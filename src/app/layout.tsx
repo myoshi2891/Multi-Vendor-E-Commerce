@@ -5,6 +5,9 @@ import localFont from "next/font/local";
 // Global CSS
 import "./globals.css";
 
+// Theme Provider
+import { ThemeProvider } from "next-themes";
+
 // Fonts
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -29,11 +32,18 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				{children}
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	);
