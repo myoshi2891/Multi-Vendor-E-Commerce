@@ -20,7 +20,7 @@ export const CategoryFormSchema = z.object({
 			url: z.string(),
 		})
 		.array()
-		.length(1, "Choose only one image for the category"),
+		.length(1, "Choose a category image."),
 	url: z
 		.string({
 			required_error: "Category URL is required",
@@ -33,6 +33,6 @@ export const CategoryFormSchema = z.object({
 		.regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
 			message:
 				"Category URL can only contain alphanumeric characters, underscores, and hyphens",
-        }),
-    featured: z.boolean().default(false),
+		}),
+	featured: z.boolean().default(false),
 });
