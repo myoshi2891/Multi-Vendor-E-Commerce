@@ -1,6 +1,8 @@
-import { User } from "@/generated/prisma";
+// import { User } from "@/generated/prisma";
+// import { User } from "@/generated/prisma";
 import { db } from "@/lib/db";
 import { clerkClient, WebhookEvent } from "@clerk/nextjs/server";
+import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 export async function POST(req: Request) {
@@ -47,8 +49,8 @@ export async function POST(req: Request) {
 		return new Response("Error occured", {
 			status: 400,
 		});
-    }
-    
+	}
+
 	// When user is created or updated
 	if (evt.type === "user.created" || evt.type === "user.updated") {
 		// Parse the incoming event data
@@ -56,8 +58,8 @@ export async function POST(req: Request) {
 		const user: Partial<User> = {
 			id: data.id,
 			name: `${data.first_name} ${data.last_name}`,
-			email: data.email_addresses[0].email_address,
-            picture: data.image_url,
+			email: data.email_addresses[0]?.email_address,
+			picture: data.image_url,
 		};
 
 		if (!user) return;
@@ -81,15 +83,15 @@ export async function POST(req: Request) {
 				role: dbUser.role || "USER",
 			},
 		});
-    }
-    
-    if (evt.type === "user.deleted") { 
-        const userId = JSON.parse(body).data.id;
-        await db.user.delete({
-            where: {
-                id: userId,
-            }
-        })
-    }
+	}
+
+	if (evt.type === "user.deleted") {
+		const userId = JSON.parse(body).data.id;
+		await db.user.delete({
+			where: {
+				id: userId,
+			},
+		});
+	}
 	return new Response("", { status: 200 });
 }

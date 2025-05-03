@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -27,11 +26,11 @@ model User {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String
-  image     String
-  url       String
-  featured Boolean  @default(false)
+  id       String  @id @default(uuid())
+  name     String
+  image    String
+  url      String  @unique
+  featured Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
