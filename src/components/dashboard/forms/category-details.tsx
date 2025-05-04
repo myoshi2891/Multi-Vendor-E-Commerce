@@ -32,6 +32,7 @@ import {
 	FormMessage,
 	FormDescription,
 } from "@/components/ui/form";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,7 +186,7 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 								)}
 							/>
 							<FormField
-								disabled={isLoading}
+								// disabled={isLoading}
 								control={form.control}
 								name="name"
 								render={({ field }) => (
@@ -195,22 +196,18 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 											<Input
 												placeholder="Name"
 												{...field}
-												onChange={(e) => {
-													console.log(
-														"Name input changed to:",
-														e.target.value,
-														field.value
-													); // ✅
-													field.onChange(e);
-												}}
 											/>
 										</FormControl>
+										<FormDescription>
+											This is your public display name.
+										</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
+
 							<FormField
-								disabled={isLoading}
+								// disabled={isLoading}
 								control={form.control}
 								name="url"
 								render={({ field }) => (
@@ -220,15 +217,6 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 											<Input
 												placeholder="/category-url"
 												{...field}
-												// onChange={(e) => {
-												// 	console.log(
-												// 		"Name input changed to:",
-												// 		e.target.value
-												// 	); // ✅
-												// 	field.onChange(
-												// 		e.target.value
-												// 	);
-												// }}
 											/>
 										</FormControl>
 										<FormMessage />
