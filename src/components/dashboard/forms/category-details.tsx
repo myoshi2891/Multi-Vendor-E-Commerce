@@ -65,10 +65,10 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 		resolver: zodResolver(CategoryFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
-			name: data?.name,
-			image: data?.image ? [{ url: data?.image }] : [],
-			url: data?.url,
-			featured: data?.featured,
+			name: data?.name ?? "",
+			image: data?.image ? [{ url: data.image }] : [],
+			url: data?.url ?? "",
+			featured: data?.featured ?? false,
 		},
 	});
 
@@ -79,16 +79,21 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 	useEffect(() => {
 		if (data) {
 			form.reset({
-				name: data?.name,
-				image: [{ url: data?.image }],
-				url: data?.url,
-				featured: data?.featured,
+				name: data.name ?? "",
+				image: data.image ? [{ url: data.image }] : [],
+				url: data.url ?? "",
+				featured: data.featured ?? false,
 			});
 		}
 	}, [data, form]);
 
 	// Submit handler for form submission
 	const handleSubmit = async (values: z.infer<typeof CategoryFormSchema>) => {
+		console.log(
+			"------------------------",
+			values,
+			"------------------------"
+		);
 		try {
 			// Upserting category data
 			const response = await upsertCategory({
@@ -100,6 +105,11 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			});
+			console.log(
+				"------------------------try",
+				response,
+				"------------------------"
+			);
 
 			// Displaying success message
 			toast({
@@ -115,6 +125,12 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 				router.push("/dashboard/admin/categories");
 			}
 		} catch (error: any) {
+			console.log(
+				"------------------------error handle",
+				values,
+				"------------------------"
+			);
+
 			// Handling form submission errors
 			console.log(error);
 			toast({
@@ -184,6 +200,14 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 											<Input
 												placeholder="Name"
 												{...field}
+												onChange={(e) => {
+													console.log(
+														"Name input changed to:",
+														e.target.value,
+														field.value
+													); // ✅
+													field.onChange(e);
+												}}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -201,6 +225,15 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 											<Input
 												placeholder="/category-url"
 												{...field}
+												// onChange={(e) => {
+												// 	console.log(
+												// 		"Name input changed to:",
+												// 		e.target.value
+												// 	); // ✅
+												// 	field.onChange(
+												// 		e.target.value
+												// 	);
+												// }}
 											/>
 										</FormControl>
 										<FormMessage />

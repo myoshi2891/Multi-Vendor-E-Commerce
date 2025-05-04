@@ -15,6 +15,7 @@ import { Category } from "@prisma/client";
 // Parameters:
 //   - category: Category object containing details of the category to be upserted.
 // Returns: Updated or newly created category details.
+
 export const upsertCategory = async (category: Category) => {
 	try {
 		// Get current user
@@ -68,6 +69,25 @@ export const upsertCategory = async (category: Category) => {
 			create: category,
 		});
 		return categoryDetails;
+	} catch (error) {
+		// Log and re-throw any errors
+		console.log(error);
+		throw error;
+	}
+};
+
+// Function: getAllCategories
+// Description: Retrieves all categories from the database.
+// Permission Level: Public
+// Returns: Array of categories sorted by updatedAt date in descending order.
+
+export const getAllCategories = async () => {
+	try {
+		// Retrieve all categories from the database
+		const categories = await db.category.findMany({
+			orderBy: { updatedAt: "desc" },
+		});
+		return categories;
 	} catch (error) {
 		// Log and re-throw any errors
 		console.log(error);

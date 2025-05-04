@@ -14,6 +14,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 // Toast
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import ModalProvider from "../providers/modal-provider";
 // Fonts
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -49,7 +50,7 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
+						<ModalProvider>{children}</ModalProvider>
 						<Toaster />
 						<SonnerToaster position="bottom-left" />
 					</ThemeProvider>
