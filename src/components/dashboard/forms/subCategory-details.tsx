@@ -198,7 +198,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 								)}
 							/>
 							<FormField
-								disabled={isLoading}
+								// disabled={isLoading}
 								control={form.control}
 								name="name"
 								render={({ field }) => (
@@ -215,7 +215,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 								)}
 							/>
 							<FormField
-								disabled={isLoading}
+								// disabled={isLoading}
 								control={form.control}
 								name="url"
 								render={({ field }) => (
@@ -241,7 +241,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 								)}
 							/>
 							<FormField
-								disabled={isLoading}
+								// disabled={isLoading}
 								control={form.control}
 								name="categoryId"
 								render={({ field }) => (
@@ -258,12 +258,20 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 										>
 											<FormControl>
 												<SelectTrigger>
-													<SelectValue defaultValue={field.value} placeholder="Select a category"/>
+													<SelectValue
+														defaultValue={
+															field.value
+														}
+														placeholder="Select a category"
+													/>
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
 												{categories.map((category) => (
-													<SelectItem key={category.id} value={category.id}>
+													<SelectItem
+														key={category.id}
+														value={category.id}
+													>
 														{category.name}
 													</SelectItem>
 												))}
