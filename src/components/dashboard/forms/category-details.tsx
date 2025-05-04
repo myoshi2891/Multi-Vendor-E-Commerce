@@ -48,13 +48,9 @@ import { useToast } from "@/hooks/use-toast";
 
 interface CategoryDetailsProps {
 	data?: Category;
-	cloudinary_key: string;
 }
 
-const CategoryDetails: FC<CategoryDetailsProps> = ({
-	data,
-	cloudinary_key,
-}) => {
+const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
@@ -170,7 +166,6 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({
 													(image) => image.url
 												)}
 												disabled={isLoading}
-												cloudinary_key={cloudinary_key}
 												onChange={(url) =>
 													field.onChange([{ url }])
 												}

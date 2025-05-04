@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Hooks and utilities
-import { useToast } from "@/components/ui/use-toast";
+// import { useToast } from "@/components/ui/use-toast";
 import { useModal } from "@/providers/modal-provider";
 
 // Lucide icons
@@ -52,6 +52,7 @@ import { ColumnDef } from "@tanstack/react-table";
 
 // Prisma models
 import { Category } from "@prisma/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const columns: ColumnDef<Category>[] = [
 	{
@@ -129,7 +130,8 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	const router = useRouter();
 
 	// Return null if rowData or rowData.id don't exist
-	if (!rowData || !rowData.id) return null;
+    if (!rowData || !rowData.id) return null;
+    
 
 	return (
 		<AlertDialog>
@@ -149,7 +151,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 								// Custom modal component
 								<CustomModal>
 									{/* Store details component */}
-									<CategoryDetails cloudinary_key="" data={{ ...rowData }} />
+									<CategoryDetails data={{ ...rowData }} />
 								</CustomModal>,
 								async () => {
 									return {

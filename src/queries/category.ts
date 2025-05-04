@@ -94,3 +94,65 @@ export const getAllCategories = async () => {
 		throw error;
 	}
 };
+
+// Function: getCategory
+// Description: Retrieves a category from the database by its ID.
+// Permission Level: Public
+// Parameters:
+// - categoryId: ID of the category to retrieve.
+// Returns: Category details if found, otherwise undefined.
+
+export const getCategory = async (categoryId: string) => {
+	try {
+		if (!categoryId) throw new Error("Please provide a category ID.");
+
+		// Retrieve category from the database
+		const category = await db.category.findUnique({
+			where: {
+				id: categoryId,
+			},
+		});
+		return category;
+	} catch (error) {
+		// Log and re-throw any errors
+		console.log(error);
+		throw error;
+	}
+};
+
+// Function: deleteCategory
+// Description: Deletes a category from the database by its ID.
+// Permission Level: Admin only
+// Parameters:
+// - categoryId: ID of the category to delete.
+// Returns: Boolean indicating whether the category was deleted successfully.
+
+export const deleteCategory = async (categoryId: string) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error("Unauthenticated.");
+
+		// Verify admin permission
+		if (user.privateMetadata.role !== "ADMIN")
+			throw new Error(
+				"Unauthorized Access: Admin Privileges Required for Entry."
+			);
+
+		if (!categoryId) throw new Error("Please provide a category ID.");
+
+		// Delete category from the database
+		const response = await db.category.delete({
+			where: {
+				id: categoryId,
+			},
+		});
+		return response;
+	} catch (error) {
+		// Log and re-throw any errors
+		console.log(error);
+		throw error;
+	}
+};
