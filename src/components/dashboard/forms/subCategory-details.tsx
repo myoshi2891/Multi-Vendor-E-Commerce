@@ -78,8 +78,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 	const isLoading = form.formState.isSubmitting;
 
 	const formData = form.watch();
-	console.log("formData", formData);
-	
+
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
@@ -97,11 +96,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 	const handleSubmit = async (
 		values: z.infer<typeof SubCategoryFormSchema>
 	) => {
-		console.log(
-			"------------------------",
-			values,
-			"------------------------"
-		);
 		try {
 			// Upserting category data
 			const response = await upsertSubCategory({
@@ -114,11 +108,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			});
-			console.log(
-				"------------------------try",
-				response,
-				"------------------------"
-			);
 
 			// Displaying success message
 			toast({
@@ -134,12 +123,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 				router.push("/dashboard/admin/subCategories");
 			}
 		} catch (error: any) {
-			console.log(
-				"------------------------error handle",
-				values,
-				"------------------------"
-			);
-
 			// Handling form submission errors
 			console.log(error);
 			toast({
@@ -225,15 +208,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 											<Input
 												placeholder="/category-url"
 												{...field}
-												// onChange={(e) => {
-												// 	console.log(
-												// 		"Name input changed to:",
-												// 		e.target.value
-												// 	); // ✅
-												// 	field.onChange(
-												// 		e.target.value
-												// 	);
-												// }}
 											/>
 										</FormControl>
 										<FormMessage />
