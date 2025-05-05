@@ -4,15 +4,15 @@
 import { FC, useEffect } from "react";
 
 // Prisma model
-import { Category } from "@prisma/client";
+import { Store } from "@prisma/client";
 
 // Form handling utilities
-import * as z from "zod";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 // Schema
-import { CategoryFormSchema } from "@/lib/schemas";
+import { StoreFormSchema } from "@/lib/schemas";
 
 // UI Components
 import { AlertDialog } from "@/components/ui/alert-dialog";
@@ -26,15 +26,15 @@ import {
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
 	FormMessage,
-	FormDescription,
 } from "@/components/ui/form";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import ImageUpload from "../shared/image-upload";
 
@@ -44,28 +44,33 @@ import { upsertCategory } from "@/queries/category";
 // Utils
 import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
-interface CategoryDetailsProps {
-	data?: Category;
+interface StoreDetailsProps {
+	data?: Store;
 }
 
-const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
+const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
 
 	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof CategoryFormSchema>>({
+	const form = useForm<z.infer<typeof StoreFormSchema>>({
 		mode: "onChange", // Form validation mode
-		resolver: zodResolver(CategoryFormSchema), // Resolver for form validation
+		resolver: zodResolver(StoreFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
 			name: data?.name ?? "",
-			image: data?.image ? [{ url: data.image }] : [],
+			description: data?.description ?? "",
+			email: data?.email ?? "",
+			phone: data?.phone ?? "",
+			logo: data?.logo ? [{ url: data.logo }] : [],
+			cover: data?.cover ? [{ url: data.cover }] : [],
 			url: data?.url ?? "",
 			featured: data?.featured ?? false,
+			status: data?.status.toString(),
 		},
 	});
 
@@ -76,33 +81,37 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 	useEffect(() => {
 		if (data) {
 			form.reset({
-				name: data.name ?? "",
-				image: data.image ? [{ url: data.image }] : [],
-				url: data.url ?? "",
-				featured: data.featured ?? false,
+				name: data?.name ?? "",
+				description: data?.description ?? "",
+				email: data?.email ?? "",
+				phone: data?.phone ?? "",
+				logo: data?.logo ? [{ url: data.logo }] : [],
+				cover: data?.cover ? [{ url: data.cover }] : [],
+				url: data?.url ?? "",
+				featured: data?.featured ?? false,
+				status: data?.status,
 			});
 		}
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (values: z.infer<typeof CategoryFormSchema>) => {
+	const handleSubmit = async (values: z.infer<typeof StoreFormSchema>) => {
 		try {
 			// Upserting category data
-			const response = await upsertCategory({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				image: values.image[0].url,
-				url: values.url,
-				featured: values.featured,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
+			// const response = await upsertCategory({
+			// 	id: data?.id ? data.id : v4(),
+			// 	name: values.name,
+			// 	// image: values.image[0].url,
+			// 	url: values.url,
+			// 	// featured: values.featured,
+			// 	createdAt: new Date(),
+			// 	updatedAt: new Date(),
+			// });
 			// Displaying success message
 			toast({
-				title: data?.id
-					? "Category has been updated."
-					: `Congratulations! '${response?.name}' is now created.`,
+				// title: data?.id
+				// 	? "Category has been updated."
+				// 	: `Congratulations! '${response?.name}' is now created.`,
 			});
 
 			// Redirect or Refresh data
@@ -126,11 +135,11 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 		<AlertDialog>
 			<Card className="w-full">
 				<CardHeader>
-					<CardTitle>Category Information</CardTitle>
+					<CardTitle>Store Information</CardTitle>
 					<CardDescription>
 						{data?.id
-							? `Update ${data?.name} category information.`
-							: " Lets create a category. You can edit category later from the categories table or the category page."}
+							? `Update ${data?.name} store information.`
+							: " Lets create a store. You can edit store later from the store settings page."}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -139,36 +148,72 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 							onSubmit={form.handleSubmit(handleSubmit)}
 							className="space-y-4"
 						>
-							<FormField
-								control={form.control}
-								name="image"
-								render={({ field }) => (
-									<FormItem>
-										<FormControl>
-											<ImageUpload
-												type="profile"
-												value={field.value.map(
-													(image) => image.url
-												)}
-												disabled={isLoading}
-												onChange={(url) =>
-													field.onChange([{ url }])
-												}
-												onRemove={(url) =>
-													field.onChange([
-														...field.value.filter(
-															(current) =>
-																current.url !==
-																url
-														),
-													])
-												}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							<div className="relative py-2 mb-24">
+								<FormField
+									control={form.control}
+									name="logo"
+									render={({ field }) => (
+										<FormItem className="absolute -bottom-20 -left-48 z-10 inset-x-96">
+											<FormControl>
+												<ImageUpload
+													type="profile"
+													value={field.value.map(
+														(image) => image.url
+													)}
+													disabled={isLoading}
+													onChange={(url) =>
+														field.onChange([
+															{ url },
+														])
+													}
+													onRemove={(url) =>
+														field.onChange([
+															...field.value.filter(
+																(current) =>
+																	current.url !==
+																	url
+															),
+														])
+													}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="cover"
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<ImageUpload
+													type="cover"
+													value={field.value.map(
+														(image) => image.url
+													)}
+													disabled={isLoading}
+													onChange={(url) =>
+														field.onChange([
+															{ url },
+														])
+													}
+													onRemove={(url) =>
+														field.onChange([
+															...field.value.filter(
+																(current) =>
+																	current.url !==
+																	url
+															),
+														])
+													}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 							<FormField
 								// disabled={isLoading}
 								control={form.control}
@@ -243,5 +288,4 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 		</AlertDialog>
 	);
 };
-
-export default CategoryDetails;
+export default StoreDetails;
