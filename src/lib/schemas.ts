@@ -119,13 +119,13 @@ export const StoreFormSchema = z.object({
 			url: z.string(),
 		})
 		.array()
-		.length(1, "Choose a store logo."),
+		.length(1, "Choose a logo image."),
 	cover: z
 		.object({
 			url: z.string(),
 		})
 		.array()
-		.length(1, "Choose a store cover."),
+		.length(1, "Choose a cover image."),
 	url: z
 		.string({
 			required_error: "Store url is required",
