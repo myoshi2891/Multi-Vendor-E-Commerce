@@ -10,6 +10,7 @@ import { cn, getDominantColors, getGridClassName } from "@/lib/utils";
 
 // Icons
 import { Trash } from "lucide-react";
+import ColorPalette from "./color-palette";
 
 interface ImagesPreviewGridProps {
 	images: { url: string }[]; // Array of image objects with { url: string }
@@ -108,6 +109,11 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 								)}
 							>
 								{/* Color palette (Extract colors) */}
+								<ColorPalette
+									colors={colors}
+									setColors={setColors}
+									extractedColors={colorPalette[i]}
+								/>
 								{/* Delete Button */}
 								<button
 									className="Btn"
