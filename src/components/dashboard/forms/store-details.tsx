@@ -1,7 +1,8 @@
 "use client";
 
-// React
+// React, Next.js
 import { FC, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Prisma model
 import { Store } from "@prisma/client";
@@ -36,17 +37,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "../shared/image-upload";
+import { useToast } from "@/hooks/use-toast";
 
 // Queries
-import { upsertCategory } from "@/queries/category";
+import { upsertStore } from "@/queries/store";
 
 // Utils
 import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { Textarea } from "@/components/ui/textarea";
 
 interface StoreDetailsProps {
 	data?: Store;
@@ -99,27 +99,31 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 	const handleSubmit = async (values: z.infer<typeof StoreFormSchema>) => {
 		try {
 			// Upserting category data
-			// const response = await upsertCategory({
-			// 	id: data?.id ? data.id : v4(),
-			// 	name: values.name,
-			// 	// image: values.image[0].url,
-			// 	url: values.url,
-			// 	// featured: values.featured,
-			// 	createdAt: new Date(),
-			// 	updatedAt: new Date(),
-			// });
+			const response = await upsertStore({
+				id: data?.id ? data.id : v4(),
+				name: values.name,
+				description: values.description,
+				email: values.email,
+				phone: values.phone,
+				logo: values.logo[0].url,
+				cover: values.cover[0].url,
+				url: values.url,
+				featured: values.featured,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
 			// Displaying success message
 			toast({
-				// title: data?.id
-				// 	? "Category has been updated."
-				// 	: `Congratulations! '${response?.name}' is now created.`,
+				title: data?.id
+					? "Store has been updated."
+					: `Congratulations! '${response?.name}' is now created.`,
 			});
 
 			// Redirect or Refresh data
 			if (data?.id) {
 				router.refresh();
 			} else {
-				router.push("/dashboard/admin/categories");
+				router.push(`/dashboard/seller/stores/${response.url}`);
 			}
 		} catch (error: any) {
 			// Handling form submission errors
