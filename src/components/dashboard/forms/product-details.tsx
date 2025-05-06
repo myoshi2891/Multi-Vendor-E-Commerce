@@ -78,13 +78,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			variantDescription: data?.variantDescription ?? "",
 			images: data?.images || [],
 			categoryId: data?.categoryId,
-            subCategoryId: data?.subCategoryId,
-            isSale: data?.isSale?? false,
-            brand: data?.brand?? "",
+			subCategoryId: data?.subCategoryId,
+			isSale: data?.isSale ?? false,
+			brand: data?.brand ?? "",
 			sku: data?.sku ?? "",
-			colors: data?.colors?? [{color: ""}],
-            sizes: data?.sizes?? [],
-            keywords: data?.keywords?? [],
+			colors: data?.colors ?? [{ color: "" }],
+			sizes: data?.sizes ?? [],
+			keywords: data?.keywords ?? [],
 		},
 	});
 
@@ -94,7 +94,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data)		
+			form.reset(data);
 		}
 	}, [data, form]);
 
@@ -121,7 +121,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			// 		? "Store has been updated."
 			// 		: `Congratulations! '${response?.name}' is now created.`,
 			// });
-
 			// // Redirect or Refresh data
 			// if (data?.id) {
 			// 	router.refresh();
@@ -156,52 +155,21 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 							onSubmit={form.handleSubmit(handleSubmit)}
 							className="space-y-4"
 						>
-							{/* Logo - Cover */}
-							<div className="relative py-2 mb-24">
+							{/* Images - colors */}
+							<div className="flex flex-col gap-y-6 xl:flex-row">
 								<FormField
 									control={form.control}
-									name="logo"
-									render={({ field }) => (
-										<FormItem className="absolute -bottom-20 -left-48 z-10 inset-x-96">
-											<FormControl>
-												<ImageUpload
-													type="profile"
-													value={field.value.map(
-														(image) => image.url
-													)}
-													disabled={isLoading}
-													onChange={(url) =>
-														field.onChange([
-															{ url },
-														])
-													}
-													onRemove={(url) =>
-														field.onChange([
-															...field.value.filter(
-																(current) =>
-																	current.url !==
-																	url
-															),
-														])
-													}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="cover"
+									name="images"
 									render={({ field }) => (
 										<FormItem>
 											<FormControl>
 												<ImageUpload
-													type="cover"
+													dontShowPreview
+													type="standard"
 													value={field.value.map(
 														(image) => image.url
 													)}
-													disabled={isLoading}
+													// disabled={isLoading}
 													onChange={(url) =>
 														field.onChange([
 															{ url },
@@ -261,87 +229,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								)}
 							/>
 
-							{/* Email - Phone */}
-							<div className="flex flex-col gap-6 md:flex-row">
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="email"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>Store email</FormLabel>
-											<FormControl>
-												<Input
-													placeholder="Email"
-													{...field}
-													type="email"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="phone"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>Store phone</FormLabel>
-											<FormControl>
-												<Input
-													placeholder="Phone"
-													{...field}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-
-							<FormField
-								control={form.control}
-								name="url"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Store url</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="/store-url"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name="featured"
-								render={({ field }) => (
-									<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-										<FormControl>
-											<Checkbox
-												checked={field.value}
-												// @ts-ignore
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<div className="space-y-1 leading-none">
-											<FormLabel>Featured</FormLabel>
-											<FormDescription>
-												This Store will appear on the
-												home page
-											</FormDescription>
-										</div>
-									</FormItem>
-								)}
-							/>
 							<Button type="submit" disabled={isLoading}>
 								{isLoading
 									? "loading..."
-									: data?.id
+									: data?.productId && data?.variantId
 									? "Save store information"
 									: "Create store"}
 							</Button>
