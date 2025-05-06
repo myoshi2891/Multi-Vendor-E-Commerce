@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Prisma model
@@ -49,6 +49,7 @@ import { v4 } from "uuid";
 
 // Types
 import { ProductWithVariantType } from "@/lib/types";
+import ImagesPreviewGrid from "../shared/images-preview-grid";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -65,6 +66,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
+
+	// Temporary state for images
+	const [images, setImages] = useState<{ url: string }[]>([]);
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof ProductFormSchema>>({
@@ -163,30 +167,61 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									render={({ field }) => (
 										<FormItem>
 											<FormControl>
-												<ImageUpload
-													dontShowPreview
-													type="standard"
-													value={field.value.map(
-														(image) => image.url
-													)}
-													// disabled={isLoading}
-													onChange={(url) =>
-														field.onChange([
-															{ url },
-														])
-													}
-													onRemove={(url) =>
-														field.onChange([
-															...field.value.filter(
-																(current) =>
-																	current.url !==
-																	url
-															),
-														])
-													}
-												/>
+												<>
+													<ImagesPreviewGrid
+														images={
+															form.getValues()
+																.images
+														}
+														onRemove={(url) =>
+															field.onChange([
+																...field.value.filter(
+																	(current) =>
+																		current.url !==
+																		url
+																),
+															])
+														}
+													/>
+													<FormMessage className="!mt-4" />
+													<ImageUpload
+														dontShowPreview
+														type="standard"
+														value={field.value.map(
+															(image) => image.url
+														)}
+														// disabled={isLoading}
+														onChange={(url) => {
+															setImages(
+																(
+																	prevImages
+																) => {
+																	const updatedImages =
+																		[
+																			...prevImages,
+																			{
+																				url,
+																			},
+																		];
+																	field.onChange(
+																		updatedImages
+																	);
+																	return updatedImages;
+																}
+															);
+														}}
+														onRemove={(url) =>
+															field.onChange([
+																...field.value.filter(
+																	(current) =>
+																		current.url !==
+																		url
+																),
+															])
+														}
+													/>
+												</>
 											</FormControl>
-											<FormMessage />
 										</FormItem>
 									)}
 								/>
