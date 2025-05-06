@@ -11,11 +11,11 @@ export const getGridClassName = (length: number) => {
 		case 2:
 			return "grid-cols-2";
 		case 3:
-			return "grid-rows-2 grid-cols-2";
+			return "grid-cols-2 grid-rows-2";
 		case 4:
-			return "grid-rows-2 grid-cols-1";
+			return "grid-cols-2 grid-rows-1";
 		case 5:
-			return "grid-rows-2 grid-cols-6";
+			return "grid-cols-2 grid-rows-6";
 		case 6:
 			return "grid-cols-2";
 		default:

@@ -173,15 +173,20 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															form.getValues()
 																.images
 														}
-														onRemove={(url) =>
-															field.onChange([
-																...field.value.filter(
-																	(current) =>
-																		current.url !==
+														onRemove={(url) => {
+															const updatedImages =
+																images.filter(
+																	(img) =>
+																		img.url !==
 																		url
-																),
-															])
-														}
+																);
+															setImages(
+																updatedImages
+															);
+															field.onChange(
+																updatedImages
+															);
+														}}
 													/>
 													<FormMessage className="!mt-4" />
 													<ImageUpload
