@@ -18,13 +18,14 @@ import {
 
 // Prisma models
 import { Store } from "@prisma/client";
+import StoreSwitcher from "./store-switcher";
 
 interface SideBarProps {
 	isAdmin?: boolean;
 	stores?: Store[];
 }
 
-const Sidebar: FC<SideBarProps> = async ({ isAdmin }) => {
+const Sidebar: FC<SideBarProps> = async ({ isAdmin, stores }) => {
 	const user = await currentUser();
 
 	return (
@@ -32,6 +33,7 @@ const Sidebar: FC<SideBarProps> = async ({ isAdmin }) => {
 			<Logo width="100%" height="180px" />
 			<span className="mt-3" />
 			{user && <UserInfo user={user} />}
+			{!isAdmin && stores && <StoreSwitcher stores={stores} />}
 			{isAdmin ? (
 				<SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} />
 			) : (
