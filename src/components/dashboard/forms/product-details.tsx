@@ -187,6 +187,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 																updatedImages
 															);
 														}}
+														// colors={colors}
+														// setColors={setColors}
 													/>
 													<FormMessage className="!mt-4" />
 													<ImageUpload

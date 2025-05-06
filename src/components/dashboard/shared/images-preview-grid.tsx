@@ -1,27 +1,59 @@
 // React, Next.js
-import { FC } from "react";
+import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
 import Image from "next/image";
 
 // Import of the image shown where are no images available
 import NoImageImg from "../../../../public/assets/images/no_image_2.png";
-import { cn, getGridClassName } from "@/lib/utils";
+
+// Utils
+import { cn, getDominantColors, getGridClassName } from "@/lib/utils";
+
+// Icons
 import { Trash } from "lucide-react";
 
 interface ImagesPreviewGridProps {
-	images: { url: string }[];
-	onRemove: (url: string) => void;
+	images: { url: string }[]; // Array of image objects with { url: string }
+	onRemove: (url: string) => void; // Callback Function to remove an image
+	colors?: { colors: string }[]; // Array of color objects with { colors: string[] }
+	setColors: Dispatch<SetStateAction<{ color: string }[]>>; // Setter function for color objects
 }
 
 const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 	images,
 	onRemove,
+	colors,
+	setColors,
 }) => {
 	// Calculate the number of images
 	let imagesLength = images.length;
-	console.log(imagesLength);
 	// Get the grid class name based on the number of images
 	const GridClassName = getGridClassName(imagesLength);
-	console.log(GridClassName);
+
+	// Extract images colors
+	const [colorPalette, setColorPalette] = useState<string[][]>([]);
+
+	useEffect(() => {
+		const fetchColors = async () => {
+			const palettes = await Promise.all(
+				images.map(async (img) => {
+					try {
+						const colors = await getDominantColors(img.url);
+						return colors;
+					} catch (error) {
+						console.log(error);
+						return [];
+					}
+				})
+			);
+			setColorPalette(palettes);
+		};
+
+		if (imagesLength > 0) {
+			fetchColors();
+		}
+	}, [images]);
+
+	console.log("colorPalette:", colorPalette);
 
 	// If there is no images, display a placeholder image
 	if (imagesLength === 0) {
