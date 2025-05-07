@@ -146,6 +146,29 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 	};
 
+	// Whenever colors, sizes, keywords changes we update the form values
+	useEffect(() => {
+		form.setValue("colors", colors);
+		// form.setValue("sizes", data?.sizes || []);
+		// form.setValue("keywords", data?.keywords || []);
+	}, [form, colors]);
+
+	// Function to add new color
+	const handleAddColor = () => {
+		setColors([...colors, { color: "" }]);
+	};
+
+	// Function to remove color
+	const handleRemoveColor = (index: number) => {
+		const updatedColors = colors.filter((_, i) => i !== index);
+		setColors(updatedColors);
+	};
+
+	// Function to add new image
+	const handleAddImage = (url: string) => {
+		setImages([...images, { url }]);
+	};
+
 	return (
 		<AlertDialog>
 			<Card className="w-full">
