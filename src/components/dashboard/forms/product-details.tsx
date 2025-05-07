@@ -71,6 +71,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// State for colors
 	const [colors, setColors] = useState<{ color: string }[]>([{ color: "" }]);
 
+	// State for sizes
+	const [sizes, setSizes] = useState<
+		{ size: string; price: number; quantity: number; discount: number }[]
+	>([{ size: "", quantity: 1, price: 0.01, discount: 0 }]);
+
 	// Temporary state for images
 	const [images, setImages] = useState<{ url: string }[]>([]);
 
@@ -95,6 +100,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			keywords: data?.keywords ?? [],
 		},
 	});
+
+	// Extract errors state from form
+	const errors = form.formState.errors;
+	console.log(errors);
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
@@ -149,25 +158,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Whenever colors, sizes, keywords changes we update the form values
 	useEffect(() => {
 		form.setValue("colors", colors);
-		// form.setValue("sizes", data?.sizes || []);
+		form.setValue("sizes", sizes);
 		// form.setValue("keywords", data?.keywords || []);
-	}, [form, colors]);
-
-	// Function to add new color
-	const handleAddColor = () => {
-		setColors([...colors, { color: "" }]);
-	};
-
-	// Function to remove color
-	const handleRemoveColor = (index: number) => {
-		const updatedColors = colors.filter((_, i) => i !== index);
-		setColors(updatedColors);
-	};
-
-	// Function to add new image
-	const handleAddImage = (url: string) => {
-		setImages([...images, { url }]);
-	};
+	}, [colors, sizes]);
+	console.log(sizes);
 
 	return (
 		<AlertDialog>
@@ -268,6 +262,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										initialDetail={{ color: "" }}
 										header="Colors"
 									/>
+									{errors.colors && (
+										<span className="text-sm font-medium text-destructive">
+											{errors.colors.message}
+										</span>
+									)}
 								</div>
 							</div>
 							{/* Name */}
@@ -308,6 +307,25 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								)}
 							/>
 
+							{/* Sizes */}
+							<div className="w-full flex flex-col gap-y-3 xl:pl-5">
+								<ClickToAddInputs
+									details={sizes}
+									setDetails={setSizes}
+									initialDetail={{
+										size: "",
+										quantity: 1,
+										price: 0.01,
+										discount: 0,
+									}}
+									header="Sizes, Quantities, Prices, Discounts"
+								/>
+								{errors.sizes && (
+									<span className="text-sm font-medium text-destructive">
+										{errors.sizes.message}
+									</span>
+								)}
+							</div>
 							<Button type="submit" disabled={isLoading}>
 								{isLoading
 									? "loading..."

@@ -256,7 +256,7 @@ export const ProductFormSchema = z.object({
 		})
 		.array()
 		.min(1, "Product must have at least one color.")
-		.refine((colors) => colors.every((c) => c.color.length >= 0), {
+		.refine((colors) => colors.every((c) => c.color.length > 0), {
 			message: "Color name cannot be empty.",
 		}),
 	sizes: z
@@ -275,7 +275,7 @@ export const ProductFormSchema = z.object({
 		.refine(
 			(sizes) =>
 				sizes.every(
-					(s) => s.size.length >= 0 && s.quantity > 0 && s.price > 0
+					(s) => s.size.length > 0 && s.quantity > 0 && s.price > 0
 				),
 			{
 				message:
