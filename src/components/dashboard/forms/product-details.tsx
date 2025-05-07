@@ -50,6 +50,7 @@ import { v4 } from "uuid";
 // Types
 import { ProductWithVariantType } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
+import ClickToAddInputs from "./click-to-add";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -66,6 +67,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
+
+	// State for colors
+	const [colors, setColors] = useState<{ color: string }[]>([{ color: "" }]);
 
 	// Temporary state for images
 	const [images, setImages] = useState<{ url: string }[]>([]);
@@ -161,6 +165,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 						>
 							{/* Images - colors */}
 							<div className="flex flex-col gap-y-6 xl:flex-row">
+								{/* Images */}
 								<FormField
 									control={form.control}
 									name="images"
@@ -232,6 +237,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										</FormItem>
 									)}
 								/>
+								{/* Colors */}
+								<div className="w-full flex flex-col gap-y-3 xl:pl-5">
+									<ClickToAddInputs
+										details={colors}
+										setDetails={setColors}
+										initialDetail={{ color: "" }}
+										header="Colors"
+									/>
+								</div>
 							</div>
 							{/* Name */}
 							<FormField
