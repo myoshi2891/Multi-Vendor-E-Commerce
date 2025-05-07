@@ -3,7 +3,7 @@ import { FC } from "react";
 
 // Define the interface for each detail object
 export interface Detail {
-	[key: string]: string | number | boolean | undefined;
+	[key: string]: string | number | undefined;
 }
 
 // Define the interface for the ClickToAddInputs component
@@ -21,6 +21,43 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 	initialDetail = {}, // Default value for initial detail is an empty object
 	header,
 }) => {
+	// Function to handle changes in detail properties
+	const handleDetailsChange = (
+		index: number,
+		property: string,
+		value: string | number
+	) => {
+		// Update the details array with the new property value
+		const updatedDetails = details.map((detail, i) =>
+			i === index ? { ...detail, [property]: value } : detail
+		);
+
+		setDetails(updatedDetails);
+	};
+
+	// Function to add a new detail object
+	const handleAddDetail = () => {
+		// Add a new detail object to the details array
+		setDetails([
+			...details,
+			{
+				...initialDetail, //Spread the initial detail object to create a new one
+			},
+		]);
+	};
+
+	// Function to remove a detail object
+	const handleRemove = (index: number) => {
+		// We must at least keep one detail we can delete if it's the only detail available
+		if (details.length === 1) return;
+		if (details.length > 1) {
+			// Remove the detail object at the specified index
+			// setDetails(details.filter((_, i) => i !== index));
+			const updatedDetails = details.filter((_, i) => i !== index);
+			setDetails(updatedDetails); // Update the state with the filtered details
+		}
+	};
+
 	// PlusButton component for adding new detail objects
 	const PlusButton = ({ onClick }: { onClick: () => void }) => {
 		return (
@@ -80,7 +117,7 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 			{/* Header */}
 			<div>{header}</div>
 			{/* Display PlusButton if no details exist */}
-			{details.length === 0 && <PlusButton onClick={() => {}} />}
+			{details.length === 0 && <PlusButton onClick={handleAddDetail} />}
 			{/* Map through details and render input fields */}
 			{details.map((detail, index) => (
 				<div key={index} className="flex items-center gap-x-4">
@@ -105,12 +142,21 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 										? 0
 										: undefined
 								}
+								onChange={(e) =>
+									handleDetailsChange(
+										index,
+										property,
+										e.target.type === "number"
+											? parseFloat(e.target.value)
+											: e.target.value
+									)
+								}
 							/>
 						</div>
-                    ))}
-                    {/* Show buttons for each row of inputs */}
-                    <MinusButton onClick={() => {}} />
-                    <PlusButton  onClick={() => {}}/>
+					))}
+					{/* Show buttons for each row of inputs */}
+					<MinusButton onClick={() => handleRemove(index)} />
+					<PlusButton onClick={handleAddDetail} />
 				</div>
 			))}
 		</div>
