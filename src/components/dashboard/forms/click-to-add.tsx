@@ -142,6 +142,7 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 										? 0
 										: undefined
 								}
+								step="0.01"
 								onChange={(e) =>
 									handleDetailsChange(
 										index,
