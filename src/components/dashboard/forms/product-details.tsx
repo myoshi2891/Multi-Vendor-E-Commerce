@@ -5,7 +5,7 @@ import { FC, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Prisma model
-import { Category, Store } from "@prisma/client";
+import { Category, Store, SubCategory } from "@prisma/client";
 
 // Form handling utilities
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,6 +51,17 @@ import { v4 } from "uuid";
 import { ProductWithVariantType } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	getAllCategories,
+	getAllSubCategoriesFotCategory,
+} from "@/queries/category";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -67,6 +78,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
+
+	// State for subCategories
+	const [subCategories, setSubcategories] = useState<SubCategory[]>([]);
 
 	// State for colors
 	const [colors, setColors] = useState<{ color: string }[]>([{ color: "" }]);
@@ -100,6 +114,34 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			keywords: data?.keywords ?? [],
 		},
 	});
+
+	// useEffect to fetch subcategories based on categoryId
+	useEffect(() => {
+		const getSubcategories = async () => {
+			const res = await getAllSubCategoriesFotCategory(
+				form.watch().categoryId
+			);
+			setSubcategories(res);
+		};
+		getSubcategories();
+	}, [form.watch().categoryId]);
+
+	// useEffect to fetch colors and sizes from data
+	useEffect(() => {
+		if (data) {
+			setColors(data.colors);
+			setSizes(data.sizes);
+		}
+	}, [data]);
+
+	// useEffect to extract images from data
+	useEffect(() => {
+		if (data?.images) {
+			setImages(data.images);
+		}
+	}, [data]);
+
+	// Form submission handler
 
 	// Extract errors state from form
 	const errors = form.formState.errors;
@@ -219,7 +261,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														value={field.value.map(
 															(image) => image.url
 														)}
-														// disabled={isLoading}
 														onChange={(url) => {
 															setImages(
 																(
@@ -270,43 +311,180 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								</div>
 							</div>
 							{/* Name */}
-							<FormField
-								// disabled={isLoading}
-								control={form.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Store name</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="Name"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
+							<div className="flex flex-col lg:flex-row gap-4">
+								<FormField
+									control={form.control}
+									name="name"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>Product name</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Name"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="variantName"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>Store name</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Name"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 							{/* Description */}
-							<FormField
-								// disabled={isLoading}
-								control={form.control}
-								name="description"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Store description</FormLabel>
-										<FormControl>
-											<Textarea
-												placeholder="Description"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
+							<div className="flex flex-col lg:flex-row gap-4">
+								<FormField
+									control={form.control}
+									name="description"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Product description
+											</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Description"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="variantDescription"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Variant Description
+											</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Description"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+							{/* Category - SubCategory */}
+							<div className="flex flex-col lg:flex-row gap-4">
+								<FormField
+									control={form.control}
+									name="categoryId"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Product Category
+											</FormLabel>
+											<Select
+												disabled={
+													isLoading ||
+													categories.length === 0
+												}
+												onValueChange={field.onChange}
+												value={field.value}
+												defaultValue={field.value}
+											>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue
+															defaultValue={
+																field.value
+															}
+															placeholder="Select a category"
+														/>
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{categories.map(
+														(category) => (
+															<SelectItem
+																key={
+																	category.id
+																}
+																value={
+																	category.id
+																}
+															>
+																{category.name}
+															</SelectItem>
+														)
+													)}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								{form.watch().categoryId && (
+									<FormField
+										control={form.control}
+										name="subCategoryId"
+										render={({ field }) => (
+											<FormItem className="flex-1">
+												<FormLabel>
+													Product SubCategory
+												</FormLabel>
+												<Select
+													disabled={
+														isLoading ||
+														categories.length === 0
+													}
+													onValueChange={
+														field.onChange
+													}
+													value={field.value}
+													defaultValue={field.value}
+												>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue
+																defaultValue={
+																	field.value
+																}
+																placeholder="Select a category"
+															/>
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														{subCategories.map(
+															(sub) => (
+																<SelectItem
+																	key={sub.id}
+																	value={
+																		sub.id
+																	}
+																>
+																	{sub.name}
+																</SelectItem>
+															)
+														)}
+													</SelectContent>
+												</Select>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
 								)}
-							/>
-
+							</div>
 							{/* Sizes */}
 							<div className="w-full flex flex-col gap-y-3 xl:pl-5">
 								<ClickToAddInputs
