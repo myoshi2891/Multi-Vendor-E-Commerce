@@ -95,6 +95,26 @@ export const getAllCategories = async () => {
 	}
 };
 
+// Function: getAllSubCategoriesFotCategory
+// Description: Retrieves all SubCategories for a category from the database.
+// Permission Level: Public
+// Returns: Array of SubCategories of Category sorted by updatedAt date in descending order.
+
+export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
+	try {
+		// Retrieve all subCategories of Category from the database
+		const subCategories = await db.subCategory.findMany({
+			where: { categoryId },
+			orderBy: { updatedAt: "desc" },
+		});
+		return subCategories;
+	} catch (error) {
+		// Log and re-throw any errors
+		console.log(error);
+		throw error;
+	}
+};
+
 // Function: getCategory
 // Description: Retrieves a category from the database by its ID.
 // Permission Level: Public
