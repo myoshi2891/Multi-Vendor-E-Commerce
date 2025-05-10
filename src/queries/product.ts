@@ -3,8 +3,11 @@
 import { db } from "@/lib/db";
 // Types
 import { ProductWithVariantType } from "@/lib/types";
+import { generateUniqueSlug } from "@/lib/utils";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
+// Slugify
+import slugify from "slugify";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -33,14 +36,32 @@ export const upsertProduct = async (
 		// Check if the product already exist
 		const existingProduct = await db.product.findUnique({
 			where: { id: product.productId },
-        });
-        
-        // Find the store by URL
-        const store = await db.store.findUnique({
-            where: { url: storeUrl },
-        })
-        if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
-        
+		});
+
+		// Find the store by URL
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+		});
+		if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
+
+		// Generate unique slugs for product and variant
+		const productSlug = generateUniqueSlug(
+			slugify(product.name, {
+				replacement: "-",
+				lower: true,
+				trim: true,
+			}),
+			"product"
+		);
+
+		const variantSlug = generateUniqueSlug(
+			slugify(product.variantName, {
+				replacement: "-",
+				lower: true,
+				trim: true,
+			}),
+			"productVariant"
+		);
 	} catch (error) {
 		console.log(error);
 		throw error;

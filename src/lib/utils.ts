@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { PrismaClient } from "@prisma/client";
 import ColorThief from "colorthief";
+import { db } from "./db";
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
@@ -54,4 +55,30 @@ export const getDominantColors = (imgUrl: string): Promise<string[]> => {
 			reject(new Error("Failed to load image"));
 		};
 	});
+};
+
+// Helper function to generate a unique slug
+export const generateUniqueSlug = async (
+	baseSlug: string,
+	model: keyof PrismaClient,
+	field: string = "slug",
+	separator: string = "-"
+) => {
+	let slug = baseSlug;
+	let suffix = 1;
+
+	while (true) {
+		const existingRecord = await (db[model] as any).findFirst({
+			where: {
+				[field]: slug,
+			},
+		});
+		if (!existingRecord) {
+			break;
+		}
+		slug = `${slug}${separator}${suffix++}`;
+		suffix += 1;
+	}
+
+	return slug;
 };

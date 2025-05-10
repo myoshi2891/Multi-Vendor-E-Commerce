@@ -61,6 +61,7 @@ import {
 import { ProductWithVariantType } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
+import { upsertProduct } from "@/queries/product";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -155,42 +156,42 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	// Submit handler for form submission
 	const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
-		try {
-			// Upserting category data
-			const response = await upsertProduct({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				description: values.description,
-				email: values.email,
-				phone: values.phone,
-				logo: values.logo[0].url,
-				cover: values.cover[0].url,
-				url: values.url,
-				featured: values.featured,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-			Displaying success message
-			toast({
-				title: data?.id
-					? "Store has been updated."
-					: `Congratulations! '${response?.name}' is now created.`,
-			});
-			// Redirect or Refresh data
-			if (data?.id) {
-				router.refresh();
-			} else {
-				router.push(`/dashboard/seller/stores/${response.url}`);
-			}
-		} catch (error: any) {
-			// Handling form submission errors
-			console.log(error);
-			toast({
-				variant: "destructive",
-				title: "Oops!",
-				description: error.toString(),
-			});
-		}
+		// try {
+		// 	// Upserting category data
+		// 	const response = await upsertProduct({
+		// 		id: data?.id ? data.id : v4(),
+		// 		name: values.name,
+		// 		description: values.description,
+		// 		email: values.email,
+		// 		phone: values.phone,
+		// 		logo: values.logo[0].url,
+		// 		cover: values.cover[0].url,
+		// 		url: values.url,
+		// 		featured: values.featured,
+		// 		createdAt: new Date(),
+		// 		updatedAt: new Date(),
+		// 	});
+		// 	Displaying success message
+		// 	toast({
+		// 		title: data?.id
+		// 			? "Store has been updated."
+		// 			: `Congratulations! '${response?.name}' is now created.`,
+		// 	});
+		// 	// Redirect or Refresh data
+		// 	if (data?.id) {
+		// 		router.refresh();
+		// 	} else {
+		// 		router.push(`/dashboard/seller/stores/${response.url}`);
+		// 	}
+		// } catch (error: any) {
+		// 	// Handling form submission errors
+		// 	console.log(error);
+		// 	toast({
+		// 		variant: "destructive",
+		// 		title: "Oops!",
+		// 		description: error.toString(),
+		// 	});
+		// }
 	};
 
 	// Handle keywords input
