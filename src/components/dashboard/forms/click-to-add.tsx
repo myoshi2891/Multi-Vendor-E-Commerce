@@ -1,5 +1,11 @@
+// React, Next.js
+import { FC, useState } from "react";
+// UI components
 import { Input } from "@/components/ui/input";
-import { FC } from "react";
+// Icons
+import { PaintBucket } from "lucide-react";
+// Color picker
+import { SketchPicker } from "react-color";
 
 // Define the interface for each detail object
 export interface Detail {
@@ -12,6 +18,7 @@ interface ClickToAddInputsProps {
 	setDetails: React.Dispatch<React.SetStateAction<Detail[]>>; // Setter function for detail objects
 	initialDetail?: Detail; // Optional initial detail objects
 	header: string; // Header for the component
+	colorPicker?: boolean; // if color picker is needed
 }
 
 // ClickToAddInputs component definition
@@ -20,7 +27,13 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 	setDetails,
 	initialDetail = {}, // Default value for initial detail is an empty object
 	header,
+	colorPicker,
 }) => {
+	// State to manage toggling color picker
+	const [colorPickerIndex, setColorPickerIndex] = useState<number | null>(
+		null
+	);
+
 	// Function to handle changes in detail properties
 	const handleDetailsChange = (
 		index: number,
@@ -112,6 +125,7 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 			</button>
 		);
 	};
+
 	return (
 		<div className="flex flex-col gap-y-4">
 			{/* Header */}
@@ -126,6 +140,48 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 							key={propIndex}
 							className="flex items-center gap-x-4"
 						>
+							{/* Color picker toggle */}
+							{property === "color" && colorPicker && (
+								<div className="flex gap-x-4">
+									<button
+										type="button"
+										className="cursor-pointer"
+										onClick={() =>
+											setColorPickerIndex(
+												colorPickerIndex === index
+													? null
+													: index
+											)
+										}
+									>
+										<PaintBucket />
+									</button>
+									<span
+										className="w-8 h-8 rounded-full"
+										style={{
+											backgroundColor: detail[
+												property
+											] as string,
+										}}
+									/>
+								</div>
+							)}
+
+							{/* Color Picker */}
+							{colorPickerIndex === index &&
+								property === "color" && (
+									<SketchPicker
+										color={detail[property] as string}
+										onChange={(e) =>
+											handleDetailsChange(
+												index,
+												property,
+												e.hex
+											)
+										}
+									/>
+								)}
+
 							{/* Input field for each property */}
 							<Input
 								className="w-28"
