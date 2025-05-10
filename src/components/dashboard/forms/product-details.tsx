@@ -65,7 +65,7 @@ import { upsertProduct } from "@/queries/product";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
-	data?: ProductWithVariantType;
+	data?: Partial<ProductWithVariantType>;
 	categories: Category[];
 	storeUrl: string;
 }
@@ -276,7 +276,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															);
 														}}
 														// colors={colors}
-														// setColors={setColors}
+														setColors={setColors}
 													/>
 													<FormMessage className="!mt-4" />
 													<ImageUpload
