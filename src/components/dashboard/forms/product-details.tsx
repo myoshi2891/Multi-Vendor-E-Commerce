@@ -315,6 +315,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										setDetails={setColors}
 										initialDetail={{ color: "" }}
 										header="Colors"
+										colorPicker
 									/>
 									{errors.colors && (
 										<span className="text-sm font-medium text-destructive">
