@@ -485,8 +485,43 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									/>
 								)}
 							</div>
+							{/* Brand, Sku */}
+							<div className="flex flex-col lg:flex-row gap-4">
+								<FormField
+									control={form.control}
+									name="brand"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>Product brand</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Brand"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="sku"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>Product sku</FormLabel>
+											<FormControl>
+												<Input
+													placeholder="Sku"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 							{/* Sizes */}
-							<div className="w-full flex flex-col gap-y-3 xl:pl-5">
+							<div className="w-full flex flex-col gap-y-3">
 								<ClickToAddInputs
 									details={sizes}
 									setDetails={setSizes}
@@ -504,6 +539,29 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									</span>
 								)}
 							</div>
+							{/* Is On Sale */}
+							<FormField
+								control={form.control}
+								name="isSale"
+								render={({ field }) => (
+									<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+										<FormControl>
+											<Checkbox
+												checked={field.value}
+												// @ts-ignore
+												onCheckedChange={field.onChange}
+											/>
+										</FormControl>
+										<div className="space-y-1 leading-none">
+											<FormLabel>On Sale</FormLabel>
+											<FormDescription>
+												Is this product on sale?
+											</FormDescription>
+										</div>
+									</FormItem>
+								)}
+							/>
+
 							<Button type="submit" disabled={isLoading}>
 								{isLoading
 									? "loading..."
