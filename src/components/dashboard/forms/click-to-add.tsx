@@ -131,9 +131,9 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 			{/* Header */}
 			<div>{header}</div>
 			{/* Display PlusButton if no details exist */}
-			{details.length === 0 && <PlusButton onClick={handleAddDetail} />}
+			{details?.length === 0 && <PlusButton onClick={handleAddDetail} />}
 			{/* Map through details and render input fields */}
-			{details.map((detail, index) => (
+			{details?.map((detail, index) => (
 				<div key={index} className="flex items-center gap-x-4">
 					{Object.keys(detail).map((property, propIndex) => (
 						<div

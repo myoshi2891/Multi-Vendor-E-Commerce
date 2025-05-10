@@ -132,3 +132,29 @@ export const upsertProduct = async (
 		throw error;
 	}
 };
+
+// Function: getProductMainInfo
+// Description: Retrieves product main information (including product and variant details)
+// Access Level: Public
+// Parameters:
+// - productId: ID of the product to retrieve.
+// Returns: Product main information (including product and variant details) or null if the product is not  found.
+
+export const getProductMainInfo = async (productId: string) => { 
+    // Retrieve product and variant details
+    const product = await db.product.findUnique({
+        where: { id: productId },
+    })
+    if (!product) return null
+    
+    // Return the main information of the product
+    return {
+        productId: product.id,
+        name: product.name,
+        description: product.description,
+        brand: product.brand,
+        categoryId: product.categoryId,
+        subCategoryId: product.subCategoryId,
+        storeId: product.storeId,
+    }
+}
