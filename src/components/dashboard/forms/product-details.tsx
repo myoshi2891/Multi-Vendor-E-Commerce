@@ -1,11 +1,11 @@
 "use client";
 
 // React, Next.js
-import { FC, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FC, useEffect, useState } from "react";
 
 // Prisma model
-import { Category, Store, SubCategory } from "@prisma/client";
+import { Category, SubCategory } from "@prisma/client";
 
 // Form handling utilities
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,19 +38,19 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import ImageUpload from "../shared/image-upload";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "../shared/image-upload";
 
 // Queries
-import { upsertStore } from "@/queries/store";
+import { getAllSubCategoriesFotCategory } from "@/queries/category";
+
+// ReactTags
+import { WithOutContext as ReactTags } from "react-tag-input";
 
 // Utils
 import { v4 } from "uuid";
 
 // Types
-import { ProductWithVariantType } from "@/lib/types";
-import ImagesPreviewGrid from "../shared/images-preview-grid";
-import ClickToAddInputs from "./click-to-add";
 import {
 	Select,
 	SelectContent,
@@ -58,10 +58,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	getAllCategories,
-	getAllSubCategoriesFotCategory,
-} from "@/queries/category";
+import { ProductWithVariantType } from "@/lib/types";
+import ImagesPreviewGrid from "../shared/images-preview-grid";
+import ClickToAddInputs from "./click-to-add";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -141,11 +140,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 	}, [data]);
 
-	// Form submission handler
-
 	// Extract errors state from form
 	const errors = form.formState.errors;
-	console.log(errors);
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
@@ -197,13 +193,30 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 	};
 
+	// Handle keywords input
+	const [keywords, setKeywords] = useState<string[]>([]);
+
+	interface Keyword {
+		id: string;
+		text: string;
+	}
+
+	const handleAddition = (keyword: Keyword) => {
+		if (keywords.length === 10) return;
+		setKeywords([...keywords, keyword.text]);
+	};
+
+	const handleDeleteKeyword = (index: number) => {
+		setKeywords(keywords.filter((_, i) => i !== index));
+	};
+
 	// Whenever colors, sizes, keywords changes we update the form values
 	useEffect(() => {
 		form.setValue("colors", colors);
 		form.setValue("sizes", sizes);
+		form.setValue("keywords", keywords);
 		// form.setValue("keywords", data?.keywords || []);
-	}, [colors, sizes]);
-	console.log(sizes);
+	}, [colors, sizes, keywords]);
 
 	return (
 		<AlertDialog>
@@ -520,6 +533,52 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									)}
 								/>
 							</div>
+							{/* Keywords */}
+							<div className="space-y-3">
+								<FormField
+									control={form.control}
+									name="keywords"
+									render={({ field }) => (
+										<FormItem className="relative flex-1">
+											<FormLabel>Product Label</FormLabel>
+											<FormControl>
+												<ReactTags
+													handleAddition={
+														handleAddition
+													}
+													handleDelete={
+														handleDeleteKeyword
+													}
+													placeholder="Keywords (e.g., size, color, material)"
+													classNames={{
+														tagInputField:
+															"bg-background border rounded-md p-2 w-full focus:outline-none",
+													}}
+												/>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+								<div className="flex flex-wrap gap-1">
+									{keywords.map((k, i) => (
+										<div
+											key={i}
+											className="text-xs inline-flex items-center px-3 py-1 bg-blue-200 text-blue-700 rounded-full gap-x-2"
+										>
+											<span>{k}</span>
+											<span
+												className="cursor-pointer"
+												onClick={() =>
+													handleDeleteKeyword(i)
+												}
+											>
+												x
+											</span>
+										</div>
+									))}
+								</div>
+							</div>
+
 							{/* Sizes */}
 							<div className="w-full flex flex-col gap-y-3">
 								<ClickToAddInputs
