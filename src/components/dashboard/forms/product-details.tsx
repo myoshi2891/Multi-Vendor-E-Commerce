@@ -157,31 +157,31 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
 		try {
 			// Upserting category data
-			// const response = await upsertStore({
-			// 	id: data?.id ? data.id : v4(),
-			// 	name: values.name,
-			// 	description: values.description,
-			// 	email: values.email,
-			// 	phone: values.phone,
-			// 	logo: values.logo[0].url,
-			// 	cover: values.cover[0].url,
-			// 	url: values.url,
-			// 	featured: values.featured,
-			// 	createdAt: new Date(),
-			// 	updatedAt: new Date(),
-			// });
-			// Displaying success message
-			// toast({
-			// 	title: data?.id
-			// 		? "Store has been updated."
-			// 		: `Congratulations! '${response?.name}' is now created.`,
-			// });
-			// // Redirect or Refresh data
-			// if (data?.id) {
-			// 	router.refresh();
-			// } else {
-			// 	router.push(`/dashboard/seller/stores/${response.url}`);
-			// }
+			const response = await upsertProduct({
+				id: data?.id ? data.id : v4(),
+				name: values.name,
+				description: values.description,
+				email: values.email,
+				phone: values.phone,
+				logo: values.logo[0].url,
+				cover: values.cover[0].url,
+				url: values.url,
+				featured: values.featured,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
+			Displaying success message
+			toast({
+				title: data?.id
+					? "Store has been updated."
+					: `Congratulations! '${response?.name}' is now created.`,
+			});
+			// Redirect or Refresh data
+			if (data?.id) {
+				router.refresh();
+			} else {
+				router.push(`/dashboard/seller/stores/${response.url}`);
+			}
 		} catch (error: any) {
 			// Handling form submission errors
 			console.log(error);
