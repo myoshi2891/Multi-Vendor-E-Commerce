@@ -134,7 +134,7 @@ model ProductVariant {
   sku                String
 
   productId String
-  product   Product @relation("ProductToProductVariant", fields: [productId], references: [id])
+  product   Product @relation("ProductToProductVariant", fields: [productId], references: [id], onDelete: Cascade)
 
   sizes  Size[]                @relation("ProductVariantSizes")
   images ProductVariantImage[] @relation("ProductVariantToVariantImage")
@@ -154,7 +154,7 @@ model Size {
   discount Float  @default(0)
 
   productVariantId String
-  productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id])
+  productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -168,7 +168,7 @@ model ProductVariantImage {
   alt String @default("")
 
   productVariantId String
-  productVariant   ProductVariant @relation("ProductVariantToVariantImage", fields: [productVariantId], references: [id])
+  productVariant   ProductVariant @relation("ProductVariantToVariantImage", fields: [productVariantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -181,7 +181,7 @@ model Color {
   name String
 
   productVariantId String
-  productVariant   ProductVariant @relation("ProductVariantColors", fields: [productVariantId], references: [id])
+  productVariant   ProductVariant @relation("ProductVariantColors", fields: [productVariantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
