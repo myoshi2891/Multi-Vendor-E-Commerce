@@ -128,6 +128,7 @@ model ProductVariant {
   id                 String  @id @default(uuid())
   variantName        String
   variantDescription String
+  variantImage       String
   slug               String  @unique
   isSale             Boolean @default(false)
   keywords           String
