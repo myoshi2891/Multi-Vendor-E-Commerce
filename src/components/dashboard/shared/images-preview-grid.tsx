@@ -2,21 +2,21 @@
 import { Dispatch, FC, SetStateAction, useEffect, useState } from "react";
 import Image from "next/image";
 
-// Import of the image shown where are no images available
+// Import of the image shown when there are no images available
 import NoImageImg from "../../../../public/assets/images/no_image_2.png";
 
 // Utils
 import { cn, getDominantColors, getGridClassName } from "@/lib/utils";
 
-// Icons
+//Icons
 import { Trash } from "lucide-react";
 import ColorPalette from "./color-palette";
 
 interface ImagesPreviewGridProps {
-	images: { url: string }[]; // Array of image objects with { url: string }
-	onRemove: (url: string) => void; // Callback Function to remove an image
-	colors?: { colors: string }[]; // Array of color objects with { colors: string[] }
-	setColors: Dispatch<SetStateAction<{ color: string }[]>>; // Setter function for color objects
+	images: { url: string }[]; // Array of image URLs
+	onRemove: (value: string) => void; // Callback function when an image is removed
+	colors?: { color: string }[]; // List of colors from form
+	setColors: Dispatch<SetStateAction<{ color: string }[]>>; // Setter function for colors
 }
 
 const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
@@ -27,12 +27,12 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 }) => {
 	// Calculate the number of images
 	let imagesLength = images?.length;
+
 	// Get the grid class name based on the number of images
 	const GridClassName = getGridClassName(imagesLength);
 
 	// Extract images colors
-	const [colorPalette, setColorPalette] = useState<string[][]>([]);
-
+	const [colorPalettes, setColorPalettes] = useState<string[][]>([]);
 	useEffect(() => {
 		const fetchColors = async () => {
 			const palettes = await Promise.all(
@@ -41,12 +41,11 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 						const colors = await getDominantColors(img.url);
 						return colors;
 					} catch (error) {
-						console.log(error);
 						return [];
 					}
 				})
 			);
-			setColorPalette(palettes);
+			setColorPalettes(palettes);
 		};
 
 		if (imagesLength > 0) {
@@ -54,15 +53,13 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 		}
 	}, [images]);
 
-	console.log("colorPalette:", colorPalette);
-
-	// If there is no images, display a placeholder image
+	// If there are no images, display a placeholder image
 	if (imagesLength === 0) {
 		return (
 			<div>
 				<Image
 					src={NoImageImg}
-					alt="No image available"
+					alt="No images available"
 					width={500}
 					height={600}
 					className="rounded-md"
@@ -70,16 +67,16 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 			</div>
 		);
 	} else {
-		// if there are images, display them in a grid
+		// If there are images, display the images in a grid
 		return (
-			<div className="max-x-4xl">
+			<div className="max-w-4xl">
 				<div
 					className={cn(
 						"grid h-[800px] overflow-hidden bg-white rounded-md",
 						GridClassName
 					)}
 				>
-					{images?.map((image, i) => (
+					{images?.map((img, i) => (
 						<div
 							key={i}
 							className={cn(
@@ -92,12 +89,11 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 						>
 							{/* Image */}
 							<Image
-								src={image.url}
-								alt={`Image ${i + 1}`}
+								src={img.url}
+								alt=""
 								width={800}
 								height={800}
 								className="w-full h-full object-cover object-top"
-								onClick={() => onRemove(image.url)}
 							/>
 							{/* Actions */}
 							<div
@@ -112,19 +108,16 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 								<ColorPalette
 									colors={colors}
 									setColors={setColors}
-									extractedColors={colorPalette[i]}
+									extractedColors={colorPalettes[i]}
 								/>
 								{/* Delete Button */}
 								<button
 									className="Btn"
 									type="button"
-									onClick={() => onRemove(image.url)}
+									onClick={() => onRemove(img.url)}
 								>
 									<div className="sign">
-										<Trash
-											size={18}
-											className="text-white"
-										/>
+										<Trash size={18} />
 									</div>
 									<div className="text">Delete</div>
 								</button>

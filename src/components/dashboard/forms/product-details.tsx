@@ -126,21 +126,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		getSubcategories();
 	}, [form.watch().categoryId]);
 
-	// useEffect to fetch colors and sizes from data
-	useEffect(() => {
-		if (data) {
-			setColors(data.colors);
-			setSizes(data.sizes);
-		}
-	}, [data]);
-
-	// useEffect to extract images from data
-	useEffect(() => {
-		if (data?.images) {
-			setImages(data.images);
-		}
-	}, [data]);
-
 	// Extract errors state from form
 	const errors = form.formState.errors;
 
@@ -229,6 +214,21 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		// form.setValue("keywords", data?.keywords || []);
 	}, [colors, sizes, keywords]);
 
+	// useEffect to fetch colors and sizes from data
+	// useEffect(() => {
+	// 	if (data) {
+	// 		setColors(data.colors);
+	// 		setSizes(data.sizes);
+	// 	}
+	// }, [data]);
+
+	// useEffect to extract images from data
+	// useEffect(() => {
+	// 	if (data?.images) {
+	// 		setImages(data.images);
+	// 	}
+	// }, [data]);
+
 	return (
 		<AlertDialog>
 			<Card className="w-full">
@@ -275,7 +275,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 																updatedImages
 															);
 														}}
-														// colors={colors}
+														colors={colors}
 														setColors={setColors}
 													/>
 													<FormMessage className="!mt-4" />
@@ -322,7 +322,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								{/* Colors */}
 								<div className="w-full flex flex-col gap-y-3 xl:pl-5">
 									<ClickToAddInputs
-										details={colors}
+										details={data?.colors || colors}
 										setDetails={setColors}
 										initialDetail={{ color: "" }}
 										header="Colors"
@@ -358,7 +358,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									name="variantName"
 									render={({ field }) => (
 										<FormItem className="flex-1">
-											<FormLabel>Store name</FormLabel>
+											<FormLabel>Variant name</FormLabel>
 											<FormControl>
 												<Input
 													placeholder="Name"

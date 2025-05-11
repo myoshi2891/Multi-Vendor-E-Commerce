@@ -1,15 +1,15 @@
 // React
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, FC, SetStateAction, useState } from "react";
 
-// Props definition
+// Pros definition
 interface ColorPaletteProps {
 	extractedColors?: string[]; // Extracted Colors (Array of strings)
 	colors?: { color: string }[]; // List of selected colors from form
-	setColors: Dispatch<SetStateAction<{ color: string }[]>>; // Setter function for color objects
+	setColors: Dispatch<SetStateAction<{ color: string }[]>>; // Setter function for colors
 }
 
-// ColorPalette component for displaying color palette
-const ColorPalette: React.FC<ColorPaletteProps> = ({
+// ColorPalette component for displaying a color palette
+const ColorPalette: FC<ColorPaletteProps> = ({
 	colors,
 	extractedColors,
 	setColors,
@@ -17,31 +17,30 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
 	// State to track the active color
 	const [activeColor, setActiveColor] = useState<string>("");
 
-	// Handle Selecting / Adding color to product colors
+	// Handle Selecting/ Adding color to product colors
 	const handleAddProductColor = (color: string) => {
 		if (!color || !setColors) return;
 
-		// Ensure the color is not already in the list
+		// Ensure colorsData is not undefined, defaulting to an empty array if it is
 		const currentColorsData = colors ?? [];
 
-		// Check if the color is already in the list
+		// Check if the color already exists in colorsData
 		const existingColor = currentColorsData.find((c) => color === c.color);
 		if (existingColor) return;
 
 		// Check for empty inputs and remove them
 		const newColors = currentColorsData.filter((c) => c.color !== "");
-
 		// Add the new color to colorsData
 		setColors([...newColors, { color: color }]);
 	};
 
-	// Color block component for displaying a single color
+	// Color component for individual color block
 	const Color = ({ color }: { color: string }) => {
 		return (
 			<div
 				className="w-20 h-[80px] cursor-pointer transition-all duration-100 ease-linear relative hover:w-[120px] hover:duration-300"
 				style={{ backgroundColor: color }}
-				onMouseOver={() => setActiveColor(color)}
+				onMouseEnter={() => setActiveColor(color)}
 				onClick={() => handleAddProductColor(color)}
 			>
 				{/* Color label */}
@@ -51,7 +50,6 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
 			</div>
 		);
 	};
-
 	return (
 		<div className="pt-10 w-[320px] h-[160px] rounded-b-md overflow-hidden">
 			{/* Color palette container */}
@@ -62,7 +60,6 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
 					<div
 						className="absolute w-16 h-16 grid place-items-center shadow-lg rounded-full -top-10"
 						style={{ backgroundColor: activeColor || "#fff" }}
-						// onMouseEnter={() => setActiveColor(activeColor)}
 					>
 						{/* Spinner icon */}
 						<svg
@@ -80,9 +77,9 @@ const ColorPalette: React.FC<ColorPaletteProps> = ({
 				</div>
 				{/* Color blocks */}
 				<div className="w-full h-[180px] absolute bottom-0 !flex items-center justify-center">
-					{/* Map over colors to display color block */}
+					{/* Map over colors to display color blocks */}
 					{extractedColors?.map((color, index) => (
-						<Color color={color} />
+						<Color key={index} color={color} />
 					))}
 				</div>
 			</div>
