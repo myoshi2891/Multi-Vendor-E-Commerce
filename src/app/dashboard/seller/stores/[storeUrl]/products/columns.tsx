@@ -67,7 +67,7 @@ export const columns: ColumnDef<StoreProductType>[] = [
 			return (
 				<div className="flex flex-col gap-y-3">
 					{/* Product name */}
-					<h1 className="font-bold truncate pb-3 border-b">
+					<h1 className="font-bold truncate pb-3 border-b capitalize">
 						{row.original.name}
 					</h1>
 					{/* Product variant */}
@@ -93,6 +93,40 @@ export const columns: ColumnDef<StoreProductType>[] = [
 										</div>
 									</Link>
 								</div>
+								{/* Info */}
+								<div className="flex mt-2 gap-2 p-1">
+									{/* Colors */}
+									<div className="w-7 flex flex-col gap-2 rounded-md">
+										{variant.colors.map((color) => (
+											<span
+												key={color.name}
+												className="w-5 h-5 rounded-full shadow-2xl"
+												style={{
+													backgroundColor: color.name,
+												}}
+											/>
+										))}
+									</div>
+									<div>
+										{/* Name of variant */}
+										<h1 className="max-w-40 capitalize text-sm">
+											{variant.variantName}
+										</h1>
+										{/* Sizes */}
+										<div className="flex flex-wrap gap-2 max-w-72 mt-1">
+											{variant.sizes.map((size) => (
+												<span
+													className="w-fit p-1 rounded-md text-[11px] font-medium border-2 bg-white/10"
+													key={size.size}
+												>
+													{size.size} - (
+													{size.quantity}) - $
+													{size.price}
+												</span>
+											))}
+										</div>
+									</div>
+								</div>
 							</div>
 						))}
 					</div>
@@ -112,6 +146,13 @@ export const columns: ColumnDef<StoreProductType>[] = [
 		header: "SubCategory",
 		cell: ({ row }) => {
 			return <span>{row.original.subCategory.name}</span>;
+		},
+	},
+	{
+		accessorKey: "brand",
+		header: "Brand",
+		cell: ({ row }) => {
+			return <span>{row.original.brand}</span>;
 		},
 	},
 
