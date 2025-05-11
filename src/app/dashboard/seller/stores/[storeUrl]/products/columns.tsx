@@ -1,13 +1,10 @@
 "use client";
 
 // React, Next.js imports
-import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
-// Custom components
-import CategoryDetails from "@/components/dashboard/forms/category-details";
-import CustomModal from "@/components/dashboard/shared/custom-modal";
+import { useState } from "react";
+import Link from "next/link";
 
 // UI components
 import {
@@ -27,7 +24,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -36,30 +32,32 @@ import {
 import { useModal } from "@/providers/modal-provider";
 
 // Lucide icons
-import {
-	BadgeCheck,
-	BadgeMinus,
-	CopyPlus,
-	Edit,
-	FilePenLine,
-	MoreHorizontal,
-	Trash,
-} from "lucide-react";
+import { CopyPlus, FilePenLine, MoreHorizontal, Trash } from "lucide-react";
 
 // Queries
-import { deleteCategory, getCategory } from "@/queries/category";
+import { deleteProduct } from "@/queries/product";
 
 // Tanstack React Table
 import { ColumnDef } from "@tanstack/react-table";
 
 // Prisma models
+
+// Types
 import { StoreProductType } from "@/lib/types";
 
 // Toast
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
 
 export const columns: ColumnDef<StoreProductType>[] = [
+	{
+		accessorKey: "name",
+		header: "Name",
+		cell: ({ row }) => (
+			<h1 className="font-bold truncate pb-3 border-b capitalize">
+				{row.original.name}
+			</h1>
+		),
+	},
 	{
 		accessorKey: "image",
 		header: "",
@@ -67,9 +65,9 @@ export const columns: ColumnDef<StoreProductType>[] = [
 			return (
 				<div className="flex flex-col gap-y-3">
 					{/* Product name */}
-					<h1 className="font-bold truncate pb-3 border-b capitalize">
+					{/* <h1 className="font-bold truncate pb-3 border-b capitalize">
 						{row.original.name}
-					</h1>
+					</h1> */}
 					{/* Product variant */}
 					<div className="relative flex flex-wrap gap-2">
 						{row.original.variants.map((variant) => (
@@ -83,6 +81,7 @@ export const columns: ColumnDef<StoreProductType>[] = [
 										alt={`${variant.variantName} image`}
 										width={1000}
 										height={1000}
+										priority
 										className="min-w-72 max-w-72 h-80 rounded-sm object-cover shadow-2xl"
 									/>
 									<Link
@@ -155,7 +154,6 @@ export const columns: ColumnDef<StoreProductType>[] = [
 			return <span>{row.original.brand}</span>;
 		},
 	},
-
 	{
 		accessorKey: "new-variant",
 		header: "",
@@ -174,26 +172,26 @@ export const columns: ColumnDef<StoreProductType>[] = [
 		cell: ({ row }) => {
 			const rowData = row.original;
 
-			return <CellActions rowData={rowData} />;
+			return <CellActions productId={rowData.id} />;
 		},
 	},
 ];
 
 // Define props interface for CellActions component
 interface CellActionsProps {
-	rowData: any;
+	productId: string;
 }
 
 // CellActions component definition
-const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
+const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 	// Hooks
-	const { setOpen, setClose } = useModal();
+	const { setClose } = useModal();
 	const [loading, setLoading] = useState(false);
 	const { toast } = useToast();
 	const router = useRouter();
 
 	// Return null if rowData or rowData.id don't exist
-	if (!rowData || !rowData.id) return null;
+	if (!productId) return null;
 
 	return (
 		<AlertDialog>
@@ -206,33 +204,12 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
-					<DropdownMenuItem
-						className="flex gap-2"
-						onClick={() => {
-							setOpen(
-								// Custom modal component
-								<CustomModal>
-									{/* Store details component */}
-									<CategoryDetails data={{ ...rowData }} />
-								</CustomModal>,
-								async () => {
-									return {
-										rowData: await getCategory(rowData?.id),
-									};
-								}
-							);
-						}}
-					>
-						<Edit size={15} />
-						Edit Details
-					</DropdownMenuItem>
-					<DropdownMenuSeparator />
 					<AlertDialogTrigger asChild>
 						<DropdownMenuItem
 							className="flex gap-2"
 							onClick={() => {}}
 						>
-							<Trash size={15} /> Delete category
+							<Trash size={15} /> Delete product
 						</DropdownMenuItem>
 					</AlertDialogTrigger>
 				</DropdownMenuContent>
@@ -244,7 +221,8 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 					</AlertDialogTitle>
 					<AlertDialogDescription className="text-left">
 						This action cannot be undone. This will permanently
-						delete the category and related data.
+						delete the product and variants that exist inside
+						product.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter className="flex items-center">
@@ -256,10 +234,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 						className="bg-destructive hover:bg-destructive mb-2 text-white"
 						onClick={async () => {
 							setLoading(true);
-							await deleteCategory(rowData.id);
+							await deleteProduct(productId);
 							toast({
-								title: "Deleted category",
-								description: "The category has been deleted.",
+								title: "Deleted product",
+								description: "The product has been deleted.",
 							});
 							setLoading(false);
 							router.refresh();

@@ -159,7 +159,7 @@ export const getProductMainInfo = async (productId: string) => {
 	};
 };
 
-// getAllStoreProducts
+// Function: getAllStoreProducts
 // Description: Retrieves all products associated with a specific store based on the store URL
 // Access Level: Public
 // Parameters:
@@ -198,4 +198,34 @@ export const getAllStoreProducts = async (storeUrl: string) => {
 		},
 	});
 	return products;
+};
+
+// Function: deleteProduct
+// Description: Deletes a product and its associated variants from the database
+// Access Level: Seller only
+// Parameters:
+// - productId: ID of the product to be deleted.
+// Returns: True if the product and its variants are successfully deleted, false otherwise.
+
+export const deleteProduct = async (productId: string) => {
+    try {
+        // Retrieve current user
+        const user = await currentUser();
+        // Check if user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
+        // Ensure user has seller privileges
+        if (user.privateMetadata.role !== "SELLER" )
+            throw new Error("Only sellers and administrators can perform this action.");
+		// Ensure product data is provided
+		if (!productId) throw new Error("Please provide product ID.");
+		
+        // Delete the product and its variants
+        const response = await db.product.delete({
+            where: { id: productId },
+        });
+        return response;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
 };
