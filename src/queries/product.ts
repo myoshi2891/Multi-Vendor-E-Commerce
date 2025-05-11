@@ -140,21 +140,62 @@ export const upsertProduct = async (
 // - productId: ID of the product to retrieve.
 // Returns: Product main information (including product and variant details) or null if the product is not  found.
 
-export const getProductMainInfo = async (productId: string) => { 
-    // Retrieve product and variant details
-    const product = await db.product.findUnique({
-        where: { id: productId },
-    })
-    if (!product) return null
-    
-    // Return the main information of the product
-    return {
-        productId: product.id,
-        name: product.name,
-        description: product.description,
-        brand: product.brand,
-        categoryId: product.categoryId,
-        subCategoryId: product.subCategoryId,
-        storeId: product.storeId,
-    }
-}
+export const getProductMainInfo = async (productId: string) => {
+	// Retrieve product and variant details
+	const product = await db.product.findUnique({
+		where: { id: productId },
+	});
+	if (!product) return null;
+
+	// Return the main information of the product
+	return {
+		productId: product.id,
+		name: product.name,
+		description: product.description,
+		brand: product.brand,
+		categoryId: product.categoryId,
+		subCategoryId: product.subCategoryId,
+		storeId: product.storeId,
+	};
+};
+
+// getAllStoreProducts
+// Description: Retrieves all products associated with a specific store based on the store URL
+// Access Level: Public
+// Parameters:
+// - storeUrl: URL of the store to retrieve products from.
+// Returns: Array of products associated with the store, including category, subcategory, and variant details or an empty array if no products are found.
+
+export const getAllStoreProducts = async (storeUrl: string) => {
+	// Retrieve store details from the database using the store URL
+	const store = await db.store.findUnique({
+		where: { url: storeUrl },
+	});
+
+	if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
+
+	// Retrieve products associated with the store using the store ID
+	const products = await db.product.findMany({
+		where: {
+			storeId: store.id,
+		},
+		include: {
+			category: true,
+			subCategory: true,
+			variants: {
+				include: {
+					images: true,
+					colors: true,
+					sizes: true,
+				},
+			},
+			store: {
+				select: {
+					id: true,
+					url: true,
+				},
+			},
+		},
+	});
+	return products;
+};
