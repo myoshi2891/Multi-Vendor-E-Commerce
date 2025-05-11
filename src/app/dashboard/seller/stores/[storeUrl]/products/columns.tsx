@@ -60,7 +60,7 @@ export const columns: ColumnDef<StoreProductType>[] = [
 	},
 	{
 		accessorKey: "image",
-		header: "",
+		header: "Images",
 		cell: ({ row }) => {
 			return (
 				<div className="flex flex-col gap-y-3">
