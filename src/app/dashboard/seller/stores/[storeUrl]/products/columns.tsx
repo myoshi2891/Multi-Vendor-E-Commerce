@@ -39,7 +39,9 @@ import { useModal } from "@/providers/modal-provider";
 import {
 	BadgeCheck,
 	BadgeMinus,
+	CopyPlus,
 	Edit,
+	FilePenLine,
 	MoreHorizontal,
 	Trash,
 } from "lucide-react";
@@ -51,58 +53,78 @@ import { deleteCategory, getCategory } from "@/queries/category";
 import { ColumnDef } from "@tanstack/react-table";
 
 // Prisma models
-import { Category } from "@prisma/client";
-import { useToast } from "@/hooks/use-toast";
+import { StoreProductType } from "@/lib/types";
 
-export const columns: ColumnDef<Category>[] = [
+// Toast
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+
+export const columns: ColumnDef<StoreProductType>[] = [
 	{
 		accessorKey: "image",
 		header: "",
 		cell: ({ row }) => {
 			return (
-				<div className="relative h-44 min-w-64 rounded-xl overflow-hidden">
-					<Image
-						src={row.original.image}
-						alt=""
-						width={1000}
-						height={1000}
-						className="w-40 h-40 rounded-full object-cover shadow-2xl"
-					/>
+				<div className="flex flex-col gap-y-3">
+					{/* Product name */}
+					<h1 className="font-bold truncate pb-3 border-b">
+						{row.original.name}
+					</h1>
+					{/* Product variant */}
+					<div className="relative flex flex-wrap gap-2">
+						{row.original.variants.map((variant) => (
+							<div
+								key={variant.id}
+								className="flex flex-col gap-y-2 group"
+							>
+								<div className="relative cursor-pointer">
+									<Image
+										src={variant.images[0].url}
+										alt={`${variant.variantName} image`}
+										width={1000}
+										height={1000}
+										className="min-w-72 max-w-72 h-80 rounded-sm object-cover shadow-2xl"
+									/>
+									<Link
+										href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
+									>
+										<div className="w-full h-full absolute top-0 left-0 bottom-0 right-0 z-0 rounded-sm bg-black/50 transition-all duration-150 hidden group-hover:block">
+											<FilePenLine className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white" />
+										</div>
+									</Link>
+								</div>
+							</div>
+						))}
+					</div>
 				</div>
 			);
 		},
 	},
 	{
-		accessorKey: "name",
-		header: "Name",
+		accessorKey: "category",
+		header: "Category",
 		cell: ({ row }) => {
-			return (
-				<span className="font-extrabold text-lg capitalize">
-					{row.original.name}
-				</span>
-			);
+			return <span>{row.original.category.name}</span>;
+		},
+	},
+	{
+		accessorKey: "subCategory",
+		header: "SubCategory",
+		cell: ({ row }) => {
+			return <span>{row.original.subCategory.name}</span>;
 		},
 	},
 
 	{
-		accessorKey: "url",
-		header: "URL",
-		cell: ({ row }) => {
-			return <span>/{row.original.url}</span>;
-		},
-	},
-	{
-		accessorKey: "featured",
-		header: "Featured",
+		accessorKey: "new-variant",
+		header: "",
 		cell: ({ row }) => {
 			return (
-				<span className="text-muted-foreground flex justify-center">
-					{row.original.featured ? (
-						<BadgeCheck className="stroke-green-300" />
-					) : (
-						<BadgeMinus />
-					)}
-				</span>
+				<Link
+					href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/new`}
+				>
+					<CopyPlus className="hover:text-blue-200" />
+				</Link>
 			);
 		},
 	},
@@ -118,7 +140,7 @@ export const columns: ColumnDef<Category>[] = [
 
 // Define props interface for CellActions component
 interface CellActionsProps {
-	rowData: Category;
+	rowData: any;
 }
 
 // CellActions component definition
@@ -130,8 +152,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	const router = useRouter();
 
 	// Return null if rowData or rowData.id don't exist
-    if (!rowData || !rowData.id) return null;
-    
+	if (!rowData || !rowData.id) return null;
 
 	return (
 		<AlertDialog>
