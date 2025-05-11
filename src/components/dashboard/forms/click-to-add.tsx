@@ -1,5 +1,5 @@
 // React, Next.js
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 // UI components
 import { Input } from "@/components/ui/input";
 // Icons
