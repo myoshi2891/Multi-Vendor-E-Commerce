@@ -1,3 +1,4 @@
+import { getAllStoreProducts } from "@/queries/product";
 import { getAllSubCategories } from "@/queries/subCategory";
 import { Prisma } from "@prisma/client";
 
@@ -37,3 +38,8 @@ export type ProductWithVariantType = {
 	createdAt: Date;
 	updatedAt: Date;
 };
+
+// Store product
+export type StoreProductType = Prisma.PromiseReturnType<
+	typeof getAllStoreProducts
+>[0];

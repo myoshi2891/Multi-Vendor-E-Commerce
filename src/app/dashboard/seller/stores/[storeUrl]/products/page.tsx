@@ -9,7 +9,7 @@ export default async function SellerProductPage({
 	params: { storeUrl: string };
 }) {
 	// Fetching products data from the database for the active store
-	const products = getAllStoreProducts(params.storeUrl);
+	const products = await getAllStoreProducts(params.storeUrl);
 
 	return (
 		<DataTable
