@@ -131,6 +131,7 @@ model ProductVariant {
   variantImage       String
   slug               String  @unique
   isSale             Boolean @default(false)
+  saleEndDate        String?
   keywords           String
   sku                String
 

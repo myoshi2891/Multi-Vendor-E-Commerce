@@ -26,6 +26,7 @@ export type ProductWithVariantType = {
 	categoryId: string;
 	subCategoryId: string;
 	isSale: boolean;
+	saleEndDate?: string;
 	brand: string;
 	sku: string;
 	colors: { color: string }[];
