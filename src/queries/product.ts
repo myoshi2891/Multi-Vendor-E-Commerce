@@ -89,6 +89,7 @@ export const upsertProduct = async (
 					alt: image.url.split("/").pop() || "",
 				})),
 			},
+			variantImage: product.variantImage,
 			colors: {
 				create: product.colors.map((color) => ({ name: color.color })),
 			},

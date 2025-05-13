@@ -104,6 +104,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			variantName: data?.variantName ?? "",
 			variantDescription: data?.variantDescription ?? "",
 			images: data?.images || [],
+			variantImage: data?.variantImage
+				? [{ url: data.variantImage }]
+				: [],
 			categoryId: data?.categoryId,
 			subCategoryId: data?.subCategoryId,
 			isSale: data?.isSale ?? false,
@@ -135,7 +138,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data);
+			form.reset({ ...data, variantImage: [{ url: data.variantImage }] });
 		}
 	}, [data, form]);
 
@@ -154,6 +157,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					categoryId: values.categoryId,
 					subCategoryId: values.subCategoryId,
 					images: values.images,
+					variantImage: values.variantImage[0].url,
 					isSale: values.isSale || false,
 					brand: values.brand,
 					sku: values.sku,
@@ -253,7 +257,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									control={form.control}
 									name="images"
 									render={({ field }) => (
-										<FormItem>
+										<FormItem className="w-full xl:border-r">
 											<FormControl>
 												<>
 													<ImagesPreviewGrid
@@ -545,52 +549,94 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									)}
 								/>
 							</div>
-							{/* Keywords */}
-							<div className="space-y-3">
-								<FormField
-									control={form.control}
-									name="keywords"
-									render={({ field }) => (
-										<FormItem className="relative flex-1">
-											<FormLabel>Product Label</FormLabel>
-											<FormControl>
-												<ReactTags
-													handleAddition={
-														handleAddition
-													}
-													handleDelete={
-														handleDeleteKeyword
-													}
-													placeholder="Keywords (e.g., size, color, material)"
-													classNames={{
-														tagInputField:
-															"bg-background border rounded-md p-2 w-full focus:outline-none",
-													}}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
-								<div className="flex flex-wrap gap-1">
-									{keywords.map((k, i) => (
-										<div
-											key={i}
-											className="text-xs inline-flex items-center px-3 py-1 bg-blue-200 text-blue-700 rounded-full gap-x-2"
-										>
-											<span>{k}</span>
-											<span
-												className="cursor-pointer"
-												onClick={() =>
-													handleDeleteKeyword(i)
-												}
+							{/* Variant image - Keywords */}
+							<div className="flex items-center gap-10 py-14">
+								{/* Variant image */}
+								<div className="border-r pr-10">
+									<FormField
+										control={form.control}
+										name="variantImage"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel className="ml-14">
+													Variant Image
+												</FormLabel>
+												<FormControl>
+													<ImageUpload
+														dontShowPreview
+														type="profile"
+														value={field.value.map(
+															(image) => image.url
+														)}
+														onChange={(url) =>
+															field.onChange([
+																{ url },
+															])
+														}
+														onRemove={(url) =>
+															field.onChange([
+																...field.value.filter(
+																	(current) =>
+																		current.url !==
+																		url
+																),
+															])
+														}
+													/>
+												</FormControl>
+												<FormMessage className="!mt-4" />
+											</FormItem>
+										)}
+									/>
+								</div>
+								{/* Keywords */}
+								<div className="w-full flex-1 space-y-3">
+									<FormField
+										control={form.control}
+										name="keywords"
+										render={({ field }) => (
+											<FormItem className="relative flex-1">
+												<FormLabel>
+													Product Label
+												</FormLabel>
+												<FormControl>
+													<ReactTags
+														handleAddition={
+															handleAddition
+														}
+														handleDelete={
+															handleDeleteKeyword
+														}
+														placeholder="Keywords (e.g., size, color, material)"
+														classNames={{
+															tagInputField:
+																"bg-background border rounded-md p-2 w-full focus:outline-none",
+														}}
+													/>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+									<div className="flex flex-wrap gap-1">
+										{keywords.map((k, i) => (
+											<div
+												key={i}
+												className="text-xs inline-flex items-center px-3 py-1 bg-blue-200 text-blue-700 rounded-full gap-x-2"
 											>
-												x
-											</span>
-										</div>
-									))}
+												<span>{k}</span>
+												<span
+													className="cursor-pointer"
+													onClick={() =>
+														handleDeleteKeyword(i)
+													}
+												>
+													x
+												</span>
+											</div>
+										))}
+									</div>
 								</div>
 							</div>
-
 							{/* Sizes */}
 							<div className="w-full flex flex-col gap-y-3">
 								<ClickToAddInputs
