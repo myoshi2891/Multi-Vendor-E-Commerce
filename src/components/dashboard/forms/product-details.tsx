@@ -43,6 +43,7 @@ import ImageUpload from "../shared/image-upload";
 
 // Queries
 import { getAllSubCategoriesFotCategory } from "@/queries/category";
+import { upsertProduct } from "@/queries/product";
 
 // ReactTags
 import { WithOutContext as ReactTags } from "react-tag-input";
@@ -61,7 +62,13 @@ import {
 import { ProductWithVariantType } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
-import { upsertProduct } from "@/queries/product";
+
+// React date time picker
+import DateTimePicker from "react-datetime-picker";
+import "react-datetime-picker/dist/DateTimePicker.css";
+import "react-calendar/dist/Calendar.css";
+import "react-clock/dist/Clock.css";
+import { format } from "date-fns";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
@@ -109,12 +116,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				: [],
 			categoryId: data?.categoryId,
 			subCategoryId: data?.subCategoryId,
-			isSale: data?.isSale ?? false,
 			brand: data?.brand ?? "",
 			sku: data?.sku ?? "",
 			colors: data?.colors ?? [{ color: "" }],
 			sizes: data?.sizes ?? [],
 			keywords: data?.keywords ?? [],
+			isSale: data?.isSale ?? false,
+			saleEndDate:
+				data?.saleEndDate ||
+				format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
 		},
 	});
 
@@ -216,22 +226,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		form.setValue("sizes", sizes);
 		form.setValue("keywords", keywords);
 		// form.setValue("keywords", data?.keywords || []);
-	}, [colors, sizes, keywords]);
+	}, [colors, sizes, keywords, data]);
 
-	// useEffect to fetch colors and sizes from data
-	// useEffect(() => {
-	// 	if (data) {
-	// 		setColors(data.colors);
-	// 		setSizes(data.sizes);
-	// 	}
-	// }, [data]);
-
-	// useEffect to extract images from data
-	// useEffect(() => {
-	// 	if (data?.images) {
-	// 		setImages(data.images);
-	// 	}
-	// }, [data]);
+	console.log("date", form.getValues().saleEndDate);
 
 	return (
 		<AlertDialog>
@@ -657,28 +654,60 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								)}
 							</div>
 							{/* Is On Sale */}
-							<FormField
-								control={form.control}
-								name="isSale"
-								render={({ field }) => (
-									<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-										<FormControl>
-											<Checkbox
-												checked={field.value}
-												// @ts-ignore
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<div className="space-y-1 leading-none">
-											<FormLabel>On Sale</FormLabel>
-											<FormDescription>
-												Is this product on sale?
-											</FormDescription>
-										</div>
-									</FormItem>
-								)}
-							/>
-
+							<div className="flex border rounded-md">
+								<FormField
+									control={form.control}
+									name="isSale"
+									render={({ field }) => (
+										<FormItem className="flex flex-row items-start space-x-3 p-4">
+											<FormControl>
+												<Checkbox
+													checked={field.value}
+													// @ts-ignore
+													onCheckedChange={
+														field.onChange
+													}
+												/>
+											</FormControl>
+											<div className="space-y-1 leading-none">
+												<FormLabel>On Sale</FormLabel>
+												<FormDescription>
+													Is this product on sale?
+												</FormDescription>
+											</div>
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="saleEndDate"
+									render={({ field }) => (
+										<FormItem className="flex flex-row items-start space-x-3 p-4">
+											<FormControl>
+												<DateTimePicker
+													onChange={(date) => {
+														field.onChange(
+															date
+																? format(
+																		date,
+																		"yyyy-MM-dd'T'HH:mm:ss"
+																  )
+																: ""
+														);
+													}}
+													value={
+														field.value
+															? new Date(
+																	field.value
+															  )
+															: null
+													}
+												/>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+							</div>
 							<Button type="submit" disabled={isLoading}>
 								{isLoading
 									? "loading..."

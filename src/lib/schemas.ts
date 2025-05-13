@@ -221,7 +221,6 @@ export const ProductFormSchema = z.object({
 			invalid_type_error: "Product subcategory must be a string",
 		})
 		.uuid(),
-	isSale: z.boolean().default(false),
 	brand: z
 		.string({
 			required_error: "Product brand is required",
@@ -288,4 +287,6 @@ export const ProductFormSchema = z.object({
 					"Size name, quantity, and price cannot be empty or less than 1.",
 			}
 		),
+	isSale: z.boolean().default(false),
+	saleEndDate: z.string().optional(),
 });
