@@ -203,6 +203,12 @@ export const ProductFormSchema = z.object({
 		.array()
 		.min(3, "Please upload at least 3 images for the product")
 		.max(6, "Please upload a maximum of 6 images for the product"),
+	variantImage: z
+		.object({
+			url: z.string(),
+		})
+		.array()
+		.length(1, "Choose a variant image."),
 	categoryId: z
 		.string({
 			required_error: "Product category is required",
