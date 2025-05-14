@@ -2,7 +2,7 @@
 
 // React, Next.js
 import { useRouter } from "next/navigation";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 
 // Prisma model
 import { Category, SubCategory } from "@prisma/client";
@@ -17,6 +17,7 @@ import { ProductFormSchema } from "@/lib/schemas";
 
 // UI Components
 import { AlertDialog } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	Card,
 	CardContent,
@@ -47,6 +48,9 @@ import { upsertProduct } from "@/queries/product";
 
 // ReactTags
 import { WithOutContext as ReactTags } from "react-tag-input";
+
+// Jodit text editor
+import JoditEditor from "jodit-react";
 
 // Utils
 import { v4 } from "uuid";
@@ -85,6 +89,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
 	const router = useRouter(); // Hook for routing
+
+	// Jodit editor refs
+	const productDescEditor = useRef(null);
+	const variantDescEditor = useRef(null);
 
 	// State for subCategories
 	const [subCategories, setSubcategories] = useState<SubCategory[]>([]);
@@ -228,7 +236,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		// form.setValue("keywords", data?.keywords || []);
 	}, [colors, sizes, keywords, data]);
 
-	console.log("date", form.getValues().saleEndDate);
+	console.log("product description", form.getValues().description);
+	console.log(
+		"product variantDescription",
+		form.getValues().variantDescription
+	);
 
 	return (
 		<AlertDialog>
@@ -371,45 +383,73 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									)}
 								/>
 							</div>
+							{/* Product and variant description editors (tabs) */}
+							<Tabs defaultValue="product" className="w-full">
+								<TabsList className="w-full grid grid-cols-2">
+									<TabsTrigger value="product">
+										Product description
+									</TabsTrigger>
+									<TabsTrigger value="variant">
+										Variant description
+									</TabsTrigger>
+								</TabsList>
+								<TabsContent value="product">
+									<FormField
+										control={form.control}
+										name="description"
+										render={({ field }) => (
+											<FormItem className="flex-1">
+												<FormControl>
+													<JoditEditor
+														ref={productDescEditor}
+														value={
+															form.getValues()
+																.description
+														}
+														onChange={(content) => {
+															form.setValue(
+																"description",
+																content
+															);
+														}}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</TabsContent>
+								<TabsContent value="variant">
+									<FormField
+										control={form.control}
+										name="variantDescription"
+										render={({ field }) => (
+											<FormItem className="flex-1">
+												<FormControl>
+													<JoditEditor
+														ref={variantDescEditor}
+														value={
+															form.getValues()
+																.variantDescription ||
+															""
+														}
+														onChange={(content) => {
+															form.setValue(
+																"variantDescription",
+																content
+															);
+														}}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</TabsContent>
+							</Tabs>
+
 							{/* Description */}
-							<div className="flex flex-col lg:flex-row gap-4">
-								<FormField
-									control={form.control}
-									name="description"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Product description
-											</FormLabel>
-											<FormControl>
-												<Textarea
-													placeholder="Description"
-													{...field}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={form.control}
-									name="variantDescription"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Variant Description
-											</FormLabel>
-											<FormControl>
-												<Textarea
-													placeholder="Description"
-													{...field}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
+							<div className="flex flex-col lg:flex-row gap-4 hidden"></div>
 							{/* Category - SubCategory */}
 							<div className="flex flex-col lg:flex-row gap-4">
 								<FormField
