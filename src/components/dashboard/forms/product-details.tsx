@@ -103,7 +103,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// State for sizes
 	const [sizes, setSizes] = useState<
 		{ size: string; price: number; quantity: number; discount: number }[]
-	>([{ size: "", quantity: 1, price: 0.01, discount: 0 }]);
+	>(data?.sizes || [{ size: "", quantity: 1, price: 0.01, discount: 0 }]);
+
+	// State for product specs
+	const [productSpecs, setProductSpecs] = useState<
+		{ name: string; value: string }[]
+	>(data?.product_specs || [{ name: "", value: "" }]);
+
+	// State for product variant specs
+	const [variantSpecs, setVariantSpecs] = useState<
+		{ name: string; value: string }[]
+	>(data?.variant_specs || [{ name: "", value: "" }]);
 
 	// Temporary state for images
 	const [images, setImages] = useState<{ url: string }[]>([]);
@@ -179,10 +189,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					images: values.images,
 					variantImage: values.variantImage[0].url,
 					isSale: values.isSale || false,
+					saleEndDate: values.saleEndDate,
 					brand: values.brand,
 					sku: values.sku,
 					colors: values.colors,
 					sizes: values.sizes || [],
+					product_specs: values.product_specs,
+					variant_specs: values.variant_specs,
 					keywords: values.keywords || [],
 					createdAt: new Date(),
 					updatedAt: new Date(),
@@ -235,14 +248,12 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		form.setValue("colors", colors);
 		form.setValue("sizes", sizes);
 		form.setValue("keywords", keywords);
-		// form.setValue("keywords", data?.keywords || []);
-	}, [colors, sizes, keywords, data]);
+		form.setValue("product_specs", productSpecs);
+		form.setValue("variant_specs", variantSpecs);
+	}, [colors, sizes, keywords, productSpecs, variantSpecs, data]);
 
-	console.log("product description", form.getValues().description);
-	console.log(
-		"product variantDescription",
-		form.getValues().variantDescription
-	);
+	// console.log("product spec", form.getValues().product_specs);
+	// console.log("product variant spec", form.getValues().variant_specs);
 
 	return (
 		<AlertDialog>
@@ -450,8 +461,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 								</TabsContent>
 							</Tabs>
 
-							{/* Description */}
-							<div className="flex flex-col lg:flex-row gap-4 hidden"></div>
 							{/* Category - SubCategory */}
 							<div className="flex flex-col lg:flex-row gap-4">
 								<FormField
@@ -695,6 +704,55 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									</span>
 								)}
 							</div>
+							{/* Product and variant specs */}
+							<Tabs
+								defaultValue="productSpecs"
+								className="w-full"
+							>
+								<TabsList className="w-full grid grid-cols-2">
+									<TabsTrigger value="productSpecs">
+										Product Specifications
+									</TabsTrigger>
+									<TabsTrigger value="variantSpecs">
+										Variant Specifications
+									</TabsTrigger>
+								</TabsList>
+								<TabsContent value="productSpecs">
+									<div className="w-full flex flex-col gap-y-3">
+										<ClickToAddInputs
+											details={productSpecs}
+											setDetails={setProductSpecs}
+											initialDetail={{
+												name: "",
+												value: "",
+											}}
+										/>
+										{errors.product_specs && (
+											<span className="text-sm font-medium text-destructive">
+												{errors.product_specs.message}
+											</span>
+										)}
+									</div>
+								</TabsContent>
+								<TabsContent value="variantSpecs">
+									<div className="w-full flex flex-col gap-y-3">
+										<ClickToAddInputs
+											details={variantSpecs}
+											setDetails={setVariantSpecs}
+											initialDetail={{
+												size: "",
+												value: "",
+											}}
+										/>
+										{errors.variant_specs && (
+											<span className="text-sm font-medium text-destructive">
+												{errors.variant_specs.message}
+											</span>
+										)}
+									</div>
+								</TabsContent>
+							</Tabs>
+
 							{/* Is On Sale */}
 							<div className="flex border rounded-md">
 								<FormField
@@ -720,35 +778,37 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										</FormItem>
 									)}
 								/>
-								<FormField
-									control={form.control}
-									name="saleEndDate"
-									render={({ field }) => (
-										<FormItem className="flex flex-row items-start space-x-3 p-4">
-											<FormControl>
-												<DateTimePicker
-													onChange={(date) => {
-														field.onChange(
-															date
-																? format(
-																		date,
-																		"yyyy-MM-dd'T'HH:mm:ss"
+								{form.getValues().isSale && (
+									<FormField
+										control={form.control}
+										name="saleEndDate"
+										render={({ field }) => (
+											<FormItem className="flex flex-row items-start space-x-3 p-4">
+												<FormControl>
+													<DateTimePicker
+														onChange={(date) => {
+															field.onChange(
+																date
+																	? format(
+																			date,
+																			"yyyy-MM-dd'T'HH:mm:ss"
+																	  )
+																	: ""
+															);
+														}}
+														value={
+															field.value
+																? new Date(
+																		field.value
 																  )
-																: ""
-														);
-													}}
-													value={
-														field.value
-															? new Date(
-																	field.value
-															  )
-															: null
-													}
-												/>
-											</FormControl>
-										</FormItem>
-									)}
-								/>
+																: null
+														}
+													/>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								)}
 							</div>
 							<Button type="submit" disabled={isLoading}>
 								{isLoading

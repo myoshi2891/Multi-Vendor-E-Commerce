@@ -17,7 +17,7 @@ interface ClickToAddInputsProps {
 	details: Detail[]; // Array of detail objects1
 	setDetails: React.Dispatch<React.SetStateAction<Detail[]>>; // Setter function for detail objects
 	initialDetail?: Detail; // Optional initial detail objects
-	header: string; // Header for the component
+	header?: string; // Header for the component
 	colorPicker?: boolean; // if color picker is needed
 }
 
@@ -129,7 +129,7 @@ const ClickToAddInputs: FC<ClickToAddInputsProps> = ({
 	return (
 		<div className="flex flex-col gap-y-4">
 			{/* Header */}
-			<div>{header}</div>
+			{header && <div>{header}</div>}
 			{/* Display PlusButton if no details exist */}
 			{details?.length === 0 && <PlusButton onClick={handleAddDetail} />}
 			{/* Map through details and render input fields */}
