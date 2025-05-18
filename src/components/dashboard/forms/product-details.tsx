@@ -128,6 +128,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			sku: data?.sku ?? "",
 			colors: data?.colors ?? [{ color: "" }],
 			sizes: data?.sizes ?? [],
+			product_specs: data?.product_specs ?? [],
+			variant_specs: data?.variant_specs ?? [],
 			keywords: data?.keywords ?? [],
 			isSale: data?.isSale ?? false,
 			saleEndDate:

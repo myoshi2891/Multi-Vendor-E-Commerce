@@ -277,6 +277,40 @@ export const ProductFormSchema = z.object({
 					"Size name, quantity, and price cannot be empty or less than 1.",
 			}
 		),
+	product_specs: z
+		.object({
+			name: z.string(),
+			value: z.string(),
+		})
+		.array()
+		.min(1, "Product must have at least one product spec.")
+		.refine(
+			(product_specs) =>
+				product_specs.every(
+					(s) => s.name.length > 0 && s.value.length > 0
+				),
+			{
+				message: "All product specs must have a name and value.",
+			}
+		),
+	variant_specs: z
+		.object({
+			name: z.string(),
+			value: z.string(),
+		})
+		.array()
+		.min(1, "Product must have at least one product variant spec.")
+		.refine(
+			(product_specs) =>
+				product_specs.every(
+					(s) => s.name.length > 0 && s.value.length > 0
+				),
+			{
+				message:
+					"All product variant specs must have a name and value.",
+			}
+		),
+
 	isSale: z.boolean().default(false),
 	saleEndDate: z.string().optional(),
 });
