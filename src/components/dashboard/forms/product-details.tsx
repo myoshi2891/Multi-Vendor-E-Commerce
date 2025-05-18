@@ -115,6 +115,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		{ name: string; value: string }[]
 	>(data?.variant_specs || [{ name: "", value: "" }]);
 
+	// State for product variant specs
+	const [questions, setQuestions] = useState<
+		{ question: string; answer: string }[]
+	>(data?.questions || [{ question: "", answer: "" }]);
+
 	// Temporary state for images
 	const [images, setImages] = useState<{ url: string }[]>([]);
 
@@ -141,6 +146,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			product_specs: data?.product_specs ?? [],
 			variant_specs: data?.variant_specs ?? [],
 			keywords: data?.keywords ?? [],
+			questions: data?.questions ?? [],
 			isSale: data?.isSale ?? false,
 			saleEndDate:
 				data?.saleEndDate ||
@@ -197,6 +203,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					product_specs: values.product_specs,
 					variant_specs: values.variant_specs,
 					keywords: values.keywords || [],
+					questions: values.questions || [],
 					createdAt: new Date(),
 					updatedAt: new Date(),
 				},
@@ -752,6 +759,23 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									</div>
 								</TabsContent>
 							</Tabs>
+							{/* Questions */}
+							<div className="w-full flex flex-col gap-y-3">
+								<ClickToAddInputs
+									details={questions}
+									setDetails={setQuestions}
+									initialDetail={{
+										questions: "",
+										answer: "",
+									}}
+									header="Questions & Answers"
+								/>
+								{errors.questions && (
+									<span className="text-sm font-medium text-destructive">
+										{errors.questions.message}
+									</span>
+								)}
+							</div>
 
 							{/* Is On Sale */}
 							<div className="flex border rounded-md">
