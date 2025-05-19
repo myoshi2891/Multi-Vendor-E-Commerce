@@ -51,38 +51,77 @@ export const upsertStore = async (store: Partial<Store>) => {
 			},
 		});
 
-        if (existingStore) {
-            let errorMessage = "";
-            if (existingStore.name === store.name) {
-                errorMessage = "A store with the same name already exists.";
-            } else if (existingStore.url === store.url) {
-                errorMessage = "A store with the same URL already exists.";
-            } else if (existingStore.email === store.email) {
-                errorMessage = "A store with the same email already exists.";
-            } else if (existingStore.phone === store.phone) {
-                errorMessage = "A store with the same phone number already exists.";
-            }
-            throw new Error(errorMessage);
-        }
-        // Upsert store details into the database
-        const storeDetails = await db.store.upsert({
-            where: {
-                id: store.id,
-            },
-            update: store,
-            create: {
-                ...store,
-                user: {
-                    connect: {
-                        id: user.id,
-                    },
-                }
-            },
-        })
+		if (existingStore) {
+			let errorMessage = "";
+			if (existingStore.name === store.name) {
+				errorMessage = "A store with the same name already exists.";
+			} else if (existingStore.url === store.url) {
+				errorMessage = "A store with the same URL already exists.";
+			} else if (existingStore.email === store.email) {
+				errorMessage = "A store with the same email already exists.";
+			} else if (existingStore.phone === store.phone) {
+				errorMessage =
+					"A store with the same phone number already exists.";
+			}
+			throw new Error(errorMessage);
+		}
+		// Upsert store details into the database
+		const storeDetails = await db.store.upsert({
+			where: {
+				id: store.id,
+			},
+			update: store,
+			create: {
+				...store,
+				user: {
+					connect: {
+						id: user.id,
+					},
+				},
+			},
+		});
 
-        return storeDetails
-    } catch (error) {
-        console.log(error);
-        throw error
-    }
+		return storeDetails;
+	} catch (error) {
+		console.log(error);
+		throw error;
+	}
+};
+
+// Function: getStoreDefaultShippingDetails
+// Description: Fetches the default shipping details for a store based on the store URL.
+// Parameters:
+// - storeUrl: URL of the store to fetch default shipping details for.
+// Returns: Default shipping details, including shipping service, fees, delivery times and return policy.
+
+export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
+	try {
+		// Ensure store data is provided
+		if (!storeUrl) throw new Error("Please provide store URL.");
+
+		// Retrieve store details from the database using the store URL
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+			select: {
+				defaultShippingService: true,
+				defaultShippingFeePerItem: true,
+				defaultShippingFeeForAdditionalItem: true,
+				defaultShippingFeePerKg: true,
+				defaultShippingFeeFixed: true,
+				defaultDeliveryTimeMin: true,
+				defaultDeliveryTimeMax: true,
+				returnPolicy: true,
+			},
+		});
+
+		// If store not found, throw an error
+		if (!store) {
+			throw new Error(`Store with URL "${storeUrl}" not found.`);
+		}
+
+		return store;
+	} catch (error) {
+		console.log(error);
+		throw error;
+	}
 };
