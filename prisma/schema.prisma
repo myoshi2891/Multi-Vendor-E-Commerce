@@ -69,22 +69,25 @@ enum StoreStatus {
 }
 
 model Store {
-  id                     String      @id @default(uuid())
-  name                   String
-  description            String      @db.Text
-  email                  String      @unique
-  phone                  String
-  url                    String      @unique
-  logo                   String
-  cover                  String
-  status                 StoreStatus @default(PENDING)
-  averageRating          Float       @default(0)
-  featured               Boolean     @default(false)
-  returnPolicy           String?
-  defaultShippingService String?
-  defaultShippingFees    Float?
-  defaultDeliveryTimeMin Int?
-  defaultDeliveryTimeMax Int?
+  id                                  String      @id @default(uuid())
+  name                                String
+  description                         String      @db.Text
+  email                               String      @unique
+  phone                               String
+  url                                 String      @unique
+  logo                                String
+  cover                               String
+  status                              StoreStatus @default(PENDING)
+  averageRating                       Float       @default(0)
+  featured                            Boolean     @default(false)
+  returnPolicy                        String     @default("Return in 30 days.")
+  defaultShippingService              String     @default("International Delivery")
+  defaultShippingFeePerItem           Float      @default(0)
+  defaultShippingFeeForAdditionalItem Float      @default(0)
+  defaultShippingFeePerKg             Float      @default(0)
+  defaultShippingFeeFixed             Float      @default(0)
+  defaultDeliveryTimeMin              Int        @default(7)
+  defaultDeliveryTimeMax              Int        @default(31)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
