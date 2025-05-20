@@ -174,3 +174,71 @@ export const updateStoreDefaultShippingDetails = async (
 		throw error;
 	}
 };
+
+// Function: getStoreShippingRates
+// Description: Retrieves all countries and their shipping rates for a specific store. If a country does not have shipping rates, it is still included in the
+// Permission Level: Public
+// Returns: Array of countries and their shipping rates, including shipping service, fees, delivery times and return policy.
+export const getStoreShippingRates = async (storeUrl: string) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error("Unauthenticated.");
+
+		// Verify seller permission
+		if (user.privateMetadata.role !== "SELLER")
+			throw new Error("Only sellers can perform this action.");
+
+		// Ensure store URL is provided
+		if (!storeUrl) throw new Error("Please provide store URL.");
+
+		// Make sure seller is updating their own store
+		const check_ownership = await db.store.findUnique({
+			where: { url: storeUrl, userId: user.id },
+		});
+
+		if (!check_ownership)
+			throw new Error("You are not authorized to update this store.");
+
+		// Retrieve store shipping rates from the database using the store URL
+		const store = await db.store.findUnique({
+			where: { url: storeUrl, userId: user.id },
+		});
+
+		if (!store) throw new Error("Store could not be found.");
+
+		// Retrieve all countries
+		const countries = await db.country.findMany({
+			orderBy: {
+				name: "asc",
+			},
+		});
+
+		// Retrieve shipping rates for the specified store
+		const shippingRates = await db.shippingRate.findMany({
+			where: {
+				storeId: store.id,
+			},
+		});
+
+		// Create a map for quick lookup of shipping rates by country ID
+		const rateMap = new Map();
+		shippingRates.forEach((rate) => {
+			rateMap.set(rate.countryId, rate);
+		});
+
+		// Map countries to their shipping rates
+		const result = countries.map((country) => ({
+			countryId: country.id,
+			countryName: country.name,
+			shippingRates: rateMap.get(country.id) || null
+		}));
+
+		return result;
+	} catch (error) {
+		console.log(error);
+		throw error;
+	}
+};

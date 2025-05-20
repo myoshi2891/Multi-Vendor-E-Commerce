@@ -4,7 +4,7 @@ import { seedCountries } from "@/migration-scripts/seed-countries";
 import { UserButton } from "@clerk/nextjs";
 
 export default async function Home() {
-	await seedCountries();
+	// await seedCountries();
 	// await updateVariantImage();
 	return (
 		<div className="p-5">
