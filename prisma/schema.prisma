@@ -95,7 +95,8 @@ model Store {
   userId String
   user   User   @relation("UserStores", fields: [userId], references: [id])
 
-  products Product[] @relation("StoreToProduct")
+  products      Product[]      @relation("StoreToProduct")
+  shippingRates ShippingRate[] @relation("StoreShippingRates")
 
   @@index([userId])
 }
@@ -249,6 +250,33 @@ model Country {
   name String @unique
   code String @unique
 
+  shippingRates ShippingRate[] @relation("CountryShippingRates")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model ShippingRate {
+  id String @id @default(uuid())
+
+  shippingService              String
+  shippingFeePerItem           Float
+  shippingFeeForAdditionalItem Float
+  shippingFeePerKg             Float
+  shippingFeeFixed             Float
+  deliveryTimeMin              Int
+  deliveryTimeMax              Int
+  returnPolicy                 String
+
+  countryId String
+  country   Country @relation("CountryShippingRates", fields: [countryId], references: [id])
+
+  storeId String
+  store   Store  @relation("StoreShippingRates", fields: [storeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([countryId])
+  @@index([storeId])
 }

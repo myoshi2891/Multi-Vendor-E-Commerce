@@ -1,5 +1,9 @@
 import StoreDefaultShippingDetails from "@/components/dashboard/forms/store-default-shipping-details";
-import { getStoreDefaultShippingDetails } from "@/queries/store";
+import {
+	getStoreDefaultShippingDetails,
+	getStoreShippingRates,
+} from "@/queries/store";
+import { redirect } from "next/navigation";
 
 export default async function SellerStoreShippingPage({
 	params,
@@ -9,7 +13,8 @@ export default async function SellerStoreShippingPage({
 	const shippingDetails = await getStoreDefaultShippingDetails(
 		params.storeUrl
 	);
-	console.log(shippingDetails);
+	if (!shippingDetails) return redirect("/");
+	const shippingRates = await getStoreShippingRates(params.storeUrl);
 
 	return (
 		<div>
