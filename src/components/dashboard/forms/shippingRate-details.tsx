@@ -27,16 +27,13 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-	FormDescription,
 } from "@/components/ui/form";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ImageUpload from "../shared/image-upload";
 
 // Queries
-import { upsertCategory } from "@/queries/category";
+import { upsertShippingRate } from "@/queries/store";
 
 // Utils
 import { v4 } from "uuid";
@@ -112,28 +109,31 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	) => {
 		try {
 			// Upserting category data
-			const response = await upsertCategory({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				image: values.image[0].url,
-				url: values.url,
-				featured: values.featured,
+			const response = await upsertShippingRate(storeUrl, {
+				id: data?.shippingRate ? data.shippingRate.id : v4(),
+				countryId: data?.countryId ? data.countryId : "",
+				shippingService: values.shippingService,
+				shippingFeePerItem: values.shippingFeePerItem,
+				shippingFeeForAdditionalItem:
+					values.shippingFeeForAdditionalItem,
+				shippingFeePerKg: values.shippingFeePerKg,
+				shippingFeeFixed: values.shippingFeeFixed,
+				deliveryTimeMin: values.deliveryTimeMin,
+				deliveryTimeMax: values.deliveryTimeMax,
+				returnPolicy: values.returnPolicy,
+				storeId: "",
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			});
 
-			// Displaying success message
-			toast({
-				title: data?.id
-					? "Category has been updated."
-					: `Congratulations! '${response?.name}' is now created.`,
-			});
+			if (response.id) {
+				// Displaying success message
+				toast({
+					title: "Shipping rate has been updated.",
+				});
 
-			// Redirect or Refresh data
-			if (data?.id) {
+				// Redirect or Refresh data
 				router.refresh();
-			} else {
-				router.push("/dashboard/admin/categories");
 			}
 		} catch (error: any) {
 			// Handling form submission errors
@@ -206,7 +206,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="shippingFeePerItem"
 									render={({ field }) => (
@@ -231,7 +230,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="shippingFeeForAdditionalItem"
 									render={({ field }) => (
@@ -256,7 +254,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="shippingFeePerKg"
 									render={({ field }) => (
@@ -281,7 +278,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="shippingFeeFixed"
 									render={({ field }) => (
@@ -306,7 +302,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="deliveryTimeMin"
 									render={({ field }) => (
@@ -330,7 +325,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									disabled
 									control={form.control}
 									name="deliveryTimeMax"
 									render={({ field }) => (
@@ -354,7 +348,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 									)}
 								/>
 								<FormField
-									// disabled={isLoading}
 									control={form.control}
 									name="returnPolicy"
 									render={({ field }) => (

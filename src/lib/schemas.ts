@@ -400,5 +400,7 @@ export const ShippingRateFormSchema = z.object({
 	shippingFeeFixed: z.number(),
 	deliveryTimeMin: z.number(),
 	deliveryTimeMax: z.number(),
-	returnPolicy: z.string(),
+	returnPolicy: z
+		.string()
+		.min(1, "Return policy must be at least 1 character long."),
 });
