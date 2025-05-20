@@ -1,7 +1,7 @@
 import { getAllStoreProducts } from "@/queries/product";
 import { getStoreDefaultShippingDetails } from "@/queries/store";
 import { getAllSubCategories } from "@/queries/subCategory";
-import { Prisma } from "@prisma/client";
+import { Prisma, ShippingRate } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -54,3 +54,9 @@ export type StoreProductType = Prisma.PromiseReturnType<
 export type StoreDefaultShippingType = Prisma.PromiseReturnType<
 	typeof getStoreDefaultShippingDetails
 >;
+
+export type CountryWithShippingRatesType = {
+	countryId: string;
+	countryName: string;
+	shippingRate: ShippingRate;
+};
