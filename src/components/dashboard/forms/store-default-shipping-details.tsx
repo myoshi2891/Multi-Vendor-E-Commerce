@@ -1,7 +1,8 @@
 "use client";
 
-// React
+// React, Next.js
 import { FC, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Form handling utilities
 import * as z from "zod";
@@ -13,12 +14,7 @@ import { StoreShippingFormSchema } from "@/lib/schemas";
 
 // UI Components
 import { AlertDialog } from "@/components/ui/alert-dialog";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -26,30 +22,31 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-	FormDescription,
 } from "@/components/ui/form";
-
-import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NumberInput } from "@tremor/react"
+import { NumberInput } from "@tremor/react";
 
 // Queries
-import { upsertCategory } from "@/queries/category";
+import { updateStoreDefaultShippingDetails } from "@/queries/store";
 
 // Utils
 import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+
+// Types
 import { StoreDefaultShippingType } from "@/lib/types";
 
 interface StoreDefaultShippingDetailsProps {
 	data?: StoreDefaultShippingType;
+	storeUrl: string;
 }
 
 const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	data,
+	storeUrl,
 }) => {
 	// Initializing necessary hooks
 	const { toast } = useToast(); // Hook for displaying toast messages
@@ -84,31 +81,31 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (values: z.infer<typeof StoreShippingFormSchema>) => {
+	const handleSubmit = async (
+		values: z.infer<typeof StoreShippingFormSchema>
+	) => {
 		try {
 			// Upserting category data
-			const response = await upsertCategory({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				image: values.image[0].url,
-				url: values.url,
-				featured: values.featured,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+			const response = await updateStoreDefaultShippingDetails(storeUrl, {
+				defaultShippingService: values.defaultShippingService,
+				defaultShippingFeePerItem: values.defaultShippingFeePerItem,
+				defaultShippingFeeForAdditionalItem:
+					values.defaultShippingFeeForAdditionalItem,
+				defaultShippingFeePerKg: values.defaultShippingFeePerKg,
+				defaultShippingFeeFixed: values.defaultShippingFeeFixed,
+				defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
+				defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
+				returnPolicy: values.returnPolicy,
 			});
 
-			// Displaying success message
-			toast({
-				title: data?.id
-					? "Category has been updated."
-					: `Congratulations! '${response?.name}' is now created.`,
-			});
+			if (response.id) {
+				// Displaying success message
+				toast({
+					title: `Store Default Shipping Details have been updated.`,
+				});
 
-			// Redirect or Refresh data
-			if (data?.id) {
+				// Redirect or Refresh data
 				router.refresh();
-			} else {
-				router.push("/dashboard/admin/categories");
 			}
 		} catch (error: any) {
 			// Handling form submission errors
@@ -160,12 +157,139 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 									render={({ field }) => (
 										<FormItem className="flex-1">
 											<FormLabel>
-												Shipping Fee Per Item
+												Shipping fee per Item
 											</FormLabel>
 											<FormControl>
 												<NumberInput
 													defaultValue={field.value}
-													onValueChange={field.onChange}
+													onValueChange={
+														field.onChange
+													}
+													min={0}
+													step={0.1}
+													className="!pl-1 !shadow-none rounded-md"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									// disabled={isLoading}
+									control={form.control}
+									name="defaultShippingFeeForAdditionalItem"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Shipping fee for additional item
+											</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={
+														field.onChange
+													}
+													min={0}
+													step={0.1}
+													className="!pl-1 !shadow-none rounded-md"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+
+							<div className="flex flex-wrap gap-4">
+								<FormField
+									// disabled={isLoading}
+									control={form.control}
+									name="defaultShippingFeePerKg"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Shipping fee per kg
+											</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={
+														field.onChange
+													}
+													min={0}
+													step={0.1}
+													className="!pl-1 !shadow-none rounded-md"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									// disabled={isLoading}
+									control={form.control}
+									name="defaultShippingFeeFixed"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Fixed Shipping fee
+											</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={
+														field.onChange
+													}
+													min={0}
+													step={0.1}
+													className="!pl-1 !shadow-none rounded-md"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+
+							<div className="flex flex-wrap gap-4">
+								<FormField
+									// disabled={isLoading}
+									control={form.control}
+									name="defaultDeliveryTimeMin"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Minimum Delivery time (days)
+											</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={
+														field.onChange
+													}
+													min={0}
+													className="!pl-1 !shadow-none rounded-md"
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									// disabled={isLoading}
+									control={form.control}
+									name="defaultDeliveryTimeMax"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormLabel>
+												Maximum Delivery time (days)
+											</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={
+														field.onChange
+													}
 													min={1}
 													className="!pl-1 !shadow-none rounded-md"
 												/>
@@ -175,9 +299,28 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 									)}
 								/>
 							</div>
+
+							<FormField
+								// disabled={isLoading}
+								control={form.control}
+								name="returnPolicy"
+								render={({ field }) => (
+									<FormItem className="flex-1">
+										<FormLabel>Return Policy</FormLabel>
+										<FormControl>
+											<Textarea
+												placeholder="What's the return policy for your store?"
+												{...field}
+												className="p-4"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
 							<Button type="submit" disabled={isLoading}>
-								{isLoading
-									? "loading..." : "Save changes"}
+								{isLoading ? "loading..." : "Save changes"}
 							</Button>
 						</form>
 					</Form>

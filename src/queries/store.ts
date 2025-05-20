@@ -1,6 +1,7 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
+import { StoreDefaultShippingType } from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -120,6 +121,54 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 		}
 
 		return store;
+	} catch (error) {
+		console.log(error);
+		throw error;
+	}
+};
+
+// Function: updateStoreDefaultShippingDetails
+// Description: Updates the default shipping details for a store based on the store URL.
+// Parameters:
+// - storeUrl: URL of the store to update.
+// - details: An object containing the new shipping details. (shipping service, fees, delivery times and return policy).
+// Returns: Updated store object with the new default shipping details.
+export const updateStoreDefaultShippingDetails = async (
+	storeUrl: string,
+	details: StoreDefaultShippingType
+) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error("Unauthenticated.");
+
+		// Verify seller permission
+		if (user.privateMetadata.role !== "SELLER")
+			throw new Error("Only sellers can perform this action.");
+
+		// Ensure store URL is provided
+		if (!storeUrl) throw new Error("Please provide store URL.");
+
+		// Ensure details are provided
+		if (!details) throw new Error("Please provide shipping details.");
+
+		// Make sure seller is updating their own store
+		const check_ownership = await db.store.findUnique({
+			where: { url: storeUrl, userId: user.id },
+		});
+
+		if (!check_ownership)
+			throw new Error("You are not authorized to update this store.");
+
+		// Find and update the store based on storeUrl
+		const updatedStore = await db.store.update({
+			where: { url: storeUrl, userId: user.id },
+			data: details,
+		});
+
+		return updatedStore;
 	} catch (error) {
 		console.log(error);
 		throw error;

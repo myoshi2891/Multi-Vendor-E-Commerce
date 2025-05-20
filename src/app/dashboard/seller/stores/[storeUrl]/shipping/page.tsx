@@ -13,7 +13,10 @@ export default async function SellerStoreShippingPage({
 
 	return (
 		<div>
-			<StoreDefaultShippingDetails data={shippingDetails} />
+			<StoreDefaultShippingDetails
+				data={shippingDetails}
+				storeUrl={params.storeUrl}
+			/>
 		</div>
 	);
 }
