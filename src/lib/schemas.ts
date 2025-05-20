@@ -1,4 +1,5 @@
 "use client";
+import { deflate } from "zlib";
 import * as z from "zod";
 
 // Category form schema
@@ -335,26 +336,47 @@ export const ProductFormSchema = z.object({
 // OfferTag form schema
 export const OfferTagFormSchema = z.object({
 	name: z
-	  .string({
-		required_error: "Category name is required.",
-		invalid_type_error: "Category nale must be a string.",
-	  })
-	  .min(2, { message: "Category name must be at least 2 characters long." })
-	  .max(50, { message: "Category name cannot exceed 50 characters." })
-	  .regex(/^[a-zA-Z0-9\s&$.%,']+$/, {
-		message:
-		  "Only letters, numbers, and spaces are allowed in the category name.",
-	  }),
+		.string({
+			required_error: "Category name is required.",
+			invalid_type_error: "Category nale must be a string.",
+		})
+		.min(2, {
+			message: "Category name must be at least 2 characters long.",
+		})
+		.max(50, { message: "Category name cannot exceed 50 characters." })
+		.regex(/^[a-zA-Z0-9\s&$.%,']+$/, {
+			message:
+				"Only letters, numbers, and spaces are allowed in the category name.",
+		}),
 	url: z
-	  .string({
-		required_error: "Category url is required",
-		invalid_type_error: "Category url must be a string",
-	  })
-	  .min(2, { message: "Category url must be at least 2 characters long." })
-	  .max(50, { message: "Category url cannot exceed 50 characters." })
-	  .regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
-		message:
-		  "Only letters, numbers, hyphen, and underscore are allowed in the category url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
-	  }),
-  });
-  
+		.string({
+			required_error: "Category url is required",
+			invalid_type_error: "Category url must be a string",
+		})
+		.min(2, { message: "Category url must be at least 2 characters long." })
+		.max(50, { message: "Category url cannot exceed 50 characters." })
+		.regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+			message:
+				"Only letters, numbers, hyphen, and underscore are allowed in the category url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
+		}),
+});
+
+// Store shipping details
+export const StoreShippingFormSchema = z.object({
+	defaultShippingService: z
+		.string({
+			required_error: "Shipping service name is required",
+			// invalid_type_error: "Default shipping service must be a string",
+		})
+		.min(2, "Shipping service name must be at least 2 characters long.")
+		.max(50, {
+			message: "Shipping service name cannot exceed 50 characters.",
+		}),
+	defaultShippingFeePerItem: z.number(),
+	defaultShippingFeeForAdditionalItem: z.number(),
+	defaultShippingFeePerKg: z.number(),
+	defaultShippingFeeFixed: z.number(),
+	defaultDeliveryTimeMin: z.number(),
+	defaultDeliveryTimeMax: z.number(),
+	returnPolicy: z.string(),
+});
