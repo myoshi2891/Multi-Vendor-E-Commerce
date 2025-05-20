@@ -1,13 +1,16 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
-import { StoreDefaultShippingType } from "@/lib/types";
+import {
+	CountryWithShippingRatesType,
+	StoreDefaultShippingType,
+} from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
 
 // Prisma models
-import { Store } from "@prisma/client";
+import { ShippingRate, Store } from "@prisma/client";
 
 // Function: upsertStore
 // Description: Upsert store details into the database, ensuring uniqueness of name, url. email, and phone.
@@ -233,10 +236,77 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 		const result = countries.map((country) => ({
 			countryId: country.id,
 			countryName: country.name,
-			shippingRates: rateMap.get(country.id) || null
+			shippingRate: rateMap.get(country.id) || null,
 		}));
 
 		return result;
+	} catch (error) {
+		console.log(error);
+		throw error;
+	}
+};
+
+// Function: upsertShippingRate
+// Description: Upserts a shipping rate for a specific store and country.
+// Permission Level: Seller Only
+// Parameters:
+//  - storeUrl: URL of the store to update.
+//  - shippingRate: Shipping rate object containing details of the shipping rate to be upserted.
+// Returns: Updated or newly created shipping rate details.
+export const upsertShippingRate = async (
+	storeUrl: string,
+	shippingRate: ShippingRate
+) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error("Unauthenticated.");
+
+		// Verify seller permission
+		if (user.privateMetadata.role !== "SELLER")
+			throw new Error("Only sellers can perform this action.");
+
+		// // Ensure store URL is provided
+		// if (!storeUrl) throw new Error("Please provide store URL.");
+
+		// Make sure seller is updating their own store
+		const check_ownership = await db.store.findUnique({
+			where: { url: storeUrl, userId: user.id },
+		});
+
+		if (!check_ownership)
+			throw new Error("You are not authorized to update this store.");
+
+		// Ensure shipping rate data is provided
+		if (!shippingRate)
+			throw new Error("Please provide shipping rate data.");
+
+		// Ensure country ID is provided
+		if (!shippingRate.countryId)
+			throw new Error("Please provide country ID.");
+
+		// Get store id
+		const store = await db.store.findUnique({
+			where: {
+				url: storeUrl,
+				userId: user.id,
+			},
+		});
+
+		if (!store) throw new Error("Store could not be found.");
+
+		// Upsert shipping rate into the database
+		const shippingRateDetails = await db.shippingRate.upsert({
+			where: {
+				id: shippingRate.id,
+			},
+			update: { ...shippingRate, storeId: store.id },
+			create: { ...shippingRate, storeId: store.id },
+		});
+
+		return shippingRateDetails;
 	} catch (error) {
 		console.log(error);
 		throw error;
