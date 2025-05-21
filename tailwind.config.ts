@@ -19,6 +19,17 @@ const config: Config = {
 				blue: {
 					primary: "#0D6EFD",
 				},
+				orange: {
+					background: "#FD384F",
+					hover: "#e23246",
+					primary: "#FA6338",
+					secondary: "#d3031c",
+					border: "#ffe6e7",
+				},
+				main: {
+					primary: "#191919",
+					secondary: "#757575",
+				},
 				popover: {
 					DEFAULT: "hsl(var(--popover))",
 					foreground: "hsl(var(--popover-foreground))",
