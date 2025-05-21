@@ -12,8 +12,9 @@ export default function StoreHeader() {
 								GoShop
 							</h1>
 						</Link>
-						<div className="flex lg:hidden">
+						<div className="flex">
 							<UserMenu />
+							<div className="w-44"></div>
 						</div>
 					</div>
 				</div>
