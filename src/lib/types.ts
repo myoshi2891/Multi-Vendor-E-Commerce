@@ -60,3 +60,10 @@ export type CountryWithShippingRatesType = {
 	countryName: string;
 	shippingRate: ShippingRate;
 };
+
+export interface Country {
+	name: string;
+	code: string;
+	city: string;
+	region: string;
+}

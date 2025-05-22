@@ -3,6 +3,9 @@ import { twMerge } from "tailwind-merge";
 import { PrismaClient } from "@prisma/client";
 import ColorThief from "colorthief";
 import { db } from "./db";
+import { Country } from "./types";
+import countries from "@/data/countries.json";
+
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
@@ -82,3 +85,40 @@ export const generateUniqueSlug = async (
 
 	return slug;
 };
+
+// the helper function to get the user country
+// Define the default country
+const DEFAULT_COUNTRY: Country = {
+	name: "United States",
+	code: "US",
+	city: "",
+	region: "",
+};
+
+export async function getUserCountry(): Promise<Country> {
+	let userCountry: Country = DEFAULT_COUNTRY;
+	try {
+		// Attempt to detect country by IP
+		const response = await fetch(
+			`https://ipinfo.io/?token=${process.env.IPINFO_TOKEN}`
+		);
+		if (response.ok) {
+			const data = await response.json();
+			// if (data.country) {
+			userCountry = {
+				name:
+					countries.find((country) => country.code === data.country)
+						?.name || data.country,
+				code: data.country,
+				city: data.city,
+				region: data.region,
+			};
+			// }
+		}
+	} catch (error) {
+		console.error("Failed to get user's country", error);
+		// Fall back to default country if IP lookup fails
+		userCountry = DEFAULT_COUNTRY;
+	}
+	return userCountry;
+}
