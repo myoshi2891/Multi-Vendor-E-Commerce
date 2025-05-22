@@ -1,5 +1,7 @@
 import Link from "next/link";
 import UserMenu from "./user-menu/user-menu";
+import Cart from "./cart";
+import DownloadApp from "./download-app";
 
 export default function StoreHeader() {
 	return (
@@ -12,11 +14,21 @@ export default function StoreHeader() {
 								GoShop
 							</h1>
 						</Link>
-						<div className="flex">
+						<div className="flex lg:hidden">
 							<UserMenu />
-							<div className="w-44"></div>
+							<Cart />
 						</div>
 					</div>
+					{/* Search input */}
+				</div>
+				<div className="hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6">
+					<div className="lg:flex">
+						{/* Download App */}
+						<DownloadApp />
+					</div>
+					{/* Country selector */}
+					<UserMenu />
+					<Cart />
 				</div>
 			</div>
 		</div>
