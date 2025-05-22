@@ -67,3 +67,7 @@ export interface Country {
 	city: string;
 	region: string;
 }
+
+import countries from "@/data/countries.json";
+
+export type SelectMenuOption = (typeof countries)[number];
