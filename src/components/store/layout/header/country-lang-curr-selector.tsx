@@ -1,6 +1,7 @@
 "use client";
-// React
+// React, Next.js
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Icons
 import { ChevronDown } from "lucide-react";
@@ -20,8 +21,41 @@ export default function CountryLanguageCurrencySelector({
 }: {
 	userCountry: Country;
 }) {
+	// Router hook for navigation
+	const router = useRouter();
+
 	// State to manage countries dropdown visibility
 	const [show, setShow] = useState(false);
+
+	const handleCountryClick = async (country: string) => {
+		// Find the country data based on the selected country name
+		const countryData = countries.find((c) => c.name === country);
+
+		if (countryData) {
+			const data: Country = {
+				name: countryData.name,
+				code: countryData.code,
+				city: "",
+				region: "",
+			};
+			try {
+				// Send a POST request to your API endpoint to set the cookie
+				const response = await fetch("/api/setUserCountryInCookies", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ userCountry: data }),
+				});
+
+				if (response.ok) {
+					router.refresh();
+				}
+			} catch (error) {
+				console.error("Error in handleCountryClick:", error);
+			}
+		}
+	};
 	return (
 		<div className="relative inline-block group">
 			{/* Trigger */}
@@ -59,7 +93,7 @@ export default function CountryLanguageCurrencySelector({
 								id={"countries"}
 								open={show}
 								onToggle={() => setShow(!show)}
-								onChange={(val) => {}}
+								onChange={(val) => handleCountryClick(val)}
 								selectedValue={
 									(countries.find(
 										(option) =>
@@ -83,7 +117,9 @@ export default function CountryLanguageCurrencySelector({
 									Currency
 								</div>
 								<div className="relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap">
-									<div className="align-middle">USD (US Dollar)</div>
+									<div className="align-middle">
+										USD (US Dollar)
+									</div>
 									<span className="absolute right-2">
 										<ChevronDown className="text-main-primary scale-75" />
 									</span>
