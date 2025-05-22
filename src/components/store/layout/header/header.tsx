@@ -2,6 +2,7 @@ import Link from "next/link";
 import UserMenu from "./user-menu/user-menu";
 import Cart from "./cart";
 import DownloadApp from "./download-app";
+import Search from "./search/search";
 
 export default function StoreHeader() {
 	return (
@@ -20,6 +21,7 @@ export default function StoreHeader() {
 						</div>
 					</div>
 					{/* Search input */}
+					<Search />
 				</div>
 				<div className="hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6">
 					<div className="lg:flex">
