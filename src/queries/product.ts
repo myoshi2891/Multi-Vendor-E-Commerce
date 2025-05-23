@@ -263,8 +263,8 @@ export const deleteProduct = async (productId: string) => {
 // Returns: Array of filtered products, including category, subcategory, variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 
 export const getProducts = async (
-	filters: any,
-	sortBy: "",
+	filters = {},
+	sortBy = "",
 	page: number = 1,
 	pageSize: number = 10
 ) => {
