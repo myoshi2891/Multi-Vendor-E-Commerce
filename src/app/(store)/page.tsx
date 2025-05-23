@@ -1,16 +1,15 @@
 import ThemeToggle from "@/components/shared/theme-toggle";
+import ProductList from "@/components/store/shared/product-list";
 import { getProducts } from "@/queries/product";
 import { UserButton } from "@clerk/nextjs";
 
 export default async function HomePage() {
-	const products = await getProducts({}, "");
+	const productsData = await getProducts();
+	const { products } = productsData;
 
 	return (
-		<div className="p-5">
-			{/* <div className="w-100 flex gap-x-5 justify-end"> */}
-			<UserButton />
-			{/* <ThemeToggle /> */}
-			{/* </div> */}
+		<div className="p-14">
+			<ProductList products={products} title="Products" arrow />
 		</div>
 	);
 }
