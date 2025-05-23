@@ -108,6 +108,7 @@ model Product {
   slug        String @unique
   brand       String
   rating      Float  @default(0)
+  sales       Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -144,6 +145,7 @@ model ProductVariant {
   saleEndDate        String?
   keywords           String
   sku                String
+  sales              Int     @default(0)
 
   productId String
   product   Product @relation("ProductToProductVariant", fields: [productId], references: [id], onDelete: Cascade)
