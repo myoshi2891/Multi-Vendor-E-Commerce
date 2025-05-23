@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 // Components
 import StoreHeader from "@/components/store/layout/header/header";
 import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
+import Footer from "@/components/store/layout/footer/footer";
 
 export default function StoreLayout({ children }: { children: ReactNode }) {
 	return (
@@ -10,6 +11,8 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
 			<StoreHeader />
 			<CategoriesHeader />
 			<div className="">{children}</div>
+			<div className="h-96"></div>
+			<Footer />
 		</div>
 	);
 }
