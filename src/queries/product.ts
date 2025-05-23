@@ -2,7 +2,11 @@
 // DB
 import { db } from "@/lib/db";
 // Types
-import { ProductWithVariantType } from "@/lib/types";
+import {
+	ProductWithVariantType,
+	VariantImage,
+	VariantSimplified,
+} from "@/lib/types";
 import { generateUniqueSlug } from "@/lib/utils";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -294,6 +298,43 @@ export const getProducts = async (
 		},
 	});
 
+	// Transform the products with filtered variants into ProductCardType structure
+	const productsWithFilteredVariants = products.map((product) => {
+		// Filter the variants based on the filters
+		const filteredVariants = product.variants;
+
+		// Transform the filtered variants into the VariantSimplified structure
+		const variants: VariantSimplified[] = filteredVariants.map(
+			(variant) => ({
+				variantId: variant.id,
+				variantSlug: variant.slug,
+				variantName: variant.variantName,
+				images: variant.images,
+				sizes: variant.sizes,
+			})
+		);
+
+		// Extract variant images for the product
+		const variantImages: VariantImage[] = filteredVariants.map(
+			(variant) => ({
+				url: `/product/${product.slug}/${variant.slug}`,
+				image: variant.variantImage
+					? variant.variantImage
+					: variant.images[0].url,
+			})
+		);
+		// Return the product in the ProductCardType structure
+		return {
+			id: product.id,
+			slug: product.slug,
+			name: product.name,
+			rating: product.rating,
+			sales: product.sales,
+			variants,
+			variantImages,
+		};
+	});
+
 	// Retrieve products matching the filters
 	// const totalCount = await db.product.count({
 	// 	where: whereClause,
@@ -305,7 +346,7 @@ export const getProducts = async (
 
 	// Return the filtered products, pagination metadata, and total count
 	return {
-		products,
+		products: productsWithFilteredVariants,
 		totalPages,
 		currentPage,
 		pageSize,
