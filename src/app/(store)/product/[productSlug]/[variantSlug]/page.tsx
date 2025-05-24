@@ -1,3 +1,5 @@
+import ProductPageContainer from "@/components/store/product-page/container";
+import { Separator } from "@/components/ui/separator";
 import { getProductPageData } from "@/queries/product";
 import { notFound, redirect } from "next/navigation";
 
@@ -38,9 +40,44 @@ export default async function ProductVariantPage({
 		);
 	}
 
+	const relatedProducts = {
+		products: [],
+	};
+
+	const { specs, questions } = productData;
 	return (
 		<div>
-			<h1 className="text-4xl font-bold">Variant Page</h1>
+			<div className="max-w-[1650px] mx-auto p-4 overflow-x-hidden">
+				<ProductPageContainer productData={productData} sizeId={sizeId}>
+					{relatedProducts.products && (
+						<>
+							<Separator />
+							{/* Related Products */}
+						</>
+					)}
+					<Separator className="mt-6" />
+					{/* Product Reviews */}
+					<>
+						<Separator className="mt-6" />
+						{/* Product description */}
+					</>
+					{(specs.product.length > 0 || specs.variant.length > 0) && (
+						<>
+							<Separator className="mt-6" />
+							{/* Specs table */}
+						</>
+					)}
+					{questions.length > 0 && (
+						<>
+							<Separator className="mt-6" />
+							{/* Product Questions */}
+						</>
+					)}
+					<Separator className="mt-6" />
+					{/* Store Card */}
+					{/* Store products */}
+				</ProductPageContainer>
+			</div>
 		</div>
 	);
 }
