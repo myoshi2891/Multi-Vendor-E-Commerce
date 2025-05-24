@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 // Types
 import {
 	ProductWithVariantType,
-	VariantImage,
+	VariantImageType,
 	VariantSimplified,
 } from "@/lib/types";
 import { generateUniqueSlug } from "@/lib/utils";
@@ -315,7 +315,7 @@ export const getProducts = async (
 		);
 
 		// Extract variant images for the product
-		const variantImages: VariantImage[] = filteredVariants.map(
+		const variantImages: VariantImageType[] = filteredVariants.map(
 			(variant) => ({
 				url: `/product/${product.slug}/${variant.slug}`,
 				image: variant.variantImage
