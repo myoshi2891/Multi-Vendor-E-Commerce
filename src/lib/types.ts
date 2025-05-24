@@ -1,5 +1,6 @@
 import {
 	getAllStoreProducts,
+	getProductPageData,
 	getProducts,
 	retrieveProductDetails,
 } from "@/queries/product";
@@ -100,4 +101,8 @@ export type VariantImageType = {
 
 export type ProductPageType = Prisma.PromiseReturnType<
 	typeof retrieveProductDetails
+>;
+
+export type ProductPageDataType = Prisma.PromiseReturnType<
+	typeof getProductPageData
 >;
