@@ -38,7 +38,10 @@ export const upsertSubCategory = async (subCategory: SubCategory) => {
 			where: {
 				AND: [
 					{
-						OR: [{ name: subCategory.name }, { url: subCategory.url }],
+						OR: [
+							{ name: subCategory.name },
+							{ url: subCategory.url },
+						],
 					},
 					{
 						NOT: {
@@ -53,7 +56,8 @@ export const upsertSubCategory = async (subCategory: SubCategory) => {
 		if (existingSubCategory) {
 			let errorMessage = "";
 			if (existingSubCategory.name === subCategory.name) {
-				errorMessage = "A subCategory with the same name already exists";
+				errorMessage =
+					"A subCategory with the same name already exists";
 			} else if (existingSubCategory.url === subCategory.url) {
 				errorMessage = "A subCategory with the same URL already exists";
 			}
@@ -154,6 +158,47 @@ export const deleteSubCategory = async (subCategoryId: string) => {
 	} catch (error) {
 		// Log and re-throw any errors
 		console.log(error);
+		throw error;
+	}
+};
+
+// Function: getSubcategories
+// Description: Retrieves subcategories from the database, with options for limiting results and random selection.
+// Permission Level: Public
+// Parameters:
+// - limit: Number indicating the maximum number of subcategories to retrieve.
+// - random: Boolean indicating whether to randomly select subcategories.
+// Returns: List of subcategories based on the provided options.
+export const getSubcategories = async (
+	limit: number | null = null,
+	random: boolean = false
+): Promise<SubCategory[]> => {
+	// Define SortOrder enum
+	enum SortOrder {
+		asc = "asc",
+		desc = "desc",
+	}
+	try {
+		// Define query options
+		const queryOptions = {
+			take: limit || undefined, // Use the provided limit or undefined for no limit
+			orderBy: random ? { createdAt: SortOrder.desc } : undefined,
+		};
+
+		// If random selection is required, use a raw query to randomize
+		if (random) {
+			const subcategories = await db.$queryRaw<SubCategory[]>`
+			SELECT * FROM SubCategory ORDER BY RAND() LIMIT ${limit || 10};
+			`;
+			return subcategories;
+		} else {
+			// Otherwise, fetch subcategories based on the defined query options
+			const subcategories = await db.subCategory.findMany(queryOptions);
+			return subcategories;
+		}
+	} catch (error) {
+		// Log and re-throw any errors
+		console.log("Error fetching subcategories", error);
 		throw error;
 	}
 };
