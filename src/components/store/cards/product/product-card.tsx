@@ -3,6 +3,7 @@ import { ProductType, VariantSimplified } from "@/lib/types";
 import Link from "next/link";
 import { useState } from "react";
 import ReactStars from "react-rating-stars-component";
+import ProductCardImageSwiper from "./swiper";
 
 export default function ProductCard({ product }: { product: ProductType }) {
 	const { name, slug, rating, sales, variantImages, variants } = product;
@@ -17,6 +18,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 						className="w-full relative inline-block overflow-hidden"
 					>
 						{/* Images Swiper */}
+						<ProductCardImageSwiper images={images} />
 						{/* Title */}
 						<div className="text-sm text-main-primary h-[18px] overflow-hidden overflow-ellipsis line-clamp-1">
 							{name} ・ {variantName}
@@ -32,8 +34,10 @@ export default function ProductCard({ product }: { product: ProductType }) {
 									value={rating}
 									isHalf
 									edit={false}
-                                />
-                                <div className="text-xs text-main-secondary">{sales} sold</div>
+								/>
+								<div className="text-xs text-main-secondary">
+									{sales} sold
+								</div>
 							</div>
 						)}
 						{/* Price */}
