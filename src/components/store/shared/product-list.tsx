@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
+import ProductCard from "../cards/product/product-card";
+import ReactStars from "react-rating-stars-component";
 
 interface Props {
 	products: ProductType[]; // Array of products data
@@ -31,19 +33,27 @@ const ProductList: FC<Props> = ({ products, title, link, arrow }) => {
 			);
 		}
 	};
-    return <div className="relative">{title && <Title />}
-        { 
-            products.length > 0 ? <div className={cn("flex flex-wrap -translate-x-5 w-[calc(100%+3rem)] sm:w-[calc(100%+1.5rem)]", {
-                "mt-2": title
-            })}>
-                {
-                    products.map((product) => (
-                        <h1>{product.name}</h1>
-                    ))
-                }
-            </div> : "No Products"
-        }
-    </div>;
+	return (
+		<div className="relative">
+			{title && <Title />}
+			{products.length > 0 ? (
+				<div
+					className={cn(
+						"flex flex-wrap -translate-x-5 w-[calc(100%+3rem)] sm:w-[calc(100%+1.5rem)]",
+						{
+							"mt-2": title,
+						}
+					)}
+				>
+					{products.map((product) => (
+						<ProductCard key={product.id} product={product} />
+					))}
+				</div>
+			) : (
+				"No Products"
+			)}
+		</div>
+	);
 };
 
 export default ProductList;
