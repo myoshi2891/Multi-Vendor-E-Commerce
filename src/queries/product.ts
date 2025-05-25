@@ -452,5 +452,6 @@ const formatProductResponse = (product: ProductPageType) => {
 		},
 		shippingDetails: {},
 		relatedProducts: [],
+		variantImages: [],
 	};
 };
