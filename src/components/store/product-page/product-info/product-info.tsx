@@ -6,6 +6,7 @@ import { FC } from "react";
 import { CopyIcon } from "@/components/store/icons";
 import toast from "react-hot-toast";
 import ReactStars from "react-rating-stars-component";
+import ProductPrice from "./product-price";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -102,6 +103,9 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 						)
 					</Link>
 				</div>
+			</div>
+			<div className="my-2 relative flex flex-col sm:flex-row justify-between">
+				<ProductPrice sizeId={sizeId} sizes={sizes} />
 			</div>
 		</div>
 	);
