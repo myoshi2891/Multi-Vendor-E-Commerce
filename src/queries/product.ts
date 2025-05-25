@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 // Types
 import {
+	ProductPageType,
 	ProductWithVariantType,
 	VariantImageType,
 	VariantSimplified,
@@ -351,5 +352,105 @@ export const getProducts = async (
 		currentPage,
 		pageSize,
 		totalCount,
+	};
+};
+
+// Function: getProductPageData
+// Description: Retrieves product data (including product and variant details) for a specific product page
+// Access Level: Public
+// Parameters:
+// - productId: The slug of the product to which the variant belongs.
+// - variantId: The ID of the variant for which to retrieve data.
+// Returns: Product data (including product and variant details) or null if the product or variant is not found.
+
+export const getProductPageData = async (
+	productSlug: string,
+	variantSlug: string
+) => {
+	// Retrieve product and variant details from the database
+	const product = await retrieveProductDetails(productSlug, variantSlug);
+	if (!product) return;
+
+	return formatProductResponse(product);
+};
+
+// Helper functions
+export const retrieveProductDetails = async (
+	productSlug: string,
+	variantSlug: string
+) => {
+	return await db.product.findUnique({
+		where: {
+			slug: productSlug,
+		},
+		include: {
+			category: true,
+			subCategory: true,
+			offerTag: true,
+			store: true,
+			specs: true,
+			questions: true,
+			variants: {
+				where: {
+					slug: variantSlug,
+				},
+				include: {
+					images: true,
+					colors: true,
+					sizes: true,
+					specs: true,
+				},
+			},
+		},
+	});
+};
+
+const formatProductResponse = (product: ProductPageType) => {
+	if (!product) return;
+	const variant = product.variants[0];
+	const { store, category, subCategory, offerTag, questions } = product;
+	const { images, colors, sizes } = variant;
+
+	return {
+		productId: product.id,
+		variantId: variant.id,
+		productSlug: product.slug,
+		variantSlug: variant.slug,
+		name: product.name,
+		description: product.description,
+		variantName: variant.variantName,
+		variantDescription: variant.variantDescription,
+		images,
+		category,
+		subCategory,
+		offerTag,
+		isSale: variant.isSale,
+		saleEndDate: variant.saleEndDate,
+		brand: product.brand,
+		sku: variant.sku,
+		store: {
+			id: store.id,
+			url: store.url,
+			name: store.name,
+			logo: store.logo,
+			followersCount: 10,
+			isUserFollowingStore: true,
+		},
+		colors,
+		sizes,
+		specs: {
+			product: product.specs,
+			variant: variant.specs,
+		},
+		questions,
+		rating: product.rating,
+		reviews: [],
+		numReviews: 122,
+		reviewsStatistics: {
+			ratingStatistics: [],
+			reviewWithImagesCount: 5,
+		},
+		shippingDetails: {},
+		relatedProducts: [],
 	};
 };
