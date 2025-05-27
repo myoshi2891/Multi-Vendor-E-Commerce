@@ -7,6 +7,7 @@ import { CopyIcon } from "@/components/store/icons";
 import toast from "react-hot-toast";
 import ReactStars from "react-rating-stars-component";
 import ProductPrice from "./product-price";
+import Countdown from "../../shared/countdown";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -106,6 +107,11 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 			</div>
 			<div className="my-2 relative flex flex-col sm:flex-row justify-between">
 				<ProductPrice sizeId={sizeId} sizes={sizes} />
+				{isSale && saleEndDate && (
+					<div className="mt-4 pb-2">
+						<Countdown targetDate={saleEndDate} />
+					</div>
+				)}
 			</div>
 		</div>
 	);
