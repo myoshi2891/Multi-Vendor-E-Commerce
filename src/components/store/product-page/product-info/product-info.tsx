@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 import ReactStars from "react-rating-stars-component";
 import ProductPrice from "./product-price";
 import Countdown from "../../shared/countdown";
+import { Separator } from "@/components/ui/separator";
+import ColorWheel from "@/components/shared/color-wheel";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -112,6 +114,15 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 						<Countdown targetDate={saleEndDate} />
 					</div>
 				)}
+			</div>
+			<Separator className="mt-2" />
+			<div className="mt-4 space-y-2">
+				<div className="relative flex items-center justify-between text-main-primary font-bold">
+					<span className="flex items-center gap-x-2">
+						{colors.length > 1 ? "Colors" : "Color"}
+						<ColorWheel colors={colors} size={25} />
+					</span>
+				</div>
 			</div>
 		</div>
 	);
