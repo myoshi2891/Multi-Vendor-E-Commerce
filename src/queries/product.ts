@@ -14,6 +14,10 @@ import { currentUser } from "@clerk/nextjs/server";
 // Slugify
 import slugify from "slugify";
 
+// Cookies
+import { getCookie } from "cookies-next";
+import { cookies } from "next/headers";
+
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
 // Permission Level: Seller only
@@ -371,8 +375,13 @@ export const getProductPageData = async (
 	const product = await retrieveProductDetails(productSlug, variantSlug);
 	if (!product) return;
 
+	// Retrieve user country
+	const userCountry = getUserCountry();
+	console.log("userCountry", userCountry);
+
 	return formatProductResponse(product);
 };
+
 
 // Helper functions
 export const retrieveProductDetails = async (
@@ -428,6 +437,26 @@ export const retrieveProductDetails = async (
 	};
 };
 
+ const getUserCountry = () => {
+		const userCountryCookie = getCookie("userCountry", { cookies }) || "";
+		const defaultCountry = { name: "United States", code: "US" };
+
+		try {
+			const parsedCountry = JSON.parse(userCountryCookie);
+			if (
+				parsedCountry &&
+				typeof parsedCountry === "object" &&
+				"name" in parsedCountry &&
+				"code" in parsedCountry
+			) {
+				return parsedCountry;
+			}
+			return defaultCountry;
+		} catch (error) {
+			// Handle error
+			console.error("Error retrieving user country:", error);
+		}
+ };
 const formatProductResponse = (product: ProductPageType) => {
 	if (!product) return;
 	const variant = product.variants[0];
