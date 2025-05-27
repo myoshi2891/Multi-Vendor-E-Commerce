@@ -10,6 +10,7 @@ import ProductPrice from "./product-price";
 import Countdown from "../../shared/countdown";
 import { Separator } from "@/components/ui/separator";
 import ColorWheel from "@/components/shared/color-wheel";
+import ProductVariantSelector from "./variant-selector";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -123,6 +124,12 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 						<ColorWheel colors={colors} size={25} />
 					</span>
 				</div>
+				{variantImages.length > 0 && (
+					<ProductVariantSelector
+						variants={variantImages}
+						slug={productData.variantSlug}
+					/>
+				)}
 			</div>
 		</div>
 	);
