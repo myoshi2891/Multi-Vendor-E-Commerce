@@ -17,11 +17,6 @@ interface Props {
 }
 
 const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard }) => {
-	// Import the usePathname hook from Next.js for getting the current URL path
-	const pathname = usePathname();
-	// Destructure the replace method from the Next.js useRouter hook to programmatically
-	const { replace } = useRouter();
-
 	// Check if the sizes array is either undefined or empty
 	// If no sizes are available, simply return from the function, performing no further
 	if (!sizes || sizes.length === 0) return null;
@@ -77,7 +72,34 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard }) => {
 		);
 	}
 
-	return <div className=""></div>;
+	// Scenario 2: SizeId passed, find the specific size and return its details
+	const selectedSize = sizes.find((size) => size.id === sizeId);
+
+	if (!selectedSize) return <></>;
+
+	// Calculate the price after the discount
+	const discountedPrice =
+		selectedSize.price * (1 - selectedSize.discount / 100);
+	return (
+		<div className="">
+			<div className="text-orange-primary inline-block font-bold leading-none mr-2.5">
+				<span className="inline-block text-4xl">
+					${discountedPrice.toFixed(2)}
+				</span>
+			</div>
+			{selectedSize.price !== discountedPrice && (
+				<span className="text-[#999] inline-block text-xl font-normal leading-6 mr-2 lime-through">
+					${selectedSize.price.toFixed(2)}
+				</span>
+			)}
+			{selectedSize.discount > 0 && (
+				<span className="inline-block text-orange-secondary text-xl leading-6">
+					{selectedSize.discount}% off
+				</span>
+			)}
+			<p className="mt-2 text-xs">{selectedSize.quantity} pieces</p>
+		</div>
+	);
 };
 
 export default ProductPrice;
