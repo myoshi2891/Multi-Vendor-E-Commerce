@@ -11,6 +11,7 @@ import Countdown from "../../shared/countdown";
 import { Separator } from "@/components/ui/separator";
 import ColorWheel from "@/components/shared/color-wheel";
 import ProductVariantSelector from "./variant-selector";
+import SizeSelector from "./size.selector";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -108,6 +109,7 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 					</Link>
 				</div>
 			</div>
+			{/* Price - Sale countdown */}
 			<div className="my-2 relative flex flex-col sm:flex-row justify-between">
 				<ProductPrice sizeId={sizeId} sizes={sizes} />
 				{isSale && saleEndDate && (
@@ -117,6 +119,7 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 				)}
 			</div>
 			<Separator className="mt-2" />
+			{/* Color Wheel - variant switcher */}
 			<div className="mt-4 space-y-2">
 				<div className="relative flex items-center justify-between text-main-primary font-bold">
 					<span className="flex items-center gap-x-2">
@@ -130,6 +133,13 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 						slug={productData.variantSlug}
 					/>
 				)}
+			</div>
+			{/* Size selector */}
+			<div className="space-y-2 pb-2 mt-4">
+				<div>
+					<h1 className="text-main-primary font-bold">Size</h1>
+				</div>
+				<SizeSelector sizeId={sizeId} sizes={sizes} />
 			</div>
 		</div>
 	);
