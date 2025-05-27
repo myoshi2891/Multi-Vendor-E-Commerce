@@ -101,6 +101,12 @@ model Store {
   @@index([userId])
 }
 
+enum ShippingFeeMethod {
+  ITEM
+  WEIGHT
+  FIXED
+}
+
 model Product {
   id          String @id @default(uuid())
   name        String
@@ -109,6 +115,7 @@ model Product {
   brand       String
   rating      Float  @default(0)
   sales       Int    @default(0)
+  shippingFeeMethod  ShippingFeeMethod @default(ITEM)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
