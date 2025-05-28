@@ -437,8 +437,6 @@ export const retrieveProductDetails = async (
 		},
 	});
 
-	console.log("variantImages", variantImages);
-
 	return {
 		...product,
 		variantImages: variantImages.map((v) => ({
@@ -495,6 +493,7 @@ const formatProductResponse = (
 		saleEndDate: variant.saleEndDate,
 		brand: product.brand,
 		sku: variant.sku,
+		weight: variant.weight,
 		store: {
 			id: store.id,
 			url: store.url,
