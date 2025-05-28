@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 // Types
 import {
 	ProductPageType,
+	ProductShippingDetailsType,
 	ProductWithVariantType,
 	VariantImageType,
 	VariantSimplified,
@@ -391,7 +392,7 @@ export const getProductPageData = async (
 	);
 	console.log(productShippingDetails);
 
-	return formatProductResponse(product);
+	return formatProductResponse(product, productShippingDetails);
 };
 
 // Helper functions
@@ -468,7 +469,10 @@ const getUserCountry = () => {
 		console.error("Error retrieving user country:", error);
 	}
 };
-const formatProductResponse = (product: ProductPageType) => {
+const formatProductResponse = (
+	product: ProductPageType,
+	shippingDetails: ProductShippingDetailsType
+) => {
 	if (!product) return;
 	const variant = product.variants[0];
 	const { store, category, subCategory, offerTag, questions } = product;
@@ -513,7 +517,7 @@ const formatProductResponse = (product: ProductPageType) => {
 			ratingStatistics: [],
 			reviewWithImagesCount: 5,
 		},
-		shippingDetails: {},
+		shippingDetails,
 		relatedProducts: [],
 		variantImages: product.variantImages,
 	};
@@ -529,7 +533,7 @@ const formatProductResponse = (product: ProductPageType) => {
 // Returns: The calculated shipping details.
 export const getShippingDetails = async (
 	shippingFeeMethod: string,
-	userCountry: { name: string; code: string },
+	userCountry: { name: string; code: string; city: string },
 	store: Store
 ) => {
 	const country = await db.country.findUnique({
@@ -575,6 +579,7 @@ export const getShippingDetails = async (
 			returnPolicy,
 			countryCode: userCountry.code,
 			countryName: userCountry.name,
+			city: userCountry.city,
 		};
 
 		switch (shippingFeeMethod) {
