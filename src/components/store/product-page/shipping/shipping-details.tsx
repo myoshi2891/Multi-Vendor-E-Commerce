@@ -1,7 +1,8 @@
 "use client";
 import { ProductShippingDetailsType } from "@/lib/types";
-import { Truck } from "lucide-react";
+import { ChevronRight, Truck } from "lucide-react";
 import { FC, useEffect, useState } from "react";
+import ProductShippingFee from "./shipping-fee";
 
 interface Props {
 	shippingDetails: ProductShippingDetailsType;
@@ -61,7 +62,18 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 							</span>
 						)}
 					</div>
+					<ChevronRight className="w-3" />
 				</div>
+				{/* Product shipping fee */}
+				{!shippingDetails.isFreeShipping && (
+					<ProductShippingFee
+						fee={shippingFee}
+						extraFee={extraShippingFee}
+						method={shippingFeeMethod}
+						weight={weight}
+						quantity={5}
+					/>
+				)}
 			</div>
 		</div>
 	);
