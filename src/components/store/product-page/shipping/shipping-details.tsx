@@ -1,6 +1,6 @@
 "use client";
 import { ProductShippingDetailsType } from "@/lib/types";
-import { ChevronRight, Truck } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Truck } from "lucide-react";
 import { FC, useEffect, useState } from "react";
 import ProductShippingFee from "./shipping-fee";
 import { getShippingDatesRange } from "@/lib/utils";
@@ -13,6 +13,7 @@ interface Props {
 
 const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 	if (typeof shippingDetails === "boolean") return null;
+	const [toggle, setToggle] = useState<boolean>(false);
 	const {
 		countryName,
 		deliveryTimeMax,
@@ -81,7 +82,7 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 					</strong>
 				</span>
 				{/* Product shipping fee */}
-				{!shippingDetails.isFreeShipping && (
+				{!shippingDetails.isFreeShipping && toggle && (
 					<ProductShippingFee
 						fee={shippingFee}
 						extraFee={extraShippingFee}
@@ -90,7 +91,23 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 						quantity={5}
 					/>
 				)}
+				<div
+					onClick={() => setToggle((prev) => !prev)}
+					className="max-w-[calc(100%-2rem)] ml-4 flex items-center bg-gray-100 hover:bg-gray-200 h-5 cursor-pointer"
+				>
+					<div className="w-full flex items-center justify-between gap-x-1 px-2">
+						<span className="text-xs">
+							{toggle ? "Hide" : "Shipping Fee Breakdown"}
+						</span>
+						{toggle ? (
+							<ChevronUp className="w-4" />
+						) : (
+							<ChevronDown className="w-4" />
+						)}
+					</div>
+				</div>
 			</div>
+			<div className="h-20"></div>
 		</div>
 	);
 };
