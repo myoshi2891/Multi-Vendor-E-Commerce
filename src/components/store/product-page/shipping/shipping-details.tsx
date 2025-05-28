@@ -49,14 +49,14 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 						{shippingDetails.isFreeShipping ? (
 							<span className="text-sm font-bold flex items-center">
 								<span>
-									Free Shipping to&nbsp;
+									Free Shipping to
 									<span>{countryName}</span>
 								</span>
 							</span>
 						) : (
 							<span className="text-sm font-bold flex items-center">
 								<span>
-									Shipping to&nbsp;<span>{countryName}</span>
+									Shipping to <span>{countryName}</span>
 								</span>
 								<span>&nbsp;for ${shippingTotal}</span>
 							</span>
