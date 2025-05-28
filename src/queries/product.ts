@@ -110,6 +110,7 @@ export const upsertProduct = async (
 			isSale: product.isSale,
 			saleEndDate: product.isSale ? product.saleEndDate : "",
 			sku: product.sku,
+			weight: product.weight,
 			keywords: product.keywords.join(","),
 			specs: {
 				create: product.variant_specs.map((spec) => ({

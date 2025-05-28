@@ -41,6 +41,7 @@ export type ProductWithVariantType = {
 	saleEndDate?: string;
 	brand: string;
 	sku: string;
+	weight: number;
 	colors: { color: string }[];
 	sizes: {
 		size: string;
