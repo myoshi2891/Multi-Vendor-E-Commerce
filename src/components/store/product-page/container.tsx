@@ -4,6 +4,7 @@ import ProductSwiper from "./product-swiper";
 import ProductInfo from "./product-info/product-info";
 import ShipTo from "./shipping/ship-to";
 import ShippingDetails from "./shipping/shipping-details";
+import ReturnsSecurityPrivacyCard from "./returns-security-privacy-card";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -48,6 +49,11 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 												weight={productData.weight}
 											/>
 										</div>
+										<ReturnsSecurityPrivacyCard
+											returnPolicy={
+												shippingDetails.returnPolicy
+											}
+										/>
 									</>
 								)}
 							</div>
