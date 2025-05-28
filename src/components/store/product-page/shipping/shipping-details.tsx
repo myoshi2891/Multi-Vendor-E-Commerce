@@ -45,12 +45,21 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-x-1">
 						<Truck className="w-4" />
-						<span className="text-sm font-bold flex items-center">
-							<span>
-								Shipping to&nbsp;<span>{countryName}</span>
+						{shippingDetails.isFreeShipping ? (
+							<span className="text-sm font-bold flex items-center">
+								<span>
+									Free Shipping to&nbsp;
+									<span>{countryName}</span>
+								</span>
 							</span>
-							<span>&nbsp;for ${shippingTotal}</span>
-						</span>
+						) : (
+							<span className="text-sm font-bold flex items-center">
+								<span>
+									Shipping to&nbsp;<span>{countryName}</span>
+								</span>
+								<span>&nbsp;for ${shippingTotal}</span>
+							</span>
+						)}
 					</div>
 				</div>
 			</div>
