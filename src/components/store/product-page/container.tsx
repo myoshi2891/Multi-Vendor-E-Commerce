@@ -3,6 +3,7 @@ import { FC, ReactNode } from "react";
 import ProductSwiper from "./product-swiper";
 import ProductInfo from "./product-info/product-info";
 import ShipTo from "./shipping/ship-to";
+import ShippingDetails from "./shipping/shipping-details";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -28,15 +29,26 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 							<div className="bg-white border rounded-md overflow-hidden overflow-y-auto p-4 pb-0">
 								{/* Ship to */}
 								{typeof shippingDetails !== "boolean" && (
-									<ShipTo
-										countryCode={
-											shippingDetails.countryCode
-										}
-										countryName={
-											shippingDetails.countryName
-										}
-										city={shippingDetails.city}
-									/>
+									<>
+										<ShipTo
+											countryCode={
+												shippingDetails.countryCode
+											}
+											countryName={
+												shippingDetails.countryName
+											}
+											city={shippingDetails.city}
+										/>
+										<div className="mt-3 space-y-3">
+											<ShippingDetails
+												shippingDetails={
+													shippingDetails
+												}
+												quantity={1}
+												weight={1}
+											/>
+										</div>
+									</>
 								)}
 							</div>
 						</div>
