@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 // Types
 import {
+	FreeShippingWithCountriesType,
 	ProductPageType,
 	ProductShippingDetailsType,
 	ProductWithVariantType,
@@ -22,7 +23,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { Store } from "@prisma/client";
+import { FreeShipping, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -389,9 +390,9 @@ export const getProductPageData = async (
 	const productShippingDetails = await getShippingDetails(
 		product.shippingFeeMethod,
 		userCountry,
-		product.store
+		product.store,
+		product.freeShipping
 	);
-	console.log(productShippingDetails);
 
 	return formatProductResponse(product, productShippingDetails);
 };
@@ -412,6 +413,11 @@ export const retrieveProductDetails = async (
 			store: true,
 			specs: true,
 			questions: true,
+			freeShipping: {
+				include: {
+					eligibleCountries: true,
+				},
+			},
 			variants: {
 				where: {
 					slug: variantSlug,
@@ -534,8 +540,23 @@ const formatProductResponse = (
 export const getShippingDetails = async (
 	shippingFeeMethod: string,
 	userCountry: { name: string; code: string; city: string },
-	store: Store
+	store: Store,
+	freeShipping: FreeShippingWithCountriesType | null
 ) => {
+	let shippingDetails = {
+		shippingFeeMethod,
+		shippingService: "",
+		shippingFee: 0,
+		extraShippingFee: 0,
+		deliveryTimeMin: 0,
+		deliveryTimeMax: 0,
+		returnPolicy: "",
+		countryCode: userCountry.code,
+		countryName: userCountry.name,
+		city: userCountry.city,
+		isFreeShipping: false,
+	};
+
 	const country = await db.country.findUnique({
 		where: {
 			name: userCountry.name,
@@ -569,7 +590,18 @@ export const getShippingDetails = async (
 		const deliveryTimeMax =
 			shippingRate?.deliveryTimeMax || store.defaultDeliveryTimeMax;
 
-		let shippingDetails = {
+		// Check for free shipping
+		if (freeShipping) {
+			const free_shipping_countries = freeShipping.eligibleCountries;
+			const check_free_shipping = free_shipping_countries.find(
+				(c) => c.countryId === country.id
+			);
+			if (check_free_shipping) {
+				shippingDetails.isFreeShipping = true;
+			}
+		}
+
+		shippingDetails = {
 			shippingFeeMethod,
 			shippingService: shippingService,
 			shippingFee: 0,
@@ -580,20 +612,30 @@ export const getShippingDetails = async (
 			countryCode: userCountry.code,
 			countryName: userCountry.name,
 			city: userCountry.city,
+			isFreeShipping: shippingDetails.isFreeShipping,
 		};
 
+		const { isFreeShipping } = shippingDetails;
 		switch (shippingFeeMethod) {
 			case "ITEM":
-				shippingDetails.shippingFee = shippingFeePerItem;
-				shippingDetails.extraShippingFee = shippingFeeForAdditionalItem;
+				shippingDetails.shippingFee = isFreeShipping
+					? 0
+					: shippingFeePerItem;
+				shippingDetails.extraShippingFee = isFreeShipping
+					? 0
+					: shippingFeeForAdditionalItem;
 				break;
 
 			case "WEIGHT":
-				shippingDetails.shippingFee = shippingFeePerKg;
+				shippingDetails.shippingFee = isFreeShipping
+					? 0
+					: shippingFeePerKg;
 				break;
 
 			case "FIXED":
-				shippingDetails.shippingFee = shippingFeeFixed;
+				shippingDetails.shippingFee = isFreeShipping
+					? 0
+					: shippingFeeFixed;
 				break;
 
 			default:
@@ -601,5 +643,6 @@ export const getShippingDetails = async (
 		}
 		return shippingDetails;
 	}
+
 	return false;
 };
