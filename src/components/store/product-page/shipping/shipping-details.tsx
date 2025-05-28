@@ -107,7 +107,6 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 					</div>
 				</div>
 			</div>
-			<div className="h-20"></div>
 		</div>
 	);
 };
