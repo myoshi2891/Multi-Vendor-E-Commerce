@@ -2,11 +2,14 @@ import {
 	getAllStoreProducts,
 	getProductPageData,
 	getProducts,
+	getShippingDetails,
 	retrieveProductDetails,
 } from "@/queries/product";
 import { getStoreDefaultShippingDetails } from "@/queries/store";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
+	FreeShipping,
+	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
 	ShippingRate,
@@ -40,6 +43,7 @@ export type ProductWithVariantType = {
 	saleEndDate?: string;
 	brand: string;
 	sku: string;
+	weight: number;
 	colors: { color: string }[];
 	sizes: {
 		size: string;
@@ -106,3 +110,11 @@ export type ProductPageType = Prisma.PromiseReturnType<
 export type ProductPageDataType = Prisma.PromiseReturnType<
 	typeof getProductPageData
 >;
+
+export type ProductShippingDetailsType = Prisma.PromiseReturnType<
+	typeof getShippingDetails
+>;
+
+export type FreeShippingWithCountriesType = FreeShipping & {
+	eligibleCountries: FreeShippingCountry[];
+};

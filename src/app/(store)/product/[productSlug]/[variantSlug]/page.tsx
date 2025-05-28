@@ -44,7 +44,8 @@ export default async function ProductVariantPage({
 		products: [],
 	};
 
-	const { specs, questions } = productData;
+	const { specs, questions, shippingDetails } = productData;
+	
 	return (
 		<div>
 			<div className="max-w-[1650px] mx-auto p-4 overflow-x-hidden">

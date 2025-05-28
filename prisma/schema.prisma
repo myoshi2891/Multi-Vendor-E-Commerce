@@ -101,14 +101,23 @@ model Store {
   @@index([userId])
 }
 
+enum ShippingFeeMethod {
+  ITEM
+  WEIGHT
+  FIXED
+}
+
 model Product {
-  id          String @id @default(uuid())
-  name        String
-  description String @db.LongText
-  slug        String @unique
-  brand       String
-  rating      Float  @default(0)
-  sales       Int    @default(0)
+  id                String            @id @default(uuid())
+  name              String
+  description       String            @db.LongText
+  slug              String            @unique
+  brand             String
+  rating            Float             @default(0)
+  sales             Int               @default(0)
+  shippingFeeMethod ShippingFeeMethod @default(ITEM)
+
+  freeShipping FreeShipping? @relation("ProductFreeShipping")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -146,6 +155,7 @@ model ProductVariant {
   keywords           String
   sku                String
   sales              Int     @default(0)
+  weight             Float
 
   productId String
   product   Product @relation("ProductToProductVariant", fields: [productId], references: [id], onDelete: Cascade)
@@ -252,7 +262,8 @@ model Country {
   name String @unique
   code String @unique
 
-  shippingRates ShippingRate[] @relation("CountryShippingRates")
+  shippingRates         ShippingRate[]        @relation("CountryShippingRates")
+  freeShippingCountries FreeShippingCountry[] @relation("FreeShippingToCountry")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -281,4 +292,30 @@ model ShippingRate {
 
   @@index([countryId])
   @@index([storeId])
+}
+
+model FreeShipping {
+  id        String  @id @default(uuid())
+  productId String  @unique
+  product   Product @relation("ProductFreeShipping", fields: [productId], references: [id], onDelete: Cascade)
+
+  eligibleCountries FreeShippingCountry[] @relation("FreeShippingCountries")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model FreeShippingCountry {
+  id             String       @id @default(uuid())
+  freeShippingId String
+  freeShipping   FreeShipping @relation("FreeShippingCountries", fields: [freeShippingId], references: [id], onDelete: Cascade)
+
+  countryId String
+  country   Country @relation("FreeShippingToCountry", fields: [countryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([freeShippingId])
+  @@index([countryId])
 }
