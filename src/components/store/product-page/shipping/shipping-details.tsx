@@ -3,6 +3,7 @@ import { ProductShippingDetailsType } from "@/lib/types";
 import { ChevronRight, Truck } from "lucide-react";
 import { FC, useEffect, useState } from "react";
 import ProductShippingFee from "./shipping-fee";
+import { getShippingDatesRange } from "@/lib/utils";
 
 interface Props {
 	shippingDetails: ProductShippingDetailsType;
@@ -39,7 +40,12 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 			default:
 				break;
 		}
-	}, [quantity]);
+	}, [quantity, countryName]);
+
+	const { minDate, maxDate } = getShippingDatesRange(
+		deliveryTimeMin,
+		deliveryTimeMax
+	);
 	return (
 		<div>
 			<div className="space-y-1">
@@ -64,6 +70,16 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 					</div>
 					<ChevronRight className="w-3" />
 				</div>
+				<span className="flex items-center text-sm ml-5">
+					Service:&nbsp;
+					<strong className="text-sm">{shippingService}</strong>
+				</span>
+				<span className="flex items-center text-sm ml-5">
+					Delivery:&nbsp;
+					<strong className="text-sm">
+						{minDate.slice(4)} - {maxDate.slice(4)}
+					</strong>
+				</span>
 				{/* Product shipping fee */}
 				{!shippingDetails.isFreeShipping && (
 					<ProductShippingFee
