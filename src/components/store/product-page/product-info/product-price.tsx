@@ -1,6 +1,7 @@
+import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
-import { FC } from "react";
+import { FC, useEffect } from "react";
 
 interface SimplifiedSize {
 	id: string;
@@ -14,9 +15,10 @@ interface Props {
 	sizeId?: string | undefined;
 	sizes: SimplifiedSize[];
 	isCard?: boolean;
+	handleChange: (property: keyof CartProductType, value: any) => void;
 }
 
-const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard }) => {
+const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
 	// Check if the sizes array is either undefined or empty
 	// If no sizes are available, simply return from the function, performing no further
 	if (!sizes || sizes.length === 0) return null;
@@ -80,6 +82,12 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard }) => {
 	// Calculate the price after the discount
 	const discountedPrice =
 		selectedSize.price * (1 - selectedSize.discount / 100);
+
+	// Update product to be added to cart with price and stock quantity
+	useEffect(() => {
+		handleChange("price", discountedPrice);
+		handleChange("stock", selectedSize.quantity);
+	}, [sizeId]);
 	return (
 		<div className="">
 			<div className="text-orange-primary inline-block font-bold leading-none mr-2.5">
