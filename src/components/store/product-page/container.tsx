@@ -1,10 +1,11 @@
-import { ProductPageDataType } from "@/lib/types";
-import { FC, ReactNode } from "react";
+import { CartProductType, ProductPageDataType } from "@/lib/types";
+import { FC, ReactNode, useEffect, useState } from "react";
 import ProductSwiper from "./product-swiper";
 import ProductInfo from "./product-info/product-info";
 import ShipTo from "./shipping/ship-to";
 import ShippingDetails from "./shipping/shipping-details";
 import ReturnsSecurityPrivacyCard from "./returns-security-privacy-card";
+import { isProductValidToAdd } from "@/lib/utils";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -15,6 +16,52 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 	// If there is no product data available, render nothing (null)
 	if (!productData) return null;
 	const { images, shippingDetails } = productData;
+
+	if (typeof shippingDetails === "boolean") return null;
+
+	// Initialize the default product data for the cart item
+	const data: CartProductType = {
+		productId: productData.productId,
+		variantId: productData.variantId,
+		productSlug: productData.productSlug,
+		variantSlug: productData.variantSlug,
+		name: productData.name,
+		variantName: productData.variantName,
+		image: productData.images[0].url,
+		variantImage: productData.variantImage,
+		sizeId: sizeId || "",
+		size: "",
+		quantity: 1,
+		price: 0,
+		stock: 1,
+		weight: productData.weight,
+		shippingMethod: shippingDetails.shippingFeeMethod,
+		shippingService: shippingDetails.shippingService,
+		shippingFee: shippingDetails.shippingFee,
+		extraShippingFee: shippingDetails.extraShippingFee,
+		deliveryTimeMin: shippingDetails.deliveryTimeMin,
+		deliveryTimeMax: shippingDetails.deliveryTimeMax,
+		isFreeShipping: shippingDetails.isFreeShipping,
+	};
+	// useState hook to manage the product's state in the cart
+	const [productToBeAddedToCart, setProductToBeAddedToCart] =
+		useState<CartProductType>(data);
+
+	// useState hook to manage product validity to be added to cart
+	const [isProductValid, setIsProductValid] = useState<boolean>(false);
+
+	// Function to handle state changes for the product properties
+	const handleChange = (property: keyof CartProductType, value: any) => {
+		setProductToBeAddedToCart((prevProduct) => ({
+			...prevProduct,
+			[property]: value,
+		}));
+	};
+
+	useEffect(() => {
+		const check = isProductValidToAdd(productToBeAddedToCart);
+		setIsProductValid(check);
+	}, [productToBeAddedToCart]);
 
 	return (
 		<div className="relative">

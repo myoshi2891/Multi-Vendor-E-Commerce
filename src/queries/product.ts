@@ -501,6 +501,7 @@ const formatProductResponse = (
 		brand: product.brand,
 		sku: variant.sku,
 		weight: variant.weight,
+		variantImage: variant.variantImage,
 		store: {
 			id: store.id,
 			url: store.url,
