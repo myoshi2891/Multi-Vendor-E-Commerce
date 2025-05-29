@@ -1,3 +1,4 @@
+"use client";
 import { CartProductType, ProductPageDataType } from "@/lib/types";
 import { FC, ReactNode, useEffect, useState } from "react";
 import ProductSwiper from "./product-swiper";
@@ -47,6 +48,8 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 	const [productToBeAddedToCart, setProductToBeAddedToCart] =
 		useState<CartProductType>(data);
 
+	console.log("productToBeAddedToCart--->", productToBeAddedToCart);
+
 	// useState hook to manage product validity to be added to cart
 	const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
@@ -70,7 +73,11 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 				<ProductSwiper images={images} />
 				<div className="w-full mt-4 md:mt-0 flex flex-col gap-4 md:flex-row">
 					{/* Product main info */}
-					<ProductInfo productData={productData} sizeId={sizeId} />
+					<ProductInfo
+						productData={productData}
+						sizeId={sizeId}
+						handleChange={handleChange}
+					/>
 					{/* Shipping details - buy actions buttons */}
 					<div className="w-[390px]">
 						<div className="z-20">
