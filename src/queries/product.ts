@@ -280,7 +280,7 @@ export const deleteProduct = async (productId: string) => {
 // Returns: Array of filtered products, including category, subcategory, variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 
 export const getProducts = async (
-	filters = {},
+	filters: any = {},
 	sortBy = "",
 	page: number = 1,
 	pageSize: number = 10
@@ -294,6 +294,32 @@ export const getProducts = async (
 	const whereClause: any = {
 		AND: [],
 	};
+
+	// Apply category filter (using category URL)
+	if (filters.category) {
+		const category = await db.category.findUnique({
+			where: {
+				url: filters.category,
+			},
+			select: { id: true },
+		});
+		if (category) {
+			whereClause.AND.push({ categoryId: category.id });
+		}
+	}
+
+	// Apply suCategory filter (using subCategory URL)
+	if (filters.subCategory) {
+		const subCategory = await db.subCategory.findUnique({
+			where: {
+				url: filters.subCategory,
+			},
+			select: { id: true },
+		});
+		if (subCategory) {
+			whereClause.AND.push({ subCategoryId: subCategory.id });
+		}
+	}
 
 	// Get all filtered, sorted products
 	const products = await db.product.findMany({
@@ -501,6 +527,7 @@ const formatProductResponse = (
 		brand: product.brand,
 		sku: variant.sku,
 		weight: variant.weight,
+		variantImage: variant.variantImage,
 		store: {
 			id: store.id,
 			url: store.url,
