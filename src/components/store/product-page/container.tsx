@@ -49,7 +49,11 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 	const [productToBeAddedToCart, setProductToBeAddedToCart] =
 		useState<CartProductType>(data);
 
-	console.log("productToBeAddedToCart--->", productToBeAddedToCart);
+	console.log(
+		"qty, stock--->",
+		productToBeAddedToCart.stock,
+		productToBeAddedToCart.quantity
+	);
 
 	// useState hook to manage product validity to be added to cart
 	const [isProductValid, setIsProductValid] = useState<boolean>(false);
@@ -128,6 +132,9 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 												}
 												quantity={
 													productToBeAddedToCart.quantity
+												}
+												stock={
+													productToBeAddedToCart.stock
 												}
 												handleChange={handleChange}
 												sizes={sizes}

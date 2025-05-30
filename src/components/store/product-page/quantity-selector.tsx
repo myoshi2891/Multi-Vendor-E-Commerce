@@ -8,6 +8,7 @@ interface QuantitySelectorProps {
 	variantId: string;
 	sizeId: string | null;
 	quantity: number;
+	stock: number;
 	handleChange: (property: keyof CartProductType, value: any) => void;
 	sizes: Size[];
 }
@@ -18,6 +19,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 	variantId,
 	sizeId,
 	quantity,
+	stock,
 	sizes,
 }) => {
 	// If no sizeId is provided, return null to prevent rendering the component
@@ -27,6 +29,21 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 	useEffect(() => {
 		handleChange("quantity", 1);
 	}, [sizeId]);
+
+	// Function to handle increasing the quantity of the product
+	const handleIncrease = () => {
+		if (quantity < stock) {
+			handleChange("quantity", quantity + 1);
+		}
+	};
+
+	// Function to handle decreasing the quantity of the product
+	const handleDecrease = () => {
+		if (quantity > 1) {
+			handleChange("quantity", quantity - 1);
+		}
+	};
+
 	return (
 		<div className="w-full py-2 px-3 bg-white border border-gray-200 rounded-lg">
 			<div className="w-full flex justify-between items-center gap-x-5">
@@ -43,10 +60,18 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 					/>
 				</div>
 				<div className="flex justify-end items-center gap-x-1.5">
-					<button className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
+					<button
+						onClick={handleDecrease}
+						className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+						disabled={quantity === 1}
+					>
 						<Minus className="w-3" />
 					</button>
-					<button className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none">
+					<button
+						onClick={handleIncrease}
+						className="size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+						disabled={quantity === stock}
+					>
 						<Plus className="w-3" />
 					</button>
 				</div>
