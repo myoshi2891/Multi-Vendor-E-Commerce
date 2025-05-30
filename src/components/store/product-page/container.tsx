@@ -8,6 +8,7 @@ import ShippingDetails from "./shipping/shipping-details";
 import ReturnsSecurityPrivacyCard from "./returns-security-privacy-card";
 import { cn, isProductValidToAdd } from "@/lib/utils";
 import QuantitySelector from "./quantity-selector";
+import SocialShare from "../shared/social-share";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -151,6 +152,11 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 									>
 										<span>Add to cart</span>
 									</button>
+									{/* Share to socials */}
+									<SocialShare
+										url={`/product/${productData.productSlug}/${productData.variantSlug}`}
+										quote={`${productData.name} ・ ${productData.variantName}`}
+									/>
 								</div>
 							</div>
 						</div>
