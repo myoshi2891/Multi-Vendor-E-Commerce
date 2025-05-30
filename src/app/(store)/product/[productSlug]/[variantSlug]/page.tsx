@@ -1,5 +1,6 @@
 import ProductPageContainer from "@/components/store/product-page/container";
 import ProductDescription from "@/components/store/product-page/product-description";
+import ProductQuestions from "@/components/store/product-page/product-questions";
 import ProductSpecs from "@/components/store/product-page/product-specs";
 import RelatedProducts from "@/components/store/product-page/related-product";
 import { Separator } from "@/components/ui/separator";
@@ -91,6 +92,9 @@ export default async function ProductVariantPage({
 						<>
 							<Separator className="mt-6" />
 							{/* Product Questions */}
+							<ProductQuestions
+								questions={productData.questions}
+							/>
 						</>
 					)}
 					<Separator className="mt-6" />
