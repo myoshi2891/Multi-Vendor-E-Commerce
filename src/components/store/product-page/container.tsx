@@ -6,7 +6,7 @@ import ProductInfo from "./product-info/product-info";
 import ShipTo from "./shipping/ship-to";
 import ShippingDetails from "./shipping/shipping-details";
 import ReturnsSecurityPrivacyCard from "./returns-security-privacy-card";
-import { isProductValidToAdd } from "@/lib/utils";
+import { cn, isProductValidToAdd } from "@/lib/utils";
 import QuantitySelector from "./quantity-selector";
 
 interface Props {
@@ -48,12 +48,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 	// useState hook to manage the product's state in the cart
 	const [productToBeAddedToCart, setProductToBeAddedToCart] =
 		useState<CartProductType>(data);
-
-	console.log(
-		"qty, stock--->",
-		productToBeAddedToCart.stock,
-		productToBeAddedToCart.quantity
-	);
 
 	// useState hook to manage product validity to be added to cart
 	const [isProductValid, setIsProductValid] = useState<boolean>(false);
@@ -141,6 +135,22 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 											/>
 										</div>
 									)}
+									{/* Action buttons */}
+									<button className="relative w-full py-2.5 min-w-20 bg-orange-background hover:bg-orange-hover text-white h-11 rounded-3xl leading-6 inline-block font-bold whitespace-nowrap border border-orange-border cursor-pointer transition-all duration-300 ease-bezier-1 select-none">
+										<span>Buy now</span>
+									</button>
+									<button
+										disabled={!isProductValid}
+										className={cn(
+											"relative w-full py-2.5 min-w-20 bg-orange-border hover:bg-[#e4cdce] text-orange-hover h-11 rounded-3xl leading-6 inline-block font-bold whitespace-nowrap border border-orange-border cursor-pointer transition-all duration-300 ease-bezier-1 select-none",
+											{
+												"cursor-not-allowed":
+													!isProductValid,
+											}
+										)}
+									>
+										<span>Add to cart</span>
+									</button>
 								</div>
 							</div>
 						</div>
