@@ -1,6 +1,7 @@
 import ProductPageContainer from "@/components/store/product-page/container";
+import RelatedProducts from "@/components/store/product-page/related-product";
 import { Separator } from "@/components/ui/separator";
-import { getProductPageData } from "@/queries/product";
+import { getProductPageData, getProducts } from "@/queries/product";
 import { notFound, redirect } from "next/navigation";
 
 interface PageProps {
@@ -40,12 +41,18 @@ export default async function ProductVariantPage({
 		);
 	}
 
-	const relatedProducts = {
-		products: [],
-	};
+	const { specs, questions, shippingDetails, category, subCategory } =
+		productData;
 
-	const { specs, questions, shippingDetails } = productData;
-	
+	const relatedProducts = await getProducts(
+		{
+			category: category.url,
+		},
+		"",
+		1,
+		12
+	);
+
 	return (
 		<div>
 			<div className="max-w-[1650px] mx-auto p-4 overflow-x-hidden">
@@ -54,6 +61,9 @@ export default async function ProductVariantPage({
 						<>
 							<Separator />
 							{/* Related Products */}
+							<RelatedProducts
+								products={relatedProducts.products}
+							/>
 						</>
 					)}
 					<Separator className="mt-6" />
