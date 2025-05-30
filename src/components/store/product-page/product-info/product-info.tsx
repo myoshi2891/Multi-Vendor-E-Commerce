@@ -1,5 +1,5 @@
 "use client";
-import { ProductPageDataType } from "@/lib/types";
+import { CartProductType, ProductPageDataType } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
 import { FC } from "react";
@@ -18,9 +18,15 @@ interface Props {
 	productData: ProductPageDataType;
 	quantity?: number;
 	sizeId: string | undefined;
+	handleChange: (property: keyof CartProductType, value: any) => void;
 }
 
-const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
+const ProductInfo: FC<Props> = ({
+	productData,
+	quantity,
+	sizeId,
+	handleChange,
+}) => {
 	// Check if productData exists return null if it's missing (prevents rendering when no data is available)
 	if (!productData) return null;
 
@@ -112,7 +118,11 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 			</div>
 			{/* Price - Sale countdown */}
 			<div className="my-2 relative flex flex-col sm:flex-row justify-between">
-				<ProductPrice sizeId={sizeId} sizes={sizes} />
+				<ProductPrice
+					sizeId={sizeId}
+					sizes={sizes}
+					handleChange={handleChange}
+				/>
 				{isSale && saleEndDate && (
 					<div className="mt-4 pb-2">
 						<Countdown targetDate={saleEndDate} />
@@ -142,7 +152,11 @@ const ProductInfo: FC<Props> = ({ productData, quantity, sizeId }) => {
 				<div>
 					<h1 className="text-main-primary font-bold">Size</h1>
 				</div>
-				<SizeSelector sizeId={sizeId} sizes={sizes} />
+				<SizeSelector
+					sizeId={sizeId}
+					sizes={sizes}
+					handleChange={handleChange}
+				/>
 			</div>
 			{/* Product assurance */}
 			<Separator className="mt-2" />

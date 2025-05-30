@@ -320,7 +320,7 @@ export const ProductFormSchema = z.object({
 			answer: z.string(),
 		})
 		.array()
-		.min(1, "Product must have at least one product question.")
+		// .min(1, "Product must have at least one product question.")
 		.refine(
 			(questions) =>
 				questions.every(
@@ -330,7 +330,8 @@ export const ProductFormSchema = z.object({
 				message:
 					"All product question inputs must be filled correctly.",
 			}
-		),
+		)
+		.optional(),
 
 	isSale: z.boolean().default(false),
 	saleEndDate: z.string().optional(),
