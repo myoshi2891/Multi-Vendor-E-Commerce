@@ -1,4 +1,5 @@
 import ProductPageContainer from "@/components/store/product-page/container";
+import ProductDescription from "@/components/store/product-page/product-description";
 import RelatedProducts from "@/components/store/product-page/related-product";
 import { Separator } from "@/components/ui/separator";
 import { getProductPageData, getProducts } from "@/queries/product";
@@ -71,6 +72,12 @@ export default async function ProductVariantPage({
 					<>
 						<Separator className="mt-6" />
 						{/* Product description */}
+						<ProductDescription
+							text={[
+								productData.description,
+								productData.variantDescription || "",
+							]}
+						/>
 					</>
 					{(specs.product.length > 0 || specs.variant.length > 0) && (
 						<>
