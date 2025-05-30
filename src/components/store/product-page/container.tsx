@@ -7,6 +7,7 @@ import ShipTo from "./shipping/ship-to";
 import ShippingDetails from "./shipping/shipping-details";
 import ReturnsSecurityPrivacyCard from "./returns-security-privacy-card";
 import { isProductValidToAdd } from "@/lib/utils";
+import QuantitySelector from "./quantity-selector";
 
 interface Props {
 	productData: ProductPageDataType;
@@ -16,7 +17,7 @@ interface Props {
 const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 	// If there is no product data available, render nothing (null)
 	if (!productData) return null;
-	const { images, shippingDetails } = productData;
+	const { images, shippingDetails, sizes } = productData;
 
 	if (typeof shippingDetails === "boolean") return null;
 
@@ -110,6 +111,30 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
 										/>
 									</>
 								)}
+								{/* Action buttons */}
+								<div className="mt-5 bg-white bottom-0 pb-4 space-y-3 sticky">
+									{/* Qty selector */}
+									{sizeId && (
+										<div className="w-full flex justify-end mt-4">
+											<QuantitySelector
+												productId={
+													productToBeAddedToCart.productId
+												}
+												variantId={
+													productToBeAddedToCart.variantId
+												}
+												sizeId={
+													productToBeAddedToCart.sizeId
+												}
+												quantity={
+													productToBeAddedToCart.quantity
+												}
+												handleChange={handleChange}
+												sizes={sizes}
+											/>
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 					</div>
