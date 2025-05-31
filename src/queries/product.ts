@@ -7,6 +7,7 @@ import {
 	ProductPageType,
 	ProductShippingDetailsType,
 	ProductWithVariantType,
+	RatingStatisticsType,
 	VariantImageType,
 	VariantSimplified,
 } from "@/lib/types";
@@ -295,6 +296,19 @@ export const getProducts = async (
 		AND: [],
 	};
 
+	// Apply store filter (using store URL)
+	if (filters.store) {
+		const store = await db.store.findUnique({
+			where: {
+				url: filters.store,
+			},
+			select: { id: true },
+		});
+		if (store) {
+			whereClause.AND.push({ storeId: store.id });
+		}
+	}
+
 	// Apply category filter (using category URL)
 	if (filters.category) {
 		const category = await db.category.findUnique({
@@ -405,6 +419,9 @@ export const getProductPageData = async (
 	productSlug: string,
 	variantSlug: string
 ) => {
+	// Get current user
+	const user = await currentUser();
+
 	// Retrieve product and variant details from the database
 	const product = await retrieveProductDetails(productSlug, variantSlug);
 	if (!product) return;
@@ -420,7 +437,24 @@ export const getProductPageData = async (
 		product.freeShipping
 	);
 
-	return formatProductResponse(product, productShippingDetails);
+	// Fetch store followers count
+	const storeFollowersCount = await getStoreFollowersCount(product.storeId);
+
+	// Check if user is following store
+	const isUserFollowingStore = await checkIfUserFollowingStore(
+		product.storeId,
+		user?.id
+	);
+
+	const ratingStatistics = await getRatingStatistics(product.id);
+
+	return formatProductResponse(
+		product,
+		productShippingDetails,
+		storeFollowersCount,
+		isUserFollowingStore,
+		ratingStatistics
+	);
 };
 
 // Helper functions
@@ -439,6 +473,7 @@ export const retrieveProductDetails = async (
 			store: true,
 			specs: true,
 			questions: true,
+			reviews: true,
 			freeShipping: {
 				include: {
 					eligibleCountries: true,
@@ -502,11 +537,15 @@ const getUserCountry = () => {
 };
 const formatProductResponse = (
 	product: ProductPageType,
-	shippingDetails: ProductShippingDetailsType
+	shippingDetails: ProductShippingDetailsType,
+	storeFollowersCount: number,
+	isUserFollowingStore: boolean,
+	ratingStatistics: RatingStatisticsType
 ) => {
 	if (!product) return;
 	const variant = product.variants[0];
-	const { store, category, subCategory, offerTag, questions } = product;
+	const { store, category, subCategory, offerTag, questions, reviews } =
+		product;
 	const { images, colors, sizes } = variant;
 
 	return {
@@ -533,8 +572,8 @@ const formatProductResponse = (
 			url: store.url,
 			name: store.name,
 			logo: store.logo,
-			followersCount: 10,
-			isUserFollowingStore: true,
+			followersCount: storeFollowersCount,
+			isUserFollowingStore,
 		},
 		colors,
 		sizes,
@@ -544,15 +583,93 @@ const formatProductResponse = (
 		},
 		questions,
 		rating: product.rating,
-		reviews: [],
-		numReviews: 122,
-		reviewsStatistics: {
-			ratingStatistics: [],
-			reviewWithImagesCount: 5,
-		},
+		reviews,
+		reviewsStatistics: ratingStatistics,
 		shippingDetails,
 		relatedProducts: [],
 		variantImages: product.variantImages,
+	};
+};
+
+const getStoreFollowersCount = async (storeId: string) => {
+	const storeFollowersCount = await db.store.findUnique({
+		where: {
+			id: storeId,
+		},
+		select: {
+			_count: {
+				select: {
+					followers: true,
+				},
+			},
+		},
+	});
+	return storeFollowersCount?._count.followers || 0;
+};
+
+const checkIfUserFollowingStore = async (
+	storeId: string,
+	userId: string | undefined
+) => {
+	let isUserFollowingStore = false;
+	if (userId) {
+		const storeFollowersInfo = await db.store.findUnique({
+			where: {
+				id: storeId,
+			},
+			select: {
+				followers: {
+					where: {
+						id: userId, // Check if this user is following the store
+					},
+					select: { id: true }, // Select the user id if following
+				},
+			},
+		});
+		if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
+			isUserFollowingStore = true;
+		}
+	}
+
+	return isUserFollowingStore;
+};
+
+export const getRatingStatistics = async (productId: string) => {
+	const ratingStats = await db.review.groupBy({
+		by: ["rating"],
+		where: { productId },
+		_count: {
+			rating: true,
+		},
+	});
+
+	const totalReviews = ratingStats.reduce(
+		(sum, stat) => sum + stat._count.rating,
+		0
+	);
+
+	const ratingCounts = Array(5).fill(0);
+
+	ratingStats.forEach((stat) => {
+		let rating = Math.floor(stat.rating);
+		if (rating >= 1 && rating <= 5) {
+			ratingCounts[rating - 1] = stat._count.rating;
+		}
+	});
+
+	return {
+		ratingStatistics: ratingCounts.map((count, index) => ({
+			rating: index + 1,
+			numReviews: count,
+			percentage: totalReviews > 0 ? (count / totalReviews) * 100 : 0,
+		})),
+		reviewsWithImagesCount: await db.review.count({
+			where: {
+				productId,
+				images: { some: {} },
+			},
+		}),
+		totalReviews,
 	};
 };
 
