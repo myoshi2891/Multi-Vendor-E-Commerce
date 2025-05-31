@@ -43,9 +43,10 @@ const ProductInfo: FC<Props> = ({
 		variantName,
 		store,
 		rating,
-		numReviews,
+		reviewsStatistics,
 	} = productData;
 
+	const { totalReviews } = reviewsStatistics;
 	// Function to copy the SKU to the clipboard
 	const copySkuToClipboard = async () => {
 		try {
@@ -107,11 +108,11 @@ const ProductInfo: FC<Props> = ({
 						className="text-[#ffd804] hover:underline"
 					>
 						(
-						{numReviews === 0
+						{totalReviews === 0
 							? "No reviews yet"
-							: numReviews === 1
+							: totalReviews === 1
 							? "1 review"
-							: `${numReviews} reviews`}
+							: `${totalReviews} reviews`}
 						)
 					</Link>
 				</div>
