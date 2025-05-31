@@ -1,9 +1,13 @@
 "use client";
 import { cn } from "@/lib/utils";
+import { followStore } from "@/queries/user";
+import { useUser } from "@clerk/nextjs";
 import { Check, MessageSquareMore, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FC, useState } from "react";
+import toast from "react-hot-toast";
 
 interface Props {
 	store: {
@@ -19,6 +23,30 @@ interface Props {
 const StoreCard: FC<Props> = ({ store }) => {
 	const { id, name, logo, url, followersCount, isUserFollowingStore } = store;
 	const [following, setFollowing] = useState<boolean>(isUserFollowingStore);
+	const [storeFollowersCount, setStoreFollowersCount] =
+		useState<number>(followersCount);
+	const user = useUser();
+	const router = useRouter();
+	const handleStoreFollow = async () => {
+		if (!user.isSignedIn) router.push("/sign-in");
+		try {
+			const res = await followStore(id);
+			setFollowing(res);
+			if (res) {
+				setStoreFollowersCount((prev) => prev + 1);
+				toast.success(`You are now following ${name}`, {
+					duration: 3000,
+				});
+			}
+			if (!res) {
+				setStoreFollowersCount((prev) => prev - 1);
+				toast.success(`You unfollowed ${name}`, { duration: 3000 });
+			}
+		} catch (error) {
+			toast.error("Something happened, Try again later.");
+		}
+	};
+
 	return (
 		<div className="w-full">
 			<div className="bg-[#f5f5f5] flex items-center justify-between rounded-xl py-3 px-4">
@@ -44,7 +72,7 @@ const StoreCard: FC<Props> = ({ store }) => {
 						<div className="text-sm leading-5 mt-1">
 							<strong>100%</strong>
 							<span> Positive Feedback</span>&nbsp;|&nbsp;
-							<strong>{followersCount}</strong>
+							<strong>{storeFollowersCount}</strong>
 							<strong> Followers</strong>
 						</div>
 					</div>
@@ -57,6 +85,7 @@ const StoreCard: FC<Props> = ({ store }) => {
 								"bg-black text-white": following,
 							}
 						)}
+						onClick={() => handleStoreFollow()}
 					>
 						{following ? (
 							<Check className="w-4 me-1" />
