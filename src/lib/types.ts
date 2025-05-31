@@ -120,6 +120,10 @@ export type RatingStatisticsType = Prisma.PromiseReturnType<
 	typeof getRatingStatistics
 >;
 
+export type StatisticsCardType = Prisma.PromiseReturnType<
+	typeof getRatingStatistics
+>["ratingStatistics"];
+
 export type FreeShippingWithCountriesType = FreeShipping & {
 	eligibleCountries: FreeShippingCountry[];
 };
