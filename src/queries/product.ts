@@ -295,6 +295,19 @@ export const getProducts = async (
 		AND: [],
 	};
 
+	// Apply store filter (using store URL)
+	if (filters.store) {
+		const store = await db.store.findUnique({
+			where: {
+				url: filters.store,
+			},
+			select: { id: true },
+		});
+		if (store) {
+			whereClause.AND.push({ storeId: store.id });
+		}
+	}
+
 	// Apply category filter (using category URL)
 	if (filters.category) {
 		const category = await db.category.findUnique({

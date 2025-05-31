@@ -4,6 +4,7 @@ import ProductDescription from "@/components/store/product-page/product-descript
 import ProductQuestions from "@/components/store/product-page/product-questions";
 import ProductSpecs from "@/components/store/product-page/product-specs";
 import RelatedProducts from "@/components/store/product-page/related-product";
+import StoreProducts from "@/components/store/product-page/store-products";
 import { Separator } from "@/components/ui/separator";
 import { getProductPageData, getProducts } from "@/queries/product";
 import { notFound, redirect } from "next/navigation";
@@ -45,7 +46,7 @@ export default async function ProductVariantPage({
 		);
 	}
 
-	const { specs, questions, shippingDetails, category, subCategory } =
+	const { specs, questions, shippingDetails, category, subCategory, store } =
 		productData;
 
 	const relatedProducts = await getProducts(
@@ -102,6 +103,11 @@ export default async function ProductVariantPage({
 					{/* Store Card */}
 					<StoreCard store={productData.store} />
 					{/* Store products */}
+					<StoreProducts
+						storeUrl={store.url}
+						storeName={store.name}
+						count={5}
+					/>
 				</ProductPageContainer>
 			</div>
 		</div>
