@@ -24,7 +24,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stores Store[] @relation("UserStores")
+  stores    Store[]  @relation("UserStores")
+  following Store[]  @relation("UserFollowingStore")
+  reviews   Review[] @relation("ReviewToUser")
 }
 
 model Category {
@@ -97,6 +99,7 @@ model Store {
 
   products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
+  followers     User[]         @relation("UserFollowingStore")
 
   @@index([userId])
 }
@@ -128,6 +131,7 @@ model Product {
   variants  ProductVariant[] @relation("ProductToProductVariant")
   specs     Spec[]           @relation("ProductSpec")
   questions Question[]       @relation("ProductQuestion")
+  reviews   Review[]         @relation("ReviewToProduct")
 
   categoryId String
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
@@ -318,4 +322,43 @@ model FreeShippingCountry {
 
   @@index([freeShippingId])
   @@index([countryId])
+}
+
+model Review {
+  id       String @id @default(uuid())
+  variant  String
+  review   String
+  rating   Float
+  color    String
+  size     String
+  quantity String
+  likes    Int    @default(0)
+
+  images ReviewImage[] @relation("ReviewToReviewImage")
+
+  userId String
+  user   User   @relation("ReviewToUser", fields: [userId], references: [id])
+
+  productId String
+  product   Product @relation("ReviewToProduct", fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model ReviewImage {
+  id  String @id @default(uuid())
+  url String
+  alt String @default("")
+
+  reviewId String
+  review   Review @relation("ReviewToReviewImage", fields: [reviewId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([reviewId])
 }

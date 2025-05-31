@@ -1,6 +1,11 @@
+import StoreCard from "@/components/store/cards/store-card";
 import ProductPageContainer from "@/components/store/product-page/container";
 import ProductDescription from "@/components/store/product-page/product-description";
+import ProductQuestions from "@/components/store/product-page/product-questions";
+import ProductSpecs from "@/components/store/product-page/product-specs";
 import RelatedProducts from "@/components/store/product-page/related-product";
+import ProductReviews from "@/components/store/product-page/reviews/product-reviews";
+import StoreProducts from "@/components/store/product-page/store-products";
 import { Separator } from "@/components/ui/separator";
 import { getProductPageData, getProducts } from "@/queries/product";
 import { notFound, redirect } from "next/navigation";
@@ -42,8 +47,15 @@ export default async function ProductVariantPage({
 		);
 	}
 
-	const { specs, questions, shippingDetails, category, subCategory } =
-		productData;
+	const {
+		specs,
+		questions,
+		shippingDetails,
+		category,
+		subCategory,
+		store,
+		reviewsStatistics,
+	} = productData;
 
 	const relatedProducts = await getProducts(
 		{
@@ -69,6 +81,11 @@ export default async function ProductVariantPage({
 					)}
 					<Separator className="mt-6" />
 					{/* Product Reviews */}
+					<ProductReviews
+						productId={productData.productId}
+						rating={productData.rating}
+						statistics={reviewsStatistics}
+					/>
 					<>
 						<Separator className="mt-6" />
 						{/* Product description */}
@@ -83,17 +100,27 @@ export default async function ProductVariantPage({
 						<>
 							<Separator className="mt-6" />
 							{/* Specs table */}
+							<ProductSpecs specs={specs} />
 						</>
 					)}
 					{questions.length > 0 && (
 						<>
 							<Separator className="mt-6" />
 							{/* Product Questions */}
+							<ProductQuestions
+								questions={productData.questions}
+							/>
 						</>
 					)}
 					<Separator className="mt-6" />
 					{/* Store Card */}
+					<StoreCard store={productData.store} />
 					{/* Store products */}
+					<StoreProducts
+						storeUrl={store.url}
+						storeName={store.name}
+						count={5}
+					/>
 				</ProductPageContainer>
 			</div>
 		</div>
