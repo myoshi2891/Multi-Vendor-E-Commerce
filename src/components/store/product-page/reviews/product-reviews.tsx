@@ -1,15 +1,17 @@
 import { RatingStatisticsType } from "@/lib/types";
 import { FC } from "react";
+import RatingCard from "../../cards/product-rating";
+import RatingStatisticsCard from "../../cards/rating-statistics";
 
 interface Props {
-    productId: string;
-    rating: number
-    statistics: RatingStatisticsType
+	productId: string;
+	rating: number;
+	statistics: RatingStatisticsType;
 }
 
 const ProductReviews: FC<Props> = ({ productId, rating, statistics }) => {
-    const {totalReviews} = statistics
-    return (
+	const { totalReviews, ratingStatistics } = statistics;
+	return (
 		<div id="reviews" className="pt-6">
 			{/* Title */}
 			<div className="h-12">
@@ -21,23 +23,25 @@ const ProductReviews: FC<Props> = ({ productId, rating, statistics }) => {
 			<div className="w-full">
 				<div className="flex items-center gap-4">
 					{/* Rating card */}
+					<RatingCard rating={rating} />
 					{/* Rating stats card */}
+					<RatingStatisticsCard statistics={ratingStatistics} />
 				</div>
 			</div>
 			{totalReviews > 0 && (
 				<>
-                    <div className="space-y-6">
-					{/* Review filters */}
-                        
-					{/* Review sort */}
-                    </div>
-                    {/* Reviews */}
-                    <div className="mt-10 min-h-72 grid grid-cols-2 gap-6"></div>
-                    {/* Pagination */}
+					<div className="space-y-6">
+						{/* Review filters */}
+
+						{/* Review sort */}
+					</div>
+					{/* Reviews */}
+					<div className="mt-10 min-h-72 grid grid-cols-2 gap-6"></div>
+					{/* Pagination */}
 				</>
 			)}
 		</div>
 	);
-}
+};
  
 export default ProductReviews;
