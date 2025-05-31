@@ -473,6 +473,7 @@ export const retrieveProductDetails = async (
 			store: true,
 			specs: true,
 			questions: true,
+			reviews: true,
 			freeShipping: {
 				include: {
 					eligibleCountries: true,
@@ -543,7 +544,8 @@ const formatProductResponse = (
 ) => {
 	if (!product) return;
 	const variant = product.variants[0];
-	const { store, category, subCategory, offerTag, questions } = product;
+	const { store, category, subCategory, offerTag, questions, reviews } =
+		product;
 	const { images, colors, sizes } = variant;
 
 	return {
@@ -581,7 +583,7 @@ const formatProductResponse = (
 		},
 		questions,
 		rating: product.rating,
-		reviews: [],
+		reviews,
 		reviewsStatistics: ratingStatistics,
 		shippingDetails,
 		relatedProducts: [],
