@@ -159,3 +159,6 @@ export type ReviewWithImageType = Review & {
 	images: ReviewImage[];
 	user: User;
 };
+
+// Define a local SortOrder type
+export type SortOrder = "asc" | "desc";

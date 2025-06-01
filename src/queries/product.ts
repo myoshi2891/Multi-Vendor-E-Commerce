@@ -8,6 +8,7 @@ import {
 	ProductShippingDetailsType,
 	ProductWithVariantType,
 	RatingStatisticsType,
+	SortOrder,
 	VariantImageType,
 	VariantSimplified,
 } from "@/lib/types";
@@ -478,6 +479,7 @@ export const retrieveProductDetails = async (
 					images: true,
 					user: true,
 				},
+				take: 2,
 			},
 			freeShipping: {
 				include: {
@@ -794,4 +796,70 @@ export const getShippingDetails = async (
 	}
 
 	return false;
+};
+
+// Function: getProductFilteredReviews
+// Description: Retrieves filtered and sorted reviews for a product from the database,
+// Access Level: Public
+// Parameters:
+// - productId: The ID of the product for which reviews are being fetched.
+// - filters: An object containing filter options such as rating, and whether review
+// - sort: An object defining sort order, such as latest, oldest, or highest rating.
+// - page: The page number for pagination. (1-based index)
+// - pageSize: The Number of reviews to retrieve per page.
+// Returns: A paginated list of reviews that match the filter and sort criteria.
+export const getProductFilteredReviews = async (
+	productId: string,
+	filters: {
+		rating?: number;
+		hasImages?: boolean;
+	},
+	sort: { orderBy: "latest" | "oldest" | "highest" } | undefined,
+	page: number = 1,
+	pageSize: number = 2
+) => {
+	const reviewFilter: any = {
+		productId,
+	};
+
+	// Apply rating filter if provided
+	if (filters.rating) {
+		const rating = filters.rating;
+		reviewFilter.rating = {
+			in: [rating, rating + 0.5],
+		};
+	}
+
+	// Apply image filter if provided
+	if (filters.hasImages) {
+		reviewFilter.images = {
+			some: {},
+		};
+	}
+
+	// Set sorting order using local SortOrder type
+	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+		sort && sort.orderBy === "latest"
+			? { createdAt: "desc" }
+			: sort && sort.orderBy === "oldest"
+			? { createdAt: "asc" }
+			: { rating: "desc" };
+
+	// Calculate pagination parameters
+	const skip = (page - 1) * pageSize;
+	const take = pageSize;
+
+	// Fetch reviews from the database
+	const reviews = await db.review.findMany({
+		where: reviewFilter,
+		include: {
+			images: true,
+			user: true,
+		},
+		orderBy: sortOption,
+		skip, // Skip records for pagination
+		take, // Take records for pagination
+	});
+
+	return reviews;
 };
