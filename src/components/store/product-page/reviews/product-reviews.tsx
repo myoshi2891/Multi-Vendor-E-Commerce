@@ -1,10 +1,16 @@
 "use client";
-import { RatingStatisticsType, ReviewWithImageType } from "@/lib/types";
-import { FC, useState } from "react";
+import {
+	RatingStatisticsType,
+	ReviewsFilterType,
+	ReviewsOrderType,
+	ReviewWithImageType,
+} from "@/lib/types";
+import { FC, useEffect, useState } from "react";
 import RatingCard from "../../cards/product-rating";
 import RatingStatisticsCard from "../../cards/rating-statistics";
 import { Review } from "@prisma/client";
 import ReviewCard from "../../cards/review";
+import { getProductFilteredReviews } from "@/queries/product";
 
 interface Props {
 	productId: string;
@@ -22,6 +28,41 @@ const ProductReviews: FC<Props> = ({
 	const [data, setData] = useState<ReviewWithImageType[]>(reviews);
 	const { totalReviews, ratingStatistics } = statistics;
 	const half = Math.ceil(data.length / 2);
+
+	// Filtering
+	const filtered_data = {
+		rating: undefined,
+		hasImages: undefined,
+	};
+	const [filters, setFilters] = useState<ReviewsFilterType>(filtered_data);
+
+	// Sorting
+	const [sort, setSort] = useState<ReviewsOrderType>();
+
+	// Pagination
+	const [page, setPage] = useState<number>(1);
+	const [pageSize, setPageSize] = useState<number>(2);
+
+	useEffect(() => {
+		if (filters.rating || filters.hasImages || sort) {
+			setPage(1);
+			handleGetReviews();
+		}
+		if (page) {
+			handleGetReviews();
+		}
+	}, [filters, sort, page]);
+
+	const handleGetReviews = async () => {
+		const res = await getProductFilteredReviews(
+			productId,
+			filters,
+			sort,
+			page,
+			pageSize
+		);
+		setData(res);
+	};
 
 	return (
 		<div id="reviews" className="pt-6">

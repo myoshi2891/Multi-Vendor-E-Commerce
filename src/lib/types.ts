@@ -162,3 +162,12 @@ export type ReviewWithImageType = Review & {
 
 // Define a local SortOrder type
 export type SortOrder = "asc" | "desc";
+
+export type ReviewsFilterType = {
+	rating?: number;
+	hasImages?: boolean;
+};
+
+export type ReviewsOrderType = {
+	orderBy: "latest" | "oldest" | "highest";
+};
