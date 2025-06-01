@@ -11,6 +11,7 @@ import RatingStatisticsCard from "../../cards/rating-statistics";
 import { Review } from "@prisma/client";
 import ReviewCard from "../../cards/review";
 import { getProductFilteredReviews } from "@/queries/product";
+import ReviewFilters from "./filters";
 
 interface Props {
 	productId: string;
@@ -85,7 +86,12 @@ const ProductReviews: FC<Props> = ({
 				<>
 					<div className="space-y-6">
 						{/* Review filters */}
-
+						<ReviewFilters
+							filters={filters}
+							setFilters={setFilters}
+							setSort={setSort}
+							stats={statistics}
+						/>
 						{/* Review sort */}
 					</div>
 					{/* Reviews */}
