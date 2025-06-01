@@ -55,6 +55,7 @@ export default async function ProductVariantPage({
 		subCategory,
 		store,
 		reviewsStatistics,
+		reviews,
 	} = productData;
 
 	const relatedProducts = await getProducts(
@@ -85,6 +86,7 @@ export default async function ProductVariantPage({
 						productId={productData.productId}
 						rating={productData.rating}
 						statistics={reviewsStatistics}
+						reviews={reviews}
 					/>
 					<>
 						<Separator className="mt-6" />

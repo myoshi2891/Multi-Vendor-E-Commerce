@@ -13,8 +13,11 @@ import {
 	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
+	Review,
+	ReviewImage,
 	ShippingRate,
 	Size,
+	User,
 } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
@@ -150,4 +153,21 @@ export type CartProductType = {
 	deliveryTimeMin: number;
 	deliveryTimeMax: number;
 	isFreeShipping: boolean;
+};
+
+export type ReviewWithImageType = Review & {
+	images: ReviewImage[];
+	user: User;
+};
+
+// Define a local SortOrder type
+export type SortOrder = "asc" | "desc";
+
+export type ReviewsFilterType = {
+	rating?: number;
+	hasImages?: boolean;
+};
+
+export type ReviewsOrderType = {
+	orderBy: "latest" | "oldest" | "highest";
 };
