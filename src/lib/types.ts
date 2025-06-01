@@ -13,8 +13,11 @@ import {
 	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
+	Review,
+	ReviewImage,
 	ShippingRate,
 	Size,
+	User,
 } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
@@ -150,4 +153,9 @@ export type CartProductType = {
 	deliveryTimeMin: number;
 	deliveryTimeMax: number;
 	isFreeShipping: boolean;
+};
+
+export type ReviewWithImageType = Review & {
+	images: ReviewImage[];
+	user: User;
 };
