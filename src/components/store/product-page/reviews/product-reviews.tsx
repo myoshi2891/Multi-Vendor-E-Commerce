@@ -21,6 +21,8 @@ const ProductReviews: FC<Props> = ({
 }) => {
 	const [data, setData] = useState<ReviewWithImageType[]>(reviews);
 	const { totalReviews, ratingStatistics } = statistics;
+	const half = Math.ceil(data.length / 2);
+
 	return (
 		<div id="reviews" className="pt-6">
 			{/* Title */}
@@ -46,15 +48,31 @@ const ProductReviews: FC<Props> = ({
 						{/* Review sort */}
 					</div>
 					{/* Reviews */}
-					<div className="mt-10 min-h-72 grid grid-cols-2 gap-6">
+					<div className="mt-10 min-h-72 grid grid-cols-2 gap-4">
 						{data.length > 0 ? (
 							<>
-								{data.map((review) => (
-									<ReviewCard
-										key={review.id}
-										review={review}
-									/>
-								))}
+								<div className="flex flex-col gap-3">
+									{data
+										// .filter((_, index) => index % 2 === 0)
+										.slice(0, half)
+										.map((review) => (
+											<ReviewCard
+												key={review.id}
+												review={review}
+											/>
+										))}
+								</div>
+								<div className="flex flex-col gap-3">
+									{data
+										// .filter((_, index) => index % 2 !== 0)
+										.slice(half)
+										.map((review) => (
+											<ReviewCard
+												key={review.id}
+												review={review}
+											/>
+										))}
+								</div>
 							</>
 						) : (
 							<>No Reviews...</>
