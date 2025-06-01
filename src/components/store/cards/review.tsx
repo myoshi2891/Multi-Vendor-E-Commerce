@@ -15,6 +15,8 @@ export default function ReviewCard({
 		.filter((color) => color.trim() !== "") //Remove any empty strings
 		.map((color) => ({ name: color.trim() }));
 
+    const { name } = user;
+	const censoredName = `${name[0]}***${name[name.length - 1]}`;
 	return (
 		<div className="border border-[#d8d8d8] rounded-xl flex h-fit relative py-4 px-2.5">
 			<div className="w-16 px-2 space-y-1">
@@ -25,7 +27,9 @@ export default function ReviewCard({
 					height={100}
 					className="w-11 h-11 rounded-full object-cover"
 				/>
-				<span className="text-xs text-main-secondary">M***H</span>
+				<span className="text-xs text-main-secondary">
+					{censoredName.toUpperCase()}
+				</span>
 			</div>
 			<div className="flex flex-1 flex-col justify-between leading-5 overflow-hidden px-1.5">
 				<div className="space-y-2">
