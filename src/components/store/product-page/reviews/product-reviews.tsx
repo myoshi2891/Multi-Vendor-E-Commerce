@@ -12,6 +12,7 @@ import { Review } from "@prisma/client";
 import ReviewCard from "../../cards/review";
 import { getProductFilteredReviews } from "@/queries/product";
 import ReviewFilters from "./filters";
+import ReviewsSort from "./sort";
 
 interface Props {
 	productId: string;
@@ -93,9 +94,10 @@ const ProductReviews: FC<Props> = ({
 							stats={statistics}
 						/>
 						{/* Review sort */}
+						<ReviewsSort sort={sort} setSort={setSort} />
 					</div>
 					{/* Reviews */}
-					<div className="mt-10 min-h-72 grid grid-cols-2 gap-4">
+					<div className="mt-6 min-h-72 grid grid-cols-2 gap-4">
 						{data.length > 0 ? (
 							<>
 								<div className="flex flex-col gap-3">
