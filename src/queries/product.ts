@@ -479,7 +479,7 @@ export const retrieveProductDetails = async (
 					images: true,
 					user: true,
 				},
-				take: 2,
+				take: 4,
 			},
 			freeShipping: {
 				include: {
@@ -816,7 +816,7 @@ export const getProductFilteredReviews = async (
 	},
 	sort: { orderBy: "latest" | "oldest" | "highest" } | undefined,
 	page: number = 1,
-	pageSize: number = 2
+	pageSize: number = 4
 ) => {
 	const reviewFilter: any = {
 		productId,
