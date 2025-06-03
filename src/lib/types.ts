@@ -181,3 +181,14 @@ export type VariantInfoType = {
 	sizes: Size[];
 	colors: string;
 };
+
+export type ReviewDetailsType = {
+	id: string;
+	review: string;
+	rating: number;
+	images: { url: string }[];
+	size: string;
+	quantity: string;
+	variant: string;
+	color: string;
+};
