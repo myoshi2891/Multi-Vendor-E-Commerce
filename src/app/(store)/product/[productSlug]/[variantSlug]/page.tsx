@@ -4,6 +4,7 @@ import ProductDescription from "@/components/store/product-page/product-descript
 import ProductQuestions from "@/components/store/product-page/product-questions";
 import ProductSpecs from "@/components/store/product-page/product-specs";
 import RelatedProducts from "@/components/store/product-page/related-product";
+import AddReview from "@/components/store/product-page/reviews/add-review";
 import ProductReviews from "@/components/store/product-page/reviews/product-reviews";
 import StoreProducts from "@/components/store/product-page/store-products";
 import { Separator } from "@/components/ui/separator";
@@ -48,6 +49,7 @@ export default async function ProductVariantPage({
 	}
 
 	const {
+		productId,
 		specs,
 		questions,
 		shippingDetails,
@@ -88,6 +90,9 @@ export default async function ProductVariantPage({
 						statistics={reviewsStatistics}
 						reviews={reviews}
 					/>
+					<div className="mt-3">
+						<AddReview productId={productId} reviews={reviews} />
+					</div>
 					<>
 						<Separator className="mt-6" />
 						{/* Product description */}

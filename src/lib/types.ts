@@ -9,6 +9,7 @@ import {
 import { getStoreDefaultShippingDetails } from "@/queries/store";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
+	Color,
 	FreeShipping,
 	FreeShippingCountry,
 	Prisma,
@@ -179,7 +180,7 @@ export type VariantInfoType = {
 	variantUrl: string;
 	images: ProductVariantImage[];
 	sizes: Size[];
-	colors: string;
+	colors: Partial<Color>[];
 };
 
 export type ReviewDetailsType = {
