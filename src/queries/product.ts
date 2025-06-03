@@ -479,7 +479,7 @@ export const retrieveProductDetails = async (
 					images: true,
 					user: true,
 				},
-				take: 2,
+				take: 4,
 			},
 			freeShipping: {
 				include: {
@@ -501,23 +501,33 @@ export const retrieveProductDetails = async (
 	});
 
 	if (!product) return null;
-	// Get variant images
-	const variantImages = await db.productVariant.findMany({
+	// Get variant info
+	const variantsInfo = await db.productVariant.findMany({
 		where: {
 			productId: product.id,
 		},
-		select: {
-			slug: true,
-			variantImage: true,
+		include: {
+			images: true,
+			sizes: true,
+			colors: true,
+			product: {
+				select: {
+					slug: true,
+				},
+			},
 		},
 	});
 
 	return {
 		...product,
-		variantImages: variantImages.map((v) => ({
-			url: `/product/${productSlug}/${v.slug}`,
-			img: v.variantImage,
-			slug: v.slug,
+		variantsInfo: variantsInfo.map((variant) => ({
+			variantName: variant.variantName,
+			variantSlug: variant.slug,
+			variantImage: variant.variantImage,
+			variantUrl: `/product/${productSlug}/${variant.slug}`,
+			images: variant.images,
+			sizes: variant.sizes,
+			colors: variant.colors.map((color) => color.name).join(","),
 		})),
 	};
 };
@@ -594,7 +604,7 @@ const formatProductResponse = (
 		reviewsStatistics: ratingStatistics,
 		shippingDetails,
 		relatedProducts: [],
-		variantImages: product.variantImages,
+		variantsInfo: product.variantsInfo,
 	};
 };
 
@@ -816,7 +826,7 @@ export const getProductFilteredReviews = async (
 	},
 	sort: { orderBy: "latest" | "oldest" | "highest" } | undefined,
 	page: number = 1,
-	pageSize: number = 2
+	pageSize: number = 4
 ) => {
 	const reviewFilter: any = {
 		productId,
