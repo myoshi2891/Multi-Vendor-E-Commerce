@@ -118,6 +118,7 @@ model Product {
   brand             String
   rating            Float             @default(0)
   sales             Int               @default(0)
+  numReviews        Int               @default(0)
   shippingFeeMethod ShippingFeeMethod @default(ITEM)
 
   freeShipping FreeShipping? @relation("ProductFreeShipping")
