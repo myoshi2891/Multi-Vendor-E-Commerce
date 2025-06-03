@@ -171,3 +171,13 @@ export type ReviewsFilterType = {
 export type ReviewsOrderType = {
 	orderBy: "latest" | "oldest" | "highest";
 };
+
+export type VariantInfoType = {
+	variantName: string;
+	variantSlug: string;
+	variantImage: string;
+	variantUrl: string;
+	images: ProductVariantImage[];
+	sizes: Size[];
+	colors: string;
+};

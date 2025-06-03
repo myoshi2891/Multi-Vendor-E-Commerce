@@ -12,6 +12,8 @@ import { Review } from "@prisma/client";
 import ReviewCard from "../../cards/review";
 import { getProductFilteredReviews } from "@/queries/product";
 import ReviewFilters from "./filters";
+import ReviewsSort from "./sort";
+import Pagination from "../../shared/pagination";
 
 interface Props {
 	productId: string;
@@ -42,7 +44,7 @@ const ProductReviews: FC<Props> = ({
 
 	// Pagination
 	const [page, setPage] = useState<number>(1);
-	const [pageSize, setPageSize] = useState<number>(2);
+	const [pageSize, setPageSize] = useState<number>(4);
 
 	useEffect(() => {
 		if (filters.rating || filters.hasImages || sort) {
@@ -93,9 +95,10 @@ const ProductReviews: FC<Props> = ({
 							stats={statistics}
 						/>
 						{/* Review sort */}
+						<ReviewsSort sort={sort} setSort={setSort} />
 					</div>
 					{/* Reviews */}
-					<div className="mt-10 min-h-72 grid grid-cols-2 gap-4">
+					<div className="mt-6 min-h-72 grid grid-cols-2 gap-4">
 						{data.length > 0 ? (
 							<>
 								<div className="flex flex-col gap-3">
@@ -126,6 +129,17 @@ const ProductReviews: FC<Props> = ({
 						)}
 					</div>
 					{/* Pagination */}
+					{data.length >= pageSize && (
+						<Pagination
+							page={page}
+							setPage={setPage}
+							totalPages={
+								filters.rating || filters.hasImages
+									? data.length / pageSize
+									: totalReviews / pageSize
+							}
+						/>
+					)}
 				</>
 			)}
 		</div>
