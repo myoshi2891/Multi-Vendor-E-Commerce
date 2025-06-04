@@ -3,8 +3,7 @@ import ProductPageContainer from "@/components/store/product-page/container";
 import ProductDescription from "@/components/store/product-page/product-description";
 import ProductQuestions from "@/components/store/product-page/product-questions";
 import ProductSpecs from "@/components/store/product-page/product-specs";
-import RelatedProducts from "@/components/store/product-page/related-product";
-import AddReview from "@/components/store/product-page/reviews/add-review";
+import RelatedProducts from '@/components/store/product-page/related-product'
 import ProductReviews from "@/components/store/product-page/reviews/product-reviews";
 import StoreProducts from "@/components/store/product-page/store-products";
 import { Separator } from "@/components/ui/separator";
@@ -49,27 +48,28 @@ export default async function ProductVariantPage({
 	}
 
 	const {
-		productId,
-		specs,
-		questions,
-		shippingDetails,
-		category,
-		subCategory,
-		store,
-		reviewsStatistics,
-		reviews,
-	} = productData;
+        productId,
+        variantInfo,
+        specs,
+        questions,
+        shippingDetails,
+        category,
+        subCategory,
+        store,
+        reviewsStatistics,
+        reviews,
+    } = productData
 
-	const relatedProducts = await getProducts(
-		{
-			category: category.url,
-		},
-		"",
-		1,
-		12
-	);
+    const relatedProducts = await getProducts(
+        {
+            category: category.url,
+        },
+        '',
+        1,
+        12
+    )
 
-	return (
+    return (
         <div>
             <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
                 <div className="rounded-md border bg-white p-4 text-black shadow" />
@@ -91,10 +91,8 @@ export default async function ProductVariantPage({
                         rating={productData.rating}
                         statistics={reviewsStatistics}
                         reviews={reviews}
+                        variantsInfo={variantInfo}
                     />
-                    <div className="mt-3">
-                        <AddReview productId={productId} reviews={reviews} />
-                    </div>
                     <>
                         <Separator className="mt-6" />
                         {/* Product description */}

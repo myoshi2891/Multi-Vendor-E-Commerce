@@ -519,17 +519,17 @@ export const retrieveProductDetails = async (
 	});
 
 	return {
-		...product,
-		variantsInfo: variantsInfo.map((variant) => ({
-			variantName: variant.variantName,
-			variantSlug: variant.slug,
-			variantImage: variant.variantImage,
-			variantUrl: `/product/${productSlug}/${variant.slug}`,
-			images: variant.images,
-			sizes: variant.sizes,
-			colors: variant.colors.map((color) => color.name).join(","),
-		})),
-	};
+        ...product,
+        variantsInfo: variantsInfo.map((variant) => ({
+            variantName: variant.variantName,
+            variantSlug: variant.slug,
+            variantImage: variant.variantImage,
+            variantUrl: `/product/${productSlug}/${variant.slug}`,
+            images: variant.images,
+            sizes: variant.sizes,
+            colors: variant.colors,
+        })),
+    }
 };
 
 const getUserCountry = () => {
@@ -566,46 +566,46 @@ const formatProductResponse = (
 	const { images, colors, sizes } = variant;
 
 	return {
-		productId: product.id,
-		variantId: variant.id,
-		productSlug: product.slug,
-		variantSlug: variant.slug,
-		name: product.name,
-		description: product.description,
-		variantName: variant.variantName,
-		variantDescription: variant.variantDescription,
-		images,
-		category,
-		subCategory,
-		offerTag,
-		isSale: variant.isSale,
-		saleEndDate: variant.saleEndDate,
-		brand: product.brand,
-		sku: variant.sku,
-		weight: variant.weight,
-		variantImage: variant.variantImage,
-		store: {
-			id: store.id,
-			url: store.url,
-			name: store.name,
-			logo: store.logo,
-			followersCount: storeFollowersCount,
-			isUserFollowingStore,
-		},
-		colors,
-		sizes,
-		specs: {
-			product: product.specs,
-			variant: variant.specs,
-		},
-		questions,
-		rating: product.rating,
-		reviews,
-		reviewsStatistics: ratingStatistics,
-		shippingDetails,
-		relatedProducts: [],
-		variantsInfo: product.variantsInfo,
-	};
+        productId: product.id,
+        variantId: variant.id,
+        productSlug: product.slug,
+        variantSlug: variant.slug,
+        name: product.name,
+        description: product.description,
+        variantName: variant.variantName,
+        variantDescription: variant.variantDescription,
+        images,
+        category,
+        subCategory,
+        offerTag,
+        isSale: variant.isSale,
+        saleEndDate: variant.saleEndDate,
+        brand: product.brand,
+        sku: variant.sku,
+        weight: variant.weight,
+        variantImage: variant.variantImage,
+        store: {
+            id: store.id,
+            url: store.url,
+            name: store.name,
+            logo: store.logo,
+            followersCount: storeFollowersCount,
+            isUserFollowingStore,
+        },
+        colors,
+        sizes,
+        specs: {
+            product: product.specs,
+            variant: variant.specs,
+        },
+        questions,
+        rating: product.rating,
+        reviews,
+        reviewsStatistics: ratingStatistics,
+        shippingDetails,
+        relatedProducts: [],
+        variantInfo: product.variantsInfo,
+    }
 };
 
 const getStoreFollowersCount = async (storeId: string) => {
