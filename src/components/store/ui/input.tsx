@@ -17,7 +17,7 @@ const Input: FC<Props> = ({ name, onChange, type, value, placeholder }) => {
                 name={name}
                 placeholder={placeholder}
                 value={value}
-                onAbort={(e) => onChange(e.currentTarget.value)} //e.target.valueから変更
+                onChange={(e) => onChange(e.target.value)}
             />
         </div>
     )
