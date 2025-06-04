@@ -69,6 +69,7 @@ export const upsertStore = async (store: Partial<Store>) => {
 			}
 			throw new Error(errorMessage);
 		}
+
 		// Upsert store details into the database
 		const storeDetails = await db.store.upsert({
 			where: {
