@@ -408,3 +408,16 @@ export const ShippingRateFormSchema = z.object({
 		.string()
 		.min(1, "Return policy must be at least 1 character long."),
 });
+
+export const AddReviewSchema = z.object({
+	variantName: z.string().min(1, "Variant name is required"),
+	rating: z.number().min(1, "Rating must be at least 1."),
+	size: z.string().min(1, "Size is required"),
+	review: z.string().min(1, "Review is required"),
+	quantity: z.string().default("1"),
+	images: z
+		.object({ url: z.string() })
+		.array()
+		.max(3, "You can upload a maximum of 3 images for the review."),
+	color: z.string({ required_error: "Color is required" }),
+});
