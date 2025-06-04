@@ -49,27 +49,28 @@ export default async function ProductVariantPage({
 	}
 
 	const {
-		productId,
-		specs,
-		questions,
-		shippingDetails,
-		category,
-		subCategory,
-		store,
-		reviewsStatistics,
-		reviews,
-	} = productData;
+        productId,
+        variantInfo,
+        specs,
+        questions,
+        shippingDetails,
+        category,
+        subCategory,
+        store,
+        reviewsStatistics,
+        reviews,
+    } = productData
 
-	const relatedProducts = await getProducts(
-		{
-			category: category.url,
-		},
-		"",
-		1,
-		12
-	);
+    const relatedProducts = await getProducts(
+        {
+            category: category.url,
+        },
+        '',
+        1,
+        12
+    )
 
-	return (
+    return (
         <div>
             <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
                 <div className="rounded-md border bg-white p-4 text-black shadow" />
@@ -93,7 +94,11 @@ export default async function ProductVariantPage({
                         reviews={reviews}
                     />
                     <div className="mt-3">
-                        <AddReview productId={productId} reviews={reviews} />
+                        <AddReview
+                            productId={productId}
+                            reviews={reviews}
+                            variantsInfo={variantInfo}
+                        />
                     </div>
                     <>
                         <Separator className="mt-6" />
