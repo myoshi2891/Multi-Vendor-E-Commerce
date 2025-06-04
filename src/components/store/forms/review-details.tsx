@@ -16,22 +16,30 @@ import Select from '../ui/select'
 import Input from '../ui/input'
 import { Button } from '../ui/button'
 import { PulseLoader } from 'react-spinners'
+import ImageUploadStore from '../shared/upload-images'
+import { upsertReview } from '@/queries/review'
+import { v4 } from 'uuid'
 
 export default function ReviewDetails({
     productId,
     data,
     variantsInfo,
+    reviews,
     setReviews,
 }: {
     productId: string
     data?: ReviewDetailsType
     variantsInfo: VariantInfoType[]
+    reviews: ReviewWithImageType[]
     setReviews: Dispatch<SetStateAction<ReviewWithImageType[]>>
 }) {
     // State for selected variant
     const [activeVariant, setActiveVariant] = useState<VariantInfoType>(
         variantsInfo[0]
     )
+
+    // Temporary state for images
+    const [images, setImages] = useState<{ url: string }[]>([])
 
     // State for sizes
     const [sizes, setSizes] = useState<{ name: string; value: string }[]>([])
@@ -60,6 +68,23 @@ export default function ReviewDetails({
     // Submit handler for form submission
     const handleSubmit = async (values: z.infer<typeof AddReviewSchema>) => {
         try {
+            const response = await upsertReview(productId, {
+                id: data?.id || v4(),
+                variant: values.variantName,
+                images: values.images,
+                quantity: values.quantity,
+                rating: values.rating,
+                review: values.review,
+                size: values.size,
+                color: values.color,
+            })
+
+            if (response.id) {
+                const rev = reviews.filter((rev) => rev.id !== response.id)
+                setReviews([...rev, response])
+            }
+
+            toast.success('Review added successfully.')
         } catch (error: any) {
             // Handle error submission errors
             console.error(error)
@@ -215,6 +240,54 @@ export default function ReviewDetails({
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     placeholder="Write your review here..."
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />{' '}
+                                <FormField
+                                    control={form.control}
+                                    name="images"
+                                    render={({ field }) => (
+                                        <FormItem className="w-full xl:border-r">
+                                            <FormControl>
+                                                <ImageUploadStore
+                                                    value={field.value.map(
+                                                        (image) => image.url
+                                                    )}
+                                                    // disabled={isLoading}
+                                                    onChange={(url) => {
+                                                        setImages(
+                                                            (prevImages) => {
+                                                                const updatedImages =
+                                                                    [
+                                                                        ...prevImages,
+                                                                        { url },
+                                                                    ]
+                                                                if (
+                                                                    updatedImages.length <=
+                                                                    3
+                                                                ) {
+                                                                    field.onChange(
+                                                                        updatedImages
+                                                                    )
+                                                                    return updatedImages
+                                                                } else {
+                                                                    return prevImages
+                                                                }
+                                                            }
+                                                        )
+                                                    }}
+                                                    onRemove={(url) =>
+                                                        field.onChange([
+                                                            ...field.value.filter(
+                                                                (current) =>
+                                                                    current.url !==
+                                                                    url
+                                                            ),
+                                                        ])
+                                                    }
+                                                    maxImages={3}
                                                 />
                                             </FormControl>
                                         </FormItem>

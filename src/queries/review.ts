@@ -17,72 +17,89 @@ export const upsertReview = async (
 	review: ReviewDetailsType
 ) => {
 	try {
-		// Get current user
-		const user = await currentUser();
+        // Get current user
+        const user = await currentUser()
 
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthorized.");
+        // Ensure user is authenticated
+        if (!user) throw new Error('Unauthorized.')
 
-		// Ensure productId and review are provided
-		if (!productId) throw new Error("Product ID is required.");
-		if (!review) throw new Error("Please provide review data.");
+        // Ensure productId and review are provided
+        if (!productId) throw new Error('Product ID is required.')
+        if (!review) throw new Error('Please provide review data.')
 
-		// Upsert the review into the database
-		const reviewDetails = await db.review.upsert({
-			where: {
-				id: review.id,
-			},
-			update: {
-				...review,
-				images: {
-					deleteMany: {},
-					create: review.images.map((img) => ({
-						url: img.url,
-					})),
-				},
-				userId: user.id,
-			},
-			create: {
-				...review,
-				images: {
-					create: review.images.map((img) => ({
-						url: img.url,
-					})),
-				},
-				productId,
-				userId: user.id,
-			},
-		});
+        // check for existing review
+        const existingReview = await db.review.findFirst({
+            where: {
+                productId,
+                userId: user.id,
+            },
+        })
 
-		// Calculate the new average rating
-		const productReviews = await db.review.findMany({
-			where: {
-				productId,
-			},
-			select: {
-				rating: true,
-			},
-		});
+        let review_data: ReviewDetailsType = review
+        if (existingReview) {
+            review_data = { ...review_data, id: existingReview.id }
+        }
 
-		const totalRating = productReviews.reduce(
-			(acc, review) => acc + review.rating,
-			0
-		);
-		const newAverageRating = totalRating / productReviews.length;
+        // Upsert the review into the database
+        const reviewDetails = await db.review.upsert({
+            where: {
+                id: review_data.id,
+            },
+            update: {
+                ...review_data,
+                images: {
+                    deleteMany: {},
+                    create: review_data.images.map((img) => ({
+                        url: img.url,
+                    })),
+                },
+                userId: user.id,
+            },
+            create: {
+                ...review_data,
+                images: {
+                    create: review_data.images.map((img) => ({
+                        url: img.url,
+                    })),
+                },
+                productId,
+                userId: user.id,
+            },
+            include: {
+                images: true,
+                user: true,
+            },
+        })
 
-		// Update the product's average rating
-		const updatedProduct = await db.product.update({
-			where: {
-				id: productId,
-			},
-			data: {
-				rating: newAverageRating, // Update the average rating
-				numReviews: productReviews.length, // Update the number of reviews
-			},
-		});
-		return reviewDetails;
-	} catch (error) {
-		console.error("Error updating review", error);
-		throw new Error("Error updating review");
-	}
+        // Calculate the new average rating
+        const productReviews = await db.review.findMany({
+            where: {
+                productId,
+            },
+            select: {
+                rating: true,
+            },
+        })
+
+        const totalRating = productReviews.reduce(
+            (acc, review) => acc + review.rating,
+            0
+        )
+        const newAverageRating = totalRating / productReviews.length
+
+        // Update the product's average rating
+        const updatedProduct = await db.product.update({
+            where: {
+                id: productId,
+            },
+            data: {
+                rating: newAverageRating, // Update the average rating
+                numReviews: productReviews.length, // Update the number of reviews
+            },
+        })
+        return reviewDetails
+    } catch (error) {
+        console.error('Error updating review', error)
+        throw new Error('Error updating review')
+    }
 };

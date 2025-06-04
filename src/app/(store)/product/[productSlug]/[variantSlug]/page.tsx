@@ -3,8 +3,7 @@ import ProductPageContainer from "@/components/store/product-page/container";
 import ProductDescription from "@/components/store/product-page/product-description";
 import ProductQuestions from "@/components/store/product-page/product-questions";
 import ProductSpecs from "@/components/store/product-page/product-specs";
-import RelatedProducts from "@/components/store/product-page/related-product";
-import AddReview from "@/components/store/product-page/reviews/add-review";
+import RelatedProducts from '@/components/store/product-page/related-product'
 import ProductReviews from "@/components/store/product-page/reviews/product-reviews";
 import StoreProducts from "@/components/store/product-page/store-products";
 import { Separator } from "@/components/ui/separator";
@@ -92,14 +91,8 @@ export default async function ProductVariantPage({
                         rating={productData.rating}
                         statistics={reviewsStatistics}
                         reviews={reviews}
+                        variantsInfo={variantInfo}
                     />
-                    <div className="mt-3">
-                        <AddReview
-                            productId={productId}
-                            reviews={reviews}
-                            variantsInfo={variantInfo}
-                        />
-                    </div>
                     <>
                         <Separator className="mt-6" />
                         {/* Product description */}
