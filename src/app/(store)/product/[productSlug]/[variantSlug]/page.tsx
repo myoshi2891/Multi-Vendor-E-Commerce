@@ -70,66 +70,68 @@ export default async function ProductVariantPage({
 	);
 
 	return (
-		<div>
-			<div className="max-w-[1650px] mx-auto p-4 overflow-x-hidden">
-				<ProductPageContainer productData={productData} sizeId={sizeId}>
-					{relatedProducts.products && (
-						<>
-							<Separator />
-							{/* Related Products */}
-							<RelatedProducts
-								products={relatedProducts.products}
-							/>
-						</>
-					)}
-					<Separator className="mt-6" />
-					{/* Product Reviews */}
-					<ProductReviews
-						productId={productData.productId}
-						rating={productData.rating}
-						statistics={reviewsStatistics}
-						reviews={reviews}
-					/>
-					<div className="mt-3">
-						<AddReview productId={productId} reviews={reviews} />
-					</div>
-					<>
-						<Separator className="mt-6" />
-						{/* Product description */}
-						<ProductDescription
-							text={[
-								productData.description,
-								productData.variantDescription || "",
-							]}
-						/>
-					</>
-					{(specs.product.length > 0 || specs.variant.length > 0) && (
-						<>
-							<Separator className="mt-6" />
-							{/* Specs table */}
-							<ProductSpecs specs={specs} />
-						</>
-					)}
-					{questions.length > 0 && (
-						<>
-							<Separator className="mt-6" />
-							{/* Product Questions */}
-							<ProductQuestions
-								questions={productData.questions}
-							/>
-						</>
-					)}
-					<Separator className="mt-6" />
-					{/* Store Card */}
-					<StoreCard store={productData.store} />
-					{/* Store products */}
-					<StoreProducts
-						storeUrl={store.url}
-						storeName={store.name}
-						count={5}
-					/>
-				</ProductPageContainer>
-			</div>
-		</div>
-	);
+        <div>
+            <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
+                <div className="rounded-md border bg-white p-4 text-black shadow" />
+
+                <ProductPageContainer productData={productData} sizeId={sizeId}>
+                    {relatedProducts.products && (
+                        <>
+                            <Separator />
+                            {/* Related Products */}
+                            <RelatedProducts
+                                products={relatedProducts.products}
+                            />
+                        </>
+                    )}
+                    <Separator className="mt-6" />
+                    {/* Product Reviews */}
+                    <ProductReviews
+                        productId={productData.productId}
+                        rating={productData.rating}
+                        statistics={reviewsStatistics}
+                        reviews={reviews}
+                    />
+                    <div className="mt-3">
+                        <AddReview productId={productId} reviews={reviews} />
+                    </div>
+                    <>
+                        <Separator className="mt-6" />
+                        {/* Product description */}
+                        <ProductDescription
+                            text={[
+                                productData.description,
+                                productData.variantDescription || '',
+                            ]}
+                        />
+                    </>
+                    {(specs.product.length > 0 || specs.variant.length > 0) && (
+                        <>
+                            <Separator className="mt-6" />
+                            {/* Specs table */}
+                            <ProductSpecs specs={specs} />
+                        </>
+                    )}
+                    {questions.length > 0 && (
+                        <>
+                            <Separator className="mt-6" />
+                            {/* Product Questions */}
+                            <ProductQuestions
+                                questions={productData.questions}
+                            />
+                        </>
+                    )}
+                    <Separator className="mt-6" />
+                    {/* Store Card */}
+                    <StoreCard store={productData.store} />
+                    {/* Store products */}
+                    <StoreProducts
+                        storeUrl={store.url}
+                        storeName={store.name}
+                        count={5}
+                    />
+                </ProductPageContainer>
+            </div>
+        </div>
+    )
 }
