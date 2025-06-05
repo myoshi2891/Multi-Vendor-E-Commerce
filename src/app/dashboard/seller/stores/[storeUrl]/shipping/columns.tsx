@@ -172,36 +172,36 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	if (!rowData) return null;
 
 	return (
-		<AlertDialog>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" className="h-8 w-8 p-0">
-						<span className="sr-only">Open menu</span>
-						<MoreHorizontal className="h-4 w-4" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
-					<DropdownMenuLabel>Actions</DropdownMenuLabel>
-					<DropdownMenuItem
-						className="flex gap-2"
-						onClick={() => {
-							setOpen(
-								// Custom modal component
+        <AlertDialog>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="size-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem
+                        className="flex gap-2"
+                        onClick={() => {
+                            setOpen(
+                                // Custom modal component
                                 <CustomModal>
-									<ShippingRateDetails
-										data={rowData}
-										storeUrl={params.storeUrl}
-									/>
-									{/* Shiiping rate details component */}
-								</CustomModal>
-							);
-						}}
-					>
-						<Edit size={15} />
-						Edit Details
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</AlertDialog>
-	);
+                                    <ShippingRateDetails
+                                        data={rowData}
+                                        storeUrl={params.storeUrl}
+                                    />
+                                    {/* Shiiping rate details component */}
+                                </CustomModal>
+                            )
+                        }}
+                    >
+                        <Edit size={15} />
+                        Edit Details
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </AlertDialog>
+    )
 };

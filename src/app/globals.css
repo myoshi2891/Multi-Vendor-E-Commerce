@@ -243,12 +243,19 @@
 	border: none !important;
 }
 .react-datetime-picker__inputGroup__input {
-	padding: 0 3px !important;
+	padding: 0 1px !important;
 	outline-color: #1087ff !important;
 }
 .react-datetime-picker__inputGroup__divider {
-	margin: 0 3px !important;
+	margin: 0 1px !important;
 }
+.react-datetime-picker__inputGroup__input--hasLeadingZero {
+	margin: 0 -1px !important;
+}
+
+/* .react-datetime-picker__inputGroup__leadingZero {
+	margin: 0 6px !important;
+} */
 
 /* Jodit editor dark mode */
 .jodit_theme_dark.jodit-container {
