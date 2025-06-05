@@ -121,7 +121,8 @@ model Product {
   numReviews        Int               @default(0)
   shippingFeeMethod ShippingFeeMethod @default(ITEM)
 
-  freeShipping FreeShipping? @relation("ProductFreeShipping")
+  freeShipping                FreeShipping? @relation("ProductFreeShipping")
+  freeShippingForAllCountries Boolean       @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt

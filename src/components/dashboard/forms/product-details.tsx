@@ -153,6 +153,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             saleEndDate:
                 data?.saleEndDate ||
                 format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+            freeShippingForAllCountries: data?.freeShippingForAllCountries,
+            freeShippingCountriesIds: data?.freeShippingCountriesIds,
+            shippingFeeMethod: data?.shippingFeeMethod,
         },
     })
 
