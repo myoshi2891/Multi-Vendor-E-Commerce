@@ -121,7 +121,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                         alt=""
                         width={1200}
                         height={1200}
-                        className="h-full w-full rounded-lg object-cover"
+                        className="size-full rounded-lg object-cover"
                     />
                 )}
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
@@ -177,7 +177,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                         size="icon"
                                         className="rounded-full"
                                     >
-                                        <Trash className="h-4 w-4" />
+                                        <Trash className="size-4" />
                                     </Button>
                                 </div>
                                 {/* Image */}
