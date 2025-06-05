@@ -855,7 +855,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             details={variantSpecs}
                                             setDetails={setVariantSpecs}
                                             initialDetail={{
-                                                size: '',
+                                                name: '',
                                                 value: '',
                                             }}
                                         />
@@ -873,7 +873,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                     details={questions}
                                     setDetails={setQuestions}
                                     initialDetail={{
-                                        questions: '',
+                                        question: '',
                                         answer: '',
                                     }}
                                     header="Questions & Answers"
