@@ -213,6 +213,13 @@ export const ProductFormSchema = z.object({
             invalid_type_error: 'Product subcategory must be a string',
         })
         .uuid(),
+    offerTagId: z
+        .string({
+            required_error: 'Product offer tag ID is mandatory.',
+            invalid_type_error: 'Product offer tag ID must be a valid UUID.',
+        })
+        .uuid()
+        .optional(),
     brand: z
         .string({
             required_error: 'Product brand is required',

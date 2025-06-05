@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { FC, useEffect, useRef, useState } from 'react'
 
 // Prisma model
-import { Category, SubCategory } from '@prisma/client'
+import { Category, OfferTag, SubCategory } from '@prisma/client'
 
 // Form handling utilities
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -74,17 +74,20 @@ import 'react-calendar/dist/Calendar.css'
 import 'react-clock/dist/Clock.css'
 import { format } from 'date-fns'
 import { NumberInput } from '@tremor/react'
+import InputFieldset from '../shared/input-fieldset'
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ProductDetailsProps {
     data?: Partial<ProductWithVariantType>
     categories: Category[]
+    offerTags: OfferTag[]
     storeUrl: string
 }
 
 const ProductDetails: FC<ProductDetailsProps> = ({
     data,
     categories,
+    offerTags,
     storeUrl,
 }) => {
     // Initializing necessary hooks
@@ -140,6 +143,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 : [],
             categoryId: data?.categoryId,
             subCategoryId: data?.subCategoryId,
+            offerTagId: data?.offerTagId,
             brand: data?.brand ?? '',
             sku: data?.sku ?? '',
             colors: data?.colors ?? [{ color: '' }],
@@ -154,7 +158,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 data?.saleEndDate ||
                 format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
             freeShippingForAllCountries: data?.freeShippingForAllCountries,
-            freeShippingCountriesIds: data?.freeShippingCountriesIds,
+            freeShippingCountriesIds: Array.isArray(
+                data?.freeShippingCountriesIds
+            )
+                ? data?.freeShippingCountriesIds
+                : data?.freeShippingCountriesIds
+                  ? [data?.freeShippingCountriesIds]
+                  : [],
             shippingFeeMethod: data?.shippingFeeMethod,
         },
     })
@@ -197,6 +207,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     variantDescription: values.variantDescription || '',
                     categoryId: values.categoryId,
                     subCategoryId: values.subCategoryId,
+                    offerTagId: values.offerTagId || '',
                     images: values.images,
                     variantImage: values.variantImage[0].url,
                     isSale: values.isSale || false,
@@ -375,164 +386,127 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 </div>
                             </div>
                             {/* Name */}
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Product name</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Name"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="variantName"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Variant name</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Name"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                            <InputFieldset label="Name">
+                                <div className="flex flex-col gap-4 lg:flex-row">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Product Name"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="variantName"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Variant Name"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </InputFieldset>
                             {/* Product and variant description editors (tabs) */}
-                            <Tabs defaultValue="product" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="product">
-                                        Product description
-                                    </TabsTrigger>
-                                    <TabsTrigger value="variant">
-                                        Variant description
-                                    </TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="product">
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                            <FormItem className="flex-1">
-                                                <FormControl>
-                                                    <JoditEditor
-                                                        ref={productDescEditor}
-                                                        value={
-                                                            form.getValues()
-                                                                .description
-                                                        }
-                                                        onChange={(content) => {
-                                                            form.setValue(
-                                                                'description',
-                                                                content
-                                                            )
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </TabsContent>
-                                <TabsContent value="variant">
-                                    <FormField
-                                        control={form.control}
-                                        name="variantDescription"
-                                        render={({ field }) => (
-                                            <FormItem className="flex-1">
-                                                <FormControl>
-                                                    <JoditEditor
-                                                        ref={variantDescEditor}
-                                                        value={
-                                                            form.getValues()
-                                                                .variantDescription ||
-                                                            ''
-                                                        }
-                                                        onChange={(content) => {
-                                                            form.setValue(
-                                                                'variantDescription',
-                                                                content
-                                                            )
-                                                        }}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </TabsContent>
-                            </Tabs>
-
-                            {/* Category - SubCategory */}
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                <FormField
-                                    control={form.control}
-                                    name="categoryId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Product Category
-                                            </FormLabel>
-                                            <Select
-                                                disabled={
-                                                    isLoading ||
-                                                    categories.length === 0
-                                                }
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                defaultValue={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue
-                                                            defaultValue={
-                                                                field.value
+                            <InputFieldset
+                                label="Product and Variant Description Editors"
+                                description=" Note: The product description is the main description for the product (Will display in every variant page). You can add an extra description specific to this variant using Variant description tab.
+                            "
+                            >
+                                <Tabs defaultValue="product" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="product">
+                                            Product description
+                                        </TabsTrigger>
+                                        <TabsTrigger value="variant">
+                                            Variant description
+                                        </TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="product">
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl>
+                                                        <JoditEditor
+                                                            ref={
+                                                                productDescEditor
                                                             }
-                                                            placeholder="Select a category"
+                                                            value={
+                                                                form.getValues()
+                                                                    .description
+                                                            }
+                                                            onChange={(
+                                                                content
+                                                            ) => {
+                                                                form.setValue(
+                                                                    'description',
+                                                                    content
+                                                                )
+                                                            }}
                                                         />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {categories.map(
-                                                        (category) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    category.id
-                                                                }
-                                                                value={
-                                                                    category.id
-                                                                }
-                                                            >
-                                                                {category.name}
-                                                            </SelectItem>
-                                                        )
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                {form.watch().categoryId && (
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </TabsContent>
+                                    <TabsContent value="variant">
+                                        <FormField
+                                            control={form.control}
+                                            name="variantDescription"
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl>
+                                                        <JoditEditor
+                                                            ref={
+                                                                variantDescEditor
+                                                            }
+                                                            value={
+                                                                form.getValues()
+                                                                    .variantDescription ||
+                                                                ''
+                                                            }
+                                                            onChange={(
+                                                                content
+                                                            ) => {
+                                                                form.setValue(
+                                                                    'variantDescription',
+                                                                    content
+                                                                )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </TabsContent>
+                                </Tabs>
+                            </InputFieldset>
+
+                            {/* Category - SubCategory - offer */}
+                            <InputFieldset label="Category">
+                                <div className="flex flex-col gap-4 lg:flex-row">
                                     <FormField
                                         control={form.control}
-                                        name="subCategoryId"
+                                        name="categoryId"
                                         render={({ field }) => (
                                             <FormItem className="flex-1">
-                                                <FormLabel>
-                                                    Product SubCategory
-                                                </FormLabel>
                                                 <Select
                                                     disabled={
                                                         isLoading ||
@@ -555,6 +529,58 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
+                                                        {categories.map(
+                                                            (category) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        category.id
+                                                                    }
+                                                                    value={
+                                                                        category.id
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        category.name
+                                                                    }
+                                                                </SelectItem>
+                                                            )
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="subCategoryId"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <Select
+                                                    disabled={
+                                                        isLoading ||
+                                                        categories.length ===
+                                                            0 ||
+                                                        !form.getValues()
+                                                            .categoryId
+                                                    }
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue
+                                                                defaultValue={
+                                                                    field.value
+                                                                }
+                                                                placeholder="Select a sub-category"
+                                                            />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
                                                         {subCategories.map(
                                                             (sub) => (
                                                                 <SelectItem
@@ -572,9 +598,61 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 <FormMessage />
                                             </FormItem>
                                         )}
+                                    />{' '}
+                                    {/* Offer Tag */}
+                                    <FormField
+                                        disabled={isLoading}
+                                        control={form.control}
+                                        name="offerTagId"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <Select
+                                                    disabled={
+                                                        isLoading ||
+                                                        categories.length == 0
+                                                    }
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue
+                                                                defaultValue={
+                                                                    field.value
+                                                                }
+                                                                placeholder="Select an offer"
+                                                            />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {offerTags &&
+                                                            offerTags.map(
+                                                                (offer) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            offer.id
+                                                                        }
+                                                                        value={
+                                                                            offer.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            offer.name
+                                                                        }
+                                                                    </SelectItem>
+                                                                )
+                                                            )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
-                                )}
-                            </div>
+                                </div>
+                            </InputFieldset>
                             {/* Brand, Sku, weight */}
                             <div className="flex flex-col gap-4 lg:flex-row">
                                 <FormField
