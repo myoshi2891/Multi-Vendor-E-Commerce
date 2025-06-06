@@ -287,24 +287,24 @@
 	color: #000;
 }
 
-/* Multi selct dark mode */
+/* Multi select dark mode */
 .dark .rmsc .dropdown-container {
 	background-color: #1a1b1f !important;
 	border-color: #eeeeee2e !important;
 }
 
-.panel-content {
+.dark .panel-content {
 	background-color: #1a1b1f !important;
 }
 
-.panel-content input:focus {
+.dark .panel-content input:focus {
 	background-color: #1a1b1f !important;
 }
 
-.select-item:hover {
+.dark .select-item:hover {
 	background-color: #303236 !important;
 }
-.select-item.selected {
+.dark .select-item.selected {
 	background-color: #303236 !important;
 }
 

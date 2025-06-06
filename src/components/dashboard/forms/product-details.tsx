@@ -2,7 +2,7 @@
 
 // React, Next.js
 import { useRouter } from 'next/navigation'
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, useEffect, useMemo, useRef, useState } from 'react'
 
 // Prisma model
 import {
@@ -83,6 +83,7 @@ import { format } from 'date-fns'
 import { NumberInput } from '@tremor/react'
 import InputFieldset from '../shared/input-fieldset'
 import { ArrowRight, Dot } from 'lucide-react'
+import { useTheme } from 'next-themes'
 // import { useToast } from "@/components/ui/use-toast";
 
 const shippingFeeMethods = [
@@ -122,6 +123,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Jodit editor refs
     const productDescEditor = useRef(null)
     const variantDescEditor = useRef(null)
+
+    // Jodit configuration
+    const { theme } = useTheme()
+
+    const config = useMemo(
+        () => ({
+            theme: theme === 'dark' ? 'dark' : 'default',
+            readonly: false,
+        }),
+        [theme]
+    )
 
     // State for subCategories
     const [subCategories, setSubcategories] = useState<SubCategory[]>([])
@@ -183,13 +195,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 data?.saleEndDate ||
                 format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
             freeShippingForAllCountries: data?.freeShippingForAllCountries,
-            freeShippingCountriesIds: Array.isArray(
-                data?.freeShippingCountriesIds
-            )
-                ? data?.freeShippingCountriesIds
-                : data?.freeShippingCountriesIds
-                  ? [data?.freeShippingCountriesIds]
-                  : [],
+            freeShippingCountriesIds: data?.freeShippingCountriesIds || [],
             shippingFeeMethod: data?.shippingFeeMethod,
         },
     })
@@ -475,7 +481,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                             <InputFieldset
                                 label="Product and Variant Description Editors"
                                 description=" Note: The product description is the main description for the product (Will display in every variant page). You can add an extra description specific to this variant using Variant description tab.
-                            "
+														"
                             >
                                 <Tabs defaultValue="product" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2">
@@ -497,6 +503,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                             ref={
                                                                 productDescEditor
                                                             }
+                                                            config={config}
                                                             value={
                                                                 form.getValues()
                                                                     .description
@@ -527,6 +534,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                             ref={
                                                                 variantDescEditor
                                                             }
+                                                            config={config}
                                                             value={
                                                                 form.getValues()
                                                                     .variantDescription ||
