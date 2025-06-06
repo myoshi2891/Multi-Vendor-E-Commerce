@@ -126,6 +126,48 @@ const handleProductCreate = async (
                 answer: q.answer,
             })),
         },
+        variants: {
+            create: [
+                {
+                    id: product.variantId,
+                    variantName: product.variantName,
+                    variantDescription: product.variantDescription,
+                    slug: variantSlug,
+                    variantImage: product.variantImage,
+                    sku: product.sku,
+                    weight: product.weight,
+                    keywords: product.keywords.join(','),
+                    isSale: product.isSale,
+                    saleEndDate: product.saleEndDate,
+                    images: {
+                        create: product.images.map((image) => ({
+                            url: image.url,
+                        })),
+                    },
+                    colors: {
+                        create: product.colors.map((color) => ({
+                            name: color.color,
+                        })),
+                    },
+                    sizes: {
+                        create: product.sizes.map((size) => ({
+                            size: size.size,
+                            quantity: size.quantity,
+                            price: size.price,
+                            discount: size.discount,
+                        })),
+                    },
+                    specs: {
+                        create: product.variant_specs.map((spec) => ({
+                            name: spec.name,
+                            value: spec.value,
+                        })),
+                    },
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt,
+                },
+            ],
+        },
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
     }
