@@ -64,7 +64,7 @@ export type ProductWithVariantType = {
     keywords: string[]
     questions: { id?: string; question: string; answer: string }[]
     freeShippingForAllCountries: boolean
-    freeShippingCountriesIds: { id?: string; label: string; value: string }
+    freeShippingCountriesIds: { id?: string; label: string; value: string }[]
     shippingFeeMethod: ShippingFeeMethod
     createdAt: Date
     updatedAt: Date
