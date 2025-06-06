@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation'
 import { FC, useEffect, useRef, useState } from 'react'
 
 // Prisma model
-import { Category, OfferTag, SubCategory } from '@prisma/client'
+import {
+    Category,
+    OfferTag,
+    ShippingFeeMethod,
+    SubCategory,
+} from '@prisma/client'
 
 // Form handling utilities
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -77,6 +82,21 @@ import { NumberInput } from '@tremor/react'
 import InputFieldset from '../shared/input-fieldset'
 import { ArrowRight, Dot } from 'lucide-react'
 // import { useToast } from "@/components/ui/use-toast";
+
+const shippingFeeMethods = [
+    {
+        value: ShippingFeeMethod.ITEM,
+        description: 'ITEM (Fees calculated based on number of products.)',
+    },
+    {
+        value: ShippingFeeMethod.WEIGHT,
+        description: 'WEIGHT (Fees calculated based on product weight.)',
+    },
+    {
+        value: ShippingFeeMethod.FIXED,
+        description: 'FIXED (Fees are fixed.)',
+    },
+]
 
 interface ProductDetailsProps {
     data?: Partial<ProductWithVariantType>
@@ -1009,6 +1029,162 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                         </div>
                                     )}
                                 </div>
+                            </InputFieldset>
+                            {/* Shipping fee method */}
+                            <InputFieldset label="Product shipping fee method">
+                                <FormField
+                                    control={form.control}
+                                    name="shippingFeeMethod"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <Select
+                                                disabled={isLoading}
+                                                onValueChange={field.onChange}
+                                                value={field.value}
+                                                defaultValue={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue
+                                                            defaultValue={
+                                                                field.value
+                                                            }
+                                                            placeholder="Select Shipping Fee Calculation method"
+                                                        />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {shippingFeeMethods.map(
+                                                        (method) => (
+                                                            <SelectItem
+                                                                key={
+                                                                    method.value
+                                                                }
+                                                                value={
+                                                                    method.value
+                                                                }
+                                                            >
+                                                                {
+                                                                    method.description
+                                                                }
+                                                            </SelectItem>
+                                                        )
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </InputFieldset>
+                            {/* Free Shipping */}
+                            <InputFieldset
+                                label="Free Shipping (Optional)"
+                                description="Free Shipping Worldwide?"
+                            >
+                                {' '}
+                                <div>
+                                    <label
+                                        htmlFor="freeShippingForAll"
+                                        className="ml-5 flex cursor-pointer items-center gap-x-2"
+                                    >
+                                        <FormField
+                                            control={form.control}
+                                            name="freeShippingForAllCountries"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <>
+                                                            <input
+                                                                type="checkbox"
+                                                                id="freeShippingForAll"
+                                                                checked={
+                                                                    field.value
+                                                                }
+                                                                onChange={
+                                                                    field.onChange
+                                                                }
+                                                                hidden
+                                                            />
+                                                            <Checkbox
+                                                                checked={
+                                                                    field.value
+                                                                }
+                                                                // @ts-ignore
+                                                                onCheckedChange={
+                                                                    field.onChange
+                                                                }
+                                                            />
+                                                        </>
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <span>Yes</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                        <Dot className="-me-1" />
+                                        If selected, customers will not need to
+                                        pay shipping fees when purchasing from
+                                        this product in any country.
+                                    </p>
+                                </div>
+                                {form.getValues().isSale && (
+                                    <div className="mt-5">
+                                        <p className="flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                            <Dot className="-me-1" />
+                                            When sale does end ?
+                                        </p>
+                                        <div className="flex items-center gap-x-5">
+                                            <FormField
+                                                control={form.control}
+                                                name="saleEndDate"
+                                                render={({ field }) => (
+                                                    <FormItem className="ml-4">
+                                                        <FormControl>
+                                                            <DateTimePicker
+                                                                className="inline-flex items-center gap-2 rounded-md border p-2 shadow-sm"
+                                                                calendarIcon={
+                                                                    <span className="text-gray-500 hover:text-gray-600">
+                                                                        🗓️
+                                                                    </span>
+                                                                }
+                                                                clearIcon={
+                                                                    <span className="text-gray-500 hover:text-gray-600">
+                                                                        ❌
+                                                                    </span>
+                                                                }
+                                                                onChange={(
+                                                                    date
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        date
+                                                                            ? format(
+                                                                                  date,
+                                                                                  "yyyy-MM-dd'T'HH:mm:ss"
+                                                                              )
+                                                                            : ''
+                                                                    )
+                                                                }}
+                                                                value={
+                                                                    field.value
+                                                                        ? new Date(
+                                                                              field.value
+                                                                          )
+                                                                        : null
+                                                                }
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <ArrowRight className="w-4 text-[#1087ff]" />
+                                            <span>{formattedDate}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </InputFieldset>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading
