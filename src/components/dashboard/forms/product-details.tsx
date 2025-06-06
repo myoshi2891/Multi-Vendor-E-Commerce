@@ -183,7 +183,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             offerTagId: data?.offerTagId,
             brand: data?.brand ?? '',
             sku: data?.sku ?? '',
-            colors: data?.colors ?? [{ color: '' }],
+            colors: data?.colors,
             sizes: data?.sizes ?? [],
             product_specs: data?.product_specs ?? [],
             variant_specs: data?.variant_specs ?? [],
@@ -239,7 +239,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Submit handler for form submission
     const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
         try {
-            // Upserting category data
+            // Upserting product data
             const response = await upsertProduct(
                 {
                     productId: data?.productId ? data.productId : v4(),
@@ -253,7 +253,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     offerTagId: values.offerTagId || '',
                     images: values.images,
                     variantImage: values.variantImage[0].url,
-                    isSale: values.isSale || false,
+                    isSale: values.isSale,
                     saleEndDate: values.saleEndDate,
                     brand: values.brand,
                     sku: values.sku,
@@ -264,6 +264,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     variant_specs: values.variant_specs,
                     keywords: values.keywords || [],
                     questions: values.questions || [],
+                    shippingFeeMethod: values.shippingFeeMethod,
+                    freeShippingForAllCountries:
+                        values.freeShippingForAllCountries,
+                    freeShippingCountriesIds:
+                        values.freeShippingCountriesIds || [],
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -274,7 +279,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 title:
                     data?.productId && data?.variantId
                         ? 'Product has been updated.'
-                        : `Congratulations! '${response?.slug}' is now created.`,
+                        : `Congratulations! Product is now created.`,
             })
             // Redirect or Refresh data
             if (data?.productId && data?.variantId) {
