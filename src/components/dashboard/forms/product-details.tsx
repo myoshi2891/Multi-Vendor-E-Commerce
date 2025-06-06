@@ -7,6 +7,7 @@ import { FC, useEffect, useRef, useState } from 'react'
 // Prisma model
 import {
     Category,
+    Country,
     OfferTag,
     ShippingFeeMethod,
     SubCategory,
@@ -39,11 +40,12 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
-
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { MultiSelect } from 'react-multi-select-component'
+
 import { useToast } from '@/hooks/use-toast'
 import ImageUpload from '../shared/image-upload'
 
@@ -103,6 +105,7 @@ interface ProductDetailsProps {
     categories: Category[]
     offerTags: OfferTag[]
     storeUrl: string
+    countries: Country[]
 }
 
 const ProductDetails: FC<ProductDetailsProps> = ({
@@ -110,6 +113,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     categories,
     offerTags,
     storeUrl,
+    countries,
 }) => {
     // Initializing necessary hooks
     const { toast } = useToast() // Hook for displaying toast messages
@@ -309,8 +313,22 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         form.setValue('variant_specs', variantSpecs)
     }, [colors, sizes, keywords, productSpecs, variantSpecs, data])
 
-    // console.log("product spec", form.getValues().product_specs);
-    // console.log("product variant spec", form.getValues().variant_specs);
+    //Countries options
+    type CountryOption = {
+        label: string
+        value: string
+    }
+
+    const countryOptions: CountryOption[] = countries.map((c) => ({
+        label: c.name,
+        value: c.id,
+    }))
+
+    const handleDeleteCountryFreeShipping = (index: number) => {
+        const currentValues = form.getValues().freeShippingCountriesIds
+        const updatedValues = currentValues.filter((_, i) => i !== index)
+        form.setValue('freeShippingCountriesIds', updatedValues)
+    }
 
     return (
         <AlertDialog>
@@ -1082,7 +1100,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 label="Free Shipping (Optional)"
                                 description="Free Shipping Worldwide?"
                             >
-                                {' '}
                                 <div>
                                     <label
                                         htmlFor="freeShippingForAll"
@@ -1131,60 +1148,81 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                         this product in any country.
                                     </p>
                                 </div>
-                                {form.getValues().isSale && (
-                                    <div className="mt-5">
-                                        <p className="flex pb-3 text-sm text-main-secondary dark:text-gray-400">
-                                            <Dot className="-me-1" />
-                                            When sale does end ?
-                                        </p>
-                                        <div className="flex items-center gap-x-5">
+                                <div>
+                                    {!form.getValues()
+                                        .freeShippingForAllCountries && (
+                                        <div>
                                             <FormField
                                                 control={form.control}
-                                                name="saleEndDate"
+                                                name="freeShippingCountriesIds"
                                                 render={({ field }) => (
-                                                    <FormItem className="ml-4">
+                                                    <FormItem>
                                                         <FormControl>
-                                                            <DateTimePicker
-                                                                className="inline-flex items-center gap-2 rounded-md border p-2 shadow-sm"
-                                                                calendarIcon={
-                                                                    <span className="text-gray-500 hover:text-gray-600">
-                                                                        🗓️
-                                                                    </span>
-                                                                }
-                                                                clearIcon={
-                                                                    <span className="text-gray-500 hover:text-gray-600">
-                                                                        ❌
-                                                                    </span>
-                                                                }
-                                                                onChange={(
-                                                                    date
-                                                                ) => {
-                                                                    field.onChange(
-                                                                        date
-                                                                            ? format(
-                                                                                  date,
-                                                                                  "yyyy-MM-dd'T'HH:mm:ss"
-                                                                              )
-                                                                            : ''
-                                                                    )
-                                                                }}
+                                                            <MultiSelect
+                                                                className="!max-w-[800px]"
+                                                                options={
+                                                                    countryOptions
+                                                                } // Array of options, each with `label` and `value`
                                                                 value={
                                                                     field.value
-                                                                        ? new Date(
-                                                                              field.value
-                                                                          )
-                                                                        : null
-                                                                }
+                                                                } // Pass the array of objects directly
+                                                                onChange={(
+                                                                    selected: CountryOption[]
+                                                                ) => {
+                                                                    field.onChange(
+                                                                        selected
+                                                                    )
+                                                                }}
+                                                                labelledBy="Select"
                                                             />
                                                         </FormControl>
                                                     </FormItem>
                                                 )}
                                             />
-                                            <ArrowRight className="w-4 text-[#1087ff]" />
-                                            <span>{formattedDate}</span>
+                                            <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                                <Dot className="-me-1" />
+                                                List of countries you offer
+                                                shipping for this product
+                                                :&nbsp;
+                                                {form.getValues()
+                                                    .freeShippingCountriesIds &&
+                                                    form.getValues()
+                                                        .freeShippingCountriesIds
+                                                        .length === 0 &&
+                                                    'None'}
+                                            </p>
+                                            {/* Free shipping countries */}
+                                            <div className="flex flex-wrap gap-1">
+                                                {form
+                                                    .getValues()
+                                                    .freeShippingCountriesIds?.map(
+                                                        (country, index) => (
+                                                            <div
+                                                                key={country.id}
+                                                                className="inline-flex items-center rounded-md bg-blue-200 px-3 py-1 text-xs text-blue-primary"
+                                                            >
+                                                                <span>
+                                                                    {
+                                                                        country.label
+                                                                    }
+                                                                </span>
+                                                                <span
+                                                                    className="ml-2 cursor-pointer hover:text-red-500"
+                                                                    onClick={() =>
+                                                                        handleDeleteCountryFreeShipping(
+                                                                            index
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    x
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </InputFieldset>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading
