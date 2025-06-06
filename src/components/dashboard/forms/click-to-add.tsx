@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { PaintBucket } from 'lucide-react'
 // Color picker
 import { SketchPicker } from 'react-color'
+import { cn } from '@/lib/utils'
 
 // Define the interface for each detail object
 export interface Detail<T = { [key: string]: string | number | undefined }> {
@@ -19,6 +20,8 @@ interface ClickToAddInputsProps<T extends Detail> {
     initialDetail?: T // Optional initial detail objects
     header?: string // Header for the component
     colorPicker?: boolean // if color picker is needed
+    containerClassName?: string // Additional class name for the container
+    inputClassName?: string // Additional class name for the input
 }
 
 // ClickToAddInputs component definition
@@ -28,6 +31,8 @@ const ClickToAddInputs = <T extends Detail>({
     initialDetail = {} as T, // Default value for initial detail is an empty object
     header,
     colorPicker,
+    containerClassName,
+    inputClassName,
 }: ClickToAddInputsProps<T>) => {
     // State to manage toggling color picker
     const [colorPickerIndex, setColorPickerIndex] = useState<number | null>(
@@ -138,7 +143,10 @@ const ClickToAddInputs = <T extends Detail>({
                     {Object.keys(detail).map((property, propIndex) => (
                         <div
                             key={propIndex}
-                            className="flex items-center gap-x-4"
+                            className={
+                                (cn('flex items-center gap-x-4'),
+                                containerClassName)
+                            }
                         >
                             {/* Color picker toggle */}
                             {property === 'color' && colorPicker && (
@@ -184,7 +192,10 @@ const ClickToAddInputs = <T extends Detail>({
 
                             {/* Input field for each property */}
                             <Input
-                                className="w-28"
+                                className={
+                                    (cn('w-28 placeholder:capitalize'),
+                                    inputClassName)
+                                }
                                 type={
                                     typeof detail[property] === 'number'
                                         ? 'number'

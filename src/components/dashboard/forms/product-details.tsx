@@ -718,64 +718,64 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 </div>
                             </InputFieldset>
                             {/* Brand, Sku, weight */}
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                <FormField
-                                    control={form.control}
-                                    name="brand"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Product brand</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Brand"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="sku"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Product sku</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Sku"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="weight"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Product weight
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    defaultValue={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    placeholder="Weight"
-                                                    min={0.01}
-                                                    step={0.01}
-                                                    className="rounded-md !text-sm !shadow-none"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                            <InputFieldset label="Brand, Sku, Weight">
+                                <div className="flex flex-col gap-4 lg:flex-row">
+                                    <FormField
+                                        control={form.control}
+                                        name="brand"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Product Brand"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="sku"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="Product Sku"
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="weight"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <NumberInput
+                                                        defaultValue={
+                                                            field.value
+                                                        }
+                                                        onValueChange={
+                                                            field.onChange
+                                                        }
+                                                        placeholder="Product Weight"
+                                                        min={0.01}
+                                                        step={0.01}
+                                                        className="rounded-md !text-sm !shadow-none"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </InputFieldset>
+
                             {/* Variant image - Keywords */}
                             <div className="flex items-center gap-10 py-14">
                                 {/* Variant image */}
@@ -865,24 +865,28 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 </div>
                             </div>
                             {/* Sizes */}
-                            <div className="flex w-full flex-col gap-y-3">
-                                <ClickToAddInputs
-                                    details={sizes}
-                                    setDetails={setSizes}
-                                    initialDetail={{
-                                        size: '',
-                                        quantity: 1,
-                                        price: 0.01,
-                                        discount: 0,
-                                    }}
-                                    header="Sizes, Quantities, Prices, Discounts"
-                                />
-                                {errors.sizes && (
-                                    <span className="text-sm font-medium text-destructive">
-                                        {errors.sizes.message}
-                                    </span>
-                                )}
-                            </div>
+                            <InputFieldset label="Sizes, Quantities, Prices, Discounts">
+                                <div className="flex w-full flex-col gap-y-3">
+                                    <ClickToAddInputs
+                                        details={sizes}
+                                        setDetails={setSizes}
+                                        initialDetail={{
+                                            size: '',
+                                            quantity: 1,
+                                            price: 0.01,
+                                            discount: 0,
+                                        }}
+                                        containerClassName="flex-1"
+                                        inputClassName="w-full"
+                                    />
+                                    {errors.sizes && (
+                                        <span className="text-sm font-medium text-destructive">
+                                            {errors.sizes.message}
+                                        </span>
+                                    )}
+                                </div>
+                            </InputFieldset>
+
                             {/* Product and variant specs */}
                             <InputFieldset
                                 label="Specifications"
@@ -909,6 +913,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     name: '',
                                                     value: '',
                                                 }}
+                                                containerClassName="flex-1"
+                                                inputClassName="w-full"
                                             />
                                             {errors.product_specs && (
                                                 <span className="text-sm font-medium text-destructive">
@@ -929,6 +935,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     name: '',
                                                     value: '',
                                                 }}
+                                                containerClassName="flex-1"
+                                                inputClassName="w-full"
                                             />
                                             {errors.variant_specs && (
                                                 <span className="text-sm font-medium text-destructive">
@@ -953,6 +961,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             question: '',
                                             answer: '',
                                         }}
+                                        containerClassName="flex-1"
+                                        inputClassName="w-full"
                                     />
                                     {errors.questions && (
                                         <span className="text-sm font-medium text-destructive">
