@@ -12,14 +12,15 @@ interface LogoProps {
 
 const Logo: FC<LogoProps> = ({ width, height }) => {
 	return (
-		<div className="z-50" style={{ width: width, height: height }}>
-			<Image
-				src={LogoImg}
-				alt="GoShop"
-				className="w-full h-full object-cover overflow-visible"
-			/>
-		</div>
-	);
+        <div className="z-50" style={{ width: width, height: height }}>
+            <Image
+                src={LogoImg}
+                alt="GoShop"
+                className="size-full overflow-visible object-cover"
+                priority
+            />
+        </div>
+    )
 };
 
 export default Logo;
