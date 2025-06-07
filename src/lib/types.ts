@@ -45,7 +45,7 @@ export type ProductWithVariantType = {
     variantImage: string
     categoryId: string
     subCategoryId: string
-    offerTagId: string
+    offerTagId?: string
     isSale: boolean
     saleEndDate?: string
     brand: string
@@ -64,7 +64,7 @@ export type ProductWithVariantType = {
     keywords: string[]
     questions: { id?: string; question: string; answer: string }[]
     freeShippingForAllCountries: boolean
-    freeShippingCountriesIds: { id?: string; label: string; value: string }
+    freeShippingCountriesIds: { id?: string; label: string; value: string }[]
     shippingFeeMethod: ShippingFeeMethod
     createdAt: Date
     updatedAt: Date
