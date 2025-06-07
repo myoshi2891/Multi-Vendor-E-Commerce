@@ -320,9 +320,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         form.setValue('colors', colors)
         form.setValue('sizes', sizes)
         form.setValue('keywords', keywords)
+        form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)
-    }, [colors, sizes, keywords, productSpecs, variantSpecs, data])
+    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data])
 
     //Countries options
     type CountryOption = {

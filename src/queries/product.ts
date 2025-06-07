@@ -74,6 +74,7 @@ export const upsertProduct = async (
             }
         } else {
             // Create new product and variant
+            await handleProductCreate(product, store.id)
         }
     } catch (error) {
         console.log(error)
@@ -112,7 +113,9 @@ const handleProductCreate = async (
         store: { connect: { id: storeId } },
         category: { connect: { id: product.categoryId } },
         subCategory: { connect: { id: product.subCategoryId } },
-        offerTag: { connect: { id: product.offerTagId } },
+        offerTag: product.offerTagId
+            ? { connect: { id: product.offerTagId } }
+            : undefined,
         brand: product.brand,
         specs: {
             create: product.product_specs.map((spec) => ({
@@ -168,9 +171,30 @@ const handleProductCreate = async (
                 },
             ],
         },
+        shippingFeeMethod: product.shippingFeeMethod,
+        freeShippingForAllCountries: product.freeShippingForAllCountries,
+        freeShipping: product.freeShippingForAllCountries
+            ? undefined
+            : product.freeShippingCountriesIds &&
+                product.freeShippingCountriesIds.length > 0
+              ? {
+                    create: {
+                        eligibleCountries: {
+                            create: product.freeShippingCountriesIds.map(
+                                (country) => ({
+                                    country: { connect: { id: country.value } },
+                                })
+                            ),
+                        },
+                    },
+                }
+              : undefined,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
     }
+
+    const new_product = await db.product.create({ data: productData })
+    return new_product
 }
 
 // Function: getProductMainInfo
@@ -417,7 +441,10 @@ export const getProducts = async (
 // - variantId: The ID of the variant for which to retrieve data.
 // Returns: Product data (including product and variant details) or null if the product or variant is not found.
 
-export const getProductPageData = async (productSlug: string, variantSlug: string) => {
+export const getProductPageData = async (
+    productSlug: string,
+    variantSlug: string
+) => {
     // Get current user
     const user = await currentUser()
 
