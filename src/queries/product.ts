@@ -315,6 +315,7 @@ export const getAllStoreProducts = async (storeUrl: string) => {
         include: {
             category: true,
             subCategory: true,
+            offerTag: true,
             variants: {
                 include: {
                     images: true,
