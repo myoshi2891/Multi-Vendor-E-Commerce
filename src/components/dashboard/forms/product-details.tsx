@@ -203,6 +203,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         },
     })
 
+    console.log('error:', form.formState.errors)
+
     const saleEndDate = form.getValues().saleEndDate || new Date().toISOString()
     const formattedDate = new Date(saleEndDate).toLocaleString('en-Us', {
         weekday: 'short', // Abbreviated day name (e.g., "Mon")
@@ -493,7 +495,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 </div>
                             </InputFieldset>
                             {/* Product and variant description editors (tabs) */}
-                            {isNewVariantPage && (
+                            {!isNewVariantPage && (
                                 <InputFieldset
                                     label="Description Editors"
                                     description={
@@ -749,7 +751,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 }
                             >
                                 <div className="flex flex-col gap-4 lg:flex-row">
-                                    {isNewVariantPage && (
+                                    {!isNewVariantPage && (
                                         <FormField
                                             control={form.control}
                                             name="brand"
