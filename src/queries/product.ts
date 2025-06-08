@@ -208,6 +208,7 @@ export const getProductMainInfo = async (productId: string) => {
     // Retrieve product and variant details
     const product = await db.product.findUnique({
         where: { id: productId },
+        include: { questions: true, specs: true },
     })
     if (!product) return null
 
@@ -219,7 +220,17 @@ export const getProductMainInfo = async (productId: string) => {
         brand: product.brand,
         categoryId: product.categoryId,
         subCategoryId: product.subCategoryId,
+        offerTagId: product.offerTagId,
         storeId: product.storeId,
+        shippingFeeMethod: product.shippingFeeMethod,
+        questions: product.questions.map((q) => ({
+            question: q.question,
+            answer: q.answer,
+        })),
+        product_specs: product.specs.map((spec) => ({
+            name: spec.name,
+            value: spec.value,
+        })),
     }
 }
 
