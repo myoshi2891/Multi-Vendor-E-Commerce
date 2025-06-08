@@ -1,4 +1,5 @@
 import { CartProductType } from '@/lib/types'
+import { Item } from '@radix-ui/react-navigation-menu'
 import { Action } from 'sonner'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -70,10 +71,70 @@ export const useCartStore = create(
                     }))
                 }
             },
-            updateProductQuantity: () => {},
-            removeMultipleFromCart: () => {},
-            removeFromCart: () => {},
-            emptyCart: () => {},
+            updateProductQuantity: (
+                product: CartProductType,
+                quantity: number
+            ) => {
+                const cart = get().cart
+
+                // If quantity is 0 or less, remove the item
+                if (quantity <= 0) {
+                    get().removeFromCart(product)
+                    return
+                }
+
+                const updatedCart = cart.map((item) =>
+                    item.productId === product.productId &&
+                    item.variantId === product.variantId &&
+                    item.sizeId === product.sizeId
+                        ? { ...item, quantity }
+                        : item
+                )
+
+                const totalItems = updatedCart.length
+                const totalPrice = updatedCart.reduce(
+                    (sum, item) => sum + item.price * item.quantity,
+                    0
+                )
+                set(() => ({
+                    cart: updatedCart,
+                    totalItems,
+                    totalPrice,
+                }))
+            },
+            removeFromCart: (product: CartProductType) => {
+                const cart = get().cart
+                const updatedCart = cart.filter(
+                    (item) =>
+                        !(
+                            item.productId === product.productId &&
+                            item.variantId === product.variantId &&
+                            item.sizeId === product.sizeId
+                        )
+                )
+                const totalItems = updatedCart.length
+                const totalPrice = updatedCart.reduce(
+                    (sum, item) => sum + item.price * item.quantity,
+                    0
+                )
+                set(() => ({
+                    cart: updatedCart,
+                    totalItems,
+                    totalPrice,
+                }))
+            },
+            removeMultipleFromCart: (products: CartProductType[]) => {
+                products.forEach((product) => {
+                    get().removeFromCart(product)
+                })
+            },
+            emptyCart: () => {
+                set(() => ({
+                    cart: [],
+                    totalItems: 0,
+                    totalPrice: 0,
+                }))
+            },
         }),
         { name: 'cart' }
     )
