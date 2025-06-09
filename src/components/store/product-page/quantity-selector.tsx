@@ -50,14 +50,11 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                 p.variantId === variantId &&
                 p.sizeId === sizeId
         )
-        console.log('search_product', search_product)
 
         return search_product
             ? search_product.stock - search_product?.quantity
             : stock
     }, [cart, productId, variantId, sizeId, stock])
-
-    console.log('maxQty', maxQty)
 
     // Function to handle increasing the quantity of the product
     const handleIncrease = () => {

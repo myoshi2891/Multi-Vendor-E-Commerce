@@ -94,7 +94,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     const addToCart = useCartStore((state) => state.addToCart)
 
     const cartItems = useFromStore(useCartStore, (state) => state.cart)
-    console.log('cartItems', cartItems)
 
     const handleAddToCart = () => {
         if (maxQty <= 0) return toast.error('Out of stock')
@@ -109,7 +108,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                 p.variantId === variantId &&
                 p.sizeId === sizeId
         )
-        console.log('search_product', search_product)
 
         return search_product
             ? search_product.stock - search_product?.quantity
