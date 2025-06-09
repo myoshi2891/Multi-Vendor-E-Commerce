@@ -1,6 +1,7 @@
+import { useCartStore } from '@/cart-store/useCartStore'
 import { CartProductType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check } from 'lucide-react'
+import { Check, Heart, Trash } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
@@ -89,6 +90,10 @@ const CartProduct: FC<Props> = ({
         (p) => unique_id === `${p.productId}-${p.variantId}-${p.sizeId}`
     )
 
+    const { updateProductQuantity, removeFromCart } = useCartStore(
+        (state) => state
+    )
+
     const handleSelectProduct = () => {}
 
     return (
@@ -138,6 +143,29 @@ const CartProduct: FC<Props> = ({
                                 />
                             </div>
                         </Link>
+                    </div>
+                    {/* Info */}
+                    <div className="w-0 min-w-0 flex-1">
+                        {/* Title - Actions */}
+                        <div className="w-[calc(100%-48px] flex items-start overflow-hidden whitespace-nowrap">
+                            <Link
+                                href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
+                                className="inline-block truncate text-sm"
+                            >
+                                {name} ・ {variantName}
+                            </Link>
+                            <div className="absolute right-0 top-0">
+                                <span className="mr-2.5 inline-block cursor-pointer">
+                                    <Heart className="w-4 hover:stroke-orange-secondary" />
+                                </span>
+                                <span
+                                    className="inline-block cursor-pointer"
+                                    onClick={() => removeFromCart(product)}
+                                >
+                                    <Trash className="w-4 hover:stroke-orange-secondary" />
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
