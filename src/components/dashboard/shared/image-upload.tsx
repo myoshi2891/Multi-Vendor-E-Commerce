@@ -67,8 +67,9 @@ const ImageUpload: FC<ImageUploadProps> = ({
             >
                 {value.length > 0 && (
                     <Image
+                        priority
                         src={value[0]}
-                        alt=""
+                        alt="image for profile picture"
                         width={300}
                         height={300}
                         className="absolute inset-0 size-52 rounded-full object-cover"
@@ -117,8 +118,9 @@ const ImageUpload: FC<ImageUploadProps> = ({
             >
                 {value.length > 0 && (
                     <Image
+                        priority
                         src={value[0]}
-                        alt=""
+                        alt="image for cover picture"
                         width={1200}
                         height={1200}
                         className="size-full rounded-lg object-cover"
@@ -182,9 +184,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                 </div>
                                 {/* Image */}
                                 <Image
+                                    priority
                                     fill
                                     className="rounded-md object-cover"
-                                    alt=""
+                                    alt="image for product"
                                     src={imageUrl}
                                 />
                             </div>

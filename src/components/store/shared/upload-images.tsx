@@ -58,8 +58,9 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                                         width={80}
                                         height={80}
                                         className="size-20 rounded-md object-cover"
-                                        alt=""
+                                        alt={`Image ${i + 1}`}
                                         src={value[i]}
+                                        priority
                                     />
                                 </div>
                             ) : (
@@ -83,7 +84,7 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                     return (
                         <>
                             <button
-                                type='button'
+                                type="button"
                                 disabled={disabled}
                                 ref={btnRef}
                                 onClick={onClick}
