@@ -2,6 +2,7 @@
 
 import { useCartStore } from '@/cart-store/useCartStore'
 import FastDelivery from '@/components/store/cards/fast-delivery'
+import CartHeader from '@/components/store/cart-page/cart-header'
 import { SecurityPrivacyCard } from '@/components/store/product-page/returns-security-privacy-card'
 import useFromStore from '@/hooks/useFromStore'
 import { CartProductType } from '@/lib/types'
@@ -20,6 +21,11 @@ export default function CartPage() {
                     <div className="mx-auto flex max-w-[1200px] py-6">
                         <div className="min-w-0 flex-1">
                             {/* Cart header */}
+                            <CartHeader
+                                cartItems={cartItems}
+                                selectedItems={selectedItems}
+                                setSelectedItems={setSelectedItems}
+                            />
                             <div className="mt-2 h-auto overflow-auto overflow-x-hidden">
                                 {/* Cart items */}
                             </div>
