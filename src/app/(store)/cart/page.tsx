@@ -1,6 +1,7 @@
 'use client'
 
 import { useCartStore } from '@/cart-store/useCartStore'
+import CartProduct from '@/components/store/cards/cart-product'
 import FastDelivery from '@/components/store/cards/fast-delivery'
 import CartHeader from '@/components/store/cart-page/cart-header'
 import { SecurityPrivacyCard } from '@/components/store/product-page/returns-security-privacy-card'
@@ -28,6 +29,15 @@ export default function CartPage() {
                             />
                             <div className="mt-2 h-auto overflow-auto overflow-x-hidden">
                                 {/* Cart items */}
+                                {cartItems.map((product, i) => (
+                                    <CartProduct
+                                        key={i}
+                                        product={product}
+                                        selectedItems={selectedItems}
+                                        setSelectedItems={setSelectedItems}
+                                        setTotalShipping={setTotalShipping}
+                                    />
+                                ))}
                             </div>
                         </div>
                         {/* Cart side */}
