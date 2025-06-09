@@ -43,7 +43,6 @@ export const useCartStore = create(
                 //         item.sizeId === product.sizeId
                 // )
 
-                // console.log(cartItem)
 
                 // if (cartItem) {
                 //     const updatedCart = cart.map((item) =>
