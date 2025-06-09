@@ -1,6 +1,4 @@
 import { CartProductType } from '@/lib/types'
-import { Item } from '@radix-ui/react-navigation-menu'
-import { Action } from 'sonner'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -38,36 +36,85 @@ export const useCartStore = create(
                 if (!product) return
                 const cart = get().cart
                 // If product already exists in cart
-                const cartItem = cart.findIndex(
+                // const cartItem = cart.findIndex(
+                //     (item) =>
+                //         item.productId === product.productId &&
+                //         item.variantId === product.variantId &&
+                //         item.sizeId === product.sizeId
+                // )
+
+                // console.log(cartItem)
+
+                // if (cartItem) {
+                //     const updatedCart = cart.map((item) =>
+                //         item.productId === product.productId &&
+                //         item.variantId === product.variantId &&
+                //         item.sizeId === product.sizeId
+                //             ? {
+                //                   ...item,
+                //                   quantity: item.quantity + product.quantity,
+                //               }
+                //             : item
+                //     )
+                //     set((state) => ({
+                //         cart: updatedCart,
+                //         totalPrice:
+                //             state.totalPrice + product.price * product.quantity,
+                //     }))
+                // } else {
+                //     const updatedCart = [...cart, { ...product }]
+                //     set((state) => ({
+                //         cart: updatedCart,
+                //         totalItems: state.totalItems + 1,
+                //         totalPrice:
+                //             state.totalPrice + product.price * product.quantity,
+                //     }))
+                // }
+                const cartItemIndex = cart.findIndex(
                     (item) =>
                         item.productId === product.productId &&
                         item.variantId === product.variantId &&
                         item.sizeId === product.sizeId
                 )
 
-                if (cartItem) {
-                    const updatedCart = cart.map((item) =>
-                        item.productId === product.productId &&
-                        item.variantId === product.variantId &&
-                        item.sizeId === product.sizeId
+                const stock = product.stock
+
+                if (cartItemIndex !== -1) {
+                    const currentQty = cart[cartItemIndex].quantity
+                    const newQty = Math.min(
+                        currentQty + product.quantity,
+                        stock
+                    )
+                    const addedQty = newQty - currentQty
+
+                    if (addedQty <= 0) return // もうこれ以上追加できない
+
+                    // update existing
+                    const updatedCart = cart.map((item, index) =>
+                        index === cartItemIndex
                             ? {
                                   ...item,
-                                  quantity: item.quantity + product.quantity,
+                                  quantity: newQty,
                               }
                             : item
                     )
                     set((state) => ({
                         cart: updatedCart,
-                        totalPrice:
-                            state.totalPrice + product.price * product.quantity,
+                        totalPrice: state.totalPrice + product.price * addedQty,
                     }))
                 } else {
-                    const updatedCart = [...cart, { ...product }]
+                    // add new
+                    const validQty = Math.min(product.quantity, stock)
+                    if (validQty <= 0) return // ストックが0のため追加不可
+
+                    const updatedCart = [
+                        ...cart,
+                        { ...product, quantity: validQty },
+                    ]
                     set((state) => ({
                         cart: updatedCart,
                         totalItems: state.totalItems + 1,
-                        totalPrice:
-                            state.totalPrice + product.price * product.quantity,
+                        totalPrice: state.totalPrice + product.price * validQty,
                     }))
                 }
             },
@@ -76,9 +123,10 @@ export const useCartStore = create(
                 quantity: number
             ) => {
                 const cart = get().cart
+                const maxQty = product.stock
+                const validQty = Math.min(quantity, maxQty)
 
-                // If quantity is 0 or less, remove the item
-                if (quantity <= 0) {
+                if (validQty <= 0) {
                     get().removeFromCart(product)
                     return
                 }
@@ -87,7 +135,7 @@ export const useCartStore = create(
                     item.productId === product.productId &&
                     item.variantId === product.variantId &&
                     item.sizeId === product.sizeId
-                        ? { ...item, quantity }
+                        ? { ...item, quantity: validQty }
                         : item
                 )
 
@@ -102,6 +150,38 @@ export const useCartStore = create(
                     totalPrice,
                 }))
             },
+
+            // updateProductQuantity: (
+            //     product: CartProductType,
+            //     quantity: number
+            // ) => {
+            //     const cart = get().cart
+
+            //     // If quantity is 0 or less, remove the item
+            //     if (quantity <= 0) {
+            //         get().removeFromCart(product)
+            //         return
+            //     }
+
+            //     const updatedCart = cart.map((item) =>
+            //         item.productId === product.productId &&
+            //         item.variantId === product.variantId &&
+            //         item.sizeId === product.sizeId
+            //             ? { ...item, quantity }
+            //             : item
+            //     )
+
+            //     const totalItems = updatedCart.length
+            //     const totalPrice = updatedCart.reduce(
+            //         (sum, item) => sum + item.price * item.quantity,
+            //         0
+            //     )
+            //     set(() => ({
+            //         cart: updatedCart,
+            //         totalItems,
+            //         totalPrice,
+            //     }))
+            // },
             removeFromCart: (product: CartProductType) => {
                 const cart = get().cart
                 const updatedCart = cart.filter(
