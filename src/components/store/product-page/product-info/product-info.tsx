@@ -33,7 +33,17 @@ const ProductInfo: FC<Props> = ({
     setActiveImage,
 }) => {
     // Check if productData exists return null if it's missing (prevents rendering when no data is available)
-    if (!productData) return null
+    // if (!productData) return null
+    if (!productData) {
+        return (
+            <div className="relative w-full xl:w-[540px]">
+                <div className="mb-4 h-6 w-3/4 animate-pulse rounded bg-gray-200"></div>
+                <div className="mb-2 h-4 w-1/2 animate-pulse rounded bg-gray-100"></div>
+                <div className="h-20 w-full animate-pulse rounded bg-gray-100"></div>
+                {/* 他にも必要に応じて Skeleton を追加 */}
+            </div>
+        )
+    }
 
     // Destructure necessary properties from the productData object
     const {
@@ -84,11 +94,12 @@ const ProductInfo: FC<Props> = ({
                             width={100}
                             height={100}
                             className="size-8 rounded-full object-cover"
+                            priority
                         />
                     </div>
                 </Link>
                 <div className="whitespace-nowrap">
-                    <span className="flex-1 overflow-hidden overflow-ellipsis whitespace-nowrap text-gray-500">
+                    <span className="flex-1 truncate text-gray-500">
                         SKU: {sku}
                     </span>
                     <span

@@ -43,10 +43,11 @@ const Select: FC<Props> = ({
                     {activeVariant?.image && (
                         <Image
                             src={activeVariant.image}
-                            alt=""
+                            alt={activeVariant.name}
                             height={50}
                             width={50}
                             className="absolute left-2 top-1/2 size-10 -translate-y-1/2 rounded-full object-cover object-top shadow-md"
+                            priority
                         />
                     )}
                     <input
@@ -83,10 +84,11 @@ const Select: FC<Props> = ({
                                 {option.image && (
                                     <Image
                                         src={option.image}
-                                        alt=""
+                                        alt={option.name}
                                         height={100}
                                         width={100}
                                         className="size-10 rounded-full object-cover object-top shadow-md"
+                                        priority
                                     />
                                 )}
                                 {option.name}
