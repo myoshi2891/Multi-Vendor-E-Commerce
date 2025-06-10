@@ -1,7 +1,7 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import { CartProductType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, Heart, Trash } from 'lucide-react'
+import { Check, ChevronRight, Heart, Minus, Plus, Trash } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
@@ -96,6 +96,20 @@ const CartProduct: FC<Props> = ({
 
     const handleSelectProduct = () => {}
 
+    const updateProductQuantityHandler = (type: 'add' | 'remove') => {
+        if (type === 'add' && quantity < stock) {
+            // increase quantity by 1 but ensure it doesn't exceed stock
+            updateProductQuantity(product, quantity + 1)
+        } else if (type === 'remove') {
+            // decrease quantity by 1 but ensure it doesn't go below 1
+            if (quantity > 1) {
+                updateProductQuantity(product, quantity - 1)
+            } else {
+                removeFromCart(product)
+            }
+        }
+    }
+
     return (
         <div className="select-none border-t border-t-[#ebebeb] bg-white px-6">
             <div className="py-4">
@@ -164,6 +178,58 @@ const CartProduct: FC<Props> = ({
                                 >
                                     <Trash className="w-4 hover:stroke-orange-secondary" />
                                 </span>
+                            </div>
+                        </div>
+                        {/* Style - size */}
+                        <div className="my-1">
+                            <button className="relative h-[24px] max-w-full cursor-pointer whitespace-normal rounded-xl bg-gray-100 px-2.5 py-0 text-xs font-bold leading-4 text-main-primary outline-0">
+                                <span className="flex flex-wrap items-center justify-between">
+                                    <div className="inline-block max-w-[95%] truncate text-left">
+                                        {size}
+                                    </div>
+                                    <span className="ml-0.5">
+                                        <ChevronRight className="w-3" />
+                                    </span>
+                                </span>
+                            </button>
+                        </div>
+                        {/* Price - Delivery */}
+                        <div className="relative mt-2 flex items-center justify-between">
+                            <div>
+                                <span className="inline-block break-all">
+                                    ${price.toFixed(2)} x {quantity} = $
+                                    {Number(price.toFixed(2)) * quantity}
+                                </span>
+                            </div>
+                            {/* Quantity changer */}
+                            <div className="text-xs">
+                                <div className="inline-flex list-none items-center text-sm leading-6 text-gray-900">
+                                    <div
+                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
+                                        onClick={() =>
+                                            updateProductQuantityHandler(
+                                                'remove'
+                                            )
+                                        }
+                                    >
+                                        <Minus className="stroke-[#555} w-3" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={quantity}
+                                        min={1}
+                                        max={stock}
+                                        className="m-1 h-6 w-[32px] border-none bg-white text-center font-bold leading-6 tracking-normal text-gray-900 outline-none"
+                                    />
+                                    <div
+                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
+                                        onClick={() =>
+                                            updateProductQuantityHandler('add')
+                                        }
+                                    >
+                                        <Plus className="stroke-[#555} w-3" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
