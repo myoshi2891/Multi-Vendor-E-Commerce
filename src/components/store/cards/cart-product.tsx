@@ -1,7 +1,15 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import { CartProductType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, ChevronRight, Heart, Minus, Plus, Trash } from 'lucide-react'
+import {
+    Check,
+    ChevronRight,
+    Heart,
+    Minus,
+    Plus,
+    Trash,
+    Truck,
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
@@ -40,6 +48,9 @@ const CartProduct: FC<Props> = ({
     } = product
 
     const unique_id = `${productId}-${variantId}-${sizeId}`
+
+    const totalPrice = price * quantity
+
     const [shippingInfo, setShippingInfo] = useState({
         initialFee: 0,
         extraFee: 0,
@@ -94,7 +105,19 @@ const CartProduct: FC<Props> = ({
         (state) => state
     )
 
-    const handleSelectProduct = () => {}
+    const handleSelectProduct = () => {
+        setSelectedItems((prev) => {
+            const exists = prev.some(
+                (item) =>
+                    item.productId === product.productId &&
+                    item.variantId === product.variantId &&
+                    item.sizeId === product.sizeId
+            )
+            return exists
+                ? prev.filter((item) => item !== product) // Remove if exists
+                : [...prev, product]
+        })
+    }
 
     const updateProductQuantityHandler = (type: 'add' | 'remove') => {
         if (type === 'add' && quantity < stock) {
@@ -198,7 +221,7 @@ const CartProduct: FC<Props> = ({
                             <div>
                                 <span className="inline-block break-all">
                                     ${price.toFixed(2)} x {quantity} = $
-                                    {Number(price.toFixed(2)) * quantity}
+                                    {totalPrice.toFixed(2)}
                                 </span>
                             </div>
                             {/* Quantity changer */}
@@ -230,6 +253,57 @@ const CartProduct: FC<Props> = ({
                                         <Plus className="stroke-[#555} w-3" />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        {/* Shipping info */}
+                        <div className="mt-1 cursor-pointer text-xs text-[#999]">
+                            <div className="mb-1 flex items-center">
+                                <span>
+                                    <Truck className="inline-block w-4 text-[#01A971]" />
+                                    {shippingInfo.totalFee > 0 ? (
+                                        <span className="ml-1 text-[#01A971]">
+                                            {shippingMethod === 'ITEM' ? (
+                                                <>
+                                                    ${shippingInfo.initialFee}
+                                                    (first item){' '}
+                                                    {quantity === 1
+                                                        ? ''
+                                                        : `+ ${quantity - 1 === 1 ? '1 item' : `${quantity - 1} items`}
+                                                    x ${extraShippingFee}
+                                                    (${quantity - 1 === 1 ? '1 additional item' : `${quantity - 1} additional items`})`}
+                                                    = $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            ) : shippingMethod === 'WEIGHT' ? (
+                                                <>
+                                                    ${shippingFee} x{' '}
+                                                    {shippingInfo.weight}kg x{' '}
+                                                    {quantity}{' '}
+                                                    {quantity > 1
+                                                        ? 'items'
+                                                        : 'item'}{' '}
+                                                    = $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Fixed Fee : $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <span className="ml-1 text-[#01A971]">
+                                            Free Delivery
+                                        </span>
+                                    )}
+                                </span>
                             </div>
                         </div>
                     </div>
