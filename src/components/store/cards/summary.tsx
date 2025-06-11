@@ -1,6 +1,10 @@
 import { CartProductType } from '@/lib/types'
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { Button } from '../ui/button'
+import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import { saveUserCart } from '@/queries/user'
+import { PulseLoader } from 'react-spinners'
 
 interface Props {
     cartItems: CartProductType[]
@@ -8,6 +12,8 @@ interface Props {
 }
 
 const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
+    const router = useRouter()
+    const [loading, setLoading] = useState<boolean>(false)
     // Calculate subtotal from cartItems
     const subtotal = cartItems.reduce((total, item) => {
         return total + item.price * item.quantity
@@ -15,6 +21,18 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
 
     // Calculate total price including shipping fees
     const total = subtotal + shippingFees
+
+    const handleSaveCart = async () => {
+        try {
+            setLoading(true)
+            const res = await saveUserCart(cartItems)
+            if (res) router.push('/checkout')
+            setLoading(false)
+        } catch (error: any) {
+            // Handle error
+            toast.error(error.toString())
+        }
+    }
 
     return (
         <div className="relative bg-white px-6 py-4">
@@ -50,10 +68,13 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
                 </h3>
             </div>
             <div className="my-2.5">
-
-            <Button >
-                <span>Checkout ({cartItems.length})</span>
-            </Button>
+                <Button onClick={() => handleSaveCart()}>
+                    {loading ? (
+                        <PulseLoader size={5} color="#fff" />
+                    ) : (
+                        <span>Checkout ({cartItems.length})</span>
+                    )}
+                </Button>
             </div>
         </div>
     )
