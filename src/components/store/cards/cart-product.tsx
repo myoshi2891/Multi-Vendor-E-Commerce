@@ -1,7 +1,15 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import { CartProductType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { Check, Heart, Trash } from 'lucide-react'
+import {
+    Check,
+    ChevronRight,
+    Heart,
+    Minus,
+    Plus,
+    Trash,
+    Truck,
+} from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
@@ -40,6 +48,9 @@ const CartProduct: FC<Props> = ({
     } = product
 
     const unique_id = `${productId}-${variantId}-${sizeId}`
+
+    const totalPrice = price * quantity
+
     const [shippingInfo, setShippingInfo] = useState({
         initialFee: 0,
         extraFee: 0,
@@ -94,7 +105,33 @@ const CartProduct: FC<Props> = ({
         (state) => state
     )
 
-    const handleSelectProduct = () => {}
+    const handleSelectProduct = () => {
+        setSelectedItems((prev) => {
+            const exists = prev.some(
+                (item) =>
+                    item.productId === product.productId &&
+                    item.variantId === product.variantId &&
+                    item.sizeId === product.sizeId
+            )
+            return exists
+                ? prev.filter((item) => item !== product) // Remove if exists
+                : [...prev, product]
+        })
+    }
+
+    const updateProductQuantityHandler = (type: 'add' | 'remove') => {
+        if (type === 'add' && quantity < stock) {
+            // increase quantity by 1 but ensure it doesn't exceed stock
+            updateProductQuantity(product, quantity + 1)
+        } else if (type === 'remove') {
+            // decrease quantity by 1 but ensure it doesn't go below 1
+            if (quantity > 1) {
+                updateProductQuantity(product, quantity - 1)
+            } else {
+                removeFromCart(product)
+            }
+        }
+    }
 
     return (
         <div className="select-none border-t border-t-[#ebebeb] bg-white px-6">
@@ -163,6 +200,109 @@ const CartProduct: FC<Props> = ({
                                     onClick={() => removeFromCart(product)}
                                 >
                                     <Trash className="w-4 hover:stroke-orange-secondary" />
+                                </span>
+                            </div>
+                        </div>
+                        {/* Style - size */}
+                        <div className="my-1">
+                            <button className="relative h-[24px] max-w-full cursor-pointer whitespace-normal rounded-xl bg-gray-100 px-2.5 py-0 text-xs font-bold leading-4 text-main-primary outline-0">
+                                <span className="flex flex-wrap items-center justify-between">
+                                    <div className="inline-block max-w-[95%] truncate text-left">
+                                        {size}
+                                    </div>
+                                    <span className="ml-0.5">
+                                        <ChevronRight className="w-3" />
+                                    </span>
+                                </span>
+                            </button>
+                        </div>
+                        {/* Price - Delivery */}
+                        <div className="relative mt-2 flex items-center justify-between">
+                            <div>
+                                <span className="inline-block break-all">
+                                    ${price.toFixed(2)} x {quantity} = $
+                                    {totalPrice.toFixed(2)}
+                                </span>
+                            </div>
+                            {/* Quantity changer */}
+                            <div className="text-xs">
+                                <div className="inline-flex list-none items-center text-sm leading-6 text-gray-900">
+                                    <div
+                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
+                                        onClick={() =>
+                                            updateProductQuantityHandler(
+                                                'remove'
+                                            )
+                                        }
+                                    >
+                                        <Minus className="stroke-[#555} w-3" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={quantity}
+                                        min={1}
+                                        max={stock}
+                                        className="m-1 h-6 w-[32px] border-none bg-white text-center font-bold leading-6 tracking-normal text-gray-900 outline-none"
+                                    />
+                                    <div
+                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
+                                        onClick={() =>
+                                            updateProductQuantityHandler('add')
+                                        }
+                                    >
+                                        <Plus className="stroke-[#555} w-3" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Shipping info */}
+                        <div className="mt-1 cursor-pointer text-xs text-[#999]">
+                            <div className="mb-1 flex items-center">
+                                <span>
+                                    <Truck className="inline-block w-4 text-[#01A971]" />
+                                    {shippingInfo.totalFee > 0 ? (
+                                        <span className="ml-1 text-[#01A971]">
+                                            {shippingMethod === 'ITEM' ? (
+                                                <>
+                                                    ${shippingInfo.initialFee}
+                                                    (first item){' '}
+                                                    {quantity === 1
+                                                        ? ''
+                                                        : `+ ${quantity - 1 === 1 ? '1 item' : `${quantity - 1} items`}
+                                                    x ${extraShippingFee}
+                                                    (${quantity - 1 === 1 ? '1 additional item' : `${quantity - 1} additional items`})`}
+                                                    = $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            ) : shippingMethod === 'WEIGHT' ? (
+                                                <>
+                                                    ${shippingFee} x{' '}
+                                                    {shippingInfo.weight}kg x{' '}
+                                                    {quantity}{' '}
+                                                    {quantity > 1
+                                                        ? 'items'
+                                                        : 'item'}{' '}
+                                                    = $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Fixed Fee : $
+                                                    {shippingInfo.totalFee.toFixed(
+                                                        2
+                                                    )}
+                                                </>
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <span className="ml-1 text-[#01A971]">
+                                            Free Delivery
+                                        </span>
+                                    )}
                                 </span>
                             </div>
                         </div>
