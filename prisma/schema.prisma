@@ -373,7 +373,7 @@ model Cart {
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
   cartItems         CartItem[] @relation("CartToCartItem")
-  shippingFeesTotal Float      @default(0)
+  shippingFees Float      @default(0) @map("shippingFeesTotal")
   subTotal          Float
   total             Float
 

@@ -237,4 +237,68 @@ export const saveUserCart = async (
     )
 
     const total = subTotal + shippingFee
+
+    // Save the validated items to the cart in the database
+    const cart = await db.cart.create({
+        data: {
+            cartItems: {
+                create: validatedCartItems.map((item) => ({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    sizeId: item.sizeId,
+                    storeId: item.storeId,
+                    sku: item.sku,
+                    productSlug: item.productSlug,
+                    variantSlug: item.variantSlug,
+                    name: item.name,
+                    image: item.image,
+                    quantity: item.quantity,
+                    size: item.size,
+                    price: item.price,
+                    shippingFee: item.shippingFee,
+                    totalPrice: item.totalPrice,
+                })),
+            },
+            shippingFees: shippingFee,
+            subTotal,
+            total,
+            userId,
+        },
+    })
+
+    if (cart) return true
+    return false
 }
+
+/**
+ * @Function getUserShippingAddresses
+ * @Description Retrieves all shipping addresses from a specific user.
+ * @PermissionLevel User who owns the addresses
+ * @Parameters None
+ * @Returns List of shipping addresses associated with the user.
+ */
+
+// export const getUserShippingAddresses = async () => {
+//     try {
+//         // Get current user
+//         const user = await currentUser()
+
+//         // Ensure user is authenticated
+//         if (!user) throw new Error('Unauthenticated.')
+
+//         // Fetch shipping addresses from the database
+//         const shippingAddresses = await db.shippingAddress.findMany({
+//             where: {
+//                 userId: user.id,
+//             },
+//             include: {
+//                 country: true,
+//             },
+//         })
+
+//         return shippingAddresses
+//     } catch (error) {
+//         console.error('Error fetching shipping addresses:', error)
+//         throw error
+//     }
+// }
