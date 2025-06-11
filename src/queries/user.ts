@@ -3,6 +3,9 @@
 import { db } from '@/lib/db'
 import { CartProductType } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
+import { getCookie } from 'cookies-next'
+import { cookies } from 'next/headers'
+import { getShippingDetails } from './product'
 
 /**
  * @name followStore
@@ -123,6 +126,11 @@ export const saveUserCart = async (
                 },
                 include: {
                     store: true,
+                    freeShipping: {
+                        include: {
+                            eligibleCountries: true,
+                        },
+                    },
                     variants: {
                         where: {
                             id: variantId,
@@ -154,9 +162,49 @@ export const saveUserCart = async (
 
             // Validate stock and price
             const validQuantity = Math.min(quantity, size.quantity)
+
             const price = size.discount
                 ? size.price - size.price * (size.discount / 100)
                 : size.price
+
+            // Calculate shipping details
+            const countryCookie = getCookie('userCountry', { cookies })
+
+            let details = {
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+            }
+
+            if (countryCookie) {
+                const country = JSON.parse(countryCookie)
+                const temp_details = await getShippingDetails(
+                    product.shippingFeeMethod,
+                    country,
+                    product.store,
+                    product.freeShipping
+                )
+                if (typeof temp_details !== 'boolean') {
+                    details = temp_details
+                }
+            }
+
+            let shippingFee = 0
+            const { shippingFeeMethod } = product
+
+            if (shippingFeeMethod === 'ITEM') {
+                shippingFee =
+                    quantity === 1
+                        ? details.shippingFee
+                        : details.shippingFee +
+                          details.extraShippingFee * (quantity - 1)
+            } else if (shippingFeeMethod === 'WEIGHT') {
+                shippingFee = details.shippingFee * variant.weight * quantity
+            } else if (shippingFeeMethod === 'FIXED') {
+                shippingFee = details.shippingFee
+            }
+
+            const totalPrice = price * validQuantity + shippingFee
 
             return {
                 productId,
@@ -171,9 +219,22 @@ export const saveUserCart = async (
                 size: size.size,
                 quantity: validQuantity,
                 price,
-                shippingFee: 0,
-                totalPrice: 0,
+                shippingFee,
+                totalPrice,
             }
         })
     )
+
+    // Recalculate the cart's total price and shipping fees
+    const subTotal = validatedCartItems.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0
+    )
+
+    const shippingFee = validatedCartItems.reduce(
+        (acc, item) => acc + item.shippingFee,
+        0
+    )
+
+    const total = subTotal + shippingFee
 }
