@@ -1,7 +1,8 @@
 import { UserShippingAddressType } from '@/lib/types'
 import { Country, ShippingAddress } from '@prisma/client'
 import { Plus } from 'lucide-react'
-import { Dispatch, FC, SetStateAction } from 'react'
+import { Dispatch, FC, SetStateAction, useState } from 'react'
+import Modal from '../modal'
 
 interface Props {
     countries: Country[]
@@ -16,6 +17,7 @@ const UserShippingAddresses: FC<Props> = ({
     selectedAddress,
     setSelectedAddress,
 }) => {
+    const [show, setShow] = useState<boolean>(true)
     return (
         <div className="w-full bg-white px-6 py-4">
             <div className="relative flex flex-col text-sm">
@@ -24,14 +26,18 @@ const UserShippingAddresses: FC<Props> = ({
                     // AddressesList
                     <div></div>
                 )}
-                <div className="ml-8 mt-4 cursor-pointer text-orange-background">
+                <div
+                    className="ml-8 mt-4 cursor-pointer text-orange-background"
+                    onClick={() => setShow(true)}
+                >
                     <Plus className="mr-1 inline-block w-3" />
                     <span className="text-sm">Add new address</span>
                 </div>
                 {/* Modal */}
-                <div>
+                <Modal title="Add New Address" show={show} setShow={setShow}>
                     {/* AddressDetail */}
-                </div>
+                    <div></div>
+                </Modal>
             </div>
         </div>
     )
