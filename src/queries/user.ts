@@ -278,27 +278,27 @@ export const saveUserCart = async (
  * @Returns List of shipping addresses associated with the user.
  */
 
-// export const getUserShippingAddresses = async () => {
-//     try {
-//         // Get current user
-//         const user = await currentUser()
+export const getUserShippingAddresses = async () => {
+    try {
+        // Get current user
+        const user = await currentUser()
 
-//         // Ensure user is authenticated
-//         if (!user) throw new Error('Unauthenticated.')
+        // Ensure user is authenticated
+        if (!user) throw new Error('Unauthenticated.')
 
-//         // Fetch shipping addresses from the database
-//         const shippingAddresses = await db.shippingAddress.findMany({
-//             where: {
-//                 userId: user.id,
-//             },
-//             include: {
-//                 country: true,
-//             },
-//         })
+        // Fetch shipping addresses from the database
+        const shippingAddresses = await db.shippingAddress.findMany({
+            where: {
+                userId: user.id,
+            },
+            include: {
+                country: true,
+            },
+        })
 
-//         return shippingAddresses
-//     } catch (error) {
-//         console.error('Error fetching shipping addresses:', error)
-//         throw error
-//     }
-// }
+        return shippingAddresses
+    } catch (error) {
+        console.error('Error fetching shipping addresses:', error)
+        throw error
+    }
+}
