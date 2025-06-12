@@ -1,5 +1,6 @@
 import CheckoutContainer from '@/components/store/checkout-page/container'
 import { db } from '@/lib/db'
+import { getUserShippingAddresses } from '@/queries/user'
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
@@ -21,6 +22,9 @@ export default async function CheckoutPage() {
 
     if (!cart) redirect('/cart')
 
+    // Get user shipping address
+    const addresses = await getUserShippingAddresses()
+
     // Get list of countries
     const countries = await db.country.findMany({
         orderBy: { name: 'desc' },
@@ -29,7 +33,11 @@ export default async function CheckoutPage() {
     return (
         <div className="min-h-screen bg-[#f4f4f4]">
             <div className="max-w-container mx-auto px-2 py-5">
-                <CheckoutContainer cart={cart} countries={countries} />
+                <CheckoutContainer
+                    cart={cart}
+                    countries={countries}
+                    addresses={addresses}
+                />
             </div>
         </div>
     )

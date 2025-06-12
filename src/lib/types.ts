@@ -18,10 +18,12 @@ import {
     ProductVariantImage,
     Review,
     ReviewImage,
+    ShippingAddress,
     ShippingFeeMethod,
     ShippingRate,
     Size,
     User,
+    Country as CountryPrisma,
 } from '@prisma/client'
 
 export interface DashboardSidebarMenuInterface {
@@ -204,4 +206,8 @@ export type ReviewDetailsType = {
 
 export type CartWithCartItemsType = Cart & {
     cartItems: CartItem[]
+}
+
+export type UserShippingAddressType = ShippingAddress & {
+    country: CountryPrisma
 }
