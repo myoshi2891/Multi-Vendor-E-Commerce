@@ -21,13 +21,15 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
   stores    Store[]  @relation("UserStores")
   following Store[]  @relation("UserFollowingStore")
   reviews   Review[] @relation("ReviewToUser")
   cart      Cart?    @relation("UserCart")
+  shippingAddresses ShippingAddress[] @relation("UserShippingAddress")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
 }
 
 model Category {
@@ -101,7 +103,7 @@ model Store {
   products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
   followers     User[]         @relation("UserFollowingStore")
-  cartItem      CartItem[]       @relation("CartItemToStore")
+  cartItem      CartItem[]     @relation("CartItemToStore")
 
   @@index([userId])
 }
@@ -272,6 +274,7 @@ model Country {
 
   shippingRates         ShippingRate[]        @relation("CountryShippingRates")
   freeShippingCountries FreeShippingCountry[] @relation("FreeShippingToCountry")
+  shippingAddresses ShippingAddress[] @relation("CountryToShippingAddress")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -372,10 +375,10 @@ model Cart {
   userId String @unique
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
-  cartItems         CartItem[] @relation("CartToCartItem")
+  cartItems    CartItem[] @relation("CartToCartItem")
   shippingFees Float      @default(0) @map("shippingFeesTotal")
-  subTotal          Float
-  total             Float
+  subTotal     Float
+  total        Float
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -400,7 +403,7 @@ model CartItem {
   cartId String
   cart   Cart   @relation("CartToCartItem", fields: [cartId], references: [id], onDelete: Cascade)
 
-  storeId String 
+  storeId String
   store   Store  @relation("CartItemToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
@@ -408,4 +411,29 @@ model CartItem {
 
   @@index([cartId])
   @@index([storeId])
+}
+
+model ShippingAddress {
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  phone     String
+  address1  String
+  address2  String
+  state     String
+  city      String
+  zip_code  String
+  default   Boolean @default(false)
+
+  userId String
+  user   User   @relation("UserShippingAddress", fields: [userId], references: [id], onDelete: Cascade)
+
+  countryId String
+  country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([userId])
 }
