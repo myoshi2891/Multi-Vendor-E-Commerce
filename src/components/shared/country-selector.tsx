@@ -63,10 +63,10 @@ export default function CountrySelector({
                         <Image
                             alt={`${selectedValue.name}`}
                             src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${selectedValue.code}.svg`}
-                            className={'mr-2 inline h-4 rounded-sm'}
+                            className="mr-2 inline size-auto h-4 rounded-sm"
+                            priority
                             width={20}
                             height={20}
-                            priority
                         />
                         {selectedValue.name}
                     </span>
@@ -155,9 +155,7 @@ export default function CountrySelector({
                                                 <Image
                                                     alt={`${value.name}`}
                                                     src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${value.code}.svg`}
-                                                    className={
-                                                        'mr-2 inline h-4 rounded-sm'
-                                                    }
+                                                    className="mr-2 inline h-4 rounded-sm"
                                                     width={20}
                                                     height={20}
                                                     priority
@@ -175,6 +173,8 @@ export default function CountrySelector({
                                                             viewBox="0 0 20 20"
                                                             fill="currentColor"
                                                             aria-hidden="true"
+                                                            width={5}
+                                                            height={5}
                                                         >
                                                             <path
                                                                 fillRule="evenodd"

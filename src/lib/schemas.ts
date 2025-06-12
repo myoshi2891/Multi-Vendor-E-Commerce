@@ -1,5 +1,6 @@
 'use client'
 import { ShippingFeeMethod } from '@prisma/client'
+import { lastDayOfDecade } from 'date-fns'
 import { deflate } from 'zlib'
 import * as z from 'zod'
 
@@ -445,4 +446,79 @@ export const AddReviewSchema = z.object({
         .array()
         .max(3, 'You can upload a maximum of 3 images for the review.'),
     color: z.string({ required_error: 'Color is required' }),
+})
+
+export const ShippingAddressSchema = z.object({
+    countryId: z
+        .string({
+            required_error: 'Country is required',
+            invalid_type_error: 'Country must be a string',
+        })
+        .uuid(),
+    firstName: z
+        .string({
+            required_error: 'First name is required',
+            invalid_type_error: 'First name must be a string',
+        })
+        .min(2, 'First name must be at least 2 characters long')
+        .max(50, 'First name cannot exceed 50 characters')
+        .regex(/^[a-zA-Z]+$/, {
+            message: 'First name can only contain letters.',
+        }),
+    lastName: z
+        .string({
+            required_error: 'Last name is required',
+            invalid_type_error: 'Last name must be a string',
+        })
+        .min(2, 'Last name must be at least 2 characters long')
+        .max(50, 'Last name cannot exceed 50 characters')
+        .regex(/^[a-zA-Z]+$/, {
+            message: 'Last name can only contain letters.',
+        }),
+    phone: z
+        .string({
+            required_error: 'Phone number is required',
+            invalid_type_error: 'Phone number must be a string',
+        })
+        .regex(/^\+?\d{1,15}$/, { message: 'Invalid phone number format.' }),
+    address1: z
+        .string({
+            required_error: 'Address 1 is required',
+            invalid_type_error: 'Address 1 must be a string',
+        })
+        .min(5, 'Address 1 must be at least 5 characters long')
+        .max(100, 'Address 1 cannot exceed 100 characters'),
+    address2: z
+        .string({
+            invalid_type_error: 'Address 2 must be a string',
+        })
+        .min(2, 'Address 2 must be at least 2 characters long')
+        .max(100, 'Address 2 cannot exceed 100 characters')
+        .optional(),
+    state: z
+        .string({
+            invalid_type_error: 'State must be a string',
+            required_error: 'State is required',
+        })
+        .min(2, { message: 'State must be at least 2 characters long' })
+        .max(50, { message: 'State cannot exceed 50 characters' }),
+
+    city: z
+        .string({
+            required_error: 'City is required',
+            invalid_type_error: 'City must be a string',
+        })
+        .min(2, { message: 'City must be at least 2 characters long' })
+        .max(50, { message: 'City cannot exceed 50 characters' }),
+
+    zip_code: z
+        .string({
+            required_error: 'Zip code is required',
+            invalid_type_error: 'Zip code must be a string',
+        })
+        .min(2, { message: 'Zip code must be at least 2 characters long' })
+        .max(10, { message: 'Zip code cannot exceed 10 characters' }),
+    // .regex(/^\d{5}(-\s{4})?$/, { message: 'Invalid zip code format.' }),
+
+    default: z.boolean().default(false),
 })
