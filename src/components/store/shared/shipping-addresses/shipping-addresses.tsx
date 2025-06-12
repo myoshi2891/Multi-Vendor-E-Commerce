@@ -3,6 +3,7 @@ import { Country, ShippingAddress } from '@prisma/client'
 import { Plus } from 'lucide-react'
 import { Dispatch, FC, SetStateAction, useState } from 'react'
 import Modal from '../modal'
+import AddressDetails from './address-details'
 
 interface Props {
     countries: Country[]
@@ -36,7 +37,7 @@ const UserShippingAddresses: FC<Props> = ({
                 {/* Modal */}
                 <Modal title="Add New Address" show={show} setShow={setShow}>
                     {/* AddressDetail */}
-                    <div></div>
+                    <AddressDetails setShow={setShow} countries={countries} />
                 </Modal>
             </div>
         </div>
