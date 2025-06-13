@@ -15,6 +15,7 @@ import * as z from 'zod'
 import { ShippingAddressSchema } from '@/lib/schemas'
 
 // UI Components
+import CountrySelector from '@/components/shared/country-selector'
 import {
     Form,
     FormControl,
@@ -23,11 +24,12 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
-
+import { Button } from '../../ui/button'
 // import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 // Queries
+import { upsertShippingAddress } from '@/queries/user'
 
 // Utils
 import { v4 } from 'uuid'
@@ -37,8 +39,6 @@ import { useRouter } from 'next/navigation'
 
 // types
 import { SelectMenuOption, UserShippingAddressType } from '@/lib/types'
-import { Button } from '../../ui/button'
-import CountrySelector from '@/components/shared/country-selector'
 
 interface AddressDetailsProps {
     data?: UserShippingAddressType
@@ -46,7 +46,11 @@ interface AddressDetailsProps {
     setShow: Dispatch<SetStateAction<boolean>>
 }
 
-const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) => {
+const AddressDetails: FC<AddressDetailsProps> = ({
+    data,
+    countries,
+    setShow,
+}) => {
     // Initializing necessary hooks
     const { toast } = useToast() // Hook for displaying toast messages
     const router = useRouter() // Hook for routing
@@ -75,14 +79,18 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
             default: data?.default ?? false,
         },
     })
-    
+
     // Loading status based on form submission
     const isLoading = form.formState.isSubmitting
 
     // Reset form values when data changes
     useEffect(() => {
         if (data) {
-            form.reset(data)
+            form.reset({
+                ...data,
+                address2: data.address2 || '',
+            })
+            handleCountryChange(data?.country.name)
         }
     }, [data, form])
 
@@ -94,21 +102,31 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
             // Upserting Address data
             const response = await upsertShippingAddress({
                 id: data?.id ? data.id : v4(),
+                firstName: values.firstName,
+                lastName: values.lastName,
+                phone: values.phone,
+                address1: values.address1,
+                address2: values.address2 || '',
+                city: values.city,
+                countryId: values.countryId,
+                state: values.state,
+                zip_code: values.zip_code,
+                default: values.default,
+                userId: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
             })
 
             // Displaying success message
             toast({
                 title: data?.id
-                    ? 'Address has been updated.'
-                    : `Congratulations! '${response?.name}' is now created.`,
+                    ? 'Shipping address has been updated.'
+                    : `Congratulations! Shipping address is now created.`,
             })
 
-            // Redirect or Refresh data
-            if (data?.id) {
-                router.refresh()
-            } else {
-                router.push('/dashboard/admin/categories')
-            }
+            // Refresh data
+            router.refresh()
+            setShow(false)
         } catch (error: any) {
             // Handling form submission errors
             console.log(error)
@@ -121,15 +139,13 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
     }
 
     const handleCountryChange = (name: string) => {
-        const country = countries.find((c) => c.id === name)
+        const country = countries.find((c) => c.name === name)
         if (country) {
             form.setValue('countryId', country?.id)
         }
         setCountry(name)
     }
 
-    console.log("country", form.watch().countryId);
-    
     return (
         <div>
             <Form {...form}>
@@ -139,7 +155,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
                 >
                     <div className="space-y-2">
                         <FormLabel>Contact information</FormLabel>
-                        <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center justify-between gap-3">
                             <FormField
                                 control={form.control}
                                 name="firstName"
@@ -175,7 +191,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
                             control={form.control}
                             name="phone"
                             render={({ field }) => (
-                                <FormItem className="!mt-6 w-[calc(50%-8px)] flex-1">
+                                <FormItem className="!mt-3 w-[calc(50%-8px)] flex-1">
                                     <FormControl>
                                         <Input
                                             placeholder="Phone number"
@@ -194,7 +210,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
                                 control={form.control}
                                 name="countryId"
                                 render={({ field }) => (
-                                    <FormItem className="!mt-6 w-[calc(50%-8px)] flex-1">
+                                    <FormItem className="!mt-3 w-[calc(50%-8px)] flex-1">
                                         <FormControl>
                                             <CountrySelector
                                                 id={'countries'}
@@ -219,8 +235,91 @@ const AddressDetails: FC<AddressDetailsProps> = ({ data, countries, setShow }) =
                                 )}
                             />
                         </div>
+                        <div className="!mt-3 flex items-center justify-between gap-3">
+                            <FormField
+                                control={form.control}
+                                name="address1"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Street, house/apartment/unit"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="address2"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Apt, suite, unit, etc (optional)"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="!mt-3 flex items-center justify-between gap-3">
+                            <FormField
+                                control={form.control}
+                                name="city"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl>
+                                            <Input
+                                                placeholder="City"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="state"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormControl>
+                                            <Input
+                                                placeholder="State/Province"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="zip_code"
+                            render={({ field }) => (
+                                <FormItem className="!mt-3 w-[calc(50%-8px)] flex-1">
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Zip code"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="rounded-md"
+                    >
                         {isLoading
                             ? 'loading...'
                             : data?.id
