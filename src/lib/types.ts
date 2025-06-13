@@ -210,4 +210,5 @@ export type CartWithCartItemsType = Cart & {
 
 export type UserShippingAddressType = ShippingAddress & {
     country: CountryPrisma
+    user: User
 }

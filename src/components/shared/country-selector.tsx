@@ -159,6 +159,7 @@ export default function CountrySelector({
                                                     width={20}
                                                     height={20}
                                                     priority
+                                                    style={{ width: 'auto' }}
                                                 />
 
                                                 <span className="truncate font-normal">
