@@ -25,7 +25,7 @@ model User {
   following Store[]  @relation("UserFollowingStore")
   reviews   Review[] @relation("ReviewToUser")
   cart      Cart?    @relation("UserCart")
-  shippingAddresses ShippingAddress[] @relation("UserShippingAddress")
+  shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -419,17 +419,17 @@ model ShippingAddress {
   lastName  String
   phone     String
   address1  String
-  address2  String
+  address2  String?
   state     String
   city      String
   zip_code  String
   default   Boolean @default(false)
 
   userId String
-  user   User   @relation("UserShippingAddress", fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
 
   countryId String
-  country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id], onDelete: Cascade)
+  country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

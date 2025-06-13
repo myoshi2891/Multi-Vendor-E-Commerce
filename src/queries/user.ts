@@ -6,6 +6,7 @@ import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
 import { getShippingDetails } from './product'
+import { ShippingAddress } from '@prisma/client'
 
 /**
  * @name followStore
@@ -292,6 +293,7 @@ export const getUserShippingAddresses = async () => {
                 userId: user.id,
             },
             include: {
+                user: true,
                 country: true,
             },
         })
@@ -299,6 +301,72 @@ export const getUserShippingAddresses = async () => {
         return shippingAddresses
     } catch (error) {
         console.error('Error fetching shipping addresses:', error)
+        throw error
+    }
+}
+
+/**
+ * @Function upsertShippingAddress
+ * @Description Updates or inserts shipping addresses into the database.
+ * @PermissionLevel User who owns the addresses
+ * @Parameters - shippingAddresses: An array of shipping address objects containing details of the addresses to be upserted.
+ * @Returns
+ */
+
+export const upsertShippingAddress = async (address: ShippingAddress) => {
+    try {
+        // Get current user
+        const user = await currentUser()
+
+        // Ensure user is authenticated
+        if (!user) throw new Error('Unauthenticated.')
+
+        // Ensure address data is provide
+        if (!address) throw new Error('Please provide shipping address data.')
+
+        // Handle making the rest of address default false when we are adding a new default
+        if (address.default) {
+            const addressDB = await db.shippingAddress.findUnique({
+                where: {
+                    id: address.id,
+                },
+            })
+            if (addressDB) {
+                try {
+                    await db.shippingAddress.updateMany({
+                        where: {
+                            userId: user.id,
+                            default: true,
+                        },
+                        data: {
+                            default: false,
+                        },
+                    })
+                } catch (error) {
+                    console.error('Error updating default addresses:', error)
+                    throw new Error('Error making the default address.')
+                }
+            }
+        }
+
+        // Upsert shipping addresses into the database
+        const upsertedAddresses = await db.shippingAddress.upsert({
+            where: {
+                id: address.id,
+            },
+            update: {
+                ...address,
+                userId: user.id,
+            },
+            create: {
+                ...address,
+                userId: user.id,
+            },
+        })
+
+        return upsertedAddresses
+    } catch (error) {
+        console.error('Error upserting shipping addresses:', error)
         throw error
     }
 }
