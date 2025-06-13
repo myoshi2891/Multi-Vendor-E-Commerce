@@ -29,6 +29,7 @@ import { Button } from '../../ui/button'
 import { Input } from '@/components/ui/input'
 
 // Queries
+import { upsertShippingAddress } from '@/queries/user'
 
 // Utils
 import { v4 } from 'uuid'
@@ -85,7 +86,11 @@ const AddressDetails: FC<AddressDetailsProps> = ({
     // Reset form values when data changes
     useEffect(() => {
         if (data) {
-            form.reset(data)
+            form.reset({
+                ...data,
+                address2: data.address2 || '',
+            })
+            handleCountryChange(data?.country.name)
         }
     }, [data, form])
 
@@ -97,21 +102,31 @@ const AddressDetails: FC<AddressDetailsProps> = ({
             // Upserting Address data
             const response = await upsertShippingAddress({
                 id: data?.id ? data.id : v4(),
+                firstName: values.firstName,
+                lastName: values.lastName,
+                phone: values.phone,
+                address1: values.address1,
+                address2: values.address2 || '',
+                city: values.city,
+                countryId: values.countryId,
+                state: values.state,
+                zip_code: values.zip_code,
+                default: values.default,
+                userId: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
             })
 
             // Displaying success message
             toast({
                 title: data?.id
-                    ? 'Address has been updated.'
-                    : `Congratulations! '${response?.name}' is now created.`,
+                    ? 'Shipping address has been updated.'
+                    : `Congratulations! Shipping address is now created.`,
             })
 
-            // Redirect or Refresh data
-            if (data?.id) {
-                router.refresh()
-            } else {
-                router.push('/dashboard/admin/categories')
-            }
+            // Refresh data
+            router.refresh()
+            setShow(false)
         } catch (error: any) {
             // Handling form submission errors
             console.log(error)
@@ -124,14 +139,12 @@ const AddressDetails: FC<AddressDetailsProps> = ({
     }
 
     const handleCountryChange = (name: string) => {
-        const country = countries.find((c) => c.id === name)
+        const country = countries.find((c) => c.name === name)
         if (country) {
             form.setValue('countryId', country?.id)
         }
         setCountry(name)
     }
-
-    console.log('country', form.watch().countryId)
 
     return (
         <div>
