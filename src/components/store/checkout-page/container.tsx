@@ -4,6 +4,7 @@ import { Country, ShippingAddress } from '@prisma/client'
 import { FC, useState } from 'react'
 import UserShippingAddresses from '../shared/shipping-addresses/shipping-addresses'
 import CheckoutProductCard from '../cards/checkout-product'
+import PlaceOrderCard from '../cards/plase-order'
 
 interface Props {
     cart: CartWithCartItemsType
@@ -34,8 +35,13 @@ const CheckoutContainer: FC<Props> = ({ cart, countries, addresses }) => {
                     </div>
                 </div>
             </div>
-            {/* Cart Side */}
-            {/* PlaceOrderCard */}
+            <PlaceOrderCard
+                cartId={cart.id}
+                shippingAddress={selectedAddress}
+                shippingFees={cart.shippingFees}
+                subTotal={cart.subTotal}
+                total={cart.total}
+            />
         </div>
     )
 }
