@@ -492,7 +492,6 @@ export const ShippingAddressSchema = z.object({
         .string({
             invalid_type_error: 'Address 2 must be a string',
         })
-        .min(2, 'Address 2 must be at least 2 characters long')
         .max(100, 'Address 2 cannot exceed 100 characters')
         .optional(),
     state: z
