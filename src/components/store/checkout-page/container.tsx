@@ -3,6 +3,7 @@ import { CartWithCartItemsType, UserShippingAddressType } from '@/lib/types'
 import { Country, ShippingAddress } from '@prisma/client'
 import { FC, useState } from 'react'
 import UserShippingAddresses from '../shared/shipping-addresses/shipping-addresses'
+import CheckoutProductCard from '../cards/checkout-product'
 
 interface Props {
     cart: CartWithCartItemsType
@@ -25,8 +26,10 @@ const CheckoutContainer: FC<Props> = ({ cart, countries, addresses }) => {
                 <div className="my-3 size-4 w-full bg-white">
                     <div className="relative">
                         {cart.cartItems.map((product) => (
-                            // CheckoutProductCard
-                            <div key={product.id}></div>
+                            <CheckoutProductCard
+                                key={product.variantId}
+                                product={product}
+                            />
                         ))}
                     </div>
                 </div>
