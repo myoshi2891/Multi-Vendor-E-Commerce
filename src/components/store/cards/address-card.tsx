@@ -5,6 +5,9 @@ import { Check } from 'lucide-react'
 import { FC, useState } from 'react'
 import Modal from '../shared/modal'
 import AddressDetails from '../shared/shipping-addresses/address-details'
+import toast from 'react-hot-toast'
+import { upsertShippingAddress } from '@/queries/user'
+import { useRouter } from 'next/navigation'
 
 interface Props {
     address: UserShippingAddressType
@@ -19,7 +22,26 @@ const ShippingAddressCard: FC<Props> = ({
     onSelect,
     countries,
 }) => {
+    const router = useRouter()
     const [show, setShow] = useState<boolean>(false)
+    const handleMakeDefault = async () => {
+        try {
+            const { country, user, ...newAddress } = address
+            const response = await upsertShippingAddress({
+                ...newAddress,
+                default: true, // Update the address as default
+            })
+            if (response) {
+                toast.success('Address marked as default.')
+                router.refresh()
+            }
+        } catch (error) {
+            toast.error(
+                'Something went wrong while making this address default.'
+            )
+        }
+    }
+
     return (
         <div className="group relative flex w-full self-start">
             {/* checkbox */}
@@ -76,6 +98,16 @@ const ShippingAddressCard: FC<Props> = ({
                     >
                         <span className="text-xs text-[#27f]">Edit</span>
                     </div>
+                    {isSelected && !address.default && (
+                        <div
+                            className="cursor-pointer"
+                            onClick={() => handleMakeDefault()}
+                        >
+                            <span className="text-xs text-[#27f]">
+                                Save as default
+                            </span>
+                        </div>
+                    )}
                 </div>
                 {show && (
                     <Modal
