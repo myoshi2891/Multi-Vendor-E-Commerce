@@ -19,7 +19,7 @@ const UserShippingAddresses: FC<Props> = ({
     selectedAddress,
     setSelectedAddress,
 }) => {
-    const [show, setShow] = useState<boolean>(true)
+    const [show, setShow] = useState<boolean>(false)
     return (
         <div className="w-full bg-white px-6 py-4">
             <div className="relative flex flex-col text-sm">
