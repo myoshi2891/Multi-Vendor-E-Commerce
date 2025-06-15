@@ -5,7 +5,10 @@ import { CartProductType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
-import { getShippingDetails } from './product'
+import {
+    getDeliveryDetailsForStoreByCountry,
+    getShippingDetails,
+} from './product'
 import { ShippingAddress } from '@prisma/client'
 
 /**
@@ -529,4 +532,77 @@ export const placeOrder = async (
     )
 
     // console.log('validatedCartItems', validatedCartItems)
+
+    // Define the type for grouped items by store
+    type GroupedItems = { [storeId: string]: typeof validatedCartItems }
+
+    // Group validated items by store
+    const groupedItems = validatedCartItems.reduce<GroupedItems>(
+        (acc, item) => {
+            if (!acc[item.storeId]) acc[item.storeId] = []
+            acc[item.storeId].push(item)
+            return acc
+        },
+        {} as GroupedItems
+    )
+
+    // console.log('groupedItems', groupedItems)
+
+    // Create the order
+    const order = await db.order.create({
+        data: {
+            userId,
+            shippingAddressId: shippingAddress.id,
+            orderStatus: 'Pending',
+            paymentStatus: 'Pending',
+            shippingFees: 0, // Will calculate below
+            subTotal: 0, // Will calculate below
+            total: 0, // Will calculate below
+        },
+    })
+
+    // Iterate over each store's items and create OrderGroup and OrderItems
+    let orderTotalPrice = 0
+    let orderShippingFee = 0
+
+    for (const [storeId, items] of Object.entries(groupedItems)) {
+        // Calculate store-specific totals
+        const groupedTotalPrice = items.reduce(
+            (acc, item) => acc + item.totalPrice,
+            0
+        )
+
+        const groupShippingFee = items.reduce(
+            (acc, item) => acc + item.shippingFee,
+            0
+        )
+
+        const { shippingService, deliveryTimeMax, deliveryTimeMin } =
+            await getDeliveryDetailsForStoreByCountry(
+                storeId,
+                shippingAddress.countryId
+            )
+        // Create an OrderGroup for this store
+        const orderGroup = await db.orderGroup.create({
+            data: {
+                orderId: order.id,
+                storeId,
+                status: 'Pending',
+                subtotal: groupedTotalPrice - groupShippingFee,
+                shippingFees: groupShippingFee,
+                total: groupedTotalPrice,
+                shippingService: shippingService || 'International Delivery',
+                shippingDeliveryMin: deliveryTimeMin || 7,
+                shippingDeliveryMax: deliveryTimeMax || 30,
+            },
+        })
+    }
+    // Clear the cart
+    // await db.cart.deleteMany({
+    //     where: {
+    //         id: cartId,
+    //     },
+    // })
+
+    return order
 }
