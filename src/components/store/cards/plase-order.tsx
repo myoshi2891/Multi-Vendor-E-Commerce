@@ -1,10 +1,12 @@
+import { useCartStore } from '@/cart-store/useCartStore'
+import { emptyUserCart, placeOrder } from '@/queries/user'
 import { ShippingAddress } from '@prisma/client'
+import { useRouter } from 'next/navigation'
 import { FC } from 'react'
+import toast from 'react-hot-toast'
+import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
-import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
-import toast from 'react-hot-toast'
-import { placeOrder } from '@/queries/user'
 
 interface Props {
     shippingFees: number
@@ -21,17 +23,18 @@ const PlaceOrderCard: FC<Props> = ({
     shippingAddress,
     cartId,
 }) => {
+    const { push } = useRouter()
+    const emptyCart = useCartStore((state) => state.emptyCart)
     const handlePlaceOrder = async () => {
         if (!shippingAddress) {
             toast.error('Select a shipping address before placing your order.')
         } else {
-            const response = await placeOrder(shippingAddress, cartId)
-            // Place order logic goes here
-            // setLoading(true)
-            // // Simulate API call
-            // await new Promise((resolve) => setTimeout(resolve, 2000))
-            // setLoading(false)
-            // router.push('/order-complete')
+            const order = await placeOrder(shippingAddress, cartId)
+            if (order) {
+                emptyCart()
+                await emptyUserCart()
+                push(`/order/${order.orderId}`)
+            }
         }
     }
     return (
@@ -85,6 +88,5 @@ const PlaceOrderCard: FC<Props> = ({
         </div>
     )
 }
-
 
 export default PlaceOrderCard
