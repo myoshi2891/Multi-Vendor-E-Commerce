@@ -968,3 +968,53 @@ export const getProductFilteredReviews = async (
 
     return reviews
 }
+
+/**
+ * @Function getDeliveryDetailsForStoreByCountry
+ * @Description Returns delivery details for a store based on the store ID and country ID
+ * @PermissionLevel Public
+ * @Parameters - storeId: ID of the store
+ * - countryId: ID of the country
+ * @Returns
+ */
+
+export const getDeliveryDetailsForStoreByCountry = async (
+    storeId: string,
+    countryId: string
+) => {
+    // Get shipping rate
+    const shippingRate = await db.shippingRate.findFirst({
+        where: {
+            storeId,
+            countryId,
+        },
+    })
+
+    let storeDetails
+    if (!shippingRate) {
+        storeDetails = await db.store.findUnique({
+            where: {
+                id: storeId,
+            },
+            select: {
+                defaultShippingService: true,
+                defaultDeliveryTimeMax: true,
+                defaultDeliveryTimeMin: true,
+            },
+        })
+    }
+
+    const shippingService = shippingRate
+        ? shippingRate.shippingService
+        : storeDetails?.defaultShippingService
+
+    const deliveryTimeMin = shippingRate
+        ? shippingRate.deliveryTimeMin
+        : storeDetails?.defaultDeliveryTimeMin
+
+    const deliveryTimeMax = shippingRate
+        ? shippingRate.deliveryTimeMax
+        : storeDetails?.defaultDeliveryTimeMax
+
+    return { shippingService, deliveryTimeMax, deliveryTimeMin }
+}
