@@ -240,6 +240,7 @@ const CartProduct: FC<Props> = ({
                                     <input
                                         type="text"
                                         value={quantity}
+                                        readOnly
                                         min={1}
                                         max={stock}
                                         className="m-1 h-6 w-[32px] border-none bg-white text-center font-bold leading-6 tracking-normal text-gray-900 outline-none"
