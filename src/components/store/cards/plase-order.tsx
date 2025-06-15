@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import toast from 'react-hot-toast'
+import { placeOrder } from '@/queries/user'
 
 interface Props {
     shippingFees: number
@@ -22,14 +23,16 @@ const PlaceOrderCard: FC<Props> = ({
 }) => {
     const handlePlaceOrder = async () => {
         if (!shippingAddress) {
-            toast.error("Select a shipping address before placing your order.")
+            toast.error('Select a shipping address before placing your order.')
+        } else {
+            const response = await placeOrder(shippingAddress, cartId)
+            // Place order logic goes here
+            // setLoading(true)
+            // // Simulate API call
+            // await new Promise((resolve) => setTimeout(resolve, 2000))
+            // setLoading(false)
+            // router.push('/order-complete')
         }
-        // Place order logic goes here
-        // setLoading(true)
-        // // Simulate API call
-        // await new Promise((resolve) => setTimeout(resolve, 2000))
-        // setLoading(false)
-        // router.push('/order-complete')
     }
     return (
         <div className="sticky top-4 ml-5 mt-3 max-h-max w-[380px]">
@@ -82,5 +85,6 @@ const PlaceOrderCard: FC<Props> = ({
         </div>
     )
 }
+
 
 export default PlaceOrderCard

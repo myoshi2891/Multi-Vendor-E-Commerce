@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartProductType } from '@/lib/types'
+import { CartProductType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
@@ -307,10 +307,10 @@ export const getUserShippingAddresses = async () => {
 
 /**
  * @Function upsertShippingAddress
- * @Description Updates or inserts shipping addresses into the database.
+ * @Description Upserts a shipping address for a specific user.
  * @PermissionLevel User who owns the addresses
- * @Parameters - shippingAddresses: An array of shipping address objects containing details of the addresses to be upserted.
- * @Returns
+ * @Parameters - address: ShippingAddress object containing details of the shipping address to be upserted.
+ * @Returns Updated or newly created shipping address details.
  */
 
 export const upsertShippingAddress = async (address: ShippingAddress) => {
@@ -369,4 +369,164 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
         console.error('Error upserting shipping addresses:', error)
         throw error
     }
+}
+
+/**
+ * @Function placeOrder
+ * @Description
+ * @PermissionLevel
+ * @Parameters
+ * @Returns
+ */
+
+export const placeOrder = async (
+    shippingAddress: ShippingAddress,
+    cartId: string
+) => {
+    // Ensure the user is authenticated
+    const user = await currentUser()
+    if (!user) throw new Error('Unauthenticated.')
+
+    const userId = user.id
+
+    // Fetch user's cart will all items
+    const cart = await db.cart.findUnique({
+        where: { id: cartId },
+        include: {
+            cartItems: true,
+        },
+    })
+
+    if (!cart) throw new Error('Cart not found.')
+
+    const cartItems = cart.cartItems
+
+    // Fetch product, variant, and size data from the database for validation
+    const validatedCartItems = await Promise.all(
+        cartItems.map(async (cartProduct) => {
+            const { productId, variantId, sizeId, quantity } = cartProduct
+
+            // Fetch the product, variant, and size from the database
+            const product = await db.product.findUnique({
+                where: {
+                    id: productId,
+                },
+                include: {
+                    store: true,
+                    freeShipping: {
+                        include: {
+                            eligibleCountries: true,
+                        },
+                    },
+                    variants: {
+                        where: {
+                            id: variantId,
+                        },
+                        include: {
+                            sizes: {
+                                where: {
+                                    id: sizeId,
+                                },
+                            },
+                            images: true,
+                        },
+                    },
+                },
+            })
+
+            if (
+                !product ||
+                product.variants.length === 0 ||
+                product.variants[0].sizes.length === 0
+            ) {
+                throw new Error(
+                    `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
+                )
+            }
+
+            const variant = product.variants[0]
+            const size = variant.sizes[0]
+
+            // Validate stock and price
+            const validQuantity = Math.min(quantity, size.quantity)
+
+            const price = size.discount
+                ? size.price - size.price * (size.discount / 100)
+                : size.price
+
+            // Calculate shipping details
+            const countryId = shippingAddress.countryId
+
+            const temp_country = await db.country.findUnique({
+                where: {
+                    id: countryId,
+                },
+            })
+
+            if (!temp_country) {
+                throw new Error(`Failed to get Shipping details for order.`)
+            }
+
+            const country = {
+                name: temp_country.name,
+                code: temp_country.code,
+                city: '',
+                region: '',
+            }
+
+            let details = {
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+            }
+
+            if (country) {
+                const temp_details = await getShippingDetails(
+                    product.shippingFeeMethod,
+                    country,
+                    product.store,
+                    product.freeShipping
+                )
+                if (typeof temp_details !== 'boolean') {
+                    details = temp_details
+                }
+            }
+
+            let shippingFee = 0
+            const { shippingFeeMethod } = product
+
+            if (shippingFeeMethod === 'ITEM') {
+                shippingFee =
+                    quantity === 1
+                        ? details.shippingFee
+                        : details.shippingFee +
+                          details.extraShippingFee * (quantity - 1)
+            } else if (shippingFeeMethod === 'WEIGHT') {
+                shippingFee = details.shippingFee * variant.weight * quantity
+            } else if (shippingFeeMethod === 'FIXED') {
+                shippingFee = details.shippingFee
+            }
+
+            const totalPrice = price * validQuantity + shippingFee
+
+            return {
+                productId,
+                variantId,
+                productSlug: product.slug,
+                variantSlug: variant.slug,
+                sizeId,
+                storeId: product.storeId,
+                sku: variant.sku,
+                name: `${product.name} ・ ${variant.variantName}`,
+                image: variant.images[0].url,
+                size: size.size,
+                quantity: validQuantity,
+                price,
+                shippingFee,
+                totalPrice,
+            }
+        })
+    )
+
+    // console.log('validatedCartItems', validatedCartItems)
 }
