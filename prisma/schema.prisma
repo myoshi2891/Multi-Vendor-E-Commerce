@@ -21,15 +21,15 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  stores    Store[]  @relation("UserStores")
-  following Store[]  @relation("UserFollowingStore")
-  reviews   Review[] @relation("ReviewToUser")
-  cart      Cart?    @relation("UserCart")
+  stores            Store[]           @relation("UserStores")
+  following         Store[]           @relation("UserFollowingStore")
+  reviews           Review[]          @relation("ReviewToUser")
+  cart              Cart?             @relation("UserCart")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
+  orders            Order[]           @relation("UserOrders")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
 }
 
 model Category {
@@ -274,7 +274,7 @@ model Country {
 
   shippingRates         ShippingRate[]        @relation("CountryShippingRates")
   freeShippingCountries FreeShippingCountry[] @relation("FreeShippingToCountry")
-  shippingAddresses ShippingAddress[] @relation("CountryToShippingAddress")
+  shippingAddresses     ShippingAddress[]     @relation("CountryToShippingAddress")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -431,9 +431,80 @@ model ShippingAddress {
   countryId String
   country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id])
 
+  orders Order[] @relation("ShippingAddressToOrder")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([countryId])
   @@index([userId])
+}
+
+enum OrderStatus {
+  Pending
+  Confirmed
+  Processing
+  Shipped
+  OutForDelivery
+  Delivered
+  Canceled
+  Failed
+  Returned
+  Refunded
+  PartiallyShipped
+  OnHold
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  Failed
+  Declined
+  Cancelled
+  Refunded
+  PartiallyRefunded
+  ChargeBack
+}
+
+model Order {
+  id           String @id @default(uuid())
+  shippingFees Float  @default(0) @map("shippingFeesTotal")
+  subTotal     Float
+  total        Float
+
+  groups OrderGroup[] @relation("OrderGroupToOrder")
+
+  orderStatus   OrderStatus   @default(Pending)
+  paymentStatus PaymentStatus @default(Pending)
+
+  shippingAddressId String
+  shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("UserOrders", fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shippingAddressId])
+  @@index([userId])
+}
+
+model OrderGroup {
+  id                  String      @id @default(uuid())
+  status              OrderStatus @default(Pending)
+  shippingService     String
+  shippingDeliveryMin Int
+  shippingDeliveryMax Int
+  shippingFees        Float
+  subtotal            Float
+  total               Float
+
+  orderId String
+  order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
 }
