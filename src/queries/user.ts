@@ -10,6 +10,7 @@ import {
     getShippingDetails,
 } from './product'
 import { ShippingAddress } from '@prisma/client'
+import { Delete } from 'lucide-react'
 
 /**
  * @name followStore
@@ -376,16 +377,17 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
 
 /**
  * @Function placeOrder
- * @Description
- * @PermissionLevel
- * @Parameters
- * @Returns
+ * @Description Places orders for a specific user.
+ * @PermissionLevel User who owns the addresses
+ * @Parameters - shippingAddress: ShippingAddress object containing details of the shipping address for the order.
+ *  - cartId: ID of the cart to place the order for.
+ * @Return Updated or newly created order details.
  */
 
 export const placeOrder = async (
     shippingAddress: ShippingAddress,
     cartId: string
-) => {
+): Promise<{ orderId: string }> => {
     // Ensure the user is authenticated
     const user = await currentUser()
     if (!user) throw new Error('Unauthenticated.')
@@ -596,13 +598,73 @@ export const placeOrder = async (
                 shippingDeliveryMax: deliveryTimeMax || 30,
             },
         })
+
+        // Create OrderItems for this OrderGroup
+        for (const item of items) {
+            await db.orderItem.create({
+                data: {
+                    orderGroupId: orderGroup.id,
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    sizeId: item.sizeId,
+                    productSlug: item.productSlug,
+                    variantSlug: item.variantSlug,
+                    sku: item.sku,
+                    name: item.name,
+                    image: item.image,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.quantity,
+                    shippingFee: item.shippingFee,
+                    totalPrice: item.totalPrice,
+                },
+            })
+        }
+
+        // Update order totals
+        orderTotalPrice += groupedTotalPrice
+        orderShippingFee += groupShippingFee
     }
-    // Clear the cart
-    // await db.cart.deleteMany({
+
+    // Update the main order with the final totals
+    await db.order.update({
+        where: {
+            id: order.id,
+        },
+        data: {
+            subTotal: orderTotalPrice - orderShippingFee,
+            shippingFees: orderShippingFee,
+            total: orderTotalPrice,
+        },
+    })
+
+    // Delete the cart
+    // await db.cart.delete({
     //     where: {
     //         id: cartId,
     //     },
     // })
 
-    return order
+    return { orderId: order.id }
+}
+
+export const emptyUserCart = async () => {
+    try {
+        // Ensure the user is authenticated
+        const user = await currentUser()
+        if (!user) throw new Error('Unauthenticated.')
+
+        const userId = user.id
+
+        const res = await db.cart.delete({
+            where: {
+                userId,
+            },
+        })
+
+        if (res) return true
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
 }
