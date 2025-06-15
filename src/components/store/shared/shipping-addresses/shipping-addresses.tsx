@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react'
 import { Dispatch, FC, SetStateAction, useState } from 'react'
 import Modal from '../modal'
 import AddressDetails from './address-details'
+import AddressList from './address.list'
 
 interface Props {
     countries: Country[]
@@ -18,14 +19,18 @@ const UserShippingAddresses: FC<Props> = ({
     selectedAddress,
     setSelectedAddress,
 }) => {
-    const [show, setShow] = useState<boolean>(true)
+    const [show, setShow] = useState<boolean>(false)
     return (
         <div className="w-full bg-white px-6 py-4">
             <div className="relative flex flex-col text-sm">
                 <h1 className="mb-3 text-lg font-bold">Shipping Addresses</h1>
                 {addresses && addresses.length > 0 && (
-                    // AddressesList
-                    <div></div>
+                    <AddressList
+                        addresses={addresses}
+                        countries={countries}
+                        selectedAddress={selectedAddress}
+                        setSelectedAddress={setSelectedAddress}
+                    />
                 )}
                 <div
                     className="ml-8 mt-4 cursor-pointer text-orange-background"
