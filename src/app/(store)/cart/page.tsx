@@ -1,4 +1,5 @@
 import CartContainer from '@/components/store/cart-page/container'
+import StoreHeader from '@/components/store/layout/header/header'
 import { Country } from '@/lib/types'
 import { cookies } from 'next/headers'
 
@@ -21,5 +22,10 @@ export default function CartPage() {
     }
 
     // Return the CartContainer component with the userCountry prop
-    return <CartContainer userCountry={userCountry} />
+    return (
+        <>
+            <StoreHeader />
+            <CartContainer userCountry={userCountry} />
+        </>
+    )
 }

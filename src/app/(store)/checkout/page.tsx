@@ -1,4 +1,5 @@
 import CheckoutContainer from '@/components/store/checkout-page/container'
+import StoreHeader from '@/components/store/layout/header/header'
 import { db } from '@/lib/db'
 import { getUserShippingAddresses } from '@/queries/user'
 import { currentUser } from '@clerk/nextjs/server'
@@ -31,14 +32,17 @@ export default async function CheckoutPage() {
     })
 
     return (
-        <div className="min-h-screen bg-[#f4f4f4]">
-            <div className="max-w-container mx-auto px-2 py-5">
-                <CheckoutContainer
-                    cart={cart}
-                    countries={countries}
-                    addresses={addresses}
-                />
+        <>
+            <StoreHeader />
+            <div className="min-h-[calc(100vh-65px)] bg-[#f4f4f4]">
+                <div className="mx-auto max-w-container px-2 py-5">
+                    <CheckoutContainer
+                        cart={cart}
+                        countries={countries}
+                        addresses={addresses}
+                    />
+                </div>
             </div>
-        </div>
+        </>
     )
 }
