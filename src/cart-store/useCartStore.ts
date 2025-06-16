@@ -16,6 +16,7 @@ interface Actions {
     removeMultipleFromCart: (Items: CartProductType[]) => void // Multiple products removal
     removeFromCart: (Item: CartProductType) => void // Single product removal
     emptyCart: () => void // Empty the cart
+    setCart: (newCart: CartProductType[]) => void // Added setCart method
 }
 
 // Initialize a default state
@@ -42,7 +43,6 @@ export const useCartStore = create(
                 //         item.variantId === product.variantId &&
                 //         item.sizeId === product.sizeId
                 // )
-
 
                 // if (cartItem) {
                 //     const updatedCart = cart.map((item) =>
@@ -214,7 +214,20 @@ export const useCartStore = create(
                     totalPrice: 0,
                 }))
             },
+            setCart: (newCart: CartProductType[]) => {
+                const totalItems = newCart.length
+                const totalPrice = newCart.reduce(
+                    (sum, item) => sum + item.price * item.quantity,
+                    0
+                )
+                set(() => ({
+                    cart: newCart,
+                    totalItems,
+                    totalPrice,
+                }))
+            },
         }),
+
         { name: 'cart' }
     )
 )

@@ -752,8 +752,38 @@ export const updateCartWithLatest = async (
                     details = temp_details
                 }
             }
-            
+
+            const price = size.discount
+                ? size.price - (size.price * size.discount) / 100
+                : size.price
+
+            const validated_qty = Math.min(quantity, size.quantity)
+
+            return {
+                productId,
+                variantId,
+                productSlug: product.slug,
+                variantSlug: variant.slug,
+                sizeId,
+                sku: variant.sku,
+                name: product.name,
+                variantName: variant.variantName,
+                image: variant.images[0].url,
+                variantImage: variant.variantImage,
+                stock: size.quantity,
+                weight: variant.weight,
+                shippingMethod: product.shippingFeeMethod,
+                size: size.size,
+                quantity: validated_qty,
+                price,
+                shippingService: details.shippingService,
+                shippingFee: details.shippingFee,
+                extraShippingFee: details.extraShippingFee,
+                deliveryTimeMin: details.deliveryTimeMin,
+                deliveryTimeMax: details.deliveryTimeMax,
+                isFreeShipping: details.isFreeShipping,
+            }
         })
     )
-    return cartProducts
+    return validatedCartItems
 }
