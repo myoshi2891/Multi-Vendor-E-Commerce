@@ -668,3 +668,92 @@ export const emptyUserCart = async () => {
         throw error
     }
 }
+
+/**
+ * @Function updateCartWithLatest
+ * @Description
+ * @PermissionLevel
+ * @Parameters
+ *
+ * @Return
+ */
+
+export const updateCartWithLatest = async (
+    cartProducts: CartProductType[]
+): Promise<CartProductType[]> => {
+    // Fetch product, variant, and size data from the database for validation
+    const validatedCartItems = await Promise.all(
+        cartProducts.map(async (cartProduct) => {
+            const { productId, variantId, sizeId, quantity } = cartProduct
+
+            // Fetch the product, variant, and size from the database
+            const product = await db.product.findUnique({
+                where: {
+                    id: productId,
+                },
+                include: {
+                    store: true,
+                    freeShipping: {
+                        include: {
+                            eligibleCountries: true,
+                        },
+                    },
+                    variants: {
+                        where: {
+                            id: variantId,
+                        },
+                        include: {
+                            sizes: {
+                                where: {
+                                    id: sizeId,
+                                },
+                            },
+                            images: true,
+                        },
+                    },
+                },
+            })
+
+            if (
+                !product ||
+                product.variants.length === 0 ||
+                product.variants[0].sizes.length === 0
+            ) {
+                // return cartProduct
+                throw new Error(
+                    `Product not found or variant or size not found.`
+                )
+            }
+            const variant = product.variants[0]
+            const size = variant.sizes[0]
+
+            // Calculate Shipping details
+            const countryCookie = getCookie('userCountry', { cookies })
+
+            let details = {
+                shippingService: product.store.defaultShippingService,
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+                deliveryTimeMin: 0,
+                deliveryTimeMax: 0,
+            }
+
+            if (countryCookie) {
+                const country = JSON.parse(countryCookie)
+                const temp_details = await getShippingDetails(
+                    product.shippingFeeMethod,
+                    country,
+                    product.store,
+                    product.freeShipping
+                )
+
+                if (typeof temp_details !== 'boolean') {
+                    details = temp_details
+                }
+            }
+            
+        })
+    )
+    return cartProducts
+}

@@ -5,10 +5,10 @@ import { CartProductType, Country } from '@/lib/types'
 import { useState } from 'react'
 import CartHeader from './cart-header'
 import CartProduct from '../cards/cart-product'
-import CartSummary from '../cards/summary'
 import FastDelivery from '../cards/fast-delivery'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import EmptyCart from './empty-cart'
+import CartSummary from './summary'
 
 export default function CartContainer({
     userCountry,
