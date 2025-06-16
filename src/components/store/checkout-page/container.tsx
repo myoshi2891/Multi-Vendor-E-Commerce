@@ -4,7 +4,7 @@ import { Country, ShippingAddress } from '@prisma/client'
 import { FC, useState } from 'react'
 import UserShippingAddresses from '../shared/shipping-addresses/shipping-addresses'
 import CheckoutProductCard from '../cards/checkout-product'
-import PlaceOrderCard from '../cards/plase-order'
+import PlaceOrderCard from '../cards/place-order'
 
 interface Props {
     cart: CartWithCartItemsType
