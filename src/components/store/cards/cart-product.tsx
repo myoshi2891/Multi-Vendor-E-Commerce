@@ -315,11 +315,11 @@ const CartProduct: FC<Props> = ({
                                                         {
                                                             shippingInfo.initialFee
                                                         }
-                                                        (first item){' '}
+                                                        (first item)&nbsp;
                                                         {quantity === 1
                                                             ? ''
                                                             : `+ ${quantity - 1 === 1 ? '1 item' : `${quantity - 1} items`}
-                                                    x ${extraShippingFee}
+                                                    x $${extraShippingFee}
                                                     (${quantity - 1 === 1 ? '1 additional item' : `${quantity - 1} additional items`})`}
                                                         = $
                                                         {shippingInfo.totalFee.toFixed(
