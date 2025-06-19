@@ -78,6 +78,7 @@ export default function CartContainer({
                                                 setTotalShipping={
                                                     setTotalShipping
                                                 }
+                                                userCountry={userCountry}
                                             />
                                         ))}
                                     </div>
