@@ -1,7 +1,7 @@
 'use client'
 import { CartProductType } from '@/lib/types'
 import { cn } from '@/lib/utils'
-import { usePathname, useRouter } from 'next/navigation'
+import { redirect, usePathname, useRouter } from 'next/navigation'
 import { FC, useEffect } from 'react'
 
 interface SimplifiedSize {
@@ -110,7 +110,13 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                     {selectedSize.discount}% off
                 </span>
             )}
-            <p className="mt-2 text-xs">{selectedSize.quantity} pieces</p>
+            <p className="mt-2 text-xs">
+                {selectedSize.quantity > 0 ? (
+                    `${selectedSize.quantity} items`
+                ) : (
+                    <span className="text-red-500">Out of stock</span>
+                )}
+            </p>
         </div>
     )
 }

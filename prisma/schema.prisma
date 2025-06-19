@@ -27,6 +27,7 @@ model User {
   cart              Cart?             @relation("UserCart")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
   orders            Order[]           @relation("UserOrders")
+  wishlist          Wishlist[]        @relation("WishlistToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -139,6 +140,7 @@ model Product {
   specs     Spec[]           @relation("ProductSpec")
   questions Question[]       @relation("ProductQuestion")
   reviews   Review[]         @relation("ReviewToProduct")
+  wishlist  Wishlist[]       @relation("WishlistToProduct")
 
   categoryId String
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
@@ -175,6 +177,7 @@ model ProductVariant {
   images ProductVariantImage[] @relation("ProductVariantToVariantImage")
   colors Color[]               @relation("ProductVariantColors")
   specs  Spec[]                @relation("ProductVariantSpec")
+  wishes Wishlist[]            @relation("WishlistToProductVariant")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -188,6 +191,8 @@ model Size {
   quantity Int
   price    Float
   discount Float  @default(0)
+
+  wishlist Wishlist[] @relation("WishlistToSize")
 
   productVariantId String
   productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id], onDelete: Cascade)
@@ -543,4 +548,28 @@ model OrderItem {
   updatedAt DateTime @updatedAt
 
   @@index([orderGroupId])
+}
+
+model Wishlist {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation("WishlistToProduct", fields: [productId], references: [id], onDelete: Cascade)
+
+  variantId String
+  variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
+
+  sizeId String?
+  size   Size?  @relation("WishlistToSize", fields: [sizeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([sizeId])
 }

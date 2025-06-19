@@ -1,22 +1,28 @@
-import Link from "next/link";
-import { CartIcon } from "@/components/store/icons";
+'use client'
+import Link from 'next/link'
+import { CartIcon } from '@/components/store/icons'
+import { useCartStore } from '@/cart-store/useCartStore'
 
 export default function Cart() {
     // Get total items in the cart
-    const totalItems = 5
-    return <div className="relative flex h-11 items-center px-2 cursor-pointer">
-        <Link href="/cart" className="flex items-center text-white">
-            <span className="text-[32px] inline-block">
-                <CartIcon />
-            </span>
-            <div className="ml-1">
-                <div className="min-h-3 min-w-6 -mt-1.5">
-                    <span className="inline-block text-xs text-main-primary leading-4 bg-white rounded-lg text-center font-bold min-h-3 px-1 min-w-6">
-                        {totalItems}
-                    </span>
+    const totalItems = useCartStore((state) => state.totalItems)
+    return (
+        <div className="relative flex h-11 cursor-pointer items-center px-2">
+            <Link href="/cart" className="flex items-center text-white">
+                <span className="inline-block text-[32px]">
+                    <CartIcon />
+                </span>
+                <div className="ml-1">
+                    <div className="-mt-1.5 min-h-3 min-w-6">
+                        <span className="inline-block min-h-3 min-w-6 rounded-lg bg-white px-1 text-center text-xs font-bold leading-4 text-main-primary">
+                            {totalItems}
+                        </span>
+                    </div>
+                    <b className="text-wrap text-xs font-bold leading-4">
+                        Cart
+                    </b>
                 </div>
-                <b className="text-xs font-bold text-wrap leading-4">Cart</b>
-            </div>
-        </Link>
-  </div>;
+            </Link>
+        </div>
+    )
 }

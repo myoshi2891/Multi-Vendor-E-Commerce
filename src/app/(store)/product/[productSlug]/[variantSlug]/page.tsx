@@ -1,53 +1,55 @@
 import StoreCard from "@/components/store/cards/store-card";
-import ProductPageContainer from "@/components/store/product-page/container";
-import ProductDescription from "@/components/store/product-page/product-description";
-import ProductQuestions from "@/components/store/product-page/product-questions";
-import ProductSpecs from "@/components/store/product-page/product-specs";
+import CategoriesHeader from '@/components/store/layout/categories-header/categories-header'
+import StoreHeader from '@/components/store/layout/header/header'
+import ProductPageContainer from '@/components/store/product-page/container'
+import ProductDescription from '@/components/store/product-page/product-description'
+import ProductQuestions from '@/components/store/product-page/product-questions'
+import ProductSpecs from '@/components/store/product-page/product-specs'
 import RelatedProducts from '@/components/store/product-page/related-product'
-import ProductReviews from "@/components/store/product-page/reviews/product-reviews";
-import StoreProducts from "@/components/store/product-page/store-products";
-import { Separator } from "@/components/ui/separator";
-import { getProductPageData, getProducts } from "@/queries/product";
-import { notFound, redirect } from "next/navigation";
+import ProductReviews from '@/components/store/product-page/reviews/product-reviews'
+import StoreProducts from '@/components/store/product-page/store-products'
+import { Separator } from '@/components/ui/separator'
+import { getProductPageData, getProducts } from '@/queries/product'
+import { notFound, redirect } from 'next/navigation'
 
 interface PageProps {
-	params: { productSlug: string; variantSlug: string };
-	searchParams: { size?: string };
+    params: { productSlug: string; variantSlug: string }
+    searchParams: { size?: string }
 }
 export default async function ProductVariantPage({
-	params: { productSlug, variantSlug },
-	searchParams: { size: sizeId },
+    params: { productSlug, variantSlug },
+    searchParams: { size: sizeId },
 }: PageProps) {
-	// Fetch product data based on the product slug and variant slug
-	const productData = await getProductPageData(productSlug, variantSlug);
+    // Fetch product data based on the product slug and variant slug
+    const productData = await getProductPageData(productSlug, variantSlug)
 
-	// If no product data is found, show the 404 Not Found page
-	if (!productData) {
-		return notFound();
-		// return redirect("/");
-	}
+    // If no product data is found, show the 404 Not Found page
+    if (!productData) {
+        return notFound()
+        // return redirect("/");
+    }
 
-	// Extract the available sizes for the product variant
-	const { sizes } = productData;
+    // Extract the available sizes for the product variant
+    const { sizes } = productData
 
-	// If the size is provided in the URL
-	if (sizeId) {
-		// Check if the provided size is available for the product variant
-		const isValidSize = sizes.some((size) => size.id === sizeId);
+    // If the size is provided in the URL
+    if (sizeId) {
+        // Check if the provided size is available for the product variant
+        const isValidSize = sizes.some((size) => size.id === sizeId)
 
-		// If the is not valid, redirect to the same product page without the size parameter
-		if (!isValidSize) {
-			return redirect(`/product/${productSlug}/${variantSlug}`);
-		}
-	}
-	// If no sizeId is provided and there's only one size available, automatically select it
-	else if (sizes.length === 1) {
-		return redirect(
-			`/product/${productSlug}/${variantSlug}?size=${sizes[0].id}` // Redirect to the URL with the size parameter prefilled
-		);
-	}
+        // If the is not valid, redirect to the same product page without the size parameter
+        if (!isValidSize) {
+            return redirect(`/product/${productSlug}/${variantSlug}`)
+        }
+    }
+    // If no sizeId is provided and there's only one size available, automatically select it
+    else if (sizes.length === 1) {
+        return redirect(
+            `/product/${productSlug}/${variantSlug}?size=${sizes[0].id}` // Redirect to the URL with the size parameter prefilled
+        )
+    }
 
-	const {
+    const {
         productId,
         variantInfo,
         specs,
@@ -71,6 +73,8 @@ export default async function ProductVariantPage({
 
     return (
         <div>
+            <StoreHeader />
+            <CategoriesHeader />
             <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
                 <div className="rounded-md border bg-white p-4 text-black shadow" />
 
