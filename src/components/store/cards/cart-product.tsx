@@ -1,5 +1,5 @@
 import { useCartStore } from '@/cart-store/useCartStore'
-import { CartProductType } from '@/lib/types'
+import { CartProductType, Country } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import {
     Check,
@@ -12,13 +12,21 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
+import {
+    Dispatch,
+    FC,
+    SetStateAction,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
 
 interface Props {
     product: CartProductType
     selectedItems: CartProductType[]
     setSelectedItems: Dispatch<SetStateAction<CartProductType[]>>
     setTotalShipping: Dispatch<SetStateAction<number>>
+    userCountry: Country
 }
 
 const CartProduct: FC<Props> = ({
@@ -26,6 +34,7 @@ const CartProduct: FC<Props> = ({
     selectedItems,
     setSelectedItems,
     setTotalShipping,
+    userCountry,
 }) => {
     const {
         productId,
@@ -46,6 +55,10 @@ const CartProduct: FC<Props> = ({
         shippingService,
         extraShippingFee,
     } = product
+
+    // Store previous values to avoid unnecessary re-renders
+    const prevShippingFeeRef = useRef(shippingFee)
+    const prevUserCountryRef = useRef(userCountry)
 
     const unique_id = `${productId}-${variantId}-${sizeId}`
 
@@ -92,10 +105,23 @@ const CartProduct: FC<Props> = ({
         })
     }
 
-    // Recalculate shipping fees whenever quantity changes
+    // Recalculate shipping fees whenever quantity, country or fees changes
     useEffect(() => {
-        calculateShipping()
-    }, [quantity])
+        if (
+            shippingFee !== prevShippingFeeRef.current ||
+            userCountry !== prevUserCountryRef.current
+        ) {
+            calculateShipping()
+        }
+        //Update refs after calculating shipping
+        prevShippingFeeRef.current = shippingFee
+        prevUserCountryRef.current = userCountry
+
+        // Add a check to recalculate shipping fee on component load (after a refresh)
+        if (!shippingInfo.totalFee) {
+            calculateShipping()
+        }
+    }, [quantity, shippingFee, userCountry, shippingInfo.totalFee])
 
     const selected = selectedItems.find(
         (p) => unique_id === `${p.productId}-${p.variantId}-${p.sizeId}`
