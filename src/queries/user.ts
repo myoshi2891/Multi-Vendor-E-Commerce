@@ -671,13 +671,12 @@ export const emptyUserCart = async () => {
 
 /**
  * @Function updateCartWithLatest
- * @Description
- * @PermissionLevel
- * @Parameters
- *
- * @Return
+ * @Description Updates the cart with the latest product, variant, and size data
+ * @PermissionLevel Authenticated
+ * @Parameters  cartProducts: CartProductType[]
+ *  - productId: The ID of the product to update the cart with.
+ * @returns CartProductType[]
  */
-
 export const updateCartWithLatest = async (
     cartProducts: CartProductType[]
 ): Promise<CartProductType[]> => {
@@ -786,4 +785,49 @@ export const updateCartWithLatest = async (
         })
     )
     return validatedCartItems
+}
+
+/**
+ * Add a product to the user's wishlist.
+ * @param productId - The ID of the product to add to the wishlist.
+ * @param variantId - The ID of the variant of the product.
+ * @param sizeId - Optional size ID if applicable.
+ * @returns The created wishlist item.
+ */
+export const addToWishlist = async (
+    productId: string,
+    variantId: string,
+    sizeId?: string
+) => {
+    try {
+        // Ensure the user is authenticated
+        const user = await currentUser()
+        if (!user) throw new Error('Unauthenticated.')
+
+        const userId = user.id
+        // Create the wishlist item
+        const existingWishlistItem = await db.wishlist.findFirst({
+            where: {
+                userId,
+                productId,
+                variantId,
+            },
+        })
+
+        if (existingWishlistItem) {
+            throw new Error('Product is already in the wishlist.')
+        }
+        
+        return await db.wishlist.create({
+            data: {
+                userId,
+                productId,
+                variantId,
+                sizeId,
+            },
+        })
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
 }

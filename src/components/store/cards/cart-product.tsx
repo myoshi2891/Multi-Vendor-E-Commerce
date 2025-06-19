@@ -1,6 +1,7 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import { CartProductType, Country } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { addToWishlist } from '@/queries/user'
 import {
     Check,
     ChevronRight,
@@ -20,6 +21,7 @@ import {
     useRef,
     useState,
 } from 'react'
+import toast from 'react-hot-toast'
 
 interface Props {
     product: CartProductType
@@ -59,6 +61,7 @@ const CartProduct: FC<Props> = ({
     // Store previous values to avoid unnecessary re-renders
     const prevShippingFeeRef = useRef(shippingFee)
     const prevUserCountryRef = useRef(userCountry)
+    const prevQuantityRef = useRef(quantity)
 
     const unique_id = `${productId}-${variantId}-${sizeId}`
 
@@ -111,13 +114,16 @@ const CartProduct: FC<Props> = ({
     useEffect(() => {
         if (
             shippingFee !== prevShippingFeeRef.current ||
-            userCountry !== prevUserCountryRef.current
+            userCountry !== prevUserCountryRef.current ||
+            quantity !== prevQuantityRef.current
         ) {
             calculateShipping()
         }
+
         //Update refs after calculating shipping
         prevShippingFeeRef.current = shippingFee
         prevUserCountryRef.current = userCountry
+        prevQuantityRef.current = quantity
 
         // Add a check to recalculate shipping fee on component load (after a refresh)
         if (!shippingInfo.totalFee) {
@@ -158,6 +164,16 @@ const CartProduct: FC<Props> = ({
             } else {
                 removeFromCart(product)
             }
+        }
+    }
+
+    // Handle add product to wishlist
+    const handleAddToWishlist = async () => {
+        try {
+            const res = await addToWishlist(productId, variantId, sizeId)
+            if (res) toast.success('Product successfully added to wishlist')
+        } catch (error: any) {
+            toast.error(error.toString())
         }
     }
 
@@ -229,7 +245,10 @@ const CartProduct: FC<Props> = ({
                                 {name} ・ {variantName}
                             </Link>
                             <div className="absolute right-0 top-0">
-                                <span className="mr-2.5 inline-block cursor-pointer">
+                                <span
+                                    className="mr-2.5 inline-block cursor-pointer"
+                                    onClick={() => handleAddToWishlist()}
+                                >
                                     <Heart className="w-4 hover:stroke-orange-secondary" />
                                 </span>
                                 <span
