@@ -1,18 +1,29 @@
 'use client'
-import { CartWithCartItemsType, UserShippingAddressType } from '@/lib/types'
+import {
+    CartWithCartItemsType,
+    Country as CountryType,
+    UserShippingAddressType,
+} from '@/lib/types'
 import { Country, ShippingAddress } from '@prisma/client'
 import { FC, useState } from 'react'
 import UserShippingAddresses from '../shared/shipping-addresses/shipping-addresses'
 import CheckoutProductCard from '../cards/checkout-product'
 import PlaceOrderCard from '../cards/place-order'
+import CountryNote from '../shared/country-note'
 
 interface Props {
     cart: CartWithCartItemsType
     countries: Country[]
     addresses: UserShippingAddressType[]
+    userCountry: CountryType
 }
 
-const CheckoutContainer: FC<Props> = ({ cart, countries, addresses }) => {
+const CheckoutContainer: FC<Props> = ({
+    cart,
+    countries,
+    addresses,
+    userCountry,
+}) => {
     const [selectedAddress, setSelectedAddress] =
         useState<ShippingAddress | null>(null)
     return (
@@ -24,6 +35,9 @@ const CheckoutContainer: FC<Props> = ({ cart, countries, addresses }) => {
                     selectedAddress={selectedAddress}
                     setSelectedAddress={setSelectedAddress}
                 />
+                <div className="my-2">
+                    <CountryNote country={userCountry.name} />
+                </div>
                 <div className="my-3 size-4 w-full bg-white">
                     <div className="relative">
                         {cart.cartItems.map((product) => (

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
+import { cn } from '@/lib/utils'
 
 interface Props {
     shippingFees: number
@@ -43,36 +44,18 @@ const PlaceOrderCard: FC<Props> = ({
                 <h1 className="mb-4 text-2xl font-bold text-gray-900">
                     Summary
                 </h1>
-                <div className="mt-4 flex items-center text-sm font-medium text-[#222]">
-                    <h2 className="truncate break-normal">Subtotal</h2>
-                    <h3 className="w-0 min-w-0 flex-1 text-right">
-                        <span className="px-0.5 text-2xl text-black">
-                            <div className="inline-block break-all text-xl text-black">
-                                ${subTotal.toFixed(2)}
-                            </div>
-                        </span>
-                    </h3>
-                </div>
-                <div className="mt-4 flex items-center text-sm font-medium text-[#222]">
-                    <h2 className="truncate break-normal">Shipping fees</h2>
-                    <h3 className="w-0 min-w-0 flex-1 text-right">
-                        <span className="px-0.5 text-2xl text-black">
-                            <div className="inline-block break-all text-xl text-black">
-                                ${shippingFees.toFixed(2)}
-                            </div>
-                        </span>
-                    </h3>
-                </div>
-                <div className="mt-4 flex items-center text-sm font-bold text-[#222]">
-                    <h2 className="truncate break-normal">Total</h2>
-                    <h3 className="w-0 min-w-0 flex-1 text-right">
-                        <span className="px-0.5 text-2xl text-black">
-                            <div className="inline-block break-all text-xl text-black">
-                                ${total.toFixed(2)}
-                            </div>
-                        </span>
-                    </h3>
-                </div>
+                <Info title="Subtotal" text={`${subTotal.toFixed(2)}`} />
+                <Info
+                    title="Shipping Fees"
+                    text={`+${shippingFees.toFixed(2)}`}
+                />
+                <Info title="Taxes" text="+0.00" />
+                <Info
+                    title="Total"
+                    text={`${total.toFixed(2)}`}
+                    isBold
+                    noBorder
+                />
                 <div className="pt-2.5">
                     <Button onClick={() => handlePlaceOrder()}>
                         <span>Place Order</span>
@@ -90,3 +73,36 @@ const PlaceOrderCard: FC<Props> = ({
 }
 
 export default PlaceOrderCard
+
+const Info = ({
+    title,
+    text,
+    isBold,
+    noBorder,
+}: {
+    title: string
+    text: string
+    isBold?: boolean
+    noBorder?: boolean
+}) => {
+    return (
+        <div
+            className={cn(
+                'mt-2 flex items-center border-b pb-1 text-sm font-medium text-[#222]',
+                {
+                    'font-bold': isBold,
+                    'border-b-0': noBorder,
+                }
+            )}
+        >
+            <h2 className="truncate break-normal">{title}</h2>
+            <h3 className="w-0 min-w-0 flex-1 text-right">
+                <span className="px-0.5 text-black">
+                    <div className="inline-block break-all text-lg text-black">
+                        {text}
+                    </div>
+                </span>
+            </h3>
+        </div>
+    )
+}
