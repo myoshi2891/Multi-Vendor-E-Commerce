@@ -10,7 +10,7 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import EmptyCart from './empty-cart'
 import CartSummary from './summary'
 import { updateCartWithLatest } from '@/queries/user'
-import CountryNote from './country-note'
+import CountryNote from '../shared/country-note'
 
 export default function CartContainer({
     userCountry,
