@@ -1,7 +1,8 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartProductType, Country } from '@/lib/types'
+import { CartItem, Country as CountryDB } from '@prisma/client'
+import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
@@ -817,7 +818,7 @@ export const addToWishlist = async (
         if (existingWishlistItem) {
             throw new Error('Product is already in the wishlist.')
         }
-        
+
         return await db.wishlist.create({
             data: {
                 userId,
@@ -830,4 +831,114 @@ export const addToWishlist = async (
         console.error(error)
         throw error
     }
+}
+
+/**
+ * @Function updateCheckoutProductWithLatest
+ * @Description Keeps the cart in sync with the latest info (price, quantity, shipping fee, etc.)
+ * @PermissionLevel Authenticated
+ * @Parameters
+ *  - cartProducts: An array of product objects from the frontend cart
+ *  - address: Country
+ * @Return
+ *  - An object containing the updated cart with recalculated total price and validated product data
+ */
+
+export const updateCheckoutProductWithLatest = async (
+    cartProducts: CartItem[],
+    address: CountryDB | undefined
+): Promise<CartWithCartItemsType[]> => {
+    // Fetch product, variant, and size data from the database for validation
+    const validatedCartItems = await Promise.all(
+        cartProducts.map(async (cartProduct) => {
+            const { productId, variantId, sizeId, quantity } = cartProduct
+
+            // Fetch the product, variant, and size from the database
+            const product = await db.product.findUnique({
+                where: {
+                    id: productId,
+                },
+                include: {
+                    store: true,
+                    freeShipping: {
+                        include: {
+                            eligibleCountries: true,
+                        },
+                    },
+                    variants: {
+                        where: {
+                            id: variantId,
+                        },
+                        include: {
+                            sizes: {
+                                where: {
+                                    id: sizeId,
+                                },
+                            },
+                            images: true,
+                        },
+                    },
+                },
+            })
+
+            if (
+                !product ||
+                product.variants.length === 0 ||
+                product.variants[0].sizes.length === 0
+            ) {
+                // return cartProduct
+                throw new Error(
+                    `Product not found or variant or size not found.`
+                )
+            }
+
+            const variant = product.variants[0]
+            const size = variant.sizes[0]
+
+            // Calculate Shipping details
+            const countryCookie = getCookie('userCountry', { cookies })
+
+            const country = address
+                ? address
+                : countryCookie
+                  ? JSON.parse(countryCookie)
+                  : null
+
+            if (!country) {
+                throw new Error("Couldn't retrieve country data.")
+            }
+
+            let shippingFee = 0
+
+            const { shippingFeeMethod, freeShipping, store } = product
+
+            const price = size.discount
+                ? size.price - (size.price * size.discount) / 100
+                : size.price
+
+            const validated_qty = Math.min(quantity, size.quantity)
+
+            const totalPrice = price * validated_qty + shippingFee
+
+            try {
+                const newCartItem = await db.cartItem.update({
+                    where: {
+                        id: cartProduct.id,
+                    },
+                    data: {
+                        name: `${product.name} ・ ${variant.variantName}`,
+                        image: variant.images[0].url,
+                        price,
+                        quantity: validated_qty,
+                        shippingFee,
+                        totalPrice,
+                    },
+                })
+                return newCartItem
+            } catch (error) {
+                return cartProduct
+            }
+        })
+    )
+    return validatedCartItems
 }
