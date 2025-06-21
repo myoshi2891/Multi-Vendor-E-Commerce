@@ -106,6 +106,7 @@ model Store {
   followers     User[]         @relation("UserFollowingStore")
   cartItem      CartItem[]     @relation("CartItemToStore")
   orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
+  coupons       Coupon[]       @relation("CouponToStore")
 
   @@index([userId])
 }
@@ -381,6 +382,9 @@ model Cart {
   userId String @unique
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
+  couponId String?
+  coupon   Coupon? @relation("CouponToCart", fields: [couponId], references: [id])
+
   cartItems    CartItem[] @relation("CartToCartItem")
   shippingFees Float      @default(0) @map("shippingFeesTotal")
   subTotal     Float
@@ -388,6 +392,8 @@ model Cart {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([couponId])
 }
 
 model CartItem {
@@ -563,7 +569,7 @@ model Wishlist {
   variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
 
   sizeId String?
-  size   Size?  @relation("WishlistToSize", fields: [sizeId], references: [id])
+  size   Size?   @relation("WishlistToSize", fields: [sizeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -572,4 +578,22 @@ model Wishlist {
   @@index([productId])
   @@index([variantId])
   @@index([sizeId])
+}
+
+model Coupon {
+  id        String @id @default(uuid())
+  code      String @unique
+  startDate String
+  endDate   String
+  discount  Int
+
+  storeId String
+  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+
+  carts  Cart[] @relation("CouponToCart")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
 }
