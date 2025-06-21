@@ -8,6 +8,7 @@ import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
 import {
     getDeliveryDetailsForStoreByCountry,
+    getProductShippingFee,
     getShippingDetails,
 } from './product'
 import { ShippingAddress } from '@prisma/client'
@@ -911,6 +912,19 @@ export const updateCheckoutProductWithLatest = async (
             let shippingFee = 0
 
             const { shippingFeeMethod, freeShipping, store } = product
+
+            const fee = await getProductShippingFee(
+                shippingFeeMethod,
+                country,
+                store,
+                freeShipping,
+                variant.weight,
+                quantity
+            )
+
+            if (fee) {
+                shippingFee = fee
+            }
 
             const price = size.discount
                 ? size.price - (size.price * size.discount) / 100
