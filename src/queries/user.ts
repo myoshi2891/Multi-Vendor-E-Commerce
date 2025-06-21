@@ -848,7 +848,7 @@ export const addToWishlist = async (
 export const updateCheckoutProductWithLatest = async (
     cartProducts: CartItem[],
     address: CountryDB | undefined
-): Promise<CartWithCartItemsType[]> => {
+): Promise<CartWithCartItemsType> => {
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -954,5 +954,33 @@ export const updateCheckoutProductWithLatest = async (
             }
         })
     )
-    return validatedCartItems
+
+    // Recalculate the cart's total price and shipping fees
+    const subTotal = validatedCartItems.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0
+    )
+    const shippingFees = validatedCartItems.reduce(
+        (acc, item) => acc + item.shippingFee,
+        0
+    )
+    const total = subTotal + shippingFees
+
+    const cart = await db.cart.update({
+        where: {
+            id: cartProducts[0].cartId,
+        },
+        data: {
+            subTotal,
+            shippingFees,
+            total,
+        },
+        include: {
+            cartItems: true,
+        },
+    })
+
+    if (!cart) throw new Error('Something went wrong while updating the cart.')
+
+    return cart
 }
