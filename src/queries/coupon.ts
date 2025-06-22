@@ -116,10 +116,93 @@ export const getStoreCoupons = async (storeURL: string) => {
 
         return coupons
     } catch (error: any) {
-        
         console.log(error)
         throw new Error(
             `Error occurred while trying to fetch store coupons: ${error.message}`
+        )
+    }
+}
+
+/**
+ * @Function getCoupon
+ * @Description Retrieves a specific coupon from the database.
+ * @PermissionLevel Public
+ * @Parameters
+ *  - couponId: ID of the coupon to be retrieved.
+ * @Return Coupon details if found, otherwise undefined.
+ */
+
+export const getCoupon = async (couponId: string) => {
+    try {
+        // Ensure couponId is provided
+        if (!couponId) throw new Error('Please provide coupon ID.')
+
+        // Retrieve coupon from the database
+        const coupon = await db.coupon.findUnique({
+            where: { id: couponId },
+        })
+
+        return coupon
+    } catch (error: any) {
+        console.log(error)
+
+        throw new Error(
+            `Error occurred while trying to fetch coupon: ${error.message}`
+        )
+    }
+}
+
+/**
+ * @Function deleteCoupon
+ * @Description Deletes a specific coupon from the database.
+ * @PermissionLevel  Seller only (must be the owner of the store)
+ * @Parameters
+ *  - couponId: ID of the coupon to be deleted.
+ *  - storeURL: String representing the URL of the store, used to retrieve the store ID.
+ * @Return Response indicating whether the coupon was deleted successfully.
+ */
+
+export const deleteCoupon = async (couponId: string, storeURL: string) => {
+    try {
+        // Get current user
+        const user = await currentUser()
+
+        // Ensure user is authenticated
+        if (!user) throw new Error('Unauthenticated.')
+
+        // Verify seller permission
+        if (user.privateMetadata.role !== 'SELLER')
+            throw new Error('Only sellers can perform this action.')
+
+        // Ensure couponId and storeUrl are provided
+        if (!couponId) throw new Error('Please provide coupon ID.')
+        if (!storeURL) throw new Error('Please provide store URL.')
+
+        // Retrieve store ID using the storeURL and ensure it belongs to the current user
+        const store = await db.store.findUnique({
+            where: { url: storeURL },
+        })
+
+        if (!store || store.userId !== user.id) {
+            throw new Error(
+                'You do not have permission to access coupons for this store.'
+            )
+        }
+
+        // Delete coupon from the database
+        const response = await db.coupon.delete({
+            where: {
+                id: couponId,
+                storeId: store.id,
+            },
+        })
+
+        return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
+    } catch (error: any) {
+        console.log(error)
+
+        throw new Error(
+            `Error occurred while trying to delete coupon: ${error.message}`
         )
     }
 }
