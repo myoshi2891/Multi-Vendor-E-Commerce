@@ -41,137 +41,55 @@ import { deleteProduct } from '@/queries/product'
 import { ColumnDef } from '@tanstack/react-table'
 
 // Prisma models
+import { Coupon } from '@prisma/client'
 
 // Types
 import { StoreProductType } from '@/lib/types'
 
 // Toast
 import { useToast } from '@/hooks/use-toast'
+import { getTimeUntil } from '@/lib/utils'
 
-export const columns: ColumnDef<StoreProductType>[] = [
+export const columns: ColumnDef<Coupon>[] = [
     {
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ row }) => (
-            <h1 className="truncate border-b pb-3 font-bold capitalize">
-                {row.original.name}
-            </h1>
-        ),
+        accessorKey: 'code',
+        header: 'Code',
+        cell: ({ row }) => {
+            return <span>{row.original.code}</span>
+        },
     },
     {
-        accessorKey: 'image',
-        header: 'Images',
+        accessorKey: 'discount',
+        header: 'Discount',
+        cell: ({ row }) => {
+            return <span>{row.original.discount}</span>
+        },
+    },
+    {
+        accessorKey: 'startDate',
+        header: 'Start Date',
         cell: ({ row }) => {
             return (
-                <div className="flex flex-col gap-y-3">
-                    {/* Product name */}
-                    {/* <h1 className="font-bold truncate pb-3 border-b capitalize">
-						{row.original.name}
-					</h1> */}
-                    {/* Product variant */}
-                    <div className="relative flex flex-wrap gap-2">
-                        {row.original.variants.map((variant) => (
-                            <div
-                                key={variant.id}
-                                className="group flex flex-col gap-y-2"
-                            >
-                                <div className="relative cursor-pointer p-2">
-                                    <Image
-                                        src={variant.images[0].url}
-                                        alt={`${variant.variantName} image`}
-                                        width={1000}
-                                        height={1000}
-                                        priority
-                                        className="h-72 max-w-72 rounded-md object-cover shadow-sm"
-                                    />
-                                    <Link
-                                        href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
-                                    >
-                                        <div className="absolute inset-0 z-0 hidden h-full w-[304px] rounded-sm bg-black/50 transition-all duration-150 group-hover:block">
-                                            <FilePenLine className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white" />
-                                        </div>
-                                    </Link>
-                                </div>
-                                {/* Info */}
-                                <div className="mt-2 flex gap-2 p-1">
-                                    {/* Colors */}
-                                    <div className="flex w-7 flex-col gap-2 rounded-md">
-                                        {variant.colors.map((color) => (
-                                            <span
-                                                key={color.name}
-                                                className="size-5 rounded-full shadow-2xl"
-                                                style={{
-                                                    backgroundColor: color.name,
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                    <div>
-                                        {/* Name of variant */}
-                                        <h1 className="max-w-40 text-sm capitalize">
-                                            {variant.variantName}
-                                        </h1>
-                                        {/* Sizes */}
-                                        <div className="mt-1 flex max-w-72 flex-wrap gap-2">
-                                            {variant.sizes.map((size) => (
-                                                <span
-                                                    className="w-fit rounded-md border-2 bg-white/10 p-1 text-[11px] font-medium"
-                                                    key={size.size}
-                                                >
-                                                    {size.size} - (
-                                                    {size.quantity}) - $
-                                                    {size.price}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <span>{new Date(row.original.startDate).toDateString()}</span>
             )
         },
     },
     {
-        accessorKey: 'category',
-        header: 'Category',
+        accessorKey: 'endDate',
+        header: 'End Date',
         cell: ({ row }) => {
-            return <span>{row.original.category.name}</span>
+            return <span>{new Date(row.original.endDate).toDateString()}</span>
         },
     },
     {
-        accessorKey: 'subCategory',
-        header: 'SubCategory',
+        accessorKey: 'timeleft',
+        header: 'Time Left',
         cell: ({ row }) => {
-            return <span>{row.original.subCategory.name}</span>
-        },
-    },
-    {
-        accessorKey: 'offerTag',
-        header: 'Offer',
-        cell: ({ row }) => {
-            const offerTag = row.original.offerTag
-            return <span>{offerTag ? offerTag.name : '-'}</span>
-        },
-    },
-    {
-        accessorKey: 'brand',
-        header: 'Brand',
-        cell: ({ row }) => {
-            return <span>{row.original.brand}</span>
-        },
-    },
-    {
-        accessorKey: 'new-variant',
-        header: '',
-        cell: ({ row }) => {
+            const { days, hours } = getTimeUntil(row.original.endDate)
             return (
-                <Link
-                    href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/new`}
-                >
-                    <CopyPlus className="hover:text-blue-200" />
-                </Link>
+                <span>
+                    {days} days and {hours} hours
+                </span>
             )
         },
     },

@@ -11,7 +11,7 @@ export default async function SellerNewCouponPage({
 }) {
     return (
         <div className="w-full">
-            <CouponDetails/>
+            <CouponDetails storeUrl={params.storeUrl} />
         </div>
     )
 }
