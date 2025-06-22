@@ -7,9 +7,9 @@ import { FC, useEffect } from 'react'
 import { Coupon } from '@prisma/client'
 
 // Form handling utilities
-import * as z from 'zod'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 // Schema
 import { CouponFormSchema } from '@/lib/schemas'
@@ -30,36 +30,34 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-    FormDescription,
 } from '@/components/ui/form'
 
-import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import ImageUpload from '../shared/image-upload'
 
 // Queries
-// import { upsertCoupon } from '@/queries/Coupon'
+import { upsertCoupon } from '@/queries/coupon'
 
 // Utils
 import { v4 } from 'uuid'
-// import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from 'next/navigation'
+
 import { useToast } from '@/hooks/use-toast'
 import { NumberInput } from '@tremor/react'
+import { useRouter } from 'next/navigation'
 
 // Date time picker
+import { format } from 'date-fns'
+import 'react-calendar/dist/Calendar.css'
+import 'react-clock/dist/Clock.css'
 import DateTimePicker from 'react-datetime-picker'
 import 'react-datetime-picker/dist/DateTimePicker.css'
-import "react-calendar/dist/Calendar.css"
-import "react-clock/dist/Clock.css"
-import { format } from 'date-fns'
 
 interface CouponDetailsProps {
     data?: Coupon
+    storeUrl: string
 }
 
-const CouponDetails: FC<CouponDetailsProps> = ({ data }) => {
+const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
     // Initializing necessary hooks
     const { toast } = useToast() // Hook for displaying toast messages
     const router = useRouter() // Hook for routing
@@ -93,20 +91,32 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data }) => {
     const handleSubmit = async (values: z.infer<typeof CouponFormSchema>) => {
         try {
             // Upserting Coupon data
-            // const response = await upsertCoupon({})
+            const response = await upsertCoupon(
+                {
+                    id: data?.id ? data.id : v4(),
+                    code: values.code,
+                    discount: values.discount,
+                    startDate: values.startDate,
+                    endDate: values.endDate,
+                    storeId: '',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+                storeUrl
+            )
 
             // Displaying success message
-            // toast({
-            //     title: data?.id
-            //         ? 'Coupon has been updated.'
-            //         : `Congratulations! '${response?.name}' is now created.`,
-            // })
+            toast({
+                title: data?.id
+                    ? 'Coupon has been updated.'
+                    : `Congratulations! '${response?.code}' is now created.`,
+            })
 
             // Redirect or Refresh data
             if (data?.id) {
                 router.refresh()
             } else {
-                router.push('/dashboard/admin/categories')
+                router.push(`/dashboard/seller/stores/${storeUrl}/coupons`)
             }
         } catch (error: any) {
             // Handling form submission errors
@@ -181,11 +191,24 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data }) => {
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                         <FormLabel>Start date</FormLabel>
-										<FormControl>
-											<DateTimePicker
-												onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : "")}
-												value={field.value? new Date(field.value) : null}
-											/>
+                                        <FormControl>
+                                            <DateTimePicker
+                                                onChange={(date) =>
+                                                    field.onChange(
+                                                        date
+                                                            ? format(
+                                                                  date,
+                                                                  "yyyy-MM-dd'T'HH:mm:ss"
+                                                              )
+                                                            : ''
+                                                    )
+                                                }
+                                                value={
+                                                    field.value
+                                                        ? new Date(field.value)
+                                                        : null
+                                                }
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -198,11 +221,24 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data }) => {
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                         <FormLabel>End date</FormLabel>
-										<FormControl>
-											<DateTimePicker
-												onChange={(date) => field.onChange(date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : "")}
-												value={field.value? new Date(field.value) : null}
-											/>
+                                        <FormControl>
+                                            <DateTimePicker
+                                                onChange={(date) =>
+                                                    field.onChange(
+                                                        date
+                                                            ? format(
+                                                                  date,
+                                                                  "yyyy-MM-dd'T'HH:mm:ss"
+                                                              )
+                                                            : ''
+                                                    )
+                                                }
+                                                value={
+                                                    field.value
+                                                        ? new Date(field.value)
+                                                        : null
+                                                }
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
