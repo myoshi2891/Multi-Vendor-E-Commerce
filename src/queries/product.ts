@@ -3,6 +3,7 @@
 import { db } from '@/lib/db'
 // Types
 import {
+    Country,
     FreeShippingWithCountriesType,
     ProductPageType,
     ProductShippingDetailsType,
@@ -1017,4 +1018,87 @@ export const getDeliveryDetailsForStoreByCountry = async (
         : storeDetails?.defaultDeliveryTimeMax
 
     return { shippingService, deliveryTimeMax, deliveryTimeMin }
+}
+
+/**
+ * @Function getProductShippingFee
+ * @Description Retrieve and calculates shipping fee based on user country and product.
+ * @PermissionLevel Public
+ * @Parameters
+ *   - shippingFeeMethod: The shipping fee method of the product
+ *   - userCountry: The parsed user country object from cookies.
+ *   - store: store details.
+ *   - freeShipping.
+ *   - weight.
+ *   - quantity.
+ * @Returns Calculated total shipping fee for product.
+ */
+export const getProductShippingFee = async (
+    shippingFeeMethod: string,
+    userCountry: Country,
+    store: Store,
+    freeShipping: FreeShippingWithCountriesType | null,
+    weight: number,
+    quantity: number
+) => {
+    // Fetch country information based on userCountry.name and userCountry.code
+    const country = await db.country.findUnique({
+        where: {
+            name: userCountry.name,
+            code: userCountry.code,
+        },
+    })
+
+    if (country) {
+        // Check if the user qualifies for free shipping
+        if (freeShipping) {
+            const free_shipping_countries = freeShipping.eligibleCountries
+            const isEligibleForFreeShipping = free_shipping_countries.some(
+                (c) => c.countryId === country.name
+            )
+            if (isEligibleForFreeShipping) {
+                return 0 // Free shipping
+            }
+        }
+
+        // Fetch shipping rate from the database for the given store and country
+        const shippingRate = await db.shippingRate.findFirst({
+            where: {
+                countryId: country.id,
+                storeId: store.id,
+            },
+        })
+
+        // Destructure the shippingRate with defaults
+        const {
+            shippingFeePerItem = store.defaultShippingFeePerItem,
+            shippingFeeForAdditionalItem = store.defaultShippingFeeForAdditionalItem,
+            shippingFeePerKg = store.defaultShippingFeePerKg,
+            shippingFeeFixed = store.defaultShippingFeeFixed,
+        } = shippingRate || {}
+
+        // Calculate the additional quantity (excluding the first item)
+        const additionalItemsQty = quantity - 1
+
+        // Define fee calculation methods in a map (using functions)
+        const feeCalculators: Record<string, () => number> = {
+            ITEM: () =>
+                shippingFeePerItem +
+                shippingFeeForAdditionalItem * additionalItemsQty,
+            WEIGHT: () => shippingFeePerKg * weight * quantity,
+            FIXED: () => shippingFeeFixed,
+        }
+
+        // Check if the fee calculation method exists and calculate the fee
+        const calculateFee = feeCalculators[shippingFeeMethod]
+        if (calculateFee) {
+            return calculateFee() // Execute the corresponding calculation
+        }
+
+        // If no valid shipping method is found, return 0
+        return 0
+    }
+
+    // Return 0 if the country is not found
+    return 0
 }
