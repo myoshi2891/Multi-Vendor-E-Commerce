@@ -1,14 +1,16 @@
 import { CartItem } from '@prisma/client'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Truck } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export default function CheckoutProductCard({
     product,
+    isDiscounted,
 }: {
     product: CartItem
-    }) {
-    const {productSlug, variantSlug, sizeId} = product
+    isDiscounted: boolean
+}) {
+    const { productSlug, variantSlug, sizeId, shippingFee } = product
     return (
         <div className="select-none border-t border-t-[#ebebeb] bg-white px-6">
             <div className="py-4">
@@ -54,13 +56,31 @@ export default function CheckoutProductCard({
                             </button>
                         </div>
                         {/* Price - Delivery */}
-                        <div className="relative mt-2 flex items-center justify-between">
+                        <div className="relative mt-2 flex flex-col justify-between">
                             {/* Price - Qty */}
                             <div className="flex w-full items-start justify-between font-bold">
-                                <div>
+                                <div className="flex items-center gap-x-2">
                                     <span className="inline-block break-all">
                                         ${product.price.toFixed(2)} x{' '}
                                         {product.quantity}
+                                    </span>
+                                    {isDiscounted && (
+                                        <span className="text-xs font-normal text-orange-background">
+                                            (Coupon applied)
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Shipping fee */}
+                            <div className="mt-1 cursor-pointer text-xs">
+                                <div className="mb-1 flex items-center">
+                                    <span>
+                                        <Truck className="inline-block w-4 text-[#01A971]" />
+                                        <span className="ml-1 text-[#01A971]">
+                                            {shippingFee
+                                                ? `$${shippingFee.toFixed(2)}`
+                                                : 'Free Delivery'}
+                                        </span>
                                     </span>
                                 </div>
                             </div>

@@ -73,6 +73,9 @@ const CheckoutContainer: FC<Props> = ({
                             <CheckoutProductCard
                                 key={product.variantId}
                                 product={product}
+                                isDiscounted={
+                                    cartData.coupon?.storeId === product.storeId
+                                }
                             />
                         ))}
                     </div>
