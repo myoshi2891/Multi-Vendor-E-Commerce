@@ -24,6 +24,8 @@ import {
     Size,
     User,
     Country as CountryPrisma,
+    Coupon,
+    Store,
 } from '@prisma/client'
 
 export interface DashboardSidebarMenuInterface {
@@ -206,6 +208,7 @@ export type ReviewDetailsType = {
 
 export type CartWithCartItemsType = Cart & {
     cartItems: CartItem[]
+    coupon: (Coupon & { store: Store }) | null
 }
 
 export type UserShippingAddressType = ShippingAddress & {

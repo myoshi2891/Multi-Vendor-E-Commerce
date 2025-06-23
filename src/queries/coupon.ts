@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
+import { CartWithCartItemsType } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { Coupon } from '@prisma/client'
 
@@ -203,6 +204,123 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 
         throw new Error(
             `Error occurred while trying to delete coupon: ${error.message}`
+        )
+    }
+}
+
+/**
+ * @Function applyCoupon
+ * @Description Applies a coupon to a. cart for items belonging to the coupon's store
+ * @Parameters
+ *  - couponCode: The coupon code to apply.
+ *  - cartId: The ID of the cart to apply the coupon to.
+ * @Return A message indicating whether the coupon was applied successfully. along with the updated cart
+ */
+
+export const applyCoupon = async (
+    couponCode: string,
+    cartId: string
+): Promise<{ message: string; cart: CartWithCartItemsType }> => {
+    try {
+        // Step 1: Fetch the coupon details
+        const coupon = await db.coupon.findUnique({
+            where: {
+                code: couponCode,
+            },
+            include: {
+                store: true,
+            },
+        })
+
+        if (!coupon) {
+            throw new Error('Coupon not found.')
+        }
+
+        // Step 2: Validate the coupon's date range
+        const currentDate = new Date()
+        const startDate = new Date(coupon.startDate)
+        const endDate = new Date(coupon.endDate)
+        if (currentDate < startDate || currentDate > endDate) {
+            throw new Error('Coupon is not valid for this date.')
+        }
+
+        // Step 3: Fetch the cart and validate its existence
+        const cart = await db.cart.findUnique({
+            where: {
+                id: cartId,
+            },
+            include: {
+                cartItems: true,
+                coupon: true,
+            },
+        })
+
+        if (!cart) {
+            throw new Error('Cart not found')
+        }
+
+        // Step 4: Ensure no coupon is already applied to the cart
+        if (cart.couponId) {
+            throw new Error('Coupon is already applied to this cart.')
+        }
+
+        // Step 5: Filter items from the store associated with the coupon
+        const storeId = coupon.storeId
+
+        const storeItems = cart.cartItems.filter(
+            (item) => item.storeId === storeId
+        )
+
+        if (storeItems.length === 0) {
+            throw new Error(
+                'No items in the cart belong to the store associated with this coupon.'
+            )
+        }
+
+        // Step 6: Calculate the discount on the store's items
+        const storeSubTotal = storeItems.reduce(
+            (acc, item) => acc + item.price * item.quantity,
+            0
+        )
+
+        const storeShippingTotal = storeItems.reduce(
+            (acc, item) => acc + item.shippingFee,
+            0
+        )
+
+        const storeTotal = storeSubTotal + storeShippingTotal
+
+        const discountedAmount = (storeTotal * coupon.discount) / 100
+
+        const newTotal = cart.total - discountedAmount
+
+        // Step 7: Update the cart with the applied coupon details and new total
+        const updatedCart = await db.cart.update({
+            where: {
+                id: cartId,
+            },
+            data: {
+                couponId: coupon.id,
+                total: newTotal,
+            },
+            include: {
+                cartItems: true,
+                coupon: {
+                    include: {
+                        store: true,
+                    },
+                },
+            },
+        })
+
+        return {
+            message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${coupon.store.name}`,
+            cart: updatedCart,
+        }
+    } catch (error: any) {
+        console.log(error)
+        throw new Error(
+            `Error occurred while applying coupon: ${error.message}`
         )
     }
 }
