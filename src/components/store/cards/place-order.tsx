@@ -2,12 +2,14 @@ import { useCartStore } from '@/cart-store/useCartStore'
 import { emptyUserCart, placeOrder } from '@/queries/user'
 import { ShippingAddress } from '@prisma/client'
 import { useRouter } from 'next/navigation'
-import { FC } from 'react'
+import { Dispatch, FC, SetStateAction } from 'react'
 import toast from 'react-hot-toast'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
 import { cn } from '@/lib/utils'
+import { CartWithCartItemsType } from '@/lib/types'
+import ApplyCouponForm from '../forms/apply-coupon'
 
 interface Props {
     shippingFees: number
@@ -15,6 +17,7 @@ interface Props {
     total: number
     shippingAddress: ShippingAddress | null
     cartId: string
+    setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
 }
 
 const PlaceOrderCard: FC<Props> = ({
@@ -23,6 +26,7 @@ const PlaceOrderCard: FC<Props> = ({
     total,
     shippingAddress,
     cartId,
+    setCartData,
 }) => {
     const { push } = useRouter()
     const emptyCart = useCartStore((state) => state.emptyCart)
@@ -56,6 +60,14 @@ const PlaceOrderCard: FC<Props> = ({
                     isBold
                     noBorder
                 />
+                <div className="mt-2">
+                    <div className="bg-white">
+                        <ApplyCouponForm
+                            cartId={cartId}
+                            setCartData={setCartData}
+                        />
+                    </div>
+                </div>
                 <div className="pt-2.5">
                     <Button onClick={() => handlePlaceOrder()}>
                         <span>Place Order</span>

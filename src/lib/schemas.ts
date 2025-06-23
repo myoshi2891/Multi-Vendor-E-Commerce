@@ -549,3 +549,12 @@ export const CouponFormSchema = z.object({
         .min(1, 'Discount percentage must be at least 1%')
         .max(99, 'Discount percentage cannot exceed 99%'),
 })
+
+export const ApplyCouponFormSchema = z.object({
+    coupon: z
+        .string({
+            required_error: 'Coupon code is required',
+            invalid_type_error: 'Coupon code must be a string',
+        })
+        .min(2, 'Coupon code must be at least 2 characters long'),
+})
