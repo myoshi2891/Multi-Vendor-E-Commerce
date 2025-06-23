@@ -12,33 +12,24 @@ import { CartWithCartItemsType } from '@/lib/types'
 import ApplyCouponForm from '../forms/apply-coupon'
 
 interface Props {
-    shippingFees: number
-    subTotal: number
-    total: number
     shippingAddress: ShippingAddress | null
-    cartId: string
     cartData: CartWithCartItemsType
     setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
-    coupon: Coupon | null
 }
 
 const PlaceOrderCard: FC<Props> = ({
-    shippingFees,
-    subTotal,
-    total,
     shippingAddress,
-    cartId,
     setCartData,
-    coupon,
     cartData,
 }) => {
+    const { id, coupon, subTotal, shippingFees, total } = cartData
     const { push } = useRouter()
     const emptyCart = useCartStore((state) => state.emptyCart)
     const handlePlaceOrder = async () => {
         if (!shippingAddress) {
             toast.error('Select a shipping address before placing your order.')
         } else {
-            const order = await placeOrder(shippingAddress, cartId)
+            const order = await placeOrder(shippingAddress, id)
             if (order) {
                 emptyCart()
                 await emptyUserCart()
@@ -59,7 +50,6 @@ const PlaceOrderCard: FC<Props> = ({
 
     if (coupon) {
         discountedAmount = (storeSubTotal * coupon.discount) / 100
-        total -= discountedAmount
     }
 
     return (
@@ -86,19 +76,63 @@ const PlaceOrderCard: FC<Props> = ({
                     isBold
                     noBorder
                 />
-                <div className="mt-2">
+            </div>
+            <div className="mt-2">
+                {coupon ? (
+                    <div className="flex bg-white">
+                        <svg
+                            width={16}
+                            height={96}
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M 8 0 
+         Q 4 4.8, 8 9.6 
+         T 8 19.2 
+         Q 4 24, 8 28.8 
+         T 8 38.4 
+         Q 4 43.2, 8 48 
+         T 8 57.6 
+         Q 4 62.4, 8 67.2 
+         T 8 76.8 
+         Q 4 81.6, 8 86.4 
+         T 8 96 
+         L 0 96 
+         L 0 0 
+         Z"
+                                fill="#66cdaa"
+                                stroke="#66cdaa"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                            />
+                        </svg>
+                        <div className="mx-2.5 w-full overflow-hidden">
+                            <p className="mr-3 mt-1.5 truncate text-xl font-bold leading-8 text-[#66cdaa]">
+                                Coupon applied !
+                            </p>
+                            <p className="max-h-10 overflow-hidden break-all leading-5 text-zinc-400">
+                                ({coupon.code}) ({coupon.discount}% off)
+                                discount
+                            </p>
+                            <p className="overflow-hidden break-words text-sm leading-5 text-zinc-400">
+                                Coupon applied only to items from&nbsp;
+                                {coupon.store.name}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
                     <div className="bg-white">
                         <ApplyCouponForm
-                            cartId={cartId}
+                            cartId={id}
                             setCartData={setCartData}
                         />
                     </div>
-                </div>
-                <div className="pt-2.5">
-                    <Button onClick={() => handlePlaceOrder()}>
-                        <span>Place Order</span>
-                    </Button>
-                </div>
+                )}
+            </div>
+            <div className="mt-2 bg-white p-4">
+                <Button onClick={() => handlePlaceOrder()}>
+                    <span>Place Order</span>
+                </Button>
             </div>
             <div className="mt-2 bg-white p-4 px-6">
                 <FastDelivery />

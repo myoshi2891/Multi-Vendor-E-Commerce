@@ -34,8 +34,6 @@ const CheckoutContainer: FC<Props> = ({
         (address) => address.countryId === selectedAddress?.countryId
     )?.country
 
-    console.log(activeCountry)
-
     const { cartItems } = cart
 
     useEffect(() => {
@@ -81,14 +79,9 @@ const CheckoutContainer: FC<Props> = ({
                 </div>
             </div>
             <PlaceOrderCard
-                cartId={cart.id}
-                shippingAddress={selectedAddress}
-                shippingFees={cartData.shippingFees}
-                subTotal={cartData.subTotal}
-                total={cartData.total}
-                setCartData={setCartData}
-                coupon={cartData.coupon}
                 cartData={cartData}
+                setCartData={setCartData}
+                shippingAddress={selectedAddress}
             />
         </div>
     )
