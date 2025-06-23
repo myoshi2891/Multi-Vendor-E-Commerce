@@ -1,6 +1,6 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import { emptyUserCart, placeOrder } from '@/queries/user'
-import { ShippingAddress } from '@prisma/client'
+import { Coupon, ShippingAddress } from '@prisma/client'
 import { useRouter } from 'next/navigation'
 import { Dispatch, FC, SetStateAction } from 'react'
 import toast from 'react-hot-toast'
@@ -17,7 +17,9 @@ interface Props {
     total: number
     shippingAddress: ShippingAddress | null
     cartId: string
+    cartData: CartWithCartItemsType
     setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
+    coupon: Coupon | null
 }
 
 const PlaceOrderCard: FC<Props> = ({
@@ -27,6 +29,8 @@ const PlaceOrderCard: FC<Props> = ({
     shippingAddress,
     cartId,
     setCartData,
+    coupon,
+    cartData,
 }) => {
     const { push } = useRouter()
     const emptyCart = useCartStore((state) => state.emptyCart)
@@ -42,6 +46,22 @@ const PlaceOrderCard: FC<Props> = ({
             }
         }
     }
+
+    let discountedAmount = 0
+    const applicableStoreItems = cartData.cartItems.filter(
+        (item) => item.storeId === coupon?.storeId
+    )
+
+    const storeSubTotal = applicableStoreItems.reduce(
+        (acc, item) => acc + item.price * item.quantity + item.shippingFee,
+        0
+    )
+
+    if (coupon) {
+        discountedAmount = (storeSubTotal * coupon.discount) / 100
+        total -= discountedAmount
+    }
+
     return (
         <div className="sticky top-4 ml-5 mt-3 max-h-max w-[380px]">
             <div className="relative bg-white px-6 py-4">
@@ -53,6 +73,12 @@ const PlaceOrderCard: FC<Props> = ({
                     title="Shipping Fees"
                     text={`+${shippingFees.toFixed(2)}`}
                 />
+                {coupon && (
+                    <Info
+                        title={`Coupon (${coupon.code}) (-${coupon.discount}%)`}
+                        text={`-$${discountedAmount.toFixed(2)}`}
+                    />
+                )}
                 <Info title="Taxes" text="+0.00" />
                 <Info
                     title="Total"

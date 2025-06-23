@@ -87,6 +87,8 @@ const CheckoutContainer: FC<Props> = ({
                 subTotal={cartData.subTotal}
                 total={cartData.total}
                 setCartData={setCartData}
+                coupon={cartData.coupon}
+                cartData={cartData}
             />
         </div>
     )
