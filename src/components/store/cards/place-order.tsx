@@ -2,7 +2,7 @@ import { useCartStore } from '@/cart-store/useCartStore'
 import { emptyUserCart, placeOrder } from '@/queries/user'
 import { Coupon, ShippingAddress } from '@prisma/client'
 import { useRouter } from 'next/navigation'
-import { Dispatch, FC, SetStateAction } from 'react'
+import { Dispatch, FC, SetStateAction, useState } from 'react'
 import toast from 'react-hot-toast'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import { Button } from '../ui/button'
@@ -10,6 +10,7 @@ import FastDelivery from './fast-delivery'
 import { cn } from '@/lib/utils'
 import { CartWithCartItemsType } from '@/lib/types'
 import ApplyCouponForm from '../forms/apply-coupon'
+import { PulseLoader } from 'react-spinners'
 
 interface Props {
     shippingAddress: ShippingAddress | null
@@ -22,10 +23,12 @@ const PlaceOrderCard: FC<Props> = ({
     setCartData,
     cartData,
 }) => {
+    const [loading, setLoading] = useState<boolean>(false)
     const { id, coupon, subTotal, shippingFees, total } = cartData
     const { push } = useRouter()
     const emptyCart = useCartStore((state) => state.emptyCart)
     const handlePlaceOrder = async () => {
+        setLoading(true)
         if (!shippingAddress) {
             toast.error('Select a shipping address before placing your order.')
         } else {
@@ -36,6 +39,7 @@ const PlaceOrderCard: FC<Props> = ({
                 push(`/order/${order.orderId}`)
             }
         }
+        setLoading(false)
     }
 
     let discountedAmount = 0
@@ -131,7 +135,11 @@ const PlaceOrderCard: FC<Props> = ({
             </div>
             <div className="mt-2 bg-white p-4">
                 <Button onClick={() => handlePlaceOrder()}>
-                    <span>Place Order</span>
+                    {loading ? (
+                        <PulseLoader size={5} color="#fff" />
+                    ) : (
+                        <span>Place order</span>
+                    )}
                 </Button>
             </div>
             <div className="mt-2 bg-white p-4 px-6">
