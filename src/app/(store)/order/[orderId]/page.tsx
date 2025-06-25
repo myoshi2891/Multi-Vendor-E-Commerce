@@ -1,3 +1,4 @@
+import OrderUserDetailsCard from '@/components/store/cards/order/user'
 import StoreHeader from '@/components/store/layout/header/header'
 import OrderHeader from '@/components/store/order-page/header'
 import { getOrder } from '@/queries/order'
@@ -41,7 +42,7 @@ export default async function OrderPage({
                 >
                     {/* Col 1 -> User, Order details */}
                     <div className="scrollbar flex h-[calc(100vh-137px)] flex-col gap-y-5 overflow-auto">
-                        {/* User card */}
+                        <OrderUserDetailsCard details={order.shippingAddress} />
                         {/* Order info */}
                         {(order.paymentStatus !== 'Pending' ||
                             order.orderStatus !== 'Failed') && (
