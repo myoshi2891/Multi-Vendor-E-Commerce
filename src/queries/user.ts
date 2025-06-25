@@ -640,7 +640,7 @@ export const placeOrder = async (
         }
 
         // Update order totals
-        orderTotalPrice += groupedTotalPrice
+        orderTotalPrice += totalAfterDiscount
         orderShippingFee += groupShippingFee
     }
 
