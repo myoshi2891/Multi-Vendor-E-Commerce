@@ -1,5 +1,7 @@
 import StoreHeader from '@/components/store/layout/header/header'
+import OrderHeader from '@/components/store/order-page/header'
 import { getOrder } from '@/queries/order'
+import { redirect } from 'next/navigation'
 
 export default async function OrderPage({
     params,
@@ -7,6 +9,7 @@ export default async function OrderPage({
     params: { orderId: string }
 }) {
     const order = await getOrder(params.orderId)
+    if (!order) return redirect('/')
 
     // Get the total count of items across all groups
     const totalItemsCount = order?.groups.reduce(
@@ -21,7 +24,12 @@ export default async function OrderPage({
         }
         return total
     }, 0)
-    return <div>
-        <StoreHeader />
-    </div>
+    return (
+        <div>
+            <StoreHeader />
+            <div className="p-2">
+                <OrderHeader order={order} />
+            </div>
+        </div>
+    )
 }
