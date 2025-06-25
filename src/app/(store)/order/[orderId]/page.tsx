@@ -29,6 +29,37 @@ export default async function OrderPage({
             <StoreHeader />
             <div className="p-2">
                 <OrderHeader order={order} />
+                <div
+                    className="grid w-full"
+                    style={{
+                        gridTemplateColumns:
+                            order.paymentStatus === 'Pending' ||
+                            order.orderStatus === 'Failed'
+                                ? '400px 3fr 1fr'
+                                : '1fr 4fr',
+                    }}
+                >
+                    {/* Col 1 -> User, Order details */}
+                    <div className="scrollbar flex h-[calc(100vh-137px)] flex-col gap-y-5 overflow-auto">
+                        {/* User card */}
+                        {/* Order info */}
+                        {(order.paymentStatus !== 'Pending' ||
+                            order.orderStatus !== 'Failed') && (
+                            <div> {/* Order total details */}</div>
+                        )}
+                    </div>
+                    {/* Col 2 -> Order Groups */}
+                    <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 overflow-auto">
+                        {/* Order group details */}
+                    </div>
+                    {/* Col 3 -> Payment Gateways */}
+                    {(order.paymentStatus === 'Pending' ||
+                        order.orderStatus === 'Failed') && (
+                        <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 space-y-5 overflow-auto border-l p-4 px-2">
+                            {/* Order total details */}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
