@@ -30,6 +30,7 @@ export default function OrderUserDetailsCard({
                         width={100}
                         height={100}
                         className="size-28 rounded-full object-cover"
+                        priority
                     />
                 </div>
                 <div className="mt-2 space-y-2 text-main-primary">
@@ -39,12 +40,13 @@ export default function OrderUserDetailsCard({
                     <h6 className="border-t border-dashed border-neutral-400 py-2 text-center">
                         {email}
                     </h6>
-                    <h6 className='text-center'>{phone}</h6>
+                    <h6 className="text-center">{phone}</h6>
                     <p className="border-t border-dashed border-neutral-400 py-2">
-                        {address1}, {address2}, {city}, {state}, {zip_code}, {country.name}
-</p>
+                        {address1}, {address2}, {city}, {state}, {zip_code},{" "}
+                        {country.name}
+                    </p>
                 </div>
             </section>
         </div>
-    )
+    );
 }
