@@ -1,6 +1,7 @@
 import OrderStatusTag from "@/components/shared/order-status";
 import { OrderGroupWithItemsType, OrderStatus } from "@/lib/types";
 import Image from "next/image";
+import ProductRow from "./product-row";
 
 export default function OrderGroupTable({
     group,
@@ -54,7 +55,7 @@ export default function OrderGroupTable({
             >
                 <div>
                     {group.items.map((product, index) => (
-                        <div></div>
+                        <ProductRow key={index} product={product} />
                     ))}
                 </div>
                 <div className="flex items-center text-center max-lg:mt-3">
