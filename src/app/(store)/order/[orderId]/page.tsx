@@ -2,6 +2,7 @@ import OrderInfoCard from "@/components/store/cards/order/info";
 import OrderTotalDetailsCard from "@/components/store/cards/order/total";
 import OrderUserDetailsCard from "@/components/store/cards/order/user";
 import StoreHeader from "@/components/store/layout/header/header";
+import OrderGroupsContainer from "@/components/store/order-page/groups-container";
 import OrderHeader from "@/components/store/order-page/header";
 import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
@@ -63,7 +64,7 @@ export default async function OrderPage({
                     </div>
                     {/* Col 2 -> Order Groups */}
                     <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 overflow-auto">
-                        {/* Order group details */}
+                        <OrderGroupsContainer groups={order.groups} />
                     </div>
                     {/* Col 3 -> Payment Gateways */}
                     {(order.paymentStatus === "Pending" ||
