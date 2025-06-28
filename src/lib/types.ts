@@ -255,3 +255,21 @@ export type OrderGroupWithItemsType = OrderGroup & {
     };
     coupon: Coupon | null;
 };
+
+export enum ProductStatus {
+    Pending = "Pending",
+    Processing = "Processing",
+    ReadyForShipment = "ReadyForShipment",
+    Shipped = "Shipped",
+    Delivered = "Delivered",
+    Canceled = "Canceled",
+    Returned = "Returned",
+    Refunded = "Refunded",
+    FailedDelivery = "FailedDelivery",
+    OnHold = "OnHold",
+    BackOrdered = "BackOrdered",
+    PartiallyShipped = "PartiallyShipped",
+    ExchangeRequested = "ExchangeRequested",
+    AwaitingPickup = "AwaitingPickup",
+}
+  
