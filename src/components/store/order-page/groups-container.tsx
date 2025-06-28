@@ -15,8 +15,8 @@ export default function OrderGroupsContainer({
         );
         return {
             shippingService: group.shippingService,
-            deliveryTimeMin: minDate,
-            deliveryTimeMax: maxDate,
+            deliveryMinDate: minDate,
+            deliveryMaxDate: maxDate,
         };
     });
     return (
