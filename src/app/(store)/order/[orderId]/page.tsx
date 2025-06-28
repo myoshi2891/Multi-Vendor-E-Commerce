@@ -1,4 +1,5 @@
 import OrderInfoCard from "@/components/store/cards/order/info";
+import OrderTotalDetailsCard from "@/components/store/cards/order/total";
 import OrderUserDetailsCard from "@/components/store/cards/order/user";
 import StoreHeader from "@/components/store/layout/header/header";
 import OrderHeader from "@/components/store/order-page/header";
@@ -51,7 +52,13 @@ export default async function OrderPage({
                         />
                         {(order.paymentStatus !== "Pending" ||
                             order.orderStatus !== "Failed") && (
-                            <div> {/* Order total details */}</div>
+                            <OrderTotalDetailsCard
+                                details={{
+                                    subTotal: order.subTotal,
+                                    shippingFees: order.shippingFees,
+                                    total: order.total,
+                                }}
+                            />
                         )}
                     </div>
                     {/* Col 2 -> Order Groups */}
@@ -62,7 +69,13 @@ export default async function OrderPage({
                     {(order.paymentStatus === "Pending" ||
                         order.orderStatus === "Failed") && (
                         <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 space-y-5 overflow-auto border-l p-4 px-2">
-                            {/* Order total details */}
+                            <OrderTotalDetailsCard
+                                details={{
+                                    subTotal: order.subTotal,
+                                    shippingFees: order.shippingFees,
+                                    total: order.total,
+                                }}
+                            />
                         </div>
                     )}
                 </div>
