@@ -19,7 +19,7 @@ export default async function UserMenu() {
                 {user ? (
                     <Image
                         src={user.imageUrl}
-                        alt={user.fullName!}
+                        alt={user.fullName ? user.fullName : "user name"}
                         width={40}
                         height={40}
                         className="size-10 rounded-full object-cover"
@@ -47,13 +47,13 @@ export default async function UserMenu() {
             {/* Content */}
             <div
                 className={cn(
-                    'absolute -left-20 top-0 hidden cursor-pointer group-hover:block',
-                    { '-left-[200px] lg:-left-[148px]': user }
+                    "absolute -left-20 top-0 hidden cursor-pointer group-hover:block",
+                    { "-left-[200px] lg:-left-[148px]": user }
                 )}
             >
                 <div className="relative bottom-auto left-2 right-auto z-40 mt-10 p-0 pt-2.5 text-sm text-[#222]">
                     {/* Triangle */}
-                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-x-[10px] !border-b-[10px] !border-l-transparent !border-r-transparent border-b-white"></div>
+                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white"></div>
                     {/* Menu */}
                     <div className="rounded-3xl bg-white text-sm text-[#222] shadow-lg">
                         <div className="w-[305px]">
@@ -127,7 +127,7 @@ export default async function UserMenu() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 const links = [

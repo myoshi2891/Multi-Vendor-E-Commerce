@@ -133,25 +133,26 @@ export async function getUserCountry(): Promise<Country> {
 
 export const getShippingDatesRange = (
     minDays: number,
-    maxDays: number
+    maxDays: number,
+    date?: Date
 ): { minDate: string; maxDate: string } => {
     // Get the current date
-    const currentDate = new Date()
+    const currentDate = date ? new Date(date) : new Date();
 
     // Calculate minDate by adding minDays to the current date
-    const minDate = new Date(currentDate)
-    minDate.setDate(currentDate.getDate() + minDays)
+    const minDate = new Date(currentDate);
+    minDate.setDate(currentDate.getDate() + minDays);
 
     // Calculate maxDate by adding maxDays to the current date
-    const maxDate = new Date(currentDate)
-    maxDate.setDate(currentDate.getDate() + maxDays)
+    const maxDate = new Date(currentDate);
+    maxDate.setDate(currentDate.getDate() + maxDays);
 
     // Return an object containing the minimum and maximum shipping dates
     return {
         minDate: minDate.toDateString(),
         maxDate: maxDate.toDateString(),
-    }
-}
+    };
+};
 
 // Function to validate the product data before adding it to the cart
 export const isProductValidToAdd = (product: CartProductType): boolean => {
