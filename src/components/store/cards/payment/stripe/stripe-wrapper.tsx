@@ -13,12 +13,16 @@ export default function StripeWrapper({
     children: ReactNode;
     amount: number;
 }) {
-    return <Elements
-        stripe={stripePromise}
-        options={{ 
-            mode: "payment",
-            amount: Math.round(amount * 100), // Convert to cents
-            currency: "USD", // Replace with your desired currency
-         }}
-    >{children}</Elements>;
+    return (
+        <Elements
+            stripe={stripePromise}
+            options={{
+                mode: "payment",
+                amount: Math.round(amount * 100), // Convert to cents
+                currency: "usd", // Replace with your desired currency
+            }}
+        >
+            {children}
+        </Elements>
+    );
 }
