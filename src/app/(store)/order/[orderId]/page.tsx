@@ -4,6 +4,8 @@ import OrderUserDetailsCard from "@/components/store/cards/order/user";
 import StoreHeader from "@/components/store/layout/header/header";
 import OrderGroupsContainer from "@/components/store/order-page/groups-container";
 import OrderHeader from "@/components/store/order-page/header";
+import OrderPayment from "@/components/store/order-page/payment";
+import { Separator } from "@/components/ui/separator";
 import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
 
@@ -76,6 +78,11 @@ export default async function OrderPage({
                                     shippingFees: order.shippingFees,
                                     total: order.total,
                                 }}
+                            />
+                            <Separator />
+                            <OrderPayment
+                                orderId={order.id}
+                                amount={order.total}
                             />
                         </div>
                     )}
