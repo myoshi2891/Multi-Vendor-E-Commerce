@@ -49,8 +49,7 @@ export default function OrderInfoCard({
                         </p>
                         <p className="mt-0.5 text-sm text-neutral-500">
                             {paymentDetails &&
-                            (paymentDetails.status === "COMPLETED" ||
-                                paymentDetails.status === "succeeded")
+                            paymentDetails.status === "Completed"
                                 ? paymentDetails.updatedAt.toDateString()
                                 : "-"}
                         </p>

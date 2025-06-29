@@ -6,8 +6,9 @@ export default function PaypalWrapper({children}: {children: ReactNode}) {
         <div>
             <PayPalScriptProvider
                 options={{
-                    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID as string, // Replace with your PayPal Client ID
-                    currency: "USD", // Replace with your desired currency
+                    clientId: process.env
+                        .NEXT_PUBLIC_PAYPAL_CLIENT_ID as string,
+                    currency: "USD",
                 }}
             >
                 {children}
