@@ -265,3 +265,42 @@ export const downloadBlobAsFile = (blob: Blob, filename: string) => {
     link.click();
     URL.revokeObjectURL(link.href);
 };
+
+// export const printPDF = (blob: Blob) => {
+//     const pdfUrl = URL.createObjectURL(blob);
+//     const printWindow = window.open(pdfUrl, "_blank");
+//     if (printWindow) {
+//         printWindow.addEventListener("load", () => {
+//             printWindow.focus();
+//             printWindow.print();
+//         });
+//     }
+// };
+
+export const printPDF = (blob: Blob) => {
+    const pdfUrl = URL.createObjectURL(blob);
+    const iframe = document.createElement("iframe");
+
+    iframe.style.position = "fixed";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.visibility = "hidden";
+    iframe.src = pdfUrl;
+
+    iframe.onload = () => {
+        const printWindow = iframe.contentWindow;
+        if (!printWindow) return;
+
+        printWindow.focus();
+
+        // 印刷完了後にクリーンアップ（印刷に多少時間がかかるため delay 付き）
+        printWindow.print();
+
+        setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+            iframe.remove();
+        }, 2000); // 2秒待ってからクリーンアップ（必要に応じて調整可）
+    };
+
+    document.body.appendChild(iframe);
+};
