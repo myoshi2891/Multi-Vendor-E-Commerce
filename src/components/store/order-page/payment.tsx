@@ -3,6 +3,7 @@ import { FC } from "react";
 import PaypalWrapper from "../cards/payment/paypal/paypal-wrapper";
 import StripeWrapper from "../cards/payment/stripe/stripe-wrapper";
 import PaypalPayment from "../cards/payment/paypal/paypal-payment";
+import StripePayment from "../cards/payment/stripe/stripe-payment";
 
 interface Props {
     orderId: string;
@@ -18,7 +19,7 @@ const OrderPayment: FC<Props> = ({ orderId, amount }) => {
             </PaypalWrapper>
             {/* Stripe */}
             <StripeWrapper amount={amount}>
-                <div></div>
+                <StripePayment orderId={orderId} />
             </StripeWrapper>
         </div>
     );
