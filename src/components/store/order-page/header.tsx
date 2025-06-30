@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { OrderFullType, OrderStatus, PaymentStatus } from "@/lib/types";
 import { ChevronLeft, ChevronRight, Download, Printer } from "lucide-react";
 import { generateOrderPDFBlob } from "./pdf-invoice";
-import { downloadBlobAsFile } from "@/lib/utils";
+import { downloadBlobAsFile, printPDF } from "@/lib/utils";
 
 export default function OrderHeader({ order }: { order: OrderFullType }) {
     if (!order) return null;
@@ -18,6 +18,16 @@ export default function OrderHeader({ order }: { order: OrderFullType }) {
             console.error("Error generating PDF:", error);
         }
     };
+
+    const handlePrint = async () => {
+        try {
+            const pdfBlob = await generateOrderPDFBlob(order);
+            printPDF(pdfBlob);
+        } catch (error) {
+            console.error("Error printing:", error);
+        }
+    };
+
     return (
         <div>
             <div className="flex w-full items-center justify-between border-b p-2">
@@ -40,7 +50,7 @@ export default function OrderHeader({ order }: { order: OrderFullType }) {
                         <Download className="me-2 w-4" />
                         Export
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => handlePrint()}>
                         <Printer className="me-2 w-4" />
                         Print
                     </Button>
