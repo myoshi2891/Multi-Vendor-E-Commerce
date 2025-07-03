@@ -1,16 +1,16 @@
-import { cn } from '@/lib/utils'
-import { SignOutButton, UserButton } from '@clerk/nextjs'
-import { currentUser } from '@clerk/nextjs/server'
-import { ChevronDown, UserIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Button } from '../../../ui/button'
-import { Separator } from '@/components/ui/separator'
-import { MessageIcon, OrderIcon, WishlistIcon } from '../../../icons'
+import { cn } from "@/lib/utils";
+import { SignOutButton, UserButton } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
+import { ChevronDown, UserIcon } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "../../../ui/button";
+import { Separator } from "@/components/ui/separator";
+import { MessageIcon, OrderIcon, WishlistIcon } from "../../../icons";
 
 export default async function UserMenu() {
     // Get the current user
-    const user = await currentUser()
+    const user = await currentUser();
 
     return (
         <div className="group relative">
@@ -133,55 +133,55 @@ export default async function UserMenu() {
 const links = [
     {
         icon: <OrderIcon />,
-        title: 'My Orders',
-        link: '/profile/orders',
+        title: "My Orders",
+        link: "/profile/orders",
     },
     {
         icon: <MessageIcon />,
-        title: 'Messages',
-        link: '/profile/messages',
+        title: "Messages",
+        link: "/profile/messages",
     },
     {
         icon: <WishlistIcon />,
-        title: 'WishList',
-        link: '/profile/wishlist',
+        title: "WishList",
+        link: "/profile/wishlist",
     },
-]
+];
 const extraLinks = [
     {
-        title: 'Profile',
-        link: '/profile',
+        title: "Profile",
+        link: "/profile",
     },
     {
-        title: 'Settings',
-        link: '/',
+        title: "Settings",
+        link: "/",
     },
     {
-        title: 'Become a Seller',
-        link: '/become-seller',
+        title: "Become a Seller",
+        link: "/become-seller",
     },
     {
-        title: 'Help Center',
-        link: '',
+        title: "Help Center",
+        link: "",
     },
     {
-        title: 'Return & Refund Policy',
-        link: '/',
+        title: "Return & Refund Policy",
+        link: "/",
     },
     {
-        title: 'Legal & Privacy',
-        link: '',
+        title: "Legal & Privacy",
+        link: "",
     },
     {
-        title: 'Discounts & Offers',
-        link: '',
+        title: "Discounts & Offers",
+        link: "",
     },
     {
-        title: 'Order Dispute Resolution',
-        link: '',
+        title: "Order Dispute Resolution",
+        link: "",
     },
     {
-        title: 'Report a Problem',
-        link: '',
+        title: "Report a Problem",
+        link: "",
     },
-]
+];
