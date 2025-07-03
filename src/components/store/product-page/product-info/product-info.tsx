@@ -14,14 +14,15 @@ import ProductVariantSelector from './variant-selector'
 import SizeSelector from './size.selector'
 import ProductAssurancePolicy from './assurance-policy'
 import { ProductVariantImage } from '@prisma/client'
+import ProductWatch from "./product-watch";
 
 interface Props {
-    productData: ProductPageDataType
-    quantity?: number
-    sizeId: string | undefined
-    handleChange: (property: keyof CartProductType, value: any) => void
-    setVariantImages: Dispatch<SetStateAction<ProductVariantImage[]>>
-    setActiveImage: Dispatch<SetStateAction<ProductVariantImage | null>>
+    productData: ProductPageDataType;
+    quantity?: number;
+    sizeId: string | undefined;
+    handleChange: (property: keyof CartProductType, value: any) => void;
+    setVariantImages: Dispatch<SetStateAction<ProductVariantImage[]>>;
+    setActiveImage: Dispatch<SetStateAction<ProductVariantImage | null>>;
 }
 
 const ProductInfo: FC<Props> = ({
@@ -42,7 +43,7 @@ const ProductInfo: FC<Props> = ({
                 <div className="h-20 w-full animate-pulse rounded bg-gray-100"></div>
                 {/* 他にも必要に応じて Skeleton を追加 */}
             </div>
-        )
+        );
     }
 
     // Destructure necessary properties from the productData object
@@ -56,21 +57,22 @@ const ProductInfo: FC<Props> = ({
         isSale,
         saleEndDate,
         variantName,
+        variantId,
         store,
         rating,
         reviewsStatistics,
-    } = productData
+    } = productData;
 
-    const { totalReviews } = reviewsStatistics
+    const { totalReviews } = reviewsStatistics;
     // Function to copy the SKU to the clipboard
     const copySkuToClipboard = async () => {
         try {
-            await navigator.clipboard.writeText(sku)
-            toast.success('Copied successfully!')
+            await navigator.clipboard.writeText(sku);
+            toast.success("Copied successfully!");
         } catch (error) {
-            toast.error('Failed to copy...')
+            toast.error("Failed to copy...");
         }
-    }
+    };
 
     return (
         <div className="relative w-full xl:w-[540px]">
@@ -125,9 +127,9 @@ const ProductInfo: FC<Props> = ({
                     >
                         (
                         {totalReviews === 0
-                            ? 'No reviews yet'
+                            ? "No reviews yet"
                             : totalReviews === 1
-                              ? '1 review'
+                              ? "1 review"
                               : `${totalReviews} reviews`}
                         )
                     </Link>
@@ -146,12 +148,14 @@ const ProductInfo: FC<Props> = ({
                     </div>
                 )}
             </div>
+            {/* Product live watchers count */}
+            <ProductWatch productId={variantId} />
             <Separator className="mt-2" />
             {/* Color Wheel - variant switcher */}
             <div className="mt-4 space-y-2">
                 <div className="relative flex items-center justify-between font-bold text-main-primary">
                     <span className="flex items-center gap-x-2">
-                        {colors.length > 1 ? 'Colors' : 'Color'}
+                        {colors.length > 1 ? "Colors" : "Color"}
                         <ColorWheel colors={colors} size={25} />
                     </span>
                 </div>
@@ -181,7 +185,7 @@ const ProductInfo: FC<Props> = ({
             <Separator className="mt-2" />
             <ProductAssurancePolicy />
         </div>
-    )
-}
+    );
+};
 
 export default ProductInfo
