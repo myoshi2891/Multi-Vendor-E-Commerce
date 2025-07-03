@@ -1,4 +1,5 @@
 "use client";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -31,8 +32,59 @@ export default function ProfileSidebar() {
                     <div className="flex h-9 items-center px-4 font-bold text-main-primary">
                         <div className="truncate">Account</div>
                     </div>
+                    {/* Links */}
+                    {menu.map((item) => (
+                        <Link key={item.link} href={item.link}>
+                            <div
+                                className={cn(
+                                    "relative flex h-9 cursor-pointer items-center px-4 text-sm hover:bg-[#f5f5f5]",
+                                    {
+                                        "user-menu-item bg-[#f5f5f5]":
+                                            item.link && pathname === item.link,
+                                    }
+                                )}
+                            >
+                                <span>{item.title}</span>
+                            </div>
+                        </Link>
+                    ))}
                 </div>
             </div>
         </div>
     );
 }
+
+const menu = [
+    {
+        title: "Overview",
+        link: "/profile",
+    },
+    {
+        title: "Orders",
+        link: "/profile/orders",
+    },
+    {
+        title: "Payment",
+        link: "/profile/payment",
+    },
+    {
+        title: "Shipping address",
+        link: "/profile/addresses",
+    },
+    {
+        title: "Reviews",
+        link: "/profile/reviews",
+    },
+    {
+        title: "History",
+        link: "/profile/history",
+    },
+    {
+        title: "Wishlist",
+        link: "/profile/wishlist",
+    },
+    {
+        title: "Following",
+        link: "/profile/following",
+    },
+];
