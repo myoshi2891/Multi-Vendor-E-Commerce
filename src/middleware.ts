@@ -4,10 +4,12 @@ import { getUserCountry } from "./lib/utils";
 
 export default clerkMiddleware(async (auth, req, next) => {
 	const protectedRoutes = createRouteMatcher([
-        '/dashboard',
-        '/dashboard/(.*)',
-        '/checkout',
-    ])
+        "/dashboard",
+        "/dashboard/(.*)",
+        "/checkout",
+        "/profile",
+        "/profile/(.*)",
+    ]);
 	if (protectedRoutes(req)) auth().protect();
 
 	// Creating a basic response
