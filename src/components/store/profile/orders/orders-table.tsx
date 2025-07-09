@@ -1,5 +1,9 @@
-'use client'
-import { UserOrderType } from "@/lib/types";
+"use client";
+import OrderStatusTag from "@/components/shared/order-status";
+import PaymentStatusTag from "@/components/shared/payment-status";
+import { OrderStatus, PaymentStatus, UserOrderType } from "@/lib/types";
+import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function OrdersTable({
@@ -68,10 +72,60 @@ export default function OrdersTable({
                                                                 #{order.id}
                                                             </p>
                                                             <p className="block font-sans text-sm font-normal leading-normal antialiased">
-                                                                Placed on: {order.createdAt.toDateString()}
+                                                                Placed on:{" "}
+                                                                {order.createdAt.toDateString()}
                                                             </p>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td>
+                                                    <div className="flex">
+                                                        {images
+                                                            .slice(0, 5)
+                                                            .map((img, i) => (
+                                                                <Image
+                                                                    src={img}
+                                                                    key={i}
+                                                                    alt=""
+                                                                    width={50}
+                                                                    height={50}
+                                                                    className="size-7 rounded-full object-cover shadow-sm"
+                                                                    style={{
+                                                                        transform: `translateX(-${i * 8}px)`,
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    {totalItemsCount} items
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <PaymentStatusTag
+                                                        status={
+                                                            order.paymentStatus as PaymentStatus
+                                                        }
+                                                        isTable
+                                                    />
+                                                </td>
+                                                <td className="p-4">
+                                                    <OrderStatusTag
+                                                        status={
+                                                            order.orderStatus as OrderStatus
+                                                        }
+                                                    />
+                                                </td>
+                                                <td className="p-4">
+                                                    ${order.total.toFixed(2)}
+                                                </td>
+                                                <td className="p-4">
+                                                    <Link
+                                                        href={`/order/${order.id}`}
+                                                    >
+                                                        <span className="cursor-pointer text-xs text-blue-primary hover:underline">
+                                                            View
+                                                        </span>
+                                                    </Link>
                                                 </td>
                                             </tr>
                                         );
