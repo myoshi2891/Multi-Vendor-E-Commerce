@@ -1,4 +1,7 @@
+import { getUserOrders } from "@/queries/profile";
 
-export default function ProfileOrdersPage() {
-  return <div>ProfileOrdersPage</div>;
+export default async function ProfileOrdersPage() {
+    const orders = await getUserOrders();
+
+    return <div>ProfileOrdersPage</div>;
 }
