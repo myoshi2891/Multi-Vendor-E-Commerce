@@ -4,7 +4,9 @@ import PaymentStatusTag from "@/components/shared/payment-status";
 import { OrderStatus, PaymentStatus, UserOrderType } from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Pagination from "../../shared/pagination";
+import { getUserOrders } from "@/queries/profile";
 
 export default function OrdersTable({
     orders,
@@ -14,6 +16,20 @@ export default function OrdersTable({
     totalPages: number;
 }) {
     const [data, setData] = useState<UserOrderType[]>(orders);
+    // Pagination
+    const [page, setPage] = useState<number>(1);
+    const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
+
+    useEffect(() => {
+        const getData = async () => {
+            const res = await getUserOrders("", "", "", page);
+            if (res) {
+                setData(res.orders);
+                setTotalDataPages(res.totalPages);
+            }
+        };
+        getData();
+    }, [page]);
     return (
         <div>
             <div className="space-y-4">
@@ -136,6 +152,7 @@ export default function OrdersTable({
                     </div>
                 </div>
             </div>
+            <Pagination page={page} setPage={setPage} totalPages={totalPages} />
         </div>
     );
 }
