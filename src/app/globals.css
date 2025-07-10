@@ -504,3 +504,17 @@
 	background-color: #fd384f;
 	left: 0;
 }
+
+/* User order filter before */
+.user-orders-table-tr::before {
+	content: '';
+	position: absolute;
+	height: 3px;
+	width: 24px;
+	border-radius: 1.5px;
+	background-color: #fd384f;
+	left: 50%;
+	transform: translate(-50%);
+	bottom: -12px;
+	animation: expandWith 0.3s;
+}
