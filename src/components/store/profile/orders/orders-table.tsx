@@ -45,10 +45,10 @@ export default function OrdersTable({
             }
         };
         getData();
-    }, [page, filter, period, search]);
+    }, [page, filter, search]); //, period, search
     return (
         <div>
-            <div className="space-y-4">
+            <div className="">
                 {/* Header */}
                 <OrderTableHeader
                     filter={filter}
@@ -60,7 +60,7 @@ export default function OrdersTable({
                 />
                 {/* Table */}
                 <div className="overflow-hidden">
-                    <div className="bg-white p-6">
+                    <div className="bg-white px-6 py-1">
                         {/* Scrollable Table Container */}
                         <div className="scrollbar max-h-[700px] overflow-auto rounded-md border">
                             <table className="w-full min-w-max table-auto text-left">
