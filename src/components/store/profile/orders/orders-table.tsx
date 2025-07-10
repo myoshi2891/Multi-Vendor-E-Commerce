@@ -1,12 +1,19 @@
 "use client";
 import OrderStatusTag from "@/components/shared/order-status";
 import PaymentStatusTag from "@/components/shared/payment-status";
-import { OrderStatus, PaymentStatus, UserOrderType } from "@/lib/types";
+import {
+    OrderStatus,
+    OrderTableDateFilter,
+    OrderTableFilter,
+    PaymentStatus,
+    UserOrderType,
+} from "@/lib/types";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Pagination from "../../shared/pagination";
 import { getUserOrders } from "@/queries/profile";
+import OrderTableHeader from "./order-table-header";
 
 export default function OrdersTable({
     orders,
@@ -20,20 +27,37 @@ export default function OrdersTable({
     const [page, setPage] = useState<number>(1);
     const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
 
+    // Filter
+    const [filter, setFilter] = useState<OrderTableFilter>("");
+
+    // Date period filter
+    const [period, setPeriod] = useState<OrderTableDateFilter>("");
+
+    // Search filter
+    const [search, setSearch] = useState<string>("");
+
     useEffect(() => {
         const getData = async () => {
-            const res = await getUserOrders("", "", "", page);
+            const res = await getUserOrders(filter, period, search, page);
             if (res) {
                 setData(res.orders);
                 setTotalDataPages(res.totalPages);
             }
         };
         getData();
-    }, [page]);
+    }, [page, filter, period, search]);
     return (
         <div>
             <div className="space-y-4">
                 {/* Header */}
+                <OrderTableHeader
+                    filter={filter}
+                    setFilter={setFilter}
+                    period={period}
+                    setPeriod={setPeriod}
+                    search={search}
+                    setSearch={setSearch}
+                />
                 {/* Table */}
                 <div className="overflow-hidden">
                     <div className="bg-white p-6">
@@ -152,7 +176,11 @@ export default function OrdersTable({
                     </div>
                 </div>
             </div>
-            <Pagination page={page} setPage={setPage} totalPages={totalPages} />
+            <Pagination
+                page={page}
+                setPage={setPage}
+                totalPages={totalDataPages}
+            />
         </div>
     );
 }

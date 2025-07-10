@@ -8,6 +8,7 @@ import CopyIcon from "./copy";
 import ArrowIcon from "./arrow";
 import AppealIcon from "./appeal";
 import DollarIcon from "./dollar";
+import DeleteIcon from "./delete";
 export {
     OrderIcon,
     MessageIcon,
@@ -19,4 +20,5 @@ export {
     ArrowIcon,
     AppealIcon,
     DollarIcon,
+    DeleteIcon,
 };

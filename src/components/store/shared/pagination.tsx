@@ -22,7 +22,7 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
     }
 
     return (
-        <div className="w-full px-4 py-10 sm:px-6 lg:px-0">
+        <div className="w-full px-4 py-0 sm:px-6 lg:px-0">
             <div className="flex w-full items-center justify-end gap-x-4 border-t border-gray-200">
                 <div
                     onClick={() => handlePrevious()}
