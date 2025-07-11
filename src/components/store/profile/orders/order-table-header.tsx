@@ -17,6 +17,8 @@ const OrderTableHeader: FC<Props> = ({
     setFilter,
     search,
     setSearch,
+    period,
+    setPeriod,
 }) => {
     const router = useRouter();
 
@@ -80,7 +82,7 @@ const OrderTableHeader: FC<Props> = ({
                     Remove all filters
                 </div>
             </div>
-            {/* Search form */}
+            {/* Search form - Date filter */}
             <div className="mt-3 flex items-center justify-between">
                 <div className="relative flex w-[500px] text-sm leading-6 text-main-primary">
                     {/* Select */}
@@ -127,6 +129,45 @@ const OrderTableHeader: FC<Props> = ({
                             </span>
                         </button>
                     </span>
+                </div>
+                {/* Filter by date */}
+                <div className="flex items-center">
+                    {/* Select */}
+                    <div className="relative mb-4 w-fit">
+                        <select
+                            className="h-8 w-40 cursor-pointer appearance-none rounded-md border px-4 outline-none hover:border hover:border-black"
+                            value={period}
+                            onChange={(e) =>
+                                setPeriod(
+                                    e.target.value as OrderTableDateFilter
+                                )
+                            }
+                        >
+                            {date_filters.map((filter) => (
+                                <option
+                                    key={filter.value}
+                                    value={filter.value}
+                                    className="flex h-8 overflow-hidden text-left text-sm"
+                                >
+                                    <span className="flex-1 whitespace-nowrap">
+                                        {filter.title}
+                                    </span>
+                                </option>
+                            ))}
+                        </select>
+                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <svg
+                                viewBox="0 0 1024 1024"
+                                width="1em"
+                                height="1em"
+                                fill="currentColor"
+                                aria-hidden="false"
+                                focusable="false"
+                            >
+                                <path d="M97.6 308.032a35.925333 35.925333 0 0 0-4.128 49.813333l1.408 1.632 355.232 371.914667a85.333333 85.333333 0 0 0 123.381333 0.032l355.626667-371.946667a35.936 35.936 0 0 0-2.730667-51.445333 37.674667 37.674667 0 0 0-50.944 1.130667l-1.504 1.546666L527.253333 674.986667a21.333333 21.333333 0 0 1-30.922666 0L150.058667 310.698667a37.653333 37.653333 0 0 0-52.448-2.666667z" />
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
