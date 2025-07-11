@@ -37,6 +37,11 @@ export default function OrdersTable({
     const [search, setSearch] = useState<string>("");
 
     useEffect(() => {
+        // Reset to page 1 when filter or search changes
+        setPage(1);
+    }, [filter, period, search]);
+
+    useEffect(() => {
         const getData = async () => {
             const res = await getUserOrders(filter, period, search, page);
             if (res) {
@@ -45,7 +50,7 @@ export default function OrdersTable({
             }
         };
         getData();
-    }, [page, filter, search]); //, period, search
+    }, [page, filter, search, period]);
     return (
         <div>
             <div className="">
