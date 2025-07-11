@@ -216,6 +216,9 @@ export const getUserPayments = async (
         whereClause.AND.push({
             OR: [
                 {
+                    id: { contains: search }, // Search by id
+                },
+                {
                     paymentIntentId: { contains: search }, // Search by Payment intent id
                 },
             ],
