@@ -1,5 +1,7 @@
-import React from "react";
+import { getUserPayments } from "@/queries/profile";
 
-export default function ProfilePaymentPage() {
-  return <div>ProfilePaymentPage</div>;
+export default async function ProfilePaymentPage() {
+    const payments = await getUserPayments();
+
+    return <div>ProfilePaymentPage</div>;
 }

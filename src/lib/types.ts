@@ -296,3 +296,11 @@ export type OrderTableDateFilter =
 export type UserOrderType = Prisma.PromiseReturnType<
     typeof getUserOrders
 >["orders"][0];
+
+export type PaymentTableFilter = "" | "paypal" | "credit-card";
+
+export type PaymentTableDateFilter =
+    | ""
+    | "last-6-months"
+    | "last-1-year"
+    | "last-2-years";
