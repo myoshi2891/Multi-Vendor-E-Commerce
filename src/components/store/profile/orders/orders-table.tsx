@@ -18,9 +18,11 @@ import OrderTableHeader from "./order-table-header";
 export default function OrdersTable({
     orders,
     totalPages,
+    prev_filter,
 }: {
     orders: UserOrderType[];
     totalPages: number;
+    prev_filter?: OrderTableFilter;
 }) {
     const [data, setData] = useState<UserOrderType[]>(orders);
     // Pagination
@@ -28,7 +30,7 @@ export default function OrdersTable({
     const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
 
     // Filter
-    const [filter, setFilter] = useState<OrderTableFilter>("");
+    const [filter, setFilter] = useState<OrderTableFilter>(prev_filter || "");
 
     // Date period filter
     const [period, setPeriod] = useState<OrderTableDateFilter>("");

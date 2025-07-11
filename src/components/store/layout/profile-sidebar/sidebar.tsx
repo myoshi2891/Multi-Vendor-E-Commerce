@@ -40,7 +40,12 @@ export default function ProfileSidebar() {
                                     "relative flex h-9 cursor-pointer items-center px-4 text-sm hover:bg-[#f5f5f5]",
                                     {
                                         "user-menu-item bg-[#f5f5f5]":
-                                            item.link && pathname === item.link,
+                                            item.link &&
+                                            (pathname === item.link ||
+                                                (pathname.startsWith(
+                                                    item.link
+                                                ) &&
+                                                    item.link !== "/profile")),
                                     }
                                 )}
                             >
