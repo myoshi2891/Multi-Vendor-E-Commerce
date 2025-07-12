@@ -308,3 +308,11 @@ export type PaymentTableDateFilter =
     | "last-6-months"
     | "last-1-year"
     | "last-2-years";
+
+export type ReviewFilter = "5" | "4" | "3" | "2" | "1" | "";
+
+export type ReviewDateFilter =
+    | ""
+    | "last-6-months"
+    | "last-1-year"
+    | "last-2-years";
