@@ -1115,7 +1115,7 @@ export const getProductShippingFee = async (
 export const getProductsByIds = async (
     ids: string[],
     page: number = 1,
-    pageSize: number = 1
+    pageSize: number = 10
 ): Promise<{ products: any; totalPages: number }> => {
     // Check if ids array is empty
     if (!ids || ids.length === 0) {
