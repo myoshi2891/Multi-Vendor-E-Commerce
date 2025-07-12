@@ -129,7 +129,7 @@ const ReviewsHeader: FC<Props> = ({
                         onChange={(e) => setDebouncedSearch(e.target.value)}
                     />
                     {/* Search icon */}
-                    <span className="relative -ml-[1px] rounded-r-md bg-white text-center">
+                    <span className="relative -ml-px rounded-r-md bg-white text-center">
                         <button className="grid h-8 min-w-[52px] cursor-pointer place-items-center rounded-r-md bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] text-white">
                             <span className="inline-block text-2xl">
                                 <SearchIcon />
