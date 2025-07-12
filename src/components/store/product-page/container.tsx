@@ -6,22 +6,22 @@ import ProductInfo from './product-info/product-info'
 import ShipTo from './shipping/ship-to'
 import ShippingDetails from './shipping/shipping-details'
 import ReturnsSecurityPrivacyCard from './returns-security-privacy-card'
-import { cn, isProductValidToAdd } from '@/lib/utils'
-import QuantitySelector from './quantity-selector'
-import SocialShare from '../shared/social-share'
-import { ProductVariantImage } from '@prisma/client'
-import { useCartStore } from '@/cart-store/useCartStore'
-import toast from 'react-hot-toast'
-import useFromStore from '@/hooks/useFromStore'
+import { cn, isProductValidToAdd, updateProductHistory } from "@/lib/utils";
+import QuantitySelector from "./quantity-selector";
+import SocialShare from "../shared/social-share";
+import { ProductVariantImage } from "@prisma/client";
+import { useCartStore } from "@/cart-store/useCartStore";
+import toast from "react-hot-toast";
+import useFromStore from "@/hooks/useFromStore";
 
 interface Props {
-    productData: ProductPageDataType
-    sizeId: string | undefined
-    children: ReactNode
+    productData: ProductPageDataType;
+    sizeId: string | undefined;
+    children: ReactNode;
 }
 const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     // If there is no product data available, render nothing (null)
-    if (!productData) return null
+    if (!productData) return null;
     const {
         productId,
         variantId,
@@ -29,20 +29,20 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         images,
         shippingDetails,
         sizes,
-    } = productData
+    } = productData;
 
-    if (typeof shippingDetails === 'boolean') return null
-    if (!productData || typeof productData.shippingDetails === 'boolean')
-        return null
+    if (typeof shippingDetails === "boolean") return null;
+    if (!productData || typeof productData.shippingDetails === "boolean")
+        return null;
 
     // State for temporary product images
     const [variantImages, setVariantImages] =
-        useState<ProductVariantImage[]>(images)
+        useState<ProductVariantImage[]>(images);
 
     // useState hook to manage the active image being displayed, initialized to the first image in the array
     const [activeImage, setActiveImage] = useState<ProductVariantImage | null>(
         images[0]
-    )
+    );
 
     // Initialize the default product data for the cart item
     const data: CartProductType = {
@@ -54,8 +54,8 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         variantName: productData.variantName,
         image: productData.images[0].url,
         variantImage: productData.variantImage,
-        sizeId: sizeId || '',
-        size: '',
+        sizeId: sizeId || "",
+        size: "",
         quantity: 1,
         price: 0,
         stock: 1,
@@ -67,45 +67,45 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         deliveryTimeMin: shippingDetails.deliveryTimeMin,
         deliveryTimeMax: shippingDetails.deliveryTimeMax,
         isFreeShipping: shippingDetails.isFreeShipping,
-    }
+    };
     // useState hook to manage the product's state in the cart
     const [productToBeAddedToCart, setProductToBeAddedToCart] =
-        useState<CartProductType>(data)
+        useState<CartProductType>(data);
 
-    const { stock } = productToBeAddedToCart
+    const { stock } = productToBeAddedToCart;
 
     // useState hook to manage product validity to be added to cart
-    const [isProductValid, setIsProductValid] = useState<boolean>(false)
+    const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
     // Function to handle state changes for the product properties
     const handleChange = (property: keyof CartProductType, value: any) => {
         setProductToBeAddedToCart((prevProduct) => ({
             ...prevProduct,
             [property]: value,
-        }))
-    }
+        }));
+    };
 
     useEffect(() => {
-        const check = isProductValidToAdd(productToBeAddedToCart)
-        setIsProductValid(check)
-    }, [productToBeAddedToCart])
+        const check = isProductValidToAdd(productToBeAddedToCart);
+        setIsProductValid(check);
+    }, [productToBeAddedToCart]);
 
     // Get the store action to add items to cart
-    const addToCart = useCartStore((state) => state.addToCart)
+    const addToCart = useCartStore((state) => state.addToCart);
     // Get the set Cart action to update items in cart
-    const setCart = useCartStore((state) => state.setCart)
+    const setCart = useCartStore((state) => state.setCart);
 
-    const cartItems = useFromStore(useCartStore, (state) => state.cart)
+    const cartItems = useFromStore(useCartStore, (state) => state.cart);
 
     // Keeping cart state updated
     useEffect(() => {
         const handleStorageChange = (event: StorageEvent) => {
             // Check if the "cart" key was changed in localStorage
-            if (event.key === 'cart') {
+            if (event.key === "cart") {
                 try {
                     const parsedValue = event.newValue
                         ? JSON.parse(event.newValue)
-                        : null
+                        : null;
 
                     // Check if parsedValue and state are valid and then update the cart
                     if (
@@ -113,28 +113,31 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                         parsedValue.state &&
                         Array.isArray(parsedValue.state.cart)
                     ) {
-                        setCart(parsedValue.state.cart)
+                        setCart(parsedValue.state.cart);
                     }
                 } catch (error) {
-                    console.error('Failed to parse updated cart data:', error)
+                    console.error("Failed to parse updated cart data:", error);
                 }
             }
-        }
+        };
 
         // Attache the event listener to localStorage changes
-        window.addEventListener('storage', handleStorageChange)
+        window.addEventListener("storage", handleStorageChange);
 
         // Remove the event listener when the component unmounts
         return () => {
-            window.removeEventListener('storage', handleStorageChange)
-        }
-    }, [])
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
+
+    // Add product to history
+    updateProductHistory(variantId);
 
     const handleAddToCart = () => {
-        if (maxQty <= 0) return toast.error('Out of stock')
-        addToCart(productToBeAddedToCart)
-        toast.success('Product added to cart successfully!')
-    }
+        if (maxQty <= 0) return toast.error("Out of stock");
+        addToCart(productToBeAddedToCart);
+        toast.success("Product added to cart successfully!");
+    };
 
     const maxQty = useMemo(() => {
         const search_product = cartItems?.find(
@@ -142,12 +145,12 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                 p.productId === productId &&
                 p.variantId === variantId &&
                 p.sizeId === sizeId
-        )
+        );
 
         return search_product
             ? search_product.stock - search_product?.quantity
-            : stock
-    }, [cartItems, productId, variantId, sizeId, stock])
+            : stock;
+    }, [cartItems, productId, variantId, sizeId, stock]);
 
     return (
         <div className="relative">
@@ -172,7 +175,7 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                         <div className="z-20">
                             <div className="overflow-hidden overflow-y-auto rounded-md border bg-white p-4 pb-0">
                                 {/* Ship to */}
-                                {typeof shippingDetails !== 'boolean' && (
+                                {typeof shippingDetails !== "boolean" && (
                                     <>
                                         <ShipTo
                                             countryCode={
@@ -232,9 +235,9 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                                     <button
                                         // disabled={!isProductValid}
                                         className={cn(
-                                            'relative inline-block h-11 w-full min-w-20 cursor-pointer select-none whitespace-nowrap rounded-3xl border border-orange-border bg-orange-border py-2.5 font-bold leading-6 text-orange-hover transition-all duration-300 ease-bezier-1 hover:bg-[#e4cdce]',
+                                            "relative inline-block h-11 w-full min-w-20 cursor-pointer select-none whitespace-nowrap rounded-3xl border border-orange-border bg-orange-border py-2.5 font-bold leading-6 text-orange-hover transition-all duration-300 ease-bezier-1 hover:bg-[#e4cdce]",
                                             {
-                                                'cursor-not-allowed':
+                                                "cursor-not-allowed":
                                                     !isProductValid ||
                                                     maxQty <= 0,
                                             }
@@ -256,7 +259,7 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
             </div>
             <div className="mt-6 w-[calc(100%-390px)] pb-16">{children}</div>
         </div>
-    )
-}
+    );
+};
 
 export default ProductPageContainer
