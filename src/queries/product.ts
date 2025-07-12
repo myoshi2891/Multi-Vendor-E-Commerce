@@ -1,33 +1,34 @@
-'use server'
+"use server";
 // DB
-import { db } from '@/lib/db'
+import { db } from "@/lib/db";
 // Types
 import {
     Country,
     FreeShippingWithCountriesType,
     ProductPageType,
     ProductShippingDetailsType,
+    ProductType,
     ProductWithVariantType,
     RatingStatisticsType,
     SortOrder,
     VariantImageType,
     VariantSimplified,
-} from '@/lib/types'
+} from "@/lib/types";
 
 // Clerk
-import { currentUser } from '@clerk/nextjs/server'
+import { currentUser } from "@clerk/nextjs/server";
 
 // Slugify
-import slugify from 'slugify'
-import { generateUniqueSlug } from '@/lib/utils'
+import slugify from "slugify";
+import { generateUniqueSlug } from "@/lib/utils";
 
 // Cookies
-import { getCookie } from 'cookies-next'
-import { cookies } from 'next/headers'
+import { getCookie } from "cookies-next";
+import { cookies } from "next/headers";
 
 // Prisma
-import { FreeShipping, Store } from '@prisma/client'
-import { sub } from 'date-fns'
+import { FreeShipping, Store } from "@prisma/client";
+import { sub } from "date-fns";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -43,46 +44,46 @@ export const upsertProduct = async (
 ) => {
     try {
         // Retrieve current user
-        const user = await currentUser()
+        const user = await currentUser();
         // Check if user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
+        if (!user) throw new Error("Unauthenticated.");
         // Ensure user has seller privileges
-        if (user.privateMetadata.role !== 'SELLER')
-            throw new Error('Only sellers can perform this action.')
+        if (user.privateMetadata.role !== "SELLER")
+            throw new Error("Only sellers can perform this action.");
         // Ensure product data is provided
-        if (!product) throw new Error('Please provide product data.')
+        if (!product) throw new Error("Please provide product data.");
         // Find the store by URL
         const store = await db.store.findUnique({
             where: { url: storeUrl, userId: user.id },
-        })
-        if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`)
+        });
+        if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
 
         // Check if the product already exist
         const existingProduct = await db.product.findUnique({
             where: { id: product.productId },
-        })
+        });
 
         // Check if the variant already exist
         const existingVariant = await db.productVariant.findUnique({
             where: { id: product.variantId },
-        })
+        });
 
         if (existingProduct) {
             if (existingVariant) {
                 // Update existing variant and product
             } else {
                 // Create new variant
-                await handleVariantCreate(product)
+                await handleVariantCreate(product);
             }
         } else {
             // Create new product and variant
-            await handleProductCreate(product, store.id)
+            await handleProductCreate(product, store.id);
         }
     } catch (error) {
-        console.log(error)
-        throw error
+        console.log(error);
+        throw error;
     }
-}
+};
 
 const handleProductCreate = async (
     product: ProductWithVariantType,
@@ -91,21 +92,21 @@ const handleProductCreate = async (
     // Generate unique slugs for product and variant
     const productSlug = await generateUniqueSlug(
         slugify(product.name, {
-            replacement: '-',
+            replacement: "-",
             lower: true,
             trim: true,
         }),
-        'product'
-    )
+        "product"
+    );
 
     const variantSlug = await generateUniqueSlug(
         slugify(product.variantName, {
-            replacement: '-',
+            replacement: "-",
             lower: true,
             trim: true,
         }),
-        'productVariant'
-    )
+        "productVariant"
+    );
 
     const productData = {
         id: product.productId,
@@ -141,7 +142,7 @@ const handleProductCreate = async (
                     variantImage: product.variantImage,
                     sku: product.sku,
                     weight: product.weight,
-                    keywords: product.keywords.join(','),
+                    keywords: product.keywords.join(","),
                     isSale: product.isSale,
                     saleEndDate: product.saleEndDate,
                     images: {
@@ -193,22 +194,22 @@ const handleProductCreate = async (
               : undefined,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
-    }
+    };
 
-    const new_product = await db.product.create({ data: productData })
-    return new_product
-}
+    const new_product = await db.product.create({ data: productData });
+    return new_product;
+};
 
 const handleVariantCreate = async (product: ProductWithVariantType) => {
     // Generate unique slug for variant
     const variantSlug = await generateUniqueSlug(
         slugify(product.variantName, {
-            replacement: '-',
+            replacement: "-",
             lower: true,
             trim: true,
         }),
-        'productVariant'
-    )
+        "productVariant"
+    );
 
     const variantData = {
         id: product.variantId,
@@ -217,9 +218,9 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
         variantDescription: product.variantDescription,
         slug: variantSlug,
         isSale: product.isSale,
-        saleEndDate: product.isSale ? product.saleEndDate : '',
+        saleEndDate: product.isSale ? product.saleEndDate : "",
         sku: product.sku,
-        keywords: product.keywords.join(','),
+        keywords: product.keywords.join(","),
         weight: product.weight,
         variantImage: product.variantImage,
         images: {
@@ -249,12 +250,12 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
 
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
-    }
+    };
 
-    const new_variant = await db.productVariant.create({ data: variantData })
+    const new_variant = await db.productVariant.create({ data: variantData });
 
-    return new_variant
-}
+    return new_variant;
+};
 
 // Function: getProductMainInfo
 // Description: Retrieves product main information (including product and variant details)
@@ -268,8 +269,8 @@ export const getProductMainInfo = async (productId: string) => {
     const product = await db.product.findUnique({
         where: { id: productId },
         include: { questions: true, specs: true },
-    })
-    if (!product) return null
+    });
+    if (!product) return null;
 
     // Return the main information of the product
     return {
@@ -290,8 +291,8 @@ export const getProductMainInfo = async (productId: string) => {
             name: spec.name,
             value: spec.value,
         })),
-    }
-}
+    };
+};
 
 // Function: getAllStoreProducts
 // Description: Retrieves all products associated with a specific store based on the store URL
@@ -304,9 +305,9 @@ export const getAllStoreProducts = async (storeUrl: string) => {
     // Retrieve store details from the database using the store URL
     const store = await db.store.findUnique({
         where: { url: storeUrl },
-    })
+    });
 
-    if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`)
+    if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
 
     // Retrieve products associated with the store using the store ID
     const products = await db.product.findMany({
@@ -331,9 +332,9 @@ export const getAllStoreProducts = async (storeUrl: string) => {
                 },
             },
         },
-    })
-    return products
-}
+    });
+    return products;
+};
 
 // Function: deleteProduct
 // Description: Deletes a product and its associated variants from the database
@@ -345,27 +346,27 @@ export const getAllStoreProducts = async (storeUrl: string) => {
 export const deleteProduct = async (productId: string) => {
     try {
         // Retrieve current user
-        const user = await currentUser()
+        const user = await currentUser();
         // Check if user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
+        if (!user) throw new Error("Unauthenticated.");
         // Ensure user has seller privileges
-        if (user.privateMetadata.role !== 'SELLER')
+        if (user.privateMetadata.role !== "SELLER")
             throw new Error(
-                'Only sellers and administrators can perform this action.'
-            )
+                "Only sellers and administrators can perform this action."
+            );
         // Ensure product data is provided
-        if (!productId) throw new Error('Please provide product ID.')
+        if (!productId) throw new Error("Please provide product ID.");
 
         // Delete the product and its variants
         const response = await db.product.delete({
             where: { id: productId },
-        })
-        return response
+        });
+        return response;
     } catch (error) {
-        console.log(error)
-        throw error
+        console.log(error);
+        throw error;
     }
-}
+};
 
 // Function: getProducts
 // Description: Retrieves filtered products based on specified criteria. Supports pagination.
@@ -379,19 +380,19 @@ export const deleteProduct = async (productId: string) => {
 
 export const getProducts = async (
     filters: any = {},
-    sortBy = '',
+    sortBy = "",
     page: number = 1,
     pageSize: number = 10
 ) => {
     // Default values for page and pageSize
-    const currentPage = page
-    const limit = pageSize
-    const skip = (currentPage - 1) * limit
+    const currentPage = page;
+    const limit = pageSize;
+    const skip = (currentPage - 1) * limit;
 
     // Construct the base query
     const whereClause: any = {
         AND: [],
-    }
+    };
 
     // Apply store filter (using store URL)
     if (filters.store) {
@@ -400,9 +401,9 @@ export const getProducts = async (
                 url: filters.store,
             },
             select: { id: true },
-        })
+        });
         if (store) {
-            whereClause.AND.push({ storeId: store.id })
+            whereClause.AND.push({ storeId: store.id });
         }
     }
 
@@ -413,9 +414,9 @@ export const getProducts = async (
                 url: filters.category,
             },
             select: { id: true },
-        })
+        });
         if (category) {
-            whereClause.AND.push({ categoryId: category.id })
+            whereClause.AND.push({ categoryId: category.id });
         }
     }
 
@@ -426,9 +427,9 @@ export const getProducts = async (
                 url: filters.subCategory,
             },
             select: { id: true },
-        })
+        });
         if (subCategory) {
-            whereClause.AND.push({ subCategoryId: subCategory.id })
+            whereClause.AND.push({ subCategoryId: subCategory.id });
         }
     }
 
@@ -446,12 +447,12 @@ export const getProducts = async (
                 },
             },
         },
-    })
+    });
 
     // Transform the products with filtered variants into ProductCardType structure
     const productsWithFilteredVariants = products.map((product) => {
         // Filter the variants based on the filters
-        const filteredVariants = product.variants
+        const filteredVariants = product.variants;
 
         // Transform the filtered variants into the VariantSimplified structure
         const variants: VariantSimplified[] = filteredVariants.map(
@@ -462,7 +463,7 @@ export const getProducts = async (
                 images: variant.images,
                 sizes: variant.sizes,
             })
-        )
+        );
 
         // Extract variant images for the product
         const variantImages: VariantImageType[] = filteredVariants.map(
@@ -472,7 +473,7 @@ export const getProducts = async (
                     ? variant.variantImage
                     : variant.images[0].url,
             })
-        )
+        );
         // Return the product in the ProductCardType structure
         return {
             id: product.id,
@@ -482,17 +483,17 @@ export const getProducts = async (
             sales: product.sales,
             variants,
             variantImages,
-        }
-    })
+        };
+    });
 
     // Retrieve products matching the filters
     // const totalCount = await db.product.count({
     // 	where: whereClause,
     // });
-    const totalCount = products.length
+    const totalCount = products.length;
 
     // Calculate total pages
-    const totalPages = Math.ceil(totalCount / pageSize)
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     // Return the filtered products, pagination metadata, and total count
     return {
@@ -501,8 +502,8 @@ export const getProducts = async (
         currentPage,
         pageSize,
         totalCount,
-    }
-}
+    };
+};
 
 // Function: getProductPageData
 // Description: Retrieves product data (including product and variant details) for a specific product page
@@ -517,14 +518,14 @@ export const getProductPageData = async (
     variantSlug: string
 ) => {
     // Get current user
-    const user = await currentUser()
+    const user = await currentUser();
 
     // Retrieve product and variant details from the database
-    const product = await retrieveProductDetails(productSlug, variantSlug)
-    if (!product) return
+    const product = await retrieveProductDetails(productSlug, variantSlug);
+    if (!product) return;
 
     // Retrieve user country
-    const userCountry = getUserCountry()
+    const userCountry = getUserCountry();
 
     // Calculate and retrieve the shipping details
     const productShippingDetails = await getShippingDetails(
@@ -532,18 +533,18 @@ export const getProductPageData = async (
         userCountry,
         product.store,
         product.freeShipping
-    )
+    );
 
     // Fetch store followers count
-    const storeFollowersCount = await getStoreFollowersCount(product.storeId)
+    const storeFollowersCount = await getStoreFollowersCount(product.storeId);
 
     // Check if user is following store
     const isUserFollowingStore = await checkIfUserFollowingStore(
         product.storeId,
         user?.id
-    )
+    );
 
-    const ratingStatistics = await getRatingStatistics(product.id)
+    const ratingStatistics = await getRatingStatistics(product.id);
 
     return formatProductResponse(
         product,
@@ -551,8 +552,8 @@ export const getProductPageData = async (
         storeFollowersCount,
         isUserFollowingStore,
         ratingStatistics
-    )
-}
+    );
+};
 
 // Helper functions
 export const retrieveProductDetails = async (
@@ -594,9 +595,9 @@ export const retrieveProductDetails = async (
                 },
             },
         },
-    })
+    });
 
-    if (!product) return null
+    if (!product) return null;
     // Get variant info
     const variantsInfo = await db.productVariant.findMany({
         where: {
@@ -612,7 +613,7 @@ export const retrieveProductDetails = async (
                 },
             },
         },
-    })
+    });
 
     return {
         ...product,
@@ -625,29 +626,29 @@ export const retrieveProductDetails = async (
             sizes: variant.sizes,
             colors: variant.colors,
         })),
-    }
-}
+    };
+};
 
 const getUserCountry = () => {
-    const userCountryCookie = getCookie('userCountry', { cookies }) || ''
-    const defaultCountry = { name: 'United States', code: 'US' }
+    const userCountryCookie = getCookie("userCountry", { cookies }) || "";
+    const defaultCountry = { name: "United States", code: "US" };
 
     try {
-        const parsedCountry = JSON.parse(userCountryCookie)
+        const parsedCountry = JSON.parse(userCountryCookie);
         if (
             parsedCountry &&
-            typeof parsedCountry === 'object' &&
-            'name' in parsedCountry &&
-            'code' in parsedCountry
+            typeof parsedCountry === "object" &&
+            "name" in parsedCountry &&
+            "code" in parsedCountry
         ) {
-            return parsedCountry
+            return parsedCountry;
         }
-        return defaultCountry
+        return defaultCountry;
     } catch (error) {
         // Handle error
-        console.error('Error retrieving user country:', error)
+        console.error("Error retrieving user country:", error);
     }
-}
+};
 const formatProductResponse = (
     product: ProductPageType,
     shippingDetails: ProductShippingDetailsType,
@@ -655,11 +656,11 @@ const formatProductResponse = (
     isUserFollowingStore: boolean,
     ratingStatistics: RatingStatisticsType
 ) => {
-    if (!product) return
-    const variant = product.variants[0]
+    if (!product) return;
+    const variant = product.variants[0];
     const { store, category, subCategory, offerTag, questions, reviews } =
-        product
-    const { images, colors, sizes } = variant
+        product;
+    const { images, colors, sizes } = variant;
 
     return {
         productId: product.id,
@@ -701,8 +702,8 @@ const formatProductResponse = (
         shippingDetails,
         relatedProducts: [],
         variantInfo: product.variantsInfo,
-    }
-}
+    };
+};
 
 const getStoreFollowersCount = async (storeId: string) => {
     const storeFollowersCount = await db.store.findUnique({
@@ -716,15 +717,15 @@ const getStoreFollowersCount = async (storeId: string) => {
                 },
             },
         },
-    })
-    return storeFollowersCount?._count.followers || 0
-}
+    });
+    return storeFollowersCount?._count.followers || 0;
+};
 
 const checkIfUserFollowingStore = async (
     storeId: string,
     userId: string | undefined
 ) => {
-    let isUserFollowingStore = false
+    let isUserFollowingStore = false;
     if (userId) {
         const storeFollowersInfo = await db.store.findUnique({
             where: {
@@ -738,37 +739,37 @@ const checkIfUserFollowingStore = async (
                     select: { id: true }, // Select the user id if following
                 },
             },
-        })
+        });
         if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
-            isUserFollowingStore = true
+            isUserFollowingStore = true;
         }
     }
 
-    return isUserFollowingStore
-}
+    return isUserFollowingStore;
+};
 
 export const getRatingStatistics = async (productId: string) => {
     const ratingStats = await db.review.groupBy({
-        by: ['rating'],
+        by: ["rating"],
         where: { productId },
         _count: {
             rating: true,
         },
-    })
+    });
 
     const totalReviews = ratingStats.reduce(
         (sum, stat) => sum + stat._count.rating,
         0
-    )
+    );
 
-    const ratingCounts = Array(5).fill(0)
+    const ratingCounts = Array(5).fill(0);
 
     ratingStats.forEach((stat) => {
-        let rating = Math.floor(stat.rating)
+        let rating = Math.floor(stat.rating);
         if (rating >= 1 && rating <= 5) {
-            ratingCounts[rating - 1] = stat._count.rating
+            ratingCounts[rating - 1] = stat._count.rating;
         }
-    })
+    });
 
     return {
         ratingStatistics: ratingCounts.map((count, index) => ({
@@ -783,8 +784,8 @@ export const getRatingStatistics = async (productId: string) => {
             },
         }),
         totalReviews,
-    }
-}
+    };
+};
 
 // Function: getShippingDetails
 // Description: Retrieves and calculates shipping details based on the product's shipping fee method and user's country
@@ -802,24 +803,24 @@ export const getShippingDetails = async (
 ) => {
     let shippingDetails = {
         shippingFeeMethod,
-        shippingService: '',
+        shippingService: "",
         shippingFee: 0,
         extraShippingFee: 0,
         deliveryTimeMin: 0,
         deliveryTimeMax: 0,
-        returnPolicy: '',
+        returnPolicy: "",
         countryCode: userCountry.code,
         countryName: userCountry.name,
         city: userCountry.city,
         isFreeShipping: false,
-    }
+    };
 
     const country = await db.country.findUnique({
         where: {
             name: userCountry.name,
             code: userCountry.code,
         },
-    })
+    });
 
     if (country) {
         // Retrieve shipping rate for the country
@@ -828,33 +829,33 @@ export const getShippingDetails = async (
                 countryId: country.id,
                 storeId: store.id,
             },
-        })
+        });
 
-        const returnPolicy = shippingRate?.returnPolicy || store.returnPolicy
+        const returnPolicy = shippingRate?.returnPolicy || store.returnPolicy;
         const shippingService =
-            shippingRate?.shippingService || store.defaultShippingService
+            shippingRate?.shippingService || store.defaultShippingService;
         const shippingFeePerItem =
-            shippingRate?.shippingFeePerItem || store.defaultShippingFeePerItem
+            shippingRate?.shippingFeePerItem || store.defaultShippingFeePerItem;
         const shippingFeeForAdditionalItem =
             shippingRate?.shippingFeeForAdditionalItem ||
-            store.defaultShippingFeeForAdditionalItem
+            store.defaultShippingFeeForAdditionalItem;
         const shippingFeePerKg =
-            shippingRate?.shippingFeePerKg || store.defaultShippingFeePerKg
+            shippingRate?.shippingFeePerKg || store.defaultShippingFeePerKg;
         const shippingFeeFixed =
-            shippingRate?.shippingFeeFixed || store.defaultShippingFeeFixed
+            shippingRate?.shippingFeeFixed || store.defaultShippingFeeFixed;
         const deliveryTimeMin =
-            shippingRate?.deliveryTimeMin || store.defaultDeliveryTimeMin
+            shippingRate?.deliveryTimeMin || store.defaultDeliveryTimeMin;
         const deliveryTimeMax =
-            shippingRate?.deliveryTimeMax || store.defaultDeliveryTimeMax
+            shippingRate?.deliveryTimeMax || store.defaultDeliveryTimeMax;
 
         // Check for free shipping
         if (freeShipping) {
-            const free_shipping_countries = freeShipping.eligibleCountries
+            const free_shipping_countries = freeShipping.eligibleCountries;
             const check_free_shipping = free_shipping_countries.find(
                 (c) => c.countryId === country.id
-            )
+            );
             if (check_free_shipping) {
-                shippingDetails.isFreeShipping = true
+                shippingDetails.isFreeShipping = true;
             }
         }
 
@@ -870,39 +871,39 @@ export const getShippingDetails = async (
             countryName: userCountry.name,
             city: userCountry.city,
             isFreeShipping: shippingDetails.isFreeShipping,
-        }
+        };
 
-        const { isFreeShipping } = shippingDetails
+        const { isFreeShipping } = shippingDetails;
         switch (shippingFeeMethod) {
-            case 'ITEM':
+            case "ITEM":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerItem
+                    : shippingFeePerItem;
                 shippingDetails.extraShippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeForAdditionalItem
-                break
+                    : shippingFeeForAdditionalItem;
+                break;
 
-            case 'WEIGHT':
+            case "WEIGHT":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerKg
-                break
+                    : shippingFeePerKg;
+                break;
 
-            case 'FIXED':
+            case "FIXED":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeFixed
-                break
+                    : shippingFeeFixed;
+                break;
 
             default:
-                break
+                break;
         }
-        return shippingDetails
+        return shippingDetails;
     }
 
-    return false
-}
+    return false;
+};
 
 // Function: getProductFilteredReviews
 // Description: Retrieves filtered and sorted reviews for a product from the database,
@@ -917,43 +918,43 @@ export const getShippingDetails = async (
 export const getProductFilteredReviews = async (
     productId: string,
     filters: {
-        rating?: number
-        hasImages?: boolean
+        rating?: number;
+        hasImages?: boolean;
     },
-    sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+    sort: { orderBy: "latest" | "oldest" | "highest" } | undefined,
     page: number = 1,
     pageSize: number = 4
 ) => {
     const reviewFilter: any = {
         productId,
-    }
+    };
 
     // Apply rating filter if provided
     if (filters.rating) {
-        const rating = filters.rating
+        const rating = filters.rating;
         reviewFilter.rating = {
             in: [rating, rating + 0.5],
-        }
+        };
     }
 
     // Apply image filter if provided
     if (filters.hasImages) {
         reviewFilter.images = {
             some: {},
-        }
+        };
     }
 
     // Set sorting order using local SortOrder type
     const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
-        sort && sort.orderBy === 'latest'
-            ? { createdAt: 'desc' }
-            : sort && sort.orderBy === 'oldest'
-              ? { createdAt: 'asc' }
-              : { rating: 'desc' }
+        sort && sort.orderBy === "latest"
+            ? { createdAt: "desc" }
+            : sort && sort.orderBy === "oldest"
+              ? { createdAt: "asc" }
+              : { rating: "desc" };
 
     // Calculate pagination parameters
-    const skip = (page - 1) * pageSize
-    const take = pageSize
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
     // Fetch reviews from the database
     const reviews = await db.review.findMany({
@@ -965,18 +966,18 @@ export const getProductFilteredReviews = async (
         orderBy: sortOption,
         skip, // Skip records for pagination
         take, // Take records for pagination
-    })
+    });
 
-    return reviews
-}
+    return reviews;
+};
 
 /**
- * @Function getDeliveryDetailsForStoreByCountry
- * @Description Returns delivery details for a store based on the store ID and country ID
- * @PermissionLevel Public
- * @Parameters - storeId: ID of the store
+ * @function getDeliveryDetailsForStoreByCountry
+ * @description Returns delivery details for a store based on the store ID and country ID
+ * @permissionLevel Public
+ * @parameters - storeId: ID of the store
  * - countryId: ID of the country
- * @Returns
+ * @returns
  */
 
 export const getDeliveryDetailsForStoreByCountry = async (
@@ -989,9 +990,9 @@ export const getDeliveryDetailsForStoreByCountry = async (
             storeId,
             countryId,
         },
-    })
+    });
 
-    let storeDetails
+    let storeDetails;
     if (!shippingRate) {
         storeDetails = await db.store.findUnique({
             where: {
@@ -1002,36 +1003,36 @@ export const getDeliveryDetailsForStoreByCountry = async (
                 defaultDeliveryTimeMax: true,
                 defaultDeliveryTimeMin: true,
             },
-        })
+        });
     }
 
     const shippingService = shippingRate
         ? shippingRate.shippingService
-        : storeDetails?.defaultShippingService
+        : storeDetails?.defaultShippingService;
 
     const deliveryTimeMin = shippingRate
         ? shippingRate.deliveryTimeMin
-        : storeDetails?.defaultDeliveryTimeMin
+        : storeDetails?.defaultDeliveryTimeMin;
 
     const deliveryTimeMax = shippingRate
         ? shippingRate.deliveryTimeMax
-        : storeDetails?.defaultDeliveryTimeMax
+        : storeDetails?.defaultDeliveryTimeMax;
 
-    return { shippingService, deliveryTimeMax, deliveryTimeMin }
-}
+    return { shippingService, deliveryTimeMax, deliveryTimeMin };
+};
 
 /**
- * @Function getProductShippingFee
- * @Description Retrieve and calculates shipping fee based on user country and product.
- * @PermissionLevel Public
- * @Parameters
+ * @function getProductShippingFee
+ * @description Retrieve and calculates shipping fee based on user country and product.
+ * @permissionLevel Public
+ * @parameters
  *   - shippingFeeMethod: The shipping fee method of the product
  *   - userCountry: The parsed user country object from cookies.
  *   - store: store details.
  *   - freeShipping.
  *   - weight.
  *   - quantity.
- * @Returns Calculated total shipping fee for product.
+ * @returns Calculated total shipping fee for product.
  */
 export const getProductShippingFee = async (
     shippingFeeMethod: string,
@@ -1047,17 +1048,17 @@ export const getProductShippingFee = async (
             name: userCountry.name,
             code: userCountry.code,
         },
-    })
+    });
 
     if (country) {
         // Check if the user qualifies for free shipping
         if (freeShipping) {
-            const free_shipping_countries = freeShipping.eligibleCountries
+            const free_shipping_countries = freeShipping.eligibleCountries;
             const isEligibleForFreeShipping = free_shipping_countries.some(
                 (c) => c.countryId === country.name
-            )
+            );
             if (isEligibleForFreeShipping) {
-                return 0 // Free shipping
+                return 0; // Free shipping
             }
         }
 
@@ -1067,7 +1068,7 @@ export const getProductShippingFee = async (
                 countryId: country.id,
                 storeId: store.id,
             },
-        })
+        });
 
         // Destructure the shippingRate with defaults
         const {
@@ -1075,10 +1076,10 @@ export const getProductShippingFee = async (
             shippingFeeForAdditionalItem = store.defaultShippingFeeForAdditionalItem,
             shippingFeePerKg = store.defaultShippingFeePerKg,
             shippingFeeFixed = store.defaultShippingFeeFixed,
-        } = shippingRate || {}
+        } = shippingRate || {};
 
         // Calculate the additional quantity (excluding the first item)
-        const additionalItemsQty = quantity - 1
+        const additionalItemsQty = quantity - 1;
 
         // Define fee calculation methods in a map (using functions)
         const feeCalculators: Record<string, () => number> = {
@@ -1087,18 +1088,118 @@ export const getProductShippingFee = async (
                 shippingFeeForAdditionalItem * additionalItemsQty,
             WEIGHT: () => shippingFeePerKg * weight * quantity,
             FIXED: () => shippingFeeFixed,
-        }
+        };
 
         // Check if the fee calculation method exists and calculate the fee
-        const calculateFee = feeCalculators[shippingFeeMethod]
+        const calculateFee = feeCalculators[shippingFeeMethod];
         if (calculateFee) {
-            return calculateFee() // Execute the corresponding calculation
+            return calculateFee(); // Execute the corresponding calculation
         }
 
         // If no valid shipping method is found, return 0
-        return 0
+        return 0;
     }
 
     // Return 0 if the country is not found
-    return 0
-}
+    return 0;
+};
+
+/**
+ * @function getProductsByIds
+ * @description Retrieves product details based on an array of product ids.
+ * @parameters - ids: An array of product ids to fetch details for.
+ * @returns A promise that resolves to an array of product objects. If id doesn't exist in the database, it will be skipped.
+ * @throws An error if the database query fails.
+ */
+
+export const getProductsByIds = async (
+    ids: string[],
+    page: number = 1,
+    pageSize: number = 1
+): Promise<{ products: any; totalPages: number }> => {
+    // Check if ids array is empty
+    if (!ids || ids.length === 0) {
+        throw new Error("Ids are undefined");
+    }
+
+    // Default values for page and pageSize
+    const currentPage = page;
+    const limit = pageSize;
+    const skip = (currentPage - 1) * limit;
+    try {
+        // Query the database for products with the specified ids
+        const variants = await db.productVariant.findMany({
+            where: {
+                id: {
+                    in: ids, //; Filter products whose ids are in the provided array
+                },
+            },
+            select: {
+                id: true,
+                variantName: true,
+                slug: true,
+                images: {
+                    select: {
+                        url: true,
+                    },
+                },
+                sizes: true,
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        rating: true,
+                        sales: true,
+                    },
+                },
+            },
+            take: limit,
+            skip: skip,
+        });
+
+        const new_products = variants.map((variant) => ({
+            id: variant.product.id,
+            slug: variant.product.slug,
+            name: variant.product.name,
+            rating: variant.product.rating,
+            sales: variant.product.sales,
+            variants: [
+                {
+                    variantId: variant.id,
+                    variantName: variant.variantName,
+                    variantSlug: variant.slug,
+                    images: variant.images,
+                    sizes: variant.sizes,
+                },
+            ],
+            variantImages: [],
+        }));
+
+        // Return products sorted in the order of ids provided
+        const ordered_products = ids
+            .map((id) =>
+                new_products.find(
+                    (product) => product.variants[0].variantId === id
+                )
+            )
+            .filter(Boolean); // Filter out undefined values
+
+        const allProducts = await db.productVariant.count({
+            where: {
+                id: {
+                    in: ids,
+                },
+            },
+        });
+        const totalPages = Math.ceil(allProducts / pageSize);
+
+        return {
+            products: ordered_products,
+            totalPages,
+        };
+    } catch (error) {
+        console.error("Error retrieving products by ids:", error);
+        throw new Error("Failed to retrieve products. Please try again.");
+    }
+};
