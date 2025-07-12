@@ -30,8 +30,8 @@ export default function ProductCardImageSwiper({
             className="relative mb-2 h-[200px] w-full overflow-hidden rounded-2xl bg-white contrast-[90%]"
             onMouseEnter={() => swiperRef.current.swiper.autoplay.start()}
             onMouseLeave={() => {
-                swiperRef.current.swiper.autoplay.stop()
-                swiperRef.current.swiper.slideTo(0)
+                swiperRef.current.swiper.autoplay.stop();
+                swiperRef.current.swiper.slideTo(0);
             }}
             // style={{ height: "200px" }}
         >
@@ -40,11 +40,11 @@ export default function ProductCardImageSwiper({
                 modules={[Autoplay]}
                 autoplay={{ delay: 500 }}
             >
-                {images.map((img) => (
-                    <SwiperSlide key={img.id}>
+                {images.map((img, index) => (
+                    <SwiperSlide key={img.id ?? index}>
                         <Image
                             src={img.url}
-                            alt={img.alt ?? img.id}
+                            alt={img.alt ?? img.id ?? "Product Image"}
                             width={400}
                             height={400}
                             className="block h-[200px] w-48 object-cover sm:w-52"
@@ -54,5 +54,5 @@ export default function ProductCardImageSwiper({
                 ))}
             </Swiper>
         </div>
-    )
+    );
 }
