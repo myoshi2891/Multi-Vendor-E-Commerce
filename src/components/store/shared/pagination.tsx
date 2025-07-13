@@ -22,11 +22,11 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
     }
 
     return (
-        <div className="w-full px-4 py-10 sm:px-6 lg:px-0">
+        <div className="w-full px-4 py-0 sm:px-6 lg:px-0">
             <div className="flex w-full items-center justify-end gap-x-4 border-t border-gray-200">
                 <div
                     onClick={() => handlePrevious()}
-                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-indigo-700"
+                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
                 >
                     <MoveLeft className="w-3" />
                     <p className="ml-3 text-sm font-medium leading-none">
@@ -38,9 +38,10 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                         <span
                             key={i}
                             className={cn(
-                                'mr-4 cursor-pointer border-t border-transparent px-2 pt-3 text-sm font-medium leading-none text-gray-600 hover:border-indigo-400 hover:text-indigo-700',
+                                "mr-4 cursor-pointer border-t border-transparent px-2 pt-3 text-sm font-medium leading-none text-gray-600 hover:text-orange-background",
                                 {
-                                    'border-indigo-400': i + 1 === page,
+                                    "border-orange-background text-orange-background":
+                                        i + 1 === page,
                                 }
                             )}
                             onClick={() => setPage(i + 1)}
@@ -51,7 +52,7 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                 </div>
                 <div
                     onClick={() => handleNext()}
-                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-indigo-700"
+                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
                 >
                     <MoveRight className="w-3" />
                     <p className="ml-3 text-sm font-medium leading-none">
@@ -60,7 +61,7 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 export default Pagination
