@@ -1,8 +1,43 @@
 import StoreHeader from "@/components/store/layout/header/header";
+import ProductList from "@/components/store/shared/product-list";
+import { FiltersQueryType } from "@/lib/types";
+import { getProducts } from "@/queries/product";
 
-export default function BrowsePage() {
-    return <>
-        <StoreHeader />
-        <div>Browse Page</div>
-    </>
+export default async function BrowsePage({
+    searchParams,
+}: {
+    searchParams: FiltersQueryType;
+}) {
+    const { category, offer, search, size, sort, subcategory } = searchParams;
+    const products_data = await getProducts(
+        {
+            search,
+            category,
+            subcategory,
+            offer,
+            size: Array.isArray(size)
+                ? size
+                : size
+                  ? [size] // Convert string to array if it's not already an array
+                  : undefined, // Default to undefined if size is not provided
+        },
+        sort
+    );
+    const { products } = products_data;
+
+    return (
+        <>
+            <StoreHeader />
+            <div className="mx-auto max-w-[95%]">
+                <div className="mt-5 flex gap-x-5">
+                    {/* Product filters */}
+                    <div className="space-y-5 p-4">
+                        {/* Product sort */}
+                        {/* Product list */}
+                        <ProductList products={products} />
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 }
