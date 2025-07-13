@@ -103,13 +103,21 @@ export interface Country {
 
 import countries from "@/data/countries.json";
 import { getOrder } from "@/queries/order";
-import { getUserOrders, getUserPayments } from "@/queries/profile";
+import {
+    getUserOrders,
+    getUserPayments,
+    getUserWishlist,
+} from "@/queries/profile";
 
 export type SelectMenuOption = (typeof countries)[number];
 
 export type ProductType = Prisma.PromiseReturnType<
     typeof getProducts
 >["products"][0];
+
+export type ProductWishListType = Prisma.PromiseReturnType<
+    typeof getUserWishlist
+>["wishlist"][0];
 
 export type VariantSimplified = {
     variantId: string;
