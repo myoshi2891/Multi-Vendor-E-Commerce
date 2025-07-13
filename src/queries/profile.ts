@@ -398,6 +398,7 @@ export const getUserWishlist = async (
                     variants: {
                         select: {
                             id: true,
+                            variantName: true,
                             slug: true,
                             images: true,
                             sizes: true,
@@ -422,12 +423,15 @@ export const getUserWishlist = async (
         sales: item.product.sales,
         variants: [
             {
+                variantId: item.product.variants[0].id,
                 variantSlug: item.product.variants[0].slug,
+                variantName: item.product.variants[0].variantName,
                 images: item.product.variants[0].images,
                 sizes: item.product.variants[0].sizes,
-            }
-        ]
-    }))
+            },
+        ],
+        variantImages: [],
+    }));
 
     // Fetch the total count of wishlist items for the query
     const totalCount = await db.wishlist.count({ where: { userId: user.id } });
