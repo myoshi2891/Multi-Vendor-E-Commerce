@@ -357,3 +357,90 @@ export const getUserReviews = async (
         totalCount,
     };
 };
+
+/**
+ * @function getUserWishlist
+ * @description Retrieves paginated wishlist items for the authenticated user
+ * @access User
+ * @params page - The page number for pagination. (default = 1)
+ * @params pageSize - The number of records to return per page. (default = 10)
+ * @returns A Promise resolving to an object containing:
+ *  - wishlist: An array of wishlist items formatted with product details.
+ *  - totalPages: The total number of pages available.
+ */
+
+export const getUserWishlist = async (
+    page: number = 1,
+    pageSize: number = 10
+) => {
+    // Retrieve the current user
+    const user = await currentUser();
+
+    // Ensure the user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Calculate pagination values
+    const skip = (page - 1) * pageSize;
+
+    // Fetch wishlist items for the current user
+    const wishlist = await db.wishlist.findMany({
+        where: {
+            userId: user.id,
+        },
+        include: {
+            product: {
+                select: {
+                    id: true,
+                    name: true,
+                    rating: true,
+                    slug: true,
+                    sales: true,
+                    variants: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            images: true,
+                            sizes: true,
+                        },
+                    },
+                },
+            },
+        },
+        take: pageSize,
+        skip, // Skip the orders of previous pages
+        orderBy: {
+            updatedAt: "desc", // Sort by most updated recently
+        },
+    });
+
+    // Transform wishlist items into the desired structure
+    const formattedWishlist = wishlist.map((item) => ({
+        id: item.product.id,
+        slug: item.product.slug,
+        name: item.product.name,
+        rating: item.product.rating,
+        sales: item.product.sales,
+        variants: [
+            {
+                variantSlug: item.product.variants[0].slug,
+                images: item.product.variants[0].images,
+                sizes: item.product.variants[0].sizes,
+            }
+        ]
+    }))
+
+    // Fetch the total count of wishlist items for the query
+    const totalCount = await db.wishlist.count({ where: { userId: user.id } });
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // Return paginated data with metadata
+    return {
+        wishlist: formattedWishlist,
+        totalPages,
+        // currentPage: page,
+        // pageSize,
+        // totalCount,
+    };
+};

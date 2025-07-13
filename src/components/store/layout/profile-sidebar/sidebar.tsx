@@ -82,14 +82,14 @@ const menu = [
     },
     {
         title: "History",
-        link: "/profile/history",
+        link: "/profile/history/1",
     },
     {
         title: "Wishlist",
-        link: "/profile/wishlist",
+        link: "/profile/wishlist/1",
     },
     {
         title: "Following",
-        link: "/profile/following",
+        link: "/profile/following/1",
     },
 ];
