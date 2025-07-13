@@ -324,3 +324,12 @@ export type ReviewDateFilter =
     | "last-6-months"
     | "last-1-year"
     | "last-2-years";
+
+export type FiltersQueryType = {
+    search: string;
+    category: string;
+    subcategory: string;
+    offer: string;
+    size: string;
+    sort: string;
+};
