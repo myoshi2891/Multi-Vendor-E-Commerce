@@ -304,3 +304,31 @@ export const printPDF = (blob: Blob) => {
 
     document.body.appendChild(iframe);
 };
+
+// Handle product history in localStorage
+export const updateProductHistory = (variantId: string) => {
+    // Fetch existing product history from localStorage
+    let productHistory: string[] = []
+    const historyString = localStorage.getItem("productHistory")
+
+    if (historyString) {
+        try {
+            productHistory = JSON.parse(historyString)
+        } catch (error) {
+            productHistory = []
+        }
+    }
+
+    // Update the history: Remove the product if it exists, and add it to the front
+    productHistory = productHistory.filter((id) => id !== variantId)
+    productHistory.unshift(variantId)
+
+    // Check storage limit (manage max number of products)
+    const MAX_PRODUCTS = 100
+    if (productHistory.length > MAX_PRODUCTS) {
+        productHistory.pop() // Remove the oldest product
+    }
+
+    // Save updated history to localStorage
+    localStorage.setItem('productHistory', JSON.stringify(productHistory))
+}

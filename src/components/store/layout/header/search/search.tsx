@@ -50,8 +50,6 @@ export default function Search() {
         }
     };
 
-    console.log("suggestions:", suggestions);
-
     return (
         <div className="relative flex-1 lg:w-full">
             <form
