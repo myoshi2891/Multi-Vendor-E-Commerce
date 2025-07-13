@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 export default function ProfileSidebar() {
     const pathname = usePathname();
     const path = pathname.split("/profile/")[1];
+    const path_trim = path ? path.split("/")[0] : null;
     return (
         <div>
             <div className="w-full p-4 text-xs text-[#999]">
@@ -22,7 +23,7 @@ export default function ProfileSidebar() {
                 {path && (
                     <span>
                         <Link href={pathname} className="capitalize">
-                            {path}
+                            {path_trim || path}
                         </Link>
                     </span>
                 )}
