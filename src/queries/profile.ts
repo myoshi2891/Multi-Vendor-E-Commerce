@@ -448,3 +448,81 @@ export const getUserWishlist = async (
         // totalCount,
     };
 };
+
+/**
+ * @function getUserFollowedStores
+ * @description Retrieves all stores that the authenticated user follow
+ * @access User
+ * @params page - The page number for pagination. (default = 1)
+ * @params pageSize - The number of stores per page. (default = 10)
+ * @returns A Promise resolving to an object containing:
+ *  - stores: An array of stores in the required format
+ *  - totalPages: The total number of pages.
+ */
+
+export const getUserFollowedStores = async (
+    page: number = 1,
+    pageSize: number = 10
+) => {
+    // Retrieve the current user
+    const user = await currentUser();
+
+    // Ensure the user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Calculate pagination values
+    const skip = (page - 1) * pageSize;
+
+    // Fetch followed stores for the current user with pagination
+    const followedStores = await db.store.findMany({
+        where: {
+            followers: {
+                some: {
+                    id: user.id,
+                },
+            },
+        },
+        select: {
+            id: true,
+            url: true,
+            name: true,
+            logo: true,
+            followers: {
+                select: {
+                    id: true,
+                },
+            },
+        },
+        take: pageSize,
+        skip,
+    });
+
+    // Fetch the total count of followed stores (without pagination)
+    const totalCount = await db.store.count({
+        where: {
+            followers: {
+                some: {
+                    id: user.id,
+                },
+            },
+        },
+    });
+
+    // Calculate the total number of pages
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // Transform the stores into the required format
+    const stores = followedStores.map((store) => ({
+        id: store.id,
+        url: store.url,
+        name: store.name,
+        logo: store.logo,
+        followersCount: store.followers.length,
+        isUserFollowingStore: true, // Always true since these are followed stores
+    }));
+
+    return {
+        stores,
+        totalPages,
+    };
+};

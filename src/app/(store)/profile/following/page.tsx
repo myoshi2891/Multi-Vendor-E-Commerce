@@ -1,4 +1,5 @@
+import { redirect } from "next/navigation";
 
 export default function ProfileFollowingPage() {
-  return <div>ProfileFollowingPage</div>;
+    redirect("/profile/following/1");
 }
