@@ -28,6 +28,8 @@ import {
     OrderGroup,
     OrderItem,
     Store,
+    Category,
+    SubCategory,
 } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
@@ -332,4 +334,8 @@ export type FiltersQueryType = {
     offer: string;
     size: string;
     sort: string;
+};
+
+export type CategoryWithSubsType = Category & {
+    subCategories: SubCategory[];
 };
