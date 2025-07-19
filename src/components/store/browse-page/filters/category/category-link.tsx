@@ -20,6 +20,28 @@ export default function CategoryLink({
     const subCategoryQuery = searchParams.get("subCategory");
 
     const [expand, setExpand] = useState<boolean>(false);
+    const handleCategoryChange = (category: string) => {
+        if (category === categoryQuery) return;
+        params.delete("subCategory");
+        params.set("category", category);
+        replaceParams();
+    };
+
+    const handleSubCategoryChange = (sub: string) => {
+        if (category.url !== categoryQuery)
+            params.set("category", category.url);
+        if (sub === subCategoryQuery) {
+            params.delete("subCategory");
+        } else {
+            params.set("subCategory", sub);
+        }
+        replaceParams();
+    };
+
+    const replaceParams = () => {
+        replace(`${pathname}?${params.toString()}`);
+        setExpand(true);
+    };
 
     return (
         <div>
@@ -28,6 +50,7 @@ export default function CategoryLink({
                     <label
                         htmlFor={category.id}
                         className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
+                        onClick={() => handleCategoryChange(category.url)}
                     >
                         <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
                             {category.url === categoryQuery && (
@@ -59,6 +82,9 @@ export default function CategoryLink({
                                 <label
                                     htmlFor={sub.id}
                                     className="flex w-full cursor-pointer select-none items-center whitespace-nowrap text-left"
+                                    onClick={() =>
+                                        handleSubCategoryChange(sub.url)
+                                    }
                                 >
                                     <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
                                         {sub.url === subCategoryQuery && (
