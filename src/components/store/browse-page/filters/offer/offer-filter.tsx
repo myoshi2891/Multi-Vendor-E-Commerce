@@ -1,14 +1,14 @@
 'use client'
-import { CategoryWithSubsType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { OfferTag } from "@prisma/client";
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
-import CategoryLink from "./category-link";
+import OfferLink from "./offer-link";
 
-export default function CategoryFilter({
-    categories,
+export default function OfferFilter({
+    offers,
 }: {
-    categories: CategoryWithSubsType[];
+    offers: OfferTag[];
 }) {
     const [show, setShow] = useState<boolean>(false);
     return (
@@ -19,7 +19,7 @@ export default function CategoryFilter({
                 onClick={() => setShow((prev) => !prev)}
             >
                 <h3 className="line-clamp-1 text-ellipsis text-sm font-bold capitalize text-main-primary">
-                    Category
+                    Offer
                 </h3>
                 <span className="absolute right-0">
                     {show ? (
@@ -31,12 +31,12 @@ export default function CategoryFilter({
             </div>
             {/* Filter */}
             <div
-                className={cn("mt-2.5", {
+                className={cn("mt-2.5 flex flex-wrap gap-2", {
                     hidden: !show,
                 })}
             >
-                {categories.map((category) => (
-                    <CategoryLink key={category.id} category={category} />
+                {offers.map((offer) => (
+                    <OfferLink key={offer.id} offer={offer} />
                 ))}
             </div>
         </div>
