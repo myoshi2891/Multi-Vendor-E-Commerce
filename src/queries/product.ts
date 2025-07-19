@@ -420,7 +420,7 @@ export const getProducts = async (
         }
     }
 
-    // Apply suCategory filter (using subCategory URL)
+    // Apply subCategory filter (using subCategory URL)
     if (filters.subCategory) {
         const subCategory = await db.subCategory.findUnique({
             where: {
@@ -430,6 +430,19 @@ export const getProducts = async (
         });
         if (subCategory) {
             whereClause.AND.push({ subCategoryId: subCategory.id });
+        }
+    }
+
+    // Apply offer filter (using offer URL)
+    if (filters.offer) {
+        const offer = await db.offerTag.findUnique({
+            where: {
+                url: filters.offer,
+            },
+            select: { id: true },
+        });
+        if (offer) {
+            whereClause.AND.push({ offerTagId: offer.id });
         }
     }
 
