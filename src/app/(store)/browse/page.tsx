@@ -3,6 +3,7 @@ import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
+import { getFilteredSizes } from "@/queries/size";
 
 export default async function BrowsePage({
     searchParams,
@@ -10,6 +11,7 @@ export default async function BrowsePage({
     searchParams: FiltersQueryType;
 }) {
     const { category, offer, search, size, sort, subcategory } = searchParams;
+    await getFilteredSizes({});
     const products_data = await getProducts(
         {
             search,

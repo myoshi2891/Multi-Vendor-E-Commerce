@@ -24,7 +24,6 @@ export default function OfferLink({
         replaceParams();
     };
 
-
     const replaceParams = () => {
         replace(`${pathname}?${params.toString()}`);
     };
