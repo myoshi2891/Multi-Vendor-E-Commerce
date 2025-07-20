@@ -3,6 +3,7 @@ import { getAllCategories } from "@/queries/category";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import CategoryFilter from "./filters/category/category-filter";
 import OfferFilter from "./filters/offer/offer-filter";
+import SizeFilter from "./filters/size/size-filter";
 
 export default async function ProductFilters({
     queries,
@@ -19,7 +20,7 @@ export default async function ProductFilters({
             <div className="w-44 border-t">
                 <CategoryFilter categories={categories} />
                 <OfferFilter offers={offers} />
-                {/* Size Filter */}
+                <SizeFilter queries={queries} />
             </div>
         </div>
     );
