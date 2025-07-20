@@ -14,12 +14,12 @@ import { db } from "@/lib/db";
 export const getFilteredSizes = async (
     filters: {
         category?: string;
-        subcategory?: string;
+        subCategory?: string;
         offer?: string;
     },
     take = 10
 ) => {
-    const { category, subcategory, offer } = filters;
+    const { category, subCategory, offer } = filters;
 
     // Construct the query dynamically based on the available filters
     const sizes = await db.size.findMany({
@@ -28,8 +28,10 @@ export const getFilteredSizes = async (
                 product: {
                     AND: [
                         category ? { category: { url: category } } : {},
-                        subcategory ? { category: { url: subcategory } } : {},
-                        offer ? { category: { url: offer } } : {},
+                        subCategory
+                            ? { subCategory: { url: subCategory } }
+                            : {},
+                        offer ? { offerTag: { url: offer } } : {},
                     ],
                 },
             },
@@ -47,8 +49,8 @@ export const getFilteredSizes = async (
                 product: {
                     AND: [
                         category ? { category: { url: category } } : {},
-                        subcategory ? { category: { url: subcategory } } : {},
-                        offer ? { category: { url: offer } } : {},
+                        subCategory ? { category: { url: subCategory } } : {},
+                        offer ? { offerTag: { url: offer } } : {},
                     ],
                 },
             },
@@ -74,7 +76,7 @@ export const getFilteredSizes = async (
                 (sizeOrderMap.get(b) ?? Infinity) || a.localeCompare(b)
         );
     });
-    
+
     // Return the unique sizes in the desired format
     return { sizes: uniqueSizesArray.map((size) => ({ size })), count };
 };
