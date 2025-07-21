@@ -10,13 +10,13 @@ export default async function BrowsePage({
 }: {
     searchParams: FiltersQueryType;
 }) {
-    const { category, offer, search, size, sort, subcategory } = searchParams;
+    const { category, offer, search, size, sort, subCategory } = searchParams;
     await getFilteredSizes({});
     const products_data = await getProducts(
         {
             search,
             category,
-            subcategory,
+            subCategory,
             offer,
             size: Array.isArray(size)
                 ? size

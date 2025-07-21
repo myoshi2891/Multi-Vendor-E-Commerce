@@ -330,7 +330,7 @@ export type ReviewDateFilter =
 export type FiltersQueryType = {
     search: string;
     category: string;
-    subcategory: string;
+    subCategory: string;
     offer: string;
     size: string;
     sort: string;

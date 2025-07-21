@@ -594,6 +594,10 @@ export const getProductPageData = async (
         user?.id
     );
 
+    // Handle product views
+    await incrementProductViews(product.id);
+
+    // Reviews stats
     const ratingStatistics = await getRatingStatistics(product.id);
 
     return formatProductResponse(
@@ -1251,5 +1255,24 @@ export const getProductsByIds = async (
     } catch (error) {
         console.error("Error retrieving products by ids:", error);
         throw new Error("Failed to retrieve products. Please try again.");
+    }
+};
+
+const incrementProductViews = async (productId: string) => {
+    const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
+        cookies,
+    });
+
+    if (!isProductAlreadyViewed) {
+        await db.product.update({
+            where: {
+                id: productId,
+            },
+            data: {
+                views: {
+                    increment: 1,
+                },
+            },
+        });
     }
 };

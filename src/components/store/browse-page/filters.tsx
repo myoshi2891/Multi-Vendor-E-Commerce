@@ -11,7 +11,7 @@ export default async function ProductFilters({
 }: {
     queries: FiltersQueryType;
 }) {
-    const { category, subcategory, offer } = queries; // Extract the search query parameters from the queries object
+    const { category, subCategory, offer } = queries; // Extract the search query parameters from the queries object
     const categories = await getAllCategories(); // Fetch all categories from the database
     const offers = await getAllOfferTags(); // Fetch all offer tags from the database
     return (

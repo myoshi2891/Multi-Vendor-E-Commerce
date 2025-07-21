@@ -129,6 +129,7 @@ model Product {
   sales             Int               @default(0)
   numReviews        Int               @default(0)
   shippingFeeMethod ShippingFeeMethod @default(ITEM)
+  views             Int               @default(0)
 
   freeShipping                FreeShipping? @relation("ProductFreeShipping")
   freeShippingForAllCountries Boolean       @default(false)
