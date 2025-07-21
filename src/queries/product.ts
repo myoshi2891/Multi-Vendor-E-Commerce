@@ -483,9 +483,26 @@ export const getProducts = async (
         });
     }
 
+    // Define the sort order
+    let orderBy: Record<string, SortOrder> = {};
+    switch (sortBy) {
+        case "most-popular":
+            orderBy = { views: "desc" };
+            break;
+        case "new-arrivals":
+            orderBy = { createdAt: "desc" };
+            break;
+        case "top-rated":
+            orderBy = { rating: "desc" };
+            break;
+        default:
+            orderBy = { views: "desc" };
+    }
+
     // Get all filtered, sorted products
     const products = await db.product.findMany({
         where: whereClause,
+        orderBy,
         take: limit, // Limit to page size
         skip: skip, // Skip the products of previous pages
         include: {
