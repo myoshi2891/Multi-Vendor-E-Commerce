@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import SizeLink from "./size-link";
 
 export default function SizeFilter({ queries }: { queries: FiltersQueryType }) {
-    const { category, subcategory, offer, search } = queries;
+    const { category, subCategory, offer, search } = queries;
     const [show, setShow] = useState<boolean>(false);
     const [sizes, setSizes] = useState<{ size: string }[]>([]);
     const [total, setTotal] = useState<number>(10);
@@ -15,11 +15,11 @@ export default function SizeFilter({ queries }: { queries: FiltersQueryType }) {
 
     useEffect(() => {
         handleGetSizes();
-    }, [category, subcategory, offer, take]);
+    }, [category, subCategory, offer, take]);
 
     const handleGetSizes = async () => {
         const sizes = await getFilteredSizes(
-            { category, subcategory, offer },
+            { category, subCategory, offer },
             take
         );
         setSizes(sizes.sizes);
