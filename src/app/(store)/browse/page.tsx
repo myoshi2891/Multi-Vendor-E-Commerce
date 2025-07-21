@@ -1,4 +1,5 @@
 import ProductFilters from "@/components/store/browse-page/filters";
+import ProductSort from "@/components/store/browse-page/sort";
 import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
@@ -35,7 +36,7 @@ export default async function BrowsePage({
                 <div className="mt-5 flex gap-x-5">
                     <ProductFilters queries={searchParams} />
                     <div className="space-y-5 p-4">
-                        {/* Product sort */}
+                        <ProductSort />
                         {/* Product list */}
                         <ProductList products={products} />
                     </div>
