@@ -27,7 +27,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { FreeShipping, Store } from "@prisma/client";
+import { FreeShipping, ProductVariant, Size, Store } from "@prisma/client";
 import { sub } from "date-fns";
 
 // Function: upsertProduct
@@ -514,6 +514,37 @@ export const getProducts = async (
                 },
             },
         },
+    });
+
+    type VariantWithSizes = ProductVariant & { sizes: Size[] };
+    // Product price sorting
+    products.sort((a, b) => {
+        // Helper function to get the minimum price from a product's variants
+        const getMinPrice = (product: any) =>
+            Math.min(
+                ...product.variants.flatMap((variant: VariantWithSizes) =>
+                    variant.sizes.map((size) => {
+                        let discount = size.discount;
+                        let discountedPrice = size.price * (1 - discount / 100);
+                        return discountedPrice;
+                    })
+                ),
+                Infinity // Default to Infinity if no sizes exist
+            );
+
+        // Get minimum prices for both products
+        const minPriceA = getMinPrice(a);
+        const minPriceB = getMinPrice(b);
+
+        // Explicitly check for price sorting conditions
+        if (sortBy === "price-low-to-high") {
+            return minPriceA - minPriceB; // Ascending order
+        } else if (sortBy === "price-high-to-low") {
+            return minPriceB - minPriceA; // Descending order
+        }
+
+        // If no price sort option is provided, return 0 (no sorting by price)
+        return 0;
     });
 
     // Transform the products with filtered variants into ProductCardType structure
