@@ -13,6 +13,7 @@ import { ProductVariantImage } from "@prisma/client";
 import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
+import { setCookie } from "cookies-next";
 
 interface Props {
     productData: ProductPageDataType;
@@ -151,6 +152,12 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
             ? search_product.stock - search_product?.quantity
             : stock;
     }, [cartItems, productId, variantId, sizeId, stock]);
+
+    // Set view cookie
+    setCookie(`viewedProduct_${productId}`, "true", {
+        maxAge: 3600,
+        path: "/",
+    });
 
     return (
         <div className="relative">

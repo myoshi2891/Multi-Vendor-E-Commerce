@@ -11,7 +11,10 @@ export default function Search() {
     const params = new URLSearchParams(searchParams);
     const { push, replace } = useRouter();
 
-    const [searchQuery, setSearchQuery] = useState<string>("");
+    const search_query_url = params.get("search");
+    const [searchQuery, setSearchQuery] = useState<string>(
+        search_query_url || ""
+    );
     const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
 
     const handleSubmit = (e: any) => {
@@ -35,6 +38,8 @@ export default function Search() {
     const handleInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchQuery(value);
+
+        if (pathname === "/browse") return;
 
         if (value.length >= 2) {
             try {

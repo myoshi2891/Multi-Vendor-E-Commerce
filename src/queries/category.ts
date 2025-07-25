@@ -17,63 +17,63 @@ import { Category } from "@prisma/client";
 // Returns: Updated or newly created category details.
 
 export const upsertCategory = async (category: Category) => {
-	try {
-		// Get current user
-		const user = await currentUser();
+    try {
+        // Get current user
+        const user = await currentUser();
 
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
+        // Ensure user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+        // Verify admin permission
+        if (user.privateMetadata.role !== "ADMIN")
+            throw new Error(
+                "Unauthorized Access: Admin Privileges Required for Entry."
+            );
 
-		// Ensure category data is provided
-		if (!category) throw new Error("Please provide category data.");
+        // Ensure category data is provided
+        if (!category) throw new Error("Please provide category data.");
 
-		// Throw error if category with same name or URL already exists
-		const existingCategory = await db.category.findFirst({
-			where: {
-				AND: [
-					{
-						OR: [{ name: category.name }, { url: category.url }],
-					},
-					{
-						NOT: {
-							id: category.id,
-						},
-					},
-				],
-			},
-		});
+        // Throw error if category with same name or URL already exists
+        const existingCategory = await db.category.findFirst({
+            where: {
+                AND: [
+                    {
+                        OR: [{ name: category.name }, { url: category.url }],
+                    },
+                    {
+                        NOT: {
+                            id: category.id,
+                        },
+                    },
+                ],
+            },
+        });
 
-		// Throw error if category with same name or URL already exists
-		if (existingCategory) {
-			let errorMessage = "";
-			if (existingCategory.name === category.name) {
-				errorMessage = "A category with the same name already exists";
-			} else if (existingCategory.url === category.url) {
-				errorMessage = "A category with the same URL already exists";
-			}
-			throw new Error(errorMessage);
-		}
+        // Throw error if category with same name or URL already exists
+        if (existingCategory) {
+            let errorMessage = "";
+            if (existingCategory.name === category.name) {
+                errorMessage = "A category with the same name already exists";
+            } else if (existingCategory.url === category.url) {
+                errorMessage = "A category with the same URL already exists";
+            }
+            throw new Error(errorMessage);
+        }
 
-		// Upsert category into the database
-		const categoryDetails = await db.category.upsert({
-			where: {
-				id: category.id,
-			},
-			update: category,
-			create: category,
-		});
-		return categoryDetails;
-	} catch (error) {
-		// Log and re-throw any errors
-		console.log(error);
-		throw error;
-	}
+        // Upsert category into the database
+        const categoryDetails = await db.category.upsert({
+            where: {
+                id: category.id,
+            },
+            update: category,
+            create: category,
+        });
+        return categoryDetails;
+    } catch (error) {
+        // Log and re-throw any errors
+        console.log(error);
+        throw error;
+    }
 };
 
 // Function: getAllCategories
@@ -82,17 +82,18 @@ export const upsertCategory = async (category: Category) => {
 // Returns: Array of categories sorted by updatedAt date in descending order.
 
 export const getAllCategories = async () => {
-	try {
-		// Retrieve all categories from the database
-		const categories = await db.category.findMany({
-			orderBy: { updatedAt: "desc" },
-		});
-		return categories;
-	} catch (error) {
-		// Log and re-throw any errors
-		console.log(error);
-		throw error;
-	}
+    try {
+        // Retrieve all categories from the database
+        const categories = await db.category.findMany({
+            include: { subCategories: true },
+            orderBy: { updatedAt: "desc" },
+        });
+        return categories;
+    } catch (error) {
+        // Log and re-throw any errors
+        console.log(error);
+        throw error;
+    }
 };
 
 // Function: getAllSubCategoriesFotCategory
@@ -101,18 +102,18 @@ export const getAllCategories = async () => {
 // Returns: Array of SubCategories of Category sorted by updatedAt date in descending order.
 
 export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
-	try {
-		// Retrieve all subCategories of Category from the database
-		const subCategories = await db.subCategory.findMany({
-			where: { categoryId },
-			orderBy: { updatedAt: "desc" },
-		});
-		return subCategories;
-	} catch (error) {
-		// Log and re-throw any errors
-		console.log(error);
-		throw error;
-	}
+    try {
+        // Retrieve all subCategories of Category from the database
+        const subCategories = await db.subCategory.findMany({
+            where: { categoryId },
+            orderBy: { updatedAt: "desc" },
+        });
+        return subCategories;
+    } catch (error) {
+        // Log and re-throw any errors
+        console.log(error);
+        throw error;
+    }
 };
 
 // Function: getCategory
@@ -123,21 +124,21 @@ export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
 // Returns: Category details if found, otherwise undefined.
 
 export const getCategory = async (categoryId: string) => {
-	try {
-		if (!categoryId) throw new Error("Please provide a category ID.");
+    try {
+        if (!categoryId) throw new Error("Please provide a category ID.");
 
-		// Retrieve category from the database
-		const category = await db.category.findUnique({
-			where: {
-				id: categoryId,
-			},
-		});
-		return category;
-	} catch (error) {
-		// Log and re-throw any errors
-		console.log(error);
-		throw error;
-	}
+        // Retrieve category from the database
+        const category = await db.category.findUnique({
+            where: {
+                id: categoryId,
+            },
+        });
+        return category;
+    } catch (error) {
+        // Log and re-throw any errors
+        console.log(error);
+        throw error;
+    }
 };
 
 // Function: deleteCategory
@@ -148,31 +149,31 @@ export const getCategory = async (categoryId: string) => {
 // Returns: Boolean indicating whether the category was deleted successfully.
 
 export const deleteCategory = async (categoryId: string) => {
-	try {
-		// Get current user
-		const user = await currentUser();
+    try {
+        // Get current user
+        const user = await currentUser();
 
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
+        // Ensure user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+        // Verify admin permission
+        if (user.privateMetadata.role !== "ADMIN")
+            throw new Error(
+                "Unauthorized Access: Admin Privileges Required for Entry."
+            );
 
-		if (!categoryId) throw new Error("Please provide a category ID.");
+        if (!categoryId) throw new Error("Please provide a category ID.");
 
-		// Delete category from the database
-		const response = await db.category.delete({
-			where: {
-				id: categoryId,
-			},
-		});
-		return response;
-	} catch (error) {
-		// Log and re-throw any errors
-		console.log(error);
-		throw error;
-	}
+        // Delete category from the database
+        const response = await db.category.delete({
+            where: {
+                id: categoryId,
+            },
+        });
+        return response;
+    } catch (error) {
+        // Log and re-throw any errors
+        console.log(error);
+        throw error;
+    }
 };
