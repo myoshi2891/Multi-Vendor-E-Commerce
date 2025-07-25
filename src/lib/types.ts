@@ -336,7 +336,7 @@ export type FiltersQueryType = {
     sort: string;
     minPrice: string; // Added minPrice
     maxPrice: string; // Added maxPrice
-    color: string;
+    color: string | string[];
 };
 
 export type CategoryWithSubsType = Category & {

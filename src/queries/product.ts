@@ -501,6 +501,23 @@ export const getProducts = async (
         });
     }
 
+    // Apply color filter
+    if (filters.color && filters.color.length > 0) {
+        const colorsArray = Array.isArray(filters.color)
+            ? filters.color
+            : [filters.color];
+        whereClause.AND.push({
+            variants: {
+                some: {
+                    colors: {
+                        some: {
+                            name: { in: colorsArray }, // Matching selected color(s)
+                        },
+                    },
+                },
+            },
+        });
+    }
     // Define the sort order
     let orderBy: Record<string, SortOrder> = {};
     switch (sortBy) {
