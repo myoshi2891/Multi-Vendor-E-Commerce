@@ -28,6 +28,8 @@ import {
     OrderGroup,
     OrderItem,
     Store,
+    Category,
+    SubCategory,
 } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
@@ -324,3 +326,19 @@ export type ReviewDateFilter =
     | "last-6-months"
     | "last-1-year"
     | "last-2-years";
+
+export type FiltersQueryType = {
+    search: string;
+    category: string;
+    subCategory: string;
+    offer: string;
+    size: string;
+    sort: string;
+    minPrice: string; // Added minPrice
+    maxPrice: string; // Added maxPrice
+    color: string | string[];
+};
+
+export type CategoryWithSubsType = Category & {
+    subCategories: SubCategory[];
+};

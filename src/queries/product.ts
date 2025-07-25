@@ -27,7 +27,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { FreeShipping, Store } from "@prisma/client";
+import { FreeShipping, ProductVariant, Size, Store } from "@prisma/client";
 import { sub } from "date-fns";
 
 // Function: upsertProduct
@@ -420,7 +420,7 @@ export const getProducts = async (
         }
     }
 
-    // Apply suCategory filter (using subCategory URL)
+    // Apply subCategory filter (using subCategory URL)
     if (filters.subCategory) {
         const subCategory = await db.subCategory.findUnique({
             where: {
@@ -433,9 +433,111 @@ export const getProducts = async (
         }
     }
 
+    // Apply size filter (using array of sizes)
+    if (filters.size && Array.isArray(filters.size)) {
+        whereClause.AND.push({
+            variants: {
+                some: {
+                    sizes: {
+                        some: {
+                            size: { in: filters.size },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    // Apply offer filter (using offer URL)
+    if (filters.offer) {
+        const offer = await db.offerTag.findUnique({
+            where: {
+                url: filters.offer,
+            },
+            select: { id: true },
+        });
+        if (offer) {
+            whereClause.AND.push({ offerTagId: offer.id });
+        }
+    }
+
+    // Apply search filter (search term in product name or description)
+    if (filters.search) {
+        whereClause.AND.push({
+            OR: [
+                {
+                    name: { contains: filters.search },
+                },
+                {
+                    description: { contains: filters.search },
+                },
+                {
+                    variants: {
+                        some: {
+                            variantName: { contains: filters.search },
+                            variantDescription: { contains: filters.search },
+                        },
+                    },
+                },
+            ],
+        });
+    }
+
+    // Apply price filters (min and max price)
+    if (filters.minPrice || filters.maxPrice) {
+        whereClause.AND.push({
+            variants: {
+                some: {
+                    sizes: {
+                        some: {
+                            price: {
+                                gte: filters.minPrice || 0, // Default to 0 if no min price is set
+                                lte: filters.maxPrice || Infinity, // Default to Infinity if no max price is set
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    // Apply color filter
+    if (filters.color && filters.color.length > 0) {
+        const colorsArray = Array.isArray(filters.color)
+            ? filters.color
+            : [filters.color];
+        whereClause.AND.push({
+            variants: {
+                some: {
+                    colors: {
+                        some: {
+                            name: { in: colorsArray }, // Matching selected color(s)
+                        },
+                    },
+                },
+            },
+        });
+    }
+    // Define the sort order
+    let orderBy: Record<string, SortOrder> = {};
+    switch (sortBy) {
+        case "most-popular":
+            orderBy = { views: "desc" };
+            break;
+        case "new-arrivals":
+            orderBy = { createdAt: "desc" };
+            break;
+        case "top-rated":
+            orderBy = { rating: "desc" };
+            break;
+        default:
+            orderBy = { views: "desc" };
+    }
+
     // Get all filtered, sorted products
     const products = await db.product.findMany({
         where: whereClause,
+        orderBy,
         take: limit, // Limit to page size
         skip: skip, // Skip the products of previous pages
         include: {
@@ -447,6 +549,37 @@ export const getProducts = async (
                 },
             },
         },
+    });
+
+    type VariantWithSizes = ProductVariant & { sizes: Size[] };
+    // Product price sorting
+    products.sort((a, b) => {
+        // Helper function to get the minimum price from a product's variants
+        const getMinPrice = (product: any) =>
+            Math.min(
+                ...product.variants.flatMap((variant: VariantWithSizes) =>
+                    variant.sizes.map((size) => {
+                        let discount = size.discount;
+                        let discountedPrice = size.price * (1 - discount / 100);
+                        return discountedPrice;
+                    })
+                ),
+                Infinity // Default to Infinity if no sizes exist
+            );
+
+        // Get minimum prices for both products
+        const minPriceA = getMinPrice(a);
+        const minPriceB = getMinPrice(b);
+
+        // Explicitly check for price sorting conditions
+        if (sortBy === "price-low-to-high") {
+            return minPriceA - minPriceB; // Ascending order
+        } else if (sortBy === "price-high-to-low") {
+            return minPriceB - minPriceA; // Descending order
+        }
+
+        // If no price sort option is provided, return 0 (no sorting by price)
+        return 0;
     });
 
     // Transform the products with filtered variants into ProductCardType structure
@@ -544,6 +677,10 @@ export const getProductPageData = async (
         user?.id
     );
 
+    // Handle product views
+    await incrementProductViews(product.id);
+
+    // Reviews stats
     const ratingStatistics = await getRatingStatistics(product.id);
 
     return formatProductResponse(
@@ -1201,5 +1338,24 @@ export const getProductsByIds = async (
     } catch (error) {
         console.error("Error retrieving products by ids:", error);
         throw new Error("Failed to retrieve products. Please try again.");
+    }
+};
+
+const incrementProductViews = async (productId: string) => {
+    const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
+        cookies,
+    });
+
+    if (!isProductAlreadyViewed) {
+        await db.product.update({
+            where: {
+                id: productId,
+            },
+            data: {
+                views: {
+                    increment: 1,
+                },
+            },
+        });
     }
 };
