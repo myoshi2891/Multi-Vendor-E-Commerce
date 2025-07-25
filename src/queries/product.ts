@@ -483,6 +483,24 @@ export const getProducts = async (
         });
     }
 
+    // Apply price filters (min and max price)
+    if (filters.minPrice || filters.maxPrice) {
+        whereClause.AND.push({
+            variants: {
+                some: {
+                    sizes: {
+                        some: {
+                            price: {
+                                gte: filters.minPrice || 0, // Default to 0 if no min price is set
+                                lte: filters.maxPrice || Infinity, // Default to Infinity if no max price is set
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
     // Define the sort order
     let orderBy: Record<string, SortOrder> = {};
     switch (sortBy) {

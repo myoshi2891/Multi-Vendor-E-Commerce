@@ -11,7 +11,17 @@ export default async function BrowsePage({
 }: {
     searchParams: FiltersQueryType;
 }) {
-    const { category, offer, search, size, sort, subCategory } = searchParams;
+    const {
+        category,
+        offer,
+        search,
+        size,
+        sort,
+        subCategory,
+        maxPrice,
+        minPrice,
+        color,
+    } = searchParams;
     await getFilteredSizes({});
     const products_data = await getProducts(
         {
@@ -24,6 +34,13 @@ export default async function BrowsePage({
                 : size
                   ? [size] // Convert string to array if it's not already an array
                   : undefined, // Default to undefined if size is not provided
+            minPrice: Number(minPrice) || 0, // Default to 0 if minPrice is not provided
+            maxPrice: Number(maxPrice) || Number.MAX_SAFE_INTEGER, // Default to the maximum safe integer if maxPrice is not provided
+            color: Array.isArray(color)
+                ? color
+                : color
+                  ? [color] // Convert single color string to array
+                  : undefined, // If no color, keep it undefined
         },
         sort
     );
