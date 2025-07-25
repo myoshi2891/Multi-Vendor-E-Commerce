@@ -6,7 +6,10 @@ import {
     getShippingDetails,
     retrieveProductDetails,
 } from "@/queries/product";
-import { getStoreDefaultShippingDetails } from "@/queries/store";
+import {
+    getStoreDefaultShippingDetails,
+    getStoreOrders,
+} from "@/queries/store";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
     Cart,
@@ -342,3 +345,5 @@ export type FiltersQueryType = {
 export type CategoryWithSubsType = Category & {
     subCategories: SubCategory[];
 };
+
+export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
