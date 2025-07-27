@@ -11,6 +11,7 @@ import { getTimeUntil } from "@/lib/utils";
 import Image from "next/image";
 import PaymentStatusTag from "@/components/shared/payment-status";
 import OrderStatusTag from "@/components/shared/order-status";
+import OrderStatusSelect from "@/components/dashboard/forms/order-status-select";
 
 export const columns: ColumnDef<StoreOrderType>[] = [
     {
@@ -65,9 +66,15 @@ export const columns: ColumnDef<StoreOrderType>[] = [
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-            return <div>
-                <OrderStatusTag status={row.original.status as OrderStatus } />
-            </div>
+            return (
+                <div>
+                    <OrderStatusSelect
+                        groupId={row.original.id}
+                        status={row.original.status as OrderStatus}
+                        storeId={row.original.storeId}
+                    />
+                </div>
+            );
         },
     },
     {
