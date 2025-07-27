@@ -15,10 +15,10 @@ export default function OrderGroupTable({
     };
 }) {
     const { shippingService, deliveryMinDate, deliveryMaxDate } = deliveryInfo;
-    const { coupon, couponId, subtotal, total, shippingFees } = group;
+    const { coupon, couponId, subTotal, total, shippingFees } = group;
     let discountedAmount = 0;
     if (couponId && coupon) {
-        discountedAmount = ((subtotal + shippingFees) * coupon.discount) / 100;
+        discountedAmount = ((subTotal + shippingFees) * coupon.discount) / 100;
     }
     return (
         <div className="max-w-xl rounded-xl border border-gray-200 pt-6 max-lg:mx-auto lg:max-w-full">
@@ -92,7 +92,7 @@ export default function OrderGroupTable({
                     <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
                         Subtotal:
                         <span className="ms-1 text-gray-500">
-                            ${subtotal.toFixed(2)}
+                            ${subTotal.toFixed(2)}
                         </span>
                     </p>
                     <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">

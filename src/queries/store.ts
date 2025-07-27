@@ -352,33 +352,33 @@ export const getStoreOrders = async (storeUrl: string) => {
 
 		// Retrieve order groups for the specified store and user
 		const orders = await db.orderGroup.findMany({
-			where: {
-				storeId: store.id
-			},
-			include: {
-				items: true,
-				coupon: true,
-				order: {
-					select: {
-						paymentStatus: true,
-						user: {
-							select: {
-								email: true
-							}
-						},
-						shippingAddress: {
-							include: {
-								country: true
-							}
-						},
-						paymentDetails: true
-					}
-				}
-			},
-			orderBy: {
-				updatedAt: "desc"
-			}
-		})
+            where: {
+                storeId: store.id,
+            },
+            include: {
+                items: true,
+                coupon: true,
+                order: {
+                    select: {
+                        paymentStatus: true,
+                        shippingAddress: {
+                            include: {
+                                country: true,
+                                user: {
+                                    select: {
+                                        email: true,
+                                    },
+                                },
+                            },
+                        },
+                        paymentDetails: true,
+                    },
+                },
+            },
+            orderBy: {
+                updatedAt: "desc",
+            },
+        });
 
 		return orders
 	} catch (error) {
