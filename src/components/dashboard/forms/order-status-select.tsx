@@ -1,6 +1,7 @@
 import OrderStatusTag from "@/components/shared/order-status";
 import { useToast } from "@/hooks/use-toast";
 import { OrderStatus } from "@/lib/types";
+import { updateOrderGroupStatus } from "@/queries/order";
 import { useRouter } from "next/navigation";
 import { FC, useState } from "react";
 
@@ -23,6 +24,27 @@ const OrderStatusSelect: FC<Props> = ({ storeId, groupId, status }) => {
         (status) => status !== newStatus
     );
 
+    // Handle click
+    const handleClick = async (selectedStatus: OrderStatus) => {
+        try {
+            const response = await updateOrderGroupStatus(
+                storeId,
+                groupId,
+                selectedStatus
+            );
+
+            if (response) {
+                setNewStatus(response as OrderStatus);
+                setIsOpen(false);
+            }
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Failed to update order status",
+                description: error.toString(),
+            });
+        }
+    };
     return (
         <div className="relative">
             {/* Current status */}
@@ -39,6 +61,7 @@ const OrderStatusSelect: FC<Props> = ({ storeId, groupId, status }) => {
                         <button
                             key={option}
                             className="flex w-full items-center rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-300"
+                            onClick={() => handleClick(option)}
                         >
                             <OrderStatusTag status={option} />
                         </button>
