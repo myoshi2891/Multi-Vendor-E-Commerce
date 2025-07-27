@@ -524,7 +524,7 @@ model OrderGroup {
   shippingDeliveryMax Int
 
   shippingFees Float
-  subtotal     Float
+  subTotal     Float
   total        Float
 
   orderId String

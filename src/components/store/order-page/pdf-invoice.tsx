@@ -105,7 +105,7 @@ export const generateOrderPDFBlob = async (
                         <Text>
                             Shipping Fees: {group.shippingFees.toFixed(2)}
                         </Text>
-                        <Text>Group Subtotal: {group.subtotal.toFixed(2)}</Text>
+                        <Text>Group Subtotal: {group.subTotal.toFixed(2)}</Text>
                         <Text>Group Total: {group.total.toFixed(2)}</Text>
                         <Text>Items Count: {group._count.items}</Text>
 
@@ -126,7 +126,12 @@ export const generateOrderPDFBlob = async (
                             </View>
                             {group.items.map((item) => (
                                 <View key={item.id} style={styles.tableRow}>
-                                    <Text style={[styles.tableCell, styles.productName]}>
+                                    <Text
+                                        style={[
+                                            styles.tableCell,
+                                            styles.productName,
+                                        ]}
+                                    >
                                         {item.name}
                                     </Text>
                                     <Text style={styles.tableCell}>
@@ -146,7 +151,9 @@ export const generateOrderPDFBlob = async (
                 {/* Order Totals */}
                 <View>
                     <Text>Order Subtotal: ${order.subTotal.toFixed(2)}</Text>
-                    <Text>Order Shipping Fees: ${order.shippingFees.toFixed(2)}</Text>
+                    <Text>
+                        Order Shipping Fees: ${order.shippingFees.toFixed(2)}
+                    </Text>
                     <Text>Order Total: ${order.total.toFixed(2)}</Text>
                 </View>
             </Page>

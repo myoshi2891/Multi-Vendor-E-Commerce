@@ -606,16 +606,16 @@ export const placeOrder = async (
             data: {
                 orderId: order.id,
                 storeId,
-                status: 'Pending',
-                subtotal: groupedTotalPrice - groupShippingFee,
+                status: "Pending",
+                subTotal: groupedTotalPrice - groupShippingFee,
                 shippingFees: groupShippingFee,
                 total: totalAfterDiscount,
-                shippingService: shippingService || 'International Delivery',
+                shippingService: shippingService || "International Delivery",
                 shippingDeliveryMin: deliveryTimeMin || 7,
                 shippingDeliveryMax: deliveryTimeMax || 30,
                 couponId: check && cartCoupon ? cartCoupon?.id : null,
             },
-        })
+        });
 
         // Create OrderItems for this OrderGroup
         for (const item of items) {
@@ -1009,15 +1009,16 @@ export const updateCheckoutProductWithLatest = async (
             )
 
             if (applicableStoreItems.length > 0) {
-                // Calculate subtotal for the coupon's store (including shipping fees)
+                // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
                         acc + item.price * item.quantity + item.shippingFee,
                     0
-                )
-                // Apply coupon discount to the store's subtotal
-                const discountedAmount = (storeSubTotal * coupon.discount) / 100
-                total -= discountedAmount
+                );
+                // Apply coupon discount to the store's subTotal
+                const discountedAmount =
+                    (storeSubTotal * coupon.discount) / 100;
+                total -= discountedAmount;
             }
         }
     }
