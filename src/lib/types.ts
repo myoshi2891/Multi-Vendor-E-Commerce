@@ -347,3 +347,44 @@ export type CategoryWithSubsType = Category & {
 };
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
+
+export type ProductSize = {
+    size: string;
+    price: number;
+    discount: number;
+    quantity: number;
+};
+
+export type ProductSimpleVariantType = {
+    variantId: string;
+    variantSlug: string;
+    variantName: string;
+    images: ProductVariantImage[];
+    sizes: ProductSize[];
+};
+
+export type ProductWithVariants = {
+    id: string;
+    slug: string;
+    name: string;
+    rating: number;
+    sales: number;
+    numReviews: number;
+    variants: {
+        id: string;
+        variantName: string;
+        variantImage: string;
+        slug: string;
+        sizes: ProductSize[];
+        images: ProductVariantImage[];
+    }[];
+};
+
+export type SimpleProduct = {
+    name: string;
+    slug: string;
+    variantName: string;
+    variantSlug: string;
+    price: number;
+    image: string;
+};
