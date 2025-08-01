@@ -30,28 +30,28 @@ const CustomModal = ({
 }: Props) => {
 	const { isOpen, setClose } = useModal();
 	return (
-		<Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
-			<DialogContent
-				className={cn(
-					"overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card",
-					maxWidth
-				)}
-			>
-				<DialogHeader className="pt-8 text-left">
-					{heading && (
-						<DialogTitle className="text-2xl font-bold">
-							{heading}
-						</DialogTitle>
-					)}
-					{subheading && (
-						<DialogDescription>{subheading}</DialogDescription>
-					)}
+        <Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
+            <DialogContent
+                className={cn(
+                    "h-screen overflow-y-scroll bg-card md:h-fit md:max-h-[700px]",
+                    maxWidth
+                )}
+            >
+                <DialogHeader className="pt-8 text-left">
+                    {heading && (
+                        <DialogTitle className="text-2xl font-bold">
+                            {heading}
+                        </DialogTitle>
+                    )}
+                    {subheading && (
+                        <DialogDescription>{subheading}</DialogDescription>
+                    )}
 
-					{children}
-				</DialogHeader>
-			</DialogContent>
-		</Dialog>
-	);
+                    {children}
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+    );
 };
 
 export default CustomModal;
