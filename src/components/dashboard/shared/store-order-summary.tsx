@@ -12,6 +12,7 @@ import { FC } from "react";
 import OrderStatusSelect from "../forms/order-status-select";
 import Image from "next/image";
 import ProductStatusTag from "@/components/shared/product-status";
+import ProductStatusSelect from "../forms/product-status-select";
 
 interface Props {
     group: StoreOrderType;
@@ -188,7 +189,9 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
                         </div>
                         {/* Product Status - Total */}
                         <div className="flex flex-col items-center justify-center">
-                            <ProductStatusTag
+                            <ProductStatusSelect
+                                orderItemId={product.id}
+                                storeId={group.storeId}
                                 status={product.status as ProductStatus}
                             />
                             <div className="grid place-items-center">

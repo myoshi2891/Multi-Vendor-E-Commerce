@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { OrderStatus } from "@/lib/types";
+import { OrderStatus, ProductStatus } from "@/lib/types";
 import { currentUser } from "@clerk/nextjs/server";
 
 /**
@@ -117,4 +117,68 @@ export const updateOrderGroupStatus = async (
     });
 
     return updatedOrder.status;
+};
+
+/**
+ * @function updateOrderItemStatus
+ * @description -
+ *              -
+ * @access User
+ * @param storeId -
+ * @param orderItemId -
+ * @param status -
+ * @returns {Object} -
+ */
+
+export const updateOrderItemStatus = async (
+    storeId: string,
+    orderItemId: string,
+    status: ProductStatus
+) => {
+    // Retrieve the current user
+    const user = await currentUser();
+
+    // Ensure user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Ensure user has seller privileges
+    if (user.privateMetadata.role !== "SELLER")
+        throw new Error("Only sellers can perform this action.");
+
+    // Ensure the user is a seller of the specified store
+    const store = await db.store.findUnique({
+        where: {
+            id: storeId,
+            userId: user.id,
+        },
+    });
+
+    // Verify ownership of the store
+    if (!store) {
+        throw new Error("Unauthorized to update order group status.");
+    }
+
+    // Retrieve the product item to be updated
+    const product = await db.orderItem.findUnique({
+        where: {
+            id: orderItemId,
+        },
+    });
+
+    // Ensure product existence
+    if (!product) {
+        throw new Error("Order item not found");
+    }
+
+    // Update the order status
+    const updatedProduct = await db.orderItem.update({
+        where: {
+            id: orderItemId,
+        },
+        data: {
+            status,
+        },
+    });
+
+    return updatedProduct.status;
 };
