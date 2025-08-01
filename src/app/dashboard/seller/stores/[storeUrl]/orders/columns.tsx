@@ -88,30 +88,70 @@ export const columns: ColumnDef<StoreOrderType>[] = [
             return <span>${row.original.total.toFixed(2)}</span>;
         },
     },
+
+    //     ❗ 問題の内容（eslint react-hooks/rules-of-hooks エラー）:
+    // React Hook（この場合は useModal()）が Reactコンポーネント関数 でも カスタムフック関数 でもない関数（この場合 cell: ({ row }) => {...}）内で呼び出されているためです。
+    // Hooks（useModal や useState, useEffect など）は、以下のような関数内でのみ使用する必要があります：
+    // React コンポーネント（function Component() {}）
+    // カスタムフック（function useCustomHook() {}）
+    // 一方、TanStack Table の columns 定義内の cell 関数は 普通の関数 であり、Reactコンポーネントではありません。
+    // {
+    //     accessorKey: "open",
+    //     header: "",
+    //     cell: ({ row }) => {
+    //         const { setOpen } = useModal();
+    //         return (
+    //             <div>
+    //                 <button
+    //                     className="group relative isolation-auto z-10 mx-auto flex items-center justify-center gap-2 overflow-hidden rounded-full border-2 bg-[#0A0D2D] px-4 py-2 font-sans text-lg text-gray-50 backdrop-blur-md before:absolute before:-left-full before:-z-10 before:aspect-square before:w-full before:scale-150 before:rounded-full before:transition-all before:duration-700 hover:text-gray-50 before:hover:left-0 before:hover:bg-blue-primary before:hover:duration-700 lg:font-semibold"
+    //                     onClick={() => {
+    //                         setOpen(
+    //                             <CustomModal maxWidth="!max-w-3xl">
+    //                                 <StoreOrderSummary group={row.original} />
+    //                             </CustomModal>
+    //                         );
+    //                     }}
+    //                 >
+    //                     View
+    //                     <span className="grid size-7 place-items-center rounded-full bg-white">
+    //                         <Expand className="w-5 stroke-black" />
+    //                     </span>
+    //                 </button>
+    //             </div>
+    //         );
+    //     },
+    // },
     {
         accessorKey: "open",
         header: "",
         cell: ({ row }) => {
-            const { setOpen } = useModal();
             return (
                 <div>
-                    <button
-                        className="group relative isolation-auto z-10 mx-auto flex items-center justify-center gap-2 overflow-hidden rounded-full border-2 bg-[#0A0D2D] px-4 py-2 font-sans text-lg text-gray-50 backdrop-blur-md before:absolute before:-left-full before:-z-10 before:aspect-square before:w-full before:scale-150 before:rounded-full before:transition-all before:duration-700 hover:text-gray-50 before:hover:left-0 before:hover:bg-blue-primary before:hover:duration-700 lg:font-semibold"
-                        onClick={() => {
-                            setOpen(
-                                <CustomModal maxWidth="!max-w-3xl">
-                                    <StoreOrderSummary group={row.original} />
-                                </CustomModal>
-                            );
-                        }}
-                    >
-                        View
-                        <span className="grid size-7 place-items-center rounded-full bg-white">
-                            <Expand className="w-5 stroke-black" />
-                        </span>
-                    </button>
+                    <ViewOrderButton order={row.original} />
                 </div>
             );
         },
     },
 ];
+
+// 別コンポーネントとして切り出し
+const ViewOrderButton = ({ order }: { order: StoreOrderType }) => {
+    const { setOpen } = useModal();
+    return (
+        <button
+            className="group relative isolation-auto z-10 mx-auto flex items-center justify-center gap-2 overflow-hidden rounded-full border-2 bg-[#0A0D2D] px-4 py-2 font-sans text-lg text-gray-50 backdrop-blur-md before:absolute before:-left-full before:-z-10 before:aspect-square before:w-full before:scale-150 before:rounded-full before:transition-all before:duration-700 hover:text-gray-50 before:hover:left-0 before:hover:bg-blue-primary before:hover:duration-700 lg:font-semibold"
+            onClick={() => {
+                setOpen(
+                    <CustomModal maxWidth="!max-w-3xl">
+                        <StoreOrderSummary group={order} />
+                    </CustomModal>
+                );
+            }}
+        >
+            View
+            <span className="grid size-7 place-items-center rounded-full bg-white">
+                <Expand className="w-5 stroke-black" />
+            </span>
+        </button>
+    );
+};

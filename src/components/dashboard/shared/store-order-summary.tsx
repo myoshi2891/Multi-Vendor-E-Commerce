@@ -2,6 +2,7 @@ import PaymentStatusTag from "@/components/shared/payment-status";
 import {
     OrderStatus,
     PaymentStatus,
+    ProductStatus,
     StoreOrderType,
     UserShippingAddressType,
 } from "@/lib/types";
@@ -9,6 +10,8 @@ import { getShippingDatesRange } from "@/lib/utils";
 import { PaymentDetails } from "@prisma/client";
 import { FC } from "react";
 import OrderStatusSelect from "../forms/order-status-select";
+import Image from "next/image";
+import ProductStatusTag from "@/components/shared/product-status";
 
 interface Props {
     group: StoreOrderType;
@@ -124,6 +127,78 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
                         </h6>
                     </div>
                 </div>
+                {/* Product */}
+                {group.items.map((product, index) => (
+                    <div
+                        key={index}
+                        className="grid w-full gap-4 border-t border-gray-100 py-3"
+                        style={{ gridTemplateColumns: "144px 1.3fr 1fr" }}
+                    >
+                        {/* Product Image */}
+                        <div className="size-full">
+                            <Image
+                                src={product.image}
+                                alt={product.name}
+                                width={200}
+                                height={200}
+                                className="size-36 rounded-xl object-cover"
+                            />
+                        </div>
+                        {/* Product Info */}
+                        <div className="flex flex-col gap-y-1">
+                            <h5 className="line-clamp-1 text-ellipsis text-sm font-semibold leading-4">
+                                {product.name}
+                            </h5>
+                            <div className="text-sm">
+                                <p className="font-normal text-gray-500">
+                                    Sku:
+                                    <span className="ms-1">{product.sku}</span>
+                                </p>
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-normal text-gray-500">
+                                    Size:
+                                    <span className="ms-1">{product.size}</span>
+                                </p>
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-normal text-gray-500">
+                                    Quantity:
+                                    <span className="ms-1">
+                                        x {product.quantity}
+                                    </span>
+                                </p>
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-normal text-gray-500">
+                                    Price:
+                                    <span className="ms-1">
+                                        ${product.price.toFixed(2)}
+                                    </span>
+                                </p>
+                            </div>
+                            <div className="text-sm">
+                                <p className="font-normal text-gray-500">
+                                    Shipping Fee:
+                                    <span className="ms-1">
+                                        ${product.shippingFee.toFixed(2)}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        {/* Product Status - Total */}
+                        <div className="flex flex-col items-center justify-center">
+                            <ProductStatusTag
+                                status={product.status as ProductStatus}
+                            />
+                            <div className="grid place-items-center">
+                                <h5 className="mt-3 text-3xl font-semibold leading-10">
+                                    ${product.totalPrice.toFixed(2)}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
