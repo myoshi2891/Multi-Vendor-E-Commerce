@@ -359,8 +359,9 @@ export type ProductSimpleVariantType = {
     variantId: string;
     variantSlug: string;
     variantName: string;
+    variantImage: string;
     images: ProductVariantImage[];
-    sizes: ProductSize[];
+    sizes: Size[];
 };
 
 export type ProductWithVariants = {
@@ -375,7 +376,7 @@ export type ProductWithVariants = {
         variantName: string;
         variantImage: string;
         slug: string;
-        sizes: ProductSize[];
+        sizes: Size[];
         images: ProductVariantImage[];
     }[];
 };
