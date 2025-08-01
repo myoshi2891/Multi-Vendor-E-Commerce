@@ -632,11 +632,11 @@ export const placeOrder = async (
                     image: item.image,
                     size: item.size,
                     quantity: item.quantity,
-                    price: item.quantity,
+                    price: item.price,
                     shippingFee: item.shippingFee,
                     totalPrice: item.totalPrice,
                 },
-            })
+            });
         }
 
         // Update order totals

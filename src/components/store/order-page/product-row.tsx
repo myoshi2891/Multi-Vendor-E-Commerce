@@ -4,7 +4,6 @@ import { OrderItem } from "@prisma/client";
 import Image from "next/image";
 
 export default function ProductRow({ product }: { product: OrderItem }) {
-    const { price } = product;
     return (
         <div className="flex w-full flex-col items-center gap-6 py-6 lg:flex-row">
             <div className="max-lg:w-full">
@@ -53,7 +52,7 @@ export default function ProductRow({ product }: { product: OrderItem }) {
                                     Price
                                 </p>
                                 <p className="text-sm font-medium leading-7 text-blue-primary lg:mt-4">
-                                    ${product.totalPrice.toFixed(2)}
+                                    ${product.price.toFixed(2)}
                                 </p>
                             </div>
                         </div>
