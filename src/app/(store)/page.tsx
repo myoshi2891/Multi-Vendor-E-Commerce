@@ -1,6 +1,8 @@
-import CategoriesHeader from '@/components/store/layout/categories-header/categories-header'
-import StoreHeader from '@/components/store/layout/header/header'
-import ProductList from '@/components/store/shared/product-list'
+import Sideline from "@/components/store/home/sideline/sideline";
+import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
+import Footer from "@/components/store/layout/footer/footer";
+import StoreHeader from "@/components/store/layout/header/header";
+import ProductList from "@/components/store/shared/product-list";
 import { getHomeDataDynamic, getHomeFeaturedCategories } from "@/queries/home";
 import { getProducts } from "@/queries/product";
 
@@ -14,15 +16,14 @@ export default async function HomePage() {
 
     const categories = await getHomeFeaturedCategories();
 
-    console.log("categories:", categories);
-
     return (
-        <div>
+        <>
             <StoreHeader />
             <CategoriesHeader />
-            <div className="p-14">
-                <ProductList products={products} title="Products" arrow />
+            <div className="relative min-h-screen w-full">
+                <Sideline />
             </div>
-        </div>
+            <Footer />
+        </>
     );
 }
