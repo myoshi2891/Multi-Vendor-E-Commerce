@@ -1,4 +1,5 @@
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
+import HomeUserCard from "@/components/store/home/main/user";
 import Sideline from "@/components/store/home/sideline/sideline";
 import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
 import Footer from "@/components/store/layout/footer/footer";
@@ -46,6 +47,9 @@ export default async function HomePage() {
                                 <div className="h-[200px]"></div>
                             </div>
                             {/* Right */}
+                            <div className="h-full">
+                                <HomeUserCard products={products} />
+                            </div>
                         </div>
                     </div>
                 </div>
