@@ -48,6 +48,7 @@ export default async function HomeUserCard({
                                 backgroundImage:
                                     "url(/assets/images/user-card/user.webp)",
                                 backgroundSize: "100% 100%",
+                                width: "auto",
                             }}
                         />
                         <span className="max-h-7 w-full text-center text-xs text-main-primary">
@@ -61,6 +62,7 @@ export default async function HomeUserCard({
                                 backgroundImage:
                                     "url(/assets/images/user-card/orders.webp)",
                                 backgroundSize: "100% 100%",
+                                width: "auto",
                             }}
                         />
                         <span className="max-h-7 w-full pl-1 text-center text-xs text-main-primary">

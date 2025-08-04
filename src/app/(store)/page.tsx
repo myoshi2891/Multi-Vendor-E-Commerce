@@ -5,17 +5,20 @@ import CategoriesHeader from "@/components/store/layout/categories-header/catego
 import Footer from "@/components/store/layout/footer/footer";
 import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
+import MainSwiper from "@/components/store/shared/swiper";
 import { getHomeDataDynamic, getHomeFeaturedCategories } from "@/queries/home";
 import { getProducts } from "@/queries/product";
 import Link from "next/link";
 
 export default async function HomePage() {
-    const productsData = await getProducts();
+    const productsData = await getProducts({}, "", 1, 100);
     const { products } = productsData;
-
     const { data } = await getHomeDataDynamic([
         { property: "offer", value: "Seasonal", type: "full" },
+        { property: "offer", value: "New Product", type: "full" },
     ]);
+
+    console.log(data);
 
     const categories = await getHomeFeaturedCategories();
 
@@ -48,10 +51,11 @@ export default async function HomePage() {
                             </div>
                             {/* Right */}
                             <div className="h-full">
-                                <HomeUserCard products={products} />
+                                <HomeUserCard products={data} />
                             </div>
                         </div>
                     </div>
+                    {/* <MainSwiper products={data} type="main" /> */}
                 </div>
             </div>
             <Footer />
