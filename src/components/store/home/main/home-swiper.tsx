@@ -11,30 +11,31 @@ import Image from "next/image";
 
 const AutoplaySlider = withAutoPlay(AwesomeSlider);
 export default function HomeMainSwiper() {
-  return <div>
-    <AutoplaySlider
-      animation="cubeAnimation"
-      bullets={false}
-      play={true}
-      cancelOnInteraction={false}
-      interval={6000}
-    >
-      {
-        images.map((image) => (
-          <div key={image.id}>
-            <Image
-              src={image.url}
-              alt="Product Image"
-              width={600}
-              height={400}
-              objectFit="cover"
-              priority
-            />
-          </div>
-        ))
-      }
-    </AutoplaySlider>
-  </div>;
+  return (
+      <div>
+          <AutoplaySlider
+              animation="cubeAnimation"
+              bullets={false}
+              play={true}
+              cancelOnInteraction={false}
+              interval={6000}
+          >
+              {images.map((image) => (
+                  <div key={image.id}>
+                      <Image
+                          src={image.url}
+                          alt="Product Image"
+                          width={600}
+                          height={400}
+                          objectFit="cover"
+                          priority
+                          style={{ width: "auto", height: "auto" }}
+                      />
+                  </div>
+              ))}
+          </AutoplaySlider>
+      </div>
+  );
 }
 
 const images = [
