@@ -7,6 +7,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import ProductCard from "../cards/product/product-card";
 import { Navigation, Pagination } from "swiper/modules";
+import ProductCardSimple from "../cards/product/simple-card";
 
 interface Props {
     children?: ReactNode;
@@ -43,7 +44,9 @@ const MainSwiper: FC<Props> = ({
                 {products?.map((product, index) => (
                     <SwiperSlide key={index}>
                         {type === "simple" ? (
-                            <div>simple card</div>
+                            <ProductCardSimple
+                                product={product as SimpleProduct}
+                            />
                         ) : type === "curved" ? (
                             <div>curved card</div>
                         ) : (
