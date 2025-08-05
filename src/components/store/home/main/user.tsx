@@ -17,7 +17,7 @@ export default async function HomeUserCard({
             <div
                 className="h-full rounded-md bg-no-repeat pb-9"
                 style={{
-                    backgroundImage: "url(/assets/images/user-card-bg.avif",
+                    backgroundImage: "url(/assets/images/user-card-bg.avif)",
                     backgroundSize: "100% 101px",
                 }}
             >
@@ -33,7 +33,7 @@ export default async function HomeUserCard({
                             className="absolute left-1/2 top-2 size-12 -translate-x-1/2 rounded-full object-cover"
                         />
                     </div>
-                    <div className="absolute top-16 h-5 w-full cursor-pointer font-bold capitalize text-black">
+                    <div className="absolute inset-x-0 top-16 mx-auto h-5 w-full cursor-pointer text-center font-bold capitalize text-black">
                         {user
                             ? user.fullName?.toLowerCase()
                             : "Welcome to GoShop"}
@@ -41,41 +41,54 @@ export default async function HomeUserCard({
                 </div>
                 {/* User Links */}
                 <div className="mt-4 flex h-[100px] w-full items-center justify-center gap-x-4">
-                    <Link href="/profile">
-                        <span
+                    <Link
+                        href="/profile"
+                        className="flex flex-col items-center"
+                    >
+                        <div
                             className="relative mx-auto block size-12 bg-cover bg-no-repeat"
                             style={{
                                 backgroundImage:
                                     "url(/assets/images/user-card/user.webp)",
                                 backgroundSize: "100% 100%",
-                                width: "auto",
+                                width: "100%",
+                                height: "auto",
                             }}
                         />
                         <span className="max-h-7 w-full text-center text-xs text-main-primary">
                             Account
                         </span>
                     </Link>
-                    <Link href="/profile/orders">
-                        <span
+                    <Link
+                        href="/profile/orders"
+                        className="flex flex-col items-center"
+                    >
+                        <div
                             className="relative mx-auto block size-12 bg-cover bg-no-repeat"
                             style={{
                                 backgroundImage:
                                     "url(/assets/images/user-card/orders.webp)",
                                 backgroundSize: "100% 100%",
-                                width: "auto",
+                                width: "100%",
+                                height: "auto",
                             }}
                         />
-                        <span className="max-h-7 w-full pl-1 text-center text-xs text-main-primary">
+                        <span className="max-h-7 w-full text-center text-xs text-main-primary">
                             Orders
                         </span>
                     </Link>
-                    <Link href="/profile/wishlist">
-                        <span
+                    <Link
+                        href="/profile/wishlist"
+                        className="flex flex-col items-center"
+                    >
+                        <div
                             className="relative mx-auto block size-12 bg-cover bg-no-repeat"
                             style={{
                                 backgroundImage:
                                     "url(/assets/images/user-card/wishlist.png)",
                                 backgroundSize: "100% 100%",
+                                width: "100%",
+                                height: "auto",
                             }}
                         />
                         <span className="max-h-7 w-full text-center text-xs text-main-primary">
@@ -90,7 +103,8 @@ export default async function HomeUserCard({
                             {role === "ADMIN" ? (
                                 <Button
                                     variant="orange-gradient"
-                                    className="rounded-md"
+                                    className="w-full rounded-md"
+                                    asChild
                                 >
                                     <Link href="/dashboard/admin">
                                         Switch to Admin Dashboard
@@ -99,7 +113,8 @@ export default async function HomeUserCard({
                             ) : role === "SELLER" ? (
                                 <Button
                                     variant="orange-gradient"
-                                    className="rounded-md"
+                                    className="w-full rounded-md"
+                                    asChild
                                 >
                                     <Link href="/dashboard/seller">
                                         Switch to Seller Dashboard
@@ -108,7 +123,8 @@ export default async function HomeUserCard({
                             ) : (
                                 <Button
                                     variant="orange-gradient"
-                                    className="rounded-md"
+                                    className="w-full rounded-md"
+                                    asChild
                                 >
                                     <Link href="/seller/apply">
                                         Apply to become a Seller
@@ -118,10 +134,10 @@ export default async function HomeUserCard({
                         </div>
                     ) : (
                         <div className="flex w-full justify-between gap-x-4">
-                            <Button variant="orange-gradient">
+                            <Button variant="orange-gradient" asChild>
                                 <Link href="/sign-up">Join</Link>
                             </Button>
-                            <Button variant="gray">
+                            <Button variant="gray" asChild>
                                 <Link href="/sign-in">Sign in</Link>
                             </Button>
                         </div>
