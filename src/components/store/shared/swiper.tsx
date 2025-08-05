@@ -47,7 +47,10 @@ const MainSwiper: FC<Props> = ({
                         ) : type === "curved" ? (
                             <div>curved card</div>
                         ) : (
-                            <ProductCard product={product as ProductType} />
+                            <ProductCard
+                                key={index}
+                                product={product as ProductType}
+                            />
                         )}
                     </SwiperSlide>
                 ))}

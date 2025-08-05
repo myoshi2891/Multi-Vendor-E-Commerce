@@ -1,3 +1,4 @@
+import ProductCardSimple from "@/components/store/cards/product/simple-card";
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
 import HomeUserCard from "@/components/store/home/main/user";
 import Sideline from "@/components/store/home/sideline/sideline";
@@ -6,6 +7,7 @@ import Footer from "@/components/store/layout/footer/footer";
 import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import MainSwiper from "@/components/store/shared/swiper";
+import { SimpleProduct } from "@/lib/types";
 import { getHomeDataDynamic, getHomeFeaturedCategories } from "@/queries/home";
 import { getProducts } from "@/queries/product";
 import Link from "next/link";
@@ -13,12 +15,15 @@ import Link from "next/link";
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
     const { products } = productsData;
-    const { data } = await getHomeDataDynamic([
-        { property: "offer", value: "Seasonal", type: "full" },
-        { property: "offer", value: "New Product", type: "full" },
-    ]);
-
-    console.log(data);
+    const { products_new_product, products_seasonal } =
+        await getHomeDataDynamic([
+            {
+                property: "offer",
+                value: "new-product",
+                type: "simple",
+            },
+            { property: "offer", value: "seasonal", type: "simple" },
+        ]);
 
     const categories = await getHomeFeaturedCategories();
 
@@ -48,14 +53,19 @@ export default async function HomePage() {
                                 <HomeMainSwiper />
                                 {/* Featured card */}
                                 <div className="h-[200px]"></div>
+                                {/* <ProductCardSimple
+                                    product={
+                                        products_new_product[0] as SimpleProduct
+                                    }
+                                /> */}
                             </div>
                             {/* Right */}
                             <div className="h-full">
-                                <HomeUserCard products={data} />
+                                <HomeUserCard products={products_new_product} />
                             </div>
                         </div>
                     </div>
-                    {/* <MainSwiper products={data} type="main" /> */}
+                    {/* <MainSwiper products={products_new_product} type="main" /> */}
                 </div>
             </div>
             <Footer />

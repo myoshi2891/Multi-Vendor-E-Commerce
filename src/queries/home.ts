@@ -168,6 +168,8 @@ export const getHomeDataDynamic = async (
             // Determine the output key based on the property and value
             const outputKey = `products_${value.replace(/-/g, "_")}`;
 
+            console.log([outputKey], formattedData);
+            
             return { [outputKey]: formattedData };
         })
     );

@@ -27,9 +27,12 @@ export default function HomeMainSwiper() {
                           alt="Product Image"
                           width={600}
                           height={400}
-                          objectFit="cover"
                           priority
-                          style={{ width: "auto", height: "auto" }}
+                          style={{
+                              width: "100%",
+                              height: "auto",
+                              objectFit: "cover",
+                          }}
                       />
                   </div>
               ))}
