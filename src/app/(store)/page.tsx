@@ -1,6 +1,6 @@
 import ProductCardSimple from "@/components/store/cards/product/simple-card";
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
-import HomeUserCard from "@/components/store/home/main/user";
+import HomeUserCard from "@/components/store/home/main/user/user";
 import Sideline from "@/components/store/home/sideline/sideline";
 import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
 import Footer from "@/components/store/layout/footer/footer";

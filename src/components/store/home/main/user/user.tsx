@@ -3,7 +3,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
 import UserImg from "@/public/assets/images/default-user.avif";
 import Link from "next/link";
-import { Button } from "../../ui/button";
+import { Button } from "../../../ui/button";
+import MainSwiper from "../../../shared/swiper";
+import UserCardProducts from "./products";
 
 export default async function HomeUserCard({
     products,
@@ -13,7 +15,7 @@ export default async function HomeUserCard({
     const user = await currentUser();
     const role = user?.privateMetadata.role;
     return (
-        <div className="relative hidden h-full overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
+        <div className="relative hidden h-[600px] overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
             <div
                 className="h-full rounded-md bg-no-repeat pb-9"
                 style={{
@@ -142,6 +144,28 @@ export default async function HomeUserCard({
                             </Button>
                         </div>
                     )}
+                </div>
+                {/* Ad swiper */}
+                <div className="mt-2 size-full max-h-[400px] flex-1 px-2 pb-[102px]">
+                    <div
+                        className="size-full overflow-hidden rounded-md bg-[#f5f5f5] bg-cover px-2.5"
+                        style={{
+                            backgroundImage:
+                                "url(/assets/images/ads/user-card-ad.avif)",
+                        }}
+                    >
+                        <Link href="#">
+                            <div className="h-24">
+                                <div className="mt-2.5 overflow-hidden text-[13px] leading-[18px] text-white">
+                                    Your favorite store
+                                </div>
+                                <div className="mt-2.5 font-bold leading-5 text-white">
+                                    Check out the latest new deals
+                                </div>
+                            </div>
+                        </Link>
+                        <UserCardProducts products={products}/>
+                    </div>
                 </div>
             </div>
         </div>
