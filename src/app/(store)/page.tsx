@@ -1,4 +1,5 @@
 import ProductCardSimple from "@/components/store/cards/product/simple-card";
+import Featured from "@/components/store/home/main/featured";
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
 import HomeUserCard from "@/components/store/home/main/user/user";
 import Sideline from "@/components/store/home/sideline/sideline";
@@ -52,16 +53,16 @@ export default async function HomePage() {
                                 {/* Main swiper */}
                                 <HomeMainSwiper />
                                 {/* Featured card */}
-                                <div className="h-[200px]"></div>
-                                {/* <ProductCardSimple
-                                    product={
-                                        products_new_product[0] as SimpleProduct
-                                    }
-                                /> */}
+                                <Featured />
                             </div>
                             {/* Right */}
                             <div className="h-full">
-                                <HomeUserCard products={products_new_product} />
+                                <HomeUserCard
+                                    products={products_new_product.filter(
+                                        (product): product is SimpleProduct =>
+                                            "variantSlug" in product
+                                    )}
+                                />
                             </div>
                         </div>
                     </div>

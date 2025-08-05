@@ -15,7 +15,7 @@ export default async function HomeUserCard({
     const user = await currentUser();
     const role = user?.privateMetadata.role;
     return (
-        <div className="relative hidden h-[600px] overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
+        <div className="relative hidden overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
             <div
                 className="h-full rounded-md bg-no-repeat pb-9"
                 style={{
@@ -164,7 +164,7 @@ export default async function HomeUserCard({
                                 </div>
                             </div>
                         </Link>
-                        <UserCardProducts products={products}/>
+                        <UserCardProducts products={products} />
                     </div>
                 </div>
             </div>

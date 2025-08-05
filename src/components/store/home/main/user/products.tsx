@@ -9,7 +9,12 @@ export default function UserCardProducts({
 }) {
     return (
         <div className="absolute bottom-0 left-0 w-[345px]">
-            <MainSwiper products={products} type="simple" slidesPerView={3} />
+            <MainSwiper
+                products={products}
+                type="simple"
+                slidesPerView={3}
+                spaceBetween={-5}
+            />
         </div>
     );
 }
