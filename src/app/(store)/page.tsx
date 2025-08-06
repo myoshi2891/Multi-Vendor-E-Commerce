@@ -38,16 +38,14 @@ export default async function HomePage() {
                     <div className="mx-auto min-h-screen max-w-[1600px] p-4">
                         {/* Main */}
                         <div className="grid w-full gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]">
-                            {/* Left */}
-                            <Link href="">
-                                <div
-                                    className="hidden h-[555px] cursor-pointer rounded-md bg-cover bg-no-repeat min-[1465px]:block"
-                                    style={{
-                                        backgroundImage:
-                                            "url(/assets/images/ads/winter-sports-clothing.jpg)",
-                                    }}
-                                />
-                            </Link>
+                            {/* Left */}{" "}
+                            <div
+                                className="hidden cursor-pointer rounded-md bg-cover bg-no-repeat min-[1465px]:block"
+                                style={{
+                                    backgroundImage:
+                                        "url(/assets/images/ads/winter-sports-clothing.jpg)",
+                                }}
+                            />
                             {/* Middle */}
                             <div className="h-fit space-y-2">
                                 {/* Main swiper */}

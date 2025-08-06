@@ -15,7 +15,7 @@ export default async function HomeUserCard({
     const user = await currentUser();
     const role = user?.privateMetadata.role;
     return (
-        <div className="relative hidden overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
+        <div className="relative hidden h-full overflow-hidden rounded-md bg-white shadow-sm min-[1170px]:block">
             <div
                 className="h-full rounded-md bg-no-repeat pb-9"
                 style={{
@@ -146,7 +146,7 @@ export default async function HomeUserCard({
                     )}
                 </div>
                 {/* Ad swiper */}
-                <div className="mt-2 size-full max-h-[400px] flex-1 px-2 pb-[102px]">
+                <div className="mt-2 size-full max-h-[420px] flex-1 px-2 pb-[102px]">
                     <div
                         className="size-full overflow-hidden rounded-md bg-[#f5f5f5] bg-cover px-2.5"
                         style={{
