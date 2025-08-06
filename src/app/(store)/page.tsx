@@ -1,4 +1,3 @@
-import ProductCardSimple from "@/components/store/cards/product/simple-card";
 import AnimatedDeals from "@/components/store/home/animated-deals";
 import Featured from "@/components/store/home/main/featured";
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
@@ -12,7 +11,9 @@ import MainSwiper from "@/components/store/shared/swiper";
 import { SimpleProduct } from "@/lib/types";
 import { getHomeDataDynamic, getHomeFeaturedCategories } from "@/queries/home";
 import { getProducts } from "@/queries/product";
+import Image from "next/image";
 import Link from "next/link";
+import SuperDealsImg from "@/public/assets/images/ads/super-deals.avif";
 
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
@@ -24,7 +25,7 @@ export default async function HomePage() {
                 value: "new-product",
                 type: "simple",
             },
-            { property: "offer", value: "seasonal", type: "simple" },
+            { property: "offer", value: "seasonal", type: "full" },
         ]);
 
     const categories = await getHomeFeaturedCategories();
@@ -53,7 +54,7 @@ export default async function HomePage() {
                                 <HomeMainSwiper />
                                 {/* Featured card */}
                                 <Featured
-                                    products={products_seasonal.filter(
+                                    products={products_new_product.filter(
                                         (product): product is SimpleProduct =>
                                             "variantSlug" in product
                                     )}
@@ -72,11 +73,29 @@ export default async function HomePage() {
                         {/* Animated deals */}
                         <div className="mt-2 hidden min-[915px]:block">
                             <AnimatedDeals
-                                products={products_seasonal.filter(
+                                products={products_new_product.filter(
                                     (product): product is SimpleProduct =>
                                         "variantSlug" in product
                                 )}
                             />
+                        </div>
+                        <div className="mt-10 space-y-10">
+                            <div className="rounded-md bg-white">
+                                <MainSwiper
+                                    products={products_seasonal}
+                                    type="curved"
+                                >
+                                    <div className="mb-4 flex items-center justify-between pl-4">
+                                        <Image
+                                            src={SuperDealsImg}
+                                            alt="Super Deals"
+                                            width={200}
+                                            height={50}
+                                            priority
+                                        />
+                                    </div>
+                                </MainSwiper>
+                            </div>
                         </div>
                     </div>
                     {/* <MainSwiper products={products_new_product} type="main" /> */}
