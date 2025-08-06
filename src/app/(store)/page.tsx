@@ -1,4 +1,5 @@
 import ProductCardSimple from "@/components/store/cards/product/simple-card";
+import AnimatedDeals from "@/components/store/home/animated-deals";
 import Featured from "@/components/store/home/main/featured";
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
 import HomeUserCard from "@/components/store/home/main/user/user";
@@ -67,6 +68,15 @@ export default async function HomePage() {
                                     )}
                                 />
                             </div>
+                        </div>
+                        {/* Animated deals */}
+                        <div className="mt-2 hidden min-[915px]:block">
+                            <AnimatedDeals
+                                products={products_seasonal.filter(
+                                    (product): product is SimpleProduct =>
+                                        "variantSlug" in product
+                                )}
+                            />
                         </div>
                     </div>
                     {/* <MainSwiper products={products_new_product} type="main" /> */}
