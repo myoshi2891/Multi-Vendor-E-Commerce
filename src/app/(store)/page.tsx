@@ -14,6 +14,7 @@ import { getProducts } from "@/queries/product";
 import Image from "next/image";
 import Link from "next/link";
 import SuperDealsImg from "@/public/assets/images/ads/super-deals.avif";
+import FeaturedCategories from "@/components/store/home/featured-categories";
 
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
@@ -28,7 +29,7 @@ export default async function HomePage() {
             { property: "offer", value: "seasonal", type: "full" },
         ]);
 
-    const categories = await getHomeFeaturedCategories();
+    const featuredCategories = await getHomeFeaturedCategories();
 
     return (
         <>
@@ -96,6 +97,9 @@ export default async function HomePage() {
                                     </div>
                                 </MainSwiper>
                             </div>
+                            <FeaturedCategories
+                                categories={featuredCategories}
+                            />
                         </div>
                     </div>
                     {/* <MainSwiper products={products_new_product} type="main" /> */}
