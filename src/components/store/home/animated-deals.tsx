@@ -1,3 +1,4 @@
+"use client";
 import { SimpleProduct } from "@/lib/types";
 import AnimatedImg from "@/public/assets/images/ads/animated-deals.gif";
 import TopSellerImg from "@/public/assets/images/featured/most-popular.avif";
@@ -5,6 +6,7 @@ import TopRatedImg from "@/public/assets/images/featured/top-rated.jpg";
 import Image from "next/image";
 import Link from "next/link";
 import MainSwiper from "../shared/swiper";
+import Countdown from "../shared/countdown";
 export default function AnimatedDeals({
     products,
 }: {
@@ -56,6 +58,9 @@ export default function AnimatedDeals({
                 </span>
             </Link>
 
+            <div className="absolute left-1/2 top-[82%] flex -translate-x-1/2 items-center justify-center">
+                <Countdown targetDate="2025-09-12T00:00:00.769Z" home_style />
+            </div>
             <div className="absolute left-1/2 top-[3%] w-[300px] -translate-x-1/2 gap-[5px] min-[1100px]:w-[400px] min-[1400px]:w-[510px]">
                 <MainSwiper
                     products={products}
