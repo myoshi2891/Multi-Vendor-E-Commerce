@@ -53,7 +53,12 @@ export default async function HomePage() {
                                 {/* Main swiper */}
                                 <HomeMainSwiper />
                                 {/* Featured card */}
-                                <Featured />
+                                <Featured
+                                    products={products_seasonal.filter(
+                                        (product): product is SimpleProduct =>
+                                            "variantSlug" in product
+                                    )}
+                                />
                             </div>
                             {/* Right */}
                             <div className="h-full">

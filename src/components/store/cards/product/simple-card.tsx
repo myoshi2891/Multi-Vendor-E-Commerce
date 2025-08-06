@@ -8,8 +8,8 @@ export default function ProductCardSimple({
 }: {
     product: SimpleProduct;
 }) {
-    console.log("product card simple: ", product);
-    console.log("product image: ", product.image); // 画像の値を確認
+    // console.log("product card simple: ", product);
+    // console.log("product image: ", product.image); // 画像の値を確認
 
     return (
         <Link href={`/product/${product.slug}/${product.variantSlug}`}>
