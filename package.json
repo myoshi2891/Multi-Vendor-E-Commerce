@@ -90,7 +90,7 @@
 		"sonner": "^1.5.0",
 		"stripe": "^17.4.0",
 		"svix": "^1.24.0",
-		"swiper": "^11.1.15",
+		"swiper": "^11.2.10",
 		"tailwind-merge": "^2.3.0",
 		"tailwindcss-animate": "^1.0.7",
 		"ts-node": "^10.9.2",
