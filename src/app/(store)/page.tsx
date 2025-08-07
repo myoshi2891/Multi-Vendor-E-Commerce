@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SuperDealsImg from "@/public/assets/images/ads/super-deals.avif";
 import FeaturedCategories from "@/components/store/home/featured-categories";
+import ProductCard from "@/components/store/cards/product/product-card";
 
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
@@ -100,6 +101,22 @@ export default async function HomePage() {
                             <FeaturedCategories
                                 categories={featuredCategories}
                             />
+                            <div>
+                                {/* Header */}
+                                <div className="flex h-8 justify-center text-center text-[24px] font-extrabold leading-8 text-[#222]">
+                                    <div className="mx-[14px] my-4 h-px flex-1 border-t-2 border-t-[hsla(0,0%,59.2%,.3)]" />
+                                    <span>More to love</span>
+                                    <div className="mx-[14px] my-4 h-px flex-1 border-t-2 border-t-[hsla(0,0%,59.2%,.3)]" />
+                                </div>
+                                <div className="mt-7 flex flex-wrap justify-center rounded-md bg-white p-4 pb-16 min-[1530px]:grid min-[1530px]:grid-cols-7">
+                                    {products.map((product, i) => (
+                                        <ProductCard
+                                            key={i}
+                                            product={product}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {/* <MainSwiper products={products_new_product} type="main" /> */}
