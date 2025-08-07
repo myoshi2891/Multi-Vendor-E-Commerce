@@ -1,29 +1,29 @@
-'use client'
-import { ProductType, VariantSimplified } from '@/lib/types'
-import Link from 'next/link'
-import { useState } from 'react'
-import ReactStars from 'react-rating-stars-component'
-import ProductCardImageSwiper from './swiper'
-import VariantSwitcher from './variant-switcher'
-import { Button } from '@/components/store/ui/button'
-import { Heart } from 'lucide-react'
-import ProductPrice from '../../product-page/product-info/product-price'
-import { addToWishlist } from '@/queries/user'
-import toast from 'react-hot-toast'
+"use client";
+import { ProductType, VariantSimplified } from "@/lib/types";
+import Link from "next/link";
+import { useState } from "react";
+import ReactStars from "react-rating-stars-component";
+import ProductCardImageSwiper from "./swiper";
+import VariantSwitcher from "./variant-switcher";
+import { Button } from "@/components/store/ui/button";
+import { Heart } from "lucide-react";
+import ProductPrice from "../../product-page/product-info/product-price";
+import { addToWishlist } from "@/queries/user";
+import toast from "react-hot-toast";
 
 export default function ProductCard({ product }: { product: ProductType }) {
-    const { name, slug, rating, sales, variantImages, variants, id } = product
-    const [variant, setVariant] = useState<VariantSimplified>(variants[0])
-    const { variantSlug, variantName, images, sizes } = variant
+    const { name, slug, rating, sales, variantImages, variants, id } = product;
+    const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
+    const { variantSlug, variantName, images, sizes } = variant;
 
     const handleAddToWishlist = async () => {
         try {
-            const res = await addToWishlist(id, variant.variantId)
-            if (res) toast.success('Product successfully added to wishlist')
+            const res = await addToWishlist(id, variant.variantId);
+            if (res) toast.success("Product successfully added to wishlist");
         } catch (error: any) {
-            toast.error(error.toString())
+            toast.error(error.toString());
         }
-    }
+    };
 
     return (
         <div>
@@ -75,7 +75,11 @@ export default function ProductCard({ product }: { product: ProductType }) {
                     <div className="h-4"></div>
                     {/* Action buttons */}
                     <div className="flex flex-row gap-x-1">
-                        <Button>Add to cart</Button>
+                        <Button>
+                            <Link href={`/product/${slug}/${variantSlug}`}>
+                                Add to cart
+                            </Link>
+                        </Button>
                         <Button
                             variant="black"
                             size="icon"
@@ -87,5 +91,5 @@ export default function ProductCard({ product }: { product: ProductType }) {
                 </div>
             </div>
         </div>
-    )
+    );
 }

@@ -10,15 +10,15 @@ export async function seedCountries() {
                 },
                 create: {
                     name: country.name,
-                    code: country.code
+                    code: country.code,
                 },
                 update: {
                     name: country.name,
-                    code: country.code
-                }
-            })
+                    code: country.code,
+                },
+            });
         }
-        console.log("Countries seeded successfully.");
+        // console.log("Countries seeded successfully.");
     } catch (error) {
         console.error("Error seeding countries:", error);
     }
