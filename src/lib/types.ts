@@ -394,3 +394,21 @@ export type SimpleProduct = {
 export type FeaturedCategoryType = Prisma.PromiseReturnType<
     typeof getHomeFeaturedCategories
 >[0];
+
+export type StoreType = {
+    name: string;
+    description: string;
+    email: string;
+    phone: string;
+    logo: string;
+    cover: string;
+    url: string;
+    defaultShippingService: string;
+    defaultDeliveryTimeMax?: number;
+    defaultDeliveryTimeMin?: number;
+    defaultShippingFeeFixed?: number;
+    defaultShippingFeeForAdditionalItem?: number;
+    defaultShippingFeePerItem?: number;
+    defaultShippingFeePerKg?: number;
+    returnPolicy?: string;
+};
