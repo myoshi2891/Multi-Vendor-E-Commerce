@@ -3,6 +3,7 @@
 import { StoreType } from "@/lib/types";
 import { useState } from "react";
 import Instructions from "./instructions";
+import ProgressBar from "./progress-bar";
 
 export default function ApplySellerMultiForm() {
     const [step, setStep] = useState<number>(1);
@@ -25,9 +26,9 @@ export default function ApplySellerMultiForm() {
     });
     return (
         <div className="grid grid-cols-[400px_1fr]">
-            <Instructions/>
+            <Instructions />
             <div className="relative w-full p-5">
-                {/* Progress Bar */}
+                <ProgressBar step={step} />
                 {/* Steps */}
             </div>
         </div>
