@@ -1,14 +1,22 @@
 import { FC } from 'react'
 
 interface Props {
-    name: string
-    value: string
-    type: 'text' | 'number'
-    placeholder?: string
-    onChange: (value: string | number) => void
+    name: string;
+    value: string;
+    type: "text" | "number";
+    placeholder?: string;
+    onChange: (value: string | number) => void;
+    readonly?: boolean;
 }
 
-const Input: FC<Props> = ({ name, onChange, type, value, placeholder }) => {
+const Input: FC<Props> = ({
+    name,
+    onChange,
+    type,
+    value,
+    placeholder,
+    readonly,
+}) => {
     return (
         <div className="relative w-full">
             <input
@@ -18,9 +26,10 @@ const Input: FC<Props> = ({ name, onChange, type, value, placeholder }) => {
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                readOnly={readonly}
             />
         </div>
-    )
-}
+    );
+};
 
 export default Input
