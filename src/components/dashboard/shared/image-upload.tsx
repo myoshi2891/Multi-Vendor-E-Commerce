@@ -36,8 +36,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
         if (error) {
             setIsBouncing(true)
             const timer = setTimeout(() => {
-                setIsBouncing(false) // Stop the bounce after 1 and half second
-            }, 1500)
+                setIsBouncing(false); // Stop the bounce after 1 and half second
+            }, 1500);
             return () => clearTimeout(timer) // Clean up timer if the component unmounts or error changes
         }
     }, [error])
