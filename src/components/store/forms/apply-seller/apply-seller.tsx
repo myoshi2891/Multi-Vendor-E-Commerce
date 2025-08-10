@@ -5,9 +5,10 @@ import { useState } from "react";
 import Instructions from "./instructions";
 import ProgressBar from "./progress-bar";
 import Step1 from "./steps/step-1/step-1";
+import Step2 from "./steps/step-2/step-2";
 
 export default function ApplySellerMultiForm() {
-    const [step, setStep] = useState<number>(1);
+    const [step, setStep] = useState<number>(2);
     const [formData, setFormData] = useState<StoreType>({
         name: "",
         description: "",
@@ -31,7 +32,16 @@ export default function ApplySellerMultiForm() {
             <div className="relative w-full p-5">
                 <ProgressBar step={step} />
                 {/* Steps */}
-                {step === 1 ? <Step1 step={step} setStep={setStep} /> : null}
+                {step === 1 ? (
+                    <Step1 step={step} setStep={setStep} />
+                ) : step === 2 ? (
+                    <Step2
+                        formData={formData}
+                        setFormData={setFormData}
+                        step={step}
+                        setStep={setStep}
+                    />
+                ) : null}
             </div>
         </div>
     );

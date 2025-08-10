@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import React from "react";
 
 interface Props {
     name: string;
@@ -9,27 +9,25 @@ interface Props {
     readonly?: boolean;
 }
 
-const Input: FC<Props> = ({
-    name,
-    onChange,
-    type,
-    value,
-    placeholder,
-    readonly,
-}) => {
-    return (
-        <div className="relative w-full">
-            <input
-                type={type}
-                className="w-full rounded-xl py-4 pl-8 pr-6 outline-none ring-1 ring-transparent duration-200 focus:ring-[#11BE86]"
-                name={name}
-                placeholder={placeholder}
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                readOnly={readonly}
-            />
-        </div>
-    );
-};
+const Input = React.forwardRef<HTMLInputElement, Props>(
+    ({ name, onChange, type, value, placeholder, readonly }, ref) => {
+        return (
+            <div className="relative w-full">
+                <input
+                    ref={ref}
+                    type={type}
+                    className="w-full rounded-xl py-4 pl-8 pr-6 outline-none ring-1 ring-transparent duration-200 focus:ring-[#11BE86]"
+                    name={name}
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    readOnly={readonly}
+                />
+            </div>
+        );
+    }
+);
 
-export default Input
+Input.displayName = "Input";
+
+export default Input;
