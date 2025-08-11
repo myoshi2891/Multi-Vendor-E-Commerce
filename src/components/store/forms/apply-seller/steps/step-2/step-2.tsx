@@ -17,6 +17,16 @@ import ImageUpload from "@/components/dashboard/shared/image-upload";
 import Input from "@/components/store/ui/input";
 import { Textarea } from "@/components/store/ui/textarea";
 
+interface FormData {
+    name: string;
+    description: string;
+    email: string;
+    phone: string;
+    url: string;
+    logo: string[];
+    cover: string[];
+}
+
 export default function Step2({
     step,
     setStep,
@@ -48,6 +58,20 @@ export default function Step2({
     const handleSubmit = async (values: z.infer<typeof StoreFormSchema>) => {
         setStep((prev) => prev + 1);
     };
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type } = event.target;
+        const parsedValue = type === "number" ? Number(value) : value;
+
+        setFormData((prev) => ({ ...prev, [name]: parsedValue }));
+        form.setValue(name as keyof FormData, value);
+    };
+
+    const handleImageChange = (name: string, url: string) => {
+        setFormData((prev) => ({ ...prev, [name]: url }));
+        form.setValue(name as keyof FormData, [{ url }]);
+    };
+
     return (
         <div className="h-full">
             <AnimatedContainer>
@@ -75,9 +99,10 @@ export default function Step2({
                                                         (image) => image.url
                                                     )}
                                                     onChange={(url) =>
-                                                        field.onChange([
-                                                            { url },
-                                                        ])
+                                                        handleImageChange(
+                                                            "logo",
+                                                            url
+                                                        )
                                                     }
                                                     onRemove={(url) =>
                                                         field.onChange([
@@ -110,11 +135,12 @@ export default function Step2({
                                                     value={field.value.map(
                                                         (image) => image.url
                                                     )}
-                                                    onChange={(url) =>
-                                                        field.onChange([
-                                                            { url },
-                                                        ])
-                                                    }
+                                                    onChange={(url) => {
+                                                        handleImageChange(
+                                                            "cover",
+                                                            url
+                                                        );
+                                                    }}
                                                     onRemove={(url) =>
                                                         field.onChange([
                                                             ...field.value.filter(
@@ -142,13 +168,7 @@ export default function Step2({
                                                 value={field.value}
                                                 type="text"
                                                 name="name"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({
-                                                        ...formData,
-                                                        name: field.value,
-                                                    });
-                                                }}
+                                                onChange={handleInputChange}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -167,12 +187,13 @@ export default function Step2({
                                                 placeholder="Store Description"
                                                 {...field}
                                                 onChange={(e) => {
+                                                    const { name, value } =
+                                                        e.target;
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        [name]: value,
+                                                    }));
                                                     field.onChange(e);
-                                                    setFormData({
-                                                        ...formData,
-                                                        description:
-                                                            field.value,
-                                                    });
                                                 }}
                                             />
                                         </FormControl>
@@ -193,13 +214,7 @@ export default function Step2({
                                                 value={field.value}
                                                 type="text"
                                                 name="url"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({
-                                                        ...formData,
-                                                        url: field.value,
-                                                    });
-                                                }}
+                                                onChange={handleInputChange}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -221,13 +236,7 @@ export default function Step2({
                                                     name="email"
                                                     type="text"
                                                     value={field.value}
-                                                    onChange={(e) => {
-                                                        field.onChange(e);
-                                                        setFormData({
-                                                            ...formData,
-                                                            email: field.value,
-                                                        });
-                                                    }}
+                                                    onChange={handleInputChange}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -245,13 +254,7 @@ export default function Step2({
                                                     name="phone"
                                                     type="text"
                                                     value={field.value}
-                                                    onChange={(e) => {
-                                                        field.onChange(e);
-                                                        setFormData({
-                                                            ...formData,
-                                                            phone: field.value,
-                                                        });
-                                                    }}
+                                                    onChange={handleInputChange}
                                                 />
                                             </FormControl>
                                             <FormMessage />
