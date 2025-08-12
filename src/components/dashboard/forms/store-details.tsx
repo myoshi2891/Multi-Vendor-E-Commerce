@@ -144,7 +144,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                     <CardDescription>
                         {data?.id
                             ? `Update ${data?.name} store information.`
-                            : ' Lets create a store. You can edit store later from the store settings page.'}
+                            : " Lets create a store. You can edit store later from the store settings page."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -297,6 +297,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                                 />
                             </div>
 
+                            {/* Url */}
                             <FormField
                                 control={form.control}
                                 name="url"
@@ -337,16 +338,16 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                             />
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading
-                                    ? 'loading...'
+                                    ? "loading..."
                                     : data?.id
-                                      ? 'Save store information'
-                                      : 'Create store'}
+                                      ? "Save store information"
+                                      : "Create store"}
                             </Button>
                         </form>
                     </Form>
                 </CardContent>
             </Card>
         </AlertDialog>
-    )
+    );
 }
 export default StoreDetails
