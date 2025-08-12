@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Hooks and utilities
-// import { useToast } from "@/components/ui/use-toast";
 import { useModal } from "@/providers/modal-provider";
 
 // Lucide icons
@@ -53,6 +52,30 @@ import StoreStatusSelect from "@/components/dashboard/forms/store-status-select"
 import StoreOrderSummary from "@/components/dashboard/shared/store-order-summary";
 import { useToast } from "@/hooks/use-toast";
 import { AdminStoreType, StoreOrderType, StoreStatus } from "@/lib/types";
+import StoreSummary from "@/components/dashboard/shared/store-summary";
+
+// ViewButtonコンポーネントを分離
+const ViewButton: React.FC<{ store: AdminStoreType }> = ({ store }) => {
+    const { setOpen } = useModal();
+
+    return (
+        <button
+            className="group relative isolation-auto z-10 mx-auto flex items-center justify-center gap-2 overflow-hidden rounded-full border-2 bg-[#0A0D2D] px-4 py-2 font-sans text-lg text-gray-50 backdrop-blur-md before:absolute before:-left-full before:-z-10 before:aspect-square before:w-full before:scale-150 before:rounded-full before:transition-all before:duration-700 hover:text-gray-50 before:hover:left-0 before:hover:bg-blue-primary before:hover:duration-700 lg:font-semibold"
+            onClick={() => {
+                setOpen(
+                    <CustomModal maxWidth="!max-w-3xl">
+                        <StoreSummary store={store} />
+                    </CustomModal>
+                );
+            }}
+        >
+            View
+            <span className="grid size-7 place-items-center rounded-full bg-white">
+                <Expand className="w-5 stroke-black" />
+            </span>
+        </button>
+    );
+};
 
 export const columns: ColumnDef<AdminStoreType>[] = [
     {
@@ -130,14 +153,10 @@ export const columns: ColumnDef<AdminStoreType>[] = [
         accessorKey: "open",
         header: "",
         cell: ({ row }) => {
-            return (
-                <div>
-                    <ViewOrderButton order={row.original} />
-                </div>
-            );
+            // Hooksを使用するコンポーネントを返す
+            return <ViewButton store={row.original} />;
         },
     },
-
     {
         accessorKey: "featured",
         header: "Featured",
@@ -157,13 +176,12 @@ export const columns: ColumnDef<AdminStoreType>[] = [
         id: "actions",
         cell: ({ row }) => {
             const rowData = row.original;
-
             return <CellActions storeId={rowData.id} />;
         },
     },
 ];
 
-// 別コンポーネントとして切り出し
+// ViewOrderButtonコンポーネント
 const ViewOrderButton = ({ order }: { order: StoreOrderType }) => {
     const { setOpen } = useModal();
     return (
