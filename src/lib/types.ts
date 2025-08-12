@@ -7,6 +7,7 @@ import {
     retrieveProductDetails,
 } from "@/queries/product";
 import {
+    getAllStores,
     getStoreDefaultShippingDetails,
     getStoreOrders,
 } from "@/queries/store";
@@ -394,3 +395,30 @@ export type SimpleProduct = {
 export type FeaturedCategoryType = Prisma.PromiseReturnType<
     typeof getHomeFeaturedCategories
 >[0];
+
+export type StoreType = {
+    name: string;
+    description: string;
+    email: string;
+    phone: string;
+    logo: string;
+    cover: string;
+    url: string;
+    defaultShippingService: string;
+    defaultDeliveryTimeMax?: number;
+    defaultDeliveryTimeMin?: number;
+    defaultShippingFeeFixed?: number;
+    defaultShippingFeeForAdditionalItem?: number;
+    defaultShippingFeePerItem?: number;
+    defaultShippingFeePerKg?: number;
+    returnPolicy?: string;
+};
+
+export type AdminStoreType = Prisma.PromiseReturnType<typeof getAllStores>[0];
+
+export enum StoreStatus {
+    PENDING = "PENDING",
+    ACTIVE = "ACTIVE",
+    BANNED = "BANNED",
+    DISABLED = "DISABLED",
+}
