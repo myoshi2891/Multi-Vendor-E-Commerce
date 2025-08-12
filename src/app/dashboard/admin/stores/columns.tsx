@@ -1,12 +1,11 @@
 "use client";
 
 // React, Next.js imports
-import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 // Custom components
-import CategoryDetails from "@/components/dashboard/forms/category-details";
 import CustomModal from "@/components/dashboard/shared/custom-modal";
 
 // UI components
@@ -27,7 +26,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -39,24 +37,22 @@ import { useModal } from "@/providers/modal-provider";
 import {
     BadgeCheck,
     BadgeMinus,
-    Edit,
     Expand,
     MoreHorizontal,
     Trash,
 } from "lucide-react";
 
 // Queries
-import { deleteCategory, getCategory } from "@/queries/category";
+import { deleteStore } from "@/queries/store";
 
 // Tanstack React Table
 import { ColumnDef } from "@tanstack/react-table";
 
 // Prisma models
+import StoreStatusSelect from "@/components/dashboard/forms/store-status-select";
+import StoreOrderSummary from "@/components/dashboard/shared/store-order-summary";
 import { useToast } from "@/hooks/use-toast";
 import { AdminStoreType, StoreOrderType, StoreStatus } from "@/lib/types";
-import StoreStatusTag from "@/components/shared/store-status";
-import StoreOrderSummary from "@/components/dashboard/shared/store-order-summary";
-import StoreStatusSelect from "@/components/dashboard/forms/store-status-select";
 
 export const columns: ColumnDef<AdminStoreType>[] = [
     {
@@ -122,11 +118,14 @@ export const columns: ColumnDef<AdminStoreType>[] = [
         header: "STATUS",
         cell: ({ row }) => {
             return (
-                <StoreStatusSelect storeId={row.original.id} status={row.original.status as StoreStatus} />
+                <StoreStatusSelect
+                    storeId={row.original.id}
+                    status={row.original.status as StoreStatus}
+                />
             );
         },
     },
-    
+
     {
         accessorKey: "open",
         header: "",
@@ -159,7 +158,7 @@ export const columns: ColumnDef<AdminStoreType>[] = [
         cell: ({ row }) => {
             const rowData = row.original;
 
-            return <CellActions rowData={rowData} />;
+            return <CellActions storeId={rowData.id} />;
         },
     },
 ];
@@ -186,14 +185,13 @@ const ViewOrderButton = ({ order }: { order: StoreOrderType }) => {
     );
 };
 
-
 // Define props interface for CellActions component
 interface CellActionsProps {
-    rowData: AdminStoreType;
+    storeId: string;
 }
 
 // CellActions component definition
-const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
+const CellActions: React.FC<CellActionsProps> = ({ storeId }) => {
     // Hooks
     const { setOpen, setClose } = useModal();
     const [loading, setLoading] = useState(false);
@@ -201,7 +199,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const router = useRouter();
 
     // Return null if rowData or rowData.id don't exist
-    if (!rowData || !rowData.id) return null;
+    if (!storeId) return null;
 
     return (
         <AlertDialog>
@@ -214,33 +212,12 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() => {
-                            setOpen(
-                                // Custom modal component
-                                <CustomModal>
-                                    {/* Store details component */}
-                                    <CategoryDetails data={{ ...rowData }} />
-                                </CustomModal>,
-                                async () => {
-                                    return {
-                                        rowData: await getCategory(rowData?.id),
-                                    };
-                                }
-                            );
-                        }}
-                    >
-                        <Edit size={15} />
-                        Edit Details
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
                         <DropdownMenuItem
                             className="flex gap-2"
                             onClick={() => {}}
                         >
-                            <Trash size={15} /> Delete category
+                            <Trash size={15} /> Delete store
                         </DropdownMenuItem>
                     </AlertDialogTrigger>
                 </DropdownMenuContent>
@@ -252,7 +229,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-left">
                         This action cannot be undone. This will permanently
-                        delete the category and related data.
+                        delete the store and related data.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex items-center">
@@ -264,10 +241,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                         className="mb-2 bg-destructive text-white hover:bg-destructive"
                         onClick={async () => {
                             setLoading(true);
-                            await deleteCategory(rowData.id);
+                            await deleteStore(storeId);
                             toast({
-                                title: "Deleted category",
-                                description: "The category has been deleted.",
+                                title: "Deleted store",
+                                description: "The store has been deleted.",
                             });
                             setLoading(false);
                             router.refresh();
