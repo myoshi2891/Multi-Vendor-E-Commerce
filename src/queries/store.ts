@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
     CountryWithShippingRatesType,
     StoreDefaultShippingType,
+    StoreStatus,
     StoreType,
 } from "@/lib/types";
 
@@ -19,7 +20,6 @@ import { ShippingRate, Store } from "@prisma/client";
 // Parameters:
 // - store: Store object containing details of the store to be upserted.
 // Returns: Updated or newly created store details.
-
 export const upsertStore = async (store: Partial<Store>) => {
     try {
         // Get current user
@@ -35,58 +35,117 @@ export const upsertStore = async (store: Partial<Store>) => {
         // Ensure store data is provided
         if (!store) throw new Error("Please provide store data.");
 
-        // Check for uniqueness of name, url, email, and phone
-        const existingStore = await db.store.findFirst({
-            where: {
-                AND: [
-                    {
-                        OR: [
-                            { name: store.name },
-                            { url: store.url },
-                            { email: store.email },
-                            { phone: store.phone },
-                        ],
-                    },
-                    {
-                        NOT: {
-                            id: store.id,
-                        },
-                    },
-                ],
-            },
-        });
+        let storeDetails;
 
-        if (existingStore) {
-            let errorMessage = "";
-            if (existingStore.name === store.name) {
-                errorMessage = "A store with the same name already exists.";
-            } else if (existingStore.url === store.url) {
-                errorMessage = "A store with the same URL already exists.";
-            } else if (existingStore.email === store.email) {
-                errorMessage = "A store with the same email already exists.";
-            } else if (existingStore.phone === store.phone) {
-                errorMessage =
-                    "A store with the same phone number already exists.";
-            }
-            throw new Error(errorMessage);
-        }
-
-        const { userId, ...storeWithoutUserId } = store;
-        // Upsert store details into the database
-        const storeDetails = await db.store.upsert({
-            where: {
-                id: store.id,
-            },
-            update: store,
-            create: {
-                ...store,
-                user: {
-                    connect: {
-                        id: user.id,
-                    },
+        if (store?.id) {
+            // 更新処理 - まずストアが存在し、現在のユーザーに属しているかチェック
+            const existingStore = await db.store.findFirst({
+                where: {
+                    id: store.id,
+                    userId: user.id, // 重要：現在のユーザーのストアかチェック
                 },
-            },
-        });
+            });
+
+            if (!existingStore) {
+                throw new Error(
+                    "Store not found or you don't have permission to update this store."
+                );
+            }
+
+            // 重複チェック（現在のストアを除外）
+            const duplicateStore = await db.store.findFirst({
+                where: {
+                    AND: [
+                        {
+                            OR: [
+                                { name: store.name },
+                                { url: store.url },
+                                { email: store.email },
+                                { phone: store.phone },
+                            ],
+                        },
+                        {
+                            NOT: {
+                                id: store.id,
+                            },
+                        },
+                    ],
+                },
+            });
+
+            if (duplicateStore) {
+                let errorMessage = "";
+                if (duplicateStore.name === store.name) {
+                    errorMessage = "A store with the same name already exists.";
+                } else if (duplicateStore.url === store.url) {
+                    errorMessage = "A store with the same URL already exists.";
+                } else if (duplicateStore.email === store.email) {
+                    errorMessage =
+                        "A store with the same email already exists.";
+                } else if (duplicateStore.phone === store.phone) {
+                    errorMessage =
+                        "A store with the same phone number already exists.";
+                }
+                throw new Error(errorMessage);
+            }
+
+            // id と userId を除外して更新
+            const { id, userId, ...storeDataToUpdate } = store;
+
+            storeDetails = await db.store.update({
+                where: { id: String(id) },
+                data: storeDataToUpdate,
+            });
+        } else {
+            // 作成処理 - 重複チェック
+            const existingStore = await db.store.findFirst({
+                where: {
+                    OR: [
+                        { name: store.name },
+                        { url: store.url },
+                        { email: store.email },
+                        { phone: store.phone },
+                    ],
+                },
+            });
+
+            if (existingStore) {
+                let errorMessage = "";
+                if (existingStore.name === store.name) {
+                    errorMessage = "A store with the same name already exists.";
+                } else if (existingStore.url === store.url) {
+                    errorMessage = "A store with the same URL already exists.";
+                } else if (existingStore.email === store.email) {
+                    errorMessage =
+                        "A store with the same email already exists.";
+                } else if (existingStore.phone === store.phone) {
+                    errorMessage =
+                        "A store with the same phone number already exists.";
+                }
+                throw new Error(errorMessage);
+            }
+
+            const { userId, ...storeWithoutUserId } = store;
+
+            const createData = {
+                ...storeWithoutUserId,
+                name: store.name!,
+                email: store.email!,
+                url: store.url!,
+                description: store.description || "",
+                phone: store.phone || "",
+                logo: store.logo || "",
+                cover: store.cover || "",
+                featured: store.featured ?? false,
+                status: store.status ?? "PENDING",
+                defaultShippingService:
+                    store.defaultShippingService || "International Delivery",
+                returnPolicy: store.returnPolicy || "Return in 30 days.",
+                userId: user.id,
+            };
+
+            storeDetails = await db.store.create({ data: createData });
+        }
 
         return storeDetails;
     } catch (error) {
@@ -461,4 +520,102 @@ export const applySeller = async (store: StoreType) => {
         console.log(error);
         throw error;
     }
+};
+
+/**
+ * @function getAllStores
+ * @description - Retrieves all stores from the database.
+ * @permissionLevel Admin Only
+ * @params None
+ * @return {Array} - Array of store objects.
+ * */
+export const getAllStores = async () => {
+    try {
+        // Ensure user is authenticated
+        const user = await currentUser();
+        if (!user) throw new Error("Unauthenticated.");
+
+        // Verify admin permission
+        if (user.privateMetadata.role !== "ADMIN")
+            throw new Error(
+                "Unauthorized Access: Admin Privileges Required to View Stores."
+            );
+
+        // Fetch all stores
+        const stores = await db.store.findMany({
+            include: {
+                user: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return stores;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+/**
+ * @function updateStoreStatus
+ * @description Updates the status of a store (e.g., from PENDING to ACTIVE) and automatically
+ *              promotes the store owner to SELLER role when their store is approved.
+ *              This function is typically used by admins to approve or reject store applications.
+ * @permissionLevel Admin Only
+ * @param {string} storeId - The unique identifier of the store to update
+ * @param {StoreStatus} status - The new status to set for the store (PENDING, ACTIVE, INACTIVE, etc.)
+ * @returns {Promise<StoreStatus>} - The updated status of the store
+ * @throws {Error} - When user is unauthenticated, lacks admin privileges, or store is not found
+ */
+export const updateStoreStatus = async (
+    storeId: string,
+    status: StoreStatus
+) => {
+    // Retrieve the current user
+    const user = await currentUser();
+
+    // Ensure user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Ensure user has admin privileges
+    if (user.privateMetadata.role !== "ADMIN")
+        throw new Error("Only admins can perform this action.");
+
+    // Ensure the user is a seller of the specified store
+    const store = await db.store.findUnique({
+        where: {
+            id: storeId,
+        },
+    });
+
+    // Verify ownership of the store
+    if (!store) {
+        throw new Error("Store not found.");
+    }
+
+    // Retrieve the order to be updated
+    const updatedStore = await db.store.update({
+        where: {
+            id: storeId,
+        },
+        data: {
+            status,
+        },
+    });
+
+    // Update the user role
+    if (store.status === "PENDING" && updatedStore.status === "ACTIVE") {
+        await db.user.update({
+            where: {
+                id: updatedStore.userId,
+            },
+            data: {
+                role: "SELLER",
+            },
+        });
+    }
+
+    return updatedStore.status;
 };
