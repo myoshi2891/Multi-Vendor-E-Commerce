@@ -100,9 +100,10 @@ model Store {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId String
-  user   User   @relation("UserStores", fields: [userId], references: [id])
-
+  userId        String
+  user          User           @relation("UserStores", fields: [userId], references: [id])
+  isDeleted     Boolean        @default(false)
+  deletedAt     DateTime?
   products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
   followers     User[]         @relation("UserFollowingStore")

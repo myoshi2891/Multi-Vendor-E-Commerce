@@ -619,3 +619,41 @@ export const updateStoreStatus = async (
 
     return updatedStore.status;
 };
+
+/**
+ * @function deleteStore
+ * @description Performs a soft delete on a store by marking it as deleted instead of permanently
+ *              removing it from the database. Sets the isDeleted flag to true and records
+ *              the deletion timestamp. This preserves data integrity and allows for potential
+ *              recovery while hiding the store from normal operations.
+ * @permissionLevel Admin Only
+ * @param {string} storeId - The unique identifier of the store to be soft deleted
+ * @returns {Promise<Store>} - The updated store object with deletion flags set
+ * @throws {Error} - When user is unauthenticated, lacks admin privileges, or store ID is not provided
+ */
+export const deleteStore = async (storeId: string) => {
+    try {
+        const user = await currentUser();
+
+        if (!user) throw new Error("Unauthenticated.");
+        if (user.privateMetadata.role !== "ADMIN")
+            throw new Error("Only admins can perform this action.");
+        if (!storeId) throw new Error("Please provide store ID.");
+
+        // Soft delete - mark as deleted instead of removing
+        const response = await db.store.update({
+            where: {
+                id: storeId,
+            },
+            data: {
+                isDeleted: true,
+                deletedAt: new Date(),
+            },
+        });
+
+        return response;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
