@@ -10,7 +10,7 @@ export default function OfferFilter({
 }: {
     offers: OfferTag[];
 }) {
-    const [show, setShow] = useState<boolean>(false);
+    const [show, setShow] = useState<boolean>(true);
     return (
         <div className="pb-4 pt-5">
             {/* Header */}

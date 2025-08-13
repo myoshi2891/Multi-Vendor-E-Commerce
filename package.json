@@ -69,6 +69,8 @@
 		"jodit-react": "^4.1.2",
 		"jsdom": "^26.1.0",
 		"lucide-react": "^0.394.0",
+		"meilisearch": "^0.51.0",
+		"mysql2": "^3.14.3",
 		"next": "^14.2.4",
 		"next-cloudinary": "^6.6.2",
 		"next-share": "^0.27.0",
