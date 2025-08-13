@@ -76,53 +76,62 @@ export const upsertOfferTag = async (offerTag: OfferTag) => {
 };
 
 // Function: getAllOfferTags
-// Description: Retrieves all OfferTags from the database.
+// Description: Retrieves all OfferTags from the database, optionally filtered by store URL. 
+//              OfferTags are ordered by the count of associated products in descending order.
 // Permission Level: Public
-// Returns: Array of OfferTags sorted by updatedAt date in ascending order.
+// Parameters:
+// - storeUrl (optional): URL of the store to filter OfferTags by associated products.
+// Returns: Array of OfferTag objects with product associations, or empty array if none found.
+
 export const getAllOfferTags = async (storeUrl?: string) => {
-	let storeId: string | undefined;
-	if (storeUrl) {
-		// Retrieve store details from the database using the store URL
-		const store = await db.store.findUnique({
-			where: { url: storeUrl },
-		});
-		// If store not found, return an empty array or handle as needed
-		if (!store) {
-			return [];
-		}
-		storeId = store?.id;
-	}
+    try {
+        let storeId: string | undefined;
+        if (storeUrl) {
+            // Retrieve store details from the database using the store URL
+            const store = await db.store.findUnique({
+                where: { url: storeUrl },
+            });
+            // If store not found, return an empty array or handle as needed
+            if (!store) {
+                return [];
+            }
+            storeId = store?.id;
+        }
 
-	// Retrieve all OfferTags from the database
-	const offerTags = await db.offerTag.findMany({
-		where: storeId
-			? {
-					products: {
-						some: {
-							storeId: storeId,
-						},
-					},
-			  }
-			: {},
-		include: {
-			products: {
-				select: {
-					id: true,
-				},
-			},
-		},
-		orderBy: {
-			products: {
-				_count: "desc", // Order by the count of associated products in descending order
-			},
-		},
-	});
+        // Retrieve all OfferTags from the database
+        const offerTags = await db.offerTag.findMany({
+            where: storeId
+                ? {
+                      products: {
+                          some: {
+                              storeId: storeId,
+                          },
+                      },
+                  }
+                : {},
+            include: {
+                products: {
+                    select: {
+                        id: true,
+                    },
+                },
+            },
+            orderBy: {
+                products: {
+                    _count: "desc", // Order by the count of associated products in descending order
+                },
+            },
+        });
 
-	if (offerTags.length === 0) {
-		// ここで初期表示メッセージを出す、何かを作成する、などの対応が可能
-		return [];
-	}
-	return offerTags;
+        if (offerTags.length === 0) {
+            // ここで初期表示メッセージを出す、何かを作成する、などの対応が可能
+            return [];
+        }
+        return offerTags;
+    } catch (error) {
+        console.error("Error retrieving OfferTags", error);
+        throw new Error("Error retrieving OfferTags");
+    }
 };
 
 // Function: getOfferTag

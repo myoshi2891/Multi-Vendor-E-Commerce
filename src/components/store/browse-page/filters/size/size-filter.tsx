@@ -6,9 +6,15 @@ import { Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import SizeLink from "./size-link";
 
-export default function SizeFilter({ queries }: { queries: FiltersQueryType }) {
+export default function SizeFilter({
+    queries,
+    storeUrl,
+}: {
+    queries: FiltersQueryType;
+    storeUrl?: string;
+}) {
     const { category, subCategory, offer, search } = queries;
-    const [show, setShow] = useState<boolean>(false);
+    const [show, setShow] = useState<boolean>(true);
     const [sizes, setSizes] = useState<{ size: string }[]>([]);
     const [total, setTotal] = useState<number>(10);
     const [take, setTake] = useState<number>(10);
@@ -19,7 +25,7 @@ export default function SizeFilter({ queries }: { queries: FiltersQueryType }) {
 
     const handleGetSizes = async () => {
         const sizes = await getFilteredSizes(
-            { category, subCategory, offer },
+            { category, subCategory, offer, storeUrl },
             take
         );
         setSizes(sizes.sizes);
