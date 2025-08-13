@@ -76,15 +76,42 @@ export const upsertCategory = async (category: Category) => {
     }
 };
 
-// Function: getAllCategories
-// Description: Retrieves all categories from the database.
-// Permission Level: Public
-// Returns: Array of categories sorted by updatedAt date in descending order.
 
-export const getAllCategories = async () => {
+// Function: getAllCategories
+// Description: Retrieves all categories from the database, optionally filtered by store URL. If a store URL is provided, only returns categories that have products in that specific store.
+// Permission Level: Public
+// Parameters:
+//   - storeUrl (optional): URL of the store to filter categories by. If provided, only categories with products in this store will be returned.
+// Returns: Array of categories with their subcategories, sorted by updatedAt date in descending order. Returns empty array if store URL is provided but store is not found.
+
+export const getAllCategories = async (storeUrl?: string) => {
     try {
+        let storeId: string | undefined;
+
+        if (storeUrl) {
+            // Retrieve the storeId based on the storeUrl
+            const store = await db.store.findUnique({
+                where: { url: storeUrl },
+            });
+
+            // if no store is found, return an empty array or handle as needed
+            if (!store) {
+                return [];
+            }
+
+            storeId = store.id;
+        }
         // Retrieve all categories from the database
         const categories = await db.category.findMany({
+            where: storeId
+                ? {
+                      products: {
+                          some: {
+                              storeId,
+                          },
+                      },
+                  }
+                : {},
             include: { subCategories: true },
             orderBy: { updatedAt: "desc" },
         });
