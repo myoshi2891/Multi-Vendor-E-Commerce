@@ -1,62 +1,67 @@
 import { db } from "@/lib/db";
-import client from "@/lib/elastic-search";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+/**
+ * MySQL FULLTEXT 検索対応版
+ */
+export async function POST(req: Request) {
     try {
-        // インデックスが存在するか確認
-        const indexExists = await client.indices.exists({ index: "products" });
+        const { query } = await req.json();
 
-        // 存在する場合のみ削除
-        if (indexExists) {
-            await client.indices.delete({ index: "products" });
+        if (!query || typeof query !== "string") {
+            return NextResponse.json(
+                { error: "Invalid query" },
+                { status: 400 }
+            );
         }
 
-        // 商品とバリアントを取得
+        // FULLTEXT 検索（MATCH ... AGAINST）
         const products = await db.product.findMany({
-            include: {
+            where: {
+                OR: [
+                    { name: { search: query } },
+                    {
+                        variants: {
+                            some: {
+                                OR: [
+                                    { variantName: { search: query } },
+                                    { keywords: { search: query } },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            },
+            select: {
+                slug: true,
+                name: true,
                 variants: {
-                    include: {
+                    take: 3, // 各商品最大3バリアント
+                    select: {
+                        slug: true,
+                        variantName: true,
                         images: {
                             take: 1,
+                            select: { url: true },
                         },
                     },
                 },
             },
+            take: 50, // 最大50件
         });
 
-        // Elasticsearch用のバルクリクエストボディを作成
-        const body = products.flatMap((product) =>
-            product.variants.flatMap((variant) => [
-                {
-                    index: { _index: "products", _id: variant.id },
-                },
-                {
-                    name: `${product.name} ・ ${variant.variantName}`,
-                    link: `/product/${product.slug}/${variant.slug}`,
-                    image: variant.images[0]?.url ?? "",
-                },
-            ])
+        // フロント用に整形
+        const results = products.flatMap((product) =>
+            product.variants.map((variant) => ({
+                name: `${product.name} ・ ${variant.variantName}`,
+                link: `/product/${product.slug}/${variant.slug}`,
+                image: variant.images[0]?.url ?? "",
+            }))
         );
 
-        // バルクインデックス処理
-        const bulkResponse = await client.bulk({ refresh: true, body });
-
-        if (bulkResponse.errors) {
-            return NextResponse.json(
-                { error: "Failed to index products and variants" },
-                { status: 500 }
-            );
-        }
-
-        return NextResponse.json(
-            { message: "Products indexed successfully" },
-            { status: 200 }
-        );
+        return NextResponse.json({ results }, { status: 200 });
     } catch (error: any) {
-        console.error("Elasticsearch indexing error:", error);
-        return new NextResponse(JSON.stringify({ error: error.message }), {
-            status: 500,
-        });
+        console.error("MySQL search error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

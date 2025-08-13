@@ -161,6 +161,7 @@ model Product {
   @@index([categoryId])
   @@index([subCategoryId])
   @@index([offerTagId])
+  @@fulltext([name, brand])
 }
 
 model ProductVariant {
@@ -189,6 +190,7 @@ model ProductVariant {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([productId])
+  @@fulltext([variantName, keywords])
 }
 
 model Size {
