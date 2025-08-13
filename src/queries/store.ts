@@ -657,3 +657,42 @@ export const deleteStore = async (storeId: string) => {
         throw error;
     }
 };
+
+/**
+ * @function getStorePageDetails
+ * @description Retrieves essential store information for displaying on a public store page.
+ *              Fetches only active stores and returns basic details including store identity,
+ *              branding assets, and review metrics for public consumption.
+ * @permissionLevel Public (no authentication required)
+ * @param {string} storeUrl - The unique URL identifier of the store to retrieve details for
+ * @returns {Promise<Object>} - Store object containing id, name, description, logo, cover, averageRating, and numReviews
+ * @throws {Error} - When store URL is not provided or store with the specified URL is not found or not active
+ */
+export const getStorePageDetails = async (storeUrl: string) => {
+    try {
+        // Fetch store details and associated data
+        const store = await db.store.findFirst({
+            where: {
+                url: storeUrl,
+                status: "ACTIVE",
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                logo: true,
+                cover: true,
+                averageRating: true,
+                numReviews: true,
+            },
+        });
+
+        // Handle case where store is not found
+        if (!store) throw new Error(`Store with URL ${storeUrl} not found.`);
+
+        return store;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
