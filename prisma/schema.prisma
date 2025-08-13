@@ -87,6 +87,7 @@ model Store {
   cover                               String
   status                              StoreStatus @default(PENDING)
   averageRating                       Float       @default(0)
+  numReviews                          Int         @default(0)
   featured                            Boolean     @default(false)
   returnPolicy                        String      @default("Return in 30 days.")
   defaultShippingService              String      @default("International Delivery")
