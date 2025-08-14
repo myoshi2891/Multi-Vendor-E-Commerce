@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
@@ -172,7 +173,7 @@ model ProductVariant {
   slug               String  @unique
   isSale             Boolean @default(false)
   saleEndDate        String?
-  keywords           String
+  keywords           String?
   sku                String
   sales              Int     @default(0)
   weight             Float
@@ -489,7 +490,6 @@ enum PaymentMethod {
   PayPal
   Stripe
 }
-
 model Order {
   id           String @id @default(uuid())
   shippingFees Float  @default(0) @map("shippingFeesTotal")
@@ -516,7 +516,6 @@ model Order {
   @@index([shippingAddressId])
   @@index([userId])
 }
-
 model OrderGroup {
   id     String      @id @default(uuid())
   status OrderStatus @default(Pending)

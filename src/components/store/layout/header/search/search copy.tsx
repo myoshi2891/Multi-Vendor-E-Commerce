@@ -2,7 +2,7 @@
 import { SearchResult } from "@/lib/types";
 import { SearchIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import SearchSuggestions from "./suggestions";
 
 export default function Search() {
@@ -17,17 +17,18 @@ export default function Search() {
     );
     const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
 
-    // 直前のリクエストをキャンセルするためのコントローラ
-    const abortRef = useRef<AbortController | null>(null);
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: any) => {
         e.preventDefault();
         if (pathname !== "/browse") {
-            push(`/browse?search=${encodeURIComponent(searchQuery)}`);
+            // We are not on the browse page, so we push to the browse page with the search query
+            push(`/browse?search=${searchQuery}`);
         } else {
+            // We are on the browse page, so we replace the current browse page with the search query
             if (!searchQuery) {
+                // If the search query is empty, we remove the search query from the search parameters
                 params.delete("search");
             } else {
+                // We update the search query in the search parameters
                 params.set("search", searchQuery);
             }
             replace(`${pathname}?${params.toString()}`);
@@ -38,57 +39,19 @@ export default function Search() {
         const value = e.target.value;
         setSearchQuery(value);
 
-        // ★ /browse でもサジェストしたいので早期 return を削除
-        const trimmed = value.trim();
-        if (trimmed.length < 2) {
-            setSuggestions([]);
-            // 進行中のリクエストがあれば止める
-            abortRef.current?.abort();
-            return;
-        }
+        if (pathname === "/browse") return;
 
-        // 直前のリクエストをキャンセル
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        try {
-            const res = await fetch(
-                `/api/search-products?search=${encodeURIComponent(trimmed)}`,
-                { signal: controller.signal }
-            );
-
-            if (!res.ok) {
-                // API が 4xx/5xx のときは空で更新（コンソールだけ残す）
-                console.error("Search API failed:", res.status, res.statusText);
-                setSuggestions([]);
+        if (value.length >= 2) {
+            try {
+                const res = await fetch(`/api/search-products?search=${value}`);
+                const data = await res.json();
+                setSuggestions(data);
+            } catch (error) {
+                console.error("Failed to fetch search results:", error);
                 return;
             }
-
-            const data = await res.json();
-
-            // // 配列 or {results: [...]}/{items: [...]} のどれでも拾えるようにする
-            // const items: SearchResult[] = Array.isArray(data)
-            //     ? data
-            //     : (data?.results ?? data?.items ?? []);
-
-            // // setSuggestions(Array.isArray(items) ? items : []);
-            // setSuggestions(data.products || []);
-            const items: SearchResult[] = Array.isArray(data)
-                ? data
-                : (data?.products ?? data?.results ?? data?.items ?? []);
-
-            // 必須キーが揃っているものだけ残す
-            const validItems = items.filter(
-                (item) => item.link && item.name && item.image
-            );
-
-            setSuggestions(validItems);
-        } catch (err: any) {
-            if (err?.name !== "AbortError") {
-                console.error("Failed to fetch search results:", err);
-                setSuggestions([]);
-            }
+        } else {
+            setSuggestions([]);
         }
     };
 
