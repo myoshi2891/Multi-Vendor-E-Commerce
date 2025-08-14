@@ -162,8 +162,9 @@ export const upsertStore = async (store: Partial<Store>) => {
 
 export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
     try {
-        // Ensure store data is provided
-        if (!storeUrl) throw new Error("Please provide store URL.");
+        // Ensure store data is provided and not just whitespace
+        if (!storeUrl || !storeUrl.trim())
+            throw new Error("Please provide store URL.");
 
         // Retrieve store details from the database using the store URL
         const store = await db.store.findUnique({
