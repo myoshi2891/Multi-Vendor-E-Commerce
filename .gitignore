@@ -40,3 +40,4 @@ next-env.d.ts
 
 meilisearch
 tsconfig.tsbuildinfo
+package-lock.json
