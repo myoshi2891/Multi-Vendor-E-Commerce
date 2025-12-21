@@ -121,7 +121,17 @@ E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
 
 - Behavior: upserts store/category/product/variant, resets sizes/images/colors
   so the E2E product always has exactly one size (auto-select in UI).
-- Test defaults read from constants; override via `E2E_*` env vars if needed.
+- Parallel isolation: seed identifiers are namespaced per project + worker
+  (example: `e2e-store-chromium-w0`).
+- Seed targeting:
+  - Default: seeds all Playwright projects and workers (based on config).
+  - Override project list: `E2E_SEED_PROJECTS="chromium,firefox"` (comma list)
+  - Override worker count: `E2E_SEED_WORKERS=2`
+  - Seed a single target: `TEST_PROJECT_NAME=chromium TEST_WORKER_INDEX=0`
+- Tests derive per-worker data via `testInfo.project.name` and
+  `testInfo.workerIndex`. Override defaults via `E2E_*` env vars if needed.
+- If you cannot seed per worker/project, run a single project with a single
+  worker (`--project=chromium --workers=1`) to avoid collisions.
 
 ## Secret Handling Rules (Mandatory)
 - Never print or log secret values (env vars or `.env` contents) in chat or logs.

@@ -1,21 +1,23 @@
 import { expect, test } from "@playwright/test";
-import { E2E_SEED } from "./seed/constants";
+import { buildE2ESeed } from "./seed/constants";
 
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
-const productSlug = process.env.E2E_PRODUCT_SLUG || E2E_SEED.product.slug;
-const variantSlug = process.env.E2E_VARIANT_SLUG || E2E_SEED.variant.slug;
-const productName = process.env.E2E_PRODUCT_NAME || E2E_SEED.product.name;
-const unitPrice = Number(
-  process.env.E2E_UNIT_PRICE || E2E_SEED.size.price
-);
+test("guest can add item to cart and see totals", async ({ page }, testInfo) => {
+  const seed = buildE2ESeed({
+    workerIndex: testInfo.workerIndex,
+    projectName: testInfo.project.name,
+  });
+  const productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
+  const variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
+  const productName = process.env.E2E_PRODUCT_NAME || seed.product.name;
+  const unitPrice = Number(process.env.E2E_UNIT_PRICE || seed.size.price);
 
-test("guest can add item to cart and see totals", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
 
   await page.context().addCookies([
     {
       name: "userCountry",
-      value: JSON.stringify(E2E_SEED.country),
+      value: JSON.stringify(seed.country),
       url: baseURL,
     },
   ]);
