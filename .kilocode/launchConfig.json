@@ -1,0 +1,10 @@
+{
+  "_comment": "TODO: adjust this file to match the project setup.",
+  "version": 1,
+  "project": "multi-vendor-ecommerce",
+  "paths": {
+    "specs": "specs",
+    "rules": ".kilocode/rules",
+    "workflows": ".kilocode/workflows"
+  }
+}
