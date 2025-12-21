@@ -1,22 +1,29 @@
 # Spec: <feature-name>
 
 ## Background / Purpose
-TODO
+Describe the current behavior and why the change is needed. Reference related
+routes or modules (for example: `src/app/(store)` or `src/queries`).
 
 ## User Stories
-- TODO
+- As a <role>, I want <capability> so that <outcome>.
+- As a <role>, I want <capability> so that <outcome>.
 
 ## Requirements
-- TODO
+- The system must ...
+- The system must ...
 
 ## Non-Requirements
-- TODO
+- The system will not ...
+- The system will not ...
 
 ## Constraints
-- TODO
+- Must reuse existing APIs where possible.
+- Must not change the data model unless explicitly required.
 
 ## Acceptance Criteria
-- TODO
+- Given <context>, when <action>, then <result>.
+- Given <context>, when <action>, then <result>.
 
 ## Risks / Open Questions
-- TODO
+- Risk: <description and mitigation>.
+- Question: <decision needed>.

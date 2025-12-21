@@ -9,7 +9,8 @@
 - Create a new folder under `specs/` for every new feature.
 - Start from templates in `.specify/templates/`.
 - Keep rules minimal and update only when necessary.
-- TODO: confirm numbering and naming conventions with the team.
+- Use a 3-digit prefix and kebab-case name (example: `002-search-autocomplete`).
+- Do not reuse numbers; keep folder names stable for traceability.
 
 ## Safety
 This setup adds documentation and templates only. It does not modify existing

@@ -1,20 +1,17 @@
 # Tasks: 001 Sample Feature (Example)
 
 ## Task Breakdown
-- Example: Define requirements and acceptance criteria.
-- Example: Implement the server action.
-- Example: Add UI changes.
-- Example: Add tests.
-TODO: replace with real tasks.
+- Example: Define autocomplete behavior and error states.
+- Example: Implement `SearchAutocomplete` component and debounce helper.
+- Example: Wire the component into the browse page.
+- Example: Add component/unit tests and update docs.
 
 ## Dependencies
-- Example: None.
-TODO: list real dependencies.
+- Example: `POST /api/index-products` available (already in repo).
+- Example: UI review for dropdown styling.
 
 ## Estimates
-- Example: 1-2 days.
-TODO: provide real estimates.
+- Example: 2-3 days including tests and review.
 
 ## Definition of Done
-- Example: Spec approved, tests passing, docs updated.
-TODO: replace with real DoD.
+- Example: Spec/plan/tasks approved, tests passing, and docs updated.

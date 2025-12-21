@@ -1,29 +1,29 @@
 # Plan: 001 Sample Feature (Example)
 
 ## Architecture / Approach
-Example: Keep existing modules and add a new server action.
-TODO: replace with the real approach.
+Example: Add a client-side autocomplete component that calls
+`POST /api/index-products` and renders a dropdown list of results.
 
 ## Scope of Change
-Example: Add one query module and update one page.
-TODO: list actual file changes.
+Example:
+- `src/app/(store)/browse/page.tsx` (wire the component)
+- `src/components/store/search/search-autocomplete.tsx` (new component)
+- `src/utils/debounce.ts` (shared helper)
 
 ## Data Model
 Example: No schema changes.
-TODO: define any schema changes.
 
 ## API / Interfaces
-Example: Add a POST handler for X.
-TODO: list actual API changes.
+Example: Reuse `POST /api/index-products` for suggestions; no new endpoints.
 
 ## Migration / Backfill
 Example: Not required.
-TODO: define if needed.
 
 ## Testing Plan
-Example: Unit tests for validation and one E2E scenario.
-TODO: list actual tests.
+Example:
+- Component test for suggestion rendering and keyboard navigation.
+- Unit test for debounce helper.
+- Optional E2E smoke: suggestions appear during typing.
 
 ## Rollout / Release
-Example: Behind a feature flag.
-TODO: define rollout plan.
+Example: Ship in a small PR; monitor logs and roll back by reverting the UI change.

@@ -1,13 +1,17 @@
 # Tasks: <feature-name>
 
 ## Task Breakdown
-- TODO
+- Task 1: ...
+- Task 2: ...
 
 ## Dependencies
-- TODO
+- Dependency 1: ...
+- Dependency 2: ...
 
 ## Estimates
-- TODO
+- Total estimate: <time>
 
 ## Definition of Done
-- TODO
+- Spec/plan/tasks approved.
+- Tests passing.
+- Docs updated.

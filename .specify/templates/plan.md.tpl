@@ -1,22 +1,23 @@
 # Plan: <feature-name>
 
 ## Architecture / Approach
-TODO
+Describe how the change fits the existing architecture. Note the primary
+modules and data flow.
 
 ## Scope of Change
-TODO
+List specific files or directories to be touched.
 
 ## Data Model
-TODO
+Describe any schema changes, migrations, or new entities.
 
 ## API / Interfaces
-TODO
+List new or changed API routes, server actions, or UI contracts.
 
 ## Migration / Backfill
-TODO
+Describe any data backfill steps or state transitions required.
 
 ## Testing Plan
-TODO
+List unit, component, integration, and E2E coverage required.
 
 ## Rollout / Release
-TODO
+Describe rollout steps, monitoring, and rollback strategy.
