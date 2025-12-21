@@ -113,10 +113,12 @@
 - Seed script: `tests/e2e/seed/seed-e2e.ts`
 - Seed data constants: `tests/e2e/seed/constants.ts`
 - Run example:
+
 ```
 E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
   npx ts-node tests/e2e/seed/seed-e2e.ts
 ```
+
 - Behavior: upserts store/category/product/variant, resets sizes/images/colors
   so the E2E product always has exactly one size (auto-select in UI).
 - Test defaults read from constants; override via `E2E_*` env vars if needed.
