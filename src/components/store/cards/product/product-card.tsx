@@ -11,6 +11,14 @@ import ProductPrice from "../../product-page/product-info/product-price";
 import { addToWishlist } from "@/queries/user";
 import toast from "react-hot-toast";
 
+/**
+ * Render a product card that displays images, title, rating, price, variant selection, and action buttons.
+ *
+ * The card shows the product's current variant (initially the first variant), allows changing the variant via a hover-revealed variant switcher, links to the product detail page, and provides "Add to cart" and wishlist actions. Clicking the wishlist button attempts to add the current variant to the wishlist and displays a success or error toast.
+ *
+ * @param product - The product to display, including its variants, images, pricing, rating, sales, slug, and id
+ * @returns A React element representing the interactive product card
+ */
 export default function ProductCard({ product }: { product: ProductType }) {
     const { name, slug, rating, sales, variantImages, variants, id } = product;
     const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
