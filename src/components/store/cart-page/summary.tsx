@@ -71,14 +71,17 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
                 <h2 className="truncate break-normal">Total</h2>
                 <h3 className="w-0 min-w-0 flex-1 text-right">
                     <span className="px-0.5 text-black">
-                        <div className="inline-block break-all text-lg text-black">
+                        <div
+                            className="inline-block break-all text-lg text-black"
+                            data-testid="cart-total"
+                        >
                             ${total.toFixed(2)}
                         </div>
                     </span>
                 </h3>
             </div>
             <div className="my-2.5">
-                <Button onClick={() => handleSaveCart()}>
+                <Button onClick={() => handleSaveCart()} data-testid="checkout">
                     {loading ? (
                         <PulseLoader size={5} color="#fff" />
                     ) : (

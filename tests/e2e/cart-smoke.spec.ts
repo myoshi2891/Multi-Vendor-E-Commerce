@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { E2E_SEED } from "./seed/constants";
 
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
-const productSlug = process.env.E2E_PRODUCT_SLUG || "e2e-test-product";
-const variantSlug = process.env.E2E_VARIANT_SLUG || "e2e-variant";
-const productName = process.env.E2E_PRODUCT_NAME || "E2E Test Product";
-const unitPrice = Number(process.env.E2E_UNIT_PRICE || "99");
+const productSlug = process.env.E2E_PRODUCT_SLUG || E2E_SEED.product.slug;
+const variantSlug = process.env.E2E_VARIANT_SLUG || E2E_SEED.variant.slug;
+const productName = process.env.E2E_PRODUCT_NAME || E2E_SEED.product.name;
+const unitPrice = Number(
+  process.env.E2E_UNIT_PRICE || E2E_SEED.size.price
+);
 
 test("guest can add item to cart and see totals", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
@@ -12,12 +15,7 @@ test("guest can add item to cart and see totals", async ({ page }) => {
   await page.context().addCookies([
     {
       name: "userCountry",
-      value: JSON.stringify({
-        name: "United States",
-        code: "US",
-        city: "",
-        region: "",
-      }),
+      value: JSON.stringify(E2E_SEED.country),
       url: baseURL,
     },
   ]);
