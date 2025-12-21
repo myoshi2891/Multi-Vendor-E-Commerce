@@ -14,6 +14,12 @@ const prisma = new PrismaClient({
   },
 });
 
+/**
+ * Creates or updates a complete end-to-end seed dataset (country, user, store, category, subCategory, product, productVariant)
+ * and recreates associated variant data (sizes, variant images, colors).
+ *
+ * @returns An object containing the upserted or created entities: `country`, `user`, `store`, `category`, `subCategory`, `product`, and `variant`.
+ */
 async function main() {
   const country = await prisma.country.upsert({
     where: { code: E2E_SEED.country.code },
