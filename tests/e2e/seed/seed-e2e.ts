@@ -35,6 +35,41 @@ const parseListEnv = (value?: string) =>
         .map((entry) => entry.trim())
         .filter(Boolean);
 
+const normalizeWorkerCount = (value: unknown, fallback: number) => {
+    const normalizeNumber = (count: number) => {
+        if (!Number.isFinite(count)) {
+            return fallback;
+        }
+        const normalized = Math.floor(count);
+        return normalized >= 1 ? normalized : fallback;
+    };
+
+    if (typeof value === "number") {
+        return normalizeNumber(value);
+    }
+
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return fallback;
+        }
+        if (trimmed.endsWith("%")) {
+            const percentage = Number.parseFloat(trimmed.slice(0, -1));
+            if (!Number.isFinite(percentage)) {
+                return fallback;
+            }
+            const computed = Math.floor(
+                (percentage / 100) * os.cpus().length
+            );
+            return computed >= 1 ? computed : fallback;
+        }
+        const parsed = Number.parseInt(trimmed, 10);
+        return normalizeNumber(parsed);
+    }
+
+    return fallback;
+};
+
 const resolveSeedTargets = (): SeedTarget[] => {
     const explicitWorkerIndex = parseIntEnv(
         process.env.TEST_WORKER_INDEX || process.env.E2E_WORKER_INDEX
@@ -64,8 +99,10 @@ const resolveSeedTargets = (): SeedTarget[] => {
     const fallbackProjectNames =
         resolvedProjectNames.length > 0 ? resolvedProjectNames : [undefined];
 
-    const defaultWorkerCount =
-        parseIntEnv(process.env.PLAYWRIGHT_WORKERS) || os.cpus().length;
+    const defaultWorkerCount = normalizeWorkerCount(
+        process.env.PLAYWRIGHT_WORKERS,
+        os.cpus().length
+    );
 
     return fallbackProjectNames.flatMap((projectName) => {
         const projectConfig = configProjects.find(
@@ -74,11 +111,12 @@ const resolveSeedTargets = (): SeedTarget[] => {
         if (explicitWorkerIndex !== undefined) {
             return [{ projectName, workerIndex: explicitWorkerIndex }];
         }
-        const workerCount =
+        const workerCount = normalizeWorkerCount(
             workerOverride ??
-            projectConfig?.workers ??
-            playwrightConfig.workers ??
-            defaultWorkerCount;
+                projectConfig?.workers ??
+                playwrightConfig.workers,
+            defaultWorkerCount
+        );
         return Array.from({ length: workerCount }, (_, workerIndex) => ({
             projectName,
             workerIndex,
@@ -261,16 +299,6 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
 
     return { country, user, store, category, subCategory, product, variant };
 };
-
-async function main() {
-    const seedTargets = resolveSeedTargets();
-
-    for (const target of seedTargets) {
-        const seed = buildE2ESeed(target);
-        await seedOnce(seed);
-    }
-    console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
-}
 
 async function main() {
     const seedTargets = resolveSeedTargets();
