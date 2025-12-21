@@ -3,7 +3,7 @@
 ## ドキュメントガイド
 - 本レポートは特定日付時点の進捗サマリ
 - 関連: `README.md`, `TESTING_DESIGN.md`
-- 次回更新時は日付・範囲・コミット一覧を最新に差し替える
+- 追記は日付付きで末尾に追加する
 
 ## 範囲
 - 基準コミット: `bc45c4f89da632eef8084ced9ddc33220ba1b63c`
@@ -51,3 +51,9 @@
 ## 付記
 - シークレットは表示・コミットしていない
 - テスト生成物はGit管理対象外とする方針
+
+## 追記 (2025-12-21)
+- KiloCode/Spec Kit の導入（`.kilocode/`, `.specify/`, `specs/` 雛形追加）
+- 仕様書テンプレ整備とサンプル仕様の具体化（`specs/001-sample-feature`）
+- 運用ルールと品質基準の明文化（`README_kilocode_speckit.md`, `constitution.md`）
+- `.gitignore` に KiloCode/Spec Kit のキャッシュ除外を追加
