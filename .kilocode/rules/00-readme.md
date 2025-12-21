@@ -9,4 +9,10 @@ to every task unless explicitly superseded.
 - Prefer "must/never" language.
 - Scope rules to the smallest area possible.
 - Add a short rationale and an owner.
-- TODO: finalize rule format with the team.
+- Rule format:
+  - Title
+  - Scope (paths/areas)
+  - Rule (must/never)
+  - Rationale
+  - Examples (allowed/blocked)
+  - Owner + Last updated

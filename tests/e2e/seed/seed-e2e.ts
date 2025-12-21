@@ -58,9 +58,7 @@ const normalizeWorkerCount = (value: unknown, fallback: number) => {
             if (!Number.isFinite(percentage)) {
                 return fallback;
             }
-            const computed = Math.floor(
-                (percentage / 100) * os.cpus().length
-            );
+            const computed = Math.floor((percentage / 100) * os.cpus().length);
             return computed >= 1 ? computed : fallback;
         }
         const parsed = Number.parseInt(trimmed, 10);
@@ -314,27 +312,3 @@ async function main() {
     }
     console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
 }
-
-/**
- * Seeds the database once for each computed seed target.
- *
- * Iterates the targets produced by resolveSeedTargets, builds a seed for each target with buildE2ESeed, executes seedOnce for each seed, and logs completion with the number of targets processed.
- */
-async function main() {
-    const seedTargets = resolveSeedTargets();
-
-    for (const target of seedTargets) {
-        const seed = buildE2ESeed(target);
-        await seedOnce(seed);
-    }
-    console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
-}
-
-main()
-    .catch((error) => {
-        console.error("E2E seed failed:", error);
-        process.exitCode = 1;
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });

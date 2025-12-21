@@ -3,7 +3,7 @@
 ## Document Guide
 - Purpose: define testing strategy and directory layout for the repo.
 - Related docs: `QA_TEST_PERSPECTIVES.md`, `README.md`.
-- TODO: align CI commands and environments with team standards.
+- CI suggestion: run `bun run lint`, `bun run test`, `bun run build`, then `bunx playwright test --project=chromium --workers=1` with `E2E_DATABASE_URL` set; use `.env.test` for integration suites.
 
 ## Goals
 - Build a layered test pyramid for a Next.js 14 multi-vendor commerce app.
