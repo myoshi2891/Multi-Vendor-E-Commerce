@@ -312,3 +312,12 @@ async function main() {
     }
     console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
 }
+
+main()
+    .catch((error) => {
+        console.error("E2E seed failed:", error);
+        process.exitCode = 1;
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
