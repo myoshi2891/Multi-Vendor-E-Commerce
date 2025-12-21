@@ -116,7 +116,7 @@
 
 ```
 E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
-  npx ts-node tests/e2e/seed/seed-e2e.ts
+  bun run seed:e2e
 ```
 
 - Behavior: upserts store/category/product/variant, resets sizes/images/colors
