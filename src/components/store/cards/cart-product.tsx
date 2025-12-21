@@ -185,6 +185,7 @@ const CartProduct: FC<Props> = ({
                     'bg-red-100': stock === 0,
                 }
             )}
+            data-testid={`cart-item-${unique_id}`}
         >
             <div className="py-4">
                 <div className="relative flex self-start">
@@ -241,6 +242,7 @@ const CartProduct: FC<Props> = ({
                             <Link
                                 href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
                                 className="inline-block truncate text-sm"
+                                data-testid="cart-item-name"
                             >
                                 {name} ・ {variantName}
                             </Link>
@@ -298,6 +300,7 @@ const CartProduct: FC<Props> = ({
                                                 'remove'
                                             )
                                         }
+                                        data-testid="cart-qty-decrease"
                                     >
                                         <Minus className="stroke-[#555} w-3" />
                                     </div>
@@ -308,12 +311,14 @@ const CartProduct: FC<Props> = ({
                                         min={1}
                                         max={stock}
                                         className="m-1 h-6 w-[32px] border-none bg-transparent text-center font-bold leading-6 tracking-normal text-gray-900 outline-none"
+                                        data-testid="cart-item-qty"
                                     />
                                     <div
                                         className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
                                         onClick={() =>
                                             updateProductQuantityHandler('add')
                                         }
+                                        data-testid="cart-qty-increase"
                                     >
                                         <Plus className="stroke-[#555} w-3" />
                                     </div>
