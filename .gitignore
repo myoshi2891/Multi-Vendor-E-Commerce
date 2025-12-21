@@ -45,4 +45,5 @@ next-env.d.ts
 meilisearch
 tsconfig.tsbuildinfo
 package-lock.json
-.vscode
+.vscode/*
+!.vscode/settings.json

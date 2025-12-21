@@ -1,209 +1,292 @@
 import { PrismaClient } from "@prisma/client";
-import { E2E_SEED } from "./constants";
+import os from "os";
+import playwrightConfig from "../../../playwright.config";
+import { buildE2ESeed } from "./constants";
 
 const databaseUrl =
-  process.env.E2E_DATABASE_URL || process.env.DATABASE_URL || "";
+    process.env.E2E_DATABASE_URL || process.env.DATABASE_URL || "";
 
 if (!databaseUrl) {
-  throw new Error("E2E_DATABASE_URL or DATABASE_URL must be set.");
+    throw new Error("E2E_DATABASE_URL or DATABASE_URL must be set.");
 }
 
 const prisma = new PrismaClient({
-  datasources: {
-    db: { url: databaseUrl },
-  },
+    datasources: {
+        db: { url: databaseUrl },
+    },
 });
 
-/**
- * Creates or updates a complete end-to-end seed dataset (country, user, store, category, subCategory, product, productVariant)
- * and recreates associated variant data (sizes, variant images, colors).
- *
- * @returns An object containing the upserted or created entities: `country`, `user`, `store`, `category`, `subCategory`, `product`, and `variant`.
- */
+type SeedTarget = {
+    workerIndex: number;
+    projectName?: string;
+};
+
+const parseIntEnv = (value?: string) => {
+    if (!value) {
+        return undefined;
+    }
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const parseListEnv = (value?: string) =>
+    value
+        ?.split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+
+const resolveSeedTargets = (): SeedTarget[] => {
+    const explicitWorkerIndex = parseIntEnv(
+        process.env.TEST_WORKER_INDEX || process.env.E2E_WORKER_INDEX
+    );
+    const explicitProjectName =
+        process.env.TEST_PROJECT_NAME || process.env.E2E_PROJECT_NAME;
+    const projectOverrides = parseListEnv(process.env.E2E_SEED_PROJECTS);
+    const workerOverride = parseIntEnv(
+        process.env.E2E_SEED_WORKERS || process.env.TEST_WORKER_COUNT
+    );
+
+    const configProjects = Array.isArray(playwrightConfig.projects)
+        ? playwrightConfig.projects
+        : [];
+    const projectNames = projectOverrides?.length
+        ? projectOverrides
+        : explicitProjectName
+          ? [explicitProjectName]
+          : [];
+    const resolvedProjectNames =
+        projectNames.length > 0
+            ? projectNames
+            : configProjects
+                  .map((project) => project.name)
+                  .filter((name): name is string => Boolean(name));
+
+    const fallbackProjectNames =
+        resolvedProjectNames.length > 0 ? resolvedProjectNames : [undefined];
+
+    const defaultWorkerCount =
+        parseIntEnv(process.env.PLAYWRIGHT_WORKERS) || os.cpus().length;
+
+    return fallbackProjectNames.flatMap((projectName) => {
+        const projectConfig = configProjects.find(
+            (project) => project.name === projectName
+        );
+        if (explicitWorkerIndex !== undefined) {
+            return [{ projectName, workerIndex: explicitWorkerIndex }];
+        }
+        const workerCount =
+            workerOverride ??
+            projectConfig?.workers ??
+            playwrightConfig.workers ??
+            defaultWorkerCount;
+        return Array.from({ length: workerCount }, (_, workerIndex) => ({
+            projectName,
+            workerIndex,
+        }));
+    });
+};
+
+const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
+    const country = await prisma.country.upsert({
+        where: { code: seed.country.code },
+        create: {
+            name: seed.country.name,
+            code: seed.country.code,
+        },
+        update: {
+            name: seed.country.name,
+        },
+    });
+
+    const user = await prisma.user.upsert({
+        where: { email: seed.user.email },
+        create: {
+            name: seed.user.name,
+            email: seed.user.email,
+            picture: seed.user.picture,
+        },
+        update: {
+            name: seed.user.name,
+            picture: seed.user.picture,
+        },
+    });
+
+    const store = await prisma.store.upsert({
+        where: { url: seed.store.url },
+        create: {
+            name: seed.store.name,
+            description: seed.store.description,
+            email: seed.store.email,
+            phone: seed.store.phone,
+            url: seed.store.url,
+            logo: seed.store.logo,
+            cover: seed.store.cover,
+            status: "ACTIVE",
+            defaultShippingService: "International Delivery",
+            defaultShippingFeePerItem: 0,
+            defaultShippingFeeForAdditionalItem: 0,
+            defaultShippingFeePerKg: 0,
+            defaultShippingFeeFixed: 0,
+            defaultDeliveryTimeMin: 3,
+            defaultDeliveryTimeMax: 7,
+            returnPolicy: "Return in 30 days.",
+            userId: user.id,
+        },
+        update: {
+            name: seed.store.name,
+            description: seed.store.description,
+            email: seed.store.email,
+            phone: seed.store.phone,
+            logo: seed.store.logo,
+            cover: seed.store.cover,
+            status: "ACTIVE",
+            defaultShippingService: "International Delivery",
+            defaultShippingFeePerItem: 0,
+            defaultShippingFeeForAdditionalItem: 0,
+            defaultShippingFeePerKg: 0,
+            defaultShippingFeeFixed: 0,
+            defaultDeliveryTimeMin: 3,
+            defaultDeliveryTimeMax: 7,
+            returnPolicy: "Return in 30 days.",
+            userId: user.id,
+        },
+    });
+
+    const category = await prisma.category.upsert({
+        where: { url: seed.category.url },
+        create: {
+            name: seed.category.name,
+            url: seed.category.url,
+            image: seed.category.image,
+            featured: false,
+        },
+        update: {
+            name: seed.category.name,
+            image: seed.category.image,
+            featured: false,
+        },
+    });
+
+    const subCategory = await prisma.subCategory.upsert({
+        where: { url: seed.subCategory.url },
+        create: {
+            name: seed.subCategory.name,
+            url: seed.subCategory.url,
+            image: seed.subCategory.image,
+            featured: false,
+            categoryId: category.id,
+        },
+        update: {
+            name: seed.subCategory.name,
+            image: seed.subCategory.image,
+            featured: false,
+            categoryId: category.id,
+        },
+    });
+
+    const product = await prisma.product.upsert({
+        where: { slug: seed.product.slug },
+        create: {
+            name: seed.product.name,
+            description: seed.product.description,
+            slug: seed.product.slug,
+            brand: seed.product.brand,
+            shippingFeeMethod: "ITEM",
+            storeId: store.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        },
+        update: {
+            name: seed.product.name,
+            description: seed.product.description,
+            brand: seed.product.brand,
+            shippingFeeMethod: "ITEM",
+            storeId: store.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        },
+    });
+
+    const variant = await prisma.productVariant.upsert({
+        where: { slug: seed.variant.slug },
+        create: {
+            variantName: seed.variant.name,
+            variantDescription: seed.variant.description,
+            variantImage: seed.variant.image,
+            slug: seed.variant.slug,
+            sku: seed.variant.sku,
+            weight: seed.variant.weight,
+            productId: product.id,
+        },
+        update: {
+            variantName: seed.variant.name,
+            variantDescription: seed.variant.description,
+            variantImage: seed.variant.image,
+            sku: seed.variant.sku,
+            weight: seed.variant.weight,
+            productId: product.id,
+        },
+    });
+
+    await prisma.size.deleteMany({ where: { productVariantId: variant.id } });
+    await prisma.productVariantImage.deleteMany({
+        where: { productVariantId: variant.id },
+    });
+    await prisma.color.deleteMany({ where: { productVariantId: variant.id } });
+
+    await prisma.size.create({
+        data: {
+            size: seed.size.size,
+            quantity: seed.size.quantity,
+            price: seed.size.price,
+            discount: seed.size.discount,
+            productVariantId: variant.id,
+        },
+    });
+
+    await prisma.productVariantImage.create({
+        data: {
+            url: seed.variantImage.url,
+            alt: seed.variantImage.alt,
+            productVariantId: variant.id,
+        },
+    });
+
+    await prisma.color.create({
+        data: {
+            name: seed.color.name,
+            productVariantId: variant.id,
+        },
+    });
+
+    return { country, user, store, category, subCategory, product, variant };
+};
+
 async function main() {
-  const country = await prisma.country.upsert({
-    where: { code: E2E_SEED.country.code },
-    create: {
-      name: E2E_SEED.country.name,
-      code: E2E_SEED.country.code,
-    },
-    update: {
-      name: E2E_SEED.country.name,
-    },
-  });
+    const seedTargets = resolveSeedTargets();
 
-  const user = await prisma.user.upsert({
-    where: { email: E2E_SEED.user.email },
-    create: {
-      name: E2E_SEED.user.name,
-      email: E2E_SEED.user.email,
-      picture: E2E_SEED.user.picture,
-    },
-    update: {
-      name: E2E_SEED.user.name,
-      picture: E2E_SEED.user.picture,
-    },
-  });
+    for (const target of seedTargets) {
+        const seed = buildE2ESeed(target);
+        await seedOnce(seed);
+    }
+    console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
+}
 
-  const store = await prisma.store.upsert({
-    where: { url: E2E_SEED.store.url },
-    create: {
-      name: E2E_SEED.store.name,
-      description: E2E_SEED.store.description,
-      email: E2E_SEED.store.email,
-      phone: E2E_SEED.store.phone,
-      url: E2E_SEED.store.url,
-      logo: E2E_SEED.store.logo,
-      cover: E2E_SEED.store.cover,
-      status: "ACTIVE",
-      defaultShippingService: "International Delivery",
-      defaultShippingFeePerItem: 0,
-      defaultShippingFeeForAdditionalItem: 0,
-      defaultShippingFeePerKg: 0,
-      defaultShippingFeeFixed: 0,
-      defaultDeliveryTimeMin: 3,
-      defaultDeliveryTimeMax: 7,
-      returnPolicy: "Return in 30 days.",
-      userId: user.id,
-    },
-    update: {
-      name: E2E_SEED.store.name,
-      description: E2E_SEED.store.description,
-      email: E2E_SEED.store.email,
-      phone: E2E_SEED.store.phone,
-      logo: E2E_SEED.store.logo,
-      cover: E2E_SEED.store.cover,
-      status: "ACTIVE",
-      defaultShippingService: "International Delivery",
-      defaultShippingFeePerItem: 0,
-      defaultShippingFeeForAdditionalItem: 0,
-      defaultShippingFeePerKg: 0,
-      defaultShippingFeeFixed: 0,
-      defaultDeliveryTimeMin: 3,
-      defaultDeliveryTimeMax: 7,
-      returnPolicy: "Return in 30 days.",
-      userId: user.id,
-    },
-  });
+async function main() {
+    const seedTargets = resolveSeedTargets();
 
-  const category = await prisma.category.upsert({
-    where: { url: E2E_SEED.category.url },
-    create: {
-      name: E2E_SEED.category.name,
-      url: E2E_SEED.category.url,
-      image: E2E_SEED.category.image,
-      featured: false,
-    },
-    update: {
-      name: E2E_SEED.category.name,
-      image: E2E_SEED.category.image,
-      featured: false,
-    },
-  });
-
-  const subCategory = await prisma.subCategory.upsert({
-    where: { url: E2E_SEED.subCategory.url },
-    create: {
-      name: E2E_SEED.subCategory.name,
-      url: E2E_SEED.subCategory.url,
-      image: E2E_SEED.subCategory.image,
-      featured: false,
-      categoryId: category.id,
-    },
-    update: {
-      name: E2E_SEED.subCategory.name,
-      image: E2E_SEED.subCategory.image,
-      featured: false,
-      categoryId: category.id,
-    },
-  });
-
-  const product = await prisma.product.upsert({
-    where: { slug: E2E_SEED.product.slug },
-    create: {
-      name: E2E_SEED.product.name,
-      description: E2E_SEED.product.description,
-      slug: E2E_SEED.product.slug,
-      brand: E2E_SEED.product.brand,
-      shippingFeeMethod: "ITEM",
-      storeId: store.id,
-      categoryId: category.id,
-      subCategoryId: subCategory.id,
-    },
-    update: {
-      name: E2E_SEED.product.name,
-      description: E2E_SEED.product.description,
-      brand: E2E_SEED.product.brand,
-      shippingFeeMethod: "ITEM",
-      storeId: store.id,
-      categoryId: category.id,
-      subCategoryId: subCategory.id,
-    },
-  });
-
-  const variant = await prisma.productVariant.upsert({
-    where: { slug: E2E_SEED.variant.slug },
-    create: {
-      variantName: E2E_SEED.variant.name,
-      variantDescription: E2E_SEED.variant.description,
-      variantImage: E2E_SEED.variant.image,
-      slug: E2E_SEED.variant.slug,
-      sku: E2E_SEED.variant.sku,
-      weight: E2E_SEED.variant.weight,
-      productId: product.id,
-    },
-    update: {
-      variantName: E2E_SEED.variant.name,
-      variantDescription: E2E_SEED.variant.description,
-      variantImage: E2E_SEED.variant.image,
-      sku: E2E_SEED.variant.sku,
-      weight: E2E_SEED.variant.weight,
-      productId: product.id,
-    },
-  });
-
-  await prisma.size.deleteMany({ where: { productVariantId: variant.id } });
-  await prisma.productVariantImage.deleteMany({
-    where: { productVariantId: variant.id },
-  });
-  await prisma.color.deleteMany({ where: { productVariantId: variant.id } });
-
-  await prisma.size.create({
-    data: {
-      size: E2E_SEED.size.size,
-      quantity: E2E_SEED.size.quantity,
-      price: E2E_SEED.size.price,
-      discount: E2E_SEED.size.discount,
-      productVariantId: variant.id,
-    },
-  });
-
-  await prisma.productVariantImage.create({
-    data: {
-      url: E2E_SEED.variantImage.url,
-      alt: E2E_SEED.variantImage.alt,
-      productVariantId: variant.id,
-    },
-  });
-
-  await prisma.color.create({
-    data: {
-      name: E2E_SEED.color.name,
-      productVariantId: variant.id,
-    },
-  });
-
-  return { country, user, store, category, subCategory, product, variant };
+    for (const target of seedTargets) {
+        const seed = buildE2ESeed(target);
+        await seedOnce(seed);
+    }
+    console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
 }
 
 main()
-  .then(() => {
-    console.log("E2E seed completed.");
-  })
-  .catch((error) => {
-    console.error("E2E seed failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+    .catch((error) => {
+        console.error("E2E seed failed:", error);
+        process.exitCode = 1;
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
