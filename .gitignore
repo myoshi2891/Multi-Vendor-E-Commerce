@@ -8,6 +8,8 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
 
 # next.js
 /.next/
@@ -28,6 +30,8 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -41,3 +45,4 @@ next-env.d.ts
 meilisearch
 tsconfig.tsbuildinfo
 package-lock.json
+.vscode

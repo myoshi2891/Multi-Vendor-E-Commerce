@@ -43,6 +43,7 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
                     key={size.size}
                     className="cursor-pointer rounded-full border px-5 py-1 hover:border-black"
                     style={{ borderColor: sizeId === size.id ? '#000' : '' }}
+                    data-testid={`size-option-${size.id}`}
                     onClick={() => handleSelectSize(size)}
                 >
                     {size.size}

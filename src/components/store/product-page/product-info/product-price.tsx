@@ -61,6 +61,9 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                         className={cn("inline-block text-nowrap text-4xl", {
                             "text-lg": isCard,
                         })}
+                        data-testid={
+                            isCard ? "product-card-price" : "product-price"
+                        }
                     >
                         {priceDisplay}
                     </span>
@@ -95,7 +98,10 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
     return (
         <div>
             <div className="mr-2.5 inline-block font-bold leading-none text-orange-primary">
-                <span className="inline-block text-4xl">
+                <span
+                    className="inline-block text-4xl"
+                    data-testid={isCard ? "product-card-price" : "product-price"}
+                >
                     ${discountedPrice.toFixed(2)}
                 </span>
             </div>
