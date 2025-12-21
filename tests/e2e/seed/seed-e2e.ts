@@ -300,6 +300,11 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
     return { country, user, store, category, subCategory, product, variant };
 };
 
+/**
+ * Runs end-to-end database seeding for all resolved seed targets.
+ *
+ * Resolves the list of seed targets, builds a seed for each target, executes the seed operation for each, and logs a completion message indicating how many targets were processed.
+ */
 async function main() {
     const seedTargets = resolveSeedTargets();
 
