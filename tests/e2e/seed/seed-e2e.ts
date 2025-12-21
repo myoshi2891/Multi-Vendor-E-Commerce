@@ -300,6 +300,26 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
     return { country, user, store, category, subCategory, product, variant };
 };
 
+/**
+ * Seeds the database once for each computed seed target.
+ *
+ * Iterates the targets produced by resolveSeedTargets, builds a seed for each target with buildE2ESeed, executes seedOnce for each seed, and logs completion with the number of targets processed.
+ */
+async function main() {
+    const seedTargets = resolveSeedTargets();
+
+    for (const target of seedTargets) {
+        const seed = buildE2ESeed(target);
+        await seedOnce(seed);
+    }
+    console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
+}
+
+/**
+ * Seeds the database once for each computed seed target.
+ *
+ * Iterates the targets produced by resolveSeedTargets, builds a seed for each target with buildE2ESeed, executes seedOnce for each seed, and logs completion with the number of targets processed.
+ */
 async function main() {
     const seedTargets = resolveSeedTargets();
 
