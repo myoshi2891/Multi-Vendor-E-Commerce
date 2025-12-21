@@ -302,7 +302,7 @@ const CartProduct: FC<Props> = ({
                                         }
                                         data-testid="cart-qty-decrease"
                                     >
-                                        <Minus className="stroke-[#555} w-3" />
+                                        <Minus className="stroke-[#555] w-3" />
                                     </div>
                                     <input
                                         type="text"
@@ -320,7 +320,7 @@ const CartProduct: FC<Props> = ({
                                         }
                                         data-testid="cart-qty-increase"
                                     >
-                                        <Plus className="stroke-[#555} w-3" />
+                                        <Plus className="stroke-[#555] w-3" />
                                     </div>
                                 </div>
                             </div>
