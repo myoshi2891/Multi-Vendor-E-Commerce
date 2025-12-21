@@ -300,6 +300,20 @@ const CartProduct: FC<Props> = ({
                                                 'remove'
                                             )
                                         }
+                                        onKeyDown={(event) => {
+                                            if (
+                                                event.key === 'Enter' ||
+                                                event.key === ' '
+                                            ) {
+                                                event.preventDefault();
+                                                updateProductQuantityHandler(
+                                                    'remove'
+                                                );
+                                            }
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label="Decrease quantity"
                                         data-testid="cart-qty-decrease"
                                     >
                                         <Minus className="stroke-[#555] w-3" />
@@ -318,6 +332,20 @@ const CartProduct: FC<Props> = ({
                                         onClick={() =>
                                             updateProductQuantityHandler('add')
                                         }
+                                        onKeyDown={(event) => {
+                                            if (
+                                                event.key === 'Enter' ||
+                                                event.key === ' '
+                                            ) {
+                                                event.preventDefault();
+                                                updateProductQuantityHandler(
+                                                    'add'
+                                                );
+                                            }
+                                        }}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label="Increase quantity"
                                         data-testid="cart-qty-increase"
                                     >
                                         <Plus className="stroke-[#555] w-3" />
