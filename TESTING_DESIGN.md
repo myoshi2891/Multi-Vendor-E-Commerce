@@ -1,5 +1,10 @@
 # Testing Design: Directory Layout and Tool Selection
 
+## Document Guide
+- Purpose: define testing strategy and directory layout for the repo.
+- Related docs: `QA_TEST_PERSPECTIVES.md`, `README.md`.
+- TODO: align CI commands and environments with team standards.
+
 ## Goals
 - Build a layered test pyramid for a Next.js 14 multi-vendor commerce app.
 - Prioritize high-risk flows: auth/RBAC, pricing, inventory, checkout, payments, and order state.
