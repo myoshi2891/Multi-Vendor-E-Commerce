@@ -123,6 +123,13 @@ E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
   so the E2E product always has exactly one size (auto-select in UI).
 - Test defaults read from constants; override via `E2E_*` env vars if needed.
 
+## Secret Handling Rules (Mandatory)
+- Never print or log secret values (env vars or `.env` contents) in chat or logs.
+- Never stage or commit `.env` or any secret-bearing files.
+- Keep `.env` and `.env.*` ignored (allow `.env.example` only).
+- Before every commit, verify `git status` shows no secret files staged.
+- If a secret file appears or is requested, stop and ask for explicit guidance.
+
 ## Suggested Scripts (for reference)
 
 ```
