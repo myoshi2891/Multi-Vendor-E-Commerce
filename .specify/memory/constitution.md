@@ -3,9 +3,18 @@
 > This document is updated by team agreement and kept current.
 
 ## Quality Bar
-- No P0/P1 bugs open for release; P2 allowed with a documented plan.
+- No P0/P1 bugs open for release; P2 allowed only with a documented mitigation plan
+  stored in the project tracker and linked from the PR.
+  - Approval: Tech Lead + Product Manager.
+  - Required fields: root cause, user impact, mitigation steps, owner, target date.
 - Critical flows (browse -> cart -> checkout -> payment) have E2E smoke coverage.
-- New server actions and validations include unit tests or a written waiver.
+- Non-critical flows must have at least one automated test per area
+  (unit/component for UI or integration for server actions). Target areas:
+  search/browse, profile management, seller store setup, admin catalog.
+- New server actions and validations include unit tests or a formal test waiver.
+  - Waiver record: tracker ticket with label `test-waiver` and link in PR description.
+  - Approval: QA Lead or Engineering Manager.
+  - Required fields: scope, risk, compensating coverage, expiry date (<= 90 days).
 - UI changes must be checked on mobile and desktop breakpoints.
 
 ## Non-Functional Requirements
