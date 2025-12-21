@@ -1,0 +1,115 @@
+{
+    // ==============================
+    // フォーマット統一 (Prettier)
+    // ==============================
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+        "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+    },
+    // ==============================
+    // ESLint (JS/TS/HTML など)
+    // ==============================
+    "eslint.enable": true,
+    "eslint.format.enable": true,
+    "eslint.run": "onSave",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit", // 保存時に ESLint Fix
+        "source.organizeImports": "explicit" // 保存時に Import 整理
+    },
+    "editor.codeActionsOnSaveTimeout": 5000,
+
+    // ==============================
+    // Python (ruff)
+    // ==============================
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": [],
+    // 仮想環境のパスに変更
+    "python.pythonPath": "./.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnknownVariableType": "none",
+        "reportUnknownMemberType": "none",
+        "reportUnknownArgumentType": "none"
+    },
+    // 仮想環境のパスを明示的に指定
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "cSpell.words": ["dotenv"],
+    "postman.settings.dotenv-detection-notification-visibility": false,
+
+    "jupyter.askForKernelRestart": false,
+    "jupyter.textOutputLimit": 100000,
+    "notebook.output.textLineLimit": 20000,
+    "python.testing.pytestEnabled": true,
+
+    // ==============================
+    // Go (staticcheck)
+    // ==============================
+    "go.lintTool": "staticcheck",
+    "go.lintOnSave": "file", // 保存時に実行
+    "go.formatTool": "gofmt", // 最軽量でデフォルト
+    "go.useLanguageServer": true,
+
+    // ==============================
+    // PHP (intelephense 推奨)
+    // ==============================
+    "intelephense.format.enable": true,
+    "intelephense.environment.phpVersion": "8.2",
+
+    // ==============================
+    // ターミナル / Conda 環境
+    // ==============================
+    "terminal.integrated.inheritEnv": false,
+
+    // ==============================
+    // UI & その他
+    // ==============================
+    "files.autoSave": "onFocusChange",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "explorer.compactFolders": false,
+    "chatgpt.openOnStartup": true,
+    // ===== Markdownプレビュー関連 =====
+    // VSCodeのテーマに関係なく、常にダークモードで表示
+    "markdown-preview-github-styles.colorTheme": "dark",
+
+    // 使用するダークテーマを指定
+    // "dark_dimmed" はGitHub公式の落ち着いたダークトーン（背景#22272e）
+    "markdown-preview-github-styles.darkTheme": "dark_dimmed",
+
+    // 任意：独自CSSを追加して行間やフォントを微調整
+    "markdown.styles": ["${workspaceFolder}/.vscode/github-preview-dark.css"],
+
+    // ===== Markdownエディタ（入力画面側）の見やすさ向上 =====
+    "editor.fontSize": 15,
+    "editor.lineHeight": 1.6,
+    "editor.fontFamily": "'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace",
+
+    // ===== VSCode全体のダークテーマ =====
+    // GitHub Dark (Default) を推奨
+    "window.autoDetectColorScheme": true,
+    // ===== プレビュー関連（補足設定）=====
+    "markdown.preview.breaks": true, // 改行をそのまま反映
+    "markdown.preview.scrollEditorWithPreview": true,
+    "markdown.preview.scrollPreviewWithEditor": true,
+    "markdown.preview.doubleClickToSwitchToEditor": true,
+    "markdown.preview.fontSize": 15,
+    "jupyter.interactiveWindow.creationMode": "multiple",
+    "makefile.configureOnOpen": false
+}

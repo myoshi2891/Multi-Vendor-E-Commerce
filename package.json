@@ -8,7 +8,8 @@
 		"start": "next start",
 		"lint": "next lint",
 		"test": "jest",
-		"test:watch": "jest --watch"
+		"test:watch": "jest --watch",
+		"seed:e2e": "tsx tests/e2e/seed/seed-e2e.ts"
 	},
 	"dependencies": {
 		"@clerk/nextjs": "^5.1.5",
@@ -105,6 +106,7 @@
 		"zustand": "^5.0.0"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.57.0",
 		"@testing-library/jest-dom": "^6.6.4",
 		"@testing-library/react": "^16.3.0",
 		"@types/node": "^20",
@@ -119,6 +121,7 @@
 		"prettier-plugin-tailwindcss": "^0.6.12",
 		"prisma": "^5.15.0",
 		"tailwindcss": "^3.4.1",
+		"tsx": "^4.21.0",
 		"typescript": "^5"
 	}
 }

@@ -249,6 +249,7 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                                                     maxQty <= 0,
                                             }
                                         )}
+                                        data-testid="add-to-cart"
                                         onClick={() => handleAddToCart()}
                                     >
                                         <span>Add to cart</span>

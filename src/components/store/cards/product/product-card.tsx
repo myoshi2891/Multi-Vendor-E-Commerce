@@ -32,6 +32,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
                     <Link
                         href={`/product/${slug}/${variantSlug}`}
                         className="relative inline-block w-full overflow-hidden"
+                        data-testid={`product-card-${slug}`}
                     >
                         {/* Images Swiper */}
                         <ProductCardImageSwiper images={images} />
