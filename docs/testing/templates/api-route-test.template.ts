@@ -66,7 +66,14 @@ const originalEnv = process.env;
 // =====================================
 
 /**
- * NextRequest を作成するヘルパー
+ * Create a mock NextRequest suitable for testing API route handlers.
+ *
+ * @param url - The request URL or path (absolute or relative). Relative paths are resolved against http://localhost:3000.
+ * @param options.method - HTTP method to use (defaults to "GET").
+ * @param options.body - JSON-serializable body object; when provided it will be stringified and set as the request body.
+ * @param options.headers - Additional request headers to include; "Content-Type: application/json" is added by default.
+ * @param options.searchParams - Query parameters to append to the URL.
+ * @returns A NextRequest constructed with the given URL, method, headers, query parameters, and optional JSON body.
  */
 function createMockRequest(
 	url: string,
@@ -101,7 +108,10 @@ function createMockRequest(
 }
 
 /**
- * レスポンスをパースするヘルパー
+ * Parse a Fetch Response body as JSON.
+ *
+ * @param response - The Fetch API Response to parse
+ * @returns The parsed JSON value as type `T`
  */
 async function parseResponse<T>(response: Response): Promise<T> {
 	return response.json() as Promise<T>;

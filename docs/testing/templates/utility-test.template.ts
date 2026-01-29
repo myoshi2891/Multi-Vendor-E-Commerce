@@ -45,7 +45,10 @@ const localStorageMock = {
 // =====================================
 
 /**
- * fetch をモックする
+ * Replace global.fetch with a mock that resolves to a response object whose `json()` returns the provided value.
+ *
+ * @param response - Value that will be returned by the mocked response's `json()` method
+ * @param ok - Whether the mocked response's `ok` property should be `true` (default: `true`)
  */
 function mockFetch(response: unknown, ok: boolean = true) {
 	global.fetch = jest.fn().mockResolvedValue({
@@ -55,14 +58,18 @@ function mockFetch(response: unknown, ok: boolean = true) {
 }
 
 /**
- * fetch エラーをモックする
+ * Replace global.fetch with a Jest mock that rejects using the provided error.
+ *
+ * @param error - The Error instance that the mocked fetch will reject with
  */
 function mockFetchError(error: Error) {
 	global.fetch = jest.fn().mockRejectedValue(error);
 }
 
 /**
- * 日付を固定する
+ * Freezes the global system time for tests to the provided date.
+ *
+ * @param date - The Date to set as the current system time for the test environment
  */
 function mockDate(date: Date) {
 	jest.useFakeTimers();
@@ -70,7 +77,9 @@ function mockDate(date: Date) {
 }
 
 /**
- * 日付を元に戻す
+ * Restores real timers so the system clock returns to the actual current time.
+ *
+ * Call after tests that replaced timers with fake timers to revert to real timers.
  */
 function restoreDate() {
 	jest.useRealTimers();
