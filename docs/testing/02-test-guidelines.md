@@ -8,7 +8,7 @@
 
 ### テストファイル
 
-```
+```text
 // ファイル名は対象ファイルと同じディレクトリに配置
 src/queries/store.ts      → src/queries/store.test.ts
 src/lib/utils.ts          → src/lib/utils.test.ts
@@ -55,7 +55,7 @@ it("正常なデータで商品を作成できること", async () => {
     const mockStoreData = TestDataFactory.validStoreData();
 
     TestHelpers.mockCurrentUser(mockUser);
-    mockDb.store.findFirst.mockResolvedValue(null);  // 重複なし
+    mockDb.store.findFirst.mockResolvedValue(null); // 重複なし
     mockDb.store.create.mockResolvedValue({ id: "store123", ...mockStoreData });
 
     // =====================================
@@ -66,10 +66,12 @@ it("正常なデータで商品を作成できること", async () => {
     // =====================================
     // Assert（検証）
     // =====================================
-    expect(result).toEqual(expect.objectContaining({
-        id: "store123",
-        name: mockStoreData.name,
-    }));
+    expect(result).toEqual(
+        expect.objectContaining({
+            id: "store123",
+            name: mockStoreData.name,
+        })
+    );
     expect(mockDb.store.create).toHaveBeenCalledTimes(1);
 });
 ```
@@ -108,20 +110,20 @@ describe("upsertStore", () => {
 
 各テストケースは以下のカテゴリに分類されます。
 
-| カテゴリ | 説明 | 例 |
-|---------|------|-----|
-| **正常系** | 期待通りの動作 | 有効なデータで作成成功 |
-| **認証テスト** | 未認証ユーザーの処理 | `currentUser()` が `null` の場合 |
-| **認可テスト** | 権限不足ユーザーの処理 | USERロールでSELLER機能にアクセス |
-| **バリデーション** | 入力値の検証 | 必須フィールドがnull |
-| **異常系** | エラーハンドリング | 存在しないID、DB接続エラー |
-| **境界値** | エッジケースの処理 | 空配列、最大値、最小値 |
-| **ビジネスロジック** | 計算・ルール検証 | 割引計算、配送料計算 |
-| **外部API** | 外部サービス連携 | Stripe/PayPal API呼び出し |
-| **フィルター** | フィルタリング機能 | カテゴリフィルター |
-| **ソート** | ソート機能 | 価格順、日付順 |
-| **ページネーション** | ページング機能 | skip/take |
-| **セキュリティ** | セキュリティ関連 | SQLインジェクション、XSS |
+| カテゴリ             | 説明                   | 例                               |
+| -------------------- | ---------------------- | -------------------------------- |
+| **正常系**           | 期待通りの動作         | 有効なデータで作成成功           |
+| **認証テスト**       | 未認証ユーザーの処理   | `currentUser()` が `null` の場合 |
+| **認可テスト**       | 権限不足ユーザーの処理 | USERロールでSELLER機能にアクセス |
+| **バリデーション**   | 入力値の検証           | 必須フィールドがnull             |
+| **異常系**           | エラーハンドリング     | 存在しないID、DB接続エラー       |
+| **境界値**           | エッジケースの処理     | 空配列、最大値、最小値           |
+| **ビジネスロジック** | 計算・ルール検証       | 割引計算、配送料計算             |
+| **外部API**          | 外部サービス連携       | Stripe/PayPal API呼び出し        |
+| **フィルター**       | フィルタリング機能     | カテゴリフィルター               |
+| **ソート**           | ソート機能             | 価格順、日付順                   |
+| **ページネーション** | ページング機能         | skip/take                        |
+| **セキュリティ**     | セキュリティ関連       | SQLインジェクション、XSS         |
 
 ---
 
@@ -134,10 +136,12 @@ describe("upsertStore", () => {
 expect(result).toEqual(expectedObject);
 
 // 部分一致
-expect(result).toEqual(expect.objectContaining({
-    id: "123",
-    name: "Test",
-}));
+expect(result).toEqual(
+    expect.objectContaining({
+        id: "123",
+        name: "Test",
+    })
+);
 
 // プリミティブ比較（strict equality）
 expect(result.id).toBe("123");
@@ -175,7 +179,7 @@ expect(mockFn).not.toHaveBeenCalled();
 
 ```typescript
 // Bad: 曖昧なアサーション
-expect(result).toBeTruthy();  // 何がtruthyか不明確
+expect(result).toBeTruthy(); // 何がtruthyか不明確
 
 // Good: 明示的なアサーション
 expect(result).toEqual(expectedValue);
@@ -184,7 +188,7 @@ expect(result.success).toBe(true);
 // Bad: 複数の無関係なアサーションを1つのテストに
 it("should work", async () => {
     expect(result1).toBe("a");
-    expect(result2).toBe("b");  // 関連がない場合は別テストに
+    expect(result2).toBe("b"); // 関連がない場合は別テストに
 });
 
 // Good: 1つのテストに1つの論理的なアサーション
@@ -221,12 +225,12 @@ it("非同期エラーがスローされること", async () => {
 
 ```typescript
 // テストファイル全体のタイムアウト
-jest.setTimeout(10000);  // 10秒
+jest.setTimeout(10000); // 10秒
 
 // 個別テストのタイムアウト
 it("長時間処理が完了すること", async () => {
     // テスト内容
-}, 15000);  // 15秒
+}, 15000); // 15秒
 ```
 
 ---
@@ -311,7 +315,7 @@ export const TestDataFactory = {
     // 注文データ
     validOrderData: (overrides = {}) => ({
         id: "order123",
-        total: 100.00,
+        total: 100.0,
         paymentStatus: "Pending",
         ...overrides,
     }),
@@ -347,11 +351,11 @@ npm test -- --coverage --collectCoverageFrom="src/queries/store.ts"
 ### カバレッジ目標
 
 | メトリクス | 目標 |
-|-----------|------|
-| Statements | 80% |
-| Branches | 75% |
-| Functions | 80% |
-| Lines | 80% |
+| ---------- | ---- |
+| Statements | 80%  |
+| Branches   | 75%  |
+| Functions  | 80%  |
+| Lines      | 80%  |
 
 ---
 
@@ -429,8 +433,9 @@ describe("upsertStore", () => {
             TestHelpers.mockUnauthenticated();
 
             // Act & Assert
-            await expect(upsertStore(TestDataFactory.validStoreData()))
-                .rejects.toThrow("Unauthenticated.");
+            await expect(
+                upsertStore(TestDataFactory.validStoreData())
+            ).rejects.toThrow("Unauthenticated.");
         });
     });
 
