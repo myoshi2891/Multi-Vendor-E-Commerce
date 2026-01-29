@@ -280,8 +280,12 @@ describe("API Route: /api/example", () => {
 			const sqlInjectionPatterns = [
 				"'; DROP TABLE products; --",
 				"1 OR 1=1",
-				"<script>alert('xss')</script>",
 				"UNION SELECT * FROM users",
+			];
+
+			const xssPatterns = [
+				"<script>alert('xss')</script>",
+				"<img src=x onerror=alert(1)>",
 			];
 
 			sqlInjectionPatterns.forEach((pattern) => {
@@ -301,6 +305,25 @@ describe("API Route: /api/example", () => {
 					// expect(response.status).toBe(200);
 					// DBが安全に呼び出されたことを確認
 					// expect(mockDb.$queryRaw).toHaveBeenCalled();
+				});
+			});
+
+			xssPatterns.forEach((pattern) => {
+				it(`XSSパターン "${pattern.substring(0, 20)}..." が無害化されること`, async () => {
+					// Arrange
+					mockDb.$queryRaw.mockResolvedValue([]);
+
+					const request = createMockRequest("/api/search-products", {
+						searchParams: { q: pattern },
+					});
+
+					// Act
+					// TODO: ハンドラーを呼び出し
+					// const response = await GET(request);
+
+					// Assert
+					// expect(response.status).toBe(200);
+					// レスポンスが適切にエスケープされていることを確認
 				});
 			});
 		});

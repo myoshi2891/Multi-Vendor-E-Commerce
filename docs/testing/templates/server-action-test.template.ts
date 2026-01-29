@@ -340,15 +340,15 @@ describe("targetFunction", () => {
 	// エラーハンドリングテスト
 	// =====================================
 	describe("エラーハンドリング", () => {
-		let consoleLogSpy: jest.SpyInstance;
+		let consoleErrorSpy: jest.SpyInstance;
 
 		beforeEach(() => {
 			TestHelpers.mockAuthenticatedSeller();
-			consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+			consoleErrorSpy = jest.spyOn(console, "error").mockImplementation();
 		});
 
 		afterEach(() => {
-			consoleLogSpy.mockRestore();
+			consoleErrorSpy.mockRestore();
 		});
 
 		it("データベースエラー時にログ出力しエラーを再スローすること", async () => {
@@ -363,7 +363,7 @@ describe("targetFunction", () => {
 			// );
 
 			// ログ出力の確認
-			// expect(consoleLogSpy).toHaveBeenCalledWith(dbError);
+			// expect(consoleErrorSpy).toHaveBeenCalledWith(dbError);
 		});
 	});
 });
