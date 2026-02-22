@@ -116,7 +116,71 @@ export const runtime = 'nodejs'
 
 ---
 
-## 7. PostgreSQL ローカル環境のセットアップ
+## 7. MySQL ローカル環境のセットアップ（移行元）
+
+ローカルで MySQL を起動し、移行前のアプリを動作確認する手順です。
+
+### macOS（Homebrew）
+
+```bash
+# インストール
+brew install mysql
+
+# サービス起動
+brew services start mysql
+
+# 停止
+brew services stop mysql
+```
+
+### MySQL 9 の認証プラグイン問題（重要）
+
+MySQL 8.4 以降、デフォルト認証プラグインが `caching_sha2_password` に変更されました。
+Prisma が使用する `mysql2` ドライバが RSA 公開鍵を取得できるよう、`DATABASE_URL` にパラメータを追加してください。
+
+```bash
+DATABASE_URL="mysql://DB_USER:DB_PASSWORD@localhost:3306/multivendor_ecommerce?allowPublicKeyRetrieval=true"
+```
+
+> [!WARNING]
+> MySQL 9.x（Homebrew）では `mysql_native_password` プラグインが廃止されています。
+> `ALTER USER ... IDENTIFIED WITH mysql_native_password` は使用できません。
+> `allowPublicKeyRetrieval=true` クエリパラメータで対応してください。
+
+### ユーザーとデータベースの初期作成
+
+MySQL が新規インストール（ユーザー・DB 未作成）の場合：
+
+```bash
+# root でログイン（パスワードなし）
+mysql -u root
+```
+
+```sql
+-- ユーザー作成
+CREATE USER 'DB_USER'@'localhost' IDENTIFIED BY 'DB_PASSWORD';
+
+-- DB 作成
+CREATE DATABASE multivendor_ecommerce CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 権限付与（shadow DB 作成権限含む）
+GRANT ALL PRIVILEGES ON *.* TO 'DB_USER'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+> `GRANT ALL ON *.*`（グローバル権限）は `prisma migrate dev` が shadow DB を作成するために必要です。
+> セキュリティが気になる場合は `GRANT ALL ON multivendor_ecommerce.* TO ...` とし、
+> 加えて `GRANT CREATE ON *.* TO ...` を付与してください。
+
+### Prisma マイグレーション実行
+
+```bash
+bunx prisma migrate dev
+```
+
+---
+
+## 8. PostgreSQL ローカル環境のセットアップ（移行先）
 
 ### macOS（Homebrew）
 
@@ -164,7 +228,16 @@ docker compose up -d
 
 ---
 
-## 8. 切替チェックリスト
+## 9. 切替チェックリスト
+
+### 移行前（MySQL ローカル確認）
+
+- [ ] MySQL サービスが起動済み（`brew services start mysql`）
+- [ ] `DATABASE_URL` に `?allowPublicKeyRetrieval=true` が含まれている（MySQL 9 使用時）
+- [ ] `DB_USER` ユーザーがグローバル権限（`GRANT ALL PRIVILEGES ON *.*`）を持つ
+- [ ] `prisma migrate dev` が成功している
+
+### 移行後（Neon + Accelerate）
 
 - [ ] Neon プロジェクトが作成済み
 - [ ] Neon の Direct connection URL を取得

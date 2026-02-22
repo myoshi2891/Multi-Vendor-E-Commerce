@@ -33,11 +33,14 @@
 移行方式にかかわらず、必ず事前にバックアップを取得してください。
 
 ```bash
-mysqldump -u root -p --single-transaction --routines --triggers \
+mysqldump -u DB_USER -p --single-transaction --routines --triggers \
   multivendor_ecommerce > backup_$(date +%Y%m%d).sql
 ```
 
 > バックアップファイルは安全な場所に保管すること。
+>
+> **MySQL 9（Homebrew）を使用している場合**: `mysql2` ドライバとの認証互換のため、
+> `.env` の `DATABASE_URL` に `?allowPublicKeyRetrieval=true` を付与してください（詳細: `02-environment-setup.md` セクション7）。
 
 ### 2-1. Neon プロジェクト作成
 
