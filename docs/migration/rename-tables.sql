@@ -40,8 +40,12 @@ ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
 -- 追加することで、そもそもコピーしない方法も推奨。
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = '_prisma_migrations') THEN
-    TRUNCATE TABLE "_prisma_migrations";
+  IF EXISTS (
+    SELECT 1 FROM pg_tables
+    WHERE schemaname = 'public'
+      AND tablename  = '_prisma_migrations'
+  ) THEN
+    TRUNCATE TABLE "public"."_prisma_migrations";
   END IF;
 END $$;
 

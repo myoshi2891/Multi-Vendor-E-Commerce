@@ -125,12 +125,14 @@ brew install pgloader
 ### 4-2. 設定ファイル作成
 
 > [!WARNING]
-> pgloader の `include drop` オプションは、接続先データベースの既存テーブルを削除します。
-> また `DROP SCHEMA IF EXISTS public CASCADE` は `public` スキーマ内の**全オブジェクトとデータを削除**します。
+> pgloader の `include drop` オプションは、`FROM` 側の MySQL に存在する各テーブルに対して
+> `DROP TABLE IF EXISTS "<tablename>" CASCADE` を接続先 PostgreSQL で実行します。
+> これにより、移行先に既存テーブルがある場合はデータが失われます。
+> （`DROP SCHEMA IF EXISTS public CASCADE` は `pgloader.conf` には含まれていません。）
 > 実行前に必ず：
 > 1. `INTO` 句の接続先 DB 名が移行対象であることを二重確認
 > 2. バックアップを取得済みであることを確認
-> 3. まず `--dry-run` でドライランを実行して結果を確認
+> 3. まず `--dry-run` でドライランを実行して接続文字列を確認
 > 4. 本番環境の DB を `INTO` 句に直接指定しないこと
 
 `docs/migration/pgloader.conf`:
@@ -156,8 +158,12 @@ CAST type longtext to text,
 
 pgloader 実行後、テーブル名を Prisma の期待する PascalCase に変更する。
 
+> **以下は `docs/migration/rename-tables.sql` の内容のサマリーです。**
+> 実際に実行する際は、`BEGIN`/`COMMIT` トランザクション・`_prisma_migrations` の
+> TRUNCATE DO ブロック・Enum 検証クエリを含む **スクリプトファイルを直接使用**してください（セクション 4-4 参照）。
+
 ```sql
--- pgloader が生成する小文字テーブル名を Prisma の PascalCase に変換
+-- ⚠ このスニペットはサマリーです。実際のコマンドは 4-4 の psql ... -f docs/migration/rename-tables.sql を使用してください。
 ALTER TABLE "user"                  RENAME TO "User";
 ALTER TABLE "category"              RENAME TO "Category";
 ALTER TABLE "subcategory"           RENAME TO "SubCategory";
@@ -185,7 +191,11 @@ ALTER TABLE "orderitem"             RENAME TO "OrderItem";
 ALTER TABLE "wishlist"              RENAME TO "Wishlist";
 ALTER TABLE "coupon"                RENAME TO "Coupon";
 ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
--- Enum テーブルも確認すること
+-- ※ 実際のスクリプトにはこの後に:
+--   - _prisma_migrations TRUNCATE DO ブロック（public スキーマ限定）
+--   - Enum 検証クエリ（SELECT typname FROM pg_type WHERE typtype = 'e'）
+--   - COMMIT
+-- が含まれます。
 ```
 
 ### 4-4. 実行
