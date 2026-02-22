@@ -139,7 +139,7 @@ MySQL 8.4 以降、デフォルト認証プラグインが `caching_sha2_passwor
 Prisma が使用する `mysql2` ドライバが RSA 公開鍵を取得できるよう、`DATABASE_URL` にパラメータを追加してください。
 
 ```bash
-DATABASE_URL="mysql://DB_USER:DB_PASSWORD@localhost:3306/multivendor_ecommerce?allowPublicKeyRetrieval=true"
+DATABASE_URL="mysql://<DB_USER>:<DB_PASSWORD>@localhost:3306/multivendor_ecommerce?allowPublicKeyRetrieval=true"
 ```
 
 > [!WARNING]
@@ -158,13 +158,13 @@ mysql -u root
 
 ```sql
 -- ユーザー作成
-CREATE USER 'DB_USER'@'localhost' IDENTIFIED BY 'DB_PASSWORD';
+CREATE USER '<DB_USER>'@'localhost' IDENTIFIED BY '<DB_PASSWORD>';
 
 -- DB 作成
 CREATE DATABASE multivendor_ecommerce CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 権限付与（shadow DB 作成権限含む）
-GRANT ALL PRIVILEGES ON *.* TO 'DB_USER'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO '<DB_USER>'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -212,8 +212,8 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: <YOUR_USER>
-      POSTGRES_PASSWORD: <YOUR_PASSWORD>
+      POSTGRES_USER: "<YOUR_USER>"
+      POSTGRES_PASSWORD: "<YOUR_PASSWORD>"
       POSTGRES_DB: multivendor_ecommerce
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -234,7 +234,7 @@ docker compose up -d
 
 - [ ] MySQL サービスが起動済み（`brew services start mysql`）
 - [ ] `DATABASE_URL` に `?allowPublicKeyRetrieval=true` が含まれている（MySQL 9 使用時）
-- [ ] `DB_USER` ユーザーがグローバル権限（`GRANT ALL PRIVILEGES ON *.*`）を持つ
+- [ ] データベースユーザーがグローバル権限（`GRANT ALL PRIVILEGES ON *.*`）を持つ
 - [ ] `prisma migrate dev` が成功している
 
 ### 移行後（Neon + Accelerate）

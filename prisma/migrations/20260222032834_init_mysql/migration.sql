@@ -477,7 +477,6 @@ CREATE TABLE `PaymentDetails` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `PaymentDetails_orderId_key`(`orderId`),
-    INDEX `PaymentDetails_orderId_idx`(`orderId`),
     INDEX `PaymentDetails_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

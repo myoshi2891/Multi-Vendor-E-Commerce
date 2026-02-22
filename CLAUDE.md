@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-マルチベンダーEコマースマーケットプレイス。Next.js 14 (App Router) + TypeScript + Prisma (MySQL) + Clerk認証 + Stripe/PayPal決済。3つのユーザーロール: 顧客(USER)、販売者(SELLER)、管理者(ADMIN)。
+マルチベンダーEコマースマーケットプレイス。Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済。3つのユーザーロール: 顧客(USER)、販売者(SELLER)、管理者(ADMIN)。
 
 ## 開発コマンド
 
@@ -112,5 +112,5 @@ bunx prisma studio           # DBブラウザ
 
 - `reactStrictMode: false` に設定されている（`next.config.mjs`）
 - Elasticsearch関連は現在コメントアウト（`src/lib/elastic-search.ts`）
-- MySQL接続で `sha256_password` 認証プラグインの問題あり（`PROGRESS.md` 参照）
-- `relationMode = "prisma"` を使用（外部キー制約はPrisma側で管理）
+- PostgreSQL (Neon) への移行完了済み
+- ネイティブ外部キー制約（`relationMode = "foreignKeys"`）の利用を推奨

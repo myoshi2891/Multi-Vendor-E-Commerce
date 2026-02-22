@@ -88,6 +88,8 @@
 - [ ] `.env` — `DATABASE_URL` を Accelerate 形式に変更、`DIRECT_URL` を追加（`02-environment-setup.md` 参照）
 - [ ] `.env.example`（存在する場合）— 同様に更新
 - [ ] `schema.prisma` — `directUrl = env("DIRECT_URL")` を追加
+- [ ] `prisma/migrations/migration_lock.toml` — `provider = "postgresql"` に更新（またはマイグレーション再生成）
+- [ ] `CLAUDE.md` — プロジェクト概要と既知の制約を PostgreSQL 用に更新
 
 ---
 

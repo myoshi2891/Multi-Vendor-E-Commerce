@@ -32,6 +32,9 @@ ALTER TABLE "orderitem"             RENAME TO "OrderItem";
 ALTER TABLE "wishlist"              RENAME TO "Wishlist";
 ALTER TABLE "coupon"                RENAME TO "Coupon";
 ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
+-- Prisma 内部結合テーブル（多対多）
+ALTER TABLE "_userfollowingstore"   RENAME TO "_UserFollowingStore";
+ALTER TABLE "_coupontouser"         RENAME TO "_CouponToUser";
 
 -- _prisma_migrations テーブルの初期化
 -- pgloader が MySQL から _prisma_migrations をコピーした場合、古い履歴が
@@ -57,7 +60,7 @@ END $$;
 --   Role, StoreStatus, ShippingFeeMethod, OrderStatus,
 --   PaymentStatus, PaymentMethod, ProductStatus
 --
--- 確認クエリ:
-SELECT typname FROM pg_type WHERE typtype = 'e' ORDER BY typname;
-
 COMMIT;
+
+-- 確認クエリ (COMMIT の後に実行して現在の状態を表示)
+SELECT typname FROM pg_type WHERE typtype = 'e' ORDER BY typname;

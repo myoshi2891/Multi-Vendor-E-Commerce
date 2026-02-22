@@ -33,7 +33,8 @@
 移行方式にかかわらず、必ず事前にバックアップを取得してください。
 
 ```bash
-mysqldump -u DB_USER -p --single-transaction --routines --triggers \
+# <DB_USER> は実際のユーザー名に置き換えてください
+mysqldump -u <DB_USER> -p --single-transaction --routines --triggers \
   multivendor_ecommerce > backup_$(date +%Y%m%d).sql
 ```
 
@@ -191,6 +192,9 @@ ALTER TABLE "orderitem"             RENAME TO "OrderItem";
 ALTER TABLE "wishlist"              RENAME TO "Wishlist";
 ALTER TABLE "coupon"                RENAME TO "Coupon";
 ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
+-- Prisma 内部結合テーブル（多対多）
+ALTER TABLE "_userfollowingstore"   RENAME TO "_UserFollowingStore";
+ALTER TABLE "_coupontouser"         RENAME TO "_CouponToUser";
 -- ※ 実際のスクリプトにはこの後に:
 --   - _prisma_migrations TRUNCATE DO ブロック（public スキーマ限定）
 --   - Enum 検証クエリ（SELECT typname FROM pg_type WHERE typtype = 'e'）
