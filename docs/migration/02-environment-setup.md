@@ -282,11 +282,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Neon Branch
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
-            https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches \
-            -d '{"branch": {"name": "pr-${{ github.event.number }}"}}'
+        id: create-branch
+        uses: neondatabase/create-branch-action@v6
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch_name: pr-${{ github.event.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}
+
+      # 接続文字列は outputs.db_url_with_pooler / outputs.db_url で取得可能
+      # - name: Run migrations
+      #   env:
+      #     DATABASE_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
+      #   run: bunx prisma migrate deploy
 ```
 
 > `secrets.NEON_API_KEY` と `secrets.NEON_PROJECT_ID` は GitHub リポジトリの
