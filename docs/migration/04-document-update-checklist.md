@@ -102,3 +102,17 @@
 5. **README.md** → Mermaid 図の更新
 6. **PROGRESS.md** → 移行完了の追記
 7. **`neon_prisma_accelerate.md`** → `docs/migration/` に統合済み、ルートから削除済み ✅
+
+---
+
+## 更新漏れ検索コマンド
+
+移行後に MySQL 関連の表記が残っていないかを確認するには、以下の ripgrep コマンドを使用してください。
+`docs/migration/` は移行用ドキュメント自体のため除外しています。
+
+```bash
+# specs/, README.md, TESTING_DESIGN.md, PROGRESS.md の MySQL 表記を一括検索（大文字小文字不問）
+rg -i "mysql" specs/ README.md TESTING_DESIGN.md PROGRESS.md
+```
+
+ヒットした行が残っている場合は、本チェックリストの各項目に従って更新してください。

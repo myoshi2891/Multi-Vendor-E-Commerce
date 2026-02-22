@@ -72,16 +72,25 @@ cp -r prisma/migrations prisma/migrations_mysql_backup
 
 # 3. 削除
 rm -rf prisma/migrations
-
-# 4. 新しい初期マイグレーションを生成
-# 方式 B (pgloader) の場合は --create-only でファイル生成のみ行う
-# DATABASE_URL には Neon の Direct connection URL を設定してください。
-bunx prisma migrate dev --name init_postgresql --create-only
 ```
 
-> **方式 A** の場合は `--create-only` なしで `bunx prisma migrate dev --name init_postgresql` を実行します。
-> **方式 B** の場合は `--create-only` でファイル生成後、pgloader → rename-tables.sql → `bunx prisma migrate resolve --applied init_postgresql` の順で適用します。
->
+**方式 A（Prisma Reset + 再シード）の場合:**
+
+```bash
+# DATABASE_URL を Neon Direct connection URL に設定した状態で実行
+bunx prisma migrate dev --name init_postgresql
+```
+
+**方式 B（pgloader）の場合:**
+
+```bash
+# --create-only でスキーマファイルのみ生成（DB への適用はしない）
+# DATABASE_URL を Neon Direct connection URL に設定した状態で実行
+bunx prisma migrate dev --name init_postgresql --create-only
+# ↓ この後、pgloader 実行 → rename-tables.sql 実行 → 以下のコマンドで適用済みとしてマーク
+bunx prisma migrate resolve --applied init_postgresql
+```
+
 > `bunx prisma migrate dev` を実行する際は、Accelerate 経由の URL ではなく、Neon の **Direct connection** URL を `DATABASE_URL` に設定する必要があります。
 
 ---
@@ -337,14 +346,14 @@ bun add pg
 ### 事故1：カラム削除によるデータ消失
 
 ```prisma
-# 変更前
+// 変更前
 model User {
   name String
 }
 
-# 変更後（nameを削除）
+// 変更後（nameを削除）
 model User {
-  # name削除
+  // name削除
 }
 ```
 

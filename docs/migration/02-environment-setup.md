@@ -191,12 +191,15 @@ brew install postgresql@16
 # サービス起動
 brew services start postgresql@16
 
+# 事前に環境変数を設定してください（< > をシェルに直接貼ると リダイレクトとして解釈されます）
+export DB_USER="your_db_user"
+export DB_PASS="your_db_password"
+
 # ユーザー設定（必要に応じて）
-# <YOUR_USER> と <YOUR_PASSWORD> は任意の値に置き換えてください
-psql postgres -c "CREATE USER <YOUR_USER> WITH PASSWORD '<YOUR_PASSWORD>';"
+psql postgres -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASS}';"
 
 # データベース作成
-createdb -O <YOUR_USER> multivendor_ecommerce
+createdb -O "${DB_USER}" multivendor_ecommerce
 
 # 接続確認
 psql -d multivendor_ecommerce -c "SELECT version();"

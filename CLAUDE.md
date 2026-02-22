@@ -112,5 +112,5 @@ bunx prisma studio           # DBブラウザ
 
 - `reactStrictMode: false` に設定されている（`next.config.mjs`）
 - Elasticsearch関連は現在コメントアウト（`src/lib/elastic-search.ts`）
-- PostgreSQL (Neon) への移行完了済み
-- ネイティブ外部キー制約（`relationMode = "foreignKeys"`）の利用を推奨
+- PostgreSQL (Neon) への移行作業中（`docs/migration/` 参照）
+- ネイティブ外部キー制約（`relationMode = "foreignKeys"`）は移行後の目標設定（現在は `"prisma"` モード）
