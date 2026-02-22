@@ -29,8 +29,9 @@ const generateUniqueSlug = async (
 ) => {
     let slug = baseSlug;
     let suffix = 1;
+    const maxAttempts = 100;
 
-    while (true) {
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const existingRecord = await (db as Record<string, any>)[
             model
@@ -43,6 +44,11 @@ const generateUniqueSlug = async (
             break;
         }
         slug = `${baseSlug}${separator}${suffix++}`;
+        if (attempts === maxAttempts - 1) {
+            throw new Error(
+                `generateUniqueSlug: exceeded ${maxAttempts} attempts for model="${model}", field="${field}", baseSlug="${baseSlug}"`
+            );
+        }
     }
 
     return slug;

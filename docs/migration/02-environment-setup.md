@@ -275,10 +275,11 @@ name: Neon Branch for PR
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, closed]
 
 jobs:
   create-branch:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Create Neon Branch
@@ -294,6 +295,17 @@ jobs:
       #   env:
       #     DATABASE_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
       #   run: bunx prisma migrate deploy
+
+  delete-branch:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Neon Branch
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch: pr-${{ github.event.number }}
+          api_key: ${{ secrets.NEON_API_KEY }}
 ```
 
 > `secrets.NEON_API_KEY` と `secrets.NEON_PROJECT_ID` は GitHub リポジトリの

@@ -503,7 +503,7 @@ export const applySeller = async (store: StoreType) => {
             throw new Error(errorMessage);
         }
 
-        console.warn("store details", store);
+        console.warn("store retrieved", { id: store.id });
 
         // Create store details into the database
         const storeDetails = await db.store.create({

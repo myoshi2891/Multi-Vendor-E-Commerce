@@ -70,7 +70,7 @@ Claude CLI が実行する前に人間が行う作業:
 > **事前チェック（pgloader 実行前に MySQL 側で実行）:**
 >
 > ```sql
-> -- 孤立レコード診断例（定紟側 Store がない Product）
+> -- 孤立レコード診断例（定義側 Store がない Product）
 > SELECT id FROM Product WHERE storeId NOT IN (SELECT id FROM Store);
 > -- 上記が 0 件または完全に修正されてから移行を進めてください。
 > ```
@@ -257,9 +257,9 @@ Prisma Accelerate (`prisma://` URL) を使う場合のみ必要。Direct connect
  }
 
 -export const db = globalThis.prisma || new PrismaClient();
-+export const db = globalThis.prisma || (globalThis.prisma = createPrisma());
++export const db = globalThis.prisma || createPrisma();
 
- if (process.env.NODE_ENV === "production") globalThis.prisma = db;
+ if (process.env.NODE_ENV !== "production") globalThis.prisma = db;
 ```
 
 インストールが必要:

@@ -30,12 +30,12 @@ export async function getUserCountry(): Promise<Country> {
             clearTimeout(timeoutId);
             if (response.ok) {
                 const data = await response.json();
+                const code: string = data.country ?? "unknown";
                 userCountry = {
                     name:
-                        countries.find(
-                            (country) => country.code === data.country
-                        )?.name || data.country,
-                    code: data.country,
+                        countries.find((country) => country.code === code)
+                            ?.name ?? code,
+                    code,
                     city: data.city || "",
                     region: data.region || "",
                 };

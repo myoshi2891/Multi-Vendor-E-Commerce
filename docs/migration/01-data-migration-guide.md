@@ -89,7 +89,7 @@ bunx prisma migrate dev --name init_postgresql
 bunx prisma migrate dev --name init_postgresql --create-only
 ```
 
-> ℹ️ この後の手順（pgloader 実行 → `rename-tables.sql` 実行 → `bunx prisma migrate resolve --applied init_postgresql`）は **セクション 4** を参照してください。
+> ℹ️ この後の手順（pgloader 実行 → `rename-tables.sql` 実行 → `bunx prisma migrate resolve --applied <タイムスタンプ付きフォルダ名>`）は **セクション 4** を参照してください。
 > `bunx prisma migrate dev` を実行する際は、Accelerate 経由の URL ではなく、Neon の **Direct connection** URL を `DATABASE_URL` に設定する必要があります。
 
 ---
