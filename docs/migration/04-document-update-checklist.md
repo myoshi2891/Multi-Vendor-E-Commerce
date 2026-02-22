@@ -99,4 +99,4 @@
 4. **Specs ドキュメント** → `specs/` 配下 5 ファイル
 5. **README.md** → Mermaid 図の更新
 6. **PROGRESS.md** → 移行完了の追記
-7. **`neon_prisma_accelerate.md`** → `docs/migration/` に統合後、ルートから削除
+7. **`neon_prisma_accelerate.md`** → `docs/migration/` に統合済み、ルートから削除済み ✅

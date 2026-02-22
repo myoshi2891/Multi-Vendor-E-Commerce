@@ -246,6 +246,56 @@ docker compose up -d
 - [ ] `.env` に `DIRECT_URL` を追加
 - [ ] `schema.prisma` に `directUrl = env("DIRECT_URL")` を追加
 - [ ] Vercel の環境変数を更新（`DATABASE_URL` + `DIRECT_URL`）
+- [ ] Vercel Preview 環境が本番 DB と**分離**されていることを確認
 - [ ] `.env.test` の `E2E_DATABASE_URL` を更新
 - [ ] Node.js runtime が明示されている（Edge runtime 不使用）
 - [ ] 接続確認済み
+
+---
+
+## 10. Neon ブランチを使った PR / Preview 環境の分離
+
+PR ごとに Neon DB ブランチを作成し、Vercel Preview と連携することで、
+本番データを汚染せずにレビュー・テストができます。
+
+### ブランチ構成
+
+```
+main       → Vercel Production  ← 本番 Neon ブランチ
+feature/*  → Vercel Preview     ← PR ごとの Neon ブランチ
+```
+
+### GitHub Actions サンプル（`.github/workflows/neon-branch.yml`）
+
+```yaml
+name: Neon Branch for PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Neon Branch
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.NEON_API_KEY }}" \
+            https://console.neon.tech/api/v2/projects/${{ secrets.NEON_PROJECT_ID }}/branches \
+            -d '{"branch": {"name": "pr-${{ github.event.number }}"}}'
+```
+
+> `secrets.NEON_API_KEY` と `secrets.NEON_PROJECT_ID` は GitHub リポジトリの
+> Settings → Secrets and variables → Actions に登録してください。
+
+### Vercel 環境変数の設定
+
+| 環境 | `DATABASE_URL` の値 |
+|---|---|
+| Production | Neon の `main` ブランチ接続 URL |
+| Preview | Neon の PR ブランチ接続 URL |
+
+> **個人開発の現フェーズでは PR ごとのブランチ自動作成は不要。**
+> `main` + `staging` の2構成で十分です。
+> チームが増えるか migration 頻度が高まった時点で導入を検討してください。
