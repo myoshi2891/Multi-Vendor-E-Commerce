@@ -75,7 +75,7 @@ export const upsertSubCategory = async (subCategory: SubCategory) => {
 		return subCategoryDetails;
 	} catch (error) {
 		// Log and re-throw any errors
-		console.log(error);
+		console.error(error);
 		throw error;
 	}
 };
@@ -97,7 +97,7 @@ export const getAllSubCategories = async () => {
 		return subCategories;
 	} catch (error) {
 		// Log and re-throw any errors
-		console.log(error);
+		console.error(error);
 		throw error;
 	}
 };
@@ -121,7 +121,7 @@ export const getSubCategory = async (subCategoryId: string) => {
 		return subCategory;
 	} catch (error) {
 		// Log and re-throw any errors
-		console.log(error);
+		console.error(error);
 		throw error;
 	}
 };
@@ -157,7 +157,7 @@ export const deleteSubCategory = async (subCategoryId: string) => {
 		return response;
 	} catch (error) {
 		// Log and re-throw any errors
-		console.log(error);
+		console.error(error);
 		throw error;
 	}
 };
@@ -188,7 +188,7 @@ export const getSubcategories = async (
 		// If random selection is required, use a raw query to randomize
 		if (random) {
 			const subcategories = await db.$queryRaw<SubCategory[]>`
-			SELECT * FROM SubCategory ORDER BY RAND() LIMIT ${limit || 10};
+			SELECT * FROM "SubCategory" ORDER BY RANDOM() LIMIT ${limit || 10};
 			`;
 			return subcategories;
 		} else {
@@ -198,7 +198,7 @@ export const getSubcategories = async (
 		}
 	} catch (error) {
 		// Log and re-throw any errors
-		console.log("Error fetching subcategories", error);
+		console.error("Error fetching subcategories", error);
 		throw error;
 	}
 };

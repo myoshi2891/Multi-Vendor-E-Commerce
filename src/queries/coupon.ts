@@ -67,7 +67,7 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
         return couponDetails
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
 
         throw new Error(
             `Error occurred while trying to upsert coupon: ${error.message}`
@@ -117,7 +117,7 @@ export const getStoreCoupons = async (storeURL: string) => {
 
         return coupons
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
         throw new Error(
             `Error occurred while trying to fetch store coupons: ${error.message}`
         )
@@ -145,7 +145,7 @@ export const getCoupon = async (couponId: string) => {
 
         return coupon
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
 
         throw new Error(
             `Error occurred while trying to fetch coupon: ${error.message}`
@@ -200,7 +200,7 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
 
         throw new Error(
             `Error occurred while trying to delete coupon: ${error.message}`
@@ -318,7 +318,7 @@ export const applyCoupon = async (
             cart: updatedCart,
         }
     } catch (error: any) {
-        console.log(error)
+        console.error(error)
         throw new Error(
             `Error occurred while applying coupon: ${error.message}`
         )

@@ -47,3 +47,13 @@ tsconfig.tsbuildinfo
 package-lock.json
 .vscode/*
 !.vscode/settings.json
+
+# kilocode/specify cache
+.kilocode/.cache/
+.specify/.cache/
+
+# MySQL マイグレーションバックアップ
+prisma/migrations_mysql_backup/
+
+# Playwright artifacts
+.playwright-mcp

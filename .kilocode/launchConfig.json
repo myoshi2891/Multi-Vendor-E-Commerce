@@ -1,0 +1,10 @@
+{
+  "_comment": "Update the project name or paths if directories move in this repo.",
+  "version": 1,
+  "project": "multi-vendor-ecommerce",
+  "paths": {
+    "specs": "specs",
+    "rules": ".kilocode/rules",
+    "workflows": ".kilocode/workflows"
+  }
+}

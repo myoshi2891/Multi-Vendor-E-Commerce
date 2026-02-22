@@ -1,7 +1,5 @@
 "use client";
 import { ShippingFeeMethod } from "@prisma/client";
-import { lastDayOfDecade } from "date-fns";
-import { deflate } from "zlib";
 import * as z from "zod";
 
 // Category form schema
@@ -343,7 +341,7 @@ export const ProductFormSchema = z.object({
         .optional(),
 
     isSale: z.boolean().default(false),
-    saleEndDate: z.string().optional(),
+    saleEndDate: z.string().datetime({ offset: true }).nullish(),
     freeShippingForAllCountries: z.boolean().default(false),
     freeShippingCountriesIds: z
         .object({

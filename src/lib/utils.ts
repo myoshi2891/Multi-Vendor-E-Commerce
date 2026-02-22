@@ -1,12 +1,15 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { PrismaClient } from "@prisma/client";
 import ColorThief from "colorthief";
-import { db } from "./db";
-import { CartProductType, Country } from "./types";
-import countries from "@/data/countries.json";
 import { differenceInDays, differenceInHours } from "date-fns";
+import { twMerge } from "tailwind-merge";
+import { CartProductType } from "./types";
 
+/**
+ * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.
+ *
+ * @param inputs - One or more class value inputs (strings, arrays, or objects) to merge
+ * @returns The merged className string with Tailwind utility conflicts resolved
+ */
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
@@ -60,69 +63,6 @@ export const getDominantColors = (imgUrl: string): Promise<string[]> => {
         };
     });
 };
-
-// Helper function to generate a unique slug
-export const generateUniqueSlug = async (
-    baseSlug: string,
-    model: keyof PrismaClient,
-    field: string = "slug",
-    separator: string = "-"
-) => {
-    let slug = baseSlug;
-    let suffix = 1;
-
-    while (true) {
-        const existingRecord = await (db[model] as any).findFirst({
-            where: {
-                [field]: slug,
-            },
-        });
-        if (!existingRecord) {
-            break;
-        }
-        slug = `${slug}${separator}${suffix++}`;
-        suffix += 1;
-    }
-
-    return slug;
-};
-
-// the helper function to get the user country
-// Define the default country
-const DEFAULT_COUNTRY: Country = {
-    name: "United States",
-    code: "US",
-    city: "",
-    region: "",
-};
-
-export async function getUserCountry(): Promise<Country> {
-    let userCountry: Country = DEFAULT_COUNTRY;
-    try {
-        // Attempt to detect country by IP
-        const response = await fetch(
-            `https://ipinfo.io/?token=${process.env.IPINFO_TOKEN}`
-        );
-        if (response.ok) {
-            const data = await response.json();
-            // if (data.country) {
-            userCountry = {
-                name:
-                    countries.find((country) => country.code === data.country)
-                        ?.name || data.country,
-                code: data.country,
-                city: data.city,
-                region: data.region,
-            };
-            // }
-        }
-    } catch (error) {
-        console.error("Failed to get user's country", error);
-        // Fall back to default country if IP lookup fails
-        userCountry = DEFAULT_COUNTRY;
-    }
-    return userCountry;
-}
 
 // Function: getShippingDatesRange
 // Description: Returns the shipping date range by adding the specified min and max days
@@ -266,17 +206,6 @@ export const downloadBlobAsFile = (blob: Blob, filename: string) => {
     URL.revokeObjectURL(link.href);
 };
 
-// export const printPDF = (blob: Blob) => {
-//     const pdfUrl = URL.createObjectURL(blob);
-//     const printWindow = window.open(pdfUrl, "_blank");
-//     if (printWindow) {
-//         printWindow.addEventListener("load", () => {
-//             printWindow.focus();
-//             printWindow.print();
-//         });
-//     }
-// };
-
 export const printPDF = (blob: Blob) => {
     const pdfUrl = URL.createObjectURL(blob);
     const iframe = document.createElement("iframe");
@@ -308,27 +237,27 @@ export const printPDF = (blob: Blob) => {
 // Handle product history in localStorage
 export const updateProductHistory = (variantId: string) => {
     // Fetch existing product history from localStorage
-    let productHistory: string[] = []
-    const historyString = localStorage.getItem("productHistory")
+    let productHistory: string[] = [];
+    const historyString = localStorage.getItem("productHistory");
 
     if (historyString) {
         try {
-            productHistory = JSON.parse(historyString)
+            productHistory = JSON.parse(historyString);
         } catch (error) {
-            productHistory = []
+            productHistory = [];
         }
     }
 
     // Update the history: Remove the product if it exists, and add it to the front
-    productHistory = productHistory.filter((id) => id !== variantId)
-    productHistory.unshift(variantId)
+    productHistory = productHistory.filter((id) => id !== variantId);
+    productHistory.unshift(variantId);
 
     // Check storage limit (manage max number of products)
-    const MAX_PRODUCTS = 100
+    const MAX_PRODUCTS = 100;
     if (productHistory.length > MAX_PRODUCTS) {
-        productHistory.pop() // Remove the oldest product
+        productHistory.pop(); // Remove the oldest product
     }
 
     // Save updated history to localStorage
-    localStorage.setItem('productHistory', JSON.stringify(productHistory))
-}
+    localStorage.setItem("productHistory", JSON.stringify(productHistory));
+};

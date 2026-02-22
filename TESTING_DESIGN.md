@@ -1,5 +1,10 @@
 # Testing Design: Directory Layout and Tool Selection
 
+## Document Guide
+- Purpose: define testing strategy and directory layout for the repo.
+- Related docs: `QA_TEST_PERSPECTIVES.md`, `README.md`, `docs/migration/03-test-strategy-updates.md`.
+- CI suggestion: run `bun run lint`, `bun run test`, `bun run build`, then `bunx playwright test --project=chromium --workers=1` with `E2E_DATABASE_URL` set; use `.env.test` for integration suites.
+
 ## Goals
 - Build a layered test pyramid for a Next.js 14 multi-vendor commerce app.
 - Prioritize high-risk flows: auth/RBAC, pricing, inventory, checkout, payments, and order state.
@@ -32,7 +37,7 @@
 
 ### Integration Tests (DB and Server Logic)
 - Runner: Jest (existing)
-- DB: MySQL test database using Docker Compose
+- DB: PostgreSQL test database using Docker Compose
 - ORM: Prisma with a separate `.env.test`
 - Notes: Use database reset per suite (migration + seed)
 
@@ -103,7 +108,7 @@
 
 ## Environment and Data Strategy
 - Use `.env.test` for test DB and secrets.
-- Use a dedicated MySQL schema for tests.
+- Use a dedicated PostgreSQL database for tests.
 - Reset strategy:
   - Integration suites: migrate + seed before suite
   - E2E suites: seed before run, clean after run
@@ -115,7 +120,7 @@
 - Run example:
 
 ```
-E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
+E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" \
   bun run seed:e2e
 ```
 

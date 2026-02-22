@@ -1,0 +1,60 @@
+import countries from "@/data/countries.json";
+import { Country } from "./types";
+
+// デフォルト国
+const DEFAULT_COUNTRY: Country = {
+    name: "United States",
+    code: "US",
+    city: "",
+    region: "",
+};
+
+// IP アドレスからユーザーの国を検出する
+/**
+ * Detects the user's country and location from their IP by querying ipinfo.io.
+ *
+ * Uses the IPINFO_TOKEN environment variable for the request and maps the returned country code to a human-readable name via the bundled countries dataset. If the request fails or the response is not usable, falls back to the default country.
+ *
+ * @returns A Country object containing `name`, `code`, `city`, and `region`; if detection fails, the default country (United States, code "US") is returned.
+ */
+export async function getUserCountry(): Promise<Country> {
+    let userCountry: Country = DEFAULT_COUNTRY;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        try {
+            const response = await fetch(
+                `https://ipinfo.io/?token=${process.env.IPINFO_TOKEN}`,
+                { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                const data = await response.json();
+                if (!data.country) {
+                    // country フィールドがない場合はデフォルトを使用（city/region は補完）
+                    userCountry = {
+                        ...DEFAULT_COUNTRY,
+                        city: data.city || "",
+                        region: data.region || "",
+                    };
+                } else {
+                    userCountry = {
+                        name:
+                            countries.find(
+                                (country) => country.code === data.country
+                            )?.name ?? data.country,
+                        code: data.country,
+                        city: data.city || "",
+                        region: data.region || "",
+                    };
+                }
+            }
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    } catch (error) {
+        console.error("Failed to get user's country", error);
+        userCountry = DEFAULT_COUNTRY;
+    }
+    return userCountry;
+}

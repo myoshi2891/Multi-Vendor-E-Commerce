@@ -7,7 +7,6 @@ import {
     FreeShippingWithCountriesType,
     ProductPageType,
     ProductShippingDetailsType,
-    ProductType,
     ProductWithVariantType,
     RatingStatisticsType,
     SortOrder,
@@ -20,15 +19,44 @@ import { currentUser } from "@clerk/nextjs/server";
 
 // Slugify
 import slugify from "slugify";
-import { generateUniqueSlug } from "@/lib/utils";
+
+// サーバー専用: slug の一意性を保証するヘルパー
+const generateUniqueSlug = async (
+    baseSlug: string,
+    model: string,
+    field: string = "slug",
+    separator: string = "-"
+) => {
+    let slug = baseSlug;
+    let suffix = 1;
+    const maxAttempts = 100;
+
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingRecord = await (db as Record<string, any>)[
+            model
+        ].findFirst({
+            where: {
+                [field]: slug,
+            },
+        });
+        if (!existingRecord) {
+            return slug;
+        }
+        slug = `${baseSlug}${separator}${suffix++}`;
+    }
+
+    throw new Error(
+        `generateUniqueSlug: exceeded ${maxAttempts} attempts for model="${model}", field="${field}", baseSlug="${baseSlug}"`
+    );
+};
 
 // Cookies
 import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { FreeShipping, ProductVariant, Size, Store } from "@prisma/client";
-import { sub } from "date-fns";
+import { ProductVariant, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -218,7 +246,7 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
         variantDescription: product.variantDescription,
         slug: variantSlug,
         isSale: product.isSale,
-        saleEndDate: product.isSale ? product.saleEndDate : "",
+        saleEndDate: product.isSale ? (product.saleEndDate ?? null) : null,
         sku: product.sku,
         keywords: product.keywords.join(","),
         weight: product.weight,
@@ -462,20 +490,36 @@ export const getProducts = async (
     }
 
     // Apply search filter (search term in product name or description)
+    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (filters.search) {
         whereClause.AND.push({
             OR: [
                 {
-                    name: { contains: filters.search },
+                    name: { contains: filters.search, mode: "insensitive" },
                 },
                 {
-                    description: { contains: filters.search },
+                    description: {
+                        contains: filters.search,
+                        mode: "insensitive",
+                    },
                 },
                 {
                     variants: {
                         some: {
-                            variantName: { contains: filters.search },
-                            variantDescription: { contains: filters.search },
+                            OR: [
+                                {
+                                    variantName: {
+                                        contains: filters.search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                                {
+                                    variantDescription: {
+                                        contains: filters.search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                            ],
                         },
                     },
                 },
@@ -785,6 +829,7 @@ const getUserCountry = () => {
     } catch (error) {
         // Handle error
         console.error("Error retrieving user country:", error);
+        return defaultCountry;
     }
 };
 const formatProductResponse = (

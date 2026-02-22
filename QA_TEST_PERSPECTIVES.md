@@ -1,8 +1,13 @@
 # マルチベンダーEコマース QA テスト観点（厳しめ）
 
+## ドキュメントガイド
+- 本文書は高リスク領域のテスト観点を優先度付きで列挙する
+- 使い方: P0/P1/P2 を基準に優先順位を決める
+- 関連: `TESTING_DESIGN.md`, `README.md`
+
 ## 前提と範囲
 - 対象: 顧客/販売者/管理者の3ロール、商品・在庫・注文・決済・配送・レビュー・検索・管理系画面
-- 連携: Clerk 認証、Stripe/PayPal 決済、UploadThing 画像、Elasticsearch
+- 連携: Clerk 認証、Stripe/PayPal 決済、Cloudinary 画像、Elasticsearch
 - 重視: 破壊的バグ（誤課金/在庫破壊/権限漏洩/個人情報漏洩/注文不整合）を最優先で洗い出す
 
 ## 重要度の基準
@@ -109,7 +114,7 @@
 - P2: 主要ブラウザ差異（Safari/Chrome/Firefox/Edge）
 
 ## 18. 例外系・障害注入
-- P0: 外部サービス停止時（Stripe/Clerk/UploadThing/検索）のフェイル動作
+- P0: 外部サービス停止時（Stripe/Clerk/Cloudinary/検索）のフェイル動作
 - P1: ネットワーク遮断/遅延時の二重送信・リトライ挙動
 - P2: サーバーエラー時のUI復旧導線
 
