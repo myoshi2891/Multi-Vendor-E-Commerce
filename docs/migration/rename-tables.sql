@@ -33,6 +33,18 @@ ALTER TABLE "wishlist"              RENAME TO "Wishlist";
 ALTER TABLE "coupon"                RENAME TO "Coupon";
 ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
 
+-- _prisma_migrations テーブルの初期化
+-- pgloader が MySQL から _prisma_migrations をコピーした場合、古い履歴が
+-- prisma migrate resolve と衝突するため、ここで TRUNCATE する。
+-- 注: pgloader.conf に EXCLUDING TABLE NAMES MATCHING '_prisma_migrations' を
+-- 追加することで、そもそもコピーしない方法も推奨。
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = '_prisma_migrations') THEN
+    TRUNCATE TABLE "_prisma_migrations";
+  END IF;
+END $$;
+
 -- Enum テーブルの確認
 -- Prisma は以下の enum を定義しています。pgloader は enum 型を PostgreSQL の
 -- ネイティブ型として作成しますが、テーブルではないためリネーム不要です。

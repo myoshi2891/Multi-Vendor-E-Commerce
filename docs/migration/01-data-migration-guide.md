@@ -104,8 +104,8 @@ bunx prisma db seed
 # テーブル一覧確認
 bunx prisma studio
 
-# または psql で直接確認
-psql -d multivendor_ecommerce -c '\dt'
+# または psql で直接確認（Neon 接続の場合は $DIRECT_URL を使用）
+psql "$DIRECT_URL" -c '\dt'
 ```
 
 ---
@@ -188,7 +188,7 @@ ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
 ### 4-4. 実行
 
 ```bash
-# ドライラン（実際の変更なし）
+# ドライラン（接続文字列の検証のみ。スキーマやデータの変換シミュレーションは行われません）
 pgloader --dry-run docs/migration/pgloader.conf
 
 # 本番実行

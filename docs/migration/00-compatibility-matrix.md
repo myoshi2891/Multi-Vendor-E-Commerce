@@ -102,12 +102,14 @@ if (process.env.NODE_ENV === "production") globalThis.prisma = db;
 import { PrismaClient } from "@prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
-const extendedPrisma = new PrismaClient().$extends(withAccelerate());
-type ExtendedPrisma = typeof extendedPrisma;
+const extendedPrisma = () =>
+  new PrismaClient().$extends(withAccelerate());
+
+type ExtendedPrisma = ReturnType<typeof extendedPrisma>;
 
 const globalForPrisma = globalThis as unknown as { prisma?: ExtendedPrisma };
 
-export const db = globalForPrisma.prisma ?? extendedPrisma;
+export const db = globalForPrisma.prisma ?? extendedPrisma();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 ```
