@@ -69,13 +69,13 @@ export async function POST(req: Request) {
                 searchError
             );
 
-            // 方法2: 通常のcontains検索（modeオプションなし）
+            // 方法2: 通常のcontains検索（PostgreSQL: case-insensitive）
             products = await db.product.findMany({
                 where: {
                     OR: [
-                        { name: { contains: searchQuery } },
-                        { brand: { contains: searchQuery } },
-                        { description: { contains: searchQuery } },
+                        { name: { contains: searchQuery, mode: "insensitive" } },
+                        { brand: { contains: searchQuery, mode: "insensitive" } },
+                        { description: { contains: searchQuery, mode: "insensitive" } },
                         {
                             variants: {
                                 some: {
@@ -83,9 +83,10 @@ export async function POST(req: Request) {
                                         {
                                             variantName: {
                                                 contains: searchQuery,
+                                                mode: "insensitive",
                                             },
                                         },
-                                        { keywords: { contains: searchQuery } },
+                                        { keywords: { contains: searchQuery, mode: "insensitive" } },
                                     ],
                                 },
                             },
@@ -281,18 +282,18 @@ export async function GET(req: Request) {
                 searchError
             );
 
-            // 通常のcontains検索にフォールバック
+            // 通常のcontains検索にフォールバック（PostgreSQL: case-insensitive）
             const whereCondition = {
                 OR: [
-                    { name: { contains: trimmedQuery } },
-                    { brand: { contains: trimmedQuery } },
-                    { description: { contains: trimmedQuery } },
+                    { name: { contains: trimmedQuery, mode: "insensitive" as const } },
+                    { brand: { contains: trimmedQuery, mode: "insensitive" as const } },
+                    { description: { contains: trimmedQuery, mode: "insensitive" as const } },
                     {
                         variants: {
                             some: {
                                 OR: [
-                                    { variantName: { contains: trimmedQuery } },
-                                    { keywords: { contains: trimmedQuery } },
+                                    { variantName: { contains: trimmedQuery, mode: "insensitive" as const } },
+                                    { keywords: { contains: trimmedQuery, mode: "insensitive" as const } },
                                 ],
                             },
                         },

@@ -462,20 +462,21 @@ export const getProducts = async (
     }
 
     // Apply search filter (search term in product name or description)
+    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (filters.search) {
         whereClause.AND.push({
             OR: [
                 {
-                    name: { contains: filters.search },
+                    name: { contains: filters.search, mode: "insensitive" },
                 },
                 {
-                    description: { contains: filters.search },
+                    description: { contains: filters.search, mode: "insensitive" },
                 },
                 {
                     variants: {
                         some: {
-                            variantName: { contains: filters.search },
-                            variantDescription: { contains: filters.search },
+                            variantName: { contains: filters.search, mode: "insensitive" },
+                            variantDescription: { contains: filters.search, mode: "insensitive" },
                         },
                     },
                 },

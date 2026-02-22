@@ -81,17 +81,18 @@ export const getUserOrders = async (
     }
 
     // Apply search filter
+    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
         whereClause.AND.push({
             OR: [
                 {
-                    id: { contains: search }, // Search by order id
+                    id: { contains: search, mode: "insensitive" },
                 },
                 {
                     groups: {
                         some: {
                             store: {
-                                name: { contains: search }, // Search by store name (no mode here)
+                                name: { contains: search, mode: "insensitive" },
                             },
                         },
                     },
@@ -101,7 +102,7 @@ export const getUserOrders = async (
                         some: {
                             items: {
                                 some: {
-                                    name: { contains: search }, // Search by product name (no mode here)
+                                    name: { contains: search, mode: "insensitive" },
                                 },
                             },
                         },
@@ -214,14 +215,15 @@ export const getUserPayments = async (
     }
 
     // Apply search filter
+    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
         whereClause.AND.push({
             OR: [
                 {
-                    id: { contains: search }, // Search by id
+                    id: { contains: search, mode: "insensitive" },
                 },
                 {
-                    paymentIntentId: { contains: search }, // Search by Payment intent id
+                    paymentIntentId: { contains: search, mode: "insensitive" },
                 },
             ],
         });
@@ -322,9 +324,10 @@ export const getUserReviews = async (
     }
 
     // Apply search filter
+    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
         whereClause.AND.push({
-            review: { contains: search }, // Search by review text
+            review: { contains: search, mode: "insensitive" },
         });
     }
 
