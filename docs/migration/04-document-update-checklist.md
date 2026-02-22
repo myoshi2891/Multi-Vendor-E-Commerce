@@ -34,6 +34,17 @@
 - [x] L12: `Integration: Prisma + MySQL with reset and seed per suite.`
   → `Integration: Prisma + PostgreSQL with reset and seed per suite.`
 
+### `specs/multi-vendor-ecommerce/03-data-model.md`
+
+- [ ] L31: `Fulltext: Product(name, brand)` → GIN インデックス使用の記述に更新
+  （`to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` ベース）
+  ※ schema から `@@fulltext([name, brand])` は削除済みのためドキュメントとの整合が必要
+
+### `specs/multi-vendor-ecommerce/04-interfaces.md`
+
+- [x] L55: `MySQL as primary datastore.` → `PostgreSQL as primary datastore.`
+- [ ] 環境変数リストに `DIRECT_URL` を追加（Neon Direct connection 用）
+
 ---
 
 ## 2. README.md（設計書）

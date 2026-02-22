@@ -14,13 +14,13 @@
 
 | ファイル | 状態 |
 |---|---|
-| `prisma/schema.prisma` | **MySQL 設定のまま**（provider = mysql, relationMode = "prisma", @@fulltext, @db.LongText） |
-| `prisma/migrations/` | MySQL 用マイグレーション履歴（`20260222032834_init_mysql/`）が存在 |
-| `prisma/migrations/migration_lock.toml` | `provider = "mysql"` |
-| `src/app/api/search-products/route.ts` | MySQL 専用の `MATCH ... AGAINST` Raw SQL を使用中 |
-| `src/queries/subCategory.ts` L191 | MySQL 専用の `RAND()` をRaw SQL で使用中 |
-| `package.json` | `mysql2` が依存パッケージとして残存 |
-| `.env` | `DATABASE_URL` が MySQL 接続文字列（ローカル開発用） |
+| `prisma/schema.prisma` | **PostgreSQL 設定済み**（provider = postgresql, directUrl 追加済み） |
+| `prisma/migrations/` | PostgreSQL 用初期マイグレーション（`20260222101357_init_postgresql/`）が存在 |
+| `prisma/migrations/migration_lock.toml` | `provider = "postgresql"` |
+| `src/app/api/search-products/route.ts` | MySQL 専用の `MATCH ... AGAINST` Raw SQL を使用中（これから修正） |
+| `src/queries/subCategory.ts` L191 | MySQL 専用の `RAND()` を Raw SQL で使用中（これから修正） |
+| `package.json` | `mysql2` が削除済み |
+| `.env` | `DATABASE_URL=prisma://...`, `DIRECT_URL=postgresql://...` 設定済み |
 | `docs/migration/` | 手順書・スクリプト群（`pgloader.conf`, `rename-tables.sql` 等）準備完了 |
 
 ---
@@ -59,6 +59,21 @@ Claude CLI が実行する前に人間が行う作業:
 +  directUrl    = env("DIRECT_URL")
  }
 ```
+
+> **⚠️ `relationMode = "prisma"` 削除による FK 振る舞い変化について**
+>
+> MySQL 環境では `relationMode = "prisma"` により Prisma アプリケーション側で FK をエミュレートしていましたが、
+> PostgreSQL ネイティブの外部キー制約に切り替わります。
+> **方式 B（pgloader）でデータ移行する場合**: MySQL 側に DB レベルの FK 制約がない場合、
+> 孤立レコードや NULL 参照が存在すると移行後に **FK 違反エラー**が発生する可能性があります。
+>
+> **事前チェック（pgloader 実行前に MySQL 側で実行）:**
+>
+> ```sql
+> -- 孤立レコード診断例（定紟側 Store がない Product）
+> SELECT id FROM Product WHERE storeId NOT IN (SELECT id FROM Store);
+> -- 上記が 0 件または完全に修正されてから移行を進めてください。
+> ```
 
 ### 2-2. MySQL 固有の型を変更
 
@@ -145,7 +160,9 @@ pgloader docs/migration/pgloader.conf
 psql "$DIRECT_URL" -f docs/migration/rename-tables.sql
 
 # Prisma に「このマイグレーションは適用済み」と記録
-bunx prisma migrate resolve --applied init_postgresql
+# <exact_timestamped_folder_name> は Step 5 で生成されたフォルダ名を使用（下記のコマンドで確認）
+ls prisma/migrations/
+bunx prisma migrate resolve --applied <exact_timestamped_folder_name>
 ```
 
 > 詳細: `docs/migration/rename-tables.sql`（BEGIN/COMMIT, 結合テーブルリネーム含む）
@@ -176,9 +193,13 @@ const rows = await db.$queryRaw<ProductSearchRow[]>(Prisma.sql`
 ```ts
 const rows = await db.$queryRaw<ProductSearchRow[]>(Prisma.sql`
   SELECT p.id, p.name, p.description,
-         ts_rank(to_tsvector('simple', p.name || ' ' || p.description), plainto_tsquery('simple', ${q})) AS relevance
+         ts_rank(
+           to_tsvector('simple', p.name || ' ' || COALESCE(p.description, '')),
+           plainto_tsquery('simple', ${q})
+         ) AS relevance
   FROM "Product" p
-  WHERE to_tsvector('simple', p.name || ' ' || p.description) @@ plainto_tsquery('simple', ${q})
+  WHERE to_tsvector('simple', p.name || ' ' || COALESCE(p.description, ''))
+        @@ plainto_tsquery('simple', ${q})
   ORDER BY relevance DESC
   LIMIT 50
 `);
@@ -225,13 +246,18 @@ Prisma Accelerate (`prisma://` URL) を使う場合のみ必要。Direct connect
 -import { PrismaClient } from "@prisma/client";
 +import { PrismaClient } from "@prisma/client/edge";
 +import { withAccelerate } from "@prisma/extension-accelerate";
++
++function createPrisma() {
++  return new PrismaClient().$extends(withAccelerate());
++}
 
  declare global {
-   var prisma: PrismaClient | undefined;
+-  var prisma: PrismaClient | undefined;
++  var prisma: ReturnType<typeof createPrisma> | undefined;
  }
 
 -export const db = globalThis.prisma || new PrismaClient();
-+export const db = globalThis.prisma || new PrismaClient().$extends(withAccelerate());
++export const db = globalThis.prisma || (globalThis.prisma = createPrisma());
 
  if (process.env.NODE_ENV === "production") globalThis.prisma = db;
 ```
