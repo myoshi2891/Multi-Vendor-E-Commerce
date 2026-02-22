@@ -51,3 +51,6 @@ package-lock.json
 # kilocode/specify cache
 .kilocode/.cache/
 .specify/.cache/
+
+# MySQL マイグレーションバックアップ
+prisma/migrations_mysql_backup/
