@@ -11,7 +11,7 @@ and store status.
 - Seller store management, product and variant management, shipping rules.
 - Admin category, subcategory, and offer tag management.
 - Stripe and PayPal payments.
-- MySQL + Prisma persistence.
+- PostgreSQL + Prisma persistence.
 - Media uploads via Cloudinary.
 
 ## Out of Scope (Current Implementation)
@@ -28,7 +28,7 @@ and store status.
 ## System Summary
 - Next.js 14 App Router with storefront and dashboard surfaces.
 - Server actions in `src/queries` encapsulate domain operations.
-- Prisma ORM with a MySQL database.
+- Prisma ORM with a PostgreSQL database.
 - Clerk authentication with webhook sync to local users.
 - Stripe and PayPal integrations for payment capture.
 - Cart state managed by Zustand with localStorage persistence.

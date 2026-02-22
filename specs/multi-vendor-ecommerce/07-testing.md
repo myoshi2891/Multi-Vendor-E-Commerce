@@ -9,7 +9,7 @@
 ## Test Layers
 - Unit: pure functions, schema validation, and query composition.
 - Component: UI behavior with jsdom and user-event.
-- Integration: Prisma + MySQL with reset and seed per suite.
+- Integration: Prisma + PostgreSQL with reset and seed per suite.
 - API routes: route handlers with NextRequest mocks.
 - E2E: Playwright scenarios for critical flows.
 

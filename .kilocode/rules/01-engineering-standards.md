@@ -13,7 +13,7 @@ These standards align with the current repo tooling and architecture.
 ## Testing
 - Unit tests for server actions and utilities (see `src/queries/*.test.ts`).
 - Component tests for UI behavior with React Testing Library (jsdom).
-- Integration tests for Prisma/MySQL changes with reset + seed.
+- Integration tests for Prisma/PostgreSQL changes with reset + seed.
 - E2E smoke tests for critical flows using Playwright.
 - New behavior must be covered by at least one relevant test; bug fixes include
   a regression test or a written waiver in the PR.

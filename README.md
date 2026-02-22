@@ -60,7 +60,7 @@ graph TB
     
     %% データベース層
     DATA[データ層]
-    DB[(MySQL データベース)]
+    DB[(PostgreSQL データベース)]
     
     %% 外部サービス
     EXT[外部サービス]
@@ -263,7 +263,7 @@ graph TB
     
     %% データベース層
     DB_LAYER[データベース層]
-    MYSQL[(MySQL)]
+    PGSQL[(PostgreSQL)]
     
     %% 外部サービス層
     EXTERNAL[外部サービス層]
@@ -298,7 +298,7 @@ graph TB
     UI_COMP --> LUCIDE
     UI_COMP --> RECHARTS
     
-    PRISMA_CLIENT --> MYSQL
+    PRISMA_CLIENT --> PGSQL
     
     API_ROUTES --> STRIPE_SERVICE
     API_ROUTES --> CLERK_AUTH
@@ -421,7 +421,7 @@ graph TB
     UPLOADTHING[UploadThing]
     
     %% データベース
-    DATABASE[(MySQL)]
+    DATABASE[(PostgreSQL)]
     PRISMA[Prisma ORM]
     
     %% 外部API統合

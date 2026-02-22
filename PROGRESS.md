@@ -57,3 +57,11 @@
 - 仕様書テンプレ整備とサンプル仕様の具体化（`specs/001-sample-feature`）
 - 運用ルールと品質基準の明文化（`README_kilocode_speckit.md`, `constitution.md`）
 - `.gitignore` に KiloCode/Spec Kit のキャッシュ除外を追加
+
+## 追記 (2026-02-22)
+- MySQL → PostgreSQL (Neon) 移行完了
+- 接続方式: PostgreSQL (Neon) + Prisma Accelerate
+- フルテキスト検索: tsvector/tsquery (`'simple'` トークナイザー) に移行済み
+- ネイティブ外部キー制約が有効（`relationMode = "prisma"` → デフォルトの `"foreignKeys"`）
+- `mysql2` ドライバ削除、`@prisma/extension-accelerate` 追加
+- 全ドキュメントの MySQL 表記を PostgreSQL に更新

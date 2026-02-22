@@ -52,7 +52,7 @@ Dashboard:
 - Clerk for auth and user metadata.
 - Stripe and PayPal for payments.
 - Cloudinary for media uploads.
-- MySQL as primary datastore.
+- PostgreSQL (Neon) as primary datastore.
 
 ## Environment Variables (Observed Usage)
 - `DATABASE_URL`

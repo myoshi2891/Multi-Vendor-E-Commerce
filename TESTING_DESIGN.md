@@ -37,7 +37,7 @@
 
 ### Integration Tests (DB and Server Logic)
 - Runner: Jest (existing)
-- DB: MySQL test database using Docker Compose
+- DB: PostgreSQL test database using Docker Compose
 - ORM: Prisma with a separate `.env.test`
 - Notes: Use database reset per suite (migration + seed)
 
@@ -108,7 +108,7 @@
 
 ## Environment and Data Strategy
 - Use `.env.test` for test DB and secrets.
-- Use a dedicated MySQL schema for tests.
+- Use a dedicated PostgreSQL database for tests.
 - Reset strategy:
   - Integration suites: migrate + seed before suite
   - E2E suites: seed before run, clean after run
@@ -120,7 +120,7 @@
 - Run example:
 
 ```
-E2E_DATABASE_URL="mysql://user:pass@localhost:3306/app_test" \
+E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" \
   bun run seed:e2e
 ```
 

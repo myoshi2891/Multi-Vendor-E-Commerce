@@ -4,7 +4,7 @@
 - Next.js 14 (App Router)
 - React 18 + TypeScript
 - Tailwind CSS + shadcn/ui components
-- Prisma ORM + MySQL
+- Prisma ORM + PostgreSQL (Neon)
 - Clerk authentication
 - Stripe and PayPal payments
 - Cloudinary media uploads
@@ -22,7 +22,7 @@
 
 ## Data Access
 - Prisma client configured in `src/lib/db.ts`.
-- MySQL fulltext search used in product search with a fallback to `contains`.
+- PostgreSQL fulltext search (tsvector/tsquery) used in product search with a fallback to `contains`.
 
 ## Client State
 - Cart state managed by Zustand with localStorage persistence in

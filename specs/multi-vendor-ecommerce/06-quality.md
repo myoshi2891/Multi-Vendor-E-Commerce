@@ -12,7 +12,7 @@
 - CartItem and OrderItem store snapshot fields (price, name, image, size).
 
 ## Performance
-- MySQL fulltext search with a fallback to `contains` queries.
+- PostgreSQL fulltext search (tsvector/tsquery) with a fallback to `contains` queries.
 - Pagination in search endpoints limits result size.
 - Client-side cart interactions avoid roundtrips.
 
