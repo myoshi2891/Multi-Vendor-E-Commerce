@@ -1,12 +1,7 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
-import {
-    CountryWithShippingRatesType,
-    StoreDefaultShippingType,
-    StoreStatus,
-    StoreType,
-} from "@/lib/types";
+import { StoreDefaultShippingType, StoreStatus, StoreType } from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -502,8 +497,6 @@ export const applySeller = async (store: StoreType) => {
             }
             throw new Error(errorMessage);
         }
-
-        console.warn("store retrieved", { id: store.id });
 
         // Create store details into the database
         const storeDetails = await db.store.create({

@@ -30,15 +30,24 @@ export async function getUserCountry(): Promise<Country> {
             clearTimeout(timeoutId);
             if (response.ok) {
                 const data = await response.json();
-                const code: string = data.country ?? "unknown";
-                userCountry = {
-                    name:
-                        countries.find((country) => country.code === code)
-                            ?.name ?? code,
-                    code,
-                    city: data.city || "",
-                    region: data.region || "",
-                };
+                if (!data.country) {
+                    // country フィールドがない場合はデフォルトを使用（city/region は補完）
+                    userCountry = {
+                        ...DEFAULT_COUNTRY,
+                        city: data.city || "",
+                        region: data.region || "",
+                    };
+                } else {
+                    userCountry = {
+                        name:
+                            countries.find(
+                                (country) => country.code === data.country
+                            )?.name ?? data.country,
+                        code: data.country,
+                        city: data.city || "",
+                        region: data.region || "",
+                    };
+                }
             }
         } finally {
             clearTimeout(timeoutId);

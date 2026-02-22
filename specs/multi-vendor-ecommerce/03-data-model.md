@@ -28,4 +28,4 @@
 ## Indexing and Uniqueness
 - Unique: Store.url, Category.url, SubCategory.url, Product.slug,
   ProductVariant.slug, Coupon.code.
-- Fulltext: Product(name, brand) and ProductVariant(variantName, keywords).
+- GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.

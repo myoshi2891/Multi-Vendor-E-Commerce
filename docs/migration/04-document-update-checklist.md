@@ -37,7 +37,7 @@
 
 ### `specs/multi-vendor-ecommerce/03-data-model.md`
 
-- [ ] L31: `Fulltext: Product(name, brand)` → GIN インデックス使用の記述に更新
+- [x] L31: `Fulltext: Product(name, brand)` → GIN インデックス使用の記述に更新
   （`to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` ベース）
   ※ schema から `@@fulltext([name, brand])` は削除済みのためドキュメントとの整合が必要
 

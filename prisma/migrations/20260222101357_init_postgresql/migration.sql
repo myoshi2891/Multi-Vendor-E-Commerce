@@ -422,8 +422,8 @@ CREATE TABLE "Wishlist" (
 CREATE TABLE "Coupon" (
     "id" TEXT NOT NULL,
     "code" TEXT NOT NULL,
-    "startDate" TEXT NOT NULL,
-    "endDate" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
     "discount" INTEGER NOT NULL,
     "storeId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

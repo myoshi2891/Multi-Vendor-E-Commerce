@@ -133,13 +133,19 @@ cp -r prisma/migrations prisma/migrations_mysql_backup
 
 # 2. 削除
 rm -rf prisma/migrations
+```
 
-# 方式 A（Prisma Reset + 再シード）の場合のみ:
-#   DATABASE_URL を DIRECT_URL（Neon Direct connection）に一時的に変更してから実行
+**方式 A（Prisma Reset + 再シード）の場合:**
+
+```bash
+# DATABASE_URL を DIRECT_URL（Neon Direct connection）に一時的に変更してから実行
 bunx prisma migrate dev --name init_postgresql
+```
 
-# 方式 B（pgloader でデータ移行）の場合のみ:
-#   スキーマファイルのみ生成（DB への適用はしない）
+**方式 B（pgloader でデータ移行）の場合:**
+
+```bash
+# スキーマファイルのみ生成（DB への適用はしない）
 bunx prisma migrate dev --name init_postgresql --create-only
 ```
 

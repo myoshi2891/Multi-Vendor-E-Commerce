@@ -41,17 +41,14 @@ const generateUniqueSlug = async (
             },
         });
         if (!existingRecord) {
-            break;
+            return slug;
         }
         slug = `${baseSlug}${separator}${suffix++}`;
-        if (attempts === maxAttempts - 1) {
-            throw new Error(
-                `generateUniqueSlug: exceeded ${maxAttempts} attempts for model="${model}", field="${field}", baseSlug="${baseSlug}"`
-            );
-        }
     }
 
-    return slug;
+    throw new Error(
+        `generateUniqueSlug: exceeded ${maxAttempts} attempts for model="${model}", field="${field}", baseSlug="${baseSlug}"`
+    );
 };
 
 // Cookies
