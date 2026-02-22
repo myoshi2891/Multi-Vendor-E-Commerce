@@ -299,9 +299,9 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
 };
 
 /**
- * Seeds the database once for each computed seed target.
+ * Seed the database for all configured targets.
  *
- * Iterates the targets produced by resolveSeedTargets, builds a seed for each target with buildE2ESeed, executes seedOnce for each seed, and logs completion with the number of targets processed.
+ * Processes each computed seed target, applies its seed data to the database, and logs completion with the number of targets processed.
  */
 async function main() {
     const seedTargets = resolveSeedTargets();

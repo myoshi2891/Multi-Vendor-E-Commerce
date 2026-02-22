@@ -10,7 +10,13 @@ const DEFAULT_COUNTRY: Country = {
 };
 
 // IP アドレスからユーザーの国を検出する
-// Edge Runtime 互換（DB 依存なし）
+/**
+ * Detects the user's country and location from their IP by querying ipinfo.io.
+ *
+ * Uses the IPINFO_TOKEN environment variable for the request and maps the returned country code to a human-readable name via the bundled countries dataset. If the request fails or the response is not usable, falls back to the default country.
+ *
+ * @returns A Country object containing `name`, `code`, `city`, and `region`; if detection fails, the default country (United States, code "US") is returned.
+ */
 export async function getUserCountry(): Promise<Country> {
     let userCountry: Country = DEFAULT_COUNTRY;
     try {
