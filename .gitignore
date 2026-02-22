@@ -54,4 +54,6 @@ package-lock.json
 
 # MySQL マイグレーションバックアップ
 prisma/migrations_mysql_backup/
+
+# Playwright artifacts
 .playwright-mcp

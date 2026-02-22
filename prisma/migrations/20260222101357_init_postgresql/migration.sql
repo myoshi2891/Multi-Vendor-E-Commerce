@@ -138,8 +138,8 @@ CREATE TABLE "Size" (
     "id" TEXT NOT NULL,
     "size" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
-    "price" DOUBLE PRECISION NOT NULL,
-    "discount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "price" NUMERIC(12,2) NOT NULL,
+    "discount" NUMERIC(12,2) NOT NULL DEFAULT 0,
     "productVariantId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -498,6 +498,11 @@ CREATE INDEX "Product_subCategoryId_idx" ON "Product"("subCategoryId");
 
 -- CreateIndex
 CREATE INDEX "Product_offerTagId_idx" ON "Product"("offerTagId");
+
+-- CreateIndex (GIN fulltext for search-products/route.ts)
+CREATE INDEX "Product_fulltext_idx" ON "Product" USING GIN (
+    to_tsvector('simple', "name" || ' ' || COALESCE("description", ''))
+);
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProductVariant_slug_key" ON "ProductVariant"("slug");

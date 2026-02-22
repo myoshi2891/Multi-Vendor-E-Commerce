@@ -149,7 +149,7 @@ export const upsertStore = async (store: Partial<Store>) => {
 
         return storeDetails;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -188,7 +188,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 
         return store;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -236,7 +236,7 @@ export const updateStoreDefaultShippingDetails = async (
 
         return updatedStore;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -304,7 +304,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 
         return result;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -371,7 +371,7 @@ export const upsertShippingRate = async (
 
         return shippingRateDetails;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -446,7 +446,7 @@ export const getStoreOrders = async (storeUrl: string) => {
 
         return orders;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -503,7 +503,7 @@ export const applySeller = async (store: StoreType) => {
             throw new Error(errorMessage);
         }
 
-        console.log("store details", store);
+        console.warn("store details", store);
 
         // Create store details into the database
         const storeDetails = await db.store.create({
@@ -518,7 +518,7 @@ export const applySeller = async (store: StoreType) => {
 
         return storeDetails;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -554,7 +554,7 @@ export const getAllStores = async () => {
 
         return stores;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -654,7 +654,7 @@ export const deleteStore = async (storeId: string) => {
 
         return response;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -693,7 +693,7 @@ export const getStorePageDetails = async (storeUrl: string) => {
 
         return store;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };

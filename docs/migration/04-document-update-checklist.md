@@ -40,10 +40,10 @@
   （`to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` ベース）
   ※ schema から `@@fulltext([name, brand])` は削除済みのためドキュメントとの整合が必要
 
-### `specs/multi-vendor-ecommerce/04-interfaces.md`
+### `specs/multi-vendor-ecommerce/04-interfaces.md` <!-- noqa: MD024 -->
 
 - [x] L55: `MySQL as primary datastore.` → `PostgreSQL as primary datastore.`
-- [ ] 環境変数リストに `DIRECT_URL` を追加（Neon Direct connection 用）
+- [x] 環境変数リストに `DIRECT_URL` を追加（Neon Direct connection 用）
 
 ---
 
@@ -122,8 +122,13 @@
 `docs/migration/` は移行用ドキュメント自体のため除外しています。
 
 ```bash
-# specs/, README.md, TESTING_DESIGN.md, PROGRESS.md の MySQL 表記を一括検索（大文字小文字不問）
-rg -i "mysql" specs/ README.md TESTING_DESIGN.md PROGRESS.md
+# specs/, README.md, TESTING_DESIGN.md の MySQL 表記を一括検索（大文字小文字不問）
+# ※ PROGRESS.md は移行経緯の履歴として意図的に MySQL の記述を含むため除外しています
+rg -i "mysql" specs/ README.md TESTING_DESIGN.md
 ```
 
 ヒットした行が残っている場合は、本チェックリストの各項目に従って更新してください。
+
+> **PROGRESS.md の手動確認:**  PROGRESS.md には L36-L47 付近に MySQL 移行前の履歴記述が残っています。
+> これらは意図的なものですが、移行後の新規記述に MySQL が混入していないか確認したい場合は
+> `rg -i "mysql" PROGRESS.md` で個別に確認してください。

@@ -1,8 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
 import ColorThief from "colorthief";
-import { CartProductType } from "./types";
 import { differenceInDays, differenceInHours } from "date-fns";
+import { twMerge } from "tailwind-merge";
+import { CartProductType } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -200,17 +200,6 @@ export const downloadBlobAsFile = (blob: Blob, filename: string) => {
     URL.revokeObjectURL(link.href);
 };
 
-// export const printPDF = (blob: Blob) => {
-//     const pdfUrl = URL.createObjectURL(blob);
-//     const printWindow = window.open(pdfUrl, "_blank");
-//     if (printWindow) {
-//         printWindow.addEventListener("load", () => {
-//             printWindow.focus();
-//             printWindow.print();
-//         });
-//     }
-// };
-
 export const printPDF = (blob: Blob) => {
     const pdfUrl = URL.createObjectURL(blob);
     const iframe = document.createElement("iframe");
@@ -242,27 +231,27 @@ export const printPDF = (blob: Blob) => {
 // Handle product history in localStorage
 export const updateProductHistory = (variantId: string) => {
     // Fetch existing product history from localStorage
-    let productHistory: string[] = []
-    const historyString = localStorage.getItem("productHistory")
+    let productHistory: string[] = [];
+    const historyString = localStorage.getItem("productHistory");
 
     if (historyString) {
         try {
-            productHistory = JSON.parse(historyString)
+            productHistory = JSON.parse(historyString);
         } catch (error) {
-            productHistory = []
+            productHistory = [];
         }
     }
 
     // Update the history: Remove the product if it exists, and add it to the front
-    productHistory = productHistory.filter((id) => id !== variantId)
-    productHistory.unshift(variantId)
+    productHistory = productHistory.filter((id) => id !== variantId);
+    productHistory.unshift(variantId);
 
     // Check storage limit (manage max number of products)
-    const MAX_PRODUCTS = 100
+    const MAX_PRODUCTS = 100;
     if (productHistory.length > MAX_PRODUCTS) {
-        productHistory.pop() // Remove the oldest product
+        productHistory.pop(); // Remove the oldest product
     }
 
     // Save updated history to localStorage
-    localStorage.setItem('productHistory', JSON.stringify(productHistory))
-}
+    localStorage.setItem("productHistory", JSON.stringify(productHistory));
+};

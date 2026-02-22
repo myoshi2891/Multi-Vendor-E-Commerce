@@ -56,6 +56,7 @@ Dashboard:
 
 ## Environment Variables (Observed Usage)
 - `DATABASE_URL`
+- `DIRECT_URL`
 - `STRIPE_SECRET_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLIC_KEY`
 - `NEXT_PUBLIC_PAYPAL_CLIENT_ID`

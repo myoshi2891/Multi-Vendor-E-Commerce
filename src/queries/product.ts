@@ -7,7 +7,6 @@ import {
     FreeShippingWithCountriesType,
     ProductPageType,
     ProductShippingDetailsType,
-    ProductType,
     ProductWithVariantType,
     RatingStatisticsType,
     SortOrder,
@@ -20,12 +19,11 @@ import { currentUser } from "@clerk/nextjs/server";
 
 // Slugify
 import slugify from "slugify";
-import { PrismaClient } from "@prisma/client";
 
 // サーバー専用: slug の一意性を保証するヘルパー
 const generateUniqueSlug = async (
     baseSlug: string,
-    model: keyof PrismaClient,
+    model: string,
     field: string = "slug",
     separator: string = "-"
 ) => {
@@ -34,7 +32,9 @@ const generateUniqueSlug = async (
 
     while (true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const existingRecord = await (db[model] as any).findFirst({
+        const existingRecord = await (db as Record<string, any>)[
+            model
+        ].findFirst({
             where: {
                 [field]: slug,
             },
@@ -42,8 +42,7 @@ const generateUniqueSlug = async (
         if (!existingRecord) {
             break;
         }
-        slug = `${slug}${separator}${suffix++}`;
-        suffix += 1;
+        slug = `${baseSlug}${separator}${suffix++}`;
     }
 
     return slug;
@@ -54,8 +53,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { FreeShipping, ProductVariant, Size, Store } from "@prisma/client";
-import { sub } from "date-fns";
+import { ProductVariant, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -497,13 +495,28 @@ export const getProducts = async (
                     name: { contains: filters.search, mode: "insensitive" },
                 },
                 {
-                    description: { contains: filters.search, mode: "insensitive" },
+                    description: {
+                        contains: filters.search,
+                        mode: "insensitive",
+                    },
                 },
                 {
                     variants: {
                         some: {
-                            variantName: { contains: filters.search, mode: "insensitive" },
-                            variantDescription: { contains: filters.search, mode: "insensitive" },
+                            OR: [
+                                {
+                                    variantName: {
+                                        contains: filters.search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                                {
+                                    variantDescription: {
+                                        contains: filters.search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                            ],
                         },
                     },
                 },

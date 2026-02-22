@@ -33,9 +33,12 @@ bunx playwright test tests/e2e/cart-smoke.spec.ts             # 単一テスト
 bun run seed:e2e
 
 # Prismaコマンド
-bunx prisma generate        # クライアント再生成
-bunx prisma db push          # スキーマをDBに反映
-bunx prisma studio           # DBブラウザ
+bunx prisma generate          # クライアント再生成
+bunx prisma migrate dev       # マイグレーション適用（prisma/migrations/ の履歴を使用）
+bunx prisma db push           # スキーマ直接反映（マイグレーション履歴なし、開発専用）
+bunx prisma studio            # DBブラウザ
+# ※ db push ではなく migrate dev を使うことで prisma/migrations/ と migration_lock.toml に
+#    履歴が残り、本番環境への安全なデプロイが可能になります。
 ```
 
 ## アーキテクチャ
