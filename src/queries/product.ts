@@ -20,7 +20,34 @@ import { currentUser } from "@clerk/nextjs/server";
 
 // Slugify
 import slugify from "slugify";
-import { generateUniqueSlug } from "@/lib/utils";
+import { PrismaClient } from "@prisma/client";
+
+// サーバー専用: slug の一意性を保証するヘルパー
+const generateUniqueSlug = async (
+    baseSlug: string,
+    model: keyof PrismaClient,
+    field: string = "slug",
+    separator: string = "-"
+) => {
+    let slug = baseSlug;
+    let suffix = 1;
+
+    while (true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingRecord = await (db[model] as any).findFirst({
+            where: {
+                [field]: slug,
+            },
+        });
+        if (!existingRecord) {
+            break;
+        }
+        slug = `${slug}${separator}${suffix++}`;
+        suffix += 1;
+    }
+
+    return slug;
+};
 
 // Cookies
 import { getCookie } from "cookies-next";

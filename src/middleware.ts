@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { getUserCountry } from "./lib/utils";
+import { getUserCountry } from "./lib/country";
 
 export default clerkMiddleware(async (auth, req, next) => {
 	const protectedRoutes = createRouteMatcher([
