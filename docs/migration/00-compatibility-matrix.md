@@ -40,7 +40,7 @@ datasource db {
 ```
 
 > `directUrl` は Prisma Accelerate 使用時に必須。マイグレーション等の直接接続に使用されます。
-
+>
 > [!CAUTION]
 > **`relationMode` を `"prisma"` → `"foreignKeys"` に変更する際の注意:**
 > この変更により、DB レベルの外部キー制約が有効になります。MySQL で `relationMode = "prisma"` を使用していた場合、孤立レコード（参照先が存在しない行）があると `prisma migrate dev` が失敗します。
@@ -155,7 +155,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 -- GIN インデックスの作成（マイグレーション SQL として追加）
 CREATE INDEX idx_product_fulltext
   ON "Product"
-  USING GIN (to_tsvector('simple', coalesce("name", '') || ' ' || coalesce("brand", '')));
+  USING GIN (to_tsvector('simple', coalesce("name", '') || ' ' || coalesce("description", '')));
 
 CREATE INDEX idx_variant_fulltext
   ON "ProductVariant"

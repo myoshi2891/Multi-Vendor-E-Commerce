@@ -142,7 +142,7 @@ services:
       POSTGRES_DB: app_test
     ports: ["5432:5432"]
     options: >-
-      --health-cmd pg_isready
+      --health-cmd "pg_isready -U test"
       --health-interval 10s
       --health-timeout 5s
       --health-retries 5

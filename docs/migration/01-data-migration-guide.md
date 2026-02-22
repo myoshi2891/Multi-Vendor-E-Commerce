@@ -121,6 +121,15 @@ brew install pgloader
 
 ### 4-2. 設定ファイル作成
 
+> [!WARNING]
+> pgloader の `include drop` オプションは、接続先データベースの既存テーブルを削除します。
+> また `DROP SCHEMA IF EXISTS public CASCADE` は `public` スキーマ内の**全オブジェクトとデータを削除**します。
+> 実行前に必ず：
+> 1. `INTO` 句の接続先 DB 名が移行対象であることを二重確認
+> 2. バックアップを取得済みであることを確認
+> 3. まず `--dry-run` でドライランを実行して結果を確認
+> 4. 本番環境の DB を `INTO` 句に直接指定しないこと
+
 `docs/migration/pgloader.conf`:
 
 ```
@@ -131,17 +140,10 @@ LOAD DATABASE
 WITH include drop, create tables, create indexes,
      reset sequences, downcase identifiers
 
-CAST type text     to text,
-     type longtext to text,
+CAST type longtext to text,
      type tinyint  to boolean using tinyint-to-boolean
 ;
 ```
-
-> [!WARNING]
-> pgloader の `include drop` オプションは、接続先データベースの既存テーブルを削除します。実行前に必ず：
-> 1. 接続先 DB 名が正しいことを二重確認
-> 2. バックアップを取得済みであることを確認
-> 3. まず `--dry-run` でドライランを実行して結果を確認
 
 > **注意**: pgloader はテーブル名を小文字に変換する（`downcase identifiers`）ため、
 > Prisma の期待するテーブル名（PascalCase）と一致しない。
@@ -192,8 +194,8 @@ pgloader --dry-run docs/migration/pgloader.conf
 # 本番実行
 pgloader docs/migration/pgloader.conf
 
-# テーブル名リネーム
-psql -d multivendor_ecommerce -f docs/migration/rename-tables.sql
+# テーブル名リネーム（Neon に直接接続）
+psql "$DIRECT_URL" -f docs/migration/rename-tables.sql
 
 # マイグレーション履歴のベースライン設定
 bunx prisma migrate resolve --applied init_postgresql

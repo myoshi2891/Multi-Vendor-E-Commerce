@@ -85,6 +85,12 @@ pgloader mysql://user:password@localhost/your_db \
 ✅ 外部キー対応
 ✅ ENUM対応
 
+> **重要**: pgloader はテーブル名を小文字に変換します。実行後に `docs/migration/rename-tables.sql` で PascalCase にリネームしてください：
+>
+> ```bash
+> psql "$DIRECT_URL" -f docs/migration/rename-tables.sql
+> ```
+
 ---
 
 ## 方式 C：SQL手動変換（小規模のみ）
@@ -128,6 +134,10 @@ datasource db {
 
 MySQL用migrationは使用不可。
 
+> [!CAUTION]
+> `rm -rf prisma/migrations` はマイグレーション履歴を**完全に削除**します。
+> 実行前にバックアップを取得してください（`cp -r prisma/migrations prisma/migrations_backup`）。
+
 ```bash
 rm -rf prisma/migrations
 ```
@@ -135,7 +145,7 @@ rm -rf prisma/migrations
 新規作成：
 
 ```bash
-npx prisma migrate dev --name init_postgres
+bunx prisma migrate dev --name init_postgres
 ```
 
 ---
@@ -143,7 +153,7 @@ npx prisma migrate dev --name init_postgres
 # 6. データ整合性確認
 
 ```bash
-npx prisma studio
+bunx prisma studio
 ```
 
 * レコード件数一致確認

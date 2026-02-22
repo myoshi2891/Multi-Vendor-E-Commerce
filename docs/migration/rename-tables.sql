@@ -1,5 +1,9 @@
 -- pgloader が生成する小文字テーブル名を Prisma の PascalCase に変換
--- 使用方法: psql -d <database> -f docs/migration/rename-tables.sql
+-- 使用方法: psql "$DIRECT_URL" -f docs/migration/rename-tables.sql
+--
+-- 注意: トランザクション内で実行するため、エラー時は自動ロールバックされます。
+
+BEGIN;
 
 ALTER TABLE "user"                  RENAME TO "User";
 ALTER TABLE "category"              RENAME TO "Category";
@@ -28,4 +32,16 @@ ALTER TABLE "orderitem"             RENAME TO "OrderItem";
 ALTER TABLE "wishlist"              RENAME TO "Wishlist";
 ALTER TABLE "coupon"                RENAME TO "Coupon";
 ALTER TABLE "paymentdetails"        RENAME TO "PaymentDetails";
--- Enum テーブルも確認すること
+
+-- Enum テーブルの確認
+-- Prisma は以下の enum を定義しています。pgloader は enum 型を PostgreSQL の
+-- ネイティブ型として作成しますが、テーブルではないためリネーム不要です。
+-- ただし、名前が変わっていないか確認してください:
+--
+--   Role, StoreStatus, ShippingFeeMethod, OrderStatus,
+--   PaymentStatus, PaymentMethod, ProductStatus
+--
+-- 確認クエリ:
+SELECT typname FROM pg_type WHERE typtype = 'e' ORDER BY typname;
+
+COMMIT;
