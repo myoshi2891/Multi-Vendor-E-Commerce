@@ -829,6 +829,7 @@ const getUserCountry = () => {
     } catch (error) {
         // Handle error
         console.error("Error retrieving user country:", error);
+        return defaultCountry;
     }
 };
 const formatProductResponse = (

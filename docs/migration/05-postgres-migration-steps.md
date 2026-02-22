@@ -14,14 +14,14 @@
 
 | ファイル | 状態 |
 |---|---|
-| `prisma/schema.prisma` | **PostgreSQL 設定済み**（provider = postgresql, directUrl 追加済み） |
-| `prisma/migrations/` | PostgreSQL 用初期マイグレーション（`20260222101357_init_postgresql/`）が存在 |
-| `prisma/migrations/migration_lock.toml` | `provider = "postgresql"` |
-| `src/app/api/search-products/route.ts` | MySQL 専用の `MATCH ... AGAINST` Raw SQL を使用中（これから修正） |
-| `src/queries/subCategory.ts` L191 | MySQL 専用の `RAND()` を Raw SQL で使用中（これから修正） |
-| `package.json` | `mysql2` が削除済み |
-| `.env` | `DATABASE_URL=prisma://...`, `DIRECT_URL=postgresql://...` 設定済み |
-| `docs/migration/` | 手順書・スクリプト群（`pgloader.conf`, `rename-tables.sql` 等）準備完了 |
+| `prisma/schema.prisma` | ✅ 完了済み（PostgreSQL 設定済み: provider = postgresql, directUrl 追加済み） |
+| `prisma/migrations/` | ✅ 完了済み（PostgreSQL 用初期マイグレーション `20260222101357_init_postgresql/` 存在） |
+| `prisma/migrations/migration_lock.toml` | ✅ 完了済み（`provider = "postgresql"`） |
+| `src/app/api/search-products/route.ts` | ✅ 完了済み（PostgreSQL `tsvector/tsquery` に換装済み） |
+| `src/queries/subCategory.ts` L191 | ✅ 完了済み（`RAND()` → `RANDOM()` 修正済み） |
+| `package.json` | ✅ 完了済み（`mysql2` 削除済み） |
+| `.env` | ✅ 完了済み（`DATABASE_URL=prisma://...`, `DIRECT_URL=postgresql://...` 設定済み） |
+| `docs/migration/` | ✅ 完了済み（手順書・スクリプト群準備完了） |
 
 ---
 
@@ -38,7 +38,7 @@ Claude CLI が実行する前に人間が行う作業:
 
 ---
 
-## Step 2: `schema.prisma` の更新
+## Step 2: `schema.prisma` の更新 ✅ 完了済み（参照用）
 
 **ファイル:** `prisma/schema.prisma`
 
@@ -48,7 +48,7 @@ Claude CLI が実行する前に人間が行う作業:
  generator client {
    provider        = "prisma-client-js"
 -  previewFeatures = ["fullTextSearch", "fullTextIndex"]
-+  previewFeatures = ["fullTextSearch"]
++  previewFeatures = ["fullTextSearchPostgres"]
  }
 
  datasource db {
@@ -138,7 +138,9 @@ rm -rf prisma/migrations
 **方式 A（Prisma Reset + 再シード）の場合:**
 
 ```bash
-# DATABASE_URL を DIRECT_URL（Neon Direct connection）に一時的に変更してから実行
+# schema.prisma に directUrl = env("DIRECT_URL") が設定されている場合、
+# Prisma CLI は directUrl を自動使用するため DATABASE_URL の一時変更は不要。
+# DIRECT_URL が .env に設定済みであることを確認してから実行してください。
 bunx prisma migrate dev --name init_postgresql
 ```
 
@@ -198,14 +200,15 @@ const rows = await db.$queryRaw<ProductSearchRow[]>(Prisma.sql`
 
 ```ts
 const rows = await db.$queryRaw<ProductSearchRow[]>(Prisma.sql`
-  SELECT p.id, p.name, p.description,
-         ts_rank(
-           to_tsvector('simple', p.name || ' ' || COALESCE(p.description, '')),
-           plainto_tsquery('simple', ${q})
-         ) AS relevance
-  FROM "Product" p
-  WHERE to_tsvector('simple', p.name || ' ' || COALESCE(p.description, ''))
-        @@ plainto_tsquery('simple', ${q})
+  WITH product_tsv AS (
+    SELECT p.id, p.name, p.description,
+           to_tsvector('simple', p.name || ' ' || COALESCE(p.description, '')) AS tsv
+    FROM "Product" p
+  )
+  SELECT id, name, description,
+         ts_rank(tsv, plainto_tsquery('simple', ${q})) AS relevance
+  FROM product_tsv
+  WHERE tsv @@ plainto_tsquery('simple', ${q})
   ORDER BY relevance DESC
   LIMIT 50
 `);

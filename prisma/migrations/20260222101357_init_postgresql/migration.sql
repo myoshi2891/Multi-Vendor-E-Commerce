@@ -121,7 +121,7 @@ CREATE TABLE "ProductVariant" (
     "variantImage" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "isSale" BOOLEAN NOT NULL DEFAULT false,
-    "saleEndDate" TEXT,
+    "saleEndDate" TIMESTAMP(3),
     "keywords" TEXT,
     "sku" TEXT NOT NULL,
     "sales" INTEGER NOT NULL DEFAULT 0,
