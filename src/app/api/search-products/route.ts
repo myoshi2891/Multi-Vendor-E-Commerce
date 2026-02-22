@@ -19,11 +19,16 @@ export async function GET(req: Request) {
     }
 
     // Prisma.sql + $queryRaw で型安全 & SQLインジェクション防止
+    // PostgreSQL: to_tsvector + plainto_tsquery で全文検索
     const rows = await db.$queryRaw<ProductSearchRow[]>(Prisma.sql`
-    SELECT p.id, p.name, p.description, 
-           MATCH(p.name, p.description) AGAINST(${q} IN NATURAL LANGUAGE MODE) AS relevance
-    FROM products p
-    WHERE MATCH(p.name, p.description) AGAINST(${q} IN NATURAL LANGUAGE MODE)
+    SELECT p.id, p.name, p.description,
+           ts_rank(
+               to_tsvector('simple', p.name || ' ' || p.description),
+               plainto_tsquery('simple', ${q})
+           ) AS relevance
+    FROM "Product" p
+    WHERE to_tsvector('simple', p.name || ' ' || p.description)
+          @@ plainto_tsquery('simple', ${q})
     ORDER BY relevance DESC
     LIMIT 50
   `);
