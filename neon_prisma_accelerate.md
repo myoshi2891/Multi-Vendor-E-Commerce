@@ -64,7 +64,9 @@ mysqldump -u root -p --single-transaction --routines --triggers your_db > dump.s
 
 # 3. データ移行方法の選択
 
-## ✅ 方法A（推奨）：pgloader使用
+## ✅ 方式 B（推奨）：pgloader使用
+
+> `01-data-migration-guide.md` では「方式 B」として記載されています。
 
 ### インストール
 
@@ -85,7 +87,7 @@ pgloader mysql://user:password@localhost/your_db \
 
 ---
 
-## 方法B：SQL手動変換（小規模のみ）
+## 方式 C：SQL手動変換（小規模のみ）
 
 主な変換ルール：
 
@@ -105,10 +107,13 @@ pgloader mysql://user:password@localhost/your_db \
 
 ```prisma
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 ```
+
+> `directUrl` は `DATABASE_URL` が `prisma://` スキーム（Prisma Accelerate）の場合に必須。`prisma migrate` 等の直接接続に使用されます。
 
 ### 型確認
 
@@ -151,8 +156,12 @@ npx prisma studio
 
 Prismaダッシュボードで Accelerate 有効化。
 
+> **注意**: `--accelerate` フラグは Prisma 5.2.0 で非推奨、7.0.0 で削除されました。
+> `DATABASE_URL` に `prisma://` スキームを使用すると自動検出されるため、通常の `bunx prisma generate` で十分です。
+> 別途 `@prisma/extension-accelerate` をインストールし、`withAccelerate()` 拡張を適用してください。
+
 ```bash
-npx prisma generate --accelerate
+bunx prisma generate
 ```
 
 `.env` 更新：
@@ -169,14 +178,17 @@ DATABASE_URL="accelerate経由URL"
 
 ```ts
 import { PrismaClient } from '@prisma/client'
+import { withAccelerate } from '@prisma/extension-accelerate'
 
-const globalForPrisma = global as unknown as {
-  prisma: PrismaClient
+const extendedPrisma = new PrismaClient().$extends(withAccelerate())
+type ExtendedPrisma = typeof extendedPrisma
+
+const globalForPrisma = globalThis as unknown as {
+  prisma?: ExtendedPrisma
 }
 
 export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient()
+  globalForPrisma.prisma ?? extendedPrisma
 
 if (process.env.NODE_ENV !== 'production')
   globalForPrisma.prisma = prisma

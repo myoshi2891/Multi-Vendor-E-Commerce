@@ -40,16 +40,31 @@ datasource db {
 ```
 
 > `directUrl` は Prisma Accelerate 使用時に必須。マイグレーション等の直接接続に使用されます。
+
+> [!CAUTION]
+> **`relationMode` を `"prisma"` → `"foreignKeys"` に変更する際の注意:**
+> この変更により、DB レベルの外部キー制約が有効になります。MySQL で `relationMode = "prisma"` を使用していた場合、孤立レコード（参照先が存在しない行）があると `prisma migrate dev` が失敗します。
 >
-> **注意**: `relationMode` を `"foreignKeys"` に変更すると、`@@index` で明示的に定義していた外部キーカラムのインデックスは Prisma が自動生成します。
-> 既存の `@@index([foreignKeyField])` は冗長になる場合がありますが、残しても問題ありません。
+> **移行前の必須手順:**
+> 1. 各テーブルで孤立レコードを検出するクエリを実行する
+>
+>    ```sql
+>    -- 例: Product テーブルの categoryId が Category に存在するか確認
+>    SELECT p.id FROM Product p LEFT JOIN Category c ON p.categoryId = c.id WHERE c.id IS NULL;
+>    ```
+>
+> 2. 孤立レコードを修正または削除する
+> 3. DB のバックアップ/スナップショットを取得する
+> 4. `prisma migrate dev` を再実行する
+>
+> また、`@@index([foreignKeyField])` は `relationMode = "foreignKeys"` では Prisma が自動生成するため冗長になりますが、残しても問題ありません。
 
 ### 1-2. `generator` ブロック
 
 | 項目 | MySQL（現在） | PostgreSQL（変更後） | 備考 |
 |---|---|---|---|
 | `previewFeatures` | `["fullTextSearch", "fullTextIndex"]` | `["fullTextSearch"]` | `fullTextIndex` は MySQL 専用。PostgreSQL では不要 |
-| `accelerate` | *(未設定)* | `npx prisma generate --accelerate` | Prisma Client 側で Accelerate を有効化 |
+| `accelerate` | *(未設定)* | `@prisma/extension-accelerate` を導入 | `DATABASE_URL` が `prisma://` スキームなら自動検出 |
 
 **変更前:**
 
@@ -69,7 +84,7 @@ generator client {
 }
 ```
 
-> **Accelerate 有効化**: Prisma Accelerate を使用する場合、`npx prisma generate --accelerate` で Client を生成し、`@prisma/extension-accelerate` を利用します。
+> **Accelerate 有効化**: `--accelerate` フラグは Prisma 5.2.0 で非推奨、7.0.0 で削除されました。Prisma >= 5.2.0 では `DATABASE_URL` に `prisma://` スキームを使用すると自動検出されるため、通常の `bunx prisma generate` で十分です。別途 `@prisma/extension-accelerate` をインストールし、`withAccelerate()` 拡張を適用してください。
 
 ### 1-3. Prisma Client 初期化コードの変更（`src/lib/db.ts`）
 
@@ -87,11 +102,12 @@ if (process.env.NODE_ENV === "production") globalThis.prisma = db;
 import { PrismaClient } from "@prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const extendedPrisma = new PrismaClient().$extends(withAccelerate());
+type ExtendedPrisma = typeof extendedPrisma;
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient().$extends(withAccelerate());
+const globalForPrisma = globalThis as unknown as { prisma?: ExtendedPrisma };
+
+export const db = globalForPrisma.prisma ?? extendedPrisma;
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 ```
@@ -175,7 +191,7 @@ CREATE INDEX idx_variant_fulltext
 ```sql
 SELECT p.id, p.name, p.description,
        MATCH(p.name, p.description) AGAINST(${q} IN NATURAL LANGUAGE MODE) AS relevance
-FROM products p
+FROM `Product` p
 WHERE MATCH(p.name, p.description) AGAINST(${q} IN NATURAL LANGUAGE MODE)
 ORDER BY relevance DESC
 LIMIT 50

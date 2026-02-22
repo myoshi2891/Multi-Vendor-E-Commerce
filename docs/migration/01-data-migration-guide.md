@@ -54,16 +54,31 @@ mysqldump -u root -p --single-transaction --routines --triggers \
 
 MySQL 用のマイグレーション履歴は PostgreSQL では利用できないため、一度削除して初期化します。
 
+> [!CAUTION]
+> `rm -rf prisma/migrations` はマイグレーション履歴を**完全に削除**します。実行前に以下を確認してください：
+> 1. 変更がコミット済みであること（または `git stash` で退避済み）
+> 2. バックアップを取得済みであること
+
 ```bash
-# 既存マイグレーション履歴を削除
+# 1. 内容確認
+ls prisma/migrations/
+
+# 2. バックアップ作成（安全策）
+cp -r prisma/migrations prisma/migrations_mysql_backup
+
+# 3. 削除
 rm -rf prisma/migrations
 
-# 新しい初期マイグレーションを生成（Neon に直接接続している環境で実行）
+# 4. 新しい初期マイグレーションを生成
+# 方式 B (pgloader) の場合は --create-only でファイル生成のみ行う
 # DATABASE_URL には Neon の Direct connection URL を設定してください。
-npx prisma migrate dev --name init_postgresql
+bunx prisma migrate dev --name init_postgresql --create-only
 ```
 
-> **注意**: `npx prisma migrate dev` を実行する際は、Accelerate 経由の URL ではなく、Neon の **Direct connection** URL を `DATABASE_URL` に設定する必要があります。
+> **方式 A** の場合は `--create-only` なしで `bunx prisma migrate dev --name init_postgresql` を実行します。
+> **方式 B** の場合は `--create-only` でファイル生成後、pgloader → rename-tables.sql → `bunx prisma migrate resolve --applied init_postgresql` の順で適用します。
+>
+> `bunx prisma migrate dev` を実行する際は、Accelerate 経由の URL ではなく、Neon の **Direct connection** URL を `DATABASE_URL` に設定する必要があります。
 
 ---
 
@@ -74,20 +89,20 @@ npx prisma migrate dev --name init_postgresql
 ```bash
 # 1. DATABASE_URL を PostgreSQL に変更（.env を編集）
 # 2. マイグレーション実行
-npx prisma migrate dev
+bunx prisma migrate dev
 
 # 3. Prisma Client 再生成
-npx prisma generate
+bunx prisma generate
 
 # 4. シードデータ投入
-npx prisma db seed
+bunx prisma db seed
 ```
 
 ### 検証
 
 ```bash
 # テーブル一覧確認
-npx prisma studio
+bunx prisma studio
 
 # または psql で直接確認
 psql -d multivendor_ecommerce -c '\dt'
@@ -110,8 +125,8 @@ brew install pgloader
 
 ```
 LOAD DATABASE
-  FROM mysql://DB_USER:password@localhost:3306/multivendor_ecommerce
-  INTO postgresql://user:password@ep-xxxx.neon.tech/db?sslmode=require
+  FROM mysql://<YOUR_MYSQL_USER>:<YOUR_MYSQL_PASSWORD>@localhost:3306/multivendor_ecommerce
+  INTO postgresql://<YOUR_NEON_USER>:<YOUR_NEON_PASSWORD>@ep-xxxx.neon.tech/multivendor_ecommerce?sslmode=require
 
 WITH include drop, create tables, create indexes,
      reset sequences, downcase identifiers
@@ -121,6 +136,12 @@ CAST type text     to text,
      type tinyint  to boolean using tinyint-to-boolean
 ;
 ```
+
+> [!WARNING]
+> pgloader の `include drop` オプションは、接続先データベースの既存テーブルを削除します。実行前に必ず：
+> 1. 接続先 DB 名が正しいことを二重確認
+> 2. バックアップを取得済みであることを確認
+> 3. まず `--dry-run` でドライランを実行して結果を確認
 
 > **注意**: pgloader はテーブル名を小文字に変換する（`downcase identifiers`）ため、
 > Prisma の期待するテーブル名（PascalCase）と一致しない。
@@ -175,7 +196,7 @@ pgloader docs/migration/pgloader.conf
 psql -d multivendor_ecommerce -f docs/migration/rename-tables.sql
 
 # マイグレーション履歴のベースライン設定
-npx prisma migrate resolve --applied init_postgresql
+bunx prisma migrate resolve --applied init_postgresql
 ```
 
 ---
@@ -189,14 +210,14 @@ npx prisma migrate resolve --applied init_postgresql
 
 ```bash
 # 1. MySQL からデータをエクスポート（Node.js スクリプト）
-npx tsx docs/migration/export-mysql-data.ts
+bunx tsx docs/migration/export-mysql-data.ts
 
 # 2. DATABASE_URL を PostgreSQL に切替
 # 3. マイグレーション実行
-npx prisma migrate dev
+bunx prisma migrate dev
 
 # 4. エクスポートしたデータをインポート
-npx tsx docs/migration/import-postgres-data.ts
+bunx tsx docs/migration/import-postgres-data.ts
 ```
 
 > スクリプトの実装は本ドキュメント範囲外。実装フェーズで作成する。
@@ -229,7 +250,7 @@ SELECT
 
 ```bash
 # Prisma Studio で確認
-npx prisma studio
+bunx prisma studio
 ```
 
 ### 6-3. アプリケーション動作確認
@@ -267,7 +288,7 @@ Neon のブランチング機能を活用し、安全に本番切替を行いま
 1. **ローカル**: `.env` の `DATABASE_URL` を MySQL の接続文字列に戻す
 2. **Vercel**: 環境変数 `DATABASE_URL` を MySQL 用に戻し、再デプロイ
 3. `schema.prisma` を MySQL 版に `git checkout` で復元
-4. `npx prisma generate` で Prisma Client を再生成
+4. `bunx prisma generate` で Prisma Client を再生成
 5. アプリケーションを再起動
 
 > MySQL 側のデータは移行中も変更しない前提。
