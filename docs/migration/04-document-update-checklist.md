@@ -85,16 +85,18 @@
 
 ## 6. 環境設定ファイル
 
-- [ ] `.env` — `DATABASE_URL` を PostgreSQL 形式に変更（`02-environment-setup.md` 参照）
+- [ ] `.env` — `DATABASE_URL` を Accelerate 形式に変更、`DIRECT_URL` を追加（`02-environment-setup.md` 参照）
 - [ ] `.env.example`（存在する場合）— 同様に更新
+- [ ] `schema.prisma` — `directUrl = env("DIRECT_URL")` を追加
 
 ---
 
 ## 更新順序の推奨
 
 1. **Prisma スキーマ** → マイグレーション生成
-2. **ソースコード** → 生SQL・`contains` モード変更
+2. **ソースコード** → 生SQL・`contains` モード変更・`db.ts` Accelerate 対応
 3. **テスト設計書** → `TESTING_DESIGN.md`
 4. **Specs ドキュメント** → `specs/` 配下 5 ファイル
 5. **README.md** → Mermaid 図の更新
 6. **PROGRESS.md** → 移行完了の追記
+7. **`neon_prisma_accelerate.md`** → `docs/migration/` に統合後、ルートから削除

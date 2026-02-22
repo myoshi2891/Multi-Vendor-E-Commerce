@@ -28,42 +28,42 @@
 
 ## 2. 事前準備
 
-### 2-1. PostgreSQL インストール
+### 2-0. MySQL データのバックアップ（必須）
+
+移行方式にかかわらず、必ず事前にバックアップを取得してください。
 
 ```bash
-# macOS (Homebrew)
-brew install postgresql@16
-brew services start postgresql@16
-
-# データベース作成
-createdb multivendor_ecommerce
+mysqldump -u root -p --single-transaction --routines --triggers \
+  multivendor_ecommerce > backup_$(date +%Y%m%d).sql
 ```
+
+> バックアップファイルは安全な場所に保管すること。
+
+### 2-1. Neon プロジェクト作成
+
+1. [Neon](https://neon.tech/) にログインし、「New Project」を作成。
+2. Production ブランチを作成。
+3. 接続URL（ステータスが `Active` なもの）を取得。
+   - `postgresql://user:password@ep-xxxx.neon.tech/db?sslmode=require`
 
 ### 2-2. Prisma スキーマの更新
 
 互換性対応表（`00-compatibility-matrix.md`）に従い `schema.prisma` を更新する。
-**注意: この手順書ではコード変更は行わない。対応表を参照すること。**
 
-### 2-3. 新規マイグレーションの生成
+### 2-3. Migration のリセット（重要）
+
+MySQL 用のマイグレーション履歴は PostgreSQL では利用できないため、一度削除して初期化します。
 
 ```bash
-# 既存マイグレーション履歴をリセット（新DB へのベースライン）
+# 既存マイグレーション履歴を削除
 rm -rf prisma/migrations
 
-# 新しい初期マイグレーションを生成
+# 新しい初期マイグレーションを生成（Neon に直接接続している環境で実行）
+# DATABASE_URL には Neon の Direct connection URL を設定してください。
 npx prisma migrate dev --name init_postgresql
-
-# GIN インデックスの追加（マイグレーション SQL に手動追記）
-# → 生成された migration.sql の末尾に以下を追加:
-#
-# CREATE INDEX idx_product_fulltext
-#   ON "Product"
-#   USING GIN (to_tsvector('simple', coalesce("name", '') || ' ' || coalesce("brand", '')));
-#
-# CREATE INDEX idx_variant_fulltext
-#   ON "ProductVariant"
-#   USING GIN (to_tsvector('simple', coalesce("variantName", '') || ' ' || coalesce("keywords", '')));
 ```
+
+> **注意**: `npx prisma migrate dev` を実行する際は、Accelerate 経由の URL ではなく、Neon の **Direct connection** URL を `DATABASE_URL` に設定する必要があります。
 
 ---
 
@@ -111,20 +111,14 @@ brew install pgloader
 ```
 LOAD DATABASE
   FROM mysql://DB_USER:password@localhost:3306/multivendor_ecommerce
-  INTO postgresql://DB_USER:password@localhost:5432/multivendor_ecommerce
+  INTO postgresql://user:password@ep-xxxx.neon.tech/db?sslmode=require
 
 WITH include drop, create tables, create indexes,
      reset sequences, downcase identifiers
 
-ALTER SCHEMA 'multivendor_ecommerce' RENAME TO 'public'
-
 CAST type text     to text,
      type longtext to text,
      type tinyint  to boolean using tinyint-to-boolean
-
-BEFORE LOAD DO
-  $$ DROP SCHEMA IF EXISTS public CASCADE; $$,
-  $$ CREATE SCHEMA public; $$
 ;
 ```
 
@@ -253,14 +247,28 @@ bun run dev
 
 ---
 
-## 7. ロールバック計画
+## 7. 本番切替フロー（Neon ブランチ活用）
+
+Neon のブランチング機能を活用し、安全に本番切替を行います。
+
+1. Neon で staging 用 branch を作成
+2. staging 環境（Vercel Preview）で接続確認・動作検証
+3. MySQL からの最終データ同期（pgloader または seed）
+4. Vercel の環境変数を Neon Production branch + Accelerate URL に切替
+5. 再デプロイ
+6. 本番動作確認
+
+---
+
+## 8. ロールバック計画
 
 移行に失敗した場合の復旧手順：
 
-1. `DATABASE_URL` を MySQL の接続文字列に戻す
-2. `schema.prisma` を MySQL 版に `git checkout` で復元
-3. `npx prisma generate` で Prisma Client を再生成
-4. アプリケーションを再起動
+1. **ローカル**: `.env` の `DATABASE_URL` を MySQL の接続文字列に戻す
+2. **Vercel**: 環境変数 `DATABASE_URL` を MySQL 用に戻し、再デプロイ
+3. `schema.prisma` を MySQL 版に `git checkout` で復元
+4. `npx prisma generate` で Prisma Client を再生成
+5. アプリケーションを再起動
 
 > MySQL 側のデータは移行中も変更しない前提。
 > 本番移行時はメンテナンスウィンドウを設けること。

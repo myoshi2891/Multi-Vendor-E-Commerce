@@ -7,45 +7,41 @@
 
 ---
 
-## 1. `DATABASE_URL` の変更
+## 1. 接続文字列の変更（Neon + Accelerate）
 
-### 接続文字列の形式比較
+Prisma Accelerate を使用する場合、**データアクセス用**と**マイグレーション用**の2つのURLを使い分けます。
 
-| | MySQL（現在） | PostgreSQL（変更後） |
-|---|---|---|
-| 形式 | `mysql://USER:PASS@HOST:PORT/DB` | `postgresql://USER:PASS@HOST:PORT/DB?schema=public` |
-| デフォルトポート | `3306` | `5432` |
-| スキーマ指定 | 不要 | `?schema=public`（推奨） |
+| 種類 | 環境変数名 | 接続形式 | 用途 |
+|---|---|---|---|
+| **Data Proxy** | `DATABASE_URL` | `prisma://accelerate.prisma-data.net/...` | アプリケーションからのデータアクセス |
+| **Direct connection** | `DIRECT_URL` | `postgresql://user:pass@ep-xxxx.neon.tech/db` | `prisma migrate`, `prisma db push` 等 |
 
-### 変更例
+### 変更例（`.env`）
 
 ```bash
-# .env（変更前）
-DATABASE_URL="mysql://DB_USER:DB_PASSWORD@localhost:3306/multivendor_ecommerce"
+# Prisma Accelerate URL (Prismaダッシュボードで取得)
+DATABASE_URL="prisma://accelerate.prisma-data.net/?api_key=your_api_key"
 
-# .env（変更後）
-DATABASE_URL="postgresql://DB_USER:DB_PASSWORD@localhost:5432/multivendor_ecommerce?schema=public"
+# Neon Direct connection URL (Neonダッシュボードで取得)
+DIRECT_URL="postgresql://DB_USER:password@ep-xxxx.neon.tech/multivendor_ecommerce?sslmode=require"
 ```
 
-> **注意**: パスワードに特殊文字（`@`, `#`, `%` 等）が含まれる場合、URL エンコードが必要。
+> **重要**: `schema.prisma` の `datasource` ブロックにも `directUrl = env("DIRECT_URL")` を追記する必要があります。
 
 ---
 
-## 2. `SHADOW_DATABASE_URL`（オプション）
+## 2. Neon / Accelerate 固有の設定
 
-Prisma の `migrate dev` はシャドウデータベースを使用する。
-PostgreSQL ではデフォルトで自動作成されるが、権限がない環境では明示指定が必要。
+### 2-1. Neon プロジェクトでの取得
 
-```bash
-# .env（必要な場合のみ）
-SHADOW_DATABASE_URL="postgresql://DB_USER:DB_PASSWORD@localhost:5432/multivendor_ecommerce_shadow?schema=public"
-```
+1. Neon の Dashboard から `Connection Details` を開き、`Direct connection` にチェックを入れた状態の URL を `DIRECT_URL` とします。
+2. `Pooling` は Prisma Accelerate が担当するため、Neon 側の `Pooling` オプションはオフのままでも構いません。
 
-事前にシャドウ DB を作成:
+### 2-2. Prisma Accelerate の有効化
 
-```bash
-createdb multivendor_ecommerce_shadow
-```
+1. [Prisma Console](https://console.prisma.io/) にログイン。
+2. 新しいプロジェクトを作成し、Neon の `Direct connection` URL をデータベースとして登録。
+3. 生成された接続文字列を `DATABASE_URL` に設定します。
 
 ---
 
@@ -73,7 +69,38 @@ E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" bun run seed:e
 
 ---
 
-## 4. その他の環境変数（変更不要）
+## 4. Vercel 環境変数の設定
+
+Vercel でデプロイする場合、以下の環境変数を設定します。
+
+```
+Project → Settings → Environment Variables
+```
+
+| 変数名 | 値 |
+|---|---|
+| `DATABASE_URL` | Prisma Accelerate の URL（`prisma://accelerate.prisma-data.net/...`） |
+| `DIRECT_URL` | Neon の Direct connection URL |
+
+設定後に再デプロイを行ってください。
+
+---
+
+## 5. Runtime 制約（重要）
+
+App Router 使用時、Neon の TCP 接続のため **Edge Runtime は使用不可** です。
+データベースにアクセスするルート・サーバーアクションには以下を明示してください。
+
+```ts
+export const runtime = 'nodejs'
+```
+
+> [!WARNING]
+> `export const runtime = 'edge'` を設定すると、Neon への TCP 接続が失敗します。
+
+---
+
+## 6. その他の環境変数（変更不要）
 
 以下の環境変数は DB 移行の影響を受けない:
 
@@ -136,11 +163,15 @@ docker compose up -d
 
 ---
 
-## 6. 切替チェックリスト
+## 8. 切替チェックリスト
 
-- [ ] PostgreSQL インスタンスが起動している
-- [ ] データベース `multivendor_ecommerce` が作成済み
-- [ ] `.env` の `DATABASE_URL` を PostgreSQL 形式に変更
-- [ ] `SHADOW_DATABASE_URL` を設定（必要な場合）
+- [ ] Neon プロジェクトが作成済み
+- [ ] Neon の Direct connection URL を取得
+- [ ] Prisma Accelerate が有効化済み
+- [ ] `.env` の `DATABASE_URL` を Accelerate 形式に変更
+- [ ] `.env` に `DIRECT_URL` を追加
+- [ ] `schema.prisma` に `directUrl = env("DIRECT_URL")` を追加
+- [ ] Vercel の環境変数を更新（`DATABASE_URL` + `DIRECT_URL`）
 - [ ] `.env.test` の `E2E_DATABASE_URL` を更新
-- [ ] `psql` で接続確認済み
+- [ ] Node.js runtime が明示されている（Edge runtime 不使用）
+- [ ] 接続確認済み

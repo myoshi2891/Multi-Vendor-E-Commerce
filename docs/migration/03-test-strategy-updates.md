@@ -52,7 +52,17 @@ services:
       POSTGRES_DB: app_test
 ```
 
-### 2-3. DB リセットスクリプト
+### 2-3. Integration テストの接続先に関する注意
+
+Prisma Accelerate はデータアクセスの高速化と接続制限の緩和を目的としているため、マイグレーションや頻繁なデータリセットが発生する **Integration テスト** では直接接続（Neon Direct connection）を使用します。
+
+- 開発環境：ローカルの Docker PostgreSQL または Neon の Direct connection
+- CI テスト：GitHub Actions 上の PostgreSQL サービスコンテナ
+
+> [!TIP]
+> テスト環境で Accelerate を使用すると、クォータの消費や初期化のオーバーヘッドが発生するため、直接接続を推奨します。
+
+### 2-4. DB リセットスクリプト
 
 `tests-setup/db.reset.ts` がある場合、接続先の変更に対応。
 Prisma 経由のリセットであればスキーマ更新のみで対応可能。

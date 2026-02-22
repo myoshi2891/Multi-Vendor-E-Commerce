@@ -34,10 +34,13 @@ datasource db {
 datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
   relationMode = "foreignKeys"
 }
 ```
 
+> `directUrl` は Prisma Accelerate 使用時に必須。マイグレーション等の直接接続に使用されます。
+>
 > **注意**: `relationMode` を `"foreignKeys"` に変更すると、`@@index` で明示的に定義していた外部キーカラムのインデックスは Prisma が自動生成します。
 > 既存の `@@index([foreignKeyField])` は冗長になる場合がありますが、残しても問題ありません。
 
@@ -46,6 +49,7 @@ datasource db {
 | 項目 | MySQL（現在） | PostgreSQL（変更後） | 備考 |
 |---|---|---|---|
 | `previewFeatures` | `["fullTextSearch", "fullTextIndex"]` | `["fullTextSearch"]` | `fullTextIndex` は MySQL 専用。PostgreSQL では不要 |
+| `accelerate` | *(未設定)* | `npx prisma generate --accelerate` | Prisma Client 側で Accelerate を有効化 |
 
 **変更前:**
 
@@ -64,6 +68,35 @@ generator client {
   previewFeatures = ["fullTextSearch"]
 }
 ```
+
+> **Accelerate 有効化**: Prisma Accelerate を使用する場合、`npx prisma generate --accelerate` で Client を生成し、`@prisma/extension-accelerate` を利用します。
+
+### 1-3. Prisma Client 初期化コードの変更（`src/lib/db.ts`）
+
+**変更前（現在）:**
+
+```ts
+import { PrismaClient } from "@prisma/client";
+export const db = globalThis.prisma || new PrismaClient();
+if (process.env.NODE_ENV === "production") globalThis.prisma = db;
+```
+
+**変更後（Accelerate 有効時）:**
+
+```ts
+import { PrismaClient } from "@prisma/client";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const db =
+  globalForPrisma.prisma ??
+  new PrismaClient().$extends(withAccelerate());
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+```
+
+> **Runtime 制約**: App Router 使用時は `export const runtime = 'nodejs'` を明示してください。Edge Runtime は Neon の TCP 接続のため使用不可です。
 
 ---
 
