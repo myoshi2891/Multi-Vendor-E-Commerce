@@ -2,7 +2,14 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 /**
- * MySQL対応検索API（mode: "insensitive" を使用しない版）
+ * Handle POST search requests and return matching product–variant suggestions.
+ *
+ * Attempts a FULLTEXT search and falls back to a case-insensitive contains search if FULLTEXT is unavailable or fails.
+ *
+ * @returns A NextResponse containing JSON:
+ * - Success (200): `{ results: Array<{ name: string; link: string; image: string }> }` where each result represents a product variant suggestion.
+ * - Invalid input (400): `{ error: "Invalid query" }`.
+ * - Server error (500): `{ error: string }`.
  */
 export async function POST(req: Request) {
     try {
@@ -128,7 +135,16 @@ export async function POST(req: Request) {
     }
 }
 
-// GETメソッド（クエリパラメータでの検索用）
+/**
+ * Searches products by the "search" query parameter and returns paginated results.
+ *
+ * Attempts a FULLTEXT search first and falls back to a case-insensitive contains search if FULLTEXT fails.
+ *
+ * @returns A JSON HTTP response:
+ * - On success: { products, total, page, limit, totalPages } where `products` is an array of product records with related store, category, subCategory, variants (with first image and sizes) and recent reviews; `total` is the total match count and `totalPages` is Math.ceil(total / limit).
+ * - If the search parameter is missing or empty: { products: [], total: 0 }.
+ * - On server error: { error: string } with status 500.
+ */
 export async function GET(req: Request) {
     try {
         const url = new URL(req.url);

@@ -4,6 +4,12 @@ import ColorThief from "colorthief";
 import { CartProductType } from "./types";
 import { differenceInDays, differenceInHours } from "date-fns";
 
+/**
+ * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.
+ *
+ * @param inputs - One or more class value inputs (strings, arrays, or objects) to merge
+ * @returns The merged className string with Tailwind utility conflicts resolved
+ */
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
