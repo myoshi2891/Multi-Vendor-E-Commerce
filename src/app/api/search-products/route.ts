@@ -10,6 +10,13 @@ type ProductSearchRow = {
     relevance: number;
 };
 
+/**
+ * Handle GET requests to perform a full-text search over products.
+ *
+ * Performs a PostgreSQL full-text search against product name and description and returns matches ordered by relevance.
+ *
+ * @returns An array of `ProductSearchRow` containing up to 50 products matching the `q` query, ordered by relevance; an empty array if `q` is missing or empty.
+ */
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q") ?? "";
