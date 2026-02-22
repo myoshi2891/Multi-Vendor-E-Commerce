@@ -16,9 +16,14 @@ import { getAllSubCategories } from "@/queries/subCategory";
 import {
     Cart,
     CartItem,
+    Category,
     Color,
+    Country as CountryPrisma,
+    Coupon,
     FreeShipping,
     FreeShippingCountry,
+    OrderGroup,
+    OrderItem,
     Prisma,
     ProductVariantImage,
     Review,
@@ -27,14 +32,9 @@ import {
     ShippingFeeMethod,
     ShippingRate,
     Size,
-    User,
-    Country as CountryPrisma,
-    Coupon,
-    OrderGroup,
-    OrderItem,
     Store,
-    Category,
     SubCategory,
+    User,
 } from "@prisma/client";
 
 export interface DashboardSidebarMenuInterface {
@@ -62,7 +62,7 @@ export type ProductWithVariantType = {
     subCategoryId: string;
     offerTagId?: string;
     isSale: boolean;
-    saleEndDate?: string;
+    saleEndDate?: string | null;
     brand: string;
     sku: string;
     weight: number;
@@ -109,13 +109,13 @@ export interface Country {
 }
 
 import countries from "@/data/countries.json";
+import { getHomeFeaturedCategories } from "@/queries/home";
 import { getOrder } from "@/queries/order";
 import {
     getUserOrders,
     getUserPayments,
     getUserWishlist,
 } from "@/queries/profile";
-import { getHomeFeaturedCategories } from "@/queries/home";
 
 export type SelectMenuOption = (typeof countries)[number];
 

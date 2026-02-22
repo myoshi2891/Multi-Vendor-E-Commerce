@@ -246,7 +246,7 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
         variantDescription: product.variantDescription,
         slug: variantSlug,
         isSale: product.isSale,
-        saleEndDate: product.isSale ? product.saleEndDate : "",
+        saleEndDate: product.isSale ? (product.saleEndDate ?? null) : null,
         sku: product.sku,
         keywords: product.keywords.join(","),
         weight: product.weight,
