@@ -1,762 +1,589 @@
-# マルチベンダーEコマースシステム設計書
+# マルチベンダー EC プラットフォーム — 概要
 
-## ドキュメントガイド
-- 本書はシステム全体の設計概要と主要な構成をまとめる
-- 主要セクション: 概要 / システム・アーキテクチャ / 技術スタック / コア商品アーキテクチャ / 統合ポイント / 主要機能 / DBスキーマ / API設計 / セキュリティ / 結論
-- 関連ドキュメント: `TESTING_DESIGN.md` / `QA_TEST_PERSPECTIVES.md` / `PROGRESS.md` / `README_kilocode_speckit.md` / `specs/README.md`
+> **関連ドキュメント**: [システムアーキテクチャ](./2-system-architecture) | [コアビジネスシステム](./3-core-business-systems) | [ユーザーインターフェース](./4-user-interfaces) | [開発・インフラ](./7-development-and-infrastructure)
 
-## 概要
+本ドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムについての概要を提供します。このプラットフォームは、複数の独立したセラーが統一されたマーケットプレイス内でストアを運営し、顧客が 1 回のトランザクションで異なるベンダーから購入できる仕組みを実現しています。
 
-### 関連ソースファイル
-- `src/app/(store)/page.tsx`
-- `src/lib/types.ts`
-- `src/queries/product.ts`
-- `prisma/schema.prisma`
-- `package.json`
-- `src/lib/schemas.ts`
-- `src/components/dashboard/forms/product-details.tsx`
+---
 
-### 目的と範囲
+## 📋 目次
 
-この文書は、マルチベンダーEコマースシステムの包括的な概要を提供します。このシステムは、統一されたマーケットプレイスプラットフォーム内で複数の販売者が個別の店舗を運営できるフルスタックWebアプリケーションです。システムは3つの異なるユーザー役割をサポートします：
-- **顧客**：商品を閲覧し購入する
-- **販売者**：店舗と在庫を管理する
-- **管理者**：プラットフォーム運営を監督する
+- [プラットフォームの目的と機能](#プラットフォームの目的と機能)
+- [システムアーキテクチャ：3 層設計](#システムアーキテクチャ3-層設計)
+- [技術スタック](#技術スタック)
+- [コアビジネスサブシステム](#コアビジネスサブシステム)
+- [ユーザーロールとアクセス制御](#ユーザーロールとアクセス制御)
+- [データフロー：商品閲覧から注文確定まで](#データフロー商品閲覧から注文確定まで)
+- [プロジェクトディレクトリ構成](#プロジェクトディレクトリ構成)
+- [データベースアーキテクチャ：PostgreSQL × Prisma](#データベースアーキテクチャpostgresql--prisma)
+- [開発環境とワークフロー](#開発環境とワークフロー)
+- [マイグレーション履歴：MySQL → PostgreSQL](#マイグレーション履歴mysql--postgresql)
+- [関連ドキュメント](#関連ドキュメント)
 
-システムは、バリエーションを持つ複雑な商品管理、複数ベンダー間での高度な注文処理、統合決済システム、および包括的な配送計算を処理します。特定のサブシステムの詳細については、**商品管理システム**、**ユーザー管理・カートシステム**、**店舗管理システム**、および**注文・決済処理**をご参照ください。
+---
 
-## システム・アーキテクチャ
+## プラットフォームの目的と機能
 
-マルチベンダーEコマースプラットフォームは、サーバーサイドレンダリング機能を備えたNext.js 14をベースとした現代的なフルスタックアーキテクチャに従っています。システムは3つの主要なユーザーインターフェースと、マルチベンダーマーケットプレイスの複雑なワークフローを処理するいくつかのコアビジネスシステムを中心に構築されています。
+**Next.js 14 App Router** で構築されたマルチベンダー EC マーケットプレイスで、3 つのユーザーロールをサポートします。
 
-### 高レベルシステムアーキテクチャ
+| ロール | 機能 |
+|--------|------|
+| **USER** | 商品閲覧・カート管理・注文・レビュー投稿・ストアフォロー |
+| **SELLER** | ストア作成・管理、商品バリアント出品、配送料設定、注文処理 |
+| **ADMIN** | ストア承認、カテゴリー管理、プラットフォームコンテンツのモデレーション |
 
-```mermaid
-graph TB
-    %% ユーザーインターフェース層
-    UI[ユーザーインターフェース層]
-    CUI[顧客UI]
-    SUI[販売者UI]
-    AUI[管理者UI]
+### 主要機能
 
-    %% アプリケーション層
-    APP[アプリケーション層]
-    STORE[店舗ページ]
-    DASH[ダッシュボード]
-    AUTH[認証]
-    API[API ルート]
+- **複雑な商品階層**: 商品 → バリアント（カラー/スタイル）→ サイズ（個別価格）
+- **マルチベンダー注文処理**: 1 回のチェックアウトをストアごとの注文グループに分割
+- **柔軟な配送システム**: 3 種の計算方式（個数・重量・定額）＋国別上書き設定
+- **デュアル決済ゲートウェイ**: Stripe / PayPal による国際対応
+- **リアルタイム在庫管理**: 注文時のバリデーションパイプラインと在庫更新
+- **全文商品検索**: PostgreSQL `tsvector`/`tsquery` + GIN インデックス
 
-    %% ビジネスロジック層
-    BL[ビジネスロジック層]
-    PM[商品管理]
-    OM[注文管理]
-    UM[ユーザー管理]
-    SM[店舗管理]
+---
 
-    %% データアクセス層
-    DA[データアクセス層]
-    PRISMA[Prisma ORM]
-    QUERIES[クエリ関数]
-
-    %% データベース層
-    DATA[データ層]
-    DB[(PostgreSQL データベース)]
-
-    %% 外部サービス
-    EXT[外部サービス]
-    STRIPE[Stripe 決済]
-    CLERK[Clerk 認証]
-    UPLOAD[UploadThing メディア]
-
-    UI --> CUI
-    UI --> SUI
-    UI --> AUI
-
-    CUI --> STORE
-    SUI --> DASH
-    AUI --> DASH
-
-    STORE --> API
-    DASH --> API
-    AUTH --> API
-
-    API --> PM
-    API --> OM
-    API --> UM
-    API --> SM
-
-    PM --> QUERIES
-    OM --> QUERIES
-    UM --> QUERIES
-    SM --> QUERIES
-
-    QUERIES --> PRISMA
-    PRISMA --> DB
-
-    API --> STRIPE
-    API --> CLERK
-    API --> UPLOAD
-
-    style UI fill:#e1f5fe
-    style APP fill:#f3e5f5
-    style BL fill:#e8f5e8
-    style DA fill:#fff3e0
-    style DATA fill:#ffebee
-    style EXT fill:#f1f8e9
-```
-
-### コアエンティティ関係
-
-システムのデータモデルは、高度な在庫管理と価格管理を備えたマルチベンダー運営をサポートする複雑な商品-バリアント・アーキテクチャを中心としています。
-
-```mermaid
-erDiagram
-    USER ||--o{ STORE : 所有
-    USER ||--o{ ORDER : 注文
-    USER ||--o{ CART_ITEM : 追加
-
-    STORE ||--o{ PRODUCT : 所有
-    STORE ||--|| STORE_SUBSCRIPTION : 持つ
-
-    PRODUCT ||--o{ PRODUCT_VARIANT : 持つ
-    PRODUCT }|--|| CATEGORY : 属する
-
-    PRODUCT_VARIANT ||--o{ VARIANT_IMAGE : 持つ
-    PRODUCT_VARIANT ||--o{ CART_ITEM : 含む
-    PRODUCT_VARIANT ||--o{ ORDER_ITEM : 含む
-
-    ORDER ||--o{ ORDER_ITEM : 含む
-    ORDER ||--|| SHIPPING_ADDRESS : 配送先
-
-    USER {
-        string id PK
-        string email UK
-        string firstName
-        string lastName
-        enum role
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    STORE {
-        string id PK
-        string userId FK
-        string name
-        string description
-        string slug UK
-        boolean isActive
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    PRODUCT {
-        string id PK
-        string storeId FK
-        string categoryId FK
-        string name
-        text description
-        decimal price
-        string status
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    PRODUCT_VARIANT {
-        string id PK
-        string productId FK
-        string name
-        decimal price
-        int inventory
-        string combination
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    ORDER {
-        string id PK
-        string userId FK
-        decimal total
-        string status
-        string paymentIntentId
-        datetime createdAt
-        datetime updatedAt
-    }
-
-    CART_ITEM {
-        string id PK
-        string userId FK
-        string variantId FK
-        int quantity
-        datetime createdAt
-        datetime updatedAt
-    }
-```
-
-### ユーザー役割とシステムワークフロー
-
-プラットフォームは3つの異なるユーザー役割をサポートし、それぞれがマルチベンダーマーケットプレイスエコシステムを可能にする専門的なインターフェースと機能を持っています。
-
-```mermaid
-graph TD
-    %% ユーザー役割
-    CUSTOMER[👤 顧客]
-    SELLER[🏪 販売者]
-    ADMIN[⚙️ 管理者]
-
-    %% 顧客ワークフロー
-    CUSTOMER --> BROWSE[商品閲覧]
-    BROWSE --> CART[カートに追加]
-    CART --> CHECKOUT[チェックアウト]
-    CHECKOUT --> PAYMENT[決済処理]
-    PAYMENT --> ORDER_TRACK[注文追跡]
-
-    %% 販売者ワークフロー
-    SELLER --> STORE_SETUP[店舗設定]
-    SELLER --> PRODUCT_MGMT[商品管理]
-    PRODUCT_MGMT --> VARIANT_MGMT[バリアント管理]
-    VARIANT_MGMT --> INVENTORY[在庫管理]
-    SELLER --> ORDER_FULFILL[注文対応]
-    ORDER_FULFILL --> SHIPPING[配送管理]
-
-    %% 管理者ワークフロー
-    ADMIN --> USER_MGMT[ユーザー管理]
-    ADMIN --> STORE_APPROVAL[店舗承認]
-    ADMIN --> PLATFORM_CONFIG[プラットフォーム設定]
-    ADMIN --> ANALYTICS[分析・レポート]
-
-    %% 共有システム
-    BROWSE --> SEARCH[検索・フィルタリング]
-    PRODUCT_MGMT --> MEDIA_UPLOAD[メディアアップロード]
-    CHECKOUT --> SHIPPING_CALC[配送料計算]
-
-    style CUSTOMER fill:#e3f2fd
-    style SELLER fill:#e8f5e8
-    style ADMIN fill:#fff3e0
-```
-
-## 技術スタックとアーキテクチャ
-
-システムは、TypeScript を使用した Next.js 14 を中心とした現代的な技術スタックを活用し、単一のアプリケーションフレームワーク内でサーバーサイドレンダリングと API 機能の両方を提供します。
-
-### 技術スタック構成図
+## システムアーキテクチャ：3 層設計
 
 ```mermaid
 graph TB
-    %% フロントエンド層
-    FE[フロントエンド層]
-    NEXTJS[Next.js 14]
-    REACT[React 18]
-    TS[TypeScript]
-    TAILWIND[Tailwind CSS]
+    subgraph CLIENT["クライアント層 (src/app/)"]
+        PAGES["Next.js App Router<br>Pages & Layouts"]
+        ZUSTAND["Zustand<br>カート状態 (localStorage)"]
+    end
 
-    %% ミドルウェア層
-    MW[ミドルウェア層]
-    CLERK_MW[Clerk認証]
-    ZOD[Zod バリデーション]
-    FORM[React Hook Form]
+    subgraph SERVER["サーバーアクション層 (src/queries/)"]
+        PRODUCT["product.ts<br>商品・配送"]
+        STORE["store.ts<br>ストア管理"]
+        USER["user.ts<br>カート・注文"]
+        REVIEW["review.ts<br>レビュー"]
+        CATEGORY["category.ts<br>カテゴリー"]
+    end
 
-    %% バックエンド層
-    BE[バックエンド層]
-    API_ROUTES[API Routes]
-    SERVER_ACTIONS[Server Actions]
-    PRISMA_CLIENT[Prisma Client]
+    subgraph DATA["データ層 (prisma/schema.prisma)"]
+        PG[("PostgreSQL<br>(Neon Serverless)")]
+        PRISMA["Prisma ORM<br>+ Accelerate 接続プール"]
+    end
 
-    %% データベース層
-    DB_LAYER[データベース層]
-    PGSQL[(PostgreSQL)]
+    subgraph EXTERNAL["外部サービス"]
+        CLERK["Clerk<br>認証"]
+        STRIPE["Stripe<br>決済"]
+        PAYPAL["PayPal<br>決済"]
+        CLOUDINARY["Cloudinary<br>メディア"]
+    end
 
-    %% 外部サービス層
-    EXTERNAL[外部サービス層]
-    STRIPE_SERVICE[Stripe 決済]
-    CLERK_AUTH[Clerk 認証]
-    UPLOADTHING[UploadThing]
-
-    %% UI コンポーネント
-    UI_COMP[UIコンポーネント]
-    SHADCN[shadcn/ui]
-    LUCIDE[Lucide Icons]
-    RECHARTS[Recharts]
-
-    FE --> NEXTJS
-    FE --> REACT
-    FE --> TS
-    FE --> TAILWIND
-
-    MW --> CLERK_MW
-    MW --> ZOD
-    MW --> FORM
-
-    BE --> API_ROUTES
-    BE --> SERVER_ACTIONS
-    BE --> PRISMA_CLIENT
-
-    NEXTJS --> MW
-    NEXTJS --> BE
-    NEXTJS --> UI_COMP
-
-    UI_COMP --> SHADCN
-    UI_COMP --> LUCIDE
-    UI_COMP --> RECHARTS
-
-    PRISMA_CLIENT --> PGSQL
-
-    API_ROUTES --> STRIPE_SERVICE
-    API_ROUTES --> CLERK_AUTH
-    API_ROUTES --> UPLOADTHING
-
-    style FE fill:#e3f2fd
-    style MW fill:#e8f5e8
-    style BE fill:#fff3e0
-    style DB_LAYER fill:#ffebee
-    style EXTERNAL fill:#f1f8e9
-    style UI_COMP fill:#fce4ec
+    PAGES -->|"use server"| SERVER
+    PAGES <-->|状態管理| ZUSTAND
+    SERVER --> PRISMA
+    PRISMA --> PG
+    PAGES --> CLERK
+    SERVER --> STRIPE
+    SERVER --> PAYPAL
+    SERVER --> CLOUDINARY
 ```
 
-## コア商品アーキテクチャ
+### アーキテクチャ層の説明
 
-商品システムは、複数の商品構成、価格帯、および異なる販売者間での在庫管理をサポートする高度なバリアントベースアーキテクチャを実装した、アプリケーションの最も複雑な部分を表しています。
+| 層 | パス | 役割 |
+|----|------|------|
+| **クライアント層** | `src/app/` | Next.js App Router のページ・レイアウト、サーバー/クライアントコンポーネント |
+| **サーバーアクション層** | `src/queries/` | `"use server"` ディレクティブによるビジネスロジック・DB直接アクセス |
+| **データ層** | `prisma/schema.prisma` | Prisma ORM 経由の PostgreSQL アクセス（接続プール付き） |
+| **外部サービス** | — | Clerk（認証）・Stripe/PayPal（決済）・Cloudinary（メディア）・Neon（DB ホスティング） |
+| **クライアント状態** | `cart-store/` | Zustand によるカート操作（localStorage に永続化） |
 
-### 商品-バリアントデータフロー
+---
 
-```mermaid
-graph TD
-    %% 商品作成フロー
-    SELLER_INPUT[販売者入力]
-    PRODUCT_FORM[商品フォーム]
-    VALIDATION[バリデーション]
-
-    %% 商品構造
-    PRODUCT[商品]
-    BASE_INFO[基本情報]
-    CATEGORY[カテゴリ]
-    VARIANTS[バリアント群]
-
-    %% バリアント詳細
-    VARIANT[個別バリアント]
-    ATTRIBUTES[属性組み合わせ]
-    PRICING[価格設定]
-    INVENTORY[在庫数]
-    IMAGES[画像群]
-
-    %% 顧客体験
-    CUSTOMER_VIEW[顧客表示]
-    SELECTION[バリアント選択]
-    CART[カート追加]
-
-    %% データ永続化
-    DB_SAVE[データベース保存]
-
-    SELLER_INPUT --> PRODUCT_FORM
-    PRODUCT_FORM --> VALIDATION
-    VALIDATION --> PRODUCT
-
-    PRODUCT --> BASE_INFO
-    PRODUCT --> CATEGORY
-    PRODUCT --> VARIANTS
-
-    VARIANTS --> VARIANT
-    VARIANT --> ATTRIBUTES
-    VARIANT --> PRICING
-    VARIANT --> INVENTORY
-    VARIANT --> IMAGES
-
-    PRODUCT --> CUSTOMER_VIEW
-    CUSTOMER_VIEW --> SELECTION
-    SELECTION --> CART
-
-    PRODUCT --> DB_SAVE
-    VARIANT --> DB_SAVE
-
-    %% スタイル設定
-    style SELLER_INPUT fill:#e8f5e8
-    style CUSTOMER_VIEW fill:#e3f2fd
-    style DB_SAVE fill:#ffebee
-```
-
-### 商品バリアント管理フロー
-
-```mermaid
-flowchart LR
-    START([開始]) --> INPUT_ATTRS[属性入力]
-    INPUT_ATTRS --> |色、サイズ等| COMBO_GEN[組み合わせ生成]
-    COMBO_GEN --> VARIANT_CREATE[バリアント作成]
-    VARIANT_CREATE --> PRICE_SET[価格設定]
-    PRICE_SET --> INVENTORY_SET[在庫設定]
-    INVENTORY_SET --> IMG_UPLOAD[画像アップロード]
-    IMG_UPLOAD --> VALIDATE[バリデーション]
-    VALIDATE --> |OK| SAVE[保存]
-    VALIDATE --> |NG| ERROR[エラー表示]
-    ERROR --> INPUT_ATTRS
-    SAVE --> END([完了])
-
-    style START fill:#c8e6c9
-    style END fill:#c8e6c9
-    style ERROR fill:#ffcdd2
-    style SAVE fill:#dcedc8
-```
-
-## 統合ポイントと外部サービス
-
-システムは、認証、決済処理、およびメディア管理機能を提供するためにいくつかの外部サービスと統合し、包括的なEコマースソリューションを作成します。
-
-### サービス統合アーキテクチャ
-
-```mermaid
-graph TB
-    %% メインアプリケーション
-    APP[Next.js アプリケーション]
-
-    %% 認証サービス
-    AUTH_SERVICE[認証サービス]
-    CLERK[Clerk]
-    AUTH_MIDDLEWARE[認証ミドルウェア]
-
-    %% 決済サービス
-    PAYMENT_SERVICE[決済サービス]
-    STRIPE[Stripe]
-    WEBHOOK[Webhook処理]
-
-    %% メディアサービス
-    MEDIA_SERVICE[メディアサービス]
-    UPLOADTHING[UploadThing]
-
-    %% データベース
-    DATABASE[(PostgreSQL)]
-    PRISMA[Prisma ORM]
-
-    %% 外部API統合
-    APP --> AUTH_SERVICE
-    AUTH_SERVICE --> CLERK
-    CLERK --> AUTH_MIDDLEWARE
-
-    APP --> PAYMENT_SERVICE
-    PAYMENT_SERVICE --> STRIPE
-    STRIPE --> WEBHOOK
-
-    APP --> MEDIA_SERVICE
-    MEDIA_SERVICE --> UPLOADTHING
-
-    APP --> PRISMA
-    PRISMA --> DATABASE
-
-    %% データフロー
-    AUTH_MIDDLEWARE -.-> APP
-    WEBHOOK -.-> APP
-    UPLOADTHING -.-> APP
-
-    style APP fill:#2196F3,color:#fff
-    style AUTH_SERVICE fill:#4CAF50,color:#fff
-    style PAYMENT_SERVICE fill:#FF9800,color:#fff
-    style MEDIA_SERVICE fill:#9C27B0,color:#fff
-    style DATABASE fill:#F44336,color:#fff
-```
-
-### システム間通信フロー
-
-```mermaid
-sequenceDiagram
-    participant C as 顧客
-    participant A as Next.js App
-    participant CL as Clerk
-    participant DB as Database
-    participant S as Stripe
-    participant UT as UploadThing
-
-    Note over C,UT: 購入プロセス例
-
-    C->>A: 商品選択・カート追加
-    A->>CL: 認証確認
-    CL-->>A: ユーザー情報
-    A->>DB: カート情報保存
-
-    C->>A: チェックアウト開始
-    A->>S: 決済インテント作成
-    S-->>A: 決済情報
-    A->>DB: 注文作成
-
-    C->>S: 決済実行
-    S->>A: Webhook通知
-    A->>DB: 注文ステータス更新
-    A-->>C: 注文確認
-
-    Note over C,UT: 商品登録プロセス例
-
-    C->>A: 商品画像アップロード
-    A->>UT: ファイルアップロード
-    UT-->>A: 画像URL
-    A->>DB: 商品データ保存
-    A-->>C: 登録完了
-```
-
-## 主要機能システム
-
-### 1. 商品管理システム
-
-商品管理システムは、複数のバリアント、動的価格設定、および包括的な在庫追跡を持つ複雑な商品カタログを処理する高度なアーキテクチャを実装しています。
-
-#### 商品階層構造
-
-```mermaid
-graph TD
-    STORE[店舗] --> PRODUCT[商品]
-    PRODUCT --> VARIANT1[バリアント1]
-    PRODUCT --> VARIANT2[バリアント2]
-    PRODUCT --> VARIANTN[バリアントN]
-
-    VARIANT1 --> ATTR1[属性: 赤-L]
-    VARIANT1 --> PRICE1[価格: ¥2,500]
-    VARIANT1 --> INV1[在庫: 15個]
-    VARIANT1 --> IMG1[画像群]
-
-    VARIANT2 --> ATTR2[属性: 青-M]
-    VARIANT2 --> PRICE2[価格: ¥2,800]
-    VARIANT2 --> INV2[在庫: 8個]
-    VARIANT2 --> IMG2[画像群]
-
-    PRODUCT --> CATEGORY[カテゴリ]
-    PRODUCT --> DESC[説明]
-    PRODUCT --> STATUS[ステータス]
-
-    style STORE fill:#4CAF50,color:#fff
-    style PRODUCT fill:#2196F3,color:#fff
-    style VARIANT1 fill:#FF9800,color:#fff
-    style VARIANT2 fill:#FF9800,color:#fff
-```
-
-### 2. 注文処理システム
-
-複数ベンダー間での注文処理を調整し、決済、在庫更新、および配送管理を処理します。
-
-#### 注文処理フロー
-
-```mermaid
-graph TD
-    CART[カート] --> CHECKOUT[チェックアウト]
-    CHECKOUT --> VALIDATE[在庫検証]
-    VALIDATE --> |在庫OK| PAYMENT[決済処理]
-    VALIDATE --> |在庫不足| ERROR[エラー処理]
-
-    PAYMENT --> STRIPE_PROCESS[Stripe処理]
-    STRIPE_PROCESS --> |成功| ORDER_CREATE[注文作成]
-    STRIPE_PROCESS --> |失敗| PAYMENT_ERROR[決済エラー]
-
-    ORDER_CREATE --> INVENTORY_UPDATE[在庫更新]
-    INVENTORY_UPDATE --> VENDOR_NOTIFY[ベンダー通知]
-    VENDOR_NOTIFY --> SHIPPING_LABEL[配送ラベル生成]
-    SHIPPING_LABEL --> ORDER_COMPLETE[注文完了]
-
-    ERROR --> CART
-    PAYMENT_ERROR --> CHECKOUT
-
-    style CART fill:#e3f2fd
-    style ORDER_COMPLETE fill:#c8e6c9
-    style ERROR fill:#ffcdd2
-    style PAYMENT_ERROR fill:#ffcdd2
-```
-
-### 3. 店舗管理システム
-
-販売者が独立した店舗運営を行えるよう、包括的な店舗管理機能を提供します。
-
-#### 店舗運営ダッシュボード
+## 技術スタック
 
 ```mermaid
 graph LR
-    DASHBOARD[店舗ダッシュボード]
+    subgraph FW["フレームワーク"]
+        NEXT["Next.js 14.2.4<br>App Router / SSR"]
+        REACT["React 18<br>Server Components"]
+        TS["TypeScript 5<br>型安全性"]
+    end
 
-    DASHBOARD --> ANALYTICS[📊 分析]
-    DASHBOARD --> PRODUCTS[📦 商品管理]
-    DASHBOARD --> ORDERS[📋 注文管理]
-    DASHBOARD --> SETTINGS[⚙️ 設定]
+    subgraph DB["データベース"]
+        PRISMA_C["@prisma/client 5.22.0<br>ORM"]
+        ACCEL["prisma/extension-accelerate<br>接続プール"]
+    end
 
-    ANALYTICS --> SALES[売上統計]
-    ANALYTICS --> TRAFFIC[トラフィック]
-    ANALYTICS --> PERFORMANCE[パフォーマンス]
+    subgraph AUTH["認証"]
+        CLERK_P["@clerk/nextjs 5.1.5"]
+    end
 
-    PRODUCTS --> ADD[商品追加]
-    PRODUCTS --> EDIT[商品編集]
-    PRODUCTS --> INVENTORY_MGMT[在庫管理]
+    subgraph PAY["決済"]
+        STRIPE_P["stripe 17.4.0"]
+        PP["@paypal/react-paypal-js 8.7.0"]
+    end
 
-    ORDERS --> PENDING[保留中注文]
-    ORDERS --> PROCESSING[処理中注文]
-    ORDERS --> SHIPPED[発送済み]
+    subgraph UI["UI"]
+        RADIX["@radix-ui/react-*<br>アクセシブル UI"]
+        TW["tailwindcss 3.4.1"]
+        LUCIDE["lucide-react アイコン"]
+    end
 
-    SETTINGS --> STORE_INFO[店舗情報]
-    SETTINGS --> BILLING[請求設定]
-    SETTINGS --> SHIPPING_RULES[配送ルール]
+    subgraph STATE["状態管理・バリデーション"]
+        ZUS["zustand 5.0.0<br>カート状態"]
+        RHF["react-hook-form 7.51.5"]
+        ZOD["zod 3.23.8<br>スキーマ検証"]
+    end
 
-    style DASHBOARD fill:#2196F3,color:#fff
-    style ANALYTICS fill:#4CAF50,color:#fff
-    style PRODUCTS fill:#FF9800,color:#fff
-    style ORDERS fill:#9C27B0,color:#fff
-    style SETTINGS fill:#607D8B,color:#fff
+    subgraph TEST["テスト"]
+        PW["@playwright/test 1.57.0<br>E2E"]
+        JEST["jest 30.0.5<br>Unit"]
+    end
 ```
 
-## データベーススキーマ設計
+### 依存関係一覧
 
-### 主要テーブル関係
+| カテゴリ | パッケージ | バージョン | 用途 |
+|----------|-----------|-----------|------|
+| **フレームワーク** | `next` | 14.2.4 | App Router・SSR・ルーティング |
+| | `react` | 18 | UI ライブラリ・Server Components |
+| | `typescript` | 5 | 型安全性 |
+| **データベース** | `@prisma/client` | 5.22.0 | PostgreSQL 用 ORM |
+| | `@prisma/extension-accelerate` | 1.2.0 | 接続プール |
+| **認証** | `@clerk/nextjs` | 5.1.5 | ユーザー認証・管理 |
+| **決済** | `stripe` | 17.4.0 | Stripe 決済処理 |
+| | `@paypal/react-paypal-js` | 8.7.0 | PayPal 連携 |
+| **メディア** | `next-cloudinary` | 6.6.2 | Cloudinary 画像アップロード |
+| **UI コンポーネント** | `@radix-ui/react-*` | 各種 | アクセシブル UI プリミティブ（30+ パッケージ） |
+| | `tailwindcss` | 3.4.1 | CSS ユーティリティ |
+| | `lucide-react` | 0.394.0 | アイコンライブラリ |
+| **状態管理** | `zustand` | 5.0.0 | グローバルカート状態 |
+| | `react-hook-form` | 7.51.5 | フォーム処理 |
+| | `zod` | 3.23.8 | スキーマバリデーション |
+| **テスト** | `@playwright/test` | 1.57.0 | E2E テスト |
+| | `jest` | 30.0.5 | ユニットテスト |
+| **ランタイム** | Bun | — | パッケージマネージャー・ランタイム（npm の代替） |
+
+---
+
+## コアビジネスサブシステム
+
+`src/queries/` 配下にサーバーアクションとして実装された 5 つの主要ドメインサブシステムです。
+
+```mermaid
+graph TD
+    subgraph SUBSYSTEMS["コアサブシステム (src/queries/)"]
+        P["⭐ product.ts<br>重要度: 154.75<br>商品管理・配送計算"]
+        S["store.ts<br>重要度: 38.63<br>ストア管理・承認ワークフロー"]
+        U["user.ts<br>重要度: 32.60<br>カート・チェックアウト・注文"]
+        R["review.ts<br>レビュー・評価集計"]
+        O["stripe.ts / paypal.ts<br>注文・決済処理"]
+    end
+
+    P -->|配送費計算| U
+    S -->|ストア承認| O
+    U -->|注文作成| O
+    O -->|レビュー許可| R
+```
+
+### 1. 商品管理システム（`product.ts`）
+
+> **重要度: 154.75**（最重要サブシステム）
+
+- **商品階層**: `Product` → `ProductVariant`（カラー/スタイル）→ `Size`（価格・在庫）
+- **主要関数**: `getProducts()` / `getProductPageData()` / `upsertProduct()` / `deleteProduct()`
+- **配送計算**: `getShippingDetails()` — 3 方式（ITEM / WEIGHT / FIXED）
+- **検索統合**: PostgreSQL `tsvector` インデックスによる全文検索
+
+### 2. ストア管理システム（`store.ts`）
+
+> **重要度: 38.63**（マルチベンダーのコア）
+
+- **ストアライフサイクル**: PENDING → ACTIVE → BANNED（管理者承認が必要）
+- **配送設定**: デフォルトレート ＋ 国別 `ShippingRate` 上書き
+- **主要関数**: `upsertStore()` / `updateStoreStatus()` / `getStoreData()`
+- **ロール昇格**: ストア承認時に USER → SELLER へ昇格
+
+### 3. ユーザー & カートシステム（`user.ts`）
+
+> **重要度: 32.60**（チェックアウトのオーケストレーション）
+
+- **カートバリデーションパイプライン**: `saveUserCart()` がサーバー側で価格・在庫・配送を再検証
+- **注文処理**: `placeOrder()` が `Order` → `OrderGroup`（ストアごと）→ `OrderItem` を生成
+- **住所管理**: ユーザーごとに複数の配送先住所
+- **主要関数**: `updateUserInfo()` / `updateCheckoutProductWithLatest()` / `getUserCart()`
+
+### 4. レビュー & 評価システム（`review.ts`）
+
+- **レビュー投稿**: Cloudinary 画像アップロード付き `upsertReview()`
+- **評価集計**: レビューごとに `Product.rating` と `numReviews` を更新
+- **フィルタリング**: `getProductFilteredReviews()` — 星評価・画像有無・並び順
+- **詳細コンテキスト**: バリアント・サイズ・購入数量を記録
+
+### 5. 注文 & 決済処理（`stripe.ts` / `paypal.ts`）
+
+- **決済ゲートウェイ**: Stripe と PayPal のデュアル統合
+- **注文分解**: 顧客の 1 件の注文をストアレベルの `OrderGroup` に分割
+- **在庫更新**: 決済成功時に在庫をアトミックにデクリメント
+- **Webhook 処理**: `POST /api/webhooks` で決済確認を処理
+
+---
+
+## ユーザーロールとアクセス制御
+
+```mermaid
+stateDiagram-v2
+    [*] --> USER: サインアップ
+    USER --> SELLER: ストア申請 → 管理者承認
+    SELLER --> USER: ストア停止
+
+    state USER {
+        u1: / ホームページ
+        u2: /browse 商品一覧
+        u3: /product/* 商品詳細
+        u4: /checkout チェックアウト
+        u5: /profile/* プロフィール
+    }
+
+    state SELLER {
+        s1: /dashboard/seller/* セラーダッシュボード
+        s2: 商品・在庫管理
+        s3: 配送設定
+        s4: 注文処理
+    }
+
+    state ADMIN {
+        a1: /dashboard/admin/* 管理画面
+        a2: ストア承認・停止
+        a3: カテゴリー管理
+    }
+```
+
+| ロール | アクセスレベル | 主要ルート | サーバーアクション |
+|--------|--------------|-----------|------------------|
+| **USER** | デフォルト | `/`, `/browse`, `/product/*`, `/checkout`, `/profile/*` | 注文・レビュー・カート管理 |
+| **SELLER** | ストア承認後 | `/dashboard/seller/*` | 商品作成・在庫管理・配送設定・注文処理 |
+| **ADMIN** | プラットフォームオーナー | `/dashboard/admin/*` | ストア承認・カテゴリー管理・コンテンツモデレーション |
+
+### アクセス制御の実装
+
+- **ミドルウェア**: `src/middleware.ts` が `/dashboard/*`・`/checkout`・`/profile/*` を保護
+- **サーバーアクション**: Clerk の `currentUser()` で ID とロールを検証
+- **ロール昇格**: `src/queries/store.ts` の `updateStoreStatus()` が USER → SELLER に昇格
+
+### ストアのライフサイクル
+
+```mermaid
+flowchart LR
+    A["USER<br>申請"] -->|ストア作成| B["Store: PENDING"]
+    B -->|管理者承認| C["Store: ACTIVE<br>User: SELLER"]
+    C -->|規約違反| D["Store: BANNED"]
+    D -->|再審査| B
+```
+
+---
+
+## データフロー：商品閲覧から注文確定まで
+
+```mermaid
+sequenceDiagram
+    actor User as ユーザー
+    participant Client as クライアント<br>(Zustand)
+    participant SA as サーバーアクション<br>(src/queries/)
+    participant DB as PostgreSQL<br>(Neon)
+    participant Payment as 決済<br>(Stripe/PayPal)
+
+    User->>Client: 商品をカートに追加
+    Client->>Client: Zustand 状態更新<br>(localStorage 保存)
+
+    User->>SA: チェックアウトへ進む
+    SA->>DB: saveUserCart()<br>価格・在庫・配送を再検証
+    DB-->>SA: 最新データ返却
+    SA-->>Client: バリデーション結果
+
+    User->>SA: 国を選択
+    SA->>DB: updateCheckoutProductWithLatest()<br>配送費を再計算
+    DB-->>SA: 国別配送費
+    SA-->>Client: 更新された合計金額
+
+    User->>SA: 注文確定
+    SA->>DB: placeOrder()<br>Order / OrderGroup / OrderItem 生成<br>在庫アトミック更新
+    DB-->>SA: 注文 ID
+
+    SA->>Payment: 決済セッション作成
+    Payment-->>User: 決済フォーム表示
+    User->>Payment: 決済情報入力・確定
+    Payment->>SA: POST /api/webhooks
+    SA->>DB: 注文ステータス更新
+```
+
+### 主要バリデーションポイント
+
+| ステップ | 処理 | 目的 |
+|----------|------|------|
+| ① クライアント側カート（Zustand） | 高速な UI 更新 | localStorage に永続化 |
+| ② サーバー側バリデーション（`saveUserCart`） | DB から価格・在庫・配送を再計算 | 不正操作の防止 |
+| ③ チェックアウト更新（`updateCheckoutProductWithLatest`） | 選択国の配送費を再計算 | 正確な配送費表示 |
+| ④ 注文確定（`placeOrder`） | アトミックトランザクション ＋ 在庫更新 | 整合性の保証 |
+| ⑤ 決済 Webhook | 確認後に注文ステータス更新 | 決済の信頼性確保 |
+
+---
+
+## プロジェクトディレクトリ構成
+
+```
+Multi-Vendor-E-Commerce/
+├── src/
+│   ├── app/                          # Next.js App Router ページ
+│   │   ├── (store)/                  # 顧客向けページ（パブリック）
+│   │   │   ├── page.tsx              # ホームページ
+│   │   │   ├── browse/               # 商品一覧
+│   │   │   ├── product/[slug]/       # 商品詳細ページ
+│   │   │   ├── cart/                 # ショッピングカート
+│   │   │   ├── checkout/             # チェックアウトフロー（要認証）
+│   │   │   └── profile/              # ユーザープロフィール（要認証）
+│   │   ├── (auth)/                   # Clerk 認証ページ
+│   │   │   ├── sign-in/
+│   │   │   └── sign-up/
+│   │   ├── dashboard/                # 保護されたダッシュボード
+│   │   │   ├── admin/                # 管理者ページ（ADMIN ロール専用）
+│   │   │   └── seller/               # セラーページ（SELLER ロール専用）
+│   │   ├── api/                      # API ルート
+│   │   │   ├── webhooks/             # Clerk/Stripe Webhook
+│   │   │   └── search-products/      # 検索エンドポイント
+│   │   └── layout.tsx                # ルートレイアウト（プロバイダー含む）
+│   ├── queries/                      # サーバーアクション（ビジネスロジック）
+│   │   ├── product.ts                # ⭐ 商品 CRUD・配送計算
+│   │   ├── store.ts                  # ストア管理・承認ワークフロー
+│   │   ├── user.ts                   # カート・チェックアウト・注文
+│   │   ├── review.ts                 # レビュー投稿・フィルタリング
+│   │   ├── category.ts               # カテゴリー管理
+│   │   └── coupon.ts                 # クーポンバリデーション
+│   ├── components/                   # React コンポーネント
+│   │   ├── ui/                       # shadcn/ui プリミティブ
+│   │   ├── store/                    # 顧客向けコンポーネント
+│   │   ├── dashboard/                # ダッシュボード専用コンポーネント
+│   │   └── shared/                   # 全体共有コンポーネント
+│   ├── cart-store/                   # Zustand カート状態
+│   │   └── cart-store.ts
+│   ├── lib/                          # ユーティリティと設定
+│   │   ├── db.ts                     # Prisma クライアントシングルトン
+│   │   ├── schemas.ts                # Zod バリデーションスキーマ
+│   │   ├── types.ts                  # TypeScript 型定義
+│   │   └── utils.ts                  # ユーティリティ関数
+│   └── middleware.ts                 # Clerk 認証ミドルウェア
+├── prisma/
+│   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
+│   └── migrations/                   # データベースマイグレーション履歴
+├── tests/
+│   └── e2e/                          # Playwright E2E テスト
+│       ├── seed/seed-e2e.ts          # テストデータシード
+│       └── cart-smoke.spec.ts        # E2E テストスペック例
+├── public/                           # 静的アセット
+├── package.json                      # 依存関係とスクリプト
+├── next.config.mjs                   # Next.js 設定
+├── tailwind.config.ts                # Tailwind CSS 設定
+├── tsconfig.json                     # TypeScript 設定
+└── playwright.config.ts              # Playwright E2E テスト設定
+```
+
+### 主要な設計上の決定事項
+
+- **`src/actions/` ディレクトリなし**: すべてのサーバーアクションは `"use server"` ディレクティブ付きで `src/queries/` に配置
+- **クエリのコロケーション**: CRUD 操作とデータフェッチをドメインごとに同一ファイルで管理
+- **パスエイリアス**: `@/*` → `src/*`、`@/store` → `src/components/store`
+- **保護されたルート**: ルートレベルのミドルウェアで `/dashboard/*`・`/checkout`・`/profile/*` を制御
+
+---
+
+## データベースアーキテクチャ：PostgreSQL × Prisma
+
+**Neon サーバーレス PostgreSQL** ＋ **Prisma Accelerate**（接続プール）を採用。MySQL 9 からのマイグレーション済み（詳細は [データベースマイグレーション](./2.1-database-migration) を参照）。
 
 ```mermaid
 erDiagram
-    users ||--o{ stores : owns
-    users ||--o{ orders : places
-    users ||--o{ cart_items : has
+    User ||--o{ Store : "1:N"
+    User ||--o| Cart : "1:1"
+    User ||--o{ Order : "1:N"
 
-    stores ||--o{ products : contains
-    stores ||--|| store_subscriptions : has
+    Store ||--o{ Product : "1:N"
+    Store ||--o{ ShippingRate : "1:N"
+    Store ||--o{ Coupon : "1:N"
 
-    products ||--o{ product_variants : has
-    products }|--|| categories : belongs_to
+    Product ||--o{ ProductVariant : "1:N"
+    Product ||--o{ Specification : "1:N"
 
-    product_variants ||--o{ variant_images : has
-    product_variants ||--o{ cart_items : contains
-    product_variants ||--o{ order_items : contains
+    ProductVariant ||--o{ Size : "1:N"
 
-    orders ||--o{ order_items : contains
-    orders ||--|| shipping_addresses : ships_to
+    Cart ||--o{ CartItem : "1:N"
+    CartItem }o--|| ProductVariant : "参照"
 
-    users {
-        string id PK "クラークユーザーID"
-        string email UK "メールアドレス"
-        string first_name "名"
-        string last_name "姓"
-        enum role "CUSTOMER/SELLER/ADMIN"
-        datetime created_at "作成日時"
-        datetime updated_at "更新日時"
+    Order ||--o{ OrderGroup : "1:N"
+    OrderGroup ||--o{ OrderItem : "1:N"
+
+    User {
+        string id PK
+        string role
+        string clerkId
     }
-
-    stores {
-        string id PK "UUID"
-        string user_id FK "所有者ID"
-        string name "店舗名"
-        text description "店舗説明"
-        string slug UK "URL スラッグ"
-        boolean is_active "アクティブ状態"
-        datetime created_at "作成日時"
-        datetime updated_at "更新日時"
+    Store {
+        string id PK
+        string status "PENDING|ACTIVE|BANNED"
+        string url
     }
-
-    products {
-        string id PK "UUID"
-        string store_id FK "店舗ID"
-        string category_id FK "カテゴリID"
-        string name "商品名"
-        text description "商品説明"
-        decimal price "基本価格"
-        enum status "DRAFT/ACTIVE/ARCHIVED"
-        datetime created_at "作成日時"
-        datetime updated_at "更新日時"
+    Product {
+        string id PK
+        float rating
+        tsvector searchVector
     }
-
-    product_variants {
-        string id PK "UUID"
-        string product_id FK "商品ID"
-        string name "バリアント名"
-        decimal price "バリアント価格"
-        int inventory "在庫数"
-        string combination "属性組み合わせ"
-        datetime created_at "作成日時"
-        datetime updated_at "更新日時"
+    ProductVariant {
+        string id PK
+        string color
+        string style
+    }
+    Size {
+        string id PK
+        float price
+        int stock
+    }
+    Order {
+        string id PK
+        string status
+    }
+    OrderGroup {
+        string id PK
+        string storeId FK
+    }
+    OrderItem {
+        string id PK
+        int quantity
+        float price
     }
 ```
 
-## API設計とエンドポイント
+### 重要な設計ポイント
 
-### RESTful API エンドポイント
+- **Size レベルの価格設定**: `ProductVariant` 内の各 `Size` が独立した価格・在庫を持つ
+- **マルチストア注文**: `Order` がストアごとの `OrderGroup` に分解され、独立した処理が可能
+- **全文検索**: `Product` テーブルの `tsvector` カラム ＋ GIN インデックス
+- **デュアル接続 URL**: `DATABASE_URL`（Accelerate 経由・アプリ用）と `DIRECT_URL`（CLI 操作用）
+
+```ts
+// src/lib/db.ts
+const createPrismaClient = () =>
+  new PrismaClient().$extends(withAccelerate());
+```
+
+---
+
+## 開発環境とワークフロー
+
+### 前提条件
+
+- **Bun**（ランタイム & パッケージマネージャー。npm の代替）
+- **PostgreSQL** データベース（Neon ホスト または ローカル）
+- **Clerk** アカウント（認証）
+- **Stripe / PayPal** アカウント（決済処理）
+- **Cloudinary** アカウント（メディアアップロード）
+
+### 必要な環境変数
+
+```env
+DATABASE_URL=                    # Prisma Accelerate 接続 URL
+DIRECT_URL=                      # マイグレーション用の直接 PostgreSQL URL
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+WEBHOOK_SECRET=                  # Clerk Webhook 署名
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLIC_KEY=
+PAYPAL_SECRET=
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=
+```
+
+### よく使う開発コマンド
+
+| コマンド | 目的 |
+|----------|------|
+| `bun run dev` | `http://localhost:3000` で Next.js 開発サーバーを起動 |
+| `bun run build` | プロダクションビルド |
+| `bun run lint` | ESLint チェック |
+| `bunx prettier --write <file>` | コードフォーマット |
+| `bunx prisma generate` | Prisma クライアントの再生成 |
+| `bunx prisma migrate dev` | マイグレーション適用（`db push` より推奨） |
+| `bunx prisma studio` | データベースブラウザを開く |
+| `bun run test` | Jest ユニットテストを実行 |
+| `bun run test:watch` | Jest ウォッチモード |
+| `bunx playwright test` | E2E テストを実行 |
+| `bun run seed:e2e` | テスト用データベースをシード |
+
+### テスト戦略
 
 ```mermaid
-graph TD
-    API[API エンドポイント]
+graph LR
+    subgraph UNIT["ユニットテスト (Jest)"]
+        J1["src/queries/*.test.ts"]
+    end
 
-    %% 商品関連
-    API --> PRODUCTS_API["/api/products（商品関連）"]
-    PRODUCTS_API --> GET_PRODUCTS["GET: 商品一覧"]
-    PRODUCTS_API --> POST_PRODUCT["POST: 商品作成"]
-    PRODUCTS_API --> PUT_PRODUCT["PUT: 商品更新"]
-    PRODUCTS_API --> DELETE_PRODUCT["DELETE: 商品削除"]
+    subgraph E2E["E2E テスト (Playwright)"]
+        P1["Chromium"]
+        P2["Firefox"]
+        P3["WebKit"]
+    end
 
-    %% 注文関連
-    API --> ORDERS_API["/api/orders（注文関連）"]
-    ORDERS_API --> GET_ORDERS["GET: 注文一覧"]
-    ORDERS_API --> POST_ORDER["POST: 注文作成"]
-    ORDERS_API --> PUT_ORDER["PUT: 注文更新"]
+    subgraph ISOLATION["テスト分離"]
+        I1["ワーカーごとに一意のシードデータ<br>e2e-seller+chromium-w0@example.com"]
+        I2["完全なデータ分離<br>で並列実行が可能"]
+    end
 
-    %% 決済関連
-    API --> PAYMENT_API["/api/payment（決済関連）"]
-    PAYMENT_API --> CREATE_INTENT["POST: 決済インテント"]
-    PAYMENT_API --> WEBHOOK["POST: Webhook処理"]
-
-    %% ユーザー関連
-    API --> USERS_API["/api/users（ユーザー関連）"]
-    USERS_API --> GET_PROFILE["GET: プロフィール"]
-    USERS_API --> PUT_PROFILE["PUT: プロフィール更新"]
-
-    %% 店舗関連
-    API --> STORES_API["/api/stores（店舗関連）"]
-    STORES_API --> GET_STORE["GET: 店舗情報"]
-    STORES_API --> POST_STORE["POST: 店舗作成"]
-    STORES_API --> PUT_STORE["PUT: 店舗更新"]
-
-    %% スタイル（GitHubでは無視される場合あり）
-    style API fill:#2196F3,color:#fff
-    style PRODUCTS_API fill:#4CAF50,color:#fff
-    style ORDERS_API fill:#FF9800,color:#fff
-    style PAYMENT_API fill:#F44336,color:#fff
-    style USERS_API fill:#9C27B0,color:#fff
-    style STORES_API fill:#795548,color:#fff
+    UNIT --> ISOLATION
+    E2E --> ISOLATION
 ```
 
-## セキュリティとパフォーマンス
+- **ユニットテスト**: Jest で `src/queries/*.test.ts` をテスト
+- **E2E テスト**: Playwright で 3 ブラウザ（Chromium・Firefox・WebKit）
+- **テスト分離**: Playwright ワーカーごとに一意のシードデータ
+- **並列実行**: 完全なデータ分離により並列テストが可能
 
-### セキュリティアーキテクチャ
+---
+
+## マイグレーション履歴：MySQL → PostgreSQL
+
+`pgloader` を使用して **MySQL 9** から **Neon PostgreSQL** へ移行。
 
 ```mermaid
-graph TD
-    CLIENT[クライアント] --> CLERK_AUTH[Clerk認証]
-    CLERK_AUTH --> MIDDLEWARE[認証ミドルウェア]
-    MIDDLEWARE --> ROLE_CHECK[役割確認]
-    ROLE_CHECK --> API_ACCESS[API アクセス]
+flowchart LR
+    subgraph OLD["移行前 (MySQL 9)"]
+        M1["MATCH ... AGAINST<br>全文検索"]
+        M2["RAND()<br>ランダム"]
+        M3["大文字小文字区別なし<br>デフォルト"]
+        M4["単一接続 URL"]
+    end
 
-    API_ACCESS --> VALIDATION[入力バリデーション]
-    VALIDATION --> ZOD_SCHEMA[Zodスキーマ]
-    ZOD_SCHEMA --> BUSINESS_LOGIC[ビジネスロジック]
+    subgraph NEW["移行後 (PostgreSQL)"]
+        N1["tsvector / tsquery<br>+ GIN インデックス"]
+        N2["RANDOM()"]
+        N3["mode: insensitive<br>を contains に追加"]
+        N4["DATABASE_URL + DIRECT_URL<br>デュアル接続"]
+    end
 
-    BUSINESS_LOGIC --> DATA_ACCESS[データアクセス]
-    DATA_ACCESS --> PRISMA_SECURITY[Prisma セキュリティ]
-    PRISMA_SECURITY --> DATABASE[(データベース)]
-
-    %% セキュリティ機能
-    RATE_LIMITING[レート制限]
-    CSRF_PROTECTION[CSRF保護]
-    XSS_PREVENTION[XSS防止]
-
-    API_ACCESS --> RATE_LIMITING
-    API_ACCESS --> CSRF_PROTECTION
-    API_ACCESS --> XSS_PREVENTION
-
-    style CLERK_AUTH fill:#4CAF50,color:#fff
-    style VALIDATION fill:#FF9800,color:#fff
-    style PRISMA_SECURITY fill:#2196F3,color:#fff
-    style DATABASE fill:#F44336,color:#fff
+    M1 -->|pgloader| N1
+    M2 -->|pgloader| N2
+    M3 -->|pgloader| N3
+    M4 -->|pgloader| N4
 ```
 
-## 結論
+---
 
-マルチベンダーEコマースシステムは、マルチベンダー運営の複雑さと、すべてのステークホルダーにとってのユーザーフレンドリーなインターフェースをバランスよく取る高度なマーケットプレイスプラットフォームを表しています。このアーキテクチャは、統一されたプラットフォーム体験内で複数の独立した店舗にわたって、スケーラブルな商品管理、安全な取引処理、および包括的な注文履行をサポートします。
+## 関連ドキュメント
 
-### 主要な技術的成果
+| ドキュメント | 内容 |
+|------------|------|
+| [システムアーキテクチャ](./2-system-architecture) | アーキテクチャパターンの詳細 |
+| [商品管理システム](./3.1-product-management-system) | 商品システムの詳細 |
+| [ストア管理システム](./3.2-store-management-system) | マルチベンダー機能の詳細 |
+| [ユーザー管理 & カートシステム](./3.3-user-management-and-cart-system) | チェックアウト・注文の詳細 |
+| [注文 & 決済処理](./3.4-order-and-payment-processing) | 決済フローの詳細 |
+| [データベーススキーマ & Prisma](./5.1-database-schema-and-prisma) | DB スキーマの詳細 |
+| [配送システム](./6-shipping-system) | 配送計算の詳細 |
+| [認証 & 認可](./8-authentication-and-authorization) | 認証フローの詳細 |
+| [テストインフラ](./7.2-testing-infrastructure) | テスト設定の詳細 |
+| [外部サービス連携](./9-external-service-integrations) | 外部サービスの詳細 |
 
-- **モジュラー設計**: 各システムコンポーネントが独立して拡張可能
-- **型安全性**: TypeScript と Zod による包括的な型検証
-- **パフォーマンス**: Next.js 14 による最適化されたサーバーサイドレンダリング
-- **スケーラビリティ**: Prisma ORM による効率的なデータベース操作
-- **セキュリティ**: Clerk による企業級認証とセキュリティ
+---
 
-### 将来の拡張可能性
-
-このアーキテクチャは以下の機能拡張に対応可能です：
-- マルチテナント機能の強化
-- 高度な分析とレポート機能
-- 第三者配送業者との統合
-- モバイルアプリケーションサポート
-- 国際化とマルチ通貨対応
+> **ドキュメントバージョン**: Next.js 14.2.4・Prisma 5.22.0・PostgreSQL マイグレーション完了時点の初版
