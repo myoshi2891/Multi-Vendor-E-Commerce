@@ -155,7 +155,7 @@ export const updateOrderItemStatus = async (
 
     // Verify ownership of the store
     if (!store) {
-        throw new Error("Unauthorized to update order group status.");
+        throw new Error("Unauthorized to update order item status.");
     }
 
     // Retrieve the product item to be updated

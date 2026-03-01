@@ -1271,7 +1271,7 @@ describe("getProductShippingFee", () => {
 
         const freeShipping = {
             eligibleCountries: [
-                { countryId: "Japan" }, // countryId比較はcountry.name
+                { countryId: "country-001" },
             ],
         };
 

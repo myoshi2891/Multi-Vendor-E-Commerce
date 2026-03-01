@@ -360,7 +360,7 @@ describe("updateOrderItemStatus", () => {
                     "Processing" as never
                 )
             ).rejects.toThrow(
-                "Unauthorized to update order group status."
+                "Unauthorized to update order item status."
             );
         });
     });

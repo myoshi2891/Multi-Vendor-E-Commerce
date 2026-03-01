@@ -134,7 +134,10 @@ describe("POST /api/webhooks", () => {
                     image_url: "https://example.com/avatar.jpg",
                 },
             };
-            mockVerify.mockReturnValue({ type: "user.created" });
+            mockVerify.mockReturnValue({
+                type: "user.created",
+                data: eventData.data,
+            });
             mockUpsert.mockResolvedValue({
                 id: "user_123",
                 role: "USER",
@@ -172,7 +175,10 @@ describe("POST /api/webhooks", () => {
                     image_url: "https://example.com/avatar.jpg",
                 },
             };
-            mockVerify.mockReturnValue({ type: "user.created" });
+            mockVerify.mockReturnValue({
+                type: "user.created",
+                data: eventData.data,
+            });
             mockUpsert.mockResolvedValue({
                 id: "user_456",
                 role: "SELLER",
@@ -198,7 +204,10 @@ describe("POST /api/webhooks", () => {
                     image_url: "https://example.com/new-avatar.jpg",
                 },
             };
-            mockVerify.mockReturnValue({ type: "user.updated" });
+            mockVerify.mockReturnValue({
+                type: "user.updated",
+                data: eventData.data,
+            });
             mockUpsert.mockResolvedValue({ id: "user_789", role: "USER" });
             mockUpdateUserMetadata.mockResolvedValue({});
 
@@ -220,7 +229,10 @@ describe("POST /api/webhooks", () => {
                     id: "user_to_delete",
                 },
             };
-            mockVerify.mockReturnValue({ type: "user.deleted" });
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
             mockDelete.mockResolvedValue({ id: "user_to_delete" });
 
             const response = await POST(createWebhookRequest(eventData));

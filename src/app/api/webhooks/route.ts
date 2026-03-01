@@ -53,8 +53,14 @@ export async function POST(req: Request) {
 
 	// When user is created or updated
 	if (evt.type === "user.created" || evt.type === "user.updated") {
-		// Parse the incoming event data
-		const data = JSON.parse(body).data;
+		// Svix検証済みのイベントデータを使用
+		const data = evt.data as {
+			id: string;
+			first_name: string;
+			last_name: string;
+			email_addresses: { email_address: string }[];
+			image_url: string;
+		};
 		const user: Partial<User> = {
 			id: data.id,
 			name: `${data.first_name} ${data.last_name}`,
@@ -86,7 +92,7 @@ export async function POST(req: Request) {
 	}
 
 	if (evt.type === "user.deleted") {
-		const userId = JSON.parse(body).data.id;
+		const userId = (evt.data as { id: string }).id;
 		await db.user.delete({
 			where: {
 				id: userId,

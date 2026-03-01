@@ -12,7 +12,8 @@ jest.mock("@/lib/db", () => ({
         review: {
             findFirst: jest.fn(),
             findMany: jest.fn(),
-            upsert: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
         },
         product: {
             update: jest.fn(),
@@ -78,14 +79,15 @@ describe("upsertReview", () => {
             mockDb.review.findFirst.mockResolvedValue(null);
         });
 
-        it("新規レビューをupsertで作成する", async () => {
+        it("新規レビューをcreateで作成する（クライアント提供IDは無視される）", async () => {
             const reviewInput = createMockReviewInput();
             const createdReview = {
+                id: "server-generated-id",
                 ...reviewInput,
                 productId: "product-001",
                 userId: TEST_CONFIG.DEFAULT_USER_ID,
             };
-            mockDb.review.upsert.mockResolvedValue(createdReview);
+            mockDb.review.create.mockResolvedValue(createdReview);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
@@ -95,15 +97,16 @@ describe("upsertReview", () => {
             );
 
             expect(result).toEqual(createdReview);
-            expect(mockDb.review.upsert).toHaveBeenCalledWith(
+            expect(mockDb.review.create).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { id: reviewInput.id },
-                    create: expect.objectContaining({
+                    data: expect.objectContaining({
                         productId: "product-001",
                         userId: TEST_CONFIG.DEFAULT_USER_ID,
                     }),
                 })
             );
+            // クライアント提供のIDはwhereに使用されない
+            expect(mockDb.review.update).not.toHaveBeenCalled();
         });
 
         it("画像をcreateで保存する", async () => {
@@ -113,15 +116,15 @@ describe("upsertReview", () => {
                     { url: "https://example.com/img2.jpg" },
                 ],
             });
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
             await upsertReview("product-001", reviewInput as never);
 
-            expect(mockDb.review.upsert).toHaveBeenCalledWith(
+            expect(mockDb.review.create).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    create: expect.objectContaining({
+                    data: expect.objectContaining({
                         images: {
                             create: [
                                 { url: "https://example.com/img1.jpg" },
@@ -141,7 +144,7 @@ describe("upsertReview", () => {
             });
         });
 
-        it("既存レビューがある場合、そのIDで更新する", async () => {
+        it("既存レビューがある場合、サーバー検証済みIDで更新する", async () => {
             const existingReview = {
                 id: "existing-review-001",
                 productId: "product-001",
@@ -149,8 +152,8 @@ describe("upsertReview", () => {
             };
             mockDb.review.findFirst.mockResolvedValue(existingReview);
 
-            const reviewInput = createMockReviewInput({ id: "new-id" });
-            mockDb.review.upsert.mockResolvedValue({
+            const reviewInput = createMockReviewInput({ id: "client-provided-id" });
+            mockDb.review.update.mockResolvedValue({
                 ...reviewInput,
                 id: "existing-review-001",
             });
@@ -159,12 +162,13 @@ describe("upsertReview", () => {
 
             await upsertReview("product-001", reviewInput as never);
 
-            // 既存レビューのIDが使われる
-            expect(mockDb.review.upsert).toHaveBeenCalledWith(
+            // クライアント提供のIDではなく、サーバー検証済みの既存レビューIDが使われる
+            expect(mockDb.review.update).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { id: "existing-review-001" },
                 })
             );
+            expect(mockDb.review.create).not.toHaveBeenCalled();
         });
 
         it("更新時に既存画像を全削除して再作成する", async () => {
@@ -172,15 +176,15 @@ describe("upsertReview", () => {
                 id: "existing-review-001",
             });
             const reviewInput = createMockReviewInput();
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.update.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
             await upsertReview("product-001", reviewInput as never);
 
-            expect(mockDb.review.upsert).toHaveBeenCalledWith(
+            expect(mockDb.review.update).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    update: expect.objectContaining({
+                    data: expect.objectContaining({
                         images: expect.objectContaining({
                             deleteMany: {},
                             create: expect.any(Array),
@@ -201,7 +205,7 @@ describe("upsertReview", () => {
 
         it("レビュー後に平均評価を再計算して商品を更新する", async () => {
             const reviewInput = createMockReviewInput({ rating: 4 });
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([
                 { rating: 5 },
                 { rating: 3 },
@@ -222,7 +226,7 @@ describe("upsertReview", () => {
 
         it("レビュー1件の場合、その評価がそのまま平均になる", async () => {
             const reviewInput = createMockReviewInput({ rating: 3 });
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 3 }]);
             mockDb.product.update.mockResolvedValue({});
 
@@ -239,7 +243,7 @@ describe("upsertReview", () => {
 
         it("小数点の平均評価を正しく計算する", async () => {
             const reviewInput = createMockReviewInput({ rating: 4 });
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([
                 { rating: 5 },
                 { rating: 4 },
@@ -259,13 +263,13 @@ describe("upsertReview", () => {
 
         it("imagesとuserをincludeしてレビューを返す", async () => {
             const reviewInput = createMockReviewInput();
-            mockDb.review.upsert.mockResolvedValue(reviewInput);
+            mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
             await upsertReview("product-001", reviewInput as never);
 
-            expect(mockDb.review.upsert).toHaveBeenCalledWith(
+            expect(mockDb.review.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     include: {
                         images: true,
