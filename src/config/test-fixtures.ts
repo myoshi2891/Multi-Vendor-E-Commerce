@@ -6,6 +6,10 @@
 import { TEST_CONFIG } from "./test-config";
 import { CartProductType } from "@/lib/types";
 
+// 相対日付の基準値（test-scenarios.ts と同パターン、循環依存回避のため独立定義）
+const NOW = Date.now();
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
 // ---- 型定義 ----
 type MockUser = {
     id: string;
@@ -482,12 +486,12 @@ export const createMockCoupon = (
 ): MockCoupon => ({
     id: "coupon-001",
     code: "SAVE10",
-    startDate: new Date("2024-01-01"),
-    endDate: new Date("2025-12-31"),
+    startDate: new Date(NOW - ONE_YEAR_MS),
+    endDate: new Date(NOW + ONE_YEAR_MS),
     discount: 10,
     storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
+    createdAt: new Date(NOW - ONE_YEAR_MS),
+    updatedAt: new Date(NOW - ONE_YEAR_MS),
     ...overrides,
 });
 

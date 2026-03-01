@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { upsertReview } from "./review";
 import { TEST_CONFIG } from "../config/test-config";
+import type { ReviewDetailsType } from "@/lib/types";
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -25,8 +26,8 @@ const mockDb = require("@/lib/db").db;
 
 // テスト用レビューデータ
 const createMockReviewInput = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<ReviewDetailsType> = {}
+): ReviewDetailsType => ({
     id: "review-001",
     review: "Great product, highly recommend!",
     rating: 5,
@@ -51,7 +52,7 @@ describe("upsertReview", () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
             await expect(
-                upsertReview("product-001", createMockReviewInput() as never)
+                upsertReview("product-001", createMockReviewInput())
             ).rejects.toThrow("Error updating review");
         });
     });
@@ -65,7 +66,7 @@ describe("upsertReview", () => {
 
         it("productIdが空の場合エラーをスローする", async () => {
             await expect(
-                upsertReview("", createMockReviewInput() as never)
+                upsertReview("", createMockReviewInput())
             ).rejects.toThrow("Error updating review");
         });
     });
@@ -93,7 +94,7 @@ describe("upsertReview", () => {
 
             const result = await upsertReview(
                 "product-001",
-                reviewInput as never
+                reviewInput
             );
 
             expect(result).toEqual(createdReview);
@@ -120,7 +121,7 @@ describe("upsertReview", () => {
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.review.create).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -160,7 +161,7 @@ describe("upsertReview", () => {
             mockDb.review.findMany.mockResolvedValue([{ rating: 4 }]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             // クライアント提供のIDではなく、サーバー検証済みの既存レビューIDが使われる
             expect(mockDb.review.update).toHaveBeenCalledWith(
@@ -180,7 +181,7 @@ describe("upsertReview", () => {
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.review.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -213,7 +214,7 @@ describe("upsertReview", () => {
             ]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.product.update).toHaveBeenCalledWith({
                 where: { id: "product-001" },
@@ -230,7 +231,7 @@ describe("upsertReview", () => {
             mockDb.review.findMany.mockResolvedValue([{ rating: 3 }]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.product.update).toHaveBeenCalledWith({
                 where: { id: "product-001" },
@@ -250,7 +251,7 @@ describe("upsertReview", () => {
             ]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.product.update).toHaveBeenCalledWith({
                 where: { id: "product-001" },
@@ -267,7 +268,7 @@ describe("upsertReview", () => {
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
 
-            await upsertReview("product-001", reviewInput as never);
+            await upsertReview("product-001", reviewInput);
 
             expect(mockDb.review.create).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -290,7 +291,7 @@ describe("upsertReview", () => {
             );
 
             await expect(
-                upsertReview("product-001", createMockReviewInput() as never)
+                upsertReview("product-001", createMockReviewInput())
             ).rejects.toThrow("Error updating review");
         });
     });

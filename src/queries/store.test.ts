@@ -14,6 +14,14 @@ import {
 } from "./store";
 import { TEST_CONFIG } from "../config/test-config";
 
+/** expectDuplicateCheck で参照されるストアフィールド */
+interface StoreDuplicateCheckData {
+    name: string | undefined;
+    url: string | undefined;
+    email: string | undefined;
+    phone: string | undefined;
+}
+
 // Mock the database
 jest.mock("@/lib/db", () => ({
     db: {
@@ -182,7 +190,7 @@ class TestHelpers {
 
     static expectStoreCreatedWith(
         mockCreate: jest.SpyInstance,
-        expectedData: any
+        expectedData: Record<string, unknown>
     ) {
         expect(mockCreate).toHaveBeenCalledWith({
             data: expectedData,
@@ -192,7 +200,7 @@ class TestHelpers {
     static expectStoreUpdatedWith(
         mockUpdate: jest.SpyInstance,
         storeId: string,
-        expectedData: any
+        expectedData: Record<string, unknown>
     ) {
         expect(mockUpdate).toHaveBeenCalledWith({
             where: { id: storeId },
@@ -215,7 +223,7 @@ class TestHelpers {
 
     static expectDuplicateCheck(
         mockFindFirst: jest.SpyInstance,
-        storeData: any,
+        storeData: StoreDuplicateCheckData,
         excludeId?: string
     ) {
         const whereCondition = excludeId
@@ -921,6 +929,7 @@ describe("getStoreDefaultShippingDetails", () => {
 // ==================================================
 // 注: 前半の TestHelpers.mockDbMethods() は db.store のスパイラッパーを返す。
 // ここでは db 全体（store, country, shippingRate 等）を参照するため別変数を使用。
+// TODO: TestHelpers.mockDbMethods() を拡張して db 全体をカバーする
 const mockPrisma = require("@/lib/db").db;
 
 // ==================================================

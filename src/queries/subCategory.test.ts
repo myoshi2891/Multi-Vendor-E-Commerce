@@ -215,12 +215,15 @@ describe("getAllSubCategories", () => {
         const consoleErrorSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
-        mockFindMany.mockRejectedValue(new Error("DB error"));
 
-        await expect(getAllSubCategories()).rejects.toThrow("DB error");
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        try {
+            mockFindMany.mockRejectedValue(new Error("DB error"));
 
-        consoleErrorSpy.mockRestore();
+            await expect(getAllSubCategories()).rejects.toThrow("DB error");
+            expect(consoleErrorSpy).toHaveBeenCalled();
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
     });
 });
 
@@ -258,13 +261,16 @@ describe("getSubCategory", () => {
         const consoleErrorSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
-        mockFindUnique.mockRejectedValue(new Error("DB error"));
 
-        await expect(getSubCategory("subcategory-001")).rejects.toThrow(
-            "DB error"
-        );
+        try {
+            mockFindUnique.mockRejectedValue(new Error("DB error"));
 
-        consoleErrorSpy.mockRestore();
+            await expect(getSubCategory("subcategory-001")).rejects.toThrow(
+                "DB error"
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
     });
 });
 
