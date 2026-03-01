@@ -13,10 +13,10 @@ Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Strip
 - **入力バリデーションは `src/lib/schemas.ts` の Zod スキーマ**（フォームは React Hook Form + Zod resolver）
 - **DBアクセスは `src/lib/db.ts` の Prisma シングルトン経由**（`new PrismaClient()` は禁止）
 - **認証は Clerk middleware**（保護ルートは `/dashboard/*`, `/checkout`, `/profile/*`）
-- **Client Component は Server Actions を直接 import しないこと**（`src/queries/` を使用）
+- **Server Actions のインポートと呼び出しに関する厳格なルール**
   - `src/queries/` はサーバー側クエリロジックの承認済みファサード（approved facade）です
-  - ✅ 【Allowed】 Server Component -> `src/queries/` -> server action
-  - ❌ 【Disallowed】 Client Component -> server action の直接 import
+  - ❌ **Client Component**: `src/queries/` を含むいかなる場所からも Server Actions を直接 import してはいけません。サーバーアクションの呼び出しは、Props（イベントハンドラー等）や API エンドポイントを経由して行う必要があります。
+  - ✅ **Server Component**: `src/queries/` を経由して Server Actions を import し、呼び出すことが許可されています。
 - データモデルは **バリアントレベル**（価格・在庫・画像は `ProductVariant` に紐づく）
 
 ## セキュリティ制約
@@ -28,22 +28,26 @@ Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Strip
 ## 禁止操作
 
 - `console.log()` のコミット（レビュー前に削除必須）
-- `bunx prisma db push` を本番相当環境で使用（`migrate dev` を使う）
+- `bunx prisma db push` の使用（これはプロトタイピングやローカル開発環境でのみ許可されます。ステージング・本番環境など、永続的でバージョン管理されたマイグレーション履歴が必要な環境では必ず `prisma migrate dev` を使用してください）
 - `migrations/` 配下の既存ファイルを編集する
 - 本番DBへの `DELETE`/`DROP` を人間の確認なしに実行する
 - `reactStrictMode` の変更（`next.config.mjs` で `false` に設定済み）
 
 ## SDD仕様書参照ルール
 
-新機能を実装する前に必ず以下の順序で確認すること：
-
+**1. 実装前（新規機能・既存機能変更・バグ修正時）**
+必ず以下の順序で関連仕様を確認すること：
 1. `specs/multi-vendor-ecommerce/00-overview.md` — プロダクトスコープ確認
 2. `specs/multi-vendor-ecommerce/01-requirements.md` — 機能・非機能要件確認
 3. `specs/multi-vendor-ecommerce/02-architecture.md` — アーキテクチャ制約確認
 4. `specs/multi-vendor-ecommerce/03-data-model.md` — データモデル確認
 5. `specs/multi-vendor-ecommerce/07-testing.md` — テスト方針確認
 
-実装後は仕様書との乖離がないか確認し、乖離があれば人間に報告する。
+**2. 実装中（レビュー・差分チェック時）**
+実装を進めながら、該当仕様書の要件や制約事項を満たしているか定期的に再確認する。
+
+**3. 実装後**
+実装が完了した時点（または変更時）で、仕様との差分がないか検証し、その結果（乖離がある場合はその報告）をユーザーに報告する。
 
 ## エージェント行動方針
 

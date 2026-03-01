@@ -373,7 +373,7 @@ Multi-Vendor-E-Commerce/
 ├── prisma/
 │   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
 │   └── migrations/                   # データベースマイグレーション履歴
-├── specs/                            # 📄 SDD 仕様書群（AI・人間 共有設計図）
+├── specs/                            # 📄 SDD 仕様書・アーティファクト（要件、Acc Criteria、設計ドキュメント）を格納。AIと人間が実装やテストを駆動させる共有設計図です（詳細は「AI エージェント連携と仕様駆動開発 (SDD)」参照）
 ├── tests/
 │   └── e2e/                          # Playwright E2E テスト
 │       ├── seed/seed-e2e.ts          # テストデータシード
@@ -492,6 +492,9 @@ erDiagram
 
 ```ts
 // src/lib/db.ts
+// Prisma Accelerate（接続プールとエッジ・ランタイム互換性）を有効化します。
+// $extends(withAccelerate()) を呼び出すことで、ベースとなる PrismaClient に
+// アクセラレート機能（ミドルウェア・振る舞い）を拡張・適用させます。
 const createPrismaClient = () =>
   new PrismaClient().$extends(withAccelerate());
 ```
@@ -505,8 +508,11 @@ const createPrismaClient = () =>
 - **Bun**（ランタイム & パッケージマネージャー。npm の代替）
 - **PostgreSQL** データベース（Neon ホスト または ローカル）
 - **Clerk** アカウント（認証）
-- **Stripe / PayPal** アカウント（決済処理、Stripe Webhook設定用に STRIPE_WEBHOOK_SECRET が必要）
+- **Stripe / PayPal** アカウント（決済処理）
 - **Cloudinary** アカウント（メディアアップロード）
+
+#### 🚨 決済のセキュリティと Webhook の設定
+Stripe などの決済結果を受け取るには `POST /api/webhooks` エンドポイントが使われます。不正なリクエストによって注文ステータスが改ざんされるリスクを防ぐため、**必ず Webhook の署名検証** を行う必要があります。このため、ローカル開発・本番環境ともに `STRIPE_WEBHOOK_SECRET` を `.env` に設定して通信の真正性を検証してください。
 
 ### 必要な環境変数
 
@@ -523,6 +529,8 @@ PAYPAL_SECRET=
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=   # Cloudinary クラウド名
 NEXT_PUBLIC_CLOUDINARY_PRESET_NAME=  # Cloudinary アップロードプリセット名
+CLOUDINARY_API_KEY=                  # Cloudinary API キー
+CLOUDINARY_API_SECRET=               # Cloudinary API シークレット
 ```
 
 ### よく使う開発コマンド
