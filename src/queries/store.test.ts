@@ -45,6 +45,7 @@ jest.mock("@/lib/db", () => ({
         user: {
             update: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -277,7 +278,7 @@ class TestHelpers {
         });
     }
 
-    static expectResultToContainShippingFields(result: any) {
+    static expectResultToContainShippingFields(result: Record<string, unknown>) {
         const expectedFields = [
             "defaultShippingService",
             "defaultShippingFeePerItem",
@@ -292,7 +293,7 @@ class TestHelpers {
         expect(Object.keys(result)).toEqual(expectedFields);
     }
 
-    static expectResultToExcludeStoreFields(result: any) {
+    static expectResultToExcludeStoreFields(result: Record<string, unknown>) {
         const excludedFields = [
             "id",
             "name",
@@ -318,7 +319,7 @@ class TestHelpers {
         mockUpdate: jest.SpyInstance,
         storeUrl: string,
         userId: string,
-        shippingDetails: any
+        shippingDetails: Record<string, unknown>
     ) {
         expect(mockUpdate).toHaveBeenCalledWith({
             where: {
@@ -930,7 +931,33 @@ describe("getStoreDefaultShippingDetails", () => {
 // 注: 前半の TestHelpers.mockDbMethods() は db.store のスパイラッパーを返す。
 // ここでは db 全体（store, country, shippingRate 等）を参照するため別変数を使用。
 // TODO: TestHelpers.mockDbMethods() を拡張して db 全体をカバーする
-const mockPrisma = require("@/lib/db").db;
+
+/** mockPrisma の型定義（モックセットアップ L27-50 と対応） */
+interface MockPrismaClient {
+    store: {
+        findUnique: jest.Mock;
+        findFirst: jest.Mock;
+        findMany: jest.Mock;
+        create: jest.Mock;
+        update: jest.Mock;
+    };
+    country: {
+        findMany: jest.Mock;
+    };
+    shippingRate: {
+        findMany: jest.Mock;
+        upsert: jest.Mock;
+    };
+    orderGroup: {
+        findMany: jest.Mock;
+    };
+    user: {
+        update: jest.Mock;
+    };
+    $transaction: jest.Mock;
+}
+
+const mockPrisma = require("@/lib/db").db as MockPrismaClient;
 
 // ==================================================
 // getStoreShippingRates
@@ -1363,6 +1390,14 @@ describe("updateStoreStatus", () => {
     describe("正常系", () => {
         beforeEach(() => {
             TestHelpers.mockUserWithRole("ADMIN");
+            // $transaction モック: コールバックに mockPrisma を渡して実行
+            mockPrisma.$transaction.mockImplementation(
+                async (
+                    callback: (
+                        tx: typeof mockPrisma
+                    ) => Promise<unknown>
+                ) => callback(mockPrisma)
+            );
         });
 
         it("ストアのステータスを更新する", async () => {
@@ -1431,6 +1466,13 @@ describe("updateStoreStatus", () => {
         beforeEach(() => {
             TestHelpers.mockUserWithRole("ADMIN");
             consoleErrorSpy = TestHelpers.mockConsoleError();
+            mockPrisma.$transaction.mockImplementation(
+                async (
+                    callback: (
+                        tx: typeof mockPrisma
+                    ) => Promise<unknown>
+                ) => callback(mockPrisma)
+            );
         });
 
         afterEach(() => {

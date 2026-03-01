@@ -2,12 +2,12 @@ import { POST } from "./route";
 
 // ---- モック設定 ----
 const mockUpsert = jest.fn();
-const mockDelete = jest.fn();
+const mockDeleteMany = jest.fn();
 jest.mock("@/lib/db", () => ({
     db: {
         user: {
             upsert: (...args: unknown[]) => mockUpsert(...args),
-            delete: (...args: unknown[]) => mockDelete(...args),
+            deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
         },
     },
 }));
@@ -152,7 +152,7 @@ describe("POST /api/webhooks", () => {
 
             expect(response.status).toBe(200);
             expect(mockUpsert).toHaveBeenCalledWith({
-                where: { email: "john@example.com" },
+                where: { id: "user_123" },
                 update: expect.objectContaining({
                     id: "user_123",
                     name: "John Smith",
@@ -338,17 +338,37 @@ describe("POST /api/webhooks", () => {
                 type: "user.deleted",
                 data: eventData.data,
             });
-            mockDelete.mockResolvedValue({ id: "user_to_delete" });
+            mockDeleteMany.mockResolvedValue({ count: 1 });
 
             const response = await POST(createWebhookRequest(eventData));
 
             expect(response.status).toBe(200);
-            expect(mockDelete).toHaveBeenCalledWith({
+            expect(mockDeleteMany).toHaveBeenCalledWith({
                 where: { id: "user_to_delete" },
             });
         });
 
-        it("db.user.deleteが失敗した場合500を返す", async () => {
+        it("既に削除済みユーザーの場合でも200を返す（冪等性）", async () => {
+            const eventData = {
+                data: {
+                    id: "user_already_deleted",
+                },
+            };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockDeleteMany.mockResolvedValue({ count: 0 });
+
+            const response = await POST(createWebhookRequest(eventData));
+
+            expect(response.status).toBe(200);
+            expect(mockDeleteMany).toHaveBeenCalledWith({
+                where: { id: "user_already_deleted" },
+            });
+        });
+
+        it("db.user.deleteManyが失敗した場合500を返す", async () => {
             const eventData = {
                 data: {
                     id: "user_delete_fail",
@@ -358,7 +378,7 @@ describe("POST /api/webhooks", () => {
                 type: "user.deleted",
                 data: eventData.data,
             });
-            mockDelete.mockRejectedValue(new Error("DB delete failed"));
+            mockDeleteMany.mockRejectedValue(new Error("DB delete failed"));
             const consoleErrorSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
