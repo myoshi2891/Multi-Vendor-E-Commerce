@@ -95,4 +95,30 @@ describe("GET /api/search-products", () => {
             expect(joinedSql).toContain('"Product"');
         });
     });
+
+    describe("エラーハンドリング", () => {
+        it("DBエラー時に500エラーを返す", async () => {
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            mockQueryRaw.mockRejectedValue(new Error("DB connection failed"));
+
+            const response = await GET(createRequest("test"));
+            const data = await response.json();
+
+            expect(response.status).toBe(500);
+            expect(data).toEqual({ error: "Internal Server Error" });
+            consoleErrorSpy.mockRestore();
+        });
+
+        it("結果が0件の場合空配列を返す（200）", async () => {
+            mockQueryRaw.mockResolvedValue([]);
+
+            const response = await GET(createRequest("nonexistent-product"));
+            const data = await response.json();
+
+            expect(response.status).toBe(200);
+            expect(data).toEqual([]);
+        });
+    });
 });
