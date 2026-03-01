@@ -13,7 +13,10 @@ Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Strip
 - **入力バリデーションは `src/lib/schemas.ts` の Zod スキーマ**（フォームは React Hook Form + Zod resolver）
 - **DBアクセスは `src/lib/db.ts` の Prisma シングルトン経由**（`new PrismaClient()` は禁止）
 - **認証は Clerk middleware**（保護ルートは `/dashboard/*`, `/checkout`, `/profile/*`）
-- **UIコンポーネントから直接サーバーアクションをimportしない**（`src/queries/` 経由）
+- **Client Component は Server Actions を直接 import しないこと**（`src/queries/` を使用）
+  - `src/queries/` はサーバー側クエリロジックの承認済みファサード（approved facade）です
+  - ✅ 【Allowed】 Server Component -> `src/queries/` -> server action
+  - ❌ 【Disallowed】 Client Component -> server action の直接 import
 - データモデルは **バリアントレベル**（価格・在庫・画像は `ProductVariant` に紐づく）
 
 ## セキュリティ制約

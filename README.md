@@ -505,7 +505,7 @@ const createPrismaClient = () =>
 - **Bun**（ランタイム & パッケージマネージャー。npm の代替）
 - **PostgreSQL** データベース（Neon ホスト または ローカル）
 - **Clerk** アカウント（認証）
-- **Stripe / PayPal** アカウント（決済処理）
+- **Stripe / PayPal** アカウント（決済処理、Stripe Webhook設定用に STRIPE_WEBHOOK_SECRET が必要）
 - **Cloudinary** アカウント（メディアアップロード）
 
 ### 必要な環境変数
@@ -518,6 +518,7 @@ CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                  # Clerk Webhook 署名
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=
+STRIPE_WEBHOOK_SECRET=           # Stripe Webhook 署名検証シークレット
 PAYPAL_SECRET=
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=   # Cloudinary クラウド名
