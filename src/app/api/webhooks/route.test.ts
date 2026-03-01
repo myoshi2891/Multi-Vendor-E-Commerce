@@ -252,6 +252,75 @@ describe("POST /api/webhooks", () => {
             expect(response.status).toBe(200);
             expect(mockUpsert).toHaveBeenCalled();
         });
+
+        it("db.user.upsertが失敗した場合500を返す", async () => {
+            const eventData = {
+                data: {
+                    id: "user_upsert_fail",
+                    first_name: "Fail",
+                    last_name: "User",
+                    email_addresses: [
+                        { email_address: "fail@example.com" },
+                    ],
+                    image_url: "https://example.com/avatar.jpg",
+                },
+            };
+            mockVerify.mockReturnValue({
+                type: "user.created",
+                data: eventData.data,
+            });
+            mockUpsert.mockRejectedValue(new Error("DB upsert failed"));
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                const response = await POST(createWebhookRequest(eventData));
+
+                expect(response.status).toBe(500);
+                expect(mockUpdateUserMetadata).not.toHaveBeenCalled();
+                expect(consoleErrorSpy).toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
+
+        it("clerkClient.users.updateUserMetadataが失敗した場合500を返す", async () => {
+            const eventData = {
+                data: {
+                    id: "user_meta_fail",
+                    first_name: "Meta",
+                    last_name: "Fail",
+                    email_addresses: [
+                        { email_address: "meta-fail@example.com" },
+                    ],
+                    image_url: "https://example.com/avatar.jpg",
+                },
+            };
+            mockVerify.mockReturnValue({
+                type: "user.created",
+                data: eventData.data,
+            });
+            mockUpsert.mockResolvedValue({
+                id: "user_meta_fail",
+                role: "USER",
+            });
+            mockUpdateUserMetadata.mockRejectedValue(
+                new Error("Clerk metadata update failed")
+            );
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                const response = await POST(createWebhookRequest(eventData));
+
+                expect(response.status).toBe(500);
+                expect(consoleErrorSpy).toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
     });
 
     describe("user.deleted", () => {
@@ -277,6 +346,31 @@ describe("POST /api/webhooks", () => {
             expect(mockDelete).toHaveBeenCalledWith({
                 where: { id: "user_to_delete" },
             });
+        });
+
+        it("db.user.deleteが失敗した場合500を返す", async () => {
+            const eventData = {
+                data: {
+                    id: "user_delete_fail",
+                },
+            };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockDelete.mockRejectedValue(new Error("DB delete failed"));
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                const response = await POST(createWebhookRequest(eventData));
+
+                expect(response.status).toBe(500);
+                expect(consoleErrorSpy).toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 

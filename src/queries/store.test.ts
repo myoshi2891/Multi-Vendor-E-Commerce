@@ -1424,6 +1424,69 @@ describe("updateStoreStatus", () => {
             expect(mockPrisma.user.update).not.toHaveBeenCalled();
         });
     });
+
+    describe("エラーハンドリング", () => {
+        let consoleErrorSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            consoleErrorSpy = TestHelpers.mockConsoleError();
+        });
+
+        afterEach(() => {
+            consoleErrorSpy.mockRestore();
+        });
+
+        it("store.update失敗時にエラーをスローし、user.updateは呼ばれない", async () => {
+            const mockError = TestDataFactory.databaseError(
+                "Database connection failed during store update"
+            );
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockPrisma.store.update.mockRejectedValue(mockError);
+
+            await expect(
+                updateStoreStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "ACTIVE" as never
+                )
+            ).rejects.toThrow(
+                "Database connection failed during store update"
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(mockPrisma.user.update).not.toHaveBeenCalled();
+        });
+
+        it("PENDING→ACTIVE遷移時にuser.updateが失敗した場合エラーをスローする", async () => {
+            const mockError = TestDataFactory.databaseError(
+                "Database connection failed during user role update"
+            );
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    status: "ACTIVE",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                })
+            );
+            mockPrisma.user.update.mockRejectedValue(mockError);
+
+            await expect(
+                updateStoreStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "ACTIVE" as never
+                )
+            ).rejects.toThrow(
+                "Database connection failed during user role update"
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(mockPrisma.store.update).toHaveBeenCalled();
+        });
+    });
 });
 
 // ==================================================
@@ -1531,7 +1594,7 @@ describe("getStorePageDetails", () => {
 
         await expect(
             getStorePageDetails("inactive-store")
-        ).rejects.toThrow();
+        ).rejects.toThrow("Store with URL inactive-store not found.");
 
         expect(mockPrisma.store.findFirst).toHaveBeenCalledWith(
             expect.objectContaining({
