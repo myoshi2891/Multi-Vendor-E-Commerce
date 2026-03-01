@@ -572,7 +572,7 @@ describe("getUserWishlist", () => {
             expect(result.totalPages).toBe(0);
         });
 
-        it("バリアントが空の商品がある場合エラーが発生する（既知の制限）", async () => {
+        it("バリアントが空の商品はフィルタリングされる", async () => {
             const wishlistItemWithEmptyVariants = {
                 productId: "product-001",
                 product: {
@@ -589,7 +589,9 @@ describe("getUserWishlist", () => {
             ]);
             mockDb.wishlist.count.mockResolvedValue(1);
 
-            await expect(getUserWishlist()).rejects.toThrow();
+            const result = await getUserWishlist();
+
+            expect(result.wishlist).toEqual([]);
         });
     });
 });
