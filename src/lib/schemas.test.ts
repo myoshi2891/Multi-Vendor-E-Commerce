@@ -411,6 +411,14 @@ describe("ShippingAddressSchema", () => {
         expect(result.success).toBe(true);
     });
 
+    it("phoneが16桁の場合エラー", () => {
+        const result = ShippingAddressSchema.safeParse({
+            ...validData,
+            phone: "+1234567890123456",
+        });
+        expect(result.success).toBe(false);
+    });
+
     it("address1が5文字未満の場合エラー", () => {
         const result = ShippingAddressSchema.safeParse({
             ...validData,

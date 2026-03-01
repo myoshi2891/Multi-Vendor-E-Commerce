@@ -571,6 +571,26 @@ describe("getUserWishlist", () => {
             expect(result.wishlist).toEqual([]);
             expect(result.totalPages).toBe(0);
         });
+
+        it("バリアントが空の商品がある場合エラーが発生する（既知の制限）", async () => {
+            const wishlistItemWithEmptyVariants = {
+                productId: "product-001",
+                product: {
+                    id: "product-001",
+                    slug: "test-product",
+                    name: "Test Product",
+                    rating: 4.5,
+                    sales: 100,
+                    variants: [],
+                },
+            };
+            mockDb.wishlist.findMany.mockResolvedValue([
+                wishlistItemWithEmptyVariants,
+            ]);
+            mockDb.wishlist.count.mockResolvedValue(1);
+
+            await expect(getUserWishlist()).rejects.toThrow();
+        });
     });
 });
 
