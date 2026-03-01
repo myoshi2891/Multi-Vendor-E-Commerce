@@ -196,6 +196,38 @@ describe("POST /api/webhooks", () => {
             });
         });
 
+        it("email_addressesが空の場合400を返す", async () => {
+            const eventData = {
+                data: {
+                    id: "user_no_email",
+                    first_name: "No",
+                    last_name: "Email",
+                    email_addresses: [],
+                    image_url: "https://example.com/avatar.jpg",
+                },
+            };
+            mockVerify.mockReturnValue({
+                type: "user.created",
+                data: eventData.data,
+            });
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                const response = await POST(createWebhookRequest(eventData));
+
+                expect(response.status).toBe(400);
+                expect(mockUpsert).not.toHaveBeenCalled();
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    "Webhook event missing primary email",
+                    { userId: "user_no_email" }
+                );
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
+
         it("ユーザー更新時もupsertが呼ばれる", async () => {
             const eventData = {
                 data: {

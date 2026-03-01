@@ -61,14 +61,19 @@ export async function POST(req: Request) {
 			email_addresses: { email_address: string }[];
 			image_url: string;
 		};
+
+		const primaryEmail = data.email_addresses[0]?.email_address;
+		if (!primaryEmail) {
+			console.error("Webhook event missing primary email", { userId: data.id });
+			return new Response("Missing primary email", { status: 400 });
+		}
+
 		const user: Partial<User> = {
 			id: data.id,
 			name: `${data.first_name} ${data.last_name}`,
-			email: data.email_addresses[0]?.email_address,
+			email: primaryEmail,
 			picture: data.image_url,
 		};
-
-		if (!user) return;
 
 		const dbUser = await db.user.upsert({
 			where: {
