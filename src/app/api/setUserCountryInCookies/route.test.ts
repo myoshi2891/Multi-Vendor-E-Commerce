@@ -62,8 +62,9 @@ describe("POST /api/setUserCountryInCookies", () => {
         const response = await POST(createRequest({ userCountry }));
 
         const setCookie = response.headers.get("set-cookie");
+        expect(setCookie).not.toBeNull();
         // NextResponseはSameSite値を小文字で出力する場合がある
-        expect(setCookie!.toLowerCase()).toContain("samesite=lax");
+        expect(String(setCookie).toLowerCase()).toContain("samesite=lax");
     });
 
     it("無効なJSONボディの場合500を返す", async () => {

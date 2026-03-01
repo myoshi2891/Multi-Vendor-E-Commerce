@@ -82,8 +82,8 @@ describe("upsertReview", () => {
         it("新規レビューをcreateで作成する（クライアント提供IDは無視される）", async () => {
             const reviewInput = createMockReviewInput();
             const createdReview = {
-                id: "server-generated-id",
                 ...reviewInput,
+                id: "server-generated-id",
                 productId: "product-001",
                 userId: TEST_CONFIG.DEFAULT_USER_ID,
             };

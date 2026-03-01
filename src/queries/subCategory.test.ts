@@ -328,6 +328,15 @@ describe("deleteSubCategory", () => {
     });
 });
 
+// $queryRaw のモック呼び出しからSQL文字列を再構成するヘルパー
+const reconstructSqlFromCall = (mockCall: unknown[]): string => {
+    const sqlStrings =
+        (mockCall[0] as Record<string, unknown>)?.strings ?? mockCall[0];
+    return Array.isArray(sqlStrings)
+        ? sqlStrings.join("?")
+        : String(sqlStrings);
+};
+
 // ==================================================
 // getSubcategories
 // ==================================================
@@ -382,11 +391,9 @@ describe("getSubcategories", () => {
 
             await getSubcategories(5, true);
 
-            const callArgs = mockQueryRaw.mock.calls[0];
-            const sqlStrings = callArgs[0]?.strings ?? callArgs[0];
-            const joinedSql = Array.isArray(sqlStrings)
-                ? sqlStrings.join("?")
-                : String(sqlStrings);
+            const joinedSql = reconstructSqlFromCall(
+                mockQueryRaw.mock.calls[0]
+            );
 
             // PostgreSQL の RANDOM() が使われること
             expect(joinedSql).toContain("RANDOM()");
@@ -399,11 +406,9 @@ describe("getSubcategories", () => {
 
             await getSubcategories(5, true);
 
-            const callArgs = mockQueryRaw.mock.calls[0];
-            const sqlStrings = callArgs[0]?.strings ?? callArgs[0];
-            const joinedSql = Array.isArray(sqlStrings)
-                ? sqlStrings.join("?")
-                : String(sqlStrings);
+            const joinedSql = reconstructSqlFromCall(
+                mockQueryRaw.mock.calls[0]
+            );
 
             // PostgreSQL では PascalCase テーブル名に引用符が必要
             expect(joinedSql).toContain('"SubCategory"');

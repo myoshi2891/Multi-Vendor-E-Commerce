@@ -21,8 +21,9 @@ jest.mock("@/lib/db", () => ({
 }));
 
 // fetch (PayPal API) モック
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+// 部分的なResponseオブジェクトを返すため、jest.Mock<Promise<Partial<Response>>>で型定義
+const mockFetch = jest.fn() as jest.Mock<Promise<Partial<Response>>>;
+global.fetch = mockFetch as unknown as typeof fetch;
 
 const mockDb = require("@/lib/db").db;
 

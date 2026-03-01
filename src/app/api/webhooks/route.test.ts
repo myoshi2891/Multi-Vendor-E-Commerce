@@ -110,10 +110,14 @@ describe("POST /api/webhooks", () => {
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
 
-            const response = await POST(createWebhookRequest({ data: {} }));
-
-            expect(response.status).toBe(400);
-            consoleErrorSpy.mockRestore();
+            try {
+                const response = await POST(
+                    createWebhookRequest({ data: {} })
+                );
+                expect(response.status).toBe(400);
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 

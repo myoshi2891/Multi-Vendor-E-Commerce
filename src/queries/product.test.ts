@@ -93,9 +93,39 @@ beforeEach(() => {
 });
 
 // ---- テスト用ヘルパー ----
+interface ProductWithVariantInput {
+    productId: string;
+    variantId: string;
+    name: string;
+    description: string;
+    variantName: string;
+    variantDescription: string;
+    images: { url: string }[];
+    variantImage: string;
+    categoryId: string;
+    subCategoryId: string;
+    offerTagId: string | undefined;
+    isSale: boolean;
+    saleEndDate: Date | null;
+    brand: string;
+    sku: string;
+    weight: number;
+    colors: { color: string }[];
+    sizes: { size: string; quantity: number; price: number; discount: number }[];
+    product_specs: { name: string; value: string }[];
+    variant_specs: { name: string; value: string }[];
+    keywords: string[];
+    questions: { question: string; answer: string }[];
+    freeShippingForAllCountries: boolean;
+    freeShippingCountriesIds: string[];
+    shippingFeeMethod: "ITEM" | "WEIGHT" | "FIXED";
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 const createMockProductWithVariantInput = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<ProductWithVariantInput> = {}
+): ProductWithVariantInput => ({
     productId: "product-new",
     variantId: "variant-new",
     name: "New Product",
@@ -120,7 +150,7 @@ const createMockProductWithVariantInput = (
     questions: [{ question: "Size?", answer: "True to size" }],
     freeShippingForAllCountries: false,
     freeShippingCountriesIds: [],
-    shippingFeeMethod: "ITEM" as const,
+    shippingFeeMethod: "ITEM",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,

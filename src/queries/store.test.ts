@@ -92,7 +92,19 @@ const TestDataFactory = {
     }),
 
     createStoreExpectedData: (
-        storeData: any,
+        storeData: {
+            name: string;
+            email: string;
+            url: string;
+            phone?: string;
+            description?: string;
+            logo?: string;
+            cover?: string;
+            featured?: boolean;
+            status?: string;
+            defaultShippingService?: string;
+            returnPolicy?: string;
+        },
         userId: string = TEST_CONFIG.DEFAULT_USER_ID
     ) => ({
         name: storeData.name,
@@ -123,7 +135,7 @@ const TestDataFactory = {
 
 // テストヘルパー
 class TestHelpers {
-    static mockCurrentUser(user: any) {
+    static mockCurrentUser(user: Record<string, unknown> | null) {
         (currentUser as jest.Mock).mockResolvedValue(user);
     }
 
@@ -149,12 +161,12 @@ class TestHelpers {
         };
     }
 
-    static mockConsoleLog() {
+    static mockConsoleError() {
         return jest.spyOn(console, "error").mockImplementation(() => {});
     }
 
     static async expectThrowError(
-        promise: Promise<any>,
+        promise: Promise<unknown>,
         expectedError: string
     ) {
         await expect(promise).rejects.toThrow(expectedError);
@@ -677,15 +689,15 @@ describe("updateStoreDefaultShippingDetails", () => {
     });
 
     describe("エラーハンドリング", () => {
-        let consoleLogSpy: jest.SpyInstance;
+        let consoleErrorSpy: jest.SpyInstance;
 
         beforeEach(() => {
             TestHelpers.mockAuthenticatedSeller();
-            consoleLogSpy = TestHelpers.mockConsoleLog();
+            consoleErrorSpy = TestHelpers.mockConsoleError();
         });
 
         afterEach(() => {
-            consoleLogSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
         });
 
         it("所有権チェック中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
@@ -711,7 +723,7 @@ describe("updateStoreDefaultShippingDetails", () => {
                 TEST_CONFIG.DEFAULT_USER_ID
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
 
@@ -747,7 +759,7 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
             TestHelpers.expectDbMethodCalledTimes(mockDb.findUnique, 1);
             TestHelpers.expectDbMethodCalledTimes(mockDb.update, 1);
         });
@@ -848,14 +860,14 @@ describe("getStoreDefaultShippingDetails", () => {
     });
 
     describe("エラーハンドリング", () => {
-        let consoleLogSpy: jest.SpyInstance;
+        let consoleErrorSpy: jest.SpyInstance;
 
         beforeEach(() => {
-            consoleLogSpy = TestHelpers.mockConsoleLog();
+            consoleErrorSpy = TestHelpers.mockConsoleError();
         });
 
         afterEach(() => {
-            consoleLogSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
         });
 
         it("データベース接続エラーを適切に処理し、エラーを再スローする", async () => {
@@ -884,7 +896,7 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Test error for logging"
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
         });
 
         it("バリデーションエラーを適切に処理する", async () => {
@@ -899,7 +911,7 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Invalid store URL format"
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(validationError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(validationError);
         });
     });
 });
@@ -907,7 +919,9 @@ describe("getStoreDefaultShippingDetails", () => {
 // ==================================================
 // 以降: 未テスト関数の追加テスト
 // ==================================================
-const mockDb = require("@/lib/db").db;
+// 注: 前半の TestHelpers.mockDbMethods() は db.store のスパイラッパーを返す。
+// ここでは db 全体（store, country, shippingRate 等）を参照するため別変数を使用。
+const mockPrisma = require("@/lib/db").db;
 
 // ==================================================
 // getStoreShippingRates
@@ -934,7 +948,7 @@ describe("getStoreShippingRates", () => {
     describe("IDOR防止（ストア所有権検証）", () => {
         it("他人のストアの配送レートを取得できない", async () => {
             TestHelpers.mockAuthenticatedSeller();
-            mockDb.store.findUnique.mockResolvedValue(null);
+            mockPrisma.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 getStoreShippingRates("other-store")
@@ -948,18 +962,18 @@ describe("getStoreShippingRates", () => {
         it("全国と配送レートのマッピングを返す", async () => {
             TestHelpers.mockAuthenticatedSeller();
             const store = TestDataFactory.existingStore();
-            mockDb.store.findUnique.mockResolvedValue(store);
+            mockPrisma.store.findUnique.mockResolvedValue(store);
 
             const countries = [
                 { id: "c1", name: "Japan" },
                 { id: "c2", name: "USA" },
             ];
-            mockDb.country.findMany.mockResolvedValue(countries);
+            mockPrisma.country.findMany.mockResolvedValue(countries);
 
             const rates = [
                 { countryId: "c1", shippingFeePerItem: 10.0 },
             ];
-            mockDb.shippingRate.findMany.mockResolvedValue(rates);
+            mockPrisma.shippingRate.findMany.mockResolvedValue(rates);
 
             const result = await getStoreShippingRates(
                 TEST_CONFIG.TEST_STORE_URL
@@ -981,15 +995,15 @@ describe("getStoreShippingRates", () => {
 
         it("国を名前昇順でクエリする", async () => {
             TestHelpers.mockAuthenticatedSeller();
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore()
             );
-            mockDb.country.findMany.mockResolvedValue([]);
-            mockDb.shippingRate.findMany.mockResolvedValue([]);
+            mockPrisma.country.findMany.mockResolvedValue([]);
+            mockPrisma.shippingRate.findMany.mockResolvedValue([]);
 
             await getStoreShippingRates(TEST_CONFIG.TEST_STORE_URL);
 
-            expect(mockDb.country.findMany).toHaveBeenCalledWith({
+            expect(mockPrisma.country.findMany).toHaveBeenCalledWith({
                 orderBy: { name: "asc" },
             });
         });
@@ -1027,7 +1041,7 @@ describe("upsertShippingRate", () => {
     describe("IDOR防止", () => {
         it("他人のストアの配送レートを更新できない", async () => {
             TestHelpers.mockAuthenticatedSeller();
-            mockDb.store.findUnique.mockResolvedValue(null);
+            mockPrisma.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 upsertShippingRate(
@@ -1043,7 +1057,7 @@ describe("upsertShippingRate", () => {
     describe("バリデーション", () => {
         beforeEach(() => {
             TestHelpers.mockAuthenticatedSeller();
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore()
             );
         });
@@ -1065,7 +1079,7 @@ describe("upsertShippingRate", () => {
         it("配送レートを正常にupsertする", async () => {
             TestHelpers.mockAuthenticatedSeller();
             const store = TestDataFactory.existingStore();
-            mockDb.store.findUnique.mockResolvedValue(store);
+            mockPrisma.store.findUnique.mockResolvedValue(store);
 
             const rateData = {
                 id: "rate-001",
@@ -1073,7 +1087,7 @@ describe("upsertShippingRate", () => {
                 shippingFeePerItem: 8.0,
             };
             const upsertedRate = { ...rateData, storeId: store.id };
-            mockDb.shippingRate.upsert.mockResolvedValue(upsertedRate);
+            mockPrisma.shippingRate.upsert.mockResolvedValue(upsertedRate);
 
             const result = await upsertShippingRate(
                 TEST_CONFIG.TEST_STORE_URL,
@@ -1081,7 +1095,7 @@ describe("upsertShippingRate", () => {
             );
 
             expect(result).toEqual(upsertedRate);
-            expect(mockDb.shippingRate.upsert).toHaveBeenCalledWith({
+            expect(mockPrisma.shippingRate.upsert).toHaveBeenCalledWith({
                 where: { id: "rate-001" },
                 update: expect.objectContaining({
                     storeId: store.id,
@@ -1122,7 +1136,7 @@ describe("getStoreOrders", () => {
         });
 
         it("存在しないストアの場合エラーをスローする", async () => {
-            mockDb.store.findUnique.mockResolvedValue(null);
+            mockPrisma.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 getStoreOrders("nonexistent")
@@ -1130,7 +1144,7 @@ describe("getStoreOrders", () => {
         });
 
         it("他人のストアの注文を取得できない（IDOR防止）", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({
                     userId: "other-user-id",
                 })
@@ -1147,7 +1161,7 @@ describe("getStoreOrders", () => {
     describe("正常系", () => {
         it("ストアの注文一覧をupdatedAt降順で取得する", async () => {
             TestHelpers.mockAuthenticatedSeller();
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore()
             );
 
@@ -1155,12 +1169,12 @@ describe("getStoreOrders", () => {
                 { id: "og-1", items: [], coupon: null, order: {} },
                 { id: "og-2", items: [], coupon: null, order: {} },
             ];
-            mockDb.orderGroup.findMany.mockResolvedValue(orders);
+            mockPrisma.orderGroup.findMany.mockResolvedValue(orders);
 
             const result = await getStoreOrders(TEST_CONFIG.TEST_STORE_URL);
 
             expect(result).toHaveLength(2);
-            expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
+            expect(mockPrisma.orderGroup.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
                     include: expect.objectContaining({
@@ -1203,7 +1217,7 @@ describe("applySeller", () => {
         });
 
         it("同名のストアが既に存在する場合エラーをスローする", async () => {
-            mockDb.store.findFirst.mockResolvedValue({
+            mockPrisma.store.findFirst.mockResolvedValue({
                 name: "Test Store",
                 url: "other-url",
                 email: "other@example.com",
@@ -1218,7 +1232,7 @@ describe("applySeller", () => {
         });
 
         it("同URLのストアが既に存在する場合エラーをスローする", async () => {
-            mockDb.store.findFirst.mockResolvedValue({
+            mockPrisma.store.findFirst.mockResolvedValue({
                 name: "Different Name",
                 url: TEST_CONFIG.TEST_STORE_URL,
                 email: "other@example.com",
@@ -1238,7 +1252,7 @@ describe("applySeller", () => {
             TestHelpers.mockCurrentUser({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.store.findFirst.mockResolvedValue(null);
+            mockPrisma.store.findFirst.mockResolvedValue(null);
 
             const storeData = TestDataFactory.validStoreData();
             const createdStore = {
@@ -1246,12 +1260,12 @@ describe("applySeller", () => {
                 id: "new-store-id",
                 userId: TEST_CONFIG.DEFAULT_USER_ID,
             };
-            mockDb.store.create.mockResolvedValue(createdStore);
+            mockPrisma.store.create.mockResolvedValue(createdStore);
 
             const result = await applySeller(storeData as never);
 
             expect(result).toEqual(createdStore);
-            expect(mockDb.store.create).toHaveBeenCalledWith({
+            expect(mockPrisma.store.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
                     ...storeData,
                     defaultShippingService: "International Delivery",
@@ -1291,12 +1305,12 @@ describe("getAllStores", () => {
                 { id: "s1", name: "Store 1", user: {} },
                 { id: "s2", name: "Store 2", user: {} },
             ];
-            mockDb.store.findMany.mockResolvedValue(stores);
+            mockPrisma.store.findMany.mockResolvedValue(stores);
 
             const result = await getAllStores();
 
             expect(result).toHaveLength(2);
-            expect(mockDb.store.findMany).toHaveBeenCalledWith({
+            expect(mockPrisma.store.findMany).toHaveBeenCalledWith({
                 include: { user: true },
                 orderBy: { createdAt: "desc" },
             });
@@ -1329,7 +1343,7 @@ describe("updateStoreStatus", () => {
     describe("バリデーション", () => {
         it("存在しないストアの場合エラーをスローする", async () => {
             TestHelpers.mockUserWithRole("ADMIN");
-            mockDb.store.findUnique.mockResolvedValue(null);
+            mockPrisma.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 updateStoreStatus("nonexistent", "ACTIVE" as never)
@@ -1343,10 +1357,10 @@ describe("updateStoreStatus", () => {
         });
 
         it("ストアのステータスを更新する", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "ACTIVE" })
             );
-            mockDb.store.update.mockResolvedValue(
+            mockPrisma.store.update.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "INACTIVE" })
             );
 
@@ -1356,40 +1370,40 @@ describe("updateStoreStatus", () => {
             );
 
             expect(result).toBe("INACTIVE");
-            expect(mockDb.store.update).toHaveBeenCalledWith({
+            expect(mockPrisma.store.update).toHaveBeenCalledWith({
                 where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
                 data: { status: "INACTIVE" },
             });
         });
 
         it("PENDING → ACTIVE遷移時にユーザーのロールをSELLERに昇格する", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "PENDING" })
             );
-            mockDb.store.update.mockResolvedValue(
+            mockPrisma.store.update.mockResolvedValue(
                 TestDataFactory.existingStore({
                     status: "ACTIVE",
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                 })
             );
-            mockDb.user.update.mockResolvedValue({});
+            mockPrisma.user.update.mockResolvedValue({});
 
             await updateStoreStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
                 "ACTIVE" as never
             );
 
-            expect(mockDb.user.update).toHaveBeenCalledWith({
+            expect(mockPrisma.user.update).toHaveBeenCalledWith({
                 where: { id: TEST_CONFIG.DEFAULT_USER_ID },
                 data: { role: "SELLER" },
             });
         });
 
         it("ACTIVE → INACTIVE遷移時にはロール昇格しない", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
+            mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "ACTIVE" })
             );
-            mockDb.store.update.mockResolvedValue(
+            mockPrisma.store.update.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "INACTIVE" })
             );
 
@@ -1398,7 +1412,7 @@ describe("updateStoreStatus", () => {
                 "INACTIVE" as never
             );
 
-            expect(mockDb.user.update).not.toHaveBeenCalled();
+            expect(mockPrisma.user.update).not.toHaveBeenCalled();
         });
     });
 });
@@ -1442,13 +1456,13 @@ describe("deleteStore", () => {
                 isDeleted: true,
                 deletedAt: new Date(),
             });
-            mockDb.store.update.mockResolvedValue(deletedStore);
+            mockPrisma.store.update.mockResolvedValue(deletedStore);
 
             const result = await deleteStore("store-001");
 
             expect(result.isDeleted).toBe(true);
             expect(result.deletedAt).toBeDefined();
-            expect(mockDb.store.update).toHaveBeenCalledWith({
+            expect(mockPrisma.store.update).toHaveBeenCalledWith({
                 where: { id: "store-001" },
                 data: {
                     isDeleted: true,
@@ -1473,12 +1487,12 @@ describe("getStorePageDetails", () => {
             averageRating: 4.5,
             numReviews: 100,
         };
-        mockDb.store.findFirst.mockResolvedValue(storeDetails);
+        mockPrisma.store.findFirst.mockResolvedValue(storeDetails);
 
         const result = await getStorePageDetails("my-store");
 
         expect(result).toEqual(storeDetails);
-        expect(mockDb.store.findFirst).toHaveBeenCalledWith({
+        expect(mockPrisma.store.findFirst).toHaveBeenCalledWith({
             where: {
                 url: "my-store",
                 status: "ACTIVE",
@@ -1496,7 +1510,7 @@ describe("getStorePageDetails", () => {
     });
 
     it("存在しないストアの場合エラーをスローする", async () => {
-        mockDb.store.findFirst.mockResolvedValue(null);
+        mockPrisma.store.findFirst.mockResolvedValue(null);
 
         await expect(
             getStorePageDetails("nonexistent")
@@ -1504,15 +1518,13 @@ describe("getStorePageDetails", () => {
     });
 
     it("INACTIVEなストアはfindFirst条件で除外される", async () => {
-        mockDb.store.findFirst.mockResolvedValue(null);
+        mockPrisma.store.findFirst.mockResolvedValue(null);
 
-        try {
-            await getStorePageDetails("inactive-store");
-        } catch {
-            // エラーは期待通り
-        }
+        await expect(
+            getStorePageDetails("inactive-store")
+        ).rejects.toThrow();
 
-        expect(mockDb.store.findFirst).toHaveBeenCalledWith(
+        expect(mockPrisma.store.findFirst).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: expect.objectContaining({
                     status: "ACTIVE",

@@ -1044,7 +1044,7 @@ describe("addToWishlist", () => {
 
             await expect(
                 addToWishlist("product-001", "variant-001")
-            ).rejects.toThrow();
+            ).rejects.toThrow("Unauthenticated.");
         });
     });
 
@@ -1062,7 +1062,7 @@ describe("addToWishlist", () => {
 
             await expect(
                 addToWishlist("product-001", "variant-001")
-            ).rejects.toThrow();
+            ).rejects.toThrow("Product is already in the wishlist.");
         });
     });
 

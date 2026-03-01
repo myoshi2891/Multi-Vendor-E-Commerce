@@ -172,6 +172,7 @@ type MockCoupon = {
     storeId: string;
     createdAt: Date;
     updatedAt: Date;
+    store?: Record<string, unknown>;
 };
 
 type MockShippingAddress = {

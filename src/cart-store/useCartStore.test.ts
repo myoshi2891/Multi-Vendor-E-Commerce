@@ -49,7 +49,8 @@ const createCartProduct = (
 });
 
 beforeEach(() => {
-    // ストアをリセット
+    // 永続化ストレージとインメモリ状態の両方をリセット
+    localStorageMock.clear();
     useCartStore.setState({ cart: [], totalItems: 0, totalPrice: 0 });
     jest.clearAllMocks();
 });

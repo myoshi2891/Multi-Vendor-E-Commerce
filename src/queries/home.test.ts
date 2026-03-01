@@ -18,10 +18,32 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
-// テスト用商品データ
+// テスト用商品データ（home固有のバリアント構造を含む）
+type HomeProductMock = {
+    id: string;
+    slug: string;
+    name: string;
+    rating: number;
+    sales: number;
+    numReviews: number;
+    variants: Array<{
+        id: string;
+        variantName: string;
+        variantImage: string | null;
+        slug: string;
+        images: Array<{ url: string }>;
+        sizes: Array<{
+            size: string;
+            price: number;
+            discount: number;
+            quantity: number;
+        }>;
+    }>;
+};
+
 const createMockProductWithVariants = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<HomeProductMock> = {}
+): HomeProductMock => ({
     id: "product-001",
     slug: "test-product",
     name: "Test Product",

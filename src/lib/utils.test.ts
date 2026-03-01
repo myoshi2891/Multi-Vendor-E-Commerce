@@ -5,35 +5,19 @@ import {
     censorName,
     getTimeUntil,
 } from "./utils";
-import { CartProductType } from "./types";
+import { createMockCartProduct } from "@/config/test-fixtures";
 
-// テスト用カート商品データ
+// 共有ファクトリを再利用し、テスト固有のデフォルト値を適用
 const createValidCartProduct = (
-    overrides: Partial<CartProductType> = {}
-): CartProductType => ({
-    productId: "product-001",
-    variantId: "variant-001",
-    productSlug: "test-product",
-    variantSlug: "test-variant",
-    name: "Test Product",
-    variantName: "Black",
-    image: "https://example.com/img.jpg",
-    variantImage: "https://example.com/variant.jpg",
-    sizeId: "size-001",
-    size: "M",
-    quantity: 1,
-    price: 29.99,
-    stock: 10,
-    weight: 0.5,
-    shippingMethod: "ITEM",
-    shippingService: "Standard",
-    shippingFee: 5.0,
-    extraShippingFee: 2.0,
-    deliveryTimeMin: 3,
-    deliveryTimeMax: 7,
-    isFreeShipping: false,
-    ...overrides,
-});
+    overrides: Parameters<typeof createMockCartProduct>[0] = {}
+) =>
+    createMockCartProduct({
+        quantity: 1,
+        stock: 10,
+        shippingService: "Standard",
+        deliveryTimeMax: 7,
+        ...overrides,
+    });
 
 // ==================================================
 // getGridClassName
@@ -240,39 +224,42 @@ describe("censorName", () => {
 // getTimeUntil
 // ==================================================
 describe("getTimeUntil", () => {
-    it("過去の日時の場合 { days: 0, hours: 0 } を返す", () => {
-        const pastDate = new Date(Date.now() - 86400000).toISOString();
+    // 時刻を固定してフレイキーテストを防止
+    const FIXED_NOW = new Date("2025-06-15T12:00:00Z");
 
-        expect(getTimeUntil(pastDate)).toEqual({ days: 0, hours: 0 });
+    beforeEach(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(FIXED_NOW);
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    it("過去の日時の場合 { days: 0, hours: 0 } を返す", () => {
+        expect(getTimeUntil("2025-06-14T12:00:00Z")).toEqual({
+            days: 0,
+            hours: 0,
+        });
     });
 
     it("現在時刻と同じ場合 { days: 0, hours: 0 } を返す", () => {
-        // Dateのコンストラクタが呼ばれるタイミングの差でtarget <= nowになる
-        const now = new Date().toISOString();
-
-        const result = getTimeUntil(now);
-        expect(result.days).toBe(0);
-        expect(result.hours).toBe(0);
+        expect(getTimeUntil("2025-06-15T12:00:00Z")).toEqual({
+            days: 0,
+            hours: 0,
+        });
     });
 
     it("未来の日時の場合、日数と時間を返す", () => {
-        // 2日と12時間後
-        const futureDate = new Date(
-            Date.now() + 2 * 86400000 + 12 * 3600000
-        ).toISOString();
-
-        const result = getTimeUntil(futureDate);
+        // 2日12時間後 = 2025-06-18T00:00:00Z
+        const result = getTimeUntil("2025-06-18T00:00:00Z");
         expect(result.days).toBe(2);
         expect(result.hours).toBe(12);
     });
 
     it("hoursは24時間未満（余り）を返す", () => {
-        // 3日と5時間後
-        const futureDate = new Date(
-            Date.now() + 3 * 86400000 + 5 * 3600000
-        ).toISOString();
-
-        const result = getTimeUntil(futureDate);
+        // 3日5時間後 = 2025-06-18T17:00:00Z
+        const result = getTimeUntil("2025-06-18T17:00:00Z");
         expect(result.days).toBe(3);
         expect(result.hours).toBe(5);
     });
