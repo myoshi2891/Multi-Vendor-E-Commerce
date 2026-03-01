@@ -87,7 +87,7 @@ export async function POST(req: Request) {
 		try {
 			const dbUser = await db.user.upsert({
 				where: {
-					email: user.email,
+					id: user.id!,
 				},
 				update: user,
 				create: {
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
 	if (evt.type === "user.deleted") {
 		const userId = (evt.data as { id: string }).id;
 		try {
-			await db.user.delete({
+			await db.user.deleteMany({
 				where: {
 					id: userId,
 				},
