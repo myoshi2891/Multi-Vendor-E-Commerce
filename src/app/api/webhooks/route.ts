@@ -5,6 +5,15 @@ import { clerkClient, WebhookEvent } from "@clerk/nextjs/server";
 import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
+/**
+ * Handle Clerk webhook POST requests: verify the Svix signature and process user lifecycle events.
+ *
+ * Verifies the incoming request using the WEBHOOK_SECRET and Svix headers, then processes
+ * user.created, user.updated, and user.deleted events by upserting or deleting the corresponding
+ * user in the local database and updating the Clerk user's private metadata (role) when applicable.
+ *
+ * @returns A Response with status 200 when the webhook is processed successfully, or status 400 if required Svix headers are missing or signature verification fails.
+ */
 export async function POST(req: Request) {
 	// You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
 	const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
