@@ -3,6 +3,14 @@ import {
     getStoreDefaultShippingDetails,
     upsertStore,
     updateStoreDefaultShippingDetails,
+    getStoreShippingRates,
+    upsertShippingRate,
+    getStoreOrders,
+    applySeller,
+    getAllStores,
+    updateStoreStatus,
+    deleteStore,
+    getStorePageDetails,
 } from "./store";
 import { TEST_CONFIG } from "../config/test-config";
 
@@ -12,7 +20,21 @@ jest.mock("@/lib/db", () => ({
         store: {
             findUnique: jest.fn(),
             findFirst: jest.fn(),
+            findMany: jest.fn(),
             create: jest.fn(),
+            update: jest.fn(),
+        },
+        country: {
+            findMany: jest.fn(),
+        },
+        shippingRate: {
+            findMany: jest.fn(),
+            upsert: jest.fn(),
+        },
+        orderGroup: {
+            findMany: jest.fn(),
+        },
+        user: {
             update: jest.fn(),
         },
     },
@@ -128,7 +150,7 @@ class TestHelpers {
     }
 
     static mockConsoleLog() {
-        return jest.spyOn(console, "log").mockImplementation(() => {});
+        return jest.spyOn(console, "error").mockImplementation(() => {});
     }
 
     static async expectThrowError(
@@ -879,5 +901,623 @@ describe("getStoreDefaultShippingDetails", () => {
 
             expect(consoleLogSpy).toHaveBeenCalledWith(validationError);
         });
+    });
+});
+
+// ==================================================
+// 以降: 未テスト関数の追加テスト
+// ==================================================
+const mockDb = require("@/lib/db").db;
+
+// ==================================================
+// getStoreShippingRates
+// ==================================================
+describe("getStoreShippingRates", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                getStoreShippingRates("test-store")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                getStoreShippingRates("test-store")
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止（ストア所有権検証）", () => {
+        it("他人のストアの配送レートを取得できない", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreShippingRates("other-store")
+            ).rejects.toThrow(
+                "You are not authorized to update this store."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("全国と配送レートのマッピングを返す", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            const store = TestDataFactory.existingStore();
+            mockDb.store.findUnique.mockResolvedValue(store);
+
+            const countries = [
+                { id: "c1", name: "Japan" },
+                { id: "c2", name: "USA" },
+            ];
+            mockDb.country.findMany.mockResolvedValue(countries);
+
+            const rates = [
+                { countryId: "c1", shippingFeePerItem: 10.0 },
+            ];
+            mockDb.shippingRate.findMany.mockResolvedValue(rates);
+
+            const result = await getStoreShippingRates(
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toEqual({
+                countryId: "c1",
+                countryName: "Japan",
+                shippingRate: rates[0],
+            });
+            // レートが無い国はnull
+            expect(result[1]).toEqual({
+                countryId: "c2",
+                countryName: "USA",
+                shippingRate: null,
+            });
+        });
+
+        it("国を名前昇順でクエリする", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+            mockDb.country.findMany.mockResolvedValue([]);
+            mockDb.shippingRate.findMany.mockResolvedValue([]);
+
+            await getStoreShippingRates(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(mockDb.country.findMany).toHaveBeenCalledWith({
+                orderBy: { name: "asc" },
+            });
+        });
+    });
+});
+
+// ==================================================
+// upsertShippingRate
+// ==================================================
+describe("upsertShippingRate", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                upsertShippingRate(
+                    "test-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                upsertShippingRate(
+                    "test-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止", () => {
+        it("他人のストアの配送レートを更新できない", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                upsertShippingRate(
+                    "other-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow(
+                "You are not authorized to update this store."
+            );
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+        });
+
+        it("配送レートデータがnullの場合エラーをスローする", async () => {
+            await expect(
+                upsertShippingRate("test-store", null as never)
+            ).rejects.toThrow("Please provide shipping rate data.");
+        });
+
+        it("countryIdがない場合エラーをスローする", async () => {
+            await expect(
+                upsertShippingRate("test-store", {} as never)
+            ).rejects.toThrow("Please provide country ID.");
+        });
+    });
+
+    describe("正常系", () => {
+        it("配送レートを正常にupsertする", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            const store = TestDataFactory.existingStore();
+            mockDb.store.findUnique.mockResolvedValue(store);
+
+            const rateData = {
+                id: "rate-001",
+                countryId: "c1",
+                shippingFeePerItem: 8.0,
+            };
+            const upsertedRate = { ...rateData, storeId: store.id };
+            mockDb.shippingRate.upsert.mockResolvedValue(upsertedRate);
+
+            const result = await upsertShippingRate(
+                TEST_CONFIG.TEST_STORE_URL,
+                rateData as never
+            );
+
+            expect(result).toEqual(upsertedRate);
+            expect(mockDb.shippingRate.upsert).toHaveBeenCalledWith({
+                where: { id: "rate-001" },
+                update: expect.objectContaining({
+                    storeId: store.id,
+                }),
+                create: expect.objectContaining({
+                    storeId: store.id,
+                }),
+            });
+        });
+    });
+});
+
+// ==================================================
+// getStoreOrders
+// ==================================================
+describe("getStoreOrders", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("ストア検証", () => {
+        beforeEach(() => {
+            TestHelpers.mockAuthenticatedSeller();
+        });
+
+        it("存在しないストアの場合エラーをスローする", async () => {
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreOrders("nonexistent")
+            ).rejects.toThrow("Store not found.");
+        });
+
+        it("他人のストアの注文を取得できない（IDOR防止）", async () => {
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    userId: "other-user-id",
+                })
+            );
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow(
+                "You are not authorized to view this store's orders."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("ストアの注文一覧をupdatedAt降順で取得する", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+
+            const orders = [
+                { id: "og-1", items: [], coupon: null, order: {} },
+                { id: "og-2", items: [], coupon: null, order: {} },
+            ];
+            mockDb.orderGroup.findMany.mockResolvedValue(orders);
+
+            const result = await getStoreOrders(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(result).toHaveLength(2);
+            expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                    include: expect.objectContaining({
+                        items: true,
+                        coupon: true,
+                        order: expect.any(Object),
+                    }),
+                    orderBy: { updatedAt: "desc" },
+                })
+            );
+        });
+    });
+});
+
+// ==================================================
+// applySeller
+// ==================================================
+describe("applySeller", () => {
+    describe("認証エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("ストアデータがnullの場合エラーをスローする", async () => {
+            await expect(
+                applySeller(null as never)
+            ).rejects.toThrow("Please provide store data.");
+        });
+
+        it("同名のストアが既に存在する場合エラーをスローする", async () => {
+            mockDb.store.findFirst.mockResolvedValue({
+                name: "Test Store",
+                url: "other-url",
+                email: "other@example.com",
+                phone: "999-0000",
+            });
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow(
+                "A store with the same name already exists."
+            );
+        });
+
+        it("同URLのストアが既に存在する場合エラーをスローする", async () => {
+            mockDb.store.findFirst.mockResolvedValue({
+                name: "Different Name",
+                url: TEST_CONFIG.TEST_STORE_URL,
+                email: "other@example.com",
+                phone: "999-0000",
+            });
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow(
+                "A store with the same URL already exists."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("新しいストアを作成しデフォルト値を設定する", async () => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.store.findFirst.mockResolvedValue(null);
+
+            const storeData = TestDataFactory.validStoreData();
+            const createdStore = {
+                ...storeData,
+                id: "new-store-id",
+                userId: TEST_CONFIG.DEFAULT_USER_ID,
+            };
+            mockDb.store.create.mockResolvedValue(createdStore);
+
+            const result = await applySeller(storeData as never);
+
+            expect(result).toEqual(createdStore);
+            expect(mockDb.store.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    ...storeData,
+                    defaultShippingService: "International Delivery",
+                    returnPolicy: "Return in 30 days.",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                }),
+            });
+        });
+    });
+});
+
+// ==================================================
+// getAllStores
+// ==================================================
+describe("getAllStores", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(getAllStores()).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(getAllStores()).rejects.toThrow(
+                "Unauthorized Access: Admin Privileges Required to View Stores."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("全ストアをcreatedAt降順で取得する", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+
+            const stores = [
+                { id: "s1", name: "Store 1", user: {} },
+                { id: "s2", name: "Store 2", user: {} },
+            ];
+            mockDb.store.findMany.mockResolvedValue(stores);
+
+            const result = await getAllStores();
+
+            expect(result).toHaveLength(2);
+            expect(mockDb.store.findMany).toHaveBeenCalledWith({
+                include: { user: true },
+                orderBy: { createdAt: "desc" },
+            });
+        });
+    });
+});
+
+// ==================================================
+// updateStoreStatus
+// ==================================================
+describe("updateStoreStatus", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                updateStoreStatus("store-001", "ACTIVE" as never)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(
+                updateStoreStatus("store-001", "ACTIVE" as never)
+            ).rejects.toThrow("Only admins can perform this action.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("存在しないストアの場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                updateStoreStatus("nonexistent", "ACTIVE" as never)
+            ).rejects.toThrow("Store not found.");
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            TestHelpers.mockUserWithRole("ADMIN");
+        });
+
+        it("ストアのステータスを更新する", async () => {
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "ACTIVE" })
+            );
+            mockDb.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "INACTIVE" })
+            );
+
+            const result = await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "INACTIVE" as never
+            );
+
+            expect(result).toBe("INACTIVE");
+            expect(mockDb.store.update).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
+                data: { status: "INACTIVE" },
+            });
+        });
+
+        it("PENDING → ACTIVE遷移時にユーザーのロールをSELLERに昇格する", async () => {
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockDb.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    status: "ACTIVE",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                })
+            );
+            mockDb.user.update.mockResolvedValue({});
+
+            await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "ACTIVE" as never
+            );
+
+            expect(mockDb.user.update).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_USER_ID },
+                data: { role: "SELLER" },
+            });
+        });
+
+        it("ACTIVE → INACTIVE遷移時にはロール昇格しない", async () => {
+            mockDb.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "ACTIVE" })
+            );
+            mockDb.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "INACTIVE" })
+            );
+
+            await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "INACTIVE" as never
+            );
+
+            expect(mockDb.user.update).not.toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// deleteStore
+// ==================================================
+describe("deleteStore", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(deleteStore("store-001")).rejects.toThrow(
+                "Unauthenticated."
+            );
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(deleteStore("store-001")).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("空のstoreIdの場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+
+            await expect(deleteStore("")).rejects.toThrow(
+                "Please provide store ID."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("ソフトデリート（isDeleted=true, deletedAt設定）を実行する", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            const deletedStore = TestDataFactory.existingStore({
+                isDeleted: true,
+                deletedAt: new Date(),
+            });
+            mockDb.store.update.mockResolvedValue(deletedStore);
+
+            const result = await deleteStore("store-001");
+
+            expect(result.isDeleted).toBe(true);
+            expect(result.deletedAt).toBeDefined();
+            expect(mockDb.store.update).toHaveBeenCalledWith({
+                where: { id: "store-001" },
+                data: {
+                    isDeleted: true,
+                    deletedAt: expect.any(Date),
+                },
+            });
+        });
+    });
+});
+
+// ==================================================
+// getStorePageDetails
+// ==================================================
+describe("getStorePageDetails", () => {
+    it("ACTIVEなストアの公開情報を返す", async () => {
+        const storeDetails = {
+            id: "store-001",
+            name: "My Store",
+            description: "A great store",
+            logo: "logo.jpg",
+            cover: "cover.jpg",
+            averageRating: 4.5,
+            numReviews: 100,
+        };
+        mockDb.store.findFirst.mockResolvedValue(storeDetails);
+
+        const result = await getStorePageDetails("my-store");
+
+        expect(result).toEqual(storeDetails);
+        expect(mockDb.store.findFirst).toHaveBeenCalledWith({
+            where: {
+                url: "my-store",
+                status: "ACTIVE",
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                logo: true,
+                cover: true,
+                averageRating: true,
+                numReviews: true,
+            },
+        });
+    });
+
+    it("存在しないストアの場合エラーをスローする", async () => {
+        mockDb.store.findFirst.mockResolvedValue(null);
+
+        await expect(
+            getStorePageDetails("nonexistent")
+        ).rejects.toThrow("Store with URL nonexistent not found.");
+    });
+
+    it("INACTIVEなストアはfindFirst条件で除外される", async () => {
+        mockDb.store.findFirst.mockResolvedValue(null);
+
+        try {
+            await getStorePageDetails("inactive-store");
+        } catch {
+            // エラーは期待通り
+        }
+
+        expect(mockDb.store.findFirst).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    status: "ACTIVE",
+                }),
+            })
+        );
     });
 });
