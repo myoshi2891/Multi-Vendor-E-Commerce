@@ -6,13 +6,13 @@ import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 /**
- * Handle Clerk webhook POST requests: verify the Svix signature and process user lifecycle events.
+ * Handle Clerk (Svix) webhook POST requests to verify events and synchronize user records in the database.
  *
- * Verifies the incoming request using the WEBHOOK_SECRET and Svix headers, then processes
- * user.created, user.updated, and user.deleted events by upserting or deleting the corresponding
- * user in the local database and updating the Clerk user's private metadata (role) when applicable.
+ * Verifies the Svix signature, processes user.created and user.updated events to upsert user records and update Clerk private metadata, and processes user.deleted events to remove users from the database. Throws an error if the webhook secret is not configured.
  *
- * @returns A Response with status 200 when the webhook is processed successfully, or status 400 if required Svix headers are missing or signature verification fails.
+ * @param req - The incoming HTTP Request containing the webhook JSON payload
+ * @returns An HTTP Response: `200` on success, `400` for missing/invalid Svix headers, verification failure, or missing required event data
+ * @throws Error if the `WEBHOOK_SECRET` environment variable is not set
  */
 export async function POST(req: Request) {
 	// You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
