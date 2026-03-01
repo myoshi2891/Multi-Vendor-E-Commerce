@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## コンテキスト参照
+
+@.claude/steering/product.md
+@.claude/steering/tech.md
+@.claude/steering/structure.md
+
 ## プロジェクト概要
 
 マルチベンダーEコマースマーケットプレイス。Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済。3つのユーザーロール: 顧客(USER)、販売者(SELLER)、管理者(ADMIN)。
@@ -43,39 +49,7 @@ bunx prisma studio            # DBブラウザ
 
 ## アーキテクチャ
 
-### ディレクトリ構造の責務
-
-| ディレクトリ | 責務 |
-|---|---|
-| `src/app/(store)/` | 顧客向けページ（ホーム、商品閲覧、カート、チェックアウト、プロフィール） |
-| `src/app/(auth)/` | Clerk認証ページ（sign-in, sign-up） |
-| `src/app/dashboard/admin/` | 管理者ダッシュボード（カテゴリ、店舗管理） |
-| `src/app/dashboard/seller/stores/[storeUrl]/` | 販売者ダッシュボード（商品、注文、クーポン、配送） |
-| `src/app/api/` | APIルート（商品検索、Webhook） |
-| `src/queries/` | **サーバーアクション・データ取得関数**（`"use server"` ディレクティブ付き） |
-| `src/lib/` | 共有ユーティリティ（db.ts, schemas.ts, types.ts, utils.ts） |
-| `src/components/ui/` | shadcn/ui コンポーネント群 |
-| `src/components/dashboard/` | ダッシュボード固有のUIコンポーネント |
-| `src/components/store/` | 顧客向けUIコンポーネント |
-| `src/components/shared/` | 全体で共有するコンポーネント |
-| `src/cart-store/` | Zustandカートストア |
-| `prisma/` | Prismaスキーマ・マイグレーション |
-
-### 重要な設計判断
-
-- **サーバーアクションは `src/queries/` に集約**: `src/actions/` ディレクトリは存在しない。サーバーアクションとクエリ関数は同一ファイルに配置
-- **UIコンポーネントからサーバーアクションを直接importしない**: `src/queries/` 経由で呼び出す
-- **入力バリデーションは `src/lib/schemas.ts` のZodスキーマ**: フォームは React Hook Form + Zod resolver
-- **DBアクセスは `src/lib/db.ts` のPrismaシングルトン経由**: 直接 `new PrismaClient()` しない
-- **認証は Clerk middleware (`src/middleware.ts`)**: 保護ルートは `/dashboard/*`, `/checkout`, `/profile/*`
-
-### パスエイリアス
-
-```
-@/*       → ./src/*
-@/store   → ./src/components/store   （注意: @/cart-storeではない）
-@/public/* → ./public/*
-```
+> 詳細は `.claude/steering/structure.md` を参照。以下はクイックリファレンス。
 
 ### 外部サービス依存
 
@@ -86,16 +60,6 @@ bunx prisma studio            # DBブラウザ
 | PayPal | 決済処理 | `src/queries/paypal.ts` |
 | Cloudinary | 画像ホスティング | `next.config.mjs` の remotePatterns |
 | Svix | Webhook検証 | `src/app/api/webhooks/` |
-
-### データモデル（主要エンティティ）
-
-`prisma/schema.prisma` の核心: **商品→バリアント→サイズ/カラー** の階層構造。
-
-- `User` → `Store`（1:N）→ `Product`（1:N）→ `ProductVariant`（1:N）
-- `ProductVariant` に価格・在庫・画像が紐づく（商品レベルではなくバリアントレベル）
-- `Cart` → `CartItem` → `ProductVariant`（バリアント単位でカートに追加）
-- `Order` → `OrderGroup`（店舗単位）→ `OrderItem`（バリアント単位）
-- ロールは `enum Role { USER ADMIN SELLER }`
 
 ## コーディング規約
 
