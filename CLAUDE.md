@@ -74,6 +74,8 @@ bunx prisma studio            # DBブラウザ
 
 - **Jest**: ユニット/コンポーネントテスト。`src/queries/*.test.ts` にテストファイルを配置。E2Eディレクトリは除外設定済み。`@testing-library/jest-dom` + MSW（オプショナル）がセットアップ済み
 - **Playwright**: E2Eテスト。`tests/e2e/` に配置。3ブラウザ（Chromium, Firefox, WebKit）。`bun run dev` でwebServer起動
+- **共通テストインフラ** (`src/config/`): `test-fixtures.ts`（型安全ファクトリ）、`test-helpers.ts`（モックユーティリティ）、`test-scenarios.ts`（シナリオデータ）、`test-config.ts`（定数）
+- テスト設計の詳細は `docs/testing/TESTING_DESIGN.md`、QA観点は `docs/testing/QA_TEST_PERSPECTIVES.md` を参照
 
 ## 既知の制約
 

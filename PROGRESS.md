@@ -2,7 +2,7 @@
 
 ## ドキュメントガイド
 - 本レポートは特定日付時点の進捗サマリ
-- 関連: `README.md`, `TESTING_DESIGN.md`
+- 関連: `README.md`, `docs/testing/TESTING_DESIGN.md`
 - 追記は日付付きで末尾に追加する
 
 ## 範囲
@@ -65,3 +65,43 @@
 - ネイティブ外部キー制約が有効（`relationMode = "prisma"` → デフォルトの `"foreignKeys"`）
 - `mysql2` ドライバ削除、`@prisma/extension-accelerate` 追加
 - 全ドキュメントの MySQL 表記を PostgreSQL に更新
+
+## 追記 (2026-03-01)
+
+### ユニットテスト大量追加
+- サーバーアクション全体のユニットテストを新規作成（536テスト、21スイート全パス）
+- 対象モジュール: category, subCategory, offer-tag, review, profile, home, utils, schemas, cartStore, store, product, order, user, coupon, stripe, paypal, webhooks, setUserCountryInCookies
+- テスト共通インフラを `src/config/` に整備:
+  - `test-fixtures.ts`: 17ファクトリを `Partial<T>` 型安全パターンで統一
+  - `test-helpers.ts`: モック認証・DB spy・console spy ユーティリティ
+  - `test-scenarios.ts`: 相対日付ベースのシナリオデータ
+  - `test-config.ts`: テスト共通定数（ID・URL・エラーメッセージ）
+
+### 実装バグ修正（4件）
+- `review.ts`: IDOR脆弱性修正（`upsert` → 所有権検証付き `update`/`create`）
+- `webhooks/route.ts`: Svix検証済み `evt.data` を使用（`JSON.parse(body).data` の再パースを排除）
+- `product.ts`: 配送料計算の `countryId` 比較バグ修正（`country.name` → `country.id`）
+- `order.ts`: `updateOrderItemStatus` のエラーメッセージ修正
+
+### テスト品質改善（18件）
+- 共通インフラ: ファクトリ型安全化、JSDoc改善、ハードコード日付 → 相対日付
+- 個別テスト: non-null assertion排除、spy復元のtry/finally化、空catch排除、fetchモック型安全化、mockDb二重定義解消、エラーメッセージアサーション追加 等14件
+- テスト拡充: 16桁電話番号の境界値テスト、空バリアントのエッジケーステスト
+
+### 仕様書更新
+- `06-quality.md`: IDOR防止パターン、Svix検証済みデータ使用を追記
+- `07-testing.md`: 共通テストインフラ (`src/config/`) を反映
+- `08-open-questions.md`: Known Issues セクション新設
+- `04-interfaces.md`: webhook・reviewモジュールのセキュリティパターンを追記
+
+### ドキュメント整理
+- `TESTING_DESIGN.md`, `QA_TEST_PERSPECTIVES.md` をルート → `docs/testing/` へ移動
+- `CLAUDE.md`, `GEMINI.md` にテスト共通インフラの参照パスを追記
+- `.claude/steering/structure.md` に `src/config/` ディレクトリを追加
+
+### コミット一覧（新しい順）
+- `8b25ca3` docs(specs): 実装変更に合わせて仕様書4件を更新
+- `8614839` test(schemas,profile): 境界値・エッジケーステスト追加
+- `babe77a` fix(test): 個別テスト品質改善14件
+- `2a70003` refactor(test): テスト共通インフラ改善 (型安全化, 相対日付, JSDoc)
+- `94c20a0` fix(api,queries): 実装バグ4件修正 (IDOR, Svix evt.data, countryId比較, エラーメッセージ)

@@ -52,6 +52,12 @@ bunx prisma studio             # DBブラウザ
 
 プロジェクト固有の慣習・既知の問題は `.context/` 配下に蓄積する（存在する場合）。
 
+## テスト構成
+
+- 共通テストインフラ: `src/config/`（`test-fixtures.ts`, `test-helpers.ts`, `test-scenarios.ts`, `test-config.ts`）
+- テスト設計の詳細: `docs/testing/TESTING_DESIGN.md`
+- QA観点: `docs/testing/QA_TEST_PERSPECTIVES.md`
+
 ## 仕様書参照
 
 新機能を実装する前に必ず以下を確認すること:
