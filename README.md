@@ -1,6 +1,6 @@
 # マルチベンダー EC プラットフォーム — 概要
 
-> **関連ドキュメント**: [システムアーキテクチャ](./2-system-architecture) | [コアビジネスシステム](./3-core-business-systems) | [ユーザーインターフェース](./4-user-interfaces) | [開発・インフラ](./7-development-and-infrastructure)
+> **関連ドキュメント**: [システムアーキテクチャ](./specs/multi-vendor-ecommerce/02-architecture.md) | [コアビジネスシステム](./specs/multi-vendor-ecommerce/05-workflows.md) | [ユーザーインターフェース](./specs/multi-vendor-ecommerce/04-interfaces.md) | [開発・インフラ](./specs/multi-vendor-ecommerce/06-quality.md)
 
 本ドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムについての概要を提供します。このプラットフォームは、複数の独立したセラーが統一されたマーケットプレイス内でストアを運営し、顧客が 1 回のトランザクションで異なるベンダーから購入できる仕組みを実現しています。
 
@@ -18,6 +18,7 @@
 - [データベースアーキテクチャ：PostgreSQL × Prisma](#データベースアーキテクチャpostgresql--prisma)
 - [開発環境とワークフロー](#開発環境とワークフロー)
 - [マイグレーション履歴：MySQL → PostgreSQL](#マイグレーション履歴mysql--postgresql)
+- [AI エージェント連携と仕様駆動開発 (SDD)](#ai-エージェント連携と仕様駆動開発-sdd)
 - [関連ドキュメント](#関連ドキュメント)
 
 ---
@@ -252,6 +253,8 @@ stateDiagram-v2
         a2: ストア承認・停止
         a3: カテゴリー管理
     }
+
+    note right of ADMIN : プラットフォームオーナーが\n直接割り当てる帯域外ロール
 ```
 
 | ロール | アクセスレベル | 主要ルート | サーバーアクション |
@@ -370,10 +373,15 @@ Multi-Vendor-E-Commerce/
 ├── prisma/
 │   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
 │   └── migrations/                   # データベースマイグレーション履歴
+├── specs/                            # 📄 SDD 仕様書群（AI・人間 共有設計図）
 ├── tests/
 │   └── e2e/                          # Playwright E2E テスト
 │       ├── seed/seed-e2e.ts          # テストデータシード
 │       └── cart-smoke.spec.ts        # E2E テストスペック例
+├── .agent/                           # 🤖 Google Antigravity ルール設定
+├── .claude/                          # 🤖 Claude Code Steering ファイル
+├── CLAUDE.md                         # Claude Code グローバルプロンプト
+├── GEMINI.md                         # Antigravity グローバルプロンプト
 ├── public/                           # 静的アセット
 ├── package.json                      # 依存関係とスクリプト
 ├── next.config.mjs                   # Next.js 設定
@@ -391,9 +399,28 @@ Multi-Vendor-E-Commerce/
 
 ---
 
+## AI エージェント連携と仕様駆動開発 (SDD)
+
+当プロジェクトは、Claude Code と Google Antigravity（Gemini IDE）を活用した **AI 仕様駆動開発（Spec-Driven Development: SDD）** を導入しています。AI エージェントは直接コードを書き始めるのではなく、まず仕様書を読み込み、レビュー後に実装を行います。
+
+### AI 設定ファイル群
+
+- `CLAUDE.md` / `.claude/` — Claude Code 用のコンテキストと Steering ファイル（プロダクトビジョン・技術制約）
+- `GEMINI.md` / `.agent/rules/` — Google Antigravity 用のグローバル永続メモリとバックグラウンドルール
+- `specs/README.md` — 仕様駆動開発のワークフロー詳細
+
+### SDD 実装フロー
+
+1. コード実装前に必ず `specs/multi-vendor-ecommerce/` 以下の該当仕様書を確認する
+2. 仕様の変更・追加がある場合は、先に `specs/` 内の Markdown ファイルを更新する
+3. AI が **実装計画（Implementation Plan）** を作成し、開発者がレビュー・承認する
+4. 実装完了後、仕様書との乖離がないか検証する
+
+---
+
 ## データベースアーキテクチャ：PostgreSQL × Prisma
 
-**Neon サーバーレス PostgreSQL** ＋ **Prisma Accelerate**（接続プール）を採用。MySQL 9 からのマイグレーション済み（詳細は [データベースマイグレーション](./2.1-database-migration) を参照）。
+**Neon サーバーレス PostgreSQL** ＋ **Prisma Accelerate**（接続プール）を採用。MySQL 9 からのマイグレーション済み（詳細は [データベースマイグレーション](./docs/migration) を参照）。
 
 ```mermaid
 erDiagram
@@ -493,6 +520,8 @@ STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=
 PAYPAL_SECRET=
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=   # Cloudinary クラウド名
+NEXT_PUBLIC_CLOUDINARY_PRESET_NAME=  # Cloudinary アップロードプリセット名
 ```
 
 ### よく使う開発コマンド
@@ -573,16 +602,15 @@ flowchart LR
 
 | ドキュメント | 内容 |
 |------------|------|
-| [システムアーキテクチャ](./2-system-architecture) | アーキテクチャパターンの詳細 |
-| [商品管理システム](./3.1-product-management-system) | 商品システムの詳細 |
-| [ストア管理システム](./3.2-store-management-system) | マルチベンダー機能の詳細 |
-| [ユーザー管理 & カートシステム](./3.3-user-management-and-cart-system) | チェックアウト・注文の詳細 |
-| [注文 & 決済処理](./3.4-order-and-payment-processing) | 決済フローの詳細 |
-| [データベーススキーマ & Prisma](./5.1-database-schema-and-prisma) | DB スキーマの詳細 |
-| [配送システム](./6-shipping-system) | 配送計算の詳細 |
-| [認証 & 認可](./8-authentication-and-authorization) | 認証フローの詳細 |
-| [テストインフラ](./7.2-testing-infrastructure) | テスト設定の詳細 |
-| [外部サービス連携](./9-external-service-integrations) | 外部サービスの詳細 |
+| [システムアーキテクチャ](./specs/multi-vendor-ecommerce/02-architecture.md) | アーキテクチャパターンの詳細 |
+| [要件定義](./specs/multi-vendor-ecommerce/01-requirements.md) | プラットフォーム要件の詳細 |
+| [データモデル](./specs/multi-vendor-ecommerce/03-data-model.md) | データベーススキーマの詳細 |
+| [インターフェース](./specs/multi-vendor-ecommerce/04-interfaces.md) | UI・API インターフェースの詳細 |
+| [ワークフロー](./specs/multi-vendor-ecommerce/05-workflows.md) | ビジネスワークフローの詳細 |
+| [品質基準](./specs/multi-vendor-ecommerce/06-quality.md) | 品質・非機能要件の詳細 |
+| [テストインフラ](./specs/multi-vendor-ecommerce/07-testing.md) | テスト設定の詳細 |
+| [未解決事項](./specs/multi-vendor-ecommerce/08-open-questions.md) | 未解決の設計課題 |
+| [データベースマイグレーション](./docs/migration) | MySQL → PostgreSQL 移行の詳細 |
 
 ---
 
