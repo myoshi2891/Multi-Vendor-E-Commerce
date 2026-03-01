@@ -68,14 +68,22 @@ export class AssertionHelpers {
         expect(method).toHaveBeenCalledTimes(times);
     }
 
-    // console.errorのモックとリストア
+    /**
+     * console.error をモック化する。
+     * 戻り値の SpyInstance に対し、テスト後に `.mockRestore()` を呼ぶ責任は呼び出し元にある。
+     * afterEach 内での復元を推奨。
+     */
     static mockConsoleError() {
         return jest
             .spyOn(console, "error")
             .mockImplementation(() => undefined);
     }
 
-    // console.logのモックとリストア
+    /**
+     * console.log をモック化する。
+     * 戻り値の SpyInstance に対し、テスト後に `.mockRestore()` を呼ぶ責任は呼び出し元にある。
+     * afterEach 内での復元を推奨。
+     */
     static mockConsoleLog() {
         return jest.spyOn(console, "log").mockImplementation(() => undefined);
     }

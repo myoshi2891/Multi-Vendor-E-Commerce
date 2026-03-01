@@ -1,12 +1,286 @@
 /**
  * 共通テストフィクスチャ
- * 全エンティティのモックデータファクトリ（overridesパターン）
+ * 全エンティティのモックデータファクトリ（Partial<T> overridesパターン）
  */
 
 import { TEST_CONFIG } from "./test-config";
+import { CartProductType } from "@/lib/types";
+
+// ---- 型定義 ----
+type MockUser = {
+    id: string;
+    name: string;
+    email: string;
+    picture: string;
+    role: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockStore = {
+    id: string;
+    name: string;
+    description: string;
+    email: string;
+    phone: string;
+    url: string;
+    logo: string;
+    cover: string;
+    status: string;
+    featured: boolean;
+    averageRating: number;
+    numReviews: number;
+    defaultShippingService: string;
+    defaultShippingFeePerItem: number;
+    defaultShippingFeeForAdditionalItem: number;
+    defaultShippingFeePerKg: number;
+    defaultShippingFeeFixed: number;
+    defaultDeliveryTimeMin: number;
+    defaultDeliveryTimeMax: number;
+    returnPolicy: string;
+    userId: string;
+    isDeleted: boolean;
+    deletedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockProduct = {
+    id: string;
+    name: string;
+    description: string;
+    slug: string;
+    brand: string;
+    rating: number;
+    sales: number;
+    numReviews: number;
+    shippingFeeMethod: "ITEM" | "WEIGHT" | "FIXED" | "FREE";
+    views: number;
+    freeShipping: Record<string, unknown> | null;
+    categoryId: string;
+    subCategoryId: string;
+    offerTagId: string | null;
+    storeId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockProductVariant = {
+    id: string;
+    variantName: string;
+    variantDescription: string;
+    variantImage: string;
+    slug: string;
+    isSale: boolean;
+    saleEndDate: Date | null;
+    keywords: string[];
+    sku: string;
+    sales: number;
+    weight: number;
+    productId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockSize = {
+    id: string;
+    size: string;
+    quantity: number;
+    price: number;
+    discount: number;
+    productVariantId: string;
+};
+
+type MockCategory = {
+    id: string;
+    name: string;
+    image: string;
+    url: string;
+    featured: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockSubCategory = {
+    id: string;
+    name: string;
+    image: string;
+    url: string;
+    featured: boolean;
+    categoryId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockOrder = {
+    id: string;
+    userId: string;
+    shippingAddressId: string;
+    orderStatus: string;
+    paymentStatus: string;
+    paymentMethod: string | null;
+    shippingFees: number;
+    subTotal: number;
+    total: number;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockOrderGroup = {
+    id: string;
+    orderId: string;
+    storeId: string;
+    status: string;
+    shippingService: string;
+    shippingDeliveryMin: number;
+    shippingDeliveryMax: number;
+    shippingFees: number;
+    subTotal: number;
+    total: number;
+    couponId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockOrderItem = {
+    id: string;
+    orderGroupId: string;
+    productId: string;
+    variantId: string;
+    sizeId: string;
+    productSlug: string;
+    variantSlug: string;
+    sku: string;
+    name: string;
+    image: string;
+    size: string;
+    quantity: number;
+    price: number;
+    shippingFee: number;
+    totalPrice: number;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockCoupon = {
+    id: string;
+    code: string;
+    startDate: Date;
+    endDate: Date;
+    discount: number;
+    storeId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockShippingAddress = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address1: string;
+    address2: string;
+    state: string;
+    city: string;
+    zip_code: string;
+    default: boolean;
+    userId: string;
+    countryId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockPaymentDetails = {
+    id: string;
+    paymentIntentId: string;
+    paymentMethod: string;
+    status: string;
+    amount: number;
+    currency: string;
+    orderId: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockCart = {
+    id: string;
+    userId: string;
+    couponId: string | null;
+    shippingFees: number;
+    subTotal: number;
+    total: number;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockCartItem = {
+    id: string;
+    cartId: string;
+    productId: string;
+    variantId: string;
+    sizeId: string;
+    storeId: string;
+    productSlug: string;
+    variantSlug: string;
+    sku: string;
+    name: string;
+    image: string;
+    size: string;
+    quantity: number;
+    price: number;
+    shippingFee: number;
+    totalPrice: number;
+};
+
+type MockCountry = {
+    id: string;
+    name: string;
+    code: string;
+};
+
+type MockOfferTag = {
+    id: string;
+    name: string;
+    url: string;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockWishlistItem = {
+    id: string;
+    userId: string;
+    productId: string;
+    variantId: string;
+    sizeId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+type MockVariantImage = {
+    id: string;
+    url: string;
+    alt: string;
+    productVariantId: string;
+};
+
+type MockFullProduct = MockProduct & {
+    store: MockStore;
+    variants: Array<
+        MockProductVariant & {
+            sizes: MockSize[];
+            images: MockVariantImage[];
+        }
+    >;
+};
+
+// ---- ファクトリ関数 ----
 
 // ---- ユーザー ----
-export const createMockUser = (overrides: Record<string, unknown> = {}) => ({
+export const createMockUser = (
+    overrides: Partial<MockUser> = {}
+): MockUser => ({
     id: TEST_CONFIG.DEFAULT_USER_ID,
     name: "Test User",
     email: TEST_CONFIG.TEST_EMAIL,
@@ -18,7 +292,9 @@ export const createMockUser = (overrides: Record<string, unknown> = {}) => ({
 });
 
 // ---- ストア ----
-export const createMockStore = (overrides: Record<string, unknown> = {}) => ({
+export const createMockStore = (
+    overrides: Partial<MockStore> = {}
+): MockStore => ({
     id: TEST_CONFIG.DEFAULT_STORE_ID,
     name: "Test Store",
     description:
@@ -50,8 +326,8 @@ export const createMockStore = (overrides: Record<string, unknown> = {}) => ({
 
 // ---- 商品 ----
 export const createMockProduct = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockProduct> = {}
+): MockProduct => ({
     id: "product-001",
     name: "Test Product",
     description:
@@ -61,7 +337,7 @@ export const createMockProduct = (
     rating: 4.5,
     sales: 100,
     numReviews: 20,
-    shippingFeeMethod: "ITEM" as const,
+    shippingFeeMethod: "ITEM",
     views: 500,
     freeShipping: null,
     categoryId: "category-001",
@@ -75,8 +351,8 @@ export const createMockProduct = (
 
 // ---- 商品バリアント ----
 export const createMockProductVariant = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockProductVariant> = {}
+): MockProductVariant => ({
     id: "variant-001",
     variantName: "Red Edition",
     variantDescription: "Red variant of the product",
@@ -95,7 +371,9 @@ export const createMockProductVariant = (
 });
 
 // ---- サイズ（在庫・価格） ----
-export const createMockSize = (overrides: Record<string, unknown> = {}) => ({
+export const createMockSize = (
+    overrides: Partial<MockSize> = {}
+): MockSize => ({
     id: "size-001",
     size: "M",
     quantity: 50,
@@ -107,8 +385,8 @@ export const createMockSize = (overrides: Record<string, unknown> = {}) => ({
 
 // ---- カテゴリ ----
 export const createMockCategory = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockCategory> = {}
+): MockCategory => ({
     id: "category-001",
     name: "Electronics",
     image: "https://example.com/electronics.jpg",
@@ -121,8 +399,8 @@ export const createMockCategory = (
 
 // ---- サブカテゴリ ----
 export const createMockSubCategory = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockSubCategory> = {}
+): MockSubCategory => ({
     id: "subcategory-001",
     name: "Smartphones",
     image: "https://example.com/smartphones.jpg",
@@ -136,8 +414,8 @@ export const createMockSubCategory = (
 
 // ---- 注文 ----
 export const createMockOrder = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockOrder> = {}
+): MockOrder => ({
     id: "order-001",
     userId: TEST_CONFIG.DEFAULT_USER_ID,
     shippingAddressId: "address-001",
@@ -154,8 +432,8 @@ export const createMockOrder = (
 
 // ---- 注文グループ（店舗単位） ----
 export const createMockOrderGroup = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockOrderGroup> = {}
+): MockOrderGroup => ({
     id: "order-group-001",
     orderId: "order-001",
     storeId: TEST_CONFIG.DEFAULT_STORE_ID,
@@ -174,8 +452,8 @@ export const createMockOrderGroup = (
 
 // ---- 注文アイテム ----
 export const createMockOrderItem = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockOrderItem> = {}
+): MockOrderItem => ({
     id: "order-item-001",
     orderGroupId: "order-group-001",
     productId: "product-001",
@@ -199,8 +477,8 @@ export const createMockOrderItem = (
 
 // ---- クーポン ----
 export const createMockCoupon = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockCoupon> = {}
+): MockCoupon => ({
     id: "coupon-001",
     code: "SAVE10",
     startDate: new Date("2024-01-01"),
@@ -214,8 +492,8 @@ export const createMockCoupon = (
 
 // ---- 配送先住所 ----
 export const createMockShippingAddress = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockShippingAddress> = {}
+): MockShippingAddress => ({
     id: "address-001",
     firstName: "Test",
     lastName: "User",
@@ -235,8 +513,8 @@ export const createMockShippingAddress = (
 
 // ---- 決済詳細 ----
 export const createMockPaymentDetails = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockPaymentDetails> = {}
+): MockPaymentDetails => ({
     id: "payment-001",
     paymentIntentId: "pi_test_123",
     paymentMethod: "Stripe",
@@ -251,7 +529,9 @@ export const createMockPaymentDetails = (
 });
 
 // ---- カート ----
-export const createMockCart = (overrides: Record<string, unknown> = {}) => ({
+export const createMockCart = (
+    overrides: Partial<MockCart> = {}
+): MockCart => ({
     id: "cart-001",
     userId: TEST_CONFIG.DEFAULT_USER_ID,
     couponId: null,
@@ -265,8 +545,8 @@ export const createMockCart = (overrides: Record<string, unknown> = {}) => ({
 
 // ---- カートアイテム ----
 export const createMockCartItem = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockCartItem> = {}
+): MockCartItem => ({
     id: "cart-item-001",
     cartId: "cart-001",
     productId: "product-001",
@@ -288,8 +568,8 @@ export const createMockCartItem = (
 
 // ---- カート商品（フロントエンド CartProductType 用） ----
 export const createMockCartProduct = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<CartProductType> = {}
+): CartProductType => ({
     productId: "product-001",
     variantId: "variant-001",
     productSlug: "test-product",
@@ -316,8 +596,8 @@ export const createMockCartProduct = (
 
 // ---- 国 ----
 export const createMockCountry = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockCountry> = {}
+): MockCountry => ({
     id: "country-001",
     name: "Japan",
     code: "JP",
@@ -326,8 +606,8 @@ export const createMockCountry = (
 
 // ---- オファータグ ----
 export const createMockOfferTag = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockOfferTag> = {}
+): MockOfferTag => ({
     id: "offer-tag-001",
     name: "Summer Sale",
     url: "summer-sale",
@@ -338,8 +618,8 @@ export const createMockOfferTag = (
 
 // ---- ウィッシュリスト ----
 export const createMockWishlistItem = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockWishlistItem> = {}
+): MockWishlistItem => ({
     id: "wishlist-001",
     userId: TEST_CONFIG.DEFAULT_USER_ID,
     productId: "product-001",
@@ -352,8 +632,8 @@ export const createMockWishlistItem = (
 
 // ---- バリアント画像 ----
 export const createMockVariantImage = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockVariantImage> = {}
+): MockVariantImage => ({
     id: "image-001",
     url: "https://example.com/product-image-1.jpg",
     alt: "Product Image 1",
@@ -363,8 +643,8 @@ export const createMockVariantImage = (
 
 // ---- 完全な商品構造（Product + Variant + Size + Image を含む） ----
 export const createMockFullProduct = (
-    overrides: Record<string, unknown> = {}
-) => ({
+    overrides: Partial<MockFullProduct> = {}
+): MockFullProduct => ({
     ...createMockProduct(),
     store: createMockStore(),
     freeShipping: null,

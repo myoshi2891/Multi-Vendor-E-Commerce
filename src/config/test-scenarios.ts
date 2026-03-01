@@ -34,23 +34,27 @@ export const ORDER_STATUS_TRANSITIONS = {
 };
 
 // ---- クーポン検証シナリオ ----
+// 相対日付を使用し、時間経過でテストが破綻しないようにする
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const now = Date.now();
+
 export const COUPON_SCENARIOS = {
-    // 期限切れパターン
+    // 期限切れパターン（1〜2年前）
     expired: {
-        startDate: new Date("2023-01-01"),
-        endDate: new Date("2023-12-31"),
+        startDate: new Date(now - 2 * ONE_YEAR_MS),
+        endDate: new Date(now - ONE_YEAR_MS),
     },
 
-    // 有効期間内パターン
+    // 有効期間内パターン（1年前〜1年後）
     active: {
-        startDate: new Date("2024-01-01"),
-        endDate: new Date("2026-12-31"),
+        startDate: new Date(now - ONE_YEAR_MS),
+        endDate: new Date(now + ONE_YEAR_MS),
     },
 
-    // 開始前パターン
+    // 開始前パターン（1〜2年後）
     notStarted: {
-        startDate: new Date("2027-01-01"),
-        endDate: new Date("2027-12-31"),
+        startDate: new Date(now + ONE_YEAR_MS),
+        endDate: new Date(now + 2 * ONE_YEAR_MS),
     },
 
     // 割引率パターン
