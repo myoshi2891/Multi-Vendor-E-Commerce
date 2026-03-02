@@ -24,3 +24,15 @@
 - `review.ts`: IDOR脆弱性修正。`upsert` → 所有権検証付き `update`/`create`。
 - `webhooks/route.ts`: Svix検証済み `evt.data` を使用（`JSON.parse(body).data` の
   再パースを排除）。
+- `webhooks/route.ts`: upsert の lookup key を `email` → `id` に変更。
+  Clerk user ID はイミュータブルなため、メール変更後もレコードが確実にマッチ。
+- `webhooks/route.ts`: `db.user.delete` → `db.user.deleteMany` で冪等化。
+  レコード不在時も `{ count: 0 }` を返し、Svix リトライループを防止。
+- `webhooks/route.ts`: `db.user.upsert` + `clerkClient.users.updateUserMetadata`
+  を try/catch でラップし、失敗時に 500 を返却（未ハンドル例外を防止）。
+- `store.ts` (`updateStoreStatus`): `store.update` + `user.update` を
+  `db.$transaction` でアトミック化。PENDING→ACTIVE 遷移時の不整合を防止。
+- `store.ts` (`updateStoreStatus`): try/catch 追加。DB 操作失敗時にエラーを
+  ログ出力して再スロー（`deleteStore` パターンに統一）。
+- `store.test.ts`: `any` → `Record<string, unknown>` + `MockPrismaClient`
+  インターフェースで型安全なモック定義を導入。

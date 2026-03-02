@@ -42,7 +42,9 @@ Dashboard:
 - `POST /api/index-products` search suggestions for autocomplete
 - `GET /api/search-products` raw SQL fulltext search
 - `POST /api/webhooks` Clerk webhook (user sync); uses Svix SDK-verified
-  `evt.data` for payload extraction instead of re-parsing the raw body.
+  `evt.data` for payload extraction. User upsert uses immutable Clerk user
+  ID as lookup key (not email). Deletion uses `deleteMany` for idempotent
+  retry handling.
 
 ## Server Actions (Queries)
 - Domain modules live in `src/queries/*.ts`.

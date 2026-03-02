@@ -105,3 +105,52 @@
 - `babe77a` fix(test): 個別テスト品質改善14件
 - `2a70003` refactor(test): テスト共通インフラ改善 (型安全化, 相対日付, JSDoc)
 - `94c20a0` fix(api,queries): 実装バグ4件修正 (IDOR, Svix evt.data, countryId比較, エラーメッセージ)
+
+## 追記 (2026-03-01 続き — ラウンド2)
+
+### テスト品質改善（8件）
+- クーポンファクトリのハードコード日付 → 相対日付
+- `review.test.ts`: `Partial<ReviewDetailsType>` 型安全化
+- `store.test.ts`: `any` → `Record<string, unknown>` + インターフェース
+- `subCategory.test.ts`: spy 復元の try/finally 化
+- `webhooks/route.ts`: `primaryEmail` 抽出 + 早期リターン
+- `profile.ts`: 空バリアント商品を `.filter()` で除外
+- `profile.test.ts`: 空ウィッシュリストの期待値修正
+- `08-open-questions.md`: Known/Resolved Issues セクション分離
+
+### コミット一覧
+- `1803781` docs(specs): ラウンド2の修正を仕様書に反映
+- `953a82c` test: テスト品質改善（型安全化・spy復元・日付相対化）
+- `12f77dc` fix(webhook,profile): email検証・空バリアントガード
+
+## 追記 (2026-03-01 続き — ラウンド3)
+
+### プロダクションコード修正（2件）
+- `store.ts`: `updateStoreStatus` に try/catch 追加
+- `webhooks/route.ts`: upsert・metadata・delete を try/catch でラップ
+
+### テスト追加（5件）
+- `store.test.ts`: エラーメッセージ厳密化、DB失敗時500テスト（2件）
+- `webhooks/route.test.ts`: upsert/metadata/delete 失敗時500テスト（3件）
+
+### コミット一覧
+- `5b4756c` test(webhook,store): エラーハンドリングテスト追加
+- `3c2e82a` fix(webhook,store): 外部呼び出しのtry/catch追加
+
+## 追記 (2026-03-02 — ラウンド4)
+
+### プロダクションコード修正（3件）
+- `webhooks/route.ts`: upsert lookup key `email` → `id`
+- `webhooks/route.ts`: `delete` → `deleteMany` で冪等化
+- `store.ts`: `db.$transaction` でアトミック化（プロジェクト初使用）
+
+### テスト修正（4件）
+- `webhooks/route.test.ts`: mockDeleteMany化、upsert assertion更新、冪等性テスト追加
+- `store.test.ts`: `$transaction` モック、`MockPrismaClient` 導入、`any` 3箇所除去
+
+### テスト統計
+- 543テスト、21スイート全パス（R1: 536 → R2: 537 → R3: 542 → R4: 543）
+
+### コミット一覧
+- `1a2f82e` test(webhook,store): upsert/deleteMany変更反映・$transactionモック・any除去
+- `f0470d7` fix(webhook,store): upsert lookup key変更・delete冪等化・$transaction導入

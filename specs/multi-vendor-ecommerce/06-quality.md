@@ -17,6 +17,9 @@
 - CartItem and OrderItem store snapshot fields (price, name, image, size).
 - Server actions validate resource ownership before mutation to prevent
   cross-user data corruption via client-supplied identifiers.
+- Store status updates (`updateStoreStatus`) use Prisma interactive
+  transactions (`db.$transaction`) to atomically update store status and
+  promote user role on PENDING → ACTIVE transition.
 
 ## Performance
 - PostgreSQL fulltext search (tsvector/tsquery) with a fallback to `contains` queries.
@@ -25,7 +28,13 @@
 
 ## Reliability
 - Payment details are upserted and linked to orders.
-- User records are upserted via webhook to reduce drift.
+- User records are upserted via webhook using immutable Clerk user ID as
+  lookup key, ensuring correct matching even after email changes.
+- User deletion via webhook uses `deleteMany` for idempotent retry handling
+  (avoids Prisma P2025 on re-delivery).
+- External service calls (Prisma, Clerk API) in webhook and store handlers
+  are wrapped in try/catch with appropriate HTTP status codes or error
+  re-throwing.
 
 ## Observability
 - Errors are logged to the console; no centralized logging is in place yet.

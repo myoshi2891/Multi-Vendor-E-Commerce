@@ -36,12 +36,13 @@ bunx prisma studio             # DBブラウザ
 
 ## エージェント行動方針
 
-- タスク開始前に必ず `specs/multi-vendor-ecommerce/` で仕様を確認する
+- **実装前・実装中・実装後の3フェーズで必ず `specs/multi-vendor-ecommerce/` 以下の該当仕様書を参照・確認する**
 - コードを一行も書く前に実装プランを生成し、ユーザーに確認を求める
 - 不確実な場合は実装前に確認（"Always Proceed" 禁止）
 - git commit はタスク単位で細かく行う
 - `console.log()` のコミット禁止
 - 本番DBへの `DELETE`/`DROP` は人間確認なしに実行しない
+- `bunx prisma db push` はプロトタイピングやローカル環境でのみ許可。履歴が必要な環境では必ず `prisma migrate dev` を使用する
 
 ## ルール参照
 
@@ -60,7 +61,8 @@ bunx prisma studio             # DBブラウザ
 
 ## 仕様書参照
 
-新機能を実装する前に必ず以下を確認すること:
+**1. 実装前（新規機能・既存機能変更・バグ修正時）**
+必ず以下の順序で関連仕様を確認すること:
 
 1. `specs/multi-vendor-ecommerce/00-overview.md` — プロダクトのスコープ
 2. `specs/multi-vendor-ecommerce/01-requirements.md` — 機能・非機能要件
@@ -68,4 +70,8 @@ bunx prisma studio             # DBブラウザ
 4. `specs/multi-vendor-ecommerce/03-data-model.md` — データモデル
 5. `specs/multi-vendor-ecommerce/07-testing.md` — テスト方針
 
-実装後は実装内容と仕様書の乖離がないか確認し、乖離があれば人間に報告する。
+**2. 実装中（レビュー・差分チェック時）**
+実装を進めながら、該当仕様書の要件や制約事項を満たしているか定期的に再確認する。
+
+**3. 実装後**
+実装が完了した時点（または変更時）で、仕様との差分がないか検証し、その結果（乖離がある場合はその報告）を人間に報告する。
