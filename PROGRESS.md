@@ -108,7 +108,7 @@
 
 ## 追記 (2026-03-01 続き — ラウンド2)
 
-### テスト品質改善（9件）
+### テスト品質改善（8件）
 - クーポンファクトリのハードコード日付 → 相対日付
 - `review.test.ts`: `Partial<ReviewDetailsType>` 型安全化
 - `store.test.ts`: `any` → `Record<string, unknown>` + インターフェース
@@ -129,7 +129,7 @@
 - `store.ts`: `updateStoreStatus` に try/catch 追加
 - `webhooks/route.ts`: upsert・metadata・delete を try/catch でラップ
 
-### テスト追加（4件）
+### テスト追加（5件）
 - `store.test.ts`: エラーメッセージ厳密化、DB失敗時500テスト（2件）
 - `webhooks/route.test.ts`: upsert/metadata/delete 失敗時500テスト（3件）
 
