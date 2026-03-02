@@ -2,7 +2,7 @@
 
 ## Document Guide
 - Purpose: define testing strategy and directory layout for the repo.
-- Related docs: `QA_TEST_PERSPECTIVES.md`, `README.md`, `docs/migration/03-test-strategy-updates.md`.
+- Related docs: `QA_TEST_PERSPECTIVES.md`（同ディレクトリ）, `../../README.md`, `../migration/03-test-strategy-updates.md`.
 - CI suggestion: run `bun run lint`, `bun run test`, `bun run build`, then `bunx playwright test --project=chromium --workers=1` with `E2E_DATABASE_URL` set; use `.env.test` for integration suites.
 
 ## Goals

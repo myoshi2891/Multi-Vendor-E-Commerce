@@ -3,8 +3,24 @@ import {
     getStoreDefaultShippingDetails,
     upsertStore,
     updateStoreDefaultShippingDetails,
+    getStoreShippingRates,
+    upsertShippingRate,
+    getStoreOrders,
+    applySeller,
+    getAllStores,
+    updateStoreStatus,
+    deleteStore,
+    getStorePageDetails,
 } from "./store";
 import { TEST_CONFIG } from "../config/test-config";
+
+/** expectDuplicateCheck で参照されるストアフィールド */
+interface StoreDuplicateCheckData {
+    name: string | undefined;
+    url: string | undefined;
+    email: string | undefined;
+    phone: string | undefined;
+}
 
 // Mock the database
 jest.mock("@/lib/db", () => ({
@@ -12,9 +28,24 @@ jest.mock("@/lib/db", () => ({
         store: {
             findUnique: jest.fn(),
             findFirst: jest.fn(),
+            findMany: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
         },
+        country: {
+            findMany: jest.fn(),
+        },
+        shippingRate: {
+            findMany: jest.fn(),
+            upsert: jest.fn(),
+        },
+        orderGroup: {
+            findMany: jest.fn(),
+        },
+        user: {
+            update: jest.fn(),
+        },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -70,7 +101,19 @@ const TestDataFactory = {
     }),
 
     createStoreExpectedData: (
-        storeData: any,
+        storeData: {
+            name: string;
+            email: string;
+            url: string;
+            phone?: string;
+            description?: string;
+            logo?: string;
+            cover?: string;
+            featured?: boolean;
+            status?: string;
+            defaultShippingService?: string;
+            returnPolicy?: string;
+        },
         userId: string = TEST_CONFIG.DEFAULT_USER_ID
     ) => ({
         name: storeData.name,
@@ -101,7 +144,7 @@ const TestDataFactory = {
 
 // テストヘルパー
 class TestHelpers {
-    static mockCurrentUser(user: any) {
+    static mockCurrentUser(user: Record<string, unknown> | null) {
         (currentUser as jest.Mock).mockResolvedValue(user);
     }
 
@@ -127,12 +170,12 @@ class TestHelpers {
         };
     }
 
-    static mockConsoleLog() {
-        return jest.spyOn(console, "log").mockImplementation(() => {});
+    static mockConsoleError() {
+        return jest.spyOn(console, "error").mockImplementation(() => {});
     }
 
     static async expectThrowError(
-        promise: Promise<any>,
+        promise: Promise<unknown>,
         expectedError: string
     ) {
         await expect(promise).rejects.toThrow(expectedError);
@@ -148,7 +191,7 @@ class TestHelpers {
 
     static expectStoreCreatedWith(
         mockCreate: jest.SpyInstance,
-        expectedData: any
+        expectedData: Record<string, unknown>
     ) {
         expect(mockCreate).toHaveBeenCalledWith({
             data: expectedData,
@@ -158,7 +201,7 @@ class TestHelpers {
     static expectStoreUpdatedWith(
         mockUpdate: jest.SpyInstance,
         storeId: string,
-        expectedData: any
+        expectedData: Record<string, unknown>
     ) {
         expect(mockUpdate).toHaveBeenCalledWith({
             where: { id: storeId },
@@ -181,7 +224,7 @@ class TestHelpers {
 
     static expectDuplicateCheck(
         mockFindFirst: jest.SpyInstance,
-        storeData: any,
+        storeData: StoreDuplicateCheckData,
         excludeId?: string
     ) {
         const whereCondition = excludeId
@@ -235,7 +278,7 @@ class TestHelpers {
         });
     }
 
-    static expectResultToContainShippingFields(result: any) {
+    static expectResultToContainShippingFields(result: Record<string, unknown>) {
         const expectedFields = [
             "defaultShippingService",
             "defaultShippingFeePerItem",
@@ -250,7 +293,7 @@ class TestHelpers {
         expect(Object.keys(result)).toEqual(expectedFields);
     }
 
-    static expectResultToExcludeStoreFields(result: any) {
+    static expectResultToExcludeStoreFields(result: Record<string, unknown>) {
         const excludedFields = [
             "id",
             "name",
@@ -276,7 +319,7 @@ class TestHelpers {
         mockUpdate: jest.SpyInstance,
         storeUrl: string,
         userId: string,
-        shippingDetails: any
+        shippingDetails: Record<string, unknown>
     ) {
         expect(mockUpdate).toHaveBeenCalledWith({
             where: {
@@ -655,15 +698,15 @@ describe("updateStoreDefaultShippingDetails", () => {
     });
 
     describe("エラーハンドリング", () => {
-        let consoleLogSpy: jest.SpyInstance;
+        let consoleErrorSpy: jest.SpyInstance;
 
         beforeEach(() => {
             TestHelpers.mockAuthenticatedSeller();
-            consoleLogSpy = TestHelpers.mockConsoleLog();
+            consoleErrorSpy = TestHelpers.mockConsoleError();
         });
 
         afterEach(() => {
-            consoleLogSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
         });
 
         it("所有権チェック中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
@@ -689,7 +732,7 @@ describe("updateStoreDefaultShippingDetails", () => {
                 TEST_CONFIG.DEFAULT_USER_ID
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
 
@@ -725,7 +768,7 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
             TestHelpers.expectDbMethodCalledTimes(mockDb.findUnique, 1);
             TestHelpers.expectDbMethodCalledTimes(mockDb.update, 1);
         });
@@ -826,14 +869,14 @@ describe("getStoreDefaultShippingDetails", () => {
     });
 
     describe("エラーハンドリング", () => {
-        let consoleLogSpy: jest.SpyInstance;
+        let consoleErrorSpy: jest.SpyInstance;
 
         beforeEach(() => {
-            consoleLogSpy = TestHelpers.mockConsoleLog();
+            consoleErrorSpy = TestHelpers.mockConsoleError();
         });
 
         afterEach(() => {
-            consoleLogSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
         });
 
         it("データベース接続エラーを適切に処理し、エラーを再スローする", async () => {
@@ -862,7 +905,7 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Test error for logging"
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
         });
 
         it("バリデーションエラーを適切に処理する", async () => {
@@ -877,7 +920,730 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Invalid store URL format"
             );
 
-            expect(consoleLogSpy).toHaveBeenCalledWith(validationError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(validationError);
         });
+    });
+});
+
+// ==================================================
+// 以降: 未テスト関数の追加テスト
+// ==================================================
+// 注: 前半の TestHelpers.mockDbMethods() は db.store のスパイラッパーを返す。
+// ここでは db 全体（store, country, shippingRate 等）を参照するため別変数を使用。
+// TODO: TestHelpers.mockDbMethods() を拡張して db 全体をカバーする
+
+/** mockPrisma の型定義（モックセットアップ L27-50 と対応） */
+interface MockPrismaClient {
+    store: {
+        findUnique: jest.Mock;
+        findFirst: jest.Mock;
+        findMany: jest.Mock;
+        create: jest.Mock;
+        update: jest.Mock;
+    };
+    country: {
+        findMany: jest.Mock;
+    };
+    shippingRate: {
+        findMany: jest.Mock;
+        upsert: jest.Mock;
+    };
+    orderGroup: {
+        findMany: jest.Mock;
+    };
+    user: {
+        update: jest.Mock;
+    };
+    $transaction: jest.Mock;
+}
+
+const mockPrisma = require("@/lib/db").db as MockPrismaClient;
+
+// ==================================================
+// getStoreShippingRates
+// ==================================================
+describe("getStoreShippingRates", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                getStoreShippingRates("test-store")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                getStoreShippingRates("test-store")
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止（ストア所有権検証）", () => {
+        it("他人のストアの配送レートを取得できない", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreShippingRates("other-store")
+            ).rejects.toThrow(
+                "You are not authorized to update this store."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("全国と配送レートのマッピングを返す", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            const store = TestDataFactory.existingStore();
+            mockPrisma.store.findUnique.mockResolvedValue(store);
+
+            const countries = [
+                { id: "c1", name: "Japan" },
+                { id: "c2", name: "USA" },
+            ];
+            mockPrisma.country.findMany.mockResolvedValue(countries);
+
+            const rates = [
+                { countryId: "c1", shippingFeePerItem: 10.0 },
+            ];
+            mockPrisma.shippingRate.findMany.mockResolvedValue(rates);
+
+            const result = await getStoreShippingRates(
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toEqual({
+                countryId: "c1",
+                countryName: "Japan",
+                shippingRate: rates[0],
+            });
+            // レートが無い国はnull
+            expect(result[1]).toEqual({
+                countryId: "c2",
+                countryName: "USA",
+                shippingRate: null,
+            });
+        });
+
+        it("国を名前昇順でクエリする", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+            mockPrisma.country.findMany.mockResolvedValue([]);
+            mockPrisma.shippingRate.findMany.mockResolvedValue([]);
+
+            await getStoreShippingRates(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(mockPrisma.country.findMany).toHaveBeenCalledWith({
+                orderBy: { name: "asc" },
+            });
+        });
+    });
+});
+
+// ==================================================
+// upsertShippingRate
+// ==================================================
+describe("upsertShippingRate", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                upsertShippingRate(
+                    "test-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                upsertShippingRate(
+                    "test-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止", () => {
+        it("他人のストアの配送レートを更新できない", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                upsertShippingRate(
+                    "other-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow(
+                "You are not authorized to update this store."
+            );
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+        });
+
+        it("配送レートデータがnullの場合エラーをスローする", async () => {
+            await expect(
+                upsertShippingRate("test-store", null as never)
+            ).rejects.toThrow("Please provide shipping rate data.");
+        });
+
+        it("countryIdがない場合エラーをスローする", async () => {
+            await expect(
+                upsertShippingRate("test-store", {} as never)
+            ).rejects.toThrow("Please provide country ID.");
+        });
+    });
+
+    describe("正常系", () => {
+        it("配送レートを正常にupsertする", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            const store = TestDataFactory.existingStore();
+            mockPrisma.store.findUnique.mockResolvedValue(store);
+
+            const rateData = {
+                id: "rate-001",
+                countryId: "c1",
+                shippingFeePerItem: 8.0,
+            };
+            const upsertedRate = { ...rateData, storeId: store.id };
+            mockPrisma.shippingRate.upsert.mockResolvedValue(upsertedRate);
+
+            const result = await upsertShippingRate(
+                TEST_CONFIG.TEST_STORE_URL,
+                rateData as never
+            );
+
+            expect(result).toEqual(upsertedRate);
+            expect(mockPrisma.shippingRate.upsert).toHaveBeenCalledWith({
+                where: { id: "rate-001" },
+                update: expect.objectContaining({
+                    storeId: store.id,
+                }),
+                create: expect.objectContaining({
+                    storeId: store.id,
+                }),
+            });
+        });
+    });
+});
+
+// ==================================================
+// getStoreOrders
+// ==================================================
+describe("getStoreOrders", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("USER");
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("ストア検証", () => {
+        beforeEach(() => {
+            TestHelpers.mockAuthenticatedSeller();
+        });
+
+        it("存在しないストアの場合エラーをスローする", async () => {
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreOrders("nonexistent")
+            ).rejects.toThrow("Store not found.");
+        });
+
+        it("他人のストアの注文を取得できない（IDOR防止）", async () => {
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    userId: "other-user-id",
+                })
+            );
+
+            await expect(
+                getStoreOrders("test-store")
+            ).rejects.toThrow(
+                "You are not authorized to view this store's orders."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("ストアの注文一覧をupdatedAt降順で取得する", async () => {
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore()
+            );
+
+            const orders = [
+                { id: "og-1", items: [], coupon: null, order: {} },
+                { id: "og-2", items: [], coupon: null, order: {} },
+            ];
+            mockPrisma.orderGroup.findMany.mockResolvedValue(orders);
+
+            const result = await getStoreOrders(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(result).toHaveLength(2);
+            expect(mockPrisma.orderGroup.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                    include: expect.objectContaining({
+                        items: true,
+                        coupon: true,
+                        order: expect.any(Object),
+                    }),
+                    orderBy: { updatedAt: "desc" },
+                })
+            );
+        });
+    });
+});
+
+// ==================================================
+// applySeller
+// ==================================================
+describe("applySeller", () => {
+    describe("認証エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("ストアデータがnullの場合エラーをスローする", async () => {
+            await expect(
+                applySeller(null as never)
+            ).rejects.toThrow("Please provide store data.");
+        });
+
+        it("同名のストアが既に存在する場合エラーをスローする", async () => {
+            mockPrisma.store.findFirst.mockResolvedValue({
+                name: "Test Store",
+                url: "other-url",
+                email: "other@example.com",
+                phone: "999-0000",
+            });
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow(
+                "A store with the same name already exists."
+            );
+        });
+
+        it("同URLのストアが既に存在する場合エラーをスローする", async () => {
+            mockPrisma.store.findFirst.mockResolvedValue({
+                name: "Different Name",
+                url: TEST_CONFIG.TEST_STORE_URL,
+                email: "other@example.com",
+                phone: "999-0000",
+            });
+
+            await expect(
+                applySeller(TestDataFactory.validStoreData() as never)
+            ).rejects.toThrow(
+                "A store with the same URL already exists."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("新しいストアを作成しデフォルト値を設定する", async () => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockPrisma.store.findFirst.mockResolvedValue(null);
+
+            const storeData = TestDataFactory.validStoreData();
+            const createdStore = {
+                ...storeData,
+                id: "new-store-id",
+                userId: TEST_CONFIG.DEFAULT_USER_ID,
+            };
+            mockPrisma.store.create.mockResolvedValue(createdStore);
+
+            const result = await applySeller(storeData as never);
+
+            expect(result).toEqual(createdStore);
+            expect(mockPrisma.store.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    ...storeData,
+                    defaultShippingService: "International Delivery",
+                    returnPolicy: "Return in 30 days.",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                }),
+            });
+        });
+    });
+});
+
+// ==================================================
+// getAllStores
+// ==================================================
+describe("getAllStores", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(getAllStores()).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(getAllStores()).rejects.toThrow(
+                "Unauthorized Access: Admin Privileges Required to View Stores."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("全ストアをcreatedAt降順で取得する", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+
+            const stores = [
+                { id: "s1", name: "Store 1", user: {} },
+                { id: "s2", name: "Store 2", user: {} },
+            ];
+            mockPrisma.store.findMany.mockResolvedValue(stores);
+
+            const result = await getAllStores();
+
+            expect(result).toHaveLength(2);
+            expect(mockPrisma.store.findMany).toHaveBeenCalledWith({
+                include: { user: true },
+                orderBy: { createdAt: "desc" },
+            });
+        });
+    });
+});
+
+// ==================================================
+// updateStoreStatus
+// ==================================================
+describe("updateStoreStatus", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(
+                updateStoreStatus("store-001", "ACTIVE" as never)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(
+                updateStoreStatus("store-001", "ACTIVE" as never)
+            ).rejects.toThrow("Only admins can perform this action.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("存在しないストアの場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                updateStoreStatus("nonexistent", "ACTIVE" as never)
+            ).rejects.toThrow("Store not found.");
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            // $transaction モック: コールバックに mockPrisma を渡して実行
+            mockPrisma.$transaction.mockImplementation(
+                async (
+                    callback: (
+                        tx: typeof mockPrisma
+                    ) => Promise<unknown>
+                ) => callback(mockPrisma)
+            );
+        });
+
+        it("ストアのステータスを更新する", async () => {
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "ACTIVE" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "INACTIVE" })
+            );
+
+            const result = await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "INACTIVE" as never
+            );
+
+            expect(result).toBe("INACTIVE");
+            expect(mockPrisma.store.update).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
+                data: { status: "INACTIVE" },
+            });
+        });
+
+        it("PENDING → ACTIVE遷移時にユーザーのロールをSELLERに昇格する", async () => {
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    status: "ACTIVE",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                })
+            );
+            mockPrisma.user.update.mockResolvedValue({});
+
+            await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "ACTIVE" as never
+            );
+
+            expect(mockPrisma.user.update).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_USER_ID },
+                data: { role: "SELLER" },
+            });
+        });
+
+        it("ACTIVE → INACTIVE遷移時にはロール昇格しない", async () => {
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "ACTIVE" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "INACTIVE" })
+            );
+
+            await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "INACTIVE" as never
+            );
+
+            expect(mockPrisma.user.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("エラーハンドリング", () => {
+        let consoleErrorSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            consoleErrorSpy = TestHelpers.mockConsoleError();
+            mockPrisma.$transaction.mockImplementation(
+                async (
+                    callback: (
+                        tx: typeof mockPrisma
+                    ) => Promise<unknown>
+                ) => callback(mockPrisma)
+            );
+        });
+
+        afterEach(() => {
+            consoleErrorSpy.mockRestore();
+        });
+
+        it("store.update失敗時にエラーをスローし、user.updateは呼ばれない", async () => {
+            const mockError = TestDataFactory.databaseError(
+                "Database connection failed during store update"
+            );
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockPrisma.store.update.mockRejectedValue(mockError);
+
+            await expect(
+                updateStoreStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "ACTIVE" as never
+                )
+            ).rejects.toThrow(
+                "Database connection failed during store update"
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(mockPrisma.user.update).not.toHaveBeenCalled();
+        });
+
+        it("PENDING→ACTIVE遷移時にuser.updateが失敗した場合エラーをスローする", async () => {
+            const mockError = TestDataFactory.databaseError(
+                "Database connection failed during user role update"
+            );
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "PENDING" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    status: "ACTIVE",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                })
+            );
+            mockPrisma.user.update.mockRejectedValue(mockError);
+
+            await expect(
+                updateStoreStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "ACTIVE" as never
+                )
+            ).rejects.toThrow(
+                "Database connection failed during user role update"
+            );
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(mockPrisma.store.update).toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// deleteStore
+// ==================================================
+describe("deleteStore", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            TestHelpers.mockUnauthenticatedUser();
+
+            await expect(deleteStore("store-001")).rejects.toThrow(
+                "Unauthenticated."
+            );
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("SELLER");
+
+            await expect(deleteStore("store-001")).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("空のstoreIdの場合エラーをスローする", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+
+            await expect(deleteStore("")).rejects.toThrow(
+                "Please provide store ID."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("ソフトデリート（isDeleted=true, deletedAt設定）を実行する", async () => {
+            TestHelpers.mockUserWithRole("ADMIN");
+            const deletedStore = TestDataFactory.existingStore({
+                isDeleted: true,
+                deletedAt: new Date(),
+            });
+            mockPrisma.store.update.mockResolvedValue(deletedStore);
+
+            const result = await deleteStore("store-001");
+
+            expect(result.isDeleted).toBe(true);
+            expect(result.deletedAt).toBeDefined();
+            expect(mockPrisma.store.update).toHaveBeenCalledWith({
+                where: { id: "store-001" },
+                data: {
+                    isDeleted: true,
+                    deletedAt: expect.any(Date),
+                },
+            });
+        });
+    });
+});
+
+// ==================================================
+// getStorePageDetails
+// ==================================================
+describe("getStorePageDetails", () => {
+    it("ACTIVEなストアの公開情報を返す", async () => {
+        const storeDetails = {
+            id: "store-001",
+            name: "My Store",
+            description: "A great store",
+            logo: "logo.jpg",
+            cover: "cover.jpg",
+            averageRating: 4.5,
+            numReviews: 100,
+        };
+        mockPrisma.store.findFirst.mockResolvedValue(storeDetails);
+
+        const result = await getStorePageDetails("my-store");
+
+        expect(result).toEqual(storeDetails);
+        expect(mockPrisma.store.findFirst).toHaveBeenCalledWith({
+            where: {
+                url: "my-store",
+                status: "ACTIVE",
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                logo: true,
+                cover: true,
+                averageRating: true,
+                numReviews: true,
+            },
+        });
+    });
+
+    it("存在しないストアの場合エラーをスローする", async () => {
+        mockPrisma.store.findFirst.mockResolvedValue(null);
+
+        await expect(
+            getStorePageDetails("nonexistent")
+        ).rejects.toThrow("Store with URL nonexistent not found.");
+    });
+
+    it("INACTIVEなストアはfindFirst条件で除外される", async () => {
+        mockPrisma.store.findFirst.mockResolvedValue(null);
+
+        await expect(
+            getStorePageDetails("inactive-store")
+        ).rejects.toThrow("Store with URL inactive-store not found.");
+
+        expect(mockPrisma.store.findFirst).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    status: "ACTIVE",
+                }),
+            })
+        );
     });
 });

@@ -84,34 +84,44 @@ export async function POST(req: Request) {
 			picture: data.image_url,
 		};
 
-		const dbUser = await db.user.upsert({
-			where: {
-				email: user.email,
-			},
-			update: user,
-			create: {
-				id: user.id!,
-				name: user.name!,
-				email: user.email!,
-				picture: user.picture!,
-				role: user.role || "USER",
-			},
-		});
+		try {
+			const dbUser = await db.user.upsert({
+				where: {
+					id: user.id!,
+				},
+				update: user,
+				create: {
+					id: user.id!,
+					name: user.name!,
+					email: user.email!,
+					picture: user.picture!,
+					role: user.role || "USER",
+				},
+			});
 
-		await clerkClient.users.updateUserMetadata(data.id, {
-			privateMetadata: {
-				role: dbUser.role || "USER",
-			},
-		});
+			await clerkClient.users.updateUserMetadata(data.id, {
+				privateMetadata: {
+					role: dbUser.role || "USER",
+				},
+			});
+		} catch (error) {
+			console.error("Webhook user upsert/metadata update failed:", error);
+			return new Response("Internal Server Error", { status: 500 });
+		}
 	}
 
 	if (evt.type === "user.deleted") {
 		const userId = (evt.data as { id: string }).id;
-		await db.user.delete({
-			where: {
-				id: userId,
-			},
-		});
+		try {
+			await db.user.deleteMany({
+				where: {
+					id: userId,
+				},
+			});
+		} catch (error) {
+			console.error("Webhook user deletion failed:", error);
+			return new Response("Internal Server Error", { status: 500 });
+		}
 	}
 	return new Response("", { status: 200 });
 }

@@ -1238,7 +1238,7 @@ export const getProductShippingFee = async (
         if (freeShipping) {
             const free_shipping_countries = freeShipping.eligibleCountries;
             const isEligibleForFreeShipping = free_shipping_countries.some(
-                (c) => c.countryId === country.name
+                (c) => c.countryId === country.id
             );
             if (isEligibleForFreeShipping) {
                 return 0; // Free shipping

@@ -417,24 +417,26 @@ export const getUserWishlist = async (
         },
     });
 
-    // Transform wishlist items into the desired structure
-    const formattedWishlist = wishlist.map((item) => ({
-        id: item.product.id,
-        slug: item.product.slug,
-        name: item.product.name,
-        rating: item.product.rating,
-        sales: item.product.sales,
-        variants: [
-            {
-                variantId: item.product.variants[0].id,
-                variantSlug: item.product.variants[0].slug,
-                variantName: item.product.variants[0].variantName,
-                images: item.product.variants[0].images,
-                sizes: item.product.variants[0].sizes,
-            },
-        ],
-        variantImages: [],
-    }));
+    // バリアントが空の商品は表示に必要な情報がないため除外
+    const formattedWishlist = wishlist
+        .filter((item) => item.product.variants.length > 0)
+        .map((item) => ({
+            id: item.product.id,
+            slug: item.product.slug,
+            name: item.product.name,
+            rating: item.product.rating,
+            sales: item.product.sales,
+            variants: [
+                {
+                    variantId: item.product.variants[0].id,
+                    variantSlug: item.product.variants[0].slug,
+                    variantName: item.product.variants[0].variantName,
+                    images: item.product.variants[0].images,
+                    sizes: item.product.variants[0].sizes,
+                },
+            ],
+            variantImages: [],
+        }));
 
     // Fetch the total count of wishlist items for the query
     const totalCount = await db.wishlist.count({ where: { userId: user.id } });

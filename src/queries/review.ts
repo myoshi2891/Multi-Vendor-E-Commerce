@@ -35,41 +35,56 @@ export const upsertReview = async (
             },
         })
 
-        let review_data: ReviewDetailsType = review
+        // クライアント提供のIDを信頼せず、サーバー検証済みのIDのみ使用（IDOR防止）
+        let reviewDetails;
         if (existingReview) {
-            review_data = { ...review_data, id: existingReview.id }
+            reviewDetails = await db.review.update({
+                where: {
+                    id: existingReview.id,
+                },
+                data: {
+                    review: review.review,
+                    rating: review.rating,
+                    size: review.size,
+                    quantity: review.quantity,
+                    variant: review.variant,
+                    color: review.color,
+                    images: {
+                        deleteMany: {},
+                        create: review.images.map((img) => ({
+                            url: img.url,
+                        })),
+                    },
+                    userId: user.id,
+                },
+                include: {
+                    images: true,
+                    user: true,
+                },
+            })
+        } else {
+            reviewDetails = await db.review.create({
+                data: {
+                    review: review.review,
+                    rating: review.rating,
+                    size: review.size,
+                    quantity: review.quantity,
+                    variant: review.variant,
+                    color: review.color,
+                    images: {
+                        create: review.images.map((img) => ({
+                            url: img.url,
+                        })),
+                    },
+                    productId,
+                    userId: user.id,
+                },
+                include: {
+                    images: true,
+                    user: true,
+                },
+            })
         }
-
-        // Upsert the review into the database
-        const reviewDetails = await db.review.upsert({
-            where: {
-                id: review_data.id,
-            },
-            update: {
-                ...review_data,
-                images: {
-                    deleteMany: {},
-                    create: review_data.images.map((img) => ({
-                        url: img.url,
-                    })),
-                },
-                userId: user.id,
-            },
-            create: {
-                ...review_data,
-                images: {
-                    create: review_data.images.map((img) => ({
-                        url: img.url,
-                    })),
-                },
-                productId,
-                userId: user.id,
-            },
-            include: {
-                images: true,
-                user: true,
-            },
-        })
 
         // Calculate the new average rating
         const productReviews = await db.review.findMany({

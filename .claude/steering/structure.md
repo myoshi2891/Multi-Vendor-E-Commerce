@@ -17,9 +17,10 @@
 | `src/components/shared/` | 全体共有コンポーネント |
 | `src/cart-store/` | Zustandカートストア |
 | `prisma/` | Prismaスキーマ・マイグレーション（`migrations/` 履歴付き） |
+| `src/config/` | テスト共通インフラ（ファクトリ・ヘルパー・シナリオ・定数） |
 | `tests/e2e/` | Playwright E2Eテスト |
 | `specs/` | SDD仕様書群（`specs/multi-vendor-ecommerce/` が主） |
-| `docs/` | アーキテクチャ・マイグレーション記録 |
+| `docs/` | アーキテクチャ・マイグレーション・テスト設計記録 |
 | `.claude/steering/` | チーム横断コンテキスト（本ファイル群） |
 | `.agent/rules/` | Antigravity向けルール定義 |
 

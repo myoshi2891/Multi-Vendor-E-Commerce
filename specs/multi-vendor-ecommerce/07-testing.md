@@ -5,6 +5,11 @@
 - React Testing Library and jest-dom installed for component tests.
 - Playwright configured for E2E scenarios.
 - Existing unit tests live under `src/queries/*.test.ts`.
+- Shared test infrastructure in `src/config/`:
+  - `test-fixtures.ts`: type-safe mock factories using `Partial<T>` overrides.
+  - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
+  - `test-scenarios.ts`: reusable scenario data (relative date-based).
+  - `test-config.ts`: shared constants (IDs, URLs, error messages).
 
 ## Test Layers
 - Unit: pure functions, schema validation, and query composition.
@@ -18,6 +23,11 @@
 ```
 .
 ├─ src/
+│  ├─ config/
+│  │  ├─ test-config.ts
+│  │  ├─ test-fixtures.ts
+│  │  ├─ test-helpers.ts
+│  │  └─ test-scenarios.ts
 │  └─ ... (co-located unit tests: *.test.ts)
 ├─ tests/
 │  ├─ unit/

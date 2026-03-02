@@ -567,51 +567,60 @@ export const updateStoreStatus = async (
     storeId: string,
     status: StoreStatus
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    try {
+        // Retrieve the current user
+        const user = await currentUser();
 
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+        // Ensure user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    // Ensure user has admin privileges
-    if (user.privateMetadata.role !== "ADMIN")
-        throw new Error("Only admins can perform this action.");
+        // Ensure user has admin privileges
+        if (user.privateMetadata.role !== "ADMIN")
+            throw new Error("Only admins can perform this action.");
 
-    // Ensure the user is a seller of the specified store
-    const store = await db.store.findUnique({
-        where: {
-            id: storeId,
-        },
-    });
-
-    // Verify ownership of the store
-    if (!store) {
-        throw new Error("Store not found.");
-    }
-
-    // Retrieve the order to be updated
-    const updatedStore = await db.store.update({
-        where: {
-            id: storeId,
-        },
-        data: {
-            status,
-        },
-    });
-
-    // Update the user role
-    if (store.status === "PENDING" && updatedStore.status === "ACTIVE") {
-        await db.user.update({
+        // Ensure the user is a seller of the specified store
+        const store = await db.store.findUnique({
             where: {
-                id: updatedStore.userId,
-            },
-            data: {
-                role: "SELLER",
+                id: storeId,
             },
         });
-    }
 
-    return updatedStore.status;
+        // Verify ownership of the store
+        if (!store) {
+            throw new Error("Store not found.");
+        }
+
+        // ステータス更新とロール昇格をアトミックに実行
+        const updatedStore = await db.$transaction(async (tx) => {
+            const updated = await tx.store.update({
+                where: {
+                    id: storeId,
+                },
+                data: {
+                    status,
+                },
+            });
+
+            // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格
+            if (store.status === "PENDING" && updated.status === "ACTIVE") {
+                await tx.user.update({
+                    where: {
+                        id: updated.userId,
+                    },
+                    data: {
+                        role: "SELLER",
+                    },
+                });
+            }
+
+            return updated;
+        });
+
+        return updatedStore.status;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 };
 
 /**
