@@ -10,6 +10,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 543 unit tests across 21 suites (all passing).
+- Mock patterns:
+  - `MockPrismaClient` interface for typed Prisma mocks in store tests.
+  - `$transaction` mock: callback receives mock client for transparent
+    assertion on `tx.store.update` / `tx.user.update`.
+  - Webhook mocks: Svix `Webhook.verify`, `next/headers`, Clerk client.
 
 ## Test Layers
 - Unit: pure functions, schema validation, and query composition.
