@@ -1,97 +1,82 @@
-# マルチベンダー EC プラットフォーム — 概要
+# 概要
 
-> **関連ドキュメント**: [システムアーキテクチャ](./specs/multi-vendor-ecommerce/02-architecture.md) | [コアビジネスシステム](./specs/multi-vendor-ecommerce/05-workflows.md) | [ユーザーインターフェース](./specs/multi-vendor-ecommerce/04-interfaces.md) | [開発・インフラ](./specs/multi-vendor-ecommerce/06-quality.md)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/myoshi2891/Multi-Vendor-E-Commerce)
 
-本ドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムについての概要を提供します。このプラットフォームは、複数の独立したセラーが統一されたマーケットプレイス内でストアを運営し、顧客が 1 回のトランザクションで異なるベンダーから購入できる仕組みを実現しています。
+**関連ソースファイル**: `CLAUDE.md` / `package.json` / `src/lib/db.ts` / `src/app/layout.tsx` / `src/middleware.ts` / `specs/multi-vendor-ecommerce/04-interfaces.md`
 
----
+このドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムの概要を提供します。このプラットフォームは、複数の独立した出品者が統一されたマーケットプレイス内で店舗を運営し、顧客が異なるベンダーから一度の取引で購入できる仕組みを実現しています。
 
-## 📋 目次
+各サブシステムの詳細については以下を参照してください。
 
-- [プラットフォームの目的と機能](#プラットフォームの目的と機能)
-- [システムアーキテクチャ：3 層設計](#システムアーキテクチャ3-層設計)
-- [技術スタック](#技術スタック)
-- [コアビジネスサブシステム](#コアビジネスサブシステム)
-- [ユーザーロールとアクセス制御](#ユーザーロールとアクセス制御)
-- [データフロー：商品閲覧から注文確定まで](#データフロー商品閲覧から注文確定まで)
-- [プロジェクトディレクトリ構成](#プロジェクトディレクトリ構成)
-- [データベースアーキテクチャ：PostgreSQL × Prisma](#データベースアーキテクチャpostgresql--prisma)
-- [開発環境とワークフロー](#開発環境とワークフロー)
-- [マイグレーション履歴：MySQL → PostgreSQL](#マイグレーション履歴mysql--postgresql)
-- [AI エージェント連携と仕様駆動開発 (SDD)](#ai-エージェント連携と仕様駆動開発-sdd)
-- [関連ドキュメント](#関連ドキュメント)
+- アーキテクチャパターン → [System Architecture]
+- ドメインロジック → [Core Business Systems]
+- フロントエンドコンポーネント → [User Interfaces]
+- ツールとテスト → [Development & Infrastructure]
 
 ---
 
 ## プラットフォームの目的と機能
 
-**Next.js 14 App Router** で構築されたマルチベンダー EC マーケットプレイスで、3 つのユーザーロールをサポートします。
+Next.js 14 App Router で構築された**マルチベンダー EC マーケットプレイス**で、3 つの異なるユーザーロールをサポートします。
 
-| ロール | 機能 |
-|--------|------|
-| **USER** | 商品閲覧・カート管理・注文・レビュー投稿・ストアフォロー |
-| **SELLER** | ストア作成・管理、商品バリアント出品、配送料設定、注文処理 |
-| **ADMIN** | ストア承認、カテゴリー管理、プラットフォームコンテンツのモデレーション |
+| ロール | できること |
+|--------|-----------|
+| **USER** | 商品閲覧・カート管理・注文・レビュー投稿・ストアのフォロー |
+| **SELLER** | ストア作成・管理、バリアント付き商品の出品、配送料の設定、注文の出荷 |
+| **ADMIN** | ストアの承認・カテゴリ管理・プラットフォームコンテンツのモデレーション |
 
-### 主要機能
+**主な機能**:
 
-- **複雑な商品階層**: 商品 → バリアント（カラー/スタイル）→ サイズ（個別価格）
-- **マルチベンダー注文処理**: 1 回のチェックアウトをストアごとの注文グループに分割
-- **柔軟な配送システム**: 3 種の計算方式（個数・重量・定額）＋国別上書き設定
-- **デュアル決済ゲートウェイ**: Stripe / PayPal による国際対応
-- **リアルタイム在庫管理**: 注文時のバリデーションパイプラインと在庫更新
-- **全文商品検索**: PostgreSQL `tsvector`/`tsquery` + GIN インデックス
+- **複雑な商品階層**: 商品は複数のバリアント（カラー・スタイル）を持ち、各バリアントに独立した価格設定の複数サイズが存在
+- **マルチベンダー注文処理**: 1 回のチェックアウトがストアごとの注文グループに分割され、独立したフルフィルメントが可能
+- **柔軟な配送システム**: 3 種類の計算方法（個数ベース・重量ベース・定額）と国別上書き設定
+- **デュアル決済ゲートウェイ**: 国際対応のための Stripe と PayPal の両方に対応
+- **リアルタイム在庫管理**: 注文時のバリデーションパイプラインによる在庫の即時更新
+- **全文商品検索**: GIN インデックスを用いた PostgreSQL の `tsvector`/`tsquery` による高パフォーマンス検索
 
 ---
 
-## システムアーキテクチャ：3 層設計
+## システムアーキテクチャ: 3 層設計
 
 ```mermaid
-graph TB
-    subgraph CLIENT["クライアント層 (src/app/)"]
-        PAGES["Next.js App Router<br>Pages & Layouts"]
-        ZUSTAND["Zustand<br>カート状態 (localStorage)"]
+graph TD
+    subgraph CLIENT["🖥️ クライアントレイヤー（src/app/）"]
+        PAGES["Next.js App Router ページ & レイアウト<br>サーバー / クライアントコンポーネント"]
+        ZUSTAND["Zustand カートステート<br>（localStorage 永続化）"]
     end
 
-    subgraph SERVER["サーバーアクション層 (src/queries/)"]
-        PRODUCT["product.ts<br>商品・配送"]
-        STORE["store.ts<br>ストア管理"]
-        USER["user.ts<br>カート・注文"]
-        REVIEW["review.ts<br>レビュー"]
-        CATEGORY["category.ts<br>カテゴリー"]
+    subgraph SERVER["⚙️ サーバーアクションレイヤー（src/queries/）"]
+        PRODUCT["product.ts<br>商品 CRUD / 配送計算"]
+        STORE["store.ts<br>ストア管理 / 承認フロー"]
+        USER["user.ts<br>カート / チェックアウト / 注文"]
+        REVIEW["review.ts<br>レビュー投稿 / フィルタリング"]
+        PAYMENTS["stripe.ts / paypal.ts<br>決済処理 / Webhook"]
     end
 
-    subgraph DATA["データ層 (prisma/schema.prisma)"]
-        PG[("PostgreSQL<br>(Neon Serverless)")]
-        PRISMA["Prisma ORM<br>+ Accelerate 接続プール"]
+    subgraph DATA["🗄️ データレイヤー（prisma/schema.prisma）"]
+        PG["Neon PostgreSQL<br>（Prisma Accelerate 経由）"]
     end
 
-    subgraph EXTERNAL["外部サービス"]
-        CLERK["Clerk<br>認証"]
-        STRIPE["Stripe<br>決済"]
-        PAYPAL["PayPal<br>決済"]
-        CLOUDINARY["Cloudinary<br>メディア"]
+    subgraph EXTERNAL["🌐 外部サービス"]
+        CLERK["Clerk<br>認証・ユーザー管理"]
+        STRIPE["Stripe<br>決済処理"]
+        PAYPAL["PayPal<br>決済処理"]
+        CLOUDINARY["Cloudinary<br>メディアアップロード"]
     end
 
-    PAGES -->|"use server"| SERVER
-    PAGES <-->|状態管理| ZUSTAND
-    SERVER --> PRISMA
-    PRISMA --> PG
-    PAGES --> CLERK
-    SERVER --> STRIPE
-    SERVER --> PAYPAL
-    SERVER --> CLOUDINARY
+    CLIENT -->|"Server Actions<br>'use server'"| SERVER
+    SERVER -->|"Prisma ORM<br>コネクションプーリング"| DATA
+    CLIENT -->|"状態管理"| ZUSTAND
+    SERVER <-->|"外部 API"| EXTERNAL
 ```
 
-### アーキテクチャ層の説明
+**アーキテクチャレイヤー**:
 
-| 層 | パス | 役割 |
-|----|------|------|
-| **クライアント層** | `src/app/` | Next.js App Router のページ・レイアウト、サーバー/クライアントコンポーネント |
-| **サーバーアクション層** | `src/queries/` | `"use server"` ディレクティブによるビジネスロジック・DB直接アクセス |
-| **データ層** | `prisma/schema.prisma` | Prisma ORM 経由の PostgreSQL アクセス（接続プール付き） |
-| **外部サービス** | — | Clerk（認証）・Stripe/PayPal（決済）・Cloudinary（メディア）・Neon（DB ホスティング） |
-| **クライアント状態** | `cart-store/` | Zustand によるカート操作（localStorage に永続化） |
+1. **クライアントレイヤー**（`src/app/`）: Next.js App Router のページとレイアウト、サーバー・クライアントコンポーネント
+2. **サーバーアクションレイヤー**（`src/queries/`）: `"use server"` ディレクティブを使ったビジネスロジック・直接 DB アクセス
+3. **データレイヤー**（`prisma/schema.prisma`）: コネクションプーリング付き Prisma ORM 経由の PostgreSQL
+4. **外部サービス**: Clerk（認証）・Stripe/PayPal（決済）・Cloudinary（メディア）・Neon（DB ホスティング）
+5. **クライアントステート**: カート操作用 Zustand（localStorage に永続化）
 
 ---
 
@@ -99,62 +84,54 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph FW["フレームワーク"]
+    subgraph FRAMEWORK["🏗️ フレームワーク"]
         NEXT["Next.js 14.2.4<br>App Router / SSR"]
         REACT["React 18<br>Server Components"]
         TS["TypeScript 5<br>型安全性"]
     end
 
-    subgraph DB["データベース"]
-        PRISMA_C["@prisma/client 5.22.0<br>ORM"]
-        ACCEL["prisma/extension-accelerate<br>接続プール"]
+    subgraph DB_STACK["🗄️ データベース"]
+        PRISMA["@prisma/client 5.22.0<br>PostgreSQL ORM"]
+        ACCEL["prisma-extension-accelerate<br>コネクションプーリング"]
     end
 
-    subgraph AUTH["認証"]
-        CLERK_P["@clerk/nextjs 5.1.5"]
+    subgraph AUTH_PAY["🔐 認証 / 決済"]
+        CLERK2["@clerk/nextjs 5.1.5<br>認証・管理"]
+        STRIPE2["stripe 17.4.0<br>Stripe 決済"]
+        PP["@paypal/react-paypal-js 8.7.0<br>PayPal 統合"]
     end
 
-    subgraph PAY["決済"]
-        STRIPE_P["stripe 17.4.0"]
-        PP["@paypal/react-paypal-js 8.7.0"]
+    subgraph UI_STATE["🎨 UI / 状態管理"]
+        RADIX["@radix-ui 各種<br>アクセシブル UI 30+"]
+        TW["tailwindcss 3.4.1<br>CSS ユーティリティ"]
+        ZUS["zustand 5.0.0<br>グローバルカートステート"]
+        RHF["react-hook-form 7.51.5<br>フォーム管理"]
+        ZOD["zod 3.23.8<br>スキーマバリデーション"]
     end
 
-    subgraph UI["UI"]
-        RADIX["@radix-ui/react-*<br>アクセシブル UI"]
-        TW["tailwindcss 3.4.1"]
-        LUCIDE["lucide-react アイコン"]
-    end
-
-    subgraph STATE["状態管理・バリデーション"]
-        ZUS["zustand 5.0.0<br>カート状態"]
-        RHF["react-hook-form 7.51.5"]
-        ZOD["zod 3.23.8<br>スキーマ検証"]
-    end
-
-    subgraph TEST["テスト"]
-        PW["@playwright/test 1.57.0<br>E2E"]
-        JEST["jest 30.0.5<br>Unit"]
+    subgraph TESTING["🧪 テスト / ランタイム"]
+        PW["@playwright/test 1.57.0<br>E2E テスト"]
+        JEST["jest 30.0.5<br>ユニットテスト"]
+        BUN["Bun 1.3.5<br>パッケージマネージャー"]
     end
 ```
 
-### 依存関係一覧
-
 | カテゴリ | パッケージ | バージョン | 用途 |
-|----------|-----------|-----------|------|
+|---------|-----------|-----------|------|
 | **フレームワーク** | `next` | 14.2.4 | App Router・SSR・ルーティング |
 | | `react` | 18 | UI ライブラリ・Server Components |
 | | `typescript` | 5 | 型安全性 |
 | **データベース** | `@prisma/client` | 5.22.0 | PostgreSQL 用 ORM |
-| | `@prisma/extension-accelerate` | 1.2.0 | 接続プール |
+| | `@prisma/extension-accelerate` | 1.2.0 | コネクションプーリング |
 | **認証** | `@clerk/nextjs` | 5.1.5 | ユーザー認証・管理 |
 | **決済** | `stripe` | 17.4.0 | Stripe 決済処理 |
-| | `@paypal/react-paypal-js` | 8.7.0 | PayPal 連携 |
+| | `@paypal/react-paypal-js` | 8.7.0 | PayPal 統合 |
 | **メディア** | `next-cloudinary` | 6.6.2 | Cloudinary 画像アップロード |
-| **UI コンポーネント** | `@radix-ui/react-*` | 各種 | アクセシブル UI プリミティブ（30+ パッケージ） |
-| | `tailwindcss` | 3.4.1 | CSS ユーティリティ |
+| **UI コンポーネント** | `@radix-ui/react-*` | 各種 | アクセシブル UI プリミティブ（30+） |
+| | `tailwindcss` | 3.4.1 | CSS ユーティリティフレームワーク |
 | | `lucide-react` | 0.394.0 | アイコンライブラリ |
-| **状態管理** | `zustand` | 5.0.0 | グローバルカート状態 |
-| | `react-hook-form` | 7.51.5 | フォーム処理 |
+| **状態管理** | `zustand` | 5.0.0 | グローバルカートステート |
+| | `react-hook-form` | 7.51.5 | フォーム管理 |
 | | `zod` | 3.23.8 | スキーマバリデーション |
 | **テスト** | `@playwright/test` | 1.57.0 | E2E テスト |
 | | `jest` | 30.0.5 | ユニットテスト |
@@ -164,63 +141,64 @@ graph LR
 
 ## コアビジネスサブシステム
 
-`src/queries/` 配下にサーバーアクションとして実装された 5 つの主要ドメインサブシステムです。
+プラットフォームは `src/queries/` にサーバーアクションとして実装された **5 つの主要ドメインサブシステム**で構成されています。
 
 ```mermaid
 graph TD
-    subgraph SUBSYSTEMS["コアサブシステム (src/queries/)"]
-        P["⭐ product.ts<br>重要度: 154.75<br>商品管理・配送計算"]
-        S["store.ts<br>重要度: 38.63<br>ストア管理・承認ワークフロー"]
-        U["user.ts<br>重要度: 32.60<br>カート・チェックアウト・注文"]
-        R["review.ts<br>レビュー・評価集計"]
-        O["stripe.ts / paypal.ts<br>注文・決済処理"]
+    subgraph SYSTEMS["🏢 コアビジネスサブシステム"]
+        P["⭐ product.ts<br>商品管理システム<br>重要度: 154.75"]
+        S["store.ts<br>ストア管理システム<br>重要度: 38.63"]
+        U["user.ts<br>ユーザー & カートシステム<br>重要度: 32.60"]
+        R["review.ts<br>レビュー & 評価システム"]
+        PAY["stripe.ts / paypal.ts<br>注文 & 決済処理"]
     end
 
-    P -->|配送費計算| U
-    S -->|ストア承認| O
-    U -->|注文作成| O
-    O -->|レビュー許可| R
+    P -->|"商品階層<br>Product → Variant → Size"| DB2[("PostgreSQL")]
+    S -->|"ストアライフサイクル<br>PENDING → ACTIVE → BANNED"| DB2
+    U -->|"カートバリデーション<br>注文作成"| DB2
+    R -->|"レビュー投稿<br>評価集計"| DB2
+    PAY -->|"Webhook<br>在庫更新"| DB2
 ```
 
 ### 1. 商品管理システム（`product.ts`）
 
-> **重要度: 154.75**（最重要サブシステム）
+**重要度: 154.75**（最も重要なサブシステム）
 
-- **商品階層**: `Product` → `ProductVariant`（カラー/スタイル）→ `Size`（価格・在庫）
-- **主要関数**: `getProducts()` / `getProductPageData()` / `upsertProduct()` / `deleteProduct()`
-- **配送計算**: `getShippingDetails()` — 3 方式（ITEM / WEIGHT / FIXED）
+- **商品階層**: `Product` → `ProductVariant`（カラー・スタイル）→ `Size`（価格・在庫）
+- **主要関数**: `getProducts()`, `getProductPageData()`, `upsertProduct()`, `deleteProduct()`
+- **配送計算機**: `getShippingDetails()`（3 メソッド: ITEM / WEIGHT / FIXED）
 - **検索統合**: PostgreSQL `tsvector` インデックスによる全文検索
 
 ### 2. ストア管理システム（`store.ts`）
 
-> **重要度: 38.63**（マルチベンダーのコア）
+**重要度: 38.63**（マルチベンダーのコア）
 
 - **ストアライフサイクル**: PENDING → ACTIVE → BANNED（管理者承認が必要）
-- **配送設定**: デフォルトレート ＋ 国別 `ShippingRate` 上書き
-- **主要関数**: `upsertStore()` / `updateStoreStatus()` / `getStoreData()`
-- **ロール昇格**: ストア承認時に USER → SELLER へ昇格
+- **配送設定**: デフォルトレート + 国別の `ShippingRate` 上書き設定
+- **主要関数**: `upsertStore()`, `updateStoreStatus()`, `getStoreData()`
+- **ロール昇格**: ストア承認時に USER → SELLER に昇格
 
 ### 3. ユーザー & カートシステム（`user.ts`）
 
-> **重要度: 32.60**（チェックアウトのオーケストレーション）
+**重要度: 32.60**（チェックアウトのオーケストレーション）
 
-- **カートバリデーションパイプライン**: `saveUserCart()` がサーバー側で価格・在庫・配送を再検証
-- **注文処理**: `placeOrder()` が `Order` → `OrderGroup`（ストアごと）→ `OrderItem` を生成
+- **カートバリデーションパイプライン**: `saveUserCart()` がサーバーサイドで価格・在庫・配送を検証
+- **注文作成**: `placeOrder()` が `Order` → `OrderGroup`（ストアごと）→ `OrderItem` を生成
 - **住所管理**: ユーザーごとに複数の配送先住所
-- **主要関数**: `updateUserInfo()` / `updateCheckoutProductWithLatest()` / `getUserCart()`
+- **主要関数**: `updateUserInfo()`, `updateCheckoutProductWithLatest()`, `getUserCart()`
 
 ### 4. レビュー & 評価システム（`review.ts`）
 
-- **レビュー投稿**: Cloudinary 画像アップロード付き `upsertReview()`
-- **評価集計**: レビューごとに `Product.rating` と `numReviews` を更新
-- **フィルタリング**: `getProductFilteredReviews()` — 星評価・画像有無・並び順
-- **詳細コンテキスト**: バリアント・サイズ・購入数量を記録
+- **レビュー投稿**: Cloudinary 画像アップロード付きの `upsertReview()`
+- **評価の集計**: レビューごとに `Product.rating` と `numReviews` を更新
+- **フィルタリング**: 星評価・画像有無・ソート順での `getProductFilteredReviews()`
+- **詳細なコンテキスト**: バリアント・サイズ・購入数量を記録
 
-### 5. 注文 & 決済処理（`stripe.ts` / `paypal.ts`）
+### 5. 注文 & 決済処理（`stripe.ts`, `paypal.ts`）
 
 - **決済ゲートウェイ**: Stripe と PayPal のデュアル統合
-- **注文分解**: 顧客の 1 件の注文をストアレベルの `OrderGroup` に分割
-- **在庫更新**: 決済成功時に在庫をアトミックにデクリメント
+- **注文の分解**: 顧客の 1 つの注文がストールレベルの `OrderGroup` に分割
+- **在庫更新**: 決済成功時に在庫をアトミックに減算
 - **Webhook 処理**: `POST /api/webhooks` で決済確認を処理
 
 ---
@@ -228,114 +206,114 @@ graph TD
 ## ユーザーロールとアクセス制御
 
 ```mermaid
-stateDiagram-v2
-    [*] --> USER: サインアップ
-    USER --> SELLER: ストア申請 → 管理者承認
-    SELLER --> USER: ストア停止
+flowchart TD
+    subgraph ROLES["👤 ロール階層"]
+        USER_R["USER<br>（デフォルト）"]
+        SELLER_R["SELLER<br>（ストア承認後）"]
+        ADMIN_R["ADMIN<br>（プラットフォームオーナー）"]
+    end
 
-    state USER {
-        u1: / ホームページ
-        u2: /browse 商品一覧
-        u3: /product/* 商品詳細
-        u4: /checkout チェックアウト
-        u5: /profile/* プロフィール
-    }
+    subgraph LIFECYCLE["🏪 ストアライフサイクル"]
+        APPLY["USER がストア申請"]
+        PENDING["Store: PENDING"]
+        APPROVE["ADMIN が承認"]
+        ACTIVE["Store: ACTIVE<br>User: SELLER に昇格"]
+        BANNED["Store: BANNED<br>（違反時）"]
+    end
 
-    state SELLER {
-        s1: /dashboard/seller/* セラーダッシュボード
-        s2: 商品・在庫管理
-        s3: 配送設定
-        s4: 注文処理
-    }
+    subgraph ROUTES["🔒 保護ルート"]
+        PUBLIC["パブリック<br>/ , /browse, /product/*"]
+        PROTECTED["要認証<br>/checkout, /profile/*"]
+        SELLER_R2["SELLER のみ<br>/dashboard/seller/*"]
+        ADMIN_R2["ADMIN のみ<br>/dashboard/admin/*"]
+    end
 
-    state ADMIN {
-        a1: /dashboard/admin/* 管理画面
-        a2: ストア承認・停止
-        a3: カテゴリー管理
-    }
+    USER_R -->|"申請"| APPLY
+    APPLY --> PENDING
+    PENDING -->|"承認"| APPROVE
+    APPROVE --> ACTIVE
+    ACTIVE -->|"違反"| BANNED
+    ACTIVE -->|"updateStoreStatus()"| SELLER_R
 
-    note right of ADMIN : プラットフォームオーナーが\n直接割り当てる帯域外ロール
+    USER_R --> PUBLIC
+    USER_R --> PROTECTED
+    SELLER_R --> SELLER_R2
+    ADMIN_R --> ADMIN_R2
+
+    MW["src/middleware.ts<br>Clerk 認証ミドルウェア"]
+    MW -->|"保護"| PROTECTED
+    MW -->|"保護"| SELLER_R2
+    MW -->|"保護"| ADMIN_R2
 ```
 
-| ロール | アクセスレベル | 主要ルート | サーバーアクション |
-|--------|--------------|-----------|------------------|
-| **USER** | デフォルト | `/`, `/browse`, `/product/*`, `/checkout`, `/profile/*` | 注文・レビュー・カート管理 |
-| **SELLER** | ストア承認後 | `/dashboard/seller/*` | 商品作成・在庫管理・配送設定・注文処理 |
-| **ADMIN** | プラットフォームオーナー | `/dashboard/admin/*` | ストア承認・カテゴリー管理・コンテンツモデレーション |
+| ロール | アクセスレベル | 主なルート | サーバーアクション |
+|--------|-------------|-----------|----------------|
+| **USER** | デフォルト | `/`, `/browse`, `/product/*`, `/checkout`, `/profile/*` | 注文・レビュー投稿・カート管理 |
+| **SELLER** | ストア承認後 | `/dashboard/seller/*`, `/dashboard/seller/stores/[storeUrl]/*` | 商品作成・在庫管理・配送設定・注文対応 |
+| **ADMIN** | プラットフォームオーナー | `/dashboard/admin/*` | ストア承認・カテゴリ管理・コンテンツモデレーション |
 
-### アクセス制御の実装
+**アクセス制御の実装**:
 
 - **ミドルウェア**: `src/middleware.ts` が `/dashboard/*`・`/checkout`・`/profile/*` を保護
 - **サーバーアクション**: Clerk の `currentUser()` で ID とロールを検証
 - **ロール昇格**: `src/queries/store.ts` の `updateStoreStatus()` が USER → SELLER に昇格
 
-### ストアのライフサイクル
-
-```mermaid
-flowchart LR
-    A["USER<br>申請"] -->|ストア作成| B["Store: PENDING"]
-    B -->|管理者承認| C["Store: ACTIVE<br>User: SELLER"]
-    C -->|規約違反| D["Store: BANNED"]
-    D -->|再審査| B
-```
-
 ---
 
-## データフロー：商品閲覧から注文確定まで
+## データフロー: 商品閲覧から注文完了まで
 
 ```mermaid
 sequenceDiagram
-    actor User as ユーザー
-    participant Client as クライアント<br>(Zustand)
-    participant SA as サーバーアクション<br>(src/queries/)
-    participant DB as PostgreSQL<br>(Neon)
-    participant Payment as 決済<br>(Stripe/PayPal)
+    actor C as 顧客
+    participant UI as クライアント UI<br/>（Zustand）
+    participant SA as サーバーアクション<br/>（src/queries/）
+    participant DB as PostgreSQL<br/>（Prisma）
+    participant PAY as Stripe / PayPal
 
-    User->>Client: 商品をカートに追加
-    Client->>Client: Zustand 状態更新<br>(localStorage 保存)
+    C->>UI: 商品をカートに追加
+    UI->>UI: カートを更新<br/>（localStorage に保存）
 
-    User->>SA: チェックアウトへ進む
-    SA->>DB: saveUserCart()<br>価格・在庫・配送を再検証
-    DB-->>SA: 最新データ返却
-    SA-->>Client: バリデーション結果
+    C->>SA: チェックアウトに進む<br/>saveUserCart()
+    SA->>DB: 価格・在庫・配送を再計算
+    DB-->>SA: 最新データを返す
+    SA-->>UI: バリデーション済みカートを返す
 
-    User->>SA: 国を選択
-    SA->>DB: updateCheckoutProductWithLatest()<br>配送費を再計算
-    DB-->>SA: 国別配送費
-    SA-->>Client: 更新された合計金額
+    C->>SA: 配送先国を選択<br/>updateCheckoutProductWithLatest()
+    SA->>DB: 国別配送料を再計算
+    DB-->>SA: 配送料を返す
+    SA-->>UI: 更新済みチェックアウトを返す
 
-    User->>SA: 注文確定
-    SA->>DB: placeOrder()<br>Order / OrderGroup / OrderItem 生成<br>在庫アトミック更新
-    DB-->>SA: 注文 ID
+    C->>SA: 注文を確定<br/>placeOrder()
+    SA->>DB: Order / OrderGroup / OrderItem をアトミックに作成
+    DB-->>SA: 注文 ID を返す
+    SA-->>PAY: 決済セッションを作成
 
-    SA->>Payment: 決済セッション作成
-    Payment-->>User: 決済フォーム表示
-    User->>Payment: 決済情報入力・確定
-    Payment->>SA: POST /api/webhooks
-    SA->>DB: 注文ステータス更新
+    PAY-->>C: 決済フォームを表示
+    C->>PAY: 決済情報を入力・送信
+    PAY->>SA: Webhook<br/>POST /api/webhooks
+    SA->>DB: 注文ステータスを更新<br/>在庫を減算
+    SA-->>C: 注文確認
 ```
 
-### 主要バリデーションポイント
+**主なバリデーションポイント**:
 
-| ステップ | 処理 | 目的 |
-|----------|------|------|
-| ① クライアント側カート（Zustand） | 高速な UI 更新 | localStorage に永続化 |
-| ② サーバー側バリデーション（`saveUserCart`） | DB から価格・在庫・配送を再計算 | 不正操作の防止 |
-| ③ チェックアウト更新（`updateCheckoutProductWithLatest`） | 選択国の配送費を再計算 | 正確な配送費表示 |
-| ④ 注文確定（`placeOrder`） | アトミックトランザクション ＋ 在庫更新 | 整合性の保証 |
-| ⑤ 決済 Webhook | 確認後に注文ステータス更新 | 決済の信頼性確保 |
+1. **クライアントサイドカート**（Zustand）: 高速な UI 更新・localStorage 永続化
+2. **サーバーサイドバリデーション**（`saveUserCart`）: データベースから価格・在庫・配送を再計算
+3. **チェックアウト更新**（`updateCheckoutProductWithLatest`）: 選択した国の配送料を再計算
+4. **注文作成**（`placeOrder`）: 在庫更新を含むアトミックトランザクション
+5. **決済 Webhook**: 確認済み決済で注文ステータスを更新
 
 ---
 
-## プロジェクトディレクトリ構成
+## プロジェクトのディレクトリ構成
 
 ```
 Multi-Vendor-E-Commerce/
 ├── src/
 │   ├── app/                          # Next.js App Router ページ
-│   │   ├── (store)/                  # 顧客向けページ（パブリック）
+│   │   ├── (store)/                  # カスタマー向けページ（公開）
 │   │   │   ├── page.tsx              # ホームページ
-│   │   │   ├── browse/               # 商品一覧
+│   │   │   ├── browse/               # 商品閲覧
 │   │   │   ├── product/[slug]/       # 商品詳細ページ
 │   │   │   ├── cart/                 # ショッピングカート
 │   │   │   ├── checkout/             # チェックアウトフロー（要認証）
@@ -344,25 +322,25 @@ Multi-Vendor-E-Commerce/
 │   │   │   ├── sign-in/
 │   │   │   └── sign-up/
 │   │   ├── dashboard/                # 保護されたダッシュボード
-│   │   │   ├── admin/                # 管理者ページ（ADMIN ロール専用）
-│   │   │   └── seller/               # セラーページ（SELLER ロール専用）
+│   │   │   ├── admin/                # 管理者ページ（ADMIN ロールのみ）
+│   │   │   └── seller/               # 出品者ページ（SELLER ロールのみ）
 │   │   ├── api/                      # API ルート
-│   │   │   ├── webhooks/             # Clerk/Stripe Webhook
+│   │   │   ├── webhooks/             # Clerk / Stripe Webhook
 │   │   │   └── search-products/      # 検索エンドポイント
-│   │   └── layout.tsx                # ルートレイアウト（プロバイダー含む）
+│   │   └── layout.tsx                # プロバイダー付きルートレイアウト
 │   ├── queries/                      # サーバーアクション（ビジネスロジック）
 │   │   ├── product.ts                # ⭐ 商品 CRUD・配送計算
-│   │   ├── store.ts                  # ストア管理・承認ワークフロー
-│   │   ├── user.ts                   # カート・チェックアウト・注文
+│   │   ├── store.ts                  # ストア管理・承認フロー
+│   │   ├── user.ts                   # カート・チェックアウト・注文作成
 │   │   ├── review.ts                 # レビュー投稿・フィルタリング
-│   │   ├── category.ts               # カテゴリー管理
+│   │   ├── category.ts               # カテゴリ管理
 │   │   └── coupon.ts                 # クーポンバリデーション
 │   ├── components/                   # React コンポーネント
 │   │   ├── ui/                       # shadcn/ui プリミティブ
-│   │   ├── store/                    # 顧客向けコンポーネント
+│   │   ├── store/                    # カスタマー向けコンポーネント
 │   │   ├── dashboard/                # ダッシュボード専用コンポーネント
-│   │   └── shared/                   # 全体共有コンポーネント
-│   ├── cart-store/                   # Zustand カート状態
+│   │   └── shared/                   # アプリ全体で共有
+│   ├── cart-store/                   # Zustand カートステート
 │   │   └── cart-store.ts
 │   ├── lib/                          # ユーティリティと設定
 │   │   ├── db.ts                     # Prisma クライアントシングルトン
@@ -372,16 +350,11 @@ Multi-Vendor-E-Commerce/
 │   └── middleware.ts                 # Clerk 認証ミドルウェア
 ├── prisma/
 │   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
-│   └── migrations/                   # データベースマイグレーション履歴
-├── specs/                            # 📄 SDD 仕様書・アーティファクト（要件、Acc Criteria、設計ドキュメント）を格納。AIと人間が実装やテストを駆動させる共有設計図です（詳細は「AI エージェント連携と仕様駆動開発 (SDD)」参照）
+│   └── migrations/                   # マイグレーション履歴
 ├── tests/
 │   └── e2e/                          # Playwright E2E テスト
 │       ├── seed/seed-e2e.ts          # テストデータシード
-│       └── cart-smoke.spec.ts        # E2E テストスペック例
-├── .agent/                           # 🤖 Google Antigravity ルール設定
-├── .claude/                          # 🤖 Claude Code Steering ファイル
-├── CLAUDE.md                         # Claude Code グローバルプロンプト
-├── GEMINI.md                         # Antigravity グローバルプロンプト
+│       └── cart-smoke.spec.ts        # テストスペックの例
 ├── public/                           # 静的アセット
 ├── package.json                      # 依存関係とスクリプト
 ├── next.config.mjs                   # Next.js 設定
@@ -390,37 +363,16 @@ Multi-Vendor-E-Commerce/
 └── playwright.config.ts              # Playwright E2E テスト設定
 ```
 
-### 主要な設計上の決定事項
+**主な設計上の決定事項**:
 
-- **`src/actions/` ディレクトリなし**: すべてのサーバーアクションは `"use server"` ディレクティブ付きで `src/queries/` に配置
-- **クエリのコロケーション**: CRUD 操作とデータフェッチをドメインごとに同一ファイルで管理
+- **`src/actions/` ディレクトリなし**: 全サーバーアクションは `"use server"` ディレクティブを付けて `src/queries/` に配置
+- **クエリのコロケーション**: ドメインごとに同一ファイルに CRUD と データ取得を配置
 - **パスエイリアス**: `@/*` → `src/*`、`@/store` → `src/components/store`
-- **保護されたルート**: ルートレベルのミドルウェアで `/dashboard/*`・`/checkout`・`/profile/*` を制御
+- **保護ルート**: ルートレベルのミドルウェアが `/dashboard/*`・`/checkout`・`/profile/*` へのアクセスを制御
 
 ---
 
-## AI エージェント連携と仕様駆動開発 (SDD)
-
-当プロジェクトは、Claude Code と Google Antigravity（Gemini IDE）を活用した **AI 仕様駆動開発（Spec-Driven Development: SDD）** を導入しています。AI エージェントは直接コードを書き始めるのではなく、まず仕様書を読み込み、レビュー後に実装を行います。
-
-### AI 設定ファイル群
-
-- `CLAUDE.md` / `.claude/` — Claude Code 用のコンテキストと Steering ファイル（プロダクトビジョン・技術制約）
-- `GEMINI.md` / `.agent/rules/` — Google Antigravity 用のグローバル永続メモリとバックグラウンドルール
-- `specs/README.md` — 仕様駆動開発のワークフロー詳細
-
-### SDD 実装フロー
-
-1. コード実装前に必ず `specs/multi-vendor-ecommerce/` 以下の該当仕様書を確認する
-2. 仕様の変更・追加がある場合は、先に `specs/` 内の Markdown ファイルを更新する
-3. AI が **実装計画（Implementation Plan）** を作成し、開発者がレビュー・承認する
-4. 実装完了後、仕様書との乖離がないか検証する
-
----
-
-## データベースアーキテクチャ：PostgreSQL × Prisma
-
-**Neon サーバーレス PostgreSQL** ＋ **Prisma Accelerate**（接続プール）を採用。MySQL 9 からのマイグレーション済み（詳細は [データベースマイグレーション](./docs/migration) を参照）。
+## データベースアーキテクチャ: PostgreSQL with Prisma
 
 ```mermaid
 erDiagram
@@ -436,65 +388,58 @@ erDiagram
     Product ||--o{ Specification : "1:N"
 
     ProductVariant ||--o{ Size : "1:N"
+    ProductVariant ||--o{ CartItem : "1:N"
 
     Cart ||--o{ CartItem : "1:N"
-    CartItem }o--|| ProductVariant : "参照"
 
     Order ||--o{ OrderGroup : "1:N"
     OrderGroup ||--o{ OrderItem : "1:N"
 
     User {
-        string id PK
-        string role
+        string id
         string clerkId
+        string role
     }
     Store {
-        string id PK
-        string status "PENDING|ACTIVE|BANNED"
+        string id
+        string status
         string url
     }
     Product {
-        string id PK
-        float rating
+        string id
+        string slug
         tsvector searchVector
+        float rating
     }
     ProductVariant {
-        string id PK
+        string id
         string color
         string style
     }
     Size {
-        string id PK
+        string id
         float price
         int stock
     }
     Order {
-        string id PK
+        string id
         string status
     }
     OrderGroup {
-        string id PK
-        string storeId FK
-    }
-    OrderItem {
-        string id PK
-        int quantity
-        float price
+        string id
+        string storeId
     }
 ```
 
-### 重要な設計ポイント
+**重要な設計ポイント**:
 
-- **Size レベルの価格設定**: `ProductVariant` 内の各 `Size` が独立した価格・在庫を持つ
-- **マルチストア注文**: `Order` がストアごとの `OrderGroup` に分解され、独立した処理が可能
-- **全文検索**: `Product` テーブルの `tsvector` カラム ＋ GIN インデックス
-- **デュアル接続 URL**: `DATABASE_URL`（Accelerate 経由・アプリ用）と `DIRECT_URL`（CLI 操作用）
+- **Size レベルでの価格管理**: `ProductVariant` 内の各 `Size` が独立した価格と在庫を持つ
+- **マルチストア注文**: `Order` がストアごとの `OrderGroup` に分解され、独立したフルフィルメントが可能
+- **全文検索**: `Product` の `tsvector` カラムと GIN インデックスによる高パフォーマンス検索
+- **デュアル接続 URL**: アプリ用の `DATABASE_URL`（Accelerate 経由）と CLI 操作用の `DIRECT_URL`
 
-```ts
+```typescript
 // src/lib/db.ts
-// Prisma Accelerate（接続プールとエッジ・ランタイム互換性）を有効化します。
-// $extends(withAccelerate()) を呼び出すことで、ベースとなる PrismaClient に
-// アクセラレート機能（ミドルウェア・振る舞い）を拡張・適用させます。
 const createPrismaClient = () =>
   new PrismaClient().$extends(withAccelerate());
 ```
@@ -505,14 +450,11 @@ const createPrismaClient = () =>
 
 ### 前提条件
 
-- **Bun**（ランタイム & パッケージマネージャー。npm の代替）
-- **PostgreSQL** データベース（Neon ホスト または ローカル）
+- **Bun**（ランタイムおよびパッケージマネージャー、npm の代替）
+- **PostgreSQL** データベース（Neon ホステッドまたはローカル）
 - **Clerk** アカウント（認証）
 - **Stripe / PayPal** アカウント（決済処理）
 - **Cloudinary** アカウント（メディアアップロード）
-
-#### 🚨 決済のセキュリティと Webhook の設定
-Stripe などの決済結果を受け取るには `POST /api/webhooks` エンドポイントが使われます。不正なリクエストによって注文ステータスが改ざんされるリスクを防ぐため、**必ず Webhook の署名検証** を行う必要があります。このため、ローカル開発・本番環境ともに `STRIPE_WEBHOOK_SECRET` を `.env` に設定して通信の真正性を検証してください。
 
 ### 必要な環境変数
 
@@ -524,25 +466,20 @@ CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                  # Clerk Webhook 署名
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=
-STRIPE_WEBHOOK_SECRET=           # Stripe Webhook 署名検証シークレット
 PAYPAL_SECRET=
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=   # Cloudinary クラウド名
-NEXT_PUBLIC_CLOUDINARY_PRESET_NAME=  # Cloudinary アップロードプリセット名
-CLOUDINARY_API_KEY=                  # Cloudinary API キー
-CLOUDINARY_API_SECRET=               # Cloudinary API シークレット
 ```
 
-### よく使う開発コマンド
+### 主な開発コマンド
 
-| コマンド | 目的 |
-|----------|------|
-| `bun run dev` | `http://localhost:3000` で Next.js 開発サーバーを起動 |
+| コマンド | 用途 |
+|---------|------|
+| `bun run dev` | http://localhost:3000 で Next.js 開発サーバーを起動 |
 | `bun run build` | プロダクションビルド |
 | `bun run lint` | ESLint チェック |
 | `bunx prettier --write <file>` | コードフォーマット |
-| `bunx prisma generate` | Prisma クライアントの再生成 |
-| `bunx prisma migrate dev` | マイグレーション適用（`db push` より推奨） |
+| `bunx prisma generate` | Prisma クライアントを再生成 |
+| `bunx prisma migrate dev` | マイグレーションを適用（`db push` ではなくこちらを使用） |
 | `bunx prisma studio` | データベースブラウザを開く |
 | `bun run test` | Jest ユニットテストを実行 |
 | `bun run test:watch` | Jest ウォッチモード |
@@ -552,75 +489,82 @@ CLOUDINARY_API_SECRET=               # Cloudinary API シークレット
 ### テスト戦略
 
 ```mermaid
-graph LR
-    subgraph UNIT["ユニットテスト (Jest)"]
+flowchart LR
+    subgraph UNIT["🧪 ユニットテスト（Jest）"]
         J1["src/queries/*.test.ts"]
     end
 
-    subgraph E2E["E2E テスト (Playwright)"]
-        P1["Chromium"]
-        P2["Firefox"]
-        P3["WebKit"]
+    subgraph E2E["🌐 E2E テスト（Playwright）"]
+        PW1["Chromium"]
+        PW2["Firefox"]
+        PW3["WebKit"]
     end
 
-    subgraph ISOLATION["テスト分離"]
-        I1["ワーカーごとに一意のシードデータ<br>e2e-seller+chromium-w0@example.com"]
-        I2["完全なデータ分離<br>で並列実行が可能"]
+    subgraph ISOLATION["🔒 テスト分離"]
+        SEED["各 Playwright ワーカーに<br>ユニークなシードデータ<br>e2e-seller+chromium-w0@example.com"]
+        PARALLEL["完全なデータ分離<br>→ 並列実行が可能"]
     end
 
-    UNIT --> ISOLATION
-    E2E --> ISOLATION
+    UNIT --> J1
+    E2E --> PW1
+    E2E --> PW2
+    E2E --> PW3
+    PW1 --> ISOLATION
+    PW2 --> ISOLATION
+    PW3 --> ISOLATION
+    SEED --> PARALLEL
 ```
-
-- **ユニットテスト**: Jest で `src/queries/*.test.ts` をテスト
-- **E2E テスト**: Playwright で 3 ブラウザ（Chromium・Firefox・WebKit）
-- **テスト分離**: Playwright ワーカーごとに一意のシードデータ
-- **並列実行**: 完全なデータ分離により並列テストが可能
 
 ---
 
-## マイグレーション履歴：MySQL → PostgreSQL
-
-`pgloader` を使用して **MySQL 9** から **Neon PostgreSQL** へ移行。
+## マイグレーション履歴: MySQL から PostgreSQL へ
 
 ```mermaid
 flowchart LR
-    subgraph OLD["移行前 (MySQL 9)"]
-        M1["MATCH ... AGAINST<br>全文検索"]
-        M2["RAND()<br>ランダム"]
-        M3["大文字小文字区別なし<br>デフォルト"]
+    subgraph BEFORE["🔴 移行前（MySQL 9）"]
+        M1["全文検索<br>MATCH ... AGAINST"]
+        M2["ランダム関数<br>RAND()"]
+        M3["大文字小文字<br>区別あり"]
         M4["単一接続 URL"]
     end
 
-    subgraph NEW["移行後 (PostgreSQL)"]
-        N1["tsvector / tsquery<br>+ GIN インデックス"]
-        N2["RANDOM()"]
-        N3["mode: insensitive<br>を contains に追加"]
-        N4["DATABASE_URL + DIRECT_URL<br>デュアル接続"]
+    subgraph TOOL["🔧 移行ツール"]
+        PGL["pgloader"]
     end
 
-    M1 -->|pgloader| N1
-    M2 -->|pgloader| N2
-    M3 -->|pgloader| N3
-    M4 -->|pgloader| N4
+    subgraph AFTER["🟢 移行後（Neon PostgreSQL）"]
+        A1["全文検索<br>tsvector / tsquery + GIN インデックス"]
+        A2["ランダム関数<br>RANDOM()"]
+        A3["大文字小文字<br>mode: 'insensitive' を追加"]
+        A4["デュアル接続 URL<br>DATABASE_URL（Accelerate）<br>DIRECT_URL（CLI）"]
+    end
+
+    BEFORE --> TOOL --> AFTER
 ```
+
+プラットフォームは最近 `pgloader` を使用して **MySQL 9** から **Neon PostgreSQL** に移行しました。主な変更点:
+
+- **全文検索**: `MATCH ... AGAINST` → GIN インデックス付きの `tsvector`/`tsquery`
+- **ランダム関数**: `RAND()` → `RANDOM()`
+- **大文字小文字の扱い**: `contains` フィルターに `mode: "insensitive"` を追加
+- **接続アーキテクチャ**: Prisma Accelerate を使用したデュアル URL 構成
 
 ---
 
 ## 関連ドキュメント
 
-| ドキュメント | 内容 |
-|------------|------|
-| [システムアーキテクチャ](./specs/multi-vendor-ecommerce/02-architecture.md) | アーキテクチャパターンの詳細 |
-| [要件定義](./specs/multi-vendor-ecommerce/01-requirements.md) | プラットフォーム要件の詳細 |
-| [データモデル](./specs/multi-vendor-ecommerce/03-data-model.md) | データベーススキーマの詳細 |
-| [インターフェース](./specs/multi-vendor-ecommerce/04-interfaces.md) | UI・API インターフェースの詳細 |
-| [ワークフロー](./specs/multi-vendor-ecommerce/05-workflows.md) | ビジネスワークフローの詳細 |
-| [品質基準](./specs/multi-vendor-ecommerce/06-quality.md) | 品質・非機能要件の詳細 |
-| [テストインフラ](./specs/multi-vendor-ecommerce/07-testing.md) | テスト設定の詳細 |
-| [未解決事項](./specs/multi-vendor-ecommerce/08-open-questions.md) | 未解決の設計課題 |
-| [データベースマイグレーション](./docs/migration) | MySQL → PostgreSQL 移行の詳細 |
+このプラットフォームの特定の側面については、以下の詳細ドキュメントを参照してください。
+
+- **アーキテクチャパターン** → [System Architecture]
+- **商品システムの詳細** → [Product Management System]
+- **マルチベンダー機能** → [Store Management System]
+- **チェックアウトと注文** → [User Management & Cart System]・[Order & Payment Processing]
+- **データベーススキーマ** → [Database Schema & Prisma]
+- **配送計算** → [Shipping System]
+- **認証フロー** → [Authentication & Authorization]
+- **テスト戦略** → [Testing Infrastructure]
+- **外部連携** → [External Service Integrations]
 
 ---
 
-> **ドキュメントバージョン**: Next.js 14.2.4・Prisma 5.22.0・PostgreSQL マイグレーション完了時点の初版
+**ドキュメントバージョン**: Next.js 14.2.4・Prisma 5.22.0・PostgreSQL 移行完了時点のプラットフォームアーキテクチャを記載した初版
