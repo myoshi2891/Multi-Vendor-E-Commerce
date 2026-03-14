@@ -41,6 +41,7 @@ type SeedReview = {
 ## 利用可能なデータ
 
 ### レビュアー（SEED_USERS の USER ロール、5名）
+
 ```typescript
 // prisma/seed/constants/users.ts より
 const reviewerEmails = [
@@ -248,6 +249,7 @@ export const SEED_REVIEWS: SeedReview[] = [
 - 人気商品（バッグ、コート、ジュエリー）には5件レビューを割り当てる
 
 上記の要件を満たす `prisma/seed/constants/reviews.ts` ファイルの内容を生成してください。
+
 ```
 
 ---
@@ -259,6 +261,7 @@ export const SEED_REVIEWS: SeedReview[] = [
 #### 対象ファイル: `prisma/seed/constants/coupons.ts`
 
 ```
+
 マルチベンダーEコマースプロジェクトのクーポンダミーデータを生成してください。
 
 ## 要件
@@ -282,6 +285,7 @@ type SeedCoupon = {
 ```
 
 ## 店舗リスト
+
 ```typescript
 const storeUrls = [
   "lux-noir-elegance",
@@ -312,6 +316,7 @@ export const SEED_COUPONS: SeedCoupon[] = [
 ```
 
 上記の要件を満たす `prisma/seed/constants/coupons.ts` ファイルの内容を生成してください。
+
 ```
 
 ---
@@ -321,6 +326,7 @@ export const SEED_COUPONS: SeedCoupon[] = [
 #### 対象ファイル: `prisma/seed/constants/shipping.ts`
 
 ```
+
 マルチベンダーEコマースプロジェクトの配送先住所ダミーデータを生成してください。
 
 ## 要件
@@ -351,6 +357,7 @@ type SeedShippingAddress = {
 ## 利用可能なデータ
 
 ### 顧客ユーザー（5名）
+
 ```typescript
 const userEmails = [
   "lux-seed-user-yuki@example.com",     // Yuki Tanaka (日本)
@@ -362,6 +369,7 @@ const userEmails = [
 ```
 
 ### 国コード（SEED_COUNTRIES より）
+
 ```typescript
 const countryCodes = ["JP", "US", "FR", "IT", "GB", "DE", "KR", "CN", "AU", "CA"];
 ```
@@ -391,6 +399,7 @@ export const SEED_SHIPPING_ADDRESSES: SeedShippingAddress[] = [
 ```
 
 上記の要件を満たす `prisma/seed/constants/shipping.ts` ファイルの内容を生成してください。
+
 ```
 
 ---
@@ -400,6 +409,7 @@ export const SEED_SHIPPING_ADDRESSES: SeedShippingAddress[] = [
 #### 対象ファイル: `prisma/seed/constants/orders.ts`
 
 ```
+
 マルチベンダーEコマースプロジェクトの注文ダミーデータを生成してください。
 
 ## 要件
@@ -450,6 +460,7 @@ type ProductStatus = "ACTIVE" | "INACTIVE";
 ## 利用可能なデータ
 
 ### 顧客（5名）
+
 ```typescript
 const userEmails = [
   "lux-seed-user-yuki@example.com",
@@ -461,6 +472,7 @@ const userEmails = [
 ```
 
 ### クーポンコード（coupons.ts より、例）
+
 ```typescript
 const couponCodes = [
   "NOIR2026SPRING",
@@ -516,6 +528,7 @@ export const SEED_ORDERS: SeedOrder[] = [
 - REFUNDED注文はpaymentStatus: "REFUNDED"
 
 上記の要件を満たす `prisma/seed/constants/orders.ts` ファイルの内容を生成してください。
+
 ```
 
 ---
