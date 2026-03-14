@@ -81,6 +81,7 @@ bun run test:watch
 - **失敗箇所**: スタックトレースから該当行を特定
 
 例:
+
 ```
 ❌ 失敗したテスト:
    - ファイル: src/queries/product.test.ts
@@ -189,8 +190,10 @@ bun run lint
 
 **エラー**:
 ```
+
 Expected: { success: true, data: {...} }
 Received: { success: false, error: "バリデーションエラー" }
+
 ```
 
 **原因**:
@@ -234,7 +237,9 @@ Received: { success: false, error: "バリデーションエラー" }
 
 1. **src/queries/product.ts:42:15**
    ```
+
    Type 'string | undefined' is not assignable to type 'string'.
+
    ```
 
    **推奨対応**:
@@ -330,6 +335,7 @@ Received: { success: false, error: "バリデーションエラー" }
 ### 禁止事項
 
 1. **テストのスキップ（`.skip()`, `.only()`）をコミット**
+
    ```typescript
    // ❌ 禁止
    it.skip("テストケース", () => { ... });
@@ -340,6 +346,7 @@ Received: { success: false, error: "バリデーションエラー" }
    - コミット前に必ず削除
 
 2. **型エラーを無視する**
+
    ```typescript
    // ❌ 禁止
    // @ts-ignore
@@ -350,6 +357,7 @@ Received: { success: false, error: "バリデーションエラー" }
    - やむを得ない場合は `@ts-expect-error` に理由コメント付き
 
 3. **`console.log()` をコミット**
+
    ```typescript
    // ❌ 禁止（デバッグ用）
    console.log("デバッグ:", value);
@@ -366,6 +374,7 @@ Received: { success: false, error: "バリデーションエラー" }
    - Assert (検証)
 
 2. **意味のあるテスト名**
+
    ```typescript
    // ✅ 良い例
    it("正常ケース: 商品を作成できる", () => { ... });

@@ -211,6 +211,7 @@ model XXX {
 #### createXXX
 
 **シグネチャ**:
+
 ```typescript
 export async function createXXX(
   data: z.infer<typeof XXXSchema>
@@ -385,6 +386,7 @@ export async function createXXX(
 5. ✅ E2Eテスト実装（該当する場合）
 6. ✅ 仕様書更新
 7. ✅ コミット・プッシュ
+
 ```
 
 ### 4. リスク分析
@@ -420,6 +422,7 @@ export async function createXXX(
 計画書を提示した後、**必ずユーザーの承認を得る**：
 
 ```
+
 ## 実装計画の確認
 
 上記の計画で新機能「XXX」の実装を進めてよろしいですか？
@@ -433,6 +436,7 @@ export async function createXXX(
 
 承認いただける場合は「承認」または「OK」とお答えください。
 変更が必要な場合は、具体的な修正内容をお知らせください。
+
 ```
 
 **明示的な承認が得られるまで実装を開始しない**。
@@ -532,6 +536,7 @@ export async function createXXX(
 ### 例1: ユーザーのお気に入り商品機能
 
 ```
+
 ユーザー: 「新機能: ユーザーがお気に入り商品を保存できる機能を追加したい」
 
 Claude:
@@ -550,7 +555,7 @@ Claude:
      → ユーザーと商品のリレーション実装パターンを学習
 
 3. 計画書生成:
-   # Implementation Plan: ユーザーのお気に入り商品機能
+   ## Implementation Plan: ユーザーのお気に入り商品機能
 
    ## 1. Architecture / Approach
    - ユーザーが商品をお気に入りに追加・削除できる機能
@@ -585,11 +590,13 @@ Claude:
 
 5. ユーザー承認待ち:
    「上記の計画で実装を進めてよろしいですか？」
+
 ```
 
 ### 例2: ストアフォロー機能
 
 ```
+
 ユーザー: 「機能追加: ユーザーがストアをフォローできるようにしたい」
 
 Claude:
@@ -600,13 +607,13 @@ Claude:
    - src/queries/user.ts を読み込み
 
 3. 計画書生成:
-   # Implementation Plan: ストアフォロー機能
+   ## Implementation Plan: ストアフォロー機能
 
-   ## 1. Architecture / Approach
+   ### 1. Architecture / Approach
    - ユーザーがストアをフォロー・アンフォローできる機能
    - フォロー中のストアの新商品通知（将来拡張）
 
-   ## 3. Data Model
+   ### 3. Data Model
    model StoreFollow {
      id        String   @id @default(uuid())
      userId    String
@@ -624,6 +631,7 @@ Claude:
    （以下、詳細）
 
 4. ユーザー承認待ち
+
 ```
 
 ## まとめ

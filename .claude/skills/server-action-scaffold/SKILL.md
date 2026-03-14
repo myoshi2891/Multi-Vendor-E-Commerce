@@ -43,6 +43,7 @@ src/queries/user.ts
 以下のパターンを学習：
 
 1. **ファイル構造**
+
    ```typescript
    "use server";
 
@@ -66,6 +67,7 @@ src/queries/user.ts
    ```
 
 2. **認証パターン**
+
    ```typescript
    const user = await currentUser();
    if (!user) {
@@ -74,6 +76,7 @@ src/queries/user.ts
    ```
 
 3. **ロールチェック**（必要な場合）
+
    ```typescript
    const dbUser = await db.user.findUnique({
      where: { clerkId: user.id },
@@ -85,11 +88,13 @@ src/queries/user.ts
    ```
 
 4. **バリデーションパターン**
+
    ```typescript
    const validated = XXXSchema.parse(data);
    ```
 
 5. **DB操作パターン**
+
    ```typescript
    const result = await db.xxx.create({
      data: validated,
@@ -97,6 +102,7 @@ src/queries/user.ts
    ```
 
 6. **エラーハンドリング**
+
    ```typescript
    try {
      // ...
@@ -107,6 +113,7 @@ src/queries/user.ts
    ```
 
 7. **レスポンス形式**
+
    ```typescript
    return { success: true, data: result };
    // または
@@ -562,6 +569,7 @@ describe("XXX サーバーアクション", () => {
    - バリデーションエラーはZodが自動的にthrowする
 
 5. **一貫性のあるレスポンス形式**
+
    ```typescript
    // 成功時
    return { success: true, data: result };

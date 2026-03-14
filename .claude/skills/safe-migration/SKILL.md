@@ -121,6 +121,7 @@ bunx prisma migrate dev --name <descriptive-name>
 ```
 
 例:
+
 ```bash
 bunx prisma migrate dev --name add_product_is_featured
 ```
