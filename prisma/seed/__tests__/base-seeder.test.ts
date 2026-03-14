@@ -7,7 +7,10 @@ import { SEED_OFFER_TAGS } from "../constants/offer-tags";
 // Prisma mock
 const mockUpsert = jest.fn();
 
-function createMockPrisma() {
+function createMockPrisma(): Pick<
+  import("@prisma/client").PrismaClient,
+  "country" | "user" | "category" | "subCategory" | "offerTag"
+> {
   const upsertFn = () => mockUpsert;
   return {
     country: { upsert: upsertFn() },
@@ -15,7 +18,7 @@ function createMockPrisma() {
     category: { upsert: upsertFn() },
     subCategory: { upsert: upsertFn() },
     offerTag: { upsert: upsertFn() },
-  } as unknown as import("@prisma/client").PrismaClient;
+  };
 }
 
 describe("seedBase", () => {
@@ -31,7 +34,7 @@ describe("seedBase", () => {
 
   it("正常ケース: 全エンティティのupsertが呼ばれること", async () => {
     const prisma = createMockPrisma();
-    await seedBase(prisma);
+    await seedBase(prisma as import("@prisma/client").PrismaClient);
 
     const expectedCalls =
       SEED_COUNTRIES.length +
@@ -83,7 +86,7 @@ describe("seedBase", () => {
 
   it("正常ケース: Country upsertがwhere: { code }で呼ばれること", async () => {
     const prisma = createMockPrisma();
-    await seedBase(prisma);
+    await seedBase(prisma as import("@prisma/client").PrismaClient);
 
     // 最初の呼び出しはCountryのupsert
     const firstCall = mockUpsert.mock.calls[0][0];
@@ -92,7 +95,7 @@ describe("seedBase", () => {
 
   it("正常ケース: User upsertがwhere: { email }で呼ばれること", async () => {
     const prisma = createMockPrisma();
-    await seedBase(prisma);
+    await seedBase(prisma as import("@prisma/client").PrismaClient);
 
     // CountryのあとにUserが呼ばれる
     const userCallIndex = SEED_COUNTRIES.length;

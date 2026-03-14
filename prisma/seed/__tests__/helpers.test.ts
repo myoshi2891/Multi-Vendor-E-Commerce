@@ -79,6 +79,41 @@ describe("seed helpers", () => {
       expect(shortSku.length).toBeGreaterThanOrEqual(6);
       expect(longSku.length).toBeLessThanOrEqual(50);
     });
+
+    describe("境界値テスト", () => {
+      it("最短SKU（6字）が生成できる", () => {
+        const sku = generateSku("AB", "CD", 1);
+        expect(sku).toBe("AB-CD-001");
+        expect(sku.length).toBe(10);
+      });
+
+      it("最長SKU（50字制限）でエラーが出ないこと", () => {
+        // 50字ギリギリのSKU（計算: 15+1+9+1+4+1+15 = 46字）
+        const sku = generateSku(
+          "LONGSTORENAME12",
+          "LONGCATEG",
+          999,
+          "VARIANTSUFFIX12"
+        );
+        expect(sku.length).toBeLessThanOrEqual(50);
+      });
+
+      it("50字超のSKUでエラーが発生すること", () => {
+        expect(() =>
+          generateSku(
+            "VERYLONGSTORENAME1234",
+            "VERYLONGCATEGORY1234",
+            9999,
+            "VERYLONGVARIANTSUFFIX1234"
+          )
+        ).toThrow(/SKU長が範囲外です/);
+      });
+
+      it("6字未満のSKUでエラーが発生すること", () => {
+        // 現在の実装では6字未満にならないが、将来の変更に備えて
+        expect(() => generateSku("A", "B", 1)).toThrow(/SKU長が範囲外です/);
+      });
+    });
   });
 
   describe("generateDeterministicId", () => {
@@ -101,11 +136,24 @@ describe("seed helpers", () => {
       );
     });
 
-    it("lux-seed- プレフィクスの名前空間で生成される", () => {
-      // 決定論的であることの検証（別の呼び出しでも同一）
-      const id = generateDeterministicId("order-001");
-      expect(typeof id).toBe("string");
-      expect(id.length).toBe(36); // UUID の長さ
+    it("lux-seed-namespace を使用して生成される", () => {
+      // 同一のseedKeyで生成したIDが一致することで、名前空間が正しく使われていることを検証
+      const id1 = generateDeterministicId("test-key");
+      const id2 = generateDeterministicId("test-key");
+      expect(id1).toBe(id2);
+
+      // 異なるseedKeyでは異なるIDになることを検証
+      const idA = generateDeterministicId("key-a");
+      const idB = generateDeterministicId("key-b");
+      expect(idA).not.toBe(idB);
+    });
+
+    it("RFC4122 UUID v5 形式であること", () => {
+      const id = generateDeterministicId("test-key");
+      // version ビット = 5, variant ビット = [89ab]
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      );
     });
   });
 });

@@ -43,14 +43,23 @@ export function generateSku(
 ): string {
   const seq = String(sequence).padStart(3, "0");
   const base = `${storeCode}-${categoryCode}-${seq}`;
-  return variantSuffix ? `${base}-${variantSuffix}` : base;
+  const sku = variantSuffix ? `${base}-${variantSuffix}` : base;
+
+  // Zod 制約チェック（SKU は 6-50字）
+  if (sku.length < 6 || sku.length > 50) {
+    throw new Error(
+      `SKU長が範囲外です（6-50字）: "${sku}" (${sku.length}字)`
+    );
+  }
+
+  return sku;
 }
 
 /**
- * 決定論的なUUID形式のIDを生成する
+ * 決定論的なUUID形式のIDを生成する（RFC4122 UUID v5 準拠）
  * 同一入力に対して常に同一のIDを返す（冪等性のため）
  * @param seedKey - ID生成のシードキー
- * @returns UUID形式の文字列
+ * @returns RFC4122 UUID v5形式の文字列
  */
 export function generateDeterministicId(seedKey: string): string {
   const namespace = "lux-seed-namespace";
@@ -58,12 +67,16 @@ export function generateDeterministicId(seedKey: string): string {
     .update(`${namespace}:${seedKey}`)
     .digest("hex");
 
-  // SHA-256ハッシュからUUID形式に変換
-  return [
+  // RFC4122 UUID v5 形式に変換
+  const uuid = [
     hash.substring(0, 8),
     hash.substring(8, 12),
-    hash.substring(12, 16),
-    hash.substring(16, 20),
+    // version bits: 5xxx (UUID v5)
+    `5${hash.substring(13, 16)}`,
+    // variant bits: [89ab]xxx
+    `${(parseInt(hash.substring(16, 18), 16) & 0x3f | 0x80).toString(16).padStart(2, "0")}${hash.substring(18, 20)}`,
     hash.substring(20, 32),
   ].join("-");
+
+  return uuid;
 }

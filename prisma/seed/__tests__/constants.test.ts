@@ -53,7 +53,7 @@ describe("seed定数データ バリデーション", () => {
 
     it("全emailがlux-seed-プレフィクスを持つこと", () => {
       for (const user of SEED_USERS) {
-        expect(user.email).toMatch(new RegExp(`^${SEED_EMAIL_PREFIX}`));
+        expect(user.email.startsWith(SEED_EMAIL_PREFIX)).toBe(true);
       }
     });
 
