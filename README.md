@@ -1,5 +1,7 @@
 # 概要
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/myoshi2891/Multi-Vendor-E-Commerce)
+
 **関連ソースファイル**: `CLAUDE.md` / `package.json` / `src/lib/db.ts` / `src/app/layout.tsx` / `src/middleware.ts` / `specs/multi-vendor-ecommerce/04-interfaces.md`
 
 このドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムの概要を提供します。このプラットフォームは、複数の独立した出品者が統一されたマーケットプレイス内で店舗を運営し、顧客が異なるベンダーから一度の取引で購入できる仕組みを実現しています。
