@@ -86,18 +86,23 @@ ls -la prisma/migrations/
 
 ### 3. 環境変数の確認
 
-環境変数が本番DBを指していないか確認：
+環境変数が本番DBを指していないか確認（認証情報を露出しないよう、ホスト名とDB名のみを抽出）：
 
 ```bash
-# DATABASE_URL をチェック（値は表示しない、存在確認のみ）
-env | grep DATABASE_URL > /dev/null && echo "DATABASE_URL is set" || echo "DATABASE_URL is not set"
-```
+# DATABASE_URL からホスト名とDB名を安全に抽出してチェック
+if [ -n "$DATABASE_URL" ]; then
+  DB_INFO=$(echo "$DATABASE_URL" | sed -E 's/.*@([^\/]+)\/([^?]+).*/host=\1 db=\2/')
+  echo "データベース接続先: $DB_INFO"
 
-`DATABASE_URL` に `production`, `prod`, `prd` などのキーワードが含まれている場合、警告：
-
-```
-⚠️ 警告: 環境変数が本番環境を指している可能性があります。
-本当に続行しますか？
+  # production キーワードチェック
+  if echo "$DATABASE_URL" | grep -qiE '(production|prod|prd)'; then
+    echo "⚠️ 警告: 環境変数が本番環境を指している可能性があります。"
+    echo "本当に続行しますか？ (yes/no)"
+    # ユーザーに明示的な確認を求める
+  fi
+else
+  echo "DATABASE_URL が設定されていません"
+fi
 ```
 
 ### 4. マイグレーション実行

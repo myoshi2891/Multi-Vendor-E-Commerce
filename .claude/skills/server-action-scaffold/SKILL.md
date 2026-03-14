@@ -146,7 +146,7 @@ src/config/test-scenarios.ts
 ```
 
 利用可能なファクトリ関数を特定：
-- `createMockUser()` - テストユーザー作成
+- `createTestUser()` - テストユーザー作成
 - `createMockStore()` - テストストア作成
 - `createMockProduct()` - テスト商品作成
 - その他のドメイン固有ファクトリ
@@ -223,7 +223,7 @@ export async function getXXXList() {
  * [更新の説明]
  * @param id - XXX ID
  * @param data - 更新データ
- * @returns { success: boolean, data?: XXX, error?: string }
+ * @returns { success: boolean, data?: { count: number }, error?: string }
  */
 export async function updateXXX(
   id: string,
@@ -302,8 +302,8 @@ export type XXXInput = z.infer<typeof XXXSchema>;
 
 ```typescript
 import { createXXX, getXXXList, updateXXX, deleteXXX } from "./XXX";
-import { mockClerkUser, mockPrisma } from "@/config/test-helpers";
-import { createMockUser, createMockXXX } from "@/config/test-fixtures";
+import { mockAuth, mockPrisma } from "@/config/test-helpers";
+import { createTestUser, createTestXXX } from "@/config/test-fixtures";
 
 // Mock設定
 jest.mock("@clerk/nextjs/server");
@@ -317,8 +317,8 @@ describe("XXX サーバーアクション", () => {
   describe("createXXX", () => {
     it("正常ケース: データを作成できる", async () => {
       // Arrange: テストデータ準備
-      const testUser = createMockUser({ role: "USER" });
-      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createTestUser({ role: "USER" });
+      mockAuth({ userId: testUser.clerkId, role: "USER" });
 
       const inputData = {
         field1: "テスト値",
@@ -410,10 +410,10 @@ describe("XXX サーバーアクション", () => {
   describe("updateXXX", () => {
     it("正常ケース: 自分のデータを更新できる", async () => {
       // Arrange
-      const testUser = createMockUser();
-      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createTestUser();
+      mockAuth({ userId: testUser.clerkId, role: "USER" });
 
-      const existingData = createMockXXX({ userId: testUser.clerkId });
+      const existingData = createTestXXX({ userId: testUser.clerkId });
       const updateData = { field1: "更新後", field2: 200 };
 
       mockPrisma.xxx.updateMany.mockResolvedValue({ count: 1 });
@@ -432,10 +432,10 @@ describe("XXX サーバーアクション", () => {
 
     it("異常ケース: 他人のデータは更新できない", async () => {
       // Arrange
-      const testUser = createMockUser();
-      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createTestUser();
+      mockAuth({ userId: testUser.clerkId, role: "USER" });
 
-      const existingData = createMockXXX({ userId: "other-user-id" });
+      const existingData = createTestXXX({ userId: "other-user-id" });
       mockPrisma.xxx.updateMany.mockResolvedValue({ count: 0 });
 
       // Act
@@ -457,16 +457,15 @@ describe("XXX サーバーアクション", () => {
       mockAuth({ userId: testUser.clerkId, role: "USER" });
 
       const existingData = createTestXXX({ userId: testUser.clerkId });
-      mockPrisma.xxx.findUnique.mockResolvedValue(existingData);
-      mockPrisma.xxx.delete.mockResolvedValue(existingData);
+      mockPrisma.xxx.deleteMany.mockResolvedValue({ count: 1 });
 
       // Act
       const result = await deleteXXX(existingData.id);
 
       // Assert
       expect(result.success).toBe(true);
-      expect(mockPrisma.xxx.delete).toHaveBeenCalledWith({
-        where: { id: existingData.id },
+      expect(mockPrisma.xxx.deleteMany).toHaveBeenCalledWith({
+        where: { id: existingData.id, userId: testUser.clerkId },
       });
     });
 
@@ -476,7 +475,7 @@ describe("XXX サーバーアクション", () => {
       mockAuth({ userId: testUser.clerkId, role: "USER" });
 
       const existingData = createTestXXX({ userId: "other-user-id" });
-      mockPrisma.xxx.findUnique.mockResolvedValue(existingData);
+      mockPrisma.xxx.deleteMany.mockResolvedValue({ count: 0 });
 
       // Act
       const result = await deleteXXX(existingData.id);
@@ -498,11 +497,11 @@ describe("XXX サーバーアクション", () => {
 
 以下のファクトリ関数がすでに実装されています：
 
-- `createMockUser(overrides?: Partial<User>)` - テストユーザー作成
-- `createMockStore(overrides?: Partial<Store>)` - テストストア作成
-- `createMockProduct(overrides?: Partial<Product>)` - テスト商品作成
-- `createMockProductVariant(overrides?: Partial<ProductVariant>)` - テストバリアント作成
-- `createMockSize(overrides?: Partial<Size>)` - テストサイズ作成
+- `createTestUser(overrides?: Partial<User>)` - テストユーザー作成
+- `createTestStore(overrides?: Partial<Store>)` - テストストア作成
+- `createTestProduct(overrides?: Partial<Product>)` - テスト商品作成
+- `createTestProductVariant(overrides?: Partial<ProductVariant>)` - テストバリアント作成
+- `createTestSize(overrides?: Partial<Size>)` - テストサイズ作成
 - その他...
 
 新しいファクトリが必要な場合は、`src/config/test-fixtures.ts` に追加してください。
