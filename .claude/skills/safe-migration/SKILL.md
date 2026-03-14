@@ -117,7 +117,7 @@ env | grep DATABASE_URL > /dev/null && echo "DATABASE_URL is set" || echo "DATAB
 **絶対に `bunx prisma db push` を使わない**。必ず以下のコマンドを使用：
 
 ```bash
-bunx prisma migrate dev --name <descriptive-name>
+bunx prisma migrate dev --name <add_descriptive_name>
 ```
 
 例:
@@ -169,9 +169,9 @@ TRUNCATE TABLE ...;
 これらの操作は元に戻せません。本当に続行しますか？
 
 既にマイグレーションは生成されていますが、適用前に以下を実行できます:
-1. migration.sql の内容を手動で確認・編集
-2. bunx prisma migrate deploy でステージング環境にテスト適用
-3. 問題があれば prisma/migrations/ の該当ディレクトリを削除して再生成
+1. `migration.sql` の内容を手動で確認・編集
+2. `bunx prisma migrate deploy` でステージング環境にテスト適用（運用DBでのディレクトリ削除は絶対に行わないこと）
+3. 破壊的変更のリカバリが必要な場合は、ディレクトリを削除せず、新しい補正マイグレーションを作成する（または開発用DBに限り、明示的に `bunx prisma migrate reset` を前提に再作成する）
 ```
 
 ### 6. Prismaクライアント再生成

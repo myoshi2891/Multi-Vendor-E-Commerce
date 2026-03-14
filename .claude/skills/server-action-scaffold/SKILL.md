@@ -146,9 +146,9 @@ src/config/test-scenarios.ts
 ```
 
 利用可能なファクトリ関数を特定：
-- `createTestUser()` - テストユーザー作成
-- `createTestStore()` - テストストア作成
-- `createTestProduct()` - テスト商品作成
+- `createMockUser()` - テストユーザー作成
+- `createMockStore()` - テストストア作成
+- `createMockProduct()` - テスト商品作成
 - その他のドメイン固有ファクトリ
 
 ### 4. テンプレート生成
@@ -266,18 +266,14 @@ export async function deleteXXX(id: string) {
       return { success: false, error: "認証が必要です" };
     }
 
-    // 権限チェック: 自分のデータのみ削除可能
-    const existing = await db.xxx.findUnique({
-      where: { id },
+    // 権限チェックを含むアトミックな削除: 自分のデータのみ削除可能
+    const result = await db.xxx.deleteMany({
+      where: { id, userId: user.id },
     });
 
-    if (!existing || existing.userId !== user.id) {
+    if (result.count === 0) {
       return { success: false, error: "権限がありません" };
     }
-
-    await db.xxx.delete({
-      where: { id },
-    });
 
     return { success: true };
   } catch (error) {
@@ -306,8 +302,8 @@ export type XXXInput = z.infer<typeof XXXSchema>;
 
 ```typescript
 import { createXXX, getXXXList, updateXXX, deleteXXX } from "./XXX";
-import { mockAuth, mockPrisma } from "@/config/test-helpers";
-import { createTestUser, createTestXXX } from "@/config/test-fixtures";
+import { mockClerkUser, mockPrisma } from "@/config/test-helpers";
+import { createMockUser, createMockXXX } from "@/config/test-fixtures";
 
 // Mock設定
 jest.mock("@clerk/nextjs/server");
@@ -321,8 +317,8 @@ describe("XXX サーバーアクション", () => {
   describe("createXXX", () => {
     it("正常ケース: データを作成できる", async () => {
       // Arrange: テストデータ準備
-      const testUser = createTestUser({ role: "USER" });
-      mockAuth({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createMockUser({ role: "USER" });
+      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
 
       const inputData = {
         field1: "テスト値",
@@ -414,33 +410,33 @@ describe("XXX サーバーアクション", () => {
   describe("updateXXX", () => {
     it("正常ケース: 自分のデータを更新できる", async () => {
       // Arrange
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createMockUser();
+      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
 
-      const existingData = createTestXXX({ userId: testUser.clerkId });
+      const existingData = createMockXXX({ userId: testUser.clerkId });
       const updateData = { field1: "更新後", field2: 200 };
 
-      mockPrisma.xxx.findUnique.mockResolvedValue(existingData);
-      mockPrisma.xxx.update.mockResolvedValue({
-        ...existingData,
-        ...updateData,
-      });
+      mockPrisma.xxx.updateMany.mockResolvedValue({ count: 1 });
 
       // Act
       const result = await updateXXX(existingData.id, updateData);
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.data).toMatchObject(updateData);
+      // 注: updateManyは更新されたデータを返さないため、必要に応じて成功のステータスと引数をチェックします
+      expect(mockPrisma.xxx.updateMany).toHaveBeenCalledWith({
+        where: { id: existingData.id, userId: testUser.clerkId },
+        data: updateData
+      });
     });
 
     it("異常ケース: 他人のデータは更新できない", async () => {
       // Arrange
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId, role: "USER" });
+      const testUser = createMockUser();
+      mockClerkUser({ userId: testUser.clerkId, role: "USER" });
 
-      const existingData = createTestXXX({ userId: "other-user-id" });
-      mockPrisma.xxx.findUnique.mockResolvedValue(existingData);
+      const existingData = createMockXXX({ userId: "other-user-id" });
+      mockPrisma.xxx.updateMany.mockResolvedValue({ count: 0 });
 
       // Act
       const result = await updateXXX(existingData.id, {
@@ -451,7 +447,6 @@ describe("XXX サーバーアクション", () => {
       // Assert
       expect(result.success).toBe(false);
       expect(result.error).toBe("権限がありません");
-      expect(mockPrisma.xxx.update).not.toHaveBeenCalled();
     });
   });
 
@@ -489,7 +484,6 @@ describe("XXX サーバーアクション", () => {
       // Assert
       expect(result.success).toBe(false);
       expect(result.error).toBe("権限がありません");
-      expect(mockPrisma.xxx.delete).not.toHaveBeenCalled();
     });
   });
 });
@@ -504,11 +498,11 @@ describe("XXX サーバーアクション", () => {
 
 以下のファクトリ関数がすでに実装されています：
 
-- `createTestUser(overrides?: Partial<User>)` - テストユーザー作成
-- `createTestStore(overrides?: Partial<Store>)` - テストストア作成
-- `createTestProduct(overrides?: Partial<Product>)` - テスト商品作成
-- `createTestProductVariant(overrides?: Partial<ProductVariant>)` - テストバリアント作成
-- `createTestSize(overrides?: Partial<Size>)` - テストサイズ作成
+- `createMockUser(overrides?: Partial<User>)` - テストユーザー作成
+- `createMockStore(overrides?: Partial<Store>)` - テストストア作成
+- `createMockProduct(overrides?: Partial<Product>)` - テスト商品作成
+- `createMockProductVariant(overrides?: Partial<ProductVariant>)` - テストバリアント作成
+- `createMockSize(overrides?: Partial<Size>)` - テストサイズ作成
 - その他...
 
 新しいファクトリが必要な場合は、`src/config/test-fixtures.ts` に追加してください。
@@ -726,4 +720,4 @@ Claude:
 - ✅ AAA パターンのユニットテスト自動生成
 - ✅ テストファクトリの活用
 
-543のテストが実証する高品質なサーバーアクションパターンを維持しながら、新機能の開発を加速します。
+多数のテストが実証する高品質なサーバーアクションパターンを維持しながら、新機能の開発を加速します。
