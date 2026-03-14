@@ -15,8 +15,14 @@ export async function seedCommerce(
     "users" | "stores" | "countries" | "products" | "variants" | "sizes"
   >
 ): Promise<void> {
-  // Coupon
+  // 依存関係の逆順で削除（外部キー制約違反を回避）
+  await prisma.orderItem.deleteMany();
+  await prisma.orderGroup.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.shippingAddress.deleteMany();
   await prisma.coupon.deleteMany();
+
+  // Coupon
   const coupons = new Map<string, string>(); // code -> id
 
   for (const c of SEED_COUPONS) {
@@ -29,8 +35,8 @@ export async function seedCommerce(
       data: {
         code: c.code,
         storeId,
-        startDate: new Date(c.startDate),
-        endDate: new Date(c.endDate),
+        startDate: c.startDate,
+        endDate: c.endDate,
         discount: c.discount,
       },
     });
@@ -38,7 +44,6 @@ export async function seedCommerce(
   }
 
   // ShippingAddress
-  await prisma.shippingAddress.deleteMany();
   // userId -> Array of ShippingAddress id
   const userAddresses = new Map<string, string[]>();
 
@@ -74,8 +79,6 @@ export async function seedCommerce(
   }
 
   // Order
-  await prisma.order.deleteMany();
-
   for (const o of SEED_ORDERS) {
     const userId = maps.users.get(o.userEmail);
     if (!userId) {
@@ -117,6 +120,12 @@ export async function seedCommerce(
           storeId,
           status: g.status,
           couponId,
+          shippingService: g.shippingService || "Standard Shipping",
+          shippingDeliveryMin: g.shippingDeliveryMin || 3,
+          shippingDeliveryMax: g.shippingDeliveryMax || 7,
+          shippingFees: 0, // 後でOrderItemから計算
+          subTotal: 0,     // 後でOrderItemから計算
+          total: 0,        // 後でOrderItemから計算
         },
       });
 

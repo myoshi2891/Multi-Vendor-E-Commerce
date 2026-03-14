@@ -195,6 +195,12 @@ export type SeedOrderGroup = {
   status: OrderStatus;
   /** クーポンコード（オプション） */
   couponCode?: string;
+  /** 配送サービス名（オプション、デフォルト: "Standard Shipping"） */
+  shippingService?: string;
+  /** 配送最短日数（オプション、デフォルト: 3） */
+  shippingDeliveryMin?: number;
+  /** 配送最長日数（オプション、デフォルト: 7） */
+  shippingDeliveryMax?: number;
   items: SeedOrderItem[];
 };
 
