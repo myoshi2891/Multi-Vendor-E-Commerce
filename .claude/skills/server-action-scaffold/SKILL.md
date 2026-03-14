@@ -15,7 +15,7 @@ allowed-tools: [Read, Grep]
 
 `src/queries/` に新しいサーバーアクションを実装する際の**一貫性のあるテンプレート**を生成する。
 
-このプロジェクトでは、543のユニットテストが `src/queries/*.test.ts` に集約されており、サーバーアクションの実装パターンが厳格に定義されています（`"use server"`, Zod schema, try/catch, 認証チェック）。
+このプロジェクトでは、多数のユニットテストが `src/queries/*.test.ts` に集約されており、サーバーアクションの実装パターンが厳格に定義されています（`"use server"`, Zod schema, try/catch, 認証チェック）。
 
 ## トリガー条件
 
@@ -235,21 +235,17 @@ export async function updateXXX(
       return { success: false, error: "認証が必要です" };
     }
 
-    // 権限チェック: 自分のデータのみ更新可能
-    const existing = await db.xxx.findUnique({
-      where: { id },
-    });
-
-    if (!existing || existing.userId !== user.id) {
-      return { success: false, error: "権限がありません" };
-    }
-
     const validated = XXXSchema.parse(data);
 
-    const result = await db.xxx.update({
-      where: { id },
+    // 権限チェックを含むアトミックな更新: 自分のデータのみ更新可能
+    const result = await db.xxx.updateMany({
+      where: { id, userId: user.id },
       data: validated,
     });
+
+    if (result.count === 0) {
+      return { success: false, error: "権限がありません" };
+    }
 
     return { success: true, data: result };
   } catch (error) {
@@ -380,8 +376,12 @@ describe("XXX サーバーアクション", () => {
         field2: 100,
       };
 
-      // Act & Assert
-      await expect(createXXX(invalidData)).rejects.toThrow();
+      // Act
+      const result = await createXXX(invalidData);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 
@@ -592,9 +592,9 @@ describe("XXX サーバーアクション", () => {
    - サーバーアクションは `src/queries/` にのみ配置
    - `src/actions/` ディレクトリは存在しない
 
-4. **UIコンポーネントから直接サーバーアクションをimport**
-   - UIコンポーネントは `src/components/` に配置
-   - サーバーアクションは `src/queries/` から呼び出す
+4. **禁止: Client Components must not import server actions directly**
+   - 許可: Server Components or Server Actions may import from `src/queries/` (e.g., use Server Component -> Server Action -> `src/queries/`), and reference `src/components/` only for UI.
+   - `src/queries/` からのインポートはサーバーサイドコード（Server Component または Server Action）からのみ可能。
 
 ### 推奨事項
 

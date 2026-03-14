@@ -329,7 +329,7 @@ export async function createXXX(
    - `specs/multi-vendor-ecommerce/04-interfaces.md` 更新（API追加がある場合）
 
 5. **コミット・プッシュ**
-   - `git add .`
+   - `git add <対象パス>`
    - `git commit -m "feat: XXX機能を追加"`
    - `git push`
 

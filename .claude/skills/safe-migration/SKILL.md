@@ -343,7 +343,7 @@ grep -r "db.[ModelName]" src/queries/
 bunx prisma db push
 
 # 禁止: migration_lock.toml の削除
-rm prisma/migration_lock.toml
+rm prisma/migrations/migration_lock.toml
 
 # 禁止: マイグレーション履歴の手動編集（既に適用済みの場合）
 vim prisma/migrations/20240115120000_*/migration.sql
@@ -368,7 +368,7 @@ bunx prisma migrate deploy
 
 - `prisma/schema.prisma` - データモデル定義
 - `prisma/migrations/` - マイグレーション履歴
-- `prisma/migration_lock.toml` - マイグレーションロックファイル
+- `prisma/migrations/migration_lock.toml` - マイグレーションロックファイル
 
 ### 仕様書
 
