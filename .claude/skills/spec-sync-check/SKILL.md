@@ -1,275 +1,222 @@
 ---
 name: spec-sync-check
 description: >
-  実装と仕様書の乖離をチェックし、報告する。
-  「仕様確認」「仕様同期」「spec確認」「仕様書チェック」
-  「仕様と実装の整合性」「仕様乖離」などのキーワードで使用。
-  機能実装後や仕様と実装の整合性を確認したいときに自動的に実行される。
+  Detects and reports divergences between implementation code and spec documents
+  in specs/multi-vendor-ecommerce/. Never auto-fixes — always reports to the human
+  for judgment. Follows SDD (Spec-Driven Development) principles where specs are
+  the single source of truth.
+  Triggered by: "仕様確認", "仕様同期", "spec確認", "仕様書チェック",
+  "仕様と実装の整合性", "仕様乖離", "spec check", "sync check",
+  "check spec", "verify spec alignment", "仕様乖離をチェック".
 invocation: automatic
 allowed-tools: [Read, Grep, Bash]
 ---
 
-# Spec Sync Checker
+# Spec Sync Checker スキル
+
+> **[SKILL LOADED]** `spec-sync-check` スキルが読み込まれました ✅
+> *(デバッグ確認後はこの行を削除してください)*
 
 ## 目的
 
-実装コードと仕様書（`specs/multi-vendor-ecommerce/`）の乖離を検出し、人間に報告する。
+実装コードと仕様書（`specs/multi-vendor-ecommerce/`）の乖離を検出し、人間に報告するスキル。
 
-このプロジェクトは **SDD（仕様駆動開発）** を採用しており、`specs/multi-vendor-ecommerce/` の仕様書が**単一の真実のソース（Single Source of Truth）**です。実装と仕様の整合性を保つことが品質保証の核心です。
+このプロジェクトは **SDD（仕様駆動開発）** を採用しており、`specs/multi-vendor-ecommerce/` が **Single Source of Truth** です。乖離の自動修正は絶対に行わない。実装・仕様書どちらが正しいかは人間が判断する。
 
-## トリガー条件
+---
 
-以下の場合に自動的に実行されます：
+## 実行手順（この順番を厳守すること）
 
-- ユーザーが「仕様確認」「仕様同期」「spec確認」「仕様書チェック」と言った場合
-- 「仕様と実装の整合性を確認」「仕様乖離をチェック」などの表現を使った場合
-- 新機能実装後、自動的に実行して乖離を報告する場合
-
-## 実行手順
-
-### 1. 対象ファイルの特定
-
-変更されたコードファイルを特定します：
+### Step 1｜変更ファイルを特定する
 
 ```bash
 git status
 git diff --name-only HEAD
-```
-
-最近のコミットで変更されたファイルを確認：
-
-```bash
 git log --oneline -5
 ```
 
-### 2. 仕様書の読み込み（必須順序）
+変更されたファイルの種類（`prisma/schema.prisma` / `src/queries/` / `src/app/` 等）によって、次のステップで読み込む仕様書を絞り込む。
 
-以下の仕様書を順番に読み込み、プロジェクトの全体像を把握します：
+---
 
-1. **`specs/multi-vendor-ecommerce/00-overview.md`** - プロダクトスコープ・システム概要
-2. **`specs/multi-vendor-ecommerce/01-requirements.md`** - 機能・非機能要件・Acceptance Criteria
-3. **`specs/multi-vendor-ecommerce/02-architecture.md`** - 技術制約・アーキテクチャ選定理由
-4. **`specs/multi-vendor-ecommerce/03-data-model.md`** - エンティティ定義・ER関連
-5. 必要に応じて以下も参照：
-   - **`specs/multi-vendor-ecommerce/04-interfaces.md`** - API・UI定義
-   - **`specs/multi-vendor-ecommerce/05-workflows.md`** - ユーザーフロー・業務フロー
-   - **`specs/multi-vendor-ecommerce/07-testing.md`** - テスト方針・カバレッジ要件
-   - **`specs/multi-vendor-ecommerce/08-open-questions.md`** - 未解決事項・議論中の課題
+### Step 2｜関連する仕様書を読み込む
 
-### 3. 乖離検出（主要な比較ポイント）
+変更内容に応じて必要な仕様書を選んで読み込む（全件読み込みは不要）：
 
-以下の観点で実装と仕様書を比較します：
+| 変更ファイル | 読み込む仕様書 |
+|------------|--------------|
+| `prisma/schema.prisma` | `03-data-model.md` |
+| `src/queries/*.ts` | `04-interfaces.md` |
+| `src/app/` / `src/middleware.ts` | `05-workflows.md` |
+| 全般的な確認 | `00-overview.md` → `01-requirements.md` → `02-architecture.md` の順 |
 
-#### A. データモデル変更の検出
+必要に応じて追加参照：
 
-**比較対象**:
-- `prisma/schema.prisma` （実装）
-- `specs/multi-vendor-ecommerce/03-data-model.md` （仕様書）
+```
+Read: specs/multi-vendor-ecommerce/07-testing.md     テスト方針・カバレッジ要件
+Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
+```
 
-**チェック項目**:
-- 新しいモデル（table）が追加されているか
-- フィールドの追加・削除・型変更があるか
-- リレーション（1:N, N:M）の変更があるか
-- インデックス・制約の変更があるか
+---
 
-#### B. サーバーアクション（API）の変更検出
+### Step 3｜乖離を検出する
 
-**比較対象**:
-- `src/queries/*.ts` （実装）
-- `specs/multi-vendor-ecommerce/04-interfaces.md` （仕様書）
+以下の4つの観点で実装と仕様書を比較する。
 
-**チェック項目**:
-- 新しいサーバーアクションが追加されているか
-- 関数シグネチャ（引数・戻り値）の変更があるか
-- 認証・認可ロジックの変更があるか
-- エラーハンドリングの変更があるか
+#### A. データモデルの乖離
 
-#### C. ワークフロー（ユーザーフロー）の変更検出
+```
+比較: prisma/schema.prisma ↔ 03-data-model.md
+```
 
-**比較対象**:
-- `src/app/` のルート構造・ページ構成（実装）
-- `specs/multi-vendor-ecommerce/05-workflows.md` （仕様書）
+チェック項目：
 
-**チェック項目**:
-- 新しいページ・ルートが追加されているか
-- ユーザーフローの順序が変更されているか
-- 認証保護ルートの変更があるか（`src/middleware.ts`）
-- ロール別アクセス制御の変更があるか
+- 新しいモデル（テーブル）の追加
+- フィールドの追加・削除・型変更
+- リレーション（1:N / N:M）の変更
+- インデックス・制約の変更
+
+#### B. サーバーアクション（API）の乖離
+
+```
+比較: src/queries/*.ts ↔ 04-interfaces.md
+```
+
+チェック項目：
+
+- 新しいサーバーアクションの追加
+- 関数シグネチャ（引数・戻り値型）の変更
+- 認証・認可ロジックの変更
+- エラーハンドリングの変更
+
+#### C. ワークフロー・ルートの乖離
+
+```
+比較: src/app/ + src/middleware.ts ↔ 05-workflows.md
+```
+
+チェック項目：
+
+- 新しいページ・ルートの追加
+- ユーザーフローの順序変更
+- 認証保護ルートの変更
+- ロール別アクセス制御の変更
 
 #### D. その他の重要な変更
 
-- **外部サービス統合**: Clerk, Stripe, PayPal, Cloudinary の統合変更
-- **技術制約**: `CLAUDE.md`, `.agent/rules/core.md` で定義されたルールの遵守
-- **テスト要件**: `specs/multi-vendor-ecommerce/07-testing.md` のカバレッジ要件
+- 外部サービス統合（Clerk / Stripe / PayPal / Cloudinary）の変更
+- `CLAUDE.md` / `.agent/rules/core.md` で定義された技術制約の遵守状況
+- テストカバレッジ要件（`07-testing.md`）との乖離
 
-### 4. 仕様書の該当セクションを特定
+---
 
-検出された乖離について、どの仕様書のどのセクションに記載されているべきかを明示します。
+### Step 4｜未解決事項を確認する
 
-例:
-- データモデル変更 → `03-data-model.md` の「3.2 エンティティ定義」セクション
-- サーバーアクション変更 → `04-interfaces.md` の「4.1 サーバーアクション一覧」セクション
-- ワークフロー変更 → `05-workflows.md` の該当するフロー図
+```
+Read: specs/multi-vendor-ecommerce/08-open-questions.md
+```
 
-### 5. レポート生成
+現在の実装に影響する未解決事項があればレポートに含める。
 
-以下の形式で乖離をレポートします：
+---
+
+### Step 5｜レポートを出力する
+
+優先度の高い順（データモデル → API → ワークフロー → その他）で報告する：
 
 ```markdown
 ## 仕様同期チェック結果
 
 ### 検出された乖離
 
-#### 1. [ファイル名]: [乖離内容]
+#### 🔴 [優先度: 高] データモデルの乖離
 
-- **実装**: ...（実際のコードの状態）
-- **仕様書**: ...（仕様書に記載されている内容）
-- **仕様書の該当箇所**: `specs/multi-vendor-ecommerce/XX-YYY.md` の [セクション番号・見出し]
-- **推奨対応**: ...（仕様書を更新すべき内容）
+**乖離 1: [内容]**
+- 実装: [実際のコードの状態]
+- 仕様書: [仕様書に記載されている内容]
+- 該当箇所: `specs/multi-vendor-ecommerce/03-data-model.md` — セクション [番号・見出し]
+- 推奨対応: [仕様書を更新すべき内容 or 実装を修正すべき内容]
 
-#### 2. [次の乖離]
+#### 🟡 [優先度: 中] API の乖離
 
-...
+**乖離 2: [内容]**
+- 実装: ...
+- 仕様書: ...
+- 該当箇所: `specs/multi-vendor-ecommerce/04-interfaces.md` — セクション [番号・見出し]
+- 推奨対応: ...
+
+---
 
 ### 更新が必要な仕様書
 
-以下の仕様書ファイルの更新が必要です：
-
 1. `specs/multi-vendor-ecommerce/03-data-model.md`
-   - セクション 3.2 に新しいモデル `XXX` を追加
-   - セクション 3.4 のER図を更新
+   - セクション 3.2 に新モデル `XXX` を追加
+   - セクション 3.4 の ER 図を更新
 
 2. `specs/multi-vendor-ecommerce/04-interfaces.md`
-   - セクション 4.1 に新しいサーバーアクション `createXXX()` を追加
-   - API仕様表を更新
+   - セクション 4.1 に `createXXX()` のシグネチャを追加
 
-### 未解決事項の確認
+---
 
-`specs/multi-vendor-ecommerce/08-open-questions.md` に以下の未解決事項があります：
+### 未解決事項（08-open-questions.md より）
 
-- [未解決事項の内容]
+以下が今回の実装に影響する可能性があります：
+- [ ] [未解決事項の内容]
 
-これらが今回の実装に影響する可能性があります。
+---
+
+### 乖離なし ✅
+
+（乖離が検出されなかった場合はこのセクションのみ表示）
 ```
 
-### 6. 未解決事項の確認
+---
 
-`specs/multi-vendor-ecommerce/08-open-questions.md` を確認し、現在の実装に関連する未解決事項があれば報告に含めます。
+## 重要ルール
 
-## 重要なルール（Critical Rules）
+### ❌ 絶対禁止
 
-### 必須事項
+- 仕様書の自動修正・自動更新
+- 実装コードの自動修正
+- 「たぶん問題ない」という判断による乖離の隠蔽
+- 乖離の重要度を無断で低く見積もること
 
-1. **乖離を見つけたら必ず人間に報告する**
-   - 自動修正は絶対に行わない
-   - 実装と仕様のどちらが正しいかは人間が判断する
+### ✅ 必須
 
-2. **仕様書の該当セクションへの参照を明示する**
-   - ファイル名だけでなく、セクション番号・見出しも含める
-   - 例: `specs/multi-vendor-ecommerce/03-data-model.md` の「3.2 エンティティ定義」
+- 乖離を検出したら必ず人間に報告する（規模の大小にかかわらず）
+- 仕様書の該当箇所はファイル名だけでなくセクション番号・見出しも明示する
+- `08-open-questions.md` を必ず確認し、関連する未解決事項を報告に含める
+- 報告の優先順位はデータモデル → API → ワークフロー → その他の順に従う
 
-3. **未解決事項（`08-open-questions.md`）を必ず確認する**
-   - 実装に影響する未解決事項があれば報告に含める
+### 💡 推奨
 
-### 報告の優先順位
+- 変更ファイルの種類で読み込む仕様書を絞り込み、不要な仕様書の読み込みを避ける
+- 乖離がない場合も「乖離なし ✅」と明示し、チェックが完了したことを伝える
 
-以下の順序で乖離を報告します（重要度順）：
-
-1. **データモデルの乖離**（最重要）
-   - DBスキーマの変更は影響範囲が大きい
-   - マイグレーション履歴との整合性が必要
-
-2. **サーバーアクション（API）の乖離**
-   - 外部システムとの契約に影響
-   - セキュリティ・認証ロジックの変更
-
-3. **ワークフロー・UIの乖離**
-   - ユーザー体験に直接影響
-   - 認証保護ルートの変更
-
-### 禁止事項
-
-1. **仕様書の自動修正を行わない**
-   - 仕様書の更新は人間が判断・承認する
-
-2. **実装の自動修正を行わない**
-   - 実装が正しい場合もあるため、人間が判断する
-
-3. **乖離の存在を隠さない**
-   - 小さな乖離でも必ず報告する
-   - 「たぶん問題ない」という判断はしない
+---
 
 ## 参考: 主要ファイルパス
 
-### 仕様書
-
-- `specs/multi-vendor-ecommerce/00-overview.md`
-- `specs/multi-vendor-ecommerce/01-requirements.md`
-- `specs/multi-vendor-ecommerce/02-architecture.md`
-- `specs/multi-vendor-ecommerce/03-data-model.md`
-- `specs/multi-vendor-ecommerce/04-interfaces.md`
-- `specs/multi-vendor-ecommerce/05-workflows.md`
-- `specs/multi-vendor-ecommerce/06-quality.md`
-- `specs/multi-vendor-ecommerce/07-testing.md`
-- `specs/multi-vendor-ecommerce/08-open-questions.md`
-
-### 実装
-
-- `prisma/schema.prisma` - データモデル定義
-- `src/queries/*.ts` - サーバーアクション
-- `src/app/` - ルート構造・ページ
-- `src/middleware.ts` - 認証保護ルート
-- `.agent/rules/core.md` - AI エージェント動作制約
-- `CLAUDE.md` - プロジェクト概要
-
-## 使用例
-
-### 例1: データモデル変更後の確認
-
 ```
-ユーザー: 「仕様確認して」
+# 仕様書
+specs/multi-vendor-ecommerce/
+  00-overview.md        プロダクトスコープ・システム概要
+  01-requirements.md    機能・非機能要件
+  02-architecture.md    技術制約・アーキテクチャ
+  03-data-model.md      エンティティ定義・ER 図
+  04-interfaces.md      API・UI 定義
+  05-workflows.md       ユーザーフロー・業務フロー
+  06-quality.md         品質基準
+  07-testing.md         テスト方針・カバレッジ要件
+  08-open-questions.md  未解決事項
 
-Claude:
-（このスキルが自動実行される）
+# 実装
+prisma/schema.prisma    データモデル定義
+src/queries/*.ts        サーバーアクション
+src/app/                ルート構造・ページ
+src/middleware.ts       認証保護ルート
 
-1. git statusで変更ファイルを確認
-   → prisma/schema.prisma が変更されている
-
-2. specs/multi-vendor-ecommerce/03-data-model.md を読み込み
-
-3. 乖離を検出:
-   - 実装: Product モデルに新フィールド `isFeature: Boolean` が追加
-   - 仕様書: Product モデルに `isFeatured` フィールドの記載なし
-
-4. レポート生成:
-   「prisma/schema.prismaに新フィールド `isFeatured` が追加されていますが、
-    specs/multi-vendor-ecommerce/03-data-model.md のセクション3.2には
-    記載されていません。仕様書の更新が必要です。」
+# ルール
+.agent/rules/core.md    AI エージェント動作制約
+CLAUDE.md               プロジェクト設定
 ```
-
-### 例2: サーバーアクション追加後の確認
-
-```
-ユーザー: 「仕様と実装の整合性を確認」
-
-Claude:
-（このスキルが自動実行される）
-
-1. git statusで変更ファイルを確認
-   → src/queries/favorite.ts が新規追加
-
-2. specs/multi-vendor-ecommerce/04-interfaces.md を読み込み
-
-3. 乖離を検出:
-   - 実装: favorite.ts に createFavorite(), deleteFavorite() を実装
-   - 仕様書: お気に入り機能のAPI定義が存在しない
-
-4. レポート生成:
-   「src/queries/favorite.ts に新しいサーバーアクションが追加されていますが、
-    specs/multi-vendor-ecommerce/04-interfaces.md のセクション4.1には
-    記載されていません。仕様書の更新が必要です。」
-```
-
-## まとめ
-
-このスキルは、SDD準拠の品質保証を自動化します。実装と仕様の乖離を早期に検出し、人間が適切な対応（仕様書更新 or 実装修正）を判断できるようにサポートします。

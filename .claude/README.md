@@ -2,32 +2,49 @@
 
 このディレクトリは **Claude Code** の設定ファイル・ステアリングファイルを管理します。
 
+---
+
 ## ファイル構成
 
 ```
 .claude/
 ├── README.md              # このファイル（構成説明）
-├── settings.local.json    # 権限設定（git管理対象外推奨）
+├── settings.local.json    # 権限設定（git 管理対象外推奨）
 ├── steering/              # チーム横断コンテキスト（全セッション共有）
 │   ├── product.md         # プロダクトビジョン・ペルソナ・KPI
 │   ├── tech.md            # 技術スタック・禁止事項・テスト要件
 │   └── structure.md       # ディレクトリ構成・設計判断・データモデル
+├── skills/                # スキル定義（自動・手動呼び出し）
+│   ├── feature-plan/      # 新機能実装計画の生成
+│   ├── safe-migration/    # Prisma マイグレーションの安全実行
+│   ├── server-action-scaffold/ # サーバーアクションのテンプレート生成
+│   ├── spec-sync-check/   # 実装と仕様書の乖離検出
+│   └── test-complete/     # テスト実行・品質チェック・コミット判定
 └── agents/                # サブエージェント定義（将来拡張用）
     └── README.md          # サブエージェント管理ドキュメント
 ```
 
-## Steering Files の役割
+---
 
-`steering/` 配下のファイルは Claude Code の **長期的コンテキスト** として機能します。
-CLAUDE.md がセッション間の「脳」であるのに対し、steering は **チーム全体で共有する不変のルール** です。
+## 各ファイルの役割
 
-- `CLAUDE.md` — プロジェクト永続メモリ（コマンド・構造の要点、@import参照）
-- `steering/product.md` — プロダクト方針（触るな、変えるな）
-- `steering/tech.md` — 技術制約（禁止事項・テスト要件）
-- `steering/structure.md` — ディレクトリ責務・設計判断
+| ファイル / ディレクトリ | 役割 | 更新頻度 |
+|----------------------|------|---------|
+| `CLAUDE.md` | プロジェクト永続メモリ（コマンド・構造の要点、`@import` 参照） | 随時 |
+| `steering/product.md` | プロダクト方針・ペルソナ・KPI（原則変更しない） | 破壊的変更時のみ |
+| `steering/tech.md` | 技術制約・禁止事項・テスト要件（原則変更しない） | 破壊的変更時のみ |
+| `steering/structure.md` | ディレクトリ責務・設計判断・データモデル | 破壊的変更時のみ |
+| `skills/*/SKILL.md` | 特定タスクの手順書（オンデマンドで読み込まれる） | スキル追加・改善時 |
+| `agents/README.md` | サブエージェント設計ルール・一覧 | エージェント追加時 |
+
+> `CLAUDE.md` がセッション間の「脳」であるのに対し、`steering/` は**チーム全体で共有する不変のルール**です。
+
+---
 
 ## 更新ルール
 
-- `steering/*.md` は **破壊的変更があった場合のみ** 更新する
-- 修正履歴はここには書かず、`git log` で追跡する
-- 個人設定は `CLAUDE.local.md`（`.gitignore` に自動追加）を使用する
+| 対象 | ルール |
+|-----|--------|
+| `steering/*.md` | 破壊的変更があった場合のみ更新する。修正履歴は `git log` で追跡する |
+| `skills/*/SKILL.md` | スキル追加・改善時に更新する。`description` は英語ベース・三人称で記述する |
+| 個人設定 | `CLAUDE.local.md` を使用する（`.gitignore` に自動追加） |
