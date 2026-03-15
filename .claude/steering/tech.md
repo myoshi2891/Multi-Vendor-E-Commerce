@@ -24,7 +24,7 @@
 | **TypeScript** | `any` 禁止（`unknown` + 型ガードで代替） |
 | **ESLint** | `next/core-web-vitals` + `plugin:tailwindcss/recommended` |
 | **エラーハンドリング** | Prisma・Clerk・Stripe/PayPal の外部呼び出しは必ず `try/catch` でラップ |
-| **ログ** | `console.log()` はコードレビュー前に必ず削除 |
+| **ログ** | `src/` 配下のアプリケーションコードでは `console.log()` 禁止。ただしスタンドアロン CLI（例: `prisma/seed/`）は許容 |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---
@@ -50,6 +50,7 @@
 | 種別 | 配置場所 | 対象 |
 |-----|---------|------|
 | Jest ユニットテスト | サーバーアクションのテストに限定: `src/queries/*.test.ts`<br>※コンポーネント/ストアのテスト（例: `useCartStore.test.ts`）はソースファイルと同階層（例: `src/cart-store/`）に配置する | 全サーバーアクション |
+| Jest シードテスト | `prisma/seed/__tests__/` | 実データ検証・実DB統合テスト用（`src/config/` 非依存）。詳細は `docs/testing/TESTING_DESIGN.md` 参照 |
 | Playwright E2E テスト | `tests/e2e/` | Chromium / Firefox / WebKit の3ブラウザ |
 | E2E シードデータ | `bun run seed:e2e` で投入 | — |
 
