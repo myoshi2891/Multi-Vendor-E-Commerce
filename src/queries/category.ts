@@ -70,8 +70,11 @@ export const upsertCategory = async (category: Category) => {
         });
         return categoryDetails;
     } catch (error: unknown) {
-        // Log and re-throw any errors
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in upsertCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertCategory:", String(error));
+        }
         throw error;
     }
 };
@@ -117,8 +120,11 @@ export const getAllCategories = async (storeUrl?: string) => {
         });
         return categories;
     } catch (error: unknown) {
-        // Log and re-throw any errors
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getAllCategories:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllCategories:", String(error));
+        }
         throw error;
     }
 };
@@ -137,8 +143,11 @@ export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
         });
         return subCategories;
     } catch (error: unknown) {
-        // Log and re-throw any errors
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getAllSubCategoriesFotCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllSubCategoriesFotCategory:", String(error));
+        }
         throw error;
     }
 };
@@ -162,8 +171,11 @@ export const getCategory = async (categoryId: string) => {
         });
         return category;
     } catch (error: unknown) {
-        // Log and re-throw any errors
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in getCategory:", String(error));
+        }
         throw error;
     }
 };
@@ -199,8 +211,11 @@ export const deleteCategory = async (categoryId: string) => {
         });
         return response;
     } catch (error: unknown) {
-        // Log and re-throw any errors
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in deleteCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteCategory:", String(error));
+        }
         throw error;
     }
 };

@@ -47,7 +47,11 @@ export const createStripePaymentIntent = async (orderId: string) => {
             clientSecret: paymentIntent.client_secret,
         };
     } catch (error: unknown) {
-        console.error("Error creating payment intent:", error);
+        if (error instanceof Error) {
+            console.error("Error creating payment intent:", error.message, error.stack);
+        } else {
+            console.error("Error creating payment intent:", String(error));
+        }
         throw error;
     }
 };
@@ -130,7 +134,11 @@ export const createStripePayment = async (
         });
         return updatedOrder;
     } catch (error: unknown) {
-        console.error("Error creating payment:", error);
+        if (error instanceof Error) {
+            console.error("Error creating payment:", error.message, error.stack);
+        } else {
+            console.error("Error creating payment:", String(error));
+        }
         throw error;
     }
 };

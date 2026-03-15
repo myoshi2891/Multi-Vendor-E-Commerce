@@ -56,6 +56,11 @@ export const createPayPalPayment = async (orderId: string) => {
 
         return paymentData;
     } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in createPayPalPayment:", error.message, error.stack);
+        } else {
+            console.error("Error in createPayPalPayment:", String(error));
+        }
         throw new Error("Failed to create PayPal payment");
     }
 };

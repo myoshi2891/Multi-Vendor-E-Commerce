@@ -114,7 +114,11 @@ export const getFilteredSizes = async (
         // Return the unique sizes in the desired format
         return { sizes: uniqueSizesArray.map((size) => ({ size })), count };
     } catch (error: unknown) {
-        console.error("Error getting filtered sizes:", error);
+        if (error instanceof Error) {
+            console.error("Error getting filtered sizes:", error.message, error.stack);
+        } else {
+            console.error("Error getting filtered sizes:", String(error));
+        }
         throw new Error("Failed to get filtered sizes");
     }
 };

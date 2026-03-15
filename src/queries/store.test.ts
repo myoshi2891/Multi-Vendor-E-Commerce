@@ -12,6 +12,7 @@ import {
     deleteStore,
     getStorePageDetails,
 } from "./store";
+import { Prisma } from "@prisma/client";
 import { TEST_CONFIG } from "../config/test-config";
 import type { StoreDefaultShippingInput } from "@/lib/types";
 
@@ -102,6 +103,21 @@ const TestDataFactory = {
         returnPolicy: "Return within 14 days with receipt.",
         ...overrides,
     }) as StoreDefaultShippingInput,
+
+    /** DB 出力モック用: Decimal フィールドを Prisma.Decimal で返す */
+    shippingDetailsDb: (
+        overrides: Partial<Record<string, unknown>> = {}
+    ) => ({
+        defaultShippingService: "Express Delivery",
+        defaultShippingFeePerItem: new Prisma.Decimal("10.5"),
+        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("5.25"),
+        defaultShippingFeePerKg: new Prisma.Decimal("2.75"),
+        defaultShippingFeeFixed: new Prisma.Decimal("15.0"),
+        defaultDeliveryTimeMin: 3,
+        defaultDeliveryTimeMax: 7,
+        returnPolicy: "Return within 14 days with receipt.",
+        ...overrides,
+    }),
 
     createStoreExpectedData: (
         storeData: {
@@ -735,7 +751,11 @@ describe("updateStoreDefaultShippingDetails", () => {
                 TEST_CONFIG.DEFAULT_USER_ID
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
 
@@ -771,7 +791,11 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
             TestHelpers.expectDbMethodCalledTimes(mockDb.findUnique, 1);
             TestHelpers.expectDbMethodCalledTimes(mockDb.update, 1);
         });
@@ -813,7 +837,7 @@ describe("getStoreDefaultShippingDetails", () => {
     describe("正常なデータ取得", () => {
         it("全フィールドが入力されているストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetails();
+            const mockStore = TestDataFactory.shippingDetailsDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(
@@ -823,7 +847,7 @@ describe("getStoreDefaultShippingDetails", () => {
             expect(result).toEqual(mockStore);
             expect(result).toMatchObject({
                 defaultShippingService: "Express Delivery",
-                defaultShippingFeePerItem: 10.5,
+                defaultShippingFeePerItem: new Prisma.Decimal("10.5"),
                 returnPolicy: "Return within 14 days with receipt.",
             });
 
@@ -836,7 +860,7 @@ describe("getStoreDefaultShippingDetails", () => {
         it("一部フィールドがnullのストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
             // DB 出力モック: スキーマ上は NOT NULL だが null 応答時の挙動を検証
-            const mockStore = TestDataFactory.shippingDetails({
+            const mockStore = TestDataFactory.shippingDetailsDb({
                 defaultShippingFeePerItem: null,
                 defaultShippingFeePerKg: null,
                 defaultDeliveryTimeMin: null,
@@ -860,7 +884,7 @@ describe("getStoreDefaultShippingDetails", () => {
 
         it("配送関連フィールドのみを選択し、他のストアプロパティは除外する", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetails();
+            const mockStore = TestDataFactory.shippingDetailsDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(
@@ -909,7 +933,11 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Test error for logging"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in getStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
         });
 
         it("バリデーションエラーを適切に処理する", async () => {
@@ -924,7 +952,11 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Invalid store URL format"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(validationError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in getStoreDefaultShippingDetails:",
+                validationError.message,
+                validationError.stack
+            );
         });
     });
 });
@@ -1516,7 +1548,11 @@ describe("updateStoreStatus", () => {
                 "Database connection failed during store update"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreStatus:",
+                mockError.message,
+                mockError.stack
+            );
             expect(mockPrisma.user.update).not.toHaveBeenCalled();
         });
 
@@ -1544,7 +1580,11 @@ describe("updateStoreStatus", () => {
                 "Database connection failed during user role update"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreStatus:",
+                mockError.message,
+                mockError.stack
+            );
             expect(mockPrisma.store.update).toHaveBeenCalled();
         });
     });

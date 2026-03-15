@@ -94,9 +94,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 
 	// Reset form values when data changes
 	useEffect(() => {
-		if (data) {
-			form.reset(mapShippingRateToFormValues(data));
-		}
+		form.reset(mapShippingRateToFormValues(data));
 	}, [data, form]);
 
 	// Submit handler for form submission

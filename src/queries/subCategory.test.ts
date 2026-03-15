@@ -452,8 +452,9 @@ describe("getSubcategories", () => {
             );
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                "Error fetching subcategories",
-                mockError
+                "Error fetching subcategories:",
+                mockError.message,
+                mockError.stack
             );
         });
     });

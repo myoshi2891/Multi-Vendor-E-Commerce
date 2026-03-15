@@ -78,7 +78,11 @@ export const followStore = async (storeId: string): Promise<boolean> => {
             return true // Follow status updated successfully
         }
     } catch (error: unknown) {
-        console.error('Error following store', error)
+        if (error instanceof Error) {
+            console.error("Error following store:", error.message, error.stack);
+        } else {
+            console.error("Error following store:", String(error));
+        }
         throw new Error('Error following store')
     }
 }
@@ -277,7 +281,11 @@ export const saveUserCart = async (
     if (cart) return true
     return false
     } catch (error: unknown) {
-        console.error("Error retrieving user cart:", error)
+        if (error instanceof Error) {
+            console.error("Error retrieving user cart:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving user cart:", String(error));
+        }
         throw error
     }
 }
@@ -311,7 +319,11 @@ export const getUserShippingAddresses = async () => {
 
         return shippingAddresses
     } catch (error: unknown) {
-        console.error('Error fetching shipping addresses:', error)
+        if (error instanceof Error) {
+            console.error("Error fetching shipping addresses:", error.message, error.stack);
+        } else {
+            console.error("Error fetching shipping addresses:", String(error));
+        }
         throw error
     }
 }
@@ -354,7 +366,11 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                         },
                     })
                 } catch (error: unknown) {
-                    console.error('Error updating default addresses:', error)
+                    if (error instanceof Error) {
+                        console.error("Error updating default addresses:", error.message, error.stack);
+                    } else {
+                        console.error("Error updating default addresses:", String(error));
+                    }
                     throw new Error('Error making the default address.')
                 }
             }
@@ -377,7 +393,11 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
 
         return upsertedAddresses
     } catch (error: unknown) {
-        console.error('Error upserting shipping addresses:', error)
+        if (error instanceof Error) {
+            console.error("Error upserting shipping addresses:", error.message, error.stack);
+        } else {
+            console.error("Error upserting shipping addresses:", String(error));
+        }
         throw error
     }
 }
@@ -395,6 +415,7 @@ export const placeOrder = async (
     shippingAddress: ShippingAddress,
     cartId: string
 ): Promise<{ orderId: string }> => {
+    try {
     // Ensure the user is authenticated
     const user = await currentUser()
     if (!user) throw new Error('Unauthenticated.')
@@ -679,6 +700,14 @@ export const placeOrder = async (
     })
 
     return { orderId: order.id }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Error in placeOrder (cartId: ${cartId}):`, error.message, error.stack);
+        } else {
+            console.error(`Error in placeOrder (cartId: ${cartId}):`, String(error));
+        }
+        throw error;
+    }
 }
 
 export const emptyUserCart = async () => {
@@ -697,7 +726,11 @@ export const emptyUserCart = async () => {
 
         if (res) return true
     } catch (error: unknown) {
-        console.error(error)
+        if (error instanceof Error) {
+            console.error("Error in emptyUserCart:", error.message, error.stack);
+        } else {
+            console.error("Error in emptyUserCart:", String(error));
+        }
         throw error
     }
 }
@@ -860,7 +893,11 @@ export const addToWishlist = async (
             },
         })
     } catch (error: unknown) {
-        console.error(error)
+        if (error instanceof Error) {
+            console.error("Error in addToWishlist:", error.message, error.stack);
+        } else {
+            console.error("Error in addToWishlist:", String(error));
+        }
         throw error
     }
 }
@@ -1073,5 +1110,21 @@ export const updateCheckoutProductWithLatest = async (
             shippingFee: item.shippingFee.toNumber(),
             totalPrice: item.totalPrice.toNumber(),
         })),
+        coupon: cart.coupon
+            ? {
+                  ...cart.coupon,
+                  store: {
+                      ...cart.coupon.store,
+                      defaultShippingFeePerItem:
+                          cart.coupon.store.defaultShippingFeePerItem.toNumber(),
+                      defaultShippingFeeForAdditionalItem:
+                          cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
+                      defaultShippingFeePerKg:
+                          cart.coupon.store.defaultShippingFeePerKg.toNumber(),
+                      defaultShippingFeeFixed:
+                          cart.coupon.store.defaultShippingFeeFixed.toNumber(),
+                  },
+              }
+            : null,
     } as unknown as CartWithCartItemsType
 }

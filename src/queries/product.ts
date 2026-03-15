@@ -108,7 +108,11 @@ export const upsertProduct = async (
             await handleProductCreate(product, store.id);
         }
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in upsertProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertProduct:", String(error));
+        }
         throw error;
     }
 };
@@ -391,7 +395,11 @@ export const deleteProduct = async (productId: string) => {
         });
         return response;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in deleteProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteProduct:", String(error));
+        }
         throw error;
     }
 };
@@ -827,8 +835,11 @@ const getUserCountry = () => {
         }
         return defaultCountry;
     } catch (error: unknown) {
-        // Handle error
-        console.error("Error retrieving user country:", error);
+        if (error instanceof Error) {
+            console.error("Error retrieving user country:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving user country:", String(error));
+        }
         return defaultCountry;
     }
 };
@@ -1088,8 +1099,12 @@ export const getShippingDetails = async (
 
     return false;
     } catch (error: unknown) {
-        console.error(error)
-        throw error
+        if (error instanceof Error) {
+            console.error("Error in getProductFilteredReviews:", error.message, error.stack);
+        } else {
+            console.error("Error in getProductFilteredReviews:", String(error));
+        }
+        throw error;
     }
 };
 
@@ -1293,8 +1308,12 @@ export const getProductShippingFee = async (
     // Return 0 if the country is not found
     return new Prisma.Decimal("0");
     } catch (error: unknown) {
-        console.error(error)
-        throw error
+        if (error instanceof Error) {
+            console.error("Error in getDeliveryDetailsForStoreByCountry:", error.message, error.stack);
+        } else {
+            console.error("Error in getDeliveryDetailsForStoreByCountry:", String(error));
+        }
+        throw error;
     }
 };
 
@@ -1393,7 +1412,11 @@ export const getProductsByIds = async (
             totalPages,
         };
     } catch (error: unknown) {
-        console.error("Error retrieving products by ids:", error);
+        if (error instanceof Error) {
+            console.error("Error retrieving products by ids:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving products by ids:", String(error));
+        }
         throw new Error("Failed to retrieve products. Please try again.");
     }
 };

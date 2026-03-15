@@ -144,7 +144,11 @@ export const upsertStore = async (store: Partial<Store>) => {
 
         return storeDetails;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in upsertStore:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertStore:", String(error));
+        }
         throw error;
     }
 };
@@ -183,7 +187,11 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 
         return store;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getStoreDefaultShippingDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreDefaultShippingDetails:", String(error));
+        }
         throw error;
     }
 };
@@ -231,7 +239,11 @@ export const updateStoreDefaultShippingDetails = async (
 
         return updatedStore;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in updateStoreDefaultShippingDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in updateStoreDefaultShippingDetails:", String(error));
+        }
         throw error;
     }
 };
@@ -299,7 +311,11 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 
         return result;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getStoreShippingRates:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreShippingRates:", String(error));
+        }
         throw error;
     }
 };
@@ -389,7 +405,11 @@ export const upsertShippingRate = async (
 
         return shippingRateDetails;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in upsertShippingRate:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertShippingRate:", String(error));
+        }
         throw error;
     }
 };
@@ -464,7 +484,11 @@ export const getStoreOrders = async (storeUrl: string) => {
 
         return orders;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getStoreOrders:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreOrders:", String(error));
+        }
         throw error;
     }
 };
@@ -534,7 +558,11 @@ export const applySeller = async (store: StoreType) => {
 
         return storeDetails;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in applySeller:", error.message, error.stack);
+        } else {
+            console.error("Error in applySeller:", String(error));
+        }
         throw error;
     }
 };
@@ -570,7 +598,11 @@ export const getAllStores = async () => {
 
         return stores;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getAllStores:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllStores:", String(error));
+        }
         throw error;
     }
 };
@@ -641,7 +673,11 @@ export const updateStoreStatus = async (
 
         return updatedStore.status;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in updateStoreStatus:", error.message, error.stack);
+        } else {
+            console.error("Error in updateStoreStatus:", String(error));
+        }
         throw error;
     }
 };
@@ -679,7 +715,11 @@ export const deleteStore = async (storeId: string) => {
 
         return response;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in deleteStore:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteStore:", String(error));
+        }
         throw error;
     }
 };
@@ -718,7 +758,11 @@ export const getStorePageDetails = async (storeUrl: string) => {
 
         return store;
     } catch (error: unknown) {
-        console.error(error);
+        if (error instanceof Error) {
+            console.error("Error in getStorePageDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in getStorePageDetails:", String(error));
+        }
         throw error;
     }
 };
