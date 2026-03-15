@@ -86,9 +86,9 @@ describe("SEED_SHIPPING_ADDRESSES バリデーション", () => {
         userDefaults.set(s.userEmail, true);
       }
     }
-    const users = Array.from(new Set(SEED_SHIPPING_ADDRESSES.map((s) => s.userEmail)));
-    for (const email of users) {
-      expect(userDefaults.has(email)).toBe(true);
+    const userRoleUsers = SEED_USERS.filter((u) => u.role === "USER");
+    for (const user of userRoleUsers) {
+      expect(userDefaults.has(user.email)).toBe(true);
     }
   });
 

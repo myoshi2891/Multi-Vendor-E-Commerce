@@ -65,24 +65,24 @@ export function generateSku(
 }
 
 /**
- * 決定論的なUUID形式のIDを生成する（RFC4122 UUID v5 準拠）
+ * 決定論的なUUID形式のIDを生成する（RFC4122 UUID v5 準拠、SHA-1使用）
  * 同一入力に対して常に同一のIDを返す（冪等性のため）
  * @param seedKey - ID生成のシードキー
  * @returns RFC4122 UUID v5形式の文字列
  */
 export function generateDeterministicId(seedKey: string): string {
   const namespace = "lux-seed-namespace";
-  const hash = createHash("sha256")
+  const hash = createHash("sha1")
     .update(`${namespace}:${seedKey}`)
     .digest("hex");
 
-  // RFC4122 UUID v5 形式に変換
+  // RFC4122 UUID v5 形式に変換（SHA-1の最初の16バイト = 32 hex文字を使用）
   const uuid = [
     hash.substring(0, 8),
     hash.substring(8, 12),
     // version bits: 5xxx (UUID v5)
     `5${hash.substring(13, 16)}`,
-    // variant bits: [89ab]xxx
+    // variant bits: [89ab]xxx (RFC4122)
     `${(parseInt(hash.substring(16, 18), 16) & 0x3f | 0x80).toString(16).padStart(2, "0")}${hash.substring(18, 20)}`,
     hash.substring(20, 32),
   ].join("-");

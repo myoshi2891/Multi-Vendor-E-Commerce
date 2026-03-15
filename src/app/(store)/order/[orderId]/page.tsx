@@ -57,9 +57,9 @@ export default async function OrderPage({
                             order.orderStatus !== "Failed") && (
                             <OrderTotalDetailsCard
                                 details={{
-                                    subTotal: order.subTotal,
-                                    shippingFees: order.shippingFees,
-                                    total: order.total,
+                                    subTotal: order.subTotal.toNumber(),
+                                    shippingFees: order.shippingFees.toNumber(),
+                                    total: order.total.toNumber(),
                                 }}
                             />
                         )}
@@ -74,15 +74,15 @@ export default async function OrderPage({
                         <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 space-y-5 overflow-auto border-l p-4 px-2">
                             <OrderTotalDetailsCard
                                 details={{
-                                    subTotal: order.subTotal,
-                                    shippingFees: order.shippingFees,
-                                    total: order.total,
+                                    subTotal: order.subTotal.toNumber(),
+                                    shippingFees: order.shippingFees.toNumber(),
+                                    total: order.total.toNumber(),
                                 }}
                             />
                             <Separator />
                             <OrderPayment
                                 orderId={order.id}
-                                amount={order.total}
+                                amount={order.total.toNumber()}
                             />
                         </div>
                     )}

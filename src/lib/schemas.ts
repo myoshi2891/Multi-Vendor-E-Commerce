@@ -1,4 +1,3 @@
-"use client";
 import { ShippingFeeMethod } from "@prisma/client";
 import * as z from "zod";
 
