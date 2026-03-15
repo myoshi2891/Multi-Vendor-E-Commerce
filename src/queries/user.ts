@@ -1060,5 +1060,18 @@ export const updateCheckoutProductWithLatest = async (
 
     if (!cart) throw new Error('Something went wrong while updating the cart.')
 
-    return cart
+    // サーバーアクション → クライアントのシリアライズで Prisma.Decimal のメソッドが
+    // 失われるため、number に変換してから返す
+    return {
+        ...cart,
+        subTotal: cart.subTotal.toNumber(),
+        shippingFees: cart.shippingFees.toNumber(),
+        total: cart.total.toNumber(),
+        cartItems: cart.cartItems.map((item) => ({
+            ...item,
+            price: item.price.toNumber(),
+            shippingFee: item.shippingFee.toNumber(),
+            totalPrice: item.totalPrice.toNumber(),
+        })),
+    } as unknown as CartWithCartItemsType
 }

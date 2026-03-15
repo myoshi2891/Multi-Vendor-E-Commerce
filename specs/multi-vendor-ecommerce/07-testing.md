@@ -16,6 +16,11 @@
   - `$transaction` mock: callback receives mock client for transparent
     assertion on `tx.store.update` / `tx.user.update`.
   - Webhook mocks: Svix `Webhook.verify`, `next/headers`, Clerk client.
+  - `Prisma.Decimal` mocks: money fields in mock data must use
+    `new Prisma.Decimal("value")` (not plain numbers) because production
+    code calls `.toNumber()`, `.add()`, `.mul()` etc. Factory overrides
+    use `as never` cast for type compatibility with `Partial<MockType>`
+    (e.g., `createMockSize({ price: new Prisma.Decimal("50") as never })`).
 
 ## Test Layers
 - Unit: pure functions, schema validation, and query composition.
