@@ -39,4 +39,4 @@
 
 ## ロードマップ参照
 
-`docs/architecture/saas-roadmap.md` を参照
+`docs/architecture/saas-roadmap.md` を参照。参照仕様: `specs/multi-vendor-ecommerce/`

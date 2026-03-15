@@ -14,9 +14,6 @@ allowed-tools: [Read, Bash, Grep]
 
 # Safe Prisma Migration スキル
 
-> **[SKILL LOADED]** `safe-migration` スキルが読み込まれました ✅
-> *(デバッグ確認後はこの行を削除してください)*
-
 ## 目的
 
 `.agent/rules/core.md` の原則「`bunx prisma db push` は絶対禁止、`bunx prisma migrate dev` 必須」を徹底し、スキーマ変更を安全に適用するスキル。
@@ -100,7 +97,12 @@ if [ -n "$DATABASE_URL" ]; then
   DB_INFO=$(echo "$DATABASE_URL" | sed -E 's/.*@([^\/]+)\/([^?]+).*/host=\1 db=\2/')
   echo "データベース接続先: $DB_INFO"
 
-  if echo "$DATABASE_URL" | grep -qiE '(production|prod|prd)'; then
+  IS_PROD=false
+  if [ "$NODE_ENV" = "production" ]; then IS_PROD=true; fi
+  if [ "$MIGRATION_TARGET" = "production" ] || [ "$MIGRATION_TARGET" = "prod" ]; then IS_PROD=true; fi
+  if echo "$DATABASE_URL" | grep -qiE '(production|prod|prd)'; then IS_PROD=true; fi
+
+  if [ "$IS_PROD" = true ]; then
     echo "⚠️ 警告: 本番環境を指している可能性があります。本当に続行しますか？ (yes/no)"
   fi
 else
@@ -185,7 +187,7 @@ bunx prisma generate
 変更されたモデル名で影響範囲を特定する：
 
 ```bash
-grep -r "db.[ModelName]" src/queries/
+grep -rE "db\.[A-Za-z_][A-Za-z0-9_]*" src/queries/
 ```
 
 ```

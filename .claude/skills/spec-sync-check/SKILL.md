@@ -14,9 +14,6 @@ allowed-tools: [Read, Grep, Bash]
 
 # Spec Sync Checker スキル
 
-> **[SKILL LOADED]** `spec-sync-check` スキルが読み込まれました ✅
-> *(デバッグ確認後はこの行を削除してください)*
-
 ## 目的
 
 実装コードと仕様書（`specs/multi-vendor-ecommerce/`）の乖離を検出し、人間に報告するスキル。

@@ -49,7 +49,7 @@
 
 | 種別 | 配置場所 | 対象 |
 |-----|---------|------|
-| Jest ユニットテスト | `src/queries/*.test.ts` | 全サーバーアクション |
+| Jest ユニットテスト | サーバーアクションのテストに限定: `src/queries/*.test.ts`<br>※コンポーネント/ストアのテスト（例: `useCartStore.test.ts`）はソースファイルと同階層（例: `src/cart-store/`）に配置する | 全サーバーアクション |
 | Playwright E2E テスト | `tests/e2e/` | Chromium / Firefox / WebKit の3ブラウザ |
 | E2E シードデータ | `bun run seed:e2e` で投入 | — |
 
@@ -63,6 +63,8 @@ bun run build           本番ビルド
 bun run lint            ESLint 実行
 bun run test            Jest ユニットテスト
 bunx playwright test    Playwright E2E テスト
+bun run seed:e2e        E2E テスト用シード（CI/E2E 用）
+bun run seed:luxury     データセット生成用シード（ローカル開発・デザイン確認用）
 bunx prisma generate    Prisma クライアント再生成
 bunx prisma migrate dev マイグレーション適用（db push は禁止）
 ```

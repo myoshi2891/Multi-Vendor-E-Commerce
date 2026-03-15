@@ -5,16 +5,13 @@ description: >
   patterns. Produces implementation file, Zod schema addition, and unit tests (AAA pattern)
   in a single scaffold. Only triggered when a new server action is explicitly requested.
   Triggered by: "新しいサーバーアクション", "サーバーアクション追加", "server action作成",
-  "APIエンドポイント追加", "queries追加", "new server action", "add server action",
+  "新しいserver actionを追加", "add server action (query)", "new server action", "add server action",
   "scaffold action", "create query".
 invocation: automatic
 allowed-tools: [Read, Grep]
 ---
 
 # Server Action Scaffold スキル
-
-> **[SKILL LOADED]** `server-action-scaffold` スキルが読み込まれました ✅
-> *(デバッグ確認後はこの行を削除してください)*
 
 ## 目的
 
@@ -41,7 +38,7 @@ Read: src/queries/user.ts
 | **ファイル構造** | `"use server"` ディレクティブ・インポート順 |
 | **認証** | `currentUser()` の呼び出し位置と未認証時のレスポンス |
 | **ロールチェック** | `db.user.findUnique` で `role` を確認するパターン |
-| **バリデーション** | `XXXSchema.parse(data)` の使用タイミング |
+| **バリデーション** | `XXXFormSchema.parse(data)` の使用タイミング |
 | **DB 操作** | `create` / `findMany` / `updateMany` / `deleteMany` の使用方法 |
 | **レスポンス形式** | `{ success: true, data }` / `{ success: false, error }` |
 | **エラーハンドリング** | `try/catch` + `console.error()` のパターン |
@@ -56,7 +53,7 @@ Read: src/lib/schemas.ts
 
 確認ポイント：
 
-- 既存スキーマの命名規則（`XXXSchema` 形式）
+- 既存スキーマの命名規則（`XXXFormSchema` 形式）
 - フィールドバリデーションのパターン（`min` / `max` / `email` / `url` 等）
 - カスタムバリデーションの実装方法
 
@@ -83,16 +80,16 @@ Read: src/config/test-scenarios.ts
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { XXXSchema } from "@/lib/schemas";
+import { XXXFormSchema } from "@/lib/schemas";
 import { z } from "zod";
 
 /** [機能の説明] */
-export async function createXXX(data: z.infer<typeof XXXSchema>) {
+export async function createXXX(data: z.infer<typeof XXXFormSchema>) {
   try {
     const user = await currentUser();
     if (!user) return { success: false, error: "認証が必要です" };
 
-    const validated = XXXSchema.parse(data);
+    const validated = XXXFormSchema.parse(data);
 
     const result = await db.xxx.create({
       data: { ...validated, userId: user.id },
@@ -124,12 +121,12 @@ export async function getXXXList() {
 }
 
 /** [更新の説明] */
-export async function updateXXX(id: string, data: z.infer<typeof XXXSchema>) {
+export async function updateXXX(id: string, data: z.infer<typeof XXXFormSchema>) {
   try {
     const user = await currentUser();
     if (!user) return { success: false, error: "認証が必要です" };
 
-    const validated = XXXSchema.parse(data);
+    const validated = XXXFormSchema.parse(data);
 
     // userId を where に含めることで権限チェックをアトミックに実施
     const result = await db.xxx.updateMany({
@@ -170,13 +167,13 @@ export async function deleteXXX(id: string) {
 #### B. Zod スキーマ（`src/lib/schemas.ts` への追加案）
 
 ```typescript
-export const XXXSchema = z.object({
+export const XXXFormSchema = z.object({
   field1: z.string().min(2, "2文字以上必要です"),
   field2: z.number().positive("正の数が必要です"),
   field3: z.string().email("有効なメールアドレスを入力してください").optional(),
 });
 
-export type XXXInput = z.infer<typeof XXXSchema>;
+export type XXXInput = z.infer<typeof XXXFormSchema>;
 ```
 
 #### C. ユニットテスト（`src/queries/XXX.test.ts`）
@@ -327,7 +324,7 @@ describe("XXX サーバーアクション", () => {
 
 ### 生成ファイル
 1. `src/queries/XXX.ts` — createXXX / getXXXList / updateXXX / deleteXXX
-2. `src/lib/schemas.ts` への追加 — XXXSchema / XXXInput
+2. `src/lib/schemas.ts` への追加 — XXXFormSchema / XXXInput
 3. `src/queries/XXX.test.ts` — CRUD × 正常・異常・権限チェック
 
 ### 次のアクション
@@ -354,7 +351,7 @@ describe("XXX サーバーアクション", () => {
 - すべてのファイル先頭に `"use server"` を記述する
 - すべてのサーバーアクションで `currentUser()` による認証チェックを行う
 - すべてのサーバーアクションを `try/catch` で囲み `console.error()` でログ出力する
-- 入力データは `XXXSchema.parse(data)` でバリデーションする
+- 入力データは `XXXFormSchema.parse(data)` でバリデーションする
 - レスポンスは `{ success: true, data }` / `{ success: false, error }` に統一する
 - 更新・削除は `updateMany` / `deleteMany` + `where: { id, userId }` で権限チェックをアトミックに行う
 - テストは AAA パターン（Arrange / Act / Assert）で記述する

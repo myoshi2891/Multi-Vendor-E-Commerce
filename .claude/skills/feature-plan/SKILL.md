@@ -13,9 +13,6 @@ allowed-tools: [Read, Grep, Bash]
 
 # Feature Implementation Plan スキル
 
-> **[SKILL LOADED]** `feature-plan` スキルが読み込まれました ✅
-> *(デバッグ確認後はこの行を削除してください)*
-
 ## 目的
 
 `.agent/rules/core.md` の原則「コードを一行も書く前に Implementation Plan を生成し、ユーザーの承認を得る」を実行するスキル。

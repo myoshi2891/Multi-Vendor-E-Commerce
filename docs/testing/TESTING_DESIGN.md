@@ -4,7 +4,7 @@
 
 - **目的**: リポジトリのテスト戦略とディレクトリ構成を定義する
 - **関連**: `QA_TEST_PERSPECTIVES.md`（同ディレクトリ）、`../../README.md`、`../migration/03-test-strategy-updates.md`
-- **CI 推奨**: `bun run lint` → `bun run test` → `bun run build` → `bunx playwright test --project=chromium --workers=1`（`E2E_DATABASE_URL` を設定）。integration スイートには `.env.test` を使用する
+- **CI 推奨**: `bun run lint` → `bun run test` → `bun run build` → スモークテスト: `bunx playwright test --project=chromium --workers=1` → フルリグレッション: `bunx playwright test --project=all --workers=1` またはプロジェクト指定なし（`E2E_DATABASE_URL` を設定）。integration スイートには `.env.test` を使用する
 
 ---
 
@@ -87,7 +87,7 @@
 
 | テスト種別 | パターン |
 |-----------|---------|
-| Unit | `src/**.test.ts` または `tests/unit/**.test.ts` |
+| Unit | `src/**/*.test.ts` または `tests/unit/**/*.test.ts` |
 | Component | `tests/component/**.test.tsx` |
 | Integration | `tests/integration/**.test.ts` |
 | E2E | `tests/e2e/**.spec.ts` |
