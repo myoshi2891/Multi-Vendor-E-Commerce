@@ -159,9 +159,12 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 			}
 		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
-			toast({
-				variant: "destructive",
+			if (error instanceof Error) {
+				console.error("Error submitting shipping rate form:", error.message, error.stack);
+			} else {
+				console.error("Error submitting shipping rate form:", error);
+			}
+			toast({				variant: "destructive",
 				title: "Oops!",
 				description: error instanceof Error ? error.message : String(error),
 			});

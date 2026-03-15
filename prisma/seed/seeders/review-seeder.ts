@@ -10,7 +10,7 @@ export async function seedReviews(
   prisma: PrismaClient,
   maps: Pick<SeedMaps, "users" | "products">
 ): Promise<void> {
-  let skipped = 0;
+  const missingProductSlugs: string[] = [];
 
   await prisma.$transaction(async (tx) => {
     // seed ユーザーのレビューのみ削除（E2Eデータとの衝突回避）
@@ -28,7 +28,7 @@ export async function seedReviews(
       const productId = maps.products.get(r.productSlug);
       if (!productId) {
         // 存在しない商品へのレビューはスキップ（Geminiデータの不整合を許容）
-        skipped++;
+        missingProductSlugs.push(r.productSlug);
         continue;
       }
 
@@ -58,9 +58,11 @@ export async function seedReviews(
     }
   });
 
-  if (skipped > 0) {
+  if (missingProductSlugs.length > 0) {
+    const uniqueSlugs = Array.from(new Set(missingProductSlugs));
     console.warn(
-      `⚠️  ${skipped}件のレビューがスキップされました（商品が存在しないため）`
+      `⚠️  ${missingProductSlugs.length}件のレビューがスキップされました（商品が存在しないため）\n` +
+      `   対象slug: ${uniqueSlugs.join(", ")}`
     );
   }
 }

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import {
     upsertProduct,
@@ -691,7 +692,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: 50, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("50") as never, discount: 0 }),
                             ],
                         },
                     ],
@@ -704,7 +705,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: 20, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("20") as never, discount: 0 }),
                             ],
                         },
                     ],
@@ -742,7 +743,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: `v${i}` }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [createMockSize()],
+                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") as never })],
                         },
                     ],
                 }));
@@ -907,7 +908,12 @@ describe("getRatingStatistics", () => {
 // ==================================================
 describe("getShippingDetails", () => {
     const userCountry = { name: "Japan", code: "JP", city: "Tokyo" };
-    const store = createMockStore();
+    const store = createMockStore({
+        defaultShippingFeePerItem: new Prisma.Decimal("5") as never,
+        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2") as never,
+        defaultShippingFeePerKg: new Prisma.Decimal("1.5") as never,
+        defaultShippingFeeFixed: new Prisma.Decimal("10") as never,
+    });
 
     it("国が見つからない場合falseを返す", async () => {
         mockDb.country.findUnique.mockResolvedValue(null);
@@ -931,10 +937,10 @@ describe("getShippingDetails", () => {
 
         it("ITEM方式: 配送レートの値を使用する", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 8.0,
-                shippingFeeForAdditionalItem: 3.0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("8"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("3"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 5,
                 deliveryTimeMax: 10,
                 shippingService: "Express",
@@ -962,10 +968,10 @@ describe("getShippingDetails", () => {
 
         it("WEIGHT方式: 重量ベースの料金を返す", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 0,
-                shippingFeeForAdditionalItem: 0,
-                shippingFeePerKg: 5.0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("0"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
+                shippingFeePerKg: new Prisma.Decimal("5"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 7,
                 deliveryTimeMax: 14,
                 shippingService: "Standard",
@@ -989,10 +995,10 @@ describe("getShippingDetails", () => {
 
         it("FIXED方式: 固定料金を返す", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 0,
-                shippingFeeForAdditionalItem: 0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 15.0,
+                shippingFeePerItem: new Prisma.Decimal("0"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("15"),
                 deliveryTimeMin: 3,
                 deliveryTimeMax: 7,
                 shippingService: "Economy",
@@ -1026,9 +1032,8 @@ describe("getShippingDetails", () => {
 
             expect(result).toEqual(
                 expect.objectContaining({
-                    shippingFee: store.defaultShippingFeePerItem,
-                    extraShippingFee:
-                        store.defaultShippingFeeForAdditionalItem,
+                    shippingFee: 5,
+                    extraShippingFee: 2,
                     deliveryTimeMin: store.defaultDeliveryTimeMin,
                     deliveryTimeMax: store.defaultDeliveryTimeMax,
                 })
@@ -1037,10 +1042,10 @@ describe("getShippingDetails", () => {
 
         it("無料配送対象国の場合、料金が0になる", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 10.0,
-                shippingFeeForAdditionalItem: 5.0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("10"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("5"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 3,
                 deliveryTimeMax: 7,
                 shippingService: "Standard",
@@ -1293,7 +1298,7 @@ describe("getProductShippingFee", () => {
             1
         );
 
-        expect(result).toBe(0);
+        expect(result).toEqual(new Prisma.Decimal("0"));
     });
 
     it("無料配送対象国の場合0を返す", async () => {
@@ -1314,20 +1319,22 @@ describe("getProductShippingFee", () => {
             1
         );
 
-        expect(result).toBe(0);
+        expect(result).toEqual(new Prisma.Decimal("0"));
     });
 
     describe("配送方式別計算", () => {
+        const mockShippingRate = {
+            shippingFeePerItem: new Prisma.Decimal("5"),
+            shippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+            shippingFeePerKg: new Prisma.Decimal("3"),
+            shippingFeeFixed: new Prisma.Decimal("15"),
+        };
+
         beforeEach(() => {
             mockDb.country.findUnique.mockResolvedValue(
                 createMockCountry()
             );
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 5.0,
-                shippingFeeForAdditionalItem: 2.0,
-                shippingFeePerKg: 3.0,
-                shippingFeeFixed: 15.0,
-            });
+            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
         });
 
         it("ITEM方式: 初回+追加アイテム料金を計算する", async () => {
@@ -1337,10 +1344,10 @@ describe("getProductShippingFee", () => {
                 store as never,
                 null,
                 0.5,
-                3 // 数量3: 5.0 + 2.0 * 2 = 9.0
+                3 // 数量3: 5 + 2 * 2 = 9
             );
 
-            expect(result).toBe(9.0);
+            expect(result).toEqual(new Prisma.Decimal("9"));
         });
 
         it("WEIGHT方式: 重量×数量×単価を計算する", async () => {
@@ -1350,10 +1357,10 @@ describe("getProductShippingFee", () => {
                 store as never,
                 null,
                 2.0, // 2kg
-                3 // 数量3: 3.0 * 2.0 * 3 = 18.0
+                3 // 数量3: 3 * 2 * 3 = 18
             );
 
-            expect(result).toBe(18.0);
+            expect(result).toEqual(new Prisma.Decimal("18"));
         });
 
         it("FIXED方式: 固定料金を返す（数量に依存しない）", async () => {
@@ -1369,12 +1376,7 @@ describe("getProductShippingFee", () => {
             mockDb.country.findUnique.mockResolvedValue(
                 createMockCountry()
             );
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 5.0,
-                shippingFeeForAdditionalItem: 2.0,
-                shippingFeePerKg: 3.0,
-                shippingFeeFixed: 15.0,
-            });
+            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
 
             const result5 = await getProductShippingFee(
                 "FIXED",
@@ -1385,8 +1387,8 @@ describe("getProductShippingFee", () => {
                 5
             );
 
-            expect(result1).toBe(15.0);
-            expect(result5).toBe(15.0);
+            expect(result1).toEqual(new Prisma.Decimal("15"));
+            expect(result5).toEqual(new Prisma.Decimal("15"));
         });
 
         it("未知の配送方式の場合0を返す", async () => {
@@ -1399,22 +1401,30 @@ describe("getProductShippingFee", () => {
                 1
             );
 
-            expect(result).toBe(0);
+            expect(result).toEqual(new Prisma.Decimal("0"));
         });
 
         it("配送レートがない場合、ストアデフォルト値を使用する", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue(null);
 
+            // ストアデフォルト値を Decimal で持つモックを使用
+            const storeWithDecimalDefaults = createMockStore({
+                defaultShippingFeePerItem: new Prisma.Decimal("5") as never,
+                defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2") as never,
+                defaultShippingFeePerKg: new Prisma.Decimal("1.5") as never,
+                defaultShippingFeeFixed: new Prisma.Decimal("10") as never,
+            });
+
             const result = await getProductShippingFee(
                 "ITEM",
                 userCountry,
-                store as never,
+                storeWithDecimalDefaults as never,
                 null,
                 0.5,
-                2 // defaultShippingFeePerItem(5.0) + defaultShippingFeeForAdditionalItem(2.0) * 1 = 7.0
+                2 // defaultShippingFeePerItem(5) + defaultShippingFeeForAdditionalItem(2) * 1 = 7
             );
 
-            expect(result).toBe(7.0);
+            expect(result).toEqual(new Prisma.Decimal("7"));
         });
     });
 });

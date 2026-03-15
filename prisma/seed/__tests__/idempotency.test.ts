@@ -2,9 +2,14 @@ import { PrismaClient } from "@prisma/client";
 import { seedAll } from "../seeders";
 import { SEED_USERS } from "../constants/users";
 import { SEED_STORES } from "../constants/stores";
+import { SEED_CATEGORIES } from "../constants/categories";
 
 // 冪等性テスト（実際のDBに対して実行）
 // ALLOW_DB_MUTATION_TESTS=true が必要
+
+const MIN_CATEGORIES = SEED_CATEGORIES.length;
+const MIN_STORES = SEED_STORES.length;
+const MIN_PRODUCTS = 30; // 全商品数より少なめ（Geminiデータの不整合を許容）
 
 describe("Seed 冪等性テスト", () => {
   let prisma: PrismaClient;
@@ -93,17 +98,17 @@ describe("Seed 冪等性テスト", () => {
     const categories = await prisma.category.findMany({
       where: { url: { startsWith: "lux-" } },
     });
-    expect(categories.length).toBeGreaterThanOrEqual(7);
+    expect(categories.length).toBeGreaterThanOrEqual(MIN_CATEGORIES);
 
     const stores = await prisma.store.findMany({
       where: { url: { startsWith: "lux-" } },
     });
-    expect(stores.length).toBeGreaterThanOrEqual(6);
+    expect(stores.length).toBeGreaterThanOrEqual(MIN_STORES);
 
     const products = await prisma.product.findMany({
       where: { slug: { startsWith: "lux-" } },
     });
-    expect(products.length).toBeGreaterThanOrEqual(30);
+    expect(products.length).toBeGreaterThanOrEqual(MIN_PRODUCTS);
   });
 
   it("seed実行後、全emailにlux-seed-プレフィクスがあること（E2E衝突回避）", async () => {
@@ -139,7 +144,6 @@ describe("Seed 冪等性テスト", () => {
       },
     });
 
-    // 全36商品のうち、少なくとも30商品は存在するはず（Geminiデータの不整合を許容）
-    expect(products.length).toBeGreaterThanOrEqual(30);
+    expect(products.length).toBeGreaterThanOrEqual(MIN_PRODUCTS);
   });
 });

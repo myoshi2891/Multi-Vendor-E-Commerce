@@ -56,7 +56,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { ProductVariant, Size, Store } from "@prisma/client";
+import { Prisma, ProductVariant, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -108,7 +108,7 @@ export const upsertProduct = async (
             await handleProductCreate(product, store.id);
         }
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -391,7 +391,7 @@ export const deleteProduct = async (productId: string) => {
         });
         return response;
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
@@ -1088,7 +1088,7 @@ export const getShippingDetails = async (
 
     return false;
     } catch (error) {
-        console.log(error)
+        console.error(error)
         throw error
     }
 };
@@ -1247,7 +1247,7 @@ export const getProductShippingFee = async (
                 (c) => c.countryId === country.id
             );
             if (isEligibleForFreeShipping) {
-                return 0; // Free shipping
+                return new Prisma.Decimal("0"); // Free shipping
             }
         }
 
@@ -1270,13 +1270,14 @@ export const getProductShippingFee = async (
         // Calculate the additional quantity (excluding the first item)
         const additionalItemsQty = Math.max(0, quantity - 1);
 
-        // Define fee calculation methods in a map (using functions)
-        const feeCalculators: Record<string, () => number> = {
+        // Define fee calculation methods in a map (using Decimal arithmetic)
+        const feeCalculators: Record<string, () => Prisma.Decimal> = {
             ITEM: () =>
-                shippingFeePerItem.toNumber() +
-                shippingFeeForAdditionalItem.toNumber() * additionalItemsQty,
-            WEIGHT: () => shippingFeePerKg.toNumber() * weight * quantity,
-            FIXED: () => shippingFeeFixed.toNumber(),
+                shippingFeePerItem.add(
+                    shippingFeeForAdditionalItem.mul(additionalItemsQty)
+                ),
+            WEIGHT: () => shippingFeePerKg.mul(weight).mul(quantity),
+            FIXED: () => shippingFeeFixed,
         };
 
         // Check if the fee calculation method exists and calculate the fee
@@ -1286,13 +1287,13 @@ export const getProductShippingFee = async (
         }
 
         // If no valid shipping method is found, return 0
-        return 0;
+        return new Prisma.Decimal("0");
     }
 
     // Return 0 if the country is not found
-    return 0;
+    return new Prisma.Decimal("0");
     } catch (error) {
-        console.log(error)
+        console.error(error)
         throw error
     }
 };

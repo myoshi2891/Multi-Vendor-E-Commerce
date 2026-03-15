@@ -147,8 +147,8 @@ export async function seedCommerce(
           status: g.status,
           couponId,
           shippingService: g.shippingService || "Standard Shipping",
-          shippingDeliveryMin: g.shippingDeliveryMin || 3,
-          shippingDeliveryMax: g.shippingDeliveryMax || 7,
+          shippingDeliveryMin: g.shippingDeliveryMin ?? 3,
+          shippingDeliveryMax: g.shippingDeliveryMax ?? 7,
           shippingFees: 0, // 後でOrderItemから計算
           subTotal: 0,     // 後でOrderItemから計算
           total: 0,        // 後でOrderItemから計算
@@ -157,35 +157,46 @@ export async function seedCommerce(
 
       let groupSubTotal = new Prisma.Decimal("0");
 
-      for (const item of g.items) {
+      // ID集合を事前収集してバッチ取得（N+1回避）
+      const itemIds = g.items.map((item) => {
         const productId = maps.products.get(item.productSlug);
         const variantId = maps.variants.get(item.variantSlug);
-
         if (!productId || !variantId) {
           throw new Error(
             `商品/バリアントが見つかりません: ${item.productSlug}/${item.variantSlug}（注文: ${o.userEmail}, 店舗: ${g.storeUrl}）`
           );
         }
-
         const sizeKey = `${item.variantSlug}:${item.size}`;
         const sizeId = maps.sizes.get(sizeKey);
-
         if (!sizeId) {
           throw new Error(
             `サイズが見つかりません: ${sizeKey}（注文: ${o.userEmail}, 店舗: ${g.storeUrl}）`
           );
         }
+        return { productId, variantId, sizeId };
+      });
 
-        // 商品データを取得して必要なフィールドを補完
-        const product = await prisma.product.findUnique({
-          where: { id: productId },
-        });
-        const variant = await prisma.productVariant.findUnique({
-          where: { id: variantId },
-        });
-        const size = await prisma.size.findUnique({
-          where: { id: sizeId },
-        });
+      const productIds = Array.from(new Set(itemIds.map((i) => i.productId)));
+      const variantIds = Array.from(new Set(itemIds.map((i) => i.variantId)));
+      const sizeIds = Array.from(new Set(itemIds.map((i) => i.sizeId)));
+
+      const [products, variants, sizes] = await Promise.all([
+        prisma.product.findMany({ where: { id: { in: productIds } } }),
+        prisma.productVariant.findMany({ where: { id: { in: variantIds } } }),
+        prisma.size.findMany({ where: { id: { in: sizeIds } } }),
+      ]);
+
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      const variantMap = new Map(variants.map((v) => [v.id, v]));
+      const sizeMap = new Map(sizes.map((s) => [s.id, s]));
+
+      for (let idx = 0; idx < g.items.length; idx++) {
+        const item = g.items[idx];
+        const { productId, variantId, sizeId } = itemIds[idx];
+
+        const product = productMap.get(productId);
+        const variant = variantMap.get(variantId);
+        const size = sizeMap.get(sizeId);
 
         if (!product || !variant || !size) {
           throw new Error(

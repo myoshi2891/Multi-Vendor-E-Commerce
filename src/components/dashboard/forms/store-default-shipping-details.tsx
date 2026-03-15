@@ -116,13 +116,17 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 				// Redirect or Refresh data
 				router.refresh();
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
+			if (error instanceof Error) {
+				console.error("Error submitting shipping details form:", error.message, error.stack);
+			} else {
+				console.error("Error submitting shipping details form:", error);
+			}
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: error instanceof Error ? error.message : String(error),
 			});
 		}
 	};

@@ -1122,24 +1122,39 @@ describe("upsertShippingRate", () => {
             const rateData = {
                 id: "rate-001",
                 countryId: "c1",
+                shippingService: "Express",
                 shippingFeePerItem: 8.0,
+                shippingFeeForAdditionalItem: 3.0,
+                shippingFeePerKg: 1.5,
+                shippingFeeFixed: 10.0,
+                deliveryTimeMin: 3,
+                deliveryTimeMax: 7,
+                returnPolicy: "30 days",
             };
             const upsertedRate = { ...rateData, storeId: store.id };
             mockPrisma.shippingRate.upsert.mockResolvedValue(upsertedRate);
 
             const result = await upsertShippingRate(
                 TEST_CONFIG.TEST_STORE_URL,
-                rateData as never
+                rateData
             );
 
             expect(result).toEqual(upsertedRate);
             expect(mockPrisma.shippingRate.upsert).toHaveBeenCalledWith({
-                where: { id: "rate-001" },
+                where: {
+                    storeId_countryId: {
+                        storeId: store.id,
+                        countryId: "c1",
+                    },
+                },
                 update: expect.objectContaining({
-                    storeId: store.id,
+                    shippingService: "Express",
+                    shippingFeePerItem: 8.0,
                 }),
                 create: expect.objectContaining({
                     storeId: store.id,
+                    countryId: "c1",
+                    shippingService: "Express",
                 }),
             });
         });

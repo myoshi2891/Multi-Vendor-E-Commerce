@@ -85,9 +85,7 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 			const value = row.original.shippingRate?.shippingFeeForAdditionalItem;
 			return (
 				<span>
-					<span>
-						{formatShippingAmount(value)}
-					</span>
+					{formatShippingAmount(value)}
 				</span>
 			);
 		},
@@ -99,9 +97,7 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 			const value = row.original.shippingRate?.shippingFeePerKg;
 			return (
 				<span>
-					<span>
-						{formatShippingAmount(value)}
-					</span>
+					{formatShippingAmount(value)}
 				</span>
 			);
 		},
@@ -113,9 +109,7 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 			const value = row.original.shippingRate?.shippingFeeFixed;
 			return (
 				<span>
-					<span>
-						{formatShippingAmount(value)}
-					</span>
+					{formatShippingAmount(value)}
 				</span>
 			);
 		},
