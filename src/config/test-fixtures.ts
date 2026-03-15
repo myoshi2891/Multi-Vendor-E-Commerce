@@ -3,6 +3,7 @@
  * 全エンティティのモックデータファクトリ（Partial<T> overridesパターン）
  */
 
+import { Prisma } from "@prisma/client";
 import { TEST_CONFIG } from "./test-config";
 import { CartProductType } from "@/lib/types";
 
@@ -35,10 +36,10 @@ type MockStore = {
     averageRating: number;
     numReviews: number;
     defaultShippingService: string;
-    defaultShippingFeePerItem: number;
-    defaultShippingFeeForAdditionalItem: number;
-    defaultShippingFeePerKg: number;
-    defaultShippingFeeFixed: number;
+    defaultShippingFeePerItem: Prisma.Decimal;
+    defaultShippingFeeForAdditionalItem: Prisma.Decimal;
+    defaultShippingFeePerKg: Prisma.Decimal;
+    defaultShippingFeeFixed: Prisma.Decimal;
     defaultDeliveryTimeMin: number;
     defaultDeliveryTimeMax: number;
     returnPolicy: string;
@@ -90,7 +91,7 @@ type MockSize = {
     id: string;
     size: string;
     quantity: number;
-    price: number;
+    price: Prisma.Decimal;
     discount: number;
     productVariantId: string;
 };
@@ -123,9 +124,9 @@ type MockOrder = {
     orderStatus: string;
     paymentStatus: string;
     paymentMethod: string | null;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -138,9 +139,9 @@ type MockOrderGroup = {
     shippingService: string;
     shippingDeliveryMin: number;
     shippingDeliveryMax: number;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     couponId: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -159,9 +160,9 @@ type MockOrderItem = {
     image: string;
     size: string;
     quantity: number;
-    price: number;
-    shippingFee: number;
-    totalPrice: number;
+    price: Prisma.Decimal;
+    shippingFee: Prisma.Decimal;
+    totalPrice: Prisma.Decimal;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -201,7 +202,7 @@ type MockPaymentDetails = {
     paymentIntentId: string;
     paymentMethod: string;
     status: string;
-    amount: number;
+    amount: Prisma.Decimal;
     currency: string;
     orderId: string;
     userId: string;
@@ -213,9 +214,9 @@ type MockCart = {
     id: string;
     userId: string;
     couponId: string | null;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -234,9 +235,9 @@ type MockCartItem = {
     image: string;
     size: string;
     quantity: number;
-    price: number;
-    shippingFee: number;
-    totalPrice: number;
+    price: Prisma.Decimal;
+    shippingFee: Prisma.Decimal;
+    totalPrice: Prisma.Decimal;
 };
 
 type MockCountry = {
@@ -314,10 +315,10 @@ export const createMockStore = (
     averageRating: 0,
     numReviews: 0,
     defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
-    defaultShippingFeePerItem: 5.0,
-    defaultShippingFeeForAdditionalItem: 2.0,
-    defaultShippingFeePerKg: 1.5,
-    defaultShippingFeeFixed: 10.0,
+    defaultShippingFeePerItem: new Prisma.Decimal("5.00"),
+    defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2.00"),
+    defaultShippingFeePerKg: new Prisma.Decimal("1.50"),
+    defaultShippingFeeFixed: new Prisma.Decimal("10.00"),
     defaultDeliveryTimeMin: 3,
     defaultDeliveryTimeMax: 14,
     returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
@@ -382,7 +383,7 @@ export const createMockSize = (
     id: "size-001",
     size: "M",
     quantity: 50,
-    price: 29.99,
+    price: new Prisma.Decimal("29.99"),
     discount: 0,
     productVariantId: "variant-001",
     ...overrides,
@@ -427,9 +428,9 @@ export const createMockOrder = (
     orderStatus: "Pending",
     paymentStatus: "Pending",
     paymentMethod: null,
-    shippingFees: 10.0,
-    subTotal: 59.98,
-    total: 69.98,
+    shippingFees: new Prisma.Decimal("10.00"),
+    subTotal: new Prisma.Decimal("59.98"),
+    total: new Prisma.Decimal("69.98"),
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -446,9 +447,9 @@ export const createMockOrderGroup = (
     shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
     shippingDeliveryMin: 3,
     shippingDeliveryMax: 14,
-    shippingFees: 5.0,
-    subTotal: 29.99,
-    total: 34.99,
+    shippingFees: new Prisma.Decimal("5.00"),
+    subTotal: new Prisma.Decimal("29.99"),
+    total: new Prisma.Decimal("34.99"),
     couponId: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -471,9 +472,9 @@ export const createMockOrderItem = (
     image: "https://example.com/product.jpg",
     size: "M",
     quantity: 2,
-    price: 29.99,
-    shippingFee: 5.0,
-    totalPrice: 64.98,
+    price: new Prisma.Decimal("29.99"),
+    shippingFee: new Prisma.Decimal("5.00"),
+    totalPrice: new Prisma.Decimal("64.98"),
     status: "Pending",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -524,7 +525,7 @@ export const createMockPaymentDetails = (
     paymentIntentId: "pi_test_123",
     paymentMethod: "Stripe",
     status: "Completed",
-    amount: 6998,
+    amount: new Prisma.Decimal("6998"),
     currency: "usd",
     orderId: "order-001",
     userId: TEST_CONFIG.DEFAULT_USER_ID,
@@ -540,9 +541,9 @@ export const createMockCart = (
     id: "cart-001",
     userId: TEST_CONFIG.DEFAULT_USER_ID,
     couponId: null,
-    shippingFees: 5.0,
-    subTotal: 59.98,
-    total: 64.98,
+    shippingFees: new Prisma.Decimal("5.00"),
+    subTotal: new Prisma.Decimal("59.98"),
+    total: new Prisma.Decimal("64.98"),
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -565,9 +566,9 @@ export const createMockCartItem = (
     image: "https://example.com/product.jpg",
     size: "M",
     quantity: 2,
-    price: 29.99,
-    shippingFee: 5.0,
-    totalPrice: 64.98,
+    price: new Prisma.Decimal("29.99"),
+    shippingFee: new Prisma.Decimal("5.00"),
+    totalPrice: new Prisma.Decimal("64.98"),
     ...overrides,
 });
 

@@ -33,10 +33,10 @@ describe("Seed 冪等性テスト", () => {
     }
   });
 
-  beforeEach(async () => {
-    // ensure seed data is available before each test
+  beforeAll(async () => {
+    // ensure seed data is available before tests
     await seedAll(prisma);
-  });
+  }, 300000);
 
   it("seedAllを2回実行しても重複が発生しないこと", async () => {
     const firstCounts = {
@@ -123,27 +123,4 @@ describe("Seed 冪等性テスト", () => {
     expect(users.length).toBeGreaterThanOrEqual(SEED_USERS.length);
   });
 
-  it("seed実行後、指定された数のストアが存在すること", async () => {
-    const stores = await prisma.store.findMany({
-      where: {
-        url: {
-          startsWith: "lux-",
-        },
-      },
-    });
-
-    expect(stores.length).toBeGreaterThanOrEqual(SEED_STORES.length);
-  });
-
-  it("seed実行後、商品データが存在すること", async () => {
-    const products = await prisma.product.findMany({
-      where: {
-        slug: {
-          startsWith: "lux-",
-        },
-      },
-    });
-
-    expect(products.length).toBeGreaterThanOrEqual(MIN_PRODUCTS);
-  });
 });

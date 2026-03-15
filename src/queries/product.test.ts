@@ -692,7 +692,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("50") as never, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("50"), discount: 0 }),
                             ],
                         },
                     ],
@@ -705,7 +705,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("20") as never, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("20"), discount: 0 }),
                             ],
                         },
                     ],
@@ -743,7 +743,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: `v${i}` }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") as never })],
+                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") })],
                         },
                     ],
                 }));
@@ -909,10 +909,10 @@ describe("getRatingStatistics", () => {
 describe("getShippingDetails", () => {
     const userCountry = { name: "Japan", code: "JP", city: "Tokyo" };
     const store = createMockStore({
-        defaultShippingFeePerItem: new Prisma.Decimal("5") as never,
-        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2") as never,
-        defaultShippingFeePerKg: new Prisma.Decimal("1.5") as never,
-        defaultShippingFeeFixed: new Prisma.Decimal("10") as never,
+        defaultShippingFeePerItem: new Prisma.Decimal("5"),
+        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+        defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
+        defaultShippingFeeFixed: new Prisma.Decimal("10"),
     });
 
     it("国が見つからない場合falseを返す", async () => {
@@ -1409,10 +1409,10 @@ describe("getProductShippingFee", () => {
 
             // ストアデフォルト値を Decimal で持つモックを使用
             const storeWithDecimalDefaults = createMockStore({
-                defaultShippingFeePerItem: new Prisma.Decimal("5") as never,
-                defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2") as never,
-                defaultShippingFeePerKg: new Prisma.Decimal("1.5") as never,
-                defaultShippingFeeFixed: new Prisma.Decimal("10") as never,
+                defaultShippingFeePerItem: new Prisma.Decimal("5"),
+                defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+                defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
+                defaultShippingFeeFixed: new Prisma.Decimal("10"),
             });
 
             const result = await getProductShippingFee(

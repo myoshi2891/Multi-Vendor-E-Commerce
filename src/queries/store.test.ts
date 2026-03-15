@@ -89,7 +89,9 @@ const TestDataFactory = {
         ...overrides,
     }),
 
-    shippingDetails: (overrides: Partial<StoreDefaultShippingInput> = {}): StoreDefaultShippingInput => ({
+    shippingDetails: (
+        overrides: { [K in keyof StoreDefaultShippingInput]?: StoreDefaultShippingInput[K] | null } = {}
+    ): StoreDefaultShippingInput => ({
         defaultShippingService: "Express Delivery",
         defaultShippingFeePerItem: 10.5,
         defaultShippingFeeForAdditionalItem: 5.25,
@@ -99,7 +101,7 @@ const TestDataFactory = {
         defaultDeliveryTimeMax: 7,
         returnPolicy: "Return within 14 days with receipt.",
         ...overrides,
-    }),
+    }) as StoreDefaultShippingInput,
 
     createStoreExpectedData: (
         storeData: {
@@ -835,10 +837,10 @@ describe("getStoreDefaultShippingDetails", () => {
             const mockDb = TestHelpers.mockDbMethods();
             // DB 出力モック: スキーマ上は NOT NULL だが null 応答時の挙動を検証
             const mockStore = TestDataFactory.shippingDetails({
-                defaultShippingFeePerItem: null as unknown as number,
-                defaultShippingFeePerKg: null as unknown as number,
-                defaultDeliveryTimeMin: null as unknown as number,
-                returnPolicy: null as unknown as string,
+                defaultShippingFeePerItem: null,
+                defaultShippingFeePerKg: null,
+                defaultDeliveryTimeMin: null,
+                returnPolicy: null,
             });
             mockDb.findUnique.mockResolvedValue(mockStore);
 
