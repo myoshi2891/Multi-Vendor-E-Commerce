@@ -67,5 +67,6 @@ bunx playwright test    Playwright E2E テスト
 bun run seed:e2e        E2E テスト用シード（CI/E2E 用）
 bun run seed:luxury     データセット生成用シード（ローカル開発・デザイン確認用）
 bunx prisma generate    Prisma クライアント再生成
-bunx prisma migrate dev マイグレーション適用（db push は禁止）
+bunx prisma migrate dev    マイグレーション適用（ローカル開発のみ）
+bunx prisma migrate deploy マイグレーション適用（本番・ステージング）
 ```

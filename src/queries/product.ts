@@ -984,6 +984,7 @@ export const getShippingDetails = async (
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null
 ) => {
+    try {
     let shippingDetails = {
         shippingFeeMethod,
         shippingService: "",
@@ -1086,6 +1087,10 @@ export const getShippingDetails = async (
     }
 
     return false;
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
 };
 
 // Function: getProductFilteredReviews
@@ -1225,6 +1230,7 @@ export const getProductShippingFee = async (
     weight: number,
     quantity: number
 ) => {
+    try {
     // Fetch country information based on userCountry.name and userCountry.code
     const country = await db.country.findUnique({
         where: {
@@ -1262,7 +1268,7 @@ export const getProductShippingFee = async (
         } = shippingRate || {};
 
         // Calculate the additional quantity (excluding the first item)
-        const additionalItemsQty = quantity - 1;
+        const additionalItemsQty = Math.max(0, quantity - 1);
 
         // Define fee calculation methods in a map (using functions)
         const feeCalculators: Record<string, () => number> = {
@@ -1285,6 +1291,10 @@ export const getProductShippingFee = async (
 
     // Return 0 if the country is not found
     return 0;
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
 };
 
 /**

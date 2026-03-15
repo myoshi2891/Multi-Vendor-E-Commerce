@@ -109,6 +109,20 @@ export type StoreDefaultShippingInput = {
     returnPolicy: string;
 };
 
+// Shipping rate (フォーム入力型)
+export type ShippingRateInput = {
+    id: string;
+    countryId: string;
+    shippingService: string;
+    shippingFeePerItem: number;
+    shippingFeeForAdditionalItem: number;
+    shippingFeePerKg: number;
+    shippingFeeFixed: number;
+    deliveryTimeMin: number;
+    deliveryTimeMax: number;
+    returnPolicy: string;
+};
+
 export type CountryWithShippingRatesType = {
     countryId: string;
     countryName: string;

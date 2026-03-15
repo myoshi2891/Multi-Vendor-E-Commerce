@@ -96,6 +96,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 export const saveUserCart = async (
     cartProducts: CartProductType[]
 ): Promise<boolean> => {
+    try {
     // Get current user
     const user = await currentUser()
 
@@ -200,13 +201,13 @@ export const saveUserCart = async (
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
-                    quantity === 1
+                    validQuantity === 1
                         ? new Prisma.Decimal(details.shippingFee)
                         : new Prisma.Decimal(details.shippingFee).add(
-                              new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
+                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
                           )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(quantity)
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
             } else if (shippingFeeMethod === 'FIXED') {
                 shippingFee = new Prisma.Decimal(details.shippingFee)
             }
@@ -275,6 +276,10 @@ export const saveUserCart = async (
 
     if (cart) return true
     return false
+    } catch (error) {
+        console.log(error)
+        throw error
+    }
 }
 
 /**
@@ -506,13 +511,13 @@ export const placeOrder = async (
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
-                    quantity === 1
+                    validQuantity === 1
                         ? new Prisma.Decimal(details.shippingFee)
                         : new Prisma.Decimal(details.shippingFee).add(
-                              new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
+                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
                           )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(quantity)
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
             } else if (shippingFeeMethod === 'FIXED') {
                 shippingFee = new Prisma.Decimal(details.shippingFee)
             }
@@ -926,9 +931,15 @@ export const updateCheckoutProductWithLatest = async (
                 throw new Error("Couldn't retrieve country data.")
             }
 
-            let shippingFee = new Prisma.Decimal("0")
-
             const { shippingFeeMethod, freeShipping, store } = product
+
+            const price = size.discount
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : size.price
+
+            const validated_qty = Math.min(quantity, size.quantity)
+
+            let shippingFee = new Prisma.Decimal("0")
 
             const fee = await getProductShippingFee(
                 shippingFeeMethod,
@@ -936,18 +947,12 @@ export const updateCheckoutProductWithLatest = async (
                 store,
                 freeShipping,
                 variant.weight,
-                quantity
+                validated_qty
             )
 
             if (fee) {
                 shippingFee = new Prisma.Decimal(fee.toString())
             }
-
-            const price = size.discount
-                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : size.price
-
-            const validated_qty = Math.min(quantity, size.quantity)
 
             const totalPrice = price.mul(validated_qty).add(shippingFee)
 

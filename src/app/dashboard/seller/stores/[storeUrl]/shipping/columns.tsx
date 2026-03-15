@@ -31,10 +31,19 @@ import CustomModal from "@/components/dashboard/shared/custom-modal";
 import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
 // import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
 
-const formatShippingAmount = (value: any) => {
-	const numValue = value?.toNumber?.() ?? Number(value);
+type DecimalLike = { toNumber: () => number };
+
+const formatShippingAmount = (
+	value: number | string | DecimalLike | null | undefined
+): string => {
+	if (value === null || value === undefined) return "Default";
+	const numValue =
+		typeof value === "object" && "toNumber" in value
+			? value.toNumber()
+			: Number(value);
+	if (Number.isNaN(numValue)) return "Default";
 	if (numValue === 0) return "Free";
-	if (numValue && numValue > 0) return `$${numValue.toFixed(2)}`;
+	if (numValue > 0) return `$${numValue.toFixed(2)}`;
 	return "Default";
 };
 

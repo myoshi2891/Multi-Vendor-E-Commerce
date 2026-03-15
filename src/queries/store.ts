@@ -1,7 +1,7 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
-import { StoreDefaultShippingInput, StoreStatus, StoreType } from "@/lib/types";
+import { ShippingRateInput, StoreDefaultShippingInput, StoreStatus, StoreType } from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -313,7 +313,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 // Returns: Updated or newly created shipping rate details.
 export const upsertShippingRate = async (
     storeUrl: string,
-    shippingRate: ShippingRate
+    shippingRate: ShippingRateInput
 ) => {
     try {
         // Get current user

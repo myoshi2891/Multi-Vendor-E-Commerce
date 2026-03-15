@@ -2,7 +2,7 @@
  * コマースseeder: Coupon, ShippingAddress, Order (OrderGroup, OrderItem)
  */
 
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { SEED_COUPONS } from "../constants/coupons";
 import { SEED_SHIPPING_ADDRESSES } from "../constants/shipping";
 import { SEED_ORDERS } from "../constants/orders";
@@ -122,7 +122,7 @@ export async function seedCommerce(
       },
     });
 
-    let orderSubTotal = 0;
+    let orderSubTotal = new Prisma.Decimal("0");
 
     for (const g of o.groups) {
       const storeId = maps.stores.get(g.storeUrl);
@@ -155,7 +155,7 @@ export async function seedCommerce(
         },
       });
 
-      let groupSubTotal = 0;
+      let groupSubTotal = new Prisma.Decimal("0");
 
       for (const item of g.items) {
         const productId = maps.products.get(item.productSlug);
@@ -188,11 +188,13 @@ export async function seedCommerce(
         });
 
         if (!product || !variant || !size) {
-          console.warn(`⚠️  データ取得失敗: ${item.productSlug} (スキップ)`);
-          continue;
+          throw new Error(
+            `DB データ取得失敗: ${item.productSlug}/${item.variantSlug} ` +
+            `(product: ${!!product}, variant: ${!!variant}, size: ${!!size})`
+          );
         }
 
-        const itemTotal = size.price.toNumber() * item.quantity;
+        const itemTotal = size.price.mul(item.quantity);
 
         await prisma.orderItem.create({
           data: {
@@ -214,7 +216,7 @@ export async function seedCommerce(
           },
         });
 
-        groupSubTotal += itemTotal;
+        groupSubTotal = groupSubTotal.add(itemTotal);
       }
 
       // OrderGroup の合計を更新
@@ -222,7 +224,7 @@ export async function seedCommerce(
         where: { id: orderGroup.id },
         data: { subTotal: groupSubTotal, total: groupSubTotal },
       });
-      orderSubTotal += groupSubTotal;
+      orderSubTotal = orderSubTotal.add(groupSubTotal);
     }
 
     // Order の合計を更新

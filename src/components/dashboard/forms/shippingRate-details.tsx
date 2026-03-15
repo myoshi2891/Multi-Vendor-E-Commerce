@@ -138,18 +138,15 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				id: data?.shippingRate ? data.shippingRate.id : v4(),
 				countryId: data?.countryId ? data.countryId : "",
 				shippingService: values.shippingService,
-				shippingFeePerItem: values.shippingFeePerItem as any,
+				shippingFeePerItem: values.shippingFeePerItem,
 				shippingFeeForAdditionalItem:
-					values.shippingFeeForAdditionalItem as any,
-				shippingFeePerKg: values.shippingFeePerKg as any,
-				shippingFeeFixed: values.shippingFeeFixed as any,
+					values.shippingFeeForAdditionalItem,
+				shippingFeePerKg: values.shippingFeePerKg,
+				shippingFeeFixed: values.shippingFeeFixed,
 				deliveryTimeMin: values.deliveryTimeMin,
 				deliveryTimeMax: values.deliveryTimeMax,
 				returnPolicy: values.returnPolicy,
-				storeId: "",
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			} as any);
+			});
 
 			if (response.id) {
 				// Displaying success message
@@ -160,13 +157,13 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				// Redirect or Refresh data
 				router.refresh();
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
 			console.log(error);
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: error instanceof Error ? error.message : String(error),
 			});
 		}
 	};
