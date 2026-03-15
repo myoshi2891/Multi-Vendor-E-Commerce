@@ -195,7 +195,7 @@ export const saveUserCart = async (
                 }
             }
 
-            let shippingFee = new Prisma.Decimal(0)
+            let shippingFee = new Prisma.Decimal("0")
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
@@ -235,12 +235,12 @@ export const saveUserCart = async (
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
         (acc, item) => acc.add(item.price.mul(item.quantity)),
-        new Prisma.Decimal(0)
+        new Prisma.Decimal("0")
     )
 
     const shippingFee = validatedCartItems.reduce(
         (acc, item) => acc.add(item.shippingFee),
-        new Prisma.Decimal(0)
+        new Prisma.Decimal("0")
     )
 
     const total = subTotal.add(shippingFee)
@@ -459,10 +459,9 @@ export const placeOrder = async (
             // Validate stock and price
             const validQuantity = Math.min(quantity, size.quantity)
 
-            const sizePrice = size.price as unknown as Prisma.Decimal
             const price = size.discount
-                ? sizePrice.mul(new Prisma.Decimal(100 - size.discount)).div(100)
-                : sizePrice
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : size.price
 
             // Calculate shipping details
             const countryId = shippingAddress.countryId
@@ -502,7 +501,7 @@ export const placeOrder = async (
                 }
             }
 
-            let shippingFee = new Prisma.Decimal(0)
+            let shippingFee = new Prisma.Decimal("0")
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
@@ -570,19 +569,19 @@ export const placeOrder = async (
     })
 
     // Iterate over each store's items and create OrderGroup and OrderItems
-    let orderTotalPrice = new Prisma.Decimal(0)
-    let orderShippingFee = new Prisma.Decimal(0)
+    let orderTotalPrice = new Prisma.Decimal("0")
+    let orderShippingFee = new Prisma.Decimal("0")
 
     for (const [storeId, items] of Object.entries(groupedItems)) {
         // Calculate store-specific totals
         const groupedTotalPrice = items.reduce(
             (acc, item) => acc.add(item.totalPrice),
-            new Prisma.Decimal(0)
+            new Prisma.Decimal("0")
         )
 
         const groupShippingFee = items.reduce(
             (acc, item) => acc.add(item.shippingFee),
-            new Prisma.Decimal(0)
+            new Prisma.Decimal("0")
         )
 
         const { shippingService, deliveryTimeMax, deliveryTimeMin } =
@@ -595,7 +594,7 @@ export const placeOrder = async (
         const check = storeId === cartCoupon?.storeId
 
         // Calculate discount based on coupon
-        let discountedAmount = new Prisma.Decimal(0)
+        let discountedAmount = new Prisma.Decimal("0")
         if (check && cartCoupon) {
             discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
         }
@@ -927,7 +926,7 @@ export const updateCheckoutProductWithLatest = async (
                 throw new Error("Couldn't retrieve country data.")
             }
 
-            let shippingFee = 0
+            let shippingFee = new Prisma.Decimal("0")
 
             const { shippingFeeMethod, freeShipping, store } = product
 
@@ -941,16 +940,16 @@ export const updateCheckoutProductWithLatest = async (
             )
 
             if (fee) {
-                shippingFee = fee
+                shippingFee = new Prisma.Decimal(fee.toString())
             }
 
             const price = size.discount
-                ? size.price.toNumber() - (size.price.toNumber() * size.discount) / 100
-                : size.price.toNumber()
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : size.price
 
             const validated_qty = Math.min(quantity, size.quantity)
 
-            const totalPrice = price * validated_qty + shippingFee
+            const totalPrice = price.mul(validated_qty).add(shippingFee)
 
             try {
                 const newCartItem = await db.cartItem.update({
@@ -988,14 +987,14 @@ export const updateCheckoutProductWithLatest = async (
     })
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc + item.price.toNumber() * item.quantity,
-        0
+        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        new Prisma.Decimal("0")
     )
     const shippingFees = validatedCartItems.reduce(
-        (acc, item) => acc + item.shippingFee.toNumber(),
-        0
+        (acc, item) => acc.add(item.shippingFee),
+        new Prisma.Decimal("0")
     )
-    let total = subTotal + shippingFees
+    let total = subTotal.add(shippingFees)
 
     // Apply coupon discount if applicable
     if (cartCoupon?.coupon) {
@@ -1014,13 +1013,14 @@ export const updateCheckoutProductWithLatest = async (
                 // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
-                        acc + item.price.toNumber() * item.quantity + item.shippingFee.toNumber(),
-                    0
+                        acc.add(item.price.mul(item.quantity)).add(item.shippingFee),
+                    new Prisma.Decimal("0")
                 );
                 // Apply coupon discount to the store's subTotal
-                const discountedAmount =
-                    (storeSubTotal * coupon.discount) / 100;
-                total -= discountedAmount;
+                const discountedAmount = storeSubTotal
+                    .mul(new Prisma.Decimal(coupon.discount.toString()))
+                    .div("100");
+                total = total.sub(discountedAmount);
             }
         }
     }
