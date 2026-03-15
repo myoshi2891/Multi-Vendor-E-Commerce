@@ -86,7 +86,7 @@ describe("SEED_SHIPPING_ADDRESSES バリデーション", () => {
         userDefaults.set(s.userEmail, true);
       }
     }
-    const users = new Set(SEED_SHIPPING_ADDRESSES.map((s) => s.userEmail));
+    const users = Array.from(new Set(SEED_SHIPPING_ADDRESSES.map((s) => s.userEmail)));
     for (const email of users) {
       expect(userDefaults.has(email)).toBe(true);
     }
@@ -135,13 +135,18 @@ describe("SEED_ORDERS バリデーション", () => {
   });
 
   it("全OrderStatusが有効な値であること", () => {
+    // Prisma enum は PascalCase
     const validStatuses = new Set([
-      "PENDING",
-      "PROCESSING",
-      "SHIPPED",
-      "DELIVERED",
-      "CANCELLED",
-      "REFUNDED",
+      "Pending",
+      "Confirmed",
+      "Processing",
+      "Shipped",
+      "OutForDelivery",
+      "Delivered",
+      "Canceled",
+      "Failed",
+      "Returned",
+      "Refunded",
     ]);
     for (const o of SEED_ORDERS) {
       expect(validStatuses.has(o.orderStatus)).toBe(true);
@@ -152,12 +157,16 @@ describe("SEED_ORDERS バリデーション", () => {
   });
 
   it("全PaymentStatusが有効な値であること", () => {
+    // Prisma enum は PascalCase
     const validStatuses = new Set([
-      "PENDING",
-      "PAID",
-      "FAILED",
-      "REFUNDED",
-      "CANCELLED",
+      "Pending",
+      "Paid",
+      "Failed",
+      "Declined",
+      "Cancelled",
+      "Refunded",
+      "PartiallyRefunded",
+      "ChargeBack",
     ]);
     for (const o of SEED_ORDERS) {
       expect(validStatuses.has(o.paymentStatus)).toBe(true);

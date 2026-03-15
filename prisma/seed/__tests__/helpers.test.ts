@@ -81,14 +81,22 @@ describe("seed helpers", () => {
     });
 
     describe("境界値テスト", () => {
-      it("最短SKU（6字）が生成できる", () => {
+      it("基本フォーマットのSKUが正しい長さであること", () => {
+        // "AB-CD-001" = 2+1+2+1+3 = 9文字
         const sku = generateSku("AB", "CD", 1);
         expect(sku).toBe("AB-CD-001");
-        expect(sku.length).toBe(10);
+        expect(sku.length).toBe(9);
+      });
+
+      it("最短の引数でも6字以上になること", () => {
+        // "A-B-001" = 1+1+1+1+3 = 7文字（フォーマット上6字未満にはならない）
+        const sku = generateSku("A", "B", 1);
+        expect(sku).toBe("A-B-001");
+        expect(sku.length).toBeGreaterThanOrEqual(6);
       });
 
       it("最長SKU（50字制限）でエラーが出ないこと", () => {
-        // 50字ギリギリのSKU（計算: 15+1+9+1+4+1+15 = 46字）
+        // 15+1+9+1+3+1+15 = 45字
         const sku = generateSku(
           "LONGSTORENAME12",
           "LONGCATEG",
@@ -107,11 +115,6 @@ describe("seed helpers", () => {
             "VERYLONGVARIANTSUFFIX1234"
           )
         ).toThrow(/SKU長が範囲外です/);
-      });
-
-      it("6字未満のSKUでエラーが発生すること", () => {
-        // 現在の実装では6字未満にならないが、将来の変更に備えて
-        expect(() => generateSku("A", "B", 1)).toThrow(/SKU長が範囲外です/);
       });
     });
   });
