@@ -92,10 +92,22 @@ export type StoreProductType = Prisma.PromiseReturnType<
     typeof getAllStoreProducts
 >[0];
 
-// Store default shipping details
+// Store default shipping details (DB 出力型)
 export type StoreDefaultShippingType = Prisma.PromiseReturnType<
     typeof getStoreDefaultShippingDetails
 >;
+
+// Store default shipping details (フォーム入力型)
+export type StoreDefaultShippingInput = {
+    defaultShippingService: string;
+    defaultShippingFeePerItem: number;
+    defaultShippingFeeForAdditionalItem: number;
+    defaultShippingFeePerKg: number;
+    defaultShippingFeeFixed: number;
+    defaultDeliveryTimeMin: number;
+    defaultDeliveryTimeMax: number;
+    returnPolicy: string;
+};
 
 export type CountryWithShippingRatesType = {
     countryId: string;

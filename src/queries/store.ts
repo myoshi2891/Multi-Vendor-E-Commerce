@@ -1,7 +1,7 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
-import { StoreDefaultShippingType, StoreStatus, StoreType } from "@/lib/types";
+import { StoreDefaultShippingInput, StoreStatus, StoreType } from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -196,7 +196,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 // Returns: Updated store object with the new default shipping details.
 export const updateStoreDefaultShippingDetails = async (
     storeUrl: string,
-    details: StoreDefaultShippingType
+    details: StoreDefaultShippingInput
 ) => {
     try {
         // Get current user

@@ -19,17 +19,30 @@ describe("Seed 冪等性テスト", () => {
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
+    if (prisma && typeof prisma.$disconnect === "function") {
+      try {
+        await prisma.$disconnect();
+      } catch (error) {
+        // safely discard disconnect errors
+      }
+    }
+  });
+
+  beforeEach(async () => {
+    // ensure seed data is available before each test
+    await seedAll(prisma);
   });
 
   it("seedAllを2回実行しても重複が発生しないこと", async () => {
-    // 1回目の実行
-    await seedAll(prisma);
-
     const firstCounts = {
       categories: (
         await prisma.category.findMany({
           where: { url: { startsWith: "lux-" } },
+        })
+      ).length,
+      users: (
+        await prisma.user.findMany({
+          where: { email: { startsWith: "lux-seed-" } },
         })
       ).length,
       stores: (
@@ -53,6 +66,11 @@ describe("Seed 冪等性テスト", () => {
           where: { url: { startsWith: "lux-" } },
         })
       ).length,
+      users: (
+        await prisma.user.findMany({
+          where: { email: { startsWith: "lux-seed-" } },
+        })
+      ).length,
       stores: (
         await prisma.store.findMany({
           where: { url: { startsWith: "lux-" } },
@@ -66,6 +84,7 @@ describe("Seed 冪等性テスト", () => {
     };
 
     expect(secondCounts.categories).toBe(firstCounts.categories);
+    expect(secondCounts.users).toBe(firstCounts.users);
     expect(secondCounts.stores).toBe(firstCounts.stores);
     expect(secondCounts.products).toBe(firstCounts.products);
   }, 300000); // 5分タイムアウト（36商品×2回実行、Neonレイテンシ考慮）

@@ -13,6 +13,7 @@ import {
     getStorePageDetails,
 } from "./store";
 import { TEST_CONFIG } from "../config/test-config";
+import type { StoreDefaultShippingInput } from "@/lib/types";
 
 /** expectDuplicateCheck で参照されるストアフィールド */
 interface StoreDuplicateCheckData {
@@ -88,7 +89,7 @@ const TestDataFactory = {
         ...overrides,
     }),
 
-    shippingDetails: (overrides = {}) => ({
+    shippingDetails: (overrides: Partial<StoreDefaultShippingInput> = {}): StoreDefaultShippingInput => ({
         defaultShippingService: "Express Delivery",
         defaultShippingFeePerItem: 10.5,
         defaultShippingFeeForAdditionalItem: 5.25,
@@ -568,7 +569,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails as any
+                    shippingDetails
                 ),
                 TEST_ERRORS.UNAUTHENTICATED
             );
@@ -585,7 +586,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails as any
+                    shippingDetails
                 ),
                 TEST_ERRORS.UNAUTHORIZED_ROLE
             );
@@ -605,7 +606,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             const shippingDetails = TestDataFactory.shippingDetails();
 
             await TestHelpers.expectThrowError(
-                updateStoreDefaultShippingDetails(null as any, shippingDetails as any),
+                updateStoreDefaultShippingDetails(null as any, shippingDetails),
                 TEST_ERRORS.MISSING_STORE_URL
             );
 
@@ -643,7 +644,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails as any
+                    shippingDetails
                 ),
                 TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE
             );
@@ -667,14 +668,14 @@ describe("updateStoreDefaultShippingDetails", () => {
             const mockDb = TestHelpers.mockDbMethods();
             const shippingDetails = TestDataFactory.shippingDetails();
             const existingStore = TestDataFactory.existingStore();
-            const updatedStore = TestDataFactory.existingStore(shippingDetails as any);
+            const updatedStore = TestDataFactory.existingStore(shippingDetails);
 
             mockDb.findUnique.mockResolvedValue(existingStore);
             mockDb.update.mockResolvedValue(updatedStore);
 
             const result = await updateStoreDefaultShippingDetails(
                 TEST_CONFIG.TEST_STORE_URL,
-                shippingDetails as any
+                shippingDetails
             );
 
             expect(result).toEqual(updatedStore);
@@ -721,7 +722,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails as any
+                    shippingDetails
                 ),
                 "Database connection failed during ownership check"
             );
@@ -750,7 +751,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails as any
+                    shippingDetails
                 ),
                 "Database connection failed during store update"
             );
@@ -832,11 +833,12 @@ describe("getStoreDefaultShippingDetails", () => {
 
         it("一部フィールドがnullのストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
+            // DB 出力モック: スキーマ上は NOT NULL だが null 応答時の挙動を検証
             const mockStore = TestDataFactory.shippingDetails({
-                defaultShippingFeePerItem: null,
-                defaultShippingFeePerKg: null,
-                defaultDeliveryTimeMin: null,
-                returnPolicy: null,
+                defaultShippingFeePerItem: null as unknown as number,
+                defaultShippingFeePerKg: null as unknown as number,
+                defaultDeliveryTimeMin: null as unknown as number,
+                returnPolicy: null as unknown as string,
             });
             mockDb.findUnique.mockResolvedValue(mockStore);
 

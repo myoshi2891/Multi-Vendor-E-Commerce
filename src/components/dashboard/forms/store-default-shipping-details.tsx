@@ -97,15 +97,15 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 			// Upserting category data
 			const response = await updateStoreDefaultShippingDetails(storeUrl, {
 				defaultShippingService: values.defaultShippingService,
-				defaultShippingFeePerItem: values.defaultShippingFeePerItem as any,
+				defaultShippingFeePerItem: values.defaultShippingFeePerItem,
 				defaultShippingFeeForAdditionalItem:
-					values.defaultShippingFeeForAdditionalItem as any,
-				defaultShippingFeePerKg: values.defaultShippingFeePerKg as any,
-				defaultShippingFeeFixed: values.defaultShippingFeeFixed as any,
+					values.defaultShippingFeeForAdditionalItem,
+				defaultShippingFeePerKg: values.defaultShippingFeePerKg,
+				defaultShippingFeeFixed: values.defaultShippingFeeFixed,
 				defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
 				defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
 				returnPolicy: values.returnPolicy,
-			} as any);
+			});
 
 			if (response.id) {
 				// Displaying success message
