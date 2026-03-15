@@ -10,6 +10,11 @@ import { seedProducts } from "./product-seeder";
 import { seedReviews } from "./review-seeder";
 import { seedCommerce } from "./commerce-seeder";
 
+/**
+ * Orchestrates database seeding in five ordered phases: base entities, stores, products, reviews, and commerce.
+ *
+ * Executes each phase sequentially using the provided Prisma client so later phases receive entities created by earlier phases.
+ */
 export async function seedAll(prisma: PrismaClient): Promise<void> {
   console.log("🌱 Seed開始...\n");
 

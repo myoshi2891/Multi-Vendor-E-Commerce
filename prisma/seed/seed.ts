@@ -8,6 +8,11 @@ import { seedAll } from "./seeders";
 
 const prisma = new PrismaClient();
 
+/**
+ * Runs the full database seeding process using the Prisma client and ensures the client is disconnected afterward.
+ *
+ * If seeding fails, logs a descriptive error message and rethrows the error for upstream handling.
+ */
 async function main() {
   try {
     await seedAll(prisma);

@@ -21,10 +21,11 @@ export const CATEGORY_NAME_REGEX = /^[a-zA-Z0-9\s]+$/;
 export const PHONE_REGEX = /^\+?\d+$/;
 
 /**
- * 文字列をURL安全なslugに変換する
- * @param input - 変換元の文字列
- * @param prefix - slugに付与するプレフィクス（デフォルト: SEED_PREFIX）
- * @returns URL安全なslug文字列
+ * Convert a string into a URL-safe slug and prepend an optional prefix.
+ *
+ * @param input - The source string to convert into a slug
+ * @param prefix - Prefix to prepend to the slug (default: `SEED_PREFIX`)
+ * @returns The resulting URL-safe slug string
  */
 export function slugify(input: string, prefix: string = SEED_PREFIX): string {
   const slug = input
@@ -37,12 +38,14 @@ export function slugify(input: string, prefix: string = SEED_PREFIX): string {
 }
 
 /**
- * SKU（Stock Keeping Unit）を生成する
- * @param storeCode - 店舗コード（例: "NOIR"）
- * @param categoryCode - カテゴリコード（例: "WC" = Women's Coats）
- * @param sequence - 連番
- * @param variantSuffix - バリアントサフィックス（例: "BLK"）
- * @returns SKU文字列（例: "NOIR-WC-001-BLK"）
+ * Build a SKU string in the form "STORE-CATEGORY-SEQ[-VARIANT]".
+ *
+ * @param storeCode - Store code (e.g., "NOIR")
+ * @param categoryCode - Category code (e.g., "WC" for Women's Coats)
+ * @param sequence - Numeric sequence, padded to three digits (e.g., 1 -> "001")
+ * @param variantSuffix - Optional variant suffix appended after a final hyphen (e.g., "BLK")
+ * @returns The formatted SKU string, for example "NOIR-WC-001" or "NOIR-WC-001-BLK"
+ * @throws Error if the resulting SKU length is less than 6 or greater than 50 characters
  */
 export function generateSku(
   storeCode: string,
@@ -65,10 +68,14 @@ export function generateSku(
 }
 
 /**
- * 決定論的なUUID形式のIDを生成する（RFC4122 UUID v5 準拠、SHA-1使用）
- * 同一入力に対して常に同一のIDを返す（冪等性のため）
- * @param seedKey - ID生成のシードキー
- * @returns RFC4122 UUID v5形式の文字列
+ * Generate a deterministic RFC4122 UUID v5–style identifier from a seed key.
+ *
+ * Uses SHA-1 over a fixed namespace and the provided `seedKey` to produce a
+ * UUID-like string with version 5 and RFC4122 variant bits set; the same
+ * `seedKey` always yields the same identifier.
+ *
+ * @param seedKey - The seed value used to derive the identifier; identical seeds produce identical IDs
+ * @returns A UUID-like string formatted with UUID v5 version and RFC4122 variant bits
  */
 export function generateDeterministicId(seedKey: string): string {
   const namespace = "lux-seed-namespace";

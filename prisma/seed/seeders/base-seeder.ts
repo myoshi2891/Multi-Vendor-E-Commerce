@@ -18,6 +18,20 @@ export type BaseSeedResult = Pick<
   "countries" | "users" | "categories" | "subCategories" | "offerTags"
 >;
 
+/**
+ * Seed base entities (countries, users, categories, subcategories, and offer tags) and return maps of their record IDs.
+ *
+ * Subcategories are created after categories so each subcategory's `categoryUrl` is resolved to a category ID.
+ *
+ * @returns An object with maps that associate canonical identifiers to record IDs:
+ * - `countries`: country code -> country id
+ * - `users`: user email -> user id
+ * - `categories`: category URL -> category id
+ * - `subCategories`: subcategory URL -> subcategory id
+ * - `offerTags`: offer tag URL -> offer tag id
+ *
+ * @throws Error if a subcategory references a `categoryUrl` that was not created or found. 
+ */
 export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
   // Country（並列化）
   const countryRecords = await Promise.all(

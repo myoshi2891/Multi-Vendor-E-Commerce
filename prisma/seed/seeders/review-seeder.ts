@@ -6,6 +6,15 @@ import { PrismaClient } from "@prisma/client";
 import { SEED_REVIEWS } from "../constants/reviews";
 import type { SeedMaps } from "../types";
 
+/**
+ * Seeds review and review image records from the SEED_REVIEWS dataset.
+ *
+ * Creates reviews for seed users and associated review images; existing reviews for the seed users are removed first. All database changes are applied in a single transaction. Reviews referencing products that cannot be resolved are skipped and reported.
+ *
+ * @param maps - Lookup maps containing `users` (maps user email to userId) and `products` (maps product slug to productId)
+ *
+ * @throws Error if a review references a userEmail not present in `maps.users`
+ */
 export async function seedReviews(
   prisma: PrismaClient,
   maps: Pick<SeedMaps, "users" | "products">

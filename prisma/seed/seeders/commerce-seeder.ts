@@ -8,6 +8,28 @@ import { SEED_SHIPPING_ADDRESSES } from "../constants/shipping";
 import { SEED_ORDERS } from "../constants/orders";
 import type { SeedMaps } from "../types";
 
+/**
+ * Seeds commerce-related data (coupons, shipping addresses, orders, order groups, and order items) and removes existing seed data for the mapped users and stores.
+ *
+ * Processes predefined seed constants to:
+ * - delete prior seed Orders, ShippingAddresses, and Coupons for the provided users/stores,
+ * - create Coupons for mapped stores,
+ * - create ShippingAddress records for mapped users and countries,
+ * - create Orders with nested OrderGroups and OrderItems while computing and persisting subtotals and totals.
+ *
+ * @param maps - A set of lookup maps used to resolve seed references to database IDs:
+ *   - `users`: maps user email -> userId
+ *   - `stores`: maps storeUrl -> storeId
+ *   - `countries`: maps countryCode -> countryId
+ *   - `products`: maps productSlug -> productId
+ *   - `variants`: maps variantSlug -> variantId
+ *   - `sizes`: maps "variantSlug:size" -> sizeId
+ *
+ * @throws When a required mapping or referenced record is missing (e.g., user, store, country, product, variant, size, or coupon).
+ * @throws When a user has no shipping addresses available for an order.
+ * @throws When an order's shippingAddressIndex is outside the valid range for the user's addresses.
+ * @throws When expected product/variant/size records cannot be retrieved from the database during order item creation.
+ */
 export async function seedCommerce(
   prisma: PrismaClient,
   maps: Pick<

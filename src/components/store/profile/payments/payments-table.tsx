@@ -10,6 +10,13 @@ import { useEffect, useState } from "react";
 import Pagination from "../../shared/pagination";
 import PaymentTableHeader from "./payment-table-header";
 
+/**
+ * Renders a paginated, filterable table of user payments with controls for status, date period, and text search.
+ *
+ * @param payments - Initial list of user payments used to populate the table.
+ * @param totalPages - Initial total number of pages for pagination.
+ * @returns The PaymentsTable React element displaying payment rows, filters, and pagination controls.
+ */
 export default function PaymentsTable({
     payments,
     totalPages,

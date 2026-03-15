@@ -6,6 +6,22 @@ import { PrismaClient } from "@prisma/client";
 import { ALL_SEED_PRODUCTS } from "../constants/products";
 import type { SeedMaps } from "../types";
 
+/**
+ * Seeds products, their variants, sizes, and related records into the database using Prisma.
+ *
+ * Validates references from `maps`, upserts products and variants by slug, removes stale related
+ * records, and recreates questions, specs, sizes, images, colors, and free-shipping data
+ * according to the seed definitions.
+ *
+ * @param prisma - PrismaClient instance used for database operations
+ * @param maps - Lookup maps required to resolve relations:
+ *   - `stores`, `categories`, `subCategories`, `offerTags`, `countries` (map keys used in seed data → corresponding IDs)
+ * @returns An object with three Maps:
+ *   - `products`: maps product slug → product id
+ *   - `variants`: maps variant slug → variant id
+ *   - `sizes`: maps "variantSlug:size" → size id
+ * @throws Error if a referenced store, category, subcategory, offer tag, or country code from the seed data cannot be resolved via the provided maps
+ */
 export async function seedProducts(
   prisma: PrismaClient,
   maps: Pick<

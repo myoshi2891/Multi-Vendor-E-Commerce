@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import ReactStars from "react-rating-stars-component";
 
+/**
+ * Render a product card that links to the selected variant's product detail page.
+ *
+ * Renders the selected variant's primary image, the lowest discounted price among that variant's sizes, the variant name, product name, variant thumbnails (hovering a thumbnail switches the displayed variant), and a star rating with a localized review count.
+ *
+ * @param product - The product data to display (of type ProductType)
+ * @returns A React element representing the interactive product card
+ */
 export default function ProductCardClean({
     product,
 }: {

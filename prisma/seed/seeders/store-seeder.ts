@@ -6,6 +6,18 @@ import { PrismaClient } from "@prisma/client";
 import { SEED_STORES } from "../constants/stores";
 import { SEED_COUNTRIES } from "../constants/countries";
 
+/**
+ * Ensures seed stores exist and creates or updates their default shipping rates per country.
+ *
+ * For each predefined store, resolves its owner via `userMap`, upserts the store record (create or update),
+ * and upserts a ShippingRate for each predefined country using the store's default shipping settings.
+ *
+ * @param userMap - Map from owner email to user ID used to assign store ownership
+ * @param countryMap - Map from country code to country ID used when creating shipping rates
+ * @returns A Map keyed by store URL with values set to the corresponding store record ID
+ * @throws Error if a store's owner email is not present in `userMap`
+ * @throws Error if a country's code is not present in `countryMap`
+ */
 export async function seedStores(
   prisma: PrismaClient,
   userMap: Map<string, string>,

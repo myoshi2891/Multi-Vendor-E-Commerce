@@ -3,6 +3,13 @@ import { OrderGroupWithItemsType, OrderStatus } from "@/lib/types";
 import Image from "next/image";
 import ProductRow from "./product-row";
 
+/**
+ * Renders a table-like card showing details for a single order group, including store info, items, delivery window, pricing breakdown, and order status.
+ *
+ * @param group - Order group data with items, store, pricing, and optional coupon information.
+ * @param deliveryInfo - Delivery metadata: `shippingService`, `deliveryMinDate`, and `deliveryMaxDate`.
+ * @returns The JSX element representing the order group card.
+ */
 export default function OrderGroupTable({
     group,
     deliveryInfo,
