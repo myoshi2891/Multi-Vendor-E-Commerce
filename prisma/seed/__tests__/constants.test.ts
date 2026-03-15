@@ -140,7 +140,8 @@ describe("seed定数データ バリデーション", () => {
       for (const sub of SEED_SUB_CATEGORIES) {
         grouped.set(sub.categoryUrl, (grouped.get(sub.categoryUrl) ?? 0) + 1);
       }
-      for (const [, count] of Array.from(grouped)) {
+      for (const category of SEED_CATEGORIES) {
+        const count = grouped.get(category.url) ?? 0;
         expect(count).toBeGreaterThanOrEqual(2);
       }
     });

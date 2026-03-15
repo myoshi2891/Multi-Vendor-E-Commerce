@@ -88,7 +88,7 @@ export default function PaymentsTable({
                                 </thead>
                                 <tbody>
                                     {data.map((payment) => {
-                                        let amount = payment.amount;
+                                        let amount = payment.amount.toNumber();
                                         if (
                                             payment.paymentMethod === "Stripe"
                                         ) {

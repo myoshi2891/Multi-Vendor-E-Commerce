@@ -55,9 +55,10 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee per item",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeePerItem;
+			const numValue = value?.toNumber();
 			return (
 				<span>
-					{value === 0 ? "Free" : value > 0 ? value : "Default"}
+					{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
 				</span>
 			);
 		},
@@ -68,11 +69,12 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		cell: ({ row }) => {
 			const value =
 				row.original.shippingRate?.shippingFeeForAdditionalItem;
+			const numValue = value?.toNumber();
 
 			return (
 				<span>
 					<span>
-						{value === 0 ? "Free" : value > 0 ? value : "Default"}
+						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
 					</span>
 				</span>
 			);
@@ -83,11 +85,12 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee per Kg",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeePerKg;
+			const numValue = value?.toNumber();
 
 			return (
 				<span>
 					<span>
-						{value === 0 ? "Free" : value > 0 ? value : "Default"}
+						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
 					</span>
 				</span>
 			);
@@ -98,11 +101,12 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee fixed",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeeFixed;
+			const numValue = value?.toNumber();
 
 			return (
 				<span>
 					<span>
-						{value === 0 ? "Free" : value > 0 ? value : "Default"}
+						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
 					</span>
 				</span>
 			);

@@ -279,12 +279,12 @@ export const applyCoupon = async (
 
         // Step 6: Calculate the discount on the store's items
         const storeSubTotal = storeItems.reduce(
-            (acc, item) => acc + item.price * item.quantity,
+            (acc, item) => acc + item.price.toNumber() * item.quantity,
             0
         )
 
         const storeShippingTotal = storeItems.reduce(
-            (acc, item) => acc + item.shippingFee,
+            (acc, item) => acc + item.shippingFee.toNumber(),
             0
         )
 

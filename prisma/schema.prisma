@@ -92,10 +92,10 @@ model Store {
   featured                            Boolean     @default(false)
   returnPolicy                        String      @default("Return in 30 days.")
   defaultShippingService              String      @default("International Delivery")
-  defaultShippingFeePerItem           Float       @default(0)
-  defaultShippingFeeForAdditionalItem Float       @default(0)
-  defaultShippingFeePerKg             Float       @default(0)
-  defaultShippingFeeFixed             Float       @default(0)
+  defaultShippingFeePerItem           Decimal     @default(0) @db.Decimal(12, 2)
+  defaultShippingFeeForAdditionalItem Decimal     @default(0) @db.Decimal(12, 2)
+  defaultShippingFeePerKg             Decimal     @default(0) @db.Decimal(12, 2)
+  defaultShippingFeeFixed             Decimal     @default(0) @db.Decimal(12, 2)
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
 
@@ -193,11 +193,11 @@ model ProductVariant {
 }
 
 model Size {
-  id       String @id @default(uuid())
+  id       String  @id @default(uuid())
   size     String
   quantity Int
-  price    Float
-  discount Float  @default(0)
+  price    Decimal @db.Decimal(12, 2)
+  discount Float   @default(0)
 
   wishlist Wishlist[] @relation("WishlistToSize")
 
@@ -297,10 +297,10 @@ model ShippingRate {
   id String @id @default(uuid())
 
   shippingService              String
-  shippingFeePerItem           Float
-  shippingFeeForAdditionalItem Float
-  shippingFeePerKg             Float
-  shippingFeeFixed             Float
+  shippingFeePerItem           Decimal @db.Decimal(12, 2)
+  shippingFeeForAdditionalItem Decimal @db.Decimal(12, 2)
+  shippingFeePerKg             Decimal @db.Decimal(12, 2)
+  shippingFeeFixed             Decimal @db.Decimal(12, 2)
   deliveryTimeMin              Int
   deliveryTimeMax              Int
   returnPolicy                 String
@@ -393,9 +393,9 @@ model Cart {
   coupon   Coupon? @relation("CouponToCart", fields: [couponId], references: [id])
 
   cartItems    CartItem[] @relation("CartToCartItem")
-  shippingFees Float      @default(0) @map("shippingFeesTotal")
-  subTotal     Float
-  total        Float
+  shippingFees Decimal    @default(0) @map("shippingFeesTotal") @db.Decimal(12, 2)
+  subTotal     Decimal    @db.Decimal(12, 2)
+  total        Decimal    @db.Decimal(12, 2)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -414,10 +414,10 @@ model CartItem {
   name        String
   image       String
   size        String
-  price       Float
-  quantity    Int    @default(1)
-  shippingFee Float  @default(0)
-  totalPrice  Float
+  price       Decimal @db.Decimal(12, 2)
+  quantity    Int     @default(1)
+  shippingFee Decimal @default(0) @db.Decimal(12, 2)
+  totalPrice  Decimal @db.Decimal(12, 2)
 
   cartId String
   cart   Cart   @relation("CartToCartItem", fields: [cartId], references: [id], onDelete: Cascade)
@@ -491,10 +491,10 @@ enum PaymentMethod {
 }
 
 model Order {
-  id           String @id @default(uuid())
-  shippingFees Float  @default(0) @map("shippingFeesTotal")
-  subTotal     Float
-  total        Float
+  id           String  @id @default(uuid())
+  shippingFees Decimal @default(0) @map("shippingFeesTotal") @db.Decimal(12, 2)
+  subTotal     Decimal @db.Decimal(12, 2)
+  total        Decimal @db.Decimal(12, 2)
 
   groups OrderGroup[] @relation("OrderGroupToOrder")
 
@@ -527,9 +527,9 @@ model OrderGroup {
   shippingDeliveryMin Int
   shippingDeliveryMax Int
 
-  shippingFees Float
-  subTotal     Float
-  total        Float
+  shippingFees Decimal @db.Decimal(12, 2)
+  subTotal     Decimal @db.Decimal(12, 2)
+  total        Decimal @db.Decimal(12, 2)
 
   orderId String
   order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id])
@@ -613,10 +613,10 @@ model OrderItem {
   name        String
   image       String
   size        String
-  quantity    Int    @default(1)
-  shippingFee Float  @default(0)
-  price       Float
-  totalPrice  Float
+  quantity    Int     @default(1)
+  shippingFee Decimal @default(0) @db.Decimal(12, 2)
+  price       Decimal @db.Decimal(12, 2)
+  totalPrice  Decimal @db.Decimal(12, 2)
 
   orderGroupId String
   orderGroup   OrderGroup @relation("OrderItemToGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
@@ -680,7 +680,7 @@ model PaymentDetails {
   paymentIntentId String
   paymentMethod   String
   status          String
-  amount          Float
+  amount          Decimal @db.Decimal(12, 2)
   currency        String
 
   orderId String @unique

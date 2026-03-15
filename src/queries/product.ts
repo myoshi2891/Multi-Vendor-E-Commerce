@@ -1061,22 +1061,22 @@ export const getShippingDetails = async (
             case "ITEM":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerItem;
+                    : shippingFeePerItem.toNumber();
                 shippingDetails.extraShippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeForAdditionalItem;
+                    : shippingFeeForAdditionalItem.toNumber();
                 break;
 
             case "WEIGHT":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerKg;
+                    : shippingFeePerKg.toNumber();
                 break;
 
             case "FIXED":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeFixed;
+                    : shippingFeeFixed.toNumber();
                 break;
 
             default:
@@ -1267,10 +1267,10 @@ export const getProductShippingFee = async (
         // Define fee calculation methods in a map (using functions)
         const feeCalculators: Record<string, () => number> = {
             ITEM: () =>
-                shippingFeePerItem +
-                shippingFeeForAdditionalItem * additionalItemsQty,
-            WEIGHT: () => shippingFeePerKg * weight * quantity,
-            FIXED: () => shippingFeeFixed,
+                shippingFeePerItem.toNumber() +
+                shippingFeeForAdditionalItem.toNumber() * additionalItemsQty,
+            WEIGHT: () => shippingFeePerKg.toNumber() * weight * quantity,
+            FIXED: () => shippingFeeFixed.toNumber(),
         };
 
         // Check if the fee calculation method exists and calculate the fee

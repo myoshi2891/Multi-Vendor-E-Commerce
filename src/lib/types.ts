@@ -37,6 +37,8 @@ import {
     User,
 } from "@prisma/client";
 
+type Decimal = Prisma.Decimal;
+
 export interface DashboardSidebarMenuInterface {
     label: string;
     icon: string;
@@ -353,7 +355,7 @@ export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
 
 export type ProductSize = {
     size: string;
-    price: number;
+    price: Decimal;
     discount: number;
     quantity: number;
 };

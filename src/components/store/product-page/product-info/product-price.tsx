@@ -1,6 +1,7 @@
 "use client";
 import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Prisma } from "@prisma/client";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { FC, useEffect } from "react";
 
@@ -8,7 +9,7 @@ interface SimplifiedSize {
     id: string;
     size: string;
     quantity: number;
-    price: number;
+    price: Prisma.Decimal;
     discount: number;
 }
 
@@ -30,7 +31,7 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
     if (!sizeId) {
         // Calculate discounted prices for all sizes
         const discountedPrices = sizes.map(
-            (size) => size.price * (1 - size.discount / 100)
+            (size) => size.price.toNumber() * (1 - size.discount / 100)
         );
 
         const totalQuantity = sizes.reduce(
@@ -89,7 +90,7 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
 
     // Calculate the price after the discount
     const discountedPrice =
-        selectedSize.price * (1 - selectedSize.discount / 100);
+        selectedSize.price.toNumber() * (1 - selectedSize.discount / 100);
     // Update product to be added to cart with price and stock quantity
     useEffect(() => {
         handleChange("price", discountedPrice);
@@ -105,9 +106,9 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                     ${discountedPrice.toFixed(2)}
                 </span>
             </div>
-            {selectedSize.price !== discountedPrice && (
+            {selectedSize.price.toNumber() !== discountedPrice && (
                 <span className="mr-2 inline-block text-xl font-normal leading-6 text-[#999] line-through">
-                    ${selectedSize.price.toFixed(2)}
+                    ${selectedSize.price.toNumber().toFixed(2)}
                 </span>
             )}
             {selectedSize.discount > 0 && (

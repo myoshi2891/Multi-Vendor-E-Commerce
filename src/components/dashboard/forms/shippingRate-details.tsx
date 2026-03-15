@@ -70,16 +70,16 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				? data?.shippingRate.shippingService
 				: "",
 			shippingFeePerItem: data?.shippingRate
-				? data?.shippingRate.shippingFeePerItem
+				? data?.shippingRate.shippingFeePerItem.toNumber()
 				: 0,
 			shippingFeeForAdditionalItem: data?.shippingRate
-				? data?.shippingRate.shippingFeeForAdditionalItem
+				? data?.shippingRate.shippingFeeForAdditionalItem.toNumber()
 				: 0,
 			shippingFeePerKg: data?.shippingRate
-				? data?.shippingRate.shippingFeePerKg
+				? data?.shippingRate.shippingFeePerKg.toNumber()
 				: 0,
 			shippingFeeFixed: data?.shippingRate
-				? data?.shippingRate.shippingFeeFixed
+				? data?.shippingRate.shippingFeeFixed.toNumber()
 				: 0,
 			deliveryTimeMin: data?.shippingRate
 				? data?.shippingRate.deliveryTimeMin
@@ -113,18 +113,18 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				id: data?.shippingRate ? data.shippingRate.id : v4(),
 				countryId: data?.countryId ? data.countryId : "",
 				shippingService: values.shippingService,
-				shippingFeePerItem: values.shippingFeePerItem,
+				shippingFeePerItem: values.shippingFeePerItem as any,
 				shippingFeeForAdditionalItem:
-					values.shippingFeeForAdditionalItem,
-				shippingFeePerKg: values.shippingFeePerKg,
-				shippingFeeFixed: values.shippingFeeFixed,
+					values.shippingFeeForAdditionalItem as any,
+				shippingFeePerKg: values.shippingFeePerKg as any,
+				shippingFeeFixed: values.shippingFeeFixed as any,
 				deliveryTimeMin: values.deliveryTimeMin,
 				deliveryTimeMax: values.deliveryTimeMax,
 				returnPolicy: values.returnPolicy,
 				storeId: "",
 				createdAt: new Date(),
 				updatedAt: new Date(),
-			});
+			} as any);
 
 			if (response.id) {
 				// Displaying success message

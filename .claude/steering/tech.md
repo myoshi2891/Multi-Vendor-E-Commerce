@@ -35,7 +35,7 @@
 
 | 禁止操作 | 代替手段 |
 |---------|---------|
-| `new PrismaClient()` を直接呼ぶ | `src/lib/db.ts` のシングルトン経由を使う |
+| `src/` 配下で `new PrismaClient()` を直接呼ぶ | `src/lib/db.ts` のシングルトン経由を使う（`prisma/seed/` とテストは例外） |
 | `src/queries/` 以外でサーバーアクションを定義する | 必ず `src/queries/` 配下に配置する |
 | UI コンポーネントから `src/queries/` を直接 import する | Server Component 経由でのみ呼び出す |
 | `bunx prisma db push` を本番相当環境で使う | `bunx prisma migrate dev` を使う |

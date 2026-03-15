@@ -178,7 +178,7 @@ export async function seedCommerce(
           continue;
         }
 
-        const itemTotal = size.price * item.quantity;
+        const itemTotal = size.price.toNumber() * item.quantity;
 
         await prisma.orderItem.create({
           data: {

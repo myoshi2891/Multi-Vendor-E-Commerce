@@ -64,5 +64,5 @@
 | `src/queries/` | `04-interfaces.md` |
 | `src/lib/schemas.ts` | `04-interfaces.md` |
 | `src/cart-store/useCartStore.ts` | `05-workflows.md` |
-| `TESTING_DESIGN.md` | `07-testing.md` |
-| `QA_TEST_PERSPECTIVES.md` | `07-testing.md` / `06-quality.md` |
+| `docs/testing/TESTING_DESIGN.md` | `docs/testing/07-testing.md` |
+| `docs/testing/QA_TEST_PERSPECTIVES.md` | `docs/testing/07-testing.md` / `docs/testing/06-quality.md` |

@@ -771,8 +771,8 @@ export const updateCartWithLatest = async (
             }
 
             const price = size.discount
-                ? size.price - (size.price * size.discount) / 100
-                : size.price
+                ? size.price.toNumber() - (size.price.toNumber() * size.discount) / 100
+                : size.price.toNumber()
 
             const validated_qty = Math.min(quantity, size.quantity)
 
@@ -943,8 +943,8 @@ export const updateCheckoutProductWithLatest = async (
             }
 
             const price = size.discount
-                ? size.price - (size.price * size.discount) / 100
-                : size.price
+                ? size.price.toNumber() - (size.price.toNumber() * size.discount) / 100
+                : size.price.toNumber()
 
             const validated_qty = Math.min(quantity, size.quantity)
 
@@ -986,11 +986,11 @@ export const updateCheckoutProductWithLatest = async (
     })
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
+        (acc, item) => acc + item.price.toNumber() * item.quantity,
         0
     )
     const shippingFees = validatedCartItems.reduce(
-        (acc, item) => acc + item.shippingFee,
+        (acc, item) => acc + item.shippingFee.toNumber(),
         0
     )
     let total = subTotal + shippingFees
@@ -1012,7 +1012,7 @@ export const updateCheckoutProductWithLatest = async (
                 // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
-                        acc + item.price * item.quantity + item.shippingFee,
+                        acc + item.price.toNumber() * item.quantity + item.shippingFee.toNumber(),
                     0
                 );
                 // Apply coupon discount to the store's subTotal

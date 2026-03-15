@@ -568,7 +568,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails
+                    shippingDetails as any
                 ),
                 TEST_ERRORS.UNAUTHENTICATED
             );
@@ -585,7 +585,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails
+                    shippingDetails as any
                 ),
                 TEST_ERRORS.UNAUTHORIZED_ROLE
             );
@@ -605,7 +605,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             const shippingDetails = TestDataFactory.shippingDetails();
 
             await TestHelpers.expectThrowError(
-                updateStoreDefaultShippingDetails(null as any, shippingDetails),
+                updateStoreDefaultShippingDetails(null as any, shippingDetails as any),
                 TEST_ERRORS.MISSING_STORE_URL
             );
 
@@ -643,7 +643,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails
+                    shippingDetails as any
                 ),
                 TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE
             );
@@ -667,14 +667,14 @@ describe("updateStoreDefaultShippingDetails", () => {
             const mockDb = TestHelpers.mockDbMethods();
             const shippingDetails = TestDataFactory.shippingDetails();
             const existingStore = TestDataFactory.existingStore();
-            const updatedStore = TestDataFactory.existingStore(shippingDetails);
+            const updatedStore = TestDataFactory.existingStore(shippingDetails as any);
 
             mockDb.findUnique.mockResolvedValue(existingStore);
             mockDb.update.mockResolvedValue(updatedStore);
 
             const result = await updateStoreDefaultShippingDetails(
                 TEST_CONFIG.TEST_STORE_URL,
-                shippingDetails
+                shippingDetails as any
             );
 
             expect(result).toEqual(updatedStore);
@@ -721,7 +721,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails
+                    shippingDetails as any
                 ),
                 "Database connection failed during ownership check"
             );
@@ -750,7 +750,7 @@ describe("updateStoreDefaultShippingDetails", () => {
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
                     TEST_CONFIG.TEST_STORE_URL,
-                    shippingDetails
+                    shippingDetails as any
                 ),
                 "Database connection failed during store update"
             );

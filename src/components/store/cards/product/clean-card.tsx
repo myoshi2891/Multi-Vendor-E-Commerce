@@ -35,7 +35,7 @@ export default function ProductCardClean({
                         height={300}
                         priority
                     />
-                    <div className="price">${size.price}</div>
+                    <div className="price">${size.price.toNumber().toFixed(2)}</div>
                 </div>
                 <div className="content">
                     <div className="brand line-clamp-1">

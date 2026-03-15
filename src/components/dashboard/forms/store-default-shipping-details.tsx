@@ -59,11 +59,11 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 		defaultValues: {
 			// Setting default form values from data (if available)
 			defaultShippingService: data?.defaultShippingService ?? "",
-			defaultShippingFeePerItem: data?.defaultShippingFeePerItem ?? 0,
+			defaultShippingFeePerItem: data?.defaultShippingFeePerItem?.toNumber() ?? 0,
 			defaultShippingFeeForAdditionalItem:
-				data?.defaultShippingFeeForAdditionalItem ?? 0,
-			defaultShippingFeePerKg: data?.defaultShippingFeePerKg ?? 0,
-			defaultShippingFeeFixed: data?.defaultShippingFeeFixed ?? 0,
+				data?.defaultShippingFeeForAdditionalItem?.toNumber() ?? 0,
+			defaultShippingFeePerKg: data?.defaultShippingFeePerKg?.toNumber() ?? 0,
+			defaultShippingFeeFixed: data?.defaultShippingFeeFixed?.toNumber() ?? 0,
 			defaultDeliveryTimeMin: data?.defaultDeliveryTimeMin ?? 0,
 			defaultDeliveryTimeMax: data?.defaultDeliveryTimeMax ?? 0,
 			returnPolicy: data?.returnPolicy ?? "",
@@ -76,7 +76,16 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data);
+			form.reset({
+				defaultShippingService: data.defaultShippingService,
+				defaultShippingFeePerItem: data.defaultShippingFeePerItem.toNumber(),
+				defaultShippingFeeForAdditionalItem: data.defaultShippingFeeForAdditionalItem.toNumber(),
+				defaultShippingFeePerKg: data.defaultShippingFeePerKg.toNumber(),
+				defaultShippingFeeFixed: data.defaultShippingFeeFixed.toNumber(),
+				defaultDeliveryTimeMin: data.defaultDeliveryTimeMin,
+				defaultDeliveryTimeMax: data.defaultDeliveryTimeMax,
+				returnPolicy: data.returnPolicy,
+			});
 		}
 	}, [data, form]);
 
@@ -88,15 +97,15 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 			// Upserting category data
 			const response = await updateStoreDefaultShippingDetails(storeUrl, {
 				defaultShippingService: values.defaultShippingService,
-				defaultShippingFeePerItem: values.defaultShippingFeePerItem,
+				defaultShippingFeePerItem: values.defaultShippingFeePerItem as any,
 				defaultShippingFeeForAdditionalItem:
-					values.defaultShippingFeeForAdditionalItem,
-				defaultShippingFeePerKg: values.defaultShippingFeePerKg,
-				defaultShippingFeeFixed: values.defaultShippingFeeFixed,
+					values.defaultShippingFeeForAdditionalItem as any,
+				defaultShippingFeePerKg: values.defaultShippingFeePerKg as any,
+				defaultShippingFeeFixed: values.defaultShippingFeeFixed as any,
 				defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
 				defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
 				returnPolicy: values.returnPolicy,
-			});
+			} as any);
 
 			if (response.id) {
 				// Displaying success message
