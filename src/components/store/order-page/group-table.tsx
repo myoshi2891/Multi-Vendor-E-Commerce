@@ -3,6 +3,13 @@ import { OrderGroupWithItemsType, OrderStatus } from "@/lib/types";
 import Image from "next/image";
 import ProductRow from "./product-row";
 
+/**
+ * Renders a table-like card showing details for a single order group, including store info, items, delivery window, pricing breakdown, and order status.
+ *
+ * @param group - Order group data with items, store, pricing, and optional coupon information.
+ * @param deliveryInfo - Delivery metadata: `shippingService`, `deliveryMinDate`, and `deliveryMaxDate`.
+ * @returns The JSX element representing the order group card.
+ */
 export default function OrderGroupTable({
     group,
     deliveryInfo,
@@ -18,7 +25,7 @@ export default function OrderGroupTable({
     const { coupon, couponId, subTotal, total, shippingFees } = group;
     let discountedAmount = 0;
     if (couponId && coupon) {
-        discountedAmount = ((subTotal + shippingFees) * coupon.discount) / 100;
+        discountedAmount = ((subTotal.toNumber() + shippingFees.toNumber()) * coupon.discount) / 100;
     }
     return (
         <div className="max-w-xl rounded-xl border border-gray-200 pt-6 max-lg:mx-auto lg:max-w-full">
@@ -92,13 +99,13 @@ export default function OrderGroupTable({
                     <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
                         Subtotal:
                         <span className="ms-1 text-gray-500">
-                            ${subTotal.toFixed(2)}
+                            ${subTotal.toNumber().toFixed(2)}
                         </span>
                     </p>
                     <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
                         Shipping Fees:
                         <span className="ms-1 text-gray-500">
-                            ${shippingFees.toFixed(2)}
+                            ${shippingFees.toNumber().toFixed(2)}
                         </span>
                     </p>
                     {couponId && (
@@ -117,7 +124,7 @@ export default function OrderGroupTable({
                     <p className="py-2 text-xl font-semibold text-black">
                         Total price:
                         <span className="ms-1 text-blue-primary">
-                            ${total.toFixed(2)}
+                            ${total.toNumber().toFixed(2)}
                         </span>
                     </p>
                 </div>
