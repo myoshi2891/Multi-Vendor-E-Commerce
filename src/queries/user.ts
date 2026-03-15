@@ -81,7 +81,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
         if (error instanceof Error) {
             console.error("Error following store:", error.message, error.stack);
         } else {
-            console.error("Error following store:", String(error));
+            console.error("Error following store:", error);
         }
         throw new Error('Error following store')
     }
@@ -115,15 +115,6 @@ export const saveUserCart = async (
             userId,
         },
     })
-
-    // Delete any existing user cart
-    if (userCart) {
-        await db.cart.delete({
-            where: {
-                userId,
-            },
-        })
-    }
 
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
@@ -250,6 +241,15 @@ export const saveUserCart = async (
 
     const total = subTotal.add(shippingFee)
 
+    // 検証成功後に既存カートを削除（検証前に削除するとエラー時にカート消失）
+    if (userCart) {
+        await db.cart.delete({
+            where: {
+                userId,
+            },
+        })
+    }
+
     // Save the validated items to the cart in the database
     const cart = await db.cart.create({
         data: {
@@ -284,7 +284,7 @@ export const saveUserCart = async (
         if (error instanceof Error) {
             console.error("Error retrieving user cart:", error.message, error.stack);
         } else {
-            console.error("Error retrieving user cart:", String(error));
+            console.error("Error retrieving user cart:", error);
         }
         throw error
     }
@@ -322,7 +322,7 @@ export const getUserShippingAddresses = async () => {
         if (error instanceof Error) {
             console.error("Error fetching shipping addresses:", error.message, error.stack);
         } else {
-            console.error("Error fetching shipping addresses:", String(error));
+            console.error("Error fetching shipping addresses:", error);
         }
         throw error
     }
@@ -369,34 +369,36 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                     if (error instanceof Error) {
                         console.error("Error updating default addresses:", error.message, error.stack);
                     } else {
-                        console.error("Error updating default addresses:", String(error));
+                        console.error("Error updating default addresses:", error);
                     }
                     throw new Error('Error making the default address.')
                 }
             }
         }
 
-        // Upsert shipping addresses into the database
-        const upsertedAddresses = await db.shippingAddress.upsert({
-            where: {
-                id: address.id,
-            },
-            update: {
-                ...address,
-                userId: user.id,
-            },
-            create: {
-                ...address,
-                userId: user.id,
-            },
+        // 所有権検証付きの upsert（他ユーザーのアドレス上書き防止）
+        const existing = await db.shippingAddress.findFirst({
+            where: { id: address.id, userId: user.id },
         })
+
+        let upsertedAddresses
+        if (existing) {
+            upsertedAddresses = await db.shippingAddress.update({
+                where: { id: address.id },
+                data: { ...address, userId: user.id },
+            })
+        } else {
+            upsertedAddresses = await db.shippingAddress.create({
+                data: { ...address, userId: user.id },
+            })
+        }
 
         return upsertedAddresses
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error upserting shipping addresses:", error.message, error.stack);
         } else {
-            console.error("Error upserting shipping addresses:", String(error));
+            console.error("Error upserting shipping addresses:", error);
         }
         throw error
     }
@@ -422,9 +424,9 @@ export const placeOrder = async (
 
     const userId = user.id
 
-    // Fetch user's cart will all items
+    // Fetch user's cart will all items（userId で所有権検証）
     const cart = await db.cart.findUnique({
-        where: { id: cartId },
+        where: { id: cartId, userId },
         include: {
             cartItems: true,
             coupon: true,
@@ -704,7 +706,7 @@ export const placeOrder = async (
         if (error instanceof Error) {
             console.error(`Error in placeOrder (cartId: ${cartId}):`, error.message, error.stack);
         } else {
-            console.error(`Error in placeOrder (cartId: ${cartId}):`, String(error));
+            console.error(`Error in placeOrder (cartId: ${cartId}):`, error);
         }
         throw error;
     }
@@ -729,7 +731,7 @@ export const emptyUserCart = async () => {
         if (error instanceof Error) {
             console.error("Error in emptyUserCart:", error.message, error.stack);
         } else {
-            console.error("Error in emptyUserCart:", String(error));
+            console.error("Error in emptyUserCart:", error);
         }
         throw error
     }
@@ -896,7 +898,7 @@ export const addToWishlist = async (
         if (error instanceof Error) {
             console.error("Error in addToWishlist:", error.message, error.stack);
         } else {
-            console.error("Error in addToWishlist:", String(error));
+            console.error("Error in addToWishlist:", error);
         }
         throw error
     }

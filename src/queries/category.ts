@@ -73,7 +73,7 @@ export const upsertCategory = async (category: Category) => {
         if (error instanceof Error) {
             console.error("Error in upsertCategory:", error.message, error.stack);
         } else {
-            console.error("Error in upsertCategory:", String(error));
+            console.error("Error in upsertCategory:", error);
         }
         throw error;
     }
@@ -123,7 +123,7 @@ export const getAllCategories = async (storeUrl?: string) => {
         if (error instanceof Error) {
             console.error("Error in getAllCategories:", error.message, error.stack);
         } else {
-            console.error("Error in getAllCategories:", String(error));
+            console.error("Error in getAllCategories:", error);
         }
         throw error;
     }
@@ -146,7 +146,7 @@ export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
         if (error instanceof Error) {
             console.error("Error in getAllSubCategoriesFotCategory:", error.message, error.stack);
         } else {
-            console.error("Error in getAllSubCategoriesFotCategory:", String(error));
+            console.error("Error in getAllSubCategoriesFotCategory:", error);
         }
         throw error;
     }
@@ -174,7 +174,7 @@ export const getCategory = async (categoryId: string) => {
         if (error instanceof Error) {
             console.error("Error in getCategory:", error.message, error.stack);
         } else {
-            console.error("Error in getCategory:", String(error));
+            console.error("Error in getCategory:", error);
         }
         throw error;
     }
@@ -214,7 +214,7 @@ export const deleteCategory = async (categoryId: string) => {
         if (error instanceof Error) {
             console.error("Error in deleteCategory:", error.message, error.stack);
         } else {
-            console.error("Error in deleteCategory:", String(error));
+            console.error("Error in deleteCategory:", error);
         }
         throw error;
     }

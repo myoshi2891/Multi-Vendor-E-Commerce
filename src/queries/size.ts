@@ -117,7 +117,7 @@ export const getFilteredSizes = async (
         if (error instanceof Error) {
             console.error("Error getting filtered sizes:", error.message, error.stack);
         } else {
-            console.error("Error getting filtered sizes:", String(error));
+            console.error("Error getting filtered sizes:", error);
         }
         throw new Error("Failed to get filtered sizes");
     }

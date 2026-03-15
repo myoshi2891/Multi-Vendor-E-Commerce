@@ -117,7 +117,7 @@ export const upsertReview = async (
         if (error instanceof Error) {
             console.error('Error updating review:', error.message, error.stack)
         } else {
-            console.error('Error updating review:', String(error))
+            console.error('Error updating review:', error)
         }
         throw new Error('Error updating review')
     }

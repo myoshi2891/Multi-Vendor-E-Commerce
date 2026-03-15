@@ -50,7 +50,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
         if (error instanceof Error) {
             console.error("Error creating payment intent:", error.message, error.stack);
         } else {
-            console.error("Error creating payment intent:", String(error));
+            console.error("Error creating payment intent:", error);
         }
         throw error;
     }
@@ -137,7 +137,7 @@ export const createStripePayment = async (
         if (error instanceof Error) {
             console.error("Error creating payment:", error.message, error.stack);
         } else {
-            console.error("Error creating payment:", String(error));
+            console.error("Error creating payment:", error);
         }
         throw error;
     }

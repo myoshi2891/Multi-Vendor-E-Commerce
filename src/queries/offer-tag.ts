@@ -73,7 +73,7 @@ export const upsertOfferTag = async (offerTag: OfferTag) => {
 		if (error instanceof Error) {
 			console.error("Error upserting OfferTag:", error.message, error.stack);
 		} else {
-			console.error("Error upserting OfferTag:", String(error));
+			console.error("Error upserting OfferTag:", error);
 		}
 		throw new Error("Error upserting OfferTag");
 	}
@@ -136,7 +136,7 @@ export const getAllOfferTags = async (storeUrl?: string) => {
         if (error instanceof Error) {
             console.error("Error retrieving OfferTags:", error.message, error.stack);
         } else {
-            console.error("Error retrieving OfferTags:", String(error));
+            console.error("Error retrieving OfferTags:", error);
         }
         throw new Error("Error retrieving OfferTags");
     }
@@ -162,7 +162,7 @@ export const getOfferTag = async (offerTagId: string) => {
 		if (error instanceof Error) {
 			console.error("Error retrieving OfferTag:", error.message, error.stack);
 		} else {
-			console.error("Error retrieving OfferTag:", String(error));
+			console.error("Error retrieving OfferTag:", error);
 		}
 		throw new Error("Error retrieving OfferTag");
 	}
@@ -203,7 +203,7 @@ export const deleteOfferTag = async (offerTagId: string) => {
 		if (error instanceof Error) {
 			console.error("Error deleting OfferTag:", error.message, error.stack);
 		} else {
-			console.error("Error deleting OfferTag:", String(error));
+			console.error("Error deleting OfferTag:", error);
 		}
 		throw new Error("Error deleting OfferTag");
 	}

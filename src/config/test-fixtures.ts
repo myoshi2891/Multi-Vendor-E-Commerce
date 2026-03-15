@@ -561,7 +561,7 @@ export const createMockPaymentDetails = (
         paymentIntentId: "pi_test_123",
         paymentMethod: "Stripe",
         status: "Completed",
-        amount: toDecimal(amount ?? 6998),
+        amount: toDecimal(amount ?? 69.98),
         currency: "usd",
         orderId: "order-001",
         userId: TEST_CONFIG.DEFAULT_USER_ID,

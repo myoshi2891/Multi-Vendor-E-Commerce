@@ -147,7 +147,7 @@ export const upsertStore = async (store: Partial<Store>) => {
         if (error instanceof Error) {
             console.error("Error in upsertStore:", error.message, error.stack);
         } else {
-            console.error("Error in upsertStore:", String(error));
+            console.error("Error in upsertStore:", error);
         }
         throw error;
     }
@@ -190,7 +190,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
         if (error instanceof Error) {
             console.error("Error in getStoreDefaultShippingDetails:", error.message, error.stack);
         } else {
-            console.error("Error in getStoreDefaultShippingDetails:", String(error));
+            console.error("Error in getStoreDefaultShippingDetails:", error);
         }
         throw error;
     }
@@ -242,7 +242,7 @@ export const updateStoreDefaultShippingDetails = async (
         if (error instanceof Error) {
             console.error("Error in updateStoreDefaultShippingDetails:", error.message, error.stack);
         } else {
-            console.error("Error in updateStoreDefaultShippingDetails:", String(error));
+            console.error("Error in updateStoreDefaultShippingDetails:", error);
         }
         throw error;
     }
@@ -314,7 +314,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
         if (error instanceof Error) {
             console.error("Error in getStoreShippingRates:", error.message, error.stack);
         } else {
-            console.error("Error in getStoreShippingRates:", String(error));
+            console.error("Error in getStoreShippingRates:", error);
         }
         throw error;
     }
@@ -408,7 +408,7 @@ export const upsertShippingRate = async (
         if (error instanceof Error) {
             console.error("Error in upsertShippingRate:", error.message, error.stack);
         } else {
-            console.error("Error in upsertShippingRate:", String(error));
+            console.error("Error in upsertShippingRate:", error);
         }
         throw error;
     }
@@ -487,7 +487,7 @@ export const getStoreOrders = async (storeUrl: string) => {
         if (error instanceof Error) {
             console.error("Error in getStoreOrders:", error.message, error.stack);
         } else {
-            console.error("Error in getStoreOrders:", String(error));
+            console.error("Error in getStoreOrders:", error);
         }
         throw error;
     }
@@ -561,7 +561,7 @@ export const applySeller = async (store: StoreType) => {
         if (error instanceof Error) {
             console.error("Error in applySeller:", error.message, error.stack);
         } else {
-            console.error("Error in applySeller:", String(error));
+            console.error("Error in applySeller:", error);
         }
         throw error;
     }
@@ -601,7 +601,7 @@ export const getAllStores = async () => {
         if (error instanceof Error) {
             console.error("Error in getAllStores:", error.message, error.stack);
         } else {
-            console.error("Error in getAllStores:", String(error));
+            console.error("Error in getAllStores:", error);
         }
         throw error;
     }
@@ -671,12 +671,20 @@ export const updateStoreStatus = async (
             return updated;
         });
 
+        // Clerk メタデータ同期（PENDING → ACTIVE 遷移時）
+        if (store.status === "PENDING" && status === "ACTIVE") {
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            await clerkClient.users.updateUserMetadata(store.userId, {
+                privateMetadata: { role: "SELLER" },
+            });
+        }
+
         return updatedStore.status;
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in updateStoreStatus:", error.message, error.stack);
         } else {
-            console.error("Error in updateStoreStatus:", String(error));
+            console.error("Error in updateStoreStatus:", error);
         }
         throw error;
     }
@@ -718,7 +726,7 @@ export const deleteStore = async (storeId: string) => {
         if (error instanceof Error) {
             console.error("Error in deleteStore:", error.message, error.stack);
         } else {
-            console.error("Error in deleteStore:", String(error));
+            console.error("Error in deleteStore:", error);
         }
         throw error;
     }
@@ -761,7 +769,7 @@ export const getStorePageDetails = async (storeUrl: string) => {
         if (error instanceof Error) {
             console.error("Error in getStorePageDetails:", error.message, error.stack);
         } else {
-            console.error("Error in getStorePageDetails:", String(error));
+            console.error("Error in getStorePageDetails:", error);
         }
         throw error;
     }

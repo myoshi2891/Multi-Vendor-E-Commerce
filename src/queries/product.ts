@@ -98,7 +98,9 @@ export const upsertProduct = async (
 
         if (existingProduct) {
             if (existingVariant) {
-                // Update existing variant and product
+                throw new Error(
+                    "Product/variant update is not yet implemented. Please delete and re-create."
+                );
             } else {
                 // Create new variant
                 await handleVariantCreate(product);
@@ -111,7 +113,7 @@ export const upsertProduct = async (
         if (error instanceof Error) {
             console.error("Error in upsertProduct:", error.message, error.stack);
         } else {
-            console.error("Error in upsertProduct:", String(error));
+            console.error("Error in upsertProduct:", error);
         }
         throw error;
     }
@@ -389,6 +391,15 @@ export const deleteProduct = async (productId: string) => {
         // Ensure product data is provided
         if (!productId) throw new Error("Please provide product ID.");
 
+        // 所有権検証: 商品のストアが現在のユーザーに属するか確認（IDOR防止）
+        const product = await db.product.findUnique({
+            where: { id: productId },
+            include: { store: { select: { userId: true } } },
+        });
+        if (!product) throw new Error("Product not found.");
+        if (product.store.userId !== user.id)
+            throw new Error("You can only delete your own products.");
+
         // Delete the product and its variants
         const response = await db.product.delete({
             where: { id: productId },
@@ -398,7 +409,7 @@ export const deleteProduct = async (productId: string) => {
         if (error instanceof Error) {
             console.error("Error in deleteProduct:", error.message, error.stack);
         } else {
-            console.error("Error in deleteProduct:", String(error));
+            console.error("Error in deleteProduct:", error);
         }
         throw error;
     }
@@ -838,7 +849,7 @@ const getUserCountry = () => {
         if (error instanceof Error) {
             console.error("Error retrieving user country:", error.message, error.stack);
         } else {
-            console.error("Error retrieving user country:", String(error));
+            console.error("Error retrieving user country:", error);
         }
         return defaultCountry;
     }
@@ -1102,7 +1113,7 @@ export const getShippingDetails = async (
         if (error instanceof Error) {
             console.error("Error in getProductFilteredReviews:", error.message, error.stack);
         } else {
-            console.error("Error in getProductFilteredReviews:", String(error));
+            console.error("Error in getProductFilteredReviews:", error);
         }
         throw error;
     }
@@ -1311,7 +1322,7 @@ export const getProductShippingFee = async (
         if (error instanceof Error) {
             console.error("Error in getDeliveryDetailsForStoreByCountry:", error.message, error.stack);
         } else {
-            console.error("Error in getDeliveryDetailsForStoreByCountry:", String(error));
+            console.error("Error in getDeliveryDetailsForStoreByCountry:", error);
         }
         throw error;
     }
@@ -1415,7 +1426,7 @@ export const getProductsByIds = async (
         if (error instanceof Error) {
             console.error("Error retrieving products by ids:", error.message, error.stack);
         } else {
-            console.error("Error retrieving products by ids:", String(error));
+            console.error("Error retrieving products by ids:", error);
         }
         throw new Error("Failed to retrieve products. Please try again.");
     }

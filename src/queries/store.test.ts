@@ -52,8 +52,14 @@ jest.mock("@/lib/db", () => ({
 }));
 
 // Mock Clerk
+const mockUpdateUserMetadata = jest.fn().mockResolvedValue({});
 jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
+    clerkClient: {
+        users: {
+            updateUserMetadata: (...args: unknown[]) => mockUpdateUserMetadata(...args),
+        },
+    },
 }));
 
 // テストデータファクトリー

@@ -437,11 +437,19 @@ describe("deleteProduct", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "SELLER" },
             });
+            mockDb.product.findUnique.mockResolvedValue({
+                id: "product-001",
+                store: { userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
             mockDb.product.delete.mockResolvedValue(createMockProduct());
 
             const result = await deleteProduct("product-001");
 
             expect(result).toEqual(createMockProduct());
+            expect(mockDb.product.findUnique).toHaveBeenCalledWith({
+                where: { id: "product-001" },
+                include: { store: { select: { userId: true } } },
+            });
             expect(mockDb.product.delete).toHaveBeenCalledWith({
                 where: { id: "product-001" },
             });
