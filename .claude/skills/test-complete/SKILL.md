@@ -226,16 +226,16 @@ bunx playwright test --ui                                         # UI モード
 bun run seed:e2e                                                  # シードデータ投入
 
 # 型チェック・リント
-bunx tsc --noEmit                  TypeScript 型チェック
-bun run lint                       ESLint
-bun run lint --fix                 ESLint 自動修正
-bunx prettier --check .            Prettier チェック
-bunx prettier --write <file>       Prettier 自動修正
+bunx tsc --noEmit                                                 # TypeScript 型チェック
+bun run lint                                                      # ESLint
+bun run lint --fix                                                # ESLint 自動修正
+bunx prettier --check .                                           # Prettier チェック
+bunx prettier --write <file>                                      # Prettier 自動修正
 
 # Prisma
-bunx prisma generate               クライアント再生成
-bunx prisma validate               スキーマ検証
-bunx prisma studio                 DB ブラウザ
+bunx prisma generate                                              # クライアント再生成
+bunx prisma validate                                              # スキーマ検証
+bunx prisma studio                                                # DB ブラウザ
 ```
 
 ---

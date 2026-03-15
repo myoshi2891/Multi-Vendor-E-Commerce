@@ -43,7 +43,7 @@
 
 ```
 @/*        → ./src/*
-@/store    → ./src/components/store   ※ @/cart-store ではない
+@/store    → ./src/components/store   ※ 'src/cart-store/' ではなく 'src/components/store/' を指す
 @/public/* → ./public/*
 ```
 
