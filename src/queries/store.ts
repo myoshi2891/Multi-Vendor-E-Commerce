@@ -355,13 +355,36 @@ export const upsertShippingRate = async (
 
         if (!store) throw new Error("Store could not be found.");
 
-        // Upsert shipping rate into the database
+        // Upsert shipping rate into the database using composite unique key
         const shippingRateDetails = await db.shippingRate.upsert({
             where: {
-                id: shippingRate.id,
+                storeId_countryId: {
+                    storeId: store.id,
+                    countryId: shippingRate.countryId,
+                },
             },
-            update: { ...shippingRate, storeId: store.id },
-            create: { ...shippingRate, storeId: store.id },
+            update: {
+                shippingService: shippingRate.shippingService,
+                returnPolicy: shippingRate.returnPolicy,
+                shippingFeePerItem: shippingRate.shippingFeePerItem,
+                shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem,
+                shippingFeePerKg: shippingRate.shippingFeePerKg,
+                shippingFeeFixed: shippingRate.shippingFeeFixed,
+                deliveryTimeMin: shippingRate.deliveryTimeMin,
+                deliveryTimeMax: shippingRate.deliveryTimeMax,
+            },
+            create: {
+                storeId: store.id,
+                countryId: shippingRate.countryId,
+                shippingService: shippingRate.shippingService,
+                returnPolicy: shippingRate.returnPolicy,
+                shippingFeePerItem: shippingRate.shippingFeePerItem,
+                shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem,
+                shippingFeePerKg: shippingRate.shippingFeePerKg,
+                shippingFeeFixed: shippingRate.shippingFeeFixed,
+                deliveryTimeMin: shippingRate.deliveryTimeMin,
+                deliveryTimeMax: shippingRate.deliveryTimeMax,
+            },
         });
 
         return shippingRateDetails;

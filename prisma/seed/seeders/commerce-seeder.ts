@@ -15,12 +15,24 @@ export async function seedCommerce(
     "users" | "stores" | "countries" | "products" | "variants" | "sizes"
   >
 ): Promise<void> {
-  // 依存関係の逆順で削除（外部キー制約違反を回避）
-  await prisma.orderItem.deleteMany();
-  await prisma.orderGroup.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.shippingAddress.deleteMany();
-  await prisma.coupon.deleteMany();
+  // seed データのみ削除（E2E テストやマニュアルデータを保護）
+  const seedUserIds = Array.from(maps.users.values());
+  const seedStoreIds = Array.from(maps.stores.values());
+
+  // Order 系は userId でフィルタ（OrderGroup, OrderItem は CASCADE DELETE）
+  await prisma.order.deleteMany({
+    where: { userId: { in: seedUserIds } },
+  });
+
+  // ShippingAddress は userId でフィルタ
+  await prisma.shippingAddress.deleteMany({
+    where: { userId: { in: seedUserIds } },
+  });
+
+  // Coupon は storeId でフィルタ
+  await prisma.coupon.deleteMany({
+    where: { storeId: { in: seedStoreIds } },
+  });
 
   // Coupon
   const coupons = new Map<string, string>(); // code -> id
@@ -90,9 +102,13 @@ export async function seedCommerce(
       throw new Error(`配送先が設定されていません: ${o.userEmail}（注文）`);
     }
 
-    // indexが範囲外の場合は0を使う
-    const addrIndex = o.shippingAddressIndex < addresses.length ? o.shippingAddressIndex : 0;
-    const shippingAddressId = addresses[addrIndex];
+    // 範囲外の index をエラーとして検出
+    if (o.shippingAddressIndex < 0 || o.shippingAddressIndex >= addresses.length) {
+      throw new Error(
+        `shippingAddressIndex が範囲外です: ${o.shippingAddressIndex}（有効範囲: 0-${addresses.length - 1}、注文: ${o.userEmail}）`
+      );
+    }
+    const shippingAddressId = addresses[o.shippingAddressIndex];
 
     const order = await prisma.order.create({
       data: {

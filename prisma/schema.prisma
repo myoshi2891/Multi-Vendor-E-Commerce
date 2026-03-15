@@ -366,6 +366,7 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
+  @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
 }
