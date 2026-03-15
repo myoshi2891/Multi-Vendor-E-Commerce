@@ -15,9 +15,9 @@ export default function ProductCardClean({
 
     const size = variant.sizes.reduce((lowest, current) => {
         const currentPriceAfterDiscount =
-            current.price * (1 - current.discount / 100);
+            current.price.toNumber() * (1 - current.discount / 100);
         const lowestPriceAfterDiscount =
-            lowest.price * (1 - lowest.discount / 100);
+            lowest.price.toNumber() * (1 - lowest.discount / 100);
 
         return currentPriceAfterDiscount < lowestPriceAfterDiscount
             ? current

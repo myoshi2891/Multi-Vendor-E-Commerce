@@ -1,7 +1,7 @@
 "use client";
 import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { FC, useEffect } from "react";
 
