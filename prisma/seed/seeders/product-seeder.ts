@@ -115,7 +115,7 @@ export async function seedProducts(
         where: { slug: v.slug },
         update: {
           variantName: v.variantName,
-          variantDescription: v.variantDescription,
+          variantDescription: v.variantDescription ?? "",
           variantImage: v.images[0]?.url ?? "",
           isSale: v.isSale,
           saleEndDate: v.saleEndDate ?? null,
@@ -126,7 +126,7 @@ export async function seedProducts(
         },
         create: {
           variantName: v.variantName,
-          variantDescription: v.variantDescription,
+          variantDescription: v.variantDescription ?? "",
           variantImage: v.images[0]?.url ?? "",
           slug: v.slug,
           isSale: v.isSale,

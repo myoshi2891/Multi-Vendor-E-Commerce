@@ -101,7 +101,7 @@ export type SeedQuestion = {
 
 export type SeedProductVariant = {
   variantName: string;
-  variantDescription: string;
+  variantDescription?: string;
   slug: string;
   sku: string;
   weight: number;

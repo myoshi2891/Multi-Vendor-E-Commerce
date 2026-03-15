@@ -49,7 +49,7 @@ git log --oneline -5
 
 必要に応じて追加参照：
 
-```
+```text
 Read: specs/multi-vendor-ecommerce/07-testing.md     テスト方針・カバレッジ要件
 Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
 ```
@@ -62,7 +62,7 @@ Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
 
 #### A. データモデルの乖離
 
-```
+```text
 比較: prisma/schema.prisma ↔ 03-data-model.md
 ```
 
@@ -75,7 +75,7 @@ Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
 
 #### B. サーバーアクション（API）の乖離
 
-```
+```text
 比較: src/queries/*.ts ↔ 04-interfaces.md
 ```
 
@@ -88,7 +88,7 @@ Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
 
 #### C. ワークフロー・ルートの乖離
 
-```
+```text
 比較: src/app/ + src/middleware.ts ↔ 05-workflows.md
 ```
 
@@ -109,7 +109,7 @@ Read: specs/multi-vendor-ecommerce/08-open-questions.md  未解決事項
 
 ### Step 4｜未解決事項を確認する
 
-```
+```text
 Read: specs/multi-vendor-ecommerce/08-open-questions.md
 ```
 
@@ -194,7 +194,7 @@ Read: specs/multi-vendor-ecommerce/08-open-questions.md
 
 ## 参考: 主要ファイルパス
 
-```
+```text
 # 仕様書
 specs/multi-vendor-ecommerce/
   00-overview.md        プロダクトスコープ・システム概要
