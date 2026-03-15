@@ -95,7 +95,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 27,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-noir-italian-wool-three-piece-suit",
+        productSlug: "lux-noir-italian-wool-tailored-suit",
         images: [],
     },
     {
@@ -107,7 +107,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 15,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-noir-italian-wool-three-piece-suit",
+        productSlug: "lux-noir-italian-wool-tailored-suit",
         images: [
             {
                 url: img,
@@ -132,7 +132,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 48,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-noir-italian-wool-three-piece-suit",
+        productSlug: "lux-noir-italian-wool-tailored-suit",
         images: [],
     },
     {
@@ -144,7 +144,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 29,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-noir-italian-wool-three-piece-suit",
+        productSlug: "lux-noir-italian-wool-tailored-suit",
         images: [],
     },
     {
@@ -156,7 +156,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 34,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-noir-merino-wool-turtleneck",
+        productSlug: "lux-noir-merino-turtleneck-sweater",
         images: [],
     },
     {
@@ -168,7 +168,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 2,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-noir-merino-wool-turtleneck",
+        productSlug: "lux-noir-merino-turtleneck-sweater",
         images: [],
     },
     {
@@ -180,7 +180,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 39,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-noir-merino-wool-turtleneck",
+        productSlug: "lux-noir-merino-turtleneck-sweater",
         images: [
             {
                 url: img,
@@ -205,7 +205,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 25,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-noir-tailored-wide-leg-trousers",
+        productSlug: "lux-noir-satin-midi-skirt",
         images: [
             {
                 url: img,
@@ -226,7 +226,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 2,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-noir-tailored-wide-leg-trousers",
+        productSlug: "lux-noir-satin-midi-skirt",
         images: [],
     },
     {
@@ -238,7 +238,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 3,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-noir-tailored-wide-leg-trousers",
+        productSlug: "lux-noir-satin-midi-skirt",
         images: [],
     },
     {
@@ -250,7 +250,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 44,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-noir-tailored-wide-leg-trousers",
+        productSlug: "lux-noir-satin-midi-skirt",
         images: [],
     },
     {
@@ -262,7 +262,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 8,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-noir-leather-chelsea-boots",
+        productSlug: "lux-noir-cashmere-blend-scarf",
         images: [
             {
                 url: img,
@@ -287,7 +287,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 18,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-noir-leather-chelsea-boots",
+        productSlug: "lux-noir-cashmere-blend-scarf",
         images: [],
     },
     {
@@ -299,7 +299,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 37,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-noir-leather-chelsea-boots",
+        productSlug: "lux-noir-cashmere-blend-scarf",
         images: [],
     },
     {
@@ -311,7 +311,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 25,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-noir-leather-chelsea-boots",
+        productSlug: "lux-noir-cashmere-blend-scarf",
         images: [],
     },
     {
@@ -323,7 +323,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 12,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-noir-leather-chelsea-boots",
+        productSlug: "lux-noir-cashmere-blend-scarf",
         images: [],
     },
     {
@@ -335,7 +335,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 34,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-maison-embroidered-cocktail-dress",
+        productSlug: "lux-maison-pleated-chiffon-maxi-dress",
         images: [],
     },
     {
@@ -347,7 +347,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 42,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-embroidered-cocktail-dress",
+        productSlug: "lux-maison-pleated-chiffon-maxi-dress",
         images: [],
     },
     {
@@ -359,7 +359,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 22,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-maison-embroidered-cocktail-dress",
+        productSlug: "lux-maison-pleated-chiffon-maxi-dress",
         images: [],
     },
     {
@@ -371,7 +371,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 30,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-maison-embroidered-cocktail-dress",
+        productSlug: "lux-maison-pleated-chiffon-maxi-dress",
         images: [
             {
                 url: img,
@@ -388,7 +388,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 24,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-maison-silk-organza-blouse",
+        productSlug: "lux-maison-embroidered-tulle-blouse",
         images: [
             {
                 url: img,
@@ -405,7 +405,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 11,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-silk-organza-blouse",
+        productSlug: "lux-maison-embroidered-tulle-blouse",
         images: [
             {
                 url: img,
@@ -422,7 +422,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 14,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-maison-silk-organza-blouse",
+        productSlug: "lux-maison-embroidered-tulle-blouse",
         images: [],
     },
     {
@@ -434,7 +434,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 38,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-maison-tailored-blazer",
+        productSlug: "lux-maison-structured-tweed-jacket",
         images: [],
     },
     {
@@ -446,7 +446,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 33,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-maison-tailored-blazer",
+        productSlug: "lux-maison-structured-tweed-jacket",
         images: [],
     },
     {
@@ -458,7 +458,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 47,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-tailored-blazer",
+        productSlug: "lux-maison-structured-tweed-jacket",
         images: [],
     },
     {
@@ -470,7 +470,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 5,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-maison-pleated-midi-skirt",
+        productSlug: "lux-maison-hand-draped-silk-gown",
         images: [],
     },
     {
@@ -482,7 +482,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 39,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-pleated-midi-skirt",
+        productSlug: "lux-maison-hand-draped-silk-gown",
         images: [
             {
                 url: img,
@@ -499,7 +499,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 26,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-maison-pleated-midi-skirt",
+        productSlug: "lux-maison-hand-draped-silk-gown",
         images: [],
     },
     {
@@ -511,7 +511,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 15,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-maison-pleated-midi-skirt",
+        productSlug: "lux-maison-hand-draped-silk-gown",
         images: [],
     },
     {
@@ -523,7 +523,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 29,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-maison-pleated-midi-skirt",
+        productSlug: "lux-maison-hand-draped-silk-gown",
         images: [
             {
                 url: img,
@@ -540,7 +540,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 33,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-maison-cashmere-wrap-coat",
+        productSlug: "lux-maison-leather-gloves-gold-hardware",
         images: [],
     },
     {
@@ -552,7 +552,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 31,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-maison-cashmere-wrap-coat",
+        productSlug: "lux-maison-leather-gloves-gold-hardware",
         images: [],
     },
     {
@@ -564,7 +564,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 50,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-cashmere-wrap-coat",
+        productSlug: "lux-maison-leather-gloves-gold-hardware",
         images: [],
     },
     {
@@ -576,7 +576,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 44,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-maison-cashmere-wrap-coat",
+        productSlug: "lux-maison-leather-gloves-gold-hardware",
         images: [
             {
                 url: img,
@@ -597,7 +597,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 29,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-maison-cashmere-wrap-coat",
+        productSlug: "lux-maison-leather-gloves-gold-hardware",
         images: [],
     },
     {
@@ -609,7 +609,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 32,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-maison-leather-shoulder-bag",
+        productSlug: "lux-maison-crystal-embellished-clutch",
         images: [],
     },
     {
@@ -621,7 +621,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 43,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-maison-leather-shoulder-bag",
+        productSlug: "lux-maison-crystal-embellished-clutch",
         images: [],
     },
     {
@@ -633,7 +633,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 12,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-maison-leather-shoulder-bag",
+        productSlug: "lux-maison-crystal-embellished-clutch",
         images: [
             {
                 url: img,
@@ -654,7 +654,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 48,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-maison-leather-shoulder-bag",
+        productSlug: "lux-maison-crystal-embellished-clutch",
         images: [],
     },
     {
@@ -979,7 +979,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 15,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-velvet-quilted-leather-shoulder-bag",
+        productSlug: "lux-velvet-quilted-lambskin-evening-bag",
         images: [],
     },
     {
@@ -991,7 +991,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 45,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-velvet-quilted-leather-shoulder-bag",
+        productSlug: "lux-velvet-quilted-lambskin-evening-bag",
         images: [
             {
                 url: img,
@@ -1012,7 +1012,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 47,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-velvet-quilted-leather-shoulder-bag",
+        productSlug: "lux-velvet-quilted-lambskin-evening-bag",
         images: [
             {
                 url: img,
@@ -1037,7 +1037,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 19,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-velvet-quilted-leather-shoulder-bag",
+        productSlug: "lux-velvet-quilted-lambskin-evening-bag",
         images: [
             {
                 url: img,
@@ -1058,7 +1058,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 38,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-velvet-quilted-leather-shoulder-bag",
+        productSlug: "lux-velvet-quilted-lambskin-evening-bag",
         images: [],
     },
     {
@@ -1127,7 +1127,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 22,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-velvet-silk-evening-clutch",
+        productSlug: "lux-velvet-python-embossed-crossbody",
         images: [],
     },
     {
@@ -1139,7 +1139,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 22,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-velvet-silk-evening-clutch",
+        productSlug: "lux-velvet-python-embossed-crossbody",
         images: [],
     },
     {
@@ -1151,7 +1151,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 15,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-velvet-silk-evening-clutch",
+        productSlug: "lux-velvet-python-embossed-crossbody",
         images: [],
     },
     {
@@ -1163,7 +1163,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 21,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-velvet-patent-leather-pumps",
+        productSlug: "lux-velvet-patent-stiletto-heels",
         images: [
             {
                 url: img,
@@ -1184,7 +1184,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 20,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-velvet-patent-leather-pumps",
+        productSlug: "lux-velvet-patent-stiletto-heels",
         images: [],
     },
     {
@@ -1196,7 +1196,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 23,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-velvet-patent-leather-pumps",
+        productSlug: "lux-velvet-patent-stiletto-heels",
         images: [],
     },
     {
@@ -1208,7 +1208,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 8,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-velvet-patent-leather-pumps",
+        productSlug: "lux-velvet-patent-stiletto-heels",
         images: [],
     },
     {
@@ -1220,7 +1220,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 28,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-velvet-structured-tote-bag",
+        productSlug: "lux-velvet-structured-leather-tote",
         images: [],
     },
     {
@@ -1232,7 +1232,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 1,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-velvet-structured-tote-bag",
+        productSlug: "lux-velvet-structured-leather-tote",
         images: [],
     },
     {
@@ -1244,7 +1244,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 34,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-velvet-structured-tote-bag",
+        productSlug: "lux-velvet-structured-leather-tote",
         images: [
             {
                 url: img,
@@ -1261,7 +1261,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 22,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-velvet-structured-tote-bag",
+        productSlug: "lux-velvet-structured-leather-tote",
         images: [],
     },
     {
@@ -1273,7 +1273,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 2,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-velvet-embossed-leather-belt",
+        productSlug: "lux-velvet-calfskin-belt-monogram",
         images: [
             {
                 url: img,
@@ -1290,7 +1290,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 19,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-velvet-embossed-leather-belt",
+        productSlug: "lux-velvet-calfskin-belt-monogram",
         images: [],
     },
     {
@@ -1302,7 +1302,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 10,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-velvet-embossed-leather-belt",
+        productSlug: "lux-velvet-calfskin-belt-monogram",
         images: [
             {
                 url: img,
@@ -1327,7 +1327,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 10,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-velvet-embossed-leather-belt",
+        productSlug: "lux-velvet-calfskin-belt-monogram",
         images: [],
     },
     {
@@ -1339,7 +1339,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 14,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-oro-chronograph-dress-watch",
+        productSlug: "lux-oro-automatic-chronograph-watch",
         images: [],
     },
     {
@@ -1351,7 +1351,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 0,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-oro-chronograph-dress-watch",
+        productSlug: "lux-oro-automatic-chronograph-watch",
         images: [
             {
                 url: img,
@@ -1372,7 +1372,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 47,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-oro-chronograph-dress-watch",
+        productSlug: "lux-oro-automatic-chronograph-watch",
         images: [],
     },
     {
@@ -1384,7 +1384,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 22,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-oro-italian-leather-loafers",
+        productSlug: "lux-oro-hand-stitched-leather-loafers",
         images: [
             {
                 url: img,
@@ -1401,7 +1401,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 33,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-oro-italian-leather-loafers",
+        productSlug: "lux-oro-hand-stitched-leather-loafers",
         images: [],
     },
     {
@@ -1413,7 +1413,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 32,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-oro-italian-leather-loafers",
+        productSlug: "lux-oro-hand-stitched-leather-loafers",
         images: [
             {
                 url: img,
@@ -1503,7 +1503,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 45,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-oro-cashmere-overcoat",
+        productSlug: "lux-oro-cashmere-blend-overcoat",
         images: [
             {
                 url: img,
@@ -1528,7 +1528,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 8,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-oro-cashmere-overcoat",
+        productSlug: "lux-oro-cashmere-blend-overcoat",
         images: [],
     },
     {
@@ -1540,7 +1540,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 21,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-oro-cashmere-overcoat",
+        productSlug: "lux-oro-cashmere-blend-overcoat",
         images: [],
     },
     {
@@ -1552,7 +1552,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 40,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-oro-cashmere-overcoat",
+        productSlug: "lux-oro-cashmere-blend-overcoat",
         images: [],
     },
     {
@@ -1564,7 +1564,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 28,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-oro-cashmere-overcoat",
+        productSlug: "lux-oro-cashmere-blend-overcoat",
         images: [],
     },
     {
@@ -1576,7 +1576,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 45,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-oro-gold-cufflinks",
+        productSlug: "lux-oro-dress-watch-leather-strap",
         images: [],
     },
     {
@@ -1588,7 +1588,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 19,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-oro-gold-cufflinks",
+        productSlug: "lux-oro-dress-watch-leather-strap",
         images: [],
     },
     {
@@ -1600,7 +1600,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 48,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-oro-gold-cufflinks",
+        productSlug: "lux-oro-dress-watch-leather-strap",
         images: [
             {
                 url: img,
@@ -1617,7 +1617,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 29,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-oro-suede-bomber-jacket",
+        productSlug: "lux-oro-italian-linen-summer-suit",
         images: [],
     },
     {
@@ -1629,7 +1629,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 13,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-oro-suede-bomber-jacket",
+        productSlug: "lux-oro-italian-linen-summer-suit",
         images: [],
     },
     {
@@ -1641,7 +1641,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 44,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-oro-suede-bomber-jacket",
+        productSlug: "lux-oro-italian-linen-summer-suit",
         images: [],
     },
     {
@@ -1653,7 +1653,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 12,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-oro-suede-bomber-jacket",
+        productSlug: "lux-oro-italian-linen-summer-suit",
         images: [],
     },
     {
@@ -1665,7 +1665,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 2,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-lumiere-lace-overlay-dress",
+        productSlug: "lux-lumiere-boucle-cropped-jacket",
         images: [
             {
                 url: img,
@@ -1690,7 +1690,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 35,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-lumiere-lace-overlay-dress",
+        productSlug: "lux-lumiere-boucle-cropped-jacket",
         images: [],
     },
     {
@@ -1702,7 +1702,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 45,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-lumiere-lace-overlay-dress",
+        productSlug: "lux-lumiere-boucle-cropped-jacket",
         images: [],
     },
     {
@@ -1714,7 +1714,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 19,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-lumiere-lace-overlay-dress",
+        productSlug: "lux-lumiere-boucle-cropped-jacket",
         images: [
             {
                 url: img,
@@ -1739,7 +1739,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 10,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-lumiere-lace-overlay-dress",
+        productSlug: "lux-lumiere-boucle-cropped-jacket",
         images: [],
     },
     {
@@ -1751,7 +1751,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 34,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-lumiere-satin-midi-skirt",
+        productSlug: "lux-lumiere-silk-camisole-top",
         images: [
             {
                 url: img,
@@ -1772,7 +1772,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 13,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-lumiere-satin-midi-skirt",
+        productSlug: "lux-lumiere-silk-camisole-top",
         images: [],
     },
     {
@@ -1784,7 +1784,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 17,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-lumiere-satin-midi-skirt",
+        productSlug: "lux-lumiere-silk-camisole-top",
         images: [
             {
                 url: img,
@@ -1805,7 +1805,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 47,
         userEmail: "lux-seed-customer-04@example.com",
-        productSlug: "lux-lumiere-satin-midi-skirt",
+        productSlug: "lux-lumiere-silk-camisole-top",
         images: [
             {
                 url: img,
@@ -1822,7 +1822,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 10,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-lumiere-satin-midi-skirt",
+        productSlug: "lux-lumiere-silk-camisole-top",
         images: [
             {
                 url: img,
@@ -1839,7 +1839,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 36,
         userEmail: "lux-seed-customer-01@example.com",
-        productSlug: "lux-lumiere-crepe-tailored-trousers",
+        productSlug: "lux-lumiere-high-waisted-palazzo-trousers",
         images: [],
     },
     {
@@ -1851,7 +1851,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 47,
         userEmail: "lux-seed-customer-05@example.com",
-        productSlug: "lux-lumiere-crepe-tailored-trousers",
+        productSlug: "lux-lumiere-high-waisted-palazzo-trousers",
         images: [],
     },
     {
@@ -1863,7 +1863,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "2",
         likes: 10,
         userEmail: "lux-seed-customer-03@example.com",
-        productSlug: "lux-lumiere-crepe-tailored-trousers",
+        productSlug: "lux-lumiere-high-waisted-palazzo-trousers",
         images: [],
     },
     {
@@ -1875,7 +1875,7 @@ export const SEED_REVIEWS: SeedReview[] = [
         quantity: "1",
         likes: 18,
         userEmail: "lux-seed-customer-02@example.com",
-        productSlug: "lux-lumiere-crepe-tailored-trousers",
+        productSlug: "lux-lumiere-high-waisted-palazzo-trousers",
         images: [
             {
                 url: img,
