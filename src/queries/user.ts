@@ -12,7 +12,6 @@ import {
     getShippingDetails,
 } from './product'
 import { ShippingAddress } from '@prisma/client'
-import { Delete } from 'lucide-react'
 
 /**
  * @name followStore
@@ -171,8 +170,8 @@ export const saveUserCart = async (
             const validQuantity = Math.min(quantity, size.quantity)
 
             const price = size.discount
-                ? size.price - size.price * (size.discount / 100)
-                : size.price
+                ? size.price.toNumber() * (1 - size.discount / 100)
+                : size.price.toNumber()
 
             // Calculate shipping details
             const countryCookie = getCookie('userCountry', { cookies })
@@ -460,8 +459,8 @@ export const placeOrder = async (
             const validQuantity = Math.min(quantity, size.quantity)
 
             const price = size.discount
-                ? size.price - size.price * (size.discount / 100)
-                : size.price
+                ? size.price.toNumber() * (1 - size.discount / 100)
+                : size.price.toNumber()
 
             // Calculate shipping details
             const countryId = shippingAddress.countryId

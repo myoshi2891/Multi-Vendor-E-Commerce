@@ -604,7 +604,7 @@ export const getProducts = async (
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = size.price * (1 - discount / 100);
+                        let discountedPrice = size.price.toNumber() * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
