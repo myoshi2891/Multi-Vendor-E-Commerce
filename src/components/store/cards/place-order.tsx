@@ -48,7 +48,7 @@ const PlaceOrderCard: FC<Props> = ({
     )
 
     const storeSubTotal = applicableStoreItems.reduce(
-        (acc, item) => acc + item.price * item.quantity + item.shippingFee,
+        (acc, item) => acc + Number(item.price) * item.quantity + Number(item.shippingFee),
         0
     )
 

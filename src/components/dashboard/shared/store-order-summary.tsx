@@ -45,7 +45,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 
     let discountedAmount = 0;
     if (couponId && coupon) {
-        discountedAmount = ((subTotal + shippingFees) * coupon.discount) / 100;
+        discountedAmount = ((subTotal.toNumber() + shippingFees.toNumber()) * coupon.discount) / 100;
     }
 
     return (

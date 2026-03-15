@@ -59,11 +59,11 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 		defaultValues: {
 			// Setting default form values from data (if available)
 			defaultShippingService: data?.defaultShippingService ?? "",
-			defaultShippingFeePerItem: data?.defaultShippingFeePerItem ?? 0,
+			defaultShippingFeePerItem: data?.defaultShippingFeePerItem?.toNumber() ?? 0,
 			defaultShippingFeeForAdditionalItem:
-				data?.defaultShippingFeeForAdditionalItem ?? 0,
-			defaultShippingFeePerKg: data?.defaultShippingFeePerKg ?? 0,
-			defaultShippingFeeFixed: data?.defaultShippingFeeFixed ?? 0,
+				data?.defaultShippingFeeForAdditionalItem?.toNumber() ?? 0,
+			defaultShippingFeePerKg: data?.defaultShippingFeePerKg?.toNumber() ?? 0,
+			defaultShippingFeeFixed: data?.defaultShippingFeeFixed?.toNumber() ?? 0,
 			defaultDeliveryTimeMin: data?.defaultDeliveryTimeMin ?? 0,
 			defaultDeliveryTimeMax: data?.defaultDeliveryTimeMax ?? 0,
 			returnPolicy: data?.returnPolicy ?? "",
@@ -76,7 +76,16 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data);
+			form.reset({
+				defaultShippingService: data.defaultShippingService,
+				defaultShippingFeePerItem: data.defaultShippingFeePerItem.toNumber(),
+				defaultShippingFeeForAdditionalItem: data.defaultShippingFeeForAdditionalItem.toNumber(),
+				defaultShippingFeePerKg: data.defaultShippingFeePerKg.toNumber(),
+				defaultShippingFeeFixed: data.defaultShippingFeeFixed.toNumber(),
+				defaultDeliveryTimeMin: data.defaultDeliveryTimeMin,
+				defaultDeliveryTimeMax: data.defaultDeliveryTimeMax,
+				returnPolicy: data.returnPolicy,
+			});
 		}
 	}, [data, form]);
 
@@ -107,13 +116,17 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 				// Redirect or Refresh data
 				router.refresh();
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
+			if (error instanceof Error) {
+				console.error("Error submitting shipping details form:", error.message, error.stack);
+			} else {
+				console.error("Error submitting shipping details form:", error);
+			}
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: error instanceof Error ? error.message : String(error),
 			});
 		}
 	};

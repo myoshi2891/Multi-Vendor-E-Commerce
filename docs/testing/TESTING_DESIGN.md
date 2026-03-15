@@ -1,180 +1,198 @@
 # Testing Design: Directory Layout and Tool Selection
 
-## Document Guide
-- Purpose: define testing strategy and directory layout for the repo.
-- Related docs: `QA_TEST_PERSPECTIVES.md`（同ディレクトリ）, `../../README.md`, `../migration/03-test-strategy-updates.md`.
-- CI suggestion: run `bun run lint`, `bun run test`, `bun run build`, then `bunx playwright test --project=chromium --workers=1` with `E2E_DATABASE_URL` set; use `.env.test` for integration suites.
+## ドキュメントガイド
+
+- **目的**: リポジトリのテスト戦略とディレクトリ構成を定義する
+- **関連**: `QA_TEST_PERSPECTIVES.md`（同ディレクトリ）、`../../README.md`、`../migration/03-test-strategy-updates.md`
+- **CI 推奨**: `bun run lint` → `bun run test` → `bun run build` → スモークテスト: `bunx playwright test --project=chromium --workers=1` → フルリグレッション: `bunx playwright test --project=all --workers=1` またはプロジェクト指定なし（`E2E_DATABASE_URL` を設定）。integration スイートには `.env.test` を使用する
+
+---
 
 ## Goals
-- Build a layered test pyramid for a Next.js 14 multi-vendor commerce app.
-- Prioritize high-risk flows: auth/RBAC, pricing, inventory, checkout, payments, and order state.
-- Keep tests fast and deterministic with clear separation of unit, integration, and E2E.
 
-## Current State (Observed)
-- Jest + ts-jest already configured; `test` script points to Jest.
-- Existing unit tests live under `src/queries/*.test.ts`.
-- React Testing Library and jest-dom are already installed.
+- Next.js 14 マルチベンダーコマースアプリ向けの階層型テストピラミッドを構築する
+- 高リスクフロー（認証 / RBAC / 価格 / 在庫 / チェックアウト / 決済 / 注文ステータス）を優先する
+- unit / integration / E2E を明確に分離し、テストを高速かつ決定論的に保つ
 
-## Decision: Jest Config (Merged This Iteration)
-- Keep a single `jest.config.js` to avoid config sprawl during early setup.
-- Use `@jest-environment jsdom` per component test file that needs DOM APIs.
-- Keep `testEnvironment: "node"` as the default for faster unit and server tests.
-- Scope runs via `--testPathPattern` in scripts instead of multiple Jest configs.
-- Revisit splitting only if setup diverges (db reset, jsdom-only setup, or slow runs).
+---
 
-## Tool Selection
+## Current State（観測済み）
 
-### Unit Tests
-- Runner: Jest (existing)
-- Purpose: Pure functions, helpers, schema logic, query composition
-- Notes: Keep node environment for speed; avoid DB and network
+- Jest + ts-jest 設定済み。`test` スクリプトが Jest を指している
+- 既存のユニットテストは `src/queries/*.test.ts` に配置されている
+- React Testing Library と jest-dom がインストール済み
 
-### Component Tests
-- Runner: Jest (existing)
-- Library: React Testing Library + jest-dom (existing)
-- Add: `@testing-library/user-event` for realistic UI interaction
-- Environment: jsdom
+---
 
-### Integration Tests (DB and Server Logic)
-- Runner: Jest (existing)
-- DB: PostgreSQL test database using Docker Compose
-- ORM: Prisma with a separate `.env.test`
-- Notes: Use database reset per suite (migration + seed)
+## 設計判断: Jest Config
 
-### API Route Tests (Next.js route handlers)
-- Runner: Jest (existing)
-- Helper: invoke `GET/POST` handler with `NextRequest`
-- Option: a small local helper to build request/response objects
+| 判断 | 内容 |
+|-----|------|
+| **単一 jest.config.js を維持** | 初期セットアップ中のコンフィグ分散を避けるため |
+| **デフォルト環境** | `testEnvironment: "node"`（ユニット・サーバーテストの高速化） |
+| **jsdom 環境** | DOM API が必要なコンポーネントテストファイルに `@jest-environment jsdom` を個別指定 |
+| **スコープ制御** | 複数の Jest 設定ではなく `--testPathPattern` でスクリプトを分ける |
+| **再検討のタイミング** | DB リセット・jsdom 専用セットアップ・低速化が生じた場合のみ分割を検討 |
 
-### End-to-End (E2E)
-- Runner: Playwright (recommended)
-- Why: Multi-browser, traces, parallelism, strong Next.js support
-- Scope: Full customer and seller flows, plus admin critical paths
+---
 
-### Visual Regression
-- Tool: Playwright screenshots (baseline + diff)
-- Scope: Product card, checkout, order details, seller dashboard
+## ツール選定
 
-### Accessibility
-- Unit: jest-axe for components
-- E2E: axe-core via Playwright
+| テスト種別 | ランナー | 目的 | 備考 |
+|-----------|---------|------|------|
+| **Unit** | Jest | 純粋関数・ヘルパー・スキーマ・クエリ合成 | node 環境で高速実行。DB・ネットワーク不使用 |
+| **Component** | Jest + React Testing Library | UI インタラクション | jsdom 環境。`@testing-library/user-event` を追加 |
+| **Integration** | Jest + Docker Compose（PostgreSQL） | DB・サーバーロジック | `.env.test` で独立した DB を使用。スイート前にリセット |
+| **API Route** | Jest | Next.js route handler の GET / POST | `NextRequest` を直接呼び出す小さなヘルパーを利用 |
+| **E2E** | Playwright | 顧客 / 販売者 / 管理者の全フロー | マルチブラウザ・トレース・並列対応 |
+| **Visual Regression** | Playwright（スクリーンショット） | 商品カード・チェックアウト・注文詳細・販売者ダッシュボード | ベースライン + diff |
+| **Accessibility** | jest-axe（unit）+ axe-core（Playwright） | コンポーネントおよび E2E でのアクセシビリティ検証 | — |
+| **Contract / Webhook** | Postman/Newman または Pact（任意） | Stripe / PayPal Webhook・重要な POST ルート | — |
+| **Performance / Load** | k6 または Artillery | 閲覧・検索・チェックアウト・決済開始 | — |
+| **Security** | OWASP ZAP baseline scan | 認証・チェックアウト・注文 API・管理ルート | CI またはステージングで実行 |
 
-### Contract and Webhook Testing
-- Tool: Postman/Newman or Pact (optional)
-- Scope: Stripe/PayPal webhooks and critical POST routes
+---
 
-### Performance and Load
-- Tool: k6 or Artillery
-- Scope: browse, search, checkout, and payment initiation
-
-### Security Checks
-- Tool: OWASP ZAP baseline scan (CI or staging)
-- Scope: auth, checkout, order APIs, and admin routes
-
-## Directory Layout
+## ディレクトリ構成
 
 ```
 .
 ├─ src/
-│  └─ ... (co-located unit tests: *.test.ts)
+│  └─ ...                       ユニットテストを co-locate: *.test.ts
 ├─ tests/
-│  ├─ unit/                # optional if not co-locating
-│  ├─ component/           # RTL component tests (jsdom)
-│  ├─ integration/         # DB and server-side integration tests
-│  ├─ api/                 # API route handler tests
-│  ├─ e2e/                 # Playwright tests
-│  ├─ visual/              # Playwright screenshot tests
-│  ├─ accessibility/       # axe checks
-│  ├─ performance/         # k6 or Artillery scripts
-│  ├─ contracts/           # webhook and external contract tests
-│  ├─ fixtures/            # static JSON and files
-│  ├─ factories/           # test data factories
-│  ├─ mocks/               # MSW handlers and stub servers
-│  └─ helpers/             # shared test utilities
+│  ├─ unit/                     co-locate しない場合の任意配置
+│  ├─ component/                RTL コンポーネントテスト（jsdom）
+│  ├─ integration/              DB・サーバーサイド integration テスト
+│  ├─ api/                      API route handler テスト
+│  ├─ e2e/                      Playwright テスト
+│  ├─ visual/                   Playwright スクリーンショットテスト
+│  ├─ accessibility/            axe チェック
+│  ├─ performance/              k6 または Artillery スクリプト
+│  ├─ contracts/                Webhook・外部コントラクトテスト
+│  ├─ fixtures/                 静的 JSON・ファイル
+│  ├─ factories/                テストデータファクトリ
+│  ├─ mocks/                    MSW ハンドラー・スタブサーバー
+│  └─ helpers/                  共有テストユーティリティ
 ├─ tests-setup/
-│  ├─ jest.setup.ts        # jest-dom, MSW setup
-│  ├─ jest.env.ts          # global env bootstrap
-│  └─ db.reset.ts          # reset, migrate, seed
+│  ├─ jest.setup.ts             jest-dom・MSW セットアップ
+│  ├─ jest.env.ts               グローバル env ブートストラップ
+│  └─ db.reset.ts               リセット・マイグレーション・シード
 ├─ playwright.config.ts
 └─ jest.config.js
 ```
 
-## Naming Conventions
-- Unit tests: `src/**.test.ts` or `tests/unit/**.test.ts`
-- Component tests: `tests/component/**.test.tsx`
-- Integration tests: `tests/integration/**.test.ts`
-- E2E tests: `tests/e2e/**.spec.ts`
-- Visual tests: `tests/visual/**.spec.ts`
+---
 
-## Environment and Data Strategy
-- Use `.env.test` for test DB and secrets.
-- Use a dedicated PostgreSQL database for tests.
-- Reset strategy:
-  - Integration suites: migrate + seed before suite
-  - E2E suites: seed before run, clean after run
-- Use factories for consistent test data, not hard-coded IDs.
+## 命名規則
 
-## E2E Seed Strategy (Locked)
-- Seed script: `tests/e2e/seed/seed-e2e.ts`
-- Seed data constants: `tests/e2e/seed/constants.ts`
-- Run example:
+| テスト種別 | パターン |
+|-----------|---------|
+| Unit | `src/**/*.test.ts` または `tests/unit/**/*.test.ts` |
+| Component | `tests/component/**.test.tsx` |
+| Integration | `tests/integration/**.test.ts` |
+| E2E | `tests/e2e/**.spec.ts` |
+| Visual | `tests/visual/**.spec.ts` |
 
-```
+---
+
+## 環境・データ戦略
+
+| 項目 | 内容 |
+|-----|------|
+| **環境変数** | テスト DB とシークレットには `.env.test` を使用する |
+| **DB** | テスト専用の PostgreSQL データベースを使用する |
+| **Integration リセット** | スイート前に migrate + seed を実行する |
+| **E2E リセット** | 実行前にシード投入、実行後にクリーンアップする |
+| **テストデータ** | ハードコードした ID ではなくファクトリを使用する |
+
+---
+
+## E2E シード戦略（確定）
+
+- **シードスクリプト**: `tests/e2e/seed/seed-e2e.ts`
+- **シードデータ定数**: `tests/e2e/seed/constants.ts`
+
+```bash
 E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" \
   bun run seed:e2e
 ```
 
-- Behavior: upserts store/category/product/variant, resets sizes/images/colors
-  so the E2E product always has exactly one size (auto-select in UI).
-- Parallel isolation: seed identifiers are namespaced per project + worker
-  (example: `e2e-store-chromium-w0`).
-- Seed targeting:
-  - Default: seeds all Playwright projects and workers (based on config).
-  - Override project list: `E2E_SEED_PROJECTS="chromium,firefox"` (comma list)
-  - Override worker count: `E2E_SEED_WORKERS=2`
-  - Seed a single target: `TEST_PROJECT_NAME=chromium TEST_WORKER_INDEX=0`
-- Tests derive per-worker data via `testInfo.project.name` and
-  `testInfo.workerIndex`. Override defaults via `E2E_*` env vars if needed.
-- If you cannot seed per worker/project, run a single project with a single
-  worker (`--project=chromium --workers=1`) to avoid collisions.
+### シードの動作
 
-## Secret Handling Rules (Mandatory)
-- Never print or log secret values (env vars or `.env` contents) in chat or logs.
-- Never stage or commit `.env` or any secret-bearing files.
-- Keep `.env` and `.env.*` ignored (allow `.env.example` only).
-- Before every commit, verify `git status` shows no secret files staged.
-- If a secret file appears or is requested, stop and ask for explicit guidance.
+- store / category / product / variant を upsert する
+- sizes / images / colors をリセットし、E2E 商品が必ず1つのサイズを持つ状態にする（UI で自動選択）
 
-## Suggested Scripts (for reference)
+### 並列分離
 
+シード識別子はプロジェクト + ワーカーごとに名前空間を分ける（例: `e2e-store-chromium-w0`）
+
+### シードターゲット制御
+
+| 変数 | 内容 |
+|-----|------|
+| デフォルト | 設定に基づき全 Playwright プロジェクト・ワーカーをシードする |
+| `E2E_SEED_PROJECTS="chromium,firefox"` | 対象プロジェクトを上書き |
+| `E2E_SEED_WORKERS=2` | ワーカー数を上書き |
+| `TEST_PROJECT_NAME=chromium TEST_WORKER_INDEX=0` | 単一ターゲットをシード |
+
+> ワーカー / プロジェクトごとにシードできない場合は `--project=chromium --workers=1` で単一実行する
+
+テストは `testInfo.project.name` と `testInfo.workerIndex` でワーカーごとのデータを取得する。必要に応じて `E2E_*` 環境変数で上書き可能。
+
+---
+
+## ❌ シークレット管理ルール（必須）
+
+| ルール | 内容 |
+|--------|------|
+| **ログ出力禁止** | シークレット値（env 変数・`.env` の内容）をチャットやログに出力しない |
+| **コミット禁止** | `.env` やシークレットを含むファイルをステージング・コミットしない |
+| **gitignore** | `.env` と `.env.*` を ignore する（`.env.example` のみ許可） |
+| **コミット前確認** | `git status` でシークレットファイルがステージされていないことを確認する |
+| **異常時対応** | シークレットファイルが表示または要求された場合は処理を中断し、明示的な指示を求める |
+
+---
+
+## テストスクリプト（参考）
+
+```bash
+bun run test                    # jest（全ユニット）
+bun run test:unit               # jest --testPathPattern "src/.*\.test\.ts$"
+bun run test:component          # jest --testPathPattern "tests/component/.*\.test\.tsx$"
+bun run test:integration        # jest --testPathPattern "tests/integration/.*\.test\.ts$"
+bun run test:e2e                # playwright test
+bun run test:visual             # playwright test tests/visual
+bun run test:a11y               # playwright test tests/accessibility
+bun run test:perf               # k6 run tests/performance/browse.js
 ```
-test                -> jest
-test:unit           -> jest --testPathPattern "src/.*\\.test\\.ts$"
-test:component      -> jest --testPathPattern "tests/component/.*\\.test\\.tsx$"
-test:integration    -> jest --testPathPattern "tests/integration/.*\\.test\\.ts$"
-test:e2e            -> playwright test
-test:visual         -> playwright test tests/visual
-test:a11y           -> playwright test tests/accessibility
-test:perf           -> k6 run tests/performance/browse.js
-```
 
-## CI Order (Fast to Slow)
-1) Lint and typecheck
-2) Unit + component
-3) Integration (DB)
-4) E2E smoke
-5) Visual, performance, security scans (nightly)
+---
 
-## Notes for This Codebase
-- Keep existing `src/queries/*.test.ts` as unit tests.
-- Use `@jest-environment jsdom` per component test file (keep single config).
-- Use Playwright for full purchase, seller update, and admin flows.
-- Mock external providers (Clerk, Stripe, PayPal) for unit/integration tests.
-- Only run real webhooks in isolated staging or contract tests.
+## CI 実行順序（高速 → 低速）
 
-## Playwright: Concrete Proposal
+| ステップ | 内容 |
+|---------|------|
+| 1 | Lint + 型チェック |
+| 2 | Unit + Component |
+| 3 | Integration（DB） |
+| 4 | E2E スモーク |
+| 5 | Visual / パフォーマンス / セキュリティスキャン（ナイトリー） |
 
-### Config file (`playwright.config.ts`)
+---
+
+## このコードベースへの注意事項
+
+- 既存の `src/queries/*.test.ts` はユニットテストとして維持する
+- コンポーネントテストファイルには `@jest-environment jsdom` を個別指定する（単一 config を維持）
+- 購入全体・販売者更新・管理者フローには Playwright を使用する
+- ユニット / integration テストでは外部プロバイダー（Clerk / Stripe / PayPal）をモックする
+- 実際の Webhook は分離されたステージングまたはコントラクトテストでのみ実行する
+
+---
+
+## Playwright: 具体的な設定
+
+### `playwright.config.ts`
 
 ```ts
 import { defineConfig, devices } from "@playwright/test";
@@ -193,33 +211,29 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "npm run dev",
+    command: "bun run dev",   // CI では next build + next start を推奨
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    { name: "firefox",  use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit",   use: { ...devices["Desktop Safari"] } },
   ],
 });
 ```
 
-Notes:
-- If you prefer Bun, switch `command` to `bun run dev`.
-- For CI stability, consider `next build` + `next start` instead of `next dev`.
+### 最初の E2E シナリオ: カートスモーク（ゲストユーザー）
 
-### First E2E scenario (cart smoke, guest user)
-Goal: prove cart add, quantity update, and persistence without auth.
+**目的**: 認証なしでカート追加・数量更新・永続化を検証する
 
-Preconditions:
-- Seed at least one product with a stable slug and in-stock variant.
-- Add `data-testid` to: product card, add-to-cart button, cart rows, totals.
-
-Test outline (`tests/e2e/cart-smoke.spec.ts`):
+**前提条件**:
+- 安定したスラッグと在庫ありバリアントを持つ商品が1件シードされていること
+- 以下に `data-testid` を付与すること: 商品カード / カートに追加ボタン / カート行 / 合計金額
 
 ```ts
+// tests/e2e/cart-smoke.spec.ts
 import { test, expect } from "@playwright/test";
 
 test("guest can add item to cart and see totals", async ({ page }) => {
@@ -247,6 +261,4 @@ test("guest can add item to cart and see totals", async ({ page }) => {
 });
 ```
 
-Next scenario after this:
-- Authenticated checkout start (login via Clerk test account), verify redirect
-  from `/cart` to `/checkout` and order summary shows correct totals.
+**次のシナリオ**: 認証済みチェックアウト開始（Clerk テストアカウントでログイン）→ `/cart` から `/checkout` へのリダイレクト + 注文サマリーの金額整合性検証

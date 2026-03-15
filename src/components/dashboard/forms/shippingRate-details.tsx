@@ -51,6 +51,29 @@ interface ShippingRateDetailsProps {
 	storeUrl: string;
 }
 
+const mapShippingRateToFormValues = (
+	data?: CountryWithShippingRatesType
+) => ({
+	countryId: data?.countryId ?? "",
+	countryName: data?.countryName ?? "",
+	shippingService: data?.shippingRate?.shippingService ?? "",
+	shippingFeePerItem: data?.shippingRate
+		? data.shippingRate.shippingFeePerItem.toNumber()
+		: 0,
+	shippingFeeForAdditionalItem: data?.shippingRate
+		? data.shippingRate.shippingFeeForAdditionalItem.toNumber()
+		: 0,
+	shippingFeePerKg: data?.shippingRate
+		? data.shippingRate.shippingFeePerKg.toNumber()
+		: 0,
+	shippingFeeFixed: data?.shippingRate
+		? data.shippingRate.shippingFeeFixed.toNumber()
+		: 0,
+	deliveryTimeMin: data?.shippingRate?.deliveryTimeMin ?? 1,
+	deliveryTimeMax: data?.shippingRate?.deliveryTimeMax ?? 1,
+	returnPolicy: data?.shippingRate?.returnPolicy ?? "",
+});
+
 const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	data,
 	storeUrl,
@@ -63,34 +86,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	const form = useForm<z.infer<typeof ShippingRateFormSchema>>({
 		mode: "onChange", // Form validation mode
 		resolver: zodResolver(ShippingRateFormSchema), // Resolver for form validation
-		defaultValues: {
-			countryId: data?.countryId ?? "",
-			countryName: data?.countryName ?? "",
-			shippingService: data?.shippingRate
-				? data?.shippingRate.shippingService
-				: "",
-			shippingFeePerItem: data?.shippingRate
-				? data?.shippingRate.shippingFeePerItem
-				: 0,
-			shippingFeeForAdditionalItem: data?.shippingRate
-				? data?.shippingRate.shippingFeeForAdditionalItem
-				: 0,
-			shippingFeePerKg: data?.shippingRate
-				? data?.shippingRate.shippingFeePerKg
-				: 0,
-			shippingFeeFixed: data?.shippingRate
-				? data?.shippingRate.shippingFeeFixed
-				: 0,
-			deliveryTimeMin: data?.shippingRate
-				? data?.shippingRate.deliveryTimeMin
-				: 1,
-			deliveryTimeMax: data?.shippingRate
-				? data?.shippingRate.deliveryTimeMax
-				: 1,
-			returnPolicy: data?.shippingRate
-				? data?.shippingRate.returnPolicy
-				: "",
-		},
+		defaultValues: mapShippingRateToFormValues(data),
 	});
 
 	// Loading status based on form submission
@@ -98,9 +94,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 
 	// Reset form values when data changes
 	useEffect(() => {
-		if (data) {
-			form.reset(data);
-		}
+		form.reset(mapShippingRateToFormValues(data));
 	}, [data, form]);
 
 	// Submit handler for form submission
@@ -121,9 +115,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				deliveryTimeMin: values.deliveryTimeMin,
 				deliveryTimeMax: values.deliveryTimeMax,
 				returnPolicy: values.returnPolicy,
-				storeId: "",
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 
 			if (response.id) {
@@ -135,13 +126,16 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				// Redirect or Refresh data
 				router.refresh();
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
-			toast({
-				variant: "destructive",
+			if (error instanceof Error) {
+				console.error("Error submitting shipping rate form:", error.message, error.stack);
+			} else {
+				console.error("Error submitting shipping rate form:", error);
+			}
+			toast({				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: error instanceof Error ? error.message : String(error),
 			});
 		}
 	};

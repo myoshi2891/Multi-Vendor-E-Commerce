@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartItem, Country as CountryDB } from '@prisma/client'
+import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
@@ -12,7 +12,6 @@ import {
     getShippingDetails,
 } from './product'
 import { ShippingAddress } from '@prisma/client'
-import { Delete } from 'lucide-react'
 
 /**
  * @name followStore
@@ -78,8 +77,12 @@ export const followStore = async (storeId: string): Promise<boolean> => {
             })
             return true // Follow status updated successfully
         }
-    } catch (error) {
-        console.error('Error following store', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error following store:", error.message, error.stack);
+        } else {
+            console.error("Error following store:", String(error));
+        }
         throw new Error('Error following store')
     }
 }
@@ -97,6 +100,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 export const saveUserCart = async (
     cartProducts: CartProductType[]
 ): Promise<boolean> => {
+    try {
     // Get current user
     const user = await currentUser()
 
@@ -171,7 +175,7 @@ export const saveUserCart = async (
             const validQuantity = Math.min(quantity, size.quantity)
 
             const price = size.discount
-                ? size.price - size.price * (size.discount / 100)
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
                 : size.price
 
             // Calculate shipping details
@@ -196,22 +200,23 @@ export const saveUserCart = async (
                 }
             }
 
-            let shippingFee = 0
+            let shippingFee = new Prisma.Decimal("0")
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
-                    quantity === 1
-                        ? details.shippingFee
-                        : details.shippingFee +
-                          details.extraShippingFee * (quantity - 1)
+                    validQuantity === 1
+                        ? new Prisma.Decimal(details.shippingFee)
+                        : new Prisma.Decimal(details.shippingFee).add(
+                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
+                          )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = details.shippingFee * variant.weight * quantity
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
             } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = details.shippingFee
+                shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price * validQuantity + shippingFee
+            const totalPrice = price.mul(validQuantity).add(shippingFee)
 
             return {
                 productId,
@@ -234,16 +239,16 @@ export const saveUserCart = async (
 
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0
+        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        new Prisma.Decimal("0")
     )
 
     const shippingFee = validatedCartItems.reduce(
-        (acc, item) => acc + item.shippingFee,
-        0
+        (acc, item) => acc.add(item.shippingFee),
+        new Prisma.Decimal("0")
     )
 
-    const total = subTotal + shippingFee
+    const total = subTotal.add(shippingFee)
 
     // Save the validated items to the cart in the database
     const cart = await db.cart.create({
@@ -275,6 +280,14 @@ export const saveUserCart = async (
 
     if (cart) return true
     return false
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving user cart:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving user cart:", String(error));
+        }
+        throw error
+    }
 }
 
 /**
@@ -305,8 +318,12 @@ export const getUserShippingAddresses = async () => {
         })
 
         return shippingAddresses
-    } catch (error) {
-        console.error('Error fetching shipping addresses:', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error fetching shipping addresses:", error.message, error.stack);
+        } else {
+            console.error("Error fetching shipping addresses:", String(error));
+        }
         throw error
     }
 }
@@ -348,8 +365,12 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                             default: false,
                         },
                     })
-                } catch (error) {
-                    console.error('Error updating default addresses:', error)
+                } catch (error: unknown) {
+                    if (error instanceof Error) {
+                        console.error("Error updating default addresses:", error.message, error.stack);
+                    } else {
+                        console.error("Error updating default addresses:", String(error));
+                    }
                     throw new Error('Error making the default address.')
                 }
             }
@@ -371,8 +392,12 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
         })
 
         return upsertedAddresses
-    } catch (error) {
-        console.error('Error upserting shipping addresses:', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error upserting shipping addresses:", error.message, error.stack);
+        } else {
+            console.error("Error upserting shipping addresses:", String(error));
+        }
         throw error
     }
 }
@@ -390,6 +415,7 @@ export const placeOrder = async (
     shippingAddress: ShippingAddress,
     cartId: string
 ): Promise<{ orderId: string }> => {
+    try {
     // Ensure the user is authenticated
     const user = await currentUser()
     if (!user) throw new Error('Unauthenticated.')
@@ -460,7 +486,7 @@ export const placeOrder = async (
             const validQuantity = Math.min(quantity, size.quantity)
 
             const price = size.discount
-                ? size.price - size.price * (size.discount / 100)
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
                 : size.price
 
             // Calculate shipping details
@@ -501,22 +527,23 @@ export const placeOrder = async (
                 }
             }
 
-            let shippingFee = 0
+            let shippingFee = new Prisma.Decimal("0")
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
-                    quantity === 1
-                        ? details.shippingFee
-                        : details.shippingFee +
-                          details.extraShippingFee * (quantity - 1)
+                    validQuantity === 1
+                        ? new Prisma.Decimal(details.shippingFee)
+                        : new Prisma.Decimal(details.shippingFee).add(
+                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
+                          )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = details.shippingFee * variant.weight * quantity
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
             } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = details.shippingFee
+                shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price * validQuantity + shippingFee
+            const totalPrice = price.mul(validQuantity).add(shippingFee)
 
             return {
                 productId,
@@ -552,118 +579,135 @@ export const placeOrder = async (
         {} as GroupedItems
     )
 
-    // console.log('groupedItems', groupedItems)
-
-    // Create the order
-    const order = await db.order.create({
-        data: {
-            userId,
-            shippingAddressId: shippingAddress.id,
-            orderStatus: 'Pending',
-            paymentStatus: 'Pending',
-            shippingFees: 0, // Will calculate below
-            subTotal: 0, // Will calculate below
-            total: 0, // Will calculate below
-        },
-    })
-
-    // Iterate over each store's items and create OrderGroup and OrderItems
-    let orderTotalPrice = 0
-    let orderShippingFee = 0
-
-    for (const [storeId, items] of Object.entries(groupedItems)) {
-        // Calculate store-specific totals
-        const groupedTotalPrice = items.reduce(
-            (acc, item) => acc + item.totalPrice,
-            0
+    // 事前にdelivery詳細を全store分取得（トランザクション外）
+    const deliveryDetailsMap = new Map<string, {
+        shippingService: string | undefined;
+        deliveryTimeMin: number | undefined;
+        deliveryTimeMax: number | undefined;
+    }>();
+    for (const storeId of Object.keys(groupedItems)) {
+        const details = await getDeliveryDetailsForStoreByCountry(
+            storeId,
+            shippingAddress.countryId
         )
-
-        const groupShippingFee = items.reduce(
-            (acc, item) => acc + item.shippingFee,
-            0
-        )
-
-        const { shippingService, deliveryTimeMax, deliveryTimeMin } =
-            await getDeliveryDetailsForStoreByCountry(
-                storeId,
-                shippingAddress.countryId
-            )
-
-        // Check coupon store
-        const check = storeId === cartCoupon?.storeId
-
-        // Calculate discount based on coupon
-        let discountedAmount = 0
-        if (check && cartCoupon) {
-            discountedAmount = (groupedTotalPrice * cartCoupon.discount) / 100
-        }
-
-        // Calculate the total after applying the discount
-        const totalAfterDiscount = groupedTotalPrice - discountedAmount
-
-        // Create an OrderGroup for this store
-        const orderGroup = await db.orderGroup.create({
-            data: {
-                orderId: order.id,
-                storeId,
-                status: "Pending",
-                subTotal: groupedTotalPrice - groupShippingFee,
-                shippingFees: groupShippingFee,
-                total: totalAfterDiscount,
-                shippingService: shippingService || "International Delivery",
-                shippingDeliveryMin: deliveryTimeMin || 7,
-                shippingDeliveryMax: deliveryTimeMax || 30,
-                couponId: check && cartCoupon ? cartCoupon?.id : null,
-            },
-        });
-
-        // Create OrderItems for this OrderGroup
-        for (const item of items) {
-            await db.orderItem.create({
-                data: {
-                    orderGroupId: orderGroup.id,
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    sizeId: item.sizeId,
-                    productSlug: item.productSlug,
-                    variantSlug: item.variantSlug,
-                    sku: item.sku,
-                    name: item.name,
-                    image: item.image,
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.price,
-                    shippingFee: item.shippingFee,
-                    totalPrice: item.totalPrice,
-                },
-            });
-        }
-
-        // Update order totals
-        orderTotalPrice += totalAfterDiscount
-        orderShippingFee += groupShippingFee
+        deliveryDetailsMap.set(storeId, details)
     }
 
-    // Update the main order with the final totals
-    await db.order.update({
-        where: {
-            id: order.id,
-        },
-        data: {
-            subTotal: orderTotalPrice - orderShippingFee,
-            shippingFees: orderShippingFee,
-            total: orderTotalPrice,
-        },
+    // 全DB操作をトランザクションでラップ
+    const order = await db.$transaction(async (tx) => {
+        // Create the order
+        const order = await tx.order.create({
+            data: {
+                userId,
+                shippingAddressId: shippingAddress.id,
+                orderStatus: 'Pending',
+                paymentStatus: 'Pending',
+                shippingFees: 0,
+                subTotal: 0,
+                total: 0,
+            },
+        })
+
+        // Iterate over each store's items and create OrderGroup and OrderItems
+        let orderTotalPrice = new Prisma.Decimal("0")
+        let orderShippingFee = new Prisma.Decimal("0")
+
+        for (const [storeId, items] of Object.entries(groupedItems)) {
+            // Calculate store-specific totals
+            const groupedTotalPrice = items.reduce(
+                (acc, item) => acc.add(item.totalPrice),
+                new Prisma.Decimal("0")
+            )
+
+            const groupShippingFee = items.reduce(
+                (acc, item) => acc.add(item.shippingFee),
+                new Prisma.Decimal("0")
+            )
+
+            const deliveryDetails = deliveryDetailsMap.get(storeId)
+            const shippingService = deliveryDetails?.shippingService
+            const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
+            const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
+
+            // Check coupon store
+            const check = storeId === cartCoupon?.storeId
+
+            // Calculate discount based on coupon
+            let discountedAmount = new Prisma.Decimal("0")
+            if (check && cartCoupon) {
+                discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+            }
+
+            // Calculate the total after applying the discount
+            const totalAfterDiscount = groupedTotalPrice.sub(discountedAmount)
+
+            // Create an OrderGroup for this store
+            const orderGroup = await tx.orderGroup.create({
+                data: {
+                    orderId: order.id,
+                    storeId,
+                    status: "Pending",
+                    subTotal: groupedTotalPrice.sub(groupShippingFee),
+                    shippingFees: groupShippingFee,
+                    total: totalAfterDiscount,
+                    shippingService: shippingService || "International Delivery",
+                    shippingDeliveryMin: deliveryTimeMin || 7,
+                    shippingDeliveryMax: deliveryTimeMax || 30,
+                    couponId: check && cartCoupon ? cartCoupon?.id : null,
+                },
+            });
+
+            // Create OrderItems for this OrderGroup
+            for (const item of items) {
+                await tx.orderItem.create({
+                    data: {
+                        orderGroupId: orderGroup.id,
+                        productId: item.productId,
+                        variantId: item.variantId,
+                        sizeId: item.sizeId,
+                        productSlug: item.productSlug,
+                        variantSlug: item.variantSlug,
+                        sku: item.sku,
+                        name: item.name,
+                        image: item.image,
+                        size: item.size,
+                        quantity: item.quantity,
+                        price: item.price,
+                        shippingFee: item.shippingFee,
+                        totalPrice: item.totalPrice,
+                    },
+                });
+            }
+
+            // Update order totals
+            orderTotalPrice = orderTotalPrice.add(totalAfterDiscount)
+            orderShippingFee = orderShippingFee.add(groupShippingFee)
+        }
+
+        // Update the main order with the final totals
+        await tx.order.update({
+            where: {
+                id: order.id,
+            },
+            data: {
+                subTotal: orderTotalPrice.sub(orderShippingFee),
+                shippingFees: orderShippingFee,
+                total: orderTotalPrice,
+            },
+        })
+
+        return order
     })
 
-    // Delete the cart
-    // await db.cart.delete({
-    //     where: {
-    //         id: cartId,
-    //     },
-    // })
-
     return { orderId: order.id }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(`Error in placeOrder (cartId: ${cartId}):`, error.message, error.stack);
+        } else {
+            console.error(`Error in placeOrder (cartId: ${cartId}):`, String(error));
+        }
+        throw error;
+    }
 }
 
 export const emptyUserCart = async () => {
@@ -681,8 +725,12 @@ export const emptyUserCart = async () => {
         })
 
         if (res) return true
-    } catch (error) {
-        console.error(error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in emptyUserCart:", error.message, error.stack);
+        } else {
+            console.error("Error in emptyUserCart:", String(error));
+        }
         throw error
     }
 }
@@ -771,8 +819,8 @@ export const updateCartWithLatest = async (
             }
 
             const price = size.discount
-                ? size.price - (size.price * size.discount) / 100
-                : size.price
+                ? size.price.toNumber() - (size.price.toNumber() * size.discount) / 100
+                : size.price.toNumber()
 
             const validated_qty = Math.min(quantity, size.quantity)
 
@@ -844,8 +892,12 @@ export const addToWishlist = async (
                 sizeId,
             },
         })
-    } catch (error) {
-        console.error(error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in addToWishlist:", error.message, error.stack);
+        } else {
+            console.error("Error in addToWishlist:", String(error));
+        }
         throw error
     }
 }
@@ -925,9 +977,15 @@ export const updateCheckoutProductWithLatest = async (
                 throw new Error("Couldn't retrieve country data.")
             }
 
-            let shippingFee = 0
-
             const { shippingFeeMethod, freeShipping, store } = product
+
+            const price = size.discount
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : size.price
+
+            const validated_qty = Math.min(quantity, size.quantity)
+
+            let shippingFee = new Prisma.Decimal("0")
 
             const fee = await getProductShippingFee(
                 shippingFeeMethod,
@@ -935,20 +993,14 @@ export const updateCheckoutProductWithLatest = async (
                 store,
                 freeShipping,
                 variant.weight,
-                quantity
+                validated_qty
             )
 
-            if (fee) {
+            if (!fee.isZero()) {
                 shippingFee = fee
             }
 
-            const price = size.discount
-                ? size.price - (size.price * size.discount) / 100
-                : size.price
-
-            const validated_qty = Math.min(quantity, size.quantity)
-
-            const totalPrice = price * validated_qty + shippingFee
+            const totalPrice = price.mul(validated_qty).add(shippingFee)
 
             try {
                 const newCartItem = await db.cartItem.update({
@@ -965,7 +1017,7 @@ export const updateCheckoutProductWithLatest = async (
                     },
                 })
                 return newCartItem
-            } catch (error) {
+            } catch (error: unknown) {
                 return cartProduct
             }
         })
@@ -986,14 +1038,14 @@ export const updateCheckoutProductWithLatest = async (
     })
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0
+        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        new Prisma.Decimal("0")
     )
     const shippingFees = validatedCartItems.reduce(
-        (acc, item) => acc + item.shippingFee,
-        0
+        (acc, item) => acc.add(item.shippingFee),
+        new Prisma.Decimal("0")
     )
-    let total = subTotal + shippingFees
+    let total = subTotal.add(shippingFees)
 
     // Apply coupon discount if applicable
     if (cartCoupon?.coupon) {
@@ -1012,13 +1064,14 @@ export const updateCheckoutProductWithLatest = async (
                 // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
-                        acc + item.price * item.quantity + item.shippingFee,
-                    0
+                        acc.add(item.price.mul(item.quantity)).add(item.shippingFee),
+                    new Prisma.Decimal("0")
                 );
                 // Apply coupon discount to the store's subTotal
-                const discountedAmount =
-                    (storeSubTotal * coupon.discount) / 100;
-                total -= discountedAmount;
+                const discountedAmount = storeSubTotal
+                    .mul(new Prisma.Decimal(coupon.discount.toString()))
+                    .div("100");
+                total = total.sub(discountedAmount);
             }
         }
     }
@@ -1044,5 +1097,34 @@ export const updateCheckoutProductWithLatest = async (
 
     if (!cart) throw new Error('Something went wrong while updating the cart.')
 
-    return cart
+    // サーバーアクション → クライアントのシリアライズで Prisma.Decimal のメソッドが
+    // 失われるため、number に変換してから返す
+    return {
+        ...cart,
+        subTotal: cart.subTotal.toNumber(),
+        shippingFees: cart.shippingFees.toNumber(),
+        total: cart.total.toNumber(),
+        cartItems: cart.cartItems.map((item) => ({
+            ...item,
+            price: item.price.toNumber(),
+            shippingFee: item.shippingFee.toNumber(),
+            totalPrice: item.totalPrice.toNumber(),
+        })),
+        coupon: cart.coupon
+            ? {
+                  ...cart.coupon,
+                  store: {
+                      ...cart.coupon.store,
+                      defaultShippingFeePerItem:
+                          cart.coupon.store.defaultShippingFeePerItem.toNumber(),
+                      defaultShippingFeeForAdditionalItem:
+                          cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
+                      defaultShippingFeePerKg:
+                          cart.coupon.store.defaultShippingFeePerKg.toNumber(),
+                      defaultShippingFeeFixed:
+                          cart.coupon.store.defaultShippingFeeFixed.toNumber(),
+                  },
+              }
+            : null,
+    } as unknown as CartWithCartItemsType
 }

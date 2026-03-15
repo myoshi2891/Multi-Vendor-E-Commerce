@@ -69,8 +69,12 @@ export const upsertOfferTag = async (offerTag: OfferTag) => {
 			update: offerTag,
 		});
 		return offerTagDetails;
-	} catch (error) {
-		console.error("Error upserting OfferTag", error);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Error upserting OfferTag:", error.message, error.stack);
+		} else {
+			console.error("Error upserting OfferTag:", String(error));
+		}
 		throw new Error("Error upserting OfferTag");
 	}
 };
@@ -128,8 +132,12 @@ export const getAllOfferTags = async (storeUrl?: string) => {
             return [];
         }
         return offerTags;
-    } catch (error) {
-        console.error("Error retrieving OfferTags", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving OfferTags:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving OfferTags:", String(error));
+        }
         throw new Error("Error retrieving OfferTags");
     }
 };
@@ -150,8 +158,12 @@ export const getOfferTag = async (offerTagId: string) => {
 			where: { id: offerTagId },
 		});
 		return offerTag;
-	} catch (error) {
-		console.error("Error retrieving OfferTag", error);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Error retrieving OfferTag:", error.message, error.stack);
+		} else {
+			console.error("Error retrieving OfferTag:", String(error));
+		}
 		throw new Error("Error retrieving OfferTag");
 	}
 };
@@ -187,8 +199,12 @@ export const deleteOfferTag = async (offerTagId: string) => {
 			where: { id: offerTagId },
 		});
 		return response;
-	} catch (error) {
-		console.error("Error deleting OfferTag", error);
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("Error deleting OfferTag:", error.message, error.stack);
+		} else {
+			console.error("Error deleting OfferTag:", String(error));
+		}
 		throw new Error("Error deleting OfferTag");
 	}
 };

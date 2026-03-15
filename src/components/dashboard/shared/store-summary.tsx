@@ -130,7 +130,7 @@ const StoreSummary: FC<Props> = ({ store }) => {
                                     </td>
                                     <td className="p-3">
                                         <p>
-                                            ${store.defaultShippingFeePerItem}
+                                            ${(store.defaultShippingFeePerItem?.toNumber() ?? 0).toFixed(2)}
                                         </p>
                                     </td>
                                 </tr>
@@ -144,7 +144,7 @@ const StoreSummary: FC<Props> = ({ store }) => {
                                         <p>
                                             $
                                             {
-                                                store.defaultShippingFeeForAdditionalItem
+                                                (store.defaultShippingFeeForAdditionalItem?.toNumber() ?? 0).toFixed(2)
                                             }
                                         </p>
                                     </td>
@@ -156,7 +156,7 @@ const StoreSummary: FC<Props> = ({ store }) => {
                                         </p>
                                     </td>
                                     <td className="p-3">
-                                        <p>${store.defaultShippingFeePerKg}</p>
+                                        <p>${(store.defaultShippingFeePerKg?.toNumber() ?? 0).toFixed(2)}</p>
                                     </td>
                                 </tr>
                                 <tr className="border-b border-gray-100 dark:border-gray-100/20">
@@ -166,7 +166,7 @@ const StoreSummary: FC<Props> = ({ store }) => {
                                         </p>
                                     </td>
                                     <td className="p-3">
-                                        <p>${store.defaultShippingFeeFixed}</p>
+                                        <p>${(store.defaultShippingFeeFixed?.toNumber() ?? 0).toFixed(2)}</p>
                                     </td>
                                 </tr>
                                 <tr className="border-b border-gray-100 dark:border-gray-100/20">

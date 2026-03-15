@@ -37,7 +37,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
 
         // Create a Stripe payment intent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(order.total * 100), // Convert to dollars
+            amount: Math.round(order.total.toNumber() * 100), // Convert to cents
             currency: "usd",
             automatic_payment_methods: { enabled: true },
         });
@@ -46,8 +46,12 @@ export const createStripePaymentIntent = async (orderId: string) => {
             paymentIntentId: paymentIntent.id,
             clientSecret: paymentIntent.client_secret,
         };
-    } catch (error) {
-        console.error("Error creating payment intent:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error creating payment intent:", error.message, error.stack);
+        } else {
+            console.error("Error creating payment intent:", String(error));
+        }
         throw error;
     }
 };
@@ -129,8 +133,12 @@ export const createStripePayment = async (
             },
         });
         return updatedOrder;
-    } catch (error) {
-        console.error("Error creating payment:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error creating payment:", error.message, error.stack);
+        } else {
+            console.error("Error creating payment:", String(error));
+        }
         throw error;
     }
 };

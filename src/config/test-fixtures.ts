@@ -3,12 +3,26 @@
  * 全エンティティのモックデータファクトリ（Partial<T> overridesパターン）
  */
 
+import { Prisma } from "@prisma/client";
 import { TEST_CONFIG } from "./test-config";
 import { CartProductType } from "@/lib/types";
 
 // 相対日付の基準値（test-scenarios.ts と同パターン、循環依存回避のため独立定義）
 const NOW = Date.now();
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+// ---- ヘルパー ----
+
+/** テスト用：number も受け入れて Prisma.Decimal に変換 */
+type DecimalLike = number | Prisma.Decimal;
+
+/** Decimal フィールドに number も受け入れるよう緩和 */
+type RelaxDecimal<T> = {
+    [K in keyof T]: T[K] extends Prisma.Decimal ? DecimalLike : T[K];
+};
+
+const toDecimal = (v: DecimalLike): Prisma.Decimal =>
+    v instanceof Prisma.Decimal ? v : new Prisma.Decimal(String(v));
 
 // ---- 型定義 ----
 type MockUser = {
@@ -35,10 +49,10 @@ type MockStore = {
     averageRating: number;
     numReviews: number;
     defaultShippingService: string;
-    defaultShippingFeePerItem: number;
-    defaultShippingFeeForAdditionalItem: number;
-    defaultShippingFeePerKg: number;
-    defaultShippingFeeFixed: number;
+    defaultShippingFeePerItem: Prisma.Decimal;
+    defaultShippingFeeForAdditionalItem: Prisma.Decimal;
+    defaultShippingFeePerKg: Prisma.Decimal;
+    defaultShippingFeeFixed: Prisma.Decimal;
     defaultDeliveryTimeMin: number;
     defaultDeliveryTimeMax: number;
     returnPolicy: string;
@@ -90,7 +104,7 @@ type MockSize = {
     id: string;
     size: string;
     quantity: number;
-    price: number;
+    price: Prisma.Decimal;
     discount: number;
     productVariantId: string;
 };
@@ -123,9 +137,9 @@ type MockOrder = {
     orderStatus: string;
     paymentStatus: string;
     paymentMethod: string | null;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -138,9 +152,9 @@ type MockOrderGroup = {
     shippingService: string;
     shippingDeliveryMin: number;
     shippingDeliveryMax: number;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     couponId: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -159,9 +173,9 @@ type MockOrderItem = {
     image: string;
     size: string;
     quantity: number;
-    price: number;
-    shippingFee: number;
-    totalPrice: number;
+    price: Prisma.Decimal;
+    shippingFee: Prisma.Decimal;
+    totalPrice: Prisma.Decimal;
     status: string;
     createdAt: Date;
     updatedAt: Date;
@@ -201,7 +215,7 @@ type MockPaymentDetails = {
     paymentIntentId: string;
     paymentMethod: string;
     status: string;
-    amount: number;
+    amount: Prisma.Decimal;
     currency: string;
     orderId: string;
     userId: string;
@@ -213,9 +227,9 @@ type MockCart = {
     id: string;
     userId: string;
     couponId: string | null;
-    shippingFees: number;
-    subTotal: number;
-    total: number;
+    shippingFees: Prisma.Decimal;
+    subTotal: Prisma.Decimal;
+    total: Prisma.Decimal;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -234,9 +248,9 @@ type MockCartItem = {
     image: string;
     size: string;
     quantity: number;
-    price: number;
-    shippingFee: number;
-    totalPrice: number;
+    price: Prisma.Decimal;
+    shippingFee: Prisma.Decimal;
+    totalPrice: Prisma.Decimal;
 };
 
 type MockCountry = {
@@ -298,36 +312,45 @@ export const createMockUser = (
 
 // ---- ストア ----
 export const createMockStore = (
-    overrides: Partial<MockStore> = {}
-): MockStore => ({
-    id: TEST_CONFIG.DEFAULT_STORE_ID,
-    name: "Test Store",
-    description:
-        "A test store description with sufficient length for validation.",
-    email: "store@example.com",
-    phone: TEST_CONFIG.TEST_PHONE,
-    url: TEST_CONFIG.TEST_STORE_URL,
-    logo: "https://example.com/logo.jpg",
-    cover: "https://example.com/cover.jpg",
-    status: "ACTIVE",
-    featured: false,
-    averageRating: 0,
-    numReviews: 0,
-    defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
-    defaultShippingFeePerItem: 5.0,
-    defaultShippingFeeForAdditionalItem: 2.0,
-    defaultShippingFeePerKg: 1.5,
-    defaultShippingFeeFixed: 10.0,
-    defaultDeliveryTimeMin: 3,
-    defaultDeliveryTimeMax: 14,
-    returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
-    userId: TEST_CONFIG.DEFAULT_USER_ID,
-    isDeleted: false,
-    deletedAt: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockStore>> = {}
+): MockStore => {
+    const {
+        defaultShippingFeePerItem,
+        defaultShippingFeeForAdditionalItem,
+        defaultShippingFeePerKg,
+        defaultShippingFeeFixed,
+        ...rest
+    } = overrides;
+    return {
+        id: TEST_CONFIG.DEFAULT_STORE_ID,
+        name: "Test Store",
+        description:
+            "A test store description with sufficient length for validation.",
+        email: "store@example.com",
+        phone: TEST_CONFIG.TEST_PHONE,
+        url: TEST_CONFIG.TEST_STORE_URL,
+        logo: "https://example.com/logo.jpg",
+        cover: "https://example.com/cover.jpg",
+        status: "ACTIVE",
+        featured: false,
+        averageRating: 0,
+        numReviews: 0,
+        defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+        defaultShippingFeePerItem: toDecimal(defaultShippingFeePerItem ?? 5.0),
+        defaultShippingFeeForAdditionalItem: toDecimal(defaultShippingFeeForAdditionalItem ?? 2.0),
+        defaultShippingFeePerKg: toDecimal(defaultShippingFeePerKg ?? 1.5),
+        defaultShippingFeeFixed: toDecimal(defaultShippingFeeFixed ?? 10.0),
+        defaultDeliveryTimeMin: 3,
+        defaultDeliveryTimeMax: 14,
+        returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
+        userId: TEST_CONFIG.DEFAULT_USER_ID,
+        isDeleted: false,
+        deletedAt: null,
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- 商品 ----
 export const createMockProduct = (
@@ -377,16 +400,19 @@ export const createMockProductVariant = (
 
 // ---- サイズ（在庫・価格） ----
 export const createMockSize = (
-    overrides: Partial<MockSize> = {}
-): MockSize => ({
-    id: "size-001",
-    size: "M",
-    quantity: 50,
-    price: 29.99,
-    discount: 0,
-    productVariantId: "variant-001",
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockSize>> = {}
+): MockSize => {
+    const { price, ...rest } = overrides;
+    return {
+        id: "size-001",
+        size: "M",
+        quantity: 50,
+        price: toDecimal(price ?? 29.99),
+        discount: 0,
+        productVariantId: "variant-001",
+        ...rest,
+    };
+};
 
 // ---- カテゴリ ----
 export const createMockCategory = (
@@ -419,66 +445,75 @@ export const createMockSubCategory = (
 
 // ---- 注文 ----
 export const createMockOrder = (
-    overrides: Partial<MockOrder> = {}
-): MockOrder => ({
-    id: "order-001",
-    userId: TEST_CONFIG.DEFAULT_USER_ID,
-    shippingAddressId: "address-001",
-    orderStatus: "Pending",
-    paymentStatus: "Pending",
-    paymentMethod: null,
-    shippingFees: 10.0,
-    subTotal: 59.98,
-    total: 69.98,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockOrder>> = {}
+): MockOrder => {
+    const { shippingFees, subTotal, total, ...rest } = overrides;
+    return {
+        id: "order-001",
+        userId: TEST_CONFIG.DEFAULT_USER_ID,
+        shippingAddressId: "address-001",
+        orderStatus: "Pending",
+        paymentStatus: "Pending",
+        paymentMethod: null,
+        shippingFees: toDecimal(shippingFees ?? 10.0),
+        subTotal: toDecimal(subTotal ?? 59.98),
+        total: toDecimal(total ?? 69.98),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- 注文グループ（店舗単位） ----
 export const createMockOrderGroup = (
-    overrides: Partial<MockOrderGroup> = {}
-): MockOrderGroup => ({
-    id: "order-group-001",
-    orderId: "order-001",
-    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-    status: "Pending",
-    shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
-    shippingDeliveryMin: 3,
-    shippingDeliveryMax: 14,
-    shippingFees: 5.0,
-    subTotal: 29.99,
-    total: 34.99,
-    couponId: null,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockOrderGroup>> = {}
+): MockOrderGroup => {
+    const { shippingFees, subTotal, total, ...rest } = overrides;
+    return {
+        id: "order-group-001",
+        orderId: "order-001",
+        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+        status: "Pending",
+        shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+        shippingDeliveryMin: 3,
+        shippingDeliveryMax: 14,
+        shippingFees: toDecimal(shippingFees ?? 5.0),
+        subTotal: toDecimal(subTotal ?? 29.99),
+        total: toDecimal(total ?? 34.99),
+        couponId: null,
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- 注文アイテム ----
 export const createMockOrderItem = (
-    overrides: Partial<MockOrderItem> = {}
-): MockOrderItem => ({
-    id: "order-item-001",
-    orderGroupId: "order-group-001",
-    productId: "product-001",
-    variantId: "variant-001",
-    sizeId: "size-001",
-    productSlug: "test-product",
-    variantSlug: "red-edition",
-    sku: "SKU-RED-001",
-    name: "Test Product ・ Red Edition",
-    image: "https://example.com/product.jpg",
-    size: "M",
-    quantity: 2,
-    price: 29.99,
-    shippingFee: 5.0,
-    totalPrice: 64.98,
-    status: "Pending",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockOrderItem>> = {}
+): MockOrderItem => {
+    const { price, shippingFee, totalPrice, ...rest } = overrides;
+    return {
+        id: "order-item-001",
+        orderGroupId: "order-group-001",
+        productId: "product-001",
+        variantId: "variant-001",
+        sizeId: "size-001",
+        productSlug: "test-product",
+        variantSlug: "red-edition",
+        sku: "SKU-RED-001",
+        name: "Test Product ・ Red Edition",
+        image: "https://example.com/product.jpg",
+        size: "M",
+        quantity: 2,
+        price: toDecimal(price ?? 29.99),
+        shippingFee: toDecimal(shippingFee ?? 5.0),
+        totalPrice: toDecimal(totalPrice ?? 64.98),
+        status: "Pending",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- クーポン ----
 export const createMockCoupon = (
@@ -518,58 +553,67 @@ export const createMockShippingAddress = (
 
 // ---- 決済詳細 ----
 export const createMockPaymentDetails = (
-    overrides: Partial<MockPaymentDetails> = {}
-): MockPaymentDetails => ({
-    id: "payment-001",
-    paymentIntentId: "pi_test_123",
-    paymentMethod: "Stripe",
-    status: "Completed",
-    amount: 6998,
-    currency: "usd",
-    orderId: "order-001",
-    userId: TEST_CONFIG.DEFAULT_USER_ID,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockPaymentDetails>> = {}
+): MockPaymentDetails => {
+    const { amount, ...rest } = overrides;
+    return {
+        id: "payment-001",
+        paymentIntentId: "pi_test_123",
+        paymentMethod: "Stripe",
+        status: "Completed",
+        amount: toDecimal(amount ?? 6998),
+        currency: "usd",
+        orderId: "order-001",
+        userId: TEST_CONFIG.DEFAULT_USER_ID,
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- カート ----
 export const createMockCart = (
-    overrides: Partial<MockCart> = {}
-): MockCart => ({
-    id: "cart-001",
-    userId: TEST_CONFIG.DEFAULT_USER_ID,
-    couponId: null,
-    shippingFees: 5.0,
-    subTotal: 59.98,
-    total: 64.98,
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockCart>> = {}
+): MockCart => {
+    const { shippingFees, subTotal, total, ...rest } = overrides;
+    return {
+        id: "cart-001",
+        userId: TEST_CONFIG.DEFAULT_USER_ID,
+        couponId: null,
+        shippingFees: toDecimal(shippingFees ?? 5.0),
+        subTotal: toDecimal(subTotal ?? 59.98),
+        total: toDecimal(total ?? 64.98),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
+        ...rest,
+    };
+};
 
 // ---- カートアイテム ----
 export const createMockCartItem = (
-    overrides: Partial<MockCartItem> = {}
-): MockCartItem => ({
-    id: "cart-item-001",
-    cartId: "cart-001",
-    productId: "product-001",
-    variantId: "variant-001",
-    sizeId: "size-001",
-    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-    productSlug: "test-product",
-    variantSlug: "red-edition",
-    sku: "SKU-RED-001",
-    name: "Test Product ・ Red Edition",
-    image: "https://example.com/product.jpg",
-    size: "M",
-    quantity: 2,
-    price: 29.99,
-    shippingFee: 5.0,
-    totalPrice: 64.98,
-    ...overrides,
-});
+    overrides: Partial<RelaxDecimal<MockCartItem>> = {}
+): MockCartItem => {
+    const { price, shippingFee, totalPrice, ...rest } = overrides;
+    return {
+        id: "cart-item-001",
+        cartId: "cart-001",
+        productId: "product-001",
+        variantId: "variant-001",
+        sizeId: "size-001",
+        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+        productSlug: "test-product",
+        variantSlug: "red-edition",
+        sku: "SKU-RED-001",
+        name: "Test Product ・ Red Edition",
+        image: "https://example.com/product.jpg",
+        size: "M",
+        quantity: 2,
+        price: toDecimal(price ?? 29.99),
+        shippingFee: toDecimal(shippingFee ?? 5.0),
+        totalPrice: toDecimal(totalPrice ?? 64.98),
+        ...rest,
+    };
+};
 
 // ---- カート商品（フロントエンド CartProductType 用） ----
 export const createMockCartProduct = (

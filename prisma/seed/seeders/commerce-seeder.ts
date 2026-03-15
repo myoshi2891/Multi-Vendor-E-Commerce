@@ -171,9 +171,9 @@ export async function seedCommerce(
           shippingService: g.shippingService || "Standard Shipping",
           shippingDeliveryMin: g.shippingDeliveryMin ?? 3,
           shippingDeliveryMax: g.shippingDeliveryMax ?? 7,
-          shippingFees: 0, // 後でOrderItemから計算
+          shippingFees: 0, // seedデータでは配送料を0に設定
           subTotal: 0,     // 後でOrderItemから計算
-          total: 0,        // 後でOrderItemから計算
+          total: 0,        // 後でOrderItemから計算（配送料は含まない）
         },
       });
 

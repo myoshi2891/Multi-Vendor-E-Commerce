@@ -56,7 +56,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { ProductVariant, Size, Store } from "@prisma/client";
+import { Prisma, ProductVariant, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -107,8 +107,12 @@ export const upsertProduct = async (
             // Create new product and variant
             await handleProductCreate(product, store.id);
         }
-    } catch (error) {
-        console.log(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in upsertProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertProduct:", String(error));
+        }
         throw error;
     }
 };
@@ -390,8 +394,12 @@ export const deleteProduct = async (productId: string) => {
             where: { id: productId },
         });
         return response;
-    } catch (error) {
-        console.log(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in deleteProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteProduct:", String(error));
+        }
         throw error;
     }
 };
@@ -604,7 +612,7 @@ export const getProducts = async (
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = size.price * (1 - discount / 100);
+                        let discountedPrice = size.price.toNumber() * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
@@ -826,9 +834,12 @@ const getUserCountry = () => {
             return parsedCountry;
         }
         return defaultCountry;
-    } catch (error) {
-        // Handle error
-        console.error("Error retrieving user country:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving user country:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving user country:", String(error));
+        }
         return defaultCountry;
     }
 };
@@ -984,6 +995,7 @@ export const getShippingDetails = async (
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null
 ) => {
+    try {
     let shippingDetails = {
         shippingFeeMethod,
         shippingService: "",
@@ -1061,22 +1073,22 @@ export const getShippingDetails = async (
             case "ITEM":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerItem;
+                    : shippingFeePerItem.toNumber();
                 shippingDetails.extraShippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeForAdditionalItem;
+                    : shippingFeeForAdditionalItem.toNumber();
                 break;
 
             case "WEIGHT":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerKg;
+                    : shippingFeePerKg.toNumber();
                 break;
 
             case "FIXED":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeFixed;
+                    : shippingFeeFixed.toNumber();
                 break;
 
             default:
@@ -1086,6 +1098,14 @@ export const getShippingDetails = async (
     }
 
     return false;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getProductFilteredReviews:", error.message, error.stack);
+        } else {
+            console.error("Error in getProductFilteredReviews:", String(error));
+        }
+        throw error;
+    }
 };
 
 // Function: getProductFilteredReviews
@@ -1225,6 +1245,7 @@ export const getProductShippingFee = async (
     weight: number,
     quantity: number
 ) => {
+    try {
     // Fetch country information based on userCountry.name and userCountry.code
     const country = await db.country.findUnique({
         where: {
@@ -1241,7 +1262,7 @@ export const getProductShippingFee = async (
                 (c) => c.countryId === country.id
             );
             if (isEligibleForFreeShipping) {
-                return 0; // Free shipping
+                return new Prisma.Decimal("0"); // Free shipping
             }
         }
 
@@ -1262,14 +1283,15 @@ export const getProductShippingFee = async (
         } = shippingRate || {};
 
         // Calculate the additional quantity (excluding the first item)
-        const additionalItemsQty = quantity - 1;
+        const additionalItemsQty = Math.max(0, quantity - 1);
 
-        // Define fee calculation methods in a map (using functions)
-        const feeCalculators: Record<string, () => number> = {
+        // Define fee calculation methods in a map (using Decimal arithmetic)
+        const feeCalculators: Record<string, () => Prisma.Decimal> = {
             ITEM: () =>
-                shippingFeePerItem +
-                shippingFeeForAdditionalItem * additionalItemsQty,
-            WEIGHT: () => shippingFeePerKg * weight * quantity,
+                shippingFeePerItem.add(
+                    shippingFeeForAdditionalItem.mul(additionalItemsQty)
+                ),
+            WEIGHT: () => shippingFeePerKg.mul(weight).mul(quantity),
             FIXED: () => shippingFeeFixed,
         };
 
@@ -1280,11 +1302,19 @@ export const getProductShippingFee = async (
         }
 
         // If no valid shipping method is found, return 0
-        return 0;
+        return new Prisma.Decimal("0");
     }
 
     // Return 0 if the country is not found
-    return 0;
+    return new Prisma.Decimal("0");
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getDeliveryDetailsForStoreByCountry:", error.message, error.stack);
+        } else {
+            console.error("Error in getDeliveryDetailsForStoreByCountry:", String(error));
+        }
+        throw error;
+    }
 };
 
 /**
@@ -1381,8 +1411,12 @@ export const getProductsByIds = async (
             products: ordered_products,
             totalPages,
         };
-    } catch (error) {
-        console.error("Error retrieving products by ids:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving products by ids:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving products by ids:", String(error));
+        }
         throw new Error("Failed to retrieve products. Please try again.");
     }
 };

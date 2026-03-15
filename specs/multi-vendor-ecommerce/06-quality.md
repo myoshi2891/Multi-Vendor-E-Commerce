@@ -20,6 +20,13 @@
 - Store status updates (`updateStoreStatus`) use Prisma interactive
   transactions (`db.$transaction`) to atomically update store status and
   promote user role on PENDING → ACTIVE transition.
+- Order placement (`placeOrder`) wraps all DB writes (order, order groups,
+  order items, total update) in a single `db.$transaction` for atomicity.
+  Read-only queries (delivery details) are pre-fetched before the
+  transaction to minimize lock duration.
+- All money fields use `Decimal(12,2)` for exact arithmetic. Internal
+  calculations use `Prisma.Decimal` methods; conversion to `number` happens
+  only at presentation boundaries.
 
 ## Performance
 - PostgreSQL fulltext search (tsvector/tsquery) with a fallback to `contains` queries.
@@ -38,3 +45,6 @@
 
 ## Observability
 - Errors are logged to the console; no centralized logging is in place yet.
+- Catch blocks use `error: unknown` (never `any`) with `instanceof Error`
+  type guards for structured logging (`console.error` with context prefix,
+  message, and stack).
