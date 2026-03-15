@@ -2,9 +2,7 @@ import { ALL_SEED_PRODUCTS } from "../constants/products";
 import { SEED_STORES } from "../constants/stores";
 import { SEED_CATEGORIES, SEED_SUB_CATEGORIES } from "../constants/categories";
 import { SEED_OFFER_TAGS } from "../constants/offer-tags";
-
-const PRODUCT_NAME_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_ -]+$/;
-const SLUG_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/;
+import { NAME_REGEX, URL_REGEX } from "../helpers";
 
 describe("ALL_SEED_PRODUCTS バリデーション", () => {
   it("36商品のデータが存在すること", () => {
@@ -25,7 +23,7 @@ describe("ALL_SEED_PRODUCTS バリデーション", () => {
     for (const p of ALL_SEED_PRODUCTS) {
       expect(p.name.length).toBeGreaterThanOrEqual(2);
       expect(p.name.length).toBeLessThanOrEqual(200);
-      expect(p.name).toMatch(PRODUCT_NAME_REGEX);
+      expect(p.name).toMatch(NAME_REGEX);
     }
   });
 
@@ -40,7 +38,7 @@ describe("ALL_SEED_PRODUCTS バリデーション", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
     for (const p of ALL_SEED_PRODUCTS) {
       expect(p.slug).toMatch(/^lux-/);
-      expect(p.slug).toMatch(SLUG_REGEX);
+      expect(p.slug).toMatch(URL_REGEX);
     }
   });
 
@@ -106,7 +104,7 @@ describe("バリアント バリデーション", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
     for (const v of allVariants) {
       expect(v.slug).toMatch(/^lux-/);
-      expect(v.slug).toMatch(SLUG_REGEX);
+      expect(v.slug).toMatch(URL_REGEX);
     }
   });
 

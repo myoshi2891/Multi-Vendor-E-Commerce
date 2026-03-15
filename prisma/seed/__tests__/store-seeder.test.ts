@@ -1,10 +1,11 @@
 import { SEED_STORES } from "../constants/stores";
 import { SEED_USERS } from "../constants/users";
-import { SEED_EMAIL_PREFIX } from "../helpers";
-
-const STORE_NAME_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_ -]+$/;
-const URL_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/;
-const PHONE_REGEX = /^\+?\d+$/;
+import {
+  SEED_EMAIL_PREFIX,
+  NAME_REGEX,
+  URL_REGEX,
+  PHONE_REGEX,
+} from "../helpers";
 
 describe("SEED_STORES バリデーション", () => {
   it("6店舗のデータが存在すること", () => {
@@ -15,7 +16,7 @@ describe("SEED_STORES バリデーション", () => {
     for (const store of SEED_STORES) {
       expect(store.name.length).toBeGreaterThanOrEqual(2);
       expect(store.name.length).toBeLessThanOrEqual(50);
-      expect(store.name).toMatch(STORE_NAME_REGEX);
+      expect(store.name).toMatch(NAME_REGEX);
     }
   });
 
@@ -67,7 +68,7 @@ describe("SEED_STORES バリデーション", () => {
 
   it("全emailがlux-seed-プレフィクスを持つこと", () => {
     for (const store of SEED_STORES) {
-      expect(store.email).toMatch(new RegExp(`^${SEED_EMAIL_PREFIX}`));
+      expect(store.email.startsWith(SEED_EMAIL_PREFIX)).toBe(true);
     }
   });
 

@@ -2,11 +2,11 @@ import { SEED_COUNTRIES } from "../constants/countries";
 import { SEED_USERS } from "../constants/users";
 import { SEED_CATEGORIES, SEED_SUB_CATEGORIES } from "../constants/categories";
 import { SEED_OFFER_TAGS } from "../constants/offer-tags";
-import { SEED_EMAIL_PREFIX } from "../helpers";
-
-// Zodスキーマの制約値を直接検証（schemas.tsは"use client"のため直接importしない）
-const URL_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/;
-const CATEGORY_NAME_REGEX = /^[a-zA-Z0-9\s]+$/;
+import {
+  SEED_EMAIL_PREFIX,
+  URL_REGEX,
+  CATEGORY_NAME_REGEX,
+} from "../helpers";
 
 describe("seed定数データ バリデーション", () => {
   describe("SEED_COUNTRIES", () => {
@@ -103,8 +103,8 @@ describe("seed定数データ バリデーション", () => {
   });
 
   describe("SEED_SUB_CATEGORIES", () => {
-    it("22個のサブカテゴリが存在すること", () => {
-      expect(SEED_SUB_CATEGORIES.length).toBe(22);
+    it("25個のサブカテゴリが存在すること", () => {
+      expect(SEED_SUB_CATEGORIES.length).toBe(25);
     });
 
     it("全てのnameがZod制約を満たすこと", () => {
@@ -140,7 +140,7 @@ describe("seed定数データ バリデーション", () => {
       for (const sub of SEED_SUB_CATEGORIES) {
         grouped.set(sub.categoryUrl, (grouped.get(sub.categoryUrl) ?? 0) + 1);
       }
-      for (const [, count] of grouped) {
+      for (const [, count] of Array.from(grouped)) {
         expect(count).toBeGreaterThanOrEqual(2);
       }
     });
