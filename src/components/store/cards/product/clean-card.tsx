@@ -4,6 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import ReactStars from "react-rating-stars-component";
 
+/**
+ * Render a product card that links to the selected variant's product detail page.
+ *
+ * Renders the selected variant's primary image, the lowest discounted price among that variant's sizes, the variant name, product name, variant thumbnails (hovering a thumbnail switches the displayed variant), and a star rating with a localized review count.
+ *
+ * @param product - The product data to display (of type ProductType)
+ * @returns A React element representing the interactive product card
+ */
 export default function ProductCardClean({
     product,
 }: {
@@ -15,9 +23,9 @@ export default function ProductCardClean({
 
     const size = variant.sizes.reduce((lowest, current) => {
         const currentPriceAfterDiscount =
-            current.price * (1 - current.discount / 100);
+            current.price.toNumber() * (1 - current.discount / 100);
         const lowestPriceAfterDiscount =
-            lowest.price * (1 - lowest.discount / 100);
+            lowest.price.toNumber() * (1 - lowest.discount / 100);
 
         return currentPriceAfterDiscount < lowestPriceAfterDiscount
             ? current
@@ -35,7 +43,7 @@ export default function ProductCardClean({
                         height={300}
                         priority
                     />
-                    <div className="price">${size.price}</div>
+                    <div className="price">${size.price.toNumber().toFixed(2)}</div>
                 </div>
                 <div className="content">
                     <div className="brand line-clamp-1">

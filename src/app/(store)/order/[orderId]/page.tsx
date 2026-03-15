@@ -9,6 +9,15 @@ import { Separator } from "@/components/ui/separator";
 import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
 
+/**
+ * Render the order details page for a specific order ID.
+ *
+ * Fetches the order by `orderId`, redirects to the root path if no order is found, computes aggregate item counts, and renders the order header, user and order details, order groups, and a conditional payment section.
+ *
+ * @param params - Route parameters object
+ * @param params.orderId - The identifier of the order to display
+ * @returns A JSX element that displays the full order page (header, details, groups, totals, and payment controls)
+ */
 export default async function OrderPage({
     params,
 }: {
@@ -57,9 +66,9 @@ export default async function OrderPage({
                             order.orderStatus !== "Failed") && (
                             <OrderTotalDetailsCard
                                 details={{
-                                    subTotal: order.subTotal,
-                                    shippingFees: order.shippingFees,
-                                    total: order.total,
+                                    subTotal: order.subTotal.toNumber(),
+                                    shippingFees: order.shippingFees.toNumber(),
+                                    total: order.total.toNumber(),
                                 }}
                             />
                         )}
@@ -74,15 +83,15 @@ export default async function OrderPage({
                         <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 space-y-5 overflow-auto border-l p-4 px-2">
                             <OrderTotalDetailsCard
                                 details={{
-                                    subTotal: order.subTotal,
-                                    shippingFees: order.shippingFees,
-                                    total: order.total,
+                                    subTotal: order.subTotal.toNumber(),
+                                    shippingFees: order.shippingFees.toNumber(),
+                                    total: order.total.toNumber(),
                                 }}
                             />
                             <Separator />
                             <OrderPayment
                                 orderId={order.id}
-                                amount={order.total}
+                                amount={order.total.toNumber()}
                             />
                         </div>
                     )}
