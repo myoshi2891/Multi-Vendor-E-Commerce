@@ -277,7 +277,7 @@ export const saveUserCart = async (
     if (cart) return true
     return false
     } catch (error) {
-        console.log(error)
+        console.error("Error retrieving user cart:", error)
         throw error
     }
 }
@@ -558,116 +558,125 @@ export const placeOrder = async (
         {} as GroupedItems
     )
 
-    // console.log('groupedItems', groupedItems)
-
-    // Create the order
-    const order = await db.order.create({
-        data: {
-            userId,
-            shippingAddressId: shippingAddress.id,
-            orderStatus: 'Pending',
-            paymentStatus: 'Pending',
-            shippingFees: 0, // Will calculate below
-            subTotal: 0, // Will calculate below
-            total: 0, // Will calculate below
-        },
-    })
-
-    // Iterate over each store's items and create OrderGroup and OrderItems
-    let orderTotalPrice = new Prisma.Decimal("0")
-    let orderShippingFee = new Prisma.Decimal("0")
-
-    for (const [storeId, items] of Object.entries(groupedItems)) {
-        // Calculate store-specific totals
-        const groupedTotalPrice = items.reduce(
-            (acc, item) => acc.add(item.totalPrice),
-            new Prisma.Decimal("0")
+    // 事前にdelivery詳細を全store分取得（トランザクション外）
+    const deliveryDetailsMap = new Map<string, {
+        shippingService: string | undefined;
+        deliveryTimeMin: number | undefined;
+        deliveryTimeMax: number | undefined;
+    }>();
+    for (const storeId of Object.keys(groupedItems)) {
+        const details = await getDeliveryDetailsForStoreByCountry(
+            storeId,
+            shippingAddress.countryId
         )
-
-        const groupShippingFee = items.reduce(
-            (acc, item) => acc.add(item.shippingFee),
-            new Prisma.Decimal("0")
-        )
-
-        const { shippingService, deliveryTimeMax, deliveryTimeMin } =
-            await getDeliveryDetailsForStoreByCountry(
-                storeId,
-                shippingAddress.countryId
-            )
-
-        // Check coupon store
-        const check = storeId === cartCoupon?.storeId
-
-        // Calculate discount based on coupon
-        let discountedAmount = new Prisma.Decimal("0")
-        if (check && cartCoupon) {
-            discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
-        }
-
-        // Calculate the total after applying the discount
-        const totalAfterDiscount = groupedTotalPrice.sub(discountedAmount)
-
-        // Create an OrderGroup for this store
-        const orderGroup = await db.orderGroup.create({
-            data: {
-                orderId: order.id,
-                storeId,
-                status: "Pending",
-                subTotal: groupedTotalPrice.sub(groupShippingFee),
-                shippingFees: groupShippingFee,
-                total: totalAfterDiscount,
-                shippingService: shippingService || "International Delivery",
-                shippingDeliveryMin: deliveryTimeMin || 7,
-                shippingDeliveryMax: deliveryTimeMax || 30,
-                couponId: check && cartCoupon ? cartCoupon?.id : null,
-            },
-        });
-
-        // Create OrderItems for this OrderGroup
-        for (const item of items) {
-            await db.orderItem.create({
-                data: {
-                    orderGroupId: orderGroup.id,
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    sizeId: item.sizeId,
-                    productSlug: item.productSlug,
-                    variantSlug: item.variantSlug,
-                    sku: item.sku,
-                    name: item.name,
-                    image: item.image,
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.price,
-                    shippingFee: item.shippingFee,
-                    totalPrice: item.totalPrice,
-                },
-            });
-        }
-
-        // Update order totals
-        orderTotalPrice = orderTotalPrice.add(totalAfterDiscount)
-        orderShippingFee = orderShippingFee.add(groupShippingFee)
+        deliveryDetailsMap.set(storeId, details)
     }
 
-    // Update the main order with the final totals
-    await db.order.update({
-        where: {
-            id: order.id,
-        },
-        data: {
-            subTotal: orderTotalPrice.sub(orderShippingFee),
-            shippingFees: orderShippingFee,
-            total: orderTotalPrice,
-        },
-    })
+    // 全DB操作をトランザクションでラップ
+    const order = await db.$transaction(async (tx) => {
+        // Create the order
+        const order = await tx.order.create({
+            data: {
+                userId,
+                shippingAddressId: shippingAddress.id,
+                orderStatus: 'Pending',
+                paymentStatus: 'Pending',
+                shippingFees: 0,
+                subTotal: 0,
+                total: 0,
+            },
+        })
 
-    // Delete the cart
-    // await db.cart.delete({
-    //     where: {
-    //         id: cartId,
-    //     },
-    // })
+        // Iterate over each store's items and create OrderGroup and OrderItems
+        let orderTotalPrice = new Prisma.Decimal("0")
+        let orderShippingFee = new Prisma.Decimal("0")
+
+        for (const [storeId, items] of Object.entries(groupedItems)) {
+            // Calculate store-specific totals
+            const groupedTotalPrice = items.reduce(
+                (acc, item) => acc.add(item.totalPrice),
+                new Prisma.Decimal("0")
+            )
+
+            const groupShippingFee = items.reduce(
+                (acc, item) => acc.add(item.shippingFee),
+                new Prisma.Decimal("0")
+            )
+
+            const deliveryDetails = deliveryDetailsMap.get(storeId)
+            const shippingService = deliveryDetails?.shippingService
+            const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
+            const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
+
+            // Check coupon store
+            const check = storeId === cartCoupon?.storeId
+
+            // Calculate discount based on coupon
+            let discountedAmount = new Prisma.Decimal("0")
+            if (check && cartCoupon) {
+                discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+            }
+
+            // Calculate the total after applying the discount
+            const totalAfterDiscount = groupedTotalPrice.sub(discountedAmount)
+
+            // Create an OrderGroup for this store
+            const orderGroup = await tx.orderGroup.create({
+                data: {
+                    orderId: order.id,
+                    storeId,
+                    status: "Pending",
+                    subTotal: groupedTotalPrice.sub(groupShippingFee),
+                    shippingFees: groupShippingFee,
+                    total: totalAfterDiscount,
+                    shippingService: shippingService || "International Delivery",
+                    shippingDeliveryMin: deliveryTimeMin || 7,
+                    shippingDeliveryMax: deliveryTimeMax || 30,
+                    couponId: check && cartCoupon ? cartCoupon?.id : null,
+                },
+            });
+
+            // Create OrderItems for this OrderGroup
+            for (const item of items) {
+                await tx.orderItem.create({
+                    data: {
+                        orderGroupId: orderGroup.id,
+                        productId: item.productId,
+                        variantId: item.variantId,
+                        sizeId: item.sizeId,
+                        productSlug: item.productSlug,
+                        variantSlug: item.variantSlug,
+                        sku: item.sku,
+                        name: item.name,
+                        image: item.image,
+                        size: item.size,
+                        quantity: item.quantity,
+                        price: item.price,
+                        shippingFee: item.shippingFee,
+                        totalPrice: item.totalPrice,
+                    },
+                });
+            }
+
+            // Update order totals
+            orderTotalPrice = orderTotalPrice.add(totalAfterDiscount)
+            orderShippingFee = orderShippingFee.add(groupShippingFee)
+        }
+
+        // Update the main order with the final totals
+        await tx.order.update({
+            where: {
+                id: order.id,
+            },
+            data: {
+                subTotal: orderTotalPrice.sub(orderShippingFee),
+                shippingFees: orderShippingFee,
+                total: orderTotalPrice,
+            },
+        })
+
+        return order
+    })
 
     return { orderId: order.id }
 }
@@ -950,8 +959,8 @@ export const updateCheckoutProductWithLatest = async (
                 validated_qty
             )
 
-            if (fee) {
-                shippingFee = new Prisma.Decimal(fee.toString())
+            if (!fee.isZero()) {
+                shippingFee = fee
             }
 
             const totalPrice = price.mul(validated_qty).add(shippingFee)
