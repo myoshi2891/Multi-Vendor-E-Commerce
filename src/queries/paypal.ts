@@ -55,7 +55,7 @@ export const createPayPalPayment = async (orderId: string) => {
         const paymentData = await response.json();
 
         return paymentData;
-    } catch (error) {
+    } catch (error: unknown) {
         throw new Error("Failed to create PayPal payment");
     }
 };

@@ -107,7 +107,7 @@ export const upsertProduct = async (
             // Create new product and variant
             await handleProductCreate(product, store.id);
         }
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -390,7 +390,7 @@ export const deleteProduct = async (productId: string) => {
             where: { id: productId },
         });
         return response;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -826,7 +826,7 @@ const getUserCountry = () => {
             return parsedCountry;
         }
         return defaultCountry;
-    } catch (error) {
+    } catch (error: unknown) {
         // Handle error
         console.error("Error retrieving user country:", error);
         return defaultCountry;
@@ -1087,7 +1087,7 @@ export const getShippingDetails = async (
     }
 
     return false;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error)
         throw error
     }
@@ -1292,7 +1292,7 @@ export const getProductShippingFee = async (
 
     // Return 0 if the country is not found
     return new Prisma.Decimal("0");
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error)
         throw error
     }
@@ -1392,7 +1392,7 @@ export const getProductsByIds = async (
             products: ordered_products,
             totalPages,
         };
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Error retrieving products by ids:", error);
         throw new Error("Failed to retrieve products. Please try again.");
     }

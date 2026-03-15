@@ -69,7 +69,7 @@ export const upsertCategory = async (category: Category) => {
             create: category,
         });
         return categoryDetails;
-    } catch (error) {
+    } catch (error: unknown) {
         // Log and re-throw any errors
         console.error(error);
         throw error;
@@ -116,7 +116,7 @@ export const getAllCategories = async (storeUrl?: string) => {
             orderBy: { updatedAt: "desc" },
         });
         return categories;
-    } catch (error) {
+    } catch (error: unknown) {
         // Log and re-throw any errors
         console.error(error);
         throw error;
@@ -136,7 +136,7 @@ export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
             orderBy: { updatedAt: "desc" },
         });
         return subCategories;
-    } catch (error) {
+    } catch (error: unknown) {
         // Log and re-throw any errors
         console.error(error);
         throw error;
@@ -161,7 +161,7 @@ export const getCategory = async (categoryId: string) => {
             },
         });
         return category;
-    } catch (error) {
+    } catch (error: unknown) {
         // Log and re-throw any errors
         console.error(error);
         throw error;
@@ -198,7 +198,7 @@ export const deleteCategory = async (categoryId: string) => {
             },
         });
         return response;
-    } catch (error) {
+    } catch (error: unknown) {
         // Log and re-throw any errors
         console.error(error);
         throw error;

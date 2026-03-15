@@ -77,7 +77,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
             })
             return true // Follow status updated successfully
         }
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error following store', error)
         throw new Error('Error following store')
     }
@@ -276,7 +276,7 @@ export const saveUserCart = async (
 
     if (cart) return true
     return false
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Error retrieving user cart:", error)
         throw error
     }
@@ -310,7 +310,7 @@ export const getUserShippingAddresses = async () => {
         })
 
         return shippingAddresses
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error fetching shipping addresses:', error)
         throw error
     }
@@ -353,7 +353,7 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                             default: false,
                         },
                     })
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error('Error updating default addresses:', error)
                     throw new Error('Error making the default address.')
                 }
@@ -376,7 +376,7 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
         })
 
         return upsertedAddresses
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error upserting shipping addresses:', error)
         throw error
     }
@@ -696,7 +696,7 @@ export const emptyUserCart = async () => {
         })
 
         if (res) return true
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error)
         throw error
     }
@@ -859,7 +859,7 @@ export const addToWishlist = async (
                 sizeId,
             },
         })
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error)
         throw error
     }
@@ -980,7 +980,7 @@ export const updateCheckoutProductWithLatest = async (
                     },
                 })
                 return newCartItem
-            } catch (error) {
+            } catch (error: unknown) {
                 return cartProduct
             }
         })

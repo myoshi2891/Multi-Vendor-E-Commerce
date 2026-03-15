@@ -143,7 +143,7 @@ export const upsertStore = async (store: Partial<Store>) => {
         }
 
         return storeDetails;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -182,7 +182,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
         }
 
         return store;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -230,7 +230,7 @@ export const updateStoreDefaultShippingDetails = async (
         });
 
         return updatedStore;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -298,7 +298,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
         }));
 
         return result;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -388,7 +388,7 @@ export const upsertShippingRate = async (
         });
 
         return shippingRateDetails;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -463,7 +463,7 @@ export const getStoreOrders = async (storeUrl: string) => {
         });
 
         return orders;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -533,7 +533,7 @@ export const applySeller = async (store: StoreType) => {
         });
 
         return storeDetails;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -569,7 +569,7 @@ export const getAllStores = async () => {
         });
 
         return stores;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -640,7 +640,7 @@ export const updateStoreStatus = async (
         });
 
         return updatedStore.status;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -678,7 +678,7 @@ export const deleteStore = async (storeId: string) => {
         });
 
         return response;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }
@@ -717,7 +717,7 @@ export const getStorePageDetails = async (storeUrl: string) => {
         if (!store) throw new Error(`Store with URL ${storeUrl} not found.`);
 
         return store;
-    } catch (error) {
+    } catch (error: unknown) {
         console.error(error);
         throw error;
     }

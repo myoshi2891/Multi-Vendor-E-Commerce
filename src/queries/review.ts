@@ -113,7 +113,7 @@ export const upsertReview = async (
             },
         })
         return reviewDetails
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error updating review', error)
         throw new Error('Error updating review')
     }
