@@ -48,17 +48,26 @@ describe("SEED_ORDERS バリデーション", () => {
   });
 
   it("全てのOrderStatusが含まれていること", () => {
-    // Prisma enum は PascalCase
     const statuses = new Set(SEED_ORDERS.map((o) => o.orderStatus));
-    expect(statuses.has("Pending")).toBe(true);
-    expect(statuses.has("Delivered")).toBe(true);
-    expect(statuses.has("Canceled")).toBe(true);
+    const expected = new Set([
+      "Pending",
+      "Processing",
+      "Shipped",
+      "Delivered",
+      "Canceled",
+      "Refunded",
+    ]);
+    expect(statuses).toEqual(expected);
   });
 
   it("全てのPaymentStatusが含まれていること", () => {
-    // Prisma enum は PascalCase
     const statuses = new Set(SEED_ORDERS.map((o) => o.paymentStatus));
-    expect(statuses.has("Paid")).toBe(true);
-    expect(statuses.has("Cancelled")).toBe(true);
+    const expected = new Set([
+      "Pending",
+      "Paid",
+      "Cancelled",
+      "Refunded",
+    ]);
+    expect(statuses).toEqual(expected);
   });
 });

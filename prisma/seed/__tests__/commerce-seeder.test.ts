@@ -119,9 +119,16 @@ describe("SEED_ORDERS バリデーション", () => {
     }
   });
 
-  it("shippingAddressIndexが0以上であること", () => {
+  it("shippingAddressIndexが有効な範囲であること", () => {
+    const addressCounts = new Map<string, number>();
+    for (const a of SEED_SHIPPING_ADDRESSES) {
+      addressCounts.set(a.userEmail, (addressCounts.get(a.userEmail) ?? 0) + 1);
+    }
     for (const o of SEED_ORDERS) {
+      expect(Number.isInteger(o.shippingAddressIndex)).toBe(true);
       expect(o.shippingAddressIndex).toBeGreaterThanOrEqual(0);
+      const count = addressCounts.get(o.userEmail) ?? 0;
+      expect(o.shippingAddressIndex).toBeLessThan(count);
     }
   });
 

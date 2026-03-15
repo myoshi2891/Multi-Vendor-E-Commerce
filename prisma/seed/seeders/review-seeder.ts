@@ -10,8 +10,11 @@ export async function seedReviews(
   prisma: PrismaClient,
   maps: Pick<SeedMaps, "users" | "products">
 ): Promise<void> {
-  // 既存のレビューをすべて削除（シードの冪等性を担保するため）
-  await prisma.review.deleteMany();
+  // seed ユーザーのレビューのみ削除（E2Eデータとの衝突回避）
+  const seedUserIds = Array.from(maps.users.values());
+  await prisma.review.deleteMany({
+    where: { userId: { in: seedUserIds } },
+  });
 
   let skipped = 0;
 

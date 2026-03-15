@@ -26,13 +26,11 @@ describe("SEED_REVIEWS バリデーション", () => {
     expect(ratio).toBeGreaterThanOrEqual(0.8);
   });
 
-  it("一部のproductSlugが存在する商品を参照していること（20%以上）", () => {
+  it("全productSlugが存在する商品を参照していること", () => {
     const productSlugs = new Set(ALL_SEED_PRODUCTS.map((p) => p.slug));
-    const validReviews = SEED_REVIEWS.filter((r) =>
-      productSlugs.has(r.productSlug)
-    );
-    const ratio = validReviews.length / SEED_REVIEWS.length;
-    expect(ratio).toBeGreaterThanOrEqual(0.2);
+    for (const r of SEED_REVIEWS) {
+      expect(productSlugs.has(r.productSlug)).toBe(true);
+    }
   });
 
   it("全userEmailが存在するUSERロールユーザーを参照していること", () => {

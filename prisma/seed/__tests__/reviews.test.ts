@@ -6,14 +6,14 @@ describe("SEED_REVIEWS バリデーション", () => {
     expect(SEED_REVIEWS.length).toBeGreaterThanOrEqual(100);
   });
 
-  it("評価が1-5の範囲内であり、主に3-5であること", () => {
+  it("評価が1-5の範囲内であること", () => {
     for (const review of SEED_REVIEWS) {
       expect(review.rating).toBeGreaterThanOrEqual(1);
       expect(review.rating).toBeLessThanOrEqual(5);
     }
   });
 
-  it("レビュー文が10文字以上の英語であること", () => {
+  it("レビュー文が10文字以上であること", () => {
     for (const review of SEED_REVIEWS) {
       expect(review.review.length).toBeGreaterThanOrEqual(10);
     }

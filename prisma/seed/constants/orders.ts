@@ -435,7 +435,7 @@ export const SEED_ORDERS: SeedOrder[] = [
   {
     "seedKey": "order-012",
     "userEmail": "lux-seed-customer-01@example.com",
-    "shippingAddressIndex": 0,
+    "shippingAddressIndex": 1,
     "orderStatus": "Pending",
     "paymentStatus": "Pending",
     "paymentMethod": "Stripe",
@@ -687,7 +687,7 @@ export const SEED_ORDERS: SeedOrder[] = [
   {
     "seedKey": "order-017",
     "userEmail": "lux-seed-customer-01@example.com",
-    "shippingAddressIndex": 0,
+    "shippingAddressIndex": 1,
     "orderStatus": "Refunded",
     "paymentStatus": "Refunded",
     "paymentMethod": "Stripe",

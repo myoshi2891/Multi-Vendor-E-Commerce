@@ -101,10 +101,12 @@ export async function seedCommerce(
         orderStatus: o.orderStatus,
         paymentStatus: o.paymentStatus,
         paymentMethod: o.paymentMethod || undefined,
-        subTotal: 0, // 後でOrderItemから計算
-        total: 0,    // 後でOrderItemから計算
+        subTotal: 0,
+        total: 0,
       },
     });
+
+    let orderSubTotal = 0;
 
     for (const g of o.groups) {
       const storeId = maps.stores.get(g.storeUrl);
@@ -112,7 +114,15 @@ export async function seedCommerce(
         throw new Error(`ストアが見つかりません: ${g.storeUrl}（注文グループ）`);
       }
 
-      const couponId = g.couponCode ? coupons.get(g.couponCode) : undefined;
+      let couponId: string | undefined;
+      if (g.couponCode) {
+        couponId = coupons.get(g.couponCode);
+        if (!couponId) {
+          throw new Error(
+            `クーポンが見つかりません: ${g.couponCode}（注文グループ: ${g.storeUrl}）`
+          );
+        }
+      }
 
       const orderGroup = await prisma.orderGroup.create({
         data: {
@@ -128,6 +138,8 @@ export async function seedCommerce(
           total: 0,        // 後でOrderItemから計算
         },
       });
+
+      let groupSubTotal = 0;
 
       for (const item of g.items) {
         const productId = maps.products.get(item.productSlug);
@@ -166,6 +178,8 @@ export async function seedCommerce(
           continue;
         }
 
+        const itemTotal = size.price * item.quantity;
+
         await prisma.orderItem.create({
           data: {
             orderGroupId: orderGroup.id,
@@ -181,11 +195,26 @@ export async function seedCommerce(
             quantity: item.quantity,
             shippingFee: 0,
             price: size.price,
-            totalPrice: size.price * item.quantity,
+            totalPrice: itemTotal,
             status: item.status,
           },
         });
+
+        groupSubTotal += itemTotal;
       }
+
+      // OrderGroup の合計を更新
+      await prisma.orderGroup.update({
+        where: { id: orderGroup.id },
+        data: { subTotal: groupSubTotal, total: groupSubTotal },
+      });
+      orderSubTotal += groupSubTotal;
     }
+
+    // Order の合計を更新
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { subTotal: orderSubTotal, total: orderSubTotal },
+    });
   }
 }
