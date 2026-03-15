@@ -38,7 +38,7 @@
 | `src/` 配下で `new PrismaClient()` を直接呼ぶ | `src/lib/db.ts` のシングルトン経由を使う（`prisma/seed/` とテストは例外） |
 | `src/queries/` 以外でサーバーアクションを定義する | 必ず `src/queries/` 配下に配置する |
 | UI コンポーネントから `src/queries/` を直接 import する | Server Component 経由でのみ呼び出す |
-| `bunx prisma db push` を本番相当環境で使う | `bunx prisma migrate dev` を使う |
+| `bunx prisma db push` を本番相当環境で使う | 本番・ステージング環境では `bunx prisma migrate deploy` を使う（`bunx prisma migrate dev` はローカル開発専用であり、予期せぬマイグレーション生成の原因になります） |
 | `prisma/migrations/` 配下の既存ファイルを編集する | 補正マイグレーションを新規作成する |
 | シークレット・API キーを `.env` 以外に書く / コミットする | `.env.local` に記載し `.gitignore` に含める |
 | 本番 DB への `DELETE` / `DROP` を人間の確認なしに実行する | `safe-migration` スキルを使い承認を得る |

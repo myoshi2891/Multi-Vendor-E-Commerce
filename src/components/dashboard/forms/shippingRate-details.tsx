@@ -99,7 +99,32 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data);
+			form.reset({
+				countryId: data.countryId ?? "",
+				countryName: data.countryName ?? "",
+				shippingService: data.shippingRate?.shippingService ?? "",
+				shippingFeePerItem: data.shippingRate
+					? data.shippingRate.shippingFeePerItem.toNumber()
+					: 0,
+				shippingFeeForAdditionalItem: data.shippingRate
+					? data.shippingRate.shippingFeeForAdditionalItem.toNumber()
+					: 0,
+				shippingFeePerKg: data.shippingRate
+					? data.shippingRate.shippingFeePerKg.toNumber()
+					: 0,
+				shippingFeeFixed: data.shippingRate
+					? data.shippingRate.shippingFeeFixed.toNumber()
+					: 0,
+				deliveryTimeMin: data.shippingRate
+					? data.shippingRate.deliveryTimeMin
+					: 1,
+				deliveryTimeMax: data.shippingRate
+					? data.shippingRate.deliveryTimeMax
+					: 1,
+				returnPolicy: data.shippingRate
+					? data.shippingRate.returnPolicy
+					: "",
+			});
 		}
 	}, [data, form]);
 

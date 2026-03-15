@@ -57,7 +57,7 @@ export async function seedReviews(
   }
 
   if (skipped > 0) {
-    console.log(
+    console.warn(
       `⚠️  ${skipped}件のレビューがスキップされました（商品が存在しないため）`
     );
   }

@@ -31,6 +31,13 @@ import CustomModal from "@/components/dashboard/shared/custom-modal";
 import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
 // import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
 
+const formatShippingAmount = (value: any) => {
+	const numValue = value?.toNumber?.() ?? Number(value);
+	if (numValue === 0) return "Free";
+	if (numValue && numValue > 0) return `$${numValue.toFixed(2)}`;
+	return "Default";
+};
+
 export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 	{
 		accessorKey: "countryName",
@@ -55,10 +62,9 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee per item",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeePerItem;
-			const numValue = value?.toNumber();
 			return (
 				<span>
-					{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
+					{formatShippingAmount(value)}
 				</span>
 			);
 		},
@@ -67,14 +73,11 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		accessorKey: "shippingFeeForAdditionalItem",
 		header: "Shipping Fee for additional item",
 		cell: ({ row }) => {
-			const value =
-				row.original.shippingRate?.shippingFeeForAdditionalItem;
-			const numValue = value?.toNumber();
-
+			const value = row.original.shippingRate?.shippingFeeForAdditionalItem;
 			return (
 				<span>
 					<span>
-						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
+						{formatShippingAmount(value)}
 					</span>
 				</span>
 			);
@@ -85,12 +88,10 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee per Kg",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeePerKg;
-			const numValue = value?.toNumber();
-
 			return (
 				<span>
 					<span>
-						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
+						{formatShippingAmount(value)}
 					</span>
 				</span>
 			);
@@ -101,12 +102,10 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: "Shipping Fee fixed",
 		cell: ({ row }) => {
 			const value = row.original.shippingRate?.shippingFeeFixed;
-			const numValue = value?.toNumber();
-
 			return (
 				<span>
 					<span>
-						{numValue === 0 ? "Free" : numValue && numValue > 0 ? `$${numValue.toFixed(2)}` : "Default"}
+						{formatShippingAmount(value)}
 					</span>
 				</span>
 			);

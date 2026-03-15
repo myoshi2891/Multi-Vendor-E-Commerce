@@ -1,3 +1,4 @@
+import { OrderStatus, PaymentStatus } from "@prisma/client";
 import { SEED_COUPONS } from "../constants/coupons";
 import { SEED_SHIPPING_ADDRESSES } from "../constants/shipping";
 import { SEED_ORDERS } from "../constants/orders";
@@ -142,19 +143,7 @@ describe("SEED_ORDERS バリデーション", () => {
   });
 
   it("全OrderStatusが有効な値であること", () => {
-    // Prisma enum は PascalCase
-    const validStatuses = new Set([
-      "Pending",
-      "Confirmed",
-      "Processing",
-      "Shipped",
-      "OutForDelivery",
-      "Delivered",
-      "Canceled",
-      "Failed",
-      "Returned",
-      "Refunded",
-    ]);
+    const validStatuses = new Set(Object.values(OrderStatus));
     for (const o of SEED_ORDERS) {
       expect(validStatuses.has(o.orderStatus)).toBe(true);
       for (const g of o.groups) {
@@ -164,17 +153,7 @@ describe("SEED_ORDERS バリデーション", () => {
   });
 
   it("全PaymentStatusが有効な値であること", () => {
-    // Prisma enum は PascalCase
-    const validStatuses = new Set([
-      "Pending",
-      "Paid",
-      "Failed",
-      "Declined",
-      "Cancelled",
-      "Refunded",
-      "PartiallyRefunded",
-      "ChargeBack",
-    ]);
+    const validStatuses = new Set(Object.values(PaymentStatus));
     for (const o of SEED_ORDERS) {
       expect(validStatuses.has(o.paymentStatus)).toBe(true);
     }

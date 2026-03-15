@@ -162,20 +162,18 @@ export async function seedCommerce(
         const variantId = maps.variants.get(item.variantSlug);
 
         if (!productId || !variantId) {
-          console.warn(
-            `⚠️  商品/バリアントが見つかりません: ${item.productSlug}/${item.variantSlug} (スキップ)`
+          throw new Error(
+            `商品/バリアントが見つかりません: ${item.productSlug}/${item.variantSlug}（注文: ${o.userEmail}, 店舗: ${g.storeUrl}）`
           );
-          continue;
         }
 
         const sizeKey = `${item.variantSlug}:${item.size}`;
         const sizeId = maps.sizes.get(sizeKey);
 
         if (!sizeId) {
-          console.warn(
-            `⚠️  サイズが見つかりません: ${sizeKey} (スキップ)`
+          throw new Error(
+            `サイズが見つかりません: ${sizeKey}（注文: ${o.userEmail}, 店舗: ${g.storeUrl}）`
           );
-          continue;
         }
 
         // 商品データを取得して必要なフィールドを補完

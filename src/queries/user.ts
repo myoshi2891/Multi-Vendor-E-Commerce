@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartItem, Country as CountryDB } from '@prisma/client'
+import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
@@ -170,8 +170,8 @@ export const saveUserCart = async (
             const validQuantity = Math.min(quantity, size.quantity)
 
             const price = size.discount
-                ? size.price.toNumber() * (1 - size.discount / 100)
-                : size.price.toNumber()
+                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : size.price
 
             // Calculate shipping details
             const countryCookie = getCookie('userCountry', { cookies })
@@ -195,22 +195,23 @@ export const saveUserCart = async (
                 }
             }
 
-            let shippingFee = 0
+            let shippingFee = new Prisma.Decimal(0)
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
                     quantity === 1
-                        ? details.shippingFee
-                        : details.shippingFee +
-                          details.extraShippingFee * (quantity - 1)
+                        ? new Prisma.Decimal(details.shippingFee)
+                        : new Prisma.Decimal(details.shippingFee).add(
+                              new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
+                          )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = details.shippingFee * variant.weight * quantity
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(quantity)
             } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = details.shippingFee
+                shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price * validQuantity + shippingFee
+            const totalPrice = price.mul(validQuantity).add(shippingFee)
 
             return {
                 productId,
@@ -233,16 +234,16 @@ export const saveUserCart = async (
 
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0
+        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        new Prisma.Decimal(0)
     )
 
     const shippingFee = validatedCartItems.reduce(
-        (acc, item) => acc + item.shippingFee,
-        0
+        (acc, item) => acc.add(item.shippingFee),
+        new Prisma.Decimal(0)
     )
 
-    const total = subTotal + shippingFee
+    const total = subTotal.add(shippingFee)
 
     // Save the validated items to the cart in the database
     const cart = await db.cart.create({
@@ -458,9 +459,10 @@ export const placeOrder = async (
             // Validate stock and price
             const validQuantity = Math.min(quantity, size.quantity)
 
+            const sizePrice = size.price as unknown as Prisma.Decimal
             const price = size.discount
-                ? size.price.toNumber() * (1 - size.discount / 100)
-                : size.price.toNumber()
+                ? sizePrice.mul(new Prisma.Decimal(100 - size.discount)).div(100)
+                : sizePrice
 
             // Calculate shipping details
             const countryId = shippingAddress.countryId
@@ -500,22 +502,23 @@ export const placeOrder = async (
                 }
             }
 
-            let shippingFee = 0
+            let shippingFee = new Prisma.Decimal(0)
             const { shippingFeeMethod } = product
 
             if (shippingFeeMethod === 'ITEM') {
                 shippingFee =
                     quantity === 1
-                        ? details.shippingFee
-                        : details.shippingFee +
-                          details.extraShippingFee * (quantity - 1)
+                        ? new Prisma.Decimal(details.shippingFee)
+                        : new Prisma.Decimal(details.shippingFee).add(
+                              new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
+                          )
             } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = details.shippingFee * variant.weight * quantity
+                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(quantity)
             } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = details.shippingFee
+                shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price * validQuantity + shippingFee
+            const totalPrice = price.mul(validQuantity).add(shippingFee)
 
             return {
                 productId,
@@ -567,19 +570,19 @@ export const placeOrder = async (
     })
 
     // Iterate over each store's items and create OrderGroup and OrderItems
-    let orderTotalPrice = 0
-    let orderShippingFee = 0
+    let orderTotalPrice = new Prisma.Decimal(0)
+    let orderShippingFee = new Prisma.Decimal(0)
 
     for (const [storeId, items] of Object.entries(groupedItems)) {
         // Calculate store-specific totals
         const groupedTotalPrice = items.reduce(
-            (acc, item) => acc + item.totalPrice,
-            0
+            (acc, item) => acc.add(item.totalPrice),
+            new Prisma.Decimal(0)
         )
 
         const groupShippingFee = items.reduce(
-            (acc, item) => acc + item.shippingFee,
-            0
+            (acc, item) => acc.add(item.shippingFee),
+            new Prisma.Decimal(0)
         )
 
         const { shippingService, deliveryTimeMax, deliveryTimeMin } =
@@ -592,13 +595,13 @@ export const placeOrder = async (
         const check = storeId === cartCoupon?.storeId
 
         // Calculate discount based on coupon
-        let discountedAmount = 0
+        let discountedAmount = new Prisma.Decimal(0)
         if (check && cartCoupon) {
-            discountedAmount = (groupedTotalPrice * cartCoupon.discount) / 100
+            discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
         }
 
         // Calculate the total after applying the discount
-        const totalAfterDiscount = groupedTotalPrice - discountedAmount
+        const totalAfterDiscount = groupedTotalPrice.sub(discountedAmount)
 
         // Create an OrderGroup for this store
         const orderGroup = await db.orderGroup.create({
@@ -606,7 +609,7 @@ export const placeOrder = async (
                 orderId: order.id,
                 storeId,
                 status: "Pending",
-                subTotal: groupedTotalPrice - groupShippingFee,
+                subTotal: groupedTotalPrice.sub(groupShippingFee),
                 shippingFees: groupShippingFee,
                 total: totalAfterDiscount,
                 shippingService: shippingService || "International Delivery",
@@ -639,8 +642,8 @@ export const placeOrder = async (
         }
 
         // Update order totals
-        orderTotalPrice += totalAfterDiscount
-        orderShippingFee += groupShippingFee
+        orderTotalPrice = orderTotalPrice.add(totalAfterDiscount)
+        orderShippingFee = orderShippingFee.add(groupShippingFee)
     }
 
     // Update the main order with the final totals
@@ -649,7 +652,7 @@ export const placeOrder = async (
             id: order.id,
         },
         data: {
-            subTotal: orderTotalPrice - orderShippingFee,
+            subTotal: orderTotalPrice.sub(orderShippingFee),
             shippingFees: orderShippingFee,
             total: orderTotalPrice,
         },
