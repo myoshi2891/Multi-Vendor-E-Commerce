@@ -68,45 +68,35 @@ export async function seedStores(
     // ShippingRate: 各国に対してデフォルト配送料を設定
     for (const country of SEED_COUNTRIES) {
       const countryId = countryMap.get(country.code);
-      if (!countryId) continue;
-
-      // ストア+国の組み合わせで既存レコードを検索
-      const existing = await prisma.shippingRate.findFirst({
-        where: { storeId: record.id, countryId },
-      });
-
-      if (existing) {
-        await prisma.shippingRate.update({
-          where: { id: existing.id },
-          data: {
-            shippingService: s.defaultShippingService,
-            shippingFeePerItem: s.defaultShippingFeePerItem,
-            shippingFeeForAdditionalItem:
-              s.defaultShippingFeeForAdditionalItem,
-            shippingFeePerKg: s.defaultShippingFeePerKg,
-            shippingFeeFixed: s.defaultShippingFeeFixed,
-            deliveryTimeMin: s.defaultDeliveryTimeMin,
-            deliveryTimeMax: s.defaultDeliveryTimeMax,
-            returnPolicy: s.returnPolicy,
-          },
-        });
-      } else {
-        await prisma.shippingRate.create({
-          data: {
-            storeId: record.id,
-            countryId,
-            shippingService: s.defaultShippingService,
-            shippingFeePerItem: s.defaultShippingFeePerItem,
-            shippingFeeForAdditionalItem:
-              s.defaultShippingFeeForAdditionalItem,
-            shippingFeePerKg: s.defaultShippingFeePerKg,
-            shippingFeeFixed: s.defaultShippingFeeFixed,
-            deliveryTimeMin: s.defaultDeliveryTimeMin,
-            deliveryTimeMax: s.defaultDeliveryTimeMax,
-            returnPolicy: s.returnPolicy,
-          },
-        });
+      if (!countryId) {
+        throw new Error(
+          `国が見つかりません: ${country.code}（ストア: ${s.name}）`
+        );
       }
+
+      const shippingData = {
+        shippingService: s.defaultShippingService,
+        shippingFeePerItem: s.defaultShippingFeePerItem,
+        shippingFeeForAdditionalItem:
+          s.defaultShippingFeeForAdditionalItem,
+        shippingFeePerKg: s.defaultShippingFeePerKg,
+        shippingFeeFixed: s.defaultShippingFeeFixed,
+        deliveryTimeMin: s.defaultDeliveryTimeMin,
+        deliveryTimeMax: s.defaultDeliveryTimeMax,
+        returnPolicy: s.returnPolicy,
+      };
+
+      await prisma.shippingRate.upsert({
+        where: {
+          storeId_countryId: { storeId: record.id, countryId },
+        },
+        update: shippingData,
+        create: {
+          storeId: record.id,
+          countryId,
+          ...shippingData,
+        },
+      });
     }
   }
 

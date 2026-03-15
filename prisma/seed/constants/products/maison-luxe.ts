@@ -294,7 +294,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
     categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-belts",
+    subCategoryUrl: "lux-acc-gloves",
     variants: [
       {
         variantName: "Black with Gold",

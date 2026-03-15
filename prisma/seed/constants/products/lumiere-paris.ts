@@ -206,7 +206,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
     categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-skirts",
+    subCategoryUrl: "lux-women-trousers",
     variants: [
       {
         variantName: "Classic Black",
@@ -418,7 +418,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
     categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-belts",
+    subCategoryUrl: "lux-acc-gloves",
     variants: [
       {
         variantName: "Cognac",

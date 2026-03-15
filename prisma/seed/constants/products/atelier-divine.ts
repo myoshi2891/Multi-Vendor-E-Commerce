@@ -136,7 +136,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-atelier-divine",
     categoryUrl: "lux-jewelry",
-    subCategoryUrl: "lux-jewelry-earrings",
+    subCategoryUrl: "lux-jewelry-bracelets",
     variants: [
       {
         variantName: "Oxidized Sterling Silver",

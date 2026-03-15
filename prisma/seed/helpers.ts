@@ -12,6 +12,15 @@ export const SEED_PREFIX = "lux-";
 export const SEED_EMAIL_PREFIX = "lux-seed-";
 
 /**
+ * Zod制約の正規表現定数
+ * src/lib/schemas.ts と同一パターン（"use client" のため直接 import できない）
+ */
+export const NAME_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_ -]+$/;
+export const URL_REGEX = /^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/;
+export const CATEGORY_NAME_REGEX = /^[a-zA-Z0-9\s]+$/;
+export const PHONE_REGEX = /^\+?\d+$/;
+
+/**
  * 文字列をURL安全なslugに変換する
  * @param input - 変換元の文字列
  * @param prefix - slugに付与するプレフィクス（デフォルト: SEED_PREFIX）

@@ -294,6 +294,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-oro-palazzo",
     categoryUrl: "lux-accessories",
+    // ポケットスクエアはスカーフに近いアクセサリーのため、lux-acc-scarves に分類
     subCategoryUrl: "lux-acc-scarves",
     variants: [
       {

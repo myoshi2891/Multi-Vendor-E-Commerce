@@ -43,9 +43,16 @@ export async function seedProducts(
       );
     }
 
-    const offerTagId = p.offerTagUrl
-      ? maps.offerTags.get(p.offerTagUrl)
-      : undefined;
+    let offerTagId: string | null = null;
+    if (p.offerTagUrl) {
+      const resolved = maps.offerTags.get(p.offerTagUrl);
+      if (!resolved) {
+        throw new Error(
+          `オファータグが見つかりません: ${p.offerTagUrl}（商品: ${p.slug}）`
+        );
+      }
+      offerTagId = resolved;
+    }
 
     // Product upsert
     const productRecord = await prisma.product.upsert({
@@ -58,7 +65,7 @@ export async function seedProducts(
         storeId,
         categoryId,
         subCategoryId,
-        offerTagId: offerTagId ?? null,
+        offerTagId,
       },
       create: {
         name: p.name,
@@ -69,7 +76,7 @@ export async function seedProducts(
         storeId,
         categoryId,
         subCategoryId,
-        offerTagId: offerTagId ?? null,
+        offerTagId,
       },
     });
     products.set(p.slug, productRecord.id);
@@ -91,6 +98,15 @@ export async function seedProducts(
     // Spec（商品レベル）: deleteMany（バリアントレベルは後で処理）
     await prisma.spec.deleteMany({
       where: { productId: productRecord.id, variantId: null },
+    });
+
+    // 定義に含まれないバリアントを削除（ダングリング防止）
+    const expectedSlugs = p.variants.map((v) => v.slug);
+    await prisma.productVariant.deleteMany({
+      where: {
+        productId: productRecord.id,
+        slug: { notIn: expectedSlugs },
+      },
     });
 
     // 各バリアント
@@ -189,26 +205,34 @@ export async function seedProducts(
       }
     }
 
-    // FreeShipping: 対象国が指定されている場合
+    // FreeShipping: 常に既存を削除（冪等性）
+    await prisma.freeShipping.deleteMany({
+      where: { productId: productRecord.id },
+    });
+
+    // 対象国が指定されている場合のみ再作成
     if (p.freeShippingCountryCodes && p.freeShippingCountryCodes.length > 0) {
-      // 既存を削除して再作成
-      await prisma.freeShipping.deleteMany({
-        where: { productId: productRecord.id },
-      });
+      // 全コードを検証（不明なコードはエラー）
+      const countryIds: string[] = [];
+      for (const code of p.freeShippingCountryCodes) {
+        const countryId = maps.countries.get(code);
+        if (!countryId) {
+          throw new Error(
+            `国コードが見つかりません: ${code}（商品: ${p.slug}）`
+          );
+        }
+        countryIds.push(countryId);
+      }
+
       const freeShipping = await prisma.freeShipping.create({
         data: { productId: productRecord.id },
       });
-      const countryIds = p.freeShippingCountryCodes
-        .map((code) => maps.countries.get(code))
-        .filter((id): id is string => id !== undefined);
-      if (countryIds.length > 0) {
-        await prisma.freeShippingCountry.createMany({
-          data: countryIds.map((countryId) => ({
-            freeShippingId: freeShipping.id,
-            countryId,
-          })),
-        });
-      }
+      await prisma.freeShippingCountry.createMany({
+        data: countryIds.map((countryId) => ({
+          freeShippingId: freeShipping.id,
+          countryId,
+        })),
+      });
     }
   }
 

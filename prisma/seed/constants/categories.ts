@@ -28,7 +28,7 @@ export const SEED_CATEGORIES: SeedCategory[] = [
   },
 ];
 
-/** サブカテゴリ（約22個） */
+/** サブカテゴリ（25個） */
 export const SEED_SUB_CATEGORIES: SeedSubCategory[] = [
   // Women
   {
@@ -55,6 +55,13 @@ export const SEED_SUB_CATEGORIES: SeedSubCategory[] = [
   {
     name: "Skirts",
     url: "lux-women-skirts",
+    image: defaultImage,
+    featured: false,
+    categoryUrl: "lux-women",
+  },
+  {
+    name: "Trousers",
+    url: "lux-women-trousers",
     image: defaultImage,
     featured: false,
     categoryUrl: "lux-women",
@@ -108,6 +115,13 @@ export const SEED_SUB_CATEGORIES: SeedSubCategory[] = [
   {
     name: "Sunglasses",
     url: "lux-acc-sunglasses",
+    image: defaultImage,
+    featured: false,
+    categoryUrl: "lux-accessories",
+  },
+  {
+    name: "Gloves",
+    url: "lux-acc-gloves",
     image: defaultImage,
     featured: false,
     categoryUrl: "lux-accessories",
@@ -177,6 +191,13 @@ export const SEED_SUB_CATEGORIES: SeedSubCategory[] = [
   {
     name: "Earrings",
     url: "lux-jewelry-earrings",
+    image: defaultImage,
+    featured: false,
+    categoryUrl: "lux-jewelry",
+  },
+  {
+    name: "Bracelets",
+    url: "lux-jewelry-bracelets",
     image: defaultImage,
     featured: false,
     categoryUrl: "lux-jewelry",
