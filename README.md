@@ -332,9 +332,17 @@ Multi-Vendor-E-Commerce/
 │   │   ├── product.ts                # ⭐ 商品 CRUD・配送計算
 │   │   ├── store.ts                  # ストア管理・承認フロー
 │   │   ├── user.ts                   # カート・チェックアウト・注文作成
+│   │   ├── order.ts                  # 注文クエリ・詳細取得
+│   │   ├── home.ts                   # ホームページ用データ取得
 │   │   ├── review.ts                 # レビュー投稿・フィルタリング
+│   │   ├── profile.ts                # ウィッシュリスト・プロフィール管理
 │   │   ├── category.ts               # カテゴリ管理
-│   │   └── coupon.ts                 # クーポンバリデーション
+│   │   ├── subCategory.ts            # サブカテゴリ管理
+│   │   ├── offer-tag.ts              # オファータグ管理
+│   │   ├── coupon.ts                 # クーポンバリデーション
+│   │   ├── size.ts                   # サイズ管理
+│   │   ├── stripe.ts                 # Stripe 決済処理
+│   │   └── paypal.ts                 # PayPal 決済処理
 │   ├── components/                   # React コンポーネント
 │   │   ├── ui/                       # shadcn/ui プリミティブ
 │   │   ├── store/                    # カスタマー向けコンポーネント
@@ -350,7 +358,12 @@ Multi-Vendor-E-Commerce/
 │   └── middleware.ts                 # Clerk 認証ミドルウェア
 ├── prisma/
 │   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
-│   └── migrations/                   # マイグレーション履歴
+│   ├── migrations/                   # マイグレーション履歴
+│   └── seed/                         # ラグジュアリーシードデータ
+│       ├── seed.ts                   # エントリポイント
+│       ├── seeders/                  # 5フェーズシーダー
+│       ├── constants/                # シードデータ定数
+│       └── __tests__/               # シードテスト
 ├── tests/
 │   └── e2e/                          # Playwright E2E テスト
 │       ├── seed/seed-e2e.ts          # テストデータシード
@@ -418,7 +431,7 @@ erDiagram
     }
     Size {
         string id
-        float price
+        decimal price
         int stock
     }
     Order {
@@ -485,6 +498,7 @@ NEXT_PUBLIC_PAYPAL_CLIENT_ID=
 | `bun run test:watch` | Jest ウォッチモード |
 | `bunx playwright test` | E2E テストを実行 |
 | `bun run seed:e2e` | テスト用データベースをシード |
+| `bun run seed:luxury` | ラグジュアリーデータセット生成（ローカル開発・デザイン確認用） |
 
 ### テスト戦略
 

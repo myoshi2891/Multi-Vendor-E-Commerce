@@ -153,17 +153,17 @@ E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" \
 
 ---
 
-## テストスクリプト（参考）
+## テストスクリプト（参考 — 未実装を含む）
 
 ```bash
-bun run test                    # jest（全ユニット）
-bun run test:unit               # jest --testPathPattern "src/.*\.test\.ts$"
-bun run test:component          # jest --testPathPattern "tests/component/.*\.test\.tsx$"
-bun run test:integration        # jest --testPathPattern "tests/integration/.*\.test\.ts$"
-bun run test:e2e                # playwright test
-bun run test:visual             # playwright test tests/visual
-bun run test:a11y               # playwright test tests/accessibility
-bun run test:perf               # k6 run tests/performance/browse.js
+bun run test                    # jest（全ユニット）← 実装済み
+bun run test:unit               # 未実装（予定: jest --testPathPattern "src/.*\.test\.ts$"）
+bun run test:component          # 未実装（予定: jest --testPathPattern "tests/component/.*\.test\.tsx$"）
+bun run test:integration        # 未実装（予定: jest --testPathPattern "tests/integration/.*\.test\.ts$"）
+bun run test:e2e                # 未実装（現状: bunx playwright test を直接使用）
+bun run test:visual             # 未実装（予定: playwright test tests/visual）
+bun run test:a11y               # 未実装（予定: playwright test tests/accessibility）
+bun run test:perf               # 未実装（予定: k6 run tests/performance/browse.js）
 ```
 
 ---

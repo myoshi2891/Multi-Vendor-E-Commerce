@@ -154,3 +154,87 @@
 ### コミット一覧
 - `1a2f82e` test(webhook,store): upsert/deleteMany変更反映・$transactionモック・any除去
 - `f0470d7` fix(webhook,store): upsert lookup key変更・delete冪等化・$transaction導入
+
+## 追記 (2026-03-14 〜 2026-03-16)
+
+### AI スキル・エージェントシステム構築
+- `.claude/skills/` に 5 つのスキルを追加:
+  - `spec-sync-check`: 仕様と実装の乖離検出
+  - `safe-migration`: Prisma マイグレーション安全実行
+  - `server-action-scaffold`: サーバーアクションテンプレート生成
+  - `test-complete`: テスト・リント一括実行と品質判定
+  - `feature-plan`: 新機能の実装計画生成
+- `.agent/skills/` に 4 つのプロジェクト専門エージェントを追加:
+  - `ec-backend-expert`, `ec-db-migrator`, `ec-frontend-expert`, `ec-qa-expert`
+- `.claude/agents/README.md` にサブエージェント定義ガイドラインを整備
+
+### ラグジュアリーシードシステム構築（prisma/seed/）
+- 5 フェーズシーダーアーキテクチャを新規構築:
+  1. Base seeder（Country / User / Category / SubCategory / OfferTag）
+  2. Store seeder（Store + ShippingRate）
+  3. Product seeder（Product / Variant / Size / Image / Color / Spec / Question）
+  4. Review seeder（Review + ReviewImage）
+  5. Commerce seeder（Coupon / ShippingAddress / Order / OrderGroup / OrderItem）
+- 型定義（`types.ts`）、ヘルパー（`helpers.ts`）、定数（`constants/`）を整備
+- シードテスト（`prisma/seed/__tests__/`）: 冪等性・バリデーション・各 seeder のテストを追加
+- `package.json` に `seed:luxury` スクリプトを追加
+
+### DB スキーマ変更（3 マイグレーション）
+- `20260314235842`: ShippingRate に `@@unique([storeId, countryId])` 追加
+- `20260315104232`: 全金額フィールドを `Decimal(12,2)` に統一（Float からの revert）
+- `20260315190000`: Review に `@@unique([userId, productId])` 追加
+
+### Decimal 精度への全面移行
+- 全金額フィールド（Store / Cart / CartItem / Order / OrderGroup / OrderItem / PaymentDetails / ShippingRate / Size）を `Decimal(12,2)` に統一
+- サーバーアクション全体で `Prisma.Decimal` メソッド（`.add()`, `.mul()`, `.sub()`, `.toNumber()`）を使用
+- UI コンポーネント（商品カード・価格表示・配送料・注文テーブル）を Decimal 対応に更新
+- テストフィクスチャに `DecimalLike` 型と `toDecimal()` ヘルパーを導入
+
+### エラーハンドリング標準化
+- 全 `src/queries/` モジュールの catch ブロックを `error: unknown` + `instanceof Error` 型ガードに統一
+- `console.error` にコンテキストプレフィックス・メッセージ・スタックを含む構造化ログを導入
+- `placeOrder()` を `db.$transaction` でアトミック化（注文作成 + 在庫減算）
+
+### テスト拡充
+- 686 テスト、30 スイート全パス（R4: 543/21 → 686/30）
+- 新規テストファイル: `home.test.ts`, `product.test.ts`（拡充）, `user.test.ts`（拡充）
+- シードテスト 9 ファイル追加（`prisma/seed/__tests__/`）
+
+### コード品質・Docstrings 追加
+- `prisma/seed/` 以下のシーダー群およびヘルパー関数に大量の Docstrings (JSDoc) を追加（#91）
+- UI コンポーネントおよびページコンポーネントの一部に Docstrings を追加
+
+### ドキュメント・仕様書更新
+- `specs/03-data-model.md`: Decimal(12,2) 記載、ShippingRate / Review の複合ユニーク制約を追記
+- `specs/06-quality.md`: Decimal 精度・トランザクション・構造化ログを追記
+- `specs/07-testing.md`: テスト数更新、`prisma/seed/__tests__/` 追加
+- `specs/05-workflows.md`: Customer Purchase Flow にサーバーサイド検証・トランザクション詳細を追加
+- `specs/08-open-questions.md`: 配送料計算・在庫ロックの 2 項目を Resolved Issues に移動
+- `specs/04-interfaces.md`: `home` モジュールを Notable modules に追加
+- `README.md`: ER 図の Decimal 修正、ディレクトリ構成に全 query モジュールと `prisma/seed/` を追加
+- `CLAUDE.md`: `seed:luxury` コマンドを追加
+- `docs/testing/TESTING_DESIGN.md`: 未実装テストスクリプトを明示
+- `.claude/steering/tech.md`: console.log ルール・シードテストガイダンスを更新
+
+### 主要コミット一覧（新しい順）
+- `f3248ac` Merge pull request #92
+- `fc94e58` refactor: refine home queries and align user test logic with Decimal precision
+- `64eaefb` refactor: refine order logic and strengthen error handling in queries
+- `3e9cce6` refactor: finalize shipping UI refactor and standardize query error logging
+- `fd9caef` refactor: exhaustive Decimal serialization fixes and type-safe error handling
+- `d005a63` 📝 Add docstrings to `dev` (#91)
+- `277d96d` refactor: finalize Decimal serialization and update technical specs
+- `38dbcba` fix(queries): wrap order placement in transaction
+- `d46e00e` refactor: comprehensive Decimal precision refinements
+- `f580a5e` fix(db): add unique constraint to reviews and refine shipping rate upsert
+- `b053a59` refactor: revert money fields to Decimal for precision
+- `0a407e5` feat(db): add unique constraint to ShippingRate
+- `aff89f9` feat(seed): seed オーケストレーションとエントリポイントを実装
+- `e1761c9` feat(seed): コマース seeder 実装
+- `0346db9` feat(seed): 商品 seeder 実装
+- `d3f4a7c` feat(seed): ストア seeder 実装
+- `018689f` feat(seed): 基底 seeder 実装
+- `06ce166` feat(seed): 型定義とヘルパー関数を実装
+- `8f7d131` feat(skills): spec-sync-check スキルを追加
+- `e14142d` feat(skills): feature-plan スキルを追加
+- `f2b7354` feat(agent): add project-specific expert skills

@@ -10,7 +10,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 543 unit tests across 21 suites (all passing).
+- 686 unit tests across 30 suites (all passing).
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent
@@ -58,6 +58,9 @@
 │  ├─ jest.setup.ts
 │  ├─ jest.env.ts
 │  └─ db.reset.ts
+├─ prisma/
+│  └─ seed/
+│     └─ __tests__/              # シードテスト（実DB統合テスト）
 ├─ playwright.config.ts
 └─ jest.config.js
 ```
