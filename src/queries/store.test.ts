@@ -14,6 +14,7 @@ import {
 } from "./store";
 import { Prisma } from "@prisma/client";
 import { TEST_CONFIG } from "../config/test-config";
+import { createMockStoreDefaultShipping, createMockStoreDefaultShippingDb } from "../config/test-fixtures";
 import type { StoreDefaultShippingInput } from "@/lib/types";
 
 /** expectDuplicateCheck で参照されるストアフィールド */
@@ -55,11 +56,11 @@ jest.mock("@/lib/db", () => ({
 const mockUpdateUserMetadata = jest.fn().mockResolvedValue({});
 jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
-    clerkClient: {
+    clerkClient: () => ({
         users: {
             updateUserMetadata: (...args: unknown[]) => mockUpdateUserMetadata(...args),
         },
-    },
+    }),
 }));
 
 // テストデータファクトリー
@@ -93,35 +94,6 @@ const TestDataFactory = {
         defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
         returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
         userId: TEST_CONFIG.DEFAULT_USER_ID,
-        ...overrides,
-    }),
-
-    shippingDetails: (
-        overrides: { [K in keyof StoreDefaultShippingInput]?: StoreDefaultShippingInput[K] | null } = {}
-    ): StoreDefaultShippingInput => ({
-        defaultShippingService: "Express Delivery",
-        defaultShippingFeePerItem: 10.5,
-        defaultShippingFeeForAdditionalItem: 5.25,
-        defaultShippingFeePerKg: 2.75,
-        defaultShippingFeeFixed: 15.0,
-        defaultDeliveryTimeMin: 3,
-        defaultDeliveryTimeMax: 7,
-        returnPolicy: "Return within 14 days with receipt.",
-        ...overrides,
-    }) as StoreDefaultShippingInput,
-
-    /** DB 出力モック用: Decimal フィールドを Prisma.Decimal で返す */
-    shippingDetailsDb: (
-        overrides: Partial<Record<string, unknown>> = {}
-    ) => ({
-        defaultShippingService: "Express Delivery",
-        defaultShippingFeePerItem: new Prisma.Decimal("10.5"),
-        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("5.25"),
-        defaultShippingFeePerKg: new Prisma.Decimal("2.75"),
-        defaultShippingFeeFixed: new Prisma.Decimal("15.0"),
-        defaultDeliveryTimeMin: 3,
-        defaultDeliveryTimeMax: 7,
-        returnPolicy: "Return within 14 days with receipt.",
         ...overrides,
     }),
 
@@ -588,7 +560,7 @@ describe("updateStoreDefaultShippingDetails", () => {
         it("ユーザーが未認証の場合はエラーをスローする", async () => {
             TestHelpers.mockUnauthenticatedUser();
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
@@ -605,7 +577,7 @@ describe("updateStoreDefaultShippingDetails", () => {
         it("ユーザーロールがSELLERでない場合はエラーをスローする", async () => {
             TestHelpers.mockUserWithRole("BUYER");
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
@@ -627,7 +599,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("storeUrlが提供されない場合はエラーをスローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(null as any, shippingDetails),
@@ -661,7 +633,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("所有権チェックで指定されたストアが見つからない場合はエラーをスローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             mockDb.findUnique.mockResolvedValue(null);
 
@@ -690,7 +662,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("ストアの所有者が有効なパラメータを提供した場合にストアを正常に更新する", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const existingStore = TestDataFactory.existingStore();
             const updatedStore = TestDataFactory.existingStore(shippingDetails);
 
@@ -736,7 +708,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("所有権チェック中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const mockError = TestDataFactory.databaseError(
                 "Database connection failed during ownership check"
             );
@@ -767,7 +739,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("更新操作中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const existingStore = TestDataFactory.existingStore();
             const mockError = TestDataFactory.databaseError(
                 "Database connection failed during store update"
@@ -843,7 +815,7 @@ describe("getStoreDefaultShippingDetails", () => {
     describe("正常なデータ取得", () => {
         it("全フィールドが入力されているストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetailsDb();
+            const mockStore = createMockStoreDefaultShippingDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(
@@ -866,7 +838,7 @@ describe("getStoreDefaultShippingDetails", () => {
         it("一部フィールドがnullのストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
             // DB 出力モック: スキーマ上は NOT NULL だが null 応答時の挙動を検証
-            const mockStore = TestDataFactory.shippingDetailsDb({
+            const mockStore = createMockStoreDefaultShippingDb({
                 defaultShippingFeePerItem: null,
                 defaultShippingFeePerKg: null,
                 defaultDeliveryTimeMin: null,
@@ -890,7 +862,7 @@ describe("getStoreDefaultShippingDetails", () => {
 
         it("配送関連フィールドのみを選択し、他のストアプロパティは除外する", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetailsDb();
+            const mockStore = createMockStoreDefaultShippingDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(

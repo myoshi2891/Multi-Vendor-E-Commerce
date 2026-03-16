@@ -671,10 +671,11 @@ export const updateStoreStatus = async (
             return updated;
         });
 
-        // Clerk メタデータ同期（PENDING → ACTIVE 遷移時）
-        if (store.status === "PENDING" && status === "ACTIVE") {
+        // Clerk メタデータ同期（ACTIVE ステータスへの遷移時、冪等操作でリトライ可能）
+        if (updatedStore.status === "ACTIVE") {
             const { clerkClient } = await import("@clerk/nextjs/server");
-            await clerkClient.users.updateUserMetadata(store.userId, {
+            const clerk = clerkClient();
+            await clerk.users.updateUserMetadata(updatedStore.userId, {
                 privateMetadata: { role: "SELLER" },
             });
         }

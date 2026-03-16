@@ -706,3 +706,55 @@ export const createMockFullProduct = (
     ],
     ...overrides,
 });
+
+// ---- ストアデフォルト配送設定（フォーム入力用） ----
+type MockStoreDefaultShipping = {
+    defaultShippingService: string;
+    defaultShippingFeePerItem: number;
+    defaultShippingFeeForAdditionalItem: number;
+    defaultShippingFeePerKg: number;
+    defaultShippingFeeFixed: number;
+    defaultDeliveryTimeMin: number;
+    defaultDeliveryTimeMax: number;
+    returnPolicy: string;
+};
+
+export const createMockStoreDefaultShipping = (
+    overrides: Partial<MockStoreDefaultShipping> = {}
+): MockStoreDefaultShipping => ({
+    defaultShippingService: "Express Delivery",
+    defaultShippingFeePerItem: 10.5,
+    defaultShippingFeeForAdditionalItem: 5.25,
+    defaultShippingFeePerKg: 2.75,
+    defaultShippingFeeFixed: 15.0,
+    defaultDeliveryTimeMin: 3,
+    defaultDeliveryTimeMax: 7,
+    returnPolicy: "Return within 14 days with receipt.",
+    ...overrides,
+});
+
+// ---- ストアデフォルト配送設定（DB 出力用、Decimal） ----
+type MockStoreDefaultShippingDb = {
+    defaultShippingService: string;
+    defaultShippingFeePerItem: Prisma.Decimal;
+    defaultShippingFeeForAdditionalItem: Prisma.Decimal;
+    defaultShippingFeePerKg: Prisma.Decimal;
+    defaultShippingFeeFixed: Prisma.Decimal;
+    defaultDeliveryTimeMin: number;
+    defaultDeliveryTimeMax: number;
+    returnPolicy: string;
+};
+
+export const createMockStoreDefaultShippingDb = (
+    overrides: Partial<Record<string, unknown>> = {}
+): MockStoreDefaultShippingDb => ({
+    defaultShippingService: "Express Delivery",
+    defaultShippingFeePerItem: new Prisma.Decimal("10.5"),
+    defaultShippingFeeForAdditionalItem: new Prisma.Decimal("5.25"),
+    defaultShippingFeePerKg: new Prisma.Decimal("2.75"),
+    defaultShippingFeeFixed: new Prisma.Decimal("15.0"),
+    defaultDeliveryTimeMin: 3,
+    defaultDeliveryTimeMax: 7,
+    returnPolicy: "Return within 14 days with receipt.",
+    ...overrides,
+});

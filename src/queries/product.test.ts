@@ -46,6 +46,7 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             findMany: jest.fn(),
             create: jest.fn(),
+            update: jest.fn(),
             count: jest.fn(),
             findFirst: jest.fn(),
         },
@@ -72,6 +73,31 @@ jest.mock("@/lib/db", () => ({
             count: jest.fn(),
             findMany: jest.fn(),
         },
+        spec: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        question: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        freeShipping: {
+            deleteMany: jest.fn(),
+            create: jest.fn(),
+        },
+        productVariantImage: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        color: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        size: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -304,6 +330,142 @@ describe("upsertProduct", () => {
                     data: expect.objectContaining({
                         productId: "product-new",
                         variantName: "Red Edition",
+                    }),
+                })
+            );
+        });
+    });
+
+    describe("既存商品+バリアント更新", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            // $transaction: コールバックを直接実行
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
+            );
+            // 各 deleteMany/createMany のデフォルトモック
+            mockDb.spec.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.spec.createMany.mockResolvedValue({ count: 0 });
+            mockDb.question.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.question.createMany.mockResolvedValue({ count: 0 });
+            mockDb.freeShipping.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.productVariantImage.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.productVariantImage.createMany.mockResolvedValue({ count: 0 });
+            mockDb.color.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.color.createMany.mockResolvedValue({ count: 0 });
+            mockDb.size.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.size.createMany.mockResolvedValue({ count: 0 });
+            mockDb.product.update.mockResolvedValue(createMockProduct());
+            mockDb.productVariant.update.mockResolvedValue(createMockProductVariant());
+            // generateUniqueSlug: 初回で一意
+            mockDb.product.findFirst.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
+        });
+
+        it("既存の商品とバリアントを正常に更新する", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "Old Name", slug: "old-name" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                    name: "Updated Product",
+                    variantName: "Updated Variant",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalled();
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "product-001" },
+                    data: expect.objectContaining({
+                        name: "Updated Product",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "variant-001" },
+                    data: expect.objectContaining({
+                        variantName: "Updated Variant",
+                    }),
+                })
+            );
+        });
+
+        it("商品名未変更時にslugが維持される", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "New Product", slug: "existing-slug" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "existing-slug",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "existing-variant-slug",
+                    }),
+                })
+            );
+        });
+
+        it("商品名変更時に新しいslugが生成される", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "Old Name", slug: "old-name" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                    name: "New Name",
+                    variantName: "New Variant",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // 名前が変わったので slug は slugify の結果になる
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "new-name",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "new-variant",
                     }),
                 })
             );

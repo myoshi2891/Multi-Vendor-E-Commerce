@@ -164,7 +164,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                     name="countryId"
                                     render={({ field }) => (
                                         <FormItem className="flex-1">
-                                            <FormLabel>Category name</FormLabel>
+                                            <FormLabel>Country ID</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
@@ -180,7 +180,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                     name="countryName"
                                     render={({ field }) => (
                                         <FormItem className="flex-1">
-                                            <FormLabel>Category name</FormLabel>
+                                            <FormLabel>Country name</FormLabel>
                                             <FormControl>
                                                 <Input {...field} />
                                             </FormControl>
@@ -213,7 +213,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }
@@ -237,7 +237,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }
@@ -261,7 +261,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }
@@ -285,7 +285,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }
@@ -309,7 +309,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }
@@ -332,7 +332,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                                             </FormLabel>
                                             <FormControl>
                                                 <NumberInput
-                                                    defaultValue={field.value}
+                                                    value={field.value}
                                                     onValueChange={
                                                         field.onChange
                                                     }

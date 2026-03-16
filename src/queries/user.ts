@@ -282,9 +282,9 @@ export const saveUserCart = async (
     return false
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error retrieving user cart:", error.message, error.stack);
+            console.error("Error saving user cart:", error.message, error.stack);
         } else {
-            console.error("Error retrieving user cart:", error);
+            console.error("Error saving user cart:", error);
         }
         throw error
     }
@@ -587,13 +587,15 @@ export const placeOrder = async (
         deliveryTimeMin: number | undefined;
         deliveryTimeMax: number | undefined;
     }>();
-    for (const storeId of Object.keys(groupedItems)) {
-        const details = await getDeliveryDetailsForStoreByCountry(
-            storeId,
-            shippingAddress.countryId
+    const storeIds = Object.keys(groupedItems);
+    const deliveryResults = await Promise.all(
+        storeIds.map((storeId) =>
+            getDeliveryDetailsForStoreByCountry(storeId, shippingAddress.countryId)
         )
-        deliveryDetailsMap.set(storeId, details)
-    }
+    );
+    storeIds.forEach((storeId, index) => {
+        deliveryDetailsMap.set(storeId, deliveryResults[index]);
+    });
 
     // 全DB操作をトランザクションでラップ
     const order = await db.$transaction(async (tx) => {
@@ -1020,7 +1022,19 @@ export const updateCheckoutProductWithLatest = async (
                 })
                 return newCartItem
             } catch (error: unknown) {
-                return cartProduct
+                if (error instanceof Error) {
+                    console.error(
+                        `Error updating cart item (id: ${cartProduct.id}):`,
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        `Error updating cart item (id: ${cartProduct.id}):`,
+                        error
+                    );
+                }
+                throw error;
             }
         })
     )

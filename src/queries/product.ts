@@ -98,15 +98,18 @@ export const upsertProduct = async (
 
         if (existingProduct) {
             if (existingVariant) {
-                throw new Error(
-                    "Product/variant update is not yet implemented. Please delete and re-create."
+                // 既存の商品とバリアントを更新
+                await handleProductAndVariantUpdate(
+                    product,
+                    existingProduct,
+                    existingVariant
                 );
             } else {
-                // Create new variant
+                // 既存商品に新規バリアントを追加
                 await handleVariantCreate(product);
             }
         } else {
-            // Create new product and variant
+            // 新規商品・バリアント作成
             await handleProductCreate(product, store.id);
         }
     } catch (error: unknown) {
@@ -289,6 +292,181 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
     const new_variant = await db.productVariant.create({ data: variantData });
 
     return new_variant;
+};
+
+// 既存の商品+バリアントをアトミックに更新
+const handleProductAndVariantUpdate = async (
+    product: ProductWithVariantType,
+    existingProduct: { name: string; slug: string },
+    existingVariant: { variantName: string; slug: string }
+): Promise<void> => {
+    // 名前が変わった場合のみ slug を再生成（URL 安定性のため）
+    const productSlug =
+        product.name !== existingProduct.name
+            ? await generateUniqueSlug(
+                  slugify(product.name, {
+                      replacement: "-",
+                      lower: true,
+                      trim: true,
+                  }),
+                  "product"
+              )
+            : existingProduct.slug;
+
+    const variantSlug =
+        product.variantName !== existingVariant.variantName
+            ? await generateUniqueSlug(
+                  slugify(product.variantName, {
+                      replacement: "-",
+                      lower: true,
+                      trim: true,
+                  }),
+                  "productVariant"
+              )
+            : existingVariant.slug;
+
+    await db.$transaction(async (tx) => {
+        // Product 本体の更新
+        await tx.product.update({
+            where: { id: product.productId },
+            data: {
+                name: product.name,
+                description: product.description,
+                slug: productSlug,
+                brand: product.brand,
+                category: { connect: { id: product.categoryId } },
+                subCategory: { connect: { id: product.subCategoryId } },
+                offerTag: product.offerTagId
+                    ? { connect: { id: product.offerTagId } }
+                    : { disconnect: true },
+                shippingFeeMethod: product.shippingFeeMethod,
+                freeShippingForAllCountries: product.freeShippingForAllCountries,
+                updatedAt: product.updatedAt,
+            },
+        });
+
+        // Product specs: 削除 + 再作成
+        await tx.spec.deleteMany({ where: { productId: product.productId } });
+        if (product.product_specs.length > 0) {
+            await tx.spec.createMany({
+                data: product.product_specs.map((spec) => ({
+                    name: spec.name,
+                    value: spec.value,
+                    productId: product.productId,
+                })),
+            });
+        }
+
+        // Questions: 削除 + 再作成
+        await tx.question.deleteMany({
+            where: { productId: product.productId },
+        });
+        if (product.questions.length > 0) {
+            await tx.question.createMany({
+                data: product.questions.map((q) => ({
+                    question: q.question,
+                    answer: q.answer,
+                    productId: product.productId,
+                })),
+            });
+        }
+
+        // FreeShipping: 既存削除 + 条件付き再作成
+        await tx.freeShipping.deleteMany({
+            where: { productId: product.productId },
+        });
+        if (
+            !product.freeShippingForAllCountries &&
+            product.freeShippingCountriesIds &&
+            product.freeShippingCountriesIds.length > 0
+        ) {
+            await tx.freeShipping.create({
+                data: {
+                    product: { connect: { id: product.productId } },
+                    eligibleCountries: {
+                        create: product.freeShippingCountriesIds.map(
+                            (country) => ({
+                                country: { connect: { id: country.value } },
+                            })
+                        ),
+                    },
+                },
+            });
+        }
+
+        // Variant 本体の更新
+        await tx.productVariant.update({
+            where: { id: product.variantId },
+            data: {
+                variantName: product.variantName,
+                variantDescription: product.variantDescription,
+                slug: variantSlug,
+                variantImage: product.variantImage,
+                sku: product.sku,
+                weight: product.weight,
+                keywords: product.keywords.join(","),
+                isSale: product.isSale,
+                saleEndDate: product.isSale
+                    ? (product.saleEndDate ?? null)
+                    : null,
+                updatedAt: product.updatedAt,
+            },
+        });
+
+        // Variant images: 削除 + 再作成
+        await tx.productVariantImage.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.images.length > 0) {
+            await tx.productVariantImage.createMany({
+                data: product.images.map((image) => ({
+                    url: image.url,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Colors: 削除 + 再作成
+        await tx.color.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.colors.length > 0) {
+            await tx.color.createMany({
+                data: product.colors.map((color) => ({
+                    name: color.color,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Sizes: 削除 + 再作成
+        await tx.size.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.sizes.length > 0) {
+            await tx.size.createMany({
+                data: product.sizes.map((size) => ({
+                    size: size.size,
+                    quantity: size.quantity,
+                    price: size.price,
+                    discount: size.discount,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Variant specs: 削除 + 再作成
+        await tx.spec.deleteMany({ where: { variantId: product.variantId } });
+        if (product.variant_specs.length > 0) {
+            await tx.spec.createMany({
+                data: product.variant_specs.map((spec) => ({
+                    name: spec.name,
+                    value: spec.value,
+                    variantId: product.variantId,
+                })),
+            });
+        }
+    });
 };
 
 // Function: getProductMainInfo
@@ -1111,9 +1289,9 @@ export const getShippingDetails = async (
     return false;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in getProductFilteredReviews:", error.message, error.stack);
+            console.error("Error in getShippingDetails:", error.message, error.stack);
         } else {
-            console.error("Error in getProductFilteredReviews:", error);
+            console.error("Error in getShippingDetails:", error);
         }
         throw error;
     }
@@ -1320,9 +1498,9 @@ export const getProductShippingFee = async (
     return new Prisma.Decimal("0");
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in getDeliveryDetailsForStoreByCountry:", error.message, error.stack);
+            console.error("Error in getProductShippingFee:", error.message, error.stack);
         } else {
-            console.error("Error in getDeliveryDetailsForStoreByCountry:", error);
+            console.error("Error in getProductShippingFee:", error);
         }
         throw error;
     }
