@@ -38,6 +38,9 @@ bunx playwright test tests/e2e/cart-smoke.spec.ts             # 単一テスト
 # E2Eシードデータ投入
 bun run seed:e2e
 
+# ラグジュアリーデータセット生成（ローカル開発・デザイン確認用）
+bun run seed:luxury
+
 # Prismaコマンド
 bunx prisma generate          # クライアント再生成
 bunx prisma migrate dev       # マイグレーション適用（prisma/migrations/ の履歴を使用）

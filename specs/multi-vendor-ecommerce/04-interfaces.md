@@ -49,7 +49,7 @@ Dashboard:
 ## Server Actions (Queries)
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
-  profile, review, coupon, stripe, paypal, user, size.
+  home, profile, review, coupon, stripe, paypal, user, size.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.

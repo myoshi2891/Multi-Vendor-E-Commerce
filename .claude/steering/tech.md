@@ -23,8 +23,12 @@
 |-----|------|
 | **TypeScript** | `any` 禁止（`unknown` + 型ガードで代替） |
 | **ESLint** | `next/core-web-vitals` + `plugin:tailwindcss/recommended` |
-| **エラーハンドリング** | Prisma・Clerk・Stripe/PayPal の外部呼び出しは必ず `try/catch` でラップ |
-| **ログ** | `src/` 配下のアプリケーションコードでは `console.log()` 禁止。ただしスタンドアロン CLI（例: `prisma/seed/`）は許容 |
+| **金額・数値精度** | `Float` 禁止。金額フィールドは `Decimal(12,2)` を必須とし、演算は必ず `Prisma.Decimal` メソッド（`.add()`, `.mul()`, `.sub()` 等）で行うこと |
+| **エラーハンドリング** | 外部呼び出し（Prisma, Clerk, Stripe/PayPal）は必ず `try/catch` でラップし、`instanceof Error` による型ガードを行う |
+| **構造化ログ** | `src/queries/` の `console.error` は `[Module:Function] Error message`, `{ error: message, stack: error.stack }` の形式で構造化すること |
+| **アトミック操作** | 注文処理や在庫減算など、複数のテーブルを更新する際は `db.$transaction` によるアトミック化を必須とする |
+| **Docstrings** | シーダー、ヘルパー、複雑なロジックには JSDoc 形式の Docstrings を記述し、AI エージェントの理解を助けること |
+| **ログ禁止** | `src/` 配下のアプリケーションコードでは `console.log()` 禁止。ただし CLI（`prisma/seed/`）は許容 |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---

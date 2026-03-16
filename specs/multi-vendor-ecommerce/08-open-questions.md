@@ -1,7 +1,5 @@
 # Open Questions and Gaps
 
-- Where is the canonical shipping fee calculation implemented for ITEM/WEIGHT/FIXED?
-- How is inventory reserved or locked during checkout to avoid oversell?
 - Are taxes, duties, or multi-currency pricing planned?
 - What is the intended refund and return workflow beyond status enums?
 - What analytics or reporting requirements are expected for sellers/admins?
@@ -36,3 +34,9 @@
   ログ出力して再スロー（`deleteStore` パターンに統一）。
 - `store.test.ts`: `any` → `Record<string, unknown>` + `MockPrismaClient`
   インターフェースで型安全なモック定義を導入。
+- `getShippingDetails` / `getProductShippingFee` (`src/queries/product.ts`):
+  ITEM/WEIGHT/FIXED の各配送料計算を実装。店舗の ShippingRate と
+  freeShipping 設定に基づいてユーザーの国に応じた配送料を算出。
+- `placeOrder` (`src/queries/user.ts`): `db.$transaction` でアトミックに
+  注文作成・在庫減算を実行。トランザクション内で在庫チェックと更新を行い
+  オーバーセルを防止。

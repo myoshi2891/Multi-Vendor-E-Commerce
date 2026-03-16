@@ -4,11 +4,12 @@
 1) Browse or search products.
 2) Open product page and choose a variant and size.
 3) Add to cart (Zustand + localStorage).
-4) Proceed to checkout and select shipping address.
-5) Create an order and select payment method.
-6) Capture payment via Stripe or PayPal.
-7) Order status and payment details are updated.
-8) Customer views order history and order details.
+4) Server-side cart validation via `saveUserCart()` recalculates prices, stock, and shipping from DB.
+5) Proceed to checkout and select shipping address; `updateCheckoutProductWithLatest()` recalculates shipping for selected country.
+6) Create an order atomically via `placeOrder()` (`db.$transaction`) with inventory deduction.
+7) Select payment method and capture payment via Stripe or PayPal.
+8) Order status and payment details are updated via payment webhook.
+9) Customer views order history and order details.
 
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
