@@ -7,19 +7,16 @@ import { SEED_CATEGORIES } from "../constants/categories";
 // 冪等性テスト（実際のDBに対して実行）
 // ALLOW_DB_MUTATION_TESTS=true が必要
 
+const SKIP_DB_TESTS = process.env.ALLOW_DB_MUTATION_TESTS !== "true";
+
 const MIN_CATEGORIES = SEED_CATEGORIES.length;
 const MIN_STORES = SEED_STORES.length;
 const MIN_PRODUCTS = 30; // 全商品数より少なめ（Geminiデータの不整合を許容）
 
-describe("Seed 冪等性テスト", () => {
+(SKIP_DB_TESTS ? describe.skip : describe)("Seed 冪等性テスト", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
-    if (process.env.ALLOW_DB_MUTATION_TESTS !== "true") {
-      throw new Error(
-        "DB変更テストには ALLOW_DB_MUTATION_TESTS=true が必要です"
-      );
-    }
     prisma = new PrismaClient();
     await seedAll(prisma);
   }, 300000);

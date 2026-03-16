@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { getHomeDataDynamic, getHomeFeaturedCategories } from "./home";
 
 // ---- モック設定 ----
@@ -34,7 +35,7 @@ type HomeProductMock = {
         images: Array<{ url: string }>;
         sizes: Array<{
             size: string;
-            price: number;
+            price: Prisma.Decimal;
             discount: number;
             quantity: number;
         }>;
@@ -58,8 +59,8 @@ const createMockProductWithVariants = (
             slug: "black",
             images: [{ url: "https://example.com/img1.jpg" }],
             sizes: [
-                { size: "M", price: 100, discount: 10, quantity: 5 },
-                { size: "L", price: 120, discount: 0, quantity: 3 },
+                { size: "M", price: new Prisma.Decimal("100"), discount: 10, quantity: 5 },
+                { size: "L", price: new Prisma.Decimal("120"), discount: 0, quantity: 3 },
             ],
         },
     ],
@@ -118,9 +119,9 @@ describe("getHomeDataDynamic", () => {
                         slug: "red",
                         images: [{ url: "img.jpg" }],
                         sizes: [
-                            { size: "S", price: 200, discount: 50, quantity: 5 }, // 100
-                            { size: "M", price: 100, discount: 0, quantity: 5 },  // 100
-                            { size: "L", price: 80, discount: 0, quantity: 5 },   // 80 ← 最安
+                            { size: "S", price: new Prisma.Decimal("200"), discount: 50, quantity: 5 }, // 100
+                            { size: "M", price: new Prisma.Decimal("100"), discount: 0, quantity: 5 },  // 100
+                            { size: "L", price: new Prisma.Decimal("80"), discount: 0, quantity: 5 },   // 80 ← 最安
                         ],
                     },
                 ],
@@ -188,7 +189,7 @@ describe("getHomeDataDynamic", () => {
                         variantImage: "https://example.com/variant.jpg",
                         slug: "black",
                         images: [{ url: "https://example.com/fallback.jpg" }],
-                        sizes: [{ size: "M", price: 100, discount: 0, quantity: 5 }],
+                        sizes: [{ size: "M", price: new Prisma.Decimal("100"), discount: 0, quantity: 5 }],
                     },
                 ],
             });
