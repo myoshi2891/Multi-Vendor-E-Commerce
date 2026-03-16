@@ -1,8 +1,6 @@
 ---
 name: ec-backend-expert
-description: |
-  Multi-Vendor ECプロジェクトのバックエンド（サーバーアクション、データベース、認証）の実装や修正を行う際に使用する。
-  「DBに保存して」「APIを作って」「バックエンドの処理」「サーバーアクション」といった指示が出た際に適用すること。
+description: Backend implementation and fixes for multi-vendor e-commerce projects, including server actions, database and authentication.
 ---
 
 # バックエンド開発エキスパート

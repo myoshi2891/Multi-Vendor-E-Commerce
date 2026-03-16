@@ -39,7 +39,7 @@ allowed-tools: [Read, Grep, Glob, Bash, Edit, Write]
 
 ### Step 2｜テストインフラを読み込む
 
-以下の 4 ファイルを**必ず**読んでから生成に着手する：
+以下の 4 ファイルを**必ず**読んでから生成に着手する（例外: `prisma/seed/**` は対象外。seed テストは `src/config` 共通インフラを使わず、inline Prisma mock または実DB を用いる方針を採る）：
 
 ```
 Read: src/config/test-fixtures.ts     # ファクトリ関数一覧を把握

@@ -60,7 +60,7 @@
 │  └─ db.reset.ts
 ├─ prisma/
 │  └─ seed/
-│     └─ __tests__/              # シードテスト（実DB統合テスト）
+│     └─ __tests__/              # シード関連テスト（実DB統合テストおよびモックテスト、src/config/ 等の共有インフラとは分離して運用）
 ├─ playwright.config.ts
 └─ jest.config.js
 ```
