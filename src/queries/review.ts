@@ -113,8 +113,12 @@ export const upsertReview = async (
             },
         })
         return reviewDetails
-    } catch (error) {
-        console.error('Error updating review', error)
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error('Error updating review:', error.message, error.stack)
+        } else {
+            console.error('Error updating review:', error)
+        }
         throw new Error('Error updating review')
     }
 };

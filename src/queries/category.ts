@@ -69,9 +69,12 @@ export const upsertCategory = async (category: Category) => {
             create: category,
         });
         return categoryDetails;
-    } catch (error) {
-        // Log and re-throw any errors
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in upsertCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertCategory:", error);
+        }
         throw error;
     }
 };
@@ -116,9 +119,12 @@ export const getAllCategories = async (storeUrl?: string) => {
             orderBy: { updatedAt: "desc" },
         });
         return categories;
-    } catch (error) {
-        // Log and re-throw any errors
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getAllCategories:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllCategories:", error);
+        }
         throw error;
     }
 };
@@ -136,9 +142,12 @@ export const getAllSubCategoriesFotCategory = async (categoryId: string) => {
             orderBy: { updatedAt: "desc" },
         });
         return subCategories;
-    } catch (error) {
-        // Log and re-throw any errors
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getAllSubCategoriesFotCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllSubCategoriesFotCategory:", error);
+        }
         throw error;
     }
 };
@@ -161,9 +170,12 @@ export const getCategory = async (categoryId: string) => {
             },
         });
         return category;
-    } catch (error) {
-        // Log and re-throw any errors
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in getCategory:", error);
+        }
         throw error;
     }
 };
@@ -198,9 +210,12 @@ export const deleteCategory = async (categoryId: string) => {
             },
         });
         return response;
-    } catch (error) {
-        // Log and re-throw any errors
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in deleteCategory:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteCategory:", error);
+        }
         throw error;
     }
 };

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import {
     upsertProduct,
@@ -45,6 +46,7 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             findMany: jest.fn(),
             create: jest.fn(),
+            update: jest.fn(),
             count: jest.fn(),
             findFirst: jest.fn(),
         },
@@ -71,6 +73,31 @@ jest.mock("@/lib/db", () => ({
             count: jest.fn(),
             findMany: jest.fn(),
         },
+        spec: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        question: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        freeShipping: {
+            deleteMany: jest.fn(),
+            create: jest.fn(),
+        },
+        productVariantImage: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        color: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        size: {
+            deleteMany: jest.fn(),
+            createMany: jest.fn(),
+        },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -308,6 +335,142 @@ describe("upsertProduct", () => {
             );
         });
     });
+
+    describe("既存商品+バリアント更新", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            // $transaction: コールバックを直接実行
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
+            );
+            // 各 deleteMany/createMany のデフォルトモック
+            mockDb.spec.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.spec.createMany.mockResolvedValue({ count: 0 });
+            mockDb.question.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.question.createMany.mockResolvedValue({ count: 0 });
+            mockDb.freeShipping.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.productVariantImage.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.productVariantImage.createMany.mockResolvedValue({ count: 0 });
+            mockDb.color.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.color.createMany.mockResolvedValue({ count: 0 });
+            mockDb.size.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.size.createMany.mockResolvedValue({ count: 0 });
+            mockDb.product.update.mockResolvedValue(createMockProduct());
+            mockDb.productVariant.update.mockResolvedValue(createMockProductVariant());
+            // generateUniqueSlug: 初回で一意
+            mockDb.product.findFirst.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
+        });
+
+        it("既存の商品とバリアントを正常に更新する", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "Old Name", slug: "old-name" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                    name: "Updated Product",
+                    variantName: "Updated Variant",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalled();
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "product-001" },
+                    data: expect.objectContaining({
+                        name: "Updated Product",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "variant-001" },
+                    data: expect.objectContaining({
+                        variantName: "Updated Variant",
+                    }),
+                })
+            );
+        });
+
+        it("商品名未変更時にslugが維持される", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "New Product", slug: "existing-slug" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "existing-slug",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "existing-variant-slug",
+                    }),
+                })
+            );
+        });
+
+        it("商品名変更時に新しいslugが生成される", async () => {
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({ name: "Old Name", slug: "old-name" })
+            );
+            mockDb.productVariant.findUnique.mockResolvedValue(
+                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
+            );
+
+            await upsertProduct(
+                createMockProductWithVariantInput({
+                    productId: "product-001",
+                    variantId: "variant-001",
+                    name: "New Name",
+                    variantName: "New Variant",
+                }) as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // 名前が変わったので slug は slugify の結果になる
+            expect(mockDb.product.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "new-name",
+                    }),
+                })
+            );
+            expect(mockDb.productVariant.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        slug: "new-variant",
+                    }),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -436,11 +599,19 @@ describe("deleteProduct", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "SELLER" },
             });
+            mockDb.product.findUnique.mockResolvedValue({
+                id: "product-001",
+                store: { userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
             mockDb.product.delete.mockResolvedValue(createMockProduct());
 
             const result = await deleteProduct("product-001");
 
             expect(result).toEqual(createMockProduct());
+            expect(mockDb.product.findUnique).toHaveBeenCalledWith({
+                where: { id: "product-001" },
+                include: { store: { select: { userId: true } } },
+            });
             expect(mockDb.product.delete).toHaveBeenCalledWith({
                 where: { id: "product-001" },
             });
@@ -691,7 +862,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: 50, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("50"), discount: 0 }),
                             ],
                         },
                     ],
@@ -704,7 +875,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: 20, discount: 0 }),
+                                createMockSize({ price: new Prisma.Decimal("20"), discount: 0 }),
                             ],
                         },
                     ],
@@ -742,7 +913,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: `v${i}` }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [createMockSize()],
+                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") })],
                         },
                     ],
                 }));
@@ -907,7 +1078,12 @@ describe("getRatingStatistics", () => {
 // ==================================================
 describe("getShippingDetails", () => {
     const userCountry = { name: "Japan", code: "JP", city: "Tokyo" };
-    const store = createMockStore();
+    const store = createMockStore({
+        defaultShippingFeePerItem: new Prisma.Decimal("5"),
+        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+        defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
+        defaultShippingFeeFixed: new Prisma.Decimal("10"),
+    });
 
     it("国が見つからない場合falseを返す", async () => {
         mockDb.country.findUnique.mockResolvedValue(null);
@@ -931,10 +1107,10 @@ describe("getShippingDetails", () => {
 
         it("ITEM方式: 配送レートの値を使用する", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 8.0,
-                shippingFeeForAdditionalItem: 3.0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("8"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("3"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 5,
                 deliveryTimeMax: 10,
                 shippingService: "Express",
@@ -962,10 +1138,10 @@ describe("getShippingDetails", () => {
 
         it("WEIGHT方式: 重量ベースの料金を返す", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 0,
-                shippingFeeForAdditionalItem: 0,
-                shippingFeePerKg: 5.0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("0"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
+                shippingFeePerKg: new Prisma.Decimal("5"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 7,
                 deliveryTimeMax: 14,
                 shippingService: "Standard",
@@ -989,10 +1165,10 @@ describe("getShippingDetails", () => {
 
         it("FIXED方式: 固定料金を返す", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 0,
-                shippingFeeForAdditionalItem: 0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 15.0,
+                shippingFeePerItem: new Prisma.Decimal("0"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("15"),
                 deliveryTimeMin: 3,
                 deliveryTimeMax: 7,
                 shippingService: "Economy",
@@ -1026,9 +1202,8 @@ describe("getShippingDetails", () => {
 
             expect(result).toEqual(
                 expect.objectContaining({
-                    shippingFee: store.defaultShippingFeePerItem,
-                    extraShippingFee:
-                        store.defaultShippingFeeForAdditionalItem,
+                    shippingFee: 5,
+                    extraShippingFee: 2,
                     deliveryTimeMin: store.defaultDeliveryTimeMin,
                     deliveryTimeMax: store.defaultDeliveryTimeMax,
                 })
@@ -1037,10 +1212,10 @@ describe("getShippingDetails", () => {
 
         it("無料配送対象国の場合、料金が0になる", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 10.0,
-                shippingFeeForAdditionalItem: 5.0,
-                shippingFeePerKg: 0,
-                shippingFeeFixed: 0,
+                shippingFeePerItem: new Prisma.Decimal("10"),
+                shippingFeeForAdditionalItem: new Prisma.Decimal("5"),
+                shippingFeePerKg: new Prisma.Decimal("0"),
+                shippingFeeFixed: new Prisma.Decimal("0"),
                 deliveryTimeMin: 3,
                 deliveryTimeMax: 7,
                 shippingService: "Standard",
@@ -1293,7 +1468,7 @@ describe("getProductShippingFee", () => {
             1
         );
 
-        expect(result).toBe(0);
+        expect(result).toEqual(new Prisma.Decimal("0"));
     });
 
     it("無料配送対象国の場合0を返す", async () => {
@@ -1314,20 +1489,22 @@ describe("getProductShippingFee", () => {
             1
         );
 
-        expect(result).toBe(0);
+        expect(result).toEqual(new Prisma.Decimal("0"));
     });
 
     describe("配送方式別計算", () => {
+        const mockShippingRate = {
+            shippingFeePerItem: new Prisma.Decimal("5"),
+            shippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+            shippingFeePerKg: new Prisma.Decimal("3"),
+            shippingFeeFixed: new Prisma.Decimal("15"),
+        };
+
         beforeEach(() => {
             mockDb.country.findUnique.mockResolvedValue(
                 createMockCountry()
             );
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 5.0,
-                shippingFeeForAdditionalItem: 2.0,
-                shippingFeePerKg: 3.0,
-                shippingFeeFixed: 15.0,
-            });
+            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
         });
 
         it("ITEM方式: 初回+追加アイテム料金を計算する", async () => {
@@ -1337,10 +1514,10 @@ describe("getProductShippingFee", () => {
                 store as never,
                 null,
                 0.5,
-                3 // 数量3: 5.0 + 2.0 * 2 = 9.0
+                3 // 数量3: 5 + 2 * 2 = 9
             );
 
-            expect(result).toBe(9.0);
+            expect(result).toEqual(new Prisma.Decimal("9"));
         });
 
         it("WEIGHT方式: 重量×数量×単価を計算する", async () => {
@@ -1350,10 +1527,10 @@ describe("getProductShippingFee", () => {
                 store as never,
                 null,
                 2.0, // 2kg
-                3 // 数量3: 3.0 * 2.0 * 3 = 18.0
+                3 // 数量3: 3 * 2 * 3 = 18
             );
 
-            expect(result).toBe(18.0);
+            expect(result).toEqual(new Prisma.Decimal("18"));
         });
 
         it("FIXED方式: 固定料金を返す（数量に依存しない）", async () => {
@@ -1369,12 +1546,7 @@ describe("getProductShippingFee", () => {
             mockDb.country.findUnique.mockResolvedValue(
                 createMockCountry()
             );
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: 5.0,
-                shippingFeeForAdditionalItem: 2.0,
-                shippingFeePerKg: 3.0,
-                shippingFeeFixed: 15.0,
-            });
+            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
 
             const result5 = await getProductShippingFee(
                 "FIXED",
@@ -1385,8 +1557,8 @@ describe("getProductShippingFee", () => {
                 5
             );
 
-            expect(result1).toBe(15.0);
-            expect(result5).toBe(15.0);
+            expect(result1).toEqual(new Prisma.Decimal("15"));
+            expect(result5).toEqual(new Prisma.Decimal("15"));
         });
 
         it("未知の配送方式の場合0を返す", async () => {
@@ -1399,22 +1571,30 @@ describe("getProductShippingFee", () => {
                 1
             );
 
-            expect(result).toBe(0);
+            expect(result).toEqual(new Prisma.Decimal("0"));
         });
 
         it("配送レートがない場合、ストアデフォルト値を使用する", async () => {
             mockDb.shippingRate.findFirst.mockResolvedValue(null);
 
+            // ストアデフォルト値を Decimal で持つモックを使用
+            const storeWithDecimalDefaults = createMockStore({
+                defaultShippingFeePerItem: new Prisma.Decimal("5"),
+                defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
+                defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
+                defaultShippingFeeFixed: new Prisma.Decimal("10"),
+            });
+
             const result = await getProductShippingFee(
                 "ITEM",
                 userCountry,
-                store as never,
+                storeWithDecimalDefaults as never,
                 null,
                 0.5,
-                2 // defaultShippingFeePerItem(5.0) + defaultShippingFeeForAdditionalItem(2.0) * 1 = 7.0
+                2 // defaultShippingFeePerItem(5) + defaultShippingFeeForAdditionalItem(2) * 1 = 7
             );
 
-            expect(result).toBe(7.0);
+            expect(result).toEqual(new Prisma.Decimal("7"));
         });
     });
 });

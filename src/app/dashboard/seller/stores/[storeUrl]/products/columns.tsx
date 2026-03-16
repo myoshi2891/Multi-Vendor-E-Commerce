@@ -120,7 +120,7 @@ export const columns: ColumnDef<StoreProductType>[] = [
                                                 >
                                                     {size.size} - (
                                                     {size.quantity}) - $
-                                                    {size.price}
+                                                    {size.price.toNumber().toFixed(2)}
                                                 </span>
                                             ))}
                                         </div>

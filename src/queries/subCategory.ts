@@ -73,9 +73,13 @@ export const upsertSubCategory = async (subCategory: SubCategory) => {
 			create: subCategory,
 		});
 		return subCategoryDetails;
-	} catch (error) {
+	} catch (error: unknown) {
 		// Log and re-throw any errors
-		console.error(error);
+		if (error instanceof Error) {
+			console.error("Error in upsertSubCategory:", error.message, error.stack);
+		} else {
+			console.error("Error in upsertSubCategory:", error);
+		}
 		throw error;
 	}
 };
@@ -95,9 +99,13 @@ export const getAllSubCategories = async () => {
 			orderBy: { updatedAt: "desc" },
 		});
 		return subCategories;
-	} catch (error) {
+	} catch (error: unknown) {
 		// Log and re-throw any errors
-		console.error(error);
+		if (error instanceof Error) {
+			console.error("Error in getAllSubCategories:", error.message, error.stack);
+		} else {
+			console.error("Error in getAllSubCategories:", error);
+		}
 		throw error;
 	}
 };
@@ -119,9 +127,13 @@ export const getSubCategory = async (subCategoryId: string) => {
 			},
 		});
 		return subCategory;
-	} catch (error) {
+	} catch (error: unknown) {
 		// Log and re-throw any errors
-		console.error(error);
+		if (error instanceof Error) {
+			console.error("Error in getSubCategory:", error.message, error.stack);
+		} else {
+			console.error("Error in getSubCategory:", error);
+		}
 		throw error;
 	}
 };
@@ -155,9 +167,13 @@ export const deleteSubCategory = async (subCategoryId: string) => {
 			},
 		});
 		return response;
-	} catch (error) {
+	} catch (error: unknown) {
 		// Log and re-throw any errors
-		console.error(error);
+		if (error instanceof Error) {
+			console.error("Error in deleteSubCategory:", error.message, error.stack);
+		} else {
+			console.error("Error in deleteSubCategory:", error);
+		}
 		throw error;
 	}
 };
@@ -196,9 +212,13 @@ export const getSubcategories = async (
 			const subcategories = await db.subCategory.findMany(queryOptions);
 			return subcategories;
 		}
-	} catch (error) {
+	} catch (error: unknown) {
 		// Log and re-throw any errors
-		console.error("Error fetching subcategories", error);
+		if (error instanceof Error) {
+			console.error("Error fetching subcategories:", error.message, error.stack);
+		} else {
+			console.error("Error fetching subcategories:", error);
+		}
 		throw error;
 	}
 };

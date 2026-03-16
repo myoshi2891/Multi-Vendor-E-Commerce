@@ -56,7 +56,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { ProductVariant, Size, Store } from "@prisma/client";
+import { Prisma, ProductVariant, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -98,17 +98,26 @@ export const upsertProduct = async (
 
         if (existingProduct) {
             if (existingVariant) {
-                // Update existing variant and product
+                // 既存の商品とバリアントを更新
+                await handleProductAndVariantUpdate(
+                    product,
+                    existingProduct,
+                    existingVariant
+                );
             } else {
-                // Create new variant
+                // 既存商品に新規バリアントを追加
                 await handleVariantCreate(product);
             }
         } else {
-            // Create new product and variant
+            // 新規商品・バリアント作成
             await handleProductCreate(product, store.id);
         }
-    } catch (error) {
-        console.log(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in upsertProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertProduct:", error);
+        }
         throw error;
     }
 };
@@ -285,6 +294,181 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
     return new_variant;
 };
 
+// 既存の商品+バリアントをアトミックに更新
+const handleProductAndVariantUpdate = async (
+    product: ProductWithVariantType,
+    existingProduct: { name: string; slug: string },
+    existingVariant: { variantName: string; slug: string }
+): Promise<void> => {
+    // 名前が変わった場合のみ slug を再生成（URL 安定性のため）
+    const productSlug =
+        product.name !== existingProduct.name
+            ? await generateUniqueSlug(
+                  slugify(product.name, {
+                      replacement: "-",
+                      lower: true,
+                      trim: true,
+                  }),
+                  "product"
+              )
+            : existingProduct.slug;
+
+    const variantSlug =
+        product.variantName !== existingVariant.variantName
+            ? await generateUniqueSlug(
+                  slugify(product.variantName, {
+                      replacement: "-",
+                      lower: true,
+                      trim: true,
+                  }),
+                  "productVariant"
+              )
+            : existingVariant.slug;
+
+    await db.$transaction(async (tx) => {
+        // Product 本体の更新
+        await tx.product.update({
+            where: { id: product.productId },
+            data: {
+                name: product.name,
+                description: product.description,
+                slug: productSlug,
+                brand: product.brand,
+                category: { connect: { id: product.categoryId } },
+                subCategory: { connect: { id: product.subCategoryId } },
+                offerTag: product.offerTagId
+                    ? { connect: { id: product.offerTagId } }
+                    : { disconnect: true },
+                shippingFeeMethod: product.shippingFeeMethod,
+                freeShippingForAllCountries: product.freeShippingForAllCountries,
+                updatedAt: product.updatedAt,
+            },
+        });
+
+        // Product specs: 削除 + 再作成
+        await tx.spec.deleteMany({ where: { productId: product.productId } });
+        if (product.product_specs.length > 0) {
+            await tx.spec.createMany({
+                data: product.product_specs.map((spec) => ({
+                    name: spec.name,
+                    value: spec.value,
+                    productId: product.productId,
+                })),
+            });
+        }
+
+        // Questions: 削除 + 再作成
+        await tx.question.deleteMany({
+            where: { productId: product.productId },
+        });
+        if (product.questions.length > 0) {
+            await tx.question.createMany({
+                data: product.questions.map((q) => ({
+                    question: q.question,
+                    answer: q.answer,
+                    productId: product.productId,
+                })),
+            });
+        }
+
+        // FreeShipping: 既存削除 + 条件付き再作成
+        await tx.freeShipping.deleteMany({
+            where: { productId: product.productId },
+        });
+        if (
+            !product.freeShippingForAllCountries &&
+            product.freeShippingCountriesIds &&
+            product.freeShippingCountriesIds.length > 0
+        ) {
+            await tx.freeShipping.create({
+                data: {
+                    product: { connect: { id: product.productId } },
+                    eligibleCountries: {
+                        create: product.freeShippingCountriesIds.map(
+                            (country) => ({
+                                country: { connect: { id: country.value } },
+                            })
+                        ),
+                    },
+                },
+            });
+        }
+
+        // Variant 本体の更新
+        await tx.productVariant.update({
+            where: { id: product.variantId },
+            data: {
+                variantName: product.variantName,
+                variantDescription: product.variantDescription,
+                slug: variantSlug,
+                variantImage: product.variantImage,
+                sku: product.sku,
+                weight: product.weight,
+                keywords: product.keywords.join(","),
+                isSale: product.isSale,
+                saleEndDate: product.isSale
+                    ? (product.saleEndDate ?? null)
+                    : null,
+                updatedAt: product.updatedAt,
+            },
+        });
+
+        // Variant images: 削除 + 再作成
+        await tx.productVariantImage.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.images.length > 0) {
+            await tx.productVariantImage.createMany({
+                data: product.images.map((image) => ({
+                    url: image.url,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Colors: 削除 + 再作成
+        await tx.color.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.colors.length > 0) {
+            await tx.color.createMany({
+                data: product.colors.map((color) => ({
+                    name: color.color,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Sizes: 削除 + 再作成
+        await tx.size.deleteMany({
+            where: { productVariantId: product.variantId },
+        });
+        if (product.sizes.length > 0) {
+            await tx.size.createMany({
+                data: product.sizes.map((size) => ({
+                    size: size.size,
+                    quantity: size.quantity,
+                    price: size.price,
+                    discount: size.discount,
+                    productVariantId: product.variantId,
+                })),
+            });
+        }
+
+        // Variant specs: 削除 + 再作成
+        await tx.spec.deleteMany({ where: { variantId: product.variantId } });
+        if (product.variant_specs.length > 0) {
+            await tx.spec.createMany({
+                data: product.variant_specs.map((spec) => ({
+                    name: spec.name,
+                    value: spec.value,
+                    variantId: product.variantId,
+                })),
+            });
+        }
+    });
+};
+
 // Function: getProductMainInfo
 // Description: Retrieves product main information (including product and variant details)
 // Access Level: Public
@@ -385,13 +569,26 @@ export const deleteProduct = async (productId: string) => {
         // Ensure product data is provided
         if (!productId) throw new Error("Please provide product ID.");
 
+        // 所有権検証: 商品のストアが現在のユーザーに属するか確認（IDOR防止）
+        const product = await db.product.findUnique({
+            where: { id: productId },
+            include: { store: { select: { userId: true } } },
+        });
+        if (!product) throw new Error("Product not found.");
+        if (product.store.userId !== user.id)
+            throw new Error("You can only delete your own products.");
+
         // Delete the product and its variants
         const response = await db.product.delete({
             where: { id: productId },
         });
         return response;
-    } catch (error) {
-        console.log(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in deleteProduct:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteProduct:", error);
+        }
         throw error;
     }
 };
@@ -604,7 +801,7 @@ export const getProducts = async (
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = size.price * (1 - discount / 100);
+                        let discountedPrice = size.price.toNumber() * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
@@ -826,9 +1023,12 @@ const getUserCountry = () => {
             return parsedCountry;
         }
         return defaultCountry;
-    } catch (error) {
-        // Handle error
-        console.error("Error retrieving user country:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving user country:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving user country:", error);
+        }
         return defaultCountry;
     }
 };
@@ -984,6 +1184,7 @@ export const getShippingDetails = async (
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null
 ) => {
+    try {
     let shippingDetails = {
         shippingFeeMethod,
         shippingService: "",
@@ -1061,22 +1262,22 @@ export const getShippingDetails = async (
             case "ITEM":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerItem;
+                    : shippingFeePerItem.toNumber();
                 shippingDetails.extraShippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeForAdditionalItem;
+                    : shippingFeeForAdditionalItem.toNumber();
                 break;
 
             case "WEIGHT":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeePerKg;
+                    : shippingFeePerKg.toNumber();
                 break;
 
             case "FIXED":
                 shippingDetails.shippingFee = isFreeShipping
                     ? 0
-                    : shippingFeeFixed;
+                    : shippingFeeFixed.toNumber();
                 break;
 
             default:
@@ -1086,6 +1287,14 @@ export const getShippingDetails = async (
     }
 
     return false;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getShippingDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in getShippingDetails:", error);
+        }
+        throw error;
+    }
 };
 
 // Function: getProductFilteredReviews
@@ -1225,6 +1434,7 @@ export const getProductShippingFee = async (
     weight: number,
     quantity: number
 ) => {
+    try {
     // Fetch country information based on userCountry.name and userCountry.code
     const country = await db.country.findUnique({
         where: {
@@ -1241,7 +1451,7 @@ export const getProductShippingFee = async (
                 (c) => c.countryId === country.id
             );
             if (isEligibleForFreeShipping) {
-                return 0; // Free shipping
+                return new Prisma.Decimal("0"); // Free shipping
             }
         }
 
@@ -1262,14 +1472,15 @@ export const getProductShippingFee = async (
         } = shippingRate || {};
 
         // Calculate the additional quantity (excluding the first item)
-        const additionalItemsQty = quantity - 1;
+        const additionalItemsQty = Math.max(0, quantity - 1);
 
-        // Define fee calculation methods in a map (using functions)
-        const feeCalculators: Record<string, () => number> = {
+        // Define fee calculation methods in a map (using Decimal arithmetic)
+        const feeCalculators: Record<string, () => Prisma.Decimal> = {
             ITEM: () =>
-                shippingFeePerItem +
-                shippingFeeForAdditionalItem * additionalItemsQty,
-            WEIGHT: () => shippingFeePerKg * weight * quantity,
+                shippingFeePerItem.add(
+                    shippingFeeForAdditionalItem.mul(additionalItemsQty)
+                ),
+            WEIGHT: () => shippingFeePerKg.mul(weight).mul(quantity),
             FIXED: () => shippingFeeFixed,
         };
 
@@ -1280,11 +1491,19 @@ export const getProductShippingFee = async (
         }
 
         // If no valid shipping method is found, return 0
-        return 0;
+        return new Prisma.Decimal("0");
     }
 
     // Return 0 if the country is not found
-    return 0;
+    return new Prisma.Decimal("0");
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getProductShippingFee:", error.message, error.stack);
+        } else {
+            console.error("Error in getProductShippingFee:", error);
+        }
+        throw error;
+    }
 };
 
 /**
@@ -1381,8 +1600,12 @@ export const getProductsByIds = async (
             products: ordered_products,
             totalPages,
         };
-    } catch (error) {
-        console.error("Error retrieving products by ids:", error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error retrieving products by ids:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving products by ids:", error);
+        }
         throw new Error("Failed to retrieve products. Please try again.");
     }
 };

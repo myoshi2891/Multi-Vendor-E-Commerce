@@ -1,79 +1,83 @@
 ---
 name: safe-migration
 description: >
-  Prismaマイグレーションを安全に実行する。
-  「マイグレーション実行」「schema変更」「DB変更」「migrate実行」
-  「Prismaマイグレーション」などのキーワードで使用。
-  db push禁止、migrate dev必須。
-  ユーザーが明示的に実行を指示した場合のみ動作。
+  Safely executes Prisma schema migrations using migrate dev (db push is strictly forbidden).
+  Verifies spec alignment, confirms backup, detects destructive operations, regenerates
+  the Prisma client, and proposes related code updates.
+  Only runs when the user explicitly requests it.
+  Triggered by: "マイグレーション実行", "migrate実行", "Prismaマイグレーション",
+  "schema変更", "DB変更", "スキーマ更新", "run migration", "apply migration",
+  "prisma migrate", "/safe-migration".
 invocation: explicit
 allowed-tools: [Read, Bash, Grep]
 ---
 
-# Safe Prisma Migration
+# Safe Prisma Migration スキル
 
 ## 目的
 
-Prismaスキーマ変更を安全にマイグレーションする。
+`.agent/rules/core.md` の原則「`bunx prisma db push` は絶対禁止、`bunx prisma migrate dev` 必須」を徹底し、スキーマ変更を安全に適用するスキル。
 
-このプロジェクトでは `.agent/rules/core.md` で **`bunx prisma db push` は絶対禁止**、**`bunx prisma migrate dev` 必須**と明記されています。マイグレーション履歴（`prisma/migrations/`）の管理が必須です。
+> ⚠️ このスキルは破壊的操作を含むため `invocation: explicit` に設定されています。
+> ユーザーの明示的な指示（「マイグレーション実行」等）がない限り、自動実行されません。
 
-## トリガー条件
+---
 
-ユーザーが以下のいずれかを明示した場合のみ実行されます（`invocation: explicit`）：
+## 実行手順（この順番を厳守すること）
 
-- 「マイグレーション実行」「migrate実行」「Prismaマイグレーション」
-- 「schema変更」「DB変更」「スキーマ更新」
-- `/safe-migration` コマンドの直接実行
+### Step 1｜スキーマ変更内容を読み込む
 
-**重要**: このスキルは破壊的操作を含むため、ユーザーの明示的な指示なしには実行されません。
-
-## 実行手順（必須順序）
-
-### 1. 事前確認
-
-#### A. スキーマ変更内容の読み込み
-
-`prisma/schema.prisma` を読み込み、変更内容を理解します：
-
-```typescript
-// Read tool で以下のファイルを読み込む
-prisma/schema.prisma
+```
+Read: prisma/schema.prisma
 ```
 
-以下の変更タイプを特定：
-- **追加**: 新しいモデル、フィールド、リレーション
-- **変更**: フィールドの型変更、制約変更、インデックス変更
-- **削除**: モデル、フィールド、リレーションの削除
+以下の変更タイプを特定する：
 
-#### B. 仕様書との整合性確認
+| 変更タイプ | 内容 |
+|-----------|------|
+| **追加** | 新しいモデル・フィールド・リレーション |
+| **変更** | 型変更・制約変更・インデックス変更 |
+| **削除** | モデル・フィールド・リレーションの削除 |
 
-`specs/multi-vendor-ecommerce/03-data-model.md` を読み込み、変更が仕様書に記載されているか確認：
+---
 
-- 新しいモデルが仕様書のER図に含まれているか
-- フィールドの変更が仕様書のエンティティ定義に記載されているか
-- 仕様書との乖離があれば警告
+### Step 2｜仕様書との整合性を確認する
 
-#### C. 既存マイグレーション履歴の確認
+```
+Read: specs/multi-vendor-ecommerce/03-data-model.md
+```
+
+確認ポイント：
+
+- 新規モデルが仕様書の ER 図に含まれているか
+- フィールド変更が仕様書のエンティティ定義に記載されているか
+- 乖離がある場合は警告をユーザーに提示する
+
+---
+
+### Step 3｜既存マイグレーション履歴を確認する
 
 ```bash
 ls -la prisma/migrations/
 ```
 
-マイグレーション履歴を確認し、以下をチェック：
+確認ポイント：
+
 - 最新のマイグレーション名とタイムスタンプ
-- マイグレーション履歴の連続性
-- `migration_lock.toml` の存在確認
+- 履歴の連続性
+- `migration_lock.toml` の存在
 
-### 2. バックアップ確認（必須）
+---
 
-**必ず**ユーザーに以下を確認します：
+### Step 4｜バックアップ確認（必須・ブロッキング）
+
+ユーザーに以下を表示し、**明示的な「yes」が得られるまで次に進まない**：
 
 ```
 ⚠️ データベースのバックアップは取得済みですか？
 
 マイグレーションは破壊的操作を含む可能性があります。
-以下の確認をお願いします：
+以下を確認してください：
 
 1. データベースのバックアップが取得されている
 2. 本番環境ではない、またはメンテナンスウィンドウ内である
@@ -82,387 +86,202 @@ ls -la prisma/migrations/
 続行しますか？ (yes/no)
 ```
 
-**明示的な「yes」が得られるまで次に進まない**。
+---
 
-### 3. 環境変数の確認
+### Step 5｜接続先環境を確認する
 
-環境変数が本番DBを指していないか確認（認証情報を露出しないよう、ホスト名とDB名のみを抽出）：
+認証情報を露出しないよう、ホスト名と DB 名のみを抽出して確認する：
 
 ```bash
-# DATABASE_URL からホスト名とDB名を安全に抽出してチェック
 if [ -n "$DATABASE_URL" ]; then
   DB_INFO=$(echo "$DATABASE_URL" | sed -E 's/.*@([^\/]+)\/([^?]+).*/host=\1 db=\2/')
   echo "データベース接続先: $DB_INFO"
 
-  # production キーワードチェック
-  if echo "$DATABASE_URL" | grep -qiE '(production|prod|prd)'; then
-    echo "⚠️ 警告: 環境変数が本番環境を指している可能性があります。"
-    echo "本当に続行しますか？ (yes/no)"
-    # ユーザーに明示的な確認を求める
+  IS_PROD=false
+  if [ "$NODE_ENV" = "production" ]; then IS_PROD=true; fi
+  if [ "$MIGRATION_TARGET" = "production" ] || [ "$MIGRATION_TARGET" = "prod" ]; then IS_PROD=true; fi
+  if echo "$DATABASE_URL" | grep -qiE '(production|prod|prd)'; then IS_PROD=true; fi
+
+  if [ "$IS_PROD" = true ]; then
+    echo "⚠️ 警告: 本番環境を指している可能性があります。本当に続行しますか？ (yes/no)"
   fi
 else
   echo "DATABASE_URL が設定されていません"
 fi
 ```
 
-### 4. マイグレーション実行
+本番環境と判定された場合は**追加の明示的確認**を求める。
 
-#### A. マイグレーション名の決定
+---
 
-変更内容に基づいて、説明的なマイグレーション名を提案：
+### Step 6｜マイグレーションを実行する
 
-- 新規モデル追加: `add_[model_name]` （例: `add_user_favorite`）
-- フィールド追加: `add_[model]_[field]` （例: `add_product_is_featured`）
-- フィールド変更: `modify_[model]_[field]` （例: `modify_user_email_unique`）
-- フィールド削除: `remove_[model]_[field]` （例: `remove_product_old_price`）
-- モデル削除: `remove_[model]` （例: `remove_legacy_cart`）
+#### マイグレーション名の命名規則
 
-#### B. migrate dev コマンド実行
+| 変更内容 | 命名パターン | 例 |
+|---------|------------|---|
+| モデル追加 | `add_[model]` | `add_user_favorite` |
+| フィールド追加 | `add_[model]_[field]` | `add_product_is_featured` |
+| フィールド変更 | `modify_[model]_[field]` | `modify_user_email_unique` |
+| フィールド削除 | `remove_[model]_[field]` | `remove_product_old_price` |
+| モデル削除 | `remove_[model]` | `remove_legacy_cart` |
 
-**絶対に `bunx prisma db push` を使わない**。必ず以下のコマンドを使用：
+#### 実行コマンド（`db push` は絶対使用禁止）
 
 ```bash
 bunx prisma migrate dev --name <add_descriptive_name>
 ```
 
-例:
+実行後、出力ログで以下を確認する：
 
-```bash
-bunx prisma migrate dev --name add_product_is_featured
-```
-
-#### C. 実行ログの確認
-
-コマンドの出力を確認し、以下をチェック：
 - マイグレーションファイルが生成されたか
 - エラーが発生していないか
-- データベースへの適用が成功したか
+- DB への適用が成功したか
 
-### 5. 生成されたマイグレーションの確認
+---
 
-#### A. 新しいマイグレーションディレクトリの確認
+### Step 7｜生成された migration.sql を確認する
 
 ```bash
 ls -la prisma/migrations/
+# → 最新ディレクトリの migration.sql を Read する
 ```
 
-最新のマイグレーションディレクトリ（タイムスタンプ付き）が生成されていることを確認。
-
-#### B. migration.sql の内容確認
-
-生成された `migration.sql` を読み込み、破壊的操作がないかチェック：
+以下の破壊的操作が含まれる場合はユーザーに警告を表示する：
 
 ```sql
--- 破壊的操作の例（警告が必要）
-DROP TABLE ...;
-DROP COLUMN ...;
-DELETE FROM ...;
-ALTER TABLE ... DROP COLUMN ...;
-ALTER TABLE ... DROP CONSTRAINT ...;
-TRUNCATE TABLE ...;
+DROP TABLE ...
+DROP COLUMN ...
+DELETE FROM ...
+ALTER TABLE ... DROP COLUMN ...
+ALTER TABLE ... DROP CONSTRAINT ...
+TRUNCATE TABLE ...
 ```
 
-**破壊的操作が含まれる場合**、ユーザーに以下の警告を表示：
+**破壊的操作が検出された場合の警告テンプレート：**
 
 ```
 ⚠️ 破壊的操作が検出されました:
 
-以下のSQL文が含まれています:
-- DROP TABLE ...
-- ALTER TABLE ... DROP COLUMN ...
+以下の SQL 文が含まれています:
+- [検出されたSQL文]
 
-これらの操作は元に戻せません。本当に続行しますか？
-
-既にマイグレーションは生成されていますが、適用前に以下を実行できます:
-1. `migration.sql` の内容を手動で確認・編集
-2. `bunx prisma migrate deploy` でステージング環境にテスト適用（運用DBでのディレクトリ削除は絶対に行わないこと）
-3. 破壊的変更のリカバリが必要な場合は、ディレクトリを削除せず、新しい補正マイグレーションを作成する（または開発用DBに限り、明示的に `bunx prisma migrate reset` を前提に再作成する）
+この操作は元に戻せません。続行する前に以下を検討してください:
+1. migration.sql を手動で確認・編集する
+2. ステージング環境に先行適用する（bunx prisma migrate deploy）
+3. ロールバックが必要な場合は、ディレクトリを削除せず補正マイグレーションを作成する
 ```
 
-### 6. Prismaクライアント再生成
+---
 
-マイグレーション成功後、Prismaクライアントを再生成：
+### Step 8｜Prisma クライアントを再生成する
 
 ```bash
 bunx prisma generate
 ```
 
-`@prisma/client` が最新のスキーマに基づいて再生成されます。
+---
 
-### 7. 関連コードの更新提案
+### Step 9｜関連コードの更新箇所を提案する
 
-スキーマ変更に伴って更新が必要なコードを特定し、提案します：
-
-#### A. サーバーアクションの影響範囲
-
-`src/queries/` で影響を受けるファイルを特定：
+変更されたモデル名で影響範囲を特定する：
 
 ```bash
-# 変更されたモデル名でgrepして影響ファイルを特定
-grep -r "db.[ModelName]" src/queries/
+grep -rE "db\.[A-Za-z_][A-Za-z0-9_]*" src/queries/
 ```
 
-影響を受けるサーバーアクションをリストアップし、更新が必要な箇所を報告。
-
-#### B. 型定義の更新
-
-`src/lib/types.ts` で以下をチェック：
-- Prismaの生成型を使用している箇所
-- カスタム型定義が必要な箇所
-
-#### C. Zodスキーマの更新
-
-`src/lib/schemas.ts` で以下をチェック：
-- フォームバリデーションスキーマ
-- サーバーアクションの入力バリデーション
-
-更新が必要なスキーマをリストアップ。
-
-### 8. 仕様書更新の提案
-
-`specs/multi-vendor-ecommerce/03-data-model.md` の更新案を提示：
-
-```markdown
-## 仕様書更新案
-
-以下のセクションの更新が必要です:
-
-### specs/multi-vendor-ecommerce/03-data-model.md
-
-**セクション 3.2: エンティティ定義**
-
-追加する内容:
-- モデル `Product` にフィールド `isFeatured: Boolean` を追加
-  - 用途: 特集商品としてホームページに表示するかを管理
-  - デフォルト値: `false`
-
-**セクション 3.4: ER図**
-
-- `Product` エンティティに `isFeatured` フィールドを追加
+```
+Read: src/lib/types.ts
+Read: src/lib/schemas.ts
 ```
 
-### 9. 最終確認とレポート
+更新が必要なファイルをリストアップして報告する。
 
-以下の形式で実行結果をレポート：
+---
+
+### Step 10｜仕様書更新案を提示する
+
+`specs/multi-vendor-ecommerce/03-data-model.md` の更新が必要なセクションと内容を提示する。
+
+---
+
+### Step 11｜実行結果レポートを出力する
 
 ```markdown
 ## Safe Migration 実行結果
 
 ### マイグレーション詳細
-
-- **マイグレーション名**: `20240115120000_add_product_is_featured`
-- **実行日時**: 2024-01-15 12:00:00
+- **マイグレーション名**: `YYYYMMDDHHMMSS_[name]`
+- **実行日時**: YYYY-MM-DD HH:MM:SS
 - **ステータス**: ✅ 成功 / ⚠️ 警告あり / ❌ 失敗
 
 ### 実行内容
+1. スキーマ変更: [内容]
+2. マイグレーションファイル生成: `prisma/migrations/[name]/`
+3. DB への適用: 成功
+4. Prisma クライアント再生成: 成功
 
-1. スキーマ変更: `Product` モデルに `isFeatured` フィールド追加
-2. マイグレーションファイル生成: `prisma/migrations/20240115120000_add_product_is_featured/`
-3. データベースへの適用: 成功
-4. Prismaクライアント再生成: 成功
+### 破壊的操作
+- ✅ なし / ⚠️ あり（[SQL文]）
 
-### 破壊的操作の有無
-
-- ✅ 破壊的操作なし
-または
-- ⚠️ 破壊的操作あり: DROP COLUMN ...
-
-### 影響を受けるファイル
-
-以下のファイルの更新が必要です:
-
-1. **src/queries/product.ts**
-   - `getProducts()` で `isFeatured` フィルタリングを追加
-
-2. **src/lib/schemas.ts**
-   - `ProductSchema` に `isFeatured` フィールド追加
-
-3. **specs/multi-vendor-ecommerce/03-data-model.md**
-   - セクション 3.2, 3.4 を更新
+### 影響を受けるファイル（要更新）
+1. `src/queries/XXX.ts` — [更新内容]
+2. `src/lib/schemas.ts` — [更新内容]
+3. `specs/multi-vendor-ecommerce/03-data-model.md` — [更新セクション]
 
 ### 次のアクション
-
-- [ ] 影響を受けるサーバーアクションを更新
-- [ ] Zodスキーマを更新
+- [ ] 影響するサーバーアクションを更新
+- [ ] Zod スキーマを更新
 - [ ] 仕様書を更新
 - [ ] テストを追加・更新
 - [ ] コミットして変更を確定
 ```
 
-## 重要なルール（Critical Rules）
+---
 
-### 絶対禁止
+## 重要ルール
 
-1. **`bunx prisma db push` の使用**
-   - このコマンドはマイグレーション履歴を残さない
-   - `.agent/rules/core.md` で明示的に禁止されている
-   - 必ず `bunx prisma migrate dev` を使用
+### ❌ 絶対禁止
 
-2. **バックアップ確認なしのマイグレーション実行**
-   - ユーザーの明示的な「yes」が必要
-   - 曖昧な返答（「たぶん」「多分」）では進まない
+- `bunx prisma db push` の使用（マイグレーション履歴が残らないため）
+- `migration_lock.toml` の削除
+- バックアップ確認なしのマイグレーション実行
+- 適用済みマイグレーションの `migration.sql` 手動編集
 
-3. **本番DB への直接マイグレーション**
-   - 環境変数が本番を指している場合は警告
-   - メンテナンスウィンドウ外の実行は禁止
+### ✅ 必須
 
-### 必須事項
+- `bunx prisma migrate dev --name [説明的な名前]` を使用する
+- バックアップ確認でユーザーの明示的な「yes」を得る
+- 破壊的操作（DROP / DELETE / TRUNCATE）は必ず警告する
+- 仕様書 `03-data-model.md` との整合性を確認する
+- マイグレーション名は `add_` / `modify_` / `remove_` プレフィックスを使用する
 
-1. **マイグレーション名は説明的に**
-   - プレフィックス: `add_`, `modify_`, `remove_`
-   - モデル名とフィールド名を含める
-   - 例: `add_product_is_featured`, `remove_user_legacy_field`
+### 💡 推奨
 
-2. **破壊的操作の警告**
-   - DROP, DELETE, ALTER ... DROP が含まれる場合は明示的に警告
-   - 元に戻せない操作であることを強調
+- 本番適用前に `bunx prisma migrate deploy` でステージング環境テストを行う
+- `prisma/migrations/` と `migration_lock.toml` を必ず Git にコミットする
+- 破壊的変更がある場合はロールバック計画を事前に確認する
 
-3. **仕様書との整合性確認**
-   - `specs/multi-vendor-ecommerce/03-data-model.md` との比較
-   - 乖離があれば報告
-
-4. **関連コード更新の提案**
-   - `src/queries/`, `src/lib/types.ts`, `src/lib/schemas.ts` への影響を分析
-   - 更新が必要なファイルをリストアップ
-
-### 推奨事項
-
-1. **ステージング環境でのテスト**
-   - 本番適用前に `bunx prisma migrate deploy` でステージングテスト
-   - データの整合性を確認
-
-2. **マイグレーション履歴の保持**
-   - `prisma/migrations/` をGitにコミット
-   - `migration_lock.toml` も含める
-
-3. **ロールバック計画**
-   - 問題が発生した場合の戻し方を事前に検討
-   - バックアップからのリストア手順を確認
-
-## 禁止操作の具体例
-
-### ❌ 絶対にやってはいけないこと
-
-```bash
-# 禁止: db push（マイグレーション履歴が残らない）
-bunx prisma db push
-
-# 禁止: migration_lock.toml の削除
-rm prisma/migrations/migration_lock.toml
-
-# 禁止: マイグレーション履歴の手動編集（既に適用済みの場合）
-vim prisma/migrations/20240115120000_*/migration.sql
-```
-
-### ✅ 正しい手順
-
-```bash
-# 正しい: migrate dev（マイグレーション履歴を作成）
-bunx prisma migrate dev --name add_product_is_featured
-
-# 正しい: Prismaクライアント再生成
-bunx prisma generate
-
-# 正しい: ステージング環境でのテスト
-bunx prisma migrate deploy
-```
+---
 
 ## 参考: 主要ファイルパス
 
-### Prisma関連
-
-- `prisma/schema.prisma` - データモデル定義
-- `prisma/migrations/` - マイグレーション履歴
-- `prisma/migrations/migration_lock.toml` - マイグレーションロックファイル
-
-### 仕様書
-
-- `specs/multi-vendor-ecommerce/03-data-model.md` - データモデル仕様
-
-### 実装
-
-- `src/queries/*.ts` - サーバーアクション
-- `src/lib/types.ts` - 型定義
-- `src/lib/schemas.ts` - Zodスキーマ
-- `src/lib/db.ts` - Prismaシングルトン
-
-### ルール
-
-- `.agent/rules/core.md` - migrate dev必須ルール
-- `CLAUDE.md` - プロジェクト概要
-
-## 使用例
-
-### 例1: 新しいフィールド追加
-
 ```
-ユーザー: 「/safe-migration」
+# Prisma 関連
+prisma/schema.prisma                    データモデル定義
+prisma/migrations/                      マイグレーション履歴
+prisma/migrations/migration_lock.toml  マイグレーションロックファイル
 
-Claude:
-1. prisma/schema.prisma を読み込み
-   → Product モデルに `isFeatured: Boolean @default(false)` 追加を確認
+# 仕様書
+specs/multi-vendor-ecommerce/03-data-model.md  データモデル仕様
 
-2. specs/multi-vendor-ecommerce/03-data-model.md を読み込み
-   → 仕様書に記載なし（警告）
+# 実装
+src/queries/*.ts      サーバーアクション
+src/lib/types.ts      型定義
+src/lib/schemas.ts    Zod スキーマ
+src/lib/db.ts         Prisma シングルトン
 
-3. バックアップ確認:
-   「⚠️ データベースのバックアップは取得済みですか？ (yes/no)」
-
-4. ユーザーが「yes」と回答
-
-5. マイグレーション実行:
-   bunx prisma migrate dev --name add_product_is_featured
-
-6. migration.sql 確認:
-   ALTER TABLE "Product" ADD COLUMN "isFeatured" BOOLEAN NOT NULL DEFAULT false;
-   → 破壊的操作なし ✅
-
-7. Prismaクライアント再生成:
-   bunx prisma generate
-
-8. レポート生成と関連ファイル更新提案
+# ルール
+.agent/rules/core.md  migrate dev 必須ルール
+CLAUDE.md             プロジェクト設定
 ```
-
-### 例2: フィールド削除（破壊的操作）
-
-```
-ユーザー: 「マイグレーション実行」
-
-Claude:
-1. prisma/schema.prisma を読み込み
-   → Product モデルから `oldPrice: Float?` 削除を確認
-
-2. バックアップ確認:
-   「⚠️ データベースのバックアップは取得済みですか？ (yes/no)」
-
-3. ユーザーが「yes」と回答
-
-4. マイグレーション実行:
-   bunx prisma migrate dev --name remove_product_old_price
-
-5. migration.sql 確認:
-   ALTER TABLE "Product" DROP COLUMN "oldPrice";
-   → ⚠️ 破壊的操作検出: DROP COLUMN
-
-6. 警告表示:
-   「⚠️ 破壊的操作が検出されました:
-    - ALTER TABLE "Product" DROP COLUMN "oldPrice"
-
-    この操作は元に戻せません。続行しますか？」
-
-7. ユーザーが確認後、Prismaクライアント再生成
-
-8. レポート生成
-```
-
-## まとめ
-
-このスキルは、Prismaマイグレーションの安全性を最大化します：
-
-- ✅ `migrate dev` 必須、`db push` 禁止の徹底
-- ✅ バックアップ確認の強制
-- ✅ 破壊的操作の事前警告
-- ✅ 仕様書との整合性確認
-- ✅ 関連コード更新の提案
-
-データベースの整合性とマイグレーション履歴の管理を確実に行い、安全なスキーマ変更をサポートします。

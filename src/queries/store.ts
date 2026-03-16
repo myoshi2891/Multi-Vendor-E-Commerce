@@ -1,7 +1,7 @@
 "use server";
 // DB
 import { db } from "@/lib/db";
-import { StoreDefaultShippingType, StoreStatus, StoreType } from "@/lib/types";
+import { ShippingRateInput, StoreDefaultShippingInput, StoreStatus, StoreType } from "@/lib/types";
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
@@ -143,8 +143,12 @@ export const upsertStore = async (store: Partial<Store>) => {
         }
 
         return storeDetails;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in upsertStore:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertStore:", error);
+        }
         throw error;
     }
 };
@@ -182,8 +186,12 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
         }
 
         return store;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getStoreDefaultShippingDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreDefaultShippingDetails:", error);
+        }
         throw error;
     }
 };
@@ -196,7 +204,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 // Returns: Updated store object with the new default shipping details.
 export const updateStoreDefaultShippingDetails = async (
     storeUrl: string,
-    details: StoreDefaultShippingType
+    details: StoreDefaultShippingInput
 ) => {
     try {
         // Get current user
@@ -230,8 +238,12 @@ export const updateStoreDefaultShippingDetails = async (
         });
 
         return updatedStore;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in updateStoreDefaultShippingDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in updateStoreDefaultShippingDetails:", error);
+        }
         throw error;
     }
 };
@@ -298,8 +310,12 @@ export const getStoreShippingRates = async (storeUrl: string) => {
         }));
 
         return result;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getStoreShippingRates:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreShippingRates:", error);
+        }
         throw error;
     }
 };
@@ -313,7 +329,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 // Returns: Updated or newly created shipping rate details.
 export const upsertShippingRate = async (
     storeUrl: string,
-    shippingRate: ShippingRate
+    shippingRate: ShippingRateInput
 ) => {
     try {
         // Get current user
@@ -355,18 +371,45 @@ export const upsertShippingRate = async (
 
         if (!store) throw new Error("Store could not be found.");
 
-        // Upsert shipping rate into the database
+        // Upsert shipping rate into the database using composite unique key
         const shippingRateDetails = await db.shippingRate.upsert({
             where: {
-                id: shippingRate.id,
+                storeId_countryId: {
+                    storeId: store.id,
+                    countryId: shippingRate.countryId,
+                },
             },
-            update: { ...shippingRate, storeId: store.id },
-            create: { ...shippingRate, storeId: store.id },
+            update: {
+                shippingService: shippingRate.shippingService,
+                returnPolicy: shippingRate.returnPolicy,
+                shippingFeePerItem: shippingRate.shippingFeePerItem,
+                shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem,
+                shippingFeePerKg: shippingRate.shippingFeePerKg,
+                shippingFeeFixed: shippingRate.shippingFeeFixed,
+                deliveryTimeMin: shippingRate.deliveryTimeMin,
+                deliveryTimeMax: shippingRate.deliveryTimeMax,
+            },
+            create: {
+                storeId: store.id,
+                countryId: shippingRate.countryId,
+                shippingService: shippingRate.shippingService,
+                returnPolicy: shippingRate.returnPolicy,
+                shippingFeePerItem: shippingRate.shippingFeePerItem,
+                shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem,
+                shippingFeePerKg: shippingRate.shippingFeePerKg,
+                shippingFeeFixed: shippingRate.shippingFeeFixed,
+                deliveryTimeMin: shippingRate.deliveryTimeMin,
+                deliveryTimeMax: shippingRate.deliveryTimeMax,
+            },
         });
 
         return shippingRateDetails;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in upsertShippingRate:", error.message, error.stack);
+        } else {
+            console.error("Error in upsertShippingRate:", error);
+        }
         throw error;
     }
 };
@@ -440,8 +483,12 @@ export const getStoreOrders = async (storeUrl: string) => {
         });
 
         return orders;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getStoreOrders:", error.message, error.stack);
+        } else {
+            console.error("Error in getStoreOrders:", error);
+        }
         throw error;
     }
 };
@@ -510,8 +557,12 @@ export const applySeller = async (store: StoreType) => {
         });
 
         return storeDetails;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in applySeller:", error.message, error.stack);
+        } else {
+            console.error("Error in applySeller:", error);
+        }
         throw error;
     }
 };
@@ -546,8 +597,12 @@ export const getAllStores = async () => {
         });
 
         return stores;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getAllStores:", error.message, error.stack);
+        } else {
+            console.error("Error in getAllStores:", error);
+        }
         throw error;
     }
 };
@@ -616,9 +671,22 @@ export const updateStoreStatus = async (
             return updated;
         });
 
+        // Clerk メタデータ同期（ACTIVE ステータスへの遷移時、冪等操作でリトライ可能）
+        if (updatedStore.status === "ACTIVE") {
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            const clerk = clerkClient();
+            await clerk.users.updateUserMetadata(updatedStore.userId, {
+                privateMetadata: { role: "SELLER" },
+            });
+        }
+
         return updatedStore.status;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in updateStoreStatus:", error.message, error.stack);
+        } else {
+            console.error("Error in updateStoreStatus:", error);
+        }
         throw error;
     }
 };
@@ -655,8 +723,12 @@ export const deleteStore = async (storeId: string) => {
         });
 
         return response;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in deleteStore:", error.message, error.stack);
+        } else {
+            console.error("Error in deleteStore:", error);
+        }
         throw error;
     }
 };
@@ -694,8 +766,12 @@ export const getStorePageDetails = async (storeUrl: string) => {
         if (!store) throw new Error(`Store with URL ${storeUrl} not found.`);
 
         return store;
-    } catch (error) {
-        console.error(error);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in getStorePageDetails:", error.message, error.stack);
+        } else {
+            console.error("Error in getStorePageDetails:", error);
+        }
         throw error;
     }
 };

@@ -12,7 +12,10 @@ import {
     deleteStore,
     getStorePageDetails,
 } from "./store";
+import { Prisma } from "@prisma/client";
 import { TEST_CONFIG } from "../config/test-config";
+import { createMockStoreDefaultShipping, createMockStoreDefaultShippingDb } from "../config/test-fixtures";
+import type { StoreDefaultShippingInput } from "@/lib/types";
 
 /** expectDuplicateCheck で参照されるストアフィールド */
 interface StoreDuplicateCheckData {
@@ -50,8 +53,14 @@ jest.mock("@/lib/db", () => ({
 }));
 
 // Mock Clerk
+const mockUpdateUserMetadata = jest.fn().mockResolvedValue({});
 jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
+    clerkClient: () => ({
+        users: {
+            updateUserMetadata: (...args: unknown[]) => mockUpdateUserMetadata(...args),
+        },
+    }),
 }));
 
 // テストデータファクトリー
@@ -85,18 +94,6 @@ const TestDataFactory = {
         defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
         returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
         userId: TEST_CONFIG.DEFAULT_USER_ID,
-        ...overrides,
-    }),
-
-    shippingDetails: (overrides = {}) => ({
-        defaultShippingService: "Express Delivery",
-        defaultShippingFeePerItem: 10.5,
-        defaultShippingFeeForAdditionalItem: 5.25,
-        defaultShippingFeePerKg: 2.75,
-        defaultShippingFeeFixed: 15.0,
-        defaultDeliveryTimeMin: 3,
-        defaultDeliveryTimeMax: 7,
-        returnPolicy: "Return within 14 days with receipt.",
         ...overrides,
     }),
 
@@ -563,7 +560,7 @@ describe("updateStoreDefaultShippingDetails", () => {
         it("ユーザーが未認証の場合はエラーをスローする", async () => {
             TestHelpers.mockUnauthenticatedUser();
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
@@ -580,7 +577,7 @@ describe("updateStoreDefaultShippingDetails", () => {
         it("ユーザーロールがSELLERでない場合はエラーをスローする", async () => {
             TestHelpers.mockUserWithRole("BUYER");
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(
@@ -602,7 +599,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("storeUrlが提供されない場合はエラーをスローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             await TestHelpers.expectThrowError(
                 updateStoreDefaultShippingDetails(null as any, shippingDetails),
@@ -636,7 +633,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("所有権チェックで指定されたストアが見つからない場合はエラーをスローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
 
             mockDb.findUnique.mockResolvedValue(null);
 
@@ -665,7 +662,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("ストアの所有者が有効なパラメータを提供した場合にストアを正常に更新する", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const existingStore = TestDataFactory.existingStore();
             const updatedStore = TestDataFactory.existingStore(shippingDetails);
 
@@ -711,7 +708,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
         it("所有権チェック中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const mockError = TestDataFactory.databaseError(
                 "Database connection failed during ownership check"
             );
@@ -732,13 +729,17 @@ describe("updateStoreDefaultShippingDetails", () => {
                 TEST_CONFIG.DEFAULT_USER_ID
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
 
         it("更新操作中にデータベースエラーが発生した場合はエラーをログに出力し、エラーを再スローする", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const shippingDetails = TestDataFactory.shippingDetails();
+            const shippingDetails = createMockStoreDefaultShipping();
             const existingStore = TestDataFactory.existingStore();
             const mockError = TestDataFactory.databaseError(
                 "Database connection failed during store update"
@@ -768,7 +769,11 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
             TestHelpers.expectDbMethodCalledTimes(mockDb.findUnique, 1);
             TestHelpers.expectDbMethodCalledTimes(mockDb.update, 1);
         });
@@ -810,7 +815,7 @@ describe("getStoreDefaultShippingDetails", () => {
     describe("正常なデータ取得", () => {
         it("全フィールドが入力されているストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetails();
+            const mockStore = createMockStoreDefaultShippingDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(
@@ -820,7 +825,7 @@ describe("getStoreDefaultShippingDetails", () => {
             expect(result).toEqual(mockStore);
             expect(result).toMatchObject({
                 defaultShippingService: "Express Delivery",
-                defaultShippingFeePerItem: 10.5,
+                defaultShippingFeePerItem: new Prisma.Decimal("10.5"),
                 returnPolicy: "Return within 14 days with receipt.",
             });
 
@@ -832,7 +837,8 @@ describe("getStoreDefaultShippingDetails", () => {
 
         it("一部フィールドがnullのストアの配送詳細を正常に返す", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetails({
+            // DB 出力モック: スキーマ上は NOT NULL だが null 応答時の挙動を検証
+            const mockStore = createMockStoreDefaultShippingDb({
                 defaultShippingFeePerItem: null,
                 defaultShippingFeePerKg: null,
                 defaultDeliveryTimeMin: null,
@@ -856,7 +862,7 @@ describe("getStoreDefaultShippingDetails", () => {
 
         it("配送関連フィールドのみを選択し、他のストアプロパティは除外する", async () => {
             const mockDb = TestHelpers.mockDbMethods();
-            const mockStore = TestDataFactory.shippingDetails();
+            const mockStore = createMockStoreDefaultShippingDb();
             mockDb.findUnique.mockResolvedValue(mockStore);
 
             const result = await getStoreDefaultShippingDetails(
@@ -905,7 +911,11 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Test error for logging"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in getStoreDefaultShippingDetails:",
+                mockError.message,
+                mockError.stack
+            );
         });
 
         it("バリデーションエラーを適切に処理する", async () => {
@@ -920,7 +930,11 @@ describe("getStoreDefaultShippingDetails", () => {
                 "Invalid store URL format"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(validationError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in getStoreDefaultShippingDetails:",
+                validationError.message,
+                validationError.stack
+            );
         });
     });
 });
@@ -1120,24 +1134,39 @@ describe("upsertShippingRate", () => {
             const rateData = {
                 id: "rate-001",
                 countryId: "c1",
+                shippingService: "Express",
                 shippingFeePerItem: 8.0,
+                shippingFeeForAdditionalItem: 3.0,
+                shippingFeePerKg: 1.5,
+                shippingFeeFixed: 10.0,
+                deliveryTimeMin: 3,
+                deliveryTimeMax: 7,
+                returnPolicy: "30 days",
             };
             const upsertedRate = { ...rateData, storeId: store.id };
             mockPrisma.shippingRate.upsert.mockResolvedValue(upsertedRate);
 
             const result = await upsertShippingRate(
                 TEST_CONFIG.TEST_STORE_URL,
-                rateData as never
+                rateData
             );
 
             expect(result).toEqual(upsertedRate);
             expect(mockPrisma.shippingRate.upsert).toHaveBeenCalledWith({
-                where: { id: "rate-001" },
+                where: {
+                    storeId_countryId: {
+                        storeId: store.id,
+                        countryId: "c1",
+                    },
+                },
                 update: expect.objectContaining({
-                    storeId: store.id,
+                    shippingService: "Express",
+                    shippingFeePerItem: 8.0,
                 }),
                 create: expect.objectContaining({
                     storeId: store.id,
+                    countryId: "c1",
+                    shippingService: "Express",
                 }),
             });
         });
@@ -1497,7 +1526,11 @@ describe("updateStoreStatus", () => {
                 "Database connection failed during store update"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreStatus:",
+                mockError.message,
+                mockError.stack
+            );
             expect(mockPrisma.user.update).not.toHaveBeenCalled();
         });
 
@@ -1525,7 +1558,11 @@ describe("updateStoreStatus", () => {
                 "Database connection failed during user role update"
             );
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(mockError);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in updateStoreStatus:",
+                mockError.message,
+                mockError.stack
+            );
             expect(mockPrisma.store.update).toHaveBeenCalled();
         });
     });

@@ -44,7 +44,7 @@ export const createPayPalPayment = async (orderId: string) => {
                         {
                             amount: {
                                 currency_code: "USD",
-                                value: order.total.toFixed(2).toString(),
+                                value: order.total.toNumber().toFixed(2),
                             },
                         },
                     ],
@@ -55,7 +55,12 @@ export const createPayPalPayment = async (orderId: string) => {
         const paymentData = await response.json();
 
         return paymentData;
-    } catch (error) {
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("Error in createPayPalPayment:", error.message, error.stack);
+        } else {
+            console.error("Error in createPayPalPayment:", error);
+        }
         throw new Error("Failed to create PayPal payment");
     }
 };
