@@ -60,7 +60,7 @@ export const getHomeDataDynamic = async (
     ): { discountedPrice: number } => {
         const sizesWithDiscount = size.map((size) => ({
             ...size,
-            discountedPrice: size.price * (1 - size.discount / 100),
+            discountedPrice: size.price.toNumber() * (1 - size.discount / 100),
         }));
 
         return sizesWithDiscount.sort(

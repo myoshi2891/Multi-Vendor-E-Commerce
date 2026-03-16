@@ -292,7 +292,7 @@ export const applyCoupon = async (
 
         const discountedAmount = (storeTotal * coupon.discount) / 100
 
-        const newTotal = cart.total - discountedAmount
+        const newTotal = cart.total.toNumber() - discountedAmount
 
         // Step 7: Update the cart with the applied coupon details and new total
         const updatedCart = await db.cart.update({

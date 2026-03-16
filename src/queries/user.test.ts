@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import {
     followStore,
     saveUserCart,
@@ -58,8 +59,11 @@ jest.mock("@/lib/db", () => ({
             update: jest.fn(),
         },
         shippingAddress: {
+            findFirst: jest.fn(),
             findMany: jest.fn(),
             findUnique: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
             upsert: jest.fn(),
             updateMany: jest.fn(),
         },
@@ -84,6 +88,7 @@ jest.mock("@/lib/db", () => ({
         coupon: {
             findUnique: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -278,7 +283,7 @@ describe("saveUserCart", () => {
                         cartItems: expect.objectContaining({
                             create: expect.arrayContaining([
                                 expect.objectContaining({
-                                    price: 29.99, // DB価格が使用されている
+                                    price: new Prisma.Decimal("29.99"), // DB価格が使用されている
                                 }),
                             ]),
                         }),
@@ -350,7 +355,7 @@ describe("saveUserCart", () => {
                         cartItems: expect.objectContaining({
                             create: expect.arrayContaining([
                                 expect.objectContaining({
-                                    price: 90, // 100 - 100 * (10/100)
+                                    price: new Prisma.Decimal("90"), // 100 * (100-10) / 100
                                 }),
                             ]),
                         }),
@@ -373,9 +378,9 @@ describe("saveUserCart", () => {
             expect(mockDb.cart.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     data: expect.objectContaining({
-                        subTotal: 59.98,
-                        shippingFees: 0,
-                        total: 59.98,
+                        subTotal: new Prisma.Decimal("59.98"),
+                        shippingFees: new Prisma.Decimal("0"),
+                        total: new Prisma.Decimal("59.98"),
                         userId: TEST_CONFIG.DEFAULT_USER_ID,
                     }),
                 })
@@ -516,29 +521,30 @@ describe("upsertShippingAddress", () => {
 
         it("新しい配送先住所を作成する", async () => {
             const address = createMockShippingAddress({ default: false });
-            mockDb.shippingAddress.upsert.mockResolvedValue(address);
+            mockDb.shippingAddress.findFirst.mockResolvedValue(null);
+            mockDb.shippingAddress.create.mockResolvedValue(address);
 
             const result = await upsertShippingAddress(address as never);
 
             expect(result).toEqual(address);
-            expect(mockDb.shippingAddress.upsert).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    where: { id: address.id },
-                    update: expect.objectContaining({
-                        userId: TEST_CONFIG.DEFAULT_USER_ID,
-                    }),
-                    create: expect.objectContaining({
-                        userId: TEST_CONFIG.DEFAULT_USER_ID,
-                    }),
-                })
-            );
+            expect(mockDb.shippingAddress.findFirst).toHaveBeenCalledWith({
+                where: { id: address.id, userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
+            expect(mockDb.shippingAddress.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                }),
+            });
         });
 
         it("デフォルト住所設定時に既存のデフォルトをfalseにする", async () => {
             const address = createMockShippingAddress({ default: true });
+            // findUnique: default=true 時の既存アドレス確認
             mockDb.shippingAddress.findUnique.mockResolvedValue(address);
             mockDb.shippingAddress.updateMany.mockResolvedValue({ count: 1 });
-            mockDb.shippingAddress.upsert.mockResolvedValue(address);
+            // findFirst: 所有権検証 → update
+            mockDb.shippingAddress.findFirst.mockResolvedValue(address);
+            mockDb.shippingAddress.update.mockResolvedValue(address);
 
             await upsertShippingAddress(address as never);
 
@@ -606,6 +612,12 @@ describe("placeOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            // $transaction モック: コールバックに mockDb を渡して実行
+            mockDb.$transaction.mockImplementation(
+                async (
+                    callback: (tx: typeof mockDb) => Promise<unknown>
+                ) => callback(mockDb)
+            );
         });
 
         it("単一店舗の注文を正常に作成する", async () => {
@@ -914,9 +926,9 @@ describe("placeOrder", () => {
                 expect.objectContaining({
                     where: { id: mockOrder.id },
                     data: expect.objectContaining({
-                        total: expect.any(Number),
-                        subTotal: expect.any(Number),
-                        shippingFees: expect.any(Number),
+                        total: expect.any(Prisma.Decimal),
+                        subTotal: expect.any(Prisma.Decimal),
+                        shippingFees: expect.any(Prisma.Decimal),
                     }),
                 })
             );
@@ -1145,7 +1157,7 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct();
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(5.0);
+            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("5.0"));
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({ price: 29.99, quantity: 2 })
             );
@@ -1172,7 +1184,7 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct(); // 在庫50
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(0);
+            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({ quantity: 50 })
             );
@@ -1205,7 +1217,7 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct();
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(0);
+            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({
                     quantity: 1,
@@ -1240,7 +1252,7 @@ describe("updateCheckoutProductWithLatest", () => {
             expect(mockDb.cart.update).toHaveBeenCalledWith(
                 expect.objectContaining({
                     data: expect.objectContaining({
-                        total: expect.any(Number),
+                        total: expect.any(Prisma.Decimal),
                     }),
                 })
             );
