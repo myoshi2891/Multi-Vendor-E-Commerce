@@ -7,4 +7,14 @@ module.exports = {
         "^@/(.*)$": "<rootDir>/src/$1",
     },
     testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/"],
+    transform: {
+        "^.+\\.tsx?$": [
+            "ts-jest",
+            {
+                tsconfig: {
+                    jsx: "react-jsx",
+                },
+            },
+        ],
+    },
 };
