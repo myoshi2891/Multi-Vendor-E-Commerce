@@ -1,4 +1,5 @@
 import {
+    cn,
     getGridClassName,
     getShippingDatesRange,
     isProductValidToAdd,
@@ -6,6 +7,36 @@ import {
     getTimeUntil,
 } from "./utils";
 import { createMockCartProduct } from "@/config/test-fixtures";
+
+// ==================================================
+// cn
+// ==================================================
+describe("cn", () => {
+    it("[P2] 単一クラス名を返す", () => {
+        expect(cn("px-4")).toBe("px-4");
+    });
+
+    it("[P2] 複数クラス名をマージする", () => {
+        expect(cn("px-4", "py-2")).toBe("px-4 py-2");
+    });
+
+    it("[P2] Tailwind 競合を解決する ('p-2 p-4' → 'p-4')", () => {
+        expect(cn("p-2", "p-4")).toBe("p-4");
+        expect(cn("px-2 py-1", "p-4")).toBe("p-4");
+    });
+
+    it("[P2] 条件付きクラス名を処理する (clsx 形式)", () => {
+        expect(cn("p-4", { "bg-red-500": true, "bg-blue-500": false })).toBe("p-4 bg-red-500");
+    });
+
+    it("[P2] undefined/null/false を無視する", () => {
+        expect(cn("p-4", undefined, null, false, "flex")).toBe("p-4 flex");
+    });
+
+    it("[P2] 引数なしで空文字を返す", () => {
+        expect(cn()).toBe("");
+    });
+});
 
 // 共有ファクトリを再利用し、テスト固有のデフォルト値を適用
 const createValidCartProduct = (
