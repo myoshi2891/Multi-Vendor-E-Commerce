@@ -16,7 +16,10 @@ export type ModalData = {
 type ModalContextType = {
 	data: ModalData;
 	isOpen: boolean;
-	setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => void;
+	setOpen: (
+		modal: React.ReactNode,
+		fetchData?: () => Promise<Partial<ModalData>>
+	) => Promise<void>;
 	setClose: () => void;
 };
 
@@ -34,12 +37,18 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 
 	const setOpen = async (
 		modal: React.ReactNode,
-		fetchData?: () => Promise<any>
+		fetchData?: () => Promise<Partial<ModalData>>
 	) => {
 		if (modal) {
 			if (fetchData) {
-				const fetchedData = await fetchData();
-				setData((prev) => ({ ...prev, ...fetchedData }));
+				try {
+					const fetchedData = await fetchData();
+					setData((prev) => ({ ...prev, ...fetchedData }));
+				} catch (error) {
+					console.error("Failed to fetch modal data:", error);
+					// Set to safe empty state or keep previous but log error
+					setData((prev) => prev);
+				}
 			}
 			setShowingModal(modal);
 			setIsOpen(true);
@@ -49,6 +58,7 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	const setClose = () => {
 		setIsOpen(false);
 		setData({});
+		setShowingModal(null);
 	};
 
 	if (!isMounted) return null;

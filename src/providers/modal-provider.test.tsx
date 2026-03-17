@@ -7,7 +7,10 @@ import ModalProvider, { useModal, ModalContext } from "./modal-provider";
 import { User } from "@prisma/client";
 
 // React 18 向けの act 環境設定
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+declare global {
+    var IS_REACT_ACT_ENVIRONMENT: boolean;
+}
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // モックユーザーの作成
 const createMockUser = (): User => ({
@@ -156,7 +159,7 @@ describe("ModalProvider", () => {
     });
 
     describe("setClose", () => {
-        it("[P1] 閉じると isOpen=false になり data がリセットされる", async () => {
+        it("[P1] 閉じると isOpen=false になり data がリセットされ、モーダルが DOM から除去される", async () => {
             render(
                 <ModalProvider>
                     <TestComponent />
@@ -172,6 +175,7 @@ describe("ModalProvider", () => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("true");
             });
             expect(screen.getByTestId("data-user-id")).toHaveTextContent("test-user-id");
+            expect(screen.getByTestId("modal-content")).toBeInTheDocument();
 
             // 閉じる
             await user.click(screen.getByTestId("close-btn"));
@@ -180,12 +184,15 @@ describe("ModalProvider", () => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("false");
             });
             expect(screen.getByTestId("data-user-id")).toHaveTextContent("no-user");
+
+            // モーダルが DOM から除去されていることを確認
+            expect(screen.queryByTestId("modal-content")).not.toBeInTheDocument();
         });
     });
 
     describe("useModal", () => {
         it("[P1] Provider 内で context を取得できる", () => {
-            let contextValue: any = null;
+            let contextValue: ReturnType<typeof useModal> | null = null;
             const ContextConsumer = () => {
                 contextValue = useModal();
                 return null;
@@ -198,8 +205,10 @@ describe("ModalProvider", () => {
             );
 
             expect(contextValue).not.toBeNull();
-            expect(contextValue.isOpen).toBe(false);
-            expect(typeof contextValue.setOpen).toBe("function");
+            if (contextValue) {
+                expect(contextValue.isOpen).toBe(false);
+                expect(typeof contextValue.setOpen).toBe("function");
+            }
         });
 
         it("[P1] Provider 外で使用するとエラーがスローされる", () => {

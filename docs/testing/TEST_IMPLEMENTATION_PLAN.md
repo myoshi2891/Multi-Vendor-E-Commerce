@@ -106,36 +106,6 @@ Playwright を使用し、実際のユーザージャーニーをエンドツー
 - **E2E**: 主要シナリオ **10+** ケースの網羅。
 - **Coverage**: ビジネスロジックの **C1 (条件網羅) 100%**。
 
-## Context
-
-`docs/testing/TEST_IMPLEMENTATION_PLAN.md` の既存内容（セクション 1〜5）の後に、各対象ファイルの **具体的テストケース設計** をセクション 6〜8 として追記する。
-ユーザーの要求: 計画書ファイル本体に詳細設計を書き込み、今後のテスト実装のリファレンスとする。
-
-## 実装内容
-
-**対象ファイル:** `docs/testing/TEST_IMPLEMENTATION_PLAN.md`**操作:** 既存セクション 5 の末尾に以下を追記する（既存内容は一切変更しない）
-
-## 追記する内容
-
-以下の全セクション（Phase 1〜3 の詳細テストケース、テスト数サマリ、実装順序、テストインフラ活用マッピング、Jest 設定注意、検証方法）を追記する。
-
-**現状のカバレッジ:**
-
-- `src/queries/*.test.ts`: 14/14 モジュール (100%)
-- `src/lib/`: schemas.test.ts, utils.test.ts のみ (2/6)
-- `src/cart-store/`: useCartStore.test.ts (1 ファイル)
-- API Route: 4 テストファイル
-- Prisma seed: 10 テストファイル
-- **コンポーネントテスト: 0 件** (237 コンポーネント中)
-- **E2E: 1 件** (cart-smoke.spec.ts のみ)
-
-**テスト対象外:**
-
-- `src/components/ui/` (49 ファイル) — shadcn/ui サードパーティ
-- `src/components/store/icons/` (12 ファイル), `src/components/dashboard/icons/` (14 ファイル) — アイコンのみ
-- `src/lib/db.ts` — シングルトンのみ、`src/lib/types.ts` — 型定義のみ
-- `src/lib/elastic-search.ts` — コメントアウト状態
-
 ---
 
 ## Phase 1: 基盤ロジック・ユーティリティ (P0) — 想定 ~112 テスト

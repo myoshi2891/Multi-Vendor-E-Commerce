@@ -11,9 +11,12 @@ jest.mock("@clerk/nextjs/server", () => ({
         return (req: NextRequest) => {
             const path = req.nextUrl.pathname;
             return routes.some((route) => {
-                const regexStr = "^" + route.replace("(.*)", ".*") + "$";
-                const regex = new RegExp(regexStr);
-                return regex.test(path);
+                // シンプルな前方一致または完全一致でシミュレーション（ReDoSを避ける）
+                if (route.endsWith("(.*)")) {
+                    const base = route.replace("(.*)", "");
+                    return path.startsWith(base);
+                }
+                return path === route;
             });
         };
     }),
@@ -35,15 +38,21 @@ type MiddlewareHandler = Parameters<typeof clerkMiddleware>[0];
 describe("Middleware", () => {
     let mockProtect: jest.Mock;
     let mockAuth: jest.Mock;
+    const originalEnv = process.env.NODE_ENV;
 
     beforeEach(() => {
         jest.clearAllMocks();
+        process.env.NODE_ENV = "test";
 
         // 認証処理のモック
         mockProtect = jest.fn();
         mockAuth = jest.fn(() => ({
             protect: mockProtect,
         }));
+    });
+
+    afterEach(() => {
+        process.env.NODE_ENV = originalEnv;
     });
 
     const typedMiddleware = middleware as unknown as MiddlewareHandler;
@@ -58,8 +67,26 @@ describe("Middleware", () => {
             expect(mockProtect).toHaveBeenCalled();
         });
 
+        it("正常系: 保護されたルート (/dashboard/settings) の場合は auth().protect() が呼ばれる", async () => {
+            const req = new NextRequest("http://localhost:3000/dashboard/settings");
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
+
+            expect(mockAuth).toHaveBeenCalled();
+            expect(mockProtect).toHaveBeenCalled();
+        });
+
         it("正常系: 保護されたルート (/checkout) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/checkout");
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
+
+            expect(mockAuth).toHaveBeenCalled();
+            expect(mockProtect).toHaveBeenCalled();
+        });
+
+        it("正常系: 保護されたルート (/profile) の場合は auth().protect() が呼ばれる", async () => {
+            const req = new NextRequest("http://localhost:3000/profile");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as any, req, {} as any);
 
@@ -107,8 +134,6 @@ describe("Middleware", () => {
             expect(getUserCountry).not.toHaveBeenCalled();
             
             // レスポンスに新しい cookie がセットされていないことを確認（next()が返る）
-            // NextResponse.next() は基本ヘッダーを引き継ぐが、新たなSet-Cookieは発生しない。
-            // ※ next/server の仕様上、内部状態の厳密な比較は難しいため、関数呼び出しで検証
             expect(response).toBeInstanceOf(NextResponse);
             // リダイレクトではないことを確認
             expect(response.headers.get("Location")).toBeNull();
@@ -119,7 +144,7 @@ describe("Middleware", () => {
             const mockCountry = { name: "United States", code: "US" };
             (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
 
-            const response = await (middleware as any)(mockAuth, req, {});
+            const response = await typedMiddleware(mockAuth as any, req, {} as any);
 
             // getUserCountry が呼ばれる
             expect(getUserCountry).toHaveBeenCalledTimes(1);
@@ -138,6 +163,22 @@ describe("Middleware", () => {
             expect(setCookieHeader).toContain(encodeURIComponent(JSON.stringify(mockCountry)));
             expect(setCookieHeader).toContain("HttpOnly");
             expect(setCookieHeader).toContain("SameSite=lax");
+        });
+
+        it("正常系: NODE_ENV が production の場合は Cookie に Secure 属性が付与される", async () => {
+            try {
+                process.env.NODE_ENV = "production";
+                const req = new NextRequest("http://localhost:3000/");
+                const mockCountry = { name: "Japan", code: "JP" };
+                (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
+
+                const response = await typedMiddleware(mockAuth as any, req, {} as any);
+
+                const setCookieHeader = response.headers.get("Set-Cookie");
+                expect(setCookieHeader).toContain("Secure");
+            } finally {
+                process.env.NODE_ENV = "test";
+            }
         });
     });
 });

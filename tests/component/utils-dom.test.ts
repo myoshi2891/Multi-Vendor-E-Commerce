@@ -3,6 +3,8 @@
 import { updateProductHistory, downloadBlobAsFile, printPDF } from "@/lib/utils";
 
 describe("DOM Utilities", () => {
+    const originalCreateElement = document.createElement;
+
     describe("updateProductHistory", () => {
         beforeEach(() => {
             localStorage.clear();
@@ -69,12 +71,10 @@ describe("DOM Utilities", () => {
     describe("downloadBlobAsFile", () => {
         let originalCreateObjectURL: typeof URL.createObjectURL;
         let originalRevokeObjectURL: typeof URL.revokeObjectURL;
-        let originalCreateElement: typeof document.createElement;
 
         beforeEach(() => {
             originalCreateObjectURL = URL.createObjectURL;
             originalRevokeObjectURL = URL.revokeObjectURL;
-            originalCreateElement = document.createElement;
             
             URL.createObjectURL = jest.fn(() => "blob:test-url");
             URL.revokeObjectURL = jest.fn();
@@ -145,6 +145,7 @@ describe("DOM Utilities", () => {
             jest.runOnlyPendingTimers();
             jest.useRealTimers();
             document.body.innerHTML = "";
+            jest.restoreAllMocks();
         });
 
         it("[P2] PDF の印刷が実行され、クリーンアップされる", () => {
@@ -175,7 +176,7 @@ describe("DOM Utilities", () => {
                 if (tagName === "iframe") {
                     return mockIframe;
                 }
-                return document.createElement.bind(document)(tagName);
+                return originalCreateElement.call(document, tagName);
             });
 
             printPDF(mockBlob);
@@ -200,11 +201,9 @@ describe("DOM Utilities", () => {
 
             expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test-pdf-url");
             expect(mockIframe.remove).toHaveBeenCalled();
-            
-            jest.restoreAllMocks();
         });
 
-        it("[P2] contentWindow が null の場合に print が呼ばれない", () => {
+        it("[P2] contentWindow が null の場合に print が呼ばれないがクリーンアップは実行される", () => {
             const mockBlob = new Blob(["pdf-content"], { type: "application/pdf" });
             
             jest.spyOn(document.body, "appendChild").mockImplementation(() => { return undefined as any; });
@@ -221,7 +220,7 @@ describe("DOM Utilities", () => {
                 if (tagName === "iframe") {
                     return mockIframe;
                 }
-                return document.createElement.bind(document)(tagName);
+                return originalCreateElement.call(document, tagName);
             });
 
             printPDF(mockBlob);
@@ -230,8 +229,11 @@ describe("DOM Utilities", () => {
             
             // エラーを投げないことを確認
             expect(() => mockIframe.onload()).not.toThrow();
-            
-            jest.restoreAllMocks();
+
+            // クリーンアップを確認
+            jest.advanceTimersByTime(2000);
+            expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test-pdf-url");
+            expect(mockIframe.remove).toHaveBeenCalled();
         });
     });
 });

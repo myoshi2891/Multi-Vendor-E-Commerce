@@ -78,6 +78,9 @@ describe("toast reducer", () => {
         toast: { id: "1", title: "Test", open: true },
       });
 
+      // Assert no timers initially
+      expect(jest.getTimerCount()).toBe(0);
+
       const state2 = reducer(state1, {
         type: "DISMISS_TOAST",
         toastId: "1",
@@ -85,8 +88,14 @@ describe("toast reducer", () => {
 
       expect(state2.toasts[0].open).toBe(false);
       
+      // Assert timer is created
+      expect(jest.getTimerCount()).toBeGreaterThan(0);
+      
       // Advance timers to trigger the REMOVE_TOAST dispatch
       jest.runAllTimers();
+
+      // Assert timer is cleared
+      expect(jest.getTimerCount()).toBe(0);
     });
 
     it("正常系: toastId=undefined で全トーストが dismiss (open: false) される", () => {
@@ -98,13 +107,20 @@ describe("toast reducer", () => {
         ],
       };
 
+      expect(jest.getTimerCount()).toBe(0);
+
       const state = reducer(customInitialState, {
         type: "DISMISS_TOAST",
       });
 
       expect(state.toasts.every((t) => t.open === false)).toBe(true);
       
+      // Assert timers are created for each toast
+      expect(jest.getTimerCount()).toBe(2);
+
       jest.runAllTimers();
+
+      expect(jest.getTimerCount()).toBe(0);
     });
 
     it("エッジケース: 空 toasts 配列で DISMISS しても例外なし", () => {

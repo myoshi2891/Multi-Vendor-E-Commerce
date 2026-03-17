@@ -216,20 +216,21 @@ export const printPDF = (blob: Blob) => {
     iframe.style.visibility = "hidden";
     iframe.src = pdfUrl;
 
-    iframe.onload = () => {
-        const printWindow = iframe.contentWindow;
-        if (!printWindow) return;
+	iframe.onload = () => {
+		const printWindow = iframe.contentWindow;
 
-        printWindow.focus();
+		if (printWindow) {
+			printWindow.focus();
+			printWindow.print();
+		}
 
-        // 印刷完了後にクリーンアップ（印刷に多少時間がかかるため delay 付き）
-        printWindow.print();
-
-        setTimeout(() => {
-            URL.revokeObjectURL(pdfUrl);
-            iframe.remove();
-        }, 2000); // 2秒待ってからクリーンアップ（必要に応じて調整可）
-    };
+		// 印刷完了後にクリーンアップ（印刷に多少時間がかかるため delay 付き）
+		// contentWindow が無い場合でもリソースリークを防ぐためにクリーンアップする
+		setTimeout(() => {
+			URL.revokeObjectURL(pdfUrl);
+			iframe.remove();
+		}, 2000); // 2秒待ってからクリーンアップ（必要に応じて調整可）
+	};
 
     document.body.appendChild(iframe);
 };
