@@ -5,6 +5,10 @@ import { updateProductHistory, downloadBlobAsFile, printPDF } from "@/lib/utils"
 describe("DOM Utilities", () => {
     const originalCreateElement = document.createElement;
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     describe("updateProductHistory", () => {
         beforeEach(() => {
             localStorage.clear();
@@ -72,6 +76,8 @@ describe("DOM Utilities", () => {
         let originalCreateObjectURL: typeof URL.createObjectURL;
         let originalRevokeObjectURL: typeof URL.revokeObjectURL;
 
+        type MockAnchor = Pick<HTMLAnchorElement, "href" | "download"> & { click: jest.Mock };
+
         beforeEach(() => {
             originalCreateObjectURL = URL.createObjectURL;
             originalRevokeObjectURL = URL.revokeObjectURL;
@@ -86,7 +92,7 @@ describe("DOM Utilities", () => {
                         href: "",
                         download: "",
                         click: jest.fn(),
-                    } as unknown as HTMLElement;
+                    } as MockAnchor as unknown as HTMLElement;
                 }
                 return originalCreateElement.call(document, tagName);
             });
@@ -95,7 +101,6 @@ describe("DOM Utilities", () => {
         afterEach(() => {
             URL.createObjectURL = originalCreateObjectURL;
             URL.revokeObjectURL = originalRevokeObjectURL;
-            jest.restoreAllMocks();
         });
 
         it("[P2] Blob からファイルがダウンロードされる", () => {
@@ -103,7 +108,7 @@ describe("DOM Utilities", () => {
             const filename = "test.txt";
             
             // Document.createElement is mocked to return our object, so we capture the instance returned
-            let mockAnchor: any;
+            let mockAnchor: MockAnchor | undefined;
             (document.createElement as jest.Mock).mockImplementation((tagName: string) => {
                 if (tagName === "a") {
                     mockAnchor = {
@@ -111,7 +116,7 @@ describe("DOM Utilities", () => {
                         download: "",
                         click: jest.fn(),
                     };
-                    return mockAnchor;
+                    return mockAnchor as MockAnchor as unknown as HTMLElement;
                 }
                 return originalCreateElement.call(document, tagName);
             });
@@ -119,9 +124,9 @@ describe("DOM Utilities", () => {
             downloadBlobAsFile(mockBlob, filename);
 
             expect(URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
-            expect(mockAnchor.href).toBe("blob:test-url");
-            expect(mockAnchor.download).toBe(filename);
-            expect(mockAnchor.click).toHaveBeenCalled();
+            expect(mockAnchor?.href).toBe("blob:test-url");
+            expect(mockAnchor?.download).toBe(filename);
+            expect(mockAnchor?.click).toHaveBeenCalled();
             expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test-url");
         });
     });
@@ -129,6 +134,13 @@ describe("DOM Utilities", () => {
     describe("printPDF", () => {
         let originalCreateObjectURL: typeof URL.createObjectURL;
         let originalRevokeObjectURL: typeof URL.revokeObjectURL;
+
+        type MockIframe = Pick<HTMLIFrameElement, "src" | "remove"> & {
+            style: Partial<CSSStyleDeclaration>;
+            onload: null | (() => void);
+            contentWindow: null | { focus: jest.Mock; print: jest.Mock };
+            remove: jest.Mock;
+        };
 
         beforeEach(() => {
             originalCreateObjectURL = URL.createObjectURL;
@@ -145,27 +157,26 @@ describe("DOM Utilities", () => {
             jest.runOnlyPendingTimers();
             jest.useRealTimers();
             document.body.innerHTML = "";
-            jest.restoreAllMocks();
         });
 
         it("[P2] PDF の印刷が実行され、クリーンアップされる", () => {
             const mockBlob = new Blob(["pdf-content"], { type: "application/pdf" });
             
             // Mock appendChild so jsdom doesn't complain about our fake node
-            const appendChildSpy = jest.spyOn(document.body, "appendChild").mockImplementation(() => { return undefined as any; });
+            const appendChildSpy = jest.spyOn(document.body, "appendChild").mockImplementation((node: Node) => node);
             
             const mockContentWindow = {
                 focus: jest.fn(),
                 print: jest.fn(),
             };
             
-            const mockIframe: any = {
+            const mockIframe: MockIframe = {
                 style: {
                     position: "",
                     width: "",
                     height: "",
                     visibility: "",
-                },
+                } as Partial<CSSStyleDeclaration>,
                 src: "",
                 onload: null,
                 contentWindow: mockContentWindow,
@@ -174,7 +185,7 @@ describe("DOM Utilities", () => {
 
             jest.spyOn(document, "createElement").mockImplementation((tagName: string) => {
                 if (tagName === "iframe") {
-                    return mockIframe;
+                    return mockIframe as MockIframe as unknown as HTMLElement;
                 }
                 return originalCreateElement.call(document, tagName);
             });
@@ -190,7 +201,7 @@ describe("DOM Utilities", () => {
 
             // onload を手動でトリガー
             expect(mockIframe.onload).toBeInstanceOf(Function);
-            mockIframe.onload();
+            if (mockIframe.onload) mockIframe.onload();
 
             // print と focus が呼ばれたか
             expect(mockContentWindow.focus).toHaveBeenCalled();
@@ -206,10 +217,10 @@ describe("DOM Utilities", () => {
         it("[P2] contentWindow が null の場合に print が呼ばれないがクリーンアップは実行される", () => {
             const mockBlob = new Blob(["pdf-content"], { type: "application/pdf" });
             
-            jest.spyOn(document.body, "appendChild").mockImplementation(() => { return undefined as any; });
+            jest.spyOn(document.body, "appendChild").mockImplementation((node: Node) => node);
             
-            const mockIframe: any = {
-                style: {},
+            const mockIframe: MockIframe = {
+                style: {} as Partial<CSSStyleDeclaration>,
                 src: "",
                 onload: null,
                 contentWindow: null,
@@ -218,7 +229,7 @@ describe("DOM Utilities", () => {
 
             jest.spyOn(document, "createElement").mockImplementation((tagName: string) => {
                 if (tagName === "iframe") {
-                    return mockIframe;
+                    return mockIframe as MockIframe as unknown as HTMLElement;
                 }
                 return originalCreateElement.call(document, tagName);
             });
@@ -228,7 +239,9 @@ describe("DOM Utilities", () => {
             expect(mockIframe.onload).toBeInstanceOf(Function);
             
             // エラーを投げないことを確認
-            expect(() => mockIframe.onload()).not.toThrow();
+            expect(() => {
+                if (mockIframe.onload) mockIframe.onload();
+            }).not.toThrow();
 
             // クリーンアップを確認
             jest.advanceTimersByTime(2000);
