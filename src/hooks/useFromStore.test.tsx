@@ -23,16 +23,6 @@ describe("useFromStore", () => {
         useMockStore.setState({ count: 0 });
     });
 
-    it("正常系: 初期レンダリング時はハイドレーション前のため undefined を返す", () => {
-        // Zustandの仕組み上、renderHookの初回実行時はundefinedになり、直後のuseEffectで値がセットされる。
-        // ここではレンダリング直後（まだuseEffectによる状態更新が完了する直前）の振る舞いを確認するのは難しいが、
-        // 少なくとも最終的に正しい値を返すかを検証する。
-        const { result } = renderHook(() => useFromStore(useMockStore, (state) => state.count));
-        
-        // useEffect 実行後には Zustand の初期値 (0) が取得できる
-        expect(result.current).toBe(0);
-    });
-
     it("正常系: useEffect 後にストアの値を正しく返す", () => {
         const { result } = renderHook(() => useFromStore(useMockStore, (state) => state.count));
         expect(result.current).toBe(0);

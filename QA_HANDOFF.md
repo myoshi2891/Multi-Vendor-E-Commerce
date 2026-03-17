@@ -19,7 +19,7 @@
 ## 次回の作業内容 (Next Steps for Tomorrow)
 計画書 (`docs/testing/TEST_IMPLEMENTATION_PLAN.md`) の **Phase 1 の残り** から実装を再開してください。
 
-### 次に着手するタスク (Phase 1 残件):
+### 次に着手するタスク (Phase 1 残件)
 1. **1-2. `src/lib/country.ts`**:
    - `fetch` のモックを使用し、正常系（ipinfo.io）・異常系・タイムアウト・フォールバックのテストを実装する。
 2. **1-3. `src/utils/sanitize.ts`**:
@@ -29,7 +29,7 @@
 4. **1-6. `src/lib/utils.ts`**:
    - `cn` 関数や DOM API 依存のユーティリティ関数のテスト。
 
-### 次回セッション開始時のプロンプト例:
+### 次回セッション開始時のプロンプト例
 > 「QA_HANDOFF.md を確認し、TEST_IMPLEMENTATION_PLAN.md の Phase 1-2 (`src/lib/country.ts`) のテスト実装からTDDで再開してください。」
 
 ---

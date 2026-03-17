@@ -69,10 +69,12 @@ describe("DOM Utilities", () => {
     describe("downloadBlobAsFile", () => {
         let originalCreateObjectURL: typeof URL.createObjectURL;
         let originalRevokeObjectURL: typeof URL.revokeObjectURL;
+        let originalCreateElement: typeof document.createElement;
 
         beforeEach(() => {
             originalCreateObjectURL = URL.createObjectURL;
             originalRevokeObjectURL = URL.revokeObjectURL;
+            originalCreateElement = document.createElement;
             
             URL.createObjectURL = jest.fn(() => "blob:test-url");
             URL.revokeObjectURL = jest.fn();
@@ -86,7 +88,7 @@ describe("DOM Utilities", () => {
                         click: jest.fn(),
                     } as unknown as HTMLElement;
                 }
-                return document.createElement.bind(document)(tagName);
+                return originalCreateElement.call(document, tagName);
             });
         });
 
@@ -111,7 +113,7 @@ describe("DOM Utilities", () => {
                     };
                     return mockAnchor;
                 }
-                return document.createElement.bind(document)(tagName);
+                return originalCreateElement.call(document, tagName);
             });
 
             downloadBlobAsFile(mockBlob, filename);

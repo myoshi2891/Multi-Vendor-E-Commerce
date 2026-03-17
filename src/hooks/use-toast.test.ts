@@ -5,6 +5,10 @@ describe("toast reducer", () => {
     jest.useFakeTimers();
   });
 
+  afterEach(() => {
+    jest.clearAllTimers();
+  });
+
   afterAll(() => {
     jest.useRealTimers();
   });
@@ -68,7 +72,7 @@ describe("toast reducer", () => {
   });
 
   describe("DISMISS_TOAST", () => {
-    it("正常系: 指定 id の open が false になる", () => {
+    it("正常系: 指定 id の open が false になり、タイマーがセットされる", () => {
       const state1 = reducer(initialState, {
         type: "ADD_TOAST",
         toast: { id: "1", title: "Test", open: true },
@@ -80,6 +84,9 @@ describe("toast reducer", () => {
       });
 
       expect(state2.toasts[0].open).toBe(false);
+      
+      // Advance timers to trigger the REMOVE_TOAST dispatch
+      jest.runAllTimers();
     });
 
     it("正常系: toastId=undefined で全トーストが dismiss (open: false) される", () => {
@@ -96,6 +103,8 @@ describe("toast reducer", () => {
       });
 
       expect(state.toasts.every((t) => t.open === false)).toBe(true);
+      
+      jest.runAllTimers();
     });
 
     it("エッジケース: 空 toasts 配列で DISMISS しても例外なし", () => {

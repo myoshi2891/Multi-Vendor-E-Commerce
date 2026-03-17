@@ -29,6 +29,7 @@ const TestComponent = () => {
             <div data-testid="is-open">{isOpen.toString()}</div>
             <div data-testid="data-user-id">{data.user?.id || "no-user"}</div>
             <button
+                type="button"
                 data-testid="open-btn"
                 onClick={() =>
                     setOpen(<div data-testid="modal-content">Modal Content</div>)
@@ -37,6 +38,7 @@ const TestComponent = () => {
                 Open
             </button>
             <button
+                type="button"
                 data-testid="open-with-data-btn"
                 onClick={() =>
                     setOpen(<div data-testid="modal-content">Modal Content</div>, async () => ({
@@ -46,10 +48,10 @@ const TestComponent = () => {
             >
                 Open With Data
             </button>
-            <button data-testid="open-null-btn" onClick={() => setOpen(null)}>
+            <button type="button" data-testid="open-null-btn" onClick={() => setOpen(null)}>
                 Open Null
             </button>
-            <button data-testid="close-btn" onClick={() => setClose()}>
+            <button type="button" data-testid="close-btn" onClick={() => setClose()}>
                 Close
             </button>
         </div>
@@ -68,29 +70,17 @@ describe("ModalProvider", () => {
     });
 
     describe("マウント制御", () => {
-        it("[P1] マウント前は children をレンダリングしない (isMounted=false)", () => {
+        it("[P1] マウント後に children がレンダリングされる", () => {
             // SSRや初回レンダリングで isMounted=false の状態を検証
-            // useEffect が同期的に走ってしまう環境では厳密に分離しづらいが、
-            // 少なくとも Provider をそのまま render した結果 null を返すかテスト
+            // jsdom環境では useEffect が即座に発火するため、
+            // マウント前(return null)を直接アサートするのは難しい。
             const { container } = render(
                 <ModalProvider>
                     <div data-testid="child">Child</div>
                 </ModalProvider>
             );
 
-            // jsdom環境では useEffect が即座に発火するため、
-            // マウント前(return null)を直接アサートするのは難しい。
-            // 便宜上、マウント後は正しくレンダリングされることで確認とする。
             expect(screen.getByTestId("child")).toBeInTheDocument();
-        });
-
-        it("[P1] マウント後に children がレンダリングされる", () => {
-            render(
-                <ModalProvider>
-                    <div data-testid="child">Child Content</div>
-                </ModalProvider>
-            );
-            expect(screen.getByTestId("child")).toHaveTextContent("Child Content");
         });
     });
 

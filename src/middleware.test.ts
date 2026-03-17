@@ -24,12 +24,17 @@ jest.mock("./lib/country", () => ({
     getUserCountry: jest.fn(),
 }));
 
+import { clerkMiddleware } from "@clerk/nextjs/server";
+
 // ミドルウェアの実体をインポート（clerkMiddleware のモックにより、内部の関数がそのまま取得される）
 import middleware from "./middleware";
 
+// clerkMiddleware のハンドラー関数の型
+type MiddlewareHandler = Parameters<typeof clerkMiddleware>[0];
+
 describe("Middleware", () => {
     let mockProtect: jest.Mock;
-    let mockAuth: any;
+    let mockAuth: jest.Mock;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -41,10 +46,13 @@ describe("Middleware", () => {
         }));
     });
 
+    const typedMiddleware = middleware as unknown as MiddlewareHandler;
+
     describe("ルーティング保護 (Authentication & Route Protection)", () => {
         it("正常系: 保護されたルート (/dashboard) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/dashboard");
-            await (middleware as any)(mockAuth, req, {});
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -52,7 +60,8 @@ describe("Middleware", () => {
 
         it("正常系: 保護されたルート (/checkout) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/checkout");
-            await (middleware as any)(mockAuth, req, {});
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -60,7 +69,8 @@ describe("Middleware", () => {
 
         it("正常系: 保護されたサブルート (/profile/orders) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/profile/orders");
-            await (middleware as any)(mockAuth, req, {});
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -68,7 +78,8 @@ describe("Middleware", () => {
 
         it("正常系: パブリックなルート (/) の場合は auth().protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/");
-            await (middleware as any)(mockAuth, req, {});
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
 
             expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
@@ -76,7 +87,8 @@ describe("Middleware", () => {
 
         it("正常系: パブリックなルート (/browse) の場合は auth().protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/browse");
-            await (middleware as any)(mockAuth, req, {});
+            req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
+            await typedMiddleware(mockAuth as any, req, {} as any);
 
             expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
@@ -89,7 +101,7 @@ describe("Middleware", () => {
             // userCountry Cookie をセット
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
 
-            const response = await (middleware as any)(mockAuth, req, {});
+            const response = await typedMiddleware(mockAuth as any, req, {} as any);
 
             // getUserCountry は呼ばれないはず
             expect(getUserCountry).not.toHaveBeenCalled();

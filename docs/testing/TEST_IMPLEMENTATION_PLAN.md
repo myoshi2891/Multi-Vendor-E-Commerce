@@ -223,15 +223,15 @@ Playwright を使用し、実際のユーザージャーニーをエンドツー
 `describe("sanitize")
   describe("正常系")
     正常系: プレーンテキストをそのまま返す                                       [P1]
-    正常系: 安全な HTML タグ (<p>, <b>, <em>) を保持する                         [P1]
+    正常系: 安全な HTML タグ (&lt;p&gt;, &lt;b&gt;, &lt;em&gt;) を保持する                         [P1]
     正常系: 空文字を入力すると空文字を返す                                       [P2]
 
   describe("XSS 防御")
-    異常系: <script>alert('xss')</script> を除去する                            [P0]
-    異常系: <img onerror="alert(1)"> の onerror を除去する                      [P0]
-    異常系: <a href="javascript:alert(1)"> の javascript: URI を除去する        [P0]
-    異常系: <svg onload="alert(1)"> の onload を除去する                        [P0]
-    異常系: <iframe src="evil.com"> を除去する                                  [P0]
+    異常系: `<script>alert('xss')</script>` を除去する                            [P0]
+    異常系: `<img onerror="alert(1)">` の onerror を除去する                      [P0]
+    異常系: `<a href="javascript:alert(1)">` の javascript: URI を除去する        [P0]
+    異常系: `<svg onload="alert(1)">` の onload を除去する                        [P0]
+    異常系: `<iframe src="evil.com">` を除去する                                  [P0]
     異常系: onclick/onmouseover 等のイベントハンドラを除去する                   [P0]
     異常系: HTML エンティティエンコードされた XSS を処理する                     [P0]
 

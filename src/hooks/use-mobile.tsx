@@ -8,8 +8,10 @@ export function useIsMobile() {
   React.useEffect(() => {
     // Safety check for environments where matchMedia is not supported
     if (typeof window.matchMedia !== 'function') {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-      return;
+      const handleResize = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      window.addEventListener("resize", handleResize)
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      return () => window.removeEventListener("resize", handleResize)
     }
 
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
