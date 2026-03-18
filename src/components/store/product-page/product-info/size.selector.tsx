@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FC, useEffect } from 'react'
 
 interface Props {
-    sizes: Size[]
+    sizes: (Omit<Size, 'price'> & { price: number })[]
     sizeId: string | undefined
     handleChange: (property: keyof CartProductType, value: any) => void
 }
@@ -15,14 +15,14 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
     const searchParams = useSearchParams()
     const params = new URLSearchParams(searchParams)
 
-    const handleSelectSize = (size: Size) => {
+    const handleSelectSize = (size: Omit<Size, 'price'> & { price: number }) => {
         // Update the sizeId in the search parameters and replace the current URL
         params.set('size', size.id)
         handleCartProductToBeAddedChange(size)
         replace(`${pathname}?${params.toString()}`)
     }
 
-    const handleCartProductToBeAddedChange = (size: Size) => {
+    const handleCartProductToBeAddedChange = (size: Omit<Size, 'price'> & { price: number }) => {
         handleChange('sizeId', size.id)
         handleChange('size', size.size)
     }

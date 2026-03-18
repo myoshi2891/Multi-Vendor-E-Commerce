@@ -2,7 +2,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 //Custom UI components
-import Header from "@/components/dashboard/header/header";
+import Header from "@/components/dashboard/header/Header";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";

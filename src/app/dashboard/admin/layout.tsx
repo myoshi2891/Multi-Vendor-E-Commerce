@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 import { currentUser } from "@clerk/nextjs/server";
 
 // Header
-import Header from "@/components/dashboard/header/header";
+import Header from "@/components/dashboard/header/Header";
 
 // Sidebar
 import Sidebar from "@/components/dashboard/sidebar/sidebar";

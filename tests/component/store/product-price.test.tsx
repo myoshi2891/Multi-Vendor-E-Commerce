@@ -16,8 +16,8 @@ describe('ProductPrice', () => {
     describe('No sizeId passed — Price range display', () => {
         it('renders price range for multiple sizes with different prices', () => {
             const sizes = [
-                createMockSize({ id: 's1', price: new Prisma.Decimal('10.00'), discount: 0 }),
-                createMockSize({ id: 's2', price: new Prisma.Decimal('20.00'), discount: 0 }),
+                createMockSize({ id: 's1', price: 10, discount: 0 }),
+                createMockSize({ id: 's2', price: 20, discount: 0 }),
             ]
             render(<ProductPrice sizes={sizes} handleChange={mockHandleChange} />)
 
@@ -28,8 +28,8 @@ describe('ProductPrice', () => {
 
         it('renders single price if all sizes have the same discounted price', () => {
             const sizes = [
-                createMockSize({ id: 's1', price: new Prisma.Decimal('10.00'), discount: 0 }),
-                createMockSize({ id: 's2', price: new Prisma.Decimal('10.00'), discount: 0 }),
+                createMockSize({ id: 's1', price: 10, discount: 0 }),
+                createMockSize({ id: 's2', price: 10, discount: 0 }),
             ]
             render(<ProductPrice sizes={sizes} handleChange={mockHandleChange} />)
 
@@ -38,8 +38,8 @@ describe('ProductPrice', () => {
 
         it('calculates range correctly with discounts', () => {
             const sizes = [
-                createMockSize({ id: 's1', price: new Prisma.Decimal('100.00'), discount: 10 }), // 90.00
-                createMockSize({ id: 's2', price: new Prisma.Decimal('200.00'), discount: 50 }), // 100.00
+                createMockSize({ id: 's1', price: 100, discount: 10 }), // 90.00
+                createMockSize({ id: 's2', price: 200, discount: 50 }), // 100.00
             ]
             render(<ProductPrice sizes={sizes} handleChange={mockHandleChange} />)
 
@@ -47,7 +47,7 @@ describe('ProductPrice', () => {
         })
 
         it('uses smaller text size when isCard is true', () => {
-            const sizes = [createMockSize({ price: new Prisma.Decimal('10.00') })]
+            const sizes = [createMockSize({ price: 10 })]
             render(<ProductPrice sizes={sizes} isCard={true} handleChange={mockHandleChange} />)
 
             const priceSpan = screen.getByTestId('product-card-price')
@@ -63,7 +63,7 @@ describe('ProductPrice', () => {
     describe('sizeId passed — Specific size price display', () => {
         it('renders discounted price and calls handleChange', () => {
             const sizes = [
-                createMockSize({ id: 's1', price: new Prisma.Decimal('100.00'), discount: 20, quantity: 10 }),
+                createMockSize({ id: 's1', price: 100, discount: 20, quantity: 10 }),
             ]
             render(<ProductPrice sizeId="s1" sizes={sizes} handleChange={mockHandleChange} />)
 
@@ -79,7 +79,7 @@ describe('ProductPrice', () => {
 
         it('renders "Out of stock" if quantity is 0', () => {
             const sizes = [
-                createMockSize({ id: 's1', price: new Prisma.Decimal('100.00'), quantity: 0 }),
+                createMockSize({ id: 's1', price: 100, quantity: 0 }),
             ]
             render(<ProductPrice sizeId="s1" sizes={sizes} handleChange={mockHandleChange} />)
 

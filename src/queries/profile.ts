@@ -396,6 +396,7 @@ export const getUserWishlist = async (
                     id: true,
                     name: true,
                     rating: true,
+                    numReviews: true,
                     slug: true,
                     sales: true,
                     variants: {
@@ -426,13 +427,17 @@ export const getUserWishlist = async (
             name: item.product.name,
             rating: item.product.rating,
             sales: item.product.sales,
+            numReviews: item.product.numReviews,
             variants: [
                 {
                     variantId: item.product.variants[0].id,
                     variantSlug: item.product.variants[0].slug,
                     variantName: item.product.variants[0].variantName,
                     images: item.product.variants[0].images,
-                    sizes: item.product.variants[0].sizes,
+                    sizes: item.product.variants[0].sizes.map((s) => ({
+                        ...s,
+                        price: s.price.toNumber(),
+                    })),
                 },
             ],
             variantImages: [],

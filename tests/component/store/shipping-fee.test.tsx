@@ -38,7 +38,7 @@ describe('ProductShippingFee', () => {
 
     describe('WEIGHT method', () => {
         it('renders correctly for weight-based shipping', () => {
-            render(<ProductShippingFee method="WEIGHT" fee={2} weight={1.5} quantity={3} />)
+            render(<ProductShippingFee method="WEIGHT" fee={2} extraFee={0} weight={1.5} quantity={3} />)
             
             expect(screen.getByText(/calculates the delivery fee bases on product weight/)).toBeInTheDocument()
             expect(screen.getByText(/Fee per kg/)).toBeInTheDocument()
@@ -48,7 +48,7 @@ describe('ProductShippingFee', () => {
 
     describe('FIXED method', () => {
         it('renders correctly for fixed shipping', () => {
-            render(<ProductShippingFee method="FIXED" fee={15} weight={1} quantity={5} />)
+            render(<ProductShippingFee method="FIXED" fee={15} extraFee={0} weight={1} quantity={5} />)
             
             expect(screen.getByText(/calculates the delivery fee on a fixed price/)).toBeInTheDocument()
             expect(screen.getByText(/Fee/)).toBeInTheDocument()

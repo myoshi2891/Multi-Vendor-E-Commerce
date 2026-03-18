@@ -56,7 +56,7 @@ export const getHomeDataDynamic = async (
 
     // Get Cheapest size
     const getCheapestSize = (
-        size: ProductSize[]
+        size: any[]
     ): { discountedPrice: number } => {
         const sizesWithDiscount = size.map((size) => ({
             ...size,
@@ -96,7 +96,7 @@ export const getHomeDataDynamic = async (
                         variantName: variant.variantName,
                         variantImage: variant.variantImage,
                         images: variant.images,
-                        sizes: variant.sizes,
+                        sizes: variant.sizes.map(s => ({ ...s, price: s.price.toNumber() })),
                     }));
                 // Extract variant images for the product
                 const variantImages: VariantImageType[] = variants.map(

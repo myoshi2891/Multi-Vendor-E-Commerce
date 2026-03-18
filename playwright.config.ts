@@ -7,6 +7,7 @@ export default defineConfig({
   timeout: 30 * 1000,
   expect: { timeout: 5 * 1000 },
   fullyParallel: true,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
@@ -17,9 +18,9 @@ export default defineConfig({
   },
   webServer: {
     command: "bun run dev",
-    url: baseURL,
+    port: 3000,
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 300 * 1000,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

@@ -20,7 +20,7 @@ jest.mock('next/image', () => ({
 describe('CountrySelector', () => {
     const mockOnToggle = jest.fn()
     const mockOnChange = jest.fn()
-    const selectedValue: SelectMenuOption = { id: 'c1', name: 'Japan', code: 'JP' }
+    const selectedValue = { id: 'c1', name: 'Japan', code: 'JP', createdAt: new Date(), updatedAt: new Date() }
 
     beforeEach(() => {
         jest.clearAllMocks()

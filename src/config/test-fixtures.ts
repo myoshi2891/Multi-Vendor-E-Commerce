@@ -104,9 +104,11 @@ type MockSize = {
     id: string;
     size: string;
     quantity: number;
-    price: Prisma.Decimal;
+    price: number;
     discount: number;
     productVariantId: string;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 type MockCategory = {
@@ -232,6 +234,8 @@ type MockCart = {
     total: Prisma.Decimal;
     createdAt: Date;
     updatedAt: Date;
+    cartItems?: MockCartItem[];
+    coupon?: any;
 };
 
 type MockCartItem = {
@@ -251,12 +255,16 @@ type MockCartItem = {
     price: Prisma.Decimal;
     shippingFee: Prisma.Decimal;
     totalPrice: Prisma.Decimal;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 type MockCountry = {
     id: string;
     name: string;
     code: string;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 type MockOfferTag = {
@@ -400,16 +408,18 @@ export const createMockProductVariant = (
 
 // ---- サイズ（在庫・価格） ----
 export const createMockSize = (
-    overrides: Partial<RelaxDecimal<MockSize>> = {}
+    overrides: Partial<MockSize> = {}
 ): MockSize => {
     const { price, ...rest } = overrides;
     return {
         id: "size-001",
         size: "M",
         quantity: 50,
-        price: toDecimal(price ?? 29.99),
+        price: price ?? 29.99,
         discount: 0,
         productVariantId: "variant-001",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
         ...rest,
     };
 };
@@ -611,6 +621,8 @@ export const createMockCartItem = (
         price: toDecimal(price ?? 29.99),
         shippingFee: toDecimal(shippingFee ?? 5.0),
         totalPrice: toDecimal(totalPrice ?? 64.98),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
         ...rest,
     };
 };
@@ -650,6 +662,8 @@ export const createMockCountry = (
     id: "country-001",
     name: "Japan",
     code: "JP",
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
     ...overrides,
 });
 

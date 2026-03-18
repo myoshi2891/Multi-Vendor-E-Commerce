@@ -111,10 +111,10 @@ describe("getOrder", () => {
             const result = await getOrder("order-001");
 
             expect(result).toEqual(orderData);
-            expect(result.groups).toHaveLength(1);
-            expect(result.groups[0].items).toHaveLength(1);
-            expect(result.shippingAddress).toBeDefined();
-            expect(result.paymentDetails).toBeDefined();
+            expect(result?.groups).toHaveLength(1);
+            expect(result?.groups[0].items).toHaveLength(1);
+            expect(result?.shippingAddress).toBeDefined();
+            expect(result?.paymentDetails).toBeDefined();
         });
 
         it("includeオプションにgroups, shippingAddress, paymentDetailsが含まれる", async () => {

@@ -835,7 +835,10 @@ export const getProducts = async (
                 variantSlug: variant.slug,
                 variantName: variant.variantName,
                 images: variant.images,
-                sizes: variant.sizes,
+                sizes: variant.sizes.map((s) => ({
+                    ...s,
+                    price: s.price.toNumber(),
+                })),
             })
         );
 
@@ -1002,7 +1005,10 @@ export const retrieveProductDetails = async (
             variantImage: variant.variantImage,
             variantUrl: `/product/${productSlug}/${variant.slug}`,
             images: variant.images,
-            sizes: variant.sizes,
+            sizes: variant.sizes.map((s) => ({
+                ...s,
+                price: s.price.toNumber(),
+            })),
             colors: variant.colors,
         })),
     };
@@ -1073,7 +1079,10 @@ const formatProductResponse = (
             isUserFollowingStore,
         },
         colors,
-        sizes,
+        sizes: sizes.map((s) => ({
+            ...s,
+            price: s.price.toNumber(),
+        })),
         specs: {
             product: product.specs,
             variant: variant.specs,
@@ -1553,6 +1562,7 @@ export const getProductsByIds = async (
                         slug: true,
                         rating: true,
                         sales: true,
+                        numReviews: true,
                     },
                 },
             },
@@ -1566,6 +1576,7 @@ export const getProductsByIds = async (
             name: variant.product.name,
             rating: variant.product.rating,
             sales: variant.product.sales,
+            numReviews: variant.product.numReviews,
             variants: [
                 {
                     variantId: variant.id,

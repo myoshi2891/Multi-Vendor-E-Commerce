@@ -862,7 +862,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("50"), discount: 0 }),
+                                createMockSize({ price: 50, discount: 0 }),
                             ],
                         },
                     ],
@@ -875,7 +875,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("20"), discount: 0 }),
+                                createMockSize({ price: 20, discount: 0 }),
                             ],
                         },
                     ],
@@ -913,7 +913,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: `v${i}` }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") })],
+                            sizes: [createMockSize({ price: 29.99 })],
                         },
                     ],
                 }));

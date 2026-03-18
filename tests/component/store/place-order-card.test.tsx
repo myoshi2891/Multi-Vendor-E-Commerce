@@ -104,7 +104,7 @@ describe('PlaceOrderCard', () => {
         }
         const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
-            coupon,
+            coupon: coupon as any,
         }
 
         renderPlaceOrderCard({ cartData: cartWithCoupon })

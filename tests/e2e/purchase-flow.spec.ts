@@ -33,9 +33,18 @@ test.describe("購入フルフロー", () => {
 
   test("商品一覧→詳細→サイズ選択→カート追加→カートページ表示と数量変更", async ({ page }) => {
     await page.goto(`/product/${productSlug}/${variantSlug}`);
-    await expect(page).toHaveURL(
-      new RegExp(`/product/${productSlug}/${variantSlug}\\?size=`)
-    );
+    
+    try {
+      await expect(page).toHaveURL(
+        new RegExp(`/product/${productSlug}/${variantSlug}\\?size=`),
+        { timeout: 5000 }
+      );
+    } catch (error) {
+      console.log("URL did not match. Current URL:", page.url());
+      const body = await page.content();
+      console.log("Page Content snippet:", body.slice(0, 1000));
+      throw error;
+    }
     await expect(page.getByTestId("product-price")).toBeVisible();
 
     await page.getByTestId("add-to-cart").click();

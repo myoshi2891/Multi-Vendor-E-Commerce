@@ -83,7 +83,8 @@ describe('AddressDetails', () => {
                 zip_code: '100-0001',
                 countryId: '550e8400-e29b-41d4-a716-446655440000',
             }),
-            country: countries[0]
+            country: countries[0],
+            user: { id: 'u1', name: 'user', email: 'a@a.com', picture: '', role: 'USER', createdAt: new Date(), updatedAt: new Date() }
         }
 
         render(<AddressDetails data={address} countries={countries} setShow={mockSetShow} />)

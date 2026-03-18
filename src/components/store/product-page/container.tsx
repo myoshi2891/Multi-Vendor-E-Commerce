@@ -157,7 +157,7 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     setCookie(`viewedProduct_${productId}`, "true", {
         maxAge: 3600,
         path: "/",
-    });
+    } as any);
 
     return (
         <div className="relative">

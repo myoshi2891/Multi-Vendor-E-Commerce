@@ -12,7 +12,7 @@ interface QuantitySelectorProps {
     quantity: number
     stock: number
     handleChange: (property: keyof CartProductType, value: any) => void
-    sizes: Size[]
+    sizes: (Omit<Size, 'price'> & { price: number })[]
 }
 
 const QuantitySelector: FC<QuantitySelectorProps> = ({

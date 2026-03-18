@@ -28,7 +28,7 @@ jest.mock("stripe", () => {
             create: mockCreate,
         },
     }));
-    (MockStripe as Record<string, unknown>).__mockCreate = mockCreate;
+    (MockStripe as any).__mockCreate = mockCreate;
     return MockStripe;
 });
 
