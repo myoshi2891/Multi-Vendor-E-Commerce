@@ -183,6 +183,21 @@ describe('CartProduct', () => {
                 expect(toast.success).toHaveBeenCalledWith('Product successfully added to wishlist')
             })
         })
+
+        it('handles failure when addToWishlist rejects on heart click', async () => {
+            ;(addToWishlist as jest.Mock).mockRejectedValue(new Error('Failed to add'))
+            renderCartProduct()
+
+            const heartIcon = screen.getByTestId('cart-item-p1-v1-s1').querySelector('.lucide-heart')?.closest('span')
+            expect(heartIcon).not.toBeNull()
+            fireEvent.click(heartIcon!)
+
+            await waitFor(() => {
+                expect(addToWishlist).toHaveBeenCalledWith('p1', 'v1', 's1')
+                expect(toast.error).toHaveBeenCalled()
+                expect(toast.success).not.toHaveBeenCalled()
+            })
+        })
     })
 
     describe('Stock status', () => {

@@ -155,6 +155,7 @@ describe('PlaceOrderCard', () => {
             expect(emptyUserCart).not.toHaveBeenCalled()
             expect(mockPush).not.toHaveBeenCalled()
             expect(mockSetCartData).not.toHaveBeenCalled()
+            expect(toast.error).toHaveBeenCalledWith('Something went wrong while placing your order.')
         })
     })
 })
