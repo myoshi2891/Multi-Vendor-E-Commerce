@@ -55,7 +55,7 @@ const ProductShippingFee: FC<Props> = ({
 									</td>
 								</tr>
 							) : (
-								<div className="space-y-1">
+								<>
 									<tr
 										className="grid gap-x-1 text-xs px-4"
 										style={{
@@ -70,7 +70,7 @@ const ProductShippingFee: FC<Props> = ({
 										</td>
 									</tr>
 									<tr
-										className="grid gap-x-1 text-xs px-4"
+										className="grid gap-x-1 text-xs px-4 mt-1"
 										style={{
 											gridTemplateColumns: "4fr 1fr",
 										}}
@@ -82,7 +82,7 @@ const ProductShippingFee: FC<Props> = ({
 											${extraFee}
 										</td>
 									</tr>
-								</div>
+								</>
 							)}
 						</thead>
 						<tbody>
@@ -160,7 +160,7 @@ const ProductShippingFee: FC<Props> = ({
 							<tr className="flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold">
 								<td className="w-full bg-black text-white px-1 py-1">
 									<span>
-										${fee} (fee) x {weight}kg (weight) x
+										${fee} (fee) x {weight}kg (weight) x{" "}
 										{quantity} (items) = $
 										{fee * weight * quantity} (total fee)
 									</span>
