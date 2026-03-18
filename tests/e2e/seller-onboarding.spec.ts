@@ -13,12 +13,14 @@ test.describe.serial("Seller オンボーディング", () => {
   let userEmail: string;
   let storeName: string;
   let clerkUserId: string;
+  let userPassword: string;
 
   test.beforeAll(async () => {
     // Generate unique credentials for this test run
     const uniqueId = Date.now();
     userEmail = `new-seller-${uniqueId}+clerk_test@example.com`;
     storeName = `Test Store ${uniqueId}`;
+    userPassword = `TestP@ssw0rd!${uniqueId}`;
 
     if (clerk) {
         // Create user in Clerk
@@ -26,7 +28,7 @@ test.describe.serial("Seller オンボーディング", () => {
             const user = await clerk.users.createUser({
                 emailAddress: [userEmail],
                 username: `newseller${uniqueId}`,
-                password: "TestPassword123!",
+                password: userPassword,
                 skipPasswordChecks: true,
             });
             clerkUserId = user.id;
@@ -65,10 +67,13 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.goto("/sign-in");
     await page.getByLabel("Email address").fill(userEmail);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
+    await page.getByLabel("Password", { exact: true }).fill(userPassword);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Wait for navigation after sign in
+    // Wait for navigation after sign in - looking for the user menu button or home page redirect
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeHidden({ timeout: 20000 });
+    
+    // Ensure we are redirecting away from sign-in
     await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }).catch(() => {});
 
     // Start Onboarding
@@ -86,9 +91,16 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByPlaceholder("Store Email").fill(userEmail);
     await page.getByPlaceholder("Store Phone").fill("1234567890");
 
-    // Fill mock image inputs (the hidden inputs we added to ImageUpload)
-    await page.getByTestId("image-upload-mock-input-profile").fill("https://res.cloudinary.com/test/image/upload/logo.png", { force: true });
-    await page.getByTestId("image-upload-mock-input-cover").fill("https://res.cloudinary.com/test/image/upload/cover.png", { force: true });
+    // Fill mock image inputs (the hidden inputs we added to ImageUpload) using evaluate to avoid focus issues
+    await page.getByTestId("image-upload-mock-input-profile").evaluate((el: HTMLInputElement, url) => {
+        el.value = url;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }, "https://res.cloudinary.com/test/image/upload/logo.png");
+    
+    await page.getByTestId("image-upload-mock-input-cover").evaluate((el: HTMLInputElement, url) => {
+        el.value = url;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }, "https://res.cloudinary.com/test/image/upload/cover.png");
 
     await page.getByRole("button", { name: "Next" }).click();
 
@@ -142,7 +154,7 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.goto("/sign-in");
     await page.getByLabel("Email address").fill(userEmail);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.getByLabel("Password", { exact: true }).fill("TestPassword123!");
+    await page.getByLabel("Password", { exact: true }).fill(userPassword);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 }).catch(() => {});
 
