@@ -3,12 +3,10 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import ProductShippingFee from '@/components/store/product-page/shipping/shipping-fee'
+import { matchText } from '@/config/test-helpers'
 
-const matchText = (text: string) => (content: string, element: any) => {
-    const normalizedContent = content.replace(/\s+/g, ' ').trim()
-    const normalizedText = text.replace(/\s+/g, ' ').trim()
-    return normalizedContent.includes(normalizedText)
-}
+// Mock dependencies
+jest.mock('@clerk/nextjs/server', () => ({}))
 
 describe('ProductShippingFee', () => {
     describe('ITEM method', () => {

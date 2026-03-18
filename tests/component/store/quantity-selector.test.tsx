@@ -124,7 +124,7 @@ describe('QuantitySelector', () => {
         })
         ;(useFromStore as jest.Mock).mockReturnValue([cartItem])
 
-        render(
+        const { rerender } = render(
             <QuantitySelector
                 productId={productId}
                 variantId={variantId}
@@ -139,10 +139,8 @@ describe('QuantitySelector', () => {
         // maxQty should be 10 - 3 = 7
         expect(screen.getByText(/You already have 3 pieces/)).toBeInTheDocument()
         
-        const plusButton = screen.getAllByRole('button')[1]
-        
         // Let's test with quantity at maxQty
-        render(
+        rerender(
             <QuantitySelector
                 productId={productId}
                 variantId={variantId}
@@ -153,9 +151,8 @@ describe('QuantitySelector', () => {
                 sizes={sizes}
             />
         )
-        // Note: The above render will append to body, but we can query again
-        const plusButtons = screen.getAllByRole('button')
-        expect(plusButtons[3]).toBeDisabled() // Second render's plus button
+        const plusButton = screen.getAllByRole('button')[1]
+        expect(plusButton).toBeDisabled()
     })
 
     it('resets quantity to 1 when sizeId changes', () => {

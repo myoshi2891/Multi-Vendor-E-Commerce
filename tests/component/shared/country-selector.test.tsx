@@ -3,23 +3,24 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import CountrySelector from '@/components/shared/country-selector'
+import { SelectMenuOption } from '@/lib/types'
 
 // Mock dependencies
 jest.mock('framer-motion', () => ({
     motion: {
-        ul: ({ children, ...props }: any) => <ul {...props}>{children}</ul>,
+        ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => <ul {...props}>{children}</ul>,
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: React.PropsWithChildren<Record<string, unknown>>) => <>{children}</>,
 }))
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: ({ priority, ...props }: any) => <img {...props} />,
+    default: ({ priority, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => <img {...props} />,
 }))
 
 describe('CountrySelector', () => {
     const mockOnToggle = jest.fn()
     const mockOnChange = jest.fn()
-    const selectedValue = { id: 'c1', name: 'Japan', code: 'JP' }
+    const selectedValue: SelectMenuOption = { id: 'c1', name: 'Japan', code: 'JP' }
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -32,7 +33,7 @@ describe('CountrySelector', () => {
                 open={false}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -47,7 +48,7 @@ describe('CountrySelector', () => {
                 open={false}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -62,7 +63,7 @@ describe('CountrySelector', () => {
                 open={true}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -79,7 +80,7 @@ describe('CountrySelector', () => {
                 open={true}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -102,7 +103,7 @@ describe('CountrySelector', () => {
                 open={true}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -119,7 +120,7 @@ describe('CountrySelector', () => {
                 open={true}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 
@@ -137,7 +138,7 @@ describe('CountrySelector', () => {
                 disabled={true}
                 onToggle={mockOnToggle}
                 onChange={mockOnChange}
-                selectedValue={selectedValue as any}
+                selectedValue={selectedValue}
             />
         )
 

@@ -50,7 +50,7 @@ describe('PlaceOrderCard', () => {
         shippingFee: new Prisma.Decimal('5.00'),
     })
 
-    const cartData = {
+    const cartData: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
         ...createMockCart({
             id: 'cart-1',
             subTotal: new Prisma.Decimal('20.00'),
@@ -65,7 +65,7 @@ describe('PlaceOrderCard', () => {
         render(
             <PlaceOrderCard
                 shippingAddress={null}
-                cartData={cartData as any}
+                cartData={cartData}
                 setCartData={mockSetCartData}
             />
         )
@@ -89,7 +89,7 @@ describe('PlaceOrderCard', () => {
             }),
             store: { name: 'Test Store' }
         }
-        const cartWithCoupon = {
+        const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
             coupon,
         }
@@ -97,7 +97,7 @@ describe('PlaceOrderCard', () => {
         render(
             <PlaceOrderCard
                 shippingAddress={null}
-                cartData={cartWithCoupon as any}
+                cartData={cartWithCoupon}
                 setCartData={mockSetCartData}
             />
         )
@@ -113,7 +113,7 @@ describe('PlaceOrderCard', () => {
         render(
             <PlaceOrderCard
                 shippingAddress={null}
-                cartData={cartData as any}
+                cartData={cartData}
                 setCartData={mockSetCartData}
             />
         )
@@ -130,8 +130,8 @@ describe('PlaceOrderCard', () => {
 
         render(
             <PlaceOrderCard
-                shippingAddress={address as any}
-                cartData={cartData as any}
+                shippingAddress={address}
+                cartData={cartData}
                 setCartData={mockSetCartData}
             />
         )

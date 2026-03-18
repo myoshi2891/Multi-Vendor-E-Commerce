@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 
+import { UserShippingAddressType } from '@/lib/types'
+
 // Mock dependencies
 jest.mock('@/queries/user', () => ({
     upsertShippingAddress: jest.fn(),
@@ -21,9 +23,13 @@ jest.mock('uuid', () => ({
     v4: jest.fn(),
 }))
 // Mock CountrySelector to simplify testing
+interface MockCountrySelectorProps {
+    onChange: (value: string) => void
+    selectedValue?: { name: string }
+}
 jest.mock('@/components/shared/country-selector', () => ({
     __esModule: true,
-    default: ({ onChange, selectedValue }: any) => (
+    default: ({ onChange, selectedValue }: MockCountrySelectorProps) => (
         <select 
             data-testid="country-selector" 
             value={selectedValue?.name} 
@@ -65,7 +71,7 @@ describe('AddressDetails', () => {
     })
 
     it('renders with existing data', () => {
-        const address = {
+        const address: UserShippingAddressType = {
             ...createMockShippingAddress({
                 id: '550e8400-e29b-41d4-a716-446655440003',
                 firstName: 'John',
@@ -80,7 +86,7 @@ describe('AddressDetails', () => {
             country: countries[0]
         }
 
-        render(<AddressDetails data={address as any} countries={countries} setShow={mockSetShow} />)
+        render(<AddressDetails data={address} countries={countries} setShow={mockSetShow} />)
 
         expect(screen.getByPlaceholderText('First name')).toHaveValue('John')
         expect(screen.getByPlaceholderText('Last name')).toHaveValue('Doe')

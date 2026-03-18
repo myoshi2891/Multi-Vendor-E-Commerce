@@ -10,7 +10,13 @@ import toast from 'react-hot-toast'
 jest.mock('@/queries/coupon', () => ({
     applyCoupon: jest.fn(),
 }))
-jest.mock('react-hot-toast')
+jest.mock('react-hot-toast', () => ({
+    __esModule: true,
+    default: {
+        success: jest.fn(),
+        error: jest.fn(),
+    }
+}))
 jest.mock('next/navigation', () => ({
     useRouter: () => ({
         refresh: jest.fn(),

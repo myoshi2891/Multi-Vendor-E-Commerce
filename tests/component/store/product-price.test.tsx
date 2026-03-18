@@ -72,8 +72,9 @@ describe('ProductPrice', () => {
             expect(screen.getByText('20% off')).toBeInTheDocument()
             expect(screen.getByText('10 items')).toBeInTheDocument()
 
-            expect(mockHandleChange).toHaveBeenCalledWith('price', 80)
-            expect(mockHandleChange).toHaveBeenCalledWith('stock', 10)
+            expect(mockHandleChange).toHaveBeenCalledTimes(2)
+            expect(mockHandleChange).toHaveBeenNthCalledWith(1, 'price', 80)
+            expect(mockHandleChange).toHaveBeenNthCalledWith(2, 'stock', 10)
         })
 
         it('renders "Out of stock" if quantity is 0', () => {

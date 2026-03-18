@@ -88,3 +88,14 @@ export class AssertionHelpers {
         return jest.spyOn(console, "log").mockImplementation(() => undefined);
     }
 }
+
+export const matchText = (text: string) => (content: string, _element: Element | null = null) => {
+    const normalizedContent = content.replace(/\s+/g, ' ').trim()
+    const normalizedText = text.replace(/\s+/g, ' ').trim()
+    return normalizedContent.includes(normalizedText)
+}
+
+export const matchTextCrunch = (text: string) => (content: string, _element: Element | null = null) => {
+    const crunch = (s: string) => s.replace(/\s+/g, '').replace(/\u00a0/g, '')
+    return crunch(content).includes(crunch(text))
+}

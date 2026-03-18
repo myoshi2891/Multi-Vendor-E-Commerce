@@ -17,10 +17,11 @@ describe('SizeSelector', () => {
     const mockReplace = jest.fn()
     const mockPathname = '/product/test'
     const mockHandleChange = jest.fn()
-    const mockSearchParams = new URLSearchParams()
+    let mockSearchParams: URLSearchParams
 
     beforeEach(() => {
         jest.clearAllMocks()
+        mockSearchParams = new URLSearchParams()
         ;(useRouter as jest.Mock).mockReturnValue({ replace: mockReplace })
         ;(usePathname as jest.Mock).mockReturnValue(mockPathname)
         ;(useSearchParams as jest.Mock).mockReturnValue(mockSearchParams)
@@ -47,7 +48,7 @@ describe('SizeSelector', () => {
         expect(selectedOption).toHaveStyle({ borderColor: '#000' })
 
         const unselectedOption = screen.getByTestId('size-option-s1')
-        expect(unselectedOption).toHaveStyle({ borderColor: '' })
+        expect(unselectedOption).not.toHaveStyle({ borderColor: '#000' })
     })
 
     it('calls handleChange and router.replace on size click', () => {

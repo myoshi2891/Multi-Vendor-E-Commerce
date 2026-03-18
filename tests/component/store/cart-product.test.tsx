@@ -7,8 +7,11 @@ import { createMockCartProduct } from '@/config/test-fixtures'
 import { useCartStore } from '@/cart-store/useCartStore'
 import { addToWishlist } from '@/queries/user'
 import toast from 'react-hot-toast'
+import { ImageProps } from 'next/image'
+import { matchTextCrunch as matchText } from '@/config/test-helpers'
 
 // Mock dependencies
+jest.mock('@clerk/nextjs/server', () => ({}))
 jest.mock('@/cart-store/useCartStore')
 jest.mock('@/queries/user', () => ({
     addToWishlist: jest.fn(),
@@ -16,17 +19,12 @@ jest.mock('@/queries/user', () => ({
 jest.mock('react-hot-toast')
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: (props: any) => <img {...props} />,
+    default: (props: ImageProps) => <img {...props as any} />,
 }))
 jest.mock('next/link', () => ({
     __esModule: true,
-    default: ({ children, href }: any) => <a href={href}>{children}</a>,
+    default: ({ children, href }: React.PropsWithChildren<{ href: string }>) => <a href={href}>{children}</a>,
 }))
-
-const matchText = (text: string) => (content: string) => {
-    const crunch = (s: string) => s.replace(/\s+/g, '').replace(/\u00a0/g, '')
-    return crunch(content).includes(crunch(text))
-}
 
 describe('CartProduct', () => {
     const mockUpdateProductQuantity = jest.fn()
