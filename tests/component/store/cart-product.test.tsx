@@ -16,7 +16,13 @@ jest.mock('@/cart-store/useCartStore')
 jest.mock('@/queries/user', () => ({
     addToWishlist: jest.fn(),
 }))
-jest.mock('react-hot-toast')
+jest.mock('react-hot-toast', () => ({
+    __esModule: true,
+    default: {
+        success: jest.fn(),
+        error: jest.fn(),
+    }
+}))
 jest.mock('next/image', () => ({
     __esModule: true,
     default: ({ src, alt, width, height, className, style }: ImageProps) => {

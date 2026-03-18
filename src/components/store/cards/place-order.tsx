@@ -39,7 +39,7 @@ const PlaceOrderCard: FC<Props> = ({
                     await emptyUserCart()
                     push(`/order/${order.orderId}`)
                 }
-            } catch (error) {
+            } catch (_error) {
                 toast.error('Something went wrong while placing your order.')
             }
         }
