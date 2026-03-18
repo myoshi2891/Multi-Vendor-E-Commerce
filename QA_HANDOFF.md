@@ -14,7 +14,7 @@
    - `QuantitySelector`: 在庫数 (maxQty) に達した際のボタン無効化ロジックを修正。
 
 3. **テストインフラの改善**:
-   - Clerk 認証やサーバーサイドモジュール (next/navigation) のモック戦略を確立し、JSDoc 環境でのテストを安定化。
+   - Clerk 認証やサーバーサイドモジュール (next/navigation) のモック戦略を確立し、JSDOM 環境でのテストを安定化。
 
 ## 残りタスク (Remaining Tasks)
 - **Phase 1 (再確認)**: Step 18 の `DashboardStats` コンポーネントがソースコード上に見当たらないため、実装状況を確認し、必要であれば新規作成またはテスト対象外とする。
