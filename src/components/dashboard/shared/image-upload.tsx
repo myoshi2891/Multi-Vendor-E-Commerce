@@ -65,6 +65,12 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     }
                 )}
             >
+                <input 
+                    type="text" 
+                    className="hidden" 
+                    data-testid="image-upload-mock-input-profile"
+                    onChange={(e) => onChange(e.target.value)}
+                />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -116,6 +122,12 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 )}
                 style={{ height: '348px' }}
             >
+                <input 
+                    type="text" 
+                    className="hidden" 
+                    data-testid="image-upload-mock-input-cover"
+                    onChange={(e) => onChange(e.target.value)}
+                />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -162,6 +174,12 @@ const ImageUpload: FC<ImageUploadProps> = ({
     } else {
         return (
             <div>
+                <input 
+                    type="text" 
+                    className="hidden" 
+                    data-testid="image-upload-mock-input-standard"
+                    onChange={(e) => onChange(e.target.value)}
+                />
                 <div className="mb-4 flex items-center gap-4">
                     {value.length > 0 &&
                         !dontShowPreview &&
