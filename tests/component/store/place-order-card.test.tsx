@@ -46,7 +46,9 @@ describe('PlaceOrderCard', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-        ;(useCartStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ emptyCart: mockEmptyCart }))
+        ;(useCartStore as unknown as jest.Mock).mockImplementation(
+            (selector: (state: { emptyCart: typeof mockEmptyCart }) => unknown) => selector({ emptyCart: mockEmptyCart })
+        )
     })
 
     const cartItem = createMockCartItem({

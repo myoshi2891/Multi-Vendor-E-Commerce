@@ -19,16 +19,25 @@ jest.mock('@/queries/user', () => ({
 jest.mock('react-hot-toast')
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: ({ src, alt, width, height, className, style }: ImageProps) => (
-        <img 
-            src={typeof src === 'string' ? src : src?.toString()} 
-            alt={alt} 
-            width={width} 
-            height={height} 
-            className={className} 
-            style={style} 
-        />
-    ),
+    default: ({ src, alt, width, height, className, style }: ImageProps) => {
+        let imgSrc = ''
+        if (typeof src === 'string') {
+            imgSrc = src
+        } else if (src && typeof src === 'object' && 'src' in src && typeof src.src === 'string') {
+            imgSrc = src.src
+        }
+
+        return (
+            <img 
+                src={imgSrc} 
+                alt={alt} 
+                width={width} 
+                height={height} 
+                className={className} 
+                style={style} 
+            />
+        )
+    },
 }))
 jest.mock('next/link', () => ({
     __esModule: true,
