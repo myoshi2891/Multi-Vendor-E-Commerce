@@ -19,7 +19,16 @@ jest.mock('@/queries/user', () => ({
 jest.mock('react-hot-toast')
 jest.mock('next/image', () => ({
     __esModule: true,
-    default: (props: ImageProps) => <img {...props as any} />,
+    default: ({ src, alt, width, height, className, style }: ImageProps) => (
+        <img 
+            src={typeof src === 'string' ? src : src?.toString()} 
+            alt={alt} 
+            width={width} 
+            height={height} 
+            className={className} 
+            style={style} 
+        />
+    ),
 }))
 jest.mock('next/link', () => ({
     __esModule: true,
@@ -224,7 +233,8 @@ describe('CartProduct', () => {
             )
 
             const heartIcon = screen.getByTestId('cart-item-p1-v1-s1').querySelector('.lucide-heart')?.closest('span')
-            if (heartIcon) fireEvent.click(heartIcon)
+            expect(heartIcon).not.toBeNull()
+            fireEvent.click(heartIcon!)
 
             await waitFor(() => {
                 expect(addToWishlist).toHaveBeenCalledWith('p1', 'v1', 's1')

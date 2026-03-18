@@ -19,7 +19,13 @@ jest.mock('@/cart-store/useCartStore')
 jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
 }))
-jest.mock('react-hot-toast')
+jest.mock('react-hot-toast', () => ({
+    __esModule: true,
+    default: {
+        error: jest.fn(),
+        success: jest.fn(),
+    }
+}))
 jest.mock('@/components/store/forms/apply-coupon', () => ({
     __esModule: true,
     default: () => <div data-testid="apply-coupon-form">ApplyCouponForm</div>,
@@ -40,7 +46,7 @@ describe('PlaceOrderCard', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-        ;(useCartStore as unknown as jest.Mock).mockReturnValue(mockEmptyCart)
+        ;(useCartStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({ emptyCart: mockEmptyCart }))
     })
 
     const cartItem = createMockCartItem({
