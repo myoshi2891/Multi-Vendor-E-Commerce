@@ -1,39 +1,31 @@
 # QA & Test Implementation Handoff (次回のセッションへの引き継ぎ)
 
 ## 本日の作業のサマリ (Today's Achievements)
-**Snapshot as of 2026-03-17:**
-1. **テスト戦略とエージェントスキルのアップデート**:
-   - `ec-qa-expert` を世界トップクラスのQA仕様（境界値分析、冪等性、異常系）にアップデート。
-   - `ec-tdd-expert` を新規作成し、TDD (Red-Green-Refactor) のプロセスを明文化。
-   - `docs/testing/TEST_IMPLEMENTATION_PLAN.md` を作成し、現在不足しているテスト（UI、カスタムフック、ミドルウェア、E2E等）の具体的な実装計画と対象ファイル（Phase 1〜3）をリストアップ。
+**Snapshot as of 2026-03-18:**
+1. **Phase 2 (UI コンポーネントテスト) の完了**:
+   - `TEST_IMPLEMENTATION_PLAN.md` の Phase 2 に記載された主要なコンポーネントテストをすべて実装。
+   - ステータスタグ、ProductPrice、ShippingFee、SizeSelector、QuantitySelector、CartProduct、ApplyCouponForm、PlaceOrderCard、Sidebar、Header、ModalProvider 等のテストを完了。
+   - ダッシュボード用の各種ステータス選択コンポーネント (OrderStatus, ProductStatus, StoreStatus) および CountrySelector のテストも追加。
+   - 合計 118 テストがパス。
 
-2. **Phase 1 (基盤ロジック・ユーティリティ) の実装状況**:
-   - **完了**: `src/middleware.ts` (`src/middleware.test.ts`) - ルーティング保護と国判定Cookieのテスト、Secure属性、サブパス網羅、ReDoS対策済みモック、引数の型安全性の強化
-   - **完了**: `src/hooks/use-mobile.tsx` (`src/hooks/use-mobile.test.tsx`) - matchMediaモックのテスト及び未サポート環境でのリサイズ追従修正
-   - **完了**: `src/hooks/use-toast.ts` (`src/hooks/use-toast.test.ts`) - ReducerとSide Effects（Fake Timers）のテスト、タイマーカウント検証追加
-   - **完了**: `src/hooks/useFromStore.ts` (`src/hooks/useFromStore.test.tsx`) - Zustandハイドレーションラッパーのテスト
-   - **完了**: `src/providers/modal-provider.tsx` (`src/providers/modal-provider.test.tsx`) - Contextのレンダリング、状態遷移、非同期データ取得の堅牢化、クリーンアップ検証済み
-   - **完了**: `tests/component/utils-dom.test.ts` - `downloadBlobAsFile`, `printPDF` のテスト、スタックオーバーフロー修正、DOMモックの型安全性強化、クリーンアップの集約
+2. **コンポーネントのバグ修正**:
+   - `OrderStatusTag`: Enum 値ではなくラベルを表示するように修正。
+   - `ProductShippingFee`: `thead` 内の不正な `div` ネスティングを修正。
+   - `QuantitySelector`: 在庫数 (maxQty) に達した際のボタン無効化ロジックを修正。
 
-※ 本日の作業はすべてコミット済みです（Working tree clean）。
+3. **テストインフラの改善**:
+   - Clerk 認証やサーバーサイドモジュール (next/navigation) のモック戦略を確立し、JSDoc 環境でのテストを安定化。
 
----
+## 残りタスク (Remaining Tasks)
+- **Phase 1 (再確認)**: Step 18 の `DashboardStats` コンポーネントがソースコード上に見当たらないため、実装状況を確認し、必要であれば新規作成またはテスト対象外とする。
+- **Phase 3 (E2E テスト)**: `purchase-flow.spec.ts` を含む Playwright E2E シナリオの実装。
 
-## 次回の作業内容 (Next Steps for Tomorrow)
-計画書 (`docs/testing/TEST_IMPLEMENTATION_PLAN.md`) の **Phase 1 の残り** から実装を再開してください。
-
-### Snapshot (2026-03-17) — remaining tasks at time of PR
-以下の Phase 1 のファイルについてテストの実装が未完了です。
-
-1. **1-2. `src/lib/country.ts`**:
-   - `fetch` のモックを使用し、正常系（ipinfo.io）・異常系・タイムアウト・フォールバックのテストを実装する。
-2. **1-3. `src/utils/sanitize.ts`**:
-   - DOMPurify による XSS 防御とエッジケースのテストを実装する。
-3. **1-6. `src/lib/utils.ts`**:
-   - `cn` 関数や、DOM API に依存しない純粋なユーティリティ関数のテスト。
+## 次回セッションへの申し送り (Handoff Notes)
+- Phase 2 (UI コンポーネント) は Step 18 を除き完了しています。
+- 次は **Phase 3 (E2E テスト)** の実装、または見当たらない `DashboardStats` の調査から開始してください。
 
 ### 次回セッション開始時のプロンプト例
-> 「QA_HANDOFF.md を確認し、TEST_IMPLEMENTATION_PLAN.md の Phase 1-2 (`src/lib/country.ts`) のテスト実装からTDDで再開してください。」
+> 「QA_HANDOFF.md を確認し、TEST_IMPLEMENTATION_PLAN.md の Phase 3 (E2E テスト) から実装を開始してください。」
 
 ---
 *Stay Red, Go Green, and Refactor rigorously.*
