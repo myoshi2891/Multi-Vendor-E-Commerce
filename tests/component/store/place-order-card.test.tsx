@@ -69,14 +69,19 @@ describe('PlaceOrderCard', () => {
         coupon: null,
     }
 
-    it('renders summary correctly without coupon', () => {
-        render(
+    const renderPlaceOrderCard = (overrides?: Partial<React.ComponentProps<typeof PlaceOrderCard>>) => {
+        return render(
             <PlaceOrderCard
                 shippingAddress={null}
                 cartData={cartData}
                 setCartData={mockSetCartData}
+                {...overrides}
             />
         )
+    }
+
+    it('renders summary correctly without coupon', () => {
+        renderPlaceOrderCard()
 
         expect(screen.getByText('Summary')).toBeInTheDocument()
         expect(screen.getByText('Subtotal')).toBeInTheDocument()
@@ -102,13 +107,7 @@ describe('PlaceOrderCard', () => {
             coupon,
         }
 
-        render(
-            <PlaceOrderCard
-                shippingAddress={null}
-                cartData={cartWithCoupon}
-                setCartData={mockSetCartData}
-            />
-        )
+        renderPlaceOrderCard({ cartData: cartWithCoupon })
 
         expect(screen.getByText(/Coupon \(SAVE10\) \(-10%\)/)).toBeInTheDocument()
         // storeSubTotal = 10 * 2 + 5 = 25. 10% of 25 = 2.50
@@ -118,13 +117,7 @@ describe('PlaceOrderCard', () => {
     })
 
     it('shows error if placing order without shipping address', async () => {
-        render(
-            <PlaceOrderCard
-                shippingAddress={null}
-                cartData={cartData}
-                setCartData={mockSetCartData}
-            />
-        )
+        renderPlaceOrderCard()
 
         fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
 
@@ -136,13 +129,7 @@ describe('PlaceOrderCard', () => {
         const address = createMockShippingAddress({ id: 'addr-1' })
         ;(placeOrder as jest.Mock).mockResolvedValue({ orderId: 'ord-123' })
 
-        render(
-            <PlaceOrderCard
-                shippingAddress={address}
-                cartData={cartData}
-                setCartData={mockSetCartData}
-            />
-        )
+        renderPlaceOrderCard({ shippingAddress: address })
 
         fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
 
@@ -151,6 +138,23 @@ describe('PlaceOrderCard', () => {
             expect(mockEmptyCart).toHaveBeenCalled()
             expect(emptyUserCart).toHaveBeenCalled()
             expect(mockPush).toHaveBeenCalledWith('/order/ord-123')
+        })
+    })
+
+    it('handles API error during place order correctly', async () => {
+        const address = createMockShippingAddress({ id: 'addr-1' })
+        ;(placeOrder as jest.Mock).mockRejectedValue(new Error('Payment failed'))
+
+        renderPlaceOrderCard({ shippingAddress: address })
+
+        fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
+
+        await waitFor(() => {
+            expect(placeOrder).toHaveBeenCalledWith(address, 'cart-1')
+            expect(mockEmptyCart).not.toHaveBeenCalled()
+            expect(emptyUserCart).not.toHaveBeenCalled()
+            expect(mockPush).not.toHaveBeenCalled()
+            expect(mockSetCartData).not.toHaveBeenCalled()
         })
     })
 })

@@ -73,16 +73,21 @@ describe('CartProduct', () => {
         extraShippingFee: 2,
     })
 
-    it('renders product details correctly', () => {
-        render(
+    const renderCartProduct = (overrides?: Partial<React.ComponentProps<typeof CartProduct>>) => {
+        return render(
             <CartProduct
                 product={product}
                 selectedItems={[]}
                 setSelectedItems={mockSetSelectedItems}
                 setTotalShipping={mockSetTotalShipping}
                 userCountry={userCountry}
+                {...overrides}
             />
         )
+    }
+
+    it('renders product details correctly', () => {
+        renderCartProduct()
 
         expect(screen.getByText(/Test Product ・ Red/)).toBeInTheDocument()
         expect(screen.getByText(/\$10.00 x 2 = \$20.00/)).toBeInTheDocument()
@@ -91,15 +96,7 @@ describe('CartProduct', () => {
 
     describe('Shipping Fee Calculation', () => {
         it('calculates ITEM shipping fee correctly', () => {
-            render(
-                <CartProduct
-                    product={product}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct()
 
             // 5 + (2-1)*2 = 7
             expect(screen.getByText(matchText('$ 5 (first item) + 1 item x $2 (1 additional item) = $ 7.00'))).toBeInTheDocument()
@@ -114,15 +111,7 @@ describe('CartProduct', () => {
                 weight: 1.5,
                 quantity: 2,
             })
-            render(
-                <CartProduct
-                    product={weightProduct}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct({ product: weightProduct })
 
             // 2 * 1.5 * 2 = 6
             expect(screen.getByText(matchText('$2 x 1.5kg x 2 items = $ 6.00'))).toBeInTheDocument()
@@ -134,15 +123,7 @@ describe('CartProduct', () => {
                 shippingMethod: 'FIXED',
                 shippingFee: 15,
             })
-            render(
-                <CartProduct
-                    product={fixedProduct}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct({ product: fixedProduct })
 
             expect(screen.getByText(matchText('Fixed Fee : $ 15.00'))).toBeInTheDocument()
         })
@@ -153,15 +134,7 @@ describe('CartProduct', () => {
                 shippingFee: 0,
                 extraShippingFee: 0,
             })
-            render(
-                <CartProduct
-                    product={freeProduct}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct({ product: freeProduct })
 
             expect(screen.getByText('Free Delivery')).toBeInTheDocument()
         })
@@ -169,30 +142,14 @@ describe('CartProduct', () => {
 
     describe('Interactions', () => {
         it('calls updateProductQuantity on increase click', () => {
-            render(
-                <CartProduct
-                    product={product}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct()
 
             fireEvent.click(screen.getByTestId('cart-qty-increase'))
             expect(mockUpdateProductQuantity).toHaveBeenCalledWith(product, 3)
         })
 
         it('calls updateProductQuantity on decrease click when qty > 1', () => {
-            render(
-                <CartProduct
-                    product={product}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct()
 
             fireEvent.click(screen.getByTestId('cart-qty-decrease'))
             expect(mockUpdateProductQuantity).toHaveBeenCalledWith(product, 1)
@@ -200,30 +157,14 @@ describe('CartProduct', () => {
 
         it('calls removeFromCart on decrease click when qty is 1', () => {
             const singleQtyProduct = createMockCartProduct({ ...product, quantity: 1 })
-            render(
-                <CartProduct
-                    product={singleQtyProduct}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct({ product: singleQtyProduct })
 
             fireEvent.click(screen.getByTestId('cart-qty-decrease'))
             expect(mockRemoveFromCart).toHaveBeenCalledWith(singleQtyProduct)
         })
 
         it('calls setSelectedItems on checkbox click', () => {
-            render(
-                <CartProduct
-                    product={product}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct()
 
             fireEvent.click(screen.getByRole('checkbox', { hidden: true }))
             expect(mockSetSelectedItems).toHaveBeenCalled()
@@ -231,15 +172,7 @@ describe('CartProduct', () => {
 
         it('calls addToWishlist on heart click', async () => {
             ;(addToWishlist as jest.Mock).mockResolvedValue(true)
-            render(
-                <CartProduct
-                    product={product}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct()
 
             const heartIcon = screen.getByTestId('cart-item-p1-v1-s1').querySelector('.lucide-heart')?.closest('span')
             expect(heartIcon).not.toBeNull()
@@ -255,15 +188,7 @@ describe('CartProduct', () => {
     describe('Stock status', () => {
         it('renders "Out of stock" and disables selection when stock is 0', () => {
             const outOfStockProduct = createMockCartProduct({ ...product, stock: 0 })
-            render(
-                <CartProduct
-                    product={outOfStockProduct}
-                    selectedItems={[]}
-                    setSelectedItems={mockSetSelectedItems}
-                    setTotalShipping={mockSetTotalShipping}
-                    userCountry={userCountry}
-                />
-            )
+            renderCartProduct({ product: outOfStockProduct })
 
             expect(screen.getByText('Out of stock')).toBeInTheDocument()
             expect(screen.queryByRole('checkbox', { hidden: true })).not.toBeInTheDocument()

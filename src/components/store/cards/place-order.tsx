@@ -32,11 +32,15 @@ const PlaceOrderCard: FC<Props> = ({
         if (!shippingAddress) {
             toast.error('Select a shipping address before placing your order.')
         } else {
-            const order = await placeOrder(shippingAddress, id)
-            if (order) {
-                emptyCart()
-                await emptyUserCart()
-                push(`/order/${order.orderId}`)
+            try {
+                const order = await placeOrder(shippingAddress, id)
+                if (order) {
+                    emptyCart()
+                    await emptyUserCart()
+                    push(`/order/${order.orderId}`)
+                }
+            } catch (error) {
+                toast.error('Something went wrong while placing your order.')
             }
         }
         setLoading(false)
