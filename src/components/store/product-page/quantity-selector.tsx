@@ -107,7 +107,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                     <button
                         onClick={handleIncrease}
                         className="inline-flex size-6 items-center justify-center gap-x-2 rounded-full border border-gray-200 bg-white text-sm font-medium shadow-sm focus:bg-gray-50 focus:outline-none disabled:pointer-events-none disabled:opacity-50"
-                        disabled={quantity === stock || quantity > maxQty}
+                        disabled={quantity >= maxQty}
                     >
                         <Plus className="w-3" />
                     </button>

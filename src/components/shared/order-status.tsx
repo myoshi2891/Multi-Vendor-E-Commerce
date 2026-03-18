@@ -85,7 +85,7 @@ const OrderStatusTag: FC<OrderStatusTagProps> = ({ status }) => {
                 )}
             >
                 <Truck className="size-3 shrink-0" />
-                {status}
+                {label}
             </span>
         </div>
     )
