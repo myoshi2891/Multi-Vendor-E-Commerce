@@ -5,7 +5,7 @@ import { FC, useEffect, useState } from 'react'
 import Image from 'next/image'
 
 // Cloudinary
-import { CldUploadWidget } from 'next-cloudinary'
+import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary'
 import { Button } from '@/components/ui/button'
 import { Trash } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -50,8 +50,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
         return null
     }
 
-    const onUpload = (result: any) => {
-        onChange(result.info.secure_url)
+    const onUpload = (result: CloudinaryUploadWidgetResults) => {
+        if (result.info && typeof result.info !== 'string' && result.info.secure_url) {
+            onChange(result.info.secure_url)
+        }
     }
 
     if (type === 'profile') {
@@ -69,7 +71,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     type="text" 
                     style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
                     tabIndex={-1}
-                    data-testid="image-upload-mock-input-profile"
+                    data-testid="n-mock-input-profile"
                     onChange={(e) => onChange(e.target.value)}
                 />
                 {value.length > 0 && (
@@ -127,7 +129,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     type="text" 
                     style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
                     tabIndex={-1}
-                    data-testid="image-upload-mock-input-cover"
+                    data-testid="n-mock-input-cover"
                     onChange={(e) => onChange(e.target.value)}
                 />
                 {value.length > 0 && (
@@ -180,7 +182,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     type="text" 
                     style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
                     tabIndex={-1}
-                    data-testid="image-upload-mock-input-standard"
+                    data-testid="n-mock-input-standard"
                     onChange={(e) => onChange(e.target.value)}
                 />
                 <div className="mb-4 flex items-center gap-4">

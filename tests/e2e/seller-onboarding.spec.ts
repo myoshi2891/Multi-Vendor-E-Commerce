@@ -36,17 +36,24 @@ test.describe.serial("Seller オンボーディング", () => {
                 skipPasswordChecks: true,
             });
             clerkUserId = user.id;
-        } catch (error: any) {
-            console.error(JSON.stringify(error.errors || error, null, 2));
+
+            // Create user in Prisma so they exist in DB
+            await prisma.user.upsert({
+                where: { id: clerkUserId },
+                update: { email: userEmail, name: "New E2E Seller", picture: "/assets/images/default-user.jpg" },
+                create: { id: clerkUserId, email: userEmail, name: "New E2E Seller", picture: "/assets/images/default-user.jpg" }
+            });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("Setup failed:", error.message, error.stack);
+            } else {
+                console.error("Setup failed with non-error object:", error);
+            }
+            if (clerkUserId) {
+                await clerk.users.deleteUser(clerkUserId).catch(() => {});
+            }
             throw error;
         }
-
-        // Create user in Prisma so they exist in DB (Webhooks might not fire local to test runner)
-        await prisma.user.upsert({
-            where: { id: clerkUserId },
-            update: { email: userEmail, name: "New E2E Seller", picture: "/assets/images/default-user.jpg" },
-            create: { id: clerkUserId, email: userEmail, name: "New E2E Seller", picture: "/assets/images/default-user.jpg" }
-        });
     } else {
         throw new Error("CLERK_SECRET_KEY is not set. Cannot run this test.");
     }
@@ -79,9 +86,15 @@ test.describe.serial("Seller オンボーディング", () => {
     
     // Ensure we are redirecting away from sign-in
     await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }).catch(() => {});
+    // Explicitly wait for home page or next destination
+    await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 }).catch(() => {});
+    await page.waitForLoadState("networkidle");
 
-    // Start Onboarding
-    await page.goto("/seller/apply");
+    // Start Onboarding - retry if interrupted
+    await expect(async () => {
+        await page.goto("/seller/apply");
+        expect(page.url()).toContain("/seller/apply");
+    }).toPass({ timeout: 15000 });
 
     // Step 1: Click Next
     await expect(page.getByText("Please sign in (Or sign up if you are new) to start")).toBeHidden();
@@ -96,8 +109,8 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByPlaceholder("Store Phone").fill("1234567890");
 
     // Fill mock image inputs (the hidden inputs we added to ImageUpload)
-    await page.getByTestId("image-upload-mock-input-profile").fill("https://res.cloudinary.com/test/image/upload/logo.png", { force: true });
-    await page.getByTestId("image-upload-mock-input-cover").fill("https://res.cloudinary.com/test/image/upload/cover.png", { force: true });
+    await page.getByTestId("n-mock-input-profile").fill("https://res.cloudinary.com/test/image/upload/logo.png", { force: true });
+    await page.getByTestId("n-mock-input-cover").fill("https://res.cloudinary.com/test/image/upload/cover.png", { force: true });
 
     await page.getByRole("button", { name: "Next" }).click();
 
@@ -116,9 +129,12 @@ test.describe.serial("Seller オンボーディング", () => {
     expect(store?.status).toBe("PENDING");
     
     // As a PENDING seller, they shouldn't be able to access the seller dashboard
-    await page.goto("/dashboard/seller");
-    // Should be redirected to home since role is not SELLER yet
-    await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 }).catch(() => {});
+    await expect(async () => {
+        await page.goto("/dashboard/seller");
+        // Should be redirected to home since role is not SELLER yet
+        await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 });
+        expect(new URL(page.url()).pathname).toBe("/");
+    }).toPass({ timeout: 15000 });
   });
 
   test("管理者が店舗を ACTIVE に変更＆販売者がダッシュボードにアクセス", async ({ page }) => {
@@ -127,19 +143,28 @@ test.describe.serial("Seller オンボーディング", () => {
        expect(store).not.toBeNull();
 
        if (store) {
-           await prisma.store.update({
-               where: { id: store.id },
-               data: { status: "ACTIVE" }
-           });
-
-           await prisma.user.update({
-               where: { id: store.userId },
-               data: { role: "SELLER" }
-           });
-
-           await clerk.users.updateUserMetadata(store.userId, {
-               privateMetadata: { role: "SELLER" }
-           });
+           try {
+               await prisma.store.update({
+                   where: { id: store.id },
+                   data: { status: "ACTIVE" }
+               });
+               await prisma.user.update({
+                   where: { id: store.userId },
+                   data: { role: "SELLER" }
+               });
+               await clerk.users.updateUserMetadata(store.userId, {
+                   privateMetadata: { role: "SELLER" }
+               });
+           } catch (error: unknown) {
+               if (error instanceof Error) {
+                   console.error("Admin approval failed:", error.message, error.stack);
+               }
+               // Rollback DB logic
+               await prisma.store.update({ where: { id: store.id }, data: { status: "PENDING" } }).catch(() => {});
+               await prisma.user.update({ where: { id: store.userId }, data: { role: "USER" } }).catch(() => {});
+               await clerk.users.updateUserMetadata(store.userId, { privateMetadata: { role: "USER" } }).catch(() => {});
+               throw error;
+           }
        }
     } else {
        console.warn("CLERK_SECRET_KEY not found, skipping Clerk role update. The dashboard access test might fail.");
@@ -154,13 +179,20 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByLabel("Password", { exact: true }).fill(userPassword);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 }).catch(() => {});
+    // Explicitly wait for home page or next destination
+    await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 }).catch(() => {});
+    await page.waitForLoadState("networkidle");
 
     // Now they should have access to the seller dashboard because their role is SELLER
-    await page.goto("/dashboard/seller");
-    await expect(page).toHaveURL(/.*dashboard\/seller/);
+    await expect(async () => {
+        await page.goto("/dashboard/seller");
+        expect(page.url()).toContain("/dashboard/seller");
+    }).toPass({ timeout: 15000 });
 
     // Verify they can view the new product page
-    await page.goto(`/dashboard/seller/stores/${storeUrl}/products/new`);
-    await expect(page.getByText(/Create a new Product Information/i)).toBeVisible();
+    await expect(async () => {
+        await page.goto(`/dashboard/seller/stores/${storeUrl}/products/new`);
+        await expect(page.getByText(/Create a new Product Information/i)).toBeVisible({ timeout: 10000 });
+    }).toPass({ timeout: 15000 });
   });
 });
