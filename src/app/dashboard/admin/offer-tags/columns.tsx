@@ -53,7 +53,7 @@ export const columns: ColumnDef<OfferTag>[] = [
 		header: "Name",
 		cell: ({ row }) => {
 			return (
-				<span className="font-extrabold text-lg capitalize">
+				<span className="text-lg font-extrabold capitalize">
 					{row.original.name}
 				</span>
 			);
@@ -97,9 +97,9 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 		<AlertDialog>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" className="h-8 w-8 p-0">
+					<Button variant="ghost" className="size-8 p-0">
 						<span className="sr-only">Open menu</span>
-						<MoreHorizontal className="h-4 w-4" />
+						<MoreHorizontal className="size-4" />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
@@ -151,7 +151,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 					</AlertDialogCancel>
 					<AlertDialogAction
 						disabled={loading}
-						className="bg-destructive hover:bg-destructive mb-2 text-white"
+						className="mb-2 bg-destructive text-white hover:bg-destructive"
 						onClick={async () => {
 							setLoading(true);
 							await deleteOfferTag(rowData.id);

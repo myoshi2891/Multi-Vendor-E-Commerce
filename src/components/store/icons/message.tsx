@@ -4,7 +4,7 @@ export default function MessageIcon() {
 			viewBox="0 0 512 512"
 			style={{ color: "currentColor" }}
 			xmlns="http://www.w3.org/2000/svg"
-			className="h-7 w-7 mt-2"
+			className="mt-2 size-7"
 		>
 			<svg
 				width="100%"

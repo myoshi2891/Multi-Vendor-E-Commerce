@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Links({ subs }: { subs: SubCategory[] }) {
 	return (
-		<div className="grid md:grid-cols-3 gap-4 mt-5 text-sm">
+		<div className="mt-5 grid gap-4 text-sm md:grid-cols-3">
 			{/* SubCategories */}
 			<div className="space-y-4">
 				<h1 className="text-lg font-bold">Find it Fast</h1>
@@ -24,7 +24,7 @@ export default function Links({ subs }: { subs: SubCategory[] }) {
 			<div className="space-y-4 md:mt-10">
 				<ul className="flex flex-col gap-y-1">
 					{footer_links.slice(0, 6).map((link) => (
-						<Link href={link.link}>
+						<Link href={link.link} key={link.title}>
 							<li>
 								<span>{link.title}</span>
 							</li>
@@ -36,7 +36,7 @@ export default function Links({ subs }: { subs: SubCategory[] }) {
 				<h1 className="text-lg font-bold">Customer care</h1>
 				<ul className="flex flex-col gap-y-1">
 					{footer_links.slice(6).map((link) => (
-						<Link href={link.link}>
+						<Link href={link.link} key={link.title}>
 							<li>
 								<span>{link.title}</span>
 							</li>

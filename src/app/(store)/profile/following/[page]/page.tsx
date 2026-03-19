@@ -8,8 +8,8 @@ export default async function ProfileFollowingPage({
     }) {
     const page = Number(params.page);
     const res = await getUserFollowedStores(page)
-    return <div className="bg-white py-4 px-6">
-        <h1 className="text-lg mb-3 font-bold">Stores you follow</h1>
+    return <div className="bg-white px-6 py-4">
+        <h1 className="mb-3 text-lg font-bold">Stores you follow</h1>
         <FollowingContainer stores={res.stores} page={page} totalPages={res.totalPages} />
     </div>;
 }

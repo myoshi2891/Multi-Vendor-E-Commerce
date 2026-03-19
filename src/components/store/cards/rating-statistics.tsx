@@ -9,7 +9,7 @@ export default function RatingStatisticsCard({
 }) {
 	return (
 		<div className="h-44 flex-1">
-			<div className="py-5 px-7 bg-[#f5f5f5] flex flex-col gap-y-2 justify-center overflow-hidden rounded-lg">
+			<div className="flex flex-col justify-center gap-y-2 overflow-hidden rounded-lg bg-[#f5f5f5] px-7 py-5">
 				{statistics.slice().reverse().map((rating) => (
 					<div
 						key={rating.rating}
@@ -23,11 +23,11 @@ export default function RatingStatisticsCard({
 							isHalf={true}
 							color="#e2dfdf"
 						/>
-						<div className="relative w-full flex-1 h-1.5 mx-2.5 bg-[#e2dfdf] rounded-full">
+						<div className="relative mx-2.5 h-1.5 w-full flex-1 rounded-full bg-[#e2dfdf]">
                             <div className="absolute left-0 h-full rounded-full bg-[#ffc50A]"
                             style={{ width: `${rating.percentage}%` }}/>
 						</div>
-						<div className="text-xs w-12 leading-4">
+						<div className="w-12 text-xs leading-4">
 							{rating.numReviews}
 						</div>
 					</div>

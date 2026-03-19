@@ -11,8 +11,12 @@ interface Props {
 	weight: number;
 }
 
-const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
-	if (typeof shippingDetails === "boolean") return null;
+const ShippingDetails: FC<Props> = (props) => {
+	if (typeof props.shippingDetails === "boolean") return null;
+	return <ShippingDetailsInner {...props} />;
+};
+
+const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 	const [toggle, setToggle] = useState<boolean>(false);
 	const {
 		countryName,
@@ -54,14 +58,14 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 					<div className="flex items-center gap-x-1">
 						<Truck className="w-4" />
 						{shippingDetails.isFreeShipping ? (
-							<span className="text-sm font-bold flex items-center">
+							<span className="flex items-center text-sm font-bold">
 								<span>
 									Free Shipping to
 									<span>{countryName}</span>
 								</span>
 							</span>
 						) : (
-							<span className="text-sm font-bold flex items-center">
+							<span className="flex items-center text-sm font-bold">
 								<span>
 									Shipping to <span>{countryName}</span>
 								</span>
@@ -71,11 +75,11 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 					</div>
 					<ChevronRight className="w-3" />
 				</div>
-				<span className="flex items-center text-sm ml-5">
+				<span className="ml-5 flex items-center text-sm">
 					Service:&nbsp;
 					<strong className="text-sm">{shippingService}</strong>
 				</span>
-				<span className="flex items-center text-sm ml-5">
+				<span className="ml-5 flex items-center text-sm">
 					Delivery:&nbsp;
 					<strong className="text-sm">
 						{minDate.slice(4)} - {maxDate.slice(4)}
@@ -93,9 +97,9 @@ const ShippingDetails: FC<Props> = ({ shippingDetails, quantity, weight }) => {
 				)}
 				<div
 					onClick={() => setToggle((prev) => !prev)}
-					className="max-w-[calc(100%-2rem)] ml-4 flex items-center bg-gray-100 hover:bg-gray-200 h-5 cursor-pointer"
+					className="ml-4 flex h-5 max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
 				>
-					<div className="w-full flex items-center justify-between gap-x-1 px-2">
+					<div className="flex w-full items-center justify-between gap-x-1 px-2">
 						<span className="text-xs">
 							{toggle ? "Hide" : "Shipping Fee Breakdown"}
 						</span>

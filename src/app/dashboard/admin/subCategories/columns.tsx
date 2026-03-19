@@ -144,9 +144,6 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const { toast } = useToast()
     const router = useRouter()
 
-    // Return null if rowData or rowData.id don't exist
-    if (!rowData || !rowData.id) return null
-
     // Get categories
     const [categories, setCategories] = useState<Category[]>([])
 
@@ -157,6 +154,9 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
         }
         fetchCategories()
     }, [])
+
+    // Return null if rowData or rowData.id don't exist
+    if (!rowData || !rowData.id) return null
 
     return (
         <AlertDialog>

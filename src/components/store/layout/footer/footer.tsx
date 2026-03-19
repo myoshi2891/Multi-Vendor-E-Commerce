@@ -8,7 +8,7 @@ export default async function Footer() {
 	return (
 		<div className="w-full bg-white">
 			<Newsletter />
-			<div className="max-w-[1430px] mx-auto">
+			<div className="mx-auto max-w-[1430px]">
 				<div className="p-5">
 					<div className="grid md:grid-cols-2 md:gap-x-5">
 						<Contact />
@@ -18,7 +18,7 @@ export default async function Footer() {
 			</div>
 			{/* Rights */}
 			<div className="bg-gradient-to-r from-slate-500 to-slate-800 px-2 text-white">
-				<div className="max-w-[1430px] mx-auto flex items-center h-7">
+				<div className="mx-auto flex h-7 max-w-[1430px] items-center">
 					<span className="text-sm">
 						<b>@ GoShop</b> - All Rights Reserved
 					</span>

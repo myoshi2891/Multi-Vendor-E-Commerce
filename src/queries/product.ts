@@ -32,7 +32,6 @@ const generateUniqueSlug = async (
     const maxAttempts = 100;
 
     for (let attempts = 0; attempts < maxAttempts; attempts++) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const existingRecord = await (db as Record<string, any>)[
             model
         ].findFirst({

@@ -316,7 +316,7 @@ const CartProduct: FC<Props> = ({
                                         aria-label="Decrease quantity"
                                         data-testid="cart-qty-decrease"
                                     >
-                                        <Minus className="stroke-[#555] w-3" />
+                                        <Minus className="w-3 stroke-[#555]" />
                                     </div>
                                     <input
                                         type="text"
@@ -348,7 +348,7 @@ const CartProduct: FC<Props> = ({
                                         aria-label="Increase quantity"
                                         data-testid="cart-qty-increase"
                                     >
-                                        <Plus className="stroke-[#555] w-3" />
+                                        <Plus className="w-3 stroke-[#555]" />
                                     </div>
                                 </div>
                             </div>

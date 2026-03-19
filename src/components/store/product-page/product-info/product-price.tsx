@@ -20,6 +20,20 @@ interface Props {
 }
 
 const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
+    // Determine selected size and price unconditionally for the hook
+    const selectedSize = (sizes || []).find((size) => size.id === sizeId);
+    const discountedPriceForHook = selectedSize 
+        ? selectedSize.price * (1 - selectedSize.discount / 100) 
+        : 0;
+
+    // Update product to be added to cart with price and stock quantity
+    useEffect(() => {
+        if (sizeId && selectedSize) {
+            handleChange("price", discountedPriceForHook);
+            handleChange("stock", selectedSize.quantity);
+        }
+    }, [sizeId, selectedSize, discountedPriceForHook, handleChange]);
+
     // Check if the sizes array is either undefined or empty
     if (!sizes || sizes.length === 0) {
         // If no sizes are available, simply return from the function, performing no further
@@ -89,11 +103,8 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
 
     // Calculate the price after the discount
     const discountedPrice =
-        selectedSize.price * (1 - selectedSize.discount / 100);    // Update product to be added to cart with price and stock quantity
-    useEffect(() => {
-        handleChange("price", discountedPrice);
-        handleChange("stock", selectedSize.quantity);
-    }, [sizeId]);
+        selectedSize.price * (1 - selectedSize.discount / 100);
+
     return (
         <div>
             <div className="mr-2.5 inline-block font-bold leading-none text-orange-primary">

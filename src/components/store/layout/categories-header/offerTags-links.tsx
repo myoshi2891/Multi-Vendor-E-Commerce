@@ -10,14 +10,19 @@ export default function OfferTagsLinks({
     offerTags: OfferTag[]
     open: boolean
 }) {
-    const useBreakpoints = () => {
-        const splitPoint = breakpoints.reduce((acc, bp) => {
-            const matches = useMediaQuery({ query: bp.query })
-            return matches ? bp.value : acc
-        }, 1)
-        return splitPoint
-    }
-    const splitPoint = useBreakpoints()
+    const isPhoneScreen = useMediaQuery({ query: '(max-width: 640px)' })
+    const isSmallScreen = useMediaQuery({ query: '(min-width: 640px)' })
+    const isMediumScreen = useMediaQuery({ query: '(min-width: 768px)' })
+    const isLargeScreen = useMediaQuery({ query: '(min-width: 1024px)' })
+    const is2XLargeScreen = useMediaQuery({ query: '(min-width: 1536px)' })
+
+    let splitPoint = 1
+    if (isPhoneScreen) splitPoint = 2
+    if (isSmallScreen) splitPoint = 3
+    if (isMediumScreen) splitPoint = 4
+    if (isLargeScreen) splitPoint = 6
+    if (is2XLargeScreen) splitPoint = 7
+
     return (
         <div className="relative w-fit">
             <div

@@ -6,7 +6,7 @@ export default function SendIcon() {
 			viewBox="0 0 512 512"
 			style={{ color: "currentColor" }}
 			xmlns="http://www.w3.org/2000/svg"
-			className="h-6 w-6"
+			className="size-6"
 		>
 			<svg
 				viewBox="0 0 14 14"

@@ -25,7 +25,7 @@ export default function DownloadApp() {
             <div className="absolute top-0 hidden cursor-pointer group-hover:block">
                 <div className="relative z-50 -ml-20 mt-12 w-[300px] rounded-3xl bg-white px-1 pb-6 pt-2 text-main-primary shadow-lg">
                     {/* Triangle */}
-                    <div className="absolute -top-1.5 left-36 size-0 !border-x-[10px] !border-b-[10px] !border-l-transparent !border-r-transparent border-b-white"></div>
+                    <div className="absolute -top-1.5 left-36 size-0 !border-x-[10px] !border-b-[10px] !border-x-transparent border-b-white"></div>
                     <div className="break-words px-1 py-3">
                         <div className="flex">
                             <div className="mx-3">

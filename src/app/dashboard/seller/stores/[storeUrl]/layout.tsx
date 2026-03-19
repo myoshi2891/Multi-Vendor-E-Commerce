@@ -37,11 +37,11 @@ export default async function SellerStoreDashboardLayout({
 
     // Render the dashboard layout with the sidebar and the child component.
     return (
-		<div className="h-full w-full flex">
+		<div className="flex size-full">
 			<Sidebar stores={stores} />
-            <div className="w-full ml-[300px]">
+            <div className="ml-[300px] w-full">
                 <Header />
-                <div className="w-full mt-[75px] p-4">{children}</div>
+                <div className="mt-[75px] w-full p-4">{children}</div>
             </div>
 		</div>
 	);

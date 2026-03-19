@@ -57,22 +57,22 @@ export default function CountryLanguageCurrencySelector({
 		}
 	};
 	return (
-		<div className="relative inline-block group">
+		<div className="group relative inline-block">
 			{/* Trigger */}
 			<div className="">
-				<div className="flex item-center h-11 py-0 px-2 cursor-pointer">
-					<span className="mr-0.5 h-[33px] grid place-items-center">
+				<div className="item-center flex h-11 cursor-pointer px-2 py-0">
+					<span className="mr-0.5 grid h-[33px] place-items-center">
 						<span
 							className={`fi fi-${userCountry.code.toLowerCase()}`}
 						/>
 					</span>
 					<div className="ml-1">
-						<span className="block text-xs text-white leading-3 mt-2">
+						<span className="mt-2 block text-xs leading-3 text-white">
 							{userCountry.name}/EN/
 						</span>
 						<b className="text-xs font-bold text-white">
 							USD
-							<span className="text-white scale-[60%] align-middle inline-block">
+							<span className="inline-block scale-[60%] align-middle text-white">
 								<ChevronDown />
 							</span>
 						</b>
@@ -80,15 +80,15 @@ export default function CountryLanguageCurrencySelector({
 				</div>
 			</div>
 			{/* Content */}
-			<div className="absolute hidden top-0 group-hover:block cursor-pointer">
-				<div className="relative mt-12 -ml-32 w-[300px] bg-white rounded-[24px] text-main-primary pt-2 px-6 pb-6 z-50">
+			<div className="absolute top-0 hidden cursor-pointer group-hover:block">
+				<div className="relative z-50 -ml-32 mt-12 w-[300px] rounded-[24px] bg-white px-6 pb-6 pt-2 text-main-primary">
 					{/* Triangle */}
-					<div className="w-0 h-0 absolute -top-1.5 right-24 !border-l-[10px] !border-l-transparent !border-r-[10px] !border-r-transparent !border-b-[10px] border-b-white"></div>
-					<div className="mt-4 leading-6 text-[20px] font-bold">
+					<div className="absolute -top-1.5 right-24 size-0 !border-x-[10px] !border-b-[10px] !border-x-transparent border-b-white"></div>
+					<div className="mt-4 text-[20px] font-bold leading-6">
 						Ship to
 					</div>
 					<div className="mt-2">
-						<div className="relative text-main-primary bg-white rounded-lg">
+						<div className="relative rounded-lg bg-white text-main-primary">
 							<CountrySelector
 								id={"countries"}
 								open={show}
@@ -102,26 +102,26 @@ export default function CountryLanguageCurrencySelector({
 								}
 							/>
 							<div className="">
-								<div className="mt-4 leading-6 text-[20px] font-bold">
+								<div className="mt-4 text-[20px] font-bold leading-6">
 									Language
 								</div>
-								<div className="relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap">
+								<div className="relative mt-2.5 flex h-10 cursor-pointer items-center truncate rounded-lg border border-black/20 px-3 py-0">
 									<div className="align-middle">English</div>
 									<span className="absolute right-2">
-										<ChevronDown className="text-main-primary scale-75" />
+										<ChevronDown className="scale-75 text-main-primary" />
 									</span>
 								</div>
 							</div>
 							<div className="">
-								<div className="mt-4 leading-6 text-[20px] font-bold">
+								<div className="mt-4 text-[20px] font-bold leading-6">
 									Currency
 								</div>
-								<div className="relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap">
+								<div className="relative mt-2.5 flex h-10 cursor-pointer items-center truncate rounded-lg border border-black/20 px-3 py-0">
 									<div className="align-middle">
 										USD (US Dollar)
 									</div>
 									<span className="absolute right-2">
-										<ChevronDown className="text-main-primary scale-75" />
+										<ChevronDown className="scale-75 text-main-primary" />
 									</span>
 								</div>
 							</div>

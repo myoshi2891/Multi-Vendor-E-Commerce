@@ -38,27 +38,27 @@ const ColorPalette: FC<ColorPaletteProps> = ({
 	const Color = ({ color }: { color: string }) => {
 		return (
 			<div
-				className="w-20 h-[80px] cursor-pointer transition-all duration-100 ease-linear relative hover:w-[120px] hover:duration-300"
+				className="relative h-[80px] w-20 cursor-pointer transition-all duration-100 ease-linear hover:w-[120px] hover:duration-300"
 				style={{ backgroundColor: color }}
 				onMouseEnter={() => setActiveColor(color)}
 				onClick={() => handleAddProductColor(color)}
 			>
 				{/* Color label */}
-				<div className="w-full h-8 text-center text-xs font-semibold absolute -top-6 text-black">
+				<div className="absolute -top-6 h-8 w-full text-center text-xs font-semibold text-black">
 					{color}
 				</div>
 			</div>
 		);
 	};
 	return (
-		<div className="pt-10 w-[320px] h-[160px] rounded-b-md overflow-hidden">
+		<div className="h-[160px] w-[320px] overflow-hidden rounded-b-md pt-10">
 			{/* Color palette container */}
-			<div className="w-[320px] h-[180px] rounded-md perspective-1000">
+			<div className="perspective-1000 h-[180px] w-[320px] rounded-md">
 				{/* Active color display */}
-				<div className="relative w-full flex items-center justify-center bg-white h-16 rounded-t-md">
+				<div className="relative flex h-16 w-full items-center justify-center rounded-t-md bg-white">
 					{/* Active color circle */}
 					<div
-						className="absolute w-16 h-16 grid place-items-center shadow-lg rounded-full -top-10"
+						className="absolute -top-10 grid size-16 place-items-center rounded-full shadow-lg"
 						style={{ backgroundColor: activeColor || "#fff" }}
 					>
 						{/* Spinner icon */}
@@ -76,7 +76,7 @@ const ColorPalette: FC<ColorPaletteProps> = ({
 					</div>
 				</div>
 				{/* Color blocks */}
-				<div className="w-full h-[180px] absolute bottom-0 !flex items-center justify-center">
+				<div className="absolute bottom-0 !flex h-[180px] w-full items-center justify-center">
 					{/* Map over colors to display color blocks */}
 					{extractedColors?.map((color, index) => (
 						<Color key={index} color={color} />

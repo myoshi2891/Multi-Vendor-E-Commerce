@@ -9,7 +9,7 @@ export default function Contact() {
 				<div className="flex items-center gap-x-6">
 					<Headset className="scale-[190%] stroke-slate-400" />
 					<div className="flex flex-col">
-						<span className="text-[#59645f] text-sm">
+						<span className="text-sm text-[#59645f]">
 							Got Questions ? Call us 24/7!
 						</span>
 						<span className="text-xl">
@@ -23,7 +23,7 @@ export default function Contact() {
 				<span className="text-sm">
 					Address: 123 Main St, City, State, ZIP Code, USA
 				</span>
-				<div className="flex flex-wrap gap-2 mt-4">
+				<div className="mt-4 flex flex-wrap gap-2">
 					<SocialLogo
 						icon="facebook"
 						size={28}

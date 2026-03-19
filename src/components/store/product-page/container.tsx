@@ -21,9 +21,14 @@ interface Props {
     sizeId: string | undefined;
     children: ReactNode;
 }
-const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
-    // If there is no product data available, render nothing (null)
-    if (!productData) return null;
+
+const ProductPageContainer: FC<Props> = (props) => {
+    if (!props.productData) return null;
+    if (typeof props.productData.shippingDetails === "boolean") return null;
+    return <ProductPageContainerInner {...props} />;
+};
+
+const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children }) => {
     const {
         productId,
         variantId,
@@ -32,10 +37,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         shippingDetails,
         sizes,
     } = productData;
-
-    if (typeof shippingDetails === "boolean") return null;
-    if (!productData || typeof productData.shippingDetails === "boolean")
-        return null;
 
     // State for temporary product images
     const [variantImages, setVariantImages] =
