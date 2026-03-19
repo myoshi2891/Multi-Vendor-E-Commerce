@@ -12,14 +12,18 @@ const clerk = clerkSecretKey ? createClerkClient({ secretKey: clerkSecretKey }) 
 test.describe.serial("Seller オンボーディング", () => {
   let userEmail: string;
   let storeName: string;
+  let storeUrl: string;
   let clerkUserId: string;
   let userPassword: string;
+
+  test.setTimeout(120000); // Allow Next.js compiler more time in dev
 
   test.beforeAll(async () => {
     // Generate unique credentials for this test run
     const uniqueId = Date.now();
     userEmail = `new-seller-${uniqueId}+clerk_test@example.com`;
     storeName = `Test Store ${uniqueId}`;
+    storeUrl = `test-store-${uniqueId}`;
     userPassword = `TestP@ssw0rd!${uniqueId}`;
 
     if (clerk) {
@@ -87,20 +91,13 @@ test.describe.serial("Seller オンボーディング", () => {
     await expect(page.getByPlaceholder("Store Name")).toBeVisible();
     await page.getByPlaceholder("Store Name").fill(storeName);
     await page.getByPlaceholder("Store Description").fill("This is a detailed description of the test store for E2E purposes containing enough characters.");
-    await page.getByPlaceholder("Store Url").fill(`test-store-${Date.now()}`);
+    await page.getByPlaceholder("Store Url").fill(storeUrl);
     await page.getByPlaceholder("Store Email").fill(userEmail);
     await page.getByPlaceholder("Store Phone").fill("1234567890");
 
-    // Fill mock image inputs (the hidden inputs we added to ImageUpload) using evaluate to avoid focus issues
-    await page.getByTestId("image-upload-mock-input-profile").evaluate((el: HTMLInputElement, url) => {
-        el.value = url;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-    }, "https://res.cloudinary.com/test/image/upload/logo.png");
-    
-    await page.getByTestId("image-upload-mock-input-cover").evaluate((el: HTMLInputElement, url) => {
-        el.value = url;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-    }, "https://res.cloudinary.com/test/image/upload/cover.png");
+    // Fill mock image inputs (the hidden inputs we added to ImageUpload)
+    await page.getByTestId("image-upload-mock-input-profile").fill("https://res.cloudinary.com/test/image/upload/logo.png", { force: true });
+    await page.getByTestId("image-upload-mock-input-cover").fill("https://res.cloudinary.com/test/image/upload/cover.png", { force: true });
 
     await page.getByRole("button", { name: "Next" }).click();
 
@@ -109,7 +106,7 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByRole("button", { name: "Submit" }).click();
 
     // Step 4: Success
-    await expect(page.getByText(/You have applied/i)).toBeVisible();
+    await expect(page.getByText(/Your store has been created/i)).toBeVisible();
 
     // Verify Pending Status in DB
     const store = await prisma.store.findFirst({
@@ -163,7 +160,7 @@ test.describe.serial("Seller オンボーディング", () => {
     await expect(page).toHaveURL(/.*dashboard\/seller/);
 
     // Verify they can view the new product page
-    await page.goto("/dashboard/seller/products/new");
-    await expect(page.getByText("Add a new product")).toBeVisible();
+    await page.goto(`/dashboard/seller/stores/${storeUrl}/products/new`);
+    await expect(page.getByText(/Create a new Product Information/i)).toBeVisible();
   });
 });
