@@ -1,7 +1,6 @@
 "use client";
 import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { Prisma } from "@prisma/client";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { FC, useEffect } from "react";
 
@@ -17,7 +16,7 @@ interface Props {
     sizeId?: string | undefined;
     sizes: SimplifiedSize[];
     isCard?: boolean;
-    handleChange: (property: keyof CartProductType, value: any) => void;
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 }
 
 const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {

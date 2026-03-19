@@ -94,17 +94,21 @@ describe('PlaceOrderCard', () => {
     })
 
     it('renders correctly with applied coupon', () => {
-        const coupon = {
-            ...createMockCoupon({
-                code: 'SAVE10',
-                discount: 10,
-                storeId: 'store-1',
-            }),
-            store: { name: 'Test Store' }
-        }
+        type CouponPropType = NonNullable<React.ComponentProps<typeof PlaceOrderCard>['cartData']['coupon']>;
+        const couponMock = createMockCoupon({
+            code: 'SAVE10',
+            discount: 10,
+            storeId: 'store-1',
+        });
+        const coupon: CouponPropType = {
+            ...couponMock,
+            startDate: couponMock.startDate.toISOString(),
+            endDate: couponMock.endDate.toISOString(),
+            store: { name: 'Test Store' } as CouponPropType['store']
+        } as unknown as CouponPropType;
         const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
-            coupon: coupon as any,
+            coupon,
         }
 
         renderPlaceOrderCard({ cartData: cartWithCoupon })

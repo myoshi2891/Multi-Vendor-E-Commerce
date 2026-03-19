@@ -18,13 +18,22 @@ export default async function SellerStoreDashboardLayout({
         redirect("/");
         return; // Ensure no further code is executed after the redirect.
     }
+    if (user.privateMetadata.role !== "SELLER") {
+        redirect("/");
+        return;
+    }
 
     // Retrieve the list of stores associated with the authenticated user.
-    const stores = await db.store.findMany({
-        where: {
-            userId: user.id,
-        },
-    });
+    let stores: any[] = [];
+    try {
+        stores = await db.store.findMany({
+            where: {
+                userId: user.id,
+            },
+        });
+    } catch (error) {
+        console.error("Error retrieving stores for seller dashboard:", error);
+    }
 
     // Render the dashboard layout with the sidebar and the child component.
     return (

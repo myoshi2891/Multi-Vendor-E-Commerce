@@ -12,7 +12,7 @@ interface ModalProviderProps {
 
 export type ModalData = {
 	user?: User;
-	rowData?: any;
+	rowData?: unknown;
 };
 type ModalContextType = {
 	data: ModalData;

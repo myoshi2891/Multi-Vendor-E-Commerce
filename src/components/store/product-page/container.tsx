@@ -14,6 +14,7 @@ import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
 import { setCookie } from "cookies-next";
+import type { OptionsType } from "cookies-next/lib/types";
 
 interface Props {
     productData: ProductPageDataType;
@@ -79,7 +80,7 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
     // Function to handle state changes for the product properties
-    const handleChange = (property: keyof CartProductType, value: any) => {
+    const handleChange = <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => {
         setProductToBeAddedToCart((prevProduct) => ({
             ...prevProduct,
             [property]: value,
@@ -154,10 +155,11 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     }, [cartItems, productId, variantId, sizeId, stock]);
 
     // Set view cookie
-    setCookie(`viewedProduct_${productId}`, "true", {
+    const cookieOptions: OptionsType & { maxAge?: number; path?: string } = {
         maxAge: 3600,
         path: "/",
-    } as any);
+    };
+    setCookie(`viewedProduct_${productId}`, "true", cookieOptions);
 
     return (
         <div className="relative">
@@ -231,7 +233,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                                                     productToBeAddedToCart.stock
                                                 }
                                                 handleChange={handleChange}
-                                                sizes={sizes}
                                             />
                                         </div>
                                     )}

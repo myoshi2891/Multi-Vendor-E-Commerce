@@ -3,13 +3,14 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AddressDetails from '@/components/store/shared/shipping-addresses/address-details'
-import { createMockShippingAddress, createMockCountry } from '@/config/test-fixtures'
+import { createMockShippingAddress, createMockCountry, createMockUser } from '@/config/test-fixtures'
 import { upsertShippingAddress } from '@/queries/user'
 import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid'
 
 import { UserShippingAddressType } from '@/lib/types'
+import { User, Role } from '@prisma/client'
 
 // Mock dependencies
 jest.mock('@/queries/user', () => ({
@@ -84,7 +85,7 @@ describe('AddressDetails', () => {
                 countryId: '550e8400-e29b-41d4-a716-446655440000',
             }),
             country: countries[0],
-            user: { id: 'u1', name: 'user', email: 'a@a.com', picture: '', role: 'USER', createdAt: new Date(), updatedAt: new Date() }
+            user: { ...createMockUser(), role: Role.USER } as User
         }
 
         render(<AddressDetails data={address} countries={countries} setShow={mockSetShow} />)

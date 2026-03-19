@@ -11,8 +11,7 @@ interface QuantitySelectorProps {
     sizeId: string | null
     quantity: number
     stock: number
-    handleChange: (property: keyof CartProductType, value: any) => void
-    sizes: (Omit<Size, 'price'> & { price: number })[]
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void
 }
 
 const QuantitySelector: FC<QuantitySelectorProps> = ({
@@ -22,7 +21,6 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
     sizeId,
     quantity,
     stock,
-    sizes,
 }) => {
     // useEffect hook to handle changes when sizeId updates
     useEffect(() => {

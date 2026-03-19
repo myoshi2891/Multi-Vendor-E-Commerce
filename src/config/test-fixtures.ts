@@ -235,7 +235,7 @@ type MockCart = {
     createdAt: Date;
     updatedAt: Date;
     cartItems?: MockCartItem[];
-    coupon?: any;
+    coupon?: MockCoupon | null;
 };
 
 type MockCartItem = {

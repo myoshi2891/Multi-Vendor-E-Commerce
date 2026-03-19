@@ -3,10 +3,12 @@ import { Size } from '@prisma/client'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FC, useEffect } from 'react'
 
+export type SizeWithPrice = Omit<Size, 'price'> & { price: number }
+
 interface Props {
-    sizes: (Omit<Size, 'price'> & { price: number })[]
+    sizes: SizeWithPrice[]
     sizeId: string | undefined
-    handleChange: (property: keyof CartProductType, value: any) => void
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void
 }
 
 const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
@@ -15,14 +17,14 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
     const searchParams = useSearchParams()
     const params = new URLSearchParams(searchParams)
 
-    const handleSelectSize = (size: Omit<Size, 'price'> & { price: number }) => {
+    const handleSelectSize = (size: SizeWithPrice) => {
         // Update the sizeId in the search parameters and replace the current URL
         params.set('size', size.id)
         handleCartProductToBeAddedChange(size)
         replace(`${pathname}?${params.toString()}`)
     }
 
-    const handleCartProductToBeAddedChange = (size: Omit<Size, 'price'> & { price: number }) => {
+    const handleCartProductToBeAddedChange = (size: SizeWithPrice) => {
         handleChange('sizeId', size.id)
         handleChange('size', size.size)
     }

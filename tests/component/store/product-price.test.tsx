@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import ProductPrice from '@/components/store/product-page/product-info/product-price'
 import { createMockSize } from '@/config/test-fixtures'
-import { Prisma } from '@prisma/client'
 
 describe('ProductPrice', () => {
     const mockHandleChange = jest.fn()

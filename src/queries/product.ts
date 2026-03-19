@@ -1583,7 +1583,10 @@ export const getProductsByIds = async (
                     variantName: variant.variantName,
                     variantSlug: variant.slug,
                     images: variant.images,
-                    sizes: variant.sizes,
+                    sizes: variant.sizes.map((size) => ({
+                        ...size,
+                        price: size.price.toNumber(),
+                    })),
                 },
             ],
             variantImages: [],

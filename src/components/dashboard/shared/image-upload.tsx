@@ -67,7 +67,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
             >
                 <input 
                     type="text" 
-                    className="hidden" 
+                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+                    tabIndex={-1}
                     data-testid="image-upload-mock-input-profile"
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -124,7 +125,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
             >
                 <input 
                     type="text" 
-                    className="hidden" 
+                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+                    tabIndex={-1}
                     data-testid="image-upload-mock-input-cover"
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -176,7 +178,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
             <div>
                 <input 
                     type="text" 
-                    className="hidden" 
+                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+                    tabIndex={-1}
                     data-testid="image-upload-mock-input-standard"
                     onChange={(e) => onChange(e.target.value)}
                 />
