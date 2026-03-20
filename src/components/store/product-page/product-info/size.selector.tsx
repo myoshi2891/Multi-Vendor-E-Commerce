@@ -36,7 +36,7 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
                 handleCartProductToBeAddedChange(search_size)
             }
         }
-    }, [])
+    }, [sizeId, sizes, handleCartProductToBeAddedChange])
 
     return (
         <div className="flex flex-wrap gap-4">

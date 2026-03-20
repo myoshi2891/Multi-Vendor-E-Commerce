@@ -20,6 +20,17 @@ interface ImageUploadProps {
     error?: boolean
 }
 
+const HiddenTestInput: FC<{ dataTestId: string; onChange: (value: string) => void }> = ({ dataTestId, onChange }) => (
+    <input 
+        type="text" 
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+        tabIndex={-1}
+        aria-hidden="true"
+        data-testid={dataTestId}
+        onChange={(e) => onChange(e.target.value)}
+    />
+);
+
 const ImageUpload: FC<ImageUploadProps> = ({
     disabled,
     onChange,
@@ -67,13 +78,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     }
                 )}
             >
-                <input 
-                    type="text" 
-                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-                    tabIndex={-1}
-                    data-testid="n-mock-input-profile"
-                    onChange={(e) => onChange(e.target.value)}
-                />
+                <HiddenTestInput dataTestId="n-mock-input-profile" onChange={onChange} />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -125,13 +130,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 )}
                 style={{ height: '348px' }}
             >
-                <input 
-                    type="text" 
-                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-                    tabIndex={-1}
-                    data-testid="n-mock-input-cover"
-                    onChange={(e) => onChange(e.target.value)}
-                />
+                <HiddenTestInput dataTestId="n-mock-input-cover" onChange={onChange} />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -178,13 +177,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
     } else {
         return (
             <div>
-                <input 
-                    type="text" 
-                    style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
-                    tabIndex={-1}
-                    data-testid="n-mock-input-standard"
-                    onChange={(e) => onChange(e.target.value)}
-                />
+                <HiddenTestInput dataTestId="n-mock-input-standard" onChange={onChange} />
                 <div className="mb-4 flex items-center gap-4">
                     {value.length > 0 &&
                         !dontShowPreview &&

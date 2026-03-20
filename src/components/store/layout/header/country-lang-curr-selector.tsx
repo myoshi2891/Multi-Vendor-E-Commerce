@@ -60,7 +60,7 @@ export default function CountryLanguageCurrencySelector({
 		<div className="group relative inline-block">
 			{/* Trigger */}
 			<div className="">
-				<div className="item-center flex h-11 cursor-pointer px-2 py-0">
+				<div className="items-center flex h-11 cursor-pointer px-2 py-0">
 					<span className="mr-0.5 grid h-[33px] place-items-center">
 						<span
 							className={`fi fi-${userCountry.code.toLowerCase()}`}

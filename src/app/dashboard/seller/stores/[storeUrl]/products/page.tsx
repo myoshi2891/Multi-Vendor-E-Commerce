@@ -14,11 +14,12 @@ export default async function SellerProductPage({
 	params: { storeUrl: string };
 }) {
 	// Fetching products data from the database for the active store
-	const products = await getAllStoreProducts(params.storeUrl);
-
-	const categories = await getAllCategories();
-	const offerTags = await getAllOfferTags();
-	const countries = await getAllCountries();
+	const [products, categories, offerTags, countries] = await Promise.all([
+		getAllStoreProducts(params.storeUrl),
+		getAllCategories(),
+		getAllOfferTags(params.storeUrl),
+		getAllCountries(),
+	]);
 
 	return (
 		<DataTable

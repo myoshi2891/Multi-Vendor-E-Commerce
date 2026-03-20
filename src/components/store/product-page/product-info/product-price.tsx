@@ -1,7 +1,7 @@
 "use client";
 import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { redirect, usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FC, useEffect } from "react";
 
 interface SimplifiedSize {
@@ -95,7 +95,6 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
     }
 
     // Scenario 2: SizeId passed, find the specific size and return its details
-    const selectedSize = sizes.find((size) => size.id === sizeId);
 
     if (!selectedSize) {
         return <></>;

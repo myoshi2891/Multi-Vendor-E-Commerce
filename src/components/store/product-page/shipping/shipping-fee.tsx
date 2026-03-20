@@ -138,7 +138,7 @@ const ProductShippingFee: FC<Props> = ({
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
 								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
-									Fee per kg (1kg = 2,205lbs)
+									Fee per kg (1 kg = 2.205 lb)
 								</td>
 								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									${fee}

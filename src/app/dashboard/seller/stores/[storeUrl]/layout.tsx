@@ -7,6 +7,7 @@ import Sidebar from "@/components/dashboard/sidebar/sidebar";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { Store } from "@prisma/client";
 export default async function SellerStoreDashboardLayout({
 	children,
 }: {
@@ -24,7 +25,7 @@ export default async function SellerStoreDashboardLayout({
     }
 
     // Retrieve the list of stores associated with the authenticated user.
-    let stores: any[] = [];
+    let stores: Store[] = [];
     try {
         stores = await db.store.findMany({
             where: {
@@ -32,7 +33,11 @@ export default async function SellerStoreDashboardLayout({
             },
         });
     } catch (error) {
-        console.error("Error retrieving stores for seller dashboard:", error);
+        if (error instanceof Error) {
+            console.error("Error retrieving stores for seller dashboard:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving stores for seller dashboard:", String(error));
+        }
     }
 
     // Render the dashboard layout with the sidebar and the child component.

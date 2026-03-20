@@ -18,11 +18,11 @@ export default function Newsletter() {
                     </h5>
                 </div>
                 {/* Right */}
-                <div className="flex w-full xl:flex-1">
-                    <input type="text" placeholder="Enter your email address"
+                <form className="flex w-full xl:flex-1">
+                    <input type="email" placeholder="Enter your email address"
                         className="h-10 w-full rounded-l-full bg-white pl-6 text-black outline-none" />
-                    <span className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white">Sign up</span>
-                </div>
+                    <button type="submit" className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white">Sign up</button>
+                </form>
             </div>
       </div>
   </div>;

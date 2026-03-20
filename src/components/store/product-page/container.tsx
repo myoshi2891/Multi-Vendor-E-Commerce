@@ -1,6 +1,6 @@
 'use client'
 import { CartProductType, ProductPageDataType } from '@/lib/types'
-import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
+import { FC, ReactNode, useEffect, useMemo, useState, useCallback } from 'react'
 import ProductSwiper from './product-swiper'
 import ProductInfo from './product-info/product-info'
 import ShipTo from './shipping/ship-to'
@@ -24,7 +24,9 @@ interface Props {
 
 const ProductPageContainer: FC<Props> = (props) => {
     if (!props.productData) return null;
-    if (typeof props.productData.shippingDetails === "boolean") return null;
+    if (typeof props.productData.shippingDetails === "boolean") {
+        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false } as any }} />;
+    }
     return <ProductPageContainerInner {...props} />;
 };
 
@@ -81,12 +83,15 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
     const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
     // Function to handle state changes for the product properties
-    const handleChange = <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => {
-        setProductToBeAddedToCart((prevProduct) => ({
-            ...prevProduct,
-            [property]: value,
-        }));
-    };
+    const handleChange = useCallback(<K extends keyof CartProductType>(property: K, value: CartProductType[K]) => {
+        setProductToBeAddedToCart((prevProduct) => {
+            if (prevProduct[property] === value) return prevProduct;
+            return {
+                ...prevProduct,
+                [property]: value,
+            };
+        });
+    }, []);
 
     useEffect(() => {
         const check = isProductValidToAdd(productToBeAddedToCart);
@@ -156,11 +161,13 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
     }, [cartItems, productId, variantId, sizeId, stock]);
 
     // Set view cookie
-    const cookieOptions: OptionsType & { maxAge?: number; path?: string } = {
-        maxAge: 3600,
-        path: "/",
-    };
-    setCookie(`viewedProduct_${productId}`, "true", cookieOptions);
+    useEffect(() => {
+        const cookieOptions: OptionsType & { maxAge?: number; path?: string } = {
+            maxAge: 3600,
+            path: "/",
+        };
+        setCookie(`viewedProduct_${productId}`, "true", cookieOptions);
+    }, [productId]);
 
     return (
         <div className="relative">

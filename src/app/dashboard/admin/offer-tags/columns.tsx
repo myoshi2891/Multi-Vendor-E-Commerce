@@ -154,14 +154,23 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 						className="mb-2 bg-destructive text-white hover:bg-destructive"
 						onClick={async () => {
 							setLoading(true);
-							await deleteOfferTag(rowData.id);
-							toast({
-								title: "Deleted category",
-								description: "The category has been deleted.",
-							});
-							setLoading(false);
-							router.refresh();
-							setClose();
+							try {
+								await deleteOfferTag(rowData.id);
+								toast({
+									title: "Deleted category",
+									description: "The category has been deleted.",
+								});
+								router.refresh();
+								setClose();
+							} catch (error: any) {
+								toast({
+									title: "Error",
+									description: error.message || "Failed to delete offer tag.",
+									variant: "destructive"
+								});
+							} finally {
+								setLoading(false);
+							}
 						}}
 					>
 						Delete

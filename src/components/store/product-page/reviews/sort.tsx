@@ -9,9 +9,9 @@ interface Props {
 
 const ReviewsSort: FC<Props> = ({ sort, setSort }) => {
 	return (
-		<div className="group w-[120px]">
+		<div className="group relative w-[120px]">
 			{/* Trigger */}
-			<button className="inline-flex items-center py-0.5 text-center text-sm text-main-primary hover:text-[#fd384f]">
+			<button type="button" className="inline-flex items-center py-0.5 text-center text-sm text-main-primary hover:text-[#fd384f]">
 				Sort by{" "}
 				{sort?.orderBy === "latest"
 					? "latest"
@@ -20,22 +20,22 @@ const ReviewsSort: FC<Props> = ({ sort, setSort }) => {
 					: "default"}
 				<ChevronDown className="ml-1 w-3" />
 			</button>
-			<div className="absolute z-10 hidden w-[120px] bg-white shadow group-hover:block">
+			<div className="absolute z-10 hidden w-[120px] bg-white shadow group-hover:block group-focus-within:block" role="menu">
 				<ul className="text-sm text-gray-700">
-					<li onClick={() => setSort(undefined)}>
-						<span className="block cursor-pointer p-2 hover:bg-gray-100">
+					<li>
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort(undefined)}>
 							Sort by default
-						</span>
+						</button>
 					</li>
-					<li onClick={() => setSort({ orderBy: "highest" })}>
-						<span className="block cursor-pointer p-2 hover:bg-gray-100">
+					<li>
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort({ orderBy: "highest" })}>
 							Sort by highest
-						</span>
+						</button>
 					</li>
-					<li onClick={() => setSort({ orderBy: "latest" })}>
-						<span className="block cursor-pointer p-2 hover:bg-gray-100">
+					<li>
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort({ orderBy: "latest" })}>
 							Sort by latest
-						</span>
+						</button>
 					</li>
 				</ul>
 			</div>

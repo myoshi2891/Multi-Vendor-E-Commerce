@@ -149,8 +149,12 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const categories = await getAllCategories()
-            setCategories(categories)
+            try {
+                const categories = await getAllCategories()
+                setCategories(categories)
+            } catch (error) {
+                console.error("Failed to fetch categories:", error)
+            }
         }
         fetchCategories()
     }, [])
@@ -224,15 +228,23 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                         className="mb-2 bg-destructive text-white hover:bg-destructive"
                         onClick={async () => {
                             setLoading(true)
-                            await deleteSubCategory(rowData.id)
-                            toast({
-                                title: 'Deleted SubCategory',
-                                description:
-                                    'The SubCategory has been deleted.',
-                            })
-                            setLoading(false)
-                            router.refresh()
-                            setClose()
+                            try {
+                                await deleteSubCategory(rowData.id)
+                                toast({
+                                    title: 'Deleted SubCategory',
+                                    description: 'The SubCategory has been deleted.',
+                                })
+                                router.refresh()
+                            } catch (error: any) {
+                                toast({
+                                    title: "Error",
+                                    description: error.message || "Failed to delete SubCategory.",
+                                    variant: "destructive"
+                                })
+                            } finally {
+                                setLoading(false)
+                                setClose()
+                            }
                         }}
                     >
                         Delete

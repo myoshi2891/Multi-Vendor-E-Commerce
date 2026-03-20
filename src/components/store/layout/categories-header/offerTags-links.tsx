@@ -17,11 +17,11 @@ export default function OfferTagsLinks({
     const is2XLargeScreen = useMediaQuery({ query: '(min-width: 1536px)' })
 
     let splitPoint = 1
-    if (isPhoneScreen) splitPoint = 2
-    if (isSmallScreen) splitPoint = 3
-    if (isMediumScreen) splitPoint = 4
-    if (isLargeScreen) splitPoint = 6
     if (is2XLargeScreen) splitPoint = 7
+    else if (isLargeScreen) splitPoint = 6
+    else if (isMediumScreen) splitPoint = 4
+    else if (isSmallScreen) splitPoint = 3
+    else if (isPhoneScreen) splitPoint = 2
 
     return (
         <div className="relative w-fit">
