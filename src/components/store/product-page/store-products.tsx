@@ -15,14 +15,13 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
     const [products, setProducts] = useState<ProductType[]>([]);
 
     useEffect(() => {
-        getStoreProducts()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        const getStoreProducts = async () => {
+            const res = await getProducts({ store: storeUrl }, "", 1, count)
+            setProducts(res.products)
+        }
 
-    const getStoreProducts = async () => {
-        const res = await getProducts({ store: storeUrl }, "", 1, count)
-        setProducts(res.products)
-    }
+        getStoreProducts()
+    }, [storeUrl, count])
 
     return <div className="relative mt-6">
         <ProductList products={products} title={`Recommended from ${storeName}`} arrow />

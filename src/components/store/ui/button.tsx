@@ -15,8 +15,8 @@ const buttonVariants = cva(
                 outline:
                     '!h-7 rounded-md border-orange-background bg-transparent px-2 text-sm font-normal text-orange-background hover:bg-orange-background hover:text-white',
                 'orange-gradient':
-                    'inline-block h-[36px] w-full cursor-pointer rounded-full bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] text-center text-[14px] font-bold leading-[36px] text-white hover:bg-gradient-to-l',
-                gray: 'inline-block h-[36px] w-full cursor-pointer rounded-full border-[#f5f5f5] bg-[#f5f5f5] text-center text-[14px] font-bold leading-[36px] text-[#222]',
+                    'inline-block h-[36px] rounded-full bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] text-center text-[14px] font-bold leading-[36px] text-white hover:bg-gradient-to-l',
+                gray: 'inline-block h-[36px] rounded-full border-[#f5f5f5] bg-[#f5f5f5] text-center text-[14px] font-bold leading-[36px] text-[#222]',
             },
             size: {
                 default: 'h-11 py-2',

@@ -26,7 +26,7 @@ const mockStripePaymentIntentsCreate = jest.fn();
 jest.mock("stripe", () => {
     return jest.fn().mockImplementation(() => ({
         paymentIntents: {
-            create: (...args: any[]) => mockStripePaymentIntentsCreate(...args),
+            create: (...args: Parameters<Stripe['paymentIntents']['create']>) => mockStripePaymentIntentsCreate(...args),
         },
     }));
 });
