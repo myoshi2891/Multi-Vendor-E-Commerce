@@ -48,6 +48,7 @@ export default function CartContainer({
             }
         }
         loadAndSyncCart()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isCartLoaded, userCountry])
 
     return (

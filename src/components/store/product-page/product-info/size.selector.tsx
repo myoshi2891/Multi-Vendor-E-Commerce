@@ -1,7 +1,7 @@
 import { CartProductType } from '@/lib/types'
 import { Size } from '@prisma/client'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useCallback } from 'react'
 
 export type SizeWithPrice = Omit<Size, 'price'> & { price: number }
 
@@ -24,10 +24,10 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
         replace(`${pathname}?${params.toString()}`)
     }
 
-    const handleCartProductToBeAddedChange = (size: SizeWithPrice) => {
+    const handleCartProductToBeAddedChange = useCallback((size: SizeWithPrice) => {
         handleChange('sizeId', size.id)
         handleChange('size', size.size)
-    }
+    }, [handleChange])
 
     useEffect(() => {
         if (sizeId) {
@@ -36,6 +36,7 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
                 handleCartProductToBeAddedChange(search_size)
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sizeId, sizes, handleCartProductToBeAddedChange])
 
     return (

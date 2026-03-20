@@ -20,17 +20,16 @@ export default function SizeFilter({
     const [take, setTake] = useState<number>(10);
 
     useEffect(() => {
+        const handleGetSizes = async () => {
+            const sizes = await getFilteredSizes(
+                { category, subCategory, offer, storeUrl },
+                take
+            );
+            setSizes(sizes.sizes);
+            setTotal(sizes.count);
+        };
         handleGetSizes();
-    }, [category, subCategory, offer, take]);
-
-    const handleGetSizes = async () => {
-        const sizes = await getFilteredSizes(
-            { category, subCategory, offer, storeUrl },
-            take
-        );
-        setSizes(sizes.sizes);
-        setTotal(sizes.count);
-    };
+    }, [category, subCategory, offer, take, storeUrl]);
 
     return (
         <div className="pb-4 pt-5">

@@ -37,6 +37,7 @@ export default function StoreProducts({
             setData(products);
         };
         getFilteredProducts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
     return (
         <div className="flex flex-wrap justify-center rounded-md bg-white p-2 pb-16 md:justify-center">

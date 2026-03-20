@@ -22,6 +22,7 @@ const AddressList: FC<Props> = ({
         if (defaultAddress) {
             setSelectedAddress(defaultAddress)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [addresses])
 
     const handleAddressSelect = (address: ShippingAddress) => { 

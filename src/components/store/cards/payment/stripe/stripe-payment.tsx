@@ -18,6 +18,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 
     useEffect(() => {
         getClientSecret();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderId]);
 
     const getClientSecret = async () => {

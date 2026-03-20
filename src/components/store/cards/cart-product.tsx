@@ -129,6 +129,7 @@ const CartProduct: FC<Props> = ({
         if (!shippingInfo.totalFee) {
             calculateShipping()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quantity, shippingFee, userCountry, shippingInfo.totalFee, stock])
 
     const selected = selectedItems.find(

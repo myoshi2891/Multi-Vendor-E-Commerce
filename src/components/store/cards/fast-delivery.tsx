@@ -14,15 +14,15 @@ const FastDelivery: FC<FastDeliveryProps> = () => {
                 <ChevronRight className="w-3" />
             </div>
             <span className="ml-5 flex gap-x-1 text-xs">
-                <Check className="w-3 -translate-y-[2px] stroke-green-400" />
+                <Check className="w-3 -translate-y-0.5 stroke-green-400" />
                 <span>$5.00 coupon code if delayed</span>
             </span>
             <span className="ml-5 flex gap-x-1 text-xs">
-                <Check className="w-3 -translate-y-[2px] stroke-green-400" />
+                <Check className="w-3 -translate-y-0.5 stroke-green-400" />
                 <span>Refund if package lost</span>
             </span>
             <span className="ml-5 flex gap-x-1 text-xs">
-                <Check className="w-3 -translate-y-[2px] stroke-green-400" />
+                <Check className="w-3 -translate-y-0.5 stroke-green-400" />
                 <span>Refund if no delivery in time</span>
             </span>
         </div>

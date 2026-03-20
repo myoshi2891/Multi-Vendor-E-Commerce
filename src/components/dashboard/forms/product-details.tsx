@@ -217,16 +217,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         hour12: false, // 12-hour format (change to false for 24-hour format)    })
     })
 
+    const categoryId = form.watch().categoryId;
     // useEffect to fetch subcategories based on categoryId
     useEffect(() => {
         const getSubcategories = async () => {
             const res = await getAllSubCategoriesFotCategory(
-                form.watch().categoryId
+                categoryId
             )
             setSubcategories(res)
         }
         getSubcategories()
-    }, [form.watch().categoryId])
+    }, [categoryId])
 
     // Extract errors state from form
     const errors = form.formState.errors
@@ -328,7 +329,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)
-    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data, form])
 
     //Countries options
     type CountryOption = {

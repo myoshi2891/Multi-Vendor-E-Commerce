@@ -58,6 +58,7 @@ const ProductReviews: FC<Props> = ({
         if (page) {
             handleGetReviews()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, sort, page])
 
     const handleGetReviews = async () => {

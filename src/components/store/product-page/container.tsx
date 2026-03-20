@@ -136,7 +136,7 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
         return () => {
             window.removeEventListener("storage", handleStorageChange);
         };
-    }, []);
+    }, [setCart]);
 
     // Add product to history
     updateProductHistory(variantId);

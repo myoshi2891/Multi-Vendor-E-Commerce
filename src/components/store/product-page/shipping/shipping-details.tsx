@@ -45,6 +45,7 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 			default:
 				break;
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [quantity, countryName]);
 
 	const { minDate, maxDate } = getShippingDatesRange(

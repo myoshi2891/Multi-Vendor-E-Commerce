@@ -51,7 +51,8 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
         if (imagesLength > 0) {
             fetchColors()
         }
-    }, [images])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [images, imagesLength])
 
     // If there are no images, display a placeholder image
     if (imagesLength === 0) {

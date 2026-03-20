@@ -16,6 +16,7 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
 
     useEffect(() => {
         getStoreProducts()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const getStoreProducts = async () => {
