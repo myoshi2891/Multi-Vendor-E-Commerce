@@ -47,12 +47,12 @@ const ProductShippingFee: FC<Props> = ({
 									className="grid gap-x-1 px-4 text-xs"
 									style={{ gridTemplateColumns: "4fr 1fr" }}
 								>
-									<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+									<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 										Fee per item
-									</td>
-									<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+									</th>
+									<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 										${fee}
-									</td>
+									</th>
 								</tr>
 							) : (
 								<>
@@ -62,12 +62,12 @@ const ProductShippingFee: FC<Props> = ({
 											gridTemplateColumns: "4fr 1fr",
 										}}
 									>
-										<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											Fee for First Item
-										</td>
-										<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+										</th>
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											${fee}
-										</td>
+										</th>
 									</tr>
 									<tr
 										className="mt-1 grid gap-x-1 px-4 text-xs"
@@ -75,12 +75,12 @@ const ProductShippingFee: FC<Props> = ({
 											gridTemplateColumns: "4fr 1fr",
 										}}
 									>
-										<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											Fee for Each Additional Item
-										</td>
-										<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+										</th>
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											${extraFee}
-										</td>
+										</th>
 									</tr>
 								</>
 							)}

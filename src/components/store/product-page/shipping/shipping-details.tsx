@@ -46,7 +46,7 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 				break;
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [quantity, countryName]);
+	}, [quantity, shippingFeeMethod, shippingFee, extraShippingFee]);
 
 	const { minDate, maxDate } = getShippingDatesRange(
 		deliveryTimeMin,
@@ -93,7 +93,7 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 						extraFee={extraShippingFee}
 						method={shippingFeeMethod}
 						weight={weight}
-						quantity={5}
+						quantity={quantity}
 					/>
 				)}
 				<div

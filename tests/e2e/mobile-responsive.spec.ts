@@ -79,8 +79,12 @@ test.describe("タブレットレスポンシブ", () => {
   test("タブレットビューポートでレイアウト切替", async ({ page }) => {
     await page.goto("/");
     // 特定の要素のスタイルや表示状態を確認する
-    // e.g. check for visible product grid columns or header variations
     const header = page.getByRole("banner");
     await expect(header).toBeVisible();
+    
+    // Check that we have a grid containing products
+    const productCards = page.getByTestId("product-card");
+    // Ensure product cards are rendered
+    await expect(productCards.first()).toBeVisible({ timeout: 10000 });
   });
 });

@@ -157,15 +157,16 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 							try {
 								await deleteOfferTag(rowData.id);
 								toast({
-									title: "Deleted category",
-									description: "The category has been deleted.",
+									title: "Deleted offer tag",
+									description: "The offer tag has been deleted.",
 								});
 								router.refresh();
 								setClose();
-							} catch (error: any) {
+							} catch (error: unknown) {
+								const message = error instanceof Error ? error.message : "Failed to delete offer tag.";
 								toast({
 									title: "Error",
-									description: error.message || "Failed to delete offer tag.",
+									description: message,
 									variant: "destructive"
 								});
 							} finally {

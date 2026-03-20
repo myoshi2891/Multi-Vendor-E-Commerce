@@ -1,7 +1,6 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import useFromStore from '@/hooks/useFromStore'
 import { CartProductType } from '@/lib/types'
-import { Size } from '@prisma/client'
 import { Minus, Plus } from 'lucide-react'
 import { FC, useEffect, useMemo } from 'react'
 
@@ -28,7 +27,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
             handleChange('quantity', 1)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sizeId])
+    }, [sizeId, quantity, handleChange])
     // Get cart product if it exist in cart, the get added quantity
     const cart = useFromStore(useCartStore, (state) => state.cart)
 

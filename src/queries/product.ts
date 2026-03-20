@@ -836,7 +836,7 @@ export const getProducts = async (
                 images: variant.images,
                 sizes: variant.sizes.map((s) => ({
                     ...s,
-                    price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
+                    price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
                 })),
             })
         );
@@ -1006,7 +1006,7 @@ export const retrieveProductDetails = async (
             images: variant.images,
             sizes: variant.sizes.map((s) => ({
                 ...s,
-                price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
+                price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
             })),
             colors: variant.colors,
         })),
@@ -1080,7 +1080,7 @@ const formatProductResponse = (
         colors,
         sizes: sizes.map((s) => ({
             ...s,
-            price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
+            price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
         })),
         specs: {
             product: product.specs,
@@ -1521,8 +1521,8 @@ export interface OrderedProductType {
     rating: number;
     sales: number;
     numReviews: number;
-    variants: any[];
-    variantImages: any[];
+    variants: VariantType[];
+    variantImages: VariantImageType[];
 }
 
 /**
@@ -1593,7 +1593,7 @@ export const getProductsByIds = async (
                     images: variant.images,
                     sizes: variant.sizes.map((size) => ({
                         ...size,
-                        price: typeof size.price === 'number' ? size.price : (size.price as any).toNumber?.() ?? size.price,
+                        price: typeof size.price === 'number' ? size.price : (size.price as unknown as Prisma.Decimal).toNumber?.() ?? size.price,
                     })),
                 },
             ],

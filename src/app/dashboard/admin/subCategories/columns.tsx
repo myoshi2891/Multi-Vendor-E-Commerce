@@ -153,7 +153,11 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                 const categories = await getAllCategories()
                 setCategories(categories)
             } catch (error) {
-                console.error("Failed to fetch categories:", error)
+                if (error instanceof Error) {
+                    console.error("Failed to fetch categories:", error.message, error.stack)
+                } else {
+                    console.error("Failed to fetch categories:", error)
+                }
             }
         }
         fetchCategories()
@@ -235,15 +239,16 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                                     description: 'The SubCategory has been deleted.',
                                 })
                                 router.refresh()
-                            } catch (error: any) {
+                                setClose()
+                            } catch (error: unknown) {
+                                const message = error instanceof Error ? error.message : "Failed to delete SubCategory."
                                 toast({
                                     title: "Error",
-                                    description: error.message || "Failed to delete SubCategory.",
+                                    description: message,
                                     variant: "destructive"
                                 })
                             } finally {
                                 setLoading(false)
-                                setClose()
                             }
                         }}
                     >

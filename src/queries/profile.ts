@@ -436,7 +436,7 @@ export const getUserWishlist = async (
                     images: item.product.variants[0].images,
                     sizes: item.product.variants[0].sizes.map((s) => ({
                         ...s,
-                        price: s.price.toNumber(),
+                        price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
                     })),
                 },
             ],

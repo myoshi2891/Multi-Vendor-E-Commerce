@@ -42,6 +42,15 @@ const ColorPalette: FC<ColorPaletteProps> = ({
 				style={{ backgroundColor: color }}
 				onMouseEnter={() => setActiveColor(color)}
 				onClick={() => handleAddProductColor(color)}
+				role="button"
+				tabIndex={0}
+				aria-label={`Select color ${color}`}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						handleAddProductColor(color);
+					}
+				}}
 			>
 				{/* Color label */}
 				<div className="absolute -top-6 h-8 w-full text-center text-xs font-semibold text-black">
@@ -76,7 +85,7 @@ const ColorPalette: FC<ColorPaletteProps> = ({
 					</div>
 				</div>
 				{/* Color blocks */}
-				<div className="absolute bottom-0 !flex h-[180px] w-full items-center justify-center">
+				<div className="absolute bottom-0 flex h-[180px] w-full items-center justify-center">
 					{/* Map over colors to display color blocks */}
 					{extractedColors?.map((color, index) => (
 						<Color key={index} color={color} />

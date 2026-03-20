@@ -25,7 +25,7 @@ interface Props {
 const ProductPageContainer: FC<Props> = (props) => {
     if (!props.productData) return null;
     if (typeof props.productData.shippingDetails === "boolean") {
-        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false } as any }} />;
+        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false } as ProductShippingDetailsType }} />;
     }
     return <ProductPageContainerInner {...props} />;
 };
@@ -138,8 +138,11 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
         };
     }, [setCart]);
 
-    // Add product to history
-    updateProductHistory(variantId);
+    useEffect(() => {
+        if (variantId) {
+            updateProductHistory(variantId);
+        }
+    }, [variantId]);
 
     const handleAddToCart = () => {
         if (maxQty <= 0) return toast.error("Out of stock");

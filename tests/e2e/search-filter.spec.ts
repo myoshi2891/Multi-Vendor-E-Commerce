@@ -37,30 +37,27 @@ test.describe("検索・フィルタ", () => {
   test("フィルタ条件が URL パラメータに反映される", async ({ page }) => {
     await page.goto(`/browse?search=${encodeURIComponent(productName)}&category=${seed.category.url}`);
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
-    if (await searchInput.isVisible()) {
-       await expect(searchInput).toHaveValue(productName);
-    }
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).toHaveValue(productName);
+    
     const categoryCheckbox = page.getByRole("checkbox", { name: seed.category.name });
-    if (await categoryCheckbox.isVisible()) {
-       await expect(categoryCheckbox).toBeChecked();
-    }
+    await expect(categoryCheckbox).toBeVisible();
+    await expect(categoryCheckbox).toBeChecked();
   });
 
   test("検索結果 0 件で適切なメッセージ表示される", async ({ page }) => {
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
-    if (await searchInput.isVisible()) {
-      await searchInput.fill("NonExistentProductxyz123");
-      await searchInput.press("Enter");
-      await expect(page.getByText(/No products found|0 results/i)).toBeVisible({ timeout: 10000 });
-    }
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill("NonExistentProductxyz123");
+    await searchInput.press("Enter");
+    await expect(page.getByText(/No products found|0 results/i)).toBeVisible({ timeout: 10000 });
   });
 
   test("ページネーションで次ページに遷移できる", async ({ page }) => {
     await page.goto("/browse");
     const nextButton = page.getByRole("button", { name: /Next/i });
-    if (await nextButton.isVisible()) {
-      await nextButton.click();
-      await expect(page).toHaveURL(/.*page=2.*/);
-    }
+    await expect(nextButton).toBeVisible();
+    await nextButton.click();
+    await expect(page).toHaveURL(/.*page=2.*/);
   });
 });

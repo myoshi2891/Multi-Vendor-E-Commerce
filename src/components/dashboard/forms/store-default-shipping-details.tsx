@@ -12,6 +12,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Schema
 import { StoreShippingFormSchema } from "@/lib/schemas";
 
+const RefinedStoreShippingFormSchema = StoreShippingFormSchema.refine((data) => {
+    return data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin;
+}, {
+    message: "Maximum delivery time must be greater than or equal to minimum delivery time",
+    path: ["defaultDeliveryTimeMax"]
+});
+
 // UI Components
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,9 +60,9 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	const router = useRouter(); // Hook for routing
 
 	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof StoreShippingFormSchema>>({
+	const form = useForm<z.infer<typeof RefinedStoreShippingFormSchema>>({
 		mode: "onChange", // Form validation mode
-		resolver: zodResolver(StoreShippingFormSchema), // Resolver for form validation
+		resolver: zodResolver(RefinedStoreShippingFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
 			defaultShippingService: data?.defaultShippingService ?? "",
@@ -91,7 +98,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 
 	// Submit handler for form submission
 	const handleSubmit = async (
-		values: z.infer<typeof StoreShippingFormSchema>
+		values: z.infer<typeof RefinedStoreShippingFormSchema>
 	) => {
 		try {
 			// Upserting category data
