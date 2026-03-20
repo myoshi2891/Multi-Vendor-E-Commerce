@@ -105,7 +105,7 @@ describe('PlaceOrderCard', () => {
             startDate: couponMock.startDate.toISOString(),
             endDate: couponMock.endDate.toISOString(),
             store: { name: 'Test Store' } as CouponPropType['store']
-        } as unknown as CouponPropType;
+        };
         const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
             coupon,

@@ -31,17 +31,15 @@ test.describe("モバイルレスポンシブ", () => {
   test("モバイルビューポートでナビゲーションメニューが開閉する", async ({ page }) => {
     await page.goto("/");
     const menuButton = page.getByRole("button", { name: /Toggle menu|Menu|Open/i }).first();
-    if (await menuButton.isVisible()) {
-      await menuButton.click();
-      await expect(page.getByRole("navigation").first()).toBeVisible();
-      // 閉じる操作
-      const closeButton = page.getByRole("button", { name: /Close|Close menu/i }).first();
-      if (await closeButton.isVisible()) {
-        await closeButton.click();
-        // The menu might not immediately unmount or might use opacity, checking isHidden is better
-        await expect(page.getByRole("navigation").first()).toBeHidden({ timeout: 5000 });
-      }
-    }
+    await expect(menuButton).toBeVisible();
+    await menuButton.click();
+    await expect(page.getByRole("navigation").first()).toBeVisible();
+    // 閉じる操作
+    const closeButton = page.getByRole("button", { name: /Close|Close menu/i }).first();
+    await expect(closeButton).toBeVisible();
+    await closeButton.click();
+    // The menu might not immediately unmount or might use opacity, checking isHidden is better
+    await expect(page.getByRole("navigation").first()).toBeHidden({ timeout: 5000 });
   });
 
   test("モバイルでカート操作 (追加・数量変更) が機能する", async ({ page }) => {
@@ -53,11 +51,11 @@ test.describe("モバイルレスポンシブ", () => {
     
     // モバイルでも数量変更ボタンが押せることを確認
     const increaseBtn = page.getByTestId("cart-qty-increase").first();
-    if (await increaseBtn.isVisible()) {
-      await increaseBtn.click();
-      const qtyInput = page.getByTestId("cart-item-qty").first();
-      await expect(qtyInput).toHaveValue("2");
-    }
+    await expect(increaseBtn).toBeVisible();
+    await increaseBtn.click();
+    const qtyInput = page.getByTestId("cart-item-qty").first();
+    await expect(qtyInput).toBeVisible();
+    await expect(qtyInput).toHaveValue("2");
   });
 
   test("モバイルでチェックアウトフローが完了できる", async ({ page }) => {
@@ -67,12 +65,11 @@ test.describe("モバイルレスポンシブ", () => {
 
     // checkoutボタンがモバイルでも見えるか、押せるか
     const checkoutBtn = page.getByTestId("checkout");
-    if (await checkoutBtn.isVisible()) {
-      await checkoutBtn.click();
-      // ゲストなのでログインにリダイレクトされることを確認
-      await page.waitForURL(/.*sign-in.*/);
-      expect(page.url()).toContain("sign-in");
-    }
+    await expect(checkoutBtn).toBeVisible();
+    await checkoutBtn.click();
+    // ゲストなのでログインにリダイレクトされることを確認
+    await page.waitForURL(/.*sign-in.*/);
+    expect(page.url()).toContain("sign-in");
   });
 });
 

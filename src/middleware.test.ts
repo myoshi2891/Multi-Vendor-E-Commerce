@@ -33,7 +33,7 @@ import { clerkMiddleware, type ClerkMiddlewareAuth } from "@clerk/nextjs/server"
 import middleware from "./middleware";
 
 // clerkMiddleware のハンドラー関数の型
-type MiddlewareHandler = (auth: ClerkMiddlewareAuth, req: NextRequest, event: NextFetchEvent) => any;
+type MiddlewareHandler = (auth: ClerkMiddlewareAuth, req: NextRequest, event: NextFetchEvent) => Promise<Response | void> | Response | void;
 
 describe("Middleware", () => {
     let mockProtect: jest.Mock;

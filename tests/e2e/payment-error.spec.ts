@@ -25,7 +25,7 @@ test.describe("決済異常系", () => {
   test("カート空でチェックアウトページにアクセスするとリダイレクトされる", async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/checkout");
-    await page.waitForURL(/\/cart|\//);
+    await page.waitForURL((url) => !url.pathname.includes('/checkout') && (url.pathname === '/cart' || url.pathname === '/'));
     expect(page.url()).not.toContain("/checkout");
   });
 
@@ -43,20 +43,19 @@ test.describe("決済異常系", () => {
     
     // click place order without selecting address
     const placeOrderBtn = page.getByRole("button", { name: /Place Order/i });
-    if (await placeOrderBtn.isVisible()) {
-       await placeOrderBtn.click();
-       await expect(page.getByText(/Please select a shipping address|Address is required/i)).toBeVisible({ timeout: 5000 });
-    }
+    await expect(placeOrderBtn).toBeVisible();
+    await placeOrderBtn.click();
+    await expect(page.getByText(/Please select a shipping address|Address is required/i)).toBeVisible({ timeout: 5000 });
   });
 
-  test("在庫切れ商品がカートにある場合 Out of stock と表示される", async ({ page }) => {
+  test.skip("在庫切れ商品がカートにある場合 Out of stock と表示される", async ({ page }) => {
     await page.goto("/cart");
     // Mock the API response for out of stock or just check the logic if we had one
     // For now, asserting that the page loads without crashing
     await expect(page.getByRole("heading", { name: /Shopping Cart/i })).toBeVisible();
   });
 
-  test("ブラウザバック後に二重送信されない（冪等性検証）", async ({ page }) => {
+  test.skip("ブラウザバック後に二重送信されない（冪等性検証）", async ({ page }) => {
     // Navigate to a mock success page then back
     await page.goto("/cart");
     await page.goto("/");

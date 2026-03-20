@@ -19,7 +19,7 @@ export default defineConfig({
   },
   webServer: {
     command: "bun run dev",
-    port: 3000,
+    url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 300 * 1000,
   },

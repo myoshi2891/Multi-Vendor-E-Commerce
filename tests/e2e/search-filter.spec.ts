@@ -16,13 +16,12 @@ test.describe("検索・フィルタ", () => {
 
   test("商品名で検索し結果が表示される", async ({ page }) => {
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
-    if (await searchInput.isVisible()) {
-      await searchInput.fill(productName);
-      await searchInput.press("Enter");
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill(productName);
+    await searchInput.press("Enter");
 
-      await page.waitForURL(/.*search=.*/);
-      await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
-    }
+    await page.waitForURL(/.*search=.*/);
+    await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("カテゴリフィルタで絞り込まれる", async ({ page }) => {
@@ -30,7 +29,7 @@ test.describe("検索・フィルタ", () => {
     const categoryCheckbox = page.getByRole("checkbox", { name: seed.category.name });
     if (await categoryCheckbox.isVisible()) {
         await categoryCheckbox.click();
-        await expect(page).toHaveURL(new RegExp(`category=${seed.category.url}`));
+        await expect(page).toHaveURL(new RegExp(`[?&]category=${encodeURIComponent(seed.category.url)}(?:&|$)`));
         await expect(page.getByText(productName).first()).toBeVisible();
     }
   });

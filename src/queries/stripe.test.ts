@@ -22,16 +22,15 @@ jest.mock("@/lib/db", () => ({
 }));
 
 // Stripeモック
-jest.mock("stripe");
-
-const MockedStripe = jest.mocked(Stripe);
 const mockStripePaymentIntentsCreate = jest.fn();
-
-MockedStripe.mockImplementation(() => ({
-    paymentIntents: {
-        create: mockStripePaymentIntentsCreate,
-    },
-} as unknown as Stripe));
+jest.mock("stripe", () => {
+    return jest.fn().mockImplementation(() => ({
+        paymentIntents: {
+            create: (...args: any[]) => mockStripePaymentIntentsCreate(...args),
+        },
+    }));
+});
+const MockedStripe = jest.mocked(Stripe);
 
 const mockDb = require("@/lib/db").db;
 

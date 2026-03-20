@@ -178,9 +178,9 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.getByLabel("Password", { exact: true }).fill(userPassword);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 }).catch(() => {});
+    await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 });
     // Explicitly wait for home page or next destination
-    await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 }).catch(() => {});
+    await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     // Now they should have access to the seller dashboard because their role is SELLER
