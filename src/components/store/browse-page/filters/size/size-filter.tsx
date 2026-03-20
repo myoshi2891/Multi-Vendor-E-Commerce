@@ -20,15 +20,31 @@ export default function SizeFilter({
     const [take, setTake] = useState<number>(10);
 
     useEffect(() => {
+        let cancelled = false;
+
         const handleGetSizes = async () => {
-            const sizes = await getFilteredSizes(
-                { category, subCategory, offer, storeUrl },
-                take
-            );
-            setSizes(sizes.sizes);
-            setTotal(sizes.count);
+            try {
+                const sizes = await getFilteredSizes(
+                    { category, subCategory, offer, storeUrl },
+                    take
+                );
+
+                if (!cancelled) {
+                    setSizes(sizes.sizes);
+                    setTotal(sizes.count);
+                }
+            } catch {
+                if (!cancelled) {
+                    setSizes([]);
+                    setTotal(0);
+                }
+            }
         };
-        handleGetSizes();
+        void handleGetSizes();
+
+        return () => {
+            cancelled = true;
+        };
     }, [category, subCategory, offer, take, storeUrl]);
 
     return (

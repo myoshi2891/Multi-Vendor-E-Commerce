@@ -221,10 +221,14 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // useEffect to fetch subcategories based on categoryId
     useEffect(() => {
         const getSubcategories = async () => {
-            const res = await getAllSubCategoriesFotCategory(
-                categoryId
-            )
-            setSubcategories(res)
+            try {
+                const res = await getAllSubCategoriesFotCategory(
+                    categoryId
+                )
+                setSubcategories(res)
+            } catch (error) {
+                console.error("Failed to fetch subcategories:", error)
+            }
         }
         getSubcategories()
     }, [categoryId])
