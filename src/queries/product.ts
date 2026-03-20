@@ -800,7 +800,7 @@ export const getProducts = async (
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = size.price.toNumber() * (1 - discount / 100);
+                        let discountedPrice = (typeof size.price === 'number' ? size.price : (size.price as any).toNumber?.() ?? size.price) * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
@@ -836,7 +836,7 @@ export const getProducts = async (
                 images: variant.images,
                 sizes: variant.sizes.map((s) => ({
                     ...s,
-                    price: s.price.toNumber(),
+                    price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
                 })),
             })
         );
@@ -1006,7 +1006,7 @@ export const retrieveProductDetails = async (
             images: variant.images,
             sizes: variant.sizes.map((s) => ({
                 ...s,
-                price: s.price.toNumber(),
+                price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
             })),
             colors: variant.colors,
         })),
@@ -1080,7 +1080,7 @@ const formatProductResponse = (
         colors,
         sizes: sizes.map((s) => ({
             ...s,
-            price: s.price.toNumber(),
+            price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
         })),
         specs: {
             product: product.specs,
@@ -1514,6 +1514,17 @@ export const getProductShippingFee = async (
     }
 };
 
+export interface OrderedProductType {
+    id: string;
+    slug: string;
+    name: string;
+    rating: number;
+    sales: number;
+    numReviews: number;
+    variants: any[];
+    variantImages: any[];
+}
+
 /**
  * @function getProductsByIds
  * @description Retrieves product details based on an array of product ids.
@@ -1526,7 +1537,7 @@ export const getProductsByIds = async (
     ids: string[],
     page: number = 1,
     pageSize: number = 10
-): Promise<{ products: any; totalPages: number }> => {
+): Promise<{ products: OrderedProductType[]; totalPages: number }> => {
     // Check if ids array is empty
     if (!ids || ids.length === 0) {
         throw new Error("Ids are undefined");
@@ -1565,11 +1576,9 @@ export const getProductsByIds = async (
                     },
                 },
             },
-            take: limit,
-            skip: skip,
         });
 
-        const new_products = variants.map((variant) => ({
+        const new_products: OrderedProductType[] = variants.map((variant) => ({
             id: variant.product.id,
             slug: variant.product.slug,
             name: variant.product.name,
@@ -1584,7 +1593,7 @@ export const getProductsByIds = async (
                     images: variant.images,
                     sizes: variant.sizes.map((size) => ({
                         ...size,
-                        price: size.price.toNumber(),
+                        price: typeof size.price === 'number' ? size.price : (size.price as any).toNumber?.() ?? size.price,
                     })),
                 },
             ],
@@ -1598,19 +1607,15 @@ export const getProductsByIds = async (
                     (product) => product.variants[0].variantId === id
                 )
             )
-            .filter(Boolean); // Filter out undefined values
+            .filter((p): p is OrderedProductType => Boolean(p));
 
-        const allProducts = await db.productVariant.count({
-            where: {
-                id: {
-                    in: ids,
-                },
-            },
-        });
+        const paginated_products = ordered_products.slice(skip, skip + limit);
+
+        const allProducts = ordered_products.length;
         const totalPages = Math.ceil(allProducts / pageSize);
 
         return {
-            products: ordered_products,
+            products: paginated_products,
             totalPages,
         };
     } catch (error: unknown) {

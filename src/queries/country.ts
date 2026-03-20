@@ -9,7 +9,11 @@ export const getAllCountries = async () => {
         });
         return countries;
     } catch (error) {
-        console.error("Error retrieving countries:", error);
+        if (error instanceof Error) {
+            console.error("Error retrieving countries:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving countries:", error);
+        }
         throw new Error("Failed to retrieve countries.");
     }
 };

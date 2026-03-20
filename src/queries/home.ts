@@ -140,9 +140,9 @@ export const getHomeDataDynamic = async (
                         ? { subCategory: { url: value } }
                         : {};
             // Query products based on the constructed where clause
-            let products: any[] = [];
+            let products: ProductWithVariants[] = [];
             try {
-                products = await db.product.findMany({
+                products = (await db.product.findMany({
                     where: whereClause,
                     select: {
                         id: true,
@@ -162,11 +162,14 @@ export const getHomeDataDynamic = async (
                             },
                         },
                     },
-                });
+                })) as unknown as ProductWithVariants[];
             } catch (error) {
-                console.error(`Error querying dynamic products for ${property}=${value}:`, error);
-                // Return empty fallback array
-                products = [];
+                if (error instanceof Error) {
+                    console.error(`Error querying dynamic products for ${property}=${value}:`, error.message, error.stack);
+                } else {
+                    console.error(`Error querying dynamic products for ${property}=${value}:`, error);
+                }
+                throw error;
             }
 
             // Format the data based on the input
