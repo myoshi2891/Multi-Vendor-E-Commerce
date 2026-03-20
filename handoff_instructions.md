@@ -32,32 +32,27 @@ Next.js 14 (App Router), TypeScript, Prisma (PostgreSQL), Clerk (Auth), Stripe/P
 
 ### 完了したタスク
 - [x] **Prismaクエリのエラーハンドリング**: `getAllCountries` 等の関数化と try-catch 実装。
-- [x] **型安全性の向上**: UIコンポーネント (size.selector, quantity-selector等) からの `any` 削除。
+- [x] **型安全性の向上**: UIコンポーネントからの `any` 削除。
 - [x] **Middlewareテストの修正**: Clerk と Next.js の型不整合を解消。
 - [x] **Stripeテストのリファクタリング**: `jest.mocked` を使用した安全なモックへの移行。
-- [x] **ImageUploadの修正**: Cloudinary の型定義適用と `data-testid` の統一 (`n-mock-input-*`)。
+- [x] **ImageUploadの修正**: Cloudinary の型定義適用と `data-testid` の統一。
 - [x] **E2Eテスト (Phase 3)**: セラーオンボーディング（ブラウザ間の挙動安定化対応完了）。
-- [x] **新規 E2Eテスト作成**: `payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts` の追加。
-- [x] **Lint警告解消**: `src/queries/product.ts` の `@typescript-eslint/no-explicit-any` 解消、React Hooks (rules-of-hooks) のエラー解消、大部分の Tailwind CSS `classnames-order` の自動修正。
+- [x] **新規 E2Eテスト作成**: `payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts` の追加と不具合修正。
+- [x] **Lint警告解消**: `react-hooks/exhaustive-deps` 警告と Tailwind CSS のカスタムクラス警告 (`tailwindcss/no-custom-classname`) をすべて修正し、`bun run lint` のエラー/警告をゼロに。
 
 ### 進行中のタスク
 - [ ] **E2Eテストの CI/CD 連携と追加安定化**: 必要に応じて実装したテストコードを実際のCIやローカルで全ブラウザパスするか確認する。
-- [ ] **残存 Lint Warning の解消 (exhaustive-deps)**: `useEffect` の依存配列に関する Warning（`react-hooks/exhaustive-deps`）が多数残っています。これらを手動で確認し安全に解消するか、必要なものは `eslint-disable-next-line` で除外する対応が必要です。
 
 ---
 
 ## 3. 次に取り組むべきステップ (Step-by-Step)
 
-### Step 1: `react-hooks/exhaustive-deps` の解消
-`bun run lint` を実行すると以下の Warning が多数確認できます。これらの依存配列漏れを解消してください。（例: `src/components/dashboard/forms/product-details.tsx`, `src/components/store/product-page/container.tsx` など）
-不要な再レンダリングや無限ループを引き起こさないよう、関数を `useCallback` でラップする、あるいは本当に依存として不要な場合は適切にコメントで無視する等の対応が必要です。
+### Step 1: E2E テストのフルラン確認
+- 作成した E2E テスト (`payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts`, その他) を `bunx playwright test` で実行し、モックや初期データの整合性がとれているか、また安定してパスするか確認してください。必要に応じて、Playwright の UIモード (`bunx playwright test --ui`) 等を用いてデバッグします。
 
-### Step 2: カスタムクラスの Tailwind 警告解消
-`bun run lint` にて、Tailwind CSS プラグインから「Classname 'xxx' is not a Tailwind CSS class!」という警告が出ています。（例: `scrollbar-track-gray-100`, `fi`, `animate-caret-blink` など）
-- これらがプロジェクト独自のカスタムクラスである場合、Tailwind の設定ファイル (`tailwind.config.ts` や `globals.css`) で定義されているか確認し、プラグインの警告を除外するか設定を修正してください。
-
-### Step 3: E2E テストのフルラン確認
-- 作成した E2E テスト (`payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts`) を `bunx playwright test` で実行し、モックや初期データの整合性がとれているか、また安定してパスするか確認してください。
+### Step 2: 機能実装やUIの微調整（必要に応じて）
+- E2Eテストの過程で発見された不具合や、UIの崩れ（特にモバイル・タブレットのレスポンシブ対応など）があれば随時修正を行います。
+- 仕様書 (`specs/multi-vendor-ecommerce/`) に沿って未実装・仕様漏れの確認を行うフェーズに移行します。
 
 ---
 
