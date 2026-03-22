@@ -446,7 +446,7 @@ export const getUserWishlist = async (
             }));
 
         // Fetch the total count of wishlist items for the query
-        const totalCount = await db.wishlist.count({ where: { userId: user.id } });
+        const totalCount = formattedWishlist.length;
 
         // Calculate total pages
         const totalPages = Math.ceil(totalCount / pageSize);

@@ -1555,9 +1555,14 @@ export const getProductsByIds = async (
     page: number = 1,
     pageSize: number = 10
 ): Promise<{ products: OrderedProductType[]; totalPages: number }> => {
+    const MAX_IDS = 1000;
     // Check if ids array is empty
     if (!ids || ids.length === 0) {
         throw new Error("Ids are undefined");
+    }
+
+    if (ids.length > MAX_IDS) {
+        throw new Error(`Too many product IDs requested. Maximum allowed is ${MAX_IDS}.`);
     }
 
     // Default values for page and pageSize
