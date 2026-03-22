@@ -61,6 +61,12 @@ test.describe("モバイルレスポンシブ", () => {
 test.describe("タブレットレスポンシブ", () => {
   test.use({ viewport: { width: 768, height: 1024 } }); // iPad 縦等のサイズ
 
+  const seed = E2E_SEED;
+
+  test.beforeEach(async ({ page }) => {
+    await setupE2ETestState(page, seed);
+  });
+
   test("タブレットビューポートでレイアウト切替", async ({ page }) => {
     // Set viewport explicitly to a tablet size
     await page.goto("/");
