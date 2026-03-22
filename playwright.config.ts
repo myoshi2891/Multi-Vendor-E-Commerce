@@ -8,6 +8,7 @@ export default defineConfig({
   timeout: 30 * 1000,
   expect: { timeout: 5 * 1000 },
   fullyParallel: true,
+  // Serial execution is required to prevent shared DB and auth session conflicts
   workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
