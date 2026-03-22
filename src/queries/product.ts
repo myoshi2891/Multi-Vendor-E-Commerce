@@ -1562,7 +1562,8 @@ export const getProductsByIds = async (
     }
 
     if (ids.length > MAX_IDS) {
-        throw new Error(`Too many product IDs requested. Maximum allowed is ${MAX_IDS}.`);
+        console.warn(`Too many product IDs requested (${ids.length}). Truncating to maximum allowed (${MAX_IDS}).`);
+        ids = ids.slice(0, MAX_IDS);
     }
 
     // Default values for page and pageSize

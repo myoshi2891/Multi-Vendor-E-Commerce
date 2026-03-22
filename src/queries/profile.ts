@@ -499,59 +499,59 @@ export const getUserFollowedStores = async (
         // Retrieve the current user
         const user = await currentUser();
 
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+        // Ensure the user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    // Calculate pagination values
-    const skip = (page - 1) * pageSize;
+        // Calculate pagination values
+        const skip = (page - 1) * pageSize;
 
-    // Fetch followed stores for the current user with pagination
-    const followedStores = await db.store.findMany({
-        where: {
-            followers: {
-                some: {
-                    id: user.id,
+        // Fetch followed stores for the current user with pagination
+        const followedStores = await db.store.findMany({
+            where: {
+                followers: {
+                    some: {
+                        id: user.id,
+                    },
                 },
             },
-        },
-        select: {
-            id: true,
-            url: true,
-            name: true,
-            logo: true,
-            followers: {
-                select: {
-                    id: true,
+            select: {
+                id: true,
+                url: true,
+                name: true,
+                logo: true,
+                followers: {
+                    select: {
+                        id: true,
+                    },
                 },
             },
-        },
-        take: pageSize,
-        skip,
-    });
+            take: pageSize,
+            skip,
+        });
 
-    // Fetch the total count of followed stores (without pagination)
-    const totalCount = await db.store.count({
-        where: {
-            followers: {
-                some: {
-                    id: user.id,
+        // Fetch the total count of followed stores (without pagination)
+        const totalCount = await db.store.count({
+            where: {
+                followers: {
+                    some: {
+                        id: user.id,
+                    },
                 },
             },
-        },
-    });
+        });
 
-    // Calculate the total number of pages
-    const totalPages = Math.ceil(totalCount / pageSize);
+        // Calculate the total number of pages
+        const totalPages = Math.ceil(totalCount / pageSize);
 
-    // Transform the stores into the required format
-    const stores = followedStores.map((store) => ({
-        id: store.id,
-        url: store.url,
-        name: store.name,
-        logo: store.logo,
-        followersCount: store.followers.length,
-        isUserFollowingStore: true, // Always true since these are followed stores
-    }));
+        // Transform the stores into the required format
+        const stores = followedStores.map((store) => ({
+            id: store.id,
+            url: store.url,
+            name: store.name,
+            logo: store.logo,
+            followersCount: store.followers.length,
+            isUserFollowingStore: true, // Always true since these are followed stores
+        }));
 
         return {
             stores,
