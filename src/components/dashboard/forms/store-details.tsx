@@ -16,7 +16,6 @@ import * as z from 'zod'
 import { StoreFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import {
     Card,
     CardContent,
@@ -137,9 +136,8 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
+        <Card className="w-full">
+            <CardHeader>
                     <CardTitle>Store Information</CardTitle>
                     <CardDescription>
                         {data?.id
@@ -344,10 +342,9 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                                       : "Create store"}
                             </Button>
                         </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        </AlertDialog>
-    );
-}
+                        </Form>
+                        </CardContent>
+                        </Card>
+                        )
+                        }
 export default StoreDetails

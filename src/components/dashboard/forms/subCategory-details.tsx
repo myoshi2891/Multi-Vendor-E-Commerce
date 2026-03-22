@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SubCategoryFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
 	Card,
 	CardContent,
@@ -134,9 +133,8 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>SubCategory Information</CardTitle>
 					<CardDescription>
 						{data?.id
@@ -289,7 +287,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

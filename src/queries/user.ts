@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
+import { toNumberSafe } from "@/lib/utils"
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
@@ -826,7 +827,7 @@ export const updateCartWithLatest = async (
                 }
             }
 
-            const priceNumber = typeof size.price === 'number' ? size.price : (size.price as any).toNumber?.() ?? size.price;
+            const priceNumber = toNumberSafe(size.price);
             const price = size.discount
                 ? priceNumber - (priceNumber * size.discount) / 100
                 : priceNumber

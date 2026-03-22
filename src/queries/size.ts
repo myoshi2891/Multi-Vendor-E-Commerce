@@ -63,6 +63,7 @@ export const getFilteredSizes = async (
                                 ? { subCategory: { url: subCategory } }
                                 : {},
                             offer ? { offerTag: { url: offer } } : {},
+                            storeId ? { store: { id: storeId } } : {},
                         ],
                     },
                 },
@@ -81,7 +82,7 @@ export const getFilteredSizes = async (
                         AND: [
                             category ? { category: { url: category } } : {},
                             subCategory
-                                ? { category: { url: subCategory } }
+                                ? { subCategory: { url: subCategory } }
                                 : {},
                             offer ? { offerTag: { url: offer } } : {},
                             storeId ? { store: { id: storeId } } : {},

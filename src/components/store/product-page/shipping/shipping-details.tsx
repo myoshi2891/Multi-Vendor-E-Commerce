@@ -96,9 +96,11 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 						quantity={quantity}
 					/>
 				)}
-				<div
+				<button
+					type="button"
+					aria-expanded={toggle}
 					onClick={() => setToggle((prev) => !prev)}
-					className="ml-4 flex h-5 max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
+					className="ml-4 flex h-5 w-full max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
 				>
 					<div className="flex w-full items-center justify-between gap-x-1 px-2">
 						<span className="text-xs">
@@ -110,7 +112,7 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 							<ChevronDown className="w-4" />
 						)}
 					</div>
-				</div>
+				</button>
 			</div>
 		</div>
 	);

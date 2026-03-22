@@ -1,6 +1,7 @@
 "use server";
-// DB
+
 import { db } from "@/lib/db";
+import { toNumberSafe } from "@/lib/utils";
 // Types
 import {
     Country,
@@ -800,7 +801,7 @@ export const getProducts = async (
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = (typeof size.price === 'number' ? size.price : (size.price as any).toNumber?.() ?? size.price) * (1 - discount / 100);
+                        let discountedPrice = toNumberSafe(size.price) * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
@@ -836,7 +837,7 @@ export const getProducts = async (
                 images: variant.images,
                 sizes: variant.sizes.map((s) => ({
                     ...s,
-                    price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
+                    price: toNumberSafe(s.price),
                 })),
             })
         );
@@ -1006,7 +1007,7 @@ export const retrieveProductDetails = async (
             images: variant.images,
             sizes: variant.sizes.map((s) => ({
                 ...s,
-                price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
+                price: toNumberSafe(s.price),
             })),
             colors: variant.colors,
         })),
@@ -1080,7 +1081,7 @@ const formatProductResponse = (
         colors,
         sizes: sizes.map((s) => ({
             ...s,
-            price: typeof s.price === 'number' ? s.price : (s.price as unknown as Prisma.Decimal).toNumber?.() ?? s.price,
+            price: toNumberSafe(s.price),
         })),
         specs: {
             product: product.specs,
@@ -1593,7 +1594,7 @@ export const getProductsByIds = async (
                     images: variant.images,
                     sizes: variant.sizes.map((size) => ({
                         ...size,
-                        price: typeof size.price === 'number' ? size.price : (size.price as unknown as Prisma.Decimal).toNumber?.() ?? size.price,
+                        price: toNumberSafe(size.price),
                     })),
                 },
             ],

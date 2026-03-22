@@ -27,7 +27,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
             handleChange('quantity', 1)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sizeId, quantity, handleChange])
+    }, [sizeId])
     // Get cart product if it exist in cart, the get added quantity
     const cart = useFromStore(useCartStore, (state) => state.cart)
 

@@ -1,5 +1,5 @@
 'use client'
-import { CartProductType, ProductPageDataType } from '@/lib/types'
+import { CartProductType, ProductPageDataType, ProductShippingDetailsType } from '@/lib/types'
 import { FC, ReactNode, useEffect, useMemo, useState, useCallback } from 'react'
 import ProductSwiper from './product-swiper'
 import ProductInfo from './product-info/product-info'
@@ -25,7 +25,7 @@ interface Props {
 const ProductPageContainer: FC<Props> = (props) => {
     if (!props.productData) return null;
     if (typeof props.productData.shippingDetails === "boolean") {
-        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false } as ProductShippingDetailsType }} />;
+        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false, returnPolicy: "", countryCode: "", countryName: "", city: "" } as ProductShippingDetailsType }} />;
     }
     return <ProductPageContainerInner {...props} />;
 };

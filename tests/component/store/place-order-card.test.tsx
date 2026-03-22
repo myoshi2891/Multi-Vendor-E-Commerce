@@ -3,7 +3,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import PlaceOrderCard from '@/components/store/cards/place-order'
-import { createMockCart, createMockCoupon, createMockShippingAddress, createMockCartItem } from '@/config/test-fixtures'
+import { createMockCart, createMockCoupon, createMockShippingAddress, createMockCartItem, createMockStore } from '@/config/test-fixtures'
 import { placeOrder, emptyUserCart } from '@/queries/user'
 import { useCartStore } from '@/cart-store/useCartStore'
 import { useRouter } from 'next/navigation'
@@ -100,12 +100,11 @@ describe('PlaceOrderCard', () => {
             discount: 10,
             storeId: 'store-1',
         });
-        const storeMock = { name: 'Test Store' } as unknown as Store;
         const coupon: CouponPropType = {
             ...couponMock,
             startDate: couponMock.startDate.toISOString(),
             endDate: couponMock.endDate.toISOString(),
-            store: storeMock as CouponPropType['store']
+            store: createMockStore({ name: 'Test Store' })
         };
         const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,

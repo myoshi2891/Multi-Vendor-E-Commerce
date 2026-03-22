@@ -4,6 +4,9 @@ export const TEST_CONFIG = {
     DEFAULT_SHIPPING_SERVICE: "International Delivery",
     DEFAULT_RETURN_POLICY: "Return in 30 days.",
 
+    // E2E Tests
+    E2E_BASE_URL: process.env.E2E_BASE_URL || "http://localhost:3000",
+
     // 追加推奨設定
     TEST_STORE_URL: "test-store",
     TEST_EMAIL: "test@example.com",

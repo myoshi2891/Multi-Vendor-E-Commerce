@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { OfferTagFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
 	Card,
 	CardContent,
@@ -113,9 +112,8 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>Offer Tag Information</CardTitle>
 					<CardDescription>
 						{data?.id
@@ -175,7 +173,6 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

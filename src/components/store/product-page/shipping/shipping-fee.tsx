@@ -1,5 +1,4 @@
 import { Check } from "lucide-react";
-import { Span } from "next/dist/trace";
 import { FC } from "react";
 
 interface Props {
@@ -126,7 +125,7 @@ const ProductShippingFee: FC<Props> = ({
 						<span className="flex gap-x-1 text-xs">
 							<Check className="min-w-3 max-w-3 stroke-green-400" />
 							<span className="mt-1">
-								This store calculates the delivery fee bases on
+								This store calculates the delivery fee based on
 								product weight
 							</span>
 						</span>
@@ -137,12 +136,12 @@ const ProductShippingFee: FC<Props> = ({
 								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									Fee per kg (1 kg = 2.205 lb)
-								</td>
-								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+								</th>
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									${fee}
-								</td>
+								</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -190,12 +189,12 @@ const ProductShippingFee: FC<Props> = ({
 								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									Fee
-								</td>
-								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
+								</th>
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									${fee}
-								</td>
+								</th>
 							</tr>
 						</thead>
 						<tbody>

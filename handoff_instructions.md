@@ -39,6 +39,7 @@ Next.js 14 (App Router), TypeScript, Prisma (PostgreSQL), Clerk (Auth), Stripe/P
 - [x] **E2Eテスト (Phase 3)**: セラーオンボーディング（ブラウザ間の挙動安定化対応完了）。
 - [x] **新規 E2Eテスト作成**: `payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts` の追加と不具合修正。
 - [x] **Lint警告解消**: `react-hooks/exhaustive-deps` 警告と Tailwind CSS のカスタムクラス警告 (`tailwindcss/no-custom-classname`) をすべて修正し、`bun run lint` のエラー/警告をゼロに。
+- [x] **コードレビュー指摘事項の反映**: `useEffect` 内の非同期処理のエラーハンドリング・クリーンアップ追加、UIコンポーネントの Tailwind クラス整理、テストコードの型安全性の向上など。
 
 ### 進行中のタスク
 - [ ] **E2Eテストの CI/CD 連携と追加安定化**: 必要に応じて実装したテストコードを実際のCIやローカルで全ブラウザパスするか確認する。
@@ -48,11 +49,11 @@ Next.js 14 (App Router), TypeScript, Prisma (PostgreSQL), Clerk (Auth), Stripe/P
 ## 3. 次に取り組むべきステップ (Step-by-Step)
 
 ### Step 1: E2E テストのフルラン確認
-- 作成した E2E テスト (`payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts`, その他) を `bunx playwright test` で実行し、モックや初期データの整合性がとれているか、また安定してパスするか確認してください。必要に応じて、Playwright の UIモード (`bunx playwright test --ui`) 等を用いてデバッグします。
+- 作成した E2E テスト (`payment-error.spec.ts`, `search-filter.spec.ts`, `mobile-responsive.spec.ts`, `purchase-flow.spec.ts` 等) を `bunx playwright test` で実行し、モックや初期データの整合性がとれているか、また安定してパスするか確認してください。
 
-### Step 2: 機能実装やUIの微調整（必要に応じて）
-- E2Eテストの過程で発見された不具合や、UIの崩れ（特にモバイル・タブレットのレスポンシブ対応など）があれば随時修正を行います。
-- 仕様書 (`specs/multi-vendor-ecommerce/`) に沿って未実装・仕様漏れの確認を行うフェーズに移行します。
+### Step 2: 仕様書に基づいた機能・非機能要件の最終確認
+- `specs/multi-vendor-ecommerce/` 以下の各ドキュメントを参照し、現在の実装が要件（特にデータモデルの制約や決済フロー）を完全に満たしているか最終チェックを行います。
+- 不足しているエラーケースのテスト（境界値テスト、異常系テスト）を必要に応じて追加します。
 
 ---
 

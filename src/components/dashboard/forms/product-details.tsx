@@ -22,7 +22,6 @@ import * as z from 'zod'
 import { ProductFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     Card,
@@ -354,9 +353,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
+        <Card className="w-full">
+            <CardHeader>
                     <CardTitle>
                         {isNewVariantPage
                             ? `Add a new variant to ${data.name}`
@@ -1320,7 +1318,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
     )
 }
 export default ProductDetails

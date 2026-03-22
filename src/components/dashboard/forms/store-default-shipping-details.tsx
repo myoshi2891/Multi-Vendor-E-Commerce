@@ -12,16 +12,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Schema
 import { StoreShippingFormSchema } from "@/lib/schemas";
 
-const RefinedStoreShippingFormSchema = StoreShippingFormSchema.refine((data) => {
-    return data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin;
-}, {
-    message: "Maximum delivery time must be greater than or equal to minimum delivery time",
-    path: ["defaultDeliveryTimeMax"]
-});
-
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -38,13 +31,18 @@ import { NumberInput } from "@tremor/react";
 // Queries
 import { updateStoreDefaultShippingDetails } from "@/queries/store";
 
-// Utils
-import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
 import { useToast } from "@/hooks/use-toast";
 
 // Types
 import { StoreDefaultShippingType } from "@/lib/types";
+
+const RefinedStoreShippingFormSchema = StoreShippingFormSchema.refine((data) => {
+    return data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin;
+}, {
+    message: "Maximum delivery time must be greater than or equal to minimum delivery time",
+    path: ["defaultDeliveryTimeMax"]
+});
 
 interface StoreDefaultShippingDetailsProps {
 	data?: StoreDefaultShippingType;
@@ -139,9 +137,8 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>Store Default Shipping Details</CardTitle>
 				</CardHeader>
 				<CardContent>
@@ -187,7 +184,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -211,7 +208,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -238,7 +235,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -262,7 +259,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -288,7 +285,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={0}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -311,7 +308,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={1}
-													className="rounded-md !pl-1 !shadow-none"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -346,7 +343,6 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

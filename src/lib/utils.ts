@@ -1,8 +1,23 @@
+import { Prisma } from "@prisma/client";
 import { clsx, type ClassValue } from "clsx";
 import ColorThief from "colorthief";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { CartProductType } from "./types";
+
+/**
+ * Safely parses a potentially Decimal/BigNumber-like object or primitive into a number.
+ * @param value The value to parse (can be number, string, Prisma.Decimal, etc.)
+ * @returns The converted number
+ */
+export function toNumberSafe(value: unknown): number {
+    if (typeof value === "number") return value;
+    if (value && typeof value === "object" && "toNumber" in value && typeof (value as any).toNumber === "function") {
+        return (value as { toNumber: () => number }).toNumber();
+    }
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+}
 
 /**
  * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.

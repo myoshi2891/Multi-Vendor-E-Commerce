@@ -27,15 +27,14 @@ test.describe("検索・フィルタ", () => {
   test("カテゴリフィルタで絞り込まれる", async ({ page }) => {
     await page.goto("/browse");
     const categoryCheckbox = page.getByRole("checkbox", { name: seed.category.name });
-    if (await categoryCheckbox.isVisible()) {
-        await categoryCheckbox.click();
-        await expect(page).toHaveURL(new RegExp(`[?&]category=${encodeURIComponent(seed.category.url)}(?:&|$)`));
-        await expect(page.getByText(productName).first()).toBeVisible();
-    }
+    await expect(categoryCheckbox).toBeVisible();
+    await categoryCheckbox.click();
+    await expect(page).toHaveURL(new RegExp(`[?&]category=${encodeURIComponent(seed.category.url)}(?:&|$)`));
+    await expect(page.getByText(productName).first()).toBeVisible();
   });
 
   test("フィルタ条件が URL パラメータに反映される", async ({ page }) => {
-    await page.goto(`/browse?search=${encodeURIComponent(productName)}&category=${seed.category.url}`);
+    await page.goto(`/browse?search=${encodeURIComponent(productName)}&category=${encodeURIComponent(seed.category.url)}`);
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
     await expect(searchInput).toBeVisible();
     await expect(searchInput).toHaveValue(productName);

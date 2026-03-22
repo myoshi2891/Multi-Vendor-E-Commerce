@@ -19,7 +19,8 @@ export default function Newsletter() {
                 </div>
                 {/* Right */}
                 <form className="flex w-full xl:flex-1" onSubmit={(e) => e.preventDefault()}>
-                    <input type="email" name="email" placeholder="Enter your email address"
+                    <label htmlFor="newsletter-email" className="sr-only">メールアドレス</label>
+                    <input id="newsletter-email" type="email" name="email" autoComplete="email" placeholder="Enter your email address"
                         className="h-10 w-full rounded-l-full bg-white pl-6 text-black outline-none" />
                     <button type="submit" className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white">Sign up</button>
                 </form>

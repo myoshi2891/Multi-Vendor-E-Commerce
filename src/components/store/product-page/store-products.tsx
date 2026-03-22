@@ -15,12 +15,28 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
     const [products, setProducts] = useState<ProductType[]>([]);
 
     useEffect(() => {
+        let cancelled = false;
+
         const getStoreProducts = async () => {
-            const res = await getProducts({ store: storeUrl }, "", 1, count)
-            setProducts(res.products)
+            try {
+                const res = await getProducts({ store: storeUrl }, "", 1, count);
+                if (!cancelled) {
+                    setProducts(res.products);
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Error fetching store products:", error.message);
+                } else {
+                    console.error("Error fetching store products:", error);
+                }
+            }
         }
 
-        getStoreProducts()
+        getStoreProducts();
+
+        return () => {
+            cancelled = true;
+        };
     }, [storeUrl, count])
 
     return <div className="relative mt-6">

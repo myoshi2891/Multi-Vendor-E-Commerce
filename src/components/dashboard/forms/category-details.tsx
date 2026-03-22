@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CategoryFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
 	Card,
 	CardContent,
@@ -123,9 +122,8 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>Category Information</CardTitle>
 					<CardDescription>
 						{data?.id
@@ -240,7 +238,6 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data }) => {
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

@@ -15,7 +15,6 @@ import * as z from 'zod'
 import { CouponFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import {
     Card,
     CardContent,
@@ -130,9 +129,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
+        <Card className="w-full">
+            <CardHeader>
                     <CardTitle>Coupon Information</CardTitle>
                     <CardDescription>
                         {data?.id
@@ -255,7 +253,6 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
     )
 }
 

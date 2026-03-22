@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { toNumberSafe } from "@/lib/utils";
 import {
     OrderStatus,
     OrderTableDateFilter,
@@ -376,87 +377,92 @@ export const getUserWishlist = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    try {
+        // Retrieve the current user
+        const user = await currentUser();
 
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+        // Ensure the user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    // Calculate pagination values
-    const skip = (page - 1) * pageSize;
+        // Calculate pagination values
+        const skip = (page - 1) * pageSize;
 
-    // Fetch wishlist items for the current user
-    const wishlist = await db.wishlist.findMany({
-        where: {
-            userId: user.id,
-        },
-        include: {
-            product: {
-                select: {
-                    id: true,
-                    name: true,
-                    rating: true,
-                    numReviews: true,
-                    slug: true,
-                    sales: true,
-                    variants: {
-                        select: {
-                            id: true,
-                            variantName: true,
-                            slug: true,
-                            images: true,
-                            sizes: true,
+        // Fetch wishlist items for the current user
+        const wishlist = await db.wishlist.findMany({
+            where: {
+                userId: user.id,
+            },
+            include: {
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rating: true,
+                        numReviews: true,
+                        slug: true,
+                        sales: true,
+                        variants: {
+                            select: {
+                                id: true,
+                                variantName: true,
+                                slug: true,
+                                images: true,
+                                sizes: true,
+                            },
                         },
                     },
                 },
             },
-        },
-        take: pageSize,
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+            take: pageSize,
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // バリアントが空の商品は表示に必要な情報がないため除外
-    const formattedWishlist = wishlist
-        .filter((item) => item.product.variants.length > 0)
-        .map((item) => ({
-            id: item.product.id,
-            slug: item.product.slug,
-            name: item.product.name,
-            rating: item.product.rating,
-            sales: item.product.sales,
-            numReviews: item.product.numReviews,
-            variants: [
-                {
-                    variantId: item.product.variants[0].id,
-                    variantSlug: item.product.variants[0].slug,
-                    variantName: item.product.variants[0].variantName,
-                    images: item.product.variants[0].images,
-                    sizes: item.product.variants[0].sizes.map((s) => ({
-                        ...s,
-                        price: typeof s.price === 'number' ? s.price : (s.price as any).toNumber?.() ?? s.price,
-                    })),
-                },
-            ],
-            variantImages: [],
-        }));
+        // バリアントが空の商品は表示に必要な情報がないため除外
+        const formattedWishlist = wishlist
+            .filter((item) => item.product.variants.length > 0)
+            .map((item) => ({
+                id: item.product.id,
+                slug: item.product.slug,
+                name: item.product.name,
+                rating: item.product.rating,
+                sales: item.product.sales,
+                numReviews: item.product.numReviews,
+                variants: [
+                    {
+                        variantId: item.product.variants[0].id,
+                        variantSlug: item.product.variants[0].slug,
+                        variantName: item.product.variants[0].variantName,
+                        images: item.product.variants[0].images,
+                        sizes: item.product.variants[0].sizes.map((s) => ({
+                            ...s,
+                            price: toNumberSafe(s.price),
+                        })),
+                    },
+                ],
+                variantImages: [],
+            }));
 
-    // Fetch the total count of wishlist items for the query
-    const totalCount = await db.wishlist.count({ where: { userId: user.id } });
+        // Fetch the total count of wishlist items for the query
+        const totalCount = await db.wishlist.count({ where: { userId: user.id } });
 
-    // Calculate total pages
-    const totalPages = Math.ceil(totalCount / pageSize);
+        // Calculate total pages
+        const totalPages = Math.ceil(totalCount / pageSize);
 
-    // Return paginated data with metadata
-    return {
-        wishlist: formattedWishlist,
-        totalPages,
-        // currentPage: page,
-        // pageSize,
-        // totalCount,
-    };
+        // Return paginated data with metadata
+        return {
+            wishlist: formattedWishlist,
+            totalPages,
+            // currentPage: page,
+            // pageSize,
+            // totalCount,
+        };
+    } catch (error: any) {
+        console.error("Error fetching user wishlist:", error);
+        throw new Error(error.message || "Failed to fetch wishlist");
+    }
 };
 
 /**
