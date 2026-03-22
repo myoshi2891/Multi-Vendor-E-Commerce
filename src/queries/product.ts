@@ -1515,6 +1515,23 @@ export const getProductShippingFee = async (
     }
 };
 
+export interface VariantType {
+    variantId: string;
+    variantName: string;
+    variantSlug: string;
+    images: { url: string }[];
+    sizes: {
+        id: string;
+        size: string;
+        quantity: number;
+        price: number;
+        discount: number;
+        productVariantId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }[];
+}
+
 export interface OrderedProductType {
     id: string;
     slug: string;

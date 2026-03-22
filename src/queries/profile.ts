@@ -459,9 +459,15 @@ export const getUserWishlist = async (
             // pageSize,
             // totalCount,
         };
-    } catch (error: any) {
-        console.error("Error fetching user wishlist:", error);
-        throw new Error(error.message || "Failed to fetch wishlist");
+    } catch (error: unknown) {
+        let message = "Failed to fetch wishlist";
+        if (error instanceof Error) {
+            message = error.message;
+            console.error("Error fetching user wishlist:", message, error.stack);
+        } else {
+            console.error("Error fetching user wishlist:", error);
+        }
+        throw new Error(message);
     }
 };
 

@@ -52,22 +52,24 @@ export const getFilteredSizes = async (
             storeId = store.id;
         }
 
-        // Construct the query dynamically based on the available filters
-        const sizes = await db.size.findMany({
-            where: {
-                productVariant: {
-                    product: {
-                        AND: [
-                            category ? { category: { url: category } } : {},
-                            subCategory
-                                ? { subCategory: { url: subCategory } }
-                                : {},
-                            offer ? { offerTag: { url: offer } } : {},
-                            storeId ? { store: { id: storeId } } : {},
-                        ],
-                    },
+        const sizeWhere = {
+            productVariant: {
+                product: {
+                    AND: [
+                        category ? { category: { url: category } } : {},
+                        subCategory
+                            ? { subCategory: { url: subCategory } }
+                            : {},
+                        offer ? { offerTag: { url: offer } } : {},
+                        storeId ? { store: { id: storeId } } : {},
+                    ],
                 },
             },
+        };
+
+        // Construct the query dynamically based on the available filters
+        const sizes = await db.size.findMany({
+            where: sizeWhere,
             select: {
                 size: true,
             },
@@ -76,20 +78,7 @@ export const getFilteredSizes = async (
 
         // Get Sizes count
         const count = await db.size.count({
-            where: {
-                productVariant: {
-                    product: {
-                        AND: [
-                            category ? { category: { url: category } } : {},
-                            subCategory
-                                ? { subCategory: { url: subCategory } }
-                                : {},
-                            offer ? { offerTag: { url: offer } } : {},
-                            storeId ? { store: { id: storeId } } : {},
-                        ],
-                    },
-                },
-            },
+            where: sizeWhere,
         });
 
         // Remove duplicate sizes
