@@ -56,13 +56,16 @@ test.describe("検索・フィルタ", () => {
 
   test("ページネーションで次ページに遷移できる", async ({ page }) => {
     // Intercept API or provide a robust mock if it's a client fetch, otherwise just test URL logic
-    await page.route("**/api/products*", async (route) => {
+    await page.route("**/api/index-products*", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           products: Array(15).fill(seed.product),
-          totalCount: 30, // Forcing pagination
+          total: 30,
+          page: 1,
+          limit: 15,
+          totalPages: 2
         }),
       });
     });
