@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
+import { setupE2ETestState } from "@/config/test-helpers";
 
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
 
@@ -23,15 +24,7 @@ test.describe("購入フルフロー", () => {
       throw new Error(`Invalid E2E_UNIT_PRICE: ${process.env.E2E_UNIT_PRICE}`);
     }
 
-    await page.addInitScript(() => localStorage.clear());
-
-    await page.context().addCookies([
-      {
-        name: "userCountry",
-        value: JSON.stringify(seed.country),
-        url: baseURL,
-      },
-    ]);
+    await setupE2ETestState(page, seed);
   });
 
   test("商品一覧→詳細→サイズ選択→カート追加→カートページ表示と数量変更", async ({ page }) => {

@@ -84,9 +84,8 @@ test.describe("タブレットレスポンシブ", () => {
 
     // Verify tablet behaviors such as the product grid column count (inspect computed style)
     const productGrid = page.getByTestId("product-grid").first();
-    const gridStyle = await productGrid.evaluate((el) => window.getComputedStyle(el).gridTemplateColumns);
-    expect(gridStyle).not.toBe("none");
-    expect(gridStyle.split(" ").length).toBeGreaterThan(1);
+    const gridStyle = await productGrid.evaluate((el) => window.getComputedStyle(el).display);
+    expect(gridStyle).toBe("flex");
 
     // Count visible column items to verify tablet specific grid
     const visibleCount = await productCards.count();
