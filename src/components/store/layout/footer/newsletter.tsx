@@ -21,13 +21,23 @@ export default function Newsletter() {
                     </h5>
                 </div>
                 {/* Right */}
-                <form className="flex w-full xl:flex-1" onSubmit={async (e) => { 
+                <form className="flex w-full xl:flex-1" onSubmit={async (e: React.FormEvent<HTMLFormElement>) => { 
                     e.preventDefault(); 
-                    const email = e.currentTarget.email.value;
+                    const formData = new FormData(e.currentTarget);
+                    const emailValue = formData.get("email");
+                    const email = typeof emailValue === 'string' ? emailValue.trim() : '';
                     if (!email) return;
+                    
                     setIsSubmitting(true);
                     try {
-                        await new Promise((res) => setTimeout(res, 1000));
+                        const response = await fetch('/api/newsletter', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email }),
+                        });
+                        
+                        if (!response.ok) throw new Error("Subscription failed");
+                        
                         toast.success("Successfully subscribed to newsletter!"); 
                         e.currentTarget.reset();
                     } catch (err) {

@@ -23,6 +23,12 @@ interface Props {
     children: ReactNode;
 }
 
+interface InnerProps {
+    productData: NonNullable<ProductPageDataType>;
+    sizeId: string | undefined;
+    children: ReactNode;
+}
+
 const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
     shippingFeeMethod: "",
     shippingService: "",
@@ -37,8 +43,7 @@ const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
     city: ""
 };
 
-const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
-    if (!productData) return null;
+const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, children }) => {
     const {
         productId,
         variantId,
@@ -57,8 +62,8 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         images[0]
     );
 
-    const hasShippingDetails = typeof shippingDetails !== "boolean";
-    const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as ProductShippingDetailsType) : DEFAULT_SHIPPING_DETAILS;
+    const hasShippingDetails = shippingDetails !== false;
+    const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as Exclude<ProductShippingDetailsType, false>) : DEFAULT_SHIPPING_DETAILS;
 
     // Initialize the default product data for the cart item
     const data: CartProductType = {
@@ -209,27 +214,19 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                                 {hasShippingDetails && (
                                     <>
                                         <ShipTo
-                                            countryCode={
-                                                (shippingDetails as ProductShippingDetailsType).countryCode
-                                            }
-                                            countryName={
-                                                (shippingDetails as ProductShippingDetailsType).countryName
-                                            }
-                                            city={(shippingDetails as ProductShippingDetailsType).city}
+                                            countryCode={normalizedShippingDetails.countryCode}
+                                            countryName={normalizedShippingDetails.countryName}
+                                            city={normalizedShippingDetails.city}
                                         />
                                         <div className="mt-3 space-y-3">
                                             <ShippingDetails
-                                                shippingDetails={
-                                                    (shippingDetails as ProductShippingDetailsType)
-                                                }
+                                                shippingDetails={normalizedShippingDetails}
                                                 quantity={1}
                                                 weight={productData.weight}
                                             />
                                         </div>
                                         <ReturnsSecurityPrivacyCard
-                                            returnPolicy={
-                                                (shippingDetails as ProductShippingDetailsType).returnPolicy
-                                            }
+                                            returnPolicy={normalizedShippingDetails.returnPolicy}
                                         />
                                     </>
                                 )}
@@ -293,4 +290,9 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     );
 };
 
-export default ProductPageContainer
+const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
+    if (!productData) return null;
+    return <ProductPageContainerInner productData={productData} sizeId={sizeId}>{children}</ProductPageContainerInner>;
+};
+
+export default ProductPageContainer;
