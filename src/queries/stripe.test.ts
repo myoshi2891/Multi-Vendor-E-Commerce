@@ -30,7 +30,6 @@ jest.mock("stripe", () => {
         },
     }));
 });
-const MockedStripe = jest.mocked(Stripe);
 
 const mockDb = require("@/lib/db").db;
 
