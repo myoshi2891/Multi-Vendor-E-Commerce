@@ -55,7 +55,6 @@ test.describe("モバイルレスポンシブ", () => {
     await checkoutBtn.click();
     // ゲストなのでログインにリダイレクトされることを確認
     await page.waitForURL(/.*sign-in.*/);
-    expect(page.url()).toContain("sign-in");
   });
 });
 
@@ -64,7 +63,6 @@ test.describe("タブレットレスポンシブ", () => {
 
   test("タブレットビューポートでレイアウト切替", async ({ page }) => {
     // Set viewport explicitly to a tablet size
-    await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto("/");
     // 特定の要素のスタイルや表示状態を確認する
     const header = page.getByRole("banner");

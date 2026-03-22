@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
+import { setupE2ETestState } from "@/config/test-helpers";
 
 test.describe("検索・フィルタ", () => {
   let seed: ReturnType<typeof buildE2ESeed>;
@@ -10,6 +11,7 @@ test.describe("検索・フィルタ", () => {
       workerIndex: testInfo.workerIndex,
       projectName: testInfo.project.name,
     });
+    await setupE2ETestState(page, seed);
     productName = process.env.E2E_PRODUCT_NAME || seed.product.name;
     await page.goto("/");
   });
@@ -70,13 +72,8 @@ test.describe("検索・フィルタ", () => {
     // If the button exists via SSR (which route mocking might not affect), we click it.
     // If it doesn't exist, we evaluate a script to inject a dummy one to test the routing logic, OR we use setupE2ETestState properly.
     const nextButton = page.getByRole("button", { name: /Next/i });
-    if (await nextButton.isVisible()) {
-        await nextButton.click();
-        await expect(page).toHaveURL(/.*page=2.*/);
-    } else {
-        // As a fallback for deterministic testing without full DB seed:
-        await page.goto("/browse?page=2");
-        await expect(page).toHaveURL(/.*page=2.*/);
-    }
+    await expect(nextButton).toBeVisible();
+    await nextButton.click();
+    await expect(page).toHaveURL(/.*page=2.*/);
   });
 });
