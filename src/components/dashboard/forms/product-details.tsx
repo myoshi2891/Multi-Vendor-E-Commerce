@@ -228,7 +228,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 )
                 setSubcategories(res)
             } catch (error: unknown) {
-                console.error("Failed to fetch subcategories:", error)
+                if (error instanceof Error) {
+                    console.error("Failed to fetch subcategories:", error.message, error.stack);
+                } else {
+                    console.error("Failed to fetch subcategories:", error);
+                }
                 setSubcategories([])
             }
         }
@@ -302,7 +306,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         } catch (error: unknown) {
             // Handling form submission errors
             const message = error instanceof Error ? error.message : "An unknown error occurred";
-            console.error(error)
+            if (error instanceof Error) {
+                console.error("ProductDetails submit error:", error.message, error.stack);
+            } else {
+                console.error("ProductDetails submit error:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
@@ -358,18 +366,18 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     return (
         <Card className="w-full">
             <CardHeader>
-                    <CardTitle>
-                        {isNewVariantPage
-                            ? `Add a new variant to ${data.name}`
-                            : 'Create a new Product Information'}
-                    </CardTitle>
-                    <CardDescription>
-                        {data?.productId && data?.variantId
-                            ? `Update ${data?.name} product information.`
-                            : ' Lets create a product. You can edit product later from the store products page.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                <CardTitle>
+                    {isNewVariantPage
+                        ? `Add a new variant to ${data.name}`
+                        : 'Create a new Product Information'}
+                </CardTitle>
+                <CardDescription>
+                    {data?.productId && data?.variantId
+                        ? `Update ${data?.name} product information.`
+                        : ' Lets create a product. You can edit product later from the store products page.'}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}

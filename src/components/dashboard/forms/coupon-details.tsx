@@ -136,14 +136,14 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
     return (
         <Card className="w-full">
             <CardHeader>
-                    <CardTitle>Coupon Information</CardTitle>
-                    <CardDescription>
-                        {data?.id
-                            ? `Update ${data?.code} Coupon information.`
-                            : ' Lets create a Coupon. You can edit Coupon later from the Coupons table or the Coupon page.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                <CardTitle>Coupon Information</CardTitle>
+                <CardDescription>
+                    {data?.id
+                        ? `Update ${data?.code} Coupon information.`
+                        : ' Lets create a Coupon. You can edit Coupon later from the Coupons table or the Coupon page.'}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}

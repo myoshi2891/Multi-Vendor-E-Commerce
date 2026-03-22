@@ -127,7 +127,11 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
         } catch (error: unknown) {
             // Handling form submission errors
             const message = error instanceof Error ? error.message : "An unknown error occurred";
-            console.error(error)
+            if (error instanceof Error) {
+                console.error("StoreDetails form submit error:", error.message, error.stack);
+            } else {
+                console.error("StoreDetails form submit error:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
@@ -139,14 +143,14 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
     return (
         <Card className="w-full">
             <CardHeader>
-                    <CardTitle>Store Information</CardTitle>
-                    <CardDescription>
-                        {data?.id
-                            ? `Update ${data?.name} store information.`
-                            : " Lets create a store. You can edit store later from the store settings page."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                <CardTitle>Store Information</CardTitle>
+                <CardDescription>
+                    {data?.id
+                        ? `Update ${data?.name} store information.`
+                        : " Lets create a store. You can edit store later from the store settings page."}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}
