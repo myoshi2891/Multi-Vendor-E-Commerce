@@ -218,8 +218,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // useEffect to fetch subcategories based on categoryId
     useEffect(() => {
         const getSubcategories = async () => {
+            form.setValue('subCategoryId', "");
+            setSubcategories([]);
             if (!categoryId) {
-                setSubcategories([])
                 return
             }
             try {
@@ -237,7 +238,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             }
         }
         getSubcategories()
-    }, [categoryId])
+    }, [categoryId, form])
+
 
     // Extract errors state from form
     const errors = form.formState.errors
@@ -344,7 +346,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)
-    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data, form])
+    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, form])
 
     //Countries options
     type CountryOption = {
