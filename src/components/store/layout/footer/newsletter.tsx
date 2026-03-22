@@ -29,6 +29,7 @@ export default function Newsletter() {
                     const emailValue = formData.get("email");
                     const email = typeof emailValue === 'string' ? emailValue.trim() : '';
                     if (!email) return;
+                    if (isSubmitting) return;
                     
                     setIsSubmitting(true);
                     const controller = new AbortController();
