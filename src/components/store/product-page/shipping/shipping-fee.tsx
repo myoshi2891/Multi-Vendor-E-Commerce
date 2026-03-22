@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { FC } from "react";
+import { computeShippingTotal } from "./shipping-details";
 
 interface Props {
 	method: string;
@@ -8,8 +9,6 @@ interface Props {
 	weight: number;
 	quantity: number;
 }
-
-import { computeShippingTotal } from "./shipping-details";
 
 const ProductShippingFee: FC<Props> = ({
 	method,
@@ -119,7 +118,6 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		case "WEIGHT":
 			return (
 				<div className="w-full pb-1">
@@ -172,7 +170,6 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		case "FIXED":
 			return (
 				<div className="w-full pb-1">
@@ -224,10 +221,8 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		default:
 			return null;
-			break;
 	}
 };
 

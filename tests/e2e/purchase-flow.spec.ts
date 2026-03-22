@@ -2,8 +2,6 @@ import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
 import { setupE2ETestState } from "@/config/test-helpers";
 
-const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
-
 test.describe("購入フルフロー", () => {
   let seed: ReturnType<typeof buildE2ESeed>;
   let productSlug: string;

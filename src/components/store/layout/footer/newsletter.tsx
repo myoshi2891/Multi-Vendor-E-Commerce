@@ -2,10 +2,11 @@
 
 import { SendIcon } from "@/components/store/icons";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export default function Newsletter() {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const isSubmittingRef = useRef(false);
     return <div className="bg-gradient-to-r from-slate-500 to-slate-800 p-5">
         <div className="mx-auto max-w-[1430px]">
             <div className="flex flex-col items-center gap-y-4 text-white xl:flex-row">
@@ -29,8 +30,9 @@ export default function Newsletter() {
                     const emailValue = formData.get("email");
                     const email = typeof emailValue === 'string' ? emailValue.trim() : '';
                     if (!email) return;
-                    if (isSubmitting) return;
-                    
+                    if (isSubmittingRef.current) return;
+
+                    isSubmittingRef.current = true;
                     setIsSubmitting(true);
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -54,6 +56,7 @@ export default function Newsletter() {
                         }
                     } finally {
                         clearTimeout(timeoutId);
+                        isSubmittingRef.current = false;
                         setIsSubmitting(false);
                     }
                 }}>

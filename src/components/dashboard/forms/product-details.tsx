@@ -141,7 +141,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     const [subCategories, setSubcategories] = useState<SubCategory[]>([])
 
     // State for colors
-    const [colors, setColors] = useState<{ color: string }[]>([{ color: '' }])
+    const [colors, setColors] = useState<{ color: string }[]>(
+        data?.colors || [{ color: '' }]
+    )
 
     // State for sizes
     const [sizes, setSizes] = useState<
@@ -216,33 +218,46 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     const categoryId = form.watch().categoryId;
     // useEffect to fetch subcategories based on categoryId
-    const isCategoryInitialMount = useRef(true);
+    const prevCategoryIdRef = useRef<string | undefined>(categoryId);
     useEffect(() => {
+        // カテゴリが実際に変更された時だけリセット
+        if (prevCategoryIdRef.current !== undefined &&
+            prevCategoryIdRef.current !== categoryId) {
+            form.setValue('subCategoryId', "");
+            setSubcategories([]);
+        }
+        prevCategoryIdRef.current = categoryId;
+
+        if (!categoryId) {
+            setSubcategories([]);
+            return;
+        }
+
+        // 非同期レスポンスの競合を防ぐ
+        let isCurrent = true;
         const getSubcategories = async () => {
-            if (isCategoryInitialMount.current) {
-                isCategoryInitialMount.current = false;
-            } else {
-                form.setValue('subCategoryId', "");
-                setSubcategories([]);
-            }
-            if (!categoryId) {
-                return
-            }
             try {
-                const res = await getAllSubCategoriesFotCategory(
-                    categoryId
-                )
-                setSubcategories(res)
+                const res = await getAllSubCategoriesFotCategory(categoryId);
+                if (isCurrent) {
+                    setSubcategories(res);
+                }
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    console.error("Failed to fetch subcategories:", error.message, error.stack);
+                    console.error("[ProductDetails:getSubcategories]", error.message, { stack: error.stack });
                 } else {
-                    console.error("Failed to fetch subcategories:", error);
+                    console.error("[ProductDetails:getSubcategories]", error);
                 }
-                setSubcategories([])
+                if (isCurrent) {
+                    setSubcategories([]);
+                }
             }
-        }
-        getSubcategories()
+        };
+
+        getSubcategories();
+
+        return () => {
+            isCurrent = false;
+        };
     }, [categoryId, form])
 
 
@@ -327,7 +342,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     }
 
     // Handle keywords input
-    const [keywords, setKeywords] = useState<string[]>([])
+    const [keywords, setKeywords] = useState<string[]>(
+        data?.keywords || []
+    )
 
     interface Keyword {
         id: string
@@ -345,9 +362,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     // Whenever colors, sizes, keywords changes we update the form values
     useEffect(() => {
-        form.setValue('colors', colors)
+        // colors が有効な値を持つ場合のみ form に反映
+        if (colors.length > 0 && (colors[0]?.color || colors.length > 1)) {
+            form.setValue('colors', colors)
+        }
+        // keywords が空でない場合のみ form に反映
+        if (keywords.length > 0) {
+            form.setValue('keywords', keywords)
+        }
+        // sizes, questions, specs は常に同期（既存の挙動を維持）
         form.setValue('sizes', sizes)
-        form.setValue('keywords', keywords)
         form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)

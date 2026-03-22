@@ -32,9 +32,19 @@ export function computeShippingTotal(
 	}
 }
 
+function isValidShippingDetails(
+	details: ProductShippingDetailsType
+): details is Exclude<ProductShippingDetailsType, boolean> {
+	return typeof details !== "boolean" && details !== null && details !== undefined;
+}
+
 const ShippingDetails: FC<Props> = (props) => {
-	if (typeof props.shippingDetails === "boolean") return null;
-	return <ShippingDetailsInner {...(props as InnerProps)} />;
+	if (!isValidShippingDetails(props.shippingDetails)) return null;
+	return <ShippingDetailsInner
+		shippingDetails={props.shippingDetails}
+		quantity={props.quantity}
+		weight={props.weight}
+	/>;
 };
 
 interface InnerProps extends Omit<Props, "shippingDetails"> {
@@ -100,7 +110,6 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 						{minDate.slice(4)} - {maxDate.slice(4)}
 					</strong>
 				</span>
-				{/* Product shipping fee */}
 				{/* Product shipping fee */}
 				{!shippingDetails.isFreeShipping && (
 					<>
