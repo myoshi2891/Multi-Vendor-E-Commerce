@@ -36,7 +36,7 @@ export default async function HomePage() {
         <>
             <StoreHeader />
             <CategoriesHeader />
-            <div className="relative min-h-screen w-full">
+            <div data-testid="app-main" className="relative min-h-screen w-full">
                 <Sideline />
                 <div className="relative h-full w-[calc(100%-40px)] bg-[#e3e3e3]">
                     <div className="mx-auto min-h-screen max-w-[1600px] p-4">
@@ -108,7 +108,7 @@ export default async function HomePage() {
                                     <span>More to love</span>
                                     <div className="mx-[14px] my-4 h-px flex-1 border-t-2 border-t-[hsla(0,0%,59.2%,.3)]" />
                                 </div>
-                                <div className="mt-7 flex flex-wrap justify-center rounded-md bg-white p-4 pb-16 min-[1530px]:grid min-[1530px]:grid-cols-7">
+                                <div data-testid="product-grid" className="mt-7 flex flex-wrap justify-center rounded-md bg-white p-4 pb-16 min-[1530px]:grid min-[1530px]:grid-cols-7">
                                     {products.map((product, i) => (
                                         <ProductCard
                                             key={i}

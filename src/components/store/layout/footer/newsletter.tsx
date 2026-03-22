@@ -31,20 +31,28 @@ export default function Newsletter() {
                     if (!email) return;
                     
                     setIsSubmitting(true);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
                     try {
                         const response = await fetch('/api/newsletter', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email }),
+                            signal: controller.signal,
                         });
                         
                         if (!response.ok) throw new Error("Subscription failed");
                         
                         toast.success("Successfully subscribed to newsletter!"); 
                         e.currentTarget.reset();
-                    } catch (err) {
-                        toast.error("Failed to subscribe.");
+                    } catch (err: unknown) {
+                        if (err instanceof Error && err.name === 'AbortError') {
+                            toast.error("Request timed out. Please try again.");
+                        } else {
+                            toast.error("Failed to subscribe.");
+                        }
                     } finally {
+                        clearTimeout(timeoutId);
                         setIsSubmitting(false);
                     }
                 }}>

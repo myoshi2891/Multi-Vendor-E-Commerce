@@ -1,7 +1,7 @@
 "use client";
 import { ProductShippingDetailsType } from "@/lib/types";
 import { ChevronDown, ChevronRight, ChevronUp, Truck } from "lucide-react";
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import ProductShippingFee from "./shipping-fee";
 import { getShippingDatesRange } from "@/lib/utils";
 
