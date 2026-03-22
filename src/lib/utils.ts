@@ -1,9 +1,21 @@
-import { Prisma } from "@prisma/client";
 import { clsx, type ClassValue } from "clsx";
 import ColorThief from "colorthief";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { CartProductType } from "./types";
+
+interface HasToNumber {
+    toNumber: () => number;
+}
+
+function hasToNumber(value: unknown): value is HasToNumber {
+    return (
+        value !== null &&
+        typeof value === "object" &&
+        "toNumber" in value &&
+        typeof (value as Record<string, unknown>).toNumber === "function"
+    );
+}
 
 /**
  * Safely parses a potentially Decimal/BigNumber-like object or primitive into a number.
@@ -12,8 +24,8 @@ import { CartProductType } from "./types";
  */
 export function toNumberSafe(value: unknown): number {
     if (typeof value === "number") return value;
-    if (value && typeof value === "object" && "toNumber" in value && typeof (value as any).toNumber === "function") {
-        return (value as { toNumber: () => number }).toNumber();
+    if (hasToNumber(value)) {
+        return value.toNumber();
     }
     const num = Number(value);
     return isNaN(num) ? 0 : num;

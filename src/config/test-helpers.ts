@@ -10,7 +10,12 @@ import type { Page } from "@playwright/test";
 /**
  * Setup E2E test state (viewport, local storage, cookies) for a page
  */
-export const setupE2ETestState = async (page: Page, seed: any) => {
+export type E2ESeedPayload = {
+    country: { code: string; [key: string]: unknown };
+    [key: string]: unknown;
+};
+
+export const setupE2ETestState = async (page: Page, seed: E2ESeedPayload) => {
     await page.addInitScript(() => localStorage.clear());
     await page.context().addCookies([
         {
