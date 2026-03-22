@@ -33,25 +33,20 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 		shippingService,
 	} = shippingDetails;
 
-	const [shippingTotal, setShippingTotal] = useState<number>();
-	useEffect(() => {
+	const shippingTotal = (() => {
 		switch (shippingFeeMethod) {
 			case "ITEM": {
-				let qty = quantity > 1 ? quantity - 1 : 0;
-				setShippingTotal(shippingFee + qty * extraShippingFee);
-				break;
+				const qty = quantity > 1 ? quantity - 1 : 0;
+				return shippingFee + qty * extraShippingFee;
             }
 			case "WEIGHT":
-				setShippingTotal(shippingFee * weight * quantity);
-				break;
+				return shippingFee * weight * quantity;
 			case "FIXED":
-				setShippingTotal(shippingFee);
-				break;
+				return shippingFee;
 			default:
-				break;
+				return shippingFee;
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [quantity, weight, shippingFeeMethod, shippingFee, extraShippingFee]);
+	})();
 
 	const { minDate, maxDate } = getShippingDatesRange(
 		deliveryTimeMin,

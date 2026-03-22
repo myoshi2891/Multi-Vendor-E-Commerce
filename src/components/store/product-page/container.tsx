@@ -221,7 +221,7 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                         <div className="mt-3 space-y-3">
                                             <ShippingDetails
                                                 shippingDetails={normalizedShippingDetails}
-                                                quantity={1}
+                                                quantity={productToBeAddedToCart.quantity}
                                                 weight={productData.weight}
                                             />
                                         </div>

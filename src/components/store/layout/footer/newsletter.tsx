@@ -1,3 +1,5 @@
+"use client";
+
 import { SendIcon } from "@/components/store/icons";
 import toast from "react-hot-toast";
 import { useState } from "react";
