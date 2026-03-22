@@ -216,10 +216,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     const categoryId = form.watch().categoryId;
     // useEffect to fetch subcategories based on categoryId
+    const isCategoryInitialMount = useRef(true);
     useEffect(() => {
         const getSubcategories = async () => {
-            form.setValue('subCategoryId', "");
-            setSubcategories([]);
+            if (isCategoryInitialMount.current) {
+                isCategoryInitialMount.current = false;
+            } else {
+                form.setValue('subCategoryId', "");
+                setSubcategories([]);
+            }
             if (!categoryId) {
                 return
             }

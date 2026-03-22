@@ -147,7 +147,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                 <CardDescription>
                     {data?.id
                         ? `Update ${data?.name} store information.`
-                        : " Lets create a store. You can edit store later from the store settings page."}
+                        : "Let's create a store. You can edit store later from the store settings page."}
                 </CardDescription>
             </CardHeader>
             <CardContent>

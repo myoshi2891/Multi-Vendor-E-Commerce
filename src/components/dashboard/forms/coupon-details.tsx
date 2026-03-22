@@ -140,7 +140,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
                 <CardDescription>
                     {data?.id
                         ? `Update ${data?.code} Coupon information.`
-                        : ' Lets create a Coupon. You can edit Coupon later from the Coupons table or the Coupon page.'}
+                        : "Create a Coupon. You can edit it later from the Coupons table or the Coupon page."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
