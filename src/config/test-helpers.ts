@@ -11,7 +11,7 @@ import type { Page } from "@playwright/test";
  * Setup E2E test state (viewport, local storage, cookies) for a page
  */
 export type E2ESeedPayload = {
-    country: { code: string; [key: string]: unknown };
+    country: { code: string; name: string; [key: string]: unknown };
     [key: string]: unknown;
 };
 

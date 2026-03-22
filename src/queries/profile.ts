@@ -486,8 +486,9 @@ export const getUserFollowedStores = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    try {
+        // Retrieve the current user
+        const user = await currentUser();
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -543,8 +544,17 @@ export const getUserFollowedStores = async (
         isUserFollowingStore: true, // Always true since these are followed stores
     }));
 
-    return {
-        stores,
-        totalPages,
-    };
+        return {
+            stores,
+            totalPages,
+        };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An unknown error occurred";
+        if (error instanceof Error) {
+            console.error("Error fetching followed stores:", error.message, error.stack);
+        } else {
+            console.error("Error fetching followed stores:", error);
+        }
+        throw new Error(message);
+    }
 };

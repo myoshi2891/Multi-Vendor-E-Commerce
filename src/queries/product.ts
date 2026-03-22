@@ -865,10 +865,9 @@ export const getProducts = async (
     });
 
     // Retrieve products matching the filters
-    // const totalCount = await db.product.count({
-    // 	where: whereClause,
-    // });
-    const totalCount = products.length;
+    const totalCount = await db.product.count({
+    	where: whereClause,
+    });
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
