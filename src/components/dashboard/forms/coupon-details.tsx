@@ -120,7 +120,11 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
         } catch (error: unknown) {
             // Handling form submission errors
             const message = error instanceof Error ? error.message : "An unknown error occurred";
-            console.error(error)
+            if (error instanceof Error) {
+                console.error("Error submitting coupon form:", error.message, error.stack);
+            } else {
+                console.error("Error submitting coupon form:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',

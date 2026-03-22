@@ -343,9 +343,9 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                                       : "Create store"}
                             </Button>
                         </form>
-                        </Form>
-                        </CardContent>
-                        </Card>
-                        )
-                        }
+                    </Form>
+                </CardContent>
+            </Card>
+        )
+}
 export default StoreDetails
