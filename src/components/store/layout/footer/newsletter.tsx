@@ -1,7 +1,9 @@
 import { SendIcon } from "@/components/store/icons";
 import toast from "react-hot-toast";
+import { useState } from "react";
 
 export default function Newsletter() {
+    const [isSubmitting, setIsSubmitting] = useState(false);
     return <div className="bg-gradient-to-r from-slate-500 to-slate-800 p-5">
         <div className="mx-auto max-w-[1430px]">
             <div className="flex flex-col items-center gap-y-4 text-white xl:flex-row">
@@ -19,11 +21,25 @@ export default function Newsletter() {
                     </h5>
                 </div>
                 {/* Right */}
-                <form className="flex w-full xl:flex-1" onSubmit={(e) => { e.preventDefault(); toast.success("Successfully subscribed to newsletter!"); }}>
+                <form className="flex w-full xl:flex-1" onSubmit={async (e) => { 
+                    e.preventDefault(); 
+                    const email = e.currentTarget.email.value;
+                    if (!email) return;
+                    setIsSubmitting(true);
+                    try {
+                        await new Promise((res) => setTimeout(res, 1000));
+                        toast.success("Successfully subscribed to newsletter!"); 
+                        e.currentTarget.reset();
+                    } catch (err) {
+                        toast.error("Failed to subscribe.");
+                    } finally {
+                        setIsSubmitting(false);
+                    }
+                }}>
                     <label htmlFor="newsletter-email" className="sr-only">メールアドレス</label>
-                    <input id="newsletter-email" type="email" name="email" autoComplete="email" placeholder="Enter your email address"
+                    <input id="newsletter-email" type="email" name="email" autoComplete="email" placeholder="Enter your email address" required
                         className="h-10 w-full rounded-l-full bg-white pl-6 text-black outline-none" />
-                    <button type="submit" className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white">Sign up</button>
+                    <button type="submit" disabled={isSubmitting} className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white disabled:opacity-50">Sign up</button>
                 </form>
             </div>
       </div>

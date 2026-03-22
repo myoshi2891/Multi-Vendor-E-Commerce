@@ -14,7 +14,8 @@ import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
 import { setCookie } from "cookies-next";
-import type { OptionsType } from "cookies-next/lib/types";
+
+type OptionsType = NonNullable<Parameters<typeof setCookie>[2]>;
 
 interface Props {
     productData: ProductPageDataType;
@@ -36,15 +37,8 @@ const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
     city: ""
 };
 
-const ProductPageContainer: FC<Props> = (props) => {
-    if (!props.productData) return null;
-    if (typeof props.productData.shippingDetails === "boolean") {
-        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: DEFAULT_SHIPPING_DETAILS }} />;
-    }
-    return <ProductPageContainerInner {...props} />;
-};
-
-const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children }) => {
+const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
+    if (!productData) return null;
     const {
         productId,
         variantId,
@@ -63,6 +57,9 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
         images[0]
     );
 
+    const hasShippingDetails = typeof shippingDetails !== "boolean";
+    const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as ProductShippingDetailsType) : DEFAULT_SHIPPING_DETAILS;
+
     // Initialize the default product data for the cart item
     const data: CartProductType = {
         productId: productData.productId,
@@ -79,13 +76,13 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
         price: 0,
         stock: 1,
         weight: productData.weight,
-        shippingMethod: shippingDetails.shippingFeeMethod,
-        shippingService: shippingDetails.shippingService,
-        shippingFee: shippingDetails.shippingFee,
-        extraShippingFee: shippingDetails.extraShippingFee,
-        deliveryTimeMin: shippingDetails.deliveryTimeMin,
-        deliveryTimeMax: shippingDetails.deliveryTimeMax,
-        isFreeShipping: shippingDetails.isFreeShipping,
+        shippingMethod: normalizedShippingDetails.shippingFeeMethod,
+        shippingService: normalizedShippingDetails.shippingService,
+        shippingFee: normalizedShippingDetails.shippingFee,
+        extraShippingFee: normalizedShippingDetails.extraShippingFee,
+        deliveryTimeMin: normalizedShippingDetails.deliveryTimeMin,
+        deliveryTimeMax: normalizedShippingDetails.deliveryTimeMax,
+        isFreeShipping: normalizedShippingDetails.isFreeShipping,
     };
     // useState hook to manage the product's state in the cart
     const [productToBeAddedToCart, setProductToBeAddedToCart] =
@@ -209,21 +206,21 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
                         <div className="z-20">
                             <div className="overflow-hidden overflow-y-auto rounded-md border bg-white p-4 pb-0">
                                 {/* Ship to */}
-                                {typeof shippingDetails !== "boolean" && (
+                                {hasShippingDetails && (
                                     <>
                                         <ShipTo
                                             countryCode={
-                                                shippingDetails.countryCode
+                                                (shippingDetails as ProductShippingDetailsType).countryCode
                                             }
                                             countryName={
-                                                shippingDetails.countryName
+                                                (shippingDetails as ProductShippingDetailsType).countryName
                                             }
-                                            city={shippingDetails.city}
+                                            city={(shippingDetails as ProductShippingDetailsType).city}
                                         />
                                         <div className="mt-3 space-y-3">
                                             <ShippingDetails
                                                 shippingDetails={
-                                                    shippingDetails
+                                                    (shippingDetails as ProductShippingDetailsType)
                                                 }
                                                 quantity={1}
                                                 weight={productData.weight}
@@ -231,7 +228,7 @@ const ProductPageContainerInner: FC<Props> = ({ productData, sizeId, children })
                                         </div>
                                         <ReturnsSecurityPrivacyCard
                                             returnPolicy={
-                                                shippingDetails.returnPolicy
+                                                (shippingDetails as ProductShippingDetailsType).returnPolicy
                                             }
                                         />
                                     </>

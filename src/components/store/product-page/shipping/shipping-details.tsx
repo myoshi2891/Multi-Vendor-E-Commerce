@@ -42,7 +42,7 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 				break;
             }
 			case "WEIGHT":
-				setShippingTotal(shippingFee * quantity);
+				setShippingTotal(shippingFee * weight * quantity);
 				break;
 			case "FIXED":
 				setShippingTotal(shippingFee);
@@ -51,7 +51,7 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 				break;
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [quantity, shippingFeeMethod, shippingFee, extraShippingFee]);
+	}, [quantity, weight, shippingFeeMethod, shippingFee, extraShippingFee]);
 
 	const { minDate, maxDate } = getShippingDatesRange(
 		deliveryTimeMin,

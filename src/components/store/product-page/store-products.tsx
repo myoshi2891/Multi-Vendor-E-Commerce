@@ -28,7 +28,7 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
                     setProducts([]);
                 }
                 if (error instanceof Error) {
-                    console.error("Error fetching store products:", error.message);
+                    console.error("Error fetching store products:", error.message, error.stack);
                 } else {
                     console.error("Error fetching store products:", error);
                 }
