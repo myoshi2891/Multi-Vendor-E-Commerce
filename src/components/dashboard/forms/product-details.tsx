@@ -381,7 +381,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 <CardDescription>
                     {data?.productId && data?.variantId
                         ? `Update ${data?.name} product information.`
-                        : ' Lets create a product. You can edit product later from the store products page.'}
+                        : "Let's create a product. You can edit product later from the store products page."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
