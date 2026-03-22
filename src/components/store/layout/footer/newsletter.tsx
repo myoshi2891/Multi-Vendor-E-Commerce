@@ -1,4 +1,5 @@
 import { SendIcon } from "@/components/store/icons";
+import toast from "react-hot-toast";
 
 export default function Newsletter() {
     return <div className="bg-gradient-to-r from-slate-500 to-slate-800 p-5">
@@ -18,7 +19,7 @@ export default function Newsletter() {
                     </h5>
                 </div>
                 {/* Right */}
-                <form className="flex w-full xl:flex-1" onSubmit={(e) => e.preventDefault()}>
+                <form className="flex w-full xl:flex-1" onSubmit={(e) => { e.preventDefault(); toast.success("Successfully subscribed to newsletter!"); }}>
                     <label htmlFor="newsletter-email" className="sr-only">メールアドレス</label>
                     <input id="newsletter-email" type="email" name="email" autoComplete="email" placeholder="Enter your email address"
                         className="h-10 w-full rounded-l-full bg-white pl-6 text-black outline-none" />

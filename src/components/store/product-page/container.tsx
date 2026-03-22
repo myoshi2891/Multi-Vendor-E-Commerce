@@ -22,10 +22,24 @@ interface Props {
     children: ReactNode;
 }
 
+const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
+    shippingFeeMethod: "",
+    shippingService: "",
+    shippingFee: 0,
+    extraShippingFee: 0,
+    deliveryTimeMin: 0,
+    deliveryTimeMax: 0,
+    isFreeShipping: false,
+    returnPolicy: "",
+    countryCode: "",
+    countryName: "",
+    city: ""
+};
+
 const ProductPageContainer: FC<Props> = (props) => {
     if (!props.productData) return null;
     if (typeof props.productData.shippingDetails === "boolean") {
-        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: { shippingFeeMethod: "", shippingService: "", shippingFee: 0, extraShippingFee: 0, deliveryTimeMin: 0, deliveryTimeMax: 0, isFreeShipping: false, returnPolicy: "", countryCode: "", countryName: "", city: "" } as ProductShippingDetailsType }} />;
+        return <ProductPageContainerInner {...props} productData={{ ...props.productData, shippingDetails: DEFAULT_SHIPPING_DETAILS }} />;
     }
     return <ProductPageContainerInner {...props} />;
 };

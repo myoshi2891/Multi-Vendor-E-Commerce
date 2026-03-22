@@ -23,7 +23,10 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
                 if (!cancelled) {
                     setProducts(res.products);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
+                if (!cancelled) {
+                    setProducts([]);
+                }
                 if (error instanceof Error) {
                     console.error("Error fetching store products:", error.message);
                 } else {

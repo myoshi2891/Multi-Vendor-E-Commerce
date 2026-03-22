@@ -202,8 +202,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         },
     })
 
-    console.log('error:', form.formState.errors)
-
     const saleEndDate = form.getValues().saleEndDate || new Date().toISOString()
     const formattedDate = new Date(saleEndDate).toLocaleString('en-Us', {
         weekday: 'short', // Abbreviated day name (e.g., "Mon")
@@ -225,7 +223,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     categoryId
                 )
                 setSubcategories(res)
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("Failed to fetch subcategories:", error)
             }
         }
@@ -296,13 +294,14 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             } else {
                 router.push(`/dashboard/seller/stores/${storeUrl}/products`)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handling form submission errors
-            console.log(error)
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            console.error(error)
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
-                description: error.toString(),
+                description: message,
             })
         }
     }
@@ -332,7 +331,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data, form])
 
     //Countries options

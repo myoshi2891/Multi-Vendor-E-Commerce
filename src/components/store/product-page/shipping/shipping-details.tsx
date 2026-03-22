@@ -13,10 +13,14 @@ interface Props {
 
 const ShippingDetails: FC<Props> = (props) => {
 	if (typeof props.shippingDetails === "boolean") return null;
-	return <ShippingDetailsInner {...props} />;
+	return <ShippingDetailsInner {...(props as InnerProps)} />;
 };
 
-const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) => {
+interface InnerProps extends Omit<Props, "shippingDetails"> {
+    shippingDetails: Exclude<ProductShippingDetailsType, boolean>;
+}
+
+const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weight }) => {
 	const [toggle, setToggle] = useState<boolean>(false);
 	const {
 		countryName,
@@ -32,10 +36,11 @@ const ShippingDetailsInner: FC<Props> = ({ shippingDetails, quantity, weight }) 
 	const [shippingTotal, setShippingTotal] = useState<number>();
 	useEffect(() => {
 		switch (shippingFeeMethod) {
-			case "ITEM":
-				let qty = quantity - 1;
+			case "ITEM": {
+				let qty = quantity > 1 ? quantity - 1 : 0;
 				setShippingTotal(shippingFee + qty * extraShippingFee);
 				break;
+            }
 			case "WEIGHT":
 				setShippingTotal(shippingFee * quantity);
 				break;

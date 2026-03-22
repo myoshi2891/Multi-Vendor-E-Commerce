@@ -100,13 +100,14 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 			} else {
 				router.push("/dashboard/admin/offer-tags");
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+			console.error(error);
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: message,
 			});
 		}
 	};

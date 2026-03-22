@@ -121,13 +121,14 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 			} else {
 				router.push("/dashboard/admin/subCategories");
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+			console.error(error);
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: message,
 			});
 		}
 	};
