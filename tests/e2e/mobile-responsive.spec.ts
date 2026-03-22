@@ -1,23 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { buildE2ESeed } from "./seed/constants";
+import { E2E_SEED } from "./seed/constants";
 import { TEST_CONFIG } from "@/config/test-config";
 import { setupE2ETestState } from "@/config/test-helpers";
 
 test.describe("モバイルレスポンシブ", () => {
   test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE 等のサイズ
 
-  let seed: ReturnType<typeof buildE2ESeed>;
-  let productSlug: string;
-  let variantSlug: string;
+  const seed = E2E_SEED;
+  const productSlug = seed.product.slug;
+  const variantSlug = seed.variant.slug;
 
-  test.beforeEach(async ({ page }, testInfo) => {
-    seed = buildE2ESeed({
-      workerIndex: testInfo.workerIndex,
-      projectName: testInfo.project.name,
-    });
-    productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
-    variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
-
+  test.beforeEach(async ({ page }) => {
     await setupE2ETestState(page, seed);
   });
 
@@ -89,7 +82,8 @@ test.describe("タブレットレスポンシブ", () => {
     // Verify tablet behaviors such as the product grid column count (inspect computed style)
     const productGrid = productCards.first().locator("..");
     const gridStyle = await productGrid.evaluate((el) => window.getComputedStyle(el).gridTemplateColumns);
-    expect(gridStyle).toBeDefined();
+    expect(gridStyle).not.toBe("none");
+    expect(gridStyle.split(" ").length).toBeGreaterThan(1);
 
     // Count visible column items to verify tablet specific grid
     const visibleCount = await productCards.count();
