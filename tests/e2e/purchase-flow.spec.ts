@@ -105,6 +105,5 @@ test.describe("購入フルフロー", () => {
 
     // Clerkのログインページへリダイレクトされることを確認（URLにsign-inが含まれる）
     await page.waitForURL(/\/sign-in/);
-    await expect(page.url()).toContain("sign-in");
   });
 });
