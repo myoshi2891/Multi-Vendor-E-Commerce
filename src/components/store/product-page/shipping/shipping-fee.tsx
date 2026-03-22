@@ -9,6 +9,8 @@ interface Props {
 	quantity: number;
 }
 
+import { computeShippingTotal } from "./shipping-details";
+
 const ProductShippingFee: FC<Props> = ({
 	method,
 	fee,
@@ -16,6 +18,7 @@ const ProductShippingFee: FC<Props> = ({
 	weight,
 	quantity,
 }) => {
+	const total = computeShippingTotal(method, fee, extraFee, weight, quantity);
 	switch (method) {
 		case "ITEM":
 			return (
@@ -101,13 +104,13 @@ const ProductShippingFee: FC<Props> = ({
 									{quantity === 1 || fee === extraFee ? (
 										<span>
 											${fee} (fee) x {quantity} (items) =
-											${fee * quantity}
+											${total}
 										</span>
 									) : (
 										<span>
 											${fee} (first item) + {quantity - 1}{" "}
 											(additional items) x ${extraFee} = $
-											{fee + (quantity - 1) * extraFee}
+											{total}
 										</span>
 									)}
 								</td>
@@ -161,7 +164,7 @@ const ProductShippingFee: FC<Props> = ({
 									<span>
 										${fee} (fee) x {weight}kg (weight) x{" "}
 										{quantity} (items) = $
-										{fee * weight * quantity} (total fee)
+										{total} (total fee)
 									</span>
 								</td>
 							</tr>

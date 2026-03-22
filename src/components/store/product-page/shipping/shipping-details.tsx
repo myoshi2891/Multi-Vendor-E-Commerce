@@ -11,6 +11,27 @@ interface Props {
 	weight: number;
 }
 
+export function computeShippingTotal(
+	shippingFeeMethod: string,
+	shippingFee: number,
+	extraShippingFee: number,
+	weight: number,
+	quantity: number
+): number {
+	switch (shippingFeeMethod) {
+		case "ITEM": {
+			const qty = quantity > 1 ? quantity - 1 : 0;
+			return shippingFee + qty * extraShippingFee;
+		}
+		case "WEIGHT":
+			return shippingFee * weight * quantity;
+		case "FIXED":
+			return shippingFee;
+		default:
+			return shippingFee;
+	}
+}
+
 const ShippingDetails: FC<Props> = (props) => {
 	if (typeof props.shippingDetails === "boolean") return null;
 	return <ShippingDetailsInner {...(props as InnerProps)} />;
@@ -33,20 +54,13 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 		shippingService,
 	} = shippingDetails;
 
-	const shippingTotal = (() => {
-		switch (shippingFeeMethod) {
-			case "ITEM": {
-				const qty = quantity > 1 ? quantity - 1 : 0;
-				return shippingFee + qty * extraShippingFee;
-            }
-			case "WEIGHT":
-				return shippingFee * weight * quantity;
-			case "FIXED":
-				return shippingFee;
-			default:
-				return shippingFee;
-		}
-	})();
+	const shippingTotal = computeShippingTotal(
+		shippingFeeMethod,
+		shippingFee,
+		extraShippingFee,
+		weight,
+		quantity
+	);
 
 	const { minDate, maxDate } = getShippingDatesRange(
 		deliveryTimeMin,
@@ -87,32 +101,37 @@ const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weigh
 					</strong>
 				</span>
 				{/* Product shipping fee */}
-				{!shippingDetails.isFreeShipping && toggle && (
-					<ProductShippingFee
-						fee={shippingFee}
-						extraFee={extraShippingFee}
-						method={shippingFeeMethod}
-						weight={weight}
-						quantity={quantity}
-					/>
-				)}
-				<button
-					type="button"
-					aria-expanded={toggle}
-					onClick={() => setToggle((prev) => !prev)}
-					className="ml-4 flex h-5 w-full max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
-				>
-					<div className="flex w-full items-center justify-between gap-x-1 px-2">
-						<span className="text-xs">
-							{toggle ? "Hide" : "Shipping Fee Breakdown"}
-						</span>
-						{toggle ? (
-							<ChevronUp className="w-4" />
-						) : (
-							<ChevronDown className="w-4" />
+				{/* Product shipping fee */}
+				{!shippingDetails.isFreeShipping && (
+					<>
+						{toggle && (
+							<ProductShippingFee
+								fee={shippingFee}
+								extraFee={extraShippingFee}
+								method={shippingFeeMethod}
+								weight={weight}
+								quantity={quantity}
+							/>
 						)}
-					</div>
-				</button>
+						<button
+							type="button"
+							aria-expanded={toggle}
+							onClick={() => setToggle((prev) => !prev)}
+							className="ml-4 flex h-5 w-full max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
+						>
+							<span className="flex w-full items-center justify-between gap-x-1 px-2">
+								<span className="text-xs">
+									{toggle ? "Hide" : "Shipping Fee Breakdown"}
+								</span>
+								{toggle ? (
+									<ChevronUp className="w-4" />
+								) : (
+									<ChevronDown className="w-4" />
+								)}
+							</span>
+						</button>
+					</>
+				)}
 			</div>
 		</div>
 	);
