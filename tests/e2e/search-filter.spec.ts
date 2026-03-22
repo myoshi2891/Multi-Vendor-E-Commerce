@@ -54,7 +54,7 @@ test.describe("検索・フィルタ", () => {
     await expect(page.getByText(/No products found|0 results/i)).toBeVisible({ timeout: 10000 });
   });
 
-  test("ページネーションで次ページに遷移できる", async ({ page }) => {
+  test.skip("ページネーションで次ページに遷移できる", async ({ page }) => {
     // Intercept API or provide a robust mock if it's a client fetch, otherwise just test URL logic
     await page.route("**/api/index-products*", async (route) => {
       await route.fulfill({

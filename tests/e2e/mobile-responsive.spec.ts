@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { E2E_SEED } from "./seed/constants";
-import { TEST_CONFIG } from "@/config/test-config";
 import { setupE2ETestState } from "@/config/test-helpers";
 
 test.describe("モバイルレスポンシブ", () => {
@@ -75,7 +74,7 @@ test.describe("タブレットレスポンシブ", () => {
     await expect(header).toBeVisible();
 
     // Assert presence/visibility of the main layout/sidebar
-    const mainContent = page.locator("main, .min-h-screen").first();
+    const mainContent = page.getByTestId("app-main");
     await expect(mainContent).toBeVisible();
     
     // Check that we have a grid containing products
@@ -84,7 +83,7 @@ test.describe("タブレットレスポンシブ", () => {
     await expect(productCards.first()).toBeVisible({ timeout: 10000 });
 
     // Verify tablet behaviors such as the product grid column count (inspect computed style)
-    const productGrid = productCards.first().locator("..");
+    const productGrid = page.getByTestId("product-grid").first();
     const gridStyle = await productGrid.evaluate((el) => window.getComputedStyle(el).gridTemplateColumns);
     expect(gridStyle).not.toBe("none");
     expect(gridStyle.split(" ").length).toBeGreaterThan(1);
