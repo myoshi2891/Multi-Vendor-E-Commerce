@@ -68,3 +68,113 @@
 ## E2E Seed
 - Seed script: `tests/e2e/seed/seed-e2e.ts`
 - Seed constants: `tests/e2e/seed/constants.ts`
+
+## E2E Testing
+
+### Helper Function Patterns
+
+E2E tests use reusable helper functions to ensure consistency and reduce code
+duplication:
+
+```typescript
+// Size selection helper (tests/e2e/purchase-flow.spec.ts)
+async function addItemToCart(page: Page, productSlug: string) {
+  await page.goto(`/product/${productSlug}`);
+
+  // Select the first available size
+  const firstSize = page.locator('[data-testid^="size-option-"]').first();
+  await firstSize.click();
+
+  // Wait for URL to update with size parameter
+  await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
+
+  await page.getByTestId("add-to-cart").click();
+}
+```
+
+**Key Patterns**:
+- Use `data-testid` prefix matching (`^=`) for stable selectors
+- Wait for URL parameter updates after state changes
+- Explicit timeout values for clear failure messages
+
+### Environment Variable Handling
+
+Numeric environment variables require careful handling to avoid empty string
+coercion:
+
+```typescript
+// Correct: trim and validate before conversion
+const envPrice = process.env.E2E_UNIT_PRICE?.trim();
+unitPrice = envPrice ? Number(envPrice) : fallbackValue;
+
+if (!Number.isFinite(unitPrice)) {
+  throw new Error(`Invalid E2E_UNIT_PRICE: ${process.env.E2E_UNIT_PRICE}`);
+}
+```
+
+**Why This Matters**:
+- `Number("")` returns `0`, bypassing validation
+- Empty strings from environment files need explicit handling
+- `trim()` prevents whitespace-only values from passing validation
+
+### Recent Improvements
+- Size selection standardized across all purchase flow tests (Round 7-8)
+- Helper functions introduced for DRY test code (Round 8)
+- Environment variable processing hardened (Round 9)
+
+## Component Testing
+
+### Shipping Fee Component Tests
+
+The `ProductShippingFee` component has comprehensive test coverage for all
+three shipping methods:
+
+```typescript
+// tests/component/store/shipping-fee.test.tsx
+describe("ProductShippingFee", () => {
+  describe("ITEM method", () => {
+    it("displays tiered pricing when fee !== extraFee", () => {
+      render(<ProductShippingFee method="ITEM" fee={5} extraFee={3} quantity={2} />);
+      expect(screen.getByText(/First item: \$5\.00/)).toBeInTheDocument();
+      expect(screen.getByText(/Each additional: \$3\.00/)).toBeInTheDocument();
+    });
+  });
+
+  describe("WEIGHT method", () => {
+    it("displays calculation formula with correct precision", () => {
+      render(<ProductShippingFee method="WEIGHT" fee={2.5} weight={1.5} quantity={2} />);
+      expect(screen.getByText(/\$2\.50 × 1\.50 kg × 2 = \$7\.50/)).toBeInTheDocument();
+    });
+  });
+
+  describe("FIXED method", () => {
+    it("shows quantity-independent message", () => {
+      render(<ProductShippingFee method="FIXED" fee={10} />);
+      expect(screen.getByText(/quantity doesn't affect shipping fee/)).toBeInTheDocument();
+    });
+  });
+});
+```
+
+**Coverage**:
+- All 3 shipping methods (ITEM, WEIGHT, FIXED)
+- Edge cases (unknown method, zero quantity)
+- Centralized calculation via `computeShippingTotal`
+- Floating-point precision handling
+
+### Shipping Calculation Utility Tests
+
+The centralized `computeShippingTotal` function ensures consistent precision:
+
+```typescript
+// src/lib/__tests__/shipping-utils.test.ts
+describe("computeShippingTotal", () => {
+  it("applies floating-point correction for WEIGHT method", () => {
+    const result = computeShippingTotal("WEIGHT", 2.5, 0, 1.5, 2);
+    expect(result).toBe(7.5); // Not 7.499999999999999
+  });
+});
+```
+
+**Implementation**: Uses `Math.round((result + Number.EPSILON) * 100) / 100` to
+guarantee 2-decimal precision for all monetary calculations.
