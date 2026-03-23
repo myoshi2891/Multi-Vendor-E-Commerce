@@ -270,7 +270,21 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Reset form values when data changes
     useEffect(() => {
         if (data) {
-            form.reset({ ...data, variantImage: [{ url: data.variantImage }] })
+            // categoryId が変わる場合、prevCategoryIdRef を先に更新
+            if (data.categoryId !== undefined) {
+                prevCategoryIdRef.current = data.categoryId
+            }
+
+            // フォームをリセット
+            form.reset({ ...data, variantImage: data.variantImage ? [{ url: data.variantImage }] : [] })
+
+            // すべての local state を再初期化
+            setColors(data.colors || [{ color: '' }])
+            setSizes(data.sizes || [{ size: '', quantity: 1, price: 0.01, discount: 0 }])
+            setProductSpecs(data.product_specs || [{ name: '', value: '' }])
+            setVariantSpecs(data.variant_specs || [{ name: '', value: '' }])
+            setQuestions(data.questions || [{ question: '', answer: '' }])
+            setKeywords(data.keywords || [])
         }
     }, [data, form])
 
@@ -362,14 +376,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     // Whenever colors, sizes, keywords changes we update the form values
     useEffect(() => {
-        // colors が有効な値を持つ場合のみ form に反映
-        if (colors.length > 0 && (colors[0]?.color || colors.length > 1)) {
-            form.setValue('colors', colors)
-        }
-        // keywords が空でない場合のみ form に反映
-        if (keywords.length > 0) {
-            form.setValue('keywords', keywords)
-        }
+        // colors/keywords を常に form に反映（空配列も含む）
+        form.setValue('colors', colors)
+        form.setValue('keywords', keywords)
+
         // sizes, questions, specs は常に同期（既存の挙動を維持）
         form.setValue('sizes', sizes)
         form.setValue('questions', questions)

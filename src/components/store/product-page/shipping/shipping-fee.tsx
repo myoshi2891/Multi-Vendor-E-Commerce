@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { FC } from "react";
-import { computeShippingTotal } from "./shipping-details";
+import { computeShippingTotal } from "@/lib/shipping-utils";
 
 interface Props {
 	method: string;

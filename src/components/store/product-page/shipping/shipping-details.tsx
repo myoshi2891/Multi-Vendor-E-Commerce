@@ -4,32 +4,12 @@ import { ChevronDown, ChevronRight, ChevronUp, Truck } from "lucide-react";
 import { FC, useState } from "react";
 import ProductShippingFee from "./shipping-fee";
 import { getShippingDatesRange } from "@/lib/utils";
+import { computeShippingTotal } from "@/lib/shipping-utils";
 
 interface Props {
 	shippingDetails: ProductShippingDetailsType;
 	quantity: number;
 	weight: number;
-}
-
-export function computeShippingTotal(
-	shippingFeeMethod: string,
-	shippingFee: number,
-	extraShippingFee: number,
-	weight: number,
-	quantity: number
-): number {
-	switch (shippingFeeMethod) {
-		case "ITEM": {
-			const qty = quantity > 1 ? quantity - 1 : 0;
-			return shippingFee + qty * extraShippingFee;
-		}
-		case "WEIGHT":
-			return shippingFee * weight * quantity;
-		case "FIXED":
-			return shippingFee;
-		default:
-			return shippingFee;
-	}
 }
 
 function isValidShippingDetails(

@@ -24,9 +24,10 @@ export default function Newsletter() {
                     </h5>
                 </div>
                 {/* Right */}
-                <form className="flex w-full xl:flex-1" onSubmit={async (e: React.FormEvent<HTMLFormElement>) => { 
-                    e.preventDefault(); 
-                    const formData = new FormData(e.currentTarget);
+                <form className="flex w-full xl:flex-1" onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
+                    e.preventDefault();
+                    const form = e.currentTarget;
+                    const formData = new FormData(form);
                     const emailValue = formData.get("email");
                     const email = typeof emailValue === 'string' ? emailValue.trim() : '';
                     if (!email) return;
@@ -43,11 +44,11 @@ export default function Newsletter() {
                             body: JSON.stringify({ email }),
                             signal: controller.signal,
                         });
-                        
+
                         if (!response.ok) throw new Error("Subscription failed");
-                        
-                        toast.success("Successfully subscribed to newsletter!"); 
-                        e.currentTarget.reset();
+
+                        toast.success("Successfully subscribed to newsletter!");
+                        form.reset();
                     } catch (err: unknown) {
                         if (err instanceof Error && err.name === 'AbortError') {
                             toast.error("Request timed out. Please try again.");

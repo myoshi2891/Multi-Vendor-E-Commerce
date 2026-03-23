@@ -27,8 +27,8 @@ test.describe("購入フルフロー", () => {
 
   test("商品一覧→詳細→サイズ選択→カート追加→カートページ表示と数量変更", async ({ page }) => {
     await page.goto(`/product/${productSlug}/${variantSlug}`);
-    
-    await page.waitForURL('**/*?size=*', { timeout: 5000 });
+
+    await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
     const current = new URL(page.url());
     expect(current.pathname).toBe(`/product/${productSlug}/${variantSlug}`);
     expect(current.searchParams.has("size")).toBe(true);
@@ -69,8 +69,8 @@ test.describe("購入フルフロー", () => {
 
     // qty=1 の状態で decrease すると削除される
     await page.getByTestId("cart-qty-decrease").click();
-    
-    await expect(page.getByText("Your cart is empty")).toBeVisible();
+
+    await expect(page.getByTestId("cart-empty-message")).toBeVisible();
     await expect(page.getByTestId("cart-item-name")).toHaveCount(0);
   });
 
