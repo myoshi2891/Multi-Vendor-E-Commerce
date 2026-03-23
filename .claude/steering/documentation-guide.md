@@ -166,6 +166,7 @@
 **配置先**: `docs/testing/TESTING_DESIGN.md`
 
 **追記内容**:
+
 ```markdown
 ### New Helper Pattern: Multi-Step Navigation
 
@@ -191,6 +192,7 @@ async function navigateToCheckout(page: Page) {
 **配置先**: `specs/multi-vendor-ecommerce/06-quality.md`
 
 **追記内容**:
+
 ```markdown
 ## Security
 
@@ -209,6 +211,7 @@ async function navigateToCheckout(page: Page) {
 **配置先**: `docs/architecture/decisions/00X-redis-adoption.md`（新規ADR作成）
 
 **内容**:
+
 ```markdown
 # 00X. Redis Adoption for Session Management
 
