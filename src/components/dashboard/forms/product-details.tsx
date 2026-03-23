@@ -248,7 +248,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 }
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    console.error("[ProductDetails:getSubcategories]", error.message, { stack: error.stack });
+                    console.error("[ProductDetails:getSubcategories]", error.message, error.stack);
                 } else {
                     console.error("[ProductDetails:getSubcategories]", error);
                 }
@@ -290,12 +290,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             setVariantSpecs(data.variant_specs || [{ name: '', value: '' }])
             setQuestions(data.questions || [{ question: '', answer: '' }])
             setKeywords(data.keywords || [])
+            setImages(data.images || [])
         }
     }, [data, form])
 
     // Submit handler for form submission
     const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
         try {
+            // colors から空プレースホルダーを除外
+            const filteredColors = values.colors.filter(c => c.color.trim() !== '');
+            const normalizedColors = filteredColors.length > 0 ? filteredColors : [];
+
             // Upserting product data
             const response = await upsertProduct(
                 {
@@ -315,7 +320,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     brand: values.brand,
                     sku: values.sku,
                     weight: values.weight,
-                    colors: values.colors,
+                    colors: normalizedColors,
                     sizes: values.sizes || [],
                     product_specs: values.product_specs,
                     variant_specs: values.variant_specs,
@@ -408,7 +413,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         <Card className="w-full">
             <CardHeader>
                 <CardTitle>
-                    {isNewVariantPage
+                    {data?.productId && data?.variantId
+                        ? `Edit ${data.name} Product Information`
+                        : isNewVariantPage
                         ? `Add a new variant to ${data.name}`
                         : 'Create a new Product Information'}
                 </CardTitle>

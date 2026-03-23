@@ -64,7 +64,7 @@ export default function Newsletter() {
                     <label htmlFor="newsletter-email" className="sr-only">メールアドレス</label>
                     <input id="newsletter-email" type="email" name="email" autoComplete="email" placeholder="Enter your email address" required
                         className="h-10 w-full rounded-l-full bg-white pl-6 text-black outline-none" />
-                    <button type="submit" disabled={isSubmitting} className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white disabled:opacity-50">Sign up</button>
+                    <button type="submit" disabled={isSubmitting} className="grid h-10 w-24 cursor-pointer place-content-center rounded-r-full bg-slate-600 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50">Sign up</button>
                 </form>
             </div>
       </div>

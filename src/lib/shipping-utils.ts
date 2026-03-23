@@ -39,6 +39,7 @@ export function computeShippingTotal(
 			break;
 	}
 
-	// 浮動小数点誤差を防ぐため 2 桁に正規化
-	return Math.round(result * 100) / 100;
+	// 浮動小数点誤差を防ぐため 2 桁に正規化（EPSILON 補正）
+	// TODO: decimal.js などの正確な decimal ライブラリへの移行を検討
+	return Math.round((result + Number.EPSILON) * 100) / 100;
 }

@@ -100,7 +100,7 @@ const ProductShippingFee: FC<Props> = ({
 								</td>
 							</tr>
 							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
-								<td className="w-full bg-black p-1 text-white">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									{quantity === 1 || fee === extraFee ? (
 										<span>
 											${fee} (fee) x {quantity} (items) =
@@ -159,7 +159,7 @@ const ProductShippingFee: FC<Props> = ({
 								</td>
 							</tr>
 							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
-								<td className="w-full bg-black p-1 text-white">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									<span>
 										${fee} (fee) x {weight}kg (weight) x{" "}
 										{quantity} (items) = $
@@ -211,7 +211,7 @@ const ProductShippingFee: FC<Props> = ({
 								</td>
 							</tr>
 							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
-								<td className="w-full bg-black p-1 text-white">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									<span>
 										${fee} (quantity doesn&apos;t affect shipping
 										fee.)
