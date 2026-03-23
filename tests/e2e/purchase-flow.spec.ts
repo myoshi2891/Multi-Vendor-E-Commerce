@@ -35,7 +35,9 @@ test.describe("購入フルフロー", () => {
     productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
     variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
     productName = process.env.E2E_PRODUCT_NAME || seed.product.name;
-    unitPrice = Number(process.env.E2E_UNIT_PRICE ?? seed.size.price);
+    // Trim and validate E2E_UNIT_PRICE before using it
+    const envPrice = process.env.E2E_UNIT_PRICE?.trim();
+    unitPrice = envPrice ? Number(envPrice) : seed.size.price;
     if (!Number.isFinite(unitPrice)) {
       throw new Error(`Invalid E2E_UNIT_PRICE: ${process.env.E2E_UNIT_PRICE}`);
     }
