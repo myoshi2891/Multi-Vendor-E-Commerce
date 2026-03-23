@@ -57,3 +57,7 @@ prisma/migrations_mysql_backup/
 
 # Playwright artifacts
 .playwright-mcp
+
+# Backup files from sed commands
+*.bak*
+*.backup
