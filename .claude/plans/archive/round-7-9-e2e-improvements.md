@@ -216,23 +216,23 @@ Step 6: プランファイルアーカイブ
 
 以下のファイルを順次更新します:
 
-1. **[docs/testing/TESTING_DESIGN.md](docs/testing/TESTING_DESIGN.md)** (265 lines)
+1. **[docs/testing/TESTING_DESIGN.md](../../../docs/testing/TESTING_DESIGN.md)** (265 lines)
    - Section: E2E Seed Strategy (L110-140 付近)
    - 新規追加: E2E Helper Patterns セクション
 
-2. **[docs/testing/TEST_IMPLEMENTATION_PLAN.md](docs/testing/TEST_IMPLEMENTATION_PLAN.md)** (853 lines)
+2. **[docs/testing/TEST_IMPLEMENTATION_PLAN.md](../../../docs/testing/TEST_IMPLEMENTATION_PLAN.md)** (853 lines)
    - Section: Phase 2 - Store Components (L550-575)
    - Section: Phase 3 - E2E Suites (L683-805)
 
-3. **[.claude/steering/tech.md](.claude/steering/tech.md)** (Tech Constraints)
+3. **[.claude/steering/tech.md](../../../.claude/steering/tech.md)** (Tech Constraints)
    - Section: コーディング規約 (L25-40 付近)
    - 新規追加: 実装例セクション
 
-4. **[specs/multi-vendor-ecommerce/06-quality.md](specs/multi-vendor-ecommerce/06-quality.md)**
+4. **[specs/multi-vendor-ecommerce/06-quality.md](../../../specs/multi-vendor-ecommerce/06-quality.md)**
    - Section: Performance
    - Section: Error Handling
 
-5. **[specs/multi-vendor-ecommerce/07-testing.md](specs/multi-vendor-ecommerce/07-testing.md)** (71 lines)
+5. **[specs/multi-vendor-ecommerce/07-testing.md](../../../specs/multi-vendor-ecommerce/07-testing.md)** (71 lines)
    - Section: E2E Testing
    - Section: Component Testing
 

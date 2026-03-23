@@ -54,7 +54,7 @@
    - E2E ヘルパー関数パターンの詳細記載
    - コンポーネントテスト実装例の追加
 
-6. **Plans Archive** (コミット: `[current]`)
+6. **Plans Archive** (コミット: `055934f`)
    - プランファイルのアーカイブ化
    - INDEX.md の作成
 
@@ -88,8 +88,8 @@ round-<開始番号>-<終了番号>-<概要>.md
 
 ## 関連ドキュメント
 
-- [`docs/testing/TESTING_DESIGN.md`](../../docs/testing/TESTING_DESIGN.md) - テスト設計とストラテジー
-- [`docs/testing/TEST_IMPLEMENTATION_PLAN.md`](../../docs/testing/TEST_IMPLEMENTATION_PLAN.md) - テスト実装計画
-- [`.claude/steering/tech.md`](../../.claude/steering/tech.md) - 技術的制約とパターン
-- [`specs/multi-vendor-ecommerce/06-quality.md`](../../specs/multi-vendor-ecommerce/06-quality.md) - 品質基準
-- [`specs/multi-vendor-ecommerce/07-testing.md`](../../specs/multi-vendor-ecommerce/07-testing.md) - テスト戦略
+- [`docs/testing/TESTING_DESIGN.md`](../../../docs/testing/TESTING_DESIGN.md) - テスト設計とストラテジー
+- [`docs/testing/TEST_IMPLEMENTATION_PLAN.md`](../../../docs/testing/TEST_IMPLEMENTATION_PLAN.md) - テスト実装計画
+- [`.claude/steering/tech.md`](../../../.claude/steering/tech.md) - 技術的制約とパターン
+- [`specs/multi-vendor-ecommerce/06-quality.md`](../../../specs/multi-vendor-ecommerce/06-quality.md) - 品質基準
+- [`specs/multi-vendor-ecommerce/07-testing.md`](../../../specs/multi-vendor-ecommerce/07-testing.md) - テスト戦略

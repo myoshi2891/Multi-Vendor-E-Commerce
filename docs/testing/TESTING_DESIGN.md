@@ -192,7 +192,7 @@ if (!Number.isFinite(unitPrice)) {
 **関連する問題**:
 
 - ❌ `Number(process.env.VALUE ?? fallback)` - 空文字列が `0` に変換される
-- ❌ `process.env.VALUE || fallback` - 文字列 `"0"` が falsy 扱いされる
+- ❌ `process.env.VALUE || fallback` - 空文字列 `""` が falsy 扱いされ、数値 `0` が必要な場合に fallback が使われる
 - ✅ `const v = process.env.VALUE?.trim(); v ? Number(v) : fallback` - 推奨パターン
 
 ---

@@ -78,8 +78,8 @@ duplication:
 
 ```typescript
 // Size selection helper (tests/e2e/purchase-flow.spec.ts)
-async function addItemToCart(page: Page, productSlug: string) {
-  await page.goto(`/product/${productSlug}`);
+async function addItemToCart(page: Page, productSlug: string, variantSlug: string) {
+  await page.goto(`/product/${productSlug}/${variantSlug}`);
 
   // Select the first available size
   const firstSize = page.locator('[data-testid^="size-option-"]').first();

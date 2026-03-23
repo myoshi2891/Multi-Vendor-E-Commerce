@@ -718,9 +718,9 @@ describe("購入フルフロー")
   ✅ 正常系: 注文確定後に注文詳細ページに遷移する                                  [P0]
   ✅ 正常系: 数量変更がカート合計に反映される                                       [P0]
   ⏸️ 正常系: 複数バリアントをカートに追加し別行で表示                              [P1]
-  ⏸️ 正常系: カートからアイテム削除できる                                           [P1]
-  ⏸️ 正常系: ページリロード後もカートが永続化されている                             [P1]
-  ⏸️ 正常系: 未認証ユーザーがチェックアウトに進むとログインにリダイレクト           [P0]
+  ✅ 正常系: カートからアイテム削除できる                                           [P1]
+  ✅ 正常系: ページリロード後もカートが永続化されている                             [P1]
+  ✅ 正常系: 未認証ユーザーがチェックアウトに進むとログインにリダイレクト           [P0]
 ```
 
 **最近の改善** (Round 7-9):
@@ -738,8 +738,8 @@ describe("購入フルフロー")
 
 ```typescript
 // Helper function for consistent size selection (Lines 56-75)
-async function addItemToCart(page: Page, productSlug: string) {
-  await page.goto(`/product/${productSlug}`);
+async function addItemToCart(page: Page, productSlug: string, variantSlug: string) {
+  await page.goto(`/product/${productSlug}/${variantSlug}`);
   
   // Select the first available size
   const firstSize = page.locator('[data-testid^="size-option-"]').first();
