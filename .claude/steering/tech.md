@@ -29,7 +29,72 @@
 | **アトミック操作** | 注文処理や在庫減算など、複数のテーブルを更新する際は `db.$transaction` によるアトミック化を必須とする |
 | **Docstrings** | シーダー、ヘルパー、複雑なロジックには JSDoc 形式の Docstrings を記述し、AI エージェントの理解を助けること |
 | **ログ禁止** | `src/` 配下のアプリケーションコードでは `console.log()` 禁止。ただし CLI（`prisma/seed/`）は許容 |
+| **配送料計算** | すべての配送料計算は `src/lib/shipping-utils.ts` の `computeShippingTotal` を使用すること（計算ロジックの一元管理） |
+| **リエントランシーガード** | 非同期操作での多重実行防止には `useRef` によるフラグ管理を行う（例: `newsletter.tsx`） |
+| **環境変数の数値変換** | 数値型環境変数は `trim()` 後に変換し、空文字列には fallback を適用すること |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
+
+---
+
+## 実装パターン例
+
+### 配送料計算の中央集約
+
+すべての配送料計算は `src/lib/shipping-utils.ts` の `computeShippingTotal` を使用します:
+
+```typescript
+import { computeShippingTotal } from "@/lib/shipping-utils";
+import { ShippingFeeMethod } from "@prisma/client";
+
+const total = computeShippingTotal(
+  method,        // ShippingFeeMethod: "ITEM" | "WEIGHT" | "FIXED"
+  fee,           // 基本配送料
+  extraFee,      // 追加配送料（ITEM 方式）
+  weight,        // 商品重量（WEIGHT 方式）
+  quantity       // 商品数量
+);
+```
+
+**利点**:
+- 計算ロジックの一元管理
+- 浮動小数点誤差の統一的な補正（`Math.round((result + Number.EPSILON) * 100) / 100`）
+- テスト容易性の向上
+
+### リエントランシーガード
+
+非同期操作での多重実行を防ぐパターン:
+
+```typescript
+const isSubmittingRef = useRef(false);
+
+const handleSubmit = async () => {
+  if (isSubmittingRef.current) return;  // 早期リターン
+
+  isSubmittingRef.current = true;
+  try {
+    await performAsyncOperation();
+  } finally {
+    isSubmittingRef.current = false;   // 必ず解放
+  }
+};
+```
+
+**実装例**: `src/components/store/layout/footer/newsletter.tsx`
+
+### 環境変数の数値変換
+
+空文字列や空白を適切に処理する:
+
+```typescript
+const envValue = process.env.MY_NUMBER?.trim();
+const myNumber = envValue ? Number(envValue) : defaultValue;
+
+if (!Number.isFinite(myNumber)) {
+  throw new Error(`Invalid MY_NUMBER: ${process.env.MY_NUMBER}`);
+}
+```
+
+**実装例**: `tests/e2e/purchase-flow.spec.ts` の `E2E_UNIT_PRICE` 処理
 
 ---
 
