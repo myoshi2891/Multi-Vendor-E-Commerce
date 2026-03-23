@@ -145,6 +145,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         data?.colors || [{ color: '' }]
     )
 
+    // State for keywords
+    const [keywords, setKeywords] = useState<string[]>(
+        data?.keywords || []
+    )
+
     // State for sizes
     const [sizes, setSizes] = useState<
         { size: string; price: number; quantity: number; discount: number }[]
@@ -355,11 +360,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         }
     }
 
-    // Handle keywords input
-    const [keywords, setKeywords] = useState<string[]>(
-        data?.keywords || []
-    )
-
     interface Keyword {
         id: string
         text: string
@@ -500,7 +500,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 {/* Colors */}
                                 <div className="flex w-full flex-col gap-y-3 xl:pl-5">
                                     <ClickToAddInputs
-                                        details={data?.colors || colors}
+                                        details={colors}
                                         setDetails={setColors}
                                         initialDetail={{ color: '' }}
                                         header="Colors"

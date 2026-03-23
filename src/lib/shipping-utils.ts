@@ -1,3 +1,5 @@
+import { ShippingFeeMethod } from "@prisma/client";
+
 /**
  * 配送料を計算する
  *
@@ -9,7 +11,7 @@
  * @returns 計算された配送料（2桁に正規化）
  */
 export function computeShippingTotal(
-	shippingFeeMethod: string,
+	shippingFeeMethod: ShippingFeeMethod,
 	shippingFee: number,
 	extraShippingFee: number,
 	weight: number,

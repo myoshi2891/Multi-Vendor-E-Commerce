@@ -1,9 +1,10 @@
 import { Check } from "lucide-react";
 import { FC } from "react";
 import { computeShippingTotal } from "@/lib/shipping-utils";
+import { ShippingFeeMethod } from "@prisma/client";
 
 interface Props {
-	method: string;
+	method: ShippingFeeMethod;
 	fee: number;
 	extraFee: number;
 	weight: number;

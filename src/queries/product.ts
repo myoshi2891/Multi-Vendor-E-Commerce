@@ -56,7 +56,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { Prisma, ProductVariant, Size, Store } from "@prisma/client";
+import { Prisma, ProductVariant, ShippingFeeMethod, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -1187,7 +1187,7 @@ export const getRatingStatistics = async (productId: string) => {
 // - store: store details
 // Returns: The calculated shipping details.
 export const getShippingDetails = async (
-    shippingFeeMethod: string,
+    shippingFeeMethod: ShippingFeeMethod,
     userCountry: { name: string; code: string; city: string },
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null

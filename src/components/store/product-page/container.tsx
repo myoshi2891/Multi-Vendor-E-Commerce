@@ -30,7 +30,7 @@ interface InnerProps {
 }
 
 const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
-    shippingFeeMethod: "",
+    shippingFeeMethod: "FIXED",
     shippingService: "",
     shippingFee: 0,
     extraShippingFee: 0,

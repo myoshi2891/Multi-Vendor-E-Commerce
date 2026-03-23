@@ -39,8 +39,8 @@ describe('ProductShippingFee', () => {
     describe('WEIGHT method', () => {
         it('renders correctly for weight-based shipping', () => {
             render(<ProductShippingFee method="WEIGHT" fee={2} extraFee={0} weight={1.5} quantity={3} />)
-            
-            expect(screen.getByText(/calculates the delivery fee bases on product weight/)).toBeInTheDocument()
+
+            expect(screen.getByText(/calculates the delivery fee based on product weight/)).toBeInTheDocument()
             expect(screen.getByText(/Fee per kg/)).toBeInTheDocument()
             expect(screen.getByText(matchText('$2 (fee) x 1.5kg (weight) x 3 (items) = $9 (total fee)'))).toBeInTheDocument()
         })
@@ -58,7 +58,7 @@ describe('ProductShippingFee', () => {
 
     describe('Edge cases', () => {
         it('returns null for unknown method', () => {
-            const { container } = render(<ProductShippingFee method="UNKNOWN" fee={0} extraFee={0} weight={0} quantity={0} />)
+            const { container } = render(<ProductShippingFee method={"UNKNOWN" as any} fee={0} extraFee={0} weight={0} quantity={0} />)
             expect(container).toBeEmptyDOMElement()
         })
     })
