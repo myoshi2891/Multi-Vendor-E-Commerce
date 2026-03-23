@@ -52,17 +52,17 @@ export const getFilteredSizes = async (
             storeId = store.id;
         }
 
+        // Build AND conditions array dynamically, only including specified filters
+        const conditions = [];
+        if (category) conditions.push({ category: { url: category } });
+        if (subCategory) conditions.push({ subCategory: { url: subCategory } });
+        if (offer) conditions.push({ offerTag: { url: offer } });
+        if (storeId) conditions.push({ store: { id: storeId } });
+
         const sizeWhere = {
             productVariant: {
                 product: {
-                    AND: [
-                        category ? { category: { url: category } } : {},
-                        subCategory
-                            ? { subCategory: { url: subCategory } }
-                            : {},
-                        offer ? { offerTag: { url: offer } } : {},
-                        storeId ? { store: { id: storeId } } : {},
-                    ],
+                    AND: conditions,
                 },
             },
         };

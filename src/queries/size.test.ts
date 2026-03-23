@@ -59,6 +59,7 @@ describe("getFilteredSizes", () => {
                             { category: { url: "electronics" } },
                             { subCategory: { url: "smartphones" } },
                             { offerTag: { url: "summer-sale" } },
+                            { store: { id: "store123" } },
                         ],
                     },
                 },
@@ -76,7 +77,7 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "electronics" } },
-                            { category: { url: "smartphones" } },
+                            { subCategory: { url: "smartphones" } },
                             { offerTag: { url: "summer-sale" } },
                             { store: { id: "store123" } },
                         ],
@@ -230,8 +231,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
                         ],
                     },
                 },
@@ -249,9 +248,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
-                            {},
                         ],
                     },
                 },
@@ -304,9 +300,7 @@ describe("getFilteredSizes", () => {
                 productVariant: {
                     product: {
                         AND: [
-                            {},
                             { subCategory: { url: "smartphones" } },
-                            {},
                         ],
                     },
                 },
@@ -323,10 +317,7 @@ describe("getFilteredSizes", () => {
                 productVariant: {
                     product: {
                         AND: [
-                            {},
-                            { category: { url: "smartphones" } },
-                            {},
-                            {},
+                            { subCategory: { url: "smartphones" } },
                         ],
                     },
                 },
@@ -374,8 +365,6 @@ describe("getFilteredSizes", () => {
                 productVariant: {
                     product: {
                         AND: [
-                            {},
-                            {},
                             { offerTag: { url: "black-friday" } },
                         ],
                     },
@@ -393,10 +382,7 @@ describe("getFilteredSizes", () => {
                 productVariant: {
                     product: {
                         AND: [
-                            {},
-                            {},
                             { offerTag: { url: "black-friday" } },
-                            {},
                         ],
                     },
                 },
@@ -453,8 +439,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
                         ],
                     },
                 },
@@ -472,9 +456,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
-                            {},
                         ],
                     },
                 },
@@ -535,8 +516,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
                         ],
                     },
                 },
@@ -554,9 +533,6 @@ describe("getFilteredSizes", () => {
                     product: {
                         AND: [
                             { category: { url: "clothing" } },
-                            {},
-                            {},
-                            {},
                         ],
                     },
                 },
