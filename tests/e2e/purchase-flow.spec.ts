@@ -38,6 +38,10 @@ test.describe("購入フルフロー", () => {
   test("商品一覧→詳細→サイズ選択→カート追加→カートページ表示と数量変更", async ({ page }) => {
     await page.goto(`/product/${productSlug}/${variantSlug}`);
 
+    // Select the first available size
+    const firstSize = page.locator('[data-testid^="size-option-"]').first();
+    await firstSize.click();
+
     await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
     const current = new URL(page.url());
     expect(current.pathname).toBe(`/product/${productSlug}/${variantSlug}`);
