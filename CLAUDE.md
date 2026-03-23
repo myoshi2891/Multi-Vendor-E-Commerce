@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @.claude/steering/product.md
 @.claude/steering/tech.md
 @.claude/steering/structure.md
+@.claude/steering/documentation-guide.md
 
 ## プロジェクト概要
 
