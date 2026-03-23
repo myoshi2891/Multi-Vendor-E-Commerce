@@ -238,3 +238,124 @@
 - `8f7d131` feat(skills): spec-sync-check スキルを追加
 - `e14142d` feat(skills): feature-plan スキルを追加
 - `f2b7354` feat(agent): add project-specific expert skills
+
+---
+
+## 追記進捗レポート (2026-03-23)
+
+### 範囲
+- 対象: Round 10 以降のドキュメント改善作業
+- 主要コミット: `e9ba2d0`, `50e5982`, `8f5ca4b`, `2f2d22c`
+
+### 今日の対応サマリ
+- ドキュメント不整合の修正（8箇所）
+- `.claude/plans/archive/` の削除と理由説明
+- ドキュメント管理戦略の確立（ADR ガイドライン）
+- 相対パス表記の統一
+
+## ドキュメント品質改善
+
+### Round 10: ドキュメント不整合の修正 (`e9ba2d0`)
+- 6 ファイル、19 挿入、20 削除
+- 修正内容：
+  1. INDEX.md: `[current]` プレースホルダーを `055934f` に置換
+  2. INDEX.md: 相対リンクパス修正（`../../` → `../../../`）
+  3. round-7-9-e2e-improvements.md: 5箇所の相対リンク修正
+  4. .gitignore: 冗長な `*.backup` パターン削除
+  5. TEST_IMPLEMENTATION_PLAN.md: `addItemToCart` シグネチャに `variantSlug` 追加
+  6. TEST_IMPLEMENTATION_PLAN.md: 3つのテストステータスを ⏸️ → ✅ に更新
+  7. TESTING_DESIGN.md: JavaScript truthiness 説明修正（`"0"` は truthy）
+  8. specs/07-testing.md: `addItemToCart` 例に `variantSlug` 追加
+
+### Archive ディレクトリの削除 (`50e5982`)
+- 2 ファイル削除、683 行削除
+- 削除理由：
+  - Round 7-9 の有用な情報は既に正式ドキュメントに統合済み
+  - Git 履歴で十分なトレーサビリティを確保
+  - メンテナンスコストが価値を上回る
+- 統合先：
+  - E2E ヘルパー関数 → `docs/testing/TESTING_DESIGN.md`
+  - 環境変数処理 → `.claude/steering/tech.md`
+  - 配送料計算 → `.claude/steering/tech.md`
+  - テストステータス → `docs/testing/TEST_IMPLEMENTATION_PLAN.md`
+
+### ドキュメント管理戦略の確立 (`8f5ca4b`)
+- 5 ファイル追加、648 行追加
+- 新規ファイル：
+  1. `.claude/steering/documentation-guide.md` (289 行)
+     - 4層構造のドキュメント体系説明
+     - Decision Tree（Q1-Q5）による配置基準
+     - ADR 作成基準（4条件すべて満たす場合のみ）
+     - 実装パターン vs ADR の判断表
+  2. `docs/architecture/README.md`
+     - アーキテクチャドキュメントの概要
+  3. `docs/architecture/decisions/README.md`
+     - ADR 作成ガイド、ライフサイクル管理
+  4. `docs/architecture/decisions/template.md`
+     - MADR 形式テンプレート
+  5. `CLAUDE.md` 更新
+     - `documentation-guide.md` への参照追加
+
+### 相対パス表記の統一 (`2f2d22c`)
+- 1 ファイル、1 挿入、1 削除
+- `documentation-guide.md` Line 151: `template.md` をクリック可能なMarkdownリンクに変更
+
+## ドキュメント配置ルール
+
+### Decision Tree
+
+```
+Q1: 全プロジェクトで不変のルールか？ → .claude/steering/tech.md
+Q2: 機能仕様の一部か？ → specs/multi-vendor-ecommerce/
+Q3: 実装の詳細な手順・パターンか？ → docs/testing/TESTING_DESIGN.md
+Q4: 過去の技術選定・移行の理由か？ → docs/architecture/decisions/ (ADR)
+Q5: それ以外（進捗・一時的）→ PROGRESS.md
+```
+
+### ADR 作成基準
+以下の4条件を**すべて**満たす場合のみ作成：
+1. 複数の代替案を比較検討した
+2. チーム全体に影響する技術選定
+3. 将来の技術選定時に参照価値がある
+4. トレードオフが将来の開発に影響する
+
+## 現在のドキュメント品質評価
+
+| 評価軸 | スコア | 所見 |
+|--------|--------|------|
+| 指標性（可検索性） | ⭐⭐⭐⭐ | specs/README.md で読み順が明確 |
+| トレーサビリティ | ⭐⭐⭐⭐ | コミットハッシュ付きで変更履歴記録 |
+| 更新頻度との同期 | ⭐⭐⭐⭐⭐ | 実装後即座に仕様書更新 |
+| 決定背景の記録 | ⭐⭐⭐⭐ | ADR フレームワーク準備完了 |
+| ADR 検索性 | ⭐⭐⭐⭐ | 配置ルール明確化により改善 |
+
+## ベストプラクティス確立
+
+### ✅ 推奨
+- 小さく始める：最初は既存ドキュメント追記、大規模変更時のみ ADR
+- コミットハッシュ記録：変更内容に関連するコミットを明記
+- 定期的なレビュー：3-6ヶ月ごとにドキュメント鮮度確認
+- Git 履歴活用：`git log` で補完できる情報は過度に記録しない
+
+### ❌ 避けるべき
+- 過剰な文書化：実装の詳細すぎる記録
+- ADR の乱用：小さな実装判断で ADR 作成しない
+- 重複記録：同じ情報を複数の場所に記録しない
+- 古い情報の放置：実装と乖離したドキュメントは削除または更新
+
+## 主要コミット一覧（新しい順）
+- `2f2d22c` docs: fix template.md reference to use consistent relative path
+- `8f5ca4b` docs: establish documentation management strategy with ADR guidelines
+- `50e5982` chore: remove redundant plans archive directory
+- `e9ba2d0` docs: fix documentation inconsistencies found in review
+
+## 期待される効果
+- **明確な配置基準**: 新しい設計決定をどこに記録すべきか迷わない
+- **検索性の向上**: 技術選定理由が一元的に管理される
+- **スケーラビリティ**: チーム規模拡大時にも機能するドキュメント体系
+- **エージェント対応**: Claude Code エージェントが自動参照可能
+
+### 次アクション候補
+- ドキュメント配置ルールの実践（新しい設計決定発生時）
+- 3-6ヶ月後のドキュメント鮮度レビュー
+- 必要に応じて ADR の作成（大規模技術変更時）

@@ -32,6 +32,11 @@
 - PostgreSQL fulltext search (tsvector/tsquery) with a fallback to `contains` queries.
 - Pagination in search endpoints limits result size.
 - Client-side cart interactions avoid roundtrips.
+- Shipping fee calculations are centralized in `src/lib/shipping-utils.ts`
+  (`computeShippingTotal`) to ensure consistent precision across all
+  components. Floating-point errors are mitigated using
+  `Math.round((result + Number.EPSILON) * 100) / 100` to guarantee 2-decimal
+  precision for all monetary values.
 
 ## Reliability
 - Payment details are upserted and linked to orders.
@@ -48,3 +53,7 @@
 - Catch blocks use `error: unknown` (never `any`) with `instanceof Error`
   type guards for structured logging (`console.error` with context prefix,
   message, and stack).
+- All server actions in `src/queries/` must wrap external calls in try/catch
+  and use structured log format: `[Module:Function] Error message` with
+  `{ error: message, stack: error.stack }` for consistent error tracking and
+  debugging.

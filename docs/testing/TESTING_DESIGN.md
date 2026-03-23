@@ -141,6 +141,62 @@ E2E_DATABASE_URL="postgresql://user:pass@localhost:5432/app_test" \
 
 ---
 
+## E2E ヘルパー関数パターン
+
+E2E テストでは再利用可能なヘルパー関数を作成することで、テストコードの DRY 化と保守性向上を図ります。
+
+### サイズ選択ヘルパーの実装例
+
+商品詳細ページでのサイズ選択は、以下のパターンで実装します:
+
+```typescript
+// Select the first available size
+const firstSize = page.locator('[data-testid^="size-option-"]').first();
+await firstSize.click();
+
+// Wait for URL to update with size parameter
+await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
+```
+
+このパターンは以下を保証します:
+
+- **サイズボタンの適切な選択**: `data-testid` 属性の prefix マッチで安定したセレクション
+- **URL パラメータの更新待機**: ルーター遷移完了の確認
+- **タイムアウト時の明確なエラー**: 5秒以内に遷移しない場合は失敗
+
+**実装例**: [`tests/e2e/purchase-flow.spec.ts`](../../tests/e2e/purchase-flow.spec.ts) の `addItemToCart` ヘルパー関数
+
+### 環境変数処理のベストプラクティス
+
+数値型環境変数の処理では、空文字列や空白の適切な処理が必要です:
+
+```typescript
+// Trim and validate before conversion
+const envPrice = process.env.E2E_UNIT_PRICE?.trim();
+unitPrice = envPrice ? Number(envPrice) : fallbackValue;
+if (!Number.isFinite(unitPrice)) {
+  throw new Error(`Invalid value: ${process.env.E2E_UNIT_PRICE}`);
+}
+```
+
+**Key Points**:
+
+| 処理ステップ | 目的 |
+|------------|------|
+| `trim()` で前後の空白を除去 | 設定ミスによる空白の影響を排除 |
+| 空文字列は falsy として扱い、fallback を使用 | `Number("")` が `0` になる問題を回避 |
+| `Number.isFinite()` で無効な値を検出 | `NaN` や `Infinity` の検出 |
+
+**実装例**: `tests/e2e/purchase-flow.spec.ts` の `unitPrice` 処理（Lines 38-43）
+
+**関連する問題**:
+
+- ❌ `Number(process.env.VALUE ?? fallback)` - 空文字列が `0` に変換される
+- ❌ `process.env.VALUE || fallback` - 空文字列 `""` が falsy 扱いされ、数値 `0` が必要な場合に fallback が使われる
+- ✅ `const v = process.env.VALUE?.trim(); v ? Number(v) : fallback` - 推奨パターン
+
+---
+
 ## ❌ シークレット管理ルール（必須）
 
 | ルール | 内容 |
