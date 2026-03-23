@@ -8,6 +8,14 @@ async function addItemToCart(
   variantSlug: string
 ) {
   await page.goto(`/product/${productSlug}/${variantSlug}`);
+
+  // Select the first available size
+  const firstSize = page.locator('[data-testid^="size-option-"]').first();
+  await firstSize.click();
+
+  // Wait for URL to update with size parameter
+  await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
+
   await page.getByTestId("add-to-cart").click();
   await page.goto("/cart");
 }
