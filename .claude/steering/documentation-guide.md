@@ -148,7 +148,7 @@
 
 ### ADR テンプレート
 
-`docs/architecture/decisions/template.md` を使用してください。
+[`docs/architecture/decisions/template.md`](../../docs/architecture/decisions/template.md) を使用してください。
 
 ---
 
