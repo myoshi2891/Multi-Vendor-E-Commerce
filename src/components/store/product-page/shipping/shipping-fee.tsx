@@ -44,7 +44,7 @@ const ProductShippingFee: FC<Props> = ({
 					</div>
 					<table className="mt-1.5 w-full">
 						<thead className="w-full">
-							{fee === extraFee || extraFee === 0 ? (
+							{fee === extraFee ? (
 								<tr
 									className="grid gap-x-1 px-4 text-xs"
 									style={{ gridTemplateColumns: "4fr 1fr" }}

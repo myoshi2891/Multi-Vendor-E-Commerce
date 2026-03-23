@@ -609,8 +609,9 @@ export const getProducts = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Default values for page and pageSize
-    const currentPage = page;
+    try {
+        // Default values for page and pageSize
+        const currentPage = page;
     const limit = pageSize;
     const skip = (currentPage - 1) * limit;
 
@@ -775,28 +776,34 @@ export const getProducts = async (
             orderBy = { views: "desc" };
     }
 
-    // Get all filtered, sorted products
-    const products = await db.product.findMany({
-        where: whereClause,
-        orderBy,
-        take: limit, // Limit to page size
-        skip: skip, // Skip the products of previous pages
-        include: {
-            variants: {
-                include: {
-                    sizes: true,
-                    images: true,
-                    colors: true,
+    // Get all filtered, sorted products and total count in parallel
+    const [products, totalCount] = await Promise.all([
+        db.product.findMany({
+            where: whereClause,
+            orderBy,
+            take: limit, // Limit to page size
+            skip: skip, // Skip the products of previous pages
+            include: {
+                variants: {
+                    include: {
+                        sizes: true,
+                        images: true,
+                        colors: true,
+                    },
                 },
             },
-        },
-    });
+        }),
+        db.product.count({
+            where: whereClause,
+        }),
+    ]);
 
     type VariantWithSizes = ProductVariant & { sizes: Size[] };
+    type ProductWithVariants = typeof products[number];
     // Product price sorting
     products.sort((a, b) => {
         // Helper function to get the minimum price from a product's variants
-        const getMinPrice = (product: any) =>
+        const getMinPrice = (product: ProductWithVariants) =>
             Math.min(
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
@@ -864,11 +871,6 @@ export const getProducts = async (
         };
     });
 
-    // Retrieve products matching the filters
-    const totalCount = await db.product.count({
-    	where: whereClause,
-    });
-
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -880,6 +882,14 @@ export const getProducts = async (
         pageSize,
         totalCount,
     };
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[product:getProducts]", error.message, { stack: error.stack });
+        } else {
+            console.error("[product:getProducts]", error);
+        }
+        throw error;
+    }
 };
 
 // Function: getProductPageData
@@ -1435,7 +1445,7 @@ export const getDeliveryDetailsForStoreByCountry = async (
  * @returns Calculated total shipping fee for product.
  */
 export const getProductShippingFee = async (
-    shippingFeeMethod: string,
+    shippingFeeMethod: ShippingFeeMethod,
     userCountry: Country,
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null,

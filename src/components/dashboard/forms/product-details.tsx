@@ -1370,8 +1370,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 {isLoading
                                     ? 'loading...'
                                     : data?.productId && data?.variantId
-                                      ? 'Save store information'
-                                      : 'Create store'}
+                                      ? 'Save product'
+                                      : 'Create product'}
                             </Button>
                         </form>
                     </Form>

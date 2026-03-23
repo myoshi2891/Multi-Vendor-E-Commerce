@@ -9,7 +9,7 @@ import ReturnsSecurityPrivacyCard from './returns-security-privacy-card'
 import { cn, isProductValidToAdd, updateProductHistory } from "@/lib/utils";
 import QuantitySelector from "./quantity-selector";
 import SocialShare from "../shared/social-share";
-import { ProductVariantImage } from "@prisma/client";
+import { ProductVariantImage, ShippingFeeMethod } from "@prisma/client";
 import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
@@ -30,7 +30,7 @@ interface InnerProps {
 }
 
 const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
-    shippingFeeMethod: "FIXED",
+    shippingFeeMethod: ShippingFeeMethod.FIXED,
     shippingService: "",
     shippingFee: 0,
     extraShippingFee: 0,

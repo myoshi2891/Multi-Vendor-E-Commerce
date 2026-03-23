@@ -1,6 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, Page } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
 import { setupE2ETestState } from "@/config/test-helpers";
+
+async function addItemToCart(
+  page: Page,
+  productSlug: string,
+  variantSlug: string
+) {
+  await page.goto(`/product/${productSlug}/${variantSlug}`);
+  await page.getByTestId("add-to-cart").click();
+  await page.goto("/cart");
+}
 
 test.describe("購入フルフロー", () => {
   let seed: ReturnType<typeof buildE2ESeed>;
@@ -60,9 +70,7 @@ test.describe("購入フルフロー", () => {
 
   test("カートからアイテムを削除できる", async ({ page }) => {
     // Add item
-    await page.goto(`/product/${productSlug}/${variantSlug}`);
-    await page.getByTestId("add-to-cart").click();
-    await page.goto("/cart");
+    await addItemToCart(page, productSlug, variantSlug);
 
     const itemName = page.getByTestId("cart-item-name");
     await expect(itemName).toContainText(productName);
@@ -75,9 +83,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("ページリロード後もカートが永続化されている", async ({ page }) => {
-    await page.goto(`/product/${productSlug}/${variantSlug}`);
-    await page.getByTestId("add-to-cart").click();
-    await page.goto("/cart");
+    await addItemToCart(page, productSlug, variantSlug);
 
     await expect(page.getByTestId("cart-item-name")).toBeVisible();
     
@@ -88,9 +94,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("未認証ユーザーがチェックアウトに進むとログインにリダイレクト", async ({ page }) => {
-    await page.goto(`/product/${productSlug}/${variantSlug}`);
-    await page.getByTestId("add-to-cart").click();
-    await page.goto("/cart");
+    await addItemToCart(page, productSlug, variantSlug);
 
     await page.getByTestId("checkout").click();
 

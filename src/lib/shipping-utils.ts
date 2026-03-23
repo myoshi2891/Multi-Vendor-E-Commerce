@@ -34,9 +34,6 @@ export function computeShippingTotal(
 		case "FIXED":
 			result = shippingFee;
 			break;
-		default:
-			result = shippingFee;
-			break;
 	}
 
 	// 浮動小数点誤差を防ぐため 2 桁に正規化（EPSILON 補正）

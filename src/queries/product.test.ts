@@ -918,6 +918,7 @@ describe("getProducts", () => {
                     ],
                 }));
             mockDb.product.findMany.mockResolvedValue(products);
+            mockDb.product.count.mockResolvedValue(5);
 
             const result = await getProducts({}, "", 1, 2);
 
