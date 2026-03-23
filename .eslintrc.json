@@ -1,7 +1,13 @@
 {
     "extends": ["next/core-web-vitals", "plugin:tailwindcss/recommended"],
     "plugins": ["tailwindcss"],
-    "rules": {
-        "tailwindcss/classnames-order": "warn"
-    }
+    "rules": {},
+    "overrides": [
+        {
+            "files": ["**/*.tsx"],
+            "rules": {
+                "tailwindcss/classnames-order": "warn"
+            }
+        }
+    ]
 }

@@ -2,11 +2,12 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 //Custom UI components
-import Header from "@/components/dashboard/header/header";
+import Header from "@/components/dashboard/header/Header";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { Store } from "@prisma/client";
 export default async function SellerStoreDashboardLayout({
 	children,
 }: {
@@ -18,21 +19,34 @@ export default async function SellerStoreDashboardLayout({
         redirect("/");
         return; // Ensure no further code is executed after the redirect.
     }
+    if (user.privateMetadata.role !== "SELLER") {
+        redirect("/");
+        return;
+    }
 
     // Retrieve the list of stores associated with the authenticated user.
-    const stores = await db.store.findMany({
-        where: {
-            userId: user.id,
-        },
-    });
+    let stores: Store[] = [];
+    try {
+        stores = await db.store.findMany({
+            where: {
+                userId: user.id,
+            },
+        });
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error("Error retrieving stores for seller dashboard:", error.message, error.stack);
+        } else {
+            console.error("Error retrieving stores for seller dashboard:", String(error));
+        }
+    }
 
     // Render the dashboard layout with the sidebar and the child component.
     return (
-		<div className="h-full w-full flex">
+		<div className="flex size-full">
 			<Sidebar stores={stores} />
-            <div className="w-full ml-[300px]">
+            <div className="ml-[300px] w-full">
                 <Header />
-                <div className="w-full mt-[75px] p-4">{children}</div>
+                <div className="mt-[75px] w-full p-4">{children}</div>
             </div>
 		</div>
 	);

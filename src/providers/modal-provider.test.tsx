@@ -205,10 +205,8 @@ describe("ModalProvider", () => {
             );
 
             expect(contextValue).not.toBeNull();
-            if (contextValue) {
-                expect(contextValue.isOpen).toBe(false);
-                expect(typeof contextValue.setOpen).toBe("function");
-            }
+            expect(contextValue!.isOpen).toBe(false);
+            expect(typeof contextValue!.setOpen).toBe("function");
         });
 
         it("[P1] Provider 外で使用するとエラーがスローされる", () => {

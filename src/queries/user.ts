@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
+import { toNumberSafe } from "@/lib/utils"
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
@@ -165,9 +166,9 @@ export const saveUserCart = async (
             // Validate stock and price
             const validQuantity = Math.min(quantity, size.quantity)
 
-            const price = size.discount
-                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : size.price
+            const priceObj = size.discount
+                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : new Prisma.Decimal(size.price.toString())
 
             // Calculate shipping details
             const countryCookie = getCookie('userCountry', { cookies })
@@ -207,7 +208,9 @@ export const saveUserCart = async (
                 shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price.mul(validQuantity).add(shippingFee)
+            const validQuantityObj = new Prisma.Decimal(validQuantity.toString());
+            const shippingFeeObj = new Prisma.Decimal(shippingFee.toString());
+            const totalPrice = priceObj.mul(validQuantityObj).add(shippingFeeObj)
 
             return {
                 productId,
@@ -221,7 +224,7 @@ export const saveUserCart = async (
                 image: variant.images[0].url,
                 size: size.size,
                 quantity: validQuantity,
-                price,
+                price: priceObj,
                 shippingFee,
                 totalPrice,
             }
@@ -230,7 +233,7 @@ export const saveUserCart = async (
 
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        (acc, item) => acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)),
         new Prisma.Decimal("0")
     )
 
@@ -487,9 +490,9 @@ export const placeOrder = async (
             // Validate stock and price
             const validQuantity = Math.min(quantity, size.quantity)
 
-            const price = size.discount
-                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : size.price
+            const priceObj = size.discount
+                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : new Prisma.Decimal(size.price.toString())
 
             // Calculate shipping details
             const countryId = shippingAddress.countryId
@@ -545,7 +548,9 @@ export const placeOrder = async (
                 shippingFee = new Prisma.Decimal(details.shippingFee)
             }
 
-            const totalPrice = price.mul(validQuantity).add(shippingFee)
+            const validQuantityObj = new Prisma.Decimal(validQuantity.toString());
+            const shippingFeeObj = new Prisma.Decimal(shippingFee.toString());
+            const totalPrice = priceObj.mul(validQuantityObj).add(shippingFeeObj)
 
             return {
                 productId,
@@ -559,7 +564,7 @@ export const placeOrder = async (
                 image: variant.images[0].url,
                 size: size.size,
                 quantity: validQuantity,
-                price,
+                price: priceObj,
                 shippingFee,
                 totalPrice,
             }
@@ -822,9 +827,10 @@ export const updateCartWithLatest = async (
                 }
             }
 
+            const priceNumber = toNumberSafe(size.price);
             const price = size.discount
-                ? size.price.toNumber() - (size.price.toNumber() * size.discount) / 100
-                : size.price.toNumber()
+                ? priceNumber - (priceNumber * size.discount) / 100
+                : priceNumber
 
             const validated_qty = Math.min(quantity, size.quantity)
 
@@ -844,7 +850,7 @@ export const updateCartWithLatest = async (
                 shippingMethod: product.shippingFeeMethod,
                 size: size.size,
                 quantity: validated_qty,
-                price,
+                price: price,
                 shippingService: details.shippingService,
                 shippingFee: details.shippingFee,
                 extraShippingFee: details.extraShippingFee,
@@ -983,9 +989,9 @@ export const updateCheckoutProductWithLatest = async (
 
             const { shippingFeeMethod, freeShipping, store } = product
 
-            const price = size.discount
-                ? size.price.mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : size.price
+            const priceObj = size.discount
+                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
+                : new Prisma.Decimal(size.price.toString())
 
             const validated_qty = Math.min(quantity, size.quantity)
 
@@ -1004,7 +1010,7 @@ export const updateCheckoutProductWithLatest = async (
                 shippingFee = fee
             }
 
-            const totalPrice = price.mul(validated_qty).add(shippingFee)
+            const totalPrice = priceObj.mul(validated_qty).add(shippingFee)
 
             try {
                 const newCartItem = await db.cartItem.update({
@@ -1014,7 +1020,7 @@ export const updateCheckoutProductWithLatest = async (
                     data: {
                         name: `${product.name} ・ ${variant.variantName}`,
                         image: variant.images[0].url,
-                        price,
+                        price: priceObj,
                         quantity: validated_qty,
                         shippingFee,
                         totalPrice,
@@ -1054,7 +1060,7 @@ export const updateCheckoutProductWithLatest = async (
     })
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc.add(item.price.mul(item.quantity)),
+        (acc, item) => acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)),
         new Prisma.Decimal("0")
     )
     const shippingFees = validatedCartItems.reduce(
@@ -1080,7 +1086,7 @@ export const updateCheckoutProductWithLatest = async (
                 // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
-                        acc.add(item.price.mul(item.quantity)).add(item.shippingFee),
+                        acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)).add(item.shippingFee),
                     new Prisma.Decimal("0")
                 );
                 // Apply coupon discount to the store's subTotal

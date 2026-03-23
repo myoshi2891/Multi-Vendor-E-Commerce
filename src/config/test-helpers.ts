@@ -5,6 +5,26 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { TEST_CONFIG } from "./test-config";
+import type { Page } from "@playwright/test";
+
+/**
+ * Setup E2E test state (viewport, local storage, cookies) for a page
+ */
+export type E2ESeedPayload = {
+    country: { code: string; name: string; [key: string]: unknown };
+    [key: string]: unknown;
+};
+
+export const setupE2ETestState = async (page: Page, seed: E2ESeedPayload) => {
+    await page.addInitScript(() => localStorage.clear());
+    await page.context().addCookies([
+        {
+            name: "userCountry",
+            value: JSON.stringify(seed.country),
+            url: TEST_CONFIG.E2E_BASE_URL,
+        },
+    ]);
+};
 
 // Clerkユーザーモック生成
 export const mockClerkUser = (

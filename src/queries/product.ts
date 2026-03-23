@@ -1,6 +1,7 @@
 "use server";
-// DB
+
 import { db } from "@/lib/db";
+import { toNumberSafe } from "@/lib/utils";
 // Types
 import {
     Country,
@@ -32,7 +33,6 @@ const generateUniqueSlug = async (
     const maxAttempts = 100;
 
     for (let attempts = 0; attempts < maxAttempts; attempts++) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const existingRecord = await (db as Record<string, any>)[
             model
         ].findFirst({
@@ -56,7 +56,7 @@ import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
-import { Prisma, ProductVariant, Size, Store } from "@prisma/client";
+import { Prisma, ProductVariant, ShippingFeeMethod, Size, Store } from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -609,8 +609,9 @@ export const getProducts = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Default values for page and pageSize
-    const currentPage = page;
+    try {
+        // Default values for page and pageSize
+        const currentPage = page;
     const limit = pageSize;
     const skip = (currentPage - 1) * limit;
 
@@ -775,33 +776,39 @@ export const getProducts = async (
             orderBy = { views: "desc" };
     }
 
-    // Get all filtered, sorted products
-    const products = await db.product.findMany({
-        where: whereClause,
-        orderBy,
-        take: limit, // Limit to page size
-        skip: skip, // Skip the products of previous pages
-        include: {
-            variants: {
-                include: {
-                    sizes: true,
-                    images: true,
-                    colors: true,
+    // Get all filtered, sorted products and total count in parallel
+    const [products, totalCount] = await Promise.all([
+        db.product.findMany({
+            where: whereClause,
+            orderBy,
+            take: limit, // Limit to page size
+            skip: skip, // Skip the products of previous pages
+            include: {
+                variants: {
+                    include: {
+                        sizes: true,
+                        images: true,
+                        colors: true,
+                    },
                 },
             },
-        },
-    });
+        }),
+        db.product.count({
+            where: whereClause,
+        }),
+    ]);
 
     type VariantWithSizes = ProductVariant & { sizes: Size[] };
+    type ProductWithVariants = typeof products[number];
     // Product price sorting
     products.sort((a, b) => {
         // Helper function to get the minimum price from a product's variants
-        const getMinPrice = (product: any) =>
+        const getMinPrice = (product: ProductWithVariants) =>
             Math.min(
                 ...product.variants.flatMap((variant: VariantWithSizes) =>
                     variant.sizes.map((size) => {
                         let discount = size.discount;
-                        let discountedPrice = size.price.toNumber() * (1 - discount / 100);
+                        let discountedPrice = toNumberSafe(size.price) * (1 - discount / 100);
                         return discountedPrice;
                     })
                 ),
@@ -835,7 +842,10 @@ export const getProducts = async (
                 variantSlug: variant.slug,
                 variantName: variant.variantName,
                 images: variant.images,
-                sizes: variant.sizes,
+                sizes: variant.sizes.map((s) => ({
+                    ...s,
+                    price: toNumberSafe(s.price),
+                })),
             })
         );
 
@@ -861,12 +871,6 @@ export const getProducts = async (
         };
     });
 
-    // Retrieve products matching the filters
-    // const totalCount = await db.product.count({
-    // 	where: whereClause,
-    // });
-    const totalCount = products.length;
-
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -878,6 +882,14 @@ export const getProducts = async (
         pageSize,
         totalCount,
     };
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[product:getProducts]", error.message, { stack: error.stack });
+        } else {
+            console.error("[product:getProducts]", error);
+        }
+        throw error;
+    }
 };
 
 // Function: getProductPageData
@@ -1002,7 +1014,10 @@ export const retrieveProductDetails = async (
             variantImage: variant.variantImage,
             variantUrl: `/product/${productSlug}/${variant.slug}`,
             images: variant.images,
-            sizes: variant.sizes,
+            sizes: variant.sizes.map((s) => ({
+                ...s,
+                price: toNumberSafe(s.price),
+            })),
             colors: variant.colors,
         })),
     };
@@ -1073,7 +1088,10 @@ const formatProductResponse = (
             isUserFollowingStore,
         },
         colors,
-        sizes,
+        sizes: sizes.map((s) => ({
+            ...s,
+            price: toNumberSafe(s.price),
+        })),
         specs: {
             product: product.specs,
             variant: variant.specs,
@@ -1179,7 +1197,7 @@ export const getRatingStatistics = async (productId: string) => {
 // - store: store details
 // Returns: The calculated shipping details.
 export const getShippingDetails = async (
-    shippingFeeMethod: string,
+    shippingFeeMethod: ShippingFeeMethod,
     userCountry: { name: string; code: string; city: string },
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null
@@ -1427,7 +1445,7 @@ export const getDeliveryDetailsForStoreByCountry = async (
  * @returns Calculated total shipping fee for product.
  */
 export const getProductShippingFee = async (
-    shippingFeeMethod: string,
+    shippingFeeMethod: ShippingFeeMethod,
     userCountry: Country,
     store: Store,
     freeShipping: FreeShippingWithCountriesType | null,
@@ -1506,6 +1524,34 @@ export const getProductShippingFee = async (
     }
 };
 
+export interface VariantType {
+    variantId: string;
+    variantName: string;
+    variantSlug: string;
+    images: { url: string }[];
+    sizes: {
+        id: string;
+        size: string;
+        quantity: number;
+        price: number;
+        discount: number;
+        productVariantId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }[];
+}
+
+export interface OrderedProductType {
+    id: string;
+    slug: string;
+    name: string;
+    rating: number;
+    sales: number;
+    numReviews: number;
+    variants: VariantType[];
+    variantImages: VariantImageType[];
+}
+
 /**
  * @function getProductsByIds
  * @description Retrieves product details based on an array of product ids.
@@ -1518,10 +1564,16 @@ export const getProductsByIds = async (
     ids: string[],
     page: number = 1,
     pageSize: number = 10
-): Promise<{ products: any; totalPages: number }> => {
+): Promise<{ products: OrderedProductType[]; totalPages: number }> => {
+    const MAX_IDS = 1000;
     // Check if ids array is empty
     if (!ids || ids.length === 0) {
         throw new Error("Ids are undefined");
+    }
+
+    if (ids.length > MAX_IDS) {
+        console.warn(`Too many product IDs requested (${ids.length}). Truncating to maximum allowed (${MAX_IDS}).`);
+        ids = ids.slice(0, MAX_IDS);
     }
 
     // Default values for page and pageSize
@@ -1553,26 +1605,29 @@ export const getProductsByIds = async (
                         slug: true,
                         rating: true,
                         sales: true,
+                        numReviews: true,
                     },
                 },
             },
-            take: limit,
-            skip: skip,
         });
 
-        const new_products = variants.map((variant) => ({
+        const new_products: OrderedProductType[] = variants.map((variant) => ({
             id: variant.product.id,
             slug: variant.product.slug,
             name: variant.product.name,
             rating: variant.product.rating,
             sales: variant.product.sales,
+            numReviews: variant.product.numReviews,
             variants: [
                 {
                     variantId: variant.id,
                     variantName: variant.variantName,
                     variantSlug: variant.slug,
                     images: variant.images,
-                    sizes: variant.sizes,
+                    sizes: variant.sizes.map((size) => ({
+                        ...size,
+                        price: toNumberSafe(size.price),
+                    })),
                 },
             ],
             variantImages: [],
@@ -1585,19 +1640,15 @@ export const getProductsByIds = async (
                     (product) => product.variants[0].variantId === id
                 )
             )
-            .filter(Boolean); // Filter out undefined values
+            .filter((p): p is OrderedProductType => Boolean(p));
 
-        const allProducts = await db.productVariant.count({
-            where: {
-                id: {
-                    in: ids,
-                },
-            },
-        });
+        const paginated_products = ordered_products.slice(skip, skip + limit);
+
+        const allProducts = ordered_products.length;
         const totalPages = Math.ceil(allProducts / pageSize);
 
         return {
-            products: ordered_products,
+            products: paginated_products,
             totalPages,
         };
     } catch (error: unknown) {

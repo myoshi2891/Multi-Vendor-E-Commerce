@@ -107,6 +107,7 @@
 		"zustand": "^5.0.0"
 	},
 	"devDependencies": {
+		"@clerk/testing": "^2.0.5",
 		"@playwright/test": "^1.57.0",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.2",
@@ -119,6 +120,7 @@
 		"eslint-plugin-tailwindcss": "^3.18.0",
 		"jest": "^30.0.5",
 		"jest-environment-jsdom": "^30.3.0",
+		"msw": "^2.12.13",
 		"postcss": "^8",
 		"prettier": "^3.5.3",
 		"prettier-plugin-tailwindcss": "^0.6.12",

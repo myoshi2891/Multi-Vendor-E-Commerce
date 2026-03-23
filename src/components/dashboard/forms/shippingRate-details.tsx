@@ -12,7 +12,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ShippingRateFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
     Card,
     CardContent,
@@ -145,9 +144,8 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
     };
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
+        <Card className="w-full">
+            <CardHeader>
                     <CardTitle>Shipping Rate</CardTitle>
                     <CardDescription>
                         Update Shipping rate information for {data?.countryName}
@@ -372,7 +370,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
     );
 };
 

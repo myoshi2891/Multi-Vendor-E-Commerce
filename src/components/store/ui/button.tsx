@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-    'group/button relative w-full flex items-center justify-center gap-x-1 text-white rounded-3xl leading-6 font-bold whitespace-nowrap border border-orange-border cursor-pointer transition-all duration-300 ease-bezier-1 select-none',
+    'group/button relative flex w-full cursor-pointer select-none items-center justify-center gap-x-1 whitespace-nowrap rounded-3xl border border-orange-border font-bold leading-6 text-white transition-all duration-300 ease-bezier-1',
     {
         variants: {
             variant: {
@@ -13,10 +13,10 @@ const buttonVariants = cva(
                 black: 'bg-black',
                 pink: 'bg-[#ffe6e7] text-orange-background hover:bg-[#e4cdce] hover:text-white',
                 outline:
-                    'bg-transparent hover:bg-orange-background hover:text-white text-orange-background rounded-md border-orange-background px-2 !h-7 text-sm font-normal',
+                    '!h-7 rounded-md border-orange-background bg-transparent px-2 text-sm font-normal text-orange-background hover:bg-orange-background hover:text-white',
                 'orange-gradient':
-                    'bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
-                gray: 'bg-[#f5f5f5] text-[#222] border-[#f5f5f5] inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+                    'inline-block h-[36px] rounded-full bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] text-center text-[14px] font-bold leading-[36px] text-white hover:bg-gradient-to-l',
+                gray: 'inline-block h-[36px] rounded-full border-[#f5f5f5] bg-[#f5f5f5] text-center text-[14px] font-bold leading-[36px] text-[#222]',
             },
             size: {
                 default: 'h-11 py-2',

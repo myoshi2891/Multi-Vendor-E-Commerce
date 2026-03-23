@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { SubCategoryFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
 import {
 	Card,
 	CardContent,
@@ -122,21 +121,21 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 			} else {
 				router.push("/dashboard/admin/subCategories");
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			console.log(error);
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+			console.error(error);
 			toast({
 				variant: "destructive",
 				title: "Oops!",
-				description: error.toString(),
+				description: message,
 			});
 		}
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>SubCategory Information</CardTitle>
 					<CardDescription>
 						{data?.id
@@ -289,7 +288,6 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

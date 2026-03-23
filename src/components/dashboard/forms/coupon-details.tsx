@@ -15,7 +15,6 @@ import * as z from 'zod'
 import { CouponFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import {
     Card,
     CardContent,
@@ -118,29 +117,33 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
             } else {
                 router.push(`/dashboard/seller/stores/${storeUrl}/coupons`)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handling form submission errors
-            console.log(error)
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            if (error instanceof Error) {
+                console.error("Error submitting coupon form:", error.message, error.stack);
+            } else {
+                console.error("Error submitting coupon form:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
-                description: error.toString(),
+                description: message,
             })
         }
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
-                    <CardTitle>Coupon Information</CardTitle>
-                    <CardDescription>
-                        {data?.id
-                            ? `Update ${data?.code} Coupon information.`
-                            : ' Lets create a Coupon. You can edit Coupon later from the Coupons table or the Coupon page.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Coupon Information</CardTitle>
+                <CardDescription>
+                    {data?.id
+                        ? `Update ${data?.code} Coupon information.`
+                        : "Create a Coupon. You can edit it later from the Coupons table or the Coupon page."}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}
@@ -255,7 +258,6 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
     )
 }
 

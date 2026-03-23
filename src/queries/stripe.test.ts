@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import Stripe from "stripe";
 import { createStripePaymentIntent, createStripePayment } from "./stripe";
 import { TEST_CONFIG } from "../config/test-config";
 import { createMockOrder, createMockPaymentDetails } from "../config/test-fixtures";
@@ -20,21 +21,15 @@ jest.mock("@/lib/db", () => ({
     },
 }));
 
-// Stripeモック — factory内で定義しTDZ問題を回避
+// Stripeモック
+const mockStripePaymentIntentsCreate = jest.fn();
 jest.mock("stripe", () => {
-    const mockCreate = jest.fn();
-    const MockStripe = jest.fn().mockImplementation(() => ({
+    return jest.fn().mockImplementation(() => ({
         paymentIntents: {
-            create: mockCreate,
+            create: (...args: Parameters<Stripe['paymentIntents']['create']>) => mockStripePaymentIntentsCreate(...args),
         },
     }));
-    (MockStripe as Record<string, unknown>).__mockCreate = mockCreate;
-    return MockStripe;
 });
-
-const mockStripePaymentIntentsCreate = (
-    require("stripe") as Record<string, unknown>
-).__mockCreate as jest.Mock;
 
 const mockDb = require("@/lib/db").db;
 

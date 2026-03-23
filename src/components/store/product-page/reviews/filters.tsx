@@ -17,7 +17,7 @@ const ReviewFilters: FC<Props> = ({ filters, setFilters, stats, setSort }) => {
 	const { rating, hasImages } = filters;
 	const { ratingStatistics, reviewsWithImagesCount, totalReviews } = stats;
 	return (
-		<div className="mt-8 relative overflow-hidden">
+		<div className="relative mt-8 overflow-hidden">
 			<div className="flex flex-wrap gap-4">
 				{/* All */}
 				<div

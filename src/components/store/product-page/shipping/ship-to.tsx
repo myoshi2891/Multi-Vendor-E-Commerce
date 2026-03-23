@@ -9,14 +9,14 @@ interface Props {
 
 const ShipTo: FC<Props> = ({ countryName, countryCode, city }) => {
 	return (
-		<div className="flex justify-between h-7">
-			<div className="flex items-center font-bold mr-2 whitespace-nowrap">
+		<div className="flex h-7 justify-between">
+			<div className="mr-2 flex items-center whitespace-nowrap font-bold">
 				<span>Ship to</span>
 			</div>
 			<div className="flex items-center overflow-hidden">
-				<MapPin className="w-4 mb-1 stroke-main-primary" />
-				<span className="text-main-secondary text-sm cursor-pointer max-w-[200px] overflow-hidden pl-0.5 text-ellipsis whitespace-nowrap">
-					{countryName}, {city},{countryCode}
+				<MapPin className="mb-1 w-4 stroke-main-primary" />
+				<span className="max-w-[200px] cursor-pointer truncate pl-0.5 text-sm text-main-secondary">
+					{[countryName, city, countryCode].filter(Boolean).join(", ")}
 				</span>
 			</div>
 		</div>

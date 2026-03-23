@@ -16,7 +16,6 @@ import * as z from 'zod'
 import { StoreFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import {
     Card,
     CardContent,
@@ -125,29 +124,33 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
             } else {
                 router.push(`/dashboard/seller/stores/${response.url}`)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handling form submission errors
-            console.log(error)
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            if (error instanceof Error) {
+                console.error("StoreDetails form submit error:", error.message, error.stack);
+            } else {
+                console.error("StoreDetails form submit error:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
-                description: error.toString(),
+                description: message,
             })
         }
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
-                    <CardTitle>Store Information</CardTitle>
-                    <CardDescription>
-                        {data?.id
-                            ? `Update ${data?.name} store information.`
-                            : " Lets create a store. You can edit store later from the store settings page."}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Store Information</CardTitle>
+                <CardDescription>
+                    {data?.id
+                        ? `Update ${data?.name} store information.`
+                        : "Let's create a store. You can edit store later from the store settings page."}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}
@@ -347,7 +350,6 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
-    );
+        )
 }
 export default StoreDetails

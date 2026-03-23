@@ -112,6 +112,7 @@ export default function ReviewDetails({
             if (sizes) setSizes(sizes_data)
             form.setValue('color', variant.colors.join(','))
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.getValues().variantName])
     return (
         <div>

@@ -1,6 +1,6 @@
 'use client'
-import { CartProductType, ProductPageDataType } from '@/lib/types'
-import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
+import { CartProductType, ProductPageDataType, ProductShippingDetailsType } from '@/lib/types'
+import { FC, ReactNode, useEffect, useMemo, useState, useCallback } from 'react'
 import ProductSwiper from './product-swiper'
 import ProductInfo from './product-info/product-info'
 import ShipTo from './shipping/ship-to'
@@ -9,20 +9,41 @@ import ReturnsSecurityPrivacyCard from './returns-security-privacy-card'
 import { cn, isProductValidToAdd, updateProductHistory } from "@/lib/utils";
 import QuantitySelector from "./quantity-selector";
 import SocialShare from "../shared/social-share";
-import { ProductVariantImage } from "@prisma/client";
+import { ProductVariantImage, ShippingFeeMethod } from "@prisma/client";
 import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
 import { setCookie } from "cookies-next";
+
+type OptionsType = NonNullable<Parameters<typeof setCookie>[2]>;
 
 interface Props {
     productData: ProductPageDataType;
     sizeId: string | undefined;
     children: ReactNode;
 }
-const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
-    // If there is no product data available, render nothing (null)
-    if (!productData) return null;
+
+interface InnerProps {
+    productData: NonNullable<ProductPageDataType>;
+    sizeId: string | undefined;
+    children: ReactNode;
+}
+
+const DEFAULT_SHIPPING_DETAILS: ProductShippingDetailsType = {
+    shippingFeeMethod: ShippingFeeMethod.FIXED,
+    shippingService: "",
+    shippingFee: 0,
+    extraShippingFee: 0,
+    deliveryTimeMin: 0,
+    deliveryTimeMax: 0,
+    isFreeShipping: false,
+    returnPolicy: "",
+    countryCode: "",
+    countryName: "",
+    city: ""
+};
+
+const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, children }) => {
     const {
         productId,
         variantId,
@@ -32,10 +53,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         sizes,
     } = productData;
 
-    if (typeof shippingDetails === "boolean") return null;
-    if (!productData || typeof productData.shippingDetails === "boolean")
-        return null;
-
     // State for temporary product images
     const [variantImages, setVariantImages] =
         useState<ProductVariantImage[]>(images);
@@ -44,6 +61,9 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     const [activeImage, setActiveImage] = useState<ProductVariantImage | null>(
         images[0]
     );
+
+    const hasShippingDetails = shippingDetails !== false;
+    const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as Exclude<ProductShippingDetailsType, false>) : DEFAULT_SHIPPING_DETAILS;
 
     // Initialize the default product data for the cart item
     const data: CartProductType = {
@@ -61,13 +81,13 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         price: 0,
         stock: 1,
         weight: productData.weight,
-        shippingMethod: shippingDetails.shippingFeeMethod,
-        shippingService: shippingDetails.shippingService,
-        shippingFee: shippingDetails.shippingFee,
-        extraShippingFee: shippingDetails.extraShippingFee,
-        deliveryTimeMin: shippingDetails.deliveryTimeMin,
-        deliveryTimeMax: shippingDetails.deliveryTimeMax,
-        isFreeShipping: shippingDetails.isFreeShipping,
+        shippingMethod: normalizedShippingDetails.shippingFeeMethod,
+        shippingService: normalizedShippingDetails.shippingService,
+        shippingFee: normalizedShippingDetails.shippingFee,
+        extraShippingFee: normalizedShippingDetails.extraShippingFee,
+        deliveryTimeMin: normalizedShippingDetails.deliveryTimeMin,
+        deliveryTimeMax: normalizedShippingDetails.deliveryTimeMax,
+        isFreeShipping: normalizedShippingDetails.isFreeShipping,
     };
     // useState hook to manage the product's state in the cart
     const [productToBeAddedToCart, setProductToBeAddedToCart] =
@@ -79,12 +99,15 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
     // Function to handle state changes for the product properties
-    const handleChange = (property: keyof CartProductType, value: any) => {
-        setProductToBeAddedToCart((prevProduct) => ({
-            ...prevProduct,
-            [property]: value,
-        }));
-    };
+    const handleChange = useCallback(<K extends keyof CartProductType>(property: K, value: CartProductType[K]) => {
+        setProductToBeAddedToCart((prevProduct) => {
+            if (prevProduct[property] === value) return prevProduct;
+            return {
+                ...prevProduct,
+                [property]: value,
+            };
+        });
+    }, []);
 
     useEffect(() => {
         const check = isProductValidToAdd(productToBeAddedToCart);
@@ -129,10 +152,13 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
         return () => {
             window.removeEventListener("storage", handleStorageChange);
         };
-    }, []);
+    }, [setCart]);
 
-    // Add product to history
-    updateProductHistory(variantId);
+    useEffect(() => {
+        if (variantId) {
+            updateProductHistory(variantId);
+        }
+    }, [variantId]);
 
     const handleAddToCart = () => {
         if (maxQty <= 0) return toast.error("Out of stock");
@@ -154,10 +180,13 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     }, [cartItems, productId, variantId, sizeId, stock]);
 
     // Set view cookie
-    setCookie(`viewedProduct_${productId}`, "true", {
-        maxAge: 3600,
-        path: "/",
-    });
+    useEffect(() => {
+        const cookieOptions: OptionsType & { maxAge?: number; path?: string } = {
+            maxAge: 3600,
+            path: "/",
+        };
+        setCookie(`viewedProduct_${productId}`, "true", cookieOptions);
+    }, [productId]);
 
     return (
         <div className="relative">
@@ -182,30 +211,22 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                         <div className="z-20">
                             <div className="overflow-hidden overflow-y-auto rounded-md border bg-white p-4 pb-0">
                                 {/* Ship to */}
-                                {typeof shippingDetails !== "boolean" && (
+                                {hasShippingDetails && (
                                     <>
                                         <ShipTo
-                                            countryCode={
-                                                shippingDetails.countryCode
-                                            }
-                                            countryName={
-                                                shippingDetails.countryName
-                                            }
-                                            city={shippingDetails.city}
+                                            countryCode={normalizedShippingDetails.countryCode}
+                                            countryName={normalizedShippingDetails.countryName}
+                                            city={normalizedShippingDetails.city}
                                         />
                                         <div className="mt-3 space-y-3">
                                             <ShippingDetails
-                                                shippingDetails={
-                                                    shippingDetails
-                                                }
-                                                quantity={1}
+                                                shippingDetails={normalizedShippingDetails}
+                                                quantity={productToBeAddedToCart.quantity}
                                                 weight={productData.weight}
                                             />
                                         </div>
                                         <ReturnsSecurityPrivacyCard
-                                            returnPolicy={
-                                                shippingDetails.returnPolicy
-                                            }
+                                            returnPolicy={normalizedShippingDetails.returnPolicy}
                                         />
                                     </>
                                 )}
@@ -231,7 +252,6 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
                                                     productToBeAddedToCart.stock
                                                 }
                                                 handleChange={handleChange}
-                                                sizes={sizes}
                                             />
                                         </div>
                                     )}
@@ -270,4 +290,9 @@ const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
     );
 };
 
-export default ProductPageContainer
+const ProductPageContainer: FC<Props> = ({ productData, sizeId, children }) => {
+    if (!productData) return null;
+    return <ProductPageContainerInner productData={productData} sizeId={sizeId}>{children}</ProductPageContainerInner>;
+};
+
+export default ProductPageContainer;

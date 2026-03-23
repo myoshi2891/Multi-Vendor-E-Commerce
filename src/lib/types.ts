@@ -160,7 +160,7 @@ export type VariantSimplified = {
     variantSlug: string;
     variantName: string;
     images: ProductVariantImage[];
-    sizes: Size[];
+    sizes: (Omit<Size, 'price'> & { price: number })[];
 };
 
 export type VariantImageType = {
@@ -239,7 +239,7 @@ export type VariantInfoType = {
     variantImage: string;
     variantUrl: string;
     images: ProductVariantImage[];
-    sizes: Size[];
+    sizes: (Omit<Size, 'price'> & { price: number })[];
     colors: Partial<Color>[];
 };
 
@@ -392,7 +392,7 @@ export type ProductSimpleVariantType = {
     variantName: string;
     variantImage: string;
     images: ProductVariantImage[];
-    sizes: Size[];
+    sizes: (Omit<Size, 'price'> & { price: number })[];
 };
 
 export type ProductWithVariants = {

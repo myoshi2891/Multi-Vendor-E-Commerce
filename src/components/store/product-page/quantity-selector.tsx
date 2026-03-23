@@ -1,7 +1,6 @@
 import { useCartStore } from '@/cart-store/useCartStore'
 import useFromStore from '@/hooks/useFromStore'
 import { CartProductType } from '@/lib/types'
-import { Size } from '@prisma/client'
 import { Minus, Plus } from 'lucide-react'
 import { FC, useEffect, useMemo } from 'react'
 
@@ -11,8 +10,7 @@ interface QuantitySelectorProps {
     sizeId: string | null
     quantity: number
     stock: number
-    handleChange: (property: keyof CartProductType, value: any) => void
-    sizes: Size[]
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void
 }
 
 const QuantitySelector: FC<QuantitySelectorProps> = ({
@@ -22,24 +20,14 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
     sizeId,
     quantity,
     stock,
-    sizes,
 }) => {
     // useEffect hook to handle changes when sizeId updates
     useEffect(() => {
         if (sizeId && quantity !== 1) {
             handleChange('quantity', 1)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sizeId])
-    // If no sizeId is provided, return null to prevent rendering the component
-    // if (!sizeId) return null
-    if (!sizeId) {
-        return (
-            <div className="w-full rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <div className="h-6 w-24 animate-pulse rounded bg-gray-200"></div>
-            </div>
-        )
-    }
-
     // Get cart product if it exist in cart, the get added quantity
     const cart = useFromStore(useCartStore, (state) => state.cart)
 
@@ -50,11 +38,21 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                 p.variantId === variantId &&
                 p.sizeId === sizeId
         )
-
-        return search_product
-            ? search_product.stock - search_product?.quantity
-            : stock
+        if (search_product) {
+            return stock - search_product.quantity
+        }
+        return stock
     }, [cart, productId, variantId, sizeId, stock])
+
+    // If no sizeId is provided, return null to prevent rendering the component
+    // if (!sizeId) return null
+    if (!sizeId) {
+        return (
+            <div className="w-full rounded-lg border border-gray-100 bg-white px-3 py-2">
+                <div className="h-6 w-24 animate-pulse rounded bg-gray-200"></div>
+            </div>
+        )
+    }
 
     // Function to handle increasing the quantity of the product
     const handleIncrease = () => {

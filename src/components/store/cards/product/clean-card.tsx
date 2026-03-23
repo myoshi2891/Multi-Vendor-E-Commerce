@@ -23,9 +23,9 @@ export default function ProductCardClean({
 
     const size = variant.sizes.reduce((lowest, current) => {
         const currentPriceAfterDiscount =
-            current.price.toNumber() * (1 - current.discount / 100);
+            current.price * (1 - current.discount / 100);
         const lowestPriceAfterDiscount =
-            lowest.price.toNumber() * (1 - lowest.discount / 100);
+            lowest.price * (1 - lowest.discount / 100);
 
         return currentPriceAfterDiscount < lowestPriceAfterDiscount
             ? current
@@ -43,7 +43,7 @@ export default function ProductCardClean({
                         height={300}
                         priority
                     />
-                    <div className="price">${size.price.toNumber().toFixed(2)}</div>
+                    <div className="price">${size.price.toFixed(2)}</div>
                 </div>
                 <div className="content">
                     <div className="brand line-clamp-1">

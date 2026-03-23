@@ -5,6 +5,8 @@ import { columns } from "./columns";
 import { Plus } from "lucide-react";
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { getAllCategories } from "@/queries/category";
+import { getAllOfferTags } from "@/queries/offer-tag";
+import { getAllCountries } from "@/queries/country";
 
 export default async function SellerProductPage({
 	params,
@@ -12,10 +14,12 @@ export default async function SellerProductPage({
 	params: { storeUrl: string };
 }) {
 	// Fetching products data from the database for the active store
-	const products = await getAllStoreProducts(params.storeUrl);
-
-	const categories = await getAllCategories();
-	// const offerTags = await getAllOfferTags();
+	const [products, categories, offerTags, countries] = await Promise.all([
+		getAllStoreProducts(params.storeUrl),
+		getAllCategories(),
+		getAllOfferTags(params.storeUrl),
+		getAllCountries(),
+	]);
 
 	return (
 		<DataTable
@@ -28,7 +32,8 @@ export default async function SellerProductPage({
 			modalChildren={
 				<ProductDetails
 					categories={categories}
-					// offerTags={}
+					offerTags={offerTags}
+					countries={countries}
 					storeUrl={params.storeUrl}
 				/>
 			}

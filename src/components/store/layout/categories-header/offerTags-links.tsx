@@ -10,14 +10,19 @@ export default function OfferTagsLinks({
     offerTags: OfferTag[]
     open: boolean
 }) {
-    const useBreakpoints = () => {
-        const splitPoint = breakpoints.reduce((acc, bp) => {
-            const matches = useMediaQuery({ query: bp.query })
-            return matches ? bp.value : acc
-        }, 1)
-        return splitPoint
-    }
-    const splitPoint = useBreakpoints()
+    const isPhoneScreen = useMediaQuery({ query: '(max-width: 640px)' })
+    const isSmallScreen = useMediaQuery({ query: '(min-width: 640px)' })
+    const isMediumScreen = useMediaQuery({ query: '(min-width: 768px)' })
+    const isLargeScreen = useMediaQuery({ query: '(min-width: 1024px)' })
+    const is2XLargeScreen = useMediaQuery({ query: '(min-width: 1536px)' })
+
+    let splitPoint = 1
+    if (is2XLargeScreen) splitPoint = 7
+    else if (isLargeScreen) splitPoint = 6
+    else if (isMediumScreen) splitPoint = 4
+    else if (isSmallScreen) splitPoint = 3
+    else if (isPhoneScreen) splitPoint = 2
+
     return (
         <div className="relative w-fit">
             <div
@@ -46,12 +51,3 @@ export default function OfferTagsLinks({
         </div>
     )
 }
-
-const breakpoints = [
-    { name: 'isPhoneScreen', query: '(max-width: 640px)', value: 2 }, // mobile devices
-    { name: 'isSmallScreen', query: '(min-width: 640px)', value: 3 }, // sm
-    { name: 'isMediumScreen', query: '(min-width: 768px)', value: 4 }, // md
-    { name: 'isLargeScreen', query: '(min-width: 1024px)', value: 6 }, // lg
-    // { name: "isExtraLargeScreen", query: "(min-width: 1280px)", value: 8 }, // xl
-    { name: 'is2XLargeScreen', query: '(min-width: 1536px)', value: 7 }, // 2xl
-]

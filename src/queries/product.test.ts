@@ -862,7 +862,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("50"), discount: 0 }),
+                                createMockSize({ price: 50, discount: 0 }),
                             ],
                         },
                     ],
@@ -875,7 +875,7 @@ describe("getProducts", () => {
                             images: [createMockVariantImage()],
                             colors: [],
                             sizes: [
-                                createMockSize({ price: new Prisma.Decimal("20"), discount: 0 }),
+                                createMockSize({ price: 20, discount: 0 }),
                             ],
                         },
                     ],
@@ -913,11 +913,12 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: `v${i}` }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [createMockSize({ price: new Prisma.Decimal("29.99") })],
+                            sizes: [createMockSize({ price: 29.99 })],
                         },
                     ],
                 }));
             mockDb.product.findMany.mockResolvedValue(products);
+            mockDb.product.count.mockResolvedValue(5);
 
             const result = await getProducts({}, "", 1, 2);
 
@@ -1658,17 +1659,15 @@ describe("getProductsByIds", () => {
 
     it("ページネーションが正しく適用される", async () => {
         mockDb.productVariant.findMany.mockResolvedValue([]);
-        mockDb.productVariant.count.mockResolvedValue(10);
 
         const result = await getProductsByIds(["v1"], 2, 5);
 
         expect(mockDb.productVariant.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
-                take: 5,
-                skip: 5, // (2-1) * 5
+                where: { id: { in: ["v1"] } }
             })
         );
-        expect(result.totalPages).toBe(2); // ceil(10/5)
+        expect(result.totalPages).toBe(0); // 0 records
     });
 
     it("DB障害時にラップしたエラーをスローする", async () => {

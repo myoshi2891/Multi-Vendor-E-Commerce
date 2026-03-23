@@ -1,15 +1,14 @@
 "use client";
 import { CartProductType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import type { Prisma } from "@prisma/client";
-import { redirect, usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FC, useEffect } from "react";
 
 interface SimplifiedSize {
     id: string;
     size: string;
     quantity: number;
-    price: Prisma.Decimal;
+    price: number;
     discount: number;
 }
 
@@ -17,10 +16,24 @@ interface Props {
     sizeId?: string | undefined;
     sizes: SimplifiedSize[];
     isCard?: boolean;
-    handleChange: (property: keyof CartProductType, value: any) => void;
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 }
 
 const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
+    // Determine selected size and price unconditionally for the hook
+    const selectedSize = (sizes || []).find((size) => size.id === sizeId);
+    const discountedPriceForHook = selectedSize 
+        ? selectedSize.price * (1 - selectedSize.discount / 100) 
+        : 0;
+
+    // Update product to be added to cart with price and stock quantity
+    useEffect(() => {
+        if (sizeId && selectedSize) {
+            handleChange("price", discountedPriceForHook);
+            handleChange("stock", selectedSize.quantity);
+        }
+    }, [sizeId, selectedSize, discountedPriceForHook, handleChange]);
+
     // Check if the sizes array is either undefined or empty
     if (!sizes || sizes.length === 0) {
         // If no sizes are available, simply return from the function, performing no further
@@ -31,7 +44,7 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
     if (!sizeId) {
         // Calculate discounted prices for all sizes
         const discountedPrices = sizes.map(
-            (size) => size.price.toNumber() * (1 - size.discount / 100)
+            (size) => size.price * (1 - size.discount / 100)
         );
 
         const totalQuantity = sizes.reduce(
@@ -82,7 +95,6 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
     }
 
     // Scenario 2: SizeId passed, find the specific size and return its details
-    const selectedSize = sizes.find((size) => size.id === sizeId);
 
     if (!selectedSize) {
         return <></>;
@@ -90,12 +102,8 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
 
     // Calculate the price after the discount
     const discountedPrice =
-        selectedSize.price.toNumber() * (1 - selectedSize.discount / 100);
-    // Update product to be added to cart with price and stock quantity
-    useEffect(() => {
-        handleChange("price", discountedPrice);
-        handleChange("stock", selectedSize.quantity);
-    }, [sizeId]);
+        selectedSize.price * (1 - selectedSize.discount / 100);
+
     return (
         <div>
             <div className="mr-2.5 inline-block font-bold leading-none text-orange-primary">
@@ -106,9 +114,9 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                     ${discountedPrice.toFixed(2)}
                 </span>
             </div>
-            {selectedSize.price.toNumber() !== discountedPrice && (
+            {selectedSize.price !== discountedPrice && (
                 <span className="mr-2 inline-block text-xl font-normal leading-6 text-[#999] line-through">
-                    ${selectedSize.price.toNumber().toFixed(2)}
+                    ${selectedSize.price.toFixed(2)}
                 </span>
             )}
             {selectedSize.discount > 0 && (

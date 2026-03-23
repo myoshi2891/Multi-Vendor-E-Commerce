@@ -92,6 +92,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({
             })
             handleCountryChange(data?.country.name)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, form])
 
     // Submit handler for form submission

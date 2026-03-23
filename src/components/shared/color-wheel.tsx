@@ -15,7 +15,7 @@ const ColorWheel: React.FC<ColorWheelProps> = ({ colors, size }) => {
 			width={size}
 			height={size}
 			viewBox={`0 0 ${size} ${size}`}
-			className="shadow-sm rounded-full"
+			className="rounded-full shadow-sm"
 		>
 			{colors.map((color, index) => {
 				const startAngle = index * sliceAngle;

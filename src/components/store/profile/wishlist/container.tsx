@@ -21,6 +21,7 @@ export default function WishlistContainer({
         if (currentPage !== page) {
             router.push(`/profile/wishlist/${currentPage}`)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, currentPage]);
     return <div>
         <div className="flex flex-wrap pb-16">

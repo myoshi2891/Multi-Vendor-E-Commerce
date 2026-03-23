@@ -25,6 +25,7 @@ const FollowingContainer: FC<Props> = ({stores, page, totalPages}) => {
             if (currentPage !== page) {
                 router.push(`/profile/following/${currentPage}`);
             }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [page, currentPage]);
 
     return (

@@ -1,9 +1,10 @@
 import { Check } from "lucide-react";
-import { Span } from "next/dist/trace";
 import { FC } from "react";
+import { computeShippingTotal } from "@/lib/shipping-utils";
+import { ShippingFeeMethod } from "@prisma/client";
 
 interface Props {
-	method: string;
+	method: ShippingFeeMethod;
 	fee: number;
 	extraFee: number;
 	weight: number;
@@ -17,13 +18,14 @@ const ProductShippingFee: FC<Props> = ({
 	weight,
 	quantity,
 }) => {
+	const total = computeShippingTotal(method, fee, extraFee, weight, quantity);
 	switch (method) {
 		case "ITEM":
 			return (
 				<div className="w-full pb-1">
 					{/* Notes */}
 					<div className="w-full">
-						<span className="text-xs flex gap-x-1">
+						<span className="flex gap-x-1 text-xs">
 							<Check className="min-w-3 max-w-3 stroke-green-400" />
 							<span className="mt-1">
 								This store calculates the delivery fee based on
@@ -31,84 +33,84 @@ const ProductShippingFee: FC<Props> = ({
 							</span>
 						</span>
 						{fee !== extraFee && (
-							<span className="text-xs flex gap-x-1">
+							<span className="flex gap-x-1 text-xs">
 								<Check className="min-w-3 max-w-3 stroke-green-400" />
 								<span className="mt-1">
-									If you purchase multiple items, you'll
+									If you purchase multiple items, you&apos;ll
 									receive a discounted delivery fee.
 								</span>
 							</span>
 						)}
 					</div>
-					<table className="w-full mt-1.5">
+					<table className="mt-1.5 w-full">
 						<thead className="w-full">
-							{fee === extraFee || extraFee === 0 ? (
+							{fee === extraFee ? (
 								<tr
-									className="grid gap-x-1 text-xs px-4"
+									className="grid gap-x-1 px-4 text-xs"
 									style={{ gridTemplateColumns: "4fr 1fr" }}
 								>
-									<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+									<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 										Fee per item
-									</td>
-									<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+									</th>
+									<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 										${fee}
-									</td>
+									</th>
 								</tr>
 							) : (
 								<>
 									<tr
-										className="grid gap-x-1 text-xs px-4"
+										className="grid gap-x-1 px-4 text-xs"
 										style={{
 											gridTemplateColumns: "4fr 1fr",
 										}}
 									>
-										<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											Fee for First Item
-										</td>
-										<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+										</th>
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											${fee}
-										</td>
+										</th>
 									</tr>
 									<tr
-										className="grid gap-x-1 text-xs px-4 mt-1"
+										className="mt-1 grid gap-x-1 px-4 text-xs"
 										style={{
 											gridTemplateColumns: "4fr 1fr",
 										}}
 									>
-										<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											Fee for Each Additional Item
-										</td>
-										<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+										</th>
+										<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 											${extraFee}
-										</td>
+										</th>
 									</tr>
 								</>
 							)}
 						</thead>
 						<tbody>
 							<tr
-								className="grid gap-x-1 text-xs px-4 mt-1"
+								className="mt-1 grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									Quantity
 								</td>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									x{quantity}
 								</td>
 							</tr>
-							<tr className="flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold">
-								<td className="w-full bg-black text-white px-1 py-1">
+							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									{quantity === 1 || fee === extraFee ? (
 										<span>
 											${fee} (fee) x {quantity} (items) =
-											${fee * quantity}
+											${total}
 										</span>
 									) : (
 										<span>
 											${fee} (first item) + {quantity - 1}{" "}
 											(additional items) x ${extraFee} = $
-											{fee + (quantity - 1) * extraFee}
+											{total}
 										</span>
 									)}
 								</td>
@@ -117,52 +119,51 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		case "WEIGHT":
 			return (
 				<div className="w-full pb-1">
 					{/* Notes */}
 					<div className="w-full">
-						<span className="text-xs flex gap-x-1">
+						<span className="flex gap-x-1 text-xs">
 							<Check className="min-w-3 max-w-3 stroke-green-400" />
 							<span className="mt-1">
-								This store calculates the delivery fee bases on
+								This store calculates the delivery fee based on
 								product weight
 							</span>
 						</span>
 					</div>
-					<table className="w-full mt-1.5">
+					<table className="mt-1.5 w-full">
 						<thead className="w-full">
 							<tr
-								className="grid gap-x-1 text-xs px-4"
+								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
-									Fee per kg (1kg = 2,205lbs)
-								</td>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
+									Fee per kg (1 kg = 2.205 lb)
+								</th>
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									${fee}
-								</td>
+								</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr
-								className="grid gap-x-1 text-xs px-4 mt-1"
+								className="mt-1 grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									Quantity
 								</td>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									x{quantity}
 								</td>
 							</tr>
-							<tr className="flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold">
-								<td className="w-full bg-black text-white px-1 py-1">
+							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									<span>
 										${fee} (fee) x {weight}kg (weight) x{" "}
 										{quantity} (items) = $
-										{fee * weight * quantity} (total fee)
+										{total} (total fee)
 									</span>
 								</td>
 							</tr>
@@ -170,13 +171,12 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		case "FIXED":
 			return (
 				<div className="w-full pb-1">
 					{/* Notes */}
 					<div className="w-full">
-						<span className="text-xs flex gap-x-1">
+						<span className="flex gap-x-1 text-xs">
 							<Check className="min-w-3 max-w-3 stroke-green-400" />
 							<span className="mt-1">
 								This store calculates the delivery fee on a
@@ -184,36 +184,36 @@ const ProductShippingFee: FC<Props> = ({
 							</span>
 						</span>
 					</div>
-					<table className="w-full mt-1.5">
+					<table className="mt-1.5 w-full">
 						<thead className="w-full">
 							<tr
-								className="grid gap-x-1 text-xs px-4"
+								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									Fee
-								</td>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								</th>
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
 									${fee}
-								</td>
+								</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr
-								className="grid gap-x-1 text-xs px-4 mt-1"
+								className="mt-1 grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									Quantity
 								</td>
-								<td className="w-full bg-gray-50 px-2 py-0.5 rounded-sm">
+								<td className="w-full rounded-sm bg-gray-50 px-2 py-0.5">
 									x{quantity}
 								</td>
 							</tr>
-							<tr className="flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold">
-								<td className="w-full bg-black text-white px-1 py-1">
+							<tr className="mt-1 flex gap-x-1 px-4 text-center text-xs font-semibold">
+								<td colSpan={2} className="w-full bg-black p-1 text-white">
 									<span>
-										${fee} (quantity doesn't affect shipping
+										${fee} (quantity doesn&apos;t affect shipping
 										fee.)
 									</span>
 								</td>
@@ -222,10 +222,8 @@ const ProductShippingFee: FC<Props> = ({
 					</table>
 				</div>
 			);
-			break;
 		default:
 			return null;
-			break;
 	}
 };
 

@@ -5,7 +5,7 @@ export default function RatingCard({ rating }: { rating: number }) {
 	const fixed_rating = Number(rating.toFixed(2));
     return (
 		<div className="h-44 flex-1">
-			<div className="p-6 bg-[#f5f5f5] flex flex-col h-full justify-center overflow-hidden rounded-lg">
+			<div className="flex h-full flex-col justify-center overflow-hidden rounded-lg bg-[#f5f5f5] p-6">
 				<div className="text-6xl font-bold">{rating}</div>
 				<div className="py-1.5">
 					<ReactStars
@@ -17,7 +17,7 @@ export default function RatingCard({ rating }: { rating: number }) {
 						color="#e2dfdf"
 					/>
 				</div>
-				<div className="text-[#03c97a] leading-5 mt-2">
+				<div className="mt-2 leading-5 text-[#03c97a]">
 					All from verified purchases
 				</div>
 			</div>

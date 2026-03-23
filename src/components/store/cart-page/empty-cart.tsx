@@ -15,7 +15,7 @@ export default function EmptyCart() {
                     className="size-64"
                     priority
                 />
-                <span className="my-3 py-4 font-bold">
+                <span className="my-3 py-4 font-bold" data-testid="cart-empty-message">
                     No items yet? Continue shopping and add items to your cart.
                 </span>
                 <Link href="/browse">

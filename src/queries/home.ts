@@ -56,7 +56,7 @@ export const getHomeDataDynamic = async (
 
     // Get Cheapest size
     const getCheapestSize = (
-        size: ProductSize[]
+        size: Array<{ price: { toNumber: () => number }; discount: number }>
     ): { discountedPrice: number } => {
         const sizesWithDiscount = size.map((size) => ({
             ...size,
@@ -96,7 +96,7 @@ export const getHomeDataDynamic = async (
                         variantName: variant.variantName,
                         variantImage: variant.variantImage,
                         images: variant.images,
-                        sizes: variant.sizes,
+                        sizes: variant.sizes.map(s => ({ ...s, price: s.price.toNumber() })),
                     }));
                 // Extract variant images for the product
                 const variantImages: VariantImageType[] = variants.map(
@@ -140,27 +140,37 @@ export const getHomeDataDynamic = async (
                         ? { subCategory: { url: value } }
                         : {};
             // Query products based on the constructed where clause
-            const products = await db.product.findMany({
-                where: whereClause,
-                select: {
-                    id: true,
-                    slug: true,
-                    name: true,
-                    rating: true,
-                    sales: true,
-                    numReviews: true,
-                    variants: {
-                        select: {
-                            id: true,
-                            variantName: true,
-                            variantImage: true,
-                            slug: true,
-                            images: true,
-                            sizes: true,
+            let products: ProductWithVariants[] = [];
+            try {
+                products = (await db.product.findMany({
+                    where: whereClause,
+                    select: {
+                        id: true,
+                        slug: true,
+                        name: true,
+                        rating: true,
+                        sales: true,
+                        numReviews: true,
+                        variants: {
+                            select: {
+                                id: true,
+                                variantName: true,
+                                variantImage: true,
+                                slug: true,
+                                images: true,
+                                sizes: true,
+                            },
                         },
                     },
-                },
-            });
+                })) as unknown as ProductWithVariants[];
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error(`Error querying dynamic products for ${property}=${value}:`, error.message, error.stack);
+                } else {
+                    console.error(`Error querying dynamic products for ${property}=${value}:`, error);
+                }
+                throw error;
+            }
 
             // Format the data based on the input
             const formattedData = formatProductData(products, type);

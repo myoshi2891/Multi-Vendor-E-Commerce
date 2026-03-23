@@ -22,7 +22,6 @@ import * as z from 'zod'
 import { ProductFormSchema } from '@/lib/schemas'
 
 // UI Components
-import { AlertDialog } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     Card,
@@ -142,7 +141,14 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     const [subCategories, setSubcategories] = useState<SubCategory[]>([])
 
     // State for colors
-    const [colors, setColors] = useState<{ color: string }[]>([{ color: '' }])
+    const [colors, setColors] = useState<{ color: string }[]>(
+        data?.colors || [{ color: '' }]
+    )
+
+    // State for keywords
+    const [keywords, setKeywords] = useState<string[]>(
+        data?.keywords || []
+    )
 
     // State for sizes
     const [sizes, setSizes] = useState<
@@ -203,8 +209,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         },
     })
 
-    console.log('error:', form.formState.errors)
-
     const saleEndDate = form.getValues().saleEndDate || new Date().toISOString()
     const formattedDate = new Date(saleEndDate).toLocaleString('en-Us', {
         weekday: 'short', // Abbreviated day name (e.g., "Mon")
@@ -217,16 +221,50 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         hour12: false, // 12-hour format (change to false for 24-hour format)    })
     })
 
+    const categoryId = form.watch().categoryId;
     // useEffect to fetch subcategories based on categoryId
+    const prevCategoryIdRef = useRef<string | undefined>(categoryId);
     useEffect(() => {
-        const getSubcategories = async () => {
-            const res = await getAllSubCategoriesFotCategory(
-                form.watch().categoryId
-            )
-            setSubcategories(res)
+        // カテゴリが実際に変更された時だけリセット
+        if (prevCategoryIdRef.current !== undefined &&
+            prevCategoryIdRef.current !== categoryId) {
+            form.setValue('subCategoryId', "");
+            setSubcategories([]);
         }
-        getSubcategories()
-    }, [form.watch().categoryId])
+        prevCategoryIdRef.current = categoryId;
+
+        if (!categoryId) {
+            setSubcategories([]);
+            return;
+        }
+
+        // 非同期レスポンスの競合を防ぐ
+        let isCurrent = true;
+        const getSubcategories = async () => {
+            try {
+                const res = await getAllSubCategoriesFotCategory(categoryId);
+                if (isCurrent) {
+                    setSubcategories(res);
+                }
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error("[ProductDetails:getSubcategories]", error.message, error.stack);
+                } else {
+                    console.error("[ProductDetails:getSubcategories]", error);
+                }
+                if (isCurrent) {
+                    setSubcategories([]);
+                }
+            }
+        };
+
+        getSubcategories();
+
+        return () => {
+            isCurrent = false;
+        };
+    }, [categoryId, form])
+
 
     // Extract errors state from form
     const errors = form.formState.errors
@@ -237,13 +275,32 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Reset form values when data changes
     useEffect(() => {
         if (data) {
-            form.reset({ ...data, variantImage: [{ url: data.variantImage }] })
+            // categoryId が変わる場合、prevCategoryIdRef を先に更新
+            if (data.categoryId !== undefined) {
+                prevCategoryIdRef.current = data.categoryId
+            }
+
+            // フォームをリセット
+            form.reset({ ...data, variantImage: data.variantImage ? [{ url: data.variantImage }] : [] })
+
+            // すべての local state を再初期化
+            setColors(data.colors || [{ color: '' }])
+            setSizes(data.sizes || [{ size: '', quantity: 1, price: 0.01, discount: 0 }])
+            setProductSpecs(data.product_specs || [{ name: '', value: '' }])
+            setVariantSpecs(data.variant_specs || [{ name: '', value: '' }])
+            setQuestions(data.questions || [{ question: '', answer: '' }])
+            setKeywords(data.keywords || [])
+            setImages(data.images || [])
         }
     }, [data, form])
 
     // Submit handler for form submission
     const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
         try {
+            // colors から空プレースホルダーを除外
+            const filteredColors = values.colors.filter(c => c.color.trim() !== '');
+            const normalizedColors = filteredColors.length > 0 ? filteredColors : [];
+
             // Upserting product data
             const response = await upsertProduct(
                 {
@@ -263,7 +320,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     brand: values.brand,
                     sku: values.sku,
                     weight: values.weight,
-                    colors: values.colors,
+                    colors: normalizedColors,
                     sizes: values.sizes || [],
                     product_specs: values.product_specs,
                     variant_specs: values.variant_specs,
@@ -292,19 +349,21 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             } else {
                 router.push(`/dashboard/seller/stores/${storeUrl}/products`)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handling form submission errors
-            console.log(error)
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            if (error instanceof Error) {
+                console.error("ProductDetails submit error:", error.message, error.stack);
+            } else {
+                console.error("ProductDetails submit error:", error);
+            }
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
-                description: error.toString(),
+                description: message,
             })
         }
     }
-
-    // Handle keywords input
-    const [keywords, setKeywords] = useState<string[]>([])
 
     interface Keyword {
         id: string
@@ -322,13 +381,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     // Whenever colors, sizes, keywords changes we update the form values
     useEffect(() => {
+        // colors/keywords を常に form に反映（空配列も含む）
         form.setValue('colors', colors)
-        form.setValue('sizes', sizes)
         form.setValue('keywords', keywords)
+
+        // sizes, questions, specs は常に同期（既存の挙動を維持）
+        form.setValue('sizes', sizes)
         form.setValue('questions', questions)
         form.setValue('product_specs', productSpecs)
         form.setValue('variant_specs', variantSpecs)
-    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, data])
+    }, [colors, sizes, keywords, questions, productSpecs, variantSpecs, form])
 
     //Countries options
     type CountryOption = {
@@ -348,21 +410,22 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     }
 
     return (
-        <AlertDialog>
-            <Card className="w-full">
-                <CardHeader>
-                    <CardTitle>
-                        {isNewVariantPage
-                            ? `Add a new variant to ${data.name}`
-                            : 'Create a new Product Information'}
-                    </CardTitle>
-                    <CardDescription>
-                        {data?.productId && data?.variantId
-                            ? `Update ${data?.name} product information.`
-                            : ' Lets create a product. You can edit product later from the store products page.'}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>
+                    {data?.productId && data?.variantId
+                        ? `Edit ${data.name} Product Information`
+                        : isNewVariantPage
+                        ? `Add a new variant to ${data.name}`
+                        : 'Create a new Product Information'}
+                </CardTitle>
+                <CardDescription>
+                    {data?.productId && data?.variantId
+                        ? `Update ${data?.name} product information.`
+                        : "Let's create a product. You can edit product later from the store products page."}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(handleSubmit)}
@@ -444,7 +507,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 {/* Colors */}
                                 <div className="flex w-full flex-col gap-y-3 xl:pl-5">
                                     <ClickToAddInputs
-                                        details={data?.colors || colors}
+                                        details={colors}
                                         setDetails={setColors}
                                         initialDetail={{ color: '' }}
                                         header="Colors"
@@ -1307,14 +1370,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 {isLoading
                                     ? 'loading...'
                                     : data?.productId && data?.variantId
-                                      ? 'Save store information'
-                                      : 'Create store'}
+                                      ? 'Save product'
+                                      : 'Create product'}
                             </Button>
                         </form>
                     </Form>
                 </CardContent>
             </Card>
-        </AlertDialog>
     )
 }
 export default ProductDetails

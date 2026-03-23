@@ -144,19 +144,27 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const { toast } = useToast()
     const router = useRouter()
 
-    // Return null if rowData or rowData.id don't exist
-    if (!rowData || !rowData.id) return null
-
     // Get categories
     const [categories, setCategories] = useState<Category[]>([])
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const categories = await getAllCategories()
-            setCategories(categories)
+            try {
+                const categories = await getAllCategories()
+                setCategories(categories)
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Failed to fetch categories:", error.message, error.stack)
+                } else {
+                    console.error("Failed to fetch categories:", error)
+                }
+            }
         }
         fetchCategories()
     }, [])
+
+    // Return null if rowData or rowData.id don't exist
+    if (!rowData || !rowData.id) return null
 
     return (
         <AlertDialog>
@@ -224,15 +232,24 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                         className="mb-2 bg-destructive text-white hover:bg-destructive"
                         onClick={async () => {
                             setLoading(true)
-                            await deleteSubCategory(rowData.id)
-                            toast({
-                                title: 'Deleted SubCategory',
-                                description:
-                                    'The SubCategory has been deleted.',
-                            })
-                            setLoading(false)
-                            router.refresh()
-                            setClose()
+                            try {
+                                await deleteSubCategory(rowData.id)
+                                toast({
+                                    title: 'Deleted SubCategory',
+                                    description: 'The SubCategory has been deleted.',
+                                })
+                                router.refresh()
+                                setClose()
+                            } catch (error: unknown) {
+                                const message = error instanceof Error ? error.message : "Failed to delete SubCategory."
+                                toast({
+                                    title: "Error",
+                                    description: message,
+                                    variant: "destructive"
+                                })
+                            } finally {
+                                setLoading(false)
+                            }
                         }}
                     >
                         Delete

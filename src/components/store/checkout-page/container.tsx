@@ -47,6 +47,7 @@ const CheckoutContainer: FC<Props> = ({
         if (cartItems.length > 0) {
             hydrateCheckoutCart()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCountry])
 
     return (

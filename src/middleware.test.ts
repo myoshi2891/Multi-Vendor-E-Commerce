@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, NextFetchEvent } from "next/server";
 import { getUserCountry } from "./lib/country";
 
 // --- モックの設定 ---
@@ -27,13 +27,13 @@ jest.mock("./lib/country", () => ({
     getUserCountry: jest.fn(),
 }));
 
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, type ClerkMiddlewareAuth } from "@clerk/nextjs/server";
 
 // ミドルウェアの実体をインポート（clerkMiddleware のモックにより、内部の関数がそのまま取得される）
 import middleware from "./middleware";
 
 // clerkMiddleware のハンドラー関数の型
-type MiddlewareHandler = Parameters<typeof clerkMiddleware>[0];
+type MiddlewareHandler = (auth: ClerkMiddlewareAuth, req: NextRequest, event: NextFetchEvent) => Promise<Response | void> | Response | void;
 
 describe("Middleware", () => {
     let mockProtect: jest.Mock;
@@ -42,7 +42,7 @@ describe("Middleware", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env.NODE_ENV = "test";
+        Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', configurable: true });
 
         // 認証処理のモック
         mockProtect = jest.fn();
@@ -52,17 +52,21 @@ describe("Middleware", () => {
     });
 
     afterEach(() => {
-        process.env.NODE_ENV = originalEnv;
+        Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
     });
 
     const typedMiddleware = middleware as unknown as MiddlewareHandler;
-    type MiddlewareArgs = Parameters<MiddlewareHandler>;
+    const mockEvent = {
+        waitUntil: jest.fn(),
+        passThroughOnException: jest.fn(),
+        sourcePage: "",
+    } as unknown as NextFetchEvent;
 
     describe("ルーティング保護 (Authentication & Route Protection)", () => {
         it("正常系: 保護されたルート (/dashboard) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/dashboard");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -71,7 +75,7 @@ describe("Middleware", () => {
         it("正常系: 保護されたルート (/dashboard/settings) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/dashboard/settings");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -80,7 +84,7 @@ describe("Middleware", () => {
         it("正常系: 保護されたルート (/checkout) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/checkout");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -89,7 +93,7 @@ describe("Middleware", () => {
         it("正常系: 保護されたルート (/profile) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/profile");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -98,7 +102,7 @@ describe("Middleware", () => {
         it("正常系: 保護されたサブルート (/profile/orders) の場合は auth().protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/profile/orders");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
@@ -107,7 +111,7 @@ describe("Middleware", () => {
         it("正常系: パブリックなルート (/) の場合は auth().protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
@@ -116,7 +120,7 @@ describe("Middleware", () => {
         it("正常系: パブリックなルート (/browse) の場合は auth().protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/browse");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-            await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
@@ -129,7 +133,7 @@ describe("Middleware", () => {
             // userCountry Cookie をセット
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
 
-            const response = await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             // getUserCountry は呼ばれないはず
             expect(getUserCountry).not.toHaveBeenCalled();
@@ -145,7 +149,7 @@ describe("Middleware", () => {
             const mockCountry = { name: "United States", code: "US" };
             (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
 
-            const response = await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
             // getUserCountry が呼ばれる
             expect(getUserCountry).toHaveBeenCalledTimes(1);
@@ -168,17 +172,17 @@ describe("Middleware", () => {
 
         it("正常系: NODE_ENV が production の場合は Cookie に Secure 属性が付与される", async () => {
             try {
-                process.env.NODE_ENV = "production";
+                Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
                 const req = new NextRequest("http://localhost:3000/");
                 const mockCountry = { name: "Japan", code: "JP" };
                 (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
 
-                const response = await typedMiddleware(mockAuth as unknown as MiddlewareArgs[0], req as unknown as MiddlewareArgs[1], {} as MiddlewareArgs[2]);
+                const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
                 const setCookieHeader = response.headers.get("Set-Cookie");
                 expect(setCookieHeader).toContain("Secure");
             } finally {
-                process.env.NODE_ENV = "test";
+                Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', configurable: true });
             }
         });
     });

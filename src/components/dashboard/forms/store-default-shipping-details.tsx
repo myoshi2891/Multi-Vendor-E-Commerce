@@ -13,8 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { StoreShippingFormSchema } from "@/lib/schemas";
 
 // UI Components
-import { AlertDialog } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -31,13 +31,18 @@ import { NumberInput } from "@tremor/react";
 // Queries
 import { updateStoreDefaultShippingDetails } from "@/queries/store";
 
-// Utils
-import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
 import { useToast } from "@/hooks/use-toast";
 
 // Types
 import { StoreDefaultShippingType } from "@/lib/types";
+
+const RefinedStoreShippingFormSchema = StoreShippingFormSchema.refine((data) => {
+    return data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin;
+}, {
+    message: "Maximum delivery time must be greater than or equal to minimum delivery time",
+    path: ["defaultDeliveryTimeMax"]
+});
 
 interface StoreDefaultShippingDetailsProps {
 	data?: StoreDefaultShippingType;
@@ -53,9 +58,9 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	const router = useRouter(); // Hook for routing
 
 	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof StoreShippingFormSchema>>({
+	const form = useForm<z.infer<typeof RefinedStoreShippingFormSchema>>({
 		mode: "onChange", // Form validation mode
-		resolver: zodResolver(StoreShippingFormSchema), // Resolver for form validation
+		resolver: zodResolver(RefinedStoreShippingFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
 			defaultShippingService: data?.defaultShippingService ?? "",
@@ -91,7 +96,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 
 	// Submit handler for form submission
 	const handleSubmit = async (
-		values: z.infer<typeof StoreShippingFormSchema>
+		values: z.infer<typeof RefinedStoreShippingFormSchema>
 	) => {
 		try {
 			// Upserting category data
@@ -132,9 +137,8 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	};
 
 	return (
-		<AlertDialog>
-			<Card className="w-full">
-				<CardHeader>
+		<Card className="w-full">
+			<CardHeader>
 					<CardTitle>Store Default Shipping Details</CardTitle>
 				</CardHeader>
 				<CardContent>
@@ -180,7 +184,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -204,7 +208,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -231,7 +235,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -255,7 +259,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -281,7 +285,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={0}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -304,7 +308,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={1}
-													className="!pl-1 !shadow-none rounded-md"
+													className="!pl-1 rounded-md !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -339,7 +343,6 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 					</Form>
 				</CardContent>
 			</Card>
-		</AlertDialog>
 	);
 };
 

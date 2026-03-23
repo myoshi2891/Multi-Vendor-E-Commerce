@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { toNumberSafe } from "@/lib/utils";
 import {
     OrderStatus,
     OrderTableDateFilter,
@@ -376,82 +377,107 @@ export const getUserWishlist = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    try {
+        // Retrieve the current user
+        const user = await currentUser();
 
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+        // Ensure the user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    // Calculate pagination values
-    const skip = (page - 1) * pageSize;
+        // Calculate pagination values
+        const skip = (page - 1) * pageSize;
 
-    // Fetch wishlist items for the current user
-    const wishlist = await db.wishlist.findMany({
-        where: {
-            userId: user.id,
-        },
-        include: {
-            product: {
-                select: {
-                    id: true,
-                    name: true,
-                    rating: true,
-                    slug: true,
-                    sales: true,
-                    variants: {
-                        select: {
-                            id: true,
-                            variantName: true,
-                            slug: true,
-                            images: true,
-                            sizes: true,
+        // Fetch wishlist items for the current user
+        const wishlist = await db.wishlist.findMany({
+            where: {
+                userId: user.id,
+            },
+            include: {
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        rating: true,
+                        numReviews: true,
+                        slug: true,
+                        sales: true,
+                        variants: {
+                            select: {
+                                id: true,
+                                variantName: true,
+                                slug: true,
+                                images: true,
+                                sizes: true,
+                            },
                         },
                     },
                 },
             },
-        },
-        take: pageSize,
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+            take: pageSize,
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // バリアントが空の商品は表示に必要な情報がないため除外
-    const formattedWishlist = wishlist
-        .filter((item) => item.product.variants.length > 0)
-        .map((item) => ({
-            id: item.product.id,
-            slug: item.product.slug,
-            name: item.product.name,
-            rating: item.product.rating,
-            sales: item.product.sales,
-            variants: [
-                {
-                    variantId: item.product.variants[0].id,
-                    variantSlug: item.product.variants[0].slug,
-                    variantName: item.product.variants[0].variantName,
-                    images: item.product.variants[0].images,
-                    sizes: item.product.variants[0].sizes,
-                },
-            ],
-            variantImages: [],
-        }));
+        // バリアントが空の商品は表示に必要な情報がないため除外
+        const formattedWishlist = wishlist
+            .filter((item) => item.product.variants.length > 0)
+            .map((item) => ({
+                id: item.product.id,
+                slug: item.product.slug,
+                name: item.product.name,
+                rating: item.product.rating,
+                sales: item.product.sales,
+                numReviews: item.product.numReviews,
+                variants: [
+                    {
+                        variantId: item.product.variants[0].id,
+                        variantSlug: item.product.variants[0].slug,
+                        variantName: item.product.variants[0].variantName,
+                        images: item.product.variants[0].images,
+                        sizes: item.product.variants[0].sizes.map((s) => ({
+                            ...s,
+                            price: toNumberSafe(s.price),
+                        })),
+                    },
+                ],
+                variantImages: [],
+            }));
 
-    // Fetch the total count of wishlist items for the query
-    const totalCount = await db.wishlist.count({ where: { userId: user.id } });
+        // Fetch the total count of wishlist items for the query
+        const totalCount = await db.wishlist.count({
+            where: {
+                userId: user.id,
+                product: {
+                    variants: {
+                        some: {}
+                    }
+                }
+            }
+        });
 
-    // Calculate total pages
-    const totalPages = Math.ceil(totalCount / pageSize);
+        // Calculate total pages
+        const totalPages = Math.ceil(totalCount / pageSize);
 
-    // Return paginated data with metadata
-    return {
-        wishlist: formattedWishlist,
-        totalPages,
-        // currentPage: page,
-        // pageSize,
-        // totalCount,
-    };
+        // Return paginated data with metadata
+        return {
+            wishlist: formattedWishlist,
+            totalPages,
+            // currentPage: page,
+            // pageSize,
+            // totalCount,
+        };
+    } catch (error: unknown) {
+        let message = "Failed to fetch wishlist";
+        if (error instanceof Error) {
+            message = error.message;
+            console.error("Error fetching user wishlist:", message, error.stack);
+        } else {
+            console.error("Error fetching user wishlist:", error);
+        }
+        throw new Error(message);
+    }
 };
 
 /**
@@ -469,65 +495,75 @@ export const getUserFollowedStores = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    try {
+        // Retrieve the current user
+        const user = await currentUser();
 
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+        // Ensure the user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    // Calculate pagination values
-    const skip = (page - 1) * pageSize;
+        // Calculate pagination values
+        const skip = (page - 1) * pageSize;
 
-    // Fetch followed stores for the current user with pagination
-    const followedStores = await db.store.findMany({
-        where: {
-            followers: {
-                some: {
-                    id: user.id,
+        // Fetch followed stores for the current user with pagination
+        const followedStores = await db.store.findMany({
+            where: {
+                followers: {
+                    some: {
+                        id: user.id,
+                    },
                 },
             },
-        },
-        select: {
-            id: true,
-            url: true,
-            name: true,
-            logo: true,
-            followers: {
-                select: {
-                    id: true,
+            select: {
+                id: true,
+                url: true,
+                name: true,
+                logo: true,
+                followers: {
+                    select: {
+                        id: true,
+                    },
                 },
             },
-        },
-        take: pageSize,
-        skip,
-    });
+            take: pageSize,
+            skip,
+        });
 
-    // Fetch the total count of followed stores (without pagination)
-    const totalCount = await db.store.count({
-        where: {
-            followers: {
-                some: {
-                    id: user.id,
+        // Fetch the total count of followed stores (without pagination)
+        const totalCount = await db.store.count({
+            where: {
+                followers: {
+                    some: {
+                        id: user.id,
+                    },
                 },
             },
-        },
-    });
+        });
 
-    // Calculate the total number of pages
-    const totalPages = Math.ceil(totalCount / pageSize);
+        // Calculate the total number of pages
+        const totalPages = Math.ceil(totalCount / pageSize);
 
-    // Transform the stores into the required format
-    const stores = followedStores.map((store) => ({
-        id: store.id,
-        url: store.url,
-        name: store.name,
-        logo: store.logo,
-        followersCount: store.followers.length,
-        isUserFollowingStore: true, // Always true since these are followed stores
-    }));
+        // Transform the stores into the required format
+        const stores = followedStores.map((store) => ({
+            id: store.id,
+            url: store.url,
+            name: store.name,
+            logo: store.logo,
+            followersCount: store.followers.length,
+            isUserFollowingStore: true, // Always true since these are followed stores
+        }));
 
-    return {
-        stores,
-        totalPages,
-    };
+        return {
+            stores,
+            totalPages,
+        };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "An unknown error occurred";
+        if (error instanceof Error) {
+            console.error("Error fetching followed stores:", error.message, error.stack);
+        } else {
+            console.error("Error fetching followed stores:", error);
+        }
+        throw new Error(message);
+    }
 };

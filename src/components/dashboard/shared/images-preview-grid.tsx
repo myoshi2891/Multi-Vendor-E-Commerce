@@ -48,7 +48,7 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
             setColorPalettes(palettes)
         }
 
-        if (imagesLength > 0) {
+        if (images && images.length > 0) {
             fetchColors()
         }
     }, [images])

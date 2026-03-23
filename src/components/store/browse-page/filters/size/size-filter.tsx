@@ -20,17 +20,32 @@ export default function SizeFilter({
     const [take, setTake] = useState<number>(10);
 
     useEffect(() => {
-        handleGetSizes();
-    }, [category, subCategory, offer, take]);
+        let cancelled = false;
 
-    const handleGetSizes = async () => {
-        const sizes = await getFilteredSizes(
-            { category, subCategory, offer, storeUrl },
-            take
-        );
-        setSizes(sizes.sizes);
-        setTotal(sizes.count);
-    };
+        const handleGetSizes = async () => {
+            try {
+                const sizes = await getFilteredSizes(
+                    { category, subCategory, offer, storeUrl },
+                    take
+                );
+
+                if (!cancelled) {
+                    setSizes(sizes.sizes);
+                    setTotal(sizes.count);
+                }
+            } catch {
+                if (!cancelled) {
+                    setSizes([]);
+                    setTotal(0);
+                }
+            }
+        };
+        void handleGetSizes();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [category, subCategory, offer, take, storeUrl]);
 
     return (
         <div className="pb-4 pt-5">

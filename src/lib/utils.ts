@@ -4,6 +4,33 @@ import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { CartProductType } from "./types";
 
+interface HasToNumber {
+    toNumber: () => number;
+}
+
+function hasToNumber(value: unknown): value is HasToNumber {
+    return (
+        value !== null &&
+        typeof value === "object" &&
+        "toNumber" in value &&
+        typeof (value as Record<string, unknown>).toNumber === "function"
+    );
+}
+
+/**
+ * Safely parses a potentially Decimal/BigNumber-like object or primitive into a number.
+ * @param value The value to parse (can be number, string, Prisma.Decimal, etc.)
+ * @returns The converted number
+ */
+export function toNumberSafe(value: unknown): number {
+    if (typeof value === "number") return value;
+    if (hasToNumber(value)) {
+        return value.toNumber();
+    }
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+}
+
 /**
  * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.
  *

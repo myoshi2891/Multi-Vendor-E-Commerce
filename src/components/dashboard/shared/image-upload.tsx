@@ -5,7 +5,7 @@ import { FC, useEffect, useState } from 'react'
 import Image from 'next/image'
 
 // Cloudinary
-import { CldUploadWidget } from 'next-cloudinary'
+import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary'
 import { Button } from '@/components/ui/button'
 import { Trash } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,17 @@ interface ImageUploadProps {
     dontShowPreview?: boolean
     error?: boolean
 }
+
+const HiddenTestInput: FC<{ dataTestId: string; onChange: (value: string) => void }> = ({ dataTestId, onChange }) => (
+    <input 
+        type="text" 
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
+        tabIndex={-1}
+        aria-hidden="true"
+        data-testid={dataTestId}
+        onChange={(e) => onChange(e.target.value)}
+    />
+);
 
 const ImageUpload: FC<ImageUploadProps> = ({
     disabled,
@@ -50,8 +61,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
         return null
     }
 
-    const onUpload = (result: any) => {
-        onChange(result.info.secure_url)
+    const onUpload = (result: CloudinaryUploadWidgetResults) => {
+        if (result.info && typeof result.info !== 'string' && result.info.secure_url) {
+            onChange(result.info.secure_url)
+        }
     }
 
     if (type === 'profile') {
@@ -65,6 +78,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     }
                 )}
             >
+                <HiddenTestInput dataTestId="n-mock-input-profile" onChange={onChange} />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -116,6 +130,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 )}
                 style={{ height: '348px' }}
             >
+                <HiddenTestInput dataTestId="n-mock-input-cover" onChange={onChange} />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -162,6 +177,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
     } else {
         return (
             <div>
+                <HiddenTestInput dataTestId="n-mock-input-standard" onChange={onChange} />
                 <div className="mb-4 flex items-center gap-4">
                     {value.length > 0 &&
                         !dontShowPreview &&

@@ -41,7 +41,7 @@ export default function CountrySelector({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [ref])
+    }, [ref, open, onToggle])
 
     const [query, setQuery] = useState('')
 
@@ -98,7 +98,7 @@ export default function CountrySelector({
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.1 }}
-                            className="absolute z-10 mt-1 max-h-80 w-full rounded-md bg-white text-base shadow-sm ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                            className="absolute z-10 mt-1 max-h-80 w-full rounded-md bg-white text-base shadow-sm ring-1 ring-black/5 focus:outline-none sm:text-sm"
                             tabIndex={-1}
                             role="listbox"
                             aria-labelledby="listbox-label"
@@ -121,6 +121,7 @@ export default function CountrySelector({
                             </div>
 
                             <div
+                                // eslint-disable-next-line tailwindcss/no-custom-classname
                                 className={
                                     'scrollbar scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-600 scrollbar-thumb-rounded scrollbar-thin max-h-64 overflow-y-scroll'
                                 }

@@ -9,33 +9,38 @@ interface Props {
 
 const ReviewsSort: FC<Props> = ({ sort, setSort }) => {
 	return (
-		<div className="group w-[120px]">
+		<div className="group relative w-[120px]">
 			{/* Trigger */}
-			<button className="text-main-primary hover:text-[#fd384f] text-sm py-0.5 text-center inline-flex items-center">
+			{/* eslint-disable-next-line tailwindcss/classnames-order */}
+			<button type="button" className="inline-flex items-center py-0.5 text-center text-sm text-main-primary hover:text-[#fd384f]">
 				Sort by{" "}
 				{sort?.orderBy === "latest"
 					? "latest"
 					: sort?.orderBy === "highest"
 					? "highest"
 					: "default"}
-				<ChevronDown className="w-3 ml-1" />
+				<ChevronDown className="ml-1 w-3" />
 			</button>
-			<div className="z-10 hidden absolute bg-white shadow w-[120px] group-hover:block">
+			{/* eslint-disable-next-line tailwindcss/classnames-order */}
+			<div className="absolute z-10 hidden w-[120px] bg-white shadow group-hover:block group-focus-within:block" role="menu">
 				<ul className="text-sm text-gray-700">
-					<li onClick={() => setSort(undefined)}>
-						<span className="block p-2 cursor-pointer hover:bg-gray-100">
+					<li>
+						{/* eslint-disable-next-line tailwindcss/classnames-order */}
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort(undefined)}>
 							Sort by default
-						</span>
+						</button>
 					</li>
-					<li onClick={() => setSort({ orderBy: "highest" })}>
-						<span className="block p-2 cursor-pointer hover:bg-gray-100">
+					<li>
+						{/* eslint-disable-next-line tailwindcss/classnames-order */}
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort({ orderBy: "highest" })}>
 							Sort by highest
-						</span>
+						</button>
 					</li>
-					<li onClick={() => setSort({ orderBy: "latest" })}>
-						<span className="block p-2 cursor-pointer hover:bg-gray-100">
+					<li>
+						{/* eslint-disable-next-line tailwindcss/classnames-order */}
+						<button role="menuitem" type="button" className="block w-full text-left cursor-pointer p-2 hover:bg-gray-100 focus:bg-gray-100" onClick={() => setSort({ orderBy: "latest" })}>
 							Sort by latest
-						</span>
+						</button>
 					</li>
 				</ul>
 			</div>
