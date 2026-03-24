@@ -22,7 +22,7 @@ const BASE_E2E_SEED = {
     email: "e2e-store@example.com",
     phone: "0000000000",
     url: "e2e-store",
-    logo: "/assets/images/logo.png",
+    logo: "/assets/images/no_image.png",
     cover: "/assets/images/home-wallpaper.webp",
   },
   category: {

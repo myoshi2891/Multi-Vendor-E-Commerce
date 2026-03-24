@@ -46,7 +46,7 @@ test.describe("決済異常系", () => {
   });
 
   test.skip("在庫切れ商品がカートにある場合 Out of stock と表示される", async ({ page }) => {
-    await page.goto("/cart");
+    await page.goto("/cart", { waitUntil: "domcontentloaded" });
     // Mock the API response for out of stock or just check the logic if we had one
     // For now, asserting that the page loads without crashing
     await expect(page.getByRole("heading", { name: /Shopping Cart/i })).toBeVisible();
@@ -54,7 +54,7 @@ test.describe("決済異常系", () => {
 
   test.skip("ブラウザバック後に二重送信されない（冪等性検証）", async ({ page }) => {
     // Navigate to a mock success page then back
-    await page.goto("/cart");
+    await page.goto("/cart", { waitUntil: "domcontentloaded" });
     await page.goto("/");
     await page.goBack();
     await expect(page).toHaveURL(/.*cart/);
