@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
-import { setupE2ETestState } from "@/config/test-helpers";
+import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
 
 test.describe("モバイルレスポンシブ", () => {
   test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE 等のサイズ
@@ -79,6 +79,10 @@ test.describe("モバイルレスポンシブ", () => {
     await page.getByTestId("add-to-cart").click();
     // Zustand persist が localStorage に書き込むのを待つ
     await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+
+    // 共通ヘルパーで localStorage 書き込み完了を待つ
+    await waitForCartPersist(page);
+
     await page.goto("/cart", { waitUntil: "domcontentloaded" });
 
     // checkoutボタンがモバイルでも見えるか、押せるか

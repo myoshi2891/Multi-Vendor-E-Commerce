@@ -131,3 +131,21 @@ export const matchTextCrunch = (text: string) => (content: string, _element: Ele
     const crunch = (s: string) => s.replace(/\s+/g, '').replace(/\u00a0/g, '')
     return crunch(content).includes(crunch(text))
 }
+
+/**
+ * Zustand persist が localStorage にカート状態を書き込むのを待つ
+ * purchase-flow と mobile-responsive の両方で使用
+ */
+export const waitForCartPersist = async (page: Page) => {
+    await page.waitForFunction(() => {
+        const cartState = window.localStorage.getItem("cart");
+        if (!cartState) return false;
+        try {
+            const parsed = JSON.parse(cartState);
+            // Zustand persist の形式: { state: { cart: [...], totalItems, totalPrice }, version: 0 }
+            return parsed.state?.cart?.length > 0;
+        } catch {
+            return false;
+        }
+    }, { timeout: 5000 });
+};

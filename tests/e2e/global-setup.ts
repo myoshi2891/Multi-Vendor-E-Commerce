@@ -23,27 +23,20 @@ export default async function globalSetup() {
     const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000';
     const port = Number(new URL(baseURL).port) || 3000;
 
-    const portInUse = await isPortInUse(port);
-    if (portInUse) {
-        console.log(`[globalSetup] Port ${port} is already in use. Reusing existing server.`);
-        console.log(`[globalSetup] Note: This log is informational only. Playwright's reuseExistingServer behavior is controlled by playwright.config.ts (reuseExistingServer: !process.env.CI). In CI, Playwright may still attempt to start a server even if the port is in use.`);
-    } else {
-        console.log(`[globalSetup] Port ${port} is free. Playwright will start dev server.`);
-        console.log(`[globalSetup] Note: This log is for debugging only. Actual server startup is controlled by playwright.config.ts webServer configuration.`);
-    }
+    // ポートチェックログは削除（リポジトリルール違反）
+    await isPortInUse(port);  // 結果は使用しない（副作用なし）
 
-    console.log('[globalSetup] Starting clerkSetup...');
+    let timeoutId: NodeJS.Timeout | undefined;
     try {
         await Promise.race([
             clerkSetup(),
-            new Promise<never>((_, reject) =>
-                setTimeout(
+            new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(
                     () => reject(new Error(`clerkSetup() timed out after ${CLERK_SETUP_TIMEOUT_MS}ms. Check CLERK_SECRET_KEY and network connectivity.`)),
                     CLERK_SETUP_TIMEOUT_MS
-                )
-            ),
+                );
+            }),
         ]);
-        console.log('[globalSetup] clerkSetup completed successfully.');
     } catch (error) {
         if (error instanceof Error) {
             console.error("[globalSetup] clerkSetup failed:", error.message, error.stack);
@@ -51,6 +44,10 @@ export default async function globalSetup() {
         } else {
             console.error("[globalSetup] clerkSetup failed:", error);
             throw error;
+        }
+    } finally {
+        if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
         }
     }
 }
