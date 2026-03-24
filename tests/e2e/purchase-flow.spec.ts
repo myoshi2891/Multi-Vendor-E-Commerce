@@ -53,7 +53,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("商品一覧→詳細→サイズ選択→カート追加→カートページ表示と数量変更", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "firefox", "Firefox: cart navigation hangs in dev mode (HMR issue)");
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
     await page.goto(`/product/${productSlug}/${variantSlug}`);
 
     // Select the first available size
@@ -67,8 +67,8 @@ test.describe("購入フルフロー", () => {
     await expect(page.getByTestId("product-price")).toBeVisible();
 
     await page.getByTestId("add-to-cart").click();
-    // toast (成功 or エラー) が表示されるのを待ち、カートが更新された後にナビゲーション
-    await expect(page.getByText(/Product added to cart|Out of stock/i)).toBeVisible({ timeout: 5000 });
+    // カート追加成功の toast を待つ（Out of stock はテスト失敗とする）
+    await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
 
     // 共通ヘルパーで localStorage 書き込み完了を待つ
     await waitForCartPersist(page);
@@ -97,7 +97,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("カートからアイテムを削除できる", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "firefox", "Firefox: cart navigation hangs in dev mode (HMR issue)");
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
     // Add item
     await addItemToCart(page, productSlug, variantSlug);
 
@@ -112,7 +112,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("ページリロード後もカートが永続化されている", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "firefox", "Firefox: cart navigation hangs in dev mode (HMR issue)");
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
     await addItemToCart(page, productSlug, variantSlug);
 
     await expect(page.getByTestId("cart-item-name")).toBeVisible();
@@ -124,7 +124,7 @@ test.describe("購入フルフロー", () => {
   });
 
   test("未認証ユーザーがチェックアウトに進むと認証エラーが表示される", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === "firefox", "Firefox: cart navigation hangs in dev mode (HMR issue)");
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
     await addItemToCart(page, productSlug, variantSlug);
 
     await page.getByTestId("checkout").click();

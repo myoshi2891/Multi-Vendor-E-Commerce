@@ -16,8 +16,12 @@ async function main() {
 }
 
 main()
-  .catch((error) => {
-    console.error('Error:', error);
+  .catch((error: unknown) => {
+    if (error instanceof Error) {
+      console.error('[cleanup-old-logo] Error:', error.message, { stack: error.stack });
+    } else {
+      console.error('[cleanup-old-logo] Error:', error);
+    }
     process.exitCode = 1;
   })
   .finally(async () => {

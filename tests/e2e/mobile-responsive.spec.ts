@@ -68,8 +68,8 @@ test.describe("モバイルレスポンシブ", () => {
   });
 
   test("モバイルでチェックアウトボタンが機能する", async ({ page }, testInfo) => {
-    // Firefox: /cart ナビゲーションが dev 環境でハングする既知の問題
-    test.skip(testInfo.project.name === "firefox", "Firefox: cart navigation hangs in dev mode");
+    // Firefox: /cart ナビゲーションが dev 環境の HMR でハングする既知の問題（CI では実行）
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
 
     await page.goto(`/product/${productSlug}/${variantSlug}`);
     // サイズ選択
