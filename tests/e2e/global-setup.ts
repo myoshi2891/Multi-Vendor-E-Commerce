@@ -26,8 +26,10 @@ export default async function globalSetup() {
     const portInUse = await isPortInUse(port);
     if (portInUse) {
         console.log(`[globalSetup] Port ${port} is already in use. Reusing existing server.`);
+        console.log(`[globalSetup] Note: This log is informational only. Playwright's reuseExistingServer behavior is controlled by playwright.config.ts (reuseExistingServer: !process.env.CI). In CI, Playwright may still attempt to start a server even if the port is in use.`);
     } else {
         console.log(`[globalSetup] Port ${port} is free. Playwright will start dev server.`);
+        console.log(`[globalSetup] Note: This log is for debugging only. Actual server startup is controlled by playwright.config.ts webServer configuration.`);
     }
 
     console.log('[globalSetup] Starting clerkSetup...');

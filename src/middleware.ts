@@ -18,12 +18,17 @@ export default clerkMiddleware(async (auth, req, next) => {
 
     const countryCookie = req.cookies.get("userCountry");
     if (!countryCookie) {
-        const userCountry = await getUserCountry();
-        response.cookies.set("userCountry", JSON.stringify(userCountry), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-        });
+        try {
+            const userCountry = await getUserCountry();
+            response.cookies.set("userCountry", JSON.stringify(userCountry), {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+            });
+        } catch (error) {
+            console.error("[middleware] Failed to set userCountry cookie:", error instanceof Error ? error.message : error);
+            // Cookie 設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
+        }
     }
 
     return response;

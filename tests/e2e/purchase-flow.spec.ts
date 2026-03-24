@@ -65,8 +65,19 @@ test.describe("購入フルフロー", () => {
     await page.getByTestId("add-to-cart").click();
     // toast (成功 or エラー) が表示されるのを待ち、カートが更新された後にナビゲーション
     await expect(page.getByText(/Product added to cart|Out of stock/i)).toBeVisible({ timeout: 5000 });
-    // localStorage 書き込み完了を確実に待つ
-    await page.waitForTimeout(500);
+
+    // localStorage 書き込み完了を確実に待つ（決定論的チェック）
+    await page.waitForFunction(() => {
+        const cartState = window.localStorage.getItem("cart");
+        if (!cartState) return false;
+        try {
+            const parsed = JSON.parse(cartState);
+            // Zustand persist の形式: { state: { cart: [...], totalItems, totalPrice }, version: 0 }
+            return parsed.state?.cart?.length > 0;
+        } catch {
+            return false;
+        }
+    }, { timeout: 5000 });
 
     await page.goto("/cart", { waitUntil: "commit" });
   await page.waitForLoadState("domcontentloaded", { timeout: 10000 }).catch(() => {});

@@ -19,6 +19,11 @@ test.describe("モバイルレスポンシブ", () => {
     await setupE2ETestState(page, seed);
   });
 
+  // TODO: ハンバーガーメニュー実装後に有効化
+  // アンブロック条件: mobile-menu-toggle, mobile-navigation, mobile-menu-close の data-testid が実装されること
+  // 期限: 2026-04-30
+  // 再現手順: (1) 375px viewport で / に遷移 (2) ハンバーガーメニューをクリック → ナビゲーション表示 (3) 閉じるボタンクリック → ナビゲーション非表示
+  // 実装場所: src/components/store/layout/header/ (推定)
   test.skip("モバイルビューポートでナビゲーションメニューが開閉する -- ハンバーガーメニュー未実装", async ({ page }) => {
     await page.goto("/");
     const menuButton = page.getByTestId("mobile-menu-toggle");
@@ -33,6 +38,11 @@ test.describe("モバイルレスポンシブ", () => {
     await expect(page.getByTestId("mobile-navigation")).toBeHidden({ timeout: 5000 });
   });
 
+  // TODO: カートページのモバイルレイアウト修正後に有効化
+  // アンブロック条件: /cart が 375px 幅で正常表示されること（flex+w-[380px]サイドバー問題の解決）
+  // 期限: 2026-04-30
+  // 再現手順: (1) 375px viewport で商品をカートに追加 (2) /cart に遷移 → カートアイテムと数量変更ボタンが画面内に表示されること
+  // 実装場所: src/components/store/cart-page/container.tsx
   test.skip("モバイルでカート操作 (追加・数量変更) が機能する -- カートページが375px幅未対応（flex+w-[380px]サイドバーでアイテム列が画面外）", async ({ page }) => {
     await page.goto(`/product/${productSlug}/${variantSlug}`);
     // サイズ選択（purchase-flow と同パターン）
