@@ -88,7 +88,8 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }).catch(() => {});
     // Explicitly wait for home page or next destination
     await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 }).catch(() => {});
-    await page.waitForLoadState("networkidle");
+    // networkidle は dev サーバーの HMR WebSocket により到達しないため domcontentloaded を使用
+    await page.waitForLoadState("domcontentloaded");
 
     // Start Onboarding - retry if interrupted
     await expect(async () => {
@@ -181,7 +182,8 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 });
     // Explicitly wait for home page or next destination
     await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 });
-    await page.waitForLoadState("networkidle");
+    // networkidle は dev サーバーの HMR WebSocket により到達しないため domcontentloaded を使用
+    await page.waitForLoadState("domcontentloaded");
 
     // Now they should have access to the seller dashboard because their role is SELLER
     await expect(async () => {

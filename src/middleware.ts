@@ -12,22 +12,13 @@ export default clerkMiddleware(async (auth, req, next) => {
     ]);
     if (protectedRoutes(req)) auth().protect();
 
-    // Creating a basic response
-    let response = NextResponse.next();
+    // リダイレクトではなくレスポンスに直接 Cookie をセット
+    // （リダイレクト方式は非ブラウザクライアントで無限ループを引き起こす）
+    const response = NextResponse.next();
 
-    // Handle Country detection
-    // Step 1: Check if country is already set in cookies
     const countryCookie = req.cookies.get("userCountry");
-
-    if (countryCookie) {
-        // If the user has already selected a country, use that for subsequent requests
-        response = NextResponse.next();
-    } else {
-        response = NextResponse.redirect(new URL(req.url));
-        // Step 2: Get the user country using the helper function
+    if (!countryCookie) {
         const userCountry = await getUserCountry();
-
-        // Step 3: Set the user country in cookies for subsequent requests
         response.cookies.set("userCountry", JSON.stringify(userCountry), {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",

@@ -16,7 +16,19 @@ export type E2ESeedPayload = {
 };
 
 export const setupE2ETestState = async (page: Page, seed: E2ESeedPayload) => {
-    await page.addInitScript(() => localStorage.clear());
+    // sessionStorage をマーカーに使い、テスト開始時の初回ナビゲーションのみ localStorage をクリアする。
+    // addInitScript は全てのナビゲーションで実行されるため、ガードなしだと
+    // page.goto("/cart") 時に Zustand persist のカートデータまで消えてしまう。
+    await page.addInitScript(() => {
+        try {
+            if (!sessionStorage.getItem("__e2e_cleared")) {
+                localStorage.clear();
+                sessionStorage.setItem("__e2e_cleared", "1");
+            }
+        } catch {
+            // sessionStorage が使えない場合は安全にスキップ
+        }
+    });
     await page.context().addCookies([
         {
             name: "userCountry",
