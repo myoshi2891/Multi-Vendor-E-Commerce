@@ -26,9 +26,7 @@ async function addItemToCart(
     await waitForCartPersist(page);
 
     await page.goto("/cart", { waitUntil: "commit" });
-    await page
-        .waitForLoadState("domcontentloaded", { timeout: 10000 })
-        .catch(() => {});
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 }
 
 test.describe("購入フルフロー", () => {
@@ -87,9 +85,7 @@ test.describe("購入フルフロー", () => {
         await waitForCartPersist(page);
 
         await page.goto("/cart", { waitUntil: "commit" });
-        await page
-            .waitForLoadState("domcontentloaded", { timeout: 10000 })
-            .catch(() => {});
+        await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
         const itemName = page.getByTestId("cart-item-name");
         await expect(itemName).toContainText(productName);
@@ -159,7 +155,8 @@ test.describe("購入フルフロー", () => {
 
         // saveUserCart が未認証エラーを throw し、toast でエラー表示される
         // 注: 現在の実装では router.push("/checkout") に到達しないため sign-in リダイレクトは発生しない
-        await expect(page.getByText(/Unauthenticated/i)).toBeVisible({
+        // getText は i18n や auth-message の変更に弱いため、toast の role で判断する
+        await expect(page.getByRole("alert")).toBeVisible({
             timeout: 10000,
         });
     });

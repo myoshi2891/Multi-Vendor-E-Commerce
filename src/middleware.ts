@@ -29,10 +29,15 @@ export default clerkMiddleware(async (auth, req, next) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
+                path: "/",
             });
             return response;
         } catch (error) {
-            console.error("[middleware] Failed to set userCountry cookie:", error instanceof Error ? error.message : error);
+            if (error instanceof Error) {
+                console.error("[middleware] Failed to set userCountry cookie:", error.message, error.stack);
+            } else {
+                console.error("[middleware] Failed to set userCountry cookie:", error);
+            }
             // Cookie設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
             return NextResponse.next({ request: req });
         }
