@@ -93,7 +93,8 @@ test.describe("モバイルレスポンシブ", () => {
     await expect(checkoutBtn).toBeVisible();
     await checkoutBtn.click();
     // saveUserCart が未認証エラーを throw し、toast でエラー表示される
-    await expect(page.getByText(/Unauthenticated/i)).toBeVisible({ timeout: 10000 });
+    // getText は i18n や auth-message の変更に弱いため、toast の role で判断する
+    await expect(page.getByRole("alert")).toBeVisible({ timeout: 10000 });
   });
 });
 
