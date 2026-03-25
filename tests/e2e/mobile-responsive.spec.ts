@@ -53,6 +53,9 @@ test.describe("モバイルレスポンシブ", () => {
     // Zustand persist が localStorage に書き込むのを待つ
     await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
 
+    // Zustand persistがlocalStorageに書き込むのを待つ
+    await waitForCartPersist(page);
+
     // カートページに移動
     await page.goto("/cart", { waitUntil: "domcontentloaded" });
 

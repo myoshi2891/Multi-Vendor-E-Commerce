@@ -14,24 +14,31 @@ export default clerkMiddleware(async (auth, req, next) => {
 
     // リダイレクトではなくレスポンスに直接 Cookie をセット
     // （リダイレクト方式は非ブラウザクライアントで無限ループを引き起こす）
-    const response = NextResponse.next();
-
     const countryCookie = req.cookies.get("userCountry");
     if (!countryCookie) {
         try {
             const userCountry = await getUserCountry();
-            response.cookies.set("userCountry", JSON.stringify(userCountry), {
+            const serialized = JSON.stringify(userCountry);
+
+            // requestにcookieを設定（同じリクエストサイクル内で読み取り可能）
+            req.cookies.set("userCountry", serialized);
+
+            // responseを作成してブラウザにもcookieを送信
+            const response = NextResponse.next({ request: req });
+            response.cookies.set("userCountry", serialized, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
             });
+            return response;
         } catch (error) {
             console.error("[middleware] Failed to set userCountry cookie:", error instanceof Error ? error.message : error);
-            // Cookie 設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
+            // Cookie設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
+            return NextResponse.next({ request: req });
         }
     }
 
-    return response;
+    return NextResponse.next({ request: req });
 });
 
 export const config = {
