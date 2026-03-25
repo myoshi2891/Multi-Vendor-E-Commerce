@@ -12,30 +12,38 @@ export default clerkMiddleware(async (auth, req, next) => {
     ]);
     if (protectedRoutes(req)) auth().protect();
 
-    // Creating a basic response
-    let response = NextResponse.next();
-
-    // Handle Country detection
-    // Step 1: Check if country is already set in cookies
+    // リダイレクトではなくレスポンスに直接 Cookie をセット
+    // （リダイレクト方式は非ブラウザクライアントで無限ループを引き起こす）
     const countryCookie = req.cookies.get("userCountry");
+    if (!countryCookie) {
+        try {
+            const userCountry = await getUserCountry();
+            const serialized = JSON.stringify(userCountry);
 
-    if (countryCookie) {
-        // If the user has already selected a country, use that for subsequent requests
-        response = NextResponse.next();
-    } else {
-        response = NextResponse.redirect(new URL(req.url));
-        // Step 2: Get the user country using the helper function
-        const userCountry = await getUserCountry();
+            // requestにcookieを設定（同じリクエストサイクル内で読み取り可能）
+            req.cookies.set("userCountry", serialized);
 
-        // Step 3: Set the user country in cookies for subsequent requests
-        response.cookies.set("userCountry", JSON.stringify(userCountry), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-        });
+            // responseを作成してブラウザにもcookieを送信
+            const response = NextResponse.next({ request: req });
+            response.cookies.set("userCountry", serialized, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+            });
+            return response;
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error("[middleware] Failed to set userCountry cookie:", error.message, error.stack);
+            } else {
+                console.error("[middleware] Failed to set userCountry cookie:", error);
+            }
+            // Cookie設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
+            return NextResponse.next({ request: req });
+        }
     }
 
-    return response;
+    return NextResponse.next({ request: req });
 });
 
 export const config = {

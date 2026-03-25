@@ -133,37 +133,36 @@ describe("Middleware", () => {
             // userCountry Cookie をセット
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
 
-            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
+            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent) as NextResponse;
 
             // getUserCountry は呼ばれないはず
             expect(getUserCountry).not.toHaveBeenCalled();
-            
+
             // レスポンスに新しい cookie がセットされていないことを確認（next()が返る）
             expect(response).toBeInstanceOf(NextResponse);
             // リダイレクトではないことを確認
             expect(response.headers.get("Location")).toBeNull();
         });
 
-        it("正常系: userCountry Cookie が存在しない場合は getUserCountry() を呼び、リダイレクトレスポンスに Cookie をセットする", async () => {
+        it("正常系: userCountry Cookie が存在しない場合は getUserCountry() を呼び、レスポンスに Cookie をセットする（リダイレクトなし）", async () => {
             const req = new NextRequest("http://localhost:3000/some-path");
             const mockCountry = { name: "United States", code: "US" };
             (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
 
-            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
+            const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent) as NextResponse;
 
             // getUserCountry が呼ばれる
             expect(getUserCountry).toHaveBeenCalledTimes(1);
 
-            // NextResponse.redirect(new URL(req.url)) が返される
+            // NextResponse.next() が返される（リダイレクトではない）
             expect(response).toBeInstanceOf(NextResponse);
-            // Location ヘッダーがリクエストURLと同じか確認
-            expect(response.headers.get("Location")).toBe("http://localhost:3000/some-path");
+            expect(response.headers.get("Location")).toBeNull();
 
             // Cookie がレスポンスにセットされているか確認
             const setCookieHeader = response.headers.get("Set-Cookie");
             expect(setCookieHeader).toBeDefined();
             expect(setCookieHeader).toContain("userCountry");
-            
+
             // Cookie の内容が正しいか検証（URLエンコードされる場合があるため、含まれる文字列でチェック）
             expect(setCookieHeader).toContain(encodeURIComponent(JSON.stringify(mockCountry)));
             expect(setCookieHeader).toContain("HttpOnly");
@@ -177,7 +176,7 @@ describe("Middleware", () => {
                 const mockCountry = { name: "Japan", code: "JP" };
                 (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
 
-                const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
+                const response = await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent) as NextResponse;
 
                 const setCookieHeader = response.headers.get("Set-Cookie");
                 expect(setCookieHeader).toContain("Secure");

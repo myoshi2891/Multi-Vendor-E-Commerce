@@ -16,7 +16,19 @@ export type E2ESeedPayload = {
 };
 
 export const setupE2ETestState = async (page: Page, seed: E2ESeedPayload) => {
-    await page.addInitScript(() => localStorage.clear());
+    // sessionStorage をマーカーに使い、テスト開始時の初回ナビゲーションのみ localStorage をクリアする。
+    // addInitScript は全てのナビゲーションで実行されるため、ガードなしだと
+    // page.goto("/cart") 時に Zustand persist のカートデータまで消えてしまう。
+    await page.addInitScript(() => {
+        try {
+            if (!sessionStorage.getItem("__e2e_cleared")) {
+                localStorage.clear();
+                sessionStorage.setItem("__e2e_cleared", "1");
+            }
+        } catch {
+            // sessionStorage が使えない場合は安全にスキップ
+        }
+    });
     await page.context().addCookies([
         {
             name: "userCountry",
@@ -119,3 +131,21 @@ export const matchTextCrunch = (text: string) => (content: string, _element: Ele
     const crunch = (s: string) => s.replace(/\s+/g, '').replace(/\u00a0/g, '')
     return crunch(content).includes(crunch(text))
 }
+
+/**
+ * Zustand persist が localStorage にカート状態を書き込むのを待つ
+ * purchase-flow と mobile-responsive の両方で使用
+ */
+export const waitForCartPersist = async (page: Page) => {
+    await page.waitForFunction(() => {
+        const cartState = window.localStorage.getItem("cart");
+        if (!cartState) return false;
+        try {
+            const parsed = JSON.parse(cartState);
+            // Zustand persist の形式: { state: { cart: [...], totalItems, totalPrice }, version: 0 }
+            return parsed.state?.cart?.length > 0;
+        } catch {
+            return false;
+        }
+    }, { timeout: 5000 });
+};
