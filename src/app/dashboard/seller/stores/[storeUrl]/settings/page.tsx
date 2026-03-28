@@ -6,11 +6,12 @@ import { redirect } from "next/navigation";
 export default async function SellerStoreSettingPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	params: Promise<{ storeUrl: string }>;
 }) {
+	const { storeUrl } = await params;
 	const storeDetails = await db.store.findUnique({
 		where: {
-			url: params.storeUrl,
+			url: storeUrl,
 		},
 	});
 	if (!storeDetails) redirect("/dashboard/seller/stores");

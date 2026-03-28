@@ -4,9 +4,10 @@ import { getUserWishlist } from "@/queries/profile";
 export default async function ProfileWishlistPage({
     params,
 }: {
-    params: { page: string };
+    params: Promise<{ page: string }>;
 }) {
-    const page = Number(params.page);
+    const { page: pageParam } = await params;
+    const page = Number(pageParam);
     const wishlist_data = await getUserWishlist(page);
     const { wishlist, totalPages } = wishlist_data;
 

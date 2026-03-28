@@ -11,13 +11,14 @@ import { getAllCountries } from "@/queries/country";
 export default async function SellerProductPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	params: Promise<{ storeUrl: string }>;
 }) {
+	const { storeUrl } = await params;
 	// Fetching products data from the database for the active store
 	const [products, categories, offerTags, countries] = await Promise.all([
-		getAllStoreProducts(params.storeUrl),
+		getAllStoreProducts(storeUrl),
 		getAllCategories(),
-		getAllOfferTags(params.storeUrl),
+		getAllOfferTags(storeUrl),
 		getAllCountries(),
 	]);
 
@@ -34,10 +35,10 @@ export default async function SellerProductPage({
 					categories={categories}
 					offerTags={offerTags}
 					countries={countries}
-					storeUrl={params.storeUrl}
+					storeUrl={storeUrl}
 				/>
 			}
-			newTabLink={`/dashboard/seller/stores/${params.storeUrl}/products/new`}
+			newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}
 			filterValue="name"
 			data={products}
 			columns={columns}

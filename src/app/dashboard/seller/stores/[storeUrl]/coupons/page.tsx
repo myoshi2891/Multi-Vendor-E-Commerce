@@ -5,9 +5,10 @@ import { Plus } from 'lucide-react'
 import { getStoreCoupons } from '@/queries/coupon'
 import CouponDetails from '@/components/dashboard/forms/coupon-details'
 
-export default async function SellerCouponsPage({ params }: { params: { storeUrl: string } }) {
+export default async function SellerCouponsPage({ params }: { params: Promise<{ storeUrl: string }> }) {
+    const { storeUrl } = await params;
     // Get all coupons for the store
-    const coupons = await getStoreCoupons(params.storeUrl)
+    const coupons = await getStoreCoupons(storeUrl)
 
     return (
         <div>
@@ -18,8 +19,8 @@ export default async function SellerCouponsPage({ params }: { params: { storeUrl
                         Create New Coupon
                     </>
                 }
-                modalChildren={<CouponDetails storeUrl={params.storeUrl} />}
-                newTabLink={`/dashboard/seller/stores/${params.storeUrl}/coupons/new`}
+                modalChildren={<CouponDetails storeUrl={storeUrl} />}
+                newTabLink={`/dashboard/seller/stores/${storeUrl}/coupons/new`}
                 filterValue="name"
                 data={coupons}
                 columns={columns}

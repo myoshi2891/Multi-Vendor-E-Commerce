@@ -11,10 +11,12 @@ export default async function StorePage({
     params,
     searchParams,
 }: {
-    params: { storeUrl: string };
-    searchParams: FiltersQueryType;
+    params: Promise<{ storeUrl: string }>;
+    searchParams: Promise<FiltersQueryType>;
 }) {
-    const store = await getStorePageDetails(params.storeUrl);
+    const { storeUrl } = await params;
+    const resolvedSearchParams = await searchParams;
+    const store = await getStorePageDetails(storeUrl);
     return (
         <>
             <StoreHeader />
@@ -23,14 +25,14 @@ export default async function StorePage({
             <div className="mx-auto max-w-[95%] border-t">
                 <div className="mt-5 flex gap-x-5">
                     <ProductFilters
-                        queries={searchParams}
-                        storeUrl={params.storeUrl}
+                        queries={resolvedSearchParams}
+                        storeUrl={storeUrl}
                     />
                     <div className="space-y-5 p-4">
                         <ProductSort />
                         <StoreProducts
-                            searchParams={searchParams}
-                            store={params.storeUrl}
+                            searchParams={resolvedSearchParams}
+                            store={storeUrl}
                         />
                     </div>
                 </div>

@@ -21,9 +21,10 @@ import { redirect } from "next/navigation";
 export default async function OrderPage({
     params,
 }: {
-    params: { orderId: string };
+    params: Promise<{ orderId: string }>;
 }) {
-    const order = await getOrder(params.orderId);
+    const { orderId } = await params;
+    const order = await getOrder(orderId);
     if (!order) return redirect("/");
 
     // Get the total count of items across all groups

@@ -9,10 +9,11 @@ import { getStoreOrders } from "@/queries/store";
 export default async function SellerOrdersPage({
     params,
 }: {
-    params: { storeUrl: string };
+    params: Promise<{ storeUrl: string }>;
 }) {
+    const { storeUrl } = await params;
     // Get all coupons for the store
-    const orders = await getStoreOrders(params.storeUrl);
+    const orders = await getStoreOrders(storeUrl);
 
     return (
         <div>

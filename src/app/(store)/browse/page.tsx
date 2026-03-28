@@ -9,7 +9,7 @@ import { getFilteredSizes } from "@/queries/size";
 export default async function BrowsePage({
     searchParams,
 }: {
-    searchParams: FiltersQueryType;
+    searchParams: Promise<FiltersQueryType>;
 }) {
     const {
         category,
@@ -21,7 +21,7 @@ export default async function BrowsePage({
         maxPrice,
         minPrice,
         color,
-    } = searchParams;
+    } = await searchParams;
     await getFilteredSizes({});
     const products_data = await getProducts(
         {
@@ -51,7 +51,7 @@ export default async function BrowsePage({
             <StoreHeader />
             <div className="mx-auto max-w-[95%]">
                 <div className="mt-5 flex gap-x-5">
-                    <ProductFilters queries={searchParams} />
+                    <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
                     <div className="space-y-5 p-4">
                         <ProductSort />
                         {/* Product list */}

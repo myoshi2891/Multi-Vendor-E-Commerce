@@ -7,9 +7,9 @@ import { cookies } from "next/headers";
 import { Country } from "@/lib/types";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 
-export default function StoreHeader() {
+export default async function StoreHeader() {
     // Get cookies from the store
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userCountryCookie = cookieStore.get("userCountry");
 
     // Set default country if cookie is missing

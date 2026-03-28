@@ -10,19 +10,20 @@ import { columns } from "./columns";
 export default async function SellerStoreShippingPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	params: Promise<{ storeUrl: string }>;
 }) {
+	const { storeUrl } = await params;
 	const shippingDetails = await getStoreDefaultShippingDetails(
-		params.storeUrl
+		storeUrl
 	);
-	const shippingRates = await getStoreShippingRates(params.storeUrl);
+	const shippingRates = await getStoreShippingRates(storeUrl);
 	if (!shippingDetails || !shippingRates) return redirect("/");
 
 	return (
 		<div>
 			<StoreDefaultShippingDetails
 				data={shippingDetails}
-				storeUrl={params.storeUrl}
+				storeUrl={storeUrl}
 			/>
 			<DataTable
 				filterValue="countryName"

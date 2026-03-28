@@ -13,13 +13,15 @@ import { getProductPageData, getProducts } from '@/queries/product'
 import { notFound, redirect } from 'next/navigation'
 
 interface PageProps {
-    params: { productSlug: string; variantSlug: string }
-    searchParams: { size?: string }
+    params: Promise<{ productSlug: string; variantSlug: string }>
+    searchParams: Promise<{ size?: string }>
 }
 export default async function ProductVariantPage({
-    params: { productSlug, variantSlug },
-    searchParams: { size: sizeId },
+    params,
+    searchParams,
 }: PageProps) {
+    const { productSlug, variantSlug } = await params;
+    const { size: sizeId } = await searchParams;
     // Fetch product data based on the product slug and variant slug
     const productData = await getProductPageData(productSlug, variantSlug)
 

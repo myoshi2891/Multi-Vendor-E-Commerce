@@ -3,14 +3,15 @@ import Pagination from "@/components/store/shared/pagination";
 import ProductList from "@/components/store/shared/product-list";
 import { getProductsByIds } from "@/queries/product";
 import { Divide } from "lucide-react";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 export default function ProfileHistoryPage({
     params,
 }: {
-    params: { page: string };
+    params: Promise<{ page: string }>;
 }) {
+    const { page: pageParam } = use(params);
     const [products, setProducts] = useState<any>([]);
-    const [page, setPage] = useState<number>(Number(params.page) || 1);
+    const [page, setPage] = useState<number>(Number(pageParam) || 1);
     const [totalPages, setTotalPages] = useState<number>(0);
     const [loading, setLoading] = useState(true);
 
@@ -27,7 +28,7 @@ export default function ProfileHistoryPage({
                 setLoading(true);
 
                 const productHistory = JSON.parse(historyString);
-                const page = Number(params.page);
+                const page = Number(pageParam);
 
                 // Fetch products by ids
                 const res = await getProductsByIds(productHistory, page);
@@ -42,7 +43,7 @@ export default function ProfileHistoryPage({
         };
         setLoading(false);
         fetchHistory();
-    }, [params.page]);
+    }, [pageParam]);
     return (
         <div className="bg-white px-6 py-4">
             <h1 className="mb-3 text-lg font-bold">

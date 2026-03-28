@@ -6,8 +6,9 @@ import { getAllOfferTags } from '@/queries/offer-tag'
 export default async function SellerNewProductPage({
     params,
 }: {
-    params: { storeUrl: string }
+    params: Promise<{ storeUrl: string }>
 }) {
+    const { storeUrl } = await params;
     const categories = await getAllCategories()
     const offerTags = await getAllOfferTags()
     const countries = await db.country.findMany({
@@ -18,7 +19,7 @@ export default async function SellerNewProductPage({
         <div className="w-full">
             <ProductDetails
                 categories={categories}
-                storeUrl={params.storeUrl}
+                storeUrl={storeUrl}
                 offerTags={offerTags}
                 countries={countries}
             />
