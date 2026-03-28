@@ -270,11 +270,13 @@ const DEFAULT_COUNTRY: Country = {
 };
 
 function isCountry(value: unknown): value is Country {
+    if (typeof value !== "object" || value === null) return false;
+    const obj = value as Record<string, unknown>;
     return (
-        typeof value === "object" &&
-        value !== null &&
-        typeof (value as Record<string, unknown>).name === "string" &&
-        typeof (value as Record<string, unknown>).code === "string"
+        typeof obj.name === "string" &&
+        typeof obj.code === "string" &&
+        typeof obj.city === "string" &&
+        typeof obj.region === "string"
     );
 }
 

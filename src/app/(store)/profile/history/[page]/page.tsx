@@ -18,33 +18,55 @@ export default function ProfileHistoryPage({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let cancelled = false;
+
         const fetchHistory = async () => {
             const historyString = localStorage.getItem("productHistory");
             if (!historyString) {
-                setProducts([]);
-                setLoading(false);
+                if (!cancelled) {
+                    setProducts([]);
+                    setLoading(false);
+                }
                 return;
             }
 
             try {
                 setLoading(true);
-                const productHistory = JSON.parse(historyString) as string[];
+                const parsed: unknown = JSON.parse(historyString);
+                const productHistory = Array.isArray(parsed) && parsed.every((item): item is string => typeof item === "string")
+                    ? parsed
+                    : [];
+                if (productHistory.length === 0) {
+                    if (!cancelled) {
+                        setProducts([]);
+                        setLoading(false);
+                    }
+                    return;
+                }
                 const res = await getProductsByIds(productHistory, currentPage);
-                setProducts(res.products);
-                setTotalPages(res.totalPages);
-                setPage(currentPage);
+                if (!cancelled) {
+                    setProducts(res.products);
+                    setTotalPages(res.totalPages);
+                    setPage(currentPage);
+                }
             } catch (error: unknown) {
                 if (error instanceof Error) {
                     console.error("[ProfileHistory] Error fetching history:", error.message, error.stack);
                 } else {
                     console.error("[ProfileHistory] Error fetching history:", error);
                 }
-                setProducts([]);
+                if (!cancelled) {
+                    setProducts([]);
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
         fetchHistory();
+
+        return () => { cancelled = true; };
     }, [currentPage]);
     return (
         <div className="bg-white px-6 py-4">

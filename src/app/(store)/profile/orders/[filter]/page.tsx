@@ -15,7 +15,7 @@ export default async function ProfileFilteredOrderPage({
         shipped: "shipped",
         delivered: "delivered",
     };
-    const filter: OrderTableFilter = rawFilter in validFilterMap
+    const filter: OrderTableFilter = Object.hasOwn(validFilterMap, rawFilter)
         ? validFilterMap[rawFilter]
         : "";
     const orders_data = await getUserOrders(filter);
