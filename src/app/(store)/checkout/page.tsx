@@ -1,7 +1,7 @@
 import CheckoutContainer from '@/components/store/checkout-page/container'
 import StoreHeader from '@/components/store/layout/header/header'
 import { db } from '@/lib/db'
-import { Country } from '@/lib/types'
+import { parseUserCountryCookie } from '@/lib/utils'
 import { getUserShippingAddresses } from '@/queries/user'
 import { currentUser } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
@@ -38,26 +38,8 @@ export default async function CheckoutPage() {
         orderBy: { name: 'desc' },
     })
 
-    // Get cookies from the store
     const cookieStore = await cookies()
-    const userCountryCookie = cookieStore.get('userCountry')
-
-    // Set default country if cookie is missing
-    let userCountry: Country = {
-        name: 'United States',
-        code: 'US',
-        city: '',
-        region: '',
-    }
-
-    // If cookie exists, parse it and update user Country
-    if (userCountryCookie) {
-        try {
-            userCountry = JSON.parse(userCountryCookie.value) as Country
-        } catch {
-            // 不正な cookie は無視し、デフォルト値を使用
-        }
-    }
+    const userCountry = parseUserCountryCookie(cookieStore.get('userCountry')?.value)
 
     return (
         <>

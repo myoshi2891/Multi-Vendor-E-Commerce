@@ -8,8 +8,17 @@ export default async function SellerOrdersPage({
     params: Promise<{ storeUrl: string }>;
 }) {
     const { storeUrl } = await params;
-    // Get all orders for the store
-    const orders = await getStoreOrders(storeUrl);
+
+    let orders: Awaited<ReturnType<typeof getStoreOrders>> = [];
+    try {
+        orders = await getStoreOrders(storeUrl);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[SellerOrders] Failed to fetch orders:", error.message, error.stack);
+        } else {
+            console.error("[SellerOrders] Failed to fetch orders:", error);
+        }
+    }
 
     return (
         <div>

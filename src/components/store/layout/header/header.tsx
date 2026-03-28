@@ -4,30 +4,12 @@ import Cart from "./cart";
 import DownloadApp from "./download-app";
 import Search from "./search/search";
 import { cookies } from "next/headers";
-import { Country } from "@/lib/types";
+import { parseUserCountryCookie } from "@/lib/utils";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 
 export default async function StoreHeader() {
-    // Get cookies from the store
     const cookieStore = await cookies();
-    const userCountryCookie = cookieStore.get("userCountry");
-
-    // Set default country if cookie is missing
-    let userCountry: Country = {
-        name: "United States",
-        code: "US",
-        city: "",
-        region: "",
-    };
-
-    // If cookie exists, update the user country
-    if (userCountryCookie) {
-        try {
-            userCountry = JSON.parse(userCountryCookie.value) as Country;
-        } catch {
-            // 不正な cookie は無視し、デフォルト値を使用
-        }
-    }
+    const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value);
 
     return (
         <div className="bg-gradient-to-r from-slate-500 to-slate-800">

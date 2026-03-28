@@ -8,6 +8,7 @@ import {
     FreeShippingWithCountriesType,
     ProductPageType,
     ProductShippingDetailsType,
+    ProductType,
     ProductWithVariantType,
     RatingStatisticsType,
     SortOrder,

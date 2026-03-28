@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import ColorThief from "colorthief";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
-import { CartProductType } from "./types";
+import { CartProductType, Country } from "./types";
 
 interface HasToNumber {
     toNumber: () => number;
@@ -261,6 +261,35 @@ export const printPDF = (blob: Blob) => {
 
     document.body.appendChild(iframe);
 };
+
+const DEFAULT_COUNTRY: Country = {
+    name: "United States",
+    code: "US",
+    city: "",
+    region: "",
+};
+
+function isCountry(value: unknown): value is Country {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        typeof (value as Record<string, unknown>).name === "string" &&
+        typeof (value as Record<string, unknown>).code === "string"
+    );
+}
+
+/**
+ * userCountry cookie を安全にパースし、不正な値の場合はデフォルトの Country を返す。
+ */
+export function parseUserCountryCookie(cookieValue: string | undefined): Country {
+    if (!cookieValue) return DEFAULT_COUNTRY;
+    try {
+        const parsed: unknown = JSON.parse(cookieValue);
+        return isCountry(parsed) ? parsed : DEFAULT_COUNTRY;
+    } catch {
+        return DEFAULT_COUNTRY;
+    }
+}
 
 // Handle product history in localStorage
 export const updateProductHistory = (variantId: string) => {

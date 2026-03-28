@@ -30,13 +30,14 @@ export default function ProfileHistoryPage({
                 setLoading(true);
                 const productHistory = JSON.parse(historyString) as string[];
                 const res = await getProductsByIds(productHistory, currentPage);
-                // getProductsByIds の戻り値は ProductList が期待する ProductType と構造互換
-                setProducts(res.products as unknown as ProductType[]);
+                setProducts(res.products);
                 setTotalPages(res.totalPages);
                 setPage(currentPage);
-            } catch (error) {
+            } catch (error: unknown) {
                 if (error instanceof Error) {
-                    console.error("Error fetching history:", error.message);
+                    console.error("[ProfileHistory] Error fetching history:", error.message, error.stack);
+                } else {
+                    console.error("[ProfileHistory] Error fetching history:", error);
                 }
                 setProducts([]);
             } finally {
