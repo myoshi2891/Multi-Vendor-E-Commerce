@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 // Icons
 import { ChevronDown } from "lucide-react";
-import "/node_modules/flag-icons/css/flag-icons.min.css";
+import "flag-icons/css/flag-icons.min.css";
 
 // Types
 import { Country, SelectMenuOption } from "@/lib/types";

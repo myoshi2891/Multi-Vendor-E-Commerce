@@ -14,12 +14,12 @@ jest.mock("@/lib/db", () => ({
 
 const mockUpdateUserMetadata = jest.fn();
 jest.mock("@clerk/nextjs/server", () => ({
-    clerkClient: {
+    clerkClient: jest.fn().mockResolvedValue({
         users: {
             updateUserMetadata: (...args: unknown[]) =>
                 mockUpdateUserMetadata(...args),
         },
-    },
+    }),
 }));
 
 // Svix Webhook モック

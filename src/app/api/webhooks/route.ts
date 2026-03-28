@@ -6,12 +6,12 @@ import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 /**
- * Handle Clerk (Svix) webhook POST requests to verify events and synchronize user records in the database.
+ * Handle Clerk (Svix) webhook POST requests, verify the Svix signature, and synchronize Clerk user events with the database.
  *
- * Verifies the Svix signature, processes user.created and user.updated events to upsert user records and update Clerk private metadata, and processes user.deleted events to remove users from the database. Throws an error if the webhook secret is not configured.
+ * Processes `user.created` and `user.updated` events to upsert user records and update Clerk private metadata, and processes `user.deleted` events to remove users from the database.
  *
  * @param req - The incoming HTTP Request containing the webhook JSON payload
- * @returns An HTTP Response: `200` on success, `400` for missing/invalid Svix headers, verification failure, or missing required event data
+ * @returns An HTTP Response: `200` on success; `400` for missing/invalid Svix headers, signature verification failure, or missing required event data; `500` for internal processing errors
  * @throws Error if the `WEBHOOK_SECRET` environment variable is not set
  */
 export async function POST(req: Request) {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 	}
 
 	// Get the headers
-	const headerPayload = headers();
+	const headerPayload = await headers();
 	const svix_id = headerPayload.get("svix-id");
 	const svix_timestamp = headerPayload.get("svix-timestamp");
 	const svix_signature = headerPayload.get("svix-signature");
@@ -99,7 +99,8 @@ export async function POST(req: Request) {
 				},
 			});
 
-			await clerkClient.users.updateUserMetadata(data.id, {
+			const client = await clerkClient();
+			await client.users.updateUserMetadata(data.id, {
 				privateMetadata: {
 					role: dbUser.role || "USER",
 				},

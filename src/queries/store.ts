@@ -674,7 +674,7 @@ export const updateStoreStatus = async (
         // Clerk メタデータ同期（ACTIVE ステータスへの遷移時、冪等操作でリトライ可能）
         if (updatedStore.status === "ACTIVE") {
             const { clerkClient } = await import("@clerk/nextjs/server");
-            const clerk = clerkClient();
+            const clerk = await clerkClient();
             await clerk.users.updateUserMetadata(updatedStore.userId, {
                 privateMetadata: { role: "SELLER" },
             });

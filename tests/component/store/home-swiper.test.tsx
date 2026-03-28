@@ -1,0 +1,71 @@
+/** @jest-environment jsdom */
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+
+// 画像 import モック
+jest.mock("@/public/assets/images/swiper/1.webp", () => "/swiper-1.webp", { virtual: true });
+jest.mock("@/public/assets/images/swiper/2.webp", () => "/swiper-2.webp", { virtual: true });
+jest.mock("@/public/assets/images/swiper/3.webp", () => "/swiper-3.webp", { virtual: true });
+jest.mock("@/public/assets/images/swiper/4.webp", () => "/swiper-4.webp", { virtual: true });
+
+// next/image モック
+jest.mock("next/image", () => ({
+    __esModule: true,
+    default: ({ src, alt }: { src: string | { src: string }; alt: string }) => {
+        const imgSrc =
+            typeof src === "string"
+                ? src
+                : src && typeof src === "object" && "src" in src
+                  ? src.src
+                  : "";
+        return <img src={imgSrc} alt={alt} data-testid="slider-image" />;
+    },
+}));
+
+// embla-carousel-react モック
+interface MockEmblaApi {
+    scrollNext: jest.Mock;
+    scrollPrev: jest.Mock;
+    canScrollNext: jest.Mock<boolean>;
+    canScrollPrev: jest.Mock<boolean>;
+    on: jest.Mock;
+    off: jest.Mock;
+    selectedScrollSnap: jest.Mock<number>;
+    scrollSnapList: jest.Mock<number[]>;
+}
+
+const mockEmblaApi: MockEmblaApi = {
+    scrollNext: jest.fn(),
+    scrollPrev: jest.fn(),
+    canScrollNext: jest.fn(() => true),
+    canScrollPrev: jest.fn(() => true),
+    on: jest.fn(() => mockEmblaApi),
+    off: jest.fn(() => mockEmblaApi),
+    selectedScrollSnap: jest.fn(() => 0),
+    scrollSnapList: jest.fn(() => [0, 1, 2, 3]),
+};
+
+jest.mock("embla-carousel-react", () => ({
+    __esModule: true,
+    default: jest.fn(() => [jest.fn(), mockEmblaApi]),
+}));
+
+// embla-carousel-autoplay モック
+jest.mock("embla-carousel-autoplay", () => ({
+    __esModule: true,
+    default: jest.fn(() => ({})),
+}));
+
+import HomeMainSwiper from "@/components/store/home/main/home-swiper";
+
+describe("HomeMainSwiper", () => {
+    it("4枚の画像が正しい alt テキストで表示されること", () => {
+        render(<HomeMainSwiper />);
+        const images = screen.getAllByTestId("slider-image");
+        expect(images).toHaveLength(4);
+        images.forEach((img, index) => {
+            expect(img).toHaveAttribute("alt", `Hero banner ${index + 1}`);
+        });
+    });
+});

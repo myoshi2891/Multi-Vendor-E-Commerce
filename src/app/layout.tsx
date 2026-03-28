@@ -33,13 +33,19 @@ export const metadata: Metadata = {
 	description: "Welcome to GoShop!",
 };
 
+/**
+ * Root layout component that wraps the application with authentication, theming, modal, and toast providers.
+ *
+ * @param children - The page or application content to render inside the layout
+ * @returns A React element containing the HTML document structure with Clerk authentication, theme provider, modal provider, and two toaster components
+ */
 export default function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider>
+		<ClerkProvider afterSignOutUrl="/">
 			<html lang="en" suppressHydrationWarning>
 				<body
 					className={`${geistSans.variable} ${geistMono.variable} antialiased`}

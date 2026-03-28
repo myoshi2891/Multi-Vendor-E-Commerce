@@ -13,13 +13,27 @@ import { getProductPageData, getProducts } from '@/queries/product'
 import { notFound, redirect } from 'next/navigation'
 
 interface PageProps {
-    params: { productSlug: string; variantSlug: string }
-    searchParams: { size?: string }
+    params: Promise<{ productSlug: string; variantSlug: string }>
+    searchParams: Promise<{ size?: string }>
 }
+/**
+ * Renders the product variant page for the given route parameters and search params.
+ *
+ * Fetches product and variant data for the provided slugs, validates or normalizes the `size`
+ * query parameter (redirecting when the size is invalid or auto-selecting when only one size
+ * is available), and returns the JSX for the product variant view including related products,
+ * reviews, descriptions, specs, questions, and store information.
+ *
+ * @param params - A promise that resolves to an object with `productSlug` and `variantSlug`.
+ * @param searchParams - A promise that resolves to an object with optional `size` (the size id).
+ * @returns The React element for the product variant page. May perform redirects or return a 404 view when appropriate.
+ */
 export default async function ProductVariantPage({
-    params: { productSlug, variantSlug },
-    searchParams: { size: sizeId },
+    params,
+    searchParams,
 }: PageProps) {
+    const { productSlug, variantSlug } = await params;
+    const { size: sizeId } = await searchParams;
     // Fetch product data based on the product slug and variant slug
     const productData = await getProductPageData(productSlug, variantSlug)
 

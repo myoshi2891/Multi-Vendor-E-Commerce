@@ -4,26 +4,19 @@ import Cart from "./cart";
 import DownloadApp from "./download-app";
 import Search from "./search/search";
 import { cookies } from "next/headers";
-import { Country } from "@/lib/types";
+import { parseUserCountryCookie } from "@/lib/utils";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 
-export default function StoreHeader() {
-    // Get cookies from the store
-    const cookieStore = cookies();
-    const userCountryCookie = cookieStore.get("userCountry");
-
-    // Set default country if cookie is missing
-    let userCountry: Country = {
-        name: "United States",
-        code: "US",
-        city: "",
-        region: "",
-    };
-
-    // If cookie exists, update the user country
-    if (userCountryCookie) {
-        userCountry = JSON.parse(userCountryCookie.value) as Country;
-    }
+/**
+ * Renders the store header UI with branding, search, user/cart controls, app download prompt, and a country/language/currency selector.
+ *
+ * The component reads the "userCountry" cookie and provides the parsed value to CountryLanguageCurrencySelector so the selector is initialized for the current user.
+ *
+ * @returns The header's JSX element.
+ */
+export default async function StoreHeader() {
+    const cookieStore = await cookies();
+    const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value);
 
     return (
         <div className="bg-gradient-to-r from-slate-500 to-slate-800">

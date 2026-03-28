@@ -4,6 +4,7 @@ module.exports = {
     testEnvironment: "node",
     setupFilesAfterEnv: ["<rootDir>/tests-setup/jest.setup.ts"],
     moduleNameMapper: {
+        "^@/public/(.*)$": "<rootDir>/public/$1",
         "^@/(.*)$": "<rootDir>/src/$1",
     },
     testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/"],

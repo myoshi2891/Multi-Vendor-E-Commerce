@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import ColorThief from "colorthief";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
-import { CartProductType } from "./types";
+import { CartProductType, Country } from "./types";
 
 interface HasToNumber {
     toNumber: () => number;
@@ -261,6 +261,46 @@ export const printPDF = (blob: Blob) => {
 
     document.body.appendChild(iframe);
 };
+
+const DEFAULT_COUNTRY: Country = {
+    name: "United States",
+    code: "US",
+    city: "",
+    region: "",
+};
+
+/**
+ * Type guard that verifies a value conforms to the Country shape.
+ *
+ * @param value - The value to validate.
+ * @returns `true` if `value` is an object with string `name`, `code`, `city`, and `region` properties, `false` otherwise.
+ */
+function isCountry(value: unknown): value is Country {
+    if (typeof value !== "object" || value === null) return false;
+    const obj = value as Record<string, unknown>;
+    return (
+        typeof obj.name === "string" &&
+        typeof obj.code === "string" &&
+        typeof obj.city === "string" &&
+        typeof obj.region === "string"
+    );
+}
+
+/**
+ * Parse a stored user country cookie and return a valid Country object, falling back to a default on error or invalid data.
+ *
+ * @param cookieValue - Raw cookie string expected to contain a JSON-encoded Country, or undefined if missing
+ * @returns The parsed `Country` when valid, otherwise `DEFAULT_COUNTRY`
+ */
+export function parseUserCountryCookie(cookieValue: string | undefined): Country {
+    if (!cookieValue) return DEFAULT_COUNTRY;
+    try {
+        const parsed: unknown = JSON.parse(cookieValue);
+        return isCountry(parsed) ? parsed : DEFAULT_COUNTRY;
+    } catch {
+        return DEFAULT_COUNTRY;
+    }
+}
 
 // Handle product history in localStorage
 export const updateProductHistory = (variantId: string) => {

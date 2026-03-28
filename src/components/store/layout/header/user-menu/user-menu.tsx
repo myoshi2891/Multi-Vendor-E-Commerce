@@ -8,6 +8,15 @@ import { Button } from "../../../ui/button";
 import { Separator } from "@/components/ui/separator";
 import { MessageIcon, OrderIcon, WishlistIcon } from "../../../icons";
 
+/**
+ * Renders a user avatar/entry area that expands into a hover menu with account actions and navigation links.
+ *
+ * The menu shows the authenticated user's avatar and account controls when a user is present, or sign-in / registration
+ * actions when no user is authenticated. The menu also includes quick links (orders, messages, wishlist) and additional
+ * navigation entries.
+ *
+ * @returns A React element representing the user menu and its hoverable dropdown content
+ */
 export default async function UserMenu() {
     // Get the current user
     const user = await currentUser();
@@ -112,11 +121,9 @@ export default async function UserMenu() {
                                         <li key={i}>
                                             <Link
                                                 href={item.link}
-                                                legacyBehavior
+                                                className="block py-1.5 text-sm text-main-primary hover:underline"
                                             >
-                                                <a className="block py-1.5 text-sm text-main-primary hover:underline">
-                                                    {item.title}
-                                                </a>
+                                                {item.title}
                                             </Link>
                                         </li>
                                     ))}

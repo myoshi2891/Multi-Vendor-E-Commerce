@@ -1,17 +1,20 @@
 import CouponDetails from '@/components/dashboard/forms/coupon-details'
-import ProductDetails from '@/components/dashboard/forms/product-details'
-import { db } from '@/lib/db'
-import { getAllCategories } from '@/queries/category'
-import { getAllOfferTags } from '@/queries/offer-tag'
 
+/**
+ * Render the seller's "new coupon" page for a specific store.
+ *
+ * @param params - A promise resolving to an object with `storeUrl`, the store identifier used to render the coupon details UI.
+ * @returns The page's JSX element containing the coupon details component for the specified store.
+ */
 export default async function SellerNewCouponPage({
     params,
 }: {
-    params: { storeUrl: string }
+    params: Promise<{ storeUrl: string }>
 }) {
+    const { storeUrl } = await params;
     return (
         <div className="w-full">
-            <CouponDetails storeUrl={params.storeUrl} />
+            <CouponDetails storeUrl={storeUrl} />
         </div>
     )
 }

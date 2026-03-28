@@ -10,7 +10,7 @@ export default clerkMiddleware(async (auth, req, next) => {
         "/profile",
         "/profile/(.*)",
     ]);
-    if (protectedRoutes(req)) auth().protect();
+    if (protectedRoutes(req)) await auth.protect();
 
     // リダイレクトではなくレスポンスに直接 Cookie をセット
     // （リダイレクト方式は非ブラウザクライアントで無限ループを引き起こす）

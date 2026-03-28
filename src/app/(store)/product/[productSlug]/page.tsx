@@ -1,24 +1,35 @@
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 
+/**
+ * Redirects to the first variant's product page for the given product slug, or to the home page if the product can't be fetched or has no variants.
+ *
+ * @param params - A promise that resolves to an object containing `productSlug`, used to look up the product.
+ * @returns A redirect response to `/product/{productSlug}/{variantSlug}` when a product with variants is found, otherwise a redirect to `/`.
+ */
 export default async function ProductPage({
 	params,
 }: {
-	params: { productSlug: string };
+	params: Promise<{ productSlug: string }>;
 }) {
-	// Fetch the product from the database using the provided slug
-	const product = await db.product.findUnique({
-		where: {
-			slug: params.productSlug,
-		},
-		include: { variants: true }, // Include product variants in the query
-    });
-    // If the product is not found, redirect to the homepage
-    if (!product) return redirect('/')
+	const { productSlug } = await params;
 
-    // If the product has no variants, redirect to the homepage
-    if (!product.variants.length) return redirect('/');
+	let product;
+	try {
+		product = await db.product.findUnique({
+			where: { slug: productSlug },
+			include: { variants: true },
+		});
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("[ProductPage] Failed to fetch product:", error.message, error.stack);
+		} else {
+			console.error("[ProductPage] Failed to fetch product:", error);
+		}
+		return redirect('/');
+	}
 
-    // If the product exists and has variants, redirect to the first variant's page
+	if (!product || !product.variants.length) return redirect('/');
+
 	return redirect(`/product/${product.slug}/${product.variants[0].slug}`);
 }

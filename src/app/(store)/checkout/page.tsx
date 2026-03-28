@@ -1,12 +1,19 @@
 import CheckoutContainer from '@/components/store/checkout-page/container'
 import StoreHeader from '@/components/store/layout/header/header'
 import { db } from '@/lib/db'
-import { Country } from '@/lib/types'
+import { parseUserCountryCookie } from '@/lib/utils'
 import { getUserShippingAddresses } from '@/queries/user'
 import { currentUser } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+/**
+ * Renders the checkout page after loading the authenticated user's cart, shipping addresses, country list, and resolved user country.
+ *
+ * Fetches the current user, the user's cart (including cart items and coupon with its store), the user's shipping addresses, the list of countries ordered by name descending, and the `userCountry` value parsed from cookies. If no authenticated user or no cart is found, redirects to `/cart`.
+ *
+ * @returns The checkout page JSX ready to be rendered, containing the store header and the checkout container populated with `cart`, `countries`, `addresses`, and `userCountry`.
+ */
 export default async function CheckoutPage() {
     const user = await currentUser()
     if (!user) {
@@ -38,22 +45,8 @@ export default async function CheckoutPage() {
         orderBy: { name: 'desc' },
     })
 
-    // Get cookies from the store
-    const cookieStore = cookies()
-    const userCountryCookie = cookieStore.get('userCountry')
-
-    // Set default country if cookie is missing
-    let userCountry: Country = {
-        name: 'United States',
-        code: 'US',
-        city: '',
-        region: '',
-    }
-
-    // If cookie exists, parse it and update user Country
-    if (userCountryCookie) {
-        userCountry = JSON.parse(userCountryCookie.value) as Country
-    }
+    const cookieStore = await cookies()
+    const userCountry = parseUserCountryCookie(cookieStore.get('userCountry')?.value)
 
     return (
         <>
