@@ -10,7 +10,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 686 unit tests across 30 suites (all passing).
+- 881 unit tests across 54 suites (all passing).
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent

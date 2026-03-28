@@ -1,11 +1,11 @@
 # Architecture
 
 ## Stack
-- Next.js 14 (App Router)
-- React 18 + TypeScript
+- Next.js 16.2.1 (App Router)
+- React 19 + TypeScript
 - Tailwind CSS + shadcn/ui components
 - Prisma ORM + PostgreSQL (Neon)
-- Clerk authentication
+- Clerk v7 authentication
 - Stripe and PayPal payments
 - Cloudinary media uploads
 

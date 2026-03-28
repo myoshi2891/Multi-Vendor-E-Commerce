@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-マルチベンダーEコマースマーケットプレイス。Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済。3つのユーザーロール: 顧客(USER)、販売者(SELLER)、管理者(ADMIN)。
+マルチベンダーEコマースマーケットプレイス。Next.js 16 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済。3つのユーザーロール: 顧客(USER)、販売者(SELLER)、管理者(ADMIN)。
 
 ## 開発コマンド
 
