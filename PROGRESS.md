@@ -444,4 +444,4 @@ Q5: それ以外（進捗・一時的）→ PROGRESS.md
 - Playwright E2E: 3 ブラウザ（Chromium / Firefox / WebKit）
 
 ### 現在のブランチ状態
-- `feat/nextjs-16-migration` → `main` へのマージ完了（`2c9665e`）
+- `feat/nextjs-16-migration` → `main` へのマージ待ち／レビュー中（PR #104、`2c9665e`）

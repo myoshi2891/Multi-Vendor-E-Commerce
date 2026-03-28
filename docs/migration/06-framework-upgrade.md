@@ -299,6 +299,6 @@ const ids = Array.isArray(parsed) && parsed.every((x): x is string => typeof x =
 ## Related
 
 - Upgrade commits: `2e7d706`, `fcdb042`
-- DB migration history: `docs/migration/00-05-*.md`
+- DB migration history: [Migration Documentation](./README.md)
 - Architecture decisions: `docs/architecture/decisions/`
 - Progress log: `PROGRESS.md` (2026-03-28 entry)
