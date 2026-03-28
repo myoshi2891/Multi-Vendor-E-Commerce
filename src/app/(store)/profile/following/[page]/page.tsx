@@ -1,6 +1,12 @@
 import FollowingContainer from "@/components/store/profile/following/container";
 import { getUserFollowedStores } from "@/queries/profile";
 
+/**
+ * Renders the "Stores you follow" profile page for a given page number.
+ *
+ * @param params - A promise that resolves to route params; expects a `page` string representing the requested page number.
+ * @returns A React element displaying the followed stores for the requested page, including pagination state.
+ */
 export default async function ProfileFollowingPage({
     params,
 }: {

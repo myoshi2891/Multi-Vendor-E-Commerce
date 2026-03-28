@@ -6,6 +6,12 @@ import { getAllCategories } from "@/queries/category";
 import { getAllOfferTags } from '@/queries/offer-tag'
 import { getProductMainInfo } from '@/queries/product'
 
+/**
+ * Loads data for a product details form and renders the ProductDetails page for a specific product.
+ *
+ * @param params - A promise that resolves to an object with `storeUrl` and `productId` identifying the store and product
+ * @returns The rendered ProductDetails React element for the product, or `null` if the product does not exist
+ */
 export default async function SellerNewProductVariantPage({
     params,
 }: {

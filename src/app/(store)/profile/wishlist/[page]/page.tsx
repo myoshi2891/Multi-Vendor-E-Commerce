@@ -1,6 +1,14 @@
 import WishlistContainer from "@/components/store/profile/wishlist/container";
 import { getUserWishlist } from "@/queries/profile";
 
+/**
+ * Renders the user's wishlist page, normalizing the requested page and displaying paginated results.
+ *
+ * The `page` parameter is normalized to an integer >= 1 (defaults to 1) and used to fetch the wishlist for that page.
+ *
+ * @param params - A promise that resolves to an object with a `page` string representing the requested page number.
+ * @returns The React element for the wishlist page, containing a paginated product list when items exist or an empty-state message otherwise.
+ */
 export default async function ProfileWishlistPage({
     params,
 }: {

@@ -8,6 +8,15 @@ import { getAllCategories } from "@/queries/category";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import { getAllCountries } from "@/queries/country";
 
+/**
+ * Renders the seller product listing page for the store identified by `storeUrl`.
+ *
+ * The page displays a data table of the store's products and provides a "Create New Product"
+ * modal pre-populated with categories, offer tags, and countries.
+ *
+ * @param params - A promise that resolves to an object containing the `storeUrl` for the active store
+ * @returns A React element for the seller product listing page populated with products, categories, offer tags, and countries
+ */
 export default async function SellerProductPage({
 	params,
 }: {

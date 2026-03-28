@@ -7,6 +7,15 @@ import StoreProducts from "@/components/store/store-page/store-products";
 import { FiltersQueryType } from "@/lib/types";
 import { getStorePageDetails } from "@/queries/store";
 
+/**
+ * Renders the store page for a given store URL, including headers, store details, filters, sort controls, and product listings.
+ *
+ * Renders a complete store UI composed of StoreHeader, CategoriesHeader, StoreDetails, ProductFilters, ProductSort, and StoreProducts.
+ *
+ * @param params - A promise that resolves to an object containing `storeUrl`, the identifier for the store to render
+ * @param searchParams - A promise that resolves to filter/query parameters used by ProductFilters and StoreProducts
+ * @returns The JSX for the store page
+ */
 export default async function StorePage({
     params,
     searchParams,

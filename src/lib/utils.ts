@@ -269,6 +269,12 @@ const DEFAULT_COUNTRY: Country = {
     region: "",
 };
 
+/**
+ * Type guard that verifies a value conforms to the Country shape.
+ *
+ * @param value - The value to validate.
+ * @returns `true` if `value` is an object with string `name`, `code`, `city`, and `region` properties, `false` otherwise.
+ */
 function isCountry(value: unknown): value is Country {
     if (typeof value !== "object" || value === null) return false;
     const obj = value as Record<string, unknown>;
@@ -281,7 +287,10 @@ function isCountry(value: unknown): value is Country {
 }
 
 /**
- * userCountry cookie を安全にパースし、不正な値の場合はデフォルトの Country を返す。
+ * Parse a stored user country cookie and return a valid Country object, falling back to a default on error or invalid data.
+ *
+ * @param cookieValue - Raw cookie string expected to contain a JSON-encoded Country, or undefined if missing
+ * @returns The parsed `Country` when valid, otherwise `DEFAULT_COUNTRY`
  */
 export function parseUserCountryCookie(cookieValue: string | undefined): Country {
     if (!cookieValue) return DEFAULT_COUNTRY;
