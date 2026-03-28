@@ -13,7 +13,7 @@
     "seed:luxury": "tsx prisma/seed/seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.1.5",
+    "@clerk/nextjs": "^7.0.7",
     "@hookform/resolvers": "^3.6.0",
     "@paypal/react-paypal-js": "^8.7.0",
     "@prisma/client": "5.22.0",
@@ -107,7 +107,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.0.5",
+    "@clerk/testing": "^2.0.7",
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

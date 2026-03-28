@@ -45,10 +45,12 @@ describe("Middleware", () => {
         Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', configurable: true });
 
         // 認証処理のモック
+        // Clerk v7: auth.protect() は auth 関数オブジェクトのプロパティとして呼ばれる
         mockProtect = jest.fn();
         mockAuth = jest.fn(() => ({
-            protect: mockProtect,
+            redirectToSignIn: jest.fn(),
         }));
+        mockAuth.protect = mockProtect;
     });
 
     afterEach(() => {
@@ -63,66 +65,59 @@ describe("Middleware", () => {
     } as unknown as NextFetchEvent;
 
     describe("ルーティング保護 (Authentication & Route Protection)", () => {
-        it("正常系: 保護されたルート (/dashboard) の場合は auth().protect() が呼ばれる", async () => {
+        it("正常系: 保護されたルート (/dashboard) の場合は auth.protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/dashboard");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
         });
 
-        it("正常系: 保護されたルート (/dashboard/settings) の場合は auth().protect() が呼ばれる", async () => {
+        it("正常系: 保護されたルート (/dashboard/settings) の場合は auth.protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/dashboard/settings");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
         });
 
-        it("正常系: 保護されたルート (/checkout) の場合は auth().protect() が呼ばれる", async () => {
+        it("正常系: 保護されたルート (/checkout) の場合は auth.protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/checkout");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
         });
 
-        it("正常系: 保護されたルート (/profile) の場合は auth().protect() が呼ばれる", async () => {
+        it("正常系: 保護されたルート (/profile) の場合は auth.protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/profile");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
         });
 
-        it("正常系: 保護されたサブルート (/profile/orders) の場合は auth().protect() が呼ばれる", async () => {
+        it("正常系: 保護されたサブルート (/profile/orders) の場合は auth.protect() が呼ばれる", async () => {
             const req = new NextRequest("http://localhost:3000/profile/orders");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).toHaveBeenCalled();
             expect(mockProtect).toHaveBeenCalled();
         });
 
-        it("正常系: パブリックなルート (/) の場合は auth().protect() が呼ばれない", async () => {
+        it("正常系: パブリックなルート (/) の場合は auth.protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
         });
 
-        it("正常系: パブリックなルート (/browse) の場合は auth().protect() が呼ばれない", async () => {
+        it("正常系: パブリックなルート (/browse) の場合は auth.protect() が呼ばれない", async () => {
             const req = new NextRequest("http://localhost:3000/browse");
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
             await typedMiddleware(mockAuth as ClerkMiddlewareAuth, req, mockEvent);
 
-            expect(mockAuth).not.toHaveBeenCalled();
             expect(mockProtect).not.toHaveBeenCalled();
         });
     });
