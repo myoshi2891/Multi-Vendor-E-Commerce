@@ -1,6 +1,12 @@
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 
+/**
+ * Redirects to the first variant's product page for the given product slug, or to the home page if the product can't be fetched or has no variants.
+ *
+ * @param params - A promise that resolves to an object containing `productSlug`, used to look up the product.
+ * @returns A redirect response to `/product/{productSlug}/{variantSlug}` when a product with variants is found, otherwise a redirect to `/`.
+ */
 export default async function ProductPage({
 	params,
 }: {

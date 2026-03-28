@@ -12,6 +12,14 @@ import 'swiper/css'
 import { ProductVariantImage } from '@prisma/client'
 import { useEffect, useRef } from 'react'
 
+/**
+ * Renders a fixed-height image carousel for product variant images.
+ *
+ * Displays each image as a slide and controls autoplay: autoplay is started on mouse enter, stopped on mouse leave, and the carousel resets to the first slide when the cursor leaves.
+ *
+ * @param images - Array of product variant images to display in the carousel
+ * @returns The JSX element containing the image Swiper carousel
+ */
 export default function ProductCardImageSwiper({
     images,
 }: {

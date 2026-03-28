@@ -8,6 +8,11 @@ import Img3 from "@/public/assets/images/swiper/3.webp";
 import Img4 from "@/public/assets/images/swiper/4.webp";
 import Image from "next/image";
 
+/**
+ * Renders the main homepage image carousel with continuous looping and autoplay.
+ *
+ * @returns The React element containing the carousel populated from the module's images.
+ */
 export default function HomeMainSwiper() {
     const [emblaRef] = useEmblaCarousel({ loop: true }, [
         Autoplay({ delay: 6000, stopOnInteraction: false }),

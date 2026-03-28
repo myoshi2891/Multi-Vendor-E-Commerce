@@ -10,13 +10,13 @@ import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
 
 /**
- * Render the order details page for a specific order ID.
+ * Render the order details page for a given route parameter.
  *
- * Fetches the order by `orderId`, redirects to the root path if no order is found, computes aggregate item counts, and renders the order header, user and order details, order groups, and a conditional payment section.
+ * Fetches the order by `orderId`, redirects to "/" if not found, computes aggregate item counts from the order's groups, and renders the order header, user and order details, groups list, and a conditional payment column when the order requires payment or has failed.
  *
- * @param params - Route parameters object
+ * @param params - A promise that resolves to the route parameters
  * @param params.orderId - The identifier of the order to display
- * @returns A JSX element that displays the full order page (header, details, groups, totals, and payment controls)
+ * @returns The rendered order details page as a JSX element
  */
 export default async function OrderPage({
     params,
