@@ -112,11 +112,9 @@ export default async function UserMenu() {
                                         <li key={i}>
                                             <Link
                                                 href={item.link}
-                                                legacyBehavior
+                                                className="block py-1.5 text-sm text-main-primary hover:underline"
                                             >
-                                                <a className="block py-1.5 text-sm text-main-primary hover:underline">
-                                                    {item.title}
-                                                </a>
+                                                {item.title}
                                             </Link>
                                         </li>
                                     ))}
