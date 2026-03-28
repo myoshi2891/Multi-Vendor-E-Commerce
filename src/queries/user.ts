@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { toNumberSafe } from "@/lib/utils"
+import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
@@ -171,7 +171,7 @@ export const saveUserCart = async (
                 : new Prisma.Decimal(size.price.toString())
 
             // Calculate shipping details
-            const countryCookie = getCookie('userCountry', { cookies })
+            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
 
             let details = {
                 shippingFee: 0,
@@ -180,7 +180,7 @@ export const saveUserCart = async (
             }
 
             if (countryCookie) {
-                const country = JSON.parse(countryCookie)
+                const country = parseUserCountryCookie(countryCookie)
                 const temp_details = await getShippingDetails(
                     product.shippingFeeMethod,
                     country,
@@ -802,7 +802,7 @@ export const updateCartWithLatest = async (
             const size = variant.sizes[0]
 
             // Calculate Shipping details
-            const countryCookie = getCookie('userCountry', { cookies })
+            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
 
             let details = {
                 shippingService: product.store.defaultShippingService,
@@ -814,7 +814,7 @@ export const updateCartWithLatest = async (
             }
 
             if (countryCookie) {
-                const country = JSON.parse(countryCookie)
+                const country = parseUserCountryCookie(countryCookie)
                 const temp_details = await getShippingDetails(
                     product.shippingFeeMethod,
                     country,
@@ -975,12 +975,12 @@ export const updateCheckoutProductWithLatest = async (
             const size = variant.sizes[0]
 
             // Calculate Shipping details
-            const countryCookie = getCookie('userCountry', { cookies })
+            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
 
-            const country = address
-                ? address
+            const country: Country | null = address
+                ? { name: address.name, code: address.code, city: "", region: "" }
                 : countryCookie
-                  ? JSON.parse(countryCookie)
+                  ? parseUserCountryCookie(countryCookie)
                   : null
 
             if (!country) {

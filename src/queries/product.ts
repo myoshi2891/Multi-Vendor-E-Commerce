@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { toNumberSafe } from "@/lib/utils";
+import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils";
 // Types
 import {
     Country,
@@ -1025,28 +1025,8 @@ export const retrieveProductDetails = async (
 };
 
 const getUserCountry = () => {
-    const userCountryCookie = getCookie("userCountry", { cookies }) || "";
-    const defaultCountry = { name: "United States", code: "US" };
-
-    try {
-        const parsedCountry = JSON.parse(userCountryCookie);
-        if (
-            parsedCountry &&
-            typeof parsedCountry === "object" &&
-            "name" in parsedCountry &&
-            "code" in parsedCountry
-        ) {
-            return parsedCountry;
-        }
-        return defaultCountry;
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error("Error retrieving user country:", error.message, error.stack);
-        } else {
-            console.error("Error retrieving user country:", error);
-        }
-        return defaultCountry;
-    }
+    const cookieValue = getCookie("userCountry", { cookies }) as string | undefined;
+    return parseUserCountryCookie(cookieValue);
 };
 const formatProductResponse = (
     product: ProductPageType,
