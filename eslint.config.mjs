@@ -14,6 +14,7 @@ export default [
     {
         // eslint-plugin-react-hooks v6 の新ルールを一時的に warn に
         // 既存コードのリファクタリングは別タスクで対応
+        files: ["**/*.{tsx,jsx}"],
         rules: {
             "react-hooks/set-state-in-effect": "warn",
             "react-hooks/static-components": "warn",

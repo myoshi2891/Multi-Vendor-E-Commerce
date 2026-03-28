@@ -1524,34 +1524,6 @@ export const getProductShippingFee = async (
     }
 };
 
-export interface VariantType {
-    variantId: string;
-    variantName: string;
-    variantSlug: string;
-    images: { url: string }[];
-    sizes: {
-        id: string;
-        size: string;
-        quantity: number;
-        price: number;
-        discount: number;
-        productVariantId: string;
-        createdAt: Date;
-        updatedAt: Date;
-    }[];
-}
-
-export interface OrderedProductType {
-    id: string;
-    slug: string;
-    name: string;
-    rating: number;
-    sales: number;
-    numReviews: number;
-    variants: VariantType[];
-    variantImages: VariantImageType[];
-}
-
 /**
  * @function getProductsByIds
  * @description Retrieves product details based on an array of product ids.
@@ -1564,7 +1536,7 @@ export const getProductsByIds = async (
     ids: string[],
     page: number = 1,
     pageSize: number = 10
-): Promise<{ products: OrderedProductType[]; totalPages: number }> => {
+): Promise<{ products: ProductType[]; totalPages: number }> => {
     const MAX_IDS = 1000;
     // Check if ids array is empty
     if (!ids || ids.length === 0) {
@@ -1585,18 +1557,15 @@ export const getProductsByIds = async (
         const variants = await db.productVariant.findMany({
             where: {
                 id: {
-                    in: ids, //; Filter products whose ids are in the provided array
+                    in: ids,
                 },
             },
             select: {
                 id: true,
                 variantName: true,
+                variantImage: true,
                 slug: true,
-                images: {
-                    select: {
-                        url: true,
-                    },
-                },
+                images: true,
                 sizes: true,
                 product: {
                     select: {
@@ -1611,27 +1580,35 @@ export const getProductsByIds = async (
             },
         });
 
-        const new_products: OrderedProductType[] = variants.map((variant) => ({
-            id: variant.product.id,
-            slug: variant.product.slug,
-            name: variant.product.name,
-            rating: variant.product.rating,
-            sales: variant.product.sales,
-            numReviews: variant.product.numReviews,
-            variants: [
-                {
-                    variantId: variant.id,
-                    variantName: variant.variantName,
-                    variantSlug: variant.slug,
-                    images: variant.images,
-                    sizes: variant.sizes.map((size) => ({
-                        ...size,
-                        price: toNumberSafe(size.price),
-                    })),
-                },
-            ],
-            variantImages: [],
-        }));
+        // getProducts と同じ ProductType 互換の構造にマッピング
+        const new_products: ProductType[] = variants.map((variant) => {
+            const variantSimplified: VariantSimplified = {
+                variantId: variant.id,
+                variantSlug: variant.slug,
+                variantName: variant.variantName,
+                images: variant.images,
+                sizes: variant.sizes.map((s) => ({
+                    ...s,
+                    price: toNumberSafe(s.price),
+                })),
+            };
+            const variantImage: VariantImageType = {
+                url: `/product/${variant.product.slug}/${variant.slug}`,
+                image: variant.variantImage
+                    ? variant.variantImage
+                    : variant.images[0]?.url ?? "",
+            };
+            return {
+                id: variant.product.id,
+                slug: variant.product.slug,
+                name: variant.product.name,
+                rating: variant.product.rating,
+                sales: variant.product.sales,
+                numReviews: variant.product.numReviews,
+                variants: [variantSimplified],
+                variantImages: [variantImage],
+            };
+        });
 
         // Return products sorted in the order of ids provided
         const ordered_products = ids
@@ -1640,7 +1617,7 @@ export const getProductsByIds = async (
                     (product) => product.variants[0].variantId === id
                 )
             )
-            .filter((p): p is OrderedProductType => Boolean(p));
+            .filter((p): p is ProductType => Boolean(p));
 
         const paginated_products = ordered_products.slice(skip, skip + limit);
 

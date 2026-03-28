@@ -7,19 +7,23 @@ export default async function ProductPage({
 	params: Promise<{ productSlug: string }>;
 }) {
 	const { productSlug } = await params;
-	// Fetch the product from the database using the provided slug
-	const product = await db.product.findUnique({
-		where: {
-			slug: productSlug,
-		},
-		include: { variants: true }, // Include product variants in the query
-    });
-    // If the product is not found, redirect to the homepage
-    if (!product) return redirect('/')
 
-    // If the product has no variants, redirect to the homepage
-    if (!product.variants.length) return redirect('/');
+	let product;
+	try {
+		product = await db.product.findUnique({
+			where: { slug: productSlug },
+			include: { variants: true },
+		});
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			console.error("[ProductPage] Failed to fetch product:", error.message, error.stack);
+		} else {
+			console.error("[ProductPage] Failed to fetch product:", error);
+		}
+		return redirect('/');
+	}
 
-    // If the product exists and has variants, redirect to the first variant's page
+	if (!product || !product.variants.length) return redirect('/');
+
 	return redirect(`/product/${product.slug}/${product.variants[0].slug}`);
 }

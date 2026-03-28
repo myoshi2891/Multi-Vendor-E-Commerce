@@ -7,7 +7,8 @@ export default async function ProfileWishlistPage({
     params: Promise<{ page: string }>;
 }) {
     const { page: pageParam } = await params;
-    const page = Math.max(1, Math.floor(Number(pageParam)) || 1);
+    const raw = Number(pageParam);
+    const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
     const wishlist_data = await getUserWishlist(page);
     const { wishlist, totalPages } = wishlist_data;
 

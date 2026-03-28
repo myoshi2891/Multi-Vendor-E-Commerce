@@ -10,7 +10,8 @@ export default function ProfileHistoryPage({
     params: Promise<{ page: string }>;
 }) {
     const { page: pageParam } = use(params);
-    const currentPage = Math.max(1, Math.floor(Number(pageParam)) || 1);
+    const raw = Number(pageParam);
+    const currentPage = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
     const [products, setProducts] = useState<ProductType[]>([]);
     const [page, setPage] = useState<number>(currentPage);
     const [totalPages, setTotalPages] = useState<number>(0);
