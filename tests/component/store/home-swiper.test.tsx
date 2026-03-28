@@ -24,13 +24,24 @@ jest.mock("next/image", () => ({
 }));
 
 // embla-carousel-react モック
-const mockEmblaApi: Record<string, jest.Mock> = {
+interface MockEmblaApi {
+    scrollNext: jest.Mock;
+    scrollPrev: jest.Mock;
+    canScrollNext: jest.Mock<boolean>;
+    canScrollPrev: jest.Mock<boolean>;
+    on: jest.Mock;
+    off: jest.Mock;
+    selectedScrollSnap: jest.Mock<number>;
+    scrollSnapList: jest.Mock<number[]>;
+}
+
+const mockEmblaApi: MockEmblaApi = {
     scrollNext: jest.fn(),
     scrollPrev: jest.fn(),
     canScrollNext: jest.fn(() => true),
     canScrollPrev: jest.fn(() => true),
-    on: jest.fn((): Record<string, jest.Mock> => mockEmblaApi),
-    off: jest.fn((): Record<string, jest.Mock> => mockEmblaApi),
+    on: jest.fn(() => mockEmblaApi),
+    off: jest.fn(() => mockEmblaApi),
     selectedScrollSnap: jest.fn(() => 0),
     scrollSnapList: jest.fn(() => [0, 1, 2, 3]),
 };
@@ -49,18 +60,12 @@ jest.mock("embla-carousel-autoplay", () => ({
 import HomeMainSwiper from "@/components/store/home/main/home-swiper";
 
 describe("HomeMainSwiper", () => {
-    it("レンダリングされること", () => {
-        render(<HomeMainSwiper />);
-        const images = screen.getAllByTestId("slider-image");
-        expect(images.length).toBe(4);
-    });
-
-    it("4枚の画像が表示されること", () => {
+    it("4枚の画像が正しい alt テキストで表示されること", () => {
         render(<HomeMainSwiper />);
         const images = screen.getAllByTestId("slider-image");
         expect(images).toHaveLength(4);
-        images.forEach((img) => {
-            expect(img).toHaveAttribute("alt", "Product Image");
+        images.forEach((img, index) => {
+            expect(img).toHaveAttribute("alt", `Hero banner ${index + 1}`);
         });
     });
 });

@@ -22,7 +22,11 @@ export default async function StoreHeader() {
 
     // If cookie exists, update the user country
     if (userCountryCookie) {
-        userCountry = JSON.parse(userCountryCookie.value) as Country;
+        try {
+            userCountry = JSON.parse(userCountryCookie.value) as Country;
+        } catch {
+            // 不正な cookie は無視し、デフォルト値を使用
+        }
     }
 
     return (

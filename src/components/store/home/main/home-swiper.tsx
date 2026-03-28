@@ -16,17 +16,17 @@ export default function HomeMainSwiper() {
     return (
         <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex">
-                {images.map((image) => (
+                {images.map((image, index) => (
                     <div
                         key={image.id}
                         className="min-w-0 flex-[0_0_100%]"
                     >
                         <Image
                             src={image.url}
-                            alt="Product Image"
+                            alt={image.alt}
                             width={600}
                             height={400}
-                            priority
+                            priority={index === 0}
                             style={{
                                 width: "100%",
                                 height: "auto",
@@ -41,8 +41,8 @@ export default function HomeMainSwiper() {
 }
 
 const images = [
-    { id: 1, url: Img1 },
-    { id: 2, url: Img2 },
-    { id: 3, url: Img3 },
-    { id: 4, url: Img4 },
+    { id: 1, url: Img1, alt: "Hero banner 1" },
+    { id: 2, url: Img2, alt: "Hero banner 2" },
+    { id: 3, url: Img3, alt: "Hero banner 3" },
+    { id: 4, url: Img4, alt: "Hero banner 4" },
 ];

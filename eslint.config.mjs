@@ -6,7 +6,7 @@ export default [
     ...nextCoreWebVitals,
     ...tailwindcss.configs["flat/recommended"],
     {
-        files: ["**/*.tsx"],
+        files: ["**/*.{tsx,jsx}"],
         rules: {
             "tailwindcss/classnames-order": "warn",
         },

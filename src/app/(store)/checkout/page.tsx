@@ -52,7 +52,11 @@ export default async function CheckoutPage() {
 
     // If cookie exists, parse it and update user Country
     if (userCountryCookie) {
-        userCountry = JSON.parse(userCountryCookie.value) as Country
+        try {
+            userCountry = JSON.parse(userCountryCookie.value) as Country
+        } catch {
+            // 不正な cookie は無視し、デフォルト値を使用
+        }
     }
 
     return (

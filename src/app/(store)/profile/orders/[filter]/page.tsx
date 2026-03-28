@@ -8,7 +8,10 @@ export default async function ProfileFilteredOrderPage({
     params: Promise<{ filter: string }>;
     }) {
     const { filter: rawFilter } = await params;
-    const filter = rawFilter ? (rawFilter as OrderTableFilter) : ""
+    const validFilters: OrderTableFilter[] = ["", "unpaid", "toShip", "shipped", "delivered"];
+    const filter: OrderTableFilter = validFilters.includes(rawFilter as OrderTableFilter)
+        ? (rawFilter as OrderTableFilter)
+        : "";
     const orders_data = await getUserOrders(filter);
     const { orders, totalPages } = orders_data;
 

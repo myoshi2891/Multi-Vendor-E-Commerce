@@ -13,7 +13,9 @@ interface ModalProps {
 const Modal: FC<ModalProps> = ({ children, title, show, setShow }) => {
     const ref = useRef<HTMLDivElement>(null)
     const close = () => setShow(false)
-    useOnClickOutside(ref as React.RefObject<HTMLElement>, close)
+    // use-onclickoutside は RefObject<HTMLElement> を要求するが
+    // React 19 の useRef は RefObject<T | null> を返すためアサーションが必要
+    useOnClickOutside(ref as unknown as React.RefObject<HTMLElement>, close)
 
     if (show) {
         return (
