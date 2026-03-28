@@ -27,6 +27,7 @@ This document records the breaking changes and applied fixes for the major frame
 In Next.js 16, `params`, `searchParams`, `cookies()`, and `headers()` are all Promises. Synchronous access no longer works.
 
 **Before (Next.js 14)**:
+
 ```typescript
 // Page component — sync params
 export default function Page({ params }: { params: { slug: string } }) {
@@ -40,6 +41,7 @@ const cookieStore = cookies();
 ```
 
 **After (Next.js 16)**:
+
 ```typescript
 // Page component — awaited params (Server Component)
 export default async function Page({
@@ -86,6 +88,7 @@ const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
 **Impact**: Libraries typed against `RefObject<T>` (without `null`) may produce TypeScript errors when receiving a React 19 ref.
 
 **Fix**: Module augmentation in `src/types/use-onclickoutside.d.ts`:
+
 ```typescript
 declare module "use-onclickoutside" {
     import { RefObject } from "react";
@@ -141,6 +144,7 @@ useEffect(() => {
 ### Breaking Change: All APIs Are Now Async
 
 **Before (v6)**:
+
 ```typescript
 import { auth, currentUser } from "@clerk/nextjs/server";
 
@@ -150,6 +154,7 @@ const client = clerkClient;         // direct property access
 ```
 
 **After (v7)**:
+
 ```typescript
 import { auth, currentUser } from "@clerk/nextjs/server";
 
@@ -165,7 +170,7 @@ The `authMiddleware` export was removed. Use `clerkMiddleware` with an inline ro
 ```typescript
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (auth, req, next) => {
     const protectedRoutes = createRouteMatcher(["/dashboard/(.*)", "/checkout", "/profile/(.*)"]);
     if (protectedRoutes(req)) await auth.protect();
     // ...
@@ -185,12 +190,14 @@ Note: `auth.protect()` is a direct property call, not `(await auth()).protect()`
 The `SwiperRef` type was moved to a named export and the `Swiper` React component API changed slightly.
 
 **Before (Swiper 11)**:
+
 ```typescript
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 ```
 
 **After (Swiper 12)**:
+
 ```typescript
 import { Swiper, SwiperSlide, SwiperRef } from "swiper/react";
 // SwiperRef is now exported directly from "swiper/react"
@@ -207,6 +214,7 @@ import { Swiper, SwiperSlide, SwiperRef } from "swiper/react";
 ESLint 9 dropped support for `.eslintrc.*` files. The config must be in `eslint.config.mjs` (flat config format).
 
 **Before (`eslint.json` / `.eslintrc.json`)**:
+
 ```json
 {
   "extends": ["next/core-web-vitals"],
@@ -217,6 +225,7 @@ ESLint 9 dropped support for `.eslintrc.*` files. The config must be in `eslint.
 ```
 
 **After (`eslint.config.mjs`)**:
+
 ```javascript
 import { dirname } from "path";
 import { fileURLToPath } from "url";

@@ -51,6 +51,19 @@ const ProductReviews: FC<Props> = ({
     const [pageSize, setPageSize] = useState<number>(4)
 
     useEffect(() => {
+        let cancelled = false
+
+        const handleGetReviews = async () => {
+            const res = await getProductFilteredReviews(
+                productId,
+                filters,
+                sort,
+                page,
+                pageSize
+            )
+            if (!cancelled) setData(res)
+        }
+
         if (filters.rating || filters.hasImages || sort) {
             setPage(1)
             handleGetReviews()
@@ -58,19 +71,10 @@ const ProductReviews: FC<Props> = ({
         if (page) {
             handleGetReviews()
         }
+
+        return () => { cancelled = true }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, sort, page])
-
-    const handleGetReviews = async () => {
-        const res = await getProductFilteredReviews(
-            productId,
-            filters,
-            sort,
-            page,
-            pageSize
-        )
-        setData(res)
-    }
 
     return (
         <div id="reviews" className="pt-6">
