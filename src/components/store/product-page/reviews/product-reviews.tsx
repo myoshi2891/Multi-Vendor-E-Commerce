@@ -53,24 +53,30 @@ const ProductReviews: FC<Props> = ({
     useEffect(() => {
         let cancelled = false
 
-        const handleGetReviews = async () => {
-            const res = await getProductFilteredReviews(
-                productId,
-                filters,
-                sort,
-                page,
-                pageSize
-            )
-            if (!cancelled) setData(res)
+        const handleGetReviews = async (fetchPage: number) => {
+            try {
+                const res = await getProductFilteredReviews(
+                    productId,
+                    filters,
+                    sort,
+                    fetchPage,
+                    pageSize
+                )
+                if (!cancelled) setData(res)
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error("[ProductReviews:handleGetReviews] Error:", error.message, error.stack)
+                } else {
+                    console.error("[ProductReviews:handleGetReviews] Error:", error)
+                }
+                if (!cancelled) setData([])
+            }
         }
 
-        if (filters.rating || filters.hasImages || sort) {
-            setPage(1)
-            handleGetReviews()
-        }
-        if (page) {
-            handleGetReviews()
-        }
+        const isFiltered = !!(filters.rating || filters.hasImages || sort)
+        const fetchPage = isFiltered ? 1 : page
+        if (isFiltered) setPage(1)
+        handleGetReviews(fetchPage)
 
         return () => { cancelled = true }
         // eslint-disable-next-line react-hooks/exhaustive-deps

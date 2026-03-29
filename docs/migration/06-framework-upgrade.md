@@ -213,7 +213,7 @@ import { Swiper, SwiperSlide, SwiperRef } from "swiper/react";
 
 ESLint 9 dropped support for `.eslintrc.*` files. The config must be in `eslint.config.mjs` (flat config format).
 
-**Before (`eslint.json` / `.eslintrc.json`)**:
+**Before (`.eslintrc.json` / `.eslintrc.js`)**:
 
 ```json
 {
