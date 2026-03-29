@@ -359,3 +359,89 @@ Q5: それ以外（進捗・一時的）→ PROGRESS.md
 - ドキュメント配置ルールの実践（新しい設計決定発生時）
 - 3-6ヶ月後のドキュメント鮮度レビュー
 - 必要に応じて ADR の作成（大規模技術変更時）
+
+---
+
+## 追記 (2026-03-28) — Next.js 16 マイグレーション完了 + ドキュメント全体更新
+
+### 範囲
+- ブランチ: `feat/nextjs-16-migration`
+- 対象: Next.js/React/Clerk/Swiper/ESLint の一括バージョンアップ + コードレビュー3ラウンド + ドキュメント全体更新
+
+---
+
+### Phase 0-7: フレームワーク移行（7コミット）
+
+#### 移行内容
+
+| Package | Before | After | 主な Breaking Changes |
+|---------|--------|-------|-----------------------|
+| Next.js | 14.x | 16.2.1 | `params`/`searchParams`/`cookies`/`headers` が Promise 化 |
+| React | 18.x | 19.x | `useRef<T>(null)` → `RefObject<T \| null>`、`use()` フック導入 |
+| `@clerk/nextjs` | v6 | v7 | `auth()`/`currentUser()` が async に、`authMiddleware` 廃止 |
+| Swiper | 11.x | 12.x | `SwiperRef` が `swiper/react` から直接エクスポート |
+| ESLint | 8.x | 9.x | `.eslintrc.*` 廃止 → `eslint.config.mjs` (flat config) |
+
+#### 適用した修正パターン
+
+1. **Async params** — Server Component では `await params`、Client Component では `use(params)`
+2. **Async cookies** — `const cookieStore = await cookies()`
+3. **Clerk v7** — `await auth()`、`await currentUser()`、`await clerkClient()`
+4. **useRef 型** — `use-onclickoutside` を module augmentation で `RefObject<HTMLElement | null>` に対応
+5. **ESLint flat config** — `react-hooks` ルールを `files: ["**/*.{tsx,jsx}"]` にスコープ
+
+#### 主要コミット（新しい順）
+- `0f2bca7` chore(deps): upgrade React 18 to React 19 with compatibility fixes
+- `2e7d706` chore(deps): upgrade Next.js 14 to 16.2.1 with ESLint 9 flat config
+- `fcdb042` refactor: migrate to async request APIs for Next.js 16
+- `ac774da` chore(deps): upgrade @clerk/nextjs to v7 for Next.js 16 compatibility
+- `9482e25` chore(deps): upgrade Swiper 11 to 12.1.3
+- `622721e` refactor: remove legacyBehavior Link pattern
+- `a597593` fix: address post-migration code quality issues
+
+---
+
+### コードレビュー Round 1-3: コード品質修正（3コミット）
+
+#### 確立されたパターン
+
+| パターン | 適用箇所 | 内容 |
+|---------|---------|------|
+| `Number.isFinite` page 正規化 | `profile/following/`, `profile/wishlist/` | `Infinity`/`NaN`/小数を排除 |
+| `Object.hasOwn` フィルター検証 | `profile/orders/[filter]/` | `in` 演算子のプロトタイプ汚染リスクを排除 |
+| `parseUserCountryCookie` 集約 | `cart/`, `checkout/`, `header/`, `queries/product.ts`, `queries/user.ts` | 生 `JSON.parse` + キャストを排除 |
+| `isCountry` 型ガード強化 | `src/lib/utils.ts` | `name`/`code`/`city`/`region` の4フィールドをすべて検証 |
+| `useEffect` キャンセルフラグ | `profile/history/` | 非同期レースコンディション防止 |
+| localStorage 型検証 | `profile/history/` | `Array.isArray` + `every(x => typeof x === "string")` |
+| `Awaited<ReturnType<>>` | `seller/stores/.../orders/` | `let` 宣言の型推論エラーを排除 |
+| Clerk v7 `async` layout | `profile/layout.tsx` | `currentUser()` await に対応して `async` 化 |
+| module augmentation | `src/types/use-onclickoutside.d.ts` | React 19 の `RefObject<T \| null>` に対応 |
+
+#### 主要コミット（新しい順）
+- `c789e34` refactor: apply parseUserCountryCookie to product and user queries
+- `a287272` fix: improve type safety and add cleanup logic to profile pages
+- `dd3bf0d` refactor: improve type safety, error handling and cookie parsing
+
+---
+
+### ドキュメント全体更新
+
+次の6ファイルを現状のコードと整合させた：
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `.claude/steering/tech.md` | Next.js 16.2.1・React 19 行追加・ESLint 9 flat config・cookie パース規約・URL パラメータ正規化規約・3つの新実装パターン・Clerk v7 async API パターン |
+| `specs/multi-vendor-ecommerce/02-architecture.md` | "Next.js 16.2.1"・"React 19"・"Clerk v7" に更新 |
+| `specs/multi-vendor-ecommerce/07-testing.md` | テスト数 686/30 → 881/54 に更新 |
+| `docs/migration/06-framework-upgrade.md` | 新規作成。5つのフレームワーク移行の breaking changes と修正パターンを一括記録 |
+| `docs/migration/README.md` | タイトルを "Migration Documentation" に変更、フレームワーク移行セクションと新ファイルへのリンクを追加 |
+| `PROGRESS.md` | 本エントリを追記 |
+
+---
+
+### テスト統計（最終）
+- 881 ユニットテスト、54 スイート（全パス）
+- Playwright E2E: 3 ブラウザ（Chromium / Firefox / WebKit）
+
+### 現在のブランチ状態
+- `feat/nextjs-16-migration` → `main` へのマージ待ち／レビュー中（PR #104、`2c9665e`）

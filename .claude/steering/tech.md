@@ -4,15 +4,17 @@
 
 | カテゴリ | 技術 |
 |---------|------|
-| **Frontend** | Next.js 14 (App Router) + TypeScript strict mode |
+| **Frontend** | Next.js 16.2.1 (App Router) + TypeScript strict mode |
+| **Runtime** | React 19 |
 | **UI** | Tailwind CSS + shadcn/ui（CSS 変数・baseカラー: slate） |
-| **認証** | Clerk（middleware: `src/middleware.ts`） |
+| **認証** | Clerk v7（middleware: `src/middleware.ts`） |
 | **DB** | PostgreSQL (Neon) + Prisma ORM + Prisma Accelerate |
 | **決済** | Stripe / PayPal |
 | **画像** | Cloudinary |
 | **Webhook** | Svix |
 | **状態管理** | Zustand（カートストア） |
 | **テスト** | Jest（ユニット）+ Playwright（E2E） |
+| **Lint** | ESLint 9（flat config: `eslint.config.mjs`） |
 | **パッケージマネージャー** | Bun |
 
 ---
@@ -32,6 +34,8 @@
 | **配送料計算** | すべての配送料計算は `src/lib/shipping-utils.ts` の `computeShippingTotal` を使用すること（計算ロジックの一元管理） |
 | **リエントランシーガード** | 非同期操作での多重実行防止には `useRef` によるフラグ管理を行う（例: `newsletter.tsx`） |
 | **環境変数の数値変換** | 数値型環境変数は `trim()` 後に変換し、空文字列には fallback を適用すること |
+| **cookie パース** | 外部 cookie の JSON パースは必ず `parseUserCountryCookie()` を使用すること（`src/lib/utils.ts`）。生の `JSON.parse` + キャストは禁止 |
+| **URL パラメータ正規化** | ページ番号など数値パラメータは `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1` で正規化すること（`Infinity` / `NaN` / 小数を排除） |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---
@@ -95,6 +99,112 @@ if (!Number.isFinite(myNumber)) {
 ```
 
 **実装例**: `tests/e2e/purchase-flow.spec.ts` の `E2E_UNIT_PRICE` 処理
+
+### Cookie パース（外部入力の安全なデシリアライズ）
+
+cookie など外部入力の JSON は `parseUserCountryCookie()` で型安全にパースする:
+
+```typescript
+import { parseUserCountryCookie } from "@/lib/utils";
+import { cookies } from "next/headers";
+
+// Server Component / Route Handler
+const cookieStore = await cookies();
+const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value);
+// → Country 型 (name, code, city, region) または DEFAULT_COUNTRY にフォールバック
+```
+
+**利点**:
+- `isCountry` 型ガードで全フィールドを検証（name / code / city / region）
+- パース失敗・不正データは `DEFAULT_COUNTRY`（US）にフォールバック
+- 生の `JSON.parse as Country` キャストを排除
+
+**実装例**: `src/lib/utils.ts` の `parseUserCountryCookie` / `isCountry`
+
+### useEffect キャンセルフラグ（非同期レースコンディション防止）
+
+`useEffect` 内で非同期処理を行う場合は、古いレスポンスで新しい状態を上書きしないよう `cancelled` フラグを用いる:
+
+```typescript
+useEffect(() => {
+    let cancelled = false;
+
+    const fetchData = async () => {
+        try {
+            const result = await someAsyncCall();
+            if (!cancelled) {   // アンマウント後 or 再実行後は更新しない
+                setState(result);
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("[Module:fetch] Error:", error.message, error.stack);
+            } else {
+                console.error("[Module:fetch] Unknown error:", error);
+            }
+            if (!cancelled) setData([]);
+        } finally {
+            if (!cancelled) setLoading(false);
+        }
+    };
+
+    fetchData();
+    return () => { cancelled = true; };  // クリーンアップ
+}, [dependency]);
+```
+
+**実装例**: `src/app/(store)/profile/history/[page]/page.tsx`
+
+### サードパーティ型の module augmentation
+
+React 19 の `useRef<T>(null)` は `RefObject<T | null>` を返すが、古いライブラリは `RefObject<T>` を期待する場合がある。型定義ファイルで拡張する:
+
+```typescript
+// src/types/use-onclickoutside.d.ts
+declare module "use-onclickoutside" {
+    import { RefObject } from "react";
+    type PossibleEvent = MouseEvent | TouchEvent;
+    type Handler = (event: PossibleEvent) => void;
+    export default function useOnClickOutside(
+        ref: RefObject<HTMLElement | null>,  // | null を許容
+        handler: Handler | null,
+        options?: { document?: Document }
+    ): void;
+}
+```
+
+**実装例**: `src/types/use-onclickoutside.d.ts`
+
+### Clerk v7 非同期 API（Next.js 16 対応）
+
+Next.js 16 の async request APIs に合わせ、Clerk v7 の API もすべて非同期になった:
+
+```typescript
+// middleware.ts — clerkMiddleware ハンドラーは async
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+export default clerkMiddleware(async (auth, req) => {
+    if (protectedRoutes(req)) await auth.protect();  // auth は直接プロパティ（関数呼び出し不要）
+    // ...
+});
+
+// Server Component / Server Action
+import { auth, currentUser } from "@clerk/nextjs/server";
+
+const { userId } = await auth();           // ← await 必須（v6 では同期）
+const user = await currentUser();          // ← await 必須
+
+// clerkClient は Promise を返す
+import { clerkClient } from "@clerk/nextjs/server";
+const client = await clerkClient();
+await client.users.updateUserMetadata(userId, { ... });
+```
+
+**破壊的変更（v6 → v7）**:
+- `auth()` → `await auth()`
+- `currentUser()` → `await currentUser()`
+- `clerkClient.users.*` → `(await clerkClient()).users.*`
+- `authMiddleware` → `clerkMiddleware`
+
+**実装例**: `src/middleware.ts`、`src/queries/` 配下の全 Server Action
 
 ---
 
