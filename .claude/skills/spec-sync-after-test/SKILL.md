@@ -1,9 +1,9 @@
 ---
 name: spec-sync-after-test
 description: >
-  テスト実装・修正後に関連仕様書・ドキュメントを漏れなく更新するスキル。
-  テスト数・スイート数・型エラー件数などの定量指標を最新化し、
-  coverage-dashboard.html を再生成する。
+  Keeps spec documents and coverage reports in sync after test implementation or fixes.
+  Updates quantitative metrics (test count, suite count, type error count) and
+  regenerates coverage-dashboard.html.
   Triggered by: "仕様書更新", "ドキュメント更新", "テスト後の仕様同期",
   "spec sync after test", "update docs after test", "テスト実装後の更新",
   "カバレッジダッシュボード更新", "update coverage dashboard".
@@ -131,6 +131,7 @@ bun run coverage:dashboard
 ```
 
 出力例の確認：
+
 ```
 [coverage-dashboard] found XX test file(s)
 [coverage-dashboard] wrote docs/coverage-dashboard.html (XXX KB)
