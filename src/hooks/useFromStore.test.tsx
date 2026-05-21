@@ -23,12 +23,12 @@ describe("useFromStore", () => {
         useMockStore.setState({ count: 0 });
     });
 
-    it("正常系: useEffect 後にストアの値を正しく返す", () => {
+    it("[P1] 正常系: useEffect 後にストアの値を正しく返す", () => {
         const { result } = renderHook(() => useFromStore(useMockStore, (state) => state.count));
         expect(result.current).toBe(0);
     });
 
-    it("正常系: ストアの変更に追従して値が更新される", () => {
+    it("[P0] 正常系: ストアの変更に追従して値が更新される", () => {
         const { result, rerender } = renderHook(() => useFromStore(useMockStore, (state) => state.count));
 
         expect(result.current).toBe(0);
@@ -45,7 +45,7 @@ describe("useFromStore", () => {
         expect(result.current).toBe(1);
     });
 
-    it("正常系: コールバック関数で値を変換して取得できる", () => {
+    it("[P1] 正常系: コールバック関数で値を変換して取得できる", () => {
         // state.count を元に文字列を作成して返す
         const { result } = renderHook(() => 
             useFromStore(useMockStore, (state) => `Count is ${state.count}`)
