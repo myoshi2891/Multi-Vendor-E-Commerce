@@ -224,4 +224,4 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - [`docs/PROGRESS.md`](../../docs/PROGRESS.md) — 作業ログ
 - [`docs/coverage-dashboard.html`](../../docs/coverage-dashboard.html) — 視覚的ダッシュボード
 - [`scripts/coverage-dashboard/`](../../scripts/coverage-dashboard/) — ダッシュボード生成スクリプト
-- [`.claude/steering/documentation-guide.md`](../steering/documentation-guide.md) — ドキュメント配置ルール
+- [`.claude/steering/documentation-guide.md`](../../steering/documentation-guide.md) — ドキュメント配置ルール

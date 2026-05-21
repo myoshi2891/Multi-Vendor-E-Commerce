@@ -1,10 +1,10 @@
 /** @jest-environment jsdom */
 
-import React from "react";
+import { User } from "@prisma/client";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ModalProvider, { useModal, ModalContext } from "./modal-provider";
-import { User } from "@prisma/client";
+import React from "react";
+import ModalProvider, { useModal } from "./modal-provider";
 
 // React 18 向けの act 環境設定
 declare global {
@@ -35,7 +35,9 @@ const TestComponent = () => {
                 type="button"
                 data-testid="open-btn"
                 onClick={() =>
-                    setOpen(<div data-testid="modal-content">Modal Content</div>)
+                    setOpen(
+                        <div data-testid="modal-content">Modal Content</div>
+                    )
                 }
             >
                 Open
@@ -44,17 +46,28 @@ const TestComponent = () => {
                 type="button"
                 data-testid="open-with-data-btn"
                 onClick={() =>
-                    setOpen(<div data-testid="modal-content">Modal Content</div>, async () => ({
-                        user: createMockUser(),
-                    }))
+                    setOpen(
+                        <div data-testid="modal-content">Modal Content</div>,
+                        async () => ({
+                            user: createMockUser(),
+                        })
+                    )
                 }
             >
                 Open With Data
             </button>
-            <button type="button" data-testid="open-null-btn" onClick={() => setOpen(null)}>
+            <button
+                type="button"
+                data-testid="open-null-btn"
+                onClick={() => setOpen(null)}
+            >
                 Open Null
             </button>
-            <button type="button" data-testid="close-btn" onClick={() => setClose()}>
+            <button
+                type="button"
+                data-testid="close-btn"
+                onClick={() => setClose()}
+            >
                 Close
             </button>
         </div>
@@ -96,7 +109,9 @@ describe("ModalProvider", () => {
             );
 
             expect(screen.getByTestId("is-open")).toHaveTextContent("false");
-            expect(screen.queryByTestId("modal-content")).not.toBeInTheDocument();
+            expect(
+                screen.queryByTestId("modal-content")
+            ).not.toBeInTheDocument();
 
             const user = userEvent.setup();
             await user.click(screen.getByTestId("open-btn"));
@@ -114,13 +129,17 @@ describe("ModalProvider", () => {
                 </ModalProvider>
             );
 
-            expect(screen.getByTestId("data-user-id")).toHaveTextContent("no-user");
+            expect(screen.getByTestId("data-user-id")).toHaveTextContent(
+                "no-user"
+            );
 
             const user = userEvent.setup();
             await user.click(screen.getByTestId("open-with-data-btn"));
 
             await waitFor(() => {
-                expect(screen.getByTestId("data-user-id")).toHaveTextContent("test-user-id");
+                expect(screen.getByTestId("data-user-id")).toHaveTextContent(
+                    "test-user-id"
+                );
             });
             expect(screen.getByTestId("is-open")).toHaveTextContent("true");
             expect(screen.getByTestId("modal-content")).toBeInTheDocument();
@@ -139,54 +158,70 @@ describe("ModalProvider", () => {
             await waitFor(() => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("true");
             });
-            expect(screen.getByTestId("data-user-id")).toHaveTextContent("no-user");
+            expect(screen.getByTestId("data-user-id")).toHaveTextContent(
+                "no-user"
+            );
         });
 
         it("[P1] fetchData が例外を投げてもモーダルは開き、エラーがログに記録される", async () => {
-            const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
 
-            const FailFetchComponent = () => {
-                const { setOpen, isOpen } = useModal();
-                return (
-                    <>
-                        <div data-testid="is-open-direct">{isOpen.toString()}</div>
-                        <button
-                            type="button"
-                            data-testid="open-fail-btn"
-                            onClick={() =>
-                                setOpen(
-                                    <div data-testid="modal-content-fail">Modal</div>,
-                                    async () => { throw new Error("fetch failed"); }
-                                )
-                            }
-                        >
-                            Open Fail
-                        </button>
-                    </>
+            try {
+                const FailFetchComponent = () => {
+                    const { setOpen, isOpen } = useModal();
+                    return (
+                        <>
+                            <div data-testid="is-open-direct">
+                                {isOpen.toString()}
+                            </div>
+                            <button
+                                type="button"
+                                data-testid="open-fail-btn"
+                                onClick={() =>
+                                    setOpen(
+                                        <div data-testid="modal-content-fail">
+                                            Modal
+                                        </div>,
+                                        async () => {
+                                            throw new Error("fetch failed");
+                                        }
+                                    )
+                                }
+                            >
+                                Open Fail
+                            </button>
+                        </>
+                    );
+                };
+
+                render(
+                    <ModalProvider>
+                        <FailFetchComponent />
+                    </ModalProvider>
                 );
-            };
 
-            render(
-                <ModalProvider>
-                    <FailFetchComponent />
-                </ModalProvider>
-            );
+                const user = userEvent.setup();
+                await user.click(screen.getByTestId("open-fail-btn"));
 
-            const user = userEvent.setup();
-            await user.click(screen.getByTestId("open-fail-btn"));
-
-            await waitFor(() => {
-                expect(screen.getByTestId("is-open-direct")).toHaveTextContent("true");
-            });
-            // fetchData の失敗がログに記録される
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "Failed to fetch modal data:",
-                expect.any(Error)
-            );
-            // fetchData が失敗してもモーダルコンテンツは表示される（グレースフルデグラデーション）
-            expect(screen.getByTestId("modal-content-fail")).toBeInTheDocument();
-
-            consoleSpy.mockRestore();
+                await waitFor(() => {
+                    expect(
+                        screen.getByTestId("is-open-direct")
+                    ).toHaveTextContent("true");
+                });
+                // fetchData の失敗がログに記録される
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    "Failed to fetch modal data:",
+                    expect.any(Error)
+                );
+                // fetchData が失敗してもモーダルコンテンツは表示される（グレースフルデグラデーション）
+                expect(
+                    screen.getByTestId("modal-content-fail")
+                ).toBeInTheDocument();
+            } finally {
+                consoleSpy.mockRestore();
+            }
         });
 
         it("[P2] modal が null の場合 isOpen が false のまま", async () => {
@@ -200,7 +235,9 @@ describe("ModalProvider", () => {
             await user.click(screen.getByTestId("open-null-btn"));
 
             await waitFor(() => {
-                expect(screen.getByTestId("is-open")).toHaveTextContent("false");
+                expect(screen.getByTestId("is-open")).toHaveTextContent(
+                    "false"
+                );
             });
         });
     });
@@ -221,19 +258,27 @@ describe("ModalProvider", () => {
             await waitFor(() => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("true");
             });
-            expect(screen.getByTestId("data-user-id")).toHaveTextContent("test-user-id");
+            expect(screen.getByTestId("data-user-id")).toHaveTextContent(
+                "test-user-id"
+            );
             expect(screen.getByTestId("modal-content")).toBeInTheDocument();
 
             // 閉じる
             await user.click(screen.getByTestId("close-btn"));
 
             await waitFor(() => {
-                expect(screen.getByTestId("is-open")).toHaveTextContent("false");
+                expect(screen.getByTestId("is-open")).toHaveTextContent(
+                    "false"
+                );
             });
-            expect(screen.getByTestId("data-user-id")).toHaveTextContent("no-user");
+            expect(screen.getByTestId("data-user-id")).toHaveTextContent(
+                "no-user"
+            );
 
             // モーダルが DOM から除去されていることを確認
-            expect(screen.queryByTestId("modal-content")).not.toBeInTheDocument();
+            expect(
+                screen.queryByTestId("modal-content")
+            ).not.toBeInTheDocument();
         });
     });
 
@@ -258,7 +303,9 @@ describe("ModalProvider", () => {
 
         it("[P1] Provider 外で使用するとエラーがスローされる", () => {
             // React のエラー境界を抑制するために console.error をモック
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
 
             expect(() => render(<OutsideComponent />)).toThrow(
                 "useModal must be used within the modal provider"
@@ -272,7 +319,9 @@ describe("ModalProvider", () => {
         it("[P1] SSR 環境でマウントされるまでは null を返す（useEffect前）", () => {
             // isMounted=false の状態を意図的に模倣してレンダリング
             // React の useEffect をモックして同期実行を防止する
-            const useEffectSpy = jest.spyOn(React, "useEffect").mockImplementationOnce(() => {});
+            const useEffectSpy = jest
+                .spyOn(React, "useEffect")
+                .mockImplementationOnce(() => {});
 
             const { container } = render(
                 <ModalProvider>
