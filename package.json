@@ -108,6 +108,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@clerk/testing": "^2.0.7",
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
