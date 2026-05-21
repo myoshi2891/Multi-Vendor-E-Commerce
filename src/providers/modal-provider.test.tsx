@@ -142,6 +142,53 @@ describe("ModalProvider", () => {
             expect(screen.getByTestId("data-user-id")).toHaveTextContent("no-user");
         });
 
+        it("[P1] fetchData が例外を投げてもモーダルは開き、エラーがログに記録される", async () => {
+            const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+            const FailFetchComponent = () => {
+                const { setOpen, isOpen } = useModal();
+                return (
+                    <>
+                        <div data-testid="is-open-direct">{isOpen.toString()}</div>
+                        <button
+                            type="button"
+                            data-testid="open-fail-btn"
+                            onClick={() =>
+                                setOpen(
+                                    <div data-testid="modal-content-fail">Modal</div>,
+                                    async () => { throw new Error("fetch failed"); }
+                                )
+                            }
+                        >
+                            Open Fail
+                        </button>
+                    </>
+                );
+            };
+
+            render(
+                <ModalProvider>
+                    <FailFetchComponent />
+                </ModalProvider>
+            );
+
+            const user = userEvent.setup();
+            await user.click(screen.getByTestId("open-fail-btn"));
+
+            await waitFor(() => {
+                expect(screen.getByTestId("is-open-direct")).toHaveTextContent("true");
+            });
+            // fetchData の失敗がログに記録される
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "Failed to fetch modal data:",
+                expect.any(Error)
+            );
+            // fetchData が失敗してもモーダルコンテンツは表示される（グレースフルデグラデーション）
+            expect(screen.getByTestId("modal-content-fail")).toBeInTheDocument();
+
+            consoleSpy.mockRestore();
+        });
+
         it("[P2] modal が null の場合 isOpen が false のまま", async () => {
             render(
                 <ModalProvider>
