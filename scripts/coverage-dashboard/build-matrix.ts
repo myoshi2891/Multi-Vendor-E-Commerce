@@ -40,8 +40,10 @@ export interface Matrix {
 const COVERAGE_THRESHOLD = 60;
 
 /**
- * カテゴリに対応する「ソース推定パス」を返す。
- * lcov の linePct を引くため、テストファイル → ソースファイルパスへの変換用。
+ * Produce candidate source file paths corresponding to a test file path.
+ *
+ * @param testPath - Test file path to derive candidates from
+ * @returns An array of candidate source paths obtained by replacing `.test.<ext>` and `.spec.<ext>` with `.<ext>` (first the `.test` variant, then the `.spec` variant)
  */
 function sourceCandidates(testPath: string): string[] {
     return [
@@ -50,6 +52,13 @@ function sourceCandidates(testPath: string): string[] {
     ];
 }
 
+/**
+ * Finds the LCOV line coverage percentage for a test file by probing candidate source paths.
+ *
+ * @param testPath - Relative path of the test file used to derive possible corresponding source paths
+ * @param lcov - Map from source file path to LCOV entry used to look up coverage
+ * @returns The `linePct` of the first matching LCOV entry, or `null` if the LCOV map is empty or no candidate matches
+ */
 function lookupCoverage(testPath: string, lcov: Map<string, LcovEntry>): number | null {
     if (lcov.size === 0) return null;
     for (const candidate of sourceCandidates(testPath)) {
@@ -59,6 +68,15 @@ function lookupCoverage(testPath: string, lcov: Map<string, LcovEntry>): number 
     return null;
 }
 
+/**
+ * Determine a cell's coverage status and its average line coverage from collected files.
+ *
+ * @param files - CellFile entries belonging to the cell
+ * @param lcovPresent - Whether LCOV information is available (non-empty)
+ * @returns An object with:
+ *   - `status`: `"missing"` when `files` is empty; `"partial"` when any file has `hasSkip`, the resolved average line coverage is below the coverage threshold, or LCOV is present but no file coverage could be resolved; otherwise `"full"`.
+ *   - `avgLinePct`: The rounded average of `linePct` across files with non-`null` coverage, or `null` if no coverage values are available.
+ */
 function decideStatus(
     files: CellFile[],
     lcovPresent: boolean,
@@ -78,6 +96,17 @@ function decideStatus(
     return { status: "full", avgLinePct: avg };
 }
 
+/**
+ * Constructs a coverage matrix for every category × domain pair from scanned test entries and LCOV results.
+ *
+ * @param tests - Array of scanned test metadata used to populate cells (file path, test counts, skip flags).
+ * @param lcov - Map of LCOV entries keyed by source path used to resolve per-file line coverage; may be empty.
+ * @returns A `Matrix` containing:
+ *  - `cells`: one `MatrixCell` per category×domain with status (`"full" | "partial" | "missing"`), aggregated test counts, file entries, and average line coverage where available;
+ *  - `summary`: aggregated totals and per-category/per-domain counts and overall coverage percentage;
+ *  - `cell(category, domain)`: accessor returning the corresponding `MatrixCell`.
+ * @throws Error if the `cell(category, domain)` accessor is called for a non-existent cell.
+ */
 export function buildMatrix(tests: ScannedTest[], lcov: Map<string, LcovEntry>): Matrix {
     // (category, domain) ごとのバケットを初期化
     const buckets = new Map<string, CellFile[]>();

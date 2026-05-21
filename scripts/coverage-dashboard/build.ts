@@ -19,6 +19,14 @@ import { parseLcov } from "./parse-lcov";
 import { renderHtml } from "./render-html";
 import { scanTests } from "./scan-tests";
 
+/**
+ * Generate a single-file coverage dashboard and write it to docs/coverage-dashboard.html.
+ *
+ * Scans the repository for test files, optionally overlays coverage information from
+ * coverage/lcov.info when present, builds a coverage matrix, renders an HTML dashboard
+ * (including generation timestamp, project name, and test runner metadata), and writes
+ * the resulting file to the repository's docs directory.
+ */
 async function main(): Promise<void> {
     const repoRoot = resolve(dirname(fileURLToPath(new URL(import.meta.url))), "..", "..");
     const outPath = resolve(repoRoot, "docs", "coverage-dashboard.html");
