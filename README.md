@@ -17,7 +17,7 @@
 
 ## プラットフォームの目的と機能
 
-Next.js 14 App Router で構築された**マルチベンダー EC マーケットプレイス**で、3 つの異なるユーザーロールをサポートします。
+Next.js 16 App Router で構築された**マルチベンダー EC マーケットプレイス**で、3 つの異なるユーザーロールをサポートします。
 
 | ロール | できること |
 |--------|-----------|
@@ -85,8 +85,8 @@ graph TD
 ```mermaid
 graph LR
     subgraph FRAMEWORK["🏗️ フレームワーク"]
-        NEXT["Next.js 14.2.4<br>App Router / SSR"]
-        REACT["React 18<br>Server Components"]
+        NEXT["Next.js 16.2.1<br>App Router / SSR"]
+        REACT["React 19<br>Server Components"]
         TS["TypeScript 5<br>型安全性"]
     end
 
@@ -96,7 +96,7 @@ graph LR
     end
 
     subgraph AUTH_PAY["🔐 認証 / 決済"]
-        CLERK2["@clerk/nextjs 5.1.5<br>認証・管理"]
+        CLERK2["@clerk/nextjs 7.0.7<br>認証・管理"]
         STRIPE2["stripe 17.4.0<br>Stripe 決済"]
         PP["@paypal/react-paypal-js 8.7.0<br>PayPal 統合"]
     end
@@ -106,7 +106,7 @@ graph LR
         TW["tailwindcss 3.4.1<br>CSS ユーティリティ"]
         ZUS["zustand 5.0.0<br>グローバルカートステート"]
         RHF["react-hook-form 7.51.5<br>フォーム管理"]
-        ZOD["zod 3.23.8<br>スキーマバリデーション"]
+        ZOD["zod 3.25.0<br>スキーマバリデーション"]
     end
 
     subgraph TESTING["🧪 テスト / ランタイム"]
@@ -118,12 +118,12 @@ graph LR
 
 | カテゴリ | パッケージ | バージョン | 用途 |
 |---------|-----------|-----------|------|
-| **フレームワーク** | `next` | 14.2.4 | App Router・SSR・ルーティング |
-| | `react` | 18 | UI ライブラリ・Server Components |
+| **フレームワーク** | `next` | 16.2.1 | App Router・SSR・ルーティング |
+| | `react` | 19 | UI ライブラリ・Server Components |
 | | `typescript` | 5 | 型安全性 |
 | **データベース** | `@prisma/client` | 5.22.0 | PostgreSQL 用 ORM |
 | | `@prisma/extension-accelerate` | 1.2.0 | コネクションプーリング |
-| **認証** | `@clerk/nextjs` | 5.1.5 | ユーザー認証・管理 |
+| **認証** | `@clerk/nextjs` | 7.0.7 | ユーザー認証・管理 |
 | **決済** | `stripe` | 17.4.0 | Stripe 決済処理 |
 | | `@paypal/react-paypal-js` | 8.7.0 | PayPal 統合 |
 | **メディア** | `next-cloudinary` | 6.6.2 | Cloudinary 画像アップロード |
@@ -132,7 +132,7 @@ graph LR
 | | `lucide-react` | 0.394.0 | アイコンライブラリ |
 | **状態管理** | `zustand` | 5.0.0 | グローバルカートステート |
 | | `react-hook-form` | 7.51.5 | フォーム管理 |
-| | `zod` | 3.23.8 | スキーマバリデーション |
+| | `zod` | 3.25.0 | スキーマバリデーション |
 | **テスト** | `@playwright/test` | 1.57.0 | E2E テスト |
 | | `jest` | 30.0.5 | ユニットテスト |
 | **ランタイム** | Bun | — | パッケージマネージャー・ランタイム（npm の代替） |
@@ -581,4 +581,4 @@ flowchart LR
 
 ---
 
-**ドキュメントバージョン**: Next.js 14.2.4・Prisma 5.22.0・PostgreSQL 移行完了時点のプラットフォームアーキテクチャを記載した初版
+**ドキュメントバージョン**: Next.js 16.2.1・React 19・Clerk v7・Prisma 5.22.0・PostgreSQL 移行完了時点のプラットフォームアーキテクチャを記載
