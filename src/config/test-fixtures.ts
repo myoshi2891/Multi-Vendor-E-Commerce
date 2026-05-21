@@ -3,7 +3,7 @@
  * 全エンティティのモックデータファクトリ（Partial<T> overridesパターン）
  */
 
-import { Prisma, StoreStatus } from "@prisma/client";
+import { Prisma, Role, StoreStatus } from "@prisma/client";
 import { TEST_CONFIG } from "./test-config";
 import { CartProductType } from "@/lib/types";
 
@@ -30,7 +30,7 @@ type MockUser = {
     name: string;
     email: string;
     picture: string;
-    role: string;
+    role: Role;
     createdAt: Date;
     updatedAt: Date;
 };
