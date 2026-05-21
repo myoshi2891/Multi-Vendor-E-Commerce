@@ -3,7 +3,7 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import QuantitySelector from '@/components/store/product-page/quantity-selector'
-import { createMockCartProduct, createMockSize } from '@/config/test-fixtures'
+import { createMockCartProduct } from '@/config/test-fixtures'
 import useFromStore from '@/hooks/useFromStore'
 
 // Mock hooks
@@ -16,7 +16,6 @@ describe('QuantitySelector', () => {
     const variantId = 'v1'
     const sizeId = 's1'
     const stock = 10
-    const sizes = [createMockSize({ id: 's1' })]
 
     beforeEach(() => {
         jest.clearAllMocks()
@@ -32,7 +31,7 @@ describe('QuantitySelector', () => {
                 quantity={1}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -49,7 +48,7 @@ describe('QuantitySelector', () => {
                 quantity={1}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -66,7 +65,7 @@ describe('QuantitySelector', () => {
                 quantity={2}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -89,7 +88,7 @@ describe('QuantitySelector', () => {
                 quantity={1}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -106,7 +105,7 @@ describe('QuantitySelector', () => {
                 quantity={10}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -132,7 +131,7 @@ describe('QuantitySelector', () => {
                 quantity={1}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -148,7 +147,7 @@ describe('QuantitySelector', () => {
                 quantity={7}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
         const plusButton = screen.getAllByRole('button')[1]
@@ -164,7 +163,7 @@ describe('QuantitySelector', () => {
                 quantity={5}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
@@ -176,7 +175,7 @@ describe('QuantitySelector', () => {
                 quantity={5}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={[...sizes, createMockSize({ id: 's2' })]}
+
             />
         )
 
@@ -201,7 +200,7 @@ describe('QuantitySelector', () => {
                 quantity={1}
                 stock={stock}
                 handleChange={mockHandleChange}
-                sizes={sizes}
+
             />
         )
 
