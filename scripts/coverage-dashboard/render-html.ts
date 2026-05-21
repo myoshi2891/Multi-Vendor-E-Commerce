@@ -19,6 +19,15 @@ const STATUS_LABEL: Record<CellStatus, string> = {
     missing: "Not implemented",
 };
 
+/**
+ * Escape special characters in a value to their corresponding HTML entities.
+ *
+ * Converts the input to a string and replaces &, <, >, ", and ' with their
+ * HTML-safe equivalents so the result can be embedded into HTML.
+ *
+ * @param value - The value to escape; it will be converted to a string
+ * @returns The escaped string with HTML entities for `&`, `<`, `>`, `"`, and `'`
+ */
 function escapeHtml(value: unknown): string {
     return String(value)
         .replace(/&/g, "&amp;")
@@ -28,11 +37,22 @@ function escapeHtml(value: unknown): string {
         .replace(/'/g, "&#39;");
 }
 
+/**
+ * Serialize a value to JSON and escape `<` characters to avoid injection of `</script>`-style sequences.
+ *
+ * @param value - The value to serialize
+ * @returns A JSON string representation of `value` with every `<` replaced by `\u003c`
+ */
 function escapeJson(value: unknown): string {
     // JSON 内に </script> が混入することを避ける
     return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
+/**
+ * Format a Date as a UTC timestamp string for display.
+ *
+ * @returns A string like `YYYY.MM.DD · HH:MM UTC` using the date's UTC components (zero-padded).
+ */
 function formatDate(d: Date): string {
     const yyyy = d.getUTCFullYear();
     const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -42,6 +62,12 @@ function formatDate(d: Date): string {
     return `${yyyy}.${mm}.${dd} · ${hh}:${min} UTC`;
 }
 
+/**
+ * Produce a report tagline in the form "FIELD REPORT / YYYY.MM" based on the provided date.
+ *
+ * @param d - The date used to extract the year and month in UTC
+ * @returns The tagline string `FIELD REPORT / YYYY.MM` where `YYYY` and `MM` are the UTC year and zero-padded month from `d`
+ */
 function tagline(d: Date): string {
     const yyyy = d.getUTCFullYear();
     const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -124,6 +150,15 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     },
 ];
 
+/**
+ * Renders the prioritized "next actions" UI as an HTML fragment.
+ *
+ * Produces three priority sections (Immediate, Next Sprint, Mid–Long Term), each containing
+ * an ordered list of actions with title, cost, and a details list for target, tool, and impact.
+ * All dynamic values are HTML-escaped for safe insertion.
+ *
+ * @returns An HTML string representing the grouped next-action sections and their action items
+ */
 function renderActions(): string {
     const groups: Record<NextAction["priority"], { label: string; mark: string; tone: string }> = {
         high: { label: "Immediate", mark: "01", tone: "high" },
@@ -163,6 +198,12 @@ function renderActions(): string {
         .join("");
 }
 
+/**
+ * Render HTML filter chip groups for categories and domains based on the coverage matrix.
+ *
+ * @param matrix - Coverage matrix used to populate chip labels and counts
+ * @returns An HTML string containing two filter groups ("Categories" and "Domains"), each with chips showing the item label and count and carrying `data-filter="category|domain"` and `data-value` attributes for client-side filtering
+ */
 function renderFilters(matrix: Matrix): string {
     const cats = CATEGORIES.map(
         (c) => `
@@ -193,6 +234,14 @@ function renderFilters(matrix: Matrix): string {
     </section>`;
 }
 
+/**
+ * Render the coverage matrix into an HTML table.
+ *
+ * Produces a table with domain columns and category rows; each cell is annotated with status, file count, and a tooltip listing files and metadata.
+ *
+ * @param matrix - The coverage matrix containing summary counts and per-category/per-domain cell data to render
+ * @returns An HTML string containing a <table> element that represents the coverage matrix, with domain headers, category rows, and status-annotated cells (including file counts and tooltips)
+ */
 function renderMatrix(matrix: Matrix): string {
     const head = `
     <thead>
@@ -252,6 +301,11 @@ function renderMatrix(matrix: Matrix): string {
     return `<table class="matrix" aria-label="テストカバレッジマトリクス">${head}${body}</table>`;
 }
 
+/**
+ * Render the HTML legend section that lists each status's symbol and label.
+ *
+ * @returns An HTML string containing the status legend fragment
+ */
 function renderLegend(): string {
     const items = (Object.keys(STATUS_SYMBOL) as CellStatus[])
         .map(
@@ -272,6 +326,13 @@ function renderLegend(): string {
     </aside>`;
 }
 
+/**
+ * Produce a standalone HTML document that visualizes the provided coverage matrix as a dashboard.
+ *
+ * @param matrix - The coverage matrix containing summary statistics and per-cell details to render.
+ * @param options - Rendering options (must include `generatedAt`; may include `projectName` and `testRunners`).
+ * @returns A full HTML document string with inlined CSS/JS and an embedded JSON payload of the matrix data.
+ */
 export function renderHtml(matrix: Matrix, options: RenderOptions): string {
     const generatedAt = formatDate(options.generatedAt);
     const tag = tagline(options.generatedAt);

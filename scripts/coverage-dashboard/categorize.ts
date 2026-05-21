@@ -82,6 +82,12 @@ export interface CategorizedTest {
     category: CategoryId;
 }
 
+/**
+ * Map a project-relative file path to its domain identifier.
+ *
+ * @param relativePath - The file path relative to the repository root used to determine the domain
+ * @returns The `DomainId` corresponding to the path, or `"other"` if no domain matches
+ */
 function detectDomain(relativePath: string): DomainId {
     for (const rule of DOMAIN_RULES) {
         if (rule.match(relativePath)) return rule.domain;
@@ -89,6 +95,19 @@ function detectDomain(relativePath: string): DomainId {
     return "other";
 }
 
+/**
+ * Determine the test category from its kind and relative path.
+ *
+ * Rules:
+ * - `kind === "playwright"` → `e2e`
+ * - paths starting with `tests/component/` → `integration`
+ * - paths starting with `src/app/api/` → `api-contract`
+ * - `src/middleware.test.ts` or paths starting with `src/utils/sanitize` → `security`
+ * - otherwise → `unit`
+ *
+ * @param test - Scanned test metadata (uses `kind` and `relativePath` to decide)
+ * @returns The chosen `CategoryId` (`e2e`, `integration`, `api-contract`, `security`, or `unit`)
+ */
 function detectCategory(test: ScannedTest): CategoryId {
     if (test.kind === "playwright") return "e2e";
 
@@ -102,6 +121,12 @@ function detectCategory(test: ScannedTest): CategoryId {
     return "unit";
 }
 
+/**
+ * Assigns a domain and category to a scanned test.
+ *
+ * @param test - The scanned test to classify
+ * @returns An object containing the original `test` and its determined `domain` and `category`
+ */
 export function categorize(test: ScannedTest): CategorizedTest {
     return {
         test,
