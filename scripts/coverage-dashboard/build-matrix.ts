@@ -59,7 +59,10 @@ function lookupCoverage(testPath: string, lcov: Map<string, LcovEntry>): number 
     return null;
 }
 
-function decideStatus(files: CellFile[]): { status: CellStatus; avgLinePct: number | null } {
+function decideStatus(
+    files: CellFile[],
+    lcovPresent: boolean,
+): { status: CellStatus; avgLinePct: number | null } {
     if (files.length === 0) return { status: "missing", avgLinePct: null };
 
     const withCoverage = files.filter((f) => f.linePct !== null) as Array<CellFile & { linePct: number }>;
@@ -70,7 +73,8 @@ function decideStatus(files: CellFile[]): { status: CellStatus; avgLinePct: numb
     const hasSkip = files.some((f) => f.hasSkip);
     const lowCoverage = avg !== null && avg < COVERAGE_THRESHOLD;
 
-    if (hasSkip || lowCoverage) return { status: "partial", avgLinePct: avg };
+    // LCOV が存在するのにファイルが解決できない場合はカバレッジ不明扱いで partial
+    if (hasSkip || lowCoverage || (lcovPresent && avg === null)) return { status: "partial", avgLinePct: avg };
     return { status: "full", avgLinePct: avg };
 }
 
@@ -100,7 +104,7 @@ export function buildMatrix(tests: ScannedTest[], lcov: Map<string, LcovEntry>):
         for (const dom of DOMAINS) {
             const files = buckets.get(key(cat.id, dom.id)) ?? [];
             files.sort((a, b) => a.path.localeCompare(b.path));
-            const { status, avgLinePct } = decideStatus(files);
+            const { status, avgLinePct } = decideStatus(files, lcov.size > 0);
             const testCount = files.reduce((sum, f) => sum + f.testCount, 0);
             const cell: MatrixCell = {
                 category: cat.id,

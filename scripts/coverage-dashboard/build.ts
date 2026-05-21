@@ -12,6 +12,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildMatrix } from "./build-matrix";
 import { parseLcov } from "./parse-lcov";
@@ -19,7 +20,7 @@ import { renderHtml } from "./render-html";
 import { scanTests } from "./scan-tests";
 
 async function main(): Promise<void> {
-    const repoRoot = resolve(__dirname, "..", "..");
+    const repoRoot = resolve(dirname(fileURLToPath(new URL(import.meta.url))), "..", "..");
     const outPath = resolve(repoRoot, "docs", "coverage-dashboard.html");
     const lcovPath = resolve(repoRoot, "coverage", "lcov.info");
 

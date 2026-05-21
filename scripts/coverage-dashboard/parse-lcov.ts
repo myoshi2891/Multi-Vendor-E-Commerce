@@ -11,8 +11,10 @@ export interface ParseLcovOptions {
 
 function normalizePath(rawPath: string, repoRoot?: string): string {
     if (!repoRoot) return rawPath;
-    const prefix = repoRoot.endsWith("/") ? repoRoot : `${repoRoot}/`;
-    return rawPath.startsWith(prefix) ? rawPath.slice(prefix.length) : rawPath;
+    const normalizedRoot = repoRoot.replace(/\\/g, "/");
+    const normalizedPath = rawPath.replace(/\\/g, "/");
+    const prefix = normalizedRoot.endsWith("/") ? normalizedRoot : `${normalizedRoot}/`;
+    return normalizedPath.startsWith(prefix) ? normalizedPath.slice(prefix.length) : normalizedPath;
 }
 
 /**

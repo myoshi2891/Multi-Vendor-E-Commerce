@@ -51,6 +51,14 @@ describe("buildMatrix", () => {
         expect(cell.testCount).toBe(2);
     });
 
+    it("lcov が存在するが linePct が解決できない場合は status=partial になる", () => {
+        const tests = [jest_("src/queries/store.test.ts")];
+        // LCOV エントリが存在するが src/queries/store.ts に対応するエントリがない
+        const lcov = new Map([["src/other/module.ts", { linesFound: 100, linesHit: 100, linePct: 100 }]]);
+        const m = buildMatrix(tests, lcov);
+        expect(m.cell("unit", "queries").status).toBe("partial");
+    });
+
     it("summary.totalCells / coveredCells / coveragePct を集計する", () => {
         // 8 カテゴリ × 10 ドメイン = 80 セル
         const tests = [jest_("src/queries/store.test.ts"), jest_("src/lib/utils.test.ts")];

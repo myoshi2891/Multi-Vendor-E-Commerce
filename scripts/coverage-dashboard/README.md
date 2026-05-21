@@ -25,7 +25,7 @@ bun run coverage:dashboard
 各モジュールには Jest テストが付属する（`*.test.ts`）。
 
 ```bash
-bun run test -- --testPathPattern=scripts/coverage-dashboard
+bun run test -- --testPathPatterns=scripts/coverage-dashboard
 ```
 
 ## 設計判断
