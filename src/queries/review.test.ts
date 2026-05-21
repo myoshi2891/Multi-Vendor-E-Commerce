@@ -295,4 +295,52 @@ describe("upsertReview", () => {
             ).rejects.toThrow("Error updating review");
         });
     });
+
+    describe("IDOR防止（他人のレビュー操作の拒否）", () => {
+        // 既存レビュー検索の where 句に userId が含まれることを明示的に検証する
+        // レグレッションテスト。将来 userId フィルタが外れた場合に検知できる。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("既存レビュー検索の where 句に認証ユーザーの userId が含まれる", async () => {
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReviewInput());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReviewInput());
+
+            expect(mockDb.review.findFirst).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        productId: "product-001",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+
+        it("他ユーザーの既存レビューには触れず、新規 create に分岐する", async () => {
+            // findFirst が他ユーザーのレビューを返さないことを userId フィルタで担保している
+            // ため、本シナリオでは null が返り create に分岐する
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReviewInput());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReviewInput());
+
+            expect(mockDb.review.update).not.toHaveBeenCalled();
+            expect(mockDb.review.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+    });
 });

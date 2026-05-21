@@ -142,6 +142,30 @@ describe("createPayPalPayment", () => {
             ).rejects.toThrow("Failed to create PayPal payment");
         });
     });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // 実装側で db.order.findUnique の where 句に userId フィルタを追加した後、
+        // skip を外すこと。詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it.skip("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // 他人の order は userId フィルタで弾かれる前提
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            await expect(createPayPalPayment("other-user-order"))
+                .rejects.toThrow("Failed to create PayPal payment");
+
+            expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "other-user-order",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -312,6 +336,27 @@ describe("capturePayPalPayment", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // 実装側で db.order.update の所有権チェックを追加した後、skip を外すこと。
+        // 詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it.skip("認証ユーザーの所有しない orderId ではキャプチャ更新が拒否される", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockFetch.mockResolvedValue({
+                json: () => Promise.resolve({ status: "COMPLETED" }),
+            });
+            // 他人の order に対する更新は所有権チェックで拒否される前提
+            mockDb.order.update.mockRejectedValue(
+                new Error("Order not found")
+            );
+
+            await expect(
+                capturePayPalPayment("other-user-order", "PAYPAL-ORDER-123")
+            ).rejects.toThrow();
         });
     });
 });

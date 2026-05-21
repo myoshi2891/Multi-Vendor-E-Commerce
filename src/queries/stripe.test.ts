@@ -151,6 +151,30 @@ describe("createStripePaymentIntent", () => {
             consoleSpy.mockRestore();
         });
     });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // 実装側で db.order.findUnique の where 句に userId フィルタを追加した後、
+        // skip を外すこと。詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it.skip("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            await expect(
+                createStripePaymentIntent("other-user-order")
+            ).rejects.toThrow("Order not found.");
+
+            expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "other-user-order",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -320,6 +344,33 @@ describe("createStripePayment", () => {
 
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
+        });
+    });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // 実装側で db.order.findUnique の where 句に userId フィルタを追加した後、
+        // skip を外すこと。詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it.skip("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            await expect(
+                createStripePayment(
+                    "other-user-order",
+                    mockPaymentIntent as never
+                )
+            ).rejects.toThrow("Order not found.");
+
+            expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "other-user-order",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
         });
     });
 });
