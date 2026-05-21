@@ -309,7 +309,7 @@ Q1: 全プロジェクトで不変のルールか？ → .claude/steering/tech.m
 Q2: 機能仕様の一部か？ → specs/multi-vendor-ecommerce/
 Q3: 実装の詳細な手順・パターンか？ → docs/testing/TESTING_DESIGN.md
 Q4: 過去の技術選定・移行の理由か？ → docs/architecture/decisions/ (ADR)
-Q5: それ以外（進捗・一時的）→ PROGRESS.md
+Q5: それ以外（進捗・一時的）→ docs/PROGRESS.md
 ```
 
 ### ADR 作成基準
@@ -435,7 +435,7 @@ Q5: それ以外（進捗・一時的）→ PROGRESS.md
 | `specs/multi-vendor-ecommerce/07-testing.md` | テスト数 686/30 → 881/54 に更新 |
 | `docs/migration/06-framework-upgrade.md` | 新規作成。5つのフレームワーク移行の breaking changes と修正パターンを一括記録 |
 | `docs/migration/README.md` | タイトルを "Migration Documentation" に変更、フレームワーク移行セクションと新ファイルへのリンクを追加 |
-| `PROGRESS.md` | 本エントリを追記 |
+| `docs/PROGRESS.md` | 本エントリを追記 |
 
 ---
 
@@ -445,3 +445,36 @@ Q5: それ以外（進捗・一時的）→ PROGRESS.md
 
 ### 現在のブランチ状態
 - `feat/nextjs-16-migration` → `main` へのマージ待ち／レビュー中（PR #104、`2c9665e`）
+
+---
+
+### Phase 1 基盤テスト検証・品質改善 (2026-05-21)
+
+#### 概要
+
+`TEST_IMPLEMENTATION_PLAN.md` の Phase 1（優先度 P0）に対応する5スイートを
+ステップバイステップで検証・改善し、各ステップをコミット。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/hooks/use-mobile.test.tsx` | P0/P1/P2 優先度ラベルを全7テストに付与（境界値 767/768 → P0） | `8e8df92` |
+| `src/hooks/useFromStore.test.tsx` | P0/P1 優先度ラベル付与（ストア変更追従 → P0） | `7260f71` |
+| `src/middleware.test.ts` | P0/P1/P2 ラベル付与 + `getUserCountry` 例外時テスト追加（+1） | `fb73cd4` |
+| `src/providers/modal-provider.test.tsx` | `fetchData` 例外時のグレースフルデグラデーションテスト追加（+1） | `462a8e1` |
+
+#### プレエキシスティング型エラー修正
+
+| ファイル | 原因 | 修正 | コミット |
+|---------|------|------|---------|
+| `tests/component/store/quantity-selector.test.tsx` | リファクタ済みの `sizes` prop が残存 | 全レンダーから `sizes={sizes}` を除去 | `ad6bbc7` |
+| `src/queries/product.test.ts` | `"UNKNOWN_METHOD"` が `ShippingFeeMethod` enum 外 | `as unknown as ShippingFeeMethod` にキャスト＋import 追加 | `ad6bbc7` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 881 | **945** |
+| スイート数 | 54 | **60** |
+| 型エラー | 11件 | **0件** |

@@ -43,7 +43,7 @@
   │       例: MySQL → PostgreSQL 移行、Elasticsearch → tsvector 移行
   │
   └─ Q5: それ以外（進捗・一時的な記録）
-      └─ YES → `PROGRESS.md` に追記（定期的にアーカイブ）
+      └─ YES → `docs/PROGRESS.md` に追記（定期的にアーカイブ）
 ```
 
 ---
@@ -56,7 +56,7 @@
 |---------|------|---------------|
 | `CLAUDE.md` | プロジェクト手順・コマンド集 | 開発コマンド、アーキテクチャ概要、コーディング規約へのリンク |
 | `README.md` | プロジェクト概要 | 技術スタック、セットアップ手順、デプロイ手順 |
-| `PROGRESS.md` | 進捗・一時的な決定 | 実装ログ、TODO、一時的な問題と解決策 |
+| `docs/PROGRESS.md` | 進捗・一時的な決定 | 実装ログ、TODO、一時的な問題と解決策 |
 
 ### Layer 2: チーム規約
 
@@ -66,6 +66,8 @@
 | `.claude/steering/tech.md` | 技術制約・実装パターン | TypeScript規約、禁止事項、実装パターン例 |
 | `.claude/steering/structure.md` | ディレクトリ責務 | 重要な設計判断、データモデル |
 | `.claude/steering/documentation-guide.md` | ドキュメント管理ルール | このファイル |
+| `.claude/rules/*.md` | 常時適用のガードレール | コーディング・テスト・セキュリティの must/never ルール |
+| `.claude/workflows/*.md` | 運用ワークフロー | PR 提出手順、ブランチ命名規則など |
 
 ### Layer 3: SDD（仕様駆動開発）
 

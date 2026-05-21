@@ -20,6 +20,11 @@
 │   ├── server-action-scaffold/ # サーバーアクションのテンプレート生成
 │   ├── spec-sync-check/   # 実装と仕様書の乖離検出
 │   └── test-complete/     # テスト実行・品質チェック・コミット判定
+├── rules/                 # 常時適用のガードレール（旧 .kilocode/rules/）
+│   ├── 00-readme.md       # ルール追加方法
+│   └── 01-engineering-standards.md  # コーディング・テスト・セキュリティ標準
+├── workflows/             # 運用ワークフロー（旧 .kilocode/workflows/）
+│   └── submit-pr.md       # PR 提出手順
 └── agents/                # サブエージェント定義（将来拡張用）
     └── README.md          # サブエージェント管理ドキュメント
 ```
@@ -35,6 +40,8 @@
 | `steering/tech.md` | 技術制約・禁止事項・テスト要件（原則変更しない） | 破壊的変更時のみ |
 | `steering/structure.md` | ディレクトリ責務・設計判断・データモデル | 破壊的変更時のみ |
 | `skills/*/SKILL.md` | 特定タスクの手順書（オンデマンドで読み込まれる） | スキル追加・改善時 |
+| `rules/*.md` | 常時適用のガードレール（must/never 形式の短いルール） | 規約追加・改訂時 |
+| `workflows/*.md` | PR 提出など定常作業の手順書 | プロセス変更時 |
 | `agents/README.md` | サブエージェント設計ルール・一覧 | エージェント追加時 |
 
 > `CLAUDE.md` がセッション間の「脳」であるのに対し、`steering/` は**チーム全体で共有する不変のルール**です。
@@ -47,4 +54,6 @@
 |-----|--------|
 | `steering/*.md` | 破壊的変更があった場合のみ更新する。修正履歴は `git log` で追跡する |
 | `skills/*/SKILL.md` | スキル追加・改善時に更新する。`description` は英語ベース・三人称で記述する |
+| `rules/*.md` | ルール追加・改訂時に更新する。新規ルールは [`rules/00-readme.md`](rules/00-readme.md) のフォーマットに従う |
+| `workflows/*.md` | プロセス変更時に更新する（PR 手順、ブランチ命名規則など） |
 | 個人設定 | `CLAUDE.local.md` を使用する（`.gitignore` に自動追加） |

@@ -39,7 +39,6 @@ Read: specs/multi-vendor-ecommerce/04-interfaces.md  → API・UI定義
 Read: specs/multi-vendor-ecommerce/05-workflows.md   → ユーザーフロー
 Read: specs/multi-vendor-ecommerce/07-testing.md     → テスト方針
 Read: specs/multi-vendor-ecommerce/08-open-questions.md → 未解決事項
-Read: specs/001-sample-feature/plan.md               → 計画書テンプレート確認
 ```
 
 確認すべきポイント：
@@ -72,7 +71,7 @@ Read: src/config/test-helpers.ts  → テストヘルパーの確認
 
 ### Step 3｜計画書を生成する
 
-`specs/001-sample-feature/plan.md` のフォーマットに従い、以下の構成で生成する：
+以下の構成で生成する：
 
 ```markdown
 # Implementation Plan: [機能名]
@@ -241,7 +240,6 @@ specs/multi-vendor-ecommerce/
   05-workflows.md      ユーザーフロー
   07-testing.md        テスト方針
   08-open-questions.md 未解決事項
-specs/001-sample-feature/plan.md  計画書テンプレート
 
 ## 実装
 src/queries/*.ts        サーバーアクション

@@ -4,13 +4,16 @@
 - Jest + ts-jest configured for unit and server-side tests.
 - React Testing Library and jest-dom installed for component tests.
 - Playwright configured for E2E scenarios.
-- Existing unit tests live under `src/queries/*.test.ts`.
+- Existing unit tests live under `src/queries/*.test.ts`, `src/hooks/`,
+  `src/providers/`, `src/utils/`, and `src/middleware.test.ts`.
 - Shared test infrastructure in `src/config/`:
   - `test-fixtures.ts`: type-safe mock factories using `Partial<T>` overrides.
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 881 unit tests across 54 suites (all passing).
+- 945 tests across 60 suites (3 skipped), as of 2026-05-21.
+  - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
+    verified with P0/P1/P2 priority labeling applied uniformly.
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent

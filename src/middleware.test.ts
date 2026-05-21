@@ -75,7 +75,7 @@ describe("Middleware", () => {
         const publicPaths = ["/", "/browse"];
 
         it.each(protectedPaths)(
-            "正常系: 保護されたルート (%s) の場合は auth.protect() が呼ばれる",
+            "[P0] 正常系: 保護されたルート (%s) の場合は auth.protect() が呼ばれる",
             async (path) => {
                 const req = new NextRequest(`http://localhost:3000${path}`);
                 req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
@@ -86,7 +86,7 @@ describe("Middleware", () => {
         );
 
         it.each(publicPaths)(
-            "正常系: パブリックなルート (%s) の場合は auth.protect() が呼ばれない",
+            "[P0] 正常系: パブリックなルート (%s) の場合は auth.protect() が呼ばれない",
             async (path) => {
                 const req = new NextRequest(`http://localhost:3000${path}`);
                 req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
@@ -98,7 +98,7 @@ describe("Middleware", () => {
     });
 
     describe("国情報 Cookie の処理 (Country Cookie Logic)", () => {
-        it("正常系: 既に userCountry Cookie が存在する場合は NextResponse.next() を返し、Cookie を再設定しない", async () => {
+        it("[P1] 正常系: 既に userCountry Cookie が存在する場合は NextResponse.next() を返し、Cookie を再設定しない", async () => {
             const req = new NextRequest("http://localhost:3000/");
             // userCountry Cookie をセット
             req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
@@ -114,7 +114,7 @@ describe("Middleware", () => {
             expect(response.headers.get("Location")).toBeNull();
         });
 
-        it("正常系: userCountry Cookie が存在しない場合は getUserCountry() を呼び、レスポンスに Cookie をセットする（リダイレクトなし）", async () => {
+        it("[P1] 正常系: userCountry Cookie が存在しない場合は getUserCountry() を呼び、レスポンスに Cookie をセットする（リダイレクトなし）", async () => {
             const req = new NextRequest("http://localhost:3000/some-path");
             const mockCountry = { name: "United States", code: "US" };
             (getUserCountry as jest.Mock).mockResolvedValue(mockCountry);
@@ -139,7 +139,7 @@ describe("Middleware", () => {
             expect(setCookieHeader).toContain("SameSite=lax");
         });
 
-        it("正常系: NODE_ENV が production の場合は Cookie に Secure 属性が付与される", async () => {
+        it("[P2] 正常系: NODE_ENV が production の場合は Cookie に Secure 属性が付与される", async () => {
             try {
                 Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
                 const req = new NextRequest("http://localhost:3000/");
@@ -153,6 +153,27 @@ describe("Middleware", () => {
             } finally {
                 Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', configurable: true });
             }
+        });
+
+        it("[P1] 異常系: getUserCountry() が例外を投げてもリクエストをクラッシュさせずに NextResponse.next() を返す", async () => {
+            const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+            const req = new NextRequest("http://localhost:3000/some-path");
+            (getUserCountry as jest.Mock).mockRejectedValue(new Error("Network error"));
+
+            const response = await typedMiddleware(mockAuth as unknown as ClerkMiddlewareAuth, req, mockEvent) as NextResponse;
+
+            // エラー時もレスポンスが返る（クラッシュしない）
+            expect(response).toBeInstanceOf(NextResponse);
+            expect(response.headers.get("Location")).toBeNull();
+
+            // エラーがログに記録される
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining("[middleware]"),
+                expect.any(String),
+                expect.any(String)
+            );
+
+            consoleSpy.mockRestore();
         });
     });
 });

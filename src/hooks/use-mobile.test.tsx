@@ -44,7 +44,7 @@ describe("useIsMobile", () => {
         jest.restoreAllMocks();
     });
 
-    it("正常系: 初期状態（innerWidth < 768 の場合）で true を返す", () => {
+    it("[P1] 正常系: 初期状態（innerWidth < 768 の場合）で true を返す", () => {
         // window.innerWidth をモバイルサイズにモック
         Object.defineProperty(window, "innerWidth", { writable: true, value: 500 });
         isMobileMatch = true;
@@ -55,7 +55,7 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 
-    it("正常系: 初期状態（innerWidth >= 768 の場合）で false を返す", () => {
+    it("[P1] 正常系: 初期状態（innerWidth >= 768 の場合）で false を返す", () => {
         // window.innerWidth をデスクトップサイズにモック
         Object.defineProperty(window, "innerWidth", { writable: true, value: 1024 });
         isMobileMatch = false;
@@ -65,7 +65,7 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(false);
     });
 
-    it("境界値: innerWidth が丁度 768 の場合 false を返す", () => {
+    it("[P0] 境界値: innerWidth が丁度 768 の場合 false を返す", () => {
         Object.defineProperty(window, "innerWidth", { writable: true, value: 768 });
         isMobileMatch = false;
 
@@ -74,7 +74,7 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(false);
     });
 
-    it("境界値: innerWidth が 767 の場合 true を返す", () => {
+    it("[P0] 境界値: innerWidth が 767 の場合 true を返す", () => {
         Object.defineProperty(window, "innerWidth", { writable: true, value: 767 });
         isMobileMatch = true;
 
@@ -83,7 +83,7 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 
-    it("正常系: matchMedia の change イベントで値が更新される", () => {
+    it("[P1] 正常系: matchMedia の change イベントで値が更新される", () => {
         Object.defineProperty(window, "innerWidth", { writable: true, value: 1024 });
         isMobileMatch = false;
 
@@ -106,7 +106,7 @@ describe("useIsMobile", () => {
         expect(result.current).toBe(true);
     });
 
-    it("正常系: アンマウント時にイベントリスナーが除去される", () => {
+    it("[P1] 正常系: アンマウント時にイベントリスナーが除去される", () => {
         Object.defineProperty(window, "innerWidth", { writable: true, value: 1024 });
         isMobileMatch = false;
 
@@ -122,7 +122,7 @@ describe("useIsMobile", () => {
         expect(mqlListeners["change"].length).toBe(0);
     });
 
-    it("エッジケース: matchMedia 未対応環境でクラッシュしない", () => {
+    it("[P2] エッジケース: matchMedia 未対応環境でクラッシュしない", () => {
         // matchMedia が存在しない環境をシミュレート
         Object.defineProperty(window, "matchMedia", { writable: true, value: undefined });
         

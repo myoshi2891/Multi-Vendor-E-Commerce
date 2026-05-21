@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, ShippingFeeMethod } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import {
     upsertProduct,
@@ -1564,7 +1564,7 @@ describe("getProductShippingFee", () => {
 
         it("未知の配送方式の場合0を返す", async () => {
             const result = await getProductShippingFee(
-                "UNKNOWN_METHOD",
+                "UNKNOWN_METHOD" as unknown as ShippingFeeMethod,
                 userCountry,
                 store as never,
                 null,
