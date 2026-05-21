@@ -89,7 +89,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 以下は、将来的に ADR 化が推奨される技術選定です（現時点では `docs/migration/` や既存ドキュメントに記録済み）：
 
 1. **MySQL → PostgreSQL 移行** - 現在: `docs/migration/`
-2. **Prisma Accelerate 導入** - 現在: `PROGRESS.md` + `README.md`
+2. **Prisma Accelerate 導入** - 現在: `docs/PROGRESS.md` + `README.md`
 3. **tsvector/tsquery 全文検索** - 現在: `README.md`
 
 必要に応じて、これらを ADR 化してください。
@@ -130,7 +130,7 @@ ADR は**イミュータブル**（不変）です。以下の場合を除き、
 
 ### その他の履歴
 - [`docs/migration/`](../../migration/) - DB 移行履歴
-- [`PROGRESS.md`](../../../PROGRESS.md) - 進捗記録
+- [`docs/PROGRESS.md`](../../PROGRESS.md) - 進捗記録
 
 ---
 

@@ -65,7 +65,7 @@
 
 ---
 
-## 4. PROGRESS.md
+## 4. docs/PROGRESS.md
 
 - [x] L36, L47: MySQL 固有の記述あり（`brew services start mysql` 等）。
   過去の経緯として残しても良いが、PostgreSQL 移行後の追記セクションを追加する。
@@ -107,7 +107,7 @@
 3. **テスト設計書** → `TESTING_DESIGN.md`
 4. **Specs ドキュメント** → `specs/` 配下 5 ファイル
 5. **README.md** → Mermaid 図の更新
-6. **PROGRESS.md** → 移行完了の追記
+6. **docs/PROGRESS.md** → 移行完了の追記
 7. **`neon_prisma_accelerate.md`** → `docs/migration/` に統合済み、ルートから削除済み ✅
 
 ---
@@ -119,12 +119,12 @@
 
 ```bash
 # specs/, README.md, TESTING_DESIGN.md の MySQL 表記を一括検索（大文字小文字不問）
-# ※ PROGRESS.md は移行経緯の履歴として意図的に MySQL の記述を含むため除外しています
+# ※ docs/PROGRESS.md は移行経緯の履歴として意図的に MySQL の記述を含むため除外しています
 rg -i "mysql" specs/ README.md TESTING_DESIGN.md
 ```
 
 ヒットした行が残っている場合は、本チェックリストの各項目に従って更新してください。
 
-> **PROGRESS.md の手動確認:**  PROGRESS.md には L36-L47 付近に MySQL 移行前の履歴記述が残っています。
+> **docs/PROGRESS.md の手動確認:**  docs/PROGRESS.md には L36-L47 付近に MySQL 移行前の履歴記述が残っています。
 > これらは意図的なものですが、移行後の新規記述に MySQL が混入していないか確認したい場合は
-> `rg -i "mysql" PROGRESS.md` で個別に確認してください。
+> `rg -i "mysql" docs/PROGRESS.md` で個別に確認してください。

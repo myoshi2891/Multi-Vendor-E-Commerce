@@ -309,7 +309,7 @@ Q1: 全プロジェクトで不変のルールか？ → .claude/steering/tech.m
 Q2: 機能仕様の一部か？ → specs/multi-vendor-ecommerce/
 Q3: 実装の詳細な手順・パターンか？ → docs/testing/TESTING_DESIGN.md
 Q4: 過去の技術選定・移行の理由か？ → docs/architecture/decisions/ (ADR)
-Q5: それ以外（進捗・一時的）→ PROGRESS.md
+Q5: それ以外（進捗・一時的）→ docs/PROGRESS.md
 ```
 
 ### ADR 作成基準
@@ -435,7 +435,7 @@ Q5: それ以外（進捗・一時的）→ PROGRESS.md
 | `specs/multi-vendor-ecommerce/07-testing.md` | テスト数 686/30 → 881/54 に更新 |
 | `docs/migration/06-framework-upgrade.md` | 新規作成。5つのフレームワーク移行の breaking changes と修正パターンを一括記録 |
 | `docs/migration/README.md` | タイトルを "Migration Documentation" に変更、フレームワーク移行セクションと新ファイルへのリンクを追加 |
-| `PROGRESS.md` | 本エントリを追記 |
+| `docs/PROGRESS.md` | 本エントリを追記 |
 
 ---
 

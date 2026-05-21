@@ -48,8 +48,7 @@ package-lock.json
 .vscode/*
 !.vscode/settings.json
 
-# kilocode/specify cache
-.kilocode/.cache/
+# specify cache
 .specify/.cache/
 
 # MySQL マイグレーションバックアップ

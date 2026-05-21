@@ -1,8 +1,9 @@
-# KiloCode Rules
+# Project Rules
 
 ## Purpose
 This folder stores always-on guardrails for the project. These rules are applied
-to every task unless explicitly superseded.
+to every task unless explicitly superseded. Higher-level team conventions live in
+[../steering/](../steering/); rules here are short, testable guardrails layered on top.
 
 ## How to Add Rules
 - Keep rules short and testable.
