@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "seed:e2e": "tsx tests/e2e/seed/seed-e2e.ts",
-    "seed:luxury": "tsx prisma/seed/seed.ts"
+    "seed:luxury": "tsx prisma/seed/seed.ts",
+    "coverage:dashboard": "tsx scripts/coverage-dashboard/build.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.7",
