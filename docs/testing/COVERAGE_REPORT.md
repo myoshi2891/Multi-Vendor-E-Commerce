@@ -81,16 +81,14 @@
 - **達成内容**: 14 ファイル全調査、IDOR 脆弱性 2 件修正（paypal/stripe）、認可テスト補完
 - **記録**: [`SECURITY_GAP_REPORT.md`](./SECURITY_GAP_REPORT.md) / commits `55c07b1`, `03a7e89`
 
-#### A2. Checkout / Cart の Visual Regression を導入 ⚠️ 2026-05-21 spec 追加・baseline 未コミット
+#### A2. Checkout / Cart の Visual Regression を導入 ✅ 2026-05-21 完了
 - **対象**: `tests/e2e/visual/`
-- **達成内容**: cart/checkout の spec ファイル追加、playwright.config.ts に安定化設定を追加
-- **残課題**: baseline スクリーンショット未コミット → `QA_HANDOFF.md OI-1` を参照
+- **達成内容**: cart/checkout の spec ファイル追加、playwright.config.ts に安定化設定を追加、および baseline スクリーンショットの生成・コミット
 - **期待効果**: 売上直結フロー (cart, checkout) の UI 崩れをマージ前に阻止
 
-#### A3. フォーム a11y を WCAG 2.1 AA で計測 ✅ 2026-05-21 完了（MVP）
+#### A3. フォーム a11y を WCAG 2.1 AA で計測 ✅ 2026-05-21 完了
 - **対象**: `tests/e2e/a11y/`
-- **達成内容**: sign-in / seller-apply の WCAG 2.1 AA スキャン追加（`@axe-core/playwright`）
-- **残課題**: `/checkout` / `/profile` の拡張 → `QA_HANDOFF.md OI-3` を参照
+- **達成内容**: sign-in / seller-apply および /checkout / /profile の WCAG 2.1 AA スキャン追加（`@axe-core/playwright`）
 - **期待効果**: 認証・申請フォームの障壁を計測 → 改善 → 退行防止のループ確立
 
 ---

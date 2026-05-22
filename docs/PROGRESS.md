@@ -116,7 +116,7 @@
 | 課題 | 詳細 | 優先度 |
 |------|------|--------|
 | Elasticsearch 未実装 | `src/lib/elastic-search.ts` がコメントアウト中。全文検索は現在 tsvector で代替 | 低 |
-| E2E シード不安定 | `bun run seed:e2e` が外部DBへの接続前提。CI環境での冪等性は未検証 | 中 |
+| E2E シード不安定 | 解消済み: CI環境で PostgreSQL コンテナを使用し、`seed-idempotency` ジョブで冪等性を検証完了 (OI-5) | - |
 | E2E テスト網羅不足 | `TEST_IMPLEMENTATION_PLAN.md` の P1/P2 スイートが未実装 | 中 |
 
 ---
@@ -143,7 +143,7 @@
 
 ### 2. E2E テストの CI 安定化
 
-**背景**: Playwright E2E は `bun run dev` でローカル起動を前提としているが、CI 環境での seed:e2e 実行と安定した接続が未検証。
+**背景**: `seed-idempotency` ジョブにより、CI環境（Docker）でシードデータが問題なく投入でき、かつ冪等であることが確認されました。今後は Playwright E2E の CI 統合を進める必要があります。
 
 **確認すべきこと**:
 - `E2E_DATABASE_URL` が CI secrets に設定されているか

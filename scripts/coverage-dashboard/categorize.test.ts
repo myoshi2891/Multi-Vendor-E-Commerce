@@ -36,8 +36,16 @@ describe("categorize - domain detection", () => {
 });
 
 describe("categorize - category detection", () => {
-    it("Playwright spec ファイルは category=e2e", () => {
+    it("Playwright spec ファイルは category=e2e (デフォルト)", () => {
         expect(categorize(mk("tests/e2e/login.spec.ts", "playwright")).category).toBe("e2e");
+    });
+
+    it("tests/e2e/visual/ 配下の Playwright spec は category=visual-snapshot", () => {
+        expect(categorize(mk("tests/e2e/visual/cart.spec.ts", "playwright")).category).toBe("visual-snapshot");
+    });
+
+    it("tests/e2e/a11y/ 配下の Playwright spec は category=a11y", () => {
+        expect(categorize(mk("tests/e2e/a11y/sign-in.spec.ts", "playwright")).category).toBe("a11y");
     });
 
     it("tests/component/ 配下は category=integration", () => {
