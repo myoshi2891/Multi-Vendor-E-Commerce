@@ -2,14 +2,13 @@ import { expect, Locator, Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 /**
- * WCAG 2.1 AA 違反スキャンの共通ヘルパー。
+ * Run an Axe WCAG 2.1 AA accessibility scan against a page and fail the test if any violations are found.
  *
- * networkidle 待ちは flake の原因となるため使用しない。
- * ページごとに「準備完了」を示す具体的な Locator を受け取り、
- * その可視化を待ってから axe-core を走らせる。
+ * Navigates to the given URL, waits for the provided readiness locator to become visible, runs axe with WCAG 2.1 AA tags,
+ * logs a concise CI-friendly summary when violations are present, and asserts that there are no violations.
  *
- * 違反が見つかった場合は CI ログ用に { id, impact, help, nodes } の
- * 簡潔なサマリを console.log で出力する。
+ * @param readinessLocator - Locator that indicates the page is ready for scanning; the function waits for it to be visible before running the scan
+ * @param timeoutMs - Maximum time in milliseconds to wait for `readinessLocator` to become visible (defaults to 15000)
  */
 export async function runA11yScan(
     page: Page,
