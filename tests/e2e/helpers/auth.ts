@@ -111,12 +111,14 @@ export function createCustomerSession(): CustomerSession {
             await expect(
                 page.getByRole("button", { name: "Sign in" })
             ).toBeHidden({ timeout: 20000 });
-            await page
-                .waitForURL(
+            try {
+                await page.waitForURL(
                     (url) => !url.pathname.includes("/sign-in"),
                     { timeout: 15000 }
-                )
-                .catch(() => {});
+                );
+            } catch (err) {
+                throw new Error(`Authentication timed out: failed to redirect away from /sign-in within 15 seconds. (Error: ${err instanceof Error ? err.message : String(err)})`);
+            }
             await page.waitForLoadState("domcontentloaded");
         },
         async cleanup() {

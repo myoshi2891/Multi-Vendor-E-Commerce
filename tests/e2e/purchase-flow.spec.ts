@@ -183,11 +183,15 @@ test.describe("購入フルフロー", () => {
         const rows = page.getByTestId("cart-item-name");
         await expect(rows).toHaveCount(2);
 
-        // 各バリアントの価格が個別に表示されている（バリアントごとの単価表示）
+        // 各バリアントの価格が個別に表示されている（バリアントごとの単価表示、カートアイテムコンテナ内にスコープを絞って検証）
         const v1Price = v1.size.price.toFixed(2);
         const v2Price = v2.size.price.toFixed(2);
-        await expect(page.getByText(`$${v1Price}`).first()).toBeVisible();
-        await expect(page.getByText(`$${v2Price}`).first()).toBeVisible();
+
+        const v1Item = page.locator('[data-testid^="cart-item-"]', { hasText: `${seed.product.name} ・ ${v1.name}` });
+        const v2Item = page.locator('[data-testid^="cart-item-"]', { hasText: `${seed.product.name} ・ ${v2.name}` });
+
+        await expect(v1Item.getByText(`$${v1Price}`)).toBeVisible();
+        await expect(v2Item.getByText(`$${v2Price}`)).toBeVisible();
 
         // カート合計は両バリアントの合算
         const expectedTotal = (v1.size.price + v2.size.price).toFixed(2);

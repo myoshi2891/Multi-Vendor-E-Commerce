@@ -160,7 +160,17 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
     color: { ...v.color },
   }));
 
-  const [primaryVariant] = variants;
+  const primaryVariant = variants[0] ?? {
+    name: "",
+    slug: "",
+    description: "",
+    sku: "",
+    weight: 0,
+    image: null,
+    size: null,
+    variantImage: null,
+    color: null,
+  };
 
   return {
     country: {
