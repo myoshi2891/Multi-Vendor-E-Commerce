@@ -92,7 +92,7 @@
 | ~~OI-1~~ | ~~Visual Regression baseline 未コミット~~ | ~~🔴 高~~ | ✅ 解消済み（`688225f`） |
 | ~~OI-2~~ | ~~`purchase-flow.spec.ts` の「複数バリアント追加」1テスト保留~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`tests/e2e/seed/constants.ts` に第2バリアント追加 + spec 追加） |
 | OI-3 | `/checkout` / `/profile` の a11y spec 未追加 | 🟡 中 | Clerk セッションヘルパー整備後 |
-| OI-4 | `.github/workflows/` CI 未整備 | 🟡 中 | lint + test + build の自動化が未設定 |
+| ~~OI-4~~ | ~~`.github/workflows/` CI 未整備~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`.github/workflows/ci.yml` に lint/test/build 3 並列ジョブ） |
 | OI-4a | CI で Visual Regression の `-linux.png` baseline 生成 | 🟡 中 | OI-4 の CI 整備と同時対応（`07-testing.md §Visual Regression` 参照） |
 | OI-5 | E2E シード冪等性（CI 環境での `seed:e2e`） | 🟡 中 | 外部 DB 接続前提のため CI 未検証 |
 | OI-6 | `DashboardStats` コンポーネント調査未完了 | 🟢 低 | ソース上に見当たらない。実装確認要 |
@@ -109,8 +109,7 @@
 
 | 優先順 | OI | 作業概要 |
 |---|---|---|
-| 1 | OI-4 | `.github/workflows/ci.yml` 追加（lint + test + build 3 ジョブ） |
-| 1a | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
+| 1 | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
 | 2 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
 | 3 | OI-5 | E2E シード冪等性の CI 環境検証 |
 
