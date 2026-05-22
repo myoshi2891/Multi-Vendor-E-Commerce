@@ -3,9 +3,9 @@
  * 全エンティティのモックデータファクトリ（Partial<T> overridesパターン）
  */
 
-import { Prisma, StoreStatus } from "@prisma/client";
+import { Prisma, Role, StoreStatus } from "@prisma/client";
 import { TEST_CONFIG } from "./test-config";
-import { CartProductType } from "@/lib/types";
+import { CartProductType, ReviewDetailsType } from "@/lib/types";
 
 // 相対日付の基準値（test-scenarios.ts と同パターン、循環依存回避のため独立定義）
 const NOW = Date.now();
@@ -30,7 +30,7 @@ type MockUser = {
     name: string;
     email: string;
     picture: string;
-    role: string;
+    role: Role;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -580,6 +580,21 @@ export const createMockPaymentDetails = (
         ...rest,
     };
 };
+
+// ---- レビュー（フロントエンド ReviewDetailsType 用） ----
+export const createMockReview = (
+    overrides: Partial<ReviewDetailsType> = {}
+): ReviewDetailsType => ({
+    id: "review-001",
+    review: "Great product, highly recommend!",
+    rating: 5,
+    images: [{ url: "https://example.com/img1.jpg" }],
+    size: "M",
+    quantity: "1",
+    variant: "Black",
+    color: "Black",
+    ...overrides,
+});
 
 // ---- カート ----
 export const createMockCart = (

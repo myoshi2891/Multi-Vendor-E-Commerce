@@ -7,7 +7,11 @@ export default defineConfig({
   globalTimeout: 600 * 1000, // 全体タイムアウト 10分（globalSetup ハング防止の安全ネット）
   testDir: "./tests/e2e",
   timeout: 30 * 1000,
-  expect: { timeout: 5 * 1000 },
+  expect: {
+    timeout: 5 * 1000,
+    // Visual Regression: スクリーンショット差分の許容ピクセル比率
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
+  },
   fullyParallel: true,
   // Serial execution is required to prevent shared DB and auth session conflicts
   workers: 1,
@@ -18,6 +22,10 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    // Visual Regression のため、アニメーション・ロケール・タイムゾーンを固定
+    reducedMotion: "reduce",
+    locale: "en-US",
+    timezoneId: "UTC",
   },
   webServer: {
     command: "bun run dev",

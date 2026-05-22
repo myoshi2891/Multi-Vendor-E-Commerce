@@ -1,9 +1,9 @@
 /** @jest-environment jsdom */
 
-import { User } from "@prisma/client";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { createMockUser } from "@/config/test-fixtures";
 import ModalProvider, { useModal } from "./modal-provider";
 
 // React 18 向けの act 環境設定
@@ -12,16 +12,7 @@ declare global {
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-// モックユーザーの作成
-const createMockUser = (): User => ({
-    id: "test-user-id",
-    name: "Test User",
-    email: "test@example.com",
-    role: "USER",
-    picture: "",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-});
+const mockUser = createMockUser();
 
 // テスト用コンポーネント
 const TestComponent = () => {
@@ -49,7 +40,7 @@ const TestComponent = () => {
                     setOpen(
                         <div data-testid="modal-content">Modal Content</div>,
                         async () => ({
-                            user: createMockUser(),
+                            user: mockUser,
                         })
                     )
                 }
@@ -138,7 +129,7 @@ describe("ModalProvider", () => {
 
             await waitFor(() => {
                 expect(screen.getByTestId("data-user-id")).toHaveTextContent(
-                    "test-user-id"
+                    mockUser.id
                 );
             });
             expect(screen.getByTestId("is-open")).toHaveTextContent("true");
@@ -259,7 +250,7 @@ describe("ModalProvider", () => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("true");
             });
             expect(screen.getByTestId("data-user-id")).toHaveTextContent(
-                "test-user-id"
+                mockUser.id
             );
             expect(screen.getByTestId("modal-content")).toBeInTheDocument();
 
@@ -307,11 +298,13 @@ describe("ModalProvider", () => {
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
 
-            expect(() => render(<OutsideComponent />)).toThrow(
-                "useModal must be used within the modal provider"
-            );
-
-            consoleErrorSpy.mockRestore();
+            try {
+                expect(() => render(<OutsideComponent />)).toThrow(
+                    "useModal must be used within the modal provider"
+                );
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 

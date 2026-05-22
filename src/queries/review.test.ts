@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { upsertReview } from "./review";
 import { TEST_CONFIG } from "../config/test-config";
-import type { ReviewDetailsType } from "@/lib/types";
+import { createMockReview } from "../config/test-fixtures";
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -24,21 +24,6 @@ jest.mock("@/lib/db", () => ({
 
 const mockDb = require("@/lib/db").db;
 
-// テスト用レビューデータ
-const createMockReviewInput = (
-    overrides: Partial<ReviewDetailsType> = {}
-): ReviewDetailsType => ({
-    id: "review-001",
-    review: "Great product, highly recommend!",
-    rating: 5,
-    images: [{ url: "https://example.com/img1.jpg" }],
-    size: "M",
-    quantity: "1",
-    variant: "Black",
-    color: "Black",
-    ...overrides,
-});
-
 beforeEach(() => {
     jest.clearAllMocks();
 });
@@ -52,7 +37,7 @@ describe("upsertReview", () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
             await expect(
-                upsertReview("product-001", createMockReviewInput())
+                upsertReview("product-001", createMockReview())
             ).rejects.toThrow("Error updating review");
         });
     });
@@ -66,7 +51,7 @@ describe("upsertReview", () => {
 
         it("productIdが空の場合エラーをスローする", async () => {
             await expect(
-                upsertReview("", createMockReviewInput())
+                upsertReview("", createMockReview())
             ).rejects.toThrow("Error updating review");
         });
     });
@@ -81,7 +66,7 @@ describe("upsertReview", () => {
         });
 
         it("新規レビューをcreateで作成する（クライアント提供IDは無視される）", async () => {
-            const reviewInput = createMockReviewInput();
+            const reviewInput = createMockReview();
             const createdReview = {
                 ...reviewInput,
                 id: "server-generated-id",
@@ -111,7 +96,7 @@ describe("upsertReview", () => {
         });
 
         it("画像をcreateで保存する", async () => {
-            const reviewInput = createMockReviewInput({
+            const reviewInput = createMockReview({
                 images: [
                     { url: "https://example.com/img1.jpg" },
                     { url: "https://example.com/img2.jpg" },
@@ -153,7 +138,7 @@ describe("upsertReview", () => {
             };
             mockDb.review.findFirst.mockResolvedValue(existingReview);
 
-            const reviewInput = createMockReviewInput({ id: "client-provided-id" });
+            const reviewInput = createMockReview({ id: "client-provided-id" });
             mockDb.review.update.mockResolvedValue({
                 ...reviewInput,
                 id: "existing-review-001",
@@ -176,7 +161,7 @@ describe("upsertReview", () => {
             mockDb.review.findFirst.mockResolvedValue({
                 id: "existing-review-001",
             });
-            const reviewInput = createMockReviewInput();
+            const reviewInput = createMockReview();
             mockDb.review.update.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
@@ -205,7 +190,7 @@ describe("upsertReview", () => {
         });
 
         it("レビュー後に平均評価を再計算して商品を更新する", async () => {
-            const reviewInput = createMockReviewInput({ rating: 4 });
+            const reviewInput = createMockReview({ rating: 4 });
             mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([
                 { rating: 5 },
@@ -226,7 +211,7 @@ describe("upsertReview", () => {
         });
 
         it("レビュー1件の場合、その評価がそのまま平均になる", async () => {
-            const reviewInput = createMockReviewInput({ rating: 3 });
+            const reviewInput = createMockReview({ rating: 3 });
             mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 3 }]);
             mockDb.product.update.mockResolvedValue({});
@@ -243,7 +228,7 @@ describe("upsertReview", () => {
         });
 
         it("小数点の平均評価を正しく計算する", async () => {
-            const reviewInput = createMockReviewInput({ rating: 4 });
+            const reviewInput = createMockReview({ rating: 4 });
             mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([
                 { rating: 5 },
@@ -263,7 +248,7 @@ describe("upsertReview", () => {
         });
 
         it("imagesとuserをincludeしてレビューを返す", async () => {
-            const reviewInput = createMockReviewInput();
+            const reviewInput = createMockReview();
             mockDb.review.create.mockResolvedValue(reviewInput);
             mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
             mockDb.product.update.mockResolvedValue({});
@@ -291,8 +276,56 @@ describe("upsertReview", () => {
             );
 
             await expect(
-                upsertReview("product-001", createMockReviewInput())
+                upsertReview("product-001", createMockReview())
             ).rejects.toThrow("Error updating review");
+        });
+    });
+
+    describe("IDOR防止（他人のレビュー操作の拒否）", () => {
+        // 既存レビュー検索の where 句に userId が含まれることを明示的に検証する
+        // レグレッションテスト。将来 userId フィルタが外れた場合に検知できる。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("既存レビュー検索の where 句に認証ユーザーの userId が含まれる", async () => {
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReview());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReview());
+
+            expect(mockDb.review.findFirst).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        productId: "product-001",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+
+        it("他ユーザーの既存レビューには触れず、新規 create に分岐する", async () => {
+            // findFirst が他ユーザーのレビューを返さないことを userId フィルタで担保している
+            // ため、本シナリオでは null が返り create に分岐する
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReview());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReview());
+
+            expect(mockDb.review.update).not.toHaveBeenCalled();
+            expect(mockDb.review.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
         });
     });
 });

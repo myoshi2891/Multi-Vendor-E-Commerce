@@ -318,3 +318,56 @@ test("guest can add item to cart and see totals", async ({ page }) => {
 ```
 
 **次のシナリオ**: 認証済みチェックアウト開始（Clerk テストアカウントでログイン）→ `/cart` から `/checkout` へのリダイレクト + 注文サマリーの金額整合性検証
+
+---
+
+## Visual Regression（A2）
+
+### 配置と運用
+
+- 対象: `tests/e2e/visual/*.spec.ts`
+- ブラウザ: Chromium 限定（Firefox / WebKit はフォントレンダリング差が大きいため Phase 2）
+- 安定化設定（`playwright.config.ts`）:
+  - `use.reducedMotion = "reduce"`（アニメーション無効化）
+  - `use.locale = "en-US"`、`use.timezoneId = "UTC"`（ロケール固定）
+  - `expect.toHaveScreenshot.maxDiffPixelRatio = 0.01`（小さな差分を許容）
+
+### Baseline 生成 / 更新
+
+```bash
+bun run seed:e2e
+bunx playwright test tests/e2e/visual --update-snapshots --project=chromium
+```
+
+生成された PNG（`tests/e2e/visual/<spec>.spec.ts-snapshots/`）をコミットする。
+意図しない差分が出た場合は `playwright-report/` の HTML で diff を確認。
+
+### Phase 2
+
+- 認証済み `/checkout` の Visual Regression（Clerk テストセッションヘルパー整備後）
+- WebKit / Firefox 対応（フォント / レンダリング差の調整後）
+- CI（GitHub Actions）での `--update-snapshots` 自動運用
+
+---
+
+## a11y (Accessibility, A3)
+
+### 配置と運用
+
+- 対象: `tests/e2e/a11y/*.spec.ts`
+- ライブラリ: `@axe-core/playwright`
+- 基準: WCAG 2.1 AA（`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` タグ）
+- ブラウザ: Chromium 限定（レンダリング差を排除）
+
+### MVP 対象ページ
+
+| ページ | URL | 認証 |
+|---|---|---|
+| Sign-in | `/sign-in` | 不要 |
+| Seller Apply Step 1 | `/seller/apply` | 不要 |
+
+`/checkout`、`/seller/apply` Step 2-4 は Clerk テストセッションヘルパー整備後（Phase 2）。
+
+### 既知違反の抑制ポリシー
+
+修正困難な違反は `AxeBuilder.disableRules([...])` で抑制するが、必ずフォローアップ issue を残し、コード上に TODO コメントで明示する。`tests/e2e/a11y/README.md` の運用ルールに従うこと。

@@ -142,6 +142,30 @@ describe("createPayPalPayment", () => {
             ).rejects.toThrow("Failed to create PayPal payment");
         });
     });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // db.order.findUnique の where 句に userId フィルタが含まれることを検証する。
+        // 詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // 他人の order は userId フィルタで弾かれる
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            await expect(createPayPalPayment("other-user-order"))
+                .rejects.toThrow("Failed to create PayPal payment");
+
+            expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "other-user-order",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -163,6 +187,8 @@ describe("capturePayPalPayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            // 所有権チェック（IDOR 防止）で利用される findUnique
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
         });
 
         it("キャプチャ失敗時にOrder.paymentStatusをFailedに更新する", async () => {
@@ -193,6 +219,8 @@ describe("capturePayPalPayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            // 所有権チェック（IDOR 防止）で利用される findUnique
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
         });
 
         const mockCaptureResponse = {
@@ -312,6 +340,36 @@ describe("capturePayPalPayment", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("IDOR防止（他人の orderId 拒否）", () => {
+        // capturePayPalPayment は PayPal 課金前に userId 付き findUnique で所有権を検証する。
+        // 他人の orderId は null となり "Order not found" でスローされる。
+        it("認証ユーザーの所有しない orderId では PayPal 課金前に拒否される", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // 所有権チェックで他人の order は見つからない
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            await expect(
+                capturePayPalPayment("other-user-order", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Order not found");
+
+            // findUnique の where 句に userId が含まれていることを検証
+            expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "other-user-order",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    }),
+                })
+            );
+            // PayPal API への課金 fetch が呼ばれていないこと
+            expect(mockFetch).not.toHaveBeenCalled();
+            // 注文更新も実行されないこと
+            expect(mockDb.order.update).not.toHaveBeenCalled();
         });
     });
 });
