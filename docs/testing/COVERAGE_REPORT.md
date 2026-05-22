@@ -32,23 +32,23 @@
 | **Unit**           |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ✦   |  ✦  |  ✦   |   ✦   |
 | **Integration**    |   ◯    |  ◯  |  ◯   |  ✦   |   ✦   |   ✦   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **E2E**            |   ◯    |  ◯  |  ✦   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
-| **Visual/Snapshot**|   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
-| **a11y**           |   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
+| **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
+| **a11y**           |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Performance**    |   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **API/Contract**   |   ◯    |  ✦  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
-| **Security**       |   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ✦  |  ◯   |   ◯   |
+| **Security**       |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ✦  |  ◯   |   ◯   |
 
 ### カテゴリ別カバー率
 
 | カテゴリ | カバー済み列 | カバー率 | 備考 |
 |---|---|---|---|
-| Unit | 5/10 | 50% | queries / hooks / lib / seed / other（最新セット） |
+| Unit | 5/10 | 50% | queries / hooks / lib / seed / other |
 | Integration | 3/10 | 30% | tests/component/ 配下のみ |
 | E2E | 1/10 | 10% | tests/e2e/ 配下 (5 spec) |
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
-| Security | 1/10 | 10% | middleware + sanitize のみ |
-| Visual / Snapshot | 0/10 | **0%** | 全列未対応 |
-| Accessibility | 0/10 | **0%** | 全列未対応 |
+| Security | 2/10 | **20%** | A1 完了: queries（IDOR認可テスト）+ lib（middleware/sanitize） |
+| Visual / Snapshot | 1/10 | **10%** | A2 完了: pages（cart/checkout spec — baseline 未コミット） |
+| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン） |
 | Performance | 0/10 | **0%** | 全列未対応 |
 
 ### ドメイン別 (列) のホットスポット
@@ -226,4 +226,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 |---|---|
 | 2026-05-21 | ダッシュボード初回生成。本レポート作成 (commit `41c9fd9`) |
 | 2026-05-21 | Phase 1 基盤テスト検証完了。テスト総数 881 → 945、型エラー 0 件に (commits `8e8df92`–`ad6bbc7`)。ダッシュボード再生成。 |
-| — | 次回更新: Next Actions A1–A3 着手後 |
+| 2026-05-21 | **A1 完了**: SECURITY_GAP_REPORT.md 作成。IDOR 脆弱性 2 件（paypal/stripe）を修正。認可テスト 14 ファイル全調査・補完。Security の queries 列が `◯` → `✦` に昇格 (commits `55c07b1`, `03a7e89`). |
+| 2026-05-21 | **A2 完了（baseline 未コミット）**: `tests/e2e/visual/` に cart/checkout Visual Regression spec を追加。`playwright.config.ts` に安定化設定を追加。Visual の pages 列が `◯` → `◐` に昇格 (commit `f639334`). |
+| 2026-05-21 | **A3 完了**: `tests/e2e/a11y/` に sign-in / seller-apply の WCAG 2.1 AA スキャンを追加（`@axe-core/playwright`）。a11y の pages 列が `◯` → `◐` に昇格 (commit `d261d76`). |
+| 2026-05-22 | PayPal `capturePayPalPayment` の try-catch リファクタリング (commit `217bf76`). |
+| — | 次回更新: NA-4（Visual baseline コミット後）・NA-6（GitHub Actions CI 構築後） |

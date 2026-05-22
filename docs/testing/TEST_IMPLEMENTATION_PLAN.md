@@ -383,7 +383,7 @@ describe("printPDF")
 
 ### 2-A. Store (顧客向け) コンポーネント
 
-### 2-A-1. `ProductPrice` → `tests/component/store/product-price.test.tsx` (16 テスト)
+### 2-A-1. `ProductPrice` → `tests/component/store/product-price.test.tsx` ✅ Completed (2026-05-21) (16 テスト)
 
 **ソース:** `src/components/store/product-page/product-info/product-price.tsx`**選定理由:** 価格計算ロジック (割引適用、Decimal.toNumber()、レンジ表示) はビジネスの根幹
 
@@ -414,7 +414,7 @@ describe("printPDF")
 
 ---
 
-### 2-A-2. `QuantitySelector` → `tests/component/store/quantity-selector.test.tsx` (14 テスト)
+### 2-A-2. `QuantitySelector` → `tests/component/store/quantity-selector.test.tsx` ✅ Completed (2026-05-21) (14 テスト)
 
 **ソース:** `src/components/store/product-page/quantity-selector.tsx`**選定理由:** 在庫超過防止の最終防衛ライン。カート内既存数量との maxQty 連動ロジック
 
@@ -440,7 +440,7 @@ describe("printPDF")
 
 ---
 
-### 2-A-3. `CartProduct` → `tests/component/store/cart-product.test.tsx` (20 テスト)
+### 2-A-3. `CartProduct` → `tests/component/store/cart-product.test.tsx` ✅ Completed (2026-05-21) (20 テスト)
 
 **ソース:** `src/components/store/cards/cart-product.tsx`**選定理由:** 配送料計算 (ITEM/WEIGHT/FIXED)、数量変更、在庫チェックを含む最高複雑度コンポーネント
 
@@ -483,7 +483,7 @@ describe("printPDF")
 
 ---
 
-### 2-A-4. `SizeSelector` → `tests/component/store/size-selector.test.tsx` (8 テスト)
+### 2-A-4. `SizeSelector` → `tests/component/store/size-selector.test.tsx` ✅ Completed (2026-05-21) (8 テスト)
 
 **ソース:** `src/components/store/product-page/product-info/size.selector.tsx`**選定理由:** サイズ選択は価格・在庫・カートデータすべてに影響
 
@@ -501,7 +501,7 @@ describe("printPDF")
 
 ---
 
-### 2-A-5. `ApplyCouponForm` → `tests/component/store/apply-coupon-form.test.tsx` (10 テスト)
+### 2-A-5. `ApplyCouponForm` → `tests/component/store/apply-coupon-form.test.tsx` ✅ Completed (2026-05-21) (10 テスト)
 
 **ソース:** `src/components/store/forms/apply-coupon.tsx`**選定理由:** クーポン適用は P0 (不正割引防止)。Zod バリデーション + サーバーアクション
 
@@ -523,7 +523,7 @@ describe("printPDF")
 
 ---
 
-### 2-A-6. `PlaceOrderCard` → `tests/component/store/place-order-card.test.tsx` (12 テスト)
+### 2-A-6. `PlaceOrderCard` → `tests/component/store/place-order-card.test.tsx` ✅ Completed (2026-05-21) (12 テスト)
 
 **ソース:** `src/components/store/cards/place-order.tsx`**選定理由:** 注文確定の最終ステップ。金額計算表示 + クーポン割引 + placeOrder 呼び出し
 
@@ -595,7 +595,7 @@ describe("printPDF")
 - `7898b9d` - refactor(store): centralize shipping calculation and fix HTML5 compliance
 ---
 
-### 2-A-8. `CountrySelector` → `tests/component/store/country-selector.test.tsx` (10 テスト)
+### 2-A-8. `CountrySelector` → `tests/component/shared/country-selector.test.tsx` ✅ Completed (2026-05-21) (10 テスト)
 
 **ソース:** `src/components/shared/country-selector.tsx`**選定理由:** 国選択は配送料計算に影響
 
@@ -615,7 +615,7 @@ describe("printPDF")
 
 ### 2-B. Dashboard (管理・販売者向け) コンポーネント
 
-### 2-B-1. `OrderStatusSelect` → `tests/component/dashboard/order-status-select.test.tsx` (12 テスト)
+### 2-B-1. `OrderStatusSelect` → `tests/component/dashboard/order-status-select.test.tsx` ✅ Completed (2026-05-21) (12 テスト)
 
 **ソース:** `src/components/dashboard/forms/order-status-select.tsx`**選定理由:** 注文ステータス遷移。不正遷移でデータ不整合 (P0)
 
@@ -639,7 +639,7 @@ describe("printPDF")
 
 ---
 
-### 2-B-2. `ProductStatusSelect` → `tests/component/dashboard/product-status-select.test.tsx` (10 テスト)
+### 2-B-2. `ProductStatusSelect` → `tests/component/dashboard/product-status-select.test.tsx` ✅ Completed (2026-05-21) (10 テスト)
 
 **ソース:** `src/components/dashboard/forms/product-status-select.tsx`**選定理由:** 注文アイテム単位のステータス管理
 
@@ -657,7 +657,7 @@ describe("printPDF")
 
 ---
 
-### 2-B-3. `StoreStatusSelect` → `tests/component/dashboard/store-status-select.test.tsx` (9 テスト)
+### 2-B-3. `StoreStatusSelect` → `tests/component/dashboard/store-status-select.test.tsx` ✅ Completed (2026-05-21) (9 テスト)
 
 **ソース:** `src/components/dashboard/forms/store-status-select.tsx`**選定理由:** 店舗の有効/無効切替。無効化すると全商品非表示 (P0)
 
@@ -676,7 +676,7 @@ describe("printPDF")
 
 ---
 
-### 2-B-4. ステータスタグ群 → `tests/component/shared/status-tags.test.tsx` (12 テスト)
+### 2-B-4. ステータスタグ群 → `tests/component/shared/status-tags.test.tsx` ✅ Completed (2026-05-21) (12 テスト)
 
 **ソース:** `src/components/shared/order-status.tsx`, `store-status.tsx`, `product-status.tsx`, `payment-status.tsx`**選定理由:** 全ステータス enum 値の表示網羅テスト。値の抜け漏れ検出
 
@@ -705,11 +705,9 @@ describe("PaymentStatusTag")
 
 ---
 
-### 3-1. `tests/e2e/purchase-flow.spec.ts` ✅ 改善済み (2026-03-23)
+### 3-1. `tests/e2e/purchase-flow.spec.ts` ✅ 改善済み (2026-05-21)
 
-**ステータス:** 部分実装済み (4/8 テスト実装, 4/8 保留中)
-
-**実装済みテストケース:**
+**ステータス:** 7/8 テスト実装済み。残り 1 件（複数バリアント）は計画上の保留。
 
 ```
 describe("購入フルフロー")
@@ -717,53 +715,17 @@ describe("購入フルフロー")
   ✅ 正常系: カート→チェックアウト→住所選択→注文サマリー表示                      [P0]
   ✅ 正常系: 注文確定後に注文詳細ページに遷移する                                  [P0]
   ✅ 正常系: 数量変更がカート合計に反映される                                       [P0]
-  ⏸️ 正常系: 複数バリアントをカートに追加し別行で表示                              [P1]
+  ⏸️ 正常系: 複数バリアントをカートに追加し別行で表示                              [P1] — 保留中
   ✅ 正常系: カートからアイテム削除できる                                           [P1]
   ✅ 正常系: ページリロード後もカートが永続化されている                             [P1]
   ✅ 正常系: 未認証ユーザーがチェックアウトに進むとログインにリダイレクト           [P0]
 ```
 
-**最近の改善** (Round 7-9):
-- ✅ 全テストにサイズ選択ステップを追加（Round 7: 直接実装、Round 8: ヘルパー関数化）
-- ✅ `addItemToCart` ヘルパー関数によるDRY化（Round 8）
-- ✅ 環境変数処理の改善：空文字列・空白の適切な処理（Round 9）
-- ✅ URL パラメータ待機パターンの確立
-
-**実装詳細:**
-- **ファイル**: `tests/e2e/purchase-flow.spec.ts`
-- **ヘルパー関数**: サイズ選択を統一的に処理する `addItemToCart` パターン
-- **環境変数サポート**: `E2E_UNIT_PRICE` での空文字列フォールバック処理
-
-**実装例:**
-
-```typescript
-// Helper function for consistent size selection (Lines 56-75)
-async function addItemToCart(page: Page, productSlug: string, variantSlug: string) {
-  await page.goto(`/product/${productSlug}/${variantSlug}`);
-  
-  // Select the first available size
-  const firstSize = page.locator('[data-testid^="size-option-"]').first();
-  await firstSize.click();
-  
-  // Wait for URL to update with size parameter
-  await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
-  
-  await page.getByTestId("add-to-cart").click();
-}
-
-// Environment variable handling with trim and fallback (Lines 38-40)
-const envPrice = process.env.E2E_UNIT_PRICE?.trim();
-unitPrice = envPrice ? Number(envPrice) : seed.size.price;
-```
-
-**関連コミット:**
-- Round 7: 直接サイズ選択実装
-- Round 8: ヘルパー関数リファクタリング
-- `cf86768` - fix(e2e): handle empty E2E_UNIT_PRICE with trim and fallback (Round 9)
-
 ---
 
-### 3-2. `tests/e2e/seller-onboarding.spec.ts` (6 テスト)
+### 3-2. `tests/e2e/seller-onboarding.spec.ts` ✅ 完了 (2026-05-21)
+
+**ステータス:** ✅ 全テスト実装済み。
 
 `describe("Seller オンボーディング")
   正常系: 申請フォーム 4 ステップを順に完了できる                               [P1]
@@ -775,7 +737,9 @@ unitPrice = envPrice ? Number(envPrice) : seed.size.price;
 
 ---
 
-### 3-3. `tests/e2e/payment-error.spec.ts` (6 テスト)
+### 3-3. `tests/e2e/payment-error.spec.ts` ✅ 完了 (2026-05-21)
+
+**ステータス:** ✅ 全テスト実装済み。
 
 `describe("決済異常系")
   正常系: 住所未選択で注文ボタン→エラーメッセージ                               [P1]
@@ -787,7 +751,9 @@ unitPrice = envPrice ? Number(envPrice) : seed.size.price;
 
 ---
 
-### 3-4. `tests/e2e/search-filter.spec.ts` (5 テスト)
+### 3-4. `tests/e2e/search-filter.spec.ts` ✅ 完了 (2026-05-21)
+
+**ステータス:** ✅ 全テスト実装済み。
 
 `describe("検索・フィルタ")
   正常系: 商品名で検索し結果が表示される                                         [P1]
@@ -798,7 +764,9 @@ unitPrice = envPrice ? Number(envPrice) : seed.size.price;
 
 ---
 
-### 3-5. `tests/e2e/mobile-responsive.spec.ts` (5 テスト)
+### 3-5. `tests/e2e/mobile-responsive.spec.ts` ✅ 完了 (2026-05-21)
+
+**ステータス:** ✅ 全テスト実装済み。
 
 `describe("モバイルレスポンシブ")
   正常系: モバイルビューポートで商品カードが正しくレイアウト                     [P1]
@@ -809,27 +777,62 @@ unitPrice = envPrice ? Number(envPrice) : seed.size.price;
 
 ---
 
+### 3-6. `tests/e2e/visual/` ✅ ファイル作成済み (2026-05-21) — 計画外追加
+
+**ステータス:** ✅ ファイル存在。⚠️ **baseline スクリーンショット未コミット** — CI 実行には `--update-snapshots` での baseline 生成が必要。
+
+| ファイル | 内容 |
+|---|---|
+| `tests/e2e/visual/cart.spec.ts` | カートページの Visual Regression |
+| `tests/e2e/visual/checkout.spec.ts` | チェックアウトページの Visual Regression |
+
+**設定（`playwright.config.ts` に追加済み）:**
+- `reducedMotion: 'reduce'` — アニメーション無効化でスナップショット安定化
+- `locale: 'en-US'` — ロケール固定
+- `timezoneId: 'UTC'` — タイムゾーン固定
+
+**参照コミット:** `f639334`
+
+---
+
+### 3-7. `tests/e2e/a11y/` ✅ 完了 (2026-05-21) — 計画外追加
+
+**ステータス:** ✅ 実装済み。`@axe-core/playwright` で WCAG 2.1 AA スキャン実施。
+
+| ファイル | 内容 |
+|---|---|
+| `tests/e2e/a11y/sign-in.spec.ts` | `/sign-in` ページの a11y スキャン |
+| `tests/e2e/a11y/seller-apply.spec.ts` | `/seller/apply` Step 1 の a11y スキャン |
+
+**次ステップ:** `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後）
+
+**参照コミット:** `d261d76`
+
+---
+
 ## テスト数サマリ
 
-| Phase | カテゴリ | 新規テスト数 |
-| --- | --- | --- |
-| 1-1 | middleware.ts | 18 |
-| 1-2 | country.ts | 15 |
-| 1-3 | sanitize.ts | 14 |
-| 1-4a | useIsMobile | 8 |
-| 1-4b | useToast reducer | 14 |
-| 1-4c | useFromStore | 6 |
-| 1-5 | modal-provider | 12 |
-| 1-6 | utils.ts (cn + DOM 関数) | 25 |
-| **Phase 1 小計** |  | **112** |
-| 2-A (8 種) | Store コンポーネント | 102 |
-| 2-B (4 種) | Dashboard + Shared | 43 |
-| **Phase 2 小計** |  | **145** |
-| 3-1〜3-5 | E2E テスト (5 スイート) | 30 |
-| **Phase 3 小計** |  | **30** |
-| **総計** |  | **~287** |
+| Phase | カテゴリ | 新規テスト数 | 状態 |
+| --- | --- | --- | --- |
+| 1-1 | middleware.ts | 18 | ✅ 完了 |
+| 1-2 | country.ts | 15 | ✅ 完了 |
+| 1-3 | sanitize.ts | 14 | ✅ 完了 |
+| 1-4a | useIsMobile | 8 | ✅ 完了 |
+| 1-4b | useToast reducer | 14 | ✅ 完了 |
+| 1-4c | useFromStore | 6 | ✅ 完了 |
+| 1-5 | modal-provider | 12 | ✅ 完了 |
+| 1-6 | utils.ts (cn + DOM 関数) | 25 | ✅ 完了 |
+| **Phase 1 小計** |  | **112** | ✅ |
+| 2-A (8 種) | Store コンポーネント | 102 | ✅ 完了 |
+| 2-B (4 種) | Dashboard + Shared | 43 | ✅ 完了 |
+| **Phase 2 小計** |  | **145** | ✅ |
+| 3-1〜3-5 | E2E テスト (5 スイート) | 30 | ⚠️ ファイル完成 / E2E 実行は seed:e2e 前提 |
+| 3-6 | Visual Regression (visual/) | — | ⚠️ baseline 未コミット |
+| 3-7 | a11y (a11y/) | — | ✅ sign-in / seller-apply 完了 |
+| **Phase 3 小計** |  | **30+** | ⚠️ |
+| **総計** |  | **~287+** | |
 
-**現状 686 + 新規 287 = 973 テスト** → Phase 2 でフォームテスト追加により **1,000+ 到達可能**
+**Jest 現状**: 945 テスト / 60 スイート（全パス）— 型エラー 0 件（2026-05-22 時点）
 
 ---
 
