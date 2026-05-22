@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-22 / **HEAD**: `688225f`
+> **最終更新**: 2026-05-22 / **HEAD**: `32cba5d`
 
 ---
 
@@ -11,9 +11,11 @@
 | 指標 | 値 |
 |------|-----|
 | Jest テスト総数 | **945** / 60 スイート（全パス） |
-| Playwright E2E | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
+| Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive）— purchase-flow に複数バリアントカートテストを追加（OI-2、2026-05-22） |
+| Playwright Visual | **2 スペック**（cart / checkout） |
+| Playwright a11y | **4 スペック**（sign-in / seller-apply / **checkout** / **profile**）— `/checkout` と `/profile` を追加（OI-3、2026-05-22） |
 | 型エラー | **0 件** |
-| Skipped テスト | 3 件（意図的） |
+| Skipped テスト | 3 件（意図的） + a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
 
 ---
 
@@ -94,7 +96,7 @@
 | ~~OI-3~~ | ~~`/checkout` / `/profile` の a11y spec 未追加~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`tests/e2e/helpers/auth.ts` + `tests/e2e/a11y/{checkout,profile}.spec.ts`。`CLERK_SECRET_KEY` 未設定時は自動スキップ） |
 | ~~OI-4~~ | ~~`.github/workflows/` CI 未整備~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`.github/workflows/ci.yml` に lint/test/build 3 並列ジョブ） |
 | ~~OI-4a~~ | ~~CI で Visual Regression の `-linux.png` baseline 生成~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`ci.yml` に `workflow_dispatch` 起動の `visual-baselines` ジョブ追加。`gh workflow run ci.yml --ref <branch>` で起動 → 自動 PR） |
-| OI-5 | E2E シード冪等性（CI 環境での `seed:e2e`） | 🟡 中 | 外部 DB 接続前提のため CI 未検証 |
+| ~~OI-5~~ | ~~E2E シード冪等性（CI 環境での `seed:e2e`）~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`ci.yml` の `seed-idempotency` ジョブで PG service container 起動 → seed 2回実行 → 行数 diff 検証） |
 | OI-6 | `DashboardStats` コンポーネント調査未完了 | 🟢 低 | ソース上に見当たらない。実装確認要 |
 | OI-7 | `coverage/lcov.info` が古い (2025-03-16 時点) | 🟢 低 | CI 整備後に自動更新 |
 
@@ -107,10 +109,17 @@
 
 ### 🟡 次のセッション以降
 
-| 優先順 | OI | 作業概要 |
+### ✅ 完了
+
+全ての優先 OI（OI-2 / OI-3 / OI-4 / OI-4a / OI-5）が 2026-05-22 に解消済み。
+
+| - | OI-4a | （マージ後）`gh workflow run ci.yml --ref dev` で起動し、生成 PR をマージして Linux baseline を取り込む |
 |---|---|---|
-| 1 | OI-5 | E2E シード冪等性の CI 環境検証 |
-| - | OI-4a | （マージ後）`gh workflow run ci.yml --ref dev` で起動し、生成 PR をマージ |
+
+### 残課題（低優先）
+
+- **OI-6**: `DashboardStats` コンポーネント調査未完了（ソース上に見当たらない）
+- **OI-7**: `coverage/lcov.info` が古い（CI でのカバレッジ自動更新は別途検討）
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 

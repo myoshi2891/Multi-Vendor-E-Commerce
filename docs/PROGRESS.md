@@ -67,6 +67,13 @@
 - `paypal.test.ts` / `stripe.test.ts` に `it.skip` で IDOR スケルトンテスト追加（実装側の `userId` フィルタ未実装を documenting）
 - **次アクション**: 別 PR で `paypal.ts` / `stripe.ts` の `db.order.findUnique` に `userId` フィルタを追加し、`it.skip` を有効化
 
+### 2026-05-22: OI-5 E2E シード冪等性 CI 検証
+- `ci.yml` に `seed-idempotency` ジョブを追加（常時実行）
+- PostgreSQL 16 service container 起動 → `prisma migrate deploy` → `seed:e2e` × 2回
+- `psql` で User/Product/ProductVariant の行数を取得し `diff` でアサート
+- シードは既に `upsert` ベースで冪等だったが、CI 環境での実証が初めて
+- **完了**: 優先 Open Issues (OI-2 / OI-3 / OI-4 / OI-4a / OI-5) 全て解消
+
 ### 2026-05-22: OI-3 認証必須ページの a11y spec 追加
 - `tests/e2e/helpers/auth.ts` を新規作成。`createCustomerSession()` で Clerk テストモードユーザーを動的作成・サインイン・クリーンアップ
 - `tests/e2e/a11y/checkout.spec.ts` / `profile.spec.ts` を追加（WCAG 2.1 AA、chromium 限定）

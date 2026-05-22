@@ -74,6 +74,65 @@ jobs:
       - name: Build
         run: bun run build
 
+  # OI-5: Verify that `bun run seed:e2e` is idempotent on a fresh DB.
+  # Runs the seed twice and asserts that User/Product/ProductVariant
+  # row counts remain identical between runs.
+  seed-idempotency:
+    name: E2E Seed Idempotency
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: e2e
+          POSTGRES_PASSWORD: e2e
+          POSTGRES_DB: e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://e2e:e2e@localhost:5432/e2e
+      DIRECT_URL: postgresql://e2e:e2e@localhost:5432/e2e
+      E2E_DATABASE_URL: postgresql://e2e:e2e@localhost:5432/e2e
+      PGPASSWORD: e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bunx prisma generate
+      - name: Apply Prisma migrations
+        run: bunx prisma migrate deploy
+      - name: First seed
+        run: bun run seed:e2e
+      - name: Snapshot row counts (before)
+        run: |
+          psql -h localhost -U e2e -d e2e -At -F, -c \
+            'SELECT (SELECT COUNT(*) FROM "User"),
+                    (SELECT COUNT(*) FROM "Product"),
+                    (SELECT COUNT(*) FROM "ProductVariant");' \
+            > before.txt
+          cat before.txt
+      - name: Second seed (idempotency check)
+        run: bun run seed:e2e
+      - name: Snapshot row counts (after)
+        run: |
+          psql -h localhost -U e2e -d e2e -At -F, -c \
+            'SELECT (SELECT COUNT(*) FROM "User"),
+                    (SELECT COUNT(*) FROM "Product"),
+                    (SELECT COUNT(*) FROM "ProductVariant");' \
+            > after.txt
+          cat after.txt
+      - name: Assert counts unchanged
+        run: diff before.txt after.txt
+
   # Manually-triggered job that generates -linux.png Playwright snapshots
   # and opens a PR with the new baselines. Run via:
   #   gh workflow run ci.yml --ref <branch>
