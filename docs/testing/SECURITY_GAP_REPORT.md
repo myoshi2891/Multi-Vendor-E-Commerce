@@ -27,13 +27,13 @@
 | `home.test.ts` | 認証不要（public read） | 0 | 0 | 0 | ✅ 意図的（read-only public） |
 | `offer-tag.test.ts` | ADMIN 必須 | 6 | 7 | 0 | ✅ 充実 |
 | `order.test.ts` | USER / SELLER | 12 | 10 | 11 | ✅ 模範 |
-| `paypal.test.ts` | USER | 4 | 0 | 1 | ⚠️ IDOR 検証不在（後述） |
+| `paypal.test.ts` | USER | 4 | 0 | 2 | ✅ IDOR レグレッションテスト追加（実装修正済み） |
 | `product.test.ts` | SELLER + 店舗所有権 | 26 | 10 | 4 | ✅ 充実 |
 | `profile.test.ts` | USER | 10 | 0 | 3 | ✅ IDOR は `userId` フィルタで担保 |
 | `review.test.ts` | USER | 3 | 0 | 3 | ⚠️ IDOR の明示テスト追加（本タスク） |
 | `size.test.ts` | 認証不要（public read） | 1 | 0 | 0 | ✅ 意図的（read-only public） |
 | `store.test.ts` | SELLER / ADMIN | 29 | 8 | 18 | ✅ 充実 |
-| `stripe.test.ts` | USER | 6 | 0 | 1 | ⚠️ IDOR 検証不在（後述） |
+| `stripe.test.ts` | USER | 6 | 0 | 2 | ✅ IDOR レグレッションテスト追加（実装修正済み） |
 | `subCategory.test.ts` | ADMIN 必須 | 7 | 7 | 0 | ✅ 充実 |
 | `user.test.ts` | USER / ADMIN | 27 | 0 | 8 | ✅ 充実 |
 
@@ -41,37 +41,27 @@
 
 ---
 
-## 2. 発見した IDOR 脆弱性（本タスクのスコープ外、要別 PR 対応）
+## 2. 発見した IDOR 脆弱性（**修正済み** — 2026-05-22）
 
-### Issue A: PayPal 決済の orderId 所有権チェック欠落
+### Issue A: PayPal 決済の orderId 所有権チェック欠落（修正済み）
 
-**ファイル**: `src/queries/paypal.ts:24`, `src/queries/paypal.ts:103`
+**ファイル**: `src/queries/paypal.ts:24`, `src/queries/paypal.ts`（`capturePayPalPayment` 内）
 
-```typescript
-// 現状（脆弱）
-const order = await db.order.findUnique({
-    where: { id: orderId },
-});
-```
-
-**問題**: 認証済みの任意ユーザーが、他人の `orderId` を指定して `createPayPalPayment` / `capturePayPalPayment` を呼び出せる。攻撃者は他人の注文に対して PayPal 決済セッションを発火させ、結果として `paymentDetails.userId` に自身の ID が記録される。
-
-**推奨修正**:
+**修正内容**: `createPayPalPayment` の `db.order.findUnique` の `where` に `userId: user.id` を追加。`capturePayPalPayment` は元々 `findUnique` を持たなかったため、PayPal の capture 課金 fetch 呼び出しの**前**に同等の所有権チェックを挿入し、他人の注文に対して課金が発生しないようにした。
 
 ```typescript
+// 修正後（src/queries/paypal.ts）
 const order = await db.order.findUnique({
     where: { id: orderId, userId: user.id },
 });
 if (!order) throw new Error("Order not found");
 ```
 
-**影響**: 他人の注文を不正に「Paid」状態に更新できる可能性 / 決済記録の関連性が不整合となる。
-
-### Issue B: Stripe 決済の orderId 所有権チェック欠落
+### Issue B: Stripe 決済の orderId 所有権チェック欠落（修正済み）
 
 **ファイル**: `src/queries/stripe.ts:30`, `src/queries/stripe.ts:79`
 
-Issue A と同じパターン。`createStripePaymentIntent` と `createStripePayment` の両方で `userId` フィルタが欠落。
+`createStripePaymentIntent` と `createStripePayment` の両方で `findUnique` の `where` に `userId: user.id` を追加。
 
 ---
 
@@ -81,12 +71,9 @@ Issue A と同じパターン。`createStripePaymentIntent` と `createStripePay
 
 既存レビュー検索 (`db.review.findFirst`) の where 句に `userId: user.id` フィルタが含まれることを明示的に検証するテストを追加。これは IDOR 防止の **既存実装に対するレグレッションテスト** であり、将来の実装変更で `userId` フィルタが外れた場合に検知できる。
 
-### 3.2 `paypal.test.ts` / `stripe.test.ts` — IDOR スケルトンテスト（skip 付き）
+### 3.2 `paypal.test.ts` / `stripe.test.ts` — IDOR レグレッションテスト（有効化済み）
 
-実装の IDOR 脆弱性が修正されたら有効化するスケルトンテストを `it.skip` で追加。コメントで「実装側の修正後に skip を外す」旨を明記。これにより:
-
-- セキュリティ要件の存在が明示的にコード上で documenting される
-- 別 PR で実装修正後、`it.skip` → `it` の 1 行変更で有効化できる
+`createPayPalPayment` / `capturePayPalPayment` / `createStripePaymentIntent` / `createStripePayment` の各テストで `db.order.findUnique` の `where` 句に `userId: user.id` が含まれることを検証する。実装の所有権チェックが将来外れた場合に検知できる。`capturePayPalPayment` のテストでは PayPal 課金 `fetch` が呼ばれていないことも合わせて確認する。
 
 ---
 
@@ -94,4 +81,4 @@ Issue A と同じパターン。`createStripePaymentIntent` と `createStripePay
 
 - 本タスクの計画: `~/.claude/plans/melodic-plotting-bubble.md`（A1 セクション）
 - 上位レポート: `docs/testing/COVERAGE_REPORT.md` の A1（🔴 高優先度）
-- 次アクション（別 PR 推奨）: Issue A / B の実装修正 + 該当 `it.skip` の有効化
+- 修正計画: `~/.claude/plans/verify-each-finding-against-snappy-galaxy.md`

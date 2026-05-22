@@ -26,10 +26,11 @@ export const createStripePaymentIntent = async (orderId: string) => {
         // Ensure user is authenticated
         if (!user) throw new Error("Unauthenticated.");
 
-        // Fetch the order to get total price
+        // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
         const order = await db.order.findUnique({
             where: {
                 id: orderId,
+                userId: user.id,
             },
         });
 
@@ -75,10 +76,11 @@ export const createStripePayment = async (
         // Ensure user is authenticated
         if (!user) throw new Error("Unauthenticated.");
 
-        // Fetch the order to get total price
+        // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
         const order = await db.order.findUnique({
             where: {
                 id: orderId,
+                userId: user.id,
             },
         });
 

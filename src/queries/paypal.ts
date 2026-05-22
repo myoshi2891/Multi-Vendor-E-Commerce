@@ -20,10 +20,11 @@ export const createPayPalPayment = async (orderId: string) => {
         // Ensure user is authenticated
         if (!user) throw new Error("Unauthenticated.");
 
-        // Fetch the order to get total price
+        // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
         const order = await db.order.findUnique({
             where: {
                 id: orderId,
+                userId: user.id,
             },
         });
 
@@ -84,6 +85,16 @@ export const capturePayPalPayment = async (
 
     // Ensure user is authenticated
     if (!user) throw new Error("Unauthenticated.");
+
+    // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
+    const order = await db.order.findUnique({
+        where: {
+            id: orderId,
+            userId: user.id,
+        },
+    });
+
+    if (!order) throw new Error("Order not found");
 
     // Capture the payment using PayPal API
     const captureResponse = await fetch(

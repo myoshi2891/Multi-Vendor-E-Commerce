@@ -153,9 +153,9 @@ describe("createStripePaymentIntent", () => {
     });
 
     describe("IDOR防止（他人の orderId 拒否）", () => {
-        // 実装側で db.order.findUnique の where 句に userId フィルタを追加した後、
-        // skip を外すこと。詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
-        it.skip("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+        // db.order.findUnique の where 句に userId フィルタが含まれることを検証する。
+        // 詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it("認証ユーザーの所有しない orderId では Order not found となる", async () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
@@ -348,9 +348,9 @@ describe("createStripePayment", () => {
     });
 
     describe("IDOR防止（他人の orderId 拒否）", () => {
-        // 実装側で db.order.findUnique の where 句に userId フィルタを追加した後、
-        // skip を外すこと。詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
-        it.skip("認証ユーザーの所有しない orderId では Order not found となる", async () => {
+        // db.order.findUnique の where 句に userId フィルタが含まれることを検証する。
+        // 詳細は docs/testing/SECURITY_GAP_REPORT.md を参照。
+        it("認証ユーザーの所有しない orderId では Order not found となる", async () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });

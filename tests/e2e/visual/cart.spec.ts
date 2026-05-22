@@ -1,6 +1,6 @@
-import { expect, test, Page } from "@playwright/test";
-import { buildE2ESeed } from "../seed/constants";
-import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
+import { Page } from "@playwright/test";
+import { test, expect } from "./_fixtures";
+import { waitForCartPersist } from "@/config/test-helpers";
 
 /**
  * Visual Regression: Cart ページ
@@ -20,7 +20,11 @@ async function addItemToCart(
     await page.goto(`/product/${productSlug}/${variantSlug}`);
     const firstSize = page.locator('[data-testid^="size-option-"]').first();
     await firstSize.click();
-    await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
+    // 製品/バリアントパスを含む厳密な URL を待つ（broad な /.*\?size=.*/ では他ページに誤マッチする可能性があるため）
+    await page.waitForURL(
+        new RegExp(`/product/${productSlug}/${variantSlug}\\?size=`),
+        { timeout: 5000 }
+    );
     await page.getByTestId("add-to-cart").click();
     await expect(page.getByText(/Product added to cart/i)).toBeVisible({
         timeout: 5000,
@@ -36,15 +40,7 @@ test.describe("Visual: Cart", () => {
         "Visual Regression は chromium 限定（フォントレンダリング差のため）"
     );
 
-    test.beforeEach(async ({ page }, testInfo) => {
-        const seed = buildE2ESeed({
-            workerIndex: testInfo.workerIndex,
-            projectName: testInfo.project.name,
-        });
-        await setupE2ETestState(page, seed);
-    });
-
-    test("空カートの表示", async ({ page }) => {
+    test("空カートの表示", async ({ page, seed: _seed }) => {
         await page.goto("/cart", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("cart-empty-message")).toBeVisible();
         await expect(page).toHaveScreenshot("cart-empty.png", {
@@ -52,11 +48,7 @@ test.describe("Visual: Cart", () => {
         });
     });
 
-    test("商品追加後のカート表示", async ({ page }, testInfo) => {
-        const seed = buildE2ESeed({
-            workerIndex: testInfo.workerIndex,
-            projectName: testInfo.project.name,
-        });
+    test("商品追加後のカート表示", async ({ page, seed }) => {
         await addItemToCart(page, seed.product.slug, seed.variant.slug);
         await expect(page.getByTestId("cart-item-name")).toBeVisible();
         await expect(page).toHaveScreenshot("cart-with-item.png", {
