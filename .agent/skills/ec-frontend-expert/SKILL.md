@@ -8,7 +8,7 @@ description: |
 # フロントエンド開発エキスパート
 
 ## Overview
-Next.js 14 App Router、Tailwind CSS、Radix UI、Zustandを使用したフロントエンド機能の開発・修正を担当するスキルです。
+Next.js 16.2.1 (App Router) + React 19、Tailwind CSS、Radix UI、Zustandを使用したフロントエンド機能の開発・修正を担当するスキルです。
 
 ## 開発規約 (Rules & Best Practices)
 

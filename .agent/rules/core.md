@@ -5,7 +5,7 @@ activation: always
 # Core Rules — Multi-Vendor E-Commerce
 
 ## プロジェクト概要
-Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済のマルチベンダーEコマースマーケットプレイス。
+Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済のマルチベンダーEコマースマーケットプレイス。
 
 ## アーキテクチャ制約
 
