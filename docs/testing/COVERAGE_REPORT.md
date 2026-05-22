@@ -67,34 +67,35 @@
 
 ---
 
-## 3. Next Actions (優先度付き)
+## 3. Next Actions (カバレッジ観点の戦略台帳)
 
-### 🔴 高優先度 — Immediate（即対応）
-
-#### A1. Server Actions に CSRF / 認可テストを横展開
-- **対象**: `src/queries/**.test.ts` (Security 行に追加)
-- **推奨ツール**: Jest + 既存 ts-jest セットアップ
-- **コスト感**: **M** (1-2 スプリント)
-- **期待効果**: 決済・注文・店舗管理を含む 14 個の Server Action 全てで、未認可ユーザーの操作が拒否されることを保証
-- **着手フック**: 既存 `src/queries/order.test.ts` の認可テストパターンを他 13 ファイルに転写
-
-#### A2. Checkout / Cart の Visual Regression を導入
-- **対象**: `tests/e2e/visual/*.spec.ts` (新規ディレクトリ)
-- **推奨ツール**: Playwright `expect(page).toHaveScreenshot()` (既存ランナー)
-- **コスト感**: **S** (数日)
-- **期待効果**: 売上直結フロー (cart, checkout, place-order) の UI 崩れをマージ前に阻止
-- **着手フック**: `tests/e2e/purchase-flow.spec.ts` の主要ステップにスクリーンショット assertion を追加するだけで開始可能
-
-#### A3. フォーム a11y を WCAG 2.1 AA で計測
-- **対象**: `tests/e2e/a11y/*.spec.ts` (新規ディレクトリ)
-- **推奨ツール**: `@axe-core/playwright` (新規依存)
-- **コスト感**: **S** (数日)
-- **期待効果**: Sign-in / Checkout / Seller Onboarding の障壁を計測 → 改善 → 退行防止のループを立ち上げ
-- **着手フック**: 最初の 3 ページ + パッケージ追加で MVP 成立
+> **運用ルール**: このセクションは「なぜやるか・何を達成するか」の**戦略理由**を記録する台帳。
+> 「次のセッションで何をするか」の即時 TODO は **[QA_HANDOFF.md](./QA_HANDOFF.md) の `残課題・Open Issues` を Single Source of Truth** とする。
 
 ---
 
-### 🟡 中優先度 — Next Sprint
+### ✅ 完了済みアーカイブ（🔴 高優先度）
+
+#### A1. Server Actions に CSRF / 認可テストを横展開 ✅ 2026-05-21 完了
+- **対象**: `src/queries/**.test.ts` (Security 行)
+- **達成内容**: 14 ファイル全調査、IDOR 脆弱性 2 件修正（paypal/stripe）、認可テスト補完
+- **記録**: [`SECURITY_GAP_REPORT.md`](./SECURITY_GAP_REPORT.md) / commits `55c07b1`, `03a7e89`
+
+#### A2. Checkout / Cart の Visual Regression を導入 ⚠️ 2026-05-21 spec 追加・baseline 未コミット
+- **対象**: `tests/e2e/visual/`
+- **達成内容**: cart/checkout の spec ファイル追加、playwright.config.ts に安定化設定を追加
+- **残課題**: baseline スクリーンショット未コミット → `QA_HANDOFF.md OI-1` を参照
+- **期待効果**: 売上直結フロー (cart, checkout) の UI 崩れをマージ前に阻止
+
+#### A3. フォーム a11y を WCAG 2.1 AA で計測 ✅ 2026-05-21 完了（MVP）
+- **対象**: `tests/e2e/a11y/`
+- **達成内容**: sign-in / seller-apply の WCAG 2.1 AA スキャン追加（`@axe-core/playwright`）
+- **残課題**: `/checkout` / `/profile` の拡張 → `QA_HANDOFF.md OI-3` を参照
+- **期待効果**: 認証・申請フォームの障壁を計測 → 改善 → 退行防止のループ確立
+
+---
+
+### 🟡 未着手（中優先度）— Next Sprint
 
 #### B1. shadcn/ui プリミティブの Snapshot
 - **対象**: `tests/component/ui/*.test.tsx`
@@ -116,10 +117,10 @@
 
 ---
 
-### 🟢 低優先度 — Mid–Long Term
+### 🟢 未着手（低優先度）— Mid–Long Term
 
 #### C1. Lighthouse CI でパフォーマンス予算化
-- **対象**: `.github/workflows/lhci.yml` (新規 + CI 立ち上げ)
+- **対象**: `.github/workflows/lhci.yml` (新規)
 - **推奨ツール**: `@lhci/cli` + GitHub Actions
 - **コスト感**: **M**
 - **期待効果**: LCP / CLS / TBT の退行を PR で検知

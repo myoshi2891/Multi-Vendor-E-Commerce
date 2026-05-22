@@ -97,23 +97,36 @@
 
 ## 次回セッション 推奨着手順
 
+> **このファイルが即時 TODO の Single Source of Truth。**
+> 中長期タスク（B1〜C2）の戦略的背景は [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) を参照。
+
+### 🔴 直近（次のセッション）
+
+```bash
+# OI-1: Visual Regression の baseline をコミット（CI ブロッカー解消）
+bunx playwright test --update-snapshots tests/e2e/visual/
+git add tests/e2e/visual/__screenshots__/
+git commit -m "test(visual): commit baseline screenshots for cart and checkout"
 ```
-優先 1: Visual Regression baseline をコミット (OI-1)
-  → bunx playwright test --update-snapshots -- tests/e2e/visual/
-  → git add tests/e2e/visual/__screenshots__/ && git commit
 
-優先 2: purchase-flow の残り 1 テスト実装 (OI-2)
-  → tests/e2e/purchase-flow.spec.ts の ⏸️ テストを有効化
+### 🟡 その次のセッション以降
 
-優先 3: GitHub Actions CI ワークフロー追加 (OI-4)
-  → .github/workflows/ci.yml（lint + test + build 3 ジョブ）
-```
+| 優先順 | OI | 作業概要 |
+|---|---|---|
+| 1 | OI-2 | `purchase-flow.spec.ts` の ⏸️ テスト（複数バリアント追加）を有効化 |
+| 2 | OI-4 | `.github/workflows/ci.yml` 追加（lint + test + build 3 ジョブ） |
+| 3 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
+| 4 | OI-5 | E2E シード冪等性の CI 環境検証 |
 
----
+### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 
-## 次回セッション開始時のプロンプト例
+- **B1** shadcn/ui プリミティブの Snapshot
+- **B2** Stripe / PayPal Webhook の Contract テスト拡充
+- **B3** Cart → Checkout の Integration テスト
+- **C1** Lighthouse CI（パフォーマンス予算化）
+- **C2** Bundle Size 継続監視
 
-> 「QA_HANDOFF.md を確認し、OI-1（Visual Regression baseline のコミット）から着手してください。」
+詳細は [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) を参照。
 
 ---
 
