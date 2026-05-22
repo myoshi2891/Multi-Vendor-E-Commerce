@@ -80,23 +80,20 @@ export const capturePayPalPayment = async (
     orderId: string,
     paymentId: string
 ) => {
-    // Get current user
-    const user = await currentUser();
-
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-    });
-
-    if (!order) throw new Error("Order not found");
-
     try {
+        // Get current user
+        const user = await currentUser();
+        if (!user) throw new Error("Unauthenticated.");
+
+        // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
+        const order = await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+        });
+        if (!order) throw new Error("Order not found");
+
         // Capture the payment using PayPal API
         const captureResponse = await fetch(
             `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
