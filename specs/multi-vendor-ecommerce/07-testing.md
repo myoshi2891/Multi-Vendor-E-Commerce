@@ -165,24 +165,25 @@ git add tests/e2e/visual/cart.spec.ts-snapshots/ tests/e2e/visual/checkout.spec.
 git commit -m "test(visual): update baseline screenshots"
 ```
 
-#### CI（Linux） — OI-4a 対応時に整備
+#### CI（Linux）
 
-GitHub Actions ワークフロー（`ci.yml`）内で以下を一度実行し、
-生成された `-linux.png` をコミットする:
+`.github/workflows/ci.yml` に `visual-baselines` ジョブが設定済み（OI-4a、2026-05-22）。
+`workflow_dispatch` で手動起動し、生成された `-linux.png` を PR として提出する仕組み:
 
-```yaml
-- name: Update visual baselines
-  run: bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
-- name: Commit linux baselines
-  run: |
-    git config user.email "ci@example.com"
-    git config user.name "CI"
-    git add tests/e2e/visual/**/*-linux.png
-    git diff --cached --quiet || git commit -m "test(visual): update linux baselines [skip ci]"
-    git push
+```bash
+# 任意のブランチ ref で起動
+gh workflow run ci.yml --ref <branch>
 ```
 
-> 通常の CI 実行では `--update-snapshots` を付けない。
+ジョブ内で以下を実行:
+1. PostgreSQL service container を起動
+2. `bunx prisma migrate deploy` + `bun run seed:e2e`
+3. `bunx playwright test tests/e2e/visual --update-snapshots`
+4. `peter-evans/create-pull-request@v6` で `chore/visual-baselines-linux` ブランチに PR 作成
+
+PR レビュー後にマージすると `-linux.png` ベースラインが main に取り込まれる。
+
+> 通常の CI 実行（`push`/`pull_request`）では `visual-baselines` ジョブは起動しない（`if: github.event_name == 'workflow_dispatch'`）。
 > baseline 更新は意図的な UI 変更時にのみ行う。
 
 ### Playwright Config（再現性確保）

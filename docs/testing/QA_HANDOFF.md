@@ -93,7 +93,7 @@
 | ~~OI-2~~ | ~~`purchase-flow.spec.ts` の「複数バリアント追加」1テスト保留~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`tests/e2e/seed/constants.ts` に第2バリアント追加 + spec 追加） |
 | OI-3 | `/checkout` / `/profile` の a11y spec 未追加 | 🟡 中 | Clerk セッションヘルパー整備後 |
 | ~~OI-4~~ | ~~`.github/workflows/` CI 未整備~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`.github/workflows/ci.yml` に lint/test/build 3 並列ジョブ） |
-| OI-4a | CI で Visual Regression の `-linux.png` baseline 生成 | 🟡 中 | OI-4 の CI 整備と同時対応（`07-testing.md §Visual Regression` 参照） |
+| ~~OI-4a~~ | ~~CI で Visual Regression の `-linux.png` baseline 生成~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`ci.yml` に `workflow_dispatch` 起動の `visual-baselines` ジョブ追加。`gh workflow run ci.yml --ref <branch>` で起動 → 自動 PR） |
 | OI-5 | E2E シード冪等性（CI 環境での `seed:e2e`） | 🟡 中 | 外部 DB 接続前提のため CI 未検証 |
 | OI-6 | `DashboardStats` コンポーネント調査未完了 | 🟢 低 | ソース上に見当たらない。実装確認要 |
 | OI-7 | `coverage/lcov.info` が古い (2025-03-16 時点) | 🟢 低 | CI 整備後に自動更新 |
@@ -109,9 +109,9 @@
 
 | 優先順 | OI | 作業概要 |
 |---|---|---|
-| 1 | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
-| 2 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
-| 3 | OI-5 | E2E シード冪等性の CI 環境検証 |
+| 1 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
+| 2 | OI-5 | E2E シード冪等性の CI 環境検証 |
+| - | OI-4a | （マージ後）`gh workflow run ci.yml --ref dev` で起動し、生成 PR をマージ |
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 

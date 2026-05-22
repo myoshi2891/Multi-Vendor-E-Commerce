@@ -67,6 +67,13 @@
 - `paypal.test.ts` / `stripe.test.ts` に `it.skip` で IDOR スケルトンテスト追加（実装側の `userId` フィルタ未実装を documenting）
 - **次アクション**: 別 PR で `paypal.ts` / `stripe.ts` の `db.order.findUnique` に `userId` フィルタを追加し、`it.skip` を有効化
 
+### 2026-05-22: OI-4a Visual baseline 生成ワークフロー追加
+- `ci.yml` に `workflow_dispatch` 起動の `visual-baselines` ジョブを追加
+- PostgreSQL service container 起動 → `prisma migrate deploy` → `seed:e2e` → `playwright --update-snapshots`
+- `peter-evans/create-pull-request@v6` で `chore/visual-baselines-linux` ブランチに自動 PR
+- `specs/multi-vendor-ecommerce/07-testing.md §Visual Regression > CI（Linux）` を更新
+- **次アクション**: マージ後に `gh workflow run ci.yml --ref dev` で起動 → OI-3 へ
+
 ### 2026-05-22: OI-4 GitHub Actions CI ワークフロー追加
 - `.github/workflows/ci.yml` を新規作成。`lint` / `test` / `build` の3並列ジョブを `push`/`pull_request` (main, dev) で実行
 - Bun セットアップは `oven-sh/setup-bun@v2` を採用、依存は `bun install --frozen-lockfile` で固定
