@@ -243,59 +243,77 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
-    const variant = await prisma.productVariant.upsert({
-        where: { slug: seed.variant.slug },
-        create: {
-            variantName: seed.variant.name,
-            variantDescription: seed.variant.description,
-            variantImage: seed.variant.image,
-            slug: seed.variant.slug,
-            sku: seed.variant.sku,
-            weight: seed.variant.weight,
-            productId: product.id,
-        },
-        update: {
-            variantName: seed.variant.name,
-            variantDescription: seed.variant.description,
-            variantImage: seed.variant.image,
-            sku: seed.variant.sku,
-            weight: seed.variant.weight,
-            productId: product.id,
-        },
-    });
+    const variants: Array<{ id: string; slug: string }> = [];
+    for (const v of seed.variants) {
+        const variant = await prisma.productVariant.upsert({
+            where: { slug: v.slug },
+            create: {
+                variantName: v.name,
+                variantDescription: v.description,
+                variantImage: v.image,
+                slug: v.slug,
+                sku: v.sku,
+                weight: v.weight,
+                productId: product.id,
+            },
+            update: {
+                variantName: v.name,
+                variantDescription: v.description,
+                variantImage: v.image,
+                sku: v.sku,
+                weight: v.weight,
+                productId: product.id,
+            },
+        });
 
-    await prisma.size.deleteMany({ where: { productVariantId: variant.id } });
-    await prisma.productVariantImage.deleteMany({
-        where: { productVariantId: variant.id },
-    });
-    await prisma.color.deleteMany({ where: { productVariantId: variant.id } });
+        await prisma.size.deleteMany({
+            where: { productVariantId: variant.id },
+        });
+        await prisma.productVariantImage.deleteMany({
+            where: { productVariantId: variant.id },
+        });
+        await prisma.color.deleteMany({
+            where: { productVariantId: variant.id },
+        });
 
-    await prisma.size.create({
-        data: {
-            size: seed.size.size,
-            quantity: seed.size.quantity,
-            price: seed.size.price,
-            discount: seed.size.discount,
-            productVariantId: variant.id,
-        },
-    });
+        await prisma.size.create({
+            data: {
+                size: v.size.size,
+                quantity: v.size.quantity,
+                price: v.size.price,
+                discount: v.size.discount,
+                productVariantId: variant.id,
+            },
+        });
 
-    await prisma.productVariantImage.create({
-        data: {
-            url: seed.variantImage.url,
-            alt: seed.variantImage.alt,
-            productVariantId: variant.id,
-        },
-    });
+        await prisma.productVariantImage.create({
+            data: {
+                url: v.variantImage.url,
+                alt: v.variantImage.alt,
+                productVariantId: variant.id,
+            },
+        });
 
-    await prisma.color.create({
-        data: {
-            name: seed.color.name,
-            productVariantId: variant.id,
-        },
-    });
+        await prisma.color.create({
+            data: {
+                name: v.color.name,
+                productVariantId: variant.id,
+            },
+        });
 
-    return { country, user, store, category, subCategory, product, variant };
+        variants.push({ id: variant.id, slug: variant.slug });
+    }
+
+    return {
+        country,
+        user,
+        store,
+        category,
+        subCategory,
+        product,
+        variants,
+        variant: variants[0],
+    };
 };
 
 /**

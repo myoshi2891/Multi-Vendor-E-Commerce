@@ -16,6 +16,11 @@ const BASE_E2E_SEED = {
     email: "e2e-seller@example.com",
     picture: "/assets/images/default-user.jpg",
   },
+  customer: {
+    name: "E2E Customer",
+    email: "e2e-customer@example.com",
+    picture: "/assets/images/default-user.jpg",
+  },
   store: {
     name: "E2E Store",
     description: "E2E seed store for Playwright tests.",
@@ -41,27 +46,50 @@ const BASE_E2E_SEED = {
     description: "Seeded product for Playwright cart smoke test.",
     brand: "E2E Brand",
   },
-  variant: {
-    name: "Default",
-    slug: "e2e-variant",
-    description: "Default variant for E2E testing.",
-    sku: "E2E-SKU-1",
-    weight: 1.2,
-    image: "/assets/images/no_image.png",
-  },
-  size: {
-    size: "M",
-    quantity: 10,
-    price: 99,
-    discount: 0,
-  },
-  variantImage: {
-    url: "/assets/images/no_image.png",
-    alt: "E2E product image",
-  },
-  color: {
-    name: "Black",
-  },
+  variants: [
+    {
+      name: "Default",
+      slug: "e2e-variant",
+      description: "Default variant for E2E testing.",
+      sku: "E2E-SKU-1",
+      weight: 1.2,
+      image: "/assets/images/no_image.png",
+      size: {
+        size: "M",
+        quantity: 10,
+        price: 99,
+        discount: 0,
+      },
+      variantImage: {
+        url: "/assets/images/no_image.png",
+        alt: "E2E product image",
+      },
+      color: {
+        name: "Black",
+      },
+    },
+    {
+      name: "Alternate",
+      slug: "e2e-variant-2",
+      description: "Second variant for multi-variant cart test.",
+      sku: "E2E-SKU-2",
+      weight: 1.2,
+      image: "/assets/images/no_image.png",
+      size: {
+        size: "M",
+        quantity: 10,
+        price: 109,
+        discount: 0,
+      },
+      variantImage: {
+        url: "/assets/images/no_image.png",
+        alt: "E2E product image 2",
+      },
+      color: {
+        name: "White",
+      },
+    },
+  ],
 } as const;
 
 const normalizeSeedSegment = (value: string) =>
@@ -120,6 +148,20 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
   const suffix = resolveSeedSuffix(options);
   const uppercaseSuffix = suffix ? suffix.toUpperCase() : "";
 
+  const variants = BASE_E2E_SEED.variants.map((v) => ({
+    name: v.name,
+    description: v.description,
+    image: v.image,
+    weight: v.weight,
+    slug: withSuffix(v.slug, suffix),
+    sku: withSuffix(v.sku, suffix),
+    size: { ...v.size },
+    variantImage: { ...v.variantImage },
+    color: { ...v.color },
+  }));
+
+  const [primaryVariant] = variants;
+
   return {
     country: {
       name: withSuffix(
@@ -139,6 +181,10 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
       ...BASE_E2E_SEED.user,
       email: withEmailSuffix(BASE_E2E_SEED.user.email, suffix),
     },
+    customer: {
+      ...BASE_E2E_SEED.customer,
+      email: withEmailSuffix(BASE_E2E_SEED.customer.email, suffix),
+    },
     store: {
       ...BASE_E2E_SEED.store,
       email: withEmailSuffix(BASE_E2E_SEED.store.email, suffix),
@@ -156,14 +202,19 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
       ...BASE_E2E_SEED.product,
       slug: withSuffix(BASE_E2E_SEED.product.slug, suffix),
     },
+    variants,
+    // 既存テスト互換: 単数エクスポートは variants[0] の別名
     variant: {
-      ...BASE_E2E_SEED.variant,
-      slug: withSuffix(BASE_E2E_SEED.variant.slug, suffix),
-      sku: withSuffix(BASE_E2E_SEED.variant.sku, suffix),
+      name: primaryVariant.name,
+      slug: primaryVariant.slug,
+      description: primaryVariant.description,
+      sku: primaryVariant.sku,
+      weight: primaryVariant.weight,
+      image: primaryVariant.image,
     },
-    size: BASE_E2E_SEED.size,
-    variantImage: BASE_E2E_SEED.variantImage,
-    color: BASE_E2E_SEED.color,
+    size: primaryVariant.size,
+    variantImage: primaryVariant.variantImage,
+    color: primaryVariant.color,
   };
 };
 

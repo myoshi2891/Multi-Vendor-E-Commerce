@@ -53,7 +53,7 @@
 
 | ステップ | ファイル | 状態 | 備考 |
 |---|---|---|---|
-| Step 22 | `tests/e2e/purchase-flow.spec.ts` | ⚠️ 7/8 テスト | 「複数バリアント追加」1件が ⏸️ 保留中 |
+| Step 22 | `tests/e2e/purchase-flow.spec.ts` | ✅ 8/8 テスト | 「複数バリアント追加」を 2026-05-22 に追加（OI-2 解消） |
 | Step 23 | `tests/e2e/seller-onboarding.spec.ts` | ✅ ファイル作成済み | 実行は seed:e2e 前提 |
 | Step 24 | `tests/e2e/payment-error.spec.ts` | ✅ ファイル作成済み | 実行は seed:e2e 前提 |
 | Step 25 | `tests/e2e/search-filter.spec.ts` | ✅ ファイル作成済み | 実行は seed:e2e 前提 |
@@ -90,7 +90,7 @@
 | # | 課題 | 優先度 | 備考 |
 |---|---|---|---|
 | ~~OI-1~~ | ~~Visual Regression baseline 未コミット~~ | ~~🔴 高~~ | ✅ 解消済み（`688225f`） |
-| OI-2 | `purchase-flow.spec.ts` の「複数バリアント追加」1テスト保留 | 🟡 中 | [P1] スキップ中 |
+| ~~OI-2~~ | ~~`purchase-flow.spec.ts` の「複数バリアント追加」1テスト保留~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`tests/e2e/seed/constants.ts` に第2バリアント追加 + spec 追加） |
 | OI-3 | `/checkout` / `/profile` の a11y spec 未追加 | 🟡 中 | Clerk セッションヘルパー整備後 |
 | OI-4 | `.github/workflows/` CI 未整備 | 🟡 中 | lint + test + build の自動化が未設定 |
 | OI-4a | CI で Visual Regression の `-linux.png` baseline 生成 | 🟡 中 | OI-4 の CI 整備と同時対応（`07-testing.md §Visual Regression` 参照） |
@@ -109,11 +109,10 @@
 
 | 優先順 | OI | 作業概要 |
 |---|---|---|
-| 1 | OI-2 | `purchase-flow.spec.ts` の ⏸️ テスト（複数バリアント追加）を有効化 |
-| 2 | OI-4 | `.github/workflows/ci.yml` 追加（lint + test + build 3 ジョブ） |
-| 2a | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
-| 3 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
-| 4 | OI-5 | E2E シード冪等性の CI 環境検証 |
+| 1 | OI-4 | `.github/workflows/ci.yml` 追加（lint + test + build 3 ジョブ） |
+| 1a | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
+| 2 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
+| 3 | OI-5 | E2E シード冪等性の CI 環境検証 |
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 
