@@ -13,6 +13,9 @@ import { currentUser } from "@clerk/nextjs/server";
  */
 
 export const createPayPalPayment = async (orderId: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
         // Get current user
         const user = await currentUser();
@@ -50,13 +53,22 @@ export const createPayPalPayment = async (orderId: string) => {
                         },
                     ],
                 }),
+                signal: controller.signal,
             }
         );
+
+        clearTimeout(timeoutId);
+
+        if (response.ok === false) {
+            const errorBody = typeof response.text === "function" ? await response.text() : "";
+            throw new Error(`PayPal API responded with status ${response.status}: ${errorBody}`);
+        }
 
         const paymentData = await response.json();
 
         return paymentData;
     } catch (error: unknown) {
+        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error("Error in createPayPalPayment:", error.message, error.stack);
         } else {
@@ -80,20 +92,23 @@ export const capturePayPalPayment = async (
     orderId: string,
     paymentId: string
 ) => {
+    // Get current user
+    const user = await currentUser();
+    if (!user) throw new Error("Unauthenticated.");
+
+    // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
+    const order = await db.order.findUnique({
+        where: {
+            id: orderId,
+            userId: user.id,
+        },
+    });
+    if (!order) throw new Error("Order not found");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
     try {
-        // Get current user
-        const user = await currentUser();
-        if (!user) throw new Error("Unauthenticated.");
-
-        // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
-        const order = await db.order.findUnique({
-            where: {
-                id: orderId,
-                userId: user.id,
-            },
-        });
-        if (!order) throw new Error("Order not found");
-
         // Capture the payment using PayPal API
         const captureResponse = await fetch(
             `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
@@ -103,8 +118,16 @@ export const capturePayPalPayment = async (
                     "Content-Type": "application/json",
                     Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
                 },
+                signal: controller.signal,
             }
         );
+
+        clearTimeout(timeoutId);
+
+        if (captureResponse.ok === false) {
+            const errorBody = typeof captureResponse.text === "function" ? await captureResponse.text() : "";
+            throw new Error(`PayPal API responded with status ${captureResponse.status}: ${errorBody}`);
+        }
 
         const captureData = await captureResponse.json();
 
@@ -182,6 +205,7 @@ export const capturePayPalPayment = async (
 
         return updatedOrder;
     } catch (error: unknown) {
+        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error(
                 "Error in capturePayPalPayment:",
