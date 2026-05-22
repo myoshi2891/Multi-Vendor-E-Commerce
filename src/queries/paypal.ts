@@ -96,89 +96,104 @@ export const capturePayPalPayment = async (
 
     if (!order) throw new Error("Order not found");
 
-    // Capture the payment using PayPal API
-    const captureResponse = await fetch(
-        `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
-            },
+    try {
+        // Capture the payment using PayPal API
+        const captureResponse = await fetch(
+            `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
+                },
+            }
+        );
+
+        const captureData = await captureResponse.json();
+
+        // Check if capture was successful
+        if (captureData.status !== "COMPLETED") {
+            return await db.order.update({
+                where: {
+                    id: orderId,
+                },
+                data: {
+                    paymentStatus: "Failed",
+                },
+            });
         }
-    );
 
-    const captureData = await captureResponse.json();
+        // Upsert payment details record
+        const newPaymentDetails = await db.paymentDetails.upsert({
+            where: {
+                orderId,
+            },
+            update: {
+                paymentIntentId: paymentId,
+                status:
+                    captureData.status === "COMPLETED"
+                        ? "Completed"
+                        : captureData.status,
+                amount: Number(
+                    captureData.purchase_units[0].payments.captures[0].amount
+                        .value
+                ),
+                currency:
+                    captureData.purchase_units[0].payments.captures[0].amount
+                        .currency_code,
+                paymentMethod: "Paypal",
+                userId: user.id,
+            },
+            create: {
+                paymentIntentId: paymentId,
+                status:
+                    captureData.status === "COMPLETED"
+                        ? "Completed"
+                        : captureData.status,
+                amount: Number(
+                    captureData.purchase_units[0].payments.captures[0].amount
+                        .value
+                ),
+                currency:
+                    captureData.purchase_units[0].payments.captures[0].amount
+                        .currency_code,
+                paymentMethod: "Paypal",
+                orderId: orderId,
+                userId: user.id,
+            },
+        });
 
-    // Check if capture was successful
-    if (captureData.status !== "COMPLETED") {
-        return await db.order.update({
+        // Update the order with the payment details
+        const updatedOrder = await db.order.update({
             where: {
                 id: orderId,
             },
             data: {
-                paymentStatus: "Failed",
-            },
-        });
-    }
-
-    // Upsert payment details record
-    const newPaymentDetails = await db.paymentDetails.upsert({
-        where: {
-            orderId,
-        },
-        update: {
-            paymentIntentId: paymentId,
-            status:
-                captureData.status === "COMPLETED"
-                    ? "Completed"
-                    : captureData.status,
-            amount: Number(
-                captureData.purchase_units[0].payments.captures[0].amount.value
-            ),
-            currency:
-                captureData.purchase_units[0].payments.captures[0].amount
-                    .currency_code,
-            paymentMethod: "Paypal",
-            userId: user.id,
-        },
-        create: {
-            paymentIntentId: paymentId,
-            status:
-                captureData.status === "COMPLETED"
-                    ? "Completed"
-                    : captureData.status,
-            amount: Number(
-                captureData.purchase_units[0].payments.captures[0].amount.value
-            ),
-            currency:
-                captureData.purchase_units[0].payments.captures[0].amount
-                    .currency_code,
-            paymentMethod: "Paypal",
-            orderId: orderId,
-            userId: user.id,
-        },
-    });
-
-    // Update the order with the payment details
-    const updatedOrder = await db.order.update({
-        where: {
-            id: orderId,
-        },
-        data: {
-            paymentStatus:
-                captureData.status === "COMPLETED" ? "Paid" : "Failed",
-            paymentMethod: "PayPal",
-            paymentDetails: {
-                connect: {
-                    id: newPaymentDetails.id,
+                paymentStatus:
+                    captureData.status === "COMPLETED" ? "Paid" : "Failed",
+                paymentMethod: "PayPal",
+                paymentDetails: {
+                    connect: {
+                        id: newPaymentDetails.id,
+                    },
                 },
             },
-        },
-        include: {
-            paymentDetails: true,
-        },
-    });
+            include: {
+                paymentDetails: true,
+            },
+        });
 
-    return updatedOrder;
+        return updatedOrder;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "Error in capturePayPalPayment:",
+                error.message,
+                error.stack
+            );
+        } else {
+            console.error("Error in capturePayPalPayment:", error);
+        }
+        throw new Error("Failed to capture PayPal payment");
+    }
 };

@@ -12,6 +12,10 @@ import { waitForCartPersist } from "@/config/test-helpers";
  *   bunx playwright test tests/e2e/visual --update-snapshots --project=chromium
  */
 
+// スラグに正規表現メタ文字（. + ? など）が混入しても URL マッチが壊れないよう、
+// RegExp に渡す前にエスケープする（MDN 標準パターン）。
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 async function addItemToCart(
     page: Page,
     productSlug: string,
@@ -21,8 +25,12 @@ async function addItemToCart(
     const firstSize = page.locator('[data-testid^="size-option-"]').first();
     await firstSize.click();
     // 製品/バリアントパスを含む厳密な URL を待つ（broad な /.*\?size=.*/ では他ページに誤マッチする可能性があるため）
+    const escapedProductSlug = escapeRegex(productSlug);
+    const escapedVariantSlug = escapeRegex(variantSlug);
     await page.waitForURL(
-        new RegExp(`/product/${productSlug}/${variantSlug}\\?size=`),
+        new RegExp(
+            `/product/${escapedProductSlug}/${escapedVariantSlug}\\?size=`
+        ),
         { timeout: 5000 }
     );
     await page.getByTestId("add-to-cart").click();

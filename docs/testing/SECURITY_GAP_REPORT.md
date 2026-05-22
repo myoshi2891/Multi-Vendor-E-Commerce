@@ -79,6 +79,7 @@ if (!order) throw new Error("Order not found");
 
 ## 4. 関連
 
-- 本タスクの計画: `~/.claude/plans/melodic-plotting-bubble.md`（A1 セクション）
+- 本タスクの計画: ローカル開発者の `~/.claude/plans/` 配下にあり、チームでは閲覧不可。
+  公開参照点はコミット履歴を参照: `55c07b1`（test(queries): backfill authorization tests and document IDOR gaps）
 - 上位レポート: `docs/testing/COVERAGE_REPORT.md` の A1（🔴 高優先度）
-- 修正計画: `~/.claude/plans/verify-each-finding-against-snappy-galaxy.md`
+- IDOR 修正の実装コミット: `03a7e89`（fix(security): resolve IDOR vulnerabilities in PayPal/Stripe queries and refactor E2E tests）
