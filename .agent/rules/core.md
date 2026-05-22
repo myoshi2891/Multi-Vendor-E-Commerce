@@ -66,11 +66,14 @@ Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Cler
 | セッション終了時（**必須**） | `docs/testing/QA_HANDOFF.md` | Open Issues 更新・次着手の明記・テスト統計を同期 |
 | セル状態変化時 | `docs/testing/COVERAGE_REPORT.md` | ヒートマップ更新（`◯`→`◐`→`✦`）・§3 タスクの完了記録 |
 | セキュリティ修正時 | `docs/testing/SECURITY_GAP_REPORT.md` | 脆弱性・修正コミット・追加テストを記録 |
+| 統計値変化時 | `docs/PROGRESS.md` | テスト統計（テスト数・型エラー数など）を `QA_HANDOFF.md` と同期して更新 |
+| カバレッジ更新時 | `docs/coverage-dashboard.html` | `bun run coverage:dashboard` を実行してダッシュボードを再生成 |
 
 **重複防止の鉄則**:
 - 即時 TODO（次何をするか）→ `QA_HANDOFF.md` のみ
 - 戦略理由（なぜやるか）→ `COVERAGE_REPORT.md §3` のみ
 - 実装手順パターン（どう書くか）→ `TESTING_DESIGN.md` のみ
+- テスト統計（テスト数・型エラー数等）の正（SSOT）→ `QA_HANDOFF.md`（`PROGRESS.md` は `QA_HANDOFF.md` の値を転記・同期する）
 
 ## パスエイリアス（クイックリファレンス）
 
