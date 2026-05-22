@@ -9,10 +9,11 @@
 
 | ページ | URL | 認証 | Phase |
 |---|---|---|---|
-| Sign-in | `/sign-in` | 不要 | **MVP（本ディレクトリ）** |
-| Seller Apply Step 1 | `/seller/apply` | 不要 | **MVP（本ディレクトリ）** |
-| Checkout | `/checkout` | 必須 | Phase 2（Clerk テストセッション整備後） |
-| Seller Apply Step 2-4 | `/seller/apply` | 必須 | Phase 2 |
+| Sign-in | `/sign-in` | 不要 | **MVP** |
+| Seller Apply Step 1 | `/seller/apply` | 不要 | **MVP** |
+| Checkout | `/checkout` | 必須 (USER) | **Phase 2**（2026-05-22 追加、OI-3） |
+| Profile | `/profile` | 必須 (USER) | **Phase 2**（2026-05-22 追加、OI-3） |
+| Seller Apply Step 2-4 | `/seller/apply` | 必須 | 今後 |
 
 ## 実行
 
@@ -36,11 +37,35 @@ const results = await new AxeBuilder({ page })
 
 抑制は仮の措置であり、フォローアップ issue を必ず作成する。
 
-## Phase 2
+## Phase 2（認証必須ページ）
 
-- `/checkout` の a11y スキャン（カート投入 + Clerk テストセッションでサインイン）
-- 認証必須ページの自動化ヘルパー整備
-- Cypress / Playwright での CI 統合
+`tests/e2e/helpers/auth.ts` の `createCustomerSession()` で Clerk テストモードのユーザーを
+動的作成・サインイン・クリーンアップする。`CLERK_SECRET_KEY` が未設定の環境では `test.skip` で自動スキップ。
+
+### 前提
+
+- `CLERK_SECRET_KEY` がローカル環境変数または CI Secrets に設定されていること
+- Clerk テストモード（メールに `+clerk_test@` を含むと検証コード自動 OK）が有効
+
+### 実装パターン
+
+```typescript
+const session = createCustomerSession();
+
+test.beforeAll(async () => {
+    await session.create({ role: "USER" });
+});
+test.afterAll(async () => {
+    await session.cleanup();
+});
+
+test("WCAG 2.1 AA 違反が無いこと", async ({ page }) => {
+    await session.signIn(page);
+    await runA11yScan(page, "/profile", { readinessLocator: page.getByRole("main") });
+});
+```
+
+参照: `tests/e2e/a11y/checkout.spec.ts`, `tests/e2e/a11y/profile.spec.ts`
 
 ## 関連
 

@@ -67,6 +67,14 @@
 - `paypal.test.ts` / `stripe.test.ts` に `it.skip` で IDOR スケルトンテスト追加（実装側の `userId` フィルタ未実装を documenting）
 - **次アクション**: 別 PR で `paypal.ts` / `stripe.ts` の `db.order.findUnique` に `userId` フィルタを追加し、`it.skip` を有効化
 
+### 2026-05-22: OI-3 認証必須ページの a11y spec 追加
+- `tests/e2e/helpers/auth.ts` を新規作成。`createCustomerSession()` で Clerk テストモードユーザーを動的作成・サインイン・クリーンアップ
+- `tests/e2e/a11y/checkout.spec.ts` / `profile.spec.ts` を追加（WCAG 2.1 AA、chromium 限定）
+- `CLERK_SECRET_KEY` 未設定時は `test.skip` で自動スキップ（CI 安全）
+- `tests/e2e/seed/constants.ts` に `customer` ベース定義を追加（seller と並列）
+- `tests/e2e/a11y/README.md` を Phase 2 認証ヘルパー実装パターンに更新
+- **次アクション**: OI-5（E2E シード冪等性 CI 検証）
+
 ### 2026-05-22: OI-4a Visual baseline 生成ワークフロー追加
 - `ci.yml` に `workflow_dispatch` 起動の `visual-baselines` ジョブを追加
 - PostgreSQL service container 起動 → `prisma migrate deploy` → `seed:e2e` → `playwright --update-snapshots`
