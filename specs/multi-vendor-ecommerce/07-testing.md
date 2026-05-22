@@ -125,6 +125,85 @@ if (!Number.isFinite(unitPrice)) {
 - Helper functions introduced for DRY test code (Round 8)
 - Environment variable processing hardened (Round 9)
 
+## Visual Regression Testing
+
+### Overview
+
+Visual regression tests live in `tests/e2e/visual/` and use Playwright's
+`toHaveScreenshot()`. Chromium only (Firefox/WebKit excluded due to font
+rendering differences; Phase 2 scope).
+
+Covered scenarios (as of 2026-05-22):
+
+| Spec | Test | Snapshot file |
+|------|------|---------------|
+| `cart.spec.ts` | 空カートの表示 | `cart-empty-chromium-<os>.png` |
+| `cart.spec.ts` | 商品追加後のカート表示 | `cart-with-item-chromium-<os>.png` |
+| `checkout.spec.ts` | 未認証リダイレクト | `checkout-redirect-signin-chromium-<os>.png` |
+
+### Snapshot Naming Convention
+
+Playwright appends the OS name automatically:
+
+```
+<test-name>-<browser>-<os>.png
+  例: cart-empty-chromium-darwin.png   (macOS ローカル)
+      cart-empty-chromium-linux.png    (CI / GitHub Actions)
+```
+
+**macOS と Linux は別ファイル**になる。ローカルで生成した `-darwin.png` を
+push しても、Linux CI は `-linux.png` を探して FAIL する。
+
+### Baseline 更新手順
+
+#### ローカル（macOS）
+
+```bash
+# Chromium 限定で baseline を再生成
+bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
+git add tests/e2e/visual/cart.spec.ts-snapshots/ tests/e2e/visual/checkout.spec.ts-snapshots/
+git commit -m "test(visual): update baseline screenshots"
+```
+
+#### CI（Linux） — OI-4a 対応時に整備
+
+GitHub Actions ワークフロー（`ci.yml`）内で以下を一度実行し、
+生成された `-linux.png` をコミットする:
+
+```yaml
+- name: Update visual baselines
+  run: bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
+- name: Commit linux baselines
+  run: |
+    git config user.email "ci@example.com"
+    git config user.name "CI"
+    git add tests/e2e/visual/**/*-linux.png
+    git diff --cached --quiet || git commit -m "test(visual): update linux baselines [skip ci]"
+    git push
+```
+
+> 通常の CI 実行では `--update-snapshots` を付けない。
+> baseline 更新は意図的な UI 変更時にのみ行う。
+
+### Playwright Config（再現性確保）
+
+`playwright.config.ts` に以下を設定し、OS 間差異を最小化している:
+
+```typescript
+use: {
+  reducedMotion: "reduce",  // アニメーション無効
+  locale: "en-US",          // ロケール固定
+  timezoneId: "UTC",        // タイムゾーン固定
+}
+```
+
+### 参照コミット
+
+| コミット | 内容 |
+|---------|------|
+| `f639334` | visual/ スペック追加・playwright.config.ts 設定追加 |
+| `688225f` | macOS（darwin）baseline 3 枚をコミット |
+
 ## Component Testing
 
 ### Shipping Fee Component Tests

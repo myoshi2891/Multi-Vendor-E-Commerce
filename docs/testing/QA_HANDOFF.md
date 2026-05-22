@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-22 / **HEAD**: `217bf76`
+> **最終更新**: 2026-05-22 / **HEAD**: `688225f`
 
 ---
 
@@ -66,12 +66,16 @@
 - `paypal.ts` / `stripe.ts` の IDOR 脆弱性（orderId 所有権チェック欠落）を修正 → テスト有効化
 - 参照コミット: `55c07b1`, `03a7e89`, `37754d9`, `217bf76`
 
-### ✅ A2（Visual Regression MVP）— ファイル追加済み・baseline 未コミット
+### ✅ A2（Visual Regression MVP）— 完了（2026-05-22）
 
 - `tests/e2e/visual/cart.spec.ts` / `checkout.spec.ts` を追加（chromium 限定）
 - `playwright.config.ts` に `reducedMotion: 'reduce'` / `locale: 'en-US'` / `timezoneId: 'UTC'` を追加
-- ⚠️ **baseline スクリーンショットが未コミット** → CI で実行すると常に失敗する状態
-- 参照コミット: `f639334`
+- baseline スクリーンショット 3 枚をコミット済み（`688225f`）
+  - `cart.spec.ts-snapshots/cart-empty-chromium-darwin.png`
+  - `cart.spec.ts-snapshots/cart-with-item-chromium-darwin.png`
+  - `checkout.spec.ts-snapshots/checkout-redirect-signin-chromium-darwin.png`
+- ⚠️ **CI（Linux）では `-linux.png` baseline が別途必要**（詳細は `specs/multi-vendor-ecommerce/07-testing.md §Visual Regression`）
+- 参照コミット: `f639334`, `688225f`
 
 ### ✅ A3（a11y MVP）— 完了（2026-05-21）
 
@@ -85,10 +89,11 @@
 
 | # | 課題 | 優先度 | 備考 |
 |---|---|---|---|
-| OI-1 | **Visual Regression baseline 未コミット** | 🔴 高 | `bunx playwright test --update-snapshots` 実行後コミット |
+| ~~OI-1~~ | ~~Visual Regression baseline 未コミット~~ | ~~🔴 高~~ | ✅ 解消済み（`688225f`） |
 | OI-2 | `purchase-flow.spec.ts` の「複数バリアント追加」1テスト保留 | 🟡 中 | [P1] スキップ中 |
 | OI-3 | `/checkout` / `/profile` の a11y spec 未追加 | 🟡 中 | Clerk セッションヘルパー整備後 |
 | OI-4 | `.github/workflows/` CI 未整備 | 🟡 中 | lint + test + build の自動化が未設定 |
+| OI-4a | CI で Visual Regression の `-linux.png` baseline 生成 | 🟡 中 | OI-4 の CI 整備と同時対応（`07-testing.md §Visual Regression` 参照） |
 | OI-5 | E2E シード冪等性（CI 環境での `seed:e2e`） | 🟡 中 | 外部 DB 接続前提のため CI 未検証 |
 | OI-6 | `DashboardStats` コンポーネント調査未完了 | 🟢 低 | ソース上に見当たらない。実装確認要 |
 | OI-7 | `coverage/lcov.info` が古い (2025-03-16 時点) | 🟢 低 | CI 整備後に自動更新 |
@@ -100,21 +105,13 @@
 > **このファイルが即時 TODO の Single Source of Truth。**
 > 中長期タスク（B1〜C2）の戦略的背景は [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) を参照。
 
-### 🔴 直近（次のセッション）
-
-```bash
-# OI-1: Visual Regression の baseline をコミット（CI ブロッカー解消）
-bunx playwright test --update-snapshots tests/e2e/visual/
-git add tests/e2e/visual/__screenshots__/
-git commit -m "test(visual): commit baseline screenshots for cart and checkout"
-```
-
-### 🟡 その次のセッション以降
+### 🟡 次のセッション以降
 
 | 優先順 | OI | 作業概要 |
 |---|---|---|
 | 1 | OI-2 | `purchase-flow.spec.ts` の ⏸️ テスト（複数バリアント追加）を有効化 |
 | 2 | OI-4 | `.github/workflows/ci.yml` 追加（lint + test + build 3 ジョブ） |
+| 2a | OI-4a | CI ワークフロー内で `--update-snapshots` を実行し `-linux.png` baseline を生成・コミット |
 | 3 | OI-3 | `/checkout` / `/profile` の a11y spec 追加（Clerk セッションヘルパー整備後） |
 | 4 | OI-5 | E2E シード冪等性の CI 環境検証 |
 
@@ -142,6 +139,7 @@ git commit -m "test(visual): commit baseline screenshots for cart and checkout"
 | `d261d76` | A3: a11y spec 追加 |
 | `37754d9` | PayPal エラーハンドリング改善 |
 | `217bf76` | capturePayPalPayment の try-catch リファクタ |
+| `688225f` | A2: Visual Regression baseline スクリーンショット 3 枚をコミット |
 
 ---
 
