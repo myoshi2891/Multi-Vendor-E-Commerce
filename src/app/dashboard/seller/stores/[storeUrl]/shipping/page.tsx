@@ -7,6 +7,8 @@ import {
 import { redirect } from "next/navigation";
 import { columns } from "./columns";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the seller store shipping page by loading and displaying the store's default shipping details and shipping rates.
  *

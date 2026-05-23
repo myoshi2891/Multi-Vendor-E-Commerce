@@ -2,6 +2,8 @@ import OrdersTable from "@/components/store/profile/orders/orders-table";
 import { OrderTableFilter } from "@/lib/types";
 import { getUserOrders } from "@/queries/profile";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Render the profile orders page filtered by the route's `filter` parameter.
  *

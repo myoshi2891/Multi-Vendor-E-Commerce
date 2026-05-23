@@ -7,6 +7,8 @@ import StoreProducts from "@/components/store/store-page/store-products";
 import { FiltersQueryType } from "@/lib/types";
 import { getStorePageDetails } from "@/queries/store";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the store page for a given store URL, including headers, store details, filters, sort controls, and product listings.
  *

@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getAllCategories } from '@/queries/category'
 import { getAllOfferTags } from '@/queries/offer-tag'
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Prepare data and render the product-creation form for a specific store.
  *

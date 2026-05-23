@@ -2,6 +2,8 @@ import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { getStoreOrders } from "@/queries/store";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Render the seller orders page for a specific store.
  *

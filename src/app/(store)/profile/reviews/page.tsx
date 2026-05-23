@@ -1,6 +1,8 @@
 import ReviewsContainer from "@/components/store/profile/reviews/reviews-container";
 import { getUserReviews } from "@/queries/profile";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfileReviewsPage() {
     const reviews_data = await getUserReviews();
     const { reviews, totalPages } = reviews_data;

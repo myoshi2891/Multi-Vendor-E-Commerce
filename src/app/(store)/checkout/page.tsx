@@ -7,6 +7,8 @@ import { currentUser } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the checkout page after loading the authenticated user's cart, shipping addresses, country list, and resolved user country.
  *

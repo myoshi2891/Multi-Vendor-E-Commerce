@@ -17,6 +17,8 @@ import SuperDealsImg from "@/public/assets/images/ads/super-deals.avif";
 import FeaturedCategories from "@/components/store/home/featured-categories";
 import ProductCard from "@/components/store/cards/product/product-card";
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
     const { products } = productsData;

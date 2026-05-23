@@ -206,6 +206,38 @@ await client.users.updateUserMetadata(userId, { ... });
 
 **実装例**: `src/middleware.ts`、`src/queries/` 配下の全 Server Action
 
+### DB 依存ページの動的レンダリング規約（Next.js 16）
+
+`src/queries/*` 経由で Prisma を呼ぶ `page.tsx` は、**原則として** `export const dynamic = 'force-dynamic';` を import 群の直後に宣言する:
+
+```typescript
+// 例: src/app/dashboard/admin/categories/page.tsx
+import { getAllCategories } from "@/queries/category";
+// ...他 import...
+
+export const dynamic = 'force-dynamic';
+
+export default async function AdminCategoriesPage() {
+    const categories = await getAllCategories();
+    // ...
+}
+```
+
+**理由**:
+- Next.js 16 のデフォルトはビルド時に Server Component の静的化を試みる。`auth()` / `cookies()` / `headers()` 等の動的シグナルが無いと Prisma クエリがビルドホストから実行され、DB 到達性に依存する。
+- CI（`.github/workflows/ci.yml`）は `DATABASE_URL=postgresql://stub:stub@localhost:5432/stub` で `next build` を走らせるため、明示宣言が無いと CI build ジョブが脆くなる。
+- `auth()` 経由で間接的に動的化される場合でも、Next.js が `Dynamic server usage` を内部 throw → `try/catch` で `console.error` に漏出するログノイズを排除できる。
+
+**トレードオフ**:
+- ストアフロント公開ページ（home / browse / product 詳細 / store 詳細）の SSG/ISR を放棄。SEO 観点で SSR にコストがかかるが、CI 安定性を優先。
+
+### 意図的に未対応の Next.js 16 警告
+
+| 警告 | 対応方針 | 理由 |
+|------|---------|------|
+| `The "middleware" file convention is deprecated. Please use "proxy" instead.` | 対応しない | Clerk v7.0.7 の `clerkMiddleware` は `src/middleware.ts` 配置前提。`@clerk/nextjs` の `proxy.d.ts` は frontend API proxy 用途であり middleware 代替ではない。Clerk が `proxy.ts` を正式サポートするまで rename しない |
+| `AVIF image not supported (Turbopack)` | 対応しない | ローカル `import` の最適化スキップのみ。Next.js Image のリモート画像最適化経路には影響なく、production の画像配信品質は変化しない。Turbopack の AVIF 対応追加を待つ |
+
 ---
 
 ## ❌ 禁止事項

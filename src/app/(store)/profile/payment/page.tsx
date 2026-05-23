@@ -1,6 +1,8 @@
 import PaymentsTable from "@/components/store/profile/payments/payments-table";
 import { getUserPayments } from "@/queries/profile";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePaymentPage() {
     const payments_data = await getUserPayments();
     const { payments, totalPages } = payments_data;

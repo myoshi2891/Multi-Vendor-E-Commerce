@@ -5,6 +5,8 @@ import { Plus } from 'lucide-react'
 import { getStoreCoupons } from '@/queries/coupon'
 import CouponDetails from '@/components/dashboard/forms/coupon-details'
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the seller coupons page for a specific store.
  *
