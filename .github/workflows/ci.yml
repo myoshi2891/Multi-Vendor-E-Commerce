@@ -38,10 +38,10 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e6840212f38992f8934757c9ca4e1950d6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
       - name: Install dependencies
@@ -53,10 +53,10 @@ jobs:
     name: Unit Tests (Jest)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e6840212f38992f8934757c9ca4e1950d6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
       - name: Install dependencies
@@ -70,10 +70,10 @@ jobs:
     name: Build (Next.js)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e6840212f38992f8934757c9ca4e1950d6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
       - name: Install dependencies
@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+        image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae # postgres:16.14
         env:
           POSTGRES_USER: e2e
           POSTGRES_PASSWORD: e2e
@@ -109,10 +109,10 @@ jobs:
       E2E_DATABASE_URL: postgresql://e2e:e2e@localhost:5432/e2e
       PGPASSWORD: e2e
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e6840212f38992f8934757c9ca4e1950d6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
       - name: Install dependencies
@@ -156,7 +156,7 @@ jobs:
       pull-requests: write
     services:
       postgres:
-        image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+        image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae # postgres:16.14
         env:
           POSTGRES_USER: e2e
           POSTGRES_PASSWORD: e2e
@@ -173,10 +173,10 @@ jobs:
       DIRECT_URL: postgresql://e2e:e2e@localhost:5432/e2e
       E2E_DATABASE_URL: postgresql://e2e:e2e@localhost:5432/e2e
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e6840212f38992f8934757c9ca4e1950d6
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: latest
       - name: Install dependencies
@@ -192,7 +192,7 @@ jobs:
       - name: Update visual baselines
         run: bunx playwright test tests/e2e/visual --update-snapshots
       - name: Open PR with new baselines
-        uses: peter-evans/create-pull-request@6d6857d36972b65feb161a90e484f2984215f83e
+        uses: peter-evans/create-pull-request@6d6857d36972b65feb161a90e484f2984215f83e # v6.0.5
         with:
           commit-message: "test(visual): update Linux baselines"
           title: "chore(visual): add -linux.png baselines"

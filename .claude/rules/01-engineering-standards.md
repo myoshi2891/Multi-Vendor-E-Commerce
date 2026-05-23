@@ -37,3 +37,16 @@ These standards align with the current repo tooling and architecture.
 - Protect routes with `clerkMiddleware` and `createRouteMatcher`.
 - Secrets live only in environment variables; never commit or log `.env` contents.
 - Verify webhooks (Svix) and validate all user input.
+
+## CI / Supply Chain
+- Third-party GitHub Actions in `.github/workflows/` MUST be pinned to a full
+  commit SHA (40 hex chars), never a mutable tag like `@v1` or `@main`.
+- Each SHA pin MUST be followed by a trailing comment naming the released
+  version (e.g. `uses: owner/action@<sha> # v2.2.0`). Rationale: SHAs are
+  unreadable, and the tag comment lets reviewers verify the pin matches a
+  known release and lets Dependabot present readable bump diffs.
+- Container service images (e.g. `services.postgres.image`) MUST be pinned to
+  a digest (`image: postgres@sha256:<digest>`) with a `# <tag>` comment.
+- When a pinned SHA cannot be resolved by Actions ("unable to find version"),
+  re-fetch the release SHA via `gh api repos/<owner>/<repo>/git/refs/tags/<tag>`
+  and replace; do NOT downgrade the pin to a floating tag.

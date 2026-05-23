@@ -160,17 +160,12 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
     color: { ...v.color },
   }));
 
-  const primaryVariant = variants[0] ?? {
-    name: "",
-    slug: "",
-    description: "",
-    sku: "",
-    weight: 0,
-    image: null,
-    size: null,
-    variantImage: null,
-    color: null,
-  };
+  if (!variants || variants.length === 0) {
+    throw new Error(
+      "buildE2ESeed: cannot derive primaryVariant — `variants` is empty or undefined. Ensure BASE_E2E_SEED.variants has at least one entry."
+    );
+  }
+  const primaryVariant = variants[0];
 
   return {
     country: {

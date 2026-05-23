@@ -13,26 +13,23 @@ import { currentUser } from "@clerk/nextjs/server";
  */
 
 export const createPayPalPayment = async (orderId: string) => {
+    // Get current user
+    const user = await currentUser();
+    if (!user) throw new Error("Unauthenticated.");
+
+    // IDOR 防止: 注文所有権を確認してから PayPal API を呼ぶ
+    const order = await db.order.findUnique({
+        where: {
+            id: orderId,
+            userId: user.id,
+        },
+    });
+    if (!order) throw new Error("Order not found");
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
-        const order = await db.order.findUnique({
-            where: {
-                id: orderId,
-                userId: user.id,
-            },
-        });
-
-        if (!order) throw new Error("Order not found");
-
         // Here you can call the PayPal API to create a payment
         const response = await fetch(
             "https://api.sandbox.paypal.com/v2/checkout/orders",
@@ -60,7 +57,7 @@ export const createPayPalPayment = async (orderId: string) => {
         clearTimeout(timeoutId);
 
         if (response.ok === false) {
-            const errorBody = typeof response.text === "function" ? await response.text() : "";
+            const errorBody = await response.text();
             throw new Error(`PayPal API responded with status ${response.status}: ${errorBody}`);
         }
 
@@ -125,7 +122,7 @@ export const capturePayPalPayment = async (
         clearTimeout(timeoutId);
 
         if (captureResponse.ok === false) {
-            const errorBody = typeof captureResponse.text === "function" ? await captureResponse.text() : "";
+            const errorBody = await captureResponse.text();
             throw new Error(`PayPal API responded with status ${captureResponse.status}: ${errorBody}`);
         }
 
