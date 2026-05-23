@@ -31,6 +31,7 @@
 ## Examples
 
 ### ✅ 良い例（B1: shadcn/ui Snapshot 9 プリミティブの場合）
+
 ```
 test(ui): add button snapshot tests (B1 Tier 1)
 test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2)
@@ -39,18 +40,23 @@ chore(test): replace placeholder classes with real tailwind utilities
 docs: regenerate coverage-dashboard.html after B1 tests
 docs(testing): sync B1 stats in TEST_IMPLEMENTATION_PLAN/QA_HANDOFF/COVERAGE_REPORT/PROGRESS
 ```
+
 → 各 commit は単独で意味があり、テストファイルとそのスナップショットがペアでコミットされ、ドキュメント同期とダッシュボード再生成は分離。
 
 ### ❌ 悪い例
+
 ```
 test(ui): add B1 shadcn snapshots + docs sync
 ```
+
 → 9 テストファイル + 40 snapshot + 5 docs + lint 修正 + ダッシュボード未生成、を 1 commit にまとめる。レビュー不能、`git bisect` 不能、`git revert` で不要な変更まで巻き戻る。
 
-### ❌ 悪い例
+### ❌ 悪い例（docs同期を後回し）
+
 ```
 test(ui): add all primitive snapshots (no docs update yet)
 ```
+
 → コミット後 `docs/coverage-dashboard.html` が古いまま放置。`spec-sync-after-test` を起動していない。「あとでまとめて同期」が次回セッションへの引き継ぎ漏れの原因になる。
 
 ## Related
