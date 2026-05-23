@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
+import type { Order } from "@prisma/client";
 
 /**
  * @Function createPayPalPayment
@@ -13,17 +14,45 @@ import { currentUser } from "@clerk/nextjs/server";
  */
 
 export const createPayPalPayment = async (orderId: string) => {
-    // Get current user
-    const user = await currentUser();
+    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Unauthenticated.") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:createPayPalPayment] Failed to fetch current user",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch current user: ${message}`);
+    }
     if (!user) throw new Error("Unauthenticated.");
 
     // IDOR 防止: 注文所有権を確認してから PayPal API を呼ぶ
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-    });
+    let order: Order | null;
+    try {
+        order = await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Order not found") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:createPayPalPayment] Failed to fetch order",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch order: ${message}`);
+    }
     if (!order) throw new Error("Order not found");
 
     const controller = new AbortController();
@@ -89,17 +118,45 @@ export const capturePayPalPayment = async (
     orderId: string,
     paymentId: string
 ) => {
-    // Get current user
-    const user = await currentUser();
+    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Unauthenticated.") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:capturePayPalPayment] Failed to fetch current user",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch current user: ${message}`);
+    }
     if (!user) throw new Error("Unauthenticated.");
 
     // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-    });
+    let order: Order | null;
+    try {
+        order = await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Order not found") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:capturePayPalPayment] Failed to fetch order",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch order: ${message}`);
+    }
     if (!order) throw new Error("Order not found");
 
     const controller = new AbortController();
