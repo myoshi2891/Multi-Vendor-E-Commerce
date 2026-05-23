@@ -104,6 +104,11 @@ QA 観点の詳細は `docs/testing/QA_TEST_PERSPECTIVES.md` を参照する。
 
 ### Step 5｜テストを生成する
 
+> **コミット粒度の原則**（詳細は [`.claude/rules/02-tdd-step-commit.md`](../../rules/02-tdd-step-commit.md) ）:
+> テストファイルは **1 ファイル（または論理的にまとめられる小グループ）単位**で生成し、
+> その都度 Red → Green → Refactor を実行してコミットする。複数ファイルを一括生成して
+> 中間コミットなしで進めないこと。
+
 #### 5-A. ユニットテスト（Jest）
 
 **配置先:** 対象ファイルと同階層の `*.test.ts`
@@ -234,6 +239,24 @@ bun run test
 
 ---
 
+### Step 6.5｜コミット粒度を決定してコミットする
+
+1 ファイル / 1 機能 / 1 Tier 単位で `git commit` を打つ。具体的な粒度:
+
+| 作業種別 | 1 commit の単位 |
+|---------|----------------|
+| サーバーアクションのテスト追加 | `src/queries/<name>.ts` + `src/queries/<name>.test.ts` |
+| コンポーネントの振る舞いテスト | `tests/component/**/<name>.test.tsx` 1 ファイル |
+| スナップショット生成テスト | `<name>.test.tsx` + 対応する `__snapshots__/<name>.test.tsx.snap` |
+| E2E テスト | `tests/e2e/<scenario>.spec.ts` 1 ファイル（必要に応じてシード変更 + spec を 1 commit） |
+| 関連 lint warning 修正 | 別 commit に分ける |
+
+**コミット前に必ず `test-complete` スキル相当のチェック**（`bun run test` + `bunx tsc --noEmit` + `bun run lint`）を実行し、3 点すべて通過してから commit する。
+
+詳細は [`.claude/rules/02-tdd-step-commit.md`](../../rules/02-tdd-step-commit.md) 参照。
+
+---
+
 ### Step 7｜レポートを出力する
 
 ```markdown
@@ -255,6 +278,10 @@ bun run test
 ### 次のアクション
 - [ ] テスト内容を確認
 - [ ] `test-complete` スキルでコミット前チェックを実行
+- [ ] Step 6.5 のコミット粒度で `git commit` を実行（**バッチ commit 禁止**）
+- [ ] テスト数 / スイート数 / スナップショット数のいずれかが変わった場合、
+      **`spec-sync-after-test` スキルを必ず起動**
+      （`docs/coverage-dashboard.html` の再生成 + spec / PROGRESS / COVERAGE_REPORT 同期 + コミット）
 ```
 
 ---
@@ -269,6 +296,10 @@ bun run test
 - `it.skip()` / `it.only()` のコミット
 - テスト内での `console.log()` の残留
 - `@ts-ignore` による型エラーの無視
+- **複数のテストファイル + ドキュメントを中間コミットなしで一括追加すること**
+  （[`.claude/rules/02-tdd-step-commit.md`](../../rules/02-tdd-step-commit.md) 違反）
+- **`spec-sync-after-test` を呼ばずに「あとでまとめて同期する」と判断すること**
+  （次セッションへの引き継ぎ漏れの原因になる）
 
 ### ✅ 必須
 
