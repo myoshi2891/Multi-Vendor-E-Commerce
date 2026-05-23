@@ -23,9 +23,11 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     // Visual Regression のため、アニメーション・ロケール・タイムゾーンを固定
-    reducedMotion: "reduce",
     locale: "en-US",
     timezoneId: "UTC",
+    contextOptions: {
+      reducedMotion: "reduce",
+    },
   },
   webServer: {
     command: "bun run dev",

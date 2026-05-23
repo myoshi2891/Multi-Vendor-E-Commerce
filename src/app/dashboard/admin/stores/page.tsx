@@ -3,6 +3,9 @@ import { getAllStores } from "@/queries/store";
 // Data table
 import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
+
+export const dynamic = 'force-dynamic';
+
 export default async function AdminStoresPage() {
 	// Fetching stores data from the database
 	const stores = await getAllStores();

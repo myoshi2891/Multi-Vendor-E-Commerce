@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
+import type { Order } from "@prisma/client";
 
 /**
  * @Function createPayPalPayment
@@ -13,23 +14,51 @@ import { currentUser } from "@clerk/nextjs/server";
  */
 
 export const createPayPalPayment = async (orderId: string) => {
+    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+    let user: Awaited<ReturnType<typeof currentUser>>;
     try {
-        // Get current user
-        const user = await currentUser();
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Unauthenticated.") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:createPayPalPayment] Failed to fetch current user",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch current user: ${message}`);
+    }
+    if (!user) throw new Error("Unauthenticated.");
 
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
-        const order = await db.order.findUnique({
+    // IDOR 防止: 注文所有権を確認してから PayPal API を呼ぶ
+    let order: Order | null;
+    try {
+        order = await db.order.findUnique({
             where: {
                 id: orderId,
                 userId: user.id,
             },
         });
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Order not found") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:createPayPalPayment] Failed to fetch order",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch order: ${message}`);
+    }
+    if (!order) throw new Error("Order not found");
 
-        if (!order) throw new Error("Order not found");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
+    try {
         // Here you can call the PayPal API to create a payment
         const response = await fetch(
             "https://api.sandbox.paypal.com/v2/checkout/orders",
@@ -50,13 +79,22 @@ export const createPayPalPayment = async (orderId: string) => {
                         },
                     ],
                 }),
+                signal: controller.signal,
             }
         );
+
+        clearTimeout(timeoutId);
+
+        if (response.ok === false) {
+            const errorBody = await response.text();
+            throw new Error(`PayPal API responded with status ${response.status}: ${errorBody}`);
+        }
 
         const paymentData = await response.json();
 
         return paymentData;
     } catch (error: unknown) {
+        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error("Error in createPayPalPayment:", error.message, error.stack);
         } else {
@@ -80,21 +118,49 @@ export const capturePayPalPayment = async (
     orderId: string,
     paymentId: string
 ) => {
-    // Get current user
-    const user = await currentUser();
-
-    // Ensure user is authenticated
+    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Unauthenticated.") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:capturePayPalPayment] Failed to fetch current user",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch current user: ${message}`);
+    }
     if (!user) throw new Error("Unauthenticated.");
 
     // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-    });
-
+    let order: Order | null;
+    try {
+        order = await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === "Order not found") {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        console.error(
+            "[paypal:capturePayPalPayment] Failed to fetch order",
+            { error: message, stack }
+        );
+        throw new Error(`Failed to fetch order: ${message}`);
+    }
     if (!order) throw new Error("Order not found");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
         // Capture the payment using PayPal API
@@ -106,8 +172,16 @@ export const capturePayPalPayment = async (
                     "Content-Type": "application/json",
                     Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
                 },
+                signal: controller.signal,
             }
         );
+
+        clearTimeout(timeoutId);
+
+        if (captureResponse.ok === false) {
+            const errorBody = await captureResponse.text();
+            throw new Error(`PayPal API responded with status ${captureResponse.status}: ${errorBody}`);
+        }
 
         const captureData = await captureResponse.json();
 
@@ -185,6 +259,7 @@ export const capturePayPalPayment = async (
 
         return updatedOrder;
     } catch (error: unknown) {
+        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error(
                 "Error in capturePayPalPayment:",

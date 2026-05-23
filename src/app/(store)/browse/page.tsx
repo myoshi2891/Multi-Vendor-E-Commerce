@@ -6,6 +6,8 @@ import { FiltersQueryType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
 import { getFilteredSizes } from "@/queries/size";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the store browse page with header, filter controls, sorting UI, and a product list derived from URL query parameters.
  *

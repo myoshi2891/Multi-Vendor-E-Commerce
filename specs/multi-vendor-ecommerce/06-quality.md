@@ -11,6 +11,12 @@
   orders) verify ownership before writing. Review operations use conditional
   `update`/`create` instead of `upsert` to prevent client-supplied IDs from
   overwriting other users' records.
+- Supply chain hardening (CI): All third-party GitHub Actions and container
+  service images are pinned to immutable digests (full commit SHA or
+  `sha256:` digest) with a trailing `# <version>` comment. Checkout steps set
+  `persist-credentials: false`, and the workflow declares `permissions: contents: read`
+  by default. See `.github/workflows/ci.yml` and the CI / Supply Chain rule in
+  `.claude/rules/01-engineering-standards.md`.
 
 ## Data Integrity
 - Prisma relations enforce ownership and cascade deletes where appropriate.

@@ -160,4 +160,43 @@ test.describe("購入フルフロー", () => {
             timeout: 10000,
         });
     });
+
+    test("複数バリアントをカートに追加すると別行として表示される", async ({
+        page,
+    }, testInfo) => {
+        test.skip(
+            testInfo.project.name === "firefox" && !process.env.CI,
+            "Firefox: cart navigation hangs in dev mode (HMR issue)"
+        );
+
+        const [v1, v2] = seed.variants;
+        expect(v2, "Second variant must be seeded for this test").toBeDefined();
+
+        // 1つ目のバリアントを追加
+        await addItemToCart(page, productSlug, v1.slug);
+        await expect(page.getByTestId("cart-item-name")).toHaveCount(1);
+
+        // 2つ目のバリアントを追加（別 SKU のため別行になるはず）
+        await addItemToCart(page, productSlug, v2.slug);
+
+        // カート行が2つ存在することを確認
+        const rows = page.getByTestId("cart-item-name");
+        await expect(rows).toHaveCount(2);
+
+        // 各バリアントの価格が個別に表示されている（バリアントごとの単価表示、カートアイテムコンテナ内にスコープを絞って検証）
+        const v1Price = v1.size.price.toFixed(2);
+        const v2Price = v2.size.price.toFixed(2);
+
+        const v1Item = page.locator('[data-testid^="cart-item-"]', { hasText: `${seed.product.name} ・ ${v1.name}` });
+        const v2Item = page.locator('[data-testid^="cart-item-"]', { hasText: `${seed.product.name} ・ ${v2.name}` });
+
+        await expect(v1Item.getByText(`$${v1Price}`)).toBeVisible();
+        await expect(v2Item.getByText(`$${v2Price}`)).toBeVisible();
+
+        // カート合計は両バリアントの合算
+        const expectedTotal = (v1.size.price + v2.size.price).toFixed(2);
+        await expect(page.getByTestId("cart-total")).toHaveText(
+            `$${expectedTotal}`
+        );
+    });
 });

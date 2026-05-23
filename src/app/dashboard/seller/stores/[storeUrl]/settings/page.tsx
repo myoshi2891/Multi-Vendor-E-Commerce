@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 
 import StoreDetails from "@/components/dashboard/forms/store-details";
 import { redirect } from "next/navigation";
+
+export const dynamic = 'force-dynamic';
+
 /**
  * Render the seller's store settings page for the store identified by `storeUrl`.
  *

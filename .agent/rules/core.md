@@ -5,7 +5,7 @@ activation: always
 # Core Rules — Multi-Vendor E-Commerce
 
 ## プロジェクト概要
-Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済のマルチベンダーEコマースマーケットプレイス。
+Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Stripe/PayPal決済のマルチベンダーEコマースマーケットプレイス。
 
 ## アーキテクチャ制約
 
@@ -54,6 +54,26 @@ Next.js 14 (App Router) + TypeScript + Prisma (PostgreSQL) + Clerk認証 + Strip
 - コードを一行も書く前に Implementation Plan を生成し、ユーザーに確認を求める
 - 不確実な場合は実装前に確認（"Always Proceed" 禁止）
 - git commit はタスク単位で細かく行う
+
+## テスト関連ドキュメントの更新ルール
+
+テストコードを追加・変更したセッションでは、以下のドキュメントを**必ず**更新してコミットする。
+詳細は [`.claude/steering/documentation-guide.md`](.claude/steering/documentation-guide.md#docstesting-各ファイルの更新ルール) を参照。
+
+| タイミング | 更新対象 | 内容 |
+|----------|---------|------|
+| Step 完了時 | `docs/testing/TEST_IMPLEMENTATION_PLAN.md` | 該当 Step に `✅ Completed (日付)` を付与 |
+| セッション終了時（**必須**） | `docs/testing/QA_HANDOFF.md` | Open Issues 更新・次着手の明記・テスト統計を同期 |
+| セル状態変化時 | `docs/testing/COVERAGE_REPORT.md` | ヒートマップ更新（`◯`→`◐`→`✦`）・§3 タスクの完了記録 |
+| セキュリティ修正時 | `docs/testing/SECURITY_GAP_REPORT.md` | 脆弱性・修正コミット・追加テストを記録 |
+| 統計値変化時 | `docs/PROGRESS.md` | テスト統計（テスト数・型エラー数など）を `QA_HANDOFF.md` と同期して更新 |
+| カバレッジ更新時 | `docs/coverage-dashboard.html` | `bun run coverage:dashboard` を実行してダッシュボードを再生成 |
+
+**重複防止の鉄則**:
+- 即時 TODO（次何をするか）→ `QA_HANDOFF.md` のみ
+- 戦略理由（なぜやるか）→ `COVERAGE_REPORT.md §3` のみ
+- 実装手順パターン（どう書くか）→ `TESTING_DESIGN.md` のみ
+- テスト統計（テスト数・型エラー数等）の正（SSOT）→ `QA_HANDOFF.md`（`PROGRESS.md` は `QA_HANDOFF.md` の値を転記・同期する）
 
 ## パスエイリアス（クイックリファレンス）
 

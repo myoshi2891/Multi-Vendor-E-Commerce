@@ -41,7 +41,7 @@ describe("createPayPalPayment", () => {
 
             await expect(
                 createPayPalPayment("order-001")
-            ).rejects.toThrow("Failed to create PayPal payment");
+            ).rejects.toThrow("Unauthenticated.");
         });
     });
 
@@ -57,7 +57,7 @@ describe("createPayPalPayment", () => {
 
             await expect(
                 createPayPalPayment("nonexistent")
-            ).rejects.toThrow("Failed to create PayPal payment");
+            ).rejects.toThrow("Order not found");
         });
     });
 
@@ -154,7 +154,7 @@ describe("createPayPalPayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(createPayPalPayment("other-user-order"))
-                .rejects.toThrow("Failed to create PayPal payment");
+                .rejects.toThrow("Order not found");
 
             expect(mockDb.order.findUnique).toHaveBeenCalledWith(
                 expect.objectContaining({

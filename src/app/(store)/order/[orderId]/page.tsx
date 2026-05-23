@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Render the order details page for a given route parameter.
  *

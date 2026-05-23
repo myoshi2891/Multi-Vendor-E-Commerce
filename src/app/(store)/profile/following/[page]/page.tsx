@@ -1,6 +1,8 @@
 import FollowingContainer from "@/components/store/profile/following/container";
 import { getUserFollowedStores } from "@/queries/profile";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the "Stores you follow" profile page for a given page number.
  *

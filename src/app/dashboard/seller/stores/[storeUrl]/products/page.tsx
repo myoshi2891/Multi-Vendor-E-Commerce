@@ -8,6 +8,8 @@ import { getAllCategories } from "@/queries/category";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import { getAllCountries } from "@/queries/country";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Renders the seller product listing page for the store identified by `storeUrl`.
  *

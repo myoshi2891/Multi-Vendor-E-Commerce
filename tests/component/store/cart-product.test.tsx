@@ -180,9 +180,9 @@ describe('CartProduct', () => {
             ;(addToWishlist as jest.Mock).mockResolvedValue(true)
             renderCartProduct()
 
-            const heartIcon = screen.getByTestId('cart-item-p1-v1-s1').querySelector('.lucide-heart')?.closest('span')
+            const heartIcon = screen.getByTestId('cart-item-wishlist-btn')
             expect(heartIcon).not.toBeNull()
-            fireEvent.click(heartIcon!)
+            fireEvent.click(heartIcon)
 
             await waitFor(() => {
                 expect(addToWishlist).toHaveBeenCalledWith('p1', 'v1', 's1')
@@ -194,9 +194,9 @@ describe('CartProduct', () => {
             ;(addToWishlist as jest.Mock).mockRejectedValue(new Error('Failed to add'))
             renderCartProduct()
 
-            const heartIcon = screen.getByTestId('cart-item-p1-v1-s1').querySelector('.lucide-heart')?.closest('span')
+            const heartIcon = screen.getByTestId('cart-item-wishlist-btn')
             expect(heartIcon).not.toBeNull()
-            fireEvent.click(heartIcon!)
+            fireEvent.click(heartIcon)
 
             await waitFor(() => {
                 expect(addToWishlist).toHaveBeenCalledWith('p1', 'v1', 's1')

@@ -95,23 +95,37 @@ function detectDomain(relativePath: string): DomainId {
     return "other";
 }
 
+const PLAYWRIGHT_CATEGORY_MAP: ReadonlyArray<{ prefix: string; category: CategoryId }> = [
+    { prefix: "tests/e2e/visual/", category: "visual-snapshot" },
+    { prefix: "tests/e2e/a11y/", category: "a11y" },
+];
+
 /**
  * Determine the test category from its kind and relative path.
  *
  * Rules:
- * - `kind === "playwright"` → `e2e`
+ * - `kind === "playwright"`:
+ *   - paths starting with `tests/e2e/visual/` → `visual-snapshot`
+ *   - paths starting with `tests/e2e/a11y/` → `a11y`
+ *   - otherwise → `e2e`
  * - paths starting with `tests/component/` → `integration`
  * - paths starting with `src/app/api/` → `api-contract`
  * - `src/middleware.test.ts` or paths starting with `src/utils/sanitize` → `security`
  * - otherwise → `unit`
  *
  * @param test - Scanned test metadata (uses `kind` and `relativePath` to decide)
- * @returns The chosen `CategoryId` (`e2e`, `integration`, `api-contract`, `security`, or `unit`)
+ * @returns The chosen `CategoryId`
  */
 function detectCategory(test: ScannedTest): CategoryId {
-    if (test.kind === "playwright") return "e2e";
-
     const p = test.relativePath;
+
+    if (test.kind === "playwright") {
+        for (const rule of PLAYWRIGHT_CATEGORY_MAP) {
+            if (p.startsWith(rule.prefix)) return rule.category;
+        }
+        return "e2e";
+    }
+
     if (p.startsWith("tests/component/")) return "integration";
     if (p.startsWith("src/app/api/")) return "api-contract";
 

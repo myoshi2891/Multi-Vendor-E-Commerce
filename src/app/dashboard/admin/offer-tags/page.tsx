@@ -13,6 +13,8 @@ import OfferTagDetails from "@/components/dashboard/forms/offer-tag-details";
 // Columns
 import { columns } from "./columns";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminOfferTagsPage() {
 	// Fetching offer tags data from the database
 	const categories = await getAllOfferTags();

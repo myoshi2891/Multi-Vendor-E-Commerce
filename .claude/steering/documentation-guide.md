@@ -81,10 +81,54 @@
 ### Layer 4: 実装ガイド・履歴
 
 | ディレクトリ | 責務 | 記録すべき内容 |
-|------------|------|---------------|
+|------------|------|-----------------|
 | `docs/architecture/decisions/` | **ADR（Architecture Decision Records）** | **技術選定理由、代替案比較、トレードオフ** |
 | `docs/migration/` | DB移行履歴 | 互換性マトリックス、移行手順、環境構築 |
 | `docs/testing/` | テスト設計詳細 | E2E ヘルパー関数、環境変数処理、テストインフラ |
+
+---
+
+## docs/testing/ 各ファイルの更新ルール
+
+> テスト関連ドキュメントは役割が分かれている。同じ情報を複数ファイルに書かないこと。
+
+| ファイル | 役割 | 更新タイミング | 更新トリガー例 |
+|---------|------|--------------|----------------|
+| **`COVERAGE_REPORT.md`** | カバレッジ戦略台帳 — なぜやるか・何を達成するか | スプリント完了時 / タスク完了後 | テストカテゴリ（A1〜C2）の着手・完了、ヒートマップ変化時 |
+| **`QA_HANDOFF.md`** | 即時 TODO の SSOT — 次セッションで何をするか | **セッション終了時に必ず更新** | テストタスク完了・新しい Open Issue 発見・優先順位変更 |
+| **`TEST_IMPLEMENTATION_PLAN.md`** | テスト実装ロードマップ — 何を・どの順で作るか | Phase/Step 完了時 | ステップ完了（✅ マーク付与）、新規スイート追加時 |
+| **`TESTING_DESIGN.md`** | テスト設計パターン集 — どう実装するか | 新パターン確立時 | 新ヘルパー関数導入・モック戦略変更・環境設定追加 |
+| **`SECURITY_GAP_REPORT.md`** | 認可テストギャップ記録 | IDOR/RBAC 調査・修正時 | セキュリティ脆弱性の発見・修正・テスト追加 |
+| **`QA_TEST_PERSPECTIVES.md`** | QA 観点台帳 — 何をテストすべきか | 新機能追加・要件変更時 | 新ドメイン追加、リスク区分変更 |
+| **`coverage-dashboard.html`** | カバレッジダッシュボード — テストカバレッジの視覚化 | カバレッジ更新時・テスト追加/変更時 | `bun run coverage:dashboard` 実行時、`lcov.info` 更新時 |
+| **`PROGRESS.md`** (Layer 1) | プロジェクト全体の進捗・一時的な決定・履歴 | 統計値変化時・フェーズ完了時 | テスト統計の変動（`QA_HANDOFF.md` から同期）、マイグレーション等の完了時 |
+
+### 更新の責務分担
+
+```
+テスト実装完了時:
+  1. TEST_IMPLEMENTATION_PLAN.md → Step に ✅ マーク付与
+  2. QA_HANDOFF.md → Open Issues を更新、次着手を明記
+  3. COVERAGE_REPORT.md → A/B/C タスクの進捗・ヒートマップ更新（セル状態が変わった場合のみ）
+
+テスト統計・カバレッジ変動時:
+  1. QA_HANDOFF.md → テスト統計テーブルを更新（SSOT）
+  2. docs/PROGRESS.md → テスト統計テーブルを同期
+  3. docs/coverage-dashboard.html → `bun run coverage:dashboard` を実行して再生成
+
+セッション終了時（必須）:
+  → QA_HANDOFF.md を必ず最新状態に更新してコミットする
+
+IDOR/セキュリティ修正時:
+  → SECURITY_GAP_REPORT.md に発見内容・修正コミット・追加テストを記録
+```
+
+### 重複防止ルール
+
+- **即時 TODO は `QA_HANDOFF.md` のみに書く**。`COVERAGE_REPORT.md §3` には「なぜやるか」の根拠のみを記録し、「いつやるか」は書かない。
+- **実装済みタスクは `COVERAGE_REPORT.md §3` でアーカイブ扱い**（完了日・コミット・残課題の参照先を記録）し、`QA_HANDOFF.md` の該当 OI は削除する。
+- **テスト数・統計は `QA_HANDOFF.md` のテスト統計テーブルを正とする**。`PROGRESS.md` にも同期させること。
+- **カバレッジダッシュボード (`coverage-dashboard.html`)** は、カバレッジ収集後（`lcov.info` 更新後）に `bun run coverage:dashboard` により自動構築し、手動での中身の改変は行わない。
 
 ---
 

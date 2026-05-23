@@ -125,6 +125,86 @@ if (!Number.isFinite(unitPrice)) {
 - Helper functions introduced for DRY test code (Round 8)
 - Environment variable processing hardened (Round 9)
 
+## Visual Regression Testing
+
+### Overview
+
+Visual regression tests live in `tests/e2e/visual/` and use Playwright's
+`toHaveScreenshot()`. Chromium only (Firefox/WebKit excluded due to font
+rendering differences; Phase 2 scope).
+
+Covered scenarios (as of 2026-05-22):
+
+| Spec | Test | Snapshot file |
+|------|------|---------------|
+| `cart.spec.ts` | 空カートの表示 | `cart-empty-chromium-<os>.png` |
+| `cart.spec.ts` | 商品追加後のカート表示 | `cart-with-item-chromium-<os>.png` |
+| `checkout.spec.ts` | 未認証リダイレクト | `checkout-redirect-signin-chromium-<os>.png` |
+
+### Snapshot Naming Convention
+
+Playwright appends the OS name automatically:
+
+```
+<test-name>-<browser>-<os>.png
+  例: cart-empty-chromium-darwin.png   (macOS ローカル)
+      cart-empty-chromium-linux.png    (CI / GitHub Actions)
+```
+
+**macOS と Linux は別ファイル**になる。ローカルで生成した `-darwin.png` を
+push しても、Linux CI は `-linux.png` を探して FAIL する。
+
+### Baseline 更新手順
+
+#### ローカル（macOS）
+
+```bash
+# Chromium 限定で baseline を再生成
+bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
+git add tests/e2e/visual/cart.spec.ts-snapshots/ tests/e2e/visual/checkout.spec.ts-snapshots/
+git commit -m "test(visual): update baseline screenshots"
+```
+
+#### CI（Linux）
+
+`.github/workflows/ci.yml` に `visual-baselines` ジョブが設定済み（OI-4a、2026-05-22）。
+`workflow_dispatch` で手動起動し、生成された `-linux.png` を PR として提出する仕組み:
+
+```bash
+# 任意のブランチ ref で起動
+gh workflow run ci.yml --ref <branch>
+```
+
+ジョブ内で以下を実行:
+1. PostgreSQL service container を起動
+2. `bunx prisma migrate deploy` + `bun run seed:e2e`
+3. `bunx playwright test tests/e2e/visual --update-snapshots`
+4. `peter-evans/create-pull-request@v6` で `chore/visual-baselines-linux` ブランチに PR 作成
+
+PR レビュー後にマージすると `-linux.png` ベースラインが main に取り込まれる。
+
+> 通常の CI 実行（`push`/`pull_request`）では `visual-baselines` ジョブは起動しない（`if: github.event_name == 'workflow_dispatch'`）。
+> baseline 更新は意図的な UI 変更時にのみ行う。
+
+### Playwright Config（再現性確保）
+
+`playwright.config.ts` に以下を設定し、OS 間差異を最小化している:
+
+```typescript
+use: {
+  reducedMotion: "reduce",  // アニメーション無効
+  locale: "en-US",          // ロケール固定
+  timezoneId: "UTC",        // タイムゾーン固定
+}
+```
+
+### 参照コミット
+
+| コミット | 内容 |
+|---------|------|
+| `f639334` | visual/ スペック追加・playwright.config.ts 設定追加 |
+| `688225f` | macOS（darwin）baseline 3 枚をコミット |
+
 ## Component Testing
 
 ### Shipping Fee Component Tests
