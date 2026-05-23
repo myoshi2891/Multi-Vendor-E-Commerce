@@ -251,6 +251,7 @@ const CartProduct: FC<Props> = ({
                                 <span
                                     className="mr-2.5 inline-block cursor-pointer"
                                     onClick={() => handleAddToWishlist()}
+                                    data-testid="cart-item-wishlist-btn"
                                 >
                                     <Heart className="w-4 hover:stroke-orange-secondary" />
                                 </span>
