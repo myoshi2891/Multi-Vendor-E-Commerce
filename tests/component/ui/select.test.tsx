@@ -44,12 +44,20 @@ describe("Select (snapshot)", () => {
     });
 
     it("renders content composition (Group + Label + Items + Separator)", () => {
-        const { container } = render(
-            <SelectGroup>
-                <SelectLabel>Fruits</SelectLabel>
-                <SelectSeparator />
-            </SelectGroup>
+        render(
+            <Select defaultOpen>
+                <SelectTrigger>
+                    <SelectValue placeholder="Choose..." />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectLabel>Fruits</SelectLabel>
+                        <SelectItem value="apple">Apple</SelectItem>
+                        <SelectSeparator />
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
         );
-        expect(container.firstChild).toMatchSnapshot();
+        expect(document.body).toMatchSnapshot();
     });
 });
