@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Skeleton (snapshot) merges className 1`] = `
+<div
+  class="animate-pulse rounded-md bg-muted h-4 w-32"
+/>
+`;
+
+exports[`Skeleton (snapshot) renders default skeleton 1`] = `
+<div
+  class="animate-pulse rounded-md bg-muted"
+/>
+`;
