@@ -1,19 +1,20 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-22 / **HEAD**: `32cba5d`
+> **最終更新**: 2026-05-23 / **HEAD**: `9c4cf33`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-22 時点）
+### テスト統計（2026-05-23 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **945** / 60 スイート（全パス） |
-| Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive）— purchase-flow に複数バリアントカートテストを追加（OI-2、2026-05-22） |
+| Jest テスト総数 | **990** / 69 スイート（68 passed + 1 skipped）— B1 で +9 スイート / +45 テスト |
+| Jest スナップショット | **40**（`tests/component/ui/__snapshots__/`） |
+| Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
-| Playwright a11y | **4 スペック**（sign-in / seller-apply / **checkout** / **profile**）— `/checkout` と `/profile` を追加（OI-3、2026-05-22） |
+| Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
 | Skipped テスト | 3 件（意図的） + a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
 
@@ -107,14 +108,10 @@
 > **このファイルが即時 TODO の Single Source of Truth。**
 > 中長期タスク（B1〜C2）の戦略的背景は [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) を参照。
 
-### 🟡 次のセッション以降
-
 ### ✅ 完了
 
-全ての優先 OI（OI-2 / OI-3 / OI-4 / OI-4a / OI-5）が 2026-05-22 に解消済み。
-
-| - | OI-4a | （マージ後）`gh workflow run ci.yml --ref dev` で起動し、生成 PR をマージして Linux baseline を取り込む |
-|---|---|---|
+全ての優先 OI（OI-2 / OI-3 / OI-4 / OI-4a / OI-5）は 2026-05-22 に解消済み。
+**B1（shadcn/ui プリミティブ Snapshot）** は 2026-05-23 に MVP 9 プリミティブ分を完了（40 snapshot）。
 
 ### 残課題（低優先）
 
@@ -123,7 +120,8 @@
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 
-- **B1** shadcn/ui プリミティブの Snapshot
+- ~~**B1** shadcn/ui プリミティブの Snapshot~~ ✅ MVP 完了（2026-05-23、9 プリミティブ / 40 snapshot）
+- **B1+** 残り 40 プリミティブの段階追加（後続 PR）
 - **B2** Stripe / PayPal Webhook の Contract テスト拡充
 - **B3** Cart → Checkout の Integration テスト
 - **C1** Lighthouse CI（パフォーマンス予算化）

@@ -91,15 +91,15 @@
 - **達成内容**: sign-in / seller-apply および /checkout / /profile の WCAG 2.1 AA スキャン追加（`@axe-core/playwright`）
 - **期待効果**: 認証・申請フォームの障壁を計測 → 改善 → 退行防止のループ確立
 
+#### B1. shadcn/ui プリミティブの Snapshot ✅ MVP 完了 2026-05-23
+- **対象**: `tests/component/ui/*.test.tsx` — 9 プリミティブ（button / dialog / select / badge / card / input / label / textarea / skeleton）
+- **達成内容**: 40 snapshot を `tests/component/ui/__snapshots__/` に生成・コミット。Tailwind / Radix のスタイル退行を CI で機械検知できるようになった。Portal を伴う `Dialog` / `Select` は `document.body` 経由でスナップショット化
+- **運用ルール**: 詳細は [`TESTING_DESIGN.md` § shadcn/ui Snapshot テスト](./TESTING_DESIGN.md) を参照
+- **残課題（B1+）**: `src/components/ui/` 配下の残り 40 プリミティブを後続 PR で段階追加
+
 ---
 
 ### 🟡 未着手（中優先度）— Next Sprint
-
-#### B1. shadcn/ui プリミティブの Snapshot
-- **対象**: `tests/component/ui/*.test.tsx`
-- **推奨ツール**: Jest + @testing-library + jest-snapshot (既存)
-- **コスト感**: **S**
-- **期待効果**: Tailwind / Radix の意図せぬスタイル退行を防ぐ。`button.tsx`, `dialog.tsx`, `select.tsx` など共通プリミティブから
 
 #### B2. Stripe / PayPal Webhook の Contract テスト
 - **対象**: `src/app/api/webhooks/route.test.ts` (拡充)
