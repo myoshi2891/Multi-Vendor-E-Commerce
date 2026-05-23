@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **990** / 69 スイート（68 passed + 1 skipped）— B1 で +9 スイート / +45 テスト |
+| Jest テスト総数 | **990** / 68 スイート（68 passed + 1 skipped）— B1 で +9 スイート / +45 テスト |
 | Jest スナップショット | **40**（`tests/component/ui/__snapshots__/`） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
