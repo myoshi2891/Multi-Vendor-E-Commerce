@@ -64,7 +64,8 @@ jobs:
       - name: Generate Prisma client
         run: bunx prisma generate
       - name: Run Jest
-        run: bun run test
+        # Temporary --verbose for modal-provider flake diagnostics; --ci suppresses snapshot writes.
+        run: bunx jest --verbose --ci
 
   build:
     name: Build (Next.js)
