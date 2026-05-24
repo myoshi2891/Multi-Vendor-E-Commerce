@@ -41,7 +41,10 @@ jest.mock("@/lib/db", () => ({
 
 const mockDb = require("@/lib/db").db;
 
-const makeUser = (role: "USER" | "SELLER" | "ADMIN", id = TEST_CONFIG.DEFAULT_USER_ID) => ({
+const makeUser = (
+    role: "USER" | "SELLER" | "ADMIN",
+    id: string = TEST_CONFIG.DEFAULT_USER_ID
+) => ({
     id,
     privateMetadata: { role },
 });
