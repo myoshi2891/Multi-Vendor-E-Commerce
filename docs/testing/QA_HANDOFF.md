@@ -16,7 +16,7 @@
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
-| Skipped テスト | 3 件（意図的） + a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
+| Skipped テスト | **4 件**（意図的: idempotency 1 件 + 3 件、CI flake 一時退避: modal-provider 1 件 — 下記 OI-8 参照）+ a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
 
 ---
 
@@ -107,6 +107,7 @@
 | ~~OI-5~~ | ~~E2E シード冪等性（CI 環境での `seed:e2e`）~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`ci.yml` の `seed-idempotency` ジョブで PG service container 起動 → seed 2回実行 → 行数 diff 検証） |
 | ~~OI-6~~ | ~~`DashboardStats` コンポーネント調査未完了~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、調査結果: ソース・仕様ともに該当コンポーネントなし。`src/app/dashboard/{admin,seller}/.../page.tsx` はプレースホルダー、`specs/multi-vendor-ecommerce/04-interfaces.md` も「overview」と記載のみ。統計 UI 要件は将来の機能追加時に `specs/` で別途起票） |
 | ~~OI-7~~ | ~~`coverage/lcov.info` が古い (2025-03-16 時点)~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、`/coverage` は `.gitignore:10` 対象で git 管理外。`bun run test -- --coverage` でローカル再生成 → `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を更新する運用を確認。CI でのカバレッジ自動化は [`COVERAGE_REPORT §3 B4`](./COVERAGE_REPORT.md#b4-ci-でのカバレッジ-artifact-化--dashboard-自動再生成) に移管） |
+| **OI-8** | **`modal-provider.test.tsx` の [P1] setOpen テストを CI flake のため一時 `it.skip`** | 🟡 中 | **未解決**（2026-05-24 着手 / 期限 2026-06-07）。`src/providers/modal-provider.test.tsx:95-130` で 1 件のみ skip。同等カバレッジは `[P1] fetchData なしでモーダルを開ける` (line 140) が部分的に担保。完全な調査経緯・6 仮説カタログ・再開条件は [`ADR-003 後続調査と一時スキップ判断`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#後続調査と一時スキップ判断) を参照。次回着手は **仮説 A（isMounted 撤廃）または仮説 B（MSW bypass）** から |
 
 ---
 

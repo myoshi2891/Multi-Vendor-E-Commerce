@@ -83,7 +83,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 |-----|---------|----------|--------|
 | [001](001-csrf-policy.md) | CSRF Protection Policy for Server Actions | Accepted | 2026-05-24 |
 | [002](002-ci-jest-verbose-flag.md) | CI で `bunx jest --verbose --ci` を採用（診断 instrumentation） | Accepted | 2026-05-24 |
-| [003](003-modal-setopen-sync-for-react19.md) | `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応） | Accepted | 2026-05-24 |
+| [003](003-modal-setopen-sync-for-react19.md) | `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応） | Partial Mitigation | 2026-05-24 |
 
 <!--
 ### 将来の ADR 候補
