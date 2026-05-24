@@ -109,8 +109,10 @@ describe("ModalProvider", () => {
 
             await waitFor(() => {
                 expect(screen.getByTestId("is-open")).toHaveTextContent("true");
+                expect(
+                    screen.getByTestId("modal-content")
+                ).toBeInTheDocument();
             });
-            expect(screen.getByTestId("modal-content")).toBeInTheDocument();
         });
 
         it("[P1] fetchData ありでデータが data にマージされる", async () => {
