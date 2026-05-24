@@ -8,6 +8,8 @@
 ## Steps
 1) Create a branch: `git checkout -b feature/<short-topic>` (or `fix/`).
 2) Implement the change in small, reviewable commits.
+   See `.claude/rules/02-tdd-step-commit.md` for required commit cadence
+   (Red→Green→Refactor + dashboard regeneration).
 3) Run tests (pick the relevant subset):
    - `bun run lint`
    - `bun run test`

@@ -832,7 +832,9 @@ describe("購入フルフロー")
 | **Phase 3 小計** |  | **30+** | ⚠️ |
 | **総計** |  | **~287+** | |
 
-**Jest 現状**: 945 テスト / 60 スイート（全パス）— 型エラー 0 件（2026-05-22 時点）
+**Jest 現状**: 990 テスト / 68 スイート（passed, 1 skipped）+ 40 snapshot（全パス）— 型エラー 0 件（2026-05-23 時点）
+
+**注**: Phase 1 (P0) / Phase 2 (P1) はすべて完了済み。次の作業は `COVERAGE_REPORT.md §3` の B/C グループ（`QA_HANDOFF.md` を SSOT として参照）。B1（shadcn/ui Snapshot MVP）は 2026-05-23 完了。
 
 ---
 

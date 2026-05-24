@@ -41,18 +41,22 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		fetchData?: () => Promise<Partial<ModalData>>
 	) => {
 		if (modal) {
+			setShowingModal(modal);
+			setIsOpen(true);
+
 			if (fetchData) {
 				try {
 					const fetchedData = await fetchData();
 					setData((prev) => ({ ...prev, ...fetchedData }));
 				} catch (error) {
-					console.error("Failed to fetch modal data:", error);
-					// Set to safe empty state or keep previous but log error
-					setData((prev) => prev);
+					if (error instanceof Error) {
+						console.error("Failed to fetch modal data:", error.message, error.stack);
+					} else {
+						console.error("Failed to fetch modal data:", error);
+					}
+					// エラー時は状態を変更しない
 				}
 			}
-			setShowingModal(modal);
-			setIsOpen(true);
 		}
 	};
 

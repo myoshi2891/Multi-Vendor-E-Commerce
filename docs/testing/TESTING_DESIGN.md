@@ -350,6 +350,56 @@ bunx playwright test tests/e2e/visual --update-snapshots --project=chromium
 
 ---
 
+## shadcn/ui Snapshot テスト（B1）
+
+### 目的
+
+`src/components/ui/` 配下の Tailwind / Radix UI ベースのプリミティブが、依存パッケージ更新や `cn()` の挙動変更で**意図せずスタイル退行**することを CI で機械的に検知する。Visual Regression（A2）が「ピクセル差分」を見るのに対し、こちらは **DOM 構造と class 文字列の差分** を見る軽量な層。
+
+### 配置と運用
+
+- **対象**: `tests/component/ui/*.test.tsx`
+- **環境**: jsdom（ファイル先頭に `/** @jest-environment jsdom */`）
+- **アサーション**: `expect(container.firstChild).toMatchSnapshot()` を基本
+  - Portal を伴うコンポーネント（`Dialog`, `Select` 等）の open 状態のみ `expect(document.body).toMatchSnapshot()` を使う
+- **Snapshot 配置**: Jest 既定の `tests/component/ui/__snapshots__/<file>.test.tsx.snap`（コミット対象）
+- **責務分離**: assertion ベースの振る舞いテストは `tests/component/store/` / `tests/component/dashboard/` に残し、`tests/component/ui/` は**回帰検知専用**
+
+### 対象プリミティブ（MVP）
+
+| Tier | プリミティブ | スナップショットの観点 |
+|---|---|---|
+| 1 | `button` | 6 variants × 4 sizes + disabled + `asChild`（Slot） |
+| 1 | `dialog` | trigger（閉）+ portal content（`document.body` 経由、open） |
+| 1 | `select` | trigger（閉）+ disabled + label/separator 合成 |
+| 2 | `badge` | 4 variants |
+| 2 | `card` | bare + Header/Title/Description/Content/Footer 合成 |
+| 2 | `input` / `textarea` | default / disabled / aria-invalid / type 別 |
+| 2 | `label` | default / `htmlFor` |
+| 2 | `skeleton` | default |
+
+残り 40 プリミティブは後続 PR で段階追加する。
+
+### Snapshot 更新の運用
+
+```bash
+# 単体実行（確認用）
+bun run test -- --testPathPatterns="tests/component/ui"
+
+# Snapshot 更新（開発時のみ。CI では実行しない）
+bun run test -- --testPathPatterns="tests/component/ui" -u
+```
+
+レビュー時は **`*.snap` の diff を必ず PR で目視確認**する。意図的なスタイル変更ならそのままマージ、意図しない差分なら依存パッケージ更新の影響をチェック。
+
+### 注意点
+
+- **Radix の `useId()` で生成される ID**（`radix-:r0:` 等）は React のレンダリングツリー位置に対して安定 — 同一テストの再実行で同じ値になる
+- **`twMerge` のバージョン更新で class 順序が変わる**場合は本来検知したい変更として扱う（無視せず PR で確認）
+- **`asChild` パターン**（`Button asChild` で `<a>` に切り替え等）は重要な使用パターンなので必ずカバーする
+
+---
+
 ## a11y (Accessibility, A3)
 
 ### 配置と運用

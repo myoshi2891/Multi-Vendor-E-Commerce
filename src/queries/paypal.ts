@@ -23,11 +23,15 @@ export const createPayPalPayment = async (orderId: string) => {
             throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        const stack = error instanceof Error ? error.stack : undefined;
-        console.error(
-            "[paypal:createPayPalPayment] Failed to fetch current user",
-            { error: message, stack }
-        );
+        if (error instanceof Error) {
+            console.error(
+                "[paypal:createPayPalPayment] Failed to fetch current user",
+                error.message,
+                error.stack
+            );
+        } else {
+            console.error("[paypal:createPayPalPayment] Failed to fetch current user", error);
+        }
         throw new Error(`Failed to fetch current user: ${message}`);
     }
     if (!user) throw new Error("Unauthenticated.");
@@ -46,11 +50,15 @@ export const createPayPalPayment = async (orderId: string) => {
             throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        const stack = error instanceof Error ? error.stack : undefined;
-        console.error(
-            "[paypal:createPayPalPayment] Failed to fetch order",
-            { error: message, stack }
-        );
+        if (error instanceof Error) {
+            console.error(
+                "[paypal:createPayPalPayment] Failed to fetch order",
+                error.message,
+                error.stack
+            );
+        } else {
+            console.error("[paypal:createPayPalPayment] Failed to fetch order", error);
+        }
         throw new Error(`Failed to fetch order: ${message}`);
     }
     if (!order) throw new Error("Order not found");
@@ -127,11 +135,18 @@ export const capturePayPalPayment = async (
             throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        const stack = error instanceof Error ? error.stack : undefined;
-        console.error(
-            "[paypal:capturePayPalPayment] Failed to fetch current user",
-            { error: message, stack }
-        );
+        if (error instanceof Error) {
+            console.error(
+                "[paypal:capturePayPalPayment] Failed to fetch current user",
+                error.message,
+                error.stack
+            );
+        } else {
+            console.error(
+                "[paypal:capturePayPalPayment] Failed to fetch current user",
+                error
+            );
+        }
         throw new Error(`Failed to fetch current user: ${message}`);
     }
     if (!user) throw new Error("Unauthenticated.");
@@ -150,11 +165,15 @@ export const capturePayPalPayment = async (
             throw error;
         }
         const message = error instanceof Error ? error.message : String(error);
-        const stack = error instanceof Error ? error.stack : undefined;
-        console.error(
-            "[paypal:capturePayPalPayment] Failed to fetch order",
-            { error: message, stack }
-        );
+        if (error instanceof Error) {
+            console.error(
+                "[paypal:capturePayPalPayment] Failed to fetch order",
+                error.message,
+                error.stack
+            );
+        } else {
+            console.error("[paypal:capturePayPalPayment] Failed to fetch order", error);
+        }
         throw new Error(`Failed to fetch order: ${message}`);
     }
     if (!order) throw new Error("Order not found");
