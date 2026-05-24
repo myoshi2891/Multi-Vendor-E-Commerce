@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-05-23 時点）
+## 現在の状態（2026-05-24 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 990テスト / 68スイート（1 skipped、全パス） |
+| Jestユニットテスト | 1008テスト / 70スイート（3 skipped、全パス） |
 | Jestスナップショット | 40（`tests/component/ui/` — B1 で導入） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -120,6 +120,22 @@
   - `.claude/rules/01-engineering-standards.md` に "CI / Supply Chain" セクションを新設
   - `specs/multi-vendor-ecommerce/06-quality.md` の Security に Supply chain hardening を明文化
 - **次アクション**: OI-4 系の追加 CI 拡張（E2E ジョブ追加等）でも本 pin 運用に従う
+
+### 2026-05-24: 認可ガード統合とCSRF防御方針の策定
+- **CSRF防御方針の決定（ADR 001）**:
+  - Next.js 16 Server Actions の Origin/Host 検証と Clerk の SameSite=Lax Cookie に依存し、明示的なトークン実装を導入しない方針を決定。`docs/architecture/decisions/001-csrf-policy.md` を作成。
+  - `specs/multi-vendor-ecommerce/06-quality.md` および `.claude/steering/tech.md` に本方針と規約を追記。
+- **共通認可ヘルパー導入 (`src/lib/auth-guards.ts`)**:
+  - `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner` を実装し、15件の単体テストをパス（100%グリーン）。
+  - エラーメッセージを統一（未認証: "Unauthenticated.", ロール不一致: "Only ...", 所有権不一致: "Forbidden: store not owned by current user."）。
+- **認可ガード置換の適用**:
+  - `category.ts` / `subCategory.ts` / `offer-tag.ts` の ADMIN インラインチェックを `requireAdmin()` に置換。
+  - `coupon.ts` の SELLER 所有権チェックを `requireStoreOwner()` に置換。
+  - `product.ts` の `upsertProduct` / `deleteProduct` / その他 SELLER アクションを `requireStoreOwner` / `requireSeller` に置換。
+  - `store.ts` の `updateStoreDefaultShippingDetails` / `getStoreShippingRates` / `upsertShippingRate` を `requireStoreOwner` に置換し、所有権チェックと店舗取得の `findUnique` 二重呼び出しを統合。`store.test.ts` のエラーメッセージ期待値も新仕様に同期。
+- **今後の残タスク**:
+  - 各種クロステナント IDOR テスト（8件）の追加。
+  - `SECURITY_GAP_REPORT.md` / `QA_HANDOFF.md` / テストダッシュボード（`docs/coverage-dashboard.html`）等のドキュメント更新。
 
 ---
 
