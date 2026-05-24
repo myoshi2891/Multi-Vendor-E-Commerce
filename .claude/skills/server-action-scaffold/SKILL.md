@@ -76,9 +76,9 @@ Read: src/config/test-scenarios.ts
 #### A. サーバーアクション実装（`src/queries/XXX.ts`）
 
 > **認可ガードの選択指針** ([src/lib/auth-guards.ts](../../../src/lib/auth-guards.ts)):
-> - `requireUser()` — 認証必須 (USER / SELLER / ADMIN 問わず)。`{ user }` を返す
-> - `requireAdmin()` — `role === "ADMIN"` のみ。グローバルリソース管理 (category / offer-tag 等)
-> - `requireSeller()` — `role === "SELLER"` のみ。ストア所有権を URL 経由で問わない場合 (例: `deleteProduct` は `productId` 起点で別途インライン比較)
+> - `requireUser()` — 認証必須 (USER / SELLER / ADMIN 問わず)。**`User` を返す**（分割代入不可。`const user = await requireUser()` で受け取る）
+> - `requireAdmin()` — `role === "ADMIN"` のみ。グローバルリソース管理 (category / offer-tag 等)。**`User` を返す**
+> - `requireSeller()` — `role === "SELLER"` のみ。ストア所有権を URL 経由で問わない場合 (例: `deleteProduct` は `productId` 起点で別途インライン比較)。**`User` を返す**
 > - `requireStoreOwner(storeUrl)` — `role === "SELLER"` ＋ `where: { url, userId }` 複合検索で **IDOR 防御を集約**。`{ user, store }` を返し、後段の `findUnique` 重複を避ける
 
 ```typescript

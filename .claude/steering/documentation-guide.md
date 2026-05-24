@@ -95,14 +95,14 @@
 | ファイル | 役割 | 更新タイミング | 更新トリガー例 |
 |---------|------|--------------|----------------|
 | **`COVERAGE_REPORT.md`** | カバレッジ戦略台帳 — なぜやるか・何を達成するか | スプリント完了時 / タスク完了後 | テストカテゴリ（A1〜C2）の着手・完了、ヒートマップ変化時 |
-| **`QA_HANDOFF.md`** | 即時 TODO の SSOT — 次セッションで何をするか + **次回着手用 依頼プロンプト** (コピペ可能) | **セッション終了時に必ず更新** | テストタスク完了・新しい Open Issue 発見・優先順位変更・`render-html.ts` の `NEXT_ACTIONS` 編集 |
+| **`QA_HANDOFF.md`** | 即時 TODO の同期先 — 次セッションで何をするか + **次回着手用 依頼プロンプト** (コピペ可能) | **セッション終了時に必ず更新** | テストタスク完了・新しい Open Issue 発見・優先順位変更・`render-html.ts` の `NEXT_ACTIONS` 編集 |
 | **`TEST_IMPLEMENTATION_PLAN.md`** | テスト実装ロードマップ — 何を・どの順で作るか | Phase/Step 完了時 | ステップ完了（✅ マーク付与）、新規スイート追加時 |
 | **`TESTING_DESIGN.md`** | テスト設計パターン集 — どう実装するか | 新パターン確立時 | 新ヘルパー関数導入・モック戦略変更・環境設定追加 |
 | **`SECURITY_GAP_REPORT.md`** | 認可テストギャップ記録 | IDOR/RBAC 調査・修正時 | セキュリティ脆弱性の発見・修正・テスト追加 |
 | **`QA_TEST_PERSPECTIVES.md`** | QA 観点台帳 — 何をテストすべきか | 新機能追加・要件変更時 | 新ドメイン追加、リスク区分変更 |
 | **`coverage-dashboard.html`** | カバレッジダッシュボード — テストカバレッジの視覚化 (生成物 / 手動編集禁止) | カバレッジ更新時・テスト追加/変更時・**`render-html.ts` 編集時** | `bun run coverage:dashboard` 実行時、`lcov.info` 更新時、`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` 編集時 |
-| **`scripts/coverage-dashboard/render-html.ts`** (SSOT) | ダッシュボード §03 Next Actions の **データ源**。`NEXT_ACTIONS` 配列を編集してから `bun run coverage:dashboard` で HTML に反映する | Next Actions の追加・完了・削除時 | A1〜C2 等のタスク完了時、新規 high/medium タスク発見時 |
-| **`PROGRESS.md`** (Layer 1) | プロジェクト全体の進捗・一時的な決定・履歴 | 統計値変化時・フェーズ完了時 | テスト統計の変動（`QA_HANDOFF.md` から同期）、マイグレーション等の完了時 |
+| **`scripts/coverage-dashboard/render-html.ts`** (SSOT) | ダッシュボード §03 Next Actions の **データ源（SSOT）**。`NEXT_ACTIONS` 配列を編集してから `bun run coverage:dashboard` で HTML に反映する | Next Actions の追加・完了・削除時 | A1〜C2 等のタスク完了時、新規 high/medium タスク発見時 |
+| **`PROGRESS.md`** (Layer 1) | プロジェクト全体の進捗・一時的な決定・履歴（同期先） | 統計値変化時・フェーズ完了時 | テスト統計の変動（`QA_HANDOFF.md` から同期）、マイグレーション等の完了時 |
 
 ### 更新の責務分担
 
@@ -119,11 +119,11 @@
 
 Next Actions の追加・完了・削除時:
   1. scripts/coverage-dashboard/render-html.ts → NEXT_ACTIONS 配列を編集（SSOT）
-  2. QA_HANDOFF.md「次回着手用 依頼プロンプト」セクション → NEXT_ACTIONS と一対一で同期
-     （タスク完了時は両方から削除、新規追加時は両方に追加）
+  2. QA_HANDOFF.md「次回着手用 依頼プロンプト」セクション → NEXT_ACTIONS から同期
+     （タスク完了時は両方から削除、新規追加時は両方に追加して同期を維持）
   3. docs/coverage-dashboard.html → `bun run coverage:dashboard` で再生成
-  ※ render-html.ts と QA_HANDOFF.md は二重 SSOT であり、片方だけ更新すると drift する。
-     必ず同一コミット内で両方を更新する。
+  ※ render-html.ts が唯一のデータ源（SSOT）であり、QA_HANDOFF.md はその同期先となる。
+     ドリフトを防ぐため、必ず同一コミット内で両方を更新・同期する。
 
 セッション終了時（必須）:
   → QA_HANDOFF.md を必ず最新状態に更新してコミットする
@@ -138,9 +138,9 @@ IDOR/セキュリティ修正時:
 
 - **即時 TODO は `QA_HANDOFF.md` のみに書く**。`COVERAGE_REPORT.md §3` には「なぜやるか」の根拠のみを記録し、「いつやるか」は書かない。
 - **実装済みタスクは `COVERAGE_REPORT.md §3` でアーカイブ扱い**（完了日・コミット・残課題の参照先を記録）し、`QA_HANDOFF.md` の該当 OI は削除する。
-- **テスト数・統計は `QA_HANDOFF.md` のテスト統計テーブルを正とする**。`PROGRESS.md` にも同期させること。
+- **テスト数・統計は `QA_HANDOFF.md` のテスト統計テーブルを正（同期元）とする**。`PROGRESS.md` は同期先となる。
 - **カバレッジダッシュボード (`coverage-dashboard.html`)** は、カバレッジ収集後（`lcov.info` 更新後）に `bun run coverage:dashboard` により自動構築し、手動での中身の改変は行わない。データの差し替えは `scripts/coverage-dashboard/render-html.ts` (`NEXT_ACTIONS` 等) を編集する。
-- **Next Actions は二重 SSOT**: `render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md` の「次回着手用 依頼プロンプト」は一対一で対応する。タスクの追加・完了は必ず両方で同時に行うこと。
+- **Next Actions の SSOT**: `render-html.ts` の `NEXT_ACTIONS` がデータ源（SSOT）であり、`QA_HANDOFF.md` の「次回着手用 依頼プロンプト」は同期先となる。タスクの追加・完了時は必ず両方を更新・同期すること。
 
 ---
 

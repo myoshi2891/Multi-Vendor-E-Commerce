@@ -166,9 +166,12 @@ bun run coverage:dashboard
 
 ```bash
 git add specs/multi-vendor-ecommerce/07-testing.md \
+        docs/testing/QA_HANDOFF.md \
         docs/testing/COVERAGE_REPORT.md \
         docs/PROGRESS.md \
         docs/coverage-dashboard.html
+# (Optional: If NEXT_ACTIONS was modified in scripts/coverage-dashboard/render-html.ts)
+# git add scripts/coverage-dashboard/render-html.ts
 git commit -m "docs: sync spec and coverage docs after test implementation
 
 - specs/07-testing.md: update test count (XXX tests / XX suites)
