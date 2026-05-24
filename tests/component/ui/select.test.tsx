@@ -54,6 +54,7 @@ describe("Select (snapshot)", () => {
                         <SelectLabel>Fruits</SelectLabel>
                         <SelectItem value="apple">Apple</SelectItem>
                         <SelectSeparator />
+                        <SelectItem value="banana">Banana</SelectItem>
                     </SelectGroup>
                 </SelectContent>
             </Select>

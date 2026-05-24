@@ -4,15 +4,19 @@
 - すべてのテスト追加・修正作業（`src/**/*.test.ts`、`tests/component/**/*.test.tsx`、`tests/e2e/**/*.spec.ts`、`prisma/seed/__tests__/**`）
 - テスト数 / スイート数 / スナップショット数のいずれかが変動する変更全般
 - 関連ドキュメント (`docs/testing/*.md`、`docs/PROGRESS.md`、`docs/coverage-dashboard.html`、`specs/multi-vendor-ecommerce/07-testing.md`) の同期作業
+- **Tierの定義**: 本リポジトリにおけるテスト実装時の難易度や依存関係の分類。
+  - **Tier 1 (独立したテスト)**: 単一のファイルやモジュールでテストが自己完結し、他への依存が少ないもの（例: 単一UIコンポーネントの基本表示テスト）。
+  - **Tier 2 (まとまった機能/コンポーネント群)**: 複数の関連するUIコンポーネントや、密接に連携するロジック群で、変更の粒度が極めて小さく、相互依存が強いもの。
 
 ## Rules
 
 ### MUST
 - 新規ロジック実装は **Red → Green → Refactor** を辿ること。各フェーズで `git commit` を打ち、ハッシュ単位で巻き戻し可能にする。
 - 既存コードへのテスト**補完のみ**の作業（例: スナップショット生成テスト）でも、**1 テストファイル（または 1 Tier / 1 機能）ごとに 1 commit** を基本単位とする。
+  - 「1 Tier / 1 機能」として複数のテストファイルを1つのコミットにまとめる（例: `B1 Tier 2`）のが妥当なのは、**同一のUIコンポーネント群、同一のテスト対象、変更の粒度が極めて小さい、または相互依存が強く同時にコミットすべき場合**に限る。
 - テスト追加・修正で `Tests:` 総数・スイート数・スナップショット数のいずれかが変わった場合、`spec-sync-after-test` skill を必ず起動する（手動で同等手順を踏む場合は Step 1〜7 をすべて実行）。
-- `spec-sync-after-test` 実行時は `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を再生成し、同じ commit に含める。
-- コミットは**論理的に独立した単位**で分けること: 「テストコード」「ダッシュボード再生成」「テスト統計の同期」「rule / skill 整備」は別 commit。
+- `spec-sync-after-test` 実行時は `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を再生成し、テスト統計の同期ドキュメント（`07-testing.md`, `COVERAGE_REPORT.md`, `PROGRESS.md`）と**同じ commit に含めて一括同期すること**。
+- コミットは**論理的に独立した単位**で分けること: 「テストコード」「ドキュメント同期（ダッシュボード再生成およびテスト統計含む）」「rule / skill 整備」は別 commit。
 - 各コミットは**単独でビルド可能・型チェック可能**な状態を維持すること（`bunx tsc --noEmit` がそのコミット時点でも通る）。
 
 ### NEVER
@@ -34,14 +38,14 @@
 
 ```
 test(ui): add button snapshot tests (B1 Tier 1)
-test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2)
-test(ui): add dialog/select portal snapshots (B1 Tier 1)
+test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2 - 相互依存があり粒度の小さい共通プリミティブのまとめ)
+test(ui): add dialog/select portal snapshots (B1 Tier 1 - 独立したコンポーネント)
+test(ui): add modal provider async logic tests (1ファイル = 1 commit のケース - 非同期処理を伴う独立したプロバイダー)
 chore(test): replace placeholder classes with real tailwind utilities
-docs: regenerate coverage-dashboard.html after B1 tests
-docs(testing): sync B1 stats in TEST_IMPLEMENTATION_PLAN/QA_HANDOFF/COVERAGE_REPORT/PROGRESS
+docs: regenerate coverage-dashboard.html and sync B1 stats in TEST_IMPLEMENTATION_PLAN/QA_HANDOFF/COVERAGE_REPORT/PROGRESS
 ```
 
-→ 各 commit は単独で意味があり、テストファイルとそのスナップショットがペアでコミットされ、ドキュメント同期とダッシュボード再生成は分離。
+→ 各 commit は単独で意味があり、テストファイルとそのスナップショットがペアでコミットされ、ドキュメント同期（ダッシュボード再生成＋統計の同期）は1つのdocsコミットにまとめられ、テストコードやリファクタリングとは分離されている。
 
 ### ❌ 悪い例
 
