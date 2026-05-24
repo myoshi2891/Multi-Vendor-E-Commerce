@@ -6,6 +6,18 @@ import { CartWithCartItemsType } from '@/lib/types'
 import { requireStoreOwner } from '@/lib/auth-guards'
 import { Coupon } from '@prisma/client'
 
+const isGuardError = (error: unknown): error is Error => {
+    if (!(error instanceof Error)) return false;
+    const guardMessages = [
+        'Unauthenticated.',
+        'Only sellers can perform this action.',
+        'Forbidden: store not owned by current user.',
+        'Please provide store URL.',
+        'Only admins can perform this action.'
+    ];
+    return guardMessages.includes(error.message);
+};
+
 /**
  * @Function upsertCoupon
  * @Description Upserts a coupon into the database, updating if it exists or creating a new one if not.
@@ -55,11 +67,15 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
         })
 
         return couponDetails
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
+        if (isGuardError(error)) {
+            throw error
+        }
+
         throw new Error(
-            `Error occurred while trying to upsert coupon: ${error.message}`
+            `Error occurred while trying to upsert coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -84,10 +100,13 @@ export const getStoreCoupons = async (storeURL: string) => {
         })
 
         return coupons
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
+        if (isGuardError(error)) {
+            throw error
+        }
         throw new Error(
-            `Error occurred while trying to fetch store coupons: ${error.message}`
+            `Error occurred while trying to fetch store coupons: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -148,11 +167,15 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
         })
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
+        if (isGuardError(error)) {
+            throw error
+        }
+
         throw new Error(
-            `Error occurred while trying to delete coupon: ${error.message}`
+            `Error occurred while trying to delete coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
