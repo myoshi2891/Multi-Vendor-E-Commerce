@@ -107,12 +107,11 @@ describe("ModalProvider", () => {
             const user = userEvent.setup();
             await user.click(screen.getByTestId("open-btn"));
 
-            await waitFor(() => {
-                expect(screen.getByTestId("is-open")).toHaveTextContent("true");
-                expect(
-                    screen.getByTestId("modal-content")
-                ).toBeInTheDocument();
-            });
+            // findByTestId は要素が DOM に commit されるまで内部で retry する。
+            // React のバッチコミット仕様により、modal-content が見えた時点で
+            // 同じ render phase でセットされた isOpen も "true" になっている。
+            expect(await screen.findByTestId("modal-content")).toBeInTheDocument();
+            expect(screen.getByTestId("is-open")).toHaveTextContent("true");
         });
 
         it("[P1] fetchData ありでデータが data にマージされる", async () => {
