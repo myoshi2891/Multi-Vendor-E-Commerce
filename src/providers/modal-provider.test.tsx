@@ -197,17 +197,18 @@ describe("ModalProvider", () => {
                 const user = userEvent.setup();
                 await user.click(screen.getByTestId("open-fail-btn"));
 
+                // setOpen は同期化されたため、fetchData の reject は fire-and-forget IIFE で
+                // microtask 後に実行される。console.error 呼び出しは waitFor で待つ必要がある。
                 await waitFor(() => {
                     expect(
                         screen.getByTestId("is-open-direct")
                     ).toHaveTextContent("true");
+                    expect(consoleSpy).toHaveBeenCalledWith(
+                        "Failed to fetch modal data:",
+                        "fetch failed",
+                        expect.any(String)
+                    );
                 });
-                // fetchData の失敗がログに記録される
-                expect(consoleSpy).toHaveBeenCalledWith(
-                    "Failed to fetch modal data:",
-                    "fetch failed",
-                    expect.any(String)
-                );
                 // fetchData が失敗してもモーダルコンテンツは表示される（グレースフルデグラデーション）
                 expect(
                     screen.getByTestId("modal-content-fail")
