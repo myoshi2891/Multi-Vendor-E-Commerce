@@ -12,8 +12,15 @@
 
 ### MUST
 - 新規ロジック実装は **Red → Green → Refactor** を辿ること。各フェーズで `git commit` を打ち、ハッシュ単位で巻き戻し可能にする。
-- 既存コードへのテスト**補完のみ**の作業（例: スナップショット生成テスト）でも、**1 テストファイル（または 1 Tier / 1 機能）ごとに 1 commit** を基本単位とする。
-  - 「1 Tier / 1 機能」として複数のテストファイルを1つのコミットにまとめる（例: `B1 Tier 2`）のが妥当なのは、**同一のUIコンポーネント群、同一のテスト対象、変更の粒度が極めて小さい、または相互依存が強く同時にコミットすべき場合**に限る。
+- 既存コードへのテスト**補完のみ**の作業（例: スナップショット生成テスト）でも、**1 テストファイルごとに 1 commit** を基本単位とする。
+  - ただし、「1 Tier / 1 機能」として複数のテストファイルを1つのコミットにまとめる（例: `B1 Tier 2`）のが妥当なのは、**以下の条件をすべて満たす場合**に限る：
+    1. **同一のカテゴリ / ドメイン**（例: shadcn/ui プリミティブ）に属する
+    2. 同梱するテストファイル数が **最大 3 ファイル** である
+    3. **変更量の合計が 200 行未満**（テストコード + スナップショットファイルの合計）
+    4. テスト対象間に **「相互依存が強く」** 同時にコミットすべき技術的根拠がある
+       - ※「相互依存が強く」とは、**インポートの 50% 以上を共有している**、または**同一の SUT (System Under Test) / モジュールを参照している**状態を指す。
+  - 上記のいずれかの閾値（3ファイル、または合計200行）を超える場合は、**原則としてコミットを分離しなければならない**。やむを得ず同一コミットにする場合は、PR（プルリクエスト）の説明文にどの基準をどう満たしたかの理由を明記し、明示的なレビュアー承認チェックボックス（`- [ ] レビュアーによる閾値超過の同梱コミット承認`）を追加すること。
+  - ※グルーピングの目的は、論理的単位をまとめることであり、**各開発フェーズ（テスト追加、リファクタリング、ドキュメントなど）を正しく分割せず、巨大な変更を一括でコミットすることを防ぐこと**である。
 - テスト追加・修正で `Tests:` 総数・スイート数・スナップショット数のいずれかが変わった場合、`spec-sync-after-test` skill を必ず起動する（手動で同等手順を踏む場合は Step 1〜7 をすべて実行）。
 - `spec-sync-after-test` 実行時は `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を再生成し、テスト統計の同期ドキュメント（`07-testing.md`, `COVERAGE_REPORT.md`, `PROGRESS.md`）と**同じ commit に含めて一括同期すること**。
 - コミットは**論理的に独立した単位**で分けること: 「テストコード」「ドキュメント同期（ダッシュボード再生成およびテスト統計含む）」「rule / skill 整備」は別 commit。
@@ -34,33 +41,38 @@
 
 ## Examples
 
-### ✅ 良い例（B1: shadcn/ui Snapshot 9 プリミティブの場合）
-
+### ✅ 良い例：新基準に基づくコミット分割
 ```
-test(ui): add button snapshot tests (B1 Tier 1)
-test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2 - 相互依存があり粒度の小さい共通プリミティブのまとめ)
-test(ui): add dialog/select portal snapshots (B1 Tier 1 - 独立したコンポーネント)
-test(ui): add modal provider async logic tests (1ファイル = 1 commit のケース - 非同期処理を伴う独立したプロバイダー)
-chore(test): replace placeholder classes with real tailwind utilities
-docs: regenerate coverage-dashboard.html and sync B1 stats in TEST_IMPLEMENTATION_PLAN/QA_HANDOFF/COVERAGE_REPORT/PROGRESS
+test(ui): add badge/card/label snapshots (B1 Tier 2 - 3ファイル、計120行、shadcn/ui プリミティブで共通 utils を参照)
+test(ui): add skeleton/textarea snapshots (B1 Tier 2 - 2ファイル、計80行、shadcn/ui プリミティブ)
+test(ui): add modal provider async logic tests (1ファイル = 1 commit - 非同期処理を伴う独立したプロバイダー、Tier 1)
+chore(test): replace placeholder classes with real tailwind utilities (テストコード修正ではないリファクタリング)
+docs: regenerate coverage-dashboard.html and sync B1 stats (ダッシュボード生成 + 統計ドキュメント更新の独立コミット)
 ```
+→ 各コミットは同一 Tier 内で「3ファイル以下」「200行未満」の基準を満たしており、テストコードとリファクタリング、ドキュメント同期が明確に別コミットに分かれている。
 
-→ 各 commit は単独で意味があり、テストファイルとそのスナップショットがペアでコミットされ、ドキュメント同期（ダッシュボード再生成＋統計の同期）は1つのdocsコミットにまとめられ、テストコードやリファクタリングとは分離されている。
+### ❌ 悪い例：3ファイルまたは200行の閾値超過を未承認で同梱
+```
+test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2)
+```
+→ 6つのテストファイルとそれに伴うスナップショット（合計300行以上）を、PRでの理由記載およびレビュアーの承認なしに1つのコミットに同梱している。
 
-### ❌ 悪い例
+### ❌ 悪い例：相互依存がない独立したテストの同梱
+```
+test(ui): add button/select/dialog snapshots (Tier 1 & Tier 2)
+```
+→ `button` と `select` と `dialog` は同一の SUT (System Under Test) を共有しておらず、インポートの共有率も 50% 未満であり、個別に独立してテスト可能なコンポーネントであるため、別々にコミットすべきである。
 
+### ❌ 悪い例：複数フェーズの混在（最大の禁止事項）
 ```
 test(ui): add B1 shadcn snapshots + docs sync
 ```
+→ 9つのテストファイル + 40個のスナップショット + 5つのドキュメント更新 + Linter修正を、中間コミットなしで1つのコミットにまとめている。レビュー不能、`git bisect` 不能、`git revert` で不要な変更まで巻き戻る。
 
-→ 9 テストファイル + 40 snapshot + 5 docs + lint 修正 + ダッシュボード未生成、を 1 commit にまとめる。レビュー不能、`git bisect` 不能、`git revert` で不要な変更まで巻き戻る。
-
-### ❌ 悪い例（docs同期を後回し）
-
+### ❌ 悪い例：docs同期を後回し
 ```
 test(ui): add all primitive snapshots (no docs update yet)
 ```
-
 → コミット後 `docs/coverage-dashboard.html` が古いまま放置。`spec-sync-after-test` を起動していない。「あとでまとめて同期」が次回セッションへの引き継ぎ漏れの原因になる。
 
 ## Related
