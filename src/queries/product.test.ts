@@ -284,7 +284,7 @@ describe("upsertProduct", () => {
 
         it("商品もバリアントも存在しない場合、新規作成する", async () => {
             mockDb.product.findUnique.mockResolvedValue(null);
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.product.create.mockResolvedValue(createMockProduct());
 
             await upsertProduct(
@@ -308,7 +308,7 @@ describe("upsertProduct", () => {
 
         it("バリアントのslugが正しく生成される", async () => {
             mockDb.product.findUnique.mockResolvedValue(null);
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.product.create.mockResolvedValue(createMockProduct());
 
             await upsertProduct(
@@ -338,7 +338,7 @@ describe("upsertProduct", () => {
 
         it("既存商品に新しいバリアントを追加する", async () => {
             mockDb.product.findUnique.mockResolvedValue(createMockProduct());
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.productVariant.create.mockResolvedValue(
                 createMockProductVariant()
             );
@@ -394,7 +394,7 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
+            mockDb.productVariant.findFirst.mockResolvedValue(
                 createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
             );
 
@@ -431,7 +431,7 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "New Product", slug: "existing-slug" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
+            mockDb.productVariant.findFirst.mockResolvedValue(
                 createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" })
             );
 
@@ -463,7 +463,7 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
+            mockDb.productVariant.findFirst.mockResolvedValue(
                 createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
             );
 
