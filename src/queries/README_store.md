@@ -51,6 +51,7 @@
 ## 追加の改善提案
 
 ### 8. **カスタムマッチャーの導入** (オプション)
+
 ```typescript
 expect.extend({
   toBeValidStore(received) {
@@ -64,6 +65,7 @@ expect.extend({
 ```
 
 ### 9. **テスト用のconfigファイル作成** (オプション)
+
 ```typescript
 // test-config.ts
 export const TEST_CONFIG = {
@@ -126,10 +128,10 @@ TEST_CONFIGに以下の設定も追加することをお勧めします：
 // src/config/test-config.ts の拡張例
 export const TEST_CONFIG = {
   DEFAULT_USER_ID: "user123",
-  DEFAULT_STORE_ID: "store123", 
+  DEFAULT_STORE_ID: "store123",
   DEFAULT_SHIPPING_SERVICE: "International Delivery",
   DEFAULT_RETURN_POLICY: "Return in 30 days.",
-  
+
   // 追加推奨設定
   TEST_STORE_URL: "test-store",
   TEST_EMAIL: "test@example.com",
@@ -201,6 +203,7 @@ export const TEST_CONFIG = {
 ## さらなる改善提案
 
 ### 8. **パフォーマンステストの追加**
+
 ```typescript
 // TEST_CONFIG に追加
 PERFORMANCE_THRESHOLDS: {
@@ -210,6 +213,7 @@ PERFORMANCE_THRESHOLDS: {
 ```
 
 ### 9. **テストカバレッジ向上のための設定**
+
 ```typescript
 // TEST_CONFIG に追加
 EDGE_CASES: {
@@ -291,7 +295,6 @@ if (!store) {
 - ✅ **予測可能性**: 固定値により再現性の高いテスト
 
 これで`updateStoreDefaultShippingDetails`のテストケースが既存のパターンと統一され、保守しやすい構造になりました。テストを成功させるには、実装側のエラーメッセージを統一する必要があります。
-
 
 TypeScriptエラーを修正し、実際の関数に合わせてテストを更新します。## 修正内容と実際の関数に合わせた変更点
 

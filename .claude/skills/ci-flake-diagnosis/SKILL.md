@@ -1,0 +1,229 @@
+---
+name: ci-flake-diagnosis
+description: >
+  Diagnoses CI-only test flakes — tests that pass locally but fail intermittently
+  on GitHub Actions. Triaged via gh CLI log inspection and event-pair comparison
+  (push vs pull_request on the same SHA). Recommends minimal diagnostic
+  instrumentation (Jest --verbose --ci) before any code change.
+  Triggered by: "CI が落ちる", "CI でだけ失敗", "テストがフレーキー",
+  "ローカルでは通る", "間欠的に失敗", "CI flake", "intermittent failure",
+  "flaky test", "passes locally fails in CI".
+invocation: automatic
+allowed-tools: [Bash, Read, Grep, Edit]
+---
+
+# CI Flake Diagnosis スキル
+
+## 目的
+
+ローカルでは通るが CI でのみ間欠的に失敗するテスト（CI-only flake）の **原因切り分けと最小修正** を行う。投機的な test code 書き換えに進む前に、まず CI ログから真因を絞り込む。
+
+---
+
+## トリガー条件
+
+ユーザーが以下のいずれかを言及した場合:
+
+- 「CI が落ちる」「CI でだけ失敗する」
+- 「ローカルでは通るのに CI で fail する」
+- 「同じテストが間欠的に失敗する」
+- GitHub Actions のテスト結果ログを貼り付けてきた
+
+ローカルで毎回失敗するテストは別のスキル（test-complete / test-gen）で対応。本スキルは **CI 環境固有の問題** に絞る。
+
+---
+
+## 実行手順
+
+### Step 1｜CI 失敗の事実関係を確定する
+
+ローカル再現を試みる前に **CI ログから事実を集める**。最小限の `gh` コマンドで以下を確定する:
+
+```bash
+# 直近 8 件の workflow run を一覧（conclusion / event / SHA を確認）
+gh run list --workflow=ci.yml --limit 8 \
+  --json conclusion,headSha,event,createdAt
+
+# 失敗した run の test job ログから対象テストの周辺を抽出
+gh run view <FAILED_RUN_ID> --log 2>&1 \
+  | grep -B 5 -A 50 "FAIL .*\.test\." | head -200
+```
+
+確定すべき事実:
+
+| 項目 | 確認方法 |
+|------|---------|
+| 同一 SHA で push event と pull_request event の結果差 | `gh run list` の event/conclusion ペア |
+| 失敗ログにエラー本文が出ているか | `gh run view --log` の `●` バレット後 |
+| `Tests: X failed` の数と「Summary of all failing tests」の列挙数の一致 | ログ末尾 |
+| 失敗テストが直近のどのコミットで追加・変更されたか | `git log --oneline -- <test file>` |
+
+---
+
+### Step 2｜真因仮説を分類する
+
+Step 1 の事実から、以下のパターンに分類する:
+
+#### パターン A: 環境変動による flake（最頻出）
+
+**サイン**:
+- 同一 SHA で push event は成功・pull_request event は失敗（または逆）
+- 別 runner（並列実行）で結果が分かれる
+- 失敗テストは複数 SHA で同じテスト名
+
+**仮説**: GitHub Actions runner（2-core Ubuntu）の個体差・隣接プロセス負荷で React の concurrent commit / async timing が乱れる。
+
+**対応**: Step 3 の診断 instrumentation → Step 4 の最小修正。
+
+#### パターン B: エラー本文が空の不可視 failure
+
+**サイン**:
+- 「Summary of all failing tests」に同一テスト名が **複数回列挙**
+- `Tests: 1 failed` だがバレットは 2 個以上
+- バレット後の本文行が空白のみ
+
+**仮説**: テスト本体の assertion 失敗ではなく **unhandled promise rejection** が複数発生し Jest 30 reporter が集約。MSW の `onUnhandledRequest: "error"` が無関係 fetch を誤検出するケースが該当。
+
+**対応**: Step 3 で `--verbose` を有効にして真のエラーを surface させる。
+
+#### パターン C: タイムアウト / handle leak
+
+**サイン**:
+- 失敗ログに `Exceeded timeout` / `Jest did not exit one second after the test run`
+- `findByTestId` / `waitForElementToBeRemoved` のデフォルト 1000ms timeout 超過
+
+**仮説**: CI runner の遅延で React 19 concurrent rendering / async event handler が間に合わない。
+
+**対応**: timeout 拡大、または `--detectOpenHandles` で leak を特定。
+
+---
+
+### Step 3｜診断 instrumentation を入れる（コード修正の前に必ず実施）
+
+**原則**: 真のエラーが見えるまでテスト code を書き換えない。投機的な書き換えはフレークの真因を埋もれさせる。
+
+**最小侵襲な diagnostic**: `.github/workflows/ci.yml` の test job を 1 行だけ変更:
+
+```yaml
+      - name: Run Jest
+        # Temporary --verbose for flake diagnostics; --ci suppresses snapshot writes.
+        run: bunx jest --verbose --ci
+```
+
+| フラグ | 効果 | 副作用 |
+|------|------|--------|
+| `--verbose` | 各 test の pass/fail と matcher 失敗 message を行ごとに出力 | 出力量増（CI 時間ほぼ不変） |
+| `--ci` | snapshot 自動更新を抑制、CI 用 reporter default を選択 | なし |
+| `bunx jest` 直接呼び出し | `bun run test` の二重ラップを回避し引数伝搬を確実化 | bun runtime から node runtime へ実行系が変わる場合がある |
+| `--runInBand`（**入れない**） | 並列実行を無効化 | 並列 race が真因なら隠してしまう |
+| `--detectOpenHandles`（**入れない**） | open handle leak を検出 | CI 時間が 2〜5x に膨張、Step 4 で必要になったら追加 |
+
+**コミット**: `chore(ci): enable jest verbose output to diagnose <area> flake`
+
+---
+
+### Step 4｜CI で再現させて真のエラーを観察する
+
+Step 3 を push した後:
+
+```bash
+# 該当 PR の最新 run を watch（CI 完了まで待機）
+gh run watch
+
+# 完了後、失敗 run の test job ログから対象テストの本文を取得
+gh run view <RUN_ID> --log 2>&1 \
+  | grep -B 2 -A 40 "●.*<TEST_NAME>"
+```
+
+**フレークは 1 push で再発しないことがある**。1〜3 回 push（空コミット可）して再現を待つ。
+
+```bash
+git commit --allow-empty -m "chore: rerun CI for flake reproduction"
+git push
+```
+
+---
+
+### Step 5｜真因に応じた最小修正
+
+verbose 出力で確認できたエラーパターン別:
+
+#### A: `MSW unhandled request error`
+
+[tests-setup/jest.setup.ts](../../tests-setup/jest.setup.ts) を条件付き bypass に変更:
+
+```ts
+const onUnhandledRequest =
+  server.listHandlers().length === 0 ? "bypass" : "error";
+beforeAll(() => server.listen({ onUnhandledRequest }));
+```
+
+**コミット**: `fix(test/setup): bypass unhandled requests when MSW handlers are empty`
+
+#### B: `act() warning` / floating promise
+
+テスト側の `onClick={() => asyncFn(...)}` を `onClick={() => { void asyncFn(...); }}` に変更。または provider 側で同期化（呼び出し元の型シグネチャ変更影響を確認）。
+
+**コミット**: `fix(<area>): mark floating async promises as void in test handlers`
+
+#### C: `findByTestId timeout`
+
+timeout を明示拡大:
+
+```ts
+expect(
+  await screen.findByTestId("xxx", {}, { timeout: 5000 })
+).toBeInTheDocument();
+```
+
+**コミット**: `test(<area>): widen findByTestId timeout for slow CI runners`
+
+---
+
+### Step 6｜診断 instrumentation のロールバック判断
+
+Step 5 の修正後 CI が **5 連続グリーン** になったことを確認してから、Step 3 で入れた `--verbose --ci` を判断する:
+
+- **`--verbose` のみ撤回**: 出力量を抑えて元のサマリ形式に戻す
+- **`--ci` は残す**: snapshot auto-write 抑制は CI で恒久的に有用
+- **`bunx jest` は残す**: `bun run test` 二重ラップ回避は維持価値あり
+
+最低限の構成:
+
+```yaml
+      - name: Run Jest
+        run: bunx jest --ci
+```
+
+**コミット**: `chore(ci): remove --verbose flag after flake fix, keep --ci`
+
+---
+
+## 禁止事項（NEVER）
+
+| 禁止 | 理由 |
+|------|------|
+| `jest.retryTimes(N)` でフレークを吸収する | リポジトリに使用例ゼロ、`.claude/rules/02-tdd-step-commit.md` の「Red を隠さない」精神に反する、真因が埋もれる |
+| `it.skip` で quarantine する | 同上、症状を隠すだけ。一時的に必要でも GitHub Issue を立ててから |
+| ローカル再現できないまま test code を書き換える | 投機的修正の典型。Step 3 を飛ばすと修正が当てずっぽうになる |
+| 1 コミットで複数の論理単位を混ぜる | [.claude/rules/02-tdd-step-commit.md](../../rules/02-tdd-step-commit.md) 違反。workflow / setup / test を別コミットに分ける |
+
+---
+
+## Rationale（このスキルが必要な理由）
+
+2026-05-24 の `modal-provider.test.tsx` フレーク調査で、以下の失敗パターンを踏んだ:
+
+1. **再現確認なしに test code を書き換えた**（commit `eb15fcf` で `waitFor` → `findByTestId` リファクタ）が CI 失敗は継続
+2. **エラー本文が空でも assertion 失敗と仮定**して対応 → 真因（reporter / runtime 由来）を見落とした
+3. **同一 SHA の push event と pull_request event の結果差**を見逃した（後から確認して環境変動 flake と判明）
+
+本スキルはこの教訓を **次回のオペレータが踏まないため** の手順書。Step 1〜2 の事実確定を飛ばして Step 5 の code 修正に進まないこと。
+
+---
+
+## Related
+
+- ADR: [`docs/architecture/decisions/002-ci-jest-verbose-flag.md`](../../../docs/architecture/decisions/002-ci-jest-verbose-flag.md) — 本スキルが生まれる契機となった調査と決定
+- Rule: [`.claude/rules/02-tdd-step-commit.md`](../../rules/02-tdd-step-commit.md) — コミット粒度規約
+- Skill: [`.claude/skills/test-complete/SKILL.md`](../test-complete/SKILL.md) — コミット前の lint/tsc/test 三点確認
