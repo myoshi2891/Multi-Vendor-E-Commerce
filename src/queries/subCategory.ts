@@ -1,7 +1,7 @@
 "use server";
 
-// Clerk
-import { currentUser } from "@clerk/nextjs/server";
+// 認可ガード (src/lib/auth-guards.ts) 経由でロール検証を集約する
+import { requireAdmin } from "@/lib/auth-guards";
 
 // DB
 import { db } from "@/lib/db";
@@ -18,17 +18,8 @@ import { Category, SubCategory } from "@prisma/client";
 
 export const upsertSubCategory = async (subCategory: SubCategory) => {
 	try {
-		// Get current user
-		const user = await currentUser();
-
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
-
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+		// 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+		await requireAdmin();
 
 		// Ensure sybCategory data is provided
 		if (!subCategory) throw new Error("Please provide subCategory data.");
@@ -146,17 +137,8 @@ export const getSubCategory = async (subCategoryId: string) => {
 // Returns: Boolean indicating whether the subCategory was deleted successfully.
 export const deleteSubCategory = async (subCategoryId: string) => {
 	try {
-		// Get current user
-		const user = await currentUser();
-
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
-
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+		// 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+		await requireAdmin();
 
 		if (!subCategoryId) throw new Error("Please provide a subCategory ID.");
 
