@@ -157,6 +157,98 @@
 | `a73603e`–`8766979` | A4: 認可ガード `requireAdmin` / `requireStoreOwner` を category / subCategory / offer-tag / coupon / product に展開 |
 | `c83a5c4` | A4: `store.ts` 配送系 3 アクションに `requireStoreOwner` 適用、`findUnique` 二重呼び出しを統合 |
 | `ae66fac` | A4: クロステナント IDOR 補完テスト 8 件追加（where 構造検証 + 副作用なし検証、990 → 1016） |
+| `eae2cfe` | A4: 統計 SSOT (QA_HANDOFF / PROGRESS / COVERAGE_REPORT / SECURITY_GAP_REPORT) と coverage-dashboard.html を同期 |
+
+---
+
+## 次回着手用 依頼プロンプト
+
+> **使い方**: 新しいセッションを開いて以下の **コードブロック内の文字列をそのままコピペ** すれば、文脈再構築なしに該当タスクへ着手できます。
+> プロンプトは `coverage-dashboard.html §03 Next Actions` (= `scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS`) と一対一で対応しています。
+> **更新規約**: タスクを完了したら、対応するプロンプトをこのセクションから削除し、`render-html.ts` の `NEXT_ACTIONS` からも同時に削除する（SSOT 二重管理を防ぐ）。新規タスクを追加する場合は両方に同時追加する。
+
+### 🔴 Immediate (high)
+
+#### NA-IM-01: getStoreOrders を `requireStoreOwner` に統合
+
+```text
+src/queries/store.ts:361 の getStoreOrders を src/lib/auth-guards.ts の requireStoreOwner に統合してください。
+
+背景:
+- A4 (2026-05-24) で coupon/product/store の他アクションは全て requireStoreOwner に統合済み。
+- getStoreOrders だけ自前の findUnique + userId !== user.id インライン比較が残存している。
+- 既存テスト src/queries/store.test.ts:1208 "他人のストアの注文を取得できない（IDOR防止）" のエラーメッセージは旧仕様 ("You are not authorized to view this store's orders.") なので、requireStoreOwner 統一文言 ("Forbidden: store not owned by current user.") に合わせて更新が必要。
+
+完了条件:
+1. getStoreOrders の認可チェックが requireStoreOwner 1 呼び出しに置換され、インライン比較が削除されている
+2. store.test.ts の関連テストが新メッセージ + 副作用なし検証 (orderGroup.findMany 非呼び出し) を含む
+3. bun run test と bunx tsc --noEmit が共にグリーン
+4. .claude/rules/02-tdd-step-commit.md に従い「コード変更」「docs 同期 (PROGRESS.md / QA_HANDOFF.md / coverage-dashboard.html 再生成含む)」を別コミットに分離
+
+参考: docs/testing/SECURITY_GAP_REPORT.md §5、 src/lib/auth-guards.ts の requireStoreOwner 実装。
+```
+
+### 🟡 Next Sprint (medium)
+
+#### NA-NS-01: B1+ shadcn/ui プリミティブ Snapshot 拡張 (残 40 プリミティブ)
+
+```text
+shadcn/ui プリミティブの Snapshot テストを B1 MVP (9 プリミティブ) から残り 40 プリミティブへ拡張してください。
+
+背景:
+- B1 MVP は 2026-05-23 に完了 (tests/component/ui/ 配下 9 ファイル / 40 snapshot)。
+- 全プリミティブ (約 49 種) のうち未着手は accordion / alert-dialog / avatar / breadcrumb / calendar / carousel / collapsible / command / context-menu / drawer / dropdown-menu / form / hover-card / menubar / navigation-menu / pagination / popover / progress / radio-group / scroll-area / sheet / sidebar / slider / sonner / switch / table / tabs / toggle / toggle-group / tooltip など。
+- .claude/rules/02-tdd-step-commit.md に「同一 Tier / 3 ファイル以下 / 合計 200 行未満 / 相互依存 (インポート共有 50%以上)」の同梱コミット条件が定義されているので、これに従ってコミットを分割すること。
+
+完了条件:
+1. プリミティブごとに 1 ファイル 1 commit を原則として段階追加
+2. spec-sync-after-test skill を起動し、テスト統計と docs/coverage-dashboard.html を同一コミットで同期
+3. bun run test, bunx tsc --noEmit が常時グリーン
+
+参考: tests/component/ui/__snapshots__/ の既存パターン、docs/testing/TESTING_DESIGN.md の "shadcn/ui Snapshot テスト" セクション。
+```
+
+#### NA-NS-02: Stripe / PayPal Webhook の Contract テスト拡充
+
+```text
+Stripe / PayPal の Webhook ハンドラーに Contract テストを追加してください (B2)。
+
+背景:
+- 既存の src/app/api/webhooks/ ハンドラーは Svix 署名検証 + イベントタイプ分岐のみで、外部プロバイダのペイロード変動に対する保証が薄い。
+- Jest + MSW (tests/mocks/server.ts) は既にセットアップ済みなので、新規 spec を追加する形でよい。
+
+完了条件:
+1. Stripe (payment_intent.succeeded / payment_intent.payment_failed / charge.refunded など) と PayPal (PAYMENT.CAPTURE.COMPLETED / PAYMENT.CAPTURE.DENIED など) の主要イベントに対する固定ペイロードフィクスチャを tests/fixtures/webhooks/ 配下に配置
+2. 各イベントタイプで Webhook ハンドラーの DB ミューテーション (Order.paymentStatus 更新等) を検証
+3. 不正署名 / 未知イベントタイプの境界系も網羅
+4. spec-sync-after-test skill で統計同期
+
+参考: src/queries/stripe.ts / paypal.ts、 docs/testing/SECURITY_GAP_REPORT.md §2 (IDOR 修正経緯)。
+```
+
+#### NA-NS-03: Cart → Checkout の Integration テスト
+
+```text
+Cart から Checkout への状態遷移をカバーする Integration テストを追加してください (B3)。
+
+背景:
+- 既存 E2E (tests/e2e/purchase-flow.spec.ts) は実ブラウザベースで遅く、リグレッション検知のフィードバックループが長い。
+- Zustand の cart-store (src/cart-store/) は既にユニットテスト済みだが、Cart → Checkout の状態橋渡し (hydration / クーポン適用 / 配送料計算) は Integration 粒度で未カバー。
+
+完了条件:
+1. tests/integration/ ディレクトリを新設 (jest.config.js に既存 testPathPatterns との衝突がないか確認)
+2. Cart ページ → Checkout ページの遷移時に Zustand store の hydration が正しく行われ、shipping / coupon / 合計金額が一貫することを検証
+3. spec-sync-after-test skill で統計同期
+
+参考: src/cart-store/useCartStore.test.ts (既存ユニット)、 src/lib/shipping-utils.ts (computeShippingTotal)。
+```
+
+### 🟢 Mid–Long Term (low)
+
+これら 2 件は SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。プロンプト化は実着手判断時に追加する。
+
+- C1: Lighthouse CI でパフォーマンス予算化 (`.github/workflows/lhci.yml`)
+- C2: Bundle Size の継続監視 (`.github/workflows/bundle.yml`)
 
 ---
 
