@@ -36,12 +36,12 @@ Read: src/queries/user.ts
 | パターン | 内容 |
 |---------|------|
 | **ファイル構造** | `"use server"` ディレクティブ・インポート順 |
-| **認証** | `currentUser()` の呼び出し位置と未認証時のレスポンス |
-| **ロールチェック** | `db.user.findUnique` で `role` を確認するパターン |
+| **認証・認可** | `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner` の使い分け (`src/lib/auth-guards.ts`)。**インライン `currentUser()` + `if (!user) ...` の新規追加は禁止** ([tech.md](../../steering/tech.md) "認可ガード" 項) |
 | **バリデーション** | `XXXFormSchema.parse(data)` の使用タイミング |
-| **DB 操作** | `create` / `findMany` / `updateMany` / `deleteMany` の使用方法 |
-| **レスポンス形式** | `{ success: true, data }` / `{ success: false, error }` |
-| **エラーハンドリング** | `try/catch` + `console.error()` のパターン |
+| **DB 操作** | `requireStoreOwner` 等で先取り認可 → `update` / `delete` / `findUnique` |
+| **レスポンス形式** | **`throw new Error("...")`** で失敗系を表現（実コード `src/queries/*` は `{success, error}` ラッパーを使わない） |
+| **エラーハンドリング** | `try/catch` + 構造化ログ `console.error("[Module:Function] ...", { error, stack })` |
+| **IDOR テスト 3 階層** | (a) スロー検証 + (b) `where: { url, userId }` 構造検証 + (c) ガード失敗時の副作用なし検証 ([SECURITY_GAP_REPORT §5.2](../../../docs/testing/SECURITY_GAP_REPORT.md)) |
 
 ---
 
@@ -75,94 +75,120 @@ Read: src/config/test-scenarios.ts
 
 #### A. サーバーアクション実装（`src/queries/XXX.ts`）
 
+> **認可ガードの選択指針** ([src/lib/auth-guards.ts](../../../src/lib/auth-guards.ts)):
+> - `requireUser()` — 認証必須 (USER / SELLER / ADMIN 問わず)。`{ user }` を返す
+> - `requireAdmin()` — `role === "ADMIN"` のみ。グローバルリソース管理 (category / offer-tag 等)
+> - `requireSeller()` — `role === "SELLER"` のみ。ストア所有権を URL 経由で問わない場合 (例: `deleteProduct` は `productId` 起点で別途インライン比較)
+> - `requireStoreOwner(storeUrl)` — `role === "SELLER"` ＋ `where: { url, userId }` 複合検索で **IDOR 防御を集約**。`{ user, store }` を返し、後段の `findUnique` 重複を避ける
+
 ```typescript
 "use server";
 
 import { db } from "@/lib/db";
-import { currentUser } from "@clerk/nextjs/server";
+import {
+  requireUser,
+  requireAdmin,
+  requireSeller,
+  requireStoreOwner,
+} from "@/lib/auth-guards";
 import { XXXFormSchema } from "@/lib/schemas";
 import { z } from "zod";
 
-/** [機能の説明] */
-export async function createXXX(data: z.infer<typeof XXXFormSchema>) {
+/**
+ * [機能の説明]
+ * @throws "Unauthenticated." / "Only sellers can perform this action." /
+ *         "Forbidden: store not owned by current user."
+ */
+export async function upsertXXX(
+  data: z.infer<typeof XXXFormSchema>,
+  storeUrl: string
+) {
   try {
-    const user = await currentUser();
-    if (!user) return { success: false, error: "認証が必要です" };
+    // 認証 + SELLER + 店舗所有権を集約検証 (auth-guards / IDOR 防御)
+    const { store } = await requireStoreOwner(storeUrl);
 
+    // Zod バリデーション
     const validated = XXXFormSchema.parse(data);
 
-    const result = await db.xxx.create({
-      data: { ...validated, userId: user.id },
+    return await db.xxx.upsert({
+      where: { id: validated.id },
+      create: { ...validated, storeId: store.id },
+      update: validated,
     });
-
-    return { success: true, data: result };
-  } catch (error) {
-    console.error("createXXX error:", error);
-    return { success: false, error: "作成に失敗しました" };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("[XXX:upsertXXX] Error", {
+        error: error.message,
+        stack: error.stack,
+      });
+    } else {
+      console.error("[XXX:upsertXXX] Unknown error", { error });
+    }
+    throw error;
   }
 }
 
-/** [一覧取得の説明] */
-export async function getXXXList() {
+/** ストア配下の XXX 一覧を取得する (SELLER 専用) */
+export async function getStoreXXXList(storeUrl: string) {
   try {
-    const user = await currentUser();
-    if (!user) return { success: false, error: "認証が必要です" };
+    const { store } = await requireStoreOwner(storeUrl);
 
-    const results = await db.xxx.findMany({
-      where: { userId: user.id },
+    return await db.xxx.findMany({
+      where: { storeId: store.id },
       orderBy: { createdAt: "desc" },
     });
-
-    return { success: true, data: results };
-  } catch (error) {
-    console.error("getXXXList error:", error);
-    return { success: false, error: "取得に失敗しました" };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("[XXX:getStoreXXXList] Error", {
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+    throw error;
   }
 }
 
-/** [更新の説明] */
-export async function updateXXX(id: string, data: z.infer<typeof XXXFormSchema>) {
+/** XXX を削除する (SELLER + 所有権必須) */
+export async function deleteXXX(xxxId: string, storeUrl: string) {
   try {
-    const user = await currentUser();
-    if (!user) return { success: false, error: "認証が必要です" };
+    await requireStoreOwner(storeUrl);
+    if (!xxxId) throw new Error("Please provide XXX ID.");
 
+    return await db.xxx.delete({ where: { id: xxxId } });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("[XXX:deleteXXX] Error", {
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+    throw error;
+  }
+}
+
+/** ADMIN 専用のグローバルリソース操作 (例: category / offer-tag) */
+export async function upsertGlobalXXX(data: z.infer<typeof XXXFormSchema>) {
+  try {
+    await requireAdmin();
     const validated = XXXFormSchema.parse(data);
-
-    // userId を where に含めることで権限チェックをアトミックに実施
-    const result = await db.xxx.updateMany({
-      where: { id, userId: user.id },
-      data: validated,
+    return await db.xxx.upsert({
+      where: { id: validated.id },
+      create: validated,
+      update: validated,
     });
-
-    if (result.count === 0) return { success: false, error: "権限がありません" };
-
-    return { success: true, data: result };
-  } catch (error) {
-    console.error("updateXXX error:", error);
-    return { success: false, error: "更新に失敗しました" };
-  }
-}
-
-/** [削除の説明] */
-export async function deleteXXX(id: string) {
-  try {
-    const user = await currentUser();
-    if (!user) return { success: false, error: "認証が必要です" };
-
-    // userId を where に含めることで権限チェックをアトミックに実施
-    const result = await db.xxx.deleteMany({
-      where: { id, userId: user.id },
-    });
-
-    if (result.count === 0) return { success: false, error: "権限がありません" };
-
-    return { success: true };
-  } catch (error) {
-    console.error("deleteXXX error:", error);
-    return { success: false, error: "削除に失敗しました" };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("[XXX:upsertGlobalXXX] Error", {
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+    throw error;
   }
 }
 ```
+
+> **注意 (deleteProduct パターン)**: 削除対象が **store URL ではなく ID 起点** (例: `productId`) の場合は `requireSeller()` + 自前の `findUnique({ include: { store: { select: { userId: true } } } })` + インライン `product.store.userId !== user.id` チェックを使う。`src/queries/product.ts::deleteProduct` を参照。
 
 #### B. Zod スキーマ（`src/lib/schemas.ts` への追加案）
 
@@ -178,138 +204,102 @@ export type XXXInput = z.infer<typeof XXXFormSchema>;
 
 #### C. ユニットテスト（`src/queries/XXX.test.ts`）
 
-AAA パターン（Arrange / Act / Assert）で全 CRUD + 権限チェックを網羅する：
+AAA パターンに加え、**IDOR テスト 3 階層** (a)(b)(c) を必ず含める ([SECURITY_GAP_REPORT §5.2](../../../docs/testing/SECURITY_GAP_REPORT.md)):
+
+| 階層 | 検証内容 | 例 |
+|------|---------|-----|
+| (a) | スロー検証 | `expect(...).rejects.toThrow("Forbidden: store not owned by current user.")` |
+| (b) | where 句の構造検証 | `expect(mockDb.store.findUnique).toHaveBeenCalledWith({ where: { url, userId } })` |
+| (c) | ガード失敗時の副作用なし検証 | `expect(mockDb.xxx.upsert).not.toHaveBeenCalled()` |
 
 ```typescript
-import { createXXX, getXXXList, updateXXX, deleteXXX } from "./XXX";
-import { mockAuth, mockPrisma } from "@/config/test-helpers";
-import { createTestUser, createTestXXX } from "@/config/test-fixtures";
+import { upsertXXX, getStoreXXXList, deleteXXX } from "./XXX";
+import { currentUser } from "@clerk/nextjs/server";
+import { TEST_CONFIG } from "@/config/test-config";
+import { createMockStore, createMockXXX } from "@/config/test-fixtures";
 
-jest.mock("@clerk/nextjs/server");
-jest.mock("@/lib/db");
+jest.mock("@clerk/nextjs/server", () => ({
+  currentUser: jest.fn(),
+}));
+jest.mock("@/lib/db", () => ({
+  db: {
+    store: { findUnique: jest.fn() },
+    xxx: {
+      findMany: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
+}));
 
-describe("XXX サーバーアクション", () => {
+const mockDb = require("@/lib/db").db;
+
+describe("upsertXXX", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  describe("createXXX", () => {
-    it("正常ケース: データを作成できる", async () => {
-      // Arrange
-      const testUser = createTestUser({ role: "USER" });
-      mockAuth({ userId: testUser.clerkId });
-      const input = { field1: "テスト値", field2: 100 };
-      const expected = { id: "xxx-123", ...input, userId: testUser.clerkId };
-      mockPrisma.xxx.create.mockResolvedValue(expected);
+  describe("認証・権限エラー", () => {
+    it("未認証ユーザーの場合 'Unauthenticated.' をスローする", async () => {
+      (currentUser as jest.Mock).mockResolvedValue(null);
+      await expect(
+        upsertXXX(createMockXXX() as never, TEST_CONFIG.TEST_STORE_URL)
+      ).rejects.toThrow("Unauthenticated.");
+    });
 
-      // Act
-      const result = await createXXX(input);
-
-      // Assert
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(expected);
-      expect(mockPrisma.xxx.create).toHaveBeenCalledWith({
-        data: { ...input, userId: testUser.clerkId },
+    it("SELLER 以外の場合 'Only sellers can perform this action.' をスローする", async () => {
+      (currentUser as jest.Mock).mockResolvedValue({
+        id: TEST_CONFIG.DEFAULT_USER_ID,
+        privateMetadata: { role: "USER" },
       });
-    });
-
-    it("異常ケース: 未認証の場合エラーを返す", async () => {
-      mockAuth(null);
-      const result = await createXXX({ field1: "テスト", field2: 100 });
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("認証が必要です");
-      expect(mockPrisma.xxx.create).not.toHaveBeenCalled();
-    });
-
-    it("異常ケース: バリデーションエラーの場合エラーを返す", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const result = await createXXX({ field1: "a", field2: 100 }); // 2文字未満
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      await expect(
+        upsertXXX(createMockXXX() as never, TEST_CONFIG.TEST_STORE_URL)
+      ).rejects.toThrow("Only sellers can perform this action.");
     });
   });
 
-  describe("getXXXList", () => {
-    it("正常ケース: ユーザーの一覧を取得できる", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const testData = [
-        createTestXXX({ userId: testUser.clerkId }),
-        createTestXXX({ userId: testUser.clerkId }),
-      ];
-      mockPrisma.xxx.findMany.mockResolvedValue(testData);
-
-      const result = await getXXXList();
-
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual(testData);
-      expect(mockPrisma.xxx.findMany).toHaveBeenCalledWith({
-        where: { userId: testUser.clerkId },
-        orderBy: { createdAt: "desc" },
+  describe("IDOR防止 (3 階層検証)", () => {
+    beforeEach(() => {
+      (currentUser as jest.Mock).mockResolvedValue({
+        id: TEST_CONFIG.DEFAULT_USER_ID,
+        privateMetadata: { role: "SELLER" },
       });
     });
 
-    it("異常ケース: 未認証の場合エラーを返す", async () => {
-      mockAuth(null);
-      const result = await getXXXList();
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("認証が必要です");
+    it("クロステナント時に Forbidden をスローし、where 構造 + 副作用なしを満たす", async () => {
+      // requireStoreOwner は where: { url, userId } の複合検索を発行する。
+      // 他人の店舗 URL を渡すと DB レベルで null が返り、ガードが throw する。
+      mockDb.store.findUnique.mockResolvedValue(null);
+
+      // (a) スロー検証
+      await expect(
+        upsertXXX(createMockXXX() as never, "other-store")
+      ).rejects.toThrow("Forbidden: store not owned by current user.");
+
+      // (b) where 構造検証 — userId 条件が外れた場合に検知
+      expect(mockDb.store.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { url: "other-store", userId: TEST_CONFIG.DEFAULT_USER_ID },
+        })
+      );
+
+      // (c) 副作用なし検証 — ガード失敗時に下流 I/O が走らない
+      expect(mockDb.xxx.upsert).not.toHaveBeenCalled();
     });
   });
 
-  describe("updateXXX", () => {
-    it("正常ケース: 自分のデータを更新できる", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const existing = createTestXXX({ userId: testUser.clerkId });
-      mockPrisma.xxx.updateMany.mockResolvedValue({ count: 1 });
-
-      const result = await updateXXX(existing.id, { field1: "更新後", field2: 200 });
-
-      expect(result.success).toBe(true);
-      expect(mockPrisma.xxx.updateMany).toHaveBeenCalledWith({
-        where: { id: existing.id, userId: testUser.clerkId },
-        data: { field1: "更新後", field2: 200 },
+  describe("正常系", () => {
+    beforeEach(() => {
+      (currentUser as jest.Mock).mockResolvedValue({
+        id: TEST_CONFIG.DEFAULT_USER_ID,
+        privateMetadata: { role: "SELLER" },
       });
+      mockDb.store.findUnique.mockResolvedValue(createMockStore());
     });
 
-    it("異常ケース: 他人のデータは更新できない", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const existing = createTestXXX({ userId: "other-user-id" });
-      mockPrisma.xxx.updateMany.mockResolvedValue({ count: 0 });
-
-      const result = await updateXXX(existing.id, { field1: "更新後", field2: 200 });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("権限がありません");
-    });
-  });
-
-  describe("deleteXXX", () => {
-    it("正常ケース: 自分のデータを削除できる", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const existing = createTestXXX({ userId: testUser.clerkId });
-      mockPrisma.xxx.deleteMany.mockResolvedValue({ count: 1 });
-
-      const result = await deleteXXX(existing.id);
-
-      expect(result.success).toBe(true);
-      expect(mockPrisma.xxx.deleteMany).toHaveBeenCalledWith({
-        where: { id: existing.id, userId: testUser.clerkId },
-      });
-    });
-
-    it("異常ケース: 他人のデータは削除できない", async () => {
-      const testUser = createTestUser();
-      mockAuth({ userId: testUser.clerkId });
-      const existing = createTestXXX({ userId: "other-user-id" });
-      mockPrisma.xxx.deleteMany.mockResolvedValue({ count: 0 });
-
-      const result = await deleteXXX(existing.id);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("権限がありません");
+    it("XXX を upsert する", async () => {
+      const xxx = createMockXXX();
+      mockDb.xxx.upsert.mockResolvedValue(xxx);
+      const result = await upsertXXX(xxx as never, TEST_CONFIG.TEST_STORE_URL);
+      expect(result).toEqual(xxx);
     });
   });
 });
@@ -345,22 +335,24 @@ describe("XXX サーバーアクション", () => {
 - `new PrismaClient()` の直接使用（必ず `import { db } from "@/lib/db"` を使う）
 - `src/queries/` 以外でのサーバーアクション定義
 - Client Component から `src/queries/` を直接インポート
+- **`if (!user) ...` / `if (role !== "...") ...` のインライン展開を新規追加する** — 必ず `src/lib/auth-guards.ts` のヘルパーを使う ([tech.md](../../steering/tech.md) "認可ガード" 項)
+- **`{ success: false, error }` ラッパー型の新規導入** — 実コード `src/queries/*` は throw ベース。ラッパー型は UI 側の責務
 
 ### ✅ 必須
 
 - すべてのファイル先頭に `"use server"` を記述する
-- すべてのサーバーアクションで `currentUser()` による認証チェックを行う
-- すべてのサーバーアクションを `try/catch` で囲み `console.error()` でログ出力する
+- 認証・認可は `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner` のいずれか 1 つで集約する
+- すべてのサーバーアクションを `try/catch` で囲み、構造化ログ `console.error("[Module:Function] ...", { error, stack })` を発行する
 - 入力データは `XXXFormSchema.parse(data)` でバリデーションする
-- レスポンスは `{ success: true, data }` / `{ success: false, error }` に統一する
-- 更新・削除は `updateMany` / `deleteMany` + `where: { id, userId }` で権限チェックをアトミックに行う
-- テストは AAA パターン（Arrange / Act / Assert）で記述する
+- 失敗系は `throw new Error("...")` で表現する（ラッパー型を使わない）
+- 店舗所有権が必要なアクションは **必ず `requireStoreOwner(storeUrl)` を使う**。返り値の `{ user, store }` を再利用し、後段で `findUnique({ where: { url, userId } })` を重複呼び出ししない
+- テストは AAA パターン + **IDOR 3 階層 (a)(b)(c)** で記述する
 
 ### 💡 推奨
 
 - `src/config/test-fixtures.ts` のファクトリ関数を積極的に活用する
 - 新しいドメインには対応するファクトリ関数を `test-fixtures.ts` に追加する
-- 権限チェックのテストケースは「正常・未認証・他人のデータ」の3軸で網羅する
+- 権限テストは「未認証 / ロール不一致 / IDOR 3 階層 (a)(b)(c) / 正常系」の最低 5 つの describe を用意する
 
 ---
 
