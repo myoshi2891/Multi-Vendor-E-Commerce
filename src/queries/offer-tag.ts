@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { currentUser } from "@clerk/nextjs/server";
+// 認可ガード (src/lib/auth-guards.ts) 経由でロール検証を集約する
+import { requireAdmin } from "@/lib/auth-guards";
 import { OfferTag } from "@prisma/client";
 
 // Function: upsertOfferTag
@@ -13,17 +14,8 @@ import { OfferTag } from "@prisma/client";
 
 export const upsertOfferTag = async (offerTag: OfferTag) => {
 	try {
-		// Get current user
-		const user = await currentUser();
-
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
-
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+		// 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+		await requireAdmin();
 
 		// Ensure OfferTag data is provided
 		if (!offerTag) throw new Error("Please provide OfferTag data.");
@@ -180,16 +172,8 @@ export const deleteOfferTag = async (offerTagId: string) => {
 
 	try {
 		// Get current user
-		const user = await currentUser();
-
-		// Ensure user is authenticated
-		if (!user) throw new Error("Unauthenticated.");
-
-		// Verify admin permission
-		if (user.privateMetadata.role !== "ADMIN")
-			throw new Error(
-				"Unauthorized Access: Admin Privileges Required for Entry."
-			);
+		// 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+		await requireAdmin();
 
 		// Ensure the offerTagId is provided
 		if (!offerTagId) throw new Error("Please provide OfferTag ID.");
