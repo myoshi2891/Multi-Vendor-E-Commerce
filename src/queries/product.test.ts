@@ -394,9 +394,12 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findFirst.mockResolvedValue(
-                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: any) => {
+                if (params?.where?.id) {
+                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -431,9 +434,12 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "New Product", slug: "existing-slug" })
             );
-            mockDb.productVariant.findFirst.mockResolvedValue(
-                createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: any) => {
+                if (params?.where?.id) {
+                    return createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -463,9 +469,12 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findFirst.mockResolvedValue(
-                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: any) => {
+                if (params?.where?.id) {
+                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
