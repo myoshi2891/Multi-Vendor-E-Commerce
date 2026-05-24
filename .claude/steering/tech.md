@@ -36,6 +36,8 @@
 | **環境変数の数値変換** | 数値型環境変数は `trim()` 後に変換し、空文字列には fallback を適用すること |
 | **cookie パース** | 外部 cookie の JSON パースは必ず `parseUserCountryCookie()` を使用すること（`src/lib/utils.ts`）。生の `JSON.parse` + キャストは禁止 |
 | **URL パラメータ正規化** | ページ番号など数値パラメータは `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1` で正規化すること（`Infinity` / `NaN` / 小数を排除） |
+| **CSRF** | Next.js 16 Server Actions の Origin/Host 検証と Clerk `SameSite=Lax` セッション Cookie に依拠する。`src/lib/csrf*` 等のトークンモジュールを新設しないこと。例外時は [ADR 001](../../docs/architecture/decisions/001-csrf-policy.md) を Superseded で更新する |
+| **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---

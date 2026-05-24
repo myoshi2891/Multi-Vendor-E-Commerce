@@ -7,6 +7,10 @@
   SDK-verified `evt.data` object instead of re-parsing the raw body.
 - Cookies for country detection are `httpOnly` and `sameSite`.
 - Secrets are read from environment variables only.
+- CSRF protection: Server Actions rely on Next.js 16's built-in Origin/Host
+  validation combined with Clerk's `SameSite=Lax` session cookies. No explicit
+  CSRF token implementation is introduced. Rationale and alternatives:
+  [`docs/architecture/decisions/001-csrf-policy.md`](../../docs/architecture/decisions/001-csrf-policy.md).
 - IDOR prevention: mutations that touch user-owned resources (reviews, stores,
   orders) verify ownership before writing. Review operations use conditional
   `update`/`create` instead of `upsert` to prevent client-supplied IDs from
