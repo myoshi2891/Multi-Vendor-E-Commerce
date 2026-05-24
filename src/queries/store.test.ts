@@ -351,7 +351,8 @@ const TEST_ERRORS = {
     DUPLICATE_PHONE: "A store with the same phone number already exists.",
     MISSING_STORE_URL: "Please provide store URL.",
     MISSING_SHIPPING_DETAILS: "Please provide shipping details.",
-    UNAUTHORIZED_STORE_UPDATE: "You are not authorized to update this store.",
+    // requireStoreOwner (src/lib/auth-guards.ts) のエラーメッセージ統一に合わせる
+    UNAUTHORIZED_STORE_UPDATE: "Forbidden: store not owned by current user.",
     STORE_NOT_FOUND: (url: string) => `Store with URL "${url}" not found.`,
 } as const;
 
@@ -1002,9 +1003,7 @@ describe("getStoreShippingRates", () => {
 
             await expect(
                 getStoreShippingRates("other-store")
-            ).rejects.toThrow(
-                "You are not authorized to update this store."
-            );
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
         });
     });
 
@@ -1098,9 +1097,7 @@ describe("upsertShippingRate", () => {
                     "other-store",
                     { countryId: "c1" } as never
                 )
-            ).rejects.toThrow(
-                "You are not authorized to update this store."
-            );
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
         });
     });
 
