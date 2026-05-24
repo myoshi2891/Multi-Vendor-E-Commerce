@@ -248,6 +248,26 @@ describe("upsertProduct", () => {
                 },
             });
         });
+
+        it("IDOR失敗時に下流の商品ミューテーション (create/update/productVariant.*) が一切呼ばれない", async () => {
+            // 副作用なし検証 (defense in depth): requireStoreOwner が throw した時点で
+            // upsertProduct 内の create/update/findFirst (slug 解決) 等が
+            // 早期リターンされ、後続の DB I/O が発生しないことを保証する。
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    "other-store"
+                )
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+            expect(mockDb.product.update).not.toHaveBeenCalled();
+            expect(mockDb.product.findFirst).not.toHaveBeenCalled();
+            expect(mockDb.productVariant.create).not.toHaveBeenCalled();
+            expect(mockDb.productVariant.update).not.toHaveBeenCalled();
+        });
     });
 
     describe("新規商品作成", () => {
@@ -596,6 +616,55 @@ describe("deleteProduct", () => {
             await expect(deleteProduct("")).rejects.toThrow(
                 "Please provide product ID."
             );
+        });
+    });
+
+    describe("IDOR防止", () => {
+        // deleteProduct は requireSeller + インライン所有権チェック (product.store.userId !== user.id)
+        // という二段構成。requireStoreOwner と異なり store URL 経由ではないため、
+        // 検証ポイントは「(b) findUnique が store.userId を含む include 構造で呼ばれているか」
+        // と「(c) ガード失敗時に db.product.delete が一切呼ばれないか」となる。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+        });
+
+        it("商品が存在しない場合 'Product not found.' をスローし db.product.delete が呼ばれない", async () => {
+            mockDb.product.findUnique.mockResolvedValue(null);
+
+            await expect(deleteProduct("nonexistent-id")).rejects.toThrow(
+                "Product not found."
+            );
+            expect(mockDb.product.delete).not.toHaveBeenCalled();
+        });
+
+        it("他人のストアの商品の場合 'You can only delete your own products.' をスローし db.product.delete が呼ばれない", async () => {
+            // 同一 productId は存在するが、関連 store の userId が現在のユーザーと一致しない
+            // (= クロステナント) 状態。インライン比較 product.store.userId !== user.id で reject。
+            mockDb.product.findUnique.mockResolvedValue({
+                id: "product-001",
+                store: { userId: "other-seller-id" },
+            });
+
+            await expect(deleteProduct("product-001")).rejects.toThrow(
+                "You can only delete your own products."
+            );
+            expect(mockDb.product.delete).not.toHaveBeenCalled();
+        });
+
+        it("所有権検証用 findUnique が { id, include: { store: { select: { userId: true } } } } 構造で呼ばれる", async () => {
+            // 将来「include を外す」「userId を取らない」変更が入った場合に検知するレグレッション。
+            mockDb.product.findUnique.mockResolvedValue(null);
+
+            await expect(deleteProduct("product-001")).rejects.toThrow(
+                "Product not found."
+            );
+            expect(mockDb.product.findUnique).toHaveBeenCalledWith({
+                where: { id: "product-001" },
+                include: { store: { select: { userId: true } } },
+            });
         });
     });
 

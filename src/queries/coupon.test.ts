@@ -123,6 +123,42 @@ describe("upsertCoupon", () => {
         });
     });
 
+    describe("IDOR防止", () => {
+        // upsertCoupon は requireStoreOwner 経由で url+userId の複合 where による
+        // 所有権検証を行う。本テストは「(b) where 構造の検証」と
+        // 「(c) ガード失敗時に下流の coupon.upsert / findFirst が呼ばれない」を担保する。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+        });
+
+        it("クロステナント時に where: { url, userId } 構造で findUnique が呼ばれ、coupon.upsert は呼ばれない", async () => {
+            // 他人の店舗 URL を指定 → 複合 where が null を返し、
+            // requireStoreOwner が "Forbidden" をスローする。
+            mockDb.store.findUnique.mockResolvedValue(null);
+            const coupon = createMockCoupon();
+
+            await expect(
+                upsertCoupon(coupon as never, "other-store")
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+
+            // (b) 複合 where 構造のレグレッション検証
+            expect(mockDb.store.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        url: "other-store",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    },
+                })
+            );
+            // (c) 副作用なし: 後続の DB I/O が一切発生しない
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+            expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
+        });
+    });
+
     describe("正常系", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
