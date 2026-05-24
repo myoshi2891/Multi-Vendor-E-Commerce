@@ -204,7 +204,8 @@ describe("ModalProvider", () => {
                 // fetchData の失敗がログに記録される
                 expect(consoleSpy).toHaveBeenCalledWith(
                     "Failed to fetch modal data:",
-                    expect.any(Error)
+                    "fetch failed",
+                    expect.any(String)
                 );
                 // fetchData が失敗してもモーダルコンテンツは表示される（グレースフルデグラデーション）
                 expect(
