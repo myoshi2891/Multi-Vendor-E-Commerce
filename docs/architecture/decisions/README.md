@@ -81,7 +81,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 
 | 番号 | タイトル | ステータス | 決定日 |
 |-----|---------|----------|--------|
-| - | （現在 ADR なし） | - | - |
+| [001](001-csrf-policy.md) | CSRF Protection Policy for Server Actions | Accepted | 2026-05-24 |
 
 <!--
 ### 将来の ADR 候補
