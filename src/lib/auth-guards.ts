@@ -25,7 +25,17 @@ import type { Store } from "@prisma/client";
  * 未認証なら "Unauthenticated." を throw する。
  */
 export async function requireUser(): Promise<User> {
-    const user = await currentUser();
+    let user;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        const message = `requireUser: failed to fetch currentUser - ${error instanceof Error ? error.message : String(error)}`;
+        const newError = new Error(message);
+        if (error instanceof Error) {
+            newError.stack = error.stack;
+        }
+        throw newError;
+    }
     if (!user) throw new Error("Unauthenticated.");
     return user;
 }
@@ -75,9 +85,19 @@ export async function requireStoreOwner(
     const user = await requireSeller();
     if (!storeUrl) throw new Error("Please provide store URL.");
 
-    const store = await db.store.findUnique({
-        where: { url: storeUrl, userId: user.id },
-    });
+    let store;
+    try {
+        store = await db.store.findUnique({
+            where: { url: storeUrl, userId: user.id },
+        });
+    } catch (error: unknown) {
+        const message = `requireStoreOwner: failed to query store - ${error instanceof Error ? error.message : String(error)}`;
+        const newError = new Error(message);
+        if (error instanceof Error) {
+            newError.stack = error.stack;
+        }
+        throw newError;
+    }
 
     if (!store) {
         throw new Error("Forbidden: store not owned by current user.");
