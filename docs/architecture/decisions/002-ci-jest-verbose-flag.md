@@ -1,6 +1,6 @@
 # 002. CI で `bunx jest --verbose --ci` を採用（`bun run test` から置き換え）
 
-- **Status**: Accepted
+- **Status**: Accepted（診断目的としては有効。**フレーク真因の修正は [ADR-003](003-modal-setopen-sync-for-react19.md) を参照**）
 - **Date**: 2026-05-24
 - **Deciders**: myoshizumi（実装）, Claude Code（調査支援）
 
@@ -51,18 +51,20 @@ CI workflow [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) の 
 
 コミット: `5cbf82a ci: add --verbose and --ci flags to jest for diagnostics`
 
-### 観察された副次的効果
+### ⚠️ 後日訂正: 「副次的効果でフレーク解消」は誤り
 
-この変更を push した直後（commit `5cbf82a`）から、**push event と pull_request event の両方が同一 SHA で成功するようになった**。診断目的の変更が結果的にフレークの解消にも寄与した。
+初版でこの ADR は「commit `5cbf82a` で `--verbose --ci` を入れた直後から両 event 成功になった = 診断 flag が偶発的にフレークを解消した」と記述していたが、**翌コミット `2eb3049`（docs のみ）で両 event 再失敗** したため、これは **lucky runner allocation による偶然のグリーン**だったと判明。
 
-確認済み CI 結果:
+確認済み CI 結果（時系列）:
 
-| Run ID | event | conclusion |
-|--------|-------|-----------|
-| 5cbf82a push | push | ✅ success |
-| 5cbf82a PR | pull_request | ✅ success（フレーク消失） |
-| eb15fcf push | push | ✅ success |
-| eb15fcf PR | pull_request | ❌ failure（修正前） |
+| commit | 変更内容 | push event | pull_request event |
+|--------|---------|-----------|--------------------|
+| `eb15fcf` | テストを findByTestId にリファクタ（失敗した最初のアプローチ） | ✅ success | ❌ failure |
+| `5cbf82a` | **本 ADR の決定: `bunx jest --verbose --ci` 導入** | ✅ success | ✅ success（偶然） |
+| `2eb3049` | docs 追加のみ（テスト・workflow 不変） | ❌ failure | ❌ failure |
+| `9b77c59` | **[ADR-003](003-modal-setopen-sync-for-react19.md): setOpen を同期化** | ✅ success | ✅ success |
+
+`9b77c59` 以降は安定してグリーン。**真の修正は ADR-003 の「setOpen 同期化」であり、本 ADR の `--verbose --ci` は診断 instrumentation としてのみ有効**。`--verbose` でも error 本文が空のままという事実が、「真因は通常の assertion failure ではない（React 19 strict act mode 由来の cleanup 段階エラー）」という ADR-003 の仮説への手がかりとなった点でのみ寄与した。
 
 ---
 
@@ -142,22 +144,23 @@ CI workflow [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) の 
 
 ### Risks
 
-- **真因が完全に特定できていない**: `5cbf82a` で結果的に解消したが、`--verbose --ci` のどの要素が効いたか（あるいは bun→node runtime 切替が効いたか）は未確定。**再発する可能性**は残る
-- **`--verbose` を撤回するタイミングが曖昧**: 当面は残し、5 連続グリーンを 2 週間程度維持できたら段階的に `--verbose` のみ撤回・`--ci` と `bunx jest` は恒久化することを検討
+- **本 ADR 単独では真因解決にならなかった**: [後日訂正](#️-後日訂正-副次的効果でフレーク解消は誤り)の通り、`5cbf82a` の見かけ上のグリーンは偶然で、`2eb3049` で再失敗。**真の修正は [ADR-003](003-modal-setopen-sync-for-react19.md)** の `setOpen` 同期化。本 ADR の `--verbose --ci` は **診断 instrumentation としての価値のみ**を残す
+- **`--verbose` を撤回するタイミング**: ADR-003 で恒久修正済みなので、`--verbose` は撤回しても安全。ただし将来別フレークが出た際の診断速度を優先するなら残置も可。判断は次回の workflow メンテ時に
 
 ---
 
 ## Implementation
 
 - [x] [.github/workflows/ci.yml](../../../.github/workflows/ci.yml) の test job を `bunx jest --verbose --ci` に変更
-- [x] CI で push event / pull_request event が両方グリーンになることを確認
 - [x] [`.claude/skills/ci-flake-diagnosis/SKILL.md`](../../../.claude/skills/ci-flake-diagnosis/SKILL.md) で診断プレイブックを形式知化
 - [x] 本 ADR で決定理由を記録
-- [ ] **将来課題**: 2 週間グリーン継続を確認したら `--verbose` の撤回判断（`--ci` と `bunx jest` は維持）
+- [x] **真因修正**: [ADR-003](003-modal-setopen-sync-for-react19.md) の `setOpen` 同期化（commit `9b77c59`）で根本解決
+- [ ] **将来の任意タスク**: `--verbose` の撤回判断。診断目的だったので解決後の今は不要だが、将来別フレークの初動を速くするため残置するのも妥当
 
 **関連コミット**:
 - `eb15fcf` — 失敗した最初のアプローチ（テスト code の `findByTestId` リファクタ）
 - `5cbf82a` — 本決定の実装（`bunx jest --verbose --ci`）
+- `9b77c59` — 真の修正（ADR-003 参照）
 
 ---
 
@@ -176,15 +179,14 @@ CI workflow [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) の 
 
 ## Notes
 
-### 真因の最有力仮説（未確定）
+### 真因（事後判明）
 
-調査時点で残った仮説:
+`9b77c59` の事後検証により、真因は **React 19 strict act mode + Context Provider の `async` setter から生じる floating promise** と判明。詳細は [ADR-003](003-modal-setopen-sync-for-react19.md) を参照。
 
-1. **`bun run test` vs `bunx jest` の runtime 差**: `bun run` 経由は bun runtime、`bunx jest` は node runtime になる場合があり、React 19 の Promise/microtask scheduling が異なる可能性
-2. **MSW `onUnhandledRequest: "error"`**: [tests/mocks/server.ts](../../../tests/mocks/server.ts) はハンドラ 0 個 → 内部 fetch が稀に発生すると即 error 化、それが unhandled rejection として集約される（「同名 3 回 + 本文空」の典型）
-3. **GitHub Actions runner の個体差**: 2-core Ubuntu の負荷変動で React 19 concurrent commit のタイミングが揺れる
+本 ADR の `--verbose --ci` 導入は **直接の修正にはならなかったが、以下 2 点で診断に寄与**:
 
-これらは結果から逆引きしての推定であり、再発時に再度切り分けが必要。
+1. **「verbose でも error 本文が空」**という事実を確定させ、「assertion failure ではない（= reporter 通常経路を通らない React 19 act error の可能性）」という仮説への決定的根拠となった
+2. 各 test の実行時間（失敗テストが 125ms = 通常範囲）を可視化し、「タイムアウト・worker クラッシュではない」を否定できた
 
 ### 関連する debugging skill
 

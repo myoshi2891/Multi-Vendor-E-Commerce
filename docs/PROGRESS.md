@@ -141,6 +141,21 @@
   - `getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
 
+### 2026-05-24: CI フレーク調査と ModalProvider setOpen 同期化（ADR-002 / ADR-003）
+
+- **問題**: `src/providers/modal-provider.test.tsx` の `[P1] モーダルを開くと...` テストが CI で間欠的に失敗。ローカル（M1 Mac）20 連続実行で再現せず、エラー本文も完全に空という稀な症状。
+- **失敗した最初のアプローチ**: テストを `findByTestId` パターンへリファクタ（`eb15fcf`） → CI 失敗継続。
+- **診断 instrumentation（[ADR-002](architecture/decisions/002-ci-jest-verbose-flag.md)）**: CI workflow を `bunx jest --verbose --ci` に変更（`5cbf82a`）。直後の偶発グリーンを一度は「解消」と誤認したが、翌コミット `2eb3049`（docs only）で再失敗し誤認と判明。`--verbose` は **真因特定の決定的証拠**（「本文空＝assertion failure ではない」）を提供したのみで、修正ではなかった。
+- **真因と修正（[ADR-003](architecture/decisions/003-modal-setopen-sync-for-react19.md)）**: `ModalProvider.setOpen` が `async` 関数で、`onClick={() => setOpen(...)}` から常に floating promise を生成。React 19 strict act mode の test cleanup で「unflushed effect」として検出されていた。全 18 callers が await していないことを確認した上で **`Promise<void>` → `void` に同期化**、fetchData 経路は fire-and-forget IIFE で起動（`9b77c59`）。CI 両 event 安定グリーン。
+- **形式知化**:
+  - `.claude/skills/ci-flake-diagnosis/SKILL.md` を新規作成（gh CLI でのログ精査 → 仮説分類 → 段階的修正の標準手順）
+  - `.claude/steering/tech.md` に「Context Provider setter の同期化」パターンを追記
+  - ADR-002 を訂正し ADR-003 を新規作成
+- **教訓**:
+  - 「数 push でグリーン」を「修正完了」と即断しない（複数連続グリーンで判定）
+  - 「エラー本文が空」は assertion failure ではないシグナル → React 19 strict act / runtime 層を疑う
+  - `async` だが consumer が `await` しない関数は anti-pattern。型を `void` に正直化する
+
 ---
 
 ## 既知の課題
