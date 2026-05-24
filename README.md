@@ -255,7 +255,7 @@ flowchart TD
 **アクセス制御の実装**:
 
 - **ミドルウェア**: `src/middleware.ts` が `/dashboard/*`・`/checkout`・`/profile/*` を保護
-- **サーバーアクション**: Clerk の `currentUser()` で ID とロールを検証
+- **サーバーアクション**: `src/lib/auth-guards.ts` の `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner` ヘルパーで認証・ロール・店舗所有権を集約検証。`requireStoreOwner` は `where: { url, userId }` の複合検索で IDOR 防御も同時に担保する
 - **ロール昇格**: `src/queries/store.ts` の `updateStoreStatus()` が USER → SELLER に昇格
 
 ---
