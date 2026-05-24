@@ -228,7 +228,10 @@ describe("upsertProduct", () => {
             ).rejects.toThrow("Please provide product data.");
         });
 
-        it("存在しないストアの場合エラーをスローする（IDOR防止: userId検証）", async () => {
+        it("ストアが見つからない / 所有者でない場合 Forbidden をスロー (requireStoreOwner で url+userId 集約検証)", async () => {
+            // 旧実装は url のみでも store を fetch していたが、現実装は
+            // requireStoreOwner が where: { url, userId } で findUnique するため、
+            // 「存在しない」「他人の店舗」を 1 メッセージに統合する (列挙耐性)。
             mockDb.store.findUnique.mockResolvedValue(null);
 
             await expect(
@@ -236,7 +239,7 @@ describe("upsertProduct", () => {
                     createMockProductWithVariantInput() as never,
                     "other-store"
                 )
-            ).rejects.toThrow('Store with URL "other-store" not found.');
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
 
             expect(mockDb.store.findUnique).toHaveBeenCalledWith({
                 where: {
@@ -574,8 +577,11 @@ describe("deleteProduct", () => {
                 privateMetadata: { role: "USER" },
             });
 
+            // 旧 message "Only sellers and administrators can perform this action."
+            // は実コード (role !== "SELLER") と乖離があったため、auth-guards 統一形
+            // に揃えた (auth-guards refactor)。ADMIN ロールも引き続き拒否される。
             await expect(deleteProduct("product-001")).rejects.toThrow(
-                "Only sellers and administrators can perform this action."
+                "Only sellers can perform this action."
             );
         });
     });

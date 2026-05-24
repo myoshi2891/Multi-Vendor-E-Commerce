@@ -18,6 +18,8 @@ import {
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
+// 認可ガード (src/lib/auth-guards.ts) 経由でロール検証を集約する
+import { requireSeller, requireStoreOwner } from "@/lib/auth-guards";
 
 // Slugify
 import slugify from "slugify";
@@ -72,20 +74,11 @@ export const upsertProduct = async (
     storeUrl: string
 ) => {
     try {
-        // Retrieve current user
-        const user = await currentUser();
-        // Check if user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-        // Ensure user has seller privileges
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
         // Ensure product data is provided
         if (!product) throw new Error("Please provide product data.");
-        // Find the store by URL
-        const store = await db.store.findUnique({
-            where: { url: storeUrl, userId: user.id },
-        });
-        if (!store) throw new Error(`Store with URL "${storeUrl}" not found.`);
+        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御 / auth-guards 経由)
+        // 旧実装の where: { url, userId } 検索は requireStoreOwner 内で同等に実行される。
+        const { store } = await requireStoreOwner(storeUrl);
 
         // Check if the product already exist
         const existingProduct = await db.product.findUnique({
@@ -558,15 +551,11 @@ export const getAllStoreProducts = async (storeUrl: string) => {
 
 export const deleteProduct = async (productId: string) => {
     try {
-        // Retrieve current user
-        const user = await currentUser();
-        // Check if user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-        // Ensure user has seller privileges
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error(
-                "Only sellers and administrators can perform this action."
-            );
+        // 認証 + SELLER ロールを集約検証 (auth-guards に統一)
+        // 旧実装の "Only sellers and administrators can perform this action."
+        // メッセージは実コード (role !== "SELLER") と乖離があったため、
+        // 統一メッセージ "Only sellers can perform this action." に揃える。
+        const user = await requireSeller();
         // Ensure product data is provided
         if (!productId) throw new Error("Please provide product ID.");
 
