@@ -80,14 +80,19 @@ export const upsertProduct = async (
         // 旧実装の where: { url, userId } 検索は requireStoreOwner 内で同等に実行される。
         const { store } = await requireStoreOwner(storeUrl);
 
-        // Check if the product already exist
+        // Check if the product already exist in this store
         const existingProduct = await db.product.findUnique({
-            where: { id: product.productId },
+            where: { id: product.productId, storeId: store.id },
         });
 
-        // Check if the variant already exist
-        const existingVariant = await db.productVariant.findUnique({
-            where: { id: product.variantId },
+        // Check if the variant already exist for this product and store
+        const existingVariant = await db.productVariant.findFirst({
+            where: {
+                id: product.variantId,
+                product: {
+                    storeId: store.id,
+                },
+            },
         });
 
         if (existingProduct) {
