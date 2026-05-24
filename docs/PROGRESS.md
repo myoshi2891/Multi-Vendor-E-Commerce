@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1008テスト / 70スイート（3 skipped、全パス） |
+| Jestユニットテスト | 1016テスト / 70スイート（3 skipped、全パス） |
 | Jestスナップショット | 40（`tests/component/ui/` — B1 で導入） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -133,9 +133,13 @@
   - `coupon.ts` の SELLER 所有権チェックを `requireStoreOwner()` に置換。
   - `product.ts` の `upsertProduct` / `deleteProduct` / その他 SELLER アクションを `requireStoreOwner` / `requireSeller` に置換。
   - `store.ts` の `updateStoreDefaultShippingDetails` / `getStoreShippingRates` / `upsertShippingRate` を `requireStoreOwner` に置換し、所有権チェックと店舗取得の `findUnique` 二重呼び出しを統合。`store.test.ts` のエラーメッセージ期待値も新仕様に同期。
+- **IDOR テスト 3 階層化（2026-05-24 追加）**:
+  - 既存テストの「(a) スロー検証」に加え、「(b) `where: { url, userId }` 構造検証」「(c) ガード失敗時の副作用なし検証」を 8 件追加。
+  - 内訳: `product.test.ts` +4 (deleteProduct IDOR 描述新設 / upsertProduct 副作用検証)、`coupon.test.ts` +1 (upsertCoupon IDOR describe 新設)、`store.test.ts` +3 (updateStoreDefaultShippingDetails / getStoreShippingRates / upsertShippingRate 補強)。
+  - テスト総数: 1008 → 1016。`ae66fac`。
 - **今後の残タスク**:
-  - 各種クロステナント IDOR テスト（8件）の追加。
-  - `SECURITY_GAP_REPORT.md` / `QA_HANDOFF.md` / テストダッシュボード（`docs/coverage-dashboard.html`）等のドキュメント更新。
+  - `getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。
+  - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
 
 ---
 

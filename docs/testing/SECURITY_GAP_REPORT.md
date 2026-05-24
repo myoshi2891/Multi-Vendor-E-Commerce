@@ -83,3 +83,49 @@ if (!order) throw new Error("Order not found");
   公開参照点はコミット履歴を参照: `55c07b1`（test(queries): backfill authorization tests and document IDOR gaps）
 - 上位レポート: `docs/testing/COVERAGE_REPORT.md` の A1（🔴 高優先度）
 - IDOR 修正の実装コミット: `03a7e89`（fix(security): resolve IDOR vulnerabilities in PayPal/Stripe queries and refactor E2E tests）
+
+---
+
+## 5. 追加調査・拡充（2026-05-24）— A4: 認可ガード統合 + IDOR 3 階層化
+
+### 5.1 認可ガード統合
+
+`src/lib/auth-guards.ts` に共通ヘルパー (`requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`) を導入し、以下の Server Action からインライン認可チェックを撤去:
+
+| ファイル | 関数 | 適用ヘルパー |
+|---|---|---|
+| `category.ts` | upsertCategory / deleteCategory | `requireAdmin` |
+| `subCategory.ts` | upsertSubCategory / deleteSubCategory | `requireAdmin` |
+| `offer-tag.ts` | upsertOfferTag / deleteOfferTag | `requireAdmin` |
+| `coupon.ts` | upsertCoupon / getStoreCoupons / deleteCoupon | `requireStoreOwner` |
+| `product.ts` | upsertProduct | `requireStoreOwner` |
+| `product.ts` | deleteProduct | `requireSeller` + インライン `product.store.userId` 比較 |
+| `store.ts` | updateStoreDefaultShippingDetails / getStoreShippingRates / upsertShippingRate | `requireStoreOwner` |
+
+副次効果として `findUnique` の二重呼び出し（旧実装で所有権チェックと取得を別々に行っていた箇所）が解消された。
+
+**スコープ外（残課題）**: `store.ts::getStoreOrders` は自前の `findUnique` + `userId !== user.id` インライン比較が残存。
+
+### 5.2 IDOR テスト 3 階層化
+
+既存テストの「(a) スロー検証」に加え、以下の 2 階層を追加するレグレッションテストを 8 件投入:
+
+- **(b) where 句の構造検証** — `expect(mockDb.store.findUnique).toHaveBeenCalledWith({ where: { url, userId } })` で複合キーの組成を担保。将来「`userId` 条件が外れる」変更を検知。
+- **(c) 副作用なし検証** — ガード失敗時に下流の `upsert` / `create` / `delete` / 関連 `findMany` が呼ばれないことを担保。defense in depth として下流の意図しない実行を検知。
+
+| ファイル | 関数 | 追加テスト |
+|---|---|---|
+| `product.test.ts` | `deleteProduct` | (a)(c) 商品 not found / (a)(c) 他人の商品 / (b) `include: { store: { select: { userId: true } } }` 構造検証 |
+| `product.test.ts` | `upsertProduct` | (c) `product.create/update/findFirst/productVariant.create/update` 非呼び出し |
+| `coupon.test.ts` | `upsertCoupon` | (b)(c) クロステナント where 構造 + `coupon.upsert/findFirst` 非呼び出し |
+| `store.test.ts` | `updateStoreDefaultShippingDetails` | (b)(c) 他人の店舗 URL 明示シナリオ + `store.update` 非呼び出し |
+| `store.test.ts` | `getStoreShippingRates` | (b)(c) 構造検証 + `country/shippingRate.findMany` 非呼び出し |
+| `store.test.ts` | `upsertShippingRate` | (b)(c) 構造検証 + `shippingRate.upsert` 非呼び出し |
+
+テスト総数: 1008 → 1016 (+8)。
+
+### 5.3 関連コミット
+
+- 認可ガード適用: `a73603e` (category) / `e294459` (subCategory) / `adcca3f` (offer-tag) / `06fe5d2` (coupon) / `8766979` (product) / `c83a5c4` (store)
+- IDOR 補完テスト: `ae66fac`
+- CSRF 防御方針: ADR 001 (`docs/architecture/decisions/001-csrf-policy.md`)

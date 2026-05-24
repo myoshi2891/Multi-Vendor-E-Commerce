@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **65** (Jest 60 / Playwright 5) |
-| テスト総数 | **945** (3 skipped) — 2026-05-21 時点 |
+| テストファイル総数 | **81** (Jest 76 / Playwright 5) |
+| テスト総数 | **1016** (3 skipped) — 2026-05-24 時点 |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **11 / 80 (14%)** |
-| lcov エントリ数 | **95** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| カバー済みセル | **13 / 80 (16%)** |
+| lcov エントリ数 | **96** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -237,4 +237,5 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-21 | **A2 完了（baseline 未コミット）**: `tests/e2e/visual/` に cart/checkout Visual Regression spec を追加。`playwright.config.ts` に安定化設定を追加。Visual の pages 列が `◯` → `◐` に昇格 (commit `f639334`). |
 | 2026-05-21 | **A3 完了**: `tests/e2e/a11y/` に sign-in / seller-apply の WCAG 2.1 AA スキャンを追加（`@axe-core/playwright`）。a11y の pages 列が `◯` → `◐` に昇格 (commit `d261d76`). |
 | 2026-05-22 | PayPal `capturePayPalPayment` の try-catch リファクタリング (commit `217bf76`). |
+| 2026-05-24 | **A4 完了**: `src/lib/auth-guards.ts` 導入 → 6 ファイルの認可をヘルパー集約。IDOR テスト 3 階層化（where 構造検証 + 副作用なし検証）で +8 件。テスト総数 1008 → 1016。lcov 95 → 96。詳細は [`SECURITY_GAP_REPORT.md §5`](./SECURITY_GAP_REPORT.md#5-追加調査拡充2026-05-24--a4-認可ガード統合--idor-3-階層化) を参照 (commits `a73603e`–`ae66fac`). |
 | — | 次回更新: NA-4（Visual baseline コミット後）・NA-6（GitHub Actions CI 構築後） |
