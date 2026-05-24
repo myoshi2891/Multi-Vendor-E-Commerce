@@ -49,7 +49,11 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 					const fetchedData = await fetchData();
 					setData((prev) => ({ ...prev, ...fetchedData }));
 				} catch (error) {
-					console.error("Failed to fetch modal data:", error);
+					if (error instanceof Error) {
+						console.error("Failed to fetch modal data:", error.message, error.stack);
+					} else {
+						console.error("Failed to fetch modal data:", error);
+					}
 					// エラー時は状態を変更しない
 				}
 			}
