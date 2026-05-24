@@ -757,7 +757,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error in updateStoreDefaultShippingDetails:",
-                mockError.message,
+                `requireStoreOwner: failed to query store - ${mockError.message}`,
                 mockError.stack
             );
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
