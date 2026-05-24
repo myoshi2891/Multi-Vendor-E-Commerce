@@ -24,16 +24,18 @@ allowed-tools: [Read, Grep, Glob, Bash, Edit, Write]
 
 ---
 
-## 更新対象ドキュメント（4層構造）
+## 更新対象ドキュメント（5層構造）
 
 | 層 | ファイル | 更新内容 |
 |----|---------|---------|
+| Layer 1 (即時 TODO の SSOT) | `docs/testing/QA_HANDOFF.md` | テスト統計テーブル (**統計の正本**) + HEAD ハッシュ + フェーズ別ステータス。**[documentation-guide.md](../../steering/documentation-guide.md) で「テスト数・統計は QA_HANDOFF.md のテスト統計テーブルを正とする」と規定されているため、他のすべての統計ファイルはここから同期する** |
 | Layer 3 (SDD) | `specs/multi-vendor-ecommerce/07-testing.md` | テスト数・スイート数・テスト配置パス |
 | Layer 4 (実装記録) | `docs/testing/COVERAGE_REPORT.md` | Executive Summary の定量指標・履歴テーブル |
-| Layer 4 (実装記録) | `docs/PROGRESS.md` | 作業履歴エントリ追加 |
+| Layer 4 (実装記録) | `docs/PROGRESS.md` | 作業履歴エントリ追加 + テスト統計テーブル (QA_HANDOFF.md から同期) |
 | Layer 4 (生成物) | `docs/coverage-dashboard.html` | `bun run coverage:dashboard` で再生成 |
 
 > `docs/coverage-dashboard.html` は**手動編集禁止**。必ず再生成コマンドを使う。
+> **同期順序**: `QA_HANDOFF.md` を最初に更新（SSOT 確定）→ 他 4 ファイルへ伝播。順序を逆にすると数値のドリフトが発生しやすい。
 
 ---
 
@@ -59,7 +61,23 @@ bunx tsc --noEmit 2>&1 | grep "error TS" | wc -l
 
 0件であれば「型エラー 0 件 (解消済み)」と記載。
 
-### Step 3｜`specs/multi-vendor-ecommerce/07-testing.md` を更新する
+### Step 3｜`docs/testing/QA_HANDOFF.md` を SSOT として更新する（最優先）
+
+> **このステップを Step 4 以降より先に実行する。** QA_HANDOFF.md は
+> [documentation-guide.md](../../steering/documentation-guide.md) で
+> 「テスト数・統計の SSOT」と規定されており、他ファイルはここから同期する。
+
+更新箇所：
+- `> **最終更新**: YYYY-MM-DD / **HEAD**: \`xxxxxxx\`` を `git log -1 --format=%h` の値で更新
+- `### テスト統計（YYYY-MM-DD 時点）` 見出しの日付を更新
+- テスト統計テーブル (Jest テスト総数 / スイート / スナップショット / 型エラー / Skipped) を Step 1〜2 の実測値で上書き
+- 該当する `### フェーズ別実施状況` のエントリにステータス変化を反映
+- 主要コミット履歴テーブル末尾に新コミットを追加
+- 「次回着手用 依頼プロンプト」セクションが影響を受ける場合 (タスク完了 / 新規追加) は **`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` 配列と同期して更新する**。詳細は QA_HANDOFF.md 内 "依頼プロンプト" セクションの更新規約を参照
+
+**禁止**: テスト統計テーブルを Step 1〜2 の出力なしに**推測値で更新する**こと。
+
+### Step 4｜`specs/multi-vendor-ecommerce/07-testing.md` を更新する
 
 更新箇所：
 - `Current State` セクションの `XXX unit tests across YY suites` 行
@@ -69,7 +87,7 @@ bunx tsc --noEmit 2>&1 | grep "error TS" | wc -l
 
 **禁止**: セクション全体の書き直し・無関係な記述の削除。
 
-### Step 4｜`docs/testing/COVERAGE_REPORT.md` を更新する
+### Step 5｜`docs/testing/COVERAGE_REPORT.md` を更新する
 
 **4.1 Executive Summary テーブル**
 
@@ -98,7 +116,7 @@ bunx tsc --noEmit 2>&1 | grep "error TS" | wc -l
 
 直近のコミットハッシュは `git log --oneline -5` で確認。
 
-### Step 5｜`docs/PROGRESS.md` に作業履歴を追記する
+### Step 6｜`docs/PROGRESS.md` に作業履歴を追記する
 
 最終エントリの直後（ファイル末尾付近）に以下の構造で追記：
 
@@ -128,7 +146,7 @@ bunx tsc --noEmit 2>&1 | grep "error TS" | wc -l
 
 > コミットハッシュは `git log --oneline` で正確な値を確認すること。推測禁止。
 
-### Step 6｜`docs/coverage-dashboard.html` を再生成する
+### Step 7｜`docs/coverage-dashboard.html` を再生成する
 
 ```bash
 bun run coverage:dashboard
@@ -144,7 +162,7 @@ bun run coverage:dashboard
 > ⚠️ lcov.info が古い場合（2025-03-16 のまま）は、先に `bun run test -- --coverage` を
 > 実行して更新してから再生成すると精度が上がる。ただし CI 未整備のため任意。
 
-### Step 7｜全変更をコミットする
+### Step 8｜全変更をコミットする
 
 ```bash
 git add specs/multi-vendor-ecommerce/07-testing.md \
@@ -169,13 +187,17 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 テスト作業が完了した
   │
   ├─ テスト数が変わった？
-  │   └─ YES → Step 1 → 07-testing.md + COVERAGE_REPORT.md を更新
+  │   └─ YES → Step 1 → QA_HANDOFF.md (Step 3, SSOT) → 07-testing.md + COVERAGE_REPORT.md を更新
   │
   ├─ 型エラー件数が変わった？
-  │   └─ YES → COVERAGE_REPORT.md Executive Summary を更新
+  │   └─ YES → QA_HANDOFF.md + COVERAGE_REPORT.md Executive Summary を更新
   │
   ├─ テストファイルを追加/削除した？
-  │   └─ YES → Step 6 (dashboard 再生成) 必須
+  │   └─ YES → Step 7 (dashboard 再生成) 必須
+  │
+  ├─ scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS を編集した？
+  │   └─ YES → Step 7 (dashboard 再生成) 必須 + QA_HANDOFF.md の
+  │              「次回着手用 依頼プロンプト」セクションを同期
   │
   ├─ 大きな作業（Phase 完了・大量追加・バグ修正）？
   │   └─ YES → docs/PROGRESS.md に作業ログを追記
