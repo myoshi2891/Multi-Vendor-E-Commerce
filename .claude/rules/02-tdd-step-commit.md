@@ -42,37 +42,47 @@
 ## Examples
 
 ### ✅ 良い例：新基準に基づくコミット分割
-```
+
+```bash
 test(ui): add badge/card/label snapshots (B1 Tier 2 - 3ファイル、計120行、shadcn/ui プリミティブで共通 utils を参照)
 test(ui): add skeleton/textarea snapshots (B1 Tier 2 - 2ファイル、計80行、shadcn/ui プリミティブ)
 test(ui): add modal provider async logic tests (1ファイル = 1 commit - 非同期処理を伴う独立したプロバイダー、Tier 1)
 chore(test): replace placeholder classes with real tailwind utilities (テストコード修正ではないリファクタリング)
 docs: regenerate coverage-dashboard.html and sync B1 stats (ダッシュボード生成 + 統計ドキュメント更新の独立コミット)
 ```
+
 → 各コミットは同一 Tier 内で「3ファイル以下」「200行未満」の基準を満たしており、テストコードとリファクタリング、ドキュメント同期が明確に別コミットに分かれている。
 
 ### ❌ 悪い例：3ファイルまたは200行の閾値超過を未承認で同梱
-```
+
+```bash
 test(ui): add badge/card/input/label/textarea/skeleton snapshots (B1 Tier 2)
 ```
+
 → 6つのテストファイルとそれに伴うスナップショット（合計300行以上）を、PRでの理由記載およびレビュアーの承認なしに1つのコミットに同梱している。
 
 ### ❌ 悪い例：相互依存がない独立したテストの同梱
-```
+
+```bash
 test(ui): add button/select/dialog snapshots (Tier 1 & Tier 2)
 ```
+
 → `button` と `select` と `dialog` は同一の SUT (System Under Test) を共有しておらず、インポートの共有率も 50% 未満であり、個別に独立してテスト可能なコンポーネントであるため、別々にコミットすべきである。
 
 ### ❌ 悪い例：複数フェーズの混在（最大の禁止事項）
-```
+
+```bash
 test(ui): add B1 shadcn snapshots + docs sync
 ```
+
 → 9つのテストファイル + 40個のスナップショット + 5つのドキュメント更新 + Linter修正を、中間コミットなしで1つのコミットにまとめている。レビュー不能、`git bisect` 不能、`git revert` で不要な変更まで巻き戻る。
 
 ### ❌ 悪い例：docs同期を後回し
-```
+
+```bash
 test(ui): add all primitive snapshots (no docs update yet)
 ```
+
 → コミット後 `docs/coverage-dashboard.html` が古いまま放置。`spec-sync-after-test` を起動していない。「あとでまとめて同期」が次回セッションへの引き継ぎ漏れの原因になる。
 
 ## Related
