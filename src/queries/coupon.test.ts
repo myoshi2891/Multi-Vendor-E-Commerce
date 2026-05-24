@@ -94,13 +94,18 @@ describe("upsertCoupon", () => {
             ).rejects.toThrow("Please provide store URL.");
         });
 
-        it("存在しないストアURLの場合エラーをスローする", async () => {
+        it("ストアが見つからない / 所有者でない場合 Forbidden をスロー (auth-guards 経由で集約)", async () => {
+            // 旧実装は url のみで store を検索していたため
+            //   - 存在しない URL → "Store with URL ... not found"
+            //   - 他人の URL    → 後段の userId 比較で別エラー
+            // と区別されたが、requireStoreOwner は where: { url, userId } の
+            // 複合検索で双方を 1 メッセージに統合する (IDOR 強化 / 列挙耐性)。
             const coupon = createMockCoupon();
             mockDb.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 upsertCoupon(coupon as never, "nonexistent-store")
-            ).rejects.toThrow('Store with URL "nonexistent-store" not found.');
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
         });
 
         it("同一ストア内でコード重複の場合エラーをスローする", async () => {
@@ -225,25 +230,31 @@ describe("getStoreCoupons", () => {
             });
         });
 
-        it("他人のストアのクーポンを取得できない", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
-                createMockStore({ userId: "different-user" })
-            );
-
-            await expect(
-                getStoreCoupons(TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow(
-                "You do not have permission to access coupons for this store."
-            );
-        });
-
-        it("存在しないストアの場合エラーをスローする", async () => {
+        it("他人のストアのクーポンを取得できない (requireStoreOwner で url+userId 複合検索)", async () => {
+            // 旧実装は url のみで store を取得し、userId を後段で比較していた。
+            // 新実装の requireStoreOwner は where: { url, userId } で findUnique
+            // するため、他人の店舗 URL を指定すると DB レベルで null が返る。
             mockDb.store.findUnique.mockResolvedValue(null);
 
             await expect(
-                getStoreCoupons("nonexistent")
-            ).rejects.toThrow(
-                "You do not have permission to access coupons for this store."
+                getStoreCoupons(TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+            // url + userId の複合 where が組まれていることを構造検証
+            expect(mockDb.store.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        url: TEST_CONFIG.TEST_STORE_URL,
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    },
+                })
+            );
+        });
+
+        it("存在しないストアの場合 Forbidden をスロー (列挙耐性: 存在 / 非所有を区別しない)", async () => {
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(getStoreCoupons("nonexistent")).rejects.toThrow(
+                "Forbidden: store not owned by current user."
             );
         });
     });
@@ -371,16 +382,23 @@ describe("deleteCoupon", () => {
             });
         });
 
-        it("他人のストアのクーポンを削除できない", async () => {
-            mockDb.store.findUnique.mockResolvedValue(
-                createMockStore({ userId: "different-user" })
-            );
+        it("他人のストアのクーポンを削除できない (requireStoreOwner で url+userId 複合検索)", async () => {
+            // 他人の店舗 URL を指定 → DB の where: { url, userId } が null を返す。
+            mockDb.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 deleteCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow(
-                "You do not have permission to access coupons for this store."
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+            expect(mockDb.store.findUnique).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        url: TEST_CONFIG.TEST_STORE_URL,
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    },
+                })
             );
+            // クーポン削除は呼ばれていない
+            expect(mockDb.coupon.delete).not.toHaveBeenCalled();
         });
     });
 
