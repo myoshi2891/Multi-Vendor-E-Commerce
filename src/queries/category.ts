@@ -1,7 +1,7 @@
 "use server";
 
-// Clerk
-import { currentUser } from "@clerk/nextjs/server";
+// 認可ガード (src/lib/auth-guards.ts) を経由してロール検証を集約する
+import { requireAdmin } from "@/lib/auth-guards";
 
 // DB
 import { db } from "@/lib/db";
@@ -18,17 +18,8 @@ import { Category } from "@prisma/client";
 
 export const upsertCategory = async (category: Category) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify admin permission
-        if (user.privateMetadata.role !== "ADMIN")
-            throw new Error(
-                "Unauthorized Access: Admin Privileges Required for Entry."
-            );
+        // 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+        await requireAdmin();
 
         // Ensure category data is provided
         if (!category) throw new Error("Please provide category data.");
@@ -189,17 +180,8 @@ export const getCategory = async (categoryId: string) => {
 
 export const deleteCategory = async (categoryId: string) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify admin permission
-        if (user.privateMetadata.role !== "ADMIN")
-            throw new Error(
-                "Unauthorized Access: Admin Privileges Required for Entry."
-            );
+        // 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
+        await requireAdmin();
 
         if (!categoryId) throw new Error("Please provide a category ID.");
 
