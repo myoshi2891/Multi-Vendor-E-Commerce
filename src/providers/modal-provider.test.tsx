@@ -70,39 +70,23 @@ const OutsideComponent = () => {
     return <div>Should not render</div>;
 };
 
-// ⚠️ FILE-LEVEL SKIPPED — OI-8 連鎖の最終形。modal-provider.test.tsx 全体を一時隔離。
+// OI-8 連鎖の経緯 (skip 解除後の履歴アーカイブ):
 //
-// CI flake は同一 commit で push event は success / pull_request event は failure になる
-// runner 個体差 (ADR-003 仮説 F) が支配的で、コード変更では解消できない領域に達した。
+// 1. setOpen 3 件 → it.skip (9c190d6 / a85460b / 73609ef CI fail)
+// 2. setOpen describe 全体 → describe.skip (12aef66)
+// 3. setClose 1 件 → CI fail (12aef66 pull_request only)
+// 4. ファイル全体 → describe.skip (bacfe2e)
+// 5. shipping-form.test.tsx へ flake 移動 (bacfe2e push only) — modal 固有問題でないと確定
+// 6. 仮説 B (MSW onUnhandledRequest "error" → "warn") を tests-setup/jest.setup.ts に適用 (c579642)
+//    → c579642 で両 event 両グリーン (1 サイクル目)
+// 7. 本コミットで file-level skip を解除 (2 サイクル目の観察 + modal 復活検証)
 //
-// 連鎖の最終履歴:
-//   1. setOpen "[P1] モーダルを開くと isOpen=true..." — 2026-05-24 it.skip (9c190d6)
-//   2. setOpen "[P1] fetchData なしでモーダルを開ける" — 2026-05-25 it.skip (a85460b)
-//   3. setOpen "[P1] fetchData が例外を投げてもモーダルは開く" — 2026-05-25 CI failure (73609ef)
-//   4. setOpen describe 全体 — 2026-05-25 describe.skip (12aef66)
-//   5. setClose "[P1] 閉じると isOpen=false..." — 2026-05-25 CI failure (12aef66 pull_request)
+// 解除判定条件: 連続 5 サイクル両 event グリーンを観察できれば仮説 B 採用確定 (ADR-003 教訓)。
+// もし本コミット以降で同じ「同名 3 回列挙・本文空」症状が再発したら、仮説 B も否決し
+// 仮説 E (Jest runner = node 直接呼出) または --maxWorkers=1 を試行する。
 //
-// 試行済み (すべて根本解消に至らず):
-//   - findByTestId 化 (eb15fcf) / --verbose --ci (5cbf82a) / setOpen 同期化 (9b77c59)
-//   - isMounted 撤廃 (a85460b) / describe.skip setOpen (12aef66)
-//
-// 共通因子: render(<ModalProvider>) + userEvent.setup().click() + waitFor() の組合せ。
-// setClose テストも内部で setOpen を呼ぶため、ModalProvider に対する操作テストは
-// すべて同パターンに該当し、it.skip 連鎖は本質的に止まらないと判断。
-//
-// 残存カバレッジ (file skip で失う):
-//   - マウント制御 (children render): カバレッジ低だが ModalProvider の SSR/CSR 安全性検証
-//   - useModal (Context 取得 / Provider 外 throw): hook API のスモークカバー
-//   ※ いずれも E2E (tests/e2e/) で間接的にカバーされる範囲
-//
-// 解除条件:
-//   1. 仮説 B (MSW bypass) — tests-setup/jest.setup.ts で handler 0 時 onUnhandledRequest='bypass'
-//   2. 仮説 E (Jest runner) — workflow で node node_modules/jest/bin/jest.js 直接呼出
-//   3. 上記いずれかで連続 5 サイクル両 event グリーンを観察
-//
-// 期限: 2026-06-07
 // 追跡: docs/testing/QA_HANDOFF.md "OI-8" / docs/architecture/decisions/003-modal-setopen-sync-for-react19.md
-describe.skip("ModalProvider", () => {
+describe("ModalProvider", () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
