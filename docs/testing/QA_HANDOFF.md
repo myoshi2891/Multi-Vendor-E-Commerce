@@ -177,20 +177,80 @@
 
 #### NA-NS-01: B1+ shadcn/ui プリミティブ Snapshot 拡張 (残 40 プリミティブ)
 
+> **詳細計画書**: [`docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md`](./B1_SNAPSHOT_EXPANSION_PLAN.md) — Tier 分類・Sprint 構造・各プリミティブの想定 snapshot 数・コミット戦略の決定版。次セッションは**まず計画書を読んでから着手**すること。
+
 ```text
 shadcn/ui プリミティブの Snapshot テストを B1 MVP (9 プリミティブ) から残り 40 プリミティブへ拡張してください。
+詳細は docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md を必ず先に読むこと（2026-05-26 調査済み）。
 
 背景:
 - B1 MVP は 2026-05-23 に完了 (tests/component/ui/ 配下 9 ファイル / 40 snapshot)。
-- 全プリミティブ (約 49 種) のうち未着手は accordion / alert-dialog / avatar / breadcrumb / calendar / carousel / collapsible / command / context-menu / drawer / dropdown-menu / form / hover-card / menubar / navigation-menu / pagination / popover / progress / radio-group / scroll-area / sheet / sidebar / slider / sonner / switch / table / tabs / toggle / toggle-group / tooltip など。
-- .claude/rules/02-tdd-step-commit.md に「同一 Tier / 3 ファイル以下 / 合計 200 行未満 / 相互依存 (インポート共有 50%以上)」の同梱コミット条件が定義されているので、これに従ってコミットを分割すること。
+- 残り 40 プリミティブを以下 Tier に分類済み (B1_SNAPSHOT_EXPANSION_PLAN.md):
+  * Tier 1 (21 個 / 外部 lib 依存なし / 1 ファイル 1 commit 原則):
+    alert, alert-dialog, aspect-ratio, avatar, breadcrumb, checkbox, collapsible,
+    hover-card, input-otp, pagination, popover, progress, radio-group, resizable,
+    scroll-area, separator, slider, switch, toggle, tooltip, chart
+  * Tier 2 (8 個 / compound Radix / 同梱コミット候補):
+    - Menu family: dropdown-menu, context-menu, menubar (3 ファイル同梱候補)
+    - Sheet family: sheet, drawer (2 ファイル同梱候補)
+    - 個別: tabs, toggle-group, table
+  * Tier 3 (7 個 / 外部 lib / 必ず 1 ファイル 1 commit):
+    form (react-hook-form), calendar (react-day-picker), carousel (embla),
+    command (cmdk), sidebar (内部 compound), navigation-menu, sonner
+  * 補助 (4 個 / 各 1 commit): accordion, toast, toaster, data-table
 
-完了条件:
-1. プリミティブごとに 1 ファイル 1 commit を原則として段階追加
-2. spec-sync-after-test skill を起動し、テスト統計と docs/coverage-dashboard.html を同一コミットで同期
-3. bun run test, bunx tsc --noEmit が常時グリーン
+- Tier 3 戦略 (確定済み): デフォルト状態のみスナップショット取得。
+  * form: useForm() ラッパーで空フォーム + FormField 1 個
+  * calendar: selected={new Date("2026-01-15")} 固定
+  * carousel: 3 slide 初期状態 (slide 0 アクティブ)
+  * command: 閉状態 + 開状態 (defaultOpen) の 2 種
+  * sidebar: <SidebarProvider><Sidebar>...</Sidebar></SidebarProvider> 最小構成
+  * navigation-menu: 単一 root + 子 NavigationMenuItem
+  * sonner: <Toaster /> 単独 (toast 発火なし)
 
-参考: tests/component/ui/__snapshots__/ の既存パターン、docs/testing/TESTING_DESIGN.md の "shadcn/ui Snapshot テスト" セクション。
+- .claude/rules/02-tdd-step-commit.md の閾値 (同一 Tier / 3 ファイル以下 / 合計 200 行未満 /
+  import 共有 50% 以上) を満たす場合のみ同梱コミット。超過時は分離。
+
+推奨実装順序 (Sprint 単位 / 各 Sprint 末で spec-sync-after-test 起動):
+- Sprint 1 (Tier 1 前半 10 commits): aspect-ratio → separator → progress → switch →
+  checkbox → radio-group → slider → toggle → tooltip → popover → spec-sync
+- Sprint 2 (Tier 1 後半 11 commits): alert → alert-dialog → avatar → breadcrumb →
+  collapsible → hover-card → input-otp → pagination → resizable → scroll-area →
+  chart → spec-sync
+- Sprint 3 (Tier 2 / 5-7 commits): Menu family → Sheet family → tabs → toggle-group →
+  table → spec-sync
+- Sprint 4 (Tier 3 + 補助 / 11 commits + archive): form → calendar → carousel →
+  command → sidebar → navigation-menu → sonner → accordion → toast → toaster →
+  data-table → spec-sync → NA-NS-01 archive (render-html.ts + 本セクション削除)
+
+標準テンプレート (Portal 系 = alert-dialog/popover/hover-card/tooltip/dropdown-menu/
+context-menu/menubar/sheet/drawer/command/sonner は document.body をスナップショット対象):
+  /** @jest-environment jsdom */
+  import { render } from "@testing-library/react";
+  import "@testing-library/jest-dom";
+  import { Foo } from "@/components/ui/foo";
+  describe("Foo (snapshot)", () => {
+    it("renders default", () => {
+      const { container } = render(<Foo>content</Foo>);
+      expect(container.firstChild).toMatchSnapshot();
+    });
+  });
+
+完了条件 (Sprint 4 終了時):
+1. tests/component/ui/*.test.tsx が 49 ファイル
+2. bun run test グリーン、bunx tsc --noEmit エラーゼロ
+3. scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS から NA-NS-01 削除
+4. 本セクション (QA_HANDOFF.md §3.3 NA-NS-01) のプロンプト削除
+5. docs/testing/COVERAGE_REPORT.md §3 に B1+ 完了アーカイブ行追加 (完了日 + commit hash)
+6. docs/coverage-dashboard.html を bun run coverage:dashboard で再生成
+7. docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md のステータスを Completed YYYY-MM-DD に更新
+
+参考:
+- 詳細計画: docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md (Tier 別 snapshot 数の想定値含む)
+- テンプレート: tests/component/ui/button.test.tsx (variants/asChild), card.test.tsx (compound), dialog.test.tsx (Portal)
+- 既存パターン: tests/component/ui/__snapshots__/
+- 設計ガイド: docs/testing/TESTING_DESIGN.md "shadcn/ui Snapshot テスト" セクション
+- コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
 #### NA-NS-02: Stripe / PayPal Webhook の Contract テスト拡充
