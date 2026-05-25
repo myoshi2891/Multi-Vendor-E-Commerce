@@ -360,32 +360,7 @@ export const upsertShippingRate = async (
 
 export const getStoreOrders = async (storeUrl: string) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
-
-        // Get store id using url
-        const store = await db.store.findUnique({
-            where: {
-                url: storeUrl,
-            },
-        });
-
-        // Ensure store existence
-        if (!store) throw new Error("Store not found.");
-
-        // Verify ownership
-        if (user.id !== store.userId) {
-            throw new Error(
-                "You are not authorized to view this store's orders."
-            );
-        }
+        const { store } = await requireStoreOwner(storeUrl);
 
         // Retrieve order groups for the specified store and user
         const orders = await db.orderGroup.findMany({
