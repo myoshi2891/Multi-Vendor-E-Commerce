@@ -70,23 +70,20 @@ const OutsideComponent = () => {
     return <div>Should not render</div>;
 };
 
-// OI-8 連鎖の経緯 (skip 解除後の履歴アーカイブ):
+// ⚠️ FILE-LEVEL SKIPPED — OI-8 (CI flake) の根本未解消につき再隔離。
 //
-// 1. setOpen 3 件 → it.skip (9c190d6 / a85460b / 73609ef CI fail)
-// 2. setOpen describe 全体 → describe.skip (12aef66)
-// 3. setClose 1 件 → CI fail (12aef66 pull_request only)
-// 4. ファイル全体 → describe.skip (bacfe2e)
-// 5. shipping-form.test.tsx へ flake 移動 (bacfe2e push only) — modal 固有問題でないと確定
-// 6. 仮説 B (MSW onUnhandledRequest "error" → "warn") を tests-setup/jest.setup.ts に適用 (c579642)
-//    → c579642 で両 event 両グリーン (1 サイクル目)
-// 7. 本コミットで file-level skip を解除 (2 サイクル目の観察 + modal 復活検証)
+// 2026-05-25 追加調査で「個別 skip / 仮説 A (isMounted 撤廃) / 仮説 B (MSW warn)」が
+// いずれも症状を完全には消せないことが確定。連鎖は modal-provider 内に留まらず
+// shipping-form.test.tsx (5851756 観察) や他の RTL + userEvent + waitFor テストへも
+// runner ガチャ的に移動する。詳細は ADR-003「後続調査」セクションを参照。
 //
-// 解除判定条件: 連続 5 サイクル両 event グリーンを観察できれば仮説 B 採用確定 (ADR-003 教訓)。
-// もし本コミット以降で同じ「同名 3 回列挙・本文空」症状が再発したら、仮説 B も否決し
-// 仮説 E (Jest runner = node 直接呼出) または --maxWorkers=1 を試行する。
+// 本ファイルは modal 隔離のため file-level skip 維持。残候補は仮説 E (Jest runner 切替)
+// と --maxWorkers=1 で、いずれも workflow ci.yml の変更を伴うため別タスクで着手予定。
 //
+// 解除判定条件: 上記いずれかで連続 5 サイクル両 event グリーンを観察。
+// 期限: 2026-06-07
 // 追跡: docs/testing/QA_HANDOFF.md "OI-8" / docs/architecture/decisions/003-modal-setopen-sync-for-react19.md
-describe("ModalProvider", () => {
+describe.skip("ModalProvider", () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
