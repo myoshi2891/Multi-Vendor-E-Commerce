@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 // Prisma models
 import { User } from "@prisma/client";
@@ -20,7 +20,7 @@ type ModalContextType = {
 	setOpen: (
 		modal: React.ReactNode,
 		fetchData?: () => Promise<Partial<ModalData>>
-	) => Promise<void>;
+	) => void;
 	setClose: () => void;
 };
 
@@ -30,34 +30,31 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [data, setData] = useState<ModalData>({});
 	const [showingModal, setShowingModal] = useState<React.ReactNode>(null);
-	const [isMounted, setIsMounted] = useState(false);
 
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
-
-	const setOpen = async (
+	// 同期関数として保つことで onClick={() => setOpen(...)} の floating promise を防ぐ。
+	// React 19 strict act mode が cleanup 段階で unflushed effect として検出するのを回避するため。
+	// fetchData がある場合のみ fire-and-forget の IIFE で非同期処理を起動する。
+	const setOpen = (
 		modal: React.ReactNode,
 		fetchData?: () => Promise<Partial<ModalData>>
-	) => {
-		if (modal) {
-			setShowingModal(modal);
-			setIsOpen(true);
+	): void => {
+		if (!modal) return;
+		setShowingModal(modal);
+		setIsOpen(true);
+		if (!fetchData) return;
 
-			if (fetchData) {
-				try {
-					const fetchedData = await fetchData();
-					setData((prev) => ({ ...prev, ...fetchedData }));
-				} catch (error) {
-					if (error instanceof Error) {
-						console.error("Failed to fetch modal data:", error.message, error.stack);
-					} else {
-						console.error("Failed to fetch modal data:", error);
-					}
-					// エラー時は状態を変更しない
+		void (async () => {
+			try {
+				const fetchedData = await fetchData();
+				setData((prev) => ({ ...prev, ...fetchedData }));
+			} catch (error) {
+				if (error instanceof Error) {
+					console.error("Failed to fetch modal data:", error.message, error.stack);
+				} else {
+					console.error("Failed to fetch modal data:", error);
 				}
 			}
-		}
+		})();
 	};
 
 	const setClose = () => {
@@ -65,8 +62,6 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setData({});
 		setShowingModal(null);
 	};
-
-	if (!isMounted) return null;
 
 	return (
 		<ModalContext.Provider value={{ data, setOpen, setClose, isOpen }}>

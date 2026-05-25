@@ -59,9 +59,7 @@ describe("upsertSubCategory", () => {
 
             await expect(
                 upsertSubCategory(createMockSubCategory() as never)
-            ).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required for Entry."
-            );
+            ).rejects.toThrow("Only admins can perform this action.");
         });
 
         it("SELLERロールでも拒否される", async () => {
@@ -72,9 +70,7 @@ describe("upsertSubCategory", () => {
 
             await expect(
                 upsertSubCategory(createMockSubCategory() as never)
-            ).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required for Entry."
-            );
+            ).rejects.toThrow("Only admins can perform this action.");
         });
     });
 
@@ -294,7 +290,7 @@ describe("deleteSubCategory", () => {
             });
 
             await expect(deleteSubCategory("subcategory-001")).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required for Entry."
+                "Only admins can perform this action."
             );
         });
     });

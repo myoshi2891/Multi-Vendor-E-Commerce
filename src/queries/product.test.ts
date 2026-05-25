@@ -183,6 +183,33 @@ const createMockProductWithVariantInput = (
     ...overrides,
 });
 
+// productVariant.findFirst の scoped lookup (id + productId + product.storeId) を完全一致で
+// 検証するマッチャー。production の IDOR 防御 (src/queries/product.ts:89-97) は
+// 3 フィールドすべてで絞り込むため、テストモックも同じ条件で「該当バリアントを返す」判定を
+// 行わないと、where: { id } だけへの退行をテストが見逃してしまう。
+const matchesScopedVariantLookup = (
+    params: unknown,
+    expected: { variantId: string; productId: string; storeId: string }
+): boolean => {
+    if (typeof params !== "object" || params === null || !("where" in params)) {
+        return false;
+    }
+    const where = (
+        params as {
+            where?: {
+                id?: string;
+                productId?: string;
+                product?: { storeId?: string };
+            };
+        }
+    ).where;
+    return (
+        where?.id === expected.variantId &&
+        where?.productId === expected.productId &&
+        where?.product?.storeId === expected.storeId
+    );
+};
+
 // ==================================================
 // upsertProduct
 // ==================================================
@@ -228,7 +255,10 @@ describe("upsertProduct", () => {
             ).rejects.toThrow("Please provide product data.");
         });
 
-        it("存在しないストアの場合エラーをスローする（IDOR防止: userId検証）", async () => {
+        it("ストアが見つからない / 所有者でない場合 Forbidden をスロー (requireStoreOwner で url+userId 集約検証)", async () => {
+            // 旧実装は url のみでも store を fetch していたが、現実装は
+            // requireStoreOwner が where: { url, userId } で findUnique するため、
+            // 「存在しない」「他人の店舗」を 1 メッセージに統合する (列挙耐性)。
             mockDb.store.findUnique.mockResolvedValue(null);
 
             await expect(
@@ -236,7 +266,7 @@ describe("upsertProduct", () => {
                     createMockProductWithVariantInput() as never,
                     "other-store"
                 )
-            ).rejects.toThrow('Store with URL "other-store" not found.');
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
 
             expect(mockDb.store.findUnique).toHaveBeenCalledWith({
                 where: {
@@ -244,6 +274,26 @@ describe("upsertProduct", () => {
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                 },
             });
+        });
+
+        it("IDOR失敗時に下流の商品ミューテーション (create/update/productVariant.*) が一切呼ばれない", async () => {
+            // 副作用なし検証 (defense in depth): requireStoreOwner が throw した時点で
+            // upsertProduct 内の create/update/findFirst (slug 解決) 等が
+            // 早期リターンされ、後続の DB I/O が発生しないことを保証する。
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    "other-store"
+                )
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+            expect(mockDb.product.update).not.toHaveBeenCalled();
+            expect(mockDb.product.findFirst).not.toHaveBeenCalled();
+            expect(mockDb.productVariant.create).not.toHaveBeenCalled();
+            expect(mockDb.productVariant.update).not.toHaveBeenCalled();
         });
     });
 
@@ -261,7 +311,7 @@ describe("upsertProduct", () => {
 
         it("商品もバリアントも存在しない場合、新規作成する", async () => {
             mockDb.product.findUnique.mockResolvedValue(null);
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.product.create.mockResolvedValue(createMockProduct());
 
             await upsertProduct(
@@ -285,7 +335,7 @@ describe("upsertProduct", () => {
 
         it("バリアントのslugが正しく生成される", async () => {
             mockDb.product.findUnique.mockResolvedValue(null);
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.product.create.mockResolvedValue(createMockProduct());
 
             await upsertProduct(
@@ -315,7 +365,7 @@ describe("upsertProduct", () => {
 
         it("既存商品に新しいバリアントを追加する", async () => {
             mockDb.product.findUnique.mockResolvedValue(createMockProduct());
-            mockDb.productVariant.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
             mockDb.productVariant.create.mockResolvedValue(
                 createMockProductVariant()
             );
@@ -371,9 +421,18 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
-                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
+                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -408,9 +467,18 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "New Product", slug: "existing-slug" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
-                createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
+                    return createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -440,9 +508,18 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findUnique.mockResolvedValue(
-                createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" })
-            );
+            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
+                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+                }
+                return null;
+            });
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -574,8 +651,11 @@ describe("deleteProduct", () => {
                 privateMetadata: { role: "USER" },
             });
 
+            // 旧 message "Only sellers and administrators can perform this action."
+            // は実コード (role !== "SELLER") と乖離があったため、auth-guards 統一形
+            // に揃えた (auth-guards refactor)。ADMIN ロールも引き続き拒否される。
             await expect(deleteProduct("product-001")).rejects.toThrow(
-                "Only sellers and administrators can perform this action."
+                "Only sellers can perform this action."
             );
         });
     });
@@ -590,6 +670,55 @@ describe("deleteProduct", () => {
             await expect(deleteProduct("")).rejects.toThrow(
                 "Please provide product ID."
             );
+        });
+    });
+
+    describe("IDOR防止", () => {
+        // deleteProduct は requireSeller + インライン所有権チェック (product.store.userId !== user.id)
+        // という二段構成。requireStoreOwner と異なり store URL 経由ではないため、
+        // 検証ポイントは「(b) findUnique が store.userId を含む include 構造で呼ばれているか」
+        // と「(c) ガード失敗時に db.product.delete が一切呼ばれないか」となる。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+        });
+
+        it("商品が存在しない場合 'Product not found.' をスローし db.product.delete が呼ばれない", async () => {
+            mockDb.product.findUnique.mockResolvedValue(null);
+
+            await expect(deleteProduct("nonexistent-id")).rejects.toThrow(
+                "Product not found."
+            );
+            expect(mockDb.product.delete).not.toHaveBeenCalled();
+        });
+
+        it("他人のストアの商品の場合 'You can only delete your own products.' をスローし db.product.delete が呼ばれない", async () => {
+            // 同一 productId は存在するが、関連 store の userId が現在のユーザーと一致しない
+            // (= クロステナント) 状態。インライン比較 product.store.userId !== user.id で reject。
+            mockDb.product.findUnique.mockResolvedValue({
+                id: "product-001",
+                store: { userId: "other-seller-id" },
+            });
+
+            await expect(deleteProduct("product-001")).rejects.toThrow(
+                "You can only delete your own products."
+            );
+            expect(mockDb.product.delete).not.toHaveBeenCalled();
+        });
+
+        it("所有権検証用 findUnique が { id, include: { store: { select: { userId: true } } } } 構造で呼ばれる", async () => {
+            // 将来「include を外す」「userId を取らない」変更が入った場合に検知するレグレッション。
+            mockDb.product.findUnique.mockResolvedValue(null);
+
+            await expect(deleteProduct("product-001")).rejects.toThrow(
+                "Product not found."
+            );
+            expect(mockDb.product.findUnique).toHaveBeenCalledWith({
+                where: { id: "product-001" },
+                include: { store: { select: { userId: true } } },
+            });
         });
     });
 

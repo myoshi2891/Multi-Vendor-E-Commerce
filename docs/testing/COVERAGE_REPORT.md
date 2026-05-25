@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **65** (Jest 60 / Playwright 5) |
-| テスト総数 | **945** (3 skipped) — 2026-05-21 時点 |
+| テストファイル総数 | **81** (Jest 76 / Playwright 5) |
+| テスト総数 | **1016** (3 skipped) — 2026-05-24 時点 |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **11 / 80 (14%)** |
-| lcov エントリ数 | **50** (※ `coverage/lcov.info` は 2025-03-16 時点。実態より古い可能性) |
+| カバー済みセル | **13 / 80 (16%)** |
+| lcov エントリ数 | **96** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -117,6 +117,15 @@
 
 ### 🟢 未着手（低優先度）— Mid–Long Term
 
+#### B4. CI でのカバレッジ artifact 化 + dashboard 自動再生成
+- **対象**: `jest.config.js`（`collectCoverage` / `coverageReporters: ['lcov', 'text-summary']` の追加）+ `.github/workflows/ci.yml`（test ジョブで `bun run test -- --coverage` + `actions/upload-artifact@<sha> # v4` で `coverage/lcov.info` を保存）
+- **推奨ツール**: Jest（既存）+ `actions/upload-artifact`。任意で Codecov / Coveralls 連携
+- **コスト感**: **S**（jest 設定 + CI 1 ジョブの修正）
+- **期待効果**: ローカル再生成漏れによる dashboard の鮮度劣化を防ぎ、PR 上でカバレッジ artifact をレビュー可能にする。`docs/coverage-dashboard.html` の自動再生成も同ジョブで実行できれば手作業を完全に排除できる
+- **背景**: 旧 OI-7（`coverage/lcov.info` が古い）の根本対応として、`QA_HANDOFF.md` の Open Issues から本セクションへ移管（2026-05-24）
+
+---
+
 #### C1. Lighthouse CI でパフォーマンス予算化
 - **対象**: `.github/workflows/lhci.yml` (新規)
 - **推奨ツール**: `@lhci/cli` + GitHub Actions
@@ -157,11 +166,10 @@
 - **対応**: `categorize.ts` の `detectCategory` で `tests/component/` 配下を最優先で integration 判定
 - **テスト追加**: `tests/component/store/cart.test.tsx → category=integration`、`src/components/store/foo.test.tsx → category=unit`
 
-### Issue #5: lcov.info の鮮度
-- **症状**: `coverage/lcov.info` のタイムスタンプが 2025-03-16。以後の機能追加・リファクタが反映されていない
-- **影響**: 「partial」判定 (lcov line% < 60%) が古い情報に基づく可能性
-- **暫定対応**: ダッシュボードの脚注に「lcov の鮮度」を明示する案 (未実装)。当面は `bun run test -- --coverage` を CI 不在のままローカルで定期実行する運用
-- **根本対応**: → Next Actions B/C の CI 立ち上げで自動化
+### Issue #5: lcov.info の鮮度 ✅ 2026-05-24 運用確定
+- **再定義**: `coverage/lcov.info` は [`.gitignore:10`](../../.gitignore) で `/coverage` 全体を無視しているため **git 管理外**。古さは「リポジトリの欠陥」ではなく「ローカル生成物の状態」であり、開発者ごとにローカルで再生成する仕様
+- **運用**: `bun run test -- --coverage` → `bun run coverage:dashboard` の順で実行し、`docs/coverage-dashboard.html`（こちらは git 追跡）のみコミットする
+- **CI 自動化**: → [§3 B4](#b4-ci-でのカバレッジ-artifact-化--dashboard-自動再生成) に移管
 
 ### Issue #6: CI ワークフロー未整備
 - **症状**: `.github/workflows/` ディレクトリが存在せず、coverage / lint / type check / e2e のいずれも PR ブロックされない
@@ -229,4 +237,5 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-21 | **A2 完了（baseline 未コミット）**: `tests/e2e/visual/` に cart/checkout Visual Regression spec を追加。`playwright.config.ts` に安定化設定を追加。Visual の pages 列が `◯` → `◐` に昇格 (commit `f639334`). |
 | 2026-05-21 | **A3 完了**: `tests/e2e/a11y/` に sign-in / seller-apply の WCAG 2.1 AA スキャンを追加（`@axe-core/playwright`）。a11y の pages 列が `◯` → `◐` に昇格 (commit `d261d76`). |
 | 2026-05-22 | PayPal `capturePayPalPayment` の try-catch リファクタリング (commit `217bf76`). |
+| 2026-05-24 | **A4 完了**: `src/lib/auth-guards.ts` 導入 → 6 ファイルの認可をヘルパー集約。IDOR テスト 3 階層化（where 構造検証 + 副作用なし検証）で +8 件。テスト総数 1008 → 1016。lcov 95 → 96。詳細は [`SECURITY_GAP_REPORT.md §5`](./SECURITY_GAP_REPORT.md#5-追加調査拡充2026-05-24--a4-認可ガード統合--idor-3-階層化) を参照 (commits `a73603e`–`ae66fac`). |
 | — | 次回更新: NA-4（Visual baseline コミット後）・NA-6（GitHub Actions CI 構築後） |

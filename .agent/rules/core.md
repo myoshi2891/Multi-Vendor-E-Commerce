@@ -21,7 +21,8 @@ Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Cler
 
 ## セキュリティ制約
 
-- 保護されたアクションでは `currentUser()` とロールチェックが必要
+- 保護されたアクションでは **`src/lib/auth-guards.ts`** のヘルパー（`requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`）で認証・ロール・店舗所有権を集約検証する。**`currentUser()` + `if (!user) ...` / `if (role !== "...") ...` のインライン展開を新規追加することは禁止**（詳細: [`.claude/steering/tech.md`](../../.claude/steering/tech.md) "認可ガード" 項、根拠: [`docs/testing/SECURITY_GAP_REPORT.md §5`](../../docs/testing/SECURITY_GAP_REPORT.md)）
+- IDOR テストは 3 階層パターン (a) スロー検証 / (b) `where: { url, userId }` 構造検証 / (c) ガード失敗時の副作用なし検証 を必ず満たす
 - 外部呼び出し（Prisma・Clerk・Stripe/PayPal）は `try/catch` でラップ
 - シークレット・APIキーは `.env` にのみ記述、コミット禁止
 

@@ -84,37 +84,23 @@ interface NextAction {
 }
 
 const NEXT_ACTIONS: readonly NextAction[] = [
+    // A1 / A2 / A3 / B1 (MVP) は 2026-05-21〜23 に完了済み。履歴は
+    // docs/testing/COVERAGE_REPORT.md §7 と QA_HANDOFF.md を参照。
     {
         priority: "high",
-        title: "Server Actions に CSRF / 認可テストを横展開",
-        target: "src/queries/**.test.ts (security 行)",
-        tool: "Jest + 既存 ts-jest セットアップ",
-        cost: "M",
-        impact: "決済・注文を含むビジネスロジックの不正アクセスを早期検知",
-    },
-    {
-        priority: "high",
-        title: "Checkout / Cart の Visual Regression を導入",
-        target: "tests/e2e/visual/*.spec.ts",
-        tool: "Playwright `expect(page).toHaveScreenshot()`",
+        title: "getStoreOrders に requireStoreOwner を統合 (A4 取りこぼし)",
+        target: "src/queries/store.ts:361 + src/queries/store.test.ts",
+        tool: "src/lib/auth-guards.ts の requireStoreOwner",
         cost: "S",
-        impact: "売上直結フローの UI 崩れをマージ前に阻止",
-    },
-    {
-        priority: "high",
-        title: "フォーム a11y を WCAG 2.1 AA で計測",
-        target: "tests/e2e/a11y/*.spec.ts",
-        tool: "@axe-core/playwright",
-        cost: "S",
-        impact: "Sign-in / Checkout / Seller Onboarding の障壁を可視化",
+        impact: "認可ガード SSOT 化を完遂し、findUnique + インライン userId 比較の重複を撤去",
     },
     {
         priority: "medium",
-        title: "shadcn/ui プリミティブの Snapshot",
+        title: "shadcn/ui プリミティブ Snapshot の B1+ 拡張 (残 40 プリミティブ)",
         target: "tests/component/ui/*.test.tsx",
         tool: "Jest + @testing-library + jest-snapshot",
-        cost: "S",
-        impact: "Tailwind / Radix の意図せぬスタイル退行を防ぐ",
+        cost: "M",
+        impact: "MVP 9 → 49 へカバレッジ拡大し、Tailwind/Radix の退行検知範囲を広げる",
     },
     {
         priority: "medium",

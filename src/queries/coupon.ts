@@ -2,8 +2,21 @@
 
 import { db } from '@/lib/db'
 import { CartWithCartItemsType } from '@/lib/types'
-import { currentUser } from '@clerk/nextjs/server'
+// 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
+import { requireStoreOwner } from '@/lib/auth-guards'
 import { Coupon } from '@prisma/client'
+
+const isGuardError = (error: unknown): error is Error => {
+    if (!(error instanceof Error)) return false;
+    const guardMessages = [
+        'Unauthenticated.',
+        'Only sellers can perform this action.',
+        'Forbidden: store not owned by current user.',
+        'Please provide store URL.',
+        'Only admins can perform this action.'
+    ];
+    return guardMessages.includes(error.message);
+};
 
 /**
  * @Function upsertCoupon
@@ -17,26 +30,14 @@ import { Coupon } from '@prisma/client'
 
 export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
     try {
-        // Get current user
-        const user = await currentUser()
-
-        // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== 'SELLER')
-            throw new Error('Only sellers can perform this action.')
-
-        // Ensure coupon data and storeUrl are provided
+        // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
         if (!coupon) throw new Error('Please provide coupon data.')
-        if (!storeURL) throw new Error('Please provide store URL.')
 
-        // Retrieve store ID using the store URL
-        const store = await db.store.findUnique({
-            where: { url: storeURL },
-        })
-
-        if (!store) throw new Error(`Store with URL "${storeURL}" not found.`)
+        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+        // - 旧実装は url のみで store を検索しており、他人の店舗 URL を知れば
+        //   その店舗にクーポンを作成できる潜在的 IDOR があった。
+        //   requireStoreOwner は { url, userId } の複合 where で検索する。
+        const { store } = await requireStoreOwner(storeURL)
 
         // Throw error if a coupon with the same code and store ID already exists
         const existingCoupon = await db.coupon.findFirst({
@@ -66,11 +67,15 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
         })
 
         return couponDetails
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
+        if (isGuardError(error)) {
+            throw error
+        }
+
         throw new Error(
-            `Error occurred while trying to upsert coupon: ${error.message}`
+            `Error occurred while trying to upsert coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -86,29 +91,8 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
 export const getStoreCoupons = async (storeURL: string) => {
     try {
-        // Get current user
-        const user = await currentUser()
-
-        // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== 'SELLER')
-            throw new Error('Only sellers can perform this action.')
-
-        // Ensure storeUrl is provided
-        if (!storeURL) throw new Error('Please provide store URL.')
-
-        // Retrieve store ID using the storeURL and ensure it belongs to the current user
-        const store = await db.store.findUnique({
-            where: { url: storeURL },
-        })
-
-        if (!store || store.userId !== user.id) {
-            throw new Error(
-                'You do not have permission to access coupons for this store.'
-            )
-        }
+        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+        const { store } = await requireStoreOwner(storeURL)
 
         // Fetch all coupons associated with the store
         const coupons = await db.coupon.findMany({
@@ -116,10 +100,13 @@ export const getStoreCoupons = async (storeURL: string) => {
         })
 
         return coupons
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
+        if (isGuardError(error)) {
+            throw error
+        }
         throw new Error(
-            `Error occurred while trying to fetch store coupons: ${error.message}`
+            `Error occurred while trying to fetch store coupons: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -165,30 +152,11 @@ export const getCoupon = async (couponId: string) => {
 
 export const deleteCoupon = async (couponId: string, storeURL: string) => {
     try {
-        // Get current user
-        const user = await currentUser()
-
-        // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== 'SELLER')
-            throw new Error('Only sellers can perform this action.')
-
-        // Ensure couponId and storeUrl are provided
+        // Ensure couponId is provided (storeURL は requireStoreOwner 側で検証)
         if (!couponId) throw new Error('Please provide coupon ID.')
-        if (!storeURL) throw new Error('Please provide store URL.')
 
-        // Retrieve store ID using the storeURL and ensure it belongs to the current user
-        const store = await db.store.findUnique({
-            where: { url: storeURL },
-        })
-
-        if (!store || store.userId !== user.id) {
-            throw new Error(
-                'You do not have permission to access coupons for this store.'
-            )
-        }
+        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+        const { store } = await requireStoreOwner(storeURL)
 
         // Delete coupon from the database
         const response = await db.coupon.delete({
@@ -199,11 +167,15 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
         })
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
+        if (isGuardError(error)) {
+            throw error
+        }
+
         throw new Error(
-            `Error occurred while trying to delete coupon: ${error.message}`
+            `Error occurred while trying to delete coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }

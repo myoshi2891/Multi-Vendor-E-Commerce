@@ -63,9 +63,7 @@ describe("upsertCategory", () => {
 
             await expect(
                 upsertCategory(createMockCategory() as never)
-            ).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required for Entry."
-            );
+            ).rejects.toThrow("Only admins can perform this action.");
         });
     });
 
@@ -314,7 +312,7 @@ describe("deleteCategory", () => {
             });
 
             await expect(deleteCategory("category-001")).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required for Entry."
+                "Only admins can perform this action."
             );
         });
     });

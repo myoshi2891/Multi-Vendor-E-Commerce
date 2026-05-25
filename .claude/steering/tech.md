@@ -36,6 +36,8 @@
 | **環境変数の数値変換** | 数値型環境変数は `trim()` 後に変換し、空文字列には fallback を適用すること |
 | **cookie パース** | 外部 cookie の JSON パースは必ず `parseUserCountryCookie()` を使用すること（`src/lib/utils.ts`）。生の `JSON.parse` + キャストは禁止 |
 | **URL パラメータ正規化** | ページ番号など数値パラメータは `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1` で正規化すること（`Infinity` / `NaN` / 小数を排除） |
+| **CSRF** | Next.js 16 Server Actions の Origin/Host 検証と Clerk `SameSite=Lax` セッション Cookie に依拠する。`src/lib/csrf*` 等のトークンモジュールを新設しないこと。例外時は [ADR 001](../../docs/architecture/decisions/001-csrf-policy.md) を Superseded で更新する |
+| **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---
@@ -230,6 +232,56 @@ export default async function AdminCategoriesPage() {
 
 **トレードオフ**:
 - ストアフロント公開ページ（home / browse / product 詳細 / store 詳細）の SSG/ISR を放棄。SEO 観点で SSR にコストがかかるが、CI 安定性を優先。
+
+### Context Provider setter の同期化（React 19 strict act mode 対応）
+
+Context Provider が公開する setter（例: `ModalProvider.setOpen`）で、**consumer が戻り値を await しない設計** の場合は **同期関数として実装**すること。`async` 関数として定義すると `onClick={() => setOpen(...)}` のような呼び出しが常に floating promise を生成し、React 19 strict act mode のテスト環境で cleanup 段階の「unflushed effect」検出によりフレークの原因となる。
+
+**❌ NG パターン**:
+
+```ts
+// floating promise が onClick から漏れる
+const setOpen = async (modal, fetchData) => {
+    setShowingModal(modal);
+    setIsOpen(true);
+    if (fetchData) {
+        const data = await fetchData();
+        setData(data);
+    }
+};
+```
+
+**✅ OK パターン**: 同期関数化 + 非同期 work は fire-and-forget IIFE
+
+```ts
+const setOpen = (modal, fetchData): void => {
+    if (!modal) return;
+    setShowingModal(modal);
+    setIsOpen(true);
+    if (!fetchData) return;
+
+    void (async () => {
+        try {
+            const data = await fetchData();
+            setData(prev => ({ ...prev, ...data }));
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error("Failed to fetch X:", error.message, error.stack);
+            }
+        }
+    })();
+};
+```
+
+**判断基準**:
+
+1. consumer が `await setter(...)` していないなら同期関数で実装
+2. 公開型は `Promise<void>` ではなく `void` を返す（型の正直化）
+3. 非同期 work が必要な分岐だけ IIFE で起動
+
+**実装例**: [src/providers/modal-provider.tsx](../../src/providers/modal-provider.tsx) ([ADR-003](../../docs/architecture/decisions/003-modal-setopen-sync-for-react19.md))
+
+---
 
 ### 意図的に未対応の Next.js 16 警告
 

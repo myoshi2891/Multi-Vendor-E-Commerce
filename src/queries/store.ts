@@ -5,6 +5,8 @@ import { ShippingRateInput, StoreDefaultShippingInput, StoreStatus, StoreType } 
 
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
+// 認可ガード (src/lib/auth-guards.ts) 経由でロール+店舗所有権を集約する
+import { requireStoreOwner } from "@/lib/auth-guards";
 
 // Prisma models
 import { ShippingRate, Store } from "@prisma/client";
@@ -207,29 +209,11 @@ export const updateStoreDefaultShippingDetails = async (
     details: StoreDefaultShippingInput
 ) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
-
-        // Ensure store URL is provided
-        if (!storeUrl) throw new Error("Please provide store URL.");
-
-        // Ensure details are provided
+        // Ensure details are provided (storeUrl は requireStoreOwner 側で検証)
         if (!details) throw new Error("Please provide shipping details.");
 
-        // Make sure seller is updating their own store
-        const check_ownership = await db.store.findUnique({
-            where: { url: storeUrl, userId: user.id },
-        });
-
-        if (!check_ownership)
-            throw new Error("You are not authorized to update this store.");
+        // 認証 + SELLER + 店舗所有権を集約検証 (auth-guards / IDOR 防御)
+        const { user } = await requireStoreOwner(storeUrl);
 
         // Find and update the store based on storeUrl
         const updatedStore = await db.store.update({
@@ -254,33 +238,10 @@ export const updateStoreDefaultShippingDetails = async (
 // Returns: Array of countries and their shipping rates, including shipping service, fees, delivery times and return policy.
 export const getStoreShippingRates = async (storeUrl: string) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
-
-        // Ensure store URL is provided
-        if (!storeUrl) throw new Error("Please provide store URL.");
-
-        // Make sure seller is updating their own store
-        const check_ownership = await db.store.findUnique({
-            where: { url: storeUrl, userId: user.id },
-        });
-
-        if (!check_ownership)
-            throw new Error("You are not authorized to update this store.");
-
-        // Retrieve store shipping rates from the database using the store URL
-        const store = await db.store.findUnique({
-            where: { url: storeUrl, userId: user.id },
-        });
-
-        if (!store) throw new Error("Store could not be found.");
+        // 認証 + SELLER + 店舗所有権を集約検証 (auth-guards / IDOR 防御)
+        // 旧実装は所有権チェックと取得で findUnique を 2 回呼んでいたが、
+        // requireStoreOwner で 1 回に統合する。
+        const { store } = await requireStoreOwner(storeUrl);
 
         // Retrieve all countries
         const countries = await db.country.findMany({
@@ -332,26 +293,10 @@ export const upsertShippingRate = async (
     shippingRate: ShippingRateInput
 ) => {
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
-
-        // // Ensure store URL is provided
-        // if (!storeUrl) throw new Error("Please provide store URL.");
-
-        // Make sure seller is updating their own store
-        const check_ownership = await db.store.findUnique({
-            where: { url: storeUrl, userId: user.id },
-        });
-
-        if (!check_ownership)
-            throw new Error("You are not authorized to update this store.");
+        // 認証 + SELLER + 店舗所有権を集約検証 (auth-guards / IDOR 防御)
+        // 旧実装は所有権チェックと store id 取得で findUnique を 2 回呼んでいたが、
+        // requireStoreOwner で 1 回に統合する。
+        const { store } = await requireStoreOwner(storeUrl);
 
         // Ensure shipping rate data is provided
         if (!shippingRate)
@@ -360,16 +305,6 @@ export const upsertShippingRate = async (
         // Ensure country ID is provided
         if (!shippingRate.countryId)
             throw new Error("Please provide country ID.");
-
-        // Get store id
-        const store = await db.store.findUnique({
-            where: {
-                url: storeUrl,
-                userId: user.id,
-            },
-        });
-
-        if (!store) throw new Error("Store could not be found.");
 
         // Upsert shipping rate into the database using composite unique key
         const shippingRateDetails = await db.shippingRate.upsert({

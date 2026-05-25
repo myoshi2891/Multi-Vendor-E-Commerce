@@ -72,7 +72,7 @@ bunx prisma studio            # DBブラウザ
 - Tailwind CSSクラスの順序は `tailwindcss/classnames-order` で warn
 - shadcn/ui: `components.json` の設定に従う（RSC対応、CSS変数使用、ベースカラー: slate）
 - 外部呼び出し（Prisma, Clerk, Stripe/PayPal）は `try/catch` でラップ
-- 保護されたアクションでは `currentUser()` とロールチェックが必要
+- 保護されたアクションでは **`src/lib/auth-guards.ts`** のヘルパー（`requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`）で認証・ロール・店舗所有権を集約検証する。**`currentUser()` + `if (!user) ...` / `if (role !== "...") ...` のインライン展開を新規追加することは禁止**（詳細: [`.claude/steering/tech.md`](.claude/steering/tech.md) "認可ガード" 項）
 
 ## テスト構成
 

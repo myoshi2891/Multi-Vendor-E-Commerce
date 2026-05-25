@@ -351,7 +351,8 @@ const TEST_ERRORS = {
     DUPLICATE_PHONE: "A store with the same phone number already exists.",
     MISSING_STORE_URL: "Please provide store URL.",
     MISSING_SHIPPING_DETAILS: "Please provide shipping details.",
-    UNAUTHORIZED_STORE_UPDATE: "You are not authorized to update this store.",
+    // requireStoreOwner (src/lib/auth-guards.ts) のエラーメッセージ統一に合わせる
+    UNAUTHORIZED_STORE_UPDATE: "Forbidden: store not owned by current user.",
     STORE_NOT_FOUND: (url: string) => `Store with URL "${url}" not found.`,
 } as const;
 
@@ -653,6 +654,31 @@ describe("updateStoreDefaultShippingDetails", () => {
 
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
+
+        it("IDOR防止: 他人の店舗 URL を指定した場合に Forbidden をスローし store.update が呼ばれない", async () => {
+            // requireStoreOwner の url+userId 複合 where のクロステナント挙動を、
+            // 「存在しない」とは別命名で明示的に検証する。
+            // 複合 where が null を返すことが「他人の店舗」を表現する。
+            const mockDb = TestHelpers.mockDbMethods();
+            const shippingDetails = createMockStoreDefaultShipping();
+
+            mockDb.findUnique.mockResolvedValue(null);
+
+            await TestHelpers.expectThrowError(
+                updateStoreDefaultShippingDetails(
+                    "other-store-url",
+                    shippingDetails
+                ),
+                TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE
+            );
+
+            TestHelpers.expectStoreOwnershipCheck(
+                mockDb.findUnique,
+                "other-store-url",
+                TEST_CONFIG.DEFAULT_USER_ID
+            );
+            TestHelpers.expectDbMethodNotCalled(mockDb.update);
+        });
     });
 
     describe("正常な更新処理", () => {
@@ -731,7 +757,7 @@ describe("updateStoreDefaultShippingDetails", () => {
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error in updateStoreDefaultShippingDetails:",
-                mockError.message,
+                `requireStoreOwner: failed to query store - ${mockError.message}`,
                 mockError.stack
             );
             TestHelpers.expectDbMethodNotCalled(mockDb.update);
@@ -1002,9 +1028,28 @@ describe("getStoreShippingRates", () => {
 
             await expect(
                 getStoreShippingRates("other-store")
-            ).rejects.toThrow(
-                "You are not authorized to update this store."
-            );
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+        });
+
+        it("IDOR失敗時に where: { url, userId } 構造で findUnique が呼ばれ、country/shippingRate.findMany は呼ばれない", async () => {
+            // (b) 構造検証 + (c) 副作用なし検証 (defense in depth)。
+            // 将来 requireStoreOwner から userId 条件が外れた場合、または
+            // ガード失敗後に下流の findMany が誤って実行された場合にここで検知。
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreShippingRates("other-store")
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+
+            expect(mockPrisma.store.findUnique).toHaveBeenCalledWith({
+                where: {
+                    url: "other-store",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+            });
+            expect(mockPrisma.country.findMany).not.toHaveBeenCalled();
+            expect(mockPrisma.shippingRate.findMany).not.toHaveBeenCalled();
         });
     });
 
@@ -1098,9 +1143,28 @@ describe("upsertShippingRate", () => {
                     "other-store",
                     { countryId: "c1" } as never
                 )
-            ).rejects.toThrow(
-                "You are not authorized to update this store."
-            );
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+        });
+
+        it("IDOR失敗時に where: { url, userId } 構造で findUnique が呼ばれ、shippingRate.upsert は呼ばれない", async () => {
+            // (b) where 構造の検証 + (c) ガード失敗時の副作用なし検証。
+            TestHelpers.mockAuthenticatedSeller();
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                upsertShippingRate(
+                    "other-store",
+                    { countryId: "c1" } as never
+                )
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+
+            expect(mockPrisma.store.findUnique).toHaveBeenCalledWith({
+                where: {
+                    url: "other-store",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+            });
+            expect(mockPrisma.shippingRate.upsert).not.toHaveBeenCalled();
         });
     });
 
