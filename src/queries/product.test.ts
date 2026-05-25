@@ -294,6 +294,7 @@ describe("upsertProduct", () => {
             expect(mockDb.product.findFirst).not.toHaveBeenCalled();
             expect(mockDb.productVariant.create).not.toHaveBeenCalled();
             expect(mockDb.productVariant.update).not.toHaveBeenCalled();
+            expect(mockDb.productVariant.findFirst).not.toHaveBeenCalled();
         });
     });
 

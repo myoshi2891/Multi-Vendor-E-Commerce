@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Edit(/.claude/skills/feature-plan/**)"
+      "Edit(/.claude/skills/feature-plan/**)",
+      "Bash(gh run *)"
     ]
   }
 }
