@@ -183,6 +183,33 @@ const createMockProductWithVariantInput = (
     ...overrides,
 });
 
+// productVariant.findFirst の scoped lookup (id + productId + product.storeId) を完全一致で
+// 検証するマッチャー。production の IDOR 防御 (src/queries/product.ts:89-97) は
+// 3 フィールドすべてで絞り込むため、テストモックも同じ条件で「該当バリアントを返す」判定を
+// 行わないと、where: { id } だけへの退行をテストが見逃してしまう。
+const matchesScopedVariantLookup = (
+    params: unknown,
+    expected: { variantId: string; productId: string; storeId: string }
+): boolean => {
+    if (typeof params !== "object" || params === null || !("where" in params)) {
+        return false;
+    }
+    const where = (
+        params as {
+            where?: {
+                id?: string;
+                productId?: string;
+                product?: { storeId?: string };
+            };
+        }
+    ).where;
+    return (
+        where?.id === expected.variantId &&
+        where?.productId === expected.productId &&
+        where?.product?.storeId === expected.storeId
+    );
+};
+
 // ==================================================
 // upsertProduct
 // ==================================================
@@ -395,8 +422,13 @@ describe("upsertProduct", () => {
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
             mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                const where = (params as { where?: { id?: string } } | undefined)?.where;
-                if (where?.id === "variant-001") {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
                     return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
                 }
                 return null;
@@ -436,8 +468,13 @@ describe("upsertProduct", () => {
                 createMockProduct({ name: "New Product", slug: "existing-slug" })
             );
             mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                const where = (params as { where?: { id?: string } } | undefined)?.where;
-                if (where?.id === "variant-001") {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
                     return createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" });
                 }
                 return null;
@@ -472,8 +509,13 @@ describe("upsertProduct", () => {
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
             mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                const where = (params as { where?: { id?: string } } | undefined)?.where;
-                if (where?.id === "variant-001") {
+                if (
+                    matchesScopedVariantLookup(params, {
+                        variantId: "variant-001",
+                        productId: "product-001",
+                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    })
+                ) {
                     return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
                 }
                 return null;
