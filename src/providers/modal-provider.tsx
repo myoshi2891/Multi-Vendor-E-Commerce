@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 // Prisma models
 import { User } from "@prisma/client";
@@ -30,11 +30,6 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [data, setData] = useState<ModalData>({});
 	const [showingModal, setShowingModal] = useState<React.ReactNode>(null);
-	const [isMounted, setIsMounted] = useState(false);
-
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
 
 	// 同期関数として保つことで onClick={() => setOpen(...)} の floating promise を防ぐ。
 	// React 19 strict act mode が cleanup 段階で unflushed effect として検出するのを回避するため。
@@ -67,8 +62,6 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setData({});
 		setShowingModal(null);
 	};
-
-	if (!isMounted) return null;
 
 	return (
 		<ModalContext.Provider value={{ data, setOpen, setClose, isOpen }}>
