@@ -24,7 +24,7 @@ allowed-tools: [Read, Grep, Glob, Bash, Edit, Write]
 
 ---
 
-## 更新対象ドキュメント（5層構造）
+## 更新対象ドキュメント（5 ファイル / documentation-guide.md の Layer 1・3・4 に対応）
 
 | 層 | ファイル | 更新内容 |
 |----|---------|---------|

@@ -89,6 +89,7 @@ export const upsertProduct = async (
         const existingVariant = await db.productVariant.findFirst({
             where: {
                 id: product.variantId,
+                productId: product.productId,
                 product: {
                     storeId: store.id,
                 },

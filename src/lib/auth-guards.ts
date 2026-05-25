@@ -25,7 +25,7 @@ import type { Store } from "@prisma/client";
  * 未認証なら "Unauthenticated." を throw する。
  */
 export async function requireUser(): Promise<User> {
-    let user;
+    let user: User | null = null;
     try {
         user = await currentUser();
     } catch (error: unknown) {
@@ -85,7 +85,7 @@ export async function requireStoreOwner(
     const user = await requireSeller();
     if (!storeUrl) throw new Error("Please provide store URL.");
 
-    let store;
+    let store: Store | null = null;
     try {
         store = await db.store.findUnique({
             where: { url: storeUrl, userId: user.id },

@@ -132,7 +132,7 @@ CI workflow [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) の 
 
 ### Positive
 
-- **CI が安定**: push / pull_request 両 event でグリーン
+- **診断に有効**: `--verbose --ci` 導入後の `5cbf82a` で push / pull_request 両 event グリーンを確認できた（後日 `2eb3049` で再失敗したため、これは lucky runner allocation。真因の恒久修正は [ADR-003](003-modal-setopen-sync-for-react19.md) を参照）
 - **将来のフレーク調査の足場**: `--verbose` 出力が常時あれば、次にフレークが出た時に Step 1（事実確定）の労力が大幅減
 - **`bun run test` 二重ラップ排除**: `bun run` → `jest` の経路で引数が落ちる事故を予防
 - **診断パターンの形式知化**: 本 ADR と [`.claude/skills/ci-flake-diagnosis/SKILL.md`](../../../.claude/skills/ci-flake-diagnosis/SKILL.md) で再現可能なプレイブックを残した
