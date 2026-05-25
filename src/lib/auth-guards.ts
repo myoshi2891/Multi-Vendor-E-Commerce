@@ -21,8 +21,11 @@ import { db } from "@/lib/db";
 import type { Store } from "@prisma/client";
 
 /**
- * Server Action 内で認証ユーザーを取得する。
- * 未認証なら "Unauthenticated." を throw する。
+ * Retrieve the authenticated user for Server Actions.
+ *
+ * @returns The authenticated `User`.
+ * @throws Error if fetching the current user fails (message is prefixed with `requireUser: failed to fetch currentUser - <original>`).
+ * @throws Error with message `"Unauthenticated."` if no user is authenticated.
  */
 export async function requireUser(): Promise<User> {
     let user: User | null = null;
@@ -41,9 +44,11 @@ export async function requireUser(): Promise<User> {
 }
 
 /**
- * ADMIN ロール必須の Server Action で使用する。
- * 未認証 → "Unauthenticated."
- * ロール不一致 → "Only admins can perform this action."
+ * Ensures the current user has the ADMIN role.
+ *
+ * @returns The authenticated user whose `privateMetadata.role` is `"ADMIN"`.
+ * @throws Error with message "Unauthenticated." if there is no authenticated user.
+ * @throws Error with message "Only admins can perform this action." if the user's role is not `"ADMIN"`.
  */
 export async function requireAdmin(): Promise<User> {
     const user = await requireUser();
@@ -54,9 +59,12 @@ export async function requireAdmin(): Promise<User> {
 }
 
 /**
- * SELLER ロール必須の Server Action で使用する。
- * 未認証 → "Unauthenticated."
- * ロール不一致 → "Only sellers can perform this action."
+ * Ensures the authenticated user has the SELLER role.
+ *
+ * Throws if the current user is not authorized to act as a seller.
+ *
+ * @returns The authenticated `User` when the user has the SELLER role.
+ * @throws `Error` with message "Only sellers can perform this action." if the user's role is not `SELLER`.
  */
 export async function requireSeller(): Promise<User> {
     const user = await requireUser();
@@ -67,17 +75,14 @@ export async function requireSeller(): Promise<User> {
 }
 
 /**
- * SELLER かつ指定された store URL の所有者であることを保証する。
- * IDOR 対策の中心ヘルパー: url + userId の複合 where 句で DB を検索する。
+ * Ensures the caller has the SELLER role and owns the store identified by `storeUrl`.
  *
- * @param storeUrl 検証対象の店舗 URL
- * @returns { user, store } 認証ユーザーと所有店舗レコード
- *
- * Throws:
- *  - "Unauthenticated."  (未認証)
- *  - "Only sellers can perform this action."  (SELLER 以外)
- *  - "Please provide store URL."  (storeUrl が空)
- *  - "Forbidden: store not owned by current user."  (店舗が存在しない or 所有者でない)
+ * @param storeUrl - The store URL to verify ownership for
+ * @returns The authenticated `user` and the owned `store` record
+ * @throws "Unauthenticated." if there is no authenticated user
+ * @throws "Only sellers can perform this action." if the authenticated user is not a seller
+ * @throws "Please provide store URL." if `storeUrl` is falsy or empty
+ * @throws "Forbidden: store not owned by current user." if no store matching the `storeUrl` is owned by the authenticated user
  */
 export async function requireStoreOwner(
     storeUrl: string
