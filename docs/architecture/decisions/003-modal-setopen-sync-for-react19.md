@@ -1,6 +1,6 @@
 # 003. `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応）
 
-- **Status**: **Partial Mitigation** — 設計改善としては妥当だが **CI flake の根本解消には至らず**。詳細は本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」を参照
+- **Status**: **Partial Mitigation** — 設計改善としては妥当だが **CI flake の根本解消には至らず**。2026-05-25 追加調査で仮説 A (isMounted 撤廃) / 仮説 B (MSW warn) の単独試行も決定的な解消に至らないことが確定。詳細は本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」および「[2026-05-25 追加調査](#2026-05-25-追加調査と次回着手点)」を参照
 - **Date**: 2026-05-24
 - **Deciders**: myoshizumi（実装）, Claude Code（調査支援）
 
@@ -317,8 +317,71 @@ Context Provider / カスタムフックで setter を定義する際は:
 
 ---
 
+## 2026-05-25 追加調査と次回着手点
+
+> **2026-05-25 追加** — 仮説 A (isMounted 撤廃) と仮説 B (MSW warn) を順に試行し、
+> いずれも root cause 解消に至らないことが確定した。skip 戦略の限界も判明したため
+> 次回は **workflow layer (`.github/workflows/ci.yml`) の修正** を優先する。
+
+### 試行ログ (commit × event の累積観測)
+
+| commit | 変更 | push | pull_request | flake test |
+|--------|------|------|--------------|-----------|
+| `a85460b` | 仮説 A (isMounted 撤廃) + 2 件目 `it.skip` | ✅ | ✅ | — |
+| `73609ef` | product.test.ts: scoped mock 強化 (CodeRabbit 対応) | ❌ | ❌ | `fetchData throws` |
+| `12aef66` | setOpen `describe.skip` | ✅ | ❌ | `setClose 閉じると...` |
+| `bacfe2e` | ModalProvider file-level skip | ❌ | ✅ | `shipping-form: creates new address` |
+| `c579642` | 仮説 B (MSW `onUnhandledRequest: warn`) | ✅ | ✅ | — |
+| `5851756` | modal unskip (cycle 2/5 観察) | ❌ | ✅ | `fetchData ありで data マージ` |
+| `7559884` | modal 再 file-level skip | (観察対象外) | (観察対象外) | — |
+
+**12 観測中 5 失敗** (push 50% 成功 / pull_request 67% 成功)。完全なランダム性。
+
+### この調査で確定した事実
+
+1. **skip 戦略は症状を別ファイルへ移動させるだけ**
+   - it.skip → describe.skip → file-skip と段階的に拡大しても、最終的に shipping-form.test.tsx (modal 完全 skip 状態で) に flake が出現
+   - つまり flake source は modal-provider 固有ではなく **RTL + userEvent + waitFor を使うテスト全般** が CI runner で偶発的にハングするメタ的問題
+2. **同一 commit で push / pull_request の結果が分かれる現象が頻発**
+   - `12aef66` / `bacfe2e` / `5851756` で観測。**コード変更ではなく runner 個体差 / worker 分担の変動が trigger** (仮説 F) が支配的
+3. **仮説 A (isMounted 撤廃) 単独効果は限定的**
+   - `a85460b` で両グリーンだったが、次の commit `73609ef` (modal 未触) で flake 再発 → 単独では不十分
+4. **仮説 B (MSW warn) 単独効果も限定的**
+   - `c579642` で両グリーン (modal skip 状態) → `5851756` で modal unskip すると push fail → modal を含めると依然 flake する
+
+### 残候補と推奨次手
+
+| # | 候補 | 信頼度 | 検証コスト | 次回着手案 |
+|---|------|------|-----------|----------|
+| E | **Jest を node 直接呼出** — `.github/workflows/ci.yml` で `bunx jest` → `node node_modules/jest/bin/jest.js` | 中 | 低 (workflow 1 行修正) | bun runtime の React 19 Promise scheduling 非互換を排除 |
+| G | **`--maxWorkers=1` で並列起動排除** — `.github/workflows/ci.yml` の jest コマンドに追加 | 中 | 低 (CI 時間 1.5-2 倍だが許容) | worker race を切り分け |
+| H | **`--testRunner=jest-circus` 明示** や Jest reporter の差し替え | 低 | 中 | 仮説 C (Jest 30 + React 19 reporter 互換性バグ) 検証 |
+| I | **continue-on-error: true で Jest 失敗を許容** | (回避策) | 低 | 根本解決ではないが PR ブロック解除 |
+
+**推奨**: まず E (workflow 修正のみ) を試し、効果がなければ G (`--maxWorkers=1`) を追加。
+両方が無効なら I (continue-on-error) で運用を回しつつ Jest / React 19 のメジャーバージョン更新を待つ。
+
+### 現在の skip 状態 (2026-05-25 終了時点)
+
+- [`src/providers/modal-provider.test.tsx`](../../../src/providers/modal-provider.test.tsx): file-level skip (9 tests skipped, 1 suite skipped)
+- 既存の idempotency 3 件 skip は維持
+- **合計**: 12 skipped tests / 2 skipped suites / 1003 passed / 1015 total
+
+### 次回着手手順 (プレイブック)
+
+1. **新規ブランチ** で仮説 E (`bunx jest` → `node node_modules/jest/bin/jest.js`) を試行
+2. 同コミット内で `src/providers/modal-provider.test.tsx` の `describe.skip` を `describe` に戻して効果検証
+3. **連続 5 サイクル両 event グリーン** を観察してから本ブランチへマージ
+4. グリーン継続を確認したら本 ADR の Status を `Accepted` に更新し file-level skip を解除
+5. もし仮説 E も否決なら、仮説 G (`--maxWorkers=1`) を同じ手順で試行
+6. 全候補が無効なら仮説 I (continue-on-error) を最終手段として導入
+
+---
+
 ## 教訓
 
-- **「1 サイクル両グリーン = 修正完了」は誤り**。本件で 2 回繰り返した判断ミス（commits `5cbf82a` / `9b77c59`）。次回からは **連続 N サイクル**を判定基準にする
-- **「assertion failure に見えない」failure は assertion ではない**。`--verbose` でも本文空なら React 19 act / runtime 層を疑う
+- **「1 サイクル両グリーン = 修正完了」は誤り**。本件で 3 回繰り返した判断ミス（commits `5cbf82a` / `9b77c59` / `c579642`）。次回からは **連続 5 サイクル**を判定基準にする
+- **「assertion failure に見えない」failure は assertion ではない**。`--verbose` でも本文空なら React 19 act / runtime 層 / Jest reporter 互換性を疑う
 - **「禁忌」ルール（`it.skip`）も状況次第で必要悪**。条件付き運用（期限・同等カバレッジ確認・追跡 doc）で適用
+- **skip 戦略はテストファイル境界で止まらない**。同型 (RTL + userEvent + waitFor) のテストが他ファイルにあると flake が移動するため、infra layer の解消が本筋
+- **同一 commit で push / pull_request の結果が分かれる場合は code でなく env を疑う**。次回からは workflow yml / runner 設定の修正を優先候補に

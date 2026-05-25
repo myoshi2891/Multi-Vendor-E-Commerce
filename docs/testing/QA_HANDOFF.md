@@ -1,22 +1,23 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-24 / **HEAD**: `eae2cfe`
+> **最終更新**: 2026-05-25 / **HEAD**: `7559884`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-24 時点）
+### テスト統計（2026-05-25 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **1016** / 70 スイート（69 passed + 1 skipped）— 認可ガード統合 + IDOR 補完で +26 テスト / +2 スイート |
+| Jest テスト総数 | **1015** / 70 スイート（68 passed + 2 skipped）— 2026-05-25 に modal-provider のハイドレーション describe 削除 + 1 件減 |
 | Jest スナップショット | **40**（`tests/component/ui/__snapshots__/`） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
-| Skipped テスト | **4 件**（意図的: idempotency 1 件 + 3 件、CI flake 一時退避: modal-provider 1 件 — 下記 OI-8 参照）+ a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
+| Skipped テスト | **12 件**（意図的: idempotency 1 件 + 3 件、CI flake 一時退避: **modal-provider 全 9 件 file-level skip** — 下記 OI-8 参照）+ a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
+| Skipped スイート | **2 件**（idempotency suite + modal-provider.test.tsx file-level） |
 
 ---
 
@@ -107,7 +108,7 @@
 | ~~OI-5~~ | ~~E2E シード冪等性（CI 環境での `seed:e2e`）~~ | ~~🟡 中~~ | ✅ 解消済み（2026-05-22、`ci.yml` の `seed-idempotency` ジョブで PG service container 起動 → seed 2回実行 → 行数 diff 検証） |
 | ~~OI-6~~ | ~~`DashboardStats` コンポーネント調査未完了~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、調査結果: ソース・仕様ともに該当コンポーネントなし。`src/app/dashboard/{admin,seller}/.../page.tsx` はプレースホルダー、`specs/multi-vendor-ecommerce/04-interfaces.md` も「overview」と記載のみ。統計 UI 要件は将来の機能追加時に `specs/` で別途起票） |
 | ~~OI-7~~ | ~~`coverage/lcov.info` が古い (2025-03-16 時点)~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、`/coverage` は `.gitignore:10` 対象で git 管理外。`bun run test -- --coverage` でローカル再生成 → `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を更新する運用を確認。CI でのカバレッジ自動化は [`COVERAGE_REPORT §3 B4`](./COVERAGE_REPORT.md#b4-ci-でのカバレッジ-artifact-化--dashboard-自動再生成) に移管） |
-| **OI-8** | **`modal-provider.test.tsx` の [P1] setOpen テストを CI flake のため一時 `it.skip`** | 🟡 中 | **未解決**（2026-05-24 着手 / 期限 2026-06-07）。`src/providers/modal-provider.test.tsx:95-130` で 1 件のみ skip。同等カバレッジは `[P1] fetchData なしでモーダルを開ける` (line 140) が部分的に担保。完全な調査経緯・6 仮説カタログ・再開条件は [`ADR-003 後続調査と一時スキップ判断`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#後続調査と一時スキップ判断) を参照。次回着手は **仮説 A（isMounted 撤廃）または仮説 B（MSW bypass）** から |
+| **OI-8** | **`modal-provider.test.tsx` を CI flake のため file-level skip。仮説 A/B 試行も決定的解消には至らず** | 🟡 中 | **未解決・拡大**（2026-05-24 着手 / 2026-05-25 拡大 / 期限 2026-06-07）。**現状**: ファイル全体 `describe.skip("ModalProvider", ...)` で 9 件 skip。**経緯**: it.skip 1 → 2 → describe.skip(setOpen) → file-level skip と段階拡大したが、bacfe2e で `tests/component/store/shipping-form.test.tsx` へ flake が移動したため modal 固有問題ではないと確定。**試行済み**: 仮説 A (isMounted 撤廃 / `a85460b`) / 仮説 B (MSW `onUnhandledRequest: warn` / `c579642`) — 単独では runner ガチャ抑制に至らず。**残候補**: 仮説 E (Jest を node 直接呼出) / `--maxWorkers=1` / continue-on-error。完全な累積観測表・次回着手手順は [`ADR-003 §2026-05-25 追加調査`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照 |
 
 ---
 
