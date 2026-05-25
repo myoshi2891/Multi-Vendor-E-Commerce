@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-25 / **HEAD**: `7559884`
+> **最終更新**: 2026-05-26 / **HEAD**: `70f5b94`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-25 時点）
+### テスト統計（2026-05-26 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **1015** / 70 スイート（68 passed + 2 skipped）— 2026-05-25 に modal-provider のハイドレーション describe 削除 + 1 件減 |
+| Jest テスト総数 | **1016** / 70 スイート（68 passed + 2 skipped）— 2026-05-26 に `getStoreOrders` の IDOR 3 階層テスト追加で +1 |
 | Jest スナップショット | **40**（`tests/component/ui/__snapshots__/`） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -121,12 +121,11 @@
 
 全ての優先 OI（OI-2 / OI-3 / OI-4 / OI-4a / OI-5）は 2026-05-22 に解消済み。
 **B1（shadcn/ui プリミティブ Snapshot）** は 2026-05-23 に MVP 9 プリミティブ分を完了（40 snapshot）。
-**A4（認可ガード統合 + IDOR 3 階層化）** は 2026-05-24 に完了（テスト総数 990 → 1016、+26 件）。
+**A4（認可ガード統合 + IDOR 3 階層化）** は 2026-05-24 に完了（テスト総数 990 → 1016、+26 件）。**A4 残課題 `getStoreOrders` 統合** は 2026-05-26 にクローズ（`70f5b94`、テスト総数 1015 → 1016 / +1）。
 
 ### 残課題（低優先）
 
-- 直近の OI はすべてクローズ済み（2026-05-24、OI-6 / OI-7 解消）。
-- `getStoreOrders` (`src/queries/store.ts:361`) は自前の `findUnique` + `userId !== user.id` インライン比較が残存しており、`requireStoreOwner` 統合の対象外として残っている。次の A4 系作業で取り込むかは別途判断。
+- 直近の OI はすべてクローズ済み（2026-05-26、A4 残課題 `getStoreOrders` の `requireStoreOwner` 統合完了）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
@@ -160,6 +159,7 @@
 | `c83a5c4` | A4: `store.ts` 配送系 3 アクションに `requireStoreOwner` 適用、`findUnique` 二重呼び出しを統合 |
 | `eae2cfe` | A4: クロステナント IDOR 補完テスト 8 件追加（where 構造検証 + 副作用なし検証、990 → 1016） |
 | `eae2cfe` | A4: 統計 SSOT (QA_HANDOFF / PROGRESS / COVERAGE_REPORT / SECURITY_GAP_REPORT) と coverage-dashboard.html を同期 |
+| `70f5b94` | A4 残課題: `getStoreOrders` を `requireStoreOwner` に統合、IDOR テストを 3 階層化（1015 → 1016） |
 
 ---
 
@@ -171,24 +171,7 @@
 
 ### 🔴 Immediate (high)
 
-#### NA-IM-01: getStoreOrders を `requireStoreOwner` に統合
-
-```text
-src/queries/store.ts:361 の getStoreOrders を src/lib/auth-guards.ts の requireStoreOwner に統合してください。
-
-背景:
-- A4 (2026-05-24) で coupon/product/store の他アクションは全て requireStoreOwner に統合済み。
-- getStoreOrders だけ自前の findUnique + userId !== user.id インライン比較が残存している。
-- 既存テスト src/queries/store.test.ts:1208 "他人のストアの注文を取得できない（IDOR防止）" のエラーメッセージは旧仕様 ("You are not authorized to view this store's orders.") なので、requireStoreOwner 統一文言 ("Forbidden: store not owned by current user.") に合わせて更新が必要。
-
-完了条件:
-1. getStoreOrders の認可チェックが requireStoreOwner 1 呼び出しに置換され、インライン比較が削除されている
-2. store.test.ts の関連テストが新メッセージ + 副作用なし検証 (orderGroup.findMany 非呼び出し) を含む
-3. bun run test と bunx tsc --noEmit が共にグリーン
-4. .claude/rules/02-tdd-step-commit.md に従い「コード変更」「docs 同期 (PROGRESS.md / QA_HANDOFF.md / coverage-dashboard.html 再生成含む)」を別コミットに分離
-
-参考: docs/testing/SECURITY_GAP_REPORT.md §5、 src/lib/auth-guards.ts の requireStoreOwner 実装。
-```
+（現在 high 優先度の Next Action はありません。A4 残課題 `getStoreOrders` 統合は `70f5b94` でクローズ済み）
 
 ### 🟡 Next Sprint (medium)
 

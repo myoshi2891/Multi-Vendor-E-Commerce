@@ -86,14 +86,8 @@ interface NextAction {
 const NEXT_ACTIONS: readonly NextAction[] = [
     // A1 / A2 / A3 / B1 (MVP) は 2026-05-21〜23 に完了済み。履歴は
     // docs/testing/COVERAGE_REPORT.md §7 と QA_HANDOFF.md を参照。
-    {
-        priority: "high",
-        title: "getStoreOrders に requireStoreOwner を統合 (A4 取りこぼし)",
-        target: "src/queries/store.ts:361 + src/queries/store.test.ts",
-        tool: "src/lib/auth-guards.ts の requireStoreOwner",
-        cost: "S",
-        impact: "認可ガード SSOT 化を完遂し、findUnique + インライン userId 比較の重複を撤去",
-    },
+    // A4 取りこぼし (getStoreOrders → requireStoreOwner) は 2026-05-26 に
+    // クローズ済み (commit 70f5b94)。
     {
         priority: "medium",
         title: "shadcn/ui プリミティブ Snapshot の B1+ 拡張 (残 40 プリミティブ)",

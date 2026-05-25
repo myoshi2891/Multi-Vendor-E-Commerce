@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-05-24 時点）
+## 現在の状態（2026-05-26 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1016テスト / 70スイート（**4 skipped**、全パス）— うち 1 件は CI flake 一時退避（既知の課題 OI-8） |
+| Jestユニットテスト | 1016テスト / 70スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-26 に `getStoreOrders` IDOR 3 階層テスト追加で +1 |
 | Jestスナップショット | 40（`tests/component/ui/` — B1 で導入） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -138,8 +138,20 @@
   - 内訳: `product.test.ts` +4 (deleteProduct IDOR 描述新設 / upsertProduct 副作用検証)、`coupon.test.ts` +1 (upsertCoupon IDOR describe 新設)、`store.test.ts` +3 (updateStoreDefaultShippingDetails / getStoreShippingRates / upsertShippingRate 補強)。
   - テスト総数: 1008 → 1016。`ae66fac`。
 - **今後の残タスク**:
-  - `getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。
+  - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-26: A4 残課題 `getStoreOrders` 統合と IDOR 3 階層化
+
+- **背景**: A4（2026-05-24）で coupon / product / store 配下の他アクションは全て `requireStoreOwner` に統合済みだったが、`store.ts::getStoreOrders` のみ自前の `findUnique({ where: { url } })` + `user.id !== store.userId` インライン比較が残存していた。`findUnique` 単独では `userId` を複合キーに含まないため IDOR 防御が「取得後にブロック」する後付け構造であり、エラーメッセージも旧仕様 `"You are not authorized to view this store's orders."` で統一文言から乖離。
+- **変更内容**:
+  - `getStoreOrders` の認可ブロック（auth / role / `findUnique` / ownership 比較の計 29 行）を `const { store } = await requireStoreOwner(storeUrl);` の 1 行に置換。複合キー `{ url, userId }` による「取得即所有検証」の原子的 IDOR 防御に変更。
+  - IDOR テストを `SECURITY_GAP_REPORT.md §5.2` の 3 階層パターンに拡張: (a) 統一文言検証 / (b) `where: { url, userId }` 構造検証 / (c) `orderGroup.findMany` 非呼び出し検証。
+  - 「存在しないストア」テストも同じ統一文言 `"Forbidden: store not owned by current user."` に同期（`requireStoreOwner` の `findUnique` 失敗パスは「未所有」と意味的に同一）。
+- **影響**:
+  - テスト総数: 1015 → 1016（+1 net、IDOR (b)+(c) 1 件追加）。
+  - `.claude/steering/tech.md` の「認可ガード」項に完全準拠（インライン展開ゼロ）。
+- **コミット**: `70f5b94`（コード変更）+ docs 同期コミット（本コミット）。
 
 ### 2026-05-24: CI フレーク調査と ModalProvider setOpen 同期化（ADR-002 / ADR-003 / 一時スキップ）
 

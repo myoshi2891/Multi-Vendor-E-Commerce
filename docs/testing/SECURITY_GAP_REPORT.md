@@ -100,11 +100,11 @@ if (!order) throw new Error("Order not found");
 | `coupon.ts` | upsertCoupon / getStoreCoupons / deleteCoupon | `requireStoreOwner` |
 | `product.ts` | upsertProduct | `requireStoreOwner` |
 | `product.ts` | deleteProduct | `requireSeller` + インライン `product.store.userId` 比較 |
-| `store.ts` | updateStoreDefaultShippingDetails / getStoreShippingRates / upsertShippingRate | `requireStoreOwner` |
+| `store.ts` | updateStoreDefaultShippingDetails / getStoreShippingRates / upsertShippingRate / **getStoreOrders** | `requireStoreOwner` |
 
 副次効果として `findUnique` の二重呼び出し（旧実装で所有権チェックと取得を別々に行っていた箇所）が解消された。
 
-**スコープ外（残課題）**: `store.ts::getStoreOrders` は自前の `findUnique` + `userId !== user.id` インライン比較が残存。
+**残課題の解消（2026-05-26）**: `store.ts::getStoreOrders` の自前 `findUnique` + `userId !== user.id` インライン比較を `requireStoreOwner` に統合。エラーメッセージを統一文言 `"Forbidden: store not owned by current user."` に揃え、IDOR テストを 3 階層パターン（後述 5.2）に準拠させた。
 
 ### 5.2 IDOR テスト 3 階層化
 
@@ -121,11 +121,13 @@ if (!order) throw new Error("Order not found");
 | `store.test.ts` | `updateStoreDefaultShippingDetails` | (b)(c) 他人の店舗 URL 明示シナリオ + `store.update` 非呼び出し |
 | `store.test.ts` | `getStoreShippingRates` | (b)(c) 構造検証 + `country/shippingRate.findMany` 非呼び出し |
 | `store.test.ts` | `upsertShippingRate` | (b)(c) 構造検証 + `shippingRate.upsert` 非呼び出し |
+| `store.test.ts` | `getStoreOrders` | (a) 統一文言検証 + (b)(c) `where: { url, userId }` 構造 + `orderGroup.findMany` 非呼び出し（2026-05-26 追加） |
 
-テスト総数: 1008 → 1016 (+8)。
+テスト総数: 1008 → 1016 (+8) → 2026-05-26 に `getStoreOrders` の (b)(c) を 1 件追加し 1017 件に増加。
 
 ### 5.3 関連コミット
 
 - 認可ガード適用: `a73603e` (category) / `e294459` (subCategory) / `adcca3f` (offer-tag) / `06fe5d2` (coupon) / `8766979` (product) / `c83a5c4` (store)
 - IDOR 補完テスト: `ae66fac`
+- `getStoreOrders` 統合: `70f5b94`（2026-05-26）
 - CSRF 防御方針: ADR 001 (`docs/architecture/decisions/001-csrf-policy.md`)
