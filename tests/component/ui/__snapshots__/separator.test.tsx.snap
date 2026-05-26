@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Separator (snapshot) renders horizontal orientation (default) 1`] = `
+<div
+  class="shrink-0 bg-border h-[1px] w-full"
+  data-orientation="horizontal"
+  role="none"
+/>
+`;
+
+exports[`Separator (snapshot) renders vertical orientation 1`] = `
+<div
+  class="shrink-0 bg-border h-full w-[1px]"
+  data-orientation="vertical"
+  role="none"
+/>
+`;
