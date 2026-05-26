@@ -18,7 +18,7 @@
 **想定成果**:
 - `tests/component/ui/*.test.tsx` が **9 → 49 ファイル**に拡張
 - snapshot 総数は **~40 → ~120**（Tier 1=3-4/file, Tier 2=4-5/file, Tier 3=2-3/file 想定）
-- `docs/coverage-dashboard.html` の §03 Next Actions から `NA-NS-01` が削除済み（= 完了アーカイブへ移行）
+- `docs/coverage-dashboard.html` の §03 Next Actions から `NA-NS-01` を削除予定（最終コミットで実施、= 完了アーカイブへ移行）
 
 ---
 
@@ -208,7 +208,7 @@ form → calendar → carousel → command → sidebar → navigation-menu → s
 - `tests/component/ui/__snapshots__/<primitive>.test.tsx.snap` × 40（jest 自動生成）
 
 ### 修正
-- [`scripts/coverage-dashboard/render-html.ts`](../../scripts/coverage-dashboard/render-html.ts) — `NEXT_ACTIONS` から `NA-NS-01` 削除（最終コミット）
+- [`scripts/coverage-dashboard/render-html.ts`](../../scripts/coverage-dashboard/render-html.ts) — `NEXT_ACTIONS` から `NA-NS-01` を削除予定（最終コミットで実施）
 - [`QA_HANDOFF.md`](./QA_HANDOFF.md) — テスト統計 + §3.3 同期
 - [`COVERAGE_REPORT.md`](./COVERAGE_REPORT.md) — B1+ アーカイブ行追加
 - [`07-testing.md`](../../specs/multi-vendor-ecommerce/07-testing.md) — テスト数
@@ -253,9 +253,13 @@ bun run test -- --ci
 bun run coverage:dashboard
 git diff docs/coverage-dashboard.html
 
-# 6. 統計同期確認: QA_HANDOFF.md の Jest snapshot 数が __snapshots__ の実数と一致
-ls tests/component/ui/__snapshots__/ | wc -l
-grep "Jest snapshots" docs/testing/QA_HANDOFF.md
+# 6. 統計同期確認: QA_HANDOFF.md の Jest snapshot 数が __snapshots__ の実 snapshot エントリー数と一致
+#    （ls | wc -l はファイル数しか数えないため、1 ファイル内に複数 snapshot がある実態と乖離する）
+ACTUAL=$(grep -rhE "^exports\[" tests/component/ui/__snapshots__/ | wc -l | tr -d ' ')
+REPORTED=$(grep -E "Jest スナップショット" docs/testing/QA_HANDOFF.md | grep -oE "[0-9]+" | head -n 1)
+echo "Actual snapshot entries: $ACTUAL"
+echo "Reported in QA_HANDOFF.md: $REPORTED"
+[ "$ACTUAL" = "$REPORTED" ] && echo "OK: synced" || echo "MISMATCH: update QA_HANDOFF.md"
 ```
 
 ### 最終（Sprint 4）完了条件

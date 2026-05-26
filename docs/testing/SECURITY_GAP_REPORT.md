@@ -123,7 +123,7 @@ if (!order) throw new Error("Order not found");
 | `store.test.ts` | `upsertShippingRate` | (b)(c) 構造検証 + `shippingRate.upsert` 非呼び出し |
 | `store.test.ts` | `getStoreOrders` | (a) 統一文言検証 + (b)(c) `where: { url, userId }` 構造 + `orderGroup.findMany` 非呼び出し（2026-05-26 追加） |
 
-テスト総数: 1008 → 1016 (+8) → 2026-05-26 に `getStoreOrders` の (b)(c) を 1 件追加し 1017 件に増加。
+テスト総数: 1008 → 1016 (+8)。2026-05-26 に `getStoreOrders` の (b)(c) を 1 件追加（1015 → 1016、net +1）。
 
 ### 5.3 関連コミット
 
