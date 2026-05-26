@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import {
     Popover,
@@ -19,13 +19,15 @@ describe("Popover (snapshot)", () => {
         expect(container.firstChild).toMatchSnapshot();
     });
 
-    it("renders portal content in defaultOpen state", () => {
+    it("renders PopoverContent in defaultOpen state", () => {
         render(
             <Popover defaultOpen>
                 <PopoverTrigger>Open</PopoverTrigger>
                 <PopoverContent>Popover body</PopoverContent>
             </Popover>
         );
-        expect(document.body).toMatchSnapshot();
+        // PopoverContent は role="dialog" の styled div として描画される。
+        // document.body 全体ではなくこの要素だけをスナップショット化してスコープを最小化する。
+        expect(screen.getByRole("dialog")).toMatchSnapshot();
     });
 });
