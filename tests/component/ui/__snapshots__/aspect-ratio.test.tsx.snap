@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`AspectRatio (snapshot) renders 1:1 ratio 1`] = `
+<div
+  data-radix-aspect-ratio-wrapper=""
+  style="position: relative; width: 100%; padding-bottom: 100%;"
+>
+  <div
+    style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px;"
+  >
+    <img
+      alt="placeholder"
+      src="/placeholder.jpg"
+    />
+  </div>
+</div>
+`;
+
+exports[`AspectRatio (snapshot) renders 16:9 ratio 1`] = `
+<div
+  data-radix-aspect-ratio-wrapper=""
+  style="position: relative; width: 100%; padding-bottom: 56.25%;"
+>
+  <div
+    style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px;"
+  >
+    <img
+      alt="placeholder"
+      src="/placeholder.jpg"
+    />
+  </div>
+</div>
+`;
