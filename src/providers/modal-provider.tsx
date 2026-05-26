@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useRef, useState } from "react";
 
 // Prisma models
 import { User } from "@prisma/client";
@@ -30,6 +30,9 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [data, setData] = useState<ModalData>({});
 	const [showingModal, setShowingModal] = useState<React.ReactNode>(null);
+	// fetchData の世代 ID。setOpen / setClose のたびに increment し、
+	// await 後に世代が進んでいたら setData をスキップする (stale fetch ガード)。
+	const requestIdRef = useRef(0);
 
 	// 同期関数として保つことで onClick={() => setOpen(...)} の floating promise を防ぐ。
 	// React 19 strict act mode が cleanup 段階で unflushed effect として検出するのを回避するため。
@@ -43,9 +46,11 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setIsOpen(true);
 		if (!fetchData) return;
 
+		const generation = ++requestIdRef.current;
 		void (async () => {
 			try {
 				const fetchedData = await fetchData();
+				if (generation !== requestIdRef.current) return;
 				setData((prev) => ({ ...prev, ...fetchedData }));
 			} catch (error) {
 				if (error instanceof Error) {
@@ -58,6 +63,7 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	};
 
 	const setClose = () => {
+		requestIdRef.current++;
 		setIsOpen(false);
 		setData({});
 		setShowingModal(null);
