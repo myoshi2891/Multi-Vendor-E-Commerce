@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Tooltip (snapshot) renders portal content in defaultOpen state 1`] = `
+<body>
+  <div>
+    <button
+      aria-describedby="radix-_r_1_"
+      data-state="instant-open"
+    >
+      Hover
+    </button>
+    <div
+      data-radix-popper-content-wrapper=""
+      style="position: fixed; left: 0px; top: 0px; transform: translate(0, -200%); min-width: max-content; --radix-popper-transform-origin:  ;"
+    >
+      <div
+        class="z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-tooltip-content-transform-origin]"
+        data-align="center"
+        data-side="top"
+        data-state="instant-open"
+        style="--radix-tooltip-content-transform-origin: var(--radix-popper-transform-origin); --radix-tooltip-content-available-width: var(--radix-popper-available-width); --radix-tooltip-content-available-height: var(--radix-popper-available-height); --radix-tooltip-trigger-width: var(--radix-popper-anchor-width); --radix-tooltip-trigger-height: var(--radix-popper-anchor-height); animation: none;"
+      >
+        Tip body
+        <span
+          id="radix-_r_1_"
+          role="tooltip"
+          style="position: absolute; border: 0px; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; word-wrap: normal;"
+        >
+          Tip body
+        </span>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`Tooltip (snapshot) renders trigger in closed state 1`] = `
+<button
+  data-state="closed"
+>
+  Hover
+</button>
+`;
