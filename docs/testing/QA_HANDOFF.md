@@ -1,17 +1,17 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-25 / **HEAD**: `7559884`
+> **最終更新**: 2026-05-26 / **HEAD**: `66fb8d5`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-25 時点）
+### テスト統計（2026-05-26 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **1015** / 70 スイート（68 passed + 2 skipped）— 2026-05-25 に modal-provider のハイドレーション describe 削除 + 1 件減 |
-| Jest スナップショット | **40**（`tests/component/ui/__snapshots__/`） |
+| Jest テスト総数 | **1042** / 80 スイート（78 passed + 2 skipped）— 2026-05-26 に B1+ Sprint 1（Tier 1 前半 10 プリミティブ snapshot）追加で +26 |
+| Jest スナップショット | **66**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 1 で +26（aspect-ratio / separator / progress / switch / checkbox / radio-group / slider / toggle / tooltip / popover） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
@@ -121,18 +121,18 @@
 
 全ての優先 OI（OI-2 / OI-3 / OI-4 / OI-4a / OI-5）は 2026-05-22 に解消済み。
 **B1（shadcn/ui プリミティブ Snapshot）** は 2026-05-23 に MVP 9 プリミティブ分を完了（40 snapshot）。
-**A4（認可ガード統合 + IDOR 3 階層化）** は 2026-05-24 に完了（テスト総数 990 → 1016、+26 件）。
+**A4（認可ガード統合 + IDOR 3 階層化）** は 2026-05-24 に完了（テスト総数 990 → 1016、+26 件）。**A4 残課題 `getStoreOrders` 統合** は 2026-05-26 にクローズ（`70f5b94`、テスト総数 1015 → 1016 / +1）。
+**B1+ Sprint 1（Tier 1 前半 10 プリミティブ）** は 2026-05-26 に完了（`b55e177`〜`66fb8d5`、テスト総数 1016 → 1042 / +26、snapshot 40 → 66 / +26）。残り 30 プリミティブは Sprint 2-4 で継続。
 
 ### 残課題（低優先）
 
-- 直近の OI はすべてクローズ済み（2026-05-24、OI-6 / OI-7 解消）。
-- `getStoreOrders` (`src/queries/store.ts:361`) は自前の `findUnique` + `userId !== user.id` インライン比較が残存しており、`requireStoreOwner` 統合の対象外として残っている。次の A4 系作業で取り込むかは別途判断。
+- 直近の OI はすべてクローズ済み（2026-05-26、A4 残課題 `getStoreOrders` の `requireStoreOwner` 統合完了）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
 
 - ~~**B1** shadcn/ui プリミティブの Snapshot~~ ✅ MVP 完了（2026-05-23、9 プリミティブ / 40 snapshot）
-- **B1+** 残り 40 プリミティブの段階追加（後続 PR）
+- **B1+** Sprint 1 完了（2026-05-26、Tier 1 前半 10 プリミティブ / +26 snapshot）。残り 30 プリミティブは Sprint 2-4（後続 PR）
 - **B2** Stripe / PayPal Webhook の Contract テスト拡充
 - **B3** Cart → Checkout の Integration テスト
 - **C1** Lighthouse CI（パフォーマンス予算化）
@@ -142,7 +142,7 @@
 
 ---
 
-## 主要コミット履歴（2026-05-21〜24）
+## 主要コミット履歴（2026-05-21〜26）
 
 | コミット | 内容 |
 |---|---|
@@ -160,6 +160,9 @@
 | `c83a5c4` | A4: `store.ts` 配送系 3 アクションに `requireStoreOwner` 適用、`findUnique` 二重呼び出しを統合 |
 | `eae2cfe` | A4: クロステナント IDOR 補完テスト 8 件追加（where 構造検証 + 副作用なし検証、990 → 1016） |
 | `eae2cfe` | A4: 統計 SSOT (QA_HANDOFF / PROGRESS / COVERAGE_REPORT / SECURITY_GAP_REPORT) と coverage-dashboard.html を同期 |
+| `70f5b94` | A4 残課題: `getStoreOrders` を `requireStoreOwner` に統合、IDOR テストを 3 階層化（1015 → 1016） |
+| `b55e177`〜`66fb8d5` | B1+ Sprint 1: Tier 1 前半 10 プリミティブ snapshot 追加（aspect-ratio / separator / progress / switch / checkbox / radio-group / slider / toggle / tooltip / popover、1016 → 1042 / +26） |
+| `6545fce` | B1+ infra: `tests-setup/jest.setup.ts` に ResizeObserver スタブ追加（Radix `useSize` 系プリミティブの snapshot テスト基盤） |
 
 ---
 
@@ -171,43 +174,88 @@
 
 ### 🔴 Immediate (high)
 
-#### NA-IM-01: getStoreOrders を `requireStoreOwner` に統合
-
-```text
-src/queries/store.ts:361 の getStoreOrders を src/lib/auth-guards.ts の requireStoreOwner に統合してください。
-
-背景:
-- A4 (2026-05-24) で coupon/product/store の他アクションは全て requireStoreOwner に統合済み。
-- getStoreOrders だけ自前の findUnique + userId !== user.id インライン比較が残存している。
-- 既存テスト src/queries/store.test.ts:1208 "他人のストアの注文を取得できない（IDOR防止）" のエラーメッセージは旧仕様 ("You are not authorized to view this store's orders.") なので、requireStoreOwner 統一文言 ("Forbidden: store not owned by current user.") に合わせて更新が必要。
-
-完了条件:
-1. getStoreOrders の認可チェックが requireStoreOwner 1 呼び出しに置換され、インライン比較が削除されている
-2. store.test.ts の関連テストが新メッセージ + 副作用なし検証 (orderGroup.findMany 非呼び出し) を含む
-3. bun run test と bunx tsc --noEmit が共にグリーン
-4. .claude/rules/02-tdd-step-commit.md に従い「コード変更」「docs 同期 (PROGRESS.md / QA_HANDOFF.md / coverage-dashboard.html 再生成含む)」を別コミットに分離
-
-参考: docs/testing/SECURITY_GAP_REPORT.md §5、 src/lib/auth-guards.ts の requireStoreOwner 実装。
-```
+（現在 high 優先度の Next Action はありません。A4 残課題 `getStoreOrders` 統合は `70f5b94` でクローズ済み）
 
 ### 🟡 Next Sprint (medium)
 
 #### NA-NS-01: B1+ shadcn/ui プリミティブ Snapshot 拡張 (残 40 プリミティブ)
 
+> **詳細計画書**: [`docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md`](./B1_SNAPSHOT_EXPANSION_PLAN.md) — Tier 分類・Sprint 構造・各プリミティブの想定 snapshot 数・コミット戦略の決定版。次セッションは**まず計画書を読んでから着手**すること。
+
 ```text
 shadcn/ui プリミティブの Snapshot テストを B1 MVP (9 プリミティブ) から残り 40 プリミティブへ拡張してください。
+詳細は docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md を必ず先に読むこと（2026-05-26 調査済み）。
 
 背景:
 - B1 MVP は 2026-05-23 に完了 (tests/component/ui/ 配下 9 ファイル / 40 snapshot)。
-- 全プリミティブ (約 49 種) のうち未着手は accordion / alert-dialog / avatar / breadcrumb / calendar / carousel / collapsible / command / context-menu / drawer / dropdown-menu / form / hover-card / menubar / navigation-menu / pagination / popover / progress / radio-group / scroll-area / sheet / sidebar / slider / sonner / switch / table / tabs / toggle / toggle-group / tooltip など。
-- .claude/rules/02-tdd-step-commit.md に「同一 Tier / 3 ファイル以下 / 合計 200 行未満 / 相互依存 (インポート共有 50%以上)」の同梱コミット条件が定義されているので、これに従ってコミットを分割すること。
+- 残り 40 プリミティブを以下 Tier に分類済み (B1_SNAPSHOT_EXPANSION_PLAN.md):
+  * Tier 1 (21 個 / 外部 lib 依存なし / 1 ファイル 1 commit 原則):
+    alert, alert-dialog, aspect-ratio, avatar, breadcrumb, checkbox, collapsible,
+    hover-card, input-otp, pagination, popover, progress, radio-group, resizable,
+    scroll-area, separator, slider, switch, toggle, tooltip, chart
+  * Tier 2 (8 個 / compound Radix / 同梱コミット候補):
+    - Menu family: dropdown-menu, context-menu, menubar (3 ファイル同梱候補)
+    - Sheet family: sheet, drawer (2 ファイル同梱候補)
+    - 個別: tabs, toggle-group, table
+  * Tier 3 (7 個 / 外部 lib / 必ず 1 ファイル 1 commit):
+    form (react-hook-form), calendar (react-day-picker), carousel (embla),
+    command (cmdk), sidebar (内部 compound), navigation-menu, sonner
+  * 補助 (4 個 / 各 1 commit): accordion, toast, toaster, data-table
 
-完了条件:
-1. プリミティブごとに 1 ファイル 1 commit を原則として段階追加
-2. spec-sync-after-test skill を起動し、テスト統計と docs/coverage-dashboard.html を同一コミットで同期
-3. bun run test, bunx tsc --noEmit が常時グリーン
+- Tier 3 戦略 (確定済み): デフォルト状態のみスナップショット取得。
+  * form: useForm() ラッパーで空フォーム + FormField 1 個
+  * calendar: selected={new Date("2026-01-15")} 固定
+  * carousel: 3 slide 初期状態 (slide 0 アクティブ)
+  * command: 閉状態 + 開状態 (defaultOpen) の 2 種
+  * sidebar: <SidebarProvider><Sidebar>...</Sidebar></SidebarProvider> 最小構成
+  * navigation-menu: 単一 root + 子 NavigationMenuItem
+  * sonner: <Toaster /> 単独 (toast 発火なし)
 
-参考: tests/component/ui/__snapshots__/ の既存パターン、docs/testing/TESTING_DESIGN.md の "shadcn/ui Snapshot テスト" セクション。
+- .claude/rules/02-tdd-step-commit.md の閾値 (同一 Tier / 3 ファイル以下 / 合計 200 行未満 /
+  import 共有 50% 以上) を満たす場合のみ同梱コミット。超過時は分離。
+
+推奨実装順序 (Sprint 単位 / 各 Sprint 末で spec-sync-after-test 起動):
+- Sprint 1 (Tier 1 前半 10 commits): aspect-ratio → separator → progress → switch →
+  checkbox → radio-group → slider → toggle → tooltip → popover → spec-sync
+  ✅ 完了 (2026-05-26, b55e177〜66fb8d5)。インフラ: 6545fce で jest.setup.ts に
+  ResizeObserver スタブを追加済み (Radix useSize 系プリミティブの基盤)。
+- Sprint 2 (Tier 1 後半 11 commits): alert → alert-dialog → avatar → breadcrumb →
+  collapsible → hover-card → input-otp → pagination → resizable → scroll-area →
+  chart → spec-sync
+- Sprint 3 (Tier 2 / 5-7 commits): Menu family → Sheet family → tabs → toggle-group →
+  table → spec-sync
+- Sprint 4 (Tier 3 + 補助 / 11 commits + archive): form → calendar → carousel →
+  command → sidebar → navigation-menu → sonner → accordion → toast → toaster →
+  data-table → spec-sync → NA-NS-01 archive (render-html.ts + 本セクション削除)
+
+標準テンプレート (Portal 系 = alert-dialog/popover/hover-card/tooltip/dropdown-menu/
+context-menu/menubar/sheet/drawer/command/sonner は document.body をスナップショット対象):
+  /** @jest-environment jsdom */
+  import { render } from "@testing-library/react";
+  import "@testing-library/jest-dom";
+  import { Foo } from "@/components/ui/foo";
+  describe("Foo (snapshot)", () => {
+    it("renders default", () => {
+      const { container } = render(<Foo>content</Foo>);
+      expect(container.firstChild).toMatchSnapshot();
+    });
+  });
+
+完了条件 (Sprint 4 終了時):
+1. tests/component/ui/*.test.tsx が 49 ファイル
+2. bun run test グリーン、bunx tsc --noEmit エラーゼロ
+3. scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS から NA-NS-01 削除
+4. 本セクション (QA_HANDOFF.md §3.3 NA-NS-01) のプロンプト削除
+5. docs/testing/COVERAGE_REPORT.md §3 に B1+ 完了アーカイブ行追加 (完了日 + commit hash)
+6. docs/coverage-dashboard.html を bun run coverage:dashboard で再生成
+7. docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md のステータスを Completed YYYY-MM-DD に更新
+
+参考:
+- 詳細計画: docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md (Tier 別 snapshot 数の想定値含む)
+- テンプレート: tests/component/ui/button.test.tsx (variants/asChild), card.test.tsx (compound), dialog.test.tsx (Portal)
+- 既存パターン: tests/component/ui/__snapshots__/
+- 設計ガイド: docs/testing/TESTING_DESIGN.md "shadcn/ui Snapshot テスト" セクション
+- コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
 #### NA-NS-02: Stripe / PayPal Webhook の Contract テスト拡充

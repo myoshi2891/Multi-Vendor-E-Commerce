@@ -1,5 +1,18 @@
 import "@testing-library/jest-dom";
 
+// jsdom は ResizeObserver を実装していないため、Radix UI の useSize 系
+// (Slider / Popover / Tooltip / HoverCard / ScrollArea 等) を含む snapshot テスト用に
+// no-op スタブを供給する。実体は不要 — Radix は subscribe して noop でも壊れない。
+// `implements ResizeObserver` で TS dom lib の型と構造的に整合させ、unknown キャスト不要。
+if (typeof globalThis.ResizeObserver === "undefined") {
+    class ResizeObserverStub implements ResizeObserver {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+    }
+    globalThis.ResizeObserver = ResizeObserverStub;
+}
+
 try {
   // Optional MSW support if tests/mocks/server is defined.
   // eslint-disable-next-line @typescript-eslint/no-var-requires

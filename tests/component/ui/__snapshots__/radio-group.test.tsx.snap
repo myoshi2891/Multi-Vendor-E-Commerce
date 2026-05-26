@@ -1,0 +1,123 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`RadioGroup (snapshot) renders default group with no selection 1`] = `
+<div
+  aria-required="false"
+  class="grid gap-2"
+  dir="ltr"
+  role="radiogroup"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-checked="false"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-radix-collection-item=""
+    data-state="unchecked"
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="a"
+  />
+  <button
+    aria-checked="false"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-radix-collection-item=""
+    data-state="unchecked"
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="b"
+  />
+</div>
+`;
+
+exports[`RadioGroup (snapshot) renders disabled state on item 1`] = `
+<div
+  aria-required="false"
+  class="grid gap-2"
+  dir="ltr"
+  role="radiogroup"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-checked="false"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-disabled=""
+    data-radix-collection-item=""
+    data-state="unchecked"
+    disabled=""
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="a"
+  />
+  <button
+    aria-checked="false"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-radix-collection-item=""
+    data-state="unchecked"
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="b"
+  />
+</div>
+`;
+
+exports[`RadioGroup (snapshot) renders with defaultValue selecting item 'b' 1`] = `
+<div
+  aria-required="false"
+  class="grid gap-2"
+  dir="ltr"
+  role="radiogroup"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-checked="false"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-radix-collection-item=""
+    data-state="unchecked"
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="a"
+  />
+  <button
+    aria-checked="true"
+    class="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    data-radix-collection-item=""
+    data-state="checked"
+    role="radio"
+    tabindex="-1"
+    type="button"
+    value="b"
+  >
+    <span
+      class="flex items-center justify-center"
+      data-state="checked"
+    >
+      <svg
+        class="lucide lucide-circle size-2.5 fill-current text-current"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+        />
+      </svg>
+    </span>
+  </button>
+</div>
+`;

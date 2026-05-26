@@ -1269,21 +1269,34 @@ describe("getStoreOrders", () => {
 
             await expect(
                 getStoreOrders("nonexistent")
-            ).rejects.toThrow("Store not found.");
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
         });
 
         it("他人のストアの注文を取得できない（IDOR防止）", async () => {
-            mockPrisma.store.findUnique.mockResolvedValue(
-                TestDataFactory.existingStore({
-                    userId: "other-user-id",
-                })
-            );
+            // (a) スロー検証。requireStoreOwner は複合キー { url, userId } で
+            // findUnique するため、他人のストアは null として返る。
+            mockPrisma.store.findUnique.mockResolvedValue(null);
 
             await expect(
                 getStoreOrders("test-store")
-            ).rejects.toThrow(
-                "You are not authorized to view this store's orders."
-            );
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+        });
+
+        it("IDOR失敗時に where: { url, userId } 構造で findUnique が呼ばれ、orderGroup.findMany は呼ばれない", async () => {
+            // (b) where 構造の検証 + (c) ガード失敗時の副作用なし検証。
+            mockPrisma.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreOrders("other-store")
+            ).rejects.toThrow(TEST_ERRORS.UNAUTHORIZED_STORE_UPDATE);
+
+            expect(mockPrisma.store.findUnique).toHaveBeenCalledWith({
+                where: {
+                    url: "other-store",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+            });
+            expect(mockPrisma.orderGroup.findMany).not.toHaveBeenCalled();
         });
     });
 
