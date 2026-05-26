@@ -10,8 +10,8 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1016テスト / 70スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-26 に `getStoreOrders` IDOR 3 階層テスト追加で +1 |
-| Jestスナップショット | 40（`tests/component/ui/` — B1 で導入） |
+| Jestユニットテスト | 1042テスト / 80スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-26 に B1+ Sprint 1（Tier 1 前半 10 プリミティブ snapshot）追加で +26 |
+| Jestスナップショット | 66（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
 
@@ -140,6 +140,20 @@
 - **今後の残タスク**:
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-26: B1+ Sprint 1 — Tier 1 前半 10 プリミティブ Snapshot 拡張
+
+- **背景**: B1 MVP（2026-05-23 / 9 プリミティブ・40 snapshot）で確立した規約を残り 40 プリミティブへ展開する [`B1_SNAPSHOT_EXPANSION_PLAN.md`](testing/B1_SNAPSHOT_EXPANSION_PLAN.md) の Sprint 1 として、Tier 1（外部 lib 依存なし）前半 10 プリミティブを実装。Tailwind / Radix のスタイル退行検知範囲を 9/49 → 19/49 へ拡大。
+- **実装内容**: 1 ファイル 1 commit 厳守で以下 10 プリミティブを追加（[`02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md) MUST 規定）:
+  - aspect-ratio (2 snap) / separator (2) / progress (3) / switch (3) / checkbox (3) / radio-group (3) / slider (3) / toggle (3) / tooltip (2) / popover (2)
+- **インフラ発見**: Radix UI の `useSize` 系（Slider / Popover / Tooltip / HoverCard / ScrollArea 等）は ResizeObserver に依存するが jsdom は未実装。`tests-setup/jest.setup.ts` に no-op スタブを追加（独立 commit `6545fce`）。B1 MVP では出現しなかったため計画書の「jest.setup.ts 変更不要」前提が一部更新された。
+- **影響**:
+  - テスト総数: 1016 → 1042（+26）
+  - Jest スナップショット: 40 → 66（+26）
+  - スイート数: 70 → 80（+10）
+  - 型エラー: 0 件（維持）
+- **コミット**: `b55e177` (aspect-ratio) → `7268b72` (separator) → `4298b52` (progress) → `189f397` (switch) → `f1c9cee` (checkbox) → `b815abb` (radio-group) → `6545fce` (ResizeObserver stub) → `a42b94b` (slider) → `c70dec9` (toggle) → `1b75ad8` (tooltip) → `66fb8d5` (popover)。
+- **次アクション**: Sprint 2（Tier 1 後半 11 プリミティブ: alert / alert-dialog / avatar / breadcrumb / collapsible / hover-card / input-otp / pagination / resizable / scroll-area / chart）。
 
 ### 2026-05-26: A4 残課題 `getStoreOrders` 統合と IDOR 3 階層化
 
