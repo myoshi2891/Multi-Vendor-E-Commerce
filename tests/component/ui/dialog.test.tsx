@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import {
     Dialog,
@@ -31,7 +31,7 @@ describe("Dialog (snapshot)", () => {
         expect(container.firstChild).toMatchSnapshot();
     });
 
-    it("renders portal content in open state", () => {
+    it("renders DialogContent in open state", () => {
         render(
             <Dialog defaultOpen>
                 <DialogTrigger asChild>
@@ -48,6 +48,10 @@ describe("Dialog (snapshot)", () => {
                 </DialogContent>
             </Dialog>
         );
-        expect(document.body).toMatchSnapshot();
+        // DialogContent は role="dialog" の styled div として描画される。
+        // document.body 全体ではなくこの要素だけをスナップショット化することで、
+        // Radix が body に書き込む scroll-lock 属性 / focus-guard span / overlay div
+        // などの周辺要素を除外しスコープを最小化する。
+        expect(screen.getByRole("dialog")).toMatchSnapshot();
     });
 });
