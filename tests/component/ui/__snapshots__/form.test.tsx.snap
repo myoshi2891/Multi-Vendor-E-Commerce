@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Form (snapshot) renders empty FormField with label / description 1`] = `
+<form>
+  <div
+    class="space-y-2"
+  >
+    <label
+      class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      for="_r_0_-form-item"
+    >
+      Username
+    </label>
+    <input
+      aria-describedby="_r_0_-form-item-description"
+      aria-invalid="false"
+      class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+      id="_r_0_-form-item"
+      name="username"
+      placeholder="user"
+      value=""
+    />
+    <p
+      class="text-sm text-muted-foreground"
+      id="_r_0_-form-item-description"
+    >
+      Public display name.
+    </p>
+  </div>
+</form>
+`;
