@@ -88,6 +88,10 @@ const fetchPayPalAccessToken = async (): Promise<string> => {
 /**
  * PayPal verify-webhook-signature API を呼んで verification_status を返す。
  * 外向き fetch は 10s で abort する（src/queries/paypal.ts と統一）。
+ *
+ * 戻り値 false は「PayPal が SUCCESS 以外の verification_status を返した」場合のみ。
+ * HTTP non-2xx / ネットワーク失敗 / JSON parse 失敗は外部障害として throw する
+ * （呼び出し側で 5xx にマップするため）。
  */
 const verifyPayPalSignature = async (
     headerMap: Record<string, string>,
@@ -119,7 +123,10 @@ const verifyPayPalSignature = async (
             }
         );
         if (!response.ok) {
-            return false;
+            const errorBody = await response.text();
+            throw new Error(
+                `PayPal verify-webhook-signature request failed: ${response.status} ${errorBody}`
+            );
         }
         const data: { verification_status?: string } = await response.json();
         return data.verification_status === "SUCCESS";
@@ -169,29 +176,38 @@ export async function POST(req: Request) {
         return new Response("Invalid JSON body", { status: 400 });
     }
 
-    // 署名検証: PayPal API を呼ぶ
+    // 署名検証: PayPal API を呼ぶ。
+    // 外部障害（OAuth/verify fetch の throw、AbortError、JSON parse 失敗、verify API
+    // の HTTP non-2xx）は 5xx として返し、PayPal Webhook の自動再送に乗せる。
+    // 署名そのものが invalid だった場合（verifyPayPalSignature が false を返す）のみ 400。
+    let verified: boolean;
     try {
         const accessToken = await fetchPayPalAccessToken();
-        const verified = await verifyPayPalSignature(
+        verified = await verifyPayPalSignature(
             headerMap,
             PAYPAL_WEBHOOK_ID,
             event,
             accessToken
         );
-        if (!verified) {
-            return new Response("Invalid signature", { status: 400 });
-        }
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error(
-                "[webhooks:paypal] Signature verification error",
+                "[webhooks:paypal] Signature verification service error",
                 error.message,
                 error.stack
             );
         } else {
-            console.error("[webhooks:paypal] Signature verification error", error);
+            console.error(
+                "[webhooks:paypal] Signature verification service error",
+                error
+            );
         }
-        return new Response("Signature verification failed", { status: 400 });
+        return new Response("Signature verification service error", {
+            status: 500,
+        });
+    }
+    if (!verified) {
+        return new Response("Invalid signature", { status: 400 });
     }
 
     if (!HANDLED_EVENT_TYPES.has(event.event_type)) {

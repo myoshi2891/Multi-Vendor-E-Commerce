@@ -130,7 +130,7 @@ describe("POST /api/webhooks/paypal", () => {
             expect(mockDb.order.update).not.toHaveBeenCalled();
         });
 
-        it("OAuth token 取得失敗時は 400 を返す", async () => {
+        it("OAuth token 取得失敗時は 500 を返す（外部障害は再送可能な 5xx で返す）", async () => {
             const consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
@@ -144,7 +144,33 @@ describe("POST /api/webhooks/paypal", () => {
                 createPayPalRequest(captureCompletedFixture)
             );
 
-            expect(response.status).toBe(400);
+            expect(response.status).toBe(500);
+            expect(mockDb.order.findUnique).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+
+        it("verify API が HTTP エラーを返した場合 500 を返す（無効署名と区別する）", async () => {
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            // 1st: OAuth token OK
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: () => Promise.resolve({ access_token: "test-access-token" }),
+            });
+            // 2nd: verify API が 503 を返す → 外部障害として throw → 5xx
+            mockFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 503,
+                text: () => Promise.resolve("service unavailable"),
+            });
+
+            const response = await POST(
+                createPayPalRequest(captureCompletedFixture)
+            );
+
+            expect(response.status).toBe(500);
+            expect(mockDb.order.findUnique).not.toHaveBeenCalled();
             consoleSpy.mockRestore();
         });
 
@@ -215,6 +241,17 @@ describe("POST /api/webhooks/paypal", () => {
                     }),
                 })
             );
+        });
+
+        it("paymentDetails.upsert と order.update を $transaction で囲んでアトミックに実行する", async () => {
+            await POST(createPayPalRequest(captureCompletedFixture));
+
+            // 実装が serial 呼び出しに退行した場合、このアサーションが落ちて検知する
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(mockDb.$transaction).toHaveBeenCalledWith(expect.any(Function));
+            // tx 経由で 2 つの書き込みがそれぞれ 1 回ずつ呼ばれる
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledTimes(1);
+            expect(mockDb.order.update).toHaveBeenCalledTimes(1);
         });
     });
 
