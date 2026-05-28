@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`InputOTP (snapshot) renders empty 6-digit group 1`] = `<noscript />`;
+
+exports[`InputOTP (snapshot) renders with partial value 1`] = `<noscript />`;
