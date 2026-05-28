@@ -5,13 +5,13 @@
 
 ---
 
-## 現在の状態（2026-05-26 時点）
+## 現在の状態（2026-05-28 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1042テスト / 80スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-26 に B1+ Sprint 1（Tier 1 前半 10 プリミティブ snapshot）追加で +26 |
-| Jestスナップショット | 66（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26） |
+| Jestユニットテスト | 1069テスト / 91スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に B1+ Sprint 2（Tier 1 後半 11 プリミティブ snapshot）追加で +27 |
+| Jestスナップショット | 93（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
 
@@ -140,6 +140,23 @@
 - **今後の残タスク**:
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-28: B1+ Sprint 2 — Tier 1 後半 11 プリミティブ Snapshot 拡張
+
+- **背景**: B1+ Sprint 1（2026-05-26）に続き [`B1_SNAPSHOT_EXPANSION_PLAN.md`](testing/B1_SNAPSHOT_EXPANSION_PLAN.md) の Sprint 2 として、Tier 1（外部 lib 依存なし）後半 11 プリミティブを実装。Tailwind / Radix のスタイル退行検知範囲を 19/49 → 30/49 へ拡大。
+- **実装内容**: 1 ファイル 1 commit 厳守で以下 11 プリミティブを追加（[`02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md) MUST 規定）:
+  - alert (3 snap) / alert-dialog (3) / avatar (3) / breadcrumb (3) / collapsible (2) / hover-card (2) / input-otp (2) / pagination (3) / resizable (2) / scroll-area (2) / chart (2)
+- **設計判断**:
+  - **hover-card**: Radix `HoverCardPrimitive.Content` には ARIA role が付かないため、popover の `getByRole("dialog")` 戦略は使えない。代わりに `screen.getByText("Card body")` で styled HoverCardContent を直接取得（テキストの最内側親要素 = HoverCardContent 自身）。popper wrapper を含めるとスナップショットに非決定な transform が混入するため除外。
+  - **chart**: recharts `ResponsiveContainer` は jsdom 内で親要素サイズを 0×0 と読み警告を出すが、テスト失敗には至らない。`beforeEach`/`afterEach` で `console.warn` を spy → no-op して出力ノイズを抑制。スナップショットは ChartContainer の class 合成と `ChartStyle` の `<style>` 注入（id を `id="bar-fixture"` 等で固定）を検証する範囲に留める。
+  - **alert-dialog**: `defaultOpen` 時は `screen.getByRole("alertdialog")` で AlertDialogContent を限定取得（dialog と異なる role）。
+- **影響**:
+  - テスト総数: 1042 → 1069（+27）
+  - Jest スナップショット: 66 → 93（+27）
+  - スイート数: 80 → 91（+11）
+  - 型エラー: 0 件（維持）
+- **コミット**: `750d830` (alert) → `c7245db` (alert-dialog) → `2753815` (avatar) → `9296ebb` (breadcrumb) → `9df0482` (collapsible) → `e38f9ee` (hover-card) → `d306803` (input-otp) → `ce6d346` (pagination) → `68a0df9` (resizable) → `35c6374` (scroll-area) → `45c339b` (chart)。
+- **次アクション**: Sprint 3（Tier 2: Menu family / Sheet family / tabs / toggle-group / table、5–7 commits）。
 
 ### 2026-05-26: B1+ Sprint 1 — Tier 1 前半 10 プリミティブ Snapshot 拡張
 

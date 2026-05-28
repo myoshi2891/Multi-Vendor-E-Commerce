@@ -11,9 +11,9 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **91** (Jest 86 / Playwright 5) |
-| テスト総数 | **1042** (12 skipped) — 2026-05-26 時点 |
-| Jest スナップショット | **66** — 2026-05-26 時点（B1+ Sprint 1 完了で 40 → 66） |
+| テストファイル総数 | **102** (Jest 97 / Playwright 5) |
+| テスト総数 | **1069** (12 skipped) — 2026-05-28 時点 |
+| Jest スナップショット | **93** — 2026-05-28 時点（B1+ Sprint 2 完了で 66 → 93） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **13 / 80 (16%)** |
 | lcov エントリ数 | **96** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
@@ -240,4 +240,5 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-22 | PayPal `capturePayPalPayment` の try-catch リファクタリング (commit `217bf76`). |
 | 2026-05-24 | **A4 完了**: `src/lib/auth-guards.ts` 導入 → 6 ファイルの認可をヘルパー集約。IDOR テスト 3 階層化（where 構造検証 + 副作用なし検証）で +8 件。テスト総数 1008 → 1016。lcov 95 → 96。詳細は [`SECURITY_GAP_REPORT.md §5`](./SECURITY_GAP_REPORT.md#5-追加調査拡充2026-05-24--a4-認可ガード統合--idor-3-階層化) を参照 (commits `a73603e`–`ae66fac`). |
 | 2026-05-26 | **B1+ Sprint 1 完了**: Tier 1 前半 10 プリミティブ snapshot 追加（aspect-ratio / separator / progress / switch / checkbox / radio-group / slider / toggle / tooltip / popover）。テスト総数 1016 → 1042 (+26)、Jest snapshot 40 → 66。インフラ: `tests-setup/jest.setup.ts` に ResizeObserver スタブ追加（Radix `useSize` 系の基盤）(commits `b55e177`〜`66fb8d5`, `6545fce`). |
+| 2026-05-28 | **B1+ Sprint 2 完了**: Tier 1 後半 11 プリミティブ snapshot 追加（alert / alert-dialog / avatar / breadcrumb / collapsible / hover-card / input-otp / pagination / resizable / scroll-area / chart）。テスト総数 1042 → 1069 (+27)、Jest snapshot 66 → 93 (+27)。chart は recharts ResponsiveContainer の jsdom 0-size 警告を console.warn spy で抑制。hover-card は role 無しのため getByText で styled HoverCardContent を取得 (commits `750d830`〜`45c339b`). |
 | — | 次回更新: B1+ Sprint 2（Tier 1 後半 11 プリミティブ）・NA-4（Visual baseline コミット後）・NA-6（GitHub Actions CI 構築後） |
