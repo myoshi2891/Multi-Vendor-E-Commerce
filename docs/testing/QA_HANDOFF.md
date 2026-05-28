@@ -16,7 +16,7 @@
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
-| Skipped テスト | **12 件**（意図的: idempotency 1 件 + 3 件、CI flake 一時退避: **modal-provider 全 9 件 file-level skip** — 下記 OI-8 参照）+ a11y は `CLERK_SECRET_KEY` 未設定時に条件スキップ |
+| Skipped テスト | **12 件**（内訳: idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`] + modal-provider 9 件 [`src/providers/modal-provider.test.tsx` を CI flake 一時退避で `describe.skip` — 下記 OI-8 参照]）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **2 件**（idempotency suite + modal-provider.test.tsx file-level） |
 
 ---
