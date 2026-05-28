@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1135テスト / 112スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B2 完了**（Stripe/PayPal Webhook ハンドラー Contract テスト追加で +32）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
+| Jestユニットテスト | 1137テスト / 112スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B2 完了**（Stripe/PayPal Webhook ハンドラー Contract テスト追加で +32）、レビュー指摘対応で +2（PayPal verify HTTP エラー / `$transaction` アトミック化検証）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |

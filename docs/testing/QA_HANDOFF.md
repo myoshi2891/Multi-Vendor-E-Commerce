@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **1135** / 112 スイート（110 passed + 2 skipped）— 2026-05-28 に B2（Stripe/PayPal Webhook ハンドラー Contract テスト）完了で +32（Stripe 15 + PayPal 15 + metadata 検証 2） |
+| Jest テスト総数 | **1137** / 112 スイート（110 passed + 2 skipped）— 2026-05-28 に B2（Stripe/PayPal Webhook ハンドラー Contract テスト）完了で +32（Stripe 15 + PayPal 15 + metadata 検証 2）、レビュー指摘対応で +2（PayPal verify HTTP エラー / `$transaction` アトミック化検証） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
