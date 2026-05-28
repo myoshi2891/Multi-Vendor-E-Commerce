@@ -125,6 +125,21 @@ describe("createPayPalPayment", () => {
             const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
             expect(callBody.intent).toBe("CAPTURE");
         });
+
+        it("Webhook 相関用に purchase_units[].custom_id を PayPal Order に付与する", async () => {
+            // PayPal Webhook (src/app/api/webhooks/paypal) は resource.custom_id から
+            // 内部 Order を逆引きするため、custom_id の付与は破壊的変更として保護する。
+            const order = createMockOrder({ total: 25.0 });
+            mockDb.order.findUnique.mockResolvedValue(order);
+            mockFetch.mockResolvedValue({
+                json: () => Promise.resolve({ id: "PP-meta", status: "CREATED" }),
+            });
+
+            await createPayPalPayment("order-custom-id");
+
+            const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(callBody.purchase_units[0].custom_id).toBe("order-custom-id");
+        });
     });
 
     describe("エラーハンドリング", () => {

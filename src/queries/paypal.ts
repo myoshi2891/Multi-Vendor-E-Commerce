@@ -80,6 +80,8 @@ export const createPayPalPayment = async (orderId: string) => {
                     intent: "CAPTURE",
                     purchase_units: [
                         {
+                            // custom_id は Webhook (src/app/api/webhooks/paypal) の resource.custom_id にコピーされ、内部 Order の相関に使用される
+                            custom_id: orderId,
                             amount: {
                                 currency_code: "USD",
                                 value: order.total.toNumber().toFixed(2),

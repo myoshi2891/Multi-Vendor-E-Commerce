@@ -88,11 +88,31 @@ describe("createStripePaymentIntent", () => {
                 amount: 9999, // $99.99 → 9999セント
                 currency: "usd",
                 automatic_payment_methods: { enabled: true },
+                metadata: { orderId: "order-001" },
             });
             expect(result).toEqual({
                 paymentIntentId: "pi_test_123",
                 clientSecret: "pi_test_123_secret",
             });
+        });
+
+        it("Webhook 相関用に metadata.orderId を PaymentIntent に付与する", async () => {
+            // Webhook (src/app/api/webhooks/stripe) で event.data.object.metadata.orderId から
+            // 内部 Order を逆引きするため、metadata の付与は破壊的変更として保護する。
+            const order = createMockOrder({ total: 50 });
+            mockDb.order.findUnique.mockResolvedValue(order);
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_meta_001",
+                client_secret: "pi_meta_001_secret",
+            });
+
+            await createStripePaymentIntent("order-meta-test");
+
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    metadata: { orderId: "order-meta-test" },
+                })
+            );
         });
 
         it("小数点以下の丸め処理が正しく行われる", async () => {
