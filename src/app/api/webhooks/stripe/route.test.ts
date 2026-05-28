@@ -18,6 +18,7 @@ jest.mock("@/lib/db", () => ({
         paymentDetails: {
             upsert: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -57,6 +58,12 @@ beforeEach(() => {
     jest.clearAllMocks();
     mockHeadersMap.clear();
     mockHeadersMap.set("stripe-signature", "t=1,v1=valid-test-signature");
+    // $transaction の callback に mockDb をそのまま渡すことで、
+    // tx.paymentDetails.upsert / tx.order.update が既存モックを呼ぶ。
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
 });
 
 const createStripeRequest = (body: unknown) =>
@@ -145,7 +152,7 @@ describe("POST /api/webhooks/stripe", () => {
             });
         });
 
-        it("PaymentDetails を upsert する（paymentIntentId 含む）", async () => {
+        it("PaymentDetails を upsert する（paymentIntentId・amount・currency 含む）", async () => {
             await POST(createStripeRequest(paymentIntentSucceededFixture));
 
             expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
@@ -156,6 +163,8 @@ describe("POST /api/webhooks/stripe", () => {
                         paymentMethod: "Stripe",
                         status: "Paid",
                         orderId: "order-stripe-success",
+                        amount: 9999, // fixture: payment_intent.amount (cents)
+                        currency: "usd", // fixture: payment_intent.currency
                     }),
                     update: expect.objectContaining({
                         paymentIntentId: "pi_test_succeeded",
@@ -233,7 +242,7 @@ describe("POST /api/webhooks/stripe", () => {
             );
         });
 
-        it("paymentIntentId は charge.payment_intent から取得する", async () => {
+        it("paymentIntentId は charge.payment_intent から取得し、amount/currency は charge から取得する", async () => {
             mockConstructEvent.mockReturnValue(chargeRefundedFullFixture);
 
             await POST(createStripeRequest(chargeRefundedFullFixture));
@@ -242,6 +251,8 @@ describe("POST /api/webhooks/stripe", () => {
                 expect.objectContaining({
                     create: expect.objectContaining({
                         paymentIntentId: "pi_test_succeeded",
+                        amount: 9999, // fixture: charge.amount
+                        currency: "usd", // fixture: charge.currency
                     }),
                 })
             );

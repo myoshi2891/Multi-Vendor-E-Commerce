@@ -62,6 +62,18 @@ const extractCorrelationIds = (
 };
 
 /**
+ * Stripe イベントから amount (cents) と currency を取り出す。
+ * PaymentIntent / Charge いずれも amount/currency をトップレベルに持つ。
+ * 既存の同期パス（src/queries/stripe.ts:96-97）と単位を揃えるための共通化。
+ */
+const extractAmountAndCurrency = (
+    event: Stripe.Event
+): { amount: number; currency: string } => {
+    const obj = event.data.object as StripePaymentIntentObject | StripeChargeObject;
+    return { amount: obj.amount, currency: obj.currency };
+};
+
+/**
  * Handle Stripe webhook POST requests with signature verification and idempotent
  * Order/PaymentDetails updates for payment_intent.succeeded / payment_intent.payment_failed /
  * charge.refunded events.
@@ -132,32 +144,39 @@ export async function POST(req: Request) {
             return new Response("Order not found", { status: 404 });
         }
 
-        // 冪等性: paymentIntentId を持つ PaymentDetails を upsert（orderId が unique）
-        await db.paymentDetails.upsert({
-            where: { orderId },
-            update: {
-                paymentIntentId,
-                paymentMethod: "Stripe",
-                status: paymentStatus,
-                userId: order.userId,
-            },
-            create: {
-                paymentIntentId,
-                paymentMethod: "Stripe",
-                status: paymentStatus,
-                amount: order.total,
-                currency: "usd",
-                orderId,
-                userId: order.userId,
-            },
-        });
+        // amount/currency は event 値（PaymentIntent/Charge の cents + 通貨コード）を使う。
+        // 同期パス (src/queries/stripe.ts) と単位を揃え、PaymentDetails 内の混在を防ぐ。
+        const { amount, currency } = extractAmountAndCurrency(event);
 
-        await db.order.update({
-            where: { id: orderId },
-            data: {
-                paymentStatus,
-                paymentMethod: "Stripe",
-            },
+        // 冪等性: paymentIntentId を持つ PaymentDetails を upsert（orderId が unique）。
+        // PaymentDetails と Order の更新はアトミックに行い、片方だけ反映される状態を防ぐ。
+        await db.$transaction(async (tx) => {
+            await tx.paymentDetails.upsert({
+                where: { orderId },
+                update: {
+                    paymentIntentId,
+                    paymentMethod: "Stripe",
+                    status: paymentStatus,
+                    userId: order.userId,
+                },
+                create: {
+                    paymentIntentId,
+                    paymentMethod: "Stripe",
+                    status: paymentStatus,
+                    amount,
+                    currency,
+                    orderId,
+                    userId: order.userId,
+                },
+            });
+
+            await tx.order.update({
+                where: { id: orderId },
+                data: {
+                    paymentStatus,
+                    paymentMethod: "Stripe",
+                },
+            });
         });
 
         return new Response("OK", { status: 200 });

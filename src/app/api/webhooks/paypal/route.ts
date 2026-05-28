@@ -48,6 +48,7 @@ const resolvePaymentStatus = (eventType: string): PaymentStatus | null => {
 
 /**
  * /v1/oauth2/token から access_token を取得する。client_id / secret は Basic auth で送る。
+ * 外向き fetch は 10s で abort する（src/queries/paypal.ts と統一）。
  */
 const fetchPayPalAccessToken = async (): Promise<string> => {
     const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
@@ -56,29 +57,37 @@ const fetchPayPalAccessToken = async (): Promise<string> => {
         throw new Error("PayPal client credentials are not configured");
     }
     const auth = Buffer.from(`${clientId}:${secret}`).toString("base64");
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
-        method: "POST",
-        headers: {
-            Authorization: `Basic ${auth}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: "grant_type=client_credentials",
-    });
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(
-            `PayPal OAuth token request failed: ${response.status} ${errorBody}`
-        );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    try {
+        const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+            method: "POST",
+            headers: {
+                Authorization: `Basic ${auth}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: "grant_type=client_credentials",
+            signal: controller.signal,
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(
+                `PayPal OAuth token request failed: ${response.status} ${errorBody}`
+            );
+        }
+        const data: { access_token?: string } = await response.json();
+        if (!data.access_token) {
+            throw new Error("PayPal OAuth response missing access_token");
+        }
+        return data.access_token;
+    } finally {
+        clearTimeout(timeoutId);
     }
-    const data: { access_token?: string } = await response.json();
-    if (!data.access_token) {
-        throw new Error("PayPal OAuth response missing access_token");
-    }
-    return data.access_token;
 };
 
 /**
  * PayPal verify-webhook-signature API を呼んで verification_status を返す。
+ * 外向き fetch は 10s で abort する（src/queries/paypal.ts と統一）。
  */
 const verifyPayPalSignature = async (
     headerMap: Record<string, string>,
@@ -86,30 +95,37 @@ const verifyPayPalSignature = async (
     event: unknown,
     accessToken: string
 ): Promise<boolean> => {
-    const response = await fetch(
-        `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                auth_algo: headerMap["paypal-auth-algo"],
-                cert_url: headerMap["paypal-cert-url"],
-                transmission_id: headerMap["paypal-transmission-id"],
-                transmission_sig: headerMap["paypal-transmission-sig"],
-                transmission_time: headerMap["paypal-transmission-time"],
-                webhook_id: webhookId,
-                webhook_event: event,
-            }),
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    try {
+        const response = await fetch(
+            `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    auth_algo: headerMap["paypal-auth-algo"],
+                    cert_url: headerMap["paypal-cert-url"],
+                    transmission_id: headerMap["paypal-transmission-id"],
+                    transmission_sig: headerMap["paypal-transmission-sig"],
+                    transmission_time: headerMap["paypal-transmission-time"],
+                    webhook_id: webhookId,
+                    webhook_event: event,
+                }),
+                signal: controller.signal,
+            }
+        );
+        if (!response.ok) {
+            return false;
         }
-    );
-    if (!response.ok) {
-        return false;
+        const data: { verification_status?: string } = await response.json();
+        return data.verification_status === "SUCCESS";
+    } finally {
+        clearTimeout(timeoutId);
     }
-    const data: { verification_status?: string } = await response.json();
-    return data.verification_status === "SUCCESS";
 };
 
 /**
@@ -203,31 +219,34 @@ export async function POST(req: Request) {
         }
 
         // 冪等性: orderId が unique。capture id を paymentIntentId カラムに格納する。
-        await db.paymentDetails.upsert({
-            where: { orderId },
-            update: {
-                paymentIntentId: captureId,
-                paymentMethod: "Paypal",
-                status: paymentStatus,
-                userId: order.userId,
-            },
-            create: {
-                paymentIntentId: captureId,
-                paymentMethod: "Paypal",
-                status: paymentStatus,
-                amount: order.total,
-                currency: "usd",
-                orderId,
-                userId: order.userId,
-            },
-        });
+        // PaymentDetails と Order の更新はアトミックに行い、片方だけ反映される状態を防ぐ。
+        await db.$transaction(async (tx) => {
+            await tx.paymentDetails.upsert({
+                where: { orderId },
+                update: {
+                    paymentIntentId: captureId,
+                    paymentMethod: "Paypal",
+                    status: paymentStatus,
+                    userId: order.userId,
+                },
+                create: {
+                    paymentIntentId: captureId,
+                    paymentMethod: "Paypal",
+                    status: paymentStatus,
+                    amount: order.total,
+                    currency: "usd",
+                    orderId,
+                    userId: order.userId,
+                },
+            });
 
-        await db.order.update({
-            where: { id: orderId },
-            data: {
-                paymentStatus,
-                paymentMethod: "PayPal",
-            },
+            await tx.order.update({
+                where: { id: orderId },
+                data: {
+                    paymentStatus,
+                    paymentMethod: "PayPal",
+                },
+            });
         });
 
         return new Response("OK", { status: 200 });

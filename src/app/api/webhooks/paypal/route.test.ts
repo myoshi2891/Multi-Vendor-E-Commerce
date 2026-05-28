@@ -16,6 +16,7 @@ jest.mock("@/lib/db", () => ({
         paymentDetails: {
             upsert: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -75,6 +76,12 @@ beforeEach(() => {
     jest.clearAllMocks();
     mockHeadersMap.clear();
     setPayPalHeaders();
+    // $transaction の callback に mockDb をそのまま渡すことで、
+    // tx.paymentDetails.upsert / tx.order.update が既存モックを呼ぶ。
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
 });
 
 const createPayPalRequest = (body: unknown) =>
