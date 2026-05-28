@@ -1,0 +1,18 @@
+{
+    "id": "WH-test-capture-denied",
+    "event_version": "1.0",
+    "create_time": "2026-05-28T10:05:00.000Z",
+    "resource_type": "capture",
+    "resource_version": "2.0",
+    "event_type": "PAYMENT.CAPTURE.DENIED",
+    "summary": "Payment denied for $ 45.00 USD",
+    "resource": {
+        "id": "CAPTURE-DENIED-001",
+        "amount": {
+            "currency_code": "USD",
+            "value": "45.00"
+        },
+        "status": "DECLINED",
+        "custom_id": "order-paypal-denied"
+    }
+}

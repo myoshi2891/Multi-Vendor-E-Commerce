@@ -1,0 +1,19 @@
+{
+    "id": "WH-test-capture-completed",
+    "event_version": "1.0",
+    "create_time": "2026-05-28T10:00:00.000Z",
+    "resource_type": "capture",
+    "resource_version": "2.0",
+    "event_type": "PAYMENT.CAPTURE.COMPLETED",
+    "summary": "Payment completed for $ 99.99 USD",
+    "resource": {
+        "id": "CAPTURE-COMPLETED-001",
+        "amount": {
+            "currency_code": "USD",
+            "value": "99.99"
+        },
+        "final_capture": true,
+        "status": "COMPLETED",
+        "custom_id": "order-paypal-success"
+    }
+}
