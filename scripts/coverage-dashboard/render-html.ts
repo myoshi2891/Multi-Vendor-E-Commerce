@@ -88,14 +88,8 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // docs/testing/COVERAGE_REPORT.md §7 と QA_HANDOFF.md を参照。
     // A4 取りこぼし (getStoreOrders → requireStoreOwner) は 2026-05-26 に
     // クローズ済み (commit 70f5b94)。
-    {
-        priority: "medium",
-        title: "shadcn/ui プリミティブ Snapshot の B1+ 拡張 (残 40 プリミティブ)",
-        target: "tests/component/ui/*.test.tsx",
-        tool: "Jest + @testing-library + jest-snapshot",
-        cost: "M",
-        impact: "MVP 9 → 49 へカバレッジ拡大し、Tailwind/Radix の退行検知範囲を広げる",
-    },
+    // NA-NS-01 (B1+ shadcn/ui プリミティブ Snapshot 拡張) は 2026-05-28 に完了
+    // (Sprint 1〜4、49 プリミティブ全カバー)。詳細は COVERAGE_REPORT.md §7 を参照。
     {
         priority: "medium",
         title: "Stripe / PayPal Webhook の Contract テスト",

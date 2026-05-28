@@ -10,8 +10,8 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1088テスト / 99スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に B1+ Sprint 3（Tier 2 全 8 プリミティブ snapshot）追加で +19 |
-| Jestスナップショット | 112（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19） |
+| Jestユニットテスト | 1103テスト / 110スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B1+ 全完了**（Sprint 1〜4 で 49/49 shadcn/ui プリミティブカバー）。Sprint 4 で +15 |
+| Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
 
@@ -140,6 +140,32 @@
 - **今後の残タスク**:
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-28: B1+ Sprint 4 — Tier 3 + 補助 全 11 プリミティブ Snapshot 拡張 / NA-NS-01 完全アーカイブ
+
+- **背景**: Sprint 3 に続き [`B1_SNAPSHOT_EXPANSION_PLAN.md`](testing/B1_SNAPSHOT_EXPANSION_PLAN.md) の Sprint 4（最終 Sprint）として、Tier 3（外部 lib 依存）7 プリミティブ + 補助 4 プリミティブの計 11 プリミティブを実装。shadcn/ui プリミティブカバーを **38/49 → 49/49（100%）** へ到達させ NA-NS-01 をアーカイブ化。
+- **実装内容**: 1 ファイル 1 commit 厳守で以下 11 プリミティブを追加。Tier 3 は外部 lib mock / setup が個別必要なため計画書段階から「同梱コミット禁止」が明文化されていた:
+  - form (1 snap) / calendar (1) / carousel (1) / command (2) / sidebar (1) / navigation-menu (1) / sonner (1) / accordion (2) / toast (2) / toaster (1) / data-table (2)
+- **設計判断と新規 jsdom スタブ**:
+  - **carousel (embla-carousel-react)**: `IntersectionObserver` / `matchMedia` が jsdom 未実装でテスト時に throw。`tests-setup/jest.setup.ts` に no-op スタブを追加（commit `222d16e`、ResizeObserver スタブと同パターン）。
+  - **command (cmdk)**: `Element.prototype.scrollIntoView` が jsdom 未実装で cmdk の自動スクロール処理で throw。同様に no-op スタブを追加（commit `ab07840`）。CommandDialog 内 DialogContent は Radix accessibility 警告（DialogTitle 未指定）を出すが snapshot 構成では省略許容のため `console.error` を spy で抑制。
+  - **calendar (react-day-picker)**: `month` prop を渡さないと「今日」依存で day_today クラスが日次変動する。`month={new Date("2026-01-15")}` で固定。
+  - **form (react-hook-form)**: 共有ヘルパー化は YAGNI として、各テストファイル内に最小 `FormFixture` を local 定義（[`B1_SNAPSHOT_EXPANSION_PLAN.md`](testing/B1_SNAPSHOT_EXPANSION_PLAN.md) 方針）。`useId()` 出力 `_r_0_` は render root ごとにリセットされるため安定。
+  - **sidebar**: `useIsMobile` (matchMedia 経由) と `SidebarProvider` の Context が必須。`SidebarProvider defaultOpen` で expanded state を再現。
+  - **sonner**: `useTheme` (next-themes) は Provider なしでもデフォルトを返すため追加 setup 不要。
+  - **data-table**: TanStack Table ラッパーで `useModal()` 依存のため `ModalProvider` でラップ。React Fragment を返すため `container.firstChild` ではなく `container` 全体をスナップショット対象に。
+- **アーカイブ作業**:
+  - `scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-01 を削除（コメントで完了履歴記録）。
+  - `QA_HANDOFF.md §3.3` の NA-NS-01 プロンプトを HTML コメントアウトでアーカイブ化（履歴の参照は残す）。
+  - `B1_SNAPSHOT_EXPANSION_PLAN.md` Status を `Completed 2026-05-28` に更新。
+- **影響**:
+  - テスト総数: 1088 → 1103（+15）
+  - Jest スナップショット: 112 → 127（+15）
+  - スイート数: 99 → 110（+11）
+  - 型エラー: 0 件（維持）
+  - **shadcn/ui プリミティブカバー: 49/49 (100%)** — Tailwind / Radix のスタイル退行検知範囲が全プリミティブに到達
+- **コミット**: `1b207ba` (form) → `875de63` (calendar) → `222d16e` (infra: IntersectionObserver/matchMedia) → `08f49c3` (carousel) → `ab07840` (infra: scrollIntoView) → `5b17cce` (command) → `07adff8` (sidebar) → `5e5b7b8` (navigation-menu) → `52ce863` (sonner) → `1af2485` (accordion) → `5987ea2` (toast) → `ed282c5` (toaster) → `8e429f2` (data-table)。
+- **次アクション**: B1+ 完了により medium priority に降格された B2 (Webhook Contract) / B3 (Cart → Checkout Integration) へ着手判断。
 
 ### 2026-05-28: B1+ Sprint 3 — Tier 2 全 8 プリミティブ Snapshot 拡張
 
