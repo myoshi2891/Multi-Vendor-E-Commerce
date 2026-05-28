@@ -1,6 +1,6 @@
 # B1+ shadcn/ui Snapshot Tests Expansion Plan
 
-> **Status**: Plan approved 2026-05-26 — Sprint 1 完了（2026-05-26、Tier 1 前半 10 プリミティブ snapshot 追加 / `b55e177`〜`66fb8d5`）。Sprint 2 完了（2026-05-28、Tier 1 後半 11 プリミティブ snapshot 追加 / `750d830`〜`45c339b`）。残り 19 プリミティブは Sprint 3-4 で段階実行中。
+> **Status**: Plan approved 2026-05-26 — Sprint 1 完了（2026-05-26、Tier 1 前半 10 プリミティブ snapshot 追加 / `b55e177`〜`66fb8d5`）。Sprint 2 完了（2026-05-28、Tier 1 後半 11 プリミティブ snapshot 追加 / `750d830`〜`45c339b`）。Sprint 3 完了（2026-05-28、Tier 2 全 8 プリミティブ snapshot 追加 / `e6c79e3`〜`4429b8b`）。残り 11 プリミティブ（Tier 3 + 補助）は Sprint 4 で段階実行中。
 > **Owner**: project team
 > **Related**: [QA_HANDOFF.md §3.3 NA-NS-01](./QA_HANDOFF.md), [COVERAGE_REPORT.md §3](./COVERAGE_REPORT.md), [TESTING_DESIGN.md "shadcn/ui Snapshot テスト"](./TESTING_DESIGN.md), [.claude/rules/02-tdd-step-commit.md](../../.claude/rules/02-tdd-step-commit.md)
 

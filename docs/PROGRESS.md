@@ -10,8 +10,8 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1069テスト / 91スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に B1+ Sprint 2（Tier 1 後半 11 プリミティブ snapshot）追加で +27 |
-| Jestスナップショット | 93（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27） |
+| Jestユニットテスト | 1088テスト / 99スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に B1+ Sprint 3（Tier 2 全 8 プリミティブ snapshot）追加で +19 |
+| Jestスナップショット | 112（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
 
@@ -140,6 +140,24 @@
 - **今後の残タスク**:
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-28: B1+ Sprint 3 — Tier 2 全 8 プリミティブ Snapshot 拡張
+
+- **背景**: B1+ Sprint 2 に続き [`B1_SNAPSHOT_EXPANSION_PLAN.md`](testing/B1_SNAPSHOT_EXPANSION_PLAN.md) の Sprint 3 として、Tier 2（compound Radix プリミティブ）全 8 プリミティブを実装。shadcn/ui プリミティブカバーを 30/49 → 38/49 へ拡大。
+- **実装内容**: 1 ファイル 1 commit 厳守で以下 8 プリミティブを追加。計画書では Menu family / Sheet family の同梱コミットを候補としていたが、Menu primitives の snapshot ファイルが class-heavy（dropdown-menu = 140 行 / menubar = 123 行 / sheet = 196 行）で [`02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md) の 200 行閾値を 3 ファイル合計で超過するため分離を選択:
+  - dropdown-menu (2 snap) / context-menu (2) / menubar (2) / sheet (3) / drawer (2) / tabs (2) / toggle-group (3) / table (3)
+- **設計判断**:
+  - **context-menu**: Radix `react-context-menu` の Root は `defaultOpen` を持たない（右クリック契機の API）。`fireEvent.contextMenu(trigger)` でメニューを open 状態にし、role="menu" を取得。
+  - **menubar**: Radix `react-menubar` の Root は `defaultValue="<menu-value>"` で特定の MenubarMenu を初期 open にできる。MenubarMenu に `value="file"` を割り当て、Root に `defaultValue="file"` を渡す。
+  - **sheet**: Radix Dialog を内部実装に持つため SheetContent は role="dialog"。`side="left"` バリアントは CVA の sheetVariants 経由でクラス差分が出るため追加スナップショット対象に含めた。
+  - **drawer**: vaul ライブラリの Drawer.Content も role="dialog" を出力。`defaultOpen` で初期 open 状態を再現。
+- **影響**:
+  - テスト総数: 1069 → 1088（+19）
+  - Jest スナップショット: 93 → 112（+19）
+  - スイート数: 91 → 99（+8）
+  - 型エラー: 0 件（維持）
+- **コミット**: `e6c79e3` (dropdown-menu) → `d7b7431` (context-menu) → `ab9a51e` (menubar) → `904899b` (sheet) → `be434c7` (drawer) → `c43eefe` (tabs) → `8b19838` (toggle-group) → `4429b8b` (table)。
+- **次アクション**: Sprint 4（Tier 3: form / calendar / carousel / command / sidebar / navigation-menu / sonner、補助: accordion / toast / toaster / data-table、計 11 commits + spec-sync + NA-NS-01 archive）。
 
 ### 2026-05-28: B1+ Sprint 2 — Tier 1 後半 11 プリミティブ Snapshot 拡張
 
