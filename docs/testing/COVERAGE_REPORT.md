@@ -12,7 +12,7 @@
 | 指標 | 値 |
 |---|---|
 | テストファイル総数 | **121** (Jest 116 / Playwright 5) |
-| テスト総数 | **1103** (12 skipped) — 2026-05-28 時点 |
+| テスト総数 | **1135** (12 skipped) — 2026-05-28 時点 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **13 / 80 (16%)** |
@@ -102,11 +102,9 @@
 
 ### 🟡 未着手（中優先度）— Next Sprint
 
-#### B2. Stripe / PayPal Webhook の Contract テスト
-- **対象**: `src/app/api/webhooks/route.test.ts` (拡充)
-- **推奨ツール**: Jest + MSW (already configured)
-- **コスト感**: **M**
-- **期待効果**: 外部決済プロバイダのスキーマ変動に耐性を持たせる。`event.type` の網羅と署名検証の境界ケース
+#### ~~B2. Stripe / PayPal Webhook の Contract テスト~~ ✅ 完了 2026-05-28
+- **達成内容**: `/api/webhooks/stripe` と `/api/webhooks/paypal` を新設し、固定ペイロードフィクスチャを `tests/fixtures/webhooks/` に配置。Stripe (payment_intent.succeeded / payment_intent.payment_failed / charge.refunded) と PayPal (PAYMENT.CAPTURE.COMPLETED / DENIED / REFUNDED) の主要イベントを冪等処理する Contract テスト 30 ケース + metadata 検証 2 ケースを追加（commits `338ab41` / `1d69f0f` / `2321cd8`）。署名検証・未知イベント no-op・Order 不在 404・DB エラー 500 の境界系を網羅
+- **残課題**: Stripe Dashboard / PayPal Developer Portal での Webhook URL 登録は運用配線・別タスク。`PAYMENT.CAPTURE.REFUNDED` の partial 判定は元 capture lookup が必要なため当面 `Refunded` 一律マップ
 
 #### B3. Cart → Checkout の Integration テスト
 - **対象**: `tests/integration/cart-checkout.test.ts` (新規)
@@ -243,3 +241,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-28 | **B1+ Sprint 2 完了**: Tier 1 後半 11 プリミティブ snapshot 追加（alert / alert-dialog / avatar / breadcrumb / collapsible / hover-card / input-otp / pagination / resizable / scroll-area / chart）。テスト総数 1042 → 1069 (+27)、Jest snapshot 66 → 93 (+27)。chart は recharts ResponsiveContainer の jsdom 0-size 警告を console.warn spy で抑制。hover-card は role 無しのため getByText で styled HoverCardContent を取得 (commits `750d830`〜`45c339b`). |
 | 2026-05-28 | **B1+ Sprint 3 完了**: Tier 2 全 8 プリミティブ snapshot 追加（dropdown-menu / context-menu / menubar / sheet / drawer / tabs / toggle-group / table）。テスト総数 1069 → 1088 (+19)、Jest snapshot 93 → 112 (+19)。class-heavy な Menu snapshot を理由に 1 ファイル 1 commit で分離（Menu family 同梱は 200 行閾値超過）。context-menu は fireEvent.contextMenu / menubar は Root defaultValue で open 状態を再現 (commits `e6c79e3`〜`4429b8b`). |
 | 2026-05-28 | **B1+ Sprint 4 完了 / NA-NS-01 archive (B1+ 全完了)**: Tier 3 + 補助 全 11 プリミティブ snapshot 追加（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table）。テスト総数 1088 → 1103 (+15)、Jest snapshot 112 → 127 (+15)。**49/49 shadcn/ui プリミティブカバー達成**。インフラ: `tests-setup/jest.setup.ts` に IntersectionObserver / matchMedia / Element.scrollIntoView スタブ追加（embla-carousel-react / cmdk 基盤）。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-01 を削除しアーカイブ化 (commits `1b207ba`〜`8e429f2`, infra: `222d16e` / `ab07840`). |
+| 2026-05-28 | **B2 完了 / NA-NS-02 archive**: Stripe/PayPal Webhook ハンドラーを新規実装（`/api/webhooks/stripe` + `/api/webhooks/paypal`）。Stripe `webhooks.constructEvent` 署名検証 + PayPal `verify-webhook-signature` API 呼び出し（OAuth Bearer フロー）+ 冪等な PaymentDetails upsert を導入。固定ペイロードフィクスチャを `tests/fixtures/webhooks/{stripe,paypal}/` に配置し Contract テスト 30 ケース + metadata 検証 2 ケース追加。テスト総数 1103 → 1135 (+32)、スイート 110 → 112 (+2)。前提として `src/queries/stripe.ts` `paypal.ts` に `metadata.orderId` / `purchase_units[].custom_id` を付与し Webhook 相関を可能化 (commits `338ab41` / `1d69f0f` / `2321cd8`). |

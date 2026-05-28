@@ -90,14 +90,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // クローズ済み (commit 70f5b94)。
     // NA-NS-01 (B1+ shadcn/ui プリミティブ Snapshot 拡張) は 2026-05-28 に完了
     // (Sprint 1〜4、49 プリミティブ全カバー)。詳細は COVERAGE_REPORT.md §7 を参照。
-    {
-        priority: "medium",
-        title: "Stripe / PayPal Webhook の Contract テスト",
-        target: "src/app/api/webhooks/route.test.ts (拡充)",
-        tool: "Jest + MSW (already configured)",
-        cost: "M",
-        impact: "外部決済プロバイダのスキーマ変動に耐性を持たせる",
-    },
+    // NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) は 2026-05-28 に完了。
+    // /api/webhooks/stripe + /api/webhooks/paypal ハンドラー新設、30 ケース +
+    // metadata 検証 2 ケースで網羅 (commits 338ab41 / 1d69f0f / 2321cd8)。
     {
         priority: "medium",
         title: "Cart → Checkout の Integration テスト",

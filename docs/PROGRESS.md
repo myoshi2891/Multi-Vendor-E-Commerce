@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1103テスト / 110スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B1+ 全完了**（Sprint 1〜4 で 49/49 shadcn/ui プリミティブカバー）。Sprint 4 で +15 |
+| Jestユニットテスト | 1135テスト / 112スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B2 完了**（Stripe/PayPal Webhook ハンドラー Contract テスト追加で +32）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -140,6 +140,32 @@
 - **今後の残タスク**:
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
+
+### 2026-05-28: B2 完了 — Stripe / PayPal Webhook ハンドラー新規実装 + Contract テスト / NA-NS-02 アーカイブ
+
+- **背景**: Open Issue B2 で「Stripe / PayPal Webhook ハンドラーの Contract テスト追加」が指定されていたが、Phase 1 調査で **Stripe/PayPal Webhook ハンドラー自体が未実装** であることが判明（既存 `src/app/api/webhooks/route.ts` は Clerk Svix 専用）。同期決済 (`src/queries/stripe.ts` / `paypal.ts`) のみで out-of-band イベント（チャージバック / 部分返金 / 遅延失敗）への DB 整合性が未保証だったため、ハンドラー新規実装 + Contract テストの 2 段構えに再設計。
+- **実装内容**:
+  - **新規エンドポイント**: `/api/webhooks/stripe` と `/api/webhooks/paypal` を子ルートとして並置（既存 Clerk webhook `/api/webhooks` はそのまま維持）。
+  - **Stripe ハンドラー**: `stripe.webhooks.constructEvent` で署名検証（raw body を `req.text()` で取得）。`payment_intent.succeeded` → Paid / `payment_intent.payment_failed` → Failed / `charge.refunded` → Refunded or PartiallyRefunded（amount_refunded と amount を比較し全額/部分を即時判定）。
+  - **PayPal ハンドラー**: PayPal `verify-webhook-signature` API 呼び出し（事前に `/v1/oauth2/token` で Bearer トークン取得する 2 段階フェッチ）。`PAYMENT.CAPTURE.COMPLETED` → Paid / `DENIED` → Failed / `REFUNDED` → Refunded（部分判定は PayPal の resource 構造上即時不可のため当面一律 Refunded、partial 精密判定は将来課題）。
+  - **冪等性**: `db.paymentDetails.upsert({ where: { orderId } })` で重複イベントを安全に処理（orderId が unique 制約）。
+  - **前提改修 (commit `338ab41`)**: `src/queries/stripe.ts` の `createStripePaymentIntent` に `metadata: { orderId }` を、`src/queries/paypal.ts` の `createPayPalPayment` に `purchase_units[0].custom_id = orderId` を付与。Webhook 側で `event.data.object.metadata.orderId` / `resource.custom_id` から内部 Order を逆引きできるようにする最小限の改修。
+  - **固定フィクスチャ**: `tests/fixtures/webhooks/stripe/{payment-intent-succeeded,payment-intent-failed,charge-refunded-full,charge-refunded-partial}.json` と `tests/fixtures/webhooks/paypal/{payment-capture-completed,payment-capture-denied,payment-capture-refunded}.json` を配置。Stripe の `charge.refunded` は全額/部分の 2 ケースで amount_refunded/amount を変えてカバー。
+  - **Contract テスト**: 各ハンドラーで 15 ケース（合計 30）+ metadata 検証 +2 ケース。署名検証（ヘッダー欠落・不正署名・正常署名）/ 正常系イベント分岐 / 境界系（metadata 欠落 400 / 未知イベント 200 no-op / Order 不在 404 / 冪等性 / DB エラー 500）を網羅。
+- **コミット分割（[`02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md) 準拠）**:
+  - `338ab41` — `feat(payments): attach orderId metadata to Stripe/PayPal payment intents`（既存 query への metadata 付与のみ、テスト +2）
+  - `1d69f0f` — `feat(webhooks): add Stripe webhook handler with contract tests`（fixture 4 + handler + test = 6 ファイル / 同一 SUT による相互依存例外条件を満たす）
+  - `2321cd8` — `feat(webhooks): add PayPal webhook handler with contract tests`（fixture 3 + handler + test = 5 ファイル / 同上）
+- **アーカイブ作業**:
+  - `scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-02 を削除（同期物として）。
+  - `QA_HANDOFF.md` の NA-NS-02 プロンプトを HTML コメントアウトでアーカイブ化。
+  - `COVERAGE_REPORT.md §3 B2` を `~~完了~~` 取り消し線 + 達成内容に更新。
+- **影響**:
+  - テスト総数: 1103 → 1135（+32）
+  - スイート数: 110 → 112（+2、`route.test.ts` × 2）
+  - 型エラー: 0 件（維持）
+  - 新規 API ルート 2 本（Stripe / PayPal Webhook 受信エンドポイント）
+- **次アクション**: B3（Cart → Checkout Integration テスト）。運用配線（Stripe Dashboard / PayPal Developer Portal での Webhook URL 登録 + `STRIPE_WEBHOOK_SECRET` / `PAYPAL_WEBHOOK_ID` の `.env.local` 設定）は別タスクとして切り出し済み。
 
 ### 2026-05-28: B1+ Sprint 4 — Tier 3 + 補助 全 11 プリミティブ Snapshot 拡張 / NA-NS-01 完全アーカイブ
 
