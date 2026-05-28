@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`HoverCard (snapshot) renders HoverCardContent in defaultOpen state 1`] = `
+<div
+  class="z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-hover-card-content-transform-origin]"
+  data-align="center"
+  data-side="bottom"
+  data-state="open"
+  style="--radix-hover-card-content-transform-origin: var(--radix-popper-transform-origin); --radix-hover-card-content-available-width: var(--radix-popper-available-width); --radix-hover-card-content-available-height: var(--radix-popper-available-height); --radix-hover-card-trigger-width: var(--radix-popper-anchor-width); --radix-hover-card-trigger-height: var(--radix-popper-anchor-height); animation: none;"
+>
+  Card body
+</div>
+`;
+
+exports[`HoverCard (snapshot) renders trigger in closed state 1`] = `
+<a
+  data-state="closed"
+>
+  Hover
+</a>
+`;
