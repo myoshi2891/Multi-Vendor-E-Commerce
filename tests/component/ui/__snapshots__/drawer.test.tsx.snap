@@ -1,0 +1,60 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Drawer (snapshot) renders DrawerContent in defaultOpen state 1`] = `
+<div
+  aria-describedby="radix-_r_5_"
+  aria-labelledby="radix-_r_4_"
+  class="fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background"
+  data-state="open"
+  data-vaul-custom-container="false"
+  data-vaul-delayed-snap-points="false"
+  data-vaul-drawer=""
+  data-vaul-drawer-direction="bottom"
+  data-vaul-snap-points="false"
+  id="radix-_r_3_"
+  role="dialog"
+  style="pointer-events: auto;"
+  tabindex="-1"
+>
+  <div
+    class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted"
+  />
+  <div
+    class="grid gap-1.5 p-4 text-center sm:text-left"
+  >
+    <h2
+      class="text-lg font-semibold leading-none tracking-tight"
+      id="radix-_r_4_"
+    >
+      Title
+    </h2>
+    <p
+      class="text-sm text-muted-foreground"
+      id="radix-_r_5_"
+    >
+      Body
+    </p>
+  </div>
+  <div
+    class="mt-auto flex flex-col gap-2 p-4"
+  >
+    <button
+      type="button"
+    >
+      OK
+    </button>
+  </div>
+</div>
+`;
+
+exports[`Drawer (snapshot) renders trigger in closed state 1`] = `
+<button
+  aria-controls="radix-_r_0_"
+  aria-expanded="false"
+  aria-haspopup="dialog"
+  data-state="closed"
+  type="button"
+>
+  Open
+</button>
+`;
