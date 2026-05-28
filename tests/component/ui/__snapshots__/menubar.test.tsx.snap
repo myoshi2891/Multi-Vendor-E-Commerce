@@ -1,0 +1,74 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Menubar (snapshot) renders Menubar in closed state 1`] = `
+<div
+  class="flex h-10 items-center space-x-1 rounded-md border bg-background p-1"
+  data-orientation="horizontal"
+  role="menubar"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-expanded="false"
+    aria-haspopup="menu"
+    class="flex cursor-default select-none items-center rounded-sm px-3 py-1.5 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+    data-orientation="horizontal"
+    data-radix-collection-item=""
+    data-state="closed"
+    id="radix-_r_1_"
+    role="menuitem"
+    tabindex="-1"
+    type="button"
+  >
+    File
+  </button>
+</div>
+`;
+
+exports[`Menubar (snapshot) renders MenubarContent in defaultValue-opened state 1`] = `
+<div
+  aria-labelledby="radix-_r_5_"
+  aria-orientation="vertical"
+  class="z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-menubar-content-transform-origin]"
+  data-align="start"
+  data-orientation="vertical"
+  data-radix-menu-content=""
+  data-radix-menubar-content=""
+  data-side="bottom"
+  data-state="open"
+  dir="ltr"
+  id="radix-_r_6_"
+  role="menu"
+  style="outline: none; --radix-menubar-content-transform-origin: var(--radix-popper-transform-origin); --radix-menubar-content-available-width: var(--radix-popper-available-width); --radix-menubar-content-available-height: var(--radix-popper-available-height); --radix-menubar-trigger-width: var(--radix-popper-anchor-width); --radix-menubar-trigger-height: var(--radix-popper-anchor-height); animation: none;"
+  tabindex="-1"
+>
+  <div
+    class="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+    data-orientation="vertical"
+    data-radix-collection-item=""
+    role="menuitem"
+    tabindex="-1"
+  >
+    New
+    <span
+      class="ml-auto text-xs tracking-widest text-muted-foreground"
+    >
+      ⌘N
+    </span>
+  </div>
+  <div
+    aria-orientation="horizontal"
+    class="-mx-1 my-1 h-px bg-muted"
+    role="separator"
+  />
+  <div
+    class="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+    data-orientation="vertical"
+    data-radix-collection-item=""
+    role="menuitem"
+    tabindex="-1"
+  >
+    Open...
+  </div>
+</div>
+`;
