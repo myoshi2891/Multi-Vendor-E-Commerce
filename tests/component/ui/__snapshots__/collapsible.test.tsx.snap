@@ -1,0 +1,44 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Collapsible (snapshot) renders in closed state 1`] = `
+<div
+  data-state="closed"
+>
+  <button
+    aria-controls="radix-_r_0_"
+    aria-expanded="false"
+    data-state="closed"
+    type="button"
+  >
+    Toggle
+  </button>
+  <div
+    data-state="closed"
+    hidden=""
+    id="radix-_r_0_"
+    style=""
+  />
+</div>
+`;
+
+exports[`Collapsible (snapshot) renders in defaultOpen state 1`] = `
+<div
+  data-state="open"
+>
+  <button
+    aria-controls="radix-_r_1_"
+    aria-expanded="true"
+    data-state="open"
+    type="button"
+  >
+    Toggle
+  </button>
+  <div
+    data-state="open"
+    id="radix-_r_1_"
+    style="transition-duration: 0s; animation-name: none;"
+  >
+    Visible body
+  </div>
+</div>
+`;

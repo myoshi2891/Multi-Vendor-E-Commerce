@@ -1,0 +1,59 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ScrollArea (snapshot) renders default (vertical) area 1`] = `
+<div
+  class="relative overflow-hidden h-32 w-48"
+  dir="ltr"
+  style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;"
+>
+  <style>
+    [data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}
+  </style>
+  <div
+    class="size-full rounded-[inherit]"
+    data-radix-scroll-area-viewport=""
+    style="overflow-x: hidden; overflow-y: scroll;"
+  >
+    <div
+      style="min-width: 100%; display: table;"
+    >
+      <div>
+        Item 1
+      </div>
+      <div>
+        Item 2
+      </div>
+      <div>
+        Item 3
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`ScrollArea (snapshot) renders with horizontal ScrollBar 1`] = `
+<div
+  class="relative overflow-hidden h-32 w-48"
+  dir="ltr"
+  style="position: relative; --radix-scroll-area-corner-width: 0px; --radix-scroll-area-corner-height: 0px;"
+>
+  <style>
+    [data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}
+  </style>
+  <div
+    class="size-full rounded-[inherit]"
+    data-radix-scroll-area-viewport=""
+    style="overflow-x: scroll; overflow-y: scroll;"
+  >
+    <div
+      style="min-width: 100%; display: table;"
+    >
+      <div
+        style="width: 600px;"
+      >
+        wide content
+      </div>
+    </div>
+  </div>
+</div>
+`;

@@ -1,0 +1,111 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`ToggleGroup (snapshot) renders multi-select group with outline variant 1`] = `
+<div
+  class="flex items-center justify-center gap-1"
+  dir="ltr"
+  role="group"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-pressed="true"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-10 min-w-10 px-3"
+    data-radix-collection-item=""
+    data-state="on"
+    tabindex="-1"
+    type="button"
+  >
+    B
+  </button>
+  <button
+    aria-pressed="true"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-10 min-w-10 px-3"
+    data-radix-collection-item=""
+    data-state="on"
+    tabindex="-1"
+    type="button"
+  >
+    I
+  </button>
+</div>
+`;
+
+exports[`ToggleGroup (snapshot) renders single-select group with defaultValue 1`] = `
+<div
+  class="flex items-center justify-center gap-1"
+  dir="ltr"
+  role="group"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-checked="true"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-transparent h-10 min-w-10 px-3"
+    data-radix-collection-item=""
+    data-state="on"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  >
+    B
+  </button>
+  <button
+    aria-checked="false"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-transparent h-10 min-w-10 px-3"
+    data-radix-collection-item=""
+    data-state="off"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  >
+    I
+  </button>
+  <button
+    aria-checked="false"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-transparent h-10 min-w-10 px-3"
+    data-radix-collection-item=""
+    data-state="off"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  >
+    U
+  </button>
+</div>
+`;
+
+exports[`ToggleGroup (snapshot) renders with size=sm and disabled item 1`] = `
+<div
+  class="flex items-center justify-center gap-1"
+  dir="ltr"
+  role="group"
+  style="outline: none;"
+  tabindex="0"
+>
+  <button
+    aria-checked="false"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-transparent h-9 min-w-9 px-2.5"
+    data-radix-collection-item=""
+    data-state="off"
+    role="radio"
+    tabindex="-1"
+    type="button"
+  >
+    A
+  </button>
+  <button
+    aria-checked="false"
+    class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-transparent h-9 min-w-9 px-2.5"
+    data-disabled=""
+    data-radix-collection-item=""
+    data-state="off"
+    disabled=""
+    role="radio"
+    tabindex="-1"
+    type="button"
+  >
+    B
+  </button>
+</div>
+`;

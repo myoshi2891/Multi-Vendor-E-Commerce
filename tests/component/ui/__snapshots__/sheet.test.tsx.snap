@@ -1,0 +1,134 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Sheet (snapshot) renders SheetContent in defaultOpen state (right side) 1`] = `
+<div
+  aria-describedby="radix-_r_5_"
+  aria-labelledby="radix-_r_4_"
+  class="fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"
+  data-state="open"
+  id="radix-_r_3_"
+  role="dialog"
+  style="pointer-events: auto;"
+  tabindex="-1"
+>
+  <div
+    class="flex flex-col space-y-2 text-center sm:text-left"
+  >
+    <h2
+      class="text-lg font-semibold text-foreground"
+      id="radix-_r_4_"
+    >
+      Title
+    </h2>
+    <p
+      class="text-sm text-muted-foreground"
+      id="radix-_r_5_"
+    >
+      Body
+    </p>
+  </div>
+  <div
+    class="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2"
+  >
+    <button
+      type="button"
+    >
+      OK
+    </button>
+  </div>
+  <button
+    class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+    type="button"
+  >
+    <svg
+      class="lucide lucide-x size-4"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6 6 18"
+      />
+      <path
+        d="m6 6 12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+`;
+
+exports[`Sheet (snapshot) renders SheetContent with side=left variant 1`] = `
+<div
+  aria-describedby="radix-_r_8_"
+  aria-labelledby="radix-_r_7_"
+  class="fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm"
+  data-state="open"
+  id="radix-_r_6_"
+  role="dialog"
+  style="pointer-events: auto;"
+  tabindex="-1"
+>
+  <div
+    class="flex flex-col space-y-2 text-center sm:text-left"
+  >
+    <h2
+      class="text-lg font-semibold text-foreground"
+      id="radix-_r_7_"
+    >
+      Left side
+    </h2>
+  </div>
+  <button
+    class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+    type="button"
+  >
+    <svg
+      class="lucide lucide-x size-4"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6 6 18"
+      />
+      <path
+        d="m6 6 12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+`;
+
+exports[`Sheet (snapshot) renders trigger in closed state 1`] = `
+<button
+  aria-controls="radix-_r_0_"
+  aria-expanded="false"
+  aria-haspopup="dialog"
+  data-state="closed"
+  type="button"
+>
+  Open
+</button>
+`;

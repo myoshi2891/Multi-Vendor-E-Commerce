@@ -1,6 +1,6 @@
 # B1+ shadcn/ui Snapshot Tests Expansion Plan
 
-> **Status**: Plan approved 2026-05-26 — Sprint 1 完了（2026-05-26、Tier 1 前半 10 プリミティブ snapshot 追加 / `b55e177`〜`66fb8d5`）。残り 30 プリミティブは Sprint 2-4 で段階実行中。
+> **Status**: ✅ **Completed 2026-05-28** — Sprint 1 (Tier 1 前半 10 / `b55e177`〜`66fb8d5`) + Sprint 2 (Tier 1 後半 11 / `750d830`〜`45c339b`) + Sprint 3 (Tier 2 全 8 / `e6c79e3`〜`4429b8b`) + Sprint 4 (Tier 3 + 補助 全 11 / `1b207ba`〜`8e429f2`) で **49/49 shadcn/ui プリミティブ・127 snapshot** に到達。NA-NS-01 は `scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md §3.3` の両 SSOT から削除済み。
 > **Owner**: project team
 > **Related**: [QA_HANDOFF.md §3.3 NA-NS-01](./QA_HANDOFF.md), [COVERAGE_REPORT.md §3](./COVERAGE_REPORT.md), [TESTING_DESIGN.md "shadcn/ui Snapshot テスト"](./TESTING_DESIGN.md), [.claude/rules/02-tdd-step-commit.md](../../.claude/rules/02-tdd-step-commit.md)
 
@@ -129,14 +129,39 @@ describe("Foo (snapshot)", () => {
 });
 ```
 
-**Portal 系**（alert-dialog / popover / hover-card / tooltip / dropdown-menu / context-menu / menubar / sheet / drawer / command / sonner）: `document.body` を対象とする。`defaultOpen` プロップを使い teardown でクリーンアップ。
+**Portal 系**（alert-dialog / popover / hover-card / tooltip / dropdown-menu / context-menu / menubar / sheet / drawer / command / sonner）: `defaultOpen` プロップで portal を強制マウントし、`screen.getByRole(...)` で **コンポーネントが出力する styled 要素だけ**をスナップショット対象にする。`document.body` 全体は Radix の focus-guard span / overlay div / scroll-lock 属性などコンポーネント外の副作用を取り込み flake 源になるため使用禁止（[`tooltip.test.tsx`](../../tests/component/ui/tooltip.test.tsx) / [`popover.test.tsx`](../../tests/component/ui/popover.test.tsx) / [`dialog.test.tsx`](../../tests/component/ui/dialog.test.tsx) 参照）。
 
 ```typescript
-it("defaultOpen renders portal content", () => {
-    render(<Popover defaultOpen>...</Popover>);
-    expect(document.body).toMatchSnapshot();
+import { render, screen } from "@testing-library/react";
+
+// パターン A: styled content 自体が role を持つ場合（popover / dialog / alert-dialog / sheet / drawer 等）
+it("renders PopoverContent in defaultOpen state", () => {
+    render(
+        <Popover defaultOpen>
+            <PopoverTrigger>Open</PopoverTrigger>
+            <PopoverContent>Popover body</PopoverContent>
+        </Popover>
+    );
+    // PopoverContent は role="dialog" の styled div として描画される。
+    expect(screen.getByRole("dialog")).toMatchSnapshot();
+});
+
+// パターン B: role が ARIA 専用の隠し span に付いている場合（tooltip）
+it("renders TooltipContent in defaultOpen state", () => {
+    render(
+        <TooltipProvider>
+            <Tooltip defaultOpen>
+                <TooltipTrigger>Hover</TooltipTrigger>
+                <TooltipContent>Tip body</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+    // role="tooltip" の ARIA span から親要素 (styled TooltipContent div) を取得する。
+    expect(screen.getByRole("tooltip").parentElement).toMatchSnapshot();
 });
 ```
+
+**role の選び方**: 各プリミティブのソース (`src/components/ui/<name>.tsx`) で Radix の `Content` 要素が出力する role を確認する。多くは `dialog` / `menu` / `tooltip` のいずれか。role が styled div ではなく隠し span にしか付かないケース（tooltip 系）はパターン B を使う。
 
 ---
 

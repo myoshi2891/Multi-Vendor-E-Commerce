@@ -1,0 +1,135 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Table (snapshot) merges className overrides 1`] = `
+<div
+  class="relative w-full overflow-auto"
+>
+  <table
+    class="w-full caption-bottom text-sm border"
+  >
+    <tbody
+      class="[&_tr:last-child]:border-0"
+    >
+      <tr
+        class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+      >
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-mono"
+        >
+          code
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;
+
+exports[`Table (snapshot) renders compound table with header / body / footer 1`] = `
+<div
+  class="relative w-full overflow-auto"
+>
+  <table
+    class="w-full caption-bottom text-sm"
+  >
+    <caption
+      class="mt-4 text-sm text-muted-foreground"
+    >
+      Invoice summary
+    </caption>
+    <thead
+      class="[&_tr]:border-b"
+    >
+      <tr
+        class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+      >
+        <th
+          class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+        >
+          Item
+        </th>
+        <th
+          class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+        >
+          Qty
+        </th>
+        <th
+          class="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
+        >
+          Total
+        </th>
+      </tr>
+    </thead>
+    <tbody
+      class="[&_tr:last-child]:border-0"
+    >
+      <tr
+        class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+      >
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          Widget
+        </td>
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          2
+        </td>
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          $20
+        </td>
+      </tr>
+    </tbody>
+    <tfoot
+      class="border-t bg-muted/50 font-medium [&>tr]:last:border-b-0"
+    >
+      <tr
+        class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+      >
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          Total
+        </td>
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          2
+        </td>
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          $20
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+`;
+
+exports[`Table (snapshot) renders selected row with data-state 1`] = `
+<div
+  class="relative w-full overflow-auto"
+>
+  <table
+    class="w-full caption-bottom text-sm"
+  >
+    <tbody
+      class="[&_tr:last-child]:border-0"
+    >
+      <tr
+        class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+        data-state="selected"
+      >
+        <td
+          class="p-4 align-middle [&:has([role=checkbox])]:pr-0"
+        >
+          Selected row
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;

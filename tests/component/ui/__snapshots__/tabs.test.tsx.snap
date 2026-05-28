@@ -1,0 +1,127 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Tabs (snapshot) renders Tabs with defaultValue selected 1`] = `
+<div
+  data-orientation="horizontal"
+  dir="ltr"
+>
+  <div
+    aria-orientation="horizontal"
+    class="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground"
+    data-orientation="horizontal"
+    role="tablist"
+    style="outline: none;"
+    tabindex="0"
+  >
+    <button
+      aria-controls="radix-_r_0_-content-account"
+      aria-selected="true"
+      class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+      data-orientation="horizontal"
+      data-radix-collection-item=""
+      data-state="active"
+      id="radix-_r_0_-trigger-account"
+      role="tab"
+      tabindex="-1"
+      type="button"
+    >
+      Account
+    </button>
+    <button
+      aria-controls="radix-_r_0_-content-password"
+      aria-selected="false"
+      class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+      data-orientation="horizontal"
+      data-radix-collection-item=""
+      data-state="inactive"
+      id="radix-_r_0_-trigger-password"
+      role="tab"
+      tabindex="-1"
+      type="button"
+    >
+      Password
+    </button>
+  </div>
+  <div
+    aria-labelledby="radix-_r_0_-trigger-account"
+    class="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    data-orientation="horizontal"
+    data-state="active"
+    id="radix-_r_0_-content-account"
+    role="tabpanel"
+    style="animation-duration: 0s;"
+    tabindex="0"
+  >
+    Account body
+  </div>
+  <div
+    aria-labelledby="radix-_r_0_-trigger-password"
+    class="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    data-orientation="horizontal"
+    data-state="inactive"
+    hidden=""
+    id="radix-_r_0_-content-password"
+    role="tabpanel"
+    tabindex="0"
+  />
+</div>
+`;
+
+exports[`Tabs (snapshot) renders Tabs with disabled trigger 1`] = `
+<div
+  data-orientation="horizontal"
+  dir="ltr"
+>
+  <div
+    aria-orientation="horizontal"
+    class="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground"
+    data-orientation="horizontal"
+    role="tablist"
+    style="outline: none;"
+    tabindex="0"
+  >
+    <button
+      aria-controls="radix-_r_3_-content-a"
+      aria-selected="true"
+      class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+      data-orientation="horizontal"
+      data-radix-collection-item=""
+      data-state="active"
+      id="radix-_r_3_-trigger-a"
+      role="tab"
+      tabindex="-1"
+      type="button"
+    >
+      A
+    </button>
+    <button
+      aria-controls="radix-_r_3_-content-b"
+      aria-selected="false"
+      class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+      data-disabled=""
+      data-orientation="horizontal"
+      data-radix-collection-item=""
+      data-state="inactive"
+      disabled=""
+      id="radix-_r_3_-trigger-b"
+      role="tab"
+      tabindex="-1"
+      type="button"
+    >
+      B (disabled)
+    </button>
+  </div>
+  <div
+    aria-labelledby="radix-_r_3_-trigger-a"
+    class="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    data-orientation="horizontal"
+    data-state="active"
+    id="radix-_r_3_-content-a"
+    role="tabpanel"
+    style="animation-duration: 0s;"
+    tabindex="0"
+  >
+    A body
+  </div>
+</div>
+`;

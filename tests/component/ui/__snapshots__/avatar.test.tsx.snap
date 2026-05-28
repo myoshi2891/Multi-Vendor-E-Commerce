@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Avatar (snapshot) merges className overrides 1`] = `
+<span
+  class="relative flex shrink-0 overflow-hidden rounded-full h-16 w-16"
+>
+  <span
+    class="flex h-full w-full items-center justify-center rounded-full bg-muted text-lg"
+  >
+    XL
+  </span>
+</span>
+`;
+
+exports[`Avatar (snapshot) renders with fallback only 1`] = `
+<span
+  class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"
+>
+  <span
+    class="flex h-full w-full items-center justify-center rounded-full bg-muted"
+  >
+    AB
+  </span>
+</span>
+`;
+
+exports[`Avatar (snapshot) renders with image source 1`] = `
+<span
+  class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"
+>
+  <span
+    class="flex h-full w-full items-center justify-center rounded-full bg-muted"
+  >
+    U
+  </span>
+</span>
+`;

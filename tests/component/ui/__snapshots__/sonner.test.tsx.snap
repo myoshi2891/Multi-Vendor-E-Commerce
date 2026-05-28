@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Sonner Toaster (snapshot) renders Toaster root without active toasts 1`] = `
+<section
+  aria-atomic="false"
+  aria-label="Notifications alt+T"
+  aria-live="polite"
+  aria-relevant="additions text"
+  tabindex="-1"
+/>
+`;

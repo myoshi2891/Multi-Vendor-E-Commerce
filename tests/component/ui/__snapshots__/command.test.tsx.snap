@@ -1,0 +1,260 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Command (snapshot) renders CommandDialog in open state 1`] = `
+<div
+  aria-describedby="radix-_r_9_"
+  aria-labelledby="radix-_r_8_"
+  class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg overflow-hidden p-0 shadow-lg"
+  data-state="open"
+  id="radix-_r_7_"
+  role="dialog"
+  style="pointer-events: auto;"
+  tabindex="-1"
+>
+  <div
+    class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:size-5"
+    cmdk-root=""
+    tabindex="-1"
+  >
+    <label
+      cmdk-label=""
+      for="radix-_r_c_"
+      id="radix-_r_b_"
+      style="position: absolute; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; border-width: 0px;"
+    />
+    <div
+      class="flex items-center border-b px-3"
+      cmdk-input-wrapper=""
+    >
+      <svg
+        class="lucide lucide-search mr-2 size-4 shrink-0 opacity-50"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx="11"
+          cy="11"
+          r="8"
+        />
+        <path
+          d="m21 21-4.3-4.3"
+        />
+      </svg>
+      <input
+        aria-autocomplete="list"
+        aria-controls="radix-_r_a_"
+        aria-expanded="true"
+        aria-labelledby="radix-_r_b_"
+        autocomplete="off"
+        autocorrect="off"
+        class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        cmdk-input=""
+        id="radix-_r_c_"
+        placeholder="Type a command"
+        role="combobox"
+        spellcheck="false"
+        type="text"
+        value=""
+      />
+    </div>
+    <div
+      aria-label="Suggestions"
+      class="max-h-[300px] overflow-y-auto overflow-x-hidden"
+      cmdk-list=""
+      id="radix-_r_a_"
+      role="listbox"
+      tabindex="-1"
+    >
+      <div
+        cmdk-list-sizer=""
+      >
+        <div
+          class="overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+          cmdk-group=""
+          data-value="Suggestions"
+          role="presentation"
+        >
+          <div
+            aria-hidden="true"
+            cmdk-group-heading=""
+            id="radix-_r_e_"
+          >
+            Suggestions
+          </div>
+          <div
+            aria-labelledby="radix-_r_e_"
+            cmdk-group-items=""
+            role="group"
+          >
+            <div
+              aria-disabled="false"
+              aria-selected="true"
+              class="relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+              cmdk-item=""
+              data-disabled="false"
+              data-selected="true"
+              data-value="Settings"
+              id="radix-_r_f_"
+              role="option"
+            >
+              Settings
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button
+    class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+    type="button"
+  >
+    <svg
+      class="lucide lucide-x size-4"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 6 6 18"
+      />
+      <path
+        d="m6 6 12 12"
+      />
+    </svg>
+    <span
+      class="sr-only"
+    >
+      Close
+    </span>
+  </button>
+</div>
+`;
+
+exports[`Command (snapshot) renders inline Command with items 1`] = `
+<div
+  class="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+  cmdk-root=""
+  tabindex="-1"
+>
+  <label
+    cmdk-label=""
+    for="radix-_r_2_"
+    id="radix-_r_1_"
+    style="position: absolute; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; border-width: 0px;"
+  />
+  <div
+    class="flex items-center border-b px-3"
+    cmdk-input-wrapper=""
+  >
+    <svg
+      class="lucide lucide-search mr-2 size-4 shrink-0 opacity-50"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle
+        cx="11"
+        cy="11"
+        r="8"
+      />
+      <path
+        d="m21 21-4.3-4.3"
+      />
+    </svg>
+    <input
+      aria-autocomplete="list"
+      aria-controls="radix-_r_0_"
+      aria-expanded="true"
+      aria-labelledby="radix-_r_1_"
+      autocomplete="off"
+      autocorrect="off"
+      class="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+      cmdk-input=""
+      id="radix-_r_2_"
+      placeholder="Type a command"
+      role="combobox"
+      spellcheck="false"
+      type="text"
+      value=""
+    />
+  </div>
+  <div
+    aria-label="Suggestions"
+    class="max-h-[300px] overflow-y-auto overflow-x-hidden"
+    cmdk-list=""
+    id="radix-_r_0_"
+    role="listbox"
+    tabindex="-1"
+  >
+    <div
+      cmdk-list-sizer=""
+    >
+      <div
+        class="overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
+        cmdk-group=""
+        data-value="Suggestions"
+        role="presentation"
+      >
+        <div
+          aria-hidden="true"
+          cmdk-group-heading=""
+          id="radix-_r_4_"
+        >
+          Suggestions
+        </div>
+        <div
+          aria-labelledby="radix-_r_4_"
+          cmdk-group-items=""
+          role="group"
+        >
+          <div
+            aria-disabled="false"
+            aria-selected="true"
+            class="relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+            cmdk-item=""
+            data-disabled="false"
+            data-selected="true"
+            data-value="Calendar"
+            id="radix-_r_5_"
+            role="option"
+          >
+            Calendar
+          </div>
+          <div
+            aria-disabled="false"
+            aria-selected="false"
+            class="relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+            cmdk-item=""
+            data-disabled="false"
+            data-selected="false"
+            data-value="Search"
+            id="radix-_r_6_"
+            role="option"
+          >
+            Search
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

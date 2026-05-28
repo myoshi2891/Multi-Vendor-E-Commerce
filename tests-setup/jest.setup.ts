@@ -13,6 +13,48 @@ if (typeof globalThis.ResizeObserver === "undefined") {
     globalThis.ResizeObserver = ResizeObserverStub;
 }
 
+// jsdom は IntersectionObserver を実装していないため、embla-carousel-react (SlidesInView)
+// など viewport 観測を行うライブラリの snapshot テスト用に no-op スタブを供給する。
+if (typeof globalThis.IntersectionObserver === "undefined") {
+    class IntersectionObserverStub implements IntersectionObserver {
+        readonly root = null;
+        readonly rootMargin = "";
+        readonly thresholds: ReadonlyArray<number> = [];
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+        takeRecords(): IntersectionObserverEntry[] {
+            return [];
+        }
+    }
+    globalThis.IntersectionObserver = IntersectionObserverStub;
+}
+
+// jsdom は window.matchMedia を実装していないため、embla-carousel-react (OptionsHandler)
+// などメディアクエリを購読するライブラリの snapshot テスト用に no-op スタブを供給する。
+// 常に matches=false を返し addEventListener/removeEventListener は noop で十分。
+// jsdom は Element.prototype.scrollIntoView を実装していないため、cmdk (Command) など
+// 選択中要素を可視領域へスクロールするライブラリの snapshot テスト用に no-op スタブを供給する。
+if (
+    typeof globalThis.window !== "undefined" &&
+    typeof Element.prototype.scrollIntoView === "undefined"
+) {
+    Element.prototype.scrollIntoView = function (): void {};
+}
+
+if (typeof globalThis.window !== "undefined" && typeof window.matchMedia === "undefined") {
+    window.matchMedia = (query: string): MediaQueryList => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+    });
+}
+
 try {
   // Optional MSW support if tests/mocks/server is defined.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
