@@ -1,0 +1,39 @@
+# Docker ビルドコンテキストから除外するファイル
+# (イメージサイズ削減・秘密情報の混入防止・キャッシュ安定化)
+
+# 依存・生成物 (コンテナ内で再インストール / 再生成する)
+node_modules
+.next
+out
+build
+src/generated
+
+# バージョン管理・IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# 環境変数 (秘密情報。.env.docker は compose の env_file で別途注入)
+.env
+.env.*
+
+# テスト成果物
+coverage
+playwright-report
+test-results
+.playwright-mcp
+
+# ログ・一時ファイル
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Docker / Make 自身 (コンテキスト内で参照不要)
+Dockerfile.dev
+docker-compose*.yml
+Makefile

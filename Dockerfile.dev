@@ -1,0 +1,36 @@
+# 開発用 Next.js アプリコンテナ
+#
+# 用途:
+#   docker-compose.yml の `app` サービスから build される開発専用イメージ。
+#   本番ビルド (next build / standalone) は対象外。HMR 付き `bun run dev` を実行する。
+#
+# 設計メモ:
+#   - Bun は CI (.github/workflows/ci.yml) と同じ 1.3.14 に固定し環境差異を排除する。
+#   - Prisma の query engine は実行時に OpenSSL を必要とするため明示的に導入する。
+#   - 依存解決 (bun install) を上位レイヤーに固定してレイヤーキャッシュを効かせる。
+#   - 実行時は docker-compose 側で bind mount + node_modules named volume を被せるため、
+#     ここで COPY したソースは初回起動やキャッシュ目的の役割を持つ。
+
+FROM oven/bun:1.3.14
+
+# Prisma query engine が依存する OpenSSL / CA 証明書を導入
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# 依存定義のみ先にコピーしてインストール (レイヤーキャッシュ最適化)
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Prisma スキーマを元にクライアントを生成 (起動前に @prisma/client を用意)
+COPY prisma ./prisma
+RUN bunx prisma generate
+
+# 残りのソースをコピー (compose の bind mount で上書きされる前提のフォールバック)
+COPY . .
+
+EXPOSE 3000
+
+CMD ["bun", "run", "dev"]
