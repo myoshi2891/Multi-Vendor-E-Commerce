@@ -29,7 +29,9 @@ export default function PaypalPayment({ orderId }: { orderId: string }) {
             <PayPalButtons
                 createOrder={createOrder}
                 onApprove={onApprove}
-                onError={(err) => console.log("Paypal Button Error:", err)}
+                onError={(err) =>
+                    console.error("[PaypalPayment] PayPal Button Error:", err)
+                }
             />
         </div>
     );

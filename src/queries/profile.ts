@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { toNumberSafe } from "@/lib/utils";
 import {
     OrderStatus,
@@ -184,33 +185,33 @@ export const getUserPayments = async (
     // Calculate pagination values
     const skip = (page - 1) * pageSize;
 
-    // Construct the base query
-    const whereClause: any = {
-        AND: [{ userId: user.id }],
-    };
+    // Construct the base query conditions（`any` を排し Prisma 生成型で型付け）
+    const andConditions: Prisma.PaymentDetailsWhereInput[] = [
+        { userId: user.id },
+    ];
 
     // Apply filters
     if (filter === "paypal") {
-        whereClause.AND.push({ paymentMethod: "PayPal" });
+        andConditions.push({ paymentMethod: "PayPal" });
     }
     if (filter === "credit-card") {
-        whereClause.AND.push({ paymentMethod: "Stripe" });
+        andConditions.push({ paymentMethod: "Stripe" });
     }
 
     // Apply period filter
     const now = new Date();
     if (period === "last-6-months") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subMonths(now, 6) },
         });
     }
     if (period === "last-1-year") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 1) },
         });
     }
     if (period === "last-2-years") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 2) },
         });
     }
@@ -218,7 +219,7 @@ export const getUserPayments = async (
     // Apply search filter
     // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
-        whereClause.AND.push({
+        andConditions.push({
             OR: [
                 {
                     id: { contains: search, mode: "insensitive" },
@@ -229,6 +230,8 @@ export const getUserPayments = async (
             ],
         });
     }
+
+    const whereClause: Prisma.PaymentDetailsWhereInput = { AND: andConditions };
 
     // Fetch payments for the current page
     const payments = await db.paymentDetails.findMany({
