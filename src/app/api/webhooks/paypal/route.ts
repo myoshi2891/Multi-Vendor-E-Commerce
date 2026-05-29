@@ -136,13 +136,15 @@ const verifyPayPalSignature = async (
 };
 
 /**
- * Handle PayPal webhook POST requests, verify signature via PayPal's
- * verify-webhook-signature API, and idempotently update Order/PaymentDetails
- * for PAYMENT.CAPTURE.COMPLETED / DENIED / REFUNDED events.
+ * Handle incoming PayPal webhook POSTs and update order/payment state for handled capture events.
+ *
+ * Validates required PayPal signature headers, verifies the webhook signature, parses the webhook
+ * payload, and idempotently updates PaymentDetails and Order when the event type is one of
+ * PAYMENT.CAPTURE.COMPLETED, PAYMENT.CAPTURE.DENIED, or PAYMENT.CAPTURE.REFUNDED.
  *
  * @param req - The incoming HTTP Request containing the webhook JSON payload
- * @returns 200 on success or ignored event; 400 on signature/metadata failure;
- *          404 if Order not found; 500 on internal error
+ * @returns A Response with status 200 for successful or ignored events, 400 for signature or payload
+ *          metadata errors, 404 if the referenced Order is not found, or 500 for internal/service errors
  */
 export async function POST(req: Request) {
     const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID;
