@@ -233,21 +233,37 @@ export const getUserPayments = async (
 
     const whereClause: Prisma.PaymentDetailsWhereInput = { AND: andConditions };
 
-    // Fetch payments for the current page
-    const payments = await db.paymentDetails.findMany({
-        where: whereClause,
-        include: {
-            order: true,
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+    // Fetch payments + total count for the current page（外部呼び出しは try/catch でラップ）
+    let payments: Prisma.PaymentDetailsGetPayload<{ include: { order: true } }>[];
+    let totalCount: number;
+    try {
+        payments = await db.paymentDetails.findMany({
+            where: whereClause,
+            include: {
+                order: true,
+            },
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.paymentDetails.count({ where: whereClause });
+        // Fetch total count of orders for the query
+        totalCount = await db.paymentDetails.count({ where: whereClause });
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to fetch user payments";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserPayments] Error fetching payments:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserPayments] Unknown error fetching payments:", error);
+        }
+        throw new Error(message);
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
