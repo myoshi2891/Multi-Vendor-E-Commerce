@@ -44,3 +44,16 @@
 - Composite unique: ShippingRate(storeId, countryId),
   Review(userId, productId).
 - GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.
+
+## ER 図 (Diagram)
+
+- 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
+  （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
+- **この図は自動生成物**。SSOT は [`prisma/schema.prisma`](../../prisma/schema.prisma) であり、
+  手書き編集してはならない。`scripts/erd/generate-erd.ts` がスキーマをパースして生成する。
+- **再生成**: スキーマ変更後は必ず `bun run erd:generate` を実行し、生成された
+  `data-model.drawio` を同一 PR でコミットすること（同期義務は
+  [`.claude/rules/03-data-model-diagram-sync.md`](../../.claude/rules/03-data-model-diagram-sync.md) を参照）。
+- 図の凡例: 🔑 主キー / ◆ 外部キー / `U` unique / ⊕ 複合ユニーク、
+  ER 記法エッジ（1 / N / 0..1）、<span style="color:#C62828">赤線 ⛓</span> = `ON DELETE CASCADE`、
+  破線枠 = 機能ドメイン分類。
