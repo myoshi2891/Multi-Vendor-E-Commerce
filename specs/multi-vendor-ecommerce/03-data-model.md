@@ -15,6 +15,8 @@
   (`Decimal(12,2)` for all money fields).
 - Order, OrderGroup, OrderItem: orders grouped per store with item-level status
   (`Decimal(12,2)` for totals, subtotals, shipping fees, and prices).
+  Deleting an Order cascades to its OrderGroups and OrderItems
+  (`onDelete: Cascade` on OrderGroup→Order and OrderItem→OrderGroup).
 - ShippingAddress and Country: address data used for orders and shipping.
 - Coupon: store coupon usable in carts and order groups.
 - PaymentDetails: payment record tied to an order and user
