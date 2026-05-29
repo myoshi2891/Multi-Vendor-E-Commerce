@@ -41,10 +41,23 @@ export async function seedCommerce(
   const seedUserIds = Array.from(maps.users.values());
   const seedStoreIds = Array.from(maps.stores.values());
 
-  // Order 系は userId でフィルタ（OrderGroup, OrderItem は CASCADE DELETE）
-  await prisma.order.deleteMany({
+  // Order 系は userId でフィルタして削除する。
+  // OrderGroup -> Order の FK には onDelete: Cascade が無いため、OrderGroup を先に削除する
+  // （OrderItem -> OrderGroup は Cascade 設定済みのため OrderGroup 削除で連鎖削除される）。
+  // これにより seed の再実行時も FK 制約違反（P2003）を起こさず冪等に動作する。
+  const seedOrders = await prisma.order.findMany({
     where: { userId: { in: seedUserIds } },
+    select: { id: true },
   });
+  const seedOrderIds = seedOrders.map((o) => o.id);
+  if (seedOrderIds.length > 0) {
+    await prisma.orderGroup.deleteMany({
+      where: { orderId: { in: seedOrderIds } },
+    });
+    await prisma.order.deleteMany({
+      where: { id: { in: seedOrderIds } },
+    });
+  }
 
   // ShippingAddress は userId でフィルタ
   await prisma.shippingAddress.deleteMany({
