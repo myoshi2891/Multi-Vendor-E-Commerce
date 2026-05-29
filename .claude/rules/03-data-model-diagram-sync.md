@@ -38,6 +38,7 @@
 ## Examples
 
 ### ✅ 良い例
+
 ```bash
 # schema.prisma に新カラム/リレーションを追加した後
 bun run erd:generate        # docs/architecture/data-model.drawio を再生成
@@ -46,6 +47,7 @@ git commit -m "feat(db): add X relation and regenerate ER diagram"
 ```
 
 ### ❌ 悪い例
+
 ```bash
 # スキーマだけ変えて図を再生成しない（図が古いまま放置）
 git add prisma/schema.prisma

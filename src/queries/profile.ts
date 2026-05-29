@@ -51,7 +51,8 @@ export const getUserOrders = async (
         } else {
             console.error("[Profile:getUserOrders] Unknown error retrieving current user:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user orders.");
     }
 
     // Ensure the user is authenticated
@@ -171,7 +172,8 @@ export const getUserOrders = async (
         } else {
             console.error("[Profile:getUserOrders] Unknown error fetching orders:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user orders.");
     }
 
     // Calculate total pages
@@ -226,7 +228,8 @@ export const getUserPayments = async (
         } else {
             console.error("[Profile:getUserPayments] Unknown error retrieving current user:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user payments.");
     }
 
     // Ensure the user is authenticated
@@ -312,7 +315,8 @@ export const getUserPayments = async (
         } else {
             console.error("[Profile:getUserPayments] Unknown error fetching payments:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user payments.");
     }
 
     // Calculate total pages
@@ -371,7 +375,8 @@ export const getUserReviews = async (
         } else {
             console.error("[Profile:getUserReviews] Unknown error retrieving current user:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user reviews.");
     }
 
     // Ensure the user is authenticated
@@ -448,7 +453,8 @@ export const getUserReviews = async (
         } else {
             console.error("[Profile:getUserReviews] Unknown error fetching reviews:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user reviews.");
     }
 
     // Calculate total pages

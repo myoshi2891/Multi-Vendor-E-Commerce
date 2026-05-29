@@ -56,4 +56,4 @@
   [`.claude/rules/03-data-model-diagram-sync.md`](../../.claude/rules/03-data-model-diagram-sync.md) を参照）。
 - 図の凡例: 🔑 主キー / ◆ 外部キー / `U` unique / ⊕ 複合ユニーク、
   ER 記法エッジ（1 / N / 0..1）、<span style="color:#C62828">赤線 ⛓</span> = `ON DELETE CASCADE`、
-  破線枠 = 機能ドメイン分類。
+  エンティティの塗り色・枠色 = 機能ドメイン（タイトルの色と対応）、破線枠 = enum ボックス。

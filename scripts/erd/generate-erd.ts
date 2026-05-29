@@ -591,17 +591,38 @@ function main(): void {
         "<font color='#C62828'><b>赤線 ⛓ = ON DELETE CASCADE</b>（親を消すと子も消える）</font>",
         "エンティティの塗り色・枠色 = 機能ドメイン（タイトルの色と対応）",
     ].join("<br/>");
-    const maxBottom = Math.max(...[...pos.values()].map((p) => p.y + p.h), enumY);
+    // エンティティ・enum 列の最下端（凡例配置の基準）
+    const contentBottom = Math.max(
+        ...[...pos.values()].map((p) => p.y + p.h),
+        enumY
+    );
+    // 凡例ボックスの寸法・配置（下端基準 + 余白 50px）
+    const LEGEND_X = 60;
+    const LEGEND_Y = contentBottom + 50;
+    const LEGEND_WIDTH = 600;
+    const LEGEND_HEIGHT = 135;
     cells.push(
         `<mxCell id="legend" value="${esc(
             legend
-        )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="60" y="${maxBottom + 50}" width="600" height="135" as="geometry"/></mxCell>`
+        )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${LEGEND_X}" y="${LEGEND_Y}" width="${LEGEND_WIDTH}" height="${LEGEND_HEIGHT}" as="geometry"/></mxCell>`
     );
+
+    // ページ寸法をコンテンツ実寸から算出（ハードコード値ではオーバーフローするため）。
+    // 右端: エンティティ列 / enum 列 / 凡例 の最大 x、下端: 凡例下端を採用し、PADDING で余白を確保。
+    const PADDING = 80;
+    const maxRight = Math.max(
+        ...[...pos.values()].map((p) => p.x + p.w),
+        enumX + ENTITY_WIDTH,
+        LEGEND_X + LEGEND_WIDTH
+    );
+    const maxBottom = LEGEND_Y + LEGEND_HEIGHT;
+    const pageWidth = Math.max(1200, Math.round(maxRight + PADDING));
+    const pageHeight = Math.max(800, Math.round(maxBottom + PADDING));
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" type="device">
   <diagram id="data-model" name="Data Model">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3400" pageHeight="2400" math="0" shadow="0">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="${pageWidth}" pageHeight="${pageHeight}" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
