@@ -220,13 +220,22 @@ describe("Scenario 2: Shipping fee consistency", () => {
         extraFee: number;
         weight: number;
         quantity: number;
+        /**
+         * 各方式の期待送料をハードコードで固定する。
+         * computeShippingTotal の出力をそのまま seed して比較すると循環参照
+         * (永続化のみ検証) になるため、計算式の正しさは独立にこの定数で pin する。
+         *   - ITEM:   baseFee + (quantity-1) * extraFee = 10 + 2*3 = 16
+         *   - WEIGHT: baseFee * weight * quantity       = 5 * 2.5 * 2 = 25
+         *   - FIXED:  baseFee                           = 15
+         */
+        expectedFee: number;
     }>([
-        { method: ShippingFeeMethod.ITEM, baseFee: 10, extraFee: 3, weight: 1, quantity: 3 },
-        { method: ShippingFeeMethod.WEIGHT, baseFee: 5, extraFee: 0, weight: 2.5, quantity: 2 },
-        { method: ShippingFeeMethod.FIXED, baseFee: 15, extraFee: 0, weight: 1, quantity: 4 },
+        { method: ShippingFeeMethod.ITEM, baseFee: 10, extraFee: 3, weight: 1, quantity: 3, expectedFee: 16 },
+        { method: ShippingFeeMethod.WEIGHT, baseFee: 5, extraFee: 0, weight: 2.5, quantity: 2, expectedFee: 25 },
+        { method: ShippingFeeMethod.FIXED, baseFee: 15, extraFee: 0, weight: 1, quantity: 4, expectedFee: 15 },
     ])(
         "stores DB CartItem.shippingFee matching computeShippingTotal for method=$method",
-        async ({ method, baseFee, extraFee, weight, quantity }) => {
+        async ({ method, baseFee, extraFee, weight, quantity, expectedFee }) => {
             // Arrange: User → Store → Category → Product → Variant → Size を実 DB に seed
             const user = await seedUser(db);
             const store = await seedStore(db, { userId: user.id });
@@ -241,15 +250,18 @@ describe("Scenario 2: Shipping fee consistency", () => {
                 sizeQuantity: quantity + 10, // 在庫余裕
             });
 
-            // Act: computeShippingTotal で期待値を計算 → Cart + CartItem を seed
-            const expectedShippingFee = computeShippingTotal(
+            // Act (1): computeShippingTotal の出力が、独立にハードコードした
+            // 期待値と一致することを検証する (計算式そのものの正しさを pin)。
+            const computed = computeShippingTotal(
                 method,
                 baseFee,
                 extraFee,
                 weight,
                 quantity
             );
+            expect(computed).toBeCloseTo(expectedFee, 2);
 
+            // Act (2): ハードコードした期待送料で Cart + CartItem を seed する。
             const cart = await seedCart(db, { userId: user.id });
             await seedCartItem(db, {
                 cartId: cart.id,
@@ -258,10 +270,10 @@ describe("Scenario 2: Shipping fee consistency", () => {
                 variant,
                 size,
                 quantity,
-                shippingFee: expectedShippingFee,
+                shippingFee: expectedFee,
             });
 
-            // Assert: DB から読み戻して shippingFee と totalPrice の整合性を検証
+            // Assert: DB から読み戻して永続化と totalPrice の整合性を検証
             const stored = await db.cart.findUniqueOrThrow({
                 where: { id: cart.id },
                 include: { cartItems: true },
@@ -270,16 +282,16 @@ describe("Scenario 2: Shipping fee consistency", () => {
             expect(stored.cartItems).toHaveLength(1);
             const storedItem = stored.cartItems[0];
 
-            // Decimal の比較は文字列または toNumber() 経由で
+            // 永続化検証: seed した値が DB に正しく保存されている
             expect(storedItem.shippingFee.toNumber()).toBeCloseTo(
-                expectedShippingFee,
+                expectedFee,
                 2
             );
 
             // line total = unit price * qty + shipping fee
             const expectedLineTotal = new Prisma.Decimal(100)
                 .mul(quantity)
-                .add(expectedShippingFee);
+                .add(expectedFee);
             expect(storedItem.totalPrice.toNumber()).toBeCloseTo(
                 expectedLineTotal.toNumber(),
                 2
