@@ -142,13 +142,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-005",
         userEmail: "lux-seed-customer-05@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Confirmed",
-        paymentStatus: "Paid",
+        orderStatus: "Canceled",
+        paymentStatus: "Cancelled",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-oro-palazzo",
-                status: "Confirmed",
+                status: "Canceled",
                 couponCode: "LUXOROPALAZZO2026",
                 items: [
                     {
@@ -156,7 +156,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-oro-pocket-square-set-classic",
                         size: "33cm x 33cm",
                         quantity: 1,
-                        status: "Processing",
+                        status: "Canceled",
                     },
                 ],
             },
@@ -166,33 +166,33 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-006",
         userEmail: "lux-seed-customer-01@example.com",
         shippingAddressIndex: 1,
-        orderStatus: "OutForDelivery",
-        paymentStatus: "Paid",
+        orderStatus: "Refunded",
+        paymentStatus: "Refunded",
         paymentMethod: "PayPal",
         groups: [
             {
                 storeUrl: "lux-lumiere-paris",
-                status: "OutForDelivery",
+                status: "Refunded",
                 items: [
                     {
                         productSlug: "lux-lumiere-lambskin-driving-gloves",
                         variantSlug: "lux-lumiere-driving-gloves-black",
                         size: "L",
                         quantity: 1,
-                        status: "Shipped",
+                        status: "Delivered",
                     },
                     {
                         productSlug: "lux-lumiere-boucle-cropped-jacket",
                         variantSlug: "lux-lumiere-boucle-jacket-pink",
                         size: "36",
                         quantity: 2,
-                        status: "Shipped",
+                        status: "Delivered",
                     },
                 ],
             },
             {
                 storeUrl: "lux-noir-elegance",
-                status: "OutForDelivery",
+                status: "Refunded",
                 couponCode: "LUXNOIRELEGANCE2026",
                 items: [
                     {
@@ -200,7 +200,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-noir-cashmere-coat-charcoal",
                         size: "S",
                         quantity: 1,
-                        status: "Shipped",
+                        status: "Delivered",
                     },
                 ],
             },
@@ -210,13 +210,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-007",
         userEmail: "lux-seed-customer-02@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Canceled",
-        paymentStatus: "Cancelled",
+        orderStatus: "Delivered",
+        paymentStatus: "Paid",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-noir-elegance",
-                status: "Canceled",
+                status: "Delivered",
                 couponCode: "LUXNOIRELEGANCE2026",
                 items: [
                     {
@@ -224,7 +224,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-noir-cashmere-coat-black",
                         size: "M",
                         quantity: 1,
-                        status: "Canceled",
+                        status: "Delivered",
                     },
                 ],
             },
@@ -234,33 +234,33 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-008",
         userEmail: "lux-seed-customer-03@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Refunded",
-        paymentStatus: "Refunded",
+        orderStatus: "Shipped",
+        paymentStatus: "Paid",
         paymentMethod: "PayPal",
         groups: [
             {
                 storeUrl: "lux-maison-luxe",
-                status: "Refunded",
+                status: "Shipped",
                 items: [
                     {
                         productSlug: "lux-maison-embroidered-tulle-blouse",
                         variantSlug: "lux-maison-tulle-blouse-ivory",
                         size: "M",
                         quantity: 1,
-                        status: "Delivered",
+                        status: "Shipped",
                     },
                     {
                         productSlug: "lux-maison-structured-tweed-jacket",
                         variantSlug: "lux-maison-tweed-jacket-navy",
                         size: "40",
                         quantity: 2,
-                        status: "Delivered",
+                        status: "Shipped",
                     },
                 ],
             },
             {
                 storeUrl: "lux-atelier-divine",
-                status: "Refunded",
+                status: "Shipped",
                 couponCode: "LUXATELIERDIVINE2026",
                 items: [
                     {
@@ -268,7 +268,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-atelier-silver-cuff-oxidized",
                         size: "L (19cm)",
                         quantity: 1,
-                        status: "Delivered",
+                        status: "Shipped",
                     },
                 ],
             },
@@ -278,13 +278,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-009",
         userEmail: "lux-seed-customer-04@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Delivered",
+        orderStatus: "Processing",
         paymentStatus: "Paid",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-atelier-divine",
-                status: "Delivered",
+                status: "Processing",
                 couponCode: "LUXATELIERDIVINE2026",
                 items: [
                     {
@@ -292,7 +292,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-atelier-silver-cuff-oxidized",
                         size: "L (19cm)",
                         quantity: 1,
-                        status: "Delivered",
+                        status: "Processing",
                     },
                 ],
             },
@@ -302,33 +302,33 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-010",
         userEmail: "lux-seed-customer-05@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Shipped",
-        paymentStatus: "Paid",
+        orderStatus: "Pending",
+        paymentStatus: "Pending",
         paymentMethod: "PayPal",
         groups: [
             {
                 storeUrl: "lux-velvet-crown",
-                status: "Shipped",
+                status: "Pending",
                 items: [
                     {
                         productSlug: "lux-velvet-patent-stiletto-heels",
                         variantSlug: "lux-velvet-patent-stiletto-black",
                         size: "37",
                         quantity: 1,
-                        status: "Shipped",
+                        status: "Pending",
                     },
                     {
                         productSlug: "lux-velvet-calfskin-belt-monogram",
                         variantSlug: "lux-velvet-calfskin-belt-tan",
                         size: "80cm",
                         quantity: 2,
-                        status: "Shipped",
+                        status: "Pending",
                     },
                 ],
             },
             {
                 storeUrl: "lux-oro-palazzo",
-                status: "Shipped",
+                status: "Pending",
                 couponCode: "LUXOROPALAZZO2026",
                 items: [
                     {
@@ -336,7 +336,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-oro-pocket-square-set-classic",
                         size: "33cm x 33cm",
                         quantity: 1,
-                        status: "Shipped",
+                        status: "Pending",
                     },
                 ],
             },
@@ -346,13 +346,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-011",
         userEmail: "lux-seed-customer-01@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Processing",
-        paymentStatus: "Paid",
+        orderStatus: "Canceled",
+        paymentStatus: "Cancelled",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-oro-palazzo",
-                status: "Processing",
+                status: "Canceled",
                 couponCode: "LUXOROPALAZZO2026",
                 items: [
                     {
@@ -360,7 +360,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-oro-pocket-square-set-classic",
                         size: "33cm x 33cm",
                         quantity: 1,
-                        status: "Processing",
+                        status: "Canceled",
                     },
                 ],
             },
@@ -370,33 +370,33 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-012",
         userEmail: "lux-seed-customer-02@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Pending",
-        paymentStatus: "Pending",
+        orderStatus: "Refunded",
+        paymentStatus: "Refunded",
         paymentMethod: "PayPal",
         groups: [
             {
                 storeUrl: "lux-lumiere-paris",
-                status: "Pending",
+                status: "Refunded",
                 items: [
                     {
                         productSlug: "lux-lumiere-lambskin-driving-gloves",
                         variantSlug: "lux-lumiere-driving-gloves-black",
                         size: "L",
                         quantity: 1,
-                        status: "Pending",
+                        status: "Delivered",
                     },
                     {
                         productSlug: "lux-lumiere-boucle-cropped-jacket",
                         variantSlug: "lux-lumiere-boucle-jacket-pink",
                         size: "38",
                         quantity: 2,
-                        status: "Pending",
+                        status: "Delivered",
                     },
                 ],
             },
             {
                 storeUrl: "lux-noir-elegance",
-                status: "Pending",
+                status: "Refunded",
                 couponCode: "LUXNOIRELEGANCE2026",
                 items: [
                     {
@@ -404,7 +404,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-noir-cashmere-coat-charcoal",
                         size: "S",
                         quantity: 1,
-                        status: "Pending",
+                        status: "Delivered",
                     },
                 ],
             },
@@ -414,13 +414,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-013",
         userEmail: "lux-seed-customer-03@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Confirmed",
+        orderStatus: "Delivered",
         paymentStatus: "Paid",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-noir-elegance",
-                status: "Confirmed",
+                status: "Delivered",
                 couponCode: "LUXNOIRELEGANCE2026",
                 items: [
                     {
@@ -428,7 +428,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-noir-cashmere-coat-black",
                         size: "XS",
                         quantity: 1,
-                        status: "Processing",
+                        status: "Delivered",
                     },
                 ],
             },
@@ -438,13 +438,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-014",
         userEmail: "lux-seed-customer-04@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "OutForDelivery",
+        orderStatus: "Shipped",
         paymentStatus: "Paid",
         paymentMethod: "PayPal",
         groups: [
             {
                 storeUrl: "lux-maison-luxe",
-                status: "OutForDelivery",
+                status: "Shipped",
                 items: [
                     {
                         productSlug: "lux-maison-embroidered-tulle-blouse",
@@ -464,7 +464,7 @@ export const SEED_ORDERS: SeedOrder[] = [
             },
             {
                 storeUrl: "lux-atelier-divine",
-                status: "OutForDelivery",
+                status: "Shipped",
                 couponCode: "LUXATELIERDIVINE2026",
                 items: [
                     {
@@ -482,13 +482,13 @@ export const SEED_ORDERS: SeedOrder[] = [
         seedKey: "order-015",
         userEmail: "lux-seed-customer-05@example.com",
         shippingAddressIndex: 0,
-        orderStatus: "Canceled",
-        paymentStatus: "Cancelled",
+        orderStatus: "Processing",
+        paymentStatus: "Paid",
         paymentMethod: "Stripe",
         groups: [
             {
                 storeUrl: "lux-atelier-divine",
-                status: "Canceled",
+                status: "Processing",
                 couponCode: "LUXATELIERDIVINE2026",
                 items: [
                     {
@@ -496,7 +496,7 @@ export const SEED_ORDERS: SeedOrder[] = [
                         variantSlug: "lux-atelier-silver-cuff-oxidized",
                         size: "L (19cm)",
                         quantity: 1,
-                        status: "Canceled",
+                        status: "Processing",
                     },
                 ],
             },
