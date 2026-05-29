@@ -236,7 +236,7 @@ describe("POST /api/webhooks/paypal", () => {
                     where: { orderId: "order-paypal-success" },
                     create: expect.objectContaining({
                         paymentIntentId: "CAPTURE-COMPLETED-001",
-                        paymentMethod: "Paypal",
+                        paymentMethod: "PayPal",
                         status: "Paid",
                     }),
                 })
