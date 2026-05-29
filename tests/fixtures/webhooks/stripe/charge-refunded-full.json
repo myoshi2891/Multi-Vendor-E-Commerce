@@ -1,0 +1,22 @@
+{
+    "id": "evt_test_charge_refunded_full",
+    "object": "event",
+    "api_version": "2025-02-24.acacia",
+    "created": 1700000020,
+    "livemode": false,
+    "type": "charge.refunded",
+    "data": {
+        "object": {
+            "id": "ch_test_full_refund",
+            "object": "charge",
+            "amount": 9999,
+            "amount_refunded": 9999,
+            "currency": "usd",
+            "refunded": true,
+            "payment_intent": "pi_test_succeeded",
+            "metadata": {
+                "orderId": "order-stripe-success"
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "id": "WH-test-capture-refunded",
+    "event_version": "1.0",
+    "create_time": "2026-05-28T10:10:00.000Z",
+    "resource_type": "refund",
+    "resource_version": "2.0",
+    "event_type": "PAYMENT.CAPTURE.REFUNDED",
+    "summary": "A $ 99.99 USD capture payment was refunded",
+    "resource": {
+        "id": "REFUND-001",
+        "amount": {
+            "currency_code": "USD",
+            "value": "99.99"
+        },
+        "status": "COMPLETED",
+        "custom_id": "order-paypal-success",
+        "links": [
+            {
+                "rel": "up",
+                "href": "https://api-m.paypal.com/v2/payments/captures/CAPTURE-COMPLETED-001",
+                "method": "GET"
+            }
+        ]
+    }
+}

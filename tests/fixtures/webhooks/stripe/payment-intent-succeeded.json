@@ -1,0 +1,21 @@
+{
+    "id": "evt_test_pi_succeeded",
+    "object": "event",
+    "api_version": "2025-02-24.acacia",
+    "created": 1700000000,
+    "livemode": false,
+    "type": "payment_intent.succeeded",
+    "data": {
+        "object": {
+            "id": "pi_test_succeeded",
+            "object": "payment_intent",
+            "amount": 9999,
+            "amount_received": 9999,
+            "currency": "usd",
+            "status": "succeeded",
+            "metadata": {
+                "orderId": "order-stripe-success"
+            }
+        }
+    }
+}

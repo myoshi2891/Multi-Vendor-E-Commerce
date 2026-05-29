@@ -1,0 +1,25 @@
+{
+    "id": "evt_test_pi_failed",
+    "object": "event",
+    "api_version": "2025-02-24.acacia",
+    "created": 1700000010,
+    "livemode": false,
+    "type": "payment_intent.payment_failed",
+    "data": {
+        "object": {
+            "id": "pi_test_failed",
+            "object": "payment_intent",
+            "amount": 4500,
+            "amount_received": 0,
+            "currency": "usd",
+            "status": "requires_payment_method",
+            "last_payment_error": {
+                "code": "card_declined",
+                "message": "Your card was declined."
+            },
+            "metadata": {
+                "orderId": "order-stripe-failed"
+            }
+        }
+    }
+}

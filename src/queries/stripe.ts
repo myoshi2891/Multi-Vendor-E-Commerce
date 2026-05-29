@@ -37,10 +37,12 @@ export const createStripePaymentIntent = async (orderId: string) => {
         if (!order) throw new Error("Order not found.");
 
         // Create a Stripe payment intent
+        // metadata.orderId は Webhook (src/app/api/webhooks/stripe) で内部 Order を相関するために必須
         const paymentIntent = await stripe.paymentIntents.create({
             amount: Math.round(order.total.toNumber() * 100), // Convert to cents
             currency: "usd",
             automatic_payment_methods: { enabled: true },
+            metadata: { orderId },
         });
 
         return {
