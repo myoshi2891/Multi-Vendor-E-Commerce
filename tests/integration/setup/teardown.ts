@@ -10,6 +10,14 @@
  */
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
+/**
+ * Stops the integration PostgreSQL Testcontainers instance referenced by
+ * `globalThis.__INTEGRATION_PG_CONTAINER__`; does nothing if no container is set.
+ *
+ * Attempts to stop the container and logs a success message. If stopping fails,
+ * logs the error message and stack for `Error` instances or the raw thrown value
+ * for non-`Error` throwables.
+ */
 export default async function globalTeardown(): Promise<void> {
     const container = (
         globalThis as unknown as {

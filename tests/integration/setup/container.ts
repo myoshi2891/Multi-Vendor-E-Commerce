@@ -34,16 +34,26 @@ const STUB_URL_PATTERNS = [
     /:\/\/$/,
 ];
 
-/** 与えられた URL が CI スタブ値の場合 true。 */
+/**
+ * Determines whether a URL is considered a CI stub value.
+ *
+ * Treats `undefined` as a stub value and matches known stub patterns.
+ *
+ * @param url - The URL to check; if `undefined`, it is treated as a stub
+ * @returns `true` if the URL is a CI stub value, `false` otherwise
+ */
 function isStubUrl(url: string | undefined): boolean {
     if (!url) return true;
     return STUB_URL_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 /**
- * 接続文字列から DB 名 (pathname 先頭スラッシュ除去) を取り出し、
- * `test` または `integration` を含むか (大文字小文字無視) 判定する。
- * パース不能な URL は安全側に倒して false を返す。
+ * Determine whether the database name from a connection URL contains "test" or "integration".
+ *
+ * Parses the URL's pathname (leading '/' removed) as the database name and treats parsing failures as not safe.
+ *
+ * @param url - The connection URL to inspect
+ * @returns `true` if the extracted database name contains "test" or "integration" (case-insensitive), `false` otherwise
  */
 function isSafeTestDbName(url: string): boolean {
     try {
@@ -75,6 +85,19 @@ function applyMigrations(): void {
     }
 }
 
+/**
+ * Prepare an integration-test PostgreSQL environment and apply Prisma migrations.
+ *
+ * If an external DATABASE_URL is provided (not a CI stub), validates explicit opt-in
+ * and that the target database name contains "test" or "integration", sets DIRECT_URL
+ * if missing, and then runs migrations against that database. Otherwise, starts a
+ * PostgreSQL testcontainer, injects its connection URI into DATABASE_URL and DIRECT_URL,
+ * stores the container instance on `globalThis.__INTEGRATION_PG_CONTAINER__` for teardown,
+ * and runs migrations against the container.
+ *
+ * @throws Error If an external DATABASE_URL is present but INTEGRATION_DB_ALLOW_EXTERNAL !== "1".
+ * @throws Error If an external DATABASE_URL is present and the database name does not contain "test" or "integration".
+ */
 export default async function globalSetup(): Promise<void> {
     const existingUrl = process.env.DATABASE_URL;
 

@@ -39,7 +39,12 @@ const uniq = (): string => randomUUID().slice(0, 8);
 
 // ----------------------------------------------------------------------------
 // User
-// ----------------------------------------------------------------------------
+/**
+ * Create a test user record with a short unique suffix and return the created User.
+ *
+ * @param overrides - Partial user fields to override the defaults (for example `name`, `email`, `role`)
+ * @returns The created `User` record
+ */
 
 export async function seedUser(
     db: PrismaClient,
@@ -59,7 +64,11 @@ export async function seedUser(
 
 // ----------------------------------------------------------------------------
 // Category / SubCategory
-// ----------------------------------------------------------------------------
+/**
+ * Create a Category and a SubCategory linked to it in the database for tests.
+ *
+ * @returns An object with `category` as the created Category and `subCategory` as the created SubCategory whose `categoryId` references `category.id`.
+ */
 
 export async function seedCategoryWithSubcategory(
     db: PrismaClient
@@ -92,6 +101,13 @@ export interface SeedStoreInput {
     overrides?: Partial<Prisma.StoreUncheckedCreateInput>;
 }
 
+/**
+ * Creates and inserts a test Store record with default values and a unique suffix.
+ *
+ * @param userId - ID of the user who will own the created store
+ * @param overrides - Partial fields applied on top of the defaults (merged into the create `data`)
+ * @returns The created Store record
+ */
 export async function seedStore(
     db: PrismaClient,
     { userId, overrides = {} }: SeedStoreInput
@@ -131,6 +147,12 @@ export interface SeedProductInput {
     sizeQuantity?: number;
 }
 
+/**
+ * Create a product with a product variant and a size, inserting all three records into the database.
+ *
+ * @param input - Creation inputs. Required: `storeId`, `categoryId`, `subCategoryId`. Optional: `shippingFeeMethod` (defaults to `ShippingFeeMethod.ITEM`), `weight` for the variant (defaults to `1`), `sizePrice` (defaults to `100`), and `sizeQuantity` (defaults to `10`).
+ * @returns An object containing the created `product`, its `variant`, and the associated `size`.
+ */
 export async function seedProductWithVariantAndSize(
     db: PrismaClient,
     input: SeedProductInput
@@ -189,6 +211,19 @@ export interface SeedCouponInput {
     connectUserIds?: string[];
 }
 
+/**
+ * Creates and inserts a coupon record with sensible defaults for testing.
+ *
+ * The returned value is the created Coupon record.
+ *
+ * Detailed behavior:
+ * - `code` defaults to `COUPON-<SUFFIX>` when `input.code` is not provided.
+ * - `startDate` defaults to 24 hours in the past and `endDate` defaults to one year from now when not provided.
+ * - `discount` defaults to `10` when not provided.
+ * - If `input.connectUserIds` is provided and non-empty, the coupon will be connected to those users; otherwise no user connections are made.
+ *
+ * @param input - SeedCouponInput describing required `storeId` and optional fields (`discount`, `startDate`, `endDate`, `code`, `connectUserIds`) and their defaulting behavior
+ */
 export async function seedCoupon(
     db: PrismaClient,
     input: SeedCouponInput
@@ -223,6 +258,12 @@ export interface SeedCartInput {
     total?: number;
 }
 
+/**
+ * Create and persist a cart record using the provided input.
+ *
+ * @param input - Seed data: must include `userId`; optional `couponId`. Numeric `subTotal`, `shippingFees`, and `total` default to 0 when omitted and are stored as decimals.
+ * @returns The created Cart record
+ */
 export async function seedCart(
     db: PrismaClient,
     input: SeedCartInput
@@ -249,6 +290,12 @@ export interface SeedCartItemInput {
     shippingFee?: number;
 }
 
+/**
+ * Create and persist a cart item with a snapshot of product/variant/size data and computed totals.
+ *
+ * @param input - Seed data containing `cartId`, `storeId`, `product`, `variant`, `size`, and optional `quantity` and `shippingFee`. The unit price is taken from `size.price`.
+ * @returns The created `CartItem` record with `price`, `quantity`, `shippingFee`, and `totalPrice` (calculated as `price * quantity + shippingFee`).
+ */
 export async function seedCartItem(
     db: PrismaClient,
     input: SeedCartItemInput
@@ -281,7 +328,14 @@ export async function seedCartItem(
 
 // ----------------------------------------------------------------------------
 // Country
-// ----------------------------------------------------------------------------
+/**
+ * Create and insert a Country record with a short unique suffix applied to the name and code.
+ *
+ * The default `name` is `Country <SUFFIX>` and the default `code` is `C<first two chars of SUFFIX>`; any fields in `overrides` are merged into the create data.
+ *
+ * @param overrides - Partial fields to merge into the created Country record (applies on top of the defaults)
+ * @returns The created `Country` record
+ */
 
 export async function seedCountry(
     db: PrismaClient,
