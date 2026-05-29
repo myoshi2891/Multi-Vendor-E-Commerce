@@ -261,7 +261,7 @@ describe("capturePayPalPayment", () => {
                 json: () => Promise.resolve(mockCaptureResponse),
             });
             const paymentDetails = createMockPaymentDetails({
-                paymentMethod: "Paypal",
+                paymentMethod: "PayPal",
             });
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             const updatedOrder = {
@@ -281,7 +281,7 @@ describe("capturePayPalPayment", () => {
                     where: { orderId: "order-001" },
                     create: expect.objectContaining({
                         paymentIntentId: "PAYPAL-ORDER-123",
-                        paymentMethod: "Paypal",
+                        paymentMethod: "PayPal",
                         status: "Completed",
                         amount: 99.99,
                         currency: "USD",

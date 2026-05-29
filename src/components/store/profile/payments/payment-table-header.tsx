@@ -187,7 +187,7 @@ const filters = [
         filter: "",
     },
     {
-        title: "Paypal",
+        title: "PayPal",
         filter: "paypal",
     },
     {

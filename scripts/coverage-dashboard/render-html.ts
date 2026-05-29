@@ -93,14 +93,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) は 2026-05-28 に完了。
     // /api/webhooks/stripe + /api/webhooks/paypal ハンドラー新設、30 ケース +
     // metadata 検証 2 ケースで網羅 (commits 338ab41 / 1d69f0f / 2321cd8)。
-    {
-        priority: "medium",
-        title: "Cart → Checkout の Integration テスト",
-        target: "tests/integration/cart-checkout.test.ts",
-        tool: "Jest + jsdom + Zustand store hydration",
-        cost: "M",
-        impact: "決済前の状態遷移を E2E より高速に保証",
-    },
+    // NA-NS-03 (B3: Cart → Checkout Integration テスト) は 2026-05-29 に完了。
+    // tests/integration/cart-checkout.test.ts (4 シナリオ / 11 テスト) と
+    // testcontainers ベースの専用 jest config を新設 (ADR-004)。
     {
         priority: "low",
         title: "Lighthouse CI でパフォーマンス予算化",

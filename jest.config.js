@@ -7,7 +7,9 @@ module.exports = {
         "^@/public/(.*)$": "<rootDir>/public/$1",
         "^@/(.*)$": "<rootDir>/src/$1",
     },
-    testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/"],
+    // tests/integration/ は jest.integration.config.js 経由でのみ実行する
+    // (jsdom + testcontainers + globalSetup を伴うため別 worker pool が必要)
+    testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/", "/tests/integration/"],
     transform: {
         "^.+\\.tsx?$": [
             "ts-jest",

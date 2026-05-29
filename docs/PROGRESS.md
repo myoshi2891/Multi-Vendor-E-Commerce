@@ -141,6 +141,45 @@
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
 
+### 2026-05-29: B3 完了 — Cart → Checkout Integration テスト / NA-NS-03 アーカイブ
+
+- **背景**: Open Issue B3 で「Cart → Checkout の状態橋渡し（Zustand persist hydration / shipping fee 計算 / クーポン適用）を Integration 粒度で検証」が指定されていた。既存 E2E (`tests/e2e/purchase-flow.spec.ts`) は実ブラウザベースで遅く、リグレッション検知のフィードバックループが長い。ユニットテスト (`src/cart-store/useCartStore.test.ts`) は store の純粋ロジックのみで、DB / server action との接続は未カバー。
+- **実装内容**:
+  - **基盤整備（Phase 0）**: 既存リポジトリに Integration テスト基盤が存在しなかったため、testcontainers-managed PostgreSQL + 専用 jest config を新設。
+    - `docs/architecture/decisions/004-integration-test-db-strategy.md` (ADR-004): testcontainers vs docker-compose 共有 vs `services.postgres` vs Neon vs SQLite の 5 案を比較し testcontainers を採択。
+    - `docker-compose.test.yml` + `.env.test.example`: testcontainers が動かない環境用のフォールバック Postgres サービス。
+    - `tests/integration/setup/container.ts` (`globalSetup`): `PostgreSqlContainer` 起動 → `DATABASE_URL` 注入 → `execFileSync` 経由で `bunx prisma migrate deploy`。`DATABASE_URL` 既設の場合は外部 DB モードと判定し testcontainers をスキップ。
+    - `tests/integration/setup/teardown.ts` (`globalTeardown`): container 停止。
+    - `tests/integration/setup/db.ts`: テスト用 `PrismaClient` ファクトリ（`src/lib/db.ts` シングルトンの例外パスとして直接 instantiate）。
+    - `tests/integration/setup/reset-db.ts`: 23 テーブルを 1 文の `TRUNCATE ... RESTART IDENTITY CASCADE` で初期化。
+    - `tests/integration/setup/seed.ts`: `src/config/test-fixtures.ts` の shape を踏襲した DB INSERT 版（`seedUser` / `seedStore` / `seedProductWithVariantAndSize` / `seedCart` / `seedCartItem` / `seedCoupon` / `seedCategoryWithSubcategory` / `seedCountry`）。
+    - `jest.integration.config.js`: `testEnvironment: "jsdom"` + `testMatch: tests/integration/**` + `maxWorkers: 1` + `testTimeout: 60s`。uuid v14 を `transformIgnorePatterns` 例外で ts-jest 変換、画像/CSS は file-mock/style-mock で空スタブ化。
+    - `jest.config.js`: `testPathIgnorePatterns` に `/tests/integration/` を追加し既存 unit から分離。
+    - `package.json`: `@testcontainers/postgresql@^10.13.2` (devDependency) + `"test:integration"` script 追加。
+    - `.github/workflows/ci.yml`: `integration-tests` ジョブ追加（testcontainers が runner の Docker daemon を直接利用するため `services:` 不要）。
+  - **B3 本体 (Phase 1)**: `tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト。
+    - Scenario 1 (Zustand persist hydration / 2 テスト): `localStorage` から `useCartStore.persist.rehydrate()` が `cart` / `totalItems` / `totalPrice` を正しく復元 / `addToCart()` が localStorage に同期保存。
+    - Scenario 2 (Shipping fee 一貫性 / 3 テスト): ITEM / WEIGHT / FIXED の 3 方式で `computeShippingTotal` (`src/lib/shipping-utils.ts`) の出力が DB の `CartItem.shippingFee` と完全一致 + `totalPrice` が `unit price × qty + shipping fee` と整合（Decimal 比較は `.toNumber()` + `toBeCloseTo`）。
+    - Scenario 3 (Coupon 適用 / 5 テスト): 正常適用 (`applyCoupon` server action) で `Cart.couponId` 更新 + `total` が store subtotal の 10% 分減算 / 異常系 4 つ（存在しない code / 期限切れ / クーポン対象店舗外 / 二重適用拒否）。
+    - Scenario 4 (未認証 redirect / 1 テスト): `currentUser` を null モックで CheckoutPage を呼出 → `redirect("/cart")` が throw されることを `NEXT_REDIRECT:/cart` カスタムエラーで捕捉。重い transitive import (StoreHeader → flag-icons CSS / .webp 画像 / uuid ESM) は moduleNameMapper + transformIgnorePatterns で吸収。
+- **設計判断（ADR-003 flake 回避）**: ADR-003 で報告されている jsdom + RTL + userEvent + waitFor の CI flake を継承しないよう、本テストでは **React Testing Library によるコンポーネント描画を意図的に避けた**。検証はすべて store / DB / server-action 層で実施。Scenario 4 のみ CheckoutPage 関数の直接呼出を行うが、`redirect` が即時 throw するため React render に到達しない。
+- **コミット計画**（[`02-tdd-step-commit.md`](.claude/rules/02-tdd-step-commit.md) 準拠で 2 PR 構成）:
+  - **PR 1 (Phase 0 / インフラ)**: ADR-004 / docker-compose.test.yml + env templates / testcontainers setup / jest.integration.config.js + script / CI workflow の論理単位ごとに分割
+  - **PR 2 (Phase 1〜2 / 本体 + 同期)**: cart-checkout.test.ts (Tier 1 単一新規ファイル = 1 commit) + spec-sync-after-test の SSOT 同期コミット
+- **影響**:
+  - テスト総数: unit/component 1137（変動なし） + integration 11（新設）
+  - スイート数: unit/component 112（変動なし） + integration 1（新設）
+  - 型エラー: 0 件（維持）
+  - 新規 devDependency: `@testcontainers/postgresql@^10.13.2`
+  - 新規 CI ジョブ: `integration-tests`
+- **アーカイブ作業**:
+  - `scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から cart-checkout エントリを削除
+  - `QA_HANDOFF.md` の NA-NS-03 プロンプトを HTML コメントアウトでアーカイブ化
+  - `COVERAGE_REPORT.md §3 B3` を `~~完了~~` 取り消し線 + 達成内容に更新、Integration マトリクスのセルを ✦ に遷移
+- **次アクション**: 残るは C1 (Lighthouse CI) / C2 (Bundle Size) の長期項目のみ。B3 で確立した testcontainers 基盤は B4 や IDOR セキュリティテストの拡充に再利用可能。
+
+---
+
 ### 2026-05-28: B2 完了 — Stripe / PayPal Webhook ハンドラー新規実装 + Contract テスト / NA-NS-02 アーカイブ
 
 - **背景**: Open Issue B2 で「Stripe / PayPal Webhook ハンドラーの Contract テスト追加」が指定されていたが、Phase 1 調査で **Stripe/PayPal Webhook ハンドラー自体が未実装** であることが判明（既存 `src/app/api/webhooks/route.ts` は Clerk Svix 専用）。同期決済 (`src/queries/stripe.ts` / `paypal.ts`) のみで out-of-band イベント（チャージバック / 部分返金 / 遅延失敗）への DB 整合性が未保証だったため、ハンドラー新規実装 + Contract テストの 2 段構えに再設計。

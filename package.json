@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:integration": "jest --config jest.integration.config.js",
     "seed:e2e": "tsx tests/e2e/seed/seed-e2e.ts",
     "seed:luxury": "tsx prisma/seed/seed.ts",
     "coverage:dashboard": "tsx scripts/coverage-dashboard/build.ts"
@@ -111,6 +112,7 @@
     "@axe-core/playwright": "^4.11.3",
     "@clerk/testing": "^2.0.7",
     "@playwright/test": "^1.57.0",
+    "@testcontainers/postgresql": "^10.13.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

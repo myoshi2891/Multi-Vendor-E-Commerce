@@ -4,6 +4,14 @@ import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 
+/**
+ * Renders PayPal checkout buttons and coordinates creating and capturing a PayPal payment for the given order.
+ *
+ * Creates a PayPal order, persists the PayPal payment id for later capture, and refreshes the page after a successful capture.
+ *
+ * @param orderId - The identifier of the order to pay with PayPal
+ * @returns A React element that displays PayPal buttons and manages the PayPal order/payment lifecycle
+ */
 export default function PaypalPayment({ orderId }: { orderId: string }) {
     // - Step 1 -----> create order ------> paymentId
     // - Step 2 -----> capture payment (paymentId)
@@ -29,7 +37,9 @@ export default function PaypalPayment({ orderId }: { orderId: string }) {
             <PayPalButtons
                 createOrder={createOrder}
                 onApprove={onApprove}
-                onError={(err) => console.log("Paypal Button Error:", err)}
+                onError={(err) =>
+                    console.error("[PaypalPayment] PayPal Button Error:", err)
+                }
             />
         </div>
     );

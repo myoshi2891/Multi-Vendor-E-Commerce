@@ -243,13 +243,13 @@ export async function POST(req: Request) {
                 where: { orderId },
                 update: {
                     paymentIntentId: captureId,
-                    paymentMethod: "Paypal",
+                    paymentMethod: "PayPal",
                     status: paymentStatus,
                     userId: order.userId,
                 },
                 create: {
                     paymentIntentId: captureId,
-                    paymentMethod: "Paypal",
+                    paymentMethod: "PayPal",
                     status: paymentStatus,
                     amount: order.total,
                     currency: "usd",
