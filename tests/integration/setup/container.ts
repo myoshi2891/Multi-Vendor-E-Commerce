@@ -5,10 +5,15 @@
  * 起動経路は以下の優先順位で決定する:
  *
  *   1. `process.env.DATABASE_URL` が設定されており、`postgresql://stub:stub@...` 等の
- *      CI スタブ値でない場合:
- *      → 外部 DB (docker-compose.test.yml で起動した postgres-test、または
- *         CI workflow の services.postgres 等) へ接続するとみなし、
- *         testcontainers の起動はスキップする。`prisma migrate deploy` のみ実行。
+ *      CI スタブ値でない場合 (= 外部 DB モード):
+ *      → docker-compose.test.yml で起動した postgres-test 等へ接続するとみなす。
+ *         ただし `prisma migrate deploy` と各テストの TRUNCATE が実 DB に向くと
+ *         データ破壊につながるため、以下の **2 つのガード** を必須とする:
+ *           a. `INTEGRATION_DB_ALLOW_EXTERNAL === "1"` の明示的オプトイン
+ *           b. 接続先 DB 名が `test` / `integration` を含むこと
+ *         両方を満たした場合のみ testcontainers をスキップし migrate deploy を実行。
+ *         `DIRECT_URL` 未設定時は `DATABASE_URL` を流用する (schema の
+ *         `directUrl = env("DIRECT_URL")` を解決するため)。
  *
  *   2. それ以外:
  *      → `@testcontainers/postgresql` で PostgreSqlContainer を起動し、
@@ -36,6 +41,20 @@ function isStubUrl(url: string | undefined): boolean {
 }
 
 /**
+ * 接続文字列から DB 名 (pathname 先頭スラッシュ除去) を取り出し、
+ * `test` または `integration` を含むか (大文字小文字無視) 判定する。
+ * パース不能な URL は安全側に倒して false を返す。
+ */
+function isSafeTestDbName(url: string): boolean {
+    try {
+        const dbName = new URL(url).pathname.replace(/^\//, "").toLowerCase();
+        return dbName.includes("test") || dbName.includes("integration");
+    } catch {
+        return false;
+    }
+}
+
+/**
  * `prisma migrate deploy` を子プロセスで実行する。
  * `process.env.DATABASE_URL` が呼び出し時点で書き換わっている必要がある。
  *
@@ -60,7 +79,33 @@ export default async function globalSetup(): Promise<void> {
     const existingUrl = process.env.DATABASE_URL;
 
     if (!isStubUrl(existingUrl)) {
-        // 外部 DB モード (docker-compose.test.yml / CI services.postgres 等)
+        // 外部 DB モード (docker-compose.test.yml 等)。
+        // 実 DB へ migrate deploy / TRUNCATE が向くのを防ぐため 2 段ガードする。
+        const url = existingUrl as string;
+
+        if (process.env.INTEGRATION_DB_ALLOW_EXTERNAL !== "1") {
+            throw new Error(
+                "[integration-setup] External DATABASE_URL detected but " +
+                    "INTEGRATION_DB_ALLOW_EXTERNAL is not set to '1'. " +
+                    "Refusing to run migrations/TRUNCATE against a non-stub DB. " +
+                    "Set INTEGRATION_DB_ALLOW_EXTERNAL=1 (docker-compose mode) or " +
+                    "leave DATABASE_URL empty to use testcontainers."
+            );
+        }
+
+        if (!isSafeTestDbName(url)) {
+            throw new Error(
+                "[integration-setup] Refusing to use DATABASE_URL whose database " +
+                    "name does not contain 'test' or 'integration'. " +
+                    "This guards against accidentally targeting a dev/prod DB."
+            );
+        }
+
+        // schema の directUrl = env("DIRECT_URL") を解決するため、未設定なら流用する。
+        if (!process.env.DIRECT_URL) {
+            process.env.DIRECT_URL = url;
+        }
+
         console.log(
             "[integration-setup] Using external DATABASE_URL (testcontainers skipped)"
         );
