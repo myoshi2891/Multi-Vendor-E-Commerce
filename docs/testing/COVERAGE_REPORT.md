@@ -11,8 +11,8 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **123** (Jest 118 / Playwright 5) |
-| テスト総数 | **1137** (12 skipped) — 2026-05-28 時点 |
+| テストファイル総数 | **124** (Jest unit/component 118 / Jest integration 1 / Playwright 5) — 2026-05-29 B3 で +1 |
+| テスト総数 | **1137 unit/component** (12 skipped) + **11 integration** — 2026-05-29 時点。Integration は `bun run test:integration` の別 config で実行 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **13 / 80 (16%)** |
@@ -31,7 +31,7 @@
 | カテゴリ ╲ ドメイン       | queries | api | pages | store | dashbd | shared | hooks | lib | seed | other |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Unit**           |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ✦   |  ✦  |  ✦   |   ✦   |
-| **Integration**    |   ◯    |  ◯  |  ◯   |  ✦   |   ✦   |   ✦   |   ◯   |  ◯  |  ◯   |   ◯   |
+| **Integration**    |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◯   |  ✦  |  ◯   |   ◯   |
 | **E2E**            |   ◯    |  ◯  |  ✦   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **a11y**           |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
@@ -106,11 +106,10 @@
 - **達成内容**: `/api/webhooks/stripe` と `/api/webhooks/paypal` を新設し、固定ペイロードフィクスチャを `tests/fixtures/webhooks/` に配置。Stripe (payment_intent.succeeded / payment_intent.payment_failed / charge.refunded) と PayPal (PAYMENT.CAPTURE.COMPLETED / DENIED / REFUNDED) の主要イベントを冪等処理する Contract テスト 30 ケース + metadata 検証 2 ケースを追加（commits `338ab41` / `1d69f0f` / `2321cd8`）。署名検証・未知イベント no-op・Order 不在 404・DB エラー 500 の境界系を網羅
 - **残課題**: Stripe Dashboard / PayPal Developer Portal での Webhook URL 登録は運用配線・別タスク。`PAYMENT.CAPTURE.REFUNDED` の partial 判定は元 capture lookup が必要なため当面 `Refunded` 一律マップ
 
-#### B3. Cart → Checkout の Integration テスト
-- **対象**: `tests/integration/cart-checkout.test.ts` (新規)
-- **推奨ツール**: Jest + jsdom + Zustand store hydration
-- **コスト感**: **M**
-- **期待効果**: 決済前の状態遷移を E2E より高速に保証 (in-memory で 100ms 級)
+#### ~~B3. Cart → Checkout の Integration テスト~~ ✅ 完了 2026-05-29
+- **達成内容**: `tests/integration/cart-checkout.test.ts` を新設し、4 シナリオ計 11 テストを実装。Scenario 1 (Zustand persist hydration / 2 テスト) + Scenario 2 (shipping fee 一貫性 ITEM/WEIGHT/FIXED / 3 テスト) + Scenario 3 (`applyCoupon` server action: 正常 + 4 異常パス / 5 テスト) + Scenario 4 (未認証 `/checkout` → `/cart` redirect / 1 テスト)。基盤として testcontainers-managed PostgreSQL + 専用 jest config (`jest.integration.config.js`) + setup ヘルパー (`tests/integration/setup/{container,teardown,db,reset-db,seed,file-mock,style-mock}.{ts,js}`) を整備し、ADR-004 で技術選定の根拠 (testcontainers vs docker-compose vs services.postgres vs Neon vs SQLite) を記録
+- **CI**: `.github/workflows/ci.yml` に `integration-tests` ジョブを追加。testcontainers が runner の Docker daemon を直接利用するため `services:` ブロック不要
+- **コスト**: ~3.3 秒 / 11 テスト (testcontainers 起動含む)。`maxWorkers: 1` 直列実行
 
 ---
 
@@ -242,3 +241,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-28 | **B1+ Sprint 3 完了**: Tier 2 全 8 プリミティブ snapshot 追加（dropdown-menu / context-menu / menubar / sheet / drawer / tabs / toggle-group / table）。テスト総数 1069 → 1088 (+19)、Jest snapshot 93 → 112 (+19)。class-heavy な Menu snapshot を理由に 1 ファイル 1 commit で分離（Menu family 同梱は 200 行閾値超過）。context-menu は fireEvent.contextMenu / menubar は Root defaultValue で open 状態を再現 (commits `e6c79e3`〜`4429b8b`). |
 | 2026-05-28 | **B1+ Sprint 4 完了 / NA-NS-01 archive (B1+ 全完了)**: Tier 3 + 補助 全 11 プリミティブ snapshot 追加（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table）。テスト総数 1088 → 1103 (+15)、Jest snapshot 112 → 127 (+15)。**49/49 shadcn/ui プリミティブカバー達成**。インフラ: `tests-setup/jest.setup.ts` に IntersectionObserver / matchMedia / Element.scrollIntoView スタブ追加（embla-carousel-react / cmdk 基盤）。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-01 を削除しアーカイブ化 (commits `1b207ba`〜`8e429f2`, infra: `222d16e` / `ab07840`). |
 | 2026-05-28 | **B2 完了 / NA-NS-02 archive**: Stripe/PayPal Webhook ハンドラーを新規実装（`/api/webhooks/stripe` + `/api/webhooks/paypal`）。Stripe `webhooks.constructEvent` 署名検証 + PayPal `verify-webhook-signature` API 呼び出し（OAuth Bearer フロー）+ 冪等な PaymentDetails upsert を導入。固定ペイロードフィクスチャを `tests/fixtures/webhooks/{stripe,paypal}/` に配置し Contract テスト 30 ケース + metadata 検証 2 ケース追加。テスト総数 1103 → 1135 (+32)、スイート 110 → 112 (+2)。前提として `src/queries/stripe.ts` `paypal.ts` に `metadata.orderId` / `purchase_units[].custom_id` を付与し Webhook 相関を可能化 (commits `338ab41` / `1d69f0f` / `2321cd8`). |
+| 2026-05-29 | **B3 完了 / NA-NS-03 archive**: Cart → Checkout の状態橋渡しを Integration tier で初カバー。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト（Zustand persist hydration / shipping fee 一貫性 ITEM・WEIGHT・FIXED / `applyCoupon` 正常+4 異常パス / 未認証 redirect）。基盤として testcontainers + 専用 jest config (`jest.integration.config.js`) + 5 setup ヘルパーを新設（ADR-004 で技術選定の根拠を記録）。CI workflow に `integration-tests` ジョブを追加。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-03 を削除しアーカイブ化。Integration マトリクスの queries / pages / lib セルが ✦ に遷移. |

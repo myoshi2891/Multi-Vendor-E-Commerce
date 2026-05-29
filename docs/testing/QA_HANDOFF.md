@@ -1,16 +1,17 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-28 / **HEAD**: `2321cd8`
+> **最終更新**: 2026-05-29 / **HEAD**: `2c80f57`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-28 時点）
+### テスト統計（2026-05-29 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 | **1137** / 112 スイート（110 passed + 2 skipped）— 2026-05-28 に B2（Stripe/PayPal Webhook ハンドラー Contract テスト）完了で +32（Stripe 15 + PayPal 15 + metadata 検証 2）、レビュー指摘対応で +2（PayPal verify HTTP エラー / `$transaction` アトミック化検証） |
+| Jest テスト総数 (unit/component) | **1137** / 112 スイート（110 passed + 2 skipped）— 2026-05-28 B2 完了時点から変動なし |
+| Jest Integration テスト総数 | **11** / 1 スイート（`tests/integration/cart-checkout.test.ts`）— 2026-05-29 B3 完了で新設。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -137,7 +138,7 @@
 - ~~**B1** shadcn/ui プリミティブの Snapshot~~ ✅ MVP 完了（2026-05-23、9 プリミティブ / 40 snapshot）
 - ~~**B1+** shadcn/ui プリミティブ Snapshot 拡張~~ ✅ **全完了（2026-05-28）**。Sprint 1 (Tier 1 前半 10) + Sprint 2 (Tier 1 後半 11) + Sprint 3 (Tier 2 全 8) + Sprint 4 (Tier 3 + 補助 全 11) で **49/49 プリミティブ・127 snapshot**。NA-NS-01 をアーカイブ化
 - ~~**B2** Stripe / PayPal Webhook の Contract テスト拡充~~ ✅ **完了（2026-05-28）**。`/api/webhooks/stripe` / `/api/webhooks/paypal` ハンドラーを新規実装し、payment_intent.succeeded/failed/charge.refunded と PAYMENT.CAPTURE.COMPLETED/DENIED/REFUNDED を冪等処理。30 ケース + metadata 検証 2 ケースで網羅
-- **B3** Cart → Checkout の Integration テスト
+- ~~**B3** Cart → Checkout の Integration テスト~~ ✅ **完了（2026-05-29）**。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テストを実装：Zustand persist hydration（2）/ shipping fee 一貫性 ITEM/WEIGHT/FIXED（3）/ クーポン適用（5 正常+異常）/ 未認証リダイレクト（1）。基盤として testcontainers PostgreSQL + 専用 jest config を新設（ADR-004）
 - **C1** Lighthouse CI（パフォーマンス予算化）
 - **C2** Bundle Size 継続監視
 
@@ -292,22 +293,14 @@ NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) は 2026-05-28 に完了
 - scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
 -->
 
-#### NA-NS-03: Cart → Checkout の Integration テスト
-
-```text
-Cart から Checkout への状態遷移をカバーする Integration テストを追加してください (B3)。
-
-背景:
-- 既存 E2E (tests/e2e/purchase-flow.spec.ts) は実ブラウザベースで遅く、リグレッション検知のフィードバックループが長い。
-- Zustand の cart-store (src/cart-store/) は既にユニットテスト済みだが、Cart → Checkout の状態橋渡し (hydration / クーポン適用 / 配送料計算) は Integration 粒度で未カバー。
-
-完了条件:
-1. tests/integration/ ディレクトリを新設 (jest.config.js に既存 testPathPatterns との衝突がないか確認)
-2. Cart ページ → Checkout ページの遷移時に Zustand store の hydration が正しく行われ、shipping / coupon / 合計金額が一貫することを検証
-3. spec-sync-after-test skill で統計同期
-
-参考: src/cart-store/useCartStore.test.ts (既存ユニット)、 src/lib/shipping-utils.ts (computeShippingTotal)。
-```
+<!--
+NA-NS-03 (B3: Cart → Checkout Integration テスト) は 2026-05-29 に完了済み。
+- 結果: tests/integration/cart-checkout.test.ts (4 シナリオ / 11 テスト)
+  + 基盤 (jest.integration.config.js + tests/integration/setup/* + ADR-004)
+- 実行: bun run test:integration (testcontainers が PostgreSQL を起動)
+- CI: .github/workflows/ci.yml の integration-tests ジョブで自動実行
+- scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
+-->
 
 ### 🟢 Mid–Long Term (low)
 
