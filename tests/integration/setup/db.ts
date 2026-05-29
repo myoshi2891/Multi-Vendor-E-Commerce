@@ -21,8 +21,12 @@ import { PrismaClient } from "@prisma/client";
 let cachedClient: PrismaClient | null = null;
 
 /**
- * Worker scope の PrismaClient を返す。
- * 接続文字列は `process.env.DATABASE_URL` （container.ts が globalSetup で確定済み）。
+ * Return a worker-scoped Prisma Client instance for integration tests.
+ *
+ * Initializes and caches a PrismaClient configured from `process.env.DATABASE_URL`.
+ * Logging is enabled for `query`, `error`, and `warn` when `DEBUG_PRISMA === "1"`, otherwise only `error` is enabled.
+ *
+ * @returns The cached `PrismaClient` instance for the current test worker
  */
 export function getTestDb(): PrismaClient {
     if (cachedClient) return cachedClient;
@@ -33,7 +37,9 @@ export function getTestDb(): PrismaClient {
 }
 
 /**
- * `afterAll` で呼ぶ。Worker scope の接続を閉じてキャッシュをクリアする。
+ * Closes the worker-scoped Prisma Client connection and clears the cached instance.
+ *
+ * If no client is cached, the function returns immediately.
  */
 export async function disconnectTestDb(): Promise<void> {
     if (!cachedClient) return;

@@ -58,12 +58,10 @@ export interface ResetDbOptions {
 }
 
 /**
- * 関連テーブルを TRUNCATE ... RESTART IDENTITY CASCADE する。
+ * Reset application tables (and optionally reference data tables) by truncating them and restarting their identity sequences.
  *
- * @example
- *   beforeEach(async () => {
- *     await resetDb(db);
- *   });
+ * @param options - Options controlling which tables are reset.
+ * @param options.includeReferenceData - If `true`, include reference tables (for example `Country`) in the reset; otherwise only application tables are truncated.
  */
 export async function resetDb(
     db: PrismaClient,
