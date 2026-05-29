@@ -236,7 +236,9 @@ export const capturePayPalPayment = async (
                 currency:
                     captureData.purchase_units[0].payments.captures[0].amount
                         .currency_code,
-                paymentMethod: "Paypal",
+                // 正規表記は "PayPal"。getUserPayments (src/queries/profile.ts) の
+                // フィルタ { paymentMethod: "PayPal" } と一致させる。
+                paymentMethod: "PayPal",
                 userId: user.id,
             },
             create: {
@@ -252,7 +254,7 @@ export const capturePayPalPayment = async (
                 currency:
                     captureData.purchase_units[0].payments.captures[0].amount
                         .currency_code,
-                paymentMethod: "Paypal",
+                paymentMethod: "PayPal",
                 orderId: orderId,
                 userId: user.id,
             },
