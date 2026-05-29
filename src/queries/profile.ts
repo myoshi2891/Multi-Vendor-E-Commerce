@@ -36,8 +36,23 @@ export const getUserOrders = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to retrieve current user";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserOrders] Error retrieving current user:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserOrders] Unknown error retrieving current user:", error);
+        }
+        throw new Error(message);
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -114,30 +129,50 @@ export const getUserOrders = async (
         });
     }
 
-    // Fetch orders for the current page
-    const orders = await db.order.findMany({
-        where: whereClause,
+    // Fetch orders + total count for the current page（外部呼び出しは try/catch でラップ）
+    let orders: Prisma.OrderGetPayload<{
         include: {
-            groups: {
-                include: {
-                    items: true,
-                    _count: {
-                        select: {
-                            items: true,
+            groups: { include: { items: true; _count: { select: { items: true } } } };
+        };
+    }>[];
+    let totalCount: number;
+    try {
+        orders = await db.order.findMany({
+            where: whereClause,
+            include: {
+                groups: {
+                    include: {
+                        items: true,
+                        _count: {
+                            select: {
+                                items: true,
+                            },
                         },
                     },
                 },
             },
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.order.count({ where: whereClause });
+        // Fetch total count of orders for the query
+        totalCount = await db.order.count({ where: whereClause });
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to fetch user orders";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserOrders] Error fetching orders:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserOrders] Unknown error fetching orders:", error);
+        }
+        throw new Error(message);
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -176,8 +211,23 @@ export const getUserPayments = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to retrieve current user";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserPayments] Error retrieving current user:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserPayments] Unknown error retrieving current user:", error);
+        }
+        throw new Error(message);
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -306,8 +356,23 @@ export const getUserReviews = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to retrieve current user";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserReviews] Error retrieving current user:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserReviews] Unknown error retrieving current user:", error);
+        }
+        throw new Error(message);
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -351,22 +416,40 @@ export const getUserReviews = async (
         });
     }
 
-    // Fetch reviews for the current page
-    const reviews = await db.review.findMany({
-        where: whereClause,
-        include: {
-            images: true,
-            user: true,
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+    // Fetch reviews + total count for the current page（外部呼び出しは try/catch でラップ）
+    let reviews: Prisma.ReviewGetPayload<{
+        include: { images: true; user: true };
+    }>[];
+    let totalCount: number;
+    try {
+        reviews = await db.review.findMany({
+            where: whereClause,
+            include: {
+                images: true,
+                user: true,
+            },
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.review.count({ where: whereClause });
+        // Fetch total count of orders for the query
+        totalCount = await db.review.count({ where: whereClause });
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error ? error.message : "Failed to fetch user reviews";
+        if (error instanceof Error) {
+            console.error("[Profile:getUserReviews] Error fetching reviews:", {
+                error: message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Profile:getUserReviews] Unknown error fetching reviews:", error);
+        }
+        throw new Error(message);
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
