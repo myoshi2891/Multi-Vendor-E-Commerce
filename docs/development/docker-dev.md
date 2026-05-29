@@ -69,8 +69,17 @@ make logs            # http://localhost:3000
 
 | 症状 | 対処 |
 |---|---|
+| ページが 500 (`Publishable key not valid.`) | `.env.docker` の Clerk キーが stub のまま。実際の Clerk **test** キー（`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`）に差し替える |
 | ソース変更が反映されない | `WATCHPACK_POLLING=true` が効いているか確認。重い場合は `make restart` |
 | `@prisma/client` が見つからない | `make generate`（named volume の node_modules に再生成） |
 | 依存を更新したのに反映されない | `make down && make build && make up`（node_modules volume を作り直す場合は `make down-v`） |
 | ポート 5432 が衝突 | ホストの別 Postgres を停止するか、`docker-compose.yml` の `db` ポートを変更 |
 | DB をまっさらにしたい | `make down-v && make setup` |
+
+### シードは `bun` 直接実行（`tsx` を使わない）
+
+`oven/bun` イメージには実 Node.js が無く `node` は Bun の fallback shim のため、`package.json` の
+`tsx ...` スクリプト（`seed:luxury` / `seed:e2e`）はコンテナ内で動かない（`Cannot find module
+'./cjs/index.cjs'`）。Makefile の `make seed` / `make seed-e2e` は `bun prisma/seed/seed.ts` のように
+**bun で TS ファイルを直接実行**することで回避している（bun は TS / tsconfig paths をネイティブ解決）。
+ホスト側 (`bun run seed:luxury`) は実 Node 経由の `tsx` で従来どおり動作する。

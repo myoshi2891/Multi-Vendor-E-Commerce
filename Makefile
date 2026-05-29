@@ -69,11 +69,14 @@ studio: ## Prisma Studio を起動 (http://localhost:5555)
 
 ## --- データ ---
 
-seed: ## ラグジュアリーデータセットを投入 (seed:luxury)
-	$(APP) bun run seed:luxury
+# NOTE: コンテナの oven/bun イメージには実 Node が無く `node` は Bun の fallback shim。
+#       package.json の `tsx ...` スクリプトはこの shim 上で動かない (cjs 解決に失敗) ため、
+#       Docker では bun でTSファイルを直接実行する (bun は TS/tsconfig paths をネイティブ解決)。
+seed: ## ラグジュアリーデータセットを投入 (bun 直接実行)
+	$(APP) bun prisma/seed/seed.ts
 
-seed-e2e: ## E2E 用シードデータを投入 (seed:e2e)
-	$(APP) bun run seed:e2e
+seed-e2e: ## E2E 用シードデータを投入 (bun 直接実行)
+	$(APP) bun tests/e2e/seed/seed-e2e.ts
 
 ## --- 品質 ---
 
@@ -95,6 +98,6 @@ setup: up ## 初回セットアップ (up → DB 起動待ち → migrate → se
 	done
 	@echo "==> マイグレーション適用"
 	$(APP) bunx prisma migrate deploy
-	@echo "==> シード投入"
-	$(APP) bun run seed:luxury
-	@echo "==> 完了: http://localhost:3000"
+	@echo "==> シード投入 (失敗してもアプリ/DB は利用可能。詳細は make seed で再実行)"
+	-$(APP) bun prisma/seed/seed.ts
+	@echo "==> 完了: http://localhost:3000 (ページ表示には .env.docker に有効な Clerk test キーが必要)"
