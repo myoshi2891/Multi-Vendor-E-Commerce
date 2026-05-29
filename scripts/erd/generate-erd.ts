@@ -279,12 +279,15 @@ function markForeignKeys(models: Model[]): void {
 // ---------------------------------------------------------------------------
 // 4. ドメイン分類とレイアウト
 // ---------------------------------------------------------------------------
+// ドメインの並び順 = エッジ距離を短くする配置。
+// 接続が濃い関係（Product↔Store, User↔Order, Review↔Product 等）が隣接するよう並べる。
+// 注: 注文/決済の枠色は CASCADE 線の赤(#C62828)と紛らわしいため藍色を使う。
 const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }[] = [
     {
-        title: "ユーザー / 店舗",
-        models: ["User", "Store"],
-        fill: "#E3F2FD",
-        stroke: "#1565C0",
+        title: "レビュー / ウィッシュリスト",
+        models: ["Review", "ReviewImage", "Wishlist"],
+        fill: "#E0F7FA",
+        stroke: "#00838F",
     },
     {
         title: "カタログ（商品階層）",
@@ -304,6 +307,20 @@ const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }
         stroke: "#2E7D32",
     },
     {
+        title: "ユーザー / 店舗",
+        models: ["User", "Store"],
+        fill: "#E3F2FD",
+        stroke: "#1565C0",
+    },
+    {
+        title: "注文 / 決済",
+        models: ["Order", "OrderGroup", "OrderItem", "PaymentDetails"],
+        fill: "#E8EAF6",
+        stroke: "#283593",
+    },
+    { title: "カート", models: ["Cart", "CartItem"], fill: "#F3E5F5", stroke: "#6A1B9A" },
+    { title: "クーポン", models: ["Coupon"], fill: "#FCE4EC", stroke: "#AD1457" },
+    {
         title: "配送 / 地域",
         models: [
             "Country",
@@ -315,28 +332,16 @@ const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }
         fill: "#FFF3E0",
         stroke: "#E65100",
     },
-    { title: "カート", models: ["Cart", "CartItem"], fill: "#F3E5F5", stroke: "#6A1B9A" },
-    { title: "クーポン", models: ["Coupon"], fill: "#FCE4EC", stroke: "#AD1457" },
-    {
-        title: "注文 / 決済",
-        models: ["Order", "OrderGroup", "OrderItem", "PaymentDetails"],
-        fill: "#FFEBEE",
-        stroke: "#C62828",
-    },
-    {
-        title: "レビュー / ウィッシュリスト",
-        models: ["Review", "ReviewImage", "Wishlist"],
-        fill: "#E0F7FA",
-        stroke: "#00838F",
-    },
 ];
 
-const ENTITY_WIDTH = 250;
-const ROW_HEIGHT = 16;
-const HEADER_HEIGHT = 26;
-const DOMAIN_GAP_X = 300;
-const ENTITY_GAP_Y = 28;
-const DOMAIN_TOP_Y = 90;
+const ENTITY_WIDTH = 240;
+const ROW_HEIGHT = 17;
+const HEADER_HEIGHT = 28;
+const ENTITY_GAP_Y = 52; // 縦間隔（横走エッジの通り道を確保）
+const SUBCOL_GAP = 60; // ドメイン内の列間隔
+const DOMAIN_GAP_X = 180; // ドメイン間の間隔（クロスドメイン・エッジの通り道）
+const DOMAIN_TOP_Y = 120;
+const MAX_PER_COL = 6; // 1 列あたりの最大エンティティ数（超過で折り返し）
 
 // ---------------------------------------------------------------------------
 // 5. XML 生成ヘルパー
@@ -393,19 +398,34 @@ function main(): void {
     const modelById = new Map<string, Model>();
     models.forEach((m) => modelById.set(m.name, m));
 
-    // --- レイアウト計算 ---
+    // --- レイアウト計算（ドメイン横並び＋多列折り返し） ---
     const pos = new Map<string, { x: number; y: number; w: number; h: number }>();
-    DOMAINS.forEach((domain, di) => {
-        const x = 40 + di * DOMAIN_GAP_X;
-        let y = DOMAIN_TOP_Y;
-        for (const name of domain.models) {
+    const domainMeta: { domain: (typeof DOMAINS)[number]; x: number; width: number }[] = [];
+    let cursorX = 60;
+    for (const domain of DOMAINS) {
+        const present = domain.models.filter((n) => modelById.has(n));
+        if (present.length === 0) continue;
+        const cols = Math.ceil(present.length / MAX_PER_COL);
+        const width = cols * ENTITY_WIDTH + (cols - 1) * SUBCOL_GAP;
+        // 各サブ列ごとに縦方向カーソルを持つ（エンティティ高さが可変のため）
+        const colY = new Array<number>(cols).fill(DOMAIN_TOP_Y);
+        present.forEach((name, i) => {
             const model = modelById.get(name);
-            if (!model) continue;
+            if (!model) return;
+            const c = Math.floor(i / MAX_PER_COL);
             const h = entityHeight(model);
-            pos.set(name, { x, y, w: ENTITY_WIDTH, h });
-            y += h + ENTITY_GAP_Y;
-        }
-    });
+            pos.set(name, {
+                x: cursorX + c * (ENTITY_WIDTH + SUBCOL_GAP),
+                y: colY[c],
+                w: ENTITY_WIDTH,
+                h,
+            });
+            colY[c] += h + ENTITY_GAP_Y;
+        });
+        domainMeta.push({ domain, x: cursorX, width });
+        cursorX += width + DOMAIN_GAP_X;
+    }
+    const canvasRight = cursorX; // enum 列の開始 x
 
     // 分類漏れモデルの検出（スキーマに新モデルが増えた場合の保険）
     const classified = new Set(DOMAINS.flatMap((d) => d.models));
@@ -425,31 +445,17 @@ function main(): void {
     cells.push(
         `<mxCell id="subtitle" value="${esc(
             "自動生成: prisma/schema.prisma が SSOT。スキーマ変更後は『bun run erd:generate』で再生成すること。"
-        )}" style="text;html=1;fontSize=12;fontColor=#555555;align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="52" width="1100" height="20" as="geometry"/></mxCell>`
+        )}" style="text;html=1;fontSize=12;fontColor=#37474F;align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="40" y="52" width="1100" height="20" as="geometry"/></mxCell>`
     );
 
-    // ドメイン背景 + ヘッダ
-    DOMAINS.forEach((domain, di) => {
-        const x = 40 + di * DOMAIN_GAP_X;
-        const present = domain.models.filter((n) => modelById.has(n));
-        if (present.length === 0) return;
-        const last = present[present.length - 1];
-        const lastPos = pos.get(last)!;
-        const bottom = lastPos.y + lastPos.h;
-        const bgId = nextId();
+    // ドメインタイトル（半透明背景帯は廃止し、文字の視認性を優先）
+    for (const meta of domainMeta) {
         cells.push(
-            `<mxCell id="${bgId}" value="" style="rounded=1;fillColor=${domain.fill};strokeColor=${domain.stroke};strokeWidth=1;opacity=40;dashed=1;" vertex="1" parent="1"><mxGeometry x="${
-                x - 16
-            }" y="${DOMAIN_TOP_Y - 36}" width="${ENTITY_WIDTH + 32}" height="${
-                bottom - (DOMAIN_TOP_Y - 36) + 16
-            }" as="geometry"/></mxCell>`
+            `<mxCell id="${nextId()}" value="${esc(
+                meta.domain.title
+            )}" style="text;html=1;fontSize=15;fontStyle=1;fontColor=${meta.domain.stroke};align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="${meta.x}" y="${DOMAIN_TOP_Y - 38}" width="${meta.width}" height="26" as="geometry"/></mxCell>`
         );
-        cells.push(
-            `<mxCell id="${nextId()}" value="${esc(domain.title)}" style="text;html=1;fontSize=14;fontStyle=1;fontColor=${domain.stroke};align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="${
-                x - 8
-            }" y="${DOMAIN_TOP_Y - 34}" width="${ENTITY_WIDTH}" height="24" as="geometry"/></mxCell>`
-        );
-    });
+    }
 
     // エンティティ
     const domainOf = new Map<string, (typeof DOMAINS)[number]>();
@@ -459,12 +465,12 @@ function main(): void {
         const p = pos.get(model.name);
         if (!p) continue;
         const d = domainOf.get(model.name);
-        const fill = "#FFFFFF";
-        const stroke = d ? d.stroke : "#666666";
+        const fill = d ? d.fill : "#FFFFFF"; // ドメイン色で淡く塗りグルーピングを明示
+        const stroke = d ? d.stroke : "#455A64";
         cells.push(
             `<mxCell id="${model.name}" value="${esc(
                 entityLabel(model)
-            )}" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;spacingRight=6;fillColor=${fill};strokeColor=${stroke};strokeWidth=1.5;fontSize=11;" vertex="1" parent="1"><mxGeometry x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" as="geometry"/></mxCell>`
+            )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;spacingRight=6;fillColor=${fill};strokeColor=${stroke};strokeWidth=1.5;fontSize=11;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" as="geometry"/></mxCell>`
         );
     }
 
@@ -484,24 +490,25 @@ function main(): void {
             startArrow = e.optionalParent ? "ERzeroToOne" : "ERone";
             endArrow = "ERmany";
         }
-        const stroke = e.cascade ? "#C62828" : "#666666";
+        const stroke = e.cascade ? "#C62828" : "#5B6B7B";
         const label = e.cascade ? `${e.label} ⛓` : e.label;
+        // entityRelationEdgeStyle = エンティティ左右からの ER 配線。
+        // jumpStyle=arc で交差線を「飛び越え」表示し重なりを判別可能にする。
+        // labelBackgroundColor で線上のラベルを白背景化して可読性を確保。
         cells.push(
             `<mxCell id="${nextId()}" value="${esc(
                 label
-            )}" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;fontSize=10;fontColor=#444444;startArrow=${startArrow};startFill=0;endArrow=${endArrow};endFill=0;strokeColor=${stroke};strokeWidth=1.2;" edge="1" parent="1" source="${e.parent}" target="${e.child}"><mxGeometry relative="1" as="geometry"/></mxCell>`
+            )}" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;fontSize=10;fontColor=#10242E;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;startArrow=${startArrow};startFill=0;endArrow=${endArrow};endFill=0;strokeColor=${stroke};strokeWidth=1.4;" edge="1" parent="1" source="${e.parent}" target="${e.child}"><mxGeometry relative="1" as="geometry"/></mxCell>`
         );
     }
 
     // 列挙型（Enum）ボックス（最右列にまとめる）
-    const enumX = 40 + DOMAINS.length * DOMAIN_GAP_X;
+    const enumX = canvasRight;
     let enumY = DOMAIN_TOP_Y;
     cells.push(
         `<mxCell id="${nextId()}" value="${esc(
             "列挙型 (Enums)"
-        )}" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#37474F;align=left;" vertex="1" parent="1"><mxGeometry x="${
-            enumX - 8
-        }" y="${DOMAIN_TOP_Y - 34}" width="${ENTITY_WIDTH}" height="24" as="geometry"/></mxCell>`
+        )}" style="text;html=1;fontSize=15;fontStyle=1;fontColor=#37474F;align=left;" vertex="1" parent="1"><mxGeometry x="${enumX}" y="${DOMAIN_TOP_Y - 38}" width="${ENTITY_WIDTH}" height="26" as="geometry"/></mxCell>`
     );
     // enum -> 使用箇所
     const enumUsage = new Map<string, string[]>();
@@ -528,41 +535,30 @@ function main(): void {
                 .replace(
                     /"/g,
                     "&quot;"
-                )}" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=4;fillColor=#ECEFF1;strokeColor=#37474F;strokeWidth=1;fontSize=11;dashed=1;" vertex="1" parent="1"><mxGeometry x="${enumX}" y="${enumY}" width="${ENTITY_WIDTH}" height="${h}" as="geometry"/></mxCell>`
+                )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=#ECEFF1;strokeColor=#455A64;strokeWidth=1.5;fontSize=11;fontColor=#10242E;dashed=1;" vertex="1" parent="1"><mxGeometry x="${enumX}" y="${enumY}" width="${ENTITY_WIDTH}" height="${h}" as="geometry"/></mxCell>`
         );
         enumY += h + ENTITY_GAP_Y;
     }
 
-    // 凡例
+    // 凡例（最下部に配置）
     const legend = [
         "<b>凡例 (Legend)</b>",
-        "🔑 主キー (Primary Key)",
-        "◆ 外部キー (Foreign Key)",
-        "• 通常カラム　　<i>U</i> = unique",
-        "⊕ 複合ユニーク制約",
-        "──◀ ER 記法: ｜=1, ⪪=多(N), ○=任意(0..1)",
-        "<font color='#C62828'>赤線 ⛓ = ON DELETE CASCADE（親削除で子も削除）</font>",
-        "破線の枠 = 機能ドメイン分類",
+        "🔑 主キー (PK)　◆ 外部キー (FK)　<i>U</i> = unique　⊕ 複合ユニーク",
+        "ER 記法 ─ 親側: ｜=1 / ○=任意(0..1)　／　子側: ⪪=多 (N)",
+        "<font color='#C62828'><b>赤線 ⛓ = ON DELETE CASCADE</b>（親を消すと子も消える）</font>",
+        "エンティティの塗り色・枠色 = 機能ドメイン（タイトルの色と対応）",
     ].join("<br/>");
+    const maxBottom = Math.max(...[...pos.values()].map((p) => p.y + p.h), enumY);
     cells.push(
         `<mxCell id="legend" value="${esc(
             legend
-        )}" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="360" height="0" as="geometry"/></mxCell>`
-    );
-    // 凡例は左上のタイトルと重ならないよう最下部へ配置し直す
-    const maxBottom = Math.max(
-        ...[...pos.values()].map((p) => p.y + p.h),
-        enumY
-    );
-    cells[cells.length - 1] = cells[cells.length - 1].replace(
-        `<mxGeometry x="40" y="20" width="360" height="0" as="geometry"/>`,
-        `<mxGeometry x="40" y="${maxBottom + 40}" width="420" height="150" as="geometry"/>`
+        )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="60" y="${maxBottom + 50}" width="600" height="135" as="geometry"/></mxCell>`
     );
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net" type="device">
   <diagram id="data-model" name="Data Model">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1800" math="0" shadow="0">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3400" pageHeight="2400" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
