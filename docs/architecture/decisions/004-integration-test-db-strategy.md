@@ -166,8 +166,8 @@
 ## Implementation
 
 - [x] `docs/architecture/decisions/004-integration-test-db-strategy.md`（本 ADR）
-- [ ] `docker-compose.test.yml`: ローカル fallback 用 Postgres 16
-- [ ] `.env.test.example` + `.gitignore` 更新
+- [x] `docker-compose.test.yml`: ローカル fallback 用 Postgres 16
+- [x] `.env.test.example` + `.gitignore` 更新
 - [ ] `package.json`: `@testcontainers/postgresql` devDependency + `test:integration` script
 - [ ] `tests/integration/setup/container.ts`: `globalSetup`（既存 `DATABASE_URL` があれば testcontainers をスキップ）
 - [ ] `tests/integration/setup/teardown.ts`: `globalTeardown`
