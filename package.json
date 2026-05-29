@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:integration": "jest --config jest.integration.config.js",
     "seed:e2e": "tsx tests/e2e/seed/seed-e2e.ts",
     "seed:luxury": "tsx prisma/seed/seed.ts",
     "coverage:dashboard": "tsx scripts/coverage-dashboard/build.ts"
