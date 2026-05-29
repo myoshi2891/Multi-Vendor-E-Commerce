@@ -279,15 +279,23 @@ function markForeignKeys(models: Model[]): void {
 // ---------------------------------------------------------------------------
 // 4. ドメイン分類とレイアウト
 // ---------------------------------------------------------------------------
-// ドメインの並び順 = エッジ距離を短くする配置。
-// 接続が濃い関係（Product↔Store, User↔Order, Review↔Product 等）が隣接するよう並べる。
+// row=0 はメイン購買フロー（左→右）、row=1 はメインフローを邪魔しないサブ機能を下段へ。
+// 並びは業務フロー（User/Store → Catalog → Cart → Coupon → Order → Shipping）に沿うため、
+// クロスドメインのエッジ距離が短くなり線交差が減る。
 // 注: 注文/決済の枠色は CASCADE 線の赤(#C62828)と紛らわしいため藍色を使う。
-const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }[] = [
+const DOMAINS: {
+    title: string;
+    models: string[];
+    fill: string;
+    stroke: string;
+    row: 0 | 1;
+}[] = [
     {
-        title: "レビュー / ウィッシュリスト",
-        models: ["Review", "ReviewImage", "Wishlist"],
-        fill: "#E0F7FA",
-        stroke: "#00838F",
+        title: "ユーザー / 店舗",
+        models: ["User", "Store"],
+        fill: "#E3F2FD",
+        stroke: "#1565C0",
+        row: 0,
     },
     {
         title: "カタログ（商品階層）",
@@ -305,21 +313,29 @@ const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }
         ],
         fill: "#E8F5E9",
         stroke: "#2E7D32",
+        row: 0,
     },
     {
-        title: "ユーザー / 店舗",
-        models: ["User", "Store"],
-        fill: "#E3F2FD",
-        stroke: "#1565C0",
+        title: "カート",
+        models: ["Cart", "CartItem"],
+        fill: "#F3E5F5",
+        stroke: "#6A1B9A",
+        row: 0,
+    },
+    {
+        title: "クーポン",
+        models: ["Coupon"],
+        fill: "#FCE4EC",
+        stroke: "#AD1457",
+        row: 0,
     },
     {
         title: "注文 / 決済",
         models: ["Order", "OrderGroup", "OrderItem", "PaymentDetails"],
         fill: "#E8EAF6",
         stroke: "#283593",
+        row: 0,
     },
-    { title: "カート", models: ["Cart", "CartItem"], fill: "#F3E5F5", stroke: "#6A1B9A" },
-    { title: "クーポン", models: ["Coupon"], fill: "#FCE4EC", stroke: "#AD1457" },
     {
         title: "配送 / 地域",
         models: [
@@ -331,17 +347,26 @@ const DOMAINS: { title: string; models: string[]; fill: string; stroke: string }
         ],
         fill: "#FFF3E0",
         stroke: "#E65100",
+        row: 0,
+    },
+    {
+        title: "レビュー / ウィッシュリスト",
+        models: ["Review", "ReviewImage", "Wishlist"],
+        fill: "#E0F7FA",
+        stroke: "#00838F",
+        row: 1,
     },
 ];
 
 const ENTITY_WIDTH = 240;
 const ROW_HEIGHT = 17;
 const HEADER_HEIGHT = 28;
-const ENTITY_GAP_Y = 52; // 縦間隔（横走エッジの通り道を確保）
-const SUBCOL_GAP = 60; // ドメイン内の列間隔
-const DOMAIN_GAP_X = 180; // ドメイン間の間隔（クロスドメイン・エッジの通り道）
+const ENTITY_GAP_Y = 80; // 縦間隔（横走エッジの通り道を確保）
+const SUBCOL_GAP = 90; // ドメイン内の列間隔
+const DOMAIN_GAP_X = 240; // ドメイン間の間隔（クロスドメイン・エッジの通り道）
 const DOMAIN_TOP_Y = 120;
 const MAX_PER_COL = 6; // 1 列あたりの最大エンティティ数（超過で折り返し）
+const ROW_GAP_Y = 120; // メインフロー行(row=0)とサブ機能行(row=1)の縦間隔
 
 // ---------------------------------------------------------------------------
 // 5. XML 生成ヘルパー
@@ -398,34 +423,52 @@ function main(): void {
     const modelById = new Map<string, Model>();
     models.forEach((m) => modelById.set(m.name, m));
 
-    // --- レイアウト計算（ドメイン横並び＋多列折り返し） ---
+    // --- レイアウト計算（ドメイン横並び＋多列折り返し、2 段ロー対応） ---
+    // row=0 をメイン購買フローとして上段に左→右で配置し、row=1 を下段サブ機能行として
+    // 上段の最下端 + ROW_GAP_Y の位置から再び左→右で配置する。これにより
+    // Review/Wishlist 等のサブ機能が購買フローの線を横断しなくなる。
     const pos = new Map<string, { x: number; y: number; w: number; h: number }>();
-    const domainMeta: { domain: (typeof DOMAINS)[number]; x: number; width: number }[] = [];
-    let cursorX = 60;
-    for (const domain of DOMAINS) {
-        const present = domain.models.filter((n) => modelById.has(n));
-        if (present.length === 0) continue;
-        const cols = Math.ceil(present.length / MAX_PER_COL);
-        const width = cols * ENTITY_WIDTH + (cols - 1) * SUBCOL_GAP;
-        // 各サブ列ごとに縦方向カーソルを持つ（エンティティ高さが可変のため）
-        const colY = new Array<number>(cols).fill(DOMAIN_TOP_Y);
-        present.forEach((name, i) => {
-            const model = modelById.get(name);
-            if (!model) return;
-            const c = Math.floor(i / MAX_PER_COL);
-            const h = entityHeight(model);
-            pos.set(name, {
-                x: cursorX + c * (ENTITY_WIDTH + SUBCOL_GAP),
-                y: colY[c],
-                w: ENTITY_WIDTH,
-                h,
+    const domainMeta: {
+        domain: (typeof DOMAINS)[number];
+        x: number;
+        topY: number;
+        width: number;
+    }[] = [];
+
+    const layoutRow = (rowIndex: 0 | 1, topY: number): { cursorX: number; bottomY: number } => {
+        let cursorX = 60;
+        let bottomY = topY;
+        for (const domain of DOMAINS) {
+            if (domain.row !== rowIndex) continue;
+            const present = domain.models.filter((n) => modelById.has(n));
+            if (present.length === 0) continue;
+            const cols = Math.ceil(present.length / MAX_PER_COL);
+            const width = cols * ENTITY_WIDTH + (cols - 1) * SUBCOL_GAP;
+            // 各サブ列ごとに縦方向カーソルを持つ（エンティティ高さが可変のため）
+            const colY = new Array<number>(cols).fill(topY);
+            present.forEach((name, i) => {
+                const model = modelById.get(name);
+                if (!model) return;
+                const c = Math.floor(i / MAX_PER_COL);
+                const h = entityHeight(model);
+                pos.set(name, {
+                    x: cursorX + c * (ENTITY_WIDTH + SUBCOL_GAP),
+                    y: colY[c],
+                    w: ENTITY_WIDTH,
+                    h,
+                });
+                colY[c] += h + ENTITY_GAP_Y;
             });
-            colY[c] += h + ENTITY_GAP_Y;
-        });
-        domainMeta.push({ domain, x: cursorX, width });
-        cursorX += width + DOMAIN_GAP_X;
-    }
-    const canvasRight = cursorX; // enum 列の開始 x
+            bottomY = Math.max(bottomY, ...colY);
+            domainMeta.push({ domain, x: cursorX, topY, width });
+            cursorX += width + DOMAIN_GAP_X;
+        }
+        return { cursorX, bottomY };
+    };
+
+    const row0 = layoutRow(0, DOMAIN_TOP_Y);
+    const row1 = layoutRow(1, row0.bottomY + ROW_GAP_Y);
+    const canvasRight = Math.max(row0.cursorX, row1.cursorX); // enum 列の開始 x
 
     // 分類漏れモデルの検出（スキーマに新モデルが増えた場合の保険）
     const classified = new Set(DOMAINS.flatMap((d) => d.models));
@@ -453,7 +496,7 @@ function main(): void {
         cells.push(
             `<mxCell id="${nextId()}" value="${esc(
                 meta.domain.title
-            )}" style="text;html=1;fontSize=15;fontStyle=1;fontColor=${meta.domain.stroke};align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="${meta.x}" y="${DOMAIN_TOP_Y - 38}" width="${meta.width}" height="26" as="geometry"/></mxCell>`
+            )}" style="text;html=1;fontSize=15;fontStyle=1;fontColor=${meta.domain.stroke};align=left;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="${meta.x}" y="${meta.topY - 38}" width="${meta.width}" height="26" as="geometry"/></mxCell>`
         );
     }
 
