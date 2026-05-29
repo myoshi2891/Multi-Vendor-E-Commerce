@@ -39,6 +39,15 @@
 
 `prisma migrate deploy` を `globalSetup` 内で実行。テストごとの再マイグレーションは行わず、各 `describe` の `beforeEach` で関連テーブルを `TRUNCATE ... RESTART IDENTITY CASCADE` する。
 
+### 外部 DB モードの安全ガード
+
+`DATABASE_URL` が非スタブ値の場合 (docker-compose fallback) は、`migrate deploy` と `TRUNCATE` が実 DB に向くため、`globalSetup` で **2 段ガード**を必須とする:
+
+1. **明示オプトイン**: `INTEGRATION_DB_ALLOW_EXTERNAL=1` が無ければ throw（testcontainers モードを使うよう促す）
+2. **DB 名ガード**: 接続先 DB 名が `test` / `integration` を含まなければ throw（dev/prod の誤接続防止）
+
+加えて `DIRECT_URL` が未設定なら `DATABASE_URL` を流用する（schema の `directUrl = env("DIRECT_URL")` を解決するため）。testcontainers モード（`DATABASE_URL` 空）はこのガードの対象外で、従来どおり自動起動する。
+
 ### Jest 環境
 
 `testEnvironment: "jsdom"` をデフォルトとし、Cart / Checkout コンポーネントの hydration を実環境で検証可能にする。**ただし ADR-003 で報告されている CI flake (RTL + userEvent + waitFor) のリスクを継承する** 点を明示的に受け入れ、ADR-003 末尾の playbook（仮説 A〜I）に沿って Integration スイートでも継続観察する。

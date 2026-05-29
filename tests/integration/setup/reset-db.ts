@@ -3,7 +3,8 @@
  *
  * 各 `describe` の `beforeEach` で呼び、関連テーブルを TRUNCATE ... RESTART IDENTITY CASCADE
  * する。テーブル列挙は prisma/schema.prisma を SSOT とし、本ファイルでは
- * Integration tier で触れる可能性が高い 23 テーブルを列挙している。
+ * Integration tier で触れる可能性が高いテーブルを `APPLICATION_TABLES` (現在 26 件) に
+ * 列挙している。件数は配列定義を直接参照すること (このコメントは目安)。
  *
  * パフォーマンス特性:
  *   - 1 TRUNCATE ALL クエリで完結 (50ms 程度)

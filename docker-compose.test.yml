@@ -4,8 +4,11 @@
 #   - testcontainers が利用できない環境 (Docker daemon を直接叩けない CI runner や
 #     一部の開発者環境) での fallback として常駐 Postgres を提供する
 #   - `.env.test` で `DATABASE_URL=postgresql://test:test@localhost:55432/integration_test`
-#     を指定すると `tests/integration/setup/container.ts` の `globalSetup` が
-#     testcontainers の起動をスキップしてこのサービスへ接続する
+#     と `INTEGRATION_DB_ALLOW_EXTERNAL=1` を指定すると
+#     `tests/integration/setup/container.ts` の `globalSetup` が
+#     testcontainers の起動をスキップしてこのサービスへ接続する。
+#     (オプトインフラグが無い、または DB 名に test/integration を含まない場合は
+#      実 DB 誤接続防止のため globalSetup が throw する)
 #
 # 起動方法:
 #   docker compose -f docker-compose.test.yml up -d
