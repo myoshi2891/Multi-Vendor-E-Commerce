@@ -1,0 +1,64 @@
+# 開発用フルスタック構成 (Next.js アプリ + ローカル PostgreSQL)
+#
+# 用途:
+#   ローカル開発を Docker で完結させる。本番 Neon とは分離した使い捨て可能な開発 DB を持つ。
+#   操作は Makefile 経由を推奨 (`make setup` / `make up` / `make migrate` など)。
+#
+# 関連:
+#   docker-compose.test.yml ... integration テスト用 Postgres (port 55432)。本ファイルとは
+#                               サービス名・コンテナ名・ポート・ボリュームすべて分離しており同時起動可能。
+#   docs/development/docker-dev.md ... セットアップ手順とトラブルシュート
+#
+# 前提:
+#   .env.docker を用意すること (`.env.docker.example` をコピー)。DATABASE_URL / DIRECT_URL は
+#   下記 db サービス (host=db) を指す。
+
+services:
+  db:
+    # postgres:16.14 (docker-compose.test.yml と同一 digest で supply-chain を固定)
+    image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+    container_name: multivendor-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: multivendor_dev
+    ports:
+      # テスト DB (55432) と衝突しない標準ポートでホストへ公開
+      - "5432:5432"
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d multivendor_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: multivendor-app-dev
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      # macOS の bind mount ではファイル変更イベントが届きにくいため polling で HMR を担保
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+      # Prisma Studio (make studio) 用
+      - "5555:5555"
+    volumes:
+      # ソースを bind mount して HMR を有効化
+      - .:/app
+      # ホストの node_modules でコンテナ内インストール結果を上書きしないよう named volume を被せる
+      - app-node-modules:/app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    command: bun run dev
+
+volumes:
+  postgres-dev-data:
+  app-node-modules:
