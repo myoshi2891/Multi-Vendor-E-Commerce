@@ -553,9 +553,6 @@ export const getUserWishlist = async (
         return {
             wishlist: formattedWishlist,
             totalPages,
-            // currentPage: page,
-            // pageSize,
-            // totalCount,
         };
     } catch (error: unknown) {
         if (error instanceof Error) {
