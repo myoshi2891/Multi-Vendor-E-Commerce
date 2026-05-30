@@ -334,8 +334,11 @@ Context Provider / カスタムフックで setter を定義する際は:
 | `c579642` | 仮説 B (MSW `onUnhandledRequest: warn`) | ✅ | ✅ | — |
 | `5851756` | modal unskip (cycle 2/5 観察) | ❌ | ✅ | `fetchData ありで data マージ` |
 | `7559884` | modal 再 file-level skip | (観察対象外) | (観察対象外) | — |
+| `63ec5cc` | (modal skip 維持・コード不変) | ❌ | — | `shipping-form: handles API errors correctly` |
 
 **12 観測中 5 失敗** (push 50% 成功 / pull_request 67% 成功)。完全なランダム性。
+
+> **2026-05-29 追記** — `63ec5cc` で再び CI fail（`shipping-form.test.tsx > handles API errors correctly`、`●` が本文空で 2 回列挙される OI-8 固有症状）。modal-provider は file-skip 維持・本テスト/コンポーネントは未変更で、ローカルでは単体・フルファイルとも決定的に pass。これは「skip は症状を別ファイルへ移動させるだけ」（`bacfe2e` 行）の再々現であり、**真因が RTL + fireEvent/waitFor を使うテスト全般のメタ問題である**ことを再確認した。次手は本ファイルの未着手候補（仮説 E → G）の workflow layer 修正。
 
 ### この調査で確定した事実
 

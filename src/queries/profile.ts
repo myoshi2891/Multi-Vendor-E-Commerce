@@ -36,8 +36,19 @@ export const getUserOrders = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserOrders] Error retrieving current user:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserOrders] Error retrieving current user:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user orders.");
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -45,39 +56,37 @@ export const getUserOrders = async (
     // Calculate pagination values
     const skip = (page - 1) * pageSize;
 
-    // Construct the base query
-    const whereClause: any = {
-        AND: [{ userId: user.id }],
-    };
+    // Construct the base query conditions（`any` を排し Prisma 生成型で型付け）
+    const andConditions: Prisma.OrderWhereInput[] = [{ userId: user.id }];
 
     // Apply filters
     if (filter === "unpaid") {
-        whereClause.AND.push({ paymentStatus: PaymentStatus.Pending });
+        andConditions.push({ paymentStatus: PaymentStatus.Pending });
     }
     if (filter === "toShip") {
-        whereClause.AND.push({ orderStatus: OrderStatus.Processing });
+        andConditions.push({ orderStatus: OrderStatus.Processing });
     }
     if (filter === "shipped") {
-        whereClause.AND.push({ orderStatus: OrderStatus.Shipped });
+        andConditions.push({ orderStatus: OrderStatus.Shipped });
     }
     if (filter === "delivered") {
-        whereClause.AND.push({ orderStatus: OrderStatus.Delivered });
+        andConditions.push({ orderStatus: OrderStatus.Delivered });
     }
 
     // Apply period filter
     const now = new Date();
     if (period === "last-6-months") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subMonths(now, 6) },
         });
     }
     if (period === "last-1-year") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 1) },
         });
     }
     if (period === "last-2-years") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 2) },
         });
     }
@@ -85,7 +94,7 @@ export const getUserOrders = async (
     // Apply search filter
     // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
-        whereClause.AND.push({
+        andConditions.push({
             OR: [
                 {
                     id: { contains: search, mode: "insensitive" },
@@ -114,30 +123,48 @@ export const getUserOrders = async (
         });
     }
 
-    // Fetch orders for the current page
-    const orders = await db.order.findMany({
-        where: whereClause,
+    const whereClause: Prisma.OrderWhereInput = { AND: andConditions };
+
+    // Fetch orders + total count for the current page（外部呼び出しは try/catch でラップ）
+    let orders: Prisma.OrderGetPayload<{
         include: {
-            groups: {
-                include: {
-                    items: true,
-                    _count: {
-                        select: {
-                            items: true,
+            groups: { include: { items: true; _count: { select: { items: true } } } };
+        };
+    }>[];
+    let totalCount: number;
+    try {
+        orders = await db.order.findMany({
+            where: whereClause,
+            include: {
+                groups: {
+                    include: {
+                        items: true,
+                        _count: {
+                            select: {
+                                items: true,
+                            },
                         },
                     },
                 },
             },
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.order.count({ where: whereClause });
+        // Fetch total count of orders for the query
+        totalCount = await db.order.count({ where: whereClause });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserOrders] Error fetching orders:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserOrders] Error fetching orders:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user orders.");
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -176,8 +203,19 @@ export const getUserPayments = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserPayments] Error retrieving current user:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserPayments] Error retrieving current user:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user payments.");
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -233,21 +271,33 @@ export const getUserPayments = async (
 
     const whereClause: Prisma.PaymentDetailsWhereInput = { AND: andConditions };
 
-    // Fetch payments for the current page
-    const payments = await db.paymentDetails.findMany({
-        where: whereClause,
-        include: {
-            order: true,
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+    // Fetch payments + total count for the current page（外部呼び出しは try/catch でラップ）
+    let payments: Prisma.PaymentDetailsGetPayload<{ include: { order: true } }>[];
+    let totalCount: number;
+    try {
+        payments = await db.paymentDetails.findMany({
+            where: whereClause,
+            include: {
+                order: true,
+            },
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.paymentDetails.count({ where: whereClause });
+        // Fetch total count of orders for the query
+        totalCount = await db.paymentDetails.count({ where: whereClause });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserPayments] Error fetching payments:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserPayments] Error fetching payments:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user payments.");
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -290,8 +340,19 @@ export const getUserReviews = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
+    try {
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserReviews] Error retrieving current user:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserReviews] Error retrieving current user:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user reviews.");
+    }
 
     // Ensure the user is authenticated
     if (!user) throw new Error("Unauthenticated.");
@@ -299,30 +360,28 @@ export const getUserReviews = async (
     // Calculate pagination values
     const skip = (page - 1) * pageSize;
 
-    // Construct the base query
-    const whereClause: any = {
-        AND: [{ userId: user.id }],
-    };
+    // Construct the base query conditions（`any` を排し Prisma 生成型で型付け）
+    const andConditions: Prisma.ReviewWhereInput[] = [{ userId: user.id }];
 
     // Apply filters
     if (filter) {
-        whereClause.AND.push({ rating: parseFloat(filter) });
+        andConditions.push({ rating: parseFloat(filter) });
     }
 
     // Apply period filter
     const now = new Date();
     if (period === "last-6-months") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subMonths(now, 6) },
         });
     }
     if (period === "last-1-year") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 1) },
         });
     }
     if (period === "last-2-years") {
-        whereClause.AND.push({
+        andConditions.push({
             createdAt: { gte: subYears(now, 2) },
         });
     }
@@ -330,27 +389,43 @@ export const getUserReviews = async (
     // Apply search filter
     // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
     if (search.trim()) {
-        whereClause.AND.push({
+        andConditions.push({
             review: { contains: search, mode: "insensitive" },
         });
     }
 
-    // Fetch reviews for the current page
-    const reviews = await db.review.findMany({
-        where: whereClause,
-        include: {
-            images: true,
-            user: true,
-        },
-        take: pageSize, // Limit to page size
-        skip, // Skip the orders of previous pages
-        orderBy: {
-            updatedAt: "desc", // Sort by most updated recently
-        },
-    });
+    const whereClause: Prisma.ReviewWhereInput = { AND: andConditions };
 
-    // Fetch total count of orders for the query
-    const totalCount = await db.review.count({ where: whereClause });
+    // Fetch reviews + total count for the current page（外部呼び出しは try/catch でラップ）
+    let reviews: Prisma.ReviewGetPayload<{
+        include: { images: true; user: true };
+    }>[];
+    let totalCount: number;
+    try {
+        reviews = await db.review.findMany({
+            where: whereClause,
+            include: {
+                images: true,
+                user: true,
+            },
+            take: pageSize, // Limit to page size
+            skip, // Skip the orders of previous pages
+            orderBy: {
+                updatedAt: "desc", // Sort by most updated recently
+            },
+        });
+
+        // Fetch total count of orders for the query
+        totalCount = await db.review.count({ where: whereClause });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserReviews] Error fetching reviews:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserReviews] Error fetching reviews:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to get user reviews.");
+    }
 
     // Calculate total pages
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -380,16 +455,27 @@ export const getUserWishlist = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
     try {
-        // Retrieve the current user
-        const user = await currentUser();
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserWishlist] Error retrieving current user:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserWishlist] Error retrieving current user:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to fetch wishlist.");
+    }
 
-        // Ensure the user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
+    // Ensure the user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
 
-        // Calculate pagination values
-        const skip = (page - 1) * pageSize;
+    // Calculate pagination values
+    const skip = (page - 1) * pageSize;
 
+    try {
         // Fetch wishlist items for the current user
         const wishlist = await db.wishlist.findMany({
             where: {
@@ -472,14 +558,13 @@ export const getUserWishlist = async (
             // totalCount,
         };
     } catch (error: unknown) {
-        let message = "Failed to fetch wishlist";
         if (error instanceof Error) {
-            message = error.message;
-            console.error("Error fetching user wishlist:", message, error.stack);
+            console.error("[Profile:getUserWishlist] Error fetching wishlist:", error.message, error.stack);
         } else {
-            console.error("Error fetching user wishlist:", error);
+            console.error("[Profile:getUserWishlist] Error fetching wishlist:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to fetch wishlist.");
     }
 };
 
@@ -498,16 +583,27 @@ export const getUserFollowedStores = async (
     page: number = 1,
     pageSize: number = 10
 ) => {
+    // Retrieve the current user（外部呼び出し: Clerk は try/catch でラップ）
+    let user: Awaited<ReturnType<typeof currentUser>>;
     try {
-        // Retrieve the current user
-        const user = await currentUser();
+        user = await currentUser();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[Profile:getUserFollowedStores] Error retrieving current user:", error.message, error.stack);
+        } else {
+            console.error("[Profile:getUserFollowedStores] Error retrieving current user:", error);
+        }
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to fetch followed stores.");
+    }
 
-        // Ensure the user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
+    // Ensure the user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
 
-        // Calculate pagination values
-        const skip = (page - 1) * pageSize;
+    // Calculate pagination values
+    const skip = (page - 1) * pageSize;
 
+    try {
         // Fetch followed stores for the current user with pagination
         const followedStores = await db.store.findMany({
             where: {
@@ -561,12 +657,12 @@ export const getUserFollowedStores = async (
             totalPages,
         };
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "An unknown error occurred";
         if (error instanceof Error) {
-            console.error("Error fetching followed stores:", error.message, error.stack);
+            console.error("[Profile:getUserFollowedStores] Error fetching followed stores:", error.message, error.stack);
         } else {
-            console.error("Error fetching followed stores:", error);
+            console.error("[Profile:getUserFollowedStores] Error fetching followed stores:", error);
         }
-        throw new Error(message);
+        // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
+        throw new Error("Failed to fetch followed stores.");
     }
 };

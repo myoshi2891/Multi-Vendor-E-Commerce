@@ -469,6 +469,18 @@ const createPrismaClient = () =>
 - **Stripe / PayPal** アカウント（決済処理）
 - **Cloudinary** アカウント（メディアアップロード）
 
+### Docker で始める（推奨）
+
+ホストに Bun / PostgreSQL を入れずに、アプリ + ローカル DB をフルスタック起動できる:
+
+```bash
+cp .env.docker.example .env.docker
+make setup        # build → 起動 → migrate → seed
+make logs         # http://localhost:3000
+```
+
+全コマンドは `make help` で確認。詳細は [`docs/development/docker-dev.md`](docs/development/docker-dev.md) を参照。
+
 ### 必要な環境変数
 
 ```env

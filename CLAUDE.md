@@ -30,7 +30,9 @@ bunx prettier --write <file>
 
 # ユニットテスト（Jest）
 bun run test
-bun run test -- --testPathPattern=src/queries/store.test.ts   # 単一テスト
+bun run test -- src/queries/store.test.ts   # 単一テスト（パスを位置引数で指定）
+# ※ 旧 --testPathPattern は現行 Jest で --testPathPatterns（複数形）に変更。
+#    位置引数指定（上記）または bunx jest <path> が版差の影響を受けず確実。
 
 # E2Eテスト（Playwright）
 bunx playwright test
@@ -49,6 +51,11 @@ bunx prisma db push           # スキーマ直接反映（マイグレーショ
 bunx prisma studio            # DBブラウザ
 # ※ db push ではなく migrate dev を使うことで prisma/migrations/ と migration_lock.toml に
 #    履歴が残り、本番環境への安全なデプロイが可能になります。
+
+# Docker 開発環境（アプリ + ローカル PostgreSQL をフルスタック起動）
+make setup                    # 初回: build → 起動 → migrate → seed
+make help                     # 全コマンド一覧
+# ※ 詳細は docs/development/docker-dev.md を参照（コンテナ内 seed は tsx 不可のため bun 直接実行）
 ```
 
 ## アーキテクチャ

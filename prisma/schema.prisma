@@ -533,7 +533,7 @@ model OrderGroup {
   total        Decimal @db.Decimal(12, 2)
 
   orderId String
-  order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id])
+  order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id], onDelete: Cascade)
 
   storeId String
   store   Store  @relation("OrderGroupToStore", fields: [storeId], references: [id])

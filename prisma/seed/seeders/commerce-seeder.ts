@@ -41,7 +41,8 @@ export async function seedCommerce(
   const seedUserIds = Array.from(maps.users.values());
   const seedStoreIds = Array.from(maps.stores.values());
 
-  // Order 系は userId でフィルタ（OrderGroup, OrderItem は CASCADE DELETE）
+  // Order 系は userId でフィルタ（OrderGroup -> Order, OrderItem -> OrderGroup は
+  // いずれも onDelete: Cascade のため、Order 削除で連鎖削除される）
   await prisma.order.deleteMany({
     where: { userId: { in: seedUserIds } },
   });
