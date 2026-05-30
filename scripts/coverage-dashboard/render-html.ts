@@ -96,14 +96,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // NA-NS-03 (B3: Cart → Checkout Integration テスト) は 2026-05-29 に完了。
     // tests/integration/cart-checkout.test.ts (4 シナリオ / 11 テスト) と
     // testcontainers ベースの専用 jest config を新設 (ADR-004)。
-    {
-        priority: "low",
-        title: "Lighthouse CI でパフォーマンス予算化",
-        target: ".github/workflows/lhci.yml",
-        tool: "@lhci/cli + GitHub Actions",
-        cost: "M",
-        impact: "LCP / CLS / TBT の退行を PR で検知",
-    },
+    // C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了。
+    // .github/workflows/lhci.yml + .lighthouserc.json を新設し、@lhci/cli で
+    // / と /browse の LCP/CLS/TBT を計測 (warn-only ベースライン)。
     {
         priority: "low",
         title: "Bundle Size の継続監視",

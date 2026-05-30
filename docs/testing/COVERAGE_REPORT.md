@@ -124,11 +124,13 @@
 
 ---
 
-#### C1. Lighthouse CI でパフォーマンス予算化
-- **対象**: `.github/workflows/lhci.yml` (新規)
-- **推奨ツール**: `@lhci/cli` + GitHub Actions
+#### ~~C1. Lighthouse CI でパフォーマンス予算化~~ ✅ 完了（2026-05-30）
+- **対象**: `.github/workflows/lhci.yml` + `.lighthouserc.json`（新規）
+- **採用ツール**: `@lhci/cli@0.15.1` + GitHub Actions
 - **コスト感**: **M**
 - **期待効果**: LCP / CLS / TBT の退行を PR で検知
+- **実装**: `pull_request [main, dev]` + `workflow_dispatch` トリガー。`ci.yml` の `seed-idempotency` を土台に Postgres service → `migrate deploy` → `seed:e2e` → `build` → `bunx lhci autorun` で `/` と `/browse` を 3 回計測（`preset: desktop`）。Clerk は構文的に正当なダミー publishable key（`pk_test_` + base64(`example.clerk.accounts.dev$`)）で起動。
+- **残課題**: assertions は **warn-only** ベースライン。数回観測後に `.lighthouserc.json` を `warn` → `error` 化して予算を厳格化（将来 issue 化）。商品詳細ページ（固定 slug）の URL 追加も検討
 
 #### C2. Bundle Size の継続監視
 - **対象**: `.github/workflows/bundle.yml`

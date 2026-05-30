@@ -141,6 +141,18 @@
   - ~~`getStoreOrders` (`src/queries/store.ts:361`) は `requireStoreOwner` 未統合（自前インライン比較が残存）。別タスクで判断。~~ → 2026-05-26 にクローズ（下記「2026-05-26」エントリ参照）。
   - `SECURITY_GAP_REPORT.md` の更新（A4 セクションの記録）。
 
+### 2026-05-30: C1 完了 — Lighthouse CI でパフォーマンス予算化
+- **背景**: C シリーズ（パフォーマンス退行検知）の 1 件目。SaaS ロードマップ範囲の別ストリーム項目で、実着手判断に至り着手。
+- **実装**:
+  - `.github/workflows/lhci.yml`（新規）: `pull_request [main, dev]` + `workflow_dispatch`。`ci.yml` の `seed-idempotency` を土台に Postgres service → `migrate deploy` → `seed:e2e` → `build` → `bunx lhci autorun`。
+  - `.lighthouserc.json`（新規）: `/` と `/browse` を 3 回計測（`preset: desktop`）。`categories:performance` / LCP / CLS / TBT を **warn-only** で評価し、`temporary-public-storage` にアップロード。
+  - 新規 devDependency: `@lhci/cli@0.15.1`。
+- **設計判断**:
+  - Clerk は `<ClerkProvider>` がルートレイアウトに乗るため、stub の `pk_test_ci-stub`（非 base64）では実行時に全ページ 500 のリスク。構文的に正当なダミー key `pk_test_` + base64(`example.clerk.accounts.dev$`) を採用（secret 不要・自己完結）。
+  - 第1イテレーションは warn-only でベースライン観測を優先（PR を即ブロックしない）。
+- **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
+- **次アクション**: C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。数回観測後に lhci の assertions を `warn → error` 化して予算を厳格化。
+
 ### 2026-05-29: B3 完了 — Cart → Checkout Integration テスト / NA-NS-03 アーカイブ
 
 - **背景**: Open Issue B3 で「Cart → Checkout の状態橋渡し（Zustand persist hydration / shipping fee 計算 / クーポン適用）を Integration 粒度で検証」が指定されていた。既存 E2E (`tests/e2e/purchase-flow.spec.ts`) は実ブラウザベースで遅く、リグレッション検知のフィードバックループが長い。ユニットテスト (`src/cart-store/useCartStore.test.ts`) は store の純粋ロジックのみで、DB / server action との接続は未カバー。
