@@ -124,11 +124,16 @@
 
 ---
 
-#### C1. Lighthouse CI でパフォーマンス予算化
-- **対象**: `.github/workflows/lhci.yml` (新規)
-- **推奨ツール**: `@lhci/cli` + GitHub Actions
+#### ~~C1. Lighthouse CI でパフォーマンス予算化~~ ✅ 完了（2026-05-30）
+- **対象**: `.github/workflows/lhci.yml` + `.lighthouserc.json`（新規）
+- **採用ツール**: `@lhci/cli@0.15.1` + GitHub Actions
 - **コスト感**: **M**
 - **期待効果**: LCP / CLS / TBT の退行を PR で検知
+- **実装**: `pull_request [main, dev]` + `workflow_dispatch` トリガー。`ci.yml` の `seed-idempotency` を土台に Postgres service → `migrate deploy` → `seed:e2e` → `build` → `bunx lhci autorun` で `/browse` を 3 回計測（`preset: desktop`）。
+- **Clerk 回避策（要点）**: `clerkMiddleware` は dev インスタンス（`pk_test`）だと「dev browser cookie 不在」で FAPI への handshake リダイレクトを発行するため、偽ドメインだと collect が 400 で失敗する。本番インスタンス形式の**ダミー `pk_live` キー**（`pk_live_` + base64(`example.clerk.accounts.dev$`)、secret も `sk_live_` ダミー）にすると handshake を行わず、未認証リクエストは FAPI 未到達で `currentUser()` が null を返し公開ページが描画される（ローカル `next start` で `/browse` → 200・handshake なしを実証）。
+- **残課題**:
+  - assertions は **warn-only** ベースライン。数回観測後に `.lighthouserc.json` を `warn` → `error` 化して予算を厳格化（将来 issue 化）。
+  - **ホーム（`/`）は計測対象外**。`src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ `/` が 500（C1 とは独立した既存バグ）。当該バグ修正後に `/` を URL リストへ追加する。
 
 #### C2. Bundle Size の継続監視
 - **対象**: `.github/workflows/bundle.yml`
