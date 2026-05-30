@@ -41,15 +41,10 @@ export const getUserOrders = async (
     try {
         user = await currentUser();
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to retrieve current user";
         if (error instanceof Error) {
-            console.error("[Profile:getUserOrders] Error retrieving current user:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserOrders] Error retrieving current user:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserOrders] Unknown error retrieving current user:", error);
+            console.error("[Profile:getUserOrders] Error retrieving current user:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user orders.");
@@ -162,15 +157,10 @@ export const getUserOrders = async (
         // Fetch total count of orders for the query
         totalCount = await db.order.count({ where: whereClause });
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to fetch user orders";
         if (error instanceof Error) {
-            console.error("[Profile:getUserOrders] Error fetching orders:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserOrders] Error fetching orders:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserOrders] Unknown error fetching orders:", error);
+            console.error("[Profile:getUserOrders] Error fetching orders:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user orders.");
@@ -218,15 +208,10 @@ export const getUserPayments = async (
     try {
         user = await currentUser();
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to retrieve current user";
         if (error instanceof Error) {
-            console.error("[Profile:getUserPayments] Error retrieving current user:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserPayments] Error retrieving current user:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserPayments] Unknown error retrieving current user:", error);
+            console.error("[Profile:getUserPayments] Error retrieving current user:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user payments.");
@@ -305,15 +290,10 @@ export const getUserPayments = async (
         // Fetch total count of orders for the query
         totalCount = await db.paymentDetails.count({ where: whereClause });
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to fetch user payments";
         if (error instanceof Error) {
-            console.error("[Profile:getUserPayments] Error fetching payments:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserPayments] Error fetching payments:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserPayments] Unknown error fetching payments:", error);
+            console.error("[Profile:getUserPayments] Error fetching payments:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user payments.");
@@ -365,15 +345,10 @@ export const getUserReviews = async (
     try {
         user = await currentUser();
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to retrieve current user";
         if (error instanceof Error) {
-            console.error("[Profile:getUserReviews] Error retrieving current user:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserReviews] Error retrieving current user:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserReviews] Unknown error retrieving current user:", error);
+            console.error("[Profile:getUserReviews] Error retrieving current user:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user reviews.");
@@ -443,15 +418,10 @@ export const getUserReviews = async (
         // Fetch total count of orders for the query
         totalCount = await db.review.count({ where: whereClause });
     } catch (error: unknown) {
-        const message =
-            error instanceof Error ? error.message : "Failed to fetch user reviews";
         if (error instanceof Error) {
-            console.error("[Profile:getUserReviews] Error fetching reviews:", {
-                error: message,
-                stack: error.stack,
-            });
+            console.error("[Profile:getUserReviews] Error fetching reviews:", error.message, error.stack);
         } else {
-            console.error("[Profile:getUserReviews] Unknown error fetching reviews:", error);
+            console.error("[Profile:getUserReviews] Error fetching reviews:", error);
         }
         // 内部エラー詳細はログのみに留め、呼び出し側へは汎用メッセージを返す
         throw new Error("Failed to get user reviews.");
