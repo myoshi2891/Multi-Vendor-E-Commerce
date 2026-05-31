@@ -11,8 +11,8 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **124** (Jest unit/component 118 / Jest integration 1 / Playwright 5) — 2026-05-29 B3 で +1 |
-| テスト総数 | **1137 unit/component** (12 skipped) + **11 integration** — 2026-05-29 時点。Integration は `bun run test:integration` の別 config で実行 |
+| テストファイル総数 | **134** (Jest unit/component 128 / Jest integration 1 / Playwright 5) — 2026-05-31 「Unit 行✦化」で co-located unit テスト +10 |
+| テスト総数 | **1179 unit/component** (12 skipped) + **11 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **13 / 80 (16%)** |
@@ -30,7 +30,7 @@
 
 | カテゴリ ╲ ドメイン       | queries | api | pages | store | dashbd | shared | hooks | lib | seed | other |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Unit**           |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ✦   |  ✦  |  ✦   |   ✦   |
+| **Unit**           |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◐   |  ✦  |  ◐   |   ◐   |
 | **Integration**    |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◯   |  ✦  |  ◯   |   ◯   |
 | **E2E**            |   ◯    |  ◯  |  ✦   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
@@ -39,11 +39,17 @@
 | **API/Contract**   |   ◯    |  ✦  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Security**       |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ✦  |  ◯   |   ◯   |
 
+> **Unit 行の注記（2026-05-31 更新）**: `pages / store / dashbd / shared` を co-located unit テストで✦化（[QA_HANDOFF.md「2026-05-31」](./QA_HANDOFF.md) 参照）。残る非✦セルは構造的・スコープ外の理由による:
+> - **`api` ◯（構造的 N/A）**: `src/app/api/*` のテストは [`categorize.ts`](../../scripts/coverage-dashboard/categorize.ts) で必ず `api-contract` カテゴリへ分類されるため、Unit×api セルを埋める手段が存在しない。api の実カバーは **API/Contract 行 ✦**（`route.test.ts` × 6）が担保する。Issue #4 の意図的設計（カテゴリ上書き）を崩さないため categorize.ts は変更しない。
+> - **`seed` ◐（意図的に分母外）**: `collectCoverageFrom` をロジック中心の `src/**` に限定したため `prisma/seed` は計測されない。「seed 以外を✦化」という本タスクのスコープ通り。
+> - **`hooks` ◐**: `modal-provider.test.tsx` の OI-8 スキップ（CI flake 隔離）による `hasSkip`。
+> - **`other` ◐**: `scripts/coverage-dashboard/scan-tests.test.ts` がスキップ検出ロジックのテストデータとして `.skip` 文字列を含み、スキャナが自己参照的に `hasSkip` 誤検知する（Issue #7 と同種のドッグフードノイズ）。
+
 ### カテゴリ別カバー率
 
 | カテゴリ | カバー済み列 | カバー率 | 備考 |
 |---|---|---|---|
-| Unit | 5/10 | 50% | queries / hooks / lib / seed / other |
+| Unit | 6/10 | 60% | queries / pages / store / dashbd / shared / lib が✦。hooks / seed / other は ◐、api は構造的 ◯（上記注記参照） |
 | Integration | 3/10 | 30% | tests/component/ 配下のみ |
 | E2E | 1/10 | 10% | tests/e2e/ 配下 (5 spec) |
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
@@ -246,4 +252,5 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-28 | **B1+ Sprint 3 完了**: Tier 2 全 8 プリミティブ snapshot 追加（dropdown-menu / context-menu / menubar / sheet / drawer / tabs / toggle-group / table）。テスト総数 1069 → 1088 (+19)、Jest snapshot 93 → 112 (+19)。class-heavy な Menu snapshot を理由に 1 ファイル 1 commit で分離（Menu family 同梱は 200 行閾値超過）。context-menu は fireEvent.contextMenu / menubar は Root defaultValue で open 状態を再現 (commits `e6c79e3`〜`4429b8b`). |
 | 2026-05-28 | **B1+ Sprint 4 完了 / NA-NS-01 archive (B1+ 全完了)**: Tier 3 + 補助 全 11 プリミティブ snapshot 追加（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table）。テスト総数 1088 → 1103 (+15)、Jest snapshot 112 → 127 (+15)。**49/49 shadcn/ui プリミティブカバー達成**。インフラ: `tests-setup/jest.setup.ts` に IntersectionObserver / matchMedia / Element.scrollIntoView スタブ追加（embla-carousel-react / cmdk 基盤）。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-01 を削除しアーカイブ化 (commits `1b207ba`〜`8e429f2`, infra: `222d16e` / `ab07840`). |
 | 2026-05-28 | **B2 完了 / NA-NS-02 archive**: Stripe/PayPal Webhook ハンドラーを新規実装（`/api/webhooks/stripe` + `/api/webhooks/paypal`）。Stripe `webhooks.constructEvent` 署名検証 + PayPal `verify-webhook-signature` API 呼び出し（OAuth Bearer フロー）+ 冪等な PaymentDetails upsert を導入。固定ペイロードフィクスチャを `tests/fixtures/webhooks/{stripe,paypal}/` に配置し Contract テスト 30 ケース + metadata 検証 2 ケース追加。テスト総数 1103 → 1135 (+32)、スイート 110 → 112 (+2)。前提として `src/queries/stripe.ts` `paypal.ts` に `metadata.orderId` / `purchase_units[].custom_id` を付与し Webhook 相関を可能化 (commits `338ab41` / `1d69f0f` / `2321cd8`). |
+| 2026-05-31 | **Unit 行✦化（seed 除く）**: `jest.config.js` に logic-centric な `collectCoverageFrom` + `coverageReporters` と画像/スタイルの moduleNameMapper を追加。co-located unit テスト 10 ファイル（shared 3 / store 3 / dashboard 3 / pages 1、+42 テスト・+10 スイート、1137 → 1179）で Unit 行の `pages / store / dashbd / shared` を ◯ → ✦ に昇格。`api` は構造的 N/A（categorize で api-contract 固定）、`seed` は分母外（意図的）、`hooks`/`other` は既存スキップ起因の ◐。詳細は §2 注記 / [`QA_HANDOFF.md`](./QA_HANDOFF.md)。 |
 | 2026-05-29 | **B3 完了 / NA-NS-03 archive**: Cart → Checkout の状態橋渡しを Integration tier で初カバー。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト（Zustand persist hydration / shipping fee 一貫性 ITEM・WEIGHT・FIXED / `applyCoupon` 正常+4 異常パス / 未認証 redirect）。基盤として testcontainers + 専用 jest config (`jest.integration.config.js`) + 5 setup ヘルパーを新設（ADR-004 で技術選定の根拠を記録）。CI workflow に `integration-tests` ジョブを追加。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-03 を削除しアーカイブ化。Integration マトリクスの queries / pages / lib セルが ✦ に遷移. |

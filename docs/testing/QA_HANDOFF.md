@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-29 / **HEAD**: `2c80f57`
+> **最終更新**: 2026-05-31 / **HEAD**: `d55e796`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-29 時点）
+### テスト統計（2026-05-31 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1137** / 112 スイート（110 passed + 2 skipped）— 2026-05-28 B2 完了時点から変動なし |
+| Jest テスト総数 (unit/component) | **1179** / 122 スイート（120 passed + 2 skipped）— 2026-05-31 「Unit 行✦化」で +42 テスト / +10 スイート（co-located unit テスト 10 ファイル: shared 3 / store 3 / dashboard 3 / pages 1） |
 | Jest Integration テスト総数 | **11** / 1 スイート（`tests/integration/cart-checkout.test.ts`）— 2026-05-29 B3 完了で新設。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -19,6 +19,20 @@
 | 型エラー | **0 件** |
 | Skipped テスト | **12 件**（内訳: idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`] + modal-provider 9 件 [`src/providers/modal-provider.test.tsx` を CI flake 一時退避で `describe.skip` — 下記 OI-8 参照]）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **2 件**（idempotency suite + modal-provider.test.tsx file-level） |
+
+---
+
+## 2026-05-31: ダッシュボード Unit 行の✦化（seed 除く）
+
+[`COVERAGE_REPORT.md §2`](./COVERAGE_REPORT.md) ヒートマップの **Unit カテゴリ行**で◯だった `pages / store / dashbd / shared` を、各ドメインに co-located unit テストを追加して **✦（lcov ≥ 60%）に昇格**。
+
+- **基盤**: [`jest.config.js`](../../jest.config.js) に `collectCoverageFrom`（ロジック中心の `src/**`、型・定数・テストインフラ・純表示物を除外）と `coverageReporters: ["lcov", "text-summary"]` を追加。`prisma/seed` は `src` 外のため分母外。unit config の `moduleNameMapper` に画像・スタイルの空モックを追加（コンポーネント unit テストの基盤）。
+- **追加テスト（co-located, 10 ファイル / +42）**:
+  - shared-ui: `logo` / `color-wheel` / `theme-toggle`
+  - store-ui: `shared/pagination` / `shared/countdown` / `cards/rating-statistics`
+  - dashboard-ui: `shared/color-palette` / `forms/click-to-add` / `shared/images-preview-grid`
+  - pages: `app/dashboard/admin/categories/columns`
+- **Unit 行の最終状態**: `queries ✦ / pages ✦ / store ✦ / dashbd ✦ / shared ✦ / lib ✦`、`hooks ◐`（modal-provider の OI-8 スキップ）、`seed ◐`（logic-centric で意図的に分母外）、`other ◐`（`scan-tests.test.ts` が `.skip` 文字列を含むスキャナ自己参照、Issue #7 同種）、`api ◯`（**構造的 N/A**: `src/app/api/*` は categorize 上必ず `api-contract` になり Unit セルは埋まらない。実カバーは **API/Contract 行 ✦** が担保）。
 
 ---
 

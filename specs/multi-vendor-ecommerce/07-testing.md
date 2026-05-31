@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1137 unit/component tests across 112 suites (12 skipped), as of 2026-05-29.
+- 1179 unit/component tests across 122 suites (12 skipped), as of 2026-05-31.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
 - 11 integration tests across 1 suite (`tests/integration/cart-checkout.test.ts`)
