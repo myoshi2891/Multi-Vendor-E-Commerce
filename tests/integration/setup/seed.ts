@@ -25,6 +25,8 @@ import {
     type PrismaClient,
     type Product,
     type ProductVariant,
+    type ProductVariantImage,
+    type ShippingAddress,
     type Size,
     type Store,
     type SubCategory,
@@ -148,15 +150,24 @@ export interface SeedProductInput {
 }
 
 /**
- * Create a product with a product variant and a size, inserting all three records into the database.
+ * Create a product with a product variant, a size, and one variant image, inserting all four records into the database.
+ *
+ * 画像 (`ProductVariantImage`) を必ず 1 件作る理由: `placeOrder`
+ * (`src/queries/user.ts`) は `variant.images[0].url` を参照するため、画像が無いと
+ * `undefined.url` でクラッシュする。Integration テストで実フローを通すために必須。
  *
  * @param input - Creation inputs. Required: `storeId`, `categoryId`, `subCategoryId`. Optional: `shippingFeeMethod` (defaults to `ShippingFeeMethod.ITEM`), `weight` for the variant (defaults to `1`), `sizePrice` (defaults to `100`), and `sizeQuantity` (defaults to `10`).
- * @returns An object containing the created `product`, its `variant`, and the associated `size`.
+ * @returns An object containing the created `product`, its `variant`, the associated `size`, and the variant `image`.
  */
 export async function seedProductWithVariantAndSize(
     db: PrismaClient,
     input: SeedProductInput
-): Promise<{ product: Product; variant: ProductVariant; size: Size }> {
+): Promise<{
+    product: Product;
+    variant: ProductVariant;
+    size: Size;
+    image: ProductVariantImage;
+}> {
     const suffix = uniq();
     const product = await db.product.create({
         data: {
@@ -191,7 +202,16 @@ export async function seedProductWithVariantAndSize(
         },
     });
 
-    return { product, variant, size };
+    // placeOrder が参照する variant.images[0].url を満たすため画像を 1 件作成
+    const image = await db.productVariantImage.create({
+        data: {
+            url: `https://example.test/variant-${suffix}.png`,
+            alt: `Variant ${suffix} image`,
+            productVariantId: variant.id,
+        },
+    });
+
+    return { product, variant, size, image };
 }
 
 // ----------------------------------------------------------------------------
@@ -346,6 +366,47 @@ export async function seedCountry(
         data: {
             name: `Country ${suffix}`,
             code: `C${suffix.slice(0, 2)}`,
+            ...overrides,
+        },
+    });
+}
+
+// ----------------------------------------------------------------------------
+// ShippingAddress
+// ----------------------------------------------------------------------------
+
+export interface SeedShippingAddressInput {
+    userId: string;
+    countryId: string;
+    overrides?: Partial<Prisma.ShippingAddressUncheckedCreateInput>;
+}
+
+/**
+ * Create and persist a ShippingAddress for a user/country, used by `placeOrder`.
+ *
+ * `placeOrder` (`src/queries/user.ts`) は引数 `shippingAddress` の `id` と `countryId`
+ * を参照し、`country.findUnique({ where: { id: countryId } })` で配送詳細を解決する。
+ * そのため Integration テストでは実 DB 上に有効な ShippingAddress を作る必要がある。
+ *
+ * @param input - Seed data: required `userId` and `countryId`; optional `overrides` merged into the create data.
+ * @returns The created `ShippingAddress` record
+ */
+export async function seedShippingAddress(
+    db: PrismaClient,
+    { userId, countryId, overrides = {} }: SeedShippingAddressInput
+): Promise<ShippingAddress> {
+    const suffix = uniq();
+    return db.shippingAddress.create({
+        data: {
+            firstName: "Test",
+            lastName: `Buyer ${suffix}`,
+            phone: "000-0000-0000",
+            address1: "1 Integration Way",
+            state: "Test State",
+            city: "Test City",
+            zip_code: "00000",
+            userId,
+            countryId,
             ...overrides,
         },
     });
