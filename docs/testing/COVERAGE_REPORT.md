@@ -11,8 +11,8 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **134** (Jest unit/component 128 / Jest integration 1 / Playwright 5) — 2026-05-31 「Unit 行✦化」で co-located unit テスト +10 |
-| テスト総数 | **1179 unit/component** (12 skipped) + **11 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行 |
+| テストファイル総数 | **135** (Jest unit/component 128 / Jest integration 2 / Playwright 5) — 2026-05-31 placeOrder 統合テスト +1 |
+| テスト総数 | **1179 unit/component** (12 skipped) + **17 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **13 / 80 (16%)** |
@@ -116,6 +116,11 @@
 - **達成内容**: `tests/integration/cart-checkout.test.ts` を新設し、4 シナリオ計 11 テストを実装。Scenario 1 (Zustand persist hydration / 2 テスト) + Scenario 2 (shipping fee 一貫性 ITEM/WEIGHT/FIXED / 3 テスト) + Scenario 3 (`applyCoupon` server action: 正常 + 4 異常パス / 5 テスト) + Scenario 4 (未認証 `/checkout` → `/cart` redirect / 1 テスト)。基盤として testcontainers-managed PostgreSQL + 専用 jest config (`jest.integration.config.js`) + setup ヘルパー (`tests/integration/setup/{container,teardown,db,reset-db,seed,file-mock,style-mock}.{ts,js}`) を整備し、ADR-004 で技術選定の根拠 (testcontainers vs docker-compose vs services.postgres vs Neon vs SQLite) を記録
 - **CI**: `.github/workflows/ci.yml` に `integration-tests` ジョブを追加。testcontainers が runner の Docker daemon を直接利用するため `services:` ブロック不要
 - **コスト**: ~3.3 秒 / 11 テスト (testcontainers 起動含む)。`maxWorkers: 1` 直列実行
+
+#### ~~B3.1. placeOrder（注文確定）の Integration テスト~~ ✅ 完了 2026-05-31
+- **達成内容**: B3 基盤を踏襲し、最もトランザクション依存の高い `placeOrder`（`src/queries/user.ts`）を実 DB で初カバー。`tests/integration/order-placement.test.ts` に 6 シナリオ（単一店舗 FK・Decimal 集計 / 複数店舗 OrderGroup 分割 / 在庫キャップ `Math.min` / クーポン店舗限定割引 / 所有権ガード IDOR・副作用なし / 不正 variant·size 組み合わせの拒否）。基盤として `seed.ts` に ProductVariantImage 作成（`placeOrder` が `variant.images[0].url` を参照）と `seedShippingAddress` を追加。本体コードは無変更。Integration 11 → 17 / スイート 1 → 2 (commits `78a20c9` / `ae28157`)
+- **categorize ドリフト（注記）**: `scripts/coverage-dashboard/categorize.ts` は Integration カテゴリを `tests/component/` のみにマップするため、`tests/integration/` 配下（cart-checkout / order-placement）はダッシュボード上 **unit × other セル**に分類される（マトリクスのセル数は 17/80 のまま不変）。本タスクでは categorize.ts と 27 件の `categorize.test.ts` を変更せず注記にとどめた（Issue #4 の意図的設計を維持）。Integration 行を実体と一致させる categorize 改修は別タスク化が妥当
+- **モック unit との差分**: 既存 `user.test.ts` は `$transaction` をモックしコールバックを直接実行するため、原子性・実 FK 制約・Postgres の Decimal 精度・実在庫キャップを構造的に検証できない。本テストはこれらを実 DB で担保する
 
 ---
 
@@ -253,4 +258,5 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-28 | **B1+ Sprint 4 完了 / NA-NS-01 archive (B1+ 全完了)**: Tier 3 + 補助 全 11 プリミティブ snapshot 追加（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table）。テスト総数 1088 → 1103 (+15)、Jest snapshot 112 → 127 (+15)。**49/49 shadcn/ui プリミティブカバー達成**。インフラ: `tests-setup/jest.setup.ts` に IntersectionObserver / matchMedia / Element.scrollIntoView スタブ追加（embla-carousel-react / cmdk 基盤）。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-01 を削除しアーカイブ化 (commits `1b207ba`〜`8e429f2`, infra: `222d16e` / `ab07840`). |
 | 2026-05-28 | **B2 完了 / NA-NS-02 archive**: Stripe/PayPal Webhook ハンドラーを新規実装（`/api/webhooks/stripe` + `/api/webhooks/paypal`）。Stripe `webhooks.constructEvent` 署名検証 + PayPal `verify-webhook-signature` API 呼び出し（OAuth Bearer フロー）+ 冪等な PaymentDetails upsert を導入。固定ペイロードフィクスチャを `tests/fixtures/webhooks/{stripe,paypal}/` に配置し Contract テスト 30 ケース + metadata 検証 2 ケース追加。テスト総数 1103 → 1135 (+32)、スイート 110 → 112 (+2)。前提として `src/queries/stripe.ts` `paypal.ts` に `metadata.orderId` / `purchase_units[].custom_id` を付与し Webhook 相関を可能化 (commits `338ab41` / `1d69f0f` / `2321cd8`). |
 | 2026-05-31 | **Unit 行✦化（seed 除く）**: `jest.config.js` に logic-centric な `collectCoverageFrom` + `coverageReporters` と画像/スタイルの moduleNameMapper を追加。co-located unit テスト 10 ファイル（shared 3 / store 3 / dashboard 3 / pages 1、+42 テスト・+10 スイート、1137 → 1179）で Unit 行の `pages / store / dashbd / shared` を ◯ → ✦ に昇格。`api` は構造的 N/A（categorize で api-contract 固定）、`seed` は分母外（意図的）、`hooks`/`other` は既存スキップ起因の ◐。詳細は §2 注記 / [`QA_HANDOFF.md`](./QA_HANDOFF.md)。 |
+| 2026-05-31 | **B3.1 完了**: 注文確定 `placeOrder` を実 DB 統合テストで初カバー。`tests/integration/order-placement.test.ts`（6 シナリオ）。`seed.ts` に ProductVariantImage 作成 + `seedShippingAddress` を追加（本体無変更）。Integration 11 → 17 / スイート 1 → 2、テストファイル総数 134 → 135。`tests/integration/` は categorize 上 unit×other に分類されるドリフトを注記（マトリクス 17/80 不変） (commits `78a20c9` / `ae28157`). |
 | 2026-05-29 | **B3 完了 / NA-NS-03 archive**: Cart → Checkout の状態橋渡しを Integration tier で初カバー。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト（Zustand persist hydration / shipping fee 一貫性 ITEM・WEIGHT・FIXED / `applyCoupon` 正常+4 異常パス / 未認証 redirect）。基盤として testcontainers + 専用 jest config (`jest.integration.config.js`) + 5 setup ヘルパーを新設（ADR-004 で技術選定の根拠を記録）。CI workflow に `integration-tests` ジョブを追加。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-03 を削除しアーカイブ化。Integration マトリクスの queries / pages / lib セルが ✦ に遷移. |

@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-05-31 / **HEAD**: `d55e796`
+> **最終更新**: 2026-05-31 / **HEAD**: `ae28157`
 
 ---
 
@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|-----|
 | Jest テスト総数 (unit/component) | **1179** / 122 スイート（120 passed + 2 skipped）— 2026-05-31 「Unit 行✦化」で +42 テスト / +10 スイート（co-located unit テスト 10 ファイル: shared 3 / store 3 / dashboard 3 / pages 1） |
-| Jest Integration テスト総数 | **11** / 1 スイート（`tests/integration/cart-checkout.test.ts`）— 2026-05-29 B3 完了で新設。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -33,6 +33,27 @@
   - dashboard-ui: `shared/color-palette` / `forms/click-to-add` / `shared/images-preview-grid`
   - pages: `app/dashboard/admin/categories/columns`
 - **Unit 行の最終状態**: `queries ✦ / pages ✦ / store ✦ / dashbd ✦ / shared ✦ / lib ✦`、`hooks ◐`（modal-provider の OI-8 スキップ）、`seed ◐`（logic-centric で意図的に分母外）、`other ◐`（`scan-tests.test.ts` が `.skip` 文字列を含むスキャナ自己参照、Issue #7 同種）、`api ◯`（**構造的 N/A**: `src/app/api/*` は categorize 上必ず `api-contract` になり Unit セルは埋まらない。実カバーは **API/Contract 行 ✦** が担保）。
+
+---
+
+## 2026-05-31: placeOrder の実 DB 統合テスト（Integration tier 拡充）
+
+B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainers + 実 PostgreSQL）を踏襲し、
+最もトランザクション依存の高い**注文確定フロー `placeOrder`（`src/queries/user.ts`）** を初めて実 DB で検証。
+
+- **追加テスト**: `tests/integration/order-placement.test.ts`（6 シナリオ / 1 スイート）。
+  単一店舗 FK・Decimal 集計 / 複数店舗 OrderGroup 分割 / 在庫キャップ（`Math.min`）/ クーポン店舗限定割引 /
+  所有権ガード（IDOR・副作用なし）/ 不正 variant·size 組み合わせの拒否。
+- **基盤拡張**: `tests/integration/setup/seed.ts` に ProductVariantImage 作成（`placeOrder` が `variant.images[0].url` を参照）
+  と `seedShippingAddress` を追加（commit `78a20c9`）。本体コード（`src/`）は無変更。
+- **統計**: Integration 11 → **17** / スイート 1 → **2**。`bun run test`（unit/component 1179）は変動なし。
+  ダッシュボードのテストファイル総数 134 → 135。
+- **categorize ドリフト（注記のみ）**: `scripts/coverage-dashboard/categorize.ts` は Integration カテゴリを
+  `tests/component/` のみにマップするため、`tests/integration/` 配下（cart-checkout / order-placement）は
+  ダッシュボード上 **unit × other セル**に分類される（マトリクスのセル数は 17/80 のまま不変）。
+  本タスクでは categorize.ts と `categorize.test.ts` は変更せず注記にとどめた（Issue #4 の意図的設計を維持）。
+  Integration 行を実体と一致させる categorize 改修は別タスク化が妥当。
+- 参照コミット: `78a20c9`（seed 基盤）/ `ae28157`（テスト本体）
 
 ---
 
