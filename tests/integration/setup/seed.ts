@@ -150,14 +150,12 @@ export interface SeedProductInput {
 }
 
 /**
- * Create a product with a product variant, a size, and one variant image, inserting all four records into the database.
+ * Create a Product with a ProductVariant, a Size, and one ProductVariantImage, inserting all four records into the database.
  *
- * 画像 (`ProductVariantImage`) を必ず 1 件作る理由: `placeOrder`
- * (`src/queries/user.ts`) は `variant.images[0].url` を参照するため、画像が無いと
- * `undefined.url` でクラッシュする。Integration テストで実フローを通すために必須。
+ * Ensures a variant image is created because the application code expects `variant.images[0].url` to exist during order flows.
  *
  * @param input - Creation inputs. Required: `storeId`, `categoryId`, `subCategoryId`. Optional: `shippingFeeMethod` (defaults to `ShippingFeeMethod.ITEM`), `weight` for the variant (defaults to `1`), `sizePrice` (defaults to `100`), and `sizeQuantity` (defaults to `10`).
- * @returns An object containing the created `product`, its `variant`, the associated `size`, and the variant `image`.
+ * @returns An object containing the created `product`, its `variant`, the associated `size`, and the created variant `image`.
  */
 export async function seedProductWithVariantAndSize(
     db: PrismaClient,
@@ -382,13 +380,12 @@ export interface SeedShippingAddressInput {
 }
 
 /**
- * Create and persist a ShippingAddress for a user/country, used by `placeOrder`.
+ * Create a persistent ShippingAddress for a given user and country to use in integration tests.
  *
- * `placeOrder` (`src/queries/user.ts`) は引数 `shippingAddress` の `id` と `countryId`
- * を参照し、`country.findUnique({ where: { id: countryId } })` で配送詳細を解決する。
- * そのため Integration テストでは実 DB 上に有効な ShippingAddress を作る必要がある。
+ * This address is suitable for use by `placeOrder`, which resolves shipping details from the
+ * shipping address `id` and `countryId`.
  *
- * @param input - Seed data: required `userId` and `countryId`; optional `overrides` merged into the create data.
+ * @param input - Seed data: required `userId` and `countryId`; optional `overrides` merged into the created record.
  * @returns The created `ShippingAddress` record
  */
 export async function seedShippingAddress(
