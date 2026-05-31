@@ -5,12 +5,13 @@
 
 ---
 
-## 現在の状態（2026-05-28 時点）
+## 現在の状態（2026-05-31 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1137テスト / 112スイート（**12 skipped**、全パス）— うち 9 件は modal-provider の CI flake 一時退避（既知の課題 OI-8）、2026-05-28 に **B2 完了**（Stripe/PayPal Webhook ハンドラー Contract テスト追加で +32）、レビュー指摘対応で +2（PayPal verify HTTP エラー / `$transaction` アトミック化検証）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
+| Jestユニットテスト | 1179テスト / 122スイート（**12 skipped**、120 passed）— 2026-05-31 「Unit 行✦化（seed 除く）」で co-located unit テスト 10 ファイル（shared/store/dashboard/pages）追加 +42 テスト・+10 スイート（1137→1179）。うち 9 skip は modal-provider の CI flake 一時退避（OI-8）。2026-05-28 **B2 完了**（Stripe/PayPal Webhook Contract +32）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
+| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -154,6 +155,16 @@
 - **副産物の発見（C1 と独立した既存バグ）**: ホーム（`/`）は `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ **500**（本番 SSR でも再現する可能性）。このため lhci の URL から `/` を除外し `/browse` のみとした。featured.tsx 修正は別タスク。
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
+
+### 2026-05-31: B3.1 — placeOrder（注文確定）の実 DB 統合テスト
+
+- **背景**: B3 で `tests/integration/` 基盤が整ったが、実 DB 統合テストは cart-checkout 1 ファイルのみ。最もトランザクション依存の高い注文確定フロー `placeOrder`（`src/queries/user.ts`）はモック Prisma の unit テストしか持たず、原子性・実 FK・Decimal 精度・在庫キャップが構造的に未検証だった。
+- **実装内容**:
+  - `tests/integration/order-placement.test.ts`（6 シナリオ / 1 スイート）: 単一店舗 FK・Decimal 集計 / 複数店舗 OrderGroup 分割 / 在庫キャップ（`Math.min`）/ クーポン店舗限定割引 / 所有権ガード（IDOR・副作用なし）/ 不正 variant·size 組み合わせの拒否。
+  - 基盤拡張: `tests/integration/setup/seed.ts` に ProductVariantImage 作成（`placeOrder` が `variant.images[0].url` を参照）と `seedShippingAddress` を追加。本体コード（`src/`）は無変更。
+- **統計**: Integration 11 → 17 / スイート 1 → 2。`bun run test`（unit/component 1179）は変動なし。ダッシュボードのテストファイル総数 134 → 135。
+- **categorize ドリフト（注記のみ）**: `tests/integration/` は categorize 上 unit×other に分類されるため Integration 行には出ない（マトリクス 17/80 不変）。categorize.ts は変更せず注記にとどめた。
+- **コミット**: `78a20c9`（seed 基盤）/ `ae28157`（テスト本体）/ docs 同期（本コミット）
 
 ### 2026-05-29: B3 完了 — Cart → Checkout Integration テスト / NA-NS-03 アーカイブ
 
