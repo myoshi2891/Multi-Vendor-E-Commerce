@@ -4,6 +4,10 @@ module.exports = {
     testEnvironment: "node",
     setupFilesAfterEnv: ["<rootDir>/tests-setup/jest.setup.ts"],
     moduleNameMapper: {
+        // 静的アセット (画像・スタイル) の import を空モックに通す。
+        // コンポーネント unit テストが public/ の画像や CSS を import するため必須。
+        "\\.(webp|png|jpg|jpeg|gif|svg)$": "<rootDir>/tests/integration/setup/file-mock.js",
+        "\\.(css|less|scss|sass)$": "<rootDir>/tests/integration/setup/style-mock.js",
         "^@/public/(.*)$": "<rootDir>/public/$1",
         "^@/(.*)$": "<rootDir>/src/$1",
     },
