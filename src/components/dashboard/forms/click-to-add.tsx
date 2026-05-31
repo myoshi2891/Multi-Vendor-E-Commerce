@@ -82,7 +82,7 @@ const ClickToAddInputs = <T extends Detail>({
             <button
                 onClick={onClick}
                 type="button"
-                title="Add nre detail"
+                title="Add new detail"
                 className="group cursor-pointer outline-none duration-300 hover:rotate-90"
             >
                 {/* Plus icon */}

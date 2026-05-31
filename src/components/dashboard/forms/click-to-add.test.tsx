@@ -46,8 +46,8 @@ describe("ClickToAddInputs", () => {
         // Arrange
         render(<Harness initial={[{ size: "M", quantity: 3 }]} />);
 
-        // Act: PlusButton (title="Add nre detail") を押す
-        fireEvent.click(screen.getAllByTitle("Add nre detail")[0]);
+        // Act: PlusButton (title="Add new detail") を押す
+        fireEvent.click(screen.getAllByTitle("Add new detail")[0]);
 
         // Assert: 行が 1 → 2 に増える
         expect(screen.getByTestId("count")).toHaveTextContent("2");
@@ -100,7 +100,7 @@ describe("ClickToAddInputs", () => {
         render(<Harness initial={[]} />);
 
         // Assert: 空配列時は単独の PlusButton
-        expect(screen.getByTitle("Add nre detail")).toBeInTheDocument();
+        expect(screen.getByTitle("Add new detail")).toBeInTheDocument();
         expect(screen.getByTestId("count")).toHaveTextContent("0");
     });
 });
