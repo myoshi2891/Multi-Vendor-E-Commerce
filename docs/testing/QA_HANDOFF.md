@@ -134,7 +134,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-02 時点）
+### 🔴 現在アクティブな残課題（優先度順・2026-06-02 時点） {#active-open-issues}
 
 > 解消済み OI（OI-1〜OI-7）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件のみ。**
 
@@ -182,7 +182,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 残課題
 
-- 現在、アクティブな残課題として **OI-8**（CI flake）および **OI-9**（ホーム `/` SSR 500）がオープンです（詳細は[アクティブな残課題テーブル](#現在アクティブな残課題優先度順2026-06-02-時点)および [ADR-003](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照）。
+- 現在、アクティブな残課題として **OI-8**（CI flake）および **OI-9**（ホーム `/` SSR 500）がオープンです（詳細は[アクティブな残課題テーブル](#active-open-issues)および [ADR-003](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
