@@ -15,6 +15,7 @@
 | **状態管理** | Zustand（カートストア） |
 | **テスト** | Jest（ユニット）+ Playwright（E2E） |
 | **Lint** | ESLint 9（flat config: `eslint.config.mjs`） |
+| **静的解析** | SonarCloud（CI）/ SonarQube Community（ローカル: `docker-compose.sonar.yml`）。設計判断は [ADR-005](../../docs/architecture/decisions/005-sonarqube-static-analysis.md) |
 | **パッケージマネージャー** | Bun |
 
 ---
@@ -38,6 +39,7 @@
 | **URL パラメータ正規化** | ページ番号など数値パラメータは `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1` で正規化すること（`Infinity` / `NaN` / 小数を排除） |
 | **CSRF** | Next.js 16 Server Actions の Origin/Host 検証と Clerk `SameSite=Lax` セッション Cookie に依拠する。`src/lib/csrf*` 等のトークンモジュールを新設しないこと。例外時は [ADR 001](../../docs/architecture/decisions/001-csrf-policy.md) を Superseded で更新する |
 | **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する |
+| **静的解析（SonarCloud）** | CI の `sonarcloud` ジョブは **非ブロッキング**（`continue-on-error: true`、`SONAR_TOKEN` 未登録時は skip）。カバレッジは `jest.config.js` の `--coverage` が出す `coverage/lcov.info` を `sonar-project.properties` 経由で取り込む。`sonar.coverage.exclusions` は `collectCoverageFrom` の除外と**一致**させること（分母の二重計上を防ぐ）。Quality Gate のブロッキング化は New Code 基準を整えてから（[ADR-005](../../docs/architecture/decisions/005-sonarqube-static-analysis.md)） |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
 ---
