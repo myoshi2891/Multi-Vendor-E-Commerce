@@ -25,6 +25,8 @@ describe("categorize - domain detection", () => {
         ["tests/component/dashboard/header.test.tsx", "dashboard-ui"],
         ["tests/component/shared/country-selector.test.tsx", "shared-ui"],
         ["tests/e2e/purchase-flow.spec.ts", "pages"],
+        ["tests/integration/cart-checkout.test.ts", "queries"],
+        ["tests/integration/order-placement.test.ts", "queries"],
     ])("%s -> domain=%s", (path, expectedDomain) => {
         const r = categorize(mk(path, path.includes("tests/e2e") ? "playwright" : "jest"));
         expect(r.domain).toBe(expectedDomain);
@@ -51,6 +53,15 @@ describe("categorize - category detection", () => {
     it("tests/component/ 配下は category=integration", () => {
         expect(
             categorize(mk("tests/component/store/cart.test.tsx")).category
+        ).toBe("integration");
+    });
+
+    it("tests/integration/ 配下は category=integration (実 DB 統合テスト)", () => {
+        expect(
+            categorize(mk("tests/integration/cart-checkout.test.ts")).category
+        ).toBe("integration");
+        expect(
+            categorize(mk("tests/integration/order-placement.test.ts")).category
         ).toBe("integration");
     });
 
