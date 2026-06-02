@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21 / **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-06-02）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -15,8 +15,8 @@
 | テスト総数 | **1179 unit/component** (12 skipped) + **17 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **13 / 80 (16%)** |
-| lcov エントリ数 | **96** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| カバー済みセル | **17 / 80 (21%)** — 2026-06-02 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `13/80 (16%)` はダッシュボードに対して未同期だったため是正） |
+| lcov エントリ数 | **254** (2026-06-02 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -122,6 +122,20 @@
 - **categorize ドリフト（注記）**: `scripts/coverage-dashboard/categorize.ts` は Integration カテゴリを `tests/component/` のみにマップするため、`tests/integration/` 配下（cart-checkout / order-placement）はダッシュボード上 **unit × other セル**に分類される（マトリクスのセル数は 17/80 のまま不変）。本タスクでは categorize.ts と 27 件の `categorize.test.ts` を変更せず注記にとどめた（Issue #4 の意図的設計を維持）。Integration 行を実体と一致させる categorize 改修は別タスク化が妥当
 - **モック unit との差分**: 既存 `user.test.ts` は `$transaction` をモックしコールバックを直接実行するため、原子性・実 FK 制約・Postgres の Decimal 精度・実在庫キャップを構造的に検証できない。本テストはこれらを実 DB で担保する
 
+#### D1. ダッシュボード Integration 行の実体化（categorize 改修）🆕 2026-06-02 起票
+- **対象**: `scripts/coverage-dashboard/categorize.ts` + `categorize.test.ts`
+- **背景**: 上記 B3.1 で記録した「categorize ドリフト」の恒久対応。`tests/integration/` が `unit × other` セルに誤分類され、ヒートマップ Integration 行が実体（実 DB での placeOrder / cart-checkout 検証）を反映しない
+- **コスト感**: **S**
+- **期待効果**: Integration 行を実カバーへ昇格させダッシュボードの信頼性を回復。Issue #4 の api→api-contract 上書き設計は維持
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」D1](./QA_HANDOFF.md)
+
+#### D2. Performance 行の着手（OI-9 修正 → lhci に `/` 追加）🆕 2026-06-02 起票
+- **対象**: `src/components/store/home/main/featured.tsx` + `.lighthouserc.json` / `lhci.yml`
+- **背景**: 下記 C1 残課題「ホーム `/` は OI-9（featured.tsx の SSR window バグ）で計測対象外」の解消。`/` を予算化し売上導線トップの退行を検知
+- **コスト感**: **M**
+- **期待効果**: Performance 0% 行を前進。OI-9 クローズで本番 SSR の 500 リスクも同時に解消
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」D2](./QA_HANDOFF.md)
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term
@@ -151,6 +165,11 @@
 - **推奨ツール**: `@next/bundle-analyzer` + `size-limit`
 - **コスト感**: **S**
 - **期待効果**: 依存追加による初期ロードの膨張を抑制
+
+#### (backlog) E2E 行の拡大
+- **対象**: `tests/e2e/`（store / dashboard フロー）
+- **背景**: ヒートマップ E2E 行は現状 `pages` のみ✦（10%）。seller onboarding 実行・order 管理など store/dashboard 主要フローは spec ファイルは存在するが `seed:e2e` 前提で未安定実行
+- **方針**: 形式 Next Action（`render-html.ts` の `NEXT_ACTIONS`）には未起票。**OI-8（CI flake）解消後**に安定実行の目処が立った段階で起票判断（過剰起票回避）
 
 ---
 
