@@ -82,8 +82,8 @@ make sonar-up
 # 2. ホスト側でカバレッジを生成（lcov を scanner が取り込む）
 bun run test -- --coverage     # coverage/lcov.info を出力
 
-# 3. 解析を実行
-SONAR_TOKEN=<発行したトークン> make sonar-scan
+# 3. 解析を実行（.env.docker の SONAR_TOKEN が自動的に渡される）
+make sonar-scan
 #    → http://localhost:9000 のプロジェクト multi-vendor-ecommerce に結果が表示される
 
 # 4. 停止（データは保持。再起動時は再ログイン不要）

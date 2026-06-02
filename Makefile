@@ -10,7 +10,7 @@
 
 COMPOSE := docker compose
 APP := $(COMPOSE) exec app
-SONAR_COMPOSE := docker compose -f docker-compose.sonar.yml
+SONAR_COMPOSE := docker compose -f docker-compose.sonar.yml $(if $(wildcard .env.docker),--env-file .env.docker,)
 
 .DEFAULT_GOAL := help
 

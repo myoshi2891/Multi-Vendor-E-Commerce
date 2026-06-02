@@ -58,6 +58,13 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    healthcheck:
+      # /api/system/status が {"status":"UP"} を返すまで待機（起動完了の最終確認）
+      test: ["CMD-SHELL", "curl -fs http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
 
   # 解析実行用ワンショットコンテナ。`profiles: [scan]` のため `up` では起動せず、
   # `make sonar-scan` (docker compose run scanner) のときだけ動く。
@@ -68,7 +75,8 @@ services:
     container_name: multivendor-sonar-scanner
     profiles: ["scan"]
     depends_on:
-      - sonarqube
+      sonarqube:
+        condition: service_healthy
     environment:
       SONAR_HOST_URL: http://sonarqube:9000
       SONAR_TOKEN: ${SONAR_TOKEN:-}
