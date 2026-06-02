@@ -101,6 +101,26 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // /browse の LCP/CLS/TBT を計測 (warn-only ベースライン)。Clerk は pk_live
     // ダミーキーで dev handshake を回避。ホーム (/) は featured.tsx の SSR バグ
     // (window 参照) で 500 のため除外、修正後に追加予定。
+    //
+    // D1 / D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
+    // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D1 / D2 と
+    // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
+    {
+        priority: "medium",
+        title: "ダッシュボード Integration 行の実体化 (categorize 改修)",
+        target: "scripts/coverage-dashboard/categorize.ts",
+        tool: "categorize.ts + categorize.test.ts (TDD)",
+        cost: "S",
+        impact: "tests/integration/ の unit×other 誤分類を解消し Integration 行を実カバーへ昇格",
+    },
+    {
+        priority: "medium",
+        title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
+        target: "src/components/store/home/main/featured.tsx + .lighthouserc.json",
+        tool: "遅延 useState 初期化 + @lhci/cli",
+        cost: "M",
+        impact: "ホーム / の SSR 500 を解消し売上導線トップを LCP/CLS/TBT で予算化",
+    },
     {
         priority: "low",
         title: "Bundle Size の継続監視",
