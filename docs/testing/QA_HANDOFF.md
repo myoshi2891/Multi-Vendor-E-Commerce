@@ -179,9 +179,9 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 **B1+ Sprint 3（Tier 2 全 8 プリミティブ）** は 2026-05-28 に完了（`e6c79e3`〜`4429b8b`、テスト総数 1069 → 1088 / +19、snapshot 93 → 112 / +19）。
 **B1+ Sprint 4（Tier 3 + 補助 全 11 プリミティブ）** は 2026-05-28 に完了（`1b207ba`〜`8e429f2`、テスト総数 1088 → 1103 / +15、snapshot 112 → 127 / +15）。**B1+ 全完了**：49/49 shadcn/ui プリミティブが snapshot テストでカバーされ、NA-NS-01 をアーカイブ化。
 
-### 残課題（低優先）
+### 残課題
 
-- 直近の OI はすべてクローズ済み（2026-05-26、A4 残課題 `getStoreOrders` の `requireStoreOwner` 統合完了）。
+- 現在、アクティブな残課題として **OI-8**（CI flake）および **OI-9**（ホーム `/` SSR 500）がオープンです（詳細は[アクティブな残課題テーブル](#現在アクティブな残課題優先度順2026-06-02-時点)および [ADR-003](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
