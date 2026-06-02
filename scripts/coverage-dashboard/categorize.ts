@@ -66,6 +66,8 @@ const DOMAIN_RULES: ReadonlyArray<{ match: (p: string) => boolean; domain: Domai
     { match: (p) => p.startsWith("src/app/api/"), domain: "api-routes" },
     { match: (p) => p.startsWith("src/app/"), domain: "pages" },
     { match: (p) => p.startsWith("tests/e2e/"), domain: "pages" },
+    // tests/integration/ は実 DB 統合テスト。SUT は src/queries/ (placeOrder / applyCoupon 等) のため queries 列へマップ
+    { match: (p) => p.startsWith("tests/integration/"), domain: "queries" },
     { match: (p) => p.startsWith("src/components/store/") || p.startsWith("tests/component/store/"), domain: "store-ui" },
     { match: (p) => p.startsWith("src/components/dashboard/") || p.startsWith("tests/component/dashboard/"), domain: "dashboard-ui" },
     { match: (p) => p.startsWith("src/components/shared/") || p.startsWith("src/components/ui/") || p.startsWith("tests/component/shared/"), domain: "shared-ui" },
@@ -108,6 +110,7 @@ const PLAYWRIGHT_CATEGORY_MAP: ReadonlyArray<{ prefix: string; category: Categor
  *   - paths starting with `tests/e2e/visual/` → `visual-snapshot`
  *   - paths starting with `tests/e2e/a11y/` → `a11y`
  *   - otherwise → `e2e`
+ * - paths starting with `tests/integration/` → `integration`
  * - paths starting with `tests/component/` → `integration`
  * - paths starting with `src/app/api/` → `api-contract`
  * - `src/middleware.test.ts` or paths starting with `src/utils/sanitize` → `security`
@@ -126,6 +129,7 @@ function detectCategory(test: ScannedTest): CategoryId {
         return "e2e";
     }
 
+    if (p.startsWith("tests/integration/")) return "integration";
     if (p.startsWith("tests/component/")) return "integration";
     if (p.startsWith("src/app/api/")) return "api-contract";
 

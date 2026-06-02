@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21 / **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-06-02）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -15,8 +15,8 @@
 | テスト総数 | **1179 unit/component** (12 skipped) + **17 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **13 / 80 (16%)** |
-| lcov エントリ数 | **96** (2026-05-24 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| カバー済みセル | **17 / 80 (21%)** — 2026-06-02 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `13/80 (16%)` はダッシュボードに対して未同期だったため是正） |
+| lcov エントリ数 | **254** (2026-06-02 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -31,7 +31,7 @@
 | カテゴリ ╲ ドメイン       | queries | api | pages | store | dashbd | shared | hooks | lib | seed | other |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Unit**           |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◐   |  ✦  |  ◐   |   ◐   |
-| **Integration**    |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◯   |  ✦  |  ◯   |   ◯   |
+| **Integration**    |   ◐    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◯   |  ✦  |  ◯   |   ◯   |
 | **E2E**            |   ◯    |  ◯  |  ✦   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **a11y**           |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
@@ -44,13 +44,15 @@
 > - **`seed` ◐（意図的に分母外）**: `collectCoverageFrom` をロジック中心の `src/**` に限定したため `prisma/seed` は計測されない。「seed 以外を✦化」という本タスクのスコープ通り。
 > - **`hooks` ◐**: `modal-provider.test.tsx` の OI-8 スキップ（CI flake 隔離）による `hasSkip`。
 > - **`other` ◐**: `scripts/coverage-dashboard/scan-tests.test.ts` がスキップ検出ロジックのテストデータとして `.skip` 文字列を含み、スキャナが自己参照的に `hasSkip` 誤検知する（Issue #7 と同種のドッグフードノイズ）。
+>
+> **Integration 行 `queries` ◐ の注記（2026-06-02 D1 完了）**: `tests/integration/`（`cart-checkout` / `order-placement`）は D1 で [`categorize.ts`](../../scripts/coverage-dashboard/categorize.ts) により `integration × queries` へ分類されるようになり、`unit × other` への誤検知が解消した。ただし統合テストファイルには同名ソースが無く lcov 解決が `null` のため、生成ダッシュボード上では ✦ ではなく **◐（partial）** で表示される（commit `b57841a`）。
 
 ### カテゴリ別カバー率
 
 | カテゴリ | カバー済み列 | カバー率 | 備考 |
 |---|---|---|---|
 | Unit | 6/10 | 60% | queries / pages / store / dashbd / shared / lib が✦。hooks / seed / other は ◐、api は構造的 ◯（上記注記参照） |
-| Integration | 3/10 | 30% | tests/component/ 配下のみ |
+| Integration | 4/10 | 40% | tests/component/（store / dashbd / shared）+ tests/integration/（queries ◐、D1 で追加） |
 | E2E | 1/10 | 10% | tests/e2e/ 配下 (5 spec) |
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
 | Security | 2/10 | **20%** | A1 完了: queries（IDOR認可テスト）+ lib（middleware/sanitize） |
@@ -119,8 +121,24 @@
 
 #### ~~B3.1. placeOrder（注文確定）の Integration テスト~~ ✅ 完了 2026-05-31
 - **達成内容**: B3 基盤を踏襲し、最もトランザクション依存の高い `placeOrder`（`src/queries/user.ts`）を実 DB で初カバー。`tests/integration/order-placement.test.ts` に 6 シナリオ（単一店舗 FK・Decimal 集計 / 複数店舗 OrderGroup 分割 / 在庫キャップ `Math.min` / クーポン店舗限定割引 / 所有権ガード IDOR・副作用なし / 不正 variant·size 組み合わせの拒否）。基盤として `seed.ts` に ProductVariantImage 作成（`placeOrder` が `variant.images[0].url` を参照）と `seedShippingAddress` を追加。本体コードは無変更。Integration 11 → 17 / スイート 1 → 2 (commits `78a20c9` / `ae28157`)
-- **categorize ドリフト（注記）**: `scripts/coverage-dashboard/categorize.ts` は Integration カテゴリを `tests/component/` のみにマップするため、`tests/integration/` 配下（cart-checkout / order-placement）はダッシュボード上 **unit × other セル**に分類される（マトリクスのセル数は 17/80 のまま不変）。本タスクでは categorize.ts と 27 件の `categorize.test.ts` を変更せず注記にとどめた（Issue #4 の意図的設計を維持）。Integration 行を実体と一致させる categorize 改修は別タスク化が妥当
+- **categorize ドリフト（D1 で恒久解消済み 2026-06-02, commit `b57841a`）**: 当初 `scripts/coverage-dashboard/categorize.ts` は Integration カテゴリを `tests/component/` のみにマップしたため、`tests/integration/` 配下（cart-checkout / order-placement）はダッシュボード上 **unit × other セル**に誤分類されていた。D1（下記）で `tests/integration/` → `integration × queries` の分類規則を追加し解消（Issue #4 の api→api-contract 上書き設計は維持）
 - **モック unit との差分**: 既存 `user.test.ts` は `$transaction` をモックしコールバックを直接実行するため、原子性・実 FK 制約・Postgres の Decimal 精度・実在庫キャップを構造的に検証できない。本テストはこれらを実 DB で担保する
+
+#### ~~D1. ダッシュボード Integration 行の実体化（categorize 改修）~~ ✅ 完了 2026-06-02
+- **対象**: `scripts/coverage-dashboard/categorize.ts` + `categorize.test.ts`
+- **背景**: 上記 B3.1 で記録した「categorize ドリフト」の恒久対応。`tests/integration/` が `unit × other` セルに誤分類され、ヒートマップ Integration 行が実体（実 DB での placeOrder / cart-checkout 検証）を反映しなかった
+- **達成内容**: `DOMAIN_RULES` に `tests/integration/` → `queries`（SUT は `src/queries/` の `placeOrder` / `applyCoupon`）、`detectCategory` に `tests/integration/` → `integration` を追加。`categorize.test.ts` に domain / category 両ケースを追加（32 ケース・green）。Issue #4 の api→api-contract 上書き設計は維持
+- **マトリクスへの反映**（lcov あり再生成）: `integration × queries` ◯→**◐**（同名ソース無しで lcov `null` のため partial）、`unit × other` から統合 2 ファイルが離脱（partial 維持）。`byCategory.unit` 50→48 / `integration` 66→68、`byDomain.queries` 14→16 / `other` 7→5、`coveredCells` 17→18（21%→23%）。Integration 行カバー率 3/10 30% → 4/10 40%
+- **記録**: commit `b57841a`（categorize 改修）/ ドキュメント・ダッシュボード再生成は本コミット
+
+#### D2. Performance 行の着手（OI-9 修正 → lhci に `/` 追加）🆕 2026-06-02 起票
+- **対象**: `src/components/store/home/main/featured.tsx + .lighthouserc.json`
+  > [!NOTE]
+  > `scripts/coverage-dashboard/render-html.ts:NEXT_ACTIONS` is the authoritative SSOT to prevent future drift.
+- **背景**: 下記 C1 残課題「ホーム `/` は OI-9（featured.tsx の SSR window バグ）で計測対象外」の解消。`/` を予算化し売上導線トップの退行を検知
+- **コスト感**: **M**
+- **期待効果**: Performance 0% 行を前進。OI-9 クローズで本番 SSR の 500 リスクも同時に解消
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」D2](./QA_HANDOFF.md)
 
 ---
 
@@ -151,6 +169,11 @@
 - **推奨ツール**: `@next/bundle-analyzer` + `size-limit`
 - **コスト感**: **S**
 - **期待効果**: 依存追加による初期ロードの膨張を抑制
+
+#### (backlog) E2E 行の拡大
+- **対象**: `tests/e2e/`（store / dashboard フロー）
+- **背景**: ヒートマップ E2E 行は現状 `pages` のみ✦（10%）。seller onboarding 実行・order 管理など store/dashboard 主要フローは spec ファイルは存在するが `seed:e2e` 前提で未安定実行
+- **方針**: 形式 Next Action（`render-html.ts` の `NEXT_ACTIONS`）には未起票。**OI-8（CI flake）解消後**に安定実行の目処が立った段階で起票判断（過剰起票回避）
 
 ---
 
@@ -260,3 +283,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-31 | **Unit 行✦化（seed 除く）**: `jest.config.js` に logic-centric な `collectCoverageFrom` + `coverageReporters` と画像/スタイルの moduleNameMapper を追加。co-located unit テスト 10 ファイル（shared 3 / store 3 / dashboard 3 / pages 1、+42 テスト・+10 スイート、1137 → 1179）で Unit 行の `pages / store / dashbd / shared` を ◯ → ✦ に昇格。`api` は構造的 N/A（categorize で api-contract 固定）、`seed` は分母外（意図的）、`hooks`/`other` は既存スキップ起因の ◐。詳細は §2 注記 / [`QA_HANDOFF.md`](./QA_HANDOFF.md)。 |
 | 2026-05-31 | **B3.1 完了**: 注文確定 `placeOrder` を実 DB 統合テストで初カバー。`tests/integration/order-placement.test.ts`（6 シナリオ）。`seed.ts` に ProductVariantImage 作成 + `seedShippingAddress` を追加（本体無変更）。Integration 11 → 17 / スイート 1 → 2、テストファイル総数 134 → 135。`tests/integration/` は categorize 上 unit×other に分類されるドリフトを注記（マトリクス 17/80 不変） (commits `78a20c9` / `ae28157`). |
 | 2026-05-29 | **B3 完了 / NA-NS-03 archive**: Cart → Checkout の状態橋渡しを Integration tier で初カバー。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト（Zustand persist hydration / shipping fee 一貫性 ITEM・WEIGHT・FIXED / `applyCoupon` 正常+4 異常パス / 未認証 redirect）。基盤として testcontainers + 専用 jest config (`jest.integration.config.js`) + 5 setup ヘルパーを新設（ADR-004 で技術選定の根拠を記録）。CI workflow に `integration-tests` ジョブを追加。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-03 を削除しアーカイブ化。Integration マトリクスの queries / pages / lib セルが ✦ に遷移. |
+| 2026-06-02 | **D1 完了（categorize ドリフト解消）**: `scripts/coverage-dashboard/categorize.ts` に `tests/integration/` → `integration × queries` の分類規則を追加し、統合テスト（cart-checkout / order-placement）の `unit × other` 誤分類を恒久解消。`categorize.test.ts` に domain/category 両ケース追加（32 ケース green）。再生成（lcov あり）で `integration × queries` ◯→◐・`unit × other` から統合 2 ファイル離脱、`coveredCells` 17→18（21%→23%）、`byCategory.unit` 50→48 / `integration` 66→68。Issue #4 の api→api-contract 上書き設計は維持。`render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md` 依頼プロンプトから D1 を同時削除 (commit `b57841a` + 本コミット). |

@@ -101,6 +101,21 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // /browse の LCP/CLS/TBT を計測 (warn-only ベースライン)。Clerk は pk_live
     // ダミーキーで dev handshake を回避。ホーム (/) は featured.tsx の SSR バグ
     // (window 参照) で 500 のため除外、修正後に追加予定。
+    //
+    // D1 (ダッシュボード Integration 行の実体化 / categorize 改修) は 2026-06-02 に完了。
+    // tests/integration/ を integration×queries に分類し unit×other 誤検知を解消
+    // (commit b57841a)。QA_HANDOFF.md「次回着手用 依頼プロンプト」D1 も同時削除済み。
+    // D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
+    // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D2 と
+    // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
+    {
+        priority: "medium",
+        title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
+        target: "src/components/store/home/main/featured.tsx + .lighthouserc.json",
+        tool: "遅延 useState 初期化 + @lhci/cli",
+        cost: "M",
+        impact: "ホーム / の SSR 500 を解消し売上導線トップを LCP/CLS/TBT で予算化",
+    },
     {
         priority: "low",
         title: "Bundle Size の継続監視",
