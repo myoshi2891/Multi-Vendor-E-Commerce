@@ -102,17 +102,12 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // ダミーキーで dev handshake を回避。ホーム (/) は featured.tsx の SSR バグ
     // (window 参照) で 500 のため除外、修正後に追加予定。
     //
-    // D1 / D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
-    // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D1 / D2 と
+    // D1 (ダッシュボード Integration 行の実体化 / categorize 改修) は 2026-06-02 に完了。
+    // tests/integration/ を integration×queries に分類し unit×other 誤検知を解消
+    // (commit b57841a)。QA_HANDOFF.md「次回着手用 依頼プロンプト」D1 も同時削除済み。
+    // D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
+    // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D2 と
     // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
-    {
-        priority: "medium",
-        title: "ダッシュボード Integration 行の実体化 (categorize 改修)",
-        target: "scripts/coverage-dashboard/categorize.ts",
-        tool: "categorize.ts + categorize.test.ts (TDD)",
-        cost: "S",
-        impact: "tests/integration/ の unit×other 誤分類を解消し Integration 行を実カバーへ昇格",
-    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
