@@ -1,0 +1,86 @@
+# ローカル SonarQube Community スタック (静的解析をローカルで再現する)
+#
+# 用途:
+#   CI (SonarCloud, .github/workflows/ci.yml の sonarcloud ジョブ) と同等の解析を
+#   開発者がローカルで確認する。アプリ本体 (docker-compose.yml) とは
+#   サービス名・コンテナ名・ポート・ボリュームすべて分離しており同時起動可能。
+#
+# 使い方 (詳細は docs/development/docker-dev.md):
+#   make sonar-up                          # SonarQube 起動 (http://localhost:9000, 初期 admin/admin)
+#   bun run test -- --coverage             # coverage/lcov.info を生成 (ホスト側)
+#   SONAR_TOKEN=<token> make sonar-scan    # 解析実行
+#   make sonar-down                        # 停止 (データは保持)
+#
+# 注意:
+#   SonarQube は内部に Elasticsearch を持つため、ホストで vm.max_map_count >= 524288 が必要。
+#   Docker Desktop (mac/win) は通常問題ないが、Linux では起動前に:
+#     sudo sysctl -w vm.max_map_count=524288
+#   起動完了まで 1〜2 分かかる (http://localhost:9000 が応答するまで待つ)。
+
+services:
+  sonarqube-db:
+    # postgres:16.14 (docker-compose.yml と同一 digest で supply-chain を固定)
+    image: postgres@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae # postgres:16.14
+    container_name: multivendor-sonarqube-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonarqube-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sonarqube:
+    image: sonarqube@sha256:35bedac3f40cda75969890da59b17d577770844fe6ef659206c678a8e00921c7 # sonarqube:26.5.0-community
+    container_name: multivendor-sonarqube
+    restart: unless-stopped
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      # アプリ (3000) / Prisma Studio (5555) / 開発 DB (5432) と衝突しない 9000 を公開
+      - "9000:9000"
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+    ulimits:
+      # Elasticsearch のファイルディスクリプタ要件
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # 解析実行用ワンショットコンテナ。`profiles: [scan]` のため `up` では起動せず、
+  # `make sonar-scan` (docker compose run scanner) のときだけ動く。
+  # 同一ネットワーク上の sonarqube サービスへ http://sonarqube:9000 で到達するため
+  # OS 非依存 (host.docker.internal / --network host の分岐が不要)。
+  scanner:
+    image: sonarsource/sonar-scanner-cli@sha256:23ca0f137965d9dff2198074043fd48d386280bc5d0ccac8c8349cea4cf096a9 # sonar-scanner-cli:12.1.0
+    container_name: multivendor-sonar-scanner
+    profiles: ["scan"]
+    depends_on:
+      - sonarqube
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+    volumes:
+      # リポジトリを bind mount。sonar-project.properties と coverage/lcov.info を読む
+      - .:/usr/src
+    # ローカル自己ホスト用に projectKey を固定 (sonar.organization は self-hosted では無視される)。
+    # SonarCloud 送信は CI 側 (sonarqube-scan-action) が担うため、ここでは衝突しないキーを使う。
+    command: ["-Dsonar.projectKey=multi-vendor-ecommerce"]
+
+volumes:
+  sonarqube-db-data:
+  sonarqube-data:
+  sonarqube-extensions:
+  sonarqube-logs:
