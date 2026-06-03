@@ -37,6 +37,35 @@
 **記録日**: 2026-03-24
 **ステータス**: 回避策実装済み（Firefox テストはスキップ、Chromium/WebKit で品質保証）
 
+### modal-provider テスト: CI環境での実行時のランダムな失敗 (OI-8)
+
+**影響範囲**: `src/providers/modal-provider.test.tsx` の一部テストが、CI (GitHub Actions) 環境でまれに失敗する。
+
+**症状**:
+- `[P1] モーダルを開くと...` テストにおいて、assertion error などの明確なエラーメッセージを出力せず、完全に空の状態でテストが失敗する。
+- 開発者ローカル環境（M1 Mac等）では再現しない。
+
+**根本原因**:
+詳細な原因は未検証（ResizeObserver の挙動、Radix UI のアクティブな要素へのフォーカス処理、jsdom での非同期イベントタイミングなどが疑われる複数の仮説がある）。
+これまでの対策として、`ModalProvider.setOpen` を非同期から同期処理に変更する設計改善を行ったが、CIでの偶発的な失敗（flake）は根治されなかった。詳細は [ADR-003: ModalProvider setOpen 同期化](../../docs/architecture/decisions/003-modal-setopen-sync-for-react19.md) を参照。
+
+**回避策**:
+- `src/providers/modal-provider.test.tsx` 内の該当テストに `it.skip` を適用し、CI の安定稼働を最優先として一時的に退避。
+- 同等のカバレッジは `[P1] fetchData なしでモーダルを開ける` などの他テストで一部担保。
+
+**長期対応案**:
+- `.claude/skills/ci-flake-diagnosis/SKILL.md` の診断プロセスに基づき、CI 実行時の環境変数・jsdom バージョン・非同期モックなどを精査し、根本原因を特定してテストのスキップを解除する。
+- 目標解決期限: 2026-06-07。
+
+**関連ファイル**:
+- `src/providers/modal-provider.test.tsx` (テスト定義、`it.skip`)
+- `src/providers/modal-provider.tsx` (SUT)
+- `docs/architecture/decisions/003-modal-setopen-sync-for-react19.md` (ADR-003)
+- `docs/testing/QA_HANDOFF.md` (OI-8 追跡用 SSOT)
+
+**記録日**: 2026-05-24
+**ステータス**: 回避策実装済み（CI flake回避のため該当テストを一時スキップ中、解決期限: 2026-06-07）
+
 ## Resolved Issues
 
 - `getUserWishlist` (`src/queries/profile.ts`): `variants[0]` への直接アクセスが
