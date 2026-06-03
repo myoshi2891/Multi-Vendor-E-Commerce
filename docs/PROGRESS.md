@@ -156,6 +156,18 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-02: SonarQube 静的解析の導入（CI = SonarCloud / ローカル = Docker）
+
+- **背景**: コード品質（バグ・スメル・セキュリティホットスポット・カバレッジ）を継続的に可視化する基盤が無かった。`jest.config.js` は既に lcov を出力できる設定を持つが、それを消費する解析基盤が未接続だった。
+- **決定**: CI は SonarCloud (SaaS)、開発者ローカルは SonarQube Community (Docker) のハイブリッド。Quality Gate は **初期は非ブロッキング**（既存コードの大量指摘で CI を止めないため）。詳細・代替案比較は [ADR-005](architecture/decisions/005-sonarqube-static-analysis.md)。
+- **実装内容**:
+  - `sonar-project.properties`: `sonar.coverage.exclusions` を `collectCoverageFrom` の除外と一致させ分母を揃える。`sonar.javascript.lcov.reportPaths=coverage/lcov.info`。
+  - `ci.yml`: `test` ジョブに `--coverage` + `upload-artifact`、非ブロッキング `sonarcloud` ジョブ（`needs: test` / `continue-on-error` / `fetch-depth: 0` / `SONAR_TOKEN` 未登録時 skip）を追加。third-party action は SHA 固定（rule 01）。
+  - `docker-compose.sonar.yml`（SonarQube Community + 専用 PostgreSQL + scanner-cli、digest 固定）+ Makefile `sonar-up/down/scan` + `.env.docker.example`。
+- **統計**: テスト数・スイート数・スナップショット数は **不変**（config/docs のみ）。`spec-sync-after-test` は非該当のため QA_HANDOFF.md / coverage-dashboard.html は更新せず。
+- **前提（リポジトリ外の手動作業）**: SonarCloud アカウント / Organization / Project 作成、`sonar-project.properties` のキー記入、GitHub Secrets への `SONAR_TOKEN` 登録。未登録でも非ブロッキングのため CI は緑のまま。
+- **コミット**: ブランチ `chore/sonarqube-integration`（`chore(sonar):` / `ci:` / `chore(docker):` / `docs(sonar):` の 4 コミット）
+
 ### 2026-05-31: B3.1 — placeOrder（注文確定）の実 DB 統合テスト
 
 - **背景**: B3 で `tests/integration/` 基盤が整ったが、実 DB 統合テストは cart-checkout 1 ファイルのみ。最もトランザクション依存の高い注文確定フロー `placeOrder`（`src/queries/user.ts`）はモック Prisma の unit テストしか持たず、原子性・実 FK・Decimal 精度・在庫キャップが構造的に未検証だった。

@@ -65,7 +65,43 @@ jobs:
         run: bunx prisma generate
       - name: Run Jest
         # Temporary --verbose for modal-provider flake diagnostics; --ci suppresses snapshot writes.
-        run: bunx jest --verbose --ci
+        # --coverage で coverage/lcov.info を生成し、後続の sonarcloud ジョブへ artifact 経由で渡す。
+        run: bunx jest --verbose --ci --coverage
+      - name: Upload coverage (lcov)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 1
+
+  # SonarCloud 静的解析 — 初期は非ブロッキング (continue-on-error: true)。
+  # test ジョブが生成した coverage/lcov.info を artifact から復元して送信する。
+  # SONAR_TOKEN 未登録なら scan ステップを skip し、CI 全体は緑のまま。
+  # secrets コンテキストは if: で直接参照できないため、job-level env に代入し
+  # step-level の `if: env.SONAR_TOKEN != ''` で判定する (GitHub Actions の定石)。
+  sonarcloud:
+    name: SonarCloud Scan
+    needs: test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: https://sonarcloud.io
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          # SonarCloud の blame / New Code 判定には全履歴が必要
+          fetch-depth: 0
+      - name: Download coverage (lcov)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: coverage-lcov
+          path: coverage
+      - name: SonarCloud Scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
 
   build:
     name: Build (Next.js)

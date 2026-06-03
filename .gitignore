@@ -11,6 +11,9 @@
 /playwright-report
 /test-results
 
+# SonarQube / SonarCloud scanner 作業ディレクトリ
+.scannerwork/
+
 # next.js
 /.next/
 /out/

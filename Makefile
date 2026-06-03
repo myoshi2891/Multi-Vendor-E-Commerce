@@ -10,12 +10,14 @@
 
 COMPOSE := docker compose
 APP := $(COMPOSE) exec app
+SONAR_COMPOSE := docker compose -f docker-compose.sonar.yml $(if $(wildcard .env.docker),--env-file .env.docker,)
 
 .DEFAULT_GOAL := help
 
 .PHONY: help up down down-v build restart ps logs sh psql \
         migrate migrate-deploy generate studio seed seed-e2e \
-        lint test test-e2e setup
+        lint test test-e2e setup \
+        sonar-up sonar-down sonar-scan
 
 help: ## 利用可能なコマンド一覧を表示
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -88,6 +90,17 @@ test: ## Jest ユニットテストを実行
 
 test-e2e: ## Playwright E2E テストを実行
 	$(APP) bunx playwright test
+
+## --- SonarQube (ローカル静的解析) ---
+
+sonar-up: ## ローカル SonarQube を起動 (http://localhost:9000, 初期 admin/admin。起動に1〜2分)
+	$(SONAR_COMPOSE) up -d sonarqube
+
+sonar-down: ## ローカル SonarQube を停止 (データは保持)
+	$(SONAR_COMPOSE) down
+
+sonar-scan: ## ローカル SonarQube へ解析実行 (要 SONAR_TOKEN。事前に `bun run test -- --coverage`)
+	$(SONAR_COMPOSE) run --rm scanner
 
 ## --- 初期化 ---
 

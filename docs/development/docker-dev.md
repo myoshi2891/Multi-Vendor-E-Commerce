@@ -65,6 +65,46 @@ make logs            # http://localhost:3000
 
 ---
 
+## ローカル SonarQube（静的解析）
+
+CI（SonarCloud）と同等の静的解析をローカルで再現する。アプリ本体スタックとは
+サービス名・ポート（9000）・ボリュームすべて分離しており**同時起動可能**。
+構成: [`docker-compose.sonar.yml`](../../docker-compose.sonar.yml)（SonarQube Community +
+専用 PostgreSQL + scanner-cli。全イメージ digest 固定）。設計判断は
+[ADR-005](../architecture/decisions/005-sonarqube-static-analysis.md) を参照。
+
+```bash
+# 1. SonarQube を起動（起動完了まで 1〜2 分）
+make sonar-up
+#    → http://localhost:9000 を開き admin/admin でログイン → 初回パスワード変更
+#    → My Account → Security でトークンを発行し .env.docker の SONAR_TOKEN に設定
+
+# 2. ホスト側でカバレッジを生成（lcov を scanner が取り込む）
+bun run test -- --coverage     # coverage/lcov.info を出力
+
+# 3. 解析を実行（.env.docker の SONAR_TOKEN が自動的に渡される）
+make sonar-scan
+#    → http://localhost:9000 のプロジェクト multi-vendor-ecommerce に結果が表示される
+
+# 4. 停止（データは保持。再起動時は再ログイン不要）
+make sonar-down
+```
+
+| コマンド | 用途 |
+|---|---|
+| `make sonar-up` | SonarQube + 専用 DB を起動（http://localhost:9000） |
+| `make sonar-scan` | scanner-cli で解析を実行（要 `SONAR_TOKEN`、事前に `--coverage`） |
+| `make sonar-down` | 停止（ボリューム/データは保持） |
+
+> **注意**: SonarQube は内部に Elasticsearch を持つため、ホストで `vm.max_map_count >= 524288`
+> が必要。Docker Desktop (mac/win) は通常問題ないが、Linux では起動前に
+> `sudo sysctl -w vm.max_map_count=524288` を実行する。
+>
+> CI（PR ごとの解析）は SonarCloud が担う。`.github/workflows/ci.yml` の `sonarcloud` ジョブは
+> 非ブロッキングで、`SONAR_TOKEN` Secret 未登録時は skip される。
+
+---
+
 ## トラブルシュート
 
 | 症状 | 対処 |
