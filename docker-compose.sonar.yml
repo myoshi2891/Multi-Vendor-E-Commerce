@@ -60,7 +60,7 @@ services:
         hard: 65536
     healthcheck:
       # /api/system/status が {"status":"UP"} を返すまで待機（起動完了の最終確認）
-      test: ["CMD-SHELL", "curl -fs http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"' || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -78,7 +78,7 @@ services:
       sonarqube:
         condition: service_healthy
     environment:
-      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_HOST_URL: ${SONAR_HOST_URL:-http://sonarqube:9000}
       SONAR_TOKEN: ${SONAR_TOKEN:-}
     volumes:
       # リポジトリを bind mount。sonar-project.properties と coverage/lcov.info を読む
