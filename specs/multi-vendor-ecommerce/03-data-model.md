@@ -49,11 +49,14 @@
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
-- **この図は自動生成物**。SSOT は [`prisma/schema.prisma`](../../prisma/schema.prisma) であり、
-  手書き編集してはならない。`scripts/erd/generate-erd.ts` がスキーマをパースして生成する。
-- **再生成**: スキーマ変更後は必ず `bun run erd:generate` を実行し、生成された
-  `data-model.drawio` を同一 PR でコミットすること（同期義務は
-  [`.claude/rules/03-data-model-diagram-sync.md`](../../.claude/rules/03-data-model-diagram-sync.md) を参照）。
+- **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
+- **再生成・調整手順**:
+  1. スキーマ変更後は、`bun run erd:generate` を実行してクリーン生成を行います。
+  2. 線の重なりや突き抜け等のレイアウト調整が必要な場合は、draw.io で図を開き、ノードの移動やエッジのドラッグなどの手動調整を行います（このスクラッチ編集は一時的です）。
+  3. 調整後、`bun run erd:extract` を実行して、調整結果を `layout-overrides.json` へ還流させます。
+  4. 再び `bun run erd:generate` を実行し、サイドカーから綺麗なレイアウトが決定論的に再現されることを確認します。
+  5. 詳細は [`.claude/skills/erd-diagram-adjust/SKILL.md`](../../.claude/skills/erd-diagram-adjust/SKILL.md) の手順を参照してください。
+- **同期の義務**: スキーマまたはレイアウト調整（サイドカー）の変更と、再生成された `data-model.drawio` は同一 PR / 同一コミットに含める必要があります（同期義務は [`.claude/rules/03-data-model-diagram-sync.md`](../../.claude/rules/03-data-model-diagram-sync.md) を参照）。
 - 図の凡例: 🔑 主キー / ◆ 外部キー / `U` unique / ⊕ 複合ユニーク、
   ER 記法エッジ（1 / N / 0..1）、<span style="color:#C62828">赤線 ⛓</span> = `ON DELETE CASCADE`、
   エンティティの塗り色・枠色 = 機能ドメイン（タイトルの色と対応）、破線枠 = enum ボックス。
