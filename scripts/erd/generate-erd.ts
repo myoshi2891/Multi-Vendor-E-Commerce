@@ -32,6 +32,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const SCHEMA_PATH = resolve(ROOT, "prisma/schema.prisma");
 const OUTPUT_PATH = resolve(ROOT, "docs/architecture/data-model.drawio");
+/** レイアウト override サイドカー（任意・存在しなくても生成は成立する） */
+const OVERRIDES_PATH = resolve(ROOT, "scripts/erd/layout-overrides.json");
 
 // ---------------------------------------------------------------------------
 // 1. 型定義
@@ -72,6 +74,33 @@ interface EnumDef {
 }
 
 type Cardinality = "1:1" | "1:N" | "N:M";
+
+/**
+ * レイアウト override サイドカー（`scripts/erd/layout-overrides.json`）の型。
+ * 構造（モデル・リレーション）は `schema.prisma` が SSOT、**配置と配線**はこのファイルが SSOT。
+ * draw.io で視覚調整した結果を `bun run erd:extract` で還流し、再生成時に決定論的へ再適用する。
+ */
+interface NodeOverride {
+    x?: number;
+    y?: number;
+    w?: number;
+    h?: number;
+}
+
+interface EdgeOverride {
+    /** 経由点（draw.io の絶対座標）。線をボックスに重ねず配線するための折れ点 */
+    waypoints?: { x: number; y: number }[];
+    /** 接続元/接続先の固定ポート（0..1 の相対座標）。未指定なら entityRelationEdgeStyle の自動選択 */
+    exitX?: number;
+    exitY?: number;
+    entryX?: number;
+    entryY?: number;
+}
+
+interface LayoutOverrides {
+    nodes: Record<string, NodeOverride>;
+    edges: Record<string, EdgeOverride>;
+}
 
 interface Edge {
     parent: string; // "1" 側 / 参照される側
@@ -277,6 +306,94 @@ function markForeignKeys(models: Model[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// 3.5 レイアウト override サイドカーの読み込み（外部入力 = unknown + 型ガード）
+// ---------------------------------------------------------------------------
+function isRecord(v: unknown): v is Record<string, unknown> {
+    return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+function isFiniteNumber(v: unknown): v is number {
+    return typeof v === "number" && Number.isFinite(v);
+}
+
+function parseNodeOverride(v: unknown): NodeOverride | null {
+    if (!isRecord(v)) return null;
+    const o: NodeOverride = {};
+    if (isFiniteNumber(v.x)) o.x = v.x;
+    if (isFiniteNumber(v.y)) o.y = v.y;
+    if (isFiniteNumber(v.w)) o.w = v.w;
+    if (isFiniteNumber(v.h)) o.h = v.h;
+    return Object.keys(o).length > 0 ? o : null;
+}
+
+function parseEdgeOverride(v: unknown): EdgeOverride | null {
+    if (!isRecord(v)) return null;
+    const o: EdgeOverride = {};
+    if (Array.isArray(v.waypoints)) {
+        const pts: { x: number; y: number }[] = [];
+        for (const p of v.waypoints) {
+            if (isRecord(p) && isFiniteNumber(p.x) && isFiniteNumber(p.y)) {
+                pts.push({ x: p.x, y: p.y });
+            }
+        }
+        if (pts.length > 0) o.waypoints = pts;
+    }
+    if (isFiniteNumber(v.exitX)) o.exitX = v.exitX;
+    if (isFiniteNumber(v.exitY)) o.exitY = v.exitY;
+    if (isFiniteNumber(v.entryX)) o.entryX = v.entryX;
+    if (isFiniteNumber(v.entryY)) o.entryY = v.entryY;
+    return Object.keys(o).length > 0 ? o : null;
+}
+
+/**
+ * `layout-overrides.json` を読む。ファイル欠如・パース失敗・型不一致はいずれも
+ * 「override 無し」へフォールバックし、生成自体は止めない（CI 安定性を優先）。
+ */
+function loadLayoutOverrides(): LayoutOverrides {
+    const empty: LayoutOverrides = { nodes: {}, edges: {} };
+    let raw: string;
+    try {
+        raw = readFileSync(OVERRIDES_PATH, "utf8");
+    } catch {
+        return empty; // ファイル無しは正常運用（後方互換）
+    }
+    try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!isRecord(parsed)) return empty;
+        const result: LayoutOverrides = { nodes: {}, edges: {} };
+        if (isRecord(parsed.nodes)) {
+            for (const [k, v] of Object.entries(parsed.nodes)) {
+                const n = parseNodeOverride(v);
+                if (n) result.nodes[k] = n;
+            }
+        }
+        if (isRecord(parsed.edges)) {
+            for (const [k, v] of Object.entries(parsed.edges)) {
+                const e = parseEdgeOverride(v);
+                if (e) result.edges[k] = e;
+            }
+        }
+        return result;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("[ERD:loadOverrides] Failed to parse layout-overrides.json", {
+            error: message,
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        return empty;
+    }
+}
+
+/**
+ * エッジ override の検索キー。同一ペア間の多重辺（例: User→Store の FK と暗黙 M:N）を
+ * 区別するため FK カラム名(label) を第一識別子に用いる。label が空なら relationName を使う。
+ */
+function edgeOverrideKey(e: Edge): string {
+    const disc = e.label && e.label.length > 0 ? e.label : e.relationName;
+    return `${e.parent}->${e.child}:${disc}`;
+}
+
+// ---------------------------------------------------------------------------
 // 4. ドメイン分類とレイアウト
 // ---------------------------------------------------------------------------
 // row=0 はメイン購買フロー（左→右）、row=1 はメインフローを邪魔しないサブ機能を下段へ。
@@ -419,6 +536,7 @@ function main(): void {
     const models = parseModels(src, modelNames);
     markForeignKeys(models);
     const edges = buildEdges(models);
+    const overrides = loadLayoutOverrides();
 
     const modelById = new Map<string, Model>();
     models.forEach((m) => modelById.set(m.name, m));
@@ -469,6 +587,18 @@ function main(): void {
     const row0 = layoutRow(0, DOMAIN_TOP_Y);
     const row1 = layoutRow(1, row0.bottomY + ROW_GAP_Y);
     const canvasRight = Math.max(row0.cursorX, row1.cursorX); // enum 列の開始 x
+
+    // --- ノード位置 override の適用（サイドカー = レイアウト SSOT） ---
+    // 自動配置で重なる/見づらいエンティティを手調整した結果を再適用する。
+    // ページ寸法は後段で pos の実寸から再計算されるため、override 後の座標に追従する。
+    for (const [name, ov] of Object.entries(overrides.nodes)) {
+        const p = pos.get(name);
+        if (!p) continue; // スキーマから消えたモデルの override は無視
+        if (ov.x !== undefined) p.x = ov.x;
+        if (ov.y !== undefined) p.y = ov.y;
+        if (ov.w !== undefined) p.w = ov.w;
+        if (ov.h !== undefined) p.h = ov.h;
+    }
 
     // 分類漏れモデルの検出（スキーマに新モデルが増えた場合の保険）
     const classified = new Set(DOMAINS.flatMap((d) => d.models));
@@ -535,13 +665,37 @@ function main(): void {
         }
         const stroke = e.cascade ? "#C62828" : "#5B6B7B";
         const label = e.cascade ? `${e.label} ⛓` : e.label;
+
+        // サイドカーの配線 override（固定ポート + 経由点）を引く。
+        const ov = overrides.edges[edgeOverrideKey(e)];
+        // 固定ポートが指定された場合のみ exit/entry を付与（未指定は entityRelationEdgeStyle の自動選択に委ねる）。
+        const portStyle = ov
+            ? [
+                  ov.exitX !== undefined ? `exitX=${ov.exitX}` : "",
+                  ov.exitY !== undefined ? `exitY=${ov.exitY}` : "",
+                  ov.exitX !== undefined || ov.exitY !== undefined ? "exitDx=0;exitDy=0" : "",
+                  ov.entryX !== undefined ? `entryX=${ov.entryX}` : "",
+                  ov.entryY !== undefined ? `entryY=${ov.entryY}` : "",
+                  ov.entryX !== undefined || ov.entryY !== undefined ? "entryDx=0;entryDy=0" : "",
+              ]
+                  .filter((s) => s.length > 0)
+                  .join(";")
+            : "";
+        const portStyleSuffix = portStyle ? portStyle + ";" : "";
+        // 経由点（waypoints）があれば <mxGeometry> 内に <Array as="points"> を埋め込む。
+        const geometry =
+            ov?.waypoints && ov.waypoints.length > 0
+                ? `<mxGeometry relative="1" as="geometry"><Array as="points">${ov.waypoints
+                      .map((p) => `<mxPoint x="${p.x}" y="${p.y}"/>`)
+                      .join("")}</Array></mxGeometry>`
+                : `<mxGeometry relative="1" as="geometry"/>`;
         // entityRelationEdgeStyle = エンティティ左右からの ER 配線。
         // jumpStyle=arc で交差線を「飛び越え」表示し重なりを判別可能にする。
         // labelBackgroundColor で線上のラベルを白背景化して可読性を確保。
         cells.push(
             `<mxCell id="${nextId()}" value="${esc(
                 label
-            )}" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;fontSize=10;fontColor=#10242E;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;startArrow=${startArrow};startFill=0;endArrow=${endArrow};endFill=0;strokeColor=${stroke};strokeWidth=1.4;" edge="1" parent="1" source="${e.parent}" target="${e.child}"><mxGeometry relative="1" as="geometry"/></mxCell>`
+            )}" style="edgeStyle=entityRelationEdgeStyle;rounded=1;html=1;fontSize=10;fontColor=#10242E;labelBackgroundColor=#FFFFFF;jumpStyle=arc;jumpSize=10;${portStyleSuffix}startArrow=${startArrow};startFill=0;endArrow=${endArrow};endFill=0;strokeColor=${stroke};strokeWidth=1.4;" edge="1" parent="1" source="${e.parent}" target="${e.child}">${geometry}</mxCell>`
         );
     }
 
@@ -638,6 +792,11 @@ ${cells.map((c) => "        " + c).join("\n")}
 
     // --- サマリ出力（検証用） ---
     console.error(`[ERD] models=${models.length} enums=${enums.length} edges=${edges.length}`);
+    const nodeOvCount = Object.keys(overrides.nodes).length;
+    const edgeOvCount = Object.keys(overrides.edges).length;
+    if (nodeOvCount > 0 || edgeOvCount > 0) {
+        console.error(`[ERD] layout-overrides applied: nodes=${nodeOvCount} edges=${edgeOvCount}`);
+    }
     console.error(`[ERD] output: ${OUTPUT_PATH}`);
     if (orphans.length) {
         console.error(

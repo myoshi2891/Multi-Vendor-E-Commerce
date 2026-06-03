@@ -13,7 +13,8 @@
     "seed:e2e": "tsx tests/e2e/seed/seed-e2e.ts",
     "seed:luxury": "tsx prisma/seed/seed.ts",
     "coverage:dashboard": "tsx scripts/coverage-dashboard/build.ts",
-    "erd:generate": "tsx scripts/erd/generate-erd.ts"
+    "erd:generate": "tsx scripts/erd/generate-erd.ts",
+    "erd:extract": "tsx scripts/erd/extract-overrides.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.7",
