@@ -31,9 +31,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const DEFAULT_INPUT = resolve(ROOT, "docs/architecture/data-model.drawio");
 const DEFAULT_OUTPUT = resolve(ROOT, "scripts/erd/layout-overrides.json");
 
-// 生成器が割り振る自動 ID（n1234）・固定の補助セル。モデルノードはこれら以外。
-const AUTO_ID = /^n\d+$/;
-const NON_MODEL_IDS = new Set(["0", "1", "title", "subtitle", "legend"]);
+// 生成器が割り振る補助セルの ID パターン（`<pageId>_n####` / `<pageId>_legend`）。
+// モデル/enum ノードの ID はこれら以外（= スキーマ上の名前）。
+const AUTO_ID = /_n\d+$/;
+const LEGEND_ID = /_legend$/;
+const NON_MODEL_IDS = new Set(["0", "1"]);
 
 interface NodeOverride {
     x?: number;
@@ -48,9 +50,13 @@ interface EdgeOverride {
     entryX?: number;
     entryY?: number;
 }
-interface LayoutOverrides {
+interface PageOverride {
     nodes: Record<string, NodeOverride>;
     edges: Record<string, EdgeOverride>;
+}
+/** ページ別レイアウト override（マルチページ）。キーは diagram id。 */
+interface LayoutOverrides {
+    pages: Record<string, PageOverride>;
 }
 
 /** mxCell 1 個分のブロックに分割（開きタグ <mxCell から次の <mxCell 直前まで）。 */
@@ -100,19 +106,10 @@ function labelToDiscriminator(value: string): string {
     return value.replace(/\s*⛓\s*$/, "").trim();
 }
 
-function main(): void {
-    const argv = process.argv.slice(2);
-    const includeNodes = argv.includes("--include-nodes");
-    const positional = argv.filter((a) => !a.startsWith("--"));
-    const inputPath = positional[0] ? resolve(ROOT, positional[0]) : DEFAULT_INPUT;
-    const outputPath = positional[1] ? resolve(ROOT, positional[1]) : DEFAULT_OUTPUT;
-
-    const xml = readFileSync(inputPath, "utf8");
-    const blocks = splitCells(xml);
-
-    const result: LayoutOverrides = { nodes: {}, edges: {} };
-
-    for (const block of blocks) {
+/** 1 つの <diagram> 本文から配線（必須）・ノード座標（任意）を抽出する。 */
+function extractDiagram(body: string, includeNodes: boolean): PageOverride {
+    const page: PageOverride = { nodes: {}, edges: {} };
+    for (const block of splitCells(body)) {
         const attrs = parseAttrs(block);
         const style = attrs.style ?? "";
 
@@ -139,19 +136,19 @@ function main(): void {
             if (exitY !== undefined) ov.exitY = exitY;
             if (entryX !== undefined) ov.entryX = entryX;
             if (entryY !== undefined) ov.entryY = entryY;
-            result.edges[key] = ov;
+            page.edges[key] = ov;
             continue;
         }
 
-        // --- ノード: --include-nodes 指定時のみ、モデルノードの座標を抽出 ---
+        // --- ノード: --include-nodes 指定時のみ、モデル/enum ノードの座標を抽出 ---
         if (includeNodes && attrs.vertex === "1") {
             const id = attrs.id ?? "";
-            if (!id || AUTO_ID.test(id) || NON_MODEL_IDS.has(id)) continue;
+            if (!id || AUTO_ID.test(id) || LEGEND_ID.test(id) || NON_MODEL_IDS.has(id)) continue;
             const geo = block.match(
                 /<mxGeometry\s+x="(-?[\d.]+)"\s+y="(-?[\d.]+)"\s+width="([\d.]+)"\s+height="([\d.]+)"/
             );
             if (!geo) continue;
-            result.nodes[id] = {
+            page.nodes[id] = {
                 x: Number(geo[1]),
                 y: Number(geo[2]),
                 w: Number(geo[3]),
@@ -159,17 +156,39 @@ function main(): void {
             };
         }
     }
+    return page;
+}
 
-    if (!includeNodes) {
-        // ノードを出力しない場合でも JSON 形状は固定（nodes は空オブジェクト）。
-        result.nodes = {};
+function main(): void {
+    const argv = process.argv.slice(2);
+    const includeNodes = argv.includes("--include-nodes");
+    const positional = argv.filter((a) => !a.startsWith("--"));
+    const inputPath = positional[0] ? resolve(ROOT, positional[0]) : DEFAULT_INPUT;
+    const outputPath = positional[1] ? resolve(ROOT, positional[1]) : DEFAULT_OUTPUT;
+
+    const xml = readFileSync(inputPath, "utf8");
+    // <diagram id="..." ...> ... </diagram> ごとに分割し、diagram id をページキーにする。
+    const diagrams = [...xml.matchAll(/<diagram\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/diagram>/g)];
+
+    const result: LayoutOverrides = { pages: {} };
+    let edgeCount = 0;
+    let nodeCount = 0;
+    for (const dm of diagrams) {
+        const id = dm[1];
+        const page = extractDiagram(dm[2], includeNodes);
+        edgeCount += Object.keys(page.edges).length;
+        nodeCount += Object.keys(page.nodes).length;
+        // override の無いページは出力しない（サイドカーを最小に保つ）。
+        if (Object.keys(page.edges).length > 0 || Object.keys(page.nodes).length > 0) {
+            result.pages[id] = page;
+        }
     }
 
     const json = JSON.stringify(result, null, 2) + "\n";
     writeFileSync(outputPath, json, "utf8");
 
     console.error(
-        `[ERD:extract] input=${inputPath}\n[ERD:extract] output=${outputPath}\n[ERD:extract] edges=${Object.keys(result.edges).length} nodes=${Object.keys(result.nodes).length}${includeNodes ? "" : " (edges only; pass --include-nodes for positions)"}`
+        `[ERD:extract] input=${inputPath}\n[ERD:extract] output=${outputPath}\n[ERD:extract] pages=${Object.keys(result.pages).length} edges=${edgeCount} nodes=${nodeCount}${includeNodes ? "" : " (edges only; pass --include-nodes for positions)"}`
     );
 }
 

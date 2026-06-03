@@ -1,95 +1,17 @@
 {
-  "nodes": {},
-  "edges": {
-    "Order->PaymentDetails:orderId": {
-      "exitX": 1,
-      "exitY": 0.5,
-      "entryX": 1,
-      "entryY": 0.5,
-      "waypoints": [
-        { "x": 2670, "y": 231 },
-        { "x": 2670, "y": 1285 }
-      ]
-    },
-    "Country->ShippingAddress:countryId": {
-      "exitX": 1,
-      "exitY": 0.5,
-      "entryX": 1,
-      "entryY": 0.5,
-      "waypoints": [
-        { "x": 3150, "y": 180 },
-        { "x": 3150, "y": 1197 }
-      ]
-    },
-    "Country->FreeShippingCountry:countryId": {
-      "exitX": 1,
-      "exitY": 0.75,
-      "entryX": 1,
-      "entryY": 0.5,
-      "waypoints": [
-        { "x": 3210, "y": 211 },
-        { "x": 3210, "y": 919 }
-      ]
-    },
-    "User->Review:userId": {
-      "exitX": 1,
-      "exitY": 0.5,
-      "entryX": 1,
-      "entryY": 0.5,
-      "waypoints": [
-        { "x": 400, "y": 197 },
-        { "x": 400, "y": 2067 }
-      ]
-    },
-    "User->Wishlist:userId": {
-      "exitX": 1,
-      "exitY": 0.7,
-      "entryX": 1,
-      "entryY": 0.8,
-      "waypoints": [
-        { "x": 440, "y": 228 },
-        { "x": 440, "y": 2618 }
-      ]
-    },
-    "Product->Wishlist:productId": {
-      "exitX": 0,
-      "exitY": 0.5,
-      "entryX": 1,
-      "entryY": 0.6,
-      "waypoints": [
-        { "x": 480, "y": 970 },
-        { "x": 480, "y": 2587 }
-      ]
-    },
-    "Product->Review:productId": {
-      "exitX": 0,
-      "exitY": 0.6,
-      "entryX": 1,
-      "entryY": 0.35,
-      "waypoints": [
-        { "x": 500, "y": 1003 },
-        { "x": 500, "y": 2029 }
-      ]
-    },
-    "ProductVariant->Wishlist:variantId": {
-      "exitX": 0,
-      "exitY": 0.4,
-      "entryX": 1,
-      "entryY": 0.4,
-      "waypoints": [
-        { "x": 520, "y": 1323 },
-        { "x": 520, "y": 2556 }
-      ]
-    },
-    "Size->Wishlist:sizeId": {
-      "exitX": 0,
-      "exitY": 0.5,
-      "entryX": 1,
-      "entryY": 0.2,
-      "waypoints": [
-        { "x": 530, "y": 1653 },
-        { "x": 530, "y": 2525 }
-      ]
+  "pages": {
+    "order": {
+      "nodes": {},
+      "edges": {
+        "OrderGroup->OrderItem:orderGroupId": {
+          "exitX": 1, "exitY": 0.5, "entryX": 1, "entryY": 0.5,
+          "waypoints": [ { "x": 720, "y": 248 }, { "x": 720, "y": 863 } ]
+        },
+        "User->PaymentDetails:userId": {
+          "exitX": 1, "exitY": 0.2, "entryX": 0, "entryY": 0.2,
+          "waypoints": [ { "x": 380, "y": 95 }, { "x": 770, "y": 95 } ]
+        }
+      }
     }
   }
 }
