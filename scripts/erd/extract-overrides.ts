@@ -23,7 +23,7 @@
  *   ノードを出力する（その場合も移動有無に関わらず全モデルを書き出す点に注意）。
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -185,6 +185,7 @@ function main(): void {
     }
 
     const json = JSON.stringify(result, null, 2) + "\n";
+    mkdirSync(dirname(outputPath), { recursive: true });
     writeFileSync(outputPath, json, "utf8");
 
     console.error(

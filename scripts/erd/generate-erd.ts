@@ -717,8 +717,9 @@ function containerCells(
  * Enum ページ（id=enums）。リレーション線は描画せず、各 enum の「参照: Table.field」注記で
  * 参照元を示す。enum を縦方向に整列する。
  */
-function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, string[]>): string {
+function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, string[]>, overrides: LayoutOverrides): string {
     const cells: string[] = [];
+    const pageOv: PageOverride = overrides.pages[page.id] ?? { nodes: {}, edges: {} };
     let autoId = 1000;
     const nextId = () => `${page.id}_n${autoId++}`;
 
@@ -726,12 +727,17 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
     let y = ORIGIN_Y;
     const enumCells: string[] = [];
     for (const en of enums) {
+        const ov = pageOv.nodes[en.name];
         const usage = enumUsage.get(en.name) ?? [];
         const usageLine = usage.length
             ? `<hr size="1"/>参照: <i>${esc(usage.join(", "))}</i>`
             : "";
         const label = `<b>«enum» ${en.name}</b><hr size="1"/>${en.values.join("<br/>")}${usageLine}`;
         const h = HEADER_HEIGHT + (en.values.length + (usage.length ? 1 : 0)) * ROW_HEIGHT + 8;
+        const cx = ov?.x ?? x;
+        const cy = ov?.y ?? y;
+        const cw = ov?.w ?? ENTITY_WIDTH;
+        const ch = ov?.h ?? h;
         enumCells.push(
             `<mxCell id="${esc(en.name)}" value="${label
                 .replace(/&/g, "&amp;")
@@ -740,7 +746,7 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
                 .replace(
                     /"/g,
                     "&quot;"
-                )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=${page.fill};strokeColor=${page.stroke};strokeWidth=1.5;fontSize=11;fontColor=#10242E;dashed=1;" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="${ENTITY_WIDTH}" height="${h}" as="geometry"/></mxCell>`
+                )}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=5;fillColor=${page.fill};strokeColor=${page.stroke};strokeWidth=1.5;fontSize=11;fontColor=#10242E;dashed=1;" vertex="1" parent="1"><mxGeometry x="${cx}" y="${cy}" width="${cw}" height="${ch}" as="geometry"/></mxCell>`
         );
         y += h + ENTITY_GAP_Y;
     }
@@ -772,7 +778,7 @@ function buildPage(
     }
 ): string {
     if (page.detail === "enum") {
-        return buildEnumPage(page, ctx.enums, ctx.enumUsage);
+        return buildEnumPage(page, ctx.enums, ctx.enumUsage, ctx.overrides);
     }
 
     const { modelById, edges, overrides } = ctx;
