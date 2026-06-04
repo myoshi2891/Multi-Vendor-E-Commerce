@@ -122,7 +122,8 @@ git diff --stat docs/architecture/data-model.drawio   # → 空（2 回目で差
 - 再生成された `docs/architecture/data-model.drawio`
 
 コミットメッセージ例:
-```
+
+```bash
 docs(erd): reroute Country/Order edges via gutters and regenerate ER diagram
 ```
 

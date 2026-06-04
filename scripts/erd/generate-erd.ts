@@ -865,6 +865,7 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
  *   - `enumUsage`: map of enum name to usage locations (unused for non-enum pages)
  *   - `overrides`: layout overrides loaded from the sidecar JSON
  * @returns The generated draw.io diagram XML for the given page.
+ */
 function buildPage(
     page: PageDef,
     ctx: {
