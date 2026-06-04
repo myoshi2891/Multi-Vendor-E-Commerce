@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="overview" name="1. System Overview">
-        <mxGraphModel dx="353" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1108" pageHeight="537" math="0" shadow="0">
+        <mxGraphModel dx="737" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1108" pageHeight="537" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -56,7 +56,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="catalog" name="2. Catalog">
-        <mxGraphModel dx="353" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1508" pageHeight="1127" math="0" shadow="0">
+        <mxGraphModel dx="737" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1508" pageHeight="1127" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -136,7 +136,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="customer" name="3. Customer Activity">
-        <mxGraphModel dx="353" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1148" pageHeight="844" math="0" shadow="0">
+        <mxGraphModel dx="737" dy="480" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1148" pageHeight="844" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>

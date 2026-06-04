@@ -49,6 +49,20 @@
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
+- **図の構成（8 ページ）**: `data-model.drawio` は機能ドメインごとに 8 タブに分割されている。
+  クロスドメインエッジを同一ページ内に収めるため、関連モデルは複数ページに重複掲載される。
+
+  | Page | タブ名 | 掲載エンティティ数 | 概要 |
+  |------|--------|--------------------|------|
+  | 1 | System Overview | 6 | 主要エンティティを名前のみで表示する全体鳥瞰図 |
+  | 2 | Catalog | 10 | Product 中心の商品カタログドメイン（Category / Variant / Color / Size 等） |
+  | 3 | Customer Activity | 4 | Review / Question 等の顧客行動ドメイン |
+  | 4 | Cart | 5 | カート構造（ProductVariant は参照注記のみ、エッジなし） |
+  | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
+  | 6 | Shipping | 6 | 配送ルール・住所（ShippingAddress を中心に ShippingRate / Country 等） |
+  | 7 | Identity | 2 | User / Store の Identity ドメイン |
+  | 8 | Enums | 7 | 全 enum 定義の参照ページ（エッジなし） |
+
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:
   1. スキーマ変更後は、`bun run erd:generate` を実行してクリーン生成を行います。
