@@ -295,7 +295,13 @@ function buildEdges(models: Model[]): Edge[] {
     return edges;
 }
 
-/** 全モデルの FK スカラー集合を確定（属性表示用） */
+/**
+ * Mark scalar fields that are used as foreign-key columns on their containing models.
+ *
+ * For each model, any field whose name appears in a relation's `fields` list will have its `isForeignKey` property set to `true`.
+ *
+ * @param models - Array of model definitions to update in place
+ */
 function markForeignKeys(models: Model[]): void {
     const fkByModel = new Map<string, Set<string>>();
     for (const model of models) {
@@ -317,15 +323,32 @@ function markForeignKeys(models: Model[]): void {
 
 // ---------------------------------------------------------------------------
 // 3.5 レイアウト override サイドカーの読み込み（外部入力 = unknown + 型ガード）
-// ---------------------------------------------------------------------------
+/**
+ * Determines whether a value is a plain object suitable for use as a string-keyed record.
+ *
+ * @param v - The value to test
+ * @returns `true` if `v` is an object, not `null`, and not an array; `false` otherwise.
+ */
 function isRecord(v: unknown): v is Record<string, unknown> {
     return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+/**
+ * Determines whether a value is a finite number.
+ *
+ * @param v - The value to test
+ * @returns `true` if `v` is a finite number, `false` otherwise.
+ */
 function isFiniteNumber(v: unknown): v is number {
     return typeof v === "number" && Number.isFinite(v);
 }
 
+/**
+ * Create a NodeOverride from an arbitrary value when it contains finite numeric `x`, `y`, `w`, or `h` properties.
+ *
+ * @param v - The value to parse for node override properties.
+ * @returns A `NodeOverride` containing any of `x`, `y`, `w`, `h` that were finite numbers, or `null` if none were present or `v` is not a record.
+ */
 function parseNodeOverride(v: unknown): NodeOverride | null {
     if (!isRecord(v)) return null;
     const o: NodeOverride = {};
@@ -336,6 +359,12 @@ function parseNodeOverride(v: unknown): NodeOverride | null {
     return Object.keys(o).length > 0 ? o : null;
 }
 
+/**
+ * Parses a raw value into an EdgeOverride when it contains valid numeric port coordinates or waypoints.
+ *
+ * @param v - The unknown input to validate and parse as an edge override object.
+ * @returns An `EdgeOverride` containing any of `waypoints`, `exitX`, `exitY`, `entryX`, or `entryY` when those fields are valid numbers (and `waypoints` is a non-empty array of `{x,y}` points); `null` if no valid override fields are present.
+ */
 function parseEdgeOverride(v: unknown): EdgeOverride | null {
     if (!isRecord(v)) return null;
     const o: EdgeOverride = {};
@@ -356,8 +385,11 @@ function parseEdgeOverride(v: unknown): EdgeOverride | null {
 }
 
 /**
- * `layout-overrides.json` を読む。ファイル欠如・パース失敗・型不一致はいずれも
- * 「override 無し」へフォールバックし、生成自体は止めない（CI 安定性を優先）。
+ * Normalize a raw page override object into a PageOverride, extracting valid node and edge overrides.
+ *
+ * Parses `nodes` and `edges` from the provided value and includes only entries that pass validation.
+ *
+ * @returns A PageOverride containing parsed `nodes` and `edges`. If the input is missing or malformed, returns an empty PageOverride (`{ nodes: {}, edges: {} }`).
  */
 function parsePageOverride(v: unknown): PageOverride {
     const page: PageOverride = { nodes: {}, edges: {} };
@@ -377,6 +409,16 @@ function parsePageOverride(v: unknown): PageOverride {
     return page;
 }
 
+/**
+ * Load and validate layout override definitions from the configured overrides file.
+ *
+ * Reads and parses the JSON at OVERRIDES_PATH and returns a `LayoutOverrides` object when it
+ * conforms to the expected shape. If the file is missing, malformed, or does not match the
+ * expected structure, this function returns an empty fallback (`{ pages: {} }`) so callers can
+ * continue without overrides. Parse failures are reported to `console.error`.
+ *
+ * @returns A `LayoutOverrides` object parsed from the overrides file, or `{ pages: {} }` if no valid overrides are available.
+ */
 function loadLayoutOverrides(): LayoutOverrides {
     const empty: LayoutOverrides = { pages: {} };
     let raw: string;
@@ -404,8 +446,10 @@ function loadLayoutOverrides(): LayoutOverrides {
 }
 
 /**
- * エッジ override の検索キー。同一ペア間の多重辺（例: User→Store の FK と暗黙 M:N）を
- * 区別するため FK カラム名(label) を第一識別子に用いる。label が空なら relationName を使う。
+ * Builds a stable identifier string for locating an edge's layout override.
+ *
+ * @param e - The edge for which to generate the override key
+ * @returns A string in the form `<parent->child:identifier>`, where `identifier` is the edge's `label` if non-empty, otherwise its `relationName`
  */
 function edgeOverrideKey(e: Edge): string {
     const disc = e.label && e.label.length > 0 ? e.label : e.relationName;
@@ -638,6 +682,11 @@ function entityLabel(model: Model): string {
     return `<b>${model.name}</b><hr size="1"/>${body}`;
 }
 
+/**
+ * Compute the pixel height of a model's entity box for the diagram.
+ *
+ * @returns The total height in pixels including the header, one row per non-relation field and per composite-unique entry, plus vertical padding.
+ */
 function entityHeight(model: Model): number {
     const rowCount =
         model.fields.filter((f) => !f.isRelationObject).length +
@@ -656,12 +705,25 @@ interface Pos {
     h: number;
 }
 
-/** name-only ラベル（Overview ページ・カラム非表示） */
+/**
+ * Create an HTML label that shows only the model name (used for overview pages).
+ *
+ * @param model - The model whose name will be rendered
+ * @returns An HTML string with the model name wrapped in a bold tag
+ */
 function entityNameLabel(model: Model): string {
     return `<b>${model.name}</b>`;
 }
 
-/** 1 ページ分の mxCell 群を <diagram> XML へ包む。 */
+/**
+ * Wraps a page's mxCell XML fragments into a <diagram> element containing an mxGraphModel.
+ *
+ * @param page - Page definition whose `id` and `name` are used for the diagram attributes
+ * @param cells - Array of mxCell XML strings to be inserted into the diagram's root
+ * @param pageWidth - Diagram page width in pixels
+ * @param pageHeight - Diagram page height in pixels
+ * @returns The complete `<diagram>` XML string for the given page
+ */
 function diagramXml(page: PageDef, cells: string[], pageWidth: number, pageHeight: number): string {
     return [
         `  <diagram id="${page.id}" name="${esc(page.name)}">`,
@@ -676,7 +738,14 @@ function diagramXml(page: PageDef, cells: string[], pageWidth: number, pageHeigh
     ].join("\n");
 }
 
-/** 凡例セル（各ページ下部に自己完結で配置） */
+/**
+ * Create an mxCell XML string for the page legend box placed at the given coordinates.
+ *
+ * @param id - The mxCell id to assign to the legend cell
+ * @param x - The left (x) position on the page in diagram units
+ * @param y - The top (y) position on the page in diagram units
+ * @returns The XML string for an `mxCell` representing the legend (fixed width 600 and height 135) containing HTML-formatted explanatory content
+ */
 function legendCell(id: string, x: number, y: number): string {
     const legend = [
         "<b>凡例 (Legend)</b>",
@@ -689,8 +758,15 @@ function legendCell(id: string, x: number, y: number): string {
 }
 
 /**
- * 背景コンテナ＋見出しセルを bbox から生成。entities より「先に」push して背面化する
- * （draw.io はセル順で背面→前面）。
+ * Create background container and heading mxCell XML strings positioned to enclose given member cells.
+ *
+ * Generates two cells (a rounded container and a heading band) whose geometry is computed from the bounding box of `members`; the returned `cells` are intended to be emitted before entity cells so they render behind them.
+ *
+ * @param page - Page metadata used for container styling and heading text (`title`, `fill`, `stroke`)
+ * @param members - Array of positioned members whose x/y/w/h extents determine the container bounding box
+ * @param idBox - mxCell id to use for the container cell
+ * @param idHead - mxCell id to use for the heading cell
+ * @returns An object containing `cells` (two mxCell XML strings: container then heading) and the computed container geometry `cx`, `cy`, `cw`, `ch` (x, y, width, height)
  */
 function containerCells(
     page: PageDef,
@@ -714,8 +790,18 @@ function containerCells(
 }
 
 /**
- * Enum ページ（id=enums）。リレーション線は描画せず、各 enum の「参照: Table.field」注記で
- * 参照元を示す。enum を縦方向に整列する。
+ * Build the draw.io diagram for the enums page (id = "enums").
+ *
+ * Generates a single-page diagram that lays out each enum vertically, includes enum values,
+ * and annotates each enum with its referencing locations (e.g., "Reference: Table.field").
+ * Relation edges are not drawn. Node position/size may be overridden by entries in
+ * `overrides.pages[page.id].nodes`.
+ *
+ * @param page - Page definition for the enums page
+ * @param enums - Array of enum definitions to render
+ * @param enumUsage - Map from enum name to an array of "Model.field" strings that reference the enum
+ * @param overrides - Layout overrides (per-page node/edge overrides) to apply when present
+ * @returns The `<diagram>` XML (mxGraphModel) for the enums page as a string
  */
 function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, string[]>, overrides: LayoutOverrides): string {
     const cells: string[] = [];
@@ -766,7 +852,19 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
     return diagramXml(page, cells, pageWidth, pageHeight);
 }
 
-/** 通常ページ（full / name）。ページ内の models を配置し、両端が同ページのエッジのみ描画する。 */
+/**
+ * Render a single non-enum ERD page (detail "full" or "name") into draw.io diagram XML.
+ *
+ * Applies optional page-specific layout overrides for node positions/sizes and edge wiring, and only includes edges whose both endpoints are present on the page.
+ *
+ * @param page - Page definition describing which models to place, layout grid, visual style, and isolated annotations.
+ * @param ctx - Rendering context containing:
+ *   - `modelById`: map of model name to parsed model metadata
+ *   - `edges`: list of all relation edges between models
+ *   - `enums`: parsed enum definitions (unused for non-enum pages)
+ *   - `enumUsage`: map of enum name to usage locations (unused for non-enum pages)
+ *   - `overrides`: layout overrides loaded from the sidecar JSON
+ * @returns The generated draw.io diagram XML for the given page.
 function buildPage(
     page: PageDef,
     ctx: {
@@ -910,7 +1008,12 @@ function buildPage(
 
 // ---------------------------------------------------------------------------
 // 7. メイン
-// ---------------------------------------------------------------------------
+/**
+ * Generate a multi-page draw.io (mxGraphModel) XML from the Prisma schema and write it to the configured output file.
+ *
+ * Reads the schema file, parses enums and models, derives relations and foreign keys, applies optional layout overrides,
+ * composes per-page diagrams, writes the combined .drawio XML to OUTPUT_PATH, and emits a compact summary and warnings to stderr.
+ */
 function main(): void {
     const raw = readFileSync(SCHEMA_PATH, "utf8");
     const src = stripComments(raw);

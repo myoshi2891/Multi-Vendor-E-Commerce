@@ -59,14 +59,30 @@ interface LayoutOverrides {
     pages: Record<string, PageOverride>;
 }
 
-/** mxCell 1 個分のブロックに分割（開きタグ <mxCell から次の <mxCell 直前まで）。 */
+/**
+ * Split a draw.io XML string into individual `<mxCell>` blocks.
+ *
+ * Each returned entry begins with `<mxCell` and contains the content up to (but not including) the next `<mxCell` start.
+ *
+ * @param xml - The complete draw.io XML text to split
+ * @returns An array of `<mxCell...>` blocks as strings
+ */
 function splitCells(xml: string): string[] {
     return xml
         .split(/(?=<mxCell\b)/)
         .filter((b) => b.startsWith("<mxCell"));
 }
 
-/** ブロックの開きタグ（最初の '>' まで）から属性を取り出す。value/style は内部に '>' を含まない前提。 */
+/**
+ * Extracts key="value" attributes from the opening tag of an XML/HTML-like block.
+ *
+ * Parses the substring from the start of `block` up to the first `>` and returns a record
+ * mapping attribute names to their unescaped string values. Assumes attribute values do not
+ * contain `"` characters and that `value`/`style` content does not contain `>`.
+ *
+ * @param block - The full element text (e.g. an `<mxCell ...>` block)
+ * @returns A map of attribute names to attribute values found in the opening tag
+ */
 function parseAttrs(block: string): Record<string, string> {
     const head = block.slice(0, block.indexOf(">"));
     const attrs: Record<string, string> = {};
@@ -78,7 +94,13 @@ function parseAttrs(block: string): Record<string, string> {
     return attrs;
 }
 
-/** style 文字列から数値プロパティを取り出す（無ければ undefined）。 */
+/**
+ * Extracts a numeric property value from a style string.
+ *
+ * @param style - The style string to search for the property (e.g. `"...;exitX=0.5;..."`).
+ * @param key - The property name to look up (the function searches for `key=<number>`).
+ * @returns The numeric value of the property if present and finite, `undefined` otherwise.
+ */
 function styleNumber(style: string, key: string): number | undefined {
     const m = style.match(new RegExp(`${key}=([\\d.]+)`));
     if (!m) return undefined;
@@ -86,7 +108,12 @@ function styleNumber(style: string, key: string): number | undefined {
     return Number.isFinite(n) ? n : undefined;
 }
 
-/** <Array as="points"> 内の経由点を抽出（ラベルオフセット等の他 mxPoint は拾わない）。 */
+/**
+ * Extracts waypoint coordinates from an `<Array as="points">` fragment inside an mxCell block.
+ *
+ * @param block - The mxCell XML fragment to search for an `<Array as="points">` element
+ * @returns An array of `{ x, y }` objects parsed from `<mxPoint x="..." y="..."/>` entries; empty if none found
+ */
 function parseWaypoints(block: string): { x: number; y: number }[] {
     const arr = block.match(/<Array\s+as="points">([\s\S]*?)<\/Array>/);
     if (!arr) return [];
@@ -101,12 +128,23 @@ function parseWaypoints(block: string): { x: number; y: number }[] {
     return pts;
 }
 
-/** エッジラベル(value)から override キーの識別子を得る。末尾の CASCADE 記号 ⛓ を除去。 */
+/**
+ * Produce a discriminator string from an edge label by removing a trailing cascade symbol.
+ *
+ * @param value - The edge label text
+ * @returns The label with a trailing `⛓` (and surrounding whitespace) removed and trimmed
+ */
 function labelToDiscriminator(value: string): string {
     return value.replace(/\s*⛓\s*$/, "").trim();
 }
 
-/** 1 つの <diagram> 本文から配線（必須）・ノード座標（任意）を抽出する。 */
+/**
+ * Extract routing information and, optionally, node coordinates from a single `<diagram>` XML body.
+ *
+ * @param body - The inner XML content of a single `<diagram>` element to parse.
+ * @param includeNodes - If true, extract vertex node geometries; otherwise omit node coordinates.
+ * @returns A PageOverride object whose `edges` maps `source->target:discriminator` to routing overrides (only populated when waypoints or exit/entry coordinates are present) and whose `nodes` maps node IDs to `{x,y,w,h}` (only populated when `includeNodes` is true and a vertex has a valid mxGeometry and is not an auto/legend/non-model id).
+ */
 function extractDiagram(body: string, includeNodes: boolean): PageOverride {
     const page: PageOverride = { nodes: {}, edges: {} };
     for (const block of splitCells(body)) {
@@ -159,6 +197,19 @@ function extractDiagram(body: string, includeNodes: boolean): PageOverride {
     return page;
 }
 
+/**
+ * Read a draw.io ERD XML file, extract per-diagram layout override information (edge routing and optionally node positions), and write the result as a JSON file.
+ *
+ * Command-line behavior:
+ * - Accepts `--include-nodes` to include node `x,y,width,height` entries; otherwise only edge routing is extracted.
+ * - Accepts optional positional arguments: first is the input path (defaults to `DEFAULT_INPUT`), second is the output path (defaults to `DEFAULT_OUTPUT`).
+ *
+ * Effects:
+ * - Reads the input XML, parses each `<diagram id="...">...</diagram">` and collects per-page overrides.
+ * - Omits pages that have neither edge nor node overrides.
+ * - Writes a prettified JSON file to the output path (creating parent directories as needed).
+ * - Emits a summary line to stderr with input/output paths, page count, edge count, node count, and a note when nodes were not included.
+ */
 function main(): void {
     const argv = process.argv.slice(2);
     const includeNodes = argv.includes("--include-nodes");
