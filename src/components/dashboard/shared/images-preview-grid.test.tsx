@@ -11,7 +11,6 @@ jest.mock("next/image", () => ({
         priority,
         ...props
     }: React.ImgHTMLAttributes<HTMLImageElement> & { priority?: boolean }) => (
-        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
         <img {...props} />
     ),
 }));

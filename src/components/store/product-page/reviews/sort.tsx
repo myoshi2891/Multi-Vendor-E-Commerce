@@ -11,7 +11,6 @@ const ReviewsSort: FC<Props> = ({ sort, setSort }) => {
 	return (
 		<div className="group relative w-[120px]">
 			{/* Trigger */}
-			{/* eslint-disable-next-line tailwindcss/classnames-order */}
 			<button type="button" className="inline-flex items-center py-0.5 text-center text-sm text-main-primary hover:text-[#fd384f]">
 				Sort by{" "}
 				{sort?.orderBy === "latest"

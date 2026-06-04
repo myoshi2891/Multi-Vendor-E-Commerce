@@ -57,7 +57,6 @@ if (typeof globalThis.window !== "undefined" && typeof window.matchMedia === "un
 
 try {
   // Optional MSW support if tests/mocks/server is defined.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { server } = require("../tests/mocks/server");
 
   if (server) {

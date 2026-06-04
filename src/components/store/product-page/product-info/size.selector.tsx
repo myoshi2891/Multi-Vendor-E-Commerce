@@ -36,7 +36,6 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
                 handleCartProductToBeAddedChange(search_size)
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sizeId, sizes, handleCartProductToBeAddedChange])
 
     return (

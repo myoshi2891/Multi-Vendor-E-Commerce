@@ -9,7 +9,6 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
-  // eslint-disable-next-line tailwindcss/no-custom-classname
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}

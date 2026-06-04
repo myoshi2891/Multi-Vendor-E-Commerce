@@ -184,7 +184,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -208,7 +208,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -235,7 +235,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -259,7 +259,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													}
 													min={0}
 													step={0.1}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -285,7 +285,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={0}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />
@@ -308,7 +308,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 														field.onChange
 													}
 													min={1}
-													className="!pl-1 rounded-md !shadow-none"
+													className="rounded-md !pl-1 !shadow-none"
 												/>
 											</FormControl>
 											<FormMessage />

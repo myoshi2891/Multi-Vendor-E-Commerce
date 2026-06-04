@@ -2,7 +2,8 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import tailwindcss from "eslint-plugin-tailwindcss";
 
 /** @type {import("eslint").Linter.Config[]} */
-export default [
+const config = [
+    { ignores: ["coverage/**", ".next/**"] },
     ...nextCoreWebVitals,
     ...tailwindcss.configs["flat/recommended"],
     {
@@ -23,4 +24,14 @@ export default [
             "react-hooks/globals": "warn",
         },
     },
+    {
+        // テストファイルは <img> を直接使うことがある — Next.js / a11y ルールを緩める
+        files: ["tests/**/*.{tsx,jsx,ts}", "src/**/*.test.{tsx,jsx,ts}"],
+        rules: {
+            "@next/next/no-img-element": "off",
+            "jsx-a11y/alt-text": "off",
+        },
+    },
 ];
+
+export default config;
