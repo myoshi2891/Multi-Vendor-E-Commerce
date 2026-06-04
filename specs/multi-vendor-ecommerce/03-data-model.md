@@ -56,7 +56,7 @@
   |------|--------|--------------------|------|
   | 1 | System Overview | 6 | 主要エンティティを名前のみで表示する全体鳥瞰図 |
   | 2 | Catalog | 10 | Product 中心の商品カタログドメイン（Category / Variant / Color / Size 等） |
-  | 3 | Customer Activity | 4 | Review / Question 等の顧客行動ドメイン |
+  | 3 | Customer Activity | 4 | Review / ReviewImage / Wishlist の顧客行動ドメイン |
   | 4 | Cart | 5 | カート構造（ProductVariant は参照注記のみ、エッジなし） |
   | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
   | 6 | Shipping | 6 | 配送ルール・住所（ShippingAddress を中心に ShippingRate / Country 等） |

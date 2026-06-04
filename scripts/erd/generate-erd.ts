@@ -726,6 +726,7 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
     const x = ORIGIN_X;
     let y = ORIGIN_Y;
     const enumCells: string[] = [];
+    const members: Pos[] = [];
     for (const en of enums) {
         const ov = pageOv.nodes[en.name];
         const usage = enumUsage.get(en.name) ?? [];
@@ -738,6 +739,7 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
         const cy = ov?.y ?? y;
         const cw = ov?.w ?? ENTITY_WIDTH;
         const ch = ov?.h ?? h;
+        members.push({ x: cx, y: cy, w: cw, h: ch });
         enumCells.push(
             `<mxCell id="${esc(en.name)}" value="${label
                 .replace(/&/g, "&amp;")
@@ -750,8 +752,6 @@ function buildEnumPage(page: PageDef, enums: EnumDef[], enumUsage: Map<string, s
         );
         y += h + ENTITY_GAP_Y;
     }
-    const bottom = y - ENTITY_GAP_Y;
-    const members: Pos[] = [{ x, y: ORIGIN_Y, w: ENTITY_WIDTH, h: bottom - ORIGIN_Y }];
     const cont = containerCells(page, members, nextId(), nextId());
     cells.push(...cont.cells);
     cells.push(
