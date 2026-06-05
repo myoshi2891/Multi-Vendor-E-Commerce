@@ -130,7 +130,6 @@ const AddressDetails: FC<AddressDetailsProps> = ({
             setShow(false)
         } catch (error: any) {
             // Handling form submission errors
-            console.log(error)
             toast({
                 variant: 'destructive',
                 title: 'Oops!',
