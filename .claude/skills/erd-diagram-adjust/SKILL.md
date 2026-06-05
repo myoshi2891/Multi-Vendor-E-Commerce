@@ -66,7 +66,7 @@ bun run erd:generate
 
 - サマリ `[ERD] models=.. enums=.. edges=..` を確認。
 - 新モデルを追加した場合、**`[ERD] WARNING: 未分類モデル ...` が出ないこと**を確認する。
-  出たら `scripts/erd/generate-erd.ts` の `DOMAINS` 配列に分類を追記してから再実行
+  出たら `scripts/erd/generate-erd.ts` の `PAGES` 定義（各ページの `models` および `cells`）にモデル名を追記し、分類してから再実行
   （[`.claude/rules/03-data-model-diagram-sync.md`](../../rules/03-data-model-diagram-sync.md)）。
 - 既存のサイドカーがあれば `[ERD] layout-overrides applied: nodes=.. edges=..` も表示される。
 
@@ -117,7 +117,7 @@ git diff --stat docs/architecture/data-model.drawio   # → 空（2 回目で差
 以下を**同一コミット**に含める:
 
 - `prisma/schema.prisma`（スキーマを変えた場合）
-- `scripts/erd/generate-erd.ts`（`DOMAINS` 等を変えた場合）
+- `scripts/erd/generate-erd.ts`（`PAGES` 等を変えた場合）
 - `scripts/erd/layout-overrides.json`（調整した場合）
 - 再生成された `docs/architecture/data-model.drawio`
 
@@ -135,18 +135,22 @@ docs(erd): reroute Country/Order edges via gutters and regenerate ER diagram
 
 ```jsonc
 {
-  "nodes": {
-    "Order": { "x": 2310, "y": 120 }        // 任意: w/h も指定可
-  },
-  "edges": {
-    // キー = "<親>-><子>:<FK カラム名>"（多重辺は FK 名で区別。M:N は "join table"）
-    "Country->ShippingAddress:countryId": {
-      "exitX": 1, "exitY": 0.5,             // 親側の接続ポート（0..1 相対）
-      "entryX": 1, "entryY": 0.5,           // 子側の接続ポート
-      "waypoints": [                         // 経由点（draw.io 絶対座標）
-        { "x": 3150, "y": 180 },
-        { "x": 3150, "y": 1197 }
-      ]
+  "pages": {
+    "<diagramId>": {
+      "nodes": {
+        "Order": { "x": 2310, "y": 120 }        // 任意: w/h も指定可
+      },
+      "edges": {
+        // キー = "<親>-><子>:<FK カラム名>"（多重辺は FK 名で区別。M:N は "join table"）
+        "Country->ShippingAddress:countryId": {
+          "exitX": 1, "exitY": 0.5,             // 親側の接続ポート（0..1 相対）
+          "entryX": 1, "entryY": 0.5,           // 子側の接続ポート
+          "waypoints": [                         // 経由点（draw.io 絶対座標）
+            { "x": 3150, "y": 180 },
+            { "x": 3150, "y": 1197 }
+          ]
+        }
+      }
     }
   }
 }
@@ -165,7 +169,7 @@ docs(erd): reroute Country/Order edges via gutters and regenerate ER diagram
 - ❌ `docs/architecture/data-model.drawio` を**直接手編集してコミット**する（調整はサイドカー経由のみ）。
 - ❌ サイドカーに**コメント**を書く（厳格 JSON のためパース失敗 → override 無効化）。
 - ❌ スキーマを変えたのに**再生成せず**コミットする。
-- ❌ 新モデル追加時に `DOMAINS` 未分類のまま（orphan WARNING を無視）放置する。
+- ❌ 新モデル追加時に `PAGES` 未分類のまま（orphan WARNING を無視）放置する。
 
 ---
 

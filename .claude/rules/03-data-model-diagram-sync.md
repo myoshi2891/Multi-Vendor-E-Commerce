@@ -14,7 +14,7 @@
 ### MUST
 - `prisma/schema.prisma` を変更したら、**同一 PR 内で** `bun run erd:generate` を実行し、
   再生成された `docs/architecture/data-model.drawio` をコミットすること。
-- 新規モデルを追加した場合は `scripts/erd/generate-erd.ts` の `DOMAINS` 配列に分類を追記し、
+- 新規モデルを追加した場合は `scripts/erd/generate-erd.ts` の `PAGES` 配列にモデル名を追記し、
   再生成時に **stderr の orphan WARNING がゼロ**（全モデルが分類済み）であることを確認すること。
 - 図の見た目・分類・記法を変えたい場合は、`scripts/erd/generate-erd.ts`（=データ源）を編集してから
   `bun run erd:generate` で再生成すること。

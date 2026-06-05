@@ -2,7 +2,7 @@
 
 exports[`Avatar (snapshot) merges className overrides 1`] = `
 <span
-  class="relative flex shrink-0 overflow-hidden rounded-full h-16 w-16"
+  class="relative flex shrink-0 overflow-hidden rounded-full size-16"
 >
   <span
     class="flex h-full w-full items-center justify-center rounded-full bg-muted text-lg"

@@ -7,7 +7,7 @@ const config = [
     ...nextCoreWebVitals,
     ...tailwindcss.configs["flat/recommended"],
     {
-        files: ["**/*.{tsx,jsx}"],
+        files: ["**/*.{ts,tsx,jsx}"],
         rules: {
             "tailwindcss/classnames-order": "warn",
         },
