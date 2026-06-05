@@ -145,11 +145,18 @@
 ### 🟢 未着手（低優先度）— Mid–Long Term
 
 #### B4. CI でのカバレッジ artifact 化 + dashboard 自動再生成
-- **対象**: `jest.config.js`（`collectCoverage` / `coverageReporters: ['lcov', 'text-summary']` の追加）+ `.github/workflows/ci.yml`（test ジョブで `bun run test -- --coverage` + `actions/upload-artifact@<sha> # v4` で `coverage/lcov.info` を保存）
-- **推奨ツール**: Jest（既存）+ `actions/upload-artifact`。任意で Codecov / Coveralls 連携
-- **コスト感**: **S**（jest 設定 + CI 1 ジョブの修正）
-- **期待効果**: ローカル再生成漏れによる dashboard の鮮度劣化を防ぎ、PR 上でカバレッジ artifact をレビュー可能にする。`docs/coverage-dashboard.html` の自動再生成も同ジョブで実行できれば手作業を完全に排除できる
-- **背景**: 旧 OI-7（`coverage/lcov.info` が古い）の根本対応として、`QA_HANDOFF.md` の Open Issues から本セクションへ移管（2026-05-24）
+> ✅ **完了（2026-06-03）** — 見出しテキストは内部リンクのアンカー安定のため変更せず、完了表示は本行で示す。
+- **対象**: `jest.config.js`（`collectCoverageFrom` / `coverageReporters: ['lcov', 'text-summary']`）+ `.github/workflows/ci.yml`（`test` ジョブ）
+- **採用ツール**: Jest（既存）+ `actions/upload-artifact@043fb46d # v7.0.1`
+- **コスト感**: **S**（CI 1 ジョブに 2 ステップ追加）
+- **実装**:
+  - `jest.config.js`: `coverageReporters: ['lcov', 'text-summary']` 設定済み（既存）。
+  - `ci.yml` `test` ジョブ: `bunx jest --verbose --ci --coverage` → `coverage/lcov.info` を `coverage-lcov` artifact 化（既存）。本タスクで **`bun run coverage:dashboard` を後段に追加**して `docs/coverage-dashboard.html` を再生成し、**`coverage-dashboard` artifact（`retention-days: 7`）**として保存。
+- **反映方式 = artifact のみ（リポジトリへの自動コミットはしない）**:
+  - `render-html.ts` が `generatedAt`（`new Date()`）を masthead / `<meta>` / 埋め込み JSON の 3 箇所に出力するため、**CI 実行ごとに HTML が必ず差分を持つ**。naïve に main/dev へ自動コミットすると commit→CI→commit のループ（churn）になる。
+  - したがって追跡ファイル（`docs/coverage-dashboard.html`）の更新は従来どおり[手動コミット運用（rule 02）](../../.claude/rules/02-tdd-step-commit.md)を SSOT のまま維持し、CI は**最新カバレッジの可視化を artifact として残す**役割に限定する。PR コメント / GitHub Pages は本フェーズ非対象。
+- **期待効果**: ローカル再生成漏れがあっても、PR の Actions run summary から常に最新 lcov 由来の dashboard artifact をレビュー可能。
+- **背景**: 旧 OI-7（`coverage/lcov.info` が古い）の根本対応として `QA_HANDOFF.md` の Open Issues から移管（2026-05-24）→ 本タスクで完了（2026-06-03）。
 
 ---
 

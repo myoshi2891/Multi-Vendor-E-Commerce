@@ -31,7 +31,6 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: "border bg-background text-foreground",
-        // eslint-disable-next-line tailwindcss/no-custom-classname
         destructive:
           "destructive group border-destructive bg-destructive text-destructive-foreground",
       },

@@ -26,7 +26,7 @@ describe("Avatar (snapshot)", () => {
 
     it("merges className overrides", () => {
         const { container } = render(
-            <Avatar className="h-16 w-16">
+            <Avatar className="size-16">
                 <AvatarFallback className="text-lg">XL</AvatarFallback>
             </Avatar>
         );

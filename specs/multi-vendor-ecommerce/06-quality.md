@@ -47,6 +47,7 @@
   components. Floating-point errors are mitigated using
   `Math.round((result + Number.EPSILON) * 100) / 100` to guarantee 2-decimal
   precision for all monetary values.
+- Lighthouse CI (`.lighthouserc.json`) による、主要画面（例: 商品一覧 `/browse`）のパフォーマンス予算（LCP, CLS, TBT 等）の自動計測と継続的監視（CI上の実行結果は一時パブリックストレージへアップロード）。
 
 ## Reliability
 - Payment details are upserted and linked to orders.
@@ -58,7 +59,7 @@
   are wrapped in try/catch with appropriate HTTP status codes or error
   re-throwing.
 
-## Observability
+## Observability & Code Quality
 - Errors are logged to the console; no centralized logging is in place yet.
 - Catch blocks use `error: unknown` (never `any`) with `instanceof Error`
   type guards for structured logging (`console.error` with context prefix,
@@ -67,3 +68,6 @@
   and use structured log format: `[Module:Function] Error message` with
   `{ error: message, stack: error.stack }` for consistent error tracking and
   debugging.
+- 静的解析プラットフォームとして **SonarQube / SonarCloud** を採用し、継続的なコード品質（バグ・スメル・脆弱性・テストカバレッジ）の可視化および監視を行います。
+  - **CI (SaaS)**: PR 毎に SonarCloud にて自動解析を実行します。品質ゲート (Quality Gate) は導入初期段階では非ブロッキング（`continue-on-error`）で運用します。
+  - **ローカル (Docker)**: `docker-compose.sonar.yml` および Makefile (`make sonar-up/scan/down`) を使用し、ローカル環境でも CI と同等の静的解析を再現・事前確認できます（詳細は [`docs/architecture/decisions/005-sonarqube-static-analysis.md`](../../docs/architecture/decisions/005-sonarqube-static-analysis.md) を参照）。

@@ -138,10 +138,10 @@ const ProductShippingFee: FC<Props> = ({
 								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 									Fee per kg (1 kg = 2.205 lb)
 								</th>
-								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 									${fee}
 								</th>
 							</tr>
@@ -190,10 +190,10 @@ const ProductShippingFee: FC<Props> = ({
 								className="grid gap-x-1 px-4 text-xs"
 								style={{ gridTemplateColumns: "4fr 1fr" }}
 							>
-								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 									Fee
 								</th>
-								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 font-normal text-left">
+								<th scope="col" className="w-full rounded-sm bg-gray-50 px-2 py-0.5 text-left font-normal">
 									${fee}
 								</th>
 							</tr>

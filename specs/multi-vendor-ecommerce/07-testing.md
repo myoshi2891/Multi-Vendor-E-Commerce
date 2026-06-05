@@ -271,3 +271,24 @@ describe("computeShippingTotal", () => {
 
 **Implementation**: Uses `Math.round((result + Number.EPSILON) * 100) / 100` to
 guarantee 2-decimal precision for all monetary calculations.
+
+## CI & Quality Integration
+
+### Continuous Integration (CI) Workflow
+GitHub Actions (`.github/workflows/ci.yml`) にて、以下の自動検証が PR およびマージ時に実行されます。
+1. **静的解析 (Lint & Build)**: `bun run lint` および `bun run build` を実行し、コードの適合性とコンパイルの成功を保証。
+2. **ユニット・コンポーネントテスト**: `bun run test --coverage` を実行。結果として出力されたカバレッジレポート（lcov）は artifact に保存され、SonarCloud に連携されます。
+3. **データベース統合テスト (Integration)**: `bun run test:integration` を実行。`testcontainers-managed PostgreSQL` を runner 上の Docker を用いて一時起動し、アトミック性や外部キー制約、Decimal 等の整合性をテスト。
+4. **シードデータの冪等性検証**: `seed-idempotency` ジョブにて、実 PostgreSQL に対するシードスクリプトの 2 回連続実行およびデータ行数の一致検証を実行（E2E テスト用のクリーンなデータ状態の担保）。
+
+### Code Quality Monitoring (SonarCloud)
+CI の `test` ジョブ完了後、SonarCloud ジョブ（`.github/workflows/ci.yml` の `sonarcloud`）が起動し、静的コード解析を実施します。
+- バグ、コードスメル、セキュリティ脆弱性、およびコードカバレッジを統合ダッシュボードで追跡。
+- 導入初期段階での Quality Gate は、既存コードベースとの兼ね合いから **非ブロッキング** で運用し、開発の停滞を防ぎつつ可視化を促進します。
+- ローカル環境でも `make sonar-scan` コマンドで同様の静的解析を再現・事前確認できます（詳細は [`docs/architecture/decisions/005-sonarqube-static-analysis.md`](../../docs/architecture/decisions/005-sonarqube-static-analysis.md) を参照）。
+
+### Automated Performance Audit (Lighthouse CI)
+CI での PR トリガー時に、Lighthouse CI ジョブ (`.github/workflows/lhci.yml`) が起動し、自動パフォーマンス予算検証が行われます。
+- `/browse` ページなどを対象に Lighthouse の desktop プリセットで 3 回測定を実行。
+- パフォーマンス（Performance）、LCP、CLS、TBT などのスコアが指定のしきい値に適合しているかを自動監査（現在はベースライン観測段階のため警告のみで非ブロッキング）。
+- 測定レポートは一時ストレージ（Lighthouse temporary public storage）にアップロードされ、結果のリンクが CI ログに記録されます。

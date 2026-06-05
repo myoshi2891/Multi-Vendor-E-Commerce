@@ -9,8 +9,11 @@
 - [`saas-roadmap.md`](saas-roadmap.md) - 将来のマルチテナント化ロードマップ
 - [`decisions/`](decisions/) - Architecture Decision Records (ADR)
 - [`data-model.drawio`](data-model.drawio) - データモデル ER 図（draw.io）。**自動生成物**：
-  SSOT は `prisma/schema.prisma`、`scripts/erd/generate-erd.ts` が生成。スキーマ変更後は
-  `bun run erd:generate` で再生成する（[同期ルール](../../.claude/rules/03-data-model-diagram-sync.md)）
+  構造の SSOT は `prisma/schema.prisma`、`scripts/erd/generate-erd.ts` が生成。スキーマ変更後は
+  `bun run erd:generate` で再生成する（[同期ルール](../../.claude/rules/03-data-model-diagram-sync.md)）。
+  線がボックスを突き抜ける等の**レイアウト調整**は配置・配線の SSOT
+  `scripts/erd/layout-overrides.json` で行い、draw.io 調整は `bun run erd:extract` で還流する
+  （運用手順: [`erd-diagram-adjust` スキル](../../.claude/skills/erd-diagram-adjust/SKILL.md)）
 
 ---
 

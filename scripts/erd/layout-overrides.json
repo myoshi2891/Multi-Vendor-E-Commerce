@@ -1,0 +1,17 @@
+{
+  "pages": {
+    "order": {
+      "nodes": {},
+      "edges": {
+        "OrderGroup->OrderItem:orderGroupId": {
+          "exitX": 1, "exitY": 0.5, "entryX": 1, "entryY": 0.5,
+          "waypoints": [ { "x": 720, "y": 248 }, { "x": 720, "y": 863 } ]
+        },
+        "User->PaymentDetails:userId": {
+          "exitX": 1, "exitY": 0.2, "entryX": 0, "entryY": 0.2,
+          "waypoints": [ { "x": 380, "y": 95 }, { "x": 770, "y": 95 } ]
+        }
+      }
+    }
+  }
+}

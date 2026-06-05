@@ -74,6 +74,19 @@ jobs:
           path: coverage/lcov.info
           if-no-files-found: error
           retention-days: 1
+      - name: Regenerate coverage dashboard
+        # 直前の jest --coverage が生成した coverage/lcov.info を取り込み
+        # docs/coverage-dashboard.html を再生成する (tsx はインストール済み)。
+        # artifact 化のみ — リポジトリへの自動コミットはしない (generatedAt が
+        # 実行ごとに変わり churn の原因になるため。詳細は COVERAGE_REPORT §3 B4)。
+        run: bun run coverage:dashboard
+      - name: Upload coverage dashboard (html)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-dashboard
+          path: docs/coverage-dashboard.html
+          if-no-files-found: error
+          retention-days: 7
 
   # SonarCloud 静的解析 — 初期は非ブロッキング (continue-on-error: true)。
   # test ジョブが生成した coverage/lcov.info を artifact から復元して送信する。
