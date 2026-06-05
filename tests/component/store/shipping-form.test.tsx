@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AddressDetails from '@/components/store/shared/shipping-addresses/address-details'
 import { createMockShippingAddress, createMockCountry, createMockUser } from '@/config/test-fixtures'
@@ -100,18 +100,22 @@ describe('AddressDetails', () => {
 
         render(<AddressDetails countries={countries} setShow={mockSetShow} />)
 
-        fireEvent.change(screen.getByPlaceholderText('First name'), { target: { value: 'Jane' } })
-        fireEvent.change(screen.getByPlaceholderText('Last name'), { target: { value: 'Smith' } })
-        fireEvent.change(screen.getByPlaceholderText('Phone number'), { target: { value: '987654321' } })
-        fireEvent.change(screen.getByPlaceholderText('Street, house/apartment/unit'), { target: { value: 'Test Road 123' } })
-        fireEvent.change(screen.getByPlaceholderText('City'), { target: { value: 'New York' } })
-        fireEvent.change(screen.getByPlaceholderText('State/Province'), { target: { value: 'NY' } })
-        fireEvent.change(screen.getByPlaceholderText('Zip code'), { target: { value: '10001' } })
-        
-        // CountrySelector mock usage
-        fireEvent.change(screen.getByTestId('country-selector'), { target: { value: 'United States' } })
+        await act(async () => {
+            fireEvent.change(screen.getByPlaceholderText('First name'), { target: { value: 'Jane' } })
+            fireEvent.change(screen.getByPlaceholderText('Last name'), { target: { value: 'Smith' } })
+            fireEvent.change(screen.getByPlaceholderText('Phone number'), { target: { value: '987654321' } })
+            fireEvent.change(screen.getByPlaceholderText('Street, house/apartment/unit'), { target: { value: 'Test Road 123' } })
+            fireEvent.change(screen.getByPlaceholderText('City'), { target: { value: 'New York' } })
+            fireEvent.change(screen.getByPlaceholderText('State/Province'), { target: { value: 'NY' } })
+            fireEvent.change(screen.getByPlaceholderText('Zip code'), { target: { value: '10001' } })
 
-        fireEvent.click(screen.getByRole('button', { name: /Create Address/i }))
+            // CountrySelector mock usage
+            fireEvent.change(screen.getByTestId('country-selector'), { target: { value: 'United States' } })
+        })
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Create Address/i }))
+        })
 
         await waitFor(() => {
             expect(upsertShippingAddress).toHaveBeenCalledWith(expect.objectContaining({
