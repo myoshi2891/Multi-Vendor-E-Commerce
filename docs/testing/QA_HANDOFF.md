@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-06 / **HEAD**: `7ef382f`
+> **最終更新**: 2026-06-06 / **HEAD**: `880b225`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1193** / 129 スイート（127 passed + 2 skipped）— 2026-06-06 コードレビュー指摘対応の同期で実測へ更新（review/rating 系コンポーネントテスト群の未同期分を反映 + `upsertReview` のメール欠落エラー経路テスト +1） |
+| Jest テスト総数 (unit/component) | **1220** / 134 スイート（132 passed + 2 skipped）— 2026-06-06 カバレッジ改善対応（5テストスイート新規追加、review.test.ts 境界テストケース +1） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -229,6 +229,8 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `1d69f0f` | **B2 Stripe Webhook 完了**: `/api/webhooks/stripe` ハンドラー新設、payment_intent.succeeded/failed/charge.refunded を冪等処理（15 ケース） |
 | `2321cd8` | **B2 PayPal Webhook 完了 / NA-NS-02 archive**: `/api/webhooks/paypal` ハンドラー新設、PAYMENT.CAPTURE.COMPLETED/DENIED/REFUNDED を冪等処理（15 ケース、1103 → 1135 / +32） |
 | `a86e012`〜`7ef382f` | コードレビュー指摘対応: `upsertReview` を `db.user.upsert` でアトミック化（レース回避）+ メール欠落エラー経路テスト +1、CustomRatingStars に ARIA/キーボード操作追加、profile データ取得 try/catch、`any`/unsafe cast 除去・共有フィクスチャ化、admin-manual のソフトデリート記述修正。テスト統計を実測へ同期（→ **1193** / 129 スイート、snapshot 127、型エラー 0） |
+| `880b225` | chore: ドキュメントの同期、payments-table の競合保護・reviews-container のクリーンアップ追加、featured.ssr / product-watch のテスト安定化 |
+| (本セッション) | CI品質ゲート改善: review-details.tsx のアクセシビリティ（button化）対応、product.ts からの未使用 getCookie 削除、およびカバレッジ向上のための5つの新規テストファイル（payments-table, reviews-container, product-list, upload-images, sidebar）作成、review.test.ts への non-Error パステスト追加（総テスト数 1193 → **1220**、スイート数 129 → **134**） |
 
 ---
 
