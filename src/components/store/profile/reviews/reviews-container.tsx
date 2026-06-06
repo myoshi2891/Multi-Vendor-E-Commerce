@@ -44,10 +44,11 @@ export default function ReviewsContainer({
     }
 
     useEffect(() => {
+        let active = true;
         const getData = async () => {
             try {
                 const res = await getUserReviews(filter, period, search, page);
-                if (res) {
+                if (res && active) {
                     setData(res.reviews);
                     setTotalDataPages(res.totalPages);
                 }
@@ -67,6 +68,9 @@ export default function ReviewsContainer({
             }
         };
         getData();
+        return () => {
+            active = false;
+        };
     }, [page, filter, search, period]);
     return (
         <div>

@@ -18,8 +18,17 @@ class MockWebSocket {
     static lastInstance: MockWebSocket | null = null;
 }
 
-(globalThis as { WebSocket: unknown }).WebSocket =
-    MockWebSocket as unknown as typeof WebSocket;
+let originalWebSocket: typeof WebSocket;
+
+beforeAll(() => {
+    originalWebSocket = globalThis.WebSocket;
+    (globalThis as { WebSocket: unknown }).WebSocket =
+        MockWebSocket as unknown as typeof WebSocket;
+});
+
+afterAll(() => {
+    globalThis.WebSocket = originalWebSocket;
+});
 
 describe("ProductWatch Component", () => {
     beforeEach(() => {

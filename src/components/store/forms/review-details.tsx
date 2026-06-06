@@ -57,17 +57,17 @@ function CustomRatingStars({
         const x = e.clientX - rect.left
         const width = rect.right - rect.left
         const nextValue = index + (x < width / 2 ? 0.5 : 1)
-        onChange(nextValue)
+        onChange(Math.max(1, nextValue))
     }
 
-    // キーボード操作: 矢印キーで 0.5 刻みに評価を増減する（[0, count] にクランプ）
+    // キーボード操作: 矢印キーで 0.5 刻みに評価を増減する（[1, count] にクランプ）
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (!edit || !onChange) return
         let nextValue: number | null = null
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
             nextValue = Math.min(count, value + 0.5)
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-            nextValue = Math.max(0, value - 0.5)
+            nextValue = Math.max(1, value - 0.5)
         }
         if (nextValue === null) return
         e.preventDefault()
@@ -78,7 +78,7 @@ function CustomRatingStars({
         <div
             className={`flex items-center gap-x-1 ${
                 edit
-                    ? 'rounded outline-none focus-visible:ring-2 focus-visible:ring-[#11BE86]'
+                    ? 'rounded outline-none focus-visible:ring-2 focus-visible:ring-ring'
                     : ''
             }`}
             onMouseLeave={handleMouseLeave}
@@ -86,7 +86,7 @@ function CustomRatingStars({
             tabIndex={edit ? 0 : undefined}
             role={edit ? 'slider' : undefined}
             aria-label={edit ? 'Rating' : undefined}
-            aria-valuemin={edit ? 0 : undefined}
+            aria-valuemin={edit ? 1 : undefined}
             aria-valuemax={edit ? count : undefined}
             aria-valuenow={edit ? value : undefined}
         >

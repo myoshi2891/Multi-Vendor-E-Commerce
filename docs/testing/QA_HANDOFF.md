@@ -134,7 +134,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-02 時点） {#active-open-issues}
+### 🔴 現在アクティブな残課題（優先度順・2026-06-06 時点） {#active-open-issues}
 
 > 解消済み OI（OI-1〜OI-7）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件のみ。**
 

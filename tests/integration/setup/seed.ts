@@ -349,7 +349,7 @@ export async function seedCartItem(
 /**
  * Create and insert a Country record with a short unique suffix applied to the name and code.
  *
- * The default `name` is `Country <SUFFIX>` and the default `code` is `C<first two chars of SUFFIX>`; any fields in `overrides` are merged into the create data.
+ * The default `name` is `Country <SUFFIX>` and the default `code` is `C${SUFFIX}` (suffix 全体の前に 'C' を付けたもの); any fields in `overrides` are merged into the create data.
  *
  * @param overrides - Partial fields to merge into the created Country record (applies on top of the defaults)
  * @returns The created `Country` record

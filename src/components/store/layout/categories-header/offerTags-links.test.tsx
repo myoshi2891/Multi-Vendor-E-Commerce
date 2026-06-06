@@ -4,12 +4,6 @@ import OfferTagsLinks from "./offerTags-links";
 import { OfferTag } from "@prisma/client";
 import { createMockOfferTag } from "@/config/test-fixtures";
 
-// Mock useMediaQuery from react-responsive
-const mockUseMediaQuery = jest.fn();
-jest.mock("react-responsive", () => ({
-    useMediaQuery: (options: { query: string }) => mockUseMediaQuery(options),
-}));
-
 describe("OfferTagsLinks Component", () => {
     const mockOfferTags: OfferTag[] = Array.from({ length: 8 }, (_, i) =>
         createMockOfferTag({
@@ -19,32 +13,42 @@ describe("OfferTagsLinks Component", () => {
         })
     );
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+    it("最大7つのリンクのみがレンダリングされること（slice(0, 7) の検証）", () => {
+        const { getAllByRole } = render(
+            <OfferTagsLinks offerTags={mockOfferTags} open={false} />
+        );
+        const links = getAllByRole("link");
+        expect(links.length).toBe(7);
     });
 
-    it("画面幅（useMediaQueryの戻り値）によってレンダリングされる要素数が変化してはならない (Hydration一致の保証)", () => {
-        // 1. Phone screen
-        mockUseMediaQuery.mockImplementation((opts) => {
-            return opts.query === "(max-width: 640px)";
-        });
-        const { container: phoneContainer, unmount: unmountPhone } = render(
+    it("各リンクに正しい href とテキスト、およびインデックスに基づく Tailwind クラスが付与されること", () => {
+        const { getAllByRole } = render(
             <OfferTagsLinks offerTags={mockOfferTags} open={false} />
         );
-        const phoneLinksCount = phoneContainer.querySelectorAll("a").length;
-        unmountPhone();
+        const links = getAllByRole("link") as HTMLAnchorElement[];
 
-        // 2. Desktop screen (2xl)
-        mockUseMediaQuery.mockImplementation((opts) => {
-            return opts.query === "(min-width: 1536px)";
-        });
-        const { container: desktopContainer, unmount: unmountDesktop } = render(
-            <OfferTagsLinks offerTags={mockOfferTags} open={false} />
-        );
-        const desktopLinksCount = desktopContainer.querySelectorAll("a").length;
-        unmountDesktop();
+        // i === 0 の検証 (text-orange-background)
+        expect(links[0].getAttribute("href")).toBe("/browse?offer=offer-1");
+        expect(links[0].textContent).toBe("Offer 1");
+        expect(links[0].className).toContain("text-orange-background");
 
-        // Should render the same amount of elements regardless of client viewport size
-        expect(phoneLinksCount).toBe(desktopLinksCount);
+        // i === 1 の検証 (通常のクラス、非表示制御なし)
+        expect(links[1].getAttribute("href")).toBe("/browse?offer=offer-2");
+        expect(links[1].textContent).toBe("Offer 2");
+        expect(links[1].className).not.toContain("hidden");
+
+        // i === 2 の検証 (hidden sm:block)
+        expect(links[2].className).toContain("hidden sm:block");
+
+        // i === 3 の検証 (hidden md:block)
+        expect(links[3].className).toContain("hidden md:block");
+
+        // i === 4, 5 の検証 (hidden lg:block)
+        expect(links[4].className).toContain("hidden lg:block");
+        expect(links[5].className).toContain("hidden lg:block");
+
+        // i === 6 の検証 (hidden 2xl:block)
+        expect(links[6].className).toContain("hidden 2xl:block");
     });
 });
+

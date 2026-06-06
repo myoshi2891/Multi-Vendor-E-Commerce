@@ -6,7 +6,7 @@ import {
 } from "@/lib/types";
 import { getUserPayments } from "@/queries/profile";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Pagination from "../../shared/pagination";
 import PaymentTableHeader from "./payment-table-header";
 
@@ -25,6 +25,7 @@ export default function PaymentsTable({
     totalPages: number;
 }) {
     const [data, setData] = useState<UserPaymentType[]>(payments);
+    const requestCounter = useRef(0);
     // Pagination
     const [page, setPage] = useState<number>(1);
     const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
@@ -52,9 +53,11 @@ export default function PaymentsTable({
 
     useEffect(() => {
         const getData = async () => {
+            requestCounter.current += 1;
+            const currentRequestId = requestCounter.current;
             try {
                 const res = await getUserPayments(filter, period, search, page);
-                if (res) {
+                if (res && currentRequestId === requestCounter.current) {
                     setData(res.payments);
                     setTotalDataPages(res.totalPages);
                 }

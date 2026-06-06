@@ -15,8 +15,8 @@
 | テスト総数 | **1193 unit/component** (12 skipped) + **17 integration** — 2026-06-06 時点（実測同期。review/rating 系コンポーネントテストの未同期分 + `upsertReview` メール欠落テスト +1）。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **17 / 80 (21%)** — 2026-06-02 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `13/80 (16%)` はダッシュボードに対して未同期だったため是正） |
-| lcov エントリ数 | **254** (2026-06-02 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
+| lcov エントリ数 | **50** (2026-06-06 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -30,14 +30,14 @@
 
 | カテゴリ ╲ ドメイン       | queries | api | pages | store | dashbd | shared | hooks | lib | seed | other |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Unit**           |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◐   |  ✦  |  ◐   |   ◐   |
-| **Integration**    |   ◐    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◯   |  ✦  |  ◯   |   ◯   |
-| **E2E**            |   ◯    |  ◯  |  ✦   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
+| **Unit**           |   ✦    |  ◯  |  ✦   |  ◐   |   ✦   |   ✦   |   ◐   |  ✦  |  ◐   |   ◐   |
+| **Integration**    |   ◐    |  ◯  |  ◯   |  ◐   |   ◐   |   ◐   |   ◯   |  ◯  |  ◯   |   ◯   |
+| **E2E**            |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **a11y**           |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Performance**    |   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **API/Contract**   |   ◯    |  ✦  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
-| **Security**       |   ✦    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ✦  |  ◯   |   ◯   |
+| **Security**       |   ◯    |  ◯  |  ◯   |  ◯   |   ◯   |   ◯   |   ◯   |  ✦  |  ◯   |   ◯   |
 
 > **Unit 行の注記（2026-05-31 更新）**: `pages / store / dashbd / shared` を co-located unit テストで✦化（[QA_HANDOFF.md「2026-05-31」](./QA_HANDOFF.md) 参照）。残る非✦セルは構造的・スコープ外の理由による:
 > - **`api` ◯（構造的 N/A）**: `src/app/api/*` のテストは [`categorize.ts`](../../scripts/coverage-dashboard/categorize.ts) で必ず `api-contract` カテゴリへ分類されるため、Unit×api セルを埋める手段が存在しない。api の実カバーは **API/Contract 行 ✦**（`route.test.ts` × 6）が担保する。Issue #4 の意図的設計（カテゴリ上書き）を崩さないため categorize.ts は変更しない。
