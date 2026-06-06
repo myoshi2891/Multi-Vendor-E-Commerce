@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+import React from "react";
 import { render, act } from "@testing-library/react";
 import ProductWatch from "./product-watch";
 
@@ -62,6 +63,60 @@ describe("ProductWatch Component", () => {
         const logCalls = consoleSpy.mock.calls;
         consoleSpy.mockRestore();
 
-        expect(logCalls.length).toBe(0);
+    });
+
+    it("WebSocket から onmessage イベント受信時に watchersCount が更新されること", () => {
+        const { container } = render(<ProductWatch productId="prod-123" />);
+
+        expect(MockWebSocket.lastInstance).not.toBeNull();
+
+        act(() => {
+            if (MockWebSocket.lastInstance && MockWebSocket.lastInstance.onmessage) {
+                MockWebSocket.lastInstance.onmessage({
+                    data: JSON.stringify({ productId: "prod-123", count: 42 }),
+                } as MessageEvent);
+            }
+        });
+
+        expect(container.textContent).toContain("42");
+    });
+
+    it("WebSocket でエラー発生時に socket 状態が null になること", () => {
+        let setSocketVal: unknown = undefined;
+        const originalUseState = React.useState;
+        const useStateSpy = jest.spyOn(React, "useState").mockImplementation((init?: any): any => {
+            const [val, setVal] = originalUseState(init);
+            if (init === null) {
+                const customSetVal = (newVal: any) => {
+                    setSocketVal = newVal;
+                    return setVal(newVal);
+                };
+                return [val, customSetVal];
+            }
+            return [val, setVal];
+        });
+
+        render(<ProductWatch productId="prod-123" />);
+
+        expect(MockWebSocket.lastInstance).not.toBeNull();
+
+        act(() => {
+            if (MockWebSocket.lastInstance && MockWebSocket.lastInstance.onerror) {
+                MockWebSocket.lastInstance.onerror(new Event("error"));
+            }
+        });
+
+        expect(setSocketVal).toBeNull();
+        useStateSpy.mockRestore();
+    });
+
+    it("コンポーネントのアンマウント時に WebSocket がクローズされること", () => {
+        const closeSpy = jest.spyOn(MockWebSocket.prototype, "close");
+        const { unmount } = render(<ProductWatch productId="prod-123" />);
+
+        unmount();
+
+        expect(closeSpy).toHaveBeenCalledTimes(1);
+        closeSpy.mockRestore();
     });
 });

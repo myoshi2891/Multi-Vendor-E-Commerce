@@ -197,9 +197,13 @@ export default function ReviewDetails({
             }
 
             toast.success('Review added successfully.')
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handle error submission errors
-            console.error(error)
+            if (error instanceof Error) {
+                console.error('Failed to add review:', error.message, error.stack)
+            } else {
+                console.error('Failed to add review:', error)
+            }
             toast.error('Failed to add review.')
         }
     }

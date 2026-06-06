@@ -3,10 +3,11 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ProductList from "./product-list";
+import { ProductType } from "@/lib/types";
 
 // Mock ProductCard to keep list testing focused
 jest.mock("../cards/product/product-card", () => {
-    return function DummyProductCard({ product }: { product: any }) {
+    return function DummyProductCard({ product }: { product: ProductType }) {
         return <div data-testid="dummy-product-card">{product.name}</div>;
     };
 });
@@ -19,7 +20,7 @@ jest.mock("lucide-react", () => ({
 const mockProducts = [
     { id: "p1", name: "Product A" },
     { id: "p2", name: "Product B" },
-];
+] as unknown as ProductType[];
 
 describe("ProductList Component", () => {
     it("renders products when list is not empty", () => {

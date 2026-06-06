@@ -4,22 +4,31 @@ import { render, screen, act, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
 let mockIsMounted = true;
-let triggerSuccess: (result: any) => void = () => {};
+let triggerSuccess: (result: unknown) => void = () => {};
 
 // Mock react to control useSyncExternalStore state
 jest.mock("react", () => {
     const original = jest.requireActual("react");
     return {
         ...original,
-        useSyncExternalStore: (subscribe: any, getSnapshot: any, getServerSnapshot: any) => {
-            return mockIsMounted ? getSnapshot() : getServerSnapshot();
+        useSyncExternalStore: <T,>(
+            subscribe: (onStoreChange: () => void) => () => void,
+            getSnapshot: () => T,
+            getServerSnapshot?: () => T
+        ) => {
+            return mockIsMounted ? getSnapshot() : (getServerSnapshot ? getServerSnapshot() : getSnapshot());
         }
     };
 });
 
+interface CldUploadWidgetProps {
+    onSuccess: (result: unknown) => void;
+    children: (args: { open: () => void }) => React.ReactNode;
+}
+
 // Mock next-cloudinary
 jest.mock("next-cloudinary", () => ({
-    CldUploadWidget: ({ onSuccess, children }: any) => {
+    CldUploadWidget: ({ onSuccess, children }: CldUploadWidgetProps) => {
         triggerSuccess = onSuccess;
         return children({
             open: () => onSuccess({ info: { secure_url: "https://example.com/mock.jpg" } })
@@ -29,7 +38,7 @@ jest.mock("next-cloudinary", () => ({
 
 // Mock next/image to avoid layout execution in JSDOM
 jest.mock("next/image", () => {
-    return function DummyImage({ src, alt }: any) {
+    return function DummyImage({ src, alt }: { src?: string; alt?: string }) {
         return <img src={src} alt={alt} data-testid="mock-img" />;
     };
 });

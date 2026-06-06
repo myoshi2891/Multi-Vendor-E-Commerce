@@ -4,6 +4,7 @@ import { render, screen, act, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ReviewsContainer from "./reviews-container";
 import { getUserReviews } from "@/queries/profile";
+import { ReviewWithImageType } from "@/lib/types";
 
 // Mock the query
 jest.mock("@/queries/profile", () => ({
@@ -82,7 +83,7 @@ const mockReviews = [
         updatedAt: new Date(),
         user: { name: "Jane Smith", picture: "" },
     },
-];
+] as unknown as ReviewWithImageType[];
 
 describe("ReviewsContainer Component", () => {
     beforeEach(() => {

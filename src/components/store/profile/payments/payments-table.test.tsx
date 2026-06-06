@@ -4,6 +4,7 @@ import { render, screen, act, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import PaymentsTable from "./payments-table";
 import { getUserPayments } from "@/queries/profile";
+import { UserPaymentType } from "@/lib/types";
 
 // Mock the query
 jest.mock("@/queries/profile", () => ({
@@ -70,7 +71,7 @@ const mockPayments = [
         orderId: "order-2",
         updatedAt: new Date("2026-06-06T00:00:00Z"),
     },
-];
+] as unknown as UserPaymentType[];
 
 describe("PaymentsTable Component", () => {
     beforeEach(() => {
@@ -161,7 +162,7 @@ describe("PaymentsTable Component", () => {
                 orderId: "order-latest",
                 updatedAt: new Date(),
             },
-        ];
+        ] as unknown as UserPaymentType[];
 
         await act(async () => {
             resolveRequest2({
@@ -181,7 +182,7 @@ describe("PaymentsTable Component", () => {
                 orderId: "order-stale",
                 updatedAt: new Date(),
             },
-        ];
+        ] as unknown as UserPaymentType[];
 
         await act(async () => {
             resolveRequest1({
