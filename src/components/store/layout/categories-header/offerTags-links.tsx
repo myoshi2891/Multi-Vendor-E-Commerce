@@ -2,6 +2,15 @@ import { cn } from '@/lib/utils'
 import { OfferTag } from '@prisma/client'
 import Link from 'next/link'
 
+/**
+ * Render up to the first seven offer tags as pill-style Next.js links with responsive visibility and a translation toggle.
+ *
+ * Each tag links to `/browse?offer=<tag.url>` and displays `tag.name`. Visibility of individual tags is controlled by index-based responsive classes (e.g., `hidden sm:block`, `hidden md:block`, etc.).
+ *
+ * @param offerTags - Array of offer tags; each tag is expected to include `id`, `name`, and `url`
+ * @param open - When `true`, the tag container's horizontal translation is reset so tags appear aligned; when `false`, a default negative translate is applied
+ * @returns A JSX element containing the rendered tag links
+ */
 export default function OfferTagsLinks({
     offerTags,
     open,

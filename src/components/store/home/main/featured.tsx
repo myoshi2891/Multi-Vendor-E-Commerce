@@ -5,6 +5,15 @@ import MainSwiper from "../../shared/swiper";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 
+/**
+ * Renders a responsive featured section with a promotional coupon and a product carousel.
+ *
+ * The layout adapts to viewport width and updates when the window is resized to determine
+ * the carousel container width.
+ *
+ * @param products - Array of products to display inside the carousel
+ * @returns The JSX element for the featured promotional section
+ */
 export default function Featured({ products }: { products: SimpleProduct[] }) {
     const is1170px = useMediaQuery({ query: "(min-width: 1170px)" });
     const is1700px = useMediaQuery({ query: "(min-width: 1700px)" });

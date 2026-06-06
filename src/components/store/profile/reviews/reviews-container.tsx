@@ -10,6 +10,16 @@ import ReviewCard from "../../cards/review";
 import Pagination from "../../shared/pagination";
 import ReviewsHeader from "./reviews-header";
 
+/**
+ * Displays a paginated, filterable list of user reviews with header controls.
+ *
+ * Renders review cards and pagination, and fetches updated review data when
+ * page, filter, period, or search state changes.
+ *
+ * @param props.reviews - Initial list of reviews to display
+ * @param props.totalPages - Initial total number of pages for pagination
+ * @returns The rendered ReviewsContainer element
+ */
 export default function ReviewsContainer({
     reviews,
     totalPages,

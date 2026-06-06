@@ -20,7 +20,21 @@ import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
 import { v4 } from 'uuid'
 
-// Custom Rating Stars Component for React 19 compatibility
+/**
+ * Renders an interactive star rating control with half-star precision and optional editability.
+ *
+ * Displays `count` stars using `value` as the current rating; hovering shows a preview (half or full)
+ * based on cursor position. When `edit` is true the user can:
+ * - select a half or full star by clicking (cursor left/right half → `index + 0.5` or `index + 1`),
+ * - preview selection on hover,
+ * - adjust the rating with Arrow keys in 0.5 increments (clamped to the range `[1, count]`).
+ *
+ * @param value - Current rating value used for rendering (may include .5 for half stars)
+ * @param onChange - Optional callback invoked with the new rating value when the user changes it
+ * @param size - Pixel size for each star (width and height)
+ * @param count - Number of stars to render
+ * @param edit - When false, disables mouse and keyboard interactions and renders read-only stars
+ */
 function CustomRatingStars({
     value,
     onChange,
@@ -132,6 +146,20 @@ function CustomRatingStars({
     )
 }
 
+/**
+ * Render the "Add a review" form for a product and handle creating or updating reviews.
+ *
+ * Displays a rating control (with half-star precision), variant/size/quantity selectors, review text, and an image uploader (up to 3 images).
+ * On submission, calls the backend upsertReview, updates the provided `reviews` state via `setReviews` when a review id is returned, and shows success or error toasts.
+ * When the selected variant changes, updates the available sizes and the form's color value based on the variant data.
+ *
+ * @param productId - The product identifier for which the review is being created or updated
+ * @param data - Optional existing review data to prefill the form (used for editing)
+ * @param variantsInfo - Array of available product variants including sizes, colors, and images
+ * @param reviews - Current list of reviews for the product; used to replace or append the returned review after upsert
+ * @param setReviews - State setter to update the reviews list after a successful upsert
+ * @returns A React element containing the review form UI
+ */
 export default function ReviewDetails({
     productId,
     data,
