@@ -60,8 +60,36 @@ function CustomRatingStars({
         onChange(nextValue)
     }
 
+    // キーボード操作: 矢印キーで 0.5 刻みに評価を増減する（[0, count] にクランプ）
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!edit || !onChange) return
+        let nextValue: number | null = null
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            nextValue = Math.min(count, value + 0.5)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            nextValue = Math.max(0, value - 0.5)
+        }
+        if (nextValue === null) return
+        e.preventDefault()
+        onChange(nextValue)
+    }
+
     return (
-        <div className="flex items-center gap-x-1" onMouseLeave={handleMouseLeave}>
+        <div
+            className={`flex items-center gap-x-1 ${
+                edit
+                    ? 'rounded outline-none focus-visible:ring-2 focus-visible:ring-[#11BE86]'
+                    : ''
+            }`}
+            onMouseLeave={handleMouseLeave}
+            onKeyDown={edit ? handleKeyDown : undefined}
+            tabIndex={edit ? 0 : undefined}
+            role={edit ? 'slider' : undefined}
+            aria-label={edit ? 'Rating' : undefined}
+            aria-valuemin={edit ? 0 : undefined}
+            aria-valuemax={edit ? count : undefined}
+            aria-valuenow={edit ? value : undefined}
+        >
             {Array.from({ length: count }).map((_, index) => {
                 const starValue = index + 1
                 const isFull = activeValue >= starValue
@@ -185,7 +213,11 @@ export default function ReviewDetails({
         name: v.variantName,
         value: v.variantName,
         image: v.variantImage,
-        colors: v.colors.map((c) => c.name).join(','),
+        // colors は Partial<Color>[] のため name が undefined の要素を除外してから連結する
+        colors: v.colors
+            .map((c) => c?.name)
+            .filter(Boolean)
+            .join(','),
     }))
 
     useEffect(() => {
@@ -199,7 +231,13 @@ export default function ReviewDetails({
             }))
             setActiveVariant(variant)
             if (sizes) setSizes(sizes_data)
-            form.setValue('color', variant.colors.map((c) => c.name).join(','))
+            form.setValue(
+                'color',
+                variant.colors
+                    .map((c) => c?.name)
+                    .filter(Boolean)
+                    .join(',')
+            )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.getValues().variantName])
