@@ -199,7 +199,7 @@ export default function ReviewDetails({
             }))
             setActiveVariant(variant)
             if (sizes) setSizes(sizes_data)
-            form.setValue('color', variant.colors.join(','))
+            form.setValue('color', variant.colors.map((c) => c.name).join(','))
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.getValues().variantName])

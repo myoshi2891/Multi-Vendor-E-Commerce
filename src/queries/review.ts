@@ -23,6 +23,26 @@ export const upsertReview = async (
         // Ensure user is authenticated
         if (!user) throw new Error('Unauthorized.')
 
+        // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードをオンデマンドで自動作成/更新（フォールバック）
+        const dbUser = await db.user.findUnique({
+            where: { id: user.id }
+        })
+        if (!dbUser) {
+            // Clerk のユーザー情報から必要な情報を取得
+            const email = user.emailAddresses[0]?.emailAddress
+            if (!email) throw new Error('User email not found in Clerk.')
+            
+            await db.user.create({
+                data: {
+                    id: user.id,
+                    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+                    email: email,
+                    picture: user.imageUrl || '',
+                    role: 'USER',
+                }
+            })
+        }
+
         // Ensure productId and review are provided
         if (!productId) throw new Error('Product ID is required.')
         if (!review) throw new Error('Please provide review data.')

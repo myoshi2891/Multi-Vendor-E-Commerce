@@ -10,6 +10,10 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@/lib/db", () => ({
     db: {
+        user: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+        },
         review: {
             findFirst: jest.fn(),
             findMany: jest.fn(),
@@ -26,6 +30,9 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
+    mockDb.user.findUnique.mockResolvedValue({
+        id: TEST_CONFIG.DEFAULT_USER_ID,
+    });
 });
 
 // ==================================================
@@ -39,6 +46,41 @@ describe("upsertReview", () => {
             await expect(
                 upsertReview("product-001", createMockReview())
             ).rejects.toThrow("Error updating review");
+        });
+    });
+
+    describe("ユーザーレコード自動同期 (フォールバック)", () => {
+        it("DB上にUserレコードがない場合、Clerk情報からUserレコードを新規作成する", async () => {
+            // Clerk側にはユーザー情報が存在する
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                firstName: "John",
+                lastName: "Doe",
+                imageUrl: "https://example.com/avatar.jpg",
+                emailAddresses: [{ emailAddress: "john@example.com" }],
+            });
+
+            // DB側にはユーザーレコードが存在しない
+            mockDb.user.findUnique.mockResolvedValue(null);
+            
+            // モックの挙動を設定
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReview());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReview());
+
+            // ユーザーが自動作成されたことをアサートする
+            expect(mockDb.user.create).toHaveBeenCalledWith({
+                data: {
+                    id: TEST_CONFIG.DEFAULT_USER_ID,
+                    name: "John Doe",
+                    email: "john@example.com",
+                    picture: "https://example.com/avatar.jpg",
+                    role: "USER",
+                }
+            });
         });
     });
 
