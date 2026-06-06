@@ -347,6 +347,20 @@ describe("upsertReview", () => {
                 upsertReview("product-001", createMockReview())
             ).rejects.toThrow("Error updating review: DB connection failed");
         });
+
+        it("DBエラー時にErrorオブジェクト以外（文字列等）が投げられた場合も、その内容をラップしてスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
+            });
+            mockDb.review.findFirst.mockRejectedValue(
+                "Database error string"
+            );
+
+            await expect(
+                upsertReview("product-001", createMockReview())
+            ).rejects.toThrow("Error updating review: Database error string");
+        });
     });
 
     describe("IDOR防止（他人のレビュー操作の拒否）", () => {

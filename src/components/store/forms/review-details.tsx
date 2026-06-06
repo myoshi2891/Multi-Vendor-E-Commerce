@@ -37,7 +37,7 @@ function CustomRatingStars({
     const [hoverValue, setHoverValue] = useState<number | null>(null)
     const activeValue = hoverValue !== null ? hoverValue : value
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
         if (!edit) return
         const rect = e.currentTarget.getBoundingClientRect()
         const x = e.clientX - rect.left
@@ -51,7 +51,7 @@ function CustomRatingStars({
         setHoverValue(null)
     }
 
-    const handleClick = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
         if (!edit || !onChange) return
         const rect = e.currentTarget.getBoundingClientRect()
         const x = e.clientX - rect.left
@@ -61,7 +61,7 @@ function CustomRatingStars({
     }
 
     // キーボード操作: 矢印キーで 0.5 刻みに評価を増減する（[1, count] にクランプ）
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
         if (!edit || !onChange) return
         let nextValue: number | null = null
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
@@ -76,19 +76,8 @@ function CustomRatingStars({
 
     return (
         <div
-            className={`flex items-center gap-x-1 ${
-                edit
-                    ? 'rounded outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                    : ''
-            }`}
+            className="flex items-center gap-x-1"
             onMouseLeave={handleMouseLeave}
-            onKeyDown={edit ? handleKeyDown : undefined}
-            tabIndex={edit ? 0 : undefined}
-            role={edit ? 'slider' : undefined}
-            aria-label={edit ? 'Rating' : undefined}
-            aria-valuemin={edit ? 1 : undefined}
-            aria-valuemax={edit ? count : undefined}
-            aria-valuenow={edit ? value : undefined}
         >
             {Array.from({ length: count }).map((_, index) => {
                 const starValue = index + 1
@@ -96,12 +85,18 @@ function CustomRatingStars({
                 const isHalf = activeValue >= starValue - 0.5 && activeValue < starValue
 
                 return (
-                    <div
-                        key={index}
-                        className={`relative ${edit ? 'cursor-pointer' : ''}`}
+                    <button
+                        key={starValue}
+                        type="button"
+                        className={`relative rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            edit ? 'cursor-pointer' : ''
+                        }`}
                         style={{ width: size, height: size }}
                         onMouseMove={(e) => handleMouseMove(e, index)}
                         onClick={(e) => handleClick(e, index)}
+                        onKeyDown={edit ? handleKeyDown : undefined}
+                        aria-label={edit ? `Rate ${starValue} out of ${count}` : undefined}
+                        disabled={!edit}
                         data-testid={`star-wrapper-${index}`}
                     >
                         {/* Empty Star Background */}
@@ -130,7 +125,7 @@ function CustomRatingStars({
                                 />
                             </div>
                         )}
-                    </div>
+                    </button>
                 )
             })}
         </div>
