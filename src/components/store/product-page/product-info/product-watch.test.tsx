@@ -37,6 +37,10 @@ describe("ProductWatch Component", () => {
         jest.clearAllMocks();
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it("WebSocket が wss:// プロトコルと正しいスキーマで初期化されること", () => {
         render(<ProductWatch productId="prod-123" />);
 
@@ -62,8 +66,6 @@ describe("ProductWatch Component", () => {
 
         const logCalls = consoleSpy.mock.calls;
         expect(consoleSpy).not.toHaveBeenCalled();
-        consoleSpy.mockRestore();
-
     });
 
     it("WebSocket から onmessage イベント受信時に watchersCount が更新されること", () => {
@@ -92,9 +94,19 @@ describe("ProductWatch Component", () => {
         useStateSpy.mockImplementation((init?: WebSocket | null): [WebSocket | null, React.Dispatch<React.SetStateAction<WebSocket | null>>] => {
             const [val, setVal] = originalUseState(init);
             if (init === null) {
-                const customSetVal = (newVal: WebSocket | null) => {
-                    setSocketVal = newVal;
-                    return setVal(newVal);
+                const customSetVal: React.Dispatch<React.SetStateAction<WebSocket | null>> = (
+                    value: React.SetStateAction<WebSocket | null>
+                ) => {
+                    if (typeof value === "function") {
+                        setVal((prev) => {
+                            const nextVal = value(prev ?? null);
+                            setSocketVal = nextVal;
+                            return nextVal;
+                        });
+                    } else {
+                        setSocketVal = value;
+                        setVal(value);
+                    }
                 };
                 return [val as WebSocket | null, customSetVal];
             }
@@ -112,7 +124,6 @@ describe("ProductWatch Component", () => {
         });
 
         expect(setSocketVal).toBeNull();
-        useStateSpy.mockRestore();
     });
 
     it("コンポーネントのアンマウント時に WebSocket がクローズされること", () => {
@@ -122,6 +133,5 @@ describe("ProductWatch Component", () => {
         unmount();
 
         expect(closeSpy).toHaveBeenCalledTimes(1);
-        closeSpy.mockRestore();
     });
 });
