@@ -5,14 +5,27 @@ import MainSwiper from "../../shared/swiper";
 import { useEffect, useState } from "react";
 import { useMediaQuery } from "react-responsive";
 
+/**
+ * Renders a responsive featured section with a promotional coupon and a product carousel.
+ *
+ * The layout adapts to viewport width and updates when the window is resized to determine
+ * the carousel container width.
+ *
+ * @param products - Array of products to display inside the carousel
+ * @returns The JSX element for the featured promotional section
+ */
 export default function Featured({ products }: { products: SimpleProduct[] }) {
     const is1170px = useMediaQuery({ query: "(min-width: 1170px)" });
     const is1700px = useMediaQuery({ query: "(min-width: 1700px)" });
 
-    // State to store the current width of the screen
-    const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
+    // State to store the current width of the screen (default to a safe desktop width)
+    const [screenWidth, setScreenWidth] = useState<number>(1200);
 
     useEffect(() => {
+        // Set actual screen width after component mounts on the client
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setScreenWidth(window.innerWidth);
+
         // Handler function to update screen width state when window is resized
         const handleResize = () => {
             setScreenWidth(window.innerWidth);

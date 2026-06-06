@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import AddressDetails from '@/components/store/shared/shipping-addresses/address-details'
 import { createMockShippingAddress, createMockCountry, createMockUser } from '@/config/test-fixtures'
@@ -14,6 +15,9 @@ import { User, Role } from '@prisma/client'
 
 // Mock dependencies
 jest.mock('@/queries/user', () => ({
+    addToWishlist: jest.fn(),
+    placeOrder: jest.fn(),
+    emptyUserCart: jest.fn(),
     upsertShippingAddress: jest.fn(),
 }))
 jest.mock('@/hooks/use-toast')
@@ -96,22 +100,23 @@ describe('AddressDetails', () => {
     })
 
     it('successfully creates a new address', async () => {
+        const user = userEvent.setup()
         ;(upsertShippingAddress as jest.Mock).mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440002' })
 
         render(<AddressDetails countries={countries} setShow={mockSetShow} />)
 
-        fireEvent.change(screen.getByPlaceholderText('First name'), { target: { value: 'Jane' } })
-        fireEvent.change(screen.getByPlaceholderText('Last name'), { target: { value: 'Smith' } })
-        fireEvent.change(screen.getByPlaceholderText('Phone number'), { target: { value: '987654321' } })
-        fireEvent.change(screen.getByPlaceholderText('Street, house/apartment/unit'), { target: { value: 'Test Road 123' } })
-        fireEvent.change(screen.getByPlaceholderText('City'), { target: { value: 'New York' } })
-        fireEvent.change(screen.getByPlaceholderText('State/Province'), { target: { value: 'NY' } })
-        fireEvent.change(screen.getByPlaceholderText('Zip code'), { target: { value: '10001' } })
-        
-        // CountrySelector mock usage
-        fireEvent.change(screen.getByTestId('country-selector'), { target: { value: 'United States' } })
+        await user.type(screen.getByPlaceholderText('First name'), 'Jane')
+        await user.type(screen.getByPlaceholderText('Last name'), 'Smith')
+        await user.type(screen.getByPlaceholderText('Phone number'), '987654321')
+        await user.type(screen.getByPlaceholderText('Street, house/apartment/unit'), 'Test Road 123')
+        await user.type(screen.getByPlaceholderText('City'), 'New York')
+        await user.type(screen.getByPlaceholderText('State/Province'), 'NY')
+        await user.type(screen.getByPlaceholderText('Zip code'), '10001')
 
-        fireEvent.click(screen.getByRole('button', { name: /Create Address/i }))
+        // CountrySelector mock usage
+        await user.selectOptions(screen.getByTestId('country-selector'), 'United States')
+
+        await user.click(screen.getByRole('button', { name: /Create Address/i }))
 
         await waitFor(() => {
             expect(upsertShippingAddress).toHaveBeenCalledWith(expect.objectContaining({
@@ -129,9 +134,10 @@ describe('AddressDetails', () => {
     })
 
     it('shows validation errors for invalid inputs', async () => {
+        const user = userEvent.setup()
         render(<AddressDetails countries={countries} setShow={mockSetShow} />)
 
-        fireEvent.click(screen.getByRole('button', { name: /Create Address/i }))
+        await user.click(screen.getByRole('button', { name: /Create Address/i }))
 
         await waitFor(() => {
             expect(screen.getByText(/First name must be at least 2 characters long/i)).toBeInTheDocument()
@@ -141,24 +147,25 @@ describe('AddressDetails', () => {
     })
 
     it('handles API errors correctly', async () => {
+        const user = userEvent.setup()
         const errorMessage = 'Failed to save address'
         ;(upsertShippingAddress as jest.Mock).mockRejectedValue(new Error(errorMessage))
 
         render(<AddressDetails countries={countries} setShow={mockSetShow} />)
 
         // Fill required fields
-        fireEvent.change(screen.getByPlaceholderText('First name'), { target: { value: 'Jane' } })
-        fireEvent.change(screen.getByPlaceholderText('Last name'), { target: { value: 'Smith' } })
-        fireEvent.change(screen.getByPlaceholderText('Phone number'), { target: { value: '987654321' } })
-        fireEvent.change(screen.getByPlaceholderText('Street, house/apartment/unit'), { target: { value: 'Road 1' } })
-        fireEvent.change(screen.getByPlaceholderText('City'), { target: { value: 'City' } })
-        fireEvent.change(screen.getByPlaceholderText('State/Province'), { target: { value: 'State' } })
-        fireEvent.change(screen.getByPlaceholderText('Zip code'), { target: { value: '12345' } })
+        await user.type(screen.getByPlaceholderText('First name'), 'Jane')
+        await user.type(screen.getByPlaceholderText('Last name'), 'Smith')
+        await user.type(screen.getByPlaceholderText('Phone number'), '987654321')
+        await user.type(screen.getByPlaceholderText('Street, house/apartment/unit'), 'Road 1')
+        await user.type(screen.getByPlaceholderText('City'), 'City')
+        await user.type(screen.getByPlaceholderText('State/Province'), 'State')
+        await user.type(screen.getByPlaceholderText('Zip code'), '12345')
         
         // Select country
-        fireEvent.change(screen.getByTestId('country-selector'), { target: { value: 'Japan' } })
+        await user.selectOptions(screen.getByTestId('country-selector'), 'Japan')
 
-        fireEvent.click(screen.getByRole('button', { name: /Create Address/i }))
+        await user.click(screen.getByRole('button', { name: /Create Address/i }))
 
         await waitFor(() => {
             expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({

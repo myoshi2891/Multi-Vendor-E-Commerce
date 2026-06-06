@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import ReactStars from 'react-rating-stars-component'
+import { Star } from 'lucide-react'
 import { z } from 'zod'
 import Select from '../ui/select'
 import Input from '../ui/input'
@@ -20,6 +20,146 @@ import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
 import { v4 } from 'uuid'
 
+/**
+ * Renders an interactive star rating control with half-star precision and optional editability.
+ *
+ * Displays `count` stars using `value` as the current rating; hovering shows a preview (half or full)
+ * based on cursor position. When `edit` is true the user can:
+ * - select a half or full star by clicking (cursor left/right half → `index + 0.5` or `index + 1`),
+ * - preview selection on hover,
+ * - adjust the rating with Arrow keys in 0.5 increments (clamped to the range `[1, count]`).
+ *
+ * @param value - Current rating value used for rendering (may include .5 for half stars)
+ * @param onChange - Optional callback invoked with the new rating value when the user changes it
+ * @param size - Pixel size for each star (width and height)
+ * @param count - Number of stars to render
+ * @param edit - When false, disables mouse and keyboard interactions and renders read-only stars
+ */
+function CustomRatingStars({
+    value,
+    onChange,
+    size = 40,
+    count = 5,
+    edit = true,
+}: {
+    value: number
+    onChange?: (value: number) => void
+    size?: number
+    count?: number
+    edit?: boolean
+}) {
+    const [hoverValue, setHoverValue] = useState<number | null>(null)
+    const activeValue = hoverValue !== null ? hoverValue : value
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
+        if (!edit) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const width = rect.right - rect.left
+        const nextValue = index + (x < width / 2 ? 0.5 : 1)
+        setHoverValue(nextValue)
+    }
+
+    const handleMouseLeave = () => {
+        if (!edit) return
+        setHoverValue(null)
+    }
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
+        if (!edit || !onChange) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const width = rect.right - rect.left
+        const nextValue = index + (x < width / 2 ? 0.5 : 1)
+        onChange(Math.max(1, nextValue))
+    }
+
+    // キーボード操作: 矢印キーで 0.5 刻みに評価を増減する（[1, count] にクランプ）
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (!edit || !onChange) return
+        let nextValue: number | null = null
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            nextValue = Math.min(count, value + 0.5)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            nextValue = Math.max(1, value - 0.5)
+        }
+        if (nextValue === null) return
+        e.preventDefault()
+        onChange(nextValue)
+    }
+
+    return (
+        <div
+            className="flex items-center gap-x-1"
+            onMouseLeave={handleMouseLeave}
+        >
+            {Array.from({ length: count }).map((_, index) => {
+                const starValue = index + 1
+                const isFull = activeValue >= starValue
+                const isHalf = activeValue >= starValue - 0.5 && activeValue < starValue
+
+                return (
+                    <button
+                        key={starValue}
+                        type="button"
+                        className={`relative rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            edit ? 'cursor-pointer' : ''
+                        }`}
+                        style={{ width: size, height: size }}
+                        onMouseMove={(e) => handleMouseMove(e, index)}
+                        onClick={(e) => handleClick(e, index)}
+                        onKeyDown={edit ? handleKeyDown : undefined}
+                        aria-label={edit ? `Rate ${starValue} out of ${count}` : undefined}
+                        disabled={!edit}
+                        data-testid={`star-wrapper-${index}`}
+                    >
+                        {/* Empty Star Background */}
+                        <Star
+                            size={size}
+                            className="text-[#e2dfdf] absolute top-0 left-0"
+                            fill="#e2dfdf"
+                        />
+                        {/* Active Star Overlay */}
+                        {isFull && (
+                            <Star
+                                size={size}
+                                className="text-[#FFD804] absolute top-0 left-0"
+                                fill="#FFD804"
+                            />
+                        )}
+                        {isHalf && (
+                            <div
+                                className="absolute top-0 left-0 overflow-hidden"
+                                style={{ width: '50%', height: size }}
+                            >
+                                <Star
+                                    size={size}
+                                    className="text-[#FFD804]"
+                                    fill="#FFD804"
+                                />
+                            </div>
+                        )}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
+/**
+ * Render the "Add a review" form for a product and handle creating or updating reviews.
+ *
+ * Displays a rating control (with half-star precision), variant/size/quantity selectors, review text, and an image uploader (up to 3 images).
+ * On submission, calls the backend upsertReview, updates the provided `reviews` state via `setReviews` when a review id is returned, and shows success or error toasts.
+ * When the selected variant changes, updates the available sizes and the form's color value based on the variant data.
+ *
+ * @param productId - The product identifier for which the review is being created or updated
+ * @param data - Optional existing review data to prefill the form (used for editing)
+ * @param variantsInfo - Array of available product variants including sizes, colors, and images
+ * @param reviews - Current list of reviews for the product; used to replace or append the returned review after upsert
+ * @param setReviews - State setter to update the reviews list after a successful upsert
+ * @returns A React element containing the review form UI
+ */
 export default function ReviewDetails({
     productId,
     data,
@@ -38,8 +178,7 @@ export default function ReviewDetails({
         variantsInfo[0]
     )
 
-    // Temporary state for images
-    const [images, setImages] = useState<{ url: string }[]>([])
+
 
     // State for sizes
     const [sizes, setSizes] = useState<{ name: string; value: string }[]>([])
@@ -85,9 +224,13 @@ export default function ReviewDetails({
             }
 
             toast.success('Review added successfully.')
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handle error submission errors
-            console.error(error)
+            if (error instanceof Error) {
+                console.error('Failed to add review:', error.message, error.stack)
+            } else {
+                console.error('Failed to add review:', error)
+            }
             toast.error('Failed to add review.')
         }
     }
@@ -96,7 +239,11 @@ export default function ReviewDetails({
         name: v.variantName,
         value: v.variantName,
         image: v.variantImage,
-        colors: v.colors.map((c) => c.name).join(','),
+        // colors は Partial<Color>[] のため name が undefined の要素を除外してから連結する
+        colors: v.colors
+            .map((c) => c?.name)
+            .filter(Boolean)
+            .join(','),
     }))
 
     useEffect(() => {
@@ -110,7 +257,13 @@ export default function ReviewDetails({
             }))
             setActiveVariant(variant)
             if (sizes) setSizes(sizes_data)
-            form.setValue('color', variant.colors.join(','))
+            form.setValue(
+                'color',
+                variant.colors
+                    .map((c) => c?.name)
+                    .filter(Boolean)
+                    .join(',')
+            )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [form.getValues().variantName])
@@ -135,18 +288,15 @@ export default function ReviewDetails({
                                         <FormItem>
                                             <FormControl>
                                                 <div className="flex items-center gap-x-2">
-                                                    <ReactStars
-                                                        count={5}
-                                                        size={40}
-                                                        color="#e2dfdf"
-                                                        activeColor="#FFD804"
-                                                        value={field.value}
-                                                        onChange={
-                                                            field.onChange
-                                                        }
-                                                        isHalf
-                                                        edit={true}
-                                                    />
+                                                     <CustomRatingStars
+                                                         count={5}
+                                                         size={40}
+                                                         value={field.value}
+                                                         onChange={
+                                                             field.onChange
+                                                         }
+                                                         edit={true}
+                                                     />
                                                     <span>
                                                         (
                                                         {form
@@ -237,7 +387,7 @@ export default function ReviewDetails({
                                         <FormItem>
                                             <FormControl>
                                                 <textarea
-                                                    className="min-h-32 w-full rounded-xl p-4 ring-1 ring-transparent duration-200 focus:outline-none focus:ring-[#11BE86]"
+                                                    className="min-h-32 w-full rounded-xl p-4 ring-1 ring-transparent duration-200 focus:outline-none focus:ring-ring"
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     placeholder="Write your review here..."
@@ -258,26 +408,10 @@ export default function ReviewDetails({
                                                     )}
                                                     // disabled={isLoading}
                                                     onChange={(url) => {
-                                                        setImages(
-                                                            (prevImages) => {
-                                                                const updatedImages =
-                                                                    [
-                                                                        ...prevImages,
-                                                                        { url },
-                                                                    ]
-                                                                if (
-                                                                    updatedImages.length <=
-                                                                    3
-                                                                ) {
-                                                                    field.onChange(
-                                                                        updatedImages
-                                                                    )
-                                                                    return updatedImages
-                                                                } else {
-                                                                    return prevImages
-                                                                }
-                                                            }
-                                                        )
+                                                        const currentImages = field.value || []
+                                                        if (currentImages.length < 3) {
+                                                            field.onChange([...currentImages, { url }])
+                                                        }
                                                     }}
                                                     onRemove={(url) =>
                                                         field.onChange([

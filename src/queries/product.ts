@@ -55,7 +55,6 @@ const generateUniqueSlug = async (
 };
 
 // Cookies
-import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 
 // Prisma
@@ -908,7 +907,7 @@ export const getProductPageData = async (
     if (!product) return;
 
     // Retrieve user country
-    const userCountry = getUserCountry();
+    const userCountry = await getUserCountry();
 
     // Calculate and retrieve the shipping details
     const productShippingDetails = await getShippingDetails(
@@ -1019,8 +1018,9 @@ export const retrieveProductDetails = async (
     };
 };
 
-const getUserCountry = () => {
-    const cookieValue = getCookie("userCountry", { cookies }) as string | undefined;
+const getUserCountry = async () => {
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get("userCountry")?.value;
     return parseUserCountryCookie(cookieValue);
 };
 const formatProductResponse = (
@@ -1615,9 +1615,8 @@ export const getProductsByIds = async (
 };
 
 const incrementProductViews = async (productId: string) => {
-    const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
-        cookies,
-    });
+    const cookieStore = await cookies();
+    const isProductAlreadyViewed = cookieStore.get(`viewedProduct_${productId}`)?.value;
 
     if (!isProductAlreadyViewed) {
         await db.product.update({

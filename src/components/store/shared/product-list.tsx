@@ -14,7 +14,7 @@ interface Props {
 }
 
 const ProductList: FC<Props> = ({ products, title, link, arrow }) => {
-    const Title = () => {
+    const renderTitle = () => {
         if (link) {
             return (
                 <Link href={link} className="h-12">
@@ -35,7 +35,7 @@ const ProductList: FC<Props> = ({ products, title, link, arrow }) => {
     }
     return (
         <div className="relative">
-            {title && <Title />}
+            {title && renderTitle()}
             {products.length > 0 ? (
                 <div
                     className={cn(

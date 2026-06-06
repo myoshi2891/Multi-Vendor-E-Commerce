@@ -6,7 +6,7 @@ import {
 } from "@/lib/types";
 import { getUserPayments } from "@/queries/profile";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Pagination from "../../shared/pagination";
 import PaymentTableHeader from "./payment-table-header";
 
@@ -25,6 +25,7 @@ export default function PaymentsTable({
     totalPages: number;
 }) {
     const [data, setData] = useState<UserPaymentType[]>(payments);
+    const requestCounter = useRef(0);
     // Pagination
     const [page, setPage] = useState<number>(1);
     const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
@@ -38,17 +39,51 @@ export default function PaymentsTable({
     // Search filter
     const [search, setSearch] = useState<string>("");
 
-    useEffect(() => {
-        // Reset to page 1 when filter or search changes
+    // Handlers to reset page when filters change
+    const handleFilterChange: React.Dispatch<
+        React.SetStateAction<PaymentTableFilter>
+    > = (value) => {
+        setFilter(value);
         setPage(1);
-    }, [filter, period, search]);
+    };
+
+    const handlePeriodChange: React.Dispatch<
+        React.SetStateAction<PaymentTableDateFilter>
+    > = (value) => {
+        setPeriod(value);
+        setPage(1);
+    };
+
+    const handleSearchChange: React.Dispatch<
+        React.SetStateAction<string>
+    > = (value) => {
+        setSearch(value);
+        setPage(1);
+    };
 
     useEffect(() => {
         const getData = async () => {
-            const res = await getUserPayments(filter, period, search, page);
-            if (res) {
-                setData(res.payments);
-                setTotalDataPages(res.totalPages);
+            requestCounter.current += 1;
+            const currentRequestId = requestCounter.current;
+            try {
+                const res = await getUserPayments(filter, period, search, page);
+                if (res && currentRequestId === requestCounter.current) {
+                    setData(res.payments);
+                    setTotalDataPages(res.totalPages);
+                }
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        "[PaymentsTable:getData] Error fetching payments:",
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        "[PaymentsTable:getData] Unknown error:",
+                        error
+                    );
+                }
             }
         };
         getData();
@@ -59,11 +94,11 @@ export default function PaymentsTable({
                 {/* Header */}
                 <PaymentTableHeader
                     filter={filter}
-                    setFilter={setFilter}
+                    setFilter={handleFilterChange}
                     period={period}
-                    setPeriod={setPeriod}
+                    setPeriod={handlePeriodChange}
                     search={search}
-                    setSearch={setSearch}
+                    setSearch={handleSearchChange}
                 />
                 {/* Table */}
                 <div className="overflow-hidden">

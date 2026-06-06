@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Trash } from 'lucide-react'
 import { CldUploadWidget } from 'next-cloudinary'
 import Image from 'next/image'
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, useRef, useSyncExternalStore } from 'react'
 
 interface ImageUploadProps {
     disabled?: boolean
@@ -22,16 +22,21 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
     maxImages,
 }) => {
     const btnRef = useRef<HTMLButtonElement | null>(null)
-    const [isMounted, setIsMounted] = useState(false)
-
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    )
 
     if (!isMounted) return null
 
-    const onUpload = (result: any) => {
-        onChange(result.info.secure_url)
+    // Cloudinary のコールバック結果は unknown として受け、secure_url を型ガードで安全に取り出す
+    const onUpload = (result: unknown) => {
+        if (typeof result !== 'object' || result === null) return
+        const info = (result as { info?: unknown }).info
+        if (typeof info !== 'object' || info === null) return
+        const secureUrl = (info as { secure_url?: unknown }).secure_url
+        if (typeof secureUrl === 'string') onChange(secureUrl)
     }
 
     return (

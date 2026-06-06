@@ -23,6 +23,23 @@ export const upsertReview = async (
         // Ensure user is authenticated
         if (!user) throw new Error('Unauthorized.')
 
+        // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードをオンデマンドで自動作成（フォールバック）。
+        // findUnique → create の2段構えだと並行リクエスト時に unique 制約違反のレースが起きうるため、upsert でアトミック化する。
+        const email = user.emailAddresses[0]?.emailAddress
+        if (!email) throw new Error('User email not found in Clerk.')
+
+        await db.user.upsert({
+            where: { id: user.id },
+            update: {}, // 既存ユーザーは変更しない（フォールバック作成のみが目的）
+            create: {
+                id: user.id,
+                name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+                email: email,
+                picture: user.imageUrl || '',
+                role: 'USER',
+            },
+        })
+
         // Ensure productId and review are provided
         if (!productId) throw new Error('Product ID is required.')
         if (!review) throw new Error('Please provide review data.')
@@ -114,11 +131,14 @@ export const upsertReview = async (
         })
         return reviewDetails
     } catch (error: unknown) {
+        let message = 'Unknown error';
         if (error instanceof Error) {
+            message = error.message;
             console.error('Error updating review:', error.message, error.stack)
         } else {
+            message = String(error);
             console.error('Error updating review:', error)
         }
-        throw new Error('Error updating review')
+        throw new Error(`Error updating review: ${message}`)
     }
 };

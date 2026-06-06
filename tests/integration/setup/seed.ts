@@ -349,7 +349,14 @@ export async function seedCartItem(
 /**
  * Create and insert a Country record with a short unique suffix applied to the name and code.
  *
- * The default `name` is `Country <SUFFIX>` and the default `code` is `C<first two chars of SUFFIX>`; any fields in `overrides` are merged into the create data.
+ * The default `name` is `Country <SUFFIX>` and the default `code` is `C${SUFFIX}` (suffix 全体の前に 'C' を付けたもの); any fields in `overrides` are merged into the create data.
+ *
+ * WARNING (BREAKING CHANGE):
+ * The `code` format was changed to a 9-character format (`C${SUFFIX}`). This is a breaking change because:
+ * 1. Existing tests that expect a standard 2 or 3-character ISO country code will fail due to mismatching format expectations.
+ * 2. The `CountrySelector` component resolves flag URLs using the country code (e.g., via `flag-icons` stylesheets). A 9-character code format will fail flag URL resolution in `CountrySelector`.
+ * Recommended action:
+ * Update test suites to accept the suffix code pattern or pass an overrides dictionary matching expected formats.
  *
  * @param overrides - Partial fields to merge into the created Country record (applies on top of the defaults)
  * @returns The created `Country` record
@@ -363,7 +370,7 @@ export async function seedCountry(
     return db.country.create({
         data: {
             name: `Country ${suffix}`,
-            code: `C${suffix.slice(0, 2)}`,
+            code: `C${suffix}`,
             ...overrides,
         },
     });

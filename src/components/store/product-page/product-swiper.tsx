@@ -12,6 +12,16 @@ import { ProductVariantImage } from '@prisma/client'
 // Image Zoom
 import ImageZoom from 'react-image-zooom'
 
+/**
+ * Renders a product image gallery with selectable thumbnails and a zoomable main image.
+ *
+ * The component displays a list of thumbnails and a main image viewer. Hovering a thumbnail sets it as the active image. If `images` is falsy, the component renders nothing.
+ *
+ * @param images - Array of product variant images to show as thumbnails and available to view
+ * @param activeImage - Currently selected image shown in the main viewer (may be `null`)
+ * @param setActiveImage - State setter to update the currently active image
+ * @returns The rendered product image swiper element or nothing when `images` is falsy
+ */
 export default function ProductSwiper({
     images,
     activeImage,
@@ -31,7 +41,7 @@ export default function ProductSwiper({
                 <div className="flex flex-wrap gap-3 xl:flex-col">
                     {images.map((img) => (
                         <div
-                            key={img.url}
+                            key={img.id}
                             className={cn(
                                 'grid h-16 w-16 cursor-pointer place-items-center overflow-hidden rounded-md border border-gray-100 transition-all duration-75 ease-in',
                                 {

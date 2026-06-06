@@ -10,6 +10,11 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@/lib/db", () => ({
     db: {
+        user: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+            upsert: jest.fn(),
+        },
         review: {
             findFirst: jest.fn(),
             findMany: jest.fn(),
@@ -26,6 +31,11 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
+    // upsert はフォールバック作成用。戻り値は upsertReview 内で参照しないが、
+    // 既定で解決させて undefined による予期せぬ挙動を避ける。
+    mockDb.user.upsert.mockResolvedValue({
+        id: TEST_CONFIG.DEFAULT_USER_ID,
+    });
 });
 
 // ==================================================
@@ -42,10 +52,64 @@ describe("upsertReview", () => {
         });
     });
 
+    describe("ユーザーレコード自動同期 (フォールバック)", () => {
+        it("Clerk情報からUserレコードをupsertで原子的に作成/同期する", async () => {
+            // Clerk側にはユーザー情報が存在する
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                firstName: "John",
+                lastName: "Doe",
+                imageUrl: "https://example.com/avatar.jpg",
+                emailAddresses: [{ emailAddress: "john@example.com" }],
+            });
+
+            // モックの挙動を設定
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(createMockReview());
+            mockDb.review.findMany.mockResolvedValue([{ rating: 5 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            await upsertReview("product-001", createMockReview());
+
+            // findUnique→create のレースを避けるため upsert でアトミックに作成されること。
+            // 既存ユーザーは update: {} で変更しない（フォールバック作成のみが目的）。
+            expect(mockDb.user.upsert).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_USER_ID },
+                update: {},
+                create: {
+                    id: TEST_CONFIG.DEFAULT_USER_ID,
+                    name: "John Doe",
+                    email: "john@example.com",
+                    picture: "https://example.com/avatar.jpg",
+                    role: "USER",
+                },
+            });
+        });
+
+        it("Clerkユーザーにメールアドレスが無い場合はエラーをスローする", async () => {
+            // Clerk 側にユーザーは居るが emailAddresses が空
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                firstName: "John",
+                lastName: "Doe",
+                imageUrl: "https://example.com/avatar.jpg",
+                emailAddresses: [],
+            });
+
+            // メール検証は upsert 前に行われるため、upsert へは到達しない
+            await expect(
+                upsertReview("product-001", createMockReview())
+            ).rejects.toThrow("User email not found in Clerk.");
+
+            expect(mockDb.user.upsert).not.toHaveBeenCalled();
+        });
+    });
+
     describe("バリデーション", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
         });
 
@@ -60,6 +124,7 @@ describe("upsertReview", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
             // 既存レビューなし
             mockDb.review.findFirst.mockResolvedValue(null);
@@ -127,6 +192,7 @@ describe("upsertReview", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
         });
 
@@ -185,6 +251,7 @@ describe("upsertReview", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
             mockDb.review.findFirst.mockResolvedValue(null);
         });
@@ -270,6 +337,7 @@ describe("upsertReview", () => {
         it("DBエラー時にラップされたメッセージをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
             mockDb.review.findFirst.mockRejectedValue(
                 new Error("DB connection failed")
@@ -277,7 +345,21 @@ describe("upsertReview", () => {
 
             await expect(
                 upsertReview("product-001", createMockReview())
-            ).rejects.toThrow("Error updating review");
+            ).rejects.toThrow("Error updating review: DB connection failed");
+        });
+
+        it("DBエラー時にErrorオブジェクト以外（文字列等）が投げられた場合も、その内容をラップしてスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
+            });
+            mockDb.review.findFirst.mockRejectedValue(
+                "Database error string"
+            );
+
+            await expect(
+                upsertReview("product-001", createMockReview())
+            ).rejects.toThrow("Error updating review: Database error string");
         });
     });
 
@@ -287,6 +369,7 @@ describe("upsertReview", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "user@example.com" }],
             });
         });
 

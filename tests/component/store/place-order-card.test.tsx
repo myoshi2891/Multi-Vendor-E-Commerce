@@ -12,8 +12,10 @@ import { Prisma } from '@prisma/client'
 
 // Mock dependencies
 jest.mock('@/queries/user', () => ({
+    addToWishlist: jest.fn(),
     placeOrder: jest.fn(),
     emptyUserCart: jest.fn(),
+    upsertShippingAddress: jest.fn(),
 }))
 jest.mock('@/cart-store/useCartStore')
 jest.mock('next/navigation', () => ({
