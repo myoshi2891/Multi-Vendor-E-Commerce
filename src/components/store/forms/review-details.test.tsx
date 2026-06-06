@@ -1,7 +1,6 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // queries をモック化して Clerk のロードによる ESM パースエラーを防ぐ
@@ -120,8 +119,11 @@ describe('ReviewDetails Component Tests', () => {
         const star = screen.getByTestId('star-wrapper-2');
         expect(star).toBeInTheDocument();
 
-        // クリックイベントを発火する
-        await userEvent.setup().click(star);
+        Object.defineProperty(star, 'getBoundingClientRect', {
+            value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
+            configurable: true
+        });
+        fireEvent.click(star, { clientX: 30 });
 
         // レーティング表示が更新されたことを確認する
         expect(screen.getByText('(3.0out of 5.0 )')).toBeInTheDocument();
@@ -273,9 +275,12 @@ describe('ReviewDetails Component Tests', () => {
             />
         );
 
-        // レーティング設定
         const star = screen.getByTestId('star-wrapper-2');
-        await userEvent.click(star); // 3.0
+        Object.defineProperty(star, 'getBoundingClientRect', {
+            value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
+            configurable: true
+        });
+        fireEvent.click(star, { clientX: 30 }); // 3.0
 
         // サイズの入力 (Select size プレースホルダーが複数あるため getAll で最初の要素を選択)
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
@@ -287,21 +292,22 @@ describe('ReviewDetails Component Tests', () => {
         const textarea = screen.getByPlaceholderText('Write your review here...');
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
-        // 送信ボタンのクリック
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        await userEvent.click(submitBtn);
+        fireEvent.click(submitBtn);
 
-        expect(upsertReview).toHaveBeenCalledWith('test-product', {
-            id: 'mock-uuid-v4',
-            variant: 'Classic Black',
-            images: [],
-            quantity: '1',
-            rating: 3.0,
-            review: 'Good product!',
-            size: 'One Size',
-            color: 'Black',
+        await waitFor(() => {
+            expect(upsertReview).toHaveBeenCalledWith('test-product', {
+                id: 'mock-uuid-v4',
+                variant: 'Classic Black',
+                images: [],
+                quantity: '1',
+                rating: 3.0,
+                review: 'Good product!',
+                size: 'One Size',
+                color: 'Black',
+            });
+            expect(mockSetReviews).toHaveBeenCalled();
         });
-        expect(mockSetReviews).toHaveBeenCalled();
     });
 
     it('should handle submit error and show error log', async () => {
@@ -318,9 +324,12 @@ describe('ReviewDetails Component Tests', () => {
             />
         );
 
-        // 必須項目を入力してバリデーションを通す
         const star = screen.getByTestId('star-wrapper-2');
-        await userEvent.click(star); // 3.0
+        Object.defineProperty(star, 'getBoundingClientRect', {
+            value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
+            configurable: true
+        });
+        fireEvent.click(star, { clientX: 30 }); // 3.0
 
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
         fireEvent.focus(sizeInput);
@@ -331,10 +340,12 @@ describe('ReviewDetails Component Tests', () => {
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        await userEvent.click(submitBtn);
+        fireEvent.click(submitBtn);
 
-        expect(upsertReview).toHaveBeenCalled();
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        await waitFor(() => {
+            expect(upsertReview).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalled();
+        });
         consoleErrorSpy.mockRestore();
     });
 });

@@ -150,8 +150,7 @@ export default function ReviewDetails({
         variantsInfo[0]
     )
 
-    // Temporary state for images
-    const [images, setImages] = useState<{ url: string }[]>([])
+
 
     // State for sizes
     const [sizes, setSizes] = useState<{ name: string; value: string }[]>([])
@@ -381,26 +380,10 @@ export default function ReviewDetails({
                                                     )}
                                                     // disabled={isLoading}
                                                     onChange={(url) => {
-                                                        setImages(
-                                                            (prevImages) => {
-                                                                const updatedImages =
-                                                                    [
-                                                                        ...prevImages,
-                                                                        { url },
-                                                                    ]
-                                                                if (
-                                                                    updatedImages.length <=
-                                                                    3
-                                                                ) {
-                                                                    field.onChange(
-                                                                        updatedImages
-                                                                    )
-                                                                    return updatedImages
-                                                                } else {
-                                                                    return prevImages
-                                                                }
-                                                            }
-                                                        )
+                                                        const currentImages = field.value || []
+                                                        if (currentImages.length < 3) {
+                                                            field.onChange([...currentImages, { url }])
+                                                        }
                                                     }}
                                                     onRemove={(url) =>
                                                         field.onChange([
