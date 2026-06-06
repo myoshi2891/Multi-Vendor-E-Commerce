@@ -116,15 +116,15 @@ function CustomRatingStars({
                         {/* Empty Star Background */}
                         <Star
                             size={size}
-                            className="text-[#e2dfdf] absolute top-0 left-0"
-                            fill="#e2dfdf"
+                            className="text-slate-300 absolute top-0 left-0"
+                            fill="currentColor"
                         />
                         {/* Active Star Overlay */}
                         {isFull && (
                             <Star
                                 size={size}
-                                className="text-[#FFD804] absolute top-0 left-0"
-                                fill="#FFD804"
+                                className="text-yellow-400 absolute top-0 left-0"
+                                fill="currentColor"
                             />
                         )}
                         {isHalf && (
@@ -134,8 +134,8 @@ function CustomRatingStars({
                             >
                                 <Star
                                     size={size}
-                                    className="text-[#FFD804]"
-                                    fill="#FFD804"
+                                    className="text-yellow-400"
+                                    fill="currentColor"
                                 />
                             </div>
                         )}

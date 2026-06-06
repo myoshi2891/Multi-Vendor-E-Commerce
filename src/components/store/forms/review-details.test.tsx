@@ -177,7 +177,7 @@ describe('ReviewDetails Component Tests', () => {
         const star = screen.getByTestId('star-wrapper-2');
 
         // 最初はイエローの星はない
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBe(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBe(0);
 
         // getBoundingClientRect を確実に上書きモック
         Object.defineProperty(star, 'getBoundingClientRect', {
@@ -194,11 +194,11 @@ describe('ReviewDetails Component Tests', () => {
 
         // clientX = 30 のとき、x = 30 >= 20 なので、3.0 になる
         fireEvent.mouseMove(star, { clientX: 30 });
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBeGreaterThan(0);
 
         // mouseLeave でホバーがリセットされる
         fireEvent.mouseLeave(star);
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBe(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBe(0);
     });
 
     it('should handle click with clientX to select partial rating', () => {
