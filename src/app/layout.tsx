@@ -6,7 +6,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 // Theme Provider
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "../providers/theme-provider";
 
 // Clerk Provider
 import { ClerkProvider } from "@clerk/nextjs";
