@@ -97,3 +97,7 @@
 - `placeOrder` (`src/queries/user.ts`): `db.$transaction` でアトミックに
   注文作成・在庫減算を実行。トランザクション内で在庫チェックと更新を行い
   オーバーセルを防止。
+- `ProductWatch` (`src/components/store/product-page/product-info/product-watch.tsx`): 閲覧者数取得のWebSocket接続失敗時のコンソールエラーを抑制し、安全に非表示にフォールバックするように修正。
+- `ThemeProvider` & `cookies()` (`src/providers/theme-provider.tsx`, `src/queries/product.ts`): ハイドレーションエラー警告および `cookies()` 非同期化に伴うSSRの不整合を解消。
+- `ReviewDetails` (`src/components/store/forms/review-details.tsx`): React 19 と互換性のない `react-rating-stars-component` を廃止し、自前のカスタム評価UI (`CustomRatingStars`) に置き換え、星が描画されない問題を解決。また、バリアント色が `[object Object]` になって保存されるバグを `.map((c) => c.name)` の適用で修正。
+- `upsertReview` (`src/queries/review.ts`): Clerk Webhook 未受信によるローカルDBへの `User` 登録漏れ（外部キー制約エラー）を防ぐため、存在しない場合に Clerk 情報を基に User を自動同期（フォールバック）する処理を追加。また、エラー伝播を詳細化。
