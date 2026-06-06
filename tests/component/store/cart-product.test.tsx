@@ -15,6 +15,9 @@ jest.mock('@clerk/nextjs/server', () => ({}))
 jest.mock('@/cart-store/useCartStore')
 jest.mock('@/queries/user', () => ({
     addToWishlist: jest.fn(),
+    placeOrder: jest.fn(),
+    emptyUserCart: jest.fn(),
+    upsertShippingAddress: jest.fn(),
 }))
 jest.mock('react-hot-toast', () => ({
     __esModule: true,

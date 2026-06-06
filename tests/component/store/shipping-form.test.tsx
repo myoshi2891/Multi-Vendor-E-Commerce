@@ -15,6 +15,9 @@ import { User, Role } from '@prisma/client'
 
 // Mock dependencies
 jest.mock('@/queries/user', () => ({
+    addToWishlist: jest.fn(),
+    placeOrder: jest.fn(),
+    emptyUserCart: jest.fn(),
     upsertShippingAddress: jest.fn(),
 }))
 jest.mock('@/hooks/use-toast')
