@@ -14,8 +14,9 @@ jest.mock('uuid', () => ({
 }));
 
 import ReviewDetails from './review-details';
+import { VariantInfoType } from '@/lib/types';
 
-const mockVariantsInfo = [
+const mockVariantsInfo: VariantInfoType[] = [
     {
         variantName: "Classic Black",
         variantSlug: "classic-black",
@@ -23,9 +24,18 @@ const mockVariantsInfo = [
         variantUrl: "/product/slug/classic-black",
         images: [],
         sizes: [
-            { id: "size-1", size: "One Size", quantity: 10, price: 100, discount: 0 }
+            {
+                id: "size-1",
+                size: "One Size",
+                quantity: 10,
+                price: 100,
+                discount: 0,
+                productVariantId: "variant-1",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            }
         ],
-        colors: [{ name: "Black", color: "#000000" }]
+        colors: [{ name: "Black" }]
     }
 ];
 
