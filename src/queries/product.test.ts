@@ -1866,30 +1866,21 @@ describe("getProductPageData", () => {
         });
     });
 
-    it("cookies() が Promise を返す場合に getCookie で正しく解決されること", async () => {
+    it("cookies() が Promise を返す場合に cookieStore.get で正しく国を解決すること", async () => {
         const { cookies } = require("next/headers");
-        const { getCookie } = require("cookies-next");
 
         // cookies() が Promise を返すモック (Next.js 15+ 挙動)
         const cookieStore = {
-            getAll: jest.fn().mockReturnValue([]),
-            get: jest.fn().mockReturnValue({ value: "US" }),
+            get: jest.fn().mockReturnValue({
+                value: JSON.stringify({ name: "United States", code: "US", city: "New York" })
+            }),
         };
         const cookiesPromise = Promise.resolve(cookieStore);
         (cookies as jest.Mock).mockImplementation(() => cookiesPromise);
 
-        (getCookie as jest.Mock).mockImplementation((name, options) => {
-            if (options && options.cookies) {
-                const c = typeof options.cookies === "function" ? options.cookies() : options.cookies;
-                if (c instanceof Promise) {
-                    throw new Error("cookies must be awaited before accessing properties");
-                }
-            }
-            return JSON.stringify({ name: "United States", code: "US", city: "New York" });
-        });
-
         const result = await getProductPageData("lux-noir", "black");
         expect(result).toBeDefined();
+        expect(cookieStore.get).toHaveBeenCalledWith("userCountry");
     });
 });
 
