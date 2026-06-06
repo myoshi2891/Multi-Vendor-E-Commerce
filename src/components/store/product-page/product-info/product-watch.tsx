@@ -2,6 +2,12 @@
 import { Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 
+/**
+ * Displays a live watcher count for the given product and updates as viewer activity changes.
+ *
+ * @param productId - The product identifier to subscribe to for live watcher updates
+ * @returns A JSX element showing the number of people watching the product when the count is greater than zero, otherwise `undefined`
+ */
 export default function ProductWatch({ productId }: { productId: string }) {
     const [watchersCount, setWatchersCount] = useState<number>(0);
     const [socket, setSocket] = useState<WebSocket | null>(null);
