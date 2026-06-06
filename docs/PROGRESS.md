@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1179テスト / 122スイート（**12 skipped**、120 passed）— 2026-05-31 「Unit 行✦化（seed 除く）」で co-located unit テスト 10 ファイル（shared/store/dashboard/pages）追加 +42 テスト・+10 スイート（1137→1179）。うち 9 skip は modal-provider の CI flake 一時退避（OI-8）。2026-05-28 **B2 完了**（Stripe/PayPal Webhook Contract +32）。`/api/webhooks/{stripe,paypal}` ハンドラー新設 |
+| Jestユニットテスト | 1193テスト / 129スイート（**12 skipped**、1181 passed）— 2026-06-06 実測同期（review/rating 系コンポーネントテストの未同期分 + `upsertReview` メール欠落エラー経路テスト +1）。2026-05-31 時点は 1179 / 122。うち 9 skip は modal-provider の CI flake 一時退避（OI-8） |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -155,6 +155,37 @@
 - **副産物の発見（C1 と独立した既存バグ）**: ホーム（`/`）は `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ **500**（本番 SSR でも再現する可能性）。このため lhci の URL から `/` を除外し `/browse` のみとした。featured.tsx 修正は別タスク。
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
+
+### 2026-06-06: コードレビュー指摘トリアージ・修正 + 統計同期
+
+#### 概要
+
+外部コードレビューの 18 指摘を現行コードに照合し、有効な 15 件を修正、陳腐化/誤判定の 3 件を理由付きでスキップした。併せて `upsertReview` のメール欠落エラー経路テストを +1 し、未同期だったテスト統計を実測へ是正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/review.ts` | `findUnique`→`create` の User フォールバックを `db.user.upsert` でアトミック化（レース回避）。メール検証は維持 | `6584e58` |
+| `src/queries/review.test.ts` | upsert アサーション化 + メール欠落エラー経路テスト +1 + 認証 mock に emailAddresses 付与 | `6584e58` |
+| `src/components/store/forms/review-details.tsx` | CustomRatingStars に role=slider / aria-value* / 矢印キー操作（0.5 刻み）/ focus ring を追加。color join を `?.`+`filter(Boolean)` で堅牢化 | `cda8792` |
+| `src/components/store/profile/{payments,reviews}/*.tsx` | データ取得 `getUserPayments`/`getUserReviews` を try/catch でラップ（構造化ログ） | `bf1eb82` |
+| `src/components/store/shared/upload-images.tsx` | Cloudinary 結果を `unknown`+型ガード化（`any` 除去） | `576c732` |
+| テスト 6 ファイル | `any`/unsafe cast 除去・共有フィクスチャ化・stale コメント修正・fireEvent→userEvent | `7ef382f` |
+| `docs/admin-manual.md` | 店舗削除をソフトデリート（`isDeleted`/`deletedAt`）として記述修正 | `a86e012` |
+
+**スキップ（理由付き）**: review-details.test の rating 文字列アサーション（JSX 空白畳み込みで現状が正）、payments/reviews の render-phase setState（React 公式「You Might Not Need an Effect」の許容パターン）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1179 | **1193** |
+| スイート数 | 122 | **129** |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
+> 差分の大半は 2026-05-31 以降に追加された review/rating 系コンポーネントテストの未同期分の反映。本対応の純増は +1（メール欠落テスト）。
 
 ### 2026-06-02: SonarQube 静的解析の導入（CI = SonarCloud / ローカル = Docker）
 

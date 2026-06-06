@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-02 / **HEAD**: `b57841a`
+> **最終更新**: 2026-06-06 / **HEAD**: `7ef382f`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-05-31 時点）
+### テスト統計（2026-06-06 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1179** / 122 スイート（120 passed + 2 skipped）— 2026-05-31 「Unit 行✦化」で +42 テスト / +10 スイート（co-located unit テスト 10 ファイル: shared 3 / store 3 / dashboard 3 / pages 1） |
+| Jest テスト総数 (unit/component) | **1193** / 129 スイート（127 passed + 2 skipped）— 2026-06-06 コードレビュー指摘対応の同期で実測へ更新（review/rating 系コンポーネントテスト群の未同期分を反映 + `upsertReview` のメール欠落エラー経路テスト +1） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -228,6 +228,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `338ab41` | B2 前提: Stripe PaymentIntent と PayPal Order に orderId metadata / custom_id を付与（Webhook 相関のため） |
 | `1d69f0f` | **B2 Stripe Webhook 完了**: `/api/webhooks/stripe` ハンドラー新設、payment_intent.succeeded/failed/charge.refunded を冪等処理（15 ケース） |
 | `2321cd8` | **B2 PayPal Webhook 完了 / NA-NS-02 archive**: `/api/webhooks/paypal` ハンドラー新設、PAYMENT.CAPTURE.COMPLETED/DENIED/REFUNDED を冪等処理（15 ケース、1103 → 1135 / +32） |
+| `a86e012`〜`7ef382f` | コードレビュー指摘対応: `upsertReview` を `db.user.upsert` でアトミック化（レース回避）+ メール欠落エラー経路テスト +1、CustomRatingStars に ARIA/キーボード操作追加、profile データ取得 try/catch、`any`/unsafe cast 除去・共有フィクスチャ化、admin-manual のソフトデリート記述修正。テスト統計を実測へ同期（→ **1193** / 129 スイート、snapshot 127、型エラー 0） |
 
 ---
 

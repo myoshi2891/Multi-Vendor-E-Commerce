@@ -11,8 +11,8 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **135** (Jest unit/component 128 / Jest integration 2 / Playwright 5) — 2026-05-31 placeOrder 統合テスト +1 |
-| テスト総数 | **1179 unit/component** (12 skipped) + **17 integration** — 2026-05-31 時点。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
+| テストファイル総数 | **142** (Jest unit/component 135 / Jest integration 2 / Playwright 5) — 2026-06-06 coverage-dashboard スキャン値に同期（review/rating 系コンポーネントテスト +7） |
+| テスト総数 | **1193 unit/component** (12 skipped) + **17 integration** — 2026-06-06 時点（実測同期。review/rating 系コンポーネントテストの未同期分 + `upsertReview` メール欠落テスト +1）。Integration は `bun run test:integration` の別 config で実行（cart-checkout 11 + order-placement 6） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **17 / 80 (21%)** — 2026-06-02 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `13/80 (16%)` はダッシュボードに対して未同期だったため是正） |
@@ -291,3 +291,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-05-31 | **B3.1 完了**: 注文確定 `placeOrder` を実 DB 統合テストで初カバー。`tests/integration/order-placement.test.ts`（6 シナリオ）。`seed.ts` に ProductVariantImage 作成 + `seedShippingAddress` を追加（本体無変更）。Integration 11 → 17 / スイート 1 → 2、テストファイル総数 134 → 135。`tests/integration/` は categorize 上 unit×other に分類されるドリフトを注記（マトリクス 17/80 不変） (commits `78a20c9` / `ae28157`). |
 | 2026-05-29 | **B3 完了 / NA-NS-03 archive**: Cart → Checkout の状態橋渡しを Integration tier で初カバー。`tests/integration/cart-checkout.test.ts` で 4 シナリオ計 11 テスト（Zustand persist hydration / shipping fee 一貫性 ITEM・WEIGHT・FIXED / `applyCoupon` 正常+4 異常パス / 未認証 redirect）。基盤として testcontainers + 専用 jest config (`jest.integration.config.js`) + 5 setup ヘルパーを新設（ADR-004 で技術選定の根拠を記録）。CI workflow に `integration-tests` ジョブを追加。`scripts/coverage-dashboard/render-html.ts` の `NEXT_ACTIONS` から NA-NS-03 を削除しアーカイブ化。Integration マトリクスの queries / pages / lib セルが ✦ に遷移. |
 | 2026-06-02 | **D1 完了（categorize ドリフト解消）**: `scripts/coverage-dashboard/categorize.ts` に `tests/integration/` → `integration × queries` の分類規則を追加し、統合テスト（cart-checkout / order-placement）の `unit × other` 誤分類を恒久解消。`categorize.test.ts` に domain/category 両ケース追加（32 ケース green）。再生成（lcov あり）で `integration × queries` ◯→◐・`unit × other` から統合 2 ファイル離脱、`coveredCells` 17→18（21%→23%）、`byCategory.unit` 50→48 / `integration` 66→68。Issue #4 の api→api-contract 上書き設計は維持。`render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md` 依頼プロンプトから D1 を同時削除 (commit `b57841a` + 本コミット). |
+| 2026-06-06 | **コードレビュー指摘対応 + 統計同期**: `upsertReview` を `db.user.upsert` でアトミック化（findUnique→create のレース回避）し、メール欠落エラー経路のユニットテストを +1。併せて CustomRatingStars の ARIA/キーボード操作、profile データ取得の try/catch、テスト群の `any`/unsafe cast 除去・共有フィクスチャ化、admin-manual のソフトデリート記述修正を実施。テスト統計を実測へ同期（unit/component 1179 → **1193**、スイート 122 → **129**、snapshot 127 不変、型エラー 0）。差分の大半は 2026-05-31 以降に追加された review/rating 系コンポーネントテストの未同期分の反映 (commits `a86e012`〜`7ef382f` + 本コミット). |
