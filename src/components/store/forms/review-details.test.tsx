@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 
 // queries をモック化して Clerk のロードによる ESM パースエラーを防ぐ
@@ -64,7 +65,7 @@ describe('ReviewDetails Rating TDD', () => {
         expect(star).toBeInTheDocument();
 
         // クリックイベントを発火する（星の中心より右をクリックして3.0点にする、もしくは単純クリック）
-        fireEvent.click(star);
+        await userEvent.setup().click(star);
 
         // レーティング表示が更新されたことを確認する
         expect(screen.getByText('(3.0out of 5.0 )')).toBeInTheDocument();

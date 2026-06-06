@@ -1855,11 +1855,15 @@ describe("getProductPageData", () => {
         };
         mockDb.product.findUnique.mockResolvedValue(mockProduct);
         mockDb.productVariant.findMany.mockResolvedValue([]);
-        mockDb.store.findUnique.mockImplementation(async (params: any) => {
-            if (params.select && params.select._count) {
+        mockDb.store.findUnique.mockImplementation(async (params: unknown) => {
+            const select =
+                typeof params === "object" && params !== null
+                    ? (params as { select?: { _count?: unknown; followers?: unknown } }).select
+                    : undefined;
+            if (select && select._count) {
                 return { _count: { followers: 0 } };
             }
-            if (params.select && params.select.followers) {
+            if (select && select.followers) {
                 return { followers: [] };
             }
             return null;

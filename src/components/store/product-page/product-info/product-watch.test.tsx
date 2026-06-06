@@ -5,10 +5,11 @@ import ProductWatch from "./product-watch";
 // Mock WebSocket class
 class MockWebSocket {
     url: string;
-    onmessage: any;
-    onopen: any;
-    onerror: any;
-    onclose: any;
+    // 実 WebSocket はイベント引数を渡すが、テストでは引数なしで発火させるため optional にする
+    onmessage: ((ev?: MessageEvent) => void) | null = null;
+    onopen: ((ev?: Event) => void) | null = null;
+    onerror: ((ev?: Event) => void) | null = null;
+    onclose: ((ev?: CloseEvent) => void) | null = null;
     constructor(url: string) {
         this.url = url;
         MockWebSocket.lastInstance = this;
@@ -17,7 +18,8 @@ class MockWebSocket {
     static lastInstance: MockWebSocket | null = null;
 }
 
-(global as any).WebSocket = MockWebSocket;
+(globalThis as { WebSocket: unknown }).WebSocket =
+    MockWebSocket as unknown as typeof WebSocket;
 
 describe("ProductWatch Component", () => {
     beforeEach(() => {

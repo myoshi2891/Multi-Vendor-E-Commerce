@@ -2,24 +2,22 @@
 import { render } from "@testing-library/react";
 import OfferTagsLinks from "./offerTags-links";
 import { OfferTag } from "@prisma/client";
+import { createMockOfferTag } from "@/config/test-fixtures";
 
 // Mock useMediaQuery from react-responsive
 const mockUseMediaQuery = jest.fn();
 jest.mock("react-responsive", () => ({
-    useMediaQuery: (options: any) => mockUseMediaQuery(options),
+    useMediaQuery: (options: { query: string }) => mockUseMediaQuery(options),
 }));
 
 describe("OfferTagsLinks Component", () => {
-    const mockOfferTags: OfferTag[] = [
-        { id: "1", name: "Offer 1", url: "offer-1" },
-        { id: "2", name: "Offer 2", url: "offer-2" },
-        { id: "3", name: "Offer 3", url: "offer-3" },
-        { id: "4", name: "Offer 4", url: "offer-4" },
-        { id: "5", name: "Offer 5", url: "offer-5" },
-        { id: "6", name: "Offer 6", url: "offer-6" },
-        { id: "7", name: "Offer 7", url: "offer-7" },
-        { id: "8", name: "Offer 8", url: "offer-8" },
-    ] as any;
+    const mockOfferTags: OfferTag[] = Array.from({ length: 8 }, (_, i) =>
+        createMockOfferTag({
+            id: String(i + 1),
+            name: `Offer ${i + 1}`,
+            url: `offer-${i + 1}`,
+        })
+    );
 
     beforeEach(() => {
         jest.clearAllMocks();
