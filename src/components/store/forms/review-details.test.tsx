@@ -8,6 +8,14 @@ jest.mock('@/queries/review', () => ({
     upsertReview: jest.fn(),
 }));
 
+jest.mock('react-hot-toast', () => ({
+    __esModule: true,
+    default: {
+        success: jest.fn(),
+        error: jest.fn(),
+    }
+}));
+
 // uuid もモック化して ESM のパースエラーを防ぐ
 jest.mock('uuid', () => ({
     v4: () => 'mock-uuid-v4',
@@ -100,6 +108,10 @@ const mockSetReviews = jest.fn();
 describe('ReviewDetails Component Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     it('should render rating stars and update rating on click', async () => {
@@ -344,8 +356,10 @@ describe('ReviewDetails Component Tests', () => {
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalled();
-            expect(consoleErrorSpy).toHaveBeenCalled();
-        });
-        consoleErrorSpy.mockRestore();
+            const hasTargetError = consoleErrorSpy.mock.calls.some(call => 
+                typeof call[0] === 'string' && call[0].includes('Failed to add review:')
+            );
+            expect(hasTargetError).toBe(true);
+        }, { timeout: 3000 });
     });
 });
