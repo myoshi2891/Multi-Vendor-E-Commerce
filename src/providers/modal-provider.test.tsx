@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
 
+import { useEffect } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMockUser } from "@/config/test-fixtures";
@@ -291,7 +292,10 @@ describe.skip("ModalProvider", () => {
         it("[P1] Provider 内で context を取得できる", () => {
             let contextValue: ReturnType<typeof useModal> | null = null;
             const ContextConsumer = () => {
-                contextValue = useModal();
+                const modal = useModal();
+                useEffect(() => {
+                    contextValue = modal;
+                }, [modal]);
                 return null;
             };
 

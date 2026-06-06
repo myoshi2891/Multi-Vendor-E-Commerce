@@ -31,10 +31,17 @@ export default function ReviewsContainer({
     // Search filter
     const [search, setSearch] = useState<string>("");
 
-    useEffect(() => {
-        // Reset to page 1 when filter or search changes
+    // Render-phase state adjustment to reset page
+    const [prevFilter, setPrevFilter] = useState<ReviewFilter>(filter);
+    const [prevPeriod, setPrevPeriod] = useState<ReviewDateFilter>(period);
+    const [prevSearch, setPrevSearch] = useState<string>(search);
+
+    if (filter !== prevFilter || period !== prevPeriod || search !== prevSearch) {
+        setPrevFilter(filter);
+        setPrevPeriod(period);
+        setPrevSearch(search);
         setPage(1);
-    }, [filter, period, search]);
+    }
 
     useEffect(() => {
         const getData = async () => {

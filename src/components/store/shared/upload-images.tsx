@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Trash } from 'lucide-react'
 import { CldUploadWidget } from 'next-cloudinary'
 import Image from 'next/image'
-import { FC, useEffect, useRef, useState } from 'react'
+import { FC, useRef, useSyncExternalStore } from 'react'
 
 interface ImageUploadProps {
     disabled?: boolean
@@ -22,11 +22,11 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
     maxImages,
 }) => {
     const btnRef = useRef<HTMLButtonElement | null>(null)
-    const [isMounted, setIsMounted] = useState(false)
-
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    )
 
     if (!isMounted) return null
 
