@@ -19,8 +19,7 @@ export default function ProductWatch({ productId }: { productId: string }) {
             // connection established
         }
 
-        ws.onerror = (error) => {
-            console.error("WebSocket error:", error);
+        ws.onerror = () => {
             setSocket(null);
         }
 
