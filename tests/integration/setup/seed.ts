@@ -363,7 +363,7 @@ export async function seedCountry(
     return db.country.create({
         data: {
             name: `Country ${suffix}`,
-            code: `C${suffix.slice(0, 2)}`,
+            code: `C${suffix}`,
             ...overrides,
         },
     });
