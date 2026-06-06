@@ -39,17 +39,27 @@ export default function PaymentsTable({
     // Search filter
     const [search, setSearch] = useState<string>("");
 
-    // Render-phase state adjustment to reset page
-    const [prevFilter, setPrevFilter] = useState<PaymentTableFilter>(filter);
-    const [prevPeriod, setPrevPeriod] = useState<PaymentTableDateFilter>(period);
-    const [prevSearch, setPrevSearch] = useState<string>(search);
-
-    if (filter !== prevFilter || period !== prevPeriod || search !== prevSearch) {
-        setPrevFilter(filter);
-        setPrevPeriod(period);
-        setPrevSearch(search);
+    // Handlers to reset page when filters change
+    const handleFilterChange: React.Dispatch<
+        React.SetStateAction<PaymentTableFilter>
+    > = (value) => {
+        setFilter(value);
         setPage(1);
-    }
+    };
+
+    const handlePeriodChange: React.Dispatch<
+        React.SetStateAction<PaymentTableDateFilter>
+    > = (value) => {
+        setPeriod(value);
+        setPage(1);
+    };
+
+    const handleSearchChange: React.Dispatch<
+        React.SetStateAction<string>
+    > = (value) => {
+        setSearch(value);
+        setPage(1);
+    };
 
     useEffect(() => {
         const getData = async () => {
@@ -84,11 +94,11 @@ export default function PaymentsTable({
                 {/* Header */}
                 <PaymentTableHeader
                     filter={filter}
-                    setFilter={setFilter}
+                    setFilter={handleFilterChange}
                     period={period}
-                    setPeriod={setPeriod}
+                    setPeriod={handlePeriodChange}
                     search={search}
-                    setSearch={setSearch}
+                    setSearch={handleSearchChange}
                 />
                 {/* Table */}
                 <div className="overflow-hidden">
