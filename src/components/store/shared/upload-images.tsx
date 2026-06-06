@@ -30,8 +30,13 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 
     if (!isMounted) return null
 
-    const onUpload = (result: any) => {
-        onChange(result.info.secure_url)
+    // Cloudinary のコールバック結果は unknown として受け、secure_url を型ガードで安全に取り出す
+    const onUpload = (result: unknown) => {
+        if (typeof result !== 'object' || result === null) return
+        const info = (result as { info?: unknown }).info
+        if (typeof info !== 'object' || info === null) return
+        const secureUrl = (info as { secure_url?: unknown }).secure_url
+        if (typeof secureUrl === 'string') onChange(secureUrl)
     }
 
     return (
