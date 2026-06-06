@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ProductList from "./product-list";
 import { ProductType } from "@/lib/types";
+import { createMockProduct } from "@/config/test-fixtures";
 
 // Mock ProductCard to keep list testing focused
 jest.mock("../cards/product/product-card", () => {
@@ -17,10 +18,18 @@ jest.mock("lucide-react", () => ({
     ChevronRight: () => <span data-testid="chevron-right">Arrow</span>,
 }));
 
-const mockProducts = [
-    { id: "p1", name: "Product A" },
-    { id: "p2", name: "Product B" },
-] as unknown as ProductType[];
+const mockProducts: ProductType[] = [
+    {
+        ...createMockProduct({ id: "p1", name: "Product A" }),
+        variants: [],
+        variantImages: [],
+    },
+    {
+        ...createMockProduct({ id: "p2", name: "Product B" }),
+        variants: [],
+        variantImages: [],
+    },
+];
 
 describe("ProductList Component", () => {
     it("renders products when list is not empty", () => {

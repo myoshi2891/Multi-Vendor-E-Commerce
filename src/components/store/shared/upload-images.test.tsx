@@ -15,8 +15,8 @@ jest.mock("react", () => {
             subscribe: (onStoreChange: () => void) => () => void,
             getSnapshot: () => T,
             getServerSnapshot?: () => T
-        ) => {
-            return mockIsMounted ? getSnapshot() : (getServerSnapshot ? getServerSnapshot() : getSnapshot());
+        ): T => {
+            return mockIsMounted ? getSnapshot() : (getServerSnapshot?.() ?? getSnapshot());
         }
     };
 });

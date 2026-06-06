@@ -61,6 +61,7 @@ describe("ProductWatch Component", () => {
         });
 
         const logCalls = consoleSpy.mock.calls;
+        expect(consoleSpy).not.toHaveBeenCalled();
         consoleSpy.mockRestore();
 
     });
@@ -82,18 +83,22 @@ describe("ProductWatch Component", () => {
     });
 
     it("WebSocket でエラー発生時に socket 状態が null になること", () => {
-        let setSocketVal: unknown = undefined;
+        let setSocketVal: WebSocket | null | undefined = undefined;
         const originalUseState = React.useState;
-        const useStateSpy = jest.spyOn(React, "useState").mockImplementation((init?: any): any => {
+        const useStateSpy = jest.spyOn(React, "useState") as unknown as jest.SpyInstance<
+            [WebSocket | null, React.Dispatch<React.SetStateAction<WebSocket | null>>],
+            [WebSocket | null | undefined]
+        >;
+        useStateSpy.mockImplementation((init?: WebSocket | null): [WebSocket | null, React.Dispatch<React.SetStateAction<WebSocket | null>>] => {
             const [val, setVal] = originalUseState(init);
             if (init === null) {
-                const customSetVal = (newVal: any) => {
+                const customSetVal = (newVal: WebSocket | null) => {
                     setSocketVal = newVal;
                     return setVal(newVal);
                 };
-                return [val, customSetVal];
+                return [val as WebSocket | null, customSetVal];
             }
-            return [val, setVal];
+            return [val as WebSocket | null, setVal as React.Dispatch<React.SetStateAction<WebSocket | null>>];
         });
 
         render(<ProductWatch productId="prod-123" />);
