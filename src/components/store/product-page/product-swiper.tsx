@@ -31,7 +31,7 @@ export default function ProductSwiper({
                 <div className="flex flex-wrap gap-3 xl:flex-col">
                     {images.map((img) => (
                         <div
-                            key={img.url}
+                            key={img.id}
                             className={cn(
                                 'grid h-16 w-16 cursor-pointer place-items-center overflow-hidden rounded-md border border-gray-100 transition-all duration-75 ease-in',
                                 {
