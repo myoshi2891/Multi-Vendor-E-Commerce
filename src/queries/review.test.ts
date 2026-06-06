@@ -277,7 +277,7 @@ describe("upsertReview", () => {
 
             await expect(
                 upsertReview("product-001", createMockReview())
-            ).rejects.toThrow("Error updating review");
+            ).rejects.toThrow("Error updating review: DB connection failed");
         });
     });
 

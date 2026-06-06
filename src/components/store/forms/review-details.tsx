@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import ReactStars from 'react-rating-stars-component'
+import { Star } from 'lucide-react'
 import { z } from 'zod'
 import Select from '../ui/select'
 import Input from '../ui/input'
@@ -19,6 +19,95 @@ import { PulseLoader } from 'react-spinners'
 import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
 import { v4 } from 'uuid'
+
+// Custom Rating Stars Component for React 19 compatibility
+function CustomRatingStars({
+    value,
+    onChange,
+    size = 40,
+    count = 5,
+    edit = true,
+}: {
+    value: number
+    onChange?: (value: number) => void
+    size?: number
+    count?: number
+    edit?: boolean
+}) {
+    const [hoverValue, setHoverValue] = useState<number | null>(null)
+    const activeValue = hoverValue !== null ? hoverValue : value
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+        if (!edit) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const width = rect.right - rect.left
+        const nextValue = index + (x < width / 2 ? 0.5 : 1)
+        setHoverValue(nextValue)
+    }
+
+    const handleMouseLeave = () => {
+        if (!edit) return
+        setHoverValue(null)
+    }
+
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+        if (!edit || !onChange) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const width = rect.right - rect.left
+        const nextValue = index + (x < width / 2 ? 0.5 : 1)
+        onChange(nextValue)
+    }
+
+    return (
+        <div className="flex items-center gap-x-1" onMouseLeave={handleMouseLeave}>
+            {Array.from({ length: count }).map((_, index) => {
+                const starValue = index + 1
+                const isFull = activeValue >= starValue
+                const isHalf = activeValue >= starValue - 0.5 && activeValue < starValue
+
+                return (
+                    <div
+                        key={index}
+                        className={`relative ${edit ? 'cursor-pointer' : ''}`}
+                        style={{ width: size, height: size }}
+                        onMouseMove={(e) => handleMouseMove(e, index)}
+                        onClick={(e) => handleClick(e, index)}
+                        data-testid={`star-wrapper-${index}`}
+                    >
+                        {/* Empty Star Background */}
+                        <Star
+                            size={size}
+                            className="text-[#e2dfdf] absolute top-0 left-0"
+                            fill="#e2dfdf"
+                        />
+                        {/* Active Star Overlay */}
+                        {isFull && (
+                            <Star
+                                size={size}
+                                className="text-[#FFD804] absolute top-0 left-0"
+                                fill="#FFD804"
+                            />
+                        )}
+                        {isHalf && (
+                            <div
+                                className="absolute top-0 left-0 overflow-hidden"
+                                style={{ width: '50%', height: size }}
+                            >
+                                <Star
+                                    size={size}
+                                    className="text-[#FFD804]"
+                                    fill="#FFD804"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
 
 export default function ReviewDetails({
     productId,
@@ -135,18 +224,15 @@ export default function ReviewDetails({
                                         <FormItem>
                                             <FormControl>
                                                 <div className="flex items-center gap-x-2">
-                                                    <ReactStars
-                                                        count={5}
-                                                        size={40}
-                                                        color="#e2dfdf"
-                                                        activeColor="#FFD804"
-                                                        value={field.value}
-                                                        onChange={
-                                                            field.onChange
-                                                        }
-                                                        isHalf
-                                                        edit={true}
-                                                    />
+                                                     <CustomRatingStars
+                                                         count={5}
+                                                         size={40}
+                                                         value={field.value}
+                                                         onChange={
+                                                             field.onChange
+                                                         }
+                                                         edit={true}
+                                                     />
                                                     <span>
                                                         (
                                                         {form
