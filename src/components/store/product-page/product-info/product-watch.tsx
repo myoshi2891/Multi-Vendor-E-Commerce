@@ -7,7 +7,7 @@ export default function ProductWatch({ productId }: { productId: string }) {
     const [socket, setSocket] = useState<WebSocket | null>(null);
 
     useEffect(() => {
-        const ws = new WebSocket(`ws:bony-onyx-nephew.glitch.me/${productId}`);
+        const ws = new WebSocket(`wss://bony-onyx-nephew.glitch.me/${productId}`);
         setSocket(ws);
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -16,7 +16,7 @@ export default function ProductWatch({ productId }: { productId: string }) {
         };
 
         ws.onopen = () => {
-            console.log("Connected to WebSocket server");
+            // connection established
         }
 
         ws.onerror = (error) => {
@@ -25,7 +25,6 @@ export default function ProductWatch({ productId }: { productId: string }) {
         }
 
         ws.onclose = () => {
-            console.log("WebSocket connection closed");
             setSocket(null);
         }
 
