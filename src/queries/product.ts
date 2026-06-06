@@ -908,7 +908,7 @@ export const getProductPageData = async (
     if (!product) return;
 
     // Retrieve user country
-    const userCountry = getUserCountry();
+    const userCountry = await getUserCountry();
 
     // Calculate and retrieve the shipping details
     const productShippingDetails = await getShippingDetails(
@@ -1019,8 +1019,8 @@ export const retrieveProductDetails = async (
     };
 };
 
-const getUserCountry = () => {
-    const cookieValue = getCookie("userCountry", { cookies }) as string | undefined;
+const getUserCountry = async () => {
+    const cookieValue = getCookie("userCountry", { cookies: await cookies() }) as string | undefined;
     return parseUserCountryCookie(cookieValue);
 };
 const formatProductResponse = (
@@ -1616,7 +1616,7 @@ export const getProductsByIds = async (
 
 const incrementProductViews = async (productId: string) => {
     const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
-        cookies,
+        cookies: await cookies(),
     });
 
     if (!isProductAlreadyViewed) {

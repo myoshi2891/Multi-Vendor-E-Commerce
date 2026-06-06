@@ -13,6 +13,7 @@ import {
     getDeliveryDetailsForStoreByCountry,
     getProductShippingFee,
     getProductsByIds,
+    getProductPageData,
 } from "./product";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -1810,3 +1811,85 @@ describe("getProductsByIds", () => {
         );
     });
 });
+
+// ==================================================
+// getProductPageData
+// ==================================================
+describe("getProductPageData", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({ id: "user-123" });
+        const mockProduct = {
+            id: "product-123",
+            slug: "lux-noir",
+            shippingFeeMethod: "ITEM",
+            freeShipping: null,
+            storeId: "store-123",
+            store: {
+                id: "store-123",
+                returnPolicy: "14 days",
+                defaultShippingService: "Standard",
+                defaultShippingFeePerItem: { toNumber: () => 5 },
+                defaultShippingFeeForAdditionalItem: { toNumber: () => 2 },
+                defaultShippingFeePerKg: { toNumber: () => 3 },
+                defaultShippingFeeFixed: { toNumber: () => 10 },
+            },
+            category: { id: "cat-123" },
+            subCategory: { id: "subcat-123" },
+            offerTag: null,
+            specs: [],
+            questions: [],
+            reviews: [],
+            rating: 4.5,
+            variants: [{
+                id: "variant-123",
+                slug: "black",
+                variantName: "Black",
+                isSale: false,
+                saleEndDate: null,
+                images: [{ url: "img1.jpg" }],
+                colors: [],
+                sizes: [{ price: { toNumber: () => 100 }, discount: 0 }],
+                specs: [],
+            }],
+            variantsInfo: [],
+        };
+        mockDb.product.findUnique.mockResolvedValue(mockProduct);
+        mockDb.productVariant.findMany.mockResolvedValue([]);
+        mockDb.store.findUnique.mockImplementation(async (params: any) => {
+            if (params.select && params.select._count) {
+                return { _count: { followers: 0 } };
+            }
+            if (params.select && params.select.followers) {
+                return { followers: [] };
+            }
+            return null;
+        });
+    });
+
+    it("cookies() が Promise を返す場合に getCookie で正しく解決されること", async () => {
+        const { cookies } = require("next/headers");
+        const { getCookie } = require("cookies-next");
+
+        // cookies() が Promise を返すモック (Next.js 15+ 挙動)
+        const cookieStore = {
+            getAll: jest.fn().mockReturnValue([]),
+            get: jest.fn().mockReturnValue({ value: "US" }),
+        };
+        const cookiesPromise = Promise.resolve(cookieStore);
+        (cookies as jest.Mock).mockImplementation(() => cookiesPromise);
+
+        (getCookie as jest.Mock).mockImplementation((name, options) => {
+            if (options && options.cookies) {
+                const c = typeof options.cookies === "function" ? options.cookies() : options.cookies;
+                if (c instanceof Promise) {
+                    throw new Error("cookies must be awaited before accessing properties");
+                }
+            }
+            return JSON.stringify({ name: "United States", code: "US", city: "New York" });
+        });
+
+        const result = await getProductPageData("lux-noir", "black");
+        expect(result).toBeDefined();
+    });
+});
+
