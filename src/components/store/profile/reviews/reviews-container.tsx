@@ -45,10 +45,25 @@ export default function ReviewsContainer({
 
     useEffect(() => {
         const getData = async () => {
-            const res = await getUserReviews(filter, period, search, page);
-            if (res) {
-                setData(res.reviews);
-                setTotalDataPages(res.totalPages);
+            try {
+                const res = await getUserReviews(filter, period, search, page);
+                if (res) {
+                    setData(res.reviews);
+                    setTotalDataPages(res.totalPages);
+                }
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        "[ReviewsContainer:getData] Error fetching reviews:",
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        "[ReviewsContainer:getData] Unknown error:",
+                        error
+                    );
+                }
             }
         };
         getData();

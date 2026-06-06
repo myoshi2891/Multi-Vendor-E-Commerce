@@ -52,10 +52,25 @@ export default function PaymentsTable({
 
     useEffect(() => {
         const getData = async () => {
-            const res = await getUserPayments(filter, period, search, page);
-            if (res) {
-                setData(res.payments);
-                setTotalDataPages(res.totalPages);
+            try {
+                const res = await getUserPayments(filter, period, search, page);
+                if (res) {
+                    setData(res.payments);
+                    setTotalDataPages(res.totalPages);
+                }
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        "[PaymentsTable:getData] Error fetching payments:",
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        "[PaymentsTable:getData] Unknown error:",
+                        error
+                    );
+                }
             }
         };
         getData();
