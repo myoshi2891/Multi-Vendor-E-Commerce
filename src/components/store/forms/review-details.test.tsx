@@ -8,6 +8,14 @@ jest.mock('@/queries/review', () => ({
     upsertReview: jest.fn(),
 }));
 
+jest.mock('react-hot-toast', () => ({
+    __esModule: true,
+    default: {
+        success: jest.fn(),
+        error: jest.fn(),
+    }
+}));
+
 // uuid もモック化して ESM のパースエラーを防ぐ
 jest.mock('uuid', () => ({
     v4: () => 'mock-uuid-v4',
@@ -102,6 +110,10 @@ describe('ReviewDetails Component Tests', () => {
         jest.clearAllMocks();
     });
 
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it('should render rating stars and update rating on click', async () => {
         render(
             <ReviewDetails
@@ -165,7 +177,7 @@ describe('ReviewDetails Component Tests', () => {
         const star = screen.getByTestId('star-wrapper-2');
 
         // 最初はイエローの星はない
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBe(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBe(0);
 
         // getBoundingClientRect を確実に上書きモック
         Object.defineProperty(star, 'getBoundingClientRect', {
@@ -182,11 +194,11 @@ describe('ReviewDetails Component Tests', () => {
 
         // clientX = 30 のとき、x = 30 >= 20 なので、3.0 になる
         fireEvent.mouseMove(star, { clientX: 30 });
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBeGreaterThan(0);
 
         // mouseLeave でホバーがリセットされる
         fireEvent.mouseLeave(star);
-        expect(document.querySelectorAll('svg[fill="#FFD804"]').length).toBe(0);
+        expect(document.querySelectorAll('svg.text-yellow-400').length).toBe(0);
     });
 
     it('should handle click with clientX to select partial rating', () => {
@@ -344,8 +356,10 @@ describe('ReviewDetails Component Tests', () => {
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalled();
-            expect(consoleErrorSpy).toHaveBeenCalled();
-        });
-        consoleErrorSpy.mockRestore();
+            const hasTargetError = consoleErrorSpy.mock.calls.some(call => 
+                typeof call[0] === 'string' && call[0].includes('Failed to add review:')
+            );
+            expect(hasTargetError).toBe(true);
+        }, { timeout: 3000 });
     });
 });
