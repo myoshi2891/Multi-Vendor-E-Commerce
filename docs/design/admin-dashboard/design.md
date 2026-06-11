@@ -403,7 +403,8 @@ export const updateOrderPaymentStatus = async (
 - **`columns.tsx`**（新規）: seller 版（[orders/columns.tsx](../../../src/app/dashboard/seller/stores/[storeUrl]/orders/columns.tsx)）をベースに、型を `AdminOrderType` に変更し **Store 列を追加**。Order 起点のため、行は Order（その中に groups[]）。各 group の store を表示。
 - **詳細モーダル**: [StoreOrderSummary](../../../src/components/dashboard/shared/store-order-summary.tsx) をそのまま流用（`group` props）。
 - **ステータス変更**: `OrderStatusSelect` を discriminated union props で admin 対応（次節 3.4）。
-- **`paymentStatus` 変更 UI（運用上の警告）**: `updateOrderPaymentStatus`（`updateOrderItemStatusAsAdmin` 経由含む）を呼ぶ操作 UI には「**DB ステータスのみ変更・決済 API 非連携（[C-a](./requirements.md#6-制限事項仕様境界)）**」の警告を明示する。`Paid`/`Refunded` 等への変更後は、運営者が Stripe / PayPal の各ダッシュボードで返金・キャプチャを **手動で照合する運用前提** を UI 上で示す。
+- **`paymentStatus` 変更 UI（運用上の警告）**: `updateOrderPaymentStatus` を呼ぶ操作 UI に**のみ**「**DB ステータスのみ変更・決済 API 非連携（[C-a](./requirements.md#6-制限事項仕様境界)）**」の警告を明示する。`Paid`/`Refunded` 等への変更後は、運営者が Stripe / PayPal の各ダッシュボードで返金・キャプチャを **手動で照合する運用前提** を UI 上で示す（手順は次節 [§3.5](#35-決済ステータス手動変更運用手順runbook)）。
+  - **`updateOrderItemStatusAsAdmin` には決済 API 警告を付与しない**: これは `OrderItem.status`（`ProductStatus` = 配送/履行ステータス）の更新であり決済とは無関係。代わりに「**配送キャリア未連携・手動ステータス変更**」である旨を示す（サードパーティ配送キャリア連携は [product.md](../../../.claude/steering/product.md) スコープ外）。
   - **スコープ外（明示）**: 外部ゲートウェイとの自動照合ジョブ・不一致検知レポート・`AuditLog` への gateway transaction ID / gateway 名の格納（監査スキーマ拡張）は本 3 機能のスコープ外（C-a「決済 API 自動連携はスコープ外」/ [product.md](../../../.claude/steering/product.md)）。永続監査が要件化したら [判断5-3](#5-3-認可境界特権昇格監査) の `AuditLog` ロードマップで扱う。
 
 ### 3.4 `OrderStatusSelect` の discriminated union 化（判断5-3）
@@ -432,6 +433,39 @@ const OrderStatusSelect: FC<Props> = (props) => {
 ```
 
 **効果（なぜ union か）**: `mode: "admin"` の分岐に `storeId` が型として存在しないため、seller 文脈に admin action が混入することを **コンパイル時に排除**。既存の seller 呼び出し側（columns.tsx）は `mode: "seller"` を明示的に付与する変更が必要（既存テストの確認対象）。
+
+### 3.5 決済ステータス手動変更 運用手順（Runbook）
+
+> `updateOrderPaymentStatus` は DB の `Order.paymentStatus` のみを変更し、Stripe / PayPal の決済 API は呼ばない（[C-a](./requirements.md#6-制限事項仕様境界)）。そのため外部ゲートウェイとの整合は**運営者の手動運用**で担保する。本節はその運用手順を定義する。
+
+**1. UI 操作フロー（変更前後の順序）**
+
+| 局面 | 操作順序 |
+| --- | --- |
+| 通常の paymentStatus 変更（例: `Pending → Paid`） | ① 対象 Order の詳細モーダルで現在の `paymentStatus` と各 OrderGroup 状態を確認 → ② `updateOrderPaymentStatus` を実行 → ③ 直後に下記「2. 不一致検知」で外部ダッシュボードと照合 |
+| `Refunded` / `Cancelled`（親→子連動あり） | ① 外部側（Stripe/PayPal）で返金・キャンセルを**先に**実施し成立を確認 → ② `updateOrderPaymentStatus(orderId, "Refunded"/"Cancelled")` を実行（同一 `db.$transaction` で子 OrderGroup/OrderItem が連動・[§3.2](#32-親子ステータス連動判断6-2-のステートマシン)）→ ③ 子連動結果を詳細モーダルで確認 |
+| 個別 OrderGroup の配送ステータス変更 | `updateOrderGroupStatusAsAdmin` を使用（**`updateOrderPaymentStatus` とは別系統**・決済とは無関係） |
+
+> **原則**: 返金/キャンセルは「**外部ゲートウェイ先行 → DB 反映**」。`Paid` への昇格は「**DB 反映 → 外部照合**」。DB を先に `Refunded` にしてから外部返金を忘れると、実返金なしの返金扱いが残る。
+
+**2. 不一致検知方法**
+
+- **照合対象**: DB `Order.paymentStatus` ↔ Stripe Dashboard（PaymentIntent / Refund 状態）/ PayPal Dashboard（Capture / Refund 状態）。
+- **確認頻度**: ① `Refunded`/`Paid`/`Cancelled` への変更**直後**（必須）、② 日次バッチ確認（推奨・手動）。
+- **チェックリスト**:
+  - [ ] DB が `Paid` の注文に、対応する成功した Capture が外部に存在するか
+  - [ ] DB が `Refunded` の注文に、対応する Refund が外部に存在し金額が一致するか
+  - [ ] 外部で返金済みなのに DB が `Paid` のままの注文が無いか（取りこぼし検知）
+
+**3. 復旧アクション（不一致発見時）**
+
+| 不一致パターン | 戻すべき DB ステータス | 外部側の調整 |
+| --- | --- | --- |
+| DB=`Refunded` だが外部に Refund 無し | `updateOrderPaymentStatus` で `Paid` に戻す | 必要なら改めて外部で返金を実行し、成立後に再度 `Refunded` へ |
+| DB=`Paid` だが外部は返金済み | `updateOrderPaymentStatus` で `Refunded` に変更（子連動を確認） | 追加調整不要（外部が正） |
+| DB=`Pending` だが外部は Capture 済み | `updateOrderPaymentStatus` で `Paid` に変更 | 追加調整不要 |
+
+**4. スコープ外（明示）**: 外部ゲートウェイとの**自動**照合ジョブ・不一致検知レポート・`AuditLog` への gateway transaction ID 格納は本 3 機能のスコープ外（line 407 の scope-out と同一・[C-a](./requirements.md#6-制限事項仕様境界)）。本 runbook は**手動運用手順のみ**を定義し、自動化は要件化時に [判断5-3](#5-3-認可境界特権昇格監査) の `AuditLog` ロードマップで扱う。
 
 ---
 
