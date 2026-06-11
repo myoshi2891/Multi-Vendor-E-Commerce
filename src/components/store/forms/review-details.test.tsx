@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // queries をモック化して Clerk のロードによる ESM パースエラーを防ぐ
@@ -305,7 +305,11 @@ describe('ReviewDetails Component Tests', () => {
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        fireEvent.click(submitBtn);
+        // RHF の非同期バリデーション → handleSubmit → upsertReview の Promise チェーンを
+        // act 内で確定的にフラッシュする（CI の OI-8 フレーク回避: jest.setup.ts 参照）
+        await act(async () => {
+            fireEvent.click(submitBtn);
+        });
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalledWith('test-product', {
@@ -352,11 +356,15 @@ describe('ReviewDetails Component Tests', () => {
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        fireEvent.click(submitBtn);
+        // reject された upsertReview の catch チェーンを act 内で確定的にフラッシュする
+        // （CI の「同名テスト3回・本文空」OI-8 フレーク回避: jest.setup.ts 参照）
+        await act(async () => {
+            fireEvent.click(submitBtn);
+        });
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalled();
-            const hasTargetError = consoleErrorSpy.mock.calls.some(call => 
+            const hasTargetError = consoleErrorSpy.mock.calls.some(call =>
                 typeof call[0] === 'string' && call[0].includes('Failed to add review:')
             );
             expect(hasTargetError).toBe(true);
