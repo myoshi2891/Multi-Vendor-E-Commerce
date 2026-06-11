@@ -188,7 +188,7 @@ const getCachedStats = unstable_cache(
 );
 ```
 
-> **`Store.status` の enum 値を要確認**: `prisma/schema.prisma` の `enum StoreStatus`（L73）を参照し、`ACTIVE`/`PENDING` の実値に合わせる（実装時に grep）。`DISABLED`/`BANNED` 等が KPI に必要なら追加。
+> **`Store.status` の enum 値（確認済み）**: `enum StoreStatus`（[schema.prisma:73-78](../../../prisma/schema.prisma#L73)）は **`PENDING` / `ACTIVE` / `BANNED` / `DISABLED`** の 4 値。現行 KPI は `ACTIVE`（`activeStores`）/ `PENDING`（`pendingStores`）のみ使用する。`BANNED` / `DISABLED` は将来 KPI 拡張で算入する場合に `findCount()` を追加する。**`INACTIVE` という値は存在しない**（旧 `src/queries/store.test.ts` の `"INACTIVE"` 参照は実値へ是正済み）。
 
 ```typescript
 /** 売上推移（チャート用）。period で粒度を切替。 */
@@ -403,6 +403,8 @@ export const updateOrderPaymentStatus = async (
 - **`columns.tsx`**（新規）: seller 版（[orders/columns.tsx](../../../src/app/dashboard/seller/stores/[storeUrl]/orders/columns.tsx)）をベースに、型を `AdminOrderType` に変更し **Store 列を追加**。Order 起点のため、行は Order（その中に groups[]）。各 group の store を表示。
 - **詳細モーダル**: [StoreOrderSummary](../../../src/components/dashboard/shared/store-order-summary.tsx) をそのまま流用（`group` props）。
 - **ステータス変更**: `OrderStatusSelect` を discriminated union props で admin 対応（次節 3.4）。
+- **`paymentStatus` 変更 UI（運用上の警告）**: `updateOrderPaymentStatus`（`updateOrderItemStatusAsAdmin` 経由含む）を呼ぶ操作 UI には「**DB ステータスのみ変更・決済 API 非連携（[C-a](./requirements.md#6-制限事項仕様境界)）**」の警告を明示する。`Paid`/`Refunded` 等への変更後は、運営者が Stripe / PayPal の各ダッシュボードで返金・キャプチャを **手動で照合する運用前提** を UI 上で示す。
+  - **スコープ外（明示）**: 外部ゲートウェイとの自動照合ジョブ・不一致検知レポート・`AuditLog` への gateway transaction ID / gateway 名の格納（監査スキーマ拡張）は本 3 機能のスコープ外（C-a「決済 API 自動連携はスコープ外」/ [product.md](../../../.claude/steering/product.md)）。永続監査が要件化したら [判断5-3](#5-3-認可境界特権昇格監査) の `AuditLog` ロードマップで扱う。
 
 ### 3.4 `OrderStatusSelect` の discriminated union 化（判断5-3）
 
@@ -498,7 +500,9 @@ export const toggleCouponActive = async (couponId: string, isActive: boolean) =>
 };
 ```
 
-> **既存 seller 版との一意性チェックの違い（判断4）**: seller の `upsertCoupon` は `code + storeId` の複合で重複検知する（[coupon.ts:43-51](../../../src/queries/coupon.ts#L43-L51)）が、これは DB の **単一列 `@unique`** と不整合になりうる。admin 版は **code 単独** + **P2002 捕捉** で行う。seller 版も他店舗/platform コードと衝突しうるため、第2段で seller `upsertCoupon` にも P2002 ハンドリングを追加する（tasks Phase 5）。
+> **既存 seller 版との一意性チェックの違い（判断4）**: seller の `upsertCoupon` は `code + storeId` の複合で重複検知する（[coupon.ts:43-51](../../../src/queries/coupon.ts#L43-L51)）が、これは DB の **単一列 `@unique`** と不整合になりうる。admin 版は **code 単独** + **P2002 捕捉** で行う。seller 版も他店舗/platform コードと衝突しうるため、第2段で seller `upsertCoupon` にも P2002 ハンドリングを追加する（tasks Phase 5・[5-B-6](./tasks.md)）。
+>
+> **一意性の SSOT と P2002 メッセージの統一（判断4 補足）**: 一意性の **最終的な SSOT は DB の `code @unique`（P2002）** とする。seller の `findFirst` 事前チェックは UX 高速フィードバック用の**楽観的チェックとして残す**が、`findFirst`→`upsert` 間の TOCTOU レース（同一 code の並行挿入）に対する**最終防御は P2002 捕捉**である。P2002 のユーザー向けメッセージは **admin / seller で完全一致**させ、canonical は日本語「このクーポンコードは既に使用されています」（[F3-5](./requirements.md) / AC-F3-2）。seller の既存英語メッセージ（`Coupon with the same code "..." already exists for this store.`）は Phase 5-B-6 でこの日本語文言へ統一する。**NFR-8（「文言は既存に倣う」）との関係**: 本メッセージは admin 仕様で日本語が canonical のため、seller 側を日本語へ寄せて「既存（=本機能で確立した）文言」に倣う形で統一する。
 
 ### 4.2 Zod スキーマ（`src/lib/schemas.ts` に追加）
 

@@ -1511,18 +1511,18 @@ describe("updateStoreStatus", () => {
                 TestDataFactory.existingStore({ status: "ACTIVE" })
             );
             mockPrisma.store.update.mockResolvedValue(
-                TestDataFactory.existingStore({ status: "INACTIVE" })
+                TestDataFactory.existingStore({ status: "DISABLED" })
             );
 
             const result = await updateStoreStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
-                "INACTIVE" as never
+                "DISABLED" as never
             );
 
-            expect(result).toBe("INACTIVE");
+            expect(result).toBe("DISABLED");
             expect(mockPrisma.store.update).toHaveBeenCalledWith({
                 where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
-                data: { status: "INACTIVE" },
+                data: { status: "DISABLED" },
             });
         });
 
@@ -1549,17 +1549,17 @@ describe("updateStoreStatus", () => {
             });
         });
 
-        it("ACTIVE → INACTIVE遷移時にはロール昇格しない", async () => {
+        it("ACTIVE → DISABLED遷移時にはロール昇格しない", async () => {
             mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "ACTIVE" })
             );
             mockPrisma.store.update.mockResolvedValue(
-                TestDataFactory.existingStore({ status: "INACTIVE" })
+                TestDataFactory.existingStore({ status: "DISABLED" })
             );
 
             await updateStoreStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
-                "INACTIVE" as never
+                "DISABLED" as never
             );
 
             expect(mockPrisma.user.update).not.toHaveBeenCalled();
@@ -1745,7 +1745,7 @@ describe("getStorePageDetails", () => {
         ).rejects.toThrow("Store with URL nonexistent not found.");
     });
 
-    it("INACTIVEなストアはfindFirst条件で除外される", async () => {
+    it("非 ACTIVE なストアは findFirst 条件で除外される", async () => {
         mockPrisma.store.findFirst.mockResolvedValue(null);
 
         await expect(
