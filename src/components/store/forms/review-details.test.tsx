@@ -57,7 +57,7 @@ jest.mock('../shared/upload-images', () => {
 });
 
 import ReviewDetails from './review-details';
-import { VariantInfoType } from '@/lib/types';
+import { VariantInfoType, ReviewWithImageType } from '@/lib/types';
 
 const mockVariantsInfo: VariantInfoType[] = [
     {
@@ -102,7 +102,7 @@ const mockVariantsInfo: VariantInfoType[] = [
     }
 ];
 
-const mockReviews: any[] = [];
+const mockReviews: ReviewWithImageType[] = [];
 const mockSetReviews = jest.fn();
 
 describe('ReviewDetails Component Tests', () => {
@@ -364,10 +364,13 @@ describe('ReviewDetails Component Tests', () => {
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalled();
-            const hasTargetError = consoleErrorSpy.mock.calls.some(call =>
-                typeof call[0] === 'string' && call[0].includes('Failed to add review:')
+            // review-details.tsx の console.error('Failed to add review:', error.message, error.stack)
+            // を厳密な引数形状で検証（error は new Error('API Error') のため message='API Error'、stack は文字列）
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to add review:',
+                'API Error',
+                expect.any(String),
             );
-            expect(hasTargetError).toBe(true);
         }, { timeout: 3000 });
     });
 });
