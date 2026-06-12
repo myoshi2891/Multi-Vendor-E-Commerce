@@ -249,8 +249,9 @@ import { z } from "zod";
 
 /** F2-4/F2-5: limit 上限キャップ（判断6-5）。 */
 const AdminOrderFilterSchema = z.object({
-    paymentStatus: z.string().optional(),
-    orderStatus: z.string().optional(),
+    // z.nativeEnum で URL パラメータを入口で検証（不正値を弾き、下流の as キャストを排除）
+    paymentStatus: z.nativeEnum(PaymentStatus).optional(),
+    orderStatus: z.nativeEnum(OrderStatus).optional(),
     search: z.string().optional(),
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(20),   // ← 上限 100
@@ -269,8 +270,8 @@ export const getAllOrders = async (
     const f = AdminOrderFilterSchema.parse(filters ?? {});
     try {
         const where: Prisma.OrderWhereInput = {
-            ...(f.paymentStatus ? { paymentStatus: f.paymentStatus as PaymentStatus } : {}),
-            ...(f.orderStatus ? { orderStatus: f.orderStatus as OrderStatus } : {}),
+            ...(f.paymentStatus ? { paymentStatus: f.paymentStatus } : {}),   // nativeEnum 検証済み・キャスト不要
+            ...(f.orderStatus ? { orderStatus: f.orderStatus } : {}),         // 同上
             ...(f.search ? { id: { contains: f.search } } : {}),
         };
         const [orders, total] = await Promise.all([
@@ -363,10 +364,14 @@ export const updateOrderPaymentStatus = async (
     const admin = await requireAdmin();
     return await db.$transaction(async (tx) => {
         await tx.order.update({ where: { id: orderId }, data: { paymentStatus: status } });
-        // 判断6-2: Canceled/Refunded のとき子 OrderGroup/OrderItem を連動（F2-10）
+        // 判断6-2: Cancelled/Refunded のとき子 OrderGroup/OrderItem を連動（F2-10）
+        // ※ enum スペル注意: 子の OrderStatus は "Canceled"（L 1 つ）、
+        //    親の PaymentStatus は "Cancelled"（L 2 つ）。PaymentStatus → OrderStatus へ正しく写像する。
         if (status === "Refunded" || status === "Cancelled") {
-            await tx.orderGroup.updateMany({ where: { orderId }, data: { status: "Refunded" } });
-            // OrderItem も同様に連動
+            const childStatus: OrderStatus =
+                status === "Refunded" ? OrderStatus.Refunded : OrderStatus.Canceled;
+            await tx.orderGroup.updateMany({ where: { orderId }, data: { status: childStatus } });
+            // OrderItem も同じ childStatus 相当（ProductStatus）へ連動
         }
         console.error(`[Admin:updatePaymentStatus] actor=${admin.id} target=${orderId} to=${status}`);
         // TODO(在庫連動・スコープ外): Refunded で在庫復元フック（判断5-2）
@@ -399,7 +404,7 @@ export const updateOrderPaymentStatus = async (
 
 ### 3.3 UI
 
-- **`page.tsx`**（新規）: `getAllOrders()` を呼び、[DataTable](../../../src/components/ui/data-table.tsx) に渡す。`export const dynamic = 'force-dynamic';`。`searchParams` から `page`/`limit`/フィルタを読み、tech.md の URL 正規化（`Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1`）+ 上限キャップを適用。
+- **`page.tsx`**（新規）: `getAllOrders()` を呼び、[DataTable](../../../src/components/ui/data-table.tsx) に渡す。`export const dynamic = 'force-dynamic';`。`searchParams` から `page`/`limit`/フィルタを読む。**`searchParams` の値は文字列**のため、まず `Number()` で数値化してから tech.md の URL 正規化を適用する（既存の正準パターン: [`profile/following/[page]/page.tsx`](../../../src/app/(store)/profile/following/[page]/page.tsx#L18-L19) の `const raw = Number(pageParam)` → `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1`）。`page`/`limit` 双方で `const rawNum = Number(raw); Number.isFinite(rawNum) && rawNum >= 1 ? Math.floor(rawNum) : 1` とし、`limit` には上限キャップも適用する（直接 `Number.isFinite(raw)` を文字列に当てると常に false となり 1 に張り付くため）。
 - **`columns.tsx`**（新規）: seller 版（[orders/columns.tsx](../../../src/app/dashboard/seller/stores/[storeUrl]/orders/columns.tsx)）をベースに、型を `AdminOrderType` に変更し **Store 列を追加**。Order 起点のため、行は Order（その中に groups[]）。各 group の store を表示。
 - **詳細モーダル**: [StoreOrderSummary](../../../src/components/dashboard/shared/store-order-summary.tsx) をそのまま流用（`group` props）。
 - **ステータス変更**: `OrderStatusSelect` を discriminated union props で admin 対応（次節 3.4）。
