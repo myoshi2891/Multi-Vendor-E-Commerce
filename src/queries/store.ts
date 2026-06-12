@@ -524,7 +524,7 @@ export const getAllStores = async () => {
  *              This function is typically used by admins to approve or reject store applications.
  * @permissionLevel Admin Only
  * @param {string} storeId - The unique identifier of the store to update
- * @param {StoreStatus} status - The new status to set for the store (PENDING, ACTIVE, INACTIVE, etc.)
+ * @param {StoreStatus} status - The new status to set for the store (PENDING, ACTIVE, BANNED, DISABLED)
  * @returns {Promise<StoreStatus>} - The updated status of the store
  * @throws {Error} - When user is unauthenticated, lacks admin privileges, or store is not found
  */

@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // queries をモック化して Clerk のロードによる ESM パースエラーを防ぐ
@@ -57,7 +57,7 @@ jest.mock('../shared/upload-images', () => {
 });
 
 import ReviewDetails from './review-details';
-import { VariantInfoType } from '@/lib/types';
+import { VariantInfoType, ReviewWithImageType } from '@/lib/types';
 
 const mockVariantsInfo: VariantInfoType[] = [
     {
@@ -102,7 +102,7 @@ const mockVariantsInfo: VariantInfoType[] = [
     }
 ];
 
-const mockReviews: any[] = [];
+const mockReviews: ReviewWithImageType[] = [];
 const mockSetReviews = jest.fn();
 
 describe('ReviewDetails Component Tests', () => {
@@ -305,7 +305,11 @@ describe('ReviewDetails Component Tests', () => {
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        fireEvent.click(submitBtn);
+        // RHF の非同期バリデーション → handleSubmit → upsertReview の Promise チェーンを
+        // act 内で確定的にフラッシュする（CI の OI-8 フレーク回避: jest.setup.ts 参照）
+        await act(async () => {
+            fireEvent.click(submitBtn);
+        });
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalledWith('test-product', {
@@ -352,14 +356,21 @@ describe('ReviewDetails Component Tests', () => {
         fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
-        fireEvent.click(submitBtn);
+        // reject された upsertReview の catch チェーンを act 内で確定的にフラッシュする
+        // （CI の「同名テスト3回・本文空」OI-8 フレーク回避: jest.setup.ts 参照）
+        await act(async () => {
+            fireEvent.click(submitBtn);
+        });
 
         await waitFor(() => {
             expect(upsertReview).toHaveBeenCalled();
-            const hasTargetError = consoleErrorSpy.mock.calls.some(call => 
-                typeof call[0] === 'string' && call[0].includes('Failed to add review:')
+            // review-details.tsx の console.error('Failed to add review:', error.message, error.stack)
+            // を厳密な引数形状で検証（error は new Error('API Error') のため message='API Error'、stack は文字列）
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to add review:',
+                'API Error',
+                expect.any(String),
             );
-            expect(hasTargetError).toBe(true);
         }, { timeout: 3000 });
     });
 });
