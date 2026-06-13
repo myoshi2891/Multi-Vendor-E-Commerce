@@ -11,13 +11,13 @@ import {
     StoreOrderType,
 } from "@/lib/types";
 
-import Image from "next/image";
 import PaymentStatusTag from "@/components/shared/payment-status";
 import OrderStatusSelect from "@/components/dashboard/forms/order-status-select";
-import { Expand } from "lucide-react";
-import { useModal } from "@/providers/modal-provider";
-import CustomModal from "@/components/dashboard/shared/custom-modal";
 import StoreOrderSummary from "@/components/dashboard/shared/store-order-summary";
+import {
+    ProductImagesCell,
+    ViewOrderButton,
+} from "@/components/dashboard/shared/order-table-cells";
 
 type AdminOrderGroup = AdminOrderType["groups"][number];
 
@@ -57,23 +57,7 @@ export const columns: ColumnDef<AdminOrderType>[] = [
             const images = row.original.groups.flatMap((group) =>
                 group.items.map((item) => item.image)
             );
-            return (
-                <div className="flex flex-wrap gap-1">
-                    {images.map((img, i) => (
-                        <Image
-                            key={`${img}-${i}`}
-                            src={img}
-                            alt={`product-${i}`}
-                            width={100}
-                            height={100}
-                            className="size-7 rounded-full object-cover"
-                            style={{
-                                transform: `translateX(-${i * 15}px)`,
-                            }}
-                        />
-                    ))}
-                </div>
-            );
+            return <ProductImagesCell images={images} />;
         },
     },
     {
@@ -136,7 +120,7 @@ export const columns: ColumnDef<AdminOrderType>[] = [
         cell: ({ row }) => {
             return (
                 <div>
-                    <ViewOrderButton order={row.original} />
+                    <OrderDetailsButton order={row.original} />
                 </div>
             );
         },
@@ -144,33 +128,20 @@ export const columns: ColumnDef<AdminOrderType>[] = [
 ];
 
 /**
- * 注文詳細モーダルを開くボタン。
+ * 注文詳細モーダルのトリガー。
  * admin 注文は複数 OrderGroup を内包するため、group ごとに `StoreOrderSummary` を表示する。
  */
-const ViewOrderButton = ({ order }: { order: AdminOrderType }) => {
-    const { setOpen } = useModal();
+const OrderDetailsButton = ({ order }: { order: AdminOrderType }) => {
     return (
-        <button
-            className="group relative isolation-auto z-10 mx-auto flex items-center justify-center gap-2 overflow-hidden rounded-full border-2 bg-[#0A0D2D] px-4 py-2 font-sans text-lg text-gray-50 backdrop-blur-md before:absolute before:-left-full before:-z-10 before:aspect-square before:w-full before:scale-150 before:rounded-full before:transition-all before:duration-700 hover:text-gray-50 before:hover:left-0 before:hover:bg-blue-primary before:hover:duration-700 lg:font-semibold"
-            onClick={() => {
-                setOpen(
-                    <CustomModal maxWidth="!max-w-3xl">
-                        <div className="space-y-6">
-                            {order.groups.map((group) => (
-                                <StoreOrderSummary
-                                    key={group.id}
-                                    group={toStoreOrder(order, group)}
-                                />
-                            ))}
-                        </div>
-                    </CustomModal>
-                );
-            }}
-        >
-            View
-            <span className="grid size-7 place-items-center rounded-full bg-white">
-                <Expand className="w-5 stroke-black" />
-            </span>
-        </button>
+        <ViewOrderButton>
+            <div className="space-y-6">
+                {order.groups.map((group) => (
+                    <StoreOrderSummary
+                        key={group.id}
+                        group={toStoreOrder(order, group)}
+                    />
+                ))}
+            </div>
+        </ViewOrderButton>
     );
 };
