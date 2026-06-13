@@ -6,8 +6,10 @@ import {
     getAllOrders,
     getOrderForAdmin,
     updateOrderGroupStatusAsAdmin,
+    updateOrderItemStatusAsAdmin,
+    updateOrderPaymentStatus,
 } from "./order";
-import { OrderStatus } from "../lib/types";
+import { OrderStatus, PaymentStatus, ProductStatus } from "../lib/types";
 import { AssertionHelpers } from "../config/test-helpers";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -745,6 +747,156 @@ describe("updateOrderGroupStatusAsAdmin", () => {
             await updateOrderGroupStatusAsAdmin(
                 "order-group-001",
                 OrderStatus.Shipped
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+// ==================================================
+// updateOrderItemStatusAsAdmin（admin・配送/履行ステータス）
+// ==================================================
+describe("updateOrderItemStatusAsAdmin", () => {
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderItemStatusAsAdmin(
+                    "order-item-001",
+                    ProductStatus.Shipped
+                ),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.orderItem.update);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("店舗所有権チェック無しでOrderItemを更新する", async () => {
+            mockDb.orderItem.update.mockResolvedValue({
+                status: ProductStatus.Shipped,
+            });
+
+            const result = await updateOrderItemStatusAsAdmin(
+                "order-item-001",
+                ProductStatus.Shipped
+            );
+
+            expect(result).toBe(ProductStatus.Shipped);
+            expect(mockDb.orderItem.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "order-item-001" },
+                    data: { status: ProductStatus.Shipped },
+                })
+            );
+        });
+    });
+});
+
+// ==================================================
+// updateOrderPaymentStatus（admin・DBのみ更新・親子連動）
+// ==================================================
+describe("updateOrderPaymentStatus", () => {
+    const setupTransaction = () => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    };
+
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderPaymentStatus("order-001", PaymentStatus.Paid),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.$transaction);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            mockDb.order.update.mockResolvedValue({});
+            mockDb.orderGroup.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
+        });
+
+        it("Paidへの変更ではDBのpaymentStatusのみ更新し子連動しない", async () => {
+            const result = await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Paid
+            );
+
+            expect(result).toBe(PaymentStatus.Paid);
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { paymentStatus: PaymentStatus.Paid },
+            });
+            // Paid は返金/キャンセルではないため子連動なし
+            AssertionHelpers.expectNotCalled(mockDb.orderGroup.updateMany);
+            AssertionHelpers.expectNotCalled(mockDb.orderItem.updateMany);
+        });
+
+        // AC-F2-5: 親 Cancelled → 子 OrderGroup/OrderItem を同一 tx で連動
+        // enum スペル: 親 Cancelled（ll）→ 子 Canceled（l）
+        it("Cancelledへの変更で子をCanceledに連動する（スペル写像）", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Cancelled
+            );
+
+            expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
+                where: { orderId: "order-001" },
+                data: { status: OrderStatus.Canceled },
+            });
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: { orderGroup: { orderId: "order-001" } },
+                data: { status: ProductStatus.Canceled },
+            });
+        });
+
+        it("Refundedへの変更で子をRefundedに連動する", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Refunded
+            );
+
+            expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
+                where: { orderId: "order-001" },
+                data: { status: OrderStatus.Refunded },
+            });
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: { orderGroup: { orderId: "order-001" } },
+                data: { status: ProductStatus.Refunded },
+            });
+        });
+
+        // AC-F2-6: 外部決済 API（Stripe/PayPal）を呼ばない
+        it("子連動は同一$transaction内で実行される（決済APIは呼ばない）", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Refunded
             );
 
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);

@@ -398,3 +398,109 @@ export const updateOrderGroupStatusAsAdmin = async (
             : new Error("Failed to update order group status.");
     }
 };
+
+/**
+ * @function updateOrderItemStatusAsAdmin
+ * @description 店舗所有権チェック無しで OrderItem.status（ProductStatus）を更新（F2-8）。
+ *              配送/履行ステータスの手動変更であり決済とは無関係（決済 API 警告は UI 層の責務）。
+ * @access ADMIN
+ * @param orderItemId 更新する OrderItem の ID
+ * @param status 新しい ProductStatus
+ * @returns 更新後の ProductStatus
+ */
+export const updateOrderItemStatusAsAdmin = async (
+    orderItemId: string,
+    status: ProductStatus
+): Promise<ProductStatus> => {
+    const admin = await requireAdmin();
+    try {
+        const updated = await db.orderItem.update({
+            where: { id: orderItemId },
+            data: { status },
+            select: { status: true },
+        });
+
+        // 監査ログ（NFR-5・判断5-3）
+        console.error(
+            `[Admin:updateOrderItemStatus] actor=${admin.id} target=${orderItemId} to=${status}`
+        );
+
+        // TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）
+
+        return updated.status as ProductStatus;
+    } catch (error: unknown) {
+        console.error("[Order:updateOrderItemStatusAsAdmin] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error instanceof Error
+            ? error
+            : new Error("Failed to update order item status.");
+    }
+};
+
+/**
+ * @function updateOrderPaymentStatus
+ * @description Order.paymentStatus を DB のみ更新する（F2-9・C-a）。Stripe/PayPal の決済 API は呼ばない。
+ *              status が Refunded/Cancelled のとき、同一 $transaction 内で子 OrderGroup/OrderItem へ伝播する（F2-10・判断6-2）。
+ * @access ADMIN
+ * @param orderId 更新する Order の ID
+ * @param status 新しい PaymentStatus
+ * @returns 更新後の PaymentStatus
+ */
+export const updateOrderPaymentStatus = async (
+    orderId: string,
+    status: PaymentStatus
+): Promise<PaymentStatus> => {
+    const admin = await requireAdmin();
+    try {
+        return await db.$transaction(async (tx) => {
+            await tx.order.update({
+                where: { id: orderId },
+                data: { paymentStatus: status },
+            });
+
+            // 親 → 子連動（F2-10）。enum スペル注意:
+            //   親 PaymentStatus は "Cancelled"（l 2 つ）、子 OrderStatus は "Canceled"（l 1 つ）。
+            if (
+                status === PaymentStatus.Refunded ||
+                status === PaymentStatus.Cancelled
+            ) {
+                const childOrderStatus: OrderStatus =
+                    status === PaymentStatus.Refunded
+                        ? OrderStatus.Refunded
+                        : OrderStatus.Canceled;
+                const childItemStatus: ProductStatus =
+                    status === PaymentStatus.Refunded
+                        ? ProductStatus.Refunded
+                        : ProductStatus.Canceled;
+
+                await tx.orderGroup.updateMany({
+                    where: { orderId },
+                    data: { status: childOrderStatus },
+                });
+                await tx.orderItem.updateMany({
+                    where: { orderGroup: { orderId } },
+                    data: { status: childItemStatus },
+                });
+            }
+
+            // 監査ログ（NFR-5・判断5-3）
+            console.error(
+                `[Admin:updatePaymentStatus] actor=${admin.id} target=${orderId} to=${status}`
+            );
+
+            // TODO(在庫連動・スコープ外): Refunded で在庫復元フックをここに（判断5-2）
+
+            return status;
+        });
+    } catch (error: unknown) {
+        console.error("[Order:updateOrderPaymentStatus] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error instanceof Error
+            ? error
+            : new Error("Failed to update order payment status.");
+    }
+};
