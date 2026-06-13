@@ -573,6 +573,30 @@ describe("getAllOrders", () => {
             expect(result.limit).toBe(20);
         });
     });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DBクエリ失敗時に汎用メッセージへ変換してスローする", async () => {
+            mockDb.order.findMany.mockRejectedValue(new Error("db down"));
+            mockDb.order.count.mockResolvedValue(0);
+
+            await expect(getAllOrders()).rejects.toThrow(
+                "Failed to fetch orders."
+            );
+            expect(errSpy).toHaveBeenCalled();
+        });
+    });
 });
 
 // ==================================================
@@ -619,6 +643,29 @@ describe("getOrderForAdmin", () => {
             const result = await getOrderForAdmin("nonexistent");
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DBクエリ失敗時に汎用メッセージへ変換してスローする", async () => {
+            mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+            await expect(getOrderForAdmin("order-001")).rejects.toThrow(
+                "Failed to fetch order."
+            );
+            expect(errSpy).toHaveBeenCalled();
         });
     });
 });
@@ -751,6 +798,95 @@ describe("updateOrderGroupStatusAsAdmin", () => {
 
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
         });
+
+        it("全子GroupがDelivered → 親OrderをDeliveredに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Delivered },
+                { status: OrderStatus.Delivered },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Delivered
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Delivered },
+            });
+        });
+
+        it("全子GroupがCanceled → 親OrderをCanceledに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Canceled },
+                { status: OrderStatus.Canceled },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Canceled
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Canceled },
+            });
+        });
+
+        it("全子GroupがRefunded → 親OrderをRefundedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Refunded },
+                { status: OrderStatus.Refunded },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Refunded
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Refunded },
+            });
+        });
+
+        it("子Groupが0件のとき親連動をスキップする（早期return）", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            // groups.length === 0 のため親 Order.update は呼ばれない
+            AssertionHelpers.expectNotCalled(mockDb.order.update);
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("tx内のDB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.orderGroup.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderGroupStatusAsAdmin(
+                    "order-group-001",
+                    OrderStatus.Shipped
+                )
+            ).rejects.toThrow("db down");
+        });
     });
 });
 
@@ -801,6 +937,32 @@ describe("updateOrderItemStatusAsAdmin", () => {
                     data: { status: ProductStatus.Shipped },
                 })
             );
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.orderItem.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderItemStatusAsAdmin(
+                    "order-item-001",
+                    ProductStatus.Shipped
+                )
+            ).rejects.toThrow("db down");
+            expect(errSpy).toHaveBeenCalled();
         });
     });
 });
@@ -916,6 +1078,29 @@ describe("updateOrderPaymentStatus", () => {
             );
 
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("tx内のDB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.order.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderPaymentStatus("order-001", PaymentStatus.Paid)
+            ).rejects.toThrow("db down");
         });
     });
 });
