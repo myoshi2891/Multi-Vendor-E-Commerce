@@ -335,10 +335,15 @@ Context Provider / カスタムフックで setter を定義する際は:
 | `5851756` | modal unskip (cycle 2/5 観察) | ❌ | ✅ | `fetchData ありで data マージ` |
 | `7559884` | modal 再 file-level skip | (観察対象外) | (観察対象外) | — |
 | `63ec5cc` | (modal skip 維持・コード不変) | ❌ | — | `shipping-form: handles API errors correctly` |
+| `2c1be6c` | (review-details 未変更・docs sync commit) | ❌ | ✅ | `review-details.test.tsx: should submit review successfully` |
 
 **12 観測中 5 失敗** (push 50% 成功 / pull_request 67% 成功)。完全なランダム性。
 
 > **2026-05-29 追記** — `63ec5cc` で再び CI fail（`shipping-form.test.tsx > handles API errors correctly`、`●` が本文空で 2 回列挙される OI-8 固有症状）。modal-provider は file-skip 維持・本テスト/コンポーネントは未変更で、ローカルでは単体・フルファイルとも決定的に pass。これは「skip は症状を別ファイルへ移動させるだけ」（`bacfe2e` 行）の再々現であり、**真因が RTL + fireEvent/waitFor を使うテスト全般のメタ問題である**ことを再確認した。次手は本ファイルの未着手候補（仮説 E → G）の workflow layer 修正。
+>
+> **2026-06-13 追記（review-details 新規データ点）** — `2c1be6c`（docs sync のみ・テスト/コンポーネント未変更）の **push run `27468097127` が失敗・同一 SHA の pull_request run `27468097968` は成功**。失敗は `review-details.test.tsx › should submit review successfully` で、`●` が **3 回列挙・本文すべて空白・286ms（timeout 未到達）** という OI-8 固有症状。ローカルは 8/8 pass。これは modal/shipping-form と同じメタ問題（RTL + `fireEvent` + `form.handleSubmit` の非同期 submit ライフサイクル）が **3 つ目のファイルでも env-variation flake として顕在化** した証跡であり、「真因はテストファイル境界で止まらない infra layer 問題」の追加裏付け。
+>
+> **診断インストルメンテーション投入**: `--verbose --ci` でも本文が空のままのため、`tests-setup/jest.setup.ts` に `[FLAKE-DIAG:unhandledRejection]` ラベル付きの **一時 `process.on("unhandledRejection")` リスナー**（`currentTestName` 付き・観測専用・可逆）を追加（commit `0736735`）。狙いは「Jest 30 reporter が集約して本文を出さない握り潰された rejection」のスタックを CI ログへ surface させること。**今回のセッションでは push/pull_request 各 2 サイクル（`0736735`/`9cb6021`）とも再現せず**（フレークは確率的）、能動的な reproduce→fix→5連続グリーンのループはユーザー判断で一旦中断。診断リスナーは **次回の自然再現を捕捉する受動的ネットとして残置** する。次に `[FLAKE-DIAG]` 行が CI に出たらスタックで真因を確定し、本筋の workflow layer 修正（仮説 E/G）または submit ライフサイクル確定待機を適用する。
 
 ### この調査で確定した事実
 
