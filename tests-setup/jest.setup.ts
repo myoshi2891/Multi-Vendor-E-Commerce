@@ -75,3 +75,21 @@ try {
 } catch {
   // MSW not configured yet.
 }
+
+// [FLAKE-DIAG OI-8] TEMP — remove after review-details flake root-caused (QA_HANDOFF OI-8 / Step 6)
+// 握り潰された unhandled rejection を、どのテスト実行中かと共に CI ログへ surface させる。
+// review-details.test.tsx の「3×バレット・本文空」OI-8 症状は、--verbose でも本文が出ない
+// = console.error ではなく unhandledRejection が Jest reporter に集約されている可能性が高い。
+// この一時リスナーで真因スタックを可視化する（観測専用。通常の assertion 失敗には影響しない）。
+process.on("unhandledRejection", (reason: unknown) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  const current =
+    typeof expect !== "undefined" && typeof expect.getState === "function"
+      ? expect.getState().currentTestName
+      : undefined;
+  console.error(
+    `[FLAKE-DIAG:unhandledRejection] test="${current ?? "unknown"}"`,
+    err.message,
+    err.stack,
+  );
+});
