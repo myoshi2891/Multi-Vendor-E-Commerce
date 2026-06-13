@@ -51,7 +51,6 @@ meilisearch
 tsconfig.tsbuildinfo
 package-lock.json
 .vscode/*
-!.vscode/settings.json
 
 # specify cache
 .specify/.cache/
@@ -64,3 +63,4 @@ prisma/migrations_mysql_backup/
 
 # Backup files from sed commands
 *.bak*
+sonnet-docs-a-quirky-meteor.md

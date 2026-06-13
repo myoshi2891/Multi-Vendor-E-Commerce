@@ -1,5 +1,16 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { getOrder, updateOrderGroupStatus, updateOrderItemStatus } from "./order";
+import {
+    getOrder,
+    updateOrderGroupStatus,
+    updateOrderItemStatus,
+    getAllOrders,
+    getOrderForAdmin,
+    updateOrderGroupStatusAsAdmin,
+    updateOrderItemStatusAsAdmin,
+    updateOrderPaymentStatus,
+} from "./order";
+import { OrderStatus, PaymentStatus, ProductStatus } from "../lib/types";
+import { AssertionHelpers } from "../config/test-helpers";
 import { TEST_CONFIG } from "../config/test-config";
 import {
     createMockStore,
@@ -20,18 +31,25 @@ jest.mock("@/lib/db", () => ({
     db: {
         order: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
+            count: jest.fn(),
+            update: jest.fn(),
         },
         store: {
             findUnique: jest.fn(),
         },
         orderGroup: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
         orderItem: {
             findUnique: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -449,6 +467,640 @@ describe("updateOrderItemStatus", () => {
             );
 
             expect(result).toBe("Canceled");
+        });
+    });
+});
+
+// ==================================================
+// getAllOrders（admin・全店舗横断）
+// ==================================================
+describe("getAllOrders", () => {
+    describe("認可エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await AssertionHelpers.expectAuthError(getAllOrders());
+        });
+
+        // (a) スロー検証: ADMIN 以外は拒否される
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(getAllOrders(), "admins");
+        });
+
+        // (c) 副作用なし検証: 認可失敗時に DB へ到達しない
+        it("認可失敗時にDBクエリを実行しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await expect(getAllOrders()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+            AssertionHelpers.expectNotCalled(mockDb.order.findMany);
+            AssertionHelpers.expectNotCalled(mockDb.order.count);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.order.findMany.mockResolvedValue([]);
+            mockDb.order.count.mockResolvedValue(0);
+        });
+
+        // (b) where 構造検証: admin は userId フィルタ無しで全店舗横断
+        it("userIdフィルタ無しで全注文を取得する", async () => {
+            await getAllOrders();
+
+            const callArg = mockDb.order.findMany.mock.calls[0][0];
+            expect(callArg.where).not.toHaveProperty("userId");
+            expect(callArg.orderBy).toEqual({ createdAt: "desc" });
+        });
+
+        it("limit=500000 は 100 にキャップされる（DoS防止）", async () => {
+            const result = await getAllOrders({ limit: 500000 });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ take: 100 })
+            );
+            expect(result.limit).toBe(100);
+        });
+
+        it("page/limit から skip を算出する", async () => {
+            await getAllOrders({ page: 3, limit: 20 });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ skip: 40, take: 20 })
+            );
+        });
+
+        it("paymentStatus / orderStatus / search を where に合成する", async () => {
+            await getAllOrders({
+                paymentStatus: "Paid" as never,
+                orderStatus: "Shipped" as never,
+                search: "abc",
+            });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        paymentStatus: "Paid",
+                        orderStatus: "Shipped",
+                        id: { contains: "abc" },
+                    },
+                })
+            );
+        });
+
+        it("orders / total / page / limit を返す", async () => {
+            mockDb.order.findMany.mockResolvedValue([createMockOrder()]);
+            mockDb.order.count.mockResolvedValue(1);
+
+            const result = await getAllOrders({ page: 1, limit: 20 });
+
+            expect(result.total).toBe(1);
+            expect(result.orders).toHaveLength(1);
+            expect(result.page).toBe(1);
+            expect(result.limit).toBe(20);
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DBクエリ失敗時に汎用メッセージへ変換してスローする", async () => {
+            mockDb.order.findMany.mockRejectedValue(new Error("db down"));
+            mockDb.order.count.mockResolvedValue(0);
+
+            await expect(getAllOrders()).rejects.toThrow(
+                "Failed to fetch orders."
+            );
+            expect(errSpy).toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// getOrderForAdmin（admin・userId フィルタ無し）
+// ==================================================
+describe("getOrderForAdmin", () => {
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                getOrderForAdmin("order-001"),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.order.findUnique);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        // where に userId を含めない（seller 版 getOrder との唯一の差分）
+        it("whereにuserIdを含めず注文IDのみで取得する", async () => {
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+
+            await getOrderForAdmin("order-001");
+
+            const callArg = mockDb.order.findUnique.mock.calls[0][0];
+            expect(callArg.where).toEqual({ id: "order-001" });
+            expect(callArg.where).not.toHaveProperty("userId");
+        });
+
+        it("存在しない注文の場合nullを返す", async () => {
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            const result = await getOrderForAdmin("nonexistent");
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DBクエリ失敗時に汎用メッセージへ変換してスローする", async () => {
+            mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+            await expect(getOrderForAdmin("order-001")).rejects.toThrow(
+                "Failed to fetch order."
+            );
+            expect(errSpy).toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// updateOrderGroupStatusAsAdmin（admin・親子連動）
+// ==================================================
+describe("updateOrderGroupStatusAsAdmin", () => {
+    // $transaction はコールバックに mockDb を渡して実行する
+    const setupTransaction = () => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    };
+
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderGroupStatusAsAdmin(
+                    "order-group-001",
+                    OrderStatus.Shipped
+                ),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.$transaction);
+            AssertionHelpers.expectNotCalled(mockDb.orderGroup.update);
+        });
+    });
+
+    describe("正常系（ADMIN・親子連動）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Shipped,
+            });
+            mockDb.order.update.mockResolvedValue({});
+        });
+
+        it("店舗所有権チェック無しでOrderGroupを更新する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+            ]);
+
+            const result = await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(result).toBe(OrderStatus.Shipped);
+            // where に storeId/userId が含まれない（admin は所有権非依存）
+            expect(mockDb.orderGroup.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "order-group-001" },
+                    data: { status: OrderStatus.Shipped },
+                })
+            );
+        });
+
+        it("全子GroupがShipped → 親OrderをShippedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+                { status: OrderStatus.Shipped },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Shipped },
+            });
+        });
+
+        it("一部の子のみShipped → 親をPartiallyShippedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+                { status: OrderStatus.Pending },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.PartiallyShipped },
+            });
+        });
+
+        it("子が混在（Shipped/Delivered無し）→ 親をProcessingに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Pending },
+                { status: OrderStatus.Confirmed },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Confirmed
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Processing },
+            });
+        });
+
+        it("更新と親連動が同一$transaction内で実行される", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+
+        it("全子GroupがDelivered → 親OrderをDeliveredに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Delivered },
+                { status: OrderStatus.Delivered },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Delivered
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Delivered },
+            });
+        });
+
+        it("全子GroupがCanceled → 親OrderをCanceledに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Canceled },
+                { status: OrderStatus.Canceled },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Canceled
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Canceled },
+            });
+        });
+
+        it("全子GroupがRefunded → 親OrderをRefundedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Refunded },
+                { status: OrderStatus.Refunded },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Refunded
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Refunded },
+            });
+        });
+
+        it("子Groupが0件のとき親連動をスキップする（早期return）", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            // groups.length === 0 のため親 Order.update は呼ばれない
+            AssertionHelpers.expectNotCalled(mockDb.order.update);
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("tx内のDB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.orderGroup.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderGroupStatusAsAdmin(
+                    "order-group-001",
+                    OrderStatus.Shipped
+                )
+            ).rejects.toThrow("db down");
+        });
+    });
+});
+
+// ==================================================
+// updateOrderItemStatusAsAdmin（admin・配送/履行ステータス）
+// ==================================================
+describe("updateOrderItemStatusAsAdmin", () => {
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderItemStatusAsAdmin(
+                    "order-item-001",
+                    ProductStatus.Shipped
+                ),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.orderItem.update);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("店舗所有権チェック無しでOrderItemを更新する", async () => {
+            mockDb.orderItem.update.mockResolvedValue({
+                status: ProductStatus.Shipped,
+            });
+
+            const result = await updateOrderItemStatusAsAdmin(
+                "order-item-001",
+                ProductStatus.Shipped
+            );
+
+            expect(result).toBe(ProductStatus.Shipped);
+            expect(mockDb.orderItem.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "order-item-001" },
+                    data: { status: ProductStatus.Shipped },
+                })
+            );
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.orderItem.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderItemStatusAsAdmin(
+                    "order-item-001",
+                    ProductStatus.Shipped
+                )
+            ).rejects.toThrow("db down");
+            expect(errSpy).toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// updateOrderPaymentStatus（admin・DBのみ更新・親子連動）
+// ==================================================
+describe("updateOrderPaymentStatus", () => {
+    const setupTransaction = () => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    };
+
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderPaymentStatus("order-001", PaymentStatus.Paid),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.$transaction);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            mockDb.order.update.mockResolvedValue({});
+            mockDb.orderGroup.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
+        });
+
+        it("Paidへの変更ではDBのpaymentStatusのみ更新し子連動しない", async () => {
+            const result = await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Paid
+            );
+
+            expect(result).toBe(PaymentStatus.Paid);
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { paymentStatus: PaymentStatus.Paid },
+            });
+            // Paid は返金/キャンセルではないため子連動なし
+            AssertionHelpers.expectNotCalled(mockDb.orderGroup.updateMany);
+            AssertionHelpers.expectNotCalled(mockDb.orderItem.updateMany);
+        });
+
+        // AC-F2-5: 親 Cancelled → 子 OrderGroup/OrderItem を同一 tx で連動
+        // enum スペル: 親 Cancelled（ll）→ 子 Canceled（l）
+        it("Cancelledへの変更で子をCanceledに連動する（スペル写像）", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Cancelled
+            );
+
+            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: {
+                    paymentStatus: PaymentStatus.Cancelled,
+                    orderStatus: OrderStatus.Canceled,
+                },
+            });
+            expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
+                where: { orderId: "order-001" },
+                data: { status: OrderStatus.Canceled },
+            });
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: { orderGroup: { orderId: "order-001" } },
+                data: { status: ProductStatus.Canceled },
+            });
+        });
+
+        it("Refundedへの変更で子をRefundedに連動する", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Refunded
+            );
+
+            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: {
+                    paymentStatus: PaymentStatus.Refunded,
+                    orderStatus: OrderStatus.Refunded,
+                },
+            });
+            expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
+                where: { orderId: "order-001" },
+                data: { status: OrderStatus.Refunded },
+            });
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: { orderGroup: { orderId: "order-001" } },
+                data: { status: ProductStatus.Refunded },
+            });
+        });
+
+        // AC-F2-6: 外部決済 API（Stripe/PayPal）を呼ばない
+        it("子連動は同一$transaction内で実行される（決済APIは呼ばない）", async () => {
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Refunded
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("異常系（DBエラー）", () => {
+        let errSpy: jest.SpyInstance;
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("tx内のDB失敗時に元のErrorをそのまま再スローする", async () => {
+            mockDb.order.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateOrderPaymentStatus("order-001", PaymentStatus.Paid)
+            ).rejects.toThrow("db down");
         });
     });
 });
