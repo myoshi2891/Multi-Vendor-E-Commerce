@@ -501,4 +501,71 @@ describe("getAllOrders", () => {
             AssertionHelpers.expectNotCalled(mockDb.order.count);
         });
     });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.order.findMany.mockResolvedValue([]);
+            mockDb.order.count.mockResolvedValue(0);
+        });
+
+        // (b) where 構造検証: admin は userId フィルタ無しで全店舗横断
+        it("userIdフィルタ無しで全注文を取得する", async () => {
+            await getAllOrders();
+
+            const callArg = mockDb.order.findMany.mock.calls[0][0];
+            expect(callArg.where).not.toHaveProperty("userId");
+            expect(callArg.orderBy).toEqual({ createdAt: "desc" });
+        });
+
+        it("limit=500000 は 100 にキャップされる（DoS防止）", async () => {
+            const result = await getAllOrders({ limit: 500000 });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ take: 100 })
+            );
+            expect(result.limit).toBe(100);
+        });
+
+        it("page/limit から skip を算出する", async () => {
+            await getAllOrders({ page: 3, limit: 20 });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ skip: 40, take: 20 })
+            );
+        });
+
+        it("paymentStatus / orderStatus / search を where に合成する", async () => {
+            await getAllOrders({
+                paymentStatus: "Paid" as never,
+                orderStatus: "Shipped" as never,
+                search: "abc",
+            });
+
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: {
+                        paymentStatus: "Paid",
+                        orderStatus: "Shipped",
+                        id: { contains: "abc" },
+                    },
+                })
+            );
+        });
+
+        it("orders / total / page / limit を返す", async () => {
+            mockDb.order.findMany.mockResolvedValue([createMockOrder()]);
+            mockDb.order.count.mockResolvedValue(1);
+
+            const result = await getAllOrders({ page: 1, limit: 20 });
+
+            expect(result.total).toBe(1);
+            expect(result.orders).toHaveLength(1);
+            expect(result.page).toBe(1);
+            expect(result.limit).toBe(20);
+        });
+    });
 });
