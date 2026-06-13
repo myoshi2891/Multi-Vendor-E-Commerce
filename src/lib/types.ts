@@ -138,7 +138,7 @@ export interface Country {
 
 import countries from "@/data/countries.json";
 import { getHomeFeaturedCategories } from "@/queries/home";
-import { getOrder, getAllOrders } from "@/queries/order";
+import type { getOrder, getAllOrders } from "@/queries/order";
 import {
     getUserOrders,
     getUserPayments,
