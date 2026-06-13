@@ -442,7 +442,8 @@ export const updateOrderItemStatusAsAdmin = async (
 /**
  * @function updateOrderPaymentStatus
  * @description Order.paymentStatus を DB のみ更新する（F2-9・C-a）。Stripe/PayPal の決済 API は呼ばない。
- *              status が Refunded/Cancelled のとき、同一 $transaction 内で子 OrderGroup/OrderItem へ伝播する（F2-10・判断6-2）。
+ *              status が Refunded/Cancelled のとき、同一 $transaction 内で親 Order.orderStatus と
+ *              子 OrderGroup/OrderItem を整合的に連動更新する（F2-10・判断6-2・design §3.2）。
  * @access ADMIN
  * @param orderId 更新する Order の ID
  * @param status 新しい PaymentStatus
@@ -455,26 +456,32 @@ export const updateOrderPaymentStatus = async (
     const admin = await requireAdmin();
     try {
         return await db.$transaction(async (tx) => {
-            await tx.order.update({
-                where: { id: orderId },
-                data: { paymentStatus: status },
-            });
-
             // 親 → 子連動（F2-10）。enum スペル注意:
             //   親 PaymentStatus は "Cancelled"（l 2 つ）、子 OrderStatus は "Canceled"（l 1 つ）。
-            if (
+            const isCancelOrRefund =
                 status === PaymentStatus.Refunded ||
-                status === PaymentStatus.Cancelled
-            ) {
-                const childOrderStatus: OrderStatus =
-                    status === PaymentStatus.Refunded
-                        ? OrderStatus.Refunded
-                        : OrderStatus.Canceled;
-                const childItemStatus: ProductStatus =
-                    status === PaymentStatus.Refunded
-                        ? ProductStatus.Refunded
-                        : ProductStatus.Canceled;
+                status === PaymentStatus.Cancelled;
+            const childOrderStatus: OrderStatus =
+                status === PaymentStatus.Refunded
+                    ? OrderStatus.Refunded
+                    : OrderStatus.Canceled;
+            const childItemStatus: ProductStatus =
+                status === PaymentStatus.Refunded
+                    ? ProductStatus.Refunded
+                    : ProductStatus.Canceled;
 
+            await tx.order.update({
+                where: { id: orderId },
+                data: {
+                    paymentStatus: status,
+                    // 連動時は親 orderStatus も子と整合させる（F2-10・design §3.2）
+                    ...(isCancelOrRefund
+                        ? { orderStatus: childOrderStatus }
+                        : {}),
+                },
+            });
+
+            if (isCancelOrRefund) {
                 await tx.orderGroup.updateMany({
                     where: { orderId },
                     data: { status: childOrderStatus },

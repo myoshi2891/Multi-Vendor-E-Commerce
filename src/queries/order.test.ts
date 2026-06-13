@@ -866,6 +866,14 @@ describe("updateOrderPaymentStatus", () => {
                 PaymentStatus.Cancelled
             );
 
+            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: {
+                    paymentStatus: PaymentStatus.Cancelled,
+                    orderStatus: OrderStatus.Canceled,
+                },
+            });
             expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
                 where: { orderId: "order-001" },
                 data: { status: OrderStatus.Canceled },
@@ -882,6 +890,14 @@ describe("updateOrderPaymentStatus", () => {
                 PaymentStatus.Refunded
             );
 
+            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: {
+                    paymentStatus: PaymentStatus.Refunded,
+                    orderStatus: OrderStatus.Refunded,
+                },
+            });
             expect(mockDb.orderGroup.updateMany).toHaveBeenCalledWith({
                 where: { orderId: "order-001" },
                 data: { status: OrderStatus.Refunded },
