@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1193テスト / 129スイート（**12 skipped**、1181 passed）— 2026-06-06 実測同期（review/rating 系コンポーネントテストの未同期分 + `upsertReview` メール欠落エラー経路テスト +1）。2026-05-31 時点は 1179 / 122。うち 9 skip は modal-provider の CI flake 一時退避（OI-8） |
+| Jestユニットテスト | 1272 passed / 1284 total / 137スイート（**12 skipped**）— 2026-06-13 PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート（order-table-cells / admin orders columns / seller orders columns + order-status-select 拡張）。うち 9 skip は modal-provider の CI flake 一時退避（OI-8） |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -155,6 +155,32 @@
 - **副産物の発見（C1 と独立した既存バグ）**: ホーム（`/`）は `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ **500**（本番 SSR でも再現する可能性）。このため lhci の URL から `/` を除外し `/browse` のみとした。featured.tsx 修正は別タスク。
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
+
+### 2026-06-13: SonarCloud Quality Gate 修復（PR #134・注文テーブル重複解消 + カバレッジ）
+
+#### 概要
+
+PR #134（`dev → main`）の `SonarCloud Code Analysis` チェックが Quality Gate 未達で赤かった（New Code の Coverage 19.4% < 80% / Duplication 7.8% > 3%）。GitHub Actions の `SonarCloud Scan` ジョブは `continue-on-error: true` で緑だが、Sonar アプリが別経路で貼る Quality Gate ステータスは制御外のため赤くなる構造。マージはブロックされない（Able to merge）が、品質改善目的で根本修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/shared/order-table-cells.tsx` | admin/seller columns に重複していた `ProductImagesCell` / `ViewOrderButton` を共有コンポーネントへ抽出（新規） | `2d692cb` |
+| `src/app/dashboard/admin/orders/columns.tsx` / `seller/.../orders/columns.tsx` | 共有セルを参照、private な重複 ViewOrderButton を削除。seller のコメントアウト済み旧 hooks 違反ブロックも削除 | `2d692cb` |
+| `src/components/dashboard/shared/order-table-cells.test.tsx` | 共有セルのテスト（+4） | `8e29b0b` |
+| `src/app/dashboard/{admin,seller/.../}/orders/columns.test.tsx` | 各 cell レンダラのテスト（+15）。両 columns Lines 100% | `99ecd48` |
+| `tests/component/dashboard/order-status-select.test.tsx` | admin 分岐 + falsy レスポンスの 2 条件を追加（+2） | `0d9fba5` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1251 passed | **1272 passed** |
+| スイート数 | 134 | **137** |
+| 型エラー | 0 件 | **0 件** |
+
+---
 
 ### 2026-06-13: 管理者ダッシュボード Phase 1 完了（Task 1-C / 1-D・F2 注文管理 UI）
 
