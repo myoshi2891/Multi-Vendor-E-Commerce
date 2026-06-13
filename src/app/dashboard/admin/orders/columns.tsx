@@ -70,7 +70,6 @@ export const columns: ColumnDef<AdminOrderType>[] = [
                             style={{
                                 transform: `translateX(-${i * 15}px)`,
                             }}
-                            priority
                         />
                     ))}
                 </div>

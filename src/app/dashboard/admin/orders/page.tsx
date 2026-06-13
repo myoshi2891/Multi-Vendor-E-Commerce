@@ -1,6 +1,7 @@
 import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { getAllOrders } from "@/queries/order";
+import { OrderStatus, PaymentStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,24 @@ function normalizePositiveInt(
 }
 
 /**
+ * searchParams の生文字列を文字列 enum の値へ絞り込む（境界での正規化）。
+ * 列挙値に含まれない・未定義の場合は `undefined`（フィルタ無し）に倒す。
+ * `includes` による実行時検証で守られた局所キャストのため `any` は不要。
+ *
+ * @param enumObj 文字列 enum（`OrderStatus` / `PaymentStatus`）
+ * @param raw searchParams から得た生の文字列（または未定義）
+ */
+function toEnumValue<T extends Record<string, string>>(
+    enumObj: T,
+    raw: string | undefined
+): T[keyof T] | undefined {
+    if (raw === undefined) return undefined;
+    return (Object.values(enumObj) as string[]).includes(raw)
+        ? (raw as T[keyof T])
+        : undefined;
+}
+
+/**
  * 全店舗横断の admin 注文管理ページ。
  *
  * `getAllOrders()`（`requireAdmin` 内包）で取得した Order 群を DataTable に渡す。
@@ -51,6 +70,8 @@ export default async function AdminOrdersPage({
     const sp = await searchParams;
     const page = normalizePositiveInt(sp.page, 1);
     const limit = normalizePositiveInt(sp.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    const paymentStatus = toEnumValue(PaymentStatus, sp.paymentStatus);
+    const orderStatus = toEnumValue(OrderStatus, sp.orderStatus);
 
     let orders: Awaited<ReturnType<typeof getAllOrders>>["orders"] = [];
     try {
@@ -58,6 +79,8 @@ export default async function AdminOrdersPage({
             page,
             limit,
             search: sp.search,
+            paymentStatus,
+            orderStatus,
         });
         orders = result.orders;
     } catch (error: unknown) {

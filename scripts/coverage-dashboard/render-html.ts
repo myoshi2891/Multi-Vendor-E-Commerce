@@ -248,7 +248,7 @@ function renderMatrix(matrix: Matrix): string {
               const files = cell.files
                   .map(
                       (f) =>
-                          `<li><code>${escapeHtml(f.path)}</code> <span class="file__count">${f.testCount} cases${f.hasSkip ? " · <em>skip</em>" : ""}${f.linePct !== null ? ` · ${f.linePct}%` : ""}</span></li>`
+                          `<li><code>${escapeHtml(f.path)}</code> <span class="file__count">${f.testCount} ${f.testCount === 1 ? "case" : "cases"}${f.hasSkip ? " · <em>skip</em>" : ""}${f.linePct !== null ? ` · ${f.linePct}%` : ""}</span></li>`
                   )
                   .join("");
               const tooltipContent = `
