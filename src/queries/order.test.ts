@@ -5,7 +5,9 @@ import {
     updateOrderItemStatus,
     getAllOrders,
     getOrderForAdmin,
+    updateOrderGroupStatusAsAdmin,
 } from "./order";
+import { OrderStatus } from "../lib/types";
 import { AssertionHelpers } from "../config/test-helpers";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -615,6 +617,137 @@ describe("getOrderForAdmin", () => {
             const result = await getOrderForAdmin("nonexistent");
 
             expect(result).toBeNull();
+        });
+    });
+});
+
+// ==================================================
+// updateOrderGroupStatusAsAdmin（admin・親子連動）
+// ==================================================
+describe("updateOrderGroupStatusAsAdmin", () => {
+    // $transaction はコールバックに mockDb を渡して実行する
+    const setupTransaction = () => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    };
+
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローし副作用なし", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                updateOrderGroupStatusAsAdmin(
+                    "order-group-001",
+                    OrderStatus.Shipped
+                ),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.$transaction);
+            AssertionHelpers.expectNotCalled(mockDb.orderGroup.update);
+        });
+    });
+
+    describe("正常系（ADMIN・親子連動）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            setupTransaction();
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Shipped,
+            });
+            mockDb.order.update.mockResolvedValue({});
+        });
+
+        it("店舗所有権チェック無しでOrderGroupを更新する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+            ]);
+
+            const result = await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(result).toBe(OrderStatus.Shipped);
+            // where に storeId/userId が含まれない（admin は所有権非依存）
+            expect(mockDb.orderGroup.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "order-group-001" },
+                    data: { status: OrderStatus.Shipped },
+                })
+            );
+        });
+
+        it("全子GroupがShipped → 親OrderをShippedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+                { status: OrderStatus.Shipped },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Shipped },
+            });
+        });
+
+        it("一部の子のみShipped → 親をPartiallyShippedに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+                { status: OrderStatus.Pending },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.PartiallyShipped },
+            });
+        });
+
+        it("子が混在（Shipped/Delivered無し）→ 親をProcessingに集約する", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Pending },
+                { status: OrderStatus.Confirmed },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Confirmed
+            );
+
+            expect(mockDb.order.update).toHaveBeenCalledWith({
+                where: { id: "order-001" },
+                data: { orderStatus: OrderStatus.Processing },
+            });
+        });
+
+        it("更新と親連動が同一$transaction内で実行される", async () => {
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
         });
     });
 });

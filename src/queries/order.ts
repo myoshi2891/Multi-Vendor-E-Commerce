@@ -297,3 +297,104 @@ export const getOrderForAdmin = async (orderId: string) => {
         throw new Error("Failed to fetch order.");
     }
 };
+
+/**
+ * 子 OrderGroup 群の状態から親 Order.orderStatus を集約導出して更新する（判断6-2 / design §3.2）。
+ * 同一トランザクション接続（tx）上で実行し、子→親の整合をアトミックに保つ。
+ *
+ * 集約規則:
+ *   - すべて Delivered            → Delivered
+ *   - すべて Shipped              → Shipped
+ *   - 一部のみ Shipped/Delivered  → PartiallyShipped
+ *   - すべて Canceled             → Canceled
+ *   - すべて Refunded             → Refunded
+ *   - それ以外（混在/Pending 等） → Processing（決定論的に集約）
+ *
+ * @param tx db.$transaction のトランザクションクライアント
+ * @param orderId 親 Order の ID
+ */
+// db.$transaction のコールバックが受け取る tx の型（Accelerate 拡張済みクライアント）。
+// 素の Prisma.TransactionClient とは非互換のため、$transaction から導出して再利用する。
+type OrderTransactionClient = Parameters<
+    Parameters<typeof db.$transaction>[0]
+>[0];
+
+const reconcileParentOrderStatus = async (
+    tx: OrderTransactionClient,
+    orderId: string
+): Promise<void> => {
+    const groups = await tx.orderGroup.findMany({
+        where: { orderId },
+        select: { status: true },
+    });
+    if (groups.length === 0) return;
+
+    const statuses = groups.map((g) => g.status);
+    const every = (s: OrderStatus) => statuses.every((x) => x === s);
+    const some = (s: OrderStatus) => statuses.some((x) => x === s);
+
+    let parent: OrderStatus;
+    if (every(OrderStatus.Delivered)) {
+        parent = OrderStatus.Delivered;
+    } else if (every(OrderStatus.Shipped)) {
+        parent = OrderStatus.Shipped;
+    } else if (every(OrderStatus.Canceled)) {
+        parent = OrderStatus.Canceled;
+    } else if (every(OrderStatus.Refunded)) {
+        parent = OrderStatus.Refunded;
+    } else if (some(OrderStatus.Shipped) || some(OrderStatus.Delivered)) {
+        parent = OrderStatus.PartiallyShipped;
+    } else {
+        parent = OrderStatus.Processing;
+    }
+
+    await tx.order.update({
+        where: { id: orderId },
+        data: { orderStatus: parent },
+    });
+};
+
+/**
+ * @function updateOrderGroupStatusAsAdmin
+ * @description 店舗所有権チェック無しで OrderGroup.status を更新し、親 Order を集約連動する（F2-7）。
+ *              requireAdmin() で保護。$transaction で子更新と親連動をアトミック化（NFR-6・判断6-2）。
+ * @access ADMIN
+ * @param groupId 更新する OrderGroup の ID
+ * @param status 新しい OrderStatus
+ * @returns 更新後の OrderStatus
+ */
+export const updateOrderGroupStatusAsAdmin = async (
+    groupId: string,
+    status: OrderStatus
+): Promise<OrderStatus> => {
+    const admin = await requireAdmin();
+    try {
+        return await db.$transaction(async (tx) => {
+            const group = await tx.orderGroup.update({
+                where: { id: groupId },
+                data: { status },
+                select: { id: true, orderId: true, status: true },
+            });
+
+            // 子 OrderGroup 群から親 Order.orderStatus を集約更新（判断6-2）
+            await reconcileParentOrderStatus(tx, group.orderId);
+
+            // 監査ログ（NFR-5・判断5-3。console.log 禁止のため console.error を構造化ログに使用）
+            console.error(
+                `[Admin:updateOrderGroupStatus] actor=${admin.id} target=${groupId} to=${status}`
+            );
+
+            // TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）
+
+            return group.status as OrderStatus;
+        });
+    } catch (error: unknown) {
+        console.error("[Order:updateOrderGroupStatusAsAdmin] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error instanceof Error
+            ? error
+            : new Error("Failed to update order group status.");
+    }
+};
