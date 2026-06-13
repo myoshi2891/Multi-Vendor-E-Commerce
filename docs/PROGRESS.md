@@ -156,6 +156,34 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-13: 管理者ダッシュボード Phase 1 / Task 1-A（admin 注文 query）
+
+#### 概要
+
+`docs/design/admin-dashboard/` 設計の Phase 1（F2 注文管理・スキーマ変更なし）の起点として、`src/queries/order.ts` に全店舗横断の admin 注文 query 5 種を追加した。認可は `requireAdmin()` に集約し、親 Order ↔ 子 OrderGroup/OrderItem のステータス連動を `$transaction` でアトミック化。在庫連動は設計どおりスコープ外（TODO フックのみ）。UI（1-C/1-D）は別タスク。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | `getAllOrders`（`AdminOrderFilterSchema` で limit≤100 clamp・nativeEnum 入口検証） | `1747f32` |
+| `src/lib/types.ts` | `AdminOrderType`（`Prisma.PromiseReturnType<typeof getAllOrders>["orders"][number]`）追加 | `445ad00` |
+| `src/queries/order.ts` | `getOrderForAdmin`（既存 `getOrder` から userId フィルタを除去） | `7083681` |
+| `src/queries/order.ts` | `updateOrderGroupStatusAsAdmin` + `reconcileParentOrderStatus`（子→親の集約遷移・混在は Processing） | `ff15259` |
+| `src/queries/order.ts` | `updateOrderItemStatusAsAdmin` + `updateOrderPaymentStatus`（Refunded/Cancelled の親→子連動・決済 API 非呼出・enum スペル写像 Cancelled→Canceled） | `d88063a` |
+| `src/queries/order.test.ts` | 認可 3 階層 / limit キャップ / 親子連動 / where 構造検証で +24 | （上記各コミット） |
+
+> 監査ログ（`[Admin:Action] actor=... target=... to=...`）は各 action 実装時にインラインで付与（action の振る舞いの一部として feat コミットに包含）。`tx` 型は Prisma Accelerate 拡張クライアントとの非互換を避けるため `$transaction` から導出（`Parameters<Parameters<typeof db.$transaction>[0]>[0]`）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1220 | **1242 passed** |
+| スイート数 | 134 | 134 |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
 ### 2026-06-06: コードレビュー指摘トリアージ・修正 + 統計同期
 
 #### 概要

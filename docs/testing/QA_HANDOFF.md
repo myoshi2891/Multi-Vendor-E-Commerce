@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-06 / **HEAD**: `880b225`
+> **最終更新**: 2026-06-13 / **HEAD**: `d88063a`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-06 時点）
+### テスト統計（2026-06-13 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1220** / 134 スイート（132 passed + 2 skipped）— 2026-06-06 カバレッジ改善対応（5テストスイート新規追加、review.test.ts 境界テストケース +1） |
+| Jest テスト総数 (unit/component) | **1242** passed / 1254 total / 134 スイート（132 passed + 2 skipped）— 2026-06-13 admin 注文 query（Phase 1 Task 1-A）で `order.test.ts` に +24（getAllOrders / getOrderForAdmin / updateOrderGroupStatusAsAdmin / updateOrderItemStatusAsAdmin / updateOrderPaymentStatus の認可・親子連動テスト） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -231,6 +231,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `a86e012`〜`7ef382f` | コードレビュー指摘対応: `upsertReview` を `db.user.upsert` でアトミック化（レース回避）+ メール欠落エラー経路テスト +1、CustomRatingStars に ARIA/キーボード操作追加、profile データ取得 try/catch、`any`/unsafe cast 除去・共有フィクスチャ化、admin-manual のソフトデリート記述修正。テスト統計を実測へ同期（→ **1193** / 129 スイート、snapshot 127、型エラー 0） |
 | `880b225` | chore: ドキュメントの同期、payments-table の競合保護・reviews-container のクリーンアップ追加、featured.ssr / product-watch のテスト安定化 |
 | (本セッション) | CI品質ゲート改善: review-details.tsx のアクセシビリティ（button化）対応、product.ts からの未使用 getCookie 削除、およびカバレッジ向上のための5つの新規テストファイル（payments-table, reviews-container, product-list, upload-images, sidebar）作成、review.test.ts への non-Error パステスト追加（総テスト数 1193 → **1220**、スイート数 129 → **134**） |
+| `ae18ce3`〜`d88063a` | **管理者ダッシュボード Phase 1 / Task 1-A 完了**: `src/queries/order.ts` に admin 注文 query 5 種（getAllOrders [limit≤100 キャップ] / getOrderForAdmin [userId フィルタ無し] / updateOrderGroupStatusAsAdmin [親子集約 reconcileParentOrderStatus] / updateOrderItemStatusAsAdmin / updateOrderPaymentStatus [Refunded/Cancelled の親→子連動・決済 API 非呼出]）を追加。`AdminOrderType` を types.ts に追加。認可は requireAdmin()、IDOR 3 階層パターンで `order.test.ts` +24（1220 → **1242 passed**） |
 
 ---
 
