@@ -32,6 +32,7 @@ describe('OrderStatusSelect', () => {
     it('renders current status and toggles dropdown', () => {
         render(
             <OrderStatusSelect
+                mode="seller"
                 storeId={storeId}
                 groupId={groupId}
                 status={OrderStatus.Pending}
@@ -56,6 +57,7 @@ describe('OrderStatusSelect', () => {
 
         render(
             <OrderStatusSelect
+                mode="seller"
                 storeId={storeId}
                 groupId={groupId}
                 status={OrderStatus.Pending}
@@ -78,6 +80,7 @@ describe('OrderStatusSelect', () => {
 
         render(
             <OrderStatusSelect
+                mode="seller"
                 storeId={storeId}
                 groupId={groupId}
                 status={OrderStatus.Pending}

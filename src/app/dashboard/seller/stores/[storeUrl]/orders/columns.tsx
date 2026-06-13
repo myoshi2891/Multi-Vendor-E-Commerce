@@ -73,6 +73,7 @@ export const columns: ColumnDef<StoreOrderType>[] = [
             return (
                 <div>
                     <OrderStatusSelect
+                        mode="seller"
                         groupId={row.original.id}
                         status={row.original.status as OrderStatus}
                         storeId={row.original.storeId}

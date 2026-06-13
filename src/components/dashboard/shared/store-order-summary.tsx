@@ -61,6 +61,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
                     <div className="flex items-center gap-x-2">
                         <PaymentStatusTag status={paymentStatus} />
                         <OrderStatusSelect
+                            mode="seller"
                             storeId={group.storeId}
                             groupId={group.id}
                             status={group.status as OrderStatus}
