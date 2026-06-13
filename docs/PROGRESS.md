@@ -156,6 +156,37 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-13: 管理者ダッシュボード Phase 1 完了（Task 1-C / 1-D・F2 注文管理 UI）
+
+#### 概要
+
+`docs/design/admin-dashboard/` の **Phase 1（F2 注文管理）を完結**。1-A（query）/ 1-B（型）は完了済みだったため、残る UI 層 1-C（`OrderStatusSelect` の discriminated union 化）と 1-D（admin 注文管理ページ）を実装。これで全店舗横断の注文閲覧・group 単位のステータス変更・詳細モーダルが動作する。**Phase 単位の現在地は専用トラッカ [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を SSOT** とし、本ファイルは全体履歴として記録する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/order-status-select.tsx` | props を `{mode:"seller"\|"admin"}` の discriminated union 化。admin 分岐は `updateOrderGroupStatusAsAdmin` を呼ぶ。`catch(error: any)` → `unknown`+型ガードへ是正 | `refactor(ui): make OrderStatusSelect props a discriminated union` |
+| seller columns / store-order-summary / store-summary | 既存 seller 呼び出し 3 箇所に `mode="seller"` 付与（store-summary は未使用 import を削除）。型整合のため union 化と同一コミット（rule 02: 各コミット tsc-clean） | 同上 |
+| `src/app/dashboard/admin/orders/columns.tsx`（新規） | `ColumnDef<AdminOrderType>`。Store 列（group 店舗列挙）/ Status 列（group ごと `OrderStatusSelect(mode:admin)`）/ 詳細モーダル（`order` 逆参照を注入する `toStoreOrder` アダプタで `StoreOrderSummary` 流用） | `feat(admin): add cross-store order management page and columns` |
+| `src/app/dashboard/admin/orders/page.tsx`（新規） | `force-dynamic` + URL パラメータ正規化（`Number()`→`Number.isFinite`）+ limit キャップ。`getAllOrders().orders` を DataTable へ | 同上 |
+| `tests/component/dashboard/order-status-select.test.tsx` | 既存 3 render に `mode="seller"` 付与（テスト数不変・新規ケースなし） | union 化コミットに同梱 |
+
+> **設計判断**: 1 注文が複数店舗（`groups[]`）にまたがるため、行粒度は **「Order 行 + group 内訳」**（design.md 準拠・ユーザー合意）。Store/Status 列は各 group を縦に列挙する。`StoreOrderSummary` は `group.order.*` 逆参照を参照するが `AdminOrderType.groups[]` は持たないため、親 Order の `paymentStatus`/`shippingAddress`/`paymentDetails` を注入する `toStoreOrder` アダプタで橋渡し（構造的部分型で `any` 不要）。
+
+> **後続に引き継ぎ（Phase 1 スコープ外）**: `updateOrderPaymentStatus` の paymentStatus 手動変更 UI（design §3.3 の決済 API 非連携警告 + §3.5 runbook）。1-D は OrderGroup の配送ステータス変更のみ結線済み。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1251 | **1251 passed**（変動なし・既存テストへ `mode` 付与のみ） |
+| スイート数 | 134 | 134 |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
+> テスト数・スイート数・スナップショット数いずれも不変のため `spec-sync-after-test` は非該当（lint 0 errors / build 成功・`/dashboard/admin/orders` = Dynamic を確認）。
+
 ### 2026-06-13: SonarCloud Quality Gate 修復（PR #133・order.ts New Code Coverage）
 
 #### 概要
@@ -445,6 +476,27 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 ---
 
 ## 次アクション
+
+### 0. 【最優先】管理者ダッシュボード Phase 2（F1 ダッシュボード統計）
+
+**背景**: Phase 1（F2 注文管理）は 2026-06-13 に完了。次は Phase 2（統計ダッシュボード）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
+
+**次セッション 依頼プロンプト（コピペ可）**:
+
+```
+docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 2（F1 ダッシュボード統計）の
+2-A を進めて。具体的には src/queries/dashboard.ts を新規作成し、getAdminDashboardStats
+（requireAdmin はキャッシュ外・Promise.all 並列集計・unstable_cache 20分）/ getSalesOverTime /
+getRecentOrders / getRecentStores を実装。Red→Green でテストを先行（非 ADMIN 拒否の認可 3 階層・
+paymentStatus=Paid のみ集計・PartiallyRefunded 全額除外・isDeleted:false の店舗カウント・
+キャッシュヒット）。完了後 2-B（KPI カード + @tremor/react チャート + 最近の注文/ストア）へ。
+完了の定義は test-complete（lint/tsc/test）+ bun run build。進捗は admin-dashboard/PROGRESS.md と
+docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新すること。
+```
+
+**注意**: query パターンは Phase 1 の `getAllOrders`（`src/queries/order.ts`）を再利用。`enum StoreStatus` は `ACTIVE`/`PENDING` を使用（`INACTIVE` は存在しない）。
+
+---
 
 ### 1. TEST_IMPLEMENTATION_PLAN.md の P1 スイート実装
 
