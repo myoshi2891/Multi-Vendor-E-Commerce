@@ -1,5 +1,11 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { getOrder, updateOrderGroupStatus, updateOrderItemStatus } from "./order";
+import {
+    getOrder,
+    updateOrderGroupStatus,
+    updateOrderItemStatus,
+    getAllOrders,
+} from "./order";
+import { AssertionHelpers } from "../config/test-helpers";
 import { TEST_CONFIG } from "../config/test-config";
 import {
     createMockStore,
@@ -20,18 +26,25 @@ jest.mock("@/lib/db", () => ({
     db: {
         order: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
+            count: jest.fn(),
+            update: jest.fn(),
         },
         store: {
             findUnique: jest.fn(),
         },
         orderGroup: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
         orderItem: {
             findUnique: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
+        $transaction: jest.fn(),
     },
 }));
 
@@ -449,6 +462,43 @@ describe("updateOrderItemStatus", () => {
             );
 
             expect(result).toBe("Canceled");
+        });
+    });
+});
+
+// ==================================================
+// getAllOrders（admin・全店舗横断）
+// ==================================================
+describe("getAllOrders", () => {
+    describe("認可エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await AssertionHelpers.expectAuthError(getAllOrders());
+        });
+
+        // (a) スロー検証: ADMIN 以外は拒否される
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(getAllOrders(), "admins");
+        });
+
+        // (c) 副作用なし検証: 認可失敗時に DB へ到達しない
+        it("認可失敗時にDBクエリを実行しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await expect(getAllOrders()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+            AssertionHelpers.expectNotCalled(mockDb.order.findMany);
+            AssertionHelpers.expectNotCalled(mockDb.order.count);
         });
     });
 });
