@@ -138,7 +138,7 @@ export interface Country {
 
 import countries from "@/data/countries.json";
 import { getHomeFeaturedCategories } from "@/queries/home";
-import { getOrder } from "@/queries/order";
+import { getOrder, getAllOrders } from "@/queries/order";
 import {
     getUserOrders,
     getUserPayments,
@@ -378,6 +378,11 @@ export type CategoryWithSubsType = Category & {
 };
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
+
+/** admin 注文一覧（全店舗横断）の 1 行型。Order 起点（groups[] を含む）。 */
+export type AdminOrderType = Prisma.PromiseReturnType<
+    typeof getAllOrders
+>["orders"][number];
 
 export type ProductSize = {
     size: string;
