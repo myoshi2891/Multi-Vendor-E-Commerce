@@ -4,6 +4,7 @@ import {
     updateOrderGroupStatus,
     updateOrderItemStatus,
     getAllOrders,
+    getOrderForAdmin,
 } from "./order";
 import { AssertionHelpers } from "../config/test-helpers";
 import { TEST_CONFIG } from "../config/test-config";
@@ -566,6 +567,54 @@ describe("getAllOrders", () => {
             expect(result.orders).toHaveLength(1);
             expect(result.page).toBe(1);
             expect(result.limit).toBe(20);
+        });
+    });
+});
+
+// ==================================================
+// getOrderForAdmin（admin・userId フィルタ無し）
+// ==================================================
+describe("getOrderForAdmin", () => {
+    describe("認可エラー", () => {
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await AssertionHelpers.expectRoleError(
+                getOrderForAdmin("order-001"),
+                "admins"
+            );
+            AssertionHelpers.expectNotCalled(mockDb.order.findUnique);
+        });
+    });
+
+    describe("正常系（ADMIN）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        // where に userId を含めない（seller 版 getOrder との唯一の差分）
+        it("whereにuserIdを含めず注文IDのみで取得する", async () => {
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+
+            await getOrderForAdmin("order-001");
+
+            const callArg = mockDb.order.findUnique.mock.calls[0][0];
+            expect(callArg.where).toEqual({ id: "order-001" });
+            expect(callArg.where).not.toHaveProperty("userId");
+        });
+
+        it("存在しない注文の場合nullを返す", async () => {
+            mockDb.order.findUnique.mockResolvedValue(null);
+
+            const result = await getOrderForAdmin("nonexistent");
+
+            expect(result).toBeNull();
         });
     });
 });

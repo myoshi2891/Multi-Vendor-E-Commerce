@@ -258,3 +258,42 @@ export const getAllOrders = async (
         throw new Error("Failed to fetch orders.");
     }
 };
+
+/**
+ * @function getOrderForAdmin
+ * @description 注文詳細を取得する（userId フィルタ無し）。requireAdmin() で保護。
+ *              既存 getOrder は `where:{ id, userId }` で自分限定のため、admin 用に別途必要（F2-6）。
+ * @access ADMIN
+ * @param orderId 取得する注文 ID
+ * @returns 注文詳細（groups / items / store / shippingAddress / paymentDetails 含む）または null
+ */
+export const getOrderForAdmin = async (orderId: string) => {
+    await requireAdmin();
+    try {
+        // include は getOrder と同形だが where から userId を外す（全店舗横断の閲覧）
+        return await db.order.findUnique({
+            where: { id: orderId },
+            include: {
+                groups: {
+                    include: {
+                        items: true,
+                        store: true,
+                        coupon: true,
+                        _count: { select: { items: true } },
+                    },
+                    orderBy: { total: "desc" },
+                },
+                shippingAddress: {
+                    include: { country: true, user: true },
+                },
+                paymentDetails: true,
+            },
+        });
+    } catch (error: unknown) {
+        console.error("[Order:getOrderForAdmin] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw new Error("Failed to fetch order.");
+    }
+};
