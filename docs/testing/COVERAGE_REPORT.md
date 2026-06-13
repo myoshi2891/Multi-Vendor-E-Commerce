@@ -12,7 +12,7 @@
 | 指標 | 値 |
 |---|---|
 | テストファイル総数 | **147** (Jest unit/component 140 / Jest integration 2 / Playwright 5) — 2026-06-06 カバレッジ改善テスト追加対応（payments-table, reviews-container, product-list, upload-images, sidebar テスト +5） |
-| テスト総数 | **1242 unit/component passed** (12 skipped) + **17 integration** — 2026-06-13 時点（admin 注文 query Task 1-A で `order.test.ts` +24） |
+| テスト総数 | **1251 unit/component passed** (12 skipped) + **17 integration** — 2026-06-13 時点（admin 注文 query Task 1-A で `order.test.ts` +24、SonarCloud Quality Gate 修復で +9） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
@@ -294,3 +294,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-06-06 | **コードレビュー指摘対応 + 統計同期**: `upsertReview` を `db.user.upsert` でアトミック化（findUnique→create のレース回避）し、メール欠落エラー経路のユニットテストを +1。併せて CustomRatingStars の ARIA/キーボード操作、profile データ取得の try/catch、テスト群の `any`/unsafe cast 除去・共有フィクスチャ化、admin-manual のソフトデリート記述修正を実施。テスト統計を実測へ同期（unit/component 1179 → **1193**、スイート 122 → **129**、snapshot 127 不変、型エラー 0）。差分の大半は 2026-05-31 以降に追加された review/rating 系コンポーネントテストの未同期分の反映 (commits `a86e012`〜`7ef382f` + 本コミット). |
 | 2026-06-06 | **CI品質ゲート改善（カバレッジ向上＆アクセシビリティ対応）**: `review-details.tsx` の非ネイティブ `role="slider"` を廃止し、各星をネイティブな `<button type="button">` に置き換えてアクセシビリティ指摘をクリア。`product.ts` の未使用インポート `getCookie` を削除。payments-table, reviews-container, product-list, upload-images, sidebar の5つのテストファイルを新規作成し、`review.test.ts` にも例外エラー分岐のテストを追加。テスト統計を実測へ同期（テストファイル総数 142 → **147**、テスト総数 1193 → **1220**、スイート数 129 → **134**）。 |
 | 2026-06-13 | **管理者ダッシュボード Phase 1 / Task 1-A 完了**: `src/queries/order.ts` に admin 注文 query 5 種を追加（`getAllOrders` [limit≤100 clamp], `getOrderForAdmin` [userId フィルタ無し], `updateOrderGroupStatusAsAdmin` [`reconcileParentOrderStatus` で子→親集約], `updateOrderItemStatusAsAdmin`, `updateOrderPaymentStatus` [Refunded/Cancelled の親→子連動・決済 API 非呼出]）。`src/lib/types.ts` に `AdminOrderType` 追加。認可は `requireAdmin()`、非 ADMIN 拒否は IDOR 3 階層パターン。`order.test.ts` +24（テスト総数 1220 → **1242 passed**、テストファイル/スイート不変） (commits `ae18ce3`〜`d88063a` + 本コミット). |
+| 2026-06-13 | **SonarCloud Quality Gate (PR #133) 修復**: `order.ts` の New Code Coverage 63.4% (< 80%) が CI を落としていた。未カバーは admin query 5 関数の `catch` ブロック（エラー経路）と `reconcileParentOrderStatus` の Delivered/Canceled/Refunded 集約分岐・子0件早期 return。`order.test.ts` に異常系（DB エラー → 汎用メッセージ変換 / 元 Error 再 throw）と集約分岐テストを +9（テスト総数 1242 → **1251 passed**、テストファイル/スイート不変）。`order.ts` Lines 87.5%→100% / Branch 61.5%→83.3%（Sonar 換算 ~93%）。プロダクションコードは無変更 (commit `38a9bbe`). |

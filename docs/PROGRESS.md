@@ -156,6 +156,30 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-13: SonarCloud Quality Gate 修復（PR #133・order.ts New Code Coverage）
+
+#### 概要
+
+PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.4%（< 80%）** で Failed し CI が落ちていた。対象は `src/queries/order.ts` 単独。Task 1-A で追加した admin query 群のうち、5 関数の `catch` ブロック（エラー経路）と `reconcileParentOrderStatus` の Delivered/Canceled/Refunded 集約分岐・子0件早期 return が未カバーだったのが原因。**プロダクションコードは無変更、テスト追加のみで解消**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.test.ts` | 異常系（DB エラー）: `getAllOrders`/`getOrderForAdmin` は汎用メッセージ変換、3 つの mutation は元 Error 再 throw を検証 | `38a9bbe` |
+| `src/queries/order.test.ts` | `reconcile` の全 Delivered/Canceled/Refunded 集約分岐 + 子0件早期 return（親連動スキップ） | `38a9bbe` |
+
+> 構造化ログ（`console.error`）は各異常系 describe で `jest.spyOn(console,"error").mockImplementation(()=>{})` により抑制。`order.ts` カバレッジ: Lines 87.5%→**100%** / Branch 61.5%→**83.3%**（Sonar 新コード換算 ~93%）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1242 | **1251 passed** |
+| スイート数 | 134 | 134 |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
 ### 2026-06-13: 管理者ダッシュボード Phase 1 / Task 1-A（admin 注文 query）
 
 #### 概要
