@@ -73,7 +73,8 @@ const OutsideComponent = () => {
 
 // OI-8 真因（size.test.ts の Prisma 接続リーク, commit 83ef06c）解消により復活。
 // modal-provider は Prisma 非依存の被害者であり、リーク源消失で file-level skip は不要になった。
-// 経緯: docs/ci/archive/unit-tests-run-reactive.md / ADR-003
+// 経緯: docs/ci/archive/unit-tests-run-reactive.md /
+//       ADR-003 (docs/architecture/decisions/003-modal-setopen-sync-for-react19.md)
 describe("ModalProvider", () => {
     beforeEach(() => {
         jest.clearAllMocks();

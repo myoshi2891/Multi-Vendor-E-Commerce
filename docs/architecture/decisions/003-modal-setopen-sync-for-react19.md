@@ -1,6 +1,6 @@
 # 003. `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応）
 
-- **Status**: **Superseded（2026-06-14）** — 本 ADR の `setOpen` 同期化は設計改善として維持されるが、OI-8 CI flake の**真因は本 ADR の主題（modal `setOpen` の async 化）とは別系統**だった。真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる stub DB への Prisma 接続リーク（P1001）で、`83ef06c` で解消。modal-provider は被害者にすぎず `49fa32d` で un-skip 済み（CI push/pull_request 両 event 2 サイクル緑）。旧 Status は「Partial Mitigation」。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md)。追加調査ログは本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」を参照
+- **Status**: **Superseded（2026-06-14）**
 - **Date**: 2026-05-24
 - **Deciders**: myoshizumi（実装）, Claude Code（調査支援）
 
