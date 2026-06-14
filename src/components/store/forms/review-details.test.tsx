@@ -292,17 +292,28 @@ describe('ReviewDetails Component Tests', () => {
             value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
             configurable: true
         });
-        fireEvent.click(star, { clientX: 30 }); // 3.0
+        // RHF mode:'onChange' は field.onChange ごとに非同期バリデーション(isValid)を走らせ、
+        // その setState は同期 fireEvent 完了後のマイクロタスクで着地する。act で包んで act 内に
+        // 確定フラッシュし、act 外リーク(OI-8 CI フレーク: jest.setup.ts / docs/ci 参照)を封じる。
+        await act(async () => {
+            fireEvent.click(star, { clientX: 30 }); // 3.0
+        });
 
         // サイズの入力 (Select size プレースホルダーが複数あるため getAll で最初の要素を選択)
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
-        fireEvent.focus(sizeInput);
+        await act(async () => {
+            fireEvent.focus(sizeInput);
+        });
         const sizeOption = screen.getByText('One Size');
-        fireEvent.mouseDown(sizeOption);
+        await act(async () => {
+            fireEvent.mouseDown(sizeOption);
+        });
 
         // レビュー内容の入力
         const textarea = screen.getByPlaceholderText('Write your review here...');
-        fireEvent.change(textarea, { target: { value: 'Good product!' } });
+        await act(async () => {
+            fireEvent.change(textarea, { target: { value: 'Good product!' } });
+        });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
         // RHF の非同期バリデーション → handleSubmit → upsertReview の Promise チェーンを
@@ -345,15 +356,25 @@ describe('ReviewDetails Component Tests', () => {
             value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
             configurable: true
         });
-        fireEvent.click(star, { clientX: 30 }); // 3.0
+        // RHF mode:'onChange' の非同期バリデーション(isValid)setState を act 内に確定フラッシュし、
+        // act 外リーク(OI-8 CI フレーク: jest.setup.ts / docs/ci 参照)を封じる。
+        await act(async () => {
+            fireEvent.click(star, { clientX: 30 }); // 3.0
+        });
 
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
-        fireEvent.focus(sizeInput);
+        await act(async () => {
+            fireEvent.focus(sizeInput);
+        });
         const sizeOption = screen.getByText('One Size');
-        fireEvent.mouseDown(sizeOption);
+        await act(async () => {
+            fireEvent.mouseDown(sizeOption);
+        });
 
         const textarea = screen.getByPlaceholderText('Write your review here...');
-        fireEvent.change(textarea, { target: { value: 'Good product!' } });
+        await act(async () => {
+            fireEvent.change(textarea, { target: { value: 'Good product!' } });
+        });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
         // reject された upsertReview の catch チェーンを act 内で確定的にフラッシュする
