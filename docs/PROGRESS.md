@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1272 passed / 1284 total / 137スイート（**12 skipped**）— 2026-06-13 PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート（order-table-cells / admin orders columns / seller orders columns + order-status-select 拡張）。うち 9 skip は modal-provider の CI flake 一時退避（OI-8） |
+| Jestユニットテスト | 1281 passed / 1284 total / 137スイート（**3 skipped**）— 2026-06-14 OI-8 解消で modal-provider 9 件を un-skip（1272→1281 / skip 12→3 / suites skip 2→1、`49fa32d`）。残 3 skip は DB ゲートの idempotency suite。前回 2026-06-13 は PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -487,6 +487,7 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
   - 「エラー本文が空」は assertion failure ではないシグナル → React 19 strict act / runtime 層を疑う
   - `async` だが consumer が `await` しない関数は anti-pattern。型を `void` に正直化する
   - **禁忌ルール（`it.skip`）も状況次第で必要悪**。条件付き運用（期限・同等カバレッジ確認・追跡 doc）で適用
+- **解消（2026-06-14, OI-8 クローズ）**: 真因は modal-provider 固有でも「RTL + userEvent + waitFor のメタ問題」でもなく、`src/queries/size.test.ts` が `@/lib/db` を未モックで実 Prisma を `spyOn` していたことによる stub DB への `PrismaClientInitializationError`(P1001) 接続リークだった。非同期 reject が同一ワーカーのプロセス境界をまたぎ、jest-circus が「その瞬間 current な別ファイル」へ `error` イベントとして帰属（P1001 の stack が空 → レポーターが本文を空に整形 → 「本文空」署名）。一時カスタム jsdom 環境の `handleTestEvent` で 3× P1001 を実観測（`a93effe`、撤去 `756c6a9`）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった modal-provider 9 件を un-skip（`49fa32d`、1272→1281 passed / skip 12→3）。ローカル 30x ループ FAIL 0・stub DB フルスイート P1001 = 0・CI push/pull_request 両 event 緑。詳細: [docs/ci/archive/unit-tests-run-reactive.md](ci/archive/unit-tests-run-reactive.md)。
 
 ---
 

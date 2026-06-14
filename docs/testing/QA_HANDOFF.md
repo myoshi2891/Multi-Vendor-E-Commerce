@@ -1,24 +1,24 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-13 / **HEAD**: `0d9fba5`
+> **最終更新**: 2026-06-14 / **HEAD**: `49fa32d`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-13 時点）
+### テスト統計（2026-06-14 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1272** passed / 1284 total / 137 スイート（135 passed + 2 skipped）— 2026-06-13 注文テーブル重複解消リファクタ（PR #134 SonarCloud Quality Gate 修復）で +21 / +3 スイート: admin/seller の `orders/columns.tsx` 重複を `order-table-cells.tsx`（ProductImagesCell / ViewOrderButton）へ抽出し、共有・admin columns・seller columns の各テスト新規 +19、`order-status-select.test.tsx` に admin 分岐 + falsy レスポンスの +2。対象4ファイルとも Lines 100%（New Code Coverage 19.4%→達成）|
+| Jest テスト総数 (unit/component) | **1281** passed / 1284 total / 137 スイート（136 passed + 1 skipped）— 2026-06-14 OI-8 真因（`size.test.ts` の Prisma 接続リーク, `83ef06c`）解消に伴い `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`）：1272→1281 passed / skip 12→3 / suites skip 2→1。CI は push/pull_request 両 event 緑・stub DB フルスイートで P1001 = 0 を確認。前回（2026-06-13）は注文テーブル重複解消リファクタ（PR #134）で +21 / +3 スイート |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
-| Skipped テスト | **12 件**（内訳: idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`] + modal-provider 9 件 [`src/providers/modal-provider.test.tsx` を CI flake 一時退避で `describe.skip` — 下記 OI-8 参照]）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
-| Skipped スイート | **2 件**（idempotency suite + modal-provider.test.tsx file-level） |
+| Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
+| Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
 
 ---
 

@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-06-13）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-06-14）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -12,7 +12,7 @@
 | 指標 | 値 |
 |---|---|
 | テストファイル総数 | **150** (Jest unit/component 143 / Jest integration 2 / Playwright 5) — 2026-06-13 注文テーブル重複解消（order-table-cells / admin orders columns / seller orders columns テスト +3） |
-| テスト総数 | **1272 unit/component passed** (12 skipped) + **17 integration** — 2026-06-13 時点（PR #134 注文テーブル重複解消リファクタで columns/共有セル/order-status-select に +21） |
+| テスト総数 | **1281 unit/component passed** (3 skipped) + **17 integration** — 2026-06-14 時点（OI-8 解消で modal-provider 9 件 un-skip：1272→1281 / skip 12→3）。残 3 skip は DB ゲートの idempotency suite |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
@@ -30,7 +30,7 @@
 
 | カテゴリ ╲ ドメイン       | queries | api | pages | store | dashbd | shared | hooks | lib | seed | other |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Unit**           |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ◐   |  ✦  |  ◐   |   ◐   |
+| **Unit**           |   ✦    |  ◯  |  ✦   |  ✦   |   ✦   |   ✦   |   ✦   |  ✦  |  ◐   |   ◐   |
 | **Integration**    |   ◐    |  ◯  |  ◯   |  ◐   |   ◐   |   ◐   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **E2E**            |   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
 | **Visual/Snapshot**|   ◯    |  ◯  |  ◐   |  ◯   |   ◯   |   ◯   |   ◯   |  ◯  |  ◯   |   ◯   |
@@ -42,7 +42,7 @@
 > **Unit 行の注記（2026-05-31 更新）**: `pages / store / dashbd / shared` を co-located unit テストで✦化（[QA_HANDOFF.md「2026-05-31」](./QA_HANDOFF.md) 参照）。残る非✦セルは構造的・スコープ外の理由による:
 > - **`api` ◯（構造的 N/A）**: `src/app/api/*` のテストは [`categorize.ts`](../../scripts/coverage-dashboard/categorize.ts) で必ず `api-contract` カテゴリへ分類されるため、Unit×api セルを埋める手段が存在しない。api の実カバーは **API/Contract 行 ✦**（`route.test.ts` × 6）が担保する。Issue #4 の意図的設計（カテゴリ上書き）を崩さないため categorize.ts は変更しない。
 > - **`seed` ◐（意図的に分母外）**: `collectCoverageFrom` をロジック中心の `src/**` に限定したため `prisma/seed` は計測されない。「seed 以外を✦化」という本タスクのスコープ通り。
-> - **`hooks` ◐**: `modal-provider.test.tsx` の OI-8 スキップ（CI flake 隔離）による `hasSkip`。
+> - **`hooks` ✦（2026-06-14 昇格）**: OI-8 解消で `modal-provider.test.tsx` の file-level skip を解除（`hasSkip` 消失）。`modal-provider.tsx` は lcov 32/33 = 97% で ✦ 条件（skip なし & lcov ≥ 60%）を満たす。
 > - **`other` ◐**: `scripts/coverage-dashboard/scan-tests.test.ts` がスキップ検出ロジックのテストデータとして `.skip` 文字列を含み、スキャナが自己参照的に `hasSkip` 誤検知する（Issue #7 と同種のドッグフードノイズ）。
 >
 > **Integration 行 `queries` ◐ の注記（2026-06-02 D1 完了）**: `tests/integration/`（`cart-checkout` / `order-placement`）は D1 で [`categorize.ts`](../../scripts/coverage-dashboard/categorize.ts) により `integration × queries` へ分類されるようになり、`unit × other` への誤検知が解消した。ただし統合テストファイルには同名ソースが無く lcov 解決が `null` のため、生成ダッシュボード上では ✦ ではなく **◐（partial）** で表示される（commit `b57841a`）。
@@ -51,7 +51,7 @@
 
 | カテゴリ | カバー済み列 | カバー率 | 備考 |
 |---|---|---|---|
-| Unit | 6/10 | 60% | queries / pages / store / dashbd / shared / lib が✦。hooks / seed / other は ◐、api は構造的 ◯（上記注記参照） |
+| Unit | 7/10 | 70% | queries / pages / store / dashbd / shared / hooks / lib が✦（hooks は 2026-06-14 OI-8 解消で◐→✦）。seed / other は ◐、api は構造的 ◯（上記注記参照） |
 | Integration | 4/10 | 40% | tests/component/（store / dashbd / shared）+ tests/integration/（queries ◐、D1 で追加） |
 | E2E | 1/10 | 10% | tests/e2e/ 配下 (5 spec) |
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
@@ -296,3 +296,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-06-13 | **管理者ダッシュボード Phase 1 / Task 1-A 完了**: `src/queries/order.ts` に admin 注文 query 5 種を追加（`getAllOrders` [limit≤100 clamp], `getOrderForAdmin` [userId フィルタ無し], `updateOrderGroupStatusAsAdmin` [`reconcileParentOrderStatus` で子→親集約], `updateOrderItemStatusAsAdmin`, `updateOrderPaymentStatus` [Refunded/Cancelled の親→子連動・決済 API 非呼出]）。`src/lib/types.ts` に `AdminOrderType` 追加。認可は `requireAdmin()`、非 ADMIN 拒否は IDOR 3 階層パターン。`order.test.ts` +24（テスト総数 1220 → **1242 passed**、テストファイル/スイート不変） (commits `ae18ce3`〜`d88063a` + 本コミット). |
 | 2026-06-13 | **SonarCloud Quality Gate (PR #133) 修復**: `order.ts` の New Code Coverage 63.4% (< 80%) が CI を落としていた。未カバーは admin query 5 関数の `catch` ブロック（エラー経路）と `reconcileParentOrderStatus` の Delivered/Canceled/Refunded 集約分岐・子0件早期 return。`order.test.ts` に異常系（DB エラー → 汎用メッセージ変換 / 元 Error 再 throw）と集約分岐テストを +9（テスト総数 1242 → **1251 passed**、テストファイル/スイート不変）。`order.ts` Lines 87.5%→100% / Branch 61.5%→83.3%（Sonar 換算 ~93%）。プロダクションコードは無変更 (commit `38a9bbe`). |
 | 2026-06-13 | **SonarCloud Quality Gate (PR #134) 修復**: New Code の Coverage 19.4% (< 80%) と Duplication 7.8% (> 3%) が `SonarCloud Code Analysis` チェックを落としていた（GitHub Actions ジョブは `continue-on-error` で緑だが、Sonar アプリが別経路で貼る Quality Gate ステータスは赤）。admin/seller の `orders/columns.tsx` に重複していた `ProductImagesCell` / `ViewOrderButton` を `src/components/dashboard/shared/order-table-cells.tsx` へ抽出（重複塊を除去）。共有 + admin columns + seller columns のテストを新規 +19、`order-status-select.test.tsx` に admin 分岐・falsy レスポンスを +2（テスト総数 1251 → **1272 passed**、テストファイル総数 147 → **150**、スイート 134 → **137**）。対象4ファイル Lines 100% (commits `2d692cb`〜`0d9fba5`). |
+| 2026-06-14 | **OI-8 クローズ（modal-provider un-skip）**: CI flake の真因（`src/queries/size.test.ts` が `@/lib/db` 未モックで実 Prisma を `spyOn` → stub DB に P1001 接続リーク → jest-circus が別ファイルへ「本文空」失敗を帰属）は `83ef06c` で根絶済み。被害者だった `modal-provider.test.tsx` の file-level skip を解除し 9 件を un-skip（テスト総数 1272 → **1281 passed**、skip 12→3、suites skip 2→1、テストファイル/スイート総数不変）。ローカル 30x ループ FAIL 0 / stub DB フルスイート P1001 = 0、CI push/pull_request 両 event 緑。ヒートマップ `Unit × hooks` ◐→✦（`modal-provider.tsx` lcov 32/33 = 97%） (commit `49fa32d` + 本コミット). |
