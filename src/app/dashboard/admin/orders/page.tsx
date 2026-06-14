@@ -10,13 +10,12 @@ const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
 
 /**
- * 数値 URL パラメータの正規化（tech.md「URL パラメータ正規化」準拠）。
- * `searchParams` の値は文字列のため、まず `Number()` で数値化してから
- * `Infinity` / `NaN` / 小数 / 1 未満を排除する。
+ * Normalizes a string URL parameter to a positive integer.
  *
- * @param raw searchParams から得た生の文字列（または未定義）
- * @param fallback 正規化に失敗した場合の既定値
- * @param max 上限（指定時にキャップ）
+ * @param raw - The raw string from search parameters
+ * @param fallback - The value returned if normalization fails
+ * @param max - Optional upper bound to cap the result
+ * @returns The normalized positive integer (at least 1), or the `fallback` value, capped at `max` if provided
  */
 function normalizePositiveInt(
     raw: string | undefined,
@@ -30,12 +29,11 @@ function normalizePositiveInt(
 }
 
 /**
- * searchParams の生文字列を文字列 enum の値へ絞り込む（境界での正規化）。
- * 列挙値に含まれない・未定義の場合は `undefined`（フィルタ無し）に倒す。
- * `includes` による実行時検証で守られた局所キャストのため `any` は不要。
+ * Narrows a string value to a valid enum member.
  *
- * @param enumObj 文字列 enum（`OrderStatus` / `PaymentStatus`）
- * @param raw searchParams から得た生の文字列（または未定義）
+ * @param enumObj - The enum object to validate against
+ * @param raw - The string value to narrow, or undefined for no filter
+ * @returns The value if it is a valid enum member, undefined otherwise
  */
 function toEnumValue<T extends Record<string, string>>(
     enumObj: T,
@@ -48,13 +46,7 @@ function toEnumValue<T extends Record<string, string>>(
 }
 
 /**
- * 全店舗横断の admin 注文管理ページ。
- *
- * `getAllOrders()`（`requireAdmin` 内包）で取得した Order 群を DataTable に渡す。
- * 各行は 1 Order（複数 OrderGroup を内包）で、Store 列・group ごとの Status 変更・
- * 詳細モーダルを columns.tsx 側で描画する。
- *
- * @param searchParams ページ番号・件数・フィルタ（文字列）。数値は正規化のうえ query へ渡す。
+ * Renders an admin page for managing orders across all stores.
  */
 export default async function AdminOrdersPage({
     searchParams,
