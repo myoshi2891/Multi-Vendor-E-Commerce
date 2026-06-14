@@ -1,6 +1,4 @@
-/** @jest-environment <rootDir>/tests-setup/flake-diag-jsdom-env.cjs */
-// [FLAKE-DIAG OI-8] TEMP — 上記 docblock は診断用カスタム jsdom 環境(handleTestEvent で
-// 失敗エラーの生オブジェクトを surface)。root-cause 後に `jsdom` へ戻し、環境ファイルを削除する。
+/** @jest-environment jsdom */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
