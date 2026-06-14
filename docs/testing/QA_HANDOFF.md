@@ -134,13 +134,13 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-06 時点） {#active-open-issues}
+### 🔴 現在アクティブな残課題（優先度順・2026-06-13 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-7）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件のみ。**
+> 解消済み OI（OI-1〜OI-7）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 3 件のみ。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
-| **1（最優先）** | **OI-8** | `modal-provider.test.tsx` / `shipping-form.test.tsx` の CI flake（file-level skip 9 件） | **期限 2026-06-07（残 5 日）** | テスト本体ではなく **workflow 層**の修正が本筋。`--maxWorkers=1` もしくは `continue-on-error` を `.github/workflows/ci.yml` に適用して runner ガチャを抑制。累積観測表・着手手順は [`ADR-003 §2026-05-25 追加調査`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点)。期限超過時は skip 維持 + ADR-003 に観測継続を明記して延長判断。 |
+| **1（最優先）** | **OI-8** | `modal-provider.test.tsx` / `shipping-form.test.tsx` の CI flake（file-level skip 9 件） | **期限 2026-06-07（期限超過）** | テスト本体ではなく **workflow 層**の修正が本筋。`--maxWorkers=1` もしくは `continue-on-error` を `.github/workflows/ci.yml` に適用して runner ガチャを抑制。累積観測表・着手手順は [`ADR-003 §2026-05-25 追加調査`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点)。期限超過時は skip 維持 + ADR-003 に観測継続を明記して延長判断。 |
 | 2 | **OI-9** | ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照） | 🟡 未着手 | 遅延初期化 `useState(() => typeof window !== "undefined" ? window.innerWidth : 0)` + `useEffect` で実測反映。**これは下記 NEXT_ACTION「D2（Performance 行着手）」の前提**：修正後に `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる。 |
 | 3 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
 
