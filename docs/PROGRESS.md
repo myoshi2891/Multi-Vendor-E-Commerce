@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1193テスト / 129スイート（**12 skipped**、1181 passed）— 2026-06-06 実測同期（review/rating 系コンポーネントテストの未同期分 + `upsertReview` メール欠落エラー経路テスト +1）。2026-05-31 時点は 1179 / 122。うち 9 skip は modal-provider の CI flake 一時退避（OI-8） |
+| Jestユニットテスト | 1281 passed / 1284 total / 137スイート（**3 skipped**）— 2026-06-14 OI-8 解消で modal-provider 9 件を un-skip（1272→1281 / skip 12→3 / suites skip 2→1、`49fa32d`）。残 3 skip は DB ゲートの idempotency suite。前回 2026-06-13 は PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -155,6 +155,63 @@
 - **副産物の発見（C1 と独立した既存バグ）**: ホーム（`/`）は `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ **500**（本番 SSR でも再現する可能性）。このため lhci の URL から `/` を除外し `/browse` のみとした。featured.tsx 修正は別タスク。
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
+
+### 2026-06-13: SonarCloud Quality Gate 修復（PR #134・注文テーブル重複解消 + カバレッジ）
+
+#### 概要
+
+PR #134（`dev → main`）の `SonarCloud Code Analysis` チェックが Quality Gate 未達で赤かった（New Code の Coverage 19.4% < 80% / Duplication 7.8% > 3%）。GitHub Actions の `SonarCloud Scan` ジョブは `continue-on-error: true` で緑だが、Sonar アプリが別経路で貼る Quality Gate ステータスは制御外のため赤くなる構造。マージはブロックされない（Able to merge）が、品質改善目的で根本修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/shared/order-table-cells.tsx` | admin/seller columns に重複していた `ProductImagesCell` / `ViewOrderButton` を共有コンポーネントへ抽出（新規） | `2d692cb` |
+| `src/app/dashboard/admin/orders/columns.tsx` / `seller/.../orders/columns.tsx` | 共有セルを参照、private な重複 ViewOrderButton を削除。seller のコメントアウト済み旧 hooks 違反ブロックも削除 | `2d692cb` |
+| `src/components/dashboard/shared/order-table-cells.test.tsx` | 共有セルのテスト（+4） | `8e29b0b` |
+| `src/app/dashboard/{admin,seller/.../}/orders/columns.test.tsx` | 各 cell レンダラのテスト（+15）。両 columns Lines 100% | `99ecd48` |
+| `tests/component/dashboard/order-status-select.test.tsx` | admin 分岐 + falsy レスポンスの 2 条件を追加（+2） | `0d9fba5` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1251 passed | **1272 passed** |
+| スイート数 | 134 | **137** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 2026-06-13: 管理者ダッシュボード Phase 1 完了（Task 1-C / 1-D・F2 注文管理 UI）
+
+#### 概要
+
+`docs/design/admin-dashboard/` の **Phase 1（F2 注文管理）を完結**。1-A（query）/ 1-B（型）は完了済みだったため、残る UI 層 1-C（`OrderStatusSelect` の discriminated union 化）と 1-D（admin 注文管理ページ）を実装。これで全店舗横断の注文閲覧・group 単位のステータス変更・詳細モーダルが動作する。**Phase 単位の現在地は専用トラッカ [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を SSOT** とし、本ファイルは全体履歴として記録する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/order-status-select.tsx` | props を `{mode:"seller"\|"admin"}` の discriminated union 化。admin 分岐は `updateOrderGroupStatusAsAdmin` を呼ぶ。`catch(error: any)` → `unknown`+型ガードへ是正 | `refactor(ui): make OrderStatusSelect props a discriminated union` |
+| seller columns / store-order-summary / store-summary | 既存 seller 呼び出し 3 箇所に `mode="seller"` 付与（store-summary は未使用 import を削除）。型整合のため union 化と同一コミット（rule 02: 各コミット tsc-clean） | 同上 |
+| `src/app/dashboard/admin/orders/columns.tsx`（新規） | `ColumnDef<AdminOrderType>`。Store 列（group 店舗列挙）/ Status 列（group ごと `OrderStatusSelect(mode:admin)`）/ 詳細モーダル（`order` 逆参照を注入する `toStoreOrder` アダプタで `StoreOrderSummary` 流用） | `feat(admin): add cross-store order management page and columns` |
+| `src/app/dashboard/admin/orders/page.tsx`（新規） | `force-dynamic` + URL パラメータ正規化（`Number()`→`Number.isFinite`）+ limit キャップ。`getAllOrders().orders` を DataTable へ | 同上 |
+| `tests/component/dashboard/order-status-select.test.tsx` | 既存 3 render に `mode="seller"` 付与（テスト数不変・新規ケースなし） | union 化コミットに同梱 |
+
+> **設計判断**: 1 注文が複数店舗（`groups[]`）にまたがるため、行粒度は **「Order 行 + group 内訳」**（design.md 準拠・ユーザー合意）。Store/Status 列は各 group を縦に列挙する。`StoreOrderSummary` は `group.order.*` 逆参照を参照するが `AdminOrderType.groups[]` は持たないため、親 Order の `paymentStatus`/`shippingAddress`/`paymentDetails` を注入する `toStoreOrder` アダプタで橋渡し（構造的部分型で `any` 不要）。
+
+> **後続に引き継ぎ（Phase 1 スコープ外）**: `updateOrderPaymentStatus` の paymentStatus 手動変更 UI（design §3.3 の決済 API 非連携警告 + §3.5 runbook）。1-D は OrderGroup の配送ステータス変更のみ結線済み。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1251 | **1251 passed**（変動なし・既存テストへ `mode` 付与のみ） |
+| スイート数 | 134 | 134 |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
+> テスト数・スイート数・スナップショット数いずれも不変のため `spec-sync-after-test` は非該当（lint 0 errors / build 成功・`/dashboard/admin/orders` = Dynamic を確認）。
 
 ### 2026-06-13: SonarCloud Quality Gate 修復（PR #133・order.ts New Code Coverage）
 
@@ -430,6 +487,7 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
   - 「エラー本文が空」は assertion failure ではないシグナル → React 19 strict act / runtime 層を疑う
   - `async` だが consumer が `await` しない関数は anti-pattern。型を `void` に正直化する
   - **禁忌ルール（`it.skip`）も状況次第で必要悪**。条件付き運用（期限・同等カバレッジ確認・追跡 doc）で適用
+- **解消（2026-06-14, OI-8 クローズ）**: 真因は modal-provider 固有でも「RTL + userEvent + waitFor のメタ問題」でもなく、`src/queries/size.test.ts` が `@/lib/db` を未モックで実 Prisma を `spyOn` していたことによる stub DB への `PrismaClientInitializationError`(P1001) 接続リークだった。非同期 reject が同一ワーカーのプロセス境界をまたぎ、jest-circus が「その瞬間 current な別ファイル」へ `error` イベントとして帰属（P1001 の stack が空 → レポーターが本文を空に整形 → 「本文空」署名）。一時カスタム jsdom 環境の `handleTestEvent` で 3× P1001 を実観測（`a93effe`、撤去 `756c6a9`）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった modal-provider 9 件を un-skip（`49fa32d`、1272→1281 passed / skip 12→3）。ローカル 30x ループ FAIL 0・stub DB フルスイート P1001 = 0・CI push/pull_request 両 event 緑。詳細: [docs/ci/archive/unit-tests-run-reactive.md](ci/archive/unit-tests-run-reactive.md)。
 
 ---
 
@@ -437,7 +495,7 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 
 | 課題 | 詳細 | 優先度 |
 |------|------|--------|
-| **modal-provider テスト CI flake (OI-8)** | `src/providers/modal-provider.test.tsx:95` の `[P1] モーダルを開くと...` を CI flake のため `it.skip`。設計改善 (ADR-003) では根治できず、6 仮説が未検証。詳細: [ADR-003 後続調査](architecture/decisions/003-modal-setopen-sync-for-react19.md#後続調査と一時スキップ判断) / [QA_HANDOFF.md OI-8](testing/QA_HANDOFF.md)。期限 2026-06-07 | 中 |
+| ~~modal-provider テスト CI flake (OI-8)~~ | ✅ **解消済み（2026-06-14）**。真因は modal-provider ではなく `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ modal-provider 9 件を un-skip（`49fa32d`）。詳細: [docs/ci/archive/unit-tests-run-reactive.md](ci/archive/unit-tests-run-reactive.md) | - |
 | Elasticsearch 未実装 | `src/lib/elastic-search.ts` がコメントアウト中。全文検索は現在 tsvector で代替 | 低 |
 | E2E シード不安定 | 解消済み: CI環境で PostgreSQL コンテナを使用し、`seed-idempotency` ジョブで冪等性を検証完了 (OI-5) | - |
 | E2E テスト網羅不足 | `TEST_IMPLEMENTATION_PLAN.md` の P1/P2 スイートが未実装 | 中 |
@@ -445,6 +503,27 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 ---
 
 ## 次アクション
+
+### 0. 【最優先】管理者ダッシュボード Phase 2（F1 ダッシュボード統計）
+
+**背景**: Phase 1（F2 注文管理）は 2026-06-13 に完了。次は Phase 2（統計ダッシュボード）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
+
+**次セッション 依頼プロンプト（コピペ可）**:
+
+```
+docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 2（F1 ダッシュボード統計）の
+2-A を進めて。具体的には src/queries/dashboard.ts を新規作成し、getAdminDashboardStats
+（requireAdmin はキャッシュ外・Promise.all 並列集計・unstable_cache 20分）/ getSalesOverTime /
+getRecentOrders / getRecentStores を実装。Red→Green でテストを先行（非 ADMIN 拒否の認可 3 階層・
+paymentStatus=Paid のみ集計・PartiallyRefunded 全額除外・isDeleted:false の店舗カウント・
+キャッシュヒット）。完了後 2-B（KPI カード + @tremor/react チャート + 最近の注文/ストア）へ。
+完了の定義は test-complete（lint/tsc/test）+ bun run build。進捗は admin-dashboard/PROGRESS.md と
+docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新すること。
+```
+
+**注意**: query パターンは Phase 1 の `getAllOrders`（`src/queries/order.ts`）を再利用。`enum StoreStatus` は `ACTIVE`/`PENDING` を使用（`INACTIVE` は存在しない）。
+
+---
 
 ### 1. TEST_IMPLEMENTATION_PLAN.md の P1 スイート実装
 

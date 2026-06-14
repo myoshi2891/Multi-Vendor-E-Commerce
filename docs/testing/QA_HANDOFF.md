@@ -1,24 +1,24 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-13 / **HEAD**: `38a9bbe`
+> **最終更新**: 2026-06-14 / **HEAD**: `49fa32d`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-13 時点）
+### テスト統計（2026-06-14 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1251** passed / 1263 total / 134 スイート（132 passed + 2 skipped）— 2026-06-13 admin 注文 query（Phase 1 Task 1-A）で `order.test.ts` に +24（認可・親子連動）、さらに SonarCloud Quality Gate（PR #133）の New Code Coverage 不足解消で +9（catch エラー経路 5 関数分 + reconcile の Delivered/Canceled/Refunded 集約分岐 + 子0件早期 return）。`order.ts` カバレッジ Lines 87.5%→100% / Branch 61.5%→83.3% |
+| Jest テスト総数 (unit/component) | **1281** passed / 1284 total / 137 スイート（136 passed + 1 skipped）— 2026-06-14 OI-8 真因（`size.test.ts` の Prisma 接続リーク, `83ef06c`）解消に伴い `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`）：1272→1281 passed / skip 12→3 / suites skip 2→1。CI は push/pull_request 両 event 緑・stub DB フルスイートで P1001 = 0 を確認。前回（2026-06-13）は注文テーブル重複解消リファクタ（PR #134）で +21 / +3 スイート |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
-| Skipped テスト | **12 件**（内訳: idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`] + modal-provider 9 件 [`src/providers/modal-provider.test.tsx` を CI flake 一時退避で `describe.skip` — 下記 OI-8 参照]）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
-| Skipped スイート | **2 件**（idempotency suite + modal-provider.test.tsx file-level） |
+| Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
+| Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
 
 ---
 
@@ -134,15 +134,16 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-06 時点） {#active-open-issues}
+### 🔴 現在アクティブな残課題（優先度順・2026-06-14 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-7）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件のみ。**
+> 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 2 件のみ。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
-| **1（最優先）** | **OI-8** | `modal-provider.test.tsx` / `shipping-form.test.tsx` の CI flake（file-level skip 9 件） | **期限 2026-06-07（残 5 日）** | テスト本体ではなく **workflow 層**の修正が本筋。`--maxWorkers=1` もしくは `continue-on-error` を `.github/workflows/ci.yml` に適用して runner ガチャを抑制。累積観測表・着手手順は [`ADR-003 §2026-05-25 追加調査`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点)。期限超過時は skip 維持 + ADR-003 に観測継続を明記して延長判断。 |
-| 2 | **OI-9** | ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照） | 🟡 未着手 | 遅延初期化 `useState(() => typeof window !== "undefined" ? window.innerWidth : 0)` + `useEffect` で実測反映。**これは下記 NEXT_ACTION「D2（Performance 行着手）」の前提**：修正後に `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる。 |
-| 3 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+| **1（最優先）** | **OI-9** | ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照） | 🟡 未着手 | 遅延初期化 `useState(() => typeof window !== "undefined" ? window.innerWidth : 0)` + `useEffect` で実測反映。**これは下記 NEXT_ACTION「D2（Performance 行着手）」の前提**：修正後に `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる。 |
+| 2 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+
+> ✅ **OI-8 完了（2026-06-14）**: CI flake の真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`、1272→1281 / skip 12→3）。CI push/pull_request 両 event × 2 サイクル緑・stub DB フルスイート P1001 = 0。詳細: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。
 
 > ✅ **D1 完了（2026-06-02）**: ダッシュボード Integration 行の誤分類（`tests/integration/` が `unit × other` セルに分類）は `categorize.ts` 改修で恒久解消（commit `b57841a`）。`integration × queries` ◯→◐（lcov に同名ソース無しのため partial）。詳細: [`COVERAGE_REPORT.md §3 D1`](./COVERAGE_REPORT.md)。
 
@@ -161,7 +162,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | ~~OI-6~~ | ~~`DashboardStats` コンポーネント調査未完了~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、調査結果: ソース・仕様ともに該当コンポーネントなし。`src/app/dashboard/{admin,seller}/.../page.tsx` はプレースホルダー、`specs/multi-vendor-ecommerce/04-interfaces.md` も「overview」と記載のみ。統計 UI 要件は将来の機能追加時に `specs/` で別途起票） |
 | ~~OI-7~~ | ~~`coverage/lcov.info` が古い (2025-03-16 時点)~~ | ~~🟢 低~~ | ✅ 解消済み（2026-05-24、`/coverage` は `.gitignore:10` 対象で git 管理外。`bun run test -- --coverage` でローカル再生成 → `bun run coverage:dashboard` で `docs/coverage-dashboard.html` を更新する運用を確認。CI でのカバレッジ自動化は [`COVERAGE_REPORT §3 B4`](./COVERAGE_REPORT.md#b4-ci-でのカバレッジ-artifact-化--dashboard-自動再生成) に移管 → **B4 完了（2026-06-03）**: `ci.yml` の `test` ジョブで `bun run coverage:dashboard` を実行し `docs/coverage-dashboard.html` を `coverage-dashboard` artifact 化。`generatedAt` の churn 回避のため自動コミットはせず artifact 化に限定） |
 | **OI-9** | **ホーム (`/`) が SSR で 500**: `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が初期化子で `window` を参照し、`"use client"` でも SSR 実行時に `ReferenceError: window is not defined` を投げる。本番 SSR でも再現の可能性。**修正案**: `useState<number>(() => typeof window !== "undefined" ? window.innerWidth : 0)` の遅延初期化 + `useEffect` で実測値を反映。**影響**: C1 (Lighthouse CI) で `/` を計測対象から除外中。修正後に `.lighthouserc.json` / `lhci.yml` の URL へ `/` を追加する。発見: 2026-05-30 (C1 検証中) | 🟡 中 | 未着手。lhci は `/browse` のみで暫定運用 |
-| **OI-8** | **`modal-provider.test.tsx` を CI flake のため file-level skip。仮説 A/B 試行も決定的解消には至らず** | 🟡 中 | **未解決・拡大**（2026-05-24 着手 / 2026-05-25 拡大 / 期限 2026-06-07）。**現状**: ファイル全体 `describe.skip("ModalProvider", ...)` で 9 件 skip。**経緯**: it.skip 1 → 2 → describe.skip(setOpen) → file-level skip と段階拡大したが、bacfe2e で `tests/component/store/shipping-form.test.tsx` へ flake が移動したため modal 固有問題ではないと確定。**試行済み**: 仮説 A (isMounted 撤廃 / `a85460b`) / 仮説 B (MSW `onUnhandledRequest: warn` / `c579642`) — 単独では runner ガチャ抑制に至らず。**残候補**: 仮説 E (Jest を node 直接呼出) / `--maxWorkers=1` / continue-on-error。**2026-05-29 再現**: `63ec5cc` で `shipping-form.test.tsx > handles API errors correctly` が CI fail（`●` 本文空 2 回 = OI-8 固有症状、ローカルは pass）。skip 移動の再々現であり workflow layer 修正が本筋と再確認。完全な累積観測表・次回着手手順は [`ADR-003 §2026-05-25 追加調査`](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照 |
+| ~~OI-8~~ | ~~CI flake（本文空・ローカル緑/CI赤・失敗テストがランダム移動）~~。真因確定 + 解消 2026-06-14 | ✅ 解消済み（2026-06-14） | **真因確定（2026-06-14）**: `src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma を `spyOn` していたため、CI の stub `DATABASE_URL` へバックグラウンド接続が `PrismaClientInitializationError`(P1001) で reject。その非同期 reject が同一ワーカーのプロセス境界をまたいでリークし、jest-circus が「その瞬間 current な別ファイルのテスト/フック」に `error` イベントとして帰属（P1001 の stack getter が空のためレポーターが本文を空に整形 → 「本文空」署名）。modal-provider / shipping-form / review-details はいずれも Prisma 非依存の**被害者**だった。**過去の仮説の誤り**: 仮説 A(isMounted)/B(MSW)/workflow 層はいずれも対症療法。`[FLAKE-DIAG:unhandledRejection]`(`0736735`) が沈黙したのは、真因が process の unhandledRejection ではなく jest-circus の `error` イベントだったため。**実観測手段**: 一時カスタム jsdom 環境の `handleTestEvent` で失敗イベントの生エラーを surface（`a93effe`、撤去 `756c6a9`）→ 3× P1001 を捕捉（失敗 push run `27487047124`）。**修正**: `size.test.ts` に `jest.mock("@/lib/db")` 追加（`83ef06c`）。stub DB のフルスイートで P1001 が 6+→0、review-details は CI push/PR 両 event × 2 サイクル緑で確認。**完了（2026-06-14）**: 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`）→ CI push/pull_request 両 event 2 サイクル緑 → `spec-sync-after-test`（passed 1272→1281 / skip 12→3）。手順全文（アーカイブ）: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。 |
 
 ---
 
@@ -182,7 +183,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 残課題
 
-- 現在、アクティブな残課題として **OI-8**（CI flake）および **OI-9**（ホーム `/` SSR 500）がオープンです（詳細は[アクティブな残課題テーブル](#active-open-issues)および [ADR-003](../architecture/decisions/003-modal-setopen-sync-for-react19.md#2026-05-25-追加調査と次回着手点) を参照）。
+- 現在、アクティブな残課題は **OI-9**（ホーム `/` SSR 500）のみです（詳細は[アクティブな残課題テーブル](#active-open-issues)を参照）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
@@ -233,6 +234,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | (本セッション) | CI品質ゲート改善: review-details.tsx のアクセシビリティ（button化）対応、product.ts からの未使用 getCookie 削除、およびカバレッジ向上のための5つの新規テストファイル（payments-table, reviews-container, product-list, upload-images, sidebar）作成、review.test.ts への non-Error パステスト追加（総テスト数 1193 → **1220**、スイート数 129 → **134**） |
 | `ae18ce3`〜`d88063a` | **管理者ダッシュボード Phase 1 / Task 1-A 完了**: `src/queries/order.ts` に admin 注文 query 5 種（getAllOrders [limit≤100 キャップ] / getOrderForAdmin [userId フィルタ無し] / updateOrderGroupStatusAsAdmin [親子集約 reconcileParentOrderStatus] / updateOrderItemStatusAsAdmin / updateOrderPaymentStatus [Refunded/Cancelled の親→子連動・決済 API 非呼出]）を追加。`AdminOrderType` を types.ts に追加。認可は requireAdmin()、IDOR 3 階層パターンで `order.test.ts` +24（1220 → **1242 passed**） |
 | `38a9bbe` | **SonarCloud Quality Gate (PR #133) 修復**: `order.ts` の New Code Coverage 63.4% (< 80%) を解消。`order.test.ts` に admin query 5 関数の catch エラー経路 + reconcile の Delivered/Canceled/Refunded 集約分岐 + 子0件早期 return を +9（1242 → **1251 passed**）。`order.ts` Lines 87.5%→100% / Branch 61.5%→83.3% |
+| `2d692cb`〜`0d9fba5` | **SonarCloud Quality Gate (PR #134) 修復**: New Code の Coverage 19.4% (< 80%) と Duplication 7.8% (> 3%) を解消。admin/seller `orders/columns.tsx` の重複（ProductImagesCell / ViewOrderButton）を `src/components/dashboard/shared/order-table-cells.tsx` へ抽出（重複塊を除去）、共有 + admin columns + seller columns のテスト新規 +19、`order-status-select.test.tsx` に admin 分岐・falsy レスポンスの +2（1251 → **1272 passed** / 134 → **137 スイート**）。対象4ファイル Lines 100% |
 
 ---
 

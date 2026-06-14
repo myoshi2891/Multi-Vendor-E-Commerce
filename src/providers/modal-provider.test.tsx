@@ -71,20 +71,11 @@ const OutsideComponent = () => {
     return <div>Should not render</div>;
 };
 
-// ⚠️ FILE-LEVEL SKIPPED — OI-8 (CI flake) の根本未解消につき再隔離。
-//
-// 2026-05-25 追加調査で「個別 skip / 仮説 A (isMounted 撤廃) / 仮説 B (MSW warn)」が
-// いずれも症状を完全には消せないことが確定。連鎖は modal-provider 内に留まらず
-// shipping-form.test.tsx (5851756 観察) や他の RTL + userEvent + waitFor テストへも
-// runner ガチャ的に移動する。詳細は ADR-003「後続調査」セクションを参照。
-//
-// 本ファイルは modal 隔離のため file-level skip 維持。残候補は仮説 E (Jest runner 切替)
-// と --maxWorkers=1 で、いずれも workflow ci.yml の変更を伴うため別タスクで着手予定。
-//
-// 解除判定条件: 上記いずれかで連続 5 サイクル両 event グリーンを観察。
-// 期限: 2026-06-07
-// 追跡: docs/testing/QA_HANDOFF.md "OI-8" / docs/architecture/decisions/003-modal-setopen-sync-for-react19.md
-describe.skip("ModalProvider", () => {
+// OI-8 真因（size.test.ts の Prisma 接続リーク, commit 83ef06c）解消により復活。
+// modal-provider は Prisma 非依存の被害者であり、リーク源消失で file-level skip は不要になった。
+// 経緯: docs/ci/archive/unit-tests-run-reactive.md /
+//       ADR-003 (docs/architecture/decisions/003-modal-setopen-sync-for-react19.md)
+describe("ModalProvider", () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });

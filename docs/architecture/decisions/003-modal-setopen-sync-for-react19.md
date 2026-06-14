@@ -1,6 +1,6 @@
 # 003. `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応）
 
-- **Status**: **Partial Mitigation** — 設計改善としては妥当だが **CI flake の根本解消には至らず**。2026-05-25 追加調査で仮説 A (isMounted 撤廃) / 仮説 B (MSW warn) の単独試行も決定的な解消に至らないことが確定。詳細は本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」および「[2026-05-25 追加調査](#2026-05-25-追加調査と次回着手点)」を参照
+- **Status**: **Superseded（2026-06-14）**
 - **Date**: 2026-05-24
 - **Deciders**: myoshizumi（実装）, Claude Code（調査支援）
 
@@ -205,8 +205,8 @@ flushSync(() => {
 - [x] [`.claude/skills/ci-flake-diagnosis/SKILL.md`](../../../.claude/skills/ci-flake-diagnosis/SKILL.md) Rationale に本件の教訓を追記
 - [x] [`.claude/steering/tech.md`](../../../.claude/steering/tech.md) に「Context Provider setter 同期化パターン」を追加
 - [x] [ADR-002](002-ci-jest-verbose-flag.md) の誤認部分（`--verbose` で解消した云々）を訂正
-- [ ] **CI 両 event 安定グリーン**: ❌ 未達成。詳細は [後続調査と一時スキップ判断](#後続調査と一時スキップ判断)
-- [ ] **真因解消**: 仮説 A〜F が未検証。下記セクション参照
+- [x] **CI 両 event 安定グリーン**: ✅ 達成（2026-06-14）。真因（`size.test.ts` の Prisma リーク・本 ADR とは別系統）を `83ef06c` で解消、modal-provider を `49fa32d` で un-skip し push/pull_request 両 event 2 サイクル緑
+- [x] **真因解消**: ✅ 仮説 A〜F はいずれも外れ。真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる stub DB への P1001 接続リークが jest-circus 経由で別ファイルへ「本文空」失敗として帰属していたこと。詳細は [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md)
 
 **関連コミット**:
 - `9b77c59` — 本決定の実装（`refactor(providers/modal): change setOpen to sync...`）
@@ -252,6 +252,8 @@ Context Provider / カスタムフックで setter を定義する際は:
 
 ## 後続調査と一時スキップ判断
 
+> **2026-06-14 真因確定（本セクションの結論）** — この CI flake（OI-8）の真因は **modal setOpen の async 化（本 ADR の主題）とは別系統**だった。真因は `src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma を `spyOn` していたことで、CI の stub `DATABASE_URL` へのバックグラウンド接続が `PrismaClientInitializationError`(P1001) で reject し、その非同期 reject が同一ワーカーのプロセス境界をまたいでリーク → jest-circus が「その瞬間 current な別ファイルのテスト/フック」に `error` イベントとして帰属（P1001 の stack が空のためレポーターが本文を空に整形 → 「本文空」署名）。modal-provider はこの**被害者**にすぎない。修正は `size.test.ts` への `jest.mock("@/lib/db")` 追加（commit `83ef06c`）。実観測手段・un-skip 手順は [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md) を参照。以下の 2026-05-24/05-25 の調査ログは**真因に到達する前の過程**として歴史的に残す。
+>
 > **2026-05-24 追加** — 本 ADR の修正後も CI flake が継続したため、対象テストを `it.skip` で一時退避した。次回調査の出発点として情報を集約する。
 
 ### 何が起きたか（時系列・確定事実）
@@ -335,10 +337,15 @@ Context Provider / カスタムフックで setter を定義する際は:
 | `5851756` | modal unskip (cycle 2/5 観察) | ❌ | ✅ | `fetchData ありで data マージ` |
 | `7559884` | modal 再 file-level skip | (観察対象外) | (観察対象外) | — |
 | `63ec5cc` | (modal skip 維持・コード不変) | ❌ | — | `shipping-form: handles API errors correctly` |
+| `2c1be6c` | (review-details 未変更・docs sync commit) | ❌ | ✅ | `review-details.test.tsx: should submit review successfully` |
 
 **12 観測中 5 失敗** (push 50% 成功 / pull_request 67% 成功)。完全なランダム性。
 
 > **2026-05-29 追記** — `63ec5cc` で再び CI fail（`shipping-form.test.tsx > handles API errors correctly`、`●` が本文空で 2 回列挙される OI-8 固有症状）。modal-provider は file-skip 維持・本テスト/コンポーネントは未変更で、ローカルでは単体・フルファイルとも決定的に pass。これは「skip は症状を別ファイルへ移動させるだけ」（`bacfe2e` 行）の再々現であり、**真因が RTL + fireEvent/waitFor を使うテスト全般のメタ問題である**ことを再確認した。次手は本ファイルの未着手候補（仮説 E → G）の workflow layer 修正。
+>
+> **2026-06-13 追記（review-details 新規データ点）** — `2c1be6c`（docs sync のみ・テスト/コンポーネント未変更）の **push run `27468097127` が失敗・同一 SHA の pull_request run `27468097968` は成功**。失敗は `review-details.test.tsx › should submit review successfully` で、`●` が **3 回列挙・本文すべて空白・286ms（timeout 未到達）** という OI-8 固有症状。ローカルは 8/8 pass。これは modal/shipping-form と同じメタ問題（RTL + `fireEvent` + `form.handleSubmit` の非同期 submit ライフサイクル）が **3 つ目のファイルでも env-variation flake として顕在化** した証跡であり、「真因はテストファイル境界で止まらない infra layer 問題」の追加裏付け。
+>
+> **診断インストルメンテーション投入**: `--verbose --ci` でも本文が空のままのため、`tests-setup/jest.setup.ts` に `[FLAKE-DIAG:unhandledRejection]` ラベル付きの **一時 `process.on("unhandledRejection")` リスナー**（`currentTestName` 付き・観測専用・可逆）を追加（commit `0736735`）。狙いは「Jest 30 reporter が集約して本文を出さない握り潰された rejection」のスタックを CI ログへ surface させること。**今回のセッションでは push/pull_request 各 2 サイクル（`0736735`/`9cb6021`）とも再現せず**（フレークは確率的）、能動的な reproduce→fix→5連続グリーンのループはユーザー判断で一旦中断。診断リスナーは **次回の自然再現を捕捉する受動的ネットとして残置** する。次に `[FLAKE-DIAG]` 行が CI に出たらスタックで真因を確定し、本筋の workflow layer 修正（仮説 E/G）または submit ライフサイクル確定待機を適用する。
 
 ### この調査で確定した事実
 

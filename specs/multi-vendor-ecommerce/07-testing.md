@@ -12,9 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1251 unit/component tests passing across 134 suites (12 skipped), as of 2026-06-13.
+- 1281 tests across 137 suites (3 skipped), as of 2026-06-14.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
+  - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
+    connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
+    the remaining 3 skips are the DB-gated idempotency suite.
 - 17 integration tests across 2 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 6) as of 2026-05-31.

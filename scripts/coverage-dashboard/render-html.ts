@@ -211,12 +211,12 @@ function renderFilters(matrix: Matrix): string {
 }
 
 /**
- * Render the coverage matrix into an HTML table.
+ * Renders the coverage matrix as an HTML table.
  *
- * Produces a table with domain columns and category rows; each cell is annotated with status, file count, and a tooltip listing files and metadata.
+ * Creates a table with domains as columns and categories as rows. Each cell displays the coverage status, file count, and a tooltip containing file paths with test counts and coverage metrics.
  *
- * @param matrix - The coverage matrix containing summary counts and per-category/per-domain cell data to render
- * @returns An HTML string containing a <table> element that represents the coverage matrix, with domain headers, category rows, and status-annotated cells (including file counts and tooltips)
+ * @param matrix - The coverage matrix containing summary data and per-cell information
+ * @returns An HTML string containing the rendered matrix table
  */
 function renderMatrix(matrix: Matrix): string {
     const head = `
@@ -248,7 +248,7 @@ function renderMatrix(matrix: Matrix): string {
               const files = cell.files
                   .map(
                       (f) =>
-                          `<li><code>${escapeHtml(f.path)}</code> <span class="file__count">${f.testCount} cases${f.hasSkip ? " · <em>skip</em>" : ""}${f.linePct !== null ? ` · ${f.linePct}%` : ""}</span></li>`
+                          `<li><code>${escapeHtml(f.path)}</code> <span class="file__count">${f.testCount} ${f.testCount === 1 ? "case" : "cases"}${f.hasSkip ? " · <em>skip</em>" : ""}${f.linePct !== null ? ` · ${f.linePct}%` : ""}</span></li>`
                   )
                   .join("");
               const tooltipContent = `
