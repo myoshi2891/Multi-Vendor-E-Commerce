@@ -495,7 +495,7 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 
 | 課題 | 詳細 | 優先度 |
 |------|------|--------|
-| **modal-provider テスト CI flake (OI-8)** | `src/providers/modal-provider.test.tsx:95` の `[P1] モーダルを開くと...` を CI flake のため `it.skip`。設計改善 (ADR-003) では根治できず、6 仮説が未検証。詳細: [ADR-003 後続調査](architecture/decisions/003-modal-setopen-sync-for-react19.md#後続調査と一時スキップ判断) / [QA_HANDOFF.md OI-8](testing/QA_HANDOFF.md)。期限 2026-06-07 | 中 |
+| ~~modal-provider テスト CI flake (OI-8)~~ | ✅ **解消済み（2026-06-14）**。真因は modal-provider ではなく `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ modal-provider 9 件を un-skip（`49fa32d`）。詳細: [docs/ci/archive/unit-tests-run-reactive.md](ci/archive/unit-tests-run-reactive.md) | - |
 | Elasticsearch 未実装 | `src/lib/elastic-search.ts` がコメントアウト中。全文検索は現在 tsvector で代替 | 低 |
 | E2E シード不安定 | 解消済み: CI環境で PostgreSQL コンテナを使用し、`seed-idempotency` ジョブで冪等性を検証完了 (OI-5) | - |
 | E2E テスト網羅不足 | `TEST_IMPLEMENTATION_PLAN.md` の P1/P2 スイートが未実装 | 中 |

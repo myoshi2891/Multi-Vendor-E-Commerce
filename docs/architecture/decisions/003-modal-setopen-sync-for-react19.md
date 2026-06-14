@@ -1,6 +1,6 @@
 # 003. `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応）
 
-- **Status**: **Partial Mitigation** — 設計改善としては妥当だが **CI flake の根本解消には至らず**。2026-05-25 追加調査で仮説 A (isMounted 撤廃) / 仮説 B (MSW warn) の単独試行も決定的な解消に至らないことが確定。詳細は本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」および「[2026-05-25 追加調査](#2026-05-25-追加調査と次回着手点)」を参照
+- **Status**: **Superseded（2026-06-14）** — 本 ADR の `setOpen` 同期化は設計改善として維持されるが、OI-8 CI flake の**真因は本 ADR の主題（modal `setOpen` の async 化）とは別系統**だった。真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる stub DB への Prisma 接続リーク（P1001）で、`83ef06c` で解消。modal-provider は被害者にすぎず `49fa32d` で un-skip 済み（CI push/pull_request 両 event 2 サイクル緑）。旧 Status は「Partial Mitigation」。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md)。追加調査ログは本 ADR 末尾「[後続調査と一時スキップ判断](#後続調査と一時スキップ判断)」を参照
 - **Date**: 2026-05-24
 - **Deciders**: myoshizumi（実装）, Claude Code（調査支援）
 
@@ -205,8 +205,8 @@ flushSync(() => {
 - [x] [`.claude/skills/ci-flake-diagnosis/SKILL.md`](../../../.claude/skills/ci-flake-diagnosis/SKILL.md) Rationale に本件の教訓を追記
 - [x] [`.claude/steering/tech.md`](../../../.claude/steering/tech.md) に「Context Provider setter 同期化パターン」を追加
 - [x] [ADR-002](002-ci-jest-verbose-flag.md) の誤認部分（`--verbose` で解消した云々）を訂正
-- [ ] **CI 両 event 安定グリーン**: ❌ 未達成。詳細は [後続調査と一時スキップ判断](#後続調査と一時スキップ判断)
-- [ ] **真因解消**: 仮説 A〜F が未検証。下記セクション参照
+- [x] **CI 両 event 安定グリーン**: ✅ 達成（2026-06-14）。真因（`size.test.ts` の Prisma リーク・本 ADR とは別系統）を `83ef06c` で解消、modal-provider を `49fa32d` で un-skip し push/pull_request 両 event 2 サイクル緑
+- [x] **真因解消**: ✅ 仮説 A〜F はいずれも外れ。真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる stub DB への P1001 接続リークが jest-circus 経由で別ファイルへ「本文空」失敗として帰属していたこと。詳細は [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md)
 
 **関連コミット**:
 - `9b77c59` — 本決定の実装（`refactor(providers/modal): change setOpen to sync...`）
@@ -252,7 +252,7 @@ Context Provider / カスタムフックで setter を定義する際は:
 
 ## 後続調査と一時スキップ判断
 
-> **2026-06-14 真因確定（本セクションの結論）** — この CI flake（OI-8）の真因は **modal setOpen の async 化（本 ADR の主題）とは別系統**だった。真因は `src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma を `spyOn` していたことで、CI の stub `DATABASE_URL` へのバックグラウンド接続が `PrismaClientInitializationError`(P1001) で reject し、その非同期 reject が同一ワーカーのプロセス境界をまたいでリーク → jest-circus が「その瞬間 current な別ファイルのテスト/フック」に `error` イベントとして帰属（P1001 の stack が空のためレポーターが本文を空に整形 → 「本文空」署名）。modal-provider はこの**被害者**にすぎない。修正は `size.test.ts` への `jest.mock("@/lib/db")` 追加（commit `83ef06c`）。実観測手段・un-skip 手順は [`docs/ci/unit-tests-run-reactive.md`](../../ci/unit-tests-run-reactive.md) を参照。以下の 2026-05-24/05-25 の調査ログは**真因に到達する前の過程**として歴史的に残す。
+> **2026-06-14 真因確定（本セクションの結論）** — この CI flake（OI-8）の真因は **modal setOpen の async 化（本 ADR の主題）とは別系統**だった。真因は `src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma を `spyOn` していたことで、CI の stub `DATABASE_URL` へのバックグラウンド接続が `PrismaClientInitializationError`(P1001) で reject し、その非同期 reject が同一ワーカーのプロセス境界をまたいでリーク → jest-circus が「その瞬間 current な別ファイルのテスト/フック」に `error` イベントとして帰属（P1001 の stack が空のためレポーターが本文を空に整形 → 「本文空」署名）。modal-provider はこの**被害者**にすぎない。修正は `size.test.ts` への `jest.mock("@/lib/db")` 追加（commit `83ef06c`）。実観測手段・un-skip 手順は [`docs/ci/archive/unit-tests-run-reactive.md`](../../ci/archive/unit-tests-run-reactive.md) を参照。以下の 2026-05-24/05-25 の調査ログは**真因に到達する前の過程**として歴史的に残す。
 >
 > **2026-05-24 追加** — 本 ADR の修正後も CI flake が継続したため、対象テストを `it.skip` で一時退避した。次回調査の出発点として情報を集約する。
 

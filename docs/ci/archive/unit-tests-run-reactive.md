@@ -1,7 +1,7 @@
-# OI-8 CI フレーク — 真因確定・review-details 修正済み・modal-provider un-skip 引き継ぎ
+# OI-8 CI フレーク — 完全クローズ（真因確定・解消・modal-provider un-skip 完了）【アーカイブ】
 
-> **Status**: 真因確定 + review-details 解消（2026-06-14）。**残: modal-provider 9 件の un-skip（次セッション）**。
-> SSOT は [`docs/testing/QA_HANDOFF.md`](../testing/QA_HANDOFF.md) の OI-8 行。本ファイルは真因の技術詳細と un-skip 手順の引き継ぎ。
+> **Status**: ✅ **完全クローズ（2026-06-14）** — 真因解消（`size.test.ts` の Prisma 接続リーク, `83ef06c`）+ 被害者だった `modal-provider.test.tsx` 9 件の un-skip（`49fa32d`）+ CI push/pull_request 両 event 2 サイクル緑 + `spec-sync-after-test`（1272→1281 passed / skip 12→3）完了。本ファイルは解決済み issue のアーカイブ記録。
+> SSOT は [`docs/testing/QA_HANDOFF.md`](../../testing/QA_HANDOFF.md) の OI-8 行（監査証跡）。本ファイルは真因の技術詳細と un-skip 手順の記録。
 
 ---
 
@@ -58,13 +58,17 @@ P1001/circus キャプチャ **0 件**を 2 サイクル確認。
 
 ---
 
-## 4. 引き継ぎ: modal-provider 9 件の un-skip 手順（次セッション）
+## 4. 引き継ぎ: modal-provider 9 件の un-skip 手順（✅ 2026-06-14 完了）
+
+> ✅ **全 Step 完了（2026-06-14）**: Step 1（un-skip `49fa32d`）/ Step 2（ローカル 30x FAIL 0・stub DB P1001 = 0）/
+> Step 3（CI push/pull_request 両 event 2 サイクル緑）/ Step 4（`spec-sync-after-test`、1272→1281 / skip 12→3）/
+> Step 5（本ファイルを `docs/ci/archive/` へ移動・ADR-003 Status 更新）。以下は実施記録。
 
 **前提**: 真因（size.test.ts の Prisma リーク）は commit `83ef06c` で根絶済み。modal-provider は
 Prisma 非依存の被害者なので、リーク源が消えた今は un-skip して安定するはず。
 
 ### Step 1 — un-skip
-- [`src/providers/modal-provider.test.tsx`](../../src/providers/modal-provider.test.tsx) の L87 付近
+- [`src/providers/modal-provider.test.tsx`](../../../src/providers/modal-provider.test.tsx) の L87 付近
   `describe.skip("ModalProvider", () => {` を `describe("ModalProvider", () => {` に戻す。
 - 同ファイル冒頭 L74-86 の「FILE-LEVEL SKIPPED — OI-8」コメントブロックを削除し、
   代わりに「OI-8 真因（size.test.ts Prisma リーク）解消により復活（本ファイル参照）」の 1 行に置換。
@@ -93,7 +97,7 @@ DATABASE_URL='postgresql://stub:stub@localhost:5432/stub' DIRECT_URL='postgresql
 - QA_HANDOFF / COVERAGE_REPORT の OI-8 行をクローズ（解消済みアーカイブへ移動）。
 
 ### Step 5 — クリーンアップ
-- 本ファイル（`docs/ci/unit-tests-run-reactive.md`）の Status を「完全クローズ」に更新。
+- 本ファイル（`docs/ci/archive/unit-tests-run-reactive.md`）の Status を「完全クローズ」に更新済み。
 - ADR-003 の OI-8 追加調査セクションに最終結論（Prisma リーク真因・解消）を追記。
 
 ---
@@ -103,6 +107,6 @@ DATABASE_URL='postgresql://stub:stub@localhost:5432/stub' DIRECT_URL='postgresql
 - 修正 commit: `83ef06c`（`fix(test): mock @/lib/db in size.test.ts ...`）
 - 診断 commit: `a93effe`（custom env + uncaughtException 計装）/ 撤去: `756c6a9`
 - 真因の event-pair 証跡: 失敗 push run `27487047124`（`[FLAKE-DIAG:circus:test_done(errors=3)]` = 3× P1001）
-- 関連: [`docs/testing/QA_HANDOFF.md`](../testing/QA_HANDOFF.md) OI-8 行（SSOT）/
-  [`docs/architecture/decisions/003-modal-setopen-sync-for-react19.md`](../architecture/decisions/003-modal-setopen-sync-for-react19.md)
+- 関連: [`docs/testing/QA_HANDOFF.md`](../../testing/QA_HANDOFF.md) OI-8 行（SSOT）/
+  [`docs/architecture/decisions/003-modal-setopen-sync-for-react19.md`](../../architecture/decisions/003-modal-setopen-sync-for-react19.md)
 - skill: `ci-flake-diagnosis`（「コード修正前に真因を実観測」— 本件はその原則の実践例）
