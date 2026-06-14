@@ -10,6 +10,20 @@ jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
 }));
 
+// 2. @/lib/db をモック化（実 Prisma クライアントを生成させない）
+//    他の src/queries/*.test.ts と異なり本ファイルは実 db を spyOn していたため、
+//    db.size へのアクセスで Prisma エンジンが遅延初期化され、CI の stub DATABASE_URL では
+//    localhost:5432 へのバックグラウンド接続が P1001(PrismaClientInitializationError)で reject。
+//    その非同期 reject がワーカーのプロセス境界をまたいでリークし、jest-circus がその瞬間
+//    current な別ファイルのテスト(例: review-details)に「本文空」失敗として帰属させていた
+//    (OI-8 フレークの真因)。モック化で実クライアント生成を断ち、リーク源を根絶する。
+jest.mock("@/lib/db", () => ({
+    db: {
+        store: { findUnique: jest.fn() },
+        size: { findMany: jest.fn(), count: jest.fn() },
+    },
+}));
+
 describe("getFilteredSizes", () => {
     it("should return filtered sizes with count when all filters are provided", async () => {
         const mockStore = {
