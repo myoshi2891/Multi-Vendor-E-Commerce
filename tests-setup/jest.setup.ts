@@ -87,16 +87,31 @@ try {
 // 一度だけ登録し、afterAll で解除して「同時に最大 1 リスナー」を保証する。
 const FLAKE_DIAG_UNHANDLED_REJECTION_KEY = "__flakeDiagUnhandledRejectionListenerInstalled__";
 
+const currentTestName = (): string => {
+  if (typeof expect !== "undefined" && typeof expect.getState === "function") {
+    return expect.getState().currentTestName ?? "unknown";
+  }
+  return "unknown";
+};
+
 const unhandledRejectionListener = (reason: unknown): void => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
-  const current =
-    typeof expect !== "undefined" && typeof expect.getState === "function"
-      ? expect.getState().currentTestName
-      : undefined;
   console.error(
-    `[FLAKE-DIAG:unhandledRejection] test="${current ?? "unknown"}"`,
+    `[FLAKE-DIAG:unhandledRejection] test="${currentTestName()}"`,
     err.message,
     err.stack,
+  );
+};
+
+// unhandledRejection と対になる uncaughtException も観測する。jest-circus が
+// current テストへ帰属させて「本文空」失敗にする経路が rejection 由来か例外スロー由来かを
+// 切り分けるため、両系統を surface する。
+const uncaughtExceptionListener = (err: unknown): void => {
+  const e = err instanceof Error ? err : new Error(String(err));
+  console.error(
+    `[FLAKE-DIAG:uncaughtException] test="${currentTestName()}"`,
+    e.message,
+    e.stack,
   );
 };
 
@@ -104,10 +119,14 @@ const flakeDiagGlobals = globalThis as Record<string, unknown>;
 
 if (!flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY]) {
   process.on("unhandledRejection", unhandledRejectionListener);
+  process.on("uncaughtException", uncaughtExceptionListener);
+  // 計装が実際に登録されたことを 1 度だけ surface（沈黙が「未登録」由来でないことの確認）。
+  console.error("[FLAKE-DIAG:installed] process listeners registered");
   flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY] = true;
 }
 
 afterAll(() => {
   process.off("unhandledRejection", unhandledRejectionListener);
+  process.off("uncaughtException", uncaughtExceptionListener);
   flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY] = false;
 });

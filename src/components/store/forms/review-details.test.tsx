@@ -1,4 +1,6 @@
-/** @jest-environment jsdom */
+/** @jest-environment <rootDir>/tests-setup/flake-diag-jsdom-env.cjs */
+// [FLAKE-DIAG OI-8] TEMP — 上記 docblock は診断用カスタム jsdom 環境(handleTestEvent で
+// 失敗エラーの生オブジェクトを surface)。root-cause 後に `jsdom` へ戻し、環境ファイルを削除する。
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -110,16 +112,7 @@ describe('ReviewDetails Component Tests', () => {
         jest.clearAllMocks();
     });
 
-    afterEach(async () => {
-        // RHF mode:'onChange' は field.onChange ごとに非同期バリデーション(isValid)を走らせ、
-        // その setState はテスト本体の act 外でマイクロ/マクロタスクとして着地する。RTL の
-        // 自動 cleanup(global afterEach=unmount)より先に、describe スコープの本 afterEach で
-        // act 内に保留タスクを drain し、リーク更新を「マウント中コンポーネントへの act 内更新」
-        // として確定フラッシュする。これにより後続テストへ波及する act 外リーク
-        // (OI-8 CI フレーク: 同名テスト3回・本文空) を境界で封じ込める。
-        await act(async () => {
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        });
+    afterEach(() => {
         jest.restoreAllMocks();
     });
 
@@ -301,28 +294,17 @@ describe('ReviewDetails Component Tests', () => {
             value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
             configurable: true
         });
-        // RHF mode:'onChange' は field.onChange ごとに非同期バリデーション(isValid)を走らせ、
-        // その setState は同期 fireEvent 完了後のマイクロタスクで着地する。act で包んで act 内に
-        // 確定フラッシュし、act 外リーク(OI-8 CI フレーク: jest.setup.ts / docs/ci 参照)を封じる。
-        await act(async () => {
-            fireEvent.click(star, { clientX: 30 }); // 3.0
-        });
+        fireEvent.click(star, { clientX: 30 }); // 3.0
 
         // サイズの入力 (Select size プレースホルダーが複数あるため getAll で最初の要素を選択)
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
-        await act(async () => {
-            fireEvent.focus(sizeInput);
-        });
+        fireEvent.focus(sizeInput);
         const sizeOption = screen.getByText('One Size');
-        await act(async () => {
-            fireEvent.mouseDown(sizeOption);
-        });
+        fireEvent.mouseDown(sizeOption);
 
         // レビュー内容の入力
         const textarea = screen.getByPlaceholderText('Write your review here...');
-        await act(async () => {
-            fireEvent.change(textarea, { target: { value: 'Good product!' } });
-        });
+        fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
         // RHF の非同期バリデーション → handleSubmit → upsertReview の Promise チェーンを
@@ -365,25 +347,15 @@ describe('ReviewDetails Component Tests', () => {
             value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
             configurable: true
         });
-        // RHF mode:'onChange' の非同期バリデーション(isValid)setState を act 内に確定フラッシュし、
-        // act 外リーク(OI-8 CI フレーク: jest.setup.ts / docs/ci 参照)を封じる。
-        await act(async () => {
-            fireEvent.click(star, { clientX: 30 }); // 3.0
-        });
+        fireEvent.click(star, { clientX: 30 }); // 3.0
 
         const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
-        await act(async () => {
-            fireEvent.focus(sizeInput);
-        });
+        fireEvent.focus(sizeInput);
         const sizeOption = screen.getByText('One Size');
-        await act(async () => {
-            fireEvent.mouseDown(sizeOption);
-        });
+        fireEvent.mouseDown(sizeOption);
 
         const textarea = screen.getByPlaceholderText('Write your review here...');
-        await act(async () => {
-            fireEvent.change(textarea, { target: { value: 'Good product!' } });
-        });
+        fireEvent.change(textarea, { target: { value: 'Good product!' } });
 
         const submitBtn = screen.getByRole('button', { name: 'Submit Review' });
         // reject された upsertReview の catch チェーンを act 内で確定的にフラッシュする
