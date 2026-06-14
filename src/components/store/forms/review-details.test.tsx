@@ -110,7 +110,16 @@ describe('ReviewDetails Component Tests', () => {
         jest.clearAllMocks();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        // RHF mode:'onChange' は field.onChange ごとに非同期バリデーション(isValid)を走らせ、
+        // その setState はテスト本体の act 外でマイクロ/マクロタスクとして着地する。RTL の
+        // 自動 cleanup(global afterEach=unmount)より先に、describe スコープの本 afterEach で
+        // act 内に保留タスクを drain し、リーク更新を「マウント中コンポーネントへの act 内更新」
+        // として確定フラッシュする。これにより後続テストへ波及する act 外リーク
+        // (OI-8 CI フレーク: 同名テスト3回・本文空) を境界で封じ込める。
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
         jest.restoreAllMocks();
     });
 
