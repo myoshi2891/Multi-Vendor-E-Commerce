@@ -81,7 +81,13 @@ try {
 // review-details.test.tsx の「3×バレット・本文空」OI-8 症状は、--verbose でも本文が出ない
 // = console.error ではなく unhandledRejection が Jest reporter に集約されている可能性が高い。
 // この一時リスナーで真因スタックを可視化する（観測専用。通常の assertion 失敗には影響しない）。
-process.on("unhandledRejection", (reason: unknown) => {
+// Jest は setupFilesAfterEach をテストファイルごとに再評価するため、素の
+// process.on(...) はワーカー内でファイル数分だけリスナーを累積させ
+// MaxListenersExceededWarning と [FLAKE-DIAG] 行の重複を招く。グローバルフラグで
+// 一度だけ登録し、afterAll で解除して「同時に最大 1 リスナー」を保証する。
+const FLAKE_DIAG_UNHANDLED_REJECTION_KEY = "__flakeDiagUnhandledRejectionListenerInstalled__";
+
+const unhandledRejectionListener = (reason: unknown): void => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const current =
     typeof expect !== "undefined" && typeof expect.getState === "function"
@@ -92,4 +98,16 @@ process.on("unhandledRejection", (reason: unknown) => {
     err.message,
     err.stack,
   );
+};
+
+const flakeDiagGlobals = globalThis as Record<string, unknown>;
+
+if (!flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY]) {
+  process.on("unhandledRejection", unhandledRejectionListener);
+  flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY] = true;
+}
+
+afterAll(() => {
+  process.off("unhandledRejection", unhandledRejectionListener);
+  flakeDiagGlobals[FLAKE_DIAG_UNHANDLED_REJECTION_KEY] = false;
 });
