@@ -252,6 +252,8 @@ Context Provider / カスタムフックで setter を定義する際は:
 
 ## 後続調査と一時スキップ判断
 
+> **2026-06-14 真因確定（本セクションの結論）** — この CI flake（OI-8）の真因は **modal setOpen の async 化（本 ADR の主題）とは別系統**だった。真因は `src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma を `spyOn` していたことで、CI の stub `DATABASE_URL` へのバックグラウンド接続が `PrismaClientInitializationError`(P1001) で reject し、その非同期 reject が同一ワーカーのプロセス境界をまたいでリーク → jest-circus が「その瞬間 current な別ファイルのテスト/フック」に `error` イベントとして帰属（P1001 の stack が空のためレポーターが本文を空に整形 → 「本文空」署名）。modal-provider はこの**被害者**にすぎない。修正は `size.test.ts` への `jest.mock("@/lib/db")` 追加（commit `83ef06c`）。実観測手段・un-skip 手順は [`docs/ci/unit-tests-run-reactive.md`](../../ci/unit-tests-run-reactive.md) を参照。以下の 2026-05-24/05-25 の調査ログは**真因に到達する前の過程**として歴史的に残す。
+>
 > **2026-05-24 追加** — 本 ADR の修正後も CI flake が継続したため、対象テストを `it.skip` で一時退避した。次回調査の出発点として情報を集約する。
 
 ### 何が起きたか（時系列・確定事実）

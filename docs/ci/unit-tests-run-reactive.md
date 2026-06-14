@@ -1,138 +1,108 @@
-# Plan: review-details "should submit review successfully" CI フレーク診断
+# OI-8 CI フレーク — 真因確定・review-details 修正済み・modal-provider un-skip 引き継ぎ
 
-## Context
+> **Status**: 真因確定 + review-details 解消（2026-06-14）。**残: modal-provider 9 件の un-skip（次セッション）**。
+> SSOT は [`docs/testing/QA_HANDOFF.md`](../testing/QA_HANDOFF.md) の OI-8 行。本ファイルは真因の技術詳細と un-skip 手順の引き継ぎ。
 
-`review-details.test.tsx › should submit review successfully` が CI でのみ間欠失敗。
-**事実確定（ci-flake-diagnosis Step 1, event-pair 対比）**:
+---
 
-| 項目 | 観測 |
-|------|------|
-| 同一 SHA `2c1be6c` の結果差 | push run `27468097127` = **failure** / pull_request run `27468097968` = **success** |
-| 失敗ログ | `1 failed, 12 skipped, 1271 passed`。`● ...should submit review successfully` が **3 回列挙・本文すべて空白**、所要 286ms（timeout 未到達） |
-| ローカル | 1272 全 pass |
-| 既存の診断フラグ | CI は既に `bunx jest --verbose --ci --coverage`（ADR-002）。**それでも本文が空** |
-| 過去の修正試行 | `13a8c45`(act でラップ), `e74bba3`, `06fbe73` — いずれも未解決 |
+## 1. 結論（先に要点）
 
-**分類**: パターン A（環境変動 flake）＋ パターン D / OI-8 の署名（3×バレット・本文空・非timeout）。
-通常の assertion 失敗ではなく、React 19 strict act mode の cleanup 段階で **握り潰された非同期 work**（unhandled rejection）がテストに帰属している。
+OI-8（同名テスト 2〜3 回列挙・**本文すべて空**・ローカル緑/CI 赤・失敗テストがランダムに移動）の**真因**は、
+`modal-provider` / `shipping-form` / `review-details` といったテスト本体ではなく、
 
-**真因仮説**: `form.handleSubmit(handleSubmit)`（RHF）の非同期チェーン
-（validation → `await upsertReview` → `setReviews`/`toast` → `isSubmitting:false` re-render）のうち、
-末尾の `isSubmitting` 再レンダリングが、`await act(() => fireEvent.click())` 退出後・`waitFor` 再進入前に
-低速 runner 上で着地し、act 外 state 更新としてフレーク化している。
-`--verbose` でも本文が空 = console.error ではなく **unhandledRejection** が真因の可能性が高い
-（Jest 30 reporter が集約し本文を出さない）。
+> **`src/queries/size.test.ts` が `@/lib/db` をモックせず実 Prisma クライアントを `spyOn` していたため、
+> CI の stub `DATABASE_URL`（`localhost:5432`）に対しバックグラウンド接続が
+> `PrismaClientInitializationError`（P1001）で reject。その非同期 reject が同一ワーカーの
+> プロセス境界をまたいでリークし、jest-circus が「その瞬間 current な別ファイルのテスト/フック」に
+> `error` イベントとして帰属させていた。**
 
-**ゴール**: コードを投機的に書き換える前に、握り潰された rejection のスタックを CI ログに surface させ、
-真因を観測してから最小修正する（skill Step 3 「コード修正の前に必ず実施」）。
+P1001 エラーの `stack` getter が空文字のため、Jest レポーターが失敗本文を空に整形 → 「本文空」署名。
+帰属先がランダムなのは、リーク reject が surface する瞬間にどのテストが走っているかに依存するため。
 
-## Approach（診断ファースト・確定事項）
+**修正**: `size.test.ts` に `jest.mock("@/lib/db")` を追加（commit `83ef06c`）。実クライアント生成を断ち、
+接続リークを根絶。review-details は CI で push/pull_request 両 event のグリーン + Unit Tests ジョブの
+P1001/circus キャプチャ **0 件**を 2 サイクル確認。
 
-ユーザー決定: **unhandledRejection リスナーをグローバル `jest.setup.ts` に追加**（診断のみ・可逆）。
+---
 
-### Step A — 診断インストルメンテーション（commit 1）
+## 2. なぜ過去の調査で外したか（教訓）
 
-`tests-setup/jest.setup.ts` の末尾に、`[FLAKE-DIAG]` ラベル付き・**1 リスナー**を追加:
+| 過去の仮定 | 実際 |
+|------------|------|
+| 「modal setOpen の async が原因」(ADR-003 仮説 A) | 別系統。modal-provider は被害者 |
+| 「MSW onUnhandledRequest が throw 化」(仮説 B) | 別系統 |
+| 「workflow 層（`--maxWorkers=1` / `continue-on-error`）が本筋」 | 対症療法。真因はテスト内の Prisma リーク |
+| 「`[FLAKE-DIAG:unhandledRejection]` で捕まるはず」（commit `0736735`） | **沈黙の理由が判明**: 真因は process の `unhandledRejection` ではなく jest-circus の `error` イベント。process リスナーでは捕捉できない |
 
-```ts
-// [FLAKE-DIAG OI-8] TEMP — remove after review-details flake root-caused (QA_HANDOFF OI-8 / Step 6)
-// 握り潰された unhandled rejection を、どのテスト実行中かと共に CI ログへ surface させる。
-// 通常の assertion 失敗には影響しない（観測専用）。
-process.on("unhandledRejection", (reason: unknown) => {
-    const err = reason instanceof Error ? reason : new Error(String(reason));
-    const current =
-        typeof expect !== "undefined" && typeof expect.getState === "function"
-            ? expect.getState().currentTestName
-            : undefined;
-    console.error(
-        `[FLAKE-DIAG:unhandledRejection] test="${current ?? "unknown"}"`,
-        err.message,
-        err.stack,
-    );
-});
-```
+**決定打**: jest-circus の `handleTestEvent` をフックする一時カスタム jsdom 環境を作り、
+失敗イベント（`test_fn_failure` / `test_done(errors>0)` / `error`）の**生エラーオブジェクト**を
+`util.inspect(showHidden)` で CI ログへ surface（commit `a93effe`、観測後 `756c6a9` で撤去）。
+これで「本文空」の正体が P1001 だと実観測できた。
 
-- `unknown` + `instanceof Error` 型ガード（CLAUDE.md 規約準拠、`any` 不使用）。
-- `expect.getState().currentTestName` で帰属テストを特定。
-- グローバル登録のため `beforeAll` 不要だが、重複登録回避のためファイルトップレベルで 1 回のみ。
-- commit: `chore(test): add temporary unhandledRejection diagnostics for OI-8 review-details flake`
-  （診断のみの独立 commit。rule 02 のフェーズ分離に従い、修正・docs とは別 commit）
+> **再利用メモ**: 「本文空・ランダム帰属」署名を再び見たら、`process.on` リスナーではなく
+> **custom environment + `handleTestEvent`** で生エラーを掴むのが最短。レポーターが空にする失敗は
+> circus イベント層でしか正体が見えない。
 
-### Step B — CI で再現させ真のスタックを観測（push）
+---
+
+## 3. 影響範囲（OI-8 は単一真因の複数被害者だった）
+
+| ファイル | 状態 | 本修正後 |
+|----------|------|----------|
+| `review-details.test.tsx` | アクティブ失敗（被害者・Prisma 非依存） | ✅ 解消（CI 2 サイクル緑で確認） |
+| `tests/component/store/shipping-form.test.tsx` | 過渡的被害者（現在 skip なし・pass） | ✅ リーク源消失で再発しない見込み |
+| `src/providers/modal-provider.test.tsx` | **`describe.skip` で 9 件 skip 中**（被害者・Prisma 非依存） | ⏳ **un-skip 可能（次セッション・下記 §4）** |
+
+決定論的裏付け: stub `DATABASE_URL` でフルユニットスイートを実行し、修正前後で
+`PrismaClientInitializationError`(P1001) が **6+ → 0**（Build ジョブのビルド時 Prisma ログは別件・無関係）。
+
+---
+
+## 4. 引き継ぎ: modal-provider 9 件の un-skip 手順（次セッション）
+
+**前提**: 真因（size.test.ts の Prisma リーク）は commit `83ef06c` で根絶済み。modal-provider は
+Prisma 非依存の被害者なので、リーク源が消えた今は un-skip して安定するはず。
+
+### Step 1 — un-skip
+- [`src/providers/modal-provider.test.tsx`](../../src/providers/modal-provider.test.tsx) の L87 付近
+  `describe.skip("ModalProvider", () => {` を `describe("ModalProvider", () => {` に戻す。
+- 同ファイル冒頭 L74-86 の「FILE-LEVEL SKIPPED — OI-8」コメントブロックを削除し、
+  代わりに「OI-8 真因（size.test.ts Prisma リーク）解消により復活（本ファイル参照）」の 1 行に置換。
+
+### Step 2 — ローカル検証（決定論シグナル）
 
 ```bash
-git push origin dev
-gh run watch                       # 完了まで待機
-# 失敗 run を取得して診断行を抽出
-gh run view <RUN_ID> --log 2>&1 | grep -A 30 "\[FLAKE-DIAG:unhandledRejection\].*should submit review"
+# 1) modal-provider 単体ループ（act/flake 兆候の有無）
+for i in $(seq 1 30); do bunx jest src/providers/modal-provider.test.tsx --silent || echo "RUN $i FAIL"; done
+# 2) stub DB でフルスイートに P1001 が出ないこと（リーク源ゼロの再確認）
+DATABASE_URL='postgresql://stub:stub@localhost:5432/stub' DIRECT_URL='postgresql://stub:stub@localhost:5432/stub' \
+  bun run test 2>&1 | grep -cE "P1001|PrismaClientInitialization"   # → 0 期待
 ```
 
-フレークは 1 push で再発しないことがある → 最大 3 回まで空コミットで再現を待つ:
+- `test-complete`（lint / tsc / test）緑を確認。
 
-```bash
-git commit --allow-empty -m "chore: rerun CI for OI-8 review-details flake reproduction"
-git push
-```
+### Step 3 — CI 検証（push/pull_request 両 event）
+- push 後、`modal-provider.test.tsx` が PASS かつ「本文空」失敗が出ないことを複数サイクル確認。
+- 念のため一時的に §2 の custom-environment 診断を再投入してもよいが、リーク源は消えているため不要の見込み。
 
-**判断**: `[FLAKE-DIAG]` 行が surface したスタックで真因を確定してから Step C に進む。
-surface しない（= rejection ではなく act-warning が真因）場合は、診断を console.error 監視へ
-切り替える別案を再評価する（本プランの想定外分岐）。
+### Step 4 — テスト統計の同期（**skip 9→0 で総数が変わる → `spec-sync-after-test` 必須**）
+- 期待値: `Skipped 12 → 3`（idempotency 3 のみ残）、`passed 1272 → 1281`（modal-provider 9 復活）、suites の skip も 2→1。
+- `spec-sync-after-test` skill を起動し、**SSOT = `QA_HANDOFF.md`** から
+  `PROGRESS.md` / `07-testing.md` / `COVERAGE_REPORT.md` / `docs/coverage-dashboard.html`（`bun run coverage:dashboard`）へ伝播。
+- カバレッジ: `hooks ◐`（modal-provider skip が理由）→ 実測再評価（✦/◐ はヒートマップ規則に従う）。
+- QA_HANDOFF / COVERAGE_REPORT の OI-8 行をクローズ（解消済みアーカイブへ移動）。
 
-### Step C — 観測結果に基づく最小修正（commit 2, 別 PR/commit）
+### Step 5 — クリーンアップ
+- 本ファイル（`docs/ci/unit-tests-run-reactive.md`）の Status を「完全クローズ」に更新。
+- ADR-003 の OI-8 追加調査セクションに最終結論（Prisma リーク真因・解消）を追記。
 
-最有力の修正（観測で裏付けが取れた場合）:
-`review-details.test.tsx` の `should submit review successfully` 末尾に、
-**送信ライフサイクルの完了（isSubmitting=false 復帰）を act 内で確定フラッシュ**する待機を追加。
+---
 
-```ts
-// 既存 waitFor の後に、ローダー解除（isSubmitting=false 再レンダリング）を待機して
-// 末尾の state 更新を act 内で確定フラッシュする
-await waitFor(() =>
-    expect(
-        screen.getByRole("button", { name: "Submit Review" }),
-    ).toBeInTheDocument(),
-);
-```
+## 5. 参照
 
-- Provider setter 同期化（skill パターン D の標準処方）は本ケースに**写像しない**
-  （RHF submit ライフサイクル由来で、同期化できる Context setter が存在しない）。
-- 真因が component 側（`handleSubmit` の post-await state 更新）にあると判明した場合のみ
-  component を触る。原則テスト側の確定待機で解決を優先。
-- commit: `test(review): settle submit lifecycle to fix OI-8 CI flake`
-
-### Step D — 安定確認 → 診断ロールバック（commit 3, skill Step 6）
-
-- 修正後 **5 連続グリーン**（push/pull_request 両 event）を確認するまで「修正成功」と即断しない
-  （skill Rationale の過去の誤認教訓）。
-- 5 連続グリーン後、Step A のリスナーを削除。
-  commit: `chore(test): remove temporary OI-8 diagnostics after review-details flake fixed`
-- `--verbose` は ADR-002 管理下のため本プランでは触らない（別判断軸）。
-
-### Step E — docs 同期
-
-- テスト**数**は変わらない（修正のみ）想定 → `spec-sync-after-test` 不要。
-- ただし OI-8 の調査記録として `docs/testing/QA_HANDOFF.md` の該当 Open Issue と
-  `docs/architecture/decisions/003-*.md` 後続調査セクションに、本フレークの event-pair 証跡と
-  確定した真因・修正 commit を追記（skill CONDITIONAL / 追跡 doc 規定）。
-
-## 変更ファイル（代表）
-
-- `tests-setup/jest.setup.ts` — 診断リスナー追加（Step A）/ 削除（Step D）
-- `src/components/store/forms/review-details.test.tsx` — 末尾待機追加（Step C）
-- `docs/testing/QA_HANDOFF.md`, `docs/architecture/decisions/003-modal-setopen-sync-for-react19.md` — 記録（Step E）
-
-## 検証
-
-1. **診断が効くこと**: Step B で `[FLAKE-DIAG:unhandledRejection] test="...should submit review successfully"` 行が
-   失敗 run のログに出ること（出れば真因スタック取得、出なければ分岐再評価）。
-2. **修正の有効性**: Step C 後、ローカル `bunx jest src/components/store/forms/review-details.test.tsx` 全 pass、
-   かつ CI で **push/pull_request 両 event × 5 連続グリーン**。
-3. **回帰なし**: `bun run test`（全体）でテスト総数不変・他スイート緑。
-4. **ロールバック**: Step D 後、`jest.setup.ts` に `[FLAKE-DIAG]` が残っていないこと（grep ゼロ）。
-
-## 禁止事項（skill 準拠）
-
-- `jest.retryTimes` でフレーク吸収しない。
-- 真因スタックを観測する前に test code を投機的に書き換えない（Step B → C の順序厳守）。
-- 「1 サイクル両グリーン = 完了」と即断しない（5 連続が基準）。
-- 診断・修正・docs・ロールバックを 1 commit に混ぜない（rule 02 フェーズ分離）。
+- 修正 commit: `83ef06c`（`fix(test): mock @/lib/db in size.test.ts ...`）
+- 診断 commit: `a93effe`（custom env + uncaughtException 計装）/ 撤去: `756c6a9`
+- 真因の event-pair 証跡: 失敗 push run `27487047124`（`[FLAKE-DIAG:circus:test_done(errors=3)]` = 3× P1001）
+- 関連: [`docs/testing/QA_HANDOFF.md`](../testing/QA_HANDOFF.md) OI-8 行（SSOT）/
+  [`docs/architecture/decisions/003-modal-setopen-sync-for-react19.md`](../architecture/decisions/003-modal-setopen-sync-for-react19.md)
+- skill: `ci-flake-diagnosis`（「コード修正前に真因を実観測」— 本件はその原則の実践例）
