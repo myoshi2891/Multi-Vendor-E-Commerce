@@ -156,6 +156,34 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-16: 管理者ダッシュボード Phase 3 完了（F3 クーポン横断管理）
+
+#### 概要
+
+`docs/design/admin-dashboard/tasks.md` の **Phase 3（F3-第1段 クーポン横断管理）を完結**。`Coupon.isActive` スキーマ追加・admin クーポン query 4 種・Zod スキーマ・admin クーポン UI + SonarCloud QG 修復（PR #138）まで含めた全タスク（3-A〜3-E）が完了。詳細は下記「SonarCloud QG 修復（PR #138）」エントリを参照。
+
+#### 実施内容（主要コミット）
+
+| Task | 対象 | コミット |
+|------|------|---------|
+| 3-A（schema） | `Coupon.isActive Boolean @default(true)` 追加・ERD 再生成 | `b4095bd` / `bc95656` |
+| 3-B（isActive 再検証） | `applyCoupon` / `placeOrder` の `isActive=false` ガード | `b4095bd` / `669ad3d` |
+| 3-C（admin query） | `getAllCoupons` / `upsertCouponAsAdmin`(P2002) / `deleteCouponAsAdmin` / `toggleCouponActive` | `c4693b1` Red / `982c765` Green |
+| 3-D（Zod） | `AdminCouponFormSchema`（`isActive` + `storeId` 含む） | `958af7a` |
+| 3-E（UI）+ QG 修復 | admin coupon pages / columns / `admin-coupon-details.tsx` / `CouponFormFields` 共有コンポーネント抽出 | `31dcf68`〜`9d12e90`（PR #138） |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前（Phase 2 完了時） | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1302 passed | **1387 passed** |
+| スイート数 | 137 | **143** |
+| 型エラー | 0 件 | **0 件** |
+
+> **次の着手**: Phase 4（null セーフ化先行）— `coupon.store?.name` 等の Phase 5 スキーマ変更前の防御リファクタ。
+
+---
+
 ### 2026-06-16: SonarCloud Quality Gate 修復（PR #138・coupon カバレッジ + 重複解消）
 
 #### 概要

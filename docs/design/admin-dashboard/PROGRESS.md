@@ -6,11 +6,12 @@
 
 ---
 
-## 🧭 現在地（2026-06-15 時点）
+## 🧭 現在地（2026-06-16 時点）
 
 - ✅ **Phase 1（F2 注文管理）完了** — 1-A〜1-D すべて実装・検証済み。
 - ✅ **Phase 2（F1 ダッシュボード統計）完了** — 2-A（統計 query）+ 2-B（KPI カード / 売上チャート / 最近リスト UI）を実装・検証済み（2026-06-15）。
-- 👉 **次の着手: Phase 3（F3 クーポン横断管理）の 3-A**（`Coupon.isActive` スキーマ追加 + ERD 再生成）。
+- ✅ **Phase 3（F3 クーポン横断管理）完了** — 3-A〜3-E すべて実装・SonarCloud QG 修復済み（2026-06-16）。
+- 👉 **次の着手: Phase 4（null セーフ化先行）**（Phase 5 スキーマ破壊変更の前提）。
 - Phase 5 は破壊的変更のため `safe-migration` 必須。
 
 ---
@@ -45,23 +46,25 @@
 
 ---
 
-## Phase 3: F3-第1段 クーポン横断管理 + isActive 列 ⬜ 未着手 👈 次はここ
+## Phase 3: F3-第1段 クーポン横断管理 + isActive 列 ✅ 完了（2026-06-16）
 
-| Task | 内容 | 状態 |
-| --- | --- | --- |
-| 3-A | スキーマ第1段（`Coupon.isActive` 追加・`migrate dev`・後方互換）+ ERD 再生成 | ⬜ |
-| 3-B | `isActive` 再検証（`placeOrder` / `applyCoupon`） | ⬜ |
-| 3-C | admin クーポン query（`getAllCoupons` / `upsertCouponAsAdmin` (P2002) / `deleteCouponAsAdmin` / `toggleCouponActive`） | ⬜ |
-| 3-D | Zod `AdminCouponFormSchema` | ⬜ |
-| 3-E | F3 UI（coupons ページ・columns・admin フォーム） | ⬜ |
+| Task | 内容 | 状態 | コミット / 備考 |
+| --- | --- | --- | --- |
+| 3-A | スキーマ第1段（`Coupon.isActive` 追加・`migrate dev`・後方互換）+ ERD 再生成 | ✅ | `b4095bd` / `bc95656` |
+| 3-B | `isActive` 再検証（`placeOrder` / `applyCoupon`） | ✅ | `669ad3d`（placeOrder）/ `b4095bd`（applyCoupon） |
+| 3-C | admin クーポン query（`getAllCoupons` / `upsertCouponAsAdmin` (P2002) / `deleteCouponAsAdmin` / `toggleCouponActive`） | ✅ | `c4693b1` Red / `982c765` Green |
+| 3-D | Zod `AdminCouponFormSchema` | ✅ | `958af7a` |
+| 3-E | F3 UI（coupons ページ・columns・admin フォーム）+ SonarCloud QG 修復（CouponFormFields 抽出・カバレッジ追加） | ✅ | `31dcf68`〜`9d12e90`（2026-06-16 QG 修復） |
+
+> **検証**: tsc 0 / lint 0 errors / test 1387 passed / SonarCloud QG Green（PR #138）。
 
 ---
 
-## Phase 4: 下位互換性確保（null セーフ化先行・スキーマ非変更）⬜ 未着手
+## Phase 4: 下位互換性確保（null セーフ化先行・スキーマ非変更）⬜ 未着手 👈 次はここ
 
 | Task | 内容 | 状態 |
 | --- | --- | --- |
-| 4-1〜4-4 | `applyCoupon` / `saveUserCart` / `getStoreCoupons`・UI の `coupon.store` null セーフ化（直列・振る舞い不変の防御のみ） | ⬜ |
+| 4-1〜4-4 | `applyCoupon` / `saveUserCart`（確認のみ）/ UI の `coupon.store` null セーフ化（直列・振る舞い不変の防御のみ） | ⬜ |
 
 ---
 
