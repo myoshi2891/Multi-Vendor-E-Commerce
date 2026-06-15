@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1302 passed / 1305 total / 138 スイート（3 skipped）** — 2026-06-15 Phase 2 F1 `dashboard.test.ts` 新規追加（+21 tests / +1 suite、`f871919`–`0f42b91`）。前回 2026-06-14 は OI-8 解消（1272→1281 / skip 12→3 / `49fa32d`）|
+| Jestユニットテスト | **1328 passed / 1331 total / 141 スイート（3 skipped）** — 2026-06-15 SonarCloud QG 修復（PR #136）: dashboard catch ブロック +8 + admin コンポーネント 4 本 +18（`750374b`–`ef091c3`）。前回 2026-06-15 は Phase 2 F1（1281→1302 / `f871919`–`0f42b91`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -561,6 +561,32 @@ docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新す
 ```
 /spec-sync-check
 ```
+
+---
+
+### SonarCloud Quality Gate 修復（PR #136）(2026-06-15)
+
+#### 概要
+
+PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query の catch ブロックテストと admin dashboard 4 コンポーネントのテストを追加。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/dashboard.test.ts` | getSalesOverTime / getRecentOrders / getRecentStores / getAdminDashboardStats の catch ブロック（Error / 非-Error 両分岐）+8 | `750374b` |
+| `tests/component/dashboard/admin/stats-cards.test.tsx` | 新規作成（KPI カード 8 ラベル・数値フォーマット +3 テスト） | `686e45a` |
+| `tests/component/dashboard/admin/recent-orders.test.tsx` | 新規作成（注文リスト・空状態・日付フォーマット +3 テスト） | `b29b4d5` |
+| `tests/component/dashboard/admin/sales-chart.test.tsx` | 新規作成（period="daily"/"monthly" 分岐・デフォルト値 +4 テスト） | `9f98ff5` |
+| `tests/component/dashboard/admin/recent-stores.test.tsx` | 新規作成（STATUS_LABEL/VARIANT 全分岐・?? フォールバック +8 テスト） | `ef091c3` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1302 passed / 1305 total | **1328 passed / 1331 total** |
+| スイート数 | 138 | **141** |
+| 型エラー | 0 件 | **0 件** |
 
 ---
 

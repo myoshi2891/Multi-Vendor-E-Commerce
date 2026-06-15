@@ -11,8 +11,8 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **150** (Jest unit/component 143 / Jest integration 2 / Playwright 5) — 2026-06-13 注文テーブル重複解消（order-table-cells / admin orders columns / seller orders columns テスト +3） |
-| テスト総数 | **1302 unit/component passed** (3 skipped) + **17 integration** — 2026-06-15 時点（Phase 2 F1 dashboard.test.ts 新規追加 +21：1281→1302 / 138 スイート）。残 3 skip は DB ゲートの idempotency suite |
+| テストファイル総数 | **154** (Jest unit/component 147 / Jest integration 2 / Playwright 5) — 2026-06-15 SonarCloud Quality Gate 修復（admin dashboard コンポーネント 4 本テスト追加） |
+| テスト総数 | **1328 unit/component passed** (3 skipped) + **17 integration** — 2026-06-15 時点（SonarCloud QG 修復：dashboard catch ブロック +8 / admin コンポーネント 4 本 +18：1302→1328 / 141 スイート）。残 3 skip は DB ゲートの idempotency suite |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
@@ -298,3 +298,4 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-06-13 | **SonarCloud Quality Gate (PR #134) 修復**: New Code の Coverage 19.4% (< 80%) と Duplication 7.8% (> 3%) が `SonarCloud Code Analysis` チェックを落としていた（GitHub Actions ジョブは `continue-on-error` で緑だが、Sonar アプリが別経路で貼る Quality Gate ステータスは赤）。admin/seller の `orders/columns.tsx` に重複していた `ProductImagesCell` / `ViewOrderButton` を `src/components/dashboard/shared/order-table-cells.tsx` へ抽出（重複塊を除去）。共有 + admin columns + seller columns のテストを新規 +19、`order-status-select.test.tsx` に admin 分岐・falsy レスポンスを +2（テスト総数 1251 → **1272 passed**、テストファイル総数 147 → **150**、スイート 134 → **137**）。対象4ファイル Lines 100% (commits `2d692cb`〜`0d9fba5`). |
 | 2026-06-14 | **OI-8 クローズ（modal-provider un-skip）**: CI flake の真因（`src/queries/size.test.ts` が `@/lib/db` 未モックで実 Prisma を `spyOn` → stub DB に P1001 接続リーク → jest-circus が別ファイルへ「本文空」失敗を帰属）は `83ef06c` で根絶済み。被害者だった `modal-provider.test.tsx` の file-level skip を解除し 9 件を un-skip（テスト総数 1272 → **1281 passed**、skip 12→3、suites skip 2→1、テストファイル/スイート総数不変）。ローカル 30x ループ FAIL 0 / stub DB フルスイート P1001 = 0、CI push/pull_request 両 event 緑。ヒートマップ `Unit × hooks` ◐→✦（`modal-provider.tsx` lcov 32/33 = 97%） (commit `49fa32d` + 本コミット). |
 | 2026-06-15 | **Phase 2 F1 ダッシュボード統計 query 実装**: `src/queries/dashboard.ts` 新規（`getAdminDashboardStats` + `getSalesOverTime` + `getRecentOrders` + `getRecentStores`）。`dashboard.test.ts` 21 件追加（認可 3 階層・Paid のみ集計・isDeleted 除外・売上チャート・最近リスト）。TDD Red→Green 4 コミット。テスト総数 1281 → **1302 passed**、スイート 137 → **138** (commits `f871919`〜`0f42b91`). |
+| 2026-06-15 | **SonarCloud Quality Gate (PR #136) 修復**: New Code Coverage 46.0%（< 80%）を解消。`dashboard.ts` catch ブロック（Error / 非-Error 両分岐）を `dashboard.test.ts` に +8。admin dashboard コンポーネント 4 本（stats-cards / recent-orders / sales-chart / recent-stores）のテストを新規作成（`tests/component/dashboard/admin/`、+18 テスト / +4 スイート）。`@tremor/react AreaChart` は jsdom モック。テスト総数 1302 → **1328 passed**、スイート 138 → **141** (commits `750374b`–`ef091c3`). |

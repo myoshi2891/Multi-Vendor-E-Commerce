@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-15 / **HEAD**: `4ed7fdd`
+> **最終更新**: 2026-06-15 / **HEAD**: `ef091c3`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1302** passed / 1305 total / 138 スイート（137 passed + 1 skipped）— 2026-06-15 Phase 2 F1 ダッシュボード統計 query 実装に伴い `src/queries/dashboard.test.ts` を新規追加（`f871919`–`0f42b91`）：1281→1302 passed / +21 tests / +1 suite。前回（2026-06-14）OI-8 解消（`49fa32d`）：1272→1281 passed / skip 12→3 / suites skip 2→1 |
+| Jest テスト総数 (unit/component) | **1328** passed / 1331 total / 141 スイート（141 passed + 1 skipped）— 2026-06-15 SonarCloud Quality Gate 修復（PR #136）: dashboard query の catch ブロックテスト +8（`750374b`）+ admin dashboard コンポーネント 4 本のテスト新規追加 stats-cards/recent-orders/sales-chart/recent-stores +18（`686e45a`–`ef091c3`）：1302→1328 passed / +4 suite |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -239,6 +239,8 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `f871919`〜`0f42b91` | **Phase 2 F1 ダッシュボード統計 query**: `src/queries/dashboard.ts` 新規（getAdminDashboardStats / getSalesOverTime / getRecentOrders / getRecentStores）+ `dashboard.test.ts` 21 件（認可 3 階層・境界条件・売上チャート・最近リスト）。TDD Red→Green で実装。1281 → **1302 passed** / +1 suite |
 | `2e25f08` | docs: Phase 2 F1 query テスト後の仕様書・カバレッジダッシュボード一括同期（`spec-sync-after-test`） |
 | `4ed7fdd` | **Phase 2 F1 UI 完成**: `admin/page.tsx` をプレースホルダーから本体へ置換。`components/dashboard/admin/`（stats-cards / sales-chart / recent-orders / recent-stores）を新規実装。`@tremor/react AreaChart`・shadcn Card。テスト数変動なし（UI は unit テスト対象外）。 |
+| `750374b` | **SonarCloud Quality Gate 修復 (PR #136) Phase 1**: `dashboard.test.ts` に catch ブロックテスト +8（getSalesOverTime / getRecentOrders / getRecentStores / getAdminDashboardStats の Error / 非-Error 両分岐）。1302 → **1310 passed** |
+| `686e45a`–`ef091c3` | **SonarCloud Quality Gate 修復 (PR #136) Phase 2**: admin dashboard コンポーネント 4 本のテスト新規追加（tests/component/dashboard/admin/）。stats-cards +3 / recent-orders +3 / sales-chart +4 / recent-stores +8。1310 → **1328 passed** / +4 スイート |
 
 ---
 
