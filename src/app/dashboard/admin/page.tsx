@@ -11,6 +11,11 @@ import { RecentStores } from "@/components/dashboard/admin/recent-stores";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Renders the admin dashboard with statistics, sales trends, and recent activity.
+ *
+ * @returns The admin dashboard layout containing statistics cards, sales chart, and recent orders and stores.
+ */
 export default async function AdminDashboardPage() {
     const [stats, salesData, recentOrders, recentStores] = await Promise.all([
         getAdminDashboardStats(),

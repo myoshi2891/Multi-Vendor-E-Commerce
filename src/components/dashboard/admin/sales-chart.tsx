@@ -14,6 +14,11 @@ interface Props {
     period?: "daily" | "monthly";
 }
 
+/**
+ * Renders a chart card displaying sales revenue trends with values formatted as USD currency.
+ *
+ * @param props.period - The time period for the chart; "daily" displays the last 30 days, "monthly" displays the last 12 months. Defaults to "monthly".
+ */
 export function SalesChart({ data, period = "monthly" }: Props) {
     const title = period === "daily" ? "直近 30 日の売上推移" : "直近 12 ヶ月の売上推移";
 

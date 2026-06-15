@@ -30,6 +30,9 @@ const STATUS_VARIANT: Record<
     DISABLED: "outline",
 };
 
+/**
+ * Renders a dashboard card displaying recent stores with their creation dates and status badges.
+ */
 export function RecentStores({ stores }: Props) {
     return (
         <Card>
