@@ -197,6 +197,23 @@ Received: { success: false, error: "..." }
 - [ ] カバレッジ 80% 未満の箇所があればテスト追加を検討
   → `test-gen` スキルで追加可能（「XXX のテストを追加して」で実行）
 - [ ] `git add . && git commit -m "feat: ..."`
+
+## 仕様書・進捗ドキュメントの同期（フェーズ完了・機能実装時は必須）
+
+以下のいずれかに該当する場合は `spec-sync-after-test` を必ず起動する:
+- 新しいサーバーアクション（`src/queries/*.ts`）を追加した
+  → `specs/04-interfaces.md` にモジュール・関数を追記
+- 新しいページ・ワークフローを追加した（`src/app/**/*.tsx`）
+  → `specs/05-workflows.md` にフローを追記
+- Phase / Task が完了した
+  → `docs/design/*/PROGRESS.md` を `✅` に更新 + `docs/PROGRESS.md` 次アクションプロンプトを次フェーズへ置換
+- 実装で Open Question が解決した
+  → `specs/08-open-questions.md` に resolved 注記を追加
+- 新しいコミットが積まれた（テスト数変動の有無にかかわらず）
+  → `QA_HANDOFF.md` の HEAD ハッシュとコミット履歴テーブルを更新
+
+⚠️ テスト数が変動しない UI 実装・フェーズ完了でも `spec-sync-after-test` は必要。
+   「テスト数が変わっていないから不要」という判断は誤り。
 ```
 
 ---

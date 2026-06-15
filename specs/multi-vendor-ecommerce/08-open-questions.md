@@ -3,6 +3,10 @@
 - Are taxes, duties, or multi-currency pricing planned?
 - What is the intended refund and return workflow beyond status enums?
 - What analytics or reporting requirements are expected for sellers/admins?
+  *(Partially resolved — Phase 2 F1: admin KPI dashboard implemented:
+  revenue, orders, stores, users, products, categories + sales-over-time chart.
+  Seller-side analytics and advanced reporting remain out of scope for current phase.
+  See `docs/design/admin-dashboard/tasks.md` for roadmap.)*
 - Are there data retention or privacy requirements beyond auth defaults?
 
 ## Known Issues

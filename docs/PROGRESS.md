@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-05-31 時点）
+## 現在の状態（2026-06-15 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1281 passed / 1284 total / 137スイート（**3 skipped**）— 2026-06-14 OI-8 解消で modal-provider 9 件を un-skip（1272→1281 / skip 12→3 / suites skip 2→1、`49fa32d`）。残 3 skip は DB ゲートの idempotency suite。前回 2026-06-13 は PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート |
+| Jestユニットテスト | **1328 passed / 1331 total / 141 スイート（3 skipped）** — 2026-06-15 SonarCloud QG 修復（PR #136）: dashboard catch ブロック +8 + admin コンポーネント 4 本 +18（`750374b`–`ef091c3`）。前回 2026-06-15 は Phase 2 F1（1281→1302 / `f871919`–`0f42b91`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -504,24 +504,22 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 
 ## 次アクション
 
-### 0. 【最優先】管理者ダッシュボード Phase 2（F1 ダッシュボード統計）
+### 0. 【最優先】管理者ダッシュボード Phase 3（F3 クーポン横断管理）
 
-**背景**: Phase 1（F2 注文管理）は 2026-06-13 に完了。次は Phase 2（統計ダッシュボード）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
+**背景**: Phase 2（F1 ダッシュボード統計）は 2026-06-15 に完了。KPI カード・売上チャート・最近リストが `/dashboard/admin` で動作中。次は Phase 3（クーポン横断管理）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
 
 **次セッション 依頼プロンプト（コピペ可）**:
 
 ```
-docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 2（F1 ダッシュボード統計）の
-2-A を進めて。具体的には src/queries/dashboard.ts を新規作成し、getAdminDashboardStats
-（requireAdmin はキャッシュ外・Promise.all 並列集計・unstable_cache 20分）/ getSalesOverTime /
-getRecentOrders / getRecentStores を実装。Red→Green でテストを先行（非 ADMIN 拒否の認可 3 階層・
-paymentStatus=Paid のみ集計・PartiallyRefunded 全額除外・isDeleted:false の店舗カウント・
-キャッシュヒット）。完了後 2-B（KPI カード + @tremor/react チャート + 最近の注文/ストア）へ。
+docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 3（F3 クーポン横断管理）の
+3-A から進めて。具体的には Coupon モデルへの isActive 列追加（migrate dev + ERD 再生成）から始め、
+3-B（placeOrder / applyCoupon の isActive 再検証）→ 3-C（admin クーポン query）→ 3-D（Zod スキーマ）
+→ 3-E（UI）の順で実装。スキーマ変更は safe-migration スキルを使うこと。
 完了の定義は test-complete（lint/tsc/test）+ bun run build。進捗は admin-dashboard/PROGRESS.md と
 docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新すること。
 ```
 
-**注意**: query パターンは Phase 1 の `getAllOrders`（`src/queries/order.ts`）を再利用。`enum StoreStatus` は `ACTIVE`/`PENDING` を使用（`INACTIVE` は存在しない）。
+**注意**: Phase 5（platform-wide 発行）は破壊的変更のため `safe-migration` 必須・最後に単独実施。
 
 ---
 
@@ -563,6 +561,32 @@ docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新す
 ```
 /spec-sync-check
 ```
+
+---
+
+### SonarCloud Quality Gate 修復（PR #136）(2026-06-15)
+
+#### 概要
+
+PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query の catch ブロックテストと admin dashboard 4 コンポーネントのテストを追加。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/dashboard.test.ts` | getSalesOverTime / getRecentOrders / getRecentStores / getAdminDashboardStats の catch ブロック（Error / 非-Error 両分岐）+8 | `750374b` |
+| `tests/component/dashboard/admin/stats-cards.test.tsx` | 新規作成（KPI カード 8 ラベル・数値フォーマット +3 テスト） | `686e45a` |
+| `tests/component/dashboard/admin/recent-orders.test.tsx` | 新規作成（注文リスト・空状態・日付フォーマット +3 テスト） | `b29b4d5` |
+| `tests/component/dashboard/admin/sales-chart.test.tsx` | 新規作成（period="daily"/"monthly" 分岐・デフォルト値 +4 テスト） | `9f98ff5` |
+| `tests/component/dashboard/admin/recent-stores.test.tsx` | 新規作成（STATUS_LABEL/VARIANT 全分岐・?? フォールバック +8 テスト） | `ef091c3` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1302 passed / 1305 total | **1328 passed / 1331 total** |
+| スイート数 | 138 | **141** |
+| 型エラー | 0 件 | **0 件** |
 
 ---
 

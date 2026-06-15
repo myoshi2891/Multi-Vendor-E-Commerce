@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1281 tests across 137 suites (3 skipped), as of 2026-06-14.
+- 1328 tests across 141 suites (3 skipped), as of 2026-06-15.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

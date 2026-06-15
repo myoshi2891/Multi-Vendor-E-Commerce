@@ -6,11 +6,12 @@
 
 ---
 
-## 🧭 現在地（2026-06-13 時点）
+## 🧭 現在地（2026-06-15 時点）
 
 - ✅ **Phase 1（F2 注文管理）完了** — 1-A〜1-D すべて実装・検証済み。
-- 👉 **次の着手: Phase 2（F1 ダッシュボード統計）の 2-A**（`getAdminDashboardStats` 等の統計 query）。
-- Phase 3 以降（クーポン横断管理・スキーマ変更）は未着手。Phase 5 は破壊的変更のため `safe-migration` 必須。
+- ✅ **Phase 2（F1 ダッシュボード統計）完了** — 2-A（統計 query）+ 2-B（KPI カード / 売上チャート / 最近リスト UI）を実装・検証済み（2026-06-15）。
+- 👉 **次の着手: Phase 3（F3 クーポン横断管理）の 3-A**（`Coupon.isActive` スキーマ追加 + ERD 再生成）。
+- Phase 5 は破壊的変更のため `safe-migration` 必須。
 
 ---
 
@@ -33,18 +34,18 @@
 
 ---
 
-## Phase 2: F1 ダッシュボード統計 ⬜ 未着手 👈 次はここ
+## Phase 2: F1 ダッシュボード統計 ✅ 完了（2026-06-15）
 
-| Task | 内容 | 状態 |
-| --- | --- | --- |
-| 2-A | 統計 query（`src/queries/dashboard.ts` 新規）: `getAdminDashboardStats`（`Promise.all` + `unstable_cache` 20分）/ `getSalesOverTime` / `getRecentOrders` / `getRecentStores` | ⬜ |
-| 2-B | F1 UI（`admin/page.tsx` 置換 + `components/dashboard/admin/*`）: KPI カード + 売上チャート（`@tremor/react`・依存追加なし）+ 最近の注文/ストア | ⬜ |
+| Task | 内容 | 状態 | コミット / 備考 |
+| --- | --- | --- | --- |
+| 2-A | 統計 query（`src/queries/dashboard.ts` 新規）: `getAdminDashboardStats`（`Promise.all` + `unstable_cache` 20分）/ `getSalesOverTime` / `getRecentOrders` / `getRecentStores` | ✅ | `f871919`〜`0f42b91`（2026-06-15） |
+| 2-B | F1 UI（`admin/page.tsx` 置換 + `components/dashboard/admin/*`）: KPI カード + 売上チャート（`@tremor/react`・依存追加なし）+ 最近の注文/ストア | ✅ | `4ed7fdd`（2026-06-15） |
 
-> 確認済み: `enum StoreStatus` = `PENDING`/`ACTIVE`/`BANNED`/`DISABLED`。KPI は `ACTIVE`/`PENDING` を使用。
+> **検証**: tsc 0 / lint 0 errors / test 1302 passed（+21）/ 型エラー 0。
 
 ---
 
-## Phase 3: F3-第1段 クーポン横断管理 + isActive 列 ⬜ 未着手
+## Phase 3: F3-第1段 クーポン横断管理 + isActive 列 ⬜ 未着手 👈 次はここ
 
 | Task | 内容 | 状態 |
 | --- | --- | --- |

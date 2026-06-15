@@ -49,10 +49,24 @@ Dashboard:
 ## Server Actions (Queries)
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
-  home, profile, review, coupon, stripe, paypal, user, size.
+  home, profile, review, coupon, stripe, PayPal, user, size, dashboard.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
+
+### dashboard module (`src/queries/dashboard.ts`)
+
+All functions require ADMIN role via `requireAdmin()` (called outside both cache scope and `try/catch` — intentional: auth errors must propagate with their specific messages and must not be swallowed by the generic DB error handler).
+
+| Function | Description | Cache |
+|----------|-------------|-------|
+| `getAdminDashboardStats()` | Aggregates 8 KPIs in parallel (`Promise.all`): totalRevenue (Paid only), totalOrders, activeStores, pendingStores, totalUsers, totalProducts, totalCategories, totalSubCategories | `unstable_cache` 20 min, tag `admin-dashboard` |
+| `getSalesOverTime(period)` | Returns `SalesPoint[]` bucketed by day (last 30 days) or month (last 12 months). Only Paid orders. JS-side bucket aggregation. | none |
+| `getRecentOrders(limit?)` | Last N orders with `groups.store` and `shippingAddress.user` included. Default limit: 5. | none |
+| `getRecentStores(limit?)` | Last N non-deleted stores ordered by `createdAt desc`. Default limit: 5. | none |
+
+Return types: `AdminDashboardStats`, `SalesPoint[]` are exported from `dashboard.ts`.
+Revenue `Decimal` fields are converted to `number` before return (serialization-safe).
 
 ## External Services
 - Clerk for auth and user metadata.
