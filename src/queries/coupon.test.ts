@@ -505,6 +505,20 @@ describe("applyCoupon", () => {
             ).rejects.toThrow("Coupon is not valid for this date.");
         });
 
+        it("isActive=false のクーポンの場合エラーをスローする", async () => {
+            mockDb.coupon.findUnique.mockResolvedValue(
+                createMockCoupon({
+                    ...COUPON_SCENARIOS.active,
+                    isActive: false,
+                    store: createMockStore(),
+                })
+            );
+
+            await expect(
+                applyCoupon("SAVE10", "cart-001")
+            ).rejects.toThrow("This coupon has been deactivated.");
+        });
+
         it("カートが見つからない場合エラーをスローする", async () => {
             mockDb.coupon.findUnique.mockResolvedValue(
                 createMockCoupon({
