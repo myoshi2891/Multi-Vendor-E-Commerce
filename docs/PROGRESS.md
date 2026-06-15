@@ -590,6 +590,36 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 
 ---
 
+---
+
+### Phase 3 F3-第1段: クーポン横断管理 + isActive 列追加 (2026-06-15)
+
+#### 概要
+
+`Coupon.isActive` 列追加（後方互換）を起点に、管理者による全ストアクーポン横断管理（一覧・作成・削除・有効/無効トグル）を実装。`applyCoupon`・`placeOrder` の二重防御で無効クーポンを注文確定まで遮断する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` | `Coupon.isActive Boolean @default(true)` 追加 + migrate + ERD 再生成 | `d5d5284` |
+| `src/queries/coupon.ts` | `applyCoupon` Step 2.5 に isActive チェック追加 | `b4095bd` |
+| `src/queries/user.ts` | `placeOrder` クーポン適用条件に `&& isActive === true` 追加 | `669ad3d` |
+| `src/queries/coupon.ts` | admin query 4 種追加（getAllCoupons / upsertCouponAsAdmin / deleteCouponAsAdmin / toggleCouponActive） | `982c765` |
+| `src/lib/schemas.ts` | `AdminCouponFormSchema`（isActive + storeId optional）追加 | `958af7a` |
+| `src/app/dashboard/admin/coupons/` | page.tsx + columns.tsx（Store 列 + Active バッジ）+ new/page.tsx 新規実装 | `31dcf68`, `eb996d0` |
+| `src/components/dashboard/forms/admin-coupon-details.tsx` | isActive Switch 付き admin フォームコンポーネント新規実装 | `31dcf68` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1328 passed / 1331 total | **1348 passed / 1351 total** |
+| スイート数 | 141 | **141** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

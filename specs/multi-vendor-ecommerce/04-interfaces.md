@@ -68,6 +68,23 @@ All functions require ADMIN role via `requireAdmin()` (called outside both cache
 Return types: `AdminDashboardStats`, `SalesPoint[]` are exported from `dashboard.ts`.
 Revenue `Decimal` fields are converted to `number` before return (serialization-safe).
 
+### coupon module (`src/queries/coupon.ts`) — admin functions
+
+Admin-only functions require ADMIN role via `requireAdmin()` (outside `try/catch` per auth-guard convention). Seller functions use `requireStoreOwner(storeUrl)`.
+
+| Function | Permission | Description |
+|----------|-----------|-------------|
+| `getAllCoupons()` | Admin | All-store coupon list with `store` included. Max 100 rows. |
+| `upsertCouponAsAdmin(coupon)` | Admin | Create/update coupon. P2002 unique violation → Japanese error message. |
+| `deleteCouponAsAdmin(couponId)` | Admin | Delete coupon without store ownership check. |
+| `toggleCouponActive(couponId)` | Admin | Flip `isActive` boolean. Returns updated coupon. |
+| `upsertCoupon(coupon, storeUrl)` | Seller | Create/update coupon for own store (IDOR-guarded via `requireStoreOwner`). |
+| `getStoreCoupons(storeUrl)` | Seller | Own-store coupons only. |
+| `deleteCoupon(couponId, storeUrl)` | Seller | Delete own-store coupon. |
+| `applyCoupon(code, cartId)` | Public | Apply coupon to cart. Validates date range, `isActive`, store match. |
+
+`Coupon.isActive Boolean @default(true)` added in Phase 3 F3-第1段 (migration `20260615075233`).
+
 ## External Services
 - Clerk for auth and user metadata.
 - Stripe and PayPal for payments.

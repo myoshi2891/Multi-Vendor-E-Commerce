@@ -26,6 +26,11 @@
    `getSalesOverTime()`, and inspect recent orders/stores at a glance.
 3) Manage categories, subcategories, and offer tags.
 4) Review store listings and update store status.
+5) Manage coupons across all stores (`/dashboard/admin/coupons`):
+   - View all-store coupon list with store name and Active/Inactive status badge.
+   - Toggle `isActive` per coupon to immediately deactivate without changing dates.
+   - Delete any coupon regardless of store ownership.
+   - Create new coupons via `upsertCouponAsAdmin()` (P2002 → Japanese error message).
 
 ## Auth and Role Sync
 1) User signs up or updates profile in Clerk.
