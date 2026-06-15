@@ -1,5 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { getAdminDashboardStats } from "./dashboard";
+import {
+    getAdminDashboardStats,
+    getSalesOverTime,
+    getRecentOrders,
+    getRecentStores,
+} from "./dashboard";
 import { TEST_CONFIG } from "../config/test-config";
 import { Prisma } from "@prisma/client";
 
@@ -256,6 +261,220 @@ describe("getAdminDashboardStats", () => {
                 totalCategories: 5,
                 totalSubCategories: 15,
             });
+        });
+    });
+});
+
+// ==================================================
+// getSalesOverTime
+// ==================================================
+describe("getSalesOverTime", () => {
+    describe("認証・権限エラー", () => {
+        it("非 ADMIN ユーザーはスローする", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            // Act & Assert
+            await expect(getSalesOverTime()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("monthly モードで Paid 注文を月次バケットに集計する", async () => {
+            // Arrange: 2024-01 に $100、2024-02 に $200
+            mockDb.order.findMany.mockResolvedValue([
+                {
+                    createdAt: new Date("2024-01-15"),
+                    total: new Prisma.Decimal("100.00"),
+                },
+                {
+                    createdAt: new Date("2024-02-10"),
+                    total: new Prisma.Decimal("200.00"),
+                },
+            ]);
+
+            // Act
+            const result = await getSalesOverTime("monthly");
+
+            // Assert: paymentStatus=Paid フィルタが付いていること
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({ paymentStatus: "Paid" }),
+                })
+            );
+            expect(result).toEqual([
+                { label: "2024-01", revenue: 100 },
+                { label: "2024-02", revenue: 200 },
+            ]);
+        });
+
+        it("daily モードで 'YYYY-MM-DD' ラベルを返す", async () => {
+            // Arrange
+            mockDb.order.findMany.mockResolvedValue([
+                {
+                    createdAt: new Date("2024-03-05"),
+                    total: new Prisma.Decimal("50.00"),
+                },
+            ]);
+
+            // Act
+            const result = await getSalesOverTime("daily");
+
+            // Assert
+            expect(result[0].label).toBe("2024-03-05");
+            expect(result[0].revenue).toBe(50);
+        });
+
+        it("注文がない場合は空配列を返す", async () => {
+            // Arrange
+            mockDb.order.findMany.mockResolvedValue([]);
+
+            // Act
+            const result = await getSalesOverTime();
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it("同じ月の注文は合算される", async () => {
+            // Arrange: 2024-01 に 2 件
+            mockDb.order.findMany.mockResolvedValue([
+                {
+                    createdAt: new Date("2024-01-10"),
+                    total: new Prisma.Decimal("100.00"),
+                },
+                {
+                    createdAt: new Date("2024-01-20"),
+                    total: new Prisma.Decimal("150.00"),
+                },
+            ]);
+
+            // Act
+            const result = await getSalesOverTime("monthly");
+
+            // Assert: 同一月は合算されて 1 エントリ
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual({ label: "2024-01", revenue: 250 });
+        });
+    });
+});
+
+// ==================================================
+// getRecentOrders
+// ==================================================
+describe("getRecentOrders", () => {
+    describe("認証・権限エラー", () => {
+        it("非 ADMIN ユーザーはスローする", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            // Act & Assert
+            await expect(getRecentOrders()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("デフォルト limit=5 で注文を降順取得する", async () => {
+            // Arrange
+            const mockOrders = [{ id: "order-1" }, { id: "order-2" }];
+            mockDb.order.findMany.mockResolvedValue(mockOrders);
+
+            // Act
+            const result = await getRecentOrders();
+
+            // Assert
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    orderBy: { createdAt: "desc" },
+                    take: 5,
+                })
+            );
+            expect(result).toEqual(mockOrders);
+        });
+
+        it("limit を指定すると指定件数で取得する", async () => {
+            // Arrange
+            mockDb.order.findMany.mockResolvedValue([]);
+
+            // Act
+            await getRecentOrders(3);
+
+            // Assert
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ take: 3 })
+            );
+        });
+    });
+});
+
+// ==================================================
+// getRecentStores
+// ==================================================
+describe("getRecentStores", () => {
+    describe("認証・権限エラー", () => {
+        it("非 ADMIN ユーザーはスローする", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            // Act & Assert
+            await expect(getRecentStores()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("isDeleted=false のストアのみ降順で取得する", async () => {
+            // Arrange
+            const mockStores = [{ id: "store-1" }, { id: "store-2" }];
+            mockDb.store.findMany.mockResolvedValue(mockStores);
+
+            // Act
+            const result = await getRecentStores();
+
+            // Assert
+            expect(mockDb.store.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { isDeleted: false },
+                    orderBy: { createdAt: "desc" },
+                    take: 5,
+                })
+            );
+            expect(result).toEqual(mockStores);
         });
     });
 });
