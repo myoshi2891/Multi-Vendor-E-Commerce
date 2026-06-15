@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-15 / **HEAD**: `eb996d0`
+> **最終更新**: 2026-06-16 / **HEAD**: `9d12e90`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1348** passed / 1351 total / 141 スイート（140 passed + 1 skipped）— 2026-06-15 Phase 3 F3-第1段: Coupon.isActive 列 + applyCoupon/placeOrder 再検証 + admin クーポン query 4 種（`f506cc9`–`eb996d0`）：1328→1348 passed / スイート変動なし |
+| Jest テスト総数 (unit/component) | **1387** passed / 1390 total / 143 スイート（143 passed + 1 skipped suite）— 2026-06-16 SonarCloud QG 修復（PR #138）: CouponFormFields 抽出 / coupon.ts 残ブランチカバー / columns.tsx テスト / admin-coupon-details.tsx コンポーネントテスト 10 件（`a80e4be`–`df53785`）：1348→1387 passed / 141→143 スイート |
 | Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -246,6 +246,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `750374b` | **SonarCloud Quality Gate 修復 (PR #136) Phase 1**: `dashboard.test.ts` に catch ブロックテスト +8（getSalesOverTime / getRecentOrders / getRecentStores / getAdminDashboardStats の Error / 非-Error 両分岐）。1302 → **1310 passed** |
 | `686e45a`–`ef091c3` | **SonarCloud Quality Gate 修復 (PR #136) Phase 2**: admin dashboard コンポーネント 4 本のテスト新規追加（tests/component/dashboard/admin/）。stats-cards +3 / recent-orders +3 / sales-chart +4 / recent-stores +8。1310 → **1328 passed** / +4 スイート |
 | `d5d5284`–`eb996d0` | **Phase 3 F3-第1段 クーポン横断管理 + isActive 列追加**: `Coupon.isActive Boolean @default(true)` 追加 + migrate + ERD 再生成。`applyCoupon`・`placeOrder` に isActive 再検証追加（TDD）。admin クーポン query 4 種（getAllCoupons / upsertCouponAsAdmin / deleteCouponAsAdmin / toggleCouponActive）実装。`AdminCouponFormSchema` 追加。`/dashboard/admin/coupons/` UI（page / columns / form）新規実装。1328 → **1348 passed** / スイート変動なし |
+| `a80e4be`–`9d12e90` | **SonarCloud QG 修復（PR #138）**: CouponFormFields 共有コンポーネント抽出（重複解消） / coupon.ts 残ブランチカバー / columns.tsx テスト追加 / admin-coupon-details.tsx コンポーネントテスト 10 件 / storeId 正規化 fix。1348 → **1387 passed** / 141 → **143** スイート |
 
 ---
 
