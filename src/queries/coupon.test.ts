@@ -1082,4 +1082,176 @@ describe("toggleCouponActive", () => {
             ).rejects.toThrow("Coupon not found.");
         });
     });
+
+    describe("エラーハンドリング", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("エラーハンドリング: DBエラーをログ出力しラップしてスローする", async () => {
+            // Arrange
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => undefined);
+            const coupon = createMockCoupon({ isActive: true });
+            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+            mockDb.coupon.update.mockRejectedValue(new Error("DB update failed"));
+
+            // Act & Assert
+            await expect(
+                toggleCouponActive("coupon-001")
+            ).rejects.toThrow(
+                "Error occurred while toggling coupon active state"
+            );
+            expect(consoleSpy).toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+
+        it("エッジケース: ガードエラーに類似したDB例外はそのままリスローされる", async () => {
+            // isGuardError(error) = true 分岐のカバレッジ
+            // Arrange
+            const coupon = createMockCoupon({ isActive: true });
+            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+            mockDb.coupon.update.mockRejectedValue(new Error("Unauthenticated."));
+
+            // Act & Assert
+            await expect(
+                toggleCouponActive("coupon-001")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+    });
+});
+
+// ==================================================
+// upsertCouponAsAdmin — バリデーション・エラーハンドリング追加
+// ==================================================
+describe("upsertCouponAsAdmin (バリデーション・エラーハンドリング追加)", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+            privateMetadata: { role: "ADMIN" },
+        });
+    });
+
+    it("異常系: couponがnullの場合エラーをスローする", async () => {
+        // Arrange / Act / Assert
+        await expect(
+            upsertCouponAsAdmin(null as never)
+        ).rejects.toThrow("Please provide coupon data.");
+    });
+
+    it("異常系: storeIdが空の場合エラーをスローする", async () => {
+        // Arrange
+        const coupon = createMockCoupon({ storeId: "" });
+
+        // Act & Assert
+        await expect(
+            upsertCouponAsAdmin(coupon as never)
+        ).rejects.toThrow("Please provide a valid store ID.");
+    });
+
+    it("エラーハンドリング: 非P2002 DBエラーをログ出力しラップしてスローする", async () => {
+        // Arrange
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+        const coupon = createMockCoupon();
+        mockDb.coupon.upsert.mockRejectedValue(new Error("DB connection failed"));
+
+        // Act & Assert
+        await expect(
+            upsertCouponAsAdmin(coupon as never)
+        ).rejects.toThrow("Error occurred while upserting coupon");
+        expect(consoleSpy).toHaveBeenCalled();
+        consoleSpy.mockRestore();
+    });
+});
+
+// ==================================================
+// getAllCoupons — エラーハンドリング追加
+// ==================================================
+describe("getAllCoupons (エラーハンドリング追加)", () => {
+    it("エラーハンドリング: DBエラーをログ出力しラップしてスローする", async () => {
+        // Arrange
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+            privateMetadata: { role: "ADMIN" },
+        });
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+        mockDb.coupon.findMany.mockRejectedValue(new Error("DB connection failed"));
+
+        // Act & Assert
+        await expect(getAllCoupons()).rejects.toThrow(
+            "Error occurred while fetching all coupons."
+        );
+        expect(consoleSpy).toHaveBeenCalled();
+        consoleSpy.mockRestore();
+    });
+});
+
+// ==================================================
+// deleteCouponAsAdmin — エラーハンドリング追加
+// ==================================================
+describe("deleteCouponAsAdmin (エラーハンドリング追加)", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+            privateMetadata: { role: "ADMIN" },
+        });
+    });
+
+    it("エラーハンドリング: DBエラーをログ出力しラップしてスローする", async () => {
+        // Arrange
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+        mockDb.coupon.delete.mockRejectedValue(new Error("DB connection failed"));
+
+        // Act & Assert
+        await expect(
+            deleteCouponAsAdmin("coupon-001")
+        ).rejects.toThrow("Error occurred while deleting coupon");
+        expect(consoleSpy).toHaveBeenCalled();
+        consoleSpy.mockRestore();
+    });
+
+    it("エッジケース: ガードエラーに類似したDB例外はそのままリスローされる", async () => {
+        // isGuardError(error) = true 分岐のカバレッジ
+        // Arrange
+        mockDb.coupon.delete.mockRejectedValue(new Error("Unauthenticated."));
+
+        // Act & Assert
+        await expect(
+            deleteCouponAsAdmin("coupon-001")
+        ).rejects.toThrow("Unauthenticated.");
+    });
+});
+
+// ==================================================
+// deleteCoupon — エッジケース追加
+// ==================================================
+describe("deleteCoupon (エッジケース追加)", () => {
+    it("境界値: delete が null を返した場合 false を返す", async () => {
+        // Arrange
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+            privateMetadata: { role: "SELLER" },
+        });
+        mockDb.store.findUnique.mockResolvedValue(createMockStore());
+        mockDb.coupon.delete.mockResolvedValue(null);
+
+        // Act
+        const result = await deleteCoupon(
+            "coupon-001",
+            TEST_CONFIG.TEST_STORE_URL
+        );
+
+        // Assert
+        expect(result).toBe(false);
+    });
 });
