@@ -156,6 +156,33 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-16: 管理者ダッシュボード Phase 4 完了（null セーフ化先行リファクタ）
+
+#### 概要
+
+`docs/design/admin-dashboard/tasks.md` の **Phase 4（下位互換性確保ステップ）を完結**。Phase 5 で `Coupon.storeId` が nullable になる前に、`coupon.store` を参照する箇所を null セーフ化。振る舞いは変えず（現状 storeId は必須のため fallback は使用されない）、スキーマ変更後の安全着地を保証する。
+
+#### 実施内容
+
+| Task | 対象 | コミット |
+|------|------|---------|
+| 4-1 | `src/queries/coupon.ts:294` applyCoupon メッセージの `coupon.store.name` → `?.name ?? '全店舗'` | `04c9636` |
+| 4-2 | `src/queries/user.ts:1135-1150` saveUserCart 確認 → ternary ガード済みのため変更不要 | — |
+| 4-3 | `src/components/store/cards/place-order.tsx:127` + `src/app/dashboard/admin/coupons/columns.tsx:62` の `coupon.store.name` → null セーフ | `a977236` |
+| 4-4 | tsc 0 errors / test 1387 passed / lint 0 errors 検証 | — |
+
+#### テスト統計（変動なし）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1387 passed | **1387 passed**（変動なし・リファクタのみ） |
+| スイート数 | 143 | 143 |
+| 型エラー | 0 件 | **0 件** |
+
+> **次の着手**: Phase 5（F3-第2段 platform-wide 発行）— `safe-migration` skill 必須・破壊的・厳格な直列。
+
+---
+
 ### 2026-06-16: 管理者ダッシュボード Phase 3 完了（F3 クーポン横断管理）
 
 #### 概要
@@ -253,7 +280,7 @@ PR #134（`dev → main`）の `SonarCloud Code Analysis` チェックが Qualit
 | `tests/component/dashboard/order-status-select.test.tsx` | 既存 3 render に `mode="seller"` 付与（テスト数不変・新規ケースなし） | union 化コミットに同梱 |
 
 > **設計判断**: 1 注文が複数店舗（`groups[]`）にまたがるため、行粒度は **「Order 行 + group 内訳」**（design.md 準拠・ユーザー合意）。Store/Status 列は各 group を縦に列挙する。`StoreOrderSummary` は `group.order.*` 逆参照を参照するが `AdminOrderType.groups[]` は持たないため、親 Order の `paymentStatus`/`shippingAddress`/`paymentDetails` を注入する `toStoreOrder` アダプタで橋渡し（構造的部分型で `any` 不要）。
-
+>
 > **後続に引き継ぎ（Phase 1 スコープ外）**: `updateOrderPaymentStatus` の paymentStatus 手動変更 UI（design §3.3 の決済 API 非連携警告 + §3.5 runbook）。1-D は OrderGroup の配送ステータス変更のみ結線済み。
 
 #### テスト統計（更新）

@@ -60,11 +60,20 @@
 
 ---
 
-## Phase 4: 下位互換性確保（null セーフ化先行・スキーマ非変更）⬜ 未着手 👈 次はここ
+## Phase 4: 下位互換性確保（null セーフ化先行・スキーマ非変更）✅ 完了（2026-06-16）
 
-| Task | 内容 | 状態 |
-| --- | --- | --- |
-| 4-1〜4-4 | `applyCoupon` / `saveUserCart`（確認のみ）/ UI の `coupon.store` null セーフ化（直列・振る舞い不変の防御のみ） | ⬜ |
+| Task | 内容 | 状態 | コミット / 備考 |
+| --- | --- | --- | --- |
+| 4-1 | `applyCoupon`（`coupon.ts:294`）`coupon.store.name` → `coupon.store?.name ?? '全店舗'` | ✅ | `04c9636` |
+| 4-2 | `saveUserCart`（`user.ts:1135-1150`）確認 → ternary ガード済みにつき変更不要 | ✅ | — |
+| 4-3 | `place-order.tsx:127` / admin `columns.tsx:62` の `coupon.store.name` → null セーフ | ✅ | `a977236` |
+| 4-4 | `bunx tsc --noEmit` 0 errors / test 1387 passed / lint 0 errors 確認 | ✅ | — |
+
+> **検証**: tsc 0 / lint 0 errors / test 1387 passed（テスト数変動なし・リファクタのみ）。
+
+---
+
+## Phase 5: F3-第2段 platform-wide 発行（破壊的・決済波及）⬜ 未着手 👈 次はここ
 
 ---
 
