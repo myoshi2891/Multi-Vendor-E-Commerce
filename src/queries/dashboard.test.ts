@@ -263,6 +263,47 @@ describe("getAdminDashboardStats", () => {
             });
         });
     });
+
+    describe("異常系 — DB エラー", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("異常系: DB エラー時に 'Failed to aggregate dashboard stats.' をスローする", async () => {
+            // Arrange
+            mockDb.order.aggregate.mockRejectedValue(new Error("DB connection error"));
+            mockDb.order.count.mockResolvedValue(0);
+            mockDb.store.groupBy.mockResolvedValue([]);
+            mockDb.user.count.mockResolvedValue(0);
+            mockDb.product.count.mockResolvedValue(0);
+            mockDb.category.count.mockResolvedValue(0);
+            mockDb.subCategory.count.mockResolvedValue(0);
+
+            // Act & Assert
+            await expect(getAdminDashboardStats()).rejects.toThrow(
+                "Failed to aggregate dashboard stats."
+            );
+        });
+
+        it("異常系: 非 Error オブジェクトでも 'Failed to aggregate dashboard stats.' をスローする", async () => {
+            // Arrange — catch 内 error instanceof Error が false の分岐をカバー
+            mockDb.order.aggregate.mockRejectedValue("string error");
+            mockDb.order.count.mockResolvedValue(0);
+            mockDb.store.groupBy.mockResolvedValue([]);
+            mockDb.user.count.mockResolvedValue(0);
+            mockDb.product.count.mockResolvedValue(0);
+            mockDb.category.count.mockResolvedValue(0);
+            mockDb.subCategory.count.mockResolvedValue(0);
+
+            // Act & Assert
+            await expect(getAdminDashboardStats()).rejects.toThrow(
+                "Failed to aggregate dashboard stats."
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -369,6 +410,35 @@ describe("getSalesOverTime", () => {
             expect(result[0]).toEqual({ label: "2024-01", revenue: 250 });
         });
     });
+
+    describe("異常系 — DB エラー", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("異常系: DB エラー時に 'Failed to fetch sales over time.' をスローする", async () => {
+            // Arrange
+            mockDb.order.findMany.mockRejectedValue(new Error("DB connection error"));
+
+            // Act & Assert
+            await expect(getSalesOverTime()).rejects.toThrow(
+                "Failed to fetch sales over time."
+            );
+        });
+
+        it("異常系: 非 Error オブジェクトでも 'Failed to fetch sales over time.' をスローする", async () => {
+            // Arrange — catch 内 error instanceof Error が false の分岐をカバー
+            mockDb.order.findMany.mockRejectedValue("string error");
+
+            // Act & Assert
+            await expect(getSalesOverTime()).rejects.toThrow(
+                "Failed to fetch sales over time."
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -429,6 +499,35 @@ describe("getRecentOrders", () => {
             );
         });
     });
+
+    describe("異常系 — DB エラー", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("異常系: DB エラー時に 'Failed to fetch recent orders.' をスローする", async () => {
+            // Arrange
+            mockDb.order.findMany.mockRejectedValue(new Error("DB connection error"));
+
+            // Act & Assert
+            await expect(getRecentOrders()).rejects.toThrow(
+                "Failed to fetch recent orders."
+            );
+        });
+
+        it("異常系: 非 Error オブジェクトでも 'Failed to fetch recent orders.' をスローする", async () => {
+            // Arrange — catch 内 error instanceof Error が false の分岐をカバー
+            mockDb.order.findMany.mockRejectedValue("string error");
+
+            // Act & Assert
+            await expect(getRecentOrders()).rejects.toThrow(
+                "Failed to fetch recent orders."
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -475,6 +574,35 @@ describe("getRecentStores", () => {
                 })
             );
             expect(result).toEqual(mockStores);
+        });
+    });
+
+    describe("異常系 — DB エラー", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
+
+        it("異常系: DB エラー時に 'Failed to fetch recent stores.' をスローする", async () => {
+            // Arrange
+            mockDb.store.findMany.mockRejectedValue(new Error("DB connection error"));
+
+            // Act & Assert
+            await expect(getRecentStores()).rejects.toThrow(
+                "Failed to fetch recent stores."
+            );
+        });
+
+        it("異常系: 非 Error オブジェクトでも 'Failed to fetch recent stores.' をスローする", async () => {
+            // Arrange — catch 内 error instanceof Error が false の分岐をカバー
+            mockDb.store.findMany.mockRejectedValue("string error");
+
+            // Act & Assert
+            await expect(getRecentStores()).rejects.toThrow(
+                "Failed to fetch recent stores."
+            );
         });
     });
 });
