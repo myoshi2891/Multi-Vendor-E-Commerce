@@ -222,6 +222,9 @@ try {
     if (error instanceof Error) {
         console.error("[Module:Function] Error message", { error: error.message, stack: error.stack });
     } else {
+        // error が Error インスタンスでない場合（例: Prisma の生オブジェクト、文字列 throw 等）は
+        // error.message / error.stack にアクセスできないため { error } をそのままログする。
+        // これは Unknown 型処理の承認パターンであり、上の Error ブランチとは意図的に別扱い。
         console.error("[Module:Function] Unknown error", { error });
     }
     throw new Error("処理に失敗しました。");

@@ -212,14 +212,27 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
                         className="mb-2 bg-destructive text-white hover:bg-destructive"
                         onClick={async () => {
                             setLoading(true)
-                            await deleteCouponAsAdmin(coupon.id)
-                            toast({
-                                title: 'Deleted coupon',
-                                description: 'The coupon has been deleted.',
-                            })
-                            setLoading(false)
-                            router.refresh()
-                            setClose()
+                            try {
+                                await deleteCouponAsAdmin(coupon.id)
+                                toast({
+                                    title: 'Deleted coupon',
+                                    description: 'The coupon has been deleted.',
+                                })
+                                router.refresh()
+                                setClose()
+                            } catch (error: unknown) {
+                                const message =
+                                    error instanceof Error
+                                        ? error.message
+                                        : 'An unknown error occurred'
+                                toast({
+                                    variant: 'destructive',
+                                    title: 'Oops!',
+                                    description: message,
+                                })
+                            } finally {
+                                setLoading(false)
+                            }
                         }}
                     >
                         Delete

@@ -549,7 +549,7 @@ export const CouponFormSchema = z.object({
 
 export const AdminCouponFormSchema = CouponFormSchema.extend({
     isActive: z.boolean().default(true),
-    storeId: z.string().optional(), // 第2段（Phase 5）で活性化
+    storeId: z.string().min(1, 'Store ID is required'),
 });
 
 export const ApplyCouponFormSchema = z.object({

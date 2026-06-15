@@ -71,6 +71,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
             endDate:
                 data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
             isActive: data?.isActive ?? true,
+            storeId: data?.storeId ?? '',
         },
     })
 
@@ -84,6 +85,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 startDate: data.startDate,
                 endDate: data.endDate,
                 isActive: data.isActive,
+                storeId: data.storeId,
             })
         }
     }, [data, form])
@@ -97,7 +99,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 startDate: values.startDate,
                 endDate: values.endDate,
                 isActive: values.isActive,
-                storeId: data?.storeId ?? '',
+                storeId: values.storeId,
                 createdAt: data?.createdAt ?? new Date(),
                 updatedAt: new Date(),
             })
@@ -150,6 +152,25 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                         onSubmit={form.handleSubmit(handleSubmit)}
                         className="space-y-4"
                     >
+                        {!data?.id && (
+                            <FormField
+                                control={form.control}
+                                name="storeId"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormLabel>Store ID</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Store ID"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+
                         <FormField
                             control={form.control}
                             name="code"
@@ -269,9 +290,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                         <Button type="submit" disabled={isLoading}>
                             {isLoading
                                 ? 'loading...'
-                                : data?.id
-                                  ? 'Save Coupon information'
-                                  : 'Create Coupon'}
+                                : (data?.id ? 'Save Coupon information' : 'Create Coupon')}
                         </Button>
                     </form>
                 </Form>

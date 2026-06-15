@@ -347,6 +347,7 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
 
     try {
         if (!coupon) throw new Error('Please provide coupon data.')
+        if (!coupon.storeId) throw new Error('Please provide a valid store ID.')
 
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
