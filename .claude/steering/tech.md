@@ -221,6 +221,8 @@ try {
 } catch (error: unknown) {
     if (error instanceof Error) {
         console.error("[Module:Function] Error message", { error: error.message, stack: error.stack });
+    } else {
+        console.error("[Module:Function] Unknown error", { error });
     }
     throw new Error("処理に失敗しました。");
 }
