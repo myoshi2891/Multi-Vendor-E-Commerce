@@ -208,6 +208,26 @@ await client.users.updateUserMetadata(userId, { ... });
 - `clerkClient.users.*` → `(await clerkClient()).users.*`
 - `authMiddleware` → `clerkMiddleware`
 
+**エラーハンドリングパターン（Server Action）**:
+
+```typescript
+// 認可ガードは try/catch の外に置く（認可エラーを汎用エラーで上書きしないため）
+const user = requireUser();  // src/lib/auth-guards.ts
+
+// 外部呼び出し（Prisma / Clerk / Stripe）は try/catch 内でラップ
+try {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(user.id, { ... });
+} catch (error: unknown) {
+    if (error instanceof Error) {
+        console.error("[Module:Function] Error message", { error: error.message, stack: error.stack });
+    }
+    throw new Error("処理に失敗しました。");
+}
+```
+
+> 完全な実装例は `src/queries/paypal.ts` を参照。
+
 **実装例**: `src/middleware.ts`、`src/queries/` 配下の全 Server Action
 
 ### DB 依存ページの動的レンダリング規約（Next.js 16）

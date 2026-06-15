@@ -11,7 +11,7 @@ const makeStore = (overrides: Partial<Store> = {}): Store =>
     ({
         id: "store-001",
         name: "テスト店舗",
-        createdAt: new Date("2024-04-01"),
+        createdAt: new Date(2024, 3, 1),
         status: StoreStatus.ACTIVE,
         isDeleted: false,
         url: "test-store",
@@ -19,7 +19,7 @@ const makeStore = (overrides: Partial<Store> = {}): Store =>
         description: null,
         logo: null,
         cover: null,
-        updatedAt: new Date("2024-04-01"),
+        updatedAt: new Date(2024, 3, 1),
         ...overrides,
     } as Store);
 
@@ -92,12 +92,13 @@ describe("RecentStores", () => {
 
     it("正常系: createdAt を日本語ロケールの日付でフォーマットする", () => {
         // Arrange
-        const store = makeStore({ createdAt: new Date("2024-04-01") });
+        const date = new Date(2024, 3, 1);
+        const store = makeStore({ createdAt: date });
 
         // Act
         render(<RecentStores stores={[store]} />);
 
         // Assert
-        expect(screen.getByText("2024/4/1")).toBeInTheDocument();
+        expect(screen.getByText(date.toLocaleDateString("ja-JP"))).toBeInTheDocument();
     });
 });

@@ -11,7 +11,7 @@ const makeOrder = (overrides: Partial<Order> = {}): Order =>
     ({
         id: "order-abc12345",
         total: new Prisma.Decimal("99.99"),
-        createdAt: new Date("2024-03-15"),
+        createdAt: new Date(2024, 2, 15),
         groups: [],
         shippingAddress: null,
         ...overrides,
@@ -46,12 +46,13 @@ describe("RecentOrders", () => {
 
     it("正常系: createdAt を日本語ロケールの日付でフォーマットする", () => {
         // Arrange
-        const orders = [makeOrder({ createdAt: new Date("2024-03-15") })];
+        const date = new Date(2024, 2, 15);
+        const orders = [makeOrder({ createdAt: date })];
 
         // Act
         render(<RecentOrders orders={orders} />);
 
         // Assert — toLocaleDateString("ja-JP") の形式
-        expect(screen.getByText("2024/3/15")).toBeInTheDocument();
+        expect(screen.getByText(date.toLocaleDateString("ja-JP"))).toBeInTheDocument();
     });
 });
