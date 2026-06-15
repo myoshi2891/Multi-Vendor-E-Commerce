@@ -28,7 +28,7 @@
 | **ESLint** | `next/core-web-vitals` + `plugin:tailwindcss/recommended` |
 | **金額・数値精度** | `Float` 禁止。金額フィールドは `Decimal(12,2)` を必須とし、演算は必ず `Prisma.Decimal` メソッド（`.add()`, `.mul()`, `.sub()` 等）で行うこと。**中間集計ループ内で `.toNumber()` して `number` 同士で加算することは禁止**（各ステップで IEEE 754 丸め誤差が蓄積するため）。`toNumber()` は return 境界のみで呼ぶこと |
 | **エラーハンドリング** | 外部呼び出し（Prisma, Clerk, Stripe/PayPal）は必ず `try/catch` でラップし、`instanceof Error` による型ガードを行う。**例外: 認可ガード（`requireAdmin()` 等 `src/lib/auth-guards.ts`）は `try/catch` の外に置く**。認可エラー（"Unauthenticated." / "Only admins can perform this action." 等）を汎用 DB エラーメッセージで上書きしないための意図的な設計 |
-| **構造化ログ** | `src/queries/` の `console.error` は `[Module:Function] Error message`, `{ error: message, stack: error.stack }` の形式で構造化すること |
+| **構造化ログ** | `src/queries/` の `console.error` は第1引数 `"[Module:Function] Error message"`（文字列）、第2引数 `{ error: error.message, stack: error.stack }`（オブジェクト）の2引数形式で構造化すること。実装例: `src/queries/paypal.ts` |
 | **アトミック操作** | 注文処理や在庫減算など、複数のテーブルを更新する際は `db.$transaction` によるアトミック化を必須とする |
 | **Docstrings** | シーダー、ヘルパー、複雑なロジックには JSDoc 形式の Docstrings を記述し、AI エージェントの理解を助けること |
 | **ログ禁止** | `src/` 配下のアプリケーションコードでは `console.log()` 禁止。ただし CLI（`prisma/seed/`）は許容 |
@@ -226,7 +226,7 @@ try {
 }
 ```
 
-> 完全な実装例は `src/queries/paypal.ts` を参照。
+> 完全な実装例は `src/queries/paypal.ts` を参照（Prisma: `db.order.findUnique` 等の try/catch ブロック、Clerk: `currentUser()` 呼び出しブロック、PayPal/Stripe: 外部 API 呼び出しブロック — すべて同パターン）。
 
 **実装例**: `src/middleware.ts`、`src/queries/` 配下の全 Server Action
 

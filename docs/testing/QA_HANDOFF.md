@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|-----|
 | Jest テスト総数 (unit/component) | **1328** passed / 1331 total / 141 スイート（140 passed + 1 skipped）— 2026-06-15 SonarCloud Quality Gate 修復（PR #136）: dashboard query の catch ブロックテスト +8（`750374b`）+ admin dashboard コンポーネント 4 本のテスト新規追加 stats-cards/recent-orders/sales-chart/recent-stores +18（`686e45a`–`ef091c3`）：1302→1328 passed / +4 suite |
-| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
+| Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
