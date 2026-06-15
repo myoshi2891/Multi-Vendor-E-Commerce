@@ -638,8 +638,8 @@ export const placeOrder = async (
             const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
             const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
 
-            // Check coupon store
-            const check = storeId === cartCoupon?.storeId
+            // Check coupon store and active status（isActive=false のクーポンは割引不適用）
+            const check = storeId === cartCoupon?.storeId && cartCoupon?.isActive === true
 
             // Calculate discount based on coupon
             let discountedAmount = new Prisma.Decimal("0")
