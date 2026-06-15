@@ -5,6 +5,10 @@ import {
     getCoupon,
     deleteCoupon,
     applyCoupon,
+    getAllCoupons,
+    upsertCouponAsAdmin,
+    deleteCouponAsAdmin,
+    toggleCouponActive,
 } from "./coupon";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -30,6 +34,7 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             findMany: jest.fn(),
             upsert: jest.fn(),
+            update: jest.fn(),
             delete: jest.fn(),
         },
         cart: {
@@ -796,6 +801,285 @@ describe("applyCoupon", () => {
 
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
+        });
+    });
+});
+
+// ==================================================
+// getAllCoupons (admin)
+// ==================================================
+describe("getAllCoupons", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(getAllCoupons()).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await expect(getAllCoupons()).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+        });
+    });
+
+    describe("正常系", () => {
+        it("全ストアのクーポン一覧を返す", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const couponWithStore = {
+                ...createMockCoupon(),
+                store: createMockStore(),
+            };
+            mockDb.coupon.findMany.mockResolvedValue([couponWithStore]);
+
+            const result = await getAllCoupons();
+
+            expect(result).toHaveLength(1);
+            expect(mockDb.coupon.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    include: expect.objectContaining({ store: true }),
+                })
+            );
+        });
+
+        it("limit ≤ 100 のキャップが適用される", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.coupon.findMany.mockResolvedValue([]);
+
+            await getAllCoupons();
+
+            expect(mockDb.coupon.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ take: 100 })
+            );
+        });
+    });
+});
+
+// ==================================================
+// upsertCouponAsAdmin (admin)
+// ==================================================
+describe("upsertCouponAsAdmin", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+            const coupon = createMockCoupon();
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+            const coupon = createMockCoupon();
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("Only admins can perform this action.");
+        });
+    });
+
+    describe("正常系", () => {
+        it("クーポンを正常に upsert する", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createMockCoupon();
+            mockDb.coupon.upsert.mockResolvedValue(coupon);
+
+            const result = await upsertCouponAsAdmin(coupon as never);
+
+            expect(result).toEqual(coupon);
+            expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: coupon.id },
+                })
+            );
+        });
+    });
+
+    describe("コードグローバル重複エラー", () => {
+        it("Prisma P2002 を日本語メッセージに変換する", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createMockCoupon();
+            const p2002Error = Object.assign(new Error("Unique constraint"), {
+                code: "P2002",
+                name: "PrismaClientKnownRequestError",
+            });
+            mockDb.coupon.upsert.mockRejectedValue(p2002Error);
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("このクーポンコードは既に使用されています");
+        });
+    });
+});
+
+// ==================================================
+// deleteCouponAsAdmin (admin)
+// ==================================================
+describe("deleteCouponAsAdmin", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(
+                deleteCouponAsAdmin("coupon-001")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await expect(
+                deleteCouponAsAdmin("coupon-001")
+            ).rejects.toThrow("Only admins can perform this action.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("couponId が空の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+
+            await expect(
+                deleteCouponAsAdmin("")
+            ).rejects.toThrow("Please provide coupon ID.");
+        });
+    });
+
+    describe("正常系", () => {
+        it("クーポンを正常に削除して true を返す", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.coupon.delete.mockResolvedValue({ id: "coupon-001" });
+
+            const result = await deleteCouponAsAdmin("coupon-001");
+
+            expect(result).toBe(true);
+            expect(mockDb.coupon.delete).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "coupon-001" },
+                })
+            );
+        });
+    });
+});
+
+// ==================================================
+// toggleCouponActive (admin)
+// ==================================================
+describe("toggleCouponActive", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(
+                toggleCouponActive("coupon-001")
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("ADMINロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await expect(
+                toggleCouponActive("coupon-001")
+            ).rejects.toThrow("Only admins can perform this action.");
+        });
+    });
+
+    describe("バリデーション", () => {
+        it("couponId が空の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+
+            await expect(
+                toggleCouponActive("")
+            ).rejects.toThrow("Please provide coupon ID.");
+        });
+    });
+
+    describe("正常系", () => {
+        it("isActive=true のクーポンを false にトグルする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createMockCoupon({ isActive: true });
+            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+            mockDb.coupon.update.mockResolvedValue({
+                ...coupon,
+                isActive: false,
+            });
+
+            const result = await toggleCouponActive("coupon-001");
+
+            expect(result.isActive).toBe(false);
+            expect(mockDb.coupon.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "coupon-001" },
+                    data: { isActive: false },
+                })
+            );
+        });
+
+        it("isActive=false のクーポンを true にトグルする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createMockCoupon({ isActive: false });
+            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+            mockDb.coupon.update.mockResolvedValue({
+                ...coupon,
+                isActive: true,
+            });
+
+            const result = await toggleCouponActive("coupon-001");
+
+            expect(result.isActive).toBe(true);
+        });
+
+        it("クーポンが存在しない場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.coupon.findUnique.mockResolvedValue(null);
+
+            await expect(
+                toggleCouponActive("coupon-001")
+            ).rejects.toThrow("Coupon not found.");
         });
     });
 });
