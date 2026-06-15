@@ -55,7 +55,7 @@ export function CouponFormFields<T extends FieldValues & CouponBaseValues>({
                         <FormLabel>Coupon discount</FormLabel>
                         <FormControl>
                             <NumberInput
-                                defaultValue={field.value}
+                                value={field.value}
                                 onValueChange={field.onChange}
                                 placeholder="%"
                                 min={1}

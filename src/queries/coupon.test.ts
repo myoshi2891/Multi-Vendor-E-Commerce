@@ -1236,22 +1236,22 @@ describe("deleteCouponAsAdmin (エラーハンドリング追加)", () => {
 // deleteCoupon — エッジケース追加
 // ==================================================
 describe("deleteCoupon (エッジケース追加)", () => {
-    it("境界値: delete が null を返した場合 false を返す", async () => {
+    it("境界値: delete が P2025 を throw した場合エラーをスローする", async () => {
         // Arrange
         (currentUser as jest.Mock).mockResolvedValue({
             id: TEST_CONFIG.DEFAULT_USER_ID,
             privateMetadata: { role: "SELLER" },
         });
         mockDb.store.findUnique.mockResolvedValue(createMockStore());
-        mockDb.coupon.delete.mockResolvedValue(null);
-
-        // Act
-        const result = await deleteCoupon(
-            "coupon-001",
-            TEST_CONFIG.TEST_STORE_URL
+        const p2025Error = Object.assign(
+            new Error("Record to delete does not exist."),
+            { code: "P2025", name: "PrismaClientKnownRequestError" }
         );
+        mockDb.coupon.delete.mockRejectedValue(p2025Error);
 
-        // Assert
-        expect(result).toBe(false);
+        // Act & Assert
+        await expect(
+            deleteCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
+        ).rejects.toThrow("Error occurred while trying to delete coupon:");
     });
 });
