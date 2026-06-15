@@ -1,20 +1,11 @@
 'use client'
 
-// React
 import { FC, useEffect } from 'react'
-
-// Prisma types
 import { Prisma } from '@prisma/client'
-
-// Form handling
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-
-// Schema
 import { AdminCouponFormSchema } from '@/lib/schemas'
-
-// UI Components
 import {
     Card,
     CardContent,
@@ -33,22 +24,12 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-// Queries
 import { upsertCouponAsAdmin } from '@/queries/coupon'
-
-// Utils
 import { v4 } from 'uuid'
 import { useToast } from '@/hooks/use-toast'
-import { NumberInput } from '@tremor/react'
 import { useRouter } from 'next/navigation'
-
-// Date time picker
 import { format } from 'date-fns'
-import 'react-calendar/dist/Calendar.css'
-import 'react-clock/dist/Clock.css'
-import DateTimePicker from 'react-datetime-picker'
-import 'react-datetime-picker/dist/DateTimePicker.css'
+import { CouponFormFields } from './coupon-form-fields'
 
 type AdminCouponType = Prisma.CouponGetPayload<{ include: { store: true } }>
 
@@ -90,7 +71,9 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
         }
     }, [data, form])
 
-    const handleSubmit = async (values: z.infer<typeof AdminCouponFormSchema>) => {
+    const handleSubmit = async (
+        values: z.infer<typeof AdminCouponFormSchema>
+    ) => {
         try {
             const response = await upsertCouponAsAdmin({
                 id: data?.id ?? v4(),
@@ -171,102 +154,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                             />
                         )}
 
-                        <FormField
-                            control={form.control}
-                            name="code"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <FormLabel>Coupon code</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Coupon code"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="discount"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <FormLabel>Coupon discount</FormLabel>
-                                    <FormControl>
-                                        <NumberInput
-                                            defaultValue={field.value}
-                                            onValueChange={field.onChange}
-                                            placeholder="%"
-                                            min={1}
-                                            className="rounded-md !text-sm !shadow-none"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="startDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Start date</FormLabel>
-                                    <FormControl>
-                                        <DateTimePicker
-                                            onChange={(date) =>
-                                                field.onChange(
-                                                    date
-                                                        ? format(
-                                                              date,
-                                                              "yyyy-MM-dd'T'HH:mm:ss"
-                                                          )
-                                                        : ''
-                                                )
-                                            }
-                                            value={
-                                                field.value
-                                                    ? new Date(field.value)
-                                                    : null
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="endDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>End date</FormLabel>
-                                    <FormControl>
-                                        <DateTimePicker
-                                            onChange={(date) =>
-                                                field.onChange(
-                                                    date
-                                                        ? format(
-                                                              date,
-                                                              "yyyy-MM-dd'T'HH:mm:ss"
-                                                          )
-                                                        : ''
-                                                )
-                                            }
-                                            value={
-                                                field.value
-                                                    ? new Date(field.value)
-                                                    : null
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <CouponFormFields control={form.control} />
 
                         <FormField
                             control={form.control}
@@ -290,7 +178,9 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                         <Button type="submit" disabled={isLoading}>
                             {isLoading
                                 ? 'loading...'
-                                : (data?.id ? 'Save Coupon information' : 'Create Coupon')}
+                                : data?.id
+                                  ? 'Save Coupon information'
+                                  : 'Create Coupon'}
                         </Button>
                     </form>
                 </Form>
