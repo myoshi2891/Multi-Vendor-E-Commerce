@@ -8,10 +8,11 @@ import AdminCouponDetails from '@/components/dashboard/forms/admin-coupon-detail
 export const dynamic = 'force-dynamic'
 
 /**
- * 管理者向けクーポン横断管理ページ。
- * 全ストアのクーポンを一覧表示し、isActive トグル・削除・編集操作を提供する。
+ * Renders the admin coupon management page.
  *
- * @returns クーポン DataTable を含む React 要素
+ * Displays all coupons in a searchable table with options to create and manage coupon details.
+ *
+ * @returns The coupon management interface.
  */
 export default async function AdminCouponsPage() {
     const coupons = await getAllCoupons()
