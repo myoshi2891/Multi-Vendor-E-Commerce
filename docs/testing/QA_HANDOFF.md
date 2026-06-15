@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-15 / **HEAD**: `0f42b91`
+> **最終更新**: 2026-06-15 / **HEAD**: `4ed7fdd`
 
 ---
 
@@ -237,6 +237,8 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `2d692cb`〜`0d9fba5` | **SonarCloud Quality Gate (PR #134) 修復**: New Code の Coverage 19.4% (< 80%) と Duplication 7.8% (> 3%) を解消。admin/seller `orders/columns.tsx` の重複（ProductImagesCell / ViewOrderButton）を `src/components/dashboard/shared/order-table-cells.tsx` へ抽出（重複塊を除去）、共有 + admin columns + seller columns のテスト新規 +19、`order-status-select.test.tsx` に admin 分岐・falsy レスポンスの +2（1251 → **1272 passed** / 134 → **137 スイート**）。対象4ファイル Lines 100% |
 | `49fa32d` | OI-8 解消: modal-provider.test.tsx 9 件を un-skip（1272 → **1281 passed** / skip 12→3 / suites skip 2→1） |
 | `f871919`〜`0f42b91` | **Phase 2 F1 ダッシュボード統計 query**: `src/queries/dashboard.ts` 新規（getAdminDashboardStats / getSalesOverTime / getRecentOrders / getRecentStores）+ `dashboard.test.ts` 21 件（認可 3 階層・境界条件・売上チャート・最近リスト）。TDD Red→Green で実装。1281 → **1302 passed** / +1 suite |
+| `2e25f08` | docs: Phase 2 F1 query テスト後の仕様書・カバレッジダッシュボード一括同期（`spec-sync-after-test`） |
+| `4ed7fdd` | **Phase 2 F1 UI 完成**: `admin/page.tsx` をプレースホルダーから本体へ置換。`components/dashboard/admin/`（stats-cards / sales-chart / recent-orders / recent-stores）を新規実装。`@tremor/react AreaChart`・shadcn Card。テスト数変動なし（UI は unit テスト対象外）。 |
 
 ---
 

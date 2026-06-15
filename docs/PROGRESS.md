@@ -504,24 +504,22 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
 
 ## 次アクション
 
-### 0. 【最優先】管理者ダッシュボード Phase 2（F1 ダッシュボード統計）
+### 0. 【最優先】管理者ダッシュボード Phase 3（F3 クーポン横断管理）
 
-**背景**: Phase 1（F2 注文管理）は 2026-06-13 に完了。次は Phase 2（統計ダッシュボード）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
+**背景**: Phase 2（F1 ダッシュボード統計）は 2026-06-15 に完了。KPI カード・売上チャート・最近リストが `/dashboard/admin` で動作中。次は Phase 3（クーポン横断管理）に着手する。Phase 単位の現在地は [docs/design/admin-dashboard/PROGRESS.md](design/admin-dashboard/PROGRESS.md) を参照（SSOT）。
 
 **次セッション 依頼プロンプト（コピペ可）**:
 
 ```
-docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 2（F1 ダッシュボード統計）の
-2-A を進めて。具体的には src/queries/dashboard.ts を新規作成し、getAdminDashboardStats
-（requireAdmin はキャッシュ外・Promise.all 並列集計・unstable_cache 20分）/ getSalesOverTime /
-getRecentOrders / getRecentStores を実装。Red→Green でテストを先行（非 ADMIN 拒否の認可 3 階層・
-paymentStatus=Paid のみ集計・PartiallyRefunded 全額除外・isDeleted:false の店舗カウント・
-キャッシュヒット）。完了後 2-B（KPI カード + @tremor/react チャート + 最近の注文/ストア）へ。
+docs/design/admin-dashboard/PROGRESS.md と tasks.md を参照し、Phase 3（F3 クーポン横断管理）の
+3-A から進めて。具体的には Coupon モデルへの isActive 列追加（migrate dev + ERD 再生成）から始め、
+3-B（placeOrder / applyCoupon の isActive 再検証）→ 3-C（admin クーポン query）→ 3-D（Zod スキーマ）
+→ 3-E（UI）の順で実装。スキーマ変更は safe-migration スキルを使うこと。
 完了の定義は test-complete（lint/tsc/test）+ bun run build。進捗は admin-dashboard/PROGRESS.md と
 docs/PROGRESS.md の両方を更新し、次の依頼プロンプトも更新すること。
 ```
 
-**注意**: query パターンは Phase 1 の `getAllOrders`（`src/queries/order.ts`）を再利用。`enum StoreStatus` は `ACTIVE`/`PENDING` を使用（`INACTIVE` は存在しない）。
+**注意**: Phase 5（platform-wide 発行）は破壊的変更のため `safe-migration` 必須・最後に単独実施。
 
 ---
 

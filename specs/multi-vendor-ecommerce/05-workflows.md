@@ -19,8 +19,13 @@
 5) Receive orders grouped by store and fulfill items.
 
 ## Admin Catalog Flow
-1) Manage categories, subcategories, and offer tags.
-2) Review store listings and update store status.
+1) View KPI dashboard: total revenue (Paid orders), order count, active/pending
+   stores, user count, product count, categories and subcategories — aggregated
+   via `getAdminDashboardStats()` with 20-minute cache.
+2) Review sales trend chart (daily last-30-days or monthly last-12-months) via
+   `getSalesOverTime()`, and inspect recent orders/stores at a glance.
+3) Manage categories, subcategories, and offer tags.
+4) Review store listings and update store status.
 
 ## Auth and Role Sync
 1) User signs up or updates profile in Clerk.
