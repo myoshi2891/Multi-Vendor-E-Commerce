@@ -59,7 +59,7 @@ export const columns: ColumnDef<AdminCouponType>[] = [
         accessorKey: 'store',
         header: 'Store',
         cell: ({ row }) => (
-            <span className="font-medium">{row.original.store.name}</span>
+            <span className="font-medium">{row.original.store?.name ?? '—'}</span>
         ),
     },
     {

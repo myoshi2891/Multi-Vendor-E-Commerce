@@ -124,7 +124,7 @@ const PlaceOrderCard: FC<Props> = ({
                             </p>
                             <p className="overflow-hidden break-words text-sm leading-5 text-zinc-400">
                                 Coupon applied only to items from&nbsp;
-                                {coupon.store.name}
+                                {coupon.store?.name ?? '全店舗'}
                             </p>
                         </div>
                     </div>
