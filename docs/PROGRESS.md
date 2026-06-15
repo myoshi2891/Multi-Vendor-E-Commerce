@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | 1281 passed / 1284 total / 137スイート（**3 skipped**）— 2026-06-14 OI-8 解消で modal-provider 9 件を un-skip（1272→1281 / skip 12→3 / suites skip 2→1、`49fa32d`）。残 3 skip は DB ゲートの idempotency suite。前回 2026-06-13 は PR #134 注文テーブル重複解消リファクタで +21 / +3 スイート |
+| Jestユニットテスト | **1302 passed / 1305 total / 138 スイート（3 skipped）** — 2026-06-15 Phase 2 F1 `dashboard.test.ts` 新規追加（+21 tests / +1 suite、`f871919`–`0f42b91`）。前回 2026-06-14 は OI-8 解消（1272→1281 / skip 12→3 / `49fa32d`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |

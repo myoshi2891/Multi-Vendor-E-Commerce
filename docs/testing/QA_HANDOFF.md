@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-14 / **HEAD**: `49fa32d`
+> **最終更新**: 2026-06-15 / **HEAD**: `0f42b91`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-14 時点）
+### テスト統計（2026-06-15 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1281** passed / 1284 total / 137 スイート（136 passed + 1 skipped）— 2026-06-14 OI-8 真因（`size.test.ts` の Prisma 接続リーク, `83ef06c`）解消に伴い `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`）：1272→1281 passed / skip 12→3 / suites skip 2→1。CI は push/pull_request 両 event 緑・stub DB フルスイートで P1001 = 0 を確認。前回（2026-06-13）は注文テーブル重複解消リファクタ（PR #134）で +21 / +3 スイート |
+| Jest テスト総数 (unit/component) | **1302** passed / 1305 total / 138 スイート（137 passed + 1 skipped）— 2026-06-15 Phase 2 F1 ダッシュボード統計 query 実装に伴い `src/queries/dashboard.test.ts` を新規追加（`f871919`–`0f42b91`）：1281→1302 passed / +21 tests / +1 suite。前回（2026-06-14）OI-8 解消（`49fa32d`）：1272→1281 passed / skip 12→3 / suites skip 2→1 |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -235,6 +235,8 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `ae18ce3`〜`d88063a` | **管理者ダッシュボード Phase 1 / Task 1-A 完了**: `src/queries/order.ts` に admin 注文 query 5 種（getAllOrders [limit≤100 キャップ] / getOrderForAdmin [userId フィルタ無し] / updateOrderGroupStatusAsAdmin [親子集約 reconcileParentOrderStatus] / updateOrderItemStatusAsAdmin / updateOrderPaymentStatus [Refunded/Cancelled の親→子連動・決済 API 非呼出]）を追加。`AdminOrderType` を types.ts に追加。認可は requireAdmin()、IDOR 3 階層パターンで `order.test.ts` +24（1220 → **1242 passed**） |
 | `38a9bbe` | **SonarCloud Quality Gate (PR #133) 修復**: `order.ts` の New Code Coverage 63.4% (< 80%) を解消。`order.test.ts` に admin query 5 関数の catch エラー経路 + reconcile の Delivered/Canceled/Refunded 集約分岐 + 子0件早期 return を +9（1242 → **1251 passed**）。`order.ts` Lines 87.5%→100% / Branch 61.5%→83.3% |
 | `2d692cb`〜`0d9fba5` | **SonarCloud Quality Gate (PR #134) 修復**: New Code の Coverage 19.4% (< 80%) と Duplication 7.8% (> 3%) を解消。admin/seller `orders/columns.tsx` の重複（ProductImagesCell / ViewOrderButton）を `src/components/dashboard/shared/order-table-cells.tsx` へ抽出（重複塊を除去）、共有 + admin columns + seller columns のテスト新規 +19、`order-status-select.test.tsx` に admin 分岐・falsy レスポンスの +2（1251 → **1272 passed** / 134 → **137 スイート**）。対象4ファイル Lines 100% |
+| `49fa32d` | OI-8 解消: modal-provider.test.tsx 9 件を un-skip（1272 → **1281 passed** / skip 12→3 / suites skip 2→1） |
+| `f871919`〜`0f42b91` | **Phase 2 F1 ダッシュボード統計 query**: `src/queries/dashboard.ts` 新規（getAdminDashboardStats / getSalesOverTime / getRecentOrders / getRecentStores）+ `dashboard.test.ts` 21 件（認可 3 階層・境界条件・売上チャート・最近リスト）。TDD Red→Green で実装。1281 → **1302 passed** / +1 suite |
 
 ---
 
