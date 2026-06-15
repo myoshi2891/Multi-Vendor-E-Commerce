@@ -660,6 +660,7 @@ model Coupon {
   startDate String
   endDate   String
   discount  Int
+  isActive  Boolean @default(true)
 
   storeId String
   store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)

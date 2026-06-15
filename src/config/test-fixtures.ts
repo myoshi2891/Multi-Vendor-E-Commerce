@@ -189,6 +189,7 @@ type MockCoupon = {
     startDate: Date;
     endDate: Date;
     discount: number;
+    isActive: boolean;
     storeId: string;
     createdAt: Date;
     updatedAt: Date;
@@ -534,6 +535,7 @@ export const createMockCoupon = (
     startDate: new Date(NOW - ONE_YEAR_MS),
     endDate: new Date(NOW + ONE_YEAR_MS),
     discount: 10,
+    isActive: true,
     storeId: TEST_CONFIG.DEFAULT_STORE_ID,
     createdAt: new Date(NOW - ONE_YEAR_MS),
     updatedAt: new Date(NOW - ONE_YEAR_MS),
