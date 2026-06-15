@@ -867,6 +867,56 @@ describe("placeOrder", () => {
             );
         });
 
+        it("isActive=false のクーポンが適用されている場合は割引が適用されない", async () => {
+            const coupon = createMockCoupon({
+                discount: 10,
+                storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                isActive: false,
+            });
+            const cartItem = createMockCartItem();
+            const cart = {
+                ...createMockCart(),
+                cartItems: [cartItem],
+                coupon: coupon,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+
+            const mockOrder = createMockOrder();
+            mockDb.order.create.mockResolvedValue(mockOrder);
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(mockOrder);
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // isActive=false のため割引なし: couponId は null
+            expect(mockDb.orderGroup.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        couponId: null,
+                    }),
+                })
+            );
+        });
+
         it("配送先のcountryIdが無効な場合エラーをスローする", async () => {
             const cartItem = createMockCartItem();
             const cart = {
