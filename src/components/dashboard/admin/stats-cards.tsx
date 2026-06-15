@@ -10,6 +10,11 @@ interface Props {
     stats: AdminDashboardStats;
 }
 
+/**
+ * Displays admin dashboard statistics as formatted metric cards in a responsive grid.
+ *
+ * Shows key metrics including total revenue, orders, stores, users, products, and categories.
+ */
 export function StatsCards({ stats }: Props) {
     const items = [
         {

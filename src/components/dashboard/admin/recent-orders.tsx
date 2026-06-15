@@ -13,6 +13,13 @@ interface Props {
     orders: RecentOrder[];
 }
 
+/**
+ * Displays a card showing recent orders with their identifiers, dates, and totals.
+ *
+ * Shows a message if no orders are available.
+ *
+ * @param orders - The orders to display.
+ */
 export function RecentOrders({ orders }: Props) {
     return (
         <Card>
