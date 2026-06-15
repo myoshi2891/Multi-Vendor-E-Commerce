@@ -216,6 +216,11 @@ export const applyCoupon = async (
             throw new Error('Coupon is not valid for this date.')
         }
 
+        // Step 2.5: isActive フラグの検証（管理者による即時無効化に対応）
+        if (!coupon.isActive) {
+            throw new Error('This coupon has been deactivated.')
+        }
+
         // Step 3: Fetch the cart and validate its existence
         const cart = await db.cart.findUnique({
             where: {
