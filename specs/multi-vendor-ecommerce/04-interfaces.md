@@ -49,14 +49,14 @@ Dashboard:
 ## Server Actions (Queries)
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
-  home, profile, review, coupon, stripe, paypal, user, size, dashboard.
+  home, profile, review, coupon, stripe, PayPal, user, size, dashboard.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
 
 ### dashboard module (`src/queries/dashboard.ts`)
 
-All functions require ADMIN role via `requireAdmin()` (called outside cache scope).
+All functions require ADMIN role via `requireAdmin()` (called outside both cache scope and `try/catch` — intentional: auth errors must propagate with their specific messages and must not be swallowed by the generic DB error handler).
 
 | Function | Description | Cache |
 |----------|-------------|-------|

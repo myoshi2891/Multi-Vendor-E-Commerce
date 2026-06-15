@@ -38,7 +38,7 @@
 
 | Task | 内容 | 状態 | コミット / 備考 |
 | --- | --- | --- | --- |
-| 2-A | 統計 query（`src/queries/dashboard.ts` 新規）: `getAdminDashboardStats`（`Promise.all` + `unstable_cache` 20分）/ `getSalesOverTime` / `getRecentOrders` / `getRecentStores` | ✅ | `418846f`〜`0f42b91`（2026-06-15） |
+| 2-A | 統計 query（`src/queries/dashboard.ts` 新規）: `getAdminDashboardStats`（`Promise.all` + `unstable_cache` 20分）/ `getSalesOverTime` / `getRecentOrders` / `getRecentStores` | ✅ | `f871919`〜`0f42b91`（2026-06-15） |
 | 2-B | F1 UI（`admin/page.tsx` 置換 + `components/dashboard/admin/*`）: KPI カード + 売上チャート（`@tremor/react`・依存追加なし）+ 最近の注文/ストア | ✅ | `4ed7fdd`（2026-06-15） |
 
 > **検証**: tsc 0 / lint 0 errors / test 1302 passed（+21）/ 型エラー 0。

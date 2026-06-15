@@ -125,7 +125,7 @@ export const getSalesOverTime = async (
         });
 
         // JS 側でバケット集計（規模拡大時は SQL date_trunc + groupBy へ移行）
-        const buckets = new Map<string, number>();
+        const buckets = new Map<string, Prisma.Decimal>();
 
         for (const order of orders) {
             const label =
@@ -135,13 +135,13 @@ export const getSalesOverTime = async (
 
             buckets.set(
                 label,
-                (buckets.get(label) ?? 0) + order.total.toNumber()
+                (buckets.get(label) ?? new Prisma.Decimal(0)).add(order.total)
             );
         }
 
         return Array.from(buckets.entries()).map(([label, revenue]) => ({
             label,
-            revenue,
+            revenue: revenue.toNumber(),
         }));
     } catch (error: unknown) {
         console.error("[Dashboard:getSalesOverTime] Error", {

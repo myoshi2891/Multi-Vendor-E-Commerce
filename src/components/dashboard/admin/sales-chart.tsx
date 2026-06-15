@@ -28,7 +28,7 @@ export function SalesChart({ data, period = "monthly" }: Props) {
                     data={data}
                     index="label"
                     categories={["revenue"]}
-                    colors={["blue"]}
+                    colors={["slate"]}
                     valueFormatter={(v: number) =>
                         `$${v.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
