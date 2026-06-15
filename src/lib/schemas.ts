@@ -547,6 +547,11 @@ export const CouponFormSchema = z.object({
         .max(99, "Discount percentage cannot exceed 99%"),
 });
 
+export const AdminCouponFormSchema = CouponFormSchema.extend({
+    isActive: z.boolean().default(true),
+    storeId: z.string().min(1, 'Store ID is required'),
+});
+
 export const ApplyCouponFormSchema = z.object({
     coupon: z
         .string({

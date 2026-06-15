@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-06-15 時点）
+## 現在の状態（2026-06-16 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1328 passed / 1331 total / 141 スイート（3 skipped）** — 2026-06-15 SonarCloud QG 修復（PR #136）: dashboard catch ブロック +8 + admin コンポーネント 4 本 +18（`750374b`–`ef091c3`）。前回 2026-06-15 は Phase 2 F1（1281→1302 / `f871919`–`0f42b91`）|
+| Jestユニットテスト | **1387 passed / 1390 total / 143 スイート（3 skipped）** — 2026-06-16 SonarCloud QG 修復（PR #138）: CouponFormFields 抽出 / coupon.ts 残ブランチカバー / columns.tsx テスト / admin-coupon-details.tsx コンポーネントテスト 10 件（`a80e4be`–`df53785`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -155,6 +155,32 @@
 - **副産物の発見（C1 と独立した既存バグ）**: ホーム（`/`）は `src/components/store/home/main/featured.tsx:13` の `useState<number>(window.innerWidth)` が SSR で `ReferenceError: window is not defined` を投げ **500**（本番 SSR でも再現する可能性）。このため lhci の URL から `/` を除外し `/browse` のみとした。featured.tsx 修正は別タスク。
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
+
+### 2026-06-16: SonarCloud Quality Gate 修復（PR #138・coupon カバレッジ + 重複解消）
+
+#### 概要
+
+PR #138（`dev → main`）の SonarCloud Quality Gate が 2 条件未達だった（Coverage 20.9% < 80% / Duplication 8.7% > 3%）。`admin-coupon-details.tsx` と `coupon-details.tsx` のフォームフィールド重複（96 行）を `CouponFormFields` 共有コンポーネントへ抽出し Duplication を解消。coupon.ts 残ブランチ・columns.tsx・admin-coupon-details.tsx のテストを追加し Coverage を満たした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/coupon-form-fields.tsx` | code / discount / startDate / endDate フィールドを共有コンポーネントとして抽出（新規） | `a80e4be` |
+| `src/queries/coupon.test.ts` | 残ブランチカバー（P2002 分岐・applyCoupon edge case）+39 テスト | `322ce41` |
+| `src/app/dashboard/admin/coupons/columns.test.tsx` | columns.tsx 各 cell レンダラーのテスト新規追加（+52 行相当） | `ca2fb6c` |
+| `src/components/dashboard/forms/admin-coupon-details.test.tsx` | コンポーネントテスト 10 件（レンダリング 6 + 正常系 2 + 異常系 2） | `df53785` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1348 passed | **1387 passed** |
+| スイート数 | 141 | **143** |
+| スナップショット | 127 | 127 |
+| 型エラー | 0 件 | **0 件** |
+
+---
 
 ### 2026-06-13: SonarCloud Quality Gate 修復（PR #134・注文テーブル重複解消 + カバレッジ）
 
@@ -586,6 +612,36 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 |------|--------|--------|
 | テスト総数 | 1302 passed / 1305 total | **1328 passed / 1331 total** |
 | スイート数 | 138 | **141** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+---
+
+### Phase 3 F3-第1段: クーポン横断管理 + isActive 列追加 (2026-06-15)
+
+#### 概要
+
+`Coupon.isActive` 列追加（後方互換）を起点に、管理者による全ストアクーポン横断管理（一覧・作成・削除・有効/無効トグル）を実装。`applyCoupon`・`placeOrder` の二重防御で無効クーポンを注文確定まで遮断する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` | `Coupon.isActive Boolean @default(true)` 追加 + migrate + ERD 再生成 | `d5d5284` |
+| `src/queries/coupon.ts` | `applyCoupon` Step 2.5 に isActive チェック追加 | `b4095bd` |
+| `src/queries/user.ts` | `placeOrder` クーポン適用条件に `&& isActive === true` 追加 | `669ad3d` |
+| `src/queries/coupon.ts` | admin query 4 種追加（getAllCoupons / upsertCouponAsAdmin / deleteCouponAsAdmin / toggleCouponActive） | `982c765` |
+| `src/lib/schemas.ts` | `AdminCouponFormSchema`（isActive + storeId optional）追加 | `958af7a` |
+| `src/app/dashboard/admin/coupons/` | page.tsx + columns.tsx（Store 列 + Active バッジ）+ new/page.tsx 新規実装 | `31dcf68`, `eb996d0` |
+| `src/components/dashboard/forms/admin-coupon-details.tsx` | isActive Switch 付き admin フォームコンポーネント新規実装 | `31dcf68` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1328 passed / 1331 total | **1348 passed / 1351 total** |
+| スイート数 | 141 | **141** |
 | 型エラー | 0 件 | **0 件** |
 
 ---

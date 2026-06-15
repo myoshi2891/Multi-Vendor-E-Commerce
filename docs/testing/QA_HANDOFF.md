@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-15 / **HEAD**: `ef091c3`
+> **最終更新**: 2026-06-16 / **HEAD**: `9d12e90`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1328** passed / 1331 total / 141 スイート（140 passed + 1 skipped）— 2026-06-15 SonarCloud Quality Gate 修復（PR #136）: dashboard query の catch ブロックテスト +8（`750374b`）+ admin dashboard コンポーネント 4 本のテスト新規追加 stats-cards/recent-orders/sales-chart/recent-stores +18（`686e45a`–`ef091c3`）：1302→1328 passed / +4 suite |
+| Jest テスト総数 (unit/component) | **1387** passed / 1390 total / 143 スイート（143 passed + 1 skipped suite）— 2026-06-16 SonarCloud QG 修復（PR #138）: CouponFormFields 抽出 / coupon.ts 残ブランチカバー / columns.tsx テスト / admin-coupon-details.tsx コンポーネントテスト 10 件（`a80e4be`–`df53785`）：1348→1387 passed / 141→143 スイート |
 | Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
@@ -88,6 +88,10 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | Step 19 | ProductStatusSelect | `tests/component/dashboard/product-status-select.test.tsx` | ✅ 完了 |
 | Step 20 | StoreStatusSelect | `tests/component/dashboard/store-status-select.test.tsx` | ✅ 完了 |
 | Step 21 | CountrySelector | `tests/component/shared/country-selector.test.tsx` | ✅ 完了 |
+| F1-1 | StatsCards (admin dashboard) | `tests/component/dashboard/admin/stats-cards.test.tsx` | ✅ 完了 |
+| F1-2 | RecentOrders (admin dashboard) | `tests/component/dashboard/admin/recent-orders.test.tsx` | ✅ 完了 |
+| F1-3 | SalesChart (admin dashboard) | `tests/component/dashboard/admin/sales-chart.test.tsx` | ✅ 完了 |
+| F1-4 | RecentStores (admin dashboard) | `tests/component/dashboard/admin/recent-stores.test.tsx` | ✅ 完了 |
 
 ### ⚠️ Phase 3（E2E テスト）— スケルトン完了・一部保留
 
@@ -241,6 +245,8 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `4ed7fdd` | **Phase 2 F1 UI 完成**: `admin/page.tsx` をプレースホルダーから本体へ置換。`components/dashboard/admin/`（stats-cards / sales-chart / recent-orders / recent-stores）を新規実装。`@tremor/react AreaChart`・shadcn Card。テスト数変動なし（UI は unit テスト対象外）。 |
 | `750374b` | **SonarCloud Quality Gate 修復 (PR #136) Phase 1**: `dashboard.test.ts` に catch ブロックテスト +8（getSalesOverTime / getRecentOrders / getRecentStores / getAdminDashboardStats の Error / 非-Error 両分岐）。1302 → **1310 passed** |
 | `686e45a`–`ef091c3` | **SonarCloud Quality Gate 修復 (PR #136) Phase 2**: admin dashboard コンポーネント 4 本のテスト新規追加（tests/component/dashboard/admin/）。stats-cards +3 / recent-orders +3 / sales-chart +4 / recent-stores +8。1310 → **1328 passed** / +4 スイート |
+| `d5d5284`–`eb996d0` | **Phase 3 F3-第1段 クーポン横断管理 + isActive 列追加**: `Coupon.isActive Boolean @default(true)` 追加 + migrate + ERD 再生成。`applyCoupon`・`placeOrder` に isActive 再検証追加（TDD）。admin クーポン query 4 種（getAllCoupons / upsertCouponAsAdmin / deleteCouponAsAdmin / toggleCouponActive）実装。`AdminCouponFormSchema` 追加。`/dashboard/admin/coupons/` UI（page / columns / form）新規実装。1328 → **1348 passed** / スイート変動なし |
+| `a80e4be`–`9d12e90` | **SonarCloud QG 修復（PR #138）**: CouponFormFields 共有コンポーネント抽出（重複解消） / coupon.ts 残ブランチカバー / columns.tsx テスト追加 / admin-coupon-details.tsx コンポーネントテスト 10 件 / storeId 正規化 fix。1348 → **1387 passed** / 141 → **143** スイート |
 
 ---
 
@@ -256,127 +262,10 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 🟡 Next Sprint (medium)
 
-<!--
-NA-NS-01 (B1+ shadcn/ui プリミティブ Snapshot 拡張) は 2026-05-28 に Sprint 1〜4 全完了済み。
-- 結果: 49/49 shadcn/ui プリミティブ・127 snapshot
-- 詳細: docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md (Status: Completed 2026-05-28)
-- 履歴: docs/testing/COVERAGE_REPORT.md §7 / docs/PROGRESS.md
-- scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
--->
-
-<!--
-#### NA-NS-01: B1+ shadcn/ui プリミティブ Snapshot 拡張 (残 40 プリミティブ)
-
-> **詳細計画書**: [`docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md`](./B1_SNAPSHOT_EXPANSION_PLAN.md) — Tier 分類・Sprint 構造・各プリミティブの想定 snapshot 数・コミット戦略の決定版。次セッションは**まず計画書を読んでから着手**すること。
-
-```text
-shadcn/ui プリミティブの Snapshot テストを B1 MVP (9 プリミティブ) から残り 40 プリミティブへ拡張してください。
-詳細は docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md を必ず先に読むこと（2026-05-26 調査済み）。
-
-背景:
-- B1 MVP は 2026-05-23 に完了 (tests/component/ui/ 配下 9 ファイル / 40 snapshot)。
-- 残り 40 プリミティブを以下 Tier に分類済み (B1_SNAPSHOT_EXPANSION_PLAN.md):
-  * Tier 1 (21 個 / 外部 lib 依存なし / 1 ファイル 1 commit 原則):
-    alert, alert-dialog, aspect-ratio, avatar, breadcrumb, checkbox, collapsible,
-    hover-card, input-otp, pagination, popover, progress, radio-group, resizable,
-    scroll-area, separator, slider, switch, toggle, tooltip, chart
-  * Tier 2 (8 個 / compound Radix / 同梱コミット候補):
-    - Menu family: dropdown-menu, context-menu, menubar (3 ファイル同梱候補)
-    - Sheet family: sheet, drawer (2 ファイル同梱候補)
-    - 個別: tabs, toggle-group, table
-  * Tier 3 (7 個 / 外部 lib / 必ず 1 ファイル 1 commit):
-    form (react-hook-form), calendar (react-day-picker), carousel (embla),
-    command (cmdk), sidebar (内部 compound), navigation-menu, sonner
-  * 補助 (4 個 / 各 1 commit): accordion, toast, toaster, data-table
-
-- Tier 3 戦略 (確定済み): デフォルト状態のみスナップショット取得。
-  * form: useForm() ラッパーで空フォーム + FormField 1 個
-  * calendar: selected={new Date("2026-01-15")} 固定
-  * carousel: 3 slide 初期状態 (slide 0 アクティブ)
-  * command: 閉状態 + 開状態 (defaultOpen) の 2 種
-  * sidebar: <SidebarProvider><Sidebar>...</Sidebar></SidebarProvider> 最小構成
-  * navigation-menu: 単一 root + 子 NavigationMenuItem
-  * sonner: <Toaster /> 単独 (toast 発火なし)
-
-- .claude/rules/02-tdd-step-commit.md の閾値 (同一 Tier / 3 ファイル以下 / 合計 200 行未満 /
-  import 共有 50% 以上) を満たす場合のみ同梱コミット。超過時は分離。
-
-推奨実装順序 (Sprint 単位 / 各 Sprint 末で spec-sync-after-test 起動):
-- Sprint 1 (Tier 1 前半 10 commits): aspect-ratio → separator → progress → switch →
-  checkbox → radio-group → slider → toggle → tooltip → popover → spec-sync
-  ✅ 完了 (2026-05-26, b55e177〜66fb8d5)。インフラ: 6545fce で jest.setup.ts に
-  ResizeObserver スタブを追加済み (Radix useSize 系プリミティブの基盤)。
-- Sprint 2 (Tier 1 後半 11 commits): alert → alert-dialog → avatar → breadcrumb →
-  collapsible → hover-card → input-otp → pagination → resizable → scroll-area →
-  chart → spec-sync
-  ✅ 完了 (2026-05-28, 750d830〜45c339b)。chart は recharts ResponsiveContainer の
-  jsdom 0-size 警告を console.warn spy で抑制。hover-card は role 無しのため
-  getByText("Card body") で styled HoverCardContent を取得。
-- Sprint 3 (Tier 2 / 8 commits): Menu family → Sheet family → tabs → toggle-group →
-  table → spec-sync
-  ✅ 完了 (2026-05-28, e6c79e3〜4429b8b)。class-heavy な Menu snapshot を理由に
-  全 8 プリミティブを 1 ファイル 1 commit で分離（Menu family 同梱は 200 行閾値超過のため断念）。
-  context-menu は defaultOpen が無いため fireEvent.contextMenu で開く。
-  menubar は Root に defaultValue を渡して特定 MenubarMenu を開く。
-- Sprint 4 (Tier 3 + 補助 / 11 commits + archive): form → calendar → carousel →
-  command → sidebar → navigation-menu → sonner → accordion → toast → toaster →
-  data-table → spec-sync → NA-NS-01 archive (render-html.ts + 本セクション削除)
-
-標準テンプレート (Portal 系 = alert-dialog/popover/hover-card/tooltip/dropdown-menu/
-context-menu/menubar/sheet/drawer/command/sonner は document.body をスナップショット対象):
-  /** @jest-environment jsdom */
-  import { render } from "@testing-library/react";
-  import "@testing-library/jest-dom";
-  import { Foo } from "@/components/ui/foo";
-  describe("Foo (snapshot)", () => {
-    it("renders default", () => {
-      const { container } = render(<Foo>content</Foo>);
-      expect(container.firstChild).toMatchSnapshot();
-    });
-  });
-
-完了条件 (Sprint 4 終了時):
-1. tests/component/ui/*.test.tsx が 49 ファイル
-2. bun run test グリーン、bunx tsc --noEmit エラーゼロ
-3. scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS から NA-NS-01 削除
-4. 本セクション (QA_HANDOFF.md §3.3 NA-NS-01) のプロンプト削除
-5. docs/testing/COVERAGE_REPORT.md §3 に B1+ 完了アーカイブ行追加 (完了日 + commit hash)
-6. docs/coverage-dashboard.html を bun run coverage:dashboard で再生成
-7. docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md のステータスを Completed YYYY-MM-DD に更新
-
-参考:
-- 詳細計画: docs/testing/B1_SNAPSHOT_EXPANSION_PLAN.md (Tier 別 snapshot 数の想定値含む)
-- テンプレート: tests/component/ui/button.test.tsx (variants/asChild), card.test.tsx (compound), dialog.test.tsx (Portal)
-- 既存パターン: tests/component/ui/__snapshots__/
-- 設計ガイド: docs/testing/TESTING_DESIGN.md "shadcn/ui Snapshot テスト" セクション
-- コミット規約: .claude/rules/02-tdd-step-commit.md
-```
--->
-
-<!--
-NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) は 2026-05-28 に完了済み。
-- 結果: /api/webhooks/stripe + /api/webhooks/paypal ハンドラー新設、30 ケース + metadata 検証 2 ケースで網羅
-- 履歴: コミット 338ab41 / 1d69f0f / 2321cd8
-- scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
--->
-
-<!--
-NA-NS-03 (B3: Cart → Checkout Integration テスト) は 2026-05-29 に完了済み。
-- 結果: tests/integration/cart-checkout.test.ts (4 シナリオ / 11 テスト)
-  + 基盤 (jest.integration.config.js + tests/integration/setup/* + ADR-004)
-- 実行: bun run test:integration (testcontainers が PostgreSQL を起動)
-- CI: .github/workflows/ci.yml の integration-tests ジョブで自動実行
-- scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
--->
-
-<!--
-D1 (ダッシュボード categorize.ts 改修 / Integration 行の実体化) は 2026-06-02 に完了。
-- 結果: tests/integration/ を integration × queries へ分類。unit × other 誤検知を恒久解消。
-  再生成 (lcov あり) で integration × queries ◯→◐、coveredCells 17→18 (21%→23%)。
-- 履歴: commit b57841a (categorize.ts + categorize.test.ts) + docs/dashboard 同期コミット
-- scripts/coverage-dashboard/render-html.ts の NEXT_ACTIONS からも削除済み
-- 詳細アーカイブ: docs/testing/COVERAGE_REPORT.md §3 D1 / §7 履歴 (2026-06-02)
--->
+<!-- NA-NS-01 (B1+ shadcn/ui Snapshot 拡張) ✅ 完了 2026-05-28: 49/49 プリミティブ / 127 snapshot。詳細: B1_SNAPSHOT_EXPANSION_PLAN.md / COVERAGE_REPORT.md §7 -->
+<!-- NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) ✅ 完了 2026-05-28: 30+2 ケース。コミット 338ab41 / 1d69f0f / 2321cd8 -->
+<!-- NA-NS-03 (B3: Cart → Checkout Integration テスト) ✅ 完了 2026-05-29: 4 シナリオ / 11 テスト。ADR-004 参照 -->
+<!-- D1 (categorize.ts 改修 / Integration 行実体化) ✅ 完了 2026-06-02: commit b57841a。詳細: COVERAGE_REPORT.md §3 D1 -->
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 

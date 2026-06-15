@@ -3,8 +3,8 @@
 import { db } from '@/lib/db'
 import { CartWithCartItemsType } from '@/lib/types'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
-import { requireStoreOwner } from '@/lib/auth-guards'
-import { Coupon } from '@prisma/client'
+import { requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
+import { Coupon, Prisma } from '@prisma/client'
 
 const isGuardError = (error: unknown): error is Error => {
     if (!(error instanceof Error)) return false;
@@ -216,6 +216,11 @@ export const applyCoupon = async (
             throw new Error('Coupon is not valid for this date.')
         }
 
+        // Step 2.5: isActive フラグの検証（管理者による即時無効化に対応）
+        if (!coupon.isActive) {
+            throw new Error('This coupon has been deactivated.')
+        }
+
         // Step 3: Fetch the cart and validate its existence
         const cart = await db.cart.findUnique({
             where: {
@@ -293,6 +298,150 @@ export const applyCoupon = async (
         console.error(error)
         throw new Error(
             `Error occurred while applying coupon: ${error.message}`
+        )
+    }
+}
+
+// ==================================================
+// Admin-only queries
+// ==================================================
+
+/**
+ * @Function getAllCoupons
+ * @Description 全ストアのクーポン一覧を取得する（管理者専用）
+ * @PermissionLevel Admin only
+ * @Return クーポン一覧（store 情報付き、最大 100 件）
+ */
+export const getAllCoupons = async () => {
+    await requireAdmin()
+
+    try {
+        const coupons = await db.coupon.findMany({
+            include: { store: true },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+        })
+        return coupons
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error('[Coupon:getAllCoupons] Failed to fetch coupons', {
+                error: error.message,
+                stack: error.stack,
+            })
+        }
+        throw new Error('Error occurred while fetching all coupons.')
+    }
+}
+
+/**
+ * @Function upsertCouponAsAdmin
+ * @Description 管理者によるクーポン作成・更新。グローバル一意制約違反（P2002）を
+ *              日本語メッセージに変換する
+ * @PermissionLevel Admin only
+ * @Parameters
+ *  - coupon: Coupon オブジェクト
+ * @Return 作成または更新されたクーポン
+ */
+export const upsertCouponAsAdmin = async (coupon: Coupon) => {
+    await requireAdmin()
+
+    try {
+        if (!coupon) throw new Error('Please provide coupon data.')
+        const normalizedStoreId = coupon.storeId?.trim()
+        if (!normalizedStoreId) throw new Error('Please provide a valid store ID.')
+
+        const couponDetails = await db.coupon.upsert({
+            where: { id: coupon.id },
+            update: { ...coupon, storeId: normalizedStoreId },
+            create: { ...coupon, storeId: normalizedStoreId },
+        })
+        return couponDetails
+    } catch (error: unknown) {
+        // P2002: Unique constraint violation（instanceof チェック不要: code だけで識別）
+        if (
+            typeof (error as Record<string, unknown>).code === 'string' &&
+            (error as Record<string, unknown>).code === 'P2002'
+        ) {
+            throw new Error('このクーポンコードは既に使用されています')
+        }
+        if (error instanceof Error) {
+            console.error('[Coupon:upsertCouponAsAdmin] Failed to upsert coupon', {
+                error: error.message,
+                stack: error.stack,
+            })
+        }
+        throw new Error(
+            `Error occurred while upserting coupon: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
+}
+
+/**
+ * @Function deleteCouponAsAdmin
+ * @Description 管理者によるクーポン削除（店舗所有権チェックなし）
+ * @PermissionLevel Admin only
+ * @Parameters
+ *  - couponId: 削除対象クーポンの ID
+ * @Return 削除成功時 true
+ */
+export const deleteCouponAsAdmin = async (couponId: string) => {
+    await requireAdmin()
+
+    try {
+        if (!couponId) throw new Error('Please provide coupon ID.')
+
+        const response = await db.coupon.delete({
+            where: { id: couponId },
+        })
+        return response !== null
+    } catch (error: unknown) {
+        if (isGuardError(error)) throw error
+
+        if (error instanceof Error) {
+            console.error('[Coupon:deleteCouponAsAdmin] Failed to delete coupon', {
+                error: error.message,
+                stack: error.stack,
+            })
+        }
+        throw new Error(
+            `Error occurred while deleting coupon: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
+}
+
+/**
+ * @Function toggleCouponActive
+ * @Description クーポンの isActive を反転させる（管理者専用）
+ * @PermissionLevel Admin only
+ * @Parameters
+ *  - couponId: 対象クーポンの ID
+ * @Return 更新されたクーポン
+ */
+export const toggleCouponActive = async (couponId: string) => {
+    await requireAdmin()
+
+    try {
+        if (!couponId) throw new Error('Please provide coupon ID.')
+
+        const coupon = await db.coupon.findUnique({ where: { id: couponId } })
+        if (!coupon) throw new Error('Coupon not found.')
+
+        const updated = await db.coupon.update({
+            where: { id: couponId },
+            data: { isActive: !coupon.isActive },
+        })
+        return updated
+    } catch (error: unknown) {
+        if (isGuardError(error)) throw error
+
+        if (error instanceof Error) {
+            console.error('[Coupon:toggleCouponActive] Failed to toggle coupon', {
+                error: error.message,
+                stack: error.stack,
+            })
+        }
+        throw new Error(
+            `Error occurred while toggling coupon active state: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
