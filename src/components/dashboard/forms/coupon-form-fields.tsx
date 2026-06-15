@@ -28,6 +28,12 @@ interface CouponFormFieldsProps<T extends FieldValues & CouponBaseValues> {
     control: Control<T>
 }
 
+/**
+ * Renders form fields for creating or editing coupon information.
+ *
+ * @param control - A react-hook-form Control object for managing form state and validation
+ * @returns A React fragment containing the four coupon form fields
+ */
 export function CouponFormFields<T extends FieldValues & CouponBaseValues>({
     control,
 }: CouponFormFieldsProps<T>) {

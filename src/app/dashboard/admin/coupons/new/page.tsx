@@ -1,9 +1,9 @@
 import AdminCouponDetails from '@/components/dashboard/forms/admin-coupon-details'
 
 /**
- * 管理者向けクーポン新規作成ページ。
+ * Page for administrators to create new coupons.
  *
- * @returns AdminCouponDetails フォームを含む React 要素
+ * @returns A React element containing the coupon creation form.
  */
 export default function AdminNewCouponPage() {
     return (
