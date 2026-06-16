@@ -47,9 +47,10 @@ const PlaceOrderCard: FC<Props> = ({
     }
 
     let discountedAmount = 0
-    const applicableStoreItems = cartData.cartItems.filter(
-        (item) => item.storeId === coupon?.storeId
-    )
+    const isPlatformCoupon = coupon?.scope === 'PLATFORM'
+    const applicableStoreItems = isPlatformCoupon
+        ? cartData.cartItems
+        : cartData.cartItems.filter((item) => item.storeId === coupon?.storeId)
 
     const storeSubTotal = applicableStoreItems.reduce(
         (acc, item) => acc + Number(item.price) * item.quantity + Number(item.shippingFee),
