@@ -350,8 +350,16 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
 
     try {
         if (!coupon) throw new Error('Please provide coupon data.')
-        const normalizedStoreId = coupon.storeId?.trim()
-        if (!normalizedStoreId) throw new Error('Please provide a valid store ID.')
+        const isPlatform = coupon.scope === 'PLATFORM'
+
+        let normalizedStoreId: string | null
+        if (isPlatform) {
+            normalizedStoreId = null
+        } else {
+            const trimmed = coupon.storeId?.trim()
+            if (!trimmed) throw new Error('Please provide a valid store ID.')
+            normalizedStoreId = trimmed
+        }
 
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
