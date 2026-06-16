@@ -2,7 +2,7 @@ import CheckoutContainer from '@/components/store/checkout-page/container'
 import StoreHeader from '@/components/store/layout/header/header'
 import { db } from '@/lib/db'
 import { parseUserCountryCookie } from '@/lib/utils'
-import { CartWithCartItemsType } from '@/lib/types'
+import { serializeCart } from '@/lib/serialize-cart'
 import { getUserShippingAddresses } from '@/queries/user'
 import { currentUser } from '@clerk/nextjs/server'
 import { cookies } from 'next/headers'
@@ -51,38 +51,7 @@ export default async function CheckoutPage() {
     const cookieStore = await cookies()
     const userCountry = parseUserCountryCookie(cookieStore.get('userCountry')?.value)
 
-    // Server → Client Component の RSC シリアライズで Prisma.Decimal インスタンスは
-    // プレーンオブジェクトに化けてメソッドを失うため、number へ変換してから渡す
-    const serializedCart = {
-        ...cart,
-        subTotal: cart.subTotal.toNumber(),
-        shippingFees: cart.shippingFees.toNumber(),
-        total: cart.total.toNumber(),
-        cartItems: cart.cartItems.map((item) => ({
-            ...item,
-            price: item.price.toNumber(),
-            shippingFee: item.shippingFee.toNumber(),
-            totalPrice: item.totalPrice.toNumber(),
-        })),
-        coupon: cart.coupon
-            ? {
-                  ...cart.coupon,
-                  store: cart.coupon.store
-                      ? {
-                            ...cart.coupon.store,
-                            defaultShippingFeePerItem:
-                                cart.coupon.store.defaultShippingFeePerItem.toNumber(),
-                            defaultShippingFeeForAdditionalItem:
-                                cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
-                            defaultShippingFeePerKg:
-                                cart.coupon.store.defaultShippingFeePerKg.toNumber(),
-                            defaultShippingFeeFixed:
-                                cart.coupon.store.defaultShippingFeeFixed.toNumber(),
-                        }
-                      : null,
-              }
-            : null,
-    } as unknown as CartWithCartItemsType
+    const serializedCart = serializeCart(cart)
 
     return (
         <>

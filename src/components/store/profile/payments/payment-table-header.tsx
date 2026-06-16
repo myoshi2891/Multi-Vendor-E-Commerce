@@ -97,13 +97,7 @@ const PaymentTableHeader: FC<Props> = ({
                             id=""
                             className="h-8 w-24 cursor-pointer appearance-none rounded-l-md border px-4 outline-none hover:border hover:border-black"
                         >
-                            <option value="">
-                                <div className="flex h-8 overflow-hidden text-left text-sm">
-                                    <span className="flex-1 whitespace-nowrap">
-                                        Order
-                                    </span>
-                                </div>
-                            </option>
+                            <option value="">Order</option>
                         </select>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                             <svg
@@ -149,14 +143,8 @@ const PaymentTableHeader: FC<Props> = ({
                             }
                         >
                             {date_filters.map((filter) => (
-                                <option
-                                    key={filter.value}
-                                    value={filter.value}
-                                    className="flex h-8 overflow-hidden text-left text-sm"
-                                >
-                                    <span className="flex-1 whitespace-nowrap">
-                                        {filter.title}
-                                    </span>
+                                <option key={filter.value} value={filter.value}>
+                                    {filter.title}
                                 </option>
                             ))}
                         </select>

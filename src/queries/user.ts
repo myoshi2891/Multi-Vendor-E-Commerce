@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db'
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
+import { serializeCart } from '@/lib/serialize-cart'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
@@ -1141,36 +1142,5 @@ export const updateCheckoutProductWithLatest = async (
 
     if (!cart) throw new Error('Something went wrong while updating the cart.')
 
-    // サーバーアクション → クライアントのシリアライズで Prisma.Decimal のメソッドが
-    // 失われるため、number に変換してから返す
-    return {
-        ...cart,
-        subTotal: cart.subTotal.toNumber(),
-        shippingFees: cart.shippingFees.toNumber(),
-        total: cart.total.toNumber(),
-        cartItems: cart.cartItems.map((item) => ({
-            ...item,
-            price: item.price.toNumber(),
-            shippingFee: item.shippingFee.toNumber(),
-            totalPrice: item.totalPrice.toNumber(),
-        })),
-        coupon: cart.coupon
-            ? {
-                  ...cart.coupon,
-                  store: cart.coupon.store
-                      ? {
-                            ...cart.coupon.store,
-                            defaultShippingFeePerItem:
-                                cart.coupon.store.defaultShippingFeePerItem.toNumber(),
-                            defaultShippingFeeForAdditionalItem:
-                                cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
-                            defaultShippingFeePerKg:
-                                cart.coupon.store.defaultShippingFeePerKg.toNumber(),
-                            defaultShippingFeeFixed:
-                                cart.coupon.store.defaultShippingFeeFixed.toNumber(),
-                        }
-                      : null,
-              }
-            : null,
-    } as unknown as CartWithCartItemsType
+    return serializeCart(cart)
 }

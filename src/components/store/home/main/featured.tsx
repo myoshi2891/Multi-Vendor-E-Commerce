@@ -21,9 +21,16 @@ export default function Featured({ products }: { products: SimpleProduct[] }) {
     // State to store the current width of the screen (default to a safe desktop width)
     const [screenWidth, setScreenWidth] = useState<number>(1200);
 
+    // useMediaQuery evaluates window.matchMedia synchronously on the client's
+    // first render, while SSR always returns false. Gating on `mounted` keeps
+    // the hydration-time render identical to the server output.
+    const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
-        // Set actual screen width after component mounts on the client
         // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+
+        // Set actual screen width after component mounts on the client
         setScreenWidth(window.innerWidth);
 
         // Handler function to update screen width state when window is resized
@@ -77,15 +84,17 @@ export default function Featured({ products }: { products: SimpleProduct[] }) {
                 </Link>
                 {/* Product swiper */}
                 <div
-                    className={is1700px ? "ml-10" : ""}
+                    className={mounted && is1700px ? "ml-10" : ""}
                     style={{
                         // Responsive width calculation:
                         // - Below 1170px: Use dynamic width (screen width minus 300px for coupon section)
                         // - Above 1700px: Fixed 750px width
                         // - Between 1170px-1700px: Responsive width using calc (500px + 5vw)
-                        width: !is1170px
+                        // Before mount, fall back to the calc() branch so the first
+                        // client render matches the server-rendered markup.
+                        width: mounted && !is1170px
                             ? `${screenWidth - 300}px`
-                            : is1700px
+                            : mounted && is1700px
                               ? "750px"
                               : `calc(500px + 5vw)`,
                     }}
