@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|-----|
 | Jest テスト総数 (unit/component) | **1398** passed / 1401 total / 143 スイート（142 passed + 1 skipped suite）— 2026-06-16 Phase 5-B（platform-wide クーポン）完了: placeOrder/applyCoupon/updateCheckoutProductWithLatest の PLATFORM scope 対応、AdminCouponFormSchema superRefine、upsertCouponAsAdmin・seller upsertCoupon の P2002 統一日本語メッセージ（`dcd70cc`–`1e1749a`）：1387→1398 passed / 143 スイート（変動なし） |
-| Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
 | Playwright Visual | **2 スペック**（cart / checkout） |

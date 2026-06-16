@@ -532,7 +532,7 @@ export const createMockCoupon = (
     overrides: Partial<MockCoupon> = {}
 ): MockCoupon => {
     const scope = overrides.scope ?? "STORE";
-    return {
+    const merged: MockCoupon = {
         id: "coupon-001",
         code: "SAVE10",
         startDate: new Date(NOW - ONE_YEAR_MS),
@@ -546,6 +546,9 @@ export const createMockCoupon = (
         updatedAt: new Date(NOW - ONE_YEAR_MS),
         ...overrides,
     };
+    // overrides.storeId が scope=PLATFORM の不変条件を破る場合に再正規化する
+    if (merged.scope === "PLATFORM") merged.storeId = null;
+    return merged;
 };
 
 // ---- 配送先住所 ----

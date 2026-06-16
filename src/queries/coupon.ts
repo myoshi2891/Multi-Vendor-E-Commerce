@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
 import { requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
@@ -201,7 +201,7 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 export const applyCoupon = async (
     couponCode: string,
     cartId: string
-): Promise<{ message: string; cart: CartWithCartItemsType }> => {
+): Promise<{ message: string; cart: SerializedCartType }> => {
     try {
         // Step 1: Fetch the coupon details
         const coupon = await db.coupon.findUnique({

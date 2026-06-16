@@ -53,20 +53,23 @@ describe('PlaceOrderCard', () => {
         )
     })
 
-    const cartItem = createMockCartItem({
-        storeId: 'store-1',
-        price: new Prisma.Decimal('10.00'),
-        quantity: 2,
-        shippingFee: new Prisma.Decimal('5.00'),
-    })
+    const cartItem = {
+        ...createMockCartItem({
+            storeId: 'store-1',
+            price: new Prisma.Decimal('10.00'),
+            quantity: 2,
+            shippingFee: new Prisma.Decimal('5.00'),
+        }),
+        price: 10.0,
+        shippingFee: 5.0,
+        totalPrice: 25.0,
+    }
 
     const cartData: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
-        ...createMockCart({
-            id: 'cart-1',
-            subTotal: new Prisma.Decimal('20.00'),
-            shippingFees: new Prisma.Decimal('5.00'),
-            total: new Prisma.Decimal('25.00'),
-        }),
+        ...createMockCart({ id: 'cart-1' }),
+        subTotal: 20.0,
+        shippingFees: 5.0,
+        total: 25.0,
         cartItems: [cartItem],
         coupon: null,
     }
@@ -102,11 +105,18 @@ describe('PlaceOrderCard', () => {
             discount: 10,
             storeId: 'store-1',
         });
+        const store = createMockStore({ name: 'Test Store' })
         const coupon: CouponPropType = {
             ...couponMock,
             startDate: couponMock.startDate.toISOString(),
             endDate: couponMock.endDate.toISOString(),
-            store: createMockStore({ name: 'Test Store' })
+            store: {
+                ...store,
+                defaultShippingFeePerItem: store.defaultShippingFeePerItem.toNumber(),
+                defaultShippingFeeForAdditionalItem: store.defaultShippingFeeForAdditionalItem.toNumber(),
+                defaultShippingFeePerKg: store.defaultShippingFeePerKg.toNumber(),
+                defaultShippingFeeFixed: store.defaultShippingFeeFixed.toNumber(),
+            },
         };
         const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
@@ -136,12 +146,17 @@ describe('PlaceOrderCard', () => {
             endDate: couponMock.endDate.toISOString(),
             store: null,
         };
-        const otherStoreItem = createMockCartItem({
-            storeId: 'store-2',
-            price: new Prisma.Decimal('10.00'),
-            quantity: 1,
-            shippingFee: new Prisma.Decimal('0.00'),
-        })
+        const otherStoreItem = {
+            ...createMockCartItem({
+                storeId: 'store-2',
+                price: new Prisma.Decimal('10.00'),
+                quantity: 1,
+                shippingFee: new Prisma.Decimal('0.00'),
+            }),
+            price: 10.0,
+            shippingFee: 0.0,
+            totalPrice: 10.0,
+        }
         const cartWithPlatformCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
             ...cartData,
             cartItems: [cartItem, otherStoreItem],

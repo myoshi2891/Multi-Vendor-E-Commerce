@@ -8,14 +8,14 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
 import { cn } from '@/lib/utils'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 import ApplyCouponForm from '../forms/apply-coupon'
 import { PulseLoader } from 'react-spinners'
 
 interface Props {
     shippingAddress: ShippingAddress | null
-    cartData: CartWithCartItemsType
-    setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
+    cartData: SerializedCartType
+    setCartData: Dispatch<SetStateAction<SerializedCartType>>
 }
 
 const PlaceOrderCard: FC<Props> = ({

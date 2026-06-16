@@ -6,7 +6,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { ApplyCouponFormSchema } from '@/lib/schemas'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { Dispatch, SetStateAction } from 'react'
@@ -21,7 +21,7 @@ export default function ApplyCouponForm({
     setCartData,
 }: {
     cartId: string
-    setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
+    setCartData: Dispatch<SetStateAction<SerializedCartType>>
 }) {
     // Form hook for managing form state and validation
     const form = useForm<z.infer<typeof ApplyCouponFormSchema>>({

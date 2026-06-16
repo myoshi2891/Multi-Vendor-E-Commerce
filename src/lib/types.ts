@@ -254,9 +254,40 @@ export type ReviewDetailsType = {
     color: string;
 };
 
-export type CartWithCartItemsType = Cart & {
-    cartItems: CartItem[];
-    coupon: (Coupon & { store: Store | null }) | null;
+/**
+ * serializeCart() の戻り値型。RSC境界を越えると Prisma.Decimal はメソッドを失った
+ * プレーンオブジェクトになるため、number に変換済みであることを型で正直に表す。
+ */
+export type SerializedCartType = Omit<
+    Cart,
+    "subTotal" | "shippingFees" | "total"
+> & {
+    subTotal: number;
+    shippingFees: number;
+    total: number;
+    cartItems: (Omit<CartItem, "price" | "shippingFee" | "totalPrice"> & {
+        price: number;
+        shippingFee: number;
+        totalPrice: number;
+    })[];
+    coupon:
+        | (Coupon & {
+              store:
+                  | (Omit<
+                        Store,
+                        | "defaultShippingFeePerItem"
+                        | "defaultShippingFeeForAdditionalItem"
+                        | "defaultShippingFeePerKg"
+                        | "defaultShippingFeeFixed"
+                    > & {
+                        defaultShippingFeePerItem: number;
+                        defaultShippingFeeForAdditionalItem: number;
+                        defaultShippingFeePerKg: number;
+                        defaultShippingFeeFixed: number;
+                    })
+                  | null;
+          })
+        | null;
 };
 
 export type UserShippingAddressType = ShippingAddress & {

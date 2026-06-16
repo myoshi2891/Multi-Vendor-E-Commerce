@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 
 type CartWithRelations = Prisma.CartGetPayload<{
     include: { cartItems: true; coupon: { include: { store: true } } }
@@ -9,7 +9,7 @@ type CartWithRelations = Prisma.CartGetPayload<{
  * Server → Client のRSCシリアライズで Prisma.Decimal インスタンスが
  * プレーンオブジェクトに化けてメソッドを失うため、number に変換してから返す。
  */
-export function serializeCart(cart: CartWithRelations): CartWithCartItemsType {
+export function serializeCart(cart: CartWithRelations): SerializedCartType {
     return {
         ...cart,
         subTotal: cart.subTotal.toNumber(),
@@ -39,5 +39,5 @@ export function serializeCart(cart: CartWithRelations): CartWithCartItemsType {
                       : null,
               }
             : null,
-    } as unknown as CartWithCartItemsType
+    }
 }

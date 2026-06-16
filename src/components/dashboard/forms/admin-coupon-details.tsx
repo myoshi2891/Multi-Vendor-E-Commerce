@@ -153,7 +153,12 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                                 <FormItem className="flex-1">
                                     <FormLabel>Scope</FormLabel>
                                     <Select
-                                        onValueChange={field.onChange}
+                                        onValueChange={(value) => {
+                                            field.onChange(value)
+                                            if (value === 'PLATFORM') {
+                                                form.setValue('storeId', '')
+                                            }
+                                        }}
                                         value={field.value}
                                     >
                                         <FormControl>

@@ -1,6 +1,6 @@
 'use client'
 import {
-    CartWithCartItemsType,
+    SerializedCartType,
     Country as CountryType,
     UserShippingAddressType,
 } from '@/lib/types'
@@ -13,7 +13,7 @@ import CountryNote from '../shared/country-note'
 import { updateCheckoutProductWithLatest } from '@/queries/user'
 
 interface Props {
-    cart: CartWithCartItemsType
+    cart: SerializedCartType
     countries: Country[]
     addresses: UserShippingAddressType[]
     userCountry: CountryType
@@ -25,7 +25,7 @@ const CheckoutContainer: FC<Props> = ({
     addresses,
     userCountry,
 }) => {
-    const [cartData, setCartData] = useState<CartWithCartItemsType>(cart)
+    const [cartData, setCartData] = useState<SerializedCartType>(cart)
 
     const [selectedAddress, setSelectedAddress] =
         useState<ShippingAddress | null>(null)

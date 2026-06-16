@@ -1,4 +1,4 @@
-import { CartItem } from '@prisma/client'
+import { SerializedCartType } from '@/lib/types'
 import { ChevronRight, Truck } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -7,7 +7,7 @@ export default function CheckoutProductCard({
     product,
     isDiscounted,
 }: {
-    product: CartItem
+    product: SerializedCartType['cartItems'][number]
     isDiscounted: boolean
 }) {
     const { productSlug, variantSlug, sizeId, shippingFee } = product

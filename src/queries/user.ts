@@ -5,7 +5,7 @@ import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
 import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
 import { serializeCart } from '@/lib/serialize-cart'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
-import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
+import { CartProductType, SerializedCartType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
@@ -949,9 +949,12 @@ export const addToWishlist = async (
  */
 
 export const updateCheckoutProductWithLatest = async (
-    cartProducts: CartItem[],
+    cartProducts: Pick<
+        CartItem,
+        'id' | 'cartId' | 'productId' | 'variantId' | 'sizeId' | 'quantity'
+    >[],
     address: CountryDB | undefined
-): Promise<CartWithCartItemsType> => {
+): Promise<SerializedCartType> => {
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
