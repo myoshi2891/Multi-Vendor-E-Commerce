@@ -11,8 +11,9 @@
 - ✅ **Phase 1（F2 注文管理）完了** — 1-A〜1-D すべて実装・検証済み。
 - ✅ **Phase 2（F1 ダッシュボード統計）完了** — 2-A（統計 query）+ 2-B（KPI カード / 売上チャート / 最近リスト UI）を実装・検証済み（2026-06-15）。
 - ✅ **Phase 3（F3 クーポン横断管理）完了** — 3-A〜3-E すべて実装・SonarCloud QG 修復済み（2026-06-16）。
-- 👉 **次の着手: Phase 4（null セーフ化先行）**（Phase 5 スキーマ破壊変更の前提）。
-- Phase 5 は破壊的変更のため `safe-migration` 必須。
+- ✅ **Phase 4（null セーフ化先行）完了** — Phase 5 スキーマ破壊変更の前提を整備済み。
+- ✅ **Phase 5（F3-第2段 platform-wide クーポン発行）完了** — 5-A〜5-C すべて実装・E2E 検証済み（2026-06-16）。
+- 👉 **次の着手: なし（tasks.md 全 Phase 完了）**。残課題（在庫連動・PartiallyRefunded 部分返金）は別タスク。
 
 ---
 
@@ -73,19 +74,17 @@
 
 ---
 
-## Phase 5: F3-第2段 platform-wide 発行（破壊的・決済波及）⬜ 未着手 👈 次はここ
-
----
-
-## Phase 5: F3-第2段 platform-wide 発行（破壊的・決済波及）⬜ 未着手
+## Phase 5: F3-第2段 platform-wide 発行（破壊的・決済波及）✅ 完了（2026-06-16）
 
 > **`safe-migration` skill 必須・厳格な直列・最後に単独実施。**
 
-| Task | 内容 | 状態 |
-| --- | --- | --- |
-| 5-A | スキーマ第2段（`CouponScope` enum + `storeId` nullable 化） | ⬜ |
-| 5-B | 影響箇所 3 改修（`placeOrder` / `applyCoupon` Decimal 化 / `saveUserCart`）+ seller `upsertCoupon` P2002 + 回帰テスト | ⬜ |
-| 5-C | E2E 検証（PLATFORM クーポン購入フロー・3 ブラウザ） | ⬜ |
+| Task | 内容 | 状態 | コミット / 備考 |
+| --- | --- | --- | --- |
+| 5-A | スキーマ第2段（`CouponScope` enum + `storeId` nullable 化）+ ERD 再生成 | ✅ | `7d3b31d` |
+| 5-B | 影響箇所 3 改修（`placeOrder` 按分 / `applyCoupon` Decimal 化 / `updateCheckoutProductWithLatest` null ガード）+ Zod superRefine + `upsertCouponAsAdmin` + seller `upsertCoupon` P2002 + admin UI scope ドロップダウン | ✅ | `182b6a5`〜`1e1749a` |
+| 5-C | E2E 検証（PLATFORM クーポン購入フロー）+ `applyCoupon` Decimal シリアライズ漏れ修正 | ✅ | `ae9364f` / `3463d1d` |
+
+> **検証**: tsc 0 / lint 0 errors / test 1398 passed（5-C はテスト数変動なし）/ Playwright `platform-coupon.spec.ts` (chromium) green。残課題（在庫連動・PartiallyRefunded 部分返金）は別タスク。
 
 ---
 

@@ -13,6 +13,8 @@
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
 - 1401 tests across 143 suites (3 skipped), as of 2026-06-16.
+  Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
+  PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

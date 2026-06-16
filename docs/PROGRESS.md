@@ -731,6 +731,36 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 
 ---
 
+### Phase 5-C: F3-第2段 platform-wide クーポン E2E検証 (2026-06-16)
+
+#### 概要
+
+5-B で実装した PLATFORM scope クーポンを E2E で検証した。なぜ: `Coupon.storeId` nullable 化と `placeOrder`/`applyCoupon`/`updateCheckoutProductWithLatest` の改修はユニットテストでしか確認していなかったため、実際の購入フロー（複数ストア商品 → クーポン適用 → チェックアウト → 注文確定）で UI 表示まで含めて回帰がないことを確認する必要があった。実装過程で `applyCoupon` が `Prisma.Decimal` を含む Cart をそのままクライアントへ返しており、Decimal のメソッドがサーバーアクション境界で失われる既知パターン（`updateCheckoutProductWithLatest` で過去修正済み、`e872af8`）と同型のバグを検出したため、同コミットで先に修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.ts` (`applyCoupon`) | クライアント返却前に Cart の Decimal フィールドを `toNumber()` でシリアライズ | `ae9364f` |
+| `tests/e2e/platform-coupon.spec.ts` | 2店舗カート + PLATFORM クーポン適用 → 注文確定 → 両 OrderGroup の割引・couponId 反映を検証する E2E テスト新規 | `3463d1d` |
+| `tests/e2e/seed/constants.ts` / `seed-e2e.ts` | storeB / productB / variantB / `scope: "PLATFORM"` クーポンの seed データは前段で投入済み | `59db81d`（先行） |
+
+#### 次に何をするか
+
+- 残課題（在庫連動・PartiallyRefunded 部分返金）は Phase 5 の対象外。別タスクで扱う。
+- Phase 5（F3-第2段 platform-wide クーポン発行）は 5-A〜5-C すべて完了。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1398 passed / 1401 total | **1398 passed / 1401 total**（変動なし） |
+| Jest スイート数 | 143 | **143**（変動なし） |
+| Playwright E2E（main） | 5 スペック | **6 スペック**（+ `platform-coupon.spec.ts`） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
