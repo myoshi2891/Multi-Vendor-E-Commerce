@@ -1412,5 +1412,61 @@ describe("updateCheckoutProductWithLatest", () => {
                 )
             ).rejects.toThrow("Couldn't retrieve country data.");
         });
+
+        it("PLATFORMスコープでcoupon.store=nullでもTypeErrorにならず全item割引対象になる", async () => {
+            const cartItems = [
+                createMockCartItem({ quantity: 1, storeId: "store-A" }),
+            ];
+            const address = createMockCountry();
+            const dbProduct = createMockFullProduct({ storeId: "store-A" });
+
+            mockDb.product.findUnique.mockResolvedValue(dbProduct);
+            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
+            mockDb.cartItem.update.mockResolvedValue(
+                createMockCartItem({
+                    quantity: 1,
+                    price: 29.99,
+                    shippingFee: 0,
+                    storeId: "store-A",
+                })
+            );
+
+            const platformCoupon = createMockCoupon({
+                discount: 10,
+                scope: "PLATFORM",
+                storeId: null,
+                startDate: new Date("2024-01-01"),
+                endDate: new Date("2027-12-31"),
+                store: undefined,
+            });
+            mockDb.cart.findUnique.mockResolvedValue({ coupon: platformCoupon });
+
+            const updatedCart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: { ...platformCoupon, store: null },
+            };
+            mockDb.cart.update.mockResolvedValue(updatedCart);
+
+            const result = await updateCheckoutProductWithLatest(
+                cartItems as never,
+                address as never
+            );
+
+            expect(result).toBeDefined();
+            expect(result.coupon?.store).toBeNull();
+            // storeId に関わらず割引が適用される（PLATFORM スコープ）
+            expect(mockDb.cart.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        total: expect.any(Prisma.Decimal),
+                    }),
+                })
+            );
+            const calledTotal =
+                mockDb.cart.update.mock.calls[0][0].data.total as Prisma.Decimal;
+            // 29.99 - (29.99 * 10 / 100) = 26.991
+            expect(calledTotal.toString()).toBe("26.991");
+        });
     });
 });
