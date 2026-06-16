@@ -1135,17 +1135,19 @@ export const updateCheckoutProductWithLatest = async (
         coupon: cart.coupon
             ? {
                   ...cart.coupon,
-                  store: {
-                      ...cart.coupon.store,
-                      defaultShippingFeePerItem:
-                          cart.coupon.store.defaultShippingFeePerItem.toNumber(),
-                      defaultShippingFeeForAdditionalItem:
-                          cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
-                      defaultShippingFeePerKg:
-                          cart.coupon.store.defaultShippingFeePerKg.toNumber(),
-                      defaultShippingFeeFixed:
-                          cart.coupon.store.defaultShippingFeeFixed.toNumber(),
-                  },
+                  store: cart.coupon.store
+                      ? {
+                            ...cart.coupon.store,
+                            defaultShippingFeePerItem:
+                                cart.coupon.store.defaultShippingFeePerItem.toNumber(),
+                            defaultShippingFeeForAdditionalItem:
+                                cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
+                            defaultShippingFeePerKg:
+                                cart.coupon.store.defaultShippingFeePerKg.toNumber(),
+                            defaultShippingFeeFixed:
+                                cart.coupon.store.defaultShippingFeeFixed.toNumber(),
+                        }
+                      : null,
               }
             : null,
     } as unknown as CartWithCartItemsType

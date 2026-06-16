@@ -66,7 +66,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 startDate: data.startDate,
                 endDate: data.endDate,
                 isActive: data.isActive,
-                storeId: data.storeId,
+                storeId: data.storeId ?? '',
             })
         }
     }, [data, form])
@@ -83,6 +83,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 endDate: values.endDate,
                 isActive: values.isActive,
                 storeId: values.storeId,
+                scope: data?.scope ?? 'STORE',
                 createdAt: data?.createdAt ?? new Date(),
                 updatedAt: new Date(),
             })

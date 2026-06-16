@@ -256,7 +256,7 @@ export type ReviewDetailsType = {
 
 export type CartWithCartItemsType = Cart & {
     cartItems: CartItem[];
-    coupon: (Coupon & { store: Store }) | null;
+    coupon: (Coupon & { store: Store | null }) | null;
 };
 
 export type UserShippingAddressType = ShippingAddress & {

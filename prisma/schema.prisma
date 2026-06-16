@@ -654,6 +654,11 @@ model Wishlist {
   @@index([sizeId])
 }
 
+enum CouponScope {
+  STORE
+  PLATFORM
+}
+
 model Coupon {
   id        String @id @default(uuid())
   code      String @unique
@@ -661,9 +666,10 @@ model Coupon {
   endDate   String
   discount  Int
   isActive  Boolean @default(true)
+  scope     CouponScope @default(STORE)
 
-  storeId String
-  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+  storeId String?
+  store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
   orders OrderGroup[] @relation("CouponToOrderGroup")
 

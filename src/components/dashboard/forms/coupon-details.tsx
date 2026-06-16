@@ -62,6 +62,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
                     startDate: values.startDate,
                     endDate: values.endDate,
                     isActive: data?.isActive ?? true,
+                    scope: 'STORE',
                     storeId: '',
                     createdAt: new Date(),
                     updatedAt: new Date(),
