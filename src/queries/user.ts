@@ -621,7 +621,21 @@ export const placeOrder = async (
         let orderTotalPrice = new Prisma.Decimal("0")
         let orderShippingFee = new Prisma.Decimal("0")
 
-        for (const [storeId, items] of Object.entries(groupedItems)) {
+        // PLATFORM スコープのクーポンはカート全体の割引総額を先に算出し、
+        // 最終グループで「総割引 − Σ確定済グループ割引」を割り当てて端数を吸収する（判断5-4）
+        const isPlatformCoupon = cartCoupon?.scope === 'PLATFORM' && cartCoupon?.isActive === true
+        const cartTotalPrice = validatedCartItems.reduce(
+            (acc, item) => acc.add(item.totalPrice),
+            new Prisma.Decimal("0")
+        )
+        const platformTotalDiscount = isPlatformCoupon && cartCoupon
+            ? cartTotalPrice.mul(cartCoupon.discount).div(100)
+            : new Prisma.Decimal("0")
+        let cumulativePlatformDiscount = new Prisma.Decimal("0")
+
+        const storeEntries = Object.entries(groupedItems)
+
+        for (const [index, [storeId, items]] of storeEntries.entries()) {
             // Calculate store-specific totals
             const groupedTotalPrice = items.reduce(
                 (acc, item) => acc.add(item.totalPrice),
@@ -638,13 +652,20 @@ export const placeOrder = async (
             const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
             const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
 
-            // Check coupon store and active status（isActive=false のクーポンは割引不適用）
-            const check = storeId === cartCoupon?.storeId && cartCoupon?.isActive === true
+            // Check coupon scope/store and active status（isActive=false のクーポンは割引不適用）
+            const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCoupon?.isActive === true)
 
             // Calculate discount based on coupon
             let discountedAmount = new Prisma.Decimal("0")
             if (check && cartCoupon) {
-                discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+                if (isPlatformCoupon && index === storeEntries.length - 1) {
+                    discountedAmount = platformTotalDiscount.sub(cumulativePlatformDiscount)
+                } else {
+                    discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+                    if (isPlatformCoupon) {
+                        cumulativePlatformDiscount = cumulativePlatformDiscount.add(discountedAmount)
+                    }
+                }
             }
 
             // Calculate the total after applying the discount

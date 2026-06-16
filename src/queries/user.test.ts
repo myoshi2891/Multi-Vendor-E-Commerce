@@ -998,7 +998,7 @@ describe("placeOrder", () => {
             }
 
             // storeA: 10 - (10*0.15=1.50) = 8.50 / storeB(最終グループ): 20 - (4.50-1.50=3.00) = 17.00
-            const totals = calls.map((call) => call[0].data.total.toString());
+            const totals = calls.map((call: typeof calls[number]) => call[0].data.total.toString());
             expect(totals).toEqual(["8.5", "17"]);
 
             // 端数吸収後の合計はカート全体の割引(30*0.15=4.50)と一致する
