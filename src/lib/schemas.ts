@@ -555,7 +555,7 @@ export const AdminCouponFormSchema = CouponFormSchema.extend({
     storeId: z.string().nullable().optional(),
 }).superRefine((val, ctx) => {
     // F3-10: STORE なら storeId 必須、PLATFORM なら null/空
-    if (val.scope === "STORE" && !val.storeId) {
+    if (val.scope === "STORE" && (!val.storeId || val.storeId.trim() === "")) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["storeId"],

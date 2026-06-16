@@ -175,7 +175,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                             )}
                         />
 
-                        {!data?.id && scope === 'STORE' && (
+                        {scope === 'STORE' && (
                             <FormField
                                 control={form.control}
                                 name="storeId"

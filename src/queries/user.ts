@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db'
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
+import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
 import { serializeCart } from '@/lib/serialize-cart'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
@@ -624,7 +625,8 @@ export const placeOrder = async (
 
         // PLATFORM スコープのクーポンはカート全体の割引総額を先に算出し、
         // 最終グループで「総割引 − Σ確定済グループ割引」を割り当てて端数を吸収する（判断5-4）
-        const isPlatformCoupon = cartCoupon?.scope === 'PLATFORM' && cartCoupon?.isActive === true
+        const cartCouponValid = cartCoupon ? isCouponCurrentlyValid(cartCoupon) : false
+        const isPlatformCoupon = cartCoupon?.scope === 'PLATFORM' && cartCouponValid
         const cartTotalPrice = validatedCartItems.reduce(
             (acc, item) => acc.add(item.totalPrice),
             new Prisma.Decimal("0")
@@ -634,7 +636,8 @@ export const placeOrder = async (
             : new Prisma.Decimal("0")
         let cumulativePlatformDiscount = new Prisma.Decimal("0")
 
-        const storeEntries = Object.entries(groupedItems)
+        // 端数吸収するストアが実行ごとにブレないよう、storeId でソートして決定論的な順序にする
+        const storeEntries = Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b))
 
         for (const [index, [storeId, items]] of storeEntries.entries()) {
             // Calculate store-specific totals
@@ -653,8 +656,8 @@ export const placeOrder = async (
             const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
             const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
 
-            // Check coupon scope/store and active status（isActive=false のクーポンは割引不適用）
-            const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCoupon?.isActive === true)
+            // Check coupon scope/store and validity（isActive=false または期間外のクーポンは割引不適用）
+            const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCouponValid)
 
             // Calculate discount based on coupon
             let discountedAmount = new Prisma.Decimal("0")
@@ -1094,11 +1097,8 @@ export const updateCheckoutProductWithLatest = async (
     // Apply coupon discount if applicable
     if (cartCoupon?.coupon) {
         const { coupon } = cartCoupon
-        const currentDate = new Date()
-        const startDate = new Date(coupon.startDate)
-        const endDate = new Date(coupon.endDate)
 
-        if (currentDate > startDate && currentDate < endDate) {
+        if (isCouponCurrentlyValid(coupon)) {
             // PLATFORM スコープは全item対象、STORE スコープは対象店舗のみ
             const isPlatform = coupon.scope === 'PLATFORM'
             const applicableStoreItems = isPlatform

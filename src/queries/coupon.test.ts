@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import {
     upsertCoupon,
     getStoreCoupons,
@@ -644,13 +645,8 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE10", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        total: 99, // 110 - 11
-                    }),
-                })
-            );
+            const { data } = mockDb.cart.update.mock.calls[0][0];
+            expect(new Prisma.Decimal(data.total).toNumber()).toBe(99); // 110 - 11
         });
 
         it("50%割引が正しく計算される", async () => {
@@ -665,13 +661,8 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE50", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        total: 100, // 200 - 100
-                    }),
-                })
-            );
+            const { data } = mockDb.cart.update.mock.calls[0][0];
+            expect(new Prisma.Decimal(data.total).toNumber()).toBe(100); // 200 - 100
         });
 
         it("複数商品の合計に対して割引が適用される", async () => {
@@ -707,13 +698,8 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE10", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        total: 139.5, // 155 - 15.5
-                    }),
-                })
-            );
+            const { data } = mockDb.cart.update.mock.calls[0][0];
+            expect(new Prisma.Decimal(data.total).toNumber()).toBe(139.5); // 155 - 15.5
         });
 
         it("PLATFORMスコープの場合は店舗を問わず全カート商品が割引対象になる", async () => {
@@ -758,13 +744,8 @@ describe("applyCoupon", () => {
 
             expect(result.message).toContain("Coupon applied successfully");
             expect(result.message).toContain("全店舗");
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        total: 90, // 100 - 10
-                    }),
-                })
-            );
+            const { data } = mockDb.cart.update.mock.calls[0][0];
+            expect(new Prisma.Decimal(data.total).toNumber()).toBe(90); // 100 - 10
         });
 
         it("丸め境界値(1.005)でDecimal演算により正しく半数上げされる（Numberのfloat誤差バグ修正）", async () => {
@@ -780,13 +761,8 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE15", "cart-001");
 
             expect(result.message).toContain("-$1.01");
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        total: 8.995, // 10 - 1.005
-                    }),
-                })
-            );
+            const { data } = mockDb.cart.update.mock.calls[0][0];
+            expect(new Prisma.Decimal(data.total).toNumber()).toBe(8.995); // 10 - 1.005
         });
     });
 

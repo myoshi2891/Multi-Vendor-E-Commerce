@@ -56,12 +56,14 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
         }
 
         // Upsert coupon into the database
+        // scope はクライアント入力を信用せず STORE に固定する（SELLER による PLATFORM クーポン作成を防ぐ）
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: store.id },
+            update: { ...coupon, storeId: store.id, scope: 'STORE' },
             create: {
                 ...coupon,
                 storeId: store.id,
+                scope: 'STORE',
             },
         })
 
@@ -277,7 +279,7 @@ export const applyCoupon = async (
 
         const discountedAmount = targetTotal.mul(coupon.discount).div(100)
 
-        const newTotal = cart.total.sub(discountedAmount).toNumber()
+        const newTotal = cart.total.sub(discountedAmount)
 
         // Step 7: Update the cart with the applied coupon details and new total
         const updatedCart = await db.cart.update({

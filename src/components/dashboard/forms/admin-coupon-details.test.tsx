@@ -140,8 +140,9 @@ describe('AdminCouponDetails', () => {
             expect(screen.getByText('Store ID')).toBeInTheDocument()
         })
 
-        it('正常系: 編集時に Store ID フィールドが表示されない', () => {
-            // Arrange
+        it('正常系: 編集時も scope=STORE なら Store ID フィールドが表示される', () => {
+            // Arrange — scope を PLATFORM → STORE に変更するケースを想定し、
+            // 編集時でも storeId を入力できる必要がある（id の有無で出し分けない）
             const coupon = {
                 ...createMockCoupon({ id: 'coupon-123' }),
                 store: createMockStore(),
@@ -151,7 +152,7 @@ describe('AdminCouponDetails', () => {
             render(<AdminCouponDetails data={coupon as never} />)
 
             // Assert
-            expect(screen.queryByText('Store ID')).not.toBeInTheDocument()
+            expect(screen.getByText('Store ID')).toBeInTheDocument()
         })
 
         it('正常系: Active スイッチが存在する', () => {
