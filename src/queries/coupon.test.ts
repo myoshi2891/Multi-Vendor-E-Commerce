@@ -1241,6 +1241,24 @@ describe("upsertCouponAsAdmin (バリデーション・エラーハンドリン�
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
     });
+
+    it("正常系: scope=PLATFORMの場合storeIdが空でもstoreId:nullでupsertされる", async () => {
+        // Arrange
+        const coupon = createMockCoupon({ scope: "PLATFORM", storeId: null });
+        mockDb.coupon.upsert.mockResolvedValue(coupon);
+
+        // Act
+        const result = await upsertCouponAsAdmin(coupon as never);
+
+        // Assert
+        expect(result).toEqual(coupon);
+        expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                create: expect.objectContaining({ storeId: null }),
+                update: expect.objectContaining({ storeId: null }),
+            })
+        );
+    });
 });
 
 // ==================================================
