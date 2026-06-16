@@ -40,6 +40,7 @@ jest.mock("@/lib/db", () => ({
         },
         cart: {
             findUnique: jest.fn(),
+            findFirst: jest.fn(),
             update: jest.fn(),
         },
     },
@@ -488,6 +489,12 @@ describe("deleteCoupon", () => {
 // applyCoupon
 // ==================================================
 describe("applyCoupon", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+        });
+    });
+
     describe("バリデーション", () => {
         it("存在しないクーポンコードの場合エラーをスローする", async () => {
             mockDb.coupon.findUnique.mockResolvedValue(null);
@@ -544,7 +551,7 @@ describe("applyCoupon", () => {
                     store: createMockStore(),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(null);
+            mockDb.cart.findFirst.mockResolvedValue(null);
 
             await expect(
                 applyCoupon("SAVE10", "invalid-cart")
@@ -558,7 +565,7 @@ describe("applyCoupon", () => {
                     store: createMockStore(),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: "existing-coupon",
                     cartItems: [],
@@ -580,7 +587,7 @@ describe("applyCoupon", () => {
                 })
             );
             // カート内の商品は別の店舗のもの
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     cartItems: [
@@ -615,7 +622,7 @@ describe("applyCoupon", () => {
                     store: createMockStore(),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     total: cartTotal,
@@ -674,7 +681,7 @@ describe("applyCoupon", () => {
                     store: createMockStore(),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     total: 155,
@@ -712,7 +719,7 @@ describe("applyCoupon", () => {
                     store: undefined,
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     total: 100,
@@ -774,7 +781,7 @@ describe("applyCoupon", () => {
                     store: createMockStore(),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     total: 100,
@@ -816,7 +823,7 @@ describe("applyCoupon", () => {
                     store: createMockStore({ name: "My Shop" }),
                 })
             );
-            mockDb.cart.findUnique.mockResolvedValue(
+            mockDb.cart.findFirst.mockResolvedValue(
                 createMockCart({
                     couponId: null,
                     total: 100,

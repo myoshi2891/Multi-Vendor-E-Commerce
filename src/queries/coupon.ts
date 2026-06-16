@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { SerializedCartType } from '@/lib/types'
 import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
-import { requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
+import { requireUser, requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
 import { Coupon, Prisma } from '@prisma/client'
 
 const isGuardError = (error: unknown): error is Error => {
@@ -202,6 +202,7 @@ export const applyCoupon = async (
     couponCode: string,
     cartId: string
 ): Promise<{ message: string; cart: SerializedCartType }> => {
+    const user = await requireUser()
     try {
         // Step 1: Fetch the coupon details
         const coupon = await db.coupon.findUnique({
@@ -230,10 +231,11 @@ export const applyCoupon = async (
             throw new Error('This coupon has been deactivated.')
         }
 
-        // Step 3: Fetch the cart and validate its existence
-        const cart = await db.cart.findUnique({
+        // Step 3: Fetch the cart and validate its existence（userId で所有権も確認）
+        const cart = await db.cart.findFirst({
             where: {
                 id: cartId,
+                userId: user.id,
             },
             include: {
                 cartItems: true,

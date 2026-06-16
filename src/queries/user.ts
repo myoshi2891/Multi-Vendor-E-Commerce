@@ -7,6 +7,7 @@ import { serializeCart } from '@/lib/serialize-cart'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, SerializedCartType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
+import { requireUser } from '@/lib/auth-guards'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
 import {
@@ -955,6 +956,12 @@ export const updateCheckoutProductWithLatest = async (
     >[],
     address: CountryDB | undefined
 ): Promise<SerializedCartType> => {
+    if (cartProducts.length === 0) throw new Error('No cart products provided.')
+    const cartId = cartProducts[0].cartId
+    const user = await requireUser()
+    const ownedCart = await db.cart.findFirst({ where: { id: cartId, userId: user.id } })
+    if (!ownedCart) throw new Error('Unauthorized: cart does not belong to current user.')
+
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -1076,7 +1083,7 @@ export const updateCheckoutProductWithLatest = async (
     // Apply coupon if exist
     const cartCoupon = await db.cart.findUnique({
         where: {
-            id: cartProducts[0].cartId,
+            id: cartId,
         },
         select: {
             coupon: {
@@ -1126,7 +1133,7 @@ export const updateCheckoutProductWithLatest = async (
 
     const cart = await db.cart.update({
         where: {
-            id: cartProducts[0].cartId,
+            id: cartId,
         },
         data: {
             subTotal,

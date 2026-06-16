@@ -75,7 +75,9 @@ const CheckoutContainer: FC<Props> = ({
                                 key={product.variantId}
                                 product={product}
                                 isDiscounted={
-                                    cartData.coupon?.storeId === product.storeId
+                                    cartData.coupon !== null &&
+                                    (cartData.coupon.scope === 'PLATFORM' ||
+                                        cartData.coupon.storeId === product.storeId)
                                 }
                             />
                         ))}

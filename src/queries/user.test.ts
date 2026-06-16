@@ -1270,6 +1270,13 @@ describe("addToWishlist", () => {
 // updateCheckoutProductWithLatest
 // ==================================================
 describe("updateCheckoutProductWithLatest", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+        });
+        mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+    });
+
     describe("データ検証", () => {
         it("商品が見つからない場合エラーをスローする", async () => {
             const cartItems = [createMockCartItem()];
