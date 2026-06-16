@@ -156,6 +156,61 @@
 - **アーカイブ作業**: `render-html.ts` の `NEXT_ACTIONS` から C1 を削除、`QA_HANDOFF.md` の C1 をアーカイブ化し C2 の依頼プロンプトを新設、`COVERAGE_REPORT.md §3 C1` を `~~完了~~` 化、`coverage-dashboard.html` を再生成。
 - **次アクション**: (1) featured.tsx の SSR `window` バグ修正 → lhci URL に `/` を追加。(2) C2（Bundle Size 継続監視、`.github/workflows/bundle.yml`）。(3) 数回観測後に lhci の assertions を `warn → error` 化。
 
+### 2026-06-16: 管理者ダッシュボード Phase 4 完了（null セーフ化先行リファクタ）
+
+#### 概要
+
+`docs/design/admin-dashboard/tasks.md` の **Phase 4（下位互換性確保ステップ）を完結**。Phase 5 で `Coupon.storeId` が nullable になる前に、`coupon.store` を参照する箇所を null セーフ化。振る舞いは変えず（現状 storeId は必須のため fallback は使用されない）、スキーマ変更後の安全着地を保証する。
+
+#### 実施内容
+
+| Task | 対象 | コミット |
+|------|------|---------|
+| 4-1 | `src/queries/coupon.ts:294` applyCoupon メッセージの `coupon.store.name` → `?.name ?? '全店舗'` | `04c9636` |
+| 4-2 | `src/queries/user.ts:1135-1150` saveUserCart 確認 → ternary ガード済みのため変更不要 | — |
+| 4-3 | `src/components/store/cards/place-order.tsx:127` + `src/app/dashboard/admin/coupons/columns.tsx:62` の `coupon.store.name` → null セーフ | `a977236` |
+| 4-4 | tsc 0 errors / test 1387 passed / lint 0 errors 検証 | — |
+
+#### テスト統計（変動なし）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1387 passed | **1387 passed**（変動なし・リファクタのみ） |
+| スイート数 | 143 | 143 |
+| 型エラー | 0 件 | **0 件** |
+
+> **次の着手**: Phase 5（F3-第2段 platform-wide 発行）— `safe-migration` skill 必須・破壊的・厳格な直列。
+
+---
+
+### 2026-06-16: 管理者ダッシュボード Phase 3 完了（F3 クーポン横断管理）
+
+#### 概要
+
+`docs/design/admin-dashboard/tasks.md` の **Phase 3（F3-第1段 クーポン横断管理）を完結**。`Coupon.isActive` スキーマ追加・admin クーポン query 4 種・Zod スキーマ・admin クーポン UI + SonarCloud QG 修復（PR #138）まで含めた全タスク（3-A〜3-E）が完了。詳細は下記「SonarCloud QG 修復（PR #138）」エントリを参照。
+
+#### 実施内容（主要コミット）
+
+| Task | 対象 | コミット |
+|------|------|---------|
+| 3-A（schema） | `Coupon.isActive Boolean @default(true)` 追加・ERD 再生成 | `b4095bd` / `bc95656` |
+| 3-B（isActive 再検証） | `applyCoupon` / `placeOrder` の `isActive=false` ガード | `b4095bd` / `669ad3d` |
+| 3-C（admin query） | `getAllCoupons` / `upsertCouponAsAdmin`(P2002) / `deleteCouponAsAdmin` / `toggleCouponActive` | `c4693b1` Red / `982c765` Green |
+| 3-D（Zod） | `AdminCouponFormSchema`（`isActive` + `storeId` 含む） | `958af7a` |
+| 3-E（UI）+ QG 修復 | admin coupon pages / columns / `admin-coupon-details.tsx` / `CouponFormFields` 共有コンポーネント抽出 | `31dcf68`〜`9d12e90`（PR #138） |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前（Phase 2 完了時） | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1302 passed | **1387 passed** |
+| スイート数 | 137 | **143** |
+| 型エラー | 0 件 | **0 件** |
+
+> **次の着手**: Phase 4（null セーフ化先行）— `coupon.store?.name` 等の Phase 5 スキーマ変更前の防御リファクタ。
+
+---
+
 ### 2026-06-16: SonarCloud Quality Gate 修復（PR #138・coupon カバレッジ + 重複解消）
 
 #### 概要
@@ -225,7 +280,7 @@ PR #134（`dev → main`）の `SonarCloud Code Analysis` チェックが Qualit
 | `tests/component/dashboard/order-status-select.test.tsx` | 既存 3 render に `mode="seller"` 付与（テスト数不変・新規ケースなし） | union 化コミットに同梱 |
 
 > **設計判断**: 1 注文が複数店舗（`groups[]`）にまたがるため、行粒度は **「Order 行 + group 内訳」**（design.md 準拠・ユーザー合意）。Store/Status 列は各 group を縦に列挙する。`StoreOrderSummary` は `group.order.*` 逆参照を参照するが `AdminOrderType.groups[]` は持たないため、親 Order の `paymentStatus`/`shippingAddress`/`paymentDetails` を注入する `toStoreOrder` アダプタで橋渡し（構造的部分型で `any` 不要）。
-
+>
 > **後続に引き継ぎ（Phase 1 スコープ外）**: `updateOrderPaymentStatus` の paymentStatus 手動変更 UI（design §3.3 の決済 API 非連携警告 + §3.5 runbook）。1-D は OrderGroup の配送ステータス変更のみ結線済み。
 
 #### テスト統計（更新）
