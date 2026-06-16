@@ -1098,10 +1098,11 @@ export const updateCheckoutProductWithLatest = async (
         const endDate = new Date(coupon.endDate)
 
         if (currentDate > startDate && currentDate < endDate) {
-            // Check if the coupon applies to any store in the cart
-            const applicableStoreItems = validatedCartItems.filter(
-                (item) => item.storeId === coupon.storeId
-            )
+            // PLATFORM スコープは全item対象、STORE スコープは対象店舗のみ
+            const isPlatform = coupon.scope === 'PLATFORM'
+            const applicableStoreItems = isPlatform
+                ? validatedCartItems
+                : validatedCartItems.filter((item) => item.storeId === coupon.storeId)
 
             if (applicableStoreItems.length > 0) {
                 // Calculate subTotal for the coupon's store (including shipping fees)
