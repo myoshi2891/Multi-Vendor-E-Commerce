@@ -122,9 +122,21 @@ describe("upsertCoupon", () => {
 
             await expect(
                 upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow(
-                `Coupon with the same code "${coupon.code}" already exists for this store.`
-            );
+            ).rejects.toThrow("このクーポンコードは既に使用されています");
+        });
+
+        it("findFirstの事前チェックをすり抜けてもupsertがP2002をrejectした場合、coupon.ts upsertCouponは統一日本語メッセージをスローする", async () => {
+            const coupon = createMockCoupon({ id: "new-coupon" });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.coupon.findFirst.mockResolvedValue(null); // 事前チェックをすり抜ける
+            const p2002Error = Object.assign(new Error("Unique constraint failed"), {
+                code: "P2002",
+            });
+            mockDb.coupon.upsert.mockRejectedValue(p2002Error);
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("このクーポンコードは既に使用されています");
         });
     });
 
