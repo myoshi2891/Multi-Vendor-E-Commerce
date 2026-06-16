@@ -299,9 +299,42 @@ export const applyCoupon = async (
 
         const scopeLabel = isPlatform ? '全店舗' : (coupon.store?.name ?? '対象店舗')
 
+        // サーバーアクション → クライアントのシリアライズで Prisma.Decimal のメソッドが
+        // 失われるため、number に変換してから返す
+        const serializedCart = {
+            ...updatedCart,
+            subTotal: updatedCart.subTotal.toNumber(),
+            shippingFees: updatedCart.shippingFees.toNumber(),
+            total: updatedCart.total.toNumber(),
+            cartItems: updatedCart.cartItems.map((item) => ({
+                ...item,
+                price: item.price.toNumber(),
+                shippingFee: item.shippingFee.toNumber(),
+                totalPrice: item.totalPrice.toNumber(),
+            })),
+            coupon: updatedCart.coupon
+                ? {
+                      ...updatedCart.coupon,
+                      store: updatedCart.coupon.store
+                          ? {
+                                ...updatedCart.coupon.store,
+                                defaultShippingFeePerItem:
+                                    updatedCart.coupon.store.defaultShippingFeePerItem.toNumber(),
+                                defaultShippingFeeForAdditionalItem:
+                                    updatedCart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
+                                defaultShippingFeePerKg:
+                                    updatedCart.coupon.store.defaultShippingFeePerKg.toNumber(),
+                                defaultShippingFeeFixed:
+                                    updatedCart.coupon.store.defaultShippingFeeFixed.toNumber(),
+                            }
+                          : null,
+                  }
+                : null,
+        } as unknown as CartWithCartItemsType
+
         return {
             message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${scopeLabel}`,
-            cart: updatedCart,
+            cart: serializedCart,
         }
     } catch (error: any) {
         console.error(error)
