@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-16 / **HEAD**: `a977236`
+> **最終更新**: 2026-06-16 / **HEAD**: `1e1749a`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-15 時点）
+### テスト統計（2026-06-16 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1387** passed / 1390 total / 143 スイート（143 passed + 1 skipped suite）— 2026-06-16 SonarCloud QG 修復（PR #138）: CouponFormFields 抽出 / coupon.ts 残ブランチカバー / columns.tsx テスト / admin-coupon-details.tsx コンポーネントテスト 10 件（`a80e4be`–`df53785`）：1348→1387 passed / 141→143 スイート |
+| Jest テスト総数 (unit/component) | **1398** passed / 1401 total / 143 スイート（143 passed + 1 skipped suite）— 2026-06-16 Phase 5-B（platform-wide クーポン）完了: placeOrder/applyCoupon/updateCheckoutProductWithLatest の PLATFORM scope 対応、AdminCouponFormSchema superRefine、upsertCouponAsAdmin・seller upsertCoupon の P2002 統一日本語メッセージ（`dcd70cc`–`1e1749a`）：1387→1398 passed / 143 スイート（変動なし） |
 | Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |

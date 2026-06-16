@@ -701,6 +701,36 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 
 ---
 
+---
+
+### Phase 5-B: F3-第2段 platform-wide クーポン 影響箇所改修 (2026-06-16)
+
+#### 概要
+
+`Coupon.storeId` の nullable 化（5-A）を受け、`placeOrder` / `applyCoupon` / `updateCheckoutProductWithLatest` の3箇所と `AdminCouponFormSchema` / `upsertCouponAsAdmin` / seller `upsertCoupon` / admin UI を PLATFORM scope に対応させた。各ステップは Red→Green の TDD で直列実施。残課題（在庫連動・PartiallyRefunded 部分返金）は別タスク。5-C（E2E検証）は未着手。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` (`placeOrder`) | PLATFORM クーポンを全 OrderGroup に適用、最終グループで端数吸収 | `dcd70cc` 系 |
+| `src/queries/coupon.ts` (`applyCoupon`) | PLATFORM 全 item 対象化 + Number演算を `Prisma.Decimal` に置換 | `dcd70cc` |
+| `src/queries/user.ts` (`updateCheckoutProductWithLatest`) | PLATFORM 対応 + `cart.coupon.store` null ガード再強化 | `f87867b` |
+| `src/lib/schemas.ts` (`AdminCouponFormSchema`) | `scope` 追加 + `superRefine`（STORE→storeId必須／PLATFORM→storeId禁止） | `e2d113b` |
+| `src/queries/coupon.ts` (`upsertCouponAsAdmin`) | `isPlatform ? null : storeId` 対応 | `7446308` |
+| `src/components/dashboard/forms/admin-coupon-details.tsx` | scope ドロップダウン UI + storeId 欄の条件表示 | `f26262f` |
+| `src/queries/coupon.ts` (seller `upsertCoupon`) | P2002 ハンドリング追加 + 重複チェックメッセージを日本語に統一 | `1e1749a` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1387 passed / 1390 total | **1398 passed / 1401 total** |
+| スイート数 | 143 | **143** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
