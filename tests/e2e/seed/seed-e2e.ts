@@ -304,6 +304,145 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         variants.push({ id: variant.id, slug: variant.slug });
     }
 
+    // Second store + product (PLATFORM クーポンのマルチストア検証用)
+    const storeB = await prisma.store.upsert({
+        where: { url: seed.storeB.url },
+        create: {
+            name: seed.storeB.name,
+            description: seed.storeB.description,
+            email: seed.storeB.email,
+            phone: seed.storeB.phone,
+            url: seed.storeB.url,
+            logo: seed.storeB.logo,
+            cover: seed.storeB.cover,
+            status: "ACTIVE",
+            defaultShippingService: "International Delivery",
+            defaultShippingFeePerItem: 0,
+            defaultShippingFeeForAdditionalItem: 0,
+            defaultShippingFeePerKg: 0,
+            defaultShippingFeeFixed: 0,
+            defaultDeliveryTimeMin: 3,
+            defaultDeliveryTimeMax: 7,
+            returnPolicy: "Return in 30 days.",
+            userId: user.id,
+        },
+        update: {
+            name: seed.storeB.name,
+            description: seed.storeB.description,
+            email: seed.storeB.email,
+            phone: seed.storeB.phone,
+            logo: seed.storeB.logo,
+            cover: seed.storeB.cover,
+            status: "ACTIVE",
+            defaultShippingService: "International Delivery",
+            defaultShippingFeePerItem: 0,
+            defaultShippingFeeForAdditionalItem: 0,
+            defaultShippingFeePerKg: 0,
+            defaultShippingFeeFixed: 0,
+            defaultDeliveryTimeMin: 3,
+            defaultDeliveryTimeMax: 7,
+            returnPolicy: "Return in 30 days.",
+            userId: user.id,
+        },
+    });
+
+    const productB = await prisma.product.upsert({
+        where: { slug: seed.productB.slug },
+        create: {
+            name: seed.productB.name,
+            description: seed.productB.description,
+            slug: seed.productB.slug,
+            brand: seed.productB.brand,
+            shippingFeeMethod: "ITEM",
+            storeId: storeB.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        },
+        update: {
+            name: seed.productB.name,
+            description: seed.productB.description,
+            brand: seed.productB.brand,
+            shippingFeeMethod: "ITEM",
+            storeId: storeB.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        },
+    });
+
+    const variantB = await prisma.productVariant.upsert({
+        where: { slug: seed.variantB.slug },
+        create: {
+            variantName: seed.variantB.name,
+            variantDescription: seed.variantB.description,
+            variantImage: seed.variantB.image,
+            slug: seed.variantB.slug,
+            sku: seed.variantB.sku,
+            weight: seed.variantB.weight,
+            productId: productB.id,
+        },
+        update: {
+            variantName: seed.variantB.name,
+            variantDescription: seed.variantB.description,
+            variantImage: seed.variantB.image,
+            sku: seed.variantB.sku,
+            weight: seed.variantB.weight,
+            productId: productB.id,
+        },
+    });
+
+    await prisma.size.deleteMany({ where: { productVariantId: variantB.id } });
+    await prisma.productVariantImage.deleteMany({
+        where: { productVariantId: variantB.id },
+    });
+    await prisma.color.deleteMany({ where: { productVariantId: variantB.id } });
+
+    await prisma.size.create({
+        data: {
+            size: seed.variantB.size.size,
+            quantity: seed.variantB.size.quantity,
+            price: seed.variantB.size.price,
+            discount: seed.variantB.size.discount,
+            productVariantId: variantB.id,
+        },
+    });
+
+    await prisma.productVariantImage.create({
+        data: {
+            url: seed.variantB.variantImage.url,
+            alt: seed.variantB.variantImage.alt,
+            productVariantId: variantB.id,
+        },
+    });
+
+    await prisma.color.create({
+        data: {
+            name: seed.variantB.color.name,
+            productVariantId: variantB.id,
+        },
+    });
+
+    // PLATFORM スコープクーポン（storeId なし・全店舗対象）
+    const platformCoupon = await prisma.coupon.upsert({
+        where: { code: seed.platformCoupon.code },
+        create: {
+            code: seed.platformCoupon.code,
+            discount: seed.platformCoupon.discount,
+            startDate: seed.platformCoupon.startDate,
+            endDate: seed.platformCoupon.endDate,
+            isActive: true,
+            scope: "PLATFORM",
+            storeId: null,
+        },
+        update: {
+            discount: seed.platformCoupon.discount,
+            startDate: seed.platformCoupon.startDate,
+            endDate: seed.platformCoupon.endDate,
+            isActive: true,
+            scope: "PLATFORM",
+            storeId: null,
+        },
+    });
+
     return {
         country,
         user,
@@ -313,6 +452,10 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         product,
         variants,
         variant: variants[0],
+        storeB,
+        productB,
+        variantB,
+        platformCoupon,
     };
 };
 
