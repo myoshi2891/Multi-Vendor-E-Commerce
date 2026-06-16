@@ -51,9 +51,7 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
         })
 
         if (existingCoupon) {
-            throw new Error(
-                `Coupon with the same code "${coupon.code}" already exists for this store.`
-            )
+            throw new Error('このクーポンコードは既に使用されています')
         }
 
         // Upsert coupon into the database
@@ -72,6 +70,14 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
         if (isGuardError(error)) {
             throw error
+        }
+
+        // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
+        if (
+            typeof (error as Record<string, unknown>).code === 'string' &&
+            (error as Record<string, unknown>).code === 'P2002'
+        ) {
+            throw new Error('このクーポンコードは既に使用されています')
         }
 
         throw new Error(
