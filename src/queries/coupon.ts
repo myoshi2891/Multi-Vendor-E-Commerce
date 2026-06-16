@@ -241,35 +241,36 @@ export const applyCoupon = async (
             throw new Error('Coupon is already applied to this cart.')
         }
 
-        // Step 5: Filter items from the store associated with the coupon
+        // Step 5: Filter items targeted by the coupon（PLATFORM は全店舗、STORE は対象店舗のみ）
+        const isPlatform = coupon.scope === 'PLATFORM'
         const storeId = coupon.storeId
 
-        const storeItems = cart.cartItems.filter(
-            (item) => item.storeId === storeId
-        )
+        const targetItems = isPlatform
+            ? cart.cartItems
+            : cart.cartItems.filter((item) => item.storeId === storeId)
 
-        if (storeItems.length === 0) {
+        if (targetItems.length === 0) {
             throw new Error(
                 'No items in the cart belong to the store associated with this coupon.'
             )
         }
 
-        // Step 6: Calculate the discount on the store's items
-        const storeSubTotal = storeItems.reduce(
-            (acc, item) => acc + item.price.toNumber() * item.quantity,
-            0
+        // Step 6: Calculate the discount on the target items（Prisma.Decimal で精度を保証）
+        const targetSubTotal = targetItems.reduce(
+            (acc, item) => acc.add(item.price.mul(item.quantity)),
+            new Prisma.Decimal(0)
         )
 
-        const storeShippingTotal = storeItems.reduce(
-            (acc, item) => acc + item.shippingFee.toNumber(),
-            0
+        const targetShippingTotal = targetItems.reduce(
+            (acc, item) => acc.add(item.shippingFee),
+            new Prisma.Decimal(0)
         )
 
-        const storeTotal = storeSubTotal + storeShippingTotal
+        const targetTotal = targetSubTotal.add(targetShippingTotal)
 
-        const discountedAmount = (storeTotal * coupon.discount) / 100
+        const discountedAmount = targetTotal.mul(coupon.discount).div(100)
 
-        const newTotal = cart.total.toNumber() - discountedAmount
+        const newTotal = cart.total.sub(discountedAmount).toNumber()
 
         // Step 7: Update the cart with the applied coupon details and new total
         const updatedCart = await db.cart.update({
@@ -290,8 +291,10 @@ export const applyCoupon = async (
             },
         })
 
+        const scopeLabel = isPlatform ? '全店舗' : (coupon.store?.name ?? '対象店舗')
+
         return {
-            message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${coupon.store?.name ?? '全店舗'}`,
+            message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${scopeLabel}`,
             cart: updatedCart,
         }
     } catch (error: any) {
