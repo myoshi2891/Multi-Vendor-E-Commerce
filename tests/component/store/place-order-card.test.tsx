@@ -122,6 +122,40 @@ describe('PlaceOrderCard', () => {
         expect(screen.getByText(/Test Store/)).toBeInTheDocument()
     })
 
+    it('renders correctly with applied PLATFORM coupon across multiple stores', () => {
+        type CouponPropType = NonNullable<React.ComponentProps<typeof PlaceOrderCard>['cartData']['coupon']>;
+        const couponMock = createMockCoupon({
+            code: 'PLATFORM10',
+            discount: 10,
+            scope: 'PLATFORM',
+            storeId: null,
+        });
+        const coupon: CouponPropType = {
+            ...couponMock,
+            startDate: couponMock.startDate.toISOString(),
+            endDate: couponMock.endDate.toISOString(),
+            store: null,
+        };
+        const otherStoreItem = createMockCartItem({
+            storeId: 'store-2',
+            price: new Prisma.Decimal('10.00'),
+            quantity: 1,
+            shippingFee: new Prisma.Decimal('0.00'),
+        })
+        const cartWithPlatformCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
+            ...cartData,
+            cartItems: [cartItem, otherStoreItem],
+            coupon,
+        }
+
+        renderPlaceOrderCard({ cartData: cartWithPlatformCoupon })
+
+        expect(screen.getByText(/Coupon \(PLATFORM10\) \(-10%\)/)).toBeInTheDocument()
+        // storeSubTotal across all stores = (10*2 + 5) + (10*1 + 0) = 35. 10% of 35 = 3.50
+        expect(screen.getByText('-$3.50')).toBeInTheDocument()
+        expect(screen.getByText(/全店舗/)).toBeInTheDocument()
+    })
+
     it('shows error if placing order without shipping address', async () => {
         renderPlaceOrderCard()
 
