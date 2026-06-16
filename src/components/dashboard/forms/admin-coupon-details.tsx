@@ -24,6 +24,13 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import { upsertCouponAsAdmin } from '@/queries/coupon'
 import { v4 } from 'uuid'
 import { useToast } from '@/hooks/use-toast'
@@ -52,11 +59,13 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
             endDate:
                 data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
             isActive: data?.isActive ?? true,
+            scope: data?.scope ?? 'STORE',
             storeId: data?.storeId ?? '',
         },
     })
 
     const isLoading = form.formState.isSubmitting
+    const scope = form.watch('scope')
 
     useEffect(() => {
         if (data) {
@@ -66,6 +75,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 startDate: data.startDate,
                 endDate: data.endDate,
                 isActive: data.isActive,
+                scope: data.scope,
                 storeId: data.storeId ?? '',
             })
         }
@@ -82,8 +92,8 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                 startDate: values.startDate,
                 endDate: values.endDate,
                 isActive: values.isActive,
-                storeId: values.storeId,
-                scope: data?.scope ?? 'STORE',
+                scope: values.scope,
+                storeId: values.scope === 'PLATFORM' ? null : (values.storeId ?? ''),
                 createdAt: data?.createdAt ?? new Date(),
                 updatedAt: new Date(),
             })
@@ -136,7 +146,36 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                         onSubmit={form.handleSubmit(handleSubmit)}
                         className="space-y-4"
                     >
-                        {!data?.id && (
+                        <FormField
+                            control={form.control}
+                            name="scope"
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormLabel>Scope</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a scope" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="STORE">
+                                                Store
+                                            </SelectItem>
+                                            <SelectItem value="PLATFORM">
+                                                Platform (all stores)
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {!data?.id && scope === 'STORE' && (
                             <FormField
                                 control={form.control}
                                 name="storeId"
@@ -147,6 +186,7 @@ const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
                                             <Input
                                                 placeholder="Store ID"
                                                 {...field}
+                                                value={field.value ?? ''}
                                             />
                                         </FormControl>
                                         <FormMessage />
