@@ -703,6 +703,79 @@ describe("applyCoupon", () => {
                 })
             );
         });
+
+        it("PLATFORMスコープの場合は店舗を問わず全カート商品が割引対象になる", async () => {
+            mockDb.coupon.findUnique.mockResolvedValue(
+                createMockCoupon({
+                    ...COUPON_SCENARIOS.active,
+                    discount: 10,
+                    scope: "PLATFORM",
+                    storeId: null,
+                    store: undefined,
+                })
+            );
+            mockDb.cart.findUnique.mockResolvedValue(
+                createMockCart({
+                    couponId: null,
+                    total: 100,
+                    cartItems: [
+                        createMockCartItem({
+                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                            price: 50,
+                            quantity: 1,
+                            shippingFee: 0,
+                        }),
+                        createMockCartItem({
+                            id: "cart-item-002",
+                            storeId: "other-store",
+                            price: 50,
+                            quantity: 1,
+                            shippingFee: 0,
+                        }),
+                    ],
+                    coupon: null,
+                })
+            );
+            mockDb.cart.update.mockResolvedValue({
+                ...createMockCart({ total: 90 }),
+                cartItems: [],
+                coupon: { store: null },
+            });
+
+            const result = await applyCoupon("PLATFORM10", "cart-001");
+
+            expect(result.message).toContain("Coupon applied successfully");
+            expect(result.message).toContain("全店舗");
+            expect(mockDb.cart.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        total: 90, // 100 - 10
+                    }),
+                })
+            );
+        });
+
+        it("丸め境界値(1.005)でDecimal演算により正しく半数上げされる（Numberのfloat誤差バグ修正）", async () => {
+            // 商品 $6.7 x 1 + 配送料 $0 = $6.7, 15%割引 = 1.005 → Decimalで1.01に半数上げ
+            // (旧Number実装は (6.7*15/100).toFixed(2) === "1.00" になる既知のfloat誤差バグ)
+            setupValidCouponScenario(15, 10, 6.7, 1, 0);
+            mockDb.cart.update.mockResolvedValue({
+                ...createMockCart({ total: 8.995 }),
+                cartItems: [],
+                coupon: { store: createMockStore() },
+            });
+
+            const result = await applyCoupon("SAVE15", "cart-001");
+
+            expect(result.message).toContain("-$1.01");
+            expect(mockDb.cart.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        total: 8.995, // 10 - 1.005
+                    }),
+                })
+            );
+        });
     });
 
     describe("正常系", () => {
