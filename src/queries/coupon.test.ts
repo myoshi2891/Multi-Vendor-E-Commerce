@@ -179,6 +179,43 @@ describe("upsertCoupon", () => {
             expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
             expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
         });
+
+        it("他店舗が所有する coupon.id を渡した場合、所有権検証で reject し upsert/findFirst を呼ばない (cross-store hijack 防御)", async () => {
+            // 呼び出し元は自店舗 (store123) を所有しているが、
+            // 渡した coupon.id は別店舗が所有する既存クーポンを指す。
+            // upsert の where は id 単独のため、所有権を事前検証しないと
+            // storeId を自店舗へ書き換えて乗っ取れてしまう。
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            const coupon = createMockCoupon({ id: "victim-coupon" });
+            mockDb.coupon.findUnique.mockResolvedValue(
+                createMockCoupon({ id: "victim-coupon", storeId: "other-store-id" })
+            );
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Forbidden: coupon not owned by current store.");
+
+            // (c) 副作用なし: 乗っ取り経路の書き込み・重複チェックに到達しない
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+            expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
+        });
+
+        it("admin 所有の PLATFORM クーポン (storeId=null) の id を渡した場合も reject する (PLATFORM hijack 防御)", async () => {
+            // 本 PR で追加された PLATFORM scope の悪用経路。
+            // storeId=null は呼び出し元 store.id と一致しないため拒否される。
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            const coupon = createMockCoupon({ id: "platform-coupon" });
+            mockDb.coupon.findUnique.mockResolvedValue(
+                createMockCoupon({ id: "platform-coupon", scope: "PLATFORM" })
+            );
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Forbidden: coupon not owned by current store.");
+
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+            expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
+        });
     });
 
     describe("正常系", () => {
