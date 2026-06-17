@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1400 passed / 1403 total / 144 スイート（3 skipped）** — 2026-06-17 コードレビュー指摘対応（IDOR / クーポン UI / 認可ガード配置）完了時点（`ec4192f`–`a6b5223`）|
+| Jestユニットテスト | **1402 passed / 1405 total / 144 スイート（3 skipped）** — 2026-06-17 `upsertCoupon` cross-store/PLATFORM hijack IDOR 修正完了時点（`f6e75fd`–`505e13b`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -781,6 +781,30 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 |------|--------|--------|
 | テスト総数 (unit/component) | 1399 passed | **1400 passed** |
 | スイート数 | 143 | **144** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### upsertCoupon cross-store/PLATFORM hijack IDOR 修正 (2026-06-17)
+
+#### 概要
+
+seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（IDOR）を修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.ts` | `requireStoreOwner` 直後に対象クーポンの所有権を事前検証。`db.coupon.upsert({ where: { id } })` の id 単独キーでは他店舗・PLATFORM(`storeId=null`) クーポンの id を渡すと update 分岐が `storeId` を自店舗へ書き換え乗っ取れた。upsert 前に `findUnique` で対象行を取得し `storeId !== store.id` を `Forbidden` で拒否（DB read のみ try/catch、認可 throw はその外） | `505e13b` |
+| `src/queries/coupon.test.ts` | IDOR 3 階層 (a) throw 検証 / (c) 副作用なし検証を他店舗・PLATFORM の 2 ケースで追加（+2） | `f6e75fd` |
+| `docs/testing/SECURITY_GAP_REPORT.md` | §6 に発見・修正・追加テストを記録 | `db63bbc` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1400 passed | **1402 passed** |
+| スイート数 | 144 | **144**（変動なし） |
 | 型エラー | 0 件 | **0 件** |
 
 ---
