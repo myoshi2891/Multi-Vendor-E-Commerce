@@ -37,10 +37,29 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
     // - 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
     const { store } = await requireStoreOwner(storeURL)
 
-    try {
-        // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
-        if (!coupon) throw new Error('Please provide coupon data.')
+    // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
+    // coupon.id を参照する所有権検証より前に置く必要があるため try の外へ。
+    if (!coupon) throw new Error('Please provide coupon data.')
 
+    // 既存クーポンの所有権検証 (cross-store / PLATFORM hijack 防御)
+    // - upsert の where は id 単独のため、他店舗・PLATFORM クーポンの id を渡すと
+    //   update 分岐が storeId を自店舗へ書き換えて乗っ取れてしまう。
+    //   対象行を事前取得し、自店舗所有でなければ拒否する。
+    // - DB 読み取りエラーのみ try/catch で包み、認可 throw (Forbidden) はその外に置く
+    //   （認可エラーを汎用 DB エラーメッセージで上書きしないため。tech.md 準拠）。
+    let existingById: Coupon | null = null
+    try {
+        existingById = await db.coupon.findUnique({ where: { id: coupon.id } })
+    } catch (error: unknown) {
+        console.error(error)
+        throw new Error('Error occurred while verifying coupon ownership.')
+    }
+    // storeId !== store.id は他店舗、PLATFORM(storeId=null) も含めて拒否する
+    if (existingById && existingById.storeId !== store.id) {
+        throw new Error('Forbidden: coupon not owned by current store.')
+    }
+
+    try {
         // Throw error if a coupon with the same code and store ID already exists
         const existingCoupon = await db.coupon.findFirst({
             where: {

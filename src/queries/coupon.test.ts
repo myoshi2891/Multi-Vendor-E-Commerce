@@ -226,6 +226,8 @@ describe("upsertCoupon", () => {
             });
             mockDb.store.findUnique.mockResolvedValue(createMockStore());
             mockDb.coupon.findFirst.mockResolvedValue(null); // 重複なし
+            // 所有権事前検証: 既存行なし (= 新規作成) をデフォルトとする
+            mockDb.coupon.findUnique.mockResolvedValue(null);
         });
 
         it("新規クーポンを正常に作成する", async () => {
@@ -250,6 +252,8 @@ describe("upsertCoupon", () => {
 
         it("既存クーポンを更新する", async () => {
             const coupon = createMockCoupon({ discount: 20 });
+            // 既存行は自店舗所有 (storeId = store123 = store.id) → 所有権検証を通過
+            mockDb.coupon.findUnique.mockResolvedValue(createMockCoupon());
             mockDb.coupon.upsert.mockResolvedValue(coupon);
 
             const result = await upsertCoupon(
@@ -280,6 +284,9 @@ describe("upsertCoupon", () => {
             // 認可ガードは try の外なので、ラップ対象の DB エラーは try 内部
             // (coupon.findFirst) で発生させる
             mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            // 所有権検証は通過させ (自店舗の既存行)、ラップ対象の DB エラーは
+            // try 内部 (coupon.findFirst) で発生させる
+            mockDb.coupon.findUnique.mockResolvedValue(createMockCoupon());
             mockDb.coupon.findFirst.mockRejectedValue(
                 new Error("DB connection failed")
             );
