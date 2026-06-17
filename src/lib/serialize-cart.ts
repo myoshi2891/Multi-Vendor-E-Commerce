@@ -6,8 +6,9 @@ type CartWithRelations = Prisma.CartGetPayload<{
 }>
 
 /**
- * Server → Client のRSCシリアライズで Prisma.Decimal インスタンスが
- * プレーンオブジェクトに化けてメソッドを失うため、number に変換してから返す。
+ * Converts all monetary fields in a cart from Decimal to number.
+ *
+ * @returns A cart object with all monetary fields converted to JavaScript numbers.
  */
 export function serializeCart(cart: CartWithRelations): SerializedCartType {
     return {

@@ -16,6 +16,12 @@ import { Button } from '../ui/button'
 import toast from 'react-hot-toast'
 import { applyCoupon } from '@/queries/coupon'
 
+/**
+ * Renders a form for applying a coupon code to a cart.
+ * 
+ * Validates the coupon input, submits it to update the cart, and displays
+ * success or error notifications.
+ */
 export default function ApplyCouponForm({
     cartId,
     setCartData,

@@ -11,11 +11,11 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the checkout page after loading the authenticated user's cart, shipping addresses, country list, and resolved user country.
+ * Renders the checkout page for an authenticated user.
  *
- * Fetches the current user, the user's cart (including cart items and coupon with its store), the user's shipping addresses, the list of countries ordered by name descending, and the `userCountry` value parsed from cookies. If no authenticated user or no cart is found, redirects to `/cart`.
+ * Redirects to `/cart` if the user is not authenticated or does not have a cart.
  *
- * @returns The checkout page JSX ready to be rendered, containing the store header and the checkout container populated with `cart`, `countries`, `addresses`, and `userCountry`.
+ * @returns The checkout page JSX.
  */
 export default async function CheckoutPage() {
     const user = await currentUser()
