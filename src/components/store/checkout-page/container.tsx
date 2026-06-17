@@ -11,6 +11,7 @@ import CheckoutProductCard from '../cards/checkout-product'
 import PlaceOrderCard from '../cards/place-order'
 import CountryNote from '../shared/country-note'
 import { updateCheckoutProductWithLatest } from '@/queries/user'
+import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
 
 interface Props {
     cart: SerializedCartType
@@ -76,6 +77,7 @@ const CheckoutContainer: FC<Props> = ({
                                 product={product}
                                 isDiscounted={
                                     cartData.coupon !== null &&
+                                    isCouponCurrentlyValid(cartData.coupon) &&
                                     (cartData.coupon.scope === 'PLATFORM' ||
                                         cartData.coupon.storeId === product.storeId)
                                 }
