@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-06-16）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-06-17）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,7 +11,7 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **157** (Jest unit/component 150 / Jest integration 2 / Playwright 5) — 2026-06-16 SonarCloud Quality Gate 修復（columns.test.tsx + admin-coupon-details.test.tsx 追加、coverage-dashboard 実測 157） |
+| テストファイル総数 | **158** (Jest unit/component 150 / Jest integration 2 / Playwright 6) — 2026-06-17 dashboard 再生成で実測 158（Phase 5-C の `tests/e2e/platform-coupon.spec.ts` を反映し Playwright 5 → 6） |
 | テスト総数 | **1402 unit/component passed** (3 skipped) + **17 integration** — 2026-06-17 時点（`upsertCoupon` の cross-store/PLATFORM クーポン hijack IDOR を修正: upsert 前に対象行を `findUnique` し `storeId !== store.id`（PLATFORM=null 含む）を拒否 + IDOR 3 階層 (a)(c) 回帰テスト +2：1400→1402、144 スイート不変）。残 3 skip は DB ゲートの idempotency suite |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |

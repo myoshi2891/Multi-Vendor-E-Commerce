@@ -154,11 +154,11 @@ export const getCoupon = async (couponId: string) => {
         })
 
         return coupon
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
         throw new Error(
-            `Error occurred while trying to fetch coupon: ${error.message}`
+            `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -321,10 +321,10 @@ export const applyCoupon = async (
             message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${scopeLabel}`,
             cart: serializedCart,
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
         throw new Error(
-            `Error occurred while applying coupon: ${error.message}`
+            `Error occurred while applying coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
