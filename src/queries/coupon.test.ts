@@ -971,6 +971,110 @@ describe("applyCoupon", () => {
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
         });
+
+        describe("Decimal演算エラー", () => {
+            // 割引計算コード(Step 6)に到達するための共通セットアップ:
+            // 有効クーポン + 対象アイテムを含むカートを用意する
+            const setupForDecimalTest = () => {
+                mockDb.coupon.findUnique.mockResolvedValue(
+                    createMockCoupon({
+                        ...COUPON_SCENARIOS.active,
+                        store: createMockStore(),
+                    })
+                );
+                mockDb.cart.findFirst.mockResolvedValue(
+                    createMockCart({
+                        couponId: null,
+                        total: 100,
+                        cartItems: [
+                            createMockCartItem({
+                                storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                                price: 100,
+                                quantity: 1,
+                                shippingFee: 5,
+                            }),
+                        ],
+                        coupon: null,
+                    })
+                );
+            };
+
+            it("価格乗算(.mul)が例外をスローした場合エラーをラップしてスローする", async () => {
+                setupForDecimalTest();
+                const consoleSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => undefined);
+                const spy = jest
+                    .spyOn(Prisma.Decimal.prototype, "mul")
+                    .mockImplementationOnce(() => {
+                        throw new Error("Decimal multiplication error");
+                    });
+
+                await expect(
+                    applyCoupon("SAVE10", "cart-001")
+                ).rejects.toThrow("Error occurred while applying coupon");
+
+                spy.mockRestore();
+                consoleSpy.mockRestore();
+            });
+
+            it("割引率除算(.div)が例外をスローした場合エラーをラップしてスローする", async () => {
+                setupForDecimalTest();
+                const consoleSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => undefined);
+                const spy = jest
+                    .spyOn(Prisma.Decimal.prototype, "div")
+                    .mockImplementationOnce(() => {
+                        throw new Error("Decimal division error");
+                    });
+
+                await expect(
+                    applyCoupon("SAVE10", "cart-001")
+                ).rejects.toThrow("Error occurred while applying coupon");
+
+                spy.mockRestore();
+                consoleSpy.mockRestore();
+            });
+
+            it("合計加算(.add)が例外をスローした場合エラーをラップしてスローする", async () => {
+                setupForDecimalTest();
+                const consoleSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => undefined);
+                const spy = jest
+                    .spyOn(Prisma.Decimal.prototype, "add")
+                    .mockImplementationOnce(() => {
+                        throw new Error("Decimal addition error");
+                    });
+
+                await expect(
+                    applyCoupon("SAVE10", "cart-001")
+                ).rejects.toThrow("Error occurred while applying coupon");
+
+                spy.mockRestore();
+                consoleSpy.mockRestore();
+            });
+
+            it("新合計減算(.sub)が例外をスローした場合エラーをラップしてスローする", async () => {
+                setupForDecimalTest();
+                const consoleSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => undefined);
+                const spy = jest
+                    .spyOn(Prisma.Decimal.prototype, "sub")
+                    .mockImplementationOnce(() => {
+                        throw new Error("Decimal subtraction error");
+                    });
+
+                await expect(
+                    applyCoupon("SAVE10", "cart-001")
+                ).rejects.toThrow("Error occurred while applying coupon");
+
+                spy.mockRestore();
+                consoleSpy.mockRestore();
+            });
+        });
     });
 });
 
