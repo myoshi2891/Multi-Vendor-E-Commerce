@@ -833,6 +833,28 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 
 ---
 
+### applyCoupon Decimal 演算エラー経路テスト追加 (2026-06-17)
+
+#### 概要
+
+`applyCoupon` Step 6（割引計算ブロック）の Decimal 演算例外が try/catch でラップされることを検証するテストを 4 件追加。コードレビューで指摘された未検証エラー経路のカバー。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.test.ts` | `Prisma.Decimal.prototype.mul/div/add/sub` を各 `mockImplementationOnce` で throw させ、`"Error occurred while applying coupon"` ラップを検証する 4 件を `describe("Decimal演算エラー")` ブロックとして追加 | `04dd88c` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1403 passed | **1407 passed** |
+| スイート数 | 144 | **144**（変動なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
