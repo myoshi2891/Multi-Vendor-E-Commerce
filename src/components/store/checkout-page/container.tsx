@@ -1,6 +1,6 @@
 'use client'
 import {
-    CartWithCartItemsType,
+    SerializedCartType,
     Country as CountryType,
     UserShippingAddressType,
 } from '@/lib/types'
@@ -11,9 +11,10 @@ import CheckoutProductCard from '../cards/checkout-product'
 import PlaceOrderCard from '../cards/place-order'
 import CountryNote from '../shared/country-note'
 import { updateCheckoutProductWithLatest } from '@/queries/user'
+import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
 
 interface Props {
-    cart: CartWithCartItemsType
+    cart: SerializedCartType
     countries: Country[]
     addresses: UserShippingAddressType[]
     userCountry: CountryType
@@ -25,7 +26,7 @@ const CheckoutContainer: FC<Props> = ({
     addresses,
     userCountry,
 }) => {
-    const [cartData, setCartData] = useState<CartWithCartItemsType>(cart)
+    const [cartData, setCartData] = useState<SerializedCartType>(cart)
 
     const [selectedAddress, setSelectedAddress] =
         useState<ShippingAddress | null>(null)
@@ -75,7 +76,10 @@ const CheckoutContainer: FC<Props> = ({
                                 key={product.variantId}
                                 product={product}
                                 isDiscounted={
-                                    cartData.coupon?.storeId === product.storeId
+                                    cartData.coupon !== null &&
+                                    isCouponCurrentlyValid(cartData.coupon) &&
+                                    (cartData.coupon.scope === 'PLATFORM' ||
+                                        cartData.coupon.storeId === product.storeId)
                                 }
                             />
                         ))}

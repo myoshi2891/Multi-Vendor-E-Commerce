@@ -1,19 +1,19 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-16 / **HEAD**: `a977236`
+> **最終更新**: 2026-06-17 / **HEAD**: `04dd88c`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-15 時点）
+### テスト統計（2026-06-17 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1387** passed / 1390 total / 143 スイート（143 passed + 1 skipped suite）— 2026-06-16 SonarCloud QG 修復（PR #138）: CouponFormFields 抽出 / coupon.ts 残ブランチカバー / columns.tsx テスト / admin-coupon-details.tsx コンポーネントテスト 10 件（`a80e4be`–`df53785`）：1348→1387 passed / 141→143 スイート |
-| Jest Integration テスト総数 | **14** / 2 スイート（`cart-checkout.test.ts` 8 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
+| Jest テスト総数 (unit/component) | **1407** passed / 1410 total / 144 スイート（143 passed + 1 skipped suite）— 2026-06-17 `applyCoupon` の Decimal 演算エラー経路テスト +4（`.mul()/.div()/.add()/.sub()` prototype spy による catch ブロック検証、`04dd88c`）：1403→1407 passed |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
-| Playwright E2E（main） | **5 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive） |
+| Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
@@ -247,6 +247,12 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `686e45a`–`ef091c3` | **SonarCloud Quality Gate 修復 (PR #136) Phase 2**: admin dashboard コンポーネント 4 本のテスト新規追加（tests/component/dashboard/admin/）。stats-cards +3 / recent-orders +3 / sales-chart +4 / recent-stores +8。1310 → **1328 passed** / +4 スイート |
 | `d5d5284`–`eb996d0` | **Phase 3 F3-第1段 クーポン横断管理 + isActive 列追加**: `Coupon.isActive Boolean @default(true)` 追加 + migrate + ERD 再生成。`applyCoupon`・`placeOrder` に isActive 再検証追加（TDD）。admin クーポン query 4 種（getAllCoupons / upsertCouponAsAdmin / deleteCouponAsAdmin / toggleCouponActive）実装。`AdminCouponFormSchema` 追加。`/dashboard/admin/coupons/` UI（page / columns / form）新規実装。1328 → **1348 passed** / スイート変動なし |
 | `a80e4be`–`9d12e90` | **SonarCloud QG 修復（PR #138）**: CouponFormFields 共有コンポーネント抽出（重複解消） / coupon.ts 残ブランチカバー / columns.tsx テスト追加 / admin-coupon-details.tsx コンポーネントテスト 10 件 / storeId 正規化 fix。1348 → **1387 passed** / 141 → **143** スイート |
+| `7d3b31d`–`1e1749a` | **Phase 5 F3-第2段 platform-wide クーポン発行（5-A/5-B）**: `Coupon.storeId` を `String?` 化 + `CouponScope`（STORE/PLATFORM）追加（`safe-migration` 経由）+ ERD 再生成。`placeOrder`（端数吸収アルゴリズムで全 OrderGroup へ按分）/ `applyCoupon`（Number→Decimal 化を兼ねる）/ `updateCheckoutProductWithLatest`（null-safe `coupon.store`）の PLATFORM scope 対応。`AdminCouponFormSchema` に scope superRefine（STORE→storeId必須／PLATFORM→storeId禁止）、`upsertCouponAsAdmin` scope対応、admin-coupon-details.tsx に scope ドロップダウン UI。seller `upsertCoupon` に P2002 フォールバック + 日本語メッセージ統一（既存英語アサート破壊的書き換えを同コミットで実施）。1387 → **1398 passed**（143 スイート変動なし） |
+| `ae9364f`–`3463d1d` | **Phase 5-C E2E 検証**: `applyCoupon` の Decimal クライアント返却シリアライズ漏れ修正（`updateCheckoutProductWithLatest` の既知パターンと同型バグ、`ae9364f`）→ `tests/e2e/platform-coupon.spec.ts` 新規（2店舗カート + PLATFORM クーポン適用 → 注文確定 → 両 OrderGroup の割引・couponId 反映を検証、`3463d1d`）。Jest 統計は変動なし（E2E のみ +1 スペック、main 5→**6**） |
+| `ec4192f`–`a6b5223` | **コードレビュー指摘対応（IDOR / クーポン UI / 認可ガード配置）**: ① `updateCheckoutProductWithLatest` の cross-cart IDOR を修正（`cartProducts[0].cartId` のみ検証 → 全 cartProduct を所有カートの cartItem id 集合で検証し、複数カート混在・他カート item.id 混入を拒否）+ IDOR 回帰テスト +1（`ec4192f`）。② checkout `isDiscounted` に `isCouponCurrentlyValid` を AND 追加し、失効/無効クーポンの割引 UI とサーバー確定額のドリフトを解消（`216c2de`）。③ `upsertCoupon`/`getStoreCoupons`/`deleteCoupon` で `requireStoreOwner` を try/catch 外へ移動（tech.md 準拠、dead な isGuardError 分岐除去、coupon.test.ts の旧ラップ期待 2 件を更新）（`a6b5223`）。1399 → **1400 passed** / 143 → **144** スイート |
+| `f6e75fd`–`505e13b` | **`upsertCoupon` cross-store/PLATFORM hijack IDOR 修正**: seller の `upsertCoupon` が `db.coupon.upsert({ where: { id } })` の id 単独キーで対象行の所有権を検証しておらず、他店舗（または admin の PLATFORM）クーポンの id を渡すと update 分岐が `storeId` を自店舗へ書き換えて乗っ取れた。PLATFORM scope 追加（Phase 5）で admin 所有クーポンへ blast radius が拡大。upsert 前に対象行を `findUnique` し `storeId !== store.id`（PLATFORM=null 含む）を `Forbidden` で拒否（認可 throw は DB read の try/catch 外）。IDOR 3 階層 (a)(c) テスト +2（他店舗 / PLATFORM）。SECURITY_GAP_REPORT.md §6 記録。1400 → **1402 passed**（144 スイート変動なし） |
+| `da8b9b9`–`3e665be` | **`applyCoupon` TOCTOU レースコンディション修正**: Step 4 の `cart.couponId` チェックと Step 7 の無条件 `db.cart.update` が原子的でなく、並行リクエストが両方チェックを通過して後勝ちで先のクーポンを上書きできた。無条件 `update` を `couponId=null` を条件に含めた条件付き `updateMany`（DB レベル CAS）へ置換し、`count === 0` で `'Coupon is already applied to this cart.'` をスロー、続けて `findFirstOrThrow` で返却形を再構築。両クエリで `userId` スコープ維持。3 階層 (a)(b)(c) 回帰テスト +1 + 既存正常系 7 件を `updateMany`+`findFirstOrThrow` へ移行。SECURITY_GAP_REPORT.md §7 記録。1402 → **1403 passed**（144 スイート変動なし） |
+| `04dd88c` | **`applyCoupon` Decimal 演算エラー経路テスト追加**: Step 6（割引計算ブロック）は既存テストで DB エラー経路のみカバーされ、Decimal 演算の例外が try/catch でラップされることが未検証だった。`Prisma.Decimal.prototype` の `.mul()` / `.div()` / `.add()` / `.sub()` を `mockImplementationOnce` で throw させ、`"Error occurred while applying coupon"` ラップを各 1 件で検証。1403 → **1407 passed**（144 スイート変動なし） |
 
 ---
 

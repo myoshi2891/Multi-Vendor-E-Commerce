@@ -1,13 +1,19 @@
-import { CartItem } from '@prisma/client'
+import { SerializedCartType } from '@/lib/types'
 import { ChevronRight, Truck } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
+/**
+ * Displays a product card with image, name, size, price, quantity, and shipping fee for checkout.
+ *
+ * @param product - A product item from the shopping cart
+ * @param isDiscounted - Whether a coupon discount has been applied
+ */
 export default function CheckoutProductCard({
     product,
     isDiscounted,
 }: {
-    product: CartItem
+    product: SerializedCartType['cartItems'][number]
     isDiscounted: boolean
 }) {
     const { productSlug, variantSlug, sizeId, shippingFee } = product

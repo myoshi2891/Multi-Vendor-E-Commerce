@@ -8,14 +8,14 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
 import { cn } from '@/lib/utils'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 import ApplyCouponForm from '../forms/apply-coupon'
 import { PulseLoader } from 'react-spinners'
 
 interface Props {
     shippingAddress: ShippingAddress | null
-    cartData: CartWithCartItemsType
-    setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
+    cartData: SerializedCartType
+    setCartData: Dispatch<SetStateAction<SerializedCartType>>
 }
 
 const PlaceOrderCard: FC<Props> = ({
@@ -47,9 +47,10 @@ const PlaceOrderCard: FC<Props> = ({
     }
 
     let discountedAmount = 0
-    const applicableStoreItems = cartData.cartItems.filter(
-        (item) => item.storeId === coupon?.storeId
-    )
+    const isPlatformCoupon = coupon?.scope === 'PLATFORM'
+    const applicableStoreItems = isPlatformCoupon
+        ? cartData.cartItems
+        : cartData.cartItems.filter((item) => item.storeId === coupon?.storeId)
 
     const storeSubTotal = applicableStoreItems.reduce(
         (acc, item) => acc + Number(item.price) * item.quantity + Number(item.shippingFee),

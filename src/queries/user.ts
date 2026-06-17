@@ -2,9 +2,12 @@
 
 import { db } from '@/lib/db'
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
+import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
+import { serializeCart } from '@/lib/serialize-cart'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
-import { CartProductType, CartWithCartItemsType, Country } from '@/lib/types'
+import { CartProductType, SerializedCartType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
+import { requireUser } from '@/lib/auth-guards'
 import { getCookie } from 'cookies-next'
 import { cookies } from 'next/headers'
 import {
@@ -621,7 +624,23 @@ export const placeOrder = async (
         let orderTotalPrice = new Prisma.Decimal("0")
         let orderShippingFee = new Prisma.Decimal("0")
 
-        for (const [storeId, items] of Object.entries(groupedItems)) {
+        // PLATFORM スコープのクーポンはカート全体の割引総額を先に算出し、
+        // 最終グループで「総割引 − Σ確定済グループ割引」を割り当てて端数を吸収する（判断5-4）
+        const cartCouponValid = cartCoupon ? isCouponCurrentlyValid(cartCoupon) : false
+        const isPlatformCoupon = cartCoupon?.scope === 'PLATFORM' && cartCouponValid
+        const cartTotalPrice = validatedCartItems.reduce(
+            (acc, item) => acc.add(item.totalPrice),
+            new Prisma.Decimal("0")
+        )
+        const platformTotalDiscount = isPlatformCoupon && cartCoupon
+            ? cartTotalPrice.mul(cartCoupon.discount).div(100)
+            : new Prisma.Decimal("0")
+        let cumulativePlatformDiscount = new Prisma.Decimal("0")
+
+        // 端数吸収するストアが実行ごとにブレないよう、storeId でソートして決定論的な順序にする
+        const storeEntries = Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b))
+
+        for (const [index, [storeId, items]] of storeEntries.entries()) {
             // Calculate store-specific totals
             const groupedTotalPrice = items.reduce(
                 (acc, item) => acc.add(item.totalPrice),
@@ -638,13 +657,20 @@ export const placeOrder = async (
             const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
             const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
 
-            // Check coupon store and active status（isActive=false のクーポンは割引不適用）
-            const check = storeId === cartCoupon?.storeId && cartCoupon?.isActive === true
+            // Check coupon scope/store and validity（isActive=false または期間外のクーポンは割引不適用）
+            const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCouponValid)
 
             // Calculate discount based on coupon
             let discountedAmount = new Prisma.Decimal("0")
             if (check && cartCoupon) {
-                discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+                if (isPlatformCoupon && index === storeEntries.length - 1) {
+                    discountedAmount = platformTotalDiscount.sub(cumulativePlatformDiscount)
+                } else {
+                    discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
+                    if (isPlatformCoupon) {
+                        cumulativePlatformDiscount = cumulativePlatformDiscount.add(discountedAmount)
+                    }
+                }
             }
 
             // Calculate the total after applying the discount
@@ -924,9 +950,34 @@ export const addToWishlist = async (
  */
 
 export const updateCheckoutProductWithLatest = async (
-    cartProducts: CartItem[],
+    cartProducts: Pick<
+        CartItem,
+        'id' | 'cartId' | 'productId' | 'variantId' | 'sizeId' | 'quantity'
+    >[],
     address: CountryDB | undefined
-): Promise<CartWithCartItemsType> => {
+): Promise<SerializedCartType> => {
+    if (cartProducts.length === 0) throw new Error('No cart products provided.')
+    const user = await requireUser()
+
+    const cartId = cartProducts[0].cartId
+    // payload 整合性: 全 item が単一 cartId に属すること（複数カート混在を拒否）
+    if (cartProducts.some((p) => p.cartId !== cartId)) {
+        throw new Error('Unauthorized: cart items belong to multiple carts.')
+    }
+
+    // 所有権 + 実在 cartItem を権威ソースとして取得（id だけで update する前のガード）
+    const ownedCart = await db.cart.findFirst({
+        where: { id: cartId, userId: user.id },
+        include: { cartItems: { select: { id: true } } },
+    })
+    if (!ownedCart) throw new Error('Unauthorized: cart does not belong to current user.')
+
+    // cartProduct.id が実際にこのカートに属することを検証（他カートの item.id 混入による IDOR を防止）
+    const ownedItemIds = new Set(ownedCart.cartItems.map((item) => item.id))
+    if (cartProducts.some((p) => !ownedItemIds.has(p.id))) {
+        throw new Error('Unauthorized: cart item does not belong to current user.')
+    }
+
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -1048,7 +1099,7 @@ export const updateCheckoutProductWithLatest = async (
     // Apply coupon if exist
     const cartCoupon = await db.cart.findUnique({
         where: {
-            id: cartProducts[0].cartId,
+            id: cartId,
         },
         select: {
             coupon: {
@@ -1072,15 +1123,13 @@ export const updateCheckoutProductWithLatest = async (
     // Apply coupon discount if applicable
     if (cartCoupon?.coupon) {
         const { coupon } = cartCoupon
-        const currentDate = new Date()
-        const startDate = new Date(coupon.startDate)
-        const endDate = new Date(coupon.endDate)
 
-        if (currentDate > startDate && currentDate < endDate) {
-            // Check if the coupon applies to any store in the cart
-            const applicableStoreItems = validatedCartItems.filter(
-                (item) => item.storeId === coupon.storeId
-            )
+        if (isCouponCurrentlyValid(coupon)) {
+            // PLATFORM スコープは全item対象、STORE スコープは対象店舗のみ
+            const isPlatform = coupon.scope === 'PLATFORM'
+            const applicableStoreItems = isPlatform
+                ? validatedCartItems
+                : validatedCartItems.filter((item) => item.storeId === coupon.storeId)
 
             if (applicableStoreItems.length > 0) {
                 // Calculate subTotal for the coupon's store (including shipping fees)
@@ -1100,7 +1149,7 @@ export const updateCheckoutProductWithLatest = async (
 
     const cart = await db.cart.update({
         where: {
-            id: cartProducts[0].cartId,
+            id: cartId,
         },
         data: {
             subTotal,
@@ -1119,34 +1168,5 @@ export const updateCheckoutProductWithLatest = async (
 
     if (!cart) throw new Error('Something went wrong while updating the cart.')
 
-    // サーバーアクション → クライアントのシリアライズで Prisma.Decimal のメソッドが
-    // 失われるため、number に変換してから返す
-    return {
-        ...cart,
-        subTotal: cart.subTotal.toNumber(),
-        shippingFees: cart.shippingFees.toNumber(),
-        total: cart.total.toNumber(),
-        cartItems: cart.cartItems.map((item) => ({
-            ...item,
-            price: item.price.toNumber(),
-            shippingFee: item.shippingFee.toNumber(),
-            totalPrice: item.totalPrice.toNumber(),
-        })),
-        coupon: cart.coupon
-            ? {
-                  ...cart.coupon,
-                  store: {
-                      ...cart.coupon.store,
-                      defaultShippingFeePerItem:
-                          cart.coupon.store.defaultShippingFeePerItem.toNumber(),
-                      defaultShippingFeeForAdditionalItem:
-                          cart.coupon.store.defaultShippingFeeForAdditionalItem.toNumber(),
-                      defaultShippingFeePerKg:
-                          cart.coupon.store.defaultShippingFeePerKg.toNumber(),
-                      defaultShippingFeeFixed:
-                          cart.coupon.store.defaultShippingFeeFixed.toNumber(),
-                  },
-              }
-            : null,
-    } as unknown as CartWithCartItemsType
+    return serializeCart(cart)
 }

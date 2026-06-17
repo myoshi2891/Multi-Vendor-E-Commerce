@@ -547,9 +547,28 @@ export const CouponFormSchema = z.object({
         .max(99, "Discount percentage cannot exceed 99%"),
 });
 
+export const CouponScopeEnum = z.enum(["STORE", "PLATFORM"]);
+
 export const AdminCouponFormSchema = CouponFormSchema.extend({
     isActive: z.boolean().default(true),
-    storeId: z.string().min(1, 'Store ID is required'),
+    scope: CouponScopeEnum.default("STORE"),
+    storeId: z.string().nullable().optional(),
+}).superRefine((val, ctx) => {
+    // F3-10: STORE なら storeId 必須、PLATFORM なら null/空
+    if (val.scope === "STORE" && (!val.storeId || val.storeId.trim() === "")) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["storeId"],
+            message: "店舗クーポンには店舗の指定が必要です",
+        });
+    }
+    if (val.scope === "PLATFORM" && val.storeId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["storeId"],
+            message: "プラットフォームクーポンに店舗は指定できません",
+        });
+    }
 });
 
 export const ApplyCouponFormSchema = z.object({

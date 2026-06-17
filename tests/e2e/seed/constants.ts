@@ -30,6 +30,15 @@ const BASE_E2E_SEED = {
     logo: "/assets/images/no_image.png",
     cover: "/assets/images/home-wallpaper.webp",
   },
+  storeB: {
+    name: "E2E Store B",
+    description: "Second E2E seed store for platform coupon Playwright tests.",
+    email: "e2e-store-b@example.com",
+    phone: "0000000001",
+    url: "e2e-store-b",
+    logo: "/assets/images/no_image.png",
+    cover: "/assets/images/home-wallpaper.webp",
+  },
   category: {
     name: "E2E Category",
     url: "e2e-category",
@@ -90,6 +99,39 @@ const BASE_E2E_SEED = {
       },
     },
   ],
+  productB: {
+    name: "E2E Test Product B",
+    slug: "e2e-test-product-b",
+    description: "Second store's seeded product for platform coupon Playwright test.",
+    brand: "E2E Brand B",
+  },
+  variantB: {
+    name: "Default",
+    slug: "e2e-variant-b",
+    description: "Default variant for store B E2E testing.",
+    sku: "E2E-SKU-B-1",
+    weight: 1.0,
+    image: "/assets/images/no_image.png",
+    size: {
+      size: "M",
+      quantity: 10,
+      price: 49,
+      discount: 0,
+    },
+    variantImage: {
+      url: "/assets/images/no_image.png",
+      alt: "E2E product image B",
+    },
+    color: {
+      name: "Blue",
+    },
+  },
+  platformCoupon: {
+    code: "E2E-PLATFORM-10",
+    discount: 10,
+    startDate: "2020-01-01",
+    endDate: "2099-12-31",
+  },
 } as const;
 
 const normalizeSeedSegment = (value: string) =>
@@ -220,6 +262,30 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
     size: primaryVariant.size,
     variantImage: primaryVariant.variantImage,
     color: primaryVariant.color,
+    storeB: {
+      ...BASE_E2E_SEED.storeB,
+      email: withEmailSuffix(BASE_E2E_SEED.storeB.email, suffix),
+      url: withSuffix(BASE_E2E_SEED.storeB.url, suffix),
+    },
+    productB: {
+      ...BASE_E2E_SEED.productB,
+      slug: withSuffix(BASE_E2E_SEED.productB.slug, suffix),
+    },
+    variantB: {
+      name: BASE_E2E_SEED.variantB.name,
+      description: BASE_E2E_SEED.variantB.description,
+      image: BASE_E2E_SEED.variantB.image,
+      weight: BASE_E2E_SEED.variantB.weight,
+      slug: withSuffix(BASE_E2E_SEED.variantB.slug, suffix),
+      sku: withSuffix(BASE_E2E_SEED.variantB.sku, suffix),
+      size: { ...BASE_E2E_SEED.variantB.size },
+      variantImage: { ...BASE_E2E_SEED.variantB.variantImage },
+      color: { ...BASE_E2E_SEED.variantB.color },
+    },
+    platformCoupon: {
+      ...BASE_E2E_SEED.platformCoupon,
+      code: withSuffix(BASE_E2E_SEED.platformCoupon.code, uppercaseSuffix),
+    },
   };
 };
 

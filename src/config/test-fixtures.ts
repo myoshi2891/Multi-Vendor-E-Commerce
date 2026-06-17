@@ -190,10 +190,11 @@ type MockCoupon = {
     endDate: Date;
     discount: number;
     isActive: boolean;
-    storeId: string;
+    scope: "STORE" | "PLATFORM";
+    storeId: string | null;
     createdAt: Date;
     updatedAt: Date;
-    store?: Record<string, unknown>;
+    store?: Record<string, unknown> | null;
 };
 
 type MockShippingAddress = {
@@ -529,18 +530,26 @@ export const createMockOrderItem = (
 // ---- クーポン ----
 export const createMockCoupon = (
     overrides: Partial<MockCoupon> = {}
-): MockCoupon => ({
-    id: "coupon-001",
-    code: "SAVE10",
-    startDate: new Date(NOW - ONE_YEAR_MS),
-    endDate: new Date(NOW + ONE_YEAR_MS),
-    discount: 10,
-    isActive: true,
-    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-    createdAt: new Date(NOW - ONE_YEAR_MS),
-    updatedAt: new Date(NOW - ONE_YEAR_MS),
-    ...overrides,
-});
+): MockCoupon => {
+    const scope = overrides.scope ?? "STORE";
+    const merged: MockCoupon = {
+        id: "coupon-001",
+        code: "SAVE10",
+        startDate: new Date(NOW - ONE_YEAR_MS),
+        endDate: new Date(NOW + ONE_YEAR_MS),
+        discount: 10,
+        isActive: true,
+        scope,
+        // PLATFORM スコープは storeId を持てない（schema の CouponScope 不変条件）
+        storeId: scope === "PLATFORM" ? null : TEST_CONFIG.DEFAULT_STORE_ID,
+        createdAt: new Date(NOW - ONE_YEAR_MS),
+        updatedAt: new Date(NOW - ONE_YEAR_MS),
+        ...overrides,
+    };
+    // overrides.storeId が scope=PLATFORM の不変条件を破る場合に再正規化する
+    if (merged.scope === "PLATFORM") merged.storeId = null;
+    return merged;
+};
 
 // ---- 配送先住所 ----
 export const createMockShippingAddress = (

@@ -5,6 +5,7 @@ import {
     ProductFormSchema,
     OfferTagFormSchema,
     CouponFormSchema,
+    AdminCouponFormSchema,
     AddReviewSchema,
     ShippingAddressSchema,
 } from "./schemas";
@@ -312,6 +313,71 @@ describe("CouponFormSchema", () => {
             discount: 100,
         });
         expect(result.success).toBe(false);
+    });
+});
+
+// ==================================================
+// AdminCouponFormSchema
+// ==================================================
+describe("AdminCouponFormSchema", () => {
+    const baseData = {
+        code: "SUMMER2024",
+        startDate: "2024-06-01",
+        endDate: "2024-06-30",
+        discount: 20,
+    };
+
+    it("scope=STOREでstoreIdが指定されている場合パースが成功する", () => {
+        const result = AdminCouponFormSchema.safeParse({
+            ...baseData,
+            scope: "STORE",
+            storeId: "store-001",
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("scope=PLATFORMでstoreIdが未指定の場合パースが成功する", () => {
+        const result = AdminCouponFormSchema.safeParse({
+            ...baseData,
+            scope: "PLATFORM",
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("scope省略時はSTOREがデフォルトになり、storeId必須になる", () => {
+        const result = AdminCouponFormSchema.safeParse({
+            ...baseData,
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("scope=STOREでstoreIdが未指定の場合エラー（店舗クーポンには店舗の指定が必要です）", () => {
+        const result = AdminCouponFormSchema.safeParse({
+            ...baseData,
+            scope: "STORE",
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0].message).toBe(
+                "店舗クーポンには店舗の指定が必要です"
+            );
+            expect(result.error.issues[0].path).toEqual(["storeId"]);
+        }
+    });
+
+    it("scope=PLATFORMでstoreIdが指定されている場合エラー（プラットフォームクーポンに店舗は指定できません）", () => {
+        const result = AdminCouponFormSchema.safeParse({
+            ...baseData,
+            scope: "PLATFORM",
+            storeId: "store-001",
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0].message).toBe(
+                "プラットフォームクーポンに店舗は指定できません"
+            );
+            expect(result.error.issues[0].path).toEqual(["storeId"]);
+        }
     });
 });
 

@@ -6,7 +6,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { ApplyCouponFormSchema } from '@/lib/schemas'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { Dispatch, SetStateAction } from 'react'
@@ -16,12 +16,18 @@ import { Button } from '../ui/button'
 import toast from 'react-hot-toast'
 import { applyCoupon } from '@/queries/coupon'
 
+/**
+ * Renders a form for applying a coupon code to a cart.
+ * 
+ * Validates the coupon input, submits it to update the cart, and displays
+ * success or error notifications.
+ */
 export default function ApplyCouponForm({
     cartId,
     setCartData,
 }: {
     cartId: string
-    setCartData: Dispatch<SetStateAction<CartWithCartItemsType>>
+    setCartData: Dispatch<SetStateAction<SerializedCartType>>
 }) {
     // Form hook for managing form state and validation
     const form = useForm<z.infer<typeof ApplyCouponFormSchema>>({

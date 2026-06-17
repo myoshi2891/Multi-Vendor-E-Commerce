@@ -359,6 +359,11 @@ describe("Scenario 3: Coupon application", () => {
             shippingFee: 0,
         });
 
+        // applyCoupon は requireUser() + cart.userId 所有権チェック (IDOR 防御, commit bc8d924) を
+        // 行うため、カート所有者として currentUser モックを設定する。id がカートの userId と
+        // 一致しないと findFirst が null を返し "Cart not found" になる点に注意。
+        (currentUser as unknown as jest.Mock).mockResolvedValue({ id: user.id });
+
         return { userId: user.id, cartId: cart.id, storeA, storeB };
     }
 

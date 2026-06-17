@@ -917,6 +917,96 @@ describe("placeOrder", () => {
             );
         });
 
+        it("PLATFORMスコープのクーポンは複数店舗の全OrderGroupに割引・couponIdを紐付け、端数は最終グループで吸収する", async () => {
+            const coupon = createMockCoupon({
+                discount: 15,
+                scope: "PLATFORM",
+                storeId: null,
+            });
+            const cartItemA = createMockCartItem({
+                storeId: "store-A",
+                quantity: 1,
+            });
+            const cartItemB = createMockCartItem({
+                id: "cart-item-002",
+                storeId: "store-B",
+                productId: "product-002",
+                variantId: "variant-002",
+                quantity: 1,
+            });
+            const cart = {
+                ...createMockCart(),
+                cartItems: [cartItemA, cartItemB],
+                coupon,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+
+            const productA = createMockFullProduct({
+                storeId: "store-A",
+                variants: [
+                    {
+                        ...createMockProductVariant(),
+                        sizes: [createMockSize({ price: 10 })],
+                        images: [createMockVariantImage()],
+                    },
+                ],
+            });
+            const productB = createMockFullProduct({
+                id: "product-002",
+                storeId: "store-B",
+                variants: [
+                    {
+                        ...createMockProductVariant({ id: "variant-002" }),
+                        sizes: [createMockSize({ price: 20 })],
+                        images: [createMockVariantImage()],
+                    },
+                ],
+            });
+            mockDb.product.findUnique
+                .mockResolvedValueOnce(productA)
+                .mockResolvedValueOnce(productB);
+
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+
+            const mockOrder = createMockOrder();
+            mockDb.order.create.mockResolvedValue(mockOrder);
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(mockOrder);
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // 2店舗 → 両方のOrderGroupにcouponIdが紐付く
+            const calls = mockDb.orderGroup.create.mock.calls;
+            expect(calls).toHaveLength(2);
+            for (const call of calls) {
+                expect(call[0].data.couponId).toBe(coupon.id);
+            }
+
+            // storeA: 10 - (10*0.15=1.50) = 8.50 / storeB(最終グループ): 20 - (4.50-1.50=3.00) = 17.00
+            const totals = calls.map((call: typeof calls[number]) => call[0].data.total.toString());
+            expect(totals).toEqual(["8.5", "17"]);
+
+            // 端数吸収後の合計はカート全体の割引(30*0.15=4.50)と一致する
+            expect(
+                mockDb.order.update.mock.calls[0][0].data.total.toString()
+            ).toBe("25.5");
+        });
+
         it("配送先のcountryIdが無効な場合エラーをスローする", async () => {
             const cartItem = createMockCartItem();
             const cart = {
@@ -1180,6 +1270,44 @@ describe("addToWishlist", () => {
 // updateCheckoutProductWithLatest
 // ==================================================
 describe("updateCheckoutProductWithLatest", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+        });
+        // 所有権チェックは cartItems.id の集合で行うため、デフォルト item を含める
+        mockDb.cart.findFirst.mockResolvedValue({
+            ...createMockCart(),
+            cartItems: [{ id: "cart-item-001" }],
+        });
+    });
+
+    describe("IDOR 防御", () => {
+        it("他カートの cartItem.id が混入している場合は拒否し update を呼ばない", async () => {
+            // Arrange: 所有カートには cart-item-001 のみ存在する
+            mockDb.cart.findFirst.mockResolvedValue({
+                ...createMockCart(),
+                cartItems: [{ id: "cart-item-001" }],
+            });
+            const cartItems = [
+                createMockCartItem({ id: "cart-item-001" }),
+                createMockCartItem({ id: "cart-item-OTHER" }), // 他ユーザーのカートアイテム
+            ];
+
+            // Act & Assert: 不正アイテム混入で拒否される
+            await expect(
+                updateCheckoutProductWithLatest(
+                    cartItems as never,
+                    createMockCountry() as never
+                )
+            ).rejects.toThrow(
+                "Unauthorized: cart item does not belong to current user."
+            );
+
+            // 副作用なし: いかなる cartItem も更新されない
+            expect(mockDb.cartItem.update).not.toHaveBeenCalled();
+        });
+    });
+
     describe("データ検証", () => {
         it("商品が見つからない場合エラーをスローする", async () => {
             const cartItems = [createMockCartItem()];
@@ -1321,6 +1449,62 @@ describe("updateCheckoutProductWithLatest", () => {
                     undefined as never // address も undefined
                 )
             ).rejects.toThrow("Couldn't retrieve country data.");
+        });
+
+        it("PLATFORMスコープでcoupon.store=nullでもTypeErrorにならず全item割引対象になる", async () => {
+            const cartItems = [
+                createMockCartItem({ quantity: 1, storeId: "store-A" }),
+            ];
+            const address = createMockCountry();
+            const dbProduct = createMockFullProduct({ storeId: "store-A" });
+
+            mockDb.product.findUnique.mockResolvedValue(dbProduct);
+            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
+            mockDb.cartItem.update.mockResolvedValue(
+                createMockCartItem({
+                    quantity: 1,
+                    price: 29.99,
+                    shippingFee: 0,
+                    storeId: "store-A",
+                })
+            );
+
+            const platformCoupon = createMockCoupon({
+                discount: 10,
+                scope: "PLATFORM",
+                storeId: null,
+                startDate: new Date("2024-01-01"),
+                endDate: new Date("2027-12-31"),
+                store: undefined,
+            });
+            mockDb.cart.findUnique.mockResolvedValue({ coupon: platformCoupon });
+
+            const updatedCart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: { ...platformCoupon, store: null },
+            };
+            mockDb.cart.update.mockResolvedValue(updatedCart);
+
+            const result = await updateCheckoutProductWithLatest(
+                cartItems as never,
+                address as never
+            );
+
+            expect(result).toBeDefined();
+            expect(result.coupon?.store).toBeNull();
+            // storeId に関わらず割引が適用される（PLATFORM スコープ）
+            expect(mockDb.cart.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        total: expect.any(Prisma.Decimal),
+                    }),
+                })
+            );
+            const calledTotal =
+                mockDb.cart.update.mock.calls[0][0].data.total as Prisma.Decimal;
+            // 29.99 - (29.99 * 10 / 100) = 26.991
+            expect(calledTotal.toString()).toBe("26.991");
         });
     });
 });

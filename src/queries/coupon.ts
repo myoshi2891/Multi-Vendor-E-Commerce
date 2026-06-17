@@ -1,9 +1,10 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { CartWithCartItemsType } from '@/lib/types'
+import { SerializedCartType } from '@/lib/types'
+import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
-import { requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
+import { requireUser, requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
 import { Coupon, Prisma } from '@prisma/client'
 
 const isGuardError = (error: unknown): error is Error => {
@@ -29,16 +30,36 @@ const isGuardError = (error: unknown): error is Error => {
  */
 
 export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // - 旧実装は url のみで store を検索しており、他人の店舗 URL を知れば
+    //   その店舗にクーポンを作成できる潜在的 IDOR があった。
+    //   requireStoreOwner は { url, userId } の複合 where で検索する。
+    // - 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
+
+    // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
+    // coupon.id を参照する所有権検証より前に置く必要があるため try の外へ。
+    if (!coupon) throw new Error('Please provide coupon data.')
+
+    // 既存クーポンの所有権検証 (cross-store / PLATFORM hijack 防御)
+    // - upsert の where は id 単独のため、他店舗・PLATFORM クーポンの id を渡すと
+    //   update 分岐が storeId を自店舗へ書き換えて乗っ取れてしまう。
+    //   対象行を事前取得し、自店舗所有でなければ拒否する。
+    // - DB 読み取りエラーのみ try/catch で包み、認可 throw (Forbidden) はその外に置く
+    //   （認可エラーを汎用 DB エラーメッセージで上書きしないため。tech.md 準拠）。
+    let existingById: Coupon | null = null
     try {
-        // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
-        if (!coupon) throw new Error('Please provide coupon data.')
+        existingById = await db.coupon.findUnique({ where: { id: coupon.id } })
+    } catch (error: unknown) {
+        console.error(error)
+        throw new Error('Error occurred while verifying coupon ownership.')
+    }
+    // storeId !== store.id は他店舗、PLATFORM(storeId=null) も含めて拒否する
+    if (existingById && existingById.storeId !== store.id) {
+        throw new Error('Forbidden: coupon not owned by current store.')
+    }
 
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        // - 旧実装は url のみで store を検索しており、他人の店舗 URL を知れば
-        //   その店舗にクーポンを作成できる潜在的 IDOR があった。
-        //   requireStoreOwner は { url, userId } の複合 where で検索する。
-        const { store } = await requireStoreOwner(storeURL)
-
+    try {
         // Throw error if a coupon with the same code and store ID already exists
         const existingCoupon = await db.coupon.findFirst({
             where: {
@@ -51,18 +72,18 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
         })
 
         if (existingCoupon) {
-            throw new Error(
-                `Coupon with the same code "${coupon.code}" already exists for this store.`
-            )
+            throw new Error('このクーポンコードは既に使用されています')
         }
 
         // Upsert coupon into the database
+        // scope はクライアント入力を信用せず STORE に固定する（SELLER による PLATFORM クーポン作成を防ぐ）
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: store.id },
+            update: { ...coupon, storeId: store.id, scope: 'STORE' },
             create: {
                 ...coupon,
                 storeId: store.id,
+                scope: 'STORE',
             },
         })
 
@@ -70,8 +91,12 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
     } catch (error: unknown) {
         console.error(error)
 
-        if (isGuardError(error)) {
-            throw error
+        // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
+        if (
+            typeof (error as Record<string, unknown>).code === 'string' &&
+            (error as Record<string, unknown>).code === 'P2002'
+        ) {
+            throw new Error('このクーポンコードは既に使用されています')
         }
 
         throw new Error(
@@ -90,10 +115,11 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
  */
 
 export const getStoreCoupons = async (storeURL: string) => {
-    try {
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        const { store } = await requireStoreOwner(storeURL)
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
 
+    try {
         // Fetch all coupons associated with the store
         const coupons = await db.coupon.findMany({
             where: { storeId: store.id },
@@ -102,9 +128,6 @@ export const getStoreCoupons = async (storeURL: string) => {
         return coupons
     } catch (error: unknown) {
         console.error(error)
-        if (isGuardError(error)) {
-            throw error
-        }
         throw new Error(
             `Error occurred while trying to fetch store coupons: ${error instanceof Error ? error.message : String(error)}`
         )
@@ -131,11 +154,11 @@ export const getCoupon = async (couponId: string) => {
         })
 
         return coupon
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
 
         throw new Error(
-            `Error occurred while trying to fetch coupon: ${error.message}`
+            `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -151,12 +174,13 @@ export const getCoupon = async (couponId: string) => {
  */
 
 export const deleteCoupon = async (couponId: string, storeURL: string) => {
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
+
     try {
         // Ensure couponId is provided (storeURL は requireStoreOwner 側で検証)
         if (!couponId) throw new Error('Please provide coupon ID.')
-
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        const { store } = await requireStoreOwner(storeURL)
 
         // Delete coupon from the database
         const response = await db.coupon.delete({
@@ -169,10 +193,6 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: unknown) {
         console.error(error)
-
-        if (isGuardError(error)) {
-            throw error
-        }
 
         throw new Error(
             `Error occurred while trying to delete coupon: ${error instanceof Error ? error.message : String(error)}`
@@ -192,7 +212,8 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 export const applyCoupon = async (
     couponCode: string,
     cartId: string
-): Promise<{ message: string; cart: CartWithCartItemsType }> => {
+): Promise<{ message: string; cart: SerializedCartType }> => {
+    const user = await requireUser()
     try {
         // Step 1: Fetch the coupon details
         const coupon = await db.coupon.findUnique({
@@ -221,10 +242,11 @@ export const applyCoupon = async (
             throw new Error('This coupon has been deactivated.')
         }
 
-        // Step 3: Fetch the cart and validate its existence
-        const cart = await db.cart.findUnique({
+        // Step 3: Fetch the cart and validate its existence（userId で所有権も確認）
+        const cart = await db.cart.findFirst({
             where: {
                 id: cartId,
+                userId: user.id,
             },
             include: {
                 cartItems: true,
@@ -241,45 +263,53 @@ export const applyCoupon = async (
             throw new Error('Coupon is already applied to this cart.')
         }
 
-        // Step 5: Filter items from the store associated with the coupon
+        // Step 5: Filter items targeted by the coupon（PLATFORM は全店舗、STORE は対象店舗のみ）
+        const isPlatform = coupon.scope === 'PLATFORM'
         const storeId = coupon.storeId
 
-        const storeItems = cart.cartItems.filter(
-            (item) => item.storeId === storeId
-        )
+        const targetItems = isPlatform
+            ? cart.cartItems
+            : cart.cartItems.filter((item) => item.storeId === storeId)
 
-        if (storeItems.length === 0) {
+        if (targetItems.length === 0) {
             throw new Error(
                 'No items in the cart belong to the store associated with this coupon.'
             )
         }
 
-        // Step 6: Calculate the discount on the store's items
-        const storeSubTotal = storeItems.reduce(
-            (acc, item) => acc + item.price.toNumber() * item.quantity,
-            0
+        // Step 6: Calculate the discount on the target items（Prisma.Decimal で精度を保証）
+        const targetSubTotal = targetItems.reduce(
+            (acc, item) => acc.add(item.price.mul(item.quantity)),
+            new Prisma.Decimal(0)
         )
 
-        const storeShippingTotal = storeItems.reduce(
-            (acc, item) => acc + item.shippingFee.toNumber(),
-            0
+        const targetShippingTotal = targetItems.reduce(
+            (acc, item) => acc.add(item.shippingFee),
+            new Prisma.Decimal(0)
         )
 
-        const storeTotal = storeSubTotal + storeShippingTotal
+        const targetTotal = targetSubTotal.add(targetShippingTotal)
 
-        const discountedAmount = (storeTotal * coupon.discount) / 100
+        const discountedAmount = targetTotal.mul(coupon.discount).div(100)
 
-        const newTotal = cart.total.toNumber() - discountedAmount
+        const newTotal = cart.total.sub(discountedAmount)
 
-        // Step 7: Update the cart with the applied coupon details and new total
-        const updatedCart = await db.cart.update({
-            where: {
-                id: cartId,
-            },
+        // Step 7: 競合を防ぐため couponId=null を条件に含めた条件付き更新（CAS）。
+        // Step 4 のチェックと書き込みの間に別リクエストがクーポンを適用する TOCTOU を
+        // DB レベルのアトミックな更新で排除する。
+        const updated = await db.cart.updateMany({
+            where: { id: cartId, userId: user.id, couponId: null },
             data: {
                 couponId: coupon.id,
                 total: newTotal,
             },
+        })
+        if (updated.count === 0) {
+            // 並行リクエストが先にクーポンを適用済み
+            throw new Error('Coupon is already applied to this cart.')
+        }
+        const updatedCart = await db.cart.findFirstOrThrow({
+            where: { id: cartId, userId: user.id },
             include: {
                 cartItems: true,
                 coupon: {
@@ -290,14 +320,18 @@ export const applyCoupon = async (
             },
         })
 
+        const scopeLabel = isPlatform ? '全店舗' : (coupon.store?.name ?? '対象店舗')
+
+        const serializedCart = serializeCart(updatedCart)
+
         return {
-            message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${coupon.store?.name ?? '全店舗'}`,
-            cart: updatedCart,
+            message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(2)} applied to items from ${scopeLabel}`,
+            cart: serializedCart,
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error)
         throw new Error(
-            `Error occurred while applying coupon: ${error.message}`
+            `Error occurred while applying coupon: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
@@ -347,8 +381,16 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
 
     try {
         if (!coupon) throw new Error('Please provide coupon data.')
-        const normalizedStoreId = coupon.storeId?.trim()
-        if (!normalizedStoreId) throw new Error('Please provide a valid store ID.')
+        const isPlatform = coupon.scope === 'PLATFORM'
+
+        let normalizedStoreId: string | null
+        if (isPlatform) {
+            normalizedStoreId = null
+        } else {
+            const trimmed = coupon.storeId?.trim()
+            if (!trimmed) throw new Error('Please provide a valid store ID.')
+            normalizedStoreId = trimmed
+        }
 
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },

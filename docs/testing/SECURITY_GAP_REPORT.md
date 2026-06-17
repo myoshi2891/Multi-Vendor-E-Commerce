@@ -131,3 +131,111 @@ if (!order) throw new Error("Order not found");
 - IDOR 補完テスト: `ae66fac`
 - `getStoreOrders` 統合: `70f5b94`（2026-05-26）
 - CSRF 防御方針: ADR 001 (`docs/architecture/decisions/001-csrf-policy.md`)
+
+## 6. 追加修正（2026-06-17）— `upsertCoupon` cross-store / PLATFORM hijack
+
+### 6.1 発見
+
+`src/queries/coupon.ts::upsertCoupon`（SELLER 用）の `db.coupon.upsert` が `where: { id: coupon.id }` で **id 単独キー**だったため、対象クーポン行が自店舗のものかを検証していなかった。`requireStoreOwner` は「呼び出し元の店舗所有権」は検証するが、**渡された `coupon.id` が指す既存行の所有権**は別問題。
+
+- **攻撃**: SELLER が他店舗（または admin の PLATFORM）クーポンの `id` を渡すと、`update` 分岐が `storeId` を自店舗へ書き換え、`scope` を `STORE` に変換して乗っ取れる。
+- **影響拡大**: Phase 5 で追加した PLATFORM scope により、admin 所有の PLATFORM クーポン（`storeId=null`）を SELLER が自店舗 STORE クーポンへ強制変換できるようになっていた（blast radius 拡大）。
+- **既存性**: `where: { id }` の primitive 自体は `main` にも存在（本 PR が新規導入したものではない）。ただし PLATFORM scope の追加で実害が拡大したため本 PR スコープで修正。
+- 既に `deleteCoupon` は `where: { id, storeId }` で所有権スコープ済みであり、`upsertCoupon` のみがガードを欠いていた。
+
+### 6.2 修正
+
+`requireStoreOwner` 直後・既存 `try` の前に対象行の所有権を事前検証:
+
+```ts
+let existingById: Coupon | null = null
+try {
+    existingById = await db.coupon.findUnique({ where: { id: coupon.id } })
+} catch (error: unknown) {
+    console.error(error)
+    throw new Error('Error occurred while verifying coupon ownership.')
+}
+// storeId !== store.id は他店舗、PLATFORM(storeId=null) も含めて拒否
+if (existingById && existingById.storeId !== store.id) {
+    throw new Error('Forbidden: coupon not owned by current store.')
+}
+```
+
+- DB 読み取りエラーのみ try/catch で包み、認可 throw（`Forbidden:`）はその外（認可エラーを汎用 DB エラーで上書きしない方針。tech.md / `isGuardError` 撤去コミット `a6b5223` と整合）。
+- upsert の `where` は Prisma unique input のため `{ id, storeId }` 複合は型エラー → 事前取得方式を採用。
+- 既存行なし（新規作成）は `existingById === null` でガードをスキップ（挙動不変）。
+
+### 6.3 追加テスト（IDOR 3 階層 (a)(c)）
+
+`coupon.test.ts::upsertCoupon › IDOR防止` に 2 件追加:
+
+| シナリオ | 検証 |
+|---|---|
+| 他店舗所有 `coupon.id`（`storeId="other-store-id"`） | (a) `"Forbidden: coupon not owned by current store."` スロー / (c) `coupon.upsert`・`findFirst` 非呼び出し |
+| admin PLATFORM クーポン（`storeId=null`） | (a) 同上スロー / (c) 同上非呼び出し |
+
+テスト総数: 1400 → 1402（+2）。
+
+### 6.4 関連コミット
+
+- Red テスト: `test(coupon): add failing cross-store coupon hijack test for upsertCoupon`
+- Green 修正: `fix(security): verify coupon ownership before upsert in upsertCoupon`
+
+## 7. 追加修正（2026-06-17）— `applyCoupon` の TOCTOU レースコンディション
+
+### 7.1 発見
+
+`src/queries/coupon.ts::applyCoupon` は Step 4 で `cart.couponId` を読んで「未適用」を確認した後、Step 7 で **無条件の** `db.cart.update({ where: { id: cartId } })` で書き込んでいた。チェックと書き込みの間に隙間があり、2 つの並行リクエストが両方ともチェックを通過してから順に書き込むと、後勝ちで先のクーポンを **サイレントに上書き** できた（Time-Of-Check-To-Time-Of-Use）。
+
+- **影響**: `'Coupon is already applied to this cart.'` ガードのバイパス。カート合計（`total`）が二重割引・不整合の状態になりうる。
+- **既存性**: 認可（`userId` スコープ）は Step 3 の `findFirst` で担保済みだが、原子性（once-only 適用）が欠けていた。IDOR ではなく並行性バグ。
+
+### 7.2 修正
+
+無条件 `update` を `couponId=null` を条件に含めた条件付き `updateMany`（DB レベルの compare-and-swap）へ置換:
+
+```ts
+const updated = await db.cart.updateMany({
+    where: { id: cartId, userId: user.id, couponId: null },
+    data: { couponId: coupon.id, total: newTotal },
+})
+if (updated.count === 0) {
+    throw new Error('Coupon is already applied to this cart.')
+}
+const updatedCart = await db.cart.findFirstOrThrow({
+    where: { id: cartId, userId: user.id },
+    include: { cartItems: true, coupon: { include: { store: true } } },
+})
+```
+
+- Prisma の `update` は `where` に unique フィールドしか取れないため、任意条件を取れる `updateMany` を採用。`couponId=null` 条件で「未適用時のみ書き込む」原子性を DB が保証する。
+- `count === 0` は並行リクエストに先を越されたことを意味し、既存と同一の文言でスロー。
+- 両クエリで `userId: user.id` スコープを維持（所有権担保は不変）。
+
+### 7.3 追加テスト（3 階層 (a)(b)(c)）
+
+`coupon.test.ts::applyCoupon › クーポン適用前のバリデーション` に 1 件追加:
+
+| シナリオ | 検証 |
+|---|---|
+| `updateMany` が `count: 0` を返す（競合で先を越された） | (a) `"Coupon is already applied to this cart."` スロー / (b) `updateMany` の `where` に `couponId: null` を含む / (c) 競合時は `findFirstOrThrow` 非呼び出し |
+
+既存の正常系テスト 7 件を `cart.update` → `cart.updateMany`(`count:1`) + `findFirstOrThrow` の呼び出しパターンへ移行。テスト総数: 1402 → 1403（+1）。
+
+### 7.4 関連コミット
+
+- Red テスト: `test(coupon): add failing race-condition test for applyCoupon TOCTOU`
+- Green 修正: `fix(coupon): make applyCoupon write atomic via conditional updateMany`
+
+### 7.5 残課題（未対応）— `cart.total` のロストアップデート
+
+§7 の CAS は `couponId: null`（once-only 適用）のみを保護する。`newTotal` の算出元である
+`cart.total` を読んだ後・書き込む前に別リクエストが `cart.total` を更新すると、古い値から
+算出した `newTotal` で上書きしうる（クーポン適用の once-only とは独立した、より狭い競合）。
+
+最小修正（`where` に `updatedAt` を追加）は無関係なカート編集との競合時に
+`"Coupon is already applied to this cart."` という誤解を招くメッセージで失敗するため不採用。
+正しい対応は read→再計算→write を `db.$transaction` 内に閉じる楽観的並行制御で、
+エラー/返却セマンティクスが変わるため別タスクとする。
+
+詳細・追跡は SDD `specs/multi-vendor-ecommerce/08-open-questions.md` の Known Issues を SSOT とする。
