@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1398 passed / 1401 total / 143 スイート（3 skipped）** — 2026-06-16 Phase 5-B（platform-wide クーポン）完了時点（`dcd70cc`–`1e1749a`）|
+| Jestユニットテスト | **1400 passed / 1403 total / 144 スイート（3 skipped）** — 2026-06-17 コードレビュー指摘対応（IDOR / クーポン UI / 認可ガード配置）完了時点（`ec4192f`–`a6b5223`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -757,6 +757,30 @@ PR #136 の New Code カバレッジ 46.0%（< 80%）を解消。dashboard query
 | Jest テスト総数 | 1398 passed / 1401 total | **1398 passed / 1401 total**（変動なし） |
 | Jest スイート数 | 143 | **143**（変動なし） |
 | Playwright E2E（main） | 5 スペック | **6 スペック**（+ `platform-coupon.spec.ts`） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### コードレビュー指摘対応（IDOR / クーポン UI / 認可ガード配置） (2026-06-17)
+
+#### 概要
+
+コードレビューで検出された 3 件の有効な指摘を修正。いずれも現行コードで再現を確認済み。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | `updateCheckoutProductWithLatest` の cross-cart IDOR 修正（`cartProducts[0].cartId` のみ検証 → 全 cartProduct を所有カートの cartItem id 集合で検証し複数カート混在・他カート item.id 混入を拒否）+ IDOR 回帰テスト +1 | `ec4192f` |
+| `src/components/store/checkout-page/container.tsx` | `isDiscounted` に `isCouponCurrentlyValid` を AND し、失効/無効クーポンの割引 UI とサーバー確定額のドリフトを解消 | `216c2de` |
+| `src/queries/coupon.ts` / `coupon.test.ts` | `upsertCoupon`/`getStoreCoupons`/`deleteCoupon` の `requireStoreOwner` を try/catch 外へ移動（tech.md 準拠）、dead な isGuardError 分岐除去、旧ラップ期待 2 件を更新 | `a6b5223` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1399 passed | **1400 passed** |
+| スイート数 | 143 | **144** |
 | 型エラー | 0 件 | **0 件** |
 
 ---

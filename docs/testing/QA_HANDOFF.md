@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-16 / **HEAD**: `3463d1d`
+> **最終更新**: 2026-06-17 / **HEAD**: `a6b5223`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-16 時点）
+### テスト統計（2026-06-17 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1398** passed / 1401 total / 143 スイート（142 passed + 1 skipped suite）— 2026-06-16 Phase 5-B（platform-wide クーポン）完了: placeOrder/applyCoupon/updateCheckoutProductWithLatest の PLATFORM scope 対応、AdminCouponFormSchema superRefine、upsertCouponAsAdmin・seller upsertCoupon の P2002 統一日本語メッセージ（`dcd70cc`–`1e1749a`）：1387→1398 passed / 143 スイート（変動なし） |
+| Jest テスト総数 (unit/component) | **1400** passed / 1403 total / 144 スイート（143 passed + 1 skipped suite）— 2026-06-17 コードレビュー指摘対応: `updateCheckoutProductWithLatest` の cross-cart IDOR 修正（全 cartProduct を所有カートの cartItem id 集合で検証）+ IDOR 回帰テスト +1、checkout `isDiscounted` に `isCouponCurrentlyValid` 追加、coupon.ts の 3 関数で `requireStoreOwner` を try/catch 外へ移動（`ec4192f`–`a6b5223`）：1399→1400 passed（前回 sync 後に security 系 3 コミットでドリフト、143→144 スイート） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
@@ -249,6 +249,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `a80e4be`–`9d12e90` | **SonarCloud QG 修復（PR #138）**: CouponFormFields 共有コンポーネント抽出（重複解消） / coupon.ts 残ブランチカバー / columns.tsx テスト追加 / admin-coupon-details.tsx コンポーネントテスト 10 件 / storeId 正規化 fix。1348 → **1387 passed** / 141 → **143** スイート |
 | `7d3b31d`–`1e1749a` | **Phase 5 F3-第2段 platform-wide クーポン発行（5-A/5-B）**: `Coupon.storeId` を `String?` 化 + `CouponScope`（STORE/PLATFORM）追加（`safe-migration` 経由）+ ERD 再生成。`placeOrder`（端数吸収アルゴリズムで全 OrderGroup へ按分）/ `applyCoupon`（Number→Decimal 化を兼ねる）/ `updateCheckoutProductWithLatest`（null-safe `coupon.store`）の PLATFORM scope 対応。`AdminCouponFormSchema` に scope superRefine（STORE→storeId必須／PLATFORM→storeId禁止）、`upsertCouponAsAdmin` scope対応、admin-coupon-details.tsx に scope ドロップダウン UI。seller `upsertCoupon` に P2002 フォールバック + 日本語メッセージ統一（既存英語アサート破壊的書き換えを同コミットで実施）。1387 → **1398 passed**（143 スイート変動なし） |
 | `ae9364f`–`3463d1d` | **Phase 5-C E2E 検証**: `applyCoupon` の Decimal クライアント返却シリアライズ漏れ修正（`updateCheckoutProductWithLatest` の既知パターンと同型バグ、`ae9364f`）→ `tests/e2e/platform-coupon.spec.ts` 新規（2店舗カート + PLATFORM クーポン適用 → 注文確定 → 両 OrderGroup の割引・couponId 反映を検証、`3463d1d`）。Jest 統計は変動なし（E2E のみ +1 スペック、main 5→**6**） |
+| `ec4192f`–`a6b5223` | **コードレビュー指摘対応（IDOR / クーポン UI / 認可ガード配置）**: ① `updateCheckoutProductWithLatest` の cross-cart IDOR を修正（`cartProducts[0].cartId` のみ検証 → 全 cartProduct を所有カートの cartItem id 集合で検証し、複数カート混在・他カート item.id 混入を拒否）+ IDOR 回帰テスト +1（`ec4192f`）。② checkout `isDiscounted` に `isCouponCurrentlyValid` を AND 追加し、失効/無効クーポンの割引 UI とサーバー確定額のドリフトを解消（`216c2de`）。③ `upsertCoupon`/`getStoreCoupons`/`deleteCoupon` で `requireStoreOwner` を try/catch 外へ移動（tech.md 準拠、dead な isGuardError 分岐除去、coupon.test.ts の旧ラップ期待 2 件を更新）（`a6b5223`）。1399 → **1400 passed** / 143 → **144** スイート |
 
 ---
 
