@@ -1010,12 +1010,14 @@ describe("applyCoupon", () => {
                         throw new Error("Decimal multiplication error");
                     });
 
-                await expect(
-                    applyCoupon("SAVE10", "cart-001")
-                ).rejects.toThrow("Error occurred while applying coupon");
-
-                spy.mockRestore();
-                consoleSpy.mockRestore();
+                try {
+                    await expect(
+                        applyCoupon("SAVE10", "cart-001")
+                    ).rejects.toThrow("Error occurred while applying coupon");
+                } finally {
+                    spy.mockRestore();
+                    consoleSpy.mockRestore();
+                }
             });
 
             it("割引率除算(.div)が例外をスローした場合エラーをラップしてスローする", async () => {
@@ -1029,12 +1031,14 @@ describe("applyCoupon", () => {
                         throw new Error("Decimal division error");
                     });
 
-                await expect(
-                    applyCoupon("SAVE10", "cart-001")
-                ).rejects.toThrow("Error occurred while applying coupon");
-
-                spy.mockRestore();
-                consoleSpy.mockRestore();
+                try {
+                    await expect(
+                        applyCoupon("SAVE10", "cart-001")
+                    ).rejects.toThrow("Error occurred while applying coupon");
+                } finally {
+                    spy.mockRestore();
+                    consoleSpy.mockRestore();
+                }
             });
 
             it("合計加算(.add)が例外をスローした場合エラーをラップしてスローする", async () => {
@@ -1048,12 +1052,14 @@ describe("applyCoupon", () => {
                         throw new Error("Decimal addition error");
                     });
 
-                await expect(
-                    applyCoupon("SAVE10", "cart-001")
-                ).rejects.toThrow("Error occurred while applying coupon");
-
-                spy.mockRestore();
-                consoleSpy.mockRestore();
+                try {
+                    await expect(
+                        applyCoupon("SAVE10", "cart-001")
+                    ).rejects.toThrow("Error occurred while applying coupon");
+                } finally {
+                    spy.mockRestore();
+                    consoleSpy.mockRestore();
+                }
             });
 
             it("新合計減算(.sub)が例外をスローした場合エラーをラップしてスローする", async () => {
@@ -1067,12 +1073,14 @@ describe("applyCoupon", () => {
                         throw new Error("Decimal subtraction error");
                     });
 
-                await expect(
-                    applyCoupon("SAVE10", "cart-001")
-                ).rejects.toThrow("Error occurred while applying coupon");
-
-                spy.mockRestore();
-                consoleSpy.mockRestore();
+                try {
+                    await expect(
+                        applyCoupon("SAVE10", "cart-001")
+                    ).rejects.toThrow("Error occurred while applying coupon");
+                } finally {
+                    spy.mockRestore();
+                    consoleSpy.mockRestore();
+                }
             });
         });
     });

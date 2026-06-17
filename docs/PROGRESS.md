@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1403 passed / 1406 total / 144 スイート（3 skipped）** — 2026-06-17 `applyCoupon` TOCTOU レース修正完了時点（`da8b9b9`–`3e665be`）|
+| Jestユニットテスト | **1407 passed / 1410 total / 144 スイート（3 skipped）** — 2026-06-17 `applyCoupon` Decimal 演算エラー経路テスト追加完了時点（`04dd88c`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
