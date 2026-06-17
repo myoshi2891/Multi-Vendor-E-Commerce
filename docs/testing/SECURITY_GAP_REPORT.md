@@ -180,3 +180,49 @@ if (existingById && existingById.storeId !== store.id) {
 
 - Red テスト: `test(coupon): add failing cross-store coupon hijack test for upsertCoupon`
 - Green 修正: `fix(security): verify coupon ownership before upsert in upsertCoupon`
+
+## 7. 追加修正（2026-06-17）— `applyCoupon` の TOCTOU レースコンディション
+
+### 7.1 発見
+
+`src/queries/coupon.ts::applyCoupon` は Step 4 で `cart.couponId` を読んで「未適用」を確認した後、Step 7 で **無条件の** `db.cart.update({ where: { id: cartId } })` で書き込んでいた。チェックと書き込みの間に隙間があり、2 つの並行リクエストが両方ともチェックを通過してから順に書き込むと、後勝ちで先のクーポンを **サイレントに上書き** できた（Time-Of-Check-To-Time-Of-Use）。
+
+- **影響**: `'Coupon is already applied to this cart.'` ガードのバイパス。カート合計（`total`）が二重割引・不整合の状態になりうる。
+- **既存性**: 認可（`userId` スコープ）は Step 3 の `findFirst` で担保済みだが、原子性（once-only 適用）が欠けていた。IDOR ではなく並行性バグ。
+
+### 7.2 修正
+
+無条件 `update` を `couponId=null` を条件に含めた条件付き `updateMany`（DB レベルの compare-and-swap）へ置換:
+
+```ts
+const updated = await db.cart.updateMany({
+    where: { id: cartId, userId: user.id, couponId: null },
+    data: { couponId: coupon.id, total: newTotal },
+})
+if (updated.count === 0) {
+    throw new Error('Coupon is already applied to this cart.')
+}
+const updatedCart = await db.cart.findFirstOrThrow({
+    where: { id: cartId, userId: user.id },
+    include: { cartItems: true, coupon: { include: { store: true } } },
+})
+```
+
+- Prisma の `update` は `where` に unique フィールドしか取れないため、任意条件を取れる `updateMany` を採用。`couponId=null` 条件で「未適用時のみ書き込む」原子性を DB が保証する。
+- `count === 0` は並行リクエストに先を越されたことを意味し、既存と同一の文言でスロー。
+- 両クエリで `userId: user.id` スコープを維持（所有権担保は不変）。
+
+### 7.3 追加テスト（3 階層 (a)(b)(c)）
+
+`coupon.test.ts::applyCoupon › クーポン適用前のバリデーション` に 1 件追加:
+
+| シナリオ | 検証 |
+|---|---|
+| `updateMany` が `count: 0` を返す（競合で先を越された） | (a) `"Coupon is already applied to this cart."` スロー / (b) `updateMany` の `where` に `couponId: null` を含む / (c) 競合時は `findFirstOrThrow` 非呼び出し |
+
+既存の正常系テスト 7 件を `cart.update` → `cart.updateMany`(`count:1`) + `findFirstOrThrow` の呼び出しパターンへ移行。テスト総数: 1405 → 1406（+1）。
+
+### 7.4 関連コミット
+
+- Red テスト: `test(coupon): add failing race-condition test for applyCoupon TOCTOU`
+- Green 修正: `fix(coupon): make applyCoupon write atomic via conditional updateMany`

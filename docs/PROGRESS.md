@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1402 passed / 1405 total / 144 スイート（3 skipped）** — 2026-06-17 `upsertCoupon` cross-store/PLATFORM hijack IDOR 修正完了時点（`f6e75fd`–`505e13b`）|
+| Jestユニットテスト | **1403 passed / 1406 total / 144 スイート（3 skipped）** — 2026-06-17 `applyCoupon` TOCTOU レース修正完了時点（`da8b9b9`–`3e665be`）|
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -804,6 +804,30 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 (unit/component) | 1400 passed | **1402 passed** |
+| スイート数 | 144 | **144**（変動なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### applyCoupon TOCTOU レースコンディション修正 (2026-06-17)
+
+#### 概要
+
+`applyCoupon` のチェック（Step 4）と書き込み（Step 7）が原子的でなく、並行リクエストが先のクーポンを上書きできた TOCTOU レースを修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.ts` | 無条件 `db.cart.update({ where: { id } })` を `couponId=null` を条件に含めた条件付き `db.cart.updateMany`（DB レベル CAS）へ置換。`count === 0` で `'Coupon is already applied to this cart.'` をスロー、続けて `findFirstOrThrow` で返却形を再構築。両クエリで `userId` スコープ維持 | `3e665be` |
+| `src/queries/coupon.test.ts` | 3 階層 (a) throw / (b) where 構造（`couponId: null`）/ (c) 副作用なし の回帰テスト +1。既存正常系 7 件を `updateMany`+`findFirstOrThrow` パターンへ移行 | `da8b9b9` |
+| `docs/testing/SECURITY_GAP_REPORT.md` | §7 に発見・修正・追加テストを記録 | （本コミット）|
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1402 passed | **1403 passed** |
 | スイート数 | 144 | **144**（変動なし） |
 | 型エラー | 0 件 | **0 件** |
 
