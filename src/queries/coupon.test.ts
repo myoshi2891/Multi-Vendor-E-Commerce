@@ -662,6 +662,7 @@ describe("applyCoupon", () => {
                 expect.objectContaining({
                     where: expect.objectContaining({
                         id: "cart-001",
+                        userId: TEST_CONFIG.DEFAULT_USER_ID,
                         couponId: null,
                     }),
                 })

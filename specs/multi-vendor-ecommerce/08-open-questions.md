@@ -70,6 +70,43 @@
 **記録日**: 2026-05-24
 **ステータス**: 回避策実装済み（CI flake回避のため該当テストを一時スキップ中、解決期限: 2026-06-07）
 
+### applyCoupon: `cart.total` の残存ロストアップデート (CAS は couponId のみ保護)
+
+**影響範囲**: `src/queries/coupon.ts::applyCoupon` の Step 7 条件付き `updateMany`
+（`where: { id, userId, couponId: null }` の DB レベル CAS）。
+
+**症状**:
+- Step 6 で `newTotal = cart.total.sub(discountedAmount)` を計算し、Step 7 で書き込む。
+- CAS は `couponId: null`（once-only 適用）のみを保護しており、`cart.total` 自体の
+  バージョンは検証していない。`applyCoupon` が `cart.total` を読んだ後・書き込む前に
+  別リクエスト（`addToCart` / `updateCart` 等）が `cart.total` を更新すると、
+  古い `cart.total` から算出した `newTotal` で上書きしてしまう（ロストアップデート）。
+- クーポン適用（`couponId` の once-only）自体は TOCTOU 修正（§7）でアトミック化済み。
+  本件はそれとは独立した、`total` フィールドに対するより狭い競合ウィンドウ。
+
+**根本原因**:
+TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`cart.total` の
+楽観的並行制御までは含めていない。
+
+**回避策（現状）**:
+- 未対応。`Cart` モデルには `updatedAt @updatedAt` が存在するため技術的には
+  `where` に `updatedAt` を加える「最小修正」が可能だが、無関係なカート編集との競合時に
+  `"Coupon is already applied to this cart."` という誤解を招くメッセージで失敗するため
+  採用しない（コードレビューでスキップ判断）。
+
+**長期対応案**:
+- 読み取り → `newTotal` 再計算 → 書き込みを `db.$transaction` 内で行い、
+  トランザクション内の最新 `cart.total` から `newTotal` を導出する。
+  once-only ガードは `couponId: null` CAS を維持。エラー/返却セマンティクスが
+  変わるため、別タスクとして実施する。
+
+**関連ファイル**:
+- `src/queries/coupon.ts` (`applyCoupon` Step 6〜7)
+- `docs/testing/SECURITY_GAP_REPORT.md` §7（TOCTOU 修正の文脈・残課題注記）
+
+**記録日**: 2026-06-17
+**ステータス**: 未対応（残課題として記録、対応は transaction リファクタを伴う別タスク）
+
 ## Resolved Issues
 
 - `getUserWishlist` (`src/queries/profile.ts`): `variants[0]` への直接アクセスが

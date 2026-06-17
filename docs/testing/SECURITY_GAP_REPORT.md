@@ -174,7 +174,7 @@ if (existingById && existingById.storeId !== store.id) {
 | 他店舗所有 `coupon.id`（`storeId="other-store-id"`） | (a) `"Forbidden: coupon not owned by current store."` スロー / (c) `coupon.upsert`・`findFirst` 非呼び出し |
 | admin PLATFORM クーポン（`storeId=null`） | (a) 同上スロー / (c) 同上非呼び出し |
 
-テスト総数: 1403 → 1405（+2）。
+テスト総数: 1400 → 1402（+2）。
 
 ### 6.4 関連コミット
 
@@ -220,9 +220,22 @@ const updatedCart = await db.cart.findFirstOrThrow({
 |---|---|
 | `updateMany` が `count: 0` を返す（競合で先を越された） | (a) `"Coupon is already applied to this cart."` スロー / (b) `updateMany` の `where` に `couponId: null` を含む / (c) 競合時は `findFirstOrThrow` 非呼び出し |
 
-既存の正常系テスト 7 件を `cart.update` → `cart.updateMany`(`count:1`) + `findFirstOrThrow` の呼び出しパターンへ移行。テスト総数: 1405 → 1406（+1）。
+既存の正常系テスト 7 件を `cart.update` → `cart.updateMany`(`count:1`) + `findFirstOrThrow` の呼び出しパターンへ移行。テスト総数: 1402 → 1403（+1）。
 
 ### 7.4 関連コミット
 
 - Red テスト: `test(coupon): add failing race-condition test for applyCoupon TOCTOU`
 - Green 修正: `fix(coupon): make applyCoupon write atomic via conditional updateMany`
+
+### 7.5 残課題（未対応）— `cart.total` のロストアップデート
+
+§7 の CAS は `couponId: null`（once-only 適用）のみを保護する。`newTotal` の算出元である
+`cart.total` を読んだ後・書き込む前に別リクエストが `cart.total` を更新すると、古い値から
+算出した `newTotal` で上書きしうる（クーポン適用の once-only とは独立した、より狭い競合）。
+
+最小修正（`where` に `updatedAt` を追加）は無関係なカート編集との競合時に
+`"Coupon is already applied to this cart."` という誤解を招くメッセージで失敗するため不採用。
+正しい対応は read→再計算→write を `db.$transaction` 内に閉じる楽観的並行制御で、
+エラー/返却セマンティクスが変わるため別タスクとする。
+
+詳細・追跡は SDD `specs/multi-vendor-ecommerce/08-open-questions.md` の Known Issues を SSOT とする。
