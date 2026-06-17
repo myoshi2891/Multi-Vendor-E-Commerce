@@ -41,7 +41,9 @@ jest.mock("@/lib/db", () => ({
         cart: {
             findUnique: jest.fn(),
             findFirst: jest.fn(),
+            findFirstOrThrow: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
     },
 }));
@@ -628,6 +630,47 @@ describe("applyCoupon", () => {
             ).rejects.toThrow("Coupon is already applied to this cart.");
         });
 
+        it("並行リクエストの競合（updateMany count=0）でエラーをスローし、couponId=null を条件に含める", async () => {
+            // Arrange: 初回チェックは通過するが、書き込み直前に別リクエストが先に適用したケース
+            mockDb.coupon.findUnique.mockResolvedValue(
+                createMockCoupon({
+                    ...COUPON_SCENARIOS.active,
+                    store: createMockStore(),
+                })
+            );
+            mockDb.cart.findFirst.mockResolvedValue(
+                createMockCart({
+                    couponId: null,
+                    cartItems: [
+                        createMockCartItem({
+                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        }),
+                    ],
+                    coupon: null,
+                })
+            );
+            // CAS が 0 件 = 競合で先を越された
+            mockDb.cart.updateMany.mockResolvedValue({ count: 0 });
+
+            // Act + Assert (a) スロー検証
+            await expect(
+                applyCoupon("SAVE10", "cart-001")
+            ).rejects.toThrow("Coupon is already applied to this cart.");
+
+            // Assert (b) where 構造検証: couponId=null の CAS 条件が含まれる
+            expect(mockDb.cart.updateMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "cart-001",
+                        couponId: null,
+                    }),
+                })
+            );
+
+            // Assert (c) 副作用なし検証: 競合時は最終フェッチを行わない
+            expect(mockDb.cart.findFirstOrThrow).not.toHaveBeenCalled();
+        });
+
         it("クーポンのストアの商品がカートにない場合エラーをスローする", async () => {
             mockDb.coupon.findUnique.mockResolvedValue(
                 createMockCoupon({
@@ -693,7 +736,8 @@ describe("applyCoupon", () => {
             // 商品 $100 x 1 + 配送料 $10 = $110, 10%割引 = -$11
             setupValidCouponScenario(10, 110, 100, 1, 10);
             const updatedCart = createMockCart({ total: 99 });
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...updatedCart,
                 cartItems: [],
                 coupon: { store: createMockStore() },
@@ -702,14 +746,15 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE10", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            const { data } = mockDb.cart.update.mock.calls[0][0];
+            const { data } = mockDb.cart.updateMany.mock.calls[0][0];
             expect(new Prisma.Decimal(data.total).toNumber()).toBe(99); // 110 - 11
         });
 
         it("50%割引が正しく計算される", async () => {
             // 商品 $200 x 1 + 配送料 $0 = $200, 50%割引 = -$100
             setupValidCouponScenario(50, 200, 200, 1, 0);
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...createMockCart({ total: 100 }),
                 cartItems: [],
                 coupon: { store: createMockStore() },
@@ -718,7 +763,7 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE50", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            const { data } = mockDb.cart.update.mock.calls[0][0];
+            const { data } = mockDb.cart.updateMany.mock.calls[0][0];
             expect(new Prisma.Decimal(data.total).toNumber()).toBe(100); // 200 - 100
         });
 
@@ -746,7 +791,8 @@ describe("applyCoupon", () => {
                     coupon: null,
                 })
             );
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...createMockCart({ total: 139.5 }),
                 cartItems: [],
                 coupon: { store: createMockStore() },
@@ -755,7 +801,7 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE10", "cart-001");
 
             expect(result.message).toContain("Coupon applied successfully");
-            const { data } = mockDb.cart.update.mock.calls[0][0];
+            const { data } = mockDb.cart.updateMany.mock.calls[0][0];
             expect(new Prisma.Decimal(data.total).toNumber()).toBe(139.5); // 155 - 15.5
         });
 
@@ -791,7 +837,8 @@ describe("applyCoupon", () => {
                     coupon: null,
                 })
             );
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...createMockCart({ total: 90 }),
                 cartItems: [],
                 coupon: { store: null },
@@ -801,7 +848,7 @@ describe("applyCoupon", () => {
 
             expect(result.message).toContain("Coupon applied successfully");
             expect(result.message).toContain("全店舗");
-            const { data } = mockDb.cart.update.mock.calls[0][0];
+            const { data } = mockDb.cart.updateMany.mock.calls[0][0];
             expect(new Prisma.Decimal(data.total).toNumber()).toBe(90); // 100 - 10
         });
 
@@ -809,7 +856,8 @@ describe("applyCoupon", () => {
             // 商品 $6.7 x 1 + 配送料 $0 = $6.7, 15%割引 = 1.005 → Decimalで1.01に半数上げ
             // (旧Number実装は (6.7*15/100).toFixed(2) === "1.00" になる既知のfloat誤差バグ)
             setupValidCouponScenario(15, 10, 6.7, 1, 0);
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...createMockCart({ total: 8.995 }),
                 cartItems: [],
                 coupon: { store: createMockStore() },
@@ -818,7 +866,7 @@ describe("applyCoupon", () => {
             const result = await applyCoupon("SAVE15", "cart-001");
 
             expect(result.message).toContain("-$1.01");
-            const { data } = mockDb.cart.update.mock.calls[0][0];
+            const { data } = mockDb.cart.updateMany.mock.calls[0][0];
             expect(new Prisma.Decimal(data.total).toNumber()).toBe(8.995); // 10 - 1.005
         });
     });
@@ -851,12 +899,13 @@ describe("applyCoupon", () => {
                 cartItems: [],
                 coupon: { ...createMockCoupon(), store: createMockStore() },
             };
-            mockDb.cart.update.mockResolvedValue(updatedCart);
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue(updatedCart);
 
             const result = await applyCoupon("SAVE10", "cart-001");
 
             expect(result.cart).toBeDefined();
-            expect(mockDb.cart.update).toHaveBeenCalledWith(
+            expect(mockDb.cart.updateMany).toHaveBeenCalledWith(
                 expect.objectContaining({
                     data: expect.objectContaining({
                         couponId: "coupon-001",
@@ -888,7 +937,8 @@ describe("applyCoupon", () => {
                     coupon: null,
                 })
             );
-            mockDb.cart.update.mockResolvedValue({
+            mockDb.cart.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.cart.findFirstOrThrow.mockResolvedValue({
                 ...createMockCart(),
                 cartItems: [],
                 coupon: {
