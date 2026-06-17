@@ -294,15 +294,22 @@ export const applyCoupon = async (
 
         const newTotal = cart.total.sub(discountedAmount)
 
-        // Step 7: Update the cart with the applied coupon details and new total
-        const updatedCart = await db.cart.update({
-            where: {
-                id: cartId,
-            },
+        // Step 7: 競合を防ぐため couponId=null を条件に含めた条件付き更新（CAS）。
+        // Step 4 のチェックと書き込みの間に別リクエストがクーポンを適用する TOCTOU を
+        // DB レベルのアトミックな更新で排除する。
+        const updated = await db.cart.updateMany({
+            where: { id: cartId, userId: user.id, couponId: null },
             data: {
                 couponId: coupon.id,
                 total: newTotal,
             },
+        })
+        if (updated.count === 0) {
+            // 並行リクエストが先にクーポンを適用済み
+            throw new Error('Coupon is already applied to this cart.')
+        }
+        const updatedCart = await db.cart.findFirstOrThrow({
+            where: { id: cartId, userId: user.id },
             include: {
                 cartItems: true,
                 coupon: {
