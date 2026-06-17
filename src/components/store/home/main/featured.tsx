@@ -27,7 +27,6 @@ export default function Featured({ products }: { products: SimpleProduct[] }) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
 
         // Set actual screen width after component mounts on the client
