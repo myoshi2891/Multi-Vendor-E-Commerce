@@ -957,10 +957,26 @@ export const updateCheckoutProductWithLatest = async (
     address: CountryDB | undefined
 ): Promise<SerializedCartType> => {
     if (cartProducts.length === 0) throw new Error('No cart products provided.')
-    const cartId = cartProducts[0].cartId
     const user = await requireUser()
-    const ownedCart = await db.cart.findFirst({ where: { id: cartId, userId: user.id } })
+
+    const cartId = cartProducts[0].cartId
+    // payload 整合性: 全 item が単一 cartId に属すること（複数カート混在を拒否）
+    if (cartProducts.some((p) => p.cartId !== cartId)) {
+        throw new Error('Unauthorized: cart items belong to multiple carts.')
+    }
+
+    // 所有権 + 実在 cartItem を権威ソースとして取得（id だけで update する前のガード）
+    const ownedCart = await db.cart.findFirst({
+        where: { id: cartId, userId: user.id },
+        include: { cartItems: { select: { id: true } } },
+    })
     if (!ownedCart) throw new Error('Unauthorized: cart does not belong to current user.')
+
+    // cartProduct.id が実際にこのカートに属することを検証（他カートの item.id 混入による IDOR を防止）
+    const ownedItemIds = new Set(ownedCart.cartItems.map((item) => item.id))
+    if (cartProducts.some((p) => !ownedItemIds.has(p.id))) {
+        throw new Error('Unauthorized: cart item does not belong to current user.')
+    }
 
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(

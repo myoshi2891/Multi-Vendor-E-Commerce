@@ -1274,7 +1274,38 @@ describe("updateCheckoutProductWithLatest", () => {
         (currentUser as jest.Mock).mockResolvedValue({
             id: TEST_CONFIG.DEFAULT_USER_ID,
         });
-        mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+        // 所有権チェックは cartItems.id の集合で行うため、デフォルト item を含める
+        mockDb.cart.findFirst.mockResolvedValue({
+            ...createMockCart(),
+            cartItems: [{ id: "cart-item-001" }],
+        });
+    });
+
+    describe("IDOR 防御", () => {
+        it("他カートの cartItem.id が混入している場合は拒否し update を呼ばない", async () => {
+            // Arrange: 所有カートには cart-item-001 のみ存在する
+            mockDb.cart.findFirst.mockResolvedValue({
+                ...createMockCart(),
+                cartItems: [{ id: "cart-item-001" }],
+            });
+            const cartItems = [
+                createMockCartItem({ id: "cart-item-001" }),
+                createMockCartItem({ id: "cart-item-OTHER" }), // 他ユーザーのカートアイテム
+            ];
+
+            // Act & Assert: 不正アイテム混入で拒否される
+            await expect(
+                updateCheckoutProductWithLatest(
+                    cartItems as never,
+                    createMockCountry() as never
+                )
+            ).rejects.toThrow(
+                "Unauthorized: cart item does not belong to current user."
+            );
+
+            // 副作用なし: いかなる cartItem も更新されない
+            expect(mockDb.cartItem.update).not.toHaveBeenCalled();
+        });
     });
 
     describe("データ検証", () => {
