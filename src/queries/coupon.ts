@@ -30,15 +30,16 @@ const isGuardError = (error: unknown): error is Error => {
  */
 
 export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // - 旧実装は url のみで store を検索しており、他人の店舗 URL を知れば
+    //   その店舗にクーポンを作成できる潜在的 IDOR があった。
+    //   requireStoreOwner は { url, userId } の複合 where で検索する。
+    // - 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
+
     try {
         // Ensure coupon data is provided (storeURL は requireStoreOwner 側で検証)
         if (!coupon) throw new Error('Please provide coupon data.')
-
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        // - 旧実装は url のみで store を検索しており、他人の店舗 URL を知れば
-        //   その店舗にクーポンを作成できる潜在的 IDOR があった。
-        //   requireStoreOwner は { url, userId } の複合 where で検索する。
-        const { store } = await requireStoreOwner(storeURL)
 
         // Throw error if a coupon with the same code and store ID already exists
         const existingCoupon = await db.coupon.findFirst({
@@ -71,10 +72,6 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
     } catch (error: unknown) {
         console.error(error)
 
-        if (isGuardError(error)) {
-            throw error
-        }
-
         // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
         if (
             typeof (error as Record<string, unknown>).code === 'string' &&
@@ -99,10 +96,11 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
  */
 
 export const getStoreCoupons = async (storeURL: string) => {
-    try {
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        const { store } = await requireStoreOwner(storeURL)
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
 
+    try {
         // Fetch all coupons associated with the store
         const coupons = await db.coupon.findMany({
             where: { storeId: store.id },
@@ -111,9 +109,6 @@ export const getStoreCoupons = async (storeURL: string) => {
         return coupons
     } catch (error: unknown) {
         console.error(error)
-        if (isGuardError(error)) {
-            throw error
-        }
         throw new Error(
             `Error occurred while trying to fetch store coupons: ${error instanceof Error ? error.message : String(error)}`
         )
@@ -160,12 +155,13 @@ export const getCoupon = async (couponId: string) => {
  */
 
 export const deleteCoupon = async (couponId: string, storeURL: string) => {
+    // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const { store } = await requireStoreOwner(storeURL)
+
     try {
         // Ensure couponId is provided (storeURL は requireStoreOwner 側で検証)
         if (!couponId) throw new Error('Please provide coupon ID.')
-
-        // 認証 + SELLER + 店舗所有権を集約検証 (IDOR 防御)
-        const { store } = await requireStoreOwner(storeURL)
 
         // Delete coupon from the database
         const response = await db.coupon.delete({
@@ -178,10 +174,6 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: unknown) {
         console.error(error)
-
-        if (isGuardError(error)) {
-            throw error
-        }
 
         throw new Error(
             `Error occurred while trying to delete coupon: ${error instanceof Error ? error.message : String(error)}`

@@ -85,6 +85,9 @@ describe("upsertCoupon", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "SELLER" },
             });
+            // 認可ガード (requireStoreOwner) は try の外で先に実行されるため、
+            // 入力バリデーションに到達するには所有ストアの解決が必要
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
         });
 
         it("クーポンデータがnullの場合エラーをスローする", async () => {
@@ -237,7 +240,10 @@ describe("upsertCoupon", () => {
             const consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => undefined);
-            mockDb.store.findUnique.mockRejectedValue(
+            // 認可ガードは try の外なので、ラップ対象の DB エラーは try 内部
+            // (coupon.findFirst) で発生させる
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.coupon.findFirst.mockRejectedValue(
                 new Error("DB connection failed")
             );
             const coupon = createMockCoupon();
