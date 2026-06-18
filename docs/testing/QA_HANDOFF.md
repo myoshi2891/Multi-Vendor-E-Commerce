@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-18 / **HEAD**: `f2cd8f1`
+> **最終更新**: 2026-06-18 / **HEAD**: `07bc12e`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1490** passed / 1493 total / 151 スイート（150 passed + 1 skipped suite）— 2026-06-18 販売者ダッシュボード Phase 3-A（F1 店舗ダッシュボード統計 query 層）完了：`src/queries/store-dashboard.test.ts` 新規 +39（認可 3 階層 × 4 関数 / 売上 join（親 Order Paid のみ）/ `_sum` null→0 / storeId 別スコープ混線なし / DB エラー Error・非 Error 両分岐、`f2cd8f1`）で 1451→1490 passed / 150→151 スイート。Phase 2-C（F2 在庫管理 UI）は `8211773`（1443→1451 / 147→150）、Phase 2-A/2-B 在庫 query 層は `2dd35b5`（1407→1435 / 144→145） |
+| Jest テスト総数 (unit/component) | **1496** passed / 1499 total / 154 スイート（153 passed + 1 skipped suite）— 2026-06-18 販売者ダッシュボード Phase 3-B（F1 店舗ダッシュボード UI）完了：`store-stats-cards` / `store-recent-orders` / `store-top-products` の RTL テスト新規 +6（各 KPI/行描画 + ゼロ件エッジ AC-F1-5）で 1490→1496 passed / 151→154 スイート（`5e48d5e`）。同時に `[storeUrl]/page.tsx` プレースホルダーを KPI ダッシュボード（`Promise.all` 4 query + `SalesChart` 再利用 + `force-dynamic`）へ置換（`07bc12e`）。Phase 3-A（F1 統計 query 層）は `f2cd8f1`（1451→1490 / 150→151） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
@@ -257,6 +257,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `3e2e175`–`b3ba8c9` | **販売者ダッシュボード Phase 2-C（F2 在庫管理 UI）**: `/dashboard/seller/stores/[storeUrl]/inventory` 新規（`page.tsx` `force-dynamic` + `requireStoreOwner` で `lowStockThreshold` 取得 + `getStoreInventory` + DataTable）。`columns.tsx` は `getInventoryColumns(threshold, storeUrl)` ファクトリ（バッジ/編集セルへ threshold・storeUrl を渡すため）。新規コンポーネント 4 本（`src/components/dashboard/seller/`）: `stock-status-badge`（getStockStatus → Badge 色分け）/ `inventory-quantity-cell`（インライン編集・リエントランシーガード・`updateSizeStock`→toast→refresh）/ `low-stock-threshold-form`（`updateStoreLowStockThreshold`）/ `inventory-alert-summary`（在庫切れ/過小件数集計・RSC）。テスト: `stock-status-badge.test.tsx` +3 + `inventory/columns.test.tsx` +5（orders columns.test.tsx の `renderCell` パターン流用、子コンポーネントスタブ化）。1435 → **1443 passed** / 145 → **147** スイート |
 | `c40708a`–`8211773` | **販売者ダッシュボード Phase 2-C 仕上げ（F2 在庫管理 UI テスト完備）**: `updateSizeStock` のアトミック所有権チェック + エラーメッセージ sanitize（`c40708a`）、在庫テーブルを client boundary（`inventory-table-client.tsx`）でラップ（`92d14ab`）、UI 強化 + `inventory-quantity-cell.test.tsx` / `low-stock-threshold-form.test.tsx` 追加（`09b2c2e`）。最後に `inventory-alert-summary.test.tsx` 新規 +3（out/low 集計マッピング・threshold 境界一致・ゼロ件エッジ。`getStockStatus` 境界を行バッジと共有することを検証）で 2-C 全 6 コンポーネントがテスト完備（`8211773`）。1443 → **1451 passed** / 147 → **150** スイート（149 passed + 1 skipped suite） |
 | `f2cd8f1` | **販売者ダッシュボード Phase 3-A（F1 店舗ダッシュボード統計 query 層）**: `src/queries/store-dashboard.ts` 新規。admin `dashboard.ts` を店舗スコープ化（`requireStoreOwner` + where に `storeId` 注入）。`getStoreDashboardStats`（5 並列集計・売上は親 `Order.paymentStatus=Paid` のみ・`unstable_cache` 20 分でキャッシュキーに `storeId` 含有し店舗間混線防止 NFR-8・`requireStoreOwner`/`lowStockThreshold` はキャッシュ外クロージャ）/ `getStoreSalesOverTime`（Paid 売上の期間別バケット集計・Decimal は return 境界で number 化）/ `getStoreRecentOrders` / `getStoreTopProducts`。`src/lib/types.ts` に `StoreRecentOrderType` / `StoreTopProductType` を `Prisma.PromiseReturnType` で導出。テスト: `store-dashboard.test.ts` 新規 +39（認可 3 階層 × 4 関数 / 売上 join / `_sum` null→0 / storeId 別スコープ / DB エラー両分岐）。1451 → **1490 passed** / 150 → **151** スイート。UI（3-B）は未着手 |
+| `4301c85`–`07bc12e` | **販売者ダッシュボード Phase 3-B（F1 店舗ダッシュボード UI）**: プレースホルダー `[storeUrl]/page.tsx` を店舗 KPI ダッシュボードへ置換。新規 presentational コンポーネント 3 本（`src/components/dashboard/seller/`）: `store-stats-cards`（admin stats-cards 派生・総売上/注文/閲覧/販売/商品/在庫アラートの 6 KPI）/ `store-recent-orders`（OrderGroup 行・`toNumberSafe` で Decimal 整形）/ `store-top-products`（sales 降順）。型は `Awaited<ReturnType<typeof get*>>` で query から導出。`SalesChart`（admin/sales-chart）は `SalesPoint[]` 共用でそのまま import（依存追加なし）。`page.tsx` は `Promise.all([getStoreDashboardStats, getStoreSalesOverTime, getStoreRecentOrders, getStoreTopProducts])` + `force-dynamic`（NFR-4）。テスト: 3 コンポーネント RTL +6（値描画 + ゼロ件 AC-F1-5、`5e48d5e`）。1490 → **1496 passed** / 151 → **154** スイート |
 
 ---
 

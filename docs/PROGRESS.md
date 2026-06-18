@@ -964,6 +964,34 @@ Phase 2-C のUIハードニング（`updateSizeStock` のアトミック所有�
 
 ---
 
+### 販売者ダッシュボード Phase 3-B（F1 店舗ダッシュボード UI） (2026-06-18)
+
+#### 概要
+
+プレースホルダー `[storeUrl]/page.tsx`（`<div>SellerStorePage</div>`）を店舗 KPI ダッシュボードへ置換。
+3-A の query 4 種を `Promise.all` で結線し、presentational コンポーネント 3 本を新規追加。売上チャートは
+admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存追加なし・design.md 判断1 の再利用方針）。これで Phase 3 完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/dashboard/seller/stores/[storeUrl]/page.tsx` | プレースホルダーを `Promise.all([getStoreDashboardStats, getStoreSalesOverTime, getStoreRecentOrders, getStoreTopProducts])` + `force-dynamic`（NFR-4）で置換 | `07bc12e` |
+| `src/components/dashboard/seller/store-stats-cards.tsx` | 新規。admin `stats-cards` 派生・6 KPI（総売上/注文/閲覧/販売/商品/在庫アラート） | `4301c85` |
+| `src/components/dashboard/seller/store-recent-orders.tsx` | 新規。OrderGroup 行・`toNumberSafe` で Decimal 整形 | `4301c85` |
+| `src/components/dashboard/seller/store-top-products.tsx` | 新規。sales 降順 | `4301c85` |
+| `src/components/dashboard/seller/{store-stats-cards,store-recent-orders,store-top-products}.test.tsx` | RTL +6（値描画 + ゼロ件エッジ AC-F1-5） | `5e48d5e` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1490 passed | **1496 passed** |
+| スイート数 | 151 | **154**（153 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1490 passed / 1493 total across 151 suites (3 skipped), as of 2026-06-18.
+- 1496 passed / 1499 total across 154 suites (3 skipped), as of 2026-06-18.
+  Seller-dashboard Phase 3-B (F1 store dashboard UI) added three RTL suites under
+  `src/components/dashboard/seller/` (`store-stats-cards` / `store-recent-orders` /
+  `store-top-products`, +6: KPI/row rendering + zero-state edge cases AC-F1-5) and
+  replaced the `[storeUrl]/page.tsx` placeholder with a KPI dashboard (`Promise.all` over
+  four store-scoped queries + reused `SalesChart` + `force-dynamic`); 1490 → 1496 passed,
+  151 → 154 suites.
   Seller-dashboard Phase 3-A added `src/queries/store-dashboard.test.ts` (new suite, +39:
   3-tier auth × 4 functions / revenue join restricted to parent `Order.paymentStatus=Paid` /
   `_sum` null → 0 / per-`storeId` cache scoping / DB-error Error & non-Error branches);
