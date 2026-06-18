@@ -1,9 +1,8 @@
-import DataTable from "@/components/ui/data-table";
-import { getInventoryColumns } from "./columns";
 import { getStoreInventory } from "@/queries/inventory";
 import { requireStoreOwner } from "@/lib/auth-guards";
 import InventoryAlertSummary from "@/components/dashboard/seller/inventory-alert-summary";
 import LowStockThresholdForm from "@/components/dashboard/seller/low-stock-threshold-form";
+import InventoryTableClient from "./inventory-table-client";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +35,10 @@ export default async function SellerInventoryPage({
                     initialThreshold={threshold}
                 />
             </div>
-            <DataTable
-                filterValue="productName"
-                data={rows}
-                columns={getInventoryColumns(threshold, storeUrl)}
-                searchPlaceholder="Search product ..."
+            <InventoryTableClient
+                rows={rows}
+                threshold={threshold}
+                storeUrl={storeUrl}
             />
         </div>
     );
