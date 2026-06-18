@@ -939,6 +939,31 @@ Phase 2-C のUIハードニング（`updateSizeStock` のアトミック所有�
 
 ---
 
+### 販売者ダッシュボード Phase 3-A（F1 店舗ダッシュボード統計 query 層） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F1「店舗統計」の query 層を新規実装。admin `dashboard.ts` を店舗スコープ化
+（`requireStoreOwner` + where に `storeId` 注入）し、新規発明を最小化（design.md 判断1）。UI（3-B）は未着手。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/store-dashboard.ts` | 新規。`getStoreDashboardStats`（5 並列集計・売上は親 `Order.paymentStatus=Paid` のみ・`unstable_cache` 20 分でキャッシュキーに `storeId` 含有 NFR-8）/ `getStoreSalesOverTime` / `getStoreRecentOrders` / `getStoreTopProducts` | `f2cd8f1` |
+| `src/lib/types.ts` | `StoreRecentOrderType` / `StoreTopProductType` を `Prisma.PromiseReturnType` で導出 | `f2cd8f1` |
+| `src/queries/store-dashboard.test.ts` | 新規 +39（認可 3 階層 × 4 関数 / 売上 join / `_sum` null→0 / storeId 別キャッシュキー / DB エラー両分岐） | `f2cd8f1` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1451 passed | **1490 passed** |
+| スイート数 | 150 | **151**（150 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

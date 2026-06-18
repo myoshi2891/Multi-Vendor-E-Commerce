@@ -5,9 +5,9 @@
 
 ## 🧭 現在地
 
-- **2026-06-18 時点**: **Phase 1 完了 / Phase 2（F2 在庫管理）完了**（query 層・型・純粋関数 + UI まで一通り）。
-- 残り: **Phase 3**（F1 店舗ダッシュボード統計: `store-dashboard.ts` query + KPI/チャート UI）👈 次はここ。
-- 検証: tsc 0 / lint 0 errors / test 1435 → **1443 passed**（147 スイート）/ build 成功 / `/dashboard/seller/stores/[storeUrl]/inventory` = Dynamic（ƒ）を確認。
+- **2026-06-18 時点**: **Phase 1 完了 / Phase 2（F2 在庫管理）完了 / Phase 3-A（F1 統計 query 層）完了**。
+- 残り: **Phase 3-B**（F1 UI: `[storeUrl]/page.tsx` プレースホルダー置換 + KPI カード/チャート/最近の注文/売れ筋商品）👈 次はここ。続いて **Phase 4**（`placeOrder` 在庫減算・厳格に最後）。
+- 検証: tsc 0 / lint 0 errors / test 1451 → **1490 passed**（151 スイート）/ build 成功（`store-dashboard.test.ts` +39）。
 
 ---
 
@@ -35,7 +35,7 @@
 
 | Task | 内容 | 状態 | コミット / 備考 |
 | --- | --- | --- | --- |
-| 3-A | 統計 query（`store-dashboard.ts`）+ キャッシュ分離テスト | ⬜ 未着手 | — |
+| 3-A | 統計 query（`store-dashboard.ts`）+ キャッシュ分離テスト | ✅ 完了 | `f2cd8f1`（query 4 種 + `StoreRecentOrderType`/`StoreTopProductType` 導出、`store-dashboard.test.ts` +39。売上 join / null→0 / storeId 別キャッシュキー / 認可 3 階層） |
 | 3-B | F1 UI（page 置換 + KPI/チャート/最近リスト） | ⬜ 未着手 | — |
 
 > **検証**（完了時に記入）: tsc 0 / lint 0 / test +N / build 成功（`/[storeUrl]` = Dynamic）。

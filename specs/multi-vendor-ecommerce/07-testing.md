@@ -12,7 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1451 passed / 1454 total across 150 suites (3 skipped), as of 2026-06-18.
+- 1490 passed / 1493 total across 151 suites (3 skipped), as of 2026-06-18.
+  Seller-dashboard Phase 3-A added `src/queries/store-dashboard.test.ts` (new suite, +39:
+  3-tier auth × 4 functions / revenue join restricted to parent `Order.paymentStatus=Paid` /
+  `_sum` null → 0 / per-`storeId` cache scoping / DB-error Error & non-Error branches);
+  1451 → 1490 passed, 150 → 151 suites.
   Seller-dashboard Phase 2-A/2-B added `src/queries/inventory.test.ts` (new suite, +22:
   auth / 3-tier IDOR / Zod rejection / happy path) and 6 `getStockStatus` boundary
   tests in `src/lib/utils.test.ts` (AC-F2-5); 1407 → 1435 passed, 144 → 145 suites.
