@@ -912,6 +912,33 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 
 ---
 
+### 販売者ダッシュボード Phase 2-C 仕上げ（F2 在庫管理 UI テスト完備） (2026-06-18)
+
+#### 概要
+
+Phase 2-C のUIハードニング（`updateSizeStock` のアトミック所有権チェック・client boundary 化）の後、
+最後まで未整備だった `inventory-alert-summary.tsx` の同階層テストを追加し、2-C 全 6 コンポーネントが
+テスト完備となった。これで Phase 2（F2 在庫管理）の UI 層が完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/inventory.ts` / `.test.ts` | `updateSizeStock` のアトミック所有権チェック + エラーメッセージ sanitize | `c40708a` |
+| `.../inventory/inventory-table-client.tsx` | 在庫テーブルを client boundary でラップ | `92d14ab` |
+| `inventory-quantity-cell.test.tsx` / `low-stock-threshold-form.test.tsx` | UI 強化に伴うコンポーネントテスト追加 | `09b2c2e` |
+| `src/components/dashboard/seller/inventory-alert-summary.test.tsx` | 新規 +3（out/low 集計マッピング・threshold 境界が行バッジと一致・ゼロ件エッジ） | `8211773` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1443 passed | **1451 passed** |
+| スイート数 | 147 | **150**（149 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

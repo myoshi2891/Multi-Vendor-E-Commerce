@@ -12,13 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1443 passed / 1446 total across 147 suites (3 skipped), as of 2026-06-18.
+- 1451 passed / 1454 total across 150 suites (3 skipped), as of 2026-06-18.
   Seller-dashboard Phase 2-A/2-B added `src/queries/inventory.test.ts` (new suite, +22:
   auth / 3-tier IDOR / Zod rejection / happy path) and 6 `getStockStatus` boundary
   tests in `src/lib/utils.test.ts` (AC-F2-5); 1407 → 1435 passed, 144 → 145 suites.
   Phase 2-C (F2 inventory UI) added `src/components/dashboard/seller/stock-status-badge.test.tsx`
   (+3 badge status boundaries) and `inventory/columns.test.tsx` (+5: accessor key order /
   per-cell rendering, reusing the orders `renderCell` pattern); 1435 → 1443 passed, 145 → 147 suites.
+  Phase 2-C completion added `inventory-quantity-cell.test.tsx` / `low-stock-threshold-form.test.tsx`
+  (UI hardening) and `inventory-alert-summary.test.tsx` (+3: out/low aggregation mapping,
+  threshold boundary parity with row badges, empty-inventory zero counts), bringing all six
+  2-C components under test; 1443 → 1451 passed, 147 → 150 suites.
   Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
   PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
