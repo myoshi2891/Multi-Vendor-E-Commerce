@@ -12,6 +12,7 @@ import {
     getStoreOrders,
     getStorePageDetails,
 } from "@/queries/store";
+import { getStoreInventory } from "@/queries/inventory";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
     Cart,
@@ -160,7 +161,7 @@ export type VariantSimplified = {
     variantSlug: string;
     variantName: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
 };
 
 export type VariantImageType = {
@@ -239,7 +240,7 @@ export type VariantInfoType = {
     variantImage: string;
     variantUrl: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
     colors: Partial<Color>[];
 };
 
@@ -410,6 +411,11 @@ export type CategoryWithSubsType = Category & {
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
 
+/** 在庫一覧行（getStoreInventory の返却要素。バリアント×サイズ単位、Decimal は number 化済み）。 */
+export type StoreInventoryRow = Prisma.PromiseReturnType<
+    typeof getStoreInventory
+>[number];
+
 /** admin 注文一覧（全店舗横断）の 1 行型。Order 起点（groups[] を含む）。 */
 export type AdminOrderType = Prisma.PromiseReturnType<
     typeof getAllOrders
@@ -428,7 +434,7 @@ export type ProductSimpleVariantType = {
     variantName: string;
     variantImage: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
 };
 
 export type ProductWithVariants = {
