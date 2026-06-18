@@ -1,6 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
-import { getStoreInventory, updateSizeStock } from "./inventory";
+import {
+    getStoreInventory,
+    updateSizeStock,
+    updateStoreLowStockThreshold,
+} from "./inventory";
 import { TEST_CONFIG } from "../config/test-config";
 
 // Mock the database
@@ -317,6 +321,70 @@ describe("getStoreInventory", () => {
             await expect(
                 getStoreInventory(TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow("Failed to fetch store inventory.");
+        });
+    });
+});
+
+// ==================================================
+// updateStoreLowStockThreshold — 認可・正常系・バリデーション
+// ==================================================
+describe("updateStoreLowStockThreshold", () => {
+    describe("認証・権限エラー", () => {
+        it("SELLER ロール以外の場合エラーをスローする", async () => {
+            mockCurrentUser(TestData.seller("USER"));
+
+            await expect(
+                updateStoreLowStockThreshold(TEST_CONFIG.TEST_STORE_URL, 5)
+            ).rejects.toThrow(ERRORS.NOT_SELLER);
+        });
+
+        it("店舗を所有していない場合 Forbidden をスローする", async () => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                updateStoreLowStockThreshold(TEST_CONFIG.TEST_STORE_URL, 5)
+            ).rejects.toThrow(ERRORS.NOT_OWNER);
+        });
+    });
+
+    describe("入力バリデーション・正常系", () => {
+        beforeEach(() => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
+        });
+
+        it("threshold=-1 は Zod で弾き、store.update を呼ばない", async () => {
+            await expect(
+                updateStoreLowStockThreshold(TEST_CONFIG.TEST_STORE_URL, -1)
+            ).rejects.toThrow("しきい値は 0 以上の整数で指定してください。");
+
+            expect(mockDb.store.update).not.toHaveBeenCalled();
+        });
+
+        it("自店舗のしきい値を更新し { lowStockThreshold } を返す", async () => {
+            mockDb.store.update.mockResolvedValue({ lowStockThreshold: 10 });
+
+            const result = await updateStoreLowStockThreshold(
+                TEST_CONFIG.TEST_STORE_URL,
+                10
+            );
+
+            expect(result).toEqual({ lowStockThreshold: 10 });
+            expect(mockDb.store.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
+                    data: { lowStockThreshold: 10 },
+                })
+            );
+        });
+
+        it("DB エラー時は汎用メッセージにラップしてスローする", async () => {
+            mockDb.store.update.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                updateStoreLowStockThreshold(TEST_CONFIG.TEST_STORE_URL, 5)
+            ).rejects.toThrow("Failed to update low stock threshold.");
         });
     });
 });

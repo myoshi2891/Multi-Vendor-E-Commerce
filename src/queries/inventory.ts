@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth-guards";
-import { UpdateSizeStockSchema } from "@/lib/schemas";
+import { UpdateSizeStockSchema, LowStockThresholdSchema } from "@/lib/schemas";
 
 /**
  * src/queries/inventory.ts
@@ -141,8 +141,28 @@ export const updateSizeStock = async (
  * @access SELLER（店舗所有者のみ）
  */
 export const updateStoreLowStockThreshold = async (
-    _storeUrl: string,
-    _threshold: number
+    storeUrl: string,
+    threshold: number
 ): Promise<{ lowStockThreshold: number }> => {
-    throw new Error("Not implemented");
+    const { store } = await requireStoreOwner(storeUrl); // 認可は try/catch の外
+
+    const parsed = LowStockThresholdSchema.safeParse({ threshold });
+    if (!parsed.success) {
+        throw new Error("しきい値は 0 以上の整数で指定してください。");
+    }
+
+    try {
+        const updated = await db.store.update({
+            where: { id: store.id },
+            data: { lowStockThreshold: parsed.data.threshold },
+            select: { lowStockThreshold: true },
+        });
+        return { lowStockThreshold: updated.lowStockThreshold };
+    } catch (error: unknown) {
+        console.error("[Inventory:updateStoreLowStockThreshold] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw new Error("Failed to update low stock threshold.");
+    }
 };
