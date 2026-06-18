@@ -78,6 +78,10 @@ jest.mock("@/lib/db", () => ({
         orderItem: {
             create: jest.fn(),
         },
+        size: {
+            updateMany: jest.fn(),
+            update: jest.fn(),
+        },
         country: {
             findUnique: jest.fn(),
         },
@@ -618,6 +622,8 @@ describe("placeOrder", () => {
                     callback: (tx: typeof mockDb) => Promise<unknown>
                 ) => callback(mockDb)
             );
+            // F3: 在庫減算は既定で「在庫十分（1 行更新）」として既存成功系を壊さない
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
         });
 
         it("単一店舗の注文を正常に作成する", async () => {
@@ -1072,6 +1078,87 @@ describe("placeOrder", () => {
                     }),
                 })
             );
+        });
+    });
+
+    // ------------------------------------------------------------------
+    // F3: 在庫のアトミック減算（placeOrder）
+    // ------------------------------------------------------------------
+    describe("在庫減算（F3）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.$transaction.mockImplementation(
+                async (
+                    callback: (tx: typeof mockDb) => Promise<unknown>
+                ) => callback(mockDb)
+            );
+
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem({ quantity: 3 })],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 0,
+                extraShippingFee: 0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+
+            const mockOrder = createMockOrder();
+            mockDb.order.create.mockResolvedValue(mockOrder);
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(mockOrder);
+        });
+
+        // AC-F3-2: 在庫不足 → throw + 注文全体ロールバック（最終 order.update 未到達）
+        it("在庫不足（updateMany が count:0）の場合、注文をロールバックする", async () => {
+            mockDb.size.updateMany.mockResolvedValue({ count: 0 });
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("在庫が不足しています");
+
+            // 合計確定の最終 update に到達しない＝$transaction はロールバックされる
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        // AC-F3-1: 在庫十分 → 減算が注文数分行われる
+        it("在庫十分の場合、Size.quantity を注文数分 decrement する", async () => {
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            expect(mockDb.size.updateMany).toHaveBeenCalledTimes(1);
+            expect(mockDb.order.update).toHaveBeenCalledTimes(1);
+        });
+
+        // AC-F3-3: レース回避の構造検証（条件付き updateMany）
+        it("updateMany は quantity:{ gte } 条件付きで decrement する（レース回避）", async () => {
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            expect(mockDb.size.updateMany).toHaveBeenCalledWith({
+                where: { id: "size-001", quantity: { gte: 3 } },
+                data: { quantity: { decrement: 3 } },
+            });
         });
     });
 });
