@@ -55,6 +55,7 @@ type MockStore = {
     defaultShippingFeeFixed: Prisma.Decimal;
     defaultDeliveryTimeMin: number;
     defaultDeliveryTimeMax: number;
+    lowStockThreshold: number;
     returnPolicy: string;
     userId: string;
     isDeleted: boolean;
@@ -352,6 +353,7 @@ export const createMockStore = (
         defaultShippingFeeFixed: toDecimal(defaultShippingFeeFixed ?? 10.0),
         defaultDeliveryTimeMin: 3,
         defaultDeliveryTimeMax: 14,
+        lowStockThreshold: 5,
         returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
         userId: TEST_CONFIG.DEFAULT_USER_ID,
         isDeleted: false,

@@ -98,6 +98,7 @@ model Store {
   defaultShippingFeeFixed             Decimal     @default(0) @db.Decimal(12, 2)
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
+  lowStockThreshold                   Int         @default(5)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
