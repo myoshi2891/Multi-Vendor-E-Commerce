@@ -35,8 +35,10 @@ export default function LowStockThresholdForm({
     const handleSave = async () => {
         if (isSubmittingRef.current) return; // 多重送信防止
 
-        const parsed = Number(value);
-        if (!Number.isInteger(parsed) || parsed < 0) {
+        const trimmed = value.trim();
+        const parsed = Number(trimmed);
+        // ※ Number("") は 0 になり整数・非負チェックを誤って通過するため、空文字を先に弾く。
+        if (trimmed === "" || !Number.isInteger(parsed) || parsed < 0) {
             setValue(String(initialThreshold));
             return;
         }

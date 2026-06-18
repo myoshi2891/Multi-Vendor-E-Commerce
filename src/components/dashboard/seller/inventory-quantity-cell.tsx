@@ -38,9 +38,11 @@ export default function InventoryQuantityCell({
     const handleSave = async () => {
         if (isSubmittingRef.current) return; // 多重送信防止（早期リターン）
 
-        const parsed = Number(value);
-        // 空文字/NaN/負数/非整数は送信せず元値に戻す（query 側 Zod でも再検証される）
-        if (!Number.isInteger(parsed) || parsed < 0) {
+        const trimmed = value.trim();
+        const parsed = Number(trimmed);
+        // 空文字/NaN/負数/非整数は送信せず元値に戻す（query 側 Zod でも再検証される）。
+        // ※ Number("") は 0 になり整数・非負チェックを誤って通過するため、空文字を先に弾く。
+        if (trimmed === "" || !Number.isInteger(parsed) || parsed < 0) {
             setValue(String(initialQuantity));
             return;
         }

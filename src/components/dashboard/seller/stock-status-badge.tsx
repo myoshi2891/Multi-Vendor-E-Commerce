@@ -29,8 +29,9 @@ const STATUS_DISPLAY: Record<
     low: {
         label: "残りわずか",
         variant: "secondary",
-        // Badge に橙系の variant は無いため className で警告色を付与する
-        className: "border-transparent bg-orange-500 text-white hover:bg-orange-500/80",
+        // Badge に警告系 variant が無いため、デザイントークン --warning を className で付与する
+        className:
+            "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
     },
     ok: { label: "在庫あり", variant: "outline" },
 };

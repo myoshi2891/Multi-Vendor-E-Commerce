@@ -34,7 +34,7 @@ export default function InventoryAlertSummary({ rows, threshold }: Props) {
             </div>
             <div className="rounded-lg border bg-background px-4 py-3">
                 <p className="text-sm text-muted-foreground">過小在庫</p>
-                <p className="text-2xl font-semibold text-orange-500">
+                <p className="text-2xl font-semibold text-warning">
                     {lowStock}
                 </p>
             </div>

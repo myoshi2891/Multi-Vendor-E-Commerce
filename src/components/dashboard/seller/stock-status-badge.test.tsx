@@ -20,7 +20,7 @@ describe("StockStatusBadge", () => {
         render(<StockStatusBadge quantity={THRESHOLD} threshold={THRESHOLD} />);
         const badge = screen.getByText("残りわずか");
         expect(badge).toBeInTheDocument();
-        expect(badge.className).toContain("orange");
+        expect(badge.className).toContain("warning");
     });
 
     it("renders the in-stock badge just above the threshold", () => {

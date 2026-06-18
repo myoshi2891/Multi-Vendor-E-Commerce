@@ -12,7 +12,7 @@ import {
     getStoreOrders,
     getStorePageDetails,
 } from "@/queries/store";
-import { getStoreInventory } from "@/queries/inventory";
+import type { getStoreInventory } from "@/queries/inventory";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
     Cart,
