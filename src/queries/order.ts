@@ -8,6 +8,39 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 /**
+ * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
+ * Canceled / Refunded への遷移時のみ在庫を戻す。
+ */
+const isRestockTerminalOrderStatus = (status: OrderStatus | undefined): boolean =>
+    status === OrderStatus.Canceled || status === OrderStatus.Refunded;
+
+/**
+ * 在庫復元（F3-5）の対象とみなす終端 PaymentStatus 判定。
+ * 親 PaymentStatus は "Cancelled"（l 2 つ）/ "Refunded"。
+ */
+const isRestockTerminalPaymentStatus = (
+    status: PaymentStatus | undefined
+): boolean =>
+    status === PaymentStatus.Cancelled || status === PaymentStatus.Refunded;
+
+/**
+ * 減算済み在庫を復元する（placeOrder の decrement の対）。
+ * 各 OrderItem の quantity を対応する Size.quantity に increment で戻す。
+ * 呼び出し側で「非終端 → 終端」の遷移ガードを通すこと（二重復元を防ぐ）。
+ */
+const restockOrderItems = async (
+    tx: OrderTransactionClient,
+    items: { sizeId: string; quantity: number }[]
+): Promise<void> => {
+    for (const item of items) {
+        await tx.size.update({
+            where: { id: item.sizeId },
+            data: { quantity: { increment: item.quantity } },
+        });
+    }
+};
+
+/**
  * @Function getOrder
  * @Description Retrieves a specific order by its ID and the current user's ID, including associated groups, items, store information, item count, and shipping address
  * @Parameters
@@ -370,6 +403,15 @@ export const updateOrderGroupStatusAsAdmin = async (
     const admin = await requireAdmin();
     try {
         return await db.$transaction(async (tx) => {
+            // F3-5 在庫復元の遷移ガード用に、更新前の status と items を取得する
+            const prev = await tx.orderGroup.findUnique({
+                where: { id: groupId },
+                select: {
+                    status: true,
+                    items: { select: { sizeId: true, quantity: true } },
+                },
+            });
+
             const group = await tx.orderGroup.update({
                 where: { id: groupId },
                 data: { status },
@@ -384,7 +426,15 @@ export const updateOrderGroupStatusAsAdmin = async (
                 `[Admin:updateOrderGroupStatus] actor=${admin.id} target=${groupId} to=${status}`
             );
 
-            // TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）
+            // F3-5: 非終端 → Canceled/Refunded の遷移時のみ在庫を復元（二重復元防止）
+            if (
+                !isRestockTerminalOrderStatus(
+                    prev?.status as OrderStatus | undefined
+                ) &&
+                isRestockTerminalOrderStatus(status)
+            ) {
+                await restockOrderItems(tx, prev?.items ?? []);
+            }
 
             return group.status as OrderStatus;
         });
@@ -456,6 +506,12 @@ export const updateOrderPaymentStatus = async (
     const admin = await requireAdmin();
     try {
         return await db.$transaction(async (tx) => {
+            // F3-5 在庫復元の遷移ガード用に、更新前の paymentStatus を取得する
+            const prev = await tx.order.findUnique({
+                where: { id: orderId },
+                select: { paymentStatus: true },
+            });
+
             // 親 → 子連動（F2-10）。enum スペル注意:
             //   親 PaymentStatus は "Cancelled"（l 2 つ）、子 OrderStatus は "Canceled"（l 1 つ）。
             const isCancelOrRefund =
@@ -497,7 +553,19 @@ export const updateOrderPaymentStatus = async (
                 `[Admin:updatePaymentStatus] actor=${admin.id} target=${orderId} to=${status}`
             );
 
-            // TODO(在庫連動・スコープ外): Refunded で在庫復元フックをここに（判断5-2）
+            // F3-5: 非終端 → Cancelled/Refunded の遷移時のみ在庫を復元（二重復元防止）
+            if (
+                isCancelOrRefund &&
+                !isRestockTerminalPaymentStatus(
+                    prev?.paymentStatus as PaymentStatus | undefined
+                )
+            ) {
+                const items = await tx.orderItem.findMany({
+                    where: { orderGroup: { orderId } },
+                    select: { sizeId: true, quantity: true },
+                });
+                await restockOrderItems(tx, items);
+            }
 
             return status;
         });
