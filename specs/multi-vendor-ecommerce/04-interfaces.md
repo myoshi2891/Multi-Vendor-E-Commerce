@@ -30,6 +30,7 @@ Dashboard:
 - `/dashboard/seller/stores` store list
 - `/dashboard/seller/stores/new` create store
 - `/dashboard/seller/stores/[storeUrl]` store details
+- `/dashboard/seller/stores/[storeUrl]/inventory` inventory management (F2)
 - `/dashboard/admin` admin overview
 - `/dashboard/admin/stores` manage stores
 - `/dashboard/admin/categories` manage categories
@@ -49,7 +50,7 @@ Dashboard:
 ## Server Actions (Queries)
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
-  home, profile, review, coupon, stripe, PayPal, user, size, dashboard.
+  home, profile, review, coupon, stripe, PayPal, user, size, dashboard, inventory.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
@@ -84,6 +85,20 @@ Admin-only functions require ADMIN role via `requireAdmin()` (outside `try/catch
 | `applyCoupon(code, cartId)` | Public | Apply coupon to cart. Validates date range, `isActive`, store match. |
 
 `Coupon.isActive Boolean @default(true)` added in Phase 3 F3-第1段 (migration `20260615075233`).
+
+### inventory module (`src/queries/inventory.ts`) — seller F2
+
+All functions require store ownership via `requireStoreOwner(storeUrl)` (called outside `try/catch` per auth-guard convention).
+
+| Function | Description |
+|----------|-------------|
+| `getStoreInventory(storeUrl)` | All `Size` rows for the store, flattened to product → variant → size. Returns `StoreInventoryRow[]` (`Decimal` price → `number` at return boundary). |
+| `updateSizeStock(sizeId, quantity, storeUrl)` | Quick-edit a size's stock. IDOR-guarded by an ownership-chain `findFirst` (`size → productVariant → product.storeId`) before `db.size.update`; non-owned `sizeId` → `Forbidden`. Input validated by `UpdateSizeStockSchema` (int ≥ 0). |
+| `updateStoreLowStockThreshold(storeUrl, threshold)` | Update `Store.lowStockThreshold` (drives low-stock badge/summary). Validated by `LowStockThresholdSchema`. |
+
+`Store.lowStockThreshold Int @default(5)` added in Phase 1 (additive). `getStockStatus(quantity, threshold)` (pure, `src/lib/utils.ts`) classifies `out`/`low`/`ok` and is shared by the badge and alert summary. Return type `StoreInventoryRow` is derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`.
+
+UI (Phase 2-C): `inventory/page.tsx` (RSC, `force-dynamic`) + `inventory/columns.tsx` (`getInventoryColumns(threshold, storeUrl)` factory) + `src/components/dashboard/seller/{stock-status-badge,inventory-quantity-cell,low-stock-threshold-form,inventory-alert-summary}.tsx`.
 
 ## External Services
 - Clerk for auth and user metadata.

@@ -16,7 +16,12 @@
 2) Create a store and configure default shipping settings.
 3) Create products and variants with sizes, colors, and images.
 4) Configure per-country shipping rates.
-5) Receive orders grouped by store and fulfill items.
+5) Manage inventory (F2): view stock per variant×size, quick-edit `Size.quantity`
+   inline (`updateSizeStock`, IDOR-guarded), set the store-wide low-stock
+   threshold (`updateStoreLowStockThreshold`), and read out-of-stock / low-stock
+   counts via the alert summary. Stock status (out/low/ok) is derived by the
+   shared `getStockStatus` helper.
+6) Receive orders grouped by store and fulfill items.
 
 ## Admin Catalog Flow
 1) View KPI dashboard: total revenue (Paid orders), order count, active/pending

@@ -883,6 +883,35 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 
 ---
 
+### 販売者ダッシュボード Phase 2-C（F2 在庫管理 UI） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F2「在庫管理」の UI 層を実装し、Phase 2（F2）を完了。
+`/dashboard/seller/stores/[storeUrl]/inventory` で在庫一覧（DataTable）・在庫数インライン編集・
+在庫アラートサマリー・過小在庫しきい値設定が操作可能になった。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/seller/stock-status-badge.tsx` | 新規: `getStockStatus` → Badge 色分け（out=destructive / low=橙 / ok=outline）+ RTL テスト +3 | `3e2e175` |
+| `src/components/dashboard/seller/inventory-quantity-cell.tsx` | 新規: 在庫数インライン編集（`useRef` リエントランシーガード・`updateSizeStock`→toast→`router.refresh()`） | `8da1262` |
+| `src/components/dashboard/seller/low-stock-threshold-form.tsx` | 新規: しきい値設定フォーム（`updateStoreLowStockThreshold`、軽量制御コンポーネント） | `966dea9` |
+| `src/components/dashboard/seller/inventory-alert-summary.tsx` | 新規: 在庫切れ/過小件数の集計表示（RSC・`getStockStatus` 共有） | `966dea9` |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/columns.tsx` | 新規: `getInventoryColumns(threshold, storeUrl)` ファクトリ（cell へ threshold/storeUrl 注入）+ `columns.test.tsx` +5 | `b3ba8c9` |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx` | 新規: `force-dynamic` + `requireStoreOwner`（しきい値取得）+ `getStoreInventory` + DataTable | `b3ba8c9` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1435 passed | **1443 passed** |
+| スイート数 | 145 | **147** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

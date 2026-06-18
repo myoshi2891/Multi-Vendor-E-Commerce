@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-18 / **HEAD**: `2dd35b5`
+> **最終更新**: 2026-06-18 / **HEAD**: `b3ba8c9`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1435** passed / 1438 total / 145 スイート（144 passed + 1 skipped suite）— 2026-06-18 販売者ダッシュボード Phase 2 在庫 query（`inventory.test.ts` 新規スイート +22：認可/IDOR 3 階層/Zod 弾き/正常系）+ `getStockStatus` 境界テスト +6（`utils.test.ts`、AC-F2-5）：1407→1435 passed / 144→145 スイート（`2dd35b5`） |
+| Jest テスト総数 (unit/component) | **1443** passed / 1446 total / 147 スイート（146 passed + 1 skipped suite）— 2026-06-18 販売者ダッシュボード Phase 2-C（F2 在庫管理 UI）：`stock-status-badge.test.tsx` 新規 +3（バッジ 3 ステータス境界）+ `inventory/columns.test.tsx` 新規 +5（accessor キー順 / 各 cell 描画）：1435→1443 passed / 145→147 スイート（`b3ba8c9`）。直前の Phase 2-A/2-B 在庫 query 層は `2dd35b5`（1407→1435 / 144→145） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
@@ -254,6 +254,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `da8b9b9`–`3e665be` | **`applyCoupon` TOCTOU レースコンディション修正**: Step 4 の `cart.couponId` チェックと Step 7 の無条件 `db.cart.update` が原子的でなく、並行リクエストが両方チェックを通過して後勝ちで先のクーポンを上書きできた。無条件 `update` を `couponId=null` を条件に含めた条件付き `updateMany`（DB レベル CAS）へ置換し、`count === 0` で `'Coupon is already applied to this cart.'` をスロー、続けて `findFirstOrThrow` で返却形を再構築。両クエリで `userId` スコープ維持。3 階層 (a)(b)(c) 回帰テスト +1 + 既存正常系 7 件を `updateMany`+`findFirstOrThrow` へ移行。SECURITY_GAP_REPORT.md §7 記録。1402 → **1403 passed**（144 スイート変動なし） |
 | `04dd88c` | **`applyCoupon` Decimal 演算エラー経路テスト追加**: Step 6（割引計算ブロック）は既存テストで DB エラー経路のみカバーされ、Decimal 演算の例外が try/catch でラップされることが未検証だった。`Prisma.Decimal.prototype` の `.mul()` / `.div()` / `.add()` / `.sub()` を `mockImplementationOnce` で throw させ、`"Error occurred while applying coupon"` ラップを各 1 件で検証。1403 → **1407 passed**（144 スイート変動なし） |
 | `dbf7127`–`2dd35b5` | **販売者ダッシュボード Phase 1 + Phase 2-A/2-B（F2 在庫管理 query 層）**: `Store.lowStockThreshold Int @default(5)` 追加（`safe-migration` + ERD 再生成、`dbf7127`）。`src/queries/inventory.ts` 新規（`getStoreInventory` / `updateSizeStock` / `updateStoreLowStockThreshold`）— 認可は `requireStoreOwner`（try/catch 外）、`updateSizeStock` は size→variant→product.storeId の所有権チェーンで IDOR 防止。`UpdateSizeStockSchema` / `LowStockThresholdSchema` 追加。`getStockStatus` / `StockStatus` を `src/lib/utils.ts` へ純粋関数として抽出（F2-5）。`StoreInventoryRow` を `src/lib/types.ts` に `Prisma.PromiseReturnType` で導出。テスト: `inventory.test.ts` 新規 +22（認可/IDOR 3 階層/Zod 弾き/正常系）+ `utils.test.ts` getStockStatus 境界 +6（AC-F2-5）。1407 → **1435 passed** / 144 → **145** スイート。UI（2-C）は未着手 |
+| `3e2e175`–`b3ba8c9` | **販売者ダッシュボード Phase 2-C（F2 在庫管理 UI）**: `/dashboard/seller/stores/[storeUrl]/inventory` 新規（`page.tsx` `force-dynamic` + `requireStoreOwner` で `lowStockThreshold` 取得 + `getStoreInventory` + DataTable）。`columns.tsx` は `getInventoryColumns(threshold, storeUrl)` ファクトリ（バッジ/編集セルへ threshold・storeUrl を渡すため）。新規コンポーネント 4 本（`src/components/dashboard/seller/`）: `stock-status-badge`（getStockStatus → Badge 色分け）/ `inventory-quantity-cell`（インライン編集・リエントランシーガード・`updateSizeStock`→toast→refresh）/ `low-stock-threshold-form`（`updateStoreLowStockThreshold`）/ `inventory-alert-summary`（在庫切れ/過小件数集計・RSC）。テスト: `stock-status-badge.test.tsx` +3 + `inventory/columns.test.tsx` +5（orders columns.test.tsx の `renderCell` パターン流用、子コンポーネントスタブ化）。1435 → **1443 passed** / 145 → **147** スイート |
 
 ---
 
