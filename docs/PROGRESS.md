@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-06-17 時点）
+## 現在の状態（2026-06-19 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1407 passed / 1410 total / 144 スイート（3 skipped）** — 2026-06-17 `applyCoupon` Decimal 演算エラー経路テスト追加完了時点（`04dd88c`）|
+| Jestユニットテスト | **1505 passed / 1508 total / 154 スイート（3 skipped）** — 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了時点（`eca47a6`）。`user.test.ts` +3 / `order.test.ts` +6 |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -988,6 +988,39 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 |------|--------|--------|
 | テスト総数 (unit/component) | 1490 passed | **1496 passed** |
 | スイート数 | 151 | **154**（153 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元） (2026-06-19)
+
+#### 概要
+
+販売者ダッシュボード設計の最終フェーズ。注文確定時に `Size.quantity` を一切減らさず**オーバーセル可能**だった
+`placeOrder` を、既存 `$transaction` 内の条件付き `updateMany` で **check-and-decrement のアトミック化**に修正
+（TOCTOU レース回避）。併せて 4-D（キャンセル/返品時の在庫復元）をユーザー承認のもと実施し、整合性の対を完成。これで全フェーズ完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | OrderItem 作成ループ内に条件付き `tx.size.updateMany`（`quantity:{gte}` + `decrement`）追加。`count===0` で `"在庫が不足しています"` throw → `$transaction` 全体ロールバック（F3-1〜F3-3） | `037c8ff` |
+| `src/queries/order.ts` | `updateOrderGroupStatusAsAdmin` / `updateOrderPaymentStatus` に在庫復元を結線。更新前ステータスを読み「非終端 → Canceled/Refunded」遷移時のみ `increment`、終端→終端再実行では復元せず二重復元防止。共有ヘルパー `restockOrderItems` + 終端判定を抽出（F3-5） | `eca47a6` |
+| `src/queries/user.test.ts` | +3（不足ロールバック / 減算成功 / レース構造 `gte` 検証） | `8cbf4c0` |
+| `src/queries/order.test.ts` | +6（グループ/注文単位の復元 + 冪等性 + 非キャンセル遷移） | `b3badc6` |
+| `tests/e2e/stock-decrement.spec.ts` | 新規。認証付き購入フロー完走後に `Size.quantity` が注文数分減ることを検証（AC-F3-4・3 ブラウザ） | `1a66ed2` |
+
+#### 設計判断
+
+- **スコープ外（意図的）**: `updateOrderItemStatusAsAdmin`（配送履行軸）と seller 非トランザクション版 `updateOrderGroupStatus` には在庫復元を結線しない。前者は決済キャンセル経路と別軸で二重復元リスクがあり、後者は `$transaction` 化が別変更になるため。両者の TODO コメントは残置。
+- **テストの観測点**: パススルー `$transaction` モックでは実ロールバックを再現できないため、不足時は「最終 `order.update`（合計確定）に到達しない」ことで意図を検証。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1496 passed | **1505 passed** |
+| スイート数 | 154 | **154**（不変・既存ファイルへ追加） |
 | 型エラー | 0 件 | **0 件** |
 
 ---

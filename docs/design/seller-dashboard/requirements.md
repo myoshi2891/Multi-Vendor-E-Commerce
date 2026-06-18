@@ -128,11 +128,11 @@
 
 ### F3 在庫減算
 
-- [ ] **AC-F3-1**: Given `Size.quantity = 10` の商品を 3 個注文、When 注文確定、Then 確定後の `Size.quantity` が `7` になる（同一 `$transaction` 内で減算）。
-- [ ] **AC-F3-2**: Given `Size.quantity = 2` の商品を 5 個注文しようとする、When 注文確定、Then 「在庫が不足しています」で弾かれ、`Order`/`OrderGroup`/`OrderItem` は **1 件も作成されない**（ロールバック）。
-- [ ] **AC-F3-3（レース）**: Given 在庫検証後・減算前に在庫が枯渇するシナリオ、When 条件付き `updateMany`（`quantity: { gte: qty }`）が `count === 0` を返す、Then 在庫不足として throw されロールバックする。
-- [ ] **AC-F3-4（E2E）**: Given 在庫のある商品、When 購入フロー全体（カート→チェックアウト→注文確定）を実行、Then 注文が作成され、対象 Size の在庫が注文数分減る（Chromium/Firefox/WebKit）。
-- [ ] **AC-F3-5（任意）**: Given 減算済みの注文を `Canceled` に変更、When ステータス更新、Then 減算分が `Size.quantity` に復元される（4-D 採用時）。
+- [x] **AC-F3-1**: Given `Size.quantity = 10` の商品を 3 個注文、When 注文確定、Then 確定後の `Size.quantity` が `7` になる（同一 `$transaction` 内で減算）。（`037c8ff` / `user.test.ts`）
+- [x] **AC-F3-2**: Given `Size.quantity = 2` の商品を 5 個注文しようとする、When 注文確定、Then 「在庫が不足しています」で弾かれ、`Order`/`OrderGroup`/`OrderItem` は **1 件も作成されない**（ロールバック）。（`037c8ff` / 観測点: 最終 `order.update` 未到達）
+- [x] **AC-F3-3（レース）**: Given 在庫検証後・減算前に在庫が枯渇するシナリオ、When 条件付き `updateMany`（`quantity: { gte: qty }`）が `count === 0` を返す、Then 在庫不足として throw されロールバックする。（`037c8ff` / `user.test.ts`）
+- [x] **AC-F3-4（E2E）**: Given 在庫のある商品、When 購入フロー全体（カート→チェックアウト→注文確定）を実行、Then 注文が作成され、対象 Size の在庫が注文数分減る（Chromium/Firefox/WebKit）。（`1a66ed2` / `tests/e2e/stock-decrement.spec.ts`）
+- [x] **AC-F3-5**: Given 減算済みの注文を `Canceled` に変更、When ステータス更新、Then 減算分が `Size.quantity` に復元される（4-D 実施・非終端→終端の遷移ガードで冪等化）。（`eca47a6` / `order.test.ts`）
 
 ### 横断（規約適合）
 

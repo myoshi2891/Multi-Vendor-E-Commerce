@@ -5,9 +5,9 @@
 
 ## 🧭 現在地
 
-- **2026-06-18 時点**: **Phase 1 完了 / Phase 2（F2 在庫管理）完了 / Phase 3（F1 店舗ダッシュボード）完了（3-A query 層 + 3-B UI）**。
-- 残り: **Phase 4**（`placeOrder` 在庫減算・厳格に最後・回帰 + E2E 必須）👈 次はここ。
-- 検証: tsc 0 / lint 0 errors / test 1490 → **1496 passed**（151 → 154 スイート）/ build 成功（`/[storeUrl]` = Dynamic ƒ・3 コンポーネント RTL +6）。
+- **2026-06-19 時点**: **全フェーズ完了** — Phase 1 / Phase 2（F2 在庫管理）/ Phase 3（F1 店舗ダッシュボード）/ **Phase 4（F3 在庫減算 + F3-5 在庫復元）完了**。🎉
+- 残り: なし（4-D 在庫復元はユーザー承認のもと実施済み）。
+- 検証: tsc 0 / lint 0 errors / test 1496 → **1505 passed**（154 スイート不変・`user.test.ts` +3 / `order.test.ts` +6）/ E2E `stock-decrement.spec.ts` 新規（3 ブラウザ）。
 
 ---
 
@@ -44,10 +44,10 @@
 
 | Task | 内容 | 状態 | コミット / 備考 |
 | --- | --- | --- | --- |
-| 4-A | `placeOrder` アトミック減算 + 不足ガード + 回帰テスト | ⬜ 未着手 | — |
-| 4-B | E2E（購入フロー → 在庫減少） | ⬜ 未着手 | — |
-| 4-C | `spec-sync-after-test` で docs 同期 | ⬜ 未着手 | — |
-| 4-D | （任意）キャンセル/返品時の在庫復元 | ⬜ 未着手 | レビュー対象（recommended ON） |
+| 4-A | `placeOrder` アトミック減算 + 不足ガード + 回帰テスト | ✅ 完了 | `8cbf4c0`–`037c8ff`（条件付き `tx.size.updateMany`・`count===0` で throw → ロールバック、`user.test.ts` +3） |
+| 4-B | E2E（購入フロー → 在庫減少） | ✅ 完了 | `1a66ed2`（`tests/e2e/stock-decrement.spec.ts`・認証付きで在庫 before/after 検証・AC-F3-4） |
+| 4-C | `spec-sync-after-test` で docs 同期 | ✅ 完了 | 本コミット |
+| 4-D | キャンセル/返品時の在庫復元（ユーザー承認のもと実施） | ✅ 完了 | `b3badc6`–`eca47a6`（admin cancel/refund に `increment` 復元 + 非終端→終端の遷移ガードで冪等化、`order.test.ts` +6） |
 
 > **検証**（完了時に記入）: tsc 0 / lint 0 / test +N / E2E 3 ブラウザ green / build 成功。
 

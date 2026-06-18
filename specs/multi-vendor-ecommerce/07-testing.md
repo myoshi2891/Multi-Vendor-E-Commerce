@@ -12,7 +12,14 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1496 passed / 1499 total across 154 suites (3 skipped), as of 2026-06-18.
+- 1505 passed / 1508 total across 154 suites (3 skipped), as of 2026-06-19.
+  Seller-dashboard Phase 4 (F3 stock decrement + F3-5 restock) added `placeOrder` stock
+  tests in `src/queries/user.test.ts` (+3: insufficient-stock rollback / decrement success /
+  race-safe conditional `updateMany`) and restock-on-cancel tests in
+  `src/queries/order.test.ts` (+6: group-/order-level restock + idempotency guards); a new
+  authenticated E2E spec `tests/e2e/stock-decrement.spec.ts` verifies `Size.quantity`
+  decreases by the ordered amount end-to-end (AC-F3-4, Jest-excluded); 1496 → 1505 passed,
+  154 suites unchanged.
   Seller-dashboard Phase 3-B (F1 store dashboard UI) added three RTL suites under
   `src/components/dashboard/seller/` (`store-stats-cards` / `store-recent-orders` /
   `store-top-products`, +6: KPI/row rendering + zero-state edge cases AC-F1-5) and
