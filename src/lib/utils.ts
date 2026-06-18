@@ -243,21 +243,21 @@ export const printPDF = (blob: Blob) => {
     iframe.style.visibility = "hidden";
     iframe.src = pdfUrl;
 
-	iframe.onload = () => {
-		const printWindow = iframe.contentWindow;
+    iframe.onload = () => {
+        const printWindow = iframe.contentWindow;
 
-		if (printWindow) {
-			printWindow.focus();
-			printWindow.print();
-		}
+        if (printWindow) {
+            printWindow.focus();
+            printWindow.print();
+        }
 
-		// 印刷完了後にクリーンアップ（印刷に多少時間がかかるため delay 付き）
-		// contentWindow が無い場合でもリソースリークを防ぐためにクリーンアップする
-		setTimeout(() => {
-			URL.revokeObjectURL(pdfUrl);
-			iframe.remove();
-		}, 2000); // 2秒待ってからクリーンアップ（必要に応じて調整可）
-	};
+        // 印刷完了後にクリーンアップ（印刷に多少時間がかかるため delay 付き）
+        // contentWindow が無い場合でもリソースリークを防ぐためにクリーンアップする
+        setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+            iframe.remove();
+        }, 2000); // 2秒待ってからクリーンアップ（必要に応じて調整可）
+    };
 
     document.body.appendChild(iframe);
 };
@@ -292,7 +292,9 @@ function isCountry(value: unknown): value is Country {
  * @param cookieValue - Raw cookie string expected to contain a JSON-encoded Country, or undefined if missing
  * @returns The parsed `Country` when valid, otherwise `DEFAULT_COUNTRY`
  */
-export function parseUserCountryCookie(cookieValue: string | undefined): Country {
+export function parseUserCountryCookie(
+    cookieValue: string | undefined
+): Country {
     if (!cookieValue) return DEFAULT_COUNTRY;
     try {
         const parsed: unknown = JSON.parse(cookieValue);
@@ -329,3 +331,26 @@ export const updateProductHistory = (variantId: string) => {
     // Save updated history to localStorage
     localStorage.setItem("productHistory", JSON.stringify(productHistory));
 };
+
+/** 在庫ステータス（バッジ表示の色分けに使用）。 */
+export type StockStatus = "out" | "low" | "ok";
+
+/**
+ * 在庫数としきい値から在庫ステータスを判定する純粋関数（F2-5）。
+ *
+ * UI（stock-status-badge.tsx）とサマリー集計（inventory-alert-summary.tsx）で
+ * 共有するため src/queries/ ではなくここに置く。判定順序は「在庫切れ優先」:
+ * threshold=0 のとき quantity=0 は "low" ではなく "out" となる。
+ *
+ * @param quantity 現在庫数（Size.quantity）
+ * @param threshold 店舗の過小在庫しきい値（Store.lowStockThreshold）
+ * @returns "out"（在庫切れ・赤） / "low"（過小在庫・橙） / "ok"（十分・通常）
+ */
+export function getStockStatus(
+    quantity: number,
+    threshold: number
+): StockStatus {
+    if (quantity <= 0) return "out"; // 在庫切れ（赤）
+    if (quantity <= threshold) return "low"; // 過小在庫（橙）
+    return "ok"; // 十分（通常）
+}

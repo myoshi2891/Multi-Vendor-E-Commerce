@@ -5,6 +5,7 @@ import {
     isProductValidToAdd,
     censorName,
     getTimeUntil,
+    getStockStatus,
 } from "./utils";
 import { createMockCartProduct } from "@/config/test-fixtures";
 
@@ -26,7 +27,9 @@ describe("cn", () => {
     });
 
     it("[P2] 条件付きクラス名を処理する (clsx 形式)", () => {
-        expect(cn("p-4", { "bg-red-500": true, "bg-blue-500": false })).toBe("p-4 bg-red-500");
+        expect(cn("p-4", { "bg-red-500": true, "bg-blue-500": false })).toBe(
+            "p-4 bg-red-500"
+        );
     });
 
     it("[P2] undefined/null/false を無視する", () => {
@@ -293,5 +296,39 @@ describe("getTimeUntil", () => {
         const result = getTimeUntil("2025-06-18T17:00:00Z");
         expect(result.days).toBe(3);
         expect(result.hours).toBe(5);
+    });
+});
+
+// ==================================================
+// getStockStatus（AC-F2-5 在庫ステータス境界）
+// ==================================================
+describe("getStockStatus", () => {
+    const THRESHOLD = 5;
+
+    it("[AC-F2-5] quantity=0 は 'out'（在庫切れ）", () => {
+        expect(getStockStatus(0, THRESHOLD)).toBe("out");
+    });
+
+    it("[AC-F2-5] quantity=threshold は 'low'（過小在庫の上限）", () => {
+        expect(getStockStatus(THRESHOLD, THRESHOLD)).toBe("low");
+    });
+
+    it("[AC-F2-5] quantity=threshold+1 は 'ok'（十分）", () => {
+        expect(getStockStatus(THRESHOLD + 1, THRESHOLD)).toBe("ok");
+    });
+
+    it("0 < quantity < threshold は 'low'", () => {
+        expect(getStockStatus(1, THRESHOLD)).toBe("low");
+        expect(getStockStatus(THRESHOLD - 1, THRESHOLD)).toBe("low");
+    });
+
+    it("負の在庫数は 'out'（在庫切れ優先）", () => {
+        expect(getStockStatus(-1, THRESHOLD)).toBe("out");
+    });
+
+    it("threshold=0 のとき quantity=0 は 'low' ではなく 'out'", () => {
+        // 在庫切れ判定が過小在庫判定より優先される
+        expect(getStockStatus(0, 0)).toBe("out");
+        expect(getStockStatus(1, 0)).toBe("ok");
     });
 });

@@ -16,28 +16,14 @@ import { UpdateSizeStockSchema, LowStockThresholdSchema } from "@/lib/schemas";
  * 設計の正本: docs/design/seller-dashboard/design.md §2.1〜§2.3
  */
 
-/** 在庫一覧の 1 行（バリアント×サイズ単位）。Decimal は number 化済み。 */
-export type StoreInventoryRow = {
-    sizeId: string;
-    productName: string;
-    variantName: string;
-    size: string;
-    quantity: number;
-    price: number;
-    sku: string;
-    productSlug: string;
-    variantId: string;
-};
-
 /**
  * @function getStoreInventory
  * @description 当該店舗の全 Size を「商品→バリアント→サイズ」の階層で取得し、
- *              在庫一覧用にフラット化して返す。
+ *              在庫一覧用にフラット化して返す。返却要素の型は
+ *              src/lib/types.ts の StoreInventoryRow（PromiseReturnType で導出）。
  * @access SELLER（店舗所有者のみ）
  */
-export const getStoreInventory = async (
-    storeUrl: string
-): Promise<StoreInventoryRow[]> => {
+export const getStoreInventory = async (storeUrl: string) => {
     const { store } = await requireStoreOwner(storeUrl); // 認可は try/catch の外
     try {
         const products = await db.product.findMany({
@@ -80,10 +66,19 @@ export const getStoreInventory = async (
             )
         );
     } catch (error: unknown) {
-        console.error("[Inventory:getStoreInventory] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        if (error instanceof Error) {
+            console.error(
+                "[Inventory:getStoreInventory] Failed to fetch store inventory",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error("[Inventory:getStoreInventory] Unknown error", {
+                error,
+            });
+        }
         throw new Error("Failed to fetch store inventory.");
     }
 };
@@ -127,10 +122,19 @@ export const updateSizeStock = async (
         });
         return { sizeId: updated.id, quantity: updated.quantity };
     } catch (error: unknown) {
-        console.error("[Inventory:updateSizeStock] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        if (error instanceof Error) {
+            console.error(
+                "[Inventory:updateSizeStock] Failed to update size stock",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error("[Inventory:updateSizeStock] Unknown error", {
+                error,
+            });
+        }
         throw error; // 認可/Forbidden はそのまま伝播
     }
 };
@@ -159,10 +163,20 @@ export const updateStoreLowStockThreshold = async (
         });
         return { lowStockThreshold: updated.lowStockThreshold };
     } catch (error: unknown) {
-        console.error("[Inventory:updateStoreLowStockThreshold] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        if (error instanceof Error) {
+            console.error(
+                "[Inventory:updateStoreLowStockThreshold] Failed to update low stock threshold",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error(
+                "[Inventory:updateStoreLowStockThreshold] Unknown error",
+                { error }
+            );
+        }
         throw new Error("Failed to update low stock threshold.");
     }
 };
