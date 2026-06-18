@@ -1,5 +1,8 @@
 "use server";
 
+import { db } from "@/lib/db";
+import { requireStoreOwner } from "@/lib/auth-guards";
+
 /**
  * src/queries/inventory.ts
  * 販売者ダッシュボード F2「在庫管理」のサーバーアクション層。
@@ -32,9 +35,56 @@ export type StoreInventoryRow = {
  * @access SELLER（店舗所有者のみ）
  */
 export const getStoreInventory = async (
-    _storeUrl: string
+    storeUrl: string
 ): Promise<StoreInventoryRow[]> => {
-    throw new Error("Not implemented");
+    const { store } = await requireStoreOwner(storeUrl); // 認可は try/catch の外
+    try {
+        const products = await db.product.findMany({
+            where: { storeId: store.id },
+            select: {
+                name: true,
+                slug: true,
+                variants: {
+                    select: {
+                        id: true,
+                        variantName: true,
+                        sku: true,
+                        sizes: {
+                            select: {
+                                id: true,
+                                size: true,
+                                quantity: true,
+                                price: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        // 商品→バリアント→サイズ をフラット化（Decimal は return 境界で number 化・NFR-3）
+        return products.flatMap((p) =>
+            p.variants.flatMap((v) =>
+                v.sizes.map((s) => ({
+                    sizeId: s.id,
+                    productName: p.name,
+                    variantName: v.variantName,
+                    size: s.size,
+                    quantity: s.quantity,
+                    price: s.price.toNumber(),
+                    sku: v.sku,
+                    productSlug: p.slug,
+                    variantId: v.id,
+                }))
+            )
+        );
+    } catch (error: unknown) {
+        console.error("[Inventory:getStoreInventory] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw new Error("Failed to fetch store inventory.");
+    }
 };
 
 /**

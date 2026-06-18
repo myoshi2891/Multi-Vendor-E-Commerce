@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { updateSizeStock } from "./inventory";
+import { Prisma } from "@prisma/client";
+import { getStoreInventory, updateSizeStock } from "./inventory";
 import { TEST_CONFIG } from "../config/test-config";
 
 // Mock the database
@@ -138,6 +139,121 @@ describe("updateSizeStock", () => {
             ).rejects.toThrow(ERRORS.SIZE_NOT_OWNED);
 
             expect(mockDb.size.update).not.toHaveBeenCalled();
+        });
+    });
+});
+
+// ==================================================
+// getStoreInventory — 認可・正常系
+// ==================================================
+describe("getStoreInventory", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            mockCurrentUser(null);
+
+            await expect(
+                getStoreInventory(TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(ERRORS.UNAUTHENTICATED);
+        });
+
+        it("SELLER ロール以外の場合エラーをスローする", async () => {
+            mockCurrentUser(TestData.seller("USER"));
+
+            await expect(
+                getStoreInventory(TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(ERRORS.NOT_SELLER);
+        });
+
+        it("店舗を所有していない場合 Forbidden をスローする", async () => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getStoreInventory(TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(ERRORS.NOT_OWNER);
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
+        });
+
+        it("storeId スコープで product.findMany を呼ぶ", async () => {
+            mockDb.product.findMany.mockResolvedValue([]);
+
+            await getStoreInventory(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(mockDb.product.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                })
+            );
+        });
+
+        it("商品→バリアント→サイズ をフラット化し Decimal を number 化する", async () => {
+            mockDb.product.findMany.mockResolvedValue([
+                {
+                    name: "T-Shirt",
+                    slug: "t-shirt",
+                    variants: [
+                        {
+                            id: "var-1",
+                            variantName: "Red",
+                            sku: "SKU-RED",
+                            sizes: [
+                                {
+                                    id: "size-s",
+                                    size: "S",
+                                    quantity: 3,
+                                    price: new Prisma.Decimal("19.99"),
+                                },
+                                {
+                                    id: "size-m",
+                                    size: "M",
+                                    quantity: 0,
+                                    price: new Prisma.Decimal("21.50"),
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ]);
+
+            const rows = await getStoreInventory(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(rows).toHaveLength(2);
+            expect(rows[0]).toEqual({
+                sizeId: "size-s",
+                productName: "T-Shirt",
+                variantName: "Red",
+                size: "S",
+                quantity: 3,
+                price: 19.99,
+                sku: "SKU-RED",
+                productSlug: "t-shirt",
+                variantId: "var-1",
+            });
+            expect(typeof rows[0].price).toBe("number");
+            expect(rows[1].sizeId).toBe("size-m");
+            expect(rows[1].price).toBe(21.5);
+        });
+
+        it("商品が無い場合は空配列を返す", async () => {
+            mockDb.product.findMany.mockResolvedValue([]);
+
+            const rows = await getStoreInventory(TEST_CONFIG.TEST_STORE_URL);
+
+            expect(rows).toEqual([]);
+        });
+
+        it("DB エラー時は汎用メッセージにラップしてスローする", async () => {
+            mockDb.product.findMany.mockRejectedValue(new Error("db down"));
+
+            await expect(
+                getStoreInventory(TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Failed to fetch store inventory.");
         });
     });
 });
