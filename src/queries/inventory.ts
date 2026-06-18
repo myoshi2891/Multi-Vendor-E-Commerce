@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth-guards";
+import { UpdateSizeStockSchema } from "@/lib/schemas";
 
 /**
  * src/queries/inventory.ts
@@ -93,11 +94,45 @@ export const getStoreInventory = async (
  * @access SELLER（店舗所有者のみ・対象 Size が当該店舗の商品階層に属すること）
  */
 export const updateSizeStock = async (
-    _sizeId: string,
-    _quantity: number,
-    _storeUrl: string
+    sizeId: string,
+    quantity: number,
+    storeUrl: string
 ): Promise<{ sizeId: string; quantity: number }> => {
-    throw new Error("Not implemented");
+    const { store } = await requireStoreOwner(storeUrl); // 認可は try/catch の外
+
+    // 入力バリデーション（Zod・int ≥ 0）
+    const parsed = UpdateSizeStockSchema.safeParse({ sizeId, quantity });
+    if (!parsed.success) {
+        throw new Error("在庫数は 0 以上の整数で指定してください。");
+    }
+
+    try {
+        // IDOR 防止: size → variant → product.storeId が当該店舗か検証（判断4）
+        const owned = await db.size.findFirst({
+            where: {
+                id: sizeId,
+                productVariant: { product: { storeId: store.id } },
+            },
+            select: { id: true },
+        });
+        if (!owned) {
+            // 他店舗の Size を指定した場合（副作用を起こさず拒否）
+            throw new Error("Forbidden: size not owned by current store.");
+        }
+
+        const updated = await db.size.update({
+            where: { id: sizeId },
+            data: { quantity: parsed.data.quantity },
+            select: { id: true, quantity: true },
+        });
+        return { sizeId: updated.id, quantity: updated.quantity };
+    } catch (error: unknown) {
+        console.error("[Inventory:updateSizeStock] Error", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error; // 認可/Forbidden はそのまま伝播
+    }
 };
 
 /**

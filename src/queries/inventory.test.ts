@@ -141,6 +141,69 @@ describe("updateSizeStock", () => {
             expect(mockDb.size.update).not.toHaveBeenCalled();
         });
     });
+
+    describe("入力バリデーション", () => {
+        beforeEach(() => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
+        });
+
+        it("quantity=-1 は Zod で弾き、所有権チェック・update を呼ばない（AC-F2-3）", async () => {
+            await expect(
+                updateSizeStock("size-1", -1, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("在庫数は 0 以上の整数で指定してください。");
+
+            expect(mockDb.size.findFirst).not.toHaveBeenCalled();
+            expect(mockDb.size.update).not.toHaveBeenCalled();
+        });
+
+        it("小数 quantity も Zod で弾く", async () => {
+            await expect(
+                updateSizeStock("size-1", 1.5, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("在庫数は 0 以上の整数で指定してください。");
+
+            expect(mockDb.size.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("正常系", () => {
+        beforeEach(() => {
+            mockCurrentUser(TestData.seller());
+            mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
+        });
+
+        it("自店舗の Size を更新し { sizeId, quantity } を返す", async () => {
+            mockDb.size.findFirst.mockResolvedValue({ id: "size-1" });
+            mockDb.size.update.mockResolvedValue({ id: "size-1", quantity: 7 });
+
+            const result = await updateSizeStock(
+                "size-1",
+                7,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toEqual({ sizeId: "size-1", quantity: 7 });
+            expect(mockDb.size.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "size-1" },
+                    data: { quantity: 7 },
+                })
+            );
+        });
+
+        it("quantity=0（在庫切れ）への更新も許可する", async () => {
+            mockDb.size.findFirst.mockResolvedValue({ id: "size-1" });
+            mockDb.size.update.mockResolvedValue({ id: "size-1", quantity: 0 });
+
+            const result = await updateSizeStock(
+                "size-1",
+                0,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toEqual({ sizeId: "size-1", quantity: 0 });
+        });
+    });
 });
 
 // ==================================================
