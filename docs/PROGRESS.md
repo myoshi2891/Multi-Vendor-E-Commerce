@@ -855,6 +855,34 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 
 ---
 
+### 販売者ダッシュボード Phase 1 + Phase 2-A/2-B（F2 在庫管理 query 層） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F2「在庫管理」の query 層・Zod・型・純粋関数を実装。Phase 1（`Store.lowStockThreshold` スキーマ）と Phase 2-A（在庫 query 3 種 + IDOR 3 階層テスト）/ 2-B（`StoreInventoryRow` 型）が完了。UI（2-C）は未着手。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` | `Store.lowStockThreshold Int @default(5)` 追加 + ERD 再生成 | `dbf7127` |
+| `src/queries/inventory.ts` | 新規: `getStoreInventory` / `updateSizeStock`（size→variant→product.storeId 所有権チェーンで IDOR 防止）/ `updateStoreLowStockThreshold`。認可は `requireStoreOwner`（try/catch 外）、構造化ログ統一 | `807e5c0`–`a9ad821` |
+| `src/lib/schemas.ts` | `UpdateSizeStockSchema` / `LowStockThresholdSchema` 追加 | `7ce4707`–`9c91861` |
+| `src/lib/utils.ts` | `getStockStatus` / `StockStatus` を純粋関数として抽出（F2-5、在庫切れ優先判定） | `a9ad821` |
+| `src/lib/types.ts` | `StoreInventoryRow` を `Prisma.PromiseReturnType<typeof getStoreInventory>[number]` で導出 | `2dd35b5` |
+| `src/queries/inventory.test.ts` | 新規スイート +22（認可/IDOR 3 階層/Zod 弾き/正常系） | `807e5c0`–`9c91861` |
+| `src/lib/utils.test.ts` | `getStockStatus` 境界テスト +6（0→out / threshold→low / threshold+1→ok・AC-F2-5） | `a9ad821` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1407 passed | **1435 passed** |
+| スイート数 | 144 | **145** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

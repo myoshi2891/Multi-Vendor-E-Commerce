@@ -12,7 +12,10 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1407 passed / 1410 total across 144 suites (3 skipped), as of 2026-06-17.
+- 1435 passed / 1438 total across 145 suites (3 skipped), as of 2026-06-18.
+  Seller-dashboard Phase 2 added `src/queries/inventory.test.ts` (new suite, +22:
+  auth / 3-tier IDOR / Zod rejection / happy path) and 6 `getStockStatus` boundary
+  tests in `src/lib/utils.test.ts` (AC-F2-5); 1407 → 1435 passed, 144 → 145 suites.
   Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
   PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully

@@ -5,9 +5,9 @@
 
 ## 🧭 現在地
 
-- **2026-06-18 時点**: **設計フェーズ完了 / 実装未着手**。
-- 本ドキュメント群（README / requirements / design / tasks / PROGRESS）を作成。
-- 次アクション: [tasks.md レビュー必須ポイント](./tasks.md#レビュー必須ポイント)を確認 → 承認後に **Phase 1**（`lowStockThreshold` スキーマ追加）から着手。
+- **2026-06-18 時点**: **Phase 1 完了 / Phase 2-A・2-B 完了**（F2 在庫管理の query 層・型・純粋関数まで）。
+- 残り: **Phase 2-C**（F2 UI: `inventory/page.tsx` + columns + seller コンポーネント群）👈 次はここ。
+- 検証: tsc 0 / lint 0 errors / test 1407 → **1435 passed**（145 スイート）/ build 成功。
 
 ---
 
@@ -15,21 +15,21 @@
 
 | Step | 内容 | 状態 | コミット / 備考 |
 | --- | --- | --- | --- |
-| 1-1 | `safe-migration` で `Store.lowStockThreshold Int @default(5)` 追加 | ⬜ 未着手 | — |
-| 1-2 | `migrate dev` + `generate` | ⬜ 未着手 | — |
-| 1-3 | `erd:generate` 再生成 | ⬜ 未着手 | — |
+| 1-1 | `safe-migration` で `Store.lowStockThreshold Int @default(5)` 追加 | ✅ 完了 | `dbf7127` |
+| 1-2 | `migrate dev` + `generate` | ✅ 完了 | `dbf7127` |
+| 1-3 | `erd:generate` 再生成 | ✅ 完了 | `dbf7127` |
 
-> **検証**（完了時に記入）: tsc 0 / lint 0 / test 変動なし（additive） / build 成功。
+> **検証**: tsc 0 / lint 0 / test 変動なし（additive） / build 成功。
 
 ## Phase 2: F2 在庫管理（高優先）
 
 | Task | 内容 | 状態 | コミット / 備考 |
 | --- | --- | --- | --- |
-| 2-A | 在庫 query（`inventory.ts`）+ IDOR 3 階層テスト | ⬜ 未着手 | — |
-| 2-B | 型定義（`StoreInventoryRow`） | ⬜ 未着手 | — |
-| 2-C | F2 UI（page/columns + seller コンポーネント群） | ⬜ 未着手 | — |
+| 2-A | 在庫 query（`inventory.ts`）+ IDOR 3 階層テスト | ✅ 完了 | `807e5c0`–`a9ad821`（query 3 種 + `getStockStatus` 抽出、`inventory.test.ts` +22 / `utils.test.ts` +6） |
+| 2-B | 型定義（`StoreInventoryRow`） | ✅ 完了 | `2dd35b5`（`Prisma.PromiseReturnType` で `types.ts` に導出） |
+| 2-C | F2 UI（page/columns + seller コンポーネント群） | ⬜ 未着手 | 👈 次はここ |
 
-> **検証**（完了時に記入）: tsc 0 / lint 0 / test +N / build 成功（`/inventory` = Dynamic）。
+> **検証**: 2-A/2-B 時点で tsc 0 / lint 0 errors / test 1407 → **1435 passed** / build 成功。2-C 完了時に `/inventory` = Dynamic を再検証。
 
 ## Phase 3: F1 店舗ダッシュボード統計（中優先）
 

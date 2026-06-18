@@ -1,16 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-17 / **HEAD**: `04dd88c`
+> **最終更新**: 2026-06-18 / **HEAD**: `2dd35b5`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-17 時点）
+### テスト統計（2026-06-18 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1407** passed / 1410 total / 144 スイート（143 passed + 1 skipped suite）— 2026-06-17 `applyCoupon` の Decimal 演算エラー経路テスト +4（`.mul()/.div()/.add()/.sub()` prototype spy による catch ブロック検証、`04dd88c`）：1403→1407 passed |
+| Jest テスト総数 (unit/component) | **1435** passed / 1438 total / 145 スイート（144 passed + 1 skipped suite）— 2026-06-18 販売者ダッシュボード Phase 2 在庫 query（`inventory.test.ts` 新規スイート +22：認可/IDOR 3 階層/Zod 弾き/正常系）+ `getStockStatus` 境界テスト +6（`utils.test.ts`、AC-F2-5）：1407→1435 passed / 144→145 スイート（`2dd35b5`） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **6 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon）— 2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（2店舗カート + PLATFORM クーポン → 注文確定 → 両 OrderGroup 割引反映を検証、`3463d1d`）。同コミット前に `applyCoupon` の Decimal クライアント返却シリアライズ漏れを修正（`ae9364f`） |
@@ -253,6 +253,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `f6e75fd`–`505e13b` | **`upsertCoupon` cross-store/PLATFORM hijack IDOR 修正**: seller の `upsertCoupon` が `db.coupon.upsert({ where: { id } })` の id 単独キーで対象行の所有権を検証しておらず、他店舗（または admin の PLATFORM）クーポンの id を渡すと update 分岐が `storeId` を自店舗へ書き換えて乗っ取れた。PLATFORM scope 追加（Phase 5）で admin 所有クーポンへ blast radius が拡大。upsert 前に対象行を `findUnique` し `storeId !== store.id`（PLATFORM=null 含む）を `Forbidden` で拒否（認可 throw は DB read の try/catch 外）。IDOR 3 階層 (a)(c) テスト +2（他店舗 / PLATFORM）。SECURITY_GAP_REPORT.md §6 記録。1400 → **1402 passed**（144 スイート変動なし） |
 | `da8b9b9`–`3e665be` | **`applyCoupon` TOCTOU レースコンディション修正**: Step 4 の `cart.couponId` チェックと Step 7 の無条件 `db.cart.update` が原子的でなく、並行リクエストが両方チェックを通過して後勝ちで先のクーポンを上書きできた。無条件 `update` を `couponId=null` を条件に含めた条件付き `updateMany`（DB レベル CAS）へ置換し、`count === 0` で `'Coupon is already applied to this cart.'` をスロー、続けて `findFirstOrThrow` で返却形を再構築。両クエリで `userId` スコープ維持。3 階層 (a)(b)(c) 回帰テスト +1 + 既存正常系 7 件を `updateMany`+`findFirstOrThrow` へ移行。SECURITY_GAP_REPORT.md §7 記録。1402 → **1403 passed**（144 スイート変動なし） |
 | `04dd88c` | **`applyCoupon` Decimal 演算エラー経路テスト追加**: Step 6（割引計算ブロック）は既存テストで DB エラー経路のみカバーされ、Decimal 演算の例外が try/catch でラップされることが未検証だった。`Prisma.Decimal.prototype` の `.mul()` / `.div()` / `.add()` / `.sub()` を `mockImplementationOnce` で throw させ、`"Error occurred while applying coupon"` ラップを各 1 件で検証。1403 → **1407 passed**（144 スイート変動なし） |
+| `dbf7127`–`2dd35b5` | **販売者ダッシュボード Phase 1 + Phase 2-A/2-B（F2 在庫管理 query 層）**: `Store.lowStockThreshold Int @default(5)` 追加（`safe-migration` + ERD 再生成、`dbf7127`）。`src/queries/inventory.ts` 新規（`getStoreInventory` / `updateSizeStock` / `updateStoreLowStockThreshold`）— 認可は `requireStoreOwner`（try/catch 外）、`updateSizeStock` は size→variant→product.storeId の所有権チェーンで IDOR 防止。`UpdateSizeStockSchema` / `LowStockThresholdSchema` 追加。`getStockStatus` / `StockStatus` を `src/lib/utils.ts` へ純粋関数として抽出（F2-5）。`StoreInventoryRow` を `src/lib/types.ts` に `Prisma.PromiseReturnType` で導出。テスト: `inventory.test.ts` 新規 +22（認可/IDOR 3 階層/Zod 弾き/正常系）+ `utils.test.ts` getStockStatus 境界 +6（AC-F2-5）。1407 → **1435 passed** / 144 → **145** スイート。UI（2-C）は未着手 |
 
 ---
 
