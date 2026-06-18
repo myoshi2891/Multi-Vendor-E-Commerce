@@ -102,25 +102,20 @@ export const updateSizeStock = async (
     }
 
     try {
-        // IDOR 防止: size → variant → product.storeId が当該店舗か検証（判断4）
-        const owned = await db.size.findFirst({
+        // IDOR 防止 + TOCTOU 解消: 所有権チェーン（size → variant → product.storeId）を
+        // 更新クエリの where に畳み込み、「検証」と「更新」を単一の原子的 UPDATE にする。
+        // count === 0 は他店舗の Size か不存在を意味し、いずれも副作用なしで拒否される。
+        const result = await db.size.updateMany({
             where: {
                 id: sizeId,
                 productVariant: { product: { storeId: store.id } },
             },
-            select: { id: true },
+            data: { quantity: parsed.data.quantity },
         });
-        if (!owned) {
-            // 他店舗の Size を指定した場合（副作用を起こさず拒否）
+        if (result.count === 0) {
             throw new Error("Forbidden: size not owned by current store.");
         }
-
-        const updated = await db.size.update({
-            where: { id: sizeId },
-            data: { quantity: parsed.data.quantity },
-            select: { id: true, quantity: true },
-        });
-        return { sizeId: updated.id, quantity: updated.quantity };
+        return { sizeId, quantity: parsed.data.quantity };
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error(
@@ -135,7 +130,11 @@ export const updateSizeStock = async (
                 error,
             });
         }
-        throw error; // 認可/Forbidden はそのまま伝播
+        // 認可エラーのみ verbatim 伝播。それ以外（Prisma 等）は内部詳細を隠す汎用メッセージに。
+        if (error instanceof Error && error.message.startsWith("Forbidden:")) {
+            throw error;
+        }
+        throw new Error("Failed to update size stock.");
     }
 };
 

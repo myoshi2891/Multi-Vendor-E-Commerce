@@ -18,8 +18,7 @@ jest.mock("@/lib/db", () => ({
             findMany: jest.fn(),
         },
         size: {
-            findFirst: jest.fn(),
-            update: jest.fn(),
+            updateMany: jest.fn(),
         },
     },
 }));
@@ -32,7 +31,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 const mockDb = require("@/lib/db").db as {
     store: { findUnique: jest.Mock; update: jest.Mock };
     product: { findMany: jest.Mock };
-    size: { findFirst: jest.Mock; update: jest.Mock };
+    size: { updateMany: jest.Mock };
 };
 
 /** requireStoreOwner / 認可ガード関連の共通エラーメッセージ */
@@ -108,8 +107,8 @@ describe("updateSizeStock", () => {
         });
 
         it("(a) 他店舗の sizeId を指定した場合 Forbidden をスローする", async () => {
-            // size → variant → product.storeId が当該店舗に属さない → findFirst は null
-            mockDb.size.findFirst.mockResolvedValue(null);
+            // 所有権チェーンを満たさない Size は updateMany の where に一致せず count=0
+            mockDb.size.updateMany.mockResolvedValue({ count: 0 });
 
             await expect(
                 updateSizeStock("foreign-size", 10, TEST_CONFIG.TEST_STORE_URL)
@@ -117,13 +116,13 @@ describe("updateSizeStock", () => {
         });
 
         it("(b) 所有権チェーンを productVariant.product.storeId の where 構造で検証する", async () => {
-            mockDb.size.findFirst.mockResolvedValue(null);
+            mockDb.size.updateMany.mockResolvedValue({ count: 0 });
 
             await expect(
                 updateSizeStock("foreign-size", 10, TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow(ERRORS.SIZE_NOT_OWNED);
 
-            expect(mockDb.size.findFirst).toHaveBeenCalledWith(
+            expect(mockDb.size.updateMany).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: {
                         id: "foreign-size",
@@ -135,14 +134,26 @@ describe("updateSizeStock", () => {
             );
         });
 
-        it("(c) 所有権チェーン失敗時に db.size.update を呼ばない（副作用なし）", async () => {
-            mockDb.size.findFirst.mockResolvedValue(null);
+        it("(c) 更新は所有権 where と同一の原子的 updateMany に畳み込まれる（TOCTOU なし）", async () => {
+            // 検証専用の無防備な findFirst→update 経路が無いこと、
+            // すなわち data は必ず所有権 where と同じ呼び出しに同梱されることを保証する。
+            mockDb.size.updateMany.mockResolvedValue({ count: 0 });
 
             await expect(
                 updateSizeStock("foreign-size", 10, TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow(ERRORS.SIZE_NOT_OWNED);
 
-            expect(mockDb.size.update).not.toHaveBeenCalled();
+            expect(mockDb.size.updateMany).toHaveBeenCalledTimes(1);
+            expect(mockDb.size.updateMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        productVariant: {
+                            product: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                        },
+                    }),
+                    data: { quantity: 10 },
+                })
+            );
         });
     });
 
@@ -152,13 +163,12 @@ describe("updateSizeStock", () => {
             mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
         });
 
-        it("quantity=-1 は Zod で弾き、所有権チェック・update を呼ばない（AC-F2-3）", async () => {
+        it("quantity=-1 は Zod で弾き、updateMany を呼ばない（AC-F2-3）", async () => {
             await expect(
                 updateSizeStock("size-1", -1, TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow("在庫数は 0 以上の整数で指定してください。");
 
-            expect(mockDb.size.findFirst).not.toHaveBeenCalled();
-            expect(mockDb.size.update).not.toHaveBeenCalled();
+            expect(mockDb.size.updateMany).not.toHaveBeenCalled();
         });
 
         it("小数 quantity も Zod で弾く", async () => {
@@ -166,7 +176,7 @@ describe("updateSizeStock", () => {
                 updateSizeStock("size-1", 1.5, TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow("在庫数は 0 以上の整数で指定してください。");
 
-            expect(mockDb.size.update).not.toHaveBeenCalled();
+            expect(mockDb.size.updateMany).not.toHaveBeenCalled();
         });
     });
 
@@ -177,8 +187,7 @@ describe("updateSizeStock", () => {
         });
 
         it("自店舗の Size を更新し { sizeId, quantity } を返す", async () => {
-            mockDb.size.findFirst.mockResolvedValue({ id: "size-1" });
-            mockDb.size.update.mockResolvedValue({ id: "size-1", quantity: 7 });
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
 
             const result = await updateSizeStock(
                 "size-1",
@@ -187,17 +196,21 @@ describe("updateSizeStock", () => {
             );
 
             expect(result).toEqual({ sizeId: "size-1", quantity: 7 });
-            expect(mockDb.size.update).toHaveBeenCalledWith(
+            expect(mockDb.size.updateMany).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { id: "size-1" },
+                    where: {
+                        id: "size-1",
+                        productVariant: {
+                            product: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                        },
+                    },
                     data: { quantity: 7 },
                 })
             );
         });
 
         it("quantity=0（在庫切れ）への更新も許可する", async () => {
-            mockDb.size.findFirst.mockResolvedValue({ id: "size-1" });
-            mockDb.size.update.mockResolvedValue({ id: "size-1", quantity: 0 });
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
 
             const result = await updateSizeStock(
                 "size-1",
@@ -206,6 +219,16 @@ describe("updateSizeStock", () => {
             );
 
             expect(result).toEqual({ sizeId: "size-1", quantity: 0 });
+        });
+
+        it("DB エラーは内部詳細を隠す汎用メッセージにラップする", async () => {
+            mockDb.size.updateMany.mockRejectedValue(
+                new Error("Prisma: connection refused at 10.0.0.1")
+            );
+
+            await expect(
+                updateSizeStock("size-1", 7, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Failed to update size stock.");
         });
     });
 });
