@@ -1,63 +1,53 @@
-# 顧客プロフィール設定機能 (Profile Settings) — 設計ドキュメント
+# Profile Settings（`/profile/settings`）— 設計書
 
-> **このディレクトリの入口**。`docs/unimplemented-screens-plan.md`「C. 顧客アカウント・メニュー」に挙がった未実装画面 `/profile/settings` を、後続セッションが **迷わず実装できる粒度** で設計したものです。
-
----
-
-## 対象機能
-
-| ルート | 現状 | 必要機能 | 優先度 |
-| --- | --- | --- | --- |
-| `/profile/settings` | ルート未定義<br>（ユーザーメニューで `/` にリンク） | 会員情報（メールアドレス、氏名）の編集、パスワード変更、多要素認証設定、およびアカウント削除機能。 | 中 |
+> 顧客アカウント設定画面。会員情報（メール・氏名）編集、パスワード変更、多要素認証（MFA）、アカウント削除を提供する。
+> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
 
 ---
 
 ## 読み順
 
-```
-1. README.md（このファイル）   ← 全体像・スコープ境界・核心判断サマリー
-2. requirements.md             ← 何を作るか（受け入れ基準・制限事項）
-3. design.md（中核）           ← どう作るか（Clerk連携、コンポーネント、影響箇所）
-4. tasks.md                    ← どの順で作るか（TDD ステップ・コミット粒度）
-5. PROGRESS.md                 ← 実行トラッカー
-```
+1. [requirements.md](./requirements.md) — 何を満たすか（要件・受け入れ基準 AC・非機能）
+2. [design.md](./design.md) — どう実装するか（中核。ページ・リンク修正・Clerk 埋め込み・影響箇所マトリクス）
+3. [tasks.md](./tasks.md) — どの順で作るか（TDD フェーズ・**SKILL 呼び出し**・コミット粒度）
+4. [PROGRESS.md](./PROGRESS.md) — 進捗 SSOT（Phase 単位の現在地）
 
 ---
 
 ## スコープ境界
 
-### ✅ スコープ内
-- Clerk SDK または Clerk ユーザープロフィールコンポーネントを用いた、会員情報（氏名、メールアドレスなど）の編集・閲覧機能。
-- パスワード変更/リセットへの導線。
-- 多要素認証 (MFA) の有効化/無効化への導線（Clerkの標準機能を利用）。
-- アカウント削除機能（退会手続き）。Clerkユーザーの削除および、関連するDBレコード（`User`モデルなど）のクリーンアップまたは論理削除。
-
-### ❌ スコープ外
-- 独自のパスワードハッシュ化やログイン認証・MFA独自画面の実装（Clerkの標準UI/標準APIにすべて委ねる）。
-- 他のユーザーデータ（過去の注文履歴など）の物理削除（法規・履歴保持のため、注文履歴は匿名化するか保持し、ユーザープロファイルのみを削除）。
+| | 含む | 含まない |
+|---|---|---|
+| **画面** | `/profile/settings`（顧客向け） | 販売者/管理者の設定 |
+| **機能** | メール・氏名編集 / パスワード変更 / MFA / アカウント削除 | 通知設定・言語設定・テーマ |
+| **実装** | Clerk `<UserProfile />` 埋め込み + メニュー導線修正 | 自前の認証フォーム再実装 |
 
 ---
 
-## 設計の核心判断
+## 核心判断（詳細は design.md の判断章）
 
-| # | 判断 | 要点 |
-| --- | --- | --- |
-| 判断1 | **Clerkの `<UserProfile />` コンポーネントの活用** | 会員情報の編集やパスワード変更、MFAはClerkが提供するセキュアなUI `<UserProfile />` を `/profile/settings` 内にマウントして実装することで、開発コストとセキュリティリスクを最小化。 |
-| 判断2 | **アカウント削除時のDB同期** | ClerkのWebhook（`user.deleted`）またはカスタムAPIエンドポイントを経由して、ローカルPostgreSQL内の `User` テーブルから該当レコードを安全に削除またはステータス更新する。 |
-| 判断3 | **認可制御** | 設定画面はログインユーザーのみがアクセス可能。未ログイン時はClerkの `auth()` ガードにより `/sign-in` にリダイレクト。 |
-
----
-
-## 実装フェーズ順
-
-```
-Phase 1: ページコンポーネント作成とClerk <UserProfile /> のマウント
-Phase 2: アカウント削除 (退会) 機能の実装 (Server Action & DB 連携)
-Phase 3: Clerk Webhook または API によるユーザー削除同期
-Phase 4: テストおよび検証 (E2E)
-```
+| 判断 | 結論 | 理由 |
+|------|------|------|
+| 認証情報の編集 UI | **Clerk `<UserProfile />` を埋め込む** | パスワード・MFA・アカウント削除を公式コンポーネントが安全に内蔵。自前再実装はセキュリティ責任が増す（`any` 禁止・秘密情報ハードコード禁止の方針とも整合） |
+| Prisma `User` 同期 | **新規 server action 不要** | webhook [`src/app/api/webhooks/route.ts:64-126`](../../../src/app/api/webhooks/route.ts) が `user.updated`/`user.deleted` を既に処理し name/email/picture を `db.user.upsert`、削除を `db.user.deleteMany` で伝播 |
+| ルーティング | **`routing="hash"`** | キャッチオール route（`[[...rest]]`）が不要で Sonnet 実装が容易 |
+| `force-dynamic` | **不要** | `src/queries/*` 経由の Prisma 呼び出しが無く Clerk が client 側で取得するため（tech.md「DB 依存ページの動的レンダリング規約」の対象外） |
 
 ---
 
-## ステータス
-- **本ドキュメント群**: 設計フェーズ。
+## 規模感
+
+- **新規ファイル**: 1（`settings/page.tsx`）
+- **変更ファイル**: 2（`user-menu.tsx` のリンク修正・`sidebar.tsx` のエントリ追加）
+- **server action / migration**: なし
+- **テスト**: RTL コンポーネントテスト 3 観点（リンク回帰・sidebar エントリ・page 描画）
+- **フェーズ**: 単一フェーズ（破壊的変更なし）
+
+---
+
+## 関連
+
+- 規約: [`.claude/rules/02-tdd-step-commit.md`](../../../.claude/rules/02-tdd-step-commit.md)（TDD・コミット粒度・spec-sync）
+- 認可: [`src/lib/auth-guards.ts`](../../../src/lib/auth-guards.ts)
+- 姉妹設計書: [`docs/design/profile-messages/`](../profile-messages/)（同じ顧客メニュー C の Messages 画面）
+- 雛形: [`docs/design/admin-dashboard/`](../admin-dashboard/)（本設計書の構成元）

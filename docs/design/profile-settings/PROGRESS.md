@@ -1,23 +1,47 @@
-# 顧客プロフィール設定機能 — 進捗トラッカー (PROGRESS.md)
+# Profile Settings — 進捗トラッカ
 
-## 現在地
-- **設計フェーズ (完了)**
-- **実装フェーズ (未着手)**
-
----
-
-## 進捗ステータス
-
-| フェーズ | タスク内容 | ステータス | 完了日 | 検証方法 |
-|---|---|---|---|---|
-| Phase 1 | ルートと認証ガードの構築 | 未着手 | - | ユニットテスト (`page.test.tsx`) |
-| Phase 2 | Clerk UserProfile のマウントとスタイル調整 | 未着手 | - | 画面プレビュー・ブラウザ検証 |
-| Phase 3 | アカウント退会機能 (Server Action + DB同期) | 未着手 | - | ユニットテスト・モック検証 |
-| Phase 4 | E2E シナリオ検証 | 未着手 | - | Playwright テスト走行 |
+> このファイルは [tasks.md](./tasks.md) の **Phase 進捗の SSOT**（どこまで完了し、次にどこから着手するか）。
+> 全体の履歴・テスト統計は [docs/PROGRESS.md](../../PROGRESS.md)、統計の SSOT は [docs/testing/QA_HANDOFF.md](../../testing/QA_HANDOFF.md)。
+> 要件は [requirements.md](./requirements.md)、設計は [design.md](./design.md)。
 
 ---
 
-## レビュー必須ポイント (Review Checklist)
-- [ ] 未ログイン時に正しくClerkのサインイン画面にリダイレクトされるか
-- [ ] アカウント削除時に、Clerk上のデータだけでなく、PostgreSQL上の `User` テーブルからもレコードが整合性を保った状態で削除（または論理削除）されるか
-- [ ] 削除処理中にローディングインジケータが表示され、二重送信が防止されているか
+## 🧭 現在地（設計完了時点）
+
+- ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
+- ⬜ **Phase 1（Settings 画面 + 導線修正）未着手**。
+- 👉 **次の着手**: [feature-plan](../../../.claude/skills/feature-plan/) で本設計書を最終計画化・承認取得 → tasks.md 1-A から。
+
+---
+
+## Phase 1: Settings 画面 + 導線修正 ⬜ 未着手
+
+| Task | 内容 | 状態 | SKILL | コミット / 備考 |
+|------|------|------|-------|----------------|
+| 1-A | user-menu リンク修正 + sidebar エントリ（回帰テスト先行） | ⬜ | test-gen | AC-S3 / AC-S4 |
+| 1-B | `/profile/settings` ページ追加（Clerk `<UserProfile />`） | ⬜ | test-gen | AC-S2 |
+| 1-C | 品質チェック（lint/tsc/test + build） | ⬜ | test-complete | rule 02 必須 |
+| 1-D | ドキュメント同期（統計 + dashboard 再生成） | ⬜ | spec-sync-after-test | QA_HANDOFF SSOT |
+| 1-E | 最終ドリフト確認 | ⬜ | spec-sync-check | 任意 |
+
+---
+
+## SKILL 起動チェック（漏れ防止）
+
+> 各フェーズ完了時に、対応 SKILL を起動したかをチェックする（rule 02 / 本設計書 tasks.md の SKILL シーケンス）。
+
+- [ ] feature-plan（着手前・必須）
+- [ ] test-gen（1-A / 1-B）
+- [ ] test-complete（各コミット前）
+- [ ] spec-sync-after-test（テスト数変動時・必須）
+- [ ] spec-sync-check（最終・任意）
+- [x] server-action-scaffold は **不要**（新規 action 無し）
+- [x] safe-migration は **不要**（schema 変更無し）
+
+---
+
+## レビュー必須ポイント（着手前に確認）
+
+- [ ] `routing="hash"` で MVP 要件を満たすか。
+- [ ] `appearance` 調整がサイドバー 296px と干渉しないか。
+- [ ] webhook 既存同期に回帰が無いか（変更しない前提）。

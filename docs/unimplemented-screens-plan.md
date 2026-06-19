@@ -23,12 +23,12 @@
 
 ### C. 顧客アカウント・メニュー (Profile / Customer Menu)
 
-> 📐 設計書あり: [`docs/design/profile-messages/`](./design/profile-messages/README.md) / [`docs/design/profile-settings/`](./design/profile-settings/README.md)（Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンス）。
+> 📐 設計書あり: [`docs/design/profile-messages/`](./design/profile-messages/) / [`docs/design/profile-settings/`](./design/profile-settings/)（Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンス）。
 
 | リンク/ルート | 現状 | 必要な機能・説明 | 優先度 |
 |---|---|---|---|
-| `/profile/messages` | **ディレクトリ未作成**<br>（ユーザーメニューにリンクあり）<br>📐 [設計書](./design/profile-messages/README.md) | 購入者と販売者、または運営サポートとの間でメッセージのやり取りを行うチャット・メッセージ画面。 | 中 |
-| `/profile/settings` | **ルート未定義**<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](./design/profile-settings/README.md) | 会員情報（メールアドレス、氏名）の編集、パスワード変更、多要素認証設定、およびアカウント削除機能。 | 中 |
+| `/profile/messages` | **ディレクトリ未作成**<br>（ユーザーメニューにリンクあり）<br>📐 [設計書](./design/profile-messages/) | 購入者と販売者、または運営サポートとの間でメッセージのやり取りを行うチャット・メッセージ画面。 | 中 |
+| `/profile/settings` | **ルート未定義**<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](./design/profile-settings/) | 会員情報（メールアドレス、氏名）の編集、パスワード変更、多要素認証設定、およびアカウント削除機能。 | 中 |
 
 ### D. 静的ページ・補助画面・カスタマーサービス (Storefront Support & Policies)
 
