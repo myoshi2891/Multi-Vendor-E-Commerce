@@ -17,7 +17,7 @@ const prisma = new PrismaClient({
 });
 
 type SeedTarget = {
-    workerIndex: number;
+    parallelIndex: number;
     projectName?: string;
 };
 
@@ -69,8 +69,8 @@ const normalizeWorkerCount = (value: unknown, fallback: number) => {
 };
 
 const resolveSeedTargets = (): SeedTarget[] => {
-    const explicitWorkerIndex = parseIntEnv(
-        process.env.TEST_WORKER_INDEX || process.env.E2E_WORKER_INDEX
+    const explicitParallelIndex = parseIntEnv(
+        process.env.TEST_PARALLEL_INDEX || process.env.E2E_PARALLEL_INDEX
     );
     const explicitProjectName =
         process.env.TEST_PROJECT_NAME || process.env.E2E_PROJECT_NAME;
@@ -106,8 +106,8 @@ const resolveSeedTargets = (): SeedTarget[] => {
         const projectConfig = configProjects.find(
             (project) => project.name === projectName
         );
-        if (explicitWorkerIndex !== undefined) {
-            return [{ projectName, workerIndex: explicitWorkerIndex }];
+        if (explicitParallelIndex !== undefined) {
+            return [{ projectName, parallelIndex: explicitParallelIndex }];
         }
         const workerCount = normalizeWorkerCount(
             workerOverride ??
@@ -115,9 +115,11 @@ const resolveSeedTargets = (): SeedTarget[] => {
                 playwrightConfig.workers,
             defaultWorkerCount
         );
-        return Array.from({ length: workerCount }, (_, workerIndex) => ({
+        // parallelIndex の値域は 0..workers-1。Playwright がワーカーを再起動しても
+        // 同じスロット番号が再利用されるため、ここで投入した範囲と実行が常に一致する。
+        return Array.from({ length: workerCount }, (_, parallelIndex) => ({
             projectName,
-            workerIndex,
+            parallelIndex,
         }));
     });
 };

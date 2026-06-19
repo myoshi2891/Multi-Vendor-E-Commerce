@@ -1,5 +1,8 @@
 type E2ESeedOptions = {
-  workerIndex?: number;
+  // Playwright の parallelIndex（0..workers-1 で安定し、ワーカー再起動後も再利用される）。
+  // 旧実装は揮発的な workerIndex（生成ごとに単調増加）をキーにしていたため、
+  // ワーカー再起動で index が増えると seed と実行で suffix が食い違っていた。
+  parallelIndex?: number;
   projectName?: string;
   suffix?: string;
 };
@@ -141,12 +144,12 @@ const normalizeSeedSegment = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const resolveWorkerIndex = (workerIndex?: number) => {
-  if (typeof workerIndex === "number" && Number.isFinite(workerIndex)) {
-    return workerIndex;
+const resolveParallelIndex = (parallelIndex?: number) => {
+  if (typeof parallelIndex === "number" && Number.isFinite(parallelIndex)) {
+    return parallelIndex;
   }
   const envIndex =
-    process.env.TEST_WORKER_INDEX || process.env.E2E_WORKER_INDEX;
+    process.env.TEST_PARALLEL_INDEX || process.env.E2E_PARALLEL_INDEX;
   if (!envIndex) {
     return undefined;
   }
@@ -166,9 +169,10 @@ const resolveSeedSuffix = (options?: E2ESeedOptions) => {
     return normalizeSeedSegment(options.suffix);
   }
   const projectSegment = resolveProjectName(options?.projectName);
-  const workerIndex = resolveWorkerIndex(options?.workerIndex);
+  const parallelIndex = resolveParallelIndex(options?.parallelIndex);
+  // suffix の `w` プレフィックスは既存 seed データとの互換のため維持する
   const workerSegment =
-    workerIndex === undefined ? "" : `w${workerIndex}`;
+    parallelIndex === undefined ? "" : `w${parallelIndex}`;
   return [projectSegment, workerSegment].filter(Boolean).join("-");
 };
 
