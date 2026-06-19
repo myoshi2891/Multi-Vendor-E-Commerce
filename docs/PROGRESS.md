@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-06-17 時点）
+## 現在の状態（2026-06-19 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1407 passed / 1410 total / 144 スイート（3 skipped）** — 2026-06-17 `applyCoupon` Decimal 演算エラー経路テスト追加完了時点（`04dd88c`）|
+| Jestユニットテスト | **1505 passed / 1508 total / 154 スイート（3 skipped）** — 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了時点（`eca47a6`）。`user.test.ts` +3 / `order.test.ts` +6 |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -851,6 +851,176 @@ seller 用 `upsertCoupon` の cross-store / PLATFORM クーポン乗っ取り（
 |------|--------|--------|
 | テスト総数 (unit/component) | 1403 passed | **1407 passed** |
 | スイート数 | 144 | **144**（変動なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 1 + Phase 2-A/2-B（F2 在庫管理 query 層） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F2「在庫管理」の query 層・Zod・型・純粋関数を実装。Phase 1（`Store.lowStockThreshold` スキーマ）と Phase 2-A（在庫 query 3 種 + IDOR 3 階層テスト）/ 2-B（`StoreInventoryRow` 型）が完了。UI（2-C）は未着手。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` | `Store.lowStockThreshold Int @default(5)` 追加 + ERD 再生成 | `dbf7127` |
+| `src/queries/inventory.ts` | 新規: `getStoreInventory` / `updateSizeStock`（size→variant→product.storeId 所有権チェーンで IDOR 防止）/ `updateStoreLowStockThreshold`。認可は `requireStoreOwner`（try/catch 外）、構造化ログ統一 | `807e5c0`–`a9ad821` |
+| `src/lib/schemas.ts` | `UpdateSizeStockSchema` / `LowStockThresholdSchema` 追加 | `7ce4707`–`9c91861` |
+| `src/lib/utils.ts` | `getStockStatus` / `StockStatus` を純粋関数として抽出（F2-5、在庫切れ優先判定） | `a9ad821` |
+| `src/lib/types.ts` | `StoreInventoryRow` を `Prisma.PromiseReturnType<typeof getStoreInventory>[number]` で導出 | `2dd35b5` |
+| `src/queries/inventory.test.ts` | 新規スイート +22（認可/IDOR 3 階層/Zod 弾き/正常系） | `807e5c0`–`9c91861` |
+| `src/lib/utils.test.ts` | `getStockStatus` 境界テスト +6（0→out / threshold→low / threshold+1→ok・AC-F2-5） | `a9ad821` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1407 passed | **1435 passed** |
+| スイート数 | 144 | **145** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 2-C（F2 在庫管理 UI） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F2「在庫管理」の UI 層を実装し、Phase 2（F2）を完了。
+`/dashboard/seller/stores/[storeUrl]/inventory` で在庫一覧（DataTable）・在庫数インライン編集・
+在庫アラートサマリー・過小在庫しきい値設定が操作可能になった。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/seller/stock-status-badge.tsx` | 新規: `getStockStatus` → Badge 色分け（out=destructive / low=橙 / ok=outline）+ RTL テスト +3 | `3e2e175` |
+| `src/components/dashboard/seller/inventory-quantity-cell.tsx` | 新規: 在庫数インライン編集（`useRef` リエントランシーガード・`updateSizeStock`→toast→`router.refresh()`） | `8da1262` |
+| `src/components/dashboard/seller/low-stock-threshold-form.tsx` | 新規: しきい値設定フォーム（`updateStoreLowStockThreshold`、軽量制御コンポーネント） | `966dea9` |
+| `src/components/dashboard/seller/inventory-alert-summary.tsx` | 新規: 在庫切れ/過小件数の集計表示（RSC・`getStockStatus` 共有） | `966dea9` |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/columns.tsx` | 新規: `getInventoryColumns(threshold, storeUrl)` ファクトリ（cell へ threshold/storeUrl 注入）+ `columns.test.tsx` +5 | `b3ba8c9` |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx` | 新規: `force-dynamic` + `requireStoreOwner`（しきい値取得）+ `getStoreInventory` + DataTable | `b3ba8c9` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1435 passed | **1443 passed** |
+| スイート数 | 145 | **147** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 2-C 仕上げ（F2 在庫管理 UI テスト完備） (2026-06-18)
+
+#### 概要
+
+Phase 2-C のUIハードニング（`updateSizeStock` のアトミック所有権チェック・client boundary 化）の後、
+最後まで未整備だった `inventory-alert-summary.tsx` の同階層テストを追加し、2-C 全 6 コンポーネントが
+テスト完備となった。これで Phase 2（F2 在庫管理）の UI 層が完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/inventory.ts` / `.test.ts` | `updateSizeStock` のアトミック所有権チェック + エラーメッセージ sanitize | `c40708a` |
+| `.../inventory/inventory-table-client.tsx` | 在庫テーブルを client boundary でラップ | `92d14ab` |
+| `inventory-quantity-cell.test.tsx` / `low-stock-threshold-form.test.tsx` | UI 強化に伴うコンポーネントテスト追加 | `09b2c2e` |
+| `src/components/dashboard/seller/inventory-alert-summary.test.tsx` | 新規 +3（out/low 集計マッピング・threshold 境界が行バッジと一致・ゼロ件エッジ） | `8211773` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1443 passed | **1451 passed** |
+| スイート数 | 147 | **150**（149 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 3-A（F1 店舗ダッシュボード統計 query 層） (2026-06-18)
+
+#### 概要
+
+販売者ダッシュボード F1「店舗統計」の query 層を新規実装。admin `dashboard.ts` を店舗スコープ化
+（`requireStoreOwner` + where に `storeId` 注入）し、新規発明を最小化（design.md 判断1）。UI（3-B）は未着手。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/store-dashboard.ts` | 新規。`getStoreDashboardStats`（5 並列集計・売上は親 `Order.paymentStatus=Paid` のみ・`unstable_cache` 20 分でキャッシュキーに `storeId` 含有 NFR-8）/ `getStoreSalesOverTime` / `getStoreRecentOrders` / `getStoreTopProducts` | `f2cd8f1` |
+| `src/lib/types.ts` | `StoreRecentOrderType` / `StoreTopProductType` を `Prisma.PromiseReturnType` で導出 | `f2cd8f1` |
+| `src/queries/store-dashboard.test.ts` | 新規 +39（認可 3 階層 × 4 関数 / 売上 join / `_sum` null→0 / storeId 別キャッシュキー / DB エラー両分岐） | `f2cd8f1` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1451 passed | **1490 passed** |
+| スイート数 | 150 | **151**（150 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 3-B（F1 店舗ダッシュボード UI） (2026-06-18)
+
+#### 概要
+
+プレースホルダー `[storeUrl]/page.tsx`（`<div>SellerStorePage</div>`）を店舗 KPI ダッシュボードへ置換。
+3-A の query 4 種を `Promise.all` で結線し、presentational コンポーネント 3 本を新規追加。売上チャートは
+admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存追加なし・design.md 判断1 の再利用方針）。これで Phase 3 完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/dashboard/seller/stores/[storeUrl]/page.tsx` | プレースホルダーを `Promise.all([getStoreDashboardStats, getStoreSalesOverTime, getStoreRecentOrders, getStoreTopProducts])` + `force-dynamic`（NFR-4）で置換 | `07bc12e` |
+| `src/components/dashboard/seller/store-stats-cards.tsx` | 新規。admin `stats-cards` 派生・6 KPI（総売上/注文/閲覧/販売/商品/在庫アラート） | `4301c85` |
+| `src/components/dashboard/seller/store-recent-orders.tsx` | 新規。OrderGroup 行・`toNumberSafe` で Decimal 整形 | `4301c85` |
+| `src/components/dashboard/seller/store-top-products.tsx` | 新規。sales 降順 | `4301c85` |
+| `src/components/dashboard/seller/{store-stats-cards,store-recent-orders,store-top-products}.test.tsx` | RTL +6（値描画 + ゼロ件エッジ AC-F1-5） | `5e48d5e` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1490 passed | **1496 passed** |
+| スイート数 | 151 | **154**（153 passed + 1 skipped suite） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元） (2026-06-19)
+
+#### 概要
+
+販売者ダッシュボード設計の最終フェーズ。注文確定時に `Size.quantity` を一切減らさず**オーバーセル可能**だった
+`placeOrder` を、既存 `$transaction` 内の条件付き `updateMany` で **check-and-decrement のアトミック化**に修正
+（TOCTOU レース回避）。併せて 4-D（キャンセル/返品時の在庫復元）をユーザー承認のもと実施し、整合性の対を完成。これで全フェーズ完了。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | OrderItem 作成ループ内に条件付き `tx.size.updateMany`（`quantity:{gte}` + `decrement`）追加。`count===0` で `"在庫が不足しています"` throw → `$transaction` 全体ロールバック（F3-1〜F3-3） | `037c8ff` |
+| `src/queries/order.ts` | `updateOrderGroupStatusAsAdmin` / `updateOrderPaymentStatus` に在庫復元を結線。更新前ステータスを読み「非終端 → Canceled/Refunded」遷移時のみ `increment`、終端→終端再実行では復元せず二重復元防止。共有ヘルパー `restockOrderItems` + 終端判定を抽出（F3-5） | `eca47a6` |
+| `src/queries/user.test.ts` | +3（不足ロールバック / 減算成功 / レース構造 `gte` 検証） | `8cbf4c0` |
+| `src/queries/order.test.ts` | +6（グループ/注文単位の復元 + 冪等性 + 非キャンセル遷移） | `b3badc6` |
+| `tests/e2e/stock-decrement.spec.ts` | 新規。認証付き購入フロー完走後に `Size.quantity` が注文数分減ることを検証（AC-F3-4・3 ブラウザ） | `1a66ed2` |
+
+#### 設計判断
+
+- **スコープ外（意図的）**: `updateOrderItemStatusAsAdmin`（配送履行軸）と seller 非トランザクション版 `updateOrderGroupStatus` には在庫復元を結線しない。前者は決済キャンセル経路と別軸で二重復元リスクがあり、後者は `$transaction` 化が別変更になるため。両者の TODO コメントは残置。
+- **テストの観測点**: パススルー `$transaction` モックでは実ロールバックを再現できないため、不足時は「最終 `order.update`（合計確定）に到達しない」ことで意図を検証。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1496 passed | **1505 passed** |
+| スイート数 | 154 | **154**（不変・既存ファイルへ追加） |
 | 型エラー | 0 件 | **0 件** |
 
 ---

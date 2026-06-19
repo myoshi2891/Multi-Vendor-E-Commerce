@@ -12,7 +12,34 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1407 passed / 1410 total across 144 suites (3 skipped), as of 2026-06-17.
+- 1505 passed / 1508 total across 154 suites (3 skipped), as of 2026-06-19.
+  Seller-dashboard Phase 4 (F3 stock decrement + F3-5 restock) added `placeOrder` stock
+  tests in `src/queries/user.test.ts` (+3: insufficient-stock rollback / decrement success /
+  race-safe conditional `updateMany`) and restock-on-cancel tests in
+  `src/queries/order.test.ts` (+6: group-/order-level restock + idempotency guards); a new
+  authenticated E2E spec `tests/e2e/stock-decrement.spec.ts` verifies `Size.quantity`
+  decreases by the ordered amount end-to-end (AC-F3-4, Jest-excluded); 1496 → 1505 passed,
+  154 suites unchanged.
+  Seller-dashboard Phase 3-B (F1 store dashboard UI) added three RTL suites under
+  `src/components/dashboard/seller/` (`store-stats-cards` / `store-recent-orders` /
+  `store-top-products`, +6: KPI/row rendering + zero-state edge cases AC-F1-5) and
+  replaced the `[storeUrl]/page.tsx` placeholder with a KPI dashboard (`Promise.all` over
+  four store-scoped queries + reused `SalesChart` + `force-dynamic`); 1490 → 1496 passed,
+  151 → 154 suites.
+  Seller-dashboard Phase 3-A added `src/queries/store-dashboard.test.ts` (new suite, +39:
+  3-tier auth × 4 functions / revenue join restricted to parent `Order.paymentStatus=Paid` /
+  `_sum` null → 0 / per-`storeId` cache scoping / DB-error Error & non-Error branches);
+  1451 → 1490 passed, 150 → 151 suites.
+  Seller-dashboard Phase 2-A/2-B added `src/queries/inventory.test.ts` (new suite, +22:
+  auth / 3-tier IDOR / Zod rejection / happy path) and 6 `getStockStatus` boundary
+  tests in `src/lib/utils.test.ts` (AC-F2-5); 1407 → 1435 passed, 144 → 145 suites.
+  Phase 2-C (F2 inventory UI) added `src/components/dashboard/seller/stock-status-badge.test.tsx`
+  (+3 badge status boundaries) and `inventory/columns.test.tsx` (+5: accessor key order /
+  per-cell rendering, reusing the orders `renderCell` pattern); 1435 → 1443 passed, 145 → 147 suites.
+  Phase 2-C completion added `inventory-quantity-cell.test.tsx` / `low-stock-threshold-form.test.tsx`
+  (UI hardening) and `inventory-alert-summary.test.tsx` (+3: out/low aggregation mapping,
+  threshold boundary parity with row badges, empty-inventory zero counts), bringing all six
+  2-C components under test; 1443 → 1451 passed, 147 → 150 suites.
   Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
   PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully

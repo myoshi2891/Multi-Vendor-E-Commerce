@@ -16,7 +16,18 @@
 2) Create a store and configure default shipping settings.
 3) Create products and variants with sizes, colors, and images.
 4) Configure per-country shipping rates.
-5) Receive orders grouped by store and fulfill items.
+5) View the store dashboard (F1) at `/dashboard/seller/stores/[storeUrl]`: 6 KPI
+   cards (revenue from Paid orders, orders, views, sales, products, low-stock
+   count), a sales-trend chart (`getStoreSalesOverTime`, reusing the admin
+   `SalesChart`), recent orders (`getStoreRecentOrders`), and top products
+   (`getStoreTopProducts`) — all store-scoped via `requireStoreOwner` and
+   aggregated through `getStoreDashboardStats` (20-min cache keyed by `storeId`).
+6) Manage inventory (F2): view stock per variant×size, quick-edit `Size.quantity`
+   inline (`updateSizeStock`, IDOR-guarded), set the store-wide low-stock
+   threshold (`updateStoreLowStockThreshold`), and read out-of-stock / low-stock
+   counts via the alert summary. Stock status (out/low/ok) is derived by the
+   shared `getStockStatus` helper.
+7) Receive orders grouped by store and fulfill items.
 
 ## Admin Catalog Flow
 1) View KPI dashboard: total revenue (Paid orders), order count, active/pending

@@ -712,6 +712,19 @@ export const placeOrder = async (
                         totalPrice: item.totalPrice,
                     },
                 });
+
+                // F3: 在庫のアトミック減算（check-and-decrement）
+                // 条件付き updateMany で「読み取り → 減算」を単一 UPDATE に畳み込み、
+                // count===0（条件を満たす行なし）を在庫不足として検知する（TOCTOU レース回避）。
+                // 減算量は確定済み item.quantity（= validQuantity, L494 のクランプ値）を使う。
+                const stock = await tx.size.updateMany({
+                    where: { id: item.sizeId, quantity: { gte: item.quantity } },
+                    data: { quantity: { decrement: item.quantity } },
+                });
+                if (stock.count === 0) {
+                    // $transaction 全体をロールバック（部分確定なし）
+                    throw new Error("在庫が不足しています");
+                }
             }
 
             // Update order totals

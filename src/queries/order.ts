@@ -8,6 +8,30 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 /**
+ * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
+ * Canceled / Refunded への遷移時のみ在庫を戻す。
+ */
+const isRestockTerminalOrderStatus = (status: OrderStatus | undefined): boolean =>
+    status === OrderStatus.Canceled || status === OrderStatus.Refunded;
+
+/**
+ * 減算済み在庫を復元する（placeOrder の decrement の対）。
+ * 各 OrderItem の quantity を対応する Size.quantity に increment で戻す。
+ * 呼び出し側で「非終端 → 終端」の遷移ガードを通すこと（二重復元を防ぐ）。
+ */
+const restockOrderItems = async (
+    tx: OrderTransactionClient,
+    items: { sizeId: string; quantity: number }[]
+): Promise<void> => {
+    for (const item of items) {
+        await tx.size.update({
+            where: { id: item.sizeId },
+            data: { quantity: { increment: item.quantity } },
+        });
+    }
+};
+
+/**
  * @Function getOrder
  * @Description Retrieves a specific order by its ID and the current user's ID, including associated groups, items, store information, item count, and shipping address
  * @Parameters
@@ -370,6 +394,15 @@ export const updateOrderGroupStatusAsAdmin = async (
     const admin = await requireAdmin();
     try {
         return await db.$transaction(async (tx) => {
+            // F3-5 在庫復元の遷移ガード用に、更新前の status と items を取得する
+            const prev = await tx.orderGroup.findUnique({
+                where: { id: groupId },
+                select: {
+                    status: true,
+                    items: { select: { sizeId: true, quantity: true } },
+                },
+            });
+
             const group = await tx.orderGroup.update({
                 where: { id: groupId },
                 data: { status },
@@ -384,7 +417,15 @@ export const updateOrderGroupStatusAsAdmin = async (
                 `[Admin:updateOrderGroupStatus] actor=${admin.id} target=${groupId} to=${status}`
             );
 
-            // TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）
+            // F3-5: 非終端 → Canceled/Refunded の遷移時のみ在庫を復元（二重復元防止）
+            if (
+                !isRestockTerminalOrderStatus(
+                    prev?.status as OrderStatus | undefined
+                ) &&
+                isRestockTerminalOrderStatus(status)
+            ) {
+                await restockOrderItems(tx, prev?.items ?? []);
+            }
 
             return group.status as OrderStatus;
         });
@@ -470,18 +511,40 @@ export const updateOrderPaymentStatus = async (
                     ? ProductStatus.Refunded
                     : ProductStatus.Canceled;
 
-            await tx.order.update({
-                where: { id: orderId },
-                data: {
-                    paymentStatus: status,
-                    // 連動時は親 orderStatus も子と整合させる（F2-10・design §3.2）
-                    ...(isCancelOrRefund
-                        ? { orderStatus: childOrderStatus }
-                        : {}),
-                },
-            });
-
+            // F3-5 在庫の二重復元防止: 「非終端 → Cancelled/Refunded」の遷移を、
+            // 条件付き updateMany で単一の原子的 UPDATE に畳み込む（placeOrder の
+            // check-and-decrement と同型）。並行する 2 つのキャンセルのうち
+            // count===1 となるのは片方のみで、子連動と在庫復元はその 1 回だけ走る
+            // （read-then-act の TOCTOU レースを回避）。
+            let didTransition = false;
             if (isCancelOrRefund) {
+                const transition = await tx.order.updateMany({
+                    where: {
+                        id: orderId,
+                        paymentStatus: {
+                            notIn: [
+                                PaymentStatus.Cancelled,
+                                PaymentStatus.Refunded,
+                            ],
+                        },
+                    },
+                    // 連動時は親 orderStatus も子と整合させる（F2-10・design §3.2）
+                    data: {
+                        paymentStatus: status,
+                        orderStatus: childOrderStatus,
+                    },
+                });
+                didTransition = transition.count === 1;
+            } else {
+                // 非キャンセル遷移は無条件更新（paymentStatus のみ）
+                await tx.order.update({
+                    where: { id: orderId },
+                    data: { paymentStatus: status },
+                });
+            }
+
+            // 子連動・在庫復元は実際に遷移が起きた場合のみ（冪等・二重復元防止）
+            if (isCancelOrRefund && didTransition) {
                 await tx.orderGroup.updateMany({
                     where: { orderId },
                     data: { status: childOrderStatus },
@@ -497,7 +560,13 @@ export const updateOrderPaymentStatus = async (
                 `[Admin:updatePaymentStatus] actor=${admin.id} target=${orderId} to=${status}`
             );
 
-            // TODO(在庫連動・スコープ外): Refunded で在庫復元フックをここに（判断5-2）
+            if (isCancelOrRefund && didTransition) {
+                const items = await tx.orderItem.findMany({
+                    where: { orderGroup: { orderId } },
+                    select: { sizeId: true, quantity: true },
+                });
+                await restockOrderItems(tx, items);
+            }
 
             return status;
         });

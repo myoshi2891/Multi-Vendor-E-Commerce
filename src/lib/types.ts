@@ -12,6 +12,11 @@ import {
     getStoreOrders,
     getStorePageDetails,
 } from "@/queries/store";
+import type { getStoreInventory } from "@/queries/inventory";
+import type {
+    getStoreRecentOrders,
+    getStoreTopProducts,
+} from "@/queries/store-dashboard";
 import { getAllSubCategories } from "@/queries/subCategory";
 import {
     Cart,
@@ -160,7 +165,7 @@ export type VariantSimplified = {
     variantSlug: string;
     variantName: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
 };
 
 export type VariantImageType = {
@@ -239,7 +244,7 @@ export type VariantInfoType = {
     variantImage: string;
     variantUrl: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
     colors: Partial<Color>[];
 };
 
@@ -410,6 +415,21 @@ export type CategoryWithSubsType = Category & {
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
 
+/** 在庫一覧行（getStoreInventory の返却要素。バリアント×サイズ単位、Decimal は number 化済み）。 */
+export type StoreInventoryRow = Prisma.PromiseReturnType<
+    typeof getStoreInventory
+>[number];
+
+/** 店舗ダッシュボードの最近の注文 1 行（getStoreRecentOrders の返却要素。OrderGroup 起点）。 */
+export type StoreRecentOrderType = Prisma.PromiseReturnType<
+    typeof getStoreRecentOrders
+>[number];
+
+/** 店舗ダッシュボードの売れ筋商品 1 行（getStoreTopProducts の返却要素。Product 起点）。 */
+export type StoreTopProductType = Prisma.PromiseReturnType<
+    typeof getStoreTopProducts
+>[number];
+
 /** admin 注文一覧（全店舗横断）の 1 行型。Order 起点（groups[] を含む）。 */
 export type AdminOrderType = Prisma.PromiseReturnType<
     typeof getAllOrders
@@ -428,7 +448,7 @@ export type ProductSimpleVariantType = {
     variantName: string;
     variantImage: string;
     images: ProductVariantImage[];
-    sizes: (Omit<Size, 'price'> & { price: number })[];
+    sizes: (Omit<Size, "price"> & { price: number })[];
 };
 
 export type ProductWithVariants = {

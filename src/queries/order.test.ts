@@ -34,6 +34,7 @@ jest.mock("@/lib/db", () => ({
             findMany: jest.fn(),
             count: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
         },
         store: {
             findUnique: jest.fn(),
@@ -46,8 +47,12 @@ jest.mock("@/lib/db", () => ({
         },
         orderItem: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
             update: jest.fn(),
             updateMany: jest.fn(),
+        },
+        size: {
+            update: jest.fn(),
         },
         $transaction: jest.fn(),
     },
@@ -1000,8 +1005,12 @@ describe("updateOrderPaymentStatus", () => {
             });
             setupTransaction();
             mockDb.order.update.mockResolvedValue({});
+            // 条件付き遷移（非終端 → Cancelled/Refunded）が成立した想定（count===1）
+            mockDb.order.updateMany.mockResolvedValue({ count: 1 });
             mockDb.orderGroup.updateMany.mockResolvedValue({ count: 1 });
             mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
+            // 在庫復元の対象 items は空（復元 no-op）
+            mockDb.orderItem.findMany.mockResolvedValue([]);
         });
 
         it("Paidへの変更ではDBのpaymentStatusのみ更新し子連動しない", async () => {
@@ -1028,9 +1037,18 @@ describe("updateOrderPaymentStatus", () => {
                 PaymentStatus.Cancelled
             );
 
-            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
-            expect(mockDb.order.update).toHaveBeenCalledWith({
-                where: { id: "order-001" },
+            // 親 Order は条件付き updateMany（非終端ガード）で paymentStatus と
+            // orderStatus を原子的に整合更新する
+            expect(mockDb.order.updateMany).toHaveBeenCalledWith({
+                where: {
+                    id: "order-001",
+                    paymentStatus: {
+                        notIn: [
+                            PaymentStatus.Cancelled,
+                            PaymentStatus.Refunded,
+                        ],
+                    },
+                },
                 data: {
                     paymentStatus: PaymentStatus.Cancelled,
                     orderStatus: OrderStatus.Canceled,
@@ -1052,9 +1070,18 @@ describe("updateOrderPaymentStatus", () => {
                 PaymentStatus.Refunded
             );
 
-            // 親 Order は paymentStatus と orderStatus を同一 update で整合更新
-            expect(mockDb.order.update).toHaveBeenCalledWith({
-                where: { id: "order-001" },
+            // 親 Order は条件付き updateMany（非終端ガード）で paymentStatus と
+            // orderStatus を原子的に整合更新する
+            expect(mockDb.order.updateMany).toHaveBeenCalledWith({
+                where: {
+                    id: "order-001",
+                    paymentStatus: {
+                        notIn: [
+                            PaymentStatus.Cancelled,
+                            PaymentStatus.Refunded,
+                        ],
+                    },
+                },
                 data: {
                     paymentStatus: PaymentStatus.Refunded,
                     orderStatus: OrderStatus.Refunded,
@@ -1101,6 +1128,161 @@ describe("updateOrderPaymentStatus", () => {
             await expect(
                 updateOrderPaymentStatus("order-001", PaymentStatus.Paid)
             ).rejects.toThrow("db down");
+        });
+    });
+});
+
+// ==================================================
+// F3-5: キャンセル/返品時の在庫復元（restock）
+// ==================================================
+describe("在庫復元（F3-5・restock on cancel/refund）", () => {
+    const setupTransaction = () => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    };
+
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+            privateMetadata: { role: "ADMIN" },
+        });
+        setupTransaction();
+        mockDb.order.update.mockResolvedValue({});
+        // 既定は「非終端 → 終端」遷移成立（count===1）。冪等ケースは個別に count:0 へ上書き。
+        mockDb.order.updateMany.mockResolvedValue({ count: 1 });
+        mockDb.orderGroup.updateMany.mockResolvedValue({ count: 1 });
+        mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
+        mockDb.size.update.mockResolvedValue({});
+    });
+
+    describe("updateOrderGroupStatusAsAdmin（グループ単位）", () => {
+        it("非終端 → Canceled の遷移で各 item の Size.quantity を復元する", async () => {
+            mockDb.orderGroup.findUnique.mockResolvedValue({
+                status: OrderStatus.Processing,
+                items: [
+                    { sizeId: "size-001", quantity: 3 },
+                    { sizeId: "size-002", quantity: 1 },
+                ],
+            });
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Canceled,
+            });
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Canceled },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Canceled
+            );
+
+            expect(mockDb.size.update).toHaveBeenCalledTimes(2);
+            expect(mockDb.size.update).toHaveBeenCalledWith({
+                where: { id: "size-001" },
+                data: { quantity: { increment: 3 } },
+            });
+            expect(mockDb.size.update).toHaveBeenCalledWith({
+                where: { id: "size-002" },
+                data: { quantity: { increment: 1 } },
+            });
+        });
+
+        // 冪等性: 既に終端（Canceled）からの再実行では復元しない（二重復元防止）
+        it("Canceled → Canceled の再実行では在庫を復元しない（冪等）", async () => {
+            mockDb.orderGroup.findUnique.mockResolvedValue({
+                status: OrderStatus.Canceled,
+                items: [{ sizeId: "size-001", quantity: 3 }],
+            });
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Canceled,
+            });
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Canceled },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Canceled
+            );
+
+            AssertionHelpers.expectNotCalled(mockDb.size.update);
+        });
+
+        it("非終端 → Shipped（非終端遷移）では在庫を復元しない", async () => {
+            mockDb.orderGroup.findUnique.mockResolvedValue({
+                status: OrderStatus.Processing,
+                items: [{ sizeId: "size-001", quantity: 3 }],
+            });
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Shipped,
+            });
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Shipped },
+            ]);
+
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Shipped
+            );
+
+            AssertionHelpers.expectNotCalled(mockDb.size.update);
+        });
+    });
+
+    describe("updateOrderPaymentStatus（注文単位）", () => {
+        it("非終端 → Refunded の遷移で注文配下の全 item を復元する", async () => {
+            // 条件付き updateMany が 1 行更新（非終端 → Refunded 成立）
+            mockDb.order.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.orderItem.findMany.mockResolvedValue([
+                { sizeId: "size-001", quantity: 2 },
+                { sizeId: "size-003", quantity: 5 },
+            ]);
+
+            await updateOrderPaymentStatus("order-001", PaymentStatus.Refunded);
+
+            expect(mockDb.orderItem.findMany).toHaveBeenCalledWith({
+                where: { orderGroup: { orderId: "order-001" } },
+                select: { sizeId: true, quantity: true },
+            });
+            expect(mockDb.size.update).toHaveBeenCalledTimes(2);
+            expect(mockDb.size.update).toHaveBeenCalledWith({
+                where: { id: "size-001" },
+                data: { quantity: { increment: 2 } },
+            });
+            expect(mockDb.size.update).toHaveBeenCalledWith({
+                where: { id: "size-003" },
+                data: { quantity: { increment: 5 } },
+            });
+        });
+
+        // 冪等性: 既に Cancelled の注文を再度 Cancelled にしても復元しない
+        it("Cancelled → Cancelled の再実行では在庫を復元しない（冪等）", async () => {
+            // 既に終端のため条件付き updateMany は 0 行更新（didTransition=false）
+            mockDb.order.updateMany.mockResolvedValue({ count: 0 });
+            mockDb.orderItem.findMany.mockResolvedValue([
+                { sizeId: "size-001", quantity: 2 },
+            ]);
+
+            await updateOrderPaymentStatus("order-001", PaymentStatus.Cancelled);
+
+            AssertionHelpers.expectNotCalled(mockDb.size.update);
+        });
+
+        it("Paid（非キャンセル遷移）では在庫を復元しない", async () => {
+            mockDb.orderItem.findMany.mockResolvedValue([
+                { sizeId: "size-001", quantity: 2 },
+            ]);
+
+            await updateOrderPaymentStatus("order-001", PaymentStatus.Paid);
+
+            AssertionHelpers.expectNotCalled(mockDb.size.update);
         });
     });
 });

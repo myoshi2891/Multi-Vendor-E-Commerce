@@ -637,3 +637,14 @@ export const StoreShippingSchema = z.object({
         .int()
         .default(31),
 });
+
+// 在庫数クイック編集（int ≥ 0・上限は運用上のサニティとして 1,000,000）
+export const UpdateSizeStockSchema = z.object({
+    sizeId: z.string().min(1),
+    quantity: z.number().int().min(0).max(1_000_000),
+});
+
+// 店舗の過小在庫しきい値（int ≥ 0）
+export const LowStockThresholdSchema = z.object({
+    threshold: z.number().int().min(0).max(1_000_000),
+});
