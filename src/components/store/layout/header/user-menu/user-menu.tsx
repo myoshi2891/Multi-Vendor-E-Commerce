@@ -161,7 +161,7 @@ const extraLinks = [
     },
     {
         title: "Settings",
-        link: "/",
+        link: "/profile/settings",
     },
     {
         title: "Become a Seller",
