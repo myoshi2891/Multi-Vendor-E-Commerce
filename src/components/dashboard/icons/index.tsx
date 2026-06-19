@@ -11,18 +11,20 @@ import InventoryIcon from "./inventory";
 import CouponIcon from "./coupon";
 import ShippingIcon from "./shipping";
 import OfferIcon from "./offer";
+import MessagesIcon from "./messages";
 export {
-  DashboardIcon,
-  StoreIcon,
-  CreateStoreIcon,
-  BoxListIcon,
-  SettingsIcon,
-  BoxesIcon,
-  CategoriesIcon,
-  ThreeBoxesIcon,
-  ProductsIcon,
-  InventoryIcon,
-  CouponIcon,
-  ShippingIcon,
-  OfferIcon,
+    DashboardIcon,
+    StoreIcon,
+    CreateStoreIcon,
+    BoxListIcon,
+    SettingsIcon,
+    BoxesIcon,
+    CategoriesIcon,
+    ThreeBoxesIcon,
+    ProductsIcon,
+    InventoryIcon,
+    CouponIcon,
+    ShippingIcon,
+    OfferIcon,
+    MessagesIcon,
 };
