@@ -3,7 +3,12 @@ import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
 import { buildE2ESeed } from "./seed/constants";
-import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
+import {
+    gotoStable,
+    setupE2ETestState,
+    waitForCartPersist,
+    waitForPostSignInSettle,
+} from "@/config/test-helpers";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +31,7 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         }
 
         seed = buildE2ESeed({
-            workerIndex: testInfo.workerIndex,
+            parallelIndex: testInfo.parallelIndex,
             projectName: testInfo.project.name,
         });
 
@@ -110,15 +115,11 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         await page.getByRole("button", { name: "Continue", exact: true }).click();
         await page.getByLabel("Password", { exact: true }).fill(userPassword);
         await page.getByRole("button", { name: "Continue", exact: true }).click();
-        await page
-            .waitForURL((url) => !url.pathname.includes("/sign-in"), {
-                timeout: 15000,
-            })
-            .catch(() => {});
-        await page.waitForLoadState("domcontentloaded");
+        // サインイン後のホームへの遅延リダイレクト着地を待ち、後続 goto の割り込みを防ぐ
+        await waitForPostSignInSettle(page);
 
-        // Store A の商品をカートに追加
-        await page.goto(`/product/${seed.product.slug}/${seed.variant.slug}`);
+        // Store A の商品をカートに追加（遅延リダイレクト割り込み時は再試行）
+        await gotoStable(page, `/product/${seed.product.slug}/${seed.variant.slug}`);
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();

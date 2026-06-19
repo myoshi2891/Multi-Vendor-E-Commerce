@@ -149,3 +149,87 @@ export const waitForCartPersist = async (page: Page) => {
         }
     }, { timeout: 5000 });
 };
+
+/**
+ * Clerk サインイン後のクライアントリダイレクトが完全に着地するまで待つ。
+ *
+ * `waitForURL(!/sign-in)` は「/sign-in を離れた瞬間」に解決するが、Clerk は
+ * その後さらにホーム `/` へ soft redirect を撃つ。Chromium は速いので後続の
+ * `page.goto()` 前にこのリダイレクトが着地するが、WebKit/Firefox は遅く、
+ * goto 実行中に着地して `page.goto: ... is interrupted by another navigation to "/"`
+ * を引き起こす（認証リダイレクト race）。
+ *
+ * ホーム着地 + networkidle まで待ち、後続ナビゲーションへの割り込みを排除する。
+ */
+export const waitForPostSignInSettle = async (page: Page) => {
+    // 1. /sign-in を離脱するまで待つ（Clerk の factor ステップ中は /sign-in を含む）
+    await page
+        .waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 })
+        .catch(() => {});
+    // 2. サインイン後の遷移先であるホーム "/" の着地を待つ
+    await page
+        .waitForURL((url) => url.pathname === "/", { timeout: 15000 })
+        .catch(() => {});
+    // 3. 遅延リダイレクト・XHR をフラッシュし、後続 goto への割り込みを減らす
+    await page.waitForLoadState("networkidle").catch(() => {});
+};
+
+/**
+ * `page.goto` を実行し、別ナビゲーションへの割り込み（"interrupted by another
+ * navigation"）が起きた場合のみリトライする。
+ *
+ * Clerk サインイン後のホーム `/` への soft redirect は WebKit/Firefox で着地が遅く、
+ * `waitForPostSignInSettle` で待っても networkidle 後に発火しうる。この遅延リダイレクトが
+ * 後続 goto に割り込むと Playwright が例外を投げるため、割り込み時のみ再試行する。
+ * 割り込んだリダイレクトは "/" へ着地済みなので、再試行は保留中の遷移なしで成功する。
+ *
+ * ブラウザエンジンごとに「割り込み」のエラー文言が異なる:
+ * - Chromium / WebKit: "interrupted by another navigation"
+ * - Firefox (Gecko):   "NS_BINDING_ABORTED" / "frame was detached"
+ *
+ * さらに、Prisma/Neon が持続負荷下で間欠的にクエリをハングさせると SSR 応答が
+ * 返らず goto がテストタイムアウトまで占有する。これを避けるため per-goto
+ * タイムアウトを設け、TimeoutError も「一過性」として再試行対象に含める。
+ *
+ * @param page Playwright Page
+ * @param url 遷移先 URL
+ * @param retries 一過性失敗（割り込み / タイムアウト）の最大リトライ回数（既定 2）
+ * @param timeoutMs per-goto タイムアウト（既定 30000）。ハング時に全テスト予算を
+ *   食い潰さず fail-fast → 再試行できるようにする。
+ */
+export const gotoStable = async (
+    page: Page,
+    url: string,
+    retries = 2,
+    timeoutMs = 30000
+) => {
+    // 一過性の遷移失敗を示すエンジン横断のシグネチャ（割り込み + タイムアウト）
+    const transientSignatures = [
+        "interrupted by another navigation", // Chromium / WebKit（遅延リダイレクト割り込み）
+        "NS_BINDING_ABORTED", // Firefox
+        "frame was detached", // Firefox（中断に伴う派生メッセージ）
+        "Timeout", // per-goto タイムアウト（負荷下の SSR 応答遅延）
+    ];
+    for (let attempt = 0; ; attempt++) {
+        try {
+            // waitUntil:"domcontentloaded" を明示する。既定の "load" は
+            // Cloudinary 画像など継続的なリソース読み込みで発火せず、goto が
+            // テストタイムアウトまでハングしうる（WebKit/Chromium で観測）。
+            await page.goto(url, {
+                waitUntil: "domcontentloaded",
+                timeout: timeoutMs,
+            });
+            return;
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            const transient = transientSignatures.some((sig) =>
+                message.includes(sig)
+            );
+            if (!transient || attempt >= retries) {
+                throw error;
+            }
+            // 割り込んだリダイレクト / 一過性ハングの沈静化を待ってから再試行する
+            await page.waitForLoadState("domcontentloaded").catch(() => {});
+        }
+    }
+};

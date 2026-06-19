@@ -140,12 +140,14 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 🔴 現在アクティブな残課題（優先度順・2026-06-14 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 2 件のみ。**
+> 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件（OI-9 / OI-11 / OI-10 / C2）。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
 | **1（最優先）** | **OI-9** | ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照） | 🟡 未着手 | 遅延初期化 `useState(() => typeof window !== "undefined" ? window.innerWidth : 0)` + `useEffect` で実測反映。**これは下記 NEXT_ACTION「D2（Performance 行着手）」の前提**：修正後に `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる。 |
-| 2 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+| 2 | **OI-11** | `/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`（`next-cloudinary` の `CldUploadWidget` をサーバ評価）。OI-9 と同族の client-only ref 問題。現状テストは落ちていない（ログのみ）が本番でも再現の可能性 | 🟡 未着手 | `image-upload.tsx` の `CldUploadWidget` を `next/dynamic` の `ssr:false` で遅延 import する。発見: 2026-06-19（E2E 本番ビルド化で顕在化） |
+| 3 | **OI-10** | a11y `color-contrast` 負債: `/checkout`・`/profile`・`/seller/apply` でグレー/ブルー系テキストが 4.5:1 未満。E2E では `runA11yScan` の `disabledRules:["color-contrast"]` で抑制中（追跡のため意図的） | 🟢 低 | 配色（テキスト色）を是正して `disabledRules` を解除する。発見: 2026-06-19（a11y readiness 修正で axe 到達後に検出） |
+| 4 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
 
 > ✅ **OI-8 完了（2026-06-14）**: CI flake の真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`、1272→1281 / skip 12→3）。CI push/pull_request 両 event × 2 サイクル緑・stub DB フルスイート P1001 = 0。詳細: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。
 >

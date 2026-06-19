@@ -3,7 +3,12 @@ import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
 import { buildE2ESeed } from "./seed/constants";
-import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
+import {
+    gotoStable,
+    setupE2ETestState,
+    waitForCartPersist,
+    waitForPostSignInSettle,
+} from "@/config/test-helpers";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +36,7 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         }
 
         seed = buildE2ESeed({
-            workerIndex: testInfo.workerIndex,
+            parallelIndex: testInfo.parallelIndex,
             projectName: testInfo.project.name,
         });
 
@@ -134,13 +139,12 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         await page.getByRole("button", { name: "Continue", exact: true }).click();
         await page.getByLabel("Password", { exact: true }).fill(userPassword);
         await page.getByRole("button", { name: "Continue", exact: true }).click();
-        await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
-            timeout: 15000,
-        });
-        await page.waitForLoadState("domcontentloaded");
+        // サインイン後のホームへの遅延リダイレクト着地を待ち、後続 goto の割り込みを防ぐ
+        await waitForPostSignInSettle(page);
 
         // Act: 商品をカートに追加（既定 quantity=1）
-        await page.goto(`/product/${seed.product.slug}/${seed.variant.slug}`);
+        // 遅延サインインリダイレクトに割り込まれた場合は再試行する
+        await gotoStable(page, `/product/${seed.product.slug}/${seed.variant.slug}`);
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
@@ -149,7 +153,9 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         });
         await waitForCartPersist(page);
 
-        await page.goto("/cart", { waitUntil: "commit" });
+        // サイズ選択のソフトナビゲーション着地が遅れると /cart goto に割り込むため
+        // gotoStable で再試行する（WebKit で "interrupted by another navigation" 観測）。
+        await gotoStable(page, "/cart");
         await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
         await expect(page.getByTestId("cart-item-name")).toHaveCount(1);
 
