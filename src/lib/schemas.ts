@@ -648,3 +648,18 @@ export const UpdateSizeStockSchema = z.object({
 export const LowStockThresholdSchema = z.object({
     threshold: z.number().int().min(0).max(1_000_000),
 });
+
+// メッセージ送信（content は 1〜2000 文字・AC-M4）
+export const SendMessageSchema = z.object({
+    conversationId: z.string().min(1),
+    content: z
+        .string()
+        .min(1, "メッセージを入力してください。")
+        .max(2000, "メッセージは2000文字以内です。"),
+});
+
+// 会話起票（storeId 必須・orderId は任意の注文起点メタ情報）
+export const StartConversationSchema = z.object({
+    storeId: z.string().min(1),
+    orderId: z.string().min(1).optional(),
+});
