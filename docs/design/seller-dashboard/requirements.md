@@ -70,7 +70,7 @@
 | **F3-2** | IF 注文確定時に いずれかの `Size.quantity` が注文数に満たない、THEN システムは **当該注文全体をロールバック**し、「在庫が不足しています」を返す（部分確定はしない）。 |
 | **F3-3** | 在庫の検証と減算は、**同一の DB 更新（`updateMany` の `where: { quantity: { gte: qty } }` 条件付き更新）でアトミックに**行い、`count === 0`（=条件を満たす行が無い）を在庫不足として検知する（TOCTOU レース回避、[判断6](./design.md#判断6-placeorder-在庫減算アトミック-check-and-decrement)）。 |
 | **F3-4** | WHILE 在庫減算を行う間、システムは `placeOrder` 既存の数量クランプ（[user.ts:494](../../../src/queries/user.ts#L494) の `Math.min(quantity, size.quantity)`）と矛盾しないよう、**減算対象を確定済みの `validQuantity` に揃える**（[design §5.2](./design.md#52-placeorder-在庫減算の影響箇所マトリクス)）。 |
-| **F3-5（任意・レビュー対象）** | WHEN 注文が `Canceled` または `Refunded` に変更されたとき、システムは減算済みの `Size.quantity` を **復元する**（在庫整合性の対。Phase 4 サブステップ 4-D・recommended、[design §5.3](./design.md#53-キャンセル返品時の在庫復元レビュー対象)）。 |
+| **F3-5（実施済み・Phase 4-D）** | WHEN 注文が `Canceled` または `Refunded` に変更されたとき、システムは減算済みの `Size.quantity` を **復元する**（在庫整合性の対。Phase 4 サブステップ 4-D で実装済み・条件付き `updateMany` による原子的遷移で二重復元を防止、[design §5.3](./design.md#53-キャンセル返品時の在庫復元レビュー対象)）。 |
 
 ---
 

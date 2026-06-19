@@ -108,7 +108,10 @@ const getCachedStoreStats = (storeId: string, lowStockThreshold: number) =>
                 throw new Error("Failed to aggregate store dashboard stats.");
             }
         },
-        ["store-dashboard-stats", storeId], // ← storeId をキャッシュキーに含める（NFR-8）
+        // storeId に加え lowStockThreshold もキー化する。閾値はクロージャ変数であり
+        // unstable_cache の引数シリアライズ対象外のため、キーに含めないと閾値変更後も
+        // 旧件数を最大 20 分返してしまう（updateStoreLowStockThreshold は revalidateTag しない）。
+        ["store-dashboard-stats", storeId, String(lowStockThreshold)],
         { revalidate: 60 * 20, tags: [`store-dashboard-${storeId}`] }
     )();
 

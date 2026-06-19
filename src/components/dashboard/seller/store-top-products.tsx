@@ -40,7 +40,7 @@ export function StoreTopProducts({ products }: Props) {
                                     {product.name}
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground">
-                                    {product.sales.toLocaleString()} 件販売
+                                    {product.sales.toLocaleString("en-US")} 件販売
                                 </span>
                             </li>
                         ))}

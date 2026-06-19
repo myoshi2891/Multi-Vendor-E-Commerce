@@ -49,7 +49,7 @@
 | 4-C | `spec-sync-after-test` で docs 同期 | ✅ 完了 | 本コミット |
 | 4-D | キャンセル/返品時の在庫復元（ユーザー承認のもと実施） | ✅ 完了 | `b3badc6`–`eca47a6`（admin cancel/refund に `increment` 復元 + 非終端→終端の遷移ガードで冪等化、`order.test.ts` +6） |
 
-> **検証**（完了時に記入）: tsc 0 / lint 0 / test +N / E2E 3 ブラウザ green / build 成功。
+> **検証**: tsc 0 / lint 0 errors / test 1496 → **1505 passed**（+9: `user.test.ts` +3 / `order.test.ts` +6・154 スイート不変） / E2E `stock-decrement.spec.ts` 新規（Chromium / Firefox / WebKit） / build 成功。
 
 ---
 
@@ -57,11 +57,11 @@
 
 [tasks.md レビュー必須ポイント](./tasks.md#レビュー必須ポイント) を参照。要約:
 
-- [ ] 4-D（在庫復元）を今回実施するか。
-- [ ] 在庫不足時に注文全体ロールバック（部分確定なし）でよいか。
-- [ ] しきい値は店舗単位の単一値でよいか（サイズ別 override スコープ外）。
-- [ ] PV は既存 `Product.views` 合算表示のみでよいか。
-- [ ] 在庫アラートは視覚バッジのみ（通知なし）でよいか。
+- [x] 4-D（在庫復元）を今回実施するか。→ ユーザー承認のもと実施済み（`b3badc6`–`eca47a6`）。
+- [x] 在庫不足時に注文全体ロールバック（部分確定なし）でよいか。→ 採用（F3-2・条件付き `updateMany` の `count===0` で throw）。
+- [x] しきい値は店舗単位の単一値でよいか（サイズ別 override スコープ外）。→ 採用（`Store.lowStockThreshold` 単一値）。
+- [x] PV は既存 `Product.views` 合算表示のみでよいか。→ 採用（Σ `Product.views`）。
+- [x] 在庫アラートは視覚バッジのみ（通知なし）でよいか。→ 採用（`getStockStatus` のバッジ／サマリのみ）。
 
 ---
 

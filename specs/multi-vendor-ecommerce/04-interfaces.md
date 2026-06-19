@@ -94,7 +94,7 @@ All functions require store ownership via `requireStoreOwner(storeUrl)` (called 
 | Function | Description |
 |----------|-------------|
 | `getStoreInventory(storeUrl)` | All `Size` rows for the store, flattened to product → variant → size. Returns `StoreInventoryRow[]` (`Decimal` price → `number` at return boundary). |
-| `updateSizeStock(sizeId, quantity, storeUrl)` | Quick-edit a size's stock. IDOR-guarded by an ownership-chain `findFirst` (`size → productVariant → product.storeId`) before `db.size.update`; non-owned `sizeId` → `Forbidden`. Input validated by `UpdateSizeStockSchema` (int ≥ 0). |
+| `updateSizeStock(sizeId, quantity, storeUrl)` | Quick-edit a size's stock. IDOR/TOCTOU-guarded by folding the ownership chain (`size → productVariant → product.storeId`) into the `where` of a single atomic `db.size.updateMany`; `count === 0` (non-owned `sizeId` or missing) → `Forbidden` with no side effect. Input validated by `UpdateSizeStockSchema` (int ≥ 0). |
 | `updateStoreLowStockThreshold(storeUrl, threshold)` | Update `Store.lowStockThreshold` (drives low-stock badge/summary). Validated by `LowStockThresholdSchema`. |
 
 `Store.lowStockThreshold Int @default(5)` added in Phase 1 (additive). `getStockStatus(quantity, threshold)` (pure, `src/lib/utils.ts`) classifies `out`/`low`/`ok` and is shared by the badge and alert summary. Return type `StoreInventoryRow` is derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`.

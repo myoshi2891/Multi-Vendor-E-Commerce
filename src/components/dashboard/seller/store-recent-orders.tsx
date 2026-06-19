@@ -44,7 +44,7 @@ export function StoreRecentOrders({ orders }: Props) {
                                         #{order.id.slice(0, 8)}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        {order.createdAt.toLocaleDateString("ja-JP")}
+                                        {order.updatedAt.toLocaleDateString("ja-JP")}
                                     </span>
                                 </div>
                                 <span className="font-semibold">

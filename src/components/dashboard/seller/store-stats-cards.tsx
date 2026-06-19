@@ -26,13 +26,13 @@ export function StoreStatsCards({ stats }: Props) {
                 maximumFractionDigits: 2,
             })}`,
         },
-        { label: "総注文数", value: stats.totalOrders.toLocaleString() },
-        { label: "総閲覧数", value: stats.totalViews.toLocaleString() },
-        { label: "販売数", value: stats.totalSales.toLocaleString() },
-        { label: "総商品数", value: stats.totalProducts.toLocaleString() },
+        { label: "総注文数", value: stats.totalOrders.toLocaleString("en-US") },
+        { label: "総閲覧数", value: stats.totalViews.toLocaleString("en-US") },
+        { label: "販売数", value: stats.totalSales.toLocaleString("en-US") },
+        { label: "総商品数", value: stats.totalProducts.toLocaleString("en-US") },
         {
             label: "在庫アラート",
-            value: stats.lowStockCount.toLocaleString(),
+            value: stats.lowStockCount.toLocaleString("en-US"),
         },
     ] as const;
 

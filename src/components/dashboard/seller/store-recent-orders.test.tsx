@@ -10,17 +10,18 @@ type StoreRecentOrder = Awaited<
 >[number];
 
 // F1 最近の注文: OrderGroup 行から id 先頭 8 桁・日付・合計（Decimal→整形）を描画し、
-// 空配列ではゼロ件文言を出すことを検証する（AC-F1-5）。コンポーネントは id/createdAt/total
-// のみ参照するため、最小限のフィールドを持つ行を unknown 経由でキャストする（any 禁止）。
+// 空配列ではゼロ件文言を出すことを検証する（AC-F1-5）。コンポーネントは id/updatedAt/total
+// のみ参照するため（並び順 updatedAt:desc と表示日付を一致させる）、最小限のフィールドを
+// 持つ行を unknown 経由でキャストする（any 禁止）。
 describe("StoreRecentOrders", () => {
     function makeOrder(
         id: string,
-        createdAt: Date,
+        updatedAt: Date,
         total: number
     ): StoreRecentOrder {
         return {
             id,
-            createdAt,
+            updatedAt,
             total: new Prisma.Decimal(total),
         } as unknown as StoreRecentOrder;
     }

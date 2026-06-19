@@ -105,9 +105,12 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
 
     /** 対象バリアントの最初の Size 在庫量を取得する（再実行に強いよう before 値を動的に読む） */
     const readSizeQuantity = async (): Promise<{ id: string; quantity: number }> => {
+        // UI が参照する retrieveProductDetails（src/queries/product.ts）は sizes に orderBy を
+        // 付けず挿入順で返す。テストも `.first()` がクリックする要素と同じ並びを読むため、
+        // ここでも orderBy を付けずに挿入順の先頭 Size を読む（UI と並びを一致させる）。
         const variant = await prisma.productVariant.findUnique({
             where: { slug: seed.variant.slug },
-            include: { sizes: { orderBy: { size: "asc" } } },
+            include: { sizes: true },
         });
         const size = variant?.sizes[0];
         if (!size) {
@@ -131,11 +134,9 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         await page.getByRole("button", { name: "Continue", exact: true }).click();
         await page.getByLabel("Password", { exact: true }).fill(userPassword);
         await page.getByRole("button", { name: "Continue", exact: true }).click();
-        await page
-            .waitForURL((url) => !url.pathname.includes("/sign-in"), {
-                timeout: 15000,
-            })
-            .catch(() => {});
+        await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
+            timeout: 15000,
+        });
         await page.waitForLoadState("domcontentloaded");
 
         // Act: 商品をカートに追加（既定 quantity=1）
