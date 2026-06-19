@@ -33,7 +33,7 @@ Dashboard:
 - `/dashboard/seller/stores/new` create store
 - `/dashboard/seller/stores/[storeUrl]` store details
 - `/dashboard/seller/stores/[storeUrl]/inventory` inventory management (F2)
-- `/dashboard/seller/stores/[storeUrl]/messages` seller-side messaging (planned — Phase 4)
+- `/dashboard/seller/stores/[storeUrl]/messages` seller-side messaging (force-dynamic; two-pane list identified by buyer + reused thread)
 - `/dashboard/admin` admin overview
 - `/dashboard/admin/stores` manage stores
 - `/dashboard/admin/categories` manage categories
@@ -125,12 +125,12 @@ Return type `StoreDashboardStats` is exported from `store-dashboard.ts`; `SalesP
 |----------|-------------|------|
 | `getOrCreateConversation(storeId, orderId?)` | Idempotent `upsert` on the `userId_storeId` composite key (returns existing or creates). | `requireUser` |
 | `getUserConversations()` | Buyer's conversations (`where: userId`) with store info + latest message, `updatedAt desc`. | `requireUser` |
-| `getStoreConversations(storeUrl)` | Store's conversations (`where: storeId`), same include. | `requireStoreOwner` |
+| `getStoreConversations(storeUrl)` | Store's conversations (`where: storeId`); include adds the buyer `user` (id/name/picture) for seller-side identification. | `requireStoreOwner` |
 | `getConversationMessages(conversationId)` | Thread messages (`createdAt asc`). | `assertParticipant` |
 | `sendMessage(conversationId, content)` | `db.$transaction([message.create, conversation.update({updatedAt})])`. Content validated by `SendMessageSchema` (1–2000 chars). | `assertParticipant` |
 | `markConversationRead(conversationId)` | `updateMany` peer-sent unread only (`senderId: { not: user.id }, isRead: false`). Idempotent. | `assertParticipant` |
 
-Sender role is derived (`message.senderId === conversation.userId` ⇒ buyer-sent), not stored. `SendMessageSchema` / `StartConversationSchema` live in `src/lib/schemas.ts`; `ConversationWithLatest` / `MessageType` are derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`. Buyer UI (Phase 3, implemented): `/profile/messages` (`force-dynamic`) + `src/components/store/profile/messages/{messages-container,conversation-thread}.tsx` (5s polling with `cancelled` flag + `document.hidden` pause). Seller UI (Phase 4) and round-trip E2E (Phase 5) are planned.
+Sender role is derived (`message.senderId === conversation.userId` ⇒ buyer-sent), not stored. `SendMessageSchema` / `StartConversationSchema` live in `src/lib/schemas.ts`; `ConversationWithLatest` / `MessageType` / `StoreConversationWithLatest` are derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`. Buyer UI (Phase 3, implemented): `/profile/messages` (`force-dynamic`) + `src/components/store/profile/messages/{messages-container,conversation-thread}.tsx` (5s polling with `cancelled` flag + `document.hidden` pause). Seller UI (Phase 4, implemented): `/dashboard/seller/stores/[storeUrl]/messages` (`force-dynamic`) + `src/components/dashboard/seller/seller-messages-container.tsx` reusing `conversation-thread.tsx`; the list is identified by the buyer `user`. Round-trip E2E (Phase 5) is planned.
 
 ## External Services
 - Clerk for auth and user metadata.

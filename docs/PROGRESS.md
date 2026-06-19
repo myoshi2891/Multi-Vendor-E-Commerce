@@ -1054,6 +1054,36 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 
 ---
 
+### profile-messages Phase 4（販売者 UI・ループ閉鎖） (2026-06-20)
+
+#### 概要
+
+購入者↔販売者 1:1 メッセージングの**ループを閉じる**販売者 UI を実装。販売者ダッシュボードに会話一覧 + 返信画面を追加し、既存の `sendMessage` / `conversation-thread.tsx` を流用して双方向往復を成立させた。設計は `docs/design/profile-messages/{requirements,design,tasks}.md`（Phase 4）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/message.ts` | `getStoreConversations` の include に購入者（`user` id/name/picture）を追加（別定数 `storeConversationListInclude`、購入者向けは無改修） | `8ab715e` |
+| `src/lib/types.ts` | `StoreConversationWithLatest` 型を追加（`ConversationWithLatest` の superset） | `8ab715e` |
+| `src/queries/message.test.ts` | `getStoreConversations` の include アサーション 1 行（テスト数±0） | `8ab715e` |
+| `src/components/dashboard/seller/seller-messages-container.tsx` | 販売者コンテナ新規（2 ペイン・左ペインは購入者で識別・右ペインは `conversation-thread.tsx` 流用・5 秒ポーリング） | `d2b987b` |
+| `src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx` | 販売者ページ新規（`force-dynamic` + `getStoreConversations`） | `4781914` |
+| `src/constants/{data,icons}.ts` ほか | seller サイドバー Messages 導線 + `MessagesIcon` 新規 | `4781914` |
+| `src/components/dashboard/seller/seller-messages-container.test.tsx` | container テスト +7（一覧/fetch+既読/ポーリング/hidden/再フェッチ/ログ） | `95d0005` |
+
+> 返信は購入者と同じ `sendMessage` を呼び、`assertParticipant` が店舗オーナーを参加者として許可する（IDOR 防止は既存 server action 層で担保）。`StoreConversationWithLatest` は構造的部分型で `ConversationThread`（props: `ConversationWithLatest`）に代入可能。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1553 passed | **1560 passed** |
+| スイート数 | 160 | **161** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1553 passed / 1556 total across 160 suites (3 skipped), as of 2026-06-19.
+- 1560 passed / 1563 total across 161 suites (3 skipped), as of 2026-06-20.
+  Profile-messages Phase 4 (seller UI, loop closure) added `getStoreConversations` buyer include
+  (`StoreConversationWithLatest` type) and the seller dashboard route
+  `/dashboard/seller/stores/[storeUrl]/messages` reusing `conversation-thread.tsx`; one component
+  suite `src/components/dashboard/seller/seller-messages-container.test.tsx` (+7: buyer-name list,
+  select fetch+mark-read, 5s polling, `document.hidden` pause, post-reply refetch, structured log);
+  +7 tests, 160 → 161 suites.
   Profile-messages Phase 2+3 (buyer↔seller 1:1 messaging) added `src/queries/message.test.ts`
   (+31: authorization / IDOR 3-tier for getConversationMessages·sendMessage·markConversationRead /
   idempotent upsert / `$transaction`) and two buyer-UI component suites under
