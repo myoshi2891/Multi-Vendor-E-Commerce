@@ -175,6 +175,8 @@ describe("getStoreConversations", () => {
             expect.objectContaining({
                 where: { storeId: STORE_ID },
                 orderBy: { updatedAt: "desc" },
+                // 販売者一覧は購入者（相手）の表示情報を含める（左ペインで会話を識別するため）
+                include: expect.objectContaining({ user: expect.anything() }),
             })
         );
     });
@@ -216,9 +218,7 @@ describe("getConversationMessages", () => {
         });
 
         it("(b) 参加者検証は store.userId を include した findUnique で行う", async () => {
-            await expect(
-                getConversationMessages("conv-x")
-            ).rejects.toThrow();
+            await expect(getConversationMessages("conv-x")).rejects.toThrow();
 
             expect(mockDb.conversation.findUnique).toHaveBeenCalledWith({
                 where: { id: "conv-x" },
@@ -227,9 +227,7 @@ describe("getConversationMessages", () => {
         });
 
         it("(c) 非参加者には副作用がない（message.findMany を呼ばない）", async () => {
-            await expect(
-                getConversationMessages("conv-x")
-            ).rejects.toThrow();
+            await expect(getConversationMessages("conv-x")).rejects.toThrow();
 
             expect(mockDb.message.findMany).not.toHaveBeenCalled();
         });
@@ -360,7 +358,9 @@ describe("sendMessage", () => {
             expect(mockDb.conversation.update).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { id: "conv-1" },
-                    data: expect.objectContaining({ updatedAt: expect.any(Date) }),
+                    data: expect.objectContaining({
+                        updatedAt: expect.any(Date),
+                    }),
                 })
             );
         });
@@ -408,7 +408,9 @@ describe("getOrCreateConversation", () => {
         expect(second).toEqual({ id: "conv-1" });
         expect(mockDb.conversation.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: { userId_storeId: { userId: USER_ID, storeId: STORE_ID } },
+                where: {
+                    userId_storeId: { userId: USER_ID, storeId: STORE_ID },
+                },
                 create: expect.objectContaining({
                     userId: USER_ID,
                     storeId: STORE_ID,

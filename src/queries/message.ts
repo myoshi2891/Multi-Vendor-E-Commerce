@@ -51,6 +51,15 @@ const conversationListInclude = {
 } as const;
 
 /**
+ * 販売者一覧 include: 共通 include に購入者（相手）の表示情報を追加する。
+ * 販売者の左ペインは自店舗ではなく購入者で会話を識別するため user を含める。
+ */
+const storeConversationListInclude = {
+    ...conversationListInclude,
+    user: { select: { id: true, name: true, picture: true } },
+} as const;
+
+/**
  * @function getOrCreateConversation
  * @description 購入者と店舗の会話を (userId, storeId) 複合キーで冪等起票する。
  *              既存があればそれを返し、無ければ作成する（@@unique による冪等・AC-M5）。
@@ -130,7 +139,7 @@ export const getStoreConversations = async (storeUrl: string) => {
     try {
         return await db.conversation.findMany({
             where: { storeId: store.id },
-            include: conversationListInclude,
+            include: storeConversationListInclude,
             orderBy: { updatedAt: "desc" },
         });
     } catch (error: unknown) {
