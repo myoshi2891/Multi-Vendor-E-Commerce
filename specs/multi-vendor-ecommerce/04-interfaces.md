@@ -18,6 +18,7 @@ Storefront:
 - `/profile/reviews` reviews
 - `/profile/following` followed stores
 - `/profile/history` activity history
+- `/profile/settings` account settings (embeds Clerk `<UserProfile routing="hash" />`; no server action — edits sync to Prisma via the Clerk webhook)
 - `/seller/apply` seller application
 
 Auth:

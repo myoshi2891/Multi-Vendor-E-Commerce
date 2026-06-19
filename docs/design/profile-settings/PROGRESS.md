@@ -6,23 +6,23 @@
 
 ---
 
-## 🧭 現在地（設計完了時点）
+## 🧭 現在地（2026-06-19）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **Phase 1（Settings 画面 + 導線修正）未着手**。
-- 👉 **次の着手**: [feature-plan](../../../.claude/skills/feature-plan/) で本設計書を最終計画化・承認取得 → tasks.md 1-A から。
+- ✅ **Phase 1（Settings 画面 + 導線修正）完了** — `413ed19`〜`9d5629d`（実装）+ ドキュメント同期コミット。テスト +3（1505→1508 passed / 154→157 スイート）。
+- 👉 **次の着手**: 残レビューポイント（`routing="hash"` の MVP 妥当性 / `appearance` のサイドバー 296px 干渉）を `bun run dev` の実描画で最終確認（1-B-3 視覚調整は認証セッション必要のため手動検証に委譲）。姉妹設計（messages）へ。
 
 ---
 
-## Phase 1: Settings 画面 + 導線修正 ⬜ 未着手
+## Phase 1: Settings 画面 + 導線修正 ✅ 完了
 
 | Task | 内容 | 状態 | SKILL | コミット / 備考 |
 |------|------|------|-------|----------------|
-| 1-A | user-menu リンク修正 + sidebar エントリ（回帰テスト先行） | ⬜ | test-gen | AC-S3 / AC-S4 |
-| 1-B | `/profile/settings` ページ追加（Clerk `<UserProfile />`） | ⬜ | test-gen | AC-S2 |
-| 1-C | 品質チェック（lint/tsc/test + build） | ⬜ | test-complete | rule 02 必須 |
-| 1-D | ドキュメント同期（統計 + dashboard 再生成） | ⬜ | spec-sync-after-test | QA_HANDOFF SSOT |
-| 1-E | 最終ドリフト確認 | ⬜ | spec-sync-check | 任意 |
+| 1-A | user-menu リンク修正 + sidebar エントリ（回帰テスト先行） | ✅ | test-gen | `413ed19`〜`e410180`（AC-S3 / AC-S4） |
+| 1-B | `/profile/settings` ページ追加（Clerk `<UserProfile />`） | ✅ | test-gen | `0e32d0a`〜`9d5629d`（AC-S2）。1-B-3 視覚調整は手動 dev 検証に委譲 |
+| 1-C | 品質チェック（lint/tsc/test + build） | ✅ | test-complete | lint 0 err / tsc 0 / 1508 passed / build 成功 |
+| 1-D | ドキュメント同期（統計 + dashboard 再生成） | ✅ | spec-sync-after-test | QA_HANDOFF SSOT → 伝播 |
+| 1-E | 最終ドリフト確認 | ⬜ | spec-sync-check | 任意（次に実施） |
 
 ---
 
@@ -30,11 +30,11 @@
 
 > 各フェーズ完了時に、対応 SKILL を起動したかをチェックする（rule 02 / 本設計書 tasks.md の SKILL シーケンス）。
 
-- [ ] feature-plan（着手前・必須）
-- [ ] test-gen（1-A / 1-B）
-- [ ] test-complete（各コミット前）
-- [ ] spec-sync-after-test（テスト数変動時・必須）
-- [ ] spec-sync-check（最終・任意）
+- [x] feature-plan（着手前・必須 — plan mode で最終計画化・承認取得済み）
+- [x] test-gen（1-A / 1-B）
+- [x] test-complete（各コミット前）
+- [x] spec-sync-after-test（テスト数変動時・必須）
+- [ ] spec-sync-check（最終・任意 — 次に実施）
 - [x] server-action-scaffold は **不要**（新規 action 無し）
 - [x] safe-migration は **不要**（schema 変更無し）
 

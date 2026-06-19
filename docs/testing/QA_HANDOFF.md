@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-19 / **HEAD**: `eca47a6`
+> **最終更新**: 2026-06-19 / **HEAD**: `9d5629d`
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1505** passed / 1508 total / 154 スイート（153 passed + 1 skipped suite）— 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了：`placeOrder` に在庫不足ロールバック/減算成功/レース構造の +3（`user.test.ts`、`8cbf4c0`〜`037c8ff`）、`updateOrderGroupStatusAsAdmin` / `updateOrderPaymentStatus` の在庫復元 + 冪等性 +6（`order.test.ts`、`b3badc6`〜`eca47a6`）で 1496→1505 passed / 1499→1508 total（スイート 154 不変）。E2E `tests/e2e/stock-decrement.spec.ts` を新規追加（Jest 集計外、`1a66ed2`）。Phase 3-B（F1 店舗ダッシュボード UI）は `5e48d5e`〜`07bc12e`（1490→1496 / 151→154） |
+| Jest テスト総数 (unit/component) | **1508** passed / 1511 total / 157 スイート（156 passed + 1 skipped suite）— 2026-06-19 profile-settings Phase 1（Settings 画面 + 導線修正）完了：`user-menu` の Settings リンク回帰（`/`→`/profile/settings`）、`profile-sidebar` の Settings エントリ、`settings/page.tsx` の `<UserProfile />` 描画の +3（新規スイート 3：`tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx`、`413ed19`〜`9d5629d`）で 1505→1508 passed / 1508→1511 total / 154→157 スイート。新規 server action・schema 変更なし（プロフィール編集は既存 Clerk webhook が Prisma 同期）。直前 Phase 4（F3 在庫減算 + F3-5 在庫復元）は `8cbf4c0`〜`eca47a6`（1496→1505 passed） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
 | Playwright E2E（main） | **7 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement）— 2026-06-19 Phase 4: `tests/e2e/stock-decrement.spec.ts` 追加（認証付き購入フロー完走後に対象 `Size.quantity` が注文数分減ることを検証・AC-F3-4、`1a66ed2`）。2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（`3463d1d`） |

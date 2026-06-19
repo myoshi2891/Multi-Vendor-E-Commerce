@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1505 passed / 1508 total across 154 suites (3 skipped), as of 2026-06-19.
+- 1508 passed / 1511 total across 157 suites (3 skipped), as of 2026-06-19.
+  Profile-settings Phase 1 (settings page + navigation fix) added three RTL suites under
+  `tests/component/store/` (`user-menu` Settings-link regression `/` → `/profile/settings`,
+  `profile-sidebar` Settings entry, `settings-page` `<UserProfile />` render); +3 tests,
+  154 → 157 suites. No new server action or schema change (profile edits sync to Prisma via
+  the existing Clerk webhook).
   Seller-dashboard Phase 4 (F3 stock decrement + F3-5 restock) added `placeOrder` stock
   tests in `src/queries/user.test.ts` (+3: insufficient-stock rollback / decrement success /
   race-safe conditional `updateMany`) and restock-on-cancel tests in

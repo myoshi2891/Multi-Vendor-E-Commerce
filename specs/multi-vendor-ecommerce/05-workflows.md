@@ -44,8 +44,10 @@
    - Create new coupons via `upsertCouponAsAdmin()` (P2002 → Japanese error message).
 
 ## Auth and Role Sync
-1) User signs up or updates profile in Clerk.
-2) Clerk webhook upserts the user in the local database.
+1) User signs up or updates profile in Clerk (e.g. via the `/profile/settings` page,
+   which embeds Clerk `<UserProfile />` for name/email/password/MFA/account-deletion).
+2) Clerk webhook upserts (or deletes) the user in the local database (`user.updated` /
+   `user.deleted` → `db.user.upsert` / `deleteMany`).
 3) Clerk private metadata is updated with the role.
 
 ## Country Detection

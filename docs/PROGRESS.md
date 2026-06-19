@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1505 passed / 1508 total / 154 スイート（3 skipped）** — 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了時点（`eca47a6`）。`user.test.ts` +3 / `order.test.ts` +6 |
+| Jestユニットテスト | **1508 passed / 1511 total / 157 スイート（3 skipped）** — 2026-06-19 profile-settings Phase 1（Settings 画面 + 導線修正）完了時点（`9d5629d`）。`tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx` +3 / +3 スイート。直前 Phase 4（在庫減算/復元）は `user.test.ts` +3 / `order.test.ts` +6 |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1021,6 +1021,35 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 |------|--------|--------|
 | テスト総数 (unit/component) | 1496 passed | **1505 passed** |
 | スイート数 | 154 | **154**（不変・既存ファイルへ追加） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### profile-settings Phase 1（Settings 画面 + 導線修正） (2026-06-19)
+
+#### 概要
+
+顧客向けアカウント設定ページ `/profile/settings` を新規追加し、Clerk `<UserProfile routing="hash" />` を埋め込み。併せて誤リンク・欠落していたユーザーメニュー／サイドバーの Settings 導線を修正。設計は `docs/design/profile-settings/{requirements,design,tasks}.md`。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(store)/profile/settings/page.tsx` | 新規。`<UserProfile routing="hash" />` 埋め込み（force-dynamic 不要・Prisma 非依存） | `9d5629d` |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` の Settings リンクを誤値 `/` → `/profile/settings` | `1227a5d` |
+| `src/components/store/layout/profile-sidebar/sidebar.tsx` | `menu` 配列末尾に Settings エントリ追加 | `e410180` |
+| `tests/component/store/user-menu.test.tsx` | Settings リンク回帰テスト（async Server Component を `render(await UserMenu())`） | `413ed19` |
+| `tests/component/store/profile-sidebar.test.tsx` | Settings エントリ描画テスト（`usePathname` モック） | `e410180` |
+| `tests/component/store/settings-page.test.tsx` | `<UserProfile>` モック描画テスト | `0e32d0a` |
+
+> プロフィール編集（氏名/メール/削除）は既存 Clerk webhook (`src/app/api/webhooks/route.ts`) 経由で Prisma `User` に同期されるため、新規 server action・schema 変更なし。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1505 passed | **1508 passed** |
+| スイート数 | 154 | **157** |
 | 型エラー | 0 件 | **0 件** |
 
 ---
