@@ -6,11 +6,12 @@
 
 ---
 
-## 🧭 現在地（設計完了時点）
+## 🧭 現在地（2026-06-19・Phase 3 完了）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **Phase 1〜5 未着手**。
-- 👉 **次の着手**: [feature-plan](../../../.claude/skills/feature-plan/) で本設計書を最終計画化・承認取得 → Phase 1（[safe-migration](../../../.claude/skills/safe-migration/)）。
+- ✅ **Phase 1〜3 完了**（schema/migration → server actions + IDOR ユニット → 購入者 UI + ポーリング）。
+- ⬜ **Phase 4〜5 未着手**（販売者 UI → E2E + ドキュメント同期）。
+- 👉 **次の着手**: Phase 4（販売者 UI）。`dashboard/seller/stores/[storeUrl]/messages/` を新規実装し、`conversation-thread.tsx` を流用して双方向ループを閉じる（返信は共有 `sendMessage`）。
 
 ---
 
@@ -18,9 +19,9 @@
 
 | Phase | 内容 | 状態 | 主 SKILL | 備考 |
 |-------|------|------|----------|------|
-| 1 | schema + migration（Conversation/Message）+ ERD 再生成 | ⬜ | safe-migration / erd:generate | 直列・最初。非破壊 additive |
-| 2 | server actions 6種 + ユニットテスト（IDOR 3階層） | ⬜ | server-action-scaffold / test-gen | AC-M1〜M7 |
-| 3 | 購入者 UI（`/profile/messages`・ポーリング） | ⬜ | test-gen | NFR-M4/M5 |
+| 1 | schema + migration（Conversation/Message）+ ERD 再生成 | ✅ | safe-migration / erd:generate | 非破壊 additive（`83eef3e` 系） |
+| 2 | server actions 6種 + ユニットテスト（IDOR 3階層） | ✅ | server-action-scaffold / test-gen | AC-M1〜M7・`message.test.ts` +31（`fcbcb3d`〜`4d76eea`） |
+| 3 | 購入者 UI（`/profile/messages`・ポーリング） | ✅ | test-gen | NFR-M4/M5・component +14（`e4e752d`〜`a20a313`） |
 | 4 | 販売者 UI（seller dashboard・ループ閉鎖） | ⬜ | test-gen | M-5 |
 | 5 | E2E（往復）+ ドキュメント同期 | ⬜ | test-complete / spec-sync-after-test / spec-sync-check | AC-M8 |
 

@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1508 passed / 1511 total across 157 suites (3 skipped), as of 2026-06-19.
+- 1553 passed / 1556 total across 160 suites (3 skipped), as of 2026-06-19.
+  Profile-messages Phase 2+3 (buyer↔seller 1:1 messaging) added `src/queries/message.test.ts`
+  (+31: authorization / IDOR 3-tier for getConversationMessages·sendMessage·markConversationRead /
+  idempotent upsert / `$transaction`) and two buyer-UI component suites under
+  `src/components/store/profile/messages/` (`conversation-thread.test.tsx` 7,
+  `messages-container.test.tsx` 7 covering 5s polling, `document.hidden` pause, mark-read);
+  +45 tests, 157 → 160 suites.
   Profile-settings Phase 1 (settings page + navigation fix) added three RTL suites under
   `tests/component/store/` (`user-menu` Settings-link regression `/` → `/profile/settings`,
   `profile-sidebar` Settings entry, `settings-page` `<UserProfile />` render); +3 tests,

@@ -11,6 +11,14 @@
 8) Order status and payment details are updated via payment webhook.
 9) Customer views order history and order details.
 
+## Buyer↔Seller Messaging Flow
+1) A conversation is created idempotently per `(userId, storeId)` via `getOrCreateConversation()`.
+2) Buyer opens `/profile/messages` (force-dynamic; `getUserConversations()` seeds the list) and selects a conversation.
+3) On selection the thread loads via `getConversationMessages()` and peer-sent unread are cleared via `markConversationRead()`.
+4) Buyer sends a message via `sendMessage()` (atomic `db.$transaction`: message create + conversation `updatedAt`), guarded by `assertParticipant`.
+5) The thread polls `getConversationMessages()` every 5s (paused while `document.hidden`) to surface the seller's replies.
+6) Seller replies from the store dashboard messages page (Phase 4) using the same `sendMessage()` (participant check authorizes the store owner), closing the loop.
+
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.
