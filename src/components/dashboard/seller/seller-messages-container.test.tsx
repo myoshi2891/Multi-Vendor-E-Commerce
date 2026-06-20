@@ -13,7 +13,10 @@ import {
     getConversationMessages,
     markConversationRead,
 } from "@/queries/message";
-import { StoreConversationWithLatest } from "@/lib/types";
+import {
+    createMockStoreConversationWithLatest,
+    createMockMessageType,
+} from "@/config/test-fixtures";
 
 jest.mock("@/queries/message", () => ({
     getConversationMessages: jest.fn(),
@@ -51,24 +54,25 @@ jest.mock("@/components/store/profile/messages/conversation-thread", () => ({
 }));
 
 // 販売者一覧は store(自店舗) ではなく購入者(user) で会話を識別する
+const store = { id: "store-1", name: "Acme Store", logo: "", url: "acme" };
 const conversations = [
-    {
+    createMockStoreConversationWithLatest({
         id: "conv-1",
         userId: "user-buyer-1",
-        storeId: "store-1",
-        store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
+        store,
         user: { id: "user-buyer-1", name: "Alice Buyer", picture: "" },
-        messages: [{ id: "m0", content: "latest preview" }],
-    },
-    {
+        messages: [
+            createMockMessageType({ id: "m0", content: "latest preview" }),
+        ],
+    }),
+    createMockStoreConversationWithLatest({
         id: "conv-2",
         userId: "user-buyer-2",
-        storeId: "store-1",
-        store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
+        store,
         user: { id: "user-buyer-2", name: "Bob Buyer", picture: "" },
         messages: [],
-    },
-] as unknown as StoreConversationWithLatest[];
+    }),
+];
 
 describe("SellerMessagesContainer", () => {
     beforeEach(() => {
@@ -88,28 +92,22 @@ describe("SellerMessagesContainer", () => {
 
     it("renders the buyer picture as an avatar image when present", () => {
         const withPicture = [
-            {
+            createMockStoreConversationWithLatest({
                 id: "conv-pic",
                 userId: "user-buyer-9",
-                storeId: "store-1",
-                store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
+                store,
                 user: {
                     id: "user-buyer-9",
                     name: "Pic Buyer",
                     picture: "https://cdn.example/buyer.png",
                 },
                 messages: [],
-            },
-        ] as unknown as StoreConversationWithLatest[];
-        render(
-            <SellerMessagesContainer initialConversations={withPicture} />
-        );
+            }),
+        ];
+        render(<SellerMessagesContainer initialConversations={withPicture} />);
 
         const avatar = screen.getByRole("img", { name: "Pic Buyer" });
-        expect(avatar).toHaveAttribute(
-            "src",
-            "https://cdn.example/buyer.png"
-        );
+        expect(avatar).toHaveAttribute("src", "https://cdn.example/buyer.png");
     });
 
     it("shows an empty state when there are no conversations", () => {

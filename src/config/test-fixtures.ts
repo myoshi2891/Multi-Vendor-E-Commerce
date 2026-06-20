@@ -8,6 +8,7 @@ import { TEST_CONFIG } from "./test-config";
 import {
     CartProductType,
     ConversationWithLatest,
+    StoreConversationWithLatest,
     MessageType,
     ReviewDetailsType,
 } from "@/lib/types";
@@ -353,7 +354,9 @@ export const createMockStore = (
         numReviews: 0,
         defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
         defaultShippingFeePerItem: toDecimal(defaultShippingFeePerItem ?? 5.0),
-        defaultShippingFeeForAdditionalItem: toDecimal(defaultShippingFeeForAdditionalItem ?? 2.0),
+        defaultShippingFeeForAdditionalItem: toDecimal(
+            defaultShippingFeeForAdditionalItem ?? 2.0
+        ),
         defaultShippingFeePerKg: toDecimal(defaultShippingFeePerKg ?? 1.5),
         defaultShippingFeeFixed: toDecimal(defaultShippingFeeFixed ?? 10.0),
         defaultDeliveryTimeMin: 3,
@@ -416,9 +419,7 @@ export const createMockProductVariant = (
 });
 
 // ---- サイズ（在庫・価格） ----
-export const createMockSize = (
-    overrides: Partial<MockSize> = {}
-): MockSize => {
+export const createMockSize = (overrides: Partial<MockSize> = {}): MockSize => {
     const { price, ...rest } = overrides;
     return {
         id: "size-001",
@@ -840,5 +841,19 @@ export const createMockConversationWithLatest = (
     updatedAt: new Date("2024-01-01"),
     store: { id: "store-1", name: "Test Store", logo: "", url: "test-store" },
     messages: [],
+    ...overrides,
+});
+
+// ---- メッセージング: 販売者会話一覧の1要素（StoreConversationWithLatest） ----
+/**
+ * getStoreConversations の戻り要素を生成する。
+ * 共通の会話形に購入者（相手）の表示情報 user(id/name/picture) を加えた形。
+ * 販売者一覧は自店舗ではなく購入者で会話を識別するため user を含む。
+ */
+export const createMockStoreConversationWithLatest = (
+    overrides: Partial<StoreConversationWithLatest> = {}
+): StoreConversationWithLatest => ({
+    ...createMockConversationWithLatest(),
+    user: { id: "user-buyer-1", name: "Test Buyer", picture: "" },
     ...overrides,
 });
