@@ -8,6 +8,11 @@ import { UserProfile } from "@clerk/nextjs";
  *
  * routing="hash" を用いることで catch-all route ([[...rest]]) を不要にする。
  * src/queries 経由の DB 呼び出しが無いため force-dynamic は付与しない。
+ *
+ * 認可: このページは Clerk middleware で保護される（src/middleware.ts の
+ * protectedRoutes `/profile/(.*)` → `auth.protect()`）。未認証アクセスは
+ * middleware 段でサインインへリダイレクトされるため、ページ本体での
+ * requireUser() は不要（DB 呼び出しの無い Clerk UI 埋め込みのみ）。
  */
 export default function ProfileSettingsPage() {
     return (
