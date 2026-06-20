@@ -1,4 +1,8 @@
+import { useId } from "react";
+
 const MessagesIcon = () => {
+    // 同一ページに複数描画されても衝突しない一意な gradient ID を生成する
+    const gradientId = useId();
     return (
         <svg
             width={50}
@@ -9,7 +13,7 @@ const MessagesIcon = () => {
         >
             <defs>
                 <linearGradient
-                    id="messagesGradient"
+                    id={gradientId}
                     x1="0%"
                     y1="0%"
                     x2="100%"
@@ -27,7 +31,7 @@ const MessagesIcon = () => {
                 xmlns="http://www.w3.org/2000/svg"
             >
                 <path
-                    fill="url(#messagesGradient)"
+                    fill={`url(#${gradientId})`}
                     d="M4 2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7.333L3 21.5A1 1 0 0 1 2 21V4a2 2 0 0 1 2-2zm3 6v2h10V8H7zm0 4v2h7v-2H7z"
                 />
             </svg>
