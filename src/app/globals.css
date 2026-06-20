@@ -4,6 +4,12 @@
 
 @layer base {
 	:root {
+		/* OS のダークモード時にネイティブフォームコントロール（select/input）が
+		   UA の暗い背景でレンダリングされ、色未指定テキスト（CanvasText）が白へ
+		   反転するのを防ぐため、ストアフロントを light スキームに固定する。
+		   ダークテーマ（.dark）使用時のみ dark に切り替える。 */
+		color-scheme: light;
+
 		--background: 0 0% 100%;
 		--foreground: 222.2 84% 4.9%;
 
@@ -39,6 +45,8 @@
 	}
 
 	.dark {
+		color-scheme: dark;
+
 		--background: 222.2 84% 4.9%;
 		--foreground: 210 40% 98%;
 
