@@ -31,6 +31,8 @@ model User {
   wishlist          Wishlist[]        @relation("WishlistToUser")
   payments          PaymentDetails[]  @relation("PaymentDetailsToUser")
   coupons           Coupon[]          @relation("CouponToUser")
+  conversations     Conversation[]    @relation("UserConversations")
+  messages          Message[]         @relation("UserMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,6 +115,7 @@ model Store {
   cartItem      CartItem[]     @relation("CartItemToStore")
   orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
   coupons       Coupon[]       @relation("CouponToStore")
+  conversations Conversation[] @relation("StoreConversations")
 
   @@index([userId])
 }
@@ -512,6 +515,8 @@ model Order {
   userId String
   user   User   @relation("UserOrders", fields: [userId], references: [id])
 
+  conversations Conversation[] @relation("OrderConversations")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -702,4 +707,42 @@ model PaymentDetails {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// 購入者(User)と店舗(Store)間の1スレッド。任意で注文(Order)起点。
+model Conversation {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+  storeId String
+  store   Store  @relation("StoreConversations", fields: [storeId], references: [id], onDelete: Cascade)
+  orderId String?
+  order   Order? @relation("OrderConversations", fields: [orderId], references: [id], onDelete: SetNull)
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, storeId])
+  @@index([userId])
+  @@index([storeId])
+  @@index([updatedAt])
+}
+
+/// 会話内の1メッセージ。senderId が conversation.userId と一致すれば購入者発、else 販売者発。
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String       @db.Text
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([senderId])
+  @@index([conversationId, createdAt]) // getConversationMessages: 会話内を createdAt 昇順で取得（[conversationId] 単独検索も B-tree 前方一致でカバー）
+  @@index([conversationId, isRead]) // markConversationRead: 会話内の未読を絞り込み既読化
 }

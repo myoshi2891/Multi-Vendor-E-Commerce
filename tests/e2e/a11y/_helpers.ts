@@ -9,20 +9,33 @@ import AxeBuilder from "@axe-core/playwright";
  *
  * @param readinessLocator - Locator that indicates the page is ready for scanning; the function waits for it to be visible before running the scan
  * @param timeoutMs - Maximum time in milliseconds to wait for `readinessLocator` to become visible (defaults to 15000)
+ * @param disabledRules - Axe rule IDs to skip. Use only for known violations tracked as tech debt;
+ *   document the rationale + tracking reference at each call site (TODO + issue/doc link).
  */
 export async function runA11yScan(
     page: Page,
     url: string,
-    opts: { readinessLocator: Locator; timeoutMs?: number }
+    opts: {
+        readinessLocator: Locator;
+        timeoutMs?: number;
+        disabledRules?: string[];
+    }
 ): Promise<void> {
-    const { readinessLocator, timeoutMs = 15000 } = opts;
+    const { readinessLocator, timeoutMs = 15000, disabledRules } = opts;
 
     await page.goto(url, { waitUntil: "domcontentloaded" });
     await readinessLocator.waitFor({ state: "visible", timeout: timeoutMs });
 
-    const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        .analyze();
+    let builder = new AxeBuilder({ page }).withTags([
+        "wcag2a",
+        "wcag2aa",
+        "wcag21a",
+        "wcag21aa",
+    ]);
+    if (disabledRules && disabledRules.length > 0) {
+        builder = builder.disableRules(disabledRules);
+    }
+    const results = await builder.analyze();
 
     if (results.violations.length > 0) {
         console.log(

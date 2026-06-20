@@ -5,7 +5,13 @@
 
 import { Prisma, Role, StoreStatus } from "@prisma/client";
 import { TEST_CONFIG } from "./test-config";
-import { CartProductType, ReviewDetailsType } from "@/lib/types";
+import {
+    CartProductType,
+    ConversationWithLatest,
+    StoreConversationWithLatest,
+    MessageType,
+    ReviewDetailsType,
+} from "@/lib/types";
 
 // 相対日付の基準値（test-scenarios.ts と同パターン、循環依存回避のため独立定義）
 const NOW = Date.now();
@@ -348,7 +354,9 @@ export const createMockStore = (
         numReviews: 0,
         defaultShippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
         defaultShippingFeePerItem: toDecimal(defaultShippingFeePerItem ?? 5.0),
-        defaultShippingFeeForAdditionalItem: toDecimal(defaultShippingFeeForAdditionalItem ?? 2.0),
+        defaultShippingFeeForAdditionalItem: toDecimal(
+            defaultShippingFeeForAdditionalItem ?? 2.0
+        ),
         defaultShippingFeePerKg: toDecimal(defaultShippingFeePerKg ?? 1.5),
         defaultShippingFeeFixed: toDecimal(defaultShippingFeeFixed ?? 10.0),
         defaultDeliveryTimeMin: 3,
@@ -411,9 +419,7 @@ export const createMockProductVariant = (
 });
 
 // ---- サイズ（在庫・価格） ----
-export const createMockSize = (
-    overrides: Partial<MockSize> = {}
-): MockSize => {
+export const createMockSize = (overrides: Partial<MockSize> = {}): MockSize => {
     const { price, ...rest } = overrides;
     return {
         id: "size-001",
@@ -798,5 +804,56 @@ export const createMockStoreDefaultShippingDb = (
     defaultDeliveryTimeMin: 3,
     defaultDeliveryTimeMax: 7,
     returnPolicy: "Return within 14 days with receipt.",
+    ...overrides,
+});
+
+// ---- メッセージング: スレッド内の1メッセージ（MessageType） ----
+/**
+ * getConversationMessages の戻り要素（完全な Message）を生成する。
+ * 左右振り分け検証では senderId を override する。
+ */
+export const createMockMessageType = (
+    overrides: Partial<MessageType> = {}
+): MessageType => ({
+    id: "msg-1",
+    conversationId: "conv-1",
+    senderId: TEST_CONFIG.DEFAULT_USER_ID,
+    content: "Hello",
+    isRead: false,
+    readAt: null,
+    createdAt: new Date("2024-01-01"),
+    ...overrides,
+});
+
+// ---- メッセージング: 会話一覧の1要素（ConversationWithLatest） ----
+/**
+ * getUserConversations の戻り要素（最新メッセージ + 店舗情報を含む会話）を生成する。
+ * store は include の select（id/name/logo/url）に対応し、messages は完全な Message 配列。
+ */
+export const createMockConversationWithLatest = (
+    overrides: Partial<ConversationWithLatest> = {}
+): ConversationWithLatest => ({
+    id: "conv-1",
+    userId: TEST_CONFIG.DEFAULT_USER_ID,
+    storeId: "store-1",
+    orderId: null,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+    store: { id: "store-1", name: "Test Store", logo: "", url: "test-store" },
+    messages: [],
+    ...overrides,
+});
+
+// ---- メッセージング: 販売者会話一覧の1要素（StoreConversationWithLatest） ----
+/**
+ * getStoreConversations の戻り要素を生成する。
+ * 共通の会話形に購入者（相手）の表示情報 user(id/name/picture) を加えた形。
+ * 販売者一覧は自店舗ではなく購入者で会話を識別するため user を含む。
+ */
+export const createMockStoreConversationWithLatest = (
+    overrides: Partial<StoreConversationWithLatest> = {}
+): StoreConversationWithLatest => ({
+    ...createMockConversationWithLatest(),
+    user: { id: "user-buyer-1", name: "Test Buyer", picture: "" },
     ...overrides,
 });

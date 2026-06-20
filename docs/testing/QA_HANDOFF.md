@@ -1,19 +1,19 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-19 / **HEAD**: `eca47a6`
+> **最終更新**: 2026-06-20 / **HEAD**: `cdc81d5`
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-19 時点）
+### テスト統計（2026-06-20 時点）
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1505** passed / 1508 total / 154 スイート（153 passed + 1 skipped suite）— 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了：`placeOrder` に在庫不足ロールバック/減算成功/レース構造の +3（`user.test.ts`、`8cbf4c0`〜`037c8ff`）、`updateOrderGroupStatusAsAdmin` / `updateOrderPaymentStatus` の在庫復元 + 冪等性 +6（`order.test.ts`、`b3badc6`〜`eca47a6`）で 1496→1505 passed / 1499→1508 total（スイート 154 不変）。E2E `tests/e2e/stock-decrement.spec.ts` を新規追加（Jest 集計外、`1a66ed2`）。Phase 3-B（F1 店舗ダッシュボード UI）は `5e48d5e`〜`07bc12e`（1490→1496 / 151→154） |
+| Jest テスト総数 (unit/component) | **1591** passed / 1594 total / 161 スイート（160 passed + 1 skipped suite）— 2026-06-20 SonarCloud Quality Gate 修復（PR #145）：購入者向け `messages-container.tsx` と販売者向け `seller-messages-container.tsx` の ~214 行相互コピー（Duplicated Lines 9.7% > 3.0% の主因）を共通フック `src/components/shared/messages/use-conversation-thread.ts`（ポーリング/既読化/送信後再フェッチ/レースガード）+ 汎用 `messages-layout.tsx`（2 ペイン骨格・アバター取得を `getAvatar` で注入）へ抽出し両コンテナを薄いラッパ化（`456fadf`）。あわせて新規コードのカバレッジを底上げ：`message.test.ts` +14（全 server action の catch を Error/unknown 両系統 + 未テストの DB エラー経路 + order null 経路、Branches 74.5%→100%、`2d5ab8a`）、`messages-container.test.tsx` +11 / `seller-messages-container.test.tsx` +1（共有フック/レイアウトの poll/markRead/handleSent catch 両系統・レースガード・inFlight・cancelled・no-op・アバター描画、両コンテナ+shared/messages Branches 100%、`082bf0a`）、`user-menu.test.tsx` +5（認証済み/未認証経路・fullName フォールバック・catch Error/unknown、37.5%→100%、`cdc81d5`）。計 1560→1591 passed / 1563→1594 total（161 スイート不変）。直前 profile-messages Phase 4（販売者 UI・ループ閉鎖）完了：`getStoreConversations` の include に購入者（`user` name/picture）を追加し `StoreConversationWithLatest` 型を新設（販売者左ペインで会話を識別）。販売者ページ `/dashboard/seller/stores/[storeUrl]/messages`（`force-dynamic`）+ `seller-messages-container.tsx`（`conversation-thread.tsx` 流用・返信は共有 `sendMessage`）+ seller サイドバー Messages 導線（`messages` アイコン新規）を追加。component テスト 1 スイート +7（`seller-messages-container.test.tsx`：購入者名での一覧描画/選択時 fetch+既読化/5 秒ポーリング/`document.hidden` 停止/返信後再フェッチ/poll 失敗ログ、`8ab715e`〜`95d0005`）。計 1553→1560 passed / 1556→1563 total / 160→161 スイート。直前 2026-06-19 profile-messages Phase 2+3（購入者↔販売者メッセージング）：Phase 2 で `src/queries/message.test.ts` 新規 +31（6 server action の認可 / IDOR 3 階層 [getConversationMessages/sendMessage/markConversationRead] / 冪等 upsert / `$transaction` 検証、`fcbcb3d`）。Phase 3 で購入者 UI（`/profile/messages`・5 秒ポーリング）の component テスト 2 スイート +14（`conversation-thread.test.tsx` 7：バブル左右振り分け/送信/Zod 空入力/リエントランシーガード/失敗 toast+構造化ログ、`messages-container.test.tsx` 7：一覧描画/選択時 fetch+既読化/5 秒ポーリング再取得/`document.hidden` 停止/送信後再フェッチ/poll 失敗ログ、`e4e752d`〜`a20a313`）。計 1508→1553 passed / 1511→1556 total / 157→160 スイート。直前 profile-settings Phase 1（Settings 画面 + 導線修正）完了：`user-menu` の Settings リンク回帰（`/`→`/profile/settings`）、`profile-sidebar` の Settings エントリ、`settings/page.tsx` の `<UserProfile />` 描画の +3（新規スイート 3：`tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx`、`413ed19`〜`9d5629d`）で 1505→1508 passed / 1508→1511 total / 154→157 スイート。新規 server action・schema 変更なし（プロフィール編集は既存 Clerk webhook が Prisma 同期）。直前 Phase 4（F3 在庫減算 + F3-5 在庫復元）は `8cbf4c0`〜`eca47a6`（1496→1505 passed） |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）— 2026-05-31 placeOrder 統合テストで +6 / +1 スイート。`bun run test:integration` (testcontainers + jsdom 専用 config) で実行。`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`）— B1+ Sprint 4 で +15（form / calendar / carousel / command / sidebar / navigation-menu / sonner / accordion / toast / toaster / data-table） |
-| Playwright E2E（main） | **7 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement）— 2026-06-19 Phase 4: `tests/e2e/stock-decrement.spec.ts` 追加（認証付き購入フロー完走後に対象 `Size.quantity` が注文数分減ることを検証・AC-F3-4、`1a66ed2`）。2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（`3463d1d`） |
+| Playwright E2E（main） | **8 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages）— 2026-06-20 profile-messages Phase 5: `tests/e2e/messages.spec.ts` 追加（AC-M8 往復: 購入者が `/profile/messages` で送信 → 販売者が `/dashboard/seller/stores/[storeUrl]/messages` で受信・返信 → 購入者ページの 5 秒ポーリングが返信を自動受信。buyer/seller を別 browser context に分離して同時セッション維持。Clerk テストモードで USER/SELLER 動的生成・会話は `beforeAll` で Prisma 直挿入・`CLERK_SECRET_KEY` 未設定時 `test.skip`。Chromium で往復通過確認・3 ブラウザ対象、`ea89706`）。Jest 集計は不変。2026-06-19 Phase 4: `tests/e2e/stock-decrement.spec.ts` 追加（認証付き購入フロー完走後に対象 `Size.quantity` が注文数分減ることを検証・AC-F3-4、`1a66ed2`）。2026-06-16 Phase 5-C: `tests/e2e/platform-coupon.spec.ts` 追加（`3463d1d`） |
 | Playwright Visual | **2 スペック**（cart / checkout） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
 | 型エラー | **0 件** |
@@ -138,14 +138,16 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-14 時点） {#active-open-issues}
+### 🔴 現在アクティブな残課題（優先度順・2026-06-19 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 2 件のみ。**
+> 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件（OI-9 / OI-11 / OI-10 / C2）。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
 | **1（最優先）** | **OI-9** | ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照） | 🟡 未着手 | 遅延初期化 `useState(() => typeof window !== "undefined" ? window.innerWidth : 0)` + `useEffect` で実測反映。**これは下記 NEXT_ACTION「D2（Performance 行着手）」の前提**：修正後に `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる。 |
-| 2 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+| 2 | **OI-11** | `/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`（`next-cloudinary` の `CldUploadWidget` をサーバ評価）。OI-9 と同族の client-only ref 問題。現状テストは落ちていない（ログのみ）が本番でも再現の可能性 | 🟡 未着手 | `image-upload.tsx` の `CldUploadWidget` を `next/dynamic` の `ssr:false` で遅延 import する。発見: 2026-06-19（E2E 本番ビルド化で顕在化） |
+| 3 | **OI-10** | a11y `color-contrast` 負債: `/checkout`・`/profile`・`/seller/apply` でグレー/ブルー系テキストが 4.5:1 未満。E2E では `runA11yScan` の `disabledRules:["color-contrast"]` で抑制中（追跡のため意図的） | 🟢 低 | 配色（テキスト色）を是正して `disabledRules` を解除する。発見: 2026-06-19（a11y readiness 修正で axe 到達後に検出） |
+| 4 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
 
 > ✅ **OI-8 完了（2026-06-14）**: CI flake の真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`、1272→1281 / skip 12→3）。CI push/pull_request 両 event × 2 サイクル緑・stub DB フルスイート P1001 = 0。詳細: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。
 >
@@ -187,7 +189,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 残課題
 
-- 現在、アクティブな残課題は **OI-9**（ホーム `/` SSR 500）のみです（詳細は[アクティブな残課題テーブル](#active-open-issues)を参照）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
+- 現在、アクティブな残課題は **OI-9 / OI-11 / OI-10 / C2** の 4 件です（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
@@ -259,6 +261,10 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 | `f2cd8f1` | **販売者ダッシュボード Phase 3-A（F1 店舗ダッシュボード統計 query 層）**: `src/queries/store-dashboard.ts` 新規。admin `dashboard.ts` を店舗スコープ化（`requireStoreOwner` + where に `storeId` 注入）。`getStoreDashboardStats`（5 並列集計・売上は親 `Order.paymentStatus=Paid` のみ・`unstable_cache` 20 分でキャッシュキーに `storeId` 含有し店舗間混線防止 NFR-8・`requireStoreOwner`/`lowStockThreshold` はキャッシュ外クロージャ）/ `getStoreSalesOverTime`（Paid 売上の期間別バケット集計・Decimal は return 境界で number 化）/ `getStoreRecentOrders` / `getStoreTopProducts`。`src/lib/types.ts` に `StoreRecentOrderType` / `StoreTopProductType` を `Prisma.PromiseReturnType` で導出。テスト: `store-dashboard.test.ts` 新規 +39（認可 3 階層 × 4 関数 / 売上 join / `_sum` null→0 / storeId 別スコープ / DB エラー両分岐）。1451 → **1490 passed** / 150 → **151** スイート。UI（3-B）は未着手 |
 | `4301c85`–`07bc12e` | **販売者ダッシュボード Phase 3-B（F1 店舗ダッシュボード UI）**: プレースホルダー `[storeUrl]/page.tsx` を店舗 KPI ダッシュボードへ置換。新規 presentational コンポーネント 3 本（`src/components/dashboard/seller/`）: `store-stats-cards`（admin stats-cards 派生・総売上/注文/閲覧/販売/商品/在庫アラートの 6 KPI）/ `store-recent-orders`（OrderGroup 行・`toNumberSafe` で Decimal 整形）/ `store-top-products`（sales 降順）。型は `Awaited<ReturnType<typeof get*>>` で query から導出。`SalesChart`（admin/sales-chart）は `SalesPoint[]` 共用でそのまま import（依存追加なし）。`page.tsx` は `Promise.all([getStoreDashboardStats, getStoreSalesOverTime, getStoreRecentOrders, getStoreTopProducts])` + `force-dynamic`（NFR-4）。テスト: 3 コンポーネント RTL +6（値描画 + ゼロ件 AC-F1-5、`5e48d5e`）。1490 → **1496 passed** / 151 → **154** スイート |
 | `8cbf4c0`–`eca47a6` | **販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）**: `placeOrder`（`src/queries/user.ts`）の OrderItem 作成ループ内に条件付き `tx.size.updateMany`（`quantity:{gte}` + `decrement`）を追加し、`count===0` を在庫不足として throw → `$transaction` 全体ロールバック（読み取り→減算を単一 UPDATE に畳み込み TOCTOU レース回避・F3-1〜F3-3、`037c8ff`）。`order.ts` の `updateOrderGroupStatusAsAdmin` / `updateOrderPaymentStatus` に在庫復元（F3-5）を結線: 更新前ステータスを読み「非終端 → Canceled/Refunded」遷移時のみ `tx.size.update` で `increment` 復元、終端→終端の再実行では復元せず二重復元を防止（共有ヘルパー `restockOrderItems` + 終端判定抽出、`eca47a6`）。テスト: `user.test.ts` +3（ロールバック/減算成功/レース構造）+ `order.test.ts` +6（グループ/注文単位の復元 + 冪等性 + 非キャンセル遷移）。E2E `tests/e2e/stock-decrement.spec.ts` 新規（認証付き購入フローで在庫 before/after 検証・AC-F3-4、`1a66ed2`）。1496 → **1505 passed** / 1499 → 1508 total（154 スイート不変） |
+| `83e6e01`–`a20a313` | **profile-messages Phase 1〜3（購入者↔販売者 1:1 メッセージング）**: Phase 1 で `Conversation`/`Message` モデル + User/Store/Order 逆リレーション追加（`safe-migration` + ERD 再生成、非破壊 additive）。Phase 2 で `src/queries/message.ts` 新規（6 server action: `getOrCreateConversation`[冪等 upsert・`@@unique(userId,storeId)`] / `getUserConversations`[`requireUser`] / `getStoreConversations`[`requireStoreOwner`] / `getConversationMessages`・`sendMessage`・`markConversationRead`[private `assertParticipant` で参加者検証・IDOR 防止]）。`SendMessageSchema`/`StartConversationSchema`、`ConversationWithLatest`/`MessageType` 型追加。`message.test.ts` +31（認可 / IDOR 3 階層 / 冪等 / `$transaction`、`fcbcb3d`）。Phase 3 で購入者 UI: `/profile/messages`（`force-dynamic`）+ `messages-container.tsx`（2 ペイン・5 秒ポーリング・`cancelled`+`document.hidden` 停止）+ `conversation-thread.tsx`（バブル左右振り分け + RHF composer・`useRef` リエントランシーガード）+ sidebar 導線。component テスト 2 スイート +14（`e4e752d`〜`a20a313`）。1508 → **1553 passed** / 1511 → 1556 total / 157 → **160** スイート |
+| `8ab715e`–`95d0005` | **profile-messages Phase 4（販売者 UI・ループ閉鎖）**: `getStoreConversations` の include に購入者（`user` id/name/picture）を追加し別 include 定数 `storeConversationListInclude` を新設（購入者向け `getUserConversations` は無改修）。`StoreConversationWithLatest` 型を `src/lib/types.ts` に追加（`ConversationWithLatest` の superset・構造的部分型で `ConversationThread` に流用可）。販売者ページ `/dashboard/seller/stores/[storeUrl]/messages`（`force-dynamic` + try/catch フォールバック）+ `seller-messages-container.tsx`（購入者向けと同型 2 ペイン・左ペインは `user.name/picture` で識別・右ペインは `conversation-thread.tsx` 流用・返信は共有 `sendMessage`・5 秒ポーリング）+ seller サイドバー Messages 導線（`MessagesIcon` 新規）。テスト: `seller-messages-container.test.tsx` 新規 +7（購入者名での一覧描画/選択時 fetch+既読化/5 秒ポーリング/`document.hidden` 停止/返信後再フェッチ/poll 失敗ログ）+ `message.test.ts` に include アサーション 1 行（テスト数±0）。1553 → **1560 passed** / 1556 → 1563 total / 160 → **161** スイート |
+| `ea89706` | **profile-messages Phase 5（E2E 往復・ループ完成）**: `tests/e2e/messages.spec.ts` 新規（AC-M8）。購入者が `/profile/messages` で送信 → 販売者が `/dashboard/seller/stores/[storeUrl]/messages` で受信・返信 → 購入者ページの 5 秒ポーリングが返信を自動受信する往復を検証。`browser.newContext()` で buyer/seller を別コンテキストに分離し同時セッションを維持してポーリング受信を `toBeVisible` で確認。Clerk テストモードで USER/SELLER を動的生成、ACTIVE 店舗 + 会話を `beforeAll` で Prisma 直挿入（起点 UI 未実装のため）、`CLERK_SECRET_KEY` 未設定時 `test.skip`。Chromium で往復通過確認・3 ブラウザ対象。Playwright E2E（main）7 → **8 スペック**。Jest 集計は不変（**1560 passed** / 161 スイート据え置き） |
+| `456fadf`〜`cdc81d5` | **SonarCloud Quality Gate 修復（PR #145）**: New Code の Duplicated Lines 9.7%（> 3.0% で QG Failed）を解消。震源は購入者 `messages-container.tsx` と販売者 `seller-messages-container.tsx` の ~214 行相互コピー。共通フック `src/components/shared/messages/use-conversation-thread.ts`（ポーリング/既読化/送信後再フェッチ/`selectedIdRef` レースガード・ログ出所は引数化で既存文言維持）+ 汎用 `messages-layout.tsx`（2 ペイン骨格・アバター取得元を `getAvatar` アダプタで注入し購入者=店舗/販売者=購入者を切替）へ抽出し、両コンテナを薄いラッパ化（props は S6759 で `Readonly` 化、挙動不変・既存テスト緑、`456fadf`）。カバレッジ補完: `message.ts` の全 catch を Error/unknown 両系統 + 未テスト DB エラー経路 + order null 経路でカバー（Branches 74.5%→**100%**、`2d5ab8a`）、共有フック/レイアウトを購入者/販売者コンテナ経由で全分岐カバー（poll/markRead/handleSent catch 両系統・レースガード false・inFlight・unmount cancelled・同一選択 no-op・アバター描画、両コンテナ+shared/messages **100%**、`082bf0a`）、`user-menu.tsx` の認証済み/未認証/`fullName` フォールバック/catch Error・unknown をカバー（37.5%→**100%**、`cdc81d5`）。1560 → **1591 passed** / 1563 → 1594 total（161 スイート不変） |
 
 ---
 
@@ -309,9 +315,50 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 - コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
+#### OI-11: seller ルートの本番 SSR クラッシュ修正
+
+```text
+/dashboard/seller 系ルートが本番 SSR で ReferenceError: self is not defined を投げる問題
+（OI-11）を修正してください。next-cloudinary の CldUploadWidget がサーバ評価される client-only
+コンポーネントであることが原因です（OI-9 と同族）。
+
+実装方針:
+1. image-upload.tsx の CldUploadWidget を next/dynamic の { ssr: false } で遅延 import する。
+2. 本番ビルド（next build → next start）で /dashboard/seller 系が SSR 200 を返すことを確認。
+
+完了条件:
+1. seller ルートが本番 SSR で 200、OI-11 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
+2. bunx tsc --noEmit / bun run lint グリーン。
+3. render-html.ts の NEXT_ACTIONS から OI-11 を削除し、本プロンプトも削除（二重 SSOT 同期）。
+
+参考:
+- OI-11 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-11 行
+- 同族先行例: OI-9（featured.tsx の SSR window 参照）
+```
+
 ### 🟢 Mid–Long Term (low)
 
 SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。
+
+#### OI-10: a11y color-contrast 負債の是正
+
+```text
+/checkout・/profile・/seller/apply のグレー/ブルー系テキストが WCAG 2.1 AA の 4.5:1 を
+満たさない a11y 負債（OI-10）を是正してください。現在 E2E では runA11yScan の
+disabledRules:["color-contrast"] で追跡のため意図的に抑制中です。
+
+実装方針:
+1. 対象ページのテキスト色を 4.5:1 以上を満たす配色へ是正する。
+2. runA11yScan の disabledRules から "color-contrast" を解除する。
+
+完了条件:
+1. axe color-contrast 違反ゼロ、OI-10 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
+2. E2E a11y spec グリーン（disabledRules 解除後）。
+3. render-html.ts の NEXT_ACTIONS から OI-10 を削除し、本プロンプトも削除（二重 SSOT 同期）。
+
+参考:
+- OI-10 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-10 行
+```
 
 <!--
 C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済み。

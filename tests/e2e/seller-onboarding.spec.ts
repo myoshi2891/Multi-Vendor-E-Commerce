@@ -99,7 +99,8 @@ test.describe.serial("Seller オンボーディング", () => {
 
     // Step 1: Click Next
     await expect(page.getByText("Please sign in (Or sign up if you are new) to start")).toBeHidden();
-    await page.getByRole("button", { name: "Next" }).click();
+    // exact:true で「Open Next.js Dev Tools」等の dev オーバーレイボタンとの衝突を防ぐ
+    await page.getByRole("button", { name: "Next", exact: true }).click();
 
     // Step 2: Store Information
     await expect(page.getByPlaceholder("Store Name")).toBeVisible();
@@ -113,7 +114,8 @@ test.describe.serial("Seller オンボーディング", () => {
     await page.getByTestId("n-mock-input-profile").fill("https://res.cloudinary.com/test/image/upload/logo.png", { force: true });
     await page.getByTestId("n-mock-input-cover").fill("https://res.cloudinary.com/test/image/upload/cover.png", { force: true });
 
-    await page.getByRole("button", { name: "Next" }).click();
+    // exact:true で「Open Next.js Dev Tools」等の dev オーバーレイボタンとの衝突を防ぐ
+    await page.getByRole("button", { name: "Next", exact: true }).click();
 
     // Step 3: Default Shipping Info (Optional, can just Submit)
     await expect(page.getByPlaceholder("Shipping Service")).toBeVisible();

@@ -14,7 +14,7 @@ export default async function ProfileLayout({ children }: { children: ReactNode 
             <StoreHeader />
             <div className="mx-auto flex max-w-container gap-4 p-4">
                 <ProfileSidebar />
-                <div className="mt-12 w-full">{children}</div>
+                <main className="mt-12 w-full">{children}</main>
             </div>
         </div>
     );

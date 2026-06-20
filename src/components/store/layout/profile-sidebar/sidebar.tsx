@@ -82,6 +82,10 @@ const menu = [
         link: "/profile/reviews",
     },
     {
+        title: "Messages",
+        link: "/profile/messages",
+    },
+    {
         title: "History",
         link: "/profile/history/1",
     },
@@ -92,5 +96,9 @@ const menu = [
     {
         title: "Following",
         link: "/profile/following/1",
+    },
+    {
+        title: "Settings",
+        link: "/profile/settings",
     },
 ];

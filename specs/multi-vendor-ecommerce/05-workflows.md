@@ -11,6 +11,15 @@
 8) Order status and payment details are updated via payment webhook.
 9) Customer views order history and order details.
 
+## Buyer↔Seller Messaging Flow
+1) A conversation is created idempotently per `(userId, storeId)` via `getOrCreateConversation()`.
+2) Buyer opens `/profile/messages` (force-dynamic; `getUserConversations()` seeds the list) and selects a conversation.
+3) On selection the thread loads via `getConversationMessages()` and peer-sent unread are cleared via `markConversationRead()`.
+4) Buyer sends a message via `sendMessage()` (atomic `db.$transaction`: message create + conversation `updatedAt`), guarded by `assertParticipant`.
+5) The thread polls `getConversationMessages()` every 5s (paused while `document.hidden`) to surface the seller's replies.
+6) Seller opens `/dashboard/seller/stores/[storeUrl]/messages` (force-dynamic; `getStoreConversations()` seeds the list, identifying each conversation by the buyer `user` name/picture) and selects a conversation.
+7) Seller replies from that page using the same `sendMessage()` (participant check authorizes the store owner) and the same reused `conversation-thread.tsx`, closing the loop. The buyer's 5s polling then surfaces the reply.
+
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.
@@ -44,8 +53,10 @@
    - Create new coupons via `upsertCouponAsAdmin()` (P2002 → Japanese error message).
 
 ## Auth and Role Sync
-1) User signs up or updates profile in Clerk.
-2) Clerk webhook upserts the user in the local database.
+1) User signs up or updates profile in Clerk (e.g. via the `/profile/settings` page,
+   which embeds Clerk `<UserProfile />` for name/email/password/MFA/account-deletion).
+2) Clerk webhook upserts (or deletes) the user in the local database (`user.updated` /
+   `user.deleted` → `db.user.upsert` / `deleteMany`).
 3) Clerk private metadata is updated with the role.
 
 ## Country Detection

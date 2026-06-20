@@ -113,6 +113,7 @@ export default function Search() {
                 )}
                 <button
                     type="submit"
+                    aria-label="Search"
                     className="mb-0 ml-0 mr-1 mt-1 grid h-8 w-[56px] cursor-pointer place-items-center rounded-[20px] border bg-gradient-to-r from-slate-500 to-slate-600"
                 >
                     <SearchIcon />

@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1505 passed / 1508 total / 154 スイート（3 skipped）** — 2026-06-19 販売者ダッシュボード Phase 4（F3 在庫減算 + F3-5 在庫復元）完了時点（`eca47a6`）。`user.test.ts` +3 / `order.test.ts` +6 |
+| Jestユニットテスト | **1591 passed / 1594 total / 161 スイート（3 skipped）** — 2026-06-20 SonarCloud QG 修復（PR #145）完了時点（`cdc81d5`）。メッセージングコンテナの重複を共有フック/レイアウトへ抽出し、`message.ts`/コンテナ/`user-menu.tsx` のカバレッジを ~100% 分岐へ底上げ（+31、161 スイート不変）。直前 profile-messages Phase 4 は `seller-messages-container.test.tsx` +7（160→161 スイート） |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1021,6 +1021,118 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 |------|--------|--------|
 | テスト総数 (unit/component) | 1496 passed | **1505 passed** |
 | スイート数 | 154 | **154**（不変・既存ファイルへ追加） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### profile-settings Phase 1（Settings 画面 + 導線修正） (2026-06-19)
+
+#### 概要
+
+顧客向けアカウント設定ページ `/profile/settings` を新規追加し、Clerk `<UserProfile routing="hash" />` を埋め込み。併せて誤リンク・欠落していたユーザーメニュー／サイドバーの Settings 導線を修正。設計は `docs/design/profile-settings/{requirements,design,tasks}.md`。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(store)/profile/settings/page.tsx` | 新規。`<UserProfile routing="hash" />` 埋め込み（force-dynamic 不要・Prisma 非依存） | `9d5629d` |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` の Settings リンクを誤値 `/` → `/profile/settings` | `1227a5d` |
+| `src/components/store/layout/profile-sidebar/sidebar.tsx` | `menu` 配列末尾に Settings エントリ追加 | `e410180` |
+| `tests/component/store/user-menu.test.tsx` | Settings リンク回帰テスト（async Server Component を `render(await UserMenu())`） | `413ed19` |
+| `tests/component/store/profile-sidebar.test.tsx` | Settings エントリ描画テスト（`usePathname` モック） | `e410180` |
+| `tests/component/store/settings-page.test.tsx` | `<UserProfile>` モック描画テスト | `0e32d0a` |
+
+> プロフィール編集（氏名/メール/削除）は既存 Clerk webhook (`src/app/api/webhooks/route.ts`) 経由で Prisma `User` に同期されるため、新規 server action・schema 変更なし。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1505 passed | **1508 passed** |
+| スイート数 | 154 | **157** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### profile-messages Phase 4（販売者 UI・ループ閉鎖） (2026-06-20)
+
+#### 概要
+
+購入者↔販売者 1:1 メッセージングの**ループを閉じる**販売者 UI を実装。販売者ダッシュボードに会話一覧 + 返信画面を追加し、既存の `sendMessage` / `conversation-thread.tsx` を流用して双方向往復を成立させた。設計は `docs/design/profile-messages/{requirements,design,tasks}.md`（Phase 4）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/message.ts` | `getStoreConversations` の include に購入者（`user` id/name/picture）を追加（別定数 `storeConversationListInclude`、購入者向けは無改修） | `8ab715e` |
+| `src/lib/types.ts` | `StoreConversationWithLatest` 型を追加（`ConversationWithLatest` の superset） | `8ab715e` |
+| `src/queries/message.test.ts` | `getStoreConversations` の include アサーション 1 行（テスト数±0） | `8ab715e` |
+| `src/components/dashboard/seller/seller-messages-container.tsx` | 販売者コンテナ新規（2 ペイン・左ペインは購入者で識別・右ペインは `conversation-thread.tsx` 流用・5 秒ポーリング） | `d2b987b` |
+| `src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx` | 販売者ページ新規（`force-dynamic` + `getStoreConversations`） | `4781914` |
+| `src/constants/{data,icons}.ts` ほか | seller サイドバー Messages 導線 + `MessagesIcon` 新規 | `4781914` |
+| `src/components/dashboard/seller/seller-messages-container.test.tsx` | container テスト +7（一覧/fetch+既読/ポーリング/hidden/再フェッチ/ログ） | `95d0005` |
+
+> 返信は購入者と同じ `sendMessage` を呼び、`assertParticipant` が店舗オーナーを参加者として許可する（IDOR 防止は既存 server action 層で担保）。`StoreConversationWithLatest` は構造的部分型で `ConversationThread`（props: `ConversationWithLatest`）に代入可能。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1553 passed | **1560 passed** |
+| スイート数 | 160 | **161** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### profile-messages Phase 5（E2E 往復・全フェーズ完了） (2026-06-20)
+
+#### 概要
+
+購入者↔販売者メッセージングの**往復を E2E で検証**し全フェーズを完了。`tests/e2e/messages.spec.ts` で「購入者が `/profile/messages` で送信 → 販売者が seller dashboard で受信・返信 → 購入者ページの 5 秒ポーリングが返信を自動受信」を検証（AC-M8）。買い手/売り手の同時セッション維持のため 2 browser context に分離。設計は `docs/design/profile-messages/{requirements,design,tasks}.md`（Phase 5）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/messages.spec.ts` | 往復 E2E 新規（2 context・Clerk テストモードで USER/SELLER 動的生成・ACTIVE 店舗 + 会話を `beforeAll` で Prisma 直挿入・`CLERK_SECRET_KEY` 未設定時 `test.skip`・Chromium で往復通過確認・3 ブラウザ対象） | `ea89706` |
+| `docs/testing/QA_HANDOFF.md` ほか | E2E スペック数 7→8 を SSOT で同期 + HEAD/履歴更新（本コミット） | （docs 同期） |
+
+> 会話起点 UI（商品/注文画面からの問い合わせボタン）は将来拡張のため、E2E は会話を Prisma 直挿入で用意する。`04-interfaces.md` / `05-workflows.md` は Phase 2〜4 で同期済みのため Phase 5 では変更不要。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1560 passed | **1560 passed**（変動なし・E2E は集計外） |
+| スイート数 | 161 | **161**（変動なし） |
+| Playwright E2E（main） | 7 スペック | **8 スペック**（+ `messages.spec.ts`） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud Quality Gate 修復（PR #145・メッセージング重複解消 + カバレッジ補完） (2026-06-20)
+
+#### 概要
+
+PR #145（dev → main）の SonarCloud 解析が **Duplicated Lines 9.7%（> 3.0%）** で Quality Gate Failed。震源は購入者 `messages-container.tsx` と販売者 `seller-messages-container.tsx` の ~214 行相互コピー（直近 `a3f2cef` で同型実装を同時導入したため）。共通フック + 汎用レイアウトへ抽出して重複を解消し、あわせて新規コードの未カバー分岐（catch の unknown 系統・認証分岐等）を ~100% 分岐まで底上げした。New Issues(4) は「No conditions set」で非ブロッキングのため対象外。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/shared/messages/use-conversation-thread.ts` | 新規。ポーリング/既読化/送信後再フェッチ/`selectedIdRef` レースガードを集約。ログ出所は引数化で既存文言を維持 | `456fadf` |
+| `src/components/shared/messages/messages-layout.tsx` | 新規。2 ペイン骨格を汎用化。アバター取得元を `getAvatar` アダプタで注入（購入者=店舗 / 販売者=購入者） | `456fadf` |
+| `messages-container.tsx` / `seller-messages-container.tsx` | 共有フック/レイアウトを使う薄いラッパへ置換（props は S6759 で `Readonly` 化・public 型と export 名は不変） | `456fadf` |
+| `src/queries/message.test.ts` | 全 server action の catch を Error/unknown 両系統 + 未テスト DB エラー経路 + order null でカバー（+14、Branches 74.5%→100%） | `2d5ab8a` |
+| `messages-container.test.tsx` / `seller-messages-container.test.tsx` | 共有フック/レイアウトの poll/markRead/handleSent catch 両系統・レースガード false・inFlight・cancelled・no-op・アバター描画（+11/+1、両コンテナ+shared/messages 100%） | `082bf0a` |
+| `tests/component/store/user-menu.test.tsx` | 認証済み/未認証/`fullName` フォールバック/catch Error・unknown（+5、37.5%→100%） | `cdc81d5` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1560 passed | **1591 passed** |
+| スイート数 | 161 | **161**（不変・既存ファイルへ追加） |
 | 型エラー | 0 件 | **0 件** |
 
 ---

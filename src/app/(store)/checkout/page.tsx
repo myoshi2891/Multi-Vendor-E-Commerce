@@ -56,7 +56,7 @@ export default async function CheckoutPage() {
     return (
         <>
             <StoreHeader />
-            <div className="min-h-[calc(100vh-65px)] bg-[#f4f4f4]">
+            <main className="min-h-[calc(100vh-65px)] bg-[#f4f4f4]">
                 <div className="mx-auto max-w-container px-2 py-5">
                     <CheckoutContainer
                         cart={serializedCart}
@@ -65,7 +65,7 @@ export default async function CheckoutPage() {
                         userCountry={userCountry}
                     />
                 </div>
-            </div>
+            </main>
         </>
     )
 }

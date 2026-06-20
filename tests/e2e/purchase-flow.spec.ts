@@ -38,7 +38,7 @@ test.describe("購入フルフロー", () => {
 
     test.beforeEach(async ({ page }, testInfo) => {
         seed = buildE2ESeed({
-            workerIndex: testInfo.workerIndex,
+            parallelIndex: testInfo.parallelIndex,
             projectName: testInfo.project.name,
         });
         productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;

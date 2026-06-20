@@ -12,7 +12,30 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1505 passed / 1508 total across 154 suites (3 skipped), as of 2026-06-19.
+- 1591 passed / 1594 total across 161 suites (3 skipped), as of 2026-06-20.
+  SonarCloud Quality Gate (PR #145) remediation extracted the duplicated buyer/seller messaging
+  containers into a shared hook (`src/components/shared/messages/use-conversation-thread.ts`) and a
+  generic `messages-layout.tsx`, then raised new-code coverage to ~100% branches: `message.test.ts`
+  (+14: every catch's Error/unknown branch + untested DB-error paths + order-null), buyer/seller
+  container suites (+11/+1: shared hook & layout branches via container instantiation), and
+  `user-menu.test.tsx` (+5: authenticated / fallback / catch branches); +31 tests, 161 suites unchanged.
+  Profile-messages Phase 4 (seller UI, loop closure) added `getStoreConversations` buyer include
+  (`StoreConversationWithLatest` type) and the seller dashboard route
+  `/dashboard/seller/stores/[storeUrl]/messages` reusing `conversation-thread.tsx`; one component
+  suite `src/components/dashboard/seller/seller-messages-container.test.tsx` (+7: buyer-name list,
+  select fetch+mark-read, 5s polling, `document.hidden` pause, post-reply refetch, structured log);
+  +7 tests, 160 → 161 suites.
+  Profile-messages Phase 2+3 (buyer↔seller 1:1 messaging) added `src/queries/message.test.ts`
+  (+31: authorization / IDOR 3-tier for getConversationMessages·sendMessage·markConversationRead /
+  idempotent upsert / `$transaction`) and two buyer-UI component suites under
+  `src/components/store/profile/messages/` (`conversation-thread.test.tsx` 7,
+  `messages-container.test.tsx` 7 covering 5s polling, `document.hidden` pause, mark-read);
+  +45 tests, 157 → 160 suites.
+  Profile-settings Phase 1 (settings page + navigation fix) added three RTL suites under
+  `tests/component/store/` (`user-menu` Settings-link regression `/` → `/profile/settings`,
+  `profile-sidebar` Settings entry, `settings-page` `<UserProfile />` render); +3 tests,
+  154 → 157 suites. No new server action or schema change (profile edits sync to Prisma via
+  the existing Clerk webhook).
   Seller-dashboard Phase 4 (F3 stock decrement + F3-5 restock) added `placeOrder` stock
   tests in `src/queries/user.test.ts` (+3: insufficient-stock rollback / decrement success /
   race-safe conditional `updateMany`) and restock-on-cancel tests in
@@ -42,6 +65,11 @@
   2-C components under test; 1443 → 1451 passed, 147 → 150 suites.
   Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
   PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
+  Phase 4 (F3) added `tests/e2e/stock-decrement.spec.ts` (post-purchase stock
+  verification), 6 → 7 specs. profile-messages Phase 5 added
+  `tests/e2e/messages.spec.ts` (AC-M8: buyer↔seller round trip across two browser
+  contexts — buyer sends, seller replies, buyer's 5s polling surfaces the reply;
+  `test.skip` when `CLERK_SECRET_KEY` is unset), 7 → 8 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

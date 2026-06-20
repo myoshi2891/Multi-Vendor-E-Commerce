@@ -45,11 +45,11 @@ export const SecurityPrivacyCard = () => {
             <p className="ml-5 text-xs text-[#979797]">
                 We value your privacy and security. We use secure payment
                 methods and follow industry best practices. Please review our
-                <a href="#" className="text-[#007BFF] hover:text-[#004587]">
+                <a href="#" className="text-[#007BFF] underline hover:text-[#004587]">
                     &nbsp;Privacy Policy&nbsp;
                 </a>
                 and
-                <a href="#" className="text-[#007BFF] hover:text-[#004587]">
+                <a href="#" className="text-[#007BFF] underline hover:text-[#004587]">
                     &nbsp;Terms of Service&nbsp;
                 </a>
                 for more information.

@@ -29,7 +29,7 @@ export default function ApplySellerMultiForm() {
         returnPolicy: "",
     });
     return (
-        <div className="grid grid-cols-[400px_1fr]">
+        <main className="grid grid-cols-[400px_1fr]">
             <Instructions />
             <div className="relative w-full p-5">
                 <ProgressBar step={step} />
@@ -54,6 +54,6 @@ export default function ApplySellerMultiForm() {
                     <Step4 />
                 ) : null}
             </div>
-        </div>
+        </main>
     );
 }

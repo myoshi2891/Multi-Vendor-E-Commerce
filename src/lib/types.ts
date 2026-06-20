@@ -14,6 +14,11 @@ import {
 } from "@/queries/store";
 import type { getStoreInventory } from "@/queries/inventory";
 import type {
+    getUserConversations,
+    getStoreConversations,
+    getConversationMessages,
+} from "@/queries/message";
+import type {
     getStoreRecentOrders,
     getStoreTopProducts,
 } from "@/queries/store-dashboard";
@@ -511,3 +516,18 @@ export enum StoreStatus {
 export type StoreDetailsType = Prisma.PromiseReturnType<
     typeof getStorePageDetails
 >;
+
+// メッセージング: 会話一覧の1要素（最新メッセージ + 店舗情報を含む）
+export type ConversationWithLatest = Prisma.PromiseReturnType<
+    typeof getUserConversations
+>[number];
+
+// メッセージング: 販売者の会話一覧の1要素（ConversationWithLatest + 購入者情報を含む）
+export type StoreConversationWithLatest = Prisma.PromiseReturnType<
+    typeof getStoreConversations
+>[number];
+
+// メッセージング: スレッド内の1メッセージ
+export type MessageType = Prisma.PromiseReturnType<
+    typeof getConversationMessages
+>[number];

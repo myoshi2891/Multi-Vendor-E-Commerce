@@ -8,7 +8,7 @@ test.describe("検索・フィルタ", () => {
 
   test.beforeEach(async ({ page }, testInfo) => {
     seed = buildE2ESeed({
-      workerIndex: testInfo.workerIndex,
+      parallelIndex: testInfo.parallelIndex,
       projectName: testInfo.project.name,
     });
     await setupE2ETestState(page, seed);

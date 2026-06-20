@@ -8,7 +8,7 @@ test.describe("決済異常系", () => {
 
   test.beforeEach(async ({ page }, testInfo) => {
     seed = buildE2ESeed({
-      workerIndex: testInfo.workerIndex,
+      parallelIndex: testInfo.parallelIndex,
       projectName: testInfo.project.name,
     });
     await setupE2ETestState(page, seed);

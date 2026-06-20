@@ -1,5 +1,8 @@
 type E2ESeedOptions = {
-  workerIndex?: number;
+  // Playwright の parallelIndex（0..workers-1 で安定し、ワーカー再起動後も再利用される）。
+  // 旧実装は揮発的な workerIndex（生成ごとに単調増加）をキーにしていたため、
+  // ワーカー再起動で index が増えると seed と実行で suffix が食い違っていた。
+  parallelIndex?: number;
   projectName?: string;
   suffix?: string;
 };
@@ -141,17 +144,28 @@ const normalizeSeedSegment = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const resolveWorkerIndex = (workerIndex?: number) => {
-  if (typeof workerIndex === "number" && Number.isFinite(workerIndex)) {
-    return workerIndex;
+// 負数・小数は `w-1` / `w1.5` のような不正な seed suffix を生むため、
+// 非負整数のみを許可する。
+const isNonNegativeInteger = (value: number) =>
+  Number.isInteger(value) && value >= 0;
+
+const resolveParallelIndex = (parallelIndex?: number) => {
+  if (typeof parallelIndex === "number" && isNonNegativeInteger(parallelIndex)) {
+    return parallelIndex;
   }
   const envIndex =
-    process.env.TEST_WORKER_INDEX || process.env.E2E_WORKER_INDEX;
+    process.env.TEST_PARALLEL_INDEX || process.env.E2E_PARALLEL_INDEX;
   if (!envIndex) {
     return undefined;
   }
-  const parsed = Number.parseInt(envIndex, 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
+  // Number.parseInt は部分パースのため "1.5"→1 / "2abc"→2 を通してしまう。
+  // 完全な非負整数文字列のみを許可する。
+  const trimmed = envIndex.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
+  return isNonNegativeInteger(parsed) ? parsed : undefined;
 };
 
 const resolveProjectName = (projectName?: string) => {
@@ -166,9 +180,10 @@ const resolveSeedSuffix = (options?: E2ESeedOptions) => {
     return normalizeSeedSegment(options.suffix);
   }
   const projectSegment = resolveProjectName(options?.projectName);
-  const workerIndex = resolveWorkerIndex(options?.workerIndex);
+  const parallelIndex = resolveParallelIndex(options?.parallelIndex);
+  // suffix の `w` プレフィックスは既存 seed データとの互換のため維持する
   const workerSegment =
-    workerIndex === undefined ? "" : `w${workerIndex}`;
+    parallelIndex === undefined ? "" : `w${parallelIndex}`;
   return [projectSegment, workerSegment].filter(Boolean).join("-");
 };
 

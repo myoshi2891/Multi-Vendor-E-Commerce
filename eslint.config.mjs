@@ -3,7 +3,7 @@ import tailwindcss from "eslint-plugin-tailwindcss";
 
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
-    { ignores: ["coverage/**", ".next/**"] },
+    { ignores: ["coverage/**", ".next/**", "playwright-report/**", "test-results/**"] },
     ...nextCoreWebVitals,
     ...tailwindcss.configs["flat/recommended"],
     {
