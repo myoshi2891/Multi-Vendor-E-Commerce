@@ -189,7 +189,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ### 残課題
 
-- 現在、アクティブな残課題は **OI-9**（ホーム `/` SSR 500）のみです（詳細は[アクティブな残課題テーブル](#active-open-issues)を参照）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
+- 現在、アクティブな残課題は **OI-9 / OI-11 / OI-10 / C2** の 4 件です（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
