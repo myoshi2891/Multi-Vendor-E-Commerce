@@ -126,7 +126,16 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         return { id: size.id, quantity: size.quantity };
     };
 
-    test("注文確定後に対象 Size.quantity が注文数分減る", async ({ page }) => {
+    test("注文確定後に対象 Size.quantity が注文数分減る", async ({ page }, testInfo) => {
+        // Firefox は dev モードで cart ナビゲーションが HMR ハングする（purchase-flow /
+        // mobile-responsive と同根の既知問題）。本スペックは full checkout を行うため特に
+        // 影響を受けやすい。兄弟スペックと同一条件でローカル dev 実行時のみ skip し、
+        // CI（本番ビルド起動）では実行する。
+        test.skip(
+            testInfo.project.name === "firefox" && !process.env.CI,
+            "Firefox: cart navigation hangs in dev mode (HMR issue)"
+        );
+
         // Arrange: 注文前の在庫を記録
         const before = await readSizeQuantity();
 
