@@ -42,9 +42,11 @@ export default function SellerMessagesContainer({
     useEffect(() => {
         if (!selectedId) return; // 未選択時は初期値 [] のまま
         let cancelled = false;
+        let inFlight = false; // 多重ポーリング防止（遅延レスポンスの順序逆転を防ぐ）
 
         const poll = async () => {
-            if (document.hidden) return; // バックグラウンド時は停止
+            if (document.hidden || inFlight) return; // 背面化中 or 実行中はスキップ
+            inFlight = true;
             try {
                 const msgs = await getConversationMessages(selectedId);
                 if (!cancelled) setMessages(msgs);
@@ -61,6 +63,8 @@ export default function SellerMessagesContainer({
                         error
                     );
                 }
+            } finally {
+                inFlight = false;
             }
         };
 
@@ -123,7 +127,7 @@ export default function SellerMessagesContainer({
             {/* 左ペイン: 会話一覧（購入者で識別） */}
             <div className="w-[300px] shrink-0 overflow-y-auto rounded-md border">
                 {conversations.length === 0 ? (
-                    <div className="p-4 text-sm text-[#999]">
+                    <div className="p-4 text-sm text-slate-500">
                         No conversations yet.
                     </div>
                 ) : (
@@ -135,9 +139,9 @@ export default function SellerMessagesContainer({
                                 type="button"
                                 onClick={() => setSelectedId(conv.id)}
                                 className={cn(
-                                    "flex w-full items-center gap-2 border-b px-3 py-2 text-left hover:bg-[#f5f5f5]",
+                                    "flex w-full items-center gap-2 border-b px-3 py-2 text-left hover:bg-slate-100",
                                     {
-                                        "bg-[#f5f5f5]": conv.id === selectedId,
+                                        "bg-slate-100": conv.id === selectedId,
                                     }
                                 )}
                             >
@@ -154,7 +158,7 @@ export default function SellerMessagesContainer({
                                     <div className="truncate text-sm font-semibold">
                                         {conv.user.name}
                                     </div>
-                                    <div className="truncate text-xs text-[#999]">
+                                    <div className="truncate text-xs text-slate-500">
                                         {latest?.content ?? "No messages"}
                                     </div>
                                 </div>

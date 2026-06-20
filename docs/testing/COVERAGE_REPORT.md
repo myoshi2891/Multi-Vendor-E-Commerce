@@ -11,7 +11,7 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **170** (Jest unit/component 161 / Jest integration 2 / Playwright 7) — 2026-06-20 profile-messages Phase 4 で `src/components/dashboard/seller/seller-messages-container.test.tsx` を新規追加（160 → 161）。2026-06-19 Phase 2+3 で `src/queries/message.test.ts` + `src/components/store/profile/messages/{conversation-thread,messages-container}.test.tsx`（157 → 160）。profile-settings Phase 1 で `tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx`（154 → 157）。Phase 4(F3) で E2E `tests/e2e/stock-decrement.spec.ts`（Playwright 6 → 7） |
+| テストファイル総数 | **170**（Jest unit/component 161 / Jest integration 2 / Playwright E2E メイン 7）— この小計は Jest + E2E メインのスコープであり、**Visual 2 + a11y 4 は別計上**（ダッシュボード `coverage-dashboard.html` が SSOT・全カテゴリ合算）。2026-06-20 profile-messages Phase 4 で `src/components/dashboard/seller/seller-messages-container.test.tsx` を新規追加（160 → 161）。2026-06-19 Phase 2+3 で `src/queries/message.test.ts` + `src/components/store/profile/messages/{conversation-thread,messages-container}.test.tsx`（157 → 160）。profile-settings Phase 1 で `tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx`（154 → 157）。Phase 4(F3) で E2E `tests/e2e/stock-decrement.spec.ts`（Playwright 6 → 7） |
 | テスト総数 | **1560 unit/component passed** (3 skipped) + **17 integration** — 2026-06-20 時点（profile-messages Phase 4 完了: 販売者 UI ループ閉鎖、`getStoreConversations` 購入者 include + 販売者ページ + container の component テスト +7、1553→1560、160→161 スイート）。残 3 skip は DB ゲートの idempotency suite |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |

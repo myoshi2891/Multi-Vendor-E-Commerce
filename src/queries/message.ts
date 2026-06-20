@@ -76,6 +76,40 @@ export const getOrCreateConversation = async (
         throw new Error("会話の作成に必要な情報が不正です。");
     }
 
+    // 注文起点で会話を起票する場合は、その注文が本人の注文であり、かつ
+    // 対象店舗の明細を含むことを検証する（他人/他店の注文を紐付ける IDOR を防止）。
+    // 所有権エラーを汎用 DB エラーで上書きしないよう、検証 throw は upsert の try の外で行う。
+    if (parsed.data.orderId) {
+        let order: { userId: string; groups: { storeId: string }[] } | null;
+        try {
+            order = await db.order.findUnique({
+                where: { id: parsed.data.orderId },
+                select: { userId: true, groups: { select: { storeId: true } } },
+            });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error(
+                    "[Message:getOrCreateConversation] Failed to verify order ownership",
+                    { error: error.message, stack: error.stack }
+                );
+            } else {
+                console.error(
+                    "[Message:getOrCreateConversation] Unknown error verifying order",
+                    { error }
+                );
+            }
+            throw new Error("会話の作成に失敗しました。");
+        }
+
+        const ownsOrder = order?.userId === user.id;
+        const orderInvolvesStore = order?.groups.some(
+            (group) => group.storeId === storeId
+        );
+        if (!ownsOrder || !orderInvolvesStore) {
+            throw new Error("Forbidden: order does not belong to this user.");
+        }
+    }
+
     try {
         const conversation = await db.conversation.upsert({
             where: { userId_storeId: { userId: user.id, storeId } },

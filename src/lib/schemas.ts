@@ -654,6 +654,7 @@ export const SendMessageSchema = z.object({
     conversationId: z.string().min(1),
     content: z
         .string()
+        .trim() // 先頭・末尾の空白を除去してから長さ検証（空白のみの送信を弾く）
         .min(1, "メッセージを入力してください。")
         .max(2000, "メッセージは2000文字以内です。"),
 });

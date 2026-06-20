@@ -7,7 +7,7 @@ import {
 } from "@/queries/message";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ConversationThread from "./conversation-thread";
 
 // ポーリング間隔（NFR-M5・design.md 判断4）
@@ -34,15 +34,20 @@ export default function MessagesContainer({
         useState<ConversationWithLatest[]>(initialConversations);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [messages, setMessages] = useState<MessageType[]>([]);
+    // 非同期フェッチ完了時に「現在選択中の会話」と照合するための live 参照
+    const selectedIdRef = useRef<string | null>(null);
 
     const selected = conversations.find((c) => c.id === selectedId) ?? null;
 
     useEffect(() => {
         if (!selectedId) return; // 未選択時は初期値 [] のまま（deselect 遷移は存在しない）
+        selectedIdRef.current = selectedId;
         let cancelled = false;
+        let inFlight = false; // 多重ポーリング防止（遅延レスポンスの順序逆転を防ぐ）
 
         const poll = async () => {
-            if (document.hidden) return; // バックグラウンド時は停止
+            if (document.hidden || inFlight) return; // 背面化中 or 実行中はスキップ
+            inFlight = true;
             try {
                 const msgs = await getConversationMessages(selectedId);
                 if (!cancelled) setMessages(msgs);
@@ -59,6 +64,8 @@ export default function MessagesContainer({
                         error
                     );
                 }
+            } finally {
+                inFlight = false;
             }
         };
 
@@ -94,11 +101,12 @@ export default function MessagesContainer({
     // 送信成功後の即時再フェッチ（ポーリングを待たず反映）
     const handleSent = () => {
         if (!selectedId) return;
-        let cancelled = false;
-        (async () => {
+        const requestedId = selectedId; // 起動時点の会話 ID を捕捉
+        void (async () => {
             try {
-                const msgs = await getConversationMessages(selectedId);
-                if (!cancelled) setMessages(msgs);
+                const msgs = await getConversationMessages(requestedId);
+                // フェッチ中に別会話へ切り替わっていたら破棄（取り違え防止）
+                if (requestedId === selectedIdRef.current) setMessages(msgs);
             } catch (error: unknown) {
                 if (error instanceof Error) {
                     console.error(
@@ -121,7 +129,7 @@ export default function MessagesContainer({
             {/* 左ペイン: 会話一覧 */}
             <div className="w-[300px] shrink-0 overflow-y-auto rounded-md border">
                 {conversations.length === 0 ? (
-                    <div className="p-4 text-sm text-[#999]">
+                    <div className="p-4 text-sm text-slate-500">
                         No conversations yet.
                     </div>
                 ) : (
@@ -131,11 +139,16 @@ export default function MessagesContainer({
                             <button
                                 key={conv.id}
                                 type="button"
-                                onClick={() => setSelectedId(conv.id)}
+                                onClick={() => {
+                                    if (conv.id === selectedId) return;
+                                    // 会話切替時に前会話のバブルが残らないよう即座にクリア
+                                    setMessages([]);
+                                    setSelectedId(conv.id);
+                                }}
                                 className={cn(
-                                    "flex w-full items-center gap-2 border-b px-3 py-2 text-left hover:bg-[#f5f5f5]",
+                                    "flex w-full items-center gap-2 border-b px-3 py-2 text-left hover:bg-slate-100",
                                     {
-                                        "bg-[#f5f5f5]": conv.id === selectedId,
+                                        "bg-slate-100": conv.id === selectedId,
                                     }
                                 )}
                             >
@@ -152,7 +165,7 @@ export default function MessagesContainer({
                                     <div className="truncate text-sm font-semibold">
                                         {conv.store.name}
                                     </div>
-                                    <div className="truncate text-xs text-[#999]">
+                                    <div className="truncate text-xs text-slate-500">
                                         {latest?.content ?? "No messages"}
                                     </div>
                                 </div>

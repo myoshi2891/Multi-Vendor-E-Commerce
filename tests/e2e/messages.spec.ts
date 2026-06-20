@@ -65,9 +65,9 @@ test.describe.serial("購入者↔販売者 メッセージング往復", () => 
         await page
             .getByRole("button", { name: "Continue", exact: true })
             .click();
-        await expect(
-            page.getByRole("button", { name: "Sign in" })
-        ).toBeHidden({ timeout: 20000 });
+        await expect(page.getByRole("button", { name: "Sign in" })).toBeHidden({
+            timeout: 20000,
+        });
         await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
             timeout: 15000,
         });
@@ -156,29 +156,61 @@ test.describe.serial("購入者↔販売者 メッセージング往復", () => 
         });
     });
 
+    // クリーンアップは best-effort（rethrow しない）だが、失敗を握りつぶさず
+    // 構造化ログに残してリソースリークの診断を可能にする。
+    const logCleanup = (ctx: string) => (error: unknown) => {
+        if (error instanceof Error) {
+            console.error(ctx, error.message, error.stack);
+        } else {
+            console.error(ctx, error);
+        }
+    };
+
     test.afterAll(async () => {
         try {
             // store 削除で conversation → message が Cascade 削除される
             if (storeId) {
                 await prisma.store
                     .delete({ where: { id: storeId } })
-                    .catch(() => {});
+                    .catch(
+                        logCleanup("[messages.afterAll] store delete failed")
+                    );
             }
             if (clerk && buyerClerkId) {
-                await clerk.users.deleteUser(buyerClerkId).catch(() => {});
+                await clerk.users
+                    .deleteUser(buyerClerkId)
+                    .catch(
+                        logCleanup(
+                            "[messages.afterAll] buyer clerk delete failed"
+                        )
+                    );
             }
             if (clerk && sellerClerkId) {
-                await clerk.users.deleteUser(sellerClerkId).catch(() => {});
+                await clerk.users
+                    .deleteUser(sellerClerkId)
+                    .catch(
+                        logCleanup(
+                            "[messages.afterAll] seller clerk delete failed"
+                        )
+                    );
             }
             if (buyerClerkId) {
                 await prisma.user
                     .delete({ where: { id: buyerClerkId } })
-                    .catch(() => {});
+                    .catch(
+                        logCleanup(
+                            "[messages.afterAll] buyer user delete failed"
+                        )
+                    );
             }
             if (sellerClerkId) {
                 await prisma.user
                     .delete({ where: { id: sellerClerkId } })
-                    .catch(() => {});
+                    .catch(
+                        logCleanup(
+                            "[messages.afterAll] seller user delete failed"
+                        )
+                    );
             }
         } finally {
             await prisma.$disconnect();

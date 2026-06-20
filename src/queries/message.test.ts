@@ -26,6 +26,9 @@ jest.mock("@/lib/db", () => ({
         store: {
             findUnique: jest.fn(),
         },
+        order: {
+            findUnique: jest.fn(),
+        },
         $transaction: jest.fn(),
     },
 }));
@@ -44,6 +47,7 @@ const mockDb = require("@/lib/db").db as {
     };
     message: { findMany: jest.Mock; create: jest.Mock; updateMany: jest.Mock };
     store: { findUnique: jest.Mock };
+    order: { findUnique: jest.Mock };
     $transaction: jest.Mock;
 };
 
@@ -420,17 +424,52 @@ describe("getOrCreateConversation", () => {
         );
     });
 
-    it("orderId を指定すると create に含める", async () => {
+    it("orderId を指定すると所有権検証後に create に含める", async () => {
         mockCurrentUser(TestData.user());
+        // 本人の注文 + 対象店舗の明細を含む（所有権 OK）
+        mockDb.order.findUnique.mockResolvedValue({
+            userId: USER_ID,
+            groups: [{ storeId: STORE_ID }],
+        });
         mockDb.conversation.upsert.mockResolvedValue({ id: "conv-1" });
 
         await getOrCreateConversation(STORE_ID, "order-1");
 
+        expect(mockDb.order.findUnique).toHaveBeenCalledWith({
+            where: { id: "order-1" },
+            select: { userId: true, groups: { select: { storeId: true } } },
+        });
         expect(mockDb.conversation.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
                 create: expect.objectContaining({ orderId: "order-1" }),
             })
         );
+    });
+
+    it("他人の注文を紐付けようとすると Forbidden で弾き upsert を呼ばない（IDOR 防止）", async () => {
+        mockCurrentUser(TestData.user());
+        mockDb.order.findUnique.mockResolvedValue({
+            userId: "other-user",
+            groups: [{ storeId: STORE_ID }],
+        });
+
+        await expect(
+            getOrCreateConversation(STORE_ID, "order-1")
+        ).rejects.toThrow("Forbidden: order does not belong to this user.");
+        expect(mockDb.conversation.upsert).not.toHaveBeenCalled();
+    });
+
+    it("対象店舗の明細を含まない注文を弾き upsert を呼ばない", async () => {
+        mockCurrentUser(TestData.user());
+        mockDb.order.findUnique.mockResolvedValue({
+            userId: USER_ID,
+            groups: [{ storeId: "other-store" }],
+        });
+
+        await expect(
+            getOrCreateConversation(STORE_ID, "order-1")
+        ).rejects.toThrow("Forbidden: order does not belong to this user.");
+        expect(mockDb.conversation.upsert).not.toHaveBeenCalled();
     });
 });
 

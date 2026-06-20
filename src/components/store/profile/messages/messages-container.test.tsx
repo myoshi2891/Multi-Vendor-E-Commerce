@@ -13,7 +13,10 @@ import {
     getConversationMessages,
     markConversationRead,
 } from "@/queries/message";
-import { ConversationWithLatest } from "@/lib/types";
+import {
+    createMockConversationWithLatest,
+    createMockMessageType,
+} from "@/config/test-fixtures";
 
 jest.mock("@/queries/message", () => ({
     getConversationMessages: jest.fn(),
@@ -51,21 +54,23 @@ jest.mock("./conversation-thread", () => ({
 }));
 
 const conversations = [
-    {
+    createMockConversationWithLatest({
         id: "conv-1",
         userId: "user-buyer",
         storeId: "store-1",
         store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
-        messages: [{ id: "m0", content: "latest preview" }],
-    },
-    {
+        messages: [
+            createMockMessageType({ id: "m0", content: "latest preview" }),
+        ],
+    }),
+    createMockConversationWithLatest({
         id: "conv-2",
         userId: "user-buyer",
         storeId: "store-2",
         store: { id: "store-2", name: "Beta Store", logo: "", url: "beta" },
         messages: [],
-    },
-] as unknown as ConversationWithLatest[];
+    }),
+];
 
 describe("MessagesContainer", () => {
     beforeEach(() => {

@@ -58,7 +58,7 @@ export default function ConversationThread({
 
     if (!conversation) {
         return (
-            <div className="flex h-full min-h-72 items-center justify-center text-sm text-[#999]">
+            <div className="flex h-full min-h-72 items-center justify-center text-sm text-slate-500">
                 Select a conversation to view messages.
             </div>
         );
@@ -95,7 +95,7 @@ export default function ConversationThread({
             {/* メッセージバブル一覧 */}
             <div className="flex-1 space-y-2 overflow-y-auto p-3">
                 {messages.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-[#999]">
+                    <div className="py-8 text-center text-sm text-slate-500">
                         No messages yet. Say hello!
                     </div>
                 ) : (
@@ -115,7 +115,7 @@ export default function ConversationThread({
                                         {
                                             "bg-blue-primary text-white":
                                                 isBuyer,
-                                            "bg-[#f5f5f5] text-main-primary":
+                                            "bg-slate-100 text-main-primary":
                                                 !isBuyer,
                                         }
                                     )}

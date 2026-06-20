@@ -158,7 +158,13 @@ const resolveParallelIndex = (parallelIndex?: number) => {
   if (!envIndex) {
     return undefined;
   }
-  const parsed = Number.parseInt(envIndex, 10);
+  // Number.parseInt は部分パースのため "1.5"→1 / "2abc"→2 を通してしまう。
+  // 完全な非負整数文字列のみを許可する。
+  const trimmed = envIndex.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
   return isNonNegativeInteger(parsed) ? parsed : undefined;
 };
 

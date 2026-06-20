@@ -10,7 +10,10 @@ import {
 import "@testing-library/jest-dom";
 import ConversationThread from "./conversation-thread";
 import { sendMessage } from "@/queries/message";
-import { ConversationWithLatest, MessageType } from "@/lib/types";
+import {
+    createMockConversationWithLatest,
+    createMockMessageType,
+} from "@/config/test-fixtures";
 
 // server action をモック
 jest.mock("@/queries/message", () => ({
@@ -26,25 +29,13 @@ jest.mock("react-hot-toast", () => ({
 const BUYER_ID = "user-buyer";
 const SELLER_ID = "user-seller";
 
-const conversation = {
+const conversation = createMockConversationWithLatest({
     id: "conv-1",
     userId: BUYER_ID, // 購入者
     storeId: "store-1",
     store: { id: "store-1", name: "Acme", logo: "", url: "acme" },
     messages: [],
-} as unknown as ConversationWithLatest;
-
-const makeMessage = (
-    overrides: Partial<MessageType> &
-        Pick<MessageType, "id" | "senderId" | "content">
-): MessageType =>
-    ({
-        conversationId: "conv-1",
-        isRead: false,
-        readAt: null,
-        createdAt: new Date(),
-        ...overrides,
-    }) as unknown as MessageType;
+});
 
 describe("ConversationThread", () => {
     beforeEach(() => {
@@ -75,12 +66,12 @@ describe("ConversationThread", () => {
 
     it("aligns buyer messages right and seller messages left", () => {
         const messages = [
-            makeMessage({
+            createMockMessageType({
                 id: "m1",
                 senderId: BUYER_ID,
                 content: "from buyer",
             }),
-            makeMessage({
+            createMockMessageType({
                 id: "m2",
                 senderId: SELLER_ID,
                 content: "from seller",

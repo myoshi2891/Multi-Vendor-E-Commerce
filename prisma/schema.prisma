@@ -744,4 +744,6 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([conversationId, createdAt]) // getConversationMessages: 会話内を createdAt 昇順で取得
+  @@index([conversationId, isRead]) // markConversationRead: 会話内の未読を絞り込み既読化
 }
