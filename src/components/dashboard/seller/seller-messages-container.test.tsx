@@ -86,6 +86,32 @@ describe("SellerMessagesContainer", () => {
         expect(screen.getByText("latest preview")).toBeInTheDocument();
     });
 
+    it("renders the buyer picture as an avatar image when present", () => {
+        const withPicture = [
+            {
+                id: "conv-pic",
+                userId: "user-buyer-9",
+                storeId: "store-1",
+                store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
+                user: {
+                    id: "user-buyer-9",
+                    name: "Pic Buyer",
+                    picture: "https://cdn.example/buyer.png",
+                },
+                messages: [],
+            },
+        ] as unknown as StoreConversationWithLatest[];
+        render(
+            <SellerMessagesContainer initialConversations={withPicture} />
+        );
+
+        const avatar = screen.getByRole("img", { name: "Pic Buyer" });
+        expect(avatar).toHaveAttribute(
+            "src",
+            "https://cdn.example/buyer.png"
+        );
+    });
+
     it("shows an empty state when there are no conversations", () => {
         render(<SellerMessagesContainer initialConversations={[]} />);
         expect(screen.getByText(/no conversations yet/i)).toBeInTheDocument();
