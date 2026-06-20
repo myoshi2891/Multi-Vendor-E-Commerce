@@ -59,6 +59,11 @@
   2-C components under test; 1443 → 1451 passed, 147 → 150 suites.
   Playwright E2E (main) gained `tests/e2e/platform-coupon.spec.ts` (Phase 5-C:
   PLATFORM-scope coupon across two stores), 5 → 6 specs; Jest count unaffected.
+  Phase 4 (F3) added `tests/e2e/stock-decrement.spec.ts` (post-purchase stock
+  verification), 6 → 7 specs. profile-messages Phase 5 added
+  `tests/e2e/messages.spec.ts` (AC-M8: buyer↔seller round trip across two browser
+  contexts — buyer sends, seller replies, buyer's 5s polling surfaces the reply;
+  `test.skip` when `CLERK_SECRET_KEY` is unset), 7 → 8 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

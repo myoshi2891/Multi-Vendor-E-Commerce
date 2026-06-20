@@ -129,12 +129,12 @@ Phase 5: E2E（購入者↔販売者往復）+ spec-sync
 
 ## Phase 5: E2E + ドキュメント同期　【SKILL: test-complete → spec-sync-after-test → spec-sync-check】
 
-| Step | 内容 | コミット例 |
-|------|------|-----------|
-| 5-1 | [test-complete](../../../.claude/skills/test-complete/)（lint/tsc/test + build）全緑確認 | — |
-| 5-2 | E2E（`tests/e2e/messages.spec.ts`）: 購入者送信 → 販売者返信 → 購入者ポーリング受信の往復（AC-M8）。Chromium/Firefox/WebKit | `test(e2e): verify buyer-seller messaging round trip` |
-| 5-3 | [spec-sync-after-test](../../../.claude/skills/spec-sync-after-test/): `QA_HANDOFF.md`（SSOT）→ `07-testing.md`/`COVERAGE_REPORT.md`/`PROGRESS.md` 伝播。新規 action/page → `04-interfaces.md`（`message.ts` の6関数・新ルート）/ `05-workflows.md`（メッセージ往復フロー）同期。`bun run coverage:dashboard` 再生成。**統計同期は単独コミット** | `docs: sync messaging stats and regenerate coverage dashboard` |
-| 5-4 | [spec-sync-check](../../../.claude/skills/spec-sync-check/) で仕様↔実装・規約↔skill ドリフト確認（報告のみ） | — |
+| Step | 内容 | 状態 | コミット |
+|------|------|------|---------|
+| 5-1 | [test-complete](../../../.claude/skills/test-complete/)（lint/tsc/test）全緑確認（1560 passed / 161 スイート・型エラー0） | ✅ | — |
+| 5-2 | E2E（`tests/e2e/messages.spec.ts`）: 購入者送信 → 販売者返信 → 購入者ポーリング受信の往復（AC-M8）。2 browser context・Chromium 往復通過確認・3 ブラウザ対象 | ✅ | `ea89706` |
+| 5-3 | [spec-sync-after-test](../../../.claude/skills/spec-sync-after-test/): `QA_HANDOFF.md`（SSOT）→ `07-testing.md`/`PROGRESS.md` 伝播（E2E スペック数 7→8・Jest 不変）。`04-interfaces.md`/`05-workflows.md` は Phase 2〜4 で同期済み。`bun run coverage:dashboard` 再生成。**統計同期は単独コミット** | ✅ | （本コミット） |
+| 5-4 | [spec-sync-check](../../../.claude/skills/spec-sync-check/) で仕様↔実装・規約↔skill ドリフト確認（報告のみ） | ✅ | — |
 
 ---
 

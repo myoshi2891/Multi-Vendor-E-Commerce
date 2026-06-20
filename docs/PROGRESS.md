@@ -1084,6 +1084,32 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 
 ---
 
+### profile-messages Phase 5（E2E 往復・全フェーズ完了） (2026-06-20)
+
+#### 概要
+
+購入者↔販売者メッセージングの**往復を E2E で検証**し全フェーズを完了。`tests/e2e/messages.spec.ts` で「購入者が `/profile/messages` で送信 → 販売者が seller dashboard で受信・返信 → 購入者ページの 5 秒ポーリングが返信を自動受信」を検証（AC-M8）。買い手/売り手の同時セッション維持のため 2 browser context に分離。設計は `docs/design/profile-messages/{requirements,design,tasks}.md`（Phase 5）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/messages.spec.ts` | 往復 E2E 新規（2 context・Clerk テストモードで USER/SELLER 動的生成・ACTIVE 店舗 + 会話を `beforeAll` で Prisma 直挿入・`CLERK_SECRET_KEY` 未設定時 `test.skip`・Chromium で往復通過確認・3 ブラウザ対象） | `ea89706` |
+| `docs/testing/QA_HANDOFF.md` ほか | E2E スペック数 7→8 を SSOT で同期 + HEAD/履歴更新（本コミット） | （docs 同期） |
+
+> 会話起点 UI（商品/注文画面からの問い合わせボタン）は将来拡張のため、E2E は会話を Prisma 直挿入で用意する。`04-interfaces.md` / `05-workflows.md` は Phase 2〜4 で同期済みのため Phase 5 では変更不要。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1560 passed | **1560 passed**（変動なし・E2E は集計外） |
+| スイート数 | 161 | **161**（変動なし） |
+| Playwright E2E（main） | 7 スペック | **8 スペック**（+ `messages.spec.ts`） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

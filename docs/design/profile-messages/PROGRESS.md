@@ -6,12 +6,12 @@
 
 ---
 
-## 🧭 現在地（2026-06-20・Phase 4 完了）
+## 🧭 現在地（2026-06-20・Phase 5 完了＝全フェーズ完了）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
 - ✅ **Phase 1〜4 完了**（schema/migration → server actions + IDOR ユニット → 購入者 UI → 販売者 UI でループ閉鎖）。
-- ⬜ **Phase 5 未着手**（E2E 往復 + ドキュメント同期）。
-- 👉 **次の着手**: Phase 5（E2E + spec-sync）。`tests/e2e/messages.spec.ts` で購入者送信 → 販売者返信 → 購入者ポーリング受信の往復（AC-M8）を Chromium/Firefox/WebKit で検証。
+- ✅ **Phase 5 完了**（E2E 往復 + ドキュメント同期）。`tests/e2e/messages.spec.ts`（AC-M8）で購入者送信 → 販売者返信 → 購入者ポーリング受信の往復を **2 browser context** で検証（`ea89706`）。3 ブラウザ対象・Chromium で往復通過確認・`CLERK_SECRET_KEY` 未設定時 `test.skip`。Playwright E2E（main）7 → 8 スペック。
+- 🎉 **全フェーズ完了**。残課題は下記「残課題・将来拡張（スコープ外）」を参照。
 
 ---
 
@@ -23,7 +23,7 @@
 | 2 | server actions 6種 + ユニットテスト（IDOR 3階層） | ✅ | server-action-scaffold / test-gen | AC-M1〜M7・`message.test.ts` +31（`fcbcb3d`〜`4d76eea`） |
 | 3 | 購入者 UI（`/profile/messages`・ポーリング） | ✅ | test-gen | NFR-M4/M5・component +14（`e4e752d`〜`a20a313`） |
 | 4 | 販売者 UI（seller dashboard・ループ閉鎖） | ✅ | test-gen | M-5・購入者 include + `StoreConversationWithLatest` 型 / seller page + container + 導線 / component +7（`8ab715e`〜`95d0005`） |
-| 5 | E2E（往復）+ ドキュメント同期 | ⬜ | test-complete / spec-sync-after-test / spec-sync-check | AC-M8 |
+| 5 | E2E（往復）+ ドキュメント同期 | ✅ | test-complete / spec-sync-after-test / spec-sync-check | AC-M8・`messages.spec.ts`（2 context 往復・3 ブラウザ）`ea89706` |
 
 ---
 
@@ -31,14 +31,14 @@
 
 > 各フェーズ完了時に、対応 SKILL を起動したかをチェックする（rule 02 / tasks.md の SKILL シーケンス）。
 
-- [ ] feature-plan（着手前・必須）
-- [ ] safe-migration（Phase 1・必須）
-- [ ] erd:generate（Phase 1・schema 変更と同一コミット・rule 03）
-- [ ] server-action-scaffold（Phase 2・各 action）
-- [ ] test-gen（Phase 2 ユニット / Phase 3・4 コンポーネント）
-- [ ] test-complete（各コミット前）
-- [ ] spec-sync-after-test（テスト数変動時・必須）
-- [ ] spec-sync-check（最終・任意）
+- [x] feature-plan（着手前・必須）
+- [x] safe-migration（Phase 1・必須）
+- [x] erd:generate（Phase 1・schema 変更と同一コミット・rule 03）
+- [x] server-action-scaffold（Phase 2・各 action）
+- [x] test-gen（Phase 2 ユニット / Phase 3・4 コンポーネント）
+- [x] test-complete（各コミット前）
+- [x] spec-sync-after-test（テスト数変動時・必須／Phase 5 で E2E スペック数 7→8 を同期）
+- [x] spec-sync-check（最終・任意）
 
 ---
 
