@@ -742,8 +742,7 @@ model Message {
   readAt         DateTime?
   createdAt      DateTime     @default(now())
 
-  @@index([conversationId])
   @@index([senderId])
-  @@index([conversationId, createdAt]) // getConversationMessages: 会話内を createdAt 昇順で取得
+  @@index([conversationId, createdAt]) // getConversationMessages: 会話内を createdAt 昇順で取得（[conversationId] 単独検索も B-tree 前方一致でカバー）
   @@index([conversationId, isRead]) // markConversationRead: 会話内の未読を絞り込み既読化
 }
