@@ -138,7 +138,7 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 
 ## 残課題・Open Issues
 
-### 🔴 現在アクティブな残課題（優先度順・2026-06-14 時点） {#active-open-issues}
+### 🔴 現在アクティブな残課題（優先度順・2026-06-19 時点） {#active-open-issues}
 
 > 解消済み OI（OI-1〜OI-8）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 4 件（OI-9 / OI-11 / OI-10 / C2）。**
 
@@ -314,9 +314,50 @@ B3（cart-checkout）で確立した `tests/integration/` 基盤（testcontainer
 - コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
+#### OI-11: seller ルートの本番 SSR クラッシュ修正
+
+```text
+/dashboard/seller 系ルートが本番 SSR で ReferenceError: self is not defined を投げる問題
+（OI-11）を修正してください。next-cloudinary の CldUploadWidget がサーバ評価される client-only
+コンポーネントであることが原因です（OI-9 と同族）。
+
+実装方針:
+1. image-upload.tsx の CldUploadWidget を next/dynamic の { ssr: false } で遅延 import する。
+2. 本番ビルド（next build → next start）で /dashboard/seller 系が SSR 200 を返すことを確認。
+
+完了条件:
+1. seller ルートが本番 SSR で 200、OI-11 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
+2. bunx tsc --noEmit / bun run lint グリーン。
+3. render-html.ts の NEXT_ACTIONS から OI-11 を削除し、本プロンプトも削除（二重 SSOT 同期）。
+
+参考:
+- OI-11 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-11 行
+- 同族先行例: OI-9（featured.tsx の SSR window 参照）
+```
+
 ### 🟢 Mid–Long Term (low)
 
 SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。
+
+#### OI-10: a11y color-contrast 負債の是正
+
+```text
+/checkout・/profile・/seller/apply のグレー/ブルー系テキストが WCAG 2.1 AA の 4.5:1 を
+満たさない a11y 負債（OI-10）を是正してください。現在 E2E では runA11yScan の
+disabledRules:["color-contrast"] で追跡のため意図的に抑制中です。
+
+実装方針:
+1. 対象ページのテキスト色を 4.5:1 以上を満たす配色へ是正する。
+2. runA11yScan の disabledRules から "color-contrast" を解除する。
+
+完了条件:
+1. axe color-contrast 違反ゼロ、OI-10 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
+2. E2E a11y spec グリーン（disabledRules 解除後）。
+3. render-html.ts の NEXT_ACTIONS から OI-10 を削除し、本プロンプトも削除（二重 SSOT 同期）。
+
+参考:
+- OI-10 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-10 行
+```
 
 <!--
 C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済み。
