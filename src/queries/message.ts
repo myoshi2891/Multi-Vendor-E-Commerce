@@ -21,14 +21,13 @@ import { SendMessageSchema, StartConversationSchema } from "@/lib/schemas";
  */
 
 /**
- * 会話の参加者（購入者本人 or 店舗オーナー）であることを検証する。
- * IDOR 防止の中核。会話と店舗オーナーを1クエリで取得し、不一致なら throw する。
+ * Verifies that the user is a participant of the conversation.
  *
- * @param conversationId - 検証対象の会話 ID
- * @param userId - 現在の認証ユーザー ID
- * @returns 検証済みの conversation（store.userId 含む）
- * @throws "Conversation not found." 会話が存在しない
- * @throws "Forbidden: not a participant of this conversation." 参加者でない
+ * @param conversationId - The conversation ID to verify
+ * @param userId - The user ID to check
+ * @returns The conversation with store owner ID included
+ * @throws When the conversation does not exist
+ * @throws When the user is neither the conversation's buyer nor its store owner
  */
 async function assertParticipant(conversationId: string, userId: string) {
     const conversation = await db.conversation.findUnique({

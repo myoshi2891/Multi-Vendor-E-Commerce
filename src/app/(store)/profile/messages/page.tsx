@@ -3,6 +3,11 @@ import { getUserConversations } from "@/queries/message";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Renders the profile messages page with the user's conversations.
+ *
+ * @returns The messages page UI containing a title and the messages container.
+ */
 export default async function ProfileMessagesPage() {
     const conversations = await getUserConversations();
     return (

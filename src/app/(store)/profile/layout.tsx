@@ -6,7 +6,6 @@ import { ReactNode } from "react";
  * Wraps page content in the store profile layout, rendering the header, sidebar, and main content area.
  *
  * @param children - Content to display inside the profile's main content region.
- * @returns The layout JSX element containing the header, sidebar, and provided children.
  */
 export default async function ProfileLayout({ children }: { children: ReactNode }) {
     return (

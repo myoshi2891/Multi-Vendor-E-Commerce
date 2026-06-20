@@ -9,6 +9,9 @@ import Step2 from "./steps/step-2/step-2";
 import Step3 from "./steps/step-3/step-3";
 import Step4 from "./steps/step-4/step-4";
 
+/**
+ * Renders a multi-step seller application form with progress tracking.
+ */
 export default function ApplySellerMultiForm() {
     const [step, setStep] = useState<number>(1);
     const [formData, setFormData] = useState<StoreType>({

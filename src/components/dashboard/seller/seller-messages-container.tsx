@@ -6,15 +6,11 @@ import { StoreConversationWithLatest } from "@/lib/types";
 import { useState } from "react";
 
 /**
- * 販売者向けメッセージ画面のコンテナ（2ペイン: 会話一覧 + スレッド）。
+ * Two-pane messaging interface for sellers to view and respond to conversations with buyers.
  *
- * 購入者向け {@link MessagesContainer} と同型だが、左ペインは自店舗ではなく相手（購入者）の
- * name / picture で会話を識別する（販売者にとって店舗は常に自分のため）。ポーリング等の
- * ロジックは共通フック {@link useConversationThread}、2 ペイン骨格は {@link MessagesLayout}
- * を共有する。右ペインの {@link ConversationThread} はバブル振り分けを購入者発か否かのみで
- * 判定し閲覧者に依存しない（design.md §4.4 / 判断2）。
+ * Displays a list of conversations in the left pane and the selected conversation's thread in the right pane. Manages conversation selection and message polling via shared hooks.
  *
- * @param props.initialConversations - サーバーで取得した会話一覧（updatedAt 降順）
+ * @param props.initialConversations - Conversation list retrieved from the server, sorted by `updatedAt` in descending order
  */
 export default function SellerMessagesContainer({
     initialConversations,

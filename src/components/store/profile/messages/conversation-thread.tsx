@@ -24,18 +24,13 @@ const ComposerSchema = SendMessageSchema.pick({ content: true });
 type ComposerValues = z.infer<typeof ComposerSchema>;
 
 /**
- * 会話スレッド表示 + メッセージ送信フォーム。
+ * Renders a conversation message thread UI with a message composer form.
  *
- * メッセージは `senderId === conversation.userId`（購入者）で左右振り分けする。
- * このコンポーネントは販売者側 UI（Phase 4）でも流用するため、購入者/販売者を
- * 区別せず「会話の購入者発か否か」だけで描画する（design.md §4.3 / 判断2）。
+ * Messages are aligned based on sender: messages from the conversation owner appear right-aligned with blue styling,
+ * while messages from others appear left-aligned with gray styling. If no conversation is selected, displays a prompt.
  *
- * 送信は useRef リエントランシーガードで多重実行を防止し、成功後に onSent で
- * 親へ再フェッチを促す（楽観的追加ではなくポーリングと一貫した再取得・design.md §4.3）。
- *
- * @param props.conversation - 選択中の会話（発話者判定に userId を使用）。未選択時は null
- * @param props.messages - スレッド内メッセージ（createdAt 昇順）
- * @param props.onSent - 送信成功後に親へ通知（再フェッチ用）
+ * @param props.conversation - The selected conversation, or `null` if none is selected.
+ * @param props.onSent - Callback invoked after a message is successfully sent.
  */
 export default function ConversationThread({
     conversation,

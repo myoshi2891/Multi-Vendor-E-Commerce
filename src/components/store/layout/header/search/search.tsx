@@ -5,6 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChangeEvent, useRef, useState } from "react";
 import SearchSuggestions from "./suggestions";
 
+/**
+ * A search form component that provides real-time product suggestions and navigates to search results.
+ *
+ * Initializes the search query from the URL's `search` parameter. Fetches product suggestions as the user types (queries must be at least 2 characters). On form submission, navigates to `/browse` with the search query, or updates the search parameter in-place if already on `/browse`. Automatically aborts previous requests when new searches are initiated.
+ */
 export default function Search() {
     const searchParams = useSearchParams();
     const pathname = usePathname();

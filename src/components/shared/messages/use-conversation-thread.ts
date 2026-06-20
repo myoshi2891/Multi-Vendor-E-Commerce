@@ -11,24 +11,14 @@ import { useEffect, useRef, useState } from "react";
 const POLL_INTERVAL_MS = 5000;
 
 /**
- * 会話スレッドのポーリング・既読化・送信後再フェッチを集約するフック。
+ * Manages the currently selected conversation, its messages, and message synchronization.
  *
- * 購入者向け {@link MessagesContainer} と販売者向け SellerMessagesContainer は
- * 表示する相手（店舗 / 購入者）のみ異なり、選択中会話のメッセージ取得ロジックは同一。
- * 重複（SonarCloud Duplications）を解消するため共通化した。
+ * Maintains the active conversation selection and automatically fetches its messages at regular intervals.
+ * When a conversation is selected, messages are cleared immediately to prevent showing the previous conversation's content.
+ * The conversation is marked as read when selected. After a message is sent, new messages are fetched immediately rather than waiting for the next polling cycle.
  *
- * 挙動:
- * - `selectConversation` で会話を切り替えると、前会話のバブルが残らないよう即座に
- *   messages をクリアしてから選択する（旧 MessagesContainer の優れた実装に統一）。
- * - 選択中は 5 秒間隔でポーリングし、`document.hidden`（タブ背面化）時は停止する。
- * - `inFlight` ガードで多重ポーリング（遅延レスポンスの順序逆転）を防ぐ。
- * - tech.md の cancelled パターンでアンマウント/再選択時のレースを防ぐ。
- * - `handleSent` は `selectedIdRef`（live 参照）で、フェッチ中に別会話へ切り替わった
- *   場合の取り違えを防ぐ。
- *
- * @param logLabel - 構造化ログのプレフィックス（例: "MessagesContainer"）。
- *                   呼び出し元コンテナごとにログ出所を区別するため引数化する。
- * @returns selectedId / messages / selectConversation / handleSent
+ * @param logLabel - A prefix for structured error logs to identify the calling component.
+ * @returns An object containing the selected conversation ID, its messages, a function to switch conversations, and a function to refetch messages after sending.
  */
 export function useConversationThread(logLabel: string) {
     const [selectedId, setSelectedId] = useState<string | null>(null);

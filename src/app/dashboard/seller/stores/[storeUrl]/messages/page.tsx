@@ -4,13 +4,10 @@ import { getStoreConversations } from "@/queries/message";
 export const dynamic = "force-dynamic";
 
 /**
- * 販売者ダッシュボードのメッセージページ。
+ * Renders the seller messages page for a specified store.
  *
- * `storeUrl` の店舗が受け取った会話一覧を取得し、{@link SellerMessagesContainer} に
- * 渡す。取得失敗時はエラーをログし、空一覧でレンダリングする（既存 seller ページと同型）。
- *
- * @param params - `storeUrl`（会話一覧のスコープとなる店舗 URL）を解決する Promise
- * @returns 会話一覧 + スレッドを描画する販売者メッセージページ
+ * @param params - Promise resolving to an object containing `storeUrl`, identifying the store whose conversations to display
+ * @returns JSX element displaying the conversation list and message threads
  */
 export default async function SellerMessagesPage({
     params,

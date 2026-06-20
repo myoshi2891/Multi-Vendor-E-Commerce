@@ -9,16 +9,12 @@ import Image from "next/image";
 type AvatarInfo = { src: string | null; name: string };
 
 /**
- * メッセージ画面の汎用 2 ペインレイアウト（左: 会話一覧 / 右: スレッド）。
+ * Renders a two-pane messaging layout with a conversation list on the left and a message thread on the right.
  *
- * 購入者・販売者コンテナで共通の骨格を持ち、唯一異なる「会話行のアバター取得元」
- * （購入者 = 店舗 / 販売者 = 購入者）を {@link AvatarInfo} を返す `getAvatar` で
- * 注入する。これにより両コンテナの重複（SonarCloud Duplications）を解消する。
+ * Accepts a generic conversation type to work with different conversation sources. The `getAvatar` function
+ * allows customization of avatar retrieval, enabling the layout to be reused across different contexts.
  *
- * 右ペインは購入者/販売者を区別しない {@link ConversationThread} を流用する。
- *
- * @typeParam T - 会話一覧の要素型。`ConversationWithLatest` を満たす上位互換型
- *                （`StoreConversationWithLatest` を含む）を受理する。
+ * @typeParam T - Conversation type that extends `ConversationWithLatest`.
  */
 export default function MessagesLayout<T extends ConversationWithLatest>({
     conversations,

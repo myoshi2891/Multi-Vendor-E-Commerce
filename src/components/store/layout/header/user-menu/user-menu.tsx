@@ -9,13 +9,13 @@ import { Separator } from "@/components/ui/separator";
 import { MessageIcon, OrderIcon, WishlistIcon } from "../../../icons";
 
 /**
- * Renders a user avatar/entry area that expands into a hover menu with account actions and navigation links.
+ * Renders a user menu with account controls and navigation links.
  *
- * The menu shows the authenticated user's avatar and account controls when a user is present, or sign-in / registration
- * actions when no user is authenticated. The menu also includes quick links (orders, messages, wishlist) and additional
- * navigation entries.
+ * Displays the authenticated user's avatar and account options when a user is present, or sign-in and registration
+ * prompts when no user is authenticated. The menu includes quick navigation links (orders, messages, wishlist) and
+ * additional menu entries (profile, settings, seller application, help, policies, and more).
  *
- * @returns A React element representing the user menu and its hoverable dropdown content
+ * @returns A React element for the user menu component.
  */
 export default async function UserMenu() {
     // Clerk の外部呼び出しは try/catch でラップする（規約: 外部 API 呼び出し）。
