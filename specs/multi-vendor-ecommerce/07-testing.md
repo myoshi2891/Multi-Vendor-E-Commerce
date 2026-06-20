@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1560 passed / 1563 total across 161 suites (3 skipped), as of 2026-06-20.
+- 1591 passed / 1594 total across 161 suites (3 skipped), as of 2026-06-20.
+  SonarCloud Quality Gate (PR #145) remediation extracted the duplicated buyer/seller messaging
+  containers into a shared hook (`src/components/shared/messages/use-conversation-thread.ts`) and a
+  generic `messages-layout.tsx`, then raised new-code coverage to ~100% branches: `message.test.ts`
+  (+14: every catch's Error/unknown branch + untested DB-error paths + order-null), buyer/seller
+  container suites (+11/+1: shared hook & layout branches via container instantiation), and
+  `user-menu.test.tsx` (+5: authenticated / fallback / catch branches); +31 tests, 161 suites unchanged.
   Profile-messages Phase 4 (seller UI, loop closure) added `getStoreConversations` buyer include
   (`StoreConversationWithLatest` type) and the seller dashboard route
   `/dashboard/seller/stores/[storeUrl]/messages` reusing `conversation-thread.tsx`; one component

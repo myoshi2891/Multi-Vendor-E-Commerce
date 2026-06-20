@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1508 passed / 1511 total / 157 スイート（3 skipped）** — 2026-06-19 profile-settings Phase 1（Settings 画面 + 導線修正）完了時点（`9d5629d`）。`tests/component/store/{user-menu,profile-sidebar,settings-page}.test.tsx` +3 / +3 スイート。直前 Phase 4（在庫減算/復元）は `user.test.ts` +3 / `order.test.ts` +6 |
+| Jestユニットテスト | **1591 passed / 1594 total / 161 スイート（3 skipped）** — 2026-06-20 SonarCloud QG 修復（PR #145）完了時点（`cdc81d5`）。メッセージングコンテナの重複を共有フック/レイアウトへ抽出し、`message.ts`/コンテナ/`user-menu.tsx` のカバレッジを ~100% 分岐へ底上げ（+31、161 スイート不変）。直前 profile-messages Phase 4 は `seller-messages-container.test.tsx` +7（160→161 スイート） |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1106,6 +1106,33 @@ admin `sales-chart.tsx` を `SalesPoint[]` 共用でそのまま import（依存
 | Jest テスト総数 (unit/component) | 1560 passed | **1560 passed**（変動なし・E2E は集計外） |
 | スイート数 | 161 | **161**（変動なし） |
 | Playwright E2E（main） | 7 スペック | **8 スペック**（+ `messages.spec.ts`） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud Quality Gate 修復（PR #145・メッセージング重複解消 + カバレッジ補完） (2026-06-20)
+
+#### 概要
+
+PR #145（dev → main）の SonarCloud 解析が **Duplicated Lines 9.7%（> 3.0%）** で Quality Gate Failed。震源は購入者 `messages-container.tsx` と販売者 `seller-messages-container.tsx` の ~214 行相互コピー（直近 `a3f2cef` で同型実装を同時導入したため）。共通フック + 汎用レイアウトへ抽出して重複を解消し、あわせて新規コードの未カバー分岐（catch の unknown 系統・認証分岐等）を ~100% 分岐まで底上げした。New Issues(4) は「No conditions set」で非ブロッキングのため対象外。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/shared/messages/use-conversation-thread.ts` | 新規。ポーリング/既読化/送信後再フェッチ/`selectedIdRef` レースガードを集約。ログ出所は引数化で既存文言を維持 | `456fadf` |
+| `src/components/shared/messages/messages-layout.tsx` | 新規。2 ペイン骨格を汎用化。アバター取得元を `getAvatar` アダプタで注入（購入者=店舗 / 販売者=購入者） | `456fadf` |
+| `messages-container.tsx` / `seller-messages-container.tsx` | 共有フック/レイアウトを使う薄いラッパへ置換（props は S6759 で `Readonly` 化・public 型と export 名は不変） | `456fadf` |
+| `src/queries/message.test.ts` | 全 server action の catch を Error/unknown 両系統 + 未テスト DB エラー経路 + order null でカバー（+14、Branches 74.5%→100%） | `2d5ab8a` |
+| `messages-container.test.tsx` / `seller-messages-container.test.tsx` | 共有フック/レイアウトの poll/markRead/handleSent catch 両系統・レースガード false・inFlight・cancelled・no-op・アバター描画（+11/+1、両コンテナ+shared/messages 100%） | `082bf0a` |
+| `tests/component/store/user-menu.test.tsx` | 認証済み/未認証/`fullName` フォールバック/catch Error・unknown（+5、37.5%→100%） | `cdc81d5` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1560 passed | **1591 passed** |
+| スイート数 | 161 | **161**（不変・既存ファイルへ追加） |
 | 型エラー | 0 件 | **0 件** |
 
 ---
