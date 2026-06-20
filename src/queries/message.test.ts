@@ -100,6 +100,9 @@ const mockCurrentUser = (user: Record<string, unknown> | null) => {
     (currentUser as jest.Mock).mockResolvedValue(user);
 };
 
+/** beforeEach で spy 済みの console.error を jest.Mock として型安全に参照する */
+const consoleErrorMock = () => console.error as unknown as jest.Mock;
+
 beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => {});
@@ -471,6 +474,16 @@ describe("getOrCreateConversation", () => {
         ).rejects.toThrow("Forbidden: order does not belong to this user.");
         expect(mockDb.conversation.upsert).not.toHaveBeenCalled();
     });
+
+    it("注文が存在しない（null）場合は所有権なしとして Forbidden で弾く（order?. の null 経路）", async () => {
+        mockCurrentUser(TestData.user());
+        mockDb.order.findUnique.mockResolvedValue(null);
+
+        await expect(
+            getOrCreateConversation(STORE_ID, "order-1")
+        ).rejects.toThrow("Forbidden: order does not belong to this user.");
+        expect(mockDb.conversation.upsert).not.toHaveBeenCalled();
+    });
 });
 
 // ==================================================
@@ -544,6 +557,175 @@ describe("markConversationRead", () => {
 
             await expect(markConversationRead("conv-1")).rejects.toThrow(
                 "既読の更新に失敗しました。"
+            );
+        });
+    });
+});
+
+// ==================================================
+// catch 分岐網羅 — Error / unknown 両系統 + 未テストの DB エラー経路
+// 各 server action の try/catch は instanceof Error の真/偽で別ログを出す。既存テストは
+// 真ブランチ（new Error）のみ踏むため、ここで偽ブランチ（非 Error reject）と未テストの
+// DB エラー経路を埋めて catch を全分岐カバーする。
+// ==================================================
+describe("catch 分岐網羅（Error / unknown 両系統）", () => {
+    /** 参加者検証を通すための共通モック（buyer として conv-1 に参加） */
+    const mockParticipant = () => {
+        mockCurrentUser(TestData.user());
+        mockDb.conversation.findUnique.mockResolvedValue(
+            TestData.buyerConversation()
+        );
+    };
+
+    describe("getUserConversations", () => {
+        it("非 Error の reject は unknown ブランチでログし汎用メッセージにラップする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.conversation.findMany.mockRejectedValue("db string error");
+
+            await expect(getUserConversations()).rejects.toThrow(
+                "会話一覧の取得に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:getUserConversations] Unknown error",
+                { error: "db string error" }
+            );
+        });
+    });
+
+    describe("getStoreConversations", () => {
+        beforeEach(() => {
+            mockCurrentUser(TestData.user("SELLER"));
+            mockDb.store.findUnique.mockResolvedValue(TestData.ownedStore());
+        });
+
+        it("DB エラー（Error）時は汎用メッセージにラップしてスローする", async () => {
+            mockDb.conversation.findMany.mockRejectedValue(new Error("db down"));
+
+            await expect(getStoreConversations(STORE_URL)).rejects.toThrow(
+                "会話一覧の取得に失敗しました。"
+            );
+        });
+
+        it("非 Error の reject は unknown ブランチでログする", async () => {
+            mockDb.conversation.findMany.mockRejectedValue({ code: "P2024" });
+
+            await expect(getStoreConversations(STORE_URL)).rejects.toThrow(
+                "会話一覧の取得に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:getStoreConversations] Unknown error",
+                { error: { code: "P2024" } }
+            );
+        });
+    });
+
+    describe("getConversationMessages", () => {
+        it("findMany が Error で reject すると汎用メッセージにラップする", async () => {
+            mockParticipant();
+            mockDb.message.findMany.mockRejectedValue(new Error("db down"));
+
+            await expect(getConversationMessages("conv-1")).rejects.toThrow(
+                "メッセージの取得に失敗しました。"
+            );
+        });
+
+        it("findMany が非 Error で reject すると unknown ブランチでログする", async () => {
+            mockParticipant();
+            mockDb.message.findMany.mockRejectedValue("boom");
+
+            await expect(getConversationMessages("conv-1")).rejects.toThrow(
+                "メッセージの取得に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:getConversationMessages] Unknown error",
+                { error: "boom" }
+            );
+        });
+    });
+
+    describe("sendMessage", () => {
+        it("$transaction が非 Error で reject すると unknown ブランチでログする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.conversation.findUnique.mockResolvedValue(
+                TestData.buyerConversation()
+            );
+            mockDb.$transaction.mockRejectedValue("tx boom");
+
+            await expect(sendMessage("conv-1", "hi")).rejects.toThrow(
+                "メッセージの送信に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:sendMessage] Unknown error",
+                { error: "tx boom" }
+            );
+        });
+    });
+
+    describe("markConversationRead", () => {
+        it("updateMany が非 Error で reject すると unknown ブランチでログする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.conversation.findUnique.mockResolvedValue(
+                TestData.buyerConversation()
+            );
+            mockDb.message.updateMany.mockRejectedValue(123);
+
+            await expect(markConversationRead("conv-1")).rejects.toThrow(
+                "既読の更新に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:markConversationRead] Unknown error",
+                { error: 123 }
+            );
+        });
+    });
+
+    describe("getOrCreateConversation", () => {
+        it("order 検証の findUnique が Error で reject すると汎用メッセージにラップし upsert を呼ばない", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.order.findUnique.mockRejectedValue(
+                new Error("order db down")
+            );
+
+            await expect(
+                getOrCreateConversation(STORE_ID, "order-1")
+            ).rejects.toThrow("会話の作成に失敗しました。");
+            expect(mockDb.conversation.upsert).not.toHaveBeenCalled();
+        });
+
+        it("order 検証の findUnique が非 Error で reject すると unknown ブランチでログする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.order.findUnique.mockRejectedValue("order boom");
+
+            await expect(
+                getOrCreateConversation(STORE_ID, "order-1")
+            ).rejects.toThrow("会話の作成に失敗しました。");
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:getOrCreateConversation] Unknown error verifying order",
+                { error: "order boom" }
+            );
+        });
+
+        it("upsert が Error で reject すると汎用メッセージにラップする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.conversation.upsert.mockRejectedValue(
+                new Error("upsert fail")
+            );
+
+            await expect(getOrCreateConversation(STORE_ID)).rejects.toThrow(
+                "会話の作成に失敗しました。"
+            );
+        });
+
+        it("upsert が非 Error で reject すると unknown ブランチでログする", async () => {
+            mockCurrentUser(TestData.user());
+            mockDb.conversation.upsert.mockRejectedValue(null);
+
+            await expect(getOrCreateConversation(STORE_ID)).rejects.toThrow(
+                "会話の作成に失敗しました。"
+            );
+            expect(consoleErrorMock()).toHaveBeenCalledWith(
+                "[Message:getOrCreateConversation] Unknown error",
+                { error: null }
             );
         });
     });
