@@ -30,8 +30,12 @@ export default function ProductCard({ product }: { product: ProductType }) {
         try {
             const res = await addToWishlist(id, variant.variantId);
             if (res) toast.success("Product successfully added to wishlist");
-        } catch (error: any) {
-            toast.error(error.toString());
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to add product to wishlist";
+            toast.error(message);
         }
     };
 
