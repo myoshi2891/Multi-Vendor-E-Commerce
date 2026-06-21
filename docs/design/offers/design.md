@@ -104,6 +104,8 @@ export default async function OffersPage() {
 
 > **型安全**: `getAllOfferTags` の戻り値型（`OfferTag` に `products: { id }[]` を含む）をそのまま使い、`any` を導入しない。`tag.products.length` は事実 0-1 の include に基づく。
 
+> **オファーカードは MVP では意図的に軽量**: 上記グリッド内のカードは専用コンポーネントを切らず、インライン `<Link>`（`rounded-xl border p-5 hover:shadow-md`）で十分とする。背景・ホバー効果・余白などの詳細スタイリングは確定値ではなく、最終 UI レビューで**ホーム/ブラウズページのカード**と視覚的整合を取った上で詰める（本設計のクラスはプレースホルダ）。専用 `offer-card` コンポーネントへの抽出は、再利用箇所が増えた段階で follow-up として検討する。
+
 ### 2.2 変更: `user-menu.tsx`（Discounts & Offers 配線）
 
 [`user-menu.tsx:197-200`](../../../src/components/store/layout/header/user-menu/user-menu.tsx#L197-L200) の `extraLinks`:

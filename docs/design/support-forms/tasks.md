@@ -70,11 +70,12 @@
 
 ### 3-B. 各ページ　【SKILL: test-gen】
 
-| Step  | 内容                                                                                                         | コミット例                                                |
-| ----- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| 3-B-1 | `contact` / `returns-exchange` / `dispute` / `report-problem` の page.tsx 追加（[design §2.5](./design.md)） | `feat(support): add contact/returns/dispute/report pages` |
+| Step  | 内容                                                                          | コミット例                                              |
+| ----- | ----------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 3-B-1 | `contact` + `returns-exchange` の page.tsx 追加（[design §2.5](./design.md)） | `feat(support): add contact and returns-exchange pages` |
+| 3-B-2 | `dispute` + `report-problem` の page.tsx 追加（[design §2.5](./design.md)）   | `feat(support): add dispute and report-problem pages`   |
 
-> ページは「同一カテゴリ・3ファイル以下・200行未満」を満たす範囲で束ねる（rule 02）。超える場合は分割。
+> **コミット分割（rule 02）**: 4 ページ（= 4 ファイル）は rule 02 の「1 コミット 3 ファイル以下」を超えるため、**2 コミットに分割**する（上記 3-B-1 / 3-B-2）。グルーピングは同一カテゴリ（サポートフォームページ）かつ各 2 ファイル・200 行未満を満たす。1 コミットに束ねたい場合は rule 02 の閾値超過承認（PR 説明 + レビュアーチェックボックス）が必要。
 
 ### 3-C. 導線配線（user-menu・回帰）　【SKILL: test-gen】
 
@@ -109,6 +110,7 @@
 - [ ] PII（本文）をログに含めていないか。
 - [ ] user-menu の **Discounts & Offers 行を触っていない**か（offers 設計書が担当）。
 - [ ] `orderId` 条件必須が Zod `superRefine` で表現され、DB は nullable か。
+- [ ] 各ページに**不要な `force-dynamic` を追加していない**か（[design §2.5](./design.md): client フォームを描画するだけでレンダリング時に Prisma を読まないため不要）。
 
 ---
 
@@ -122,9 +124,10 @@
 | 4        | feat         | createSupportTicket 実装（Green）                             |
 | 5        | test         | SupportForm テスト（Red）                                     |
 | 6        | feat         | SupportForm 実装（Green）                                     |
-| 7        | feat         | 4 フォームページ                                              |
-| 8        | test         | user-menu リンク回帰（Red）                                   |
-| 9        | fix          | user-menu 配線（Green）                                       |
-| 10       | docs         | spec-sync + dashboard 再生成（統計同期は単独コミット）        |
+| 7        | feat         | contact + returns-exchange ページ（rule 02: 2 ファイル）      |
+| 8        | feat         | dispute + report-problem ページ（rule 02: 2 ファイル）        |
+| 9        | test         | user-menu リンク回帰（Red）                                   |
+| 10       | fix          | user-menu 配線（Green）                                       |
+| 11       | docs         | spec-sync + dashboard 再生成（統計同期は単独コミット）        |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。

@@ -25,7 +25,7 @@
 | ID         | 受け入れ基準                                                                                                                         | 検証方法                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | **AC-SP1** | `/about` `/legal` `/faqs` `/customer-service` `/product-support` がそれぞれ 200 で描画され、各ページの見出し（`<h1>`）が表示される。 | RTL / E2E                     |
-| **AC-SP2** | `/faq` アクセス時に `/faqs` へ 308/redirect される。                                                                                 | E2E / 手動                    |
+| **AC-SP2** | `/faq` アクセス時に `/faqs` へ **308（`permanentRedirect`）** でリダイレクトされる。                                                 | E2E / 手動                    |
 | **AC-SP3** | `/customer-service` の DOM に上記 5 導線リンク（`href`）が存在する。                                                                 | RTL                           |
 | **AC-SP4** | `user-menu.tsx` の `extraLinks` で「Help Center」の `link` が `/customer-service`（旧 `""` でない）。                                | RTL（回帰）                   |
 | **AC-SP5** | `user-menu.tsx` の `extraLinks` で「Legal & Privacy」の `link` が `/legal`（旧 `""` でない）。                                       | RTL（回帰）                   |

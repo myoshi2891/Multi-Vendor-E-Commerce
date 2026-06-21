@@ -69,3 +69,4 @@
 - 雛形: [`docs/design/profile-messages/`](../profile-messages/)（additive migration + server action + Zod + IDOR テストの流用元）
 - 認可: [`src/lib/auth-guards.ts`](../../../src/lib/auth-guards.ts)
 - 姉妹設計書: [`docs/design/storefront-static-pages/`](../storefront-static-pages/)（returns ポリシー本文・customer-service ポータルからの遷移元）
+- 姉妹設計書: [`docs/design/track-order/`](../track-order/)（`orderId` の検証・IDOR 防止・enumeration（注文番号総当たり）対策はそちらで扱う。本設計は所有権を**検証しない**前提（[design §1.3](./design.md)）なので、本人性を伴う注文照会は track-order を参照）

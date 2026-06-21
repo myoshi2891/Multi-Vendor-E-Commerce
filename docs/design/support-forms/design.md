@@ -146,7 +146,13 @@ export const SupportTicketSchema = z
             .min(1, "内容を入力してください。")
             .max(5000, "内容は5000文字以内です。"),
         // RETURN_REQUEST / DISPUTE では必須。他カテゴリでは任意。
-        orderId: z.string().trim().min(1).optional(),
+        // Order.id は uuid（design §0-4）のため uuid 形式を検証し、"abc" 等の不正値を弾く。
+        orderId: z
+            .string()
+            .trim()
+            .min(1)
+            .uuid("有効な注文番号を入力してください。")
+            .optional(),
     })
     .superRefine((val, ctx) => {
         const needsOrder =
@@ -260,6 +266,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SupportTicketSchema, type SupportTicketInput } from "@/lib/schemas";
 import { createSupportTicket } from "@/queries/support";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 interface SupportFormProps {
     category: SupportTicketInput["category"];
@@ -316,10 +333,93 @@ export default function SupportForm({
             <p role="status">受け付けました。担当より追ってご連絡します。</p>
         );
 
-    // ↓ shadcn/ui Form + Input/Textarea で name/email/subject/message を描画。
-    //   requireOrderId が true のとき orderId 欄を表示する。
-    //   form.formState.errors.root?.message を上部に表示。
-    return /* RHF フィールド群（既存ダッシュボードフォームのスタイルに準拠） */ null;
+    // shadcn/ui Form プリミティブで描画（既存ダッシュボードフォームのスタイルに準拠）。
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* ルートエラー（server action からの汎用エラー）を上部に表示 */}
+                {form.formState.errors.root?.message && (
+                    <p role="alert" className="text-sm text-destructive">
+                        {form.formState.errors.root.message}
+                    </p>
+                )}
+
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>お名前</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>メールアドレス</FormLabel>
+                            <FormControl>
+                                <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>件名</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>内容</FormLabel>
+                            <FormControl>
+                                <Textarea rows={6} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {/* RETURN_REQUEST / DISPUTE のときのみ orderId 欄を表示 */}
+                {requireOrderId && (
+                    <FormField
+                        control={form.control}
+                        name="orderId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>対象の注文番号</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {submitLabel ?? "送信"}
+                </Button>
+            </form>
+        </Form>
+    );
 }
 ```
 
@@ -345,7 +445,10 @@ export default function ContactPage() {
 }
 ```
 
-- `returns-exchange/page.tsx`: 上部に返品ポリシー要約（[storefront-static-pages](../storefront-static-pages/) の定数を再利用可）+ `<SupportForm category="RETURN_REQUEST" requireOrderId />`。
+- `returns-exchange/page.tsx`: **上部に返品ポリシー要約 → 下部にフォーム** の順で描画する。
+    - ポリシー要約は [storefront-static-pages](../storefront-static-pages/) の**型付き定数を `import`** して描画する（server fetch しない）。よって**キャッシュ戦略は不要**・`force-dynamic` も不要（静的・Prisma を読まない）。
+    - 実装順/依存: ポリシー要約は静的定数のみで自己完結し `SupportForm` に依存しない。よって storefront-static-pages 側の定数（`returns` ポリシー本文）が先に存在することだけが前提（無ければプレースホルダ定数で先行可）。`SupportForm`（§2.4）→ ページ組み込みの順で実装する。
+    - 構成: `<>{/* ポリシー要約（import 定数） */}<SupportForm category="RETURN_REQUEST" requireOrderId /></>`。
 - `dispute/page.tsx`: `<SupportForm category="DISPUTE" requireOrderId />`。
 - `report-problem/page.tsx`: `<SupportForm category="PROBLEM_REPORT" />`。
 
@@ -402,6 +505,12 @@ export default function ContactPage() {
 
 - 問い合わせ・問題報告はゲスト（未購入者・未登録者）も行う典型ユースケース。`requireUser` を付けると正当な利用を阻害する。
 - ログイン中のみ `userId` を付け、後の名寄せに使う。`currentUser()` の失敗は握りつぶさず**ログした上でゲスト続行**（縮退）。
+
+## 判断4. なぜ `status` を enum でなく `String @default("OPEN")` にするか
+
+- 本 MVP は**保存のみ**で、運営対応ステータスを操作する管理 UI は無い（スコープ外・§4 要件）。取りうる値が未確定の段階で enum を切ると、後続で値追加のたびに migration を要する。
+- そこで MVP は `String @default("OPEN")` とし、許容値（例: `OPEN` / `IN_PROGRESS` / `RESOLVED` / `CLOSED`）の確定と `SupportTicketStatus` enum 化は**後続の管理 UI 設計書**に委ねる（その時点で `safe-migration` により String→enum 変換）。
+- `category` は送信時にフォーム種別で確定する固定集合のため enum（`SupportTicketCategory`）にするが、`status` は運用フローが未確定なので String に留める、という非対称な判断。
 
 ---
 

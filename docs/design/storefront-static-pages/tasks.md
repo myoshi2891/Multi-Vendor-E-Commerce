@@ -48,7 +48,7 @@
 | 1-B-1           | `content/{about,legal,faqs,product-support,customer-service}.ts` を作成（プレースホルダ文面）                                              | `feat(static): add page content constants`                                                              |
 | 1-B-2 Red→Green | 代表ページ（about）の描画テスト（`<h1>About`）を書き（Red）→ `about/page.tsx` 作成（Green）。`legal`/`faqs`/`product-support` も同型で追加 | `test(static): add about page render test` / `feat(static): add about/legal/faqs/product-support pages` |
 | 1-B-3 Red→Green | `customer-service/page.tsx` の 5 導線 `href` テスト（Red）→ 実装（Green）（AC-SP3）                                                        | `test(static): assert customer-service portal links` / `feat(static): add customer-service portal page` |
-| 1-B-4           | `/faq` → `/faqs` の redirect ページ作成（単体テストは付けない・[design §3 注](./design.md)）                                               | `feat(static): redirect /faq to canonical /faqs`                                                        |
+| 1-B-4           | `/faq` → `/faqs` の `permanentRedirect`（308）ページ作成（単体テストは付けない・[design §3 注](./design.md)）                              | `feat(static): permanent-redirect /faq to canonical /faqs`                                              |
 
 > **コミット粒度**: ページは「同一カテゴリ・3ファイル以下・200行未満」なら rule 02 の Tier 2 として束ねて可。超える場合は分割（about/legal/faqs を1コミット、product-support/customer-service/faq を別コミット等）。
 
@@ -88,15 +88,15 @@
 
 ## コミット分割サマリー（rule 02 準拠）
 
-| コミット | 種別      | 内容                                                   |
-| -------- | --------- | ------------------------------------------------------ |
-| 1        | test      | StaticPageLayout 描画テスト（Red）                     |
-| 2        | feat      | StaticPageLayout 実装（Green）                         |
-| 3        | feat      | コンテンツ定数                                         |
-| 4        | test+feat | 静的ページ（about/legal/faqs/product-support）         |
-| 5        | test+feat | customer-service ポータル + /faq redirect              |
-| 6        | test      | user-menu リンク回帰（Red）                            |
-| 7        | fix       | user-menu 配線（Green）                                |
-| 8        | docs      | spec-sync + dashboard 再生成（統計同期は単独コミット） |
+| コミット | 種別      | 内容                                                      |
+| -------- | --------- | --------------------------------------------------------- |
+| 1        | test      | StaticPageLayout 描画テスト（Red）                        |
+| 2        | feat      | StaticPageLayout 実装（Green）                            |
+| 3        | feat      | コンテンツ定数                                            |
+| 4        | test+feat | 静的ページ（about/legal/faqs/product-support）            |
+| 5        | test+feat | customer-service ポータル + /faq permanentRedirect（308） |
+| 6        | test      | user-menu リンク回帰（Red）                               |
+| 7        | fix       | user-menu 配線（Green）                                   |
+| 8        | docs      | spec-sync + dashboard 再生成（統計同期は単独コミット）    |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。

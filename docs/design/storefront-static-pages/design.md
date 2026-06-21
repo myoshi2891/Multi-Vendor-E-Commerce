@@ -27,7 +27,7 @@ src/app/(store)/
   ├─ about/page.tsx                 ← 新規（server component）
   ├─ legal/page.tsx                 ← 新規
   ├─ faqs/page.tsx                  ← 新規（正規 FAQ）
-  ├─ faq/page.tsx                   ← 新規（redirect("/faqs") のみ）
+  ├─ faq/page.tsx                   ← 新規（permanentRedirect("/faqs") のみ・308）
   ├─ customer-service/page.tsx      ← 新規（ポータル）
   └─ product-support/page.tsx       ← 新規
 
@@ -46,13 +46,13 @@ src/components/store/layout/header/user-menu/
 
 ### 1.2 再利用元マトリクス
 
-| 流用するもの             | 出典                                                               | 用途                                              |
-| ------------------------ | ------------------------------------------------------------------ | ------------------------------------------------- |
-| `(store)` 共通レイアウト | `src/app/(store)/layout.tsx`                                       | ヘッダー/フッターは自動付与（各 page は本文のみ） |
-| `cn` ユーティリティ      | `src/lib/utils.ts`                                                 | クラス結合                                        |
-| リンク回帰テストの型     | [`profile-settings/design.md` §2.2](../profile-settings/design.md) | user-menu リンク修正の RTL パターン               |
-| Next.js `redirect`       | `next/navigation`                                                  | `/faq` → `/faqs`                                  |
-| shadcn `Card` 等         | `src/components/ui/`                                               | customer-service の導線カード                     |
+| 流用するもの                | 出典                                                               | 用途                                              |
+| --------------------------- | ------------------------------------------------------------------ | ------------------------------------------------- |
+| `(store)` 共通レイアウト    | `src/app/(store)/layout.tsx`                                       | ヘッダー/フッターは自動付与（各 page は本文のみ） |
+| `cn` ユーティリティ         | `src/lib/utils.ts`                                                 | クラス結合                                        |
+| リンク回帰テストの型        | [`profile-settings/design.md` §2.2](../profile-settings/design.md) | user-menu リンク修正の RTL パターン               |
+| Next.js `permanentRedirect` | `next/navigation`                                                  | `/faq` → `/faqs`（308 恒久）                      |
+| shadcn `Card` 等            | `src/components/ui/`                                               | customer-service の導線カード                     |
 
 ### 1.3 認可方針
 
@@ -198,11 +198,15 @@ export default function AboutPage() {
 
 ```tsx
 // src/app/(store)/faq/page.tsx
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-/** 旧 "/faq" リンク（footer:66-68）を正規の "/faqs" に集約する。 */
+/**
+ * 旧 "/faq" リンク（footer:66-68）を正規の "/faqs" に集約する。
+ * 恒久的な統合のため 308（Permanent Redirect）を返す `permanentRedirect` を使う
+ * （`redirect` は 307 Temporary。判断2 のとおり統合は恒久的）。
+ */
 export default function FaqRedirectPage() {
-    redirect("/faqs");
+    permanentRedirect("/faqs");
 }
 ```
 
@@ -307,7 +311,7 @@ export default function CustomerServicePage() {
 | T-SP4  | `user-menu.tsx`                                | extraLinks「Help Center」→`/customer-service`（**回帰**: 旧 `""` を弾く） | AC-SP4  |
 | T-SP5  | `user-menu.tsx`                                | extraLinks「Legal & Privacy」→`/legal`（**回帰**）                        | AC-SP5  |
 
-> `/faq` redirect（AC-SP2）は RTL では検証しづらいため E2E or 手動（`tasks.md` の Verification）。`redirect()` を呼ぶだけのページに単体テストは付けない（過剰）。
+> `/faq` redirect（AC-SP2・308）は RTL では検証しづらいため E2E or 手動（`tasks.md` の Verification）。`permanentRedirect()` を呼ぶだけのページに単体テストは付けない（過剰）。
 
 ---
 
@@ -323,7 +327,7 @@ export default function CustomerServicePage() {
 ## 判断2. なぜ `/faqs` を正規にするか
 
 - footer に `/faq`（"FAQ"）と `/faqs`（"FAQs"）が両方存在（事実 0-2）。2 実体を作ると二重メンテになる。
-- `/faqs`（複数形）を本体に、`/faq` は `redirect` の薄いページに。footer のリンク文字列自体は変更せず（リンク先は両方有効）、実体は 1 つに集約。
+- `/faqs`（複数形）を本体に、`/faq` は `permanentRedirect`（308 恒久）の薄いページに。footer のリンク文字列自体は変更せず（リンク先は両方有効）、実体は 1 つに集約。
 
 ## 判断3. なぜ `force-dynamic` を付与しないか
 
