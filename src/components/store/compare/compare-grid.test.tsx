@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { ProductType } from "@/lib/types";
 import { useCompareStore } from "@/compare-store/useCompareStore";
@@ -80,4 +80,76 @@ it("items が空のとき空状態を表示し getProductsByIds を呼ばない"
 
     expect(screen.getByTestId("compare-empty")).toBeInTheDocument();
     expect(mockedGetProductsByIds).not.toHaveBeenCalled();
+});
+
+// loading 状態（取得未解決の間はスケルトンを表示）
+it("取得完了前は items 件数ぶんのスケルトンを表示する", () => {
+    useCompareStore.setState({ items: ["v1", "v2"] });
+    // 解決しない Promise で loading=true を維持
+    mockedGetProductsByIds.mockReturnValue(new Promise(() => {}));
+
+    const { container } = render(<CompareGrid />);
+
+    const skeletons = container.querySelectorAll(".animate-pulse");
+    expect(skeletons).toHaveLength(2);
+});
+
+// remove: 個別削除ボタンで該当商品が比較リストから外れる
+it("Remove ボタン押下で該当バリアントを比較リストから除去する", async () => {
+    useCompareStore.setState({ items: ["v1", "v2"] });
+    mockedGetProductsByIds.mockResolvedValue({
+        products: [createProduct("v1", "Alpha Shirt"), createProduct("v2", "Beta Shoes")],
+        totalPages: 1,
+    });
+
+    render(<CompareGrid />);
+    await waitFor(() => {
+        expect(screen.getByText("Alpha Shirt")).toBeInTheDocument();
+    });
+
+    // 先頭(v1)の Remove を押下
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove from compare" })[0]);
+
+    await waitFor(() => {
+        expect(useCompareStore.getState().items).toEqual(["v2"]);
+    });
+});
+
+// clear all: 全削除で空状態に戻る
+it("Clear all 押下で比較リストを空にし空状態を表示する", async () => {
+    useCompareStore.setState({ items: ["v1"] });
+    mockedGetProductsByIds.mockResolvedValue({
+        products: [createProduct("v1", "Alpha Shirt")],
+        totalPages: 1,
+    });
+
+    render(<CompareGrid />);
+    await waitFor(() => {
+        expect(screen.getByText("Alpha Shirt")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+
+    await waitFor(() => {
+        expect(useCompareStore.getState().items).toEqual([]);
+        expect(screen.getByTestId("compare-empty")).toBeInTheDocument();
+    });
+});
+
+// error パス: getProductsByIds が reject したとき商品を描画しない（catch 分岐）
+it("getProductsByIds が失敗したとき商品を描画しない", async () => {
+    const errorSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+    useCompareStore.setState({ items: ["v1"] });
+    mockedGetProductsByIds.mockRejectedValue(new Error("boom"));
+
+    render(<CompareGrid />);
+
+    await waitFor(() => {
+        expect(errorSpy).toHaveBeenCalled();
+    });
+    expect(screen.queryByText("Alpha Shirt")).not.toBeInTheDocument();
+
+    errorSpy.mockRestore();
 });
