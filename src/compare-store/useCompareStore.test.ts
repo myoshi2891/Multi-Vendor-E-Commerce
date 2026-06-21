@@ -93,6 +93,51 @@ describe("removeFromCompare / clearCompare", () => {
 });
 
 // ==================================================
+// 永続化レイヤー契約（persist: localStorage 書き込み / 再ハイドレート）
+// ==================================================
+describe("persistence", () => {
+    /** 直近の setItem 呼び出しから永続化された items 配列を取り出す。 */
+    const persistedItems = (): unknown => {
+        const calls = localStorageMock.setItem.mock.calls;
+        const last = calls[calls.length - 1];
+        expect(last[0]).toBe("compare-store"); // persist の name キー
+        return JSON.parse(last[1]).state.items;
+    };
+
+    it("addToCompare で compare-store キーに items が永続化される", () => {
+        useCompareStore.getState().addToCompare("v1");
+
+        expect(localStorageMock.setItem).toHaveBeenCalledWith(
+            "compare-store",
+            expect.any(String)
+        );
+        expect(persistedItems()).toContain("v1");
+    });
+
+    it("removeFromCompare 後も最新 items が永続化される", () => {
+        const store = useCompareStore.getState();
+        store.addToCompare("v1");
+        store.addToCompare("v2");
+
+        store.removeFromCompare("v1");
+
+        expect(persistedItems()).toEqual(["v2"]);
+    });
+
+    it("既存の永続データから items を再ハイドレートする", async () => {
+        // 事前に永続済みデータを localStorage に注入してからリハイドレート
+        localStorageMock.setItem(
+            "compare-store",
+            JSON.stringify({ state: { items: ["v1", "v2"] }, version: 0 })
+        );
+
+        await useCompareStore.persist.rehydrate();
+
+        expect(useCompareStore.getState().items).toEqual(["v1", "v2"]);
+    });
+});
+
+// ==================================================
 // isComparing（ボタンのトグル判定用）
 // ==================================================
 describe("isComparing", () => {
