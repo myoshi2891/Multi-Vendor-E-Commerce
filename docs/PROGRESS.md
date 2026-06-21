@@ -1137,6 +1137,33 @@ PR #145（dev → main）の SonarCloud 解析が **Duplicated Lines 9.7%（> 3.
 
 ---
 
+### Compare 機能（商品比較）実装 (2026-06-21)
+
+#### 概要
+
+`docs/design/compare/` の MVP（Zustand 永続ストア + 比較グリッドページ）に加え、tasks.md 2-B の「Add to compare ボタン」を実装。Red→Green TDD でストア → グリッド → 商品カードボタンの順にコミット分割。footer の「Compare」リンク（既存・配線済み）が初めて到達先を持つ。新規 server action・schema 変更なし（既存 `getProductsByIds` を再利用）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/compare-store/useCompareStore.ts` | 新規。zustand + persist（`useCartStore` と同型）。バリアント ID のみ保持・上限 4 件・冪等・`isComparing` | `5a1c669` |
+| `src/compare-store/useCompareStore.test.ts` | 新規 +8（T-CMP1〜4 add/冪等/上限/削除 + `isComparing`） | `23f7332`/`5a1c669` |
+| `src/app/(store)/compare/page.tsx` | 新規。client wrapper（`CompareGrid` を描画・`force-dynamic` 不要） | `2616f88` |
+| `src/components/store/compare/compare-grid.tsx` | 新規 client。既存 `getProductsByIds` 再利用・`useEffect` キャンセルフラグ・`items.length===0` で未呼び出し（空配列 throw 回避）・横並びカラム + 個別削除/全消去/スケルトン | `2616f88` |
+| `src/components/store/compare/compare-grid.test.tsx` | 新規 +2（T-CMP5/T-CMP6・`getProductsByIds` mock） | `ece4e5c`/`2616f88` |
+| `src/components/store/cards/product/product-card.tsx` | Add-to-compare トグルボタン追加（GitCompare・トグル＋トースト・上限 4 超過は `toast.error`・ストアは void のままハンドラ側で分岐） | `bdf3356` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1591 passed | **1601 passed** |
+| スイート数 | 161 | **163** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

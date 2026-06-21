@@ -11,6 +11,12 @@
 8) Order status and payment details are updated via payment webhook.
 9) Customer views order history and order details.
 
+## Product Compare Flow
+1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
+2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).
+3) `CompareGrid` (client) reads the variant ids from `useCompareStore`. When the list is empty it renders an empty state and does **not** call `getProductsByIds` (that query throws on an empty id array).
+4) For a non-empty list, `CompareGrid` fetches products via the existing `getProductsByIds()` (guarded by a `useEffect` cancellation flag) and renders them side-by-side (image / name / lowest size price / rating) with per-column remove and a clear-all action.
+
 ## Buyer↔Seller Messaging Flow
 1) A conversation is created idempotently per `(userId, storeId)` via `getOrCreateConversation()`.
 2) Buyer opens `/profile/messages` (force-dynamic; `getUserConversations()` seeds the list) and selects a conversation.

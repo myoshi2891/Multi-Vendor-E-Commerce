@@ -12,7 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1591 passed / 1594 total across 161 suites (3 skipped), as of 2026-06-20.
+- 1601 passed / 1604 total across 163 suites (3 skipped), as of 2026-06-21.
+  Compare feature (product comparison) added a `useCompareStore` (zustand + persist under
+  `src/compare-store/`, holding variant ids, max 4, idempotent, `isComparing`), the `/compare`
+  page (client wrapper) and `CompareGrid` (client, reusing the existing `getProductsByIds`,
+  skipping the call when the list is empty to avoid its empty-array throw), plus an
+  Add-to-compare toggle button on the product card (tasks.md 2-B). Two new suites:
+  `useCompareStore.test.ts` (+8: T-CMP1–4 add/idempotent/limit/remove + `isComparing`) and
+  `compare-grid.test.tsx` (+2: T-CMP5/T-CMP6 fetch-and-render / empty-state no-call, mocking
+  `getProductsByIds`); +10 tests, 161 → 163 suites. No new server action or schema change.
   SonarCloud Quality Gate (PR #145) remediation extracted the duplicated buyer/seller messaging
   containers into a shared hook (`src/components/shared/messages/use-conversation-thread.ts`) and a
   generic `messages-layout.tsx`, then raised new-code coverage to ~100% branches: `message.test.ts`

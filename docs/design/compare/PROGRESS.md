@@ -9,30 +9,31 @@
 ## 🧭 現在地（2026-06-21）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **実装未着手** — 着手時は [tasks.md](./tasks.md) §0 の `feature-plan` から開始（承認後 Phase 1）。
-- 👉 **次の着手**: Phase 1-A（`useCompareStore` のユニット先行 → 実装）。
+- ✅ **実装完了** — Phase 1〜3 すべて完了（`23f7332`〜`bdf3356`）。2-B「Add to compare」ボタンも対応済み。
+- ✅ **品質ゲート** — lint 0 error / tsc 0 / test 1601 passed（+10）/ build 成功（`/compare` static）。
+- 👉 **次の着手**: なし（任意拡張のスペック行比較は design §判断4 の follow-up として未着手のまま据え置き）。
 
 ---
 
-## Phase 進捗 ⬜ 未着手
+## Phase 進捗 ✅ 完了
 
 | Phase | 内容                                                   | 状態 | SKILL                                |
 | ----- | ------------------------------------------------------ | ---- | ------------------------------------ |
-| 1     | Zustand ストア（useCompareStore・TDD）                 | ⬜   | test-gen                             |
-| 2     | UI（page + CompareGrid・任意で Add to compare ボタン） | ⬜   | test-gen                             |
-| 3     | 品質チェック + ドキュメント同期                        | ⬜   | test-complete / spec-sync-after-test |
+| 1     | Zustand ストア（useCompareStore・TDD）                 | ✅ `5a1c669` | test-gen                       |
+| 2     | UI（page + CompareGrid + Add to compare ボタン 2-B）   | ✅ `bdf3356` | test-gen                       |
+| 3     | 品質チェック + ドキュメント同期                        | ✅          | test-complete / spec-sync-after-test |
 
 ---
 
 ## SKILL 起動チェック（漏れ防止）
 
-- [ ] feature-plan（着手前・必須）
-- [ ] test-gen（Phase 1 / 2）
-- [ ] test-complete（各コミット前）
-- [ ] spec-sync-after-test（テスト数変動時・必須）
+- [x] feature-plan（着手前・必須）
+- [x] test-gen（Phase 1 / 2）
+- [x] test-complete（各コミット前）
+- [x] spec-sync-after-test（テスト数変動時・必須）
 - [ ] spec-sync-check（最終・任意）
-- [ ] safe-migration は **不要**（schema 変更無し）
-- [ ] server-action-scaffold は **不要**（既存 `getProductsByIds` 再利用）
+- [x] safe-migration は **不要**（schema 変更無し）
+- [x] server-action-scaffold は **不要**（既存 `getProductsByIds` 再利用）
 
 ---
 
