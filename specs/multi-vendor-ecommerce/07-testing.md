@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1601 passed / 1604 total across 163 suites (3 skipped), as of 2026-06-21.
+- 1613 passed / 1616 total across 164 suites (3 skipped), as of 2026-06-22.
+  PR #147 follow-up raised SonarCloud New Code coverage from 63.6% to ≥80% by adding
+  `product-card.test.tsx` (new, +8: compare toggle 3 branches, wishlist success/failure,
+  rating condition) and extending `compare-grid.test.tsx` (+4: loading skeleton, remove,
+  clear-all, fetch-rejection catch); both files reach 100% line coverage. The `product-card.tsx`
+  wishlist `catch` was also narrowed from `any` to `unknown` + `instanceof Error`.
   Compare feature (product comparison) added a `useCompareStore` (zustand + persist under
   `src/compare-store/`, holding variant ids, max 4, idempotent, `isComparing`), the `/compare`
   page (client wrapper) and `CompareGrid` (client, reusing the existing `getProductsByIds`,

@@ -1164,6 +1164,32 @@ PR #145（dev → main）の SonarCloud 解析が **Duplicated Lines 9.7%（> 3.
 
 ---
 
+### SonarCloud Quality Gate 修復（PR #147 compare 機能）(2026-06-22)
+
+#### 概要
+
+PR #147（compare 機能）の SonarCloud Quality Gate が New Code Coverage 63.6%（< 80%）で Failed。
+`product-card.tsx` にテストファイルが無く新規 compare ロジックが 0% だったのが主因。テスト追加で
+両ファイル Lines 100% にし QG を通す。New Issues / Duplications は元から 0 で、原因はカバレッジのみ。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/product/product-card.test.tsx` | 新規 +8（`handleToggleCompare` 3 分岐 [追加/削除/上限 4] + wishlist 成功/失敗 catch + `rating>0 && sales>0` 条件）。toast は callable+`.success`/`.error` を持つモックで再現 | `e8fe553` |
+| `src/components/store/compare/compare-grid.test.tsx` | +4（loading スケルトン描画 / 個別 remove / clear all / `getProductsByIds` reject の catch 経路） | `e39a38e` |
+| `src/components/store/cards/product/product-card.tsx` | wishlist catch の `error: any` を `unknown` + `instanceof Error` 型ガードへ修正（no-any 規約準拠） | `22bb3f3` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1601 passed | **1613 passed** |
+| スイート数 | 163 | **164** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
