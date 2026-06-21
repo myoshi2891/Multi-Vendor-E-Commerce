@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1613 passed / 1616 total across 164 suites (3 skipped), as of 2026-06-22.
+- 1617 passed / 1620 total across 164 suites (3 skipped), as of 2026-06-22.
+  Compare review-finding fixes added an `else` branch to `compare-grid.tsx`'s catch for
+  non-`Error` throws (structured `"[Compare:fetch] Unknown error"` log, aligning with the
+  tech.md cancellation-flag pattern) and +4 regression tests across the two existing compare
+  suites (`useCompareStore.test.ts`: persistence contract — setItem under the `compare-store`
+  key, re-persist after remove, rehydrate from existing data; `compare-grid.test.tsx`: the new
+  non-`Error` reject branch); suite count unchanged (1613 → 1617).
   PR #147 follow-up raised SonarCloud New Code coverage from 63.6% to ≥80% by adding
   `product-card.test.tsx` (new, +8: compare toggle 3 branches, wishlist success/failure,
   rating condition) and extending `compare-grid.test.tsx` (+4: loading skeleton, remove,

@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1591 passed / 1594 total / 161 スイート（3 skipped）** — 2026-06-20 SonarCloud QG 修復（PR #145）完了時点（`cdc81d5`）。メッセージングコンテナの重複を共有フック/レイアウトへ抽出し、`message.ts`/コンテナ/`user-menu.tsx` のカバレッジを ~100% 分岐へ底上げ（+31、161 スイート不変）。直前 profile-messages Phase 4 は `seller-messages-container.test.tsx` +7（160→161 スイート） |
+| Jestユニットテスト | **1617 passed / 1620 total / 164 スイート（3 skipped）** — 2026-06-22 compare レビュー指摘修正完了時点。`compare-grid.tsx` catch に非 `Error` 用 `else`（`"[Compare:fetch] Unknown error"` 構造化ログ）を追加し、回帰テストを既存 2 スイートへ +4（`useCompareStore.test.ts` 永続化契約 3 件 + `compare-grid.test.tsx` 非 Error reject 1 件、スイート不変、1613→1617）。直前 PR #147（Compare SonarCloud QG 修復）で `product-card.test.tsx` 新規 +8 + `compare-grid.test.tsx` +4（1601→1613、163→164 スイート）、その前 2026-06-21 Compare 機能で +10（161→163 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
