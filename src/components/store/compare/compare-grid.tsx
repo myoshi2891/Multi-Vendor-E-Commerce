@@ -40,6 +40,8 @@ export default function CompareGrid() {
                         error.message,
                         error.stack
                     );
+                } else {
+                    console.error("[Compare:fetch] Unknown error", { error });
                 }
                 if (!cancelled) setProducts([]);
             } finally {

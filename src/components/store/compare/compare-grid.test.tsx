@@ -153,3 +153,23 @@ it("getProductsByIds が失敗したとき商品を描画しない", async () =>
 
     errorSpy.mockRestore();
 });
+
+// error パス（非 Error 値）: instanceof Error でない reject でも Unknown error 分岐でログする
+it("getProductsByIds が非 Error を throw したとき Unknown error をログし描画しない", async () => {
+    const errorSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+    useCompareStore.setState({ items: ["v1"] });
+    mockedGetProductsByIds.mockRejectedValue("boom"); // 文字列 throw（非 Error）
+
+    render(<CompareGrid />);
+
+    await waitFor(() => {
+        expect(errorSpy).toHaveBeenCalledWith("[Compare:fetch] Unknown error", {
+            error: "boom",
+        });
+    });
+    expect(screen.queryByText("Alpha Shirt")).not.toBeInTheDocument();
+
+    errorSpy.mockRestore();
+});
