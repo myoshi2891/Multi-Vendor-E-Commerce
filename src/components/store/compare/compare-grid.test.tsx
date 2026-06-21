@@ -13,9 +13,7 @@ jest.mock("@/queries/product", () => ({
 import { getProductsByIds } from "@/queries/product";
 import CompareGrid from "./compare-grid";
 
-const mockedGetProductsByIds = getProductsByIds as jest.MockedFunction<
-    typeof getProductsByIds
->;
+const mockedGetProductsByIds = jest.mocked(getProductsByIds);
 
 /**
  * 比較グリッドが描画する最小限のフィールドを満たす ProductType モックを生成する。
@@ -34,7 +32,7 @@ const createProduct = (variantId: string, name: string): ProductType => {
                 variantId,
                 variantSlug: `variant-${variantId}`,
                 variantName: "Black",
-                images: [{ url: "img.jpg" }],
+                images: [{ url: "/img.jpg" }],
                 sizes: [
                     {
                         id: `size-${variantId}`,
@@ -47,7 +45,7 @@ const createProduct = (variantId: string, name: string): ProductType => {
             },
         ],
         variantImages: [
-            { url: `/product/slug-${variantId}/variant-${variantId}`, image: "img.jpg" },
+            { url: `/product/slug-${variantId}/variant-${variantId}`, image: "/img.jpg" },
         ],
     } as unknown as ProductType;
 };
