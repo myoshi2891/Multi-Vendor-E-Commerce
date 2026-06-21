@@ -123,3 +123,40 @@ make sonar-down
 './cjs/index.cjs'`）。Makefile の `make seed` / `make seed-e2e` は `bun prisma/seed/seed.ts` のように
 **bun で TS ファイルを直接実行**することで回避している（bun は TS / tsconfig paths をネイティブ解決）。
 ホスト側 (`bun run seed:luxury`) は実 Node 経由の `tsx` で従来どおり動作する。
+
+---
+
+## ローカル Postgres での E2E（Neon 負荷 flake の回避）
+
+### 背景（環境起因 flake）
+
+ホストで `bunx playwright test` を実行すると、Bun の `.env` 自動ロードにより **Neon の
+`DATABASE_URL`** が解決され、webServer（Next）もテスト内 `PrismaClient` も Neon を向く。
+Neon + Prisma Accelerate（レート制限・コールドポーズ）の持続負荷下で間欠ハングが発生し、
+重い注文フロー（sign-in → cart → checkout → place order）の商品ページ goto が 90s 超
+ハングする。ローカルは `retries: 0`（`playwright.config.ts`）のため救済されず、失敗が run
+ごとに別テスト（`stock-decrement` ↔ `platform-coupon` 等）へ**移動する**——これは
+テストロジックではなく**環境起因 flake** の決定的サイン。テストコードは無修正で正しい。
+
+### 解決策: ローカル Postgres へ向ける（opt-in）
+
+```bash
+bun run test:e2e:local                                    # 全 E2E
+bun run test:e2e:local -- tests/e2e/stock-decrement.spec.ts   # 単一スペック
+```
+
+`scripts/e2e/run-local.sh` が以下を一括実行する:
+
+1. `docker compose up -d db` → healthcheck が `healthy` になるまで待機
+2. `DATABASE_URL` / `DIRECT_URL` / `E2E_DATABASE_URL` を
+   `postgresql://dev:dev@localhost:5432/multivendor_dev` に**上書き**（Bun/Next とも
+   先行 export を `.env` より優先するため、DB のみローカルへ切替わる）
+3. `bunx prisma migrate deploy` → `bun run seed:e2e`
+4. `bunx playwright test "$@"`
+
+Clerk/Stripe 等のキーは export せず `.env` から従来どおり供給される（DB URL のみ上書き）。
+既定の `bunx playwright test`（Neon）経路は据え置きで、これは opt-in。
+
+> **注意 (reuseExistingServer)**: `playwright.config.ts` は `reuseExistingServer: !CI` のため、
+> :3000 に Neon 向きの dev サーバーが起動中だと**再利用されてしまい**、切替が無効化される。
+> `bun run test:e2e:local` 実行前に、:3000 の既存サーバー（`bun run dev` 等）を必ず停止すること。
