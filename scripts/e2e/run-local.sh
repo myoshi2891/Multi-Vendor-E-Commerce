@@ -36,7 +36,20 @@ echo "==> ローカル Postgres (db サービス) を起動..."
 docker compose up -d db
 
 echo "==> DB の healthcheck 完了を待機..."
-until [ "$(docker compose ps -q db | xargs docker inspect -f '{{.State.Health.Status}}')" = "healthy" ]; do
+# 最大 60s（30 回 × 2s）待機。コンテナ ID が空の間は docker inspect をスキップし、
+# set -e による即時終了と、healthy にならない場合の無限ハングの両方を防ぐ。
+readonly DB_HEALTH_MAX_RETRIES=30
+db_health_attempt=0
+until
+    db_cid="$(docker compose ps -q db)"
+    [ -n "$db_cid" ] &&
+        [ "$(docker inspect -f '{{.State.Health.Status}}' "$db_cid")" = "healthy" ]
+do
+    db_health_attempt=$((db_health_attempt + 1))
+    if [ "$db_health_attempt" -ge "$DB_HEALTH_MAX_RETRIES" ]; then
+        echo "ERROR: db サービスが ${DB_HEALTH_MAX_RETRIES} 回（約 60s）待機しても healthy になりませんでした。" >&2
+        exit 1
+    fi
     sleep 2
 done
 
