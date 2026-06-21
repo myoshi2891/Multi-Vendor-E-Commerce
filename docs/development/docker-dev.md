@@ -126,19 +126,33 @@ make sonar-down
 
 ---
 
-## ローカル Postgres での E2E（Neon 負荷 flake の回避）
+## ローカル Postgres での E2E（Neon 切り離し + retries による flake 吸収）
 
-### 背景（環境起因 flake）
+### 背景と、検証で判明したこと
 
 ホストで `bunx playwright test` を実行すると、Bun の `.env` 自動ロードにより **Neon の
 `DATABASE_URL`** が解決され、webServer（Next）もテスト内 `PrismaClient` も Neon を向く。
-Neon + Prisma Accelerate（レート制限・コールドポーズ）の持続負荷下で間欠ハングが発生し、
-重い注文フロー（sign-in → cart → checkout → place order）の商品ページ goto が 90s 超
-ハングする。ローカルは `retries: 0`（`playwright.config.ts`）のため救済されず、失敗が run
-ごとに別テスト（`stock-decrement` ↔ `platform-coupon` 等）へ**移動する**——これは
-テストロジックではなく**環境起因 flake** の決定的サイン。テストコードは無修正で正しい。
+重い注文フロー（sign-in → cart → checkout → place order）が chromium/webkit で間欠的に
+120s ハングし、失敗が run ごとに別テスト（`stock-decrement` ↔ `platform-coupon`）へ移動する。
 
-### 解決策: ローカル Postgres へ向ける（opt-in）
+当初は「Neon + Prisma Accelerate の負荷ハングが原因」と仮説し、E2E をローカル Postgres へ
+向ける検証を行った（migrate/seed が `localhost:5432` に成功し、webServer もローカル seed を
+読めることを確認）。**しかしローカル Postgres でも 3 run 中 1 run で `platform-coupon` が
+120s ハングし、flake は再現した。** これにより **DB バックエンドは真因ではない** ことが
+確定した（Neon 仮説は反証）。失敗 run のスナップショットでは商品ページ（`size-option`）に
+到達せずホームに留まっており、ハングは DB ではなく **ブラウザ側フロー（sign-in 後の
+ナビゲーション/データ準備レース）** で起きている。共有ローカル DB に対して 3 ブラウザを
+直列実行する構成のため、軽微なタイミング差で間欠化する。
+
+したがって本コマンドの位置づけは「flake の根絶」ではなく、
+
+1. **Neon/Accelerate を変数から外す**（クラウド到達性・レート制限に E2E を依存させない）、
+2. **CI と同じ `retries` で間欠ハングを吸収する**（CI は `playwright.config.ts` で `retries: 2`、
+   ローカル既定は `0`。本コマンドは `--retries=2` を付与して CI と同じ吸収挙動にする）
+
+の 2 点である。テストコードは無修正。
+
+### 使い方（opt-in）
 
 ```bash
 bun run test:e2e:local                                    # 全 E2E
@@ -152,10 +166,17 @@ bun run test:e2e:local -- tests/e2e/stock-decrement.spec.ts   # 単一スペッ�
    `postgresql://dev:dev@localhost:5432/multivendor_dev` に**上書き**（Bun/Next とも
    先行 export を `.env` より優先するため、DB のみローカルへ切替わる）
 3. `bunx prisma migrate deploy` → `bun run seed:e2e`
-4. `bunx playwright test "$@"`
+4. `bunx playwright test --retries=2 "$@"`（CI と同じ flake 吸収）
 
 Clerk/Stripe 等のキーは export せず `.env` から従来どおり供給される（DB URL のみ上書き）。
 既定の `bunx playwright test`（Neon）経路は据え置きで、これは opt-in。
+
+> **未解決（真因の深掘り）**: 120s ハングの確定的な原因（sign-in 後のレース/データ分離）は
+> 未特定。`test-results/.../trace.zip` を `npx playwright show-trace` で開けば、どの操作が
+> 120s を消費したか（gotoStable の商品 goto か、`size-option` 待ちか）を特定できる。
+> retries はあくまで吸収であり、恒久修正には trace に基づく同期/分離の修正が必要。
+
+---
 
 > **注意 (reuseExistingServer)**: `playwright.config.ts` は `reuseExistingServer: !CI` のため、
 > :3000 に Neon 向きの dev サーバーが起動中だと**再利用されてしまい**、切替が無効化される。

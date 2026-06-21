@@ -4,11 +4,17 @@
 #
 # 背景:
 #   既定の `bunx playwright test` は Bun の `.env` 自動ロードにより Neon の DATABASE_URL を
-#   解決する。Neon + Prisma Accelerate の負荷下間欠ハングが重い注文フロー（sign-in →
-#   cart → checkout → place order）の goto を 90s 超ハングさせ、ローカルでは retries:0 の
-#   ため救済されず、run ごとに別テストへ移動する環境 flake になる。
+#   解決する。重い注文フロー（sign-in → cart → checkout → place order）が間欠的に 120s
+#   ハングし、失敗が run ごとに別テストへ移動する。
 #
-# 本スクリプトは DB URL のみをローカル docker Postgres に上書きして flake を根絶する。
+#   当初は Neon 負荷が原因と仮説したが、ローカル Postgres へ向けても flake は再現した
+#   （3 run 中 1 run で platform-coupon が 120s ハング）。よって DB は真因ではなく、ハングは
+#   sign-in 後のブラウザ側ナビゲーション/データ準備レースである。本スクリプトの狙いは:
+#     (1) Neon/Accelerate を変数から外す（クラウド到達性に E2E を依存させない）
+#     (2) CI と同じ retries で間欠ハングを吸収する（CI=retries:2 / ローカル既定=0）
+#   詳細は docs/development/docker-dev.md を参照。
+#
+# DB URL のみをローカル docker Postgres に上書きする。
 # Clerk/Stripe 等のキーは export せず `.env` から従来通り供給される。
 #
 # 使い方:
@@ -45,5 +51,5 @@ bunx prisma migrate deploy
 echo "==> E2E シード投入 (seed:e2e)..."
 bun run seed:e2e
 
-echo "==> Playwright E2E 実行 (ローカル Postgres)..."
-bunx playwright test "$@"
+echo "==> Playwright E2E 実行 (ローカル Postgres, retries=2 で CI と同じ flake 吸収)..."
+bunx playwright test --retries=2 "$@"
