@@ -6,9 +6,11 @@ import ReactStars from "react-rating-stars-component";
 import ProductCardImageSwiper from "./swiper";
 import VariantSwitcher from "./variant-switcher";
 import { Button } from "@/components/store/ui/button";
-import { Heart } from "lucide-react";
+import { GitCompare, Heart } from "lucide-react";
 import ProductPrice from "../../product-page/product-info/product-price";
 import { addToWishlist } from "@/queries/user";
+import { useCompareStore } from "@/compare-store/useCompareStore";
+import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 /**
@@ -28,9 +30,34 @@ export default function ProductCard({ product }: { product: ProductType }) {
         try {
             const res = await addToWishlist(id, variant.variantId);
             if (res) toast.success("Product successfully added to wishlist");
-        } catch (error: any) {
-            toast.error(error.toString());
+        } catch (error: unknown) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to add product to wishlist";
+            toast.error(message);
         }
+    };
+
+    const compareItems = useCompareStore((s) => s.items);
+    const addToCompare = useCompareStore((s) => s.addToCompare);
+    const removeFromCompare = useCompareStore((s) => s.removeFromCompare);
+    const isComparing = compareItems.includes(variant.variantId);
+
+    // トグル＋トースト。ストアは void のままハンドラ側で分岐（上限はストアでも拒否されるが
+    // ユーザーへ理由を伝えるため事前に件数を確認して error トーストを出す）。
+    const handleToggleCompare = () => {
+        if (isComparing) {
+            removeFromCompare(variant.variantId);
+            toast("Removed from compare");
+            return;
+        }
+        if (compareItems.length >= 4) {
+            toast.error("Compare list is full (max 4)");
+            return;
+        }
+        addToCompare(variant.variantId);
+        toast.success("Added to compare");
     };
 
     return (
@@ -95,6 +122,23 @@ export default function ProductCard({ product }: { product: ProductType }) {
                             onClick={() => handleAddToWishlist()}
                         >
                             <Heart className="w-5" />
+                        </Button>
+                        <Button
+                            variant="black"
+                            size="icon"
+                            aria-label={
+                                isComparing
+                                    ? "Remove from compare"
+                                    : "Add to compare"
+                            }
+                            aria-pressed={isComparing}
+                            onClick={() => handleToggleCompare()}
+                        >
+                            <GitCompare
+                                className={cn("w-5", {
+                                    "text-orange-primary": isComparing,
+                                })}
+                            />
                         </Button>
                     </div>
                 </div>

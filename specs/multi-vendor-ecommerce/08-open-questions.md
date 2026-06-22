@@ -44,6 +44,47 @@
 **記録日**: 2026-03-24
 **ステータス**: 回避策実装済み（Firefox テストはスキップ、Chromium/WebKit で品質保証）
 
+### E2E テスト: 重い注文フローが間欠的に 120s ハングする (OI-9)
+
+**影響範囲**: `tests/e2e/stock-decrement.spec.ts` / `tests/e2e/platform-coupon.spec.ts` 等、
+sign-in → cart → checkout → place order を通す重いフロー。chromium / webkit で間欠的に
+1 テストが `test.setTimeout(120000)` を使い切ってタイムアウトする。
+
+**症状**:
+- 失敗が run ごとに別テストへ移動する（run1: `stock-decrement` / run2: `platform-coupon`）。
+- 失敗 run のスナップショットでは商品ページの `size-option` / `add-to-cart` に到達せず、
+  カート 0 のままホームに滞留している。
+
+**調査経緯（重要: 当初仮説は反証済み）**:
+- 当初「Neon + Prisma Accelerate の負荷下間欠ハングが原因」と仮説し、E2E をローカル
+  docker Postgres（`postgresql://dev:dev@localhost:5432/multivendor_dev`）へ向ける検証を実施。
+- migrate/seed が `localhost:5432` に成功し webServer もローカル seed を読めることを確認した
+  にもかかわらず、**ローカル Postgres でも 3 run 中 1 run で 120s ハングが再現した**。
+- → **DB バックエンド（Neon/Prisma）は真因ではない**ことが controlled experiment により確定。
+  ハングは DB ではなく **sign-in 後のブラウザ側ナビゲーション/データ準備レース**。共有ローカル
+  DB に対し 3 ブラウザを直列実行する構成で、軽微なタイミング差により間欠化する。
+
+**回避策（実装済み）**:
+- ローカル opt-in 経路 `bun run test:e2e:local`（`scripts/e2e/run-local.sh`）が
+  `bunx playwright test --retries=2` で実行し、CI（`playwright.config.ts` の `retries: 2`）と
+  同じく新規プロセス再実行で間欠ハングを吸収する。ローカル既定（`retries: 0`）では救済されない。
+- テストコードは無修正（環境/同期起因のため、ロジック修正は「もぐら叩き」になる）。
+
+**長期対応案（恒久修正・未着手）**:
+1. 失敗 run の `test-results/.../trace.zip` を `npx playwright show-trace` で解析し、
+   120s を消費した操作が gotoStable の商品 goto か `size-option` 待ちかを確定する。
+2. sign-in 後のナビゲーション同期（`waitForPostSignInSettle` / `gotoStable`）の強化、または
+   3 ブラウザ直列実行時の seed データ分離（suffix）/共有 DB 競合の見直し。
+
+**関連ファイル**:
+- `scripts/e2e/run-local.sh`（ローカル opt-in 実行・retries 吸収）
+- `docs/development/docker-dev.md`（経緯と使い方の詳細）
+- `src/config/test-helpers.ts`（`gotoStable` / `waitForPostSignInSettle`）
+- `tests/e2e/seed/constants.ts`（seed suffix 分離ロジック）
+
+**記録日**: 2026-06-21
+**ステータス**: retries で吸収（恒久修正は未着手・trace 解析待ち）
+
 ### modal-provider テスト: CI環境での実行時のランダムな失敗 (OI-8)
 
 **影響範囲**: `src/providers/modal-provider.test.tsx` の一部テストが、CI (GitHub Actions) 環境でまれに失敗する。

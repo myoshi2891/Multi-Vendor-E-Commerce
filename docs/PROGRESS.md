@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1591 passed / 1594 total / 161 スイート（3 skipped）** — 2026-06-20 SonarCloud QG 修復（PR #145）完了時点（`cdc81d5`）。メッセージングコンテナの重複を共有フック/レイアウトへ抽出し、`message.ts`/コンテナ/`user-menu.tsx` のカバレッジを ~100% 分岐へ底上げ（+31、161 スイート不変）。直前 profile-messages Phase 4 は `seller-messages-container.test.tsx` +7（160→161 スイート） |
+| Jestユニットテスト | **1617 passed / 1620 total / 164 スイート（3 skipped）** — 2026-06-22 compare レビュー指摘修正完了時点。`compare-grid.tsx` catch に非 `Error` 用 `else`（`"[Compare:fetch] Unknown error"` 構造化ログ）を追加し、回帰テストを既存 2 スイートへ +4（`useCompareStore.test.ts` 永続化契約 3 件 + `compare-grid.test.tsx` 非 Error reject 1 件、スイート不変、1613→1617）。直前 PR #147（Compare SonarCloud QG 修復）で `product-card.test.tsx` 新規 +8 + `compare-grid.test.tsx` +4（1601→1613、163→164 スイート）、その前 2026-06-21 Compare 機能で +10（161→163 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1133,6 +1133,59 @@ PR #145（dev → main）の SonarCloud 解析が **Duplicated Lines 9.7%（> 3.
 |------|--------|--------|
 | Jest テスト総数 (unit/component) | 1560 passed | **1591 passed** |
 | スイート数 | 161 | **161**（不変・既存ファイルへ追加） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Compare 機能（商品比較）実装 (2026-06-21)
+
+#### 概要
+
+`docs/design/compare/` の MVP（Zustand 永続ストア + 比較グリッドページ）に加え、tasks.md 2-B の「Add to compare ボタン」を実装。Red→Green TDD でストア → グリッド → 商品カードボタンの順にコミット分割。footer の「Compare」リンク（既存・配線済み）が初めて到達先を持つ。新規 server action・schema 変更なし（既存 `getProductsByIds` を再利用）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/compare-store/useCompareStore.ts` | 新規。zustand + persist（`useCartStore` と同型）。バリアント ID のみ保持・上限 4 件・冪等・`isComparing` | `5a1c669` |
+| `src/compare-store/useCompareStore.test.ts` | 新規 +8（T-CMP1〜4 add/冪等/上限/削除 + `isComparing`） | `23f7332`/`5a1c669` |
+| `src/app/(store)/compare/page.tsx` | 新規。client wrapper（`CompareGrid` を描画・`force-dynamic` 不要） | `2616f88` |
+| `src/components/store/compare/compare-grid.tsx` | 新規 client。既存 `getProductsByIds` 再利用・`useEffect` キャンセルフラグ・`items.length===0` で未呼び出し（空配列 throw 回避）・横並びカラム + 個別削除/全消去/スケルトン | `2616f88` |
+| `src/components/store/compare/compare-grid.test.tsx` | 新規 +2（T-CMP5/T-CMP6・`getProductsByIds` mock） | `ece4e5c`/`2616f88` |
+| `src/components/store/cards/product/product-card.tsx` | Add-to-compare トグルボタン追加（GitCompare・トグル＋トースト・上限 4 超過は `toast.error`・ストアは void のままハンドラ側で分岐） | `bdf3356` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1591 passed | **1601 passed** |
+| スイート数 | 161 | **163** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud Quality Gate 修復（PR #147 compare 機能）(2026-06-22)
+
+#### 概要
+
+PR #147（compare 機能）の SonarCloud Quality Gate が New Code Coverage 63.6%（< 80%）で Failed。
+`product-card.tsx` にテストファイルが無く新規 compare ロジックが 0% だったのが主因。テスト追加で
+両ファイル Lines 100% にし QG を通す。New Issues / Duplications は元から 0 で、原因はカバレッジのみ。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/product/product-card.test.tsx` | 新規 +8（`handleToggleCompare` 3 分岐 [追加/削除/上限 4] + wishlist 成功/失敗 catch + `rating>0 && sales>0` 条件）。toast は callable+`.success`/`.error` を持つモックで再現 | `e8fe553` |
+| `src/components/store/compare/compare-grid.test.tsx` | +4（loading スケルトン描画 / 個別 remove / clear all / `getProductsByIds` reject の catch 経路） | `e39a38e` |
+| `src/components/store/cards/product/product-card.tsx` | wishlist catch の `error: any` を `unknown` + `instanceof Error` 型ガードへ修正（no-any 規約準拠） | `22bb3f3` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1601 passed | **1613 passed** |
+| スイート数 | 163 | **164** |
 | 型エラー | 0 件 | **0 件** |
 
 ---
