@@ -184,7 +184,7 @@ const extraLinks = [
     },
     {
         title: "Help Center",
-        link: "",
+        link: "/customer-service",
     },
     {
         title: "Return & Refund Policy",
@@ -192,7 +192,7 @@ const extraLinks = [
     },
     {
         title: "Legal & Privacy",
-        link: "",
+        link: "/legal",
     },
     {
         title: "Discounts & Offers",
