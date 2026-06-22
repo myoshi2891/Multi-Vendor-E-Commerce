@@ -19,8 +19,8 @@ export default function ReturnsExchangePage() {
                     {RETURNS_POLICY_SUMMARY.intro}
                 </p>
                 <ul className="list-disc space-y-1 pl-5 text-sm">
-                    {RETURNS_POLICY_SUMMARY.points.map((point) => (
-                        <li key={point}>{point}</li>
+                    {RETURNS_POLICY_SUMMARY.points.map((point, index) => (
+                        <li key={`${point}-${index}`}>{point}</li>
                     ))}
                 </ul>
             </section>

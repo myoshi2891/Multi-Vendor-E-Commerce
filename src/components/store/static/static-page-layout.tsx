@@ -55,9 +55,9 @@ export default function StaticPageLayout({
                         <h2 className="mb-3 text-xl font-semibold">
                             {s.heading}
                         </h2>
-                        {s.body.split("\n\n").map((para) => (
+                        {s.body.split("\n\n").map((para, index) => (
                             <p
-                                key={para}
+                                key={`${s.heading}-${index}`}
                                 className="mb-3 leading-relaxed text-main-secondary"
                             >
                                 {para}
