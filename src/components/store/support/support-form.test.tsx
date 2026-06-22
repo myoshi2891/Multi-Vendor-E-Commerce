@@ -72,4 +72,76 @@ describe("SupportForm", () => {
         // 後始末（保留 promise を解決）
         resolveFn({ id: "ticket-1" });
     });
+
+    /** 有効入力を全フィールドに入力するヘルパー */
+    const fillValid = () => {
+        fireEvent.change(screen.getByLabelText("お名前"), {
+            target: { value: "山田太郎" },
+        });
+        fireEvent.change(screen.getByLabelText("メールアドレス"), {
+            target: { value: "taro@example.com" },
+        });
+        fireEvent.change(screen.getByLabelText("件名"), {
+            target: { value: "件名" },
+        });
+        fireEvent.change(screen.getByLabelText("内容"), {
+            target: { value: "本文です。" },
+        });
+    };
+
+    // T-SF7 — 送信成功で受付メッセージ（<output> = role status）を表示する
+    it("送信成功で受付メッセージを表示する", async () => {
+        // Arrange
+        render(<SupportForm category="CONTACT" />);
+        fillValid();
+
+        // Act
+        fireEvent.click(screen.getByRole("button", { name: /送信|send/i }));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByRole("status")).toHaveTextContent(
+                "受け付けました。"
+            );
+        });
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+    });
+
+    // T-SF8 — server action が reject するとルートエラー（role alert）を表示する
+    it("送信失敗時にエラーメッセージを alert で表示する", async () => {
+        // Arrange
+        mockCreate.mockRejectedValue(new Error("boom"));
+        render(<SupportForm category="CONTACT" />);
+        fillValid();
+
+        // Act
+        fireEvent.click(screen.getByRole("button", { name: /送信|send/i }));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByRole("alert")).toHaveTextContent("boom");
+        });
+    });
+
+    // T-SF9 — requireOrderId で注文番号欄を表示する
+    it("requireOrderId=true で対象の注文番号欄を表示する", () => {
+        // Arrange / Act
+        render(
+            <SupportForm category="RETURN_REQUEST" requireOrderId />
+        );
+
+        // Assert
+        expect(screen.getByLabelText("対象の注文番号")).toBeInTheDocument();
+    });
+
+    // T-SF10 — submitLabel でボタン文言を上書きする
+    it("submitLabel でボタン文言を上書きする", () => {
+        // Arrange / Act
+        render(<SupportForm category="CONTACT" submitLabel="送信する" />);
+
+        // Assert
+        expect(
+            screen.getByRole("button", { name: "送信する" })
+        ).toBeInTheDocument();
+    });
 });

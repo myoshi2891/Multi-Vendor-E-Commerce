@@ -39,6 +39,12 @@ describe("createSupportTicket", () => {
         jest.clearAllMocks();
         mockCurrentUser.mockResolvedValue(null);
         mockDb.supportTicket.create.mockResolvedValue({ id: "ticket-1" });
+        // catch ブロックの構造化ログ出力でテスト出力を汚さない
+        jest.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
 
     // T-SF1 / AC-SF1
@@ -103,5 +109,60 @@ describe("createSupportTicket", () => {
             data: { userId?: string };
         };
         expect(callArg.data.userId).toBeUndefined();
+    });
+
+    // T-SF7 — currentUser が Error を throw してもゲスト送信として続行する
+    it("currentUser が Error を throw しても userId 未設定で作成し id を返す", async () => {
+        // Arrange
+        mockCurrentUser.mockRejectedValue(new Error("clerk down"));
+        const input = validContact();
+
+        // Act
+        const result = await createSupportTicket(input);
+
+        // Assert
+        const callArg = mockDb.supportTicket.create.mock.calls[0][0] as {
+            data: { userId?: string };
+        };
+        expect(callArg.data.userId).toBeUndefined();
+        expect(result).toEqual({ id: "ticket-1" });
+    });
+
+    // T-SF8 — currentUser が非 Error 値を throw した場合（unknown 分岐）も続行する
+    it("currentUser が非 Error を throw しても作成を続行する", async () => {
+        // Arrange
+        mockCurrentUser.mockRejectedValue("string failure");
+        const input = validContact();
+
+        // Act
+        const result = await createSupportTicket(input);
+
+        // Assert
+        expect(mockDb.supportTicket.create).toHaveBeenCalledTimes(1);
+        expect(result).toEqual({ id: "ticket-1" });
+    });
+
+    // T-SF9 — create が Error を throw したら汎用エラーで reject する
+    it("create が Error を throw すると送信失敗エラーで reject する", async () => {
+        // Arrange
+        mockDb.supportTicket.create.mockRejectedValue(new Error("db error"));
+        const input = validContact();
+
+        // Act / Assert
+        await expect(createSupportTicket(input)).rejects.toThrow(
+            "送信に失敗しました。時間をおいて再度お試しください。"
+        );
+    });
+
+    // T-SF10 — create が非 Error 値を throw した場合（unknown 分岐）も汎用エラーで reject する
+    it("create が非 Error を throw しても送信失敗エラーで reject する", async () => {
+        // Arrange
+        mockDb.supportTicket.create.mockRejectedValue({ code: "P2002" });
+        const input = validContact();
+
+        // Act / Assert
+        await expect(createSupportTicket(input)).rejects.toThrow(
+            "送信に失敗しました。時間をおいて再度お試しください。"
+        );
     });
 });
