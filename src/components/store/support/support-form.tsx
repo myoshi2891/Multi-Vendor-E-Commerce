@@ -18,16 +18,17 @@ import { Button } from "@/components/ui/button";
 
 interface SupportFormProps {
     category: SupportTicketInput["category"];
-    /** orderId 欄を表示するか（RETURN_REQUEST / DISPUTE で true） */
-    requireOrderId?: boolean;
     submitLabel?: string;
 }
 
 export default function SupportForm({
     category,
-    requireOrderId,
     submitLabel,
 }: Readonly<SupportFormProps>) {
+    // orderId 欄の要否は category から導出する（schemas.ts の superRefine と同一条件）。
+    // caller が category と requireOrderId を別々に渡してずれる事故を防ぐ。
+    const requireOrderId =
+        category === "RETURN_REQUEST" || category === "DISPUTE";
     const isSubmittingRef = useRef(false);
     const [done, setDone] = useState(false);
     const form = useForm<SupportTicketInput>({

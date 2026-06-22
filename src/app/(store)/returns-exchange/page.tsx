@@ -27,7 +27,6 @@ export default function ReturnsExchangePage() {
 
             <SupportForm
                 category="RETURN_REQUEST"
-                requireOrderId
                 submitLabel="返品・交換を申請する"
             />
         </main>

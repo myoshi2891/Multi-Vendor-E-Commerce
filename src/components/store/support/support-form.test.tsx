@@ -123,12 +123,10 @@ describe("SupportForm", () => {
         });
     });
 
-    // T-SF9 — requireOrderId で注文番号欄を表示する
-    it("requireOrderId=true で対象の注文番号欄を表示する", () => {
+    // T-SF9 — category=RETURN_REQUEST から注文番号欄の表示を導出する
+    it("category=RETURN_REQUEST で対象の注文番号欄を表示する", () => {
         // Arrange / Act
-        render(
-            <SupportForm category="RETURN_REQUEST" requireOrderId />
-        );
+        render(<SupportForm category="RETURN_REQUEST" />);
 
         // Assert
         expect(screen.getByLabelText("対象の注文番号")).toBeInTheDocument();
