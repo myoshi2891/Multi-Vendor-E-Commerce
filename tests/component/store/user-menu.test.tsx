@@ -81,6 +81,37 @@ describe("UserMenu", () => {
         expect(legalLink).toHaveAttribute("href", "/legal");
     });
 
+    it('renders the Return & Refund Policy extra link pointing to "/returns-exchange" (regression: not "/")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "/" を弾き /returns-exchange を指すこと（AC-SF7）
+        const link = screen.getByRole("link", {
+            name: "Return & Refund Policy",
+        });
+        expect(link).toHaveAttribute("href", "/returns-exchange");
+    });
+
+    it('renders the Order Dispute Resolution extra link pointing to "/dispute" (regression: not "")', async () => {
+        // Arrange / Act
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /dispute を指すこと（AC-SF7）
+        const link = screen.getByRole("link", {
+            name: "Order Dispute Resolution",
+        });
+        expect(link).toHaveAttribute("href", "/dispute");
+    });
+
+    it('renders the Report a Problem extra link pointing to "/report-problem" (regression: not "")', async () => {
+        // Arrange / Act
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /report-problem を指すこと（AC-SF7）
+        const link = screen.getByRole("link", { name: "Report a Problem" });
+        expect(link).toHaveAttribute("href", "/report-problem");
+    });
+
     it("未認証時はサインイン/登録ボタンを描画する（user=null 経路）", async () => {
         mockCurrentUser.mockResolvedValueOnce(null);
 
