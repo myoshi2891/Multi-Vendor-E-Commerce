@@ -10,9 +10,7 @@ import ProductPrice from "@/components/store/product-page/product-info/product-p
 import type { ProductType } from "@/lib/types";
 
 /**
- * 比較グリッド（client）。useCompareStore のバリアント ID を読み、getProductsByIds で
- * 商品を取得して横並びカラムで描画する。比較リストが空のときは getProductsByIds を呼ばず
- * （ids 空配列で throw する仕様を回避）空状態を表示する。
+ * Renders a horizontal comparison grid of selected products with pricing, ratings, and controls to modify the comparison list.
  */
 export default function CompareGrid() {
     const items = useCompareStore((s) => s.items);
