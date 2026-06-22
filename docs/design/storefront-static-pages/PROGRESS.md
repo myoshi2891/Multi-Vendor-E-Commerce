@@ -23,7 +23,7 @@
 | 1-C  | user-menu 配線（Help Center / Legal）       | ✅ `227ca0e` | test-gen             | 回帰テスト先行（AC-SP4/5・+2）                    |
 | 1-D  | 品質チェック（lint/tsc/test + build）       | ✅   | test-complete        | 全緑（lint 0 err / tsc 0 / 1629 passed / build OK）|
 | 1-E  | ドキュメント同期（統計 + dashboard 再生成） | ✅   | spec-sync-after-test | QA_HANDOFF SSOT → 伝播                            |
-| 1-F  | 最終ドリフト確認                            | ⬜   | spec-sync-check      | 任意（未実施）                                    |
+| 1-F  | 最終ドリフト確認                            | ➖   | spec-sync-check      | 任意（Phase 1 完了条件外・未実施）                |
 
 ---
 

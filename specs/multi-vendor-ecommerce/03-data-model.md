@@ -37,6 +37,7 @@
 - StoreStatus: PENDING, ACTIVE, BANNED, DISABLED
 - ShippingFeeMethod: ITEM, WEIGHT, FIXED
 - OrderStatus, PaymentStatus, PaymentMethod, ProductStatus
+- CouponScope: STORE, PLATFORM (Coupon.scope; default STORE)
 - SupportTicketCategory: CONTACT, RETURN_REQUEST, DISPUTE, PROBLEM_REPORT
 
 ## Money Field Convention
