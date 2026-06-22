@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1638 passed / 1641 total / 170 スイート（3 skipped）** — 2026-06-22 support-forms 機能完了時点。4 種サポートフォームを単一 `SupportTicket` モデル + 公開 server action `createSupportTicket` + 共有 `SupportForm` + 公開 4 ページ（`/contact` `/returns-exchange` `/dispute` `/report-problem`・全て SSG）で実装し、user-menu 3 リンクを配線。新規スイート `support.test.ts` +4 / `support-form.test.tsx` +2 + `user-menu.test.tsx` +3 回帰 = +9（1629→1638、168→170 スイート）。直前 storefront-static-pages 機能で +9（165→168 スイート）、その前 offers 機能で +3（164→165 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1650 passed / 1653 total / 171 スイート（3 skipped）** — 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |

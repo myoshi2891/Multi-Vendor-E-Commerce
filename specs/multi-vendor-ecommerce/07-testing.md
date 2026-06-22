@@ -12,6 +12,14 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1650 passed / 1653 total across 171 suites (3 skipped), as of 2026-06-22.
+  SonarCloud Quality Gate remediation (PR #149) lifted support-forms New Code Coverage
+  from 77.5% over the 80% gate and cleared 4 New Issues (S6759 readonly props ×2, S6819
+  `<output>` over `role="status"`, S6479 content-based paragraph keys). Added `support.test.ts`
+  (+5, currentUser/create throw paths in Error and non-Error branches), `support-form.test.tsx`
+  (+4, success `<output>` / error alert / `requireOrderId` / `submitLabel`) and a new suite
+  `content/content.test.ts` (+3, import-and-shape checks for the previously-0% faqs/legal/
+  product-support/returns constants); +12 tests, 170 → 171 suites.
 - 1638 passed / 1641 total across 170 suites (3 skipped), as of 2026-06-22.
   Support forms (`docs/design/support-forms/`) added a single `SupportTicket` model
   (additive, non-destructive migration + ERD regen) and a public `createSupportTicket`
