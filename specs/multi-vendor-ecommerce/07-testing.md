@@ -12,7 +12,14 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1617 passed / 1620 total across 164 suites (3 skipped), as of 2026-06-22.
+- 1620 passed / 1623 total across 165 suites (3 skipped), as of 2026-06-22.
+  Offers feature (`docs/design/offers/`) added the public `/offers` landing page
+  (`src/app/(store)/offers/page.tsx`, `force-dynamic`, reusing `getAllOfferTags` and
+  delegating the product grid to `/browse?offer=<url>`) and wired the user-menu
+  "Discounts & Offers" link (`""` → `/offers`). New suite `offers/page.test.tsx` (+2:
+  T-OF1 list & `/browse?offer=<url>` links / T-OF2 empty state, `getAllOfferTags` mocked)
+  and a +1 regression in `user-menu.test.tsx` (T-OF3: link → `/offers`); +3 tests,
+  164 → 165 suites. No new server action or schema change.
   Compare review-finding fixes added an `else` branch to `compare-grid.tsx`'s catch for
   non-`Error` throws (structured `"[Compare:fetch] Unknown error"` log, aligning with the
   tech.md cancellation-flag pattern) and +4 regression tests across the two existing compare

@@ -6,23 +6,23 @@
 
 ---
 
-## 🧭 現在地（2026-06-21）
+## 🧭 現在地（2026-06-22）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **実装未着手** — 着手時は [tasks.md](./tasks.md) §0 の `feature-plan` から開始（承認後 Phase 1）。
-- 👉 **次の着手**: Phase 1-A（`/offers` ページの描画テスト先行 → 実装）。
+- ✅ **Phase 1 完了** — `/offers` ページ + user-menu 配線を TDD（Red→Green）で実装（`fd11326`〜`d2cd4e4`）。
+- 👉 **次の着手**: なし（MVP 完了）。任意拡張（offers 内商品プレビュー / プラットフォームクーポン掲示）は scope 外。
 
 ---
 
-## Phase 1: オファー landing + 導線 ⬜ 未着手
+## Phase 1: オファー landing + 導線 ✅ 完了
 
 | Task | 内容                                                           | 状態 | SKILL                   |
 | ---- | -------------------------------------------------------------- | ---- | ----------------------- |
-| 1-A  | `/offers` ページ（getAllOfferTags 再利用・force-dynamic・TDD） | ⬜   | test-gen                |
-| 1-B  | user-menu 配線（Discounts & Offers・回帰）                     | ⬜   | test-gen                |
-| 1-C  | 品質チェック（lint/tsc/test + build）                          | ⬜   | test-complete           |
-| 1-D  | ドキュメント同期（統計 + dashboard 再生成）                    | ⬜   | spec-sync-after-test    |
-| 1-E  | 最終ドリフト確認                                               | ⬜   | spec-sync-check（任意） |
+| 1-A  | `/offers` ページ（getAllOfferTags 再利用・force-dynamic・TDD） | ✅ `fd11326`〜`90f774d` | test-gen                |
+| 1-B  | user-menu 配線（Discounts & Offers・回帰）                     | ✅ `67c4023`〜`d2cd4e4` | test-gen                |
+| 1-C  | 品質チェック（lint/tsc/test + build）                          | ✅ 全緑（`/offers` は ƒ dynamic） | test-complete           |
+| 1-D  | ドキュメント同期（統計 + dashboard 再生成）                    | ✅ | spec-sync-after-test    |
+| 1-E  | 最終ドリフト確認                                               | ⬜（任意） | spec-sync-check（任意） |
 
 ---
 

@@ -1190,6 +1190,34 @@ PR #147（compare 機能）の SonarCloud Quality Gate が New Code Coverage 63.
 
 ---
 
+### Offers 機能（オファー landing + 導線）実装 (2026-06-22)
+
+#### 概要
+
+`docs/design/offers/` の MVP を実装。プラットフォーム全体のオファー（`OfferTag`）を一覧する公開ページ
+`/offers` を追加し、user-menu の「Discounts & Offers」リンク（旧 `""`）を `/offers` に配線した。
+商品グリッドは再実装せず、各オファーを既存 `/browse?offer=<url>` フィルタへ委譲（DRY）。新規 server
+action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(store)/offers/page.test.tsx` | 新規 +2（T-OF1 一覧＋`/browse?offer=<url>` リンク描画 / T-OF2 空状態・`getAllOfferTags` mock・`render(await OffersPage())`） | `fd11326` |
+| `src/app/(store)/offers/page.tsx` | 新規（async server component・`force-dynamic`・`getAllOfferTags` 再利用・空配列で空状態） | `90f774d` |
+| `tests/component/store/user-menu.test.tsx` | T-OF3 回帰 +1（Discounts & Offers→`/offers`、旧 `""` を弾く） | `67c4023` |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` の Discounts & Offers を `""`→`/offers`（1 行） | `d2cd4e4` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1617 passed | **1620 passed** |
+| スイート数 | 164 | **165** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |

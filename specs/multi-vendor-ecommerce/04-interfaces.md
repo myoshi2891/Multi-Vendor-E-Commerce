@@ -4,6 +4,7 @@
 Storefront:
 - `/` home
 - `/browse` browse and search
+- `/offers` platform-wide offer (OfferTag) landing; each tag links to `/browse?offer=<url>` (reuses `getAllOfferTags`, `force-dynamic`)
 - `/product/[productSlug]` product details
 - `/product/[productSlug]/[variantSlug]` variant details
 - `/store/[storeUrl]` store page

@@ -11,6 +11,11 @@
 8) Order status and payment details are updated via payment webhook.
 9) Customer views order history and order details.
 
+## Offer Discovery Flow
+1) Customer opens `/offers` from the user-menu "Discounts & Offers" link (now wired to `/offers`) or directly.
+2) The page (`force-dynamic`) calls `getAllOfferTags()`, listing every `OfferTag` ordered by product count (empty state when none exist).
+3) Each offer links to `/browse?offer=<url>`; product filtering, sorting, and paging are delegated to the existing `/browse` + `getProducts` offer filter (no product grid re-implemented on `/offers`).
+
 ## Product Compare Flow
 1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
 2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).
