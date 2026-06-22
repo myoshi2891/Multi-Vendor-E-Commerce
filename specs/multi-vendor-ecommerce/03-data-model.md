@@ -25,12 +25,19 @@
 - Category, SubCategory, OfferTag: taxonomy and merchandising labels.
 - ShippingRate, FreeShipping, FreeShippingCountry: shipping rules by country
   (`Decimal(12,2)` for fee fields).
+- SupportTicket: public support-form submission (contact / return / dispute /
+  problem-report) collapsed into one table by `category`. Optional `orderId` and
+  `userId` references (both `onDelete: SetNull`; guest submissions leave `userId`
+  null). `status String @default("OPEN")` (kept as `String` not enum until the
+  operator-side admin UI defines the value set — see design.md 判断4). No money
+  fields. Added via additive, non-destructive migration `add_support_ticket`.
 
 ## Enumerations
 - Role: USER, ADMIN, SELLER
 - StoreStatus: PENDING, ACTIVE, BANNED, DISABLED
 - ShippingFeeMethod: ITEM, WEIGHT, FIXED
 - OrderStatus, PaymentStatus, PaymentMethod, ProductStatus
+- SupportTicketCategory: CONTACT, RETURN_REQUEST, DISPUTE, PROBLEM_REPORT
 
 ## Money Field Convention
 - All monetary amounts use `Decimal(12,2)` (Prisma `@db.Decimal(12,2)`) for

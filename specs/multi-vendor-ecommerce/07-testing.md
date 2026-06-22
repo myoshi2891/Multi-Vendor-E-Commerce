@@ -12,6 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1638 passed / 1641 total across 170 suites (3 skipped), as of 2026-06-22.
+  Support forms (`docs/design/support-forms/`) added a single `SupportTicket` model
+  (additive, non-destructive migration + ERD regen) and a public `createSupportTicket`
+  server action (`src/queries/support.ts`, no auth guard = guest-allowed, attaches
+  `userId` only when signed in). Four public form pages `/contact` `/returns-exchange`
+  `/dispute` `/report-problem` render the shared `support-form.tsx` (RHF + zodResolver,
+  `useRef` double-submit guard) and stay `○ Static` (no `force-dynamic`). The user-menu
+  "Return & Refund Policy" (`/` → `/returns-exchange`), "Order Dispute Resolution"
+  (`""` → `/dispute`) and "Report a Problem" (`""` → `/report-problem`) links were wired.
+  New suites `support.test.ts` (+4, T-SF1–T-SF4) and `support-form.test.tsx` (+2,
+  T-SF5/T-SF6) plus +3 regressions in `user-menu.test.tsx` (T-SF7); +9 tests,
+  168 → 170 suites.
 - 1629 passed / 1632 total across 168 suites (3 skipped), as of 2026-06-22.
   Storefront static pages (`docs/design/storefront-static-pages/`) added the public
   `/about` `/legal` `/faqs` `/customer-service` `/product-support` pages plus a 308

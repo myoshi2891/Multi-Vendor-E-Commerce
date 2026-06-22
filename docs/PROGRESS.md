@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1617 passed / 1620 total / 164 スイート（3 skipped）** — 2026-06-22 compare レビュー指摘修正完了時点。`compare-grid.tsx` catch に非 `Error` 用 `else`（`"[Compare:fetch] Unknown error"` 構造化ログ）を追加し、回帰テストを既存 2 スイートへ +4（`useCompareStore.test.ts` 永続化契約 3 件 + `compare-grid.test.tsx` 非 Error reject 1 件、スイート不変、1613→1617）。直前 PR #147（Compare SonarCloud QG 修復）で `product-card.test.tsx` 新規 +8 + `compare-grid.test.tsx` +4（1601→1613、163→164 スイート）、その前 2026-06-21 Compare 機能で +10（161→163 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1638 passed / 1641 total / 170 スイート（3 skipped）** — 2026-06-22 support-forms 機能完了時点。4 種サポートフォームを単一 `SupportTicket` モデル + 公開 server action `createSupportTicket` + 共有 `SupportForm` + 公開 4 ページ（`/contact` `/returns-exchange` `/dispute` `/report-problem`・全て SSG）で実装し、user-menu 3 リンクを配線。新規スイート `support.test.ts` +4 / `support-form.test.tsx` +2 + `user-menu.test.tsx` +3 回帰 = +9（1629→1638、168→170 スイート）。直前 storefront-static-pages 機能で +9（165→168 スイート）、その前 offers 機能で +3（164→165 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1242,6 +1242,33 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 |------|--------|--------|
 | Jest テスト総数 (unit/component) | 1620 passed | **1629 passed** |
 | スイート数 | 165 | **168** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Support forms 実装（2026-06-22）
+
+#### 概要
+
+4 種のサポートフォーム（問い合わせ/返品/紛争/問題報告）を単一 `SupportTicket` モデルに集約して実装。送信は公開（ゲスト可）、ログイン時のみ `userId` を付与。`docs/design/support-forms/` の設計に準拠。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` + migration + ERD | `SupportTicket` モデル + `SupportTicketCategory` enum + 逆リレーション（additive・非破壊）、ERD に Support Domain ページ追加 | `e3c58aa` |
+| `src/lib/schemas.ts` | `SupportTicketSchema`（`superRefine` 条件必須・`preprocess` 空欄正規化） | `595012e` / `1652212` |
+| `src/queries/support.ts` | 公開 server action `createSupportTicket`（PII 非ログ・縮退） | `86404dd` |
+| `src/components/store/support/support-form.tsx` | 共有 client フォーム（RHF+Zod・`useRef` 二重送信防止） | `1652212` |
+| `src/app/(store)/{contact,returns-exchange,dispute,report-problem}/page.tsx` + `content/returns.ts` | 公開 4 ページ（全て SSG・`force-dynamic` 不付与） | `7aec40e` / `8dd3380` |
+| `user-menu.tsx` | 3 リンク配線（returns/dispute/report） | `3608a3b` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1629 passed | **1638 passed** |
+| スイート数 | 168 | **170** |
 | 型エラー | 0 件 | **0 件** |
 
 ---

@@ -22,6 +22,12 @@
 3) `/about`, `/legal` (with table of contents), `/faqs`, and `/product-support` render typed content constants through the shared `StaticPageLayout` (plain-text paragraphs only; placeholder copy pending operator replacement).
 4) Legacy `/faq` issues a 308 `permanentRedirect` to the canonical `/faqs`. All pages are public (outside middleware protection) and DB-independent (SSG, no `force-dynamic`).
 
+## Support Form Submission Flow
+1) Customer (guest or signed-in) reaches a support form: `/contact` (general), `/returns-exchange` (return/exchange, shows a policy summary on top), `/dispute` (order dispute), or `/report-problem`. The user-menu wires "Return & Refund Policy" → `/returns-exchange`, "Order Dispute Resolution" → `/dispute`, and "Report a Problem" → `/report-problem`.
+2) The shared `SupportForm` (client) collects name / email / subject / message, plus an order number for `/returns-exchange` and `/dispute` (`requireOrderId`). It validates with `SupportTicketSchema` (RHF + zodResolver) and guards against double submission with a `useRef` flag.
+3) On submit, the public server action `createSupportTicket(input)` re-validates, attaches `userId` only when `currentUser()` resolves (guest submissions leave it null), and creates one `SupportTicket` row with the form's `category`. The message body (PII) is never logged.
+4) On success the form shows a receipt message (`role="status"`); a generic failure surfaces as a root-level error (`role="alert"`). No external email/notification is sent in this MVP — operators triage via the stored `status` (admin viewing UI is a follow-up).
+
 ## Product Compare Flow
 1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
 2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).

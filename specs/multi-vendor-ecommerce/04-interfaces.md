@@ -58,7 +58,7 @@ Dashboard:
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
   home, profile, review, coupon, stripe, PayPal, user, size, dashboard, inventory,
-  store-dashboard, message.
+  store-dashboard, message, support.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
@@ -135,6 +135,16 @@ Return type `StoreDashboardStats` is exported from `store-dashboard.ts`; `SalesP
 | `markConversationRead(conversationId)` | `updateMany` peer-sent unread only (`senderId: { not: user.id }, isRead: false`). Idempotent. | `assertParticipant` |
 
 Sender role is derived (`message.senderId === conversation.userId` ⇒ buyer-sent), not stored. `SendMessageSchema` / `StartConversationSchema` live in `src/lib/schemas.ts`; `ConversationWithLatest` / `MessageType` / `StoreConversationWithLatest` are derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`. Buyer UI (Phase 3, implemented): `/profile/messages` (`force-dynamic`) + `src/components/store/profile/messages/{messages-container,conversation-thread}.tsx` (5s polling with `cancelled` flag + `document.hidden` pause). Seller UI (Phase 4, implemented): `/dashboard/seller/stores/[storeUrl]/messages` (`force-dynamic`) + `src/components/dashboard/seller/seller-messages-container.tsx` reusing `conversation-thread.tsx`; the list is identified by the buyer `user`. Round-trip E2E (Phase 5) is planned.
+
+### support module (`src/queries/support.ts`) — public support forms
+
+Four support form types (contact / return / dispute / problem-report) collapse into a single `SupportTicket` model identified by `SupportTicketCategory`. The submit action is **public** (no auth guard) so guests can submit; when signed in, `currentUser()` attaches `userId` (a failure is logged and degrades to a guest submission). PII (the message body) is never logged. The `orderId` ownership is **not** verified (number-declaration model; operator-side identity check is out of scope). See `docs/design/support-forms/design.md`.
+
+| Function | Description | Auth |
+|----------|-------------|------|
+| `createSupportTicket(input)` | Validates with `SupportTicketSchema` (outside `try/catch`), then `db.supportTicket.create` selecting `{ id }`. Returns `{ id }`. Throws `"入力内容を確認してください。"` (validation) or `"送信に失敗しました。..."` (DB). | Public (guest-allowed; `userId` only when signed in) |
+
+`SupportTicketSchema` / `SupportTicketCategoryEnum` / `SupportTicketInput` live in `src/lib/schemas.ts`. `superRefine` requires `orderId` only for `RETURN_REQUEST`/`DISPUTE`; empty strings are normalized to `undefined` via `z.preprocess` before the optional uuid check. UI: shared client form `src/components/store/support/support-form.tsx` (RHF + zodResolver, `useRef` double-submit guard, `requireOrderId` toggles the orderId field) rendered by public pages `/contact`, `/returns-exchange` (with `content/returns.ts` policy summary), `/dispute`, `/report-problem` — all stay `○ Static` (no `force-dynamic`; Prisma is only touched in the submit action).
 
 ## External Services
 - Clerk for auth and user metadata.
