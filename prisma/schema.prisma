@@ -33,6 +33,7 @@ model User {
   coupons           Coupon[]          @relation("CouponToUser")
   conversations     Conversation[]    @relation("UserConversations")
   messages          Message[]         @relation("UserMessages")
+  supportTickets    SupportTicket[]   @relation("SupportTicketToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -409,7 +410,7 @@ model Cart {
 }
 
 model CartItem {
-  id          String @id @default(uuid())
+  id          String  @id @default(uuid())
   productId   String
   variantId   String
   sizeId      String
@@ -515,7 +516,8 @@ model Order {
   userId String
   user   User   @relation("UserOrders", fields: [userId], references: [id])
 
-  conversations Conversation[] @relation("OrderConversations")
+  conversations  Conversation[]  @relation("OrderConversations")
+  supportTickets SupportTicket[] @relation("SupportTicketToOrder")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -666,12 +668,12 @@ enum CouponScope {
 }
 
 model Coupon {
-  id        String @id @default(uuid())
-  code      String @unique
+  id        String      @id @default(uuid())
+  code      String      @unique
   startDate String
   endDate   String
   discount  Int
-  isActive  Boolean @default(true)
+  isActive  Boolean     @default(true)
   scope     CouponScope @default(STORE)
 
   storeId String?
@@ -711,13 +713,13 @@ model PaymentDetails {
 
 /// 購入者(User)と店舗(Store)間の1スレッド。任意で注文(Order)起点。
 model Conversation {
-  id      String @id @default(uuid())
+  id      String  @id @default(uuid())
   userId  String
-  user    User   @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
   storeId String
-  store   Store  @relation("StoreConversations", fields: [storeId], references: [id], onDelete: Cascade)
+  store   Store   @relation("StoreConversations", fields: [storeId], references: [id], onDelete: Cascade)
   orderId String?
-  order   Order? @relation("OrderConversations", fields: [orderId], references: [id], onDelete: SetNull)
+  order   Order?  @relation("OrderConversations", fields: [orderId], references: [id], onDelete: SetNull)
 
   messages Message[]
 
@@ -745,4 +747,42 @@ model Message {
   @@index([senderId])
   @@index([conversationId, createdAt]) // getConversationMessages: 会話内を createdAt 昇順で取得（[conversationId] 単独検索も B-tree 前方一致でカバー）
   @@index([conversationId, isRead]) // markConversationRead: 会話内の未読を絞り込み既読化
+}
+
+/// サポート系フォーム（問い合わせ/返品/紛争/問題報告）の受付チケット。
+/// 4 種のフォームを category で識別し単一テーブルに集約する。
+/// 設計の正本: docs/design/support-forms/design.md §2.1
+model SupportTicket {
+  id       String                @id @default(uuid())
+  category SupportTicketCategory
+
+  name    String
+  email   String
+  subject String
+  message String @db.Text
+
+  /// RETURN_REQUEST / DISPUTE のみ必須（Zod で強制）。対象注文への任意参照。
+  orderId String?
+  order   Order?  @relation("SupportTicketToOrder", fields: [orderId], references: [id], onDelete: SetNull)
+
+  /// ログイン送信時のみ設定。ゲスト送信は null。
+  userId String?
+  user   User?   @relation("SupportTicketToUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  /// 運営対応ステータス。閲覧 UI は後続（本 MVP は保存のみ）。
+  status String @default("OPEN")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, status])
+  @@index([userId])
+  @@index([orderId])
+}
+
+enum SupportTicketCategory {
+  CONTACT
+  RETURN_REQUEST
+  DISPUTE
+  PROBLEM_REPORT
 }
