@@ -28,7 +28,7 @@ export default function StaticPageLayout({
     sections,
     withToc = false,
     className,
-}: StaticPageLayoutProps) {
+}: Readonly<StaticPageLayoutProps>) {
     return (
         <main className={cn("mx-auto max-w-4xl px-4 py-10", className)}>
             <h1 className="mb-4 text-3xl font-bold">{title}</h1>
@@ -55,9 +55,9 @@ export default function StaticPageLayout({
                         <h2 className="mb-3 text-xl font-semibold">
                             {s.heading}
                         </h2>
-                        {s.body.split("\n\n").map((para, i) => (
+                        {s.body.split("\n\n").map((para) => (
                             <p
-                                key={i}
+                                key={para}
                                 className="mb-3 leading-relaxed text-main-secondary"
                             >
                                 {para}

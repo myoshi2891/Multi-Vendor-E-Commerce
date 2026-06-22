@@ -27,7 +27,7 @@ export default function SupportForm({
     category,
     requireOrderId,
     submitLabel,
-}: SupportFormProps) {
+}: Readonly<SupportFormProps>) {
     const isSubmittingRef = useRef(false);
     const [done, setDone] = useState(false);
     const form = useForm<SupportTicketInput>({
@@ -67,9 +67,7 @@ export default function SupportForm({
     };
 
     if (done)
-        return (
-            <p role="status">受け付けました。担当より追ってご連絡します。</p>
-        );
+        return <output>受け付けました。担当より追ってご連絡します。</output>;
 
     // shadcn/ui Form プリミティブで描画（既存ダッシュボードフォームのスタイルに準拠）。
     return (
