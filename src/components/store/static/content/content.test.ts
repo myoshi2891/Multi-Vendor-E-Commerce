@@ -1,3 +1,4 @@
+import { ABOUT_SECTIONS } from "./about";
 import { FAQ_SECTIONS } from "./faqs";
 import { LEGAL_SECTIONS } from "./legal";
 import { PRODUCT_SUPPORT_SECTIONS } from "./product-support";
@@ -11,6 +12,7 @@ import type { StaticSection } from "../static-page-layout";
  */
 describe("static content data", () => {
     const sectionLists: ReadonlyArray<[string, StaticSection[]]> = [
+        ["ABOUT_SECTIONS", ABOUT_SECTIONS],
         ["FAQ_SECTIONS", FAQ_SECTIONS],
         ["LEGAL_SECTIONS", LEGAL_SECTIONS],
         ["PRODUCT_SUPPORT_SECTIONS", PRODUCT_SUPPORT_SECTIONS],
