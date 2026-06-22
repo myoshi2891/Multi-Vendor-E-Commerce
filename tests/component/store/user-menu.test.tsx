@@ -52,6 +52,17 @@ describe("UserMenu", () => {
         expect(settingsLink).toHaveAttribute("href", "/profile/settings");
     });
 
+    it('renders the Discounts & Offers extra link pointing to "/offers" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /offers を指すこと（AC-OF3）
+        const offersLink = screen.getByRole("link", {
+            name: "Discounts & Offers",
+        });
+        expect(offersLink).toHaveAttribute("href", "/offers");
+    });
+
     it("未認証時はサインイン/登録ボタンを描画する（user=null 経路）", async () => {
         mockCurrentUser.mockResolvedValueOnce(null);
 
