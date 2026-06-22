@@ -664,3 +664,48 @@ export const StartConversationSchema = z.object({
     storeId: z.string().min(1),
     orderId: z.string().min(1).optional(),
 });
+
+// サポートチケット（4 フォーム共通）。category により orderId 必須を切替える。
+export const SupportTicketCategoryEnum = z.enum([
+    "CONTACT",
+    "RETURN_REQUEST",
+    "DISPUTE",
+    "PROBLEM_REPORT",
+]);
+
+export const SupportTicketSchema = z
+    .object({
+        category: SupportTicketCategoryEnum,
+        name: z.string().trim().min(1, "お名前を入力してください。").max(120),
+        email: z
+            .string()
+            .trim()
+            .email("有効なメールアドレスを入力してください。"),
+        subject: z.string().trim().min(1, "件名を入力してください。").max(200),
+        message: z
+            .string()
+            .trim()
+            .min(1, "内容を入力してください。")
+            .max(5000, "内容は5000文字以内です。"),
+        // RETURN_REQUEST / DISPUTE では必須。他カテゴリでは任意。
+        // Order.id は uuid（design §0-4）のため uuid 形式を検証し、"abc" 等の不正値を弾く。
+        orderId: z
+            .string()
+            .trim()
+            .min(1)
+            .uuid("有効な注文番号を入力してください。")
+            .optional(),
+    })
+    .superRefine((val, ctx) => {
+        const needsOrder =
+            val.category === "RETURN_REQUEST" || val.category === "DISPUTE";
+        if (needsOrder && !val.orderId) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["orderId"],
+                message: "対象の注文番号を入力してください。",
+            });
+        }
+    });
+
+export type SupportTicketInput = z.infer<typeof SupportTicketSchema>;
