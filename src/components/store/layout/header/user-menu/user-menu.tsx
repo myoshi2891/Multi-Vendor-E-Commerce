@@ -188,7 +188,7 @@ const extraLinks = [
     },
     {
         title: "Return & Refund Policy",
-        link: "/",
+        link: "/returns-exchange",
     },
     {
         title: "Legal & Privacy",
@@ -200,10 +200,10 @@ const extraLinks = [
     },
     {
         title: "Order Dispute Resolution",
-        link: "",
+        link: "/dispute",
     },
     {
         title: "Report a Problem",
-        link: "",
+        link: "/report-problem",
     },
 ];
