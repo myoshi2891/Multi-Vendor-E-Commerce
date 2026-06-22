@@ -12,7 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1620 passed / 1623 total across 165 suites (3 skipped), as of 2026-06-22.
+- 1629 passed / 1632 total across 168 suites (3 skipped), as of 2026-06-22.
+  Storefront static pages (`docs/design/storefront-static-pages/`) added the public
+  `/about` `/legal` `/faqs` `/customer-service` `/product-support` pages plus a 308
+  `permanentRedirect` from `/faq` to `/faqs`, all rendered via a shared
+  `StaticPageLayout` component fed by typed content constants (plain-text `<p>` only,
+  no `dangerouslySetInnerHTML`, no `force-dynamic` since they are DB-independent and
+  stay SSG). The user-menu "Help Center" (`""` → `/customer-service`) and
+  "Legal & Privacy" (`""` → `/legal`) links were wired. New suites
+  `static-page-layout.test.tsx` (+5), `about/page.test.tsx` (+1),
+  `customer-service/page.test.tsx` (+1) and +2 regressions in `user-menu.test.tsx`
+  (Help Center / Legal & Privacy links); +9 tests, 165 → 168 suites.
+  No new server action or schema change.
   Offers feature (`docs/design/offers/`) added the public `/offers` landing page
   (`src/app/(store)/offers/page.tsx`, `force-dynamic`, reusing `getAllOfferTags` and
   delegating the product grid to `/browse?offer=<url>`) and wired the user-menu

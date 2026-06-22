@@ -5,6 +5,9 @@ Storefront:
 - `/` home
 - `/browse` browse and search
 - `/offers` platform-wide offer (OfferTag) landing; each tag links to `/browse?offer=<url>` (reuses `getAllOfferTags`, `force-dynamic`)
+- `/about` `/legal` `/faqs` `/product-support` static content pages (DB-independent, SSG; rendered via shared `StaticPageLayout` fed by typed content constants in `src/components/store/static/content/`)
+- `/customer-service` support hub portal (cards linking to `/contact` `/returns-exchange` `/faqs` `/track-order` `/product-support`)
+- `/faq` → 308 `permanentRedirect` to canonical `/faqs` (deduplicates the legacy footer link)
 - `/product/[productSlug]` product details
 - `/product/[productSlug]/[variantSlug]` variant details
 - `/store/[storeUrl]` store page

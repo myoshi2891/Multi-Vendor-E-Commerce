@@ -16,6 +16,12 @@
 2) The page (`force-dynamic`) calls `getAllOfferTags()`, listing every `OfferTag` ordered by product count (empty state when none exist).
 3) Each offer links to `/browse?offer=<url>`; product filtering, sorting, and paging are delegated to the existing `/browse` + `getProducts` offer filter (no product grid re-implemented on `/offers`).
 
+## Static Content & Support Flow
+1) Customer reaches static pages from the footer links or the user-menu: "Help Center" → `/customer-service`, "Legal & Privacy" → `/legal` (both previously empty strings, now wired).
+2) `/customer-service` is a support hub presenting cards to `/contact`, `/returns-exchange`, `/faqs`, `/track-order`, and `/product-support`.
+3) `/about`, `/legal` (with table of contents), `/faqs`, and `/product-support` render typed content constants through the shared `StaticPageLayout` (plain-text paragraphs only; placeholder copy pending operator replacement).
+4) Legacy `/faq` issues a 308 `permanentRedirect` to the canonical `/faqs`. All pages are public (outside middleware protection) and DB-independent (SSG, no `force-dynamic`).
+
 ## Product Compare Flow
 1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
 2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).

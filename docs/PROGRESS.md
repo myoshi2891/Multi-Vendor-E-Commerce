@@ -1218,6 +1218,34 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 
 ---
 
+### Storefront static pages 実装 (2026-06-22)
+
+#### 概要
+
+`docs/design/storefront-static-pages/` に従い、リンク切れだった footer/ user-menu 導線先の静的ページ群を実装。共有 `StaticPageLayout` + 型付きコンテンツ定数で `/about` `/legal` `/faqs` `/customer-service` `/product-support` を追加し、`/faq`→`/faqs` の 308 恒久リダイレクトと user-menu の Help Center / Legal & Privacy リンクを配線。文面はプレースホルダ（運営差替前提）。新規 server action・schema 変更なし。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/static/static-page-layout.tsx` | 共有レイアウト部品（plain text `<p>` 描画・XSS 回避・`slugify` 目次） | `fa1f56a`–`de2c3a2` |
+| `src/components/store/static/content/*.ts` | コンテンツ定数 5 本（プレースホルダ文面 + `SUPPORT_LINKS`） | (constants commit) |
+| `src/app/(store)/{about,legal,faqs,product-support}/page.tsx` | 静的ページ（`metadata` + `StaticPageLayout`・`legal` は `withToc`） | (pages commit) |
+| `src/app/(store)/customer-service/page.tsx` | サポートポータル（5 導線カード） | (portal commit) |
+| `src/app/(store)/faq/page.tsx` | `permanentRedirect("/faqs")`（308） | (portal commit) |
+| `tests/component/store/user-menu.test.tsx` | +2 回帰（Help Center→`/customer-service` / Legal & Privacy→`/legal`） | (test commit) |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` 2 行配線（旧 `""`） | `227ca0e` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1620 passed | **1629 passed** |
+| スイート数 | 165 | **168** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
