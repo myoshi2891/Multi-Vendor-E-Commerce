@@ -63,6 +63,24 @@ describe("UserMenu", () => {
         expect(offersLink).toHaveAttribute("href", "/offers");
     });
 
+    it('renders the Help Center extra link pointing to "/customer-service" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /customer-service を指すこと（AC-SP4）
+        const helpLink = screen.getByRole("link", { name: "Help Center" });
+        expect(helpLink).toHaveAttribute("href", "/customer-service");
+    });
+
+    it('renders the Legal & Privacy extra link pointing to "/legal" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /legal を指すこと（AC-SP5）
+        const legalLink = screen.getByRole("link", { name: "Legal & Privacy" });
+        expect(legalLink).toHaveAttribute("href", "/legal");
+    });
+
     it("未認証時はサインイン/登録ボタンを描画する（user=null 経路）", async () => {
         mockCurrentUser.mockResolvedValueOnce(null);
 
