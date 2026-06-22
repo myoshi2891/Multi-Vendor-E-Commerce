@@ -689,12 +689,18 @@ export const SupportTicketSchema = z
             .max(5000, "内容は5000文字以内です。"),
         // RETURN_REQUEST / DISPUTE では必須。他カテゴリでは任意。
         // Order.id は uuid（design §0-4）のため uuid 形式を検証し、"abc" 等の不正値を弾く。
-        orderId: z
-            .string()
-            .trim()
-            .min(1)
-            .uuid("有効な注文番号を入力してください。")
-            .optional(),
+        // フォームの controlled input は空欄を "" で渡すため、preprocess で空白→undefined に
+        // 正規化してから optional 検証する（"" のまま .min(1) に当てると CONTACT 等が弾かれる）。
+        orderId: z.preprocess(
+            (v) =>
+                typeof v === "string" && v.trim() === "" ? undefined : v,
+            z
+                .string()
+                .trim()
+                .min(1)
+                .uuid("有効な注文番号を入力してください。")
+                .optional()
+        ),
     })
     .superRefine((val, ctx) => {
         const needsOrder =
