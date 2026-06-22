@@ -196,7 +196,7 @@ const extraLinks = [
     },
     {
         title: "Discounts & Offers",
-        link: "",
+        link: "/offers",
     },
     {
         title: "Order Dispute Resolution",
