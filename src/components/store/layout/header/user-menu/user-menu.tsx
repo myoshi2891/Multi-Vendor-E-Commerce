@@ -184,26 +184,26 @@ const extraLinks = [
     },
     {
         title: "Help Center",
-        link: "",
+        link: "/customer-service",
     },
     {
         title: "Return & Refund Policy",
-        link: "/",
+        link: "/returns-exchange",
     },
     {
         title: "Legal & Privacy",
-        link: "",
+        link: "/legal",
     },
     {
         title: "Discounts & Offers",
-        link: "",
+        link: "/offers",
     },
     {
         title: "Order Dispute Resolution",
-        link: "",
+        link: "/dispute",
     },
     {
         title: "Report a Problem",
-        link: "",
+        link: "/report-problem",
     },
 ];

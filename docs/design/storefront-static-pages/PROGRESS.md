@@ -6,24 +6,24 @@
 
 ---
 
-## 🧭 現在地（2026-06-21）
+## 🧭 現在地（2026-06-22）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **実装未着手** — 着手時は [tasks.md](./tasks.md) §0 の `feature-plan` から開始（承認後 Phase 1）。
-- 👉 **次の着手**: Phase 1-A（共有レイアウト `StaticPageLayout` の Red テスト）。
+- ✅ **Phase 1 完了** — 共有レイアウト + 5 ページ + /faq 308 redirect + user-menu 配線。build で 6 ルート全て `○ Static`、テスト 1620→1629 passed / 165→168 スイート。
+- 👉 **次の着手**: なし（本設計書は完了）。残る user-menu 空文字リンク（Return & Refund / Order Dispute / Report a Problem）は別設計書（support-forms 等）が担当。文面はプレースホルダのため運営へ正式文面差替を依頼（フォローアップ）。
 
 ---
 
-## Phase 1: 共有レイアウト + 各ページ + 導線配線 ⬜ 未着手
+## Phase 1: 共有レイアウト + 各ページ + 導線配線 ✅ 完了
 
 | Task | 内容                                        | 状態 | SKILL                | 備考                                              |
 | ---- | ------------------------------------------- | ---- | -------------------- | ------------------------------------------------- |
-| 1-A  | StaticPageLayout 共有部品                   | ⬜   | test-gen             | 描画テスト先行                                    |
-| 1-B  | コンテンツ定数 + 5 ページ + /faq redirect   | ⬜   | test-gen             | about/legal/faqs/customer-service/product-support |
-| 1-C  | user-menu 配線（Help Center / Legal）       | ⬜   | test-gen             | 回帰テスト先行（AC-SP4/5）                        |
-| 1-D  | 品質チェック（lint/tsc/test + build）       | ⬜   | test-complete        | 全緑後コミット                                    |
-| 1-E  | ドキュメント同期（統計 + dashboard 再生成） | ⬜   | spec-sync-after-test | QA_HANDOFF SSOT → 伝播                            |
-| 1-F  | 最終ドリフト確認                            | ⬜   | spec-sync-check      | 任意                                              |
+| 1-A  | StaticPageLayout 共有部品                   | ✅ `fa1f56a`–`de2c3a2` | test-gen             | 描画テスト先行（+5）                              |
+| 1-B  | コンテンツ定数 + 5 ページ + /faq redirect   | ✅   | test-gen             | about/legal/faqs/customer-service/product-support |
+| 1-C  | user-menu 配線（Help Center / Legal）       | ✅ `227ca0e` | test-gen             | 回帰テスト先行（AC-SP4/5・+2）                    |
+| 1-D  | 品質チェック（lint/tsc/test + build）       | ✅   | test-complete        | 全緑（lint 0 err / tsc 0 / 1629 passed / build OK）|
+| 1-E  | ドキュメント同期（統計 + dashboard 再生成） | ✅   | spec-sync-after-test | QA_HANDOFF SSOT → 伝播                            |
+| 1-F  | 最終ドリフト確認                            | ➖   | spec-sync-check      | 任意（Phase 1 完了条件外・未実施）                |
 
 ---
 

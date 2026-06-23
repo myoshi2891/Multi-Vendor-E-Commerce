@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1617 passed / 1620 total / 164 スイート（3 skipped）** — 2026-06-22 compare レビュー指摘修正完了時点。`compare-grid.tsx` catch に非 `Error` 用 `else`（`"[Compare:fetch] Unknown error"` 構造化ログ）を追加し、回帰テストを既存 2 スイートへ +4（`useCompareStore.test.ts` 永続化契約 3 件 + `compare-grid.test.tsx` 非 Error reject 1 件、スイート不変、1613→1617）。直前 PR #147（Compare SonarCloud QG 修復）で `product-card.test.tsx` 新規 +8 + `compare-grid.test.tsx` +4（1601→1613、163→164 スイート）、その前 2026-06-21 Compare 機能で +10（161→163 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1650 passed / 1653 total / 171 スイート（3 skipped）** — 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1186,6 +1186,89 @@ PR #147（compare 機能）の SonarCloud Quality Gate が New Code Coverage 63.
 |------|--------|--------|
 | Jest テスト総数 (unit/component) | 1601 passed | **1613 passed** |
 | スイート数 | 163 | **164** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Offers 機能（オファー landing + 導線）実装 (2026-06-22)
+
+#### 概要
+
+`docs/design/offers/` の MVP を実装。プラットフォーム全体のオファー（`OfferTag`）を一覧する公開ページ
+`/offers` を追加し、user-menu の「Discounts & Offers」リンク（旧 `""`）を `/offers` に配線した。
+商品グリッドは再実装せず、各オファーを既存 `/browse?offer=<url>` フィルタへ委譲（DRY）。新規 server
+action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(store)/offers/page.test.tsx` | 新規 +2（T-OF1 一覧＋`/browse?offer=<url>` リンク描画 / T-OF2 空状態・`getAllOfferTags` mock・`render(await OffersPage())`） | `fd11326` |
+| `src/app/(store)/offers/page.tsx` | 新規（async server component・`force-dynamic`・`getAllOfferTags` 再利用・空配列で空状態） | `90f774d` |
+| `tests/component/store/user-menu.test.tsx` | T-OF3 回帰 +1（Discounts & Offers→`/offers`、旧 `""` を弾く） | `67c4023` |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` の Discounts & Offers を `""`→`/offers`（1 行） | `d2cd4e4` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1617 passed | **1620 passed** |
+| スイート数 | 164 | **165** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Storefront static pages 実装 (2026-06-22)
+
+#### 概要
+
+`docs/design/storefront-static-pages/` に従い、リンク切れだった footer/ user-menu 導線先の静的ページ群を実装。共有 `StaticPageLayout` + 型付きコンテンツ定数で `/about` `/legal` `/faqs` `/customer-service` `/product-support` を追加し、`/faq`→`/faqs` の 308 恒久リダイレクトと user-menu の Help Center / Legal & Privacy リンクを配線。文面はプレースホルダ（運営差替前提）。新規 server action・schema 変更なし。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/static/static-page-layout.tsx` | 共有レイアウト部品（plain text `<p>` 描画・XSS 回避・`slugify` 目次） | `fa1f56a`–`de2c3a2` |
+| `src/components/store/static/content/*.ts` | コンテンツ定数 5 本（プレースホルダ文面 + `SUPPORT_LINKS`） | (constants commit) |
+| `src/app/(store)/{about,legal,faqs,product-support}/page.tsx` | 静的ページ（`metadata` + `StaticPageLayout`・`legal` は `withToc`） | (pages commit) |
+| `src/app/(store)/customer-service/page.tsx` | サポートポータル（5 導線カード） | (portal commit) |
+| `src/app/(store)/faq/page.tsx` | `permanentRedirect("/faqs")`（308） | (portal commit) |
+| `tests/component/store/user-menu.test.tsx` | +2 回帰（Help Center→`/customer-service` / Legal & Privacy→`/legal`） | (test commit) |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `extraLinks` 2 行配線（旧 `""`） | `227ca0e` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1620 passed | **1629 passed** |
+| スイート数 | 165 | **168** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Support forms 実装（2026-06-22）
+
+#### 概要
+
+4 種のサポートフォーム（問い合わせ/返品/紛争/問題報告）を単一 `SupportTicket` モデルに集約して実装。送信は公開（ゲスト可）、ログイン時のみ `userId` を付与。`docs/design/support-forms/` の設計に準拠。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` + migration + ERD | `SupportTicket` モデル + `SupportTicketCategory` enum + 逆リレーション（additive・非破壊）、ERD に Support Domain ページ追加 | `e3c58aa` |
+| `src/lib/schemas.ts` | `SupportTicketSchema`（`superRefine` 条件必須・`preprocess` 空欄正規化） | `595012e` / `1652212` |
+| `src/queries/support.ts` | 公開 server action `createSupportTicket`（PII 非ログ・縮退） | `86404dd` |
+| `src/components/store/support/support-form.tsx` | 共有 client フォーム（RHF+Zod・`useRef` 二重送信防止） | `1652212` |
+| `src/app/(store)/{contact,returns-exchange,dispute,report-problem}/page.tsx` + `content/returns.ts` | 公開 4 ページ（全て SSG・`force-dynamic` 不付与） | `7aec40e` / `8dd3380` |
+| `user-menu.tsx` | 3 リンク配線（returns/dispute/report） | `3608a3b` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1629 passed | **1638 passed** |
+| スイート数 | 168 | **170** |
 | 型エラー | 0 件 | **0 件** |
 
 ---

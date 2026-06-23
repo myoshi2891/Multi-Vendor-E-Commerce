@@ -645,8 +645,22 @@ const PAGES: PageDef[] = [
         },
     },
     {
+        id: "support",
+        name: "9. Support",
+        title: "Support Domain",
+        fill: "#E0F2F1",
+        stroke: "#00695C",
+        detail: "full",
+        models: ["User", "Order", "SupportTicket"],
+        cells: {
+            User: [0, 0],
+            Order: [0, 1],
+            SupportTicket: [1, 0],
+        },
+    },
+    {
         id: "enums",
-        name: "9. Enums",
+        name: "10. Enums",
         title: "Enums",
         fill: "#ECEFF1",
         stroke: "#455A64",

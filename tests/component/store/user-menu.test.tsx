@@ -52,6 +52,66 @@ describe("UserMenu", () => {
         expect(settingsLink).toHaveAttribute("href", "/profile/settings");
     });
 
+    it('renders the Discounts & Offers extra link pointing to "/offers" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /offers を指すこと（AC-OF3）
+        const offersLink = screen.getByRole("link", {
+            name: "Discounts & Offers",
+        });
+        expect(offersLink).toHaveAttribute("href", "/offers");
+    });
+
+    it('renders the Help Center extra link pointing to "/customer-service" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /customer-service を指すこと（AC-SP4）
+        const helpLink = screen.getByRole("link", { name: "Help Center" });
+        expect(helpLink).toHaveAttribute("href", "/customer-service");
+    });
+
+    it('renders the Legal & Privacy extra link pointing to "/legal" (regression: not "")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /legal を指すこと（AC-SP5）
+        const legalLink = screen.getByRole("link", { name: "Legal & Privacy" });
+        expect(legalLink).toHaveAttribute("href", "/legal");
+    });
+
+    it('renders the Return & Refund Policy extra link pointing to "/returns-exchange" (regression: not "/")', async () => {
+        // Arrange / Act — async Server Component は await して描画する
+        render(await UserMenu());
+
+        // Assert — 旧 "/" を弾き /returns-exchange を指すこと（AC-SF7）
+        const link = screen.getByRole("link", {
+            name: "Return & Refund Policy",
+        });
+        expect(link).toHaveAttribute("href", "/returns-exchange");
+    });
+
+    it('renders the Order Dispute Resolution extra link pointing to "/dispute" (regression: not "")', async () => {
+        // Arrange / Act
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /dispute を指すこと（AC-SF7）
+        const link = screen.getByRole("link", {
+            name: "Order Dispute Resolution",
+        });
+        expect(link).toHaveAttribute("href", "/dispute");
+    });
+
+    it('renders the Report a Problem extra link pointing to "/report-problem" (regression: not "")', async () => {
+        // Arrange / Act
+        render(await UserMenu());
+
+        // Assert — 旧 "" を弾き /report-problem を指すこと（AC-SF7）
+        const link = screen.getByRole("link", { name: "Report a Problem" });
+        expect(link).toHaveAttribute("href", "/report-problem");
+    });
+
     it("未認証時はサインイン/登録ボタンを描画する（user=null 経路）", async () => {
         mockCurrentUser.mockResolvedValueOnce(null);
 

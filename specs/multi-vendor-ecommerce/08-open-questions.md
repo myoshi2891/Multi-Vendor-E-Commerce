@@ -2,6 +2,11 @@
 
 - Are taxes, duties, or multi-currency pricing planned?
 - What is the intended refund and return workflow beyond status enums?
+  *(Partially resolved — support-forms now provides a public return-request /
+  dispute intake (`SupportTicket`, `category=RETURN_REQUEST`/`DISPUTE`, `orderId`
+  captured, `status` defaults to `OPEN`). The downstream refund processing
+  (stock restock, Stripe/PayPal refund) and an operator-side ticket viewing/
+  status-update UI remain out of scope — see `docs/design/support-forms/` §4.)*
 - What analytics or reporting requirements are expected for sellers/admins?
   *(Partially resolved — admin KPI dashboard (Phase 2 F1) and seller store
   dashboard (seller-dashboard Phase 3: revenue from Paid orders, orders, views,

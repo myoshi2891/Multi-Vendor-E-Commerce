@@ -9,19 +9,19 @@
 ## 🧭 現在地（2026-06-21）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **実装未着手** — 着手時は [tasks.md](./tasks.md) §0 の `feature-plan` から開始（承認後 Phase 1: safe-migration）。
-- 👉 **次の着手**: Phase 1-A（`SupportTicket` モデル追加 → `safe-migration` → ERD 再生成）。
+- ✅ **実装完了** — Phase 1〜4 全完了（commits `e3c58aa`〜`3608a3b` + 本ドキュメント同期）。テスト +9（1629→1638 passed / 168→170 スイート）。
+- 👉 **次の着手**: なし（本機能クローズ）。follow-up は管理者向けチケット閲覧/ステータス更新 UI・外部メール通知・reCAPTCHA/レート制限（いずれもスコープ外・別設計書）。
 
 ---
 
-## Phase 進捗 ⬜ 未着手
+## Phase 進捗 ✅ 完了
 
 | Phase | 内容                                                                   | 状態 | SKILL                                |
 | ----- | ---------------------------------------------------------------------- | ---- | ------------------------------------ |
-| 1     | schema（SupportTicket + enum + 逆リレーション + migration + ERD）      | ⬜   | safe-migration                       |
-| 2     | Zod（SupportTicketSchema） + server action（createSupportTicket・TDD） | ⬜   | server-action-scaffold / test-gen    |
-| 3     | UI（SupportForm + 4 ページ + user-menu 配線）                          | ⬜   | test-gen                             |
-| 4     | 品質チェック + ドキュメント同期                                        | ⬜   | test-complete / spec-sync-after-test |
+| 1     | schema（SupportTicket + enum + 逆リレーション + migration + ERD）      | ✅ `e3c58aa` | safe-migration                |
+| 2     | Zod（SupportTicketSchema） + server action（createSupportTicket・TDD） | ✅ `595012e`〜`86404dd` | server-action-scaffold / test-gen |
+| 3     | UI（SupportForm + 4 ページ + user-menu 配線）                          | ✅ `b227765`〜`3608a3b` | test-gen             |
+| 4     | 品質チェック + ドキュメント同期                                        | ✅ 本コミット | test-complete / spec-sync-after-test |
 
 ---
 
