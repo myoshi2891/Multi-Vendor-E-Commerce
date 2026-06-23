@@ -7,13 +7,11 @@ export const dynamic = "force-dynamic"; // Prisma 依存ページ規約（tech.m
 export const metadata: Metadata = { title: "Discounts & Offers | Marketplace" };
 
 /**
- * プラットフォーム全体のオファー（OfferTag）一覧ページ。
+ * Displays all available offer tags as browsable options.
  *
- * 商品グリッドは持たず、各オファーを /browse?offer=<url> へ誘導する（DRY: 商品の
- * 絞り込み・ソート・ページングは既存 /browse の getProducts フィルタへ委譲する）。
- * getAllOfferTags は src/queries 経由で Prisma を読むため force-dynamic を宣言する。
+ * Shows an empty state if no offer tags are available; otherwise, renders a responsive grid of links to the browse page filtered by each tag.
  *
- * @returns オファー一覧（タグが無い場合は空状態メッセージ）の React 要素
+ * @returns A React element representing the offers page
  */
 export default async function OffersPage() {
     const offerTags = await getAllOfferTags();

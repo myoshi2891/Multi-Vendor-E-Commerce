@@ -5,13 +5,13 @@ import { currentUser } from "@clerk/nextjs/server";
 import { SupportTicketSchema, type SupportTicketInput } from "@/lib/schemas";
 
 /**
- * サポートチケット（問い合わせ/返品/紛争/問題報告）を作成する。
- * 公開アクション（ゲスト送信可）。ログイン時のみ userId を付与する。
+ * Creates a support ticket for inquiries, returns, disputes, or problem reports.
  *
- * @param input - フォーム入力（category を含む）。Zod で検証する。
- * @returns 作成された SupportTicket の id
- * @throws "入力内容を確認してください。" Zod 検証失敗
- * @throws "送信に失敗しました。時間をおいて再度お試しください。" DB エラー
+ * Accepts guest submissions. If a user is authenticated, their ID is automatically included.
+ *
+ * @returns An object containing the `id` of the created ticket
+ * @throws "入力内容を確認してください。" if input validation fails
+ * @throws "送信に失敗しました。時間をおいて再度お試しください。" if the database operation fails
  */
 export async function createSupportTicket(
     input: SupportTicketInput

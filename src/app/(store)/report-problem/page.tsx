@@ -5,8 +5,9 @@ export const metadata: Metadata = {
     title: "Report a Problem | Marketplace",
 };
 
-/** 問題報告（Report a Problem）フォーム。公開（ゲスト可）。
- *  DB 書込は server action 側のため force-dynamic 不要。 */
+/**
+ * Renders the report problem page with a form for users to submit problem reports.
+ */
 export default function ReportProblemPage() {
     return (
         <main className="mx-auto max-w-2xl px-4 py-10">

@@ -3,7 +3,9 @@ import SupportForm from "@/components/store/support/support-form";
 
 export const metadata: Metadata = { title: "Contact | Marketplace" };
 
-/** お問い合わせフォーム。公開（ゲスト可）。DB 書込は server action 側のため force-dynamic 不要。 */
+/**
+ * Renders the contact page with a support form.
+ */
 export default function ContactPage() {
     return (
         <main className="mx-auto max-w-2xl px-4 py-10">

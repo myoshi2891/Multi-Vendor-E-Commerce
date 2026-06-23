@@ -7,7 +7,11 @@ export const metadata: Metadata = {
     description: "利用規約・プライバシーポリシー・特定商取引法に基づく表記。",
 };
 
-/** 利用規約・プライバシー・特商法表記の静的ページ。長文のため目次を表示する。 */
+/**
+ * Displays legal policies, privacy information, and commercial law disclosures.
+ *
+ * Includes a table of contents for navigation through the lengthy content.
+ */
 export default function LegalPage() {
     return (
         <StaticPageLayout

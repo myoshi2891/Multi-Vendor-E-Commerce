@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     description: "購入後の技術サポートとトラブルシューティング。",
 };
 
-/** 購入後の技術サポート・トラブルシューティングの静的ページ。 */
+/**
+ * Renders the product support page.
+ */
 export default function ProductSupportPage() {
     return (
         <StaticPageLayout

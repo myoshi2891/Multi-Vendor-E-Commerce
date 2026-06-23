@@ -18,9 +18,15 @@ interface StaticPageLayoutProps {
 }
 
 /**
- * 静的コンテンツページの共通レイアウト。
- * sections を段落＋見出しで描画する。withToc=true なら heading から
- * アンカー目次を生成する。DB 非依存・全クライアント入力なし（XSS リスクなし）。
+ * Renders a static page layout with title, optional introduction, and content sections.
+ *
+ * Displays each section with its heading and paragraphs (split by double newlines). If `withToc` is enabled, generates a table of contents with anchor links to each section.
+ *
+ * @param title - The main page title
+ * @param lead - Optional introductory paragraph below the title
+ * @param sections - Array of content sections to display
+ * @param withToc - Whether to display a table of contents; defaults to `false`
+ * @param className - Additional CSS classes to apply to the root container
  */
 export default function StaticPageLayout({
     title,
@@ -70,7 +76,12 @@ export default function StaticPageLayout({
     );
 }
 
-/** 見出しを安定したアンカー id に変換（英数小文字 + ハイフン） */
+/**
+ * Converts a heading string into a URL-safe anchor ID.
+ *
+ * @param s - The heading text to convert
+ * @returns The slugified ID, containing only lowercase letters, numbers, and hyphens
+ */
 function slugify(s: string): string {
     return s
         .toLowerCase()

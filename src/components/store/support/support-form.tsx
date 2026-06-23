@@ -21,6 +21,14 @@ interface SupportFormProps {
     submitLabel?: string;
 }
 
+/**
+ * Renders a support ticket submission form.
+ *
+ * The form collects name, email, subject, and message. An orderId field is conditionally displayed when the category is "RETURN_REQUEST" or "DISPUTE". After successful submission, displays a confirmation message instead of the form. Submission errors are displayed on the form.
+ *
+ * @param category - The support ticket category, determining whether the orderId field is displayed.
+ * @param submitLabel - Optional text for the submit button; defaults to "送信" if not provided.
+ */
 export default function SupportForm({
     category,
     submitLabel,

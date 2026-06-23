@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     description: "よくある質問と回答の一覧。",
 };
 
-/** よくある質問（Q&A）の静的ページ。各 Q を見出し、A を本文として描画する。 */
+/**
+ * Displays the frequently asked questions page.
+ */
 export default function FaqsPage() {
     return <StaticPageLayout title="FAQs" sections={FAQ_SECTIONS} />;
 }

@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     description: "サポート窓口のハブ。お問い合わせ・返品・配送状況・FAQ への入口。",
 };
 
-/** サポート窓口のハブページ。導線カードを定数から描画する。DB 非依存。 */
+/**
+ * Displays a customer service hub page with navigation cards to support resources.
+ */
 export default function CustomerServicePage() {
     return (
         <main className="mx-auto max-w-5xl px-4 py-10">

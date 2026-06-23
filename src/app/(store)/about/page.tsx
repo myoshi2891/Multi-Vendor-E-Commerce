@@ -7,7 +7,9 @@ export const metadata: Metadata = {
     description: "運営会社情報とプラットフォームの紹介。",
 };
 
-/** 運営会社情報・プラットフォーム紹介の静的ページ。DB 非依存のため force-dynamic 不要。 */
+/**
+ * Renders the About page with company information and platform introduction.
+ */
 export default function AboutPage() {
     return <StaticPageLayout title="About" sections={ABOUT_SECTIONS} />;
 }

@@ -5,8 +5,9 @@ export const metadata: Metadata = {
     title: "Order Dispute | Marketplace",
 };
 
-/** 注文紛争（Order Dispute）の申立フォーム。公開（ゲスト可）。
- *  DB 書込は server action 側のため force-dynamic 不要。 */
+/**
+ * Renders the order dispute resolution page.
+ */
 export default function DisputePage() {
     return (
         <main className="mx-auto max-w-2xl px-4 py-10">
