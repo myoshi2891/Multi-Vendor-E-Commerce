@@ -127,6 +127,10 @@
   `tests/e2e/messages.spec.ts` (AC-M8: buyer↔seller round trip across two browser
   contexts — buyer sends, seller replies, buyer's 5s polling surfaces the reply;
   `test.skip` when `CLERK_SECRET_KEY` is unset), 7 → 8 specs; Jest count unaffected.
+  Shared layout chrome unification added `tests/e2e/layout-chrome.spec.ts`
+  (asserts `store-header`/`store-footer` render exactly once across `(store)`
+  pages, home is not double-headed, and `(fullscreen)` `seller/apply` has no
+  shared chrome), 8 → 9 specs; Jest count unaffected.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
