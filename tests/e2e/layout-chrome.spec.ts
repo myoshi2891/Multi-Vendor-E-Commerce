@@ -44,6 +44,14 @@ test.describe("共通レイアウト(ヘッダー/フッター)", () => {
     }
   });
 
+  test("sign-in/sign-up にもヘッダーとフッターが各1つ表示される", async ({ page }) => {
+    for (const path of ["/sign-in", "/sign-up"]) {
+      await page.goto(path);
+      await expect(page.getByTestId("store-header")).toHaveCount(1);
+      await expect(page.getByTestId("store-footer")).toHaveCount(1);
+    }
+  });
+
   test("seller/apply は共通ヘッダー/フッターを持たない(MinimalHeader 全画面)", async ({ page }) => {
     await page.goto("/seller/apply");
 
