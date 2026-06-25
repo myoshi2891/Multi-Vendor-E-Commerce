@@ -19,7 +19,7 @@ export default async function StoreHeader() {
     const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value);
 
     return (
-        <div className="bg-gradient-to-r from-slate-500 to-slate-800">
+        <div data-testid="store-header" className="bg-gradient-to-r from-slate-500 to-slate-800">
             <div className="size-full px-4 text-white lg:flex lg:px-12">
                 <div className="flex flex-col gap-3 py-3 lg:w-full lg:flex-1 lg:flex-row">
                     <div className="flex items-center justify-between">
