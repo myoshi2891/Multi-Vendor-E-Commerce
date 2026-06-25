@@ -4,8 +4,6 @@ import HomeMainSwiper from "@/components/store/home/main/home-swiper";
 import HomeUserCard from "@/components/store/home/main/user/user";
 import Sideline from "@/components/store/home/sideline/sideline";
 import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
-import Footer from "@/components/store/layout/footer/footer";
-import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import MainSwiper from "@/components/store/shared/swiper";
 import { SimpleProduct } from "@/lib/types";
@@ -36,7 +34,6 @@ export default async function HomePage() {
 
     return (
         <>
-            <StoreHeader />
             <CategoriesHeader />
             <div data-testid="app-main" className="relative min-h-screen w-full">
                 <Sideline />
@@ -124,7 +121,6 @@ export default async function HomePage() {
                     {/* <MainSwiper products={products_new_product} type="main" /> */}
                 </div>
             </div>
-            <Footer />
         </>
     );
 }

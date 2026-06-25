@@ -1,6 +1,5 @@
 import StoreCard from "@/components/store/cards/store-card";
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header'
-import StoreHeader from '@/components/store/layout/header/header'
 import ProductPageContainer from '@/components/store/product-page/container'
 import ProductDescription from '@/components/store/product-page/product-description'
 import ProductQuestions from '@/components/store/product-page/product-questions'
@@ -89,7 +88,6 @@ export default async function ProductVariantPage({
 
     return (
         <div>
-            <StoreHeader />
             <CategoriesHeader />
             <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
                 <div className="rounded-md border bg-white p-4 text-black shadow" />

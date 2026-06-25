@@ -1,6 +1,5 @@
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
-import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
@@ -55,18 +54,15 @@ export default async function BrowsePage({
     const { products } = products_data;
 
     return (
-        <>
-            <StoreHeader />
-            <div className="mx-auto max-w-[95%]">
-                <div className="mt-5 flex gap-x-5">
-                    <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
-                    <div className="space-y-5 p-4">
-                        <ProductSort />
-                        {/* Product list */}
-                        <ProductList products={products} />
-                    </div>
+        <div className="mx-auto max-w-[95%]">
+            <div className="mt-5 flex gap-x-5">
+                <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
+                <div className="space-y-5 p-4">
+                    <ProductSort />
+                    {/* Product list */}
+                    <ProductList products={products} />
                 </div>
             </div>
-        </>
+        </div>
     );
 }
