@@ -130,7 +130,9 @@
   Shared layout chrome unification added `tests/e2e/layout-chrome.spec.ts`
   (asserts `store-header`/`store-footer` render exactly once across `(store)`
   pages, home is not double-headed, and `(fullscreen)` `seller/apply` has no
-  shared chrome), 8 → 9 specs; Jest count unaffected.
+  shared chrome), 8 → 9 specs; Jest count unaffected. The same spec later gained
+  a sign-in/sign-up chrome assertion (the `(auth)` group now supplies the shared
+  header/footer), 6 → 7 tests within the spec; spec file count stays 9.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

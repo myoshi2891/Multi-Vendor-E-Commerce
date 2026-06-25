@@ -1287,7 +1287,9 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 | `src/app/(store)/layout.tsx` | `StoreHeader` + `Footer` を共通描画（cookies 経由で動的化） | `33be2c3` |
 | `header.tsx` / `footer.tsx` | ルート要素に `data-testid=store-header/store-footer` 付与 | `33be2c3` |
 | `(store)/{page,cart,checkout,browse,product,store}` + `profile/layout.tsx` | 重複 Header/Footer と未使用 import を除去（`CategoriesHeader` は維持） | `b767a24` |
-| `tests/e2e/layout-chrome.spec.ts` | chrome 表示の E2E +6（chromium 通過確認） | `7fdc6ba` |
+| `(store)/layout.tsx` | sticky footer 化（`flex min-h-screen flex-col` + children `flex-1`）でフッターの浮きを解消 | `1f3ef92` |
+| `src/app/(auth)/layout.tsx` + sign-in/sign-up page | 認証ページに共通 chrome 供給（Clerk フォームの `h-screen`→`flex-1` 中央寄せ） | `cc69850` |
+| `tests/e2e/layout-chrome.spec.ts` | chrome 表示の E2E（chromium 通過確認）。認証ページ検証含め 7 テスト | `7fdc6ba` / `cc69850` |
 
 #### テスト統計（更新）
 
