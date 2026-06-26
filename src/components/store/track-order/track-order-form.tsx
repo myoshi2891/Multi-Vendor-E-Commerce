@@ -65,7 +65,9 @@ export default function TrackOrderForm() {
         <div>
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit(onSubmit, resetLookup)}
+                    onSubmit={(e) =>
+                        void form.handleSubmit(onSubmit, resetLookup)(e)
+                    }
                     className="space-y-4"
                     noValidate
                 >
