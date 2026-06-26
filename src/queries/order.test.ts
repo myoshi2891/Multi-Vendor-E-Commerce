@@ -1412,6 +1412,12 @@ describe("trackOrder", () => {
         ).rejects.toThrow("注文の照会に失敗しました。時間をおいて再度お試しください。");
         expect(errSpy).toHaveBeenCalled();
 
+        // PII 不漏洩契約の固定: ログ引数（第2引数の { error, stack } 等を含む
+        // 全呼び出し・全引数）を直列化し、email・orderId が一切含まれないことを検証する。
+        const loggedPayload = JSON.stringify(errSpy.mock.calls);
+        expect(loggedPayload).not.toContain(OWNER_EMAIL);
+        expect(loggedPayload).not.toContain("order-001");
+
         errSpy.mockRestore();
     });
 });
