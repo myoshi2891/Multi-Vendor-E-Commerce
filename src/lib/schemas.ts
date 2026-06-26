@@ -715,3 +715,11 @@ export const SupportTicketSchema = z
     });
 
 export type SupportTicketInput = z.infer<typeof SupportTicketSchema>;
+
+// 注文追跡: 注文番号 + メール。両者一致で配送状況を照会する（公開）。
+export const TrackOrderSchema = z.object({
+    orderId: z.string().trim().min(1, "注文番号を入力してください。"),
+    email: z.string().trim().email("有効なメールアドレスを入力してください。"),
+});
+
+export type TrackOrderInput = z.infer<typeof TrackOrderSchema>;
