@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
+import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
 import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -79,6 +80,70 @@ export const getOrder = async (orderId: string) => {
     });
 
     return order;
+};
+
+/**
+ * 注文番号 + メールで配送状況を照会する公開アクション。
+ *
+ * 本人性は orderId が示す注文の所有者 User.email と入力 email の一致で確認する
+ * （ゲスト注文は無く email は User.email のみ・schema.prisma:18-39, 498-525）。
+ *
+ * IDOR/列挙防止: 注文の不存在と email 不一致を区別せず、どちらも null を返す。
+ * where は { id: orderId } のみとし、email 照合は取得後にアプリ層で行う（副作用なし）。
+ *
+ * @param input - { orderId, email }。Zod で検証する。
+ * @returns 追跡データ（order/group/item ステータス）または null（不一致/不存在/不正入力）
+ */
+export const trackOrder = async (input: TrackOrderInput) => {
+    // 入力検証（不正入力も「見つからない」と同等に null）。
+    const parsed = TrackOrderSchema.safeParse(input);
+    if (!parsed.success) return null;
+    const { orderId, email } = parsed.data;
+
+    try {
+        const order = await db.order.findUnique({
+            where: { id: orderId },
+            include: {
+                user: { select: { email: true } },
+                groups: {
+                    include: {
+                        items: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image: true,
+                                quantity: true,
+                                status: true,
+                            },
+                        },
+                        store: { select: { name: true, url: true } },
+                    },
+                    orderBy: { createdAt: "asc" },
+                },
+            },
+        });
+
+        // 不存在・email 不一致を同一応答（null）にする（列挙防止）。
+        if (!order) return null;
+        if (order.user.email.toLowerCase() !== email.toLowerCase()) return null;
+
+        // email を結果から除去して返す（PII を結果に残さない）。
+        const { user: _user, ...rest } = order;
+        return rest;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            // email/orderId 等の PII はログしない。
+            console.error("[Order:trackOrder] lookup failed", {
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[Order:trackOrder] lookup failed (unknown)", {
+                error,
+            });
+        }
+        return null;
+    }
 };
 
 /**
