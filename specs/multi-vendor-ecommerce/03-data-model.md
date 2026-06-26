@@ -3,9 +3,11 @@
 ## Core Entities
 - User: identity, role, and profile; owns stores, orders, cart, wishlist, and
   payment records.
-- Store: owned by a user; contains products, shipping rates, coupons, and order
-  groups; has status and default shipping settings (`Decimal(12,2)` for default
-  shipping fee fields).
+- Store: owned by a user; contains products, shipping rates, coupons, order
+  groups, and conversations; has status and default shipping settings
+  (`Decimal(12,2)` for default shipping fee fields). `lowStockThreshold Int
+  @default(5)` drives the inventory low-stock badge/summary (additive,
+  non-destructive migration).
 - Product: belongs to a store, category, and subcategory; has variants, specs,
   reviews, and questions.
 - ProductVariant: specific sellable variant; has sizes, colors, images, and
@@ -25,6 +27,12 @@
 - Category, SubCategory, OfferTag: taxonomy and merchandising labels.
 - ShippingRate, FreeShipping, FreeShippingCountry: shipping rules by country
   (`Decimal(12,2)` for fee fields).
+- Conversation and Message: buyer↔seller 1:1 messaging. A Conversation is unique
+  per `(userId, storeId)` and optionally references an `orderId`
+  (`onDelete: SetNull`); both `userId`/`storeId` references cascade-delete. Each
+  Message belongs to a Conversation and a sender (`User`); the sender role is
+  derived (`Message.senderId === Conversation.userId` ⇒ buyer-sent) rather than
+  stored. `Message.isRead`/`readAt` drive unread clearing. No money fields.
 - SupportTicket: public support-form submission (contact / return / dispute /
   problem-report) collapsed into one table by `category`. Optional `orderId` and
   `userId` references (both `onDelete: SetNull`; guest submissions leave `userId`
@@ -50,14 +58,14 @@
 - Unique: Store.url, Category.url, SubCategory.url, Product.slug,
   ProductVariant.slug, Coupon.code.
 - Composite unique: ShippingRate(storeId, countryId),
-  Review(userId, productId).
+  Review(userId, productId), Conversation(userId, storeId).
 - GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.
 
 ## ER 図 (Diagram)
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
-- **図の構成（8 ページ）**: `data-model.drawio` は機能ドメインごとに 8 タブに分割されている。
+- **図の構成（10 ページ）**: `data-model.drawio` は機能ドメインごとに 10 タブに分割されている。
   クロスドメインエッジを同一ページ内に収めるため、関連モデルは複数ページに重複掲載される。
 
   | Page | タブ名 | 掲載エンティティ数 | 概要 |
@@ -69,7 +77,9 @@
   | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
   | 6 | Shipping | 6 | 配送ルール・住所（ShippingAddress を中心に ShippingRate / Country 等） |
   | 7 | Identity | 2 | User / Store の Identity ドメイン |
-  | 8 | Enums | 7 | 全 enum 定義の参照ページ（エッジなし） |
+  | 8 | Messaging | 5 | 購入者↔販売者メッセージング（Conversation / Message / User / Store / Order） |
+  | 9 | Support | 3 | サポート受付（SupportTicket / User / Order） |
+  | 10 | Enums | 9 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:
