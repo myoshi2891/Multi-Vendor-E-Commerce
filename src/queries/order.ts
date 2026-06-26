@@ -93,6 +93,7 @@ export const getOrder = async (orderId: string) => {
  *
  * @param input - { orderId, email }。Zod で検証する。
  * @returns 追跡データ（order/group/item ステータス）または null（不一致/不存在/不正入力）
+ * @throws 一過性の DB/インフラ障害時。null（真の不一致/不存在）と区別するため握り潰さず再 throw する。
  */
 export const trackOrder = async (input: TrackOrderInput) => {
     // 入力検証（不正入力も「見つからない」と同等に null）。
@@ -142,7 +143,10 @@ export const trackOrder = async (input: TrackOrderInput) => {
                 error,
             });
         }
-        return null;
+        // 一過性のインフラ障害を「見つからない(null)」に変換しない。
+        // null は真の不一致/不存在/不正入力のみに限定し、DB 障害は呼び出し側へ伝播させる
+        // （UI 側で not-found ではなく汎用の再試行メッセージを出すため）。PII は含めない。
+        throw new Error("注文の照会に失敗しました。時間をおいて再度お試しください。");
     }
 };
 

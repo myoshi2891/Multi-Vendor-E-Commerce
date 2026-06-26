@@ -28,20 +28,34 @@ export default function TrackOrderForm() {
     const [result, setResult] =
         useState<Awaited<ReturnType<typeof trackOrder>>>(null);
     const [notFound, setNotFound] = useState(false);
+    const [failed, setFailed] = useState(false);
 
     const form = useForm<TrackOrderInput>({
         resolver: zodResolver(TrackOrderSchema),
         defaultValues: { orderId: "", email: "" },
     });
 
+    // 直前の照会結果（result/notFound/failed）を即座にクリアする。
+    // 表示中の状態を常に「現在の入力」に同期させ、再照会中やバリデーション失敗時に
+    // 古い結果や not-found メッセージが残らないようにする。
+    const resetLookup = () => {
+        setResult(null);
+        setNotFound(false);
+        setFailed(false);
+    };
+
     const onSubmit = async (values: TrackOrderInput) => {
         if (isSubmittingRef.current) return;
         isSubmittingRef.current = true;
-        setNotFound(false);
+        resetLookup();
         try {
             const data = await trackOrder(values);
             if (!data) setNotFound(true);
             setResult(data);
+        } catch {
+            // trackOrder が一過性のインフラ障害を throw した場合は not-found ではなく
+            // 汎用の再試行メッセージを表示する（不存在/不一致の null とは区別する）。
+            setFailed(true);
         } finally {
             isSubmittingRef.current = false;
         }
@@ -51,7 +65,7 @@ export default function TrackOrderForm() {
         <div>
             <Form {...form}>
                 <form
-                    onSubmit={form.handleSubmit(onSubmit)}
+                    onSubmit={form.handleSubmit(onSubmit, resetLookup)}
                     className="space-y-4"
                     noValidate
                 >
@@ -91,10 +105,15 @@ export default function TrackOrderForm() {
                 </form>
             </Form>
 
+            {failed ? (
+                <output className="mt-6 block text-sm text-destructive">
+                    注文の照会に失敗しました。時間をおいて再度お試しください。
+                </output>
+            ) : null}
             {notFound ? (
-                <p role="status" className="mt-6 text-sm text-muted-foreground">
+                <output className="mt-6 block text-sm text-muted-foreground">
                     注文が見つかりませんでした。
-                </p>
+                </output>
             ) : null}
             {result ? <TrackOrderResult order={result} /> : null}
         </div>

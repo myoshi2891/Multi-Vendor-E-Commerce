@@ -2,7 +2,7 @@ import OrderStatusTag from "@/components/shared/order-status";
 import PaymentStatusTag from "@/components/shared/payment-status";
 import ProductStatusTag from "@/components/shared/product-status";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
-import { trackOrder } from "@/queries/order";
+import type { trackOrder } from "@/queries/order";
 import Image from "next/image";
 
 // trackOrder の非 null 戻り値（user＝email は除去済み）を型として再利用し、any を避ける。
