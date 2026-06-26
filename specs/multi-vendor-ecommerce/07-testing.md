@@ -16,11 +16,14 @@
   track-order feature (`docs/design/track-order/`): public order-tracking page `/track-order`
   with a public `trackOrder` server action (no auth guard; `where: { id }` only, email matched
   in app layer with `toLowerCase()` — IDOR 3-layer; mismatch and not-found return the same `null`
-  to prevent enumeration; `user`/email stripped from the result; no PII logged) and
-  `TrackOrderSchema`. Client `track-order-form.tsx` (RHF + zodResolver, useRef re-entrancy guard,
-  single not-found message) and `track-order-result.tsx` (reuses shared OrderStatusTag /
-  PaymentStatusTag / ProductStatusTag). Added +6 to `order.test.ts` (T-TO1–T-TO6) and a new suite
-  `src/components/store/track-order/track-order-form.test.tsx` (+2, T-TO7/T-TO8); +8 tests, 171 → 172 suites.
+  to prevent enumeration; `user`/email stripped from the result; no PII logged — and on DB failure
+  `trackOrder` throws a generic message instead of null, with no email/orderId in the log) and
+  `TrackOrderSchema`. Client `track-order-form.tsx` (RHF + zodResolver, useRef re-entrancy guard;
+  distinguishes a not-found message from a separate failed retry message when `trackOrder` throws)
+  and `track-order-result.tsx` (reuses shared OrderStatusTag / PaymentStatusTag / ProductStatusTag).
+  Added +7 to `order.test.ts` (T-TO1–T-TO6 plus T-TO11 DB-failure-throws-with-no-PII) and a new suite
+  `src/components/store/track-order/track-order-form.test.tsx` (+4, T-TO7–T-TO10: empty-submit guard,
+  matched-status render, null → not-found, throw → retry message); +11 tests, 171 → 172 suites.
 - 1650 passed / 1653 total across 171 suites (3 skipped), as of 2026-06-22.
   SonarCloud Quality Gate remediation (PR #149) lifted support-forms New Code Coverage
   from 77.5% over the 80% gate and cleared 4 New Issues (S6759 readonly props ×2, S6819
