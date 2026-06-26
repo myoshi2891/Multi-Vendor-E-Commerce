@@ -20,7 +20,7 @@
   `TrackOrderSchema`. Client `track-order-form.tsx` (RHF + zodResolver, useRef re-entrancy guard,
   single not-found message) and `track-order-result.tsx` (reuses shared OrderStatusTag /
   PaymentStatusTag / ProductStatusTag). Added +6 to `order.test.ts` (T-TO1–T-TO6) and a new suite
-  `tests/component/store/track-order-form.test.tsx` (+2, T-TO7/T-TO8); +8 tests, 171 → 172 suites.
+  `src/components/store/track-order/track-order-form.test.tsx` (+2, T-TO7/T-TO8); +8 tests, 171 → 172 suites.
 - 1650 passed / 1653 total across 171 suites (3 skipped), as of 2026-06-22.
   SonarCloud Quality Gate remediation (PR #149) lifted support-forms New Code Coverage
   from 77.5% over the 80% gate and cleared 4 New Issues (S6759 readonly props ×2, S6819

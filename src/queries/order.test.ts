@@ -1398,4 +1398,20 @@ describe("trackOrder", () => {
         expect(result).toBeNull();
         AssertionHelpers.expectNotCalled(mockDb.order.findUnique);
     });
+
+    it("T-TO11: DB 障害は null に変換せず throw する（not-found と区別）", async () => {
+        // Arrange: 一過性のインフラ障害。PII ログを抑制する。
+        const errSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+        // Act / Assert: null ではなく汎用メッセージで throw
+        await expect(
+            trackOrder({ orderId: "order-001", email: OWNER_EMAIL })
+        ).rejects.toThrow("注文の照会に失敗しました。時間をおいて再度お試しください。");
+        expect(errSpy).toHaveBeenCalled();
+
+        errSpy.mockRestore();
+    });
 });

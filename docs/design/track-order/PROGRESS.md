@@ -23,7 +23,7 @@
 | 3     | 品質チェック + ドキュメント同期                                        | ✅   | test-complete / spec-sync-after-test |
 
 > **既存表示部品の流用調査の結論**: design §1.2 が参照した `src/app/(store)/order/[orderId]/` は実在せず、注文詳細は `src/app/(fullscreen)/order/[orderId]/page.tsx`。流用したのは重い `order-page/*`（force-dynamic / PDF / 決済列依存）ではなく共有ステータスタグ `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`（`src/components/shared/`）。`track-order-result.tsx` はこれらを組み合わせる軽量実装。
-> **コンポーネントテスト配置**: design はコロケート指定だったが、リポジトリ慣習（store component テストは全て `tests/component/store/`）に合わせ `tests/component/store/track-order-form.test.tsx` に配置。
+> **コンポーネントテスト配置**: design のコロケート指定どおり `src/components/store/track-order/track-order-form.test.tsx` に配置（直近の `support-form.test.tsx` も `src/components/store/support/` にコロケート済みで、これが現行慣習）。当初 `tests/component/store/` に置いたが、レビュー指摘によりコロケートへ移動。
 
 ---
 
