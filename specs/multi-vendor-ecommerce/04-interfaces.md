@@ -77,6 +77,14 @@ All functions require ADMIN role via `requireAdmin()` (called outside both cache
 Return types: `AdminDashboardStats`, `SalesPoint[]` are exported from `dashboard.ts`.
 Revenue `Decimal` fields are converted to `number` before return (serialization-safe).
 
+### order module (`src/queries/order.ts`) — public order tracking
+
+| Function | Permission | Description |
+|----------|-----------|-------------|
+| `trackOrder(input)` | **Public** (no auth guard) | Looks up an order for the public `/track-order` page by `{ orderId, email }` (validated by `TrackOrderSchema`). Fetches with `where: { id: orderId }` only and matches the owner `User.email` in the app layer (`toLowerCase()`), so identity is proven by email match rather than a `userId` where-clause. Returns the order (`groups → items / store`) with `user`/email stripped, or `null`. A not-found order and an email mismatch return the **same** `null` to prevent order-id enumeration (IDOR 3-layer: throw / where-structure / no side effects). Invalid input also returns `null` (no `findUnique` call). No PII (email/orderId) is logged. |
+
+This is distinct from `getOrder(orderId)`, which is authenticated (`where: { id, userId }`) and powers the signed-in order detail page; both coexist.
+
 ### coupon module (`src/queries/coupon.ts`) — admin functions
 
 Admin-only functions require ADMIN role via `requireAdmin()` (outside `try/catch` per auth-guard convention). Seller functions use `requireStoreOwner(storeUrl)`.

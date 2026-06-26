@@ -12,6 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1659 passed / 1662 total across 172 suites (3 skipped), as of 2026-06-26.
+  track-order feature (`docs/design/track-order/`): public order-tracking page `/track-order`
+  with a public `trackOrder` server action (no auth guard; `where: { id }` only, email matched
+  in app layer with `toLowerCase()` — IDOR 3-layer; mismatch and not-found return the same `null`
+  to prevent enumeration; `user`/email stripped from the result; no PII logged) and
+  `TrackOrderSchema`. Client `track-order-form.tsx` (RHF + zodResolver, useRef re-entrancy guard,
+  single not-found message) and `track-order-result.tsx` (reuses shared OrderStatusTag /
+  PaymentStatusTag / ProductStatusTag). Added +6 to `order.test.ts` (T-TO1–T-TO6) and a new suite
+  `tests/component/store/track-order-form.test.tsx` (+2, T-TO7/T-TO8); +8 tests, 171 → 172 suites.
 - 1650 passed / 1653 total across 171 suites (3 skipped), as of 2026-06-22.
   SonarCloud Quality Gate remediation (PR #149) lifted support-forms New Code Coverage
   from 77.5% over the 80% gate and cleared 4 New Issues (S6759 readonly props ×2, S6819
