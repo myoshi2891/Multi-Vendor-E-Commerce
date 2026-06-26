@@ -10,7 +10,7 @@ import { cookies } from 'next/headers'
  * レイアウトが供給する。
  *
  * @returns `CartContainer` を返す。`CartContainer` は解析済みのユーザー国
- * （cookie が無い/不正な場合は `undefined`）を受け取る。
+ * （cookie が無い/不正な場合はデフォルト国）を受け取る。
  */
 export default async function CartPage() {
     const cookieStore = await cookies()
