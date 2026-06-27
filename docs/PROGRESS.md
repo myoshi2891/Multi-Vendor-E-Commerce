@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1650 passed / 1653 total / 171 スイート（3 skipped）** — 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1659 passed / 1662 total / 172 スイート（3 skipped）** — 2026-06-26 track-order 機能実装時点。公開の注文追跡 `trackOrder`（IDOR 3 階層・不一致/不存在を同一 null）+ `/track-order` ページ + form/result。既存 `order.test.ts` に +6（T-TO1〜T-TO6）+ 新規 `track-order-form.test.tsx` +2（T-TO7/T-TO8）= +8（1651→1659、171→172 スイート、`b2a30e5`〜`b57bd40`）。直前 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1269,6 +1269,60 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 |------|--------|--------|
 | Jest テスト総数 (unit/component) | 1629 passed | **1638 passed** |
 | スイート数 | 168 | **170** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 共通レイアウト統一（全店舗ページに Header/Footer）(2026-06-25)
+
+#### 概要
+
+ヘッダー/フッターを各 `page.tsx` で個別描画していたため `/compare` `/returns-exchange` `/product-support` 等で未表示だった問題を、`(store)/layout.tsx` での共通描画に集約して解消。全画面ページ（`order`・`seller/apply`）は共通 chrome を継承しないよう `(fullscreen)` ルートグループへ退避（URL 不変）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(fullscreen)/` | 新規ルートグループ + Toaster ラッパー layout、`order`/`seller` を `git mv` で退避 | `54d8c07` |
+| `src/app/(store)/layout.tsx` | `StoreHeader` + `Footer` を共通描画（cookies 経由で動的化） | `33be2c3` |
+| `header.tsx` / `footer.tsx` | ルート要素に `data-testid=store-header/store-footer` 付与 | `33be2c3` |
+| `(store)/{page,cart,checkout,browse,product,store}` + `profile/layout.tsx` | 重複 Header/Footer と未使用 import を除去（`CategoriesHeader` は維持） | `b767a24` |
+| `(store)/layout.tsx` | sticky footer 化（`flex min-h-screen flex-col` + children `flex-1`）でフッターの浮きを解消 | `1f3ef92` |
+| `src/app/(auth)/layout.tsx` + sign-in/sign-up page | 認証ページに共通 chrome 供給（Clerk フォームの `h-screen`→`flex-1` 中央寄せ） | `cc69850` |
+| `tests/e2e/layout-chrome.spec.ts` | chrome 表示の E2E（chromium 通過確認）。認証ページ検証含め 7 テスト | `7fdc6ba` / `cc69850` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1650 passed | **1650 passed**（不変） |
+| Playwright E2E（main） | 8 スペック | **9 スペック** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Track order 機能実装 (2026-06-26)
+
+#### 概要
+
+公開の注文追跡機能を実装。ログイン不要で注文番号 + メールから配送状況を照会する `/track-order` ページと公開 server action `trackOrder`。footer の「Track your Order」配線済だがページ未実装だった空白を解消。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/schemas.ts` | `TrackOrderSchema`（orderId/email）追加 | `b2a30e5` |
+| `src/queries/order.test.ts` | trackOrder IDOR テスト T-TO1〜T-TO6（Red） | `5945810` |
+| `src/queries/order.ts` | 公開 `trackOrder`（where:{id} のみ・email 照合はアプリ層・不一致/不存在を同一 null・user 除去・PII 非ログ） | `494811d` |
+| `tests/component/store/track-order-form.test.tsx` | フォームテスト T-TO7/T-TO8（Red） | `d636079` |
+| `src/app/(store)/track-order/page.tsx`, `src/components/store/track-order/{track-order-form,track-order-result}.tsx` | page + form（RHF+zodResolver・二重送信防止）+ result（共有ステータスタグ流用） | `b57bd40` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1651 passed | **1659 passed**（+8） |
+| スイート数 | 171 | **172** |
 | 型エラー | 0 件 | **0 件** |
 
 ---

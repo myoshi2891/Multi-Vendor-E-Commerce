@@ -1,23 +1,21 @@
 // React
 import { ReactNode } from 'react'
 
-// Toaster
-import { Toaster } from 'react-hot-toast'
-
 // Layout chrome
 import StoreHeader from '@/components/store/layout/header/header'
 import Footer from '@/components/store/layout/footer/footer'
 
 /**
- * Renders the shared storefront layout with the store header, footer, and toast notifications.
+ * Provides the shared layout for authentication pages.
+ *
+ * @param children - The page content to render within the main area.
  */
-export default function StoreLayout({ children }: { children: ReactNode }) {
+export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
         <div className="flex min-h-screen flex-col">
             <StoreHeader />
-            <div className="flex-1">{children}</div>
+            <main className="flex flex-1 flex-col">{children}</main>
             <Footer />
-            <Toaster position="top-center" />
         </div>
     )
 }

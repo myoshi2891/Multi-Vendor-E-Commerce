@@ -1,6 +1,5 @@
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
-import StoreHeader from "@/components/store/layout/header/header";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
@@ -9,10 +8,10 @@ import { getFilteredSizes } from "@/queries/size";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the store browse page with header, filter controls, sorting UI, and a product list derived from URL query parameters.
+ * Renders the store browse page with filter controls, sorting UI, and a product list derived from URL query parameters.
  *
- * @param searchParams - A promise resolving to the query parameters used to filter and sort products (e.g., category, size, price range, color, offer, sort, and search).
- * @returns The browse page React element containing the header, product filters, sort controls, and the filtered product list.
+ * @param searchParams - A promise resolving to the query parameters used to filter and sort products.
+ * @returns The browse page React element containing the product filters, sort controls, and filtered product list.
  */
 export default async function BrowsePage({
     searchParams,
@@ -55,18 +54,15 @@ export default async function BrowsePage({
     const { products } = products_data;
 
     return (
-        <>
-            <StoreHeader />
-            <div className="mx-auto max-w-[95%]">
-                <div className="mt-5 flex gap-x-5">
-                    <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
-                    <div className="space-y-5 p-4">
-                        <ProductSort />
-                        {/* Product list */}
-                        <ProductList products={products} />
-                    </div>
+        <div className="mx-auto max-w-[95%]">
+            <div className="mt-5 flex gap-x-5">
+                <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
+                <div className="space-y-5 p-4">
+                    <ProductSort />
+                    {/* Product list */}
+                    <ProductList products={products} />
                 </div>
             </div>
-        </>
+        </div>
     );
 }

@@ -6,21 +6,24 @@
 
 ---
 
-## 🧭 現在地（2026-06-21）
+## 🧭 現在地（2026-06-26）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。
-- ⬜ **実装未着手** — 着手時は [tasks.md](./tasks.md) §0 の `feature-plan` から開始（承認後 Phase 1）。
-- 👉 **次の着手**: Phase 1-A（`TrackOrderSchema`）→ 1-B（`trackOrder` の IDOR 3 階層テスト先行）。
+- ✅ **実装完了** — Phase 1〜3 完了（`b2a30e5`〜`b57bd40` + docs sync）。lint/tsc/test/build 全緑。
+- 👉 **次の着手**: なし（follow-up: レート制限 / reCAPTCHA は requirements §4 スコープ外）。
 
 ---
 
-## Phase 進捗 ⬜ 未着手
+## Phase 進捗 ✅ 完了
 
 | Phase | 内容                                                                   | 状態 | SKILL                                |
 | ----- | ---------------------------------------------------------------------- | ---- | ------------------------------------ |
-| 1     | Zod（TrackOrderSchema） + server action（trackOrder・IDOR 3 階層 TDD） | ⬜   | test-gen                             |
-| 2     | UI（page + form + result・既存表示部品の流用調査）                     | ⬜   | test-gen                             |
-| 3     | 品質チェック + ドキュメント同期                                        | ⬜   | test-complete / spec-sync-after-test |
+| 1     | Zod（TrackOrderSchema） + server action（trackOrder・IDOR 3 階層 TDD） | ✅ `b2a30e5`〜`494811d` | test-gen                |
+| 2     | UI（page + form + result・共有ステータスタグを流用）                   | ✅ `d636079`〜`b57bd40` | test-gen                |
+| 3     | 品質チェック + ドキュメント同期                                        | ✅   | test-complete / spec-sync-after-test |
+
+> **既存表示部品の流用調査の結論**: design §1.2 が参照した `src/app/(store)/order/[orderId]/` は実在せず、注文詳細は `src/app/(fullscreen)/order/[orderId]/page.tsx`。流用したのは重い `order-page/*`（force-dynamic / PDF / 決済列依存）ではなく共有ステータスタグ `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`（`src/components/shared/`）。`track-order-result.tsx` はこれらを組み合わせる軽量実装。
+> **コンポーネントテスト配置**: design のコロケート指定どおり `src/components/store/track-order/track-order-form.test.tsx` に配置（直近の `support-form.test.tsx` も `src/components/store/support/` にコロケート済みで、これが現行慣習）。当初 `tests/component/store/` に置いたが、レビュー指摘によりコロケートへ移動。
 
 ---
 

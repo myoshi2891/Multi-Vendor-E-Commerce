@@ -8,6 +8,7 @@ import {
     updateOrderGroupStatusAsAdmin,
     updateOrderItemStatusAsAdmin,
     updateOrderPaymentStatus,
+    trackOrder,
 } from "./order";
 import { OrderStatus, PaymentStatus, ProductStatus } from "../lib/types";
 import { AssertionHelpers } from "../config/test-helpers";
@@ -1284,5 +1285,139 @@ describe("在庫復元（F3-5・restock on cancel/refund）", () => {
 
             AssertionHelpers.expectNotCalled(mockDb.size.update);
         });
+    });
+});
+
+// ==================================================
+// trackOrder（公開・注文番号 + メールで配送状況を照会）
+//   IDOR 3 階層: (a) スロー検証 / (b) where 構造 / (c) 副作用なし
+//   不一致と不存在を同一応答（null）にして注文 ID の存在を秘匿する。
+// ==================================================
+describe("trackOrder", () => {
+    const OWNER_EMAIL = "owner@example.com";
+
+    /** 所有者 email を含む注文データを組み立てる（trackOrder の include 形に対応）。 */
+    const buildTrackableOrder = () => ({
+        ...createMockOrder(),
+        user: { email: OWNER_EMAIL },
+        groups: [
+            {
+                ...createMockOrderGroup(),
+                items: [createMockOrderItem()],
+                store: { name: "Test Store", url: "test-store" },
+            },
+        ],
+    });
+
+    it("T-TO1: email 一致（大小無視）で order/group/item を返し、user(email) を除去する", async () => {
+        // Arrange
+        const orderData = buildTrackableOrder();
+        mockDb.order.findUnique.mockResolvedValue(orderData);
+
+        // Act: 入力 email を大文字にしても所有者 email と一致させる
+        const result = await trackOrder({
+            orderId: "order-001",
+            email: OWNER_EMAIL.toUpperCase(),
+        });
+
+        // Assert: 結果が返り、PII（user.email）が除去されている
+        expect(result).not.toBeNull();
+        expect(result).not.toHaveProperty("user");
+        expect(result?.groups).toHaveLength(1);
+        expect(result?.groups[0].items).toHaveLength(1);
+        expect(result?.groups[0].store).toEqual({
+            name: "Test Store",
+            url: "test-store",
+        });
+    });
+
+    it("T-TO2: email 不一致のとき null を返す（IDOR スロー検証・データを漏らさない）", async () => {
+        // Arrange
+        mockDb.order.findUnique.mockResolvedValue(buildTrackableOrder());
+
+        // Act
+        const result = await trackOrder({
+            orderId: "order-001",
+            email: "attacker@example.com",
+        });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it("T-TO3: findUnique の where が { id: orderId }（email を where に混ぜない）", async () => {
+        // Arrange
+        mockDb.order.findUnique.mockResolvedValue(buildTrackableOrder());
+
+        // Act
+        await trackOrder({ orderId: "order-001", email: OWNER_EMAIL });
+
+        // Assert
+        expect(mockDb.order.findUnique).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { id: "order-001" },
+            })
+        );
+    });
+
+    it("T-TO4: 不一致時に update/delete 等を呼ばない（副作用なし・読取のみ）", async () => {
+        // Arrange
+        mockDb.order.findUnique.mockResolvedValue(buildTrackableOrder());
+
+        // Act
+        await trackOrder({
+            orderId: "order-001",
+            email: "attacker@example.com",
+        });
+
+        // Assert
+        AssertionHelpers.expectNotCalled(mockDb.order.update);
+        AssertionHelpers.expectNotCalled(mockDb.orderGroup.update);
+        AssertionHelpers.expectNotCalled(mockDb.orderItem.update);
+    });
+
+    it("T-TO5: 不存在 orderId のとき null（T-TO2 と同一応答・列挙防止）", async () => {
+        // Arrange
+        mockDb.order.findUnique.mockResolvedValue(null);
+
+        // Act
+        const result = await trackOrder({
+            orderId: "nonexistent",
+            email: OWNER_EMAIL,
+        });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it("T-TO6: 不正入力（空 orderId）のとき Zod で null・findUnique 未呼び出し", async () => {
+        // Act
+        const result = await trackOrder({ orderId: "", email: OWNER_EMAIL });
+
+        // Assert
+        expect(result).toBeNull();
+        AssertionHelpers.expectNotCalled(mockDb.order.findUnique);
+    });
+
+    it("T-TO11: DB 障害は null に変換せず throw する（not-found と区別）", async () => {
+        // Arrange: 一過性のインフラ障害。PII ログを抑制する。
+        const errSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+        // Act / Assert: null ではなく汎用メッセージで throw
+        await expect(
+            trackOrder({ orderId: "order-001", email: OWNER_EMAIL })
+        ).rejects.toThrow("注文の照会に失敗しました。時間をおいて再度お試しください。");
+        expect(errSpy).toHaveBeenCalled();
+
+        // PII 不漏洩契約の固定: ログ引数（第2引数の { error, stack } 等を含む
+        // 全呼び出し・全引数）を直列化し、email・orderId が一切含まれないことを検証する。
+        const loggedPayload = JSON.stringify(errSpy.mock.calls);
+        expect(loggedPayload).not.toContain(OWNER_EMAIL);
+        expect(loggedPayload).not.toContain("order-001");
+
+        errSpy.mockRestore();
     });
 });

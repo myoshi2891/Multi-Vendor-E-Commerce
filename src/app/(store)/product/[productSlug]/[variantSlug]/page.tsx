@@ -1,6 +1,5 @@
 import StoreCard from "@/components/store/cards/store-card";
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header'
-import StoreHeader from '@/components/store/layout/header/header'
 import ProductPageContainer from '@/components/store/product-page/container'
 import ProductDescription from '@/components/store/product-page/product-description'
 import ProductQuestions from '@/components/store/product-page/product-questions'
@@ -19,16 +18,15 @@ interface PageProps {
     searchParams: Promise<{ size?: string }>
 }
 /**
- * Renders the product variant page for the given route parameters and search params.
+ * Renders the product variant page for the requested product and variant.
  *
- * Fetches product and variant data for the provided slugs, validates or normalizes the `size`
- * query parameter (redirecting when the size is invalid or auto-selecting when only one size
- * is available), and returns the JSX for the product variant view including related products,
- * reviews, descriptions, specs, questions, and store information.
+ * Validates the `size` query parameter, redirects when it is invalid, auto-selects the only
+ * available size when none is provided, and returns the product variant view with related
+ * products, reviews, description, specs, questions, and store details.
  *
- * @param params - A promise that resolves to an object with `productSlug` and `variantSlug`.
- * @param searchParams - A promise that resolves to an object with optional `size` (the size id).
- * @returns The React element for the product variant page. May perform redirects or return a 404 view when appropriate.
+ * @param params - The route parameters containing `productSlug` and `variantSlug`.
+ * @param searchParams - The search parameters containing an optional `size` value.
+ * @returns The product variant page element, or a redirect/404 response when applicable.
  */
 export default async function ProductVariantPage({
     params,
@@ -89,7 +87,6 @@ export default async function ProductVariantPage({
 
     return (
         <div>
-            <StoreHeader />
             <CategoriesHeader />
             <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
                 <div className="rounded-md border bg-white p-4 text-black shadow" />

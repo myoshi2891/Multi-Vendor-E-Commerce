@@ -12,6 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1659 passed / 1662 total across 172 suites (3 skipped), as of 2026-06-26.
+  track-order feature (`docs/design/track-order/`): public order-tracking page `/track-order`
+  with a public `trackOrder` server action (no auth guard; `where: { id }` only, email matched
+  in app layer with `toLowerCase()` — IDOR 3-layer; mismatch and not-found return the same `null`
+  to prevent enumeration; `user`/email stripped from the result; no PII logged — and on DB failure
+  `trackOrder` throws a generic message instead of null, with no email/orderId in the log) and
+  `TrackOrderSchema`. Client `track-order-form.tsx` (RHF + zodResolver, useRef re-entrancy guard;
+  distinguishes a not-found message from a separate failed retry message when `trackOrder` throws)
+  and `track-order-result.tsx` (reuses shared OrderStatusTag / PaymentStatusTag / ProductStatusTag).
+  Added +7 to `order.test.ts` (T-TO1–T-TO6 plus T-TO11 DB-failure-throws-with-no-PII) and a new suite
+  `src/components/store/track-order/track-order-form.test.tsx` (+4, T-TO7–T-TO10: empty-submit guard,
+  matched-status render, null → not-found, throw → retry message); +11 tests, 171 → 172 suites.
 - 1650 passed / 1653 total across 171 suites (3 skipped), as of 2026-06-22.
   SonarCloud Quality Gate remediation (PR #149) lifted support-forms New Code Coverage
   from 77.5% over the 80% gate and cleared 4 New Issues (S6759 readonly props ×2, S6819
@@ -127,6 +139,12 @@
   `tests/e2e/messages.spec.ts` (AC-M8: buyer↔seller round trip across two browser
   contexts — buyer sends, seller replies, buyer's 5s polling surfaces the reply;
   `test.skip` when `CLERK_SECRET_KEY` is unset), 7 → 8 specs; Jest count unaffected.
+  Shared layout chrome unification added `tests/e2e/layout-chrome.spec.ts`
+  (asserts `store-header`/`store-footer` render exactly once across `(store)`
+  pages, home is not double-headed, and `(fullscreen)` `seller/apply` has no
+  shared chrome), 8 → 9 specs; Jest count unaffected. The same spec later gained
+  a sign-in/sign-up chrome assertion (the `(auth)` group now supplies the shared
+  header/footer), 6 → 7 tests within the spec; spec file count stays 9.
   - Phase 1 foundation layer (middleware, hooks, utils, providers) fully
     verified with P0/P1/P2 priority labeling applied uniformly.
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma

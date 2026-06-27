@@ -8,18 +8,18 @@ import { parseUserCountryCookie } from "@/lib/utils";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 
 /**
- * Renders the store header UI with branding, search, user/cart controls, app download prompt, and a country/language/currency selector.
+ * Renders the store header with branding, search, account controls, app download access, and locale selection.
  *
- * The component reads the "userCountry" cookie and provides the parsed value to CountryLanguageCurrencySelector so the selector is initialized for the current user.
+ * Reads the `userCountry` cookie and uses it to initialize `CountryLanguageCurrencySelector`.
  *
- * @returns The header's JSX element.
+ * @returns The store header JSX element.
  */
 export default async function StoreHeader() {
     const cookieStore = await cookies();
     const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value);
 
     return (
-        <div className="bg-gradient-to-r from-slate-500 to-slate-800">
+        <div data-testid="store-header" className="bg-gradient-to-r from-slate-500 to-slate-800">
             <div className="size-full px-4 text-white lg:flex lg:px-12">
                 <div className="flex flex-col gap-3 py-3 lg:w-full lg:flex-1 lg:flex-row">
                     <div className="flex items-center justify-between">

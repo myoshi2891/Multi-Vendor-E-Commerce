@@ -1,7 +1,6 @@
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
-import StoreHeader from "@/components/store/layout/header/header";
 import StoreDetails from "@/components/store/store-page/store-details";
 import StoreProducts from "@/components/store/store-page/store-products";
 import { FiltersQueryType } from "@/lib/types";
@@ -10,13 +9,13 @@ import { getStorePageDetails } from "@/queries/store";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the store page for a given store URL, including headers, store details, filters, sort controls, and product listings.
+ * Renders the store page for a given store URL.
  *
- * Renders a complete store UI composed of StoreHeader, CategoriesHeader, StoreDetails, ProductFilters, ProductSort, and StoreProducts.
+ * The page includes the category header, store details, filter controls, sort controls, and product listings.
  *
- * @param params - A promise that resolves to an object containing `storeUrl`, the identifier for the store to render
- * @param searchParams - A promise that resolves to filter/query parameters used by ProductFilters and StoreProducts
- * @returns The JSX for the store page
+ * @param params - Resolves to the store URL for the page.
+ * @param searchParams - Resolves to the filter and query parameters used by the product controls.
+ * @returns The JSX for the store page.
  */
 export default async function StorePage({
     params,
@@ -30,7 +29,6 @@ export default async function StorePage({
     const store = await getStorePageDetails(storeUrl);
     return (
         <>
-            <StoreHeader />
             <CategoriesHeader />
             <StoreDetails details={store} />
             <div className="mx-auto max-w-[95%] border-t">

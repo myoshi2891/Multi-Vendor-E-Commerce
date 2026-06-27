@@ -51,7 +51,7 @@
 
 ### 2-A. 結果表示部品の既存流用調査
 
-- [ ] `src/app/(store)/order/[orderId]/` のステータス表示部品が流用可能か調査し、design §1.2 に追記。
+- [x] 調査完了: `src/app/(store)/order/[orderId]/` は実在せず、注文詳細は `src/app/(fullscreen)/order/[orderId]/page.tsx`。流用は重い `order-page/*` ではなく共有ステータスタグ `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`（`src/components/shared/`）。design §1.2 に追記済み。
 
 ### 2-B. フォーム + 結果表示（TDD）　【SKILL: test-gen】
 

@@ -28,6 +28,12 @@
 3) On submit, the public server action `createSupportTicket(input)` re-validates, attaches `userId` only when `currentUser()` resolves (guest submissions leave it null), and creates one `SupportTicket` row with the form's `category`. The message body (PII) is never logged.
 4) On success the form shows a receipt message (`role="status"`); a generic failure surfaces as a root-level error (`role="alert"`). No external email/notification is sent in this MVP — operators triage via the stored `status` (admin viewing UI is a follow-up).
 
+## Order Tracking Flow
+1) Customer (guest or signed-in) reaches `/track-order` from the footer "Track your Order" link or the `/customer-service` support hub card.
+2) The client `TrackOrderForm` collects an order number and email, validates with `TrackOrderSchema` (RHF + zodResolver), and guards against double submission with a `useRef` flag.
+3) On submit, the public server action `trackOrder({ orderId, email })` fetches the order by `where: { id: orderId }` only and compares the input email to the owner `User.email` in the app layer (case-insensitive). A match returns the order (groups → items / store) with email stripped; a mismatch, a missing order, or invalid input all return the **same** `null` (enumeration-safe).
+4) `TrackOrderResult` renders the overall `orderStatus` / `paymentStatus` and, per store group, the shipping service and delivery window plus each item's `ProductStatus`, reusing the shared `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`. A `null` result shows a single generic "not found" message.
+
 ## Product Compare Flow
 1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
 2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).

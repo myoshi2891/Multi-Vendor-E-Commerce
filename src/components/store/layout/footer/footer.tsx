@@ -3,10 +3,15 @@ import Contact from "./contact";
 import Links from "./links";
 import Newsletter from "./newsletter";
 
+/**
+ * Renders the store footer.
+ *
+ * @returns The footer layout, including the newsletter section, contact details, category links, and rights bar.
+ */
 export default async function Footer() {
 	const subs = await getSubcategories(7, true);
 	return (
-		<div className="w-full bg-white">
+		<div data-testid="store-footer" className="w-full bg-white">
 			<Newsletter />
 			<div className="mx-auto max-w-[1430px]">
 				<div className="p-5">

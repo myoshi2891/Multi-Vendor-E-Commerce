@@ -45,10 +45,10 @@ src/components/store/track-order/
 | order include 形（groups/items/store/shippingAddress） | `order.ts:50-79`（`getOrder`）                                                                  | `trackOrder` の `findUnique` include   |
 | IDOR 3 階層テスト                                      | `profile-messages` 設計 / [`SECURITY_GAP_REPORT.md §5.2`](../../testing/SECURITY_GAP_REPORT.md) | AC-TO2〜TO4                            |
 | リエントランシーガード                                 | `newsletter.tsx`                                                                                | 照会フォームの二重送信防止             |
-| 既存注文詳細表示部品                                   | `src/app/(store)/order/[orderId]/`（要調査）                                                    | 結果表示の部分流用（**実装時に調査**） |
+| 共有ステータスタグ（流用確定）                         | `src/components/shared/{order-status,payment-status,product-status}.tsx`                         | `track-order-result.tsx` で order/group/item ステータスを描画 |
 | `Decimal.toNumber()` の境界処理                        | `tech.md` 金額規約                                                                              | 金額表示時                             |
 
-> **実装時の調査タスク**: `src/app/(store)/order/[orderId]/` 配下に order/group/item ステータスを描画する既存部品があれば `track-order-result.tsx` で再利用する。無ければ最小の表示を新規作成。再利用可否を design の本節に追記すること。
+> **実装時の調査結論（2026-06-26）**: design 当初が参照した `src/app/(store)/order/[orderId]/` は**実在しない**。認証付き注文詳細ページは `src/app/(fullscreen)/order/[orderId]/page.tsx` で、表示部品は `src/components/store/order-page/*`（`OrderHeader` 等）。ただしこれらは `OrderFullType`・PDF・決済列に依存し公開追跡には過剰なため流用せず、**共有ステータスタグ `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`**（`src/components/shared/`、`order-page/header.tsx` での使用例あり）のみを `track-order-result.tsx` で組み合わせる軽量実装とした。
 
 ### 1.3 認可方針
 

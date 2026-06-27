@@ -1,5 +1,4 @@
 import CheckoutContainer from '@/components/store/checkout-page/container'
-import StoreHeader from '@/components/store/layout/header/header'
 import { db } from '@/lib/db'
 import { parseUserCountryCookie } from '@/lib/utils'
 import { serializeCart } from '@/lib/serialize-cart'
@@ -11,11 +10,11 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the checkout page for an authenticated user.
+ * Renders the checkout page for the current user.
  *
- * Redirects to `/cart` if the user is not authenticated or does not have a cart.
+ * Redirects to `/cart` when the user is not signed in or does not have a cart.
  *
- * @returns The checkout page JSX.
+ * @returns The checkout page content.
  */
 export default async function CheckoutPage() {
     const user = await currentUser()
@@ -54,18 +53,15 @@ export default async function CheckoutPage() {
     const serializedCart = serializeCart(cart)
 
     return (
-        <>
-            <StoreHeader />
-            <main className="min-h-[calc(100vh-65px)] bg-[#f4f4f4]">
-                <div className="mx-auto max-w-container px-2 py-5">
-                    <CheckoutContainer
-                        cart={serializedCart}
-                        countries={countries}
-                        addresses={addresses}
-                        userCountry={userCountry}
-                    />
-                </div>
-            </main>
-        </>
+        <main className="min-h-[calc(100vh-65px)] bg-[#f4f4f4]">
+            <div className="mx-auto max-w-container px-2 py-5">
+                <CheckoutContainer
+                    cart={serializedCart}
+                    countries={countries}
+                    addresses={addresses}
+                    userCountry={userCountry}
+                />
+            </div>
+        </main>
     )
 }
