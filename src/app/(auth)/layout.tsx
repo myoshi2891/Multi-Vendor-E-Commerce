@@ -6,11 +6,9 @@ import StoreHeader from '@/components/store/layout/header/header'
 import Footer from '@/components/store/layout/footer/footer'
 
 /**
- * 認証ページ（sign-in / sign-up）の共通レイアウト。
+ * Provides the shared layout for authentication pages.
  *
- * 店舗フロントと統一感を出すため StoreHeader / Footer を供給する。
- * sticky footer パターン（`flex min-h-screen flex-col` + `<main>` を `flex-1`）で
- * 構成し、ヘッダーとフッターの間に Clerk のフォームを中央寄せする。
+ * @param children - The page content to render within the main area.
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (

@@ -4,8 +4,7 @@ import TrackOrderForm from "@/components/store/track-order/track-order-form";
 export const metadata: Metadata = { title: "Track your order | Marketplace" };
 
 /**
- * 注文追跡ページ（公開）。照会は client フォーム → server action（trackOrder）で行うため
- * force-dynamic は不要（page 自体は静的、DB 読取は action 内）。
+ * Renders the public order tracking page.
  */
 export default function TrackOrderPage() {
     return (

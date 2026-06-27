@@ -8,11 +8,11 @@ import { parseUserCountryCookie } from "@/lib/utils";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 
 /**
- * Renders the store header UI with branding, search, user/cart controls, app download prompt, and a country/language/currency selector.
+ * Renders the store header with branding, search, account controls, app download access, and locale selection.
  *
- * The component reads the "userCountry" cookie and provides the parsed value to CountryLanguageCurrencySelector so the selector is initialized for the current user.
+ * Reads the `userCountry` cookie and uses it to initialize `CountryLanguageCurrencySelector`.
  *
- * @returns The header's JSX element.
+ * @returns The store header JSX element.
  */
 export default async function StoreHeader() {
     const cookieStore = await cookies();

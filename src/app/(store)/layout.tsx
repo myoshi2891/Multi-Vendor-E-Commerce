@@ -9,15 +9,7 @@ import StoreHeader from '@/components/store/layout/header/header'
 import Footer from '@/components/store/layout/footer/footer'
 
 /**
- * 店舗フロントの共通レイアウト。
- *
- * ヘッダー（StoreHeader）とフッター（Footer）を全店舗ページで一度だけ描画する。
- * StoreHeader は cookies() を読むため、(store) サブツリーは request 時の
- * 動的レンダリングになる（個別ページへの force-dynamic 追記は不要）。
- *
- * レイアウトは sticky footer パターン（`flex min-h-screen flex-col` + コンテンツを
- * `flex-1`）で構成し、コンテンツが短いページでもフッターが画面下端に固定される
- * （フッターが宙に浮くのを防ぐ）。
+ * Renders the shared storefront layout with the store header, footer, and toast notifications.
  */
 export default function StoreLayout({ children }: { children: ReactNode }) {
     return (

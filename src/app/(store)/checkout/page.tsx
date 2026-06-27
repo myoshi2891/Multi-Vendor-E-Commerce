@@ -10,11 +10,11 @@ import { redirect } from 'next/navigation'
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the checkout page for an authenticated user.
+ * Renders the checkout page for the current user.
  *
- * Redirects to `/cart` if the user is not authenticated or does not have a cart.
+ * Redirects to `/cart` when the user is not signed in or does not have a cart.
  *
- * @returns The checkout page JSX.
+ * @returns The checkout page content.
  */
 export default async function CheckoutPage() {
     const user = await currentUser()
