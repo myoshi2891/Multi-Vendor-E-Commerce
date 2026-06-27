@@ -2,11 +2,10 @@ import ProfileSidebar from "@/components/store/layout/profile-sidebar/sidebar";
 import { ReactNode } from "react";
 
 /**
- * Wraps page content in the store profile layout, rendering the sidebar and main content area.
- * ヘッダー/フッターは (store) レイアウトが供給する。
+ * Wraps profile page content in the store profile layout.
  *
- * @param children - Content to display inside the profile's main content region.
- * @returns The layout JSX element containing the sidebar and provided children.
+ * @param children - Content to display in the main profile area.
+ * @returns The layout JSX element containing the sidebar and provided content.
  */
 export default async function ProfileLayout({ children }: { children: ReactNode }) {
     return (

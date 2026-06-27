@@ -3,14 +3,12 @@ import { parseUserCountryCookie } from '@/lib/utils'
 import { cookies } from 'next/headers'
 
 /**
- * Server-rendered cart page that provides the parsed user country to the cart container.
+ * Renders the cart page with the parsed user country.
  *
- * This component reads the `userCountry` cookie, parses it into a user country value, and renders
- * the cart container with the parsed `userCountry` prop. The store header/footer は (store)
- * レイアウトが供給する。
+ * Reads the `userCountry` cookie, converts it to a user country value, and passes it to
+ * `CartContainer`.
  *
- * @returns `CartContainer` を返す。`CartContainer` は解析済みのユーザー国
- * （cookie が無い/不正な場合はデフォルト国）を受け取る。
+ * @returns The cart container rendered with the parsed `userCountry` value.
  */
 export default async function CartPage() {
     const cookieStore = await cookies()

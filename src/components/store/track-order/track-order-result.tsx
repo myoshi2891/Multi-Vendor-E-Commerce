@@ -11,11 +11,9 @@ type TrackOrderResultData = NonNullable<
 >;
 
 /**
- * 注文追跡の結果表示。注文全体のステータス（orderStatus / paymentStatus）と、
- * 店舗グループ単位の配送サービス・配送予定日数、各アイテムの商品ステータスを描画する。
+ * Renders the order tracking result, including order and payment status, shipping details for each store group, and per-item product status.
  *
- * DB enum（@prisma/client）は @/lib/types の enum と同値の文字列のため、共有タグへ
- * 渡す際に as でキャストする（order-page/header.tsx と同型）。
+ * @param order - The tracked order data to display.
  */
 export default function TrackOrderResult({
     order,

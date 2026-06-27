@@ -17,6 +17,11 @@ import ProductCard from "@/components/store/cards/product/product-card";
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Server-side renders the store home page.
+ *
+ * Assembles the main home sections, including featured products, seasonal deals, featured categories, and the product grid.
+ */
 export default async function HomePage() {
     const productsData = await getProducts({}, "", 1, 100);
     const { products } = productsData;

@@ -17,11 +17,9 @@ import { useForm } from "react-hook-form";
 import TrackOrderResult from "./track-order-result";
 
 /**
- * 注文追跡フォーム（公開）。注文番号 + メールを送信し、一致した注文の配送状況を表示する。
+ * Renders the public order tracking form.
  *
- * - 本人性は server action（trackOrder）側で「所有者 email との一致」で検証する。
- * - 不一致・不存在は区別せず単一メッセージ（列挙防止）。
- * - useRef で二重送信を防止する（NFR-TO4）。
+ * Submits an order ID and email address to look up a matching order and display its tracking details or a status message.
  */
 export default function TrackOrderForm() {
     const isSubmittingRef = useRef(false);

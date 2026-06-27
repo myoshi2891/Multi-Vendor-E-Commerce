@@ -9,13 +9,13 @@ import { getStorePageDetails } from "@/queries/store";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the store page for a given store URL, including headers, store details, filters, sort controls, and product listings.
+ * Renders the store page for a given store URL.
  *
- * Renders a complete store UI composed of CategoriesHeader, StoreDetails, ProductFilters, ProductSort, and StoreProducts. StoreHeader/Footer は (store) レイアウトが供給する。
+ * The page includes the category header, store details, filter controls, sort controls, and product listings.
  *
- * @param params - A promise that resolves to an object containing `storeUrl`, the identifier for the store to render
- * @param searchParams - A promise that resolves to filter/query parameters used by ProductFilters and StoreProducts
- * @returns The JSX for the store page
+ * @param params - Resolves to the store URL for the page.
+ * @param searchParams - Resolves to the filter and query parameters used by the product controls.
+ * @returns The JSX for the store page.
  */
 export default async function StorePage({
     params,
