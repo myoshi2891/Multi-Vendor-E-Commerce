@@ -33,7 +33,7 @@
 - [x] 001 SECURITY-01 IDOR
 - [x] 002 SECURITY-02 mass-assignment
 - [x] 003 SECURITY-03+04 payment trust
-- [ ] 004 DEPS-01 Clerk upgrade
+- [x] 004 DEPS-01 Clerk upgrade
 - [ ] 005 CORRECTNESS-04+02 cart integrity
 - [ ] 006 CORRECTNESS-03 double-submit
 - [ ] 007 TECHDEBT-01+06 logging consolidation
