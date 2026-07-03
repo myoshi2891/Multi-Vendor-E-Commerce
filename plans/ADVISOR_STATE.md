@@ -17,9 +17,18 @@
 | 2b | Audit Wave 2: tech-debt / dependencies / DX+docs / direction | ✅ DONE | `plans/audit/findings-05〜08-*.md` / Commit 3 |
 | 3 | Vet（引用箇所を自分で開いて検証・重複排除・leverage 順位付け） | ✅ DONE | `plans/audit/VETTED_FINDINGS.md` / Commit 4 |
 | 4 | プラン執筆（1プラン=1コミット、`.agents/skills/improve/references/plan-template.md` 準拠） | ✅ DONE | `plans/001〜012-*.md` / Commit 5..16 |
-| 5 | 索引 `plans/README.md`（実行順・依存・ステータス表・rejected） | 🔲 TODO | 最終コミット |
+| 5 | 索引 `plans/README.md`（実行順・依存・ステータス表・rejected） | ✅ DONE | 最終コミット |
 
 ## 次のアクション（NEXT）
+
+**✅ 全フェーズ完了（2026-07-03）。** improve スキルの deep 監査・vet・12プラン執筆・索引作成をすべて終了。
+成果物は `plans/` 配下（`README.md` 索引 / `001〜012-*.md` / `audit/`）。ソースコードは一切未変更。
+次は実行フェーズ: 各プランを `execute <plan>`（別 executor + レビュー）で実装するか、`reconcile` で後日整合。
+実行推奨順は `plans/README.md` の「Recommended sequencing」を参照（security 001–004 が最優先）。
+
+---
+
+### 完了記録（参考）
 
 **Phase 4 — プラン執筆（1プラン=1コミット、12本）。** `VETTED_FINDINGS.md` の「プラン化対象」12本を `plan-template.md` 準拠で執筆。各プランは:
 - 引用コードは**本体の再読から**転記（サブエージェント報告からコピーしない）
