@@ -31,7 +31,7 @@
 
 進捗（このセクションを更新しながら進める）:
 - [x] 001 SECURITY-01 IDOR
-- [ ] 002 SECURITY-02 mass-assignment
+- [x] 002 SECURITY-02 mass-assignment
 - [ ] 003 SECURITY-03+04 payment trust
 - [ ] 004 DEPS-01 Clerk upgrade
 - [ ] 005 CORRECTNESS-04+02 cart integrity
