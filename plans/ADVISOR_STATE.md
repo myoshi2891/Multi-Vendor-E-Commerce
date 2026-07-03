@@ -16,7 +16,7 @@
 | 2a | Audit Wave 1: correctness / security / performance / test-coverage | ✅ DONE | `plans/audit/findings-01〜04-*.md` / Commit 2 |
 | 2b | Audit Wave 2: tech-debt / dependencies / DX+docs / direction | ✅ DONE | `plans/audit/findings-05〜08-*.md` / Commit 3 |
 | 3 | Vet（引用箇所を自分で開いて検証・重複排除・leverage 順位付け） | ✅ DONE | `plans/audit/VETTED_FINDINGS.md` / Commit 4 |
-| 4 | プラン執筆（1プラン=1コミット、`.agents/skills/improve/references/plan-template.md` 準拠） | 🔲 TODO | `plans/001〜0NN-*.md` / Commit 5..N |
+| 4 | プラン執筆（1プラン=1コミット、`.agents/skills/improve/references/plan-template.md` 準拠） | ✅ DONE | `plans/001〜012-*.md` / Commit 5..16 |
 | 5 | 索引 `plans/README.md`（実行順・依存・ステータス表・rejected） | 🔲 TODO | 最終コミット |
 
 ## 次のアクション（NEXT）
@@ -41,7 +41,7 @@
 - [x] 009 PERF-04+06 query hygiene
 - [x] 010 TESTS-07 shipping-utils tests
 - [x] 011 DX-02+03+04 onboarding docs
-- [ ] 012 DIRECTION-02 restock spike
+- [x] 012 DIRECTION-02 restock spike
 
 **Phase 5 — 索引** `plans/README.md`（実行順・依存・ステータス表・rejected・次点候補）→ 最終コミット・最終報告。
 
