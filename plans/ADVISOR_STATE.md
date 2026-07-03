@@ -30,7 +30,7 @@
 各プラン執筆ごとに **Commit 5..16**: `docs(plans): add plan 0NN <slug>`（+ ADVISOR_STATE 更新を同コミットに）。
 
 進捗（このセクションを更新しながら進める）:
-- [ ] 001 SECURITY-01 IDOR
+- [x] 001 SECURITY-01 IDOR
 - [ ] 002 SECURITY-02 mass-assignment
 - [ ] 003 SECURITY-03+04 payment trust
 - [ ] 004 DEPS-01 Clerk upgrade
