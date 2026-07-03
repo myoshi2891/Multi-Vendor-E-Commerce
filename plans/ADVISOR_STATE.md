@@ -40,7 +40,7 @@
 - [x] 008 TECHDEBT-05+04 dead code + schema move
 - [x] 009 PERF-04+06 query hygiene
 - [x] 010 TESTS-07 shipping-utils tests
-- [ ] 011 DX-02+03+04 onboarding docs
+- [x] 011 DX-02+03+04 onboarding docs
 - [ ] 012 DIRECTION-02 restock spike
 
 **Phase 5 — 索引** `plans/README.md`（実行順・依存・ステータス表・rejected・次点候補）→ 最終コミット・最終報告。
