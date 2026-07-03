@@ -36,7 +36,7 @@
 - [x] 004 DEPS-01 Clerk upgrade
 - [x] 005 CORRECTNESS-04+02 cart integrity
 - [x] 006 CORRECTNESS-03 double-submit
-- [ ] 007 TECHDEBT-01+06 logging consolidation
+- [x] 007 TECHDEBT-01+06 logging consolidation
 - [ ] 008 TECHDEBT-05+04 dead code + schema move
 - [ ] 009 PERF-04+06 query hygiene
 - [ ] 010 TESTS-07 shipping-utils tests
