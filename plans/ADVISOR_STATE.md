@@ -37,7 +37,7 @@
 - [x] 005 CORRECTNESS-04+02 cart integrity
 - [x] 006 CORRECTNESS-03 double-submit
 - [x] 007 TECHDEBT-01+06 logging consolidation
-- [ ] 008 TECHDEBT-05+04 dead code + schema move
+- [x] 008 TECHDEBT-05+04 dead code + schema move
 - [ ] 009 PERF-04+06 query hygiene
 - [ ] 010 TESTS-07 shipping-utils tests
 - [ ] 011 DX-02+03+04 onboarding docs
