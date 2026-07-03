@@ -35,7 +35,7 @@
 - [x] 003 SECURITY-03+04 payment trust
 - [x] 004 DEPS-01 Clerk upgrade
 - [x] 005 CORRECTNESS-04+02 cart integrity
-- [ ] 006 CORRECTNESS-03 double-submit
+- [x] 006 CORRECTNESS-03 double-submit
 - [ ] 007 TECHDEBT-01+06 logging consolidation
 - [ ] 008 TECHDEBT-05+04 dead code + schema move
 - [ ] 009 PERF-04+06 query hygiene
