@@ -31,7 +31,7 @@
 | 5 | plan 014 spike-category-attributes-facets | ✅ DONE | Commit R2-5 |
 | 6 | plan 015 spike-faceted-search-and-browse | ✅ DONE | Commit R2-6 |
 | 7 | plan 016 spike-seller-onboarding-catalog-approval | ✅ DONE | Commit R2-7 |
-| 8 | plan 017 spike-recommendation-foundation | ⬜ TODO | Commit R2-8 |
+| 8 | plan 017 spike-recommendation-foundation | ✅ DONE | Commit R2-8 |
 | 9 | README 索引更新（013〜017 追加・012 後続採番注記の修正・日本語執筆注記） | ⬜ TODO | Commit R2-9 |
 
 ### Round 2 採番メモ
