@@ -195,6 +195,10 @@ B-1 → B-2 → B-3 は**依存の鎖**になっている（属性はカテゴ�
 既存プラン（Round 1: 001〜012）と DIRECTION-01〜05 を含めた全体地図。
 **Phase 0 が最優先である点は Round 1 の勧告から不変**。
 
+> **Round 3 追記（2026-07-10）**: `[R3]` 表記の spike 018〜022（B-6〜B-10 の解消）を
+> Phase C/D に配置した。B-6〜B-10 の定義と配置根拠は
+> [`OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](OPERATIONS_TRUST_GROWTH_BLUEPRINT.md) §2.2/§4 を参照。
+
 ```
 Phase 0: 守り（既存 Round 1 プラン — 拡張の前提）
 ├─ 001-004 セキュリティ（IDOR / mass-assignment / 決済信頼 / Clerk升级）★最優先
@@ -210,14 +214,19 @@ Phase B: 発見性
 └─ (deferred PERF-05: 参照データキャッシュを 015 に統合検討)
 
 Phase C: 信頼性・運用（マーケットプレイスの「治安」）
+├─ spike 021 → 通知・メッセージ基盤           [B-9 解消, R3。016/018 の通知要件の共通前提 — C 内先頭]
 ├─ spike 016 → 出品審査ワークフロー           [B-4 解消, 013/014 と独立に着手可]
 ├─ DIRECTION-03 サポートチケットコンソール（findings-08 監査済み）
+├─ spike 018 → 返品・交換 RMA ワークフロー    [B-6 解消, R3。チケット→RMA→返金→restock の鎖に挿入]
 ├─ DIRECTION-02 在庫 restock（plan 012 spike 済み）
-├─ DIRECTION-01 返金実行（L/HIGH — チケット→返金→restock の順で自然に接続）
+├─ DIRECTION-01 返金実行（L/HIGH — チケット→RMA(018)→返金→restock の順で自然に接続）
+├─ spike 019 → レビュー・UGC 品質ガバナンス   [B-7 解消, R3。評価集計の修正が 022 のシグナルを供給]
+├─ spike 022 → セラーパフォーマンス・自動措置 [B-10 解消, R3。019 の後・016 の対（入口/継続の品質）]
 └─ DIRECTION-05 エラーモニタリング（運用の目）
 
 Phase D: 成長
 ├─ spike 017 → レコメンド基盤 v1              [B-5 解消, A/B の完成度に比例して効果増]
+├─ spike 020 → プロモーション・キャンペーン    [B-8 解消, R3。既存 PLATFORM クーポン基盤の上位構造]
 └─ DIRECTION-04 i18n 基盤（設計文書既存 — 多言語はブランド確定後の市場選択と同期）
 
 ゲート付き将来項目（product.md スコープ外 — 明示ゲートの解除が先）:
