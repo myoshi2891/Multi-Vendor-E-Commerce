@@ -25,9 +25,9 @@
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R2-1 |
-| 2 | 拡張観点 recon（データモデル/queries/admin UI のエビデンス） | ⬜ TODO | `audit/findings-09-direction-expansion.md` / Commit R2-2 |
-| 3 | 拡張ブループリント執筆 | ⬜ TODO | `direction/EXPANSION_BLUEPRINT.md` / Commit R2-3 |
-| 4 | plan 013 spike-category-tree-n-level | ⬜ TODO | Commit R2-4 |
+| 2 | 拡張観点 recon（データモデル/queries/admin UI のエビデンス） | ✅ DONE | `audit/findings-09-direction-expansion.md` / Commit R2-2 |
+| 3 | 拡張ブループリント執筆 | ✅ DONE | `direction/EXPANSION_BLUEPRINT.md` / Commit R2-3 |
+| 4 | plan 013 spike-category-tree-n-level | ✅ DONE | Commit R2-4 |
 | 5 | plan 014 spike-category-attributes-facets | ⬜ TODO | Commit R2-5 |
 | 6 | plan 015 spike-faceted-search-and-browse | ⬜ TODO | Commit R2-6 |
 | 7 | plan 016 spike-seller-onboarding-catalog-approval | ⬜ TODO | Commit R2-7 |
