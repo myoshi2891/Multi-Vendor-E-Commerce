@@ -32,7 +32,7 @@
 | 6 | plan 015 spike-faceted-search-and-browse | ✅ DONE | Commit R2-6 |
 | 7 | plan 016 spike-seller-onboarding-catalog-approval | ✅ DONE | Commit R2-7 |
 | 8 | plan 017 spike-recommendation-foundation | ✅ DONE | Commit R2-8 |
-| 9 | README 索引更新（013〜017 追加・012 後続採番注記の修正・日本語執筆注記） | ⬜ TODO | Commit R2-9 |
+| 9 | README 索引更新（013〜017 追加・012 後続採番注記の修正・日本語執筆注記） | ✅ DONE | Commit R2-9 |
 
 ### Round 2 採番メモ
 
@@ -62,10 +62,14 @@ README の該当注記を修正）。
 
 ## 次のアクション（NEXT）
 
-**▶ Round 2（direction-expansion）進行中（2026-07-09〜）。** 上記「Round 2 チェックリスト」の
-未完了マイルストーンを順に実行する。Round 1（deep 監査・12プラン・索引）は 2026-07-03 に全フェーズ完了済み。
-Round 1 プランの実行フェーズ（`execute <plan>` / `reconcile`）は Round 2 とは独立に着手可能
-（実行推奨順は `plans/README.md` の「Recommended sequencing」参照。security 001–004 が最優先）。
+**✅ Round 2（direction-expansion）全マイルストーン完了（2026-07-09）。**
+成果物: `direction/EXPANSION_BLUEPRINT.md`（拡張検討ドキュメント本体）+ spike プラン 013〜017 +
+`audit/findings-09-direction-expansion.md` + README 索引更新。ソースコードは一切未変更。
+次のアクション候補（いずれも独立に着手可能）:
+1. Round 1 の実行フェーズ: security 001–004 を `execute <plan>` で最優先実施
+2. Round 2 の spike 実行: 013 → 014 → 015 の順（016/017 は独立）。各 spike は設計文書 +
+   後続実装プランを生成して STOP する
+3. ブランド方針が決まったら `EXPANSION_BLUEPRINT.md` §3.2 の有効化列・§5 検算表を更新
 
 ---
 
