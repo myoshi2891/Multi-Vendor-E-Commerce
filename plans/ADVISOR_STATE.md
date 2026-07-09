@@ -6,7 +6,7 @@
 
 ---
 
-## Round 3 — direction-expansion 第2弾: 運用・信頼・成長（`next` バリアント / 進行中）
+## Round 3 — direction-expansion 第2弾: 運用・信頼・成長（`next` バリアント / 完了 2026-07-10）
 
 - **開始日**: 2026-07-10 / **監査対象 HEAD**: `86c04a1`（branch: `dev`。Round 2 以降ソース変更なし — 差分は docs(plans) コミットのみ）
 - **バリアント**: `next`（roadmap/direction 特化）+ Round 1/2 成果物との reconcile
@@ -33,14 +33,22 @@
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R3-1 |
-| 2 | 新領域 recon（O-1〜O-5 のエビデンス収集） | ⬜ TODO | `audit/findings-10-direction-operations-growth.md` / Commit R3-2 |
-| 3 | 運用・信頼・成長ブループリント執筆 + EXPANSION_BLUEPRINT §5 ロードマップ統合 | ⬜ TODO | `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` / Commit R3-3 |
-| 4 | plan 018 spike-returns-rma-workflow | ⬜ TODO | Commit R3-4 |
-| 5 | plan 019 spike-review-ugc-governance | ⬜ TODO | Commit R3-5 |
-| 6 | plan 020 spike-promotion-engine | ⬜ TODO | Commit R3-6 |
-| 7 | plan 021 spike-notification-foundation | ⬜ TODO | Commit R3-7 |
-| 8 | plan 022 spike-seller-performance-trust | ⬜ TODO | Commit R3-8 |
-| 9 | README 索引更新（018〜022 追加・依存関係・推奨順序） | ⬜ TODO | Commit R3-9 |
+| 2 | 新領域 recon（O-1〜O-5 のエビデンス収集） | ✅ DONE | `audit/findings-10-direction-operations-growth.md` / Commit R3-2 |
+| 3 | 運用・信頼・成長ブループリント執筆 + EXPANSION_BLUEPRINT §5 ロードマップ統合 | ✅ DONE | `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` / Commit R3-3 |
+| 4 | plan 018 spike-returns-rma-workflow | ✅ DONE | Commit R3-4 |
+| 5 | plan 019 spike-review-ugc-governance | ✅ DONE | Commit R3-5 |
+| 6 | plan 020 spike-promotion-engine | ✅ DONE | Commit R3-6 |
+| 7 | plan 021 spike-notification-foundation | ✅ DONE | Commit R3-7 |
+| 8 | plan 022 spike-seller-performance-trust | ✅ DONE | Commit R3-8 |
+| 9 | README 索引更新（018〜022 追加・依存関係・推奨順序） | ✅ DONE | Commit R3-9 |
+
+### Round 3 vet メモ（rejected なし）
+
+候補5領域はすべて recon で「実在するギャップ」と確認され、5本とも spike 化した
+（水増しなし判定の根拠は findings-10 の各 file:line エビデンス）。
+既存カバーと判明した部分は spike のスコープから除外して整合を取った:
+RETURN_REQUEST 受付・PLATFORM クーポン + admin UI は「再利用する資産」として
+各プランの Current state に記載（重複プラン化せず）。
 
 ### Round 3 依存メモ
 
@@ -107,14 +115,21 @@ README の該当注記を修正）。
 
 ## 次のアクション（NEXT）
 
-**✅ Round 2（direction-expansion）全マイルストーン完了（2026-07-09）。**
-成果物: `direction/EXPANSION_BLUEPRINT.md`（拡張検討ドキュメント本体）+ spike プラン 013〜017 +
-`audit/findings-09-direction-expansion.md` + README 索引更新。ソースコードは一切未変更。
+**✅ Round 3（operations/trust/growth expansion）全マイルストーン完了（2026-07-10）。**
+成果物: `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` + spike プラン 018〜022 +
+`audit/findings-10-direction-operations-growth.md` + EXPANSION_BLUEPRINT §5 ロードマップ統合 +
+README 索引更新。ソースコードは一切未変更。
 次のアクション候補（いずれも独立に着手可能）:
 1. Round 1 の実行フェーズ: security 001–004 を `execute <plan>` で最優先実施
 2. Round 2 の spike 実行: 013 → 014 → 015 の順（016/017 は独立）。各 spike は設計文書 +
    後続実装プランを生成して STOP する
-3. ブランド方針が決まったら `EXPANSION_BLUEPRINT.md` §3.2 の有効化列・§5 検算表を更新
+3. Round 3 の spike 実行: 021（通知 — C の共通前提）→ 018 → 019 → 022 の順、020 は独立。
+   018/022 は状態遷移記録方式を一本化（先行した方の決定に従う）
+4. ブランド方針が決まったら `EXPANSION_BLUEPRINT.md` §3.2 の有効化列・§5 検算表と
+   `OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` §4 検算表を更新
+
+**Round 2 完了記録（2026-07-09）**: `direction/EXPANSION_BLUEPRINT.md` + spike 013〜017 +
+`audit/findings-09-direction-expansion.md` + README 索引更新。
 
 ---
 
