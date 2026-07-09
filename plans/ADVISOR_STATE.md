@@ -1,8 +1,49 @@
-# ADVISOR_STATE — improve スキル deep 監査の進行状態
+# ADVISOR_STATE — improve スキル監査の進行状態
 
 > **目的**: セッションを跨いでも次セッションで即再開できるようにする状態ファイル。
 > 各マイルストーン完了ごとに更新し、`plans/**` のみを対象に `docs(plans): ...` でコミットする。
 > **ソースコードは一切変更しない**（improve スキル Hard Rule 1）。
+
+---
+
+## Round 2 — direction-expansion（`next` バリアント / 進行中）
+
+- **開始日**: 2026-07-09 / **監査対象 HEAD**: `a17e2cc`（branch: `dev`）
+- **バリアント**: `next`（roadmap/direction 特化）+ Round 1 成果物との reconcile
+- **目的**: Amazon 級マーケットプレイスへの拡張検討ドキュメント（ブランド非依存の汎用骨組み・
+  参照カテゴリタクソノミー・フェーズ別ロードマップ）+ 土台となる design/spike プラン 5本
+- **ユーザー確認済みの決定**:
+  - 実装は一切しない（成果物は `plans/` 配下のみ）
+  - **本ラウンドの成果物は日本語のみ**（Round 1 の EN 原本 + `plans/ja/` ミラー構成は踏襲しない）
+  - 範囲: ブループリント + spike 5本（013〜017）
+  - `product.md` スコープ外（多通貨・税計算・高度分析・配送キャリア連携）はプラン化しない
+  - 既存 DIRECTION-01〜05（`audit/findings-08-direction.md`）と重複するプランは作らず、
+    ブループリントのロードマップに参照配置する
+
+### Round 2 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R2-1 |
+| 2 | 拡張観点 recon（データモデル/queries/admin UI のエビデンス） | ⬜ TODO | `audit/findings-09-direction-expansion.md` / Commit R2-2 |
+| 3 | 拡張ブループリント執筆 | ⬜ TODO | `direction/EXPANSION_BLUEPRINT.md` / Commit R2-3 |
+| 4 | plan 013 spike-category-tree-n-level | ⬜ TODO | Commit R2-4 |
+| 5 | plan 014 spike-category-attributes-facets | ⬜ TODO | Commit R2-5 |
+| 6 | plan 015 spike-faceted-search-and-browse | ⬜ TODO | Commit R2-6 |
+| 7 | plan 016 spike-seller-onboarding-catalog-approval | ⬜ TODO | Commit R2-7 |
+| 8 | plan 017 spike-recommendation-foundation | ⬜ TODO | Commit R2-8 |
+| 9 | README 索引更新（013〜017 追加・012 後続採番注記の修正・日本語執筆注記） | ⬜ TODO | Commit R2-9 |
+
+### Round 2 採番メモ
+
+Round 1 の `README.md` は「012 の後続 = `plans/013-implement-item-level-restock.md`」と番号を
+予約していたが、番号の単調性を保つため **013〜017 は本ラウンドの spike プランが使用**する。
+012 実行時に生成される後続実装プランは**実行時点の次の空き番号**を採番する（Commit R2-9 で
+README の該当注記を修正）。
+
+---
+
+## Round 1 — deep 監査（完了 / 2026-07-03）
 
 - **監査対象 HEAD**: `f9752c0`（branch: `dev`）
 - **effort level**: deep / プラン選定方針: **カテゴリ網羅で自動作成**（ユーザー承認済み。意味のある発見があった各カテゴリ最低1件、セキュリティ・direction 必須。目安 8〜12 プラン）
@@ -21,10 +62,10 @@
 
 ## 次のアクション（NEXT）
 
-**✅ 全フェーズ完了（2026-07-03）。** improve スキルの deep 監査・vet・12プラン執筆・索引作成をすべて終了。
-成果物は `plans/` 配下（`README.md` 索引 / `001〜012-*.md` / `audit/`）。ソースコードは一切未変更。
-次は実行フェーズ: 各プランを `execute <plan>`（別 executor + レビュー）で実装するか、`reconcile` で後日整合。
-実行推奨順は `plans/README.md` の「Recommended sequencing」を参照（security 001–004 が最優先）。
+**▶ Round 2（direction-expansion）進行中（2026-07-09〜）。** 上記「Round 2 チェックリスト」の
+未完了マイルストーンを順に実行する。Round 1（deep 監査・12プラン・索引）は 2026-07-03 に全フェーズ完了済み。
+Round 1 プランの実行フェーズ（`execute <plan>` / `reconcile`）は Round 2 とは独立に着手可能
+（実行推奨順は `plans/README.md` の「Recommended sequencing」参照。security 001–004 が最優先）。
 
 ---
 
