@@ -6,7 +6,52 @@
 
 ---
 
-## Round 2 — direction-expansion（`next` バリアント / 進行中）
+## Round 3 — direction-expansion 第2弾: 運用・信頼・成長（`next` バリアント / 進行中）
+
+- **開始日**: 2026-07-10 / **監査対象 HEAD**: `86c04a1`（branch: `dev`。Round 2 以降ソース変更なし — 差分は docs(plans) コミットのみ）
+- **バリアント**: `next`（roadmap/direction 特化）+ Round 1/2 成果物との reconcile
+- **目的**: Round 2（カタログ基盤と発見性）が扱わなかった **運用（Operations）・信頼（Trust）・
+  成長（Growth）** 領域の拡張検討ドキュメント + design/spike プラン 5 本（018〜022）。
+  Round 2 と同じ「構造はブランド非依存・ポリシーはデータで差し替え」原則で書く
+- **ユーザー確認済みの決定**:
+  - 実装は一切しない（成果物は `plans/` 配下のみ）
+  - 成果物は**日本語のみ**（Round 2 決定を継承）
+  - 依頼原文（Amazon 級拡張ドキュメント + 汎用骨組み）は Round 2 で完成済みであることを確認済み。
+    今回は **Round 3: 新領域拡張** をユーザーが明示選択
+  - `product.md` スコープ外（多通貨・税計算・高度分析・配送キャリア連携）はプラン化しない。
+    RMA は追跡番号手入力前提 / セラー指標は自動措置シグナルに限定（分析 UI は作らない）
+  - Round 1 DIRECTION-01〜05・Round 2 spike 013〜017 と重複するプランは作らない
+- **候補領域**（R3-2 recon で裏取り後に確定。カバー済み/低価値と判明したら本数を減らし README rejected に記録）:
+  1. 返品・交換（RMA）顧客ワークフロー（DIRECTION-01 返金実行の上流）
+  2. レビュー・UGC 品質ガバナンス（モデレーション・通報・購入者確認バッジ）
+  3. プロモーション・販促エンジン（プラットフォーム主導セール・タイムセール）
+  4. 通知・トランザクショナルメッセージ基盤（spike 016 / RMA の共通前提）
+  5. セラーパフォーマンス指標と自動措置（Trust & Safety、spike 016 の延長）
+
+### Round 3 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R3-1 |
+| 2 | 新領域 recon（O-1〜O-5 のエビデンス収集） | ⬜ TODO | `audit/findings-10-direction-operations-growth.md` / Commit R3-2 |
+| 3 | 運用・信頼・成長ブループリント執筆 + EXPANSION_BLUEPRINT §5 ロードマップ統合 | ⬜ TODO | `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` / Commit R3-3 |
+| 4 | plan 018 spike-returns-rma-workflow | ⬜ TODO | Commit R3-4 |
+| 5 | plan 019 spike-review-ugc-governance | ⬜ TODO | Commit R3-5 |
+| 6 | plan 020 spike-promotion-engine | ⬜ TODO | Commit R3-6 |
+| 7 | plan 021 spike-notification-foundation | ⬜ TODO | Commit R3-7 |
+| 8 | plan 022 spike-seller-performance-trust | ⬜ TODO | Commit R3-8 |
+| 9 | README 索引更新（018〜022 追加・依存関係・推奨順序） | ⬜ TODO | Commit R3-9 |
+
+### Round 3 依存メモ
+
+- **021（通知基盤）は 018（RMA）と 016（審査）の通知要件の共通前提** → ロードマップ上は
+  Phase C の早い位置に配置する
+- 018 は「チケット（DIRECTION-03）→ RMA → 返金実行（DIRECTION-01）→ restock（012）」の鎖に接続
+- 019 / 020 / 022 は相互に独立
+
+---
+
+## Round 2 — direction-expansion（`next` バリアント / 完了 2026-07-09）
 
 - **開始日**: 2026-07-09 / **監査対象 HEAD**: `a17e2cc`（branch: `dev`）
 - **バリアント**: `next`（roadmap/direction 特化）+ Round 1 成果物との reconcile
