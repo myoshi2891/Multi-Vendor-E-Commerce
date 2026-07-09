@@ -64,4 +64,4 @@ prisma/migrations_mysql_backup/
 # Backup files from sed commands
 *.bak*
 
-plans/ja/*
+/plans/
