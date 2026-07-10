@@ -31,18 +31,31 @@
 
 ### Round 4 チェックリスト
 
+> **採番訂正**: 開始時に「findings-11 / TESTS-08〜12」と予約したが、`findings-11-security-followup.md`
+> と Round 1 raw の TESTS-08〜10 が既に存在したため、**台帳 = findings-12 / 新規所見 = TESTS-11〜14**
+> に訂正（単調性維持）。
+
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
-| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R4-1 |
-| 2 | lcov 実測監査 + vetting（TESTS-08〜12） | ⬜ TODO | `audit/findings-11-test-coverage.md` / Commit R4-2 |
-| 3 | plan 026 paypal エラー分岐ユニットテスト | ⬜ TODO | Commit R4-3 |
-| 4 | plan 027 placeOrder オーバーセルロールバック統合テスト（TESTS-05 昇格） | ⬜ TODO | Commit R4-4 |
-| 5 | plan 028 country.ts ユニットテスト新設 | ⬜ TODO | Commit R4-5 |
-| 6 | plan 029 profile.ts catch 分岐テスト | ⬜ TODO | Commit R4-6 |
-| 7 | plan 030 money-path クライアントコンポーネントテスト | ⬜ TODO | Commit R4-7 |
-| 8 | README 索引更新（026〜030 追加・TESTS-05 昇格反映） | ⬜ TODO | Commit R4-8 |
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / `14f4d0e` |
+| 2 | lcov 実測監査 + vetting（TESTS-11〜14 + Round 1 TESTS-01〜10 の reconcile） | ✅ DONE | `audit/findings-12-test-coverage.md` + VETTED_FINDINGS Round 4 追記 / `a1cabd1` |
+| 3 | plan 026 paypal エラー分岐ユニットテスト（TESTS-11） | ✅ DONE | `c6c57ae` |
+| 4 | plan 027 placeOrder オーバーセル + PLATFORM 端数 統合テスト（TESTS-05+08 昇格） | ✅ DONE | `1e3b2d6` |
+| 5 | plan 028 country.ts ユニットテスト新設（TESTS-12） | ✅ DONE | `4900374` |
+| 6 | plan 029 profile.ts catch 分岐テスト（TESTS-13） | ✅ DONE | `104e6aa` |
+| 7 | plan 030 money-path クライアントコンポーネントテスト（TESTS-01 残余） | ✅ DONE | `9ad5303` |
+| 8 | README 索引更新（023〜025 の索引漏れ補完 + 026〜030 追加・TESTS-05 昇格反映） | ✅ DONE | Commit R4-8 |
 | 9 | docs/testing 精査・更新（QA_HANDOFF 履歴分離 + 統計実測同期 + 関連 docs） | ⬜ TODO | `docs(testing):` 3 コミット |
 | 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | `docs:` 1 コミット |
+
+### Round 4 vet メモ
+
+- **rejected**（詳細は findings-12）: coupon-utils / serialize-cart / shipping-utils の
+  「テストファイルなし」（間接カバレッジ 100%）・db.ts・`search copy.tsx`（plan 008 対象）・
+  chart.tsx（snapshot 済みプリミティブ）・product-details.tsx（TECHDEBT-02 従属）・
+  dashboard forms 群（低レバレッジ → README 次点候補）。
+- **索引ドリフト発見**: security-followup ラウンドの 023〜025 が README status テーブルに
+  未掲載だった → R4-8 で補完（024 は P3、プラン本文の Status と突合済み）。
 
 ---
 
