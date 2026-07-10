@@ -84,3 +84,37 @@
 - **DEPS-04（Prisma 6.x）/ PERF-01 / PERF-05 / CORRECTNESS-01 / TESTS-05 / DX-01**: 意味のある finding だが 12本の枠外。README の「次点候補」に列挙し、後日 `execute`/追加プラン化の対象とする。
 - **決定済みトレードオフ（ADR-001〜005・force-dynamic・reactStrictMode:false・Elasticsearch コメントアウト・middleware→proxy/AVIF 警告・スコープ外の多通貨/税/分析/配送キャリア）**: recon の表どおり finding 化せず。
 - **既修正セキュリティ（SECURITY_GAP_REPORT.md: PayPal/Stripe userId スコープ・upsertCoupon 所有権・applyCoupon CAS・review IDOR）**: 全て健在・回帰なしを security サブエージェントが確認。
+
+---
+
+## Round 4 追記 — テストカバレッジ実測監査（2026-07-10 / HEAD `b6591f9`）
+
+- **方法**: `bun run test -- --coverage` の lcov 実測 + ソース/テスト突合。全所見を本体が直接 vet
+  （サブエージェント不使用）。詳細台帳: [`findings-12-test-coverage.md`](findings-12-test-coverage.md)。
+- **ベースライン**: Jest 1662 passed / 1665 total / 172 スイート。
+  Statements 65.19% / Branches 44.89%。Integration は Docker 停止のため未実行。
+
+### Round 4 vetted findings 表（leverage 順）
+
+| # | Finding | Category | Impact | Effort | Risk | Confidence | Evidence |
+|---|---|---|---|---|---|---|---|
+| R4-1 | TESTS-11 `paypal.ts` エラー経路分岐が unit 未カバー（B 28.6%） | tests | 決済モジュールのエラー縮退が回帰無検出 | S | LOW | HIGH | `paypal.ts:22-35,49-62,99-100,136-179,203-204,285-295` |
+| R4-2 | TESTS-05+08 `placeOrder` オーバーセルロールバック / PLATFORM 端数吸収が統合テスト未実施 | tests | 在庫整合・割引金額の最重要保証が実 DB 未検証 | M | LOW | HIGH | `user.ts:720-727`, `user.ts:646-676` |
+| R4-3 | TESTS-12 `country.ts` が唯一テストのない server action（0%） | tests | 「全 server action テスト済み」不変条件の唯一の違反 | S | LOW | HIGH | `country.ts:5-19` |
+| R4-4 | TESTS-13 `profile.ts` catch 分岐 5 関数×2系統未カバー（B 69.2%） | tests | プロフィール 5 テーブルのエラー縮退未検証 | S–M | LOW | HIGH | `profile.ts:44-50,160-166,211-217,293-299,348-354,…` |
+| R4-5 | TESTS-01 残余: money-path クライアント 6 ファイルが 0% | tests | チェックアウト KPI 直結 UI の回帰無検出 | M | LOW-MED | HIGH | `stripe-payment.tsx` / `checkout-page/container.tsx` / `cart-page/{container,summary}.tsx` / `paypal-payment.tsx` / `newsletter.tsx` |
+| R4-6 | TESTS-14 2026-06 新機能のゲスト E2E 導線なし | tests | ブラウザ縦貫の配線未検証（component 層は厚い） | M | LOW | MED | `tests/e2e/`（spec 不在） |
+
+### Round 4 プラン化
+
+**026**（TESTS-11）/ **027**（TESTS-05+08）/ **028**（TESTS-12）/ **029**（TESTS-13）/ **030**（TESTS-01 残余）。
+TESTS-14 は deferred（README 次点候補）。
+
+### Round 4 considered and rejected（再監査防止）
+
+- **coupon-utils / serialize-cart / shipping-utils の「テストファイルなし」**: 間接カバレッジ 100%（lcov 実測）のため危険な未テストではない。直接テストの SSOT 論拠は plan 010（shipping-utils）のみ維持。
+- **db.ts 0%**: シングルトン配線 6 行。テスト価値なし。
+- **`search copy.tsx` 0%**: dead code — plan 008（削除）の対象でありテスト所見にしない。
+- **chart.tsx B 6.5%**: shadcn プリミティブ・snapshot 済み・B1+ 方針どおり。
+- **product-details.tsx 0%（169L/392B）**: TECHDEBT-02（characterization tests first・L 効数）に従属。単独テストプラン化せず。
+- **dashboard forms 群 0%**: 内部 UI・money-path よりレバレッジ下位。README 次点候補へ。
