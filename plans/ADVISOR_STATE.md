@@ -6,6 +6,41 @@
 
 ---
 
+## Round 5 — Integration テスト特化監査（`tests` フォーカス / 開始 2026-07-11）
+
+- **開始日**: 2026-07-11 / **監査対象 HEAD**: `1750ef2`（branch: `dev`）
+- **バリアント**: `tests` フォーカス・**Integration（testcontainers）限定**
+  （Recon → integration カバレッジのみ監査 → プラン化）
+- **目的**: 既存 Integration テスト（`tests/integration/` 17 テスト / 2 スイート）の網羅性を
+  **実測ベースライン付き**で精査し、「追加が必要な統合テスト項目」を Sonnet が zero-context で
+  実行できる自己完結プラン（031〜）に落とす。あわせて docs/testing 配下の精査・ブラッシュアップと
+  coverage-dashboard.html の更新（Round 4 と同じ Hard Rule 1 のスコープ例外:
+  docs/testing・`scripts/coverage-dashboard/render-html.ts`・生成物 HTML の編集を許可）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - プラン化は**自動作成**（vet 済み所見から高レバレッジ 3〜5 本。Round 1/4 前例踏襲）
+  - 監査冒頭で **`bun run test:integration` を実測実行**（Docker 起動済み・使い捨てコンテナ）。
+    Round 4 で未実測だった Integration 統計を実測値で更新する
+  - plan 027（TESTS-05+08）と重複するプランは作らない。TESTS-02（capture 経路）は
+    plan 003 先行依存のため deferred 維持
+  - `prisma/seed/__tests__/` はシードテスト（別枠）であり本ラウンドの「Integration」対象外
+- **成果物**: `audit/findings-13-integration-coverage.md`（監査台帳）+ plans 031〜（3〜5 本）+
+  README 索引 + docs/testing 同期 + ダッシュボード再生成
+
+### Round 5 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R5-1 |
+| 2 | 実測ベースライン + Integration 監査台帳（TESTS-15〜 + TESTS-02/04/06 reconcile） | ⬜ TODO | `audit/findings-13-integration-coverage.md` |
+| 3〜7 | プラン 031〜 執筆（1 プラン = 1 コミット・監査結果で本数確定） | ⬜ TODO | — |
+| 8 | README 索引更新（031〜 追加・推奨順序・依存） | ⬜ TODO | — |
+| 9 | docs/testing 精査・更新（Integration 実測同期 + TESTING_DESIGN ドリフト修正ほか） | ⬜ TODO | — |
+| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | — |
+| 11 | ADVISOR_STATE クローズ（`git diff 1750ef2..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+
+---
+
 ## Round 4 — テストカバレッジ監査（`tests` フォーカス / 開始 2026-07-10）
 
 - **開始日**: 2026-07-10 / **監査対象 HEAD**: `b6591f9`（branch: `dev`）
