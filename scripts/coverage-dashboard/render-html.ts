@@ -120,6 +120,21 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収など money-critical な未テスト分岐を回帰検知下に置く",
     },
+    // R5 は improve Round 5 Integration 特化監査 (2026-07-11) 起票。既存
+    // Integration 17 テストの実測 (17/17 pass / 4.779s) の上で、実 DB でしか
+    // 検証できない未カバー統合面 5 件をプラン化。実行手順の SSOT は
+    // plans/031〜035 (自己完結プラン・全プラン Docker 必須)、監査台帳は
+    // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
+    // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
+    // QA_HANDOFF R5 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R5: Integration テストギャップ解消 (plans 031〜035)",
+        target: "order ライフサイクル restock / webhook 冪等性 / tsvector 検索 / レビュー集計 / ロール昇格",
+        tool: "plans/031〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "M",
+        impact: "在庫二重復元・webhook 再送・raw SQL 回帰など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 17→約45 テスト / 2→6 スイート)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
