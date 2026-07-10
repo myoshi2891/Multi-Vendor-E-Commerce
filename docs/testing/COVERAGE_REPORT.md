@@ -150,6 +150,15 @@
 - **やらないと判定したもの**（再監査防止）: coupon-utils / serialize-cart の直接テスト（間接カバレッジ 100%）、chart.tsx 分岐網羅、dashboard forms 群、product-details.tsx（TECHDEBT-02 従属）— 詳細は findings-12 の rejected 節
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R4](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
 
+#### R5. improve Round 5 Integration テストギャップ解消（plans 031〜035）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/`（testcontainers 実 PostgreSQL）への 4 スイート新設 + seed ヘルパー拡張。検証対象コード: `src/queries/order.ts`（キャンセル/返金の子連動 + restock）、`src/app/api/webhooks/{stripe,paypal}/route.ts`（冪等 upsert）、`src/app/api/search-products/route.ts` + `src/queries/subCategory.ts`（raw SQL）、`src/queries/review.ts`（評価集計）、`src/queries/store.ts`（ロール昇格遷移）
+- **なぜやるか**: 2026-07-11 の Integration 特化監査（初の実測: **17/17 pass / 4.779s**）で、既存 17 テストが「注文確定まで」に集中し、**注文後のライフサイクルと raw SQL / unique 制約 / 条件付き updateMany という実 DB でしか検証できないセマンティクス**が全て未カバーと判明したため。(1) 在庫復元の二重実行は placeOrder のオーバーセル（plan 027）と対になる在庫・金銭クリティカル障害。(2) webhook はプロバイダーが再送を前提とする経路なのに冪等性の本体（orderId unique + upsert）が全モックで未実行。(3) tsvector 検索 SQL は Elasticsearch 移行の中核なのに一度も実行されない。(4)(5) レビュー集計・ロール昇格は表示信頼と権限境界の遷移条件
+- **何を達成するか**: Integration 17 → **約 45〜50 テスト / 2 → 6 スイート**（各プランのシナリオ合計）。実行手順・ケース表・STOP 条件は **`plans/031〜035`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-13-integration-coverage.md`](../../plans/audit/findings-13-integration-coverage.md)
+- **コスト感**: S〜M × 5 プラン（相互独立・並行可。031 と 027 は seed.ts 拡張が重なるためマージ注意）
+- **やらないと判定したもの**（再監査防止）: saveUserCart 統合（plan 005 のコード修正先行）、sendMessage 配列 tx（低レバレッジ）、updateProduct tx（money-path 外の次点候補）、`ORDER BY RANDOM()` 単独プラン化（033 に従属）— 詳細は findings-13 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R5](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term

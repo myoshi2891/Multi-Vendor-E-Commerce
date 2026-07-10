@@ -42,7 +42,7 @@
 |-----------|---------|------|------|
 | **Unit** | Jest | 純粋関数・ヘルパー・スキーマ・クエリ合成 | node 環境で高速実行。DB・ネットワーク不使用 |
 | **Component** | Jest + React Testing Library | UI インタラクション | jsdom 環境。`@testing-library/user-event` を追加 |
-| **Integration** | Jest + Docker Compose（PostgreSQL） | DB・サーバーロジック | `.env.test` で独立した DB を使用。スイート前にリセット |
+| **Integration** | Jest + testcontainers（PostgreSQL）| DB・サーバーロジック | 専用 config（`jest.integration.config.js`）の globalSetup がコンテナを自動起動し `DATABASE_URL` を書き換え。テストごとに TRUNCATE リセット（`tests/integration/setup/reset-db.ts`）。設計判断: ADR-004 |
 | **API Route** | Jest | Next.js route handler の GET / POST | `NextRequest` を直接呼び出す小さなヘルパーを利用 |
 | **E2E** | Playwright | 顧客 / 販売者 / 管理者の全フロー | マルチブラウザ・トレース・並列対応 |
 | **Visual Regression** | Playwright（スクリーンショット） | 商品カード・チェックアウト・注文詳細・販売者ダッシュボード | ベースライン + diff |
@@ -101,7 +101,7 @@
 |-----|------|
 | **環境変数** | テスト DB とシークレットには `.env.test` を使用する |
 | **DB** | テスト専用の PostgreSQL データベースを使用する |
-| **Integration リセット** | スイート前に migrate + seed を実行する |
+| **Integration リセット** | globalSetup で testcontainers 起動 + migrate 適用。各テスト `beforeEach` で `resetDb(db)`（TRUNCATE ... RESTART IDENTITY CASCADE）+ テスト内 seed ヘルパー（`tests/integration/setup/seed.ts`）を使用する |
 | **E2E リセット** | 実行前にシード投入、実行後にクリーンアップする |
 | **テストデータ** | ハードコードした ID ではなくファクトリを使用する |
 
@@ -209,13 +209,17 @@ if (!Number.isFinite(unitPrice)) {
 
 ---
 
-## テストスクリプト（参考 — 未実装を含む）
+## テストスクリプト（参考 — 未実装を含む / 2026-07-11 実装状況同期）
 
 ```bash
-bun run test                    # jest（全ユニット）← 実装済み
-bun run test:unit               # 未実装（予定: jest --testPathPattern "src/.*\.test\.ts$"）
-bun run test:component          # 未実装（予定: jest --testPathPattern "tests/component/.*\.test\.tsx$"）
-bun run test:integration        # 未実装（予定: jest --testPathPattern "tests/integration/.*\.test\.ts$"）
+bun run test                    # jest（全ユニット/コンポーネント）← 実装済み
+bun run test:watch              # jest --watch ← 実装済み
+bun run test:integration        # 実装済み: jest --config jest.integration.config.js
+                                #   （testcontainers 実 PostgreSQL。bun run test の集計外。
+                                #    2026-07-11 実測: 17/17 pass / 4.779s。ADR-004 参照）
+bun run test:e2e:local          # 実装済み: bash scripts/e2e/run-local.sh
+bun run test:unit               # 未実装（予定: jest --testPathPatterns "src/.*\.test\.ts$"）
+bun run test:component          # 未実装（予定: jest --testPathPatterns "tests/component/.*\.test\.tsx$"）
 bun run test:e2e                # 未実装（現状: bunx playwright test を直接使用）
 bun run test:visual             # 未実装（予定: playwright test tests/visual）
 bun run test:a11y               # 未実装（予定: playwright test tests/accessibility）

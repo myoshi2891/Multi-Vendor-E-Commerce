@@ -39,7 +39,7 @@
 | 6 | plan 034 upsertReview 評価集計（TESTS-18） | ✅ DONE | `034-integration-test-review-aggregation.md` |
 | 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ✅ DONE | `035-integration-test-store-status-role-promotion.md` |
 | 8 | README 索引更新（031〜035 追加・推奨順序 #10・TESTS-04/06 昇格反映・rejected 記録） | ✅ DONE | Commit R5-8 |
-| 9 | docs/testing 精査・更新（Integration 実測同期 + TESTING_DESIGN ドリフト修正ほか） | ⬜ TODO | — |
+| 9 | docs/testing 精査・更新（QA_HANDOFF 実測同期 + R5 プロンプト / TESTING_DESIGN ドリフト 3 件修正 / COVERAGE_REPORT §3 R5 / PERSPECTIVES 4 観点） | ✅ DONE | Commit R5-9 |
 | 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | — |
 | 11 | ADVISOR_STATE クローズ（`git diff 1750ef2..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
 

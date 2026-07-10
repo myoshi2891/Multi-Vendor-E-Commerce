@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-10 / **HEAD**: `b6591f9`（+ Round 4 監査 docs コミット群。ソースコード無変更）
+> **最終更新**: 2026-07-11 / **HEAD**: `1750ef2`（+ Round 4/5 監査 docs コミット群。ソースコード無変更）
 
 ---
 
@@ -16,7 +16,7 @@
 |------|-----|
 | Jest テスト総数 (unit/component) | **1662** passed / 1665 total / 172 スイート（171 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
-| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外 |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -227,6 +227,28 @@ docs 同期（別コミット）を行い、plans/README.md の 026 行を DONE 
 （027〜030 も同形式: パスを `plans/027-integration-test-oversell-rollback-and-platform-coupon.md` /
 `plans/028-unit-test-country-query.md` / `plans/029-unit-test-profile-catch-branches.md` /
 `plans/030-component-test-money-path-client.md` に差し替えて依頼する）
+
+#### R5: improve Round 5 Integration テストギャップ解消（plans 031〜035）🆕 2026-07-11 起票
+
+2026-07-11 の Integration 特化監査（`plans/audit/findings-13-integration-coverage.md`・
+実測 17/17 pass）で特定した「実 DB でしか検証できない未テスト統合面」5 件の実行プラン。
+**全プラン Docker 必須**（`docker info` 失敗時は各プラン Step 0 の STOP 条件で BLOCKED 記録）。
+推奨順: 031（在庫復元・money-critical）→ 032（webhook 決済）→ 033（tsvector 検索）→
+034（レビュー集計）→ 035（ロール昇格）。相互独立・並行可だが、**031 と 027 は両方
+`tests/integration/setup/seed.ts` を拡張**するため同時実行時はマージに注意（可能なら 027 → 031 順）。
+
+```
+plans/031-integration-test-order-lifecycle-restock.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 本体コード（src/queries/order.ts）は変更禁止・テスト/seedヘルパー追加のみ。Docker 必須
+（docker info 失敗時は STOP して BLOCKED 記録）。各 Step の Verify コマンドを必ず実行し、
+STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期
+（別コミット）を行い、plans/README.md の 031 行を DONE に更新すること。
+```
+
+（032〜035 も同形式: パスを `plans/032-integration-test-webhook-payment-idempotency.md` /
+`plans/033-integration-test-tsvector-search.md` / `plans/034-integration-test-review-aggregation.md` /
+`plans/035-integration-test-store-status-role-promotion.md` に差し替え、「本体コード」を各プランの
+Out of scope 記載どおり読み替えて依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 
