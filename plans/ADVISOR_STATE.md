@@ -40,8 +40,17 @@
 | 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ✅ DONE | `035-integration-test-store-status-role-promotion.md` |
 | 8 | README 索引更新（031〜035 追加・推奨順序 #10・TESTS-04/06 昇格反映・rejected 記録） | ✅ DONE | Commit R5-8 |
 | 9 | docs/testing 精査・更新（QA_HANDOFF 実測同期 + R5 プロンプト / TESTING_DESIGN ドリフト 3 件修正 / COVERAGE_REPORT §3 R5 / PERSPECTIVES 4 観点） | ✅ DONE | Commit R5-9 |
-| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | — |
-| 11 | ADVISOR_STATE クローズ（`git diff 1750ef2..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ✅ DONE | `ece9da1`（R5 エントリ + 再生成。tsc 0 / lint 0 エラー確認済み） |
+| 11 | ADVISOR_STATE クローズ（`git diff 1750ef2..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット（diff 空を検証済み） |
+
+**Round 5 完了（2026-07-11）**。ソースコード（`src/` `tests/` `prisma/`）は無変更
+（`git diff 1750ef2..HEAD --stat -- src tests prisma` = 空で検証済み）。
+Integration 実測 **17/17 pass / 4.779s**（本リポジトリ初の実測記録 — Round 4 の未実測を解消）。
+成果物: `audit/findings-13-integration-coverage.md`（TESTS-15〜19 + reconcile + rejected）+
+plans **031〜035**（全プラン Docker 必須・Sonnet 実行可能な自己完結形式）+ README 索引 +
+docs/testing 4 ファイル同期（TESTING_DESIGN のドリフト 3 件修正含む）+ ダッシュボード再生成。
+次のアクション: plans/031〜035 の実行（QA_HANDOFF「次回着手用 依頼プロンプト」R5 参照。
+推奨順 031 → 032 → 033 → 034 → 035。027 と 031 は seed.ts 拡張が重なるため可能なら 027 先行）。
 
 ---
 
