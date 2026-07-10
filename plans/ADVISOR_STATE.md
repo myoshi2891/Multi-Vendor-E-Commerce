@@ -32,7 +32,7 @@
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R5-1 |
-| 2 | 実測ベースライン + Integration 監査台帳（TESTS-15〜 + TESTS-02/04/06 reconcile） | ⬜ TODO | `audit/findings-13-integration-coverage.md` |
+| 2 | 実測ベースライン + Integration 監査台帳（TESTS-15〜19 + TESTS-02/04/06 reconcile） | ✅ DONE | `audit/findings-13-integration-coverage.md`（実測: **17/17 pass / 4.779s** — Round 4 の未実測を解消） |
 | 3〜7 | プラン 031〜 執筆（1 プラン = 1 コミット・監査結果で本数確定） | ⬜ TODO | — |
 | 8 | README 索引更新（031〜 追加・推奨順序・依存） | ⬜ TODO | — |
 | 9 | docs/testing 精査・更新（Integration 実測同期 + TESTING_DESIGN ドリフト修正ほか） | ⬜ TODO | — |
