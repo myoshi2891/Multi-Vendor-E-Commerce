@@ -6,6 +6,46 @@
 
 ---
 
+## Round 4 — テストカバレッジ監査（`tests` フォーカス / 開始 2026-07-10）
+
+- **開始日**: 2026-07-10 / **監査対象 HEAD**: `b6591f9`（branch: `dev`）
+- **バリアント**: `tests` フォーカス（Recon → test-coverage カテゴリのみ監査 → プラン化）
+- **目的**: 既存テスト（Jest 1662 passed / 172 スイート・Integration 17・E2E 9 スペック）の
+  網羅性を lcov 実測で精査し、「危険な未テスト箇所」を Sonnet 実行可能なプランに落とす。
+  あわせて docs/testing 配下の精査・ブラッシュアップと coverage-dashboard.html の更新
+  （いずれもユーザー明示依頼のため Hard Rule 1 のスコープ例外として docs/testing・
+  `scripts/coverage-dashboard/render-html.ts`・生成物 HTML の編集を許可）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - 成果物形式 = **監査台帳 1 本（findings-11）+ 実行プラン数本（026〜）**
+  - QA_HANDOFF.md は**履歴をアーカイブ分離**（統計セルの機能実装履歴長文を
+    COVERAGE_REPORT.md §7 へ移動。統計 SSOT 構造は不変）
+  - plan 010（TESTS-07 shipping-utils）と重複するプランは作らない
+- **ベースライン実測（2026-07-10 / `bun run test -- --coverage`）**:
+  - Jest: **1662 passed / 1665 total（3 skipped）/ 172 スイート（171 passed + 1 skipped）**
+    — QA_HANDOFF 記載（1659/1662）から +3。差分コミット: `865dda3`（track-order エラー系 +
+    テストファイル配置移動 `tests/component/store/` → `src/components/store/track-order/`）・
+    `83fe664`（T-TO11 PII 非ログ検証）
+  - カバレッジ: Statements 65.19% / **Branches 44.89%** / Functions 54.1% / Lines 64.11%
+  - Integration（testcontainers）: **未実行**（Docker デーモン停止中のため。統計は前回値を維持）
+
+### Round 4 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R4-1 |
+| 2 | lcov 実測監査 + vetting（TESTS-08〜12） | ⬜ TODO | `audit/findings-11-test-coverage.md` / Commit R4-2 |
+| 3 | plan 026 paypal エラー分岐ユニットテスト | ⬜ TODO | Commit R4-3 |
+| 4 | plan 027 placeOrder オーバーセルロールバック統合テスト（TESTS-05 昇格） | ⬜ TODO | Commit R4-4 |
+| 5 | plan 028 country.ts ユニットテスト新設 | ⬜ TODO | Commit R4-5 |
+| 6 | plan 029 profile.ts catch 分岐テスト | ⬜ TODO | Commit R4-6 |
+| 7 | plan 030 money-path クライアントコンポーネントテスト | ⬜ TODO | Commit R4-7 |
+| 8 | README 索引更新（026〜030 追加・TESTS-05 昇格反映） | ⬜ TODO | Commit R4-8 |
+| 9 | docs/testing 精査・更新（QA_HANDOFF 履歴分離 + 統計実測同期 + 関連 docs） | ⬜ TODO | `docs(testing):` 3 コミット |
+| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | `docs:` 1 コミット |
+
+---
+
 ## Round 3 — direction-expansion 第2弾: 運用・信頼・成長（`next` バリアント / 完了 2026-07-10）
 
 - **開始日**: 2026-07-10 / **監査対象 HEAD**: `86c04a1`（branch: `dev`。Round 2 以降ソース変更なし — 差分は docs(plans) コミットのみ）
