@@ -1,12 +1,12 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-06-26 / **HEAD**: `b57bd40`
+> **最終更新**: 2026-07-10 / **HEAD**: `b6591f9`（+ Round 4 監査 docs コミット群。ソースコード無変更）
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-06-26 時点）
+### テスト統計（2026-07-10 実測・`bun run test -- --coverage`）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -14,7 +14,8 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1659** passed / 1662 total / 172 スイート（171 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1662** passed / 1665 total / 172 スイート（171 passed + 1 skipped suite） |
+| カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外 |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip |
@@ -178,6 +179,7 @@
 - **C2** Bundle Size 継続監視（🟢 低）
 - ~~**D1** ダッシュボード `categorize.ts` 改修：`tests/integration/` を Integration 行へ正しく分類~~ ✅ **完了（2026-06-02）**。`unit × other` 誤分類を恒久解消し `integration × queries` ◯→◐（commit `b57841a`）
 - **D2** Performance 行の着手（🟡 中 / cost M）：**OI-9 修正が前提**。`/` の SSR 500 を解消 → lhci 計測 URL に `/` 追加 → warn→error 化で予算厳格化
+- **R4** テストギャップ解消（🟡 中 / cost S〜M ×5）：improve Round 4 監査（2026-07-10）の実行プラン **plans/026〜030**（paypal エラー分岐 / placeOrder オーバーセル+PLATFORM 端数統合 / country.ts 新設 / profile.ts catch 分岐 / money-path コンポーネント 6 本）。進捗は [`plans/README.md`](../../plans/README.md) の status 列が SSOT。着手プロンプトは本ファイル「次回着手用 依頼プロンプト」R4 を参照
 
 詳細は [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) を参照。D2 の着手プロンプトは本ファイル「次回着手用 依頼プロンプト」を参照。
 
@@ -207,6 +209,24 @@
 <!-- NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) ✅ 完了 2026-05-28: 30+2 ケース。コミット 338ab41 / 1d69f0f / 2321cd8 -->
 <!-- NA-NS-03 (B3: Cart → Checkout Integration テスト) ✅ 完了 2026-05-29: 4 シナリオ / 11 テスト。ADR-004 参照 -->
 <!-- D1 (categorize.ts 改修 / Integration 行実体化) ✅ 完了 2026-06-02: commit b57841a。詳細: COVERAGE_REPORT.md §3 D1 -->
+
+#### R4: テストギャップ解消（improve Round 4 / plans 026〜030）
+
+2026-07-10 の lcov 実測監査（`plans/audit/findings-12-test-coverage.md`）で特定した
+「危険な未テスト箇所」5 件の実行プラン。**各プランは zero-context executor（Sonnet 級）向けに
+自己完結**しており、下のプロンプトだけで着手できる。推奨順: 026 → 027 → 028 → 029 → 030
+（相互独立・並行可。027 のみ Docker 必須）。
+
+```
+plans/026-unit-test-paypal-error-branches.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 本体コード（src/queries/paypal.ts）は変更禁止・テスト追加のみ。各 Step の Verify コマンドを
+必ず実行し、STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で
+docs 同期（別コミット）を行い、plans/README.md の 026 行を DONE に更新すること。
+```
+
+（027〜030 も同形式: パスを `plans/027-integration-test-oversell-rollback-and-platform-coupon.md` /
+`plans/028-unit-test-country-query.md` / `plans/029-unit-test-profile-catch-branches.md` /
+`plans/030-component-test-money-path-client.md` に差し替えて依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 
