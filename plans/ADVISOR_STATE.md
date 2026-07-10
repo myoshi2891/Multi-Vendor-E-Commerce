@@ -33,7 +33,11 @@
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R5-1 |
 | 2 | 実測ベースライン + Integration 監査台帳（TESTS-15〜19 + TESTS-02/04/06 reconcile） | ✅ DONE | `audit/findings-13-integration-coverage.md`（実測: **17/17 pass / 4.779s** — Round 4 の未実測を解消） |
-| 3〜7 | プラン 031〜 執筆（1 プラン = 1 コミット・監査結果で本数確定） | ⬜ TODO | — |
+| 3 | plan 031 注文ライフサイクル + restock 統合テスト（TESTS-15） | ✅ DONE | `031-integration-test-order-lifecycle-restock.md` |
+| 4 | plan 032 webhook 実 DB 冪等性（TESTS-16） | ⬜ TODO | — |
+| 5 | plan 033 tsvector 全文検索 実 DB 統合（TESTS-17） | ⬜ TODO | — |
+| 6 | plan 034 upsertReview 評価集計（TESTS-18） | ⬜ TODO | — |
+| 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ⬜ TODO | — |
 | 8 | README 索引更新（031〜 追加・推奨順序・依存） | ⬜ TODO | — |
 | 9 | docs/testing 精査・更新（Integration 実測同期 + TESTING_DESIGN ドリフト修正ほか） | ⬜ TODO | — |
 | 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | — |
