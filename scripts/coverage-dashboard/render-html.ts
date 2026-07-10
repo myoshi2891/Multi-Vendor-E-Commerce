@@ -108,6 +108,18 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
     // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D2 と
     // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
+    // R4 は improve Round 4 監査 (2026-07-10) 起票のテストギャップ解消。
+    // 実行手順の SSOT は plans/026〜030 (自己完結プラン)、進捗は plans/README.md
+    // の status 列。QA_HANDOFF「次回着手用 依頼プロンプト」R4 と一対一対応。
+    // 全 5 プラン完了時に本エントリと QA_HANDOFF R4 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R4: テストギャップ解消 (plans 026〜030)",
+        target: "paypal/country/profile queries + order-placement 統合 + money-path UI 6 本",
+        tool: "plans/026〜030 の自己完結プラン (Sonnet 実行可・spec-sync 必須)",
+        cost: "M",
+        impact: "決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収など money-critical な未テスト分岐を回帰検知下に置く",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
