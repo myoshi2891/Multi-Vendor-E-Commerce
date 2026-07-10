@@ -37,7 +37,7 @@
 | 4 | plan 032 webhook 実 DB 冪等性（TESTS-16） | ✅ DONE | `032-integration-test-webhook-payment-idempotency.md` |
 | 5 | plan 033 tsvector 全文検索 実 DB 統合（TESTS-17） | ✅ DONE | `033-integration-test-tsvector-search.md` |
 | 6 | plan 034 upsertReview 評価集計（TESTS-18） | ✅ DONE | `034-integration-test-review-aggregation.md` |
-| 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ⬜ TODO | — |
+| 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ✅ DONE | `035-integration-test-store-status-role-promotion.md` |
 | 8 | README 索引更新（031〜 追加・推奨順序・依存） | ⬜ TODO | — |
 | 9 | docs/testing 精査・更新（Integration 実測同期 + TESTING_DESIGN ドリフト修正ほか） | ⬜ TODO | — |
 | 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | — |
