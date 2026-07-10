@@ -35,7 +35,7 @@
 | 2 | 実測ベースライン + Integration 監査台帳（TESTS-15〜19 + TESTS-02/04/06 reconcile） | ✅ DONE | `audit/findings-13-integration-coverage.md`（実測: **17/17 pass / 4.779s** — Round 4 の未実測を解消） |
 | 3 | plan 031 注文ライフサイクル + restock 統合テスト（TESTS-15） | ✅ DONE | `031-integration-test-order-lifecycle-restock.md` |
 | 4 | plan 032 webhook 実 DB 冪等性（TESTS-16） | ✅ DONE | `032-integration-test-webhook-payment-idempotency.md` |
-| 5 | plan 033 tsvector 全文検索 実 DB 統合（TESTS-17） | ⬜ TODO | — |
+| 5 | plan 033 tsvector 全文検索 実 DB 統合（TESTS-17） | ✅ DONE | `033-integration-test-tsvector-search.md` |
 | 6 | plan 034 upsertReview 評価集計（TESTS-18） | ⬜ TODO | — |
 | 7 | plan 035 updateStoreStatus ロール昇格遷移（TESTS-19） | ⬜ TODO | — |
 | 8 | README 索引更新（031〜 追加・推奨順序・依存） | ⬜ TODO | — |
