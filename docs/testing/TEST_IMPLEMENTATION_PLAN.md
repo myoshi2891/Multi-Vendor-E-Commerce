@@ -810,6 +810,26 @@ describe("購入フルフロー")
 
 ---
 
+## Phase 4: Round 4 テストギャップ解消（P2〜P3・2026-07-10 起票）
+
+> **実行手順の SSOT は `plans/026〜030`**（improve Round 4 監査の自己完結プラン。
+> 本セクションは「何を・どの順で作るか」のロードマップ位置付けのみを記録し、
+> ケース表・モック手順・STOP 条件はプラン側を参照する）。
+> 監査台帳: [`plans/audit/findings-12-test-coverage.md`](../../plans/audit/findings-12-test-coverage.md)
+
+| Step | 対象 | プラン | 追加規模（想定） | 状態 |
+| --- | --- | --- | --- | --- |
+| 4-1 | `src/queries/paypal.test.ts` エラー経路分岐（B 28.6%→90%+） | [plans/026](../../plans/026-unit-test-paypal-error-branches.md) | +14〜16 | ⬜ 未着手 |
+| 4-2 | `tests/integration/order-placement.test.ts` オーバーセルロールバック + PLATFORM 端数（Docker 必須） | [plans/027](../../plans/027-integration-test-oversell-rollback-and-platform-coupon.md) | +3 シナリオ | ⬜ 未着手 |
+| 4-3 | `src/queries/country.test.ts` 新設（最後の未テスト server action） | [plans/028](../../plans/028-unit-test-country-query.md) | +4 / +1 スイート | ⬜ 未着手 |
+| 4-4 | `src/queries/profile.test.ts` catch 分岐 + 期間フィルタ（B 69.2%→95%+） | [plans/029](../../plans/029-unit-test-profile-catch-branches.md) | +14〜20 | ⬜ 未着手 |
+| 4-5 | money-path クライアント 6 ファイルの component テスト（newsletter / cart-summary / checkout-container / stripe-payment / paypal-payment / cart-container） | [plans/030](../../plans/030-component-test-money-path-client.md) | +22 前後 / +6 スイート | ⬜ 未着手 |
+
+**実行規律**: 各 Step 完了ごとに `spec-sync-after-test` skill で統計同期（rule 02）。
+進捗の SSOT は [`plans/README.md`](../../plans/README.md) の status 列であり、本表の状態列は同期先。
+
+---
+
 ## テスト数サマリ
 
 | Phase | カテゴリ | 新規テスト数 | 状態 |
