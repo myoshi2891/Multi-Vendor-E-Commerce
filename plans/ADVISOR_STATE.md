@@ -45,8 +45,13 @@
 | 6 | plan 029 profile.ts catch 分岐テスト（TESTS-13） | ✅ DONE | `104e6aa` |
 | 7 | plan 030 money-path クライアントコンポーネントテスト（TESTS-01 残余） | ✅ DONE | `9ad5303` |
 | 8 | README 索引更新（023〜025 の索引漏れ補完 + 026〜030 追加・TESTS-05 昇格反映） | ✅ DONE | Commit R4-8 |
-| 9 | docs/testing 精査・更新（QA_HANDOFF 履歴分離 + 統計実測同期 + 関連 docs） | ⬜ TODO | `docs(testing):` 3 コミット |
-| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | `docs:` 1 コミット |
+| 9 | docs/testing 精査・更新（QA_HANDOFF 履歴分離 + 統計実測同期 + 関連 docs） | ✅ DONE | `ab98e64`（履歴分離）/ `7f2b6c0`（統計同期+R4 プロンプト）/ `ec60bd4`（COVERAGE_REPORT §3 R4+§7 / TEST_IMPLEMENTATION_PLAN Phase 4 / QA_TEST_PERSPECTIVES 新機能観点） |
+| 10 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ✅ DONE | `886cd05`（R4 エントリ + 再生成。tsc 0 / lint 0 エラー確認済み） |
+
+**Round 4 完了（2026-07-10）**。ソースコード（`src/` `tests/` `prisma/`）は無変更
+（`git diff b6591f9..HEAD --stat -- src tests prisma` = 空で検証済み）。
+Integration テスト実測は Docker 停止のため未実施（plan 027 に Docker 前提の STOP 条件を明記済み）。
+次のアクション: plans/026〜030 の実行（QA_HANDOFF「次回着手用 依頼プロンプト」R4 参照）。
 
 ### Round 4 vet メモ
 
