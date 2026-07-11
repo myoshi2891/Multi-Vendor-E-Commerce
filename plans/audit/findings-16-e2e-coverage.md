@@ -268,6 +268,20 @@ pass/fail の実測記録が存在しないため、この全滅状態は本ラ�
   （next-cloudinary）に依存 → **OI-11 `self is not defined`（`QA_HANDOFF.md:125`）と同族の
   本番ビルド SSR リスク**があり、admin CRUD 系 E2E は OI-11 解消の影響圏。ステータス変更 UI
   （orders/stores テーブル操作）が Cloudinary 非依存であれば先行可能。
+- **Evidence（追記 2026-07-11・plan 050 執筆時の再監査）**:
+  (1) ステータス変更 UI は `src/app/dashboard/admin/stores/columns.tsx:144` の
+  `StoreStatusSelect`（`src/components/dashboard/forms/store-status-select.tsx` —
+  Cloudinary 非依存）→ **admin stores テーブル経由の E2E は OI-11 の影響を受けず先行可能**。
+  (2) admin ルートの認可は `src/app/dashboard/admin/layout.tsx:21` の
+  `user.privateMetadata.role !== "ADMIN"` — **Clerk privateMetadata 判定**のため、E2E の
+  ADMIN セッションは DB role だけでなく Clerk metadata の設定が必要
+  （`seller-onboarding.spec.ts:158` に前例）。
+  (3) **ストアフロント反映は半分未実装**: store ページは `getStorePageDetails` が
+  `status: "ACTIVE"` フィルタ（`src/queries/store.ts:659-663`）で非 ACTIVE を隠すが、
+  **`getProducts`（`src/queries/product.ts`）には store status の条件が一切無く**、
+  BANNED 店舗の商品は /browse・商品詳細で表示・購入可能なまま。§20 P1
+  「全商品が非表示 / 購入不可」はアプリ側が未達 — E2E は現行契約（store ページ非表示）
+  のみ固定し、商品露出ギャップは**アプリ側 correctness 課題**として別途起票が必要。
 - **Impact**: 店舗 BAN の顧客側反映（商品非表示）は運営の主要オペレーションだが未固定。
 - **Effort**: M〜L（**TESTS-26 先行依存** + ADMIN ロールセッション。`createCustomerSession()` は
   `role` 指定可能（`auth.ts` の `opts.role`）で流用できる）
