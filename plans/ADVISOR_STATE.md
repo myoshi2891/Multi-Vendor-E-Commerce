@@ -36,13 +36,31 @@
 
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
-| 1 | ADVISOR_STATE 新ラウンド記録 | ⏳ TODO | 本セクション |
-| 2 | 実測ベースライン + A/B 軸監査台帳（TESTS-24〜 + deferred 再裁定 + rejected 記録） | ⏳ TODO | `audit/findings-15-integration-coverage-r7.md` |
-| 3〜N | プラン 040〜 執筆（1 プラン = 1 コミット・plan-template 準拠） | ⏳ TODO | `040-*.md` 〜 |
-| N+1 | README 索引更新（040〜 追加・推奨順序 #12・rejected 記録） | ⏳ TODO | README.md |
-| N+2 | docs/testing 精査・更新（QA_HANDOFF R7 実測+プロンプト / COVERAGE_REPORT §3 R7 / PERSPECTIVES 新観点 / TESTING_DESIGN ドリフト精査） | ⏳ TODO | docs/testing |
-| N+3 | NEXT_ACTIONS R7 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⏳ TODO | render-html.ts + HTML |
-| N+4 | ADVISOR_STATE クローズ（`git diff 9111f41..HEAD --stat -- src tests prisma` = 空 を検証） | ⏳ TODO | 本ファイル |
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / `921aecc` |
+| 2 | 実測ベースライン + A/B 軸監査台帳（TESTS-24〜25 + deferred 再裁定 5 件 + rejected 6 件） | ✅ DONE | `audit/findings-15-integration-coverage-r7.md`（実測: **17/17 pass / 4.473s**）/ `f4428e8` |
+| 3 | plan 040 Clerk user.deleted webhook FK 連鎖（TESTS-24） | ✅ DONE | `040-integration-test-user-deletion-webhook.md` / `57cdfa3` |
+| 4 | plan 041 Coupon.code グローバル unique P2002（TESTS-25 — R6 次点の再裁定昇格） | ✅ DONE | `041-integration-test-coupon-code-uniqueness.md` / `72c205a` |
+| 5 | README 索引更新（040〜041 追加・推奨順序 #12・R6 次点の昇格/deferred 変更・R7 rejected 記録） | ✅ DONE | `f65010e` |
+| 6 | docs/testing 精査・更新（QA_HANDOFF R7 実測+プロンプト / COVERAGE_REPORT §3 R7 / PERSPECTIVES 2 観点。TESTING_DESIGN はドリフトなしのため無変更） | ✅ DONE | `cffe6d8` |
+| 7 | NEXT_ACTIONS R7 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 エラー確認済み） | ✅ DONE | `c32ac08` |
+| 8 | ADVISOR_STATE クローズ（`git diff 9111f41..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット（diff 空を検証済み） |
+
+**Round 7 完了（2026-07-11）**。ソースコード（`src/` `tests/` `prisma/`）は無変更
+（`git diff 9111f41..HEAD --stat -- src tests prisma` = 空で検証済み）。
+Integration 実測 **17/17 pass / 4.473s**（R5/R6 と同一構成の再確認）。
+成果物: `audit/findings-15-integration-coverage-r7.md`（TESTS-24〜25 + 再裁定 + rejected、
+FK/unique とも migration SQL・schema レベルで裏取り）+ plans **040〜041**（全プラン Docker 必須・
+seed.ts / reset-db.ts 非変更・Sonnet 実行可能な自己完結形式。高レバレッジ候補が 2 件のみの
+ため水増しせず 2 本）+ README 索引 + docs/testing 3 ファイル同期 + ダッシュボード再生成。
+特記事項: 040 シナリオ 2〜4（RESTRICT による削除不能 → PII 残存）と 041 シナリオ 2・3
+（クロスストア code 衝突の P2002 フォールバック）は**現挙動の characterization** — 対応する
+correctness 修正（user.deleted の匿名化 or ソフト削除 / coupon 事前チェックのスコープ整合）は
+将来プランの候補として findings-15 に記録。
+次のアクション: plans/031〜035（R5）→ 036〜039（R6）→ 040〜041（R7）の実行
+（QA_HANDOFF「次回着手用 依頼プロンプト」R5/R6/R7 参照。R7 推奨順 040 → 041。
+seed.ts 競合がないため R5/R6 プランと並行可）。Integration の残余候補はほぼ枯渇 —
+次ラウンドを行う場合はコード修正先行の deferred 群（005/003/009/002 完了後の追加テスト）の
+解消状況を先に確認すること。
 
 ---
 
