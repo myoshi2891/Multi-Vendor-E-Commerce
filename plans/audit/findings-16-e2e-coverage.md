@@ -92,6 +92,12 @@ pass/fail の実測記録が存在しないため、この全滅状態は本ラ�
 - **Evidence（検出不能の構造）**: `.github/workflows/ci.yml` に Playwright ジョブは無い
   （`:162` の e2e ジョブは seed 冪等性チェックのみ）。`auth.ts` 最終変更は `29050e2`
   （2026-05-22）で、以降フル実測記録なし → 退行の混入時期を特定できる計測が存在しない。
+- **Evidence（追記 2026-07-11・plan 049 執筆時の再監査）**: 壊れた locator
+  `getByLabel("Email address")` は `auth.ts` の他に **4 spec にインライン複製**されている:
+  `stock-decrement.spec.ts:147` / `messages.spec.ts:60` / `seller-onboarding.spec.ts:79,180` /
+  `platform-coupon.spec.ts:114`（`createCustomerSession().signIn` を使うのは a11y
+  checkout/profile の 2 spec のみ）。**auth.ts 単独修復では 16 件中 a11y 2 件しか回復しない**
+  ため、plan 042 は共有サインイン関数の抽出 + 5 サイト置換にスコープ拡大済み。
 - **Impact**: **認証セッションを前提とする E2E 資産すべてが機能停止**（在庫減算 F3・
   PLATFORM クーポン複数店舗注文 = §20 P0 相当の 2 本を含む）。さらに本台帳の
   TESTS-30/31/34〜38（新規認証系 E2E）は全てこの修復が先行依存。

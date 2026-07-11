@@ -7,7 +7,7 @@
 > in `plans/README.md` — unless a reviewer dispatched you and told you they
 > maintain the index.
 >
-> **Drift check (run first)**: `git diff --stat 6ad7b05..HEAD -- tests/e2e/helpers/auth.ts src/components/store/icons/ src/components/store/layout/footer/newsletter.tsx`
+> **Drift check (run first)**: `git diff --stat 6ad7b05..HEAD -- tests/e2e/helpers/auth.ts tests/e2e/stock-decrement.spec.ts tests/e2e/messages.spec.ts tests/e2e/seller-onboarding.spec.ts tests/e2e/platform-coupon.spec.ts src/components/store/icons/ src/components/store/layout/footer/newsletter.tsx`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts against the live code before proceeding; on a
 > mismatch, treat it as a STOP condition.
@@ -15,7 +15,8 @@
 ## Status
 
 - **Priority**: P1
-- **Effort**: S
+- **Effort**: M（当初 S — 壊れた locator が 4 spec にインライン複製されていると判明し、
+  共有関数抽出 + 5 サイト置換にスコープ拡大）
 - **Risk**: MED（Clerk コンポーネントの DOM 構造は Clerk 側更新で再ドリフトし得る）
 - **Depends on**: none（**逆に plans 047〜050 がすべて本プランに依存する**）
 - **Category**: tests
@@ -88,6 +89,13 @@ async signIn(page) {
   `SendIcon` としてフッターに描画され、axe の `svg-img-alt`（serious）違反となる。
   同型の `role="img"` で代替テキスト無しのアイコンが
   `src/components/store/icons/wishlist.tsx:16` と `src/components/store/icons/order.tsx:16` にもある。
+- **重要: 壊れた locator は 5 サイトに複製されている。** `createCustomerSession().signIn`
+  （auth.ts）を使うのは a11y checkout / profile の 2 spec だけで、以下 4 spec は
+  **同じ `getByLabel("Email address")` 手順をインラインで持つ**（auth.ts だけ直しても回復しない）:
+  - `tests/e2e/stock-decrement.spec.ts:147`
+  - `tests/e2e/messages.spec.ts:60`（買い手/売り手 2 コンテキストで共用のローカル関数）
+  - `tests/e2e/seller-onboarding.spec.ts:79` と `:180`
+  - `tests/e2e/platform-coupon.spec.ts:114`
 - 影響を受けているテスト（実測 #2 の failed/did-not-run 一覧）:
   - `tests/e2e/messages.spec.ts:220`（3 ブラウザ）
   - `tests/e2e/platform-coupon.spec.ts:106`（3 ブラウザ）
@@ -117,15 +125,18 @@ async signIn(page) {
 ## Scope
 
 **In scope** (the only files you should modify):
-- `tests/e2e/helpers/auth.ts` — `signIn()` の locator 修正
+- `tests/e2e/helpers/auth.ts` — 共有サインイン関数の抽出 + `signIn()` の locator 修正
+- `tests/e2e/stock-decrement.spec.ts` / `tests/e2e/messages.spec.ts` /
+  `tests/e2e/seller-onboarding.spec.ts` / `tests/e2e/platform-coupon.spec.ts` —
+  **インラインのサインイン手順ブロックを共有関数呼び出しに置換するのみ**
+  （各 spec のテストロジック・assert は変更しない）
 - `src/components/store/icons/send.tsx` — `aria-label` 追加
 - `src/components/store/icons/wishlist.tsx` / `src/components/store/icons/order.tsx` — 同上（同型違反の予防是正）
 
 **Out of scope** (do NOT touch, even though they look related):
 - `src/components/store/layout/footer/newsletter.tsx` — Newsletter のラベルを変える方向で
   「解決」しない（UI 文言は仕様。テスト側の locator を堅牢化するのが正）。
-- 各 spec ファイル（messages / platform-coupon / …）— ヘルパー修復だけで回復するはず。
-  spec 側も直さないと通らない場合は STOP。
+- 4 spec のサインイン以外の箇所（ユーザー作成・seed・assert 等）。
 - `playwright.config.ts` — globalTimeout の恒久化は plan 044 の担当。
 - a11y spec の `disabledRules` に `svg-img-alt` を追加して黙らせる対応（違反の隠蔽）。
 
@@ -137,17 +148,20 @@ async signIn(page) {
 
 ## Steps
 
-### Step 1: `signIn()` の locator を Clerk 現行 UI + Clerk スコープに堅牢化する
+### Step 1: 共有サインイン関数を抽出し、Clerk 現行 UI + Clerk スコープに堅牢化する
 
-`tests/e2e/helpers/auth.ts` の `signIn()` を次の形に書き換える（要点: **Clerk コンポーネント内に
-スコープしてから操作**し、フッター Newsletter への誤爆を構造的に排除する。ステップ数の仮定
+`tests/e2e/helpers/auth.ts` に **export された共有関数** `signInWithPassword(page, email, password)`
+を新設し、`session.signIn()` はそれを呼ぶ薄いラッパーにする（Step 2 で 4 spec からも
+同じ関数を使うため）。関数本体は次の形（要点: **Clerk コンポーネント内にスコープしてから
+操作**し、フッター Newsletter への誤爆を構造的に排除する。ステップ数の仮定
 （1 画面 or 2 画面）にも依存させない）:
 
 ```typescript
-async signIn(page) {
-    if (!session.email || !session.password) {
-        throw new Error("Call create() in beforeAll before signIn().");
-    }
+export async function signInWithPassword(
+    page: Page,
+    email: string,
+    password: string
+): Promise<void> {
     await setupClerkTestingToken({ page });
     await page.goto("/sign-in");
 
@@ -157,24 +171,27 @@ async signIn(page) {
 
     // 識別子: Clerk は input[name="identifier"] を使う（現行 UI のラベルは
     // "Email address or username" だが、name 属性はラベル文言より安定）
-    await clerkRoot.locator('input[name="identifier"]').fill(session.email);
+    await clerkRoot.locator('input[name="identifier"]').fill(email);
 
     // 現行 UI は識別子 + パスワード同一画面。パスワード欄が同時に見えていれば埋める。
     const passwordInput = clerkRoot.locator('input[name="password"]');
     if (await passwordInput.isVisible()) {
-        await passwordInput.fill(session.password);
+        await passwordInput.fill(password);
         await clerkRoot.getByRole("button", { name: "Continue" }).click();
     } else {
         // 旧 2 ステップ UI へのフォールバック（Clerk 設定差分に備える）
         await clerkRoot.getByRole("button", { name: "Continue" }).click();
         await passwordInput.waitFor({ state: "visible", timeout: 10000 });
-        await passwordInput.fill(session.password);
+        await passwordInput.fill(password);
         await clerkRoot.getByRole("button", { name: "Continue" }).click();
     }
 
     // サインイン成立 = Clerk フォームが DOM から消える
     await expect(clerkRoot).toBeHidden({ timeout: 20000 });
-    // 以降（waitForURL による /sign-in 離脱確認）は現状コードを維持する
+    // /sign-in からの離脱確認（現行 signIn() 末尾の waitForURL ブロックをここへ移設）
+}
+// session.signIn() は null チェック後に
+// signInWithPassword(page, session.email, session.password) を呼ぶだけにする
 ```
 
 注意:
@@ -187,14 +204,34 @@ async signIn(page) {
 
 **Verify**: `bunx tsc --noEmit` → exit 0
 
-### Step 2: a11y checkout を単発実行してサインイン成立を確認する
+### Step 2: 4 spec のインラインサインイン手順を共有関数へ置換する
+
+以下の各サイトで「`/sign-in` へ goto → `getByLabel("Email address").fill` → Continue →
+Password → Continue → 完了待ち」に相当する一連のブロックを特定し、
+`signInWithPassword(page, <その spec のメール変数>, <パスワード変数>)` の 1 呼び出しに置換する
+（import を `./helpers/auth` から追加。ユーザー作成・その前後のロジックは触らない）:
+
+- `tests/e2e/stock-decrement.spec.ts:147` 周辺
+- `tests/e2e/messages.spec.ts:60` 周辺（ローカル関数内 — 買い手/売り手の 2 コンテキストで
+  共用されているため、そのローカル関数の**中身**を置換する）
+- `tests/e2e/seller-onboarding.spec.ts:79` と `:180` の 2 箇所
+- `tests/e2e/platform-coupon.spec.ts:114` 周辺
+
+置換後、`grep -rn 'getByLabel("Email address")' tests/e2e/` が **0 件**になること。
+`setupClerkTestingToken` の呼び出しが spec 側と共有関数で二重になる場合は spec 側を消す
+（同一 page への複数回呼び出しは無害だが冗長）。
+
+**Verify**: `grep -rn 'getByLabel("Email address")' tests/e2e/` → no matches、
+`bunx tsc --noEmit` → exit 0
+
+### Step 3: a11y checkout を単発実行してサインイン成立を確認する
 
 **Verify**: `bash scripts/e2e/run-local.sh tests/e2e/a11y/checkout.spec.ts --project=chromium`
 → サインインは成立する（`toBeHidden` タイムアウトが消える）。
-このステップでは **axe 違反（svg-img-alt）による fail は想定内**（Step 3 で解消）。
+このステップでは **axe 違反（svg-img-alt）による fail は想定内**（Step 4 で解消）。
 それ以外の理由（例: `waitForURL /checkout` 不達）で fail する場合は STOP。
 
-### Step 3: フッター系アイコン SVG に代替テキストを追加する
+### Step 4: フッター系アイコン SVG に代替テキストを追加する
 
 `src/components/store/icons/send.tsx` / `wishlist.tsx` / `order.tsx` の
 `role="img"` を持つ `<svg>` に `aria-label` を追加する（表示に影響しない属性のみの変更）:
@@ -216,13 +253,13 @@ async signIn(page) {
 **Verify**: `bash scripts/e2e/run-local.sh tests/e2e/a11y/sign-in.spec.ts --project=chromium`
 → `1 passed`（svg-img-alt 違反が解消）
 
-### Step 4: 認証依存 spec を chromium で一括確認する
+### Step 5: 認証依存 spec を chromium で一括確認する
 
 **Verify**:
 `bash scripts/e2e/run-local.sh tests/e2e/stock-decrement.spec.ts tests/e2e/platform-coupon.spec.ts tests/e2e/seller-onboarding.spec.ts tests/e2e/messages.spec.ts tests/e2e/a11y --project=chromium`
 → failed 0（skip はブラウザ限定分のみ）
 
-### Step 5: 3 ブラウザフルランで回復を確認する
+### Step 6: 3 ブラウザフルランで回復を確認する
 
 **Verify**: `bash scripts/e2e/run-local.sh --global-timeout=3600000`
 → ベースライン（52 passed / 17 failed / 39 skipped / 3 did not run）から
@@ -230,7 +267,7 @@ async signIn(page) {
 期待値: **69 passed / 3 failed（visual 3 枚 = plan 043 担当・既知）/ 39 skipped**。
 visual 3 件以外の fail が残る場合は STOP。
 
-### Step 6: テスト統計ドキュメントを同期する
+### Step 7: テスト統計ドキュメントを同期する
 
 E2E の pass/fail 実測値が変わるため、`spec-sync-after-test` skill（`.claude/skills/spec-sync-after-test/SKILL.md`）
 を起動し、`docs/testing/QA_HANDOFF.md` のテスト統計（SSOT）に E2E 実測行を反映する。
@@ -243,12 +280,12 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 
 - 本プランはテストコード自体の修復であり、新規テスト追加は無い。
 - 回復対象: findings-16 記載の 16 instance + a11y sign-in 1 instance。
-- 最終検証はフルラン（Step 5）の期待値到達。
+- 最終検証はフルラン（Step 6）の期待値到達。
 
 ## Done criteria
 
 - [ ] `bunx tsc --noEmit` exit 0 / `bun run lint` exit 0
-- [ ] `grep -n 'getByLabel("Email address")' tests/e2e/helpers/auth.ts` → no matches
+- [ ] `grep -rn 'getByLabel("Email address")' tests/e2e/` → no matches（5 サイト全滅）
 - [ ] chromium で a11y 4 spec / messages / platform-coupon / seller-onboarding / stock-decrement すべて passed
 - [ ] 3 ブラウザフルランで visual 3 件（plan 043 対象）以外の failed が 0
 - [ ] `git status` で in-scope 外のファイル変更が無い
@@ -260,9 +297,9 @@ Stop and report back (do not improvise) if:
 
 - `.cl-signIn-root` が `/sign-in` に存在しない（Clerk のクラス名がさらに変わった）。
   error-context.md の実 DOM を添えて報告する。
-- Step 2 で「サインイン自体は成立するが `/checkout` に到達しない」等、locator 以外の
+- Step 3 で「サインイン自体は成立するが `/checkout` に到達しない」等、locator 以外の
   失敗モードが出た（アプリ側の退行の可能性 — 本プランの範囲外）。
-- Step 5 のフルランで visual 3 件以外の fail が残った。
+- Step 6 のフルランで visual 3 件以外の fail が残った。
 - 修正が spec ファイル本体（messages 等）の変更を要求すると判明した。
 - `CLERK_SECRET_KEY` が未設定で認証系 spec が skip される（検証にならない）。
 
