@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-11 / **HEAD**: `1750ef2`（+ Round 4/5 監査 docs コミット群。ソースコード無変更）
+> **最終更新**: 2026-07-11 / **HEAD**: `9111f41`（+ Round 4〜7 監査 docs コミット群。ソースコード無変更）
 
 ---
 
@@ -16,7 +16,7 @@
 |------|-----|
 | Jest テスト総数 (unit/component) | **1662** passed / 1665 total / 172 スイート（171 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
-| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s を再実測**（ソース無変更の確認込み） |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -273,6 +273,30 @@ STOP conditions に該当したら中断して報告。完了後は spec-sync-af
 `plans/038-integration-test-product-update-tx.md` /
 `plans/039-integration-test-product-browse-filters.md` に差し替え、「本体コード」を各プランの
 Out of scope 記載どおり読み替えて依頼する）
+
+#### R7: improve Round 7 Integration 残余ギャップ解消（plans 040〜041）🆕 2026-07-11 起票
+
+2026-07-11 の Integration 第 3 弾監査（`plans/audit/findings-15-integration-coverage-r7.md`・
+R5/R6 未スイープの切り口: Clerk user-sync webhook の FK 連鎖・グローバル unique 制約の実発火）で
+特定した 2 件の実行プラン（高レバレッジ候補が 2 件のみだったため水増しせず 2 本 — 詳細な
+rejected/deferred 判定は findings-15 参照）。**全プラン Docker 必須**・相互独立・
+**`tests/integration/setup/seed.ts` / `setup/reset-db.ts` を変更しない**ため
+R4〜R6 プラン（027 / 031〜039）とも並行可。
+推奨順: 040（user.deleted FK 連鎖 — PII 残存・Svix 無限リトライのコンプライアンス隣接）→
+041（coupon code unique — セラー日常運用のエラー UX）。
+040 のシナリオ 2〜4 と 041 のシナリオ 2・3 は**現挙動の characterization**（既知ギャップの固定）—
+期待値の反転条件は各プラン本文の STOP conditions / Maintenance notes を参照。
+
+```
+plans/040-integration-test-user-deletion-webhook.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 本体コード（src/app/api/webhooks/route.ts）と prisma/ は変更禁止・テスト追加のみ。Docker 必須
+（docker info 失敗時は STOP して BLOCKED 記録）。各 Step の Verify コマンドを必ず実行し、
+STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期
+（別コミット）を行い、plans/README.md の 040 行を DONE に更新すること。
+```
+
+（041 も同形式: パスを `plans/041-integration-test-coupon-code-uniqueness.md` に差し替え、
+「本体コード」を `src/queries/coupon.ts` に読み替えて依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 

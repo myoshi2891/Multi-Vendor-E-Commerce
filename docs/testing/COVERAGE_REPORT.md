@@ -168,6 +168,15 @@
 - **やらないと判定したもの**（再監査防止）: followStore トグル（implicit M2M unique が保護）、addToWishlist 重複ガード（検証すべき unique 制約が存在しない）、taxonomy/coupon upsert 群（P2002 フォールバック実装済み・次点）、applyCoupon total ロストアップデート（コード修正先行）、getStoreOrders ページング — 詳細は findings-14 の rejected 節
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R6](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
 
+#### R7. improve Round 7 Integration 残余ギャップ解消（plans 040〜041）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/` への 2 スイート新設（seed ヘルパー・reset-db とも変更なし）。検証対象コード: `src/app/api/webhooks/route.ts`（Clerk `user.deleted` の `db.user.deleteMany`）、`src/queries/coupon.ts`（upsertCoupon / upsertCouponAsAdmin の P2002 フォールバック）
+- **なぜやるか**: R5/R6 が未スイープの切り口（user-sync webhook・グローバル unique の実発火）をスイープした結果、(1) **User への FK は RESTRICT（Store/Review/ShippingAddress/Order）・CASCADE（Cart/Wishlist/PaymentDetails/Conversation/Message）・SET NULL（SupportTicket）の 3 種混在**で、注文・レビュー・住所・店舗持ちユーザーの Clerk 削除は P2003 → 500 → Svix 無限リトライ + PII 残存（コンプライアンス隣接 — migration SQL レベルで確証）、(2) **`Coupon.code` はグローバル unique なのに upsertCoupon の事前チェックは自店舗スコープのみ** — 他店舗/PLATFORM とのコード衝突は決定論的に P2002 フォールバックへ到達する（race ではない）のに実 unique 制約は一度も発火していない、と判明したため。高レバレッジ候補が 2 件のみだったため水増しせず 2 本
+- **何を達成するか**: Integration に 2 スイート・約 11 テストを追加（R5/R6 完了後の想定合計: 2 → 12 スイート / 約 76〜81 テスト）。実行手順・ケース表・STOP 条件は **`plans/040〜041`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-15-integration-coverage-r7.md`](../../plans/audit/findings-15-integration-coverage-r7.md)。040 のシナリオ 2〜4・041 のシナリオ 2・3 は**現挙動の characterization** を含む（修正プラン実行時に期待値を反転する前提を各プランに明記済み）
+- **コスト感**: S〜S–M × 2 プラン（相互独立・並行可。seed.ts / reset-db.ts 非変更のため 027/031〜039 とも競合しない）
+- **やらないと判定したもの**（再監査防止）: category/subCategory/offerTag upsert 群（事前チェックがグローバルで unique と整合 — P2002 は race 限定）、applySeller/upsertStore 一意性（plan 002 の修正先行 + unit 網羅済み）、profile 読み取り群（plan 039 と同セマンティクス族）、dashboard 集計系（unstable_cache の試験環境リスク）、upsertShippingRate（正しい upsert イディオム）、getStoreOrders ページング（plan 009 先行 — deferred へ変更）— 詳細は findings-15 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R7](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term
