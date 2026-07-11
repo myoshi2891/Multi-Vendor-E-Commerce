@@ -5,11 +5,12 @@ Round 2 (`next` variant — direction expansion): 2026-07-09, against HEAD `a17e
 Round 3 (`next` variant — operations/trust/growth expansion): 2026-07-10, against HEAD `86c04a1` (branch `dev`).
 Round 4 (`tests` focus — lcov 実測カバレッジ監査): 2026-07-10, against HEAD `b6591f9` (branch `dev`).
 Round 5 (`tests` focus — Integration 特化監査・実測 17/17 pass): 2026-07-11, against HEAD `1750ef2` (branch `dev`).
+Round 6 (`tests` focus — Integration 次点候補の深掘り・実測 17/17 pass 再確認): 2026-07-11, against HEAD `4ec6b5b` (branch `dev`).
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
 the audit itself changed no source code.
 
-- Raw audit findings: [`audit/findings-01〜08-*.md`](audit/) (Round 1) / [`audit/findings-09-direction-expansion.md`](audit/findings-09-direction-expansion.md) (Round 2) / [`audit/findings-10-direction-operations-growth.md`](audit/findings-10-direction-operations-growth.md) (Round 3) / [`audit/findings-12-test-coverage.md`](audit/findings-12-test-coverage.md) (Round 4・vetted) / [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md) (Round 5・vetted・Integration 実測ベースライン付き)
+- Raw audit findings: [`audit/findings-01〜08-*.md`](audit/) (Round 1) / [`audit/findings-09-direction-expansion.md`](audit/findings-09-direction-expansion.md) (Round 2) / [`audit/findings-10-direction-operations-growth.md`](audit/findings-10-direction-operations-growth.md) (Round 3) / [`audit/findings-12-test-coverage.md`](audit/findings-12-test-coverage.md) (Round 4・vetted) / [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md) (Round 5・vetted・Integration 実測ベースライン付き) / [`audit/findings-14-integration-coverage-r6.md`](audit/findings-14-integration-coverage-r6.md) (Round 6・vetted・FK/migration SQL レベルの裏取り付き)
 - Vetted findings table + rejected list: [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md)
 - Recon facts / conventions / verification baseline: [`audit/recon.md`](audit/recon.md)
 - **Expansion blueprint (Round 2 中心成果物・フェーズロードマップ SSOT)**: [`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md)
@@ -60,6 +61,10 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | Docker 必須 | TODO |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | Docker 必須 | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | Docker 必須 | TODO |
+| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | Docker 必須 | TODO |
+| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | Docker 必須 | TODO |
+| [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | Docker 必須 | TODO |
+| [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | Docker 必須 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
@@ -75,6 +80,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 8. **Round 3 expansion spikes (018–022)** — 運用・信頼・成長ブループリント（[`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md) §4）に従う: 推奨順は **021（通知 — C 内の共通前提）→ 018（RMA）→ 019（レビュー）→ 022（セラー品質）**、**020（販促）は独立**（Phase D）。すべて design/spike のため相互に並行着手可能だが、021 を先に確定させると 016/018 の通知定義が単純化し、018/022 はタイムスタンプ方式の整合が必要（どちらか先行した方の決定に他方が従う）。後続実装プランは Round 2 と同じく Phase 0 完了後の実行を推奨。
 9. **Round 4 test-coverage plans (026–030)** — 純追加のテスト拡充で相互に独立・いつでも並行着手可能。推奨順は **026（paypal・money-critical）→ 027（統合・Docker 必須）→ 028 → 029 → 030**。plan **010**（shipping-utils・Round 1）とも独立・併走可（重複なし — 026〜030 は 010 と対象ファイルが異なる）。027 は Docker が使えない環境では BLOCKED として記録し他を先行する。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02）。
 10. **Round 5 integration-test plans (031–035)** — Integration（testcontainers）特化の純追加テスト拡充。全プラン **Docker 必須**（`docker info` 失敗時は各プラン Step 0 の STOP 条件に従い BLOCKED 記録）。相互に独立・並行着手可能だが、**031 と 027 は両方 `tests/integration/setup/seed.ts` を拡張**するため同時実行時はマージで両追記の共存を確認する。推奨順は **031（在庫復元・money-critical）→ 032（webhook 決済・money-critical）→ 033（tsvector 検索）→ 034（レビュー集計）→ 035（ロール昇格）**。027（placeOrder の減算側）と 031（キャンセルの復元側）で在庫整合の両側が閉じるため、可能なら 027 → 031 の順が理想。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02。Integration 統計の SSOT は `docs/testing/QA_HANDOFF.md`）。
+11. **Round 6 integration-test plans (036–039)** — Integration 特化の第 2 弾（R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse フィルタ）。全プラン **Docker 必須**・相互に独立・**seed.ts を変更しない**ため 027/031〜035 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→ 038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）**。037 のシナリオ 2 と 039 のシナリオ 2・4 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-14-integration-coverage-r6.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 
 ## Dependency notes
 
@@ -100,7 +106,8 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - **TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。
 - **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — plan 003 の `$transaction` 化が先行依存のため deferred 維持（Round 5 で再確認。003 完了後は plan 032 の `webhook-payment.test.ts` に同型シナリオを追加するのが低コスト）。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
-- **Round 5 rejected（詳細: [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md)）**: saveUserCart 統合（plan 005 のコード修正が先行 — 005 完了後の追加候補）・sendMessage 配列 tx（低レバレッジ）・`updateProduct` specs/questions tx + `generateUniqueSlug`（次点候補 — money-path でないため 031〜035 より低優先）・`ORDER BY RANDOM()` 単独プラン化（033 の従属シナリオで充足）・removeCoupon 拡張（unit 網羅済み）。
+- **Round 5 rejected（詳細: [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md)）**: saveUserCart 統合（plan 005 のコード修正が先行 — 005 完了後の追加候補。**Round 6 で deferred 維持を再確認**）・sendMessage 配列 tx（低レバレッジ）・~~`updateProduct` specs/questions tx + `generateUniqueSlug`（次点候補）~~ → **Round 6 で plan 038 に昇格**・`ORDER BY RANDOM()` 単独プラン化（033 の従属シナリオで充足）・removeCoupon 拡張（unit 網羅済み）。
+- **Round 6 rejected（詳細: [`audit/findings-14-integration-coverage-r6.md`](audit/findings-14-integration-coverage-r6.md)）**: followStore トグル（implicit M2M unique が保護・unit 網羅済み）・addToWishlist 重複ガード（複合 unique 制約が存在せず実 DB で検証できる制約がない — unique 追加はスキーマ変更系）・dashboard taxonomy/coupon upsert 群（P2002 フォールバック実装済み・admin 経路 — 次点候補として将来ラウンドで再評価）・applyCoupon total ロストアップデート（コード修正 `$transaction` 化が先行する correctness 事案 — 上記 Deferred 記録を維持）・`getStoreOrders` 等ダッシュボード一覧系の実 DB ページング（browse より閲覧頻度・リスク低）。
 - **TESTS-09**（Round 1 raw）`jest.config.js` の page.tsx 一律除外の見直し — 分母変更はダッシュボード全指標に波及するため単独ラウンドで扱う。
 - **dashboard forms 群の component テスト**（Round 4 rejected 詳細: [`audit/findings-12-test-coverage.md`](audit/findings-12-test-coverage.md)）— `admin-coupon-details.test.tsx` パターンで可能だが money-path より低レバレッジ。
 - **`catch (error: any)` 残存 2 箇所**（`cart-page/summary.tsx:30` / `stripe-payment.tsx:28`）— no-any 規約違反の単独 fix 候補（前例 `22bb3f3`）。plan 030 のテストが回帰検知になる。
@@ -124,6 +131,6 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 
 ## What was NOT audited (deep, but scoped)
 
-- Full test-suite / E2E were **not executed** this session (stats read from `docs/testing/QA_HANDOFF.md`); the type-check + lint + `bun audit` baselines were run (see recon). **Round 5 追記（2026-07-11）**: Integration スイートは実測済み（`bun run test:integration` = 17/17 pass / 4.779s）。E2E・外部サービス実環境は引き続き未実測。
+- Full test-suite / E2E were **not executed** this session (stats read from `docs/testing/QA_HANDOFF.md`); the type-check + lint + `bun audit` baselines were run (see recon). **Round 5 追記（2026-07-11）**: Integration スイートは実測済み（`bun run test:integration` = 17/17 pass / 4.779s）。E2E・外部サービス実環境は引き続き未実測。**Round 6 追記（2026-07-11）**: Integration 17/17 pass / 4.008s を再実測（ソース無変更のため R5 と同一構成）。
 - No live external-service (Stripe/PayPal/Clerk/Cloudinary) environment testing.
 - Generated artifacts skipped: `coverage/`, `docs/coverage-dashboard.html`, `docs/architecture/data-model.drawio`, `.next/`, `node_modules/`.
