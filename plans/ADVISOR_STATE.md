@@ -33,13 +33,28 @@
 
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
-| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R6-1 |
-| 2 | 実測ベースライン + スイープ A/B 監査台帳（TESTS-20〜 + 再裁定 + rejected） | ⬜ TODO | `audit/findings-14-integration-coverage-r6.md` |
-| 3〜 | plans 036〜 執筆（1 プラン = 1 コミット） | ⬜ TODO | |
-| N-3 | README 索引更新（036〜 追加・推奨順序・rejected 更新） | ⬜ TODO | |
-| N-2 | docs/testing 精査・更新（QA_HANDOFF R6 プロンプト等） | ⬜ TODO | |
-| N-1 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | |
-| N | ADVISOR_STATE クローズ（`git diff 4ec6b5b..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | |
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / `a12d220` |
+| 2 | 実測ベースライン + スイープ A/B 監査台帳（TESTS-20〜23 + 再裁定 3 件 + rejected 5 件） | ✅ DONE | `audit/findings-14-integration-coverage-r6.md`（実測: **17/17 pass / 4.008s**）/ `6802d60` |
+| 3 | plan 036 deleteProduct FK Restrict/カスケード（TESTS-20） | ✅ DONE | `036-integration-test-product-deletion-fk.md` / `0d14aca` |
+| 4 | plan 037 upsertShippingAddress default 不変条件（TESTS-21） | ✅ DONE | `037-integration-test-shipping-address-default.md` / `4795d6d` |
+| 5 | plan 038 updateProduct 全置換 tx/slug/SetNull（TESTS-22 — R5 次点昇格） | ✅ DONE | `038-integration-test-product-update-tx.md` / `2ea8948` |
+| 6 | plan 039 getProducts フィルタ/ソート/ページング（TESTS-23） | ✅ DONE | `039-integration-test-product-browse-filters.md` / `cd008ca` |
+| 7 | README 索引更新（036〜039 追加・推奨順序 #11・R5 次点昇格反映・rejected 記録） | ✅ DONE | `eeb2d94` |
+| 8 | docs/testing 精査・更新（QA_HANDOFF R6 実測+プロンプト / COVERAGE_REPORT §3 R6 / PERSPECTIVES 5 観点。TESTING_DESIGN はドリフトなしのため無変更） | ✅ DONE | `fa157c2` |
+| 9 | NEXT_ACTIONS R6 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 エラー確認済み） | ✅ DONE | `f15d610` |
+| 10 | ADVISOR_STATE クローズ（`git diff 4ec6b5b..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット（diff 空を検証済み） |
+
+**Round 6 完了（2026-07-11）**。ソースコード（`src/` `tests/` `prisma/`）は無変更
+（`git diff 4ec6b5b..HEAD --stat -- src tests prisma` = 空で検証済み）。
+Integration 実測 **17/17 pass / 4.008s**（R5 と同一構成の再確認）。
+成果物: `audit/findings-14-integration-coverage-r6.md`（TESTS-20〜23 + 再裁定 + rejected、
+FK は migration SQL レベルで裏取り）+ plans **036〜039**（全プラン Docker 必須・seed.ts 非変更・
+Sonnet 実行可能な自己完結形式）+ README 索引 + docs/testing 3 ファイル同期 + ダッシュボード再生成。
+特記事項: 037 シナリオ 2（default 併存）と 039 シナリオ 2・4（フィルタ黙殺・Infinity 境界）は
+**現挙動の characterization** — 対応する correctness 修正は将来プランの候補として findings-14 に記録。
+次のアクション: plans/031〜035（R5）→ 036〜039（R6）の実行（QA_HANDOFF「次回着手用
+依頼プロンプト」R5/R6 参照。R6 推奨順 036 → 037 → 038 → 039。seed.ts 競合がないため
+R5 プランと並行可）。
 
 ---
 
