@@ -172,18 +172,25 @@ pass/fail の実測記録が存在しないため、この全滅状態は本ラ�
   プランで STOP 条件として明示する）
 - **Confidence**: High
 
-### [TESTS-32] search-filter ページネーション skip — route-mock 前提の旧実装が壊れており、実データ方式には seed 拡張が必要
+### [TESTS-32] search-filter ページネーション skip — **/browse にページネーション UI 自体が未実装**（プラン執筆時の再監査で訂正）
 
 - **Evidence**: `tests/e2e/search-filter.spec.ts:62-87` — `page.route("**/api/index-products*")`
   で 30 件をモックする設計だが SSR ページには効かず skip 放置。E2E seed は商品 2 種のみ
-  （`tests/e2e/seed/constants.ts` — `e2e-test-product` / `e2e-test-product-b`）で、
-  1 ページあたりの表示件数を超えられず実データでは 2 ページ目が存在しない。
-- **Impact**: ページネーション UI（`page=2` 遷移・URL 正規化）が E2E 未固定。
-- **Effort**: M（seed に商品を追加（ページサイズ + 1 以上）+ skip 解除・実データ検証へ書き換え。
-  seed 変更は `tests/e2e/seed/` 配下で完結）
-- **Risk**: 中（seed 追加が他 spec の件数 assert（検索 0 件系等）へ波及しないか要確認 —
-  プランで既存 assert の棚卸しを含める）
-- **Confidence**: High
+  （`tests/e2e/seed/constants.ts` — `e2e-test-product` / `e2e-test-product-b`）。
+- **Evidence（訂正 2026-07-11・plan 046 執筆時）**: `src/app/(store)/browse/page.tsx:20-33` は
+  searchParams から `page` を**読んでおらず**、`getProducts` を page 引数なし（既定 1 頁目・
+  pageSize 10）で呼ぶ。共有 `Pagination` コンポーネント（`src/components/store/shared/
+  pagination.tsx`）の利用箇所は profile history / product reviews / payments table のみで、
+  **/browse には描画されない**。一方 `getProducts` は `page`/`pageSize` 引数と `totalPages`
+  返却を実装済み（`src/queries/product.ts:601-605,870`）で、UI 配線だけが欠けている。
+  つまり **/browse は商品が 11 件以上あっても先頭 10 件しか表示できない dormant な機能ギャップ**
+  であり、skip テストは「存在しない UI」を待っていた。
+- **Impact**: ページネーション UI（`page=2` 遷移・URL 正規化）が E2E 未固定 — ただし前提として
+  機能実装（最小の searchParams 配線 + ページャ描画）が必要。
+- **Effort**: M（当初見積の「seed 拡張のみ」から訂正: 最小 feature 配線（`src/` 変更）+
+  専用カテゴリの seed 拡張 + skip 解除の 3 点セット。plan 046 が担当）
+- **Risk**: 中（ページャ UI の追加が既存 browse レイアウト・他 spec に波及しないか要確認）
+- **Confidence**: High（訂正後）
 
 ### [TESTS-33] ゲスト E2E 導線（track-order / compare / offers / 静的ページ）— TESTS-14 の昇格。認証不要で最も安定な未カバー領域
 
