@@ -166,6 +166,22 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "S",
         impact: "退会ユーザーの PII 残存 + Svix 無限リトライ・店舗間クーポンコード衝突の実 unique 発火を回帰検知下に置く (Integration +2 スイート / 約11 テスト)",
     },
+    // R8 は improve Round 8 E2E 網羅性監査 (2026-07-11) 起票。全 Round を通じて初の
+    // 3 ブラウザフル実測 (111 テスト / 25.5m) で 52 passed / 17 failed / 39 skipped /
+    // 3 did not run — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト (5 サイト複製)
+    // の単一根本原因で全滅 (plan 042 が最優先・047〜050 の先行依存)。実行手順の SSOT は
+    // plans/042〜050 (自己完結プラン・CLERK_SECRET_KEY + ローカル Docker Postgres 必須・
+    // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
+    // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
+    // 本エントリと QA_HANDOFF R8 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R8: E2E 網羅性ギャップ解消 (plans 042〜050)",
+        target: "signIn ヘルパー修復 (認証系 16 件回復) / VRT 再撮影 / ゲスト導線 / /browse ページネーション配線 / 注文詳細金額 / エンゲージメント / admin 店舗ステータス",
+        tool: "plans/042〜050 の自己完結プラン (Sonnet 実行可・042 が認証系の先行依存・spec-sync 必須)",
+        cost: "M",
+        impact: "全滅中の認証系 E2E (在庫減算・複数店舗クーポン = §20 P0 相当) を回復し、請求表示・顧客エンゲージメント・管理者オペレーションをブラウザ導線で回帰検知下に置く (E2E 修復 16 + 新規約 13 テスト ×3 ブラウザ)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
