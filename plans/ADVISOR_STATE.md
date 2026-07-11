@@ -6,6 +6,48 @@
 
 ---
 
+## Round 8 — E2E テスト網羅性監査（`tests` フォーカス・E2E 限定 / 開始 2026-07-11）
+
+- **開始日**: 2026-07-11 / **監査対象 HEAD**: `fbd1020`（branch: `dev` — R7 クローズコミット。
+  R7 監査 HEAD `9111f41` からソース `src/ tests/ prisma/` は無変更 — R7 クローズ時に diff 空を検証済み）
+- **バリアント**: `tests` フォーカス・**E2E（Playwright）限定**。全 Round を通じて E2E は
+  「未実測・スコープ外」だったため（R4〜R7 の明記事項）、本ラウンドが初の E2E 実測 + 網羅性監査
+- **目的**: 既存 E2E（main 9 spec + visual 2 + a11y 4）の網羅性を **3 ブラウザ実測ベースライン付き**で
+  精査し、追加が必要な E2E テスト項目を Sonnet が zero-context で実行できる自己完結プラン
+  （**042〜**）に落とす。COVERAGE_REPORT §3 で保留中だった「(backlog) E2E 行の拡大」の起票判断を
+  本ラウンドで確定する。あわせて docs/testing 精査・更新と coverage-dashboard.html 再生成
+  （R4〜R7 と同じ Hard Rule 1 のスコープ例外）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - プラン承認済み（`~/.claude/plans/agent-skills-improve-skill-md-e2e-sonne-idempotent-valley.md`）
+  - 実測ベースラインは **3 ブラウザフル**（chromium/firefox/webkit）。手順は文書化済みの
+    `scripts/e2e/run-local.sh`（ローカル Docker Postgres へ `migrate deploy` → `seed:e2e` →
+    `--retries=2`。:3000 の既存サーバー停止が前提条件のため app コンテナを一時停止 → 実測後に再開）
+  - プラン化対象は**監査台帳完成後にユーザーが選択**（R5〜R7 の自動選定と異なる —
+    AskUserQuestion で明示決定。台帳にはギャップ全量を記載し、選択待ちで PAUSE する）
+  - **販売者ダッシュボード系 E2E（商品 CRUD・注文ステータス更新等）は deferred 維持**
+    （OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行依存。台帳に記録のみ）
+  - Docker 起動済み（app + postgres。実測時に app は一時停止する）
+- **採番**: 監査台帳 = `audit/findings-16-e2e-coverage.md` / 新規所見 = TESTS-26〜 /
+  新規プラン = 042〜
+- **成果物**: findings-16（監査台帳・ギャップ全量 + deferred + rejected）+ plans 042〜
+  （ユーザー選択分）+ README 索引 + docs/testing 同期 + ダッシュボード再生成
+
+### Round 8 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
+| 2 | E2E 実測ベースライン（3 ブラウザ・run-local.sh 手順）+ 監査台帳（TESTS-26〜 + deferred + rejected） | ⬜ TODO | `audit/findings-16-e2e-coverage.md` |
+| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定） | ⬜ TODO | — |
+| 4 | plans 042〜 執筆（選択分・1 プラン = 1 コミット） | ⬜ TODO | — |
+| 5 | README 索引更新（042〜 追加・TESTS-14 昇格/維持の反映・rejected 記録） | ⬜ TODO | — |
+| 6 | docs/testing 精査・更新（QA_HANDOFF E2E 実測同期 + R8 プロンプト / COVERAGE_REPORT §3 R8 / PERSPECTIVES / TEST_IMPLEMENTATION_PLAN / TESTING_DESIGN ドリフト確認） | ⬜ TODO | — |
+| 7 | NEXT_ACTIONS R8 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⬜ TODO | — |
+| 8 | ADVISOR_STATE クローズ（`git diff fbd1020..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+
+---
+
 ## Round 7 — Integration 残余領域の監査（`tests` フォーカス第 3 弾 / 開始 2026-07-11）
 
 - **開始日**: 2026-07-11 / **監査対象 HEAD**: `9111f41`（branch: `dev` — R6 クローズコミット。
