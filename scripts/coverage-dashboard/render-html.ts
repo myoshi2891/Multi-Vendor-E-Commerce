@@ -150,6 +150,22 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
     },
+    // R7 は improve Round 7 Integration 第 3 弾監査 (2026-07-11) 起票。R5/R6 未スイープの
+    // 切り口 (Clerk user-sync webhook の FK 連鎖 / グローバル unique 制約の実発火) で
+    // 2 件をプラン化 (高レバレッジ候補が 2 件のみのため水増しせず 2 本)。
+    // seed.ts / reset-db.ts 非変更のため R4〜R6 プランと並行可。実行手順の SSOT は
+    // plans/040〜041 (自己完結プラン・全プラン Docker 必須)、監査台帳は
+    // plans/audit/findings-15-integration-coverage-r7.md。QA_HANDOFF
+    // 「次回着手用 依頼プロンプト」R7 と一対一対応。全 2 プラン完了時に本エントリと
+    // QA_HANDOFF R7 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R7: Integration 残余ギャップ解消 (plans 040〜041)",
+        target: "Clerk user.deleted webhook の FK 連鎖 / Coupon.code グローバル unique P2002",
+        tool: "plans/040〜041 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "S",
+        impact: "退会ユーザーの PII 残存 + Svix 無限リトライ・店舗間クーポンコード衝突の実 unique 発火を回帰検知下に置く (Integration +2 スイート / 約11 テスト)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
