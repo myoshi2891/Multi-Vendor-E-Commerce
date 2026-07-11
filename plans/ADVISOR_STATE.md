@@ -6,6 +6,46 @@
 
 ---
 
+## Round 7 — Integration 残余領域の監査（`tests` フォーカス第 3 弾 / 開始 2026-07-11）
+
+- **開始日**: 2026-07-11 / **監査対象 HEAD**: `9111f41`（branch: `dev` — R6 クローズコミット。
+  R6 監査 HEAD `4ec6b5b` からソース `src/ tests/ prisma/` は無変更 — R6 クローズ時に diff 空を検証済み）
+- **バリアント**: `tests` フォーカス・**Integration（testcontainers）限定**の第 3 弾
+- **目的**: R5/R6 が高レバレッジ候補を消費済みのため、Round 7 は (A) R6 の次点候補の再評価
+  （dashboard taxonomy/coupon upsert 群の P2002 実発火・`getStoreOrders` 等一覧系ページング）+
+  (B) 未スイープの新規切り口（Clerk webhook `user.deleted` の FK 連鎖 / Store 複合 unique 群 /
+  profile 系読み取り / store ページ集計系）の 2 軸で監査し、追加が必要な統合テスト項目を
+  Sonnet が zero-context で実行できる自己完結プラン（**040〜**）に落とす。あわせて docs/testing
+  精査・更新と coverage-dashboard.html 再生成（R4/R5/R6 と同じ Hard Rule 1 のスコープ例外）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - プラン承認済み（`~/.claude/plans/agent-skills-improve-skill-md-integrati-scalable-fox.md`）
+  - プラン化は**自動選定**（vet 済み所見から高レバレッジ 3〜5 本。R5/R6 前例踏襲。
+    **3 本未満なら水増しせず正直に減らす** — R6 で候補を相当消費済みのため 2〜4 本の見込み）
+  - plans 027 / 031〜039 とシナリオ・対象分岐が重複するプランは作らない
+  - `prisma/seed/__tests__/` はシードテスト（別枠）であり本ラウンドの「Integration」対象外
+  - Docker 起動済み（29.5.2 確認済み）→ 冒頭で `bun run test:integration` を実測
+- **Deferred 継続（先行依存が未解消 — 昇格せず維持確認のみ）**: saveUserCart（plan 005 先行）/
+  TESTS-02 capture 経路（plan 003 先行）/ applyCoupon total ロストアップデート（correctness 修正先行）
+- **採番**: 監査台帳 = `audit/findings-15-integration-coverage-r7.md` / 新規所見 = TESTS-24〜 /
+  新規プラン = 040〜
+- **成果物**: findings-15（監査台帳）+ plans 040〜（2〜5 本）+ README 索引 +
+  docs/testing 同期 + ダッシュボード再生成
+
+### Round 7 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ⏳ TODO | 本セクション |
+| 2 | 実測ベースライン + A/B 軸監査台帳（TESTS-24〜 + deferred 再裁定 + rejected 記録） | ⏳ TODO | `audit/findings-15-integration-coverage-r7.md` |
+| 3〜N | プラン 040〜 執筆（1 プラン = 1 コミット・plan-template 準拠） | ⏳ TODO | `040-*.md` 〜 |
+| N+1 | README 索引更新（040〜 追加・推奨順序 #12・rejected 記録） | ⏳ TODO | README.md |
+| N+2 | docs/testing 精査・更新（QA_HANDOFF R7 実測+プロンプト / COVERAGE_REPORT §3 R7 / PERSPECTIVES 新観点 / TESTING_DESIGN ドリフト精査） | ⏳ TODO | docs/testing |
+| N+3 | NEXT_ACTIONS R7 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⏳ TODO | render-html.ts + HTML |
+| N+4 | ADVISOR_STATE クローズ（`git diff 9111f41..HEAD --stat -- src tests prisma` = 空 を検証） | ⏳ TODO | 本ファイル |
+
+---
+
 ## Round 6 — Integration 次点候補の深掘り監査（`tests` フォーカス / 開始 2026-07-11）
 
 - **開始日**: 2026-07-11 / **監査対象 HEAD**: `4ec6b5b`（branch: `dev` — R5 クローズコミット。
