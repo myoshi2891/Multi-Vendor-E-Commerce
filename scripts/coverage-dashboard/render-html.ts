@@ -135,6 +135,21 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "在庫二重復元・webhook 再送・raw SQL 回帰など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 17→約45 テスト / 2→6 スイート)",
     },
+    // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
+    // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
+    // browse フィルタ合成) で 4 件をプラン化。seed.ts 非変更のため R4/R5 プランと
+    // 並行可。実行手順の SSOT は plans/036〜039 (自己完結プラン・全プラン Docker 必須)、
+    // 監査台帳は plans/audit/findings-14-integration-coverage-r6.md。QA_HANDOFF
+    // 「次回着手用 依頼プロンプト」R6 と一対一対応。全 4 プラン完了時に本エントリと
+    // QA_HANDOFF R6 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R6: Integration 深掘りギャップ解消 (plans 036〜039)",
+        target: "deleteProduct FK 境界 / 住所 default 不変条件 / updateProduct 全置換 tx / getProducts フィルタ",
+        tool: "plans/036〜039 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "M",
+        impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
