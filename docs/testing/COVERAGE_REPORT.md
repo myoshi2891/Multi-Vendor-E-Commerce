@@ -177,6 +177,15 @@
 - **やらないと判定したもの**（再監査防止）: category/subCategory/offerTag upsert 群（事前チェックがグローバルで unique と整合 — P2002 は race 限定）、applySeller/upsertStore 一意性（plan 002 の修正先行 + unit 網羅済み）、profile 読み取り群（plan 039 と同セマンティクス族）、dashboard 集計系（unstable_cache の試験環境リスク）、upsertShippingRate（正しい upsert イディオム）、getStoreOrders ページング（plan 009 先行 — deferred へ変更）— 詳細は findings-15 の rejected 節
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R7](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
 
+#### R8. improve Round 8 E2E 網羅性ギャップ解消（plans 042〜050）🆕 2026-07-11 起票
+
+- **対象**: `tests/e2e/`（修復 + 新規 spec 4 本 + seed 拡張）と最小の `src/` 変更（icons の aria-label 3 行・product-card の aria-label 1 行・/browse ページネーション配線）。「(backlog) E2E 行の拡大」を本項へ正式昇格
+- **なぜやるか**: 全 Round を通じて初の 3 ブラウザフル実測（2026-07-11・111 テスト・25.5m）で **52 passed / 17 failed / 39 skipped / 3 did not run** — (1) **認証系 E2E 16 件が全滅**（signIn の `getByLabel("Email address")` が Clerk 現行 UI「Email address or username」とフッター Newsletter 欄の完全一致に挟まれ誤爆。auth.ts + 4 spec の 5 サイトに複製・CI に Playwright ジョブが無く検出不能だった）、(2) a11y sign-in は**実 WCAG 違反 svg-img-alt**、(3) VRT 3 枚は陳腐化、(4) /browse は**ページネーション UI 自体が未実装**（11 商品以上で顧客が到達不能になる dormant ギャップ）、(5) `getProducts` に store status フィルタが無く **BANNED 店舗の商品が /browse に露出**（§20 P1 の半分が未達 — correctness 起票候補）と判明したため
+- **何を達成するか**: 042（signIn 修復 — 最優先・047〜050 の先行依存）/ 043（VRT 再撮影）/ 044（運用ガード）/ 045（ゲスト導線 — TESTS-14 昇格）/ 046（/browse ページネーション配線 + 実データ E2E）/ 047（住所エラー un-skip + 注文詳細金額明細 = §20 P0 請求側）/ 048（wishlist・フォロー・レビュー）/ 049（プロフィール住所・注文履歴）/ 050（admin 店舗ステータス → store ページ非公開）。実行手順・STOP 条件は **plans/042〜050** が SSOT。監査台帳: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)
+- **コスト感**: S×3 + M×6（042 完了までは 045/044/043/046 のみ並行可）
+- **やらないと判定したもの**（再監査防止）: 販売者ダッシュボード CRUD（OI-11 先行）・決済失敗ロールバック §20 P0（Stripe 実キー effort L・plan 032 が DB 側を部分カバー）・在庫切れ表示/二重送信 skip（機能未実装・plan 006 先行）・route-mock ページネーション復活・3 ブラウザフル CI 常設・color-contrast 有効化 — 詳細は findings-16 の Deferred/Rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R8](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term
@@ -215,9 +224,10 @@
 - **期待効果**: 依存追加による初期ロードの膨張を抑制
 
 #### (backlog) E2E 行の拡大
-- **対象**: `tests/e2e/`（store / dashboard フロー）
-- **背景**: ヒートマップ E2E 行は現状 `pages` のみ✦（10%）。seller onboarding 実行・order 管理など store/dashboard 主要フローは spec ファイルは存在するが `seed:e2e` 前提で未安定実行
-- **方針**: 形式 Next Action（`render-html.ts` の `NEXT_ACTIONS`）には未起票。**OI-8（CI flake）解消後**に安定実行の目処が立った段階で起票判断（過剰起票回避）
+> ✅ **R8 へ正式昇格（2026-07-11）** — 2026-07-11 の 3 ブラウザフル実測で「未安定実行」の実態が
+> 確定（認証系 16 件が signIn ドリフトで全滅・詳細は上記 R8 項と
+> [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)）。
+> 起票判断保留は解除し、plans 042〜050 が実行台帳。見出しはアンカー安定のため変更しない。
 
 ---
 

@@ -18,9 +18,9 @@
 | カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
-| Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip |
-| Playwright Visual | **2 スペック**（cart / checkout） |
-| Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile） |
+| Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip。**2026-07-11 初のフル実測（3 ブラウザ 111 テスト / `run-local.sh` + `--global-timeout=3600000` / 25.5m）: 52 passed / 17 failed / 39 skipped / 3 did not run** — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト単一原因で全滅（**plan 042 で修復予定**。skip 39 の内訳 = 静的 18 + a11y/visual の chromium 限定 14 + firefox ローカルゲート 7。詳細: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)） |
+| Playwright Visual | **2 スペック**（cart / checkout）。2026-07-11 実測: **3 テストともベースライン陳腐化で failed**（cart-empty は高さ 720→1071px。plan 043 で目視ゲート付き再撮影予定） |
+| Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile）。2026-07-11 実測: seller-apply のみ passed。sign-in は**実 WCAG 違反 svg-img-alt**（フッター SendIcon — plan 042 で是正）、checkout / profile は signIn ドリフトで fail |
 | 型エラー | **0 件** |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
@@ -297,6 +297,30 @@ STOP conditions に該当したら中断して報告。完了後は spec-sync-af
 
 （041 も同形式: パスを `plans/041-integration-test-coupon-code-uniqueness.md` に差し替え、
 「本体コード」を `src/queries/coupon.ts` に読み替えて依頼する）
+
+#### R8: improve Round 8 E2E 網羅性ギャップ解消（plans 042〜050）🆕 2026-07-11 起票
+
+2026-07-11 の初 E2E フル実測 + 網羅性監査（`plans/audit/findings-16-e2e-coverage.md`）で
+特定した 9 件の実行プラン。**最優先は 042**（signIn ヘルパーの Clerk UI ドリフトが
+5 サイトに複製され認証系 16 テストが全滅中 — 047/048/049/050 の先行依存）。
+042 と並行して依存ゼロの 045（ゲスト導線）/ 044（運用ガード）/ 043（VRT）/
+046（/browse ページネーション配線）に着手可能。045・046 は同じ
+`tests/e2e/seed/` を触るため後発が先発の diff を取り込むこと。
+全プラン `CLERK_SECRET_KEY` + ローカル Docker Postgres 前提。**実行前に :3000 を解放**
+（`docker compose stop app` — 怠ると別環境のサーバーを無警告で再利用し実測が無効化される。
+2026-07-11 実測 #1 の事故として findings-16 に記録済み）。
+
+```
+plans/042-e2e-signin-helper-repair.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 変更は In scope のファイルのみ（tests/e2e/ の 5 ファイル + src/components/store/icons/ の
+aria-label 追加 3 行）。実行前に lsof -nP -iTCP:3000 -sTCP:LISTEN が空であることを確認し、
+占有されていたら docker compose stop app。各 Step の Verify コマンドを必ず実行し、
+STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期
+（別コミット）を行い、plans/README.md の 042 行を DONE に更新すること。
+```
+
+（043〜050 も同形式: パスを各プランに差し替える。047〜050 は「plan 042 が DONE であること」を
+冒頭で確認し、未完なら BLOCKED 記録で STOP と付記して依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 

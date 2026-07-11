@@ -72,11 +72,34 @@ UI/状態管理に関わるカスタムフックの振る舞い検証。
 ### Phase 3: 重要ワークフロー (E2E Tests) 【優先度: P1-P2】
 Playwright を使用し、実際のユーザージャーニーをエンドツーエンドで検証する。
 
+> **2026-07-11 実測注記（R8）**: 初の 3 ブラウザフル実測（111 テスト / 25.5m）で
+> **52 passed / 17 failed / 39 skipped / 3 did not run**。下表のうち購入フロー・Seller
+> オンボーディングの認証依存部は spec 実装済みだが **signIn ヘルパーの Clerk UI ドリフト
+> （5 サイト複製）で全滅中** — 修復は plans/042。決済異常系はカード拒否・二重決済が
+> 未実装のまま skip（機能実装待ち）。実測の詳細:
+> [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)
+
 | シナリオ | 内容 | ツール |
 |:---|:---|:---|
 | **購入フルフロー** | 検索 → カート → Stripe/PayPal 決済 → 注文完了 → DB 整合性。 | Playwright |
 | **Seller オンボーディング** | 申請 → Admin 承認 → 店舗作成 → 商品出品。 | Playwright |
 | **決済異常系** | 決済キャンセル、カード拒否、二重決済試行時の冪等性検証。 | Playwright |
+
+### Phase 5: E2E 拡大（improve Round 8 / plans 042〜050）【優先度: P1-P3】🆕 2026-07-11
+
+R8 監査（findings-16）で確定したギャップの実行フェーズ。**042 が全認証系プランの先行依存**。
+
+| Step | プラン | 内容 | 状態 |
+|:---|:---|:---|:---|
+| 5-1 | plans/042 | signIn ヘルパー修復（5 サイト）+ svg-img-alt 是正 → 認証系 16 件回復 | ⬜ |
+| 5-2 | plans/043 | VRT ベースライン 3 枚の目視ゲート付き再撮影 | ⬜ |
+| 5-3 | plans/044 | run-local.sh :3000 ガード + globalTimeout 60 分化 | ⬜ |
+| 5-4 | plans/045 | ゲスト導線（compare / track-order / offers / 静的）+ OfferTag seed | ⬜ |
+| 5-5 | plans/046 | /browse ページネーション最小配線 + 実データ E2E + seed 12 商品 | ⬜ |
+| 5-6 | plans/047 | 住所未選択エラー un-skip + 注文詳細金額明細（§20 P0 請求側） | ⬜ |
+| 5-7 | plans/048 | wishlist / ストアフォロー / レビュー投稿 | ⬜ |
+| 5-8 | plans/049 | プロフィール住所管理 + 注文履歴 | ⬜ |
+| 5-9 | plans/050 | admin 店舗ステータス変更 → store ページ非公開 | ⬜ |
 
 ---
 
