@@ -38,7 +38,7 @@
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
-| 2 | E2E 実測ベースライン（3 ブラウザ・run-local.sh 手順）+ 監査台帳（TESTS-26〜 + deferred + rejected） | ⬜ TODO | `audit/findings-16-e2e-coverage.md` |
+| 2 | E2E 実測ベースライン（3 ブラウザ・run-local.sh 手順）+ 監査台帳（TESTS-26〜38 + deferred + rejected） | ✅ DONE | `audit/findings-16-e2e-coverage.md`（実測 #1 は :3000 二重占有 + globalTimeout 打ち切りで無効 → app コンテナ停止 + `--global-timeout` 上書きの実測 #2 が SSOT: **52 passed / 17 failed / 39 skipped / 3 did not run / 25.5m**。認証系 16 件の全滅は `auth.ts` signIn の Clerk UI ドリフト単一根本原因 = TESTS-26） |
 | 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定） | ⬜ TODO | — |
 | 4 | plans 042〜 執筆（選択分・1 プラン = 1 コミット） | ⬜ TODO | — |
 | 5 | README 索引更新（042〜 追加・TESTS-14 昇格/維持の反映・rejected 記録） | ⬜ TODO | — |
