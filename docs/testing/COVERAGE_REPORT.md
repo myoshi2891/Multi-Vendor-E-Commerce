@@ -159,6 +159,15 @@
 - **やらないと判定したもの**（再監査防止）: saveUserCart 統合（plan 005 のコード修正先行）、sendMessage 配列 tx（低レバレッジ）、updateProduct tx（money-path 外の次点候補）、`ORDER BY RANDOM()` 単独プラン化（033 に従属）— 詳細は findings-13 の rejected 節
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R5](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
 
+#### R6. improve Round 6 Integration 深掘りギャップ解消（plans 036〜039）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/` への 4 スイート新設（seed ヘルパーは変更なし）。検証対象コード: `src/queries/product.ts`（deleteProduct の FK 境界 / handleProductAndVariantUpdate の全置換 tx / getProducts のフィルタ合成）、`src/queries/user.ts`（upsertShippingAddress の default 不変条件）
+- **なぜやるか**: Round 5 が「$transaction / raw SQL / webhook 全サイト」を精査済みのため、Round 6 は**別の切り口**（FK onDelete の実セマンティクス・非原子 multi-write の不変条件・削除+再作成の下流連鎖・複雑 where ビルダー）をスイープした結果、(1) **レビュー付き商品はセラーが削除できず P2003 が 500 として露出**（Review→Product が RESTRICT — migration SQL レベルで確証）、(2) **新規住所を default 作成すると既存 default と併存**し checkout 自動選択（`addresses.find(a => a.default)`）が非決定化、(3) 商品編集の sizes 全置換が Wishlist.sizeId を SET NULL・CartItem.sizeId を stale 化、(4) browse 主経路の `lte: Infinity` Decimal 境界・「存在しない URL のフィルタ黙殺 → 全件」がいずれも実 DB 未検証と判明したため
+- **何を達成するか**: Integration に 4 スイート・約 20 テストを追加（R5 完了後の想定合計: 2 → 10 スイート / 約 65〜70 テスト）。実行手順・ケース表・STOP 条件は **`plans/036〜039`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-14-integration-coverage-r6.md`](../../plans/audit/findings-14-integration-coverage-r6.md)。037/039 は**現挙動の characterization** を含む（修正プラン実行時に期待値を反転する前提を各プランに明記済み）
+- **コスト感**: S〜M × 4 プラン（相互独立・並行可。seed.ts 非変更のため 027/031〜035 とも競合しない）
+- **やらないと判定したもの**（再監査防止）: followStore トグル（implicit M2M unique が保護）、addToWishlist 重複ガード（検証すべき unique 制約が存在しない）、taxonomy/coupon upsert 群（P2002 フォールバック実装済み・次点）、applyCoupon total ロストアップデート（コード修正先行）、getStoreOrders ページング — 詳細は findings-14 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R6](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term

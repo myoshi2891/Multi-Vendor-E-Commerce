@@ -16,7 +16,7 @@
 |------|-----|
 | Jest テスト総数 (unit/component) | **1662** passed / 1665 total / 172 スイート（171 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
-| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消） |
+| Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s を再実測**（ソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip |
 | Playwright Visual | **2 スペック**（cart / checkout） |
@@ -248,6 +248,30 @@ STOP conditions に該当したら中断して報告。完了後は spec-sync-af
 （032〜035 も同形式: パスを `plans/032-integration-test-webhook-payment-idempotency.md` /
 `plans/033-integration-test-tsvector-search.md` / `plans/034-integration-test-review-aggregation.md` /
 `plans/035-integration-test-store-status-role-promotion.md` に差し替え、「本体コード」を各プランの
+Out of scope 記載どおり読み替えて依頼する）
+
+#### R6: improve Round 6 Integration 深掘りギャップ解消（plans 036〜039）🆕 2026-07-11 起票
+
+2026-07-11 の Integration 深掘り監査（`plans/audit/findings-14-integration-coverage-r6.md`・
+R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse
+フィルタ）で特定した 4 件の実行プラン。**全プラン Docker 必須**・相互独立・
+**`tests/integration/setup/seed.ts` を変更しない**ため R4/R5 プラン（027 / 031〜035）とも並行可。
+推奨順: 036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→
+038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）。
+037/039 には**現挙動の characterization**（既知ギャップの固定）シナリオが含まれる —
+期待値の反転条件は各プラン本文の STOP conditions / Maintenance notes を参照。
+
+```
+plans/036-integration-test-product-deletion-fk.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 本体コード（src/queries/product.ts）と prisma/ は変更禁止・テスト追加のみ。Docker 必須
+（docker info 失敗時は STOP して BLOCKED 記録）。各 Step の Verify コマンドを必ず実行し、
+STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期
+（別コミット）を行い、plans/README.md の 036 行を DONE に更新すること。
+```
+
+（037〜039 も同形式: パスを `plans/037-integration-test-shipping-address-default.md` /
+`plans/038-integration-test-product-update-tx.md` /
+`plans/039-integration-test-product-browse-filters.md` に差し替え、「本体コード」を各プランの
 Out of scope 記載どおり読み替えて依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
