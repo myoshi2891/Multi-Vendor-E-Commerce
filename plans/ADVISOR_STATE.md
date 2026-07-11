@@ -6,6 +6,43 @@
 
 ---
 
+## Round 6 — Integration 次点候補の深掘り監査（`tests` フォーカス / 開始 2026-07-11）
+
+- **開始日**: 2026-07-11 / **監査対象 HEAD**: `4ec6b5b`（branch: `dev` — R5 クローズコミット。
+  R5 監査 HEAD `1750ef2` からソース `src/ tests/ prisma/` は無変更を確認済み）
+- **バリアント**: `tests` フォーカス・**Integration（testcontainers）限定**の第 2 弾
+- **目的**: Round 5 が「$transaction / raw SQL / webhook 全サイト」を精査済みのため、
+  Round 6 は (A) R5 の deferred/次点候補の再評価 + (B) R5 未スイープの新規切り口
+  （非原子 multi-write / unique・FK カスケード / admin・seller 経路の upsert 群 /
+  複雑 where ビルダー）の 2 軸で監査し、追加が必要な統合テスト項目を Sonnet が
+  zero-context で実行できる自己完結プラン（**036〜**）に落とす。あわせて docs/testing
+  精査・更新と coverage-dashboard.html 再生成（R4/R5 と同じ Hard Rule 1 のスコープ例外）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - Round 6 の実施は AskUserQuestion で明示選択済み（「次点候補の深掘り監査」）
+  - プラン化は**自動選定**（vet 済み所見から高レバレッジ 3〜5 本。R5 前例踏襲。
+    高レバレッジが 3 本未満なら水増しせず正直に減らす）
+  - plan 027 / 031〜035 とシナリオ・対象分岐が重複するプランは作らない
+  - `prisma/seed/__tests__/` はシードテスト（別枠）であり本ラウンドの「Integration」対象外
+- **採番**: 監査台帳 = `audit/findings-14-integration-coverage-r6.md` / 新規所見 = TESTS-20〜 /
+  新規プラン = 036〜
+- **成果物**: findings-14（監査台帳）+ plans 036〜（3〜5 本）+ README 索引 +
+  docs/testing 同期 + ダッシュボード再生成
+
+### Round 6 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / Commit R6-1 |
+| 2 | 実測ベースライン + スイープ A/B 監査台帳（TESTS-20〜 + 再裁定 + rejected） | ⬜ TODO | `audit/findings-14-integration-coverage-r6.md` |
+| 3〜 | plans 036〜 執筆（1 プラン = 1 コミット） | ⬜ TODO | |
+| N-3 | README 索引更新（036〜 追加・推奨順序・rejected 更新） | ⬜ TODO | |
+| N-2 | docs/testing 精査・更新（QA_HANDOFF R6 プロンプト等） | ⬜ TODO | |
+| N-1 | NEXT_ACTIONS 追加 + coverage-dashboard.html 再生成 | ⬜ TODO | |
+| N | ADVISOR_STATE クローズ（`git diff 4ec6b5b..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | |
+
+---
+
 ## Round 5 — Integration テスト特化監査（`tests` フォーカス / 開始 2026-07-11）
 
 - **開始日**: 2026-07-11 / **監査対象 HEAD**: `1750ef2`（branch: `dev`）
