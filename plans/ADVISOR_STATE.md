@@ -39,12 +39,12 @@
 |---|---|---|---|
 | 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
 | 2 | E2E 実測ベースライン（3 ブラウザ・run-local.sh 手順）+ 監査台帳（TESTS-26〜38 + deferred + rejected） | ✅ DONE | `audit/findings-16-e2e-coverage.md`（実測 #1 は :3000 二重占有 + globalTimeout 打ち切りで無効 → app コンテナ停止 + `--global-timeout` 上書きの実測 #2 が SSOT: **52 passed / 17 failed / 39 skipped / 3 did not run / 25.5m**。認証系 16 件の全滅は `auth.ts` signIn の Clerk UI ドリフト単一根本原因 = TESTS-26） |
-| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定） | ⬜ TODO | — |
-| 4 | plans 042〜 執筆（選択分・1 プラン = 1 コミット） | ⬜ TODO | — |
-| 5 | README 索引更新（042〜 追加・TESTS-14 昇格/維持の反映・rejected 記録） | ⬜ TODO | — |
-| 6 | docs/testing 精査・更新（QA_HANDOFF E2E 実測同期 + R8 プロンプト / COVERAGE_REPORT §3 R8 / PERSPECTIVES / TEST_IMPLEMENTATION_PLAN / TESTING_DESIGN ドリフト確認） | ⬜ TODO | — |
-| 7 | NEXT_ACTIONS R8 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⬜ TODO | — |
-| 8 | ADVISOR_STATE クローズ（`git diff fbd1020..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定） | ✅ DONE | AskUserQuestion で全 13 所見中 **9 本をプラン化** 決定（TESTS-26/32/33/34/35/36/37/38 系 + ゲスト導線）。決済失敗ロールバック・販売者 CRUD 系は deferred 維持 |
+| 4 | plans 042〜 執筆（選択分・1 プラン = 1 コミット） | ✅ DONE | plans 042〜050（9 本）: `154425c`（042 初出）→ `3ae8c3f`（042 を 4 spec に拡張）/ 043 `ff35b66` / 044 `63ac998` / 045 `c13823d` / 046 `754a5b3` / 047 `4e25223` / 048 `d1f13df` / 049 `d24ee4c` / 050 `4eb61f4` |
+| 5 | README 索引更新（042〜 追加・TESTS-14 昇格/維持の反映・rejected 記録） | ✅ DONE | `d07186f`（plans/README.md status テーブルに 042〜050 追加） |
+| 6 | docs/testing 精査・更新（QA_HANDOFF E2E 実測同期 + R8 プロンプト / COVERAGE_REPORT §3 R8 / PERSPECTIVES / TEST_IMPLEMENTATION_PLAN / TESTING_DESIGN ドリフト確認） | ✅ DONE | `cbfdfad`（QA_HANDOFF / COVERAGE_REPORT / QA_TEST_PERSPECTIVES / TEST_IMPLEMENTATION_PLAN の 4 ファイル同期。TESTING_DESIGN はドリフトなし → 無変更を記録） |
+| 7 | NEXT_ACTIONS R8 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ✅ DONE | `13e0dd4`（render-html.ts の NEXT_ACTIONS に R8 追加 + dashboard 再生成）。クローズ時に再検証: tsc 0 / lint 0（warnings のみ）/ 再生成差分はタイムスタンプのみ（コンテンツ一致） |
+| 8 | ADVISOR_STATE クローズ（`git diff fbd1020..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット。`git diff fbd1020..HEAD --stat -- src tests prisma` = **空**（ソース無変更を機械検証）。QA_HANDOFF R8 ↔ NEXT_ACTIONS R8 は plans 042〜050 で一対一対応を確認 |
 
 ---
 
