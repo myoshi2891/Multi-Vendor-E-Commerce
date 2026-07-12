@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-11 / **HEAD**: `9111f41`（+ Round 4〜7 監査 docs コミット群。ソースコード無変更）
+> **最終更新**: 2026-07-12 / **HEAD**: `9111f41`（+ Round 4〜9 監査 docs コミット群。ソースコード無変更）
 
 ---
 
@@ -321,6 +321,31 @@ STOP conditions に該当したら中断して報告。完了後は spec-sync-af
 
 （043〜050 も同形式: パスを各プランに差し替える。047〜050 は「plan 042 が DONE であること」を
 冒頭で確認し、未完なら BLOCKED 記録で STOP と付記して依頼する）
+
+#### R9: improve Round 9 E2E 残余ギャップ解消（plans 051〜056）🆕 2026-07-12 起票
+
+2026-07-12 の E2E 残余監査（`plans/audit/findings-17-e2e-coverage-r9.md` — R8 未スイープの
+新規切り口 8 系統を精査。ベースラインは R8 実測 #2 を SSOT 引き継ぎ・再実測なし）で
+特定した 6 件の実行プラン。**051（国選択セレクタ — 依存ゼロ・P1）と
+056（Newsletter dormant 404 の characterization — 依存ゼロ）は R8 プランを待たず即着手可能**。
+052（a11y 拡大）は plan 042 Step 4（svg-img-alt 修正）完了後、055（カート引き継ぎ）と
+053 のサインアウト部は 042 全体の完了後、054（VRT 拡大）は plan 043 完了後。
+**監査で新規発見したアプリ側ギャップ**: フッター Newsletter フォームの `/api/newsletter` が
+**リポジトリに不在**（curl 実測 404・schema に購読者モデルも無し）— 全購読操作が失敗する
+dormant 機能。成功系は機能実装プランの起票が先（characterization は plan 056 が担当）。
+
+```
+plans/051-e2e-country-selector.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 変更は In scope のファイルのみ（tests/e2e/country-selector.spec.ts 新規のみ・src/ 変更禁止）。
+実行前に lsof -nP -iTCP:3000 -sTCP:LISTEN が空であることを確認し、占有されていたら
+docker compose stop app。各 Step の Verify コマンドを必ず実行し、STOP conditions に該当したら
+中断して報告。完了後は spec-sync-after-test skill で docs 同期（別コミット）を行い、
+plans/README.md の 051 行を DONE に更新すること。
+```
+
+（052〜056 も同形式: パスを各プランに差し替える。052 は「plan 042 Step 4 完了」、
+055 は「plan 042 DONE」、054 は「plan 043 DONE」を冒頭で確認し、未完なら BLOCKED 記録で
+STOP と付記して依頼する）
 
 #### D2: Performance 行の着手（OI-9 修正 → lhci に `/` 追加）
 

@@ -186,6 +186,15 @@
 - **やらないと判定したもの**（再監査防止）: 販売者ダッシュボード CRUD（OI-11 先行）・決済失敗ロールバック §20 P0（Stripe 実キー effort L・plan 032 が DB 側を部分カバー）・在庫切れ表示/二重送信 skip（機能未実装・plan 006 先行）・route-mock ページネーション復活・3 ブラウザフル CI 常設・color-contrast 有効化 — 詳細は findings-16 の Deferred/Rejected 節
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R8](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
 
+#### R9. improve Round 9 E2E 残余ギャップ解消（plans 051〜056）🆕 2026-07-12 起票
+
+- **対象**: `tests/e2e/`（新規 spec 5 本 + VRT ベースライン 2 枚）。R8 未スイープの新規切り口 8 系統を精査した残余監査（E2E 特化第 2 弾）。ベースラインは R8 実測 #2 を SSOT 引き継ぎ（ソース無変更のため再実測なし — 台帳に根拠記録）
+- **なぜやるか**: R8 の実効カバレッジ分析で「green なのはゲスト導線のみ」と確定したが、そのゲスト側にも未検証の中核導線が残っていた — (1) **国選択セレクタ（Ship to）の cookie 往復**（配送先・配送料計算の入力なのに E2E ゼロ・依存ゼロで即着手可能）、(2) **Newsletter フォームが dormant 404**（`/api/newsletter` route がリポジトリに不在・schema に購読者モデルも無し・curl 実測 404 — 全ページ露出のフォームが 100% 失敗する新規アプリギャップ）、(3) a11y / VRT の対象がストアフロント主要ページ（browse / 商品詳細 / cart）に未拡大、(4) サインアップウィジェットに TESTS-26 型ドリフトの canary 無し、(5) ゲストカート → サインイン後の引き継ぎ（saveUserCart 往復）がどの層でも未検証
+- **何を達成するか**: 051（国選択 cookie 往復 — P1・依存ゼロ）/ 052（a11y 拡大: browse・商品詳細・cart — 042 Step 4 先行）/ 053（認証サーフェススモーク: sign-up ウィジェット・Register・サインアウト）/ 054（VRT 拡大: 商品詳細・browse — 043 先行）/ 055（ゲストカート → ログイン引き継ぎ — 042 先行）/ 056（Newsletter dormant 404 の characterization — route 実装時に意図的 fail して書き直しを強制する設計）。実行手順・STOP 条件は **plans/051〜056** が SSOT。監査台帳: [`plans/audit/findings-17-e2e-coverage-r9.md`](../../plans/audit/findings-17-e2e-coverage-r9.md)
+- **コスト感**: S×3 + S–M×2 + M×1（051 / 056 / 053 スモーク部は R8 プランと独立に並行可）
+- **やらないと判定したもの**（再監査防止）: カスタム 404 E2E（`not-found.tsx` 不在 — Next デフォルト検証は低価値）・フルサインアップ E2E（Clerk 自身のテスト責務に近い）・言語/通貨セレクタ（静的表示のみ・多通貨はスコープ外）・Newsletter 成功系（機能実装先行）・home の a11y/VRT（OI-9 先行）。R8 deferred 5 件は全件維持を再裁定 — 詳細は findings-17 の Deferred/Rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R9](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term

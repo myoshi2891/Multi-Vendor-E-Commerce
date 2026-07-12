@@ -250,3 +250,8 @@
 | P0 | 決済失敗 → カート / 在庫 / 注文状態が完全に巻き戻る | E2E 未着手（Stripe 実キー + 失敗カード前提で deferred — findings-16）。DB 巻き戻しは Integration plan 032 が部分カバー |
 | P1 | 販売者が在庫を 0 に変更 → 購入不可が即反映 | E2E なし（販売者ダッシュボード操作は OI-11 先行依存で deferred 維持） |
 | P1 | 管理者が店舗停止 → 全商品が非表示 / 購入不可になる | **アプリ側が半分未実装**: store ページは ACTIVE フィルタ済み（→ **plan 050** で E2E 固定）だが `getProducts` に store status 条件が無く BANNED 店舗の商品が /browse に露出（correctness 起票候補 — findings-16 TESTS-38 追記） |
+| P1 | 顧客が配送先の国を変更 → cookie 反映・リロード後も維持される | E2E ゼロ（2026-07-12 R9 監査 TESTS-40 で確認 — ゲスト・依存ゼロ）→ **plan 051** |
+| P2 | ゲストで構築したカートがサインイン後も引き継がれ /checkout に持ち越される | E2E ゼロ（既存は「未認証エラー」と「最初から認証済み」のみ — R9 TESTS-42）→ **plan 055**（plan 042 先行） |
+| P2 | サインアップウィジェットが描画され、サインアウトでゲスト状態に戻る | E2E ゼロ（TESTS-26 型の Clerk UI ドリフトを検出する canary 不在 — R9 TESTS-41）→ **plan 053** |
+| P2 | Newsletter 購読が成功する | **アプリ側が未実装**: `/api/newsletter` route がリポジトリに不在（curl 実測 404・schema に購読者モデル無し — R9 TESTS-39）。現挙動の characterization は **plan 056**、成功系は機能実装プランの起票が先 |
+| P2 | ストアフロント主要ページ（browse / 商品詳細 / cart）に WCAG 2.1 AA 違反・レイアウト崩れが無い | a11y / VRT とも対象外だった（R9 TESTS-43/44）→ **plan 052 / 054**（042 Step 4 / 043 先行）。home は OI-9 解消後に追加 |
