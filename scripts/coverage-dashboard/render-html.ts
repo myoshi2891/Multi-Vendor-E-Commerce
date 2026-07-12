@@ -182,6 +182,24 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "全滅中の認証系 E2E (在庫減算・複数店舗クーポン = §20 P0 相当) を回復し、請求表示・顧客エンゲージメント・管理者オペレーションをブラウザ導線で回帰検知下に置く (E2E 修復 16 + 新規約 13 テスト ×3 ブラウザ)",
     },
+    // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
+    // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
+    // 再実測なし)。国選択 cookie 往復・a11y/VRT のストアフロント主要ページ拡大・
+    // 認証サーフェス canary・ゲストカート引き継ぎ・Newsletter dormant 404
+    // (/api/newsletter が route/schema とも不在 — curl 実測 404) の 6 件をプラン化。
+    // 051/056 は依存ゼロで即着手可、052 は plan 042 Step 4、055 は 042、054 は 043 が
+    // 先行。実行手順の SSOT は plans/051〜056 (自己完結プラン)、監査台帳は
+    // plans/audit/findings-17-e2e-coverage-r9.md。QA_HANDOFF「次回着手用 依頼
+    // プロンプト」R9 と一対一対応。全 6 プラン完了時に本エントリと QA_HANDOFF R9 を
+    // 同時削除すること。
+    {
+        priority: "medium",
+        title: "R9: E2E 残余ギャップ解消 (plans 051〜056)",
+        target: "国選択 cookie 往復 / a11y 拡大 (browse・商品詳細・cart) / 認証サーフェススモーク / VRT 拡大 / ゲストカート引き継ぎ / Newsletter dormant 404 characterization",
+        tool: "plans/051〜056 の自己完結プラン (Sonnet 実行可・051/056 は依存ゼロ・spec-sync 必須)",
+        cost: "M",
+        impact: "配送先 cookie・ゲスト→会員化のカート持ち越し・sign-up ウィジェットドリフトなどゲスト側の中核導線を回帰検知下に置き、a11y/VRT を売上導線ページへ拡大 (E2E 新規約 11 テスト ×3 ブラウザ + VRT 2 枚)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
