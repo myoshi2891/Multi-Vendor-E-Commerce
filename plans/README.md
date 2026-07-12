@@ -77,6 +77,12 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
+| [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | TODO |
+| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
+| [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
+| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
+| [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
+| [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
@@ -102,7 +108,17 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     diff を取り込むこと。042 完了後は **047（注文系 P1）→ 048 → 050 → 049** の順を推奨。
     全プラン `CLERK_SECRET_KEY` + ローカル Docker Postgres（`scripts/e2e/run-local.sh`）前提、
     実行前に :3000 の解放（`docker compose stop app`）が必要（044 が機械化する）。
-13. **Round 7 integration-test plans (040–041)** — Integration 特化の第 3 弾（R5/R6 未スイープの切り口: Clerk user-sync webhook の FK 連鎖・グローバル unique 制約の実発火）。両プラン **Docker 必須**・相互に独立・**seed.ts / reset-db.ts を変更しない**ため 027/031〜039 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **040（user.deleted FK 連鎖 — PII 残存/Svix 無限リトライのコンプライアンス隣接）→ 041（coupon code unique — セラー日常運用のエラー UX）**。040 のシナリオ 2〜4 と 041 のシナリオ 2・3 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-15-integration-coverage-r7.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
+13. **Round 9 E2E plans (051–056)** — E2E 特化の第 2 弾（R8 未スイープの残余切り口。
+    詳細: `audit/findings-17-e2e-coverage-r9.md`。ベースラインは R8 実測 #2 を SSOT 引き継ぎ —
+    ソース無変更のため再実測なし）。**051（国選択 — 依存ゼロ・P1）と 056（Newsletter
+    characterization — 依存ゼロ）は即着手可能**で、053 のサインアップスモーク部も独立。
+    **052 は plan 042 の Step 4（svg-img-alt 修正）完了後**、**055 と 053 のサインアウト部は
+    042 全体の完了後**、**054 は plan 043（VRT 再ベースライン）完了後**に着手する。
+    推奨順: 051 → 056 → 053（スモーク部）→〔042 完了〕→ 052 → 055 → 053（サインアウト部）
+    →〔043 完了〕→ 054。home（`/`）の a11y / VRT は OI-9（SSR 500）解消後の追加項目として
+    052 / 054 の Maintenance notes に記録済み。各プラン完了時の docs 同期義務は R8 と同じ
+    （`spec-sync-after-test`・E2E 統計 SSOT = `docs/testing/QA_HANDOFF.md`）。
+14. **Round 7 integration-test plans (040–041)** — Integration 特化の第 3 弾（R5/R6 未スイープの切り口: Clerk user-sync webhook の FK 連鎖・グローバル unique 制約の実発火）。両プラン **Docker 必須**・相互に独立・**seed.ts / reset-db.ts を変更しない**ため 027/031〜039 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **040（user.deleted FK 連鎖 — PII 残存/Svix 無限リトライのコンプライアンス隣接）→ 041（coupon code unique — セラー日常運用のエラー UX）**。040 のシナリオ 2〜4 と 041 のシナリオ 2・3 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-15-integration-coverage-r7.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 
 ## Dependency notes
 
@@ -128,6 +144,8 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
+- **Round 9 deferred（詳細: [`audit/findings-17-e2e-coverage-r9.md`](audit/findings-17-e2e-coverage-r9.md)）**: R8 deferred 5 件は**全件維持**（ソース無変更のため先行条件が不変であることを再裁定済み）。新規 deferred: Newsletter 購読の**成功系** E2E（route + スキーマ + 保存先が丸ごと不在 — 機能実装プランが先行。characterization は plan 056 が担当）・home（`/`）の a11y / VRT（OI-9 `featured.tsx` SSR 500 の解消が先行 — 解消後に plan 052 / 054 の形式で追加）。
+- **Round 9 rejected（詳細: findings-17 Rejected 節）**: カスタム 404 ページ E2E（`not-found.tsx` 不在 — Next デフォルト挙動の検証は低価値、実装が先）・フルサインアップ E2E（確認コード入力までのフロー全長は Clerk 自身のテスト責務に近い — ウィジェット描画スモーク〔plan 053〕で UI ドリフト検出は達成）・言語/通貨セレクタ E2E（静的表示のみで操作可能な機能が無い。多通貨は product.md スコープ外）。
 - **Round 8 rejected（詳細: findings-16 Rejected 節）**: ページネーションの route-mock 方式復活（SSR に効かず壊れた実績）・3 ブラウザフル E2E の CI 常設（wall-clock 25.5m+ と Clerk 実キー secrets 運用が前提 — chromium 限定 nightly を別途設計）・a11y `color-contrast` ルール有効化（既知デザイン負債として QA_HANDOFF で追跡中）。
 - **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — plan 003 の `$transaction` 化が先行依存のため deferred 維持（Round 5 で再確認。003 完了後は plan 032 の `webhook-payment.test.ts` に同型シナリオを追加するのが低コスト）。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
 - **Round 5 rejected（詳細: [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md)）**: saveUserCart 統合（plan 005 のコード修正が先行 — 005 完了後の追加候補。**Round 6 で deferred 維持を再確認**）・sendMessage 配列 tx（低レバレッジ）・~~`updateProduct` specs/questions tx + `generateUniqueSlug`（次点候補）~~ → **Round 6 で plan 038 に昇格**・`ORDER BY RANDOM()` 単独プラン化（033 の従属シナリオで充足）・removeCoupon 拡張（unit 網羅済み）。
