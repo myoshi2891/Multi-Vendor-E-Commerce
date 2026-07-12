@@ -40,14 +40,28 @@
 
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
-| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
-| 2 | 残余監査（候補 1〜8 の vet）+ 監査台帳（TESTS-39〜 + deferred 再裁定 + rejected） | ⬜ TODO | `audit/findings-17-e2e-coverage-r9.md` |
-| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定・PAUSE） | ⬜ TODO | AskUserQuestion |
-| 4 | plans 051〜 執筆（選択分・1 プラン = 1 コミット） | ⬜ TODO | — |
-| 5 | README 索引更新（051〜 追加・rejected / deferred 記録） | ⬜ TODO | — |
-| 6 | docs/testing 精査・更新（QA_HANDOFF R9 プロンプト / COVERAGE_REPORT §3 R9 / PERSPECTIVES / TEST_IMPLEMENTATION_PLAN / TESTING_DESIGN ドリフト確認） | ⬜ TODO | — |
-| 7 | NEXT_ACTIONS R9 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⬜ TODO | — |
-| 8 | ADVISOR_STATE クローズ（`git diff 25e50d9..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション / `95d1308` |
+| 2 | 残余監査（候補 1〜8 の vet）+ 監査台帳（TESTS-39〜44 + deferred 再裁定 5 件維持 + rejected 3 件） | ✅ DONE | `audit/findings-17-e2e-coverage-r9.md` / `99ede89`（再実測なし — R8 実測 #2 を SSOT 引き継ぎ。スポット検証: `/api/newsletter` curl **404** 実測。TESTS-44 は plan 054 執筆時の再監査で Evidence 訂正 — seed 画像はローカルアセット / `b8c81cb`） |
+| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定・PAUSE） | ✅ DONE | AskUserQuestion で全 6 所見（TESTS-39〜44）**すべてプラン化**を決定（deferred の再昇格なし） |
+| 4 | plans 051〜056 執筆（選択分・1 プラン = 1 コミット） | ✅ DONE | 051 `0f9460b` / 052 `f631cbd` / 053 `14a83a8` / 054 `b8c81cb`（+ TESTS-44 訂正）/ 055 `46868c8` / 056 `a10dabc` |
+| 5 | README 索引更新（051〜056 追加・推奨順序 #13・R9 deferred/rejected 記録） | ✅ DONE | `c89914d` |
+| 6 | docs/testing 精査・更新（QA_HANDOFF R9 プロンプト / COVERAGE_REPORT §3 R9 / PERSPECTIVES §20 +5 行 / TEST_IMPLEMENTATION_PLAN Phase 6。TESTING_DESIGN は新パターン導入なしのためドリフトなし → 無変更を記録） | ✅ DONE | `f7368c2` |
+| 7 | NEXT_ACTIONS R9 追加 + coverage-dashboard.html 再生成（lint 0 エラー・15 警告 / tsc ソース 0 エラー — `.next/` 生成物内の 2 件は稼働中 dev コンテナと過去本番ビルドの型スナップショット競合による環境ノイズで追跡対象外） | ✅ DONE | `f6a9b7a` |
+| 8 | ADVISOR_STATE クローズ（`git diff 25e50d9..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット。`git diff 25e50d9..HEAD --stat -- src tests prisma` = **空**（ソース無変更を機械検証）。QA_HANDOFF R9 ↔ NEXT_ACTIONS R9 は plans 051〜056 で一対一対応を確認 |
+
+**Round 9 完了（2026-07-12）**。ソースコード（`src/` `tests/` `prisma/`）は無変更。
+成果物: `audit/findings-17-e2e-coverage-r9.md`（TESTS-39〜44 + R8 deferred 5 件の維持再裁定 +
+rejected 3 件。全所見を直接コード読解で vet・Newsletter 404 は curl 実測）+ plans **051〜056**
+（6 本すべてユーザー選択・Sonnet 実行可能な自己完結形式）+ README 索引 + docs/testing
+4 ファイル同期 + ダッシュボード再生成。
+特記事項: (1) **Newsletter dormant 404 はアプリ側の新規発見ギャップ**（route + schema とも不在）—
+成功系は機能実装プランの起票が先で、plan 056 は現挙動の characterization（実装時に意図的 fail
+して書き直しを強制する設計）。(2) home（`/`）の a11y / VRT は OI-9 解消後の追加項目として
+plan 052 / 054 の Maintenance notes に記録。
+次のアクション: **051（依存ゼロ・P1）と 056 は即実行可能**。R8 plans 042〜050 の実行と併走する
+場合の依存順は plans/README「Recommended sequencing #13」参照（052 ← 042 Step 4 /
+055・053 サインアウト部 ← 042 / 054 ← 043）。E2E の未スイープ切り口は本ラウンドでほぼ枯渇 —
+次ラウンドを行う場合は plans 042〜056 の実行結果と OI-9 / OI-11 の解消状況を先に確認すること。
 
 ---
 
