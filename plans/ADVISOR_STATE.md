@@ -6,6 +6,51 @@
 
 ---
 
+## Round 9 — E2E 残余監査（`tests` フォーカス・E2E 限定 第 2 弾 / 開始 2026-07-12）
+
+- **開始日**: 2026-07-12 / **監査対象 HEAD**: `25e50d9`（branch: `dev` — R8 クローズコミット。
+  R8 監査 HEAD `fbd1020` からソース `src/ tests/ prisma/` は無変更 — R8 クローズ時に diff 空を検証済み）
+- **バリアント**: `tests` フォーカス・**E2E（Playwright）限定**の第 2 弾（R6/R7 の integration
+  残余監査と同型）。R8 が「既存 15 spec の 3 ブラウザ実測 + 主要導線ギャップ」をスイープ済みの
+  ため、R9 は **R8 未スイープの新規切り口** + **R8 deferred の再裁定** の 2 軸で残余を精査する
+- **目的**: 追加が必要な E2E テスト項目を Sonnet が zero-context で実行できる自己完結プラン
+  （**051〜**）に落とす。あわせて docs/testing 精査・更新と coverage-dashboard.html 再生成
+  （R4〜R8 と同じ Hard Rule 1 のスコープ例外: `plans/**`・`docs/testing/**`・
+  `scripts/coverage-dashboard/render-html.ts`・生成物 HTML のみ編集可）
+- **ユーザー確認済みの決定**:
+  - テストコードの実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/` は無変更）
+  - プラン承認済み（`~/.claude/plans/agent-skills-improve-skill-md-e2e-sonne-splendid-pudding.md`）
+  - **ベースライン再実測なし**: ソース無変更のため R8 実測 #2（52 passed / 17 failed /
+    39 skipped / 3 did not run / 25.5m — findings-16 参照）を SSOT として引き継ぐ。Docker は
+    起動済みだが個別候補のスポット検証（curl 等の読み取り系）に限定して使用
+  - プラン化対象は**監査台帳完成後にユーザーが選択**（R8 方式・AskUserQuestion で PAUSE）
+  - plans 042〜050 とシナリオ・対象 UI が重複するプランは作らない。候補が薄ければ
+    水増しせず本数を減らす（R7 前例）
+- **R9 監査の切り口（recon 済み候補仮説 — 台帳で vet）**: (1) サインアップ導線 /
+  (2) Newsletter 購読の dormant 404 疑い（`newsletter.tsx:41` が `fetch('/api/newsletter')` するが
+  route 不在）/ (3) 国選択セレクタ + `userCountry` cookie / (4) ゲストカート→ログイン時マージ /
+  (5) a11y 対象拡大（home/browse/product/cart — TESTS-26 非依存）/ (6) VRT 対象拡大 /
+  (7) 404・サインアウト等の残余スイープ / (8) R8 deferred 再裁定（ソース無変更のため維持確認のみ）
+- **採番**: 監査台帳 = `audit/findings-17-e2e-coverage-r9.md` / 新規所見 = TESTS-39〜 /
+  新規プラン = 051〜
+- **成果物**: findings-17（監査台帳・ギャップ全量 + deferred + rejected）+ plans 051〜
+  （ユーザー選択分）+ README 索引 + docs/testing 同期 + ダッシュボード再生成
+
+### Round 9 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
+| 2 | 残余監査（候補 1〜8 の vet）+ 監査台帳（TESTS-39〜 + deferred 再裁定 + rejected） | ⬜ TODO | `audit/findings-17-e2e-coverage-r9.md` |
+| 3 | ギャップ一覧の提示 → ユーザー選択（プラン化対象の確定・PAUSE） | ⬜ TODO | AskUserQuestion |
+| 4 | plans 051〜 執筆（選択分・1 プラン = 1 コミット） | ⬜ TODO | — |
+| 5 | README 索引更新（051〜 追加・rejected / deferred 記録） | ⬜ TODO | — |
+| 6 | docs/testing 精査・更新（QA_HANDOFF R9 プロンプト / COVERAGE_REPORT §3 R9 / PERSPECTIVES / TEST_IMPLEMENTATION_PLAN / TESTING_DESIGN ドリフト確認） | ⬜ TODO | — |
+| 7 | NEXT_ACTIONS R9 追加 + coverage-dashboard.html 再生成（tsc 0 / lint 0 確認） | ⬜ TODO | — |
+| 8 | ADVISOR_STATE クローズ（`git diff 25e50d9..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+
+---
+
 ## Round 8 — E2E テスト網羅性監査（`tests` フォーカス・E2E 限定 / 開始 2026-07-11）
 
 - **開始日**: 2026-07-11 / **監査対象 HEAD**: `fbd1020`（branch: `dev` — R7 クローズコミット。
