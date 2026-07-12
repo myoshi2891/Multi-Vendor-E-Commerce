@@ -163,10 +163,13 @@
   （SSR 500）解消が先行依存（TESTS-43 と同一理由）。
 - **Impact**: 購買判断が起きる 2 ページ（商品詳細・browse）の視覚回帰が検出不能。
   Tailwind クラス順序 lint はあるがレイアウト崩れ自体を検出する層は VRT のみ。
-- **Effort**: M（seed 商品は `e2e-test-product` 系 2 種で画像は Cloudinary リモート —
-  画像領域のマスク（`mask` オプション）等の安定化設計が必要。ここが本所見の主コスト）
-- **Risk**: 中（リモート画像・動的コンテンツ起因のフレーク。マスク + アニメーション無効化を
-  プランで規定する。plan 043 の再撮影ガイドラインと運用を揃えること）
+- **Effort**: M → **S〜M に下方修正**（訂正 2026-07-12・plan 054 執筆時の再監査:
+  E2E seed の商品画像は Cloudinary リモートではなく**ローカルアセット**
+  `/assets/images/no_image.png`（`tests/e2e/seed/constants.ts:68,76,96` 等）— E2E DB には
+  seed:e2e の 2 商品しか無いため browse / 商品詳細の描画は決定論的。リモート画像フレークの
+  懸念は当初見積より小さい。マスクは既存 cart.spec.ts の前例に合わせ画像領域のみでよい）
+- **Risk**: 低〜中（動的コンテンツ起因のフレークは config の reducedMotion / locale /
+  timezone 固定で大半が抑制済み。plan 043 の再撮影ガイドラインと運用を揃えること）
 - **Confidence**: High
 
 ---
