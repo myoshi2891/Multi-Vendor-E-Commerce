@@ -163,7 +163,7 @@ describe("POST /api/webhooks/stripe", () => {
                         paymentMethod: "Stripe",
                         status: "Paid",
                         orderId: "order-stripe-success",
-                        amount: 9999, // fixture: payment_intent.amount (cents)
+                        amount: 99.99, // fixture: payment_intent.amount (cents) normalized to dollars
                         currency: "usd", // fixture: payment_intent.currency
                     }),
                     update: expect.objectContaining({
@@ -225,6 +225,29 @@ describe("POST /api/webhooks/stripe", () => {
             );
         });
 
+        it("異常系: Charge metadata がなくても paymentIntentId で注文を相関して返金を記録する", async () => {
+            const event = JSON.parse(JSON.stringify(chargeRefundedFullFixture));
+            event.data.object.metadata = {};
+            mockConstructEvent.mockReturnValue(event);
+            mockDb.paymentDetails.findUnique = jest.fn().mockResolvedValue({
+                orderId: "order-stripe-success",
+            });
+
+            const response = await POST(createStripeRequest(event));
+
+            expect(response.status).toBe(200);
+            expect(mockDb.paymentDetails.findUnique).toHaveBeenCalledWith({
+                where: { paymentIntentId: "pi_test_succeeded" },
+                select: { orderId: true },
+            });
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { id: "order-stripe-success" },
+                    data: expect.objectContaining({ paymentStatus: "Refunded" }),
+                })
+            );
+        });
+
         it("部分返金時に Order.paymentStatus を PartiallyRefunded に更新する", async () => {
             mockConstructEvent.mockReturnValue(chargeRefundedPartialFixture);
 
@@ -251,7 +274,7 @@ describe("POST /api/webhooks/stripe", () => {
                 expect.objectContaining({
                     create: expect.objectContaining({
                         paymentIntentId: "pi_test_succeeded",
-                        amount: 9999, // fixture: charge.amount
+                        amount: 99.99, // fixture: charge.amount normalized to dollars
                         currency: "usd", // fixture: charge.currency
                     }),
                 })
