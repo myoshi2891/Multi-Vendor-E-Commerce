@@ -242,7 +242,10 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            // intent.amount(9999) と order.total を一致させる（サーバー側 amount 照合のため）
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
             mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
         });
 
@@ -361,7 +364,9 @@ describe("createStripePayment", () => {
             const consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => undefined);
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
             mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
             mockDb.paymentDetails.upsert.mockRejectedValue(
                 new Error("DB error")
@@ -420,6 +425,49 @@ describe("createStripePayment", () => {
             await expect(
                 createStripePayment("order-001", mockPaymentIntent.id as never)
             ).rejects.toThrow("Payment intent does not match order.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("PaymentIntent の金額・通貨照合", () => {
+        // metadata.orderId が正しくても、amount/currency が order.total と食い違う
+        // intent を弾く（クライアントが金額を改ざんした intent id を渡す攻撃の防御）。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // order.total = 99.99 → 期待 amount は 9999 セント
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+        });
+
+        it("amount が注文合計と一致しない intent を拒否し、Order を更新しない", async () => {
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                amount: 100, // 改ざんされた低額
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id as never)
+            ).rejects.toThrow("Payment intent amount/currency mismatch.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("currency が usd でない intent を拒否し、Order を更新しない", async () => {
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                currency: "jpy",
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id as never)
+            ).rejects.toThrow("Payment intent amount/currency mismatch.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
         });

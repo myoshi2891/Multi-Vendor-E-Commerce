@@ -95,6 +95,16 @@ export const createStripePayment = async (
             throw new Error("Payment intent does not match order.");
         }
 
+        // metadata が正しくても amount/currency が改ざんされた intent を弾く。
+        // intent は createStripePaymentIntent で order.total（セント）+ "usd" で生成される。
+        const expectedAmount = Math.round(order.total.toNumber() * 100);
+        if (
+            paymentIntent.amount !== expectedAmount ||
+            paymentIntent.currency !== "usd"
+        ) {
+            throw new Error("Payment intent amount/currency mismatch.");
+        }
+
         const updatedPaymentDetails = await db.paymentDetails.upsert({
             where: {
                 orderId,
