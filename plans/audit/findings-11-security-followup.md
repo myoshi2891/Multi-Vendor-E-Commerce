@@ -88,7 +88,7 @@ Round 1 の「Areas checked and found clean」に加え、本ラウンドで**�
 
 | Plan | Title | Category | Priority | Effort | Risk | Depends on | Status |
 |------|-------|----------|----------|--------|------|------------|--------|
-| [023](../023-bound-and-validate-public-search-pagination.md) | Bound & validate `index-products` GET pagination | security | P2 | S | LOW | — | TODO |
+| [023](../023-bound-and-validate-public-search-pagination.md) | Bound & validate `index-products` GET pagination | security | P2 | S | LOW | — | DONE |
 | [024](../024-validate-usercountry-cookie-write.md) | Validate `userCountry` cookie write (symmetry) | security | P3 | S | LOW | — | DONE |
 | [025](../025-spike-rate-limit-public-endpoints.md) | **Spike**: rate-limit seam for public endpoints | security | P3 | M | LOW-MED | — | DONE |
 
