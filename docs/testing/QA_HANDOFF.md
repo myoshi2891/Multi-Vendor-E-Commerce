@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-17 / **HEAD**: `e9ba111`（CodeRabbit 指摘対応: stripe payment status マッピング・order try/catch・stripe.test.ts の `as never` 除去・plans/ja 再同期）
+> **最終更新**: 2026-07-17 / **HEAD**: `2631481`（CodeRabbit 指摘対応 第2弾: stripe の `requires_payment_method` を `last_payment_error` の有無で Failed/Pending 分岐・index-products のページネーションコメント是正）
 
 ---
 
@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1685** passed / 1688 total / 174 スイート（173 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1686** passed / 1689 total / 174 スイート（173 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-17 実測） | Statements 65.63% / Branches 45.29% / Functions 54.33% / Lines 64.59% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

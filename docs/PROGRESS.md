@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1685 passed / 1688 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1686 passed / 1689 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応 第2弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1425,6 +1425,31 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 
 > スイート +2 は本セッションの追加ではなく、先行コミット由来の未同期分（`src/lib/log.test.ts`
 > = plans 007-009 のログ集約 / `place-order.test.tsx` = 二重送信ガード）を取り込んだもの。
+
+---
+
+### CodeRabbit 指摘対応 第2弾 (2026-07-17)
+
+#### 概要
+
+Stripe PaymentIntent の初期状態を決済失敗と誤判定しないよう分岐を修正し、ページネーションコメントとテスト統計を同期した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.test.ts` | `requires_payment_method` のエラー有無による分岐を回帰テストで固定 | `444a129` |
+| `src/queries/stripe.ts` | `last_payment_error` ありを `Failed`、なしを `Pending` に写像 | `c57e239` |
+| `src/app/api/index-products/route.ts` | 小数値を拒否せず切り捨てる実装にコメントを一致 | `2631481` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1685 passed / 1688 total | **1686 passed / 1689 total**（3 skipped） |
+| スイート数 | 174（173 passed + 1 skipped） | **174**（173 passed + 1 skipped） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
 
 ---
 
