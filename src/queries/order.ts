@@ -3,10 +3,14 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
-import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
+import {
+    AdminOrderFilterSchema,
+    TrackOrderSchema,
+    type AdminOrderFilter,
+    type TrackOrderInput,
+} from "@/lib/schemas";
 import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
-import { z } from "zod";
 
 /**
  * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
@@ -301,23 +305,6 @@ export const updateOrderItemStatus = async (
 // ==================================================================
 
 /**
- * admin 注文一覧のフィルタ（F2-4/F2-5・判断6-5）。
- * paymentStatus / orderStatus は nativeEnum で入口検証し、下流の as キャストを排除する。
- * limit は上限 100 にキャップして OOM/DoS を防止する。
- */
-const AdminOrderFilterSchema = z.object({
-    paymentStatus: z.nativeEnum(PaymentStatus).optional(),
-    orderStatus: z.nativeEnum(OrderStatus).optional(),
-    search: z.string().optional(),
-    page: z.number().int().min(1).default(1),
-    // limit は throw ではなく clamp（≤100）でキャップし、極端値を 100 に丸める（AC-F2-3）
-    limit: z
-        .number()
-        .default(20)
-        .transform((n) => Math.min(Math.max(Math.floor(n), 1), 100)),
-});
-
-/**
  * @function getAllOrders
  * @description 全店舗横断の注文一覧（Order 起点）。requireAdmin() で保護。
  *              seller 版が OrderGroup 起点・自店舗限定なのに対し、Order 起点・横断で取得する。
@@ -326,7 +313,7 @@ const AdminOrderFilterSchema = z.object({
  * @returns { orders, total, page, limit }
  */
 export const getAllOrders = async (
-    filters?: Partial<z.infer<typeof AdminOrderFilterSchema>>
+    filters?: Partial<AdminOrderFilter>
 ) => {
     await requireAdmin();
     const f = AdminOrderFilterSchema.parse(filters ?? {});

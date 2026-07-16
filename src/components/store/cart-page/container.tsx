@@ -36,7 +36,6 @@ export default function CartContainer({
             if (cartItems?.length) {
                 try {
                     const updatedCart = await updateCartWithLatest(cartItems)
-                    console.log('updatedCart--->', updatedCart)
 
                     setCart(updatedCart)
                     setLoading(false)

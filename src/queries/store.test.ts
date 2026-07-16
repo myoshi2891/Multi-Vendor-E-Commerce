@@ -1371,6 +1371,7 @@ describe("getStoreOrders", () => {
                         order: expect.any(Object),
                     }),
                     orderBy: { updatedAt: "desc" },
+                    take: 200,
                 })
             );
         });

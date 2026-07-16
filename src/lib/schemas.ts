@@ -1,4 +1,5 @@
 import { ShippingFeeMethod } from "@prisma/client";
+import { OrderStatus, PaymentStatus } from "@/lib/types";
 import * as z from "zod";
 
 // Category form schema
@@ -723,3 +724,22 @@ export const TrackOrderSchema = z.object({
 });
 
 export type TrackOrderInput = z.infer<typeof TrackOrderSchema>;
+
+/**
+ * admin 注文一覧のフィルタ（F2-4/F2-5・判断6-5）。
+ * paymentStatus / orderStatus は nativeEnum で入口検証し、下流の as キャストを排除する。
+ * limit は上限 100 にキャップして OOM/DoS を防止する。
+ */
+export const AdminOrderFilterSchema = z.object({
+    paymentStatus: z.nativeEnum(PaymentStatus).optional(),
+    orderStatus: z.nativeEnum(OrderStatus).optional(),
+    search: z.string().optional(),
+    page: z.number().int().min(1).default(1),
+    // limit は throw ではなく clamp（≤100）でキャップし、極端値を 100 に丸める（AC-F2-3）
+    limit: z
+        .number()
+        .default(20)
+        .transform((n) => Math.min(Math.max(Math.floor(n), 1), 100)),
+});
+
+export type AdminOrderFilter = z.infer<typeof AdminOrderFilterSchema>;

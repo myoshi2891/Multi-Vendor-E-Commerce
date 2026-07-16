@@ -45,9 +45,9 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [004](004-upgrade-clerk-nextjs-security.md) | Upgrade `@clerk/nextjs` off CRITICAL auth-bypass advisory | dependencies | P1 | S | LOW-MED | — | DONE |
 | [005](005-cart-integrity-atomic-save-and-persist.md) | Atomic `saveUserCart` + single-source cart persist | correctness | P2 | S | LOW | — | DONE |
 | [006](006-place-order-double-submit-guard.md) | Guard "Place order" against double submit | correctness | P2 | S | LOW | — | DONE |
-| [007](007-logging-consolidation-and-debug-cleanup.md) | `logError` helper; remove debug `console.log`; fix coupon logs | tech-debt | P3 | M | LOW | — | TODO |
-| [008](008-remove-dead-search-copy-and-relocate-schema.md) | Delete dead `search copy.tsx`; relocate inline Zod schema | tech-debt | P3 | S | LOW | — | TODO |
-| [009](009-query-hygiene-bound-store-orders-and-drop-dead-query.md) | Bound `getStoreOrders`; remove discarded browse query | perf | P3 | S | LOW | — | TODO |
+| [007](007-logging-consolidation-and-debug-cleanup.md) | `logError` helper; remove debug `console.log`; fix coupon logs | tech-debt | P3 | M | LOW | — | DONE |
+| [008](008-remove-dead-search-copy-and-relocate-schema.md) | Delete dead `search copy.tsx`; relocate inline Zod schema | tech-debt | P3 | S | LOW | — | DONE |
+| [009](009-query-hygiene-bound-store-orders-and-drop-dead-query.md) | Bound `getStoreOrders`; remove discarded browse query | perf | P3 | S | LOW | — | DONE |
 | [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | TODO |
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
