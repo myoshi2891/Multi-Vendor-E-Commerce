@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-16 / **HEAD**: `373ad85`（plan 003: Stripe 決済状態のサーバー導出・配送先住所所有権検証）
+> **最終更新**: 2026-07-16 / **HEAD**: `7f2365e`（plan 023: `index-products` GET ページネーション境界化）
 
 ---
 
@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1667** passed / 1670 total / 172 スイート（171 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1682** passed / 1685 total / 172 スイート（171 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-10） | Statements 65.19% / Branches 44.89% / Functions 54.1% / Lines 64.11% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

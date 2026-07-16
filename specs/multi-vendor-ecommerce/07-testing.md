@@ -12,12 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1667 passed / 1670 total across 172 suites (3 skipped), as of 2026-07-16.
-  Plan 003 hardened checkout trust boundaries: `createStripePayment` accepts only a PaymentIntent ID,
-  re-fetches the authoritative intent from Stripe, and requires `metadata.orderId` to match before
-  persisting state; `placeOrder` rejects shipping addresses not owned by the authenticated user.
-  This plan adds two regressions; the current HEAD total is +5 from the previous recorded baseline
-  after synchronizing the accumulated test-statistic drift (suite count unchanged).
+- 1682 passed / 1685 total across 172 suites (3 skipped), as of 2026-07-16.
+  Plan 023 normalizes public `index-products` GET pagination: non-numeric and invalid values use
+  defaults, `limit` is capped at 50, and `page` at 10,000. Five regressions assert both Prisma
+  `skip`/`take` arguments and normalized response metadata; the current total also synchronizes
+  accumulated test-statistic drift (suite count unchanged).
 - 1659 passed / 1662 total across 172 suites (3 skipped), as of 2026-06-26.
   track-order feature (`docs/design/track-order/`): public order-tracking page `/track-order`
   with a public `trackOrder` server action (no auth guard; `where: { id }` only, email matched
