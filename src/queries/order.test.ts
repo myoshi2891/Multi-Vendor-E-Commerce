@@ -430,6 +430,45 @@ describe("updateOrderItemStatus", () => {
                 )
             ).rejects.toThrow("Order item not found");
         });
+
+        // tech.md「外部呼び出し（Prisma）は必ず try/catch でラップ」。
+        // 生の Prisma エラーは接続文字列等を含みうるため、UI へ素通しさせない。
+        it("DB エラー時は構造化ログを出し、汎用エラーに変換する", async () => {
+            const consoleSpy = AssertionHelpers.mockConsoleError();
+            mockDb.orderItem.updateMany.mockRejectedValue(
+                new Error("connection terminated unexpectedly")
+            );
+
+            await expect(
+                updateOrderItemStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "order-item-001",
+                    "Processing" as never
+                )
+            ).rejects.toThrow("Failed to update order item status.");
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "[Order:updateOrderItemStatus] status update failed",
+                expect.objectContaining({
+                    error: "connection terminated unexpectedly",
+                })
+            );
+            consoleSpy.mockRestore();
+        });
+
+        // 「見つからない」は認可・不存在の判定であり、DB 障害の汎用エラーで
+        // 上書きしてはならない（count===0 の判定は try/catch の外に置く）。
+        it("DB エラーの汎用化が Order item not found を潰さない", async () => {
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
+
+            await expect(
+                updateOrderItemStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "nonexistent",
+                    "Processing" as never
+                )
+            ).rejects.toThrow("Order item not found");
+        });
     });
 
     describe("正常系", () => {
