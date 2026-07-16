@@ -5,8 +5,20 @@
 > 読み取り専用の調査を行い、未解決の問いにエビデンス付きで答え、設計ドキュメントを書き、STOP する。
 > 完了したら `plans/README.md` のこのプランのステータス行を更新する。
 >
-> **ドリフトチェック（最初に実行）**:
-> `git diff --stat a17e2cc..HEAD -- prisma/schema.prisma src/queries/store.ts src/queries/product.ts`
+> **ドリフトチェック（最初に実行）**: Step 1 が棚卸しする**公開経路の依存ファイル全体**を対象にする
+> （`schema.prisma` + store/product クエリだけでは狭すぎる。ブラウズ・ホーム・商品詳細・検索 route・
+> カート/チェックアウトの商品参照が別ファイルに散在するため）:
+>
+> ```
+> git diff --stat a17e2cc..HEAD -- \
+>   prisma/schema.prisma \
+>   src/queries/store.ts src/queries/product.ts \
+>   src/app/api/index-products/ src/app/api/search-products/ \
+>   'src/app/(store)/**' src/components/store/
+> ```
+>
+> （実際の公開経路ファイルは Step 1 の grep 結果で確定する。ここに挙げた以外の経路が
+> 見つかったら差分対象に追加する。）
 > いずれかが変更されていれば「Current state」の抜粋と現行コードを突き合わせる。
 > `Product` に公開状態カラムが追加済み、または `upsertProduct` に審査分岐が入っていたら
 > STOP して報告する。
@@ -117,16 +129,36 @@ enum ProductStatus {          // schema.prisma:560 — ※これは OrderItem �
 1. **公開状態の状態機械**: 商品公開状態の enum（非衝突名で。例: `ListingStatus`）の値集合と
    合法遷移を確定する。初期仮説: `DRAFT → PENDING_REVIEW → ACTIVE / REJECTED`、
    `ACTIVE → SUSPENDED`（運営停止）、`REJECTED → PENDING_REVIEW`（再申請）。
+   **再審査・復帰の戻り先を必ず定義すること**（現仮説には抜けがある）:
+   - `ACTIVE → PENDING_REVIEW`: SELLER が重要フィールド（Q4）を編集して再審査に戻る遷移。
+     これが無いと Q4「編集時のみ再審査」の戻り先が状態機械に存在しない。
+   - `SUSPENDED → ???`: 運営停止からの復帰経路（例: `SUSPENDED → ACTIVE` 直接復帰、または
+     `SUSPENDED → PENDING_REVIEW` 再審査経由）を定義する。復帰不能の終端にしない。
+   - 各遷移の**実行権限**（SELLER が起こせる遷移 / ADMIN のみの遷移）も併記する。
    既存商品の初期値（全量 `ACTIVE` へ backfill）も決める。
 2. **審査ポリシーの切り替え機構**: 「全商品審査 / 新規販売者のみ審査 / 事後審査（即公開 +
    事後チェック）」をデータでどう表現するか。グローバル設定 1 レコードか、店舗ごとの
    `trustLevel` か。ブランド確定時に**コード変更なしで**厳格さを変えられること
    （EXPANSION_BLUEPRINT §5 の検算表）が要件。
-3. **公開クエリへの反映**: ストアフロントの全商品取得経路（Step 1 で列挙）に
-   `listingStatus: ACTIVE` + `store: { status: ACTIVE }` を漏れなく効かせる方法。
+3. **公開クエリへの反映（ブラウズ用スコープ）**: **発見/ブラウズ経路**（ブラウズ・ホーム・
+   商品詳細・検索 route）に `listingStatus: ACTIVE` + `store: { status: ACTIVE }` を漏れなく効かせる方法。
    各クエリに where を足すか、共通の「公開商品スコープ」ヘルパー（例:
-   `publicProductWhere()` を `src/lib/` に置き全経路で合成）を導入するか。
+   `publicProductWhere()` を `src/lib/` に置き全**ブラウズ**経路で合成）を導入するか。
    **漏れが即セキュリティ/信頼性問題になるため、grep で機械的に検証可能な形**を選ぶこと。
+
+   > **カート/チェックアウト/注文履歴の商品参照は、このブラウズ用公開スコープと分離すること**
+   > （無条件に `listingStatus: ACTIVE` を適用しない）。理由:
+   > - ユーザーが既にカートへ追加した商品が後で `SUSPENDED`/`REJECTED` になった場合、
+   >   ブラウズ用スコープをそのままカート参照に適用すると**カートから商品が黙って消え**、
+   >   小計やチェックアウトが壊れる（UX/整合性の破綻）。
+   > - **注文履歴**は過去購入品の参照であり、現在の公開状態に関わらず**必ず読めなければならない**
+   >   （履歴の商品が公開停止で 404 になってはならない）。
+   > よって設計は 2 系統に分ける:
+   >   (i) **ブラウズ用公開スコープ** = `listingStatus: ACTIVE` + `store.status: ACTIVE`（発見経路のみ）。
+   >   (ii) **カート/チェックアウト用参照** = 公開スコープを課さず、代わりに「購入可能性チェック」
+   >        （在庫・現在の購入可否）をチェックアウト時に**別ロジックで**行い、非 ACTIVE 品は
+   >        「購入不可」を明示表示する（消さない）。注文履歴は状態フィルタなしで読む。
+   > Q3 の grep 検証は (i) の経路にのみ適用し、(ii) を誤って (i) のスコープに含めないことを確認する。
 4. **SELLER の編集と再審査**: ACTIVE 商品の編集は即反映か、重要フィールド（名前・画像・
    カテゴリ）の変更時のみ再審査か。`upsertProduct`（`product.ts:71`）の分岐設計。
 5. **審査 UI と運用コスト**: admin の審査キュー（承認/差し戻し + 理由）を
