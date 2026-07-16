@@ -28,14 +28,22 @@
 
 There is **no rate limiting anywhere** in the codebase (a repo-wide search for
 `ratelimit` / `upstash` / `throttle` returns zero implementation hits). Several
-**public, unauthenticated** endpoints run comparatively expensive database work
-on every call — the two full-text search routes and the cookie-set route. A
-single client can drive heavy DB load without authenticating, and this compounds
-with the unbounded pagination tracked in `plans/023`. This is a cross-cutting
-defense-in-depth gap, not a single bug — and whether/how to add rate limiting
-(in-memory vs a shared store like Upstash vs edge/WAF) is a maintainer decision
-with real trade-offs. So the right first step is a **design spike**, not a code
-change.
+**public, unauthenticated** endpoints are abusable, but **for different reasons —
+do not lump them into one "DB load" bucket**:
+
+- **The two full-text search routes** run comparatively expensive **database work**
+  (tsvector queries) on every call → a single client can drive heavy DB load
+  without authenticating, compounding with the unbounded pagination in `plans/023`.
+- **The cookie-set route** (`POST /api/setUserCountryInCookies`) does **no database
+  work** — it validates the body and writes a cookie. Its abuse profile is
+  **write/CPU/cookie-bloat spam**, not DB load. Rate-limiting it is still warranted,
+  but the rationale and limits differ from the search routes (see `plans/024` for
+  its input hardening).
+
+This is a cross-cutting defense-in-depth gap, not a single bug — and whether/how to
+add rate limiting (in-memory vs a shared store like Upstash vs edge/WAF) is a
+maintainer decision with real trade-offs. So the right first step is a **design
+spike**, not a code change.
 
 ## Current state (facts to inline into the design doc)
 
@@ -103,7 +111,19 @@ is already present.
    - **B. Shared store (Upstash Redis / `@upstash/ratelimit`)** — correct across instances; adds an external dependency + env config + latency per check.
    - **C. Edge/platform layer (Vercel WAF / middleware-level limiting)** — offloads to infra; may not be available on the current plan; least app code.
    - **D. Do nothing now** — accept the risk this phase; document why (valid if traffic is low / pre-launch).
-3. **Key strategy questions** to answer regardless of option: keying (per-IP via `x-forwarded-for` vs per-user for authenticated routes), limits per endpoint class (search vs cookie-set), what response to return (429 + `Retry-After`), and where the limiter runs (middleware vs per-route).
+3. **Key strategy questions** to answer regardless of option: keying (per-IP vs per-user for authenticated routes), limits per endpoint class (search vs cookie-set), what response to return (429 + `Retry-After`), and where the limiter runs (middleware vs per-route).
+   - **`x-forwarded-for` trust boundary (must design, not skip)**: `x-forwarded-for`
+     is a **client-supplied, spoofable header**. Using the raw header as the
+     rate-limit key lets an attacker rotate it to get unlimited fresh buckets,
+     defeating the limiter. The design must specify how a **trusted** client IP is
+     derived: e.g. take the value the platform's trusted proxy appends (on Vercel,
+     the platform-provided client IP / the right-most hop added by infra you
+     control), not the left-most attacker-controlled entry. Define how many proxy
+     hops are trusted and where the boundary sits. If a trustworthy client IP
+     cannot be established for a given deployment, prefer keying that doesn't rely
+     on the header (e.g. edge/WAF layer, or per-session for authenticated routes)
+     and record that limitation. **Never key the limiter on the raw
+     `x-forwarded-for` string.**
 4. **Scope decision needed** — explicitly ask the maintainer whether rate limiting is in the current phase (given `product.md` doesn't list it either way).
 5. **Recommendation** — a ranked recommendation with rationale, and whether to open an ADR under `docs/architecture/decisions/` (MADR format).
 6. **Open questions** — the decisions only the maintainer can make (option choice, scope, budget for an external store).
