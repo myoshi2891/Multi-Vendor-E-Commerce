@@ -142,16 +142,31 @@ const SELLER_EDITABLE_STORE_FIELDS = [
     "defaultDeliveryTimeMin", "defaultDeliveryTimeMax", "lowStockThreshold",
 ] as const;
 
-function pickSellerEditableStoreFields<T extends Record<string, unknown>>(store: T) {
-    const out: Record<string, unknown> = {};
+type SellerEditableStoreFields = Pick<
+    Store,
+    (typeof SELLER_EDITABLE_STORE_FIELDS)[number]
+>;
+
+function pickSellerEditableStoreFields<T extends object>(
+    store: T
+): Partial<SellerEditableStoreFields> {
+    const out: Partial<SellerEditableStoreFields> = {};
     for (const key of SELLER_EDITABLE_STORE_FIELDS) {
-        if (key in store && store[key] !== undefined) out[key] = store[key];
+        const value = Reflect.get(store, key) as
+            | SellerEditableStoreFields[typeof key]
+            | undefined;
+        if (value !== undefined) {
+            Object.assign(out, { [key]: value });
+        }
     }
     return out;
 }
 ```
 
-（`unknown` + 型付きキーリストを使う — リポジトリは `any` を禁止している。）
+（戻り値は `Record<string, unknown>` では**なく** `Partial<Pick<Store, ...>>` にすること — strict TypeScript
+のもとで Prisma の `StoreUpdateInput`/`StoreCreateInput` へ代入可能な状態を保つため。`key in store` ではなく
+型付きキーリストと `Reflect.get` を使う；リポジトリは `any` を禁止している。これが実際に
+`src/queries/store.ts` へ出荷されている形である。）
 
 **検証**: `bunx tsc --noEmit` → exit 0。
 

@@ -106,11 +106,11 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 
 **検証**: `bun audit` が `@clerk/nextjs` の CRITICAL GHSA-vqx2-fgx2-5wq9 をもう一覧に含まないこと。次に `js-cookie` を確認する:
 - `grep -A2 'js-cookie' bun.lock | head` — `@clerk/shared` がパッチ済み `js-cookie`（勧告が修正された >3.0.5）をピンするリリースに進んでいれば、HIGH は解消している。
-- バンプ後も `bun audit` が `js-cookie` の HIGH を示す場合、`package.json` に一時的な override を追加して再インストールする:
+- バンプ後も `bun audit` が `js-cookie` の HIGH を示す場合、`package.json` に一時的な override を追加して再インストールする。**勧告が名指しするパッチ済みバージョンを正確にピンすること — キャレット/範囲は使わないこと**。`^3.0.5` のような範囲は脆弱な `3.0.5` に解決されたままとなり、さらに将来の任意の `3.x` へ浮動してしまうため:
   ```json
-  "overrides": { "js-cookie": "^3.0.5" }
+  "overrides": { "js-cookie": "3.0.6" }
   ```
-  （勧告が名指しするパッチ済みバージョンを使うこと。）`bun audit` を再実行する。Clerk を壊さずに解決できない場合は STOP して報告すること — Clerk を強制的にダウングレードしない。
+  （`3.0.6` は、勧告が修正版として挙げている正確なバージョンに置き換えること。）`bun audit` を再実行する。Clerk を壊さずに解決できない場合は STOP して報告すること — Clerk を強制的にダウングレードしない。
 
 ### Step 4: 完全なテスト + lint
 

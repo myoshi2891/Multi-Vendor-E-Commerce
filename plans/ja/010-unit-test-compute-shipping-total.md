@@ -131,9 +131,15 @@ describe("computeShippingTotal", () => {
             // 5 * 2 * 3 = 30
             expect(computeShippingTotal("WEIGHT", 5, 0, 2, 3)).toBe(30);
         });
-        it("小数の丸め（2桁正規化）", () => {
-            // 0.1 * 0.1 * 3 = 0.03（float 誤差を 0.03 に正規化）
+        it("float 誤差の 2 桁正規化", () => {
+            // 0.1 * 0.1 * 3 = 0.030000...4（float 誤差）→ 0.03 に正規化
             expect(computeShippingTotal("WEIGHT", 0.1, 0, 0.1, 3)).toBe(0.03);
+        });
+        it("丸め境界（.xx5 は half-up で切り上げ）", () => {
+            // 0.125 は 2 桁目の直後がちょうど 5。computeShippingTotal は
+            // Math.round((x + EPSILON) * 100) / 100 で half-up するため 0.13 になる。
+            // ↑の float 正規化テストとは別に「実際の丸め境界」を検証する入力。
+            expect(computeShippingTotal("WEIGHT", 0.25, 0, 0.5, 1)).toBe(0.13);
         });
     });
 

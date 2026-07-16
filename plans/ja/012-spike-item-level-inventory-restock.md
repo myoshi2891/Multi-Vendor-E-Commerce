@@ -119,7 +119,7 @@ const restockOrderItems = async (
 
 **対象内**（本 spike が生成するもの）:
 - `docs/design/inventory-restock/design.md` の設計ドキュメント（ディレクトリを新規作成）— 以下の未解決の問いに、リポジトリの設計ドキュメント規約に従って答える（構造は既存の `docs/design/*/design.md` を参照）。
-- 後続の**実装**プランファイル `plans/013-implement-item-level-restock.md`（または次に空いている番号）— 他のプランと同じテンプレート水準で executor が実行できるよう書く — ただし設計判断が確定した後に限る。
+- 後続の**実装**プランファイルを**次に空いている番号**で作成する（例: `plans/057-implement-item-level-restock.md` — `013` は再利用**しない**こと。`013-spike-category-tree-n-level.md` が既に使用済みである。空き番号は `ls plans/ | grep -oE '^[0-9]+' | sort -n | tail -1` で確認する）。他のプランと同じテンプレート水準で executor が実行できるよう書く — ただし設計判断が確定した後に限る。
 
 **対象外**（本プランで行わないこと）:
 - `src/queries/order.ts`、`src/queries/user.ts`、スキーマへの変更。これは設計のみ。

@@ -150,8 +150,16 @@ if (cart) return true;
 
 ### Step 3: テスト — サーバーの原子性
 
-`src/queries/user.test.ts` の `saveUserCart` describe（~217行目）に、delete+create が原子的であることを証明するテストを追加する:
-- `db.$transaction` をモックし、その callback を `tx.cart.create` が **reject** する `tx` で呼び出す；`saveUserCart(...)` が reject し（モックがトランザクションを表現しているため）操作が成功を報告しないことを assert する。
+> **このユニットテストのスコープ**: モックした `db.$transaction` は、実 DB の原子性やロールバックを
+> 証明するものでは**ない** — 証明できるのは、コードが delete+create を `$transaction` *経由で*
+> 配線していることと、callback 内部からの reject が伝播することだけである。エラー時の実際の
+> ロールバックは、実 DB に対する統合テストで検証しなければならない（これは統合テストシリーズ、
+> 例えばプラン 027/031 の担当領域である。`docs/testing/SECURITY_GAP_REPORT.md` §5.2 の
+> mock vs integration の切り分けに従う）。テストの description もそれに合わせて書くこと —
+> 「原子性を証明する」と主張しないこと。
+
+`src/queries/user.test.ts` の `saveUserCart` describe（~217行目）に、delete+create が**単一の `$transaction` を経由して配線されている**ことと、callback の reject が表面化することを証明するテストを追加する:
+- `db.$transaction` をモックし、その callback を `tx.cart.create` が **reject** する `tx` で呼び出す；`saveUserCart(...)` が reject し、操作が成功を報告しないことを assert する（delete+create はトップレベルの独立した呼び出しではなく、トランザクションの callback 経由で発行される）。
 - 既存の happy-path テストを調整する: 現在おそらく `db.cart.delete` / `db.cart.create` を直接モックしている。コードが今や `db.$transaction(cb)` を呼ぶため、`db.$transaction.mockImplementation(async (cb) => cb(mockTx))` として `mockTx.cart.delete`/`create` を jest fn にする — このリポジトリの他のトランザクション使用テストがどうモックしているかを踏襲する（ファイル内の既存 `$transaction` モック利用箇所を検索；`order.test.ts` は `callback(mockDb)` の passthrough パターンを使用）。
 
 **検証**: `bun run test -- src/queries/user.test.ts` → 全件 pass。

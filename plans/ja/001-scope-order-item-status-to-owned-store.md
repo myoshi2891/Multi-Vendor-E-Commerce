@@ -205,7 +205,7 @@ return status;
 
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `bun run test -- src/queries/order.test.ts` が exit 0；新規クロスストア IDOR テストが存在し pass する
-- [ ] `grep -n "orderItem.findUnique" src/queries/order.ts` が `updateOrderItemStatus` 内で**マッチしない**（スコープなしの read が消えている）
+- [ ] スコープなしの read が **`updateOrderItemStatus` から確実に**消えている。ファイル全体への素の `grep` では関数スコープを証明できない（別の関数が正当に `orderItem.findUnique` を使っている可能性があるため）ので、先に関数本体を切り出すこと: `awk '/export const updateOrderItemStatus/,/^};/' src/queries/order.ts | grep -c "orderItem.findUnique"` → `0` を期待
 - [ ] `grep -n "orderGroup: { storeId" src/queries/order.ts` が新しいスコープ付き where 句を示す
 - [ ] 対象外リストのファイルが一切変更されていない（`git status`）
 - [ ] `plans/README.md` の 001 のステータス行が DONE に更新されている
