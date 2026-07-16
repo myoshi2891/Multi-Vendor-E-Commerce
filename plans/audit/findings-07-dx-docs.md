@@ -30,9 +30,23 @@
   | 区分 | 変数 | 扱い |
   |---|---|---|
   | **必須（未設定だと機能が壊れる）** | `STRIPE_WEBHOOK_SECRET`（webhook 署名検証）、`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` / `NEXT_PUBLIC_CLOUDINARY_PRESET_NAME`（画像アップロード）、`PAYPAL_WEBHOOK_ID`、`NEXT_PUBLIC_APP_URL`、Clerk の sign-in/up URL 系 | README に記載し `.env.example` にプレースホルダーを置く |
-  | **任意（既定値があり未設定でも動く）** | `PAYPAL_API_BASE`（未設定時 sandbox にフォールバック — `webhooks/paypal/route.ts:6`）、`IPINFO_TOKEN` | 「任意」と明示し、未設定時の既定挙動を 1 行で書く |
+  | **任意（既定値があり未設定でも動く）** | `IPINFO_TOKEN` | 「任意」と明示し、未設定時の既定挙動を 1 行で書く |
+  | **部分的にしか効かない（要注記）** | `PAYPAL_API_BASE` | 下記の注記つきで記載する |
   | **放棄予定（設定不要）** | `ELASTICSEARCH_*` | **README には載せない**。`src/` から読まれてはいるが経路自体が放棄済み（`src/lib/elastic-search.ts` はコメントアウト — 既知の制約として `.claude/steering/structure.md` に記載）。載せると「設定すべき変数」と誤読される |
 
+  > **`PAYPAL_API_BASE` の注記（実装状況と一致させること）**: この変数は
+  > **webhook 署名検証の経路でしか読まれない**（`webhooks/paypal/route.ts:5-6` —
+  > 未設定時は `https://api-m.sandbox.paypal.com` にフォールバック）。
+  > **決済の作成・capture は `src/queries/paypal.ts:72,189` で
+  > `https://api.sandbox.paypal.com` をハードコードしている**ため、
+  > **`PAYPAL_API_BASE` を本番値に設定しても決済経路は sandbox のまま**である。
+  > したがって「任意（設定すれば本番に切り替わる）」と読める書き方をしてはならない。
+  > README には「webhook 検証先のみを切り替える変数であり、決済経路の本番化には
+  > `paypal.ts` のハードコード解消が別途必要」と明記する
+  > （ハードコード自体は `plans/README.md` の rejected 所見 SECURITY-07 として
+  > 「本番環境の配線意図を確認してから」と保留済み — 本 finding では
+  > **README の記述を実装と一致させることだけ**を扱い、コード修正は要求しない）。
+  >
   > 「必須」と「任意」を混ぜて羅列すると、新規開発者はどれを揃えれば起動できるのかが
   > 判断できず、DX-03 が解こうとしているオンボーディングブロッカーが形を変えて残る。
   - 理想は `.env.docker.example` に対する生成/検証で再ドリフトを防止すること

@@ -127,8 +127,11 @@ ORDER BY relevance DESC LIMIT 50
   （`schema.prisma:130-170`）。
 - **`ProductStatus` enum は商品公開ゲートに転用できない（実スキーマ照合済み）** —
   名前が紛らわしいため、spike 016 の設計で最初に潰しておくべき誤解:
-  - `enum ProductStatus`（`schema.prisma:560-573`）の値は
-    **`Pending` / `Processing` / `ReadyForShipment` / `Shipped` / `Delivered` / `Canceled`**。
+  - `enum ProductStatus`（`schema.prisma:560-610`）の値は **14 個**:
+    `Pending` / `Processing` / `ReadyForShipment` / `Shipped` / `Delivered` /
+    `Canceled` / `Returned` / `Refunded` / `FailedDelivery` / `OnHold` /
+    `BackOrdered` / `PartiallyShipped` / `ExchangeRequested` / `AwaitingPickup`
+    （末尾にはさらに `PartiallyRefunded` / `ChargedBack` 等のコメントアウト済み候補が並ぶ）。
     各値には「Product has been shipped」「Product has been delivered to the customer」等の
     コメントが付いており、**注文された商品の配送・フルフィルメント状態**を表す。
   - 実際の用途も `OrderItem.status`（`updateOrderItemStatusAsAdmin` の戻り値型が
@@ -139,6 +142,9 @@ ORDER BY relevance DESC LIMIT 50
     新設する必要がある**。既存 `ProductStatus` の値を増やして流用すると、
     OrderItem の配送状態に「審査中」のような無意味な値が混入し、
     両ドメインが 1 つの enum に癒着する（後から分離するのは migration を伴い高コスト）。
+    **既に 14 値を抱えている**ことがこの判断を後押しする — フルフィルメント側だけで
+    これだけの状態を持つ enum に審査状態を足すと、値の意味が文脈依存になり、
+    どの値がどちらのドメインのものか実装者が判別できなくなる。
   > 命名の紛らわしさは既知の負債。spike 016 で新 enum を足す際は、
   > 既存 `ProductStatus` の**改名**（例: `OrderItemStatus`）を同時に検討すること
   > （`.claude/rules/03-data-model-diagram-sync.md` の ERD 再生成義務にも注意）。

@@ -14,7 +14,7 @@
 - **Confidence**: HIGH — 「DB のみ・決済 API は呼ばない」境界がコードと仕様に逐語で記載。
 - **Design spike が先に答えるべき問い**: 部分返金対応か全額のみか？返金の source of truth（アプリ起点 vs プロバイダ webhook 起点）？冪等キー戦略？既存の `updateOrderPaymentStatus` 内 `PaymentStatus`↔`OrderStatus`↔`OrderItem` カスケードとの相互作用？
 
-### [DIRECTION-02] Cancelled/Returned/Refunded 時の在庫復元（restock）フックの実装
+### [DIRECTION-02] Canceled/Returned/Refunded 時の在庫復元（restock）フックの実装
 
 - **Evidence**: `src/queries/order.ts` — `// TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）`。`order.ts:286` — モジュールレベル注記「在庫連動はスコープ外・TODO コメントのフック位置のみ残す」。`08-open-questions.md:7-8` が "stock restock" をスコープ外ダウンストリームとして命名。restock は `placeOrder`（`src/queries/user.ts`、原子的 `$transaction`）の既存 decrement の鏡像。
 - **現 HEAD の実装状態（実測で確定）**: **未実装**。`updateOrderItemStatusAsAdmin` 内に
@@ -27,16 +27,16 @@
   > `grep -n "TODO(在庫連動・スコープ外)" src/queries/order.ts`
 - **Impact**: 現状、キャンセル/返品/返金された商品の在庫は**二度と戻らない** — 返品のたびに販売可能数が恒久的に過少計上され、SELLER KPI「在庫管理の操作性」を直接毀損、幻の在庫切れで GMV を押し下げる。注文時 decrement は存在するのに逆方向 restore が無い非対称。
 - **Effort**: M — 既存 status 遷移 `$transaction` 内への restock 書き込み + 二重 restock ガード。
-- **Risk**: MED — 冪等必須（Cancelled→Cancelled の再発火や admin 操作の繰り返しで二重加算しない）。`placeOrder` と同じトランザクション規律が必要。
+- **Risk**: MED — 冪等必須（`Canceled`→`Canceled` の再発火や admin 操作の繰り返しで二重加算しない）。`placeOrder` と同じトランザクション規律が必要。
 - **Confidence**: HIGH — フック位置と意図がコードに明記。
 - **Design spike が先に答えるべき問い**:
   - 「item ごとに restock はちょうど 1 回」を保証する状態は何か
     （`restocked` フラグ vs status 履歴からの導出）？
-  - **発火条件を status ごとに分離して決めること**（一括で「Cancelled/Returned/Refunded で
-    restock」と決めない）:
+  - **発火条件を status ごとに分離して決めること**（一括で「`Canceled`/`Returned`/`Refunded` で
+    restock」と決めない）。**以下はすべて `OrderItem.status`（= `ProductStatus`）の値**:
     | status | 発火条件の候補 | 論点 |
     |---|---|---|
-    | **Cancelled** | **status 単独で発火**してよい | 出荷前のキャンセルであり、商品は物理的に手元にある。返金の有無と在庫の所在は独立 |
+    | **`Canceled`** | **status 単独で発火**してよい | 出荷前のキャンセルであり、商品は物理的に手元にある。返金の有無と在庫の所在は独立 |
     | **Returned** | **status 単独で発火**してよい（ただし「返品**到着**」を意味する status か要確認） | 商品が戻ってきたことが在庫復元の根拠。「返品**申請**」段階で復元すると幻の在庫になる |
     | **Refunded** | **返金完了と結合すべき**（status 単独では発火させない） | Refunded は**金銭の状態**であって商品の所在を意味しない。返金したが商品は未返送というケースで在庫が増える（= 実在庫との乖離）。DIRECTION-01（実 Stripe/PayPal 返金実行）と結合し、**返金完了 かつ 商品返送確認**を条件にするのが安全側 |
     > **なぜ分離が必要か**: 3 つを同じ条件で扱うと、**Refunded の扱いが最も危険**になる。
@@ -45,6 +45,13 @@
     > 「幻の在庫切れ」の**逆方向の同じ病**（実在しない在庫の販売 = オーバーセル）になる。
   - DIRECTION-01 の返金実行と結合するか、status 単独で発火するかは**上表のとおり
     status ごとに答えが異なる**ため、spike ではこの粒度で結論を出すこと。
+  - > **enum スペル注意（一括置換は不可）**: 本 finding の `Canceled` は
+    > **l が 1 つ**。これは `OrderStatus` / `ProductStatus` の永続化値
+    > （`schema.prisma:475` / `:573`）であり、`updateOrderItemStatusAsAdmin` の
+    > TODO コメントの表記と一致する。一方 **親の `PaymentStatus` は `Cancelled`
+    > （l が 2 つ）**（`schema.prisma:488`）で、こちらも正しい値である
+    > （`order.ts:570-571` に同じ注意書きがある）。**どちらの enum を指しているかで
+    > 綴りが変わる**ため、ドキュメント全体を一括置換してはならない。
 
 ### [DIRECTION-03] 運営向けサポートチケットコンソール（閲覧 + status 更新）の構築
 
