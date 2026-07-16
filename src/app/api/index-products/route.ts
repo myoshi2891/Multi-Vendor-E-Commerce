@@ -166,7 +166,8 @@ export async function GET(req: Request) {
             );
         }
 
-        // ページネーション用パラメータ（NaN / 負値 / 小数 / 過大値を排除）
+        // ページネーション用パラメータ。NaN / 負値は既定値へフォールバックし、
+        // 小数は切り捨て、過大値は上限へクランプする（いずれも拒否はしない）。
         const MAX_LIMIT = 50; // POST ハンドラの take:50 と一致させる
         const MAX_PAGE = 10_000; // page の上限（skip 暴走・DB の巨大 OFFSET を防ぐ）
         const rawPage = Number(url.searchParams.get("page"));
