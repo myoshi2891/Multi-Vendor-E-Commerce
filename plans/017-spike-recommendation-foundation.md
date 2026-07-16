@@ -108,13 +108,39 @@ SQL 合成で成立する v1（関連商品・一緒に購入・人気商品）�
      （共起 2 件未満は出さない等）
    - (c) **人気商品/あなたへのおすすめ（ホーム）**: 閲覧ユーザーの wishlist/注文カテゴリに
      基づく人気商品。未ログイン時のフォールバック（全体人気）
-2. **seam（インターフェイス）の固定**: `getRelatedProducts(productId, { strategy, limit })`
-   のような公開シグネチャと戻り値型（既存の商品カード props と互換な形）を確定する。
+2. **seam（インターフェイス）の固定 — v1 戦略セット全体を覆うこと**:
+   `getRelatedProducts(productId, ...)` の**商品アンカー前提だけでは Q1(c) のホーム推薦
+   （ユーザーアンカー / 無ログイン時は全体人気）を表現できない**。seam は 3 戦略すべてを
+   1 つの契約で扱える形にする。推奨:
+
+   ```ts
+   type RecommendationContext =
+     | { anchor: "product"; productId: string }   // (a) 関連商品・(b) 一緒に購入
+     | { anchor: "user"; userId: string }         // (c) あなたへのおすすめ（ホーム）
+     | { anchor: "anonymous" };                    // (c) 未ログイン時の全体人気フォールバック
+   function getRecommendations(
+     ctx: RecommendationContext,
+     opts: { strategy: RecommendationStrategy; limit: number }
+   ): Promise<ProductCardData[]>;  // 戻り値は既存の商品カード props と互換
+   ```
+
    戦略の実装が SQL からベクタ検索に変わっても**呼び出し側が変わらない**ことが要件。
-   配置は `src/queries/`（規約）。
-3. **鮮度と性能**: リクエスト毎計算か、`unstable_cache` 等でのキャッシュか（PERF-05・
-   plan 015 のファセット集計キャッシュと同じ層 — 方式を揃えるか）。共起集計はマテビュー/
-   定期集計に逃がすべき規模かを、想定データ量で見積もる。
+   配置は `src/queries/`（規約）。商品アンカー専用の薄いラッパ
+   （`getRelatedProducts(productId, opts)` → `getRecommendations({anchor:"product",productId}, opts)`）は
+   置いてよいが、**正準の seam は文脈を受け取る形**にし、ホーム推薦を後付けで別シグネチャにしない。
+3. **鮮度と性能 + キャッシュのユーザー分離**: リクエスト毎計算か、`unstable_cache` 等での
+   キャッシュか（PERF-05・plan 015 のファセット集計キャッシュと同じ層 — 方式を揃えるか）。
+   共起集計はマテビュー/定期集計に逃がすべき規模かを、想定データ量で見積もる。
+
+   > **パーソナライズ推薦（Q1c のユーザーアンカー）をキャッシュする場合、キャッシュキーに
+   > `userId` を必ず含めてユーザー間で分離すること**（`anchor:"user"` の結果を共有キーで
+   > キャッシュすると、あるユーザーの wishlist/注文ベース推薦が別ユーザーに漏れる）。設計方針:
+   > - `anchor:"anonymous"`（全体人気）と `anchor:"product"`（非パーソナライズな関連商品）は
+   >   **共有キャッシュ可**（キーは戦略 + productId 等、ユーザー非依存）。
+   > - `anchor:"user"` は **per-user キー**（`["recs", userId, strategy]` 等）にするか、
+   >   個人化データはキャッシュしない（計算コスト次第）。`unstable_cache` の `keyParts` /
+   >   tag に `userId` を含めることを設計に明記する。
+   > - ログイン状態が切り替わったとき（ログアウト）に個人化キャッシュが残らない無効化方針も決める。
 4. **表示枠の設計**: `relatedProducts` スロット（商品詳細）以外にどの枠を v1 に含めるか
    （カート画面の「一緒に購入」、ホームの「人気」）。UI は既存の商品カード/カルーセルの
    再利用で足りるか。
