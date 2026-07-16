@@ -119,8 +119,18 @@ const mockDb = require("@/lib/db").db;
 
 ## Scope
 
-**In scope**（変更してよいファイル）:
+**In scope — テストコード（1 コミット目）**:
 - `src/queries/paypal.test.ts` — テスト追記のみ
+
+**In scope — ドキュメント同期（後続の別コミット）**:
+- `spec-sync-after-test` の成果物一式 — テスト数が変動するため
+  `.claude/rules/02-tdd-step-commit.md` の MUST に従い同期する。SSOT は
+  `docs/testing/QA_HANDOFF.md`、伝播先は `07-testing.md` / `COVERAGE_REPORT.md` /
+  `docs/PROGRESS.md`、および `bun run coverage:dashboard` 再生成後の
+  `docs/coverage-dashboard.html`。**テストコードとは別コミット**にする。
+
+> 注: 「In scope — テストコード」は 1 コミット目のスコープ、docs 同期は後続の別コミット。
+> 下の Out of scope は**どちらのコミットでも触らない**もの。
 
 **Out of scope**（触らない。関連して見えても変更禁止）:
 - `src/queries/paypal.ts` — 本体。テストのために本体を変えたくなったら STOP
