@@ -81,9 +81,12 @@
 ### ⑦ レビュー・UGC 品質ガバナンス → spike 019 ／ B-7 解消
 
 - レビューに (a) 購入検証バッジ（OrderItem 履歴との照合）、(b) モデレーション状態機械
-  （公開/審査中/非公開/通報済み）+ 通報受付、(c) `$transaction` によるアトミック評価集計
-  （Product と**死にフィールド化している `Store.averageRating`** の両方）、(d) helpful 投票の
-  per-user 化（`likes Int` の置き換え）を導入
+  （公開/審査中/非公開/通報済み）+ 通報受付、(c) 評価集計の更新（Product と**死にフィールド化
+  している `Store.averageRating`** の両方）、(d) helpful 投票の per-user 化（`likes Int` の置き換え）を導入
+  - **注意**: `$transaction` は原子性は与えるが、並行レビューの read-modify-write（現在値を読んで
+    平均を再計算し書き戻す）競合は防げない。集計更新はアトミックインクリメント／行ロック
+    （`SELECT ... FOR UPDATE` 相当）／集計の再計算をトランザクション内で行う等で
+    ロストアップデートを避けること（spike 019 の設計判断項目）
 - モデレーションモード（事前/事後/無審査）は柱④と同じ「ポリシーをデータで差し替え」
 - 決めるべきこと: 購入検証の判定基準（Delivered のみか）／通報の受け皿
   （SupportTicket 拡張 vs 専用モデル）／`rating Float` の Decimal 化の要否
@@ -132,7 +135,11 @@
 ## 実装フェーズで適用される規約（[`tech.md`](../../../.claude/steering/tech.md)）
 
 - 金額系は `Decimal(12,2)` + `Prisma.Decimal` 演算（⑧の価格履歴・固定額クーポンで必須）
-- 状態遷移 + 副作用は `db.$transaction`（④⑥⑦⑩で必須）
+- 状態遷移 + **DB 副作用**（複数テーブル更新・在庫減算・集計更新）は `db.$transaction`（④⑥⑦⑩で必須）
+  - **外部副作用（email 送信・Stripe/PayPal 呼び出し等）は `$transaction` の内側に置かない**。
+    外部呼び出しはロールバックできず、DB コネクションをその間占有するため。柱⑨は
+    **Outbox パターン**（トランザクション内では通知イベントを DB に記録するに留め、送信は
+    トランザクション確定後に別処理で実行）で DB 確定と外部送信の境界を分離する（本節 柱⑨ 参照）
 - auth-guards（`requireUser`/`requireAdmin`/`requireSeller`/`requireStoreOwner`）使用・
   Server Action は `src/queries/` 配置
 - スキーマ変更時は ERD 再生成（`03-data-model-diagram-sync` ルール）と `safe-migration` スキル
