@@ -140,16 +140,31 @@ const SELLER_EDITABLE_STORE_FIELDS = [
     "defaultDeliveryTimeMin", "defaultDeliveryTimeMax", "lowStockThreshold",
 ] as const;
 
-function pickSellerEditableStoreFields<T extends Record<string, unknown>>(store: T) {
-    const out: Record<string, unknown> = {};
+type SellerEditableStoreFields = Pick<
+    Store,
+    (typeof SELLER_EDITABLE_STORE_FIELDS)[number]
+>;
+
+function pickSellerEditableStoreFields<T extends object>(
+    store: T
+): Partial<SellerEditableStoreFields> {
+    const out: Partial<SellerEditableStoreFields> = {};
     for (const key of SELLER_EDITABLE_STORE_FIELDS) {
-        if (key in store && store[key] !== undefined) out[key] = store[key];
+        const value = Reflect.get(store, key) as
+            | SellerEditableStoreFields[typeof key]
+            | undefined;
+        if (value !== undefined) {
+            Object.assign(out, { [key]: value });
+        }
     }
     return out;
 }
 ```
 
-(Use `unknown` + the typed key list — the repo bans `any`.)
+(Return `Partial<Pick<Store, ...>>` — **not** `Record<string, unknown>` — so the result stays
+assignable to Prisma's `StoreUpdateInput`/`StoreCreateInput` under strict TypeScript. Use `Reflect.get`
+with the typed key list rather than `key in store`; the repo bans `any`. This is the shape actually
+shipped in `src/queries/store.ts`.)
 
 **Verify**: `bunx tsc --noEmit` → exit 0.
 

@@ -118,7 +118,7 @@ If item X is cancelled individually (path 1 restocks it) and later the whole ord
 
 **In scope** (this spike produces):
 - A design document at `docs/design/inventory-restock/design.md` (create the dir) answering the open questions below, following the repo's design-doc conventions (see existing `docs/design/*/design.md` for structure).
-- A follow-up **implementation** plan file `plans/013-implement-item-level-restock.md` (or the next free number) written to the same template standard as the other plans, ready for an executor — but only after the design decisions are made.
+- A follow-up **implementation** plan file at **the next free plan number** (e.g. `plans/057-implement-item-level-restock.md` — do NOT reuse `013`, which is already taken by `013-spike-category-tree-n-level.md`; confirm the free number with `ls plans/ | grep -oE '^[0-9]+' | sort -n | tail -1`), written to the same template standard as the other plans, ready for an executor — but only after the design decisions are made.
 
 **Out of scope** (do NOT do in this plan):
 - Any change to `src/queries/order.ts`, `src/queries/user.ts`, or the schema. This is design-only.
@@ -130,6 +130,7 @@ If item X is cancelled individually (path 1 restocks it) and later the whole ord
    - (a) an `OrderItem.restockedAt` / `restocked: Boolean` column (schema migration) that every restock path checks-and-sets atomically in the same `$transaction`; or
    - (b) derive "already restocked" from status history — i.e. only restock on the *transition into* a terminal state, and make both paths use a conditional `updateMany` on the item (`where: { id, status: { notIn: [terminal...] } }`) so the second attempt sees `count === 0`.
    State which is simpler and safer given the existing `updateMany`-transition pattern. (Option (b) mirrors the existing code and avoids a migration; option (a) is explicit but adds schema surface. Recommend one.)
+   - **Caveat for option (b)**: a status-transition guard on a *single* entity does NOT by itself prevent double-restock across *different* paths (item-level `updateOrderItemStatusAsAdmin` vs order-level `updateOrderPaymentStatus`), because they transition different rows. If (b) is chosen, the exactly-once claim MUST still be anchored at the **item level** (an item-scoped conditional `updateMany`/marker that both paths check-and-set in the same `$transaction`), not merely on an order/group status transition. See Q3.
 2. **Which terminal statuses restock?** `Canceled`, `Refunded`, `Returned` — confirm the exact `ProductStatus`/`OrderStatus` enum spellings (note the existing code's `Cancelled` vs `Canceled` double-l/single-l distinction between `PaymentStatus` and `OrderStatus`). List the exact values.
 3. **Item-level vs order-level interaction.** Specify how `updateOrderItemStatusAsAdmin` and `updateOrderPaymentStatus` avoid double-crediting the same item (this is where option (a)/(b) pays off). Give the concrete transaction shape.
 4. **Transaction boundary.** `updateOrderItemStatusAsAdmin` currently is not in a `$transaction`. Confirm the implementation must wrap status-update + restock atomically, and specify the `where`-guard that makes the transition idempotent.

@@ -103,12 +103,12 @@ If any Clerk-mocked test fails because the mock shape changed, adjust **only the
 ### Step 3: Confirm the advisory is cleared
 
 **Verify**: `bun audit` no longer lists the `@clerk/nextjs` CRITICAL GHSA-vqx2-fgx2-5wq9. Then check `js-cookie`:
-- `grep -A2 'js-cookie' bun.lock | head` — if `@clerk/shared` advanced to a release pinning a patched `js-cookie` (>3.0.5 with the advisory fixed), the HIGH is gone.
-- If `bun audit` still shows the `js-cookie` HIGH after the bump, add a temporary override to `package.json` and reinstall:
+- `grep -A2 'js-cookie' bun.lock | head` — if `@clerk/shared` advanced to a release pinning a patched `js-cookie` (the exact fixed version the advisory names), the HIGH is gone.
+- If `bun audit` still shows the `js-cookie` HIGH after the bump, add a temporary override to `package.json` and reinstall. **Pin the exact patched version the advisory names — do NOT use a caret/range**, because a range like `^3.0.5` still resolves to the vulnerable `3.0.5` and floats to any future `3.x`:
   ```json
-  "overrides": { "js-cookie": "^3.0.5" }
+  "overrides": { "js-cookie": "3.0.6" }
   ```
-  (Use the patched version the advisory names.) Re-run `bun audit`. If it cannot be resolved without breaking Clerk, STOP and report — do not force-downgrade Clerk.
+  (Replace `3.0.6` with whatever exact version the advisory lists as fixed.) Re-run `bun audit`. If it cannot be resolved without breaking Clerk, STOP and report — do not force-downgrade Clerk.
 
 ### Step 4: Full test + lint
 

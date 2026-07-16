@@ -27,6 +27,14 @@ Two independent query-hygiene wins:
 
 This plan applies a **defensive upper bound** (`take`) to the store-orders query without changing its return shape (so the seller page's client-side `DataTable` search/pagination keeps working), and deletes the dead browse-page call. Full server-side pagination of the orders table is deliberately **deferred** — see Maintenance notes — because it would change the return type consumed by `StoreOrderType` and regress the DataTable's in-browser search, which is a larger, riskier change than this hygiene pass.
 
+> **Behavior-change caveat (not pure hygiene)**: the *return shape* is unchanged, but the
+> *behavior* is not — a store with more than `take` orders will **silently** drop its oldest orders
+> from the seller view, with no UI signal. This is a user-facing truncation, so treat it as a
+> product contract: the seller page MUST surface a "showing the latest N orders" notice (or an
+> equivalent affordance) alongside the `take`, and the follow-up (PERF-04) must deliver real
+> pagination before the bound can plausibly be hit in production. Do not ship the bare `take`
+> as if it were invisible.
+
 ## Current state
 
 ### Unbounded `getStoreOrders`, `src/queries/store.ts:361-393`

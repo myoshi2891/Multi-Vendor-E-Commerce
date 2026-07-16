@@ -146,10 +146,17 @@ Do **not** remove the `set(() => ({ ... }))` calls that precede them — those d
 
 **Verify**: `bunx tsc --noEmit` → exit 0 and `grep -n "localStorage" src/cart-store/useCartStore.ts` returns no matches.
 
-### Step 3: Test — server atomicity
+### Step 3: Test — server transaction wiring (not real rollback)
 
-In `src/queries/user.test.ts`, in the `saveUserCart` describe (line ~217), add a test proving the delete+create is atomic:
-- Mock `db.$transaction` to invoke its callback with a `tx` where `tx.cart.create` **rejects**; assert `saveUserCart(...)` rejects and (because the mock represents a transaction) the operation does not report success.
+> **Scope of this unit test**: a mocked `db.$transaction` does **not** prove real DB atomicity or
+> rollback — it only proves the code routes delete+create *through* `$transaction` and propagates a
+> rejection from inside the callback. Actual rollback-on-error must be verified by an integration
+> test against a real DB (that belongs to the integration-test series, e.g. plans 027/031, per
+> `docs/testing/SECURITY_GAP_REPORT.md` §5.2's mock-vs-integration split). Word the test's
+> description accordingly — do not claim it "proves atomicity".
+
+In `src/queries/user.test.ts`, in the `saveUserCart` describe (line ~217), add a test proving the delete+create is **wired through a single `$transaction`** and that a callback rejection surfaces:
+- Mock `db.$transaction` to invoke its callback with a `tx` where `tx.cart.create` **rejects**; assert `saveUserCart(...)` rejects and the operation does not report success (the delete+create are issued via the transaction callback, not as independent top-level calls).
 - Adjust existing happy-path tests: they currently likely mock `db.cart.delete` / `db.cart.create` directly. Since the code now calls `db.$transaction(cb)`, make the mock `db.$transaction.mockImplementation(async (cb) => cb(mockTx))` where `mockTx.cart.delete`/`create` are jest fns — mirror how other transaction-using tests in this repo mock it (search the file for existing `$transaction` mock usage; `order.test.ts` uses the `callback(mockDb)` passthrough pattern).
 
 **Verify**: `bun run test -- src/queries/user.test.ts` → all pass.
