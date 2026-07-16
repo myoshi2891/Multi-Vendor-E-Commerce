@@ -186,15 +186,42 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 - 内容が S1 と同一（upsert update 経路が同値で上書き）
 
 **Scenario S3: 状態遷移イベントは upsert 更新される**
-`payment_intent.succeeded` → `charge-refunded-full`（同一 orderId。charge fixture は
-`event.data.object.metadata.orderId` と `payment_intent` を差し替え）の順で配送。DB assert:
+`payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
 - PaymentDetails は 1 行のまま `status === "Refunded"`
 - Order.paymentStatus === "Refunded"
-- `charge-refunded-partial` の別ケースで `PartiallyRefunded` も 1 テスト固定
+- 部分返金の別ケースで `PartiallyRefunded` も 1 テスト固定
+
+> **fixture は実在の Stripe イベント形状に忠実にすること**（でっち上げの `charge-refunded-full` /
+> `charge-refunded-partial` のような**存在しないイベントタイプ名やペイロード**を使わない）。
+> Stripe の実際のイベントは `type: "charge.refunded"`、`event.data.object` は **Charge オブジェクト**で
+> `amount` / `amount_refunded` / `refunded`(boolean) / `payment_intent` / `metadata` 等を持つ。
+> 全額返金は `amount_refunded === amount`（`refunded: true`）、部分返金は
+> `0 < amount_refunded < amount` で表現する。fixture は Stripe CLI の
+> `stripe trigger charge.refunded` で記録した実イベント、または公式型
+> （`Stripe.Charge` / `Stripe.Event`）に一致する形から作る。route が実際に読むフィールド
+> （`route.ts` で参照している `object` のプロパティ）を Current state から確認し、それに整合させる。
 
 **Scenario S4: Order 不在は 404 + 副作用なし**
 存在しない orderId のイベントを配送 → 404。
 `db.paymentDetails.count()` === 0（何も書かれない）。
+
+**Scenario S5: `$transaction` の原子性（失敗時ロールバック）— JSDoc の「tx 原子性」を実証**
+JSDoc に「tx 原子性」を検証境界として掲げる以上、**成功パスだけでなく失敗時に部分書き込みが
+残らないこと**を 1 ケースで実証する（無ければ JSDoc から「tx 原子性」を削り scope を狭める）。
+`@/lib/db` はモックしない方針なので、トランザクションの**2 番目の書き込みだけ**を決定論的に
+失敗させる seam を使う:
+- 実装が `db.$transaction([paymentDetails.upsert, order.update])`（または async 版）で
+  paymentDetails 書き込み → order 更新の順なら、**order 側を失敗させる**制約を仕込む。
+  具体例: seed 済み Order を配送直前に `db.order.delete` で消し、かつ paymentDetails 側の
+  upsert は成立する状況を作る（order.update が `Record to update not found` で throw）。
+  → route が `$transaction` で括っていれば **paymentDetails も書かれない**（count === 0）。
+- 期待 assert: レスポンスは 5xx（またはハンドリング済みのエラー応答）、かつ
+  `db.paymentDetails.count({ where: { orderId } })` === **0**（原子ロールバック）。
+- **もし** route が upsert と update を `$transaction` で括っていない（2 つの独立書き込み）ことが
+  判明したら、それは**原子性の欠陥**。テストを削って隠さず、失敗テストとして顕在化させ finding に
+  登録し、JSDoc の「tx 原子性」記述を「（未担保・要修正）」に改める（scope を正直に狭める）。
+
+> 根拠: 「境界に掲げた性質は成功例だけで満たしたことにしない」。原子性は*失敗時*にしか観測できない。
 
 **Verify**: `bun run test:integration -- tests/integration/webhook-payment.test.ts` → Stripe 分 all pass
 
@@ -213,8 +240,18 @@ fixture の `resource.custom_id` を seed 済み orderId に差し替えて配�
 **Scenario P3: COMPLETED → REFUNDED 遷移 → upsert 更新**（1 行のまま `Refunded`）
 
 **Scenario P4: プロバイダー切替の上書き**（同一 Order に Stripe イベント → PayPal イベントの順で
-配送し、PaymentDetails が 1 行のまま `paymentMethod` が `"PayPal"` に更新されること —
-orderId unique 制約がプロバイダー跨ぎでも 1 行を保証する設計の固定）
+配送。PaymentDetails が 1 行のまま、以下が**すべて**新プロバイダー値に更新されることを assert する
+—`paymentMethod` だけでなく**金額・通貨も**切替後に一貫すること）:
+- `paymentMethod` が `"PayPal"` に更新される
+- `amount` が **PayPal 経路の権威値（`order.total`、`route.ts:254`）**に更新される
+  （Stripe 側の cents 値が残らないこと。単位・値ともに PayPal 経路の格納規則に一致）
+- `paymentIntentId` が PayPal の `resource.id` に更新される（Stripe intent id が残らない）
+- 通貨を格納するカラムがある場合はそれも新プロバイダー値に一致すること
+  （スキーマに currency 列が無ければ「格納なし」を Current state で確認し本 assert は省略と明記）
+- orderId unique 制約がプロバイダー跨ぎでも 1 行を保証する設計の固定（count === 1）
+
+> 主眼: 「行が 1 本」だけでなく「切替で古いプロバイダーの金額・intent が残らない」ことまで固定する。
+> 金額の残留は二重計上・返金額誤りに直結するため、`paymentMethod` の更新だけでは不十分。
 
 **Verify**: `bun run test:integration -- tests/integration/webhook-payment.test.ts` → all pass
 
