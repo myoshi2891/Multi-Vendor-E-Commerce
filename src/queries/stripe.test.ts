@@ -127,7 +127,7 @@ describe("createStripePaymentIntent", () => {
 
             await createStripePaymentIntent("order-001");
 
-            // Math.round(10.005 * 100) = 1001
+            // Prisma.Decimal で 10.005 を 1001 セントへ丸める
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     amount: 1001,
@@ -481,6 +481,7 @@ describe("createStripePayment", () => {
             ).rejects.toThrow("Payment intent does not match order.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
         });
     });
 
@@ -511,6 +512,7 @@ describe("createStripePayment", () => {
             ).rejects.toThrow("Payment intent amount/currency mismatch.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
         });
 
         it("currency が usd でない intent を拒否し、Order を更新しない", async () => {
@@ -524,6 +526,7 @@ describe("createStripePayment", () => {
             ).rejects.toThrow("Payment intent amount/currency mismatch.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
         });
     });
 });

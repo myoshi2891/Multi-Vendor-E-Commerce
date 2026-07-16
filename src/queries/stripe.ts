@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { PaymentStatus } from "@prisma/client";
+import { PaymentStatus, Prisma } from "@prisma/client";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -40,6 +40,9 @@ const toOrderPaymentStatus = (
     }
 };
 
+const toStripeAmount = (total: Prisma.Decimal): number =>
+    total.mul(100).toDecimalPlaces(0).toNumber();
+
 /**
  * @Function createStripePaymentIntent
  * @Description Creates a Stripe payment intent for the given order.
@@ -69,7 +72,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
         // Create a Stripe payment intent
         // metadata.orderId は Webhook (src/app/api/webhooks/stripe) で内部 Order を相関するために必須
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(order.total.toNumber() * 100), // Convert to cents
+            amount: toStripeAmount(order.total),
             currency: "usd",
             automatic_payment_methods: { enabled: true },
             metadata: { orderId },
@@ -128,7 +131,7 @@ export const createStripePayment = async (
 
         // metadata が正しくても amount/currency が改ざんされた intent を弾く。
         // intent は createStripePaymentIntent で order.total（セント）+ "usd" で生成される。
-        const expectedAmount = Math.round(order.total.toNumber() * 100);
+        const expectedAmount = toStripeAmount(order.total);
         if (
             paymentIntent.amount !== expectedAmount ||
             paymentIntent.currency !== "usd"
