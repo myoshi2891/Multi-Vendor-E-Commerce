@@ -91,12 +91,16 @@ i18n-localization/`）が同じ「Zod スキーマのファクトリ化」論点
 
 ## Commands you will need（読み取り専用調査）
 
+> すべて**副作用なしの読み取り専用**コマンド（`grep` / `SELECT` のみ）。実行して結果を得られる形に
+> 統一する（インタラクティブな `prisma studio` や不安定な正規表現は使わない）。
+
 | 目的 | コマンド | 期待 |
 |---|---|---|
-| Spec の全参照箇所 | `grep -rn "specs\?\b" src/ -il --include="*.ts" --include="*.tsx"` | 影響ファイル一覧 |
-| 既存 Spec データの傾向 | `bunx prisma studio`（目視）または seed 定義 `grep -rn "specs" prisma/seed/` | name の表記揺れ実態 |
-| JSONB/GIN の先行事例 | `grep -rn "Json\|@db.JsonB" prisma/schema.prisma` | 現状の Json 利用有無 |
-| 型チェック | `bunx tsc --noEmit` | exit 0 |
+| Spec の全参照箇所 | `grep -rniE "Spec" src/ --include="*.ts" --include="*.tsx" -l` | 影響ファイル一覧（`-l` でファイル名のみ。`\b` 等の非移植正規表現は使わない） |
+| 既存 Spec データの傾向（seed 定義から） | `grep -rniE "spec" prisma/seed/` | name の表記揺れ実態（seed の宣言値から把握） |
+| 既存 Spec データの傾向（DB から・任意） | `psql "$DATABASE_URL" -c 'SELECT name, COUNT(*) FROM "Spec" GROUP BY name ORDER BY 2 DESC LIMIT 50;'` | 読み取り専用 SELECT で表記揺れを実測（`prisma studio` の目視は使わない） |
+| JSONB/GIN の先行事例 | `grep -rniE "Json\|Jsonb" prisma/schema.prisma` | 現状の Json 利用有無 |
+| 型チェック（副作用なし） | `bunx tsc --noEmit` | exit 0 |
 
 ## Scope
 
@@ -186,8 +190,10 @@ ALL を満たすこと:
 - `Spec` モデルが既に型付き・カテゴリ紐づけに改修済み（前提消滅）
 - plan 013 の設計が「属性はカテゴリノードに紐づく」前提と両立しない形で確定していた場合 —
   矛盾点を列挙して 013 の設計者判断を仰ぐ
-- JSONB 方式を選ぶ場合に Prisma（現行 5.x）+ Accelerate の JSONB フィルタ/インデックス
-  サポートに重大な制約が見つかった場合 — 制約の一次情報を添えて報告
+- JSONB 方式を選ぶ場合に Prisma（**現行の宣言値 `5.22.0`** — `package.json` の `prisma` /
+  `@prisma/client` に固定。「5.x」等の曖昧な前提を書かず、実行時に
+  `grep -E '"@prisma/client"' package.json` で確認した値を使う）+ Accelerate の
+  JSONB フィルタ/インデックスサポートに重大な制約が見つかった場合 — 制約の一次情報を添えて報告
   （Round 1 deferred の Prisma 6.x アップグレード spike と統合すべきかの判断材料になる）
 
 ## Maintenance notes
