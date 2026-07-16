@@ -90,7 +90,7 @@ Round 1 の「Areas checked and found clean」に加え、本ラウンドで**�
 |------|-------|----------|----------|--------|------|------------|--------|
 | [023](../023-bound-and-validate-public-search-pagination.md) | Bound & validate `index-products` GET pagination | security | P2 | S | LOW | — | TODO |
 | [024](../024-validate-usercountry-cookie-write.md) | Validate `userCountry` cookie write (symmetry) | security | P3 | S | LOW | — | TODO |
-| [025](../025-spike-rate-limit-public-endpoints.md) | **Spike**: rate-limit seam for public endpoints | security | P3 | M | LOW-MED | — | TODO |
+| [025](../025-spike-rate-limit-public-endpoints.md) | **Spike**: rate-limit seam for public endpoints | security | P3 | M | LOW-MED | — | DONE |
 
 推奨順: **023 → 024**（いずれも独立・S・LOW）、**025 は spike**（設計文書 + 後続実装プラン提案で STOP）。
 023 は SECURITY-05（`index-products` の `error.message` 漏洩）と同一ファイルを触るため、SECURITY-05 を
