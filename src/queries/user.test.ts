@@ -215,6 +215,14 @@ describe("followStore", () => {
 // saveUserCart
 // ==================================================
 describe("saveUserCart", () => {
+    beforeEach(() => {
+        // saveUserCart の transaction callback を同じ DB モックで実行する。
+        mockDb.$transaction.mockImplementation(
+            async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                callback(mockDb)
+        );
+    });
+
     describe("認証エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
@@ -339,6 +347,33 @@ describe("saveUserCart", () => {
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
             expect(mockDb.cart.create).toHaveBeenCalled();
+        });
+
+        it("削除・作成を単一transactionへ配線し、コールバック内の失敗を伝播する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            const transactionCart = {
+                delete: jest.fn().mockResolvedValue(createMockCart()),
+                create: jest.fn().mockRejectedValue(new Error("Cart creation failed")),
+            };
+
+            mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: unknown) => Promise<unknown>) =>
+                    callback({ cart: transactionCart })
+            );
+
+            await expect(saveUserCart(cartProducts as never)).rejects.toThrow(
+                "Cart creation failed"
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(transactionCart.delete).toHaveBeenCalledWith({
+                where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
+            expect(transactionCart.create).toHaveBeenCalledTimes(1);
+            expect(mockDb.cart.delete).not.toHaveBeenCalled();
+            expect(mockDb.cart.create).not.toHaveBeenCalled();
         });
 
         it("割引価格が正しく計算される", async () => {

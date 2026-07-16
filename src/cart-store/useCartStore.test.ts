@@ -236,16 +236,18 @@ describe("removeFromCart", () => {
         expect(state.totalPrice).toBe(20);
     });
 
-    it("localStorageに同期する", () => {
+    it("削除後もZustand persistのラッパー形式で保存する", () => {
         const product = createCartProduct();
         useCartStore.getState().addToCart(product);
 
         useCartStore.getState().removeFromCart(product);
 
-        expect(localStorageMock.setItem).toHaveBeenCalledWith(
-            "cart",
-            JSON.stringify([])
-        );
+        const raw = localStorage.getItem("cart");
+        expect(raw).toBeTruthy();
+        const parsed = JSON.parse(raw as string);
+        expect(parsed).toHaveProperty("state");
+        expect(Array.isArray(parsed)).toBe(false);
+        expect(parsed.state.cart).toEqual([]);
     });
 });
 
@@ -269,16 +271,15 @@ describe("removeMultipleFromCart", () => {
         expect(state.totalPrice).toBe(20);
     });
 
-    it("localStorageに同期する", () => {
+    it("複数削除後もZustand persistのラッパー形式で保存する", () => {
         const product = createCartProduct();
         useCartStore.getState().addToCart(product);
 
         useCartStore.getState().removeMultipleFromCart([product]);
 
-        expect(localStorageMock.setItem).toHaveBeenCalledWith(
-            "cart",
-            JSON.stringify([])
-        );
+        const raw = localStorage.getItem("cart");
+        expect(raw).toBeTruthy();
+        expect(JSON.parse(raw as string).state.cart).toEqual([]);
     });
 });
 
@@ -298,12 +299,14 @@ describe("emptyCart", () => {
         expect(state.totalPrice).toBe(0);
     });
 
-    it("localStorageからcartを削除する", () => {
+    it("空状態をZustand persistのラッパー形式で保存する", () => {
         useCartStore.getState().addToCart(createCartProduct());
 
         useCartStore.getState().emptyCart();
 
-        expect(localStorageMock.removeItem).toHaveBeenCalledWith("cart");
+        const raw = localStorage.getItem("cart");
+        expect(raw).toBeTruthy();
+        expect(JSON.parse(raw as string).state.cart).toEqual([]);
     });
 });
 

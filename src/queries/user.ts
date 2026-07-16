@@ -247,41 +247,44 @@ export const saveUserCart = async (
 
     const total = subTotal.add(shippingFee)
 
-    // 検証成功後に既存カートを削除（検証前に削除するとエラー時にカート消失）
-    if (userCart) {
-        await db.cart.delete({
-            where: {
+    // 検証成功後に既存カートを置換する。削除と作成を同一トランザクションに入れ、
+    // 作成に失敗した場合も既存カートが失われないようにする。
+    const cart = await db.$transaction(async (tx) => {
+        if (userCart) {
+            await tx.cart.delete({
+                where: {
+                    userId,
+                },
+            })
+        }
+
+        // Save the validated items to the cart in the database
+        return tx.cart.create({
+            data: {
+                cartItems: {
+                    create: validatedCartItems.map((item) => ({
+                        productId: item.productId,
+                        variantId: item.variantId,
+                        sizeId: item.sizeId,
+                        storeId: item.storeId,
+                        sku: item.sku,
+                        productSlug: item.productSlug,
+                        variantSlug: item.variantSlug,
+                        name: item.name,
+                        image: item.image,
+                        quantity: item.quantity,
+                        size: item.size,
+                        price: item.price,
+                        shippingFee: item.shippingFee,
+                        totalPrice: item.totalPrice,
+                    })),
+                },
+                shippingFees: shippingFee,
+                subTotal,
+                total,
                 userId,
             },
         })
-    }
-
-    // Save the validated items to the cart in the database
-    const cart = await db.cart.create({
-        data: {
-            cartItems: {
-                create: validatedCartItems.map((item) => ({
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    sizeId: item.sizeId,
-                    storeId: item.storeId,
-                    sku: item.sku,
-                    productSlug: item.productSlug,
-                    variantSlug: item.variantSlug,
-                    name: item.name,
-                    image: item.image,
-                    quantity: item.quantity,
-                    size: item.size,
-                    price: item.price,
-                    shippingFee: item.shippingFee,
-                    totalPrice: item.totalPrice,
-                })),
-            },
-            shippingFees: shippingFee,
-            subTotal,
-            total,
-            userId,
-        },
     })
 
     if (cart) return true
