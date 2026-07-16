@@ -1,6 +1,7 @@
 import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
-import { getStoreOrders, STORE_ORDERS_MAX } from "@/queries/store";
+import { getStoreOrders } from "@/queries/store";
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 export const dynamic = 'force-dynamic';
 

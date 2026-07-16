@@ -11,8 +11,8 @@ import { requireStoreOwner } from "@/lib/auth-guards";
 // Prisma models
 import { ShippingRate, Store } from "@prisma/client";
 
-// 無制限の findMany を防ぐ防御的上限。将来はサーバーサイドページネーションへ移行（PERF-04 follow-up）。
-export const STORE_ORDERS_MAX = 200;
+// 共有定数（"use server" ファイルからは非 async の値を export できないため lib 側に配置）
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 // Seller が編集可能な Store フィールドのみを許可する allowlist。
 // status / featured / averageRating / numReviews は特権フィールドのため
