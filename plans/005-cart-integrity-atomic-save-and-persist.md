@@ -92,7 +92,7 @@ localStorage.removeItem('cart')
 **In scope**:
 - `src/queries/user.ts` — `saveUserCart` transaction wrap
 - `src/cart-store/useCartStore.ts` — remove 3 manual localStorage calls
-- `src/queries/user.test.ts` — atomicity test
+- `src/queries/user.test.ts` — transaction-wiring and rejection-propagation test
 - `src/cart-store/useCartStore.test.ts` — persist-integrity assertion
 - `plans/README.md` — update plan 005 status when complete
 
@@ -183,7 +183,7 @@ Follow the existing test setup in this file for how the store + localStorage are
 
 ## Test plan
 
-- Server: transaction-rollback test (create fails → no success) + adjusted happy path using the `$transaction` mock.
+- Server: transaction-wiring/rejection-propagation test (create fails → no success) + adjusted happy path using the `$transaction` mock. Real rollback behavior remains an integration-test concern.
 - Client: persist-wrapper-integrity test after removal (asserts wrapped shape) + confirm empty-cart leaves a valid persisted empty state.
 - Structural patterns: `saveUserCart` describe in `user.test.ts`; existing cart action tests in `useCartStore.test.ts`.
 - Verification: both test commands pass with the new tests.
@@ -195,7 +195,7 @@ ALL must hold:
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `grep -n "localStorage" src/cart-store/useCartStore.ts` returns no matches
 - [ ] `grep -n "db.\$transaction" src/queries/user.ts` shows `saveUserCart` now wraps delete+create
-- [ ] `bun run test -- src/queries/user.test.ts` exits 0; atomicity test present
+- [ ] `bun run test -- src/queries/user.test.ts` exits 0; transaction-wiring and rejection-propagation test present
 - [ ] `bun run test -- src/cart-store/useCartStore.test.ts` exits 0; persist-integrity test present
 - [ ] `bun run lint` exits 0
 - [ ] No files outside the in-scope list are modified (`git status`)

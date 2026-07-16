@@ -119,7 +119,7 @@ const restockOrderItems = async (
 
 **対象内**（本 spike が生成するもの）:
 - `docs/design/inventory-restock/design.md` の設計ドキュメント（ディレクトリを新規作成）— 以下の未解決の問いに、リポジトリの設計ドキュメント規約に従って答える（構造は既存の `docs/design/*/design.md` を参照）。
-- 後続の**実装**プランファイルを**次に空いている番号**で作成する（例: `plans/057-implement-item-level-restock.md` — `013` は再利用**しない**こと。`013-spike-category-tree-n-level.md` が既に使用済みである。空き番号は `ls plans/ | grep -oE '^[0-9]+' | sort -n | tail -1` で確認する）。他のプランと同じテンプレート水準で executor が実行できるよう書く — ただし設計判断が確定した後に限る。
+- 後続の**実装**プランファイルを**次に空いている番号**で `plans/<next-free-number>-implement-item-level-restock.md` として作成する。実行時に `plans/` 配下の数字 prefix を調べ、使用済み番号を再利用しないこと。他のプランと同じテンプレート水準で executor が実行できるよう書く — ただし設計判断が確定した後に限る。
 
 **対象外**（本プランで行わないこと）:
 - `src/queries/order.ts`、`src/queries/user.ts`、スキーマへの変更。これは設計のみ。
@@ -131,6 +131,7 @@ const restockOrderItems = async (
    - (a) すべての在庫復元経路が同じ `$transaction` 内で check-and-set を原子的に行う `OrderItem.restockedAt` / `restocked: Boolean` カラム（スキーマ移行）；または
    - (b) status 履歴から「既に復元済み」を導出する — すなわち終端状態への*遷移時にのみ*在庫を復元し、両経路がアイテムに対する条件付き `updateMany`（`where: { id, status: { notIn: [terminal...] } }`）を使うことで、2回目の試行が `count === 0` を見るようにする。
    既存の `updateMany` 遷移パターンを踏まえてどちらがよりシンプルで安全かを述べる。（選択肢 (b) は既存コードを鏡写しにしマイグレーションを回避する；選択肢 (a) は明示的だがスキーマの表面を増やす。どちらか一方を推奨すること。）
+   - **選択肢 (b) の注意点**: 単一エンティティの status 遷移ガードだけでは、アイテムレベルの `updateOrderItemStatusAsAdmin` と注文レベルの `updateOrderPaymentStatus` のような**異なる経路間**の二重在庫復元を防げない。両者は異なる行を遷移させるためである。(b) を選ぶ場合も、exactly-once の根拠は**アイテムレベル**に置き、両経路が同じ `$transaction` 内で check-and-set するアイテム単位の条件付き `updateMany` または marker を使うこと。注文/order-group の status 遷移だけを根拠にしてはならない。Q3 も参照。
 2. **どの終端 status が在庫復元をトリガーするか？** `Canceled`、`Refunded`、`Returned` — 正確な `ProductStatus`/`OrderStatus` の enum 綴りを確認する（既存コードの `PaymentStatus` と `OrderStatus` の間の `Cancelled` vs `Canceled` の二重l/単一lの違いに注意）。正確な値を列挙すること。
 3. **アイテムレベル vs 注文レベルの相互作用。** `updateOrderItemStatusAsAdmin` と `updateOrderPaymentStatus` が同じアイテムへの二重クレジットをどう回避するかを specify する（ここで選択肢 (a)/(b) が効いてくる）。具体的なトランザクション形状を示す。
 4. **トランザクション境界。** `updateOrderItemStatusAsAdmin` は現在 `$transaction` の中にない。実装が status 更新 + 在庫復元を原子的に包む必要があることを確認し、遷移を冪等にする `where` ガードを specify する。
@@ -153,7 +154,7 @@ const restockOrderItems = async (
 
 ### Step 3: 後続の実装プランを書く
 
-`plan-template.md` の水準（自己完結、ドリフトチェック、検証ゲート、STOP conditions）を使い、`plans/013-implement-item-level-restock.md`（または次の空き番号）を書く。executor がこれを実行して*決定済みの*設計 — トランザクションラップ、ガード、`restockOrderItems` の再利用、テスト計画（モックした `tx` によるユニット；ADR-004 に従い `tests/integration/` 配下で両経路にわたり在庫がちょうど一度だけ増分することを assert する統合テスト）— を実装できるようにする。
+`plan-template.md` の水準（自己完結、ドリフトチェック、検証ゲート、STOP conditions）を使い、実行時点の次の空き番号を選んで `plans/<next-free-number>-implement-item-level-restock.md` を書く。executor がこれを実行して*決定済みの*設計 — トランザクションラップ、ガード、`restockOrderItems` の再利用、テスト計画（モックした `tx` によるユニット；ADR-004 に従い `tests/integration/` 配下で両経路にわたり在庫がちょうど一度だけ増分することを assert する統合テスト）— を実装できるようにする。
 
 **検証**: フォローアッププランが具体的な `file:line` を引用し、機械的に検証可能な done criteria を持ち、その scope が DIRECTION-01 の返金実行を除外している。
 
@@ -163,9 +164,9 @@ const restockOrderItems = async (
 
 - [ ] `docs/design/inventory-restock/design.md` が存在し、6つの未解決の問いすべてに判断 + エビデンスとともに答えている
 - [ ] 設計が、在庫復元をトリガーする正確な enum 値と、選択したちょうど一度だけのメカニズム（a または b）を正当化とともに名指ししている
-- [ ] `plans/013-implement-item-level-restock.md`（または次の空き番号）が存在し、テンプレート準拠で、zero-context executor 向けに準備されている
+- [ ] `plans/<next-free-number>-implement-item-level-restock.md` が作成時点で空いていた番号に存在し、テンプレート準拠で、zero-context executor 向けに準備されている
 - [ ] ソースファイルやスキーマが変更されていない（`git status` は新規 docs/plan ファイルのみを示す）
-- [ ] `plans/README.md` の 012 のステータス行が更新され、新しい 013 プランが索引に追加されている
+- [ ] `plans/README.md` の 012 のステータス行が更新され、新しい後続プランが選択した番号で索引に追加されている
 
 ## STOP conditions
 

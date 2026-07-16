@@ -127,6 +127,8 @@ take: STORE_ORDERS_MAX,
 
 The return stays `orders` (an array), so no consumer changes.
 
+This establishes an explicit temporary product contract: callers receive at most the 200 most recently updated orders. Older orders are not retrievable until server-side pagination is implemented, so the UI and API documentation must not present this result as the store's complete order history.
+
 **Verify**: `bunx tsc --noEmit` → exit 0.
 
 ### Step 2: Remove the discarded browse-page query

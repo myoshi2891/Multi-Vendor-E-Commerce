@@ -118,7 +118,7 @@ If item X is cancelled individually (path 1 restocks it) and later the whole ord
 
 **In scope** (this spike produces):
 - A design document at `docs/design/inventory-restock/design.md` (create the dir) answering the open questions below, following the repo's design-doc conventions (see existing `docs/design/*/design.md` for structure).
-- A follow-up **implementation** plan file at **the next free plan number** (e.g. `plans/057-implement-item-level-restock.md` — do NOT reuse `013`, which is already taken by `013-spike-category-tree-n-level.md`; confirm the free number with `ls plans/ | grep -oE '^[0-9]+' | sort -n | tail -1`), written to the same template standard as the other plans, ready for an executor — but only after the design decisions are made.
+- A follow-up **implementation** plan file at **the next free plan number**, named `plans/<next-free-number>-implement-item-level-restock.md`. Determine the number at execution time by inspecting the numeric prefixes under `plans/`; do not reuse an occupied number. Write it to the same template standard as the other plans, ready for an executor — but only after the design decisions are made.
 
 **Out of scope** (do NOT do in this plan):
 - Any change to `src/queries/order.ts`, `src/queries/user.ts`, or the schema. This is design-only.
@@ -153,7 +153,7 @@ Create `docs/design/inventory-restock/design.md` answering all six open question
 
 ### Step 3: Write the follow-up implementation plan
 
-Using `plan-template.md` standards (self-contained, drift check, verification gates, STOP conditions), write `plans/013-implement-item-level-restock.md` (or next free number) that an executor can run to implement the *decided* design: the transaction wrap, the guard, reuse of `restockOrderItems`, and the test plan (unit with mocked `tx`; an integration test under `tests/integration/` per ADR-004 that asserts stock increments exactly once across both paths).
+Using `plan-template.md` standards (self-contained, drift check, verification gates, STOP conditions), write `plans/<next-free-number>-implement-item-level-restock.md`, choosing the next free number at execution time. The executor must be able to implement the *decided* design: the transaction wrap, the guard, reuse of `restockOrderItems`, and the test plan (unit with mocked `tx`; an integration test under `tests/integration/` per ADR-004 that asserts stock increments exactly once across both paths).
 
 **Verify**: the follow-up plan cites concrete `file:line`, has machine-checkable done criteria, and its scope excludes DIRECTION-01 refund execution.
 
@@ -163,9 +163,9 @@ ALL must hold:
 
 - [ ] `docs/design/inventory-restock/design.md` exists and answers all six open questions with decisions + evidence
 - [ ] The design names the exact restock-triggering enum values and the chosen exactly-once mechanism (a or b) with justification
-- [ ] `plans/013-implement-item-level-restock.md` (or next free number) exists, template-compliant, ready for a zero-context executor
+- [ ] `plans/<next-free-number>-implement-item-level-restock.md` exists at a number that was free when created, is template-compliant, and is ready for a zero-context executor
 - [ ] No source files or schema were modified (`git status` shows only new docs/plan files)
-- [ ] `plans/README.md` status row for 012 updated and the new 013 plan added to the index
+- [ ] `plans/README.md` status row for 012 updated and the new follow-up plan added to the index under its chosen number
 
 ## STOP conditions
 

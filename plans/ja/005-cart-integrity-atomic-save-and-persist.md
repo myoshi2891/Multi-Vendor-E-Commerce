@@ -94,8 +94,9 @@ localStorage.removeItem('cart')
 **対象内**:
 - `src/queries/user.ts` — `saveUserCart` のトランザクションラップ
 - `src/cart-store/useCartStore.ts` — 手動 localStorage 呼び出し3箇所を削除
-- `src/queries/user.test.ts` — 原子性テスト
+- `src/queries/user.test.ts` — トランザクション配線と reject 伝播のテスト
 - `src/cart-store/useCartStore.test.ts` — persist 整合性アサーション
+- `plans/README.md` — 完了時にプラン 005 のステータスを更新
 
 **対象外**:
 - `placeOrder` の二重送信/冪等性（プラン 006）。
@@ -148,7 +149,7 @@ if (cart) return true;
 
 **検証**: `bunx tsc --noEmit` → exit 0、かつ `grep -n "localStorage" src/cart-store/useCartStore.ts` がマッチしない。
 
-### Step 3: テスト — サーバーの原子性
+### Step 3: テスト — サーバーのトランザクション配線（実 DB のロールバックではない）
 
 > **このユニットテストのスコープ**: モックした `db.$transaction` は、実 DB の原子性やロールバックを
 > 証明するものでは**ない** — 証明できるのは、コードが delete+create を `$transaction` *経由で*
@@ -185,7 +186,7 @@ expect(Array.isArray(parsed)).toBe(false);
 
 ## Test plan
 
-- サーバー: トランザクションロールバックテスト（create 失敗 → 成功なし）+ `$transaction` モックを使った調整済み happy path。
+- サーバー: トランザクション配線/reject 伝播テスト（create 失敗 → 成功なし）+ `$transaction` モックを使った調整済み happy path。実際のロールバック動作は統合テストの関心事として残す。
 - クライアント: 削除後の persist ラッパー整合性テスト（ラップされた形式を assert）+ 空カートが有効な永続化空状態を残すことの確認。
 - 構造パターン: `user.test.ts` の `saveUserCart` describe；`useCartStore.test.ts` の既存カートアクションテスト。
 - 検証: 両テストコマンドが新規テストとともに pass する。
@@ -197,7 +198,7 @@ expect(Array.isArray(parsed)).toBe(false);
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `grep -n "localStorage" src/cart-store/useCartStore.ts` がマッチしない
 - [ ] `grep -n "db.\$transaction" src/queries/user.ts` が `saveUserCart` が delete+create を包んでいることを示す
-- [ ] `bun run test -- src/queries/user.test.ts` が exit 0；原子性テストが存在する
+- [ ] `bun run test -- src/queries/user.test.ts` が exit 0；トランザクション配線と reject 伝播のテストが存在する
 - [ ] `bun run test -- src/cart-store/useCartStore.test.ts` が exit 0；persist 整合性テストが存在する
 - [ ] `bun run lint` が exit 0
 - [ ] 対象外リストのファイルが一切変更されていない（`git status`）

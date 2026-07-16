@@ -174,7 +174,7 @@ In `src/queries/order.test.ts`, the `describe("updateOrderItemStatus", ...)` blo
    it("他店舗の OrderItem は更新できない（count 0 → not found）", async () => {
        mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
        await expect(
-           updateOrderItemStatus(TEST_CONFIG.DEFAULT_STORE_ID, "victim-item", "Shipped" as never)
+           updateOrderItemStatus(TEST_CONFIG.DEFAULT_STORE_ID, "victim-item", "Shipped")
        ).rejects.toThrow("Order item not found");
        expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
            where: { id: "victim-item", orderGroup: { storeId: TEST_CONFIG.DEFAULT_STORE_ID } },
