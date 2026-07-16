@@ -102,7 +102,7 @@ Read this before running anything, so a pre-existing red does not get misdiagnos
 ## Git workflow
 
 - Branch: `advisor/057-upgrade-next`
-- Commit style: `chore(deps): upgrade next to ^16.2.x (GHSA-26hh-7cqf-hhc6)`
+- Commit style: `chore(deps): upgrade next to ~16.2.x (GHSA-26hh-7cqf-hhc6)`
 - Do NOT push or open a PR unless instructed.
 
 ## Steps
@@ -115,7 +115,15 @@ Confirm the latest 16.2.x first:
 bun info next version
 ```
 
-In `package.json:80`, change `"next": "^16.2.1"` to the latest `16.2.x` (at planning time `^16.2.10`; **the floor must be at least `^16.2.5`** — that is the fixed version the advisories name). Then:
+In `package.json:80`, change `"next": "^16.2.1"` to the latest `16.2.x` pinned with a **tilde**: `~16.2.10` at planning time. **The floor must be at least `16.2.5`** — that is the fixed version the advisories name.
+
+> **Use `~`, not `^`.** Caret keeps the leftmost non-zero digit fixed, so `^16.2.10` means
+> `>=16.2.10 <17.0.0` — it permits 16.3.0 and beyond. Tilde means `>=16.2.10 <16.3.0`, which is
+> what this plan's scope actually declares ("a patch bump within 16.2.x"; 16.3+/17.x is a STOP
+> condition — see Scope and Stop conditions). Using `^` here would silently allow the very minor
+> migration this plan forbids.
+
+Then:
 
 ```
 bun install
@@ -175,7 +183,7 @@ Expect a redirect to the Clerk sign-in URL, not `200` with dashboard markup. If 
 
 ALL must hold:
 
-- [ ] `package.json` declares `next` with a floor `>= ^16.2.5`
+- [ ] `package.json` declares `next` as `~16.2.x` with a floor `>= 16.2.5` (tilde — a `^` range would permit 16.3+, which is out of scope)
 - [ ] `bun.lock` and `node_modules/next/package.json` both resolve `next` to `>= 16.2.5`
 - [ ] `bun audit` reports none of GHSA-26hh-7cqf-hhc6 / GHSA-8h8q-6873-q5fj / GHSA-3g8h-86w9-wvmq
 - [ ] `bunx tsc --noEmit` exits 0
