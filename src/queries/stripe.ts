@@ -17,21 +17,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
  * 「失敗」ではない。Failed を確定させると、後続の webhook が succeeded を通知した
  * 際に DB が Stripe の真実と食い違うため、Pending に留めて上書き可能な状態を保つ。
  *
+ * requires_payment_method は「拒否されて再入力を要する状態」と「まだ決済手段が
+ * 付いていない初期状態」の双方で返るため、status だけでは失敗と判別できない。
+ * 拒否の証跡である last_payment_error の有無で区別し、証跡が無い場合は Pending に
+ * 留める（初期状態の intent を Failed で確定させると再試行を塞いでしまう）。
+ *
  * @see https://docs.stripe.com/payments/paymentintents/lifecycle
- * @param intentStatus - Stripe から retrieve した権威的な intent の status
+ * @param paymentIntent - Stripe から retrieve した権威的な intent
  * @returns Order.paymentStatus に格納する PaymentStatus
  */
 const toOrderPaymentStatus = (
-    intentStatus: Stripe.PaymentIntent.Status
+    paymentIntent: Stripe.PaymentIntent
 ): PaymentStatus => {
-    switch (intentStatus) {
+    switch (paymentIntent.status) {
         case "succeeded":
             return "Paid";
         case "canceled":
             return "Cancelled";
-        // 決済手段が拒否され、再入力を要する = このattemptは失敗。
         case "requires_payment_method":
-            return "Failed";
+            // 拒否された attempt が存在する場合のみ、このattemptの失敗として確定する。
+            return paymentIntent.last_payment_error ? "Failed" : "Pending";
         case "processing":
         case "requires_action":
         case "requires_confirmation":
@@ -174,7 +179,7 @@ export const createStripePayment = async (
                 id: orderId,
             },
             data: {
-                paymentStatus: toOrderPaymentStatus(paymentIntent.status),
+                paymentStatus: toOrderPaymentStatus(paymentIntent),
                 paymentMethod: "Stripe",
                 paymentDetails: {
                     connect: {
