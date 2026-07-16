@@ -220,15 +220,20 @@ export async function seedOrderWithGroupAndItem(
 ): Promise<{ order: Order; group: OrderGroup; item: OrderItem }> { ... }
 ```
 
-実装要件:
+実装要件（金額は必ず `Prisma.Decimal` のメソッドで計算。`×`/`*` の生演算は
+`.claude/steering/tech.md`（金額・数値精度）で禁止）:
 - `db.order.create` → `db.orderGroup.create` → `db.orderItem.create` の順で FK を結線
-- Order: `subTotal` / `total` は `new Prisma.Decimal(...)` で適当な整合値（例: price×qty）、
+- 金額の基準値をまず Decimal で定義:
+  `const price = new Prisma.Decimal(size.price);`
+  `const qty = input.quantity ?? 1;`
+  `const lineTotal = price.mul(qty);`（`price × qty` は書かない）
+- Order: `subTotal` / `total` は `lineTotal`（= `price.mul(qty)`）を用いた整合値、
   `shippingAddressId` / `userId` は input から
 - OrderGroup: `shippingService: "Standard"`、`shippingDeliveryMin: 7` / `shippingDeliveryMax: 14`、
   `shippingFees: new Prisma.Decimal(0)`、`subTotal`/`total` は Order と整合、`storeId` は input から
 - OrderItem: `productSlug: product.slug` / `variantSlug: variant.slug` / `sku: variant.sku` /
   `name: product.name` / `image: variant.variantImage` / `size: size.size` /
-  `price: size.price` / `totalPrice: price×quantity` / `quantity: input.quantity ?? 1`
+  `price: price` / `totalPrice: lineTotal`（`price.mul(qty)`）/ `quantity: qty`
 - enum import は `@prisma/client` から（`OrderStatus` / `PaymentStatus`）
 
 **Verify**: `bunx tsc --noEmit` → exit 0
@@ -260,12 +265,22 @@ function mockAuthAsAdmin(): void {
 - OrderGroup: `status === "Canceled"`、OrderItem: `status === "Canceled"`（子連動）
 - `Size.quantity` が減算前の値に**復元**されている（例: 8 → decrement 3 → 5 → restock → 8）
 
-**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）**
+**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）— 逐次のみ**
 Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled)` を
-**2 回**順に実行し、以下を assert:
+**2 回逐次**実行し、以下を assert:
 - 2 回とも throw しない（戻り値は両方 `Cancelled` — 関数は遷移スキップ時も status を返す設計）
 - `Size.quantity` の復元は **1 回ぶんのみ**（8 のまま。16 になっていたら二重復元バグ）
 - `Cancelled` → `Refunded` の再遷移でも復元が走らないこと（quantity 不変）を追加 assert
+
+> **並行実行時の二重 restock は本シナリオの対象外（既知の TOCTOU 制約）**。この逐次テストは
+> 「読んで→分岐して→復元する」の *逐次* 冪等性のみを保証する。同一注文への
+> `Promise.all([updateOrderPaymentStatus(...), updateOrderPaymentStatus(...)])` のような
+> **並行**呼び出しでは、両者が「まだ Cancelled でない」を読んでから両者が復元し、二重 restock が
+> 起こりうる（現実装のガードが `SELECT`→分岐→`UPDATE` を単一の条件付き更新に畳んでいない場合）。
+> これを塞ぐには「終端状態への遷移＋在庫復元」を条件付き `updateMany`（`where` に現ステータス条件）
+> や行ロックで原子化する本体修正が必要で、**本プラン（テスト追加のみ）の scope 外**。
+> 並行 restock ガードの実 DB テストは別プラン候補として Maintenance notes / README deferred に記録する
+> （下記参照）。ここで並行テストは書かない（本体が未対応のため意図的に赤くしない）。
 
 **Scenario 3: Refunded 遷移の子連動**
 `updateOrderPaymentStatus(order.id, PaymentStatus.Refunded)` で
@@ -288,10 +303,18 @@ Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, Paymen
 - groupA をもう一度 `Canceled` に更新（終端 → 終端）→ 在庫の追加復元なし（冪等）
 - groupB も `Canceled` に更新 → 親 Order.orderStatus が `"Canceled"`（全 Canceled）
 
-**Scenario 6: 認可ガード（副作用なし）**
-`currentUser` を `{ id: "user-1", privateMetadata: { role: "USER" } }` にして
-`updateOrderPaymentStatus` を呼び、`/Only admins can perform this action/` で reject +
-Order / Size が一切変化していないことを assert。
+**Scenario 6: 認可ガード（副作用なし）— 両 admin 関数を対象**
+`currentUser` を `{ id: "user-1", privateMetadata: { role: "USER" } }` にして、
+**両方の admin 関数**を個別に検証する（片方だけでは、もう一方の `requireAdmin` 欠落を
+検出できない）:
+- 6a: `updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled)` →
+  `/Only admins can perform this action/` で reject + Order / Size が一切変化していない。
+- 6b: `updateOrderGroupStatusAsAdmin(group.id, OrderStatus.Canceled)`（同引数形状は
+  Current state / 実装シグネチャに合わせる）→ 同じく `/Only admins can perform this action/` で
+  reject + Order / OrderGroup / OrderItem / Size が一切変化していない。
+
+> 根拠: 両関数とも冒頭で `requireAdmin()` を呼ぶ設計（本プラン「認可」節）。認可回帰は関数ごとに
+> 独立して検知できる必要があるため、`updateOrderGroupStatusAsAdmin` の非管理者拒否も必須テストとする。
 
 **Verify**: `bun run test:integration -- tests/integration/order-lifecycle.test.ts` → 全 pass
 
@@ -342,6 +365,10 @@ Stop and report back (do not improvise) if:
   実装変更時に期待値の更新が必要になる（テストが正しく赤くなる、が意図）。
 - plan 027 実行後は `order-placement.test.ts`（減算側）と本ファイル（復元側）で
   在庫整合の両側が閉じる。レビュー時は両ファイルの JSDoc 境界列挙が重複しないことを確認。
+- **並行 restock（TOCTOU）ガードは未カバー**（Scenario 2 の注記参照）。同一注文への並行キャンセルで
+  二重復元が起きうる現実装の制約を塞ぐには、「終端遷移＋在庫復元」を条件付き `updateMany` /
+  行ロックで原子化する**本体修正**が必要。これは別プラン候補として README の deferred に残す
+  （本プランは逐次冪等性のみを固定する）。
 - `updateOrderGroupStatusAsAdmin` の遷移ガードは read-then-act（条件付き updateMany ではない）。
   並行実行の完全な TOCTOU 耐性はスコープ外とし、逐次 2 回呼び出しの冪等性のみ固定した。
   並行キャンセルの厳密な検証が必要になったら別プランで扱う。
