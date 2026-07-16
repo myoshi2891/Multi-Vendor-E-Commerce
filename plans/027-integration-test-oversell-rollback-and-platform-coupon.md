@@ -112,10 +112,17 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
 
 ## Scope
 
-**In scope**（変更してよいファイル）:
+**In scope — テスト/seed（1〜2 コミット目）**:
 - `tests/integration/order-placement.test.ts` — シナリオ追加 + 冒頭 JSDoc 更新
 - `tests/integration/setup/seed.ts` — `SeedCouponInput` に optional `scope?: CouponScope` を追加
-  （`db.coupon.create` の data に `scope: input.scope`。未指定時は Prisma デフォルト STORE）
+  （`db.coupon.create` の data に `scope: input.scope`。未指定時の既定は Step 1 で**検証**する）
+
+**In scope — ドキュメント同期（後続の別コミット）**:
+- `spec-sync-after-test` の成果物一式（Step 6）— Integration テスト数が 17→20 に変動するため
+  `.claude/rules/02-tdd-step-commit.md` に従い同期。SSOT は `docs/testing/QA_HANDOFF.md`、
+  伝播先 `07-testing.md` / `COVERAGE_REPORT.md` / `docs/PROGRESS.md` +
+  `bun run coverage:dashboard` 再生成の `docs/coverage-dashboard.html`。
+- `plans/README.md` の 027 行を DONE に更新（Done criteria と一致）。**テストとは別コミット**。
 
 **Out of scope**（触らない）:
 - `src/queries/user.ts` — 本体。オーバーセル throw のメッセージ変更等も禁止
@@ -143,13 +150,22 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
 
 ### Step 1: `seedCoupon` に scope を追加
 
-`tests/integration/setup/seed.ts` の `SeedCouponInput` に
-`/** クーポンスコープ。デフォルトは Prisma スキーマの STORE */ scope?: CouponScope;` を追加し、
-`db.coupon.create` の `data` に `scope: input.scope` を渡す（`undefined` なら Prisma が
-デフォルト STORE を適用するので分岐不要）。`CouponScope` は `@prisma/client` から import。
+まず `scope` 未指定時の既定を**推測せず確認**する:
+`grep -n "scope" prisma/schema.prisma` で `Coupon.scope` に `@default(STORE)` が付いていることを
+確認する（付いていなければ `undefined` を渡すと NOT NULL 違反になるため、`input.scope ?? "STORE"` の
+明示フォールバックに切り替える）。
 
-**Verify**: `bunx tsc --noEmit` → exit 0。`bun run test:integration` → 既存 17 全 pass（回帰なし）。
-ここで 1 コミット目。
+確認後、`SeedCouponInput` に
+`/** クーポンスコープ。未指定時は下記 create の挙動に従う（Step 1 で schema 既定を確認済み） */ scope?: CouponScope;`
+を追加し、`db.coupon.create` の `data` に `scope: input.scope` を渡す。`CouponScope` は
+`@prisma/client` から import。
+
+> 根拠: `scope: undefined` を Prisma の create に渡すと「その列を省略」扱いになり、**列に
+> `@default` があるときだけ**既定値が入る。`@default` が無い場合は省略が NOT NULL 違反になる。
+> よって「undefined → 既定 STORE」は schema を確認してからでないと断定できない。
+
+**Verify**: `grep` で `Coupon.scope @default(STORE)` を確認 → `bunx tsc --noEmit` exit 0 →
+`bun run test:integration` 既存 17 全 pass（回帰なし）。ここで 1 コミット目。
 
 ### Step 2: Scenario 7 — 減算後の `Size.quantity` を assert（TESTS-05 前半）
 
@@ -187,15 +203,20 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
    import に `import { getDeliveryDetailsForStoreByCountry } from "@/queries/product";` を追加。
 
 2. Arrange: 在庫 **5**・カート数量 **5**（検証時はキャップ非発動で quantity 5 のまま通過）を seed。
+   モックは **実関数の型で宣言**する（`as jest.Mock` は型を消すので使わない）。
    テスト内で `mockImplementationOnce` により一度だけ割り込む:
 
    ```typescript
-   const mockedDelivery = getDeliveryDetailsForStoreByCountry as jest.Mock;
-   mockedDelivery.mockImplementationOnce(async (storeId: string, countryId: string) => {
+   // 実関数のシグネチャを保つ型付きモック（jest.Mock への曖昧キャストは禁止）
+   const mockedDelivery =
+       getDeliveryDetailsForStoreByCountry as jest.MockedFunction<
+           typeof getDeliveryDetailsForStoreByCountry
+       >;
+   mockedDelivery.mockImplementationOnce(async (storeId, countryId) => {
        // カート検証（キャップ）通過後・decrement 前に、別トランザクションで在庫を 2 に減らす
        await db.size.update({ where: { id: size.id }, data: { quantity: 2 } });
        return jest
-           .requireActual("@/queries/product")
+           .requireActual<typeof import("@/queries/product")>("@/queries/product")
            .getDeliveryDetailsForStoreByCountry(storeId, countryId);
    });
    ```
@@ -205,8 +226,15 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
 4. Assert（ロールバックの 3 点検証 — SECURITY_GAP_REPORT §5.2 の「副作用なし」思想と同型）:
    - `db.order.count()` / `db.orderGroup.count()` / `db.orderItem.count()` がすべて **0**
    - `db.size.findUniqueOrThrow(...)` の quantity が **2 のまま**（decrement されていない）
-5. 後始末: このテストの `finally` または `afterEach` で `mockedDelivery.mockClear()`
-   （`jest.fn(actual)` のデフォルト透過実装は維持されるので restore は不要）。
+5. 後始末（**strict-safe**）: `afterEach` で `mockedDelivery.mockReset()` した後、
+   **透過実装を張り直す**:
+   `mockedDelivery.mockImplementation(jest.requireActual<typeof import("@/queries/product")>("@/queries/product").getDeliveryDetailsForStoreByCountry)`。
+
+   > 重要: `mockClear()` は `mock.calls` を消すだけで、**`mockImplementationOnce` のキューや
+   > `mockImplementation` はリセットしない**。もし Act が once 実装を消費する前に throw すると、
+   > 未消費の once 実装が次テストに漏れる。これを確実に防ぐには `mockReset()`（実装ごと消去）
+   > → 透過実装を張り直す、の 2 段が必要。`beforeEach` で透過実装を張る形でもよいが、
+   > 「reset だけ」で放置しないこと（全モック消去状態になり他シナリオが実装欠落で落ちる）。
 
 **Verify**: 該当テストが緑 + 上記 3 点 assert がすべて通る + 既存 Scenario 1〜7 も緑のまま
 （部分モックのデフォルト透過を確認）。19 pass。
@@ -224,13 +252,23 @@ Arrange は Scenario 4（store-scoped coupon）を手本に **2 店舗**を seed
 - 商品小計 = $100.00、PLATFORM 10% → `platformTotalDiscount = $10.00`
 - 各グループの単純 10% は 3.333 / 6.667 と割り切れない → 端数吸収の検証に適する
 
-Assert（セント単位で pin。`Prisma.Decimal` の `.toNumber()` を `toBeCloseTo(x, 2)` で）:
+Assert（**金額は Decimal の厳密比較**。`.toNumber()` + `toBeCloseTo` の浮動小数点比較は
+`.claude/steering/tech.md`（金額・数値精度）で禁止 — セント単位でも IEEE754 誤差が出るため）:
+
+金額の等価判定は次のいずれかで行う（浮動小数点を介さない）:
+- 文字列比較: `expect(new Prisma.Decimal(actual).toFixed(2)).toBe("10.00")`
+- Decimal 比較: `expect(new Prisma.Decimal(actual).equals(new Prisma.Decimal("10.00"))).toBe(true)`
 
 1. `order.groups` を **storeId 昇順（`localeCompare`）にソート**し、非最終グループの
-   `total` = `groupedTotalPrice + shipping − groupedTotalPrice×0.10`（通常計算）
-2. 最終グループの割引 = `10.00 − (非最終グループ割引の合計)`（残差吸収）
-3. **全グループ割引の合計がちょうど $10.00**（`sum(group割引) === platformTotalDiscount`）
-4. `order.total` = `subTotal + shippingFees`（Order レベル集計の整合）
+   `total` = `groupedTotalPrice + shipping − groupedTotalPrice×0.10`（`Prisma.Decimal`
+   の `.mul()/.sub()/.add()` で計算し `.toFixed(2)` で比較）
+2. 最終グループの割引 = `10.00 − (非最終グループ割引の合計)`（残差吸収。Decimal で減算）
+3. **全グループ割引の合計がちょうど $10.00**
+   （`groups.reduce((acc, g) => acc.add(discount(g)), new Prisma.Decimal(0)).toFixed(2) === "10.00"`）
+4. `order.total` = `subTotal + shippingFees`（Order レベル集計の整合。`.toFixed(2)` で比較）
+
+> 補足: 中間集計は `.toNumber()` せず `Prisma.Decimal` のまま `.add()` で畳み込み、
+> **比較の直前にだけ** `.toFixed(2)`（文字列）へ変換する（`tech.md`「toNumber() は return 境界のみ」）。
 
 送料は Scenario 1〜4 と同じく `computeShippingTotal` で独立に pin する。
 
