@@ -25,24 +25,29 @@
 ## Why this matters
 
 2026-07-11 の 3 ブラウザフル実測（`plans/audit/findings-16-e2e-coverage.md` TESTS-28）で、
-VRT がベースラインとの乖離で fail していることが判明した。**実測ログに失敗内訳が
-採取されているのは 2 件**:
-`cart-empty.png` は **ページ高さ 1280x720 → 1280x1071（+351px）** の构造的乖離、
+VRT がベースラインとの乖離で fail していることが判明した。**実測での失敗は 3 件**
+（`visual/cart` ×2 + `visual/checkout` ×1 / いずれも chromium）。
+根本原因が判明しているのは 2 件:
+`cart-empty.png` は **ページ高さ 1280x720 → 1280x1071（+351px）** の構造的乖離、
 `checkout-redirect-signin.png` は差分 19%（リダイレクト先 /sign-in に描画される Clerk
 ウィジェット自体の UI が 2 ステップ型 → 1 画面統合型へ変わったため）。
-**`cart-with-item` については実測の失敗出力が残っておらず、乖離しているかは未確定**
-（cart-empty と同じレイアウト増分を受けている可能性は高いが、推測で更新しない）。
+残る 1 件が `cart-with-item.png`（cart.spec.ts のスナップショットは
+`cart-empty` / `cart-with-item` の 2 枚のみ）— 個別の差分ログは残っていないが、
+**同じレイアウト増分を受けたものとして cart ×2 が実測に裏付けられている**
+（findings-16 の SSOT は `17 failed = TESTS-26: 13 + TESTS-27: 1 + TESTS-28: 3` と
+分解され、この和は算術的に閉じている）。
 VRT が常時 red のままでは真の視覚リグレッションが混入してもノイズと区別できず、
 差分検出器として機能しない。現行 UI が意図どおりであることを**目視確認した上で**
 ベースラインを再撮影する。
 
 ## Current state
 
-- ベースライン画像（VRT スペックは 3 件。うち**実測で乖離が確認できているのは 2 枚**）:
+- ベースライン画像（VRT スペックは 3 件。実測では**3 件とも fail**。
+  うち差分の内訳まで判明しているのが 2 枚）:
   | ベースライン | 実測の乖離 | 更新見込み |
   |---|---|---|
   | `tests/e2e/visual/cart.spec.ts-snapshots/cart-empty-chromium-darwin.png` | **あり**（+351px / 差分 9%） | 更新される |
-  | `tests/e2e/visual/cart.spec.ts-snapshots/cart-with-item-chromium-darwin.png` | **未確定**（失敗出力なし） | Step 1 の実測で判断 |
+  | `tests/e2e/visual/cart.spec.ts-snapshots/cart-with-item-chromium-darwin.png` | **あり**（差分の内訳は未採取） | 更新される |
   | `tests/e2e/visual/checkout.spec.ts-snapshots/checkout-redirect-signin-chromium-darwin.png` | **あり**（差分 19%） | 更新される |
 
 - **fail 数と更新枚数の関係（本プランの前提）**: `--update-snapshots` は
@@ -50,9 +55,12 @@ VRT が常時 red のままでは真の視覚リグレッションが混入し�
   いるテストは pass し、そのファイルは**書き換わらない**（mtime も変わらない）。
   したがって:
   - **更新後に `git status` に現れる .png の枚数 = 更新前に fail していた VRT テスト数**
-  - 実測どおり 2 件 fail なら **2 枚**、`cart-with-item` も乖離していれば **3 枚**
+  - 実測どおり 3 件 fail なら **3 枚**
   - **4 枚以上、あるいは 0 枚は前提の破綻**（前者は想定外の対象混入、後者は
     そもそも fail していない = 本プランが不要）→ いずれも STOP して報告
+  - 2 枚以下だった場合は、実測（findings-16 TESTS-28 = 3 件）より fail が減っている
+    ということなので、**Step 1 の failed 数を正として進めた上で差異を報告する**
+    （プラン執筆後に UI が戻された等の可能性）
 - スペック（**変更しない** — 撮影対象の定義として引用）:
 
 ```typescript
@@ -116,9 +124,8 @@ await expect(page).toHaveScreenshot("checkout-redirect-signin.png", { fullPage: 
 
 `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` を実行。
 
-**Verify**: **2 failed / 1 passed**（実測どおり `cart-empty` と
-`checkout-redirect-signin` が fail）または **3 failed**（`cart-with-item` も
-乖離していた場合）。fail した各テストについて `test-results/` 配下に
+**Verify**: **3 failed**（実測どおり `cart-empty` / `cart-with-item` /
+`checkout-redirect-signin` の全件が fail）。fail した各テストについて `test-results/` 配下に
 `*-actual.png` / `*-expected.png` / `*-diff.png` が生成されている。
 **ここで観測した failed 数を記録すること** — Step 3 で更新される .png の枚数と
 一致しなければならない。0 failed なら本プランは不要（STOP して報告）。
@@ -130,8 +137,10 @@ await expect(page).toHaveScreenshot("checkout-redirect-signin.png", { fullPage: 
 
 1. **cart-empty**（fail 確定）: 高さ +351px の増分が「フッター/コンテンツの追加」等の
    意図的変更で説明できるか。レイアウト崩れ（要素の重なり・見切れ・空白の異常）が**無い**こと。
-2. **cart-with-item**（fail した場合のみ）: 商品行の表示が正常（名前・価格・数量
-   コントロールが揃っている）こと。pass していれば現行 UI と一致しており確認不要。
+2. **cart-with-item**（fail 確定 — ただし差分の内訳は未採取のため、ここで初めて分かる）:
+   商品行の表示が正常（名前・価格・数量コントロールが揃っている）こと。
+   cart-empty と同じ高さ増分が主因であれば同様に許容してよいが、**それ以外の差分が
+   主因だった場合は内容を記録して報告**する（本プランで想定していない乖離のため）。
 3. **checkout-redirect-signin**（fail 確定）: 差分の主因が Clerk ウィジェットの現行 UI
    （"Email address or username" + Password 同一画面、findings-16 TESTS-26 参照）であること。
 
@@ -143,7 +152,7 @@ await expect(page).toHaveScreenshot("checkout-redirect-signin.png", { fullPage: 
 `bash scripts/e2e/run-local.sh tests/e2e/visual --update-snapshots --project=chromium`
 
 **Verify**: `git status` で変更が `tests/e2e/visual/*-snapshots/*.png` のみであり、
-その**枚数が Step 1 の failed 数と一致**すること（実測どおりなら 2 枚）。
+その**枚数が Step 1 の failed 数と一致**すること（実測どおりなら 3 枚）。
 `--update-snapshots` は fail したものだけを書き換えるため、この一致が
 「想定外のスナップショットを巻き込んでいない」ことの機械的な証拠になる。
 枚数が Step 1 の failed 数を超える場合は STOP。
@@ -151,22 +160,23 @@ await expect(page).toHaveScreenshot("checkout-redirect-signin.png", { fullPage: 
 ### Step 4: green を確認しコミットする
 
 **Verify**: `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` → `3 passed`
-（**VRT スペックは 3 件なので、更新枚数が 2 枚でも最終的な pass 数は 3**。
-更新した 2 枚 + もともと一致していた 1 枚。連続 2 回実行してもフレークしないことを確認）
+（**VRT スペックは 3 件で、実測では 3 件とも fail していたため 3 枚とも更新される**。
+更新枚数が実測より少なかった場合でも、最終的な pass 数は常にスペック件数の 3。
+連続 2 回実行してもフレークしないことを確認）
 
 ## Test plan
 
 - 新規テストは無し。既存 VRT 3 テストが green に戻ることが成果物。
 - **数の対応関係**（混同しやすいので明示）: VRT スペック **3 件** /
-  更新前の failed **2 件（実測）** / 更新される .png **= failed 件数** /
-  更新後の passed **3 件**。
+  更新前の failed **3 件（実測 — findings-16 TESTS-28）** /
+  更新される .png **= failed 件数** / 更新後の passed **3 件**。
 - 再現性確認: Step 4 の 2 回連続 green。
 
 ## Done criteria
 
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` が 2 回連続 `3 passed`
 - [ ] 変更ファイルが `tests/e2e/visual/*-snapshots/*.png` のみで、**枚数が Step 1 の
-      failed 数と一致**（実測どおりなら 2 枚。`cart-with-item` も乖離していれば 3 枚）
+      failed 数と一致**（実測どおりなら 3 枚）
 - [ ] 最終の VRT 実行が `3 passed`（スペック件数であり、更新枚数とは別の数）
 - [ ] コミット本文に目視確認の内訳が記録されている
 - [ ] `plans/README.md` の 043 行を DONE に更新

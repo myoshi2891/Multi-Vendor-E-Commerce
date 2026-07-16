@@ -217,11 +217,25 @@ await expect(page.getByText(store.name)).toHaveCount(0);
   あるいは店舗名が描画されて公開されたまま）— 前者は Current state の読解が古い
   （修正コミットを特定して期待値を 404 へ反転してよいか報告）、後者は
   **ステータスフィルタが効いていない重大所見**として即報告。
-- 非 ACTIVE store ページの実挙動が 500 エラー（notFound ではなく未処理例外 —
-  アプリバグとして報告。テストで 500 を「正」として固定しない）。
+
+> **500 は STOP 条件ではない。** 未処理例外が error boundary へ到達する現実装は
+> **既知のアプリバグ**（本来は `notFound()` で 404 が正しい）だが、本プランは
+> characterization テストであり、**現挙動を記録した上でテストは pass させる**。
+> 500 を観測しても止まらず、Step 4 のとおり `expect(response?.status()).toBe(500)` +
+> `TODO(characterization)` で固定し、バグである旨は Maintenance notes に記録する
+> （notFound() 導入時に期待値を 404 へ反転する）。
+> STOP するのは上記のとおり**500 以外**を観測した場合のみ。
 
 ## Maintenance notes
 
+- **アプリ側ギャップ（500 — 本 spec が characterization で固定する現挙動）**:
+  非 ACTIVE store ページは `getStorePageDetails` の throw（`src/queries/store.ts:725`）が
+  未処理のまま error boundary へ到達し **HTTP 500** になる。**本来は `notFound()` で 404**
+  が正しく、500 は顧客に無用なエラー画面を見せるアプリバグ。本 spec は
+  「BANNED にしたら顧客から見えなくなる」ことの保証が目的のため、**500 を現挙動として
+  記録しつつ pass させる**（`toHaveCount(0)` が本質的な保証を担う）。
+  `notFound()` が導入されたら Step 4 の期待値を 404 へ反転すること
+  （`TODO(characterization)` コメントが目印）。次回 correctness 監査ラウンドの候補。
 - **アプリ側ギャップ（重要）**: `getProducts` に store status フィルタが無く、BANNED 店舗の
   商品が /browse に出続ける。§20 P1 の完全な達成には `src/queries/product.ts` の
   whereClause への store status 条件追加（+ Integration/E2E の拡張）が必要。

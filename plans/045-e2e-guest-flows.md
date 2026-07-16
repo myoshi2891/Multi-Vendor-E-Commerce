@@ -184,25 +184,43 @@ const offerUrlPattern = new RegExp(
 await page.waitForURL(offerUrlPattern);
 ```
 6. **静的ページのコンテンツスモーク** — `/about`・`/contact`・`/customer-service` の各ページで
-   **HTTP ステータス 200** を assert した上で、`page.getByRole("main")` 内に見出しが
-   visible であることを for ループで確認する:
+   **HTTP ステータス 200** と**そのページ固有の見出し文言**の両方を assert する。
+   期待値は実装から採取済み（下表）:
+
+| path | h1 の文言 | 実装 |
+|---|---|---|
+| `/about` | `About` | `about/page.tsx:12`（`StaticPageLayout title="About"` → `static-page-layout.tsx:34` の `<h1>`） |
+| `/contact` | `Contact us` | `contact/page.tsx:10` |
+| `/customer-service` | `Customer service` | `customer-service/page.tsx:14` |
 
 ```typescript
-for (const path of ["/about", "/contact", "/customer-service"]) {
+const STATIC_PAGES = [
+    { path: "/about", heading: "About" },
+    { path: "/contact", heading: "Contact us" },
+    { path: "/customer-service", heading: "Customer service" },
+] as const;
+
+for (const { path, heading } of STATIC_PAGES) {
     const response = await page.goto(path);
-    // 目的は 404 / 空白ページの検出。見出しの存在だけでは達成できない（下記参照）
+    // (a) ページが実在すること
     expect(response?.status(), `${path} should return 200`).toBe(200);
-    await expect(page.getByRole("main").getByRole("heading").first()).toBeVisible();
+    // (b) そのページ固有の内容が描画されていること（3 ページとも <main> を持つ）
+    await expect(
+        page.getByRole("main").getByRole("heading", { name: heading, level: 1 })
+    ).toBeVisible();
 }
 ```
 
-   > **なぜ status の assert が必要か**: 「404 の検出が目的」と書きながら見出しの
-   > visible だけを見ると、目的を達成できない。Next.js の `not-found` ページにも
-   > `main` と `heading` があるため、**ページが 404 でもこのテストは green になる**。
-   > `response.status() === 200` を assert して初めて「ページが存在する」ことを言える。
-   > ステータスを取れない事情がある場合は、代わりに**各ページ固有のテキスト**
-   > （実装から採取した見出し文言など）を assert すること — どちらか一方は必須で、
-   > 「main に heading がある」だけで済ませない。
+   > **なぜ両方 assert するのか（どちらか一方では不十分）**:
+   > - **status だけ**では「200 だが中身が空/別ページ」を検出できない。
+   > - **「main に heading がある」だけ**では 404 を検出できない。Next.js の `not-found`
+   >   ページにも `main` と `heading` があるため、**ページが 404 でも green になる**。
+   > - **任意の heading（`.first()`）**では、ページを取り違えても気付けない。3 ページとも
+   >   `<main>` + `<h1>` という同じ構造のため、`/about` が `/contact` の内容を返しても
+   >   `.first()` は素通りする。**文言まで固定して初めてページの同一性を主張できる**。
+   >
+   > 見出し文言が変わったらこの spec は fail する（意図的な契約）。実装側の文言変更時は
+   > 上表と `STATIC_PAGES` を同時に更新すること。
 
 注意:
 - compare の追加操作（テスト 2）でカードの hover オーバーレイが開かない場合、viewport が

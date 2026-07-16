@@ -104,7 +104,8 @@ cookie 書き込み → `router.refresh()` → ヘッダー表示更新」とい
 
 ### Step 1: country-selector.spec.ts を作成する
 
-`tests/e2e/country-selector.spec.ts` を新規作成し、以下の 3 テストを書く:
+`tests/e2e/country-selector.spec.ts` を新規作成し、以下の **2 テスト**を書く
+（シナリオ 2 と 3 は cookie 状態を引き継ぐため**同一テスト内の連続 assert**にする — 下記）:
 
 1. **初期表示は DEFAULT_COUNTRY（United States）** — `/` ではなく **`/browse` へ goto**
    （home `/` は OI-9 の SSR 500 が未解消 — `docs/testing/QA_HANDOFF.md` の OI-9 参照）→
@@ -132,10 +133,18 @@ await countryResponse; // click 前に仕掛けた待ち受けをここで回収
 
    - `router.refresh()` 後にヘッダーが `Japan/EN/` になる:
      `await expect(page.getByText("Japan/EN/")).toBeVisible({ timeout: 10000 })`
-3. **リロード後も選択が永続する（httpOnly cookie）** — テスト 2 の続きで
+   **同一テスト内で続けて**、リロード後も選択が永続すること（httpOnly cookie）を assert する:
    `page.reload()` → `Japan/EN/` が引き続き visible。
-   （テスト 2 と 3 は 1 つの `test()` にまとめてよい — cookie 状態を引き継ぐ必要があるため、
-   独立させる場合は `test.describe.serial` ではなく同一テスト内の連続 assert とする）
+
+   > **シナリオ 2 と 3 を 1 つの `test()` にまとめるのは確定事項**（任意ではない）。
+   > 「国を変更する」→「リロードしても残る」は cookie 状態の引き継ぎが前提で、
+   > テストを分けると 3 本目は「2 本目が先に走ったこと」に暗黙依存する。
+   > Playwright は各 `test()` が独立コンテキストで任意順・並列に走りうるため、
+   > その依存は成立しない。**`test.describe.serial` で連結してはならない**
+   > （実行順を縛るだけで独立性の幻想が残り、1 本目が落ちると 2 本目が
+   > did not run になって切り分けが難化する — findings-16 の
+   > seller-onboarding の 3 did not run が実例）。
+   > したがって本 spec の**テスト総数は 2 本**で固定する。
 
 注意:
 - 国旗 `<img>` の src / 読み込み完了は assert しない（外部 CDN 依存）。
@@ -169,7 +178,7 @@ await countryResponse; // click 前に仕掛けた待ち受けをここで回収
 
 ## Test plan
 
-- 新規: `tests/e2e/country-selector.spec.ts` に 2〜3 テスト（初期表示 / 変更 + 永続）。
+- 新規: `tests/e2e/country-selector.spec.ts` に **2 テスト**（初期表示 / 変更 + 永続）。
 - 構造の手本: `tests/e2e/layout-chrome.spec.ts`（ゲスト・seed 不要）。
 - 回帰: layout-chrome が引き続き passed。
 
@@ -177,6 +186,9 @@ await countryResponse; // click 前に仕掛けた待ち受けをここで回収
 
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] chromium で新テスト all passed、3 ブラウザで all passed（正当なローカルゲート skip を除く）
+- [ ] `country-selector.spec.ts` の `test(` が **2 件**（変更 + 永続は同一テスト内の
+      連続 assert）で、`test.describe.serial` を使っていない
+      （`grep -c "test(" tests/e2e/country-selector.spec.ts` / `grep -n "describe.serial"`）
 - [ ] `waitForResponse` の Promise が対象の click **より前**に生成され、click 後に
       `await` されている（click してから待ち始める書き方はレスポンス取りこぼしで
       フレークするため不可）

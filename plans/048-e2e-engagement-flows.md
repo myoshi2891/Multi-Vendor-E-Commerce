@@ -202,5 +202,15 @@ afterAll cleanup / 各テスト冒頭 `session.signIn(page)` + `setupE2ETestStat
 - レビューテストは `upsertReview` の「既存レビューは update」挙動（`review.ts:48-`）により
   同一ユーザーの再実行でも冪等（createCustomerSession はランごとに新規ユーザーを作るため
   実質毎回 create 経路）。
+- **3 テストが 1 ユーザーを共有していても、リトライ（CI の `retries: 2`）で初期条件は汚れない**。
+  `createCustomerSession()` は**モジュールスコープで `uniqueId` を採番**する
+  （`tests/e2e/helpers/auth.ts:49-50`）。Playwright はテスト失敗時に**ワーカープロセスを
+  破棄して新規生成**するため、リトライではモジュールが再 import されて `uniqueId` が
+  採り直され、`beforeAll` が**別の Clerk ユーザーを作成**する。つまりリトライは常に
+  まっさらなユーザーから始まる。
+  1 ラン内でも 3 テストは**別リソース**（wishlist / follow / review）を触り、
+  フォローはテスト 2 内で unfollow まで戻すため相互干渉しない。
+  → この前提が崩れるのは「テスト間で同一リソースを奪い合う assert」を足したときなので、
+  テスト追加時はここを再確認すること。
 - wishlist の解除（一覧からの削除 UI）は未検証のまま — profile 系の網羅は plan 049 と
   合わせて拡張する。
