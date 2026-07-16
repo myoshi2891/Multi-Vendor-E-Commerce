@@ -29,7 +29,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 |------|-------|----------|----------|--------|------|------------|--------|
 | [001](001-scope-order-item-status-to-owned-store.md) | Scope `updateOrderItemStatus` to owned store (cross-store IDOR) | security | P1 | S | LOW | — | DONE |
 | [002](002-allowlist-mutable-store-fields.md) | Allowlist seller-editable Store fields (mass assignment) | security | P1 | S–M | LOW | — | DONE |
-| [003](003-server-side-payment-and-address-trust.md) | Derive Stripe state server-side; verify address ownership | security | P1 | M | MED | — | TODO |
+| [003](003-server-side-payment-and-address-trust.md) | Derive Stripe state server-side; verify address ownership | security | P1 | M | MED | — | DONE |
 | [004](004-upgrade-clerk-nextjs-security.md) | Upgrade `@clerk/nextjs` off CRITICAL auth-bypass advisory | dependencies | P1 | S | LOW-MED | — | TODO |
 | [005](005-cart-integrity-atomic-save-and-persist.md) | Atomic `saveUserCart` + single-source cart persist | correctness | P2 | S | LOW | — | TODO |
 | [006](006-place-order-double-submit-guard.md) | Guard "Place order" against double submit | correctness | P2 | S | LOW | — | TODO |
