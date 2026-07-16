@@ -120,14 +120,20 @@ lcov 未カバー（2026-07-10 実測）: `44-50, 160-166, 211-217, 293-299, 348
 ### Step 1: catch 分岐網羅 describe を追加
 
 `profile.test.ts` 末尾に `describe("catch 分岐網羅（Error / unknown 両系統）")` を新設。
-上の表の 5 関数それぞれに 4 ケース（currentUser reject × Error/非 Error、DB reject × Error/非 Error）
-…を全展開すると 20 だが、**message.test.ts の前例と同じく間引いてよい**。最低限の網羅は:
+必要テスト数は**機械的に定義**する（lcov の実測任せ・「間引いてよい」を排除する）:
 
-- 全 5 関数: 「DB reject（Error）→ 汎用メッセージ throw」（5 テスト）
-- 全 5 関数: 「DB reject（非 Error）→ unknown 分岐のログ + 汎用メッセージ」（5 テスト）
-- 代表 2 関数（getUserOrders / getUserWishlist）: 「currentUser reject（Error / 非 Error）」（4 テスト）
-  ※ currentUser catch は 5 関数で完全同型のため、lcov で残りの関数の分岐が埋まらない場合のみ
-  同型テストを追加する（Step 3 の実測で判断）
+> **必須テスト数 = 5 関数 × 4 ケース = 20 テスト**。
+> 4 ケースは各関数につき固定: ①currentUser reject（Error）②currentUser reject（非 Error）
+> ③DB reject（Error）④DB reject（非 Error）。
+
+- 全 5 関数: 「currentUser reject（Error）→ 汎用メッセージ throw + Error 分岐ログ」（5 テスト）
+- 全 5 関数: 「currentUser reject（非 Error）→ 汎用メッセージ + unknown 分岐ログ」（5 テスト）
+- 全 5 関数: 「DB reject（Error）→ 汎用メッセージ throw + Error 分岐ログ」（5 テスト）
+- 全 5 関数: 「DB reject（非 Error）→ 汎用メッセージ + unknown 分岐ログ」（5 テスト）
+
+> currentUser catch は 5 関数で同型だが、**同型だからと 2 関数に間引かない**。回帰検知点は
+> 関数ごとに独立している必要がある（片方だけリファクタで壊れたケースを検出できるように）。
+> lcov が同型分岐を「カバー済み」と表示しても、20 テストはすべて残す。
 
 各テストで assert すること: ①throw が**表の汎用メッセージと完全一致** ②`console.error` が
 表のログ prefix で呼ばれる ③throw メッセージに元エラーの詳細（"db down" 等）が含まれない。
@@ -135,7 +141,7 @@ DB reject は各関数が最初に呼ぶ mock（order.findMany / paymentDetails.
 wishlist.findMany / user.findUnique 等 — 既存正常系テストが使っている mock と同じもの）に
 `mockRejectedValue` を仕込む。
 
-**Verify**: `bun run test -- src/queries/profile.test.ts` → 既存 34 + 新規 14 前後 all pass。
+**Verify**: `bun run test -- src/queries/profile.test.ts` → 既存 34 + 新規 **20** all pass。
 
 ### Step 2: 期間フィルタ分岐テストを追加
 
@@ -170,8 +176,10 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 
 ## Done criteria
 
-- [ ] `bun run test -- src/queries/profile.test.ts` exit 0、テスト数 34 → 48 以上
+- [ ] `bun run test -- src/queries/profile.test.ts` exit 0、テスト数 34 → **54 以上**
+      （catch 網羅 20 本 + 期間フィルタ分。catch 20 本は必須の下限）
 - [ ] profile.ts 単体 Branches ≥ 95%
+- [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各 20 本）
 - [ ] 全 5 関数で「汎用メッセージ完全一致 + 詳細非漏洩」の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` / `bun run test` exit 0
 - [ ] 変更が `src/queries/profile.test.ts`（+ spec-sync docs 群）のみ
@@ -181,7 +189,8 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 
 - Drift check で catch のログ prefix / 汎用メッセージが表と一致しない
 - テストを通すために profile.ts 本体の変更が必要に見える
-- Step 3 で 2 回補完しても Branches が 90% を下回る（未カバー行の一覧を添えて報告）
+- Step 3 で 2 回補完しても Branches が **95% を下回る**（Done criteria / Step 3 の閾値と一致。
+  未カバー行の一覧を添えて報告）
 
 ## Maintenance notes
 
