@@ -693,6 +693,64 @@ describe("placeOrder", () => {
             expect(mockDb.orderItem.create).toHaveBeenCalledTimes(1);
         });
 
+        it("クライアントが countryId を偽装しても所有住所(ownedAddress)のサーバー値を使う", async () => {
+            // 攻撃者は自分の住所 id を渡しつつ countryId だけ別国に改ざんできる。
+            // 所有権検証後は ownedAddress のサーバー値で配送/税判定すべき（クライアント値は無視）。
+            const forgedAddress = createMockShippingAddress({
+                countryId: "country-FORGED",
+            });
+            const ownedAddress = createMockShippingAddress({
+                countryId: "country-001", // サーバー DB 上の真の国
+            });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(ownedAddress);
+
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            const mockOrder = createMockOrder();
+            mockDb.order.create.mockResolvedValue(mockOrder);
+            mockDb.orderGroup.create.mockResolvedValue({ id: "order-group-001" });
+            mockDb.orderItem.create.mockResolvedValue({ id: "order-item-001" });
+            mockDb.order.update.mockResolvedValue(mockOrder);
+
+            await placeOrder(forgedAddress as never, "cart-001");
+
+            // 国判定はサーバー値 country-001 を使い、偽装 country-FORGED は使われない
+            expect(mockDb.country.findUnique).toHaveBeenCalledWith({
+                where: { id: "country-001" },
+            });
+            expect(mockGetDeliveryDetails).toHaveBeenCalledWith(
+                expect.any(String),
+                "country-001"
+            );
+            expect(mockDb.country.findUnique).not.toHaveBeenCalledWith({
+                where: { id: "country-FORGED" },
+            });
+            // 注文に紐づく住所も ownedAddress.id（サーバー値）
+            expect(mockDb.order.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        shippingAddressId: ownedAddress.id,
+                    }),
+                })
+            );
+        });
+
         it("複数店舗の商品は店舗ごとにOrderGroupが作成される", async () => {
             const cartItem1 = createMockCartItem({ storeId: "store-A" });
             const cartItem2 = createMockCartItem({

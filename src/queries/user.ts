@@ -504,7 +504,9 @@ export const placeOrder = async (
                 : new Prisma.Decimal(size.price.toString())
 
             // Calculate shipping details
-            const countryId = shippingAddress.countryId
+            // 所有権検証済みの ownedAddress（サーバー値）を使う。
+            // クライアント供給の shippingAddress.countryId は改ざん可能なため信頼しない。
+            const countryId = ownedAddress.countryId
 
             const temp_country = await db.country.findUnique({
                 where: {
@@ -604,7 +606,7 @@ export const placeOrder = async (
     const storeIds = Object.keys(groupedItems);
     const deliveryResults = await Promise.all(
         storeIds.map((storeId) =>
-            getDeliveryDetailsForStoreByCountry(storeId, shippingAddress.countryId)
+            getDeliveryDetailsForStoreByCountry(storeId, ownedAddress.countryId)
         )
     );
     storeIds.forEach((storeId, index) => {
@@ -617,7 +619,7 @@ export const placeOrder = async (
         const order = await tx.order.create({
             data: {
                 userId,
-                shippingAddressId: shippingAddress.id,
+                shippingAddressId: ownedAddress.id,
                 orderStatus: 'Pending',
                 paymentStatus: 'Pending',
                 shippingFees: 0,
