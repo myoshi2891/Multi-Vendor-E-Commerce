@@ -124,7 +124,18 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    - (b) 隣接リスト + materialized path（`path: "electronics/camera/lens"` 文字列列）
    - (c) closure table（別テーブルで祖先-子孫全ペア）
    推奨の初期仮説: (b) — URL slug 互換（既存 `url @unique` を path の末尾要素として温存）と
-   `startsWith` によるサブツリー検索が tsvector 検索（plan 015）と素直に組み合う。検証して確定せよ。
+   materialized path のサブツリー検索が tsvector 検索（plan 015）と素直に組み合う。検証して確定せよ。
+
+   > **(b) を採る場合、prefix 境界を必ず定義すること**（素朴な `startsWith("electronics/camera")` は
+   > `"electronics/camera-accessories"` のような**兄弟ノードを誤ヒット**する）。サブツリー検索は
+   > 「そのノード自身 ＋ 区切り文字境界での子孫」に限定する:
+   > - 区切り文字を **path 末尾にも付与**して保存する（例: `"electronics/camera/"`）か、
+   >   検索時に境界を明示する。
+   > - 自身＋子孫の条件: `path = 'electronics/camera'` **OR** `path LIKE 'electronics/camera/%'`
+   >   （SQL の `LIKE` 特殊文字 `%` `_` は path 側でエスケープ、または区切り文字を含まない slug 制約で回避）。
+   >   Prisma なら `{ OR: [{ path: p }, { path: { startsWith: p + '/' } }] }`。
+   > - 「子のみ（孫を除く）」が要る画面では、深さ（`depth` 列）か「区切り文字数 = 親+1」条件を併用する。
+   > spike はこの境界定義を ADR に明記し、誤ヒットしないことを実データ（兄弟 slug 衝突ケース）で検証する。
 2. **SubCategory の処遇**: `Category` へ統合して `SubCategory` テーブルを廃止するか、
    ビュー/互換レイヤーとして残すか。統合する場合の data migration 手順
    （SubCategory 行 → Category 行 + parentId 設定、id 衝突の扱い）を具体化する。
