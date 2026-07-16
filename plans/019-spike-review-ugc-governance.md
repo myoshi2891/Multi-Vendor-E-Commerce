@@ -39,15 +39,22 @@ UGC が増えるほど、偽レビュー・不適切コンテンツ・不正確�
 
 ### Review モデル — 信頼装置なし（`prisma/schema.prisma:353-391`）
 
+抜粋（**関連フィールドのみを抜き出した簡略版**。実物は `prisma/schema.prisma:353-391` を参照）。
+構文は有効な Prisma として書く（1 行複数フィールドのような擬似記法は使わない）:
+
 ```prisma
-model Review {                 // schema.prisma:353
+model Review {
   variant  String
   review   String
-  rating   Float               // ← Float（金額ではないため Decimal 規約対象外だった）
-  color / size / quantity String
-  likes    Int @default(0)     // ← 参照・更新する query が存在しない死にフィールド
+  rating   Float               // ← Float（金額ではないため Decimal 規約対象外。範囲検証は別途必要 — 下記）
+  color    String
+  size     String
+  quantity String
+  likes    Int    @default(0)  // ← 参照・更新する query が存在しない死にフィールド
   images   ReviewImage[]
+
   @@unique([userId, productId]) // 1ユーザー1商品1レビュー
+  // 注: userId / productId / タイムスタンプ等の他フィールドは本抜粋では省略
 }
 ```
 
@@ -73,6 +80,12 @@ await db.product.update({ where: { id: productId },
 
 - **`db.$transaction` なし**: レビュー upsert と評価再計算が別トランザクション。並行実行で
   `Product.rating` / `numReviews` が古い集合で上書きされうる
+- **`rating` の範囲検証が無い**: `rating Float` は現状どの経路でも 1〜5 の範囲チェックを受けない。
+  `upsertReview` は範囲外（0・6・負値・`NaN`・非整数）をそのまま保存し、平均が汚染される。
+  設計で **rating の許容範囲（1〜5 の整数を初期仮説）を確定し、多層で強制**すること:
+  (i) 入口の Zod（`src/lib/schemas.ts`）で `z.number().int().min(1).max(5)`、
+  (ii) 可能なら DB CHECK 制約（`rating BETWEEN 1 AND 5`）で最終防衛、
+  (iii) 集計は範囲内保証済みの値に対して行う。これを Open questions / 実装プランの必須項目にする。
 - クライアント提供 ID を信頼しない IDOR 対策（`review.ts:55-60`）は既に施されている — 維持する
 
 ### Store.averageRating — 死にフィールド（`prisma/schema.prisma:93-94`）
@@ -145,8 +158,12 @@ numReviews    Int   @default(0)  // schema.prisma:94 — 同上
    現行方式の原子化、(b) 差分更新（加重平均の増分計算）、(c) DB 集計（`AVG()` を
    `$queryRaw`）のどれにするか。**Product と Store の両方**を同一トランザクションで
    更新すること。モデレーションで非公開になったレビューを集計から除外する仕様も確定する。
-5. **`rating Float` の型**: 表示は小数1桁で足りる。`Float` 維持か `Decimal(2,1)` 化かを
+5. **`rating` の型と範囲検証**: 表示は小数1桁で足りる。`Float` 維持か `Decimal(2,1)` 化かを
    ADR 判断として確定する（tech.md の Decimal 規約は金額対象 — 評価への適用は判断事項）。
+   **加えて入力 rating の許容範囲を必ず設計に含める**（Current state の観察参照）:
+   1〜5 の整数を初期仮説とし、Zod（`z.number().int().min(1).max(5)`）+ 可能なら DB CHECK
+   （`rating BETWEEN 1 AND 5`）で多層に強制。範囲外・`NaN`・非整数を保存させないことを
+   集計汚染防止の要件として明記する。
 6. **helpful 投票**: `likes Int` を per-user の `ReviewVote`（unique [userId, reviewId]）へ
    置き換えるか、初期スコープから外して `likes` を撤去するか。表示ソート
    （「参考になった順」）に使うかも含めて判断する。
