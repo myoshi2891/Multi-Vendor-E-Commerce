@@ -3,7 +3,7 @@
 > 位置づけ: [拡張計画ドキュメント群](README.md)の第2章。
 > 統合元: Round 2 ブループリント §2 / Round 3 ブループリント §2。引用 file:line は
 > 昇格時 HEAD `d6a8ede`（2026-07-10, branch `dev`）で再検証済み。
-> 詳細な監査エビデンスは `plans/audit/findings-09/-10`（未追跡の advisor 作業領域）にある。
+> 詳細な監査エビデンスは `plans/audit/findings-09/-10`（advisor 作業領域の監査原本・凍結済み）にある。
 
 ---
 

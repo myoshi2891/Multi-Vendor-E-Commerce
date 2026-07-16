@@ -2,7 +2,8 @@
 
 > 位置づけ: [拡張計画ドキュメント群](README.md)の第5章であり、**フェーズロードマップの SSOT**。
 > 統合元: Round 2 ブループリント §5（Round 3 追記込み）。従来 SSOT だった
-> `plans/direction/EXPANSION_BLUEPRINT.md` §5（未追跡）から 2026-07-10 に移管した。
+> [`plans/direction/EXPANSION_BLUEPRINT.md`](../../../plans/direction/EXPANSION_BLUEPRINT.md) §5
+> （移管後は凍結済みの監査原本）から 2026-07-10 に移管した。
 > 柱①〜⑩の定義は [04. アーキテクチャ10本柱](04-architecture-pillars.md)、
 > B-1〜B-10 は [02. 現状分析](02-current-state.md) を参照。
 
@@ -11,7 +12,7 @@
 ## 1. 全体地図
 
 improve スキル Round 1 の監査プラン（001〜012: セキュリティ・正確性・技術負債等 —
-`plans/`・未追跡）と direction 発見（DIRECTION-01〜05）を含めた全体像。
+`plans/`）と direction 発見（DIRECTION-01〜05）を含めた全体像。
 **Phase 0 が最優先である点は Round 1 の勧告から不変**。
 
 ```

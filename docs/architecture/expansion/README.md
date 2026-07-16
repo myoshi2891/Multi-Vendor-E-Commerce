@@ -24,15 +24,17 @@
 ## SSOT（Single Source of Truth）の宣言
 
 - **フェーズロードマップの SSOT は [`05-phased-roadmap.md`](05-phased-roadmap.md) である。**
-  従来 SSOT だった `plans/direction/EXPANSION_BLUEPRINT.md` §5（improve スキル Round 2 成果物・
-  git 未追跡）から本ディレクトリへ**移管**した（2026-07-10）。
+  従来 SSOT だった [`plans/direction/EXPANSION_BLUEPRINT.md`](../../../plans/direction/EXPANSION_BLUEPRINT.md) §5
+  （improve スキル Round 2 成果物）から本ディレクトリへ**移管**した（2026-07-10）。
 - 本ドキュメント群は、improve スキル（senior advisor / 読み取り専用監査）の Round 2
   （カタログ基盤・発見性）/ Round 3（運用・信頼・成長）の成果物を**統合・昇格**したもの。
-  監査エビデンスの原本と spike プラン本体は `plans/`（advisor 作業領域・`.gitignore` 済み）にある:
-  - 監査 findings: `plans/audit/findings-09-direction-expansion.md`（E-1〜E-5）/
-    `findings-10-direction-operations-growth.md`（O-1〜O-5）
+  監査エビデンスの原本と spike プラン本体は `plans/`（advisor 作業領域）にある:
+  - 監査 findings: [`plans/audit/findings-09-direction-expansion.md`](../../../plans/audit/findings-09-direction-expansion.md)（E-1〜E-5）/
+    [`findings-10-direction-operations-growth.md`](../../../plans/audit/findings-10-direction-operations-growth.md)（O-1〜O-5）
   - spike プラン: `plans/013〜022-spike-*.md`（柱①〜⑩に対応）
-  - `plans/` は追跡外のため、本ドキュメント群が**チームに共有される唯一の正式版**である
+  - `plans/` も git 追跡対象だが、**役割が違う**: `plans/` は Round ごとの監査原本・作業領域
+    （昇格後は凍結され、以後更新しない）であり、本ドキュメント群が**継続的に更新される正式版**である。
+    ロードマップの差分は必ず本ディレクトリ側へ入れること
 
 ---
 

@@ -78,4 +78,4 @@
 | スコープ外: **多通貨・税計算エンジン・高度な分析ダッシュボード・配送キャリア連携** | [`product.md`](../../../.claude/steering/product.md) | [05. ロードマップ](05-phased-roadmap.md)の「ゲート付き将来項目」に位置のみ記す。販促は単一通貨前提、セラー指標は措置シグナルに限定（分析 UI は作らない）、RMA の返送追跡は追跡番号手入力前提 |
 | **Elasticsearch 再導入はしない**（tsvector 選定は決定済みトレードオフ） | [`tech.md`](../../../.claude/steering/tech.md) 既知の制約 | 検索拡張は tsvector の延長線で設計する（柱③） |
 | SaaS 化 Phase 2/3（orgId/RLS・課金）は現時点で不要 | [`saas-roadmap.md`](../saas-roadmap.md) | ゲート済み。本計画とは独立 |
-| Round 1 監査の direction 発見（返金実行 / restock / サポートコンソール / i18n / 監視） | `plans/audit/findings-08-direction.md`（未追跡） | 監査済み。ロードマップ上に**配置**するのみで重複計画は作らない |
+| Round 1 監査の direction 発見（返金実行 / restock / サポートコンソール / i18n / 監視） | [`plans/audit/findings-08-direction.md`](../../../plans/audit/findings-08-direction.md)（Round 1 監査原本・凍結済み） | 監査済み。ロードマップ上に**配置**するのみで重複計画は作らない |
