@@ -126,20 +126,30 @@ normalized parsing. Target shape (keep the comment in Japanese to match the file
 ```ts
         // ページネーション用パラメータ（NaN / 負値 / 小数 / 過大値を排除）
         const MAX_LIMIT = 50; // POST ハンドラの take:50 と一致させる
+        const MAX_PAGE = 10_000; // page の上限（skip 暴走・DB の巨大 OFFSET を防ぐ）
         const rawPage = Number(url.searchParams.get("page"));
         const rawLimit = Number(url.searchParams.get("limit"));
         const page =
-            Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+            Number.isFinite(rawPage) && rawPage >= 1
+                ? Math.min(Math.floor(rawPage), MAX_PAGE)
+                : 1; // 下限 1・上限 MAX_PAGE でクランプ
         const limit =
             Number.isFinite(rawLimit) && rawLimit >= 1
                 ? Math.min(Math.floor(rawLimit), MAX_LIMIT)
                 : 20; // 既定 20、上限 MAX_LIMIT
-        const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit; // page/limit 双方が有界なので skip も有界
 ```
 
 Rationale for `Number()` over `parseInt`: `parseInt("20abc")` returns `20`
 (silent truncation of junk); `Number("20abc")` returns `NaN`, which the
 `Number.isFinite` guard then rejects — stricter and matches the tech.md intent.
+
+Rationale for clamping `page` (not just the lower bound): without an upper bound,
+`?page=999999999` yields `skip = (page-1)*limit` — an enormous OFFSET that makes
+Postgres scan/skip millions of rows (DoS-ish) or risks exceeding safe integer
+range. `page` and `limit` must **both** be bounded so `skip` is bounded. If a
+deeper page than `MAX_PAGE` is ever legitimately needed, switch to keyset
+(cursor) pagination rather than raising the OFFSET ceiling.
 
 Leave the two `take: limit` usages and the response block unchanged — they now
 receive the normalized `limit` automatically.
@@ -155,16 +165,29 @@ without a real database. Model the mock style after an existing query test that
 mocks `@/lib/db` — for example `src/queries/store.test.ts` (see how it does
 `jest.mock("@/lib/db", ...)`).
 
-Cases to cover (all against the GET handler):
-1. **Happy path**: `?search=foo&page=2&limit=10` → `findMany` called with `take: 10, skip: 10`.
-2. **Over-large limit**: `?search=foo&limit=99999999` → `findMany` called with `take: 50` (clamped).
-3. **Negative page**: `?search=foo&page=-1` → `page` normalized to `1`, `skip: 0` (no throw).
-4. **Non-numeric page/limit**: `?search=foo&page=abc&limit=xyz` → `page: 1`, `take: 20`, `skip: 0`.
+Cases to cover (all against the GET handler). Assert **both** the Prisma call
+args (`take`/`skip`) **and** the normalized values echoed in the response body:
+1. **Happy path**: `?search=foo&page=2&limit=10` → `findMany` called with `take: 10, skip: 10`;
+   response body's `page === 2` / `limit === 10`.
+2. **Over-large limit**: `?search=foo&limit=99999999` → `findMany` `take: 50` (clamped);
+   response body's `limit === 50` (the clamped value, not the raw input).
+3. **Negative page**: `?search=foo&page=-1` → `page` normalized to `1`, `skip: 0` (no throw);
+   response body's `page === 1`.
+4. **Non-numeric page/limit**: `?search=foo&page=abc&limit=xyz` → `page: 1`, `take: 20`, `skip: 0`;
+   response body's `page === 1` / `limit === 20`.
+5. **Over-large page (upper clamp)**: `?search=foo&page=999999999&limit=10` →
+   `page` clamped to `MAX_PAGE`, `skip === (MAX_PAGE-1)*10`（skip が有界であること）;
+   response body's `page === MAX_PAGE`.
+
+> レスポンス正規化の確認理由: `totalPages = ceil(total/limit)` などがクランプ後の `limit`/`page`
+> を使う必要がある。Prisma 引数だけでなく**返却されるページング値**も正規化済みであることを固定する
+> （Maintenance notes「Reviewer focus」と一致）。レスポンスに `page`/`limit` フィールドが無い実装なら、
+> 何が正規化結果として返るか（`totalPages` 等）を Current state で確認し、それを assert 対象にする。
 
 Construct requests with `new Request("http://localhost/api/index-products?...")`
 and call the exported `GET` directly.
 
-**Verify**: `bun run test -- src/app/api/index-products` → all pass, including the 4 new cases.
+**Verify**: `bun run test -- src/app/api/index-products` → all pass, including the 5 new cases.
 
 ### Step 3: Full gate
 
@@ -205,6 +228,6 @@ Stop and report back (do not improvise) if:
 ## Maintenance notes
 
 - **Test-stats sync**: adding tests changes the project's `Tests:` total. Per `.claude/rules/02-tdd-step-commit.md`, after this lands you must run the `spec-sync-after-test` skill (regenerate `docs/coverage-dashboard.html` + sync `QA_HANDOFF.md` etc.) in a **separate docs commit**. Keep the test-code commit and the docs-sync commit distinct.
-- **SECURITY-05 overlap**: the raw `{ error: error.message }` 500 responses (lines ~134, ~403) remain — a future plan should replace them with a constant string and log details via `console.error` only. If you fix SECURITY-05 in the same PR later, keep it a separate commit from this pagination change.
+- **SECURITY-05 overlap**: the raw `{ error: error.message }` 500 responses (lines ~134, ~403) remain — a future plan should replace them with a constant, user-safe string and log details **server-side only, using the repo's structured-log convention** (`.claude/steering/tech.md`「構造化ログ」): first arg the string `"[Module:Function] Error message"`, second arg the object `{ error: error.message, stack: error.stack }` — not an ad-hoc `console.error(error)`. If you fix SECURITY-05 in the same PR later, keep it a separate commit from this pagination change.
 - **Reviewer focus**: confirm the response `page`/`limit` values are the **normalized** ones (so `totalPages = ceil(total/limit)` uses the clamped `limit`), and that the POST handler was untouched.
 - If real pagination limits ever need to differ per caller (e.g. an internal caller wanting more than 50), introduce an explicit allowlist rather than removing the clamp.
