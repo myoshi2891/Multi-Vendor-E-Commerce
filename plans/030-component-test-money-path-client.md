@@ -39,7 +39,7 @@ newsletter。server action をいつ呼ぶか・失敗時に何を表示する�
 
 | # | ファイル | 行/分岐 | 中身（自分で読んで確認済み） |
 |---|---|---|---|
-| 1 | `src/components/store/layout/footer/newsletter.tsx` | 72L / B12 | フォーム submit → `/api/newsletter` へ fetch。`isSubmittingRef` 二重送信ガード・8s AbortController・AbortError と一般失敗で別 toast・成功で `form.reset()` |
+| 1 | `src/components/store/layout/footer/newsletter.tsx` | 72L / B12 | フォーム submit → `/api/newsletter` へ fetch。**⚠ `src/app/api/newsletter/` は存在しない**（本番では 404 する既知の不整合。別 finding として記録し本プランでは本体を直さない）。`isSubmittingRef` 二重送信ガード・8s AbortController・AbortError と一般失敗で別 toast・成功で `form.reset()` |
 | 2 | `src/components/store/cart-page/summary.tsx` | 97L / B4 | `cartItems.reduce` で subTotal/total 集計・`saveUserCart` 成功で `router.push("/checkout")`・失敗で `toast.error`。**`catch (error: any)` あり（後述）** |
 | 3 | `src/components/store/checkout-page/container.tsx` | 98L / B16 | `useEffect` で `updateCheckoutProductWithLatest` により cart を hydrate（`cartItems.length > 0` 時のみ）・住所選択で `activeCountry` 導出・`isCouponCurrentlyValid` でクーポン検証 |
 | 4 | `src/components/store/cards/payment/stripe/stripe-payment.tsx` | 98L / B35 | mount 時 `createStripePaymentIntent` → clientSecret 取得・submit で `elements.submit()` → `stripe.confirmPayment` → 成功時 `createStripePayment` → `router.refresh()`。submitError / confirm error で `errorMessage` 表示。**`catch (error: any)` あり** |
@@ -76,17 +76,35 @@ SDK モックの指針:
   `PaymentElement` → `() => <div data-testid="payment-element" />`）
 - `@paypal/react-paypal-js`: `PayPalButtons` を「`createOrder` / `onApprove` / `onError` props を
   受け取り、それぞれを発火させるテスト用ボタンを描画する」stub にする:
+  `Function` 型は `.claude/steering/tech.md`（`any` 禁止）の趣旨に反するため使わない。
+  各コールバックを実シグネチャで型付けする（`@paypal/react-paypal-js` の
+  `PayPalButtonsComponentProps` から必要な型を借用してもよい）:
   ```tsx
+  import type {
+      CreateOrderActions,
+      OnApproveActions,
+      OnApproveData,
+  } from "@paypal/paypal-js";
+
+  type PayPalButtonsStubProps = {
+      createOrder: (data: Record<string, never>, actions: CreateOrderActions) => Promise<string>;
+      onApprove: (data: OnApproveData, actions: OnApproveActions) => Promise<void>;
+      onError: (err: unknown) => void;
+  };
+
   jest.mock("@paypal/react-paypal-js", () => ({
-      PayPalButtons: ({ createOrder, onApprove, onError }: Record<string, Function>) => (
+      PayPalButtons: ({ createOrder, onApprove, onError }: PayPalButtonsStubProps) => (
           <div>
-              <button onClick={() => createOrder({}, {})}>pp-create</button>
-              <button onClick={() => onApprove()}>pp-approve</button>
+              <button onClick={() => void createOrder({}, {} as CreateOrderActions)}>pp-create</button>
+              <button onClick={() => void onApprove({} as OnApproveData, {} as OnApproveActions)}>pp-approve</button>
               <button onClick={() => onError(new Error("pp boom"))}>pp-error</button>
           </div>
       ),
   }));
   ```
+  > 実際の props 型が上記と細部で異なる場合は、`@paypal/react-paypal-js` の
+  > `PayPalButtonsComponentProps` から該当プロパティ型を pick して使う。いずれにせよ
+  > `Function` / `any` は使わない。
 - fetch（newsletter）: `global.fetch = jest.fn()`（`src/queries/paypal.test.ts:24-26` と同じ形）
 
 ## Commands you will need
@@ -100,13 +118,24 @@ SDK モックの指針:
 
 ## Scope
 
-**In scope**（すべて新規作成）:
+**In scope — テスト（すべて新規作成。1 ファイル = 1 コミット）**:
 - `tests/component/store/newsletter.test.tsx`
 - `tests/component/store/cart-summary.test.tsx`
 - `tests/component/store/checkout-container.test.tsx`
 - `tests/component/store/stripe-payment.test.tsx`
 - `tests/component/store/paypal-payment.test.tsx`
 - `tests/component/store/cart-container.test.tsx`
+
+**In scope — ドキュメント同期（後続の別コミット）**:
+- `spec-sync-after-test` の成果物一式（Step 7）— スイート数 +6 でテスト統計が変動するため必須。
+  SSOT は `docs/testing/QA_HANDOFF.md`、伝播先 `07-testing.md` / `COVERAGE_REPORT.md` /
+  `docs/PROGRESS.md` + `bun run coverage:dashboard` 再生成の `docs/coverage-dashboard.html`。
+- `plans/README.md` の 030 行を DONE に更新。**テストとは別コミット**。
+
+**必須テストユーティリティ**（新規モック値を手書きせず共通基盤を使う）:
+- カートアイテムは `src/config/test-fixtures.ts` の `createMockCartItem`（型安全ファクトリ）を使う。
+  他の型付きモックデータも `src/config/`（test-fixtures / test-helpers / test-scenarios）から取得する。
+  アドホックなオブジェクトリテラルで代用しない（型のドリフトと重複を防ぐ）。
 
 **Out of scope**（触らない）:
 - 対象コンポーネント本体 6 ファイル — **`catch (error: any)`（summary.tsx:30 /
@@ -129,8 +158,12 @@ SDK モックの指針:
 
 ### Step 1: newsletter.test.tsx（4 ケース）
 
-1. 正常系: email 入力 → submit → `fetch` が `/api/newsletter` へ `POST`（body に email）→
-   `toast.success` + `form.reset()`（input が空になる）
+1. 配線の特性化（成功パスの「モック上の」再現）: email 入力 → submit → `fetch` が
+   `/api/newsletter` へ `POST`（body に email）で呼ばれることを assert し、`fetch` モックが
+   `{ ok: true }` を返したときに `toast.success` + `form.reset()` になることを確認する。
+   > 注: これは**コンポーネントの配線**の特性化であって、`/api/newsletter` が実在する成功経路である
+   > ことの証明ではない（上表のとおり当該ルートは未実装）。「エンドポイントが動く」とは書かない。
+   > ルート実装/削除は別 finding として扱い、本テストは現行 fetch 先を固定するだけ。
 2. リエントランシーガード: `fetch` を pending のまま保持（`new Promise(() => {})` ではなく
    解決可能な deferred で）→ 連続 2 回 submit → `fetch` は **1 回だけ**呼ばれる
 3. 失敗系: `fetch` が `{ ok: false }` を resolve → `toast.error("Failed to subscribe.")`
@@ -149,16 +182,19 @@ SDK モックの指針:
 
 **Verify**: 3 pass → コミット。
 
-### Step 3: paypal-payment.test.tsx（3 ケース）
+### Step 3: paypal-payment.test.tsx（4 ケース）
 
 PayPalButtons stub（Current state のモック指針）を使用。
 
 1. `pp-create` クリック → `createPayPalPayment(orderId)` が呼ばれる
 2. `pp-create` → `pp-approve` の順にクリック → `capturePayPalPayment(orderId, <createOrder が
-   返した id>)` が呼ばれ、`captureResponse.id` ありで `router.refresh()`
-3. `pp-error` クリック → `console.error` が `"[PaypalPayment] PayPal Button Error:"` で呼ばれる
+   返した id>)` が呼ばれ、`captureResponse.id` **あり**で `router.refresh()` が呼ばれる
+3. **`captureResponse.id` なし分岐**: `capturePayPalPayment` が `id` を持たない結果
+   （例: `{}` や `{ id: undefined }`）を resolve → `router.refresh()` が**呼ばれない**ことを assert
+   （`onApprove` の `if (captureResponse.id)` 分岐の false 側を固定する）
+4. `pp-error` クリック → `console.error` が `"[PaypalPayment] PayPal Button Error:"` で呼ばれる
 
-**Verify**: 3 pass → コミット。
+**Verify**: 4 pass → コミット。
 
 ### Step 4: stripe-payment.test.tsx（5 ケース）
 
@@ -169,8 +205,14 @@ PayPalButtons stub（Current state のモック指針）を使用。
 2. intent 取得失敗: `createStripePaymentIntent` reject → `error.message` が画面に表示される
 3. `elements.submit()` が `{ error: { message: "bad card" } }` を返す → エラーメッセージ表示・
    `confirmPayment` は呼ばれない
-4. `confirmPayment` 成功（`{ error: undefined, paymentIntent: {...} }`）→
-   `createStripePayment(orderId, paymentIntent)` → `router.refresh()`
+4. `confirmPayment` 成功（`{ error: undefined, paymentIntent: { id: "pi_123", ... } }`）→
+   **`createStripePayment(orderId, paymentIntent.id)`**（第 2 引数は intent **オブジェクトではなく
+   `id`（string）**。`src/queries/stripe.ts:70-73` の現行契約 `createStripePayment(orderId: string,
+   paymentIntentId: string)` に一致させる）→ `router.refresh()`。
+   > server action 側は `paymentIntentId` から Stripe に `retrieve` して amount/currency/metadata を
+   > **サーバ権威で**検証する（commit `4b13ce1` / plan 003）。クライアントは金額を渡さないため、
+   > このコンポーネントテストでは「渡す引数が `paymentIntent.id` であること」のみを固定し、
+   > 金額・通貨の検証は server action のユニットテスト（`stripe.test.ts`）の領分とする。
 5. `confirmPayment` がエラーを返す → `createStripePayment` は呼ばれない
 
 **Verify**: 5 pass → コミット。
@@ -186,10 +228,20 @@ place-order-card.test.tsx と同様に stub 化。
 2. cartItems が空なら `updateCheckoutProductWithLatest` は**呼ばれない**
 3. 住所選択（stub の props 経由で `setSelectedAddress` を発火）→ `activeCountry` が
    選択住所の country になり、hydrate が再実行される
-4. hydrate が reject した場合の挙動を**現行実装どおり**固定（unhandled になるなら
-   その事実を確認するテストは書かず、報告事項として記録 — 本体修正は out of scope）
+4. **hydrate（`updateCheckoutProductWithLatest`）が reject した場合**: 黙認しない。
+   テストで reject を発生させ、次のいずれかを**明示的に assert** する:
+   - 望ましい挙動（`useEffect` 内で catch し `toast.error` 等でハンドルする）が実装済みなら、
+     それを assert する。
+   - 現行実装が **unhandled rejection を起こす**なら、それを**バグとして顕在化**させる:
+     `const spy = jest.spyOn(console, "error")` で unhandled を捕捉するか、
+     `process.on("unhandledRejection")` を一時登録して**「未ハンドルであること」を assert** し、
+     テスト名に `TODO(bug): hydrate rejection is unhandled` を付けて `SECURITY_GAP_REPORT` 等の
+     finding に登録する（本体修正は out of scope だが、**テストで検知点を作る**）。
 
-**Verify**: 3〜4 pass → コミット。
+   > 方針: 「unhandled になるならテストを書かない」は不可。回帰無検出を残さないため、
+   > 現状の欠陥もテストで固定して可視化する（`.claude/steering` の「エラーを握りつぶさない」に沿う）。
+
+**Verify**: 4 pass → コミット。
 
 ### Step 6: cart-container.test.tsx（3〜5 ケース）
 
