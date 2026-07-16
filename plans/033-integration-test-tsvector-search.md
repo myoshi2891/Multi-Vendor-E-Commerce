@@ -133,7 +133,33 @@ SELECT * FROM "SubCategory" ORDER BY RANDOM() LIMIT ${limit || 10};
 パラメータ化の安全性）と ADR-004 参照を記載。モックは**不要**（route は db 以外の
 外部依存なし。認証も不要な公開 API）。
 
-共通 Arrange ヘルパー: `seedUser` → `seedStore` → `seedCategoryWithSubcategory` の後、
+**テスト間の DB リセット（必須・明示）**: 各シナリオは「結果が正確に N 件」「`db.product.count()` が
+seed 数のまま」等、**DB が各テスト開始時にクリーンであること**に依存する。よって
+`beforeEach` で `resetDb(db)`（`tests/integration/setup/reset-db.ts`。TRUNCATE 系）を呼び、
+その後に基盤エンティティ（`seedUser` / `seedStore` / `seedCategoryWithSubcategory`）を
+**毎テスト再 seed** する。商品はシナリオごとに Arrange 内で seed する。
+
+```typescript
+let db: PrismaClient;
+let base: { storeId: string; categoryId: string; subCategoryId: string };
+
+beforeAll(() => { db = getTestDb(); });
+afterAll(async () => { await disconnectTestDb(); });
+
+beforeEach(async () => {
+    await resetDb(db);                       // ← 各テスト前にクリーン化（accumulation を防ぐ）
+    const user = await seedUser(db);
+    const store = await seedStore(db, { userId: user.id });
+    const { category, subCategory } = await seedCategoryWithSubcategory(db);
+    base = { storeId: store.id, categoryId: category.id, subCategoryId: subCategory.id };
+});
+```
+
+> 根拠: リセットが無いと前テストの商品が残り、「1 件ヒット」「count === seed 数」「関連度で B が先頭」
+> といった assert が実行順に依存して壊れる（フレークの温床）。`Product` / `SubCategory` /
+> `Store` 等は `resetDb` の TRUNCATE 対象であることを確認してから使う。
+
+共通 Arrange ヘルパー: 上記 `base`（`storeId` / `categoryId` / `subCategoryId`）を使い、
 
 ```typescript
 async function seedSearchableProduct(input: {
