@@ -256,15 +256,36 @@ export const updateOrderItemStatus = async (
 
     // IDOR 防止: 対象 OrderItem を所有店舗にスコープする。
     // OrderItem → OrderGroup.storeId の関係で絞り込み、検証と更新を単一の原子的更新にする。
-    const result = await db.orderItem.updateMany({
-        where: {
-            id: orderItemId,
-            orderGroup: { storeId },
-        },
-        data: { status },
-    });
+    let result: { count: number };
+    try {
+        result = await db.orderItem.updateMany({
+            where: {
+                id: orderItemId,
+                orderGroup: { storeId },
+            },
+            data: { status },
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[Order:updateOrderItemStatus] status update failed",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error(
+                "[Order:updateOrderItemStatus] status update failed (unknown)",
+                { error }
+            );
+        }
+        // 生の Prisma エラー（接続文字列等を含みうる）を UI へ素通しさせない。
+        throw new Error("Failed to update order item status.");
+    }
 
     // 他店舗のアイテムか不存在の場合は、副作用なしで拒否する。
+    // DB 障害の汎用エラーと混同しないよう、判定は try/catch の外に置く。
     if (result.count === 0) {
         throw new Error("Order item not found");
     }
