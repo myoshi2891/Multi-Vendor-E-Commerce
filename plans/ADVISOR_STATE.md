@@ -446,25 +446,44 @@ README の該当注記を修正）。
 
 ## 次のアクション（NEXT）
 
-**✅ Round 3（operations/trust/growth expansion）全マイルストーン完了（2026-07-10）。**
-成果物: `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` + spike プラン 018〜022 +
-`audit/findings-10-direction-operations-growth.md` + EXPANSION_BLUEPRINT §5 ロードマップ統合 +
-README 索引更新。ソースコードは一切未変更。
-次のアクション候補（いずれも独立に着手可能）:
+**✅ 最新ラウンドは Round 9（E2E 残余監査）で、2026-07-12 に完了済み。**
+ソースコード（`src/` `tests/` `prisma/`）は Round 4〜9 を通じて無変更
+（監査ラウンドは読み取り + プラン執筆のみ）。
+
+**次セッションの着手先: プラン 051 と 056 の実行**（Round 9 の記録どおり、
+どちらも**依存ゼロで即実行可能**）:
+
+1. **[051](051-e2e-country-selector.md)**（P1 / 国セレクタの cookie ラウンドトリップ）—
+   Depends on `—`。
+2. **[056](056-e2e-newsletter-characterization.md)**（Newsletter dormant 404 の
+   characterization。route + schema とも不在というアプリ側ギャップの現挙動固定）。
+
+その先の実行順・依存は **[`README.md`](README.md) の Status 表と
+「Recommended sequencing #13」を正とする**（042 が signIn ヘルパーを修復するまで
+認証系 E2E 047〜050・052・055 は着手不可 / 054 は 043 の VRT 再撮影が前提）。
+新ラウンドを起こす場合は、E2E の未スイープ切り口が Round 9 でほぼ枯渇しているため、
+**plans 042〜056 の実行結果と OI-9 / OI-11 の解消状況を先に確認すること**。
+
+---
+
+### 完了記録（参考）
+
+**Round 3 完了（2026-07-10）**: `direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` +
+spike プラン 018〜022 + `audit/findings-10-direction-operations-growth.md` +
+EXPANSION_BLUEPRINT §5 ロードマップ統合 + README 索引更新。
+当時の次アクション候補（**未着手のものは現在も有効**。ただし着手順は上記 NEXT を優先）:
+
 1. Round 1 の実行フェーズ: security 001–004 を `execute <plan>` で最優先実施
 2. Round 2 の spike 実行: 013 → 014 → 015 の順（016/017 は独立）。各 spike は設計文書 +
    後続実装プランを生成して STOP する
 3. Round 3 の spike 実行: 021（通知 — C の共通前提）→ 018 → 019 → 022 の順、020 は独立。
    018/022 は状態遷移記録方式を一本化（先行した方の決定に従う）
-4. ブランド方針が決まったら `EXPANSION_BLUEPRINT.md` §3.2 の有効化列・§5 検算表と
-   `OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` §4 検算表を更新
+4. ブランド方針が決まったら**`docs/architecture/expansion/` 側**の該当ファイルを更新する
+   （2026-07-10 の昇格により、`direction/` の 2 ブループリントは凍結済みの履歴。
+   更新先は docs 側 — [`README.md`](README.md) の SSOT 注記を参照）
 
 **Round 2 完了記録（2026-07-09）**: `direction/EXPANSION_BLUEPRINT.md` + spike 013〜017 +
 `audit/findings-09-direction-expansion.md` + README 索引更新。
-
----
-
-### 完了記録（参考）
 
 **Phase 4 — プラン執筆（1プラン=1コミット、12本）。** `VETTED_FINDINGS.md` の「プラン化対象」12本を `plan-template.md` 準拠で執筆。各プランは:
 - 引用コードは**本体の再読から**転記（サブエージェント報告からコピーしない）

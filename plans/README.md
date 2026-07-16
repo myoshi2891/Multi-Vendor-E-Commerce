@@ -19,8 +19,13 @@ the audit itself changed no source code.
   `plans/direction/**` は**昇格前の履歴**として保持する（内容の更新は docs 側で行う）。
 - Vetted findings table + rejected list: [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md)
 - Recon facts / conventions / verification baseline: [`audit/recon.md`](audit/recon.md)
-- **Expansion blueprint (Round 2 中心成果物・フェーズロードマップ SSOT)**: [`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md)
-- **Operations/Trust/Growth blueprint (Round 3 中心成果物)**: [`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md)
+- **Expansion / Operations / Trust / Growth の現行 SSOT**: [`docs/architecture/expansion/`](../docs/architecture/expansion/) —
+  柱の本体は [`04-architecture-pillars.md`](../docs/architecture/expansion/04-architecture-pillars.md)、
+  フェーズロードマップは [`05-phased-roadmap.md`](../docs/architecture/expansion/05-phased-roadmap.md)。
+  **設計確定・ブランド確定・ロードマップ更新はすべて docs 側で行う。**
+- Round 2/3 のブループリント原本（**昇格前の履歴・凍結済み / 更新しない**）:
+  [`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md)（Round 2） /
+  [`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md)（Round 3）
 - Session resume state: [`ADVISOR_STATE.md`](ADVISOR_STATE.md)
 
 > **Note (Round 2/3)**: plans 013–022 および Round 2/3 の成果物は**日本語のみ**で執筆されている
@@ -156,7 +161,23 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >   （プラン間の依存ではなく実行環境の要件であり、満たせない場合は BLOCKED として記録する）。
 > - **ファイル競合の注意**（同じ seed を触る等）→ Recommended sequencing 節の注記。
 
-- No hard code dependencies between plans. Soft ordering only:
+- **プラン間の依存は、表の "Depends on" 列に記載されたものが全て**（列が `—` のプランは
+  他プランの完了を待たずに着手できる）。**未完了の前提を無視して実行してよいという意味ではない。**
+  現在の列は次の 3 種を含むので、着手前に自分の行がどれかを見分けること:
+  - **hard 依存（先行プランの完了が必須）**: 047〜050 → 042 / 052 → 042 Step 4 /
+    055 → 042 / 053（サインアウトのみ）→ 042 / 054 → 043。
+    042 が signIn ヘルパーを修復するまで認証系 E2E は書けず、043 が VRT ベースラインを
+    再撮影するまで 054 の拡張は常時 red になる。
+  - **soft 依存（`並行可` と注記されたもの）**: 014 → 013 / 015 → 014 / 018 → 021 /
+    022 → 019・018。先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
+    （各プラン冒頭の Executor 指示に、先行なしで進める場合の前提が明記されている）。
+  - **環境前提（プラン間依存ではない）**: `Docker 必須`（027・031〜041）/
+    `CLERK_SECRET_KEY`（042）。満たせない場合は BLOCKED として記録する。
+  > 上のガイダンス（「列は hard 依存のみを記載する」）に対し、実際の列には `並行可` の
+  > soft 依存と環境前提が混在している。次にこの表を整理する際は、soft を
+  > Recommended sequencing 節へ、環境前提を各プランの Step 0 へ移すこと。
+
+- 以下は soft ordering（推奨順であって前提ではない）:
   - 007 should land before the deferred bulk logging migration it names (so all sites converge on `logError`).
   - 012 (spike) generates a follow-up implementation plan at the **next free number at execution time**（旧記載の `plans/013-*` は Round 2 の 013–017 使用に伴い変更）; execute it only after 012's design decisions are approved.
   - 014 は 013 の設計（カテゴリツリーの新スキーマ案）を消費する。013 未実施でも 014 は進行可能だが、その場合の前提は 014 冒頭の Executor 指示に明記済み。
@@ -209,6 +230,13 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 ## What was NOT audited (deep, but scoped)
 
 - Full test-suite / E2E were **not executed** this session (stats read from `docs/testing/QA_HANDOFF.md`); the type-check + lint + `bun audit` baselines were run (see recon). **Round 5 追記（2026-07-11）**: Integration スイートは実測済み（`bun run test:integration` = 17/17 pass / 4.779s）。E2E・外部サービス実環境は引き続き未実測。**Round 6 追記（2026-07-11）**: Integration 17/17 pass / 4.008s を再実測（ソース無変更のため R5 と同一構成）。**Round 7 追記（2026-07-11）**: Integration 17/17 pass / 4.473s を再実測（同上）。
+**Round 8 追記（2026-07-11）**: **E2E も実測済み** — 3 ブラウザのクリーンランで
+**52 passed / 17 failed / 39 skipped / 3 did not run**（111 total / 25.5m / exit 1）。
+これが [`audit/findings-16`](audit/findings-16-e2e-coverage.md) の SSOT であり、
+17 failed は TESTS-26（signIn ドリフト・13）/ TESTS-27（svg-img-alt・1）/
+TESTS-28（VRT 陳腐化・3）に分解済み。**Round 9 追記（2026-07-12）**: R8 実測 #2 を
+SSOT として引き継ぎ再検証（ソース無変更のため再実行なし）。
+→ **「E2E は未実測」は Round 1〜7 時点の記述であり、Round 8 以降は当てはまらない。**
 - No live external-service (Stripe/PayPal/Clerk/Cloudinary) environment testing.
 - Generated artifacts skipped **as audit targets**: `coverage/`, `docs/coverage-dashboard.html`,
   `docs/architecture/data-model.drawio`, `.next/`, `node_modules/`.
