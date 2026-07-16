@@ -119,10 +119,40 @@ ADR-004 参照を記載。Clerk mock 不要。
 共通 Arrange（describe 冒頭の beforeEach で構築するか、各テストで最小構成にする）:
 `seedUser` → `seedStore` → カテゴリ 2 系統（`seedCategoryWithSubcategory` × 2）→
 商品 3 件以上を属性を変えて seed:
-- 商品 A: カテゴリ 1 / 価格 50 / 追加 Size "XL" / Color "Red"（`db.size.create` / `db.color.create`）
-- 商品 B: カテゴリ 1 / 価格 150
-- 商品 C: カテゴリ 2 / 価格 300 / name を `db.product.update` で "Aurora Lamp" に、
+- 商品 A: カテゴリ 1 / 既定 Size "M" = 価格 50 / 追加 Size "XL" = 価格 60 / Color "Red"
+  （`db.size.create` / `db.color.create`）
+- 商品 B: カテゴリ 1 / 既定 Size "M" = 価格 150
+- 商品 C: カテゴリ 2 / 既定 Size "M" = 価格 300 / name を `db.product.update` で "Aurora Lamp" に、
   description を "handmade walnut base" に上書き（検索シナリオ用）
+
+**全商品の全 Size について `price` と `discount` を明示固定すること（シナリオ 4 / 8 の必須要件）**。
+`seedProductWithVariantAndSize` は `sizePrice` を受けるが **`discount` は受け取らず
+`Float @default(0)` に委ねる**（`seed.ts:194-201` / `schema.prisma:205`）ため、
+追加 Size だけでなく**既定の "M" Size も明示的に固定**する:
+
+```typescript
+// 既定 M Size は seed ヘルパーの sizePrice で価格を、discount は db.size.update で明示する
+const productA = await seedProductWithVariantAndSize(db, { ...ids, sizePrice: 50 });
+await db.size.update({ where: { id: productA.size.id }, data: { discount: 0 } });
+// 追加 Size も price / discount の両方を明示（既定値に委ねない）
+await db.size.create({
+    data: { size: "XL", quantity: 10, price: new Prisma.Decimal(60), discount: 0,
+            productVariantId: productA.variant.id },
+});
+```
+
+> **なぜ両方なのか（フィルタとソートで参照する値が違う）**:
+> - **シナリオ 4 の価格絞り込み**は `sizes: { some: { price: { gte, lte } } }`
+>   （`product.ts:726-737`）で **生の `price`** を見る。`some` のため
+>   **商品のどれか 1 つの Size が範囲内なら商品全体がヒットする** — 追加 XL の価格を
+>   決めずに置くと、商品 A が `minPrice: 100` の絞り込みに紛れ込みうる。
+>   上記の A（50 / 60）は**全 Size が 100 未満**なので B・C の期待結果を汚さない。
+> - **シナリオ 8 の価格ソート**は `getMinPrice`（`product.ts:801-811`）で
+>   **割引後価格 `price * (1 - discount / 100)` の最小値**を使う。`discount` を
+>   既定値任せにすると、スキーマ既定が変わった瞬間に並び順が静かに壊れる。
+>
+> `views` / `createdAt`（下記）と同じく、**assert が依存する値はすべて Arrange で明示する**
+> のが本プランの原則。
 
 **`views` と `createdAt` を全商品で相異なる既知の値に明示すること（フレーク防止の必須要件）**:
 
@@ -240,6 +270,9 @@ Machine-checkable. ALL must hold:
 - [ ] シナリオ 4 に minPrice 単独（`Infinity` 経路)の assert が存在する
 - [ ] 共通 Arrange が全商品の `views` / `createdAt` を**相異なる既知の値**に固定している
       （固定しないとデフォルト orderBy が views 同値となり行順非保証でフレークする）
+- [ ] 共通 Arrange が**全商品の全 Size**（既定 "M" + 追加分）の `price` と `discount` を
+      明示固定している（フィルタは生 `price` を `some` で見るため追加 Size が混入し、
+      ソートは `discount` 込みの割引後価格を見るため既定値任せだと壊れる）
 - [ ] シナリオ 6 がページ 1 = [A, B] / ページ 2 = [C] の**具体的な並び**まで assert している
 - [ ] シナリオ 8 が 4 つの sortBy（new-arrivals / most-popular / price-low-to-high /
       price-high-to-low）の並びを assert しており、price 系は全件が 1 ページに収まる

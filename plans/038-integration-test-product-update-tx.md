@@ -185,6 +185,12 @@ function buildUpdateInput(
 `seedProductWithVariantAndSize`。既存の子レコード（旧 spec / 旧 question）は
 `db.spec.create` / `db.question.create` で事前投入して「置換前」の状態を作る。
 
+> `seedProductWithVariantAndSize` の戻り値 `{ product, variant, size }` は
+> `buildUpdateInput` の第 1 引数 `seeded` の型とそのまま一致するため、
+> **`const seeded = await seedProductWithVariantAndSize(db, {...})` と受けて
+> 各シナリオで `buildUpdateInput(seeded, overrides)` の形で渡す**
+> （分割代入して個別変数にすると呼び出しごとに再構築が必要になる）。
+
 シナリオ:
 
 1. **specs / questions / sizes の全置換が正確（旧行消滅・新行のみ）**:
@@ -226,7 +232,8 @@ await db.$executeRawUnsafe(
     `ALTER TABLE "Spec" ADD CONSTRAINT "tmp_block_boom" CHECK ("value" <> 'BOOM')`
 );
 try {
-    const input = buildUpdateInput({
+    // buildUpdateInput(seeded, overrides) — 第 1 引数に seed 済みの状態を渡す（必須）
+    const input = buildUpdateInput(seeded, {
         product_specs: [{ name: "material", value: "cotton" }], // 置換は成功する
         variant_specs: [{ name: "trigger", value: "BOOM" }],    // tx 最終段でここが落ちる
     });

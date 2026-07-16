@@ -34,8 +34,11 @@ Clerk の `user.deleted` イベントを受けた webhook は `db.user.deleteMan
 CASCADE（Cart / Wishlist / PaymentDetails / Conversation / Message / フォロー / クーポン割当）・
 SET NULL（SupportTicket）の 3 種が混在**する。つまり**注文・レビュー・住所・店舗のいずれか
 1 件でも持つユーザーが Clerk 上でアカウントを削除すると、DB 側の削除は P2003 で永続的に失敗し、
-webhook は 500 を返し続けて Svix が無限リトライし、ユーザーの PII（name/email/picture）が
-DB に残存し続ける**（GDPR 等の削除要求と衝突するコンプライアンス隣接事案）。一方 Cart や
+webhook は 500 を返し続ける。Svix のリトライは**有限回で打ち切られ、以後そのメッセージは
+failed としてマークされる**（リトライ上限後の再送はダッシュボード等からの手動操作が必要）。
+つまり**リトライを尽くしても削除は成功せず、誰も気付かないまま
+ユーザーの PII（name/email/picture）が DB に残存し続ける**
+（GDPR 等の削除要求と衝突するコンプライアンス隣接事案）。一方 Cart や
 Wishlist は黙って連鎖消滅し、SupportTicket は匿名化される。この 3 値境界は
 `db.user.deleteMany` をモックする unit テスト（`src/app/api/webhooks/route.test.ts`）では
 原理的に検証できない。実 DB で characterization として固定すれば、将来の修正

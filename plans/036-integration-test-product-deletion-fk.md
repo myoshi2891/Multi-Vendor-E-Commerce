@@ -185,7 +185,9 @@ Current state の CASCADE 表に挙げた**残り全ての子テーブル**を�
 > Arrange の網羅性がこのプランの肝。Current state の表に挙げた行のうち 1 つでも
 > 生成を省くと、そのテーブルの CASCADE は**未検証のまま「消えた」ことになってしまう**
 > （0 件のものを数えて 0 件だったと言っているだけになる）。そのため下記シナリオ 1 では
-> **削除前に各テーブルが 1 件以上ある**ことを先に assert する。
+> **削除前に各テーブルが厳密に期待件数ある**ことを先に assert する。件数は Arrange が
+> 決定論的に作るため既知であり、「1 件以上」のような下限で緩める理由がない
+> （下限で書くと、Arrange の二重生成や取りこぼしを検出できない）。
 
 再利用のため、全子テーブルの件数をまとめて取る小ヘルパーを置く:
 
@@ -210,8 +212,20 @@ async function countProductChildren() {
 シナリオ:
 
 1. **レビューなし商品の削除で子テーブルが連鎖消滅する（CASCADE の実挙動）**:
-   Arrange 直後に `countProductChildren()` が**全て 1 以上**であることを assert
-   （spec は 2）。オーナーとして `deleteProduct(product.id)` → resolve。
+   Arrange 直後に `countProductChildren()` が**厳密な期待件数**であることを
+   1 度の `toEqual` で assert する（削除後の assert と同じ形式に揃える）:
+
+```typescript
+// 削除前: Arrange が作った件数と厳密に一致すること。
+// spec が 2 なのは productId 紐付け 1 件 + variantId 紐付け 1 件を作るため
+// （Spec は両方の FK 経路を持つので、片方だけでは CASCADE の半分しか検証できない）。
+expect(await countProductChildren()).toEqual({
+    variant: 1, size: 1, image: 1, color: 1, spec: 2,
+    question: 1, wishlist: 1, freeShipping: 1, fsCountry: 1,
+});
+```
+
+   オーナーとして `deleteProduct(product.id)` → resolve。
    `db.product.count` === 0 に加え、`countProductChildren()` が
    **全フィールド 0** であることを 1 度の `toEqual` で assert:
 
@@ -266,7 +280,8 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test:integration` exits 0; `product-deletion.test.ts` の新規テストが全 pass
 - [ ] Arrange が Current state の CASCADE 表の**全行**（Color / Spec×2 / Question / Wishlist /
       FreeShipping / FreeShippingCountry を含む）を生成し、シナリオ 1 で削除前に
-      各 1 件以上あることを assert している
+      **厳密な期待件数**（Spec は 2、他は 1）を 1 度の `toEqual` で assert している
+      （`>= 1` のような下限では Arrange の二重生成・取りこぼしを検出できない）
 - [ ] シナリオ 1 が子テーブル**全件** 0 を assert している（`fsCountry` = 多段連鎖を含む）
 - [ ] シナリオ 2 に「reject + 商品/レビュー残存」に加え、**子テーブル全件不変**の assert が存在する
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
