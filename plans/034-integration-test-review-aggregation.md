@@ -95,8 +95,15 @@ return reviewDetails
 
 ## Scope
 
-**In scope**（変更してよいファイル）:
+**In scope — テスト（1 コミット目）**:
 - `tests/integration/review-aggregation.test.ts` — **新規作成**
+
+**In scope — ドキュメント同期（後続の別コミット）**:
+- `spec-sync-after-test` の成果物一式 — Integration テスト数が変動するため
+  `.claude/rules/02-tdd-step-commit.md` に従い同期。SSOT は `docs/testing/QA_HANDOFF.md`、
+  伝播先 `07-testing.md` / `COVERAGE_REPORT.md` / `docs/PROGRESS.md` +
+  `bun run coverage:dashboard` 再生成の `docs/coverage-dashboard.html`。
+- `plans/README.md` の 034 行を DONE に更新。**テストとは別コミット**。
 
 **Out of scope**（触らない）:
 - `src/queries/review.ts` — 検証対象本体。**非トランザクション集計の `$transaction` 化などの
@@ -146,18 +153,36 @@ review fixture ビルダー（rating を引数に、他フィールドはダミ�
 シナリオ:
 
 1. **初回投稿で rating / numReviews が設定される**:
-   Clerk user "reviewer-1" で `upsertReview(product.id, buildReview({ rating: 4 }))` →
-   `db.product.findUnique` で `rating === 4` / `numReviews === 1`。
-   加えて **User フォールバック**の検証: `db.user.findUnique({ where: { id: "reviewer-1" } })`
-   が存在する（seed していないのに upsert で作成された）
+   **User フォールバックを実際に踏むための前提**（これが無いと「作成された」ことを実証できない）:
+   - reviewer の Clerk id は **store オーナーの seedUser とは別 id** にする（"reviewer-1"）。
+     共通 Arrange の `seedUser` はオーナー用であり reviewer を作らないことを明示する。
+   - 呼び出し**前**に `db.user.findUnique({ where: { id: "reviewer-1" } })` が **null** であることを
+     assert（＝ DB に未存在。ここで存在していたら fallback create 分岐を検証できない）。
+   - `mockAuthAsClerkUser("reviewer-1")` は upsert が User 作成に使うフィールド
+     （email / firstName / lastName / imageUrl）を**すべて供給**する（上のヘルパーが供給済み。
+     実装が参照するフィールドを Current state で確認し、欠けを増やさない）。
+
+   実行: `upsertReview(product.id, buildReview({ rating: 4 }))` →
+   - `db.product.findUnique` で `rating === 4` / `numReviews === 1`。
+   - **User フォールバック**の検証: 呼び出し**後**に
+     `db.user.findUnique({ where: { id: "reviewer-1" } })` が存在し、
+     Clerk mock の値（email 等）で作成されている（前提の「呼び出し前 null」と対で、
+     upsert が新規作成したことを実証する）。
 2. **複数ユーザーの平均**: "reviewer-1" が rating 4、"reviewer-2" が rating 2 を投稿 →
    `rating === 3` / `numReviews === 2`（`toBeCloseTo(3, 5)` で assert）
 3. **同一ユーザーの再投稿は update（件数不変・平均のみ変動）**:
    シナリオ 2 の状態から "reviewer-1" が rating 5 で再投稿 →
    `db.review.count({ where: { productId } })` === **2**（増えない）、
    `rating === 3.5`（(5+2)/2）、numReviews === 2。
-   images 総入れ替えの検証: 再投稿の images が新 URL 1 件なら
-   `db.reviewImage.count()` が旧画像ぶん増殖していないこと
+   images 総入れ替えの検証は**対象レビューに限定**する（グローバル `db.reviewImage.count()` は
+   他 Product / 他 reviewer の画像も数えてしまうため使わない）。まず対象 review を特定し、
+   その review に紐づく画像だけを数える:
+   - `const review = await db.review.findFirstOrThrow({ where: { productId: product.id, userId: "reviewer-1" } });`
+   - 再投稿の images が新 URL 1 件なら
+     `db.reviewImage.count({ where: { reviewId: review.id } })` === **1**
+     （旧画像が消え新 1 件に総入れ替え。増殖・残存していないこと）。
+   > 根拠: 画像の総入れ替えは「その review の images が置換される」性質。全 reviewImage を数えると
+   > シナリオ 2 の reviewer-2 やシナリオ 4 の Product B の画像に汚染され、検証が緩む/壊れる。
 4. **商品間の独立性**: 別 Product B を seed し、B へのレビュー投稿が
    Product A の rating / numReviews を変えないこと
 5. **未認証は reject + 副作用なし**: `currentUser` を null に →
