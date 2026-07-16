@@ -2,7 +2,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 import { createStripePaymentIntent, createStripePayment } from "./stripe";
 import { TEST_CONFIG } from "../config/test-config";
-import { createMockOrder, createMockPaymentDetails } from "../config/test-fixtures";
+import {
+    createMockOrder,
+    createMockPaymentDetails,
+} from "../config/test-fixtures";
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -27,8 +30,11 @@ const mockStripePaymentIntentsRetrieve = jest.fn();
 jest.mock("stripe", () => {
     return jest.fn().mockImplementation(() => ({
         paymentIntents: {
-            create: (...args: Parameters<Stripe['paymentIntents']['create']>) => mockStripePaymentIntentsCreate(...args),
-            retrieve: (...args: Parameters<Stripe['paymentIntents']['retrieve']>) => mockStripePaymentIntentsRetrieve(...args),
+            create: (...args: Parameters<Stripe["paymentIntents"]["create"]>) =>
+                mockStripePaymentIntentsCreate(...args),
+            retrieve: (
+                ...args: Parameters<Stripe["paymentIntents"]["retrieve"]>
+            ) => mockStripePaymentIntentsRetrieve(...args),
         },
     }));
 });
@@ -216,7 +222,7 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent.id as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Unauthenticated.");
         });
     });
@@ -232,7 +238,7 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(
-                createStripePayment("nonexistent", mockPaymentIntent.id as never)
+                createStripePayment("nonexistent", mockPaymentIntent.id)
             ).rejects.toThrow("Order not found.");
         });
     });
@@ -246,7 +252,9 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(
                 createMockOrder({ total: 99.99 })
             );
-            mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
         });
 
         it("決済成功時にPaymentDetailsをupsertしステータスをCompletedにする", async () => {
@@ -262,7 +270,7 @@ describe("createStripePayment", () => {
 
             const result = await createStripePayment(
                 "order-001",
-                mockPaymentIntent.id as never
+                mockPaymentIntent.id
             );
 
             expect(result).toEqual(updatedOrder);
@@ -290,10 +298,7 @@ describe("createStripePayment", () => {
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
 
-            await createStripePayment(
-                "order-001",
-                mockPaymentIntent.id as never
-            );
+            await createStripePayment("order-001", mockPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -316,12 +321,11 @@ describe("createStripePayment", () => {
             });
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
-            mockStripePaymentIntentsRetrieve.mockResolvedValue(failedPaymentIntent);
-
-            await createStripePayment(
-                "order-001",
-                failedPaymentIntent.id as never
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                failedPaymentIntent
             );
+
+            await createStripePayment("order-001", failedPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -393,10 +397,7 @@ describe("createStripePayment", () => {
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
 
-            await createStripePayment(
-                "order-001",
-                mockPaymentIntent.id as never
-            );
+            await createStripePayment("order-001", mockPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -421,13 +422,15 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(
                 createMockOrder({ total: 99.99 })
             );
-            mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
             mockDb.paymentDetails.upsert.mockRejectedValue(
                 new Error("DB error")
             );
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent.id as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("DB error");
 
             expect(consoleSpy).toHaveBeenCalled();
@@ -445,10 +448,7 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(
-                createStripePayment(
-                    "other-user-order",
-                    mockPaymentIntent.id as never
-                )
+                createStripePayment("other-user-order", mockPaymentIntent.id)
             ).rejects.toThrow("Order not found.");
 
             expect(mockDb.order.findUnique).toHaveBeenCalledWith(
@@ -477,7 +477,7 @@ describe("createStripePayment", () => {
             );
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent.id as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Payment intent does not match order.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
@@ -508,7 +508,7 @@ describe("createStripePayment", () => {
             });
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent.id as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Payment intent amount/currency mismatch.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
@@ -522,7 +522,7 @@ describe("createStripePayment", () => {
             });
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent.id as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Payment intent amount/currency mismatch.");
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
