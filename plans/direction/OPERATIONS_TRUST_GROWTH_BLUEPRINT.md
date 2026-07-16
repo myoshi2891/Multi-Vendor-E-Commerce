@@ -27,8 +27,7 @@
 > [`docs/architecture/expansion/05-phased-roadmap.md`](../../docs/architecture/expansion/05-phased-roadmap.md)**
 > （2026-07-10 の昇格で Round 2 ブループリント §5 から移管済み）。
 > 本ラウンドの spike は昇格前に Round 2 §5 へ追記配置したが、**以後のフェーズ配置の
-> 参照・更新は docs 側の `05-phased-roadmap.md` に対して行う**
-> （「SSOT は Round 2 §5 のまま」という記述は昇格前のものであり、冒頭の凍結注記が優先する）。
+> 参照・更新は docs 側の `05-phased-roadmap.md` に対して行う**（§4 は配置の根拠を残した履歴）。
 
 ---
 
@@ -81,7 +80,25 @@ Round 2 §1.1 の「Amazon 級 = 構造的性質」の定義を継承し、本�
 | PLATFORM スコープのクーポン + admin CRUD/UI + CAS 適用 | `coupon.ts:349-486` / `dashboard/admin/coupons/` | 販促エンジンの土台。キャンペーン層を上に足すだけ |
 | `Message.isRead`/`readAt` の既読管理パターン | `schema.prisma:743-744` | アプリ内通知の未読管理の実装先例 |
 | `OrderGroup.shippingDeliveryMin/Max`（配送約束のスナップショット） | `schema.prisma:536-537` | 遅延率計測の「約束」側は在る。「実績」側だけがない |
-| 店舗承認 `$transaction` パターン（PENDING→ACTIVE + ロール昇格） | `store.ts:531-602` | 状態遷移 + 副作用の原子化テンプレート（RMA/措置に転用） |
+| 店舗承認 `$transaction` パターン（PENDING→ACTIVE + ロール昇格） | `updateStoreStatus`（`store.ts:612-644`） | **DB 状態遷移の原子化**テンプレート（RMA/措置に転用）。tx 内は DB の状態遷移のみ、**通知・外部同期は tx の外** — 境界は下記注記 |
+
+> **店舗承認パターンの tx 境界（RMA・措置・審査に転用する際の必須の読み取り）**:
+> `updateStoreStatus` が原子化しているのは **DB の状態遷移だけ**である
+> （`store.ts:612-635` の `db.$transaction` 内は `store.update` +
+> ロール昇格の `user.update` の 2 つのみ）。**Clerk メタデータ同期は tx の外**に置かれ、
+> 「冪等操作でリトライ可能」というコメントつきで tx 成功後に実行される
+> （`store.ts:637-644`）。
+>
+> **外部呼び出しを tx 内に入れてはならない**理由:
+> 1. 外部 API の遅延がそのまま DB のトランザクション時間・ロック保持時間になる。
+> 2. 外部呼び出しが成功した後に tx がロールバックすると、**DB は巻き戻るが外部システムは
+>    巻き戻らない**（復元不能な不整合）。
+>
+> したがって柱⑥（RMA）・⑩（措置）に転用する際も、**tx 内 = DB の状態遷移、
+> tx 外 = 通知送信・決済プロバイダ呼び出し・Clerk 同期**という分割を守ること。
+> tx 外の副作用は**冪等に設計してリトライで担保する**（上記 Clerk 同期と同じ考え方）。
+> 柱⑨（通知基盤）の Outbox 方式の検討は、まさにこの「tx 外の副作用をどう確実に届けるか」
+> という問題への回答候補である。
 
 ### 2.2 欠落（拡張を阻む構造的制約 — Round 2 の B-1〜B-5 に続く採番）
 
@@ -109,8 +126,9 @@ Round 2 の柱①〜⑤に続く採番。**⑨（通知）が他の柱の共通�
 - `ReturnRequest`（仮称）エンティティを導入: 対象 `OrderItem`・数量・理由コード・
   解決種別（返金/交換/店舗クレジット）・状態機械（申請→承認/却下→返送待ち→受領検品→解決）
 - 既存資産と接続する: 受付は `SupportTicket(RETURN_REQUEST)` からの昇格 or 注文履歴からの
-  直接申請 / 解決時は `OrderItem.status` を `Returned` へ遷移 / 下流に DIRECTION-01（返金実行）
-  と plan 012（restock）が接続
+  直接申請 / **解決時に `OrderItem.status` をどの終端値へ遷移させるかは未確定**
+  （`Returned` が第一候補だが、解決種別ごとに答えが異なる — 下記 `TODO(needs-detail)` で
+  確定させるまで決め打ちしない）/ 下流に DIRECTION-01（返金実行）と plan 012（restock）が接続
 - **下流に接続する通知**: RMA の各状態遷移（申請受理 / 承認・却下 / 返送待ち / 受領検品 /
   解決）は**柱⑨（通知基盤）の発火点**になる。本柱⑥の状態機械が発火点の一覧を確定させ、
   柱⑨がイベント→通知マッピングとして受ける（⑨側の記述と対で維持すること）。
@@ -188,9 +206,14 @@ Round 2 の柱①〜⑤に続く採番。**⑨（通知）が他の柱の共通�
 
 ---
 
-## 4. フェーズ配置（SSOT は Round 2 §5 — ここは配置の根拠のみ）
+## 4. フェーズ配置（配置の根拠のみ — SSOT は docs 側）
 
-[`EXPANSION_BLUEPRINT.md`](EXPANSION_BLUEPRINT.md) §5 に本ラウンドの spike を次の通り追記した:
+> **現行 SSOT は [`docs/architecture/expansion/05-phased-roadmap.md`](../../docs/architecture/expansion/05-phased-roadmap.md)**。
+> 本節は Round 3 時点の**配置の根拠（なぜこの順なのか）を残した履歴**であり、
+> フェーズ配置そのものの参照・更新は docs 側に対して行う。
+
+昇格前、[`EXPANSION_BLUEPRINT.md`](EXPANSION_BLUEPRINT.md) §5 に本ラウンドの spike を
+次の通り追記した（**この配置は 2026-07-10 の昇格で docs 側へ移管済み**）:
 
 - **Phase C（信頼性・運用）に ⑨→⑥→⑦→⑩**: ⑨通知（021）は C 内の他項目の前提のため先頭。
   ⑥RMA（018）は既存の「チケット→返金→restock」の鎖に挿入され
@@ -227,10 +250,22 @@ Round 2 の柱①〜⑤に続く採番。**⑨（通知）が他の柱の共通�
   対象だが、⑦⑧の spike では評価・割引率の型見直し（Decimal 化 or 現状維持の明示判断）を
   ADR 判断項目に含める
 
-## 6. 本ドキュメントの更新規約
+## 6. 更新規約（昇格により docs 側へ移管済み）
 
-- spike 018〜022 の設計確定時に §3 の「決めるべきこと」を決定事項で置き換えて更新する
-  （更新コミットは `docs(plans):` スコープ — Round 2 §7 と同じ）
-- ブランド確定時は §4 の検算表を実際の決定で上書きする
+> 本節は**昇格前**の運用を記した履歴であり、以下のとおり読み替える
+> （冒頭の凍結通知と同じ規約。[`EXPANSION_BLUEPRINT.md`](EXPANSION_BLUEPRINT.md) §7 と対）。
+
+- **本ファイルは凍結済み。SSOT は [`docs/architecture/expansion/`](../../docs/architecture/expansion/) 側**。
+  柱⑥〜⑩の設計確定・ブランド確定・検算表の更新は**すべて docs 側で行う**
+  （柱の本体は [`04-architecture-pillars.md`](../../docs/architecture/expansion/04-architecture-pillars.md)、
+  フェーズ配置は [`05-phased-roadmap.md`](../../docs/architecture/expansion/05-phased-roadmap.md)）。
+- **例外的に本ファイルを触ってよいのは**、(a) 昇格先への参照リンクの追加・修正、
+  (b) 明らかな事実誤り（引用コード・行番号・仕様の記述ミス）の訂正のみ。
+  いずれも `docs(plans):` スコープでコミットする。
 - 恒久的なアーキテクチャ決定（例: 通知の Outbox 方式・タイムスタンプのイベントログ化）が
-  確定したら `docs/architecture/decisions/` に ADR を起こし本ファイルからリンクする
+  確定したら `docs/architecture/decisions/` に ADR を起こし **docs 側の正式版から**リンクする。
+
+> **昇格前の規約（履歴・実行しない）**: 「spike 018〜022 の設計確定時に §3 の
+> 『決めるべきこと』を決定事項で置き換える」「ブランド確定時は §4 の検算表を
+> 実際の決定で上書きする」——これらは昇格により **docs 側の該当ファイルの責務**へ
+> 移管された。**本節の記述に従って本ファイルを更新すると、docs 側との二重管理になる。**
