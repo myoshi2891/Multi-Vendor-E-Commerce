@@ -95,7 +95,8 @@ export const getProducts = async (
 
 | 目的 | コマンド | 期待 |
 |---|---|---|
-| 既存インデックスの確認 | `grep -n "@@index\|@@fulltext" prisma/schema.prisma` | 現状 GIN なし |
+| 既存インデックスの確認（スキーマ） | `grep -n "@@index\|@@fulltext" prisma/schema.prisma` | 宣言済み index 一覧 |
+| **既存 GIN の確認（マイグレーション）** | `grep -rniE "USING gin\|to_tsvector\|tsvector\|CREATE INDEX" prisma/migrations/` | 生 SQL で追加済みの GIN/tsvector が無いことを確認（**schema.prisma だけ見て「GIN なし」と断定しない** — tsvector GIN は Prisma スキーマに宣言できず、生 SQL マイグレーションでしか入らないため） |
 | 検索 UI の呼び出し元 | `grep -rn "search-products" src/ -il` | ヘッダー検索コンポーネント |
 | ブラウズページの filters 生成元 | `grep -rn "getProducts(" src/ -l` | 呼び出しサイト一覧 |
 | EXPLAIN の実測（任意・ローカルDB） | `bunx prisma studio` 等でデータ量確認後、psql で `EXPLAIN ANALYZE` | 式評価のコスト実測 |
@@ -115,11 +116,22 @@ export const getProducts = async (
 
 ## Open questions（spike が証拠付きで必ず答える）
 
-1. **tsvector の恒久化**: `Product` に `searchVector tsvector` 生成列（name + brand +
-   description + カテゴリ名/keywords をどう合成するか）+ GIN インデックスを追加する
+1. **tsvector の恒久化**: `Product` に `searchVector tsvector` 列 + GIN インデックスを追加する
    マイグレーション設計。Prisma は tsvector 型を直接サポートしないため
    `Unsupported("tsvector")` 列 + 生 SQL マイグレーションの型安全な扱い方を確定する。
-   バリアント keywords を含める場合の非正規化（トリガー vs アプリ層での再計算）も決める。
+
+   > **重要な設計上の分離**: PostgreSQL の `GENERATED ALWAYS AS (...) STORED` 列は
+   > **同一行の列しか参照できない**。したがって:
+   > - `Product` 自身の列（`name` + `brand` + `description`）だけなら **生成列**で合成可能。
+   > - **カテゴリ名 / SubCategory 名 / バリアント keywords など「別テーブルの値」は生成列に
+   >   直接含められない**。これらを検索対象に含めるには、
+   >   (α) それらの値を **`Product` 上の非正規化列に先に落とし込み**（トリガー or アプリ層で
+   >       upsert 時に書き込む）、その非正規化列を生成列に含める、または
+   >   (β) 生成列をやめ、**トリガー保守の `tsvector` 列**（`BEFORE INSERT/UPDATE` で
+   >       関連テーブルを引いて `to_tsvector(...)` を組み立てる）にする、
+   >   のどちらかを選ぶ。spike は (α)/(β) を「同期の複雑さ・関連行変更時の再計算コスト・
+   >   整合性」で比較し ADR で確定する。
+   > 「関連テーブルの値をそのまま生成列に組み込む」案は**成立しない**ので選択肢から外すこと。
 2. **2系統の統合**: ブラウズの `filters.search`（ILIKE）を tsvector 経路に寄せるか、
    逆にヘッダー検索を `getProducts` に寄せるか。ランキング（ts_rank）とフィルタ（Prisma where）
    の合成方法（`$queryRaw` で ID + rank を取り Prisma で hydrate する2段構え等）を設計する。
@@ -151,8 +163,20 @@ Open questions 1・2・6 に答える: 生成列 + GIN の DDL、検索とブラ
 （推奨初期仮説: `$queryRaw` で「ID + ts_rank」を取得 → Prisma `findMany({ where: { id: { in } } })`
 で hydrate → rank 順に並べ替え、の2段構え）、slug 解決の並列化。
 
+> **フィルタは LIMIT より前に適用すること**（順序の誤りを禁止する）。素朴な2段構えで
+> 「①`$queryRaw` が ts_rank 上位 50 件を先に `LIMIT 50` で確定 → ②Prisma でカテゴリ/価格/属性
+> フィルタを適用」とすると、②が 50 件を間引いて **50 件未満**になり、かつ rank 51 位以降の
+> **フィルタ適合商品を取りこぼす**（正しくない結果）。対策:
+> - カテゴリ/価格/属性フィルタを **①の `$queryRaw` の `WHERE` に押し込み**、フィルタ適用**後**に
+>   `ORDER BY ts_rank ... LIMIT/OFFSET` する（フィルタ → ソート → ページング の順）。
+> - フィルタ条件が Prisma 側にしか表現できない場合は、少なくとも **LIMIT を最終段（フィルタ後）
+>   にのみ置く**設計にする（先頭段での早期 LIMIT を禁止）。
+> - ページングは「フィルタ済み母集合」に対して行い、`totalCount` もフィルタ後で数える。
+> spike はこの「フィルタ → LIMIT」順序を SQL 雛形で明示し、誤順序を anti-pattern として記録する。
+
 **Verify**: 統合後の「検索語 + カテゴリ + 価格帯 + 属性ファセット」を1リクエストで処理する
-シーケンス図（テキストで可）と各段の SQL/Prisma 雛形が design doc 案にある。
+シーケンス図（テキストで可）と各段の SQL/Prisma 雛形が design doc 案にあり、**フィルタが LIMIT より
+前に適用される**ことが雛形上で確認できる。
 
 ### Step 3: ファセット集計と価格ソートの設計
 
