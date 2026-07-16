@@ -275,7 +275,7 @@ const DEFAULT_COUNTRY: Country = {
  * @param value - The value to validate.
  * @returns `true` if `value` is an object with string `name`, `code`, `city`, and `region` properties, `false` otherwise.
  */
-function isCountry(value: unknown): value is Country {
+export function isCountry(value: unknown): value is Country {
     if (typeof value !== "object" || value === null) return false;
     const obj = value as Record<string, unknown>;
     return (
