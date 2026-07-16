@@ -1,0 +1,3 @@
+reviews:
+    path_filters:
+        - "!plans/**" # plans フォルダ配下をすべて除外
