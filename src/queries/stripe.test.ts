@@ -332,6 +332,60 @@ describe("createStripePayment", () => {
             );
         });
 
+        // 3DS 認証待ちや非同期決済手段の intent は「まだ失敗していない」。
+        // Failed を確定させると、後続 webhook が succeeded を通知した際に
+        // DB 上の paymentStatus と Stripe の真実が食い違う。
+        it.each([
+            ["processing"],
+            ["requires_action"],
+            ["requires_confirmation"],
+            ["requires_capture"],
+        ])(
+            "未完了 intent (%s) は Failed ではなく Pending に更新する",
+            async (status) => {
+                mockDb.paymentDetails.upsert.mockResolvedValue(
+                    createMockPaymentDetails({ status })
+                );
+                mockDb.order.update.mockResolvedValue(createMockOrder());
+                mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                    ...mockPaymentIntent,
+                    status,
+                });
+
+                await createStripePayment("order-001", mockPaymentIntent.id);
+
+                expect(mockDb.order.update).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        data: expect.objectContaining({
+                            paymentStatus: "Pending",
+                        }),
+                    })
+                );
+            }
+        );
+
+        // canceled は失敗ではなく取消。enum に Cancelled がある以上、区別して記録する。
+        it("取消済み intent は Cancelled に更新する", async () => {
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails({ status: "canceled" })
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "canceled",
+            });
+
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        paymentStatus: "Cancelled",
+                    }),
+                })
+            );
+        });
+
         it("PaymentDetailsのconnect(紐付け)が正しく行われる", async () => {
             const paymentDetails = createMockPaymentDetails({
                 id: "pd-123",
