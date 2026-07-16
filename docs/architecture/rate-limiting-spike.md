@@ -169,6 +169,22 @@ client identification; for authenticated routes, a stable user/session key is
 an alternative.  Authenticated endpoint limits are outside this spike's
 surface and should not be added merely for consistency.
 
+The shared limiter must minimize client-address data after the trusted address
+has been derived:
+
+- Normalize the address, then derive an opaque bucket identifier with a keyed
+  HMAC and a rate-limit-specific secret.  Do not place a raw IP address in the
+  Redis key, response, metric label, or application log.
+- Give every counter an expiry equal to the algorithm's active window plus
+  only the short grace period required for clock or retry handling.  Do not
+  retain expired client buckets for analytics or debugging by default.
+- Logs and metrics may record the endpoint class, decision, and aggregate
+  counts, but not the raw address or the stable bucket identifier.  Any longer
+  retention requires a separately approved privacy and incident-response use
+  case with an explicit retention period.
+- Document HMAC-secret rotation before rollout.  Rotation may intentionally
+  reset buckets, but it must not require retaining a raw-IP lookup table.
+
 ### Endpoint classes and responses
 
 The future policy must keep at least two classes rather than applying a single
