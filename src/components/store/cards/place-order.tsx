@@ -2,7 +2,7 @@ import { useCartStore } from '@/cart-store/useCartStore'
 import { emptyUserCart, placeOrder } from '@/queries/user'
 import { Coupon, ShippingAddress } from '@prisma/client'
 import { useRouter } from 'next/navigation'
-import { Dispatch, FC, SetStateAction, useState } from 'react'
+import { Dispatch, FC, SetStateAction, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card'
 import { Button } from '../ui/button'
@@ -24,26 +24,31 @@ const PlaceOrderCard: FC<Props> = ({
     cartData,
 }) => {
     const [loading, setLoading] = useState<boolean>(false)
+    const isPlacingOrderRef = useRef(false)
     const { id, coupon, subTotal, shippingFees, total } = cartData
     const { push } = useRouter()
     const emptyCart = useCartStore((state) => state.emptyCart)
     const handlePlaceOrder = async () => {
+        if (isPlacingOrderRef.current) return
+        isPlacingOrderRef.current = true
         setLoading(true)
-        if (!shippingAddress) {
-            toast.error('Select a shipping address before placing your order.')
-        } else {
-            try {
-                const order = await placeOrder(shippingAddress, id)
-                if (order) {
-                    emptyCart()
-                    await emptyUserCart()
-                    push(`/order/${order.orderId}`)
-                }
-            } catch (_error) {
-                toast.error('Something went wrong while placing your order.')
+        try {
+            if (!shippingAddress) {
+                toast.error('Select a shipping address before placing your order.')
+                return
             }
+            const order = await placeOrder(shippingAddress, id)
+            if (order) {
+                emptyCart()
+                await emptyUserCart()
+                push(`/order/${order.orderId}`)
+            }
+        } catch (_error) {
+            toast.error('Something went wrong while placing your order.')
+        } finally {
+            isPlacingOrderRef.current = false
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     let discountedAmount = 0
@@ -139,7 +144,7 @@ const PlaceOrderCard: FC<Props> = ({
                 )}
             </div>
             <div className="mt-2 bg-white p-4">
-                <Button onClick={() => handlePlaceOrder()}>
+                <Button onClick={() => handlePlaceOrder()} disabled={loading}>
                     {loading ? (
                         <PulseLoader size={5} color="#fff" />
                     ) : (
