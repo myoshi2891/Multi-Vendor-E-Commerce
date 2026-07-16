@@ -108,8 +108,14 @@ response.cookies.set("userCountry", serialized, {
   を検証）を**書き込み側にも対称適用**する。
 - `.claude/steering/tech.md`: `any` 禁止（`unknown` + 型ガード）。`request.json()` の戻り値は
   `unknown` として扱い、`isCountry` で絞り込む。
+- `.claude/steering/tech.md`（構造化ログ）: 境界での失敗は
+  第1引数 `"[Module:Function] Error message"`（文字列）、第2引数
+  `{ error: error.message, stack: error.stack }`（オブジェクト）の 2 引数形式でログする。
+  ただし**クライアントへは内部詳細を返さない**（汎用メッセージのみ）。
 - Error handling: external calls wrapped in `try/catch`; log at the boundary,
   never leak internals to the client.
+- 入力起因のエラー（不正な JSON / shape 不一致 / 過大サイズ）は **4xx**（クライアント誤り）で
+  返す。`500` は**サーバ内部の予期せぬ失敗**に限定する（下記 Step 2 参照）。
 
 ## Commands you will need
 
@@ -121,10 +127,21 @@ response.cookies.set("userCountry", serialized, {
 
 ## Scope
 
-**In scope** (the only files you may modify/create):
+**In scope — code/test (the only *code* files you may modify/create)**:
 - `src/lib/utils.ts` — add `export` to the existing `isCountry` type guard (no logic change).
 - `src/app/api/setUserCountryInCookies/route.ts` — validate before writing; add `path: "/"`.
 - `src/app/api/setUserCountryInCookies/route.test.ts` — **create** (see Test plan).
+
+**In scope — docs (separate commit(s), AFTER the code commit)**:
+- `plans/audit/findings-11-security-followup.md` — update this plan's status row
+  (per the Executor instructions header). Doc-only; keep it out of the code commit.
+- `spec-sync-after-test` の出力先（`QA_HANDOFF.md` を SSOT とするテスト統計同期先一式）—
+  テスト追加で `Tests:` 総数が変わるため、`.claude/rules/02-tdd-step-commit.md` に従い
+  **さらに別の docs コミット**で同期する（Maintenance notes と一致）。
+
+> 注: 上の「code/test 3 ファイル」は **1 コミット目**のスコープ、docs 群は
+> **後続の別コミット**のスコープ。Done criteria の `git status` チェックは
+> **code コミット直前**の状態（3 ファイルのみ）を指す。
 
 **Out of scope** (do NOT touch, even though they look related):
 - `parseUserCountryCookie` and `DEFAULT_COUNTRY` — the read path is already correct.
@@ -150,32 +167,73 @@ Then `bunx tsc --noEmit` → exit 0.
 
 ### Step 2: Validate the body and pin cookie attributes in the route
 
-Rewrite `src/app/api/setUserCountryInCookies/route.ts` to validate with
-`isCountry` before writing, and add `path: "/"`. Target shape:
+Rewrite `src/app/api/setUserCountryInCookies/route.ts` so that:
+
+1. **不正な JSON は 400**（`500` ではない）。`request.json()` は本文が JSON でないと throw する。
+   これは**クライアント誤り**なので 400 を返す。`500` は shape 検証を通過した後に発生した
+   **サーバ内部の予期せぬ失敗**（cookie 設定時の例外等）だけに限定する。
+2. **shape は `isCountry` で検証**（読み取り側 `parseUserCountryCookie` と対称）。
+3. **保存は明示 projection のみ**（4 フィールド固定）＋**フィールド長上限**でサイズを決定論的に有界化する。
+   `isCountry` は「string であること」しか見ないため、`isCountry` 単独ではサイズ上限を満たさない
+   （巨大文字列 4 本を渡せば cookie は肥大化しうる）。
+4. **境界で構造化ログ**（`tech.md`）。クライアントには汎用メッセージのみ返す。
+
+Target shape（projection + 長さ上限は**必須**。オプションではない）:
 
 ```ts
 import { NextResponse } from "next/server";
 import { isCountry } from "@/lib/utils";
 
+// 各フィールドの最大長（保存前に強制。合計でも cookie の実用上限に十分収まる）
+const MAX_FIELD_LEN = 100;
+
 export async function POST(request: Request) {
+    // --- 入力パース: JSON 不正はクライアント誤り (400) ---
+    let body: unknown;
     try {
-        const body: unknown = await request.json();
-        const userCountry =
-            typeof body === "object" && body !== null
-                ? (body as Record<string, unknown>).userCountry
-                : undefined;
+        body = await request.json();
+    } catch (error: unknown) {
+        // パース失敗は 400。内部詳細はクライアントに返さない
+        console.error("[setUserCountryInCookies:POST] Invalid JSON body", {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return new NextResponse("Invalid JSON body.", { status: 400 });
+    }
 
-        // 読み取り側 parseUserCountryCookie と対称に shape 検証（name/code/city/region）
-        if (!isCountry(userCountry)) {
-            return new NextResponse("Invalid userCountry data.", { status: 400 });
-        }
+    const userCountry =
+        typeof body === "object" && body !== null
+            ? (body as Record<string, unknown>).userCountry
+            : undefined;
 
+    // shape 検証（name/code/city/region がすべて string）
+    if (!isCountry(userCountry)) {
+        return new NextResponse("Invalid userCountry data.", { status: 400 });
+    }
+
+    // 文字列長上限（過大入力の 400 拒否 — cookie 肥大化を確実に防ぐ）
+    if (
+        userCountry.name.length > MAX_FIELD_LEN ||
+        userCountry.code.length > MAX_FIELD_LEN ||
+        userCountry.city.length > MAX_FIELD_LEN ||
+        userCountry.region.length > MAX_FIELD_LEN
+    ) {
+        return new NextResponse("userCountry field too long.", { status: 400 });
+    }
+
+    try {
         const response = new NextResponse("User country saved successfully", {
             status: 200,
         });
 
-        // 検証済み Country のみを直列化（固定4フィールドのためサイズは実質有界）
-        response.cookies.set("userCountry", JSON.stringify(userCountry), {
+        // 明示 projection: 検証済みの 4 フィールドのみを直列化（余分なフィールドを確実に落とす）
+        const serialized = JSON.stringify({
+            name: userCountry.name,
+            code: userCountry.code,
+            city: userCountry.city,
+            region: userCountry.region,
+        });
+
+        response.cookies.set("userCountry", serialized, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
@@ -183,34 +241,38 @@ export async function POST(request: Request) {
         });
 
         return response;
-    } catch (error) {
-        // 内部詳細はクライアントに漏らさない
+    } catch (error: unknown) {
+        // ここに来るのは cookie 設定など内部処理の予期せぬ失敗のみ → 500
+        console.error("[setUserCountryInCookies:POST] Failed to set cookie", {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
         return new NextResponse("Couldn't save data", { status: 500 });
     }
 }
 ```
 
-Note: validating with `isCountry` (four required string fields) means the
-serialized cookie is now a fixed small shape — extra client-supplied fields are
-dropped is NOT automatic (`JSON.stringify(userCountry)` still serializes the
-whole object). If you want to guarantee only the four fields are stored,
-serialize an explicit projection instead:
-`JSON.stringify({ name: userCountry.name, code: userCountry.code, city: userCountry.city, region: userCountry.region })`.
-**Prefer the explicit projection** — it also caps size deterministically. Use it
-in place of `JSON.stringify(userCountry)` above.
+**設計上の要点**:
+- **projection は必須**。`JSON.stringify(userCountry)` はオブジェクト全体を直列化するため
+  余分フィールドが残る。上記の明示 projection で 4 フィールドに固定する。
+- **長さ上限は必須**。`isCountry` は型のみ検証し長さを見ない。`MAX_FIELD_LEN` で
+  serialize 後サイズを決定論的に有界化する（過大入力は 400）。
+- `try/catch` は **cookie 設定ブロックのみ**を包む。JSON パースは別 try で 400 に振り分ける。
 
-**Verify**: `bunx tsc --noEmit` → exit 0.
+**Verify**: `bunx tsc --noEmit` → exit 0。
 
 ### Step 3: Add the route test
 
 Create `src/app/api/setUserCountryInCookies/route.test.ts`. Call the exported
 `POST` with `new Request("http://localhost/api/setUserCountryInCookies", { method: "POST", body: JSON.stringify({...}) })`.
 
-Cases:
+Cases（1〜6 は**すべて必須**。回帰を機械的に守るため条件付きにしない）:
 1. **Valid country**: body `{ userCountry: { name, code, city, region } }` → status 200; response `Set-Cookie` header contains `userCountry=` and `Path=/`.
 2. **Missing userCountry**: body `{}` → status 400.
 3. **Invalid shape**: body `{ userCountry: { name: "X" } }` (missing fields) → status 400, no cookie set.
-4. **Extra fields dropped** (only if you used the explicit projection in Step 2): body with an extra `evil: "..."` field → 200, and the serialized cookie does not contain `evil`.
+4. **Malformed JSON**: body が非 JSON（例: `body: "not-json"`）→ status **400**（500 でないこと）、no cookie set。
+5. **Extra fields dropped**（**必須** — Step 2 の projection は必須のため）: `userCountry` に余分な `evil: "..."` を含める → 200、かつ直列化された cookie 値に `evil` が**含まれない**。
+6. **Oversized field rejected**（**必須**）: いずれかのフィールドが `MAX_FIELD_LEN` 超（例: `name: "x".repeat(101)`）→ status **400**、no cookie set。
 
 Read the `Set-Cookie` header via `response.headers.get("set-cookie")`.
 
@@ -227,7 +289,8 @@ Read the `Set-Cookie` header via `response.headers.get("set-cookie")`.
 
 - New file: `src/app/api/setUserCountryInCookies/route.test.ts`.
 - Structural pattern: a route/handler test that constructs a `Request` and calls the exported handler directly. If no API-route test exists to copy, model the mock-free structure after any `src/queries/*.test.ts` (Arrange–Act–Assert).
-- Cases: the 3–4 listed in Step 3 (valid / missing / invalid / extra-fields-dropped).
+- Cases: the 6 listed in Step 3 (valid / missing / invalid / malformed-JSON→400 /
+  extra-fields-dropped / oversized→400) — all required.
 - Verification: `bun run test -- src/app/api/setUserCountryInCookies` → all pass.
 
 ## Done criteria
@@ -240,7 +303,11 @@ Machine-checkable. ALL must hold:
 - [ ] `grep -n "export function isCountry" src/lib/utils.ts` → one match.
 - [ ] `grep -n "isCountry" src/app/api/setUserCountryInCookies/route.ts` → at least one match (route validates).
 - [ ] `grep -n 'path: "/"' src/app/api/setUserCountryInCookies/route.ts` → one match.
-- [ ] `git status` shows only the 3 in-scope files changed/created.
+- [ ] `grep -n "MAX_FIELD_LEN" src/app/api/setUserCountryInCookies/route.ts` → 長さ上限が実装されている。
+- [ ] route が `JSON.stringify({ name:..., code:..., city:..., region:... })` の明示 projection を使う
+      （`JSON.stringify(userCountry)` の全体直列化ではない）。
+- [ ] Before the **code commit**, `git status` shows only the 3 in-scope
+      code/test files changed/created (docs updates go in later, separate commits).
 
 ## STOP conditions
 
