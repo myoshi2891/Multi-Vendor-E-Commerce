@@ -584,6 +584,7 @@ describe("placeOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(shippingAddress);
         });
 
         it("カートが見つからない場合エラーをスローする", async () => {
@@ -592,6 +593,28 @@ describe("placeOrder", () => {
             await expect(
                 placeOrder(shippingAddress as never, "invalid-cart")
             ).rejects.toThrow("Cart not found.");
+        });
+
+        it("認証ユーザーが所有しない配送先住所を拒否し、注文トランザクションを開始しない", async () => {
+            mockDb.cart.findUnique.mockResolvedValue({
+                ...createMockCart(),
+                cartItems: [],
+                coupon: null,
+            });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(null);
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Shipping address not found.");
+
+            expect(mockDb.shippingAddress.findFirst).toHaveBeenCalledWith({
+                where: {
+                    id: shippingAddress.id,
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+            });
+            expect(mockDb.$transaction).not.toHaveBeenCalled();
+            expect(mockDb.order.create).not.toHaveBeenCalled();
         });
 
         it("無効な商品/バリアント/サイズの組合せでエラーをスローする", async () => {
@@ -616,6 +639,7 @@ describe("placeOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(shippingAddress);
             // $transaction モック: コールバックに mockDb を渡して実行
             mockDb.$transaction.mockImplementation(
                 async (
