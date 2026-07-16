@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-07-16 時点）
+## 現在の状態（2026-06-19 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1676 passed / 1679 total / 172 スイート（3 skipped）** — 2026-07-16 実測。plan 024 で `userCountry` cookie のJSON・shape・サイズ検証と明示projectionを回帰テストで保護。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1659 passed / 1662 total / 172 スイート（3 skipped）** — 2026-06-26 track-order 機能実装時点。公開の注文追跡 `trackOrder`（IDOR 3 階層・不一致/不存在を同一 null）+ `/track-order` ページ + form/result。既存 `order.test.ts` に +6（T-TO1〜T-TO6）+ 新規 `track-order-form.test.tsx` +2（T-TO7/T-TO8）= +8（1651→1659、171→172 スイート、`b2a30e5`〜`b57bd40`）。直前 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1350,27 +1350,50 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 
 ---
 
-### Plan 024: `userCountry` cookie 書き込み検証 (2026-07-16)
+### Plan 023: 公開商品検索ページネーションの境界化・正規化 (2026-07-16)
 
 #### 概要
 
-公開APIのcookie書き込みを読取り側と対称にし、不正・過大な入力を保存しないようにした。
+公開 `index-products` GET の無制限ページネーションを防ぎ、無効な URL パラメータで Prisma 例外にならないよう正規化した。
 
 #### 実施内容
 
 | 対象 | 変更内容 | コミット |
-|------|---------|---------|
-| `src/lib/utils.ts` / `src/app/api/setUserCountryInCookies/route.ts` | 共通型ガード、JSON/shape/長さ検証、4フィールド投影、`Path=/` を実装 | `58a6bd5` |
-| `src/app/api/setUserCountryInCookies/route.test.ts` | 必須6ケースの回帰テストへ更新 | `58a6bd5` |
-| `plans/audit/findings-11-security-followup.md` | Plan 024 をDONEに更新 | `8bd7bfd` |
+|------|---------|----------|
+| `src/app/api/index-products/route.ts` | `page` を 1〜10,000、`limit` を 1〜50 に正規化・クランプし、`skip` を有界化 | `7f2365e` |
+| `src/app/api/index-products/route.test.ts` | 有効値・過大/負/非数値・過大ページの Prisma 引数と応答メタデータを確認する5件を追加 | `7f2365e` |
 
 #### テスト統計（更新）
 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
-| Jest テスト総数 | 1667 passed / 1670 total | **1676 passed / 1679 total** |
+| テスト総数 | 1667 passed（前回記録） | **1681 passed**（plan 023/024 を統合後に全スイート実測） |
 | スイート数 | 172 | **172** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### Plan 024: `userCountry` cookie 書き込み検証 (2026-07-16)
+
+#### 概要
+
+公開 API の cookie 書き込みを読取り側と対称にし、不正・過大な入力を保存しないようにした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/lib/utils.ts` / `src/app/api/setUserCountryInCookies/route.ts` | 共通型ガード、JSON/shape/長さ検証、4フィールド投影、`Path=/` を実装 | `58a6bd5` |
+| `src/app/api/setUserCountryInCookies/route.test.ts` | 必須6ケースの回帰テストへ更新 | `58a6bd5` |
+| `plans/audit/findings-11-security-followup.md` | Plan 024 をDONEに更新 | `8bd7bfd` |
+
+#### テスト統計（統合後）
+
+| 指標 | 値 |
+|------|----|
+| テスト総数 | **1681 passed / 1684 total**（3 skipped） |
+| スイート数 | **171 passed / 172 total**（1 skipped） |
+| 型エラー | **0 件** |
 
 ---
 
