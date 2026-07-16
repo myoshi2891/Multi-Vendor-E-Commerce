@@ -387,6 +387,27 @@ describe("updateOrderItemStatus", () => {
                 "Unauthorized to update order item status."
             );
         });
+
+        it("他店舗の OrderItem は更新できない（count 0 → not found）", async () => {
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
+
+            await expect(
+                updateOrderItemStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "victim-item",
+                    "Shipped" as never
+                )
+            ).rejects.toThrow("Order item not found");
+
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: {
+                    id: "victim-item",
+                    orderGroup: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                },
+                data: { status: "Shipped" },
+            });
+        });
     });
 
     describe("バリデーション", () => {
@@ -399,7 +420,7 @@ describe("updateOrderItemStatus", () => {
         });
 
         it("存在しないOrderItemの場合エラーをスローする", async () => {
-            mockDb.orderItem.findUnique.mockResolvedValue(null);
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
 
             await expect(
                 updateOrderItemStatus(
@@ -421,12 +442,7 @@ describe("updateOrderItemStatus", () => {
         });
 
         it("OrderItemのステータスを正常に更新する", async () => {
-            mockDb.orderItem.findUnique.mockResolvedValue(
-                createMockOrderItem({ status: "Pending" })
-            );
-            mockDb.orderItem.update.mockResolvedValue(
-                createMockOrderItem({ status: "Processing" })
-            );
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
 
             const result = await updateOrderItemStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
@@ -435,19 +451,17 @@ describe("updateOrderItemStatus", () => {
             );
 
             expect(result).toBe("Processing");
-            expect(mockDb.orderItem.update).toHaveBeenCalledWith({
-                where: { id: "order-item-001" },
+            expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+                where: {
+                    id: "order-item-001",
+                    orderGroup: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                },
                 data: { status: "Processing" },
             });
         });
 
         it("Shipped → Delivered の遷移が正常に行われる", async () => {
-            mockDb.orderItem.findUnique.mockResolvedValue(
-                createMockOrderItem({ status: "Shipped" })
-            );
-            mockDb.orderItem.update.mockResolvedValue(
-                createMockOrderItem({ status: "Delivered" })
-            );
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
 
             const result = await updateOrderItemStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
@@ -459,12 +473,7 @@ describe("updateOrderItemStatus", () => {
         });
 
         it("Canceled ステータスに更新できる", async () => {
-            mockDb.orderItem.findUnique.mockResolvedValue(
-                createMockOrderItem({ status: "Pending" })
-            );
-            mockDb.orderItem.update.mockResolvedValue(
-                createMockOrderItem({ status: "Canceled" })
-            );
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 1 });
 
             const result = await updateOrderItemStatus(
                 TEST_CONFIG.DEFAULT_STORE_ID,
