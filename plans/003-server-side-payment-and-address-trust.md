@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/stripe.ts src/queries/user.ts src/queries/stripe.test.ts src/queries/user.test.ts src/components/store/cards/payment/stripe/stripe-payment.tsx`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/stripe.ts src/queries/user.ts src/queries/stripe.test.ts src/queries/user.test.ts src/components/store/cards/payment/stripe/stripe-payment.tsx plans/README.md`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts to live code; on a mismatch, STOP.
 
@@ -121,6 +121,7 @@ const order = await db.$transaction(async (tx) => {
 - `src/components/store/cards/payment/stripe/stripe-payment.tsx` — update the call to pass only what the server needs
 - `src/queries/user.ts` — `placeOrder` address-ownership check
 - `src/queries/stripe.test.ts`, `src/queries/user.test.ts` — tests
+- `plans/README.md` — update plan 003 status when complete
 
 **Out of scope**:
 - The signed webhook handlers (`src/app/api/webhooks/stripe/route.ts`) — already authoritative; do not change.

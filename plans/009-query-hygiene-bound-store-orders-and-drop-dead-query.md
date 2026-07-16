@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/store.ts "src/app/(store)/browse/page.tsx" src/queries/store.test.ts`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/store.ts "src/app/(store)/browse/page.tsx" src/queries/store.test.ts plans/README.md`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts to live code; on a mismatch, STOP.
 
@@ -94,6 +94,7 @@ export const getStoreOrders = async (storeUrl: string) => {
 - `src/queries/store.ts` — add a bounded `take` to `getStoreOrders`
 - `src/app/(store)/browse/page.tsx` — remove the discarded call + unused import
 - `src/queries/store.test.ts` — assert the `take` bound
+- `plans/README.md` — update plan 009 status when complete
 
 **Out of scope**:
 - Changing `getStoreOrders`'s return shape or adding page params (deferred; would break `StoreOrderType` + DataTable search).

@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/order.ts src/lib/schemas.ts "src/components/store/layout/header/search/"`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/order.ts src/lib/schemas.ts "src/components/store/layout/header/search/" plans/README.md`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts to live code; on a mismatch, STOP.
 
@@ -81,6 +81,7 @@ Enum import in `order.ts` (line 5): `import { OrderStatus, PaymentStatus, Produc
 - Delete `src/components/store/layout/header/search/search copy.tsx`
 - `src/lib/schemas.ts` — add `AdminOrderFilterSchema` (+ inferred type)
 - `src/queries/order.ts` — import the schema instead of defining it
+- `plans/README.md` — update plan 008 status when complete
 
 **Out of scope**:
 - `search.tsx` / `suggestions.tsx` — the live components; do not touch.

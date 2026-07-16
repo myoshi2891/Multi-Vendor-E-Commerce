@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/components/store/cards/place-order.tsx`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/components/store/cards/place-order.tsx plans/README.md`
 > If the file changed since this plan was written, compare the "Current state"
 > excerpt to live code; on a mismatch, STOP.
 
@@ -95,6 +95,7 @@ Use this pattern. The `disabled` prop on the button is the visible complement to
 **In scope**:
 - `src/components/store/cards/place-order.tsx` — add ref guard + `disabled`
 - A co-located component test if the repo tests this component (see step 3; create only if a sibling test pattern exists)
+- `plans/README.md` — update plan 006 status when complete
 
 **Out of scope**:
 - Server-side idempotency in `placeOrder` (`src/queries/user.ts`) — deferred (see Maintenance notes). Do NOT modify `placeOrder` here.

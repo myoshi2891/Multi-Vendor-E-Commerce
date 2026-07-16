@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/lib/shipping-utils.ts`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/lib/shipping-utils.ts plans/README.md`
 > If the file changed since this plan was written, compare the "Current state"
 > excerpt to live code; on a mismatch, STOP.
 
@@ -82,6 +82,7 @@ Behavior to pin (derived by reading the code — verify each by hand):
 
 **In scope**:
 - `src/lib/shipping-utils.test.ts` (create)
+- `plans/README.md` — update plan 010 status when complete
 
 **Out of scope**:
 - `src/lib/shipping-utils.ts` — do NOT modify the implementation. If a test reveals a genuine bug (e.g. an unreachable/uninitialized `result` for an unexpected method value), STOP and report it as a finding — do not "fix" it in this test-only plan.

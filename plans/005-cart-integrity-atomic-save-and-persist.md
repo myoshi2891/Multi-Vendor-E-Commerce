@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/user.ts src/cart-store/useCartStore.ts src/cart-store/useCartStore.test.ts src/queries/user.test.ts`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/queries/user.ts src/cart-store/useCartStore.ts src/cart-store/useCartStore.test.ts src/queries/user.test.ts plans/README.md`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts to live code; on a mismatch, STOP.
 
@@ -94,6 +94,7 @@ localStorage.removeItem('cart')
 - `src/cart-store/useCartStore.ts` — remove 3 manual localStorage calls
 - `src/queries/user.test.ts` — atomicity test
 - `src/cart-store/useCartStore.test.ts` — persist-integrity assertion
+- `plans/README.md` — update plan 005 status when complete
 
 **Out of scope**:
 - `placeOrder` double-submit / idempotency (that is plan 006).

@@ -5,7 +5,7 @@
 > anything in "STOP conditions" occurs, stop and report — do not improvise.
 > When done, update the status row for this plan in `plans/README.md`.
 >
-> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/lib src/queries/coupon.ts src/components/store/forms/apply-coupon.tsx src/components/store/cart-page/container.tsx`
+> **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- src/lib src/queries/coupon.ts src/components/store/forms/apply-coupon.tsx src/components/store/cart-page/container.tsx plans/README.md`
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts to live code; on a mismatch, STOP.
 
@@ -79,6 +79,7 @@ console.log('updatedCart--->', updatedCart)
 - `src/queries/coupon.ts` — convert the 6 bare `console.error(error)` sites to `logError`
 - `src/components/store/forms/apply-coupon.tsx` — replace `console.log(error)` (and fix the `error: any`)
 - `src/components/store/cart-page/container.tsx` — delete the debug `console.log`
+- `plans/README.md` — update plan 007 status when complete
 
 **Out of scope**:
 - The ~90 legacy 3-arg `console.error` sites across other `src/queries/*` files (deferred; see Maintenance notes). Do NOT mass-migrate them in this plan.
