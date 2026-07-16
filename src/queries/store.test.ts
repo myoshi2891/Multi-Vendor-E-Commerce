@@ -501,8 +501,11 @@ describe("upsertStore", () => {
 
             const storeData = {
                 ...TestDataFactory.validStoreData(),
+                // 4つの特権フィールドすべてを注入する
                 status: StoreStatus.ACTIVE,
                 featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
                 returnPolicy: "Custom return policy",
             };
             mockDb.create.mockResolvedValue(TestDataFactory.existingStore());
@@ -512,11 +515,16 @@ describe("upsertStore", () => {
             const createCall = mockDb.create.mock.calls[0][0] as {
                 data: Record<string, unknown>;
             };
+            // status/featured はサーバー既定値に固定される
             expect(createCall.data).toMatchObject({
                 status: StoreStatus.PENDING,
                 featured: false,
                 returnPolicy: "Custom return policy",
             });
+            // averageRating/numReviews はクライアント値が create payload に載らない
+            // （allowlist 外のため schema 既定値に委ねる）
+            expect(createCall.data).not.toHaveProperty("averageRating");
+            expect(createCall.data).not.toHaveProperty("numReviews");
         });
     });
 
@@ -539,8 +547,12 @@ describe("upsertStore", () => {
                 email: "updated@example.com",
                 url: "updated-store",
                 phone: "9876543210",
+                // 4つの特権フィールドすべてを注入し、いずれも update payload から
+                // 除外されることを検証する（mass assignment 防止）。
                 status: StoreStatus.ACTIVE,
                 featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
                 description: "Updated description",
                 returnPolicy: "Updated return policy",
             };
@@ -579,8 +591,11 @@ describe("upsertStore", () => {
                     returnPolicy: "Updated return policy",
                 }),
             });
+            // 特権フィールド4種すべてが update payload に載らないこと
             expect(updateCall.data).not.toHaveProperty("status");
             expect(updateCall.data).not.toHaveProperty("featured");
+            expect(updateCall.data).not.toHaveProperty("averageRating");
+            expect(updateCall.data).not.toHaveProperty("numReviews");
 
             TestHelpers.expectDbMethodNotCalled(mockDb.create);
         });
