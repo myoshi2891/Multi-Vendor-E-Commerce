@@ -10,12 +10,12 @@
 | プラン索引・実行順・ステータス表・先送り/却下 | [`../README.md`](../README.md) |
 | セッション再開状態・ラウンド履歴 | [`../ADVISOR_STATE.md`](../ADVISOR_STATE.md) |
 | 監査の生データ・vet 済み findings・recon | [`../audit/`](../audit/) |
-| プラン 013〜056（Round 2〜9） | [`../`](../) — **原本がすでに日本語**。訳は不要 |
+| プラン 013〜057（Round 2〜9 + dependency follow-up） | [`../`](../) — **原本がすでに日本語**。訳は不要 |
 
 ## なぜ ja/ は 001〜012 だけなのか
 
 `plans/` 配下で英語で書かれているのは **Round 1 の 001〜012 だけ**である。
-`ADVISOR_STATE.md`・`README.md`・`audit/**`・プラン 013〜056（Round 2〜9）は
+`ADVISOR_STATE.md`・`README.md`・`audit/**`・プラン 013〜057（Round 2〜9 + dependency follow-up）は
 **原本がすでに日本語**で書かれており、訳す対象が存在しない。
 
 Round 2 でこの方針は明示的に決定されている（[`../ADVISOR_STATE.md`](../ADVISOR_STATE.md) 参照）:
