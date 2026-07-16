@@ -1367,9 +1367,33 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
-| テスト総数 | 1667 passed（前回記録） | **1682 passed**（plan 023 は +5、累積ドリフトを同期） |
+| テスト総数 | 1667 passed（前回記録） | **1681 passed**（plan 023/024 を統合後に全スイート実測） |
 | スイート数 | 172 | **172** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### Plan 024: `userCountry` cookie 書き込み検証 (2026-07-16)
+
+#### 概要
+
+公開 API の cookie 書き込みを読取り側と対称にし、不正・過大な入力を保存しないようにした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/lib/utils.ts` / `src/app/api/setUserCountryInCookies/route.ts` | 共通型ガード、JSON/shape/長さ検証、4フィールド投影、`Path=/` を実装 | `58a6bd5` |
+| `src/app/api/setUserCountryInCookies/route.test.ts` | 必須6ケースの回帰テストへ更新 | `58a6bd5` |
+| `plans/audit/findings-11-security-followup.md` | Plan 024 をDONEに更新 | `8bd7bfd` |
+
+#### テスト統計（統合後）
+
+| 指標 | 値 |
+|------|----|
+| テスト総数 | **1681 passed / 1684 total**（3 skipped） |
+| スイート数 | **171 passed / 172 total**（1 skipped） |
+| 型エラー | **0 件** |
 
 ---
 
