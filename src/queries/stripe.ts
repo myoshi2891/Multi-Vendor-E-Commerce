@@ -2,12 +2,43 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
+import { PaymentStatus } from "@prisma/client";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: "2025-02-24.acacia",
     // Additional Stripe options can be added here
 });
+
+/**
+ * Stripe の PaymentIntent.status を Order.paymentStatus へ写像する。
+ *
+ * 未完了（3DS 認証待ち = requires_action、非同期決済の処理中 = processing 等）は
+ * 「失敗」ではない。Failed を確定させると、後続の webhook が succeeded を通知した
+ * 際に DB が Stripe の真実と食い違うため、Pending に留めて上書き可能な状態を保つ。
+ *
+ * @see https://docs.stripe.com/payments/paymentintents/lifecycle
+ * @param intentStatus - Stripe から retrieve した権威的な intent の status
+ * @returns Order.paymentStatus に格納する PaymentStatus
+ */
+const toOrderPaymentStatus = (
+    intentStatus: Stripe.PaymentIntent.Status
+): PaymentStatus => {
+    switch (intentStatus) {
+        case "succeeded":
+            return "Paid";
+        case "canceled":
+            return "Cancelled";
+        // 決済手段が拒否され、再入力を要する = このattemptは失敗。
+        case "requires_payment_method":
+            return "Failed";
+        case "processing":
+        case "requires_action":
+        case "requires_confirmation":
+        case "requires_capture":
+            return "Pending";
+    }
+};
 
 /**
  * @Function createStripePaymentIntent
@@ -140,8 +171,7 @@ export const createStripePayment = async (
                 id: orderId,
             },
             data: {
-                paymentStatus:
-                    paymentIntent.status === "succeeded" ? "Paid" : "Failed",
+                paymentStatus: toOrderPaymentStatus(paymentIntent.status),
                 paymentMethod: "Stripe",
                 paymentDetails: {
                     connect: {
