@@ -2,7 +2,6 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { PaymentIntent } from "@stripe/stripe-js";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -64,13 +63,13 @@ export const createStripePaymentIntent = async (orderId: string) => {
  * @Description Captures a Stripe payment and updates the order status in the database.
  * @PermissionLevel User who owns the addresses
  * @Parameters  - orderId: The ID of the order to update.
- *              - paymentIntent: The Stripe payment intent to capture.
+ *              - paymentIntentId: The Stripe payment intent ID to capture.
  * @Returns Updated order details.
  */
 
 export const createStripePayment = async (
     orderId: string,
-    paymentIntent: PaymentIntent
+    paymentIntentId: string
 ) => {
     try {
         // Get current user
@@ -87,6 +86,14 @@ export const createStripePayment = async (
         });
 
         if (!order) throw new Error("Order not found.");
+
+        // 権威的なソースは Stripe。クライアント値ではなく retrieve した intent から導出する。
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        // intent 作成時に付与した metadata.orderId で、対象注文との対応を検証する。
+        if (paymentIntent.metadata?.orderId !== orderId) {
+            throw new Error("Payment intent does not match order.");
+        }
 
         const updatedPaymentDetails = await db.paymentDetails.upsert({
             where: {
