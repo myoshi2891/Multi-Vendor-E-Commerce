@@ -57,7 +57,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 
             if (!error && paymentIntent) { 
                 try { 
-                    const res = await createStripePayment(orderId, paymentIntent)
+                    const res = await createStripePayment(orderId, paymentIntent.id)
                     if (!res.paymentDetails?.paymentIntentId) throw new Error('Payment details not found');
                     router.refresh()
                 } catch (error: any) { 

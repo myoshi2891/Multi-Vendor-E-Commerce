@@ -23,10 +23,12 @@ jest.mock("@/lib/db", () => ({
 
 // Stripeモック
 const mockStripePaymentIntentsCreate = jest.fn();
+const mockStripePaymentIntentsRetrieve = jest.fn();
 jest.mock("stripe", () => {
     return jest.fn().mockImplementation(() => ({
         paymentIntents: {
             create: (...args: Parameters<Stripe['paymentIntents']['create']>) => mockStripePaymentIntentsCreate(...args),
+            retrieve: (...args: Parameters<Stripe['paymentIntents']['retrieve']>) => mockStripePaymentIntentsRetrieve(...args),
         },
     }));
 });
@@ -206,6 +208,7 @@ describe("createStripePayment", () => {
         amount: 9999,
         currency: "usd",
         status: "succeeded",
+        metadata: { orderId: "order-001" },
     };
 
     describe("認証エラー", () => {
@@ -213,7 +216,7 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent as never)
+                createStripePayment("order-001", mockPaymentIntent.id as never)
             ).rejects.toThrow("Unauthenticated.");
         });
     });
@@ -229,7 +232,7 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(
-                createStripePayment("nonexistent", mockPaymentIntent as never)
+                createStripePayment("nonexistent", mockPaymentIntent.id as never)
             ).rejects.toThrow("Order not found.");
         });
     });
@@ -240,6 +243,7 @@ describe("createStripePayment", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
             mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
         });
 
         it("決済成功時にPaymentDetailsをupsertしステータスをCompletedにする", async () => {
@@ -255,10 +259,13 @@ describe("createStripePayment", () => {
 
             const result = await createStripePayment(
                 "order-001",
-                mockPaymentIntent as never
+                mockPaymentIntent.id as never
             );
 
             expect(result).toEqual(updatedOrder);
+            expect(mockStripePaymentIntentsRetrieve).toHaveBeenCalledWith(
+                mockPaymentIntent.id
+            );
             expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { orderId: "order-001" },
@@ -282,7 +289,7 @@ describe("createStripePayment", () => {
 
             await createStripePayment(
                 "order-001",
-                mockPaymentIntent as never
+                mockPaymentIntent.id as never
             );
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
@@ -299,17 +306,18 @@ describe("createStripePayment", () => {
         it("決済失敗時にOrder.paymentStatusをFailedに更新する", async () => {
             const failedPaymentIntent = {
                 ...mockPaymentIntent,
-                status: "failed",
+                status: "requires_payment_method",
             };
             const paymentDetails = createMockPaymentDetails({
                 status: "failed",
             });
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(failedPaymentIntent);
 
             await createStripePayment(
                 "order-001",
-                failedPaymentIntent as never
+                failedPaymentIntent.id as never
             );
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
@@ -330,7 +338,7 @@ describe("createStripePayment", () => {
 
             await createStripePayment(
                 "order-001",
-                mockPaymentIntent as never
+                mockPaymentIntent.id as never
             );
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
@@ -354,12 +362,13 @@ describe("createStripePayment", () => {
                 .spyOn(console, "error")
                 .mockImplementation(() => undefined);
             mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(mockPaymentIntent);
             mockDb.paymentDetails.upsert.mockRejectedValue(
                 new Error("DB error")
             );
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent as never)
+                createStripePayment("order-001", mockPaymentIntent.id as never)
             ).rejects.toThrow("DB error");
 
             expect(consoleSpy).toHaveBeenCalled();
@@ -379,7 +388,7 @@ describe("createStripePayment", () => {
             await expect(
                 createStripePayment(
                     "other-user-order",
-                    mockPaymentIntent as never
+                    mockPaymentIntent.id as never
                 )
             ).rejects.toThrow("Order not found.");
 
@@ -391,6 +400,28 @@ describe("createStripePayment", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("PaymentIntent と注文の対応検証", () => {
+        it("別注文に紐づく PaymentIntent を拒否し、Order を更新しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                metadata: { orderId: "other-order" },
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id as never)
+            ).rejects.toThrow("Payment intent does not match order.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
         });
     });
 });

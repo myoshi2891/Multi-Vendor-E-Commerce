@@ -441,6 +441,12 @@ export const placeOrder = async (
 
     if (!cart) throw new Error('Cart not found.')
 
+    // shippingAddress の所有権検証（IDOR 防止: 他ユーザーの住所 id を注文に付けさせない）
+    const ownedAddress = await db.shippingAddress.findFirst({
+        where: { id: shippingAddress.id, userId },
+    })
+    if (!ownedAddress) throw new Error('Shipping address not found.')
+
     const cartItems = cart.cartItems
     const cartCoupon = cart.coupon // The coupon, if it exists
 
