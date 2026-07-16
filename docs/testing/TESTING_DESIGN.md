@@ -102,6 +102,7 @@
 | **環境変数** | テスト DB とシークレットには `.env.test` を使用する |
 | **DB** | テスト専用の PostgreSQL データベースを使用する |
 | **Integration リセット** | globalSetup で testcontainers 起動 + migrate 適用。各テスト `beforeEach` で `resetDb(db)`（TRUNCATE ... RESTART IDENTITY CASCADE）+ テスト内 seed ヘルパー（`tests/integration/setup/seed.ts`）を使用する |
+| **Integration 直列実行** | 全スイートが1つのDBコンテナを共有するため、`jest.integration.config.js` の `maxWorkers: 1` を維持し、`test.concurrent` / `describe.concurrent` は使用しない。並列化は ADR-004 の per-worker container 戦略を実装してから行う |
 | **E2E リセット** | 実行前にシード投入、実行後にクリーンアップする |
 | **テストデータ** | ハードコードした ID ではなくファクトリを使用する |
 

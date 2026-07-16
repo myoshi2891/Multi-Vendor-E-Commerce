@@ -85,39 +85,6 @@ Playwright を使用し、実際のユーザージャーニーをエンドツー
 | **Seller オンボーディング** | 申請 → Admin 承認 → 店舗作成 → 商品出品。 | Playwright |
 | **決済異常系** | 決済キャンセル、カード拒否、二重決済試行時の冪等性検証。 | Playwright |
 
-### Phase 5: E2E 拡大（improve Round 8 / plans 042〜050）【優先度: P1-P3】🆕 2026-07-11
-
-R8 監査（findings-16）で確定したギャップの実行フェーズ。**042 が全認証系プランの先行依存**。
-
-| Step | プラン | 内容 | 状態 |
-|:---|:---|:---|:---|
-| 5-1 | plans/042 | signIn ヘルパー修復（5 サイト）+ svg-img-alt 是正 → 認証系 16 件回復 | ⬜ |
-| 5-2 | plans/043 | VRT ベースライン 3 枚の目視ゲート付き再撮影 | ⬜ |
-| 5-3 | plans/044 | run-local.sh :3000 ガード + globalTimeout 60 分化 | ⬜ |
-| 5-4 | plans/045 | ゲスト導線（compare / track-order / offers / 静的）+ OfferTag seed | ⬜ |
-| 5-5 | plans/046 | /browse ページネーション最小配線 + 実データ E2E + seed 12 商品 | ⬜ |
-| 5-6 | plans/047 | 住所未選択エラー un-skip + 注文詳細金額明細（§20 P0 請求側） | ⬜ |
-| 5-7 | plans/048 | wishlist / ストアフォロー / レビュー投稿 | ⬜ |
-| 5-8 | plans/049 | プロフィール住所管理 + 注文履歴 | ⬜ |
-| 5-9 | plans/050 | admin 店舗ステータス変更 → store ページ非公開 | ⬜ |
-
-### Phase 6: E2E 残余拡大（improve Round 9 / plans 051〜056）【優先度: P1-P3】🆕 2026-07-12
-
-R9 残余監査（findings-17 — R8 未スイープの切り口 8 系統。ベースラインは R8 実測 #2 を
-SSOT 引き継ぎ）で確定したギャップの実行フェーズ。**6-1 / 6-6 は依存ゼロで即着手可能**。
-6-2 は plan 042 Step 4、6-4 は plan 043、6-5（+ 6-3 のサインアウト部）は plan 042 の完了が先行。
-
-| Step | プラン | 内容 | 状態 |
-|:---|:---|:---|:---|
-| 6-1 | plans/051 | 国選択セレクタ（Ship to）cookie 往復（依存ゼロ・P1） | ⬜ |
-| 6-2 | plans/052 | a11y スキャン拡大: browse / 商品詳細 / cart（042 Step 4 先行） | ⬜ |
-| 6-3 | plans/053 | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト） | ⬜ |
-| 6-4 | plans/054 | VRT 拡大: 商品詳細 / browse（043 先行） | ⬜ |
-| 6-5 | plans/055 | ゲストカート → サインイン後の引き継ぎ（042 先行） | ⬜ |
-| 6-6 | plans/056 | Newsletter dormant 404 の characterization（route 実装時に書き直し前提） | ⬜ |
-
----
-
 ## 3. 重点検証戦略 (Specialist Focus)
 
 ### 1. 精度と整合性
@@ -865,6 +832,41 @@ describe("購入フルフロー")
 
 **実行規律**: 各 Step 完了ごとに `spec-sync-after-test` skill で統計同期（rule 02）。
 進捗の SSOT は [`plans/README.md`](../../plans/README.md) の status 列であり、本表の状態列は同期先。
+
+---
+
+## Phase 5: E2E 拡大（improve Round 8 / plans 042〜050）【優先度: P1-P3】🆕 2026-07-11
+
+R8 監査（findings-16）で確定したギャップの実行フェーズ。**042 が全認証系プランの先行依存**。
+
+| Step | プラン | 内容 | 状態 |
+|:---|:---|:---|:---|
+| 5-1 | plans/042 | signIn ヘルパー修復（5 サイト）+ svg-img-alt 是正 → 認証系 16 件回復 | ⬜ |
+| 5-2 | plans/043 | VRT ベースライン 3 枚の目視ゲート付き再撮影 | ⬜ |
+| 5-3 | plans/044 | run-local.sh :3000 ガード + globalTimeout 60 分化 | ⬜ |
+| 5-4 | plans/045 | ゲスト導線（compare / track-order / offers / 静的）+ OfferTag seed | ⬜ |
+| 5-5 | plans/046 | /browse ページネーション最小配線 + 実データ E2E + seed 12 商品 | ⬜ |
+| 5-6 | plans/047 | 住所未選択エラー un-skip + 注文詳細金額明細（§20 P0 請求側） | ⬜ |
+| 5-7 | plans/048 | wishlist / ストアフォロー / レビュー投稿 | ⬜ |
+| 5-8 | plans/049 | プロフィール住所管理 + 注文履歴 | ⬜ |
+| 5-9 | plans/050 | admin 店舗ステータス変更 → store ページ非公開 | ⬜ |
+
+---
+
+## Phase 6: E2E 残余拡大（improve Round 9 / plans 051〜056）【優先度: P1-P3】🆕 2026-07-12
+
+R9 残余監査（findings-17 — R8 未スイープの切り口 8 系統。ベースラインは R8 実測 #2 を
+SSOT 引き継ぎ）で確定したギャップの実行フェーズ。**6-1 / 6-6 は依存ゼロで即着手可能**。
+6-2 は plan 042 Step 4、6-4 は plan 043、6-5（+ 6-3 のサインアウト部）は plan 042 の完了が先行。
+
+| Step | プラン | 内容 | 状態 |
+|:---|:---|:---|:---|
+| 6-1 | plans/051 | 国選択セレクタ（Ship to）cookie 往復（依存ゼロ・P1） | ⬜ |
+| 6-2 | plans/052 | a11y スキャン拡大: browse / 商品詳細 / cart（042 Step 4 先行） | ⬜ |
+| 6-3 | plans/053 | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト） | ⬜ |
+| 6-4 | plans/054 | VRT 拡大: 商品詳細 / browse（043 先行） | ⬜ |
+| 6-5 | plans/055 | ゲストカート → サインイン後の引き継ぎ（042 先行） | ⬜ |
+| 6-6 | plans/056 | Newsletter dormant 404 の characterization（route 実装時に書き直し前提） | ⬜ |
 
 ---
 
