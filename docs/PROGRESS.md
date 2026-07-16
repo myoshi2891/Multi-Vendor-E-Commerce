@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1659 passed / 1662 total / 172 スイート（3 skipped）** — 2026-06-26 track-order 機能実装時点。公開の注文追跡 `trackOrder`（IDOR 3 階層・不一致/不存在を同一 null）+ `/track-order` ページ + form/result。既存 `order.test.ts` に +6（T-TO1〜T-TO6）+ 新規 `track-order-form.test.tsx` +2（T-TO7/T-TO8）= +8（1651→1659、171→172 スイート、`b2a30e5`〜`b57bd40`）。直前 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
+| Jestユニットテスト | **1685 passed / 1688 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1394,6 +1394,37 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 | テスト総数 | **1681 passed / 1684 total**（3 skipped） |
 | スイート数 | **171 passed / 172 total**（1 skipped） |
 | 型エラー | **0 件** |
+
+---
+
+### CodeRabbit 指摘対応: 決済ステータス写像・エラー遮断・型契約・plans/ja 再同期 (2026-07-17)
+
+#### 概要
+
+`main ← dev` の CodeRabbit 指摘を精査し、実コード 3 件を修正した上で、指摘の大半（約 65 件）の根本原因だった
+`plans/ja/` のドリフトを構造的に解消した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/queries/stripe.ts` | 未完了 intent（`processing` / `requires_action` / `requires_confirmation` / `requires_capture`）を `Failed` に確定させず `Pending` へ写像。`canceled` は `Cancelled` に分離。3DS 認証中の注文が後続 webhook の `succeeded` と矛盾しなくなった | `d093373`（Red）→ `35c402f`（Green） |
+| `src/queries/order.ts` | `updateOrderItemStatus` の `updateMany` を try/catch で包み、生 Prisma エラーの UI 露出を遮断（認可ガードは規約どおり try の外に維持） | `1d99179` |
+| `src/queries/stripe.test.ts` | `as never` 11 箇所を除去。`never` は全型に代入可能なため、引数契約の変更を無条件に黙らせていた | `d330e34` |
+| `plans/ja/` | `ADVISOR_STATE.md` / `README.md` / `audit/**` は英語原本の訳ではなく**日本語原本の複製**だったため削除（原本の成長にコピーが追随せず 26〜98 行乖離。`findings-02` は原本とバイト同一）。`README.md` は索引を複製しない範囲宣言に作り替え | `c449c82` |
+| `plans/ja/001-012` | 真の訳である 12 本を原本と再同期。004 は override が脆弱な `^3.0.5` を指示していた（原本は `3.0.6` 厳密ピン）、005 は「原子性を証明する」と誤記（原本は明確に否定）、001 は原本が否定した grep 検証のまま、002 は未出荷の旧実装、010 はテスト欠落、012 は採番衝突 | `e9ba111` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1681 passed / 1684 total | **1685 passed / 1688 total**（3 skipped） |
+| スイート数 | 172（171 passed + 1 skipped） | **174**（173 passed + 1 skipped） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+> スイート +2 は本セッションの追加ではなく、先行コミット由来の未同期分（`src/lib/log.test.ts`
+> = plans 007-009 のログ集約 / `place-order.test.tsx` = 二重送信ガード）を取り込んだもの。
 
 ---
 

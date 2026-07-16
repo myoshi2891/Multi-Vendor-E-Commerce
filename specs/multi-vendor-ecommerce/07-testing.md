@@ -12,6 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1685 passed / 1688 total across 174 suites (3 skipped), as of 2026-07-17.
+  Two new suites (+2): `src/lib/log.test.ts` (the shared `logError` helper from the plans 007-009
+  logging consolidation) and `src/components/store/cards/place-order.test.tsx` (the place-order
+  double-submit guard). The remaining delta comes from the atomic `saveUserCart` work in
+  `useCartStore.test.ts` / `user.test.ts` and from `store.test.ts`. Stripe capture now maps
+  in-flight PaymentIntent states (`processing` / `requires_action` / `requires_confirmation` /
+  `requires_capture`) to `Pending` rather than `Failed`, so a later webhook reporting `succeeded`
+  cannot contradict the stored `paymentStatus`; `canceled` maps to `Cancelled`. Counts are from a
+  full-suite run.
 - 1681 passed / 1684 total across 172 suites (3 skipped), as of 2026-07-16.
   Plan 023 normalizes public `index-products` GET pagination: non-numeric and invalid values use
   defaults, `limit` is capped at 50, and `page` at 10,000. Five regressions assert both Prisma
