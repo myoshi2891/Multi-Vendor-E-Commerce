@@ -315,6 +315,9 @@ describe("createStripePayment", () => {
             const failedPaymentIntent = {
                 ...mockPaymentIntent,
                 status: "requires_payment_method",
+                // 拒否された attempt の証跡。これが無い requires_payment_method は
+                // 「まだ決済手段が付いていない初期状態」と区別できない。
+                last_payment_error: { code: "card_declined" },
             };
             const paymentDetails = createMockPaymentDetails({
                 status: "failed",
@@ -331,6 +334,31 @@ describe("createStripePayment", () => {
                 expect.objectContaining({
                     data: expect.objectContaining({
                         paymentStatus: "Failed",
+                    }),
+                })
+            );
+        });
+
+        // requires_payment_method は「拒否後」だけでなく PaymentIntent の初期状態でもある。
+        // last_payment_error が無い = まだ一度も決済を試みていない = 再試行可能。
+        // ここで Failed を確定させると、その後の正常な決済を注文が受け付けられなくなる。
+        it("決済手段未設定の requires_payment_method は Pending に更新する", async () => {
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails({ status: "requires_payment_method" })
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "requires_payment_method",
+                last_payment_error: null,
+            });
+
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        paymentStatus: "Pending",
                     }),
                 })
             );
