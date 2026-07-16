@@ -101,6 +101,7 @@ export const getAllCountries = async () => {
 
 ```typescript
 import { getAllCountries } from "./country";
+import { db } from "@/lib/db";
 
 // ---- モック設定 ----
 jest.mock("@/lib/db", () => ({
@@ -111,7 +112,11 @@ jest.mock("@/lib/db", () => ({
     },
 }));
 
-const mockDb = require("@/lib/db").db;
+// require("@/lib/db") は暗黙 any を招くため使わない。
+// 型付き import した db を jest.Mocked で絞り込む（category.test.ts と同型）。
+const mockFindMany = db.country.findMany as jest.MockedFunction<
+    typeof db.country.findMany
+>;
 
 let consoleErrorSpy: jest.SpyInstance;
 
@@ -127,19 +132,24 @@ afterEach(() => {
 
 テストケース 4 本（describe `getAllCountries`）:
 
-1. **正常系**: `findMany` が `[{ id: "c1", name: "Japan", code: "JP" }]` 相当を resolve →
-   戻り値がそのまま返り、`findMany` が `{ orderBy: { name: "asc" } }` で呼ばれたことを assert
+1. **正常系**: `mockFindMany.mockResolvedValue([{ id: "c1", name: "Japan", code: "JP" }] as ...)` →
+   戻り値がそのまま返り、`mockFindMany` が `{ orderBy: { name: "asc" } }` で呼ばれたことを assert
    （昇順ソートは呼び出し契約として固定する）
-2. **DB エラー（Error）**: `mockRejectedValue(new Error("db down"))` →
+2. **DB エラー（Error）**: `mockFindMany.mockRejectedValue(new Error("db down"))` →
    `rejects.toThrow("Failed to retrieve countries.")` + `console.error` が
    `("Error retrieving countries:", "db down", expect.any(String))` で呼ばれる
-3. **DB エラー（非 Error）**: `mockRejectedValue("boom")` → 同じ汎用メッセージで throw +
+3. **DB エラー（非 Error）**: `mockFindMany.mockRejectedValue("boom")` → 同じ汎用メッセージで throw +
    `console.error` が `("Error retrieving countries:", "boom")` で呼ばれる（unknown 分岐）
-4. **エラー詳細の非漏洩**: ケース 2 の throw メッセージに `"db down"` が**含まれない**こと
-   （`rejects.toThrow` の完全一致 or `.rejects.toMatchObject({ message: "Failed to retrieve countries." })`）
-   — ケース 2 に同居させてもよいが assert として明示する
+4. **エラー詳細の非漏洩**: ケース 2 の throw メッセージが `"Failed to retrieve countries."` と
+   **完全一致**し、内部詳細 `"db down"` を**含まない**こと。`toThrow(string)` は部分一致のため
+   完全一致の検証には使わない。次のいずれかで厳密に検証する:
+   - `await expect(...).rejects.toThrow(/^Failed to retrieve countries\.$/)`（アンカー付き正規表現）
+   - もしくは try/catch で捕捉し `expect((e as Error).message).toBe("Failed to retrieve countries.")`
+     かつ `expect((e as Error).message).not.toContain("db down")`
 
-**Verify**: `bun run test -- src/queries/country.test.ts` → 4 pass（ケース 4 を 2 に同居させた場合 3 pass）。
+   このケースは**独立した 1 テスト**として残す（ケース 2 に同居させない — テスト数を 4 に固定する）。
+
+**Verify**: `bun run test -- src/queries/country.test.ts` → **4 pass**（4 本で固定。同居させない）。
 
 ### Step 2: カバレッジと品質ゲート
 
