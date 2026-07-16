@@ -5,8 +5,17 @@
 > 読み取り専用の調査を行い、未解決の問いにエビデンス付きで答え、設計ドキュメントを書き、STOP する。
 > 完了したら `plans/README.md` のこのプランのステータス行を更新する。
 >
-> **ドリフトチェック（最初に実行）**:
-> `git diff --stat 86c04a1..HEAD -- prisma/schema.prisma package.json src/queries/order.ts src/queries/store.ts`
+> **ドリフトチェック（最初に実行）**: 「Current state」が参照する依存ファイルを**すべて**対象にする
+> （order/store クエリと schema/package.json だけでは狭い。既読管理の手本 `message.ts`、
+> 通知ベルの挿入点 header、webhook パターンも Current state の前提）:
+>
+> ```
+> git diff --stat 86c04a1..HEAD -- \
+>   prisma/schema.prisma package.json \
+>   src/queries/order.ts src/queries/store.ts src/queries/message.ts \
+>   src/components/store/layout/header/ src/app/api/webhooks/
+> ```
+>
 > いずれかが変更されていれば「Current state」の抜粋と現行コードを突き合わせる。
 > Notification 系モデルがスキーマに追加済み、またはメール送信ライブラリ
 > （resend / nodemailer 等）が `package.json` に追加済みなら STOP して報告する。
@@ -81,8 +90,10 @@ model Message {                 // schema.prisma:736
 
 - 外部呼び出し（メールプロバイダ）は `try/catch` + 構造化ログ
   （`"[Module:Function] msg", { error, stack }` の2引数形式 — `src/queries/paypal.ts` が実装例）
-- **通知の失敗が主処理（注文更新等）を失敗させないこと** — 主処理の `$transaction` の外で
-  発火するか、Outbox 経由にするかは Open question
+- **通知の失敗が主処理（注文更新等）を失敗させないこと** — 送信（外部発火）は主処理の
+  `$transaction` の**外**で行う。実行モデル（commit 後 inline 発火 / Outbox）は Q4 で確定するが、
+  **この tx 境界の決定は `plans/018`（RMA）Q6 の通知原子性モデルと統一すること**（両 spike で
+  同じモデルを採り矛盾させない。片方が Outbox を選ぶなら他方も整合させ、相互参照を design doc に書く）
 - 認可は auth-guards / サーバーアクションは `src/queries/` 配置
 - スキーマ変更時は ERD 再生成（`.claude/rules/03-data-model-diagram-sync.md`）
 - 外部依存の追加（メールプロバイダ SDK）は事前確認が必要な変更（ユーザー承認事項 —
@@ -106,6 +117,12 @@ model Message {                 // schema.prisma:736
   ADR 化は「外部依存の追加 + チーム影響 + 参照価値」の作成基準を満たす）
 - 後続**実装**プラン `plans/0NN-implement-notification-foundation.md`（実行時点の次の空き番号、
   plan-template 準拠）
+- `plans/README.md` の本プランのステータス行更新（Executor 指示・Done criteria と一致する
+  **成果物の一部**。ドキュメント更新なので設計ドキュメント生成とは別コミットにする）
+
+> 注: 冒頭の「設計のみ・機能を出荷しない」は **`src/`・スキーマ・`package.json` を変更しない**という意味。
+> 設計ドキュメント / ADR 草案 / 後続プラン / README ステータス行の**ドキュメント生成・更新は本 spike の
+> 成果物**であり、Out of scope のコード変更禁止と矛盾しない。
 
 **Out of scope**（本プランでやらないこと）:
 - `src/`・スキーマ・`package.json` の変更（設計のみ。SDK 追加は後続プランでユーザー承認後）
@@ -117,10 +134,20 @@ model Message {                 // schema.prisma:736
 
 ## Open questions（spike が証拠付きで必ず答える）
 
-1. **Notification テーブルの形**: 受信者（userId）・種別・タイトル/本文（or テンプレート
-   キー + パラメータ JSON）・リンク先・isRead/readAt（`Message` パターン踏襲）・
+1. **Notification テーブルの形 + 冪等性・重複排除**: 受信者（userId）・種別・タイトル/本文
+   （or テンプレートキー + パラメータ JSON）・リンク先・isRead/readAt（`Message` パターン踏襲）・
    発生源参照（orderId 等のポリモーフィック参照をどう持つか）。
    保持期間・既読一括化・ページングの要件も確定する。
+
+   > **通知イベントの冪等性・重複排除を必須設計項目にすること**（同一イベントの再処理・リトライ・
+   > webhook 再送で通知が二重に飛ぶのを防ぐ）:
+   > - 各通知に **冪等性キー**を持たせる（例: `dedupeKey = hash(eventType + sourceRef + recipientId + 状態遷移識別子)`）。
+   >   Notification（および Outbox を採るなら Outbox 行）に `@@unique(dedupeKey)` を張り、
+   >   二重挿入を DB レベルで弾く（upsert or `ON CONFLICT DO NOTHING`）。
+   > - 送信側も **at-least-once 前提**で重複耐性を持たせる（同じ dedupeKey は 1 回だけ送る／
+   >   送信済みフラグを立ててから送る）。webhook（bounce 等）受信も冪等化する。
+   > - 018 RMA / 016 審査など複数 spike の発火イベントが同じ規約でキーを作れるよう、
+   >   dedupeKey の生成規則を本 spike で共通定義する。
 2. **チャネル抽象の seam**: `sendNotification(event, recipient)` 相当の単一入口が
    in-app 記録と email 送信へ分配する形。email プロバイダを差し替え可能にする
    インターフェイス（spike 017 の `getRelatedProducts(strategy)` seam と同じ発想）を定義する。
@@ -210,5 +237,11 @@ ALL を満たすこと:
   チャネル種別の拡張余地を残すこと（ただし初期実装は in-app + email の2つに絞る）
 - イベント → 通知マッピングは機能追加のたびに行が増える — 「新しい状態遷移を足すときは
   マッピング表の更新を検討する」旨を実装プランで tech.md へ追記提案すること
-- レビュアーが後続実装 PR で最も精査すべき点: 発火点が `$transaction` の外にあること
-  （通知失敗の波及防止）と、メール本文に PII/シークレットをログ出力していないこと
+- レビュアーが後続実装 PR で最も精査すべき点: **外部送信（メール発火）が `$transaction` の外に
+  あること**（通知失敗の波及防止）と、メール本文に PII/シークレットをログ出力していないこと。
+  > **ただし Outbox を採用する場合、「発火点が transaction の外」を無条件の必須条件にしないこと**。
+  > Outbox パターンでは **Outbox 行の *書き込み* は主処理の `$transaction` 内**で行うのが正しい
+  > （主状態変更と通知意図を原子的にコミット → メッセージ喪失を防ぐ）。tx の外に出すのは
+  > **実際の *送信*（ワーカー/cron による外部発火）だけ**。したがって精査点は正確には
+  > 「*送信* が tx 外」であって「*Outbox への記録* が tx 外」ではない。inline 発火モデルを採る場合のみ
+  > 「発火そのものが tx 外」となる。どちらのモデルかを design doc で明示し、レビュー観点もそれに合わせる。
