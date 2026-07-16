@@ -12,7 +12,7 @@ import {
     deleteStore,
     getStorePageDetails,
 } from "./store";
-import { Prisma } from "@prisma/client";
+import { Prisma, StoreStatus } from "@prisma/client";
 import { TEST_CONFIG } from "../config/test-config";
 import { createMockStoreDefaultShipping, createMockStoreDefaultShippingDb } from "../config/test-fixtures";
 import type { StoreDefaultShippingInput } from "@/lib/types";
@@ -494,6 +494,30 @@ describe("upsertStore", () => {
                 TestDataFactory.createStoreExpectedData(storeData)
             );
         });
+
+        it("特権フィールドを指定されてもサーバー既定値で作成する", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst.mockResolvedValue(null);
+
+            const storeData = {
+                ...TestDataFactory.validStoreData(),
+                status: StoreStatus.ACTIVE,
+                featured: true,
+                returnPolicy: "Custom return policy",
+            };
+            mockDb.create.mockResolvedValue(TestDataFactory.existingStore());
+
+            await upsertStore(storeData);
+
+            const createCall = mockDb.create.mock.calls[0][0] as {
+                data: Record<string, unknown>;
+            };
+            expect(createCall.data).toMatchObject({
+                status: StoreStatus.PENDING,
+                featured: false,
+                returnPolicy: "Custom return policy",
+            });
+        });
     });
 
     describe("ストア更新", () => {
@@ -515,8 +539,10 @@ describe("upsertStore", () => {
                 email: "updated@example.com",
                 url: "updated-store",
                 phone: "9876543210",
-                status: "ACTIVE" as any,
+                status: StoreStatus.ACTIVE,
+                featured: true,
                 description: "Updated description",
+                returnPolicy: "Updated return policy",
             };
 
             const updatedStore = TestDataFactory.existingStore(updateData);
@@ -541,15 +567,20 @@ describe("upsertStore", () => {
                 TEST_CONFIG.DEFAULT_STORE_ID
             );
 
-            TestHelpers.expectStoreUpdatedWith(
-                mockDb.update,
-                TEST_CONFIG.DEFAULT_STORE_ID,
-                expect.objectContaining({
+            const updateCall = mockDb.update.mock.calls[0][0] as {
+                where: Record<string, unknown>;
+                data: Record<string, unknown>;
+            };
+            expect(updateCall).toMatchObject({
+                where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
+                data: expect.objectContaining({
                     name: "Updated Store Name",
                     email: "updated@example.com",
-                    status: "ACTIVE",
-                })
-            );
+                    returnPolicy: "Updated return policy",
+                }),
+            });
+            expect(updateCall.data).not.toHaveProperty("status");
+            expect(updateCall.data).not.toHaveProperty("featured");
 
             TestHelpers.expectDbMethodNotCalled(mockDb.create);
         });
@@ -1414,6 +1445,35 @@ describe("applySeller", () => {
                     returnPolicy: "Return in 30 days.",
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                 }),
+            });
+        });
+
+        it("申請者が指定した特権フィールドをサーバー既定値で上書きする", async () => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockPrisma.store.findFirst.mockResolvedValue(null);
+
+            const storeData = {
+                ...TestDataFactory.validStoreData(),
+                description: "Store description",
+                logo: "logo.png",
+                cover: "cover.png",
+                defaultShippingService: "Express Delivery",
+                status: StoreStatus.ACTIVE,
+                featured: true,
+            };
+            mockPrisma.store.create.mockResolvedValue(storeData);
+
+            await applySeller(storeData);
+
+            const createCall = mockPrisma.store.create.mock.calls[0][0] as {
+                data: Record<string, unknown>;
+            };
+            expect(createCall.data).toMatchObject({
+                status: StoreStatus.PENDING,
+                featured: false,
+                name: storeData.name,
             });
         });
     });

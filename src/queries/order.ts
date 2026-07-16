@@ -254,29 +254,22 @@ export const updateOrderItemStatus = async (
         throw new Error("Unauthorized to update order item status.");
     }
 
-    // Retrieve the product item to be updated
-    const product = await db.orderItem.findUnique({
+    // IDOR 防止: 対象 OrderItem を所有店舗にスコープする。
+    // OrderItem → OrderGroup.storeId の関係で絞り込み、検証と更新を単一の原子的更新にする。
+    const result = await db.orderItem.updateMany({
         where: {
             id: orderItemId,
+            orderGroup: { storeId },
         },
+        data: { status },
     });
 
-    // Ensure product existence
-    if (!product) {
+    // 他店舗のアイテムか不存在の場合は、副作用なしで拒否する。
+    if (result.count === 0) {
         throw new Error("Order item not found");
     }
 
-    // Update the order status
-    const updatedProduct = await db.orderItem.update({
-        where: {
-            id: orderItemId,
-        },
-        data: {
-            status,
-        },
-    });
-
-    return updatedProduct.status;
+    return status;
 };
 
 // ==================================================================
