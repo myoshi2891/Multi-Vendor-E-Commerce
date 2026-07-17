@@ -167,6 +167,29 @@ export const createStripePayment = async (
 
 関数本体の残りは構造的には同じままだが — すべての `paymentIntent.*` が今や**取得済み**のオブジェクトを参照するため、`amount`、`currency`、`status` は Stripe 権威になる。それ以外の upsert/update の形は変更しないこと。
 
+> **「Stripe 権威」と「この注文と一致する」は別物である。** retrieve が証明するのは intent 自身の
+> 値であって、それが注文の請求額と合致することではない。upsert の前に明示的に突き合わせること —
+> さもないと `order.total` と異なる `amount`（あるいは `usd` 以外の通貨）の intent が
+> この注文の決済として記録される:
+>
+> ```ts
+> // metadata が正しくても amount/currency が食い違う intent を弾く
+> const expectedAmount = toStripeAmount(order.total);
+> if (paymentIntent.amount !== expectedAmount || paymentIntent.currency !== "usd") {
+>     throw new Error("Payment intent amount/currency mismatch.");
+> }
+> ```
+>
+> `toStripeAmount` は intent 作成時と**同一**の Decimal ベースのヘルパー
+> （`order.total.mul(100).toDecimalPlaces(0).toNumber()`）でなければならない。さもないと
+> 作成時と照合時がズレる。
+>
+> **実装済みのため再導出しないこと**: `src/queries/stripe.ts` は現在さらに
+> (a) 作成時に有効な intent id を記録し capture 時に一致を要求する、
+> (b) 確定済み `paymentStatus` からの遷移を拒否する — を行っており、metadata+amount+currency
+> だけでは残る「古い Pending/canceled intent が Paid を退行させる」穴を塞いでいる。
+> 詳細は [`audit/VETTED_FINDINGS.md`](../audit/VETTED_FINDINGS.md) の Round 10 / CR-03 を参照。
+
 **検証**: `bunx tsc --noEmit` → exit 0。
 
 ### Step 2: クライアント呼び出し元を id のみ渡すよう更新
@@ -189,7 +212,15 @@ const ownedAddress = await db.shippingAddress.findFirst({
 if (!ownedAddress) throw new Error("Shipping address not found.");
 ```
 
-残りのフローでは引き続き `shippingAddress.countryId` / `shippingAddress.id` を使用する — チェックはそれをゲートするだけである。（任意で、完全にサーバー由来にするため `ownedAddress.countryId` を使ってもよいが、所有権が証明された今は既存の `shippingAddress.countryId` でも許容できる。）
+そのうえで、**残りのフローで使う住所の値はすべてクライアント供給の `shippingAddress` ではなく `ownedAddress` から導出する** — 配送料の引き当てには `ownedAddress.countryId`、注文の `shippingAddressId` には `ownedAddress.id` を使う。
+
+> **`shippingAddress.countryId` を読み続けてはならない。** 上の所有権チェックが証明するのは
+> `shippingAddress.id` が呼び出し元のものであることだけで、クライアント供給オブジェクトの
+> **他のフィールドについては何も保証しない**。呼び出し元は**自分の**住所 `id` と**偽装した**
+> `countryId` を組み合わせれば、このチェックをそのまま通過できる。`countryId` は
+> `getDeliveryDetailsForStoreByCountry` を駆動するため、偽装値は別の国の配送料率を選択させる:
+> IDOR は塞がるが**配送料の改ざんは開いたまま**になる。id の所有権は行の完全性ではない —
+> 行を読み直してサーバー側の値を使うこと。
 
 **検証**: `bunx tsc --noEmit` → exit 0。
 

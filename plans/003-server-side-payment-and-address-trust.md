@@ -165,6 +165,28 @@ export const createStripePayment = async (
 
 The rest of the function body stays structurally the same — but every `paymentIntent.*` now refers to the **retrieved** object, so `amount`, `currency`, and `status` are Stripe-authoritative. Do not otherwise change the upsert/update shape.
 
+> **Stripe-authoritative is not the same as "matches this order".** The retrieve call proves the
+> intent's own values, not that they agree with what the order is owed. Reconcile them explicitly
+> before the upsert — otherwise an intent whose `amount` differs from `order.total` (or a non-`usd`
+> currency) is recorded as this order's payment:
+>
+> ```ts
+> // metadata が正しくても amount/currency が食い違う intent を弾く
+> const expectedAmount = toStripeAmount(order.total);
+> if (paymentIntent.amount !== expectedAmount || paymentIntent.currency !== "usd") {
+>     throw new Error("Payment intent amount/currency mismatch.");
+> }
+> ```
+>
+> `toStripeAmount` must be the **same** Decimal-based helper used at intent creation
+> (`order.total.mul(100).toDecimalPlaces(0).toNumber()`), or creation and verification drift apart.
+>
+> **Already shipped, do not re-derive**: `src/queries/stripe.ts` now also (a) records the active
+> intent id at creation and requires a match at capture, and (b) refuses transitions out of a
+> settled `paymentStatus` — closing the "old Pending/canceled intent downgrades a Paid order"
+> hole that metadata+amount+currency alone leaves open. See the Round 10 ledger entry CR-03 in
+> [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md).
+
 **Verify**: `bunx tsc --noEmit` → exit 0.
 
 ### Step 2: Update the client caller to pass the id only
@@ -187,7 +209,15 @@ const ownedAddress = await db.shippingAddress.findFirst({
 if (!ownedAddress) throw new Error("Shipping address not found.");
 ```
 
-Keep using `shippingAddress.countryId` / `shippingAddress.id` as before for the rest of the flow — the check just gates it. (Optionally use `ownedAddress.countryId` to be fully server-sourced, but the existing `shippingAddress.countryId` is acceptable since ownership is now proven.)
+Then **derive every address value the rest of the flow uses from `ownedAddress`, not from the client-supplied `shippingAddress`** — `ownedAddress.countryId` for the shipping-fee lookup and `ownedAddress.id` for `shippingAddressId` on the order.
+
+> **Do not keep reading `shippingAddress.countryId`.** The ownership check above only proves that
+> `shippingAddress.id` belongs to the caller — it says nothing about the other fields on the
+> client-supplied object. A caller can send their **own** address `id` together with a **forged**
+> `countryId` and pass the check unchanged. `countryId` drives
+> `getDeliveryDetailsForStoreByCountry`, so a forged value selects another country's shipping rate:
+> the IDOR is closed while the shipping-fee manipulation stays open. Ownership of the id is not
+> integrity of the row — re-read the row and use the server's values.
 
 **Verify**: `bunx tsc --noEmit` → exit 0.
 
