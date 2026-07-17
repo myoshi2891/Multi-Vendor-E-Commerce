@@ -111,8 +111,18 @@
 - **Fix sketch**: `tests/integration/product-update.test.ts` を新設。①specs/questions/sizes の
   全置換が正確に反映（旧行消滅・新行のみ残存）、②名前変更で slug 再生成 + 既存 slug と
   衝突時に `-1` suffix、③名前不変なら slug 不変、④sizes 置換で Wishlist.sizeId が NULL 化・
-  CartItem.sizeId は残存、⑤tx 途中失敗（不正 categoryId 等の FK 違反）で全子テーブルが
-  変更前のまま（原子性）、を検証。→ **plan 038**
+  CartItem.sizeId は残存、⑤tx **後段**での失敗で全子テーブルが変更前のまま（原子性）、を検証。
+  → **plan 038**
+
+  > **⑤の失敗注入について（訂正 2026-07-17 — plan 038 と統一）**: 当初の本文は
+  > 「不正 `categoryId` 等の FK 違反」としていたが、[plan 038](../038-integration-test-product-update-tx.md)
+  > （`:213-231`）がこれを**明示的に否決**している。`categoryId` 注入は tx の**最初の操作**
+  > `product.update` で失敗するため、Spec / Question / Size の置換が**そもそも実行されず**、
+  > 「実行したが巻き戻った」と「最初から実行していない」を区別できない
+  > — tx が無くてもテストが green になり、**原子性の証拠にならない**。
+  > 正しくは **Size 全置換より後段**へ失敗を注入する。038 の採用手段は plan 035 と同型の
+  > **テスト内 DDL による一時 CHECK 制約**で、tx 最終操作である variant 分の Spec create のみを
+  > 決定論的に落とす。**注入手段の詳細は plan 038 を正とする**（本ファイルでは再掲しない）。
 
 ### [TESTS-23] `getProducts`（browse 主経路）のフィルタ合成・ソート・ページングが実 DB 未検証
 
