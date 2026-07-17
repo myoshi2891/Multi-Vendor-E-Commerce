@@ -93,6 +93,7 @@ export const getStoreOrders = async (storeUrl: string) => {
 **In scope**:
 - `src/queries/store.ts` — add a bounded `take` to `getStoreOrders`
 - `src/app/(store)/browse/page.tsx` — remove the discarded call + unused import
+- `src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx` — surface the "showing the latest N orders" notice **required by the behavior-change caveat above**. Without this the plan mandates a user-facing signal it gives no in-scope file to write it in; shipping the bare `take` would be the silent truncation the caveat forbids.
 - `src/queries/store.test.ts` — assert the `take` bound
 - `plans/README.md` — update plan 009 status when complete
 

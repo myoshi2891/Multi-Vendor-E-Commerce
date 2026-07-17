@@ -29,6 +29,15 @@
 
 本プランは、store-orders クエリの戻り値形状を変えることなく（seller ページのクライアント側 `DataTable` の検索/ページネーションが引き続き動作するように）**防御的な上限**（`take`）を適用し、dead な browse ページの呼び出しを削除する。注文テーブルの完全なサーバー側ページネーションは意図的に**先送り**する — Maintenance notes 参照 — なぜならそれは `StoreOrderType` が消費する戻り値型を変え、DataTable のブラウザ内検索を退行させるため、この衛生的パスよりも大きくリスクの高い変更になるからである。
 
+> **振る舞いの変更に関する注意（純粋な衛生ではない）**: *戻り値の形*は不変だが、
+> *振る舞い*は不変ではない — `take` を超える注文を持つ店舗は、seller ビューから
+> 最古の注文が**サイレントに脱落**し、UI 上の signal は何も出ない。これはユーザーに
+> 見える切り捨てであり、プロダクト契約として扱うこと: seller ページは `take` と併せて
+> 「最新 N 件を表示中」の告知（または同等の affordance）を**必ず**出さなければならない。
+> また後続の PERF-04 が本物のページネーションを提供するまで、本番でこの上限に
+> 到達しうる状態にしてはならない。**素の `take` を、あたかも不可視であるかのように
+> 出荷しないこと。**
+
 ## Current state
 
 ### 無制限の `getStoreOrders`、`src/queries/store.ts:361-393`
@@ -87,6 +96,7 @@ export const getStoreOrders = async (storeUrl: string) => {
 **対象内**:
 - `src/queries/store.ts` — `getStoreOrders` に有界な `take` を追加
 - `src/app/(store)/browse/page.tsx` — 破棄された呼び出し + 未使用 import を削除
+- `src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx` — 上記の**振る舞いの変更に関する注意が要求する**「最新 N 件を表示中」の告知を出す。これが無いと、プランはユーザーに見える signal を義務付けながら、それを書き込む対象内ファイルを与えていないことになり、素の `take` の出荷は注意が禁じるサイレントな切り捨てそのものになる。
 - `src/queries/store.test.ts` — `take` の上限を assert
 - `plans/README.md` — 完了時に plan 009 のステータスを更新（別の docs コミット）
 
