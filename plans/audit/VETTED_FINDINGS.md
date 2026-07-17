@@ -444,7 +444,11 @@ triage を挟んだ理由そのもの。
   実装完了と実行状態を分離しており、部分的な反証があった。主旨（✅ が実行成功を含意する）は
   正当なため、実際の対象行で対応した（節冒頭に R8 実測の注記 + 見出しを「✅ 実装完了」へ）。`c2ad9e6`
 
-### Round 10 deferred — plans/ 計画書 59 件（Round 11 で triage 予定）
+> **⚠️ 本節の進捗は下の「Round 11 追記」を必ず参照すること。** 59 件のうち **25 件は
+> Round 11 で処理済み**（妥当 24 件を修正 / 却下 1 件）。**残り 34 件が未着手**。
+> 本節の表は「採取した 59 件の原文」を保持するアーカイブであり、進捗は反映していない。
+
+### Round 10 deferred — plans/ 計画書 59 件（Round 11 で triage 開始）
 
 > **永続化の理由**: 本一覧の出所はスクリーンショットのみで、GitHub にも `gh api` にも存在しない。
 > セッションのコンテキストが失われると**対象そのものが復元不能**になるため、
@@ -557,3 +561,76 @@ triage を挟んだ理由そのもの。
 > コミット `ee80cda` / `923219d`（「in-scope file check を code commit にスコープする」）が
 > plans/ 側にのみ適用され、ja 側へ伝播していない可能性が高い。Round 11 では**まとめて 1 コミット**で
 > 処理できるか（rule 02 の「同一カテゴリ・3 ファイル以下・200 行未満」基準）を判断すること。
+
+---
+
+## Round 11 追記 — CodeRabbit ローカルレビュー triage 第2弾（2026-07-17 / HEAD `27757a3`）
+
+> **対象**: Round 10 deferred の plans/ 計画書 59 件（上記「Round 10 deferred」節の P-01〜P-59）。
+> **本ラウンドで 25 件を処理**（妥当 24 件を修正 / 却下 1 件）。**残り 34 件は未着手**（下記「Round 11 未着手」）。
+> 出所・制約・注意事項は Round 10 の冒頭注記と同じ（GitHub に存在せず `gh api` で取得不可・
+> 根拠はスクリーンショットの 1 行タイトルのみ・行番号は採取時点のもの）。
+
+### Round 11 の運用で確立した判断基準（後続ラウンドはこれを踏襲すること）
+
+1. **EN / ja はペアで扱う**。`plans/NNN-*.md` と `plans/ja/NNN-*.md` は同一プランの言語違いであり、
+   同一の欠陥が両方に存在することが多い（実績: P-01/P-49、P-02/P-52、P-51、P-05/P-56、P-06/P-58）。
+   片方だけ直すと翻訳ドリフトが残る。**修正時は必ず対になる版を確認**し、同一コミットにまとめる。
+2. **凍結は絶対ではない**。`plans/direction/` の冒頭（OPERATIONS L13 / EXPANSION L304）は
+   **(a) 参照リンクの修正 と (b) 明らかな事実誤り（引用コード・行番号・仕様の記述ミス）の訂正のみ**を
+   明示的に許可している。「凍結だから全部却下」は誤り — **例外条項まで読んでから判定する**
+   （実績: P-44 は事実誤りのため許可範囲内で訂正 / P-45 は体裁の問題で許可範囲外のため却下）。
+3. **指摘タイトルの字面適用は設計意図を壊す**（Round 10 の CR-03 と同じ教訓）。必ず実コードへ照合する。
+4. **行番号は CodeRabbit 側が誤っていることがある**（Round 10 の CR-14 実績）。指摘行に該当物が
+   無い場合、主旨が妥当なら**実際の対象行を探して**対応する。
+
+### Round 11 accepted（妥当・修正済み 24 件）
+
+| # | 対象 | 判定根拠（要約） | コミット |
+|---|------|----------------|---------|
+| P-46 / P-48 / P-50 / P-54 / P-55 / P-57 | `plans/ja/{001,002,003,008,009,010}` | Scope が `plans/README.md` を含まないのに Done criteria が「対象外リストのファイルが一切変更されていない」と「README のステータス行が更新されている」を同時要求 = **両立不能**。英語版は Round 9 の `ee80cda` で修正済みだが ja へ未伝播。各ファイルを**対応する英語版と同一のパターン**へ揃えた（001/002 は Done criteria の限定のみ / 003/008/009/010 は Scope への README 追記も。010 は `ee80cda` の対象 001-009 外のため ja 側のみの不一致） | `b96e5b3` |
+| P-44 | `plans/direction/EXPANSION_BLUEPRINT.md` + `docs/architecture/expansion/02-current-state.md` | 「tsvector が式評価でインデックスも無い」は**事実誤り**。GIN 式インデックス `Product_fulltext_idx` が実在（`prisma/migrations/20260222101357_init_postgresql/migration.sql:503`）。`findings-03:130` は既に「正しく裏打ち」と記録済みで、docs 側（正式版）と原本に旧主張が残存していた。**凍結の許可範囲 (b) に該当**するため原本も訂正 | `39da9b6` |
+| P-38 | `plans/ADVISOR_STATE.md` | NEXT が 051/056 のみで **P1 の 057 を落としていた**。`README.md:103` の Status 表は 057 を「P1 / 依存ゼロ / TODO」、同 140-146 は「テスト系プラン群より優先する」と明記しており矛盾 | `731a254` |
+| P-39 | `plans/ADVISOR_STATE.md` | 再開プロンプトの「ソースコード変更禁止」が Hard Rule 1 の **execute バリアント例外**（executor サブエージェントが隔離 worktree でコードを編集）を否定。`07ec68b` が Rule 1 を純化した際の取り残し。なお「plans/ のみをコミット」は Hard Rule 2 の "Landing any of it on the user's branch stays the user's decision" に該当するユーザー指示のため**矛盾扱いせず現状維持** | `731a254` |
+| P-40 | `plans/README.md` | ヘッダーの監査履歴が Round 7 で停止。Round 8（HEAD `fbd1020`）/ Round 9（HEAD `25e50d9`）を追記 | `9cca76a` |
+| P-41 | `plans/README.md` | **実害のある矛盾**。rejected 記録「DEPS-08 Next.js 16.2.1: already current — no action」は Round 1（`f9752c0` / 2026-07-03、advisory 未公表時）の判断だが、plan 057 は同じ `next@16.2.1` を HIGH（GHSA-26hh-7cqf-hhc6）として P1 bump を要求。**読者が 057 を「再監査済みの却下事項」と誤認して脆弱性対応を握り潰す危険** | `9cca76a` |
+| P-42 | `plans/audit/VETTED_FINDINGS.md` | Round 9 のプラン化は 051-056（TESTS-39〜44）のみで、**057 の provenance がどのラウンドにも存在しなかった**。057 は依存監査由来の独立プラン（`7f7bb71`）でカテゴリも `dependencies`。recon の `bun audit` 証跡表・「監査後の変化」表が `next` を含まない理由（監査時点で advisory 未公表）も記録。あわせて Round 10 の列挙で 057 を「E2E プラン」に分類していた**自らの誤り**も訂正 | `9cca76a` |
+| P-43 | `plans/audit/findings-14-integration-coverage-r6.md` | 「`undefined` は Prisma が条件ごと無視する」を**無条件の前提**にしていた。現行 `prisma@5.22.0`（`strictUndefinedChecks` 未有効）では成立するが、DEPS-04 の Prisma 5→6 移行で前提が変わりうる。キー自体を条件付きで生やす形へ改めバージョン非依存にした | `9cca76a` |
+| P-01 / P-49 | `plans/002` + `plans/ja/002` | プランの Current state（L23）が `averageRating` / `numReviews` を特権カラムと明示し "fake their rating" を塞ぐべき攻撃に挙げながら、**Step 5 の回帰テストは `status` / `featured` しか assert していない** = 自ら定義した脅威に回帰網が無い。`3247e42` が `applySeller` create 側のみ assert 済みで、`upsertStore` の update/create 2 経路が未カバー | `d036f53` |
+| P-02 / P-52 | `plans/003` + `plans/ja/003` | **誤った安全性の主張**。「所有権が証明された今は既存の `shippingAddress.countryId` でも許容できる」は誤り — 所有権チェックは `{ id, userId }` の一致しか見ず、クライアント供給オブジェクトの他フィールドは無保証。自分の住所 id と偽装 `countryId` で通過でき、`countryId` は `getDeliveryDetailsForStoreByCountry` を駆動するため**配送料改ざんが開いたまま**。実装は既に `user.ts:509-511` で `ownedAddress.countryId` を使用しており、プランのみが取り残されていた | `d1493a4` |
+| P-51 | `plans/003` + `plans/ja/003` | 「amount / currency / status は Stripe 権威になる」で停止し**注文との突き合わせが無い**。Stripe 権威であることと `order.total` と一致することは別問題。amount/currency 照合と、`toStripeAmount` が作成時と同一の Decimal ヘルパーである必要を追記。Round 10 (CR-03) 実装済みの有効 intent 一致確認・確定状態ガードも参照させた | `d1493a4` |
+| P-03 | `plans/005` | 永続化テストが「保存された形が persist ラッパーである」ことしか見ておらず、これは**シリアライズ形のプロキシ**。真の不変条件は「書いたものが読み戻せる」こと（version 不一致・キー改名・`partialize` の脱落があれば shape 検証は通ったまま rehydrate が壊れ、**テスト緑のままカートが消える**）。`persist.rehydrate()` の往復検証と、`totalItems` / `totalPrice` の再計算 assert を必須化 | `ebef82d` |
+| P-04 | `plans/006` | 「この領域にコンポーネントテストが無ければ scaffold せず手動確認」という条件分岐が残存。**`src/components/store/cards/place-order.test.tsx` は現に存在**し mock 一式も揃っているため、回帰テストは必須。条件分岐を削除し Test plan を実在ケースに合わせて確定 | `ebef82d` |
+| P-05 / P-56 | `plans/009` + `plans/ja/009` | **プランの自己矛盾**。behavior-change caveat が「seller ページは『最新 N 件を表示中』の告知を必ず出せ」と義務付ける一方、In scope に**その UI ファイルが無い**（store.ts / browse/page.tsx / store.test.ts / README のみ）= スコープ内で義務を果たせず、素の `take` 出荷は caveat 自身が禁じるサイレント切り捨てになる。`src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx`（`getStoreOrders` の唯一の呼び出し元）を Scope へ追加。ja 版には caveat ブロック自体が欠落していたため EN 同等に補った | `b4545b7` |
+| P-06 | `plans/011` + `plans/ja/011` | Clerk URL 変数が同一プラン内で**3 通りに扱われていた**（superset は「必須」に含める / 「README に不足」リストは除外 / `.env.example` テンプレートは「必要に応じて」とコメントアウト）。加えて `.env.docker.example:28` の `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` がどこにも出てこない。実測で `src/` は 3 変数とも未参照（grep 0 件）= Clerk がライブラリ設定として読むだけで**任意**。ただし本リポジトリは `src/app/(auth)/` にカスタム認証ページを持ち値は確定。「既定値ありの任意」で 3 箇所を統一 | `27757a3` |
+| P-58 | `plans/011` + `plans/ja/011` | **指摘が実測で実証された**。修正手順の検索範囲（`docs/ README.md .claude/ specs/`）が検証コマンド（リポジトリ全体）より狭く、範囲外の参照は修正を免れたままゲートだけが落ちる。実測: `plans/` に約 15 件（`ADVISOR_STATE.md` / `audit/recon.md` / `audit/findings-07` / `audit/VETTED_FINDINGS.md` / 本プラン EN・ja 自身）、`docs/design/*/README.md` に約 11 件。修正・検証とも全リポジトリ検索へ統一 | `27757a3` |
+
+### Round 11 rejected（再監査防止）
+
+- **P-45 `plans/direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` 137-155「`Store.returnPolicy` の決定事項を箇条書きへ戻してください」**:
+  **却下 — 凍結の許可範囲外**。指摘自体は構造欠陥として正しい（`（期間・対象外カテゴリ。`Store.returnPolicy String` の構造化を含む）` が
+  「決めるべきこと」の「返品ポリシーのデータ化」に係る括弧書きなのに、間に `TODO(needs-detail)` の
+  blockquote が挿入されて親項目から切り離されている）。しかし本ファイルは凍結済み原本で、
+  許可されるのは **(a) 参照リンクの修正 / (b) 明らかな事実誤りの訂正のみ**（L13 / L263）。
+  体裁の崩れはどちらにも該当しない。**かつ昇格先の正式版
+  [`docs/architecture/expansion/04-architecture-pillars.md:77-79`](../../docs/architecture/expansion/04-architecture-pillars.md)
+  は既に正しく整形されている**（括弧書きが親項目に直接続く）ため、下流への実害もない。
+
+### Round 11 未着手（34 件 — 次ラウンドの対象）
+
+上記「Round 10 deferred」節の原文表を参照。未着手は以下:
+
+| 群 | 項目 | 件数 | 参照節 |
+|---|------|-----|-------|
+| spike プラン | **P-07〜P-17** | 11 | 「spike プラン（013-025）」 |
+| テスト実装プラン | **P-18〜P-28** | 11 | 「テスト実装プラン（026-041）」 |
+| E2E プラン | **P-29〜P-37** | 9 | 「E2E プラン（042-056）+ 依存プラン（057）」 |
+| ja 個別 | **P-47**（ja/001 IDOR テストの検証範囲）/ **P-53**（ja/004 依存更新後の変更可能ファイル範囲）/ **P-59**（ja/012 完了条件の矛盾） | 3 | 「日本語版プラン（plans/ja/）」 |
+
+**注意点（着手前に読むこと）**:
+- **P-12（019 の評価集計競合）・P-14（021 の送信前記録）・P-13（020 の法域要件）は設計判断**を含む。
+  spike プランは「決めるべきこと」を列挙する検討ドキュメントであり、**決定を書き込む先は spike の
+  成果物側**（Round 3 の凍結注記が「本ファイルの『決めるべきこと』を決定事項で書き換えないこと」と
+  規定しているのと同型の注意）。プランの記述矛盾の修正と、未確定の設計判断の確定を混同しないこと。
+- **P-36 / P-37 の対象 057 は E2E ではなく `dependencies`**（provenance は上記「plan 057 の provenance」節）。
+- ja 側にペアが存在する項目は EN と同時に確認すること（上記「Round 11 の運用で確立した判断基準」1）。
