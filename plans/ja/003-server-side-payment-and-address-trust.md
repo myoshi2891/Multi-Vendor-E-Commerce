@@ -123,6 +123,7 @@ const order = await db.$transaction(async (tx) => {
 - `src/components/store/cards/payment/stripe/stripe-payment.tsx` — サーバーが必要とする値のみを渡すよう呼び出しを更新
 - `src/queries/user.ts` — `placeOrder` の住所所有権チェック
 - `src/queries/stripe.test.ts`、`src/queries/user.test.ts` — テスト
+- `plans/README.md` — 完了時に plan 003 のステータスを更新（別の docs コミット）
 
 **対象外**:
 - 署名済み webhook ハンドラ（`src/app/api/webhooks/stripe/route.ts`）— 既に権威的経路；変更しない。
@@ -235,7 +236,7 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 - [ ] `grep -n "paymentIntents.retrieve" src/queries/stripe.ts` がサーバー側再取得を示す
 - [ ] `grep -n "shippingAddress.findFirst" src/queries/user.ts` が所有権チェックを示す
 - [ ] `createStripePayment` のシグネチャが `paymentIntentId: string` を取る（`PaymentIntent` ではない）
-- [ ] 対象外リストのファイルが一切変更されていない（`git status`）
+- [ ] **コードコミットの時点で**、対象外リストのファイルが一切変更されていない（`git status`）— `plans/README.md` のステータス行更新は別の docs コミットで行う
 - [ ] `plans/README.md` の 003 のステータス行が更新されている
 
 ## STOP conditions

@@ -265,7 +265,7 @@ data: {
 - [ ] `grep -n "status: store.status" src/queries/store.ts` がマッチしない
 - [ ] `grep -n "featured: store.featured" src/queries/store.ts` がマッチしない
 - [ ] `grep -n "\.\.\.store\b" src/queries/store.ts` が `db.store.create`/`update` の data ペイロードへの生クライアント spread を残していない
-- [ ] 対象外リストのファイルが一切変更されていない（`git status`）
+- [ ] **コードコミットの時点で**、対象外リストのファイルが一切変更されていない（`git status`）— `plans/README.md` のステータス行更新は別の docs コミットで行う
 - [ ] `plans/README.md` の 002 のステータス行が更新されている
 
 ## STOP conditions

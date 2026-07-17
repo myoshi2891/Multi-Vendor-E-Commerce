@@ -84,6 +84,7 @@ export function computeShippingTotal(
 
 **対象内**:
 - `src/lib/shipping-utils.test.ts`（新規作成）
+- `plans/README.md` — 完了時に plan 010 のステータスを更新（別の docs コミット）
 
 **対象外**:
 - `src/lib/shipping-utils.ts` — 実装は**変更しない**こと。テストが本物のバグ（例えば予期しない method 値で `result` が未到達/未初期化になる等）を明らかにした場合、STOP してそれを finding として報告する — このテスト専用プランで「修正」しない。

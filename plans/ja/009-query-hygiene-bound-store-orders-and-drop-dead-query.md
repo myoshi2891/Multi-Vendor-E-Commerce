@@ -88,6 +88,7 @@ export const getStoreOrders = async (storeUrl: string) => {
 - `src/queries/store.ts` — `getStoreOrders` に有界な `take` を追加
 - `src/app/(store)/browse/page.tsx` — 破棄された呼び出し + 未使用 import を削除
 - `src/queries/store.test.ts` — `take` の上限を assert
+- `plans/README.md` — 完了時に plan 009 のステータスを更新（別の docs コミット）
 
 **対象外**:
 - `getStoreOrders` の戻り値形状の変更やページパラメータの追加（先送り；`StoreOrderType` + DataTable の検索を壊す）。
@@ -172,7 +173,7 @@ expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
 - [ ] `bun run test -- src/queries/store.test.ts` が exit 0；`take` アサーションが pass
 - [ ] `bun run lint` が exit 0
 - [ ] `src/lib/types.ts`、seller/admin の `columns.tsx`、`columns.test.tsx` が変更されていない（`git status`）
-- [ ] 対象外リストのファイルが一切変更されていない（`git status`）
+- [ ] **コードコミットの時点で**、対象外リストのファイルが一切変更されていない（`git status`）— `plans/README.md` のステータス行更新は別の docs コミットで行う
 - [ ] `plans/README.md` の 009 のステータス行が更新されている
 
 ## STOP conditions

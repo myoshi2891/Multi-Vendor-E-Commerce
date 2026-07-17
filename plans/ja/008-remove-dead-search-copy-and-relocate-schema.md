@@ -83,6 +83,7 @@ const AdminOrderFilterSchema = z.object({
 - `src/components/store/layout/header/search/search copy.tsx` を削除
 - `src/lib/schemas.ts` — `AdminOrderFilterSchema`（+ 推論型）を追加
 - `src/queries/order.ts` — 定義する代わりにスキーマを import する
+- `plans/README.md` — 完了時に plan 008 のステータスを更新（別の docs コミット）
 
 **対象外**:
 - `search.tsx` / `suggestions.tsx` — 現行コンポーネント；触らない。
@@ -172,7 +173,7 @@ import { OrderStatus, PaymentStatus } from "@/lib/types";
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `bun run test -- src/queries/order.test.ts` が exit 0
 - [ ] `bun run lint` が exit 0
-- [ ] 対象外リストのファイルが一切変更されていない（`git status`）
+- [ ] **コードコミットの時点で**、対象外リストのファイルが一切変更されていない（`git status`）— `plans/README.md` のステータス行更新は別の docs コミットで行う
 - [ ] `plans/README.md` の 008 のステータス行が更新されている
 
 ## STOP conditions
