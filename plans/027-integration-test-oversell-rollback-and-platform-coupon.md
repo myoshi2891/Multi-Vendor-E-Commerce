@@ -115,7 +115,10 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
 **In scope — テスト/seed（1〜2 コミット目）**:
 - `tests/integration/order-placement.test.ts` — シナリオ追加 + 冒頭 JSDoc 更新
 - `tests/integration/setup/seed.ts` — `SeedCouponInput` に optional `scope?: CouponScope` を追加
-  （`db.coupon.create` の data に `scope: input.scope`。未指定時の既定は Step 1 で**検証**する）
+  （`db.coupon.create` の data に `scope: input.scope`。未指定時の既定は Step 1 で**検証**する）。
+  **あわせて `storeId` を `string | null` に広げる**（現状は `storeId: string` で必須・非 null のため
+  PLATFORM クーポンを `storeId: null` で seed できない。`prisma/schema.prisma` の `Coupon.storeId` は
+  `String?` なので DB 側は元から null 可）。既存の呼び出し側は文字列を渡しており影響を受けない
 
 **In scope — ドキュメント同期（後続の別コミット）**:
 - `spec-sync-after-test` の成果物一式（Step 6）— Integration テスト数が 17→20 に変動するため
@@ -148,7 +151,7 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
 
 **Verify**: `Tests: 17 passed` 相当の出力。
 
-### Step 1: `seedCoupon` に scope を追加
+### Step 1: `seedCoupon` に scope を追加し、storeId を nullable にする
 
 まず `scope` 未指定時の既定を**推測せず確認**する:
 `grep -n "scope" prisma/schema.prisma` で `Coupon.scope` に `@default(STORE)` が付いていることを
@@ -163,6 +166,14 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
 > 根拠: `scope: undefined` を Prisma の create に渡すと「その列を省略」扱いになり、**列に
 > `@default` があるときだけ**既定値が入る。`@default` が無い場合は省略が NOT NULL 違反になる。
 > よって「undefined → 既定 STORE」は schema を確認してからでないと断定できない。
+
+あわせて `SeedCouponInput.storeId` を **`string` から `string | null` へ広げる**（Step 4 の
+PLATFORM クーポンを `storeId: null` で seed するため。理由は Step 4 の blockquote 参照）。
+`prisma/schema.prisma` の `Coupon.storeId` は `String?` なので DB 側は元から null を許容しており、
+ヘルパーの型だけが不必要に狭かった。`storeId` は必須プロパティのまま（`?` は付けない） ——
+**PLATFORM/STORE いずれの場合も呼び出し側に明示させる**ことで、書き忘れによる暗黙の紐付けを防ぐ。
+既存の呼び出し側（`order-placement.test.ts:379` / `cart-checkout.test.ts:373`）は文字列を渡して
+おり、型の緩和による影響を受けない。
 
 **Verify**: `grep` で `Coupon.scope @default(STORE)` を確認 → `bunx tsc --noEmit` exit 0 →
 `bun run test:integration` 既存 17 全 pass（回帰なし）。ここで 1 コミット目。
@@ -247,8 +258,22 @@ Arrange は Scenario 4（store-scoped coupon）を手本に **2 店舗**を seed
 - store X（storeId ソートで先になるよう seed 順は不問 — assert 側でソートして特定する）:
   商品 $33.33 × 1（sizePrice: 33.33, quantity 1）
 - store Y: 商品 $66.67 × 1
-- クーポン: `seedCoupon(db, { storeId: <どちらでも可>, discount: 10, scope: "PLATFORM" })`
+- クーポン: `seedCoupon(db, { storeId: null, discount: 10, scope: "PLATFORM" })`
   → `seedCart(db, { userId, couponId: coupon.id })`
+
+  > **`storeId` は `null` に固定すること**（店舗 X / Y のどちらかを入れない）。理由は 3 つ:
+  > 1. **テストの識別力**（最重要）。`user.ts:671` の判定は論理和である:
+  >    `const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCouponValid)`
+  >    `storeId` に店舗 X を入れると、**X への割引は 2 つの項のどちらからでも到達できる**ため、
+  >    「PLATFORM 分岐が効いた」ことを assert で証明できない（STORE 一致の項で通っただけかもしれず、
+  >    Scenario 9 が主張する内容を検証していないことになる）。`null` ならどの店舗の `storeId` とも
+  >    一致しないので、**割引が生じる経路が `isPlatformCoupon` に一意に絞られる**。
+  > 2. **ドメイン意味論**。PLATFORM スコープのクーポンは特定店舗に所有されない。実装も PLATFORM 時は
+  >    `storeId` を参照しない（`user.ts:671` の短絡 / `:1153-1155` は全 item を対象にする）。
+  >    非 null を入れた fixture はモデルを誤って教える。
+  > 3. **Cascade の巻き添え**。`Coupon.store` は `onDelete: Cascade`（`prisma/schema.prisma`）。
+  >    PLATFORM クーポンに `storeId` を持たせると、**その店舗の削除で全社クーポンごと消える**。
+  >    fixture がこの形を再現すべきではない。
 - 商品小計 = $100.00、PLATFORM 10% → `platformTotalDiscount = $10.00`
 - 各グループの単純 10% は 3.333 / 6.667 と割り切れない → 端数吸収の検証に適する
 
