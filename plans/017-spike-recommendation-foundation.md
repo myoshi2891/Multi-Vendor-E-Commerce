@@ -194,7 +194,7 @@ ALL を満たすこと:
 - [ ] v1 各戦略の SQL/Prisma 雛形が現行スキーマで書かれている（PoC 実行結果は任意）
 - [ ] seam のシグネチャと戻り値型が確定し、将来差し替えの検算が書かれている
 - [ ] `plans/0NN-implement-recommendations-v1.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 017 ステータス行を更新した
 
 ## STOP conditions

@@ -197,7 +197,7 @@ ALL を満たすこと:
 - [ ] `docs/design/category-tree/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] ADR（ツリー表現方式）が MADR 形式で存在し、3方式の比較を含む
 - [ ] `plans/0NN-implement-category-tree.md` が存在し、テンプレート準拠で zero-context executor が実行可能
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみを示す）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 013 ステータス行を更新し、後続プランを索引に追加した
 
 ## STOP conditions

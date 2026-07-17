@@ -216,7 +216,7 @@ ALL を満たすこと:
 - [ ] イベント → 通知の初期マッピング表（016/018 の計画中イベント含む）が design doc にある
 - [ ] 「通知失敗が主処理を壊さない」ことの設計上の保証（実行モデルの選定根拠）が明記されている
 - [ ] `plans/0NN-implement-notification-foundation.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマ・package.json は未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマ・package.json は未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 021 ステータス行を更新した
 
 ## STOP conditions

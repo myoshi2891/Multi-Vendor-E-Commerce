@@ -202,7 +202,7 @@ ALL を満たすこと:
 - [ ] `docs/design/faceted-search/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] 統合後アーキテクチャのシーケンスと SQL/Prisma 雛形が design doc にある
 - [ ] `plans/0NN-implement-faceted-search.md`（または分割プラン群）が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 015 ステータス行を更新した
 
 ## STOP conditions

@@ -227,7 +227,7 @@ ALL を満たすこと:
 - [ ] 遷移表・接続点定義表（DIRECTION-01 / 012 / 021 / DIRECTION-03）が design doc にある
 - [ ] 返品ポリシーが「コード変更なしでブランド別に差し替え可能」である説明が design doc にある
 - [ ] `plans/0NN-implement-returns-rma.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 018 ステータス行を更新した
 
 ## STOP conditions

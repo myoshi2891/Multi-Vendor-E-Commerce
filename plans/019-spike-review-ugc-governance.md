@@ -216,7 +216,7 @@ ALL を満たすこと:
 - [ ] モデレーションモードが「コード変更なしで差し替え可能」である説明が design doc にある
 - [ ] spike 016 のポリシー機構との整合（同一表現 or 相互参照）が明記されている
 - [ ] `plans/0NN-implement-review-governance.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 019 ステータス行を更新した
 
 ## STOP conditions

@@ -180,7 +180,7 @@ ALL を満たすこと:
 - [ ] `docs/design/category-attributes/design.md` が存在し、全6問に決定 + 証拠がある
 - [ ] ADR（格納方式）が存在し、3方式の集計 SQL 雛形比較を含む
 - [ ] `plans/0NN-implement-category-attributes.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 014 ステータス行を更新した
 
 ## STOP conditions

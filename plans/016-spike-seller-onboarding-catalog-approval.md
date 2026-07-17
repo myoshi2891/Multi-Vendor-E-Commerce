@@ -215,7 +215,7 @@ ALL を満たすこと:
 - [ ] 公開経路の棚卸し表と BANNED/DISABLED 露出の検証結果が design doc にある
 - [ ] enum 命名が既存 `ProductStatus`（schema.prisma:560 — 注文アイテム配送状態）と衝突していない
 - [ ] `plans/0NN-implement-catalog-approval.md` が存在し、テンプレート準拠
-- [ ] ソースコード・スキーマは未変更（`git status` が新規ドキュメント/プランのみ）
+- [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 016 ステータス行を更新し、露出問題があれば deferred 節に追記した
 
 ## STOP conditions

@@ -164,7 +164,7 @@ ALL must hold:
 - [ ] `docs/design/inventory-restock/design.md` exists and answers all six open questions with decisions + evidence
 - [ ] The design names the exact restock-triggering enum values and the chosen exactly-once mechanism (a or b) with justification
 - [ ] `plans/<next-free-number>-implement-item-level-restock.md` exists at a number that was free when created, is template-compliant, and is ready for a zero-context executor
-- [ ] No source files or schema were modified (`git status` shows only new docs/plan files)
+- [ ] No source files or schema were modified (`git status` shows only new docs/plan files, plus the `plans/README.md` index update below)
 - [ ] `plans/README.md` status row for 012 updated and the new follow-up plan added to the index under its chosen number
 
 ## STOP conditions
