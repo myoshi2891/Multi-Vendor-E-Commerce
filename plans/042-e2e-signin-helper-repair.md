@@ -176,26 +176,14 @@ export async function signInWithPassword(
     // 送信ボタンは exact: true 必須（理由は下記「注意」参照）
     const continueButton = clerkRoot.getByRole("button", { name: "Continue", exact: true });
 
-    // 現行 UI は識別子 + パスワード同一画面。
-    // 1 段 / 2 段の判定前に「パスワード欄の状態が確定する」まで待つ。
-    // isVisible() の即時評価では、ハイドレーション直後にまだ password 欄が
-    // 描画されていないだけの状態を「2 段 UI」と誤判定しうる（下記「注意」参照）。
+    // 現行 UI は識別子 + パスワード同一画面（Why this matters で実測確定済み）。
+    // UI 形式は Clerk の「設定」で決まる静的な性質なので、時間で推測せず assert する。
+    // 形式が変わったらここで大声で失敗させ、helper を意図的に更新させる（下記「注意」参照）。
     const passwordInput = clerkRoot.locator('input[name="password"]');
-    const isSingleStep = await passwordInput
-        .waitFor({ state: "visible", timeout: 3000 })
-        .then(() => true)
-        .catch(() => false);
+    await expect(passwordInput).toBeVisible({ timeout: 15000 });
 
-    if (isSingleStep) {
-        await passwordInput.fill(password);
-        await continueButton.click();
-    } else {
-        // 旧 2 ステップ UI へのフォールバック（Clerk 設定差分に備える）
-        await continueButton.click();
-        await passwordInput.waitFor({ state: "visible", timeout: 10000 });
-        await passwordInput.fill(password);
-        await continueButton.click();
-    }
+    await passwordInput.fill(password);
+    await continueButton.click();
 
     // サインイン成立 = Clerk フォームが DOM から消える
     await expect(clerkRoot).toBeHidden({ timeout: 20000 });
@@ -216,13 +204,23 @@ export async function signInWithPassword(
   ボタンにもマッチして **strict mode violation**（2 要素ヒット）になるか、最悪
   Google ボタンをクリックして OAuth へ飛ぶ。既存コード（Current state の抜粋）が
   `exact: true` を付けているのは偶然ではないので、書き換え時に落とさないこと。
-- **1 段 / 2 段の判定に `isVisible()` の即時評価を使わない**。`clerkRoot` が visible に
-  なった時点では Clerk ウィジェット内部のフォームがまだ描画途中でありうる。この瞬間に
-  `isVisible()` を呼ぶと `false` が返り、**実際は 1 段 UI なのに 2 段フォールバックへ
-  分岐**する。その結果、識別子だけを入れて Continue を押し、パスワード欄の出現を
-  10s 待って失敗する（現行の失敗と似た症状に化けるため原因究明が難しくなる）。
-  短い timeout 付きの `waitFor({ state: "visible" })` を `.then(true)/.catch(false)` で
-  受けて**状態が確定してから**分岐すること。
+- **1 段 / 2 段を「時間」で判定しない**（`isVisible()` の即時評価も、短い timeout 付き
+  `waitFor` の `.then(true)/.catch(false)` も**どちらも不可**）。
+  `clerkRoot` が visible になった時点では Clerk ウィジェット内部のフォームがまだ描画途中で
+  ありうるため、その瞬間の `isVisible()` は `false` を返し、**実際は 1 段 UI なのに 2 段
+  フォールバックへ分岐**する。識別子だけ入れて Continue を押し、パスワード欄の出現を待って
+  失敗する（現行の失敗と似た症状に化けるため原因究明が難しくなる）。
+  **短い timeout（例: 3s）付きの `waitFor` に置き換えても、これは緩和であって解決ではない** ——
+  遅い CI・コールドスタート・初回コンパイルで描画が閾値を超えれば同じ誤分岐が起き、
+  しかも**閾値付近でのみ再現する**ため最悪の形のフレークになる。空パスワードのまま Continue が
+  押される経路が残る限り、本プランが撲滅対象にしている不安定さを修復コード自身が再導入する。
+  タイムアウトが測っているのは「時間」であって「UI 形式」ではない。
+  **UI 形式は Clerk の設定で決まる静的な性質**なので、現行形式（1 段 = 識別子 + パスワード同一画面。
+  Why this matters で実測確定済み）を **`expect(passwordInput).toBeVisible()` で assert し、
+  分岐そのものを持たない**こと。待ち時間は「描画を待つ」ためだけに使い、判定には使わない。
+  将来 Clerk 設定が 2 段へ変わった場合はこの assert が**明確なメッセージで失敗**するので、
+  helper を意図的に更新できる（黙って誤分岐してフレークするより、失敗が早く・原因が自明）。
+  投機的な 2 段フォールバックは、実際に 2 段 UI を使う環境が現れるまで**書かない**。
 - **`toBeHidden` の後に `waitForURL` を必ず置く**。フォームの消滅は「Clerk が受理した」
   ことしか意味せず、リダイレクト完了は保証しない。ここで待たないと、呼び出し側の
   最初の `goto` / `click` がリダイレクト途中に割り込み、`/sign-in` へ差し戻される
