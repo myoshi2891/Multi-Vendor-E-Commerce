@@ -616,16 +616,17 @@ triage を挟んだ理由そのもの。
   [`docs/architecture/expansion/04-architecture-pillars.md:77-79`](../../docs/architecture/expansion/04-architecture-pillars.md)
   は既に正しく整形されている**（括弧書きが親項目に直接続く）ため、下流への実害もない。
 
-### Round 11 未着手（34 件 — 次ラウンドの対象）
+### Round 11 未着手（34 件）→ **Round 12 で全件処理済み**
 
-上記「Round 10 deferred」節の原文表を参照。未着手は以下:
+> ✅ **本表は解消済み**。下記 34 件はすべて「Round 12 追記」節で triage 済み
+> （accepted 30 / rejected 4）。**未着手はゼロ**。以下は経緯の記録として残す。
 
-| 群 | 項目 | 件数 | 参照節 |
-|---|------|-----|-------|
-| spike プラン | **P-07〜P-17** | 11 | 「spike プラン（013-025）」 |
-| テスト実装プラン | **P-18〜P-28** | 11 | 「テスト実装プラン（026-041）」 |
-| E2E プラン | **P-29〜P-37** | 9 | 「E2E プラン（042-056）+ 依存プラン（057）」 |
-| ja 個別 | **P-47**（ja/001 IDOR テストの検証範囲）/ **P-53**（ja/004 依存更新後の変更可能ファイル範囲）/ **P-59**（ja/012 完了条件の矛盾） | 3 | 「日本語版プラン（plans/ja/）」 |
+| 群 | 項目 | 件数 | 参照節 | Round 12 の結果 |
+|---|------|-----|-------|----------------|
+| spike プラン | **P-07〜P-17** | 11 | 「spike プラン（013-025）」 | 全 11 件 accepted |
+| テスト実装プラン | **P-18〜P-28** | 11 | 「テスト実装プラン（026-041）」 | 9 件 accepted / **P-27・P-28 rejected**（誤検知） |
+| E2E プラン | **P-29〜P-37** | 9 | 「E2E プラン（042-056）+ 依存プラン（057）」 | 7 件 accepted / **P-30・P-34 rejected**（既充足・誤検知） |
+| ja 個別 | **P-47**（ja/001 IDOR テストの検証範囲）/ **P-53**（ja/004 依存更新後の変更可能ファイル範囲）/ **P-59**（ja/012 完了条件の矛盾） | 3 | 「日本語版プラン（plans/ja/）」 | 全 3 件 accepted（いずれも翻訳ドリフト。P-47 は EN 側にも同一欠陥） |
 
 **注意点（着手前に読むこと）**:
 - **P-12（019 の評価集計競合）・P-14（021 の送信前記録）・P-13（020 の法域要件）は設計判断**を含む。
@@ -634,3 +635,143 @@ triage を挟んだ理由そのもの。
   規定しているのと同型の注意）。プランの記述矛盾の修正と、未確定の設計判断の確定を混同しないこと。
 - **P-36 / P-37 の対象 057 は E2E ではなく `dependencies`**（provenance は上記「plan 057 の provenance」節）。
 - ja 側にペアが存在する項目は EN と同時に確認すること（上記「Round 11 の運用で確立した判断基準」1）。
+
+---
+
+## Round 12 追記 — CodeRabbit ローカルレビュー triage 第3弾（2026-07-17 / HEAD `3a875cd`）
+
+> **対象**: Round 11 未着手の 34 件（spike P-07〜P-17 / テスト実装 P-18〜P-28 /
+> E2E・依存 P-29〜P-37 / ja 個別 P-47・P-53・P-59）。**これで 73 件すべての triage が完了**。
+> **本ラウンドの結果**: 妥当 31 件を修正 / 却下 3 件（P-27・P-28・P-30。うち P-34 は当初
+> 却下候補として実測検証した結果 誤検知と確定）。正確には **accepted 30 / rejected 4**（下表）。
+> 出所・制約は Round 10 の冒頭注記と同じ（GitHub に存在せず `gh api` 不可・根拠は
+> スクリーンショットの 1 行タイトルのみ・行番号は採取時点）。
+> **`src/` は 1 行も変更していない**（全 27 コミットが `plans/` 配下のみ）ため、テスト数は
+> 変動せず `spec-sync-after-test` は不要（rule 02 の MUST 条件に非該当）。`bunx tsc --noEmit` exit 0。
+
+### Round 12 で追加された判断基準（Round 11 の 4 点に加えて踏襲すること）
+
+5. **「記録」と「契約」を混同しない**。characterization テストで現状の欠陥を可視化する意図は
+   正しいが、**欠陥そのものを assert して緑にすると誘因が反転する**（バグがある間は緑・修正すると赤 =
+   修正を罰する「欠陥のロック」）。固定するのは**あるべき挙動**にし、未実装の間は
+   `it.failing`（Jest 28+）/ `test.fail()`（Playwright）でマークするか、
+   `not.toBe(200)` のように**修正後も生き残る耐久契約**へ言い換える。現状の事実はコメントと
+   Maintenance notes に記録すれば足りる（実績: P-23 / P-32）。
+6. **「起きないこと」の assert には control（対照）を添える**。「副作用が無い」「POST が飛ばない」
+   「表示されない」は、**そもそも仕組みが動いていなくても緑になる**。対になる肯定側
+   （制約なしなら 1 件書かれる / 有効入力なら POST が飛ぶ / BAN 前は 200 で表示される）を
+   先に通してはじめて、否定側の assert が意味を持つ（実績: P-24 / P-32 / P-35）。
+7. **却下する前に実測する**。「通説」で判断しない。P-34 は Playwright の
+   `browser.newContext()` が `use.baseURL` を継承しないという通説に見えたが、実測（baseURL
+   有無で相対 `goto` の挙動が変わる）と実装（`playwright/lib/index.js:207-222` が
+   `_defaultContextOptions` へ注入）の両方で**継承する**ことを確認して却下した。
+   P-28 も生成型（`startDate: string`）を見なければ誤修正していた。
+8. **指摘が既に解消済みのことがある**。ローカルレビューは未プッシュのコミット群を対象とするが、
+   **同じ範囲の後続コミットが既に直している**場合がある（P-30 は `612bb93`
+   「verify money in integer cents」で採取時点より前に解消済みだった）。
+   「現在の内容」と照合すること。
+
+### Round 12 accepted（妥当・修正済み 30 件）
+
+| # | 対象 | 判定根拠（要約） | コミット |
+|---|------|----------------|---------|
+| P-07 / P-08 | `plans/014` + `plans/015` | 「読み取り専用調査」表のコマンドが実行不能・副作用つき。`psql "$DATABASE_URL"` は **Accelerate の `prisma://` URL** で psql が接続できない（`docs/migration/05-postgres-migration-steps.md:23`。素の接続文字列は `DIRECT_URL` = `schema.prisma:9` の `directUrl`、リポジトリ内の psql 前例 :168/:301 も `$DIRECT_URL`）。015 の `prisma studio` は書き込み可能な GUI で見出しと矛盾し、014 は既に「使わない」と明記済み = 姉妹プラン間の不整合 | `6006063` |
+| P-09 | `plans/016` | Open question 3 の blockquote が **(i) ブラウズ用公開スコープ / (ii) チェックアウトの購入可能性チェック**の 2 系統を課すのに、Step 4・Verify・Done criteria が (i) しか要求せず **(ii) がスコープから落ちていた**。可視性フィルタは認可の代用にならず、非 ACTIVE 品は直リンク・カート残留・API 直叩きで**購入が通ったまま**になる。拒否は `placeOrder`（`user.ts:424`）のサーバー側で行うことを明記 | `9eb8066` |
+| P-10 | `plans/017` | seam は `src/queries/` = `"use server"` 配置であり**引数はクライアント任意入力**。`{ anchor:"user"; userId: string }` は他人の ID を渡すだけで wishlist/注文由来の推薦を読める **IDOR**。直下のキャッシュ分離規定は cross-user のキャッシュ漏れしか防がず引数経由の攻撃は素通り。`userId` を型から外し `requireUser()`（`auth-guards.ts:30` — 引数を取らずセッションから導出）で導出させた | `be0320d` |
+| P-11 | `plans/018` | 冪等性が**遷移側だけ**（「条件付き updateMany」）で**作成（INSERT）側が無防備**。Q1 の数量上限は*合計*を縛るだけで、3 個購入 → 「1 個返品」の二度押しは 1+1=2 ≤ 3 で両方通り二重返金を招く（TOCTOU の原子化でも救えない — 両方が不変条件を満たすため）。要件のみ Q1 へ追加し方式選択は spike に残した | `3e11945` |
+| P-12 | `plans/019` | **技術的事実の誤り**。プラン全体（L81 / Q4 / Step 3 / Maintenance）が評価集計の競合を「`$transaction` 化」で解決できるかのように書くが、tx が与えるのは**原子性であって分離性ではない**。既定の READ COMMITTED では findMany → 再計算 → update の read-modify-write がロストアップデートを起こし、**両方 commit に成功するため検知もできない**。実装側は既に `user.ts:286` で `isolationLevel: Serializable` を明示済み（CR-04 由来）。方式 (a)/(b)/(c) の選択は spike の設計判断として踏み込まず、前提の訂正と「分離レベル / ロック機構の確定」要求に留めた | `9d80ad6` |
+| P-13 | `plans/020` | 法域別要件が**出典なしの断定**（「EU: 直近 30 日間の最低価格を提示する義務」等）で、Done criteria にも裏付け要求が無い。「30 日」は**価格履歴の保持期間というスキーマ要件を直接駆動する数値**で、誤れば法令非対応か過剰実装に直結。法域の**選択**は spike の判断のため踏み込まず、①未検証の初期仮説と明示 ②一次資料での裏付けと出典明記の要求 ③調査の出発点（EU: Directive (EU) 2019/2161 / US: 16 CFR Part 233 / 日本: 景表法 5 条 2 号 + 消費者庁ガイドライン。いずれも未検証と断り書き）④裏付けまで数値をスキーマ要件へ落とさない ⑤法務判断が要る場合の STOP を追加 | `345583e` |
+| P-14 | `plans/021` | **同一文内の自己矛盾**。「送信側も **at-least-once 前提**で重複耐性を持たせる（…／**送信済みフラグを立ててから送る**）」—— 前者は「重複しても失わない」保証だが、後者は at-most-once の挙動で、送信失敗やクラッシュ時に**送っていないのに送信済みと記録された通知が永久に再送されない**（サイレントロス）。方式選択は spike に残し、誤指示の除去と選択肢（送信後に記録 / リース方式）の提示に留めた。あわせて outbox の参照先を Q6（opt-out）→ **Q4（送信の実行モデル）**へ訂正（(β) outbox は plan 018 の Q6 で、021 では Q4 の (b)） | `3791a51` |
+| P-15 | `plans/023` | **実測で実証**。Current state 自身が「`take: limit` は GET の**2 箇所**（FULLTEXT / contains fallback）に流れる」と書くのに Step 2 のケース 1〜5 が経路を指定していない。route は既に `7f2365e` で実装済みで、`route.test.ts` の正規化 5 ケースは全て `mockProductFindMany.mockResolvedValueOnce([])` で **FULLTEXT 経路のみ**を通し、**fallback（`route.ts:332`）の take/skip は一度も検証されていない**。fallback 側のクランプ漏れは「FULLTEXT が落ちた時だけ発現する」最も気づきにくい形で残る。経路別の必須ケースと Done criteria の件数分解を追加 | `b774660` |
+| P-16 | `plans/024` | 同一プラン内の不整合。L111-113 が tech.md 構造化ログ規約を**自ら引用**し「第2引数は `{ error, stack }` の 2 引数形式」と明記し、L179 も「境界で構造化ログ」を要求、50 行下の cookie 失敗ブランチ（L246-249）は `stack` を含むのに、**malformed JSON ブランチ（L197）だけが `stack` を落としていた**。規約を引用しながらコード例がそれを破っており、実装されると JSON パース失敗の発生源が追えない | `a9318e6` |
+| P-17 | `plans/025` | 信頼プロキシからの client IP 導出は**配備トポロジーの関数**なのに Vercel 前提で一本化。その前提自体が未検証で、Current state L64 が "Vercel-style serverless **assumed**" と自認し、実測では `vercel.json` 無し・README はアプリのホスト先を宣言せず（Neon = DB のみ）・自前 Docker スタック同梱。正解はホスト毎に異なり（Vercel / CDN・WAF 固有ヘッダ / 逆プロキシ無しでは `x-forwarded-for` は不在か完全に攻撃者制御）、誤ると**両方向に壊れる**（信頼しすぎ = 攻撃者にキーを渡す / 信頼しなさすぎ = 全員が同一バケットで正規ユーザーを締め出す）。配備先の確定を先行させ、trust boundary を環境別に確定させる形へ | `5dfa538` |
+| P-18 / P-19 | `plans/026` | **(P-18)** Why が「paypal.ts は tech.md が構造化ログ規約の**実装例として指名**しているファイルであり、その**規約遵守**がテストで固定されていないのは不健全」と書くが、**実物は規約に準拠していない** —— tech.md は 2 引数形式 `{ error, stack }` を定めるのに `paypal.ts:26-31` は**3 引数の位置指定形式**。**規約が自ら挙げた模範例が規約に違反している**。characterization プランなので、この前提のままでは「規約遵守を固定した」つもりで**規約違反を固定**する。Risk の「paypal.ts は 1 行も変更しない」制約は維持し**乖離の明示**に留めた。**(P-19)** 件数が 5 箇所で揺れ（見出し「8 ケース」/ Verify「7〜8」/「31〜32」/ Done「31 以上」）、発生源はケース 8 の「（ケース 2 の assert に同居可）」。独立テストに確定させ **17+8+7=32** で統一 | `b849123` |
+| P-20 | `plans/027` | Step 4 の `storeId: <どちらでも可>` を `null` に固定。決め手は**テストの識別力**: `user.ts:671` の判定は論理和 `isPlatformCoupon \|\| (storeId === cartCoupon?.storeId && cartCouponValid)` で、店舗 X を入れると**X への割引は 2 項のどちらからでも到達でき**「PLATFORM 分岐が効いた」ことを証明できない。`null` ならどの店舗とも一致せず**経路が `isPlatformCoupon` に一意化**する。加えて ①PLATFORM は特定店舗に所有されず実装も PLATFORM 時は `storeId` を参照しない（:671 短絡 / :1153-1155 全件対象）②`Coupon.store` は `onDelete: Cascade` で店舗削除の巻き添えになる。実装前提として `SeedCouponInput.storeId: string`（必須・非 null）では `null` を渡せないため `string \| null` への緩和を Scope / Step 1 に追加（DB 側は `String?` で元から null 可） | `e241f01` |
+| P-21 | `plans/028` | 正常系がテストデータをインラインリテラルで手書き。`createMockCountry`（`test-fixtures.ts:693`）が既に存在し `{ id, name: "Japan", code: "JP", createdAt, updatedAt }` を返す（手書き値とほぼ同一）。型安全ファクトリの利用は CLAUDE.md「共通テストインフラ」の規約で、028 は `src/config` を一度も参照していなかった。害は `as` キャストに現れている —— リテラルは `createdAt`/`updatedAt` を欠いて型エラーになり、それを `as` で黙らせている。キャストで潰すと将来 `Country` に列が増えてもテストは古い形のまま緑で通り続ける | `befedf9` |
+| P-22 | `plans/029` | 件数が 4 箇所で不一致（Effort「+14〜20」/ Commands「34 → 54」= Step 1 後の値で Step 2 の追加を無視 / Step 2 Verify に数値なし / Done「54 以上」）。根本原因は **Step 1 と Step 2 の正面衝突** —— Step 1 は「必要テスト数は機械的に定義する（lcov の実測任せ・『間引いてよい』を排除する）」と定めるのに、Step 2 は「lcov の未カバーが 8 行なので**既にカバー済みの期間値はスキップしてよい**」と Step 1 が明示的に禁じた手法を採り、テスト数が lcov 依存の非決定になっていた。Step 1 の原則を Step 2 へ適用し 3 関数 × 3 期間 = 9 に固定（行カバレッジは「その行を通ったか」しか見ず、境界計算の誤りは期間値ごとに独立して起きる）。**34+20+9=63** で統一 | `0f819f1` |
+| P-23 | `plans/030` | hydrate の reject が unhandled になる場合に「**未ハンドルであること**」を assert して固定する案だった。誘因が反転する（バグがある間は緑・catch を実装した瞬間に赤 = 修正を罰する）。固定の向きだけを変え、常に**望ましい挙動**（catch され `toast.error` 等でユーザーに伝わる）を assert 対象にし、未実装の間は `it.failing`（Jest 30 使用。`it.failing` は Jest 28+）でマークする形へ。`process.on("unhandledRejection")` での固定も除去（Node/Jest 設定依存でフレークし他テストの rejection も拾う） | `e66b81a` |
+| P-24 | `plans/032` | S5 の手法が**原子性を何も証明しない**。`PaymentDetails.orderId` は Order への**必須 FK**（`onDelete: Cascade`）なので、① Order を消すと Cascade で既存 PaymentDetails も道連れ ② Order が無ければ `paymentDetails.upsert` 自体が FK 違反で落ちる = 「upsert は成立するが order.update だけ失敗する」状態は**存在し得ない** ③ つまり失敗するのは**2 番目ではなく 1 番目**で、`count === 0` は **`$transaction` が無くても成立**し「ロールバックされた」と「そもそも書かれなかった」を区別できない。実 PG で `order.update` が書く `paymentMethod: "Stripe"` を拒む CHECK 制約を一時付与する方式へ差し替え（`IS DISTINCT FROM` で既存 NULL 行でも制約追加が通る / DROP は `finally` 必須 / **対照 assert = 制約なしでは count === 1** を必須化）。route が実際に tx で括られていること（`stripe/route.ts:153-179`）も実測して明記 | `78ffa81` |
+| P-25 | `plans/035` | 非対称が仕様かバグか未確定と認めつつ、fallback が「判定が得られない場合はコメントを明記して**進める**」を許していた。実コード照合で**権限付与**の非対称と判明: DB 昇格は `store.status === "PENDING" && updated.status === "ACTIVE"` で PENDING 起点のみ / Clerk 同期は `updatedStore.status === "ACTIVE"` で**任意の起点**から。そして認可ソースは **Clerk の `privateMetadata.role`**（`auth-guards.ts:71` の `requireSeller`）であって DB の `User.role` ではない。つまり DISABLED → ACTIVE で **DB が USER のままでも `requireSeller()` が通り実際に販売者権限が付与される**。バグならテストが権限昇格を契約として固着させる（コメントは固定を防がない — assert こそが契約）。fallback を STOP へ差し替え | `2b4ae2c` |
+| P-26 | `plans/040` | タイトルが「FK 連鎖（RESTRICT / CASCADE / SET NULL）を固定する」と掲げ Why が CASCADE 群に 7 種を列挙するのに、シナリオ 1 は Cart/CartItem/Wishlist/フォローのみ。実物照合で 2 点判明: ① **PaymentDetails の CASCADE は到達不能** —— `PaymentDetails.orderId` は必須 FK なので保有者は必ず Order を持ち `Order.userId` は RESTRICT、削除は常に Order で阻止される（シナリオ 2 の 500 経路に吸収）= CASCADE 群への列挙は事実誤り ② **`Conversation.orderId` は optional** なので Order 無しで成立し、Conversation / Message / `_CouponToUser` の CASCADE は**到達可能なのに未検証**。シナリオ 1 に seed と assert を追加（`_CouponToUser` は implicit M2M のためフォロー同様 Coupon 側から `_count.users` を引く）。`seedCoupon` の `connectUserIds` と生 `db.*.create` で足り「seed.ts / reset-db.ts を変更しない」制約は維持 | `d94d00e` |
+| P-29 | `plans/042` | 修復後の helper が **3 秒 timeout 付き `waitFor` の `.then(true)/.catch(false)`** で 1 段 / 2 段 UI を判定 = **タイムアウトを機能検出に使う**アンチパターン。遅い CI・コールドスタートで描画が閾値を超えると 2 段分岐が**空パスワードのまま Continue を押して**サインインが失敗し、**閾値付近でのみ再現する**最悪のフレークになる —— 本プランがまさに撲滅対象にしている不安定さを修復コード自身が再導入する。UI 形式は Clerk の**設定で決まる静的な性質**（現行が 1 段であることは Why で実測確定済み）なので、分岐を外し `expect(passwordInput).toBeVisible()` で assert する形へ。待ち時間は描画待ちにのみ使い判定には使わない | `0aa2350` |
+| P-31 | `plans/049` | 注文には「他テストが作った注文と同居しうる — workers:1 でも DB は共有」と明記して行スコープを徹底しているのに、**住所には同じ規律が無い**。テスト 1 は UI で住所を作るが後始末が無く、実行ごとに累積して 2 回目以降は assert が strict mode violation になる。またテスト 2 のチェックアウトの住所選択が**実行順に依存**する。さらに後始末の前提が誤り —— 「カスケードクリーンアップ」と書くが `ShippingAddress.userId` は **RESTRICT** でカスケードは存在せず、むしろ住所が残ると `user.delete` が P2003 で失敗し、`auth.ts:124-138` の `cleanup()` が `.catch(() => {})` で**その失敗を握り潰す**（片付いていないのに片付いた顔をする）。参照元 `stock-decrement.spec.ts:96-106` は実際にはカスケードではなく `shippingAddress.deleteMany` で明示的に消しており、プランがパターンを誤って要約していた | `c28305a` |
+| P-32 | `plans/050` | `toBe(500)` で未処理例外のステータスを期待値に固定（Current state / Done criteria / STOP にも波及）。① **誘因の反転**（500 は仕様でなくバグ。404 へ直すと赤）② **偽の安心** —— 500 は「何かが壊れた」としか言わず、DB 断や無関係なリグレッションでも 500 になり、そのときエラーページには店舗名が無いので `toHaveCount(0)` も**一緒に通る** = 2 つの assert が揃って緑でも「BANNED にしたから見えない」ことを何も証明しない。`not.toBe(200)` へ変更（500 でも 404 でも通る耐久契約）し、既存の手順 2 を **control として必須化**（BAN 前に 200 + 店舗名 visible）。500 の事実はコメントと Maintenance notes に記録 | `530e3c6` |
+| P-33 | `plans/054` | ベースライン撮影が `... --project=chromium -- --update-snapshots` と区切りの `--` を挟んでいた。`run-local.sh` の最終行は `bunx playwright test --retries=2 "$@"` で**引数をそのまま渡す**。`--` は `bun run test:e2e:local -- <args>` のように **`bun run` 経由**でだけ必要な作法（`package.json:13`）で、`bash` で直接叩く本プランでは不要。渡すと playwright は `--` 以降を**位置引数（テストフィルタ）**と解釈し `--update-snapshots` という名前のテストを探して **0 件マッチ** = ベースラインが更新されないまま成功に見える。併記の「引数をそのまま渡さない場合は」という但し書きも誤診のため削除。プラン内の他 4 箇所は元から `--` 無しで正しかった | `b345ff2` |
+| P-35 | `plans/056` | 空メールの「POST なし」判定が競合。`checkValidity()` は validity 状態を**問い合わせるだけの純粋関数**で、空の `required` 欄なら **click の前でも後でも常に `false`** を返すため「submit がブロックされた」証拠にならず、`expect.poll(...).toBe(false)` は**初回評価で即成立して何も待たない**。直後の `toHaveLength(0)` が**まだ発火していないだけの POST を「無かった」と誤判定**しうる。**実ブラウザで検証**（`setContent` の最小フォーム）: click 前は `checkValidity()=false` かつ `invalid` 未発火 / click 後に `invalid` 発火・submit ハンドラ未実行。判定を `invalid` イベント（submit 試行時の制約検証失敗でのみ発火）へ差し替え。`window` フラグは `any` を使わず型付け。テスト 1 が `page.on("request")` 捕捉の control を兼ねる旨も明記 | `b4bf5cb` |
+| P-36 / P-37 | `plans/057` | **(P-36)** 「Confirm the latest 16.2.x」と書きつつ `bun info next version` = **最新リリース全体**を返すコマンド。実測では両方 `16.2.10` で**偶然一致するだけ**であり、16.3.0 / 17.x が出た瞬間にそれを返す —— この手順が最も効くべきタイミングで静かに誤答し、Scope と STOP が**明示的に禁じる**マイナー/メジャー移行へ誘導する。`npm view "next@16.2" version \| tail -1` へ差し替え（16.2 レンジを解決し昇順出力することを実測確認）。**(P-37)** `grep -c "<id>"  # expect 0` は**終了コードが検証内容と逆** —— grep は該当なしで exit 1 を返すため望ましい結果が失敗終了になる（実測: `echo hello \| grep -c nomatch` は `0` を出力し exit 1）。`grep -q` の明示分岐ループへ置換（cleared なら exit 0 / 残存なら該当 id を示して exit 1、`bun audit` は 3 回→1 回）。capture の `\|\| true` は必須（`bun audit` は advisory が残ると非ゼロ終了し、ここでは handlebars CRITICAL が残る前提）。**置換後のスクリプトを実行して検証済み** | `73209af` |
+| P-47 | `plans/001` + `plans/ja/001` | 3 階層 IDOR を満たすと宣言しつつ **(c) を「`updateMany` が `{ count: 0 }` を返す経路で throw する」と説明** = (a) スロー検証の言い換えであり副作用の検証になっておらず、例示コードにも (c) の assert が無い（実際は (a)(b) の 2 階層のみ）。`updateMany` は**モックなのでそもそも何も書かない**ので、戻り値を `{count:0}` にして throw を確認しても副作用の不在は示せない。`SECURITY_GAP_REPORT.md:114` の (c) は「ガード失敗時に下流の `upsert`/`create`/`delete`/関連 `findMany` が呼ばれないこと」=**別の呼び出しの不在**を見る階層。本関数は Step 1 でスコープ無しの `update` → スコープ付き `updateMany` へ移行するため **`update` の非呼び出し**がまさに検証対象（将来 `update` へ戻す変更を検知）。`mockDb.orderItem` は両方を宣言済み（`order.test.ts:49-53`）でモック追加は不要。**EN 側にも同一の欠陥があり同一コミットで修正**（基準 1） | `de23c75` |
+| P-53 | `plans/ja/004` | Scope「対象内」が `plans/README.md` を含まないのに Done criteria が「`git status` は package.json + bun.lock のみ」と「README のステータス行が更新されている」を同時要求 = **両立不能**（Round 11 `b96e5b3` と同一パターン）。英語版は正しく、Scope に README を含み Done criteria が「**bump コミットの直前**は…」「**別の docs コミット**で」と**時点を限定**していたが、ja 版でこの限定が翻訳時に落ちていた。**漏れの経緯**: EN 側の一括修正 `ee80cda` は対象が 001-003 / 005-009 で **004 を含まず**、ja 側の `b96e5b3` はその 6 件を伝播しただけのため 004 は両方の網から外れていた | `bc4ae23` |
+| P-59 | `plans/ja/012` | Done criteria が両立不能 —— 「`git status` は**新規** docs/plan ファイルのみ」と「`plans/README.md` のステータス行が更新されている」（README は既存ファイルの変更）。英語版は `git status` の条件に **"plus the `plans/README.md` index update below"** の但し書きを持ち整合しており、ja 版でこれが翻訳時に落ちていた。**Scope はいじらない** —— EN/ja とも Scope に README を挙げず Done criteria の但し書きで整合を取る設計で、ja だけ Scope を変えると逆に英語版とドリフトするため | `3a875cd` |
+
+### Round 12 rejected（再監査防止 — 4 件）
+
+- **P-27 `plans/040` 93-96「SET NULL 後の SupportTicket がテスト間に残留します」**:
+  **却下 — 誤検知**。プランの既存注記（採取時点の L93-96）が正しい。`reset-db.ts:78` は
+  `TRUNCATE TABLE ... RESTART IDENTITY **CASCADE**` を発行し、PostgreSQL の `TRUNCATE ... CASCADE` は
+  **named table を FK 参照しているテーブルを自動的に truncate 対象へ加える**（判定は **FK 制約の有無**であって
+  行の値ではない）。`SupportTicket.userId` は `User` への FK（SET NULL）で `User` は `APPLICATION_TABLES` に
+  列挙済み（`reset-db.ts:50`）のため、**匿名化済み（`userId=NULL`）の行も truncate される**。
+  SET NULL であることは cascade 判定に影響しない。そもそも CASCADE 無しでは「他テーブルから FK 参照されている
+  テーブルは truncate できない」とエラーになるため、CASCADE はまさにその依存を取り込むための指定。
+  Conversation / Message も同じ理由で掃除される。
+
+- **P-28 `plans/041` 95-112「Prisma の Coupon 型に合わせて日付を Date で渡してください」**:
+  **却下 — 誤検知（字面適用すると型エラーになる）**。Round 10 の CR-03 と同型の罠。
+  `Coupon.startDate` / `endDate` は **`String`** である（`schema.prisma` の `startDate String` /
+  `endDate String`、生成型も `startDate: string`（`node_modules/.prisma/client/index.d.ts:31112`））。
+  `Date` なのは `createdAt` / `updatedAt` のみ。プランの `buildCouponInput` は
+  `startDate: new Date(...).toISOString()`（string）/ `createdAt: new Date()`（Date）と**既に正しい**。
+  指摘どおり `startDate: new Date(...)` にすると **Date は string に代入できず型エラー**になる。
+  混乱の元は同一モデル内の型の混在で、plan 020 も「日付が文字列型（TZ・比較の保証なし）」を
+  **設計上の欠陥として**挙げている（是正は別課題であってテストプランの範囲外）。
+
+- **P-30 `plans/047` 155-188「金額検算を Decimal 規約と整合させてください」**:
+  **却下 — 既に充足済み**。採取時点（`739097c`）で既にセント整数検算へ修正済みだった
+  （`612bb93` "fix 047 (declare doc-sync scope, **verify money in integer cents**, …)" が
+  `< 0.02` の許容誤差方式を置換。同コミットは **origin/dev にプッシュ済みかつ採取時点より前**）。
+  現行プランは L170 で 1 度だけ丸めてセント整数化し、L181-188 で許容誤差を明示的に拒否
+  （「±0.01〜0.02 は誤差を隠すと同時に 1 セントの実バグも見逃す」）、L234 の Done criteria で
+  float 比較を禁止、L264-268 で `group-table.tsx` の Decimal 逸脱と「本 spec の検算はこのズレの
+  影響を受けない」理由まで文書化済み。**ローカルレビューは未プッシュ範囲を対象とするが、
+  指摘が既に解消済みの内容を指すことがある**（Round 12 の判断基準 8）。
+
+- **P-34 `plans/055` 127-147「新しいコンテキストへ baseURL を明示的に引き継いでください」**:
+  **却下 — 誤検知（実測とソースの両方で確認）**。「`browser.newContext()` は config の `use` を
+  継承しない」は一般に流布する理解だが、本リポジトリの Playwright では**継承する**。
+  **実測**: `use: { baseURL }` あり → `newContext()` 後の相対 `goto` は URL が解決され timeout /
+  `use: {}` なし → `Cannot navigate to invalid URL`。**ソース**: `playwright/lib/index.js:207-208` が
+  config の `baseURL` を `_combinedContextOptions` へ入れ、`:222` が
+  `playwright._defaultContextOptions = _combinedContextOptions` としてグローバルに設定するため、
+  `browser.newContext()` が自動的に受け取る。よって明示的な引き継ぎは不要。
+  既存 `tests/e2e/messages.spec.ts:229-241` も `newContext()` 後に相対 `goto` を使っている。
+
+### Round 12 の副産物（本ラウンドのスコープ外 — 次ラウンドの候補）
+
+triage 中に実物照合で判明したが、34 件のいずれにも該当しないため**手を付けていない**もの:
+
+1. **tech.md の構造化ログ規約と `paypal.ts` の乖離**（P-18 で判明）。tech.md「構造化ログ」は
+   2 引数形式 `{ error: error.message, stack: error.stack }` を定め**実装例として `src/queries/paypal.ts` を
+   名指し**するが、実物は 3 引数の位置指定形式（12 箇所）。規約・実装のどちらを直すかは判断事項
+   （`src/lib/log.ts` の `logError` への統合が `coupon.ts` / `order.ts` で進行中・`paypal.ts` は未移行）。
+   plan 026 でテストを付けてから移行すると差分が機械的に見える。
+2. **plan 023 のステータス drift**。`plans/README.md:71` は 023 を **TODO** とするが、
+   route のクランプは `7f2365e` で実装済み・`route.test.ts` の正規化 5 ケースも存在する
+   （ただし P-15 のとおり fallback 経路は未カバー）。
+3. **`plans/015` の GIN 確認行の自己矛盾**。「期待」列が「生 SQL で追加済みの GIN/tsvector が
+   **無いことを確認**」としつつ同じセルで「schema.prisma だけ見て『GIN なし』と断定しない」と警告。
+   実際には GIN 式インデックス `Product_fulltext_idx` が**実在**する（Round 11 の P-44 で確定）。
+   P-44 と同型の事実誤りだが 34 件の対象外。
+4. **`plans/025` の調査コマンド表が壊れている**。`grep -rniE "ratelimit|upstash|throttle"` の
+   未エスケープ `|` が markdown の表を分断し（MD056）、**レンダリング後のコマンドが欠落**する
+   （読者がコピーすると動かない）。P-07 / P-08 と同型だが 34 件の対象外。
+
+### Round 12 完了時点の全体像
+
+| ラウンド | 対象 | accepted | rejected |
+|---|------|---------|---------|
+| Round 10 | src/ 4 件 + docs 10 件 | 13 | 1 |
+| Round 11 | plans/ 59 件のうち 25 件 | 24 | 1 |
+| **Round 12** | **plans/ 残り 34 件** | **30** | **4** |
+| **合計** | **73 件** | **67** | **6** |
+
+**CodeRabbit ローカルレビュー 73 件の triage はこれで完了**。未着手はゼロ。
