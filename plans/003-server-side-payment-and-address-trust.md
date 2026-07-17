@@ -234,7 +234,7 @@ ALL must hold:
 - [ ] `grep -n "paymentIntents.retrieve" src/queries/stripe.ts` shows the server-side re-fetch
 - [ ] `grep -n "shippingAddress.findFirst" src/queries/user.ts` shows the ownership check
 - [ ] `createStripePayment` signature takes `paymentIntentId: string` (not `PaymentIntent`)
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 003 updated
 
 ## STOP conditions

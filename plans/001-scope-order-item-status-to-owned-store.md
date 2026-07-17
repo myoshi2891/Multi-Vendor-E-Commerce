@@ -207,7 +207,7 @@ ALL must hold:
 - [ ] `bun run test -- src/queries/order.test.ts` exits 0; the new cross-store IDOR test exists and passes
 - [ ] The unscoped read is gone **from `updateOrderItemStatus` specifically**. A plain file-wide `grep` cannot prove function scope (another function may legitimately use `orderItem.findUnique`), so extract the function body first: `awk '/export const updateOrderItemStatus/,/^};/' src/queries/order.ts | grep -c "orderItem.findUnique"` → expect `0`
 - [ ] `grep -n "orderGroup: { storeId" src/queries/order.ts` shows the new scoped where-clause
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 001 updated to DONE
 
 ## STOP conditions

@@ -185,7 +185,7 @@ ALL must hold:
 - [ ] `grep -n "isPlacingOrderRef" src/components/store/cards/place-order.tsx` shows the guard
 - [ ] `grep -n "disabled={loading}" src/components/store/cards/place-order.tsx` shows the disabled button
 - [ ] `placeOrder` in `src/queries/user.ts` is unchanged (`git diff --stat` shows no change there)
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 006 updated
 
 ## STOP conditions

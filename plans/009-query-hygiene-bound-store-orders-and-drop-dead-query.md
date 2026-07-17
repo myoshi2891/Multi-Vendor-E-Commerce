@@ -179,7 +179,7 @@ ALL must hold:
 - [ ] `bun run test -- src/queries/store.test.ts` exits 0; the `take` assertion passes
 - [ ] `bun run lint` exits 0
 - [ ] `src/lib/types.ts`, seller/admin `columns.tsx`, and `columns.test.tsx` are unchanged (`git status`)
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 009 updated
 
 ## STOP conditions

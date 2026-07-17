@@ -171,7 +171,7 @@ ALL must hold:
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `bun run test -- src/queries/order.test.ts` exits 0
 - [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 008 updated
 
 ## STOP conditions

@@ -180,7 +180,7 @@ ALL must hold:
 - [ ] `grep -n "catch (error: any)" src/components/store/forms/apply-coupon.tsx` returns no matches
 - [ ] `bun run test -- src/lib/log.test.ts src/queries/coupon.test.ts` exits 0
 - [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 007 updated
 
 ## STOP conditions

@@ -263,7 +263,7 @@ ALL must hold:
 - [ ] `grep -n "status: store.status" src/queries/store.ts` returns no match
 - [ ] `grep -n "featured: store.featured" src/queries/store.ts` returns no match
 - [ ] `grep -n "\.\.\.store\b" src/queries/store.ts` shows no remaining raw client spread into a `db.store.create`/`update` data payload
-- [ ] No files outside the in-scope list are modified (`git status`)
+- [ ] Before the **code commit**, no files outside the in-scope list are modified (`git status`) — the `plans/README.md` status-row update lands in a separate docs commit
 - [ ] `plans/README.md` status row for 002 updated
 
 ## STOP conditions
