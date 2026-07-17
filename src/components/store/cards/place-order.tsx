@@ -8,6 +8,7 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import { Button } from '../ui/button'
 import FastDelivery from './fast-delivery'
 import { cn } from '@/lib/utils'
+import { logError } from '@/lib/log'
 import { SerializedCartType } from '@/lib/types'
 import ApplyCouponForm from '../forms/apply-coupon'
 import { PulseLoader } from 'react-spinners'
@@ -33,10 +34,10 @@ const PlaceOrderCard: FC<Props> = ({
         isPlacingOrderRef.current = true
         setLoading(true)
         // push() は戻り値が void で await できず、遷移完了まで本コンポーネントは
-        // マウントされたままになる。成功経路でガードを解除すると遷移中にボタンが
+        // マウントされたままになる。注文成立後にガードを解除すると遷移中にボタンが
         // 再有効化され、カート削除済みの状態で placeOrder が再実行されてしまう
         // （"Cart not found." で失敗し、成功したのに誤エラーが表示される）。
-        let navigating = false
+        let orderPlaced = false
         try {
             if (!shippingAddress) {
                 toast.error('Select a shipping address before placing your order.')
@@ -44,17 +45,26 @@ const PlaceOrderCard: FC<Props> = ({
             }
             const order = await placeOrder(shippingAddress, id)
             if (order) {
+                // 注文成立は不可逆。この時点でガードを恒久化し、以降の後片付けが
+                // 失敗しても再注文させない。
+                orderPlaced = true
                 emptyCart()
-                await emptyUserCart()
-                navigating = true
+                try {
+                    await emptyUserCart()
+                } catch (error: unknown) {
+                    // カートの後片付け失敗は注文成立を取り消さないため、
+                    // ログのみに留めて遷移を継続する。
+                    logError('[PlaceOrder:handlePlaceOrder] cart cleanup failed', error)
+                }
                 push(`/order/${order.orderId}`)
             }
-        } catch (_error) {
+        } catch (error: unknown) {
+            logError('[PlaceOrder:handlePlaceOrder] failed to place order', error)
             toast.error('Something went wrong while placing your order.')
         } finally {
-            // 遷移する場合は解除しない（アンマウント前提の意図的な例外）。
+            // 注文成立後は解除しない（アンマウント前提の意図的な例外）。
             // 失敗・住所未選択時のみ解除して再試行を許可する。
-            if (!navigating) {
+            if (!orderPlaced) {
                 isPlacingOrderRef.current = false
                 setLoading(false)
             }
