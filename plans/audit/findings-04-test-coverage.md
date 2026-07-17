@@ -6,10 +6,22 @@
 
 ### [TESTS-01] Client-side payment/checkout orchestration layer has zero component tests
 
-- **Evidence**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `cards/place-order.tsx`（`placeOrder`）/ `checkout-page/container.tsx` / `order-page/*` — すべて co-located テストなし（ディレクトリツリーで確認済み）。
-- **Impact**: capture/place-order をいつ呼ぶか・失敗ハンドリング・二重送信ガードを担うクライアント層の回帰が無検出で通る。唯一の演習は間欠ハングが追跡中の E2E のみ。
-- **Effort**: L / **Risk**: LOW / **Confidence**: HIGH
-- **Fix sketch**: server action をモックした RTL テストで happy path / 失敗 toast / submit ボタンの再入ガードを検証。優先: `place-order.tsx`・`stripe-payment.tsx`・`paypal-payment.tsx`。
+> **⚠️ 訂正（2026-07-17）**: 原文の Evidence は「`cards/place-order.tsx` を含めすべてテストなし」と
+> していたが、これは**採取時点で既に誤り**だった。原因は探索方法で、**co-located テストのみを
+> 探し、本リポジトリのコンポーネントテスト規約である `tests/component/` を見ていない**
+> （`.claude/steering/tech.md`「テスト要件」表が定める配置）。`place-order.tsx` には監査 HEAD
+> `f9752c0` 時点で `tests/component/store/place-order-card.test.tsx` が存在した
+> （追加コミット `0e10650`。同テストは `@/components/store/cards/place-order` を直接 import）。
+> 見出しの "zero component tests" も同様に過大。**残り 4 ファイルの所見は検証の結果正しい**。
+> Round 4 の再検証・残余のプラン化は
+> [`findings-12-test-coverage.md`](findings-12-test-coverage.md)（reconcile 表 TESTS-01 行 →
+> 「部分解消」/ 残余は **plan 030**）を正とする。
+
+- **Evidence（訂正後）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし（`git ls-tree f9752c0 tests/component/` および co-located の双方で確認）。**現 HEAD でも未カバー**。
+- **Evidence（誤りとして撤回）**: ~~`cards/place-order.tsx`（`placeOrder`）~~ — 監査時点で `tests/component/store/place-order-card.test.tsx` によりカバー済み。
+- **Impact**: capture をいつ呼ぶか・失敗ハンドリング・二重送信ガードを担うクライアント層の回帰が無検出で通る。唯一の演習は間欠ハングが追跡中の E2E のみ（ただし place-order の再入ガードは component テストで演習済み）。
+- **Effort**: L / **Risk**: LOW / **Confidence**: HIGH（訂正後の 4 ファイルについて）
+- **Fix sketch**: server action をモックした RTL テストで happy path / 失敗 toast / submit ボタンの再入ガードを検証。優先: `stripe-payment.tsx`・`paypal-payment.tsx`（`place-order.tsx` はカバー済みのため対象外）。
 
 ### [TESTS-02] Synchronous capture paths (createStripePayment / capturePayPalPayment) lack integration coverage; two-write consistency untestable as written
 
