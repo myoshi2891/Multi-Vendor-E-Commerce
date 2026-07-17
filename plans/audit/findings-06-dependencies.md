@@ -34,6 +34,14 @@
 
 ### [DEPS-02] `js-cookie` HIGH が Clerk バンプで transitCVE 解消することの確認ゲート
 
+> **✅ ゲート通過（実測 2026-07-17）**: Clerk バンプ後の現 `bun.lock` は
+> `@clerk/nextjs@^7.5.0`（`package.json:21`）→ `@clerk/shared@4.25.4` →
+> **`js-cookie@3.0.7`**（`bun.lock:1796`, `:224`）に解決する。3.0.5 より新しいパッチ版であり、
+> 下記「判定」の**第 1 分岐（ゲート通過）**に該当する。
+> したがって **`overrides` による強制解決は不要**（第 2 分岐は発動しない）。
+> 実際に `package.json:140` の `overrides` に `js-cookie` は無い。
+> 以下は**バンプ前**の監査所見と、ゲートの手順定義。
+
 - **Evidence**: `bun.lock` の経路 `@clerk/nextjs@7.0.7 › @clerk/shared@4.3.2 › js-cookie@3.0.5`（`node_modules/js-cookie/package.json` = 3.0.5）。`js-cookie` はツリー上 `@clerk/shared` 経由のみで、`package.json` に直接依存なし。
 - **Impact**: 脆弱な `js-cookie@3.0.5` が Clerk shared 経由でクライアントバンドルに同梱。`@clerk/shared@4.3.2` にピン留めされているため単独更新は不可 — Clerk が新しい `@clerk/shared` を引くときのみ動く。独立アクションではなく **DEPS-01 の検証ゲート**。
 - **Effort**: S（DEPS-01 に内包） / **Risk**: LOW / **Confidence**: HIGH
@@ -57,21 +65,33 @@ cat node_modules/js-cookie/package.json | grep '"version"'
   - **解決版がパッチ済み（>3.0.5 の修正版）** → ゲート通過。DEPS-02 をクローズし、
     その旨と実測版を記録する。
   - **7.5.x でも `js-cookie@3.0.5` のまま** → `@clerk/shared` が旧版をピンし続けている。
-    `package.json` に一時的な `overrides` を追加して強制解決する:
+    `package.json` に一時的な `overrides` を追加して強制解決する。
+    **`package.json` は厳格 JSON であり、コメントも重複キーも書けない**。かつ
+    **`overrides` キーは既に存在する**（`package.json:140` の `@types/react` 系）ため、
+    新規キーを足すのではなく**既存オブジェクトへマージ**すること
+    （別途 `"overrides"` を書くと重複キーになり、後勝ちで `@types/react` の固定が消える）:
 
-```jsonc
-// package.json（一時措置。Clerk 側が追従したら削除する）
-"overrides": { "js-cookie": "<パッチ済み版>" }
+```json
+{
+  "overrides": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "js-cookie": "<パッチ済み版>"
+  }
+}
 ```
+
+  > 一時措置である旨は JSON にコメントを書けないため、**本ファイルと plan 004 に記録**する
+  > （Clerk 側が追従したら `js-cookie` 行のみ削除する）。
 
     追加後は **`bun install` → 上記 1〜3 を再実行**して解決版が変わったことを確認し、
     さらに **Clerk のサインイン/サインアウト導線をスモーク**すること
     （`js-cookie` は Clerk のセッション cookie 操作に使われるため、強制上書きは
     認証の回帰リスクを持つ。`tests/e2e/a11y/sign-in.spec.ts` + plan 053 の
     auth-surface spec が最小の受け皿になる）。
-  - `overrides` を入れた場合は**恒久措置ではない**ことを `package.json` のコメントと
-    本ファイルに明記し、Clerk 側が追従した時点で削除する（削除忘れは将来の
-    Clerk アップグレードを黙って阻害する）。
+  - `overrides` を入れた場合は**恒久措置ではない**ことを本ファイルと plan 004 に明記し、
+    Clerk 側が追従した時点で削除する（削除忘れは将来の Clerk アップグレードを黙って阻害する）。
+    **`package.json` にコメントは書けない**ため、記録先はリポジトリ内のこれらの文書になる。
 
 ### [DEPS-03] `jodit` prototype pollution は本番到達性が低い — 出力はサニタイズ済み
 
