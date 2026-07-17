@@ -201,11 +201,20 @@ lint 的チェック）を設計する。
 
 `docs/design/catalog-approval/design.md` を書き、`plans/0NN-implement-catalog-approval.md` を
 plan-template 準拠で書く。実装プランには: enum 追加（非衝突名）+ backfill マイグレーション →
-ERD 再生成 → 公開スコープ適用 → 審査 action（`requireAdmin`、IDOR 3 階層テスト付き）→
-審査 UI → E2E、を含める。
+ERD 再生成 → (i) ブラウズ用公開スコープ適用 → **(ii) チェックアウトの購入可能性チェック**
+→ 審査 action（`requireAdmin`、IDOR 3 階層テスト付き）→ 審査 UI → E2E、を含める。
 
-**Verify**: 後続プランの done criteria に「BANNED 店舗の商品がブラウズ・検索・商品詳細に
-出ないことの E2E/統合テスト」が含まれる。
+(ii) は Open question 3 の blockquote が定めた設計の後半にあたる。**(i) だけでは購入を拒否できない**
+—— ブラウズ用スコープは発見経路の可視性しか変えず、カート/チェックアウトには意図的に課さないため、
+非 ACTIVE 品は直リンク・カート残留・API 直叩きで**購入が通ったままになる**。可視性フィルタは
+認可の代用にならない。したがって購入拒否は注文確定の**サーバー側**（`place-order` 経路 =
+`src/queries/user.ts` の注文作成）で、既存の在庫チェックと同じ `$transaction` 内で行う。
+
+**Verify**: 後続プランの done criteria に以下の**両方**が含まれる:
+- (i) BANNED 店舗の商品がブラウズ・検索・商品詳細に出ないことの E2E/統合テスト
+- (ii) 非 ACTIVE（`listingStatus` 非公開 / 店舗 BANNED・DISABLED）の商品を含むカートが
+  **注文確定でサーバー側から拒否される**ことの統合テスト（カートから黙って消さず「購入不可」を
+  明示する UI 側の扱いと対で設計する）
 
 ## Done criteria
 
@@ -213,6 +222,9 @@ ALL を満たすこと:
 
 - [ ] `docs/design/catalog-approval/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] 公開経路の棚卸し表と BANNED/DISABLED 露出の検証結果が design doc にある
+- [ ] design doc が **(i) ブラウズ用公開スコープと (ii) 注文確定時の購入可能性チェックを別々に**
+      定義し、(ii) が「非 ACTIVE 品を含むカートをサーバー側で拒否する」ことまで規定している
+      （(i) の可視性フィルタだけでは購入を拒否できないため。Open question 3 の blockquote 参照）
 - [ ] enum 命名が既存 `ProductStatus`（schema.prisma:560 — 注文アイテム配送状態）と衝突していない
 - [ ] `plans/0NN-implement-catalog-approval.md` が存在し、テンプレート準拠
 - [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
