@@ -96,7 +96,23 @@ ORDER BY relevance DESC LIMIT 50
 
 - 対象は **`Product.name` + `description` のみ**。`ProductVariant.keywords`（`schema.prisma:179`）・
   `brand`（`schema.prisma:135`）・カテゴリ名・`Spec` は検索対象外。
-- インデックスなしの式評価（`to_tsvector` を行ごとに計算）。生成列 + GIN インデックス未導入。
+- **インデックスは存在する**（訂正: [`findings-03-performance.md`](findings-03-performance.md) と統一）。
+  `Product_fulltext_idx`（`prisma/migrations/20260222101357_init_postgresql/migration.sql:503`）が
+  **上記 WHERE 句と同一の式**に張られた GIN 式インデックスであり、絞り込みは索引で裏打ちされている:
+
+  ```sql
+  CREATE INDEX "Product_fulltext_idx" ON "Product" USING GIN (
+      to_tsvector('simple', "name" || ' ' || COALESCE("description", ''))
+  );
+  ```
+
+  生成列は未導入だが、**式インデックスで機能的に等価**なため性能上の欠落ではない
+  （findings-03 の clean 一覧: 「主 FTS `search-products` GET は `Product_fulltext_idx` GIN で
+  正しく裏打ち」）。なお `ts_rank` は SELECT/ORDER BY で式を再評価するが、これは
+  **WHERE で絞り込まれた行のみ**が対象。
+  > **インデックス不一致が問題なのは別ルート**の `index-products` 側であり、
+  > findings-03 の **PERF-11**（Prisma の per-column `to_tsvector` / ILIKE フォールバックが
+  > この GIN と一致しない）が扱う。本ルート（`search-products`）と混同しないこと。
 - カテゴリ絞り込み・ファセット集計（件数付きフィルタ）・サジェストは無い。
 
 **ブラウズ側フィルタ** — `src/queries/product.ts:601-772`（`getProducts`）:
@@ -110,10 +126,18 @@ ORDER BY relevance DESC LIMIT 50
 - ソートは views / createdAt / rating の3種のみ（`:758-772`）。価格順ソートは無い。
 - ファセット件数（「この条件でカラー赤は12件」）を返す集計は存在しない。
 
-**含意（spike 015 の出発点)**: E-2 の属性基盤の上に、①生成列 + GIN での tsvector 高速化と
-対象拡大、②属性ファセットの集計/フィルタ、③2系統ある検索実装（tsvector と ILIKE）の統合、
+**含意（spike 015 の出発点)**: E-2 の属性基盤の上に、①**検索対象の拡大**
+（`keywords` / `brand` / カテゴリ名 / `Spec` — 現状は `name` + `description` のみ）、
+②属性ファセットの集計/フィルタ、③2系統ある検索実装（tsvector と ILIKE）の統合、
 を設計する。Round 1 deferred の **PERF-05**（カテゴリ等参照データのキャッシュ）と直交せず
 統合検討する。
+
+> **訂正（2026-07-17）**: ①は当初「生成列 + GIN での tsvector 高速化と対象拡大」としていたが、
+> **`search-products` の現行式は既に `Product_fulltext_idx` GIN で裏打ち済み**（E-3 参照）。
+> したがって spike 015 の論点は「高速化」ではなく**対象カラムの拡大**であり、その手段として
+> 生成列（複数カラム連結を 1 列に materialize）を採るかが設計判断になる
+> — 対象を広げれば現行の式インデックスは一致しなくなるため、**新しい式 or 生成列 + GIN の
+> 張り直しが必要**という順序で捉えること。
 
 ## E-4: カタログガバナンス — 店舗承認のみ・商品承認なし
 
