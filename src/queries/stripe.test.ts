@@ -522,7 +522,11 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            // mockPaymentIntent.amount(9999) と一致する総額にし、
+            // 金額検証ではなく intent id の一致確認に到達させる
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
             mockDb.paymentDetails.upsert.mockResolvedValue(
                 createMockPaymentDetails()
             );
@@ -572,7 +576,7 @@ describe("createStripePayment", () => {
 
         it("確定済み(Paid)注文を canceled intent で退行させない", async () => {
             mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ paymentStatus: "Paid" })
+                createMockOrder({ total: 99.99, paymentStatus: "Paid" })
             );
             mockDb.paymentDetails.findUnique.mockResolvedValue(
                 createMockPaymentDetails({ paymentIntentId: mockPaymentIntent.id })
