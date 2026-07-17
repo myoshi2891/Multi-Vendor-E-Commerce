@@ -5,13 +5,13 @@
 
 ---
 
-## 現在の状態（2026-06-19 時点）
+## 現在の状態（2026-07-17 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1689 passed / 1692 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応 第3弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
+| Jestユニットテスト | **1696 passed / 1699 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -1505,3 +1505,42 @@ severity は指摘の見立てと一部食い違った。「未来日付」系 5
 
 CodeRabbit の残り 77 件は docs 整合系が大半。`plans/README.md` の "Depends on" 矛盾は
 文書自身が L172-175 で自認済みのため、指摘の詳細なしで着手可能。
+
+---
+
+### CodeRabbit ローカルレビュー対応 第4弾（2026-07-17）
+
+#### 概要
+
+CodeRabbit VSCode 拡張が未プッシュの 25 コミットに対して出した 73 件の指摘を triage し、
+`src/` 本番コード 4 件と docs/テスト統計整合 10 件に対応した（`plans/` 59 件は次段へ繰越）。
+指摘は GitHub 上に存在せず `gh api` で取得できないため、各指摘を実コードへ照合して
+妥当性を判定した。判定記録は [`plans/audit/VETTED_FINDINGS.md`](../plans/audit/VETTED_FINDINGS.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/place-order.tsx` | 注文確定と同時にガードを恒久化。後片付け失敗で再注文できた実バグを修正 | `5192aea`→`cc7468c` |
+| `src/queries/order.ts` | エラーログ 7 箇所を `logError` へ統合（監査ログ 3 箇所は対象外） | `cd12973` |
+| `src/queries/stripe.ts` | 有効な PaymentIntent を一意に検証し、確定状態からの退行を拒否 | `91020b3`→`ab97f8f` |
+| `src/queries/user.ts` | カート保存を Serializable + 冪等 `deleteMany` で直列化 | `f4bddb3`→`f046d22` |
+| `scripts/coverage-dashboard/scan-tests.ts` | `it.each` の展開を数え、ダッシュボードの integration 件数を 14→17 に是正 | `a1fe1bb`→`c1be6d7` |
+
+#### 判断メモ
+
+- stripe の指摘を字面どおり「`succeeded` 以外を拒否」と実装すると、`toOrderPaymentStatus` が
+  意図的に全ステータスを写像している既存仕様と既存テストを壊す。真の脆弱性は
+  「同一注文の古い intent による確定済み決済の退行」だったため、確定状態ガード +
+  有効 intent id の一致確認という形に読み替えて実装した。
+- ダッシュボードの数値ズレは HTML でも docs でもなく **scanner のロジック**が SSOT だった。
+  rule 02/03 の「生成物は手編集せず SSOT を直す」に従い `scan-tests.ts` を修正した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1689 passed / 1692 total | **1696 passed / 1699 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| Integration（ダッシュボード集計） | 14（実測 17 と乖離） | **17**（実測と一致） |
+| 型エラー | 0 件 | **0 件** |
