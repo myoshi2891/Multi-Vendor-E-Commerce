@@ -137,8 +137,8 @@ ALL must hold:
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `bun run test` exits 0 (full unit suite green)
 - [ ] `bun run lint` exits 0
-- [ ] No source files under `src/` were modified (`git status` shows only `package.json` + `bun.lock`, and optionally test-mock files if a mock changed)
-- [ ] `plans/README.md` status row for 004 updated
+- [ ] No source files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock` (and optionally test-mock files if a mock changed)
+- [ ] `plans/README.md` status row for 004 updated — in a **separate docs commit**, after the bump commit
 
 ## STOP conditions
 

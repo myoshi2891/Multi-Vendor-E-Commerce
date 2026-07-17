@@ -190,8 +190,8 @@ ALL must hold:
 - [ ] `bun run test -- src/middleware.test.ts` passes
 - [ ] `bun run test` exits 0 (full unit suite green; expect 1685/1688 unless other work landed)
 - [ ] `bun run lint` exits 0
-- [ ] No files under `src/` were modified (`git status` shows only `package.json` + `bun.lock`)
-- [ ] `plans/README.md` status row for 057 updated
+- [ ] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
+- [ ] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
 - [ ] Step 5 smoke result recorded (done, or explicitly flagged pending)
 
 ## STOP conditions
