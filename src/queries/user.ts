@@ -113,13 +113,6 @@ export const saveUserCart = async (
 
     const userId = user.id
 
-    // Search for existing user cart
-    const userCart = await db.cart.findFirst({
-        where: {
-            userId,
-        },
-    })
-
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -249,43 +242,49 @@ export const saveUserCart = async (
 
     // 検証成功後に既存カートを置換する。削除と作成を同一トランザクションに入れ、
     // 作成に失敗した場合も既存カートが失われないようにする。
-    const cart = await db.$transaction(async (tx) => {
-        if (userCart) {
-            await tx.cart.delete({
+    //
+    // Cart.userId は @unique。同一ユーザーの並行保存では、削除と作成が交錯して
+    // delete の P2025 / create の P2002 で正当なリクエストが落ちうる。
+    // Serializable で DB 側に直列化させ、deleteMany で削除を冪等にする
+    // （他リクエストが先に削除済みでも count:0 が返るだけで失敗しない）。
+    const cart = await db.$transaction(
+        async (tx) => {
+            await tx.cart.deleteMany({
                 where: {
                     userId,
                 },
             })
-        }
 
-        // Save the validated items to the cart in the database
-        return tx.cart.create({
-            data: {
-                cartItems: {
-                    create: validatedCartItems.map((item) => ({
-                        productId: item.productId,
-                        variantId: item.variantId,
-                        sizeId: item.sizeId,
-                        storeId: item.storeId,
-                        sku: item.sku,
-                        productSlug: item.productSlug,
-                        variantSlug: item.variantSlug,
-                        name: item.name,
-                        image: item.image,
-                        quantity: item.quantity,
-                        size: item.size,
-                        price: item.price,
-                        shippingFee: item.shippingFee,
-                        totalPrice: item.totalPrice,
-                    })),
+            // Save the validated items to the cart in the database
+            return tx.cart.create({
+                data: {
+                    cartItems: {
+                        create: validatedCartItems.map((item) => ({
+                            productId: item.productId,
+                            variantId: item.variantId,
+                            sizeId: item.sizeId,
+                            storeId: item.storeId,
+                            sku: item.sku,
+                            productSlug: item.productSlug,
+                            variantSlug: item.variantSlug,
+                            name: item.name,
+                            image: item.image,
+                            quantity: item.quantity,
+                            size: item.size,
+                            price: item.price,
+                            shippingFee: item.shippingFee,
+                            totalPrice: item.totalPrice,
+                        })),
+                    },
+                    shippingFees: shippingFee,
+                    subTotal,
+                    total,
+                    userId,
                 },
-                shippingFees: shippingFee,
-                subTotal,
-                total,
-                userId,
-            },
-        })
-    })
+            })
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    )
 
     if (cart) return true
     return false
