@@ -68,6 +68,7 @@
 **対象内**:
 - `package.json` — `@clerk/nextjs`（peer 要件がある場合のみ `@clerk/testing` も）をバンプ
 - `bun.lock` — `bun install` により再生成
+- `plans/README.md` — 完了時に plan 004 のステータス行を更新（**bump とは別の docs コミット**）
 
 **対象外**:
 - `src/middleware.ts` および Clerk を使用する各ソースファイル — コード変更は想定していない。アップグレードによりコード変更が必要になった場合、それは STOP 条件である（報告すること；広範なリファクタを独自判断で行わない）。
@@ -138,8 +139,8 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `bun run test` が exit 0（フルユニットスイート green）
 - [ ] `bun run lint` が exit 0
-- [ ] `src/` 配下のソースファイルが一切変更されていない（`git status` は `package.json` + `bun.lock` のみ、モックが変更された場合はテストモックファイルのみを示す）
-- [ ] `plans/README.md` の 004 のステータス行が更新されている
+- [ ] `src/` 配下のソースファイルが一切変更されていない — **bump コミットの直前**で `git status` が `package.json` + `bun.lock` のみ（モックが変更された場合はテストモックファイルも）を示す
+- [ ] `plans/README.md` の 004 のステータス行が更新されている — bump コミットの後、**別の docs コミット**で
 
 ## STOP conditions
 
