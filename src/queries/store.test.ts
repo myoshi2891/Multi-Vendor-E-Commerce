@@ -1478,6 +1478,8 @@ describe("applySeller", () => {
                 defaultShippingService: "Express Delivery",
                 status: StoreStatus.ACTIVE,
                 featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
             };
             mockPrisma.store.create.mockResolvedValue(storeData);
 
@@ -1491,6 +1493,11 @@ describe("applySeller", () => {
                 featured: false,
                 name: storeData.name,
             });
+            // status/featured はサーバー既定値で上書きされるが、評価系は
+            // pickSellerEditableStoreFields の allowlist から漏れると payload に
+            // 混入してしまう。allowlist 由来の除外を回帰ロックとして固定する
+            expect(createCall.data).not.toHaveProperty("averageRating");
+            expect(createCall.data).not.toHaveProperty("numReviews");
         });
     });
 });
