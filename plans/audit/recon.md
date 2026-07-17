@@ -43,27 +43,43 @@
 
 ### bun audit の要点（ランタイム到達性で選別）
 
-- 🔴 **`@clerk/nextjs` 7.0.7（直接依存・ランタイム）**: CRITICAL [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス、>=7.0.0 <=7.2.3 が影響）+ HIGH GHSA-w24r-5266-9c3c。修正版は 7.2.4 以降（最新 stable 7.5.x）。
-- 🔴 `js-cookie` HIGH（`@clerk/nextjs › @clerk/backend › @clerk/shared` 経由）→ Clerk 更新で解消見込み。
-- 🟡 `jodit` moderate prototype pollution（`jodit-react` 経由・リッチテキストエディタ＝ランタイム）。
-- ⚪ dev 専用（本番非到達）: `handlebars`（ts-jest 経由）、`ws`（jsdom / @lhci/cli 経由）、`picomatch`（jest/tailwind 等）。
-- **証跡の所在**: 監査実行ログの全文は**セッション scratchpad に保存されており
-  コミット対象外**。つまり**リポジトリ内には 97 件の内訳を裏付ける証跡が残っていない**
-  （scratchpad はセッション終了で失われるため、後任は上記サマリを検証できない）。
-  再監査防止のため、以下のいずれかを**リポジトリ内に**残すこと:
-  - **(A) 要約表を本ファイルに置く**（推奨）— 少なくとも
-    **ランタイム到達性のある advisory** について
-    `GHSA ID / パッケージ / 深刻度 / 経路（直接依存 or transitive の親）/ 修正版`
-    を表で記録する。上の 🔴🟡⚪ の箇条書きはこの要約の core にあたるので、
-    GHSA ID と修正版を各行に補って表へ昇格させれば足りる。
-  - **(B) 再実行手順 + 期待内訳を明記する** — 「`bun audit` を実行し、
-    **critical 3 / high 35 / moderate 45 / low 14（計 97）** と一致するか確認する。
-    一致しない場合は依存が動いているので内訳の差分を特定する」という形で、
-    **期待値付きの検証手順**として書く（数値だけを置くと、次に誰かが実行したとき
-    増減の意味を判断できない）。
-  > **dev 専用（本番非到達）の 90 件超をそのまま「97 件」として引用しない**こと。
-  > 判断に効くのはランタイム到達性のある 3 件（Clerk / js-cookie / jodit）であり、
-  > 総数は深刻度の指標として誤解を招く。
+> **本表が `bun audit` 実測のリポジトリ内証跡**（方針 (A) を採用し 2026-07-17 に作成）。
+> **値はすべて監査時点（HEAD `f9752c0` / 2026-07-03 / `bun audit` 実測）のもの**であり、
+> 現在の依存状態ではない（その後の変化は下の「監査後の変化」を参照）。
+> 実行ログ全文はセッション scratchpad にあり失われたため、**本表が唯一の証跡**となる。
+
+**ランタイム到達性のある advisory（判断に効く 3 件）**:
+
+| # | パッケージ | 深刻度 | Advisory ID | 経路 | 修正版 | ランタイム到達性 |
+|---|---|---|---|---|---|---|
+| 1 | `@clerk/nextjs` 7.0.7 | **CRITICAL** | [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス。影響: >=7.0.0 <=7.2.3） | **直接依存**（`package.json`） | 7.2.4 以降（当時の最新 stable 7.5.x） | ✅ 認証経路 |
+| 2 | `@clerk/nextjs` 7.0.7 | HIGH | [GHSA-w24r-5266-9c3c](https://github.com/advisories/GHSA-w24r-5266-9c3c) | **直接依存**（同上） | 同上（plan 004 参照） | ✅ 認証経路 |
+| 3 | `js-cookie` 3.0.5 | HIGH | **未特定** — 当時の `bun audit` ログが scratchpad と共に失われ、ID を採取できていない（推測で埋めない） | transitive: `@clerk/nextjs › @clerk/backend › @clerk/shared@4.3.2` がピン | Clerk 更新で追従（DEPS-02 のゲート） | ✅ Clerk セッション cookie 操作 |
+| 4 | `jodit` 4.6.2 | moderate（prototype pollution） | **未特定** — [`findings-06-dependencies.md`](findings-06-dependencies.md) DEPS-03 の同定表も「未記載」と記録 | transitive: `jodit-react@^4.1.2` 経由 | 未特定 | ⚠️ 限定的（認証済み seller 自身のエディタ内。ストアフロント側は DOMPurify で閉鎖済み — DEPS-03） |
+
+**dev 専用（本番非到達 — 個別追跡しない）**: `handlebars`（ts-jest 経由）、
+`ws`（jsdom / @lhci/cli 経由）、`picomatch`（jest/tailwind 等）。
+
+> **dev 専用（本番非到達）の 90 件超をそのまま「97 件」として引用しない**こと。
+> 判断に効くのは上表のランタイム到達性のある 3 パッケージ（Clerk / js-cookie / jodit）であり、
+> 総数は深刻度の指標として誤解を招く。
+
+**当時の内訳（参考値）**: critical 3 / high 35 / moderate 45 / low 14（計 97）。
+再実行して一致しない場合は依存が動いた結果であり、**不一致それ自体は異常ではない**
+（下記のとおり実際に動いている）。判断は上表の 3 パッケージで行うこと。
+
+#### 監査後の変化（2026-07-17 実測 — 上表は更新しない）
+
+上表は監査時点のスナップショットとして凍結し、その後の解決状況をここに併記する:
+
+| 項目 | 監査時点（`f9752c0`） | 現在 | 根拠 |
+|---|---|---|---|
+| `@clerk/nextjs` | 7.0.7（#1 #2 の影響下） | **`^7.5.0`** — 修正版 7.2.4 を満たす | `package.json:21` |
+| `js-cookie` | 3.0.5（#3） | **3.0.7**（`@clerk/shared@4.25.4` 経由）= パッチ済み | `bun.lock:1796`, `:224` |
+| `jodit` | 4.6.2（#4） | `jodit-react@^4.1.2` のまま（変更なし） | `package.json:77` |
+
+→ #1〜#3 は Clerk バンプ（plan 004）で解消側に動いた。DEPS-02 のゲート判定は
+[`findings-06-dependencies.md`](findings-06-dependencies.md) を参照。#4 は未対応のまま。
 
 ### lint 警告の要点
 
