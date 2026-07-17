@@ -26,9 +26,14 @@
 **Lines 51.3% / Branches 28.6%（16/56）** しかない。未カバーなのは catch 節の全エラー分岐と
 PayPal API の非 OK 応答経路 — つまり「決済が失敗したとき何が起きるか」がすべて回帰無検出である。
 さらに paypal.ts は `.claude/steering/tech.md` が構造化ログ・エラーハンドリング規約の
-**実装例（exemplar）として指名しているファイル**であり、その規約遵守がテストで固定されていないのは
+**実装例（exemplar）として指名しているファイル**であり、その挙動がテストで固定されていないのは
 基準線として不健全。既存の `message.test.ts` に同型ギャップを +14 テストで閉じた前例
 （Branches 74.5%→100%、commit `2d5ab8a`）があり、同じパターンの横展開で完了できる。
+
+> ⚠️ **ただし現行 paypal.ts は、その tech.md 構造化ログ規約に実際には準拠していない**
+> （実測 — 下記「構造化ログ規約との不一致」参照）。本プランは
+> **characterization テスト**（現状の挙動を固定する）であり、**規約準拠を固定するものではない**。
+> この差を意識せずに書くと「規約遵守を固定した」つもりで**規約違反を固定**することになる。
 
 ## Current state
 
@@ -72,6 +77,38 @@ try {
     throw new Error(`Failed to fetch current user: ${message}`);
 }
 ```
+
+### 構造化ログ規約との不一致（テストを書く前に読むこと）
+
+上の実コードのとおり、paypal.ts の `console.error` は **3 引数の位置指定形式**である:
+
+```typescript
+console.error("[paypal:createPayPalPayment] Failed to fetch current user", error.message, error.stack);
+//            ^ 第1引数: 文字列                                            ^ 第2引数    ^ 第3引数
+```
+
+一方 `.claude/steering/tech.md`「構造化ログ」が定める規約は **2 引数形式**:
+
+```typescript
+console.error("[Module:Function] Error message", { error: error.message, stack: error.stack });
+//                                                ^ 第2引数はオブジェクト 1 個
+```
+
+**つまり tech.md は paypal.ts を規約の実装例として名指ししているが、当の paypal.ts は
+その規約に準拠していない**（規約側の例示と実装が乖離している）。
+
+本プランでの扱い（**この方針から逸脱しないこと**）:
+
+- 本プランは **characterization テスト**であり、**現状の 3 引数形式をそのまま assert する**。
+  Status の Risk が明記するとおり **`paypal.ts` は 1 行も変更しない**。
+- テストを「規約準拠の証明」として書かないこと。固定しているのは**現状の挙動**であって
+  規約遵守ではない。テスト名やコメントで「規約どおり」と書かないこと（誤った証跡になる）。
+- **この不一致の解消（paypal.ts を 2 引数へ寄せる / tech.md の例示を差し替える / 規約自体を
+  見直す）は本プランのスコープ外**。テスト追加後に別プラン・別コミットで判断する。
+  先に本プランでテストを付けておくことで、その移行時に「何が変わるか」が機械的に見える
+  （移行はテストを壊す変更として現れる）。
+- なお `src/lib/log.ts` の `logError` への統合が進行中（`coupon.ts` は移行済み、`order.ts` は
+  Round 10 の `cd12973` で移行）。paypal.ts の移行時は本プランのテストが安全網になる。
 
 **注意（message.ts との差分）**: paypal.ts の catch は `message.test.ts` の対象と違い、
 冒頭に**特定メッセージの再 throw ガード**（`"Unauthenticated."` / `"Order not found"`）が 1 分岐多い。
@@ -175,12 +212,13 @@ const mockDb = require("@/lib/db").db;
    メッセージに `PayPal API responded with status 500` が含まれる
 7. fetch が非 Error（例 `"network boom"`）で reject → 外側 catch の非 Error 分岐
    （`console.error("Error in createPayPalPayment:", "network boom")`）→ `"Failed to create PayPal payment"`
-8. ケース 2〜7 で PII（user email 等）がログ引数に含まれないこと（ケース 2 の assert に同居可）
+8. ケース 2〜7 で PII（user email 等）がログ引数に含まれないこと
+   （**独立した 1 テストとして書く** — ケース 2 へ同居させない。テスト数を決定論的に保つため）
 
 認証済みユーザーと所有 order のモックは既存テスト（`paypal.test.ts:64-96` 付近の
 `createMockOrder` 利用箇所）と同じ手順を流用する。
 
-**Verify**: `bun run test -- src/queries/paypal.test.ts` → 既存 17 + 新規 7〜8 all pass。
+**Verify**: `bun run test -- src/queries/paypal.test.ts` → 既存 17 + 新規 8 = **25** テスト all pass。
 
 ### Step 3: `capturePayPalPayment` の同型テストを追加
 
@@ -191,7 +229,7 @@ const mockDb = require("@/lib/db").db;
 - fetch 非 OK（`captureResponse.ok === false`）→ 最終メッセージは `"Failed to capture PayPal payment"`
 - 外側 catch の非 Error 分岐 → `console.error("Error in capturePayPalPayment:", ...)`
 
-**Verify**: `bun run test -- src/queries/paypal.test.ts` → 計 31〜32 テスト all pass。
+**Verify**: `bun run test -- src/queries/paypal.test.ts` → 計 **32** テスト（17 + 8 + 7）all pass。
 
 ### Step 4: 分岐カバレッジを確認
 
@@ -212,13 +250,13 @@ Uncovered Line #s を確認し、上記ケース表の漏れのみ補う（新�
 
 （本プラン自体がテスト追加。上記 Step 2〜3 のケース表が仕様）
 - 構造の手本: `src/queries/message.test.ts:567-660`
-- 検証: `bun run test -- src/queries/paypal.test.ts` → 31〜32 テスト all pass
+- 検証: `bun run test -- src/queries/paypal.test.ts` → 32 テスト all pass
 
 ## Done criteria
 
 Machine-checkable. ALL must hold:
 
-- [ ] `bun run test -- src/queries/paypal.test.ts` exit 0、テスト数が 17 → 31 以上
+- [ ] `bun run test -- src/queries/paypal.test.ts` exit 0、テスト数が 17 → **32**（Step 2 で +8 / Step 3 で +7）
 - [ ] paypal.ts 単体の Branch カバレッジ ≥ 90%（Step 4 のコマンドで確認）
 - [ ] `bunx tsc --noEmit` exit 0
 - [ ] `git diff --stat` で変更ファイルが `src/queries/paypal.test.ts`（+ spec-sync の docs 群）のみ
