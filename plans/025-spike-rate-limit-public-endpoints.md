@@ -143,7 +143,7 @@ doc is ready for maintainer review.
 
 - [ ] `docs/architecture/rate-limiting-spike.md` (or the `plans/direction/` variant) exists and contains all six sections from Step 2.
 - [ ] The doc lists the exact public endpoints from `find src/app/api -name route.ts` and confirms `grep -rniE "ratelimit|upstash|throttle" src` returned no matches.
-- [ ] No files under `src/`, `next.config.mjs`, or `package.json` were modified (`git status` shows only the new doc — and the follow-up plan only if the gate in Step 3 was passed).
+- [ ] No files under `src/`, `next.config.mjs`, or `package.json` were modified (`git status` shows only the new doc, the `plans/audit/findings-11-security-followup.md` status row, and the follow-up plan — the last only if the gate in Step 3 was passed).
 - [ ] The doc contains an explicit "Open questions for the maintainer" section.
 
 ## STOP conditions
