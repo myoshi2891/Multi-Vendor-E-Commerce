@@ -31,7 +31,7 @@
 
 Clerk の `user.deleted` イベントを受けた webhook は `db.user.deleteMany` の**ハード削除**を
 実行するが、User への FK は **RESTRICT（Store / Review / ShippingAddress / Order）・
-CASCADE（Cart / Wishlist / PaymentDetails / Conversation / Message / フォロー / クーポン割当）・
+CASCADE（Cart / Wishlist / Conversation / Message / フォロー / クーポン割当）・
 SET NULL（SupportTicket）の 3 種が混在**する。つまり**注文・レビュー・住所・店舗のいずれか
 1 件でも持つユーザーが Clerk 上でアカウントを削除すると、DB 側の削除は P2003 で永続的に失敗し、
 webhook は 500 を返し続ける。Svix のリトライは**有限回で打ち切られ、以後そのメッセージは
@@ -75,6 +75,18 @@ Wishlist は黙って連鎖消滅し、SupportTicket は匿名化される。こ
     `Conversation.userId`（:45）と `Message.senderId`（:57）は **CASCADE**
   - `prisma/migrations/20260622061307_add_support_ticket/migration.sql`:
     `SupportTicket.userId`（:34）は **SET NULL**（匿名化）
+
+> **`PaymentDetails.userId` の CASCADE は、この webhook 経路では到達できない**（＝本プランの
+> 検証対象に含めない）。`PaymentDetails.orderId` は `Order` への**必須** FK（`schema.prisma` —
+> `orderId String @unique`）なので、PaymentDetails を 1 行でも持つユーザーは**必ず Order を持つ**。
+> そして `Order.userId` は RESTRICT。したがって削除は常に **Order の RESTRICT で先に阻止**され、
+> PaymentDetails の CASCADE が発火する状態は作れない（シナリオ 2 の 500 経路に吸収される）。
+> Why this matters の CASCADE 列挙から PaymentDetails を外しているのはこのため。
+>
+> 一方 **`Conversation` は `orderId String?` が optional** なので Order 無しで成立し、
+> `Conversation` / `Message` / `_CouponToUser` の CASCADE は**到達可能**。よってシナリオ 1 で
+> 検証する（本プランのタイトルが「FK 連鎖（RESTRICT / CASCADE / SET NULL）を固定する」と
+> 掲げる以上、到達可能な CASCADE を取りこぼさない）。
 - **webhook の境界モック（unit テストのパターンをそのまま流用する）**:
   `src/app/api/webhooks/route.test.ts:4-68` に svix / next/headers / `@clerk/nextjs/server` /
   `WEBHOOK_SECRET` 環境変数 / `createWebhookRequest` / `setSvixHeaders` の完全な設定例がある。
@@ -198,14 +210,20 @@ async function postUserDeleted(userId: string): Promise<Response> {
 
 シナリオ（各テストの Arrange は `beforeEach` の `resetDb(db)` 後に組む）:
 
-1. **Cart / Wishlist / フォローのみのユーザーは削除され、子行が連鎖消滅する（CASCADE）**:
+1. **CASCADE 群のみのユーザーは削除され、子行が連鎖消滅する（CASCADE）**:
    `seedUser` → `seedCart` + `seedCartItem`（商品は別セラーの store に `seedStore` +
    `seedCategoryWithSubcategory` + `seedProductWithVariantAndSize` で用意）+
    `db.wishlist.create` + `db.user.update` で `following: { connect: { id: store.id } }`
-   （`User.following`（schema.prisma:26）が `_UserFollowingStore` の implicit M2M）→
+   （`User.following`（schema.prisma:26）が `_UserFollowingStore` の implicit M2M）
+   さらに **`db.conversation.create`（`userId` / `storeId`。`orderId` は指定しない — optional なので
+   Order 無しで成立し、RESTRICT に触れずに CASCADE を発火できる）** と **`db.message.create`
+   （`conversationId` / `senderId: user.id`）**、
+   および **`seedCoupon(db, { storeId: store.id, connectUserIds: [user.id] })`（`_CouponToUser` の
+   M2M 割当。既存ヘルパーで足り、`seed.ts` の変更は不要）** を用意して →
    `postUserDeleted(user.id)` → **status 200**。
    assert: 対象 User 消滅（`db.user.findUnique` === null）、`db.cart.count` === 0、
-   `db.cartItem.count` === 0、`db.wishlist.count` === 0。
+   `db.cartItem.count` === 0、`db.wishlist.count` === 0、
+   **`db.conversation.count` === 0、`db.message.count` === 0**。
    **フォロー中間テーブルの解消も assert する**（`_UserFollowingStore` の CASCADE は
    migration `:760` で定義されているのに、これを確認しないと「フォロー行だけ残る」
    回帰を取り逃す）。implicit M2M の中間テーブルは Prisma から直接クエリできないため、
@@ -219,7 +237,20 @@ const storeAfter = await db.store.findUniqueOrThrow({
 expect(storeAfter._count.followers).toBe(0); // _UserFollowingStore の行が CASCADE で消えた
 ```
 
+   **クーポン割当（`_CouponToUser`）も同じ理由で assert する**（migration `:766` の CASCADE）。
+   これも implicit M2M で直接クエリできないため、**Coupon 側から users を引いて空であること**を
+   確認する（Coupon 自体は残る — 消えるのは割当だけ）:
+
+```typescript
+const couponAfter = await db.coupon.findUniqueOrThrow({
+    where: { id: coupon.id },
+    select: { _count: { select: { users: true } } },
+});
+expect(couponAfter._count.users).toBe(0); // _CouponToUser の行が CASCADE で消えた
+```
+
    **セラー側は無傷**: store / product / variant / size が残存（count 1 ずつ）。
+   Coupon 本体も残存（`db.coupon.count` === 1）。
    > フォロー解消の assert は「Store は残るがフォロー関係だけが消える」という
    > 中間テーブル固有の挙動を固定する。Store 残存の assert だけでは、
    > 中間テーブル行が孤児として残っても green になってしまう。
@@ -277,6 +308,11 @@ Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `user-deletion-webhook.test.ts` の新規テストが全 pass
 - [ ] シナリオ 1 に**フォロー中間テーブル解消**（`_count.followers === 0`）の assert が存在する
+- [ ] シナリオ 1 が**到達可能な CASCADE をすべて**カバーしている: Cart / CartItem / Wishlist /
+      Conversation / Message / `_UserFollowingStore` / `_CouponToUser`
+      （`PaymentDetails` は Order の RESTRICT に阻まれ到達不能なため対象外 — Current state の
+      blockquote 参照。タイトルが掲げる「FK 連鎖（RESTRICT / CASCADE / SET NULL）」と
+      検証範囲を一致させるための項目）
 - [ ] シナリオ 2 に「500 + User/Order/住所 残存」の両方の assert が存在する
 - [ ] シナリオ 5（**Store 保有ユーザー**）に「500 + User/Store 残存」の assert が存在する
       — Why this matters が RESTRICT 群の筆頭に挙げる経路であり、欠かすと販売者側の
