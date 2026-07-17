@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1696 passed / 1699 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1699 passed / 1702 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1540,7 +1540,7 @@ CodeRabbit VSCode 拡張が未プッシュの 25 コミットに対して出し�
 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
-| テスト総数 | 1689 passed / 1692 total | **1696 passed / 1699 total** |
+| テスト総数 | 1689 passed / 1692 total | **1699 passed / 1702 total** |
 | スイート数 | 174 | **174**（変化なし） |
 | Integration（ダッシュボード集計） | 14（実測 17 と乖離） | **17**（実測と一致） |
 | 型エラー | 0 件 | **0 件** |

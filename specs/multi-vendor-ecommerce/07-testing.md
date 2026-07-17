@@ -12,8 +12,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1696 passed / 1699 total across 174 suites (3 skipped), as of 2026-07-17.
-  Seven regressions from the CodeRabbit local review (+7, no new suites). `place-order.test.tsx`
+- 1699 passed / 1702 total across 174 suites (3 skipped), as of 2026-07-17.
+  Ten regressions from the CodeRabbit local review (+10, no new suites). `place-order.test.tsx`
   (+1) pins the guard to order confirmation: a failing `emptyUserCart()` cleanup must not release
   it, because the order is already placed and irreversible (previously the `catch`/`finally` path
   re-enabled the button and allowed a duplicate order). `stripe.test.ts` (+4) rejects a stale
