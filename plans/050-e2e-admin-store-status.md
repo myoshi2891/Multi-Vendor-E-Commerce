@@ -80,9 +80,11 @@ const store = await db.store.findFirst({
   > (a) 存在しない店舗と非公開店舗を区別できず、
   > (b) 監視上は「バグ」として計上され、
   > (c) ユーザーにエラー画面を見せる。
-  > 本プランはこの**現挙動を characterization として固定**する。テストコードには
-  > `TODO(characterization): 非 ACTIVE 店舗は notFound() が正。404 へ修正時に
-  > この期待値を反転する` を必須で書くこと。
+  > 本プランはこの**現挙動を記録**するが、**assert で 500 を固定はしない**
+  > （`toBe(500)` は notFound() 修正で落ちるため、修正を罰するテストになる。
+  > 詳細は Step 4 の blockquote）。テストコードには
+  > `TODO: 非 ACTIVE 店舗は notFound() による 404 が正。現実装は未処理例外で 500 になるため
+  > not.toBe(200) で両対応にしている` をコメントで書くこと。
 - **テスト用店舗の設計**: seed の `E2E Store` / `E2E Store B` は purchase-flow /
   platform-coupon 等が使う**共有リソース** — ステータスを変えると（workers:1 でも
   リトライ順により）他 spec を壊す。**使い捨て店舗を Prisma で直接作成**する
@@ -141,35 +143,51 @@ spec の骨組み（describe + `requiresClerkAdmin` ゲート + `createCustomerS
 
 1. beforeAll: Prisma で使い捨て店舗を作成（url 例: `e2e-status-store-${uniqueId}`、
    `status: "ACTIVE"`、owner = ADMIN ユーザー）。afterAll で削除。
-2. （ベースライン確認）`/store/<使い捨て店舗url>` へ goto → 店舗名が表示される（ACTIVE 時は公開）。
+2. **（control — 必須。任意のベースラインではない）** `/store/<使い捨て店舗url>` へ goto →
+   **HTTP 200** かつ店舗名が表示される（ACTIVE 時は公開）。
+   これを省くと手順 4 の「非公開」assert が、ページが最初から壊れていても緑になる（手順 4 の blockquote 参照）。
 3. `/dashboard/admin/stores` へ goto → 使い捨て店舗の行を特定
    （店舗名テキストで locator）→ status タグを click → ドロップダウンから
    `Banned` のタグを click（`StoreStatusTag` の表示文言は
    `src/components/shared/order-status` 系ではなく store 用タグ — 実文言を
    `StoreStatusTag` の実装から確認して合わせる）→ 成功 toast を確認。
 4. `/store/<使い捨て店舗url>` へ goto → **非公開になったことを assert** する。
-   Current state で確定したとおり実挙動は **HTTP 500**（`getStorePageDetails` の throw が
-   未処理のまま error boundary へ到達する）なので、**レスポンスステータスで判定**する:
+   ただし **HTTP 500 を期待値として固定しない**（理由は下記 blockquote）:
 
 ```typescript
-// BANNED 化した店舗ページは非公開になる。
-// TODO(characterization): 現実装は notFound() を持たず throw が素通りするため 500 になる。
-// 本来は 404 が正しい。notFound() 導入時はこの期待値を 404 へ反転すること。
-// 参照: src/queries/store.ts:725（throw）/ src/app/(store)/store/[storeUrl]/page.tsx（null 未処理）
-const response = await page.goto(`/store/${storeUrl}`);
-expect(response?.status()).toBe(500);
+// --- 手順 2 の control（BAN 前 / 再掲）: これが通ることが手順 4 の前提 ---
+// const before = await page.goto(`/store/${storeUrl}`);
+// expect(before?.status()).toBe(200);
+// await expect(page.getByText(store.name)).toBeVisible();
 
-// 店舗名が描画されていないこと（= 非公開になった実質的な確認）。
-// ステータスだけでなくこちらも見る理由: 将来 404 化されたときに status assert は
-// 落ちるが、「店舗情報が出ていない」という本質的な保証はこの行が担い続ける。
+// --- 手順 4（BAN 後）: 公開されていないこと ---
+// 現実装は notFound() を持たず getStorePageDetails の throw が素通りするため 500 になる。
+// 本来は 404 が正しい。どちらでも通る形で「公開されていない」ことだけを契約にする
+// （notFound() 導入時にこのテストが落ちないようにするため）。
+// 参照: src/queries/store.ts:729（throw）/ src/app/(store)/store/[storeUrl]/page.tsx（null 未処理）
+const response = await page.goto(`/store/${storeUrl}`);
+expect(response?.status()).not.toBe(200);
+
+// 店舗情報が描画されていないこと（本質的な契約）。
 await expect(page.getByText(store.name)).toHaveCount(0);
 ```
 
-   > **`toHaveCount(0)` を併記する意図**: このテストの目的は「BANNED にしたら
-   > 顧客から見えなくなる」ことの保証であって、500 という数値の保証ではない。
-   > 500 の assert は現挙動の記録（characterization）、`toHaveCount(0)` は
-   > **修正後も生き残る本質的な契約**。両方を置くことで、404 化の修正時に
-   > 「どちらを反転すべきか」がテストを読むだけで分かる。
+   > **なぜ `toBe(500)` にしないか** — 2 つの理由がある。
+   >
+   > 1. **誘因が反転する**。500 は未処理エラーであって仕様ではない。これを期待値に据えると
+   >    **バグがある間は緑・`notFound()` で 404 へ直した瞬間に赤**になる。修正を罰するテストは
+   >    回帰検知点ではなく欠陥のロックであり、次の担当者は「直したらテストが壊れた」と受け取る。
+   >    `not.toBe(200)` なら 500（現在）でも 404（修正後）でも通り、
+   >    「BANNED の店舗ページは正常表示されない」という**修正後も生き残る契約**だけを主張できる。
+   > 2. **500 は「何かが壊れた」としか言っていない**。DB 断・無関係なリグレッションでも 500 になり、
+   >    そのときエラーページには店舗名が無いので **`toHaveCount(0)` も一緒に通る**。
+   >    つまり 2 つの assert が揃って緑でも「BANNED にしたから見えない」ことを何も証明しない
+   >    （偽の安心）。だから **BAN 前の control（200 + 店舗名 visible）が必須**になる ——
+   >    これが通って初めて「土台は健全で、状態を変えたから見えなくなった」と言える。
+   >    control を欠いた「非表示の assert」は、ページが最初から壊れていても緑になる。
+   >
+   > 現実装が 500 であるという**事実の記録**は、この blockquote と上のコメントで残す。
+   > テストの assert で固定する必要はない（記録と契約を混同しない）。
 5. （復帰確認・任意だが推奨）admin UI で `Active` に戻す → store ページが再表示される。
 
 **Verify**: `bash scripts/e2e/run-local.sh tests/e2e/admin-store-status.spec.ts --project=chromium`
@@ -198,10 +216,10 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] chromium 1 passed / 3 ブラウザ 3 passed
-- [ ] 非公開の assert が **`response.status()` による具体的な期待値**（現挙動 = 500）と
-      **店舗名の非表示**（`toHaveCount(0)`）の両方を含む
-- [ ] 500 期待値に `TODO(characterization)`（notFound() 導入時に 404 へ反転）が
-      併記されている（`grep -n "TODO(characterization)" tests/e2e/admin-store-status.spec.ts`）
+- [ ] 非公開の assert が **`response.status()).not.toBe(200)`**（500 でも 404 でも通る耐久契約）と
+      **店舗名の非表示**（`toHaveCount(0)`）の両方を含む。**`toBe(500)` で固定していないこと**
+- [ ] **BAN 前の control**（`toBe(200)` + 店舗名 `toBeVisible()`）が BAN の assert より前にある
+      — これが無いと、ページが最初から壊れていても非表示 assert が緑になる（Step 4 の blockquote 参照）
 - [ ] platform-coupon（chromium）が引き続き passed（共有店舗無傷）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（`src/` 無変更。プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 050 行を DONE に更新
@@ -221,10 +239,13 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 > **500 は STOP 条件ではない。** 未処理例外が error boundary へ到達する現実装は
 > **既知のアプリバグ**（本来は `notFound()` で 404 が正しい）だが、本プランは
 > characterization テストであり、**現挙動を記録した上でテストは pass させる**。
-> 500 を観測しても止まらず、Step 4 のとおり `expect(response?.status()).toBe(500)` +
-> `TODO(characterization)` で固定し、バグである旨は Maintenance notes に記録する
-> （notFound() 導入時に期待値を 404 へ反転する）。
-> STOP するのは上記のとおり**500 以外**を観測した場合のみ。
+> 500 を観測しても止まらず、Step 4 のとおり `expect(response?.status()).not.toBe(200)` +
+> `toHaveCount(0)` で「公開されていない」ことだけを契約にし、500 である事実は
+> コメントと Maintenance notes に記録する（**assert では固定しない** —
+> 理由は Step 4 の blockquote）。
+> **404 を観測した場合も STOP しない** —— `not.toBe(200)` はそのまま通る。
+> `notFound()` が導入済みだったということなので、Current state の記述と
+> Maintenance notes を現状に合わせて更新し、報告する。
 
 ## Maintenance notes
 
