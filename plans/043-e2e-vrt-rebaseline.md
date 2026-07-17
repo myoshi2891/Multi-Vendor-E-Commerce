@@ -175,11 +175,12 @@ await expect(page).toHaveScreenshot("checkout-redirect-signin.png", { fullPage: 
 ## Done criteria
 
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` が 2 回連続 `3 passed`
-- [ ] 変更ファイルが `tests/e2e/visual/*-snapshots/*.png` のみで、**枚数が Step 1 の
+- [ ] **スナップショットコミットの直前**で、変更ファイルが
+      `tests/e2e/visual/*-snapshots/*.png` のみで、**枚数が Step 1 の
       failed 数と一致**（実測どおりなら 3 枚）
 - [ ] 最終の VRT 実行が `3 passed`（スペック件数であり、更新枚数とは別の数）
 - [ ] コミット本文に目視確認の内訳が記録されている
-- [ ] `plans/README.md` の 043 行を DONE に更新
+- [ ] `plans/README.md` の 043 行を DONE に更新（スナップショットコミットとは**別の docs コミット**で）
 
 ## STOP conditions
 

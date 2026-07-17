@@ -214,7 +214,7 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 new cases exist and pass.
 - [ ] `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET handler's pagination block (the normalized code uses `Number(...)`).
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
-- [ ] `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files.
+- [ ] Before the **code commit**, `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files. (The `plans/audit/findings-11-security-followup.md` status row and the `spec-sync-after-test` docs go in later, separate commits.)
 
 ## STOP conditions
 
