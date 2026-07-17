@@ -68,8 +68,8 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計 | direction | P3 | M | LOW | — | TODO |
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | M | LOW-MED | — | TODO |
-| [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | TODO |
-| [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | TODO |
+| [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | DONE |
+| [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
@@ -103,8 +103,19 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | TODO |
+| [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | TODO |
+| [059](059-paypal-capture-verification.md) | PayPal capture の金額/相関/通貨検証 + settled ガード（Stripe パリティ・SECURITY-12/13） | security | P1 | S | LOW | — | TODO |
+| [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | TODO |
+| [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | TODO |
+| [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
+> `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
+> 024=`setUserCountryInCookies/route.ts` の `isCountry()` 検証）だが、Status 表が長らく `TODO` の
+> ままドリフトしていた（findings-11 冒頭注記と不一致）。Round 13 の実装状態 reconcile
+> （[`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §0）で確認し `DONE` に補正。
 
 ## Recommended sequencing
 
@@ -146,6 +157,18 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     のと同じ攻撃面がフレームワーク層で開いたまま**になっている（004 は Next.js を明示的に
     スコープ外としていたため別プラン）。16.2.x 内のパッチ bump のみで、`src/` は無変更。
     E2E/統合系プラン（042〜056）とはファイル競合がなく並行着手可能。
+16. **Round 13 security plans (058–062)** — セキュリティ特化 deep 監査（第 3 弾）の産物
+    （詳細: `audit/findings-18-security-r13.md`）。**058 / 059 / 060 が P1**（順不同・相互依存なし・
+    いずれも S〜S–M・LOW risk）で、テスト系プラン群より優先する。推奨順は
+    **058（getCoupon IDOR — 情報漏洩）→ 059（PayPal 過少支払い→Paid — 決済整合性）→
+    060（discount>99→注文 total 負値化）→ 061（レスポンスヘッダ）→ 062（生 error.message 漏洩）**。
+    **057 との優先関係**: 057（`next` bump・HIGH advisory）は依存層の P1 で、058〜062 とファイル
+    競合がなく並行着手可能。フレームワーク層（057）とアプリ層（058〜062）は独立に進められる。
+    **注意**: 059 は `isSettledPaymentStatus` を `src/queries/stripe.ts` から export して共有する
+    ため stripe.ts に軽微に触れる（他プランと競合なし）。058 と 060 は同じ `src/queries/coupon.ts`
+    を触るため、同時実行時は後発が先発の diff を取り込むこと（058=`getCoupon`、060=`upsertCoupon`
+    系で関数は異なるが同一ファイル）。各プランはセキュリティ修正のため回帰テスト必須
+    （認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の 3 階層 IDOR パターン）。
 
 ## Dependency notes
 
@@ -216,6 +239,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006; overlaps the `applyCoupon` lost-update `$transaction` refactor.
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。
+- **Round 13 deferred（詳細: [`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §3）**: 5 本をプラン化（058〜062）した後の残余。**SECURITY-11**（`dompurify >=3.1.3 <3.2.7` XSS advisory・`src/utils/sanitize.ts` 経由で本番 UI 到達だが sink は sanitize 済み → 依存 refresh 枠で patched 版へ。plan 057 の `next` bump と同じ依存メンテ、個別プラン化しない）・**SECURITY-15**（主要ミューテーションのサーバー側 Zod 検証欠落〔review/shipping-address/product〕— plan 060 が coupon で確立するパターンの横展開 follow-up。`upsertProduct` は `ProductWithVariantType` の型差分の突合が必要）・**SECURITY-16**（Cloudinary unsigned upload — preset の signed/unsigned・ダッシュボード制約がコード外のため investigate 先行）・**SECURITY-17**（webhook ステータスの無条件上書き→out-of-order 退行 — plan 059 の settled-guard を webhook へ展開 + plan 032 と調整）・**SECURITY-18**（Clerk/Svix 検証が raw body でない fail-closed 信頼性 — 低コスト、次の webhook 作業に同梱）・**SECURITY-19**（公開検索の入力長上限なし — rate-limit spike plan 025 と併走）・**AUTHZ-02**（seller-store layout の `[storeUrl]` 所有権未検証・多層防御 — クエリ層が実データを守るため MED）・**AUTHZ-03**（`getProductMainInfo` caller チェックなし — 大半公開で LOW）・**LOGIC-22**（送料計算の二系統分岐 Decimal vs float — tech-debt / 規約ドリフト）・**LOGIC-23**（`placeOrder` qty=0 → ITEM 送料負値化 — LOW correctness）・**SECURITY-24**（クーポン利用回数制限なし・`CouponToUser` 未使用 — 1人1回制限が仕様意図か product 判断先行）。
 
 ## Findings considered and rejected (so nobody re-audits them)
 
@@ -226,6 +250,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **DX-09** `.editorconfig`, **TECHDEBT-07** shared dashboard-form scaffold: low value / debatable — spike only if revisited.
 - **Decided tradeoffs (NOT findings)**: ADR-001 CSRF (no token module), ADR-002 CI `--verbose`, ADR-003 `setOpen` sync, ADR-004 testcontainers, ADR-005 SonarCloud non-blocking, `reactStrictMode: false`, Elasticsearch commented out (tsvector chosen), DB-page `force-dynamic` (SSG abandonment documented), `middleware`→`proxy` / AVIF warnings unaddressed, and product scope-outs (multi-currency / tax / advanced analytics / shipping-carrier integration). See [`audit/recon.md`](audit/recon.md) "決定済みトレードオフ".
 - **Already-fixed security** (still healthy, no regression): PayPal/Stripe userId scoping, `upsertCoupon` ownership, `applyCoupon` CAS, review IDOR — per `docs/testing/SECURITY_GAP_REPORT.md`.
+- **Round 13 rejected / by-design（詳細: [`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §4）**: `src/components/ui/chart.tsx:81-98` の `dangerouslySetInnerHTML`（開発者定義 config 由来・外部入力なし・shadcn 上流標準 — by-design）・`src/queries/subCategory.ts:188-190` の `ORDER BY RANDOM() LIMIT ${limit}`（`number|null` 束縛・文字列連結なし — 注入なし）・CORS / 認証系列挙 / セッション（自前実装なし・Clerk 委譲 — clean）・CI SHA pin / 秘密取り扱い / PII ログ（rule 01 充足・`.env` 追跡外・`console.error` は PII 非出力 — clean）。**DEPS-06** は台帳分類の訂正のみ（recon の lodash「本番非到達」は誤り、runtime transitive で到達するが `_.template` 悪用経路は現状未到達 → DEPS-05 の routine refresh に lodash/lodash-es を含める。個別プラン化しない）。
 
 ## What was NOT audited (deep, but scoped)
 
