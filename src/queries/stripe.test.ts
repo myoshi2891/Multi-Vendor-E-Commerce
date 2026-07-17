@@ -20,6 +20,7 @@ jest.mock("@/lib/db", () => ({
         },
         paymentDetails: {
             upsert: jest.fn(),
+            findUnique: jest.fn(),
         },
     },
 }));
@@ -510,6 +511,97 @@ describe("createStripePayment", () => {
 
             expect(mockDb.order.update).not.toHaveBeenCalled();
             expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("有効な PaymentIntent の一意性検証", () => {
+        // 同一注文に対して createStripePaymentIntent は都度新しい intent を作るため、
+        // 古い Pending/canceled intent も metadata・金額・通貨は一致してしまう。
+        // 「作成時に保存した有効な intent id」との一致確認で、確定済み決済の退行を防ぐ。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+        });
+
+        it("作成時に有効な PaymentIntent ID を保存する", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_active_001",
+                client_secret: "pi_active_001_secret",
+                status: "requires_payment_method",
+            });
+
+            await createStripePaymentIntent("order-001");
+
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { orderId: "order-001" },
+                    update: expect.objectContaining({
+                        paymentIntentId: "pi_active_001",
+                    }),
+                    create: expect.objectContaining({
+                        paymentIntentId: "pi_active_001",
+                    }),
+                })
+            );
+        });
+
+        it("保存済みの有効な intent と一致しない古い intent を拒否する", async () => {
+            // 有効な intent は pi_active_001。攻撃者は同一注文の古い intent を渡す
+            mockDb.paymentDetails.findUnique.mockResolvedValue(
+                createMockPaymentDetails({ paymentIntentId: "pi_active_001" })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                id: "pi_stale_000",
+                status: "canceled",
+            });
+
+            await expect(
+                createStripePayment("order-001", "pi_stale_000")
+            ).rejects.toThrow("Payment intent is not active for this order.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み(Paid)注文を canceled intent で退行させない", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ paymentStatus: "Paid" })
+            );
+            mockDb.paymentDetails.findUnique.mockResolvedValue(
+                createMockPaymentDetails({ paymentIntentId: mockPaymentIntent.id })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "canceled",
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Order payment is already settled.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み(Paid)注文に対する新しい intent の作成を拒否する", async () => {
+            // 新規 intent を作れてしまうと、保存済みの有効な intent id が
+            // 上書きされ、一致確認そのものが迂回される。
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ paymentStatus: "Paid" })
+            );
+
+            await expect(
+                createStripePaymentIntent("order-001")
+            ).rejects.toThrow("Order payment is already settled.");
+
+            expect(mockStripePaymentIntentsCreate).not.toHaveBeenCalled();
         });
     });
 
