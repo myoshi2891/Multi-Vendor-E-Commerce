@@ -57,35 +57,35 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | TODO |
-| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | 013（設計消費・並行可） | TODO |
-| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | M | LOW-MED | 014（属性部分のみ） | TODO |
+| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | TODO |
+| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | M | LOW-MED | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | M | LOW | — | TODO |
-| [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | M | LOW-MED | 021（通知定義・並行可） | TODO |
+| [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [019](019-spike-review-ugc-governance.md) | **Spike**: レビュー・UGC 品質ガバナンス設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計 | direction | P3 | M | LOW | — | TODO |
-| [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | M | LOW-MED | 019（評価供給・並行可）/ 018（方式整合） | TODO |
+| [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | TODO |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | TODO |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
-| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | Docker 必須 | TODO |
+| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | TODO |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | TODO |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
-| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | Docker 必須 | TODO |
-| [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | Docker 必須 | TODO |
-| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | Docker 必須 | TODO |
-| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | Docker 必須 | TODO |
-| [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | Docker 必須 | TODO |
-| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | Docker 必須 | TODO |
-| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | Docker 必須 | TODO |
-| [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | Docker 必須 | TODO |
-| [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | Docker 必須 | TODO |
-| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | Docker 必須 | TODO |
-| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | Docker 必須 | TODO |
-| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | CLERK_SECRET_KEY | TODO |
+| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
+| [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
+| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | TODO |
+| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
+| [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
+| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | TODO |
+| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | TODO |
+| [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
+| [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
+| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
+| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
+| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | TODO |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
@@ -161,21 +161,19 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >   （プラン間の依存ではなく実行環境の要件であり、満たせない場合は BLOCKED として記録する）。
 > - **ファイル競合の注意**（同じ seed を触る等）→ Recommended sequencing 節の注記。
 
-- **プラン間の依存は、表の "Depends on" 列に記載されたものが全て**（列が `—` のプランは
-  他プランの完了を待たずに着手できる）。**未完了の前提を無視して実行してよいという意味ではない。**
-  現在の列は次の 3 種を含むので、着手前に自分の行がどれかを見分けること:
-  - **hard 依存（先行プランの完了が必須）**: 047〜050 → 042 / 052 → 042 Step 4 /
-    055 → 042 / 053（サインアウトのみ）→ 042 / 054 → 043。
-    042 が signIn ヘルパーを修復するまで認証系 E2E は書けず、043 が VRT ベースラインを
-    再撮影するまで 054 の拡張は常時 red になる。
-  - **soft 依存（`並行可` と注記されたもの）**: 014 → 013 / 015 → 014 / 018 → 021 /
-    022 → 019・018。先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
-    （各プラン冒頭の Executor 指示に、先行なしで進める場合の前提が明記されている）。
-  - **環境前提（プラン間依存ではない）**: `Docker 必須`（027・031〜041）/
-    `CLERK_SECRET_KEY`（042）。満たせない場合は BLOCKED として記録する。
-  > 上のガイダンス（「列は hard 依存のみを記載する」）に対し、実際の列には `並行可` の
-  > soft 依存と環境前提が混在している。次にこの表を整理する際は、soft を
-  > Recommended sequencing 節へ、環境前提を各プランの Step 0 へ移すこと。
+上の規約に従い、列に載らない前提は次の場所が持つ。**列が `—` でも「前提ゼロ」という意味では
+ない**ので、着手前に該当箇所を確認すること:
+
+| 種別 | 記載場所 | 対象 |
+|------|---------|------|
+| **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 |
+| **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 |
+| **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041 / `CLERK_SECRET_KEY`: 042 |
+
+- soft 依存は先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
+  （各プラン冒頭の Executor 指示に、先行なしで進める場合の前提が明記されている）。
+- 環境前提は各プランの Step 0 が `docker info` 失敗時の STOP と `BLOCKED` 記録まで規定しており、
+  Recommended sequencing の 10〜12 でもラウンド単位で再掲している。
 
 - 以下は soft ordering（推奨順であって前提ではない）:
   - 007 should land before the deferred bulk logging migration it names (so all sites converge on `logError`).
