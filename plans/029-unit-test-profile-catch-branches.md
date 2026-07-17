@@ -12,7 +12,7 @@
 ## Status
 
 - **Priority**: P3
-- **Effort**: S–M（+14〜20 テスト・機械的な横展開）
+- **Effort**: S–M（+29 テスト = catch 20 + 期間フィルタ 9・機械的な横展開）
 - **Risk**: LOW（テスト追記のみ。本体無変更）
 - **Depends on**: none（plan 026 と同型パターン。どちらが先でもよい）
 - **Category**: tests
@@ -94,7 +94,7 @@ lcov 未カバー（2026-07-10 実測）: `44-50, 160-166, 211-217, 293-299, 348
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| 対象テスト | `bun run test -- src/queries/profile.test.ts` | all pass（34 → 54: 既存 34 + 必須 20） |
+| 対象テスト | `bun run test -- src/queries/profile.test.ts` | all pass（34 → 63: 既存 34 + catch 20 + 期間フィルタ 9） |
 | カバレッジ | `bun run test -- src/queries/profile.test.ts --coverage --collectCoverageFrom='src/queries/profile.ts'` | Branches ≥ 95% |
 | 型チェック | `bunx tsc --noEmit` | exit 0 |
 | Lint | `bun run lint` | exit 0 |
@@ -149,10 +149,19 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 `"last-6-months"` / `"last-1-year"` / `"last-2-years"` の各値で呼び、対応する mock
 `findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert
 （既存のフィルタ系テストの assert 形式を踏襲。日付値そのものは `expect.any(Date)` でよい）。
-3 関数 × 3 期間 = 9 だが、lcov の未カバーが 8 行（84,89,242,247,252,374,379,384）で
-あることから、**既にカバー済みの期間値はスキップしてよい**（Step 3 の実測で確認）。
 
-**Verify**: 対象テスト all pass。
+Step 1 と**同じ規則**で必要テスト数を機械的に定義する（lcov の実測任せ・「間引いてよい」を排除する）:
+
+> **必須テスト数 = 3 関数 × 3 期間 = 9 テスト**。
+> 3 期間は固定: ①`"last-6-months"` ②`"last-1-year"` ③`"last-2-years"`。
+>
+> **lcov が「カバー済み」と表示しても 9 テストはすべて残す**（Step 1 の「同型だからと間引かない」と
+> 同じ理由）。行カバレッジは「その行を通ったか」しか見ないため、異なる期間値が同じ行を通れば
+> 1 つ書いた時点でカバー済みに見える。しかし**境界計算の誤り（月数の取り違え・年跨ぎ）は期間値ごとに
+> 独立して起きる**ため、行が緑でも他の値は無検出のまま残る。カバレッジ率に最適化すると
+> 「行を通す最小テスト」になり、検知力ではなく指標を買うことになる。
+
+**Verify**: `bun run test -- src/queries/profile.test.ts` → 計 **63** テスト（34 + 20 + 9）all pass。
 
 ### Step 3: カバレッジ実測と補完
 
@@ -176,10 +185,11 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 
 ## Done criteria
 
-- [ ] `bun run test -- src/queries/profile.test.ts` exit 0、テスト数 34 → **54 以上**
-      （catch 網羅 20 本 + 期間フィルタ分。catch 20 本は必須の下限）
+- [ ] `bun run test -- src/queries/profile.test.ts` exit 0、テスト数 34 → **63**
+      （catch 網羅 20 本 + 期間フィルタ 9 本。いずれも lcov の結果にかかわらず間引かない）
 - [ ] profile.ts 単体 Branches ≥ 95%
 - [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各関数 4 本・計 20 本）
+- [ ] 3 関数（`getUserOrders` / `getUserPayments` / `getUserReviews`）で 3 期間すべてが揃っている（各関数 3 本・計 9 本）
 - [ ] 全 5 関数で「汎用メッセージ完全一致 + 詳細非漏洩」の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` / `bun run test` exit 0
 - [ ] 変更が `src/queries/profile.test.ts`（+ spec-sync docs 群）のみ
