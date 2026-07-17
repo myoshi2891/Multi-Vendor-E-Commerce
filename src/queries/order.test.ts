@@ -589,6 +589,17 @@ describe("getAllOrders", () => {
             expect(result.limit).toBe(100);
         });
 
+        it("page=1e12 は 10_000 にキャップされる（DoS防止）", async () => {
+            const result = await getAllOrders({ page: 1e12, limit: 50 });
+
+            // クランプが無いと skip=(1e12-1)*50≒5e13 となり、巨大 OFFSET による
+            // 過大な DB スキャンと Number.MAX_SAFE_INTEGER 超えの精度喪失を招く
+            expect(mockDb.order.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ skip: (10_000 - 1) * 50, take: 50 })
+            );
+            expect(result.page).toBe(10_000);
+        });
+
         it("page/limit から skip を算出する", async () => {
             await getAllOrders({ page: 3, limit: 20 });
 
