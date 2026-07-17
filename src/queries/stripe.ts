@@ -49,6 +49,28 @@ const toStripeAmount = (total: Prisma.Decimal): number =>
     total.mul(100).toDecimalPlaces(0).toNumber();
 
 /**
+ * 決済が確定済み（不可逆）とみなす Order.paymentStatus 判定。
+ *
+ * これらの状態は Stripe 側で資金移動が確定した結果であり、PaymentIntent の
+ * retrieve 結果で上書きしてはならない。createStripePaymentIntent は同一注文に
+ * 対して都度新しい intent を生成するため、古い Pending/canceled intent も
+ * metadata・金額・通貨の検証を通過してしまう。確定状態を保護しないと、
+ * 古い intent id を渡すだけで Paid を Cancelled へ退行させられる。
+ *
+ * Refunded / PartiallyRefunded / ChargeBack は返金・チャージバックの結果であり、
+ * intent の状態から再導出できないため同様に保護する。
+ */
+const SETTLED_PAYMENT_STATUSES: readonly PaymentStatus[] = [
+    "Paid",
+    "Refunded",
+    "PartiallyRefunded",
+    "ChargeBack",
+];
+
+const isSettledPaymentStatus = (status: PaymentStatus): boolean =>
+    SETTLED_PAYMENT_STATUSES.includes(status);
+
+/**
  * @Function createStripePaymentIntent
  * @Description Creates a Stripe payment intent for the given order.
  * @PermissionLevel User who owns the addresses
@@ -74,6 +96,12 @@ export const createStripePaymentIntent = async (orderId: string) => {
 
         if (!order) throw new Error("Order not found.");
 
+        // 確定済みの決済に新しい intent を作らせない。作成を許すと下で保存する
+        // 「有効な intent id」が上書きされ、createStripePayment 側の一致確認を迂回できる。
+        if (isSettledPaymentStatus(order.paymentStatus)) {
+            throw new Error("Order payment is already settled.");
+        }
+
         // Create a Stripe payment intent
         // metadata.orderId は Webhook (src/app/api/webhooks/stripe) で内部 Order を相関するために必須
         const paymentIntent = await stripe.paymentIntents.create({
@@ -81,6 +109,29 @@ export const createStripePaymentIntent = async (orderId: string) => {
             currency: "usd",
             automatic_payment_methods: { enabled: true },
             metadata: { orderId },
+        });
+
+        // この注文で「有効な」intent はこれ 1 つであることを記録する。
+        // createStripePayment はこの id との一致を要求し、古い intent を拒否する。
+        await db.paymentDetails.upsert({
+            where: { orderId },
+            update: {
+                paymentIntentId: paymentIntent.id,
+                paymentMethod: "Stripe",
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                status: paymentIntent.status,
+                userId: user.id,
+            },
+            create: {
+                paymentIntentId: paymentIntent.id,
+                paymentMethod: "Stripe",
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
+                status: paymentIntent.status,
+                orderId,
+                userId: user.id,
+            },
         });
 
         return {
@@ -126,6 +177,12 @@ export const createStripePayment = async (
 
         if (!order) throw new Error("Order not found.");
 
+        // 確定済みの決済は intent の retrieve 結果で上書きしない。
+        // 古い canceled intent を渡して Paid を Cancelled へ退行させる攻撃を防ぐ。
+        if (isSettledPaymentStatus(order.paymentStatus)) {
+            throw new Error("Order payment is already settled.");
+        }
+
         // 権威的なソースは Stripe。クライアント値ではなく retrieve した intent から導出する。
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -142,6 +199,20 @@ export const createStripePayment = async (
             paymentIntent.currency !== "usd"
         ) {
             throw new Error("Payment intent amount/currency mismatch.");
+        }
+
+        // metadata・金額・通貨は同一注文の「古い」intent でも一致してしまうため、
+        // createStripePaymentIntent が保存した有効な intent id との一致を要求する。
+        // 記録が無い場合（本ガード導入前に作られた注文）は従来どおり通す。
+        const activePayment = await db.paymentDetails.findUnique({
+            where: { orderId },
+            select: { paymentIntentId: true },
+        });
+        if (
+            activePayment &&
+            activePayment.paymentIntentId !== paymentIntent.id
+        ) {
+            throw new Error("Payment intent is not active for this order.");
         }
 
         const updatedPaymentDetails = await db.paymentDetails.upsert({
