@@ -56,13 +56,32 @@
 
 | # | マイルストーン | 状態 | 成果物 / コミット |
 |---|---|---|---|
-| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
-| 2 | Recon リフレッシュ（ベースライン実測 + 既存資産突合 + 実装状態 reconcile） | ⬜ TODO | — |
-| 3 | deep 監査（並列サブエージェント A〜F） | ⬜ TODO | — |
-| 4 | Vet + 監査台帳（findings-18 + VETTED_FINDINGS R13 追記） | ⬜ TODO | — |
-| 5 | plans 058〜 執筆（自動選定・1 プラン = 1 コミット） | ⬜ TODO | — |
-| 6 | README 索引更新（058〜 追加 + Status ドリフト修正 + deferred/rejected 記録） | ⬜ TODO | — |
-| 7 | ADVISOR_STATE クローズ（`git diff 7080b12..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション（`82febbf`） |
+| 2 | Recon リフレッシュ（ベースライン実測 + 既存資産突合 + 実装状態 reconcile） | ✅ DONE | findings-18 §0（`03f9a74`）。`tsc` 0 / `lint` 0 / `bun audit` 90。023/024 の Status ドリフト検出 |
+| 3 | deep 監査（並列サブエージェント A〜F） | ✅ DONE | 6 領域 Explore（認可/入力/決済/webhook/ヘッダ/依存）。全所見を本体が file:line で vet |
+| 4 | Vet + 監査台帳（findings-18 + VETTED_FINDINGS R13 追記） | ✅ DONE | `d2aff76`。新規 SECURITY-10〜19 + AUTHZ/LOGIC + DEPS-06、clean 領域・rejected 記録 |
+| 5 | plans 058〜 執筆（自動選定・1 プラン = 1 コミット） | ✅ DONE | 058（`2a1e6b6`）/ 059（`56ae6fb`）/ 060（`efcbffa`）/ 061（`cdfa685`）/ 062（`3ba0f6c`） |
+| 6 | README 索引更新（058〜 追加 + Status ドリフト修正 + deferred/rejected 記録） | ✅ DONE | `c148915`。058〜062 追加・023/024 を DONE 補正・sequencing #16・deferred/rejected R13 |
+| 7 | ADVISOR_STATE クローズ（`git diff 7080b12..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット。**検証: diff 空を確認済み（src/tests/prisma 無変更）** |
+
+### Round 13 クローズ記録（2026-07-17）
+
+- **成果物**: 監査台帳 `audit/findings-18-security-r13.md`（新規 SECURITY-10〜19・AUTHZ-02/03・
+  LOGIC-22/23・SECURITY-24・DEPS-06、clean 6 領域の再確認、rejected/by-design）+ VETTED_FINDINGS
+  Round 13 節 + プラン **058〜062**（5 本）+ README 索引（Status ドリフト修正含む）。
+- **プラン選定（自動・水増しなし）**: HIGH confidence × 高レバレッジ 5 本に限定。
+  - **P1**: 058（getCoupon cross-store IDOR read）/ 059（PayPal capture 金額・相関・通貨検証 +
+    settled ガード）/ 060（クーポン mutation のサーバー側 Zod 検証・discount>99→負値 total 防止）
+  - **P2**: 061（レスポンス強化ヘッダ・clickjacking/HSTS 等）/ 062（検索 route の生 error.message
+    漏洩停止 + `error:any` 撤去）
+- **未プラン化の既存所見をプラン化**: SECURITY-05（→062）・SECURITY-06（→061）は Round 1 で
+  fix sketch 止まりだったものを Sonnet 実行可能プランに昇格。
+- **reconcile 修正**: plans 023 / 024 を README で DONE に補正（実装済みだが TODO のままドリフト）。
+- **機械検証**: `git diff 7080b12..HEAD --stat -- src tests prisma` = **空**（ソース無変更を確認）。
+  本ラウンドの全コミットは `docs(plans):` / `docs(audit):` 形式・1 マイルストーン=1 コミット。
+- **次アクション（実行順）**: 依存 P1 の **057**（`next` bump）と本ラウンド P1 の **058→059→060**
+  を優先（相互にファイル競合なし・並行可）。次いで 061 / 062。deferred 11 件は findings-18 §3 の
+  昇格条件つき（dompurify は依存 refresh、SECURITY-15 は 060 の横展開、SECURITY-24 は仕様判断先行 等）。
 
 ---
 
