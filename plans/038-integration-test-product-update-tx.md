@@ -293,7 +293,7 @@ Machine-checkable. ALL must hold:
       2 回連続実行が 2 回とも pass する
 - [ ] シナリオ 4 に Wishlist SetNull と CartItem stale の**両方**の assert が存在する
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
-- [ ] `git status` で in-scope 外のファイルに変更がない
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 038 行が DONE に更新済み
 

@@ -280,7 +280,7 @@ Machine-checkable. ALL must hold:
 - [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する（grep で確認可:
       `grep -n "count" tests/integration/webhook-payment.test.ts` に該当行がある）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0（集計不変）
-- [ ] `git status` で in-scope 外のファイルに変更がない
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 032 行が DONE に更新済み
 

@@ -194,7 +194,7 @@ assert は「ゲスト表示（Sign in / Register）の復帰」に限定する�
 - [ ] spec 内に「ページ全体スコープの `getByLabel("Email address")`」が存在しない
       （`grep -n 'getByLabel("Email address")' tests/e2e/auth-surface.spec.ts` → 0 件、
       または Clerk ルートにスコープされたチェーンのみ）
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 053 行を更新（Step 3 の実施/延期を明記）
 
 ## STOP conditions

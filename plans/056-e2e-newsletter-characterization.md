@@ -208,7 +208,7 @@ expect(newsletterRequests).toHaveLength(0);
 - [ ] `page.on("request")` の登録が対象の click **より前**に行われている
 - [ ] spec 冒頭に characterization の docstring（route 実装時は書き直す旨）がある
 - [ ] `src/app/api/newsletter/` が作られていない（`ls src/app/api/` で確認）
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 056 行を DONE に更新
 
 ## STOP conditions

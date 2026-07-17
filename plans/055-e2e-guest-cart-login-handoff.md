@@ -191,7 +191,7 @@ purchase-flow / stock-decrement には firefox のローカルゲート前例
       壊れていても green になる）
 - [ ] 新規コンテキストを `finally` で `close()` している
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/purchase-flow.spec.ts --project=chromium` 既存分 passed
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 055 行を DONE に更新
 
 ## STOP conditions

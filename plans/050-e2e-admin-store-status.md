@@ -203,7 +203,7 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 - [ ] 500 期待値に `TODO(characterization)`（notFound() 導入時に 404 へ反転）が
       併記されている（`grep -n "TODO(characterization)" tests/e2e/admin-store-status.spec.ts`）
 - [ ] platform-coupon（chromium）が引き続き passed（共有店舗無傷）
-- [ ] `git status` で in-scope 外の変更なし（`src/` 無変更）
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（`src/` 無変更。プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 050 行を DONE に更新
 
 ## STOP conditions

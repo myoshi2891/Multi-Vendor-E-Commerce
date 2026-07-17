@@ -193,7 +193,7 @@ await countryResponse; // click 前に仕掛けた待ち受けをここで回収
       `await` されている（click してから待ち始める書き方はレスポンス取りこぼしで
       フレークするため不可）
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/layout-chrome.spec.ts --project=chromium` 既存分 passed
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 051 行を DONE に更新
 
 ## STOP conditions

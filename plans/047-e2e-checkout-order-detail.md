@@ -237,7 +237,7 @@ skip 数（-3: :29 ×3 ブラウザ）とテスト内容が変わるため `spec
       （`.StripeElement` 等 Stripe 固有要素に依存していないこと）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が**別コミット**で完了
       — un-skip により E2E の passed/skipped 件数が変動するため
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 047 行を DONE に更新
 
 ## STOP conditions

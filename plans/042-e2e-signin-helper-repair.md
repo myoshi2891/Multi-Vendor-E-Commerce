@@ -326,7 +326,7 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       （コメントだけで終わっていないこと）
 - [ ] chromium で a11y 4 spec / messages / platform-coupon / seller-onboarding / stock-decrement すべて passed
 - [ ] 3 ブラウザフルランで visual 3 件（plan 043 対象）以外の failed が 0
-- [ ] `git status` で in-scope 外のファイル変更が無い
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 042 行を DONE に更新
 
 ## STOP conditions

@@ -162,7 +162,7 @@ await page.waitForURL(`**/order/${orderId}`);
 - [ ] 注文履歴テストが `#<orderId>` で**行を特定**し、**その行スコープ**で `View` を
       click している（`page` 直下で `View` を取得していないこと — 一覧に複数注文が
       あると別の注文へ遷移しうるため）
-- [ ] `git status` で in-scope 外の変更なし（`src/` 無変更）
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（`src/` 無変更。プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 049 行を DONE に更新
 
 ## STOP conditions

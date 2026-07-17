@@ -174,7 +174,7 @@ Baseline 更新コマンドのコメント）で 1 テスト:
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` が 2 回連続 all passed（5 テスト）
 - [ ] 新規ベースライン 2 枚が目視確認済み（コミットメッセージに記録）
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 054 行を DONE に更新
 
 ## STOP conditions

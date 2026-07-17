@@ -275,7 +275,7 @@ for (const { path, heading } of STATIC_PAGES) {
       いる — 見出しの visible だけでは 404 ページでも green になり、目的を達成できない
 - [ ] chromium で 6 passed、3 ブラウザで 18 passed（正当なローカルゲート skip を除く）
 - [ ] `bash scripts/e2e/run-local.sh tests/e2e/search-filter.spec.ts --project=chromium` 既存分 passed
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 045 行を DONE に更新
 
 ## STOP conditions

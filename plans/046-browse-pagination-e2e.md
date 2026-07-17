@@ -255,7 +255,7 @@ skill の手順に従い確認する。
       （`page=2` だけの assert では、既存クエリを落とす実装でも green になる）
 - [ ] `/browse?category=<専用>&page=abc` が 1 ページ目扱い（テストで固定済み）
 - [ ] `bun run seed:e2e` 冪等（2 回連続 exit 0）
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 046 行を DONE に更新
 
 ## STOP conditions

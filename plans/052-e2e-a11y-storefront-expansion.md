@@ -207,7 +207,7 @@ a11y スイートは **既存 4 spec（各 1 テスト）+ 本プランの新 3 
       許容は既存規約どおり `color-contrast` のみ）
 - [ ] a11y スイート全体の結果が上表と一致する（042 完了時 7 passed /
       042 未完了時 5 passed + checkout・profile の 2 failed のみ）
-- [ ] `git status` で in-scope 外の変更なし
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `plans/README.md` の 052 行を DONE に更新
 
 ## STOP conditions

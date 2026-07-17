@@ -341,7 +341,7 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test:integration` exits 0; `order-lifecycle.test.ts` の新規テストが全 pass
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0
 - [ ] `bun run test`（unit）exits 0 で**テスト数が増減しない**（integration は unit 集計外）
-- [ ] `git status` で in-scope 外のファイルに変更がない
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] `git log --oneline -- src/queries/order.ts` に新規コミットがない（本体無変更）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 031 行が DONE に更新済み

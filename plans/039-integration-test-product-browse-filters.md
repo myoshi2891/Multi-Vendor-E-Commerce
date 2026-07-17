@@ -278,7 +278,7 @@ Machine-checkable. ALL must hold:
       price-high-to-low）の並びを assert しており、price 系は全件が 1 ページに収まる
       pageSize で呼ばれている
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
-- [ ] `git status` で in-scope 外のファイルに変更がない
+- [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 039 行が DONE に更新済み
 
