@@ -79,7 +79,12 @@ await db.product.update({ where: { id: productId },
 ```
 
 - **`db.$transaction` なし**: レビュー upsert と評価再計算が別トランザクション。並行実行で
-  `Product.rating` / `numReviews` が古い集合で上書きされうる
+  `Product.rating` / `numReviews` が古い集合で上書きされうる。
+  ただし **`$transaction` で囲むだけではこの競合は解消しない**（Open question 4 参照）——
+  トランザクションが与えるのは原子性であって分離性ではなく、PostgreSQL の既定分離レベル
+  READ COMMITTED では「全件 findMany → 平均を再計算 → update」の read-modify-write は
+  ロストアップデートを起こす。2 つの投稿が同じレビュー集合を読んでから両方書くと後勝ちで
+  片方が消え、**両方とも commit に成功するためエラーにもならない**
 - **`rating` の範囲検証が無い**: `rating Float` は現状どの経路でも 1〜5 の範囲チェックを受けない。
   `upsertReview` は範囲外（0・6・負値・`NaN`・非整数）をそのまま保存し、平均が汚染される。
   設計で **rating の許容範囲（1〜5 の整数を初期仮説）を確定し、多層で強制**すること:
@@ -154,10 +159,29 @@ numReviews    Int   @default(0)  // schema.prisma:94 — 同上
 3. **通報の受け皿**: レビュー通報を `SupportTicket` の拡張（reviewId 参照の追加）で受けるか、
    専用モデル（`ReviewReport`）を新設するか。通報数の閾値で `FLAGGED` へ自動遷移させる場合の
    閾値のデータ化を含めて確定する。
-4. **アトミック集計の方式**: `$transaction` 内での集計更新を、(a) 全件 findMany + 再計算の
+4. **アトミック集計の方式**: 集計更新を、(a) 全件 findMany + 再計算の
    現行方式の原子化、(b) 差分更新（加重平均の増分計算）、(c) DB 集計（`AVG()` を
    `$queryRaw`）のどれにするか。**Product と Store の両方**を同一トランザクションで
    更新すること。モデレーションで非公開になったレビューを集計から除外する仕様も確定する。
+
+   > **`$transaction` で囲むことと競合の解消は別問題**。トランザクションは原子性
+   > （全部成功するか全部失敗するか）を与えるが、**分離性は分離レベル次第**であり、
+   > PostgreSQL の既定は READ COMMITTED。(a) をそのまま `$transaction` で包んでも、
+   > 並行する 2 投稿が同じレビュー集合を読んでから両方 update すればロストアップデートが
+   > 残る（両方 commit 成功するので検知もできない）。
+   > よって spike は方式 (a)/(b)/(c) の選択に加えて、**その方式で並行投稿が壊れない機構**を
+   > 明示的に確定すること。選択肢:
+   > - **Serializable 分離レベル**（`db.$transaction(fn, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })`）
+   >   と直列化失敗時のリトライ方針。本リポジトリの先例: `src/queries/user.ts:286`（Round 10 の
+   >   `saveUserCart` TOCTOU 修正で採用）
+   > - **行ロック**（`SELECT ... FOR UPDATE` を `$queryRaw` で先に取る）
+   > - **単一文への畳み込み**（(c) 相当。`UPDATE ... SET rating = (SELECT AVG(...))` を 1 文で。
+   >   ただし文の開始時点のスナップショットを読むため、これだけで十分かは要検証）
+   > - **条件付き書き込み**（(b) 相当。読んだ値を WHERE 条件に含める楽観ロック + リトライ）
+   >
+   > Step 3 の「新設計で壊れない根拠」は、**分離レベル / ロックまで含めて**書くこと。
+   > Accelerate 経由での Serializable の可否・タイムアウト制約は STOP conditions の
+   > 「Accelerate の制約と衝突」に該当しうるため実測で確認する。
 5. **`rating` の型と範囲検証**: 表示は小数1桁で足りる。`Float` 維持か `Decimal(2,1)` 化かを
    ADR 判断として確定する（tech.md の Decimal 規約は金額対象 — 評価への適用は判断事項）。
    **加えて入力 rating の許容範囲を必ず設計に含める**（Current state の観察参照）:
@@ -194,6 +218,9 @@ Open questions 4〜5 に答える。並行レビュー投稿シナリオ（2ユ�
 初回 backfill（全店舗の既存レビューからの再計算）手順も設計する。
 
 **Verify**: 並行シナリオの before/after 分析と backfill 手順が design doc 案にある。
+before/after 分析は **`$transaction` で囲んだこと**を根拠にせず、**分離レベル / ロック機構まで
+特定**して「なぜロストアップデートが起きないか」を説明していること（Open question 4 の
+blockquote 参照）。
 
 ### Step 4: 設計ドキュメントと後続実装プランの執筆
 
@@ -238,4 +265,6 @@ ALL を満たすこと:
 - モデレーション状態はレコメンド（spike 017）・検索（spike 015）の対象絞り込みにも
   効かせる必要が出る — 実装時に「公開レビューのみ」条件の適用先を横断確認すること
 - レビュアーが後続実装 PR で最も精査すべき点: `$transaction` の範囲（upsert + Product 集計 +
-  Store 集計が1トランザクション）と、backfill マイグレーションの冪等性
+  Store 集計が1トランザクション）**と、その分離レベル / ロック機構**（範囲が正しくても
+  READ COMMITTED のままではロストアップデートが残る — Open question 4 の blockquote 参照）、
+  および backfill マイグレーションの冪等性
