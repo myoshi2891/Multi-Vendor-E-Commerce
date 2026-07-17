@@ -169,19 +169,35 @@ return status;
    });
    expect(result).toBe("Processing");
    ```
-2. **新規 IDOR テスト** — 同じ describe 内に、このファイルの他所で使われている 3 階層 IDOR パターン（`docs/testing/SECURITY_GAP_REPORT.md` §5.2 と 219・369 行目の `describe("IDOR防止（ストア所有権検証）")` ブロック参照）に従って追加する。カバー対象: (a) アイテムが他店舗に属する場合 "Order item not found" を throw する、(b) `updateMany` の where 句が `orderGroup: { storeId }` を伴う、(c) 更新の副作用が漏れない — すなわち `updateMany` が `{ count: 0 }` を返す経路で throw する:
+2. **新規 IDOR テスト** — 同じ describe 内に、このファイルの他所で使われている 3 階層 IDOR パターン（`docs/testing/SECURITY_GAP_REPORT.md` §5.2 と 219・369 行目の `describe("IDOR防止（ストア所有権検証）")` ブロック参照）に従って追加する。カバー対象:
+   - **(a) スロー検証**: アイテムが他店舗に属する場合（`updateMany` が `{ count: 0 }` を返す経路）に "Order item not found" を throw する
+   - **(b) where 句の構造検証**: `updateMany` の where 句が `orderGroup: { storeId }` を伴う
+   - **(c) 副作用なし検証**: ガード失敗時に**下流の書き込みが呼ばれない** — ここでは**スコープ無しの `orderItem.update` が呼ばれていない**こと
+
    ```ts
    it("他店舗の OrderItem は更新できない（count 0 → not found）", async () => {
        mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
        await expect(
            updateOrderItemStatus(TEST_CONFIG.DEFAULT_STORE_ID, "victim-item", "Shipped")
-       ).rejects.toThrow("Order item not found");
-       expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+       ).rejects.toThrow("Order item not found");                          // (a)
+       expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({          // (b)
            where: { id: "victim-item", orderGroup: { storeId: TEST_CONFIG.DEFAULT_STORE_ID } },
            data: { status: "Shipped" },
        });
+       expect(mockDb.orderItem.update).not.toHaveBeenCalled();             // (c)
    });
    ```
+
+   > **(c) を「`{ count: 0 }` の経路で throw する」と書かないこと**（それは (a) の言い換えであり、
+   > 副作用の検証になっていない）。`updateMany` は**モックなのでそもそも何も書き込まない** ——
+   > その戻り値を `{ count: 0 }` にして throw を確認しても、「副作用が漏れない」ことは何も示せない。
+   > `SECURITY_GAP_REPORT.md` §5.2 の (c) は **「ガード失敗時に下流の `upsert` / `create` /
+   > `delete` / 関連 `findMany` が呼ばれないこと」**を担保する階層で、**別の呼び出しの不在**を
+   > 見るもの。本関数では Step 1 でスコープ無しの `orderItem.update` からスコープ付きの
+   > `orderItem.updateMany` へ移行するため、**`update` の非呼び出し**がまさに検証すべき
+   > 「下流の意図しない実行」にあたる（将来 `update` へ戻す変更を検知できる）。
+   > `mockDb.orderItem` には `update` / `updateMany` の**両方が既に宣言済み**（`order.test.ts:49-53`）
+   > なのでモックの追加は不要。
 3. この describe 共有の `beforeEach` が引き続き `mockDb.store.findUnique.mockResolvedValue(createMockStore())` を設定していることを確認する（店舗所有権ゲートは不変）。このファイルの mock `db` オブジェクトに `orderItem.updateMany` が無ければ、`orderItem` のモックに `updateMany: jest.fn()` を追加する（mock db は既に `order`/`orderGroup`/`orderItem` に `updateMany` を宣言済み、~38-53行目 — `orderItem` にあるか確認）。
 
 **検証**: `bun run test -- src/queries/order.test.ts` → 新規 IDOR テストを含め全件 pass。

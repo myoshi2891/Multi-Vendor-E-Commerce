@@ -169,19 +169,35 @@ In `src/queries/order.test.ts`, the `describe("updateOrderItemStatus", ...)` blo
    });
    expect(result).toBe("Processing");
    ```
-2. **New IDOR test** — add inside the same describe, following the 3-tier IDOR pattern used elsewhere in this file (see `docs/testing/SECURITY_GAP_REPORT.md` §5.2 and the `describe("IDOR防止（ストア所有権検証）")` blocks at lines 219 and 369). Cover: (a) throws "Order item not found" when the item belongs to another store, (b) the `updateMany` where-clause carries `orderGroup: { storeId }`, (c) no update side effect leaks — i.e. `updateMany` returned `{ count: 0 }` path throws:
+2. **New IDOR test** — add inside the same describe, following the 3-tier IDOR pattern used elsewhere in this file (see `docs/testing/SECURITY_GAP_REPORT.md` §5.2 and the `describe("IDOR防止（ストア所有権検証）")` blocks at lines 219 and 369). Cover:
+   - **(a) throw check**: throws "Order item not found" when the item belongs to another store (the `updateMany` → `{ count: 0 }` path)
+   - **(b) where-clause structure check**: the `updateMany` where-clause carries `orderGroup: { storeId }`
+   - **(c) no-side-effect check**: no downstream write runs when the guard rejects — here, that the **unscoped `orderItem.update` was not called**
+
    ```ts
    it("他店舗の OrderItem は更新できない（count 0 → not found）", async () => {
        mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
        await expect(
            updateOrderItemStatus(TEST_CONFIG.DEFAULT_STORE_ID, "victim-item", "Shipped")
-       ).rejects.toThrow("Order item not found");
-       expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({
+       ).rejects.toThrow("Order item not found");                          // (a)
+       expect(mockDb.orderItem.updateMany).toHaveBeenCalledWith({          // (b)
            where: { id: "victim-item", orderGroup: { storeId: TEST_CONFIG.DEFAULT_STORE_ID } },
            data: { status: "Shipped" },
        });
+       expect(mockDb.orderItem.update).not.toHaveBeenCalled();             // (c)
    });
    ```
+
+   > **Do not describe (c) as "the `{ count: 0 }` path throws"** — that is a restatement of (a), not a
+   > side-effect check. `updateMany` is **mocked, so it never writes anything**; making it return
+   > `{ count: 0 }` and asserting a throw proves nothing about side effects leaking.
+   > `SECURITY_GAP_REPORT.md` §5.2 defines (c) as ensuring **downstream `upsert` / `create` /
+   > `delete` / related `findMany` are not called** when the guard rejects — it looks for the
+   > **absence of a different call**. Since Step 1 migrates this function from the unscoped
+   > `orderItem.update` to the scoped `orderItem.updateMany`, **`update` not being called** is
+   > exactly the "unintended downstream execution" worth pinning (it catches a future revert to
+   > `update`). `mockDb.orderItem` already declares **both** `update` and `updateMany`
+   > (`order.test.ts:49-53`), so no mock additions are needed.
 3. Ensure the shared `beforeEach` for this describe still sets `mockDb.store.findUnique.mockResolvedValue(createMockStore())` (the store-ownership gate is unchanged). If the mock `db` object in this file lacks `orderItem.updateMany`, add `updateMany: jest.fn()` to the `orderItem` mock (the mock db already declares `updateMany` for `order`/`orderGroup`/`orderItem` at lines ~38-53 — confirm `orderItem` has it).
 
 **Verify**: `bun run test -- src/queries/order.test.ts` → all pass, including the new IDOR test.
