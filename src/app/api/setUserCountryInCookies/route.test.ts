@@ -26,6 +26,10 @@ describe("POST /api/setUserCountryInCookies", () => {
         const setCookie = response.headers.get("set-cookie");
         expect(setCookie).toContain("userCountry=");
         expect(setCookie).toContain("Path=/");
+        // XSS での窃取と CSRF を防ぐクッキー保護属性。route.ts 側で後退した場合に
+        // 検知できるよう固定する（既定値に依存せず明示的に検証する）
+        expect(setCookie).toContain("HttpOnly");
+        expect(setCookie).toContain("SameSite=lax");
     });
 
     it("returns 400 when userCountry is missing", async () => {
