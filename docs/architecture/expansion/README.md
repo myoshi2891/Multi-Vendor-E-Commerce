@@ -32,9 +32,13 @@
   - 監査 findings: [`plans/audit/findings-09-direction-expansion.md`](../../../plans/audit/findings-09-direction-expansion.md)（E-1〜E-5）/
     [`findings-10-direction-operations-growth.md`](../../../plans/audit/findings-10-direction-operations-growth.md)（O-1〜O-5）
   - spike プラン: `plans/013〜022-spike-*.md`（柱①〜⑩に対応）
-  - `plans/` も git 追跡対象だが、**役割が違う**: `plans/` は Round ごとの監査原本・作業領域
-    （昇格後は凍結され、以後更新しない）であり、本ドキュメント群が**継続的に更新される正式版**である。
-    ロードマップの差分は必ず本ディレクトリ側へ入れること
+  - `plans/` も git 追跡対象だが、**役割が違う**: `plans/` は Round ごとの監査原本・作業領域であり、
+    本ドキュメント群が**継続的に更新される正式版**である。ロードマップの差分は必ず本ディレクトリ側へ入れること
+  - **凍結されるのは昇格した原本のみ**であり、`plans/` 全体ではない:
+    - 凍結（以後更新しない）: `plans/direction/`（`EXPANSION_BLUEPRINT.md` /
+      `OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`）と `plans/audit/findings-*.md`
+    - 継続更新: `plans/README.md`（status 列）・`plans/ADVISOR_STATE.md`・実行中の
+      `plans/001〜057-*.md`（作業領域のため）
 
 ---
 

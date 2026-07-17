@@ -11,15 +11,17 @@
 
 ## 1. 全体地図
 
-improve スキル Round 1 の監査プラン（001〜012: セキュリティ・正確性・技術負債等 —
-`plans/`）と direction 発見（DIRECTION-01〜05）を含めた全体像。
+improve スキル Round 1 の監査プラン（001〜012 — `plans/`）と direction 発見
+（DIRECTION-01〜05）を含めた全体像。うち **001〜011 が Phase 0（守り）**、
+**012 は在庫 restock の spike** であり、成果は Phase C の DIRECTION-02 に接続する（下記参照）。
 **Phase 0 が最優先である点は Round 1 の勧告から不変**。
 
 ```
-Phase 0: 守り（Round 1 プラン — 拡張の前提）
+Phase 0: 守り（Round 1 プラン 001-011 — 拡張の前提）
 ├─ 001-004 セキュリティ（IDOR / mass-assignment / 決済信頼 / Clerk 升级）★最優先
 ├─ 005-006 正確性（カート原子性 / 二重注文）
 └─ 007-011 技術負債・テスト・docs
+    ※ 012（在庫 restock spike）は守りではなく調査プランのため Phase C / DIRECTION-02 に計上
 
 Phase A: カタログ基盤（土台 — 本計画の中核）
 ├─ 柱① カテゴリ N 階層ツリー化                [B-1 解消]
