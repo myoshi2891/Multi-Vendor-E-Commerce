@@ -1,0 +1,262 @@
+# プラン 021（design/spike）: 通知・トランザクショナルメッセージ基盤を設計する
+
+> **Executor 向け指示**: これは **design/spike** プランであり、ビルドプランでは**ない**。
+> 成果物は設計ドキュメントと後続実装プランであり、本プランで機能を出荷**しない**。
+> 読み取り専用の調査を行い、未解決の問いにエビデンス付きで答え、設計ドキュメントを書き、STOP する。
+> 完了したら `plans/README.md` のこのプランのステータス行を更新する。
+>
+> **ドリフトチェック（最初に実行）**: 「Current state」が参照する依存ファイルを**すべて**対象にする
+> （order/store クエリと schema/package.json だけでは狭い。既読管理の手本 `message.ts`、
+> 通知ベルの挿入点 header、webhook パターンも Current state の前提）:
+>
+> ```
+> git diff --stat 86c04a1..HEAD -- \
+>   prisma/schema.prisma package.json \
+>   src/queries/order.ts src/queries/store.ts src/queries/message.ts \
+>   src/components/store/layout/header/ src/app/api/webhooks/
+> ```
+>
+> いずれかが変更されていれば「Current state」の抜粋と現行コードを突き合わせる。
+> Notification 系モデルがスキーマに追加済み、またはメール送信ライブラリ
+> （resend / nodemailer 等）が `package.json` に追加済みなら STOP して報告する。
+
+## Status
+
+- **Priority**: P3（マーケットプレイスの「治安」 — Phase C。**C 内の他項目
+  （016 審査通知 / 018 RMA 通知 / DIRECTION-03 チケット返信通知）の共通前提のため C 先頭**）
+- **Effort**: M（spike + 設計ドキュメント。実装は後続プラン）
+- **Risk**: LOW（読み取り調査は安全。本体実装も既存フローへの追記が主で、
+  通知失敗が主処理を壊さない設計にすれば低リスク）
+- **Depends on**: なし（016/018 の spike と相互参照 — 実行順は 021 が先でも後でも成立するが、
+  021 を先に確定すると 016/018 の通知定義が「マッピング表への行追加」で済む）
+- **Category**: direction
+- **Planned at**: commit `86c04a1`, 2026-07-10
+- **背景ドキュメント**: `plans/direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` §3-⑨ /
+  `plans/audit/findings-10-direction-operations-growth.md` O-4
+
+## Why this matters
+
+顧客が注文の進行を知る手段は pull 型（`trackOrder` / プロフィール注文履歴）のみで、
+**「状態が変わったら知らせる」基盤がアプリに存在しない**（Notification モデルなし・
+メール送信ライブラリなし。Clerk のメールは認証系のみ）。一方で、通知を必要とする機能が
+複数計画中である: spike 016 の審査合否、plan 018 の RMA 状態遷移、DIRECTION-03 の
+チケット返信、既存の注文状態遷移。基盤なしに各機能が個別にメール送信を実装すると、
+発火点・テンプレート・opt-out 管理が散乱し、後から統合するコストが機能数に比例して増える。
+本 spike は **(a) Notification テーブル（アプリ内通知の SSOT）、(b) チャネル抽象
+（in-app 必須 + email はプロバイダ差し替え可能な seam）、(c) イベント → 通知マッピングの
+データ化** を、最初の消費者（016/018）が「行を足すだけ」で使える形で設計する。
+
+## Current state（設計前に必ず読む）
+
+### 通知基盤 — 存在しない
+
+- `prisma/schema.prisma` に Notification 系モデルなし（grep 全走査で 0 件）
+- `package.json` にメール送信系依存なし（nodemailer / resend / sendgrid / postmark 等 0 件）
+- Clerk の認証系メール（サインイン・検証）は Clerk 管轄 — 取引メールには使えない
+
+### 既存の「未読」概念 — チャットの既読管理のみ（`prisma/schema.prisma:736-750`）
+
+```prisma
+model Message {                 // schema.prisma:736
+  isRead    Boolean  @default(false)  // schema.prisma:743
+  readAt    DateTime?                 // schema.prisma:744
+  @@index([conversationId, isRead])   // 未読絞り込み用の複合インデックス（設計コメント付き）
+}
+```
+
+購入者⇔店舗の 1:1 会話（`Conversation`、`schema.prisma:714-733`）専用だが、
+**未読管理 + 既読化のパターンとして in-app 通知の実装先例**になる。
+
+### 通知を必要とするイベント源（現状はどれも通知を発火しない）
+
+| イベント源 | 場所 | 想定受信者 |
+|---|---|---|
+| 注文状態遷移 | `updateOrderGroupStatus` / `updateOrderItemStatus`（`src/queries/order.ts:164,229`）+ admin 版（`:459,521`） | 顧客 |
+| 支払状態遷移 | `updateOrderPaymentStatus`（`order.ts:562`）+ Stripe/PayPal webhook（`src/app/api/webhooks/`） | 顧客 |
+| 店舗承認 | `updateStoreStatus`（`src/queries/store.ts:531-602` — PENDING→ACTIVE + ロール昇格の `$transaction`） | 販売者 |
+| チャット新着 | `src/queries/message.ts` | 相手方 |
+| （計画中）出品審査合否 | spike 016 | 販売者 |
+| （計画中）RMA 状態遷移 | plan 018 | 顧客・販売者 |
+| （計画中）チケット返信 | DIRECTION-03 | 顧客 |
+
+### 実行環境の制約
+
+- デプロイ先は Vercel 相当（Next.js 16 サーバーレス）— **常駐ワーカー不可**。
+  遅延送信を設計する場合は cron（Vercel Cron 等）か送信時 inline かの選択になる
+- webhook 検証は Svix（`src/app/api/webhooks/`）— 外部プロバイダの配信イベント
+  （bounce 等）を受ける場合の既存パターン
+
+### 遵守すべきリポジトリ規約
+
+- 外部呼び出し（メールプロバイダ）は `try/catch` + 構造化ログ
+  （`"[Module:Function] msg", { error, stack }` の2引数形式 — `src/queries/paypal.ts` が実装例）
+- **通知の失敗が主処理（注文更新等）を失敗させないこと** — 送信（外部発火）は主処理の
+  `$transaction` の**外**で行う。実行モデル（commit 後 inline 発火 / Outbox）は Q4 で確定するが、
+  **この tx 境界の決定は `plans/018`（RMA）Q6 の通知原子性モデルと統一すること**（両 spike で
+  同じモデルを採り矛盾させない。片方が Outbox を選ぶなら他方も整合させ、相互参照を design doc に書く）
+- 認可は auth-guards / サーバーアクションは `src/queries/` 配置
+- スキーマ変更時は ERD 再生成（`.claude/rules/03-data-model-diagram-sync.md`）
+- 外部依存の追加（メールプロバイダ SDK）は事前確認が必要な変更（ユーザー承認事項 —
+  後続実装プランに明記する）
+
+## Commands you will need（読み取り専用調査）
+
+| 目的 | コマンド | 期待 |
+|---|---|---|
+| 状態遷移の発火点の全列挙 | `grep -rn "\.update(\|updateMany(" src/queries/order.ts src/queries/store.ts \| head -20` | 通知フック挿入点一覧 |
+| 既読管理パターンの確認 | `grep -n "isRead\|markConversationRead" src/queries/message.ts` | 既存の未読/既読化実装 |
+| webhook の既存パターン | `ls src/app/api/webhooks/` | Svix 検証の実装先例 |
+| ヘッダー UI（ベル置き場）の確認 | `ls src/components/store/layout/header/` | in-app 通知の表示挿入点 |
+
+## Scope
+
+**In scope**（本 spike が生成するもの）:
+- 設計ドキュメント `docs/design/notification-foundation/design.md`（新規） —
+  Open questions 全てに決定 + 根拠
+- メールプロバイダ選定の **ADR 草案**（`docs/architecture/decisions/` 形式・代替案比較付き。
+  ADR 化は「外部依存の追加 + チーム影響 + 参照価値」の作成基準を満たす）
+- 後続**実装**プラン `plans/0NN-implement-notification-foundation.md`（実行時点の次の空き番号、
+  plan-template 準拠）
+- `plans/README.md` の本プランのステータス行更新（Executor 指示・Done criteria と一致する
+  **成果物の一部**。ドキュメント更新なので設計ドキュメント生成とは別コミットにする）
+
+> 注: 冒頭の「設計のみ・機能を出荷しない」は **`src/`・スキーマ・`package.json` を変更しない**という意味。
+> 設計ドキュメント / ADR 草案 / 後続プラン / README ステータス行の**ドキュメント生成・更新は本 spike の
+> 成果物**であり、Out of scope のコード変更禁止と矛盾しない。
+
+**Out of scope**（本プランでやらないこと）:
+- `src/`・スキーマ・`package.json` の変更（設計のみ。SDK 追加は後続プランでユーザー承認後）
+- マーケティングメール・ニュースレター配信（既存 newsletter コンポーネントは登録のみ —
+  トランザクショナル通知と混同しない。将来項目として言及のみ）
+- push 通知（Web Push / モバイル）— チャネル抽象の拡張点として言及のみ
+- 各機能側の通知内容の詳細設計（016/018/DIRECTION-03 側の責務 — 本 spike は
+  マッピングの「形式」と最初の数行を定義する）
+
+## Open questions（spike が証拠付きで必ず答える）
+
+1. **Notification テーブルの形 + 冪等性・重複排除**: 受信者（userId）・種別・タイトル/本文
+   （or テンプレートキー + パラメータ JSON）・リンク先・isRead/readAt（`Message` パターン踏襲）・
+   発生源参照（orderId 等のポリモーフィック参照をどう持つか）。
+   保持期間・既読一括化・ページングの要件も確定する。
+
+   > **通知イベントの冪等性・重複排除を必須設計項目にすること**（同一イベントの再処理・リトライ・
+   > webhook 再送で通知が二重に飛ぶのを防ぐ）:
+   > - 各通知に **冪等性キー**を持たせる（例: `dedupeKey = hash(eventType + sourceRef + recipientId + 状態遷移識別子)`）。
+   >   Notification（および Outbox を採るなら Outbox 行）に `@@unique(dedupeKey)` を張り、
+   >   二重挿入を DB レベルで弾く（upsert or `ON CONFLICT DO NOTHING`）。
+   > - 送信側も **at-least-once 前提**で重複耐性を持たせる（同じ dedupeKey は 1 回だけ送る）。
+   >   webhook（bounce 等）受信も冪等化する。
+   >
+   > **「送信済み」は外部送信の前に記録しないこと**。送る前に送信済みフラグを立てると、
+   > 送信が失敗した場合・プロセスがその隙に落ちた場合に、**送っていないのに送信済みと記録された
+   > 通知が永久に再送されない**（サイレントロス）。これは at-most-once の挙動であり、直上で
+   > 前提に置いた **at-least-once と矛盾する**（at-least-once は「重複しても失わない」保証）。
+   > 記録の順序は Q4（送信の実行モデル）と一体で決めること。選択肢:
+   > - **送信後に記録**: 送信成功を確認してから `sentAt` を書く。プロセスが送信直後・記録前に
+   >   落ちると再送されるが、`dedupeKey` により受信側で吸収できる（at-least-once として正しい挙動）。
+   > - **リース方式（claim → 送信 → 完了）**: 送信前に書くのは「送信済み」ではなく
+   >   **`in-flight`（処理中）の確保**（`attemptCount` + `leaseExpiresAt`）に留め、送信成功後に
+   >   `sentAt` を書く。リース期限切れの行は別ワーカーが再試行できるため、クラッシュしても失われない。
+   >   Q4 の (b) Outbox テーブル + cron 再送を採る場合はこちらが自然。
+   >
+   > いずれの方式でも、**「送信していないのに送信済みになる」状態が発生しない**ことを不変条件として
+   > design doc に明記すること。
+   > - 018 RMA / 016 審査など複数 spike の発火イベントが同じ規約でキーを作れるよう、
+   >   dedupeKey の生成規則を本 spike で共通定義する。
+2. **チャネル抽象の seam**: `sendNotification(event, recipient)` 相当の単一入口が
+   in-app 記録と email 送信へ分配する形。email プロバイダを差し替え可能にする
+   インターフェイス（spike 017 の `getRelatedProducts(strategy)` seam と同じ発想）を定義する。
+   **in-app は必須・email はイベント種別ごとに opt-in** という初期方針の妥当性を検証する。
+3. **メールプロバイダ選定（ADR）**: Resend / SendGrid / AWS SES 等を、無料枠・Next.js
+   親和性・テンプレート管理・bounce webhook・ベンダーロックインの観点で比較し、
+   第一候補を決める（**実装プランでの導入はユーザー承認事項**と明記）。
+   ローカル/CI では実送信しないスタブ（env による無効化）を設計に含める。
+4. **送信の実行モデル**: (a) 主処理後の inline 送信（`$transaction` の外・失敗は
+   ログのみ）、(b) Outbox テーブル + cron 再送、のどちらを初期実装にするか。
+   Vercel の実行時間制約と「通知失敗が主処理を壊さない」要件から確定する。
+   Outbox を選ぶ場合は cron の実行手段（Vercel Cron / 外部スケジューラ）も決める。
+5. **イベント → 通知マッピングのデータ化**: どのイベントで・どのロールに・どのチャネルで
+   送るかを、コード内定数（型安全・レビュー可能）とするか DB テーブル（無停止変更可能）と
+   するか。ブランド未定の「ポリシー差し替え」原則との整合を根拠に確定し、
+   初期マッピング表（少なくとも: 注文 Shipped/Delivered、店舗承認、016 審査合否、
+   018 RMA 主要遷移）を書く。
+6. **ユーザーの通知設定（opt-out）**: email のカテゴリ別 opt-out を初期スコープに
+   含めるか。含めない場合も、法令上 opt-out 必須になりうるカテゴリ（販促系）を
+   トランザクショナル通知と分離しておく設計上の線引きを書く。
+
+## Steps
+
+### Step 1: 発火点と受信者の棚卸し
+
+「Current state」のイベント源表を出発点に、全発火点（order/store/message + webhook）の
+正確な位置（file:line）・その時点で入手できる受信者情報・`$transaction` の内外を確認する。
+
+**Verify**: 発火点一覧表（イベント × file:line × 受信者導出 × transaction 内外）が
+design doc 案にある。
+
+### Step 2: データモデルとチャネル seam の設計
+
+Open questions 1〜2 に答える。`Message.isRead` パターン（複合インデックス設計込み）を
+in-app 通知へ転用する差分を明確にする。
+
+**Verify**: Notification スキーマ案・seam のインターフェイス定義（TypeScript シグネチャ）が
+design doc 案にある。
+
+### Step 3: プロバイダ選定 ADR と実行モデルの確定
+
+Open questions 3〜4 に答える。ADR 草案（MADR 形式 — `docs/architecture/decisions/template.md`
+準拠）を書き、実行モデルは障害シナリオ（プロバイダ停止・タイムアウト・部分失敗）ごとの
+挙動表で比較する。
+
+**Verify**: ADR 草案が代替案比較・Consequences 付きで存在し、実行モデルの障害挙動表が
+design doc 案にある。
+
+### Step 4: マッピング定義と後続実装プランの執筆
+
+Open questions 5〜6 に答え、`docs/design/notification-foundation/design.md` を完成させ、
+`plans/0NN-implement-notification-foundation.md` を plan-template 準拠で書く。実装プランには:
+スキーマ追加 + ERD 再生成 → seam 実装（プロバイダはスタブから）→ 発火点への組み込み
+（注文 Shipped/Delivered を最初の実配線に）→ in-app 表示 UI（ヘッダーベル + 一覧）→
+テスト（送信スタブの検証・通知失敗が主処理を壊さないことのテスト）、を含める。
+
+**Verify**: 後続プランの done criteria に「メール送信失敗時も注文状態更新が成功することの
+テスト」と「SDK 追加はユーザー承認後」の明記が含まれる。
+
+## Done criteria
+
+ALL を満たすこと:
+
+- [ ] `docs/design/notification-foundation/design.md` が存在し、Open questions 全6問に決定 + 根拠がある
+- [ ] メールプロバイダ選定の ADR 草案（MADR 形式・代替案比較付き）が存在する
+- [ ] イベント → 通知の初期マッピング表（016/018 の計画中イベント含む）が design doc にある
+- [ ] 「通知失敗が主処理を壊さない」ことの設計上の保証（実行モデルの選定根拠）が明記されている
+- [ ] `plans/0NN-implement-notification-foundation.md` が存在し、テンプレート準拠
+- [ ] ソースコード・スキーマ・package.json は未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
+- [ ] `plans/README.md` の 021 ステータス行を更新した
+
+## STOP conditions
+
+以下の場合は STOP して報告する:
+
+- Notification 系モデルまたはメール送信ライブラリが既に追加されている（前提消滅）
+- 選定候補のプロバイダがすべて「サーバーレスからの同期送信」に実用上の問題（レイテンシ・
+  レート制限）を抱えると判明し、Outbox + cron が必須になるのに Vercel Cron が
+  利用できない環境制約が判明した場合 — 代替（QStash 等の外部キュー）はスコープ拡大のため
+  判断を仰ぐ
+- 016/018 の spike が実行済みで、その通知要件が本 spike のマッピング形式で表現できない
+  場合 — 形式の拡張案を添えて報告する
+
+## Maintenance notes
+
+- チャネル seam は将来の push 通知・SMS の追加点になる — インターフェイスに
+  チャネル種別の拡張余地を残すこと（ただし初期実装は in-app + email の2つに絞る）
+- イベント → 通知マッピングは機能追加のたびに行が増える — 「新しい状態遷移を足すときは
+  マッピング表の更新を検討する」旨を実装プランで tech.md へ追記提案すること
+- レビュアーが後続実装 PR で最も精査すべき点: **外部送信（メール発火）が `$transaction` の外に
+  あること**（通知失敗の波及防止）と、メール本文に PII/シークレットをログ出力していないこと。
+  > **ただし Outbox を採用する場合、「発火点が transaction の外」を無条件の必須条件にしないこと**。
+  > Outbox パターンでは **Outbox 行の *書き込み* は主処理の `$transaction` 内**で行うのが正しい
+  > （主状態変更と通知意図を原子的にコミット → メッセージ喪失を防ぐ）。tx の外に出すのは
+  > **実際の *送信*（ワーカー/cron による外部発火）だけ**。したがって精査点は正確には
+  > 「*送信* が tx 外」であって「*Outbox への記録* が tx 外」ではない。inline 発火モデルを採る場合のみ
+  > 「発火そのものが tx 外」となる。どちらのモデルかを design doc で明示し、レビュー観点もそれに合わせる。

@@ -53,6 +53,7 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             create: jest.fn(),
             delete: jest.fn(),
+            deleteMany: jest.fn(),
             update: jest.fn(),
         },
         cartItem: {
@@ -215,6 +216,14 @@ describe("followStore", () => {
 // saveUserCart
 // ==================================================
 describe("saveUserCart", () => {
+    beforeEach(() => {
+        // saveUserCart の transaction callback を同じ DB モックで実行する。
+        mockDb.$transaction.mockImplementation(
+            async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                callback(mockDb)
+        );
+    });
+
     describe("認証エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
@@ -327,7 +336,7 @@ describe("saveUserCart", () => {
             const existingCart = createMockCart();
 
             mockDb.cart.findFirst.mockResolvedValue(existingCart);
-            mockDb.cart.delete.mockResolvedValue(existingCart);
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
             mockDb.product.findUnique.mockResolvedValue(
                 createMockFullProduct()
             );
@@ -335,10 +344,74 @@ describe("saveUserCart", () => {
 
             await saveUserCart(cartProducts as never);
 
-            expect(mockDb.cart.delete).toHaveBeenCalledWith({
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
             expect(mockDb.cart.create).toHaveBeenCalled();
+        });
+
+        // Cart.userId は @unique。findFirst(検証前の読み取り) と transaction の間には
+        // TOCTOU があり、同一ユーザーの並行保存で delete の P2025 /
+        // create の P2002 が起きうる。Serializable で DB 側の直列化に委ねる。
+        it("カート保存をユーザー単位で直列化する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            await saveUserCart(cartProducts as never);
+
+            expect(mockDb.$transaction).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({ isolationLevel: "Serializable" })
+            );
+        });
+
+        it("既存カートの削除は冪等に行う（並行削除で失敗させない）", async () => {
+            // findFirst で既存カートを観測した後に他リクエストが先に削除しても、
+            // deleteMany なら count:0 を返すだけで P2025 にならない。
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            await expect(
+                saveUserCart(cartProducts as never)
+            ).resolves.toBe(true);
+
+            expect(mockDb.cart.delete).not.toHaveBeenCalled();
+        });
+
+        it("削除・作成を単一transactionへ配線し、コールバック内の失敗を伝播する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            const transactionCart = {
+                deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+                create: jest.fn().mockRejectedValue(new Error("Cart creation failed")),
+            };
+
+            mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: unknown) => Promise<unknown>) =>
+                    callback({ cart: transactionCart })
+            );
+
+            await expect(saveUserCart(cartProducts as never)).rejects.toThrow(
+                "Cart creation failed"
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(transactionCart.deleteMany).toHaveBeenCalledWith({
+                where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
+            expect(transactionCart.create).toHaveBeenCalledTimes(1);
+            expect(mockDb.cart.delete).not.toHaveBeenCalled();
+            expect(mockDb.cart.create).not.toHaveBeenCalled();
         });
 
         it("割引価格が正しく計算される", async () => {
@@ -584,6 +657,7 @@ describe("placeOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(shippingAddress);
         });
 
         it("カートが見つからない場合エラーをスローする", async () => {
@@ -592,6 +666,28 @@ describe("placeOrder", () => {
             await expect(
                 placeOrder(shippingAddress as never, "invalid-cart")
             ).rejects.toThrow("Cart not found.");
+        });
+
+        it("認証ユーザーが所有しない配送先住所を拒否し、注文トランザクションを開始しない", async () => {
+            mockDb.cart.findUnique.mockResolvedValue({
+                ...createMockCart(),
+                cartItems: [],
+                coupon: null,
+            });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(null);
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Shipping address not found.");
+
+            expect(mockDb.shippingAddress.findFirst).toHaveBeenCalledWith({
+                where: {
+                    id: shippingAddress.id,
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+            });
+            expect(mockDb.$transaction).not.toHaveBeenCalled();
+            expect(mockDb.order.create).not.toHaveBeenCalled();
         });
 
         it("無効な商品/バリアント/サイズの組合せでエラーをスローする", async () => {
@@ -616,6 +712,7 @@ describe("placeOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(shippingAddress);
             // $transaction モック: コールバックに mockDb を渡して実行
             mockDb.$transaction.mockImplementation(
                 async (
@@ -667,6 +764,64 @@ describe("placeOrder", () => {
             expect(mockDb.order.create).toHaveBeenCalledTimes(1);
             expect(mockDb.orderGroup.create).toHaveBeenCalledTimes(1);
             expect(mockDb.orderItem.create).toHaveBeenCalledTimes(1);
+        });
+
+        it("クライアントが countryId を偽装しても所有住所(ownedAddress)のサーバー値を使う", async () => {
+            // 攻撃者は自分の住所 id を渡しつつ countryId だけ別国に改ざんできる。
+            // 所有権検証後は ownedAddress のサーバー値で配送/税判定すべき（クライアント値は無視）。
+            const forgedAddress = createMockShippingAddress({
+                countryId: "country-FORGED",
+            });
+            const ownedAddress = createMockShippingAddress({
+                countryId: "country-001", // サーバー DB 上の真の国
+            });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(ownedAddress);
+
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            const mockOrder = createMockOrder();
+            mockDb.order.create.mockResolvedValue(mockOrder);
+            mockDb.orderGroup.create.mockResolvedValue({ id: "order-group-001" });
+            mockDb.orderItem.create.mockResolvedValue({ id: "order-item-001" });
+            mockDb.order.update.mockResolvedValue(mockOrder);
+
+            await placeOrder(forgedAddress as never, "cart-001");
+
+            // 国判定はサーバー値 country-001 を使い、偽装 country-FORGED は使われない
+            expect(mockDb.country.findUnique).toHaveBeenCalledWith({
+                where: { id: "country-001" },
+            });
+            expect(mockGetDeliveryDetails).toHaveBeenCalledWith(
+                expect.any(String),
+                "country-001"
+            );
+            expect(mockDb.country.findUnique).not.toHaveBeenCalledWith({
+                where: { id: "country-FORGED" },
+            });
+            // 注文に紐づく住所も ownedAddress.id（サーバー値）
+            expect(mockDb.order.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        shippingAddressId: ownedAddress.id,
+                    }),
+                })
+            );
         });
 
         it("複数店舗の商品は店舗ごとにOrderGroupが作成される", async () => {

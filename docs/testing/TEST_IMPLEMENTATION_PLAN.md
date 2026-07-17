@@ -72,13 +72,18 @@ UI/状態管理に関わるカスタムフックの振る舞い検証。
 ### Phase 3: 重要ワークフロー (E2E Tests) 【優先度: P1-P2】
 Playwright を使用し、実際のユーザージャーニーをエンドツーエンドで検証する。
 
+> **2026-07-11 実測注記（R8）**: 初の 3 ブラウザフル実測（111 テスト / 25.5m）で
+> **52 passed / 17 failed / 39 skipped / 3 did not run**。下表のうち購入フロー・Seller
+> オンボーディングの認証依存部は spec 実装済みだが **signIn ヘルパーの Clerk UI ドリフト
+> （5 サイト複製）で全滅中** — 修復は plans/042。決済異常系はカード拒否・二重決済が
+> 未実装のまま skip（機能実装待ち）。実測の詳細:
+> [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)
+
 | シナリオ | 内容 | ツール |
 |:---|:---|:---|
 | **購入フルフロー** | 検索 → カート → Stripe/PayPal 決済 → 注文完了 → DB 整合性。 | Playwright |
 | **Seller オンボーディング** | 申請 → Admin 承認 → 店舗作成 → 商品出品。 | Playwright |
 | **決済異常系** | 決済キャンセル、カード拒否、二重決済試行時の冪等性検証。 | Playwright |
-
----
 
 ## 3. 重点検証戦略 (Specialist Focus)
 
@@ -703,6 +708,13 @@ describe("PaymentStatusTag")
 
 **前提:** `bun run seed:e2e` 済み、`playwright.config.ts` の既存設定を使用
 
+> ⚠️ **本節の ✅ は「実装完了」であり「実行が通っている」ことを意味しない。**
+> 以下 3-1〜3-5 のスペックはファイルとしては全て実在するが、2026-07-11 の R8 フル実測
+> （3 ブラウザ 111 テスト）では **52 passed / 17 failed / 39 skipped / 3 did not run** で、
+> 認証系 16 件は signIn ヘルパーの Clerk UI ドリフトにより全滅している（plan 042 で修復予定）。
+> 実行状態の正本は [`QA_HANDOFF.md`](./QA_HANDOFF.md) の Playwright 行、
+> 詳細は [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md) を参照。
+
 ---
 
 ### 3-1. `tests/e2e/purchase-flow.spec.ts` ✅ 改善済み (2026-05-21)
@@ -723,9 +735,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-2. `tests/e2e/seller-onboarding.spec.ts` ✅ 完了 (2026-05-21)
+### 3-2. `tests/e2e/seller-onboarding.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("Seller オンボーディング")
   正常系: 申請フォーム 4 ステップを順に完了できる                               [P1]
@@ -737,9 +749,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-3. `tests/e2e/payment-error.spec.ts` ✅ 完了 (2026-05-21)
+### 3-3. `tests/e2e/payment-error.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("決済異常系")
   正常系: 住所未選択で注文ボタン→エラーメッセージ                               [P1]
@@ -751,9 +763,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-4. `tests/e2e/search-filter.spec.ts` ✅ 完了 (2026-05-21)
+### 3-4. `tests/e2e/search-filter.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("検索・フィルタ")
   正常系: 商品名で検索し結果が表示される                                         [P1]
@@ -764,9 +776,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-5. `tests/e2e/mobile-responsive.spec.ts` ✅ 完了 (2026-05-21)
+### 3-5. `tests/e2e/mobile-responsive.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("モバイルレスポンシブ")
   正常系: モバイルビューポートで商品カードが正しくレイアウト                     [P1]
@@ -807,6 +819,61 @@ describe("購入フルフロー")
 **次ステップ:** `/checkout` / `/profile` の a11y spec 追加（完了済み）
 
 **参照コミット:** `d261d76`
+
+---
+
+## Phase 4: Round 4 テストギャップ解消（P2〜P3・2026-07-10 起票）
+
+> **実行手順の SSOT は `plans/026〜030`**（improve Round 4 監査の自己完結プラン。
+> 本セクションは「何を・どの順で作るか」のロードマップ位置付けのみを記録し、
+> ケース表・モック手順・STOP 条件はプラン側を参照する）。
+> 監査台帳: [`plans/audit/findings-12-test-coverage.md`](../../plans/audit/findings-12-test-coverage.md)
+
+| Step | 対象 | プラン | 追加規模（想定） | 状態 |
+| --- | --- | --- | --- | --- |
+| 4-1 | `src/queries/paypal.test.ts` エラー経路分岐（B 28.6%→90%+） | [plans/026](../../plans/026-unit-test-paypal-error-branches.md) | +14〜16 | ⬜ 未着手 |
+| 4-2 | `tests/integration/order-placement.test.ts` オーバーセルロールバック + PLATFORM 端数（Docker 必須） | [plans/027](../../plans/027-integration-test-oversell-rollback-and-platform-coupon.md) | +3 シナリオ | ⬜ 未着手 |
+| 4-3 | `src/queries/country.test.ts` 新設（最後の未テスト server action） | [plans/028](../../plans/028-unit-test-country-query.md) | +4 / +1 スイート | ⬜ 未着手 |
+| 4-4 | `src/queries/profile.test.ts` catch 分岐 + 期間フィルタ（B 69.2%→95%+） | [plans/029](../../plans/029-unit-test-profile-catch-branches.md) | +14〜20 | ⬜ 未着手 |
+| 4-5 | money-path クライアント 6 ファイルの component テスト（newsletter / cart-summary / checkout-container / stripe-payment / paypal-payment / cart-container） | [plans/030](../../plans/030-component-test-money-path-client.md) | +22 前後 / +6 スイート | ⬜ 未着手 |
+
+**実行規律**: 各 Step 完了ごとに `spec-sync-after-test` skill で統計同期（rule 02）。
+進捗の SSOT は [`plans/README.md`](../../plans/README.md) の status 列であり、本表の状態列は同期先。
+
+---
+
+## Phase 5: E2E 拡大（improve Round 8 / plans 042〜050）【優先度: P1-P3】🆕 2026-07-11
+
+R8 監査（findings-16）で確定したギャップの実行フェーズ。**042 が全認証系プランの先行依存**。
+
+| Step | プラン | 内容 | 状態 |
+|:---|:---|:---|:---|
+| 5-1 | plans/042 | signIn ヘルパー修復（5 サイト）+ svg-img-alt 是正 → 認証系 16 件回復 | ⬜ |
+| 5-2 | plans/043 | VRT ベースライン 3 枚の目視ゲート付き再撮影 | ⬜ |
+| 5-3 | plans/044 | run-local.sh :3000 ガード + globalTimeout 60 分化 | ⬜ |
+| 5-4 | plans/045 | ゲスト導線（compare / track-order / offers / 静的）+ OfferTag seed | ⬜ |
+| 5-5 | plans/046 | /browse ページネーション最小配線 + 実データ E2E + seed 12 商品 | ⬜ |
+| 5-6 | plans/047 | 住所未選択エラー un-skip + 注文詳細金額明細（§20 P0 請求側） | ⬜ |
+| 5-7 | plans/048 | wishlist / ストアフォロー / レビュー投稿 | ⬜ |
+| 5-8 | plans/049 | プロフィール住所管理 + 注文履歴 | ⬜ |
+| 5-9 | plans/050 | admin 店舗ステータス変更 → store ページ非公開 | ⬜ |
+
+---
+
+## Phase 6: E2E 残余拡大（improve Round 9 / plans 051〜056）【優先度: P1-P3】🆕 2026-07-12
+
+R9 残余監査（findings-17 — R8 未スイープの切り口 8 系統。ベースラインは R8 実測 #2 を
+SSOT 引き継ぎ）で確定したギャップの実行フェーズ。**6-1 / 6-6 は依存ゼロで即着手可能**。
+6-2 は plan 042 Step 4、6-4 は plan 043、6-5（+ 6-3 のサインアウト部）は plan 042 の完了が先行。
+
+| Step | プラン | 内容 | 状態 |
+|:---|:---|:---|:---|
+| 6-1 | plans/051 | 国選択セレクタ（Ship to）cookie 往復（依存ゼロ・P1） | ⬜ |
+| 6-2 | plans/052 | a11y スキャン拡大: browse / 商品詳細 / cart（042 Step 4 先行） | ⬜ |
+| 6-3 | plans/053 | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト） | ⬜ |
+| 6-4 | plans/054 | VRT 拡大: 商品詳細 / browse（043 先行） | ⬜ |
+| 6-5 | plans/055 | ゲストカート → サインイン後の引き継ぎ（042 先行） | ⬜ |
+| 6-6 | plans/056 | Newsletter dormant 404 の characterization（route 実装時に書き直し前提） | ⬜ |
 
 ---
 

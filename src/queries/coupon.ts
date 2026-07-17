@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
+import { logError } from '@/lib/log'
 import { SerializedCartType } from '@/lib/types'
 import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
@@ -51,7 +52,7 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
     try {
         existingById = await db.coupon.findUnique({ where: { id: coupon.id } })
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:upsertCoupon] failed to verify coupon ownership', error)
         throw new Error('Error occurred while verifying coupon ownership.')
     }
     // storeId !== store.id は他店舗、PLATFORM(storeId=null) も含めて拒否する
@@ -89,7 +90,7 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
         return couponDetails
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:upsertCoupon] failed to upsert coupon', error)
 
         // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
         if (
@@ -127,7 +128,7 @@ export const getStoreCoupons = async (storeURL: string) => {
 
         return coupons
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:getStoreCoupons] failed to fetch store coupons', error)
         throw new Error(
             `Error occurred while trying to fetch store coupons: ${error instanceof Error ? error.message : String(error)}`
         )
@@ -155,7 +156,7 @@ export const getCoupon = async (couponId: string) => {
 
         return coupon
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:getCoupon] failed to fetch coupon', error)
 
         throw new Error(
             `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
@@ -192,7 +193,7 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:deleteCoupon] failed to delete coupon', error)
 
         throw new Error(
             `Error occurred while trying to delete coupon: ${error instanceof Error ? error.message : String(error)}`
@@ -329,7 +330,7 @@ export const applyCoupon = async (
             cart: serializedCart,
         }
     } catch (error: unknown) {
-        console.error(error)
+        logError('[Coupon:applyCoupon] failed to apply coupon', error)
         throw new Error(
             `Error occurred while applying coupon: ${error instanceof Error ? error.message : String(error)}`
         )

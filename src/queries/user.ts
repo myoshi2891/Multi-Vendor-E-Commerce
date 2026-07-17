@@ -113,13 +113,6 @@ export const saveUserCart = async (
 
     const userId = user.id
 
-    // Search for existing user cart
-    const userCart = await db.cart.findFirst({
-        where: {
-            userId,
-        },
-    })
-
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -247,42 +240,51 @@ export const saveUserCart = async (
 
     const total = subTotal.add(shippingFee)
 
-    // 検証成功後に既存カートを削除（検証前に削除するとエラー時にカート消失）
-    if (userCart) {
-        await db.cart.delete({
-            where: {
-                userId,
-            },
-        })
-    }
+    // 検証成功後に既存カートを置換する。削除と作成を同一トランザクションに入れ、
+    // 作成に失敗した場合も既存カートが失われないようにする。
+    //
+    // Cart.userId は @unique。同一ユーザーの並行保存では、削除と作成が交錯して
+    // delete の P2025 / create の P2002 で正当なリクエストが落ちうる。
+    // Serializable で DB 側に直列化させ、deleteMany で削除を冪等にする
+    // （他リクエストが先に削除済みでも count:0 が返るだけで失敗しない）。
+    const cart = await db.$transaction(
+        async (tx) => {
+            await tx.cart.deleteMany({
+                where: {
+                    userId,
+                },
+            })
 
-    // Save the validated items to the cart in the database
-    const cart = await db.cart.create({
-        data: {
-            cartItems: {
-                create: validatedCartItems.map((item) => ({
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    sizeId: item.sizeId,
-                    storeId: item.storeId,
-                    sku: item.sku,
-                    productSlug: item.productSlug,
-                    variantSlug: item.variantSlug,
-                    name: item.name,
-                    image: item.image,
-                    quantity: item.quantity,
-                    size: item.size,
-                    price: item.price,
-                    shippingFee: item.shippingFee,
-                    totalPrice: item.totalPrice,
-                })),
-            },
-            shippingFees: shippingFee,
-            subTotal,
-            total,
-            userId,
+            // Save the validated items to the cart in the database
+            return tx.cart.create({
+                data: {
+                    cartItems: {
+                        create: validatedCartItems.map((item) => ({
+                            productId: item.productId,
+                            variantId: item.variantId,
+                            sizeId: item.sizeId,
+                            storeId: item.storeId,
+                            sku: item.sku,
+                            productSlug: item.productSlug,
+                            variantSlug: item.variantSlug,
+                            name: item.name,
+                            image: item.image,
+                            quantity: item.quantity,
+                            size: item.size,
+                            price: item.price,
+                            shippingFee: item.shippingFee,
+                            totalPrice: item.totalPrice,
+                        })),
+                    },
+                    shippingFees: shippingFee,
+                    subTotal,
+                    total,
+                    userId,
+                },
+            })
         },
-    })
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    )
 
     if (cart) return true
     return false
@@ -441,6 +443,12 @@ export const placeOrder = async (
 
     if (!cart) throw new Error('Cart not found.')
 
+    // shippingAddress の所有権検証（IDOR 防止: 他ユーザーの住所 id を注文に付けさせない）
+    const ownedAddress = await db.shippingAddress.findFirst({
+        where: { id: shippingAddress.id, userId },
+    })
+    if (!ownedAddress) throw new Error('Shipping address not found.')
+
     const cartItems = cart.cartItems
     const cartCoupon = cart.coupon // The coupon, if it exists
 
@@ -498,7 +506,9 @@ export const placeOrder = async (
                 : new Prisma.Decimal(size.price.toString())
 
             // Calculate shipping details
-            const countryId = shippingAddress.countryId
+            // 所有権検証済みの ownedAddress（サーバー値）を使う。
+            // クライアント供給の shippingAddress.countryId は改ざん可能なため信頼しない。
+            const countryId = ownedAddress.countryId
 
             const temp_country = await db.country.findUnique({
                 where: {
@@ -598,7 +608,7 @@ export const placeOrder = async (
     const storeIds = Object.keys(groupedItems);
     const deliveryResults = await Promise.all(
         storeIds.map((storeId) =>
-            getDeliveryDetailsForStoreByCountry(storeId, shippingAddress.countryId)
+            getDeliveryDetailsForStoreByCountry(storeId, ownedAddress.countryId)
         )
     );
     storeIds.forEach((storeId, index) => {
@@ -611,7 +621,7 @@ export const placeOrder = async (
         const order = await tx.order.create({
             data: {
                 userId,
-                shippingAddressId: shippingAddress.id,
+                shippingAddressId: ownedAddress.id,
                 orderStatus: 'Pending',
                 paymentStatus: 'Pending',
                 shippingFees: 0,

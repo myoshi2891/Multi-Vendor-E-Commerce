@@ -25,8 +25,10 @@ const createPostRequest = (body: Record<string, unknown>) =>
         body: JSON.stringify(body),
     });
 
-const createGetRequest = (query: string) =>
-    new Request(`http://localhost:3000/api/index-products?search=${encodeURIComponent(query)}`);
+const createGetRequest = (params: URLSearchParams) =>
+    new Request(
+        `http://localhost:3000/api/index-products?${params.toString()}`
+    );
 
 describe("POST /api/index-products - フォールバック contains 検索", () => {
     it("fulltext検索失敗時のフォールバックで mode: 'insensitive' が含まれる", async () => {
@@ -88,7 +90,7 @@ describe("GET /api/index-products - フォールバック contains 検索", () =
 
         const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
-        await GET(createGetRequest("Laptop"));
+        await GET(createGetRequest(new URLSearchParams({ search: "Laptop" })));
 
         consoleWarnSpy.mockRestore();
 
@@ -116,5 +118,93 @@ describe("GET /api/index-products - フォールバック contains 検索", () =
                 { description: { contains: "Laptop", mode: "insensitive" } },
             ])
         );
+    });
+});
+
+describe("GET /api/index-products - ページネーション正規化", () => {
+    const mockSuccessfulSearch = () => {
+        mockProductFindMany.mockResolvedValueOnce([]);
+        mockProductCount.mockResolvedValueOnce(100);
+    };
+
+    const getFindManyPagination = () => {
+        const [args] = mockProductFindMany.mock.calls;
+        const options = args[0] as { skip: number; take: number };
+        return { skip: options.skip, take: options.take };
+    };
+
+    it("有効な page と limit を Prisma とレスポンスに反映する", async () => {
+        mockSuccessfulSearch();
+
+        const response = await GET(
+            createGetRequest(
+                new URLSearchParams({ search: "foo", page: "2", limit: "10" })
+            )
+        );
+        const body = await response.json();
+
+        expect(getFindManyPagination()).toEqual({ skip: 10, take: 10 });
+        expect(body).toMatchObject({ page: 2, limit: 10 });
+    });
+
+    it("過大な limit を 50 にクランプする", async () => {
+        mockSuccessfulSearch();
+
+        const response = await GET(
+            createGetRequest(
+                new URLSearchParams({ search: "foo", limit: "99999999" })
+            )
+        );
+        const body = await response.json();
+
+        expect(getFindManyPagination()).toEqual({ skip: 0, take: 50 });
+        expect(body).toMatchObject({ page: 1, limit: 50 });
+    });
+
+    it("負の page を 1 に正規化する", async () => {
+        mockSuccessfulSearch();
+
+        const response = await GET(
+            createGetRequest(new URLSearchParams({ search: "foo", page: "-1" }))
+        );
+        const body = await response.json();
+
+        expect(getFindManyPagination()).toEqual({ skip: 0, take: 20 });
+        expect(body).toMatchObject({ page: 1, limit: 20 });
+    });
+
+    it("非数値の page と limit をデフォルト値に正規化する", async () => {
+        mockSuccessfulSearch();
+
+        const response = await GET(
+            createGetRequest(
+                new URLSearchParams({ search: "foo", page: "abc", limit: "xyz" })
+            )
+        );
+        const body = await response.json();
+
+        expect(getFindManyPagination()).toEqual({ skip: 0, take: 20 });
+        expect(body).toMatchObject({ page: 1, limit: 20 });
+    });
+
+    it("過大な page を上限にクランプする", async () => {
+        mockSuccessfulSearch();
+
+        const response = await GET(
+            createGetRequest(
+                new URLSearchParams({
+                    search: "foo",
+                    page: "999999999",
+                    limit: "10",
+                })
+            )
+        );
+        const body = await response.json();
+
+        expect(getFindManyPagination()).toEqual({
+            skip: (10_000 - 1) * 10,
+            take: 10,
+        });
+        expect(body).toMatchObject({ page: 10_000, limit: 10 });
     });
 });

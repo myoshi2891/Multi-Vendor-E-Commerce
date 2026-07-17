@@ -15,6 +15,7 @@ import { z } from 'zod'
 import { Button } from '../ui/button'
 import toast from 'react-hot-toast'
 import { applyCoupon } from '@/queries/coupon'
+import { logError } from '@/lib/log'
 
 /**
  * Renders a form for applying a coupon code to a cart.
@@ -49,10 +50,9 @@ export default function ApplyCouponForm({
             const res = await applyCoupon(values.coupon, cartId)
             setCartData(res.cart)
             toast.success(res.message)
-        } catch (error: any) {
-            console.log(error)
-
-            toast.error(error.toString())
+        } catch (error: unknown) {
+            logError('[ApplyCoupon:handleSubmit] failed to apply coupon', error)
+            toast.error(error instanceof Error ? error.message : 'Failed to apply coupon.')
         }
     }
 

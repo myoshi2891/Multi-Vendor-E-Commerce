@@ -108,6 +108,98 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // D2 はカバレッジギャップ由来の新規 Next Action (2026-06-02 起票)。
     // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」D2 と
     // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
+    // R4 は improve Round 4 監査 (2026-07-10) 起票のテストギャップ解消。
+    // 実行手順の SSOT は plans/026〜030 (自己完結プラン)、進捗は plans/README.md
+    // の status 列。QA_HANDOFF「次回着手用 依頼プロンプト」R4 と一対一対応。
+    // 全 5 プラン完了時に本エントリと QA_HANDOFF R4 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R4: テストギャップ解消 (plans 026〜030)",
+        target: "paypal/country/profile queries + order-placement 統合 + money-path UI 6 本",
+        tool: "plans/026〜030 の自己完結プラン (Sonnet 実行可・spec-sync 必須)",
+        cost: "M",
+        impact: "決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収など money-critical な未テスト分岐を回帰検知下に置く",
+    },
+    // R5 は improve Round 5 Integration 特化監査 (2026-07-11) 起票。既存
+    // Integration 17 テストの実測 (17/17 pass / 4.779s) の上で、実 DB でしか
+    // 検証できない未カバー統合面 5 件をプラン化。実行手順の SSOT は
+    // plans/031〜035 (自己完結プラン・全プラン Docker 必須)、監査台帳は
+    // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
+    // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
+    // QA_HANDOFF R5 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R5: Integration テストギャップ解消 (plans 031〜035)",
+        target: "order ライフサイクル restock / webhook 冪等性 / tsvector 検索 / レビュー集計 / ロール昇格",
+        tool: "plans/031〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "M",
+        impact: "在庫二重復元・webhook 再送・raw SQL 回帰など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 17→約45 テスト / 2→6 スイート)",
+    },
+    // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
+    // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
+    // browse フィルタ合成) で 4 件をプラン化。seed.ts 非変更のため R4/R5 プランと
+    // 並行可。実行手順の SSOT は plans/036〜039 (自己完結プラン・全プラン Docker 必須)、
+    // 監査台帳は plans/audit/findings-14-integration-coverage-r6.md。QA_HANDOFF
+    // 「次回着手用 依頼プロンプト」R6 と一対一対応。全 4 プラン完了時に本エントリと
+    // QA_HANDOFF R6 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R6: Integration 深掘りギャップ解消 (plans 036〜039)",
+        target: "deleteProduct FK 境界 / 住所 default 不変条件 / updateProduct 全置換 tx / getProducts フィルタ",
+        tool: "plans/036〜039 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "M",
+        impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
+    },
+    // R7 は improve Round 7 Integration 第 3 弾監査 (2026-07-11) 起票。R5/R6 未スイープの
+    // 切り口 (Clerk user-sync webhook の FK 連鎖 / グローバル unique 制約の実発火) で
+    // 2 件をプラン化 (高レバレッジ候補が 2 件のみのため水増しせず 2 本)。
+    // seed.ts / reset-db.ts 非変更のため R4〜R6 プランと並行可。実行手順の SSOT は
+    // plans/040〜041 (自己完結プラン・全プラン Docker 必須)、監査台帳は
+    // plans/audit/findings-15-integration-coverage-r7.md。QA_HANDOFF
+    // 「次回着手用 依頼プロンプト」R7 と一対一対応。全 2 プラン完了時に本エントリと
+    // QA_HANDOFF R7 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R7: Integration 残余ギャップ解消 (plans 040〜041)",
+        target: "Clerk user.deleted webhook の FK 連鎖 / Coupon.code グローバル unique P2002",
+        tool: "plans/040〜041 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "S",
+        impact: "退会ユーザーの PII 残存 + Svix 無限リトライ・店舗間クーポンコード衝突の実 unique 発火を回帰検知下に置く (Integration +2 スイート / 約11 テスト)",
+    },
+    // R8 は improve Round 8 E2E 網羅性監査 (2026-07-11) 起票。全 Round を通じて初の
+    // 3 ブラウザフル実測 (111 テスト / 25.5m) で 52 passed / 17 failed / 39 skipped /
+    // 3 did not run — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト (5 サイト複製)
+    // の単一根本原因で全滅 (plan 042 が最優先・047〜050 の先行依存)。実行手順の SSOT は
+    // plans/042〜050 (自己完結プラン・CLERK_SECRET_KEY + ローカル Docker Postgres 必須・
+    // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
+    // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
+    // 本エントリと QA_HANDOFF R8 を同時削除すること。
+    {
+        priority: "medium",
+        title: "R8: E2E 網羅性ギャップ解消 (plans 042〜050)",
+        target: "signIn ヘルパー修復 (認証系 16 件回復) / VRT 再撮影 / ゲスト導線 / /browse ページネーション配線 / 注文詳細金額 / エンゲージメント / admin 店舗ステータス",
+        tool: "plans/042〜050 の自己完結プラン (Sonnet 実行可・042 が認証系の先行依存・spec-sync 必須)",
+        cost: "M",
+        impact: "全滅中の認証系 E2E (在庫減算・複数店舗クーポン = §20 P0 相当) を回復し、請求表示・顧客エンゲージメント・管理者オペレーションをブラウザ導線で回帰検知下に置く (E2E 修復 16 + 新規約 13 テスト ×3 ブラウザ)",
+    },
+    // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
+    // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
+    // 再実測なし)。国選択 cookie 往復・a11y/VRT のストアフロント主要ページ拡大・
+    // 認証サーフェス canary・ゲストカート引き継ぎ・Newsletter dormant 404
+    // (/api/newsletter が route/schema とも不在 — curl 実測 404) の 6 件をプラン化。
+    // 051/056 は依存ゼロで即着手可、052 は plan 042 Step 4、055 は 042、054 は 043 が
+    // 先行。実行手順の SSOT は plans/051〜056 (自己完結プラン)、監査台帳は
+    // plans/audit/findings-17-e2e-coverage-r9.md。QA_HANDOFF「次回着手用 依頼
+    // プロンプト」R9 と一対一対応。全 6 プラン完了時に本エントリと QA_HANDOFF R9 を
+    // 同時削除すること。
+    {
+        priority: "medium",
+        title: "R9: E2E 残余ギャップ解消 (plans 051〜056)",
+        target: "国選択 cookie 往復 / a11y 拡大 (browse・商品詳細・cart) / 認証サーフェススモーク / VRT 拡大 / ゲストカート引き継ぎ / Newsletter dormant 404 characterization",
+        tool: "plans/051〜056 の自己完結プラン (Sonnet 実行可・051/056 は依存ゼロ・spec-sync 必須)",
+        cost: "M",
+        impact: "配送先 cookie・ゲスト→会員化のカート持ち越し・sign-up ウィジェットドリフトなどゲスト側の中核導線を回帰検知下に置き、a11y/VRT を売上導線ページへ拡大 (E2E 新規約 11 テスト ×3 ブラウザ + VRT 2 枚)",
+    },
     {
         priority: "medium",
         title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",

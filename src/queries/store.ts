@@ -11,6 +11,54 @@ import { requireStoreOwner } from "@/lib/auth-guards";
 // Prisma models
 import { ShippingRate, Store } from "@prisma/client";
 
+// 共有定数（"use server" ファイルからは非 async の値を export できないため lib 側に配置）
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
+// Seller が編集可能な Store フィールドのみを許可する allowlist。
+// status / featured / averageRating / numReviews は特権フィールドのため
+// クライアント入力から読まない（モデレーション/featured/評価の改ざん防止）。
+const SELLER_EDITABLE_STORE_FIELDS = [
+    "name",
+    "description",
+    "email",
+    "phone",
+    "url",
+    "logo",
+    "cover",
+    "returnPolicy",
+    "defaultShippingService",
+    "defaultShippingFeePerItem",
+    "defaultShippingFeeForAdditionalItem",
+    "defaultShippingFeePerKg",
+    "defaultShippingFeeFixed",
+    "defaultDeliveryTimeMin",
+    "defaultDeliveryTimeMax",
+    "lowStockThreshold",
+] as const;
+
+type SellerEditableStoreFields = Pick<
+    Store,
+    (typeof SELLER_EDITABLE_STORE_FIELDS)[number]
+>;
+
+function pickSellerEditableStoreFields<T extends object>(
+    store: T
+): Partial<SellerEditableStoreFields> {
+    const out: Partial<SellerEditableStoreFields> = {};
+
+    for (const key of SELLER_EDITABLE_STORE_FIELDS) {
+        const value = Reflect.get(store, key) as
+            | SellerEditableStoreFields[typeof key]
+            | undefined;
+
+        if (value !== undefined) {
+            Object.assign(out, { [key]: value });
+        }
+    }
+
+    return out;
+}
+
 // Function: upsertStore
 // Description: Upsert store details into the database, ensuring uniqueness of name, url. email, and phone.
 // Access Level: Seller Only
@@ -86,12 +134,9 @@ export const upsertStore = async (store: Partial<Store>) => {
                 throw new Error(errorMessage);
             }
 
-            // id と userId を除外して更新
-            const { id, userId, ...storeDataToUpdate } = store;
-
             storeDetails = await db.store.update({
-                where: { id: String(id) },
-                data: storeDataToUpdate,
+                where: { id: String(store.id) },
+                data: pickSellerEditableStoreFields(store),
             });
         } else {
             // 作成処理 - 重複チェック
@@ -122,10 +167,8 @@ export const upsertStore = async (store: Partial<Store>) => {
                 throw new Error(errorMessage);
             }
 
-            const { userId, ...storeWithoutUserId } = store;
-
             const createData = {
-                ...storeWithoutUserId,
+                ...pickSellerEditableStoreFields(store),
                 name: store.name!,
                 email: store.email!,
                 url: store.url!,
@@ -133,8 +176,8 @@ export const upsertStore = async (store: Partial<Store>) => {
                 phone: store.phone || "",
                 logo: store.logo || "",
                 cover: store.cover || "",
-                featured: store.featured ?? false,
-                status: store.status ?? "PENDING",
+                featured: false,
+                status: StoreStatus.PENDING,
                 defaultShippingService:
                     store.defaultShippingService || "International Delivery",
                 returnPolicy: store.returnPolicy || "Return in 30 days.",
@@ -390,6 +433,7 @@ export const getStoreOrders = async (storeUrl: string) => {
             orderBy: {
                 updatedAt: "desc",
             },
+            take: STORE_ORDERS_MAX,
         });
 
         return orders;
@@ -458,7 +502,16 @@ export const applySeller = async (store: StoreType) => {
         // Create store details into the database
         const storeDetails = await db.store.create({
             data: {
-                ...store,
+                ...pickSellerEditableStoreFields(store),
+                name: store.name!,
+                description: store.description!,
+                email: store.email!,
+                phone: store.phone!,
+                url: store.url!,
+                logo: store.logo!,
+                cover: store.cover!,
+                featured: false,
+                status: StoreStatus.PENDING,
                 defaultShippingService:
                     store.defaultShippingService || "International Delivery",
                 returnPolicy: store.returnPolicy || "Return in 30 days.",

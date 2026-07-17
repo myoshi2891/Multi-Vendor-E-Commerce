@@ -2,7 +2,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 import { createStripePaymentIntent, createStripePayment } from "./stripe";
 import { TEST_CONFIG } from "../config/test-config";
-import { createMockOrder, createMockPaymentDetails } from "../config/test-fixtures";
+import {
+    createMockOrder,
+    createMockPaymentDetails,
+} from "../config/test-fixtures";
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -17,16 +20,22 @@ jest.mock("@/lib/db", () => ({
         },
         paymentDetails: {
             upsert: jest.fn(),
+            findUnique: jest.fn(),
         },
     },
 }));
 
 // Stripeモック
 const mockStripePaymentIntentsCreate = jest.fn();
+const mockStripePaymentIntentsRetrieve = jest.fn();
 jest.mock("stripe", () => {
     return jest.fn().mockImplementation(() => ({
         paymentIntents: {
-            create: (...args: Parameters<Stripe['paymentIntents']['create']>) => mockStripePaymentIntentsCreate(...args),
+            create: (...args: Parameters<Stripe["paymentIntents"]["create"]>) =>
+                mockStripePaymentIntentsCreate(...args),
+            retrieve: (
+                ...args: Parameters<Stripe["paymentIntents"]["retrieve"]>
+            ) => mockStripePaymentIntentsRetrieve(...args),
         },
     }));
 });
@@ -125,7 +134,7 @@ describe("createStripePaymentIntent", () => {
 
             await createStripePaymentIntent("order-001");
 
-            // Math.round(10.005 * 100) = 1001
+            // Prisma.Decimal で 10.005 を 1001 セントへ丸める
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     amount: 1001,
@@ -206,6 +215,7 @@ describe("createStripePayment", () => {
         amount: 9999,
         currency: "usd",
         status: "succeeded",
+        metadata: { orderId: "order-001" },
     };
 
     describe("認証エラー", () => {
@@ -213,7 +223,7 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Unauthenticated.");
         });
     });
@@ -229,7 +239,7 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(
-                createStripePayment("nonexistent", mockPaymentIntent as never)
+                createStripePayment("nonexistent", mockPaymentIntent.id)
             ).rejects.toThrow("Order not found.");
         });
     });
@@ -239,7 +249,13 @@ describe("createStripePayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            // intent.amount(9999) と order.total を一致させる（サーバー側 amount 照合のため）
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
         });
 
         it("決済成功時にPaymentDetailsをupsertしステータスをCompletedにする", async () => {
@@ -255,10 +271,13 @@ describe("createStripePayment", () => {
 
             const result = await createStripePayment(
                 "order-001",
-                mockPaymentIntent as never
+                mockPaymentIntent.id
             );
 
             expect(result).toEqual(updatedOrder);
+            expect(mockStripePaymentIntentsRetrieve).toHaveBeenCalledWith(
+                mockPaymentIntent.id
+            );
             expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { orderId: "order-001" },
@@ -280,10 +299,7 @@ describe("createStripePayment", () => {
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
 
-            await createStripePayment(
-                "order-001",
-                mockPaymentIntent as never
-            );
+            await createStripePayment("order-001", mockPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -299,23 +315,105 @@ describe("createStripePayment", () => {
         it("決済失敗時にOrder.paymentStatusをFailedに更新する", async () => {
             const failedPaymentIntent = {
                 ...mockPaymentIntent,
-                status: "failed",
+                status: "requires_payment_method",
+                // 拒否された attempt の証跡。これが無い requires_payment_method は
+                // 「まだ決済手段が付いていない初期状態」と区別できない。
+                last_payment_error: { code: "card_declined" },
             };
             const paymentDetails = createMockPaymentDetails({
                 status: "failed",
             });
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
-
-            await createStripePayment(
-                "order-001",
-                failedPaymentIntent as never
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                failedPaymentIntent
             );
+
+            await createStripePayment("order-001", failedPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
                     data: expect.objectContaining({
                         paymentStatus: "Failed",
+                    }),
+                })
+            );
+        });
+
+        // requires_payment_method は「拒否後」だけでなく PaymentIntent の初期状態でもある。
+        // last_payment_error が無い = まだ一度も決済を試みていない = 再試行可能。
+        // ここで Failed を確定させると、その後の正常な決済を注文が受け付けられなくなる。
+        it("決済手段未設定の requires_payment_method は Pending に更新する", async () => {
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails({ status: "requires_payment_method" })
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "requires_payment_method",
+                last_payment_error: null,
+            });
+
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        paymentStatus: "Pending",
+                    }),
+                })
+            );
+        });
+
+        // 3DS 認証待ちや非同期決済手段の intent は「まだ失敗していない」。
+        // Failed を確定させると、後続 webhook が succeeded を通知した際に
+        // DB 上の paymentStatus と Stripe の真実が食い違う。
+        it.each([
+            ["processing"],
+            ["requires_action"],
+            ["requires_confirmation"],
+            ["requires_capture"],
+        ])(
+            "未完了 intent (%s) は Failed ではなく Pending に更新する",
+            async (status) => {
+                mockDb.paymentDetails.upsert.mockResolvedValue(
+                    createMockPaymentDetails({ status })
+                );
+                mockDb.order.update.mockResolvedValue(createMockOrder());
+                mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                    ...mockPaymentIntent,
+                    status,
+                });
+
+                await createStripePayment("order-001", mockPaymentIntent.id);
+
+                expect(mockDb.order.update).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        data: expect.objectContaining({
+                            paymentStatus: "Pending",
+                        }),
+                    })
+                );
+            }
+        );
+
+        // canceled は失敗ではなく取消。enum に Cancelled がある以上、区別して記録する。
+        it("取消済み intent は Cancelled に更新する", async () => {
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails({ status: "canceled" })
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "canceled",
+            });
+
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        paymentStatus: "Cancelled",
                     }),
                 })
             );
@@ -328,10 +426,7 @@ describe("createStripePayment", () => {
             mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
             mockDb.order.update.mockResolvedValue(createMockOrder());
 
-            await createStripePayment(
-                "order-001",
-                mockPaymentIntent as never
-            );
+            await createStripePayment("order-001", mockPaymentIntent.id);
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -353,13 +448,18 @@ describe("createStripePayment", () => {
             const consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => undefined);
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
             mockDb.paymentDetails.upsert.mockRejectedValue(
                 new Error("DB error")
             );
 
             await expect(
-                createStripePayment("order-001", mockPaymentIntent as never)
+                createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("DB error");
 
             expect(consoleSpy).toHaveBeenCalled();
@@ -377,10 +477,7 @@ describe("createStripePayment", () => {
             mockDb.order.findUnique.mockResolvedValue(null);
 
             await expect(
-                createStripePayment(
-                    "other-user-order",
-                    mockPaymentIntent as never
-                )
+                createStripePayment("other-user-order", mockPaymentIntent.id)
             ).rejects.toThrow("Order not found.");
 
             expect(mockDb.order.findUnique).toHaveBeenCalledWith(
@@ -391,6 +488,169 @@ describe("createStripePayment", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("PaymentIntent と注文の対応検証", () => {
+        it("別注文に紐づく PaymentIntent を拒否し、Order を更新しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                metadata: { orderId: "other-order" },
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Payment intent does not match order.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("有効な PaymentIntent の一意性検証", () => {
+        // 同一注文に対して createStripePaymentIntent は都度新しい intent を作るため、
+        // 古い Pending/canceled intent も metadata・金額・通貨は一致してしまう。
+        // 「作成時に保存した有効な intent id」との一致確認で、確定済み決済の退行を防ぐ。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // mockPaymentIntent.amount(9999) と一致する総額にし、
+            // 金額検証ではなく intent id の一致確認に到達させる
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+        });
+
+        it("作成時に有効な PaymentIntent ID を保存する", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_active_001",
+                client_secret: "pi_active_001_secret",
+                status: "requires_payment_method",
+            });
+
+            await createStripePaymentIntent("order-001");
+
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { orderId: "order-001" },
+                    update: expect.objectContaining({
+                        paymentIntentId: "pi_active_001",
+                    }),
+                    create: expect.objectContaining({
+                        paymentIntentId: "pi_active_001",
+                    }),
+                })
+            );
+        });
+
+        it("保存済みの有効な intent と一致しない古い intent を拒否する", async () => {
+            // 有効な intent は pi_active_001。攻撃者は同一注文の古い intent を渡す
+            mockDb.paymentDetails.findUnique.mockResolvedValue(
+                createMockPaymentDetails({ paymentIntentId: "pi_active_001" })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                id: "pi_stale_000",
+                status: "canceled",
+            });
+
+            await expect(
+                createStripePayment("order-001", "pi_stale_000")
+            ).rejects.toThrow("Payment intent is not active for this order.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み(Paid)注文を canceled intent で退行させない", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99, paymentStatus: "Paid" })
+            );
+            mockDb.paymentDetails.findUnique.mockResolvedValue(
+                createMockPaymentDetails({ paymentIntentId: mockPaymentIntent.id })
+            );
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                status: "canceled",
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Order payment is already settled.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み(Paid)注文に対する新しい intent の作成を拒否する", async () => {
+            // 新規 intent を作れてしまうと、保存済みの有効な intent id が
+            // 上書きされ、一致確認そのものが迂回される。
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ paymentStatus: "Paid" })
+            );
+
+            await expect(
+                createStripePaymentIntent("order-001")
+            ).rejects.toThrow("Order payment is already settled.");
+
+            expect(mockStripePaymentIntentsCreate).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("PaymentIntent の金額・通貨照合", () => {
+        // metadata.orderId が正しくても、amount/currency が order.total と食い違う
+        // intent を弾く（クライアントが金額を改ざんした intent id を渡す攻撃の防御）。
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            // order.total = 99.99 → 期待 amount は 9999 セント
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+        });
+
+        it("amount が注文合計と一致しない intent を拒否し、Order を更新しない", async () => {
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                amount: 100, // 改ざんされた低額
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Payment intent amount/currency mismatch.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+        });
+
+        it("currency が usd でない intent を拒否し、Order を更新しない", async () => {
+            mockStripePaymentIntentsRetrieve.mockResolvedValue({
+                ...mockPaymentIntent,
+                currency: "jpy",
+            });
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Payment intent amount/currency mismatch.");
+
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
         });
     });
 });

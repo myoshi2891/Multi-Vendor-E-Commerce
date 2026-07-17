@@ -1,12 +1,17 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { logError } from "@/lib/log";
 import { requireAdmin } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
-import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
+import {
+    AdminOrderFilterSchema,
+    TrackOrderSchema,
+    type AdminOrderFilter,
+    type TrackOrderInput,
+} from "@/lib/schemas";
 import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
-import { z } from "zod";
 
 /**
  * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
@@ -132,17 +137,8 @@ export const trackOrder = async (input: TrackOrderInput) => {
         const { user: _user, ...rest } = order;
         return rest;
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            // email/orderId 等の PII はログしない。
-            console.error("[Order:trackOrder] lookup failed", {
-                error: error.message,
-                stack: error.stack,
-            });
-        } else {
-            console.error("[Order:trackOrder] lookup failed (unknown)", {
-                error,
-            });
-        }
+        // email/orderId 等の PII はログしない。
+        logError("[Order:trackOrder] lookup failed", error);
         // 一過性のインフラ障害を「見つからない(null)」に変換しない。
         // null は真の不一致/不存在/不正入力のみに限定し、DB 障害は呼び出し側へ伝播させる
         // （UI 側で not-found ではなく汎用の再試行メッセージを出すため）。PII は含めない。
@@ -254,29 +250,30 @@ export const updateOrderItemStatus = async (
         throw new Error("Unauthorized to update order item status.");
     }
 
-    // Retrieve the product item to be updated
-    const product = await db.orderItem.findUnique({
-        where: {
-            id: orderItemId,
-        },
-    });
+    // IDOR 防止: 対象 OrderItem を所有店舗にスコープする。
+    // OrderItem → OrderGroup.storeId の関係で絞り込み、検証と更新を単一の原子的更新にする。
+    let result: { count: number };
+    try {
+        result = await db.orderItem.updateMany({
+            where: {
+                id: orderItemId,
+                orderGroup: { storeId },
+            },
+            data: { status },
+        });
+    } catch (error: unknown) {
+        logError("[Order:updateOrderItemStatus] status update failed", error);
+        // 生の Prisma エラー（接続文字列等を含みうる）を UI へ素通しさせない。
+        throw new Error("Failed to update order item status.");
+    }
 
-    // Ensure product existence
-    if (!product) {
+    // 他店舗のアイテムか不存在の場合は、副作用なしで拒否する。
+    // DB 障害の汎用エラーと混同しないよう、判定は try/catch の外に置く。
+    if (result.count === 0) {
         throw new Error("Order item not found");
     }
 
-    // Update the order status
-    const updatedProduct = await db.orderItem.update({
-        where: {
-            id: orderItemId,
-        },
-        data: {
-            status,
-        },
-    });
-
-    return updatedProduct.status;
+    return status;
 };
 
 // ==================================================================
@@ -287,23 +284,6 @@ export const updateOrderItemStatus = async (
 // ==================================================================
 
 /**
- * admin 注文一覧のフィルタ（F2-4/F2-5・判断6-5）。
- * paymentStatus / orderStatus は nativeEnum で入口検証し、下流の as キャストを排除する。
- * limit は上限 100 にキャップして OOM/DoS を防止する。
- */
-const AdminOrderFilterSchema = z.object({
-    paymentStatus: z.nativeEnum(PaymentStatus).optional(),
-    orderStatus: z.nativeEnum(OrderStatus).optional(),
-    search: z.string().optional(),
-    page: z.number().int().min(1).default(1),
-    // limit は throw ではなく clamp（≤100）でキャップし、極端値を 100 に丸める（AC-F2-3）
-    limit: z
-        .number()
-        .default(20)
-        .transform((n) => Math.min(Math.max(Math.floor(n), 1), 100)),
-});
-
-/**
  * @function getAllOrders
  * @description 全店舗横断の注文一覧（Order 起点）。requireAdmin() で保護。
  *              seller 版が OrderGroup 起点・自店舗限定なのに対し、Order 起点・横断で取得する。
@@ -312,7 +292,7 @@ const AdminOrderFilterSchema = z.object({
  * @returns { orders, total, page, limit }
  */
 export const getAllOrders = async (
-    filters?: Partial<z.infer<typeof AdminOrderFilterSchema>>
+    filters?: Partial<AdminOrderFilter>
 ) => {
     await requireAdmin();
     const f = AdminOrderFilterSchema.parse(filters ?? {});
@@ -344,10 +324,7 @@ export const getAllOrders = async (
 
         return { orders, total, page: f.page, limit: f.limit };
     } catch (error: unknown) {
-        console.error("[Order:getAllOrders] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:getAllOrders] Error", error);
         throw new Error("Failed to fetch orders.");
     }
 };
@@ -383,10 +360,7 @@ export const getOrderForAdmin = async (orderId: string) => {
             },
         });
     } catch (error: unknown) {
-        console.error("[Order:getOrderForAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:getOrderForAdmin] Error", error);
         throw new Error("Failed to fetch order.");
     }
 };
@@ -499,10 +473,7 @@ export const updateOrderGroupStatusAsAdmin = async (
             return group.status as OrderStatus;
         });
     } catch (error: unknown) {
-        console.error("[Order:updateOrderGroupStatusAsAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderGroupStatusAsAdmin] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order group status.");
@@ -539,10 +510,7 @@ export const updateOrderItemStatusAsAdmin = async (
 
         return updated.status as ProductStatus;
     } catch (error: unknown) {
-        console.error("[Order:updateOrderItemStatusAsAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderItemStatusAsAdmin] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order item status.");
@@ -640,10 +608,7 @@ export const updateOrderPaymentStatus = async (
             return status;
         });
     } catch (error: unknown) {
-        console.error("[Order:updateOrderPaymentStatus] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderPaymentStatus] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order payment status.");

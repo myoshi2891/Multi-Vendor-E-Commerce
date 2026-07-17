@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-06-19）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-07-17）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,13 +11,13 @@
 
 | 指標 | 値 |
 |---|---|
-| テストファイル総数 | **183 ファイル**（Jest unit/component 172 / Jest integration 2 / Playwright E2E メイン 9）— この小計は Jest + E2E メインのスコープであり、**Visual 2 + a11y 4 は別計上**（ダッシュボード `coverage-dashboard.html` が SSOT・全カテゴリ合算）。ファイル追加履歴: 2026-06-26 track-order 機能で `tests/component/store/track-order-form.test.tsx` 新規（`trackOrder` ユニットは既存 `order.test.ts` に追加）。2026-06-22 PR #149 SonarCloud 修復で `src/components/store/static/content/content.test.ts` 新規。2026-06-22 support-forms 機能で `src/queries/support.test.ts` + `src/components/store/support/support-form.test.tsx` 新規。2026-06-22 storefront-static-pages 機能で `static-page-layout.test.tsx` + `about/page.test.tsx` + `customer-service/page.test.tsx` 新規。2026-06-22 offers 機能で `src/app/(store)/offers/page.test.tsx` 新規。2026-06-22 PR #147 で `product-card.test.tsx` 新規。2026-06-21 Compare 機能で `useCompareStore.test.ts` + `compare-grid.test.tsx` 新規。2026-06-20 で `seller-messages-container.test.tsx`、2026-06-19 で `message.test.ts` + `{conversation-thread,messages-container}.test.tsx`、profile-settings Phase 1 で `{user-menu,profile-sidebar,settings-page}.test.tsx`、Phase 4(F3) で E2E `stock-decrement.spec.ts` を追加 |
-| Jest スイート総数 | **172 スイート**（171 passed + 1 skipped）— スイート数の遷移: 161 → 163（2026-06-21 Compare 2 ファイル）→ 164（2026-06-22 PR #147 product-card 1 ファイル）→ 165（2026-06-22 offers `offers/page.test.tsx` 1 ファイル）→ 168（2026-06-22 storefront-static-pages 3 ファイル）→ 170（2026-06-22 support-forms 2 ファイル）→ 171（2026-06-22 PR #149 `content/content.test.ts` 1 ファイル）→ 172（2026-06-26 track-order `track-order-form.test.tsx` 1 ファイル）。 |
-| テスト総数 | **1659 unit/component passed** (3 skipped) + **17 integration** — 2026-06-26 時点（track-order 機能: 既存 `order.test.ts` に +6 [T-TO1〜T-TO6・IDOR 3 階層] + 新規 `track-order-form.test.tsx` +2 [T-TO7/T-TO8] = +8、1651→1659、171→172 スイート。直前 PR #149 SonarCloud 修復: +12、1638→1650、170→171 スイート）。残 3 skip は DB ゲートの idempotency suite |
+| テストファイル総数 | **185 ファイル**（Jest unit/component 174 / Jest integration 2 / Playwright E2E メイン 9）— この小計は Jest + E2E メインのスコープであり、**Visual 2 + a11y 4 は別計上**（ダッシュボード `coverage-dashboard.html` が SSOT・全カテゴリ合算）。ファイル追加履歴: 2026-06-26 track-order 機能で `tests/component/store/track-order-form.test.tsx` 新規（`trackOrder` ユニットは既存 `order.test.ts` に追加）。2026-06-22 PR #149 SonarCloud 修復で `src/components/store/static/content/content.test.ts` 新規。2026-06-22 support-forms 機能で `src/queries/support.test.ts` + `src/components/store/support/support-form.test.tsx` 新規。2026-06-22 storefront-static-pages 機能で `static-page-layout.test.tsx` + `about/page.test.tsx` + `customer-service/page.test.tsx` 新規。2026-06-22 offers 機能で `src/app/(store)/offers/page.test.tsx` 新規。2026-06-22 PR #147 で `product-card.test.tsx` 新規。2026-06-21 Compare 機能で `useCompareStore.test.ts` + `compare-grid.test.tsx` 新規。2026-06-20 で `seller-messages-container.test.tsx`、2026-06-19 で `message.test.ts` + `{conversation-thread,messages-container}.test.tsx`、profile-settings Phase 1 で `{user-menu,profile-sidebar,settings-page}.test.tsx`、Phase 4(F3) で E2E `stock-decrement.spec.ts` を追加 |
+| Jest スイート総数 | **174 スイート**（173 passed + 1 skipped）— スイート数の遷移: 161 → 163（2026-06-21 Compare 2 ファイル）→ 164（2026-06-22 PR #147 product-card 1 ファイル）→ 165（2026-06-22 offers `offers/page.test.tsx` 1 ファイル）→ 168（2026-06-22 storefront-static-pages 3 ファイル）→ 170（2026-06-22 support-forms 2 ファイル）→ 171（2026-06-22 PR #149 `content/content.test.ts` 1 ファイル）→ 172（2026-06-26 track-order `track-order-form.test.tsx` 1 ファイル）→ 174（2026-07-16 plans 007-009 ログ集約 `src/lib/log.test.ts` + 二重送信ガード `place-order.test.tsx` の 2 ファイル）。 |
+| テスト総数 | **1699 unit/component passed** (3 skipped) + **17 integration** — 2026-07-17 に CodeRabbit ローカルレビュー対応 第4弾後の全スイートで実測。place-order は注文確定時点でガードを恒久化し、stripe は有効な PaymentIntent を一意に検証、カート保存は Serializable で直列化する。残 3 skip は DB ゲートの idempotency suite。**integration 17 はダッシュボードの `integration × queries` 集計とも一致**（`scan-tests.ts` が `it.each` を 0 件と数えていた欠陥を `c1be6d7` で解消し 14→17。従来この行の 17 とダッシュボードの 14 が乖離していた） |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
-| lcov エントリ数 | **50** (2026-06-06 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| lcov エントリ数 | **297** (2026-07-17 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
@@ -141,6 +141,60 @@
 - **期待効果**: Performance 0% 行を前進。OI-9 クローズで本番 SSR の 500 リスクも同時に解消
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」D2](./QA_HANDOFF.md)
 
+#### R4. improve Round 4 テストギャップ解消（plans 026〜030）🆕 2026-07-10 起票
+
+- **対象**: `src/queries/paypal.ts` / `country.ts` / `profile.ts`（unit）、`tests/integration/order-placement.test.ts`（integration）、money-path クライアント 6 ファイル（component）
+- **なぜやるか**: 2026-07-10 の lcov 実測監査（全体 Branches **44.89%**）で、カバレッジの低さが**危険な場所に集中**していることが判明したため。(1) `paypal.ts` は決済モジュールかつエラーハンドリング規約の exemplar なのに Branches 28.6% — エラー縮退が回帰無検出。(2) `placeOrder` のオーバーセルロールバック（TOCTOU ガード）と PLATFORM クーポン端数吸収は在庫・金額整合の最重要保証なのに実 DB 未検証（Round 1 TESTS-05/08 の昇格）。(3) `country.ts` は「全 server action テスト済み」不変条件の唯一の違反（0%）。(4) checkout KPI 直結のクライアント 6 ファイル（stripe/paypal 決済・checkout/cart コンテナ・newsletter）が 0%
+- **何を達成するか**: paypal Branches 90%+ / profile 95%+ / country 100% / 統合 +3 シナリオ / component スイート +6。実行手順・ケース表・STOP 条件は **`plans/026〜030`** が SSOT（zero-context executor 向け自己完結）。監査台帳: [`plans/audit/findings-12-test-coverage.md`](../../plans/audit/findings-12-test-coverage.md)
+- **コスト感**: S〜M × 5 プラン（相互独立・並行可。027 のみ Docker 必須）
+- **やらないと判定したもの**（再監査防止）: coupon-utils / serialize-cart の直接テスト（間接カバレッジ 100%）、chart.tsx 分岐網羅、dashboard forms 群、product-details.tsx（TECHDEBT-02 従属）— 詳細は findings-12 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R4](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
+#### R5. improve Round 5 Integration テストギャップ解消（plans 031〜035）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/`（testcontainers 実 PostgreSQL）への 4 スイート新設 + seed ヘルパー拡張。検証対象コード: `src/queries/order.ts`（キャンセル/返金の子連動 + restock）、`src/app/api/webhooks/{stripe,paypal}/route.ts`（冪等 upsert）、`src/app/api/search-products/route.ts` + `src/queries/subCategory.ts`（raw SQL）、`src/queries/review.ts`（評価集計）、`src/queries/store.ts`（ロール昇格遷移）
+- **なぜやるか**: 2026-07-11 の Integration 特化監査（初の実測: **17/17 pass / 4.779s**）で、既存 17 テストが「注文確定まで」に集中し、**注文後のライフサイクルと raw SQL / unique 制約 / 条件付き updateMany という実 DB でしか検証できないセマンティクス**が全て未カバーと判明したため。(1) 在庫復元の二重実行は placeOrder のオーバーセル（plan 027）と対になる在庫・金銭クリティカル障害。(2) webhook はプロバイダーが再送を前提とする経路なのに冪等性の本体（orderId unique + upsert）が全モックで未実行。(3) tsvector 検索 SQL は Elasticsearch 移行の中核なのに一度も実行されない。(4)(5) レビュー集計・ロール昇格は表示信頼と権限境界の遷移条件
+- **何を達成するか**: Integration 17 → **約 45〜50 テスト / 2 → 6 スイート**（各プランのシナリオ合計）。実行手順・ケース表・STOP 条件は **`plans/031〜035`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-13-integration-coverage.md`](../../plans/audit/findings-13-integration-coverage.md)
+- **コスト感**: S〜M × 5 プラン（相互独立・並行可。031 と 027 は seed.ts 拡張が重なるためマージ注意）
+- **やらないと判定したもの**（再監査防止）: saveUserCart 統合（plan 005 のコード修正先行）、sendMessage 配列 tx（低レバレッジ）、updateProduct tx（money-path 外の次点候補）、`ORDER BY RANDOM()` 単独プラン化（033 に従属）— 詳細は findings-13 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R5](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
+#### R6. improve Round 6 Integration 深掘りギャップ解消（plans 036〜039）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/` への 4 スイート新設（seed ヘルパーは変更なし）。検証対象コード: `src/queries/product.ts`（deleteProduct の FK 境界 / handleProductAndVariantUpdate の全置換 tx / getProducts のフィルタ合成）、`src/queries/user.ts`（upsertShippingAddress の default 不変条件）
+- **なぜやるか**: Round 5 が「$transaction / raw SQL / webhook 全サイト」を精査済みのため、Round 6 は**別の切り口**（FK onDelete の実セマンティクス・非原子 multi-write の不変条件・削除+再作成の下流連鎖・複雑 where ビルダー）をスイープした結果、(1) **レビュー付き商品はセラーが削除できず P2003 が 500 として露出**（Review→Product が RESTRICT — migration SQL レベルで確証）、(2) **新規住所を default 作成すると既存 default と併存**し checkout 自動選択（`addresses.find(a => a.default)`）が非決定化、(3) 商品編集の sizes 全置換が Wishlist.sizeId を SET NULL・CartItem.sizeId を stale 化、(4) browse 主経路の `lte: Infinity` Decimal 境界・「存在しない URL のフィルタ黙殺 → 全件」がいずれも実 DB 未検証と判明したため
+- **何を達成するか**: Integration に 4 スイート・約 20 テストを追加（R5 完了後の想定合計: 2 → 10 スイート / 約 65〜70 テスト）。実行手順・ケース表・STOP 条件は **`plans/036〜039`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-14-integration-coverage-r6.md`](../../plans/audit/findings-14-integration-coverage-r6.md)。037/039 は**現挙動の characterization** を含む（修正プラン実行時に期待値を反転する前提を各プランに明記済み）
+- **コスト感**: S〜M × 4 プラン（相互独立・並行可。seed.ts 非変更のため 027/031〜035 とも競合しない）
+- **やらないと判定したもの**（再監査防止）: followStore トグル（implicit M2M unique が保護）、addToWishlist 重複ガード（検証すべき unique 制約が存在しない）、taxonomy/coupon upsert 群（P2002 フォールバック実装済み・次点）、applyCoupon total ロストアップデート（コード修正先行）、getStoreOrders ページング — 詳細は findings-14 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R6](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
+#### R7. improve Round 7 Integration 残余ギャップ解消（plans 040〜041）🆕 2026-07-11 起票
+
+- **対象**: `tests/integration/` への 2 スイート新設（seed ヘルパー・reset-db とも変更なし）。検証対象コード: `src/app/api/webhooks/route.ts`（Clerk `user.deleted` の `db.user.deleteMany`）、`src/queries/coupon.ts`（upsertCoupon / upsertCouponAsAdmin の P2002 フォールバック）
+- **なぜやるか**: R5/R6 が未スイープの切り口（user-sync webhook・グローバル unique の実発火）をスイープした結果、(1) **User への FK は RESTRICT（Store/Review/ShippingAddress/Order）・CASCADE（Cart/Wishlist/PaymentDetails/Conversation/Message）・SET NULL（SupportTicket）の 3 種混在**で、注文・レビュー・住所・店舗持ちユーザーの Clerk 削除は P2003 → 500 → Svix 無限リトライ + PII 残存（コンプライアンス隣接 — migration SQL レベルで確証）、(2) **`Coupon.code` はグローバル unique なのに upsertCoupon の事前チェックは自店舗スコープのみ** — 他店舗/PLATFORM とのコード衝突は決定論的に P2002 フォールバックへ到達する（race ではない）のに実 unique 制約は一度も発火していない、と判明したため。高レバレッジ候補が 2 件のみだったため水増しせず 2 本
+- **何を達成するか**: Integration に 2 スイート・約 11 テストを追加（R5/R6 完了後の想定合計: 2 → 12 スイート / 約 76〜81 テスト）。実行手順・ケース表・STOP 条件は **`plans/040〜041`** が SSOT（zero-context executor 向け自己完結・全プラン Docker 必須）。監査台帳: [`plans/audit/findings-15-integration-coverage-r7.md`](../../plans/audit/findings-15-integration-coverage-r7.md)。040 のシナリオ 2〜4・041 のシナリオ 2・3 は**現挙動の characterization** を含む（修正プラン実行時に期待値を反転する前提を各プランに明記済み）
+- **コスト感**: S〜S–M × 2 プラン（相互独立・並行可。seed.ts / reset-db.ts 非変更のため 027/031〜039 とも競合しない）
+- **やらないと判定したもの**（再監査防止）: category/subCategory/offerTag upsert 群（事前チェックがグローバルで unique と整合 — P2002 は race 限定）、applySeller/upsertStore 一意性（plan 002 の修正先行 + unit 網羅済み）、profile 読み取り群（plan 039 と同セマンティクス族）、dashboard 集計系（unstable_cache の試験環境リスク）、upsertShippingRate（正しい upsert イディオム）、getStoreOrders ページング（plan 009 先行 — deferred へ変更）— 詳細は findings-15 の rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R7](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
+#### R8. improve Round 8 E2E 網羅性ギャップ解消（plans 042〜050）🆕 2026-07-11 起票
+
+- **対象**: `tests/e2e/`（修復 + 新規 spec 4 本 + seed 拡張）と最小の `src/` 変更（icons の aria-label 3 行・product-card の aria-label 1 行・/browse ページネーション配線）。「(backlog) E2E 行の拡大」を本項へ正式昇格
+- **なぜやるか**: 全 Round を通じて初の 3 ブラウザフル実測（2026-07-11・111 テスト・25.5m）で **52 passed / 17 failed / 39 skipped / 3 did not run** — (1) **認証系 E2E 16 件が全滅**（signIn の `getByLabel("Email address")` が Clerk 現行 UI「Email address or username」とフッター Newsletter 欄の完全一致に挟まれ誤爆。auth.ts + 4 spec の 5 サイトに複製・CI に Playwright ジョブが無く検出不能だった）、(2) a11y sign-in は**実 WCAG 違反 svg-img-alt**、(3) VRT 3 枚は陳腐化、(4) /browse は**ページネーション UI 自体が未実装**（11 商品以上で顧客が到達不能になる dormant ギャップ）、(5) `getProducts` に store status フィルタが無く **BANNED 店舗の商品が /browse に露出**（§20 P1 の半分が未達 — correctness 起票候補）と判明したため
+- **何を達成するか**: 042（signIn 修復 — 最優先・047〜050 の先行依存）/ 043（VRT 再撮影）/ 044（運用ガード）/ 045（ゲスト導線 — TESTS-14 昇格）/ 046（/browse ページネーション配線 + 実データ E2E）/ 047（住所エラー un-skip + 注文詳細金額明細 = §20 P0 請求側）/ 048（wishlist・フォロー・レビュー）/ 049（プロフィール住所・注文履歴）/ 050（admin 店舗ステータス → store ページ非公開）。実行手順・STOP 条件は **plans/042〜050** が SSOT。監査台帳: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)
+- **コスト感**: S×3 + M×6（042 完了までは 045/044/043/046 のみ並行可）
+- **やらないと判定したもの**（再監査防止）: 販売者ダッシュボード CRUD（OI-11 先行）・決済失敗ロールバック §20 P0（Stripe 実キー effort L・plan 032 が DB 側を部分カバー）・在庫切れ表示/二重送信 skip（機能未実装・plan 006 先行）・route-mock ページネーション復活・3 ブラウザフル CI 常設・color-contrast 有効化 — 詳細は findings-16 の Deferred/Rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R8](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
+#### R9. improve Round 9 E2E 残余ギャップ解消（plans 051〜056）🆕 2026-07-12 起票
+
+- **対象**: `tests/e2e/`（新規 spec 5 本 + VRT ベースライン 2 枚）。R8 未スイープの新規切り口 8 系統を精査した残余監査（E2E 特化第 2 弾）。ベースラインは R8 実測 #2 を SSOT 引き継ぎ（ソース無変更のため再実測なし — 台帳に根拠記録）
+- **なぜやるか**: R8 の実効カバレッジ分析で「green なのはゲスト導線のみ」と確定したが、そのゲスト側にも未検証の中核導線が残っていた — (1) **国選択セレクタ（Ship to）の cookie 往復**（配送先・配送料計算の入力なのに E2E ゼロ・依存ゼロで即着手可能）、(2) **Newsletter フォームが dormant 404**（`/api/newsletter` route がリポジトリに不在・schema に購読者モデルも無し・curl 実測 404 — 全ページ露出のフォームが 100% 失敗する新規アプリギャップ）、(3) a11y / VRT の対象がストアフロント主要ページ（browse / 商品詳細 / cart）に未拡大、(4) サインアップウィジェットに TESTS-26 型ドリフトの canary 無し、(5) ゲストカート → サインイン後の引き継ぎ（saveUserCart 往復）がどの層でも未検証
+- **何を達成するか**: 051（国選択 cookie 往復 — P1・依存ゼロ）/ 052（a11y 拡大: browse・商品詳細・cart — 042 Step 4 先行）/ 053（認証サーフェススモーク: sign-up ウィジェット・Register・サインアウト）/ 054（VRT 拡大: 商品詳細・browse — 043 先行）/ 055（ゲストカート → ログイン引き継ぎ — 042 先行）/ 056（Newsletter dormant 404 の characterization — route 実装時に意図的 fail して書き直しを強制する設計）。実行手順・STOP 条件は **plans/051〜056** が SSOT。監査台帳: [`plans/audit/findings-17-e2e-coverage-r9.md`](../../plans/audit/findings-17-e2e-coverage-r9.md)
+- **コスト感**: S×3 + S–M×2 + M×1（051 / 056 / 053 スモーク部は R8 プランと独立に並行可）
+- **やらないと判定したもの**（再監査防止）: カスタム 404 E2E（`not-found.tsx` 不在 — Next デフォルト検証は低価値）・フルサインアップ E2E（Clerk 自身のテスト責務に近い）・言語/通貨セレクタ（静的表示のみ・多通貨はスコープ外）・Newsletter 成功系（機能実装先行）・home の a11y/VRT（OI-9 先行）。R8 deferred 5 件は全件維持を再裁定 — 詳細は findings-17 の Deferred/Rejected 節
+- **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」R9](./QA_HANDOFF.md)、進捗 SSOT は [`plans/README.md`](../../plans/README.md) status 列
+
 ---
 
 ### 🟢 未着手（低優先度）— Mid–Long Term
@@ -179,9 +233,10 @@
 - **期待効果**: 依存追加による初期ロードの膨張を抑制
 
 #### (backlog) E2E 行の拡大
-- **対象**: `tests/e2e/`（store / dashboard フロー）
-- **背景**: ヒートマップ E2E 行は現状 `pages` のみ✦（10%）。seller onboarding 実行・order 管理など store/dashboard 主要フローは spec ファイルは存在するが `seed:e2e` 前提で未安定実行
-- **方針**: 形式 Next Action（`render-html.ts` の `NEXT_ACTIONS`）には未起票。**OI-8（CI flake）解消後**に安定実行の目処が立った段階で起票判断（過剰起票回避）
+> ✅ **R8 へ正式昇格（2026-07-11）** — 2026-07-11 の 3 ブラウザフル実測で「未安定実行」の実態が
+> 確定（認証系 16 件が signIn ドリフトで全滅・詳細は上記 R8 項と
+> [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)）。
+> 起票判断保留は解除し、plans 042〜050 が実行台帳。見出しはアンカー安定のため変更しない。
 
 ---
 
@@ -328,3 +383,12 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-06-25 | **共通レイアウト統一（全店舗ページに Header/Footer）**: ヘッダー/フッターを各 `page.tsx` で個別描画していたため `/compare` `/returns-exchange` `/product-support` 等で未表示だった問題を、`(store)/layout.tsx` での共通描画（`StoreHeader` + `Footer`）に集約して解消。`StoreHeader` が `cookies()` を読むため `(store)` サブツリーは request 時の動的レンダリングとなり、Footer の DB 取得もビルド時静的化を試みず CI build が安定。全画面ページ（`order/[orderId]`・`seller/apply`）は共通 chrome を継承しないよう `(fullscreen)` ルートグループへ `git mv` で退避（URL 不変）。各ページ/`profile/layout.tsx` の重複描画と未使用 import を除去（ホーム/商品/店舗の `CategoriesHeader` は維持）。E2E `tests/e2e/layout-chrome.spec.ts` 新規 +6（chrome 各1つ / ホーム二重ヘッダー無し / `seller/apply` chrome 無し・Jest 集計外）+ header/footer ルートへ `data-testid` 付与。Playwright E2E（main）8 → **9 スペック**。Jest 集計は不変（**1650 passed** / 171 スイート） (commits `54d8c07`–`7fdc6ba`). |
 | 2026-06-25 | **共通レイアウト仕上げ（sticky footer + 認証ページ chrome）**: フッターが宙に浮く問題を `(store)/layout.tsx` の sticky footer 化（`flex min-h-screen flex-col` + children `flex-1`）で解消（`1f3ef92`）。`(auth)/layout.tsx` を新設し sign-in/sign-up に共通 `StoreHeader`/`Footer` を供給（Clerk フォームがフッターを画面外へ押し出さないよう各ページの `h-screen`→`flex-1` 中央寄せに変更、`cc69850`）。`layout-chrome.spec.ts` に認証ページ chrome 検証を +1（6→7 テスト・spec ファイル数は 9 のまま）。Jest 集計は不変（**1650 passed** / 171 スイート） (commits `1f3ef92`–`cc69850`). |
 | 2026-06-26 | **Track order 機能実装（`docs/design/track-order/`）**: 公開の注文追跡ページ `/track-order`（footer「Track your Order」配線済だがページ未実装だった空白を解消）。新規公開 server action `trackOrder`（`src/queries/order.ts`・認可ガードなし=ゲスト/未ログイン可・`where:{ id: orderId }` のみで取得し email 照合はアプリ層 `toLowerCase()` 比較＝IDOR 3 階層 [スロー / where 構造 / 副作用なし]・不一致と不存在を同一 `null` で列挙防止・戻り値から `user`(email) 除去・PII 非ログ）+ `TrackOrderSchema`（Zod・orderId `min(1)`/email）。client フォーム `track-order-form.tsx`（RHF+zodResolver・`useRef` 二重送信防止・不一致/不存在は単一メッセージ）+ 結果表示 `track-order-result.tsx`（既存共有タグ `OrderStatusTag`/`PaymentStatusTag`/`ProductStatusTag` を流用＝DRY・重い `order-page/*` には依存しない）。`force-dynamic` 不付与（DB 読取は action 内）。既存スイート `order.test.ts` に +6（T-TO1〜T-TO6）・新規スイート `tests/component/store/track-order-form.test.tsx` +2（T-TO7/T-TO8）。テスト総数 1651 → **1659 passed**、テストファイル 182 → **183**（track-order で +1。180→181 と記録していたが、E2E メイン `messages.spec.ts`/`layout-chrome.spec.ts` 2 本が未計上だったため基準を 182 に補正）、スイート 171 → **172** (commits `b2a30e5`–`b57bd40`). |
+| 2026-06-26〜27 | **Track order テスト補強（QA_HANDOFF 未同期分の追補記録）**: `order.test.ts` +2（trackOrder エラー経路・status タグ検証、`1f1114e`）+ 失敗ログの PII 非含有検証 T-TO11 +1（`83fe664`）。あわせて `track-order-form.test.tsx` を `tests/component/store/` → `src/components/store/track-order/` へ co-located 移動（`865dda3`、スイート数不変）。テスト総数 1659 → **1662 passed** / 1662 → 1665 total。※この +3 は 2026-07-10 の Round 4 監査ベースライン実測で発見された統計ドリフトを遡って記録したもの。 |
+| 2026-07-10 | **improve Round 4（`tests` フォーカス監査）完了**: `bun run test -- --coverage` の lcov 実測（Statements 65.19% / Branches 44.89%）+ ソース/テスト突合で「危険な未テスト箇所」を監査。新規所見 TESTS-11〜14 + Round 1 raw TESTS-01〜10 の reconcile を [`plans/audit/findings-12-test-coverage.md`](../../plans/audit/findings-12-test-coverage.md) に記録し、Sonnet 実行可能な自己完結プラン **plans/026〜030** を起票（paypal エラー分岐 / placeOrder オーバーセル+PLATFORM 端数統合 / country.ts 新設 / profile.ts catch 分岐 / money-path コンポーネント 6 本）。テストコードは未変更（プラン化のみ）。QA_HANDOFF の統計セル履歴長文を本 §7 へのポインタに整理（重複解消）。§3 に R4 台帳を起票。 |
+| 2026-07-16 | **plan 003 完了**: Stripe capture はクライアントの PaymentIntent 全体を受け取らず ID だけを受け、Stripe から再取得した amount/currency/status のみを保存。`metadata.orderId` 不一致は副作用なしで拒否する。`placeOrder` は配送先住所を `id + userId` で所有権検証してからトランザクションへ進む。回帰テスト +2（統計は累積ドリフトも含め 1662→1667 に同期）、`4825e55` / `373ad85`。 |
+| 2026-07-16 | **plan 023 完了**: 公開 `index-products` GET の `page` / `limit` を `Number` + 有限値・下限検証で正規化し、`limit ≤ 50` と `page ≤ 10,000` にクランプ。回帰テスト5件で有効値・過大/負/非数値・過大ページの Prisma `skip`/`take` と応答メタデータを固定、`7f2365e`。 |
+| 2026-07-16 | **plan 024 完了**: 公開 `setUserCountryInCookies` route は読取り側と同じ `isCountry` ガードを使い、不正JSON・shape不一致・各フィールド100文字超を400で拒否する。cookieは4フィールドだけを投影して `Path=/` で書込み、余分なフィールドを永続化しない。必須6ケースへテストを更新、`58a6bd5` / `8bd7bfd`。plan 023/024 統合後の全スイート実測は **1681 passed / 1684 total / 172 suites**。 |
+| 2026-07-17 | **CodeRabbit 指摘対応**: stripe capture が未完了 intent（`processing` / `requires_action` / `requires_confirmation` / `requires_capture`）を `Failed` に確定させず `Pending` に写像するよう修正（`d093373` Red → `35c402f` Green）。3DS 認証中の注文が後続 webhook の `succeeded` と矛盾しなくなった。`canceled` は `Cancelled` へ分離。`updateOrderItemStatus` の `updateMany` を try/catch で包み生 Prisma エラーの UI 露出を遮断（`1d99179`、認可ガードは規約どおり try の外）。`stripe.test.ts` の `as never` 11 箇所を除去し型契約を復活（`d330e34`）。統計は先行コミット由来の未同期分（`src/lib/log.test.ts` + `place-order.test.tsx` の 2 スイート）も併せて **1685 passed / 1688 total / 174 suites** へ同期。 |
+| 2026-07-17 | **CodeRabbit 指摘対応 第2弾**: `requires_payment_method` を `last_payment_error` の有無で `Failed` / `Pending` に分岐し、決済試行前の初期 PaymentIntent を失敗確定しない回帰テストを追加（`444a129` Red → `c57e239` Green）。`index-products` のページネーションコメントも、小数値を拒否せず切り捨てる実装に合わせて是正（`2631481`）。全スイート実測を **1686 passed / 1689 total / 174 suites** へ同期。 |
+| 2026-07-17 | **CodeRabbit 指摘対応 第3弾（ソース 4 件）**: place-order の多重送信ガードが `push()` を待たず `finally` で無条件解除され、遷移中に `placeOrder` が再実行されていた（Red で呼び出し 2 回を実測）。`emptyUserCart` が `db.cart.delete` でカート行ごと削除するため重複注文は発生しないが、2 回目が `"Cart not found."` で失敗し成功後に誤エラートーストが出ていた。`navigating` フラグで成功経路の解除をスキップし、失敗経路のリトライは回帰テストで担保（`0166533`）。`AdminOrderFilterSchema.page` は `limit`≤100 と異なり上限が無く、`?page=1e12` が `skip:(1e12-1)*50`≈5e13 まで素通りしていたため、`index-products/route.ts:172` の `MAX_PAGE=10_000` と同一根拠・同一値でクランプし、`page.tsx` の `page`/`limit` 非対称も解消（`fa25439`）。cookie 保護属性（`75535f4`）と `applySeller` の評価系除外（`3247e42`）は既存 it への assert 追加で回帰ロック化（ソース変更なし・テスト数不変）。「未来日付」系の指摘は当日日付のため誤検知と判定。全スイート実測 **1689 passed / 1692 total / 174 スイート**（+3、スイート不変）、lcov Statements 65.65% / Branches 45.33% / Functions 54.36% / Lines 64.61% (commits `0166533`–`3247e42`). |
+| 2026-07-17 | **CodeRabbit ローカルレビュー対応 第4弾（ソース 4 件 + scanner 1 件）**: 拡張のローカルレビュー 73 件のうち、src/ 4 件と docs/テスト統計整合 10 件を triage して対応（plans/ 59 件は次段へ繰越）。place-order は `await emptyUserCart()` が `navigating = true` より前にあり、カート後片付けが失敗すると `catch`→`finally` でガードが解放され **成立済みの注文を再実行できた**。フラグを `orderPlaced` に改名して注文確定と同時に立て、後片付けの失敗は `logError` に留めて遷移を継続（`5192aea` Red → `cc7468c` Green）。stripe は同一注文に対し intent を都度生成するため、古い Pending/canceled intent も metadata・金額・通貨が一致して通過し **確定済み Paid を退行**させられた。作成時に有効な intent id を `paymentDetails` に保存して一致確認し、`isSettledPaymentStatus`（Paid/Refunded/PartiallyRefunded/ChargeBack）で確定状態からの遷移と新規 intent 作成を拒否（`91020b3` Red → `ab97f8f` Green）。`saveUserCart` は `findFirst` と `$transaction` の間の TOCTOU で並行保存時に `delete` の P2025 / `create` の P2002 が起きえたため、Serializable + 冪等な `deleteMany` へ変更し事前読取りを撤去（`f4bddb3` Red → `f046d22` Green）。order.ts のエラーログ 7 箇所を `logError` へ統合（監査ログ 3 箇所は error でないため対象外・`cd12973`）。ダッシュボードの `integration × queries` が 14 で QA_HANDOFF の 17 と乖離していた真因は `scan-tests.ts` の静的走査が `it.each` を 0 件と数えていたことで、ジェネリクス・テンプレート表・文字列/コメントを考慮した展開走査を追加し 14→17 で一致（`a1fe1bb` Red → `c1be6d7` Green）。全スイート実測 **1699 passed / 1702 total / 174 スイート**（+10、スイート不変）(commits `5192aea`–`c1be6d7`). |

@@ -166,10 +166,21 @@ export async function GET(req: Request) {
             );
         }
 
-        // ページネーション用パラメータ
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "20");
-        const skip = (page - 1) * limit;
+        // ページネーション用パラメータ。NaN / 負値は既定値へフォールバックし、
+        // 小数は切り捨て、過大値は上限へクランプする（いずれも拒否はしない）。
+        const MAX_LIMIT = 50; // POST ハンドラの take:50 と一致させる
+        const MAX_PAGE = 10_000; // page の上限（skip 暴走・DB の巨大 OFFSET を防ぐ）
+        const rawPage = Number(url.searchParams.get("page"));
+        const rawLimit = Number(url.searchParams.get("limit"));
+        const page =
+            Number.isFinite(rawPage) && rawPage >= 1
+                ? Math.min(Math.floor(rawPage), MAX_PAGE)
+                : 1; // 下限 1・上限 MAX_PAGE でクランプ
+        const limit =
+            Number.isFinite(rawLimit) && rawLimit >= 1
+                ? Math.min(Math.floor(rawLimit), MAX_LIMIT)
+                : 20; // 既定 20、上限 MAX_LIMIT
+        const skip = (page - 1) * limit; // page/limit 双方が有界なので skip も有界
 
         let products, totalCount;
 

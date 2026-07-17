@@ -1,0 +1,159 @@
+# プラン 004: `@clerk/nextjs` を CRITICAL ミドルウェア認証バイパス勧告の圏外へアップグレード
+
+> 原本: [../004-upgrade-clerk-nextjs-security.md](../004-upgrade-clerk-nextjs-security.md)
+
+> **Executor 向け指示**: このプランを順番どおりに実行すること。各検証コマンドを実行し、
+> 次に進む前に期待結果を確認する。「STOP conditions」に該当する事象が起きたら、
+> 停止して報告すること — 独自判断で進めない。完了したら `plans/README.md` の
+> このプランのステータス行を更新する。
+>
+> **ドリフトチェック（最初に実行）**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts`
+> `package.json`/`bun.lock` が既に `@clerk/nextjs` を 7.2.4 以降にしている場合、
+> 勧告は既に解消済みの可能性がある — 何もする前に STOP してインストール済み
+> バージョンを報告すること。
+
+## Status
+
+- **Priority**: P1
+- **Effort**: S
+- **Risk**: LOW-MED
+- **Depends on**: none
+- **Category**: dependencies
+- **Planned at**: commit `f9752c0`, 2026-07-03
+
+## なぜ重要か
+
+`@clerk/nextjs` は `^7.0.7` にピン留めされ 7.0.7 に解決される。これは **GHSA-vqx2-fgx2-5wq9**（CRITICAL、ミドルウェアベースのルート保護バイパス、`>=7.0.0 <=7.2.3` に影響、`7.2.4` で修正）と HIGH の GHSA-w24r-5266-9c3c の影響範囲内にある。本リポジトリの `src/middleware.ts` は、まさにこの勧告が標的とするパターン — `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`、`/checkout`、`/profile` をゲート — を使用している。攻撃者は有効なセッションなしにこれらの保護されたルートシェルに到達できる可能性がある。多層防御（サーバーアクションは `src/lib/auth-guards.ts` 経由で再検証し、dashboard レイアウトは `currentUser()` を呼ぶ）は露出を減らすが排除はしない — ミドルウェアを唯一のゲートとして依存しているページはすべてリスクにさらされる。v7 系内でのアップグレードは、小さく十分に限定された影響範囲でこの勧告を解消する。このアップグレードは、Clerk がパッチ済みの `@clerk/shared` を引くようになると、推移的依存の HIGH `js-cookie@3.0.5`（`@clerk/shared` 経由）も解消する。
+
+## Current state
+
+- `package.json:21` — `"@clerk/nextjs": "^7.0.7"`；`bun.lock` は 7.0.7 に解決。
+- `package.json:116` — `"@clerk/testing": "^2.0.7"`（互換性を維持すること）。
+- `src/middleware.ts` — 保護ルートのゲート（ファイル全体は短い；関連する行）:
+
+  ```ts
+  import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+  export default clerkMiddleware(async (auth, req, next) => {
+      const protectedRoutes = createRouteMatcher([
+          "/dashboard", "/dashboard/(.*)", "/checkout", "/profile", "/profile/(.*)",
+      ]);
+      if (protectedRoutes(req)) await auth.protect();
+      // ... userCountry cookie logic ...
+  });
+  export const config = { matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"] };
+  ```
+
+- Clerk は `src/` 内の約55箇所で import されている（middleware、`layout.tsx` の `ClerkProvider`、`SignIn`/`SignUp`/`UserProfile` UI、`webhooks/route.ts` と `store.ts` の `clerkClient`、dashboard レイアウト + 多数の `src/queries/*` の `currentUser()`）。7.0 から 7.5 の間で削除された API はどれも使用していない（これは同一メジャー内のアップグレード）。
+- `src/middleware.test.ts` が存在し（4テスト）、Clerk は `src/queries/*.test.ts` の各スイートでモックされている。
+
+### リポジトリ規約 / 制約
+
+- **パッケージマネージャーは Bun**（`bun.lock`）。`bun install` でインストールすること。
+- **`src/middleware.ts` のロジックは変更しないこと** — 修正は依存バージョンのみ。`clerkMiddleware` + `auth.protect()` パターンは意図的なものであり 7.5.x でも引き続き有効（`.claude/steering/tech.md`「Clerk v7 非同期 API」参照）。`middleware`→`proxy` の非推奨警告は**文書化された非対応事項**である — ファイルをリネームしないこと。
+- Peer 要件: `@clerk/nextjs` 7.x の peer は `next: ^16.1.0-0`；リポジトリは `next@16.2.1` を実行 — 充足済み。Next をバンプしないこと。
+
+## 必要なコマンド
+
+| 目的         | コマンド                                        | 期待結果            |
+|-----------------|------------------------------------------------|---------------------|
+| インストール         | `bun install`                                  | exit 0, lock 更新|
+| 監査（確認）   | `bun audit`                                     | Clerk CRITICAL が消えている |
+| 型チェック       | `bunx tsc --noEmit`                            | exit 0              |
+| Middleware テスト | `bun run test -- src/middleware.test.ts`       | 全件 pass            |
+| Clerk モック済み    | `bun run test -- src/queries/user.test.ts`     | 全件 pass            |
+| Lint            | `bun run lint`                                 | exit 0（警告は許容）   |
+
+## Scope
+
+**対象内**:
+- `package.json` — `@clerk/nextjs`（peer 要件がある場合のみ `@clerk/testing` も）をバンプ
+- `bun.lock` — `bun install` により再生成
+- `plans/README.md` — 完了時に plan 004 のステータス行を更新（**bump とは別の docs コミット**）
+
+**対象外**:
+- `src/middleware.ts` および Clerk を使用する各ソースファイル — コード変更は想定していない。アップグレードによりコード変更が必要になった場合、それは STOP 条件である（報告すること；広範なリファクタを独自判断で行わない）。
+- Prisma、Next.js、その他無関係な依存関係。
+- `js-cookie` の override（Step 3 の監査結果でバンプ後も HIGH が残る場合のみ追加 — Step 3 参照）。
+
+## Git ワークフロー
+
+- Branch: `advisor/004-upgrade-clerk`
+- コミットスタイル: `chore(deps): upgrade @clerk/nextjs to ^7.5.x (GHSA-vqx2-fgx2-5wq9)`
+- 指示がない限り push や PR は作成しないこと。
+
+## Steps
+
+### Step 1: バージョンをバンプして再インストール
+
+`package.json` で `"@clerk/nextjs": "^7.0.7"` を最新の `7.x`（目標は `^7.5.0` 以降；`bun info @clerk/nextjs version` または npm view で正確な最新 7.x を確認）に変更する。その後:
+
+```
+bun install
+```
+
+**検証**: `bun install` が exit 0 で、`bun.lock` が `@clerk/nextjs` を `>= 7.2.4` のバージョンに解決していること。確認方法:
+`grep -A2 '"@clerk/nextjs"' bun.lock | head`（新しいバージョンが表示されるはず）。
+
+### Step 2: 型チェック + Clerk 関連テストの実行
+
+**検証**:
+- `bunx tsc --noEmit` → exit 0（Clerk の型による新規エラーなし）
+- `bun run test -- src/middleware.test.ts` → 全件 pass
+- `bun run test -- src/queries/user.test.ts` → 全件 pass（代表的な Clerk モック済みスイート）
+
+Clerk モック済みテストがモック形状の変化により失敗した場合は、**テストのモックのみ**を新しい Clerk サーフェスに合わせて調整すること — プロダクションコードは変更しない。プロダクションコードの変更が必要な場合は STOP する。
+
+### Step 3: 勧告が解消されたことを確認
+
+**検証**: `bun audit` が `@clerk/nextjs` の CRITICAL GHSA-vqx2-fgx2-5wq9 をもう一覧に含まないこと。次に `js-cookie` を確認する:
+- `grep -A2 'js-cookie' bun.lock | head` — `@clerk/shared` がパッチ済み `js-cookie`（勧告が修正された >3.0.5）をピンするリリースに進んでいれば、HIGH は解消している。
+- バンプ後も `bun audit` が `js-cookie` の HIGH を示す場合、`package.json` に一時的な override を追加して再インストールする。**勧告が名指しするパッチ済みバージョンを正確にピンすること — キャレット/範囲は使わないこと**。`^3.0.5` のような範囲は脆弱な `3.0.5` に解決されたままとなり、さらに将来の任意の `3.x` へ浮動してしまうため:
+  ```json
+  "overrides": { "js-cookie": "3.0.6" }
+  ```
+  （`3.0.6` は、勧告が修正版として挙げている正確なバージョンに置き換えること。）`bun audit` を再実行する。Clerk を壊さずに解決できない場合は STOP して報告すること — Clerk を強制的にダウングレードしない。
+
+### Step 4: 完全なテスト + lint
+
+**検証**:
+- `bun run test` → 全件 pass（フルユニットスイート；他所で Clerk モックの回帰がないことを確認）
+- `bun run lint` → exit 0
+
+### Step 5: 手動での保護ルートスモークテスト（報告のみ）
+
+このステップは executor のサンドボックスでは完全には自動化できない。レビュアー向けに文書化すること: 開発サーバーを起動した状態（`bun run dev`）で、**未認証**の `/dashboard` へのリクエストは sign-in へリダイレクトされ（dashboard シェルを描画しない）なければならない。開発サーバーを実行できる場合は確認し結果を記録すること；できない場合は、この手動チェックが保留中であることをレポートに記録すること。
+
+## Test plan
+
+- 新規の自動テストは厳密には不要（これはバージョンバンプ）だが、既存の `src/middleware.test.ts` と Clerk モック済み query スイートが回帰ゲートであり、green を維持しなければならない。
+- Clerk モックの変更が必要だった場合、コミット本文にどのモックをなぜ変更したか正確に記す。
+- 検証: `bun run test` が全件 pass；`bun audit` の CRITICAL が解消。
+
+## Done criteria
+
+以下すべてを満たすこと:
+
+- [ ] `package.json` が `@clerk/nextjs` を `>= 7.2.4`（目標 `^7.5.x`）で示している
+- [ ] `bun.lock` が `@clerk/nextjs` を `>= 7.2.4` に解決している
+- [ ] `bun audit` が `@clerk/nextjs` の GHSA-vqx2-fgx2-5wq9 をもう報告しない
+- [ ] `bunx tsc --noEmit` が exit 0
+- [ ] `bun run test` が exit 0（フルユニットスイート green）
+- [ ] `bun run lint` が exit 0
+- [ ] `src/` 配下のソースファイルが一切変更されていない — **bump コミットの直前**で `git status` が `package.json` + `bun.lock` のみ（モックが変更された場合はテストモックファイルも）を示す
+- [ ] `plans/README.md` の 004 のステータス行が更新されている — bump コミットの後、**別の docs コミット**で
+
+## STOP conditions
+
+以下に該当する場合は停止して報告すること:
+
+- アップグレードが `src/` 配下のプロダクションファイルの変更を要求する（7.0 とターゲットの間の実際の破壊的変更）— ファイルとエラーを報告する；広範な移行を試みない。
+- `bun install` が peer の解決に失敗する（例: Next.js のバンプを要求する）— peer 競合を報告する。
+- `bun audit` が `js-cookie` の HIGH の残存を示し、クリーンな override で解決できない — 報告する；Clerk をダウングレードしない。
+- 複数の Clerk モック済みテストが、単なるモック形状の調整ではなく実際の API 変更を示唆する形で失敗する。
+
+## Maintenance notes
+
+- `@clerk/testing` は `@clerk/nextjs` のメジャーと互換に保つこと；peer 範囲が要求する場合のみバンプする。
+- Clerk が示唆している `middleware`→`proxy` への移行に注意すること — リポジトリには、Clerk が `proxy.ts` を公式サポートするまで `src/middleware.ts` をリネーム**しない**という文書化された決定がある（`.claude/steering/tech.md`）。この非推奨警告に対してここで対応しないこと。
+- レビュアーは diff がバージョンのみ（+ lockfile）であること、未認証の `/dashboard` への手動スモークが実施されたか明示的に保留フラグが立てられていることを確認すること。
+- 先送り: Prisma 5→6 のメジャーラグ（DEPS-04）は別の、より大きなアップグレードである — このセキュリティバンプに同梱しないこと。

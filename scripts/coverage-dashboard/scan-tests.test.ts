@@ -101,6 +101,64 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(3);
     });
 
+    // it.each は実行時にテーブル行数ぶんのテストへ展開される。静的走査で 0 件として
+    // 扱うと、ダッシュボードの testCount が実測（bun run test）と食い違う。
+    it("it.each のテーブル行数を展開して testCount に数える", async () => {
+        root = makeFixture({
+            "src/queries/each.test.ts": `
+                it.each([
+                    { a: 1 },
+                    { a: 2 },
+                    { a: 3 },
+                ])('case $a', ({ a }) => {});
+                it('regular', () => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 3 (it.each の行) + 1 (通常の it) = 4
+        expect(results[0]?.testCount).toBe(4);
+    });
+
+    it("ジェネリクス付き it.each<T>([...]) も展開して数える", async () => {
+        // tests/integration/cart-checkout.test.ts が使う形式。
+        // 型引数の中に { } や , を含むため、素朴な括弧数えでは誤る。
+        root = makeFixture({
+            "src/queries/generic-each.test.ts": `
+                it.each<{
+                    method: string;
+                    quantity: number;
+                }>([
+                    { method: 'ITEM', quantity: 3 },
+                    { method: 'WEIGHT', quantity: 2 },
+                    { method: 'FIXED', quantity: 4 },
+                ])('method=$method', async ({ method }) => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(3);
+    });
+
+    it("test.each のテンプレートリテラル表も行数で数える", async () => {
+        root = makeFixture({
+            "src/queries/table-each.test.ts": [
+                "test.each`",
+                "  a    | b",
+                "  ${1} | ${2}",
+                "  ${3} | ${4}",
+                "`('adds $a', ({ a, b }) => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        // ヘッダ行を除いたデータ行 2 件
+        expect(results[0]?.testCount).toBe(2);
+    });
+
     it("存在しない root では空配列を返す", async () => {
         const result = await scanTests(join(tmpdir(), "definitely-not-exists-xyz"));
         expect(result).toEqual([]);

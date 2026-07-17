@@ -5,13 +5,13 @@
 
 ---
 
-## 現在の状態（2026-06-19 時点）
+## 現在の状態（2026-07-17 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1659 passed / 1662 total / 172 スイート（3 skipped）** — 2026-06-26 track-order 機能実装時点。公開の注文追跡 `trackOrder`（IDOR 3 階層・不一致/不存在を同一 null）+ `/track-order` ページ + form/result。既存 `order.test.ts` に +6（T-TO1〜T-TO6）+ 新規 `track-order-form.test.tsx` +2（T-TO7/T-TO8）= +8（1651→1659、171→172 スイート、`b2a30e5`〜`b57bd40`）。直前 2026-06-22 PR #149 SonarCloud Quality Gate 修復時点。support-forms 新規コードの Coverage 77.5%（< 80%）を解消し New Issues 4 件（S6759×2 / S6819 / S6479）をクリア。Issue 修正（props `Readonly` 化・`<output>`・段落 key 内容化、`1508fc8`）+ カバレッジ補完 `support.test.ts` +5 / `support-form.test.tsx` +4 / 新規 `content/content.test.ts` +3 = +12（1638→1650、170→171 スイート、`63c3755`）。直前 support-forms 機能で +9（168→170 スイート）、その前 storefront-static-pages 機能で +9（165→168 スイート）。詳細・SSOT は `docs/testing/QA_HANDOFF.md` |
-| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
+| Jestユニットテスト | **1699 passed / 1702 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -1327,6 +1327,132 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 
 ---
 
+### Plan 003: Stripe 決済状態のサーバー導出・配送先住所所有権検証 (2026-07-16)
+
+#### 概要
+
+決済完了状態・金額・通貨をクライアント入力ではなく Stripe の再取得結果から導出し、他ユーザーの配送先住所IDを注文に関連付ける IDOR を防止した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.ts` / `stripe-payment.tsx` / `stripe.test.ts` | PaymentIntent ID のみを受け、Stripe 再取得・`metadata.orderId` 照合・不一致拒否へ変更 | `4825e55` |
+| `src/queries/user.ts` / `user.test.ts` | `shippingAddress.id + userId` の所有権検証をトランザクション前に追加 | `373ad85` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1662 passed（前回記録） | **1667 passed**（plan 003 は +2、累積ドリフトを同期） |
+| スイート数 | 172 | **172** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Plan 023: 公開商品検索ページネーションの境界化・正規化 (2026-07-16)
+
+#### 概要
+
+公開 `index-products` GET の無制限ページネーションを防ぎ、無効な URL パラメータで Prisma 例外にならないよう正規化した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/app/api/index-products/route.ts` | `page` を 1〜10,000、`limit` を 1〜50 に正規化・クランプし、`skip` を有界化 | `7f2365e` |
+| `src/app/api/index-products/route.test.ts` | 有効値・過大/負/非数値・過大ページの Prisma 引数と応答メタデータを確認する5件を追加 | `7f2365e` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1667 passed（前回記録） | **1681 passed**（plan 023/024 を統合後に全スイート実測） |
+| スイート数 | 172 | **172** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### Plan 024: `userCountry` cookie 書き込み検証 (2026-07-16)
+
+#### 概要
+
+公開 API の cookie 書き込みを読取り側と対称にし、不正・過大な入力を保存しないようにした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/lib/utils.ts` / `src/app/api/setUserCountryInCookies/route.ts` | 共通型ガード、JSON/shape/長さ検証、4フィールド投影、`Path=/` を実装 | `58a6bd5` |
+| `src/app/api/setUserCountryInCookies/route.test.ts` | 必須6ケースの回帰テストへ更新 | `58a6bd5` |
+| `plans/audit/findings-11-security-followup.md` | Plan 024 をDONEに更新 | `8bd7bfd` |
+
+#### テスト統計（統合後）
+
+| 指標 | 値 |
+|------|----|
+| テスト総数 | **1681 passed / 1684 total**（3 skipped） |
+| スイート数 | **171 passed / 172 total**（1 skipped） |
+| 型エラー | **0 件** |
+
+---
+
+### CodeRabbit 指摘対応: 決済ステータス写像・エラー遮断・型契約・plans/ja 再同期 (2026-07-17)
+
+#### 概要
+
+`main ← dev` の CodeRabbit 指摘を精査し、実コード 3 件を修正した上で、指摘の大半（約 65 件）の根本原因だった
+`plans/ja/` のドリフトを構造的に解消した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|----------|
+| `src/queries/stripe.ts` | 未完了 intent（`processing` / `requires_action` / `requires_confirmation` / `requires_capture`）を `Failed` に確定させず `Pending` へ写像。`canceled` は `Cancelled` に分離。3DS 認証中の注文が後続 webhook の `succeeded` と矛盾しなくなった | `d093373`（Red）→ `35c402f`（Green） |
+| `src/queries/order.ts` | `updateOrderItemStatus` の `updateMany` を try/catch で包み、生 Prisma エラーの UI 露出を遮断（認可ガードは規約どおり try の外に維持） | `1d99179` |
+| `src/queries/stripe.test.ts` | `as never` 11 箇所を除去。`never` は全型に代入可能なため、引数契約の変更を無条件に黙らせていた | `d330e34` |
+| `plans/ja/` | `ADVISOR_STATE.md` / `README.md` / `audit/**` は英語原本の訳ではなく**日本語原本の複製**だったため削除（原本の成長にコピーが追随せず 26〜98 行乖離。`findings-02` は原本とバイト同一）。`README.md` は索引を複製しない範囲宣言に作り替え | `c449c82` |
+| `plans/ja/001-012` | 真の訳である 12 本を原本と再同期。004 は override が脆弱な `^3.0.5` を指示していた（原本は `3.0.6` 厳密ピン）、005 は「原子性を証明する」と誤記（原本は明確に否定）、001 は原本が否定した grep 検証のまま、002 は未出荷の旧実装、010 はテスト欠落、012 は採番衝突 | `e9ba111` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1681 passed / 1684 total | **1685 passed / 1688 total**（3 skipped） |
+| スイート数 | 172（171 passed + 1 skipped） | **174**（173 passed + 1 skipped） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+> スイート +2 は本セッションの追加ではなく、先行コミット由来の未同期分（`src/lib/log.test.ts`
+> = plans 007-009 のログ集約 / `place-order.test.tsx` = 二重送信ガード）を取り込んだもの。
+
+---
+
+### CodeRabbit 指摘対応 第2弾 (2026-07-17)
+
+#### 概要
+
+Stripe PaymentIntent の初期状態を決済失敗と誤判定しないよう分岐を修正し、ページネーションコメントとテスト統計を同期した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.test.ts` | `requires_payment_method` のエラー有無による分岐を回帰テストで固定 | `444a129` |
+| `src/queries/stripe.ts` | `last_payment_error` ありを `Failed`、なしを `Pending` に写像 | `c57e239` |
+| `src/app/api/index-products/route.ts` | 小数値を拒否せず切り捨てる実装にコメントを一致 | `2631481` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1685 passed / 1688 total | **1686 passed / 1689 total**（3 skipped） |
+| スイート数 | 174（173 passed + 1 skipped） | **174**（173 passed + 1 skipped） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
 ## 参照ドキュメント
 
 | ドキュメント | 目的 |
@@ -1336,3 +1462,85 @@ action・schema 変更なし（既存 `getAllOfferTags` を再利用）。
 | `docs/migration/06-framework-upgrade.md` | Next.js 16 マイグレーションの詳細記録 |
 | `specs/multi-vendor-ecommerce/` | SDD 仕様書群（Single Source of Truth） |
 | `.claude/steering/tech.md` | 実装パターン・コーディング規約 |
+
+---
+
+### CodeRabbit 指摘対応 第3弾（ソースコード 4 件） (2026-07-17)
+
+#### 概要
+
+CodeRabbit が `dev` に出した 83 件のうち、ソースコードを対象とする 4 件を精査して対応した。
+精査の結果、2 件は実バグ、2 件は「既に正しい挙動の回帰ロック欠落」であることが判明し、
+severity は指摘の見立てと一部食い違った。「未来日付」系 5 件は当日日付のため誤検知と判定。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/place-order.tsx` | `push()` を待たず `finally` が無条件にガード解除 → 遷移中に `placeOrder` 再実行（Red で 2 回を実測）。`navigating` フラグで成功経路の解除をスキップ | `0166533` |
+| `src/lib/schemas.ts` / `src/app/dashboard/admin/orders/page.tsx` | `AdminOrderFilterSchema.page` に上限が無く `?page=1e12` が `skip`≈5e13 まで素通り。`MAX_PAGE=10_000` でクランプし `page.tsx` の非対称も解消 | `fa25439` |
+| `src/app/api/setUserCountryInCookies/route.test.ts` | `HttpOnly` / `SameSite=lax` の検証を追加（ソースは既に正しい・後退検知のみ欠落） | `75535f4` |
+| `src/queries/store.test.ts` | `applySeller` の評価系除外を回帰ロック化（`upsertStore` 側には既存・非対称の解消） | `3247e42` |
+| `docs/architecture/expansion/*` | `plans/` を「git 未追跡」とする誤記 6 箇所を是正（実際は 93 ファイルが追跡対象）。SSOT の論拠を追跡状態から「宣言と凍結」へ | `9dde461` |
+| `plans/057-upgrade-next-middleware-bypass.md` | `^16.2.10` は 16.3+ を許容し「16.2.x 限定」の宣言と矛盾。tilde（`~16.2.10`）へ是正 | `e08978c` |
+
+#### 判明した事実（次セッションへの引き継ぎ）
+
+- **重複注文は発生していなかった**: `emptyUserCart` は `db.cart.delete` でカート行ごと削除するため、
+  2 回目の `placeOrder` は `Cart not found.` で throw する。実害は「成功したのに誤エラートースト」。
+  冪等性キーの導入は過剰と判断し不採用。
+- **`applySeller` / `upsertStore` は同じ `pickSellerEditableStoreFields` を共有**。allowlist を壊すと
+  両テストが同時に Red になることを実証済み。片方だけロックがある状態は穴なので対称を保つこと。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1686 passed / 1689 total | **1689 passed / 1692 total** |
+| スイート数 | 174 | **174**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | S 65.63 / B 45.29 / F 54.33 / L 64.59 | **S 65.65 / B 45.33 / F 54.36 / L 64.61** |
+
+#### 残課題
+
+CodeRabbit の残り 77 件は docs 整合系が大半。`plans/README.md` の "Depends on" 矛盾は
+文書自身が L172-175 で自認済みのため、指摘の詳細なしで着手可能。
+
+---
+
+### CodeRabbit ローカルレビュー対応 第4弾（2026-07-17）
+
+#### 概要
+
+CodeRabbit VSCode 拡張が未プッシュの 25 コミットに対して出した 73 件の指摘を triage し、
+`src/` 本番コード 4 件と docs/テスト統計整合 10 件に対応した（`plans/` 59 件は次段へ繰越）。
+指摘は GitHub 上に存在せず `gh api` で取得できないため、各指摘を実コードへ照合して
+妥当性を判定した。判定記録は [`plans/audit/VETTED_FINDINGS.md`](../plans/audit/VETTED_FINDINGS.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/place-order.tsx` | 注文確定と同時にガードを恒久化。後片付け失敗で再注文できた実バグを修正 | `5192aea`→`cc7468c` |
+| `src/queries/order.ts` | エラーログ 7 箇所を `logError` へ統合（監査ログ 3 箇所は対象外） | `cd12973` |
+| `src/queries/stripe.ts` | 有効な PaymentIntent を一意に検証し、確定状態からの退行を拒否 | `91020b3`→`ab97f8f` |
+| `src/queries/user.ts` | カート保存を Serializable + 冪等 `deleteMany` で直列化 | `f4bddb3`→`f046d22` |
+| `scripts/coverage-dashboard/scan-tests.ts` | `it.each` の展開を数え、ダッシュボードの integration 件数を 14→17 に是正 | `a1fe1bb`→`c1be6d7` |
+
+#### 判断メモ
+
+- stripe の指摘を字面どおり「`succeeded` 以外を拒否」と実装すると、`toOrderPaymentStatus` が
+  意図的に全ステータスを写像している既存仕様と既存テストを壊す。真の脆弱性は
+  「同一注文の古い intent による確定済み決済の退行」だったため、確定状態ガード +
+  有効 intent id の一致確認という形に読み替えて実装した。
+- ダッシュボードの数値ズレは HTML でも docs でもなく **scanner のロジック**が SSOT だった。
+  rule 02/03 の「生成物は手編集せず SSOT を直す」に従い `scan-tests.ts` を修正した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1689 passed / 1692 total | **1699 passed / 1702 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| Integration（ダッシュボード集計） | 14（実測 17 と乖離） | **17**（実測と一致） |
+| 型エラー | 0 件 | **0 件** |

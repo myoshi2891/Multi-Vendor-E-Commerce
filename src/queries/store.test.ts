@@ -12,7 +12,7 @@ import {
     deleteStore,
     getStorePageDetails,
 } from "./store";
-import { Prisma } from "@prisma/client";
+import { Prisma, StoreStatus } from "@prisma/client";
 import { TEST_CONFIG } from "../config/test-config";
 import { createMockStoreDefaultShipping, createMockStoreDefaultShippingDb } from "../config/test-fixtures";
 import type { StoreDefaultShippingInput } from "@/lib/types";
@@ -494,6 +494,38 @@ describe("upsertStore", () => {
                 TestDataFactory.createStoreExpectedData(storeData)
             );
         });
+
+        it("特権フィールドを指定されてもサーバー既定値で作成する", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst.mockResolvedValue(null);
+
+            const storeData = {
+                ...TestDataFactory.validStoreData(),
+                // 4つの特権フィールドすべてを注入する
+                status: StoreStatus.ACTIVE,
+                featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
+                returnPolicy: "Custom return policy",
+            };
+            mockDb.create.mockResolvedValue(TestDataFactory.existingStore());
+
+            await upsertStore(storeData);
+
+            const createCall = mockDb.create.mock.calls[0][0] as {
+                data: Record<string, unknown>;
+            };
+            // status/featured はサーバー既定値に固定される
+            expect(createCall.data).toMatchObject({
+                status: StoreStatus.PENDING,
+                featured: false,
+                returnPolicy: "Custom return policy",
+            });
+            // averageRating/numReviews はクライアント値が create payload に載らない
+            // （allowlist 外のため schema 既定値に委ねる）
+            expect(createCall.data).not.toHaveProperty("averageRating");
+            expect(createCall.data).not.toHaveProperty("numReviews");
+        });
     });
 
     describe("ストア更新", () => {
@@ -515,8 +547,14 @@ describe("upsertStore", () => {
                 email: "updated@example.com",
                 url: "updated-store",
                 phone: "9876543210",
-                status: "ACTIVE" as any,
+                // 4つの特権フィールドすべてを注入し、いずれも update payload から
+                // 除外されることを検証する（mass assignment 防止）。
+                status: StoreStatus.ACTIVE,
+                featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
                 description: "Updated description",
+                returnPolicy: "Updated return policy",
             };
 
             const updatedStore = TestDataFactory.existingStore(updateData);
@@ -541,15 +579,23 @@ describe("upsertStore", () => {
                 TEST_CONFIG.DEFAULT_STORE_ID
             );
 
-            TestHelpers.expectStoreUpdatedWith(
-                mockDb.update,
-                TEST_CONFIG.DEFAULT_STORE_ID,
-                expect.objectContaining({
+            const updateCall = mockDb.update.mock.calls[0][0] as {
+                where: Record<string, unknown>;
+                data: Record<string, unknown>;
+            };
+            expect(updateCall).toMatchObject({
+                where: { id: TEST_CONFIG.DEFAULT_STORE_ID },
+                data: expect.objectContaining({
                     name: "Updated Store Name",
                     email: "updated@example.com",
-                    status: "ACTIVE",
-                })
-            );
+                    returnPolicy: "Updated return policy",
+                }),
+            });
+            // 特権フィールド4種すべてが update payload に載らないこと
+            expect(updateCall.data).not.toHaveProperty("status");
+            expect(updateCall.data).not.toHaveProperty("featured");
+            expect(updateCall.data).not.toHaveProperty("averageRating");
+            expect(updateCall.data).not.toHaveProperty("numReviews");
 
             TestHelpers.expectDbMethodNotCalled(mockDb.create);
         });
@@ -1325,6 +1371,7 @@ describe("getStoreOrders", () => {
                         order: expect.any(Object),
                     }),
                     orderBy: { updatedAt: "desc" },
+                    take: 200,
                 })
             );
         });
@@ -1415,6 +1462,42 @@ describe("applySeller", () => {
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                 }),
             });
+        });
+
+        it("申請者が指定した特権フィールドをサーバー既定値で上書きする", async () => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockPrisma.store.findFirst.mockResolvedValue(null);
+
+            const storeData = {
+                ...TestDataFactory.validStoreData(),
+                description: "Store description",
+                logo: "logo.png",
+                cover: "cover.png",
+                defaultShippingService: "Express Delivery",
+                status: StoreStatus.ACTIVE,
+                featured: true,
+                averageRating: 4.9,
+                numReviews: 999,
+            };
+            mockPrisma.store.create.mockResolvedValue(storeData);
+
+            await applySeller(storeData);
+
+            const createCall = mockPrisma.store.create.mock.calls[0][0] as {
+                data: Record<string, unknown>;
+            };
+            expect(createCall.data).toMatchObject({
+                status: StoreStatus.PENDING,
+                featured: false,
+                name: storeData.name,
+            });
+            // status/featured はサーバー既定値で上書きされるが、評価系は
+            // pickSellerEditableStoreFields の allowlist から漏れると payload に
+            // 混入してしまう。allowlist 由来の除外を回帰ロックとして固定する
+            expect(createCall.data).not.toHaveProperty("averageRating");
+            expect(createCall.data).not.toHaveProperty("numReviews");
         });
     });
 });

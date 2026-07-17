@@ -5,8 +5,9 @@ import { OrderStatus, PaymentStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-// limit の上限（getAllOrders 側の AdminOrderFilterSchema でも clamp されるが UI 側でも明示）
+// limit / page の上限（getAllOrders 側の AdminOrderFilterSchema でも clamp されるが UI 側でも明示）
 const MAX_LIMIT = 100;
+const MAX_PAGE = 10_000;
 const DEFAULT_LIMIT = 50;
 
 /**
@@ -60,7 +61,7 @@ export default async function AdminOrdersPage({
     }>;
 }) {
     const sp = await searchParams;
-    const page = normalizePositiveInt(sp.page, 1);
+    const page = normalizePositiveInt(sp.page, 1, MAX_PAGE);
     const limit = normalizePositiveInt(sp.limit, DEFAULT_LIMIT, MAX_LIMIT);
     const paymentStatus = toEnumValue(PaymentStatus, sp.paymentStatus);
     const orderStatus = toEnumValue(OrderStatus, sp.orderStatus);

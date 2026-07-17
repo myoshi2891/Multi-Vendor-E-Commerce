@@ -201,9 +201,6 @@ export const useCartStore = create(
                     totalItems,
                     totalPrice,
                 }))
-
-                // Manually sync with localStorage after removal
-                localStorage.setItem('cart', JSON.stringify(updatedCart))
             },
             removeMultipleFromCart: (products: CartProductType[]) => {
                 const cart = get().cart
@@ -226,9 +223,6 @@ export const useCartStore = create(
                     totalItems,
                     totalPrice,
                 }))
-
-                // Manually sync with localStorage after removal
-                localStorage.setItem('cart', JSON.stringify(updatedCart))
             },
             emptyCart: () => {
                 set(() => ({
@@ -236,8 +230,6 @@ export const useCartStore = create(
                     totalItems: 0,
                     totalPrice: 0,
                 }))
-                // Explicitly clear the cart localStorage as well
-                localStorage.removeItem('cart')
             },
             setCart: (newCart: CartProductType[]) => {
                 const totalItems = newCart.length

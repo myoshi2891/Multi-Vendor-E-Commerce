@@ -6,6 +6,9 @@
 
 ## Contents
 
+- [`expansion/`](expansion/README.md) - **マーケットプレイス拡張計画（正式版）**：
+  「Amazon 級」の定義・参照カテゴリタクソノミー（20部門）・汎用骨組み10本柱・
+  フェーズ別ロードマップ（拡張計画の SSOT）。ブランド非依存の土台作りの計画
 - [`saas-roadmap.md`](saas-roadmap.md) - 将来のマルチテナント化ロードマップ
 - [`decisions/`](decisions/) - Architecture Decision Records (ADR)
 - [`data-model.drawio`](data-model.drawio) - データモデル ER 図（draw.io）。**自動生成物**：

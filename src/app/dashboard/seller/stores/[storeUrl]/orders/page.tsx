@@ -1,6 +1,7 @@
 import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { getStoreOrders } from "@/queries/store";
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,9 @@ export default async function SellerOrdersPage({
 
     return (
         <div>
+            <p className="mb-4 text-sm text-muted-foreground">
+                Showing up to the latest {STORE_ORDERS_MAX} orders.
+            </p>
             <DataTable
                 filterValue="id"
                 data={orders}

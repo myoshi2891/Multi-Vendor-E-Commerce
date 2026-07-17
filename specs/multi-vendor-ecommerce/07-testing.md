@@ -12,6 +12,41 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1699 passed / 1702 total across 174 suites (3 skipped), as of 2026-07-17.
+  Ten regressions from the CodeRabbit local review (+10, no new suites). `place-order.test.tsx`
+  (+1) pins the guard to order confirmation: a failing `emptyUserCart()` cleanup must not release
+  it, because the order is already placed and irreversible (previously the `catch`/`finally` path
+  re-enabled the button and allowed a duplicate order). `stripe.test.ts` (+4) rejects a stale
+  payment intent: `createStripePaymentIntent` now records the active intent id and
+  `createStripePayment` requires a match, since an older Pending/canceled intent for the same order
+  shares the same metadata/amount/currency and could downgrade a settled `Paid` order.
+  `user.test.ts` (+2) requires a `Serializable` transaction and an idempotent `deleteMany`, closing
+  the TOCTOU between the pre-read and the cart replacement. Counts are from a full-suite run.
+- 1689 passed / 1692 total across 174 suites (3 skipped), as of 2026-07-17.
+  Three regressions from the CodeRabbit follow-up (+3, no new suites). `place-order.test.tsx` (+2)
+  locks the submit guard: the success path must keep `isPlacingOrderRef` and `loading` held while
+  `push()` navigates (previously the `finally` released them unconditionally and `placeOrder` was
+  re-invoked — measured at 2 calls), and the failure path must still release them so a retry works.
+  `order.test.ts` (+1) caps `AdminOrderFilterSchema.page` at 10,000, mirroring the existing
+  `limit`≤100 clamp; without it `?page=1e12` reached `skip:(1e12-1)*50` ≈ 5e13. Cookie-protection
+  and `applySeller` privileged-field assertions were added to existing tests, so they do not move
+  the count. Counts are from a full-suite run.
+- 1686 passed / 1689 total across 174 suites (3 skipped), as of 2026-07-17.
+  Two new suites (+2): `src/lib/log.test.ts` (the shared `logError` helper from the plans 007-009
+  logging consolidation) and `src/components/store/cards/place-order.test.tsx` (the place-order
+  double-submit guard). The remaining delta comes from the atomic `saveUserCart` work in
+  `useCartStore.test.ts` / `user.test.ts` and from `store.test.ts`. Stripe capture now maps
+  in-flight PaymentIntent states (`processing` / `requires_action` / `requires_confirmation` /
+  `requires_capture`) to `Pending` rather than `Failed`, so a later webhook reporting `succeeded`
+  cannot contradict the stored `paymentStatus`; `canceled` maps to `Cancelled`. A
+  `requires_payment_method` intent is now `Failed` only when `last_payment_error` is present;
+  an unconfirmed initial intent remains `Pending`. Counts are from a full-suite run.
+- 1681 passed / 1684 total across 172 suites (3 skipped), as of 2026-07-16.
+  Plan 023 normalizes public `index-products` GET pagination: non-numeric and invalid values use
+  defaults, `limit` is capped at 50, and `page` at 10,000. Five regressions assert both Prisma
+  `skip`/`take` arguments and normalized response metadata. Plan 024 adds six route-handler
+  regressions for valid, malformed, oversized, and projected `userCountry` cookie writes; the
+  merged total is from the full-suite run (suite count unchanged).
 - 1659 passed / 1662 total across 172 suites (3 skipped), as of 2026-06-26.
   track-order feature (`docs/design/track-order/`): public order-tracking page `/track-order`
   with a public `trackOrder` server action (no auth guard; `where: { id }` only, email matched

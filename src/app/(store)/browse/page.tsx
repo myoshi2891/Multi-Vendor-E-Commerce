@@ -3,7 +3,6 @@ import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
-import { getFilteredSizes } from "@/queries/size";
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +28,6 @@ export default async function BrowsePage({
         minPrice,
         color,
     } = await searchParams;
-    await getFilteredSizes({});
     const products_data = await getProducts(
         {
             search,

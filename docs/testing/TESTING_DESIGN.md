@@ -26,13 +26,19 @@
 
 ## 設計判断: Jest Config
 
+> **経緯**: 当初は「単一 `jest.config.js` を維持し、スコープは `--testPathPattern` で分ける」
+> 方針だった。下記「再検討のタイミング」に挙げた **DB リセットが実際に必要になった**ため
+> （testcontainers による実 PostgreSQL・[ADR-004](../architecture/decisions/004-integration-test-infrastructure.md)）、
+> Integration のみ専用 config へ分割済み。現行は **2 config 体制**。
+
 | 判断 | 内容 |
 |-----|------|
-| **単一 jest.config.js を維持** | 初期セットアップ中のコンフィグ分散を避けるため |
+| **unit/component は `jest.config.js`** | `bun run test` = `jest`。`testPathIgnorePatterns` で `/tests/e2e/` と `/tests/integration/` を除外する |
+| **Integration は `jest.integration.config.js`** | `bun run test:integration` = `jest --config jest.integration.config.js`。`testMatch` は `<rootDir>/tests/integration/**/*.test.{ts,tsx}`。globalSetup がコンテナを起動し `maxWorkers: 1` で直列実行するため、unit と同居できない（ADR-004） |
 | **デフォルト環境** | `testEnvironment: "node"`（ユニット・サーバーテストの高速化） |
 | **jsdom 環境** | DOM API が必要なコンポーネントテストファイルに `@jest-environment jsdom` を個別指定 |
-| **スコープ制御** | 複数の Jest 設定ではなく `--testPathPattern` でスクリプトを分ける |
-| **再検討のタイミング** | DB リセット・jsdom 専用セットアップ・低速化が生じた場合のみ分割を検討 |
+| **スコープ制御** | `--testPathPattern` ではなく `--config` で分離する（上記 2 config）。unit 側の除外は `testPathIgnorePatterns` が担う |
+| **再検討のタイミング** | これ以上の分割は、jsdom 専用セットアップ・低速化が生じた場合のみ検討する |
 
 ---
 
@@ -42,7 +48,7 @@
 |-----------|---------|------|------|
 | **Unit** | Jest | 純粋関数・ヘルパー・スキーマ・クエリ合成 | node 環境で高速実行。DB・ネットワーク不使用 |
 | **Component** | Jest + React Testing Library | UI インタラクション | jsdom 環境。`@testing-library/user-event` を追加 |
-| **Integration** | Jest + Docker Compose（PostgreSQL） | DB・サーバーロジック | `.env.test` で独立した DB を使用。スイート前にリセット |
+| **Integration** | Jest + testcontainers（PostgreSQL）| DB・サーバーロジック | 専用 config（`jest.integration.config.js`）の globalSetup がコンテナを自動起動し `DATABASE_URL` を書き換え。テストごとに TRUNCATE リセット（`tests/integration/setup/reset-db.ts`）。設計判断: ADR-004 |
 | **API Route** | Jest | Next.js route handler の GET / POST | `NextRequest` を直接呼び出す小さなヘルパーを利用 |
 | **E2E** | Playwright | 顧客 / 販売者 / 管理者の全フロー | マルチブラウザ・トレース・並列対応 |
 | **Visual Regression** | Playwright（スクリーンショット） | 商品カード・チェックアウト・注文詳細・販売者ダッシュボード | ベースライン + diff |
@@ -78,7 +84,8 @@
 │  ├─ jest.env.ts               グローバル env ブートストラップ
 │  └─ db.reset.ts               リセット・マイグレーション・シード
 ├─ playwright.config.ts
-└─ jest.config.js
+├─ jest.config.js               unit/component（tests/e2e・tests/integration を除外）
+└─ jest.integration.config.js   Integration 専用（testcontainers / maxWorkers:1・ADR-004）
 ```
 
 ---
@@ -101,7 +108,8 @@
 |-----|------|
 | **環境変数** | テスト DB とシークレットには `.env.test` を使用する |
 | **DB** | テスト専用の PostgreSQL データベースを使用する |
-| **Integration リセット** | スイート前に migrate + seed を実行する |
+| **Integration リセット** | globalSetup で testcontainers 起動 + migrate 適用。各テスト `beforeEach` で `resetDb(db)`（TRUNCATE ... RESTART IDENTITY CASCADE）+ テスト内 seed ヘルパー（`tests/integration/setup/seed.ts`）を使用する |
+| **Integration 直列実行** | 全スイートが1つのDBコンテナを共有するため、`jest.integration.config.js` の `maxWorkers: 1` を維持し、`test.concurrent` / `describe.concurrent` は使用しない。並列化は ADR-004 の per-worker container 戦略を実装してから行う |
 | **E2E リセット** | 実行前にシード投入、実行後にクリーンアップする |
 | **テストデータ** | ハードコードした ID ではなくファクトリを使用する |
 
@@ -209,13 +217,17 @@ if (!Number.isFinite(unitPrice)) {
 
 ---
 
-## テストスクリプト（参考 — 未実装を含む）
+## テストスクリプト（参考 — 未実装を含む / 2026-07-11 実装状況同期）
 
 ```bash
-bun run test                    # jest（全ユニット）← 実装済み
-bun run test:unit               # 未実装（予定: jest --testPathPattern "src/.*\.test\.ts$"）
-bun run test:component          # 未実装（予定: jest --testPathPattern "tests/component/.*\.test\.tsx$"）
-bun run test:integration        # 未実装（予定: jest --testPathPattern "tests/integration/.*\.test\.ts$"）
+bun run test                    # jest（全ユニット/コンポーネント）← 実装済み
+bun run test:watch              # jest --watch ← 実装済み
+bun run test:integration        # 実装済み: jest --config jest.integration.config.js
+                                #   （testcontainers 実 PostgreSQL。bun run test の集計外。
+                                #    2026-07-11 実測: 17/17 pass / 4.779s。ADR-004 参照）
+bun run test:e2e:local          # 実装済み: bash scripts/e2e/run-local.sh
+bun run test:unit               # 未実装（予定: jest --testPathPatterns "src/.*\.test\.ts$"）
+bun run test:component          # 未実装（予定: jest --testPathPatterns "tests/component/.*\.test\.tsx$"）
 bun run test:e2e                # 未実装（現状: bunx playwright test を直接使用）
 bun run test:visual             # 未実装（予定: playwright test tests/visual）
 bun run test:a11y               # 未実装（予定: playwright test tests/accessibility）
