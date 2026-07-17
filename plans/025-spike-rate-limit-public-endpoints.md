@@ -61,7 +61,16 @@ Signed/authenticated endpoints that should **not** need app-level rate limiting
 Relevant constraints (inline into the doc — the reader may not have these):
 
 - `.claude/steering/product.md` "スコープ外（現フェーズ）" lists multi-currency, tax engine, advanced analytics, and third-party shipping-carrier integration. **Rate limiting is NOT listed** — so it is neither in-scope-approved nor explicitly out-of-scope. Flag this: the maintainer must decide whether rate limiting is in the current phase's scope.
-- Hosting/runtime: Next.js 16 (App Router), deployed target per `docs/` (Vercel-style serverless assumed). In serverless, **in-memory counters do not share state across instances** — call this out as the key trade-off.
+- Hosting/runtime: Next.js 16 (App Router). **The deployment target is undeclared — do not assume Vercel.**
+  Measured at plan time: there is no `vercel.json`, `README.md` names Neon only (DB hosting) and declares no
+  app host, and the repo ships a self-hosted Docker stack (`docs/development/docker-dev.md`, `make setup`).
+  The spike must **establish the actual target(s) with the maintainer before** any option is recommended,
+  because both of the following depend on it: (i) whether in-memory counters are viable, and (ii) how a
+  trusted client IP is derived (see the `x-forwarded-for` trust boundary below).
+  If the target is serverless/scale-out, **in-memory counters do not share state across instances** — call
+  that out as the key trade-off. If it is a single self-hosted instance, that trade-off may not apply at all,
+  and option A becomes materially stronger. Record the target (and its evidence) in the write-up rather than
+  carrying the assumption forward.
 - DB is Prisma + Prisma Accelerate over Neon (connection-pooled). Note that Accelerate has its own limits but is not a substitute for request-level rate limiting.
 - ADR process: `docs/architecture/decisions/` (MADR format, template at `docs/architecture/decisions/template.md`). A rate-limiting decision that compares alternatives and affects the whole app **meets the ADR bar** (`.claude/steering/documentation-guide.md`: multiple alternatives + team-wide + future reference + trade-offs). The spike should recommend whether to open an ADR.
 
@@ -116,14 +125,35 @@ is already present.
      is a **client-supplied, spoofable header**. Using the raw header as the
      rate-limit key lets an attacker rotate it to get unlimited fresh buckets,
      defeating the limiter. The design must specify how a **trusted** client IP is
-     derived: e.g. take the value the platform's trusted proxy appends (on Vercel,
-     the platform-provided client IP / the right-most hop added by infra you
-     control), not the left-most attacker-controlled entry. Define how many proxy
-     hops are trusted and where the boundary sits. If a trustworthy client IP
-     cannot be established for a given deployment, prefer keying that doesn't rely
-     on the header (e.g. edge/WAF layer, or per-session for authenticated routes)
-     and record that limitation. **Never key the limiter on the raw
-     `x-forwarded-for` string.**
+     derived: take the value appended by a proxy **you control**, not the left-most
+     attacker-controlled entry. Define how many proxy hops are trusted and where the
+     boundary sits. **Never key the limiter on the raw `x-forwarded-for` string.**
+
+     **This derivation is a function of the deployment topology, so settle it per
+     target environment — do not write one rule and assume it ports.** The correct
+     answer differs by host, and the repo's target is undeclared (see Current state):
+     - **Vercel-style serverless**: the platform appends the client IP at a trusted
+       hop; use the platform-provided value, not a header index you picked yourself.
+     - **Behind a CDN/WAF (e.g. Cloudflare)**: the authoritative value is that
+       provider's own header, and `x-forwarded-for` may carry attacker-supplied
+       entries ahead of it.
+     - **Self-hosted (the repo's Docker stack, `docs/development/docker-dev.md`)**:
+       depends entirely on the reverse proxy in front — with no proxy,
+       `x-forwarded-for` is **absent or fully attacker-controlled** and must not be
+       trusted at all.
+     - **Local dev / CI**: typically no proxy; the limiter must not silently key every
+       request into one shared bucket (which would make tests interfere) or into
+       unlimited distinct ones (which would make the limiter untestable). Decide the
+       intended behaviour rather than inheriting it by accident.
+
+     Record, per environment the project actually targets: which header/API is
+     authoritative, how many hops are trusted, and what happens when the value is
+     missing. If a trustworthy client IP cannot be established for a given
+     deployment, prefer keying that doesn't rely on the header (e.g. edge/WAF layer,
+     or per-session for authenticated routes) and record that limitation. **A wrong
+     trust boundary fails in both directions**: trusting too much hands the attacker
+     the key, trusting too little collapses distinct users into one bucket and locks
+     out legitimate traffic.
 4. **Scope decision needed** — explicitly ask the maintainer whether rate limiting is in the current phase (given `product.md` doesn't list it either way).
 5. **Recommendation** — a ranked recommendation with rationale, and whether to open an ADR under `docs/architecture/decisions/` (MADR format).
 6. **Open questions** — the decisions only the maintainer can make (option choice, scope, budget for an external store).
@@ -144,6 +174,7 @@ doc is ready for maintainer review.
 - [ ] `docs/architecture/rate-limiting-spike.md` (or the `plans/direction/` variant) exists and contains all six sections from Step 2.
 - [ ] The doc lists the exact public endpoints from `find src/app/api -name route.ts` and confirms `grep -rniE "ratelimit|upstash|throttle" src` returned no matches.
 - [ ] No files under `src/`, `next.config.mjs`, or `package.json` were modified (`git status` shows only the new doc, the `plans/audit/findings-11-security-followup.md` status row, and the follow-up plan — the last only if the gate in Step 3 was passed).
+- [ ] The doc **records the deployment target(s) established with the maintainer** (not assumed) and derives the trusted-client-IP rule **per target environment**, including what happens when no trustworthy IP is available. See Step 2's `x-forwarded-for` trust boundary.
 - [ ] The doc contains an explicit "Open questions for the maintainer" section.
 
 ## STOP conditions
