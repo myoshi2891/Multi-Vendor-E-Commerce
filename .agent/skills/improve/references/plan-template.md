@@ -24,7 +24,14 @@ File naming: `<plan-dir>/NNN-short-slug.md`, numbered in recommended execution o
 > in `<plan-dir>/README.md` — unless a reviewer dispatched you and told you they
 > maintain the index.
 >
-> **Drift check (run first)**: `git diff --stat <planned-at SHA>..HEAD -- <in-scope paths>`
+> **Drift check (run first)**:
+> ```bash
+> git diff --stat <planned-at SHA> -- <in-scope paths>   # committed AND uncommitted drift
+> git status --porcelain -- <in-scope paths>             # staged / untracked in-scope files
+> ```
+> Use `<SHA>` (not `<SHA>..HEAD`): the two-dot form compares two commits and is
+> blind to working-tree and staged changes, so a plan can read as clean while the
+> in-scope files are already edited locally.
 > If any in-scope file changed since this plan was written, compare the
 > "Current state" excerpts against the live code before proceeding; on a
 > mismatch, treat it as a STOP condition.
