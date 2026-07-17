@@ -196,6 +196,7 @@ export async function POST(request: Request) {
         // パース失敗は 400。内部詳細はクライアントに返さない
         console.error("[setUserCountryInCookies:POST] Invalid JSON body", {
             error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
         });
         return new NextResponse("Invalid JSON body.", { status: 400 });
     }
