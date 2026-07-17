@@ -108,49 +108,51 @@ import { ShippingFeeMethod } from "@prisma/client";
 describe("computeShippingTotal", () => {
     describe("quantity ガード", () => {
         it("quantity が 0 のとき 0 を返す", () => {
-            expect(computeShippingTotal("ITEM", 10, 2, 1, 0)).toBe(0);
+            expect(computeShippingTotal(ShippingFeeMethod.ITEM, 10, 2, 1, 0)).toBe(0);
         });
         it("quantity が負のとき 0 を返す", () => {
-            expect(computeShippingTotal("FIXED", 10, 2, 1, -3)).toBe(0);
+            expect(computeShippingTotal(ShippingFeeMethod.FIXED, 10, 2, 1, -3)).toBe(0);
         });
     });
 
     describe("ITEM 方式", () => {
         it("単数 (quantity=1) は base のみ", () => {
-            expect(computeShippingTotal("ITEM", 10, 2, 1, 1)).toBe(10);
+            expect(computeShippingTotal(ShippingFeeMethod.ITEM, 10, 2, 1, 1)).toBe(10);
         });
         it("複数は base + (qty-1)*extra", () => {
             // 10 + (3-1)*2 = 14
-            expect(computeShippingTotal("ITEM", 10, 2, 1, 3)).toBe(14);
+            expect(computeShippingTotal(ShippingFeeMethod.ITEM, 10, 2, 1, 3)).toBe(14);
         });
     });
 
     describe("WEIGHT 方式", () => {
         it("fee*weight*quantity", () => {
             // 5 * 2 * 3 = 30
-            expect(computeShippingTotal("WEIGHT", 5, 0, 2, 3)).toBe(30);
+            expect(computeShippingTotal(ShippingFeeMethod.WEIGHT, 5, 0, 2, 3)).toBe(30);
         });
         it("float 誤差の 2 桁正規化", () => {
             // 0.1 * 0.1 * 3 = 0.030000...4（float 誤差）→ 0.03 に正規化
-            expect(computeShippingTotal("WEIGHT", 0.1, 0, 0.1, 3)).toBe(0.03);
+            expect(computeShippingTotal(ShippingFeeMethod.WEIGHT, 0.1, 0, 0.1, 3)).toBe(0.03);
         });
         it("丸め境界（.xx5 は half-up で切り上げ）", () => {
             // 0.125 は 2 桁目の直後がちょうど 5。computeShippingTotal は
             // Math.round((x + EPSILON) * 100) / 100 で half-up するため 0.13 になる。
             // ↑の float 正規化テストとは別に「実際の丸め境界」を検証する入力。
-            expect(computeShippingTotal("WEIGHT", 0.25, 0, 0.5, 1)).toBe(0.13);
+            expect(computeShippingTotal(ShippingFeeMethod.WEIGHT, 0.25, 0, 0.5, 1)).toBe(0.13);
         });
     });
 
     describe("FIXED 方式", () => {
         it("weight/quantity に依存せず fee を返す", () => {
-            expect(computeShippingTotal("FIXED", 25, 99, 99, 4)).toBe(25);
+            expect(computeShippingTotal(ShippingFeeMethod.FIXED, 25, 99, 99, 4)).toBe(25);
         });
     });
 });
 ```
 
-Adjust the enum-literal typing if `ShippingFeeMethod` requires it (e.g. cast `"ITEM" as ShippingFeeMethod` only if the compiler complains — the string unions usually satisfy it directly).
+`ShippingFeeMethod` は Prisma 生成のランタイム enum なので、`ShippingFeeMethod.ITEM` をそのまま
+渡せる（`src/components/dashboard/forms/product-details.tsx:90` が同じ使い方をしている）。
+文字列リテラルでも型は通るが、enum を使えばキャストの要否を判断する必要がなくなる。
 
 **Verify**: `bun run test -- src/lib/shipping-utils.test.ts` → all pass; `bunx tsc --noEmit` → exit 0.
 
@@ -164,7 +166,7 @@ Because this adds a new test file (and new tests), the repo's process (`.claude/
 
 ## Test plan
 
-- New file `src/lib/shipping-utils.test.ts` covering: quantity 0, quantity negative, ITEM single, ITEM multiple, WEIGHT integer, WEIGHT rounding, FIXED independence.
+- New file `src/lib/shipping-utils.test.ts` covering 8 cases: quantity 0, quantity negative, ITEM single, ITEM multiple, WEIGHT integer, WEIGHT float normalization, WEIGHT rounding boundary (.xx5 half-up), FIXED independence.
 - Structural pattern: `src/lib/utils.test.ts` (nearest pure-function unit test in the same directory).
 - Verification: `bun run test -- src/lib/shipping-utils.test.ts` → all pass with the new cases.
 
@@ -172,7 +174,7 @@ Because this adds a new test file (and new tests), the repo's process (`.claude/
 
 ALL must hold:
 
-- [ ] `src/lib/shipping-utils.test.ts` exists with the 7 cases above (or more)
+- [ ] `src/lib/shipping-utils.test.ts` exists with the 8 cases above (or more)
 - [ ] `bun run test -- src/lib/shipping-utils.test.ts` exits 0
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `bun run lint` exits 0
