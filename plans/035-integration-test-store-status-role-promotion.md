@@ -175,9 +175,21 @@ clerkClient）のみ。`beforeEach` で `resetDb` + `mockReset`。
    >   （Clerk 同期も PENDING 起点限定にする等）に期待値を
    >   `mockUpdateUserMetadata` 未呼び出しへ**反転**させる。
    >
-   > オペレーターはテストを書く前にこの判定をユーザーへ確認すること。判定が得られない場合は
-   > シナリオ 3 に「非対称は未判定。修正時に期待値反転の可能性あり」のコメントを
-   > テストファイル内へ明記した上で進める（合わせ込みの既成事実化を防ぐため）。
+   > ⚠️ **これは体裁の非対称ではなく「権限付与」の非対称であり、未確定のまま assert で固定しないこと**。
+   > 本リポジトリの認可ソースは **Clerk の `privateMetadata.role`** であって DB の `User.role` ではない
+   > （`src/lib/auth-guards.ts:71` の `requireSeller` は `user.privateMetadata?.role !== "SELLER"` で判定。
+   > `updateStoreStatus` 自身の admin 判定も `user.privateMetadata.role` を読む）。
+   > つまり DISABLED → ACTIVE で Clerk 側が `SELLER` になると、DB が `USER` のままでも
+   > **`requireSeller()` は通り、実際に販売者権限が付与される**。
+   > これが仕様なら問題ないが、**バグならテストが権限昇格を「期待値」として固着させる**。
+   > テストファイル内のコメントは固定を防がない —— **assert こそが契約**になる。
+   >
+   > オペレーターはテストを書く前にこの判定をユーザーへ確認すること。
+   > **判定が得られない場合は STOP して報告する**（下記 STOP conditions）。
+   > 「コメントを書いた上で進める」は不可 —— 未確定の権限付与を契約化してしまう。
+   > どうしても他シナリオを先に進める必要がある場合のみ、**シナリオ 3 から
+   > `mockUpdateUserMetadata` の assert だけを外し**（Store.status / User.role の assert は
+   > 判定に依存しないので残してよい）、Clerk 呼び出しの検証は判定後に別途追加する。
    > 判定先の候補: spike 016（出品審査ワークフロー）の設計 — Maintenance notes 参照。
 4. **ACTIVE → ACTIVE 再実行の冪等性**: シナリオ 1 の後に再度 `"ACTIVE"` で呼ぶ →
    throw せず、User.role は SELLER のまま（再昇格なし = `store.status`（更新前読取）が
@@ -282,6 +294,10 @@ Stop and report back (do not improvise) if:
 - Drift check で `store.ts:558-590` が本プランの抜粋と一致しない
 - シナリオ 2 / 3 で User.role が SELLER に変わる（昇格条件のバグ = 権限境界の欠陥）—
   **セキュリティ関連の本体バグ**。即 STOP して報告（テストの合わせ込み禁止）
+- シナリオ 3 の非対称（DB 昇格なし + Clerk 同期あり）が**仕様かバグかの判定をユーザーから
+  得られない** — Clerk の `privateMetadata.role` は認可ソース（`auth-guards.ts:71`）であり、
+  未確定のまま `mockUpdateUserMetadata` を assert すると**権限付与を契約として固着させる**。
+  STOP して報告する（判定なしで進める場合は当該 assert を外すこと。シナリオ 3 の blockquote 参照）
 - シナリオ 7 で `user.update` が失敗したのに Store.status が ACTIVE のまま残る
   （＝ status 更新とロール昇格が原子的でない）— **本体バグ**。期待値を実測値に
   合わせ込まず、そのまま報告する
