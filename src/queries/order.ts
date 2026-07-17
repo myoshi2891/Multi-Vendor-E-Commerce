@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { logError } from "@/lib/log";
 import { requireAdmin } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
 import {
@@ -136,17 +137,8 @@ export const trackOrder = async (input: TrackOrderInput) => {
         const { user: _user, ...rest } = order;
         return rest;
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            // email/orderId 等の PII はログしない。
-            console.error("[Order:trackOrder] lookup failed", {
-                error: error.message,
-                stack: error.stack,
-            });
-        } else {
-            console.error("[Order:trackOrder] lookup failed (unknown)", {
-                error,
-            });
-        }
+        // email/orderId 等の PII はログしない。
+        logError("[Order:trackOrder] lookup failed", error);
         // 一過性のインフラ障害を「見つからない(null)」に変換しない。
         // null は真の不一致/不存在/不正入力のみに限定し、DB 障害は呼び出し側へ伝播させる
         // （UI 側で not-found ではなく汎用の再試行メッセージを出すため）。PII は含めない。
@@ -270,20 +262,7 @@ export const updateOrderItemStatus = async (
             data: { status },
         });
     } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error(
-                "[Order:updateOrderItemStatus] status update failed",
-                {
-                    error: error.message,
-                    stack: error.stack,
-                }
-            );
-        } else {
-            console.error(
-                "[Order:updateOrderItemStatus] status update failed (unknown)",
-                { error }
-            );
-        }
+        logError("[Order:updateOrderItemStatus] status update failed", error);
         // 生の Prisma エラー（接続文字列等を含みうる）を UI へ素通しさせない。
         throw new Error("Failed to update order item status.");
     }
@@ -345,10 +324,7 @@ export const getAllOrders = async (
 
         return { orders, total, page: f.page, limit: f.limit };
     } catch (error: unknown) {
-        console.error("[Order:getAllOrders] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:getAllOrders] Error", error);
         throw new Error("Failed to fetch orders.");
     }
 };
@@ -384,10 +360,7 @@ export const getOrderForAdmin = async (orderId: string) => {
             },
         });
     } catch (error: unknown) {
-        console.error("[Order:getOrderForAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:getOrderForAdmin] Error", error);
         throw new Error("Failed to fetch order.");
     }
 };
@@ -500,10 +473,7 @@ export const updateOrderGroupStatusAsAdmin = async (
             return group.status as OrderStatus;
         });
     } catch (error: unknown) {
-        console.error("[Order:updateOrderGroupStatusAsAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderGroupStatusAsAdmin] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order group status.");
@@ -540,10 +510,7 @@ export const updateOrderItemStatusAsAdmin = async (
 
         return updated.status as ProductStatus;
     } catch (error: unknown) {
-        console.error("[Order:updateOrderItemStatusAsAdmin] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderItemStatusAsAdmin] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order item status.");
@@ -641,10 +608,7 @@ export const updateOrderPaymentStatus = async (
             return status;
         });
     } catch (error: unknown) {
-        console.error("[Order:updateOrderPaymentStatus] Error", {
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
+        logError("[Order:updateOrderPaymentStatus] Error", error);
         throw error instanceof Error
             ? error
             : new Error("Failed to update order payment status.");
