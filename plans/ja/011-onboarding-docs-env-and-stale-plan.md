@@ -62,7 +62,22 @@ STRIPE_WEBHOOK_SECRET
 WEBHOOK_SECRET
 ```
 
-加えて、直接の `process.env` ではなくライブラリ設定経由で使われる変数（`.env.docker.example` に存在）: Clerk の publishable/secret キー、Clerk の sign-in/up URL 変数、`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`、`NEXT_PUBLIC_CLOUDINARY_PRESET_NAME`、`NEXT_PUBLIC_APP_URL`。**必要な変数名の権威的な superset として `.env.docker.example` を使う**こと（Docker 固有のホスト名は除く）。
+加えて、直接の `process.env` ではなくライブラリ設定経由で使われる変数（`.env.docker.example` に存在）: Clerk の publishable/secret キー、Clerk の sign-in/up URL 変数、`NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`、`NEXT_PUBLIC_CLOUDINARY_PRESET_NAME`、`NEXT_PUBLIC_APP_URL`。**変数名の権威的な superset として `.env.docker.example` を使う**こと（Docker 固有のホスト名は除く）。
+
+> **Clerk の URL 変数 — 扱いを 1 つに統一すること。** `NEXT_PUBLIC_CLERK_SIGN_IN_URL`、
+> `NEXT_PUBLIC_CLERK_SIGN_UP_URL`、`NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
+> （`.env.docker.example:26-28`）は**任意**である: `src/` はこれらを一切読まない
+> （`grep -rn 'CLERK_SIGN_IN_URL\|CLERK_SIGN_UP_URL\|AFTER_SIGN_IN' src/` → 0 件）。
+> Clerk がライブラリ設定として消費し、未設定なら Clerk 自身の既定値にフォールバックする。
+> ただし本リポジトリは `src/app/(auth)/sign-in`・`sign-up` に**カスタム**認証ページを持つため、
+> 値は任意ではなく確定しており、`.env.example` に載せる価値がある。
+>
+> 本プラン内の**3 箇所すべてで「既定値ありの任意」として統一**すること: 上の superset、
+> 下の「README に不足している」リスト（**載せない** — あちらはコードが必須とする変数のためのもの）、
+> Step 2 の `.env.example` テンプレート（本リポジトリの実値を入れて任意と明記して**載せる**）。
+> superset を「必須」と呼びながらテンプレートでは「必要に応じて」とコメントアウトする、という
+> 現状の不一致を解消するための注記である。`AFTER_SIGN_IN_URL` も他の 2 つと並べて記載すること
+> （兄弟変数だけ載せて 1 つ落とすのは同じ欠陥）。
 
 コードが必要としているが README に無いもの: **`STRIPE_WEBHOOK_SECRET`**、**`PAYPAL_API_BASE`**、**`PAYPAL_WEBHOOK_ID`**、**`IPINFO_TOKEN`**、**`NEXT_PUBLIC_APP_URL`**、そして **`NEXT_PUBLIC_CLOUDINARY_*`** のペア（README は Cloudinary を前提条件として挙げているにも関わらず、その変数を省略している）。
 
@@ -118,9 +133,20 @@ WEBHOOK_SECRET
 次に `git mv docs/unimplemented-screens-plan.md docs/archive/unimplemented-screens-plan.md`（チームが削除を好む場合は `git rm` でも可 — アーカイブがより安全なデフォルト）。
 
 移動後、旧パスにリンクしている他のドキュメントを更新する:
-`grep -rn "unimplemented-screens-plan" docs/ README.md .claude/ specs/` — direction のソースとして引用している recon/roadmap ドキュメント等、各参照を修正または削除する。
+`grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules` — direction のソースとして引用している recon/roadmap ドキュメント等、各参照を修正または削除する。
 
-**検証**: `grep -rn "unimplemented-screens-plan" --include=*.md . | grep -v docs/archive` → アーカイブ外に生きた参照がない（または残る全参照が新しいアーカイブパスを指す）。
+> **手で選んだサブセットではなく、リポジトリ全体を検索すること。** 本ステップの旧版は
+> `docs/ README.md .claude/ specs/` の 4 箇所しか走査しておらず、これは**下の「検証」コマンドより
+> 狭い**。そのため 4 箇所の外にある参照は修正を免れたままゲートだけが落ちる。これは仮定の話ではない:
+> `plans/` だけで約 15 件（`plans/ADVISOR_STATE.md`・`plans/audit/recon.md`・
+> `plans/audit/findings-07-dx-docs.md`・`plans/audit/VETTED_FINDINGS.md`・本プランの EN/ja 自身）、
+> `docs/design/*/README.md` にさらに約 11 件ある。修正の範囲と検証の範囲を一致させること。
+>
+> `plans/audit/findings-*` と本プラン自身の参照は**残ってよい** — 監査自身の証跡として当該ファイルを
+> 引用しているため。削除ではなく新しいアーカイブパスへ向け直すこと。下の検証コマンドはそれを許容する
+> （**旧**パスへの生きた参照が無いことだけを要求する）。
+
+**検証**: `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules | grep -v docs/archive` → アーカイブ外に生きた参照がない（または残る全参照が新しいアーカイブパスを指す）。
 
 ### Step 2: README の env ブロックを補完する
 
@@ -135,7 +161,11 @@ DIRECT_URL=
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
-# 必要に応じて: NEXT_PUBLIC_CLERK_SIGN_IN_URL / NEXT_PUBLIC_CLERK_SIGN_UP_URL
+# 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
+# 本リポジトリは src/app/(auth)/ にカスタム認証ページを持つため、既定値ではなく下記の値を使う。
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
 
 # --- Stripe ---
 STRIPE_SECRET_KEY=

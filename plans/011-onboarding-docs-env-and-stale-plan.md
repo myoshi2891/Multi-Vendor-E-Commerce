@@ -60,9 +60,24 @@ STRIPE_WEBHOOK_SECRET
 WEBHOOK_SECRET
 ```
 
-Plus vars used via library config rather than direct `process.env` (present in `.env.docker.example`): the Clerk publishable/secret keys, the Clerk sign-in/up URL vars, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_PRESET_NAME`, and `NEXT_PUBLIC_APP_URL`. **Use `.env.docker.example` as the authoritative superset of required variable names** (strip the Docker-specific hostnames).
+Plus vars used via library config rather than direct `process.env` (present in `.env.docker.example`): the Clerk publishable/secret keys, the Clerk sign-in/up URL vars, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `NEXT_PUBLIC_CLOUDINARY_PRESET_NAME`, and `NEXT_PUBLIC_APP_URL`. **Use `.env.docker.example` as the authoritative superset of variable names** (strip the Docker-specific hostnames).
 
-Missing from the README that the code needs: **`STRIPE_WEBHOOK_SECRET`**, **`PAYPAL_API_BASE`**, **`PAYPAL_WEBHOOK_ID`**, **`IPINFO_TOKEN`**, **`NEXT_PUBLIC_APP_URL`**, and the **`NEXT_PUBLIC_CLOUDINARY_*`** pair (README even lists Cloudinary as a prerequisite but omits its vars).
+> **Clerk URL vars — one treatment, applied everywhere.** `NEXT_PUBLIC_CLERK_SIGN_IN_URL`,
+> `NEXT_PUBLIC_CLERK_SIGN_UP_URL` and `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
+> (`.env.docker.example:26-28`) are **optional**: nothing in `src/` reads them
+> (`grep -rn 'CLERK_SIGN_IN_URL\|CLERK_SIGN_UP_URL\|AFTER_SIGN_IN' src/` → 0 hits) — Clerk consumes
+> them as library config and falls back to its own defaults when they are absent. They are worth
+> shipping in `.env.example` anyway because this repo serves **custom** auth pages at
+> `src/app/(auth)/sign-in` and `sign-up`, so the values are not arbitrary.
+>
+> Treat them as **optional-with-defaults in all three places** in this plan: the superset above,
+> the "missing from the README" list below (they are *not* listed there — that list is for vars the
+> code requires), and the `.env.example` template in Step 2 (present, with the repo's real values,
+> and marked optional). Do **not** call the superset "required" and then comment them out as
+> 「必要に応じて」 — that is the inconsistency this note exists to close. `AFTER_SIGN_IN_URL` must
+> appear alongside the other two; omitting it while listing its siblings is the same defect.
+
+Missing from the README that the code **requires**: **`STRIPE_WEBHOOK_SECRET`**, **`PAYPAL_API_BASE`**, **`PAYPAL_WEBHOOK_ID`**, **`IPINFO_TOKEN`**, **`NEXT_PUBLIC_APP_URL`**, and the **`NEXT_PUBLIC_CLOUDINARY_*`** pair (README even lists Cloudinary as a prerequisite but omits its vars). The Clerk URL vars are deliberately absent from this list per the note above.
 
 ### `.env.example`
 
@@ -116,9 +131,21 @@ Preferred: archive rather than hard-delete, so history/context is visible. Creat
 Then `git mv docs/unimplemented-screens-plan.md docs/archive/unimplemented-screens-plan.md` (or `git rm` it if the team prefers deletion — archiving is the safer default).
 
 After moving, update any doc that links to the old path:
-`grep -rn "unimplemented-screens-plan" docs/ README.md .claude/ specs/` — fix or remove each reference (e.g. recon/roadmap docs that cite it as a direction source).
+`grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules` — fix or remove each reference (e.g. recon/roadmap docs that cite it as a direction source).
 
-**Verify**: `grep -rn "unimplemented-screens-plan" --include=*.md . | grep -v docs/archive` → no live references outside the archive (or all remaining references point to the new archive path).
+> **Search the whole repo, not a hand-picked subset.** An earlier revision of this step scanned only
+> `docs/ README.md .claude/ specs/`, which is **narrower than the Verify command below** — so a
+> reference outside those four paths survives the fix and then fails the gate. That is not
+> hypothetical: `plans/` alone holds ~15 references (`plans/ADVISOR_STATE.md`,
+> `plans/audit/recon.md`, `plans/audit/findings-07-dx-docs.md`, `plans/audit/VETTED_FINDINGS.md`,
+> and this plan's own EN/ja copies), and `docs/design/*/README.md` holds ~11 more. Keep the fix
+> scope and the verify scope identical.
+>
+> References inside `plans/audit/findings-*` and this plan itself are **expected to remain** — they
+> cite the file as the audit's own evidence. Point them at the new archive path rather than deleting
+> them; the Verify command below accepts that (it only requires no live references to the *old* path).
+
+**Verify**: `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules | grep -v docs/archive` → no live references outside the archive (or all remaining references point to the new archive path).
 
 ### Step 2: Complete the README env block
 
@@ -133,7 +160,11 @@ DIRECT_URL=
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
-# 必要に応じて: NEXT_PUBLIC_CLERK_SIGN_IN_URL / NEXT_PUBLIC_CLERK_SIGN_UP_URL
+# 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
+# 本リポジトリは src/app/(auth)/ にカスタム認証ページを持つため、既定値ではなく下記の値を使う。
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
 
 # --- Stripe ---
 STRIPE_SECRET_KEY=
