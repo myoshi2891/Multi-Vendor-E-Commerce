@@ -420,9 +420,112 @@ triage を挟んだ理由そのもの。
   実装完了と実行状態を分離しており、部分的な反証があった。主旨（✅ が実行成功を含意する）は
   正当なため、実際の対象行で対応した（節冒頭に R8 実測の注記 + 見出しを「✅ 実装完了」へ）。`c2ad9e6`
 
-### Round 10 deferred
+### Round 10 deferred — plans/ 計画書 59 件（Round 11 で triage 予定）
 
-- **plans/ 計画書 59 件**: 本ラウンドのスコープ外（ユーザー裁定により src/ + docs 統計整合を優先）。
-  内訳は plans/ja/ の Scope と Done criteria の対象ファイル不一致（6 件）、spike プランの
-  設計指摘（020 の法域要件・021 の送信前記録・019 の評価集計競合等）、テスト計画プランの
-  ケース数・完了条件の整合など。次段で triage する。
+> **永続化の理由**: 本一覧の出所はスクリーンショットのみで、GitHub にも `gh api` にも存在しない。
+> セッションのコンテキストが失われると**対象そのものが復元不能**になるため、
+> 採取時点（2026-07-17 / HEAD `739097c`）の「ファイル:行 → 指摘タイトル」を原文のまま台帳へ固定する。
+> **行番号は採取時点のもの**であり、着手時は各ファイルの実内容へ照合し直すこと（Round 10 の CR-14 は
+> CodeRabbit の行番号自体が誤っていた実例）。
+> **判定は未実施**（タイトルのみ・実コード未照合）。Round 10 の CR-03 が示すとおり、
+> タイトルの字面適用は設計意図を壊しうるため、Round 11 で必ず実物照合してから採否を決める。
+
+#### 実行プラン（001-012）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-01 | `plans/002-allowlist-mutable-store-fields.md` 232-245 | 評価フィールドの回帰テストも追加してください。 |
+| P-02 | `plans/003-server-side-payment-and-address-trust.md` 178-190 | 所有済み住所の countryId をサーバー側の値に置き換えてください。 |
+| P-03 | `plans/005-cart-integrity-atomic-save-and-persist.md` 165-178 | 永続化テストで再ハイドレーションまで検証してください。 |
+| P-04 | `plans/006-place-order-double-submit-guard.md` 164-177 | 既存の place-order.test.tsx を必須の回帰テストとして扱ってください。 |
+| P-05 | `plans/009-query-hygiene-bound-store-orders-and-drop-dead-query.md` 30-36 | 現行スコープのまま take を出荷しないでください。 |
+| P-06 | `plans/011-onboarding-docs-env-and-stale-plan.md` 49-65 | Clerk の URL 変数の扱いを統一してください。 |
+
+#### spike プラン（013-025）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-07 | `plans/014-spike-category-attributes-facets.md` 92-103 | 調査用 psql は DATABASE_URL ではなく直接接続 URL を使ってください。 |
+| P-08 | `plans/015-spike-faceted-search-and-browse.md` 94-103 | 読み取り専用調査から prisma studio を外してください。 |
+| P-09 | `plans/016-spike-seller-onboarding-catalog-approval.md` 143-161 | 非公開商品の購入拒否を実装計画と完了条件に追加してください。 |
+| P-10 | `plans/017-spike-recommendation-foundation.md` 111-143 | ユーザー推薦の userId を未検証の呼び出し側入力にしないでください。 |
+| P-11 | `plans/018-spike-returns-rma-workflow.md` 137-152 | RMA 作成にリクエスト冪等性を追加してください。 |
+| P-12 | `plans/019-spike-review-ugc-governance.md` 157-160 | トランザクションで囲むだけでは評価集計の競合を解消できません。 |
+| P-13 | `plans/020-spike-promotion-engine.md` 38-48 | 法域別の要件を一次資料で裏付けてください。 |
+| P-14 | `plans/021-spike-notification-foundation.md` 142-150 | 外部送信前に「送信済み」を記録しないでください。 |
+| P-15 | `plans/023-bound-and-validate-public-search-pagination.md` 161-180 | FULLTEXT経路とfallback経路を分けてテストしてください。 |
+| P-16 | `plans/024-validate-usercountry-cookie-write.md` 195-200 | malformed JSON時も stack を含めてください。 |
+| P-17 | `plans/025-spike-rate-limit-public-endpoints.md` 115-126 | 信頼プロキシのIP導出を配備環境ごとに確定してください。 |
+
+#### テスト実装プラン（026-041）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-18 | `plans/026-unit-test-paypal-error-branches.md` 53-72 | 構造化ログ規約との不一致を明示してください。 |
+| P-19 | `plans/026-unit-test-paypal-error-branches.md` 160-183 | テストケース数と完了条件を一致させてください。 |
+| P-20 | `plans/027-integration-test-oversell-rollback-and-platform-coupon.md` 247-253 | PLATFORMクーポンの storeId を null に固定してください。 |
+| P-21 | `plans/028-unit-test-country-query.md` 133-148 | テストデータは共通fixtureから生成してください。 |
+| P-22 | `plans/029-unit-test-profile-catch-branches.md` 93-101 | 期間フィルタ追加後のテスト数条件を統一してください。 |
+| P-23 | `plans/030-component-test-money-path-client.md` 231-242 | 未処理 rejection を成功するテストとして固定しないでください。 |
+| P-24 | `plans/032-integration-test-webhook-payment-idempotency.md` 208-222 | トランザクションのロールバックを実証できていません。 |
+| P-25 | `plans/035-integration-test-store-status-role-promotion.md` 162-180 | Clerk 側の権限昇格を未確定のまま固定しないでください。 |
+| P-26 | `plans/040-integration-test-user-deletion-webhook.md` 32-45 | タイトルと実際のカスケード検証範囲が一致していません。 |
+| P-27 | `plans/040-integration-test-user-deletion-webhook.md` 93-96 | SET NULL 後の SupportTicket がテスト間に残留します。 |
+| P-28 | `plans/041-integration-test-coupon-code-uniqueness.md` 95-112 | Prisma の Coupon 型に合わせて日付を Date で渡してください。 |
+
+#### E2E プラン（042-057）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-29 | `plans/042-e2e-signin-helper-repair.md` 183-198 | 3 秒タイムアウトを UI 形式の判定に使うと再びフレークします。 |
+| P-30 | `plans/047-e2e-checkout-order-detail.md` 155-188 | 金額検算を Decimal 規約と整合させてください。 |
+| P-31 | `plans/049-e2e-profile-orders-addresses.md` 87-105 | テスト間で住所状態を共有しないでください。 |
+| P-32 | `plans/050-e2e-admin-store-status.md` 150-172 | HTTP 500 を成功条件として固定しないでください。 |
+| P-33 | `plans/054-e2e-vrt-expansion.md` 72-79 | ベースライン更新コマンドを実際のラッパー仕様に合わせてください。 |
+| P-34 | `plans/055-e2e-guest-cart-login-handoff.md` 127-147 | 新しいコンテキストへ baseURL を明示的に引き継いでください。 |
+| P-35 | `plans/056-e2e-newsletter-characterization.md` 141-168 | 空メールの「POSTなし」判定が競合します。 |
+| P-36 | `plans/057-upgrade-next-middleware-bypass.md` 112-124 | 16.2.xの最新パッチを取得するコマンドになっていません。 |
+| P-37 | `plans/057-upgrade-next-middleware-bypass.md` 146-156 | grep -c の終了コードを修正してください。 |
+
+#### インデックス・状態管理・direction（凍結対象を含むため要注意）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-38 | `plans/ADVISOR_STATE.md` 453-465 | NEXTにP1のplan 057を反映してください。 |
+| P-39 | `plans/ADVISOR_STATE.md` 512-520 | 再開プロンプトが現行Hard Ruleの例外を否定しています。 |
+| P-40 | `plans/README.md` 3-9 | Round 8/9の監査履歴をヘッダーへ追加してください。 |
+| P-41 | `plans/README.md` 218-225 | DEPS-08のrejected記録をplan 057と整合させてください。 |
+| P-42 | `plans/audit/VETTED_FINDINGS.md` 311-339 | Round 9の依存関係とplan 057のprovenanceを同期してください。 |
+| P-43 | `plans/audit/findings-14-integration-coverage-r6.md` 162-170 | Prisma の undefined 挙動を無条件に前提にしないでください。 |
+| P-44 | `plans/direction/EXPANSION_BLUEPRINT.md` 84-95 | tsvector の「インデックスなし」という記述を訂正してください。 |
+| P-45 | `plans/direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md` 137-155 | Store.returnPolicy の決定事項を箇条書きへ戻してください。 |
+
+> ⚠️ **P-44 / P-45 は `plans/direction/` = 凍結済みの監査原本**（本ラウンド CR-09 で凍結範囲を確定）。
+> PR #153 でも同種の指摘に対し「凍結済み原本のため直接修正は不適切、対応先は昇格後の docs 側」と
+> 回答済み（コメント `3596976146` / `3597151955`）。Round 11 では**同じ理由で却下**する公算が高い。
+> P-42 は `plans/audit/findings-*` ではなく台帳本体（本ファイル）であり凍結対象外。
+
+#### 日本語版プラン（plans/ja/）
+
+| # | 対象 | 指摘タイトル（原文） |
+|---|------|--------------------|
+| P-46 | `plans/ja/001-scope-order-item-status-to-owned-store.md` 112-116 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-47 | `plans/ja/001-scope-order-item-status-to-owned-store.md` 160-187 | IDORテストの検証範囲を正確に記述してください。 |
+| P-48 | `plans/ja/002-allowlist-mutable-store-fields.md` 110-114 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-49 | `plans/ja/002-allowlist-mutable-store-fields.md` 234-247 | averageRating と numReviews も回帰テストで明示的に拒否してください。 |
+| P-50 | `plans/ja/003-server-side-payment-and-address-trust.md` 119-125 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-51 | `plans/ja/003-server-side-payment-and-address-trust.md` 157-167 | PaymentIntent の金額・通貨も注文と照合してください。 |
+| P-52 | `plans/ja/003-server-side-payment-and-address-trust.md` 179-191 | 住所情報は ownedAddress から引き続き導出してください。 |
+| P-53 | `plans/ja/004-upgrade-clerk-nextjs-security.md` 66-75 | 依存更新後に変更可能なファイル範囲を明確化してください。 |
+| P-54 | `plans/ja/008-remove-dead-search-copy-and-relocate-schema.md` 80-85 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-55 | `plans/ja/009-query-hygiene-bound-store-orders-and-drop-dead-query.md` 85-90 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-56 | `plans/ja/009-query-hygiene-bound-store-orders-and-drop-dead-query.md` 105-123 | ページネーションなしの take: 200 を無告知で導入しないでください。 |
+| P-57 | `plans/ja/010-unit-test-compute-shipping-total.md` 83-87 | Scope と Done criteria の対象ファイルを一致させてください。 |
+| P-58 | `plans/ja/011-onboarding-docs-env-and-stale-plan.md` 120-123 | 旧ドキュメントへの参照検索をリポジトリ全体に広げてください。 |
+| P-59 | `plans/ja/012-spike-item-level-inventory-restock.md` 161-169 | 完了条件の変更対象が矛盾しています。 |
+
+> **P-46 / P-48 / P-50 / P-54 / P-55 / P-57 は同一パターン**（「Scope と Done criteria の対象
+> ファイルを一致させてください」×6）。plans/ja/ は plans/ 直下の日本語版であり、Round 9 の
+> コミット `ee80cda` / `923219d`（「in-scope file check を code commit にスコープする」）が
+> plans/ 側にのみ適用され、ja 側へ伝播していない可能性が高い。Round 11 では**まとめて 1 コミット**で
+> 処理できるか（rule 02 の「同一カテゴリ・3 ファイル以下・200 行未満」基準）を判断すること。
