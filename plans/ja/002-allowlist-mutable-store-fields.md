@@ -235,14 +235,24 @@ data: {
 
 `src/queries/store.test.ts` に、既存の `upsertStore` テストとこのファイル内の IDOR 系アサーションを手本にテストを追加する:
 
-1. `upsertStore` **update**: `status: "ACTIVE"` と `featured: true` を含む `store` オブジェクトで呼び出し、`db.store.update` の呼び出しに渡された `data` が `status` も `featured` も**含まない**ことを assert する:
+「Current state」で挙げた特権カラムを**すべて**カバーすること — `status`、`featured`、
+**および計算値である評価フィールド `averageRating` / `numReviews`**。評価の偽装は本プランが
+塞ぐべき 3 つの攻撃の 1 つであり、ここを assert しないと回帰網なしで allowlist を出荷することになる。
+
+1. `upsertStore` **update**: `status: "ACTIVE"`、`featured: true`、`averageRating: 4.9`、`numReviews: 999` を含む `store` オブジェクトで呼び出し、`db.store.update` の呼び出しに渡された `data` がそのいずれも**含まない**ことを assert する:
    ```ts
    const call = mockDb.store.update.mock.calls[0][0];
    expect(call.data).not.toHaveProperty("status");
    expect(call.data).not.toHaveProperty("featured");
+   expect(call.data).not.toHaveProperty("averageRating");
+   expect(call.data).not.toHaveProperty("numReviews");
    ```
-2. `upsertStore` **create**: `status: "ACTIVE"`、`featured: true` で呼び出し、`db.store.create` の `data.status === "PENDING"` かつ `data.featured === false` であることを assert する。
-3. `applySeller`: 同様のアサーション — 入力に関わらず applicant create は `status: "PENDING"`、`featured: false` を強制する。
+2. `upsertStore` **create**: `status: "ACTIVE"`、`featured: true`、`averageRating: 4.9`、`numReviews: 999` で呼び出し、`db.store.create` の `data.status === "PENDING"` かつ `data.featured === false` であること、および `data` が `averageRating` も `numReviews` も持たない（`prisma/schema.prisma:85-86` のスキーマ既定値が効く）ことを assert する。
+3. `applySeller`: 同様のアサーション — 入力に関わらず applicant create は `status: "PENDING"`、`featured: false` を強制し、`averageRating` / `numReviews` を落とす。
+
+> **注**: `applySeller` の create ケースについては `src/queries/store.test.ts:507-527` が
+> 既に `averageRating` / `numReviews` を assert 済み（コミット `3247e42`）。それは残したまま、
+> 未 assert の `upsertStore` 2 経路へ同じカバレッジを広げること。
 
 **検証**: `bun run test -- src/queries/store.test.ts` → 新規テストを含め全件 pass。
 

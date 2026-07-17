@@ -233,14 +233,20 @@ If `applySeller`'s `StoreType` makes some required columns non-optional such tha
 
 In `src/queries/store.test.ts`, add tests (model them after the existing `upsertStore` tests and the IDOR-style assertions in that file):
 
-1. `upsertStore` **update**: call with a `store` object that includes `status: "ACTIVE"` and `featured: true`; assert `db.store.update` was called with `data` that does **not** contain `status` or `featured`:
+Cover **every** privileged column named in "Current state" — `status`, `featured`, **and the computed reputation fields `averageRating` / `numReviews`**. Faking a rating is one of the three attacks this plan exists to close, so leaving it unasserted would ship the allowlist without a regression net for it.
+
+1. `upsertStore` **update**: call with a `store` object that includes `status: "ACTIVE"`, `featured: true`, `averageRating: 4.9`, `numReviews: 999`; assert `db.store.update` was called with `data` that does **not** contain any of them:
    ```ts
    const call = mockDb.store.update.mock.calls[0][0];
    expect(call.data).not.toHaveProperty("status");
    expect(call.data).not.toHaveProperty("featured");
+   expect(call.data).not.toHaveProperty("averageRating");
+   expect(call.data).not.toHaveProperty("numReviews");
    ```
-2. `upsertStore` **create**: call with `status: "ACTIVE"`, `featured: true`; assert `db.store.create` `data.status === "PENDING"` and `data.featured === false`.
-3. `applySeller`: same assertion — applicant create forces `status: "PENDING"`, `featured: false` regardless of input.
+2. `upsertStore` **create**: call with `status: "ACTIVE"`, `featured: true`, `averageRating: 4.9`, `numReviews: 999`; assert `db.store.create` `data.status === "PENDING"` and `data.featured === false`, and that `data` carries neither `averageRating` nor `numReviews` (the schema defaults at `prisma/schema.prisma:85-86` must win).
+3. `applySeller`: same assertion — applicant create forces `status: "PENDING"`, `featured: false` and drops `averageRating` / `numReviews` regardless of input.
+
+> **Note**: `src/queries/store.test.ts:507-527` already asserts the `applySeller` create case for `averageRating` / `numReviews` (commit `3247e42`). Keep it and extend the same coverage to the two `upsertStore` paths above, which remain unasserted.
 
 **Verify**: `bun run test -- src/queries/store.test.ts` → all pass, new tests included.
 
