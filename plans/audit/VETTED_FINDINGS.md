@@ -350,3 +350,79 @@ TESTS-27 は 042 に同梱（26 と直列で a11y 2 spec を回復）。043 / 04
 - **フル サインアップ E2E（確認コード入力 → セッション成立まで）**: Clerk test mode 固定コード（424242）前提のフロー全長テストは、`auth.ts` が API 直でユーザー作成する現行設計と重複投資。ウィジェット描画スモーク（053）で足りる。
 - **言語 / 通貨セレクタの E2E**: `country-lang-curr-selector.tsx:106-128` の Language / Currency 欄は**静的表示のみ**（onChange ハンドラ無し）。多通貨対応は `product.md` の**スコープ外**。
 - **dashboard forms 群 0%**: 内部 UI・money-path よりレバレッジ下位。README 次点候補へ。
+
+---
+
+## Round 10 追記 — CodeRabbit ローカルレビュー triage（2026-07-17 / HEAD `739097c`）
+
+> **本ラウンドの出所が他と異なる点に注意**: 本節は improve スキルの監査ではなく、
+> **CodeRabbit VSCode 拡張のローカルレビュー**（未プッシュの 25 コミット `origin/dev..dev`
+> を対象）に対する triage 記録である。指摘は GitHub 上に存在せず `gh api` で取得できない
+> （PR #153 の CodeRabbit コメント 30 件は別物で、いずれも `edaee52`〜`a2c1cee` で対応済み）。
+> 根拠はスクリーンショットの「ファイル + 行範囲 + 1 行タイトル」のみのため、
+> **各指摘を実コードへ照合してから採否を決めた**。
+>
+> **スコープ**: 全 73 件のうち src/ 4 件 + docs/テスト統計整合 10 件 = 14 件を対象とした。
+> **plans/ 計画書 59 件は次段へ繰り越し**（本ラウンド未着手）。
+
+### Round 10 accepted — src/ 本番コード（4 件すべて妥当）
+
+| # | 対象 | 判定 | 実コード照合の根拠 | コミット |
+|---|------|------|-------------------|---------|
+| CR-01 | `place-order.tsx` | **妥当・実バグ** | `await emptyUserCart()` が `navigating = true` より前にあり、後片付けが throw すると `catch`→`finally` でガードが解放される。**注文は成立済みなのに再実行可能**だった。フラグを `orderPlaced` に改名し注文確定と同時に立てる形へ | `5192aea`→`cc7468c` |
+| CR-02 | `order.ts` | **妥当** | `src/lib/log.ts` の `logError` が既存で `coupon.ts` は全面移行済み。order.ts のみ inline `console.error` が残存。**error ログ 7 箇所のみ**を統合し、監査ログ 3 箇所（`[Admin:*] actor=...`）は error ではないため対象外とした | `cd12973` |
+| CR-03 | `stripe.ts` | **妥当（ただし字面どおりの適用は不可）** | 下記「解釈の修正」を参照 | `91020b3`→`ab97f8f` |
+| CR-04 | `user.ts` | **妥当（軽微）** | `Cart.userId` は `@unique`。`findFirst`(旧 117 行) と `$transaction` の間に TOCTOU があり、並行保存で `delete` の P2025 / `create` の P2002 が発生しうる。tx によりデータ破損はしないが正当なリクエストが偽エラーで落ちる。Serializable + 冪等 `deleteMany` + 事前読取り撤去で解消 | `f4bddb3`→`f046d22` |
+
+#### CR-03 の解釈の修正（記録すべき判断）
+
+指摘タイトルは「注文に対する有効な PaymentIntent を一意に検証してください」。
+当初これを **「`status !== "succeeded"` なら拒否」** と解釈して計画したが、実コード照合の結果
+**この実装は既存仕様と既存テストを破壊する**と判明したため破棄した:
+
+- `stripe.ts` の `toOrderPaymentStatus` は `succeeded` / `canceled` / `processing` /
+  `requires_action` 等を**意図的に全て写像**する設計（in-flight を `Failed` で確定させず
+  `Pending` に留める意図は同関数の docstring に明記）。
+- `stripe.test.ts`「取消済み intent は Cancelled に更新する」がこの仕様を固定している。
+
+指摘本文を確認したところ真の脆弱性は狭く、**「同一注文の古い Pending/canceled intent も
+metadata・金額・通貨が一致するため通過し、確定済み Paid を退行させられる」**ことだった
+（`createStripePaymentIntent` は呼ぶたびに新しい intent を生成するため、1 注文に複数の
+有効な intent が並存する）。したがって:
+
+1. `createStripePaymentIntent` が生成した intent id を `paymentDetails` に保存（有効な intent の記録）
+2. `createStripePayment` が保存済み id との一致を要求（記録の無い導入前の注文は従来どおり通す）
+3. `isSettledPaymentStatus`（Paid / Refunded / PartiallyRefunded / ChargeBack）で確定状態からの
+   遷移と、確定済み注文への新規 intent 作成を拒否（保存済み id の上書きによる迂回を塞ぐ）
+
+**教訓**: CodeRabbit の指摘タイトルだけを字面適用すると設計意図を壊す。本ラウンドが
+triage を挟んだ理由そのもの。
+
+### Round 10 accepted — docs / テスト統計整合（10 件中 9 件妥当）
+
+| # | 対象 | 判定 | 事実 | コミット |
+|---|------|------|------|---------|
+| CR-05 | `audit-playbook.md:34` | 妥当 | 依存監査コマンドの列挙が npm/pip/cargo のみで Bun が欠落。`bun audit` は実在し recon.md に実測証跡あり | `739097c` |
+| CR-06 | `plan-template.md:27-30` | 妥当 | `git diff --stat <SHA>..HEAD` は 2 コミット間比較で**未コミット変更を検出できない**。two-dot を外し `git status --porcelain` を併用 | `739097c` |
+| CR-07 | `PROGRESS.md:8` | 妥当 | 見出し `2026-06-19` に対し本文は `2026-07-17` 実測で約 1 ヶ月のズレ | `c86e9e6` |
+| CR-08 | `05-phased-roadmap.md:14-22` | 妥当（自己矛盾） | 14 行「001〜012」と Phase 0 ツリー「001〜011」が矛盾。ただし plan 012 は spike で 38 行の DIRECTION-02 側に**意図的に配置**されているため、Phase 0 に足すのではなく範囲表記を実態へ合わせた | `43db4c8` |
+| CR-09 | `expansion/README.md:35-37` | 妥当 | 「plans/ は昇格後は凍結」が実態と矛盾（`plans/README.md` の status 列と `ADVISOR_STATE.md` は現在も更新中）。実際の凍結対象は `plans/direction/` と `plans/audit/findings-*` のみ | `43db4c8` |
+| CR-10 | `coverage-dashboard.html:2447` | **妥当（真因は別ファイル）** | JSON は `testCount: 14`、実測 17。真因は `scan-tests.ts:31` の `BLOCK_PATTERN` が `it.each` を **0 件**と数える静的走査の欠陥（`cart-checkout.test.ts:217` の `it.each` が実行時 3 ケースに展開）。rule 02/03 に従い HTML ではなく scanner を修正し 14→17 で一致 | `a1fe1bb`→`c1be6d7` |
+| CR-11 | `COVERAGE_REPORT.md:14-20` | 妥当 | doc 17 vs dashboard 14 の不一致。CR-10 の修正で解消 | `c1be6d7` / `c86e9e6` |
+| CR-12 | `QA_TEST_PERSPECTIVES.md:247` | 妥当 | §20 E2E 表のヘッダ基準日が `2026-07-11 R8` のままで、本文の R9（2026-07-12）追記を未反映 | `c2ad9e6` |
+| CR-13 | `TESTING_DESIGN.md:31/34/81` | 妥当 | 「単一 jest.config.js を維持」「`--testPathPattern` で分ける」が実態と乖離。実際は 2 config を `--config` で分離（ADR-004）。**分割は同表 35 行「再検討のタイミング」の DB リセット条件が実際に発生した結果**であり、表だけが未更新だった | `c2ad9e6` |
+
+### Round 10 partially rejected（誤検知の記録 — 再監査防止）
+
+- **CR-14 `TEST_IMPLEMENTATION_PLAN.md:75-87`「E2E の『完了』表記を実測状態と分離してください」**:
+  **主旨は妥当だが行番号が誤り**。指摘範囲 75-87 に `✅ 完了` は存在せず（当該範囲は R8 実測注記と
+  シナリオ表）、実際の対象は **713-772 行**（3-2〜3-5 の 4 スイート）。また 889 行は既に `⚠️` で
+  実装完了と実行状態を分離しており、部分的な反証があった。主旨（✅ が実行成功を含意する）は
+  正当なため、実際の対象行で対応した（節冒頭に R8 実測の注記 + 見出しを「✅ 実装完了」へ）。`c2ad9e6`
+
+### Round 10 deferred
+
+- **plans/ 計画書 59 件**: 本ラウンドのスコープ外（ユーザー裁定により src/ + docs 統計整合を優先）。
+  内訳は plans/ja/ の Scope と Done criteria の対象ファイル不一致（6 件）、spike プランの
+  設計指摘（020 の法域要件・021 の送信前記録・019 の評価集計競合等）、テスト計画プランの
+  ケース数・完了条件の整合など。次段で triage する。
