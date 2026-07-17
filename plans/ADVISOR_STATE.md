@@ -450,12 +450,18 @@ README の該当注記を修正）。
 ソースコード（`src/` `tests/` `prisma/`）は Round 4〜9 を通じて無変更
 （監査ラウンドは読み取り + プラン執筆のみ）。
 
-**次セッションの着手先: プラン 051 と 056 の実行**（Round 9 の記録どおり、
-どちらも**依存ゼロで即実行可能**）:
+**次セッションの着手先: プラン 057 → 051 → 056 の実行**（いずれも**依存ゼロで即実行可能**）:
 
-1. **[051](051-e2e-country-selector.md)**（P1 / 国セレクタの cookie ラウンドトリップ）—
+1. **[057](057-upgrade-next-middleware-bypass.md)**（P1 / dependencies / Depends on `—`）—
+   **テスト系プラン群より優先する**（[`README.md`](README.md) の
+   「Recommended sequencing #15」）。`next@16.2.1` が GHSA-26hh-7cqf-hhc6
+   （HIGH — App Router の Middleware/Proxy バイパス）の影響範囲内で、
+   `src/middleware.ts` が `/dashboard`・`/checkout`・`/profile` を守っている以上、
+   **plan 004 が Clerk 側で塞いだのと同じ攻撃面がフレームワーク層で開いたまま**。
+   16.2.x 内のパッチ bump のみで `src/` は無変更、042〜056 とファイル競合なし。
+2. **[051](051-e2e-country-selector.md)**（P1 / 国セレクタの cookie ラウンドトリップ）—
    Depends on `—`。
-2. **[056](056-e2e-newsletter-characterization.md)**（Newsletter dormant 404 の
+3. **[056](056-e2e-newsletter-characterization.md)**（Newsletter dormant 404 の
    characterization。route + schema とも不在というアプリ側ギャップの現挙動固定）。
 
 その先の実行順・依存は **[`README.md`](README.md) の Status 表と
@@ -514,7 +520,10 @@ EXPANSION_BLUEPRINT §5 ロードマップ統合 + README 索引更新。
 ```
 plans/ADVISOR_STATE.md と plans/audit/recon.md を読んで、improve スキル
 （.agent/skills/improve/SKILL.md）の deep 監査を「次のアクション（NEXT）」から再開してください。
-ルール: ソースコード変更禁止・成果物は plans/ 配下のみ・各マイルストーンで
+ルール: advisor 自身によるソースコード編集は禁止（Hard Rule 1。ただし execute
+バリアントは別の executor サブエージェントを隔離 worktree に派遣してコードを
+編集させ、advisor はその diff をレビューして判定する — この経路は禁止ではない）・
+advisor 自身の成果物は plans/ 配下のみ・各マイルストーンで
 plans/ のみを docs(plans): 形式でコミット・プランは references/plan-template.md 準拠で
 zero-context executor 向けに自己完結・カテゴリ網羅（セキュリティ/direction 必須）で自動作成。
 完了済みフェーズは再実行せず、このファイルのチェックリストを更新しながら進めること。
