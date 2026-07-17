@@ -147,25 +147,56 @@ page.on("request", (request) => {
     }
 });
 
+// 「submit が試行され、制約検証でブロックされた」ことを一意に示す invalid イベントを待つ。
+// invalid は submit 試行時の制約検証失敗でのみ発火する（click 前には発火しない）。
+// リスナー登録は click より前に済ませる（await するので登録完了が保証される）。
+await page.evaluate(() => {
+    const w = window as Window & { __newsletterInvalidFired?: boolean };
+    w.__newsletterInvalidFired = false;
+    document
+        .querySelector("#newsletter-email")
+        ?.addEventListener("invalid", () => { w.__newsletterInvalidFired = true; }, { once: true });
+});
+
 await page.locator("#newsletter-email").fill("");
 await page.getByRole("button", { name: "Sign up" }).click();
 
-// 時間ではなく「HTML5 の required がブロックした」ことを決定的な基準にする。
-// checkValidity() が false = ブラウザは submit を開始していない。
+// ブラウザが submit をブロックした証拠。ここが true になった時点で
+// onSubmit は走っていない = POST が発火する機会は既に過ぎている。
 await expect
-    .poll(async () => page.locator("#newsletter-email").evaluate(
-        (el: HTMLInputElement) => el.checkValidity()
-    ))
-    .toBe(false);
+    .poll(async () =>
+        page.evaluate(
+            () => (window as Window & { __newsletterInvalidFired?: boolean }).__newsletterInvalidFired
+        )
+    )
+    .toBe(true);
 
 // ブロックされた以上、POST は 1 件も発生していないはず
 expect(newsletterRequests).toHaveLength(0);
 ```
 
+   > **`checkValidity()` を判定基準にしないこと（判定が競合する）**。
+   > `checkValidity()` は要素の validity 状態を**問い合わせるだけの純粋関数**で、
+   > 空の `required` 欄なら **click の前でも後でも常に `false`** を返す ——
+   > 「submit がブロックされた」ことの証拠にはならない（submit を試みていなくても `false`）。
+   > そのため `expect.poll(...).toBe(false)` は**初回評価で即座に成立して何も待たず**、
+   > 直後の `toHaveLength(0)` が**まだ発火していないだけの POST を「無かった」と誤判定**しうる。
+   > リグレッションで実際に POST が飛ぶようになっても、テストは緑のまま通り抜ける。
+   >
+   > `invalid` **イベント**は submit 試行時の制約検証失敗でのみ発火するため、
+   > 「submit が処理され、かつブロックされた」ことを一意に示す。これを待てば
+   > POST が発火する機会は既に過ぎており、`toHaveLength(0)` は決定的になる。
+   >
    > `expect.poll` は条件が満たされるまで（既定のタイムアウトまで）再評価するので、
    > 固定待機と違い**速い環境では即座に抜け、遅い環境でも取りこぼさない**。
    > `page.on("request")` の登録は **click より前**に行うこと（後だと初回の
-   > リクエストを取りこぼす）。
+   > リクエストを取りこぼす）。`window` へのフラグ設置は `any` を使わず
+   > `Window & { __newsletterInvalidFired?: boolean }` で型付けする（`.claude/steering/tech.md`）。
+   >
+   > **control はテスト 1 が兼ねる**: テスト 1（有効なメールで POST が 404 に終わる）が
+   > 通っていることが、「`page.on("request")` の捕捉が実際に機能している」ことの裏付けになる。
+   > テスト 1 が壊れている状態では本テストの `toHaveLength(0)` は無意味に緑になるので、
+   > 本テストが落ちないのにテスト 1 が落ちている場合は、まずテスト 1 を直すこと。
 
 注意:
 - ボタンのアクセシブル名 `Sign up` はフッターの Newsletter 見出し
