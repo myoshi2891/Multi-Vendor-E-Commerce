@@ -98,7 +98,7 @@ i18n-localization/`）が同じ「Zod スキーマのファクトリ化」論点
 |---|---|---|
 | Spec の全参照箇所 | `grep -rniE "Spec" src/ --include="*.ts" --include="*.tsx" -l` | 影響ファイル一覧（`-l` でファイル名のみ。`\b` 等の非移植正規表現は使わない） |
 | 既存 Spec データの傾向（seed 定義から） | `grep -rniE "spec" prisma/seed/` | name の表記揺れ実態（seed の宣言値から把握） |
-| 既存 Spec データの傾向（DB から・任意） | `psql "$DATABASE_URL" -c 'SELECT name, COUNT(*) FROM "Spec" GROUP BY name ORDER BY 2 DESC LIMIT 50;'` | 読み取り専用 SELECT で表記揺れを実測（`prisma studio` の目視は使わない） |
+| 既存 Spec データの傾向（DB から・任意） | `psql "$DIRECT_URL" -c 'SELECT name, COUNT(*) FROM "Spec" GROUP BY name ORDER BY 2 DESC LIMIT 50;'` | 読み取り専用 SELECT で表記揺れを実測（`prisma studio` の目視は使わない）。**`$DATABASE_URL` は不可** — 本リポジトリの `DATABASE_URL` は Prisma Accelerate の `prisma://` URL であり psql は接続できない。素の PostgreSQL 接続文字列は `DIRECT_URL`（`prisma/schema.prisma:9` の `directUrl`。前例: `docs/migration/05-postgres-migration-steps.md:168`） |
 | JSONB/GIN の先行事例 | `grep -rniE "Json\|Jsonb" prisma/schema.prisma` | 現状の Json 利用有無 |
 | 型チェック（副作用なし） | `bunx tsc --noEmit` | exit 0 |
 

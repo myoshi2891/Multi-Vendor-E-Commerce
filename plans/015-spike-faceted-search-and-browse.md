@@ -93,13 +93,21 @@ export const getProducts = async (
 
 ## Commands you will need（読み取り専用調査）
 
+> すべて**副作用なしの読み取り専用**コマンド（`grep` / `SELECT` / `EXPLAIN` のみ）。実行して結果を得られる
+> 形に統一する（インタラクティブかつ書き込み可能な `prisma studio` は使わない — 目視では証跡が残らず、
+> 同じ判断を後から再現できない）。DB へは `$DIRECT_URL` で接続する（**`$DATABASE_URL` は不可** — 本
+> リポジトリの `DATABASE_URL` は Prisma Accelerate の `prisma://` URL であり psql は接続できない。素の
+> PostgreSQL 接続文字列は `DIRECT_URL`。`prisma/schema.prisma:9` の `directUrl`、前例:
+> `docs/migration/05-postgres-migration-steps.md:168`）。
+
 | 目的 | コマンド | 期待 |
 |---|---|---|
 | 既存インデックスの確認（スキーマ） | `grep -n "@@index\|@@fulltext" prisma/schema.prisma` | 宣言済み index 一覧 |
 | **既存 GIN の確認（マイグレーション）** | `grep -rniE "USING gin\|to_tsvector\|tsvector\|CREATE INDEX" prisma/migrations/` | 生 SQL で追加済みの GIN/tsvector が無いことを確認（**schema.prisma だけ見て「GIN なし」と断定しない** — tsvector GIN は Prisma スキーマに宣言できず、生 SQL マイグレーションでしか入らないため） |
 | 検索 UI の呼び出し元 | `grep -rn "search-products" src/ -il` | ヘッダー検索コンポーネント |
 | ブラウズページの filters 生成元 | `grep -rn "getProducts(" src/ -l` | 呼び出しサイト一覧 |
-| EXPLAIN の実測（任意・ローカルDB） | `bunx prisma studio` 等でデータ量確認後、psql で `EXPLAIN ANALYZE` | 式評価のコスト実測 |
+| データ量の確認（任意・ローカルDB） | `psql "$DIRECT_URL" -c 'SELECT COUNT(*) FROM "Product";'` | EXPLAIN の前提となる行数を読み取り専用 SELECT で把握 |
+| EXPLAIN の実測（任意・ローカルDB） | `psql "$DIRECT_URL" -c 'EXPLAIN ANALYZE SELECT id FROM "Product" WHERE to_tsvector($$simple$$, name) @@ to_tsquery($$simple$$, $$test$$);'` | 式評価のコスト実測（SQL 内の文字列は `$$` ドル引用符で括り、シェルのクォート衝突を避ける） |
 
 ## Scope
 
