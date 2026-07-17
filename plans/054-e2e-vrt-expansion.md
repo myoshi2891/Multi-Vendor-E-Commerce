@@ -63,6 +63,16 @@ test.describe("Visual: Cart", () => {
   アニメーション・ロケール・タイムゾーンは config で固定済み（`:28-33`）。
 - ベースライン更新コマンド（cart.spec.ts:12 に記載の運用）:
   `bunx playwright test tests/e2e/visual --update-snapshots --project=chromium`
+  本プランはローカル Postgres 前提のため `scripts/e2e/run-local.sh` 経由で実行する（Commands 表）。
+
+  > **`run-local.sh` に `--` を挟まないこと**。同スクリプトの最終行は
+  > `bunx playwright test --retries=2 "$@"`（`scripts/e2e/run-local.sh`）で、
+  > **引数をそのまま playwright へ渡す**。区切りの `--` は
+  > `bun run test:e2e:local -- <args>` のように **`bun run` 経由で呼ぶとき**にだけ必要な作法で
+  > （`package.json:13` の `test:e2e:local` がその形）、`bash scripts/e2e/run-local.sh ...` を
+  > 直接叩く本プランでは不要。誤って渡すと playwright は `--` 以降を**位置引数
+  > （テストフィルタ）**として解釈し、`--update-snapshots` という名前のテストを探して
+  > **0 件マッチ** —— **ベースラインが更新されないまま成功したように見える**。
 - seed 値は `_fixtures.ts` の `seed` フィクスチャから取得（slug はワーカー毎サフィックス付き）。
   商品詳細 URL: `/product/${seed.product.slug}/${seed.variant.slug}`。
 - **home（`/`）は対象外**: OI-9（本番ビルド SSR 500 — `docs/testing/QA_HANDOFF.md`）が未解消。
@@ -75,7 +85,7 @@ test.describe("Visual: Cart", () => {
 |---|---|---|
 | 前提確認（043 完了） | `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` | 既存 3 テスト passed |
 | 型チェック / Lint | `bunx tsc --noEmit` / `bun run lint` | exit 0 |
-| ベースライン撮影 | `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium -- --update-snapshots`（run-local.sh が引数をそのまま渡さない場合は `bunx playwright test tests/e2e/visual --update-snapshots --project=chromium` を :3000 でサーバー稼働中に実行） | 新規 PNG が生成される |
+| ベースライン撮影 | `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium --update-snapshots` | 新規 PNG が生成される |
 | 差分検証 | `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` | all passed |
 
 ## Scope
