@@ -150,6 +150,17 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   `$transaction` + 条件付き `updateMany`/行ロックで実現、または OrderItem に
    >   `returnedQuantity` を持たせて条件付き increment）。spike はこの原子化方式を確定する。
    > - 数量が 0 以下・購入数超過の申請は入口の Zod でも弾く（多層防御）。
+   > - **申請リクエストの冪等性も別途確定すること**（上の数量上限とは別の不変条件）。上限は
+   >   *合計*を縛るだけで、**上限内の重複申請は防げない** —— 3 個購入した商品に「1 個返品」を
+   >   二度押しすると 1+1=2 ≤ 3 で両方通り、同一意図の RMA が 2 件でき二重返金・二重返送・
+   >   販売者の重複対応を招く。本プランが既に持つ冪等化は **遷移**側（「条件付き updateMany」・
+   >   上記「遵守すべきリポジトリ規約」）だけで、**作成（INSERT）側は無防備**。
+   >   本リポジトリは同型の実害を経験済み（`place-order` の二重送信ガード = plan 006 /
+   >   `src/components/store/cards/place-order.tsx`）。方式は spike が決める（例: クライアント
+   >   由来の冪等性キー + `@@unique`、`[orderItemId, status, requestedQuantity]` 等の自然キー制約、
+   >   短時間の重複申請の拒否）。UI 側のガードだけに依存しないこと（再送・並行タブ・API 直叩きで
+   >   破れる）。plan 021 の通知冪等性キー（Q6 の (β) outbox が参照するもの）と概念を揃え、
+   >   相互参照を書く。
 2. **SupportTicket との関係**: RETURN_REQUEST チケットを RMA へ「昇格」させるのか、
    注文履歴からの直接申請で RMA を作り、チケットは相談窓口として並立させるのか。
    既存フォーム（`returns-exchange/page.tsx`）の扱い（置き換え or 維持）を含めて確定する。
