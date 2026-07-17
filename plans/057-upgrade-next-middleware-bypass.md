@@ -112,8 +112,20 @@ Read this before running anything, so a pre-existing red does not get misdiagnos
 Confirm the latest 16.2.x first:
 
 ```
-bun info next version
+npm view "next@16.2" version | tail -1
 ```
+
+> **Do not use `bun info next version`.** That prints the version of the **latest** release of
+> `next` overall — not the latest `16.2.x`. The two coincide only while 16.2.x *is* the newest
+> line (they did at planning time: both `16.2.10`), so the command looks correct today and
+> **silently returns the wrong answer the moment 16.3.0 or 17.x ships** — which is exactly when
+> this step matters. It would then point the executor at a minor/major bump that this plan's
+> Scope and Stop conditions explicitly forbid.
+>
+> `npm view "next@16.2" version` resolves the range `16.2` and prints every matching version in
+> ascending order (one per line, `next@16.2.10 '16.2.10'` form when several match), so `tail -1`
+> takes the newest 16.2.x. `bun info next versions | tr ',' '\n' | grep -o "16\.2\.[0-9]*" | tail -1`
+> is an equivalent bun-only alternative.
 
 In `package.json:80`, change `"next": "^16.2.1"` to the latest `16.2.x` pinned with a **tilde**: `~16.2.10` at planning time. **The floor must be at least `16.2.5`** — that is the fixed version the advisories name.
 
@@ -145,13 +157,31 @@ bun install
 
 ### Step 3: Confirm the advisories are cleared
 
-**Verify**: `bun audit` no longer lists the three `next` advisories:
+**Verify**: `bun audit` no longer lists the three `next` advisories. Run:
 
 ```
-bun audit 2>&1 | grep -c "26hh-7cqf-hhc6"   # expect 0
-bun audit 2>&1 | grep -c "8h8q-6873-q5fj"   # expect 0
-bun audit 2>&1 | grep -c "3g8h-86w9-wvmq"   # expect 0
+audit_output=$(bun audit 2>&1 || true)
+for id in 26hh-7cqf-hhc6 8h8q-6873-q5fj 3g8h-86w9-wvmq; do
+    if grep -q "$id" <<< "$audit_output"; then
+        echo "STILL PRESENT: $id"; exit 1
+    fi
+done
+echo "all three advisories cleared"
 ```
+
+> **Do not use `grep -c "<id>"` with `# expect 0` as the check.** `grep` exits **1 when it finds
+> no match** — so the desired outcome (count `0`, advisory gone) comes back with a **failing exit
+> code**, while the undesired outcome (advisory still listed) exits `0`. The exit status is
+> inverted relative to what this step is verifying, so the check reports failure exactly when it
+> should pass, and any `set -e` script or CI step reading the exit code draws the wrong
+> conclusion. Verified: `echo hello | grep -c nomatch` prints `0` and exits `1`.
+>
+> The loop above uses `grep -q` (quiet; exit status only) and maps it explicitly, so a cleared
+> advisory exits `0` and a lingering one exits `1` with the offending id named. It also runs
+> `bun audit` **once** instead of three times. The `|| true` on the capture is required because
+> `bun audit` itself exits non-zero while *any* advisory remains — and one is expected to remain
+> here (the `handlebars` CRITICAL via `ts-jest`; see pre-existing condition 3). Without it the
+> step would fail on an unrelated finding.
 
 The `next  >=16.0.0 <16.2.5` block should be gone entirely. Remaining unrelated findings (notably the `handlebars` CRITICAL via `ts-jest`) are expected — see pre-existing condition 3. Do not chase them here.
 
