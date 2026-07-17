@@ -32,6 +32,11 @@ const PlaceOrderCard: FC<Props> = ({
         if (isPlacingOrderRef.current) return
         isPlacingOrderRef.current = true
         setLoading(true)
+        // push() は戻り値が void で await できず、遷移完了まで本コンポーネントは
+        // マウントされたままになる。成功経路でガードを解除すると遷移中にボタンが
+        // 再有効化され、カート削除済みの状態で placeOrder が再実行されてしまう
+        // （"Cart not found." で失敗し、成功したのに誤エラーが表示される）。
+        let navigating = false
         try {
             if (!shippingAddress) {
                 toast.error('Select a shipping address before placing your order.')
@@ -41,13 +46,18 @@ const PlaceOrderCard: FC<Props> = ({
             if (order) {
                 emptyCart()
                 await emptyUserCart()
+                navigating = true
                 push(`/order/${order.orderId}`)
             }
         } catch (_error) {
             toast.error('Something went wrong while placing your order.')
         } finally {
-            isPlacingOrderRef.current = false
-            setLoading(false)
+            // 遷移する場合は解除しない（アンマウント前提の意図的な例外）。
+            // 失敗・住所未選択時のみ解除して再試行を許可する。
+            if (!navigating) {
+                isPlacingOrderRef.current = false
+                setLoading(false)
+            }
         }
     }
 
