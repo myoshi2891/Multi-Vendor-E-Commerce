@@ -20,6 +20,52 @@
 
 ---
 
+## Round 13 — セキュリティ特化 deep 監査（`deep security` フォーカス / 開始 2026-07-17）
+
+- **開始日**: 2026-07-17 / **監査対象 HEAD**: `7080b12`（branch: `dev` — Round 12 triage クローズ
+  コミット。R10〜12 は CodeRabbit triage ラウンドで、`src/` には plan 003/005/006 相当の
+  fix コミット群（`f046d22` / `ab97f8f` / `cc7468c` 等）が入っている — Round 9 以前と異なり
+  **ソースが動いた後の初のセキュリティ監査**）
+- **バリアント**: `security` フォーカス・**effort = deep**（リポジトリ全体・全セキュリティ領域を
+  並列 Explore サブエージェント ≤8 で網羅）。Round 1 の findings-02（SECURITY-01〜09）と
+  security follow-up（findings-11 / NEW-1〜3）に続く第 3 のセキュリティラウンド
+- **目的**: Amazon 級の世界トップクラス EC サイトを目標水準として、認可/IDOR・インジェクション/XSS・
+  決済/ビジネスロジック悪用・Webhook/SSRF・ヘッダ/CSP/レート制限・依存/サプライチェーン/PII の
+  6 領域を deep 監査し、新規所見を Sonnet が zero-context で実行できる自己完結プラン
+  （**058〜**）に落とす
+- **ユーザー確認済みの決定**:
+  - 実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/`・`docs/` は無変更）
+  - プラン承認済み（`~/.claude/plans/agent-skills-improve-skill-md-amazon-ec-drifting-breeze.md`）
+  - **effort = deep**（AskUserQuestion で明示選択）
+  - **プラン化は自動選定**（vet 済み所見からレバレッジ順 3〜6 本目安。水増しせず、候補が
+    薄ければ正直に減らす — R7 前例。AskUserQuestion で明示選択）
+  - 成果物は日本語のみ（Round 2 以降の決定を継承）
+  - **編集可能範囲は `plans/**` のみ**（スコープ例外なし — R4〜R9 の docs/testing 例外は
+    本ラウンドでは不要: テスト統計が動かないため）
+  - 既 vet/rejected（SECURITY-01〜09・NEW-1〜3・VETTED_FINDINGS の rejected・
+    決定済みトレードオフ ADR-001 CSRF 等）の再監査はしない
+- **既知の reconcile 対象（Step 2 で実測確認 → Step 6 で README 修正）**: findings-11 冒頭注記は
+  「023/024 は実装済み（回帰テストあり）」と記すが README Status 表は両方 TODO のまま。
+  直近 git log の fix コミット群から 003/005/006 も DONE の可能性が高い
+- **採番**: 監査台帳 = `audit/findings-18-security-r13.md` / 新規所見 = SECURITY-10〜 /
+  新規プラン = 058〜
+- **成果物**: findings-18（監査台帳・clean 再確認 + 新規所見 + deferred + rejected）+
+  plans 058〜（自動選定分）+ README 索引（Status ドリフト修正含む）+ VETTED_FINDINGS R13 追記
+
+### Round 13 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション |
+| 2 | Recon リフレッシュ（ベースライン実測 + 既存資産突合 + 実装状態 reconcile） | ⬜ TODO | — |
+| 3 | deep 監査（並列サブエージェント A〜F） | ⬜ TODO | — |
+| 4 | Vet + 監査台帳（findings-18 + VETTED_FINDINGS R13 追記） | ⬜ TODO | — |
+| 5 | plans 058〜 執筆（自動選定・1 プラン = 1 コミット） | ⬜ TODO | — |
+| 6 | README 索引更新（058〜 追加 + Status ドリフト修正 + deferred/rejected 記録） | ⬜ TODO | — |
+| 7 | ADVISOR_STATE クローズ（`git diff 7080b12..HEAD --stat -- src tests prisma` = 空 を検証） | ⬜ TODO | — |
+
+---
+
 ## Round 9 — E2E 残余監査（`tests` フォーカス・E2E 限定 第 2 弾 / 開始 2026-07-12）
 
 - **開始日**: 2026-07-12 / **監査対象 HEAD**: `25e50d9`（branch: `dev` — R8 クローズコミット。
