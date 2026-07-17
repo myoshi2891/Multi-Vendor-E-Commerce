@@ -121,6 +121,40 @@ describe('PlaceOrderCard', () => {
         expect(mockedPlaceOrder).toHaveBeenCalledTimes(1)
     })
 
+    it('カート後片付けが失敗しても注文は確定済みなので再注文させない', async () => {
+        mockedPlaceOrder.mockResolvedValue({ orderId: 'order-003' })
+        mockedEmptyUserCart.mockRejectedValue(new Error('cleanup failed'))
+
+        render(
+            <PlaceOrderCard
+                shippingAddress={shippingAddress}
+                cartData={cartData}
+                setCartData={jest.fn()}
+            />
+        )
+        const button = screen.getByRole('button', { name: 'Place order' })
+
+        fireEvent.click(button)
+
+        // 後片付けの失敗は注文成立を取り消さない。遷移は行う
+        await waitFor(() => {
+            expect(push).toHaveBeenCalledWith('/order/order-003')
+        })
+
+        // 成立済みの注文に対してエラーを表示しない（誤解を招くため）
+        expect(mockedToastError).not.toHaveBeenCalledWith(
+            'Something went wrong while placing your order.'
+        )
+
+        // 再クリックしても placeOrder は再実行されない（二重注文の防止）
+        fireEvent.click(button)
+
+        await waitFor(() => {
+            expect(button).toBeDisabled()
+        })
+        expect(mockedPlaceOrder).toHaveBeenCalledTimes(1)
+    })
+
     it('注文が失敗した場合はガードを解除して再試行できる', async () => {
         mockedPlaceOrder.mockRejectedValueOnce(new Error('Cart not found.'))
 
