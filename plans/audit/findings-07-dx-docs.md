@@ -70,24 +70,44 @@
     ローカル pre-commit 高速フィードバック。
   - **`no-console` ルールを CI で強制する**（本 finding の「規約に機械的ガードレールが無い」
     という Impact に直接効く最小の一手）:
+    `eslint.config.mjs` は **flat config**（設定オブジェクトの配列）であり、
+    適用範囲は `files` で表す。裸の `rules:` を足すと**全ファイルに適用**され意図とずれるため、
+    既存ファイルの他ブロックと同じく `files` でスコープした**配列要素**として追加する:
+
     ```js
-    // eslint.config.mjs — src/ 配下のアプリケーションコードに適用
-    rules: {
-        // console.log 禁止（.claude/steering/tech.md「ログ禁止」規約）。
-        // 構造化ログの console.error / console.warn は境界での正規手段なので許可する。
-        "no-console": ["error", { allow: ["warn", "error"] }],
+    // eslint.config.mjs — 既存の config 配列に追加する要素
+    {
+        // src/ 配下のアプリケーションコードにのみ適用する。
+        // このスコープにより prisma/seed/（CLI・tech.md の明示的な例外）と scripts/ は
+        // src/ 外なので自動的に対象外となる — 個別の除外指定は不要。
+        files: ["src/**/*.{ts,tsx}"],
+        rules: {
+            // console.log 禁止（.claude/steering/tech.md「ログ禁止」規約）。
+            // 構造化ログの console.error / console.warn は境界での正規手段なので許可する。
+            "no-console": ["error", { allow: ["warn", "error"] }],
+        },
     }
     ```
+
     > **`allow: ["warn", "error"]` が要点**。`.claude/rules/01-engineering-standards.md` は
     > 「`console.error`/`console.warn` で境界ログを出す」ことを**要求**しており、
     > `no-console` を無条件 error にすると規約自身と衝突して大量の
     > `eslint-disable` を誘発する（DX-07 が問題視している disable 21 箇所を増やす）。
     > 禁止対象は `console.log` のみ。
-    - **適用範囲の除外が必要**: CLI（`prisma/seed/`）は `console.log` 許容
-      （tech.md の明示的な例外）。`scripts/` も同様に扱うか個別判断すること。
-    - 導入時は TECHDEBT-06（`src/` UI の残置デバッグ `console.log`）の除去と
+
+    - **適用範囲**: 上記の `files: ["src/**/*.{ts,tsx}"]` により、CLI（`prisma/seed/`・
+      `scripts/`）は `src/` 外のため**自動的に対象外**となる（tech.md の明示的な例外と整合）。
+      個別の `ignores` 指定は不要。
+    - **ただし `src/` 内に例外扱いすべき実 `console.log` が残っている**（実測 2026-07-17）:
+      `src/migration-scripts/migrate-variantImage.ts:22,27` は `"use server"` を持つ
+      アプリケーションコードでありながら CLI 的な進捗ログを出しており、上記スコープで
+      **即 error になる**。`src/migration-scripts/seed-countries.ts:21` と
+      `src/queries/user.ts:588` は**コメントアウト済み**のため影響しない。
+    - 導入時は TECHDEBT-06（`src/` の残置デバッグ `console.log`）の除去と
       **同時**に行う。先にルールだけ入れると CI が即赤になる（DX-05 の Risk 欄が
-      Prettier について指摘しているのと同じ構図）。
+      Prettier について指摘しているのと同じ構図）。上記 `migrate-variantImage.ts` が
+      その具体例であり、構造化 `console.error` へ寄せるか本ファイルを CLI として
+      `src/` 外へ移すかは TECHDEBT-06 側の判断。
 
 ### [DX-06] `typecheck` スクリプト / CI 型チェックジョブが無い
 
