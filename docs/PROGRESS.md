@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1686 passed / 1689 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応 第2弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1689 passed / 1692 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit 指摘対応 第3弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1462,3 +1462,46 @@ Stripe PaymentIntent の初期状態を決済失敗と誤判定しないよう�
 | `docs/migration/06-framework-upgrade.md` | Next.js 16 マイグレーションの詳細記録 |
 | `specs/multi-vendor-ecommerce/` | SDD 仕様書群（Single Source of Truth） |
 | `.claude/steering/tech.md` | 実装パターン・コーディング規約 |
+
+---
+
+### CodeRabbit 指摘対応 第3弾（ソースコード 4 件） (2026-07-17)
+
+#### 概要
+
+CodeRabbit が `dev` に出した 83 件のうち、ソースコードを対象とする 4 件を精査して対応した。
+精査の結果、2 件は実バグ、2 件は「既に正しい挙動の回帰ロック欠落」であることが判明し、
+severity は指摘の見立てと一部食い違った。「未来日付」系 5 件は当日日付のため誤検知と判定。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/place-order.tsx` | `push()` を待たず `finally` が無条件にガード解除 → 遷移中に `placeOrder` 再実行（Red で 2 回を実測）。`navigating` フラグで成功経路の解除をスキップ | `0166533` |
+| `src/lib/schemas.ts` / `src/app/dashboard/admin/orders/page.tsx` | `AdminOrderFilterSchema.page` に上限が無く `?page=1e12` が `skip`≈5e13 まで素通り。`MAX_PAGE=10_000` でクランプし `page.tsx` の非対称も解消 | `fa25439` |
+| `src/app/api/setUserCountryInCookies/route.test.ts` | `HttpOnly` / `SameSite=lax` の検証を追加（ソースは既に正しい・後退検知のみ欠落） | `75535f4` |
+| `src/queries/store.test.ts` | `applySeller` の評価系除外を回帰ロック化（`upsertStore` 側には既存・非対称の解消） | `3247e42` |
+| `docs/architecture/expansion/*` | `plans/` を「git 未追跡」とする誤記 6 箇所を是正（実際は 93 ファイルが追跡対象）。SSOT の論拠を追跡状態から「宣言と凍結」へ | `9dde461` |
+| `plans/057-upgrade-next-middleware-bypass.md` | `^16.2.10` は 16.3+ を許容し「16.2.x 限定」の宣言と矛盾。tilde（`~16.2.10`）へ是正 | `e08978c` |
+
+#### 判明した事実（次セッションへの引き継ぎ）
+
+- **重複注文は発生していなかった**: `emptyUserCart` は `db.cart.delete` でカート行ごと削除するため、
+  2 回目の `placeOrder` は `Cart not found.` で throw する。実害は「成功したのに誤エラートースト」。
+  冪等性キーの導入は過剰と判断し不採用。
+- **`applySeller` / `upsertStore` は同じ `pickSellerEditableStoreFields` を共有**。allowlist を壊すと
+  両テストが同時に Red になることを実証済み。片方だけロックがある状態は穴なので対称を保つこと。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1686 passed / 1689 total | **1689 passed / 1692 total** |
+| スイート数 | 174 | **174**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | S 65.63 / B 45.29 / F 54.33 / L 64.59 | **S 65.65 / B 45.33 / F 54.36 / L 64.61** |
+
+#### 残課題
+
+CodeRabbit の残り 77 件は docs 整合系が大半。`plans/README.md` の "Depends on" 矛盾は
+文書自身が L172-175 で自認済みのため、指摘の詳細なしで着手可能。

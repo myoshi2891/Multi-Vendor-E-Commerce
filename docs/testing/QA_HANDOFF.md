@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-17 / **HEAD**: `2631481`（CodeRabbit 指摘対応 第2弾: stripe の `requires_payment_method` を `last_payment_error` の有無で Failed/Pending 分岐・index-products のページネーションコメント是正）
+> **最終更新**: 2026-07-17 / **HEAD**: `3247e42`（CodeRabbit 指摘対応 第3弾: place-order の多重送信ガードを遷移完了まで保持・admin 注文フィルタの `page` を 10,000 にクランプ・cookie 保護属性と applySeller の特権フィールド除外を回帰ロック）
 
 ---
 
@@ -14,8 +14,8 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1686** passed / 1689 total / 174 スイート（173 passed + 1 skipped suite） |
-| カバレッジ全体（lcov 2026-07-17 実測） | Statements 65.63% / Branches 45.29% / Functions 54.33% / Lines 64.59% |
+| Jest テスト総数 (unit/component) | **1689** passed / 1692 total / 174 スイート（173 passed + 1 skipped suite） |
+| カバレッジ全体（lcov 2026-07-17 実測） | Statements 65.65% / Branches 45.33% / Functions 54.36% / Lines 64.61% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip。**2026-07-11 初のフル実測（3 ブラウザ 111 テスト / `run-local.sh` + `--global-timeout=3600000` / 25.5m）: 52 passed / 17 failed / 39 skipped / 3 did not run** — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト単一原因で全滅（**plan 042 で修復予定**。skip 39 の内訳 = 静的 18 + a11y/visual の chromium 限定 14 + firefox ローカルゲート 7。詳細: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)） |
