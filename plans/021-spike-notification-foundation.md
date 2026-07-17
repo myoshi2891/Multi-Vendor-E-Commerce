@@ -144,8 +144,23 @@ model Message {                 // schema.prisma:736
    > - 各通知に **冪等性キー**を持たせる（例: `dedupeKey = hash(eventType + sourceRef + recipientId + 状態遷移識別子)`）。
    >   Notification（および Outbox を採るなら Outbox 行）に `@@unique(dedupeKey)` を張り、
    >   二重挿入を DB レベルで弾く（upsert or `ON CONFLICT DO NOTHING`）。
-   > - 送信側も **at-least-once 前提**で重複耐性を持たせる（同じ dedupeKey は 1 回だけ送る／
-   >   送信済みフラグを立ててから送る）。webhook（bounce 等）受信も冪等化する。
+   > - 送信側も **at-least-once 前提**で重複耐性を持たせる（同じ dedupeKey は 1 回だけ送る）。
+   >   webhook（bounce 等）受信も冪等化する。
+   >
+   > **「送信済み」は外部送信の前に記録しないこと**。送る前に送信済みフラグを立てると、
+   > 送信が失敗した場合・プロセスがその隙に落ちた場合に、**送っていないのに送信済みと記録された
+   > 通知が永久に再送されない**（サイレントロス）。これは at-most-once の挙動であり、直上で
+   > 前提に置いた **at-least-once と矛盾する**（at-least-once は「重複しても失わない」保証）。
+   > 記録の順序は Q4（送信の実行モデル）と一体で決めること。選択肢:
+   > - **送信後に記録**: 送信成功を確認してから `sentAt` を書く。プロセスが送信直後・記録前に
+   >   落ちると再送されるが、`dedupeKey` により受信側で吸収できる（at-least-once として正しい挙動）。
+   > - **リース方式（claim → 送信 → 完了）**: 送信前に書くのは「送信済み」ではなく
+   >   **`in-flight`（処理中）の確保**（`attemptCount` + `leaseExpiresAt`）に留め、送信成功後に
+   >   `sentAt` を書く。リース期限切れの行は別ワーカーが再試行できるため、クラッシュしても失われない。
+   >   Q4 の (b) Outbox テーブル + cron 再送を採る場合はこちらが自然。
+   >
+   > いずれの方式でも、**「送信していないのに送信済みになる」状態が発生しない**ことを不変条件として
+   > design doc に明記すること。
    > - 018 RMA / 016 審査など複数 spike の発火イベントが同じ規約でキーを作れるよう、
    >   dedupeKey の生成規則を本 spike で共通定義する。
 2. **チャネル抽象の seam**: `sendNotification(event, recipient)` 相当の単一入口が
