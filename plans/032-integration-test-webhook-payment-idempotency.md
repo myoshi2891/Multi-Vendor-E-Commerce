@@ -208,20 +208,55 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 **Scenario S5: `$transaction` の原子性（失敗時ロールバック）— JSDoc の「tx 原子性」を実証**
 JSDoc に「tx 原子性」を検証境界として掲げる以上、**成功パスだけでなく失敗時に部分書き込みが
 残らないこと**を 1 ケースで実証する（無ければ JSDoc から「tx 原子性」を削り scope を狭める）。
-`@/lib/db` はモックしない方針なので、トランザクションの**2 番目の書き込みだけ**を決定論的に
-失敗させる seam を使う:
-- 実装が `db.$transaction([paymentDetails.upsert, order.update])`（または async 版）で
-  paymentDetails 書き込み → order 更新の順なら、**order 側を失敗させる**制約を仕込む。
-  具体例: seed 済み Order を配送直前に `db.order.delete` で消し、かつ paymentDetails 側の
-  upsert は成立する状況を作る（order.update が `Record to update not found` で throw）。
-  → route が `$transaction` で括っていれば **paymentDetails も書かれない**（count === 0）。
-- 期待 assert: レスポンスは 5xx（またはハンドリング済みのエラー応答）、かつ
-  `db.paymentDetails.count({ where: { orderId } })` === **0**（原子ロールバック）。
-- **もし** route が upsert と update を `$transaction` で括っていない（2 つの独立書き込み）ことが
-  判明したら、それは**原子性の欠陥**。テストを削って隠さず、失敗テストとして顕在化させ finding に
+実装は `$transaction` で括られていることを確認済み（`src/app/api/webhooks/stripe/route.ts:153-179`
+— `tx.paymentDetails.upsert` → `tx.order.update` の順。Drift check で形状が変わっていたら STOP）。
+
+> ⚠️ **`db.order.delete` で Order を消す方法は使わないこと（ロールバックを実証できない）**。
+> `PaymentDetails.orderId` は `Order` への**必須 FK**（`prisma/schema.prisma` — `onDelete: Cascade`）。
+> したがって:
+> - Order を消すと **`onDelete: Cascade` で既存 PaymentDetails も道連れ**になる。
+> - Order が無い状態では `paymentDetails.upsert` は **FK 制約違反で落ちる** ——
+>   「upsert は成立するが order.update だけ失敗する」という前提の状態は**そもそも存在し得ない**。
+> - つまり失敗するのは **2 番目ではなく 1 番目**の書き込み。`count === 0` は
+>   **route が `$transaction` を使っていなくても成立**するため、この assert は原子性を
+>   一切証明しない（「ロールバックされた」と「そもそも書かれなかった」を区別できない）。
+>
+> **ロールバックの実証には「1 番目が成功し、2 番目が失敗する」状態が必須**。
+
+`@/lib/db` はモックしない方針なので、実 PostgreSQL（testcontainers）側で**2 番目の書き込みだけ**を
+決定論的に失敗させる。`order.update` は `paymentMethod: "Stripe"` を書くので、それを拒む
+CHECK 制約を一時的に張る:
+
+```typescript
+// Arrange: Order（paymentMethod は未設定）と User を seed した後
+await db.$executeRawUnsafe(
+    `ALTER TABLE "Order" ADD CONSTRAINT tmp_block_stripe CHECK ("paymentMethod" IS DISTINCT FROM 'Stripe'::"PaymentMethod")`
+);
+try {
+    // Act: webhook イベントを配送
+    //   tx 内: paymentDetails.upsert は成功（Order は実在するので FK OK）
+    //          → order.update が CHECK 違反で throw → tx ロールバック
+    // Assert: 5xx（またはハンドリング済みのエラー応答）かつ
+    //   await db.paymentDetails.count({ where: { orderId } }) === 0
+} finally {
+    await db.$executeRawUnsafe(`ALTER TABLE "Order" DROP CONSTRAINT tmp_block_stripe`);
+}
+```
+
+- `IS DISTINCT FROM` を使うのは、既存行の `paymentMethod` が `NULL` でも制約追加が通るようにするため
+  （`NULL IS DISTINCT FROM 'Stripe'` は true）。`<>` だと NULL 比較が `NULL` になり挙動が変わる。
+- 制約の削除は **`finally` で必ず行う**（残すと後続テストの `order.update` を巻き込んで壊す）。
+- **対照（control）assert を必ず添えること**: 同じイベントを**制約なし**で配送すると
+  `paymentDetails.count({ where: { orderId } })` === **1** になることを確認する。
+  これが無いと「制約のせいで 1 番目すら書かれなかった」場合と区別できず、
+  上で退けた `order.delete` 方式と同じ穴に戻る。**対照が 1・本番が 0** で初めてロールバックの証明になる。
+
+- **もし** Drift check で route が upsert と update を `$transaction` で括っていない（2 つの独立書き込み）
+  ことが判明したら、それは**原子性の欠陥**。テストを削って隠さず、失敗テストとして顕在化させ finding に
   登録し、JSDoc の「tx 原子性」記述を「（未担保・要修正）」に改める（scope を正直に狭める）。
 
-> 根拠: 「境界に掲げた性質は成功例だけで満たしたことにしない」。原子性は*失敗時*にしか観測できない。
+> 根拠: 「境界に掲げた性質は成功例だけで満たしたことにしない」。原子性は*失敗時*にしか観測できず、
+> かつ**失敗のさせ方を誤ると何も証明しないテストが緑で残る**。
 
 **Verify**: `bun run test:integration -- tests/integration/webhook-payment.test.ts` → Stripe 分 all pass
 
