@@ -183,6 +183,24 @@ args (`take`/`skip`) **and** the normalized values echoed in the response body:
 > を使う必要がある。Prisma 引数だけでなく**返却されるページング値**も正規化済みであることを固定する
 > （Maintenance notes「Reviewer focus」と一致）。レスポンスに `page`/`limit` フィールドが無い実装なら、
 > 何が正規化結果として返るか（`totalPages` 等）を Current state で確認し、それを assert 対象にする。
+>
+> **FULLTEXT 経路と contains fallback 経路は分けてテストすること**。上記 Current state のとおり
+> `take: limit` / `skip` は GET ハンドラ内の**2 箇所**（FULLTEXT 経路と、その `catch` で走る contains
+> fallback 経路）に独立して存在する。`db.product.findMany` を単に成功させるモックだけで上記 1〜5 を
+> 書くと **FULLTEXT 経路しか通らず、fallback 側の `take`/`skip` は一度も検証されない** ——
+> fallback 側でクランプを適用し忘れても（あるいは別の値を渡しても）テストは緑のまま通る。
+> 境界のリグレッションは「FULLTEXT が落ちた時だけ発現する」形で残り、最も気づきにくい。
+>
+> よって各経路について、少なくとも**クランプが効くケース 1 つ**（例: 過大 `limit` → `take: 50`）を
+> 独立に固定する:
+> - **FULLTEXT 経路**: `findMany` を解決させる（既存の「ページネーション正規化」describe と同じ形）。
+> - **fallback 経路**: 最初の検索呼び出しを **reject させて `catch` へ落とし**、fallback の
+>   `findMany` に渡る `take`/`skip` を assert する。既存の
+>   `src/app/api/index-products/route.test.ts`「GET /api/index-products - フォールバック contains 検索」
+>   describe が、fallback を発火させる mock の書き方（`mode: "insensitive"` を assert している箇所）の
+>   雛形になる —— そこに `take`/`skip` の assert が無いことが、まさに本項が塞ぐ穴。
+> - どちらの経路の `findMany` 呼び出しを見ているかを、テスト名か `mock.calls` の添字で**明示**すること
+>   （両経路が同じ `mockProductFindMany` を共有するため、取り違えると検証が空振りする）。
 
 Construct requests with `new Request("http://localhost/api/index-products?...")`
 and call the exported `GET` directly.
@@ -211,7 +229,8 @@ Machine-checkable. ALL must hold:
 
 - [ ] `bunx tsc --noEmit` exits 0.
 - [ ] `bun run lint` exits 0.
-- [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 new cases exist and pass.
+- [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 normalization cases (FULLTEXT path) exist and pass.
+- [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
 - [ ] `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET handler's pagination block (the normalized code uses `Number(...)`).
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
 - [ ] Before the **code commit**, `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files. (The `plans/audit/findings-11-security-followup.md` status row and the `spec-sync-after-test` docs go in later, separate commits.)
