@@ -37,7 +37,7 @@ B-1〜B-5 はカタログ基盤・発見性（Round 2 監査 E-1〜E-5）、B-6�
 |---|---|---|---|---|
 | B-1 | **カテゴリが固定2階層**（Category→SubCategory、self-relation なし） | `prisma/schema.prisma` の Category/SubCategory | 「家電 > カメラ > レンズ > 単焦点」が表現不能。総合モールの部門構造が組めない | ① |
 | B-2 | **商品属性が自由記述 Spec**（型なし・カテゴリ非依存・検索非参照） | Spec モデル | ファセット検索・商品比較・構造化データが成立しない。表記揺れが蓄積 | ② |
-| B-3 | **検索が2系統併存で貧弱**（tsvector は name+description のみ / ブラウズは ILIKE、ファセット集計なし、価格ソートなし） | `src/queries/product.ts:602`（`filters: any`）ほか | SKU 増加とともに「探せない」が顕在化。tsvector が式評価でインデックスも無い | ③ |
+| B-3 | **検索が2系統併存で貧弱**（tsvector は name+description のみ / ブラウズは ILIKE、ファセット集計なし、価格ソートなし） | `src/queries/product.ts:602`（`filters: any`）ほか | SKU 増加とともに「探せない」が顕在化。tsvector 経路自体は GIN 式インデックス `Product_fulltext_idx` で裏打ちされているが、対象が name+description に限られる。`index-products` 経路の Prisma per-column `{ search }` と ILIKE フォールバック（先頭ワイルドカード・pg_trgm なし）はこのインデックスに一致せず、インデックス不使用（[findings-03](../../../plans/audit/findings-03-performance.md)） | ③ |
 | B-4 | **商品レベルの審査・公開制御がない**（保存即公開。BANNED 店舗の商品露出も未検証） | 公開クエリに店舗状態の共通 where なし | 販売者数が増えるとカタログ品質と信頼性が守れない | ④ |
 | B-5 | **シグナル未活用**（relatedProducts 常に空） | `src/queries/product.ts:1080` | 回遊・クロスセルの機会損失。単品ページが行き止まり | ⑤ |
 | B-6 | **返品が自由記述チケット止まり**（RMA エンティティ・状態機械なし） | `SupportTicket` のみ | 返品体験が運営の手作業に比例。返金実行が接続する上流が存在しない | ⑥ |

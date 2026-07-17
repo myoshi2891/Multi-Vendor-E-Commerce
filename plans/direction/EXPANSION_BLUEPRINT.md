@@ -87,7 +87,7 @@
 |---|---|---|---|
 | B-1 | **カテゴリが固定2階層**（Category→SubCategory、self-relation なし） | E-1 | 「家電 > カメラ > レンズ > 単焦点」が表現不能。総合モールの部門構造が組めない |
 | B-2 | **商品属性が自由記述 Spec**（型なし・カテゴリ非依存・検索非参照） | E-2 | ファセット検索・商品比較・構造化データが成立しない。表記揺れが蓄積 |
-| B-3 | **検索が2系統併存で貧弱**（tsvector は name+description のみ / ブラウズは ILIKE、ファセット集計なし、価格ソートなし） | E-3 | SKU 増加とともに「探せない」が顕在化。tsvector が式評価でインデックスも無い |
+| B-3 | **検索が2系統併存で貧弱**（tsvector は name+description のみ / ブラウズは ILIKE、ファセット集計なし、価格ソートなし） | E-3 | SKU 増加とともに「探せない」が顕在化。tsvector 経路は GIN 式インデックス `Product_fulltext_idx` で裏打ち済みだが対象が name+description に限られ、`index-products` 経路の Prisma per-column `{ search }` と ILIKE フォールバックはインデックス不使用（[findings-03](../audit/findings-03-performance.md)） |
 | B-4 | **商品レベルの審査・公開制御がない**（保存即公開。BANNED 店舗の商品露出も未検証） | E-4 | 販売者数が増えるとカタログ品質と信頼性が守れない |
 | B-5 | **シグナル未活用**（relatedProducts 常に空） | E-5 | 回遊・クロスセルの機会損失。単品ページが行き止まり |
 
