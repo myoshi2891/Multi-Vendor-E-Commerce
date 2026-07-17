@@ -161,20 +161,31 @@ Confirm the shared `Button` (`src/components/ui/button.tsx`, shadcn) forwards `d
 
 **Verify**: `bunx tsc --noEmit` → exit 0; `bun run lint` → exit 0.
 
-### Step 3: Add a component test if this component is tested
+### Step 3: Extend the existing component test — required, not conditional
 
-Check for an existing test near this component:
-`ls src/components/store/cards/*.test.tsx 2>/dev/null` and search the repo for RTL tests of checkout cards.
-- **If a sibling component test pattern exists**, add a test that mocks `@/queries/user` (`placeOrder`, `emptyUserCart`), renders `PlaceOrderCard`, clicks the button twice rapidly, and asserts `placeOrder` was called **once**. Model it after the nearest existing `render`/`fireEvent`/`waitFor` test.
-- **If no component tests exist in this area**, do not scaffold a new test harness — instead note in your report that this fix is UI-guarded and covered manually. (Creating a brand-new test infra for one component exceeds this plan's scope.)
+**`src/components/store/cards/place-order.test.tsx` already exists** and already covers this
+component (rapid double-click → one `placeOrder`; guard held through navigation; guard released on
+failure so a retry works; cleanup failure must not allow a re-order). The harness, the
+`@/queries/user` mocks (`placeOrder`, `emptyUserCart`) and the `next/navigation` / `react-hot-toast`
+mocks are all in place, so **a regression test for this fix is mandatory** — the "no test infra
+here, fall back to manual" escape hatch does not apply.
 
-**Verify** (if a test was added): `bun run test -- src/components/store/cards` → all pass.
+Add to that file rather than scaffolding anything new. Model new cases on the ones already there.
+
+**Verify**: `bun run test -- src/components/store/cards/place-order.test.tsx` → all pass, including
+the pre-existing cases (do not regress them).
 
 ## Test plan
 
-- If component tests exist here: double-click → `placeOrder` called once; button `disabled` while pending; error toast on rejection; missing-address path shows the address toast and does not call `placeOrder`.
-- Structural pattern: the nearest existing RTL component test in `src/components/store/**`.
-- If no such tests exist, the verification is typecheck + lint + manual (documented in the report).
+Required, in `src/components/store/cards/place-order.test.tsx`:
+
+- double-click → `placeOrder` called once; button `disabled` while pending
+- error toast on rejection, and the guard released so a retry calls `placeOrder` again
+- missing-address path shows the address toast and does not call `placeOrder`
+- the guard stays held once the order is confirmed, including when `emptyUserCart()` rejects
+  (a placed order is irreversible — cleanup failure must not re-enable the button)
+
+Structural pattern: the cases already in that file.
 
 ## Done criteria
 

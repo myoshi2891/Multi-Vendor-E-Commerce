@@ -173,7 +173,24 @@ const parsed = JSON.parse(raw as string);
 expect(parsed).toHaveProperty('state');       // persist wrapper, not a bare array
 expect(Array.isArray(parsed)).toBe(false);
 ```
-Follow the existing test setup in this file for how the store + localStorage are initialized (jsdom provides `localStorage`). If the existing tests reset storage in `beforeEach`, keep that.
+Follow the existing test setup in this file for how the store + localStorage are initialized (this file installs a `localStorageMock` at the top and clears it in `beforeEach` — keep that).
+
+**Then assert the round trip, not just the shape.** The shape check above is a proxy: it proves what
+was written *looks* like the persist wrapper, not that the store can read it back. A payload can
+satisfy `toHaveProperty('state')` and still fail to rehydrate (wrong `version`, a renamed key, a
+`partialize` that drops the field). Since the whole point of this plan is that a persisted cart
+survives a reload, verify it end-to-end:
+
+```ts
+// after mutating the cart via store actions
+await useCartStore.persist.rehydrate();          // re-read the persisted entry
+const rehydrated = useCartStore.getState();
+expect(rehydrated.cart).toHaveLength(<expected>); // the items came back
+expect(rehydrated.totalItems).toBe(<expected>);   // derived state recomputed, not stale
+```
+
+Assert the derived fields (`totalItems` / `totalPrice`) as well as `cart` — rehydrating the array
+while leaving the totals at their defaults is exactly the regression this catches.
 
 **Verify**: `bun run test -- src/cart-store/useCartStore.test.ts` → all pass.
 
