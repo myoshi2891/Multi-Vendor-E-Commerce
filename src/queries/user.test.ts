@@ -53,6 +53,7 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             create: jest.fn(),
             delete: jest.fn(),
+            deleteMany: jest.fn(),
             update: jest.fn(),
         },
         cartItem: {
@@ -335,7 +336,7 @@ describe("saveUserCart", () => {
             const existingCart = createMockCart();
 
             mockDb.cart.findFirst.mockResolvedValue(existingCart);
-            mockDb.cart.delete.mockResolvedValue(existingCart);
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
             mockDb.product.findUnique.mockResolvedValue(
                 createMockFullProduct()
             );
@@ -343,16 +344,53 @@ describe("saveUserCart", () => {
 
             await saveUserCart(cartProducts as never);
 
-            expect(mockDb.cart.delete).toHaveBeenCalledWith({
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
             expect(mockDb.cart.create).toHaveBeenCalled();
         });
 
+        // Cart.userId は @unique。findFirst(検証前の読み取り) と transaction の間には
+        // TOCTOU があり、同一ユーザーの並行保存で delete の P2025 /
+        // create の P2002 が起きうる。Serializable で DB 側の直列化に委ねる。
+        it("カート保存をユーザー単位で直列化する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            await saveUserCart(cartProducts as never);
+
+            expect(mockDb.$transaction).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({ isolationLevel: "Serializable" })
+            );
+        });
+
+        it("既存カートの削除は冪等に行う（並行削除で失敗させない）", async () => {
+            // findFirst で既存カートを観測した後に他リクエストが先に削除しても、
+            // deleteMany なら count:0 を返すだけで P2025 にならない。
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(createMockCart());
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            await expect(
+                saveUserCart(cartProducts as never)
+            ).resolves.toBe(true);
+
+            expect(mockDb.cart.delete).not.toHaveBeenCalled();
+        });
+
         it("削除・作成を単一transactionへ配線し、コールバック内の失敗を伝播する", async () => {
             const cartProducts = [createMockCartProduct()];
             const transactionCart = {
-                delete: jest.fn().mockResolvedValue(createMockCart()),
+                deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
                 create: jest.fn().mockRejectedValue(new Error("Cart creation failed")),
             };
 
@@ -368,7 +406,7 @@ describe("saveUserCart", () => {
             );
 
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
-            expect(transactionCart.delete).toHaveBeenCalledWith({
+            expect(transactionCart.deleteMany).toHaveBeenCalledWith({
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
             expect(transactionCart.create).toHaveBeenCalledTimes(1);
