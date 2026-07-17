@@ -92,14 +92,14 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
 1. **住所管理: フォームから追加 → 一覧表示**
    - `/profile/addresses` へ goto → `Add new address` を click
    - placeholder 契約でフォームを埋める: First name `E2E` / Last name `Tester` /
-     Phone number `+15550001111` / Street `123 Profile St` / City `Testville` /
+     Phone number `+15550001111` / Street は**この実行に固有の値**（下記参照） / City `Testville` /
      State `CA` / Zip `90210`。国 select は seed の国（`seed.country.name`）を選択
      （select 要素なら `selectOption`、カスタムコンボボックスなら実 DOM を確認して操作）
    - `Save Address information` を click
-   - 一覧に `123 Profile St` が表示される
+   - 一覧に**その固有の Street** が表示される（`toHaveCount(1)` で 1 件であることまで確認する）
 2. **注文履歴: 注文が一覧に載り、詳細へ遷移できる**
-   - 住所を Prisma で直接作成する（stock-decrement `:80-85` のパターンを踏襲。
-     テスト末尾/afterAll で削除してカスケードクリーンアップ）
+   - 住所を Prisma で直接作成する（stock-decrement `:80-85` のパターンを踏襲）。
+     **テスト 1 が作った住所に依存しない**（下記参照）
    - 商品 → サイズ選択 → カート → checkout → `Place order` → `/order/` 到達
      （stock-decrement `:155-176` の手順を流用。`gotoStable` 等の安定化ヘルパーも同 spec から
      コピーではなく import できるなら import、できなければ最小限の再実装）
@@ -109,6 +109,29 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
      実装（`orders-table.tsx:111-175` の構造に基づく — 各注文は `<tr key={order.id}>` で、
      同じ行内に `#{order.id}`（`:119`）と `/order/${order.id}` への `View` リンク
      （`:169-173`）が並ぶ）:
+
+> **住所の状態をテスト間・実行間で共有しないこと**（注文について本プランが既に払っている
+> 注意と同じ規律を、住所にも適用する）。
+>
+> - **テスト 1 の住所は UI 経由で作られ、放置すると残り続ける**。DB は worker をまたいで
+>   共有され（本プラン自身が注文について「workers:1 でも DB は共有」と明記）、
+>   実行のたびに同じ Street の住所が**累積**する。すると テスト 1 の
+>   「一覧に表示される」assert は 2 回目以降 **strict mode violation**（複数ヒット）になる。
+>   → **Street はこの実行に固有の値**にする（例: `123 Profile St ${Date.now()}` を
+>   テスト内で 1 度だけ生成して変数に保持し、入力と assert の両方で使う）。
+> - **テスト 2 はテスト 1 の住所に依存しないこと**。テスト 1 の住所が残っていると、
+>   チェックアウトの住所選択がどれを拾うかが**テスト実行順に依存**する
+>   （テスト 2 単体を `--grep` で走らせた場合と結果が変わる）。テスト 2 は自分で作った
+>   住所を明示的に選択し、「1 件しか無いはず」を前提にしない。
+> - **後始末は `afterAll` で `shippingAddress.deleteMany({ where: { userId } })` を明示的に行う**
+>   （テスト 1・テスト 2 が作った分を両方まとめて消せる）。実績のあるパターンは
+>   `tests/e2e/stock-decrement.spec.ts:96-106`。
+>   **「ユーザーを消せばカスケードで住所も消える」は誤り** —— `ShippingAddress.userId` は
+>   **RESTRICT**（`prisma/schema.prisma` / plan 040 の FK 表）であり、カスケードは存在しない。
+>   むしろ住所が残っていると `user.delete` 自体が P2003 で失敗する。しかも
+>   `createCustomerSession` の `cleanup()`（`tests/e2e/helpers/auth.ts:124-138`）は
+>   `prisma.user.delete(...).catch(() => {})` で**その失敗を握り潰す**ため、
+>   **片付いていないのに片付いた顔をする**。住所は自分で消すこと。
 
 ```typescript
 const orderId = new URL(page.url()).pathname.split("/order/")[1];
