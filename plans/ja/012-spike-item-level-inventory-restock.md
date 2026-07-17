@@ -165,7 +165,7 @@ const restockOrderItems = async (
 - [ ] `docs/design/inventory-restock/design.md` が存在し、6つの未解決の問いすべてに判断 + エビデンスとともに答えている
 - [ ] 設計が、在庫復元をトリガーする正確な enum 値と、選択したちょうど一度だけのメカニズム（a または b）を正当化とともに名指ししている
 - [ ] `plans/<next-free-number>-implement-item-level-restock.md` が作成時点で空いていた番号に存在し、テンプレート準拠で、zero-context executor 向けに準備されている
-- [ ] ソースファイルやスキーマが変更されていない（`git status` は新規 docs/plan ファイルのみを示す）
+- [ ] ソースファイルやスキーマが変更されていない（`git status` は新規 docs/plan ファイルと、下記の `plans/README.md` の索引更新のみを示す）
 - [ ] `plans/README.md` の 012 のステータス行が更新され、新しい後続プランが選択した番号で索引に追加されている
 
 ## STOP conditions
