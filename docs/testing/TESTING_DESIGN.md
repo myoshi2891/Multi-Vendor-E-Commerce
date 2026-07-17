@@ -26,13 +26,19 @@
 
 ## 設計判断: Jest Config
 
+> **経緯**: 当初は「単一 `jest.config.js` を維持し、スコープは `--testPathPattern` で分ける」
+> 方針だった。下記「再検討のタイミング」に挙げた **DB リセットが実際に必要になった**ため
+> （testcontainers による実 PostgreSQL・[ADR-004](../architecture/decisions/004-integration-test-infrastructure.md)）、
+> Integration のみ専用 config へ分割済み。現行は **2 config 体制**。
+
 | 判断 | 内容 |
 |-----|------|
-| **単一 jest.config.js を維持** | 初期セットアップ中のコンフィグ分散を避けるため |
+| **unit/component は `jest.config.js`** | `bun run test` = `jest`。`testPathIgnorePatterns` で `/tests/e2e/` と `/tests/integration/` を除外する |
+| **Integration は `jest.integration.config.js`** | `bun run test:integration` = `jest --config jest.integration.config.js`。`testMatch` は `<rootDir>/tests/integration/**/*.test.{ts,tsx}`。globalSetup がコンテナを起動し `maxWorkers: 1` で直列実行するため、unit と同居できない（ADR-004） |
 | **デフォルト環境** | `testEnvironment: "node"`（ユニット・サーバーテストの高速化） |
 | **jsdom 環境** | DOM API が必要なコンポーネントテストファイルに `@jest-environment jsdom` を個別指定 |
-| **スコープ制御** | 複数の Jest 設定ではなく `--testPathPattern` でスクリプトを分ける |
-| **再検討のタイミング** | DB リセット・jsdom 専用セットアップ・低速化が生じた場合のみ分割を検討 |
+| **スコープ制御** | `--testPathPattern` ではなく `--config` で分離する（上記 2 config）。unit 側の除外は `testPathIgnorePatterns` が担う |
+| **再検討のタイミング** | これ以上の分割は、jsdom 専用セットアップ・低速化が生じた場合のみ検討する |
 
 ---
 
@@ -78,7 +84,8 @@
 │  ├─ jest.env.ts               グローバル env ブートストラップ
 │  └─ db.reset.ts               リセット・マイグレーション・シード
 ├─ playwright.config.ts
-└─ jest.config.js
+├─ jest.config.js               unit/component（tests/e2e・tests/integration を除外）
+└─ jest.integration.config.js   Integration 専用（testcontainers / maxWorkers:1・ADR-004）
 ```
 
 ---

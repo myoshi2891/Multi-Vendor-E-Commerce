@@ -708,6 +708,13 @@ describe("PaymentStatusTag")
 
 **前提:** `bun run seed:e2e` 済み、`playwright.config.ts` の既存設定を使用
 
+> ⚠️ **本節の ✅ は「実装完了」であり「実行が通っている」ことを意味しない。**
+> 以下 3-1〜3-5 のスペックはファイルとしては全て実在するが、2026-07-11 の R8 フル実測
+> （3 ブラウザ 111 テスト）では **52 passed / 17 failed / 39 skipped / 3 did not run** で、
+> 認証系 16 件は signIn ヘルパーの Clerk UI ドリフトにより全滅している（plan 042 で修復予定）。
+> 実行状態の正本は [`QA_HANDOFF.md`](./QA_HANDOFF.md) の Playwright 行、
+> 詳細は [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md) を参照。
+
 ---
 
 ### 3-1. `tests/e2e/purchase-flow.spec.ts` ✅ 改善済み (2026-05-21)
@@ -728,9 +735,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-2. `tests/e2e/seller-onboarding.spec.ts` ✅ 完了 (2026-05-21)
+### 3-2. `tests/e2e/seller-onboarding.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("Seller オンボーディング")
   正常系: 申請フォーム 4 ステップを順に完了できる                               [P1]
@@ -742,9 +749,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-3. `tests/e2e/payment-error.spec.ts` ✅ 完了 (2026-05-21)
+### 3-3. `tests/e2e/payment-error.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("決済異常系")
   正常系: 住所未選択で注文ボタン→エラーメッセージ                               [P1]
@@ -756,9 +763,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-4. `tests/e2e/search-filter.spec.ts` ✅ 完了 (2026-05-21)
+### 3-4. `tests/e2e/search-filter.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("検索・フィルタ")
   正常系: 商品名で検索し結果が表示される                                         [P1]
@@ -769,9 +776,9 @@ describe("購入フルフロー")
 
 ---
 
-### 3-5. `tests/e2e/mobile-responsive.spec.ts` ✅ 完了 (2026-05-21)
+### 3-5. `tests/e2e/mobile-responsive.spec.ts` ✅ 実装完了 (2026-05-21)
 
-**ステータス:** ✅ 全テスト実装済み。
+**ステータス:** ✅ 全テスト実装済み（実行状態は本節冒頭の注記を参照）。
 
 `describe("モバイルレスポンシブ")
   正常系: モバイルビューポートで商品カードが正しくレイアウト                     [P1]
