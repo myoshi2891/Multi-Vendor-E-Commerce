@@ -165,9 +165,21 @@
   > // 現状（product.ts:732 付近）: maxPrice が無いと Infinity が Decimal フィルタへ渡る
   > price: { gte: filters.minPrice || 0, lte: filters.maxPrice || Infinity }
   >
-  > // 修正: 値がある時だけ条件を付ける（undefined は Prisma が条件ごと無視する）
-  > price: { gte: filters.minPrice ?? 0, lte: filters.maxPrice ?? undefined }
+  > // 修正: 値がある時だけ条件を付ける（キー自体を生やさない）
+  > price: {
+  >     gte: filters.minPrice ?? 0,
+  >     ...(filters.maxPrice !== undefined && { lte: filters.maxPrice }),
+  > }
   > ```
+  >
+  > **明示的な `undefined` を渡す形（`lte: filters.maxPrice ?? undefined`）に依存しないこと**。
+  > 「`undefined` は Prisma が条件ごと無視する」は**無条件の前提ではない**:
+  > 現行の `prisma@5.22.0`（`schema.prisma:3` の `previewFeatures = ["fullTextSearch"]` のみ）
+  > では確かに無視されるが、これは `strictUndefinedChecks` を有効化していないことに依存する。
+  > 同機能は明示的な `undefined` をエラーにする方向の preview であり、
+  > **Prisma 5→6 の major 移行（`plans/README.md` の DEPS-04 — 意図的に保留中）で
+  > 前提が変わりうる**。上記のようにキー自体を条件付きで生やせば、この前提に依存しない。
+  >
   > テストは**修正後の挙動**（minPrice 単独指定で上限なしの絞り込みが正しく効く）を
   > 検証する。これなら Prisma のバージョンが変わっても期待値は不変であり、
   > 回帰網として機能し続ける。

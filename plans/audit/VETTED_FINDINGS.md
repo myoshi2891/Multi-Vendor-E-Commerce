@@ -338,6 +338,30 @@ TESTS-27 は 042 に同梱（26 と直列で a11y 2 spec を回復）。043 / 04
 **着手順**: 051 / 052 / 053 / 056 は独立（ゲスト到達可能・認証修復に非依存）。
 055 は **042 が先行依存**（認証必須）。054 は **043**（VRT 再撮影）が先行依存。
 
+### plan 057 の provenance（Round 9 のプラン化には属さない）
+
+**057 は本ラウンド（E2E 残余監査）の産物ではない**。上記 051〜056 は TESTS-39〜44 に
+対応する `tests` フォーカスの成果物だが、057 は**依存監査由来の独立プラン**であり、
+カテゴリも `dependencies`（E2E ではない）。
+
+- **作成**: `7f7bb71`（2026-07-17）。`next` が 16.2.1 に解決され、
+  GHSA-26hh-7cqf-hhc6（**HIGH** — App Router の segment-prefetch 経由の
+  Middleware/Proxy バイパス。影響範囲 `>=16.0.0 <16.2.5`）に該当することが
+  計画時点で確認された。併せて GHSA-8h8q-6873-q5fj（HIGH / Server Components DoS）と
+  GHSA-3g8h-86w9-wvmq（LOW / redirect cache poisoning）— 3 件とも 16.2.5 で修正。
+- **plan 004 との関係**: 004 が Clerk 側で塞いだのと**同じ攻撃面が 1 層下で再度開いた**もの。
+  `src/middleware.ts` が `createRouteMatcher` + `auth.protect()` で
+  `/dashboard`・`/checkout`・`/profile` を守っていても、バイパスが Next.js 自身の
+  middleware/prefetch 処理にある以上 Clerk バンプでは塞がらない。004 は Next.js の
+  アップグレードを明示的にスコープ外としていたため別プランになった。
+- **Round 1 の DEPS-08 との関係**: [`README.md`](../README.md) の
+  "Findings considered and rejected" にある「DEPS-08 Next.js 16.2.1: already current —
+  no action」は **Round 1（HEAD `f9752c0` / 2026-07-03）時点の判断であり現在は無効**。
+  advisory は当時未公表。**057 を「再監査済みの却下事項」と誤認しないこと**。
+- **recon の依存監査表との関係**: [`recon.md`](recon.md) の `bun audit` 証跡表と
+  「監査後の変化」表は**いずれも `next` を含まない**（監査時点で advisory が
+  存在しなかったため）。057 の根拠は recon ではなく上記 `7f7bb71` の計画時点検証にある。
+
 ### Round 9 deferred（再評価条件つき）
 
 - **R8 deferred 5 件の再裁定**: 販売者ダッシュボード CRUD（OI-11 依存）/ 決済失敗ロールバック / payment-error `:58` 在庫切れ表示 / `:70` 二重送信（plan 006 依存）/ mobile-responsive 2 件 — **いずれも deferred 維持**（先行条件に変化なし）。
@@ -473,7 +497,11 @@ triage を挟んだ理由そのもの。
 | P-27 | `plans/040-integration-test-user-deletion-webhook.md` 93-96 | SET NULL 後の SupportTicket がテスト間に残留します。 |
 | P-28 | `plans/041-integration-test-coupon-code-uniqueness.md` 95-112 | Prisma の Coupon 型に合わせて日付を Date で渡してください。 |
 
-#### E2E プラン（042-057）
+#### E2E プラン（042-056）+ 依存プラン（057）
+
+> **P-36 / P-37 の対象 057 は E2E ではなく `dependencies` カテゴリ**の依存 bump プラン
+> （provenance は上記「plan 057 の provenance」節を参照）。本表の見出しは番号の連続で
+> まとめているだけで、カテゴリの同一性を意味しない。
 
 | # | 対象 | 指摘タイトル（原文） |
 |---|------|--------------------|

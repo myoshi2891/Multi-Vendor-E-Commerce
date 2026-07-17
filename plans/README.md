@@ -7,6 +7,8 @@ Round 4 (`tests` focus — lcov 実測カバレッジ監査): 2026-07-10, agains
 Round 5 (`tests` focus — Integration 特化監査・実測 17/17 pass): 2026-07-11, against HEAD `1750ef2` (branch `dev`).
 Round 6 (`tests` focus — Integration 次点候補の深掘り・実測 17/17 pass 再確認): 2026-07-11, against HEAD `4ec6b5b` (branch `dev`).
 Round 7 (`tests` focus — Integration 残余領域の第 3 弾・実測 17/17 pass 再確認): 2026-07-11, against HEAD `9111f41` (branch `dev`).
+Round 8 (`tests` focus — E2E テスト網羅性監査・初の 3 ブラウザフル実測): 2026-07-11, against HEAD `fbd1020` (branch `dev`).
+Round 9 (`tests` focus — E2E 残余監査): 2026-07-12, against HEAD `25e50d9` (branch `dev`).
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
 the audit itself changed no source code.
@@ -220,7 +222,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **SECURITY-07** PayPal sandbox endpoint hardcoded (`paypal.ts:72,189`): LOW confidence — verify intended prod env wiring first; investigate, not a fix.
 - **SECURITY-08/09** older raw-`error.message` interpolation / `upsertReview` purchase verification: LOW confidence, mitigated by Next.js server-action error masking.
 - **DEPS-05** dev-only advisories (handlebars/ws/picomatch): not production-reachable; fold into routine dev-tool refresh.
-- **DEPS-08** Next.js 16.2.1: already current — no action.
+- **DEPS-08** Next.js 16.2.1: already current — no action. **⚠️ この却下は Round 1（2026-07-03 / HEAD `f9752c0`）時点の判断であり、現在は無効**。Round 9 以降に GHSA-26hh-7cqf-hhc6（HIGH — App Router の Middleware/Proxy バイパス）が公表され、`next@16.2.1` は影響範囲内。**対応は [plan 057](057-upgrade-next-middleware-bypass.md)（P1・依存ゼロ・即着手可能）**で、16.2.x 内のパッチ bump のみ。「already current」を理由に 057 を再監査済みの却下事項と誤認しないこと。
 - **DX-09** `.editorconfig`, **TECHDEBT-07** shared dashboard-form scaffold: low value / debatable — spike only if revisited.
 - **Decided tradeoffs (NOT findings)**: ADR-001 CSRF (no token module), ADR-002 CI `--verbose`, ADR-003 `setOpen` sync, ADR-004 testcontainers, ADR-005 SonarCloud non-blocking, `reactStrictMode: false`, Elasticsearch commented out (tsvector chosen), DB-page `force-dynamic` (SSG abandonment documented), `middleware`→`proxy` / AVIF warnings unaddressed, and product scope-outs (multi-currency / tax / advanced analytics / shipping-carrier integration). See [`audit/recon.md`](audit/recon.md) "決定済みトレードオフ".
 - **Already-fixed security** (still healthy, no regression): PayPal/Stripe userId scoping, `upsertCoupon` ownership, `applyCoupon` CAS, review IDOR — per `docs/testing/SECURITY_GAP_REPORT.md`.
