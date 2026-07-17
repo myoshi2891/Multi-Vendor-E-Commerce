@@ -229,17 +229,28 @@ place-order-card.test.tsx と同様に stub 化。
 3. 住所選択（stub の props 経由で `setSelectedAddress` を発火）→ `activeCountry` が
    選択住所の country になり、hydrate が再実行される
 4. **hydrate（`updateCheckoutProductWithLatest`）が reject した場合**: 黙認しない。
-   テストで reject を発生させ、次のいずれかを**明示的に assert** する:
-   - 望ましい挙動（`useEffect` 内で catch し `toast.error` 等でハンドルする）が実装済みなら、
-     それを assert する。
-   - 現行実装が **unhandled rejection を起こす**なら、それを**バグとして顕在化**させる:
-     `const spy = jest.spyOn(console, "error")` で unhandled を捕捉するか、
-     `process.on("unhandledRejection")` を一時登録して**「未ハンドルであること」を assert** し、
-     テスト名に `TODO(bug): hydrate rejection is unhandled` を付けて `SECURITY_GAP_REPORT` 等の
-     finding に登録する（本体修正は out of scope だが、**テストで検知点を作る**）。
+   テストで reject を発生させ、**常に「望ましい挙動」を assert 対象にする**
+   （`useEffect` 内で catch され、ユーザーに失敗が伝わる = `toast.error` 等が呼ばれる）:
+   - 望ましい挙動が**実装済み**なら、通常の `it(...)` でそのまま assert する。
+   - 現行実装が **unhandled rejection を起こす**（= 望ましい挙動が未実装）なら、
+     **同じ assert のまま `it.failing(...)` でマークする**（Jest 30 — `it.failing` は Jest 28+）。
+     テスト名は `hydrate rejection is surfaced to the user` のように**望ましい挙動**で書き、
+     `SECURITY_GAP_REPORT` 等の finding に登録する（本体修正は out of scope だが、
+     **テストで検知点を作る**）。
 
-   > 方針: 「unhandled になるならテストを書かない」は不可。回帰無検出を残さないため、
-   > 現状の欠陥もテストで固定して可視化する（`.claude/steering` の「エラーを握りつぶさない」に沿う）。
+   > **「未ハンドルであること」を assert して緑になるテストにしないこと**。それは誘因を反転させる ——
+   > バグがある間は緑で、**誰かが catch を実装した瞬間に赤**になる。修正を罰するテストは回帰検知点では
+   > なく、**欠陥のロック**になる（次の担当者は「直したらテストが壊れた」と受け取る）。
+   > `it.failing` は逆に、**本体が失敗する間は緑・望ましい挙動が実装されたら赤**になり
+   > 「もう `.failing` を外せる」と教えてくれる。まさにこの用途のための機構。
+   >
+   > `process.on("unhandledRejection")` の一時登録での固定も採らないこと。unhandled rejection の
+   > 扱いは Node と Jest の設定に依存し、**環境差でフレークする**うえ、他テストの rejection まで
+   > 拾いうる。
+   >
+   > 方針は変わらない: 「unhandled になるならテストを書かない」は不可。回帰無検出を残さず、
+   > 現状の欠陥も可視化する（`.claude/steering` の「エラーを握りつぶさない」に沿う）。
+   > 変えるのは**固定の向き**だけ —— 欠陥ではなく**あるべき挙動**を書き、今は落ちることを明示する。
 
 **Verify**: 4 pass → コミット。
 
