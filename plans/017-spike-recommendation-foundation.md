@@ -116,13 +116,24 @@ SQL 合成で成立する v1（関連商品・一緒に購入・人気商品）�
    ```ts
    type RecommendationContext =
      | { anchor: "product"; productId: string }   // (a) 関連商品・(b) 一緒に購入
-     | { anchor: "user"; userId: string }         // (c) あなたへのおすすめ（ホーム）
+     | { anchor: "user" }                          // (c) あなたへのおすすめ（ホーム）
      | { anchor: "anonymous" };                    // (c) 未ログイン時の全体人気フォールバック
    function getRecommendations(
      ctx: RecommendationContext,
      opts: { strategy: RecommendationStrategy; limit: number }
    ): Promise<ProductCardData[]>;  // 戻り値は既存の商品カード props と互換
    ```
+
+   > **`anchor:"user"` に `userId` を持たせないこと**（呼び出し側入力にしない）。seam の配置は
+   > `src/queries/` = `"use server"` の Server Action であり、**引数はすべてクライアントから
+   > 任意の値を送れる公開入力**になる。`userId` を受け取る形にすると、他人の ID を渡すだけで
+   > その人の wishlist/注文履歴から導かれた推薦を読み出せる（IDOR）。推薦結果は「何を買ったか・
+   > 何を欲しがっているか」の推測情報であり、漏洩は実害を伴う。
+   > 正: `anchor:"user"` の分岐内で **`requireUser()`**（`src/lib/auth-guards.ts:30` — 引数を取らず
+   > Clerk セッションから導出）を呼び、その `user.id` を使う。tech.md「認可ガード」の規約どおり
+   > インラインの `if (!user)` 展開は追加せず、ガードは `try/catch` の外へ置く。
+   > 未ログインで `anchor:"user"` が来た場合の扱い（`anchor:"anonymous"` へフォールバックするか
+   > 例外にするか）も設計で決めること。
 
    戦略の実装が SQL からベクタ検索に変わっても**呼び出し側が変わらない**ことが要件。
    配置は `src/queries/`（規約）。商品アンカー専用の薄いラッパ
@@ -193,6 +204,8 @@ ALL を満たすこと:
 - [ ] `docs/design/recommendations/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] v1 各戦略の SQL/Prisma 雛形が現行スキーマで書かれている（PoC 実行結果は任意）
 - [ ] seam のシグネチャと戻り値型が確定し、将来差し替えの検算が書かれている
+- [ ] seam の `anchor:"user"` が **`userId` を引数に取らず** `requireUser()` でサーバー側導出する形に
+      なっている（Server Action の引数はクライアント任意入力のため。Open question 2 の blockquote 参照）
 - [ ] `plans/0NN-implement-recommendations-v1.md` が存在し、テンプレート準拠
 - [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 017 ステータス行を更新した
