@@ -202,7 +202,7 @@ Run the full local gate before committing.
 
 - New file: `src/app/api/index-products/route.test.ts` (or added cases to an existing test in that dir).
 - Structural pattern to copy: `src/queries/store.test.ts` (its `jest.mock("@/lib/db", ...)` setup).
-- Cases: the 4 listed in Step 2 (happy path + 3 abuse/robustness inputs).
+- Cases: the 5 listed in Step 2 (happy path + 4 abuse/robustness inputs).
 - Verification: `bun run test -- src/app/api/index-products` → all pass.
 
 ## Done criteria
@@ -211,7 +211,7 @@ Machine-checkable. ALL must hold:
 
 - [ ] `bunx tsc --noEmit` exits 0.
 - [ ] `bun run lint` exits 0.
-- [ ] `bun run test -- src/app/api/index-products` exits 0; the 4 new cases exist and pass.
+- [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 new cases exist and pass.
 - [ ] `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET handler's pagination block (the normalized code uses `Number(...)`).
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
 - [ ] `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files.

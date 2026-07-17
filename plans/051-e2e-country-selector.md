@@ -159,7 +159,7 @@ await countryResponse; // click 前に仕掛けた待ち受けをここで回収
 ### Step 2: chromium で green にする
 
 **Verify**: `bash scripts/e2e/run-local.sh tests/e2e/country-selector.spec.ts --project=chromium`
-→ 2〜3 passed（テスト構成による）
+→ 2 passed（Done criteria が `test(` を 2 件に固定しているため構成の揺れはない）
 
 ### Step 3: 3 ブラウザで確認する
 

@@ -94,7 +94,7 @@ lcov 未カバー（2026-07-10 実測）: `44-50, 160-166, 211-217, 293-299, 348
 
 | Purpose | Command | Expected on success |
 |---|---|---|
-| 対象テスト | `bun run test -- src/queries/profile.test.ts` | all pass（34 → 48+） |
+| 対象テスト | `bun run test -- src/queries/profile.test.ts` | all pass（34 → 54: 既存 34 + 必須 20） |
 | カバレッジ | `bun run test -- src/queries/profile.test.ts --coverage --collectCoverageFrom='src/queries/profile.ts'` | Branches ≥ 95% |
 | 型チェック | `bunx tsc --noEmit` | exit 0 |
 | Lint | `bun run lint` | exit 0 |
@@ -179,7 +179,7 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 - [ ] `bun run test -- src/queries/profile.test.ts` exit 0、テスト数 34 → **54 以上**
       （catch 網羅 20 本 + 期間フィルタ分。catch 20 本は必須の下限）
 - [ ] profile.ts 単体 Branches ≥ 95%
-- [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各 20 本）
+- [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各関数 4 本・計 20 本）
 - [ ] 全 5 関数で「汎用メッセージ完全一致 + 詳細非漏洩」の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` / `bun run test` exit 0
 - [ ] 変更が `src/queries/profile.test.ts`（+ spec-sync docs 群）のみ
