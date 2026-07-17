@@ -132,9 +132,25 @@ afterEach(() => {
 
 テストケース 4 本（describe `getAllCountries`）:
 
-1. **正常系**: `mockFindMany.mockResolvedValue([{ id: "c1", name: "Japan", code: "JP" }] as ...)` →
-   戻り値がそのまま返り、`mockFindMany` が `{ orderBy: { name: "asc" } }` で呼ばれたことを assert
-   （昇順ソートは呼び出し契約として固定する）
+1. **正常系**: 共通 fixture でテストデータを作る（**インラインのオブジェクトリテラルを手書きしない**）:
+
+   ```typescript
+   import { createMockCountry } from "@/config/test-fixtures";
+
+   const country = createMockCountry();          // { id: "country-001", name: "Japan", code: "JP", createdAt, updatedAt }
+   mockFindMany.mockResolvedValue([country]);
+   ```
+
+   → 戻り値が `[country]` としてそのまま返り、`mockFindMany` が `{ orderBy: { name: "asc" } }` で
+   呼ばれたことを assert（昇順ソートは呼び出し契約として固定する）。
+
+   > **共通 fixture を使う理由**: `createMockCountry`（`src/config/test-fixtures.ts:693`）が既に存在し、
+   > 型安全ファクトリの利用は CLAUDE.md「共通テストインフラ（`src/config/`）」の規約。
+   > 手書きリテラル `{ id: "c1", name: "Japan", code: "JP" }` は `MockCountry` に必要な
+   > **`createdAt` / `updatedAt` を欠く**ため型エラーになり、それを `as ...` キャストで黙らせることになる
+   > —— ファクトリはまさにそのキャストを不要にするために存在する。キャストで潰すと、将来 `Country` に
+   > 列が増えたときテストが**古い形のまま緑で通り続け**、乖離に気づけない。
+   > 値を変えたい場合は `createMockCountry({ name: "Australia" })` のように overrides を使う。
 2. **DB エラー（Error）**: `mockFindMany.mockRejectedValue(new Error("db down"))` →
    `rejects.toThrow("Failed to retrieve countries.")` + `console.error` が
    `("Error retrieving countries:", "db down", expect.any(String))` で呼ばれる
