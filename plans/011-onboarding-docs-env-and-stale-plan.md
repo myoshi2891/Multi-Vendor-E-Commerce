@@ -133,6 +133,17 @@ Then `git mv docs/unimplemented-screens-plan.md docs/archive/unimplemented-scree
 After moving, update any doc that links to the old path:
 `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules` — fix or remove each reference (e.g. recon/roadmap docs that cite it as a direction source).
 
+**References are written in two path forms. Update both** (measured at audit time):
+
+| Form | Example | After the move |
+|---|---|---|
+| Repo-root relative | `docs/unimplemented-screens-plan.md` | `docs/archive/unimplemented-screens-plan.md` |
+| Relative link | `../../unimplemented-screens-plan.md` | `../../archive/unimplemented-screens-plan.md` |
+
+The relative-link form appears in **9 files** under `docs/design/*/README.md` (`offers`,
+`admin-dashboard`, `profile-settings`, `track-order`, `storefront-static-pages`, `compare`,
+`profile-messages`, `support-forms`, `seller-dashboard`). A grep rooted at `docs/` misses them.
+
 > **Search the whole repo, not a hand-picked subset.** An earlier revision of this step scanned only
 > `docs/ README.md .claude/ specs/`, which is **narrower than the Verify command below** — so a
 > reference outside those four paths survives the fix and then fails the gate. That is not
@@ -145,7 +156,27 @@ After moving, update any doc that links to the old path:
 > cite the file as the audit's own evidence. Point them at the new archive path rather than deleting
 > them; the Verify command below accepts that (it only requires no live references to the *old* path).
 
-**Verify**: `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules | grep -v docs/archive` → no live references outside the archive (or all remaining references point to the new archive path).
+**Verify**:
+
+```bash
+grep -rn "unimplemented-screens-plan" . --include="*.md" \
+  | grep -v node_modules \
+  | grep -v "archive/unimplemented-screens-plan"
+```
+
+→ **zero hits**. Any hit is a live reference to the *old* path.
+
+> **Exclude on `archive/unimplemented-screens-plan`, not on `docs/archive`.** The earlier gate used
+> `grep -v docs/archive`, which **fails references that were correctly updated**. As the table above
+> shows, the 9 files under `docs/design/*/README.md` use the relative-link form, so after the fix
+> they read `../../archive/unimplemented-screens-plan.md` — a string that contains `archive/` but
+> **not** `docs/archive`. Under the old gate all 9 counted as leftovers. Excluding on the path
+> segment immediately before the filename (`archive/`) is agnostic to whether the reference is
+> repo-root relative or link-relative.
+>
+> This also makes the gate **binary**. The old wording's escape hatch ("or all remaining references
+> point to the new archive path") could not be decided by the command itself and required a human to
+> eyeball the output, so it is removed.
 
 ### Step 2: Complete the README env block
 

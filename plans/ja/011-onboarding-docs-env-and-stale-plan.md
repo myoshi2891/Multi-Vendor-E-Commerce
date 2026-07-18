@@ -135,6 +135,17 @@ WEBHOOK_SECRET
 移動後、旧パスにリンクしている他のドキュメントを更新する:
 `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules` — direction のソースとして引用している recon/roadmap ドキュメント等、各参照を修正または削除する。
 
+**参照は 2 つの表記形で書かれている。両方を更新すること**（監査時点の実測）:
+
+| 表記形 | 例 | 更新後 |
+|---|---|---|
+| リポジトリルート起点 | `docs/unimplemented-screens-plan.md` | `docs/archive/unimplemented-screens-plan.md` |
+| 相対リンク | `../../unimplemented-screens-plan.md` | `../../archive/unimplemented-screens-plan.md` |
+
+相対リンク形は `docs/design/*/README.md` の **9 ファイル**（`offers` / `admin-dashboard` /
+`profile-settings` / `track-order` / `storefront-static-pages` / `compare` / `profile-messages` /
+`support-forms` / `seller-dashboard`）にある。`docs/` 起点の grep しか掛けないとここを取りこぼす。
+
 > **手で選んだサブセットではなく、リポジトリ全体を検索すること。** 本ステップの旧版は
 > `docs/ README.md .claude/ specs/` の 4 箇所しか走査しておらず、これは**下の「検証」コマンドより
 > 狭い**。そのため 4 箇所の外にある参照は修正を免れたままゲートだけが落ちる。これは仮定の話ではない:
@@ -146,7 +157,26 @@ WEBHOOK_SECRET
 > 引用しているため。削除ではなく新しいアーカイブパスへ向け直すこと。下の検証コマンドはそれを許容する
 > （**旧**パスへの生きた参照が無いことだけを要求する）。
 
-**検証**: `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules | grep -v docs/archive` → アーカイブ外に生きた参照がない（または残る全参照が新しいアーカイブパスを指す）。
+**検証**:
+
+```bash
+grep -rn "unimplemented-screens-plan" . --include="*.md" \
+  | grep -v node_modules \
+  | grep -v "archive/unimplemented-screens-plan"
+```
+
+→ **ヒット 0 件**。ヒットが 1 件でもあれば、それは**旧パスへの生きた参照**である。
+
+> **除外は `docs/archive` ではなく `archive/unimplemented-screens-plan` で行うこと。**
+> 旧版のゲートは `grep -v docs/archive` で除外していたが、これは**正しく更新した参照を
+> 失敗と判定する**。上表のとおり `docs/design/*/README.md` の 9 ファイルは相対リンク形であり、
+> 更新後は `../../archive/unimplemented-screens-plan.md` になる。この文字列は `archive/` を
+> 含むが `docs/archive` は**含まない**ため、旧ゲートでは 9 件すべてが残存扱いになった。
+> ファイル名直前のパスセグメント（`archive/`）で除外すれば、ルート起点・相対リンクの
+> どちらの表記形でも正しく除外できる。
+>
+> この変更によりゲートは**二値判定**になる。旧版の「または残る全参照が新しいアーカイブパスを
+> 指す」という但し書きは、コマンド単体では真偽を決められず人間の目視判断を要求していたため削除した。
 
 ### Step 2: README の env ブロックを補完する
 
