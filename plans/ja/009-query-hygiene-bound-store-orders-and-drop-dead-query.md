@@ -162,6 +162,37 @@ expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
 
 **検証**: `bun run test -- src/queries/store.test.ts` → 全件 pass。
 
+### Step 3b: seller 注文ページに切り捨て告知を表示する
+
+> **事後documented（2026-07-18 追記）**。Scope は `orders/page.tsx` を
+> in-scope に挙げ、告知を behavior-change caveat が*要求する*ものと明記して
+> いるが、Step 1-4 は執筆を一度も指示せず、Done criteria も検証していなかった。
+> 告知自体は実際に出荷されている。本ステップは実施済みの作業を記録し、
+> プランの内部整合を回復して、再実行時に要件が黙って落ちないようにするもの。
+
+`take` の上限と利用者向け告知は **2 つの変更ではなく 1 つ**である。
+`take: STORE_ORDERS_MAX` だけを追加すると「全注文」が「最新 200 件、ただし
+無告知」に変わり、200 件を超える order group を持つ販売者からは古い注文が
+上限の存在を示すものなく消える。これは behavior-change caveat が禁じる
+サイレント切り捨てそのものであり、上限を告知なしで出荷してはならない。
+
+`src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx` にて、テーブルの
+上に上限を表示する。数値は `200` をハードコードせず共有定数から導出すること
+（文言がクエリ側とドリフトしないようにするため）:
+
+```tsx
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
+<p className="mb-4 text-sm text-muted-foreground">
+    Showing up to the latest {STORE_ORDERS_MAX} orders.
+</p>
+```
+
+**検証**:
+
+- `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` → import と補間の両方が出ること（＝文言が定数由来であり、リテラル `200` ではないこと）。
+- `bunx tsc --noEmit` → exit 0。
+
 ### Step 4: 完全な lint
 
 **検証**: `bun run lint` → exit 0。
@@ -179,6 +210,7 @@ expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
 
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` が上限適用を示す
+- [ ] `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` が定数由来の切り捨て告知を示す（2026-07-18 追加 — 上限と告知は同時に出荷する。告知なしの上限は caveat が禁じるサイレント切り捨てになる）
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` がマッチしない
 - [ ] `bun run test -- src/queries/store.test.ts` が exit 0；`take` アサーションが pass
 - [ ] `bun run lint` が exit 0
