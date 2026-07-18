@@ -210,5 +210,52 @@ Stop and report if:
 ## Maintenance notes
 
 - **Deferred follow-up (separate plan)**: make `placeOrder` idempotent against genuinely concurrent requests — e.g. consume/lock the cart inside the order-creation `$transaction` so a second concurrent call finds no cart. This overlaps the tracked `applyCoupon` lost-update `$transaction` refactor (`specs/.../08-open-questions.md`) and carries MED risk; it should be planned and reviewed on its own, not bolted onto this UI guard.
-- Reviewer should confirm the ref is released in a `finally` (no path leaves it stuck `true`, which would permanently disable ordering for that mounted component).
+- ~~Reviewer should confirm the ref is released in a `finally` (no path leaves it stuck `true`, which would permanently disable ordering for that mounted component).~~ **Superseded — see below.**
+
+### Superseded: the guard is deliberately NOT released after a successful order (2026-07-18)
+
+This plan is **DONE**, but both the Step-2 snippet (lines ~123-143) and the
+review note above specify an **unconditional** release in `finally`. That is the
+behavior the implementation had to abandon, and following it now reintroduces a
+duplicate-submit bug:
+
+`push()` returns `void` and cannot be awaited, so the component stays mounted
+and interactive while the navigation is in flight. An unconditional
+`finally { isPlacingOrderRef.current = false }` therefore re-arms the button
+*before* the user leaves the page, and a second click re-invokes `placeOrder`.
+This was measured, not theorized — the regression test observed **two** calls.
+It did not create duplicate orders (`emptyUserCart` deletes the cart row, so the
+second attempt finds nothing) but it failed with `"Cart not found."`, showing an
+error toast on top of a successful order.
+
+The shipped shape (`src/components/store/cards/place-order.tsx:74-80`) releases
+the guard **only on the failure path**:
+
+```ts
+} finally {
+    // 注文成立後は解除しない（アンマウント前提の意図的な例外）。
+    // 失敗・住所未選択時のみ解除して再試行を許可する。
+    if (!orderPlaced) {
+        isPlacingOrderRef.current = false
+        setLoading(false)
+    }
+}
+```
+
+The "stuck `true`" hazard the old note warns about is real but is accepted here:
+after a successful order the component is expected to unmount via navigation, so
+a permanently-armed guard has no user-visible lifetime. Retry after a genuine
+failure is what must stay possible, and that is the branch the condition keeps.
+
+Two later changes build on this and must be preserved together:
+
+- **Cleanup is best-effort** (2026-07-18). The snippet's `emptyCart()` is
+  synchronous but unguarded; the Zustand store is `persist`-backed, so it can
+  throw on a storage failure (Safari private mode, quota). Combined with
+  `orderPlaced === true` skipping the release, an unguarded throw left the user
+  with a placed order, an error toast, no navigation, and a permanently disabled
+  button — unrecoverable. Both `emptyCart()` and `emptyUserCart()` are now
+  individually wrapped so neither can block `push()`.
+- The deferred server-side idempotency follow-up below is still open; this UI
+  guard does not protect against genuinely concurrent requests.
 - If a global loading/submit abstraction is later introduced for forms, fold this guard into it.
