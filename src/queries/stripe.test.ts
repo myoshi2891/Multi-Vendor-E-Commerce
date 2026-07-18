@@ -93,12 +93,17 @@ describe("createStripePaymentIntent", () => {
 
             const result = await createStripePaymentIntent("order-001");
 
-            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith({
-                amount: 9999, // $99.99 → 9999セント
-                currency: "usd",
-                automatic_payment_methods: { enabled: true },
-                metadata: { orderId: "order-001" },
-            });
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
+                {
+                    amount: 9999, // $99.99 → 9999セント
+                    currency: "usd",
+                    automatic_payment_methods: { enabled: true },
+                    metadata: { orderId: "order-001" },
+                },
+                expect.objectContaining({
+                    idempotencyKey: expect.any(String),
+                })
+            );
             expect(result).toEqual({
                 paymentIntentId: "pi_test_123",
                 clientSecret: "pi_test_123_secret",
@@ -120,7 +125,8 @@ describe("createStripePaymentIntent", () => {
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     metadata: { orderId: "order-meta-test" },
-                })
+                }),
+                expect.anything()
             );
         });
 
@@ -138,7 +144,8 @@ describe("createStripePaymentIntent", () => {
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     amount: 1001,
-                })
+                }),
+                expect.anything()
             );
         });
 
@@ -153,7 +160,98 @@ describe("createStripePaymentIntent", () => {
             await createStripePaymentIntent("order-001");
 
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
-                expect.objectContaining({ amount: 1 })
+                expect.objectContaining({ amount: 1 }),
+                expect.anything()
+            );
+        });
+    });
+
+    // 冪等キーが無いと、二重クリックやネットワーク再送のたびに Stripe 側へ
+    // 新しい intent が作られ、孤児 intent が量産される。さらに paymentDetails の
+    // 「有効な intent id」が毎回上書きされるため、先行 intent で決済中のユーザーが
+    // createStripePayment で拒否されうる。
+    describe("冪等性", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("同一注文・同一金額の再実行では同じ冪等キーを送る", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_001",
+                client_secret: "pi_idem_001_secret",
+            });
+
+            await createStripePaymentIntent("order-idem");
+            await createStripePaymentIntent("order-idem");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).toBe(
+                secondOptions.idempotencyKey
+            );
+            expect(firstOptions.idempotencyKey).toContain("order-idem");
+        });
+
+        it("注文ごとに異なる冪等キーを送る", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_002",
+                client_secret: "pi_idem_002_secret",
+            });
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            await createStripePaymentIntent("order-a");
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            await createStripePaymentIntent("order-b");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).not.toBe(
+                secondOptions.idempotencyKey
+            );
+        });
+
+        // Stripe は「同一キー・異なるパラメータ」の再送をエラーで拒否する。
+        // 金額をキーに含めないと、クーポン適用等で合計が正当に変わった際に
+        // 決済が永久に通らなくなる。
+        it("同一注文でも金額が変われば異なる冪等キーを送る", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_003",
+                client_secret: "pi_idem_003_secret",
+            });
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 100 })
+            );
+            await createStripePaymentIntent("order-amount");
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 80 })
+            );
+            await createStripePaymentIntent("order-amount");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).not.toBe(
+                secondOptions.idempotencyKey
             );
         });
     });

@@ -83,12 +83,24 @@ export const createStripePaymentIntent = async (orderId: string) => {
 
         // Create a Stripe payment intent
         // metadata.orderId は Webhook (src/app/api/webhooks/stripe) で内部 Order を相関するために必須
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount: toStripeAmount(order.total),
-            currency: "usd",
-            automatic_payment_methods: { enabled: true },
-            metadata: { orderId },
-        });
+        const amount = toStripeAmount(order.total);
+
+        // 冪等キーが無いと、二重クリックやネットワーク再送のたびに新しい intent が
+        // 作られて孤児化し、下の upsert が「有効な intent id」を上書きするため
+        // 先行 intent で決済中のユーザーが createStripePayment で拒否される。
+        //
+        // Stripe は「同一キー・異なるパラメータ」の再送をエラーで拒否するため、
+        // 金額をキーに含める。クーポン適用等で合計が正当に変われば別キーになり、
+        // 同一パラメータの再送だけが同じ intent を返す。
+        const paymentIntent = await stripe.paymentIntents.create(
+            {
+                amount,
+                currency: "usd",
+                automatic_payment_methods: { enabled: true },
+                metadata: { orderId },
+            },
+            { idempotencyKey: `order_${orderId}_${amount}` }
+        );
 
         // この注文で「有効な」intent はこれ 1 つであることを記録する。
         // createStripePayment はこの id との一致を要求し、古い intent を拒否する。
