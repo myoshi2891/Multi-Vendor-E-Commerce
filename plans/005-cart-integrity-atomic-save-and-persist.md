@@ -232,3 +232,50 @@ Stop and report if:
 - If a future feature needs to hydrate the cart from the server, do it through `setCart`/`persist`, never by writing the `'cart'` localStorage key directly — that reintroduces this corruption.
 - Reviewer should confirm `persist` is the *only* writer of the `'cart'` key after this change.
 - The store's `totalPrice` still uses float summation; if money precision becomes a concern, that's a separate Decimal migration (not in this plan).
+
+### Corrections to the test steps (2026-07-18)
+
+This plan is **DONE**; the steps are left as the historical record. Two
+instructions in them are unsound and must **not** be copied into new tests:
+
+1. **Step 3 defers the transaction-mock shape to "search the file".** Telling
+   the executor to mirror whatever `$transaction` mocking already exists in the
+   file produces a different ad-hoc mock per test author. This repo has shared
+   test infrastructure for exactly this — `src/config/test-helpers.ts` (mock
+   utilities), `test-fixtures.ts` (typed factories), `test-scenarios.ts`, and
+   `test-config.ts` (see `CLAUDE.md` "テスト構成"). New transaction tests should
+   take the `tx` double from there, and extend that module when it lacks a case,
+   rather than re-deriving a local `callback(mockDb)` passthrough.
+
+2. **Step 4's `rehydrate()` round trip does not prove what it claims.** The
+   snippet calls `useCartStore.persist.rehydrate()` and then asserts on
+   `useCartStore.getState()` — but that is the *same* store instance that just
+   performed the mutation, so its in-memory state already holds the expected
+   values. `rehydrate()` could be a complete no-op (or read a corrupt payload
+   and bail) and every assertion would still pass. It cannot fail for the
+   regression it was written to catch.
+
+   To actually exercise a reload, the in-memory state must be discarded before
+   rehydrating, so the values can only come back from storage:
+
+   ```ts
+   // after mutating the cart via store actions
+   const persisted = localStorage.getItem('cart');       // capture what was written
+   useCartStore.setState({ cart: [], totalItems: 0, totalPrice: 0 });  // simulate a fresh load
+   localStorage.setItem('cart', persisted as string);
+   await useCartStore.persist.rehydrate();
+
+   const rehydrated = useCartStore.getState();
+   expect(rehydrated.cart).toHaveLength(<expected>);   // came back from storage
+   expect(rehydrated.totalItems).toBe(<expected>);     // derived state recomputed
+   ```
+
+   Note the `beforeEach` at `src/cart-store/useCartStore.test.ts:54` already
+   resets the store this way — the reset is the load-bearing part, not the
+   `rehydrate()` call.
+
+**Current coverage gap**: only the wrapper-shape assertions from the first half
+of Step 4 were implemented (`useCartStore.test.ts:239`, `:274`, `:302`). No
+round-trip test exists in any form, so "a persisted cart survives a reload" —
+the stated point of this plan — is still unverified. Adding one is tracked as
+follow-up work, not as part of this DONE plan.
