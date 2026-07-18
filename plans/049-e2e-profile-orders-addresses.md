@@ -126,6 +126,28 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
 > - **後始末は `afterAll` で `shippingAddress.deleteMany({ where: { userId } })` を明示的に行う**
 >   （テスト 1・テスト 2 が作った分を両方まとめて消せる）。実績のあるパターンは
 >   `tests/e2e/stock-decrement.spec.ts:96-106`。
+>   **必ず `session.cleanup()` より前に実行すること。順序が正しさを決める。**
+>   `cleanup()`（`tests/e2e/helpers/auth.ts:124-138`）は 2 つの理由で「後」だと壊れる:
+>
+>   1. `prisma.user.delete(...).catch(() => {})` — 住所が残っていると FK RESTRICT で
+>      P2003 になり、その失敗が握り潰されて **User 行が黙って残る**。
+>   2. `finally { await prisma?.$disconnect(); }` — `cleanup()` は**抜ける際に接続を切る**。
+>      後ろに置いた `deleteMany` は「遅い」だけでなく、**切断済みクライアントに対して
+>      発行される**ことになる。
+>
+>   ```typescript
+>   test.afterAll(async () => {
+>       // 1. 子（住所）を先に消す —— これが無いと 2. が P2003 で黙って失敗する
+>       await prisma.shippingAddress
+>           .deleteMany({ where: { userId } })
+>           .catch(() => {});
+>       // 2. そのあとに親（User）と Clerk を消し、最後に切断する
+>       await session.cleanup();
+>   });
+>   ```
+>
+>   `stock-decrement.spec.ts:96-106` はこの順序（住所 → User → Clerk → `$disconnect()` が最後）を
+>   そのまま体現している。**引用しているのは deleteMany の書き方だけでなく、この並び順である。**
 >   **「ユーザーを消せばカスケードで住所も消える」は誤り** —— `ShippingAddress.userId` は
 >   **RESTRICT**（`prisma/schema.prisma` / plan 040 の FK 表）であり、カスケードは存在しない。
 >   むしろ住所が残っていると `user.delete` 自体が P2003 で失敗する。しかも
