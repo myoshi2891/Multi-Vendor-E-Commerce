@@ -204,41 +204,82 @@ P2002 フォールバックの実発火 / 副作用なし）と ADR-004 参照�
    > したがって `rejects.toThrow(...)` だけでは、**どちらの経路で拒否されたのかを
    > 区別できない**。「事前チェックは自店舗スコープなので素通りし、P2002 だけが
    > このメッセージを出す」という本シナリオの主張は、メッセージの一致では**証明されない**。
-   > 以下 2 つの assert を追加して初めて経路が特定できる。
+   > このため、経路をメッセージ一致から推論するのではなく、下記のとおり
+   > 検証手段そのものを分割する。
+   >
+   > **訂正（2026-07-18）**: 以前の版はここで「事前チェックと**同一条件**の
+   > `findFirst` をテスト側で実行し、`null` を確認する」方法（`preCheckHit`）を
+   > 指定していた。これは**経路の証明にならない**ので採用しないこと。
+   >
+   > 理由: その `findFirst` は `upsertCoupon` **内部の**事前チェックを観測して
+   > いない。テスト側で `storeId: storeA.id` をハードコードした同じクエリを
+   > 再実行しているだけで、実装とは独立している。将来 `coupon.ts` の事前チェックが
+   > グローバル検索へ変更されて P2002 経路が**一度も実行されなくなっても**、
+   > テスト側のクエリは `storeA.id` のままなので `null` を返し続け、
+   > テストは green のままになる。本プランが検証したかった「実 unique 制約の発火」が
+   > 無検証で腐るという、まさに (a) が防ぐはずだった事態を (a) 自身が招く。
+   > （加えて、旧スニペットの `rawCouponData` はどこにも定義されておらず、
+   > そのままでは動かなかった。）
+   >
+   > **代わりに、証明したい 2 つを別々の手段で検証する**:
+
+**(1) 実 DB 統合テスト — 観測可能な振る舞いを固定する**
+
+内部経路を推測せず、外から見える結果だけを assert する。
 
 ```typescript
-// (a) 事前チェック（coupon.ts:64-76 と同一条件）は素通りする = ここでは拒否していない
-const preCheckHit = await db.coupon.findFirst({
-    where: {
-        AND: [
-            { code: "SHARED" },
-            { storeId: storeA.id },       // 自店舗スコープ: 店舗 B の行は視界に入らない
-            { NOT: { id: input.id } },
-        ],
-    },
-});
-expect(preCheckHit).toBeNull();           // 事前チェックでは検出できないことの直接証明
+// 前提: 店舗 B に code "SHARED" の行が 1 件ある
+const before = await db.coupon.findMany({ where: { code: "SHARED" } });
+expect(before).toHaveLength(1);
 
-// (b) 実 DB の unique 制約が P2002 を出すことを独立に確認する
+// 店舗 A オーナーとして同じ code を作ろうとすると拒否される
 await expect(
-    db.coupon.create({
-        data: { ...rawCouponData, id: randomUUID(), code: "SHARED", storeId: storeA.id },
-    })
-).rejects.toMatchObject({ code: "P2002" });
+    upsertCoupon(buildCouponInput({ code: "SHARED" }), storeA.url)
+).rejects.toThrow("このクーポンコードは既に使用されています");
+
+// 既存行は無傷、かつ行が増えていない（＝拒否が副作用なしで成立した）
+const after = await db.coupon.findMany({ where: { code: "SHARED" } });
+expect(after).toHaveLength(1);
+expect(after[0]).toMatchObject({ id: before[0].id, storeId: storeB.id });
 ```
 
-   > (a) で「事前チェックは素通り」、(b) で「衝突時に DB が出すのは P2002」を示せば、
-   > `upsertCoupon` が投げたメッセージの出所は **P2002 フォールバック以外にありえない**
-   > と切り分けられる。(a) を省くと、将来事前チェックがグローバルスコープ化されて
-   > P2002 経路が**一度も実行されなくなっても**このテストは green のままになり、
-   > 本プランが検証したかった「実 unique 制約の発火」が無検証で腐る。
-   > ※ (b) は独立確認のため `rejects` 後に行が増えていないこと（`db.coupon.count()` === 1）
-   > を最終 assert で担保すること。
+これは「他店舗の code と衝突する作成が、既存行を保ったまま拒否される」という
+**プランが本当に守りたい不変条件**そのものであり、実装が事前チェックで弾こうが
+P2002 で弾こうが正しく緑・正しく赤になる。実装の内部構造に結合しない。
+
+**(2) P2002 → メッセージ変換は、その分岐を直接駆動して証明する**
+
+「どちらの経路を通ったか」を実 DB の挙動から推論するのをやめ、P2002 分岐だけを
+直接叩くユニットテストを `src/queries/coupon.test.ts` に置く。Prisma を
+モックして `create`（または `update`）に P2002 を投げさせれば、事前チェックの
+スコープが将来どう変わっても、この分岐の存在と変換内容が独立に固定される。
+
+```typescript
+mockDb.coupon.findFirst.mockResolvedValue(null);   // 事前チェックは素通りさせる
+mockDb.coupon.create.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "5.22.0",
+        meta: { target: ["code"] },
+    })
+);
+
+await expect(upsertCoupon(input, storeA.url))
+    .rejects.toThrow("このクーポンコードは既に使用されています");
+```
+
+   > この分割により、(1) は「振る舞いが守られているか」を実 DB で、(2) は
+   > 「P2002 を正しく変換しているか」を実装経路上で、それぞれ**取り違えようのない
+   > 形で**検証する。1 本のテストで両方を兼ねようとしたことが、経路を
+   > メッセージ一致から推論するという弱い証明を招いていた。
 3. **PLATFORM クーポンの code と衝突する seller create も P2002 経路**:
    事前チェックは `storeId: store.id` 固定のため `storeId: null` の PLATFORM 行を
-   構造的に検出できない（シナリオ 2 と同じ切り分けの理屈）。本シナリオでも
-   シナリオ 2 の (a) と同型の「事前チェック素通り」assert を置くこと
-   （`findFirst` の条件を PLATFORM 行に対して実行 → null）。
+   構造的に検出できない（シナリオ 2 と同じ切り分けの理屈）。本シナリオも
+   シナリオ 2 と同じ方針で検証すること — すなわち**「事前チェック素通り」を
+   テスト側の再クエリで示そうとしない**（同じトートロジーになる）。
+   実 DB 側では観測可能な振る舞い（拒否される・PLATFORM 行が無傷・行が増えない）
+   のみを assert し、P2002 変換自体はシナリオ 2 の (2) と同じユニットテストで
+   カバー済みとする。
    `db.coupon.create({ data: { id: randomUUID(), code: "PLATFORM10", startDate, endDate,
    discount: 15, scope: "PLATFORM", storeId: null } })` → 店舗 A オーナーとして
    `upsertCoupon(buildCouponInput({ code: "PLATFORM10" }), storeA.url)` →
