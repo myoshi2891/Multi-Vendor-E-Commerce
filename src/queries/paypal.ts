@@ -4,8 +4,8 @@ import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import type { Order } from "@prisma/client";
-// 確定済み決済ステータスの SSOT は stripe.ts（Stripe capture ガードと共有）
-import { isSettledPaymentStatus } from "@/queries/stripe";
+// 確定済み決済ステータスの SSOT は src/lib/payment-status.ts（Stripe/PayPal 両ガードで共有）
+import { isSettledPaymentStatus } from "@/lib/payment-status";
 
 /**
  * @Function createPayPalPayment

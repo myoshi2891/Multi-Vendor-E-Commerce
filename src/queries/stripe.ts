@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { isSettledPaymentStatus } from "@/lib/payment-status";
 import { currentUser } from "@clerk/nextjs/server";
 import { PaymentStatus, Prisma } from "@prisma/client";
 import Stripe from "stripe";
@@ -47,28 +48,6 @@ const toOrderPaymentStatus = (
 
 const toStripeAmount = (total: Prisma.Decimal): number =>
     total.mul(100).toDecimalPlaces(0).toNumber();
-
-/**
- * 決済が確定済み（不可逆）とみなす Order.paymentStatus 判定。
- *
- * これらの状態は Stripe 側で資金移動が確定した結果であり、PaymentIntent の
- * retrieve 結果で上書きしてはならない。createStripePaymentIntent は同一注文に
- * 対して都度新しい intent を生成するため、古い Pending/canceled intent も
- * metadata・金額・通貨の検証を通過してしまう。確定状態を保護しないと、
- * 古い intent id を渡すだけで Paid を Cancelled へ退行させられる。
- *
- * Refunded / PartiallyRefunded / ChargeBack は返金・チャージバックの結果であり、
- * intent の状態から再導出できないため同様に保護する。
- */
-const SETTLED_PAYMENT_STATUSES: readonly PaymentStatus[] = [
-    "Paid",
-    "Refunded",
-    "PartiallyRefunded",
-    "ChargeBack",
-];
-
-export const isSettledPaymentStatus = (status: PaymentStatus): boolean =>
-    SETTLED_PAYMENT_STATUSES.includes(status);
 
 /**
  * @Function createStripePaymentIntent
