@@ -319,7 +319,10 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 - [ ] `signInWithPassword` の Continue 取得が `{ exact: true }` 付き
       （`grep -n 'name: "Continue"' tests/e2e/helpers/*.ts` の全ヒットに `exact: true` がある。
       Google ボタンの名前 `Sign in with Google Continue with Google` に部分一致するため）
-- [ ] 1 段 / 2 段の分岐が `isVisible()` の即時評価ではなく `waitFor` の解決結果で判定している
+- [ ] `signInWithPassword` に **1 段 / 2 段の分岐が存在しない**
+      （`grep -n 'isVisible()' tests/e2e/helpers/*.ts` が sign-in ヘルパー内で 0 ヒット。
+      UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
+      で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**
       （コメントだけで終わっていないこと）
 - [ ] chromium で a11y 4 spec / messages / platform-coupon / seller-onboarding / stock-decrement すべて passed
@@ -347,5 +350,12 @@ Stop and report back (do not improvise) if:
 - CI には Playwright ジョブが無く（`.github/workflows/ci.yml` の e2e ジョブは seed 冪等性のみ）、
   この種の退行は CI で検出されない。CI への E2E 導入判断は findings-16 の Rejected 節
   （chromium 限定 + nightly 案）を参照。
-- レビュー観点: signIn の フォールバック分岐（2 ステップ UI）はデッドコードに見えるが
-  Clerk インスタンス設定差分への保険として意図的。
+- レビュー観点: signIn に 2 ステップ UI のフォールバック分岐が**入っていない**ことを
+  確認する。これは削り忘れではなく Step 1 の設計判断であり、「保険として残す」形へ
+  戻さないこと。理由は、分岐を持つには「今どちらの UI か」を実行時に判定する必要が
+  あり、その判定手段（`isVisible()` の即時評価も短い timeout 付き `waitFor` も）が
+  いずれも「時間」を測っているだけで「UI 形式」を測っていないため。遅い CI や
+  コールドスタートで描画が閾値を超えると、1 段 UI なのに 2 段へ誤分岐し、本プランが
+  撲滅しようとしている閾値付近フレークを修復コード自身が再導入する。
+  将来 Clerk 設定が 2 段へ変わったら `expect(passwordInput).toBeVisible()` が明確な
+  メッセージで失敗するので、そのとき helper を意図的に更新すればよい。
