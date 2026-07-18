@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
  * @returns A NextResponse containing JSON:
  * - Success (200): `{ results: Array<{ name: string; link: string; image: string }> }` where each result represents a product variant suggestion.
  * - Invalid input (400): `{ error: "Invalid query" }`.
- * - Server error (500): `{ error: string }`.
+ * - Server error (500): `{ error: "Internal Server Error" }` (詳細はサーバーログにのみ出力).
  */
 export async function POST(req: Request) {
     try {
@@ -129,9 +129,14 @@ export async function POST(req: Request) {
         );
 
         return NextResponse.json({ results }, { status: 200 });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        // 詳細はサーバー側にのみ残し、クライアントへは固定メッセージを返す
+        // （内部例外文字列＝DB ドライバのメッセージ等の漏洩を防ぐ）
         console.error("Search error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }
 
@@ -143,7 +148,7 @@ export async function POST(req: Request) {
  * @returns A JSON HTTP response:
  * - On success: { products, total, page, limit, totalPages } where `products` is an array of product records with related store, category, subCategory, variants (with first image and sizes) and recent reviews; `total` is the total match count and `totalPages` is Math.ceil(total / limit).
  * - If the search parameter is missing or empty: { products: [], total: 0 }.
- * - On server error: { error: string } with status 500.
+ * - On server error: { error: "Internal Server Error" } with status 500 (詳細はサーバーログにのみ出力).
  */
 export async function GET(req: Request) {
     try {
@@ -409,8 +414,13 @@ export async function GET(req: Request) {
             },
             { status: 200 }
         );
-    } catch (error: any) {
+    } catch (error: unknown) {
+        // 詳細はサーバー側にのみ残し、クライアントへは固定メッセージを返す
+        // （内部例外文字列＝DB ドライバのメッセージ等の漏洩を防ぐ）
         console.error("Search error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }
