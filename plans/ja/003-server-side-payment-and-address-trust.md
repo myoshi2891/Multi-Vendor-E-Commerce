@@ -286,3 +286,36 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 - レビュアーは変更後、引数からは `paymentIntent.status`/`.amount` が一切読まれず、取得済みオブジェクトからのみ読まれることを確認すること。
 - PayPal capture（`paypal.ts`）が後に同様に堅牢化される場合、このパターン（サーバー側再取得 + order マッチ）を踏襲すること。
 - 先送り事項: 通貨単位の正規化と `stripe.ts` の古い3引数ログ（tech-debt パスで構造化ログへ変換）。
+
+### 本プラン完了後の乖離（2026-07-18 追記）
+
+本プランは **DONE**（PR #158 としてマージ済み）。上記ステップは commit
+`f9752c0` 時点の計画の記録であり、意図的に改変していない。以下 3 点はその後
+変化しているため、**ステップ本文を現行仕様として読まないこと**:
+
+1. **`requires_payment_method` は無条件 `Failed` ではない。**
+   Step 4 は当該ステータスを `paymentStatus: "Failed"` へ写像する前提だが、
+   現行の `src/queries/stripe.ts` は `last_payment_error` の有無で分岐する。
+   このステータスは「拒否されて再入力が必要」と「まだ決済手段が付いていない
+   初期状態」の双方で返るため、status だけでは失敗と判別できない。初期状態を
+   `Failed` で確定させると再試行を塞ぐ。現行の写像は
+   `last_payment_error ? "Failed" : "Pending"`。
+2. **セント換算は共通化され、float ベースではなくなった。**
+   79-84 行の抜粋は作成時の `Math.round(order.total.toNumber() * 100)` を
+   示すが、現在は作成時・照合時とも単一のヘルパー `toStripeAmount()`
+   (`stripe.ts:52`) を呼ぶ。実装は `.claude/steering/tech.md` の
+   `Prisma.Decimal` 規約に従い `total.mul(100).toDecimalPlaces(0).toNumber()`。
+   作成時と照合時で導出方法が異なると、正当な決済が
+   `paymentIntent.amount !== expectedAmount` ガードで弾かれる。
+3. **住所所有権のテストは「クライアント由来フィールドを使わないこと」を
+   assert すべき。** Step 5 のテスト（239-247 行付近）は拒否経路
+   （`findFirst` → null）と正常系を固定するが、引数の
+   `shippingAddress.<field>` を密かに読み続ける回帰はこれを通過してしまう。
+   恒久的な assertion は「永続化された注文が **DB から取得した**住所を
+   持つこと」— 例えば `findFirst` にクライアント供給オブジェクトとは異なる
+   値の住所を返させ、保存値が引数ではなく DB 行と一致することを検証する。
+
+本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。
+本モジュールから `isSettledPaymentStatus` を export して再利用）および
+2026-07-18 の CodeRabbit Phase 1（冪等キー付与 + ステータス書き込みの CAS 化）
+— 詳細は `docs/testing/COVERAGE_REPORT.md §7`。

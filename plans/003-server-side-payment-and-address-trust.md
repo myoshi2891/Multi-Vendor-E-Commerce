@@ -283,3 +283,38 @@ Stop and report if:
 - Reviewer should confirm no `paymentIntent.status`/`.amount` is read from the argument after the change — only from the retrieved object.
 - If PayPal capture (`paypal.ts`) is later hardened the same way, mirror this pattern (server-side re-fetch + order match).
 - Follow-up deferred: currency-unit normalization and the older 3-arg logging in `stripe.ts` (convert to structured logging in a tech-debt pass).
+
+### Divergence since this plan shipped (2026-07-18)
+
+This plan is **DONE** (merged as PR #158). The steps above record the work as
+planned at commit `f9752c0` and are deliberately left unedited. Three points
+have since moved, so do **not** read the step text as the current spec:
+
+1. **`requires_payment_method` is no longer an unconditional `Failed`.**
+   Step 4 (line ~231) expects that status to map to `paymentStatus: "Failed"`.
+   `src/queries/stripe.ts` now branches on `last_payment_error`: the status is
+   returned both for "declined, re-enter a method" *and* for "no payment method
+   attached yet", so status alone cannot distinguish failure from an untouched
+   intent. Confirming `Failed` on the initial state would block the retry.
+   Current mapping: `last_payment_error ? "Failed" : "Pending"`.
+2. **The cents conversion is shared, and no longer float-based.** The excerpt at
+   lines 79-84 shows `Math.round(order.total.toNumber() * 100)` at creation
+   time. Both creation and verification now call one helper,
+   `toStripeAmount()` (`stripe.ts:52`), implemented as
+   `total.mul(100).toDecimalPlaces(0).toNumber()` per the `Prisma.Decimal`
+   requirement in `.claude/steering/tech.md`. Deriving the expected amount
+   differently at verification time than at creation time is what makes a
+   legitimate payment fail the `paymentIntent.amount !== expectedAmount` guard.
+3. **Address-ownership coverage should assert non-use of client fields.** The
+   Step 5 tests (lines ~239-247) pin the *rejection* path (`findFirst` → null)
+   and the happy path, which a regression that silently kept reading
+   `shippingAddress.<field>` from the argument would still pass. The durable
+   assertion is that the persisted order carries the **DB-fetched** address —
+   e.g. have `findFirst` resolve an address whose fields differ from the
+   client-supplied object and assert the stored values match the DB row, not
+   the argument.
+
+Later payment work built on this plan: `plans/059` (PayPal capture verification,
+which exported `isSettledPaymentStatus` from this module for reuse) and the
+2026-07-18 CodeRabbit Phase 1 round (idempotency key + compare-and-set on the
+status write) — see `docs/testing/COVERAGE_REPORT.md §7`.
