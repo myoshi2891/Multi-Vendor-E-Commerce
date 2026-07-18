@@ -231,10 +231,15 @@ await expect(page.getByText(store.name)).toHaveCount(0);
   （認可経路が Current state の記述から変わっている）。
 - `Store` モデルの必須フィールドが多く、使い捨て店舗の Prisma 作成が
   30 行を超える複雑さになる（seed ヘルパー側に共通化すべきか判断が要る — 報告）。
-- 非 ACTIVE store ページの実挙動が **500 以外**（例: 既に `notFound()` が導入されて 404、
-  あるいは店舗名が描画されて公開されたまま）— 前者は Current state の読解が古い
-  （修正コミットを特定して期待値を 404 へ反転してよいか報告）、後者は
+- 非 ACTIVE store ページで**店舗名が描画されて公開されたまま**（`toHaveCount(0)` が赤）—
   **ステータスフィルタが効いていない重大所見**として即報告。
+
+  > **404 は STOP 条件ではない**（旧版はここに「既に `notFound()` が導入されて 404」を
+  > STOP として挙げていたが、下の blockquote および Step 4 の設計と矛盾していたため削除した）。
+  > 本プランの契約は `not.toBe(200)` であり、**404 はアサーションにとって非事象**で、
+  > そのまま緑になる。404 が無効化するのは*アサーション*ではなく*記述*（Current state と
+  > Maintenance notes が「500」と書いている点）なので、対応は **STOP でも期待値の変更でもなく、
+  > 記述の更新 + 報告**である。
 
 > **500 は STOP 条件ではない。** 未処理例外が error boundary へ到達する現実装は
 > **既知のアプリバグ**（本来は `notFound()` で 404 が正しい）だが、本プランは
@@ -255,8 +260,11 @@ await expect(page.getByText(store.name)).toHaveCount(0);
   が正しく、500 は顧客に無用なエラー画面を見せるアプリバグ。本 spec は
   「BANNED にしたら顧客から見えなくなる」ことの保証が目的のため、**500 を現挙動として
   記録しつつ pass させる**（`toHaveCount(0)` が本質的な保証を担う）。
-  `notFound()` が導入されたら Step 4 の期待値を 404 へ反転すること
-  （`TODO(characterization)` コメントが目印）。次回 correctness 監査ラウンドの候補。
+  `notFound()` が導入されたら、**Step 4 の assert は変更しない**（`not.toBe(200)` は 404 でも
+  そのまま通る。これが耐久契約を選んだ理由であり、`toBe(404)` へ書き換えることは
+  Step 4 の blockquote が退けた「修正を罰するテスト」へ逆戻りする）。更新するのは
+  **記述のみ** —— 本節と Current state の「500」を 404 に直し、`TODO(characterization)`
+  コメント（目印）を削除する。次回 correctness 監査ラウンドの候補。
 - **アプリ側ギャップ（重要）**: `getProducts` に store status フィルタが無く、BANNED 店舗の
   商品が /browse に出続ける。§20 P1 の完全な達成には `src/queries/product.ts` の
   whereClause への store status 条件追加（+ Integration/E2E の拡張）が必要。
