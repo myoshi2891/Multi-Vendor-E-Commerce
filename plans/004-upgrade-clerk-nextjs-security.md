@@ -105,11 +105,34 @@ If any Clerk-mocked test fails because the mock shape changed, adjust **only the
 
 **Verify**: `bun audit` no longer lists the `@clerk/nextjs` CRITICAL GHSA-vqx2-fgx2-5wq9. Then check `js-cookie`:
 - `grep -A2 'js-cookie' bun.lock | head` — if `@clerk/shared` advanced to a release pinning a patched `js-cookie` (the exact fixed version the advisory names), the HIGH is gone.
-- If `bun audit` still shows the `js-cookie` HIGH after the bump, add a temporary override to `package.json` and reinstall. **Pin the exact patched version the advisory names — do NOT use a caret/range**, because a range like `^3.0.5` still resolves to the vulnerable `3.0.5` and floats to any future `3.x`:
+- **Only if** `bun audit` still shows the `js-cookie` HIGH after the bump, add a
+  temporary override to `package.json` and reinstall. If the bump already
+  cleared it (the expected case — Clerk pulls a patched `@clerk/shared`),
+  **skip this step entirely**: an unnecessary override pins a transitive
+  dependency that upstream is otherwise free to advance, and it silently holds
+  back future patches.
+
+  When it *is* needed, pin the exact patched version the advisory names rather
+  than a caret range:
+
   ```json
   "overrides": { "js-cookie": "3.0.6" }
   ```
-  (Replace `3.0.6` with whatever exact version the advisory lists as fixed.) Re-run `bun audit`. If it cannot be resolved without breaking Clerk, STOP and report — do not force-downgrade Clerk.
+
+  (Replace `3.0.6` with whatever exact version the advisory lists as fixed.)
+  Re-run `bun audit`. If it cannot be resolved without breaking Clerk, STOP and
+  report — do not force-downgrade Clerk.
+
+  > **Correction (2026-07-18)**: an earlier revision justified the exact pin by
+  > claiming a range like `^3.0.5` "still resolves to the vulnerable `3.0.5`".
+  > That is not how caret ranges work — `^3.0.5` means `>=3.0.5 <4.0.0`, and a
+  > fresh resolution picks the newest matching `3.x`, i.e. it *would* pick up
+  > the patched release. The instruction (pin exactly) stands, but for different
+  > reasons: a range does not **guarantee** the patched version, because an
+  > already-satisfying entry in `bun.lock` is left in place and the audit can
+  > still fail after reinstall; and an override is meant to be a temporary,
+  > auditable assertion of one known-good version — a floating range makes it
+  > impossible to tell later whether the override is still doing anything.
 
 ### Step 4: Full test + lint
 
@@ -155,3 +178,25 @@ Stop and report if:
 - Watch for the `middleware`→`proxy` migration Clerk is signposting — the repo has a documented decision NOT to rename `src/middleware.ts` until Clerk officially supports `proxy.ts` (`.claude/steering/tech.md`). Do not act on that deprecation warning here.
 - Reviewer should confirm the diff is version-only (plus lockfile) and that the manual unauthenticated `/dashboard` smoke was performed or explicitly flagged pending.
 - Follow-up: the Prisma 5→6 major lag (DEPS-04) is a separate, larger upgrade — do not bundle it with this security bump.
+
+### Resolution status (verified 2026-07-18)
+
+This plan is **DONE** and **both advisories are closed in the current tree**.
+The "Why this matters" and "Current state" sections above describe the tree at
+commit `f9752c0` and are left as the historical record — do not read them as
+the present state:
+
+| Item | As planned (`f9752c0`) | Current tree |
+|---|---|---|
+| `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <=7.2.3`) | `^7.5.0` — outside the affected range |
+| `@clerk/testing` | `^2.0.7` | `^2.2.9` |
+| `js-cookie` (transitive) | `3.0.5` via `@clerk/shared` (HIGH) | `3.0.7` via `@clerk/shared@4.25.4` |
+
+Consequently **no `js-cookie` override was required**, and none should be added:
+the Clerk bump carried a patched `@clerk/shared`, which is exactly the outcome
+Step 3 anticipates. Step 3's override block therefore remains a conditional
+contingency, not a step to execute.
+
+Later Clerk work: `plans/057` bumped `next` (not Clerk) — the `middleware`→`proxy`
+deprecation noted above is still deliberately unaddressed per
+`.claude/steering/tech.md`.
