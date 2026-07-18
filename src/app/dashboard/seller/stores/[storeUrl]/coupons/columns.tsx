@@ -155,7 +155,10 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
                                 </CustomModal>,
                                 async () => {
                                     return {
-                                        rowData: await getCoupon(coupon?.id),
+                                        rowData: await getCoupon(
+                                            coupon?.id,
+                                            params.storeUrl
+                                        ),
                                     }
                                 }
                             )

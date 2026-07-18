@@ -4,6 +4,7 @@ import {
     upsertCoupon,
     getStoreCoupons,
     getCoupon,
+    getCouponAsAdmin,
     deleteCoupon,
     applyCoupon,
     getAllCoupons,
@@ -404,33 +405,155 @@ describe("getStoreCoupons", () => {
 // getCoupon
 // ==================================================
 describe("getCoupon", () => {
-    describe("バリデーション", () => {
-        it("couponIdが空の場合エラーをスローする", async () => {
-            await expect(getCoupon("")).rejects.toThrow(
-                "Please provide coupon ID."
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(
+                getCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await expect(
+                getCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+        });
+
+        it("(a) 非所有ストア URL では Forbidden をスローし、クーポン読み取りは発生しない", async () => {
+            // 他人の店舗 URL → requireStoreOwner の where: { url, userId } が null を返す
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getCoupon("coupon-001", "not-my-store")
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+            // 副作用なし検証: クーポン取得クエリ自体が呼ばれていない
+            expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
+        });
+
+        it("(b) 取得クエリが id + storeId の複合 where でスコープされる", async () => {
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            const coupon = createMockCoupon();
+            mockDb.coupon.findFirst.mockResolvedValue(coupon);
+
+            const result = await getCoupon(
+                "coupon-001",
+                TEST_CONFIG.TEST_STORE_URL
             );
+
+            expect(result).toEqual(coupon);
+            expect(mockDb.coupon.findFirst).toHaveBeenCalledWith({
+                where: {
+                    id: "coupon-001",
+                    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                },
+            });
+        });
+
+        it("(c) 他店舗クーポンの id を渡しても null が返る (storeId スコープにより不可視)", async () => {
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            // 自店舗スコープの findFirst では他店舗クーポンはヒットしない
+            mockDb.coupon.findFirst.mockResolvedValue(null);
+
+            const result = await getCoupon(
+                "other-store-coupon",
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+        });
+
+        it("couponIdが空の場合エラーをスローする", async () => {
+            await expect(
+                getCoupon("", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Please provide coupon ID.");
+        });
+
+        it("storeURLが空の場合エラーをスローする", async () => {
+            await expect(getCoupon("coupon-001", "")).rejects.toThrow(
+                "Please provide store URL."
+            );
+        });
+    });
+});
+
+// ==================================================
+// getCouponAsAdmin
+// ==================================================
+describe("getCouponAsAdmin", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(getCouponAsAdmin("coupon-001")).rejects.toThrow(
+                "Unauthenticated."
+            );
+        });
+
+        it("ADMIN以外の場合エラーをスローし、クーポン読み取りは発生しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await expect(getCouponAsAdmin("coupon-001")).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+            expect(mockDb.coupon.findUnique).not.toHaveBeenCalled();
         });
     });
 
     describe("正常系", () => {
-        it("クーポンを正常に取得する", async () => {
-            const coupon = createMockCoupon();
-            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
 
-            const result = await getCoupon("coupon-001");
+        it("ADMINは任意のクーポンを取得できる (PLATFORM クーポン含む・非スコープ findUnique)", async () => {
+            const platformCoupon = createMockCoupon({
+                storeId: null,
+                scope: "PLATFORM",
+            });
+            mockDb.coupon.findUnique.mockResolvedValue(platformCoupon);
 
-            expect(result).toEqual(coupon);
+            const result = await getCouponAsAdmin("coupon-001");
+
+            expect(result).toEqual(platformCoupon);
             expect(mockDb.coupon.findUnique).toHaveBeenCalledWith({
                 where: { id: "coupon-001" },
             });
         });
 
-        it("存在しないクーポンの場合nullを返す", async () => {
-            mockDb.coupon.findUnique.mockResolvedValue(null);
-
-            const result = await getCoupon("nonexistent");
-
-            expect(result).toBeNull();
+        it("couponIdが空の場合エラーをスローする", async () => {
+            await expect(getCouponAsAdmin("")).rejects.toThrow(
+                "Please provide coupon ID."
+            );
         });
     });
 });

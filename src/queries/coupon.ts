@@ -137,26 +137,64 @@ export const getStoreCoupons = async (storeURL: string) => {
 
 /**
  * @Function getCoupon
- * @Description Retrieves a specific coupon from the database.
- * @PermissionLevel Public
+ * @Description Retrieves a coupon owned by the given store. Seller-only.
+ * @PermissionLevel Seller (must own storeURL)
  * @Parameters
  *  - couponId: ID of the coupon to be retrieved.
- * @Return Coupon details if found, otherwise undefined.
+ *  - storeURL: String representing the URL of the store, used to verify ownership.
+ * @Return Coupon details if found and owned by the store, otherwise null.
  */
 
-export const getCoupon = async (couponId: string) => {
+export const getCoupon = async (couponId: string, storeURL: string) => {
+    // 認可 + 店舗所有権を集約検証 (IDOR 防御)。認可ガードは try/catch の外。
+    const { store } = await requireStoreOwner(storeURL)
+
     try {
         // Ensure couponId is provided
         if (!couponId) throw new Error('Please provide coupon ID.')
 
         // Retrieve coupon from the database
+        // findUnique は unique フィールドのみ where に取れるため、
+        // storeId との複合スコープには findFirst を使う。
+        const coupon = await db.coupon.findFirst({
+            where: { id: couponId, storeId: store.id },
+        })
+
+        return coupon
+    } catch (error: unknown) {
+        logError('[Coupon:getCoupon] failed to fetch coupon', error)
+
+        throw new Error(
+            `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
+}
+
+/**
+ * @Function getCouponAsAdmin
+ * @Description Retrieves any coupon (incl. PLATFORM coupons with storeId = null). Admin-only.
+ * @PermissionLevel Admin only
+ * @Parameters
+ *  - couponId: ID of the coupon to be retrieved.
+ * @Return Coupon details if found, otherwise null.
+ */
+
+export const getCouponAsAdmin = async (couponId: string) => {
+    // 認可ガードは try/catch の外。
+    await requireAdmin()
+
+    try {
+        // Ensure couponId is provided
+        if (!couponId) throw new Error('Please provide coupon ID.')
+
+        // PLATFORM クーポン (storeId = null) を含む全クーポンが対象のため非スコープ
         const coupon = await db.coupon.findUnique({
             where: { id: couponId },
         })
 
         return coupon
     } catch (error: unknown) {
-        logError('[Coupon:getCoupon] failed to fetch coupon', error)
+        logError('[Coupon:getCouponAsAdmin] failed to fetch coupon', error)
 
         throw new Error(
             `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`

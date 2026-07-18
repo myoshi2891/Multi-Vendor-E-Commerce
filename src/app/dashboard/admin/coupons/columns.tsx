@@ -37,7 +37,7 @@ import { Edit, MoreHorizontal, Power, Trash } from 'lucide-react'
 // Queries
 import {
     deleteCouponAsAdmin,
-    getCoupon,
+    getCouponAsAdmin,
     toggleCouponActive,
 } from '@/queries/coupon'
 
@@ -147,7 +147,7 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
                                     <AdminCouponDetails data={coupon} />
                                 </CustomModal>,
                                 async () => ({
-                                    rowData: await getCoupon(coupon.id),
+                                    rowData: await getCouponAsAdmin(coupon.id),
                                 })
                             )
                         }}
