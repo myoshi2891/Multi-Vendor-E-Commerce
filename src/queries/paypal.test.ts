@@ -235,13 +235,19 @@ describe("capturePayPalPayment", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
             // 所有権チェック（IDOR 防止）で利用される findUnique
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            // capture 検証 (金額 = order.total / custom_id = orderId / USD) を通過するよう
+            // total をモック capture 応答の 99.99 に合わせる
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
         });
 
         const mockCaptureResponse = {
             status: "COMPLETED",
             purchase_units: [
                 {
+                    // createPayPalPayment が作成時に orderId を custom_id として格納する
+                    custom_id: "order-001",
                     payments: {
                         captures: [
                             {
@@ -355,6 +361,113 @@ describe("capturePayPalPayment", () => {
                     }),
                 })
             );
+        });
+    });
+
+    describe("capture 検証（金額/相関/通貨/確定済みガード — Stripe パリティ）", () => {
+        // createPayPalPayment が作成時に格納した custom_id (= orderId) /
+        // amount.value (= order.total) / currency_code ("USD") を capture 応答で検証し、
+        // 不一致時は Paid 確定を拒否する。確定済み注文は capture 前に拒否する。
+        const buildCaptureResponse = (overrides: {
+            customId?: string;
+            value?: string;
+            currencyCode?: string;
+        }) => ({
+            status: "COMPLETED",
+            purchase_units: [
+                {
+                    custom_id: overrides.customId ?? "order-001",
+                    payments: {
+                        captures: [
+                            {
+                                amount: {
+                                    value: overrides.value ?? "99.99",
+                                    currency_code:
+                                        overrides.currencyCode ?? "USD",
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+        });
+
+        it("capture 金額が order.total と不一致の場合スローし、Paid 更新しない", async () => {
+            // 安い注文で作った PayPal Order を高い注文の capture に流用する過少支払いベクトル
+            mockFetch.mockResolvedValue({
+                json: () =>
+                    Promise.resolve(buildCaptureResponse({ value: "1.00" })),
+            });
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("PayPal capture amount/currency mismatch.");
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("custom_id が orderId と不一致の場合スローし、Paid 更新しない", async () => {
+            mockFetch.mockResolvedValue({
+                json: () =>
+                    Promise.resolve(
+                        buildCaptureResponse({ customId: "other-order-999" })
+                    ),
+            });
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("PayPal capture does not match order.");
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("currency_code が USD 以外の場合スローし、Paid 更新しない", async () => {
+            mockFetch.mockResolvedValue({
+                json: () =>
+                    Promise.resolve(
+                        buildCaptureResponse({ currencyCode: "JPY" })
+                    ),
+            });
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("PayPal capture amount/currency mismatch.");
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み注文 (Paid) は capture 前に拒否され、PayPal API も呼ばれない", async () => {
+            // 遅延/DENIED capture で Paid/Refunded を Failed へ退行させない settled ガード
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99, paymentStatus: "Paid" })
+            );
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Order payment is already settled.");
+            expect(mockFetch).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("確定済み注文 (Refunded) も capture 前に拒否される", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99, paymentStatus: "Refunded" })
+            );
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Order payment is already settled.");
+            expect(mockFetch).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
         });
     });
 

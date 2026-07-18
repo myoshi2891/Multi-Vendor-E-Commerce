@@ -67,7 +67,7 @@ const SETTLED_PAYMENT_STATUSES: readonly PaymentStatus[] = [
     "ChargeBack",
 ];
 
-const isSettledPaymentStatus = (status: PaymentStatus): boolean =>
+export const isSettledPaymentStatus = (status: PaymentStatus): boolean =>
     SETTLED_PAYMENT_STATUSES.includes(status);
 
 /**

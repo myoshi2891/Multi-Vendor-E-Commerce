@@ -2,7 +2,10 @@
 
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import type { Order } from "@prisma/client";
+// 確定済み決済ステータスの SSOT は stripe.ts（Stripe capture ガードと共有）
+import { isSettledPaymentStatus } from "@/queries/stripe";
 
 /**
  * @Function createPayPalPayment
@@ -180,6 +183,12 @@ export const capturePayPalPayment = async (
     }
     if (!order) throw new Error("Order not found");
 
+    // 確定済み決済は capture 応答で上書きしない（Paid/Refunded を古い/DENIED capture で退行させない）。
+    // Stripe capture (confirmStripePayment) と同一の settled ガード。認可ガード同様 try/catch の外。
+    if (isSettledPaymentStatus(order.paymentStatus)) {
+        throw new Error("Order payment is already settled.");
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
@@ -216,6 +225,29 @@ export const capturePayPalPayment = async (
                     paymentStatus: "Failed",
                 },
             });
+        }
+
+        // capture 応答を作成時の正値 (createPayPalPayment が格納した custom_id = orderId /
+        // amount.value = order.total / currency_code = "USD") と突合し、
+        // 安い注文で作成した PayPal Order を高い注文の capture に流用する過少支払いを拒否する。
+        const capture =
+            captureData.purchase_units?.[0]?.payments?.captures?.[0];
+        const capturedValue = capture?.amount?.value;
+        const capturedCurrency = capture?.amount?.currency_code;
+        // custom_id は purchase_units[0].custom_id（作成時に orderId を格納）に載る。
+        // PayPal の応答バージョンによっては capture 側にも複製されるため両方を許容する。
+        const capturedCustomId =
+            captureData.purchase_units?.[0]?.custom_id ?? capture?.custom_id;
+
+        if (capturedCustomId !== orderId) {
+            throw new Error("PayPal capture does not match order.");
+        }
+        if (
+            capturedCurrency !== "USD" ||
+            capturedValue === undefined ||
+            !new Prisma.Decimal(capturedValue).equals(order.total)
+        ) {
+            throw new Error("PayPal capture amount/currency mismatch.");
         }
 
         // Upsert payment details record
@@ -291,6 +323,15 @@ export const capturePayPalPayment = async (
             );
         } else {
             console.error("Error in capturePayPalPayment:", error);
+        }
+        // capture 検証エラーは意図した拒否のため、汎用メッセージで上書きせず透過させる
+        // (coupon.ts の isGuardError と同じ「意図的 throw の保全」パターン)
+        if (
+            error instanceof Error &&
+            (error.message === "PayPal capture does not match order." ||
+                error.message === "PayPal capture amount/currency mismatch.")
+        ) {
+            throw error;
         }
         throw new Error("Failed to capture PayPal payment");
     }
