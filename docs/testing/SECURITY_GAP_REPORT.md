@@ -280,3 +280,55 @@ Round 13 セキュリティ監査（`plans/audit/findings-18-security-r13.md`）
 - 監査台帳: `plans/audit/findings-18-security-r13.md`（SECURITY-10）
 - 残る同族ギャップ: SECURITY-15（review / shipping-address / product のサーバー側 Zod 検証欠落）は
   plan 060 がクーポンで確立するパターンの横展開 follow-up として deferred
+
+---
+
+## 9. 追加修正（2026-07-18）— PayPal capture の検証欠落（plan 059 / SECURITY-12・13）
+
+### 9.1 発見
+
+Round 13 セキュリティ監査で特定。Stripe capture（`confirmStripePayment`）は確定済み注文の拒否 +
+PaymentIntent の `metadata.orderId` / `amount` / `currency` 突合を行うのに対し、
+`capturePayPalPayment` は所有権チェック後、capture 応答の `status` のみで `Paid` を確定していた。
+
+- **SECURITY-12（過少支払い）**: capture は `orderId`（サーバー供給）と `paymentId`
+  （クライアント供給）を緩く結合するだけのため、安い注文で作成した PayPal Order を
+  高い注文の capture に流用すると、過少支払いで高い注文が `Paid` になる。
+- **SECURITY-13（確定済み退行）**: 遅延 / `DENIED` capture が非 `COMPLETED` 分岐で
+  `paymentStatus: "Failed"` を無条件書き込みし、`Paid` / `Refunded` を退行させられる。
+
+### 9.2 修正（コミット `6a31da1`）
+
+- `src/queries/stripe.ts`: `isSettledPaymentStatus` を export（唯一の変更・ロジック不変）。
+  確定済みステータス（Paid/Refunded/PartiallyRefunded/ChargeBack）の SSOT を両決済で共有。
+- `src/queries/paypal.ts`:
+  - capture フェッチ前（try 外・認可ガードと同じ領域）に settled ガードを追加 —
+    確定済み注文は `"Order payment is already settled."` で PayPal API 呼び出し前に拒否。
+  - `Paid` 確定前に、作成時の正値（`createPayPalPayment` が格納した
+    `purchase_units[0].custom_id = orderId` / `amount.value = order.total` /
+    `currency_code = "USD"`）と capture 応答を突合。金額比較は float `===` ではなく
+    `new Prisma.Decimal(capturedValue).equals(order.total)`。不一致はすべて throw で
+    `paymentDetails.upsert` / `order.update` に到達しない。
+  - 検証エラーは catch の汎用 `"Failed to capture PayPal payment"` で上書きせず透過
+    （coupon.ts `isGuardError` と同じ意図的 throw の保全パターン）。
+
+### 9.3 追加テスト
+
+`paypal.test.ts` 15 → 20（+5。full suite 1707 → 1712 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| 金額不一致（value=1.00 ≠ total=99.99） | `"PayPal capture amount/currency mismatch."` スロー + upsert/update 非呼び出し |
+| custom_id 不一致 | `"PayPal capture does not match order."` スロー + 書き込みなし |
+| 通貨不一致（JPY） | mismatch スロー + 書き込みなし |
+| 確定済み（Paid） | `"Order payment is already settled."` スロー + **fetch 自体が非呼び出し** |
+| 確定済み（Refunded） | 同上 |
+
+既存 happy path モックには `custom_id: "order-001"` と `total: 99.99` の整合を追加（挙動不変）。
+
+### 9.4 関連
+
+- 実行プラン: [`plans/059-paypal-capture-verification.md`](../../plans/059-paypal-capture-verification.md)
+- 同族の残ギャップ: **SECURITY-17**（webhook `src/app/api/webhooks/paypal/route.ts` の
+  無条件ステータス上書き）は deferred — 対応時は本修正で export した
+  `isSettledPaymentStatus` を再利用する（plan 059 Maintenance notes 参照）。

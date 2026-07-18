@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1707 passed / 1710 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 058 getCoupon IDOR 修正時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1712 passed / 1715 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 059 PayPal capture 検証時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1576,3 +1576,30 @@ plan 058（`getCoupon` cross-store IDOR read 修正）を dev に順次コミッ
 | テスト総数 | 1699 passed / 1702 total | **1707 passed / 1710 total** |
 | スイート数 | 174 | **174**（変化なし） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### improve Round 13 P1 第2弾: plan 059（2026-07-18）
+
+#### 概要
+
+PayPal capture 経路を Stripe capture と同水準のガードに引き上げた（plan 059 / SECURITY-12・13）。
+過少支払いによる Paid 化と、遅延/DENIED capture による確定済みステータスの退行を遮断。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.ts` | `isSettledPaymentStatus` を export（ロジック不変・確定済みステータス SSOT の共有） | `6a31da1` |
+| `src/queries/paypal.ts` | capture 前の settled ガード + custom_id/金額（`Prisma.Decimal.equals`）/通貨の突合。検証エラーは catch で透過 | `6a31da1` |
+| `src/queries/paypal.test.ts` | 負系 5 ケース追加（15→20）。既存モックに custom_id・total 整合を追加 | `6a31da1` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1707 passed / 1710 total | **1712 passed / 1715 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §9
