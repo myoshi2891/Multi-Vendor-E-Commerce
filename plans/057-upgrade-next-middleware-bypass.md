@@ -237,6 +237,47 @@ Stop and report if:
 
 ## Maintenance notes
 
+### Correction (2026-07-19): the "Latest version" command is not pinned to the 16.x line
+
+This plan is DONE; the steps are left as the historical record. This note corrects one row of the
+**Commands you will need** table so that anyone re-running the recipe (or copying it into a future
+upgrade plan) does not get bitten.
+
+**The defect.** The row reads:
+
+| Purpose | Command | Expected |
+|---|---|---|
+| Latest version | `bun info next version` | prints latest 16.x |
+
+`bun info next version` resolves the **`latest` dist-tag — whichever major that happens to be**. The
+Expected column claims the 16.x line specifically. The two are not the same query.
+
+Today they coincide, so the row passes by luck: `bun info next version` → `16.2.10`, identical to
+`npm view next version`, and `bun info next dist-tags` confirms `"latest": "16.2.10"`. **Once Next.js
+17 ships, this command prints 17.x** while the plan tells the reader it is the latest 16.x.
+
+**Why that matters for this plan specifically.** 057 is a *minimal floor-raise off a security
+advisory* — the Scope section restricts the diff to a version bump, and Maintenance notes below
+insist on keeping it version-only. Silently following a `latest` that crossed a major boundary turns
+a patch bump into a major upgrade. It would also break the peer compatibility this plan verified:
+`@clerk/nextjs@7.5.19` peers `^16.1.0-0`, which 17.x does not satisfy.
+
+**Corrected row.** Constrain the query to the major line being patched:
+
+| Purpose | Command | Expected |
+|---|---|---|
+| Latest 16.x version | `bun info 'next@^16' version` | prints the newest 16.x (e.g. `16.2.10`) |
+
+Quote the argument — `^` is a shell history-expansion character in some shells, and the `@` range
+must reach `bun`, not the shell. Verified 2026-07-19 on Bun 1.3.12: `bun info 'next@^16' version` →
+`16.2.10`; the mechanism was cross-checked with `bun info 'next@^15' version` → `15.5.20` (the newest
+15.x, not the global latest), confirming the range constrains the query rather than being ignored.
+
+Generalize this when writing future dependency plans: **an advisory-driven bump should query the
+line it intends to stay on**, not the registry's global `latest`.
+
+### Standing maintenance notes
+
 - **Do not bundle other upgrades.** The `handlebars` CRITICAL (dev-only, DEPS-05) and the Prisma 5→6 major (DEPS-04) are separate, deliberately deferred items — keep this diff version-only.
 - `next-cloudinary`'s missing 16.x peer declaration is a real (pre-existing) latent issue and is entangled with **OI-11**; if it is ever addressed, do it in the OI-11 work, not in a security bump.
 - Watch for the `middleware`→`proxy` migration Next.js is signposting — the repo has a documented decision NOT to rename `src/middleware.ts` until Clerk officially supports `proxy.ts` (`.claude/steering/tech.md`). Do not act on that deprecation warning here.
