@@ -88,8 +88,10 @@ the highest-value, lowest-risk gap immediately.
 
 ## Scope
 
-**In scope** (the only file you should modify):
+**In scope**:
 - `next.config.mjs` — add an `async headers()` block
+- `tests/e2e/security-headers.spec.ts` — exact-value regression guard (approved scope extension;
+  see Test plan)
 
 **Out of scope** (do NOT touch):
 - `src/middleware.ts` — no header logic here.
@@ -161,17 +163,45 @@ export default nextConfig;
 
 ### Step 2: Smoke-check the headers on a running server (report-only if sandbox can't run dev)
 
-Start the dev server (`bun run dev`) and confirm the headers are present:
+Start the dev server (`bun run dev`) and confirm the headers are present **with the exact expected
+values**. A name-only `grep` is not sufficient: it matches `X-Frame-Options: ALLOWALL` just as
+happily as `SAMEORIGIN`, so a weakened value would pass silently. The check below extracts all five
+headers, normalizes only the **name** casing (HTTP header names are case-insensitive; values are
+not — `SAMEORIGIN` must keep its casing), and compares the whole set against the expected set:
 
 ```bash
-curl -sS -D - -o /dev/null http://localhost:3000/ | grep -iE 'x-frame-options|x-content-type-options|referrer-policy|permissions-policy|strict-transport-security'
-curl -sS -D - -o /dev/null http://localhost:3000/checkout | grep -iE 'x-frame-options'
+check_security_headers() {
+  local url="$1" got want
+  got=$(curl -sS -D - -o /dev/null "$url" | tr -d '\r' \
+    | awk 'index($0, ": ") > 0 {
+        name = tolower(substr($0, 1, index($0, ": ") - 1));
+        value = substr($0, index($0, ": ") + 2);
+        if (name ~ /^(x-frame-options|x-content-type-options|referrer-policy|permissions-policy|strict-transport-security)$/)
+          print name ": " value;
+      }' | sort)
+  want=$(printf '%s\n' \
+    'permissions-policy: camera=(), microphone=(), geolocation=()' \
+    'referrer-policy: strict-origin-when-cross-origin' \
+    'strict-transport-security: max-age=63072000; includeSubDomains; preload' \
+    'x-content-type-options: nosniff' \
+    'x-frame-options: SAMEORIGIN' | sort)
+  if [ "$got" = "$want" ]; then
+    echo "OK   $url (5/5 headers match exactly)"
+  else
+    echo "FAIL $url"; diff <(echo "$want") <(echo "$got"); return 1
+  fi
+}
+
+check_security_headers http://localhost:3000/
+check_security_headers http://localhost:3000/checkout
 ```
 
-Expect `X-Frame-Options: SAMEORIGIN` (and the others) on both. `/checkout` will redirect to sign-in
-when unauthenticated — that's fine; the header should still be present on the response. If you
-cannot run the dev server in your environment, record in your report that this smoke check is
-**pending** rather than skipping it silently.
+Both must print `OK ... (5/5 headers match exactly)`. A missing header, an extra-but-wrong value, or
+a typo all surface as a `diff` showing exactly which line differs. `/checkout` will redirect to
+sign-in when unauthenticated — that's fine; the headers should still be present on that redirect
+response (do **not** add `-L`, so the redirect's own headers are what gets checked). If you cannot
+run the dev server in your environment, record in your report that this smoke check is **pending**
+rather than skipping it silently.
 
 > HSTS only takes effect over HTTPS in production; on local `http://localhost` the header is sent
 > but browsers ignore it. That is expected — do not try to "fix" it locally.
@@ -179,25 +209,39 @@ cannot run the dev server in your environment, record in your report that this s
 ## Test plan
 
 - No unit test framework exists for Next.js response headers in this repo; verification is the
-  config-parses check (Step 1) plus the curl smoke (Step 2).
-- If you want a regression guard, an optional Playwright check under `tests/e2e/` asserting
-  `response.headers()['x-frame-options'] === 'SAMEORIGIN'` on `/` is acceptable **but out of the
-  minimal scope** — if you add one, note it in your report; do not let it expand the diff into test
-  infra changes.
+  config-parses check (Step 1) plus the exact-value curl smoke (Step 2).
+- **Regression guard (added, approved scope extension)**: `tests/e2e/security-headers.spec.ts`
+  asserts all five headers' exact values on `/` and `/checkout`. It uses the `request`
+  (APIRequestContext) fixture rather than `page` — no DOM rendering is needed — with
+  `maxRedirects: 0` so the `/checkout` redirect response's own headers are what gets asserted.
+  Playwright lowercases header names in `response.headers()`, so the expectation map is keyed in
+  lowercase. The spec is Clerk-independent and therefore runs in all environments. No test-infra
+  changes were required.
 
 ## Done criteria
 
 ALL must hold:
 
-- [ ] `next.config.mjs` has an `async headers()` returning the five headers above for `source: '/:path*'`
-- [ ] `reactStrictMode: false` and the `images.remotePatterns` block are unchanged
-- [ ] `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"` prints `function`
-- [ ] `bun run lint` exits 0
-- [ ] Curl smoke shows `X-Frame-Options: SAMEORIGIN` on `/` and `/checkout` (or the check is
-      explicitly flagged pending in the report)
-- [ ] No `Content-Security-Policy` (enforcing) header was added
-- [ ] No files other than `next.config.mjs` are modified (`git status`)
-- [ ] `plans/README.md` status row for 061 updated
+- [x] `next.config.mjs` has an `async headers()` returning the five headers above for `source: '/:path*'`
+- [x] `reactStrictMode: false` and the `images.remotePatterns` block are unchanged
+- [x] `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"` prints `function`
+- [x] `bun run lint` exits 0
+- [x] **`check_security_headers` reports `5/5 headers match exactly` for BOTH `/` and `/checkout`** —
+      i.e. every one of the following name **and value** pairs is asserted, not merely the presence
+      of a header name (or the check is explicitly flagged pending in the report):
+  - [x] `x-frame-options: SAMEORIGIN`
+  - [x] `x-content-type-options: nosniff`
+  - [x] `referrer-policy: strict-origin-when-cross-origin`
+  - [x] `permissions-policy: camera=(), microphone=(), geolocation=()`
+  - [x] `strict-transport-security: max-age=63072000; includeSubDomains; preload`
+- [x] **`tests/e2e/security-headers.spec.ts` asserts those same five exact values on `/` and
+      `/checkout` and passes** (regression guard, so the values cannot be weakened later without a
+      failing test)
+- [x] No `Content-Security-Policy` (enforcing) header was added
+- [x] Only `next.config.mjs` and `tests/e2e/security-headers.spec.ts` are modified (`git status`) —
+      the E2E spec is an explicitly approved scope extension over the original "next.config.mjs only"
+      constraint
+- [x] `plans/README.md` status row for 061 updated
 
 ## STOP conditions
 

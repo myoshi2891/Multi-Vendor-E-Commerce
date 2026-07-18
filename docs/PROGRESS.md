@@ -1638,3 +1638,44 @@ PayPal capture 経路を Stripe capture と同水準のガードに引き上げ�
 | 型エラー | 0 件 | **0 件** |
 
 詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §10
+
+---
+
+### improve Round 13 P2 — レスポンス強化ヘッダ + 検索 route の error.message 漏洩停止 (2026-07-18)
+
+#### 概要
+
+security 分類の P2 プラン 2 本（061 / 062）を TDD（Red→Green）で実装。いずれも
+未認証クライアントに対する露出面を塞ぐ変更で、相互依存はない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/security-headers.spec.ts` | 新規。5 ヘッダの**値**を `/` と `/checkout` で厳密アサート（Red 確認済み） | `4e2c4fa` |
+| `next.config.mjs` | `async headers()` で全ルート（`/:path*`）へ 5 ヘッダを付与 | `afd22b3` |
+| `src/app/api/index-products/route.test.ts` | POST/GET の 500 分岐テスト +2（Red 時に漏洩を実証） | `5ef0dfe` |
+| `src/app/api/index-products/route.ts` | catch 2 か所を `unknown` + 固定 `"Internal Server Error"` へ。JSDoc も同期 | `492e9ac` |
+
+#### 設計上の要点
+
+- **ヘッダは名前ではなく値をアサートする**: `grep -iE 'x-frame-options|...'` 方式ではヘッダ名の
+  存在しか見ておらず、`X-Frame-Options: ALLOWALL` のような値の緩和を検知できない。E2E と
+  curl smoke の双方で 5 値すべてを厳密比較する方式に統一した。
+- **500 分岐への到達方法**: `route.ts` は入れ子 try/catch で、内側 catch のフォールバック
+  `findMany` は try で包まれていない。よってモックを 2 回 reject させると outer catch へ伝播し、
+  route を改変せずに 500 を踏める。
+- **CSP は意図的に対象外**: Clerk / Stripe / PayPal / Cloudinary の allowlist と Report-Only
+  ロールアウトが必要なため、SECURITY-06 の CSP 分は継続課題として残す。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1717 passed / 1720 total | **1719 passed / 1722 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| Playwright E2E スペック | 9 | **10**（security-headers 追加・3 ブラウザ 6/6 pass） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+検証: curl 厳密値 smoke が `/` `/checkout` 両方で 5/5 完全一致を報告。

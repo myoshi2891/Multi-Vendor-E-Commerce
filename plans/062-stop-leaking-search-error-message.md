@@ -164,15 +164,16 @@ new cases.
 
 ALL must hold:
 
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `grep -n "error: any" src/app/api/index-products/route.ts` → no matches
-- [ ] `grep -n "error.message" src/app/api/index-products/route.ts` → no matches (client response no
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `grep -n "error: any" src/app/api/index-products/route.ts` → no matches
+- [x] `grep -n "error.message" src/app/api/index-products/route.ts` → no matches (client response no
       longer carries the raw message)
-- [ ] Both handlers return `{ error: "Internal Server Error" }` with status 500 on failure
-- [ ] `bun run test -- src/app/api/index-products/route.test.ts` passes with the two new 500 tests
-- [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `plans/README.md` status row for 062 updated
+- [x] Both handlers return `{ error: "Internal Server Error" }` with status 500 on failure
+- [x] `bun run test -- src/app/api/index-products/route.test.ts` passes with the two new 500 tests
+      (9/9)
+- [x] `bun run lint` exits 0
+- [x] No files outside the in-scope list are modified (`git status`)
+- [x] `plans/README.md` status row for 062 updated
 
 ## STOP conditions
 

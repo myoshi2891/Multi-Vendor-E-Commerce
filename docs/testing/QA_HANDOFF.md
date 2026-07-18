@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-18 / **HEAD**: `c67b833`（improve Round 13 P1 全 4 プラン完了 — plan 057: `next` を ~16.2.10 へ bump [`10e35f3`] / plan 058: `getCoupon` IDOR read 修正 [`15c9a96`] / plan 059: PayPal capture の金額/相関/通貨検証 + settled ガード [`6a31da1`] / plan 060: クーポン mutation のサーバー側 Zod 検証 — discount>99 → 負値 total 防止 [`c67b833`]）
+> **最終更新**: 2026-07-18 / **HEAD**: `492e9ac`（improve Round 13 P2 プラン完了 — plan 061: レスポンス強化ヘッダ 5 種を全ルートへ付与 + E2E 厳密値ガード [`4e2c4fa`/`afd22b3`] / plan 062: `index-products` の生 `error.message` 漏洩停止 + `error: any` 撤去 [`5ef0dfe`/`492e9ac`]）。直前: Round 13 P1 全 4 プラン完了 — plan 057: `next` を ~16.2.10 へ bump [`10e35f3`] / plan 058: `getCoupon` IDOR read 修正 [`15c9a96`] / plan 059: PayPal capture の金額/相関/通貨検証 + settled ガード [`6a31da1`] / plan 060: クーポン mutation のサーバー側 Zod 検証 — discount>99 → 負値 total 防止 [`c67b833`]
 
 ---
 
@@ -14,11 +14,11 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1717** passed / 1720 total / 174 スイート（173 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1719** passed / 1722 total / 174 スイート（173 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-17 実測） | Statements 65.65% / Branches 45.33% / Functions 54.36% / Lines 64.61% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
-| Playwright E2E（main） | **9 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip。**2026-07-11 初のフル実測（3 ブラウザ 111 テスト / `run-local.sh` + `--global-timeout=3600000` / 25.5m）: 52 passed / 17 failed / 39 skipped / 3 did not run** — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト単一原因で全滅（**plan 042 で修復予定**。skip 39 の内訳 = 静的 18 + a11y/visual の chromium 限定 14 + firefox ローカルゲート 7。詳細: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)） |
+| Playwright E2E（main） | **10 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / messages / layout-chrome / **security-headers** 🆕 2026-07-18 plan 061）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip。**2026-07-11 初のフル実測（3 ブラウザ 111 テスト / `run-local.sh` + `--global-timeout=3600000` / 25.5m）: 52 passed / 17 failed / 39 skipped / 3 did not run** — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト単一原因で全滅（**plan 042 で修復予定**。skip 39 の内訳 = 静的 18 + a11y/visual の chromium 限定 14 + firefox ローカルゲート 7。詳細: [`plans/audit/findings-16-e2e-coverage.md`](../../plans/audit/findings-16-e2e-coverage.md)）。**2026-07-18: `security-headers.spec.ts` を 3 ブラウザ実測で 6/6 pass**（Clerk 非依存・`request` フィクスチャのみ使用のため常時実行可能） |
 | Playwright Visual | **2 スペック**（cart / checkout）。2026-07-11 実測: **3 テストともベースライン陳腐化で failed**（cart-empty は高さ 720→1071px。plan 043 で目視ゲート付き再撮影予定） |
 | Playwright a11y | **4 スペック**（sign-in / seller-apply / checkout / profile）。2026-07-11 実測: seller-apply のみ passed。sign-in は**実 WCAG 違反 svg-img-alt**（フッター SendIcon — plan 042 で是正）、checkout / profile は signIn ドリフトで fail |
 | 型エラー | **0 件** |

@@ -12,6 +12,16 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1719 passed / 1722 total across 174 suites (3 skipped), as of 2026-07-18.
+  Two security regressions from plan 062 (+2, no new suites). `index-products/route.test.ts` (+2)
+  pins both handlers' 500 branch to a fixed `{ error: "Internal Server Error" }` body: the previous
+  `catch (error: any)` returned raw `error.message`, exposing internal detail (DB driver text,
+  connection host/port) to unauthenticated clients. The tests reach the outer catch by rejecting the
+  mocked `db.product.findMany` twice — the fallback `contains` query inside the inner catch is not
+  itself wrapped, so the second rejection propagates. A new Playwright spec
+  `tests/e2e/security-headers.spec.ts` (2 tests × 3 browsers) asserts the exact values of the five
+  response-hardening headers added by plan 061 on `/` and `/checkout`; asserting values rather than
+  header names is what catches a weakened setting (e.g. `SAMEORIGIN` → `ALLOWALL`).
 - 1717 passed / 1720 total across 174 suites (3 skipped), as of 2026-07-18.
   Ten regressions from the CodeRabbit local review (+10, no new suites). `place-order.test.tsx`
   (+1) pins the guard to order confirmation: a failing `emptyUserCart()` cleanup must not release
