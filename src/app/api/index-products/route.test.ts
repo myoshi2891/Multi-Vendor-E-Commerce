@@ -208,3 +208,66 @@ describe("GET /api/index-products - ページネーション正規化", () => {
         expect(body).toMatchObject({ page: 10_000, limit: 10 });
     });
 });
+
+describe("index-products - 500 レスポンスの情報漏洩防止", () => {
+    // DB ドライバのメッセージを模した「クライアントへ漏れてはいけない」文字列
+    const LEAKY_MESSAGE = "connect ECONNREFUSED 10.0.0.5:5432";
+
+    // fulltext とフォールバックの両方を失敗させると外側の catch へ伝播する
+    // （フォールバック側の findMany は try で包まれていないため）
+
+    it("POST は内部エラーメッセージを含まない汎用 500 を返す", async () => {
+        mockProductFindMany
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE))
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE));
+
+        const consoleWarnSpy = jest
+            .spyOn(console, "warn")
+            .mockImplementation(() => {});
+        const consoleErrorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        const response = await POST(createPostRequest({ query: "iPhone" }));
+        const body = await response.json();
+
+        expect(response.status).toBe(500);
+        expect(body).toEqual({ error: "Internal Server Error" });
+        expect(JSON.stringify(body)).not.toContain(LEAKY_MESSAGE);
+        // サーバー側では完全なエラーを保持していること（デバッグ性の担保）
+        expect(consoleErrorSpy).toHaveBeenCalled();
+
+        consoleWarnSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+    });
+
+    it("GET は内部エラーメッセージを含まない汎用 500 を返す", async () => {
+        // GET は Promise.all([findMany, count]) なので count も同数 reject させる
+        mockProductFindMany
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE))
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE));
+        mockProductCount
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE))
+            .mockRejectedValueOnce(new Error(LEAKY_MESSAGE));
+
+        const consoleWarnSpy = jest
+            .spyOn(console, "warn")
+            .mockImplementation(() => {});
+        const consoleErrorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        const response = await GET(
+            createGetRequest(new URLSearchParams({ search: "Laptop" }))
+        );
+        const body = await response.json();
+
+        expect(response.status).toBe(500);
+        expect(body).toEqual({ error: "Internal Server Error" });
+        expect(JSON.stringify(body)).not.toContain(LEAKY_MESSAGE);
+        expect(consoleErrorSpy).toHaveBeenCalled();
+
+        consoleWarnSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+    });
+});
