@@ -197,8 +197,8 @@ const createData = {
     phone: store.phone || "",
     logo: store.logo || "",
     cover: store.cover || "",
-    featured: false,          // 特権: 常にサーバー既定
-    status: "PENDING",        // 特権: 常にサーバー既定（admin のみ変更可）
+    featured: false,                 // privileged: always server-set
+    status: StoreStatus.PENDING,     // privileged: always server-set (admin-only mutation)
     defaultShippingService: store.defaultShippingService || "International Delivery",
     returnPolicy: store.returnPolicy || "Return in 30 days.",
     userId: user.id,
@@ -218,7 +218,7 @@ data: {
     email: store.email!,
     url: store.url!,
     featured: false,
-    status: "PENDING",   // 申請は必ず PENDING（admin レビュー必須）
+    status: StoreStatus.PENDING,   // applications are always PENDING (admin review required)
     defaultShippingService: store.defaultShippingService || "International Delivery",
     returnPolicy: store.returnPolicy || "Return in 30 days.",
     userId: user.id,
@@ -282,6 +282,33 @@ Stop and report if:
 - You find another server action (outside `store.ts`) that also spreads client store data into a create/update — note it but do not fix it here (report for a follow-up plan).
 
 ## Maintenance notes
+
+### Correction (2026-07-19): Step 3 / Step 4 `status` now uses `StoreStatus.PENDING`
+
+This plan is DONE, but the body was corrected because of a **technical fact that was wrong at
+authoring time**. The history is preserved in this note.
+
+- **Before**: Step 3 / Step 4 code snippets used `status: "PENDING"` (a bare string literal).
+- **After**: both use `status: StoreStatus.PENDING` (the enum from `@/lib/types`).
+
+**Why it was wrong (the two sites fail for different reasons)**:
+
+1. **Step 3 does not typecheck.** It builds a **standalone object literal**
+   (`const createData = { ... }`) and passes it to `db.store.create({ data: createData })` later.
+   A standalone literal has no contextual type, so `"PENDING"` **widens to `string`**, which is not
+   assignable to `StoreStatus`. As written, the snippet fails Step 3's own verification gate
+   (`bunx tsc --noEmit` → exit 0).
+2. **Step 4 does typecheck.** It writes `data: { ... }` **inline**, so contextual typing applies and
+   `"PENDING"` keeps its literal type. That site was not a type error but was **inconsistent with
+   Step 3**, so it was corrected for uniformity.
+
+**What shipped**: the merged code uses the enum at both sites — see the `upsertStore` and
+`applySeller` create branches in [`src/queries/store.ts`](../src/queries/store.ts), both
+`status: StoreStatus.PENDING`. `StoreStatus` is imported via
+`import { ..., StoreStatus, ... } from "@/lib/types"`. This correction aligns the **plan text with
+the implementation**; no source change accompanies it.
+
+### Standing maintenance notes
 
 - If a new seller-editable Store column is added to `prisma/schema.prisma`, add it to `SELLER_EDITABLE_STORE_FIELDS` — otherwise seller edits to it silently no-op.
 - If a new **privileged** column is added, ensure it is NOT in the allowlist and is server-set on create.
