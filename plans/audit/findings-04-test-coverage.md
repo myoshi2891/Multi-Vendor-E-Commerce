@@ -17,7 +17,12 @@
 > [`findings-12-test-coverage.md`](findings-12-test-coverage.md)（reconcile 表 TESTS-01 行 →
 > 「部分解消」/ 残余は **plan 030**）を正とする。
 
-- **Evidence（訂正後）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし（`git ls-tree f9752c0 tests/component/` および co-located の双方で確認）。**現 HEAD でも未カバー**。
+- **Evidence（訂正後）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし（`git ls-tree f9752c0 tests/component/` および co-located の双方で確認 — **監査時点 HEAD `f9752c0` / 2026-07-03**）。**2026-07-18 の再測定時点でも未カバー**。
+
+  > **「現 HEAD」と書かないこと**: この finding は複数ラウンドにまたがって参照される
+  > ため、日付の無い「現 HEAD」は読んだ時点によって指すコミットが変わり、いつの
+  > 測定なのか復元できなくなる。カバレッジ状態を更新する際は**必ず測定日を添える**
+  > こと（監査時点の値は上書きせず、測定日付きの行を足す）。
 - **Evidence（誤りとして撤回）**: ~~`cards/place-order.tsx`（`placeOrder`）~~ — 監査時点で `tests/component/store/place-order-card.test.tsx` によりカバー済み。
 - **Impact**: capture をいつ呼ぶか・失敗ハンドリング・二重送信ガードを担うクライアント層の回帰が無検出で通る。唯一の演習は間欠ハングが追跡中の E2E のみ（ただし place-order の再入ガードは component テストで演習済み）。
 - **Effort**: L / **Risk**: LOW / **Confidence**: HIGH（訂正後の 4 ファイルについて）

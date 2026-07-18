@@ -6,6 +6,20 @@
 
 ### [DEPS-01] `@clerk/nextjs` を auth-bypass アドバイザリ圏外へ更新（7.0.7 → 7.5.x）
 
+> **✅ 解消済み（実測 2026-07-18）**: `package.json` は `"@clerk/nextjs": "^7.5.0"`、
+> `@clerk/testing` は `^2.2.9`。GHSA-vqx2-fgx2-5wq9 の影響範囲（`>=7.0.0 <=7.2.3`）の
+> **外**にあり、本 finding はクローズ済み。実施は [plan 004](../004-upgrade-clerk-nextjs-security.md)（DONE）。
+>
+> DEPS-02 の「✅ ゲート通過（実測 2026-07-17）」は**この DEPS-01 のバンプが完了して
+> いることを前提とした記述**であり、以下の Evidence（`^7.0.7` が現状という記述）と
+> 矛盾していた。以下は**バンプ前＝監査時点（2026-07-03 / HEAD `f9752c0`）の記録**
+> として読むこと。
+>
+> なお下の TODO(needs-detail)「バンプ先の具体的なピンが未確定」も**解決済み**:
+> 範囲指定 `^7.5.0` のまま記録する形を採り、`bun.lock` 上の解決版が両アドバイザリの
+> 修正版を満たすことを確認済み（`js-cookie` は `@clerk/shared@4.25.4` 経由で `3.0.7`）。
+> 厳密ピンは採用していない。
+
 - **Evidence**:
   - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <=7.2.3、修正 7.2.4+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
   - `src/middleware.ts:6-13` — アドバイザリが標的とするまさにこのパターン: `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`, `/dashboard/(.*)`, `/checkout`, `/profile`, `/profile/(.*)` を保護。
