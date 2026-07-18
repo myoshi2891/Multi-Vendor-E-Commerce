@@ -35,16 +35,35 @@
    > Time-of-use）を残す**。チェック時点で :3000 が空いていても、Playwright が webServer を
    > 起動するまでの間に別プロセス（`docker compose up` の遅延起動、エディタの dev サーバー等）が
    > :3000 を掴めば、結局 `reuseExistingServer: !CI` が他人のサーバーを再利用してしまう。
-   > チェックは**窓を狭めるだけで塞がない**。方針をユーザーに確認すること:
-   > - **(A) 残存を許容**（本プランの現案）: 事前チェックのみ。実行者が手順を踏めば
-   >   ほぼ防げる。`reuseExistingServer: !CI` のローカル高速反復の利便を維持できる。
-   > - **(B) `reuseExistingServer: false` で根治**: Playwright に必ず自前の webServer を
-   >   起動させる。:3000 が占有されていれば起動自体が失敗するため、他環境の再利用は
-   >   **構造的に不可能**になる。代償はローカルでの反復速度（毎回 build/起動が走る）と、
-   >   現 Out of scope（`reuseExistingServer` の値変更）の見直し。
+   > チェックは**窓を狭めるだけで塞がない**。
    >
-   > 判定が出るまでは (A) の実装で進めてよいが、その場合も残存リスクとして
-   > Maintenance notes に明記すること（「ガードがあるから安全」と読ませない）。
+   > **解決（2026-07-18 確定）**: 当初は (A) 残存許容 / (B) `reuseExistingServer: false`
+   > で根治、の二択としてユーザー判断待ちにしていたが、**(A) は採らない**。
+   > TOCTOU が残ると、テストが pass しても「意図したアプリ・環境を検証した」保証が
+   > 得られない — グリーンの意味が壊れるため、これは既知リスクとして許容できる
+   > 種類のものではない。一方 (B) を無条件に適用すると素の
+   > `bunx playwright test` でも毎回 build/起動が走り、ローカル反復の利便を失う。
+   >
+   > 二択に見えたのは「設定が実行経路を区別できない」ことが原因なので、
+   > **(C) 実行経路ごとに再利用可否を切り替える**を採用する:
+   >
+   > ```ts
+   > // playwright.config.ts:47
+   > reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE,
+   > ```
+   >
+   > `scripts/e2e/run-local.sh` は `export E2E_NO_REUSE=1` してから Playwright を
+   > 起動する。これにより:
+   >
+   > - **実測を行う run-local.sh 経由では再利用が構造的に不可能**になる。:3000 が
+   >   誰かに掴まれていれば webServer の起動自体が失敗するので、TOCTOU の窓は
+   >   「狭まる」のではなく**閉じる**。事前 `lsof` チェックは、失敗をより読みやすい
+   >   メッセージに変えるための UX 改善として残す（安全性の根拠ではなくなる）。
+   > - **素の `bunx playwright test` は従来どおり**既存 dev サーバーを再利用でき、
+   >   ローカル反復の速度が落ちない。
+   >
+   > これは現 Out of scope の「`reuseExistingServer` の値変更」に触れるため、
+   > Scope を更新すること（値の固定変更ではなく、環境変数による条件化）。
 2. `globalTimeout: 1200s`（20 分）は「概ね pass する」前提の値で、失敗リトライを含む実測
    25.5 分に不足し、`did not run` 打ち切りが発生した。
 
@@ -114,7 +133,11 @@ globalTimeout: 1200 * 1000,
 - `playwright.config.ts`（`globalTimeout` の値とコメントのみ）
 
 **Out of scope**:
-- `reuseExistingServer` の値変更（ローカルの高速反復用途を壊す。ガードは run-local.sh 側で行う）
+- `reuseExistingServer` を**固定値へ**変更すること（`false` 直書きはローカルの高速反復
+  用途を壊す）。**ただし環境変数による条件化は in scope**:
+  `reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE` へ変更し、
+  `run-local.sh` から `E2E_NO_REUSE=1` を立てる（TOCTOU を閉じるための必須変更。
+  Why this matters の解決節を参照）。
 - `workers` / `retries` / `timeout` 等 config の他項目
 - `.github/workflows/` — CI への E2E 導入は別判断（findings-16 Rejected 節参照）
 
@@ -219,11 +242,16 @@ globalTimeout: 3600 * 1000,
 
 - テスト総数が大きく増えた場合（plans 045〜050 の実装後）、`globalTimeout` の再見積りが
   必要になり得る。判断材料はフルラン実測の wall-clock（run-local.sh の出力に表示される）。
-- **本プランの :3000 チェックは TOCTOU を残す**（Why this matters の
-  TODO(needs-detail) 参照）。チェック通過後に :3000 を掴まれた場合は依然として別環境の
-  サーバーが再利用されうるため、「ガードがあるから安全」とは読まないこと。根治は
-  `reuseExistingServer: false`（ユーザー判断待ち）。
-- `reuseExistingServer: !CI` は「ローカル反復では既存 dev サーバーを使い回す」利便のための
-  設定であり、本プランのガードはそれを **run-local.sh 経由の実測時のみ**禁止する構造。
-  素の `bunx playwright test` にはガードが効かない点は既知の制約（実測は必ず
-  run-local.sh 経由で行う運用）。
+- **:3000 の TOCTOU は `E2E_NO_REUSE` で閉じてある**（Why this matters の解決節を参照）。
+  `run-local.sh` が `E2E_NO_REUSE=1` を立て、`reuseExistingServer` が
+  `!CI && !E2E_NO_REUSE` を評価するため、実測経路では再利用が構造的に起こらない。
+  事前 `lsof` チェックは**安全性の根拠ではなく**、占有時のエラーを読みやすくする
+  ためだけに残している — チェックを消しても安全性は変わらないが、失敗メッセージが
+  分かりにくくなる。
+- したがって **`reuseExistingServer` を素の `false` へ書き換えないこと**。素の
+  `bunx playwright test` で毎回 build/起動が走り、ローカル反復が遅くなる。
+  区別すべきは「CI か否か」ではなく「実測経路か反復経路か」であり、それを担うのが
+  `E2E_NO_REUSE` である。
+- 逆に、`run-local.sh` から `E2E_NO_REUSE` の export を外すと TOCTOU が復活する。
+  この 2 つ（config の条件式と run-local.sh の export）は**対で意味を持つ**ので、
+  一方だけを変更しないこと。
