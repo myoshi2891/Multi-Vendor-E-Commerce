@@ -265,22 +265,47 @@ function mockAuthAsAdmin(): void {
 - OrderGroup: `status === "Canceled"`、OrderItem: `status === "Canceled"`（子連動）
 - `Size.quantity` が減算前の値に**復元**されている（例: 8 → decrement 3 → 5 → restock → 8）
 
-**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）— 逐次のみ**
+**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）— 逐次 + 並行**
 Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled)` を
 **2 回逐次**実行し、以下を assert:
 - 2 回とも throw しない（戻り値は両方 `Cancelled` — 関数は遷移スキップ時も status を返す設計）
 - `Size.quantity` の復元は **1 回ぶんのみ**（8 のまま。16 になっていたら二重復元バグ）
 - `Cancelled` → `Refunded` の再遷移でも復元が走らないこと（quantity 不変）を追加 assert
 
-> **並行実行時の二重 restock は本シナリオの対象外（既知の TOCTOU 制約）**。この逐次テストは
-> 「読んで→分岐して→復元する」の *逐次* 冪等性のみを保証する。同一注文への
-> `Promise.all([updateOrderPaymentStatus(...), updateOrderPaymentStatus(...)])` のような
-> **並行**呼び出しでは、両者が「まだ Cancelled でない」を読んでから両者が復元し、二重 restock が
-> 起こりうる（現実装のガードが `SELECT`→分岐→`UPDATE` を単一の条件付き更新に畳んでいない場合）。
-> これを塞ぐには「終端状態への遷移＋在庫復元」を条件付き `updateMany`（`where` に現ステータス条件）
-> や行ロックで原子化する本体修正が必要で、**本プラン（テスト追加のみ）の scope 外**。
-> 並行 restock ガードの実 DB テストは別プラン候補として Maintenance notes / README deferred に記録する
-> （下記参照）。ここで並行テストは書かない（本体が未対応のため意図的に赤くしない）。
+> **並行実行も本シナリオに含める（前提更新 2026-07-19）**。旧版はここで「並行実行時の二重
+> restock は既知の TOCTOU 制約につき対象外」としていたが、その但し書きは
+> **「現実装のガードが `SELECT`→分岐→`UPDATE` を単一の条件付き更新に畳んでいない場合」**という
+> 条件付きで書かれており、**この条件はもはや成立しない**。
+>
+> commit `d0005bb`（*refactor(order): make restock idempotent with conditional updateMany*）が
+> まさにその畳み込みを実装済みである（`src/queries/order.ts` の `updateOrderPaymentStatus`）:
+>
+> - `tx.order.updateMany` の `where` が `paymentStatus: { notIn: [Cancelled, Refunded] }` を持ち、
+>   「非終端 → 終端」の遷移を**単一の原子的 UPDATE** に畳んでいる
+> - `didTransition = transition.count === 1`
+> - 子連動（`orderGroup` / `orderItem` の `updateMany`）と `restockOrderItems` の**両方**が
+>   `if (isCancelOrRefund && didTransition)` の内側にある
+>
+> READ COMMITTED 下では、同一行への並行 `updateMany` は行ロックで直列化される。後発は先発の
+> commit 後に `where` を再評価して `count === 0` となるため、**在庫復元はちょうど 1 回**に定まる。
+> したがって並行テストは「本体未対応ゆえに意図的に赤くする」ものではなく、**緑になることを
+> 期待して書く回帰網**である。
+>
+> 逐次 2 回に加えて、以下を assert すること:
+>
+> ```typescript
+> await Promise.all([
+>     updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled),
+>     updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled),
+> ]);
+> // Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
+> ```
+>
+> **注意**: `Promise.all` の 2 本は同時に接続を要求するため、**接続プールが 2 以上**必要
+> （`jest.integration.config.js` は `maxWorkers: 1` だがこれはプロセス並列度であって
+> 接続数ではない）。プール枯渇でハングした場合は接続文字列の `connection_limit` を確認すること。
+> 万一このテストが赤くなった場合は、テストを緩めるのではなく **`d0005bb` の CAS が退行して
+> いないか**を先に疑い、STOP して報告する（それは本物の回帰である）。
 
 **Scenario 3: Refunded 遷移の子連動**
 `updateOrderPaymentStatus(order.id, PaymentStatus.Refunded)` で
@@ -365,10 +390,15 @@ Stop and report back (do not improvise) if:
   実装変更時に期待値の更新が必要になる（テストが正しく赤くなる、が意図）。
 - plan 027 実行後は `order-placement.test.ts`（減算側）と本ファイル（復元側）で
   在庫整合の両側が閉じる。レビュー時は両ファイルの JSDoc 境界列挙が重複しないことを確認。
-- **並行 restock（TOCTOU）ガードは未カバー**（Scenario 2 の注記参照）。同一注文への並行キャンセルで
-  二重復元が起きうる現実装の制約を塞ぐには、「終端遷移＋在庫復元」を条件付き `updateMany` /
-  行ロックで原子化する**本体修正**が必要。これは別プラン候補として README の deferred に残す
-  （本プランは逐次冪等性のみを固定する）。
-- `updateOrderGroupStatusAsAdmin` の遷移ガードは read-then-act（条件付き updateMany ではない）。
-  並行実行の完全な TOCTOU 耐性はスコープ外とし、逐次 2 回呼び出しの冪等性のみ固定した。
-  並行キャンセルの厳密な検証が必要になったら別プランで扱う。
+- **並行 restock ガードは関数によって状況が異なる**（前提更新 2026-07-19）。旧版はこれを
+  「未カバー・本体未修正」と一律に扱っていたが、実装を確認すると 2 経路で異なる:
+
+  | 関数 | 遷移ガードの形 | 並行時の二重復元 | 本プランでの扱い |
+  |---|---|---|---|
+  | `updateOrderPaymentStatus` | **条件付き `updateMany`（CAS）** — `where` に `paymentStatus: { notIn: [...] }`、復元は `transition.count === 1` の内側（commit `d0005bb`） | 起きない（行ロックで直列化され後発は `count === 0`） | **Scenario 2 で並行テストを書く**（緑を期待） |
+  | `updateOrderGroupStatusAsAdmin` | **read-then-act** — `findUnique` で `prev.status` を読んでから分岐して `update`（`order.ts:441-471`） | **起きうる**（`findUnique` は行ロックを取らないため両者が非終端を読める） | 逐次冪等性のみ固定。並行は対象外 |
+
+  したがって「本体が未対応だから並行テストを書かない」は `updateOrderPaymentStatus` には
+  当てはまらない。group-level 側のみ、条件付き `updateMany` への統一（`updateOrderPaymentStatus`
+  と同型の修正）が**本体修正**として残っており、これを別プラン候補として README の deferred に残す。
+  本プランはテスト追加のみのため group-level の本体修正は行わない。
