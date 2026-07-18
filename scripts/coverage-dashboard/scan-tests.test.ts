@@ -121,6 +121,34 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(4);
     });
 
+    // 空テーブルは実行時に 0 件へ展開される（Jest では空 each 自体がエラー扱い）。
+    // 配列の開き括弧自身を「内容あり」と見なすと 1 件に化け、testCount が過大になる。
+    it("空の it.each([]) は 0 件として数える", async () => {
+        root = makeFixture({
+            "src/queries/empty-each.test.ts": `
+                it.each([])('never runs', () => {});
+                it('regular', () => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 0 (空の it.each) + 1 (通常の it) = 1
+        expect(results[0]?.testCount).toBe(1);
+    });
+
+    it("空要素を含む入れ子 it.each([[]]) は 1 件として数える", async () => {
+        root = makeFixture({
+            "src/queries/nested-empty-each.test.ts": `
+                it.each([[]])('one empty row', () => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     it("ジェネリクス付き it.each<T>([...]) も展開して数える", async () => {
         // tests/integration/cart-checkout.test.ts が使う形式。
         // 型引数の中に { } や , を含むため、素朴な括弧数えでは誤る。

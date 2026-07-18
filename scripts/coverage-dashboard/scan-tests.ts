@@ -115,8 +115,10 @@ function countArrayElements(content: string, start: number): number {
             continue;
         }
         if (c === "[" || c === "{" || c === "(") {
+            // 配列そのものの開き括弧（depth 0 → 1）は「要素」ではない。
+            // ここで hasContent を立てると `it.each([])` が 1 件に化ける。
+            if (depth >= 1) hasContent = true;
             depth++;
-            hasContent = true;
         } else if (c === "]" || c === "}" || c === ")") {
             depth--;
             if (depth === 0) {
