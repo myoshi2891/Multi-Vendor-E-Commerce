@@ -139,6 +139,35 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
 2. **SubCategory の処遇**: `Category` へ統合して `SubCategory` テーブルを廃止するか、
    ビュー/互換レイヤーとして残すか。統合する場合の data migration 手順
    （SubCategory 行 → Category 行 + parentId 設定、id 衝突の扱い）を具体化する。
+
+   > **統合を採る場合、`url`（slug）衝突の解決方式を設計上の必須論点として決めること。**
+   > これは「移行時に気をつける」レベルの話ではなく、**制約の意味が変わる**ことによる構造的な問題:
+   >
+   > - **現状**: `Category.url @unique` と `SubCategory.url @unique` は**別テーブル上の別制約**。
+   >   したがって Category `camera` と SubCategory `camera` は**現在まったく合法に共存できる**。
+   > - **統合後**: 単一の `Category.url @unique` が両者の**和集合**を覆う。共存していたペアは
+   >   そのまま P2002 となり、**data migration が途中で落ちる**。
+   >
+   > `id` 衝突（上記の括弧内）は `@default(uuid())` のため実質起こらない。**実際に起きるのは
+   > slug 衝突**であり、現状の問い立てはあり得ない衝突を挙げてあり得る衝突を落としている。
+   >
+   > spike で決めるべきこと:
+   >
+   > 1. **一意性のスコープ**: グローバル一意（`url @unique` を維持）か、親内一意
+   >    （`@@unique([parentId, url])`）か。後者は `/browse/electronics/camera` のような
+   >    パス全体方式（問い 4）と整合し、衝突自体が消える。前者を採るなら 2. が必須。
+   > 2. **衝突時のリネーム規則**: 決定論的で冪等な規則を定めること（例: 子側に親 slug を
+   >    前置して `electronics-camera`、それでも衝突する場合の連番付与規則）。移行を再実行しても
+   >    同じ結果になることを要件に含める。
+   > 3. **リネームした slug の URL 後方互換**: リネームは既存 URL を壊すため、問い 4 の
+   >    リダイレクト戦略と**同じ表**で管理する（旧 slug → 新 slug の対応表を移行の成果物とする）。
+   > 4. **事前計測**: 移行を書く前に、実データで衝突件数を数えるクエリを ADR に載せる:
+   >    `SELECT url FROM "Category" INTERSECT SELECT url FROM "SubCategory";`
+   >    件数 0 でも規則は決めておくこと（将来の admin 入力で発生し得るため）。
+   >
+   > **ローカル開発では再現しない点に注意**: `bun run seed:luxury` の生成データは
+   > `lux-<category>-<subcategory>` という前置命名（例: `lux-watches` / `lux-watches-sport`）を
+   > 採っており、**偶然**衝突しない。シードで通ったことを衝突が無い証拠として扱わないこと。
 3. **Product FK の移行**: `categoryId`（必須）+ `subCategoryId`（必須）→ 「リーフノード 1 FK」へ
    どう移すか。中間段階（旧 FK と新 FK の並走期間）を設けるか、一括切替か。
    既存クエリ（`getProducts` の category/subCategory フィルタ、`getAllCategories` の
@@ -196,6 +225,9 @@ ALL を満たすこと:
 
 - [ ] `docs/design/category-tree/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] ADR（ツリー表現方式）が MADR 形式で存在し、3方式の比較を含む
+- [ ] **統合方式を採る場合**、ADR が slug 一意性のスコープ（グローバル一意 vs
+      `@@unique([parentId, url])`）を明示し、グローバル一意を選ぶなら決定論的なリネーム規則と
+      旧→新 slug 対応表の生成方針、および衝突件数の事前計測クエリを含む（Open question 2）
 - [ ] `plans/0NN-implement-category-tree.md` が存在し、テンプレート準拠で zero-context executor が実行可能
 - [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 013 ステータス行を更新し、後続プランを索引に追加した
