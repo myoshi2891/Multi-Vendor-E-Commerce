@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1717 passed / 1720 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 060 クーポン server-side Zod 検証時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1738 passed / 1741 total / 175 スイート（3 skipped）** — 2026-07-18 実測（CodeRabbit ローカルレビュー Phase 1 完了時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1679,3 +1679,46 @@ security 分類の P2 プラン 2 本（061 / 062）を TDD（Red→Green）で�
 | 型エラー | 0 件 | **0 件** |
 
 検証: curl 厳密値 smoke が `/` `/checkout` 両方で 5/5 完全一致を報告。
+
+---
+
+### CodeRabbit ローカルレビュー対応 Phase 1（ソースコード実バグ 5 件）(2026-07-18)
+
+#### 概要
+
+VSCode CodeRabbit 拡張のローカルレビュー 50 件のうち、ソースコードに対する
+指摘 5 件を精査して修正した。残る 45 件（`plans/**` 40 件・`docs/`・`.agent/` 5 件）は
+Phase 3-4 として別途対応する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `.coderabbit.yaml` | 設定コメント（plans/ 全除外）と実装（1 ファイルのみ除外）の食い違いを解消するため廃止 | `f088dca` |
+| `scripts/coverage-dashboard/scan-tests.ts` | 開き括弧自身が `hasContent` を立て `it.each([])` を 1 件と数えていたのを是正 | `b5eb8d1` |
+| `src/components/store/cards/place-order.tsx` | 無保護だった同期 `emptyCart()` を try/catch で包み、成立済み注文の遷移を継続 | `f4aba5f` |
+| `src/lib/db-retry.ts` (新規) | `retryOnSerializationFailure`（P2034 限定・指数バックオフ + ジッター） | `d8108b5` |
+| `src/queries/user.ts` | `saveUserCart` の Serializable transaction に P2034 再試行を適用 | `e5903c8` |
+| `src/queries/stripe.ts` | `paymentIntents.create` に orderId + 金額由来の冪等キーを付与 | `ae585a7` |
+| `src/queries/stripe.ts` / `src/lib/payment-status.ts` | 決済状態更新を単一 transaction + 条件付き update（CAS）へ変更。`SETTLED_PAYMENT_STATUSES` を公開 | `c77cdd7` |
+
+#### 判断メモ
+
+- **`src/queries/store.ts:436` は修正しない**。「200 件超が無告知で閲覧不能」という指摘の
+  前提が誤りで、呼び出し元 `orders/page.tsx` に `Showing up to the latest {STORE_ORDERS_MAX}
+  orders.` の告知があり、`store-constants.ts` にも PERF-04 follow-up と明記されている。
+- **冪等キーに金額を含める**のは、Stripe が「同一キー・異なるパラメータ」の再送をエラーで
+  拒否するため。`orderId` だけを鍵にすると、クーポン適用等で合計が正当に変わった時点で
+  決済が永久に通らなくなる。
+- **CAS の相手は webhook**。`src/app/api/webhooks/stripe/route.ts` は `$transaction` を
+  使っているが条件付き update ではないため、server action 側で「未確定であること」を
+  where に含めて退行を防ぐ設計とした。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1719 passed / 1722 total | **1738 passed / 1741 total** |
+| スイート数 | 174 | **175**（`src/lib/db-retry.test.ts` 新設） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |

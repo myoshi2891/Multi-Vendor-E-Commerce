@@ -12,6 +12,25 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1738 passed / 1741 total across 175 suites (3 skipped), as of 2026-07-18.
+  Nineteen regressions from the CodeRabbit local review, Phase 1 (+19, one new suite).
+  `src/lib/db-retry.test.ts` is the new suite (+8): `saveUserCart` declared
+  `isolationLevel: Serializable` without any retry, which only converts a P2002/P2025 conflict into
+  a P2034 one — the legitimate concurrent request still fails. `retryOnSerializationFailure` retries
+  P2034 with exponential backoff and jitter, and the tests pin that non-P2034 errors are rethrown on
+  the first attempt (retrying a unique-constraint violation only repeats the same failure).
+  `stripe.test.ts` (+6) covers two payment defects: the idempotency tests require a deterministic
+  key derived from order id **and** amount, because Stripe rejects a reused key carrying different
+  parameters — keying on the order alone would permanently block payment after a legitimate total
+  change (coupon). The CAS tests require `PaymentDetails` and `Order` to be updated inside one
+  transaction with `paymentStatus: { notIn: SETTLED }` in the `where`: the previous read-then-act
+  let the Stripe webhook write `Paid` between the guard's read and the action's write, regressing a
+  settled order to `Pending`. `user.test.ts` (+2) asserts the retry is wired through the real
+  transaction. `place-order.test.tsx` (+1) requires navigation to survive a throwing `emptyCart()`
+  — the store is persisted, so the synchronous call can still throw on a storage failure, and an
+  unguarded throw left the user with a placed order, an error toast, no navigation, and a
+  permanently disabled button. `scan-tests.test.ts` (+2) pins `it.each([])` to zero cases; the
+  scanner's opening-bracket branch set `hasContent`, inflating an empty table to one.
 - 1719 passed / 1722 total across 174 suites (3 skipped), as of 2026-07-18.
   Two security regressions from plan 062 (+2, no new suites). `index-products/route.test.ts` (+2)
   pins both handlers' 500 branch to a fixed `{ error: "Internal Server Error" }` body: the previous
