@@ -153,8 +153,31 @@ Subtotal ${subTotal.toFixed(2)} / Shipping Fee +${shippingFees.toFixed(2)} / Tot
 ### Step 2: platform-coupon spec に金額明細 assert を追記する
 
 `tests/e2e/platform-coupon.spec.ts` の既存テスト末尾（`Coupon (${...})` ×2 の確認の後）に
-追加する。**表示金額のハードコードはしない**（seed の価格・配送料・割引率から導出するか、
-DOM から読んだ値の算術不変条件で検証する）。推奨実装:
+追加する。**表示金額のハードコードはしない**。検証の経路は 2 つあり、
+**経路ごとに使うべき算術が違う**ので取り違えないこと:
+
+| 経路 | 何をするか | 使う算術 |
+|---|---|---|
+| **A: 期待値を seed から導出** | seed の価格・配送料・割引率から期待金額を**計算**し、表示と突き合わせる | **`Prisma.Decimal`**（下記） |
+| **B: DOM の算術不変条件**（推奨・以下の実装） | 表示された値どうしの関係（`subtotal + shipping - discount === total` 等）を検証する | **セント整数**（下記） |
+
+> **経路 A を採る場合は `Prisma.Decimal` で計算すること。** これは表示文字列の話ではなく
+> **サーバー側と同じ金額演算**であり、`.claude/steering/tech.md` の規約がそのまま適用される:
+> 金額は `Decimal(12,2)`、演算は `.add()` / `.mul()` / `.sub()` 等の `Prisma.Decimal` メソッド、
+> **中間集計で `.toNumber()` して `number` 同士で加算するのは禁止**（各ステップで IEEE 754 の
+> 丸め誤差が蓄積するため）、`.toNumber()` は**最後の比較境界でのみ**呼ぶ。
+> 割引率の乗算と配送料の加算を挟む本ケースは、まさに誤差が蓄積する形なので `number` で
+> 積み上げないこと。配送料は必ず `src/lib/shipping-utils.ts` の `computeShippingTotal` を
+> 使う（計算ロジックの一元管理）。
+>
+> **経路 B に `Prisma.Decimal` を持ち込む必要はない。** DOM に届いた時点で金額は既に
+> **表示文字列**であり（`src/components/store/cards/order/total.tsx:29` /
+> `src/components/store/order-page/group-table.tsx` はいずれも `.toFixed(2)` で描画。
+> 桁区切りカンマは入らず常に `$X.XX` 形式）、そこに `Decimal` を被せても精度は増えない。
+> 小数第 2 位までと決まった文字列は、**パース時に 1 度だけ丸めてセント整数化**すれば
+> 以降の加減算が厳密になる。これが下記の実装である。
+
+推奨実装（経路 B）:
 
 ```typescript
 // グループ毎の金額行が両 OrderGroup に揃っていること（構造検証）
@@ -186,6 +209,13 @@ const parseMoneyToCents = (text: string): number => {
 > ちょうど 0.01 ずれる）。表示値は小数第 2 位までと決まっているので、パース時に
 > 1 度だけ丸めて整数化すれば、以降の加減算は厳密になり **`toBe` で完全一致**を
 > 主張できる。許容誤差そのものが不要になる。
+>
+> 上記正規表現が安全である根拠も実装で確認済み: 金額描画は
+> `total.tsx` / `group-table.tsx` / `pdf-invoice.tsx` いずれも `.toFixed(2)` であり、
+> `toLocaleString` / `Intl.NumberFormat` は使われていない。したがって桁区切りカンマは
+> 現れず、`$1234.56` 形式が保証される。**もし将来カンマ区切り書式に変わったら**
+> `parseMoneyToCents` は `1,234.56` から `1` だけを拾って**静かに誤った値**を返すので、
+> 書式変更時はこのパーサも併せて更新すること（カンマ除去を追加する）。
 
 実装の細部（locator の切り方）は executor に委ねるが、**検証内容は上記 3 点**
 （構造 2 グループ分・グループ内検算・全体合計との一致）を必ず含めること。
