@@ -1,12 +1,12 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-17 / **HEAD**: `c1be6d7`（CodeRabbit ローカルレビュー対応 第4弾: place-order のガードを注文確定時点で恒久化・stripe の有効 PaymentIntent を一意検証・カート保存を Serializable で直列化・order.ts のエラーログを `logError` へ統合・ダッシュボード scanner の `it.each` 展開対応）
+> **最終更新**: 2026-07-18 / **HEAD**: `15c9a96`（plan 057: `next` を ~16.2.10 へ bump [GHSA-26hh-7cqf-hhc6 HIGH 解消・`10e35f3`] / plan 058: `getCoupon` を所有店舗にスコープする IDOR read 修正 + `getCouponAsAdmin` 新設・IDOR 3 階層回帰テスト追加 [`15c9a96`]）
 
 ---
 
 ## 現在の実装状態サマリ
 
-### テスト統計（2026-07-17 実測・`bun run test`）
+### テスト統計（2026-07-18 実測・`bun run test`）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1699** passed / 1702 total / 174 スイート（173 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1707** passed / 1710 total / 174 スイート（173 passed + 1 skipped suite） |
 | カバレッジ全体（lcov 2026-07-17 実測） | Statements 65.65% / Branches 45.33% / Functions 54.36% / Lines 64.61% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

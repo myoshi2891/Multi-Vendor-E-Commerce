@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1699 passed / 1702 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1707 passed / 1710 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 058 getCoupon IDOR 修正時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1543,4 +1543,36 @@ CodeRabbit VSCode 拡張が未プッシュの 25 コミットに対して出し�
 | テスト総数 | 1689 passed / 1692 total | **1699 passed / 1702 total** |
 | スイート数 | 174 | **174**（変化なし） |
 | Integration（ダッシュボード集計） | 14（実測 17 と乖離） | **17**（実測と一致） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### improve Round 13 P1 第1弾: plan 057 + plan 058（2026-07-18）
+
+#### 概要
+
+依存層 P1 の plan 057（`next` の HIGH advisory 解消）と Round 13 セキュリティ P1 の
+plan 058（`getCoupon` cross-store IDOR read 修正）を dev に順次コミットで実行した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `package.json` / `bun.lock` | `next` を `^16.2.1` → `~16.2.10` に bump（GHSA-26hh-7cqf-hhc6 HIGH ほか 3 advisory 解消。tilde で 16.2.x に固定） | `10e35f3` |
+| `src/queries/coupon.ts` | `getCoupon` を `requireStoreOwner` + `findFirst { id, storeId }` にスコープ、`getCouponAsAdmin`（`requireAdmin` + 非スコープ）新設 | `15c9a96` |
+| seller / admin `coupons/columns.tsx` | 新シグネチャ / 新関数への呼び出し更新（計 2 箇所） | `15c9a96` |
+| `src/queries/coupon.test.ts` | IDOR 3 階層回帰テスト追加 + 既存 getCoupon テストの署名更新（77→84） | `15c9a96` |
+
+#### 検証
+
+- `bun audit`: next の 3 advisory 消滅（handlebars CRITICAL は既知の dev-only 残存 = DEPS-05）
+- 未認証 `/dashboard` / `/profile` は Clerk へ 307 リダイレクト（smoke 実施済み。非 document リクエストは 404 = いずれも保護動作）
+- 詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §8
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1699 passed / 1702 total | **1707 passed / 1710 total** |
+| スイート数 | 174 | **174**（変化なし） |
 | 型エラー | 0 件 | **0 件** |

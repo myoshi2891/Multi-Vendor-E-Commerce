@@ -239,3 +239,44 @@ const updatedCart = await db.cart.findFirstOrThrow({
 エラー/返却セマンティクスが変わるため別タスクとする。
 
 詳細・追跡は SDD `specs/multi-vendor-ecommerce/08-open-questions.md` の Known Issues を SSOT とする。
+
+---
+
+## 8. 追加修正（2026-07-18）— `getCoupon` cross-store IDOR read（plan 058 / SECURITY-10）
+
+### 8.1 発見
+
+Round 13 セキュリティ監査（`plans/audit/findings-18-security-r13.md`）で特定。
+`getCoupon(couponId)` は `'use server'` ファイル内の唯一の非認証読取で、
+`db.coupon.findUnique({ where: { id } })` を認証・ロール・所有権チェックなしで実行していた
+（JSDoc も `@PermissionLevel Public` と誤記）。サーバーアクションは到達可能な POST
+エンドポイントのため、任意の `couponId` を渡すだけで他店舗クーポンの全行
+（`code` / `discount` / `storeId` / 期間）を読める cross-store IDOR read。
+漏洩した code はチェックアウトの `applyCoupon` で行使可能。
+
+### 8.2 修正（コミット `15c9a96`）
+
+- `getCoupon(couponId, storeURL)`: `requireStoreOwner(storeURL)` を try/catch の外で実行し、
+  読取を `findFirst({ where: { id: couponId, storeId: store.id } })` の複合スコープへ変更
+  （`deleteCoupon` と同型。`findUnique` は unique フィールドしか where に取れないため `findFirst`）。
+- `getCouponAsAdmin(couponId)`: admin ダッシュボードは PLATFORM クーポン（`storeId = null`）を
+  扱うため store スコープ不可。`requireAdmin()` ゲートの非スコープ `findUnique` として分離新設。
+- 呼び出し元 2 箇所を更新: seller `coupons/columns.tsx` は `params.storeUrl` を追加渡し、
+  admin `coupons/columns.tsx` は `getCouponAsAdmin` へ切替。
+
+### 8.3 追加テスト（3 階層 (a)(b)(c) — §5.2 パターン準拠）
+
+`coupon.test.ts` 77 → 84（+7。full suite 1699 → 1707 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| (a) スロー検証 | 非所有ストア URL で `"Forbidden: store not owned by current user."` スロー + `db.coupon.findFirst` 非呼び出し（副作用なし） |
+| (b) where 構造検証 | 成功経路の `findFirst` が `where: { id, storeId: <owned store id> }` の複合スコープであること |
+| (c) 到達不能検証 | 他店舗クーポン id はスコープにより `null`（不可視）。admin 経路は非 ADMIN で拒否 + `findUnique` 非呼び出し、ADMIN は PLATFORM クーポンを取得可能 |
+
+### 8.4 関連
+
+- 実行プラン: [`plans/058-scope-get-coupon-to-owner.md`](../../plans/058-scope-get-coupon-to-owner.md)
+- 監査台帳: `plans/audit/findings-18-security-r13.md`（SECURITY-10）
+- 残る同族ギャップ: SECURITY-15（review / shipping-address / product のサーバー側 Zod 検証欠落）は
+  plan 060 がクーポンで確立するパターンの横展開 follow-up として deferred
