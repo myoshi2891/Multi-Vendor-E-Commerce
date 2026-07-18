@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
 import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
 import { serializeCart } from '@/lib/serialize-cart'
+import { retryOnSerializationFailure } from '@/lib/db-retry'
 import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
 import { CartProductType, SerializedCartType, Country } from '@/lib/types'
 import { currentUser } from '@clerk/nextjs/server'
@@ -247,43 +248,49 @@ export const saveUserCart = async (
     // delete の P2025 / create の P2002 で正当なリクエストが落ちうる。
     // Serializable で DB 側に直列化させ、deleteMany で削除を冪等にする
     // （他リクエストが先に削除済みでも count:0 が返るだけで失敗しない）。
-    const cart = await db.$transaction(
-        async (tx) => {
-            await tx.cart.deleteMany({
-                where: {
-                    userId,
-                },
-            })
-
-            // Save the validated items to the cart in the database
-            return tx.cart.create({
-                data: {
-                    cartItems: {
-                        create: validatedCartItems.map((item) => ({
-                            productId: item.productId,
-                            variantId: item.variantId,
-                            sizeId: item.sizeId,
-                            storeId: item.storeId,
-                            sku: item.sku,
-                            productSlug: item.productSlug,
-                            variantSlug: item.variantSlug,
-                            name: item.name,
-                            image: item.image,
-                            quantity: item.quantity,
-                            size: item.size,
-                            price: item.price,
-                            shippingFee: item.shippingFee,
-                            totalPrice: item.totalPrice,
-                        })),
+    //
+    // Serializable は競合を「やり直せるエラー(P2034)」へ変換するだけなので、
+    // 再試行と組み合わせて初めて正当なリクエストを守れる。トランザクション全体を
+    // 再実行対象にする（部分適用による二重適用を避けるため）。
+    const cart = await retryOnSerializationFailure(() =>
+        db.$transaction(
+            async (tx) => {
+                await tx.cart.deleteMany({
+                    where: {
+                        userId,
                     },
-                    shippingFees: shippingFee,
-                    subTotal,
-                    total,
-                    userId,
-                },
-            })
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+                })
+
+                // Save the validated items to the cart in the database
+                return tx.cart.create({
+                    data: {
+                        cartItems: {
+                            create: validatedCartItems.map((item) => ({
+                                productId: item.productId,
+                                variantId: item.variantId,
+                                sizeId: item.sizeId,
+                                storeId: item.storeId,
+                                sku: item.sku,
+                                productSlug: item.productSlug,
+                                variantSlug: item.variantSlug,
+                                name: item.name,
+                                image: item.image,
+                                quantity: item.quantity,
+                                size: item.size,
+                                price: item.price,
+                                shippingFee: item.shippingFee,
+                                totalPrice: item.totalPrice,
+                            })),
+                        },
+                        shippingFees: shippingFee,
+                        subTotal,
+                        total,
+                        userId,
+                    },
+                })
+            },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+        )
     )
 
     if (cart) return true

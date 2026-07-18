@@ -387,6 +387,56 @@ describe("saveUserCart", () => {
             expect(mockDb.cart.delete).not.toHaveBeenCalled();
         });
 
+        // Serializable は競合を「壊れたデータ」ではなく「やり直せるエラー(P2034)」へ
+        // 変換する。再試行がなければ P2002/P2025 を P2034 に置き換えただけになり、
+        // 正当なリクエストが落ちる問題は解決しない。
+        it("直列化異常(P2034)で失敗したtransactionを再試行する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            const serializationFailure =
+                new Prisma.PrismaClientKnownRequestError(
+                    "could not serialize access",
+                    { code: "P2034", clientVersion: "test" }
+                );
+            mockDb.$transaction
+                .mockRejectedValueOnce(serializationFailure)
+                .mockImplementation(
+                    async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                        callback(mockDb)
+                );
+
+            await expect(
+                saveUserCart(cartProducts as never)
+            ).resolves.toBe(true);
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(2);
+        });
+
+        it("直列化異常以外のtransaction失敗は再試行せず伝播する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+
+            const uniqueViolation = new Prisma.PrismaClientKnownRequestError(
+                "unique constraint failed",
+                { code: "P2002", clientVersion: "test" }
+            );
+            mockDb.$transaction.mockRejectedValue(uniqueViolation);
+
+            await expect(
+                saveUserCart(cartProducts as never)
+            ).rejects.toMatchObject({ code: "P2002" });
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+
         it("削除・作成を単一transactionへ配線し、コールバック内の失敗を伝播する", async () => {
             const cartProducts = [createMockCartProduct()];
             const transactionCart = {
