@@ -163,6 +163,24 @@ define this trust boundary in its runbook and implementation ADR:
    access.  The application must not accept an arbitrary forwarding header
    when the origin can be reached without the trusted proxy.
 
+The extraction rule is **not portable** — it is a property of the host, and a
+rule that is correct on one platform is a spoofing hole on another.  The
+implementation must therefore select the rule from the deployment target
+rather than hardcoding a single expression.  This project has **not committed
+to a hosting platform** (see the deployment-neutrality requirement in
+`plans/021`), so the implementation ADR must record which row below applies:
+
+| Deployment target | Trusted source of the client address | Notes |
+|---|---|---|
+| Vercel | `x-vercel-forwarded-for` (platform-set, not client-settable) | `x-forwarded-for` is also rewritten, but the vendor header is the documented contract. Assume exactly one platform hop. |
+| Cloudflare (proxied) | `CF-Connecting-IP` | Only trustworthy when the origin is *not* reachable directly — otherwise the header is attacker-settable. Requires origin lock-down (Tunnel / IP allowlist / mTLS). |
+| AWS ALB / CloudFront | right-most value of `x-forwarded-for` | The ALB *appends*; the left-most entries are attacker-supplied. Count hops explicitly if CloudFront sits in front of the ALB. |
+| Nginx / self-managed reverse proxy | value written by `set_real_ip_from` + `real_ip_header` | The proxy must be configured to *overwrite*, not append; otherwise strip the header at the edge. |
+| Bare Node (no proxy) | socket remote address only | `x-forwarded-for` MUST be ignored entirely — there is no trusted hop to attribute it to. |
+
+If the chosen target is not in this table, do not guess: establish the contract
+from the vendor's documentation and add the row before implementing.
+
 If that contract cannot be established for the selected hosting arrangement,
 do not use an application-level IP key.  Prefer an edge/WAF control that owns
 client identification; for authenticated routes, a stable user/session key is
