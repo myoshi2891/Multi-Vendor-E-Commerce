@@ -92,11 +92,11 @@ Admin-only functions require ADMIN role via `requireAdmin()` (outside `try/catch
 | Function | Permission | Description |
 |----------|-----------|-------------|
 | `getAllCoupons()` | Admin | All-store coupon list with `store` included. Max 100 rows. |
-| `upsertCouponAsAdmin(coupon)` | Admin | Create/update coupon. P2002 unique violation → Japanese error message. |
+| `upsertCouponAsAdmin(coupon)` | Admin | Create/update coupon. Server-side `AdminCouponFormSchema.safeParse` gate + explicit field mapping (plan 060). P2002 unique violation → Japanese error message. |
 | `deleteCouponAsAdmin(couponId)` | Admin | Delete coupon without store ownership check. |
 | `toggleCouponActive(couponId)` | Admin | Flip `isActive` boolean. Returns updated coupon. |
 | `getCouponAsAdmin(couponId)` | Admin | Unscoped single-coupon read (incl. PLATFORM coupons with `storeId = null`). Added in plan 058. |
-| `upsertCoupon(coupon, storeUrl)` | Seller | Create/update coupon for own store (IDOR-guarded via `requireStoreOwner`). |
+| `upsertCoupon(coupon, storeUrl)` | Seller | Create/update coupon for own store (IDOR-guarded via `requireStoreOwner`). Server-side `CouponFormSchema.safeParse` gate + explicit field mapping — blocks `discount > 99` → negative order totals (plan 060). |
 | `getStoreCoupons(storeUrl)` | Seller | Own-store coupons only. |
 | `getCoupon(couponId, storeUrl)` | Seller | Own-store single-coupon read, scoped `findFirst { id, storeId }`. Was an unauthenticated `findUnique` (cross-store IDOR read, SECURITY-10) until plan 058. |
 | `deleteCoupon(couponId, storeUrl)` | Seller | Delete own-store coupon. |

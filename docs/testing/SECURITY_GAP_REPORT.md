@@ -332,3 +332,52 @@ PaymentIntent の `metadata.orderId` / `amount` / `currency` 突合を行うの�
 - 同族の残ギャップ: **SECURITY-17**（webhook `src/app/api/webhooks/paypal/route.ts` の
   無条件ステータス上書き）は deferred — 対応時は本修正で export した
   `isSettledPaymentStatus` を再利用する（plan 059 Maintenance notes 参照）。
+
+---
+
+## 10. 追加修正（2026-07-18）— クーポン mutation のサーバー側 Zod 検証（plan 060 / SECURITY-14）
+
+### 10.1 発見
+
+Round 13 セキュリティ監査で特定。`upsertCoupon` / `upsertCouponAsAdmin` は
+クライアント供給の `Coupon` オブジェクトを `{ ...coupon }` の未検証スプレッドで DB へ書き込み、
+`CouponFormSchema`（`discount` の `.min(1).max(99)`、`code` の `^[A-Za-z0-9]+$` 等）は
+ブラウザの `zodResolver` でしか実行されなかった。サーバーアクションを直接呼び出すと
+`discount > 99` を永続化でき、`applyCoupon`（coupon.ts）と `placeOrder`（user.ts）が
+`total.mul(discount).div(100)` を計算するため、**注文 total を負値化**できる money-critical ギャップ。
+
+### 10.2 修正（コミット `c67b833`）
+
+- `upsertCoupon`: 所有権検証後・upsert 前に `CouponFormSchema.safeParse(coupon)` ゲートを追加
+  （`z.object` は未知キーを除去するため `Coupon` 全体を渡して 4 フォームフィールドのみ検証）。
+  書き込みを `parsed.data` の明示マッピング + サーバー強制 `storeId: store.id` / `scope: 'STORE'`
+  に置換し、スプレッドを撤去。
+- `upsertCouponAsAdmin`: `AdminCouponFormSchema.safeParse` ゲート（`superRefine` が
+  STORE ⇒ storeId 必須 / PLATFORM ⇒ storeId 空の不変条件も検証）。既存の
+  `normalizedStoreId` ロジックは defense-in-depth として残置し、同様に明示マッピング化。
+- 検証失敗はいずれも `"クーポンの入力値が不正です。"` で書き込み前に throw。
+- 検証: `grep "\.\.\.coupon" src/queries/coupon.ts` → 0 件（スプレッド撤去の機械確認）。
+
+### 10.3 追加テスト
+
+`coupon.test.ts` 84 → 89（+5。full suite 1712 → 1717 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| discount > 99（seller） | 検証エラースロー + `db.coupon.upsert` 非呼び出し（負値 total ベクトルを書き込み前に遮断） |
+| discount < 1（seller） | 同上 |
+| 不正 code `"!!"`（seller） | 同上 |
+| 明示マッピング（seller） | クライアント供給の `scope: "PLATFORM"` / `storeId: "attacker-store"` が無視され、書き込みが検証済み 4 フィールド + サーバー強制値のみであることを厳密一致で検証 |
+| discount > 99（admin） | 検証エラースロー + 書き込みなし |
+
+既存の upsert 系テスト入力は `createValidCouponInput`（ISO 文字列日付）へ更新
+（共有 fixture `MockCoupon` の `startDate`/`endDate` が `Date` 型で、Prisma モデルの
+`String` と乖離しているため — fixture 本体の是正はスコープ外の別課題）。
+
+### 10.4 関連
+
+- 実行プラン: [`plans/060-server-validate-coupon-mutations.md`](../../plans/060-server-validate-coupon-mutations.md)
+- **SECURITY-15**（`upsertReview` / `upsertShippingAddress` / `upsertProduct` の同族ギャップ）は
+  本修正の `safeParse` → 明示マッピングパターンを参照実装とする deferred follow-up。
+  `upsertProduct` は `ProductWithVariantType` とスキーマの型差分の突合が必要（plan 060
+  Maintenance notes 参照）。

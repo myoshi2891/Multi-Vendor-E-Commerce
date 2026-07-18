@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1712 passed / 1715 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 059 PayPal capture 検証時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1717 passed / 1720 total / 174 スイート（3 skipped）** — 2026-07-18 実測（plan 060 クーポン server-side Zod 検証時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1603,3 +1603,38 @@ PayPal capture 経路を Stripe capture と同水準のガードに引き上げ�
 | 型エラー | 0 件 | **0 件** |
 
 詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §9
+
+---
+
+### improve Round 13 P1 第3弾: plan 060（2026-07-18・P1 全 4 プラン完走）
+
+#### 概要
+
+クーポン mutation にサーバー側 Zod 検証を導入した（plan 060 / SECURITY-14）。
+直接呼び出しで discount>99 を永続化し注文 total を負値化できる money-critical ギャップを
+書き込み境界で遮断。これで Round 13 P1（058/059/060）+ 依存層 P1（057）の 4 プランが完走。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.ts` | `upsertCoupon` に `CouponFormSchema.safeParse` ゲート、`upsertCouponAsAdmin` に `AdminCouponFormSchema.safeParse` ゲート。両者ともスプレッド書き込みを `parsed.data` + サーバー強制フィールドの明示マッピングへ置換 | `c67b833` |
+| `src/queries/coupon.test.ts` | 負系 4 + 明示マッピング検証 1 を追加（84→89）。upsert 系既存テストを `createValidCouponInput`（ISO 文字列日付）へ更新 | `c67b833` |
+
+#### 判断メモ
+
+- 共有 fixture `MockCoupon` の `startDate`/`endDate` は `Date` 型で、Prisma モデルの
+  `String` と乖離している（既存テストは `as never` で黙殺）。本番 shape はスキーマと
+  一致するためプランの STOP 条件（「dates are not strings after all」）には該当せず、
+  テストファイル内ヘルパーで ISO 文字列入力を生成する最小対応とした。
+  fixture 本体の是正は全域に波及するためスコープ外の別課題。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1712 passed / 1715 total | **1717 passed / 1720 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §10
