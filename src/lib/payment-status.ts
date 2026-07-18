@@ -17,7 +17,7 @@ import { PaymentStatus } from "@prisma/client";
  * 必要があるため、同期ヘルパーである本関数はここ（`src/lib/`）を SSOT とし、
  * Stripe / PayPal の両決済ガードから共有する。
  */
-const SETTLED_PAYMENT_STATUSES: readonly PaymentStatus[] = [
+export const SETTLED_PAYMENT_STATUSES: readonly PaymentStatus[] = [
     "Paid",
     "Refunded",
     "PartiallyRefunded",

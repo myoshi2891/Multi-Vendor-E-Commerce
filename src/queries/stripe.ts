@@ -1,7 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { isSettledPaymentStatus } from "@/lib/payment-status";
+import {
+    isSettledPaymentStatus,
+    SETTLED_PAYMENT_STATUSES,
+} from "@/lib/payment-status";
 import { currentUser } from "@clerk/nextjs/server";
 import { PaymentStatus, Prisma } from "@prisma/client";
 import Stripe from "stripe";
@@ -206,55 +209,72 @@ export const createStripePayment = async (
             throw new Error("Payment intent is not active for this order.");
         }
 
-        const updatedPaymentDetails = await db.paymentDetails.upsert({
-            where: {
-                orderId,
-            },
-            update: {
-                paymentIntentId: paymentIntent.id,
-                paymentMethod: "Stripe",
-                amount: paymentIntent.amount,
-                currency: paymentIntent.currency,
-                status:
-                    paymentIntent.status === "succeeded"
-                        ? "Completed"
-                        : paymentIntent.status,
-                userId: user.id,
-            },
-            create: {
-                paymentIntentId: paymentIntent.id,
-                paymentMethod: "Stripe",
-                amount: paymentIntent.amount,
-                currency: paymentIntent.currency,
-                status:
-                    paymentIntent.status === "succeeded"
-                        ? "Completed"
-                        : paymentIntent.status,
-                orderId: orderId,
-                userId: user.id,
-            },
-        });
+        const nextPaymentDetailsStatus =
+            paymentIntent.status === "succeeded"
+                ? "Completed"
+                : paymentIntent.status;
 
-        // Update the order with payment details
-        const updatedOrder = await db.order.update({
-            where: {
-                id: orderId,
-            },
-            data: {
-                paymentStatus: toOrderPaymentStatus(paymentIntent),
-                paymentMethod: "Stripe",
-                paymentDetails: {
-                    connect: {
-                        id: updatedPaymentDetails.id,
+        // 上の isSettledPaymentStatus チェックは read-then-act であり、読み取りから
+        // 書き込みまでの間に webhook (src/app/api/webhooks/stripe) が Paid を
+        // 書き込むと、後発の本 server action が Pending へ退行させてしまう。
+        //
+        // PaymentDetails と Order の更新を単一トランザクションに入れたうえで、
+        // Order 側の where に「未確定であること」を含めて条件付き更新（CAS）にする。
+        // 条件を満たさない場合 Prisma は P2025 を投げるので、確定済みとして扱う。
+        const updatedOrder = await db.$transaction(async (tx) => {
+            const updatedPaymentDetails = await tx.paymentDetails.upsert({
+                where: {
+                    orderId,
+                },
+                update: {
+                    paymentIntentId: paymentIntent.id,
+                    paymentMethod: "Stripe",
+                    amount: paymentIntent.amount,
+                    currency: paymentIntent.currency,
+                    status: nextPaymentDetailsStatus,
+                    userId: user.id,
+                },
+                create: {
+                    paymentIntentId: paymentIntent.id,
+                    paymentMethod: "Stripe",
+                    amount: paymentIntent.amount,
+                    currency: paymentIntent.currency,
+                    status: nextPaymentDetailsStatus,
+                    orderId: orderId,
+                    userId: user.id,
+                },
+            });
+
+            // Update the order with payment details
+            return tx.order.update({
+                where: {
+                    id: orderId,
+                    paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] },
+                },
+                data: {
+                    paymentStatus: toOrderPaymentStatus(paymentIntent),
+                    paymentMethod: "Stripe",
+                    paymentDetails: {
+                        connect: {
+                            id: updatedPaymentDetails.id,
+                        },
                     },
                 },
-            },
-            include: {
-                paymentDetails: true,
-            },
+                include: {
+                    paymentDetails: true,
+                },
+            });
         });
         return updatedOrder;
     } catch (error: unknown) {
+        // 条件付き更新が一致しなかった = 読み取り後に他経路が決済を確定させた。
+        // 汎用エラーで潰さず、事前チェックと同じ意味のエラーへ正規化する。
+        if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2025"
+        ) {
+            throw new Error("Order payment is already settled.");
+        }
         if (error instanceof Error) {
             console.error("Error creating payment:", error.message, error.stack);
         } else {

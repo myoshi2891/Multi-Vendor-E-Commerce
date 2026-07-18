@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import Stripe from "stripe";
+import { Prisma } from "@prisma/client";
 import { createStripePaymentIntent, createStripePayment } from "./stripe";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -14,6 +15,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@/lib/db", () => ({
     db: {
+        $transaction: jest.fn(),
         order: {
             findUnique: jest.fn(),
             update: jest.fn(),
@@ -44,6 +46,11 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
+    // createStripePayment の transaction callback を同じ DB モックで実行する。
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
 });
 
 // ==================================================
@@ -401,7 +408,9 @@ describe("createStripePayment", () => {
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { id: "order-001" },
+                    // where には CAS 条件（未確定であること）も含まれる。
+                    // 詳細は「決済状態更新の原子性 (CAS)」の describe を参照。
+                    where: expect.objectContaining({ id: "order-001" }),
                     data: expect.objectContaining({
                         paymentStatus: "Paid",
                         paymentMethod: "Stripe",
@@ -704,6 +713,69 @@ describe("createStripePayment", () => {
             ).rejects.toThrow("Order payment is already settled.");
 
             expect(mockStripePaymentIntentsCreate).not.toHaveBeenCalled();
+        });
+    });
+
+    // 冒頭の isSettledPaymentStatus チェックは read-then-act であり、読み取りから
+    // 書き込みまでの間に webhook (src/app/api/webhooks/stripe) が Paid を書き込むと、
+    // 後発の本 server action が Pending へ退行させてしまう。書き込み自体を
+    // 「未確定のままである場合のみ」の条件付き更新にして原子性を担保する。
+    describe("決済状態更新の原子性 (CAS)", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.paymentDetails.findUnique.mockResolvedValue(null);
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
+        });
+
+        it("PaymentDetails と Order の更新を単一transactionで行う", async () => {
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+
+        it("確定済みでない場合のみ更新する条件をwhereに含める", async () => {
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "order-001",
+                        paymentStatus: {
+                            notIn: expect.arrayContaining([
+                                "Paid",
+                                "Refunded",
+                                "PartiallyRefunded",
+                                "ChargeBack",
+                            ]),
+                        },
+                    }),
+                })
+            );
+        });
+
+        // 条件付き更新が 0 件 = 読み取り後に他経路(webhook)が確定させた。
+        // 汎用 DB エラーで潰さず、確定済みであることを呼び出し元へ伝える。
+        it("読み取り後に確定済みへ変わっていた場合は settled エラーを返す", async () => {
+            const notFound = new Prisma.PrismaClientKnownRequestError(
+                "record not found",
+                { code: "P2025", clientVersion: "test" }
+            );
+            mockDb.order.update.mockRejectedValue(notFound);
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Order payment is already settled.");
         });
     });
 
