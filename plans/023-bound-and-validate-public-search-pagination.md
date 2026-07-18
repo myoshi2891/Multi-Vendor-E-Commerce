@@ -246,6 +246,47 @@ Stop and report back (do not improvise) if:
 
 ## Maintenance notes
 
+### Correction (2026-07-19): the `parseInt` gate was scoped wider than its own criterion
+
+This plan is DONE; the step bodies above are left as the historical record. This note documents a
+defect in one Done-criteria gate so that anyone **re-running the gates** (or copying this pattern
+into a new plan) uses the corrected form.
+
+**The defect.** The criterion reads:
+
+> `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET
+> handler's pagination block (the normalized code uses `Number(...)`).
+
+The prose scopes the assertion to *the GET handler's pagination block*, but the command scans the
+**whole file** — including the POST handler at `route.ts:14`. The two disagree, under a heading that
+claims "Machine-checkable".
+
+Today it passes only incidentally: `parseInt` occurs nowhere in the file. Add a legitimate `parseInt`
+to the POST handler and the command fails while the stated criterion remains satisfied — a false
+failure that a future executor would have to debug.
+
+**Corrected gates.** Scope the negative check to the GET handler, and lead with the positive
+assertions (a bare "X is absent" check also passes for a file that does no pagination parsing at
+all — the positive checks are what actually pin the behavior):
+
+```bash
+# Positive: page/limit are parsed with Number(...) and clamped by both bounds
+awk '/^export async function GET/,0' src/app/api/index-products/route.ts \
+  | grep -nE 'Number\(url\.searchParams\.get\("(page|limit)"\)\)|MAX_(LIMIT|PAGE)'
+
+# Negative: no parseInt anywhere in the GET handler (awk scopes from GET to EOF,
+# so it is not tied to line numbers that drift)
+awk '/^export async function GET/,0' src/app/api/index-products/route.ts | grep -c "parseInt"
+# → 0
+```
+
+**Verified against the shipped implementation (2026-07-19)**: the negative check returns `0`, and
+the positive check matches `MAX_LIMIT = 50` / `MAX_PAGE = 10_000` plus
+`Number(url.searchParams.get("page"))` / `...get("limit")` with `Math.min` / `Math.floor` clamping —
+i.e. the delivered code satisfies the corrected gates. No source change accompanies this note.
+
+### Standing maintenance notes
+
 - **Test-stats sync**: adding tests changes the project's `Tests:` total. Per `.claude/rules/02-tdd-step-commit.md`, after this lands you must run the `spec-sync-after-test` skill (regenerate `docs/coverage-dashboard.html` + sync `QA_HANDOFF.md` etc.) in a **separate docs commit**. Keep the test-code commit and the docs-sync commit distinct.
 - **SECURITY-05 overlap**: the raw `{ error: error.message }` 500 responses (lines ~134, ~403) remain — a future plan should replace them with a constant, user-safe string and log details **server-side only, using the repo's structured-log convention** (`.claude/steering/tech.md`「構造化ログ」): first arg the string `"[Module:Function] Error message"`, second arg the object `{ error: error.message, stack: error.stack }` — not an ad-hoc `console.error(error)`. If you fix SECURITY-05 in the same PR later, keep it a separate commit from this pagination change.
 - **Reviewer focus**: confirm the response `page`/`limit` values are the **normalized** ones (so `totalPages = ceil(total/limit)` uses the clamped `limit`), and that the POST handler was untouched.
