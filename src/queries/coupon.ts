@@ -6,6 +6,8 @@ import { SerializedCartType } from '@/lib/types'
 import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
 import { requireUser, requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
+// フォーム契約のサーバー側強制 (SECURITY-14: 直接呼び出しによる discount>99 等の回避防止)
+import { CouponFormSchema, AdminCouponFormSchema } from '@/lib/schemas'
 import { Coupon, Prisma } from '@prisma/client'
 
 const isGuardError = (error: unknown): error is Error => {
@@ -76,13 +78,33 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
             throw new Error('このクーポンコードは既に使用されています')
         }
 
+        // フォーム契約をサーバー側でも強制する（直接呼び出しで discount>99 等を回避させない）。
+        // z.object は未知キーを除去するため、Coupon 全体を渡して 4 フォームフィールドのみ検証される。
+        const parsed = CouponFormSchema.safeParse(coupon)
+        if (!parsed.success) {
+            throw new Error('クーポンの入力値が不正です。')
+        }
+
         // Upsert coupon into the database
-        // scope はクライアント入力を信用せず STORE に固定する（SELLER による PLATFORM クーポン作成を防ぐ）
+        // クライアント入力のスプレッドは行わず、検証済みフィールドを明示マッピングする。
+        // scope / storeId はクライアント入力を信用せずサーバー強制（SELLER による PLATFORM クーポン作成を防ぐ）
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: store.id, scope: 'STORE' },
+            update: {
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                storeId: store.id,
+                scope: 'STORE',
+            },
             create: {
-                ...coupon,
+                // id はフォーム側で常にクライアント生成される (data?.id ?? v4())
+                id: coupon.id,
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
                 storeId: store.id,
                 scope: 'STORE',
             },
@@ -420,8 +442,17 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
 
     try {
         if (!coupon) throw new Error('Please provide coupon data.')
+
+        // フォーム契約をサーバー側でも強制する (SECURITY-14)。superRefine が
+        // STORE ⇒ storeId 必須 / PLATFORM ⇒ storeId 空 の不変条件も検証する。
+        const parsed = AdminCouponFormSchema.safeParse(coupon)
+        if (!parsed.success) {
+            throw new Error('クーポンの入力値が不正です。')
+        }
+
         const isPlatform = coupon.scope === 'PLATFORM'
 
+        // safeParse 通過後の defense-in-depth として残置（通常は superRefine が先に検出）
         let normalizedStoreId: string | null
         if (isPlatform) {
             normalizedStoreId = null
@@ -431,10 +462,29 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
             normalizedStoreId = trimmed
         }
 
+        // クライアント入力のスプレッドは行わず、検証済みフィールドを明示マッピングする
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: normalizedStoreId },
-            create: { ...coupon, storeId: normalizedStoreId },
+            update: {
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                isActive: parsed.data.isActive,
+                scope: parsed.data.scope,
+                storeId: normalizedStoreId,
+            },
+            create: {
+                // id はフォーム側で常にクライアント生成される (data?.id ?? v4())
+                id: coupon.id,
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                isActive: parsed.data.isActive,
+                scope: parsed.data.scope,
+                storeId: normalizedStoreId,
+            },
         })
         return couponDetails
     } catch (error: unknown) {
