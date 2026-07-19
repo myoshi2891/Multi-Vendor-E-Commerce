@@ -642,8 +642,9 @@ triage を挟んだ理由そのもの。
 
 > **対象**: Round 11 未着手の 34 件（spike P-07〜P-17 / テスト実装 P-18〜P-28 /
 > E2E・依存 P-29〜P-37 / ja 個別 P-47・P-53・P-59）。**これで 73 件すべての triage が完了**。
-> **本ラウンドの結果**: 妥当 31 件を修正 / 却下 3 件（P-27・P-28・P-30。うち P-34 は当初
-> 却下候補として実測検証した結果 誤検知と確定）。正確には **accepted 30 / rejected 4**（下表）。
+> **本ラウンドの結果**: **accepted 30 / rejected 4**（30 + 4 = 34 で対象件数と一致）。
+> rejected は **P-27・P-28・P-30・P-34** の 4 件（内訳は下記「Round 12 rejected」節。
+> P-34 は当初 accepted 候補だったが、実測検証の結果 誤検知と確定して rejected へ移した）。
 > 出所・制約は Round 10 の冒頭注記と同じ（GitHub に存在せず `gh api` 不可・根拠は
 > スクリーンショットの 1 行タイトルのみ・行番号は採取時点）。
 > **`src/` は 1 行も変更していない**（全 27 コミットが `plans/` 配下のみ）ため、テスト数は
@@ -844,3 +845,74 @@ LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / 
   差分が機械的に見える（プラン内 Maintenance note で言及）。
 - **`product-description.tsx:1` の `'use-client'` 誤記**（正しくは `'use client'`）: 実質サーバー
   コンポーネント化しているが sanitize は jsdom でサーバー実行可能なため XSS 影響なし。tech-debt レベル。
+
+---
+
+## Round 14 追記 — CodeRabbit レビュー第4弾 + Phase A 実装（2026-07-19 / HEAD `b5d0c66`）
+
+> **⚠️ 本ラウンドは他ラウンドと性格が異なる — `src/` と `tests/` を実際に変更している**。
+> Round 1〜13 は improve スキルの監査ラウンドで Hard Rule 1（advisor はソースを変更しない）に
+> 従っていたが、Round 14 は **CodeRabbit レビューの指摘に対する実装セッション**であり、
+> 監査ではない。したがって `plans/**` のみ編集という制約は適用されない。
+> **「ソース無変更」を Round 14 に期待しないこと**（`git diff 934b6fa..b5d0c66 --stat -- src tests`
+> は空ではない — これは違反ではなく本ラウンドの目的そのもの）。
+
+- **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に対して実施したレビュー。
+  VSCode の「問題」パネル表示は **114 件**（⚠49 + ⓘ65）だが、これは
+  **NEW REVIEW + PREVIOUS REVIEWS (2) の合算**であり純粋な新規指摘数ではない。
+  精査後の実体: `plans/ja/*` ミラー重複 5 / 同一箇所の言い換え重複 4 / 既に解消済み（誤検知）3 /
+  **要対応 約 81**（コード 5 + プラン/ドキュメント 76）。
+- **実行計画**: `~/.claude/plans/claude-rules-02-tdd-step-commit-md-peaceful-globe.md`
+  （Phase A = コード修正 / Phase B = 監査台帳の整合性回復 / Phase C = 個別プラン文書 約 60 件）。
+- **コミット規律**: `.claude/rules/02-tdd-step-commit.md` に従い 1 論理単位 = 1 コミット。
+
+### Round 14 Phase A — 実装済み（5 コミット / `934b6fa..b5d0c66`）
+
+| # | 修正 | 深刻度 | コミット | 変更ファイル |
+|---|------|-------|---------|-------------|
+| A-1 | PayPal/Stripe の settled ガードを CAS 条件で原子化（`update.where` に `paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] }` を混ぜ、P2025 を既存メッセージ `"Order payment is already settled."` へ写像） | 高 | `4261be0` | `paypal.ts` + `paypal.test.ts` |
+| A-3 | `PaymentDetails.amount` を **ドル建て**へ統一（Stripe 側が `paymentIntent.amount`（セント: 3000）を `Decimal(12,2)` 列へ書いていた単純バグ。`order.total` を `Prisma.Decimal` のまま渡す形へ） | 中 | `e63474b` | `stripe.ts` + `stripe.test.ts` |
+| A-5 | `placeOrder` のサーバー側冪等性（`$transaction` 先頭で `cart.deleteMany({ id, userId })` → `count === 0` を CAS ゲートに。カート行が単一使用トークンとして働き、同一 `cartId` の二重注文を行ロックで直列化） | 高 | `824e224` | `user.ts` + `user.test.ts` |
+| A-4a | `route.test.ts` の `mockRestore()` を `afterEach(jest.restoreAllMocks)` へ集約（アサーション失敗時に spy が漏れて後続テストを汚染していた） | 低 | `15aef5c` | `index-products/route.test.ts` |
+| A-4b | security-headers E2E に `response.status()` の検証を追加（500 でもヘッダが付けば pass していた） | 低 | `b5d0c66` | `security-headers.spec.ts` |
+
+### Round 14 rejected（再監査防止 — 1 件）
+
+- **A-2「`custom_id` 検証を全 status 書き込みの上流へ」**: **却下 — 前提が誤り（既に充足済み）**。
+  計画は「`if (captureData.status !== "COMPLETED")` 分岐が `custom_id` 突合**より前**にあり、
+  他人の PayPal Order id を渡すだけで自分の注文を `Failed` に落とせる」としていたが、
+  **ラウンド開始時点（`934b6fa`）で既に検証が上流にあった** —
+  `git show 934b6fa:src/queries/paypal.ts` で `capturedCustomId !== orderId` が **L228**、
+  `captureData.status !== "COMPLETED"` が **L233** と確認（現行も `paypal.ts:248` / `:253` で同順）。
+  よって Phase A のコミットは**計画の 6 本ではなく 5 本**で正しい。
+  Round 12 の判断基準 8（「指摘が既に解消済みのことがある」）と同型。
+
+### Round 14 が既存台帳へ与える影響（reconcile）
+
+1. **CORRECTNESS-05**（`PaymentDetails.amount` の単位不一致 Stripe セント vs PayPal ドル）—
+   [`../README.md`](../README.md) の Deferred 節に「needs backfill」として記載。
+   **コード側は A-3 で解消**したが、**過去に Stripe 決済で作成された行はセント値のまま残る**。
+   → **データ補正（backfill）は未起票のまま**。Deferred 記載は維持し、範囲を
+   「コード修正」から「既存行の backfill のみ」へ縮小して読むこと。
+2. **「Server-side `placeOrder` idempotency」**（plan 006 から deferred されていた項目）—
+   **A-5 で解消**。README Deferred 節の該当行は消化済み。
+3. **TESTS-02 capture 経路**（R1 raw / R5〜R6 deferred）— 先行依存としていた plan 003 は DONE、
+   さらに A-1 / A-3 で capture 経路自体が変化した。**deferred 理由が失効**しており昇格の
+   再評価対象（[`findings-13`](findings-13-integration-coverage.md) /
+   [`findings-14`](findings-14-integration-coverage-r6.md) の該当行に注記済み）。
+4. **`saveUserCart` 統合**（R5 rejected / R6〜R7 deferred 維持）— 先行依存の plan 005 は DONE。
+   **同じく deferred 理由が失効**（[`findings-17`](findings-17-e2e-coverage-r9.md) TESTS-42 に注記済み）。
+5. **SECURITY-17**（webhook ステータスの無条件上書き → out-of-order 退行 / R13 deferred）—
+   A-1 が確立した CAS ガードのイディオムを **webhook 側へ横展開**すれば解消できる。
+   findings-18 §3 の「plan 059 の settled-guard を webhook へ展開」という昇格条件は
+   **A-1 の着地でより具体化した**（`notSettled()` ヘルパーが `paypal.ts` に実在する）。
+
+### Round 14 未着手（Phase C — 約 60 件）
+
+`plans/003`〜`plans/062` の個別プラン文書に対する指摘。**1 プラン = 1 コミット**で進める。
+このうち**約 15 件は CodeRabbit のタイトルのみでは修正内容を確定できない**
+（例: `plans/013`「Make ADR numbering deterministic」/ `plans/025`「Align the "repo-wide" claim」/
+`plans/044`「port check does not eliminate server-reuse races」/ `plans/017`「Include every
+result-shaping input in recommendation cache keys」/ `plans/038`「Isolate the temporary DDL
+constraint from the integration suite」）。**着手時に該当コメントの詳細本文を入手すること**
+（Round 11 の判断基準 3「指摘タイトルの字面適用は設計意図を壊す」）。
