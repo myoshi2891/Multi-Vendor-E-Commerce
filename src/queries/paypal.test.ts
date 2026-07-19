@@ -210,7 +210,10 @@ describe("capturePayPalPayment", () => {
             mockFetch.mockResolvedValue({
                 json: () =>
                     Promise.resolve({
+                        // custom_id は status を問わず検証されるため、失敗応答でも
+                        // 自注文への相関を示す必要がある。
                         status: "FAILED",
+                        purchase_units: [{ custom_id: "order-001" }],
                     }),
             });
             const updatedOrder = createMockOrder({ paymentStatus: "Failed" });
@@ -226,6 +229,25 @@ describe("capturePayPalPayment", () => {
                 where: { id: "order-001" },
                 data: { paymentStatus: "Failed" },
             });
+        });
+
+        it("非 COMPLETED でも custom_id 不一致なら Failed 更新せずに拒否する", async () => {
+            // 他人の PayPal Order id を渡し、その DENIED/DECLINED 応答で
+            // 自分の注文を Failed へ落とす経路を塞ぐ。custom_id の検証は
+            // status 分岐より上流になければ、この書き込みに到達してしまう。
+            mockFetch.mockResolvedValue({
+                json: () =>
+                    Promise.resolve({
+                        status: "DECLINED",
+                        purchase_units: [{ custom_id: "other-order-999" }],
+                    }),
+            });
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("PayPal capture does not match order.");
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
         });
     });
 

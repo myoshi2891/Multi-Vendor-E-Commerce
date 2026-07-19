@@ -215,6 +215,20 @@ export const capturePayPalPayment = async (
 
         const captureData = await captureResponse.json();
 
+        const capture =
+            captureData.purchase_units?.[0]?.payments?.captures?.[0];
+        // custom_id は purchase_units[0].custom_id（作成時に orderId を格納）に載る。
+        // PayPal の応答バージョンによっては capture 側にも複製されるため両方を許容する。
+        const capturedCustomId =
+            captureData.purchase_units?.[0]?.custom_id ?? capture?.custom_id;
+
+        // 相関検証は status を問わず、あらゆる状態書き込みより前に行う。
+        // status 分岐の後ろに置くと、他人の PayPal Order の DENIED/DECLINED 応答で
+        // 自分の注文を Failed へ落とせてしまう（検証コードに到達しない書き込み経路）。
+        if (capturedCustomId !== orderId) {
+            throw new Error("PayPal capture does not match order.");
+        }
+
         // Check if capture was successful
         if (captureData.status !== "COMPLETED") {
             return await db.order.update({
@@ -227,21 +241,13 @@ export const capturePayPalPayment = async (
             });
         }
 
-        // capture 応答を作成時の正値 (createPayPalPayment が格納した custom_id = orderId /
+        // capture 応答を作成時の正値 (createPayPalPayment が格納した
         // amount.value = order.total / currency_code = "USD") と突合し、
         // 安い注文で作成した PayPal Order を高い注文の capture に流用する過少支払いを拒否する。
-        const capture =
-            captureData.purchase_units?.[0]?.payments?.captures?.[0];
+        // 金額は COMPLETED 応答にしか載らないため、相関検証とは分けてここで行う。
         const capturedValue = capture?.amount?.value;
         const capturedCurrency = capture?.amount?.currency_code;
-        // custom_id は purchase_units[0].custom_id（作成時に orderId を格納）に載る。
-        // PayPal の応答バージョンによっては capture 側にも複製されるため両方を許容する。
-        const capturedCustomId =
-            captureData.purchase_units?.[0]?.custom_id ?? capture?.custom_id;
 
-        if (capturedCustomId !== orderId) {
-            throw new Error("PayPal capture does not match order.");
-        }
         if (
             capturedCurrency !== "USD" ||
             capturedValue === undefined ||
