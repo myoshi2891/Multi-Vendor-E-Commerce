@@ -107,12 +107,16 @@ export const createStripePaymentIntent = async (orderId: string) => {
 
         // この注文で「有効な」intent はこれ 1 つであることを記録する。
         // createStripePayment はこの id との一致を要求し、古い intent を拒否する。
+        //
+        // amount は Stripe の minor unit (paymentIntent.amount) ではなく order.total を
+        // 保存する。PaymentDetails.amount は Decimal(12,2) = ドル建てであり、PayPal 側も
+        // ドルで保存している。混在させると集計・表示が 100 倍ずれる。
         await db.paymentDetails.upsert({
             where: { orderId },
             update: {
                 paymentIntentId: paymentIntent.id,
                 paymentMethod: "Stripe",
-                amount: paymentIntent.amount,
+                amount: order.total,
                 currency: paymentIntent.currency,
                 status: paymentIntent.status,
                 userId: user.id,
@@ -120,7 +124,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
             create: {
                 paymentIntentId: paymentIntent.id,
                 paymentMethod: "Stripe",
-                amount: paymentIntent.amount,
+                amount: order.total,
                 currency: paymentIntent.currency,
                 status: paymentIntent.status,
                 orderId,
@@ -222,6 +226,8 @@ export const createStripePayment = async (
         // Order 側の where に「未確定であること」を含めて条件付き更新（CAS）にする。
         // 条件を満たさない場合 Prisma は P2025 を投げるので、確定済みとして扱う。
         const updatedOrder = await db.$transaction(async (tx) => {
+            // amount は order.total（ドル建て）。Decimal(12,2) カラムに Stripe の
+            // minor unit を入れない（createStripePaymentIntent 側と同じ理由）。
             const updatedPaymentDetails = await tx.paymentDetails.upsert({
                 where: {
                     orderId,
@@ -229,7 +235,7 @@ export const createStripePayment = async (
                 update: {
                     paymentIntentId: paymentIntent.id,
                     paymentMethod: "Stripe",
-                    amount: paymentIntent.amount,
+                    amount: order.total,
                     currency: paymentIntent.currency,
                     status: nextPaymentDetailsStatus,
                     userId: user.id,
@@ -237,7 +243,7 @@ export const createStripePayment = async (
                 create: {
                     paymentIntentId: paymentIntent.id,
                     paymentMethod: "Stripe",
-                    amount: paymentIntent.amount,
+                    amount: order.total,
                     currency: paymentIntent.currency,
                     status: nextPaymentDetailsStatus,
                     orderId: orderId,

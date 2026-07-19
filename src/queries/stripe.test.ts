@@ -117,6 +117,34 @@ describe("createStripePaymentIntent", () => {
             });
         });
 
+        it("PaymentDetails.amount は Decimal(12,2) 準拠のドル建てで保存する", async () => {
+            // Stripe API は minor unit (セント) を要求するが、PaymentDetails.amount は
+            // Decimal(12,2) = ドル建て。両者を混同すると $99.99 の注文が 9999.00 として
+            // 記録され、PayPal 側 (ドル建て) との集計が破綻する。
+            const order = createMockOrder({ total: 99.99 });
+            mockDb.order.findUnique.mockResolvedValue(order);
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_unit_001",
+                client_secret: "pi_unit_001_secret",
+                amount: 9999,
+                currency: "usd",
+                status: "requires_payment_method",
+            });
+
+            await createStripePaymentIntent("order-001");
+
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    create: expect.objectContaining({
+                        amount: new Prisma.Decimal("99.99"),
+                    }),
+                    update: expect.objectContaining({
+                        amount: new Prisma.Decimal("99.99"),
+                    }),
+                })
+            );
+        });
+
         it("Webhook 相関用に metadata.orderId を PaymentIntent に付与する", async () => {
             // Webhook (src/app/api/webhooks/stripe) で event.data.object.metadata.orderId から
             // 内部 Order を逆引きするため、metadata の付与は破壊的変更として保護する。
@@ -389,7 +417,9 @@ describe("createStripePayment", () => {
                     create: expect.objectContaining({
                         paymentIntentId: "pi_test_123",
                         paymentMethod: "Stripe",
-                        amount: 9999,
+                        // PaymentDetails.amount は Decimal(12,2) = ドル建て。
+                        // Stripe API の minor unit (9999) をそのまま入れない。
+                        amount: new Prisma.Decimal("99.99"),
                         currency: "usd",
                         status: "Completed",
                         orderId: "order-001",
