@@ -5,7 +5,27 @@ import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 import type { Order } from "@prisma/client";
 // 確定済み決済ステータスの SSOT は src/lib/payment-status.ts（Stripe/PayPal 両ガードで共有）
-import { isSettledPaymentStatus } from "@/lib/payment-status";
+import {
+    SETTLED_PAYMENT_STATUSES,
+    isSettledPaymentStatus,
+} from "@/lib/payment-status";
+
+/**
+ * 状態遷移を伴う `order.update` に付与する CAS 条件。
+ *
+ * `findUnique` による事前判定は read-then-act であり、判定と書き込みの間に別
+ * リクエストが決済を確定させたケースを防げない。where に確定済みステータスの
+ * 除外条件を混ぜることで判定と書き込みを単一 UPDATE へ畳み込み、0 件マッチ
+ * （= 既に確定済み）を Prisma の P2025 として検知する。
+ */
+const notSettled = () => ({
+    paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] },
+});
+
+/** CAS 条件が 0 件マッチだった場合に Prisma が返す「更新対象なし」エラーか */
+const isRecordNotFound = (error: unknown): boolean =>
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025";
 
 /**
  * @Function createPayPalPayment
@@ -234,6 +254,7 @@ export const capturePayPalPayment = async (
             return await db.order.update({
                 where: {
                     id: orderId,
+                    ...notSettled(),
                 },
                 data: {
                     paymentStatus: "Failed",
@@ -302,6 +323,7 @@ export const capturePayPalPayment = async (
         const updatedOrder = await db.order.update({
             where: {
                 id: orderId,
+                ...notSettled(),
             },
             data: {
                 paymentStatus:
@@ -329,6 +351,11 @@ export const capturePayPalPayment = async (
             );
         } else {
             console.error("Error in capturePayPalPayment:", error);
+        }
+        // CAS 条件が 0 件マッチ = read-then-act ガード通過後に別リクエストが確定させた。
+        // 同期ガードと同じメッセージへ写像し、外から見た挙動を一致させる。
+        if (isRecordNotFound(error)) {
+            throw new Error("Order payment is already settled.");
         }
         // capture 検証エラーは意図した拒否のため、汎用メッセージで上書きせず透過させる
         // (coupon.ts の isGuardError と同じ「意図的 throw の保全」パターン)

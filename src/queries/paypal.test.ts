@@ -1,7 +1,13 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import { createPayPalPayment, capturePayPalPayment } from "./paypal";
+import { SETTLED_PAYMENT_STATUSES } from "@/lib/payment-status";
 import { TEST_CONFIG } from "../config/test-config";
 import { createMockOrder, createMockPaymentDetails } from "../config/test-fixtures";
+
+// 確定済みステータスを除外する CAS 条件。order.update の where に付与され、
+// read-then-act ガード通過後に別リクエストが確定させたケースを DB 側で弾く。
+const NOT_SETTLED = { paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] } };
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -226,7 +232,7 @@ describe("capturePayPalPayment", () => {
 
             expect(result).toEqual(updatedOrder);
             expect(mockDb.order.update).toHaveBeenCalledWith({
-                where: { id: "order-001" },
+                where: { id: "order-001", ...NOT_SETTLED },
                 data: { paymentStatus: "Failed" },
             });
         });
@@ -334,7 +340,7 @@ describe("capturePayPalPayment", () => {
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { id: "order-001" },
+                    where: { id: "order-001", ...NOT_SETTLED },
                     data: expect.objectContaining({
                         paymentStatus: "Paid",
                         paymentMethod: "PayPal",
@@ -490,6 +496,29 @@ describe("capturePayPalPayment", () => {
             ).rejects.toThrow("Order payment is already settled.");
             expect(mockFetch).not.toHaveBeenCalled();
             expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("並行 capture: findUnique 通過後に確定した場合も CAS で拒否される", async () => {
+            // read-then-act ガードは単一プロセス内でしか効かない。findUnique が
+            // Pending を返した後に別リクエストが Paid を確定させると、update の
+            // where が 0 件マッチとなり Prisma が P2025 を投げる。これを既存の
+            // settled メッセージへ写像し、外から見た挙動を同期ガードと揃える。
+            mockFetch.mockResolvedValue({
+                json: () => Promise.resolve(buildCaptureResponse({})),
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockRejectedValue(
+                new Prisma.PrismaClientKnownRequestError(
+                    "An operation failed because it depends on one or more records that were required but not found.",
+                    { code: "P2025", clientVersion: "5.22.0" }
+                )
+            );
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Order payment is already settled.");
         });
     });
 
