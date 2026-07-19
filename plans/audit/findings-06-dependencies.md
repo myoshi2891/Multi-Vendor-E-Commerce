@@ -30,7 +30,14 @@
 - **Risk**: LOW-MED — v7 内のマイナーバンプ。使用 API 面は 7.0→7.5 で安定。Clerk のマイナーは `auth()`/`clerkMiddleware` 内部を変えることがあるため MED 寄り。全テスト + 未認証での保護ルート手動スモークでカバー。
 - **Confidence**: HIGH — インストール版・影響範囲・使用面すべて直接検証済み。
 - **Fix sketch**: `package.json` を `^7.5.x` にバンプ → 再インストールで `bun.lock` 更新 → Clerk モックのユニット + middleware テスト → 保護ルート1本を未認証スモーク。
-- > **TODO(needs-detail)**: **バンプ先の具体的なピンが未確定**。本 finding の `7.5.x` は
+- > **✅ 解決済み（2026-07-17 / Round 13 の実装状態 reconcile で確認）— 以下は履歴**。
+  > 確定結果: `package.json:21` は **`"@clerk/nextjs": "^7.5.0"`**（範囲指定のまま記録する
+  > 方針を採用・厳密ピンは不採用）。`bun.lock` 上の解決版は GHSA-vqx2-fgx2-5wq9 の
+  > 修正版（7.2.4+）と HIGH GHSA-w24r-5266-9c3c の**両方**を満たし、`js-cookie` は
+  > `@clerk/shared@4.25.4` 経由で `3.0.7`。**下記 TODO は着手不要**（本節冒頭の
+  > blockquote と同一の結論。以降の手順・確認事項は当時の未確定事項の記録として残す）。
+  >
+  > **TODO(needs-detail)〔当時・解決済み〕**: **バンプ先の具体的なピンが未確定**。本 finding の `7.5.x` は
   > 監査時点（2026-07-03 / HEAD `f9752c0`）の記述であり、**現時点で何が解決されるかは
   > 実行して確かめる必要がある**（`^7.5.x` は範囲指定なので、いつ実行するかで
   > 解決版が変わる）。確認手順:
@@ -171,7 +178,18 @@ cat node_modules/js-cookie/package.json | grep '"version"'
   `node_modules/next/package.json` とも **16.2.1**（インストール実体）。
   peer（React 19、`@playwright/test` ^1.51）充足。`middleware→proxy` / AVIF 警告の
   非対応は決定済みトレードオフ（recon）。
-- > **TODO(needs-detail)**: **「16.2.1 が最新」という判定は監査時点
+- > **✅ 解決済み（2026-07-19）— 以下は履歴。本 finding の「アクション不要」判定は撤回済み**。
+  > 下記 2 分岐のうち **「より新しい版が出ている」が現実**となった: Round 9 以降に
+  > **GHSA-26hh-7cqf-hhc6**（HIGH — App Router の Middleware/Proxy バイパス）が公表され、
+  > `next@16.2.1` は影響範囲内だった。独立 finding として起票され
+  > **[plan 057](../057-upgrade-next-middleware-bypass.md)（DONE）**で解消済み
+  > （現状: `package.json:80` = `"next": "~16.2.10"` / `bun.lock` 解決版 **16.2.10**）。
+  > 本 finding の本来の目的（**Clerk/Prisma の作業に Next バンプを同梱しない**）は
+  > 057 が独立プランになったことで維持されている。
+  > **⚠️ 本 finding を「Next は対応不要」の根拠として再利用しないこと**
+  > （[`../README.md`](../README.md) の rejected 節 DEPS-08 にも同じ注意書きあり）。
+  >
+  > **TODO(needs-detail)〔当時・解決済み〕**: **「16.2.1 が最新」という判定は監査時点
   > （2026-07-03 / HEAD `f9752c0`）のものであり、リポジトリ内からは検証できない**
   > （最新版の情報は外部レジストリにしか無い）。本 finding が実測で言えるのは
   > **「インストール実体が 16.2.1 である」ことまで**で、それが最新かどうかは別の主張。
