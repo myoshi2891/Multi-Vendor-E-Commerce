@@ -54,6 +54,18 @@
 
 ### [TESTS-15] 注文キャンセル/返金の子連動 + 在庫復元（restock）が実 DB 未検証 — TESTS-06 の昇格・拡張
 
+> **⚠️ `Cancelled` と `Canceled` の綴り違いはタイポではない — 別 enum の正しい綴りである**。
+> `prisma/schema.prisma` は 2 つの enum で綴りを違えている:
+>
+> | enum | 綴り | 定義 | 本節での登場箇所 |
+> |---|---|---|---|
+> | `PaymentStatus` | **`Cancelled`**（L 二重） | `schema.prisma:488` | `updateOrderPaymentStatus` の `paymentStatus` 遷移 |
+> | `OrderStatus` | **`Canceled`**（L 単一） | `schema.prisma:475` | `updateOrderGroupStatusAsAdmin` の `orderStatus` 遷移 |
+>
+> **どちらかに寄せて「統一」してはならない** — 台帳の綴りを揃えると実装の enum 値と
+> 乖離し、テスト実装時に存在しない値を書いて型エラーになる。スキーマ側の綴り統一は
+> 破壊的マイグレーション（既存行の値書き換え）を伴う別課題であり、本ラウンドの対象外。
+
 - **Evidence**: `src/queries/order.ts:562-651` — `updateOrderPaymentStatus`。
   「非終端 → Cancelled/Refunded」遷移を条件付き `updateMany`（`paymentStatus: { notIn: [...] }`）
   で単一原子 UPDATE に畳み込み、`transition.count === 1` のときのみ子 OrderGroup/OrderItem 連動
@@ -158,7 +170,7 @@
 
 | # | 所見 | Round 5 時点の現状（直接確認） | 裁定 |
 |---|---|---|---|
-| TESTS-02 | capture 経路の非原子 2 書き込みが統合テスト不能 | 未解消。`src/queries/stripe.ts` / `paypal.ts` の capture 側はテスト以前に `$transaction` 化（plan 003 隣接）が先 | **deferred 維持**（コード修正が先行依存。032 の webhook 側とは対象コードが別） |
+| TESTS-02 | capture 経路の非原子 2 書き込みが統合テスト不能 | 未解消。`src/queries/stripe.ts` / `paypal.ts` の capture 側はテスト以前に `$transaction` 化（plan 003 隣接）が先 | **deferred 維持**（コード修正が先行依存。032 の webhook 側とは対象コードが別）<br>**⚠️ 2026-07-19 追記**: 先行依存としていた **plan 003 は DONE**（[`../README.md`](../README.md) の Status 表が正）。さらに Round 14 で capture 経路に CAS ガードが入った（`4261be0` / `e63474b`）ため、本行の「未解消」は **Round 5 時点の記述**。再評価は [`VETTED_FINDINGS.md`](VETTED_FINDINGS.md) の「Round 14 追記」節を参照 |
 | TESTS-04 | webhook ハンドラーの実 DB 冪等性なし | 未解消を再確認（両 route の unit テストは db 全モック） | **TESTS-16 に昇格 → plan 032** |
 | TESTS-05+08 | placeOrder オーバーセルロールバック + PLATFORM 端数 | plan 027（TODO）が既存。本ラウンドの 031 は**注文後のライフサイクル（restock 側）**でシナリオ非重複 | plan 027 維持（重複プラン作成せず） |
 | TESTS-06 | restock 二重実行ガードの実 DB テストなし | 未解消を再確認（`order.ts:562-651` / `:459-510`） | **TESTS-15 に昇格 → plan 031** |
