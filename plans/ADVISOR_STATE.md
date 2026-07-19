@@ -17,6 +17,77 @@
 >
 > **例外はラウンド開始時に明示的に宣言すること**（宣言のない範囲外編集は Hard Rule 1 違反）。
 > いずれの場合も **`src/` のソースコードは一切変更しない**という中核は不変。
+>
+> **⚠️ ただし Hard Rule 1 が適用されるのは「improve スキルの監査ラウンド」だけである**。
+> 本ファイルは監査ラウンド（R1〜R9・R13）に加えて、**CodeRabbit レビュー由来の
+> triage / 実装ラウンド（R10〜R12・R14）も履歴として記録**している。後者は improve
+> スキルの実行ではないため Hard Rule 1 の管轄外で、**Round 14 は実際に `src/` と
+> `tests/` を変更している**（それが目的のラウンドであり、違反ではない）。
+> ラウンドごとの性格は下表のとおり:
+>
+> | ラウンド | 性格 | Hard Rule 1 | `src/` 変更 |
+> |---|---|---|---|
+> | R1〜R9・R13 | improve スキルの監査 | **適用** | なし（各ラウンドのクローズで機械検証済み） |
+> | R10〜R12 | CodeRabbit 指摘の triage（plans/ の文書修正） | 管轄外（結果的に `plans/**` のみ） | なし |
+> | **R14** | CodeRabbit 指摘の **triage + 実装** | **管轄外** | **あり（決済・注文冪等性の 5 コミット）** |
+
+---
+
+## Round 14 — CodeRabbit レビュー第4弾 + Phase A 実装（**監査ではない** / 2026-07-19）
+
+> **⚠️ 本ラウンドは improve スキルの監査ラウンドではない。** CodeRabbit の指摘に対する
+> **実装セッション**であり、`src/` と `tests/` を実際に変更している。
+> `git diff 934b6fa..b5d0c66 --stat -- src tests` は**空ではない** —
+> 他ラウンドのクローズ条件（diff 空の機械検証）を本ラウンドに適用しないこと。
+
+- **対象範囲**: `934b6fa..b5d0c66`（branch: `dev` / **5 コミット**）
+- **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に実施したレビュー。
+  VSCode「問題」パネルの **114 件**（⚠49 + ⓘ65）は **NEW REVIEW + PREVIOUS REVIEWS (2)
+  の合算**であり新規指摘数ではない。精査後の実体は `plans/ja/*` ミラー重複 5 /
+  言い換え重複 4 / 既に解消済み（誤検知）3 / **要対応 約 81**（コード 5 + 文書 76）
+- **実行計画**: `~/.claude/plans/claude-rules-02-tdd-step-commit-md-peaceful-globe.md`
+- **ユーザー確認済みの決定**:
+  - Phase A（コード修正）は **TDD（Red → Green）**・1 論理単位 = 1 コミット
+  - PayPal settled ガードの CAS 不一致は既存メッセージ `"Order payment is already settled."`
+    で再 throw する（read-then-act の事前判定は無駄な PayPal API 呼び出し回避のため**残す**）
+  - `PaymentDetails.amount` は**ドル建てに統一**（`schema.prisma:699` の `Decimal(12,2)` に従う。
+    マイグレーション不要 — Stripe 側のコード修正のみ）
+  - `placeOrder` の冪等性は**カート行を使い捨てトークン**として扱う（マイグレーション不要）
+- **採番**: 監査台帳は新設せず、**`audit/VETTED_FINDINGS.md` の「Round 14 追記」節**に記録
+  （R10〜R12 の triage ラウンドと同じ扱い）
+
+### Round 14 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | Phase A-1 PayPal settled ガードの CAS 原子化 | ✅ DONE | `4261be0`（`paypal.ts` + `paypal.test.ts`） |
+| 2 | Phase A-3 `PaymentDetails.amount` のドル建て統一 | ✅ DONE | `e63474b`（`stripe.ts` + `stripe.test.ts`） |
+| 3 | Phase A-5 `placeOrder` のサーバー側冪等性 | ✅ DONE | `824e224`（`user.ts` + `user.test.ts`） |
+| 4 | Phase A-4a spy リーク修正（`afterEach` へ集約） | ✅ DONE | `15aef5c`（`index-products/route.test.ts`） |
+| 5 | Phase A-4b security-headers E2E の status 検証 | ✅ DONE | `b5d0c66`（`security-headers.spec.ts`） |
+| 6 | Phase A-2 `custom_id` 検証の上流化 | ❌ **不要（前提が誤り）** | 着手前から充足済み。詳細は下記 |
+| 7 | Phase B 監査台帳の整合性回復（本タスク） | ✅ DONE | findings-06/13/14/17 + VETTED_FINDINGS + README ×2 + 本ファイル（1 ファイル = 1 コミット） |
+| 8 | Phase C 個別プラン文書 約 60 件 | ⬜ **未着手** | `plans/003`〜`plans/062`。1 プラン = 1 コミット |
+
+### Round 14 の rejected（再監査防止）
+
+**A-2「`custom_id` 検証を全 status 書き込みの上流へ」— 却下（前提が誤り・既に充足済み）**。
+計画は「`if (captureData.status !== "COMPLETED")` が `custom_id` 突合より前にあり、他人の
+PayPal Order id で自分の注文を `Failed` に落とせる」としたが、**ラウンド開始時点で既に
+検証が上流にあった**（`git show 934b6fa:src/queries/paypal.ts` → `capturedCustomId !== orderId`
+が **L228**、status 分岐が **L233**。現行も `paypal.ts:248` / `:253` で同順）。
+**Phase A のコミットは計画の 6 本ではなく 5 本で正しい。**
+Round 12 の判断基準 8（「指摘が既に解消済みのことがある」）と同型の事例。
+
+### Round 14 が解消した既存 deferred
+
+- **「Server-side `placeOrder` idempotency」**（plan 006 から deferred）→ **A-5 で解消**。
+  ただし同項目に併記されていた **`applyCoupon` の lost-update `$transaction` リファクタは未解決**
+  （別事案として分離済み — `README.md` Deferred 節）。
+- **CORRECTNESS-05**（`PaymentDetails.amount` 単位不一致）→ **コード側は A-3 で解消**。
+  **既存行の backfill は未起票**（過去の Stripe 決済行はセント値のまま残る）。
+- **TESTS-02 capture 経路** / **`saveUserCart` 統合** → 先行依存だった plan 003 / 005 が
+  DONE になり、**deferred 理由そのものが失効**（昇格の再評価対象）。
 
 ---
 
@@ -511,29 +582,51 @@ README の該当注記を修正）。
 
 ## 次のアクション（NEXT）
 
-**✅ 最新ラウンドは Round 9（E2E 残余監査）で、2026-07-12 に完了済み。**
-ソースコード（`src/` `tests/` `prisma/`）は Round 4〜9 を通じて無変更
-（監査ラウンドは読み取り + プラン執筆のみ）。
+> **本節はファイル末尾寄りにあるが「Round 1 の続き」ではなく、全ラウンドを通じた現在地**である。
+> ラウンド節は降順（最新が上）に並ぶのに本節だけが Round 1 節の末尾に置かれているため、
+> **更新漏れが起きやすい構造**になっている（実際に Round 13 まで「最新は Round 9」「次は 057」の
+> ままドリフトし、**完了済みプランを次アクションとして推奨していた**）。
+> **ラウンドをクローズしたら必ず本節も更新すること。**
 
-**次セッションの着手先: プラン 057 → 051 → 056 の実行**（いずれも**依存ゼロで即実行可能**）:
+**✅ 最新ラウンドは Round 14（CodeRabbit 第4弾 + Phase A 実装）で、2026-07-19 時点で
+Phase A / Phase B が完了。** Round 14 は**監査ではなく実装ラウンド**であり、
+`src/` `tests/` は変更されている（R4〜R13 の「無変更」規律は本ラウンドに適用されない）。
 
-1. **[057](057-upgrade-next-middleware-bypass.md)**（P1 / dependencies / Depends on `—`）—
-   **テスト系プラン群より優先する**（[`README.md`](README.md) の
-   「Recommended sequencing #15」）。`next@16.2.1` が GHSA-26hh-7cqf-hhc6
-   （HIGH — App Router の Middleware/Proxy バイパス）の影響範囲内で、
-   `src/middleware.ts` が `/dashboard`・`/checkout`・`/profile` を守っている以上、
-   **plan 004 が Clerk 側で塞いだのと同じ攻撃面がフレームワーク層で開いたまま**。
-   16.2.x 内のパッチ bump のみで `src/` は無変更、042〜056 とファイル競合なし。
-2. **[051](051-e2e-country-selector.md)**（P1 / 国セレクタの cookie ラウンドトリップ）—
-   Depends on `—`。
-3. **[056](056-e2e-newsletter-characterization.md)**（Newsletter dormant 404 の
-   characterization。route + schema とも不在というアプリ側ギャップの現挙動固定）。
+### 直近の着手先
 
-その先の実行順・依存は **[`README.md`](README.md) の Status 表と
-「Recommended sequencing #13」を正とする**（042 が signIn ヘルパーを修復するまで
-認証系 E2E 047〜050・052・055 は着手不可 / 054 は 043 の VRT 再撮影が前提）。
-新ラウンドを起こす場合は、E2E の未スイープ切り口が Round 9 でほぼ枯渇しているため、
-**plans 042〜056 の実行結果と OI-9 / OI-11 の解消状況を先に確認すること**。
+1. **Round 14 Phase C（約 60 件）— 最優先**。`plans/003`〜`plans/062` の個別プラン文書に
+   対する CodeRabbit 指摘。**1 プラン = 1 コミット**。着手順は依存の強い順で
+   ①セキュリティ実装系（003–007・009・059・060・062）→ ②spike 系（013–022・025）→
+   ③テスト計画系（027–041）→ ④E2E 系（042–057）→ ⑤その他 docs。
+   **⚠️ 約 15 件はタイトルだけでは修正内容を確定できない**ため、着手時に該当コメントの
+   詳細本文を入手すること（Round 11 判断基準 3）。
+2. **未実行プランの実行**。**058〜062 は全て DONE**。残る TODO は
+   **[`README.md`](README.md) の Status 表を正とする**（本節に一覧を再掲しない —
+   二重管理でドリフトさせないため）。E2E 系は **042 が絶対の先頭**（signIn ヘルパーの
+   Clerk UI ドリフトで認証系 16 件が全滅中 / 047–050・052・055 が待ち）。
+   依存ゼロで即着手できるのは **051 / 056 / 044 / 045**。
+3. **Round 14 が生んだ未起票の残件**（いずれも小さく独立）:
+   - `PaymentDetails.amount` の**既存行 backfill**（コード修正は `e63474b` で完了済み）
+   - `applyCoupon` の lost-update `$transaction` リファクタ
+   - 住所 `default: true` 重複バグの remediation（plan 037 の characterization が先行）
+
+### 完了済み（次アクションとして推奨しないこと）
+
+**001–009・023・024・057–062 は DONE**。とくに **057（`next` bump）は
+`~16.2.10` で着地済み**であり、過去の本節が「次に実行する」と書いていたのは
+**Round 13 時点で既に古い記述**だった。実行実態は常に
+**[`README.md`](README.md) の Status 表**が SSOT。
+
+### 新ラウンドを起こす場合
+
+- **E2E**: 未スイープ切り口は Round 9 でほぼ枯渇 → plans 042〜056 の実行結果と
+  OI-9 / OI-11 の解消状況を先に確認する。
+- **Integration**: 先行依存だった plan 003 / 005 が DONE になり、**TESTS-02 capture 経路と
+  `saveUserCart` 統合の deferred 理由が失効**している（昇格の再評価が可能）。
+- **Security**: Round 13 deferred 11 件が `audit/findings-18-security-r13.md` §3 に
+  昇格条件つきで残る。**SECURITY-17（webhook の無条件上書き）は Round 14 の A-1 が
+  確立した CAS イディオム（`paypal.ts` の `notSettled()`）を横展開すれば解消**でき、
+  昇格条件がより具体化している。
 
 ---
 
@@ -594,11 +687,26 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 完了済みフェーズは再実行せず、このファイルのチェックリストを更新しながら進めること。
 ```
 
-## 完了済みの要点（次セッションが再導出しなくてよい事実）
+## 完了済みの要点（**Round 1 時点の記録** — 現在値ではない）
 
-- ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件
-- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、<=7.2.3 影響・修正版 7.2.4+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補
+> **⚠️ 本節は Round 1（2026-07-03 / HEAD `f9752c0`）時点のスナップショットであり、
+> 「次セッションが再導出しなくてよい**現在の**事実」ではない。** 見出しが
+> 「完了済みの要点」であるため現況表と誤読されやすいが、以下の数値・判定の多くは
+> 後続ラウンドで変化している。**現在値が必要なときは実測するか、下表の参照先を見ること。**
+>
+> | 項目 | Round 1 時点 | 現在（最終確認: 2026-07-19 / Round 14） |
+> |---|---|---|
+> | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — Round 13 実測。詳細 `audit/findings-18-security-r13.md` §0） |
+> | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消） |
+> | `next` | `^16.2.1` | **`~16.2.10`**（[plan 057](057-upgrade-next-middleware-bypass.md) DONE。R1 の「最新・対応不要」判定は撤回済み） |
+> | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / README Deferred で継続追跡） |
+> | tsc / lint | 0 エラー / 15 警告 | 同左（Round 13 で再実測・変化なし） |
+
+- ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件 ← **R1 時点**
+- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、<=7.2.3 影響・修正版 7.2.4+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補 ← **plan 004 で解消済み**
 - 既知・未対応（プラン化候補）: OI-9 ホーム SSR 500 / OI-11 seller `self is not defined` / OI-10 a11y color-contrast / C2 bundle size / applyCoupon total ロストアップデート / E2E 120s ハング
+  ← **OI-9 / OI-11 は Round 9 時点でも「未着手」を確認済み**（`docs/testing/QA_HANDOFF.md`）。
+  最新の解消状況は QA_HANDOFF 側を正とする
 - **direction 残候補: 一覧は [`plans/README.md`](README.md) の Deferred 節を参照**（**単一の出所**）。
   > 本ファイルに一覧を再掲していたが、README 側と**二重管理**になり、片方だけ更新されて
   > ドリフトしていた（例: `/dashboard/admin/orders`・`/dashboard/admin/coupons`・
