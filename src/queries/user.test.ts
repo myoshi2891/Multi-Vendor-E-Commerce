@@ -771,6 +771,85 @@ describe("placeOrder", () => {
             );
             // F3: 在庫減算は既定で「在庫十分（1 行更新）」として既存成功系を壊さない
             mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+            // 冪等性ゲート: カート消費は既定で成功（1 行削除）とする
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
+        });
+
+        it("注文トランザクション内でカートを消費し、二重注文を防ぐ", async () => {
+            // カート行を単一使用トークンとして扱う。クライアントの多重送信ガードは
+            // Server Action を直接叩けば迂回できるため、サーバー側で直列化する。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.order.create.mockResolvedValue(createMockOrder());
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // 所有権込みの条件付き削除であること（他人のカートを消費させない）
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
+                where: { id: "cart-001", userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
+            // 注文作成より前に消費すること（ゲートとして機能する順序）
+            expect(
+                mockDb.cart.deleteMany.mock.invocationCallOrder[0]
+            ).toBeLessThan(mockDb.order.create.mock.invocationCallOrder[0]);
+        });
+
+        it("カートが既に消費済みなら注文を作成せず Cart not found. を投げる", async () => {
+            // 並行 2 リクエストのうち削除に成功するのは 1 つだけ。もう一方は
+            // count === 0 となり、$transaction ごとロールバックされる。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Cart not found.");
+
+            expect(mockDb.order.create).not.toHaveBeenCalled();
+            expect(mockDb.size.updateMany).not.toHaveBeenCalled();
         });
 
         it("単一店舗の注文を正常に作成する", async () => {
@@ -1385,14 +1464,25 @@ describe("emptyUserCart", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.cart.delete.mockResolvedValue(createMockCart());
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
 
             const result = await emptyUserCart();
 
             expect(result).toBe(true);
-            expect(mockDb.cart.delete).toHaveBeenCalledWith({
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
+        });
+
+        it("カートが既に存在しない場合もエラーにせず true を返す（冪等）", async () => {
+            // placeOrder が注文トランザクション内でカートを消費した後、
+            // クライアントの後片付け呼び出しが偽のエラーログを出さないこと。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+
+            await expect(emptyUserCart()).resolves.toBe(true);
         });
     });
 });

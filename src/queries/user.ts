@@ -624,6 +624,22 @@ export const placeOrder = async (
 
     // 全DB操作をトランザクションでラップ
     const order = await db.$transaction(async (tx) => {
+        // 冪等性ゲート: カート行を「単一使用トークン」として消費する。
+        //
+        // place-order.tsx の isPlacingOrderRef はクライアント側ガードにすぎず、
+        // Server Action を直接叩けば迂回できる。ここで注文作成より前に条件付き削除を
+        // 行うと、カート行の行ロックで並行リクエストが直列化され、削除に成功した
+        // 1 リクエストだけが注文へ進む（count === 0 側は下で throw してロールバック）。
+        //
+        // 在庫不足等で tx がロールバックすればカート削除も巻き戻るため、ユーザーは
+        // 再試行できる。CartItem は Cart から onDelete: Cascade で連鎖削除される。
+        // 条件式は在庫減算の check-and-decrement（下の tx.size.updateMany）と同じ
+        // 「条件付き書き込み + count 判定」イディオム。
+        const consumed = await tx.cart.deleteMany({
+            where: { id: cartId, userId },
+        })
+        if (consumed.count === 0) throw new Error('Cart not found.')
+
         // Create the order
         const order = await tx.order.create({
             data: {
@@ -783,13 +799,16 @@ export const emptyUserCart = async () => {
 
         const userId = user.id
 
-        const res = await db.cart.delete({
+        // placeOrder が注文トランザクション内でカートを消費済みの場合があるため、
+        // delete（対象なしで P2025）ではなく deleteMany を使い冪等にする。
+        // 「カートを空にする」操作は結果状態が同じなら成功とみなしてよい。
+        await db.cart.deleteMany({
             where: {
                 userId,
             },
         })
 
-        if (res) return true
+        return true
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in emptyUserCart:", error.message, error.stack);
