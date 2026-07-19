@@ -17,6 +17,12 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
+// console の spy はアサーション失敗時にも必ず復元する。テスト本体末尾の
+// mockRestore() は失敗時に到達せず、後続テストへ spy が漏れて出力を汚す。
+afterEach(() => {
+    jest.restoreAllMocks();
+});
+
 // ヘルパー: Request オブジェクト生成
 const createPostRequest = (body: Record<string, unknown>) =>
     new Request("http://localhost:3000/api/index-products", {
@@ -39,11 +45,10 @@ describe("POST /api/index-products - フォールバック contains 検索", () 
             .mockResolvedValueOnce([]);
 
         // consoleの警告を抑制
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+        jest.spyOn(console, "warn").mockImplementation(() => {});
 
         await POST(createPostRequest({ query: "iPhone" }));
 
-        consoleWarnSpy.mockRestore();
 
         // フォールバック呼び出し（2回目）の引数を検証
         expect(mockProductFindMany).toHaveBeenCalledTimes(2);
@@ -88,11 +93,10 @@ describe("GET /api/index-products - フォールバック contains 検索", () =
             .mockRejectedValueOnce(new Error("Fulltext count failed"))
             .mockResolvedValueOnce(0);
 
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+        jest.spyOn(console, "warn").mockImplementation(() => {});
 
         await GET(createGetRequest(new URLSearchParams({ search: "Laptop" })));
 
-        consoleWarnSpy.mockRestore();
 
         // フォールバック呼び出しの引数を検証
         // Promise.all が失敗するため、フォールバックブロックで再度 findMany が呼ばれる
@@ -221,9 +225,7 @@ describe("index-products - 500 レスポンスの情報漏洩防止", () => {
             .mockRejectedValueOnce(new Error(LEAKY_MESSAGE))
             .mockRejectedValueOnce(new Error(LEAKY_MESSAGE));
 
-        const consoleWarnSpy = jest
-            .spyOn(console, "warn")
-            .mockImplementation(() => {});
+        jest.spyOn(console, "warn").mockImplementation(() => {});
         const consoleErrorSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
@@ -237,8 +239,6 @@ describe("index-products - 500 レスポンスの情報漏洩防止", () => {
         // サーバー側では完全なエラーを保持していること（デバッグ性の担保）
         expect(consoleErrorSpy).toHaveBeenCalled();
 
-        consoleWarnSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
     });
 
     it("GET は内部エラーメッセージを含まない汎用 500 を返す", async () => {
@@ -250,9 +250,7 @@ describe("index-products - 500 レスポンスの情報漏洩防止", () => {
             .mockRejectedValueOnce(new Error(LEAKY_MESSAGE))
             .mockRejectedValueOnce(new Error(LEAKY_MESSAGE));
 
-        const consoleWarnSpy = jest
-            .spyOn(console, "warn")
-            .mockImplementation(() => {});
+        jest.spyOn(console, "warn").mockImplementation(() => {});
         const consoleErrorSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
@@ -267,7 +265,5 @@ describe("index-products - 500 レスポンスの情報漏洩防止", () => {
         expect(JSON.stringify(body)).not.toContain(LEAKY_MESSAGE);
         expect(consoleErrorSpy).toHaveBeenCalled();
 
-        consoleWarnSpy.mockRestore();
-        consoleErrorSpy.mockRestore();
     });
 });
