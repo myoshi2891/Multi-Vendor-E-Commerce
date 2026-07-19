@@ -9,11 +9,24 @@ Round 6 (`tests` focus — Integration 次点候補の深掘り・実測 17/17 p
 Round 7 (`tests` focus — Integration 残余領域の第 3 弾・実測 17/17 pass 再確認): 2026-07-11, against HEAD `9111f41` (branch `dev`).
 Round 8 (`tests` focus — E2E テスト網羅性監査・初の 3 ブラウザフル実測): 2026-07-11, against HEAD `fbd1020` (branch `dev`).
 Round 9 (`tests` focus — E2E 残余監査): 2026-07-12, against HEAD `25e50d9` (branch `dev`).
+Round 10–12 (CodeRabbit ローカルレビュー triage 全 3 弾 — 73 件 / accepted 67・rejected 6):
+2026-07-17, against HEAD `739097c` → `27757a3` → `3a875cd` (branch `dev`)。
+**監査ではなく指摘 triage のラウンド**で、成果物は `audit/VETTED_FINDINGS.md` の Round 10–12 節
+（独立した findings ファイルは作らない）。
+Round 13 (`deep security` focus — セキュリティ特化 deep 監査 第 3 弾): 2026-07-17,
+against HEAD `7080b12` (branch `dev`). → plans **058–062**.
+Round 14 (CodeRabbit レビュー第4弾 + **Phase A 実装**): 2026-07-19, `934b6fa..b5d0c66` (branch `dev`).
+**⚠️ 本ラウンドのみ `src/` と `tests/` を実際に変更している**（決済・注文冪等性の
+セキュリティ修正 5 コミット）。他ラウンドの「ソース無変更」規律は Round 14 には適用されない。
+詳細と reconcile は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
 the audit itself changed no source code.
 
-- Raw audit findings: Round 1 ([01 correctness](audit/findings-01-correctness.md) / [02 security](audit/findings-02-security.md) / [03 performance](audit/findings-03-performance.md) / [04 test coverage](audit/findings-04-test-coverage.md) / [05 tech debt](audit/findings-05-tech-debt.md) / [06 dependencies](audit/findings-06-dependencies.md) / [07 DX/docs](audit/findings-07-dx-docs.md) / [08 direction](audit/findings-08-direction.md)) / [Round 2](audit/findings-09-direction-expansion.md) / [Round 3](audit/findings-10-direction-operations-growth.md) / [security follow-up](audit/findings-11-security-followup.md) / [Round 4](audit/findings-12-test-coverage.md) / [Round 5](audit/findings-13-integration-coverage.md) / [Round 6](audit/findings-14-integration-coverage-r6.md) / [Round 7](audit/findings-15-integration-coverage-r7.md) / [Round 8](audit/findings-16-e2e-coverage.md) / [Round 9](audit/findings-17-e2e-coverage-r9.md)
+- Raw audit findings: Round 1 ([01 correctness](audit/findings-01-correctness.md) / [02 security](audit/findings-02-security.md) / [03 performance](audit/findings-03-performance.md) / [04 test coverage](audit/findings-04-test-coverage.md) / [05 tech debt](audit/findings-05-tech-debt.md) / [06 dependencies](audit/findings-06-dependencies.md) / [07 DX/docs](audit/findings-07-dx-docs.md) / [08 direction](audit/findings-08-direction.md)) / [Round 2](audit/findings-09-direction-expansion.md) / [Round 3](audit/findings-10-direction-operations-growth.md) / [security follow-up](audit/findings-11-security-followup.md) / [Round 4](audit/findings-12-test-coverage.md) / [Round 5](audit/findings-13-integration-coverage.md) / [Round 6](audit/findings-14-integration-coverage-r6.md) / [Round 7](audit/findings-15-integration-coverage-r7.md) / [Round 8](audit/findings-16-e2e-coverage.md) / [Round 9](audit/findings-17-e2e-coverage-r9.md) / [Round 13 security](audit/findings-18-security-r13.md)
+  — **Round 10–12（CodeRabbit triage）と Round 14（CodeRabbit 第4弾 + 実装）は独立した
+  findings ファイルを持たない**。両者の台帳は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md)
+  の該当ラウンド節にある（監査ではなく指摘 triage / 実装のラウンドのため）。
 - **direction の正式版 SSOT**: [`docs/architecture/expansion/`](../docs/architecture/expansion/) —
   Round 2/3 の [`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) /
   [`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md)
@@ -218,7 +231,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- **CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars) — needs backfill.
+- **CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars) — **コード修正は Round 14 (`e63474b`) で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**残るのは既存行の backfill のみで、これは未起票**（過去の Stripe 決済行はセント値のまま）。本項目を「コード修正が必要」と読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
@@ -236,7 +249,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-01 (bulk)** the ~90-site legacy `console.error` → `logError` migration (after plan 007).
 - **TECHDEBT-02** break up `product-details.tsx` (1382-line god component) — L effort, characterization tests first.
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
-- **Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006; overlaps the `applyCoupon` lost-update `$transaction` refactor.
+- ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。
 - **Round 13 deferred（詳細: [`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §3）**: 5 本をプラン化（058〜062）した後の残余。**SECURITY-11**（`dompurify >=3.1.3 <3.2.7` XSS advisory・`src/utils/sanitize.ts` 経由で本番 UI 到達だが sink は sanitize 済み → 依存 refresh 枠で patched 版へ。plan 057 の `next` bump と同じ依存メンテ、個別プラン化しない）・**SECURITY-15**（主要ミューテーションのサーバー側 Zod 検証欠落〔review/shipping-address/product〕— plan 060 が coupon で確立するパターンの横展開 follow-up。`upsertProduct` は `ProductWithVariantType` の型差分の突合が必要）・**SECURITY-16**（Cloudinary unsigned upload — preset の signed/unsigned・ダッシュボード制約がコード外のため investigate 先行）・**SECURITY-17**（webhook ステータスの無条件上書き→out-of-order 退行 — plan 059 の settled-guard を webhook へ展開 + plan 032 と調整）・**SECURITY-18**（Clerk/Svix 検証が raw body でない fail-closed 信頼性 — 低コスト、次の webhook 作業に同梱）・**SECURITY-19**（公開検索の入力長上限なし — rate-limit spike plan 025 と併走）・**AUTHZ-02**（seller-store layout の `[storeUrl]` 所有権未検証・多層防御 — クエリ層が実データを守るため MED）・**AUTHZ-03**（`getProductMainInfo` caller チェックなし — 大半公開で LOW）・**LOGIC-22**（送料計算の二系統分岐 Decimal vs float — tech-debt / 規約ドリフト）・**LOGIC-23**（`placeOrder` qty=0 → ITEM 送料負値化 — LOW correctness）・**SECURITY-24**（クーポン利用回数制限なし・`CouponToUser` 未使用 — 1人1回制限が仕様意図か product 判断先行）。
