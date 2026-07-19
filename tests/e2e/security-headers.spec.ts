@@ -26,6 +26,15 @@ test.describe("セキュリティレスポンスヘッダ", () => {
         }) => {
             // リダイレクトを追わず、そのレスポンス自体のヘッダを検証する
             const response = await request.get(path, { maxRedirects: 0 });
+
+            // ヘッダは 500 エラーページにも付与されるため、ステータスを検証しないと
+            // アプリが壊れていてもこのテストは緑のままになる。`/` は 200、
+            // `/checkout` は未認証でサインインへの 3xx を返すので 4xx/5xx を弾く。
+            expect(
+                response.status(),
+                `${path} のステータス`
+            ).toBeLessThan(400);
+
             const headers = response.headers(); // キーは小文字に正規化済み
 
             for (const [name, value] of Object.entries(
