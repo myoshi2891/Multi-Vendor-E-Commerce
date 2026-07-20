@@ -854,8 +854,13 @@ LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / 
 > Round 1〜13 は improve スキルの監査ラウンドで Hard Rule 1（advisor はソースを変更しない）に
 > 従っていたが、Round 14 は **CodeRabbit レビューの指摘に対する実装セッション**であり、
 > 監査ではない。したがって `plans/**` のみ編集という制約は適用されない。
-> **「ソース無変更」を Round 14 に期待しないこと**（`git diff 934b6fa..b5d0c66 --stat -- src tests`
+> **「ソース無変更」を Round 14 に期待しないこと**（`git diff 72e8004..b5d0c66 --stat -- src tests`
 > は空ではない — これは違反ではなく本ラウンドの目的そのもの）。
+>
+> **⚠️ 範囲記法の注意**: 本ラウンドの baseline は **`72e8004`**（Round 13 末尾のコミット）であり、
+> `934b6fa` は **Phase A-2 の修正コミットそのもの**である。git の `A..B` は A を含まないため、
+> `934b6fa..b5d0c66` と書くと A-2 が範囲から脱落する。**範囲は `72e8004..b5d0c66`（6 コミット）**
+> と書くこと（`934b6fa^..b5d0c66` でも同義）。
 
 - **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に対して実施したレビュー。
   VSCode の「問題」パネル表示は **114 件**（⚠49 + ⓘ65）だが、これは
@@ -866,26 +871,42 @@ LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / 
   （Phase A = コード修正 / Phase B = 監査台帳の整合性回復 / Phase C = 個別プラン文書 約 60 件）。
 - **コミット規律**: `.claude/rules/02-tdd-step-commit.md` に従い 1 論理単位 = 1 コミット。
 
-### Round 14 Phase A — 実装済み（5 コミット / `934b6fa..b5d0c66`）
+### Round 14 Phase A — 実装済み（6 コミット / `72e8004..b5d0c66`）
 
 | # | 修正 | 深刻度 | コミット | 変更ファイル |
 |---|------|-------|---------|-------------|
+| A-2 | `custom_id` の相関検証を `captureData` パース直後・**全 status 書き込みの上流**へ移動（従来は `status !== "COMPLETED"` 分岐の後ろにあり、他人の PayPal Order の DENIED/DECLINED 応答で自分の注文を `Failed` に落とせた。金額/通貨の突合は COMPLETED 応答にしか値が載らないため現位置に残す） | 高 | `934b6fa` | `paypal.ts` + `paypal.test.ts` |
 | A-1 | PayPal/Stripe の settled ガードを CAS 条件で原子化（`update.where` に `paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] }` を混ぜ、P2025 を既存メッセージ `"Order payment is already settled."` へ写像） | 高 | `4261be0` | `paypal.ts` + `paypal.test.ts` |
 | A-3 | `PaymentDetails.amount` を **ドル建て**へ統一（Stripe 側が `paymentIntent.amount`（セント: 3000）を `Decimal(12,2)` 列へ書いていた単純バグ。`order.total` を `Prisma.Decimal` のまま渡す形へ） | 中 | `e63474b` | `stripe.ts` + `stripe.test.ts` |
 | A-5 | `placeOrder` のサーバー側冪等性（`$transaction` 先頭で `cart.deleteMany({ id, userId })` → `count === 0` を CAS ゲートに。カート行が単一使用トークンとして働き、同一 `cartId` の二重注文を行ロックで直列化） | 高 | `824e224` | `user.ts` + `user.test.ts` |
 | A-4a | `route.test.ts` の `mockRestore()` を `afterEach(jest.restoreAllMocks)` へ集約（アサーション失敗時に spy が漏れて後続テストを汚染していた） | 低 | `15aef5c` | `index-products/route.test.ts` |
 | A-4b | security-headers E2E に `response.status()` の検証を追加（500 でもヘッダが付けば pass していた） | 低 | `b5d0c66` | `security-headers.spec.ts` |
 
-### Round 14 rejected（再監査防止 — 1 件）
+### Round 14 rejected（0 件）
 
-- **A-2「`custom_id` 検証を全 status 書き込みの上流へ」**: **却下 — 前提が誤り（既に充足済み）**。
-  計画は「`if (captureData.status !== "COMPLETED")` 分岐が `custom_id` 突合**より前**にあり、
-  他人の PayPal Order id を渡すだけで自分の注文を `Failed` に落とせる」としていたが、
-  **ラウンド開始時点（`934b6fa`）で既に検証が上流にあった** —
-  `git show 934b6fa:src/queries/paypal.ts` で `capturedCustomId !== orderId` が **L228**、
-  `captureData.status !== "COMPLETED"` が **L233** と確認（現行も `paypal.ts:248` / `:253` で同順）。
-  よって Phase A のコミットは**計画の 6 本ではなく 5 本**で正しい。
-  Round 12 の判断基準 8（「指摘が既に解消済みのことがある」）と同型。
+**本ラウンドに rejected はない。** Phase A は計画どおり A-1〜A-5 の **6 コミット全てが実装済み**。
+
+> **⚠️ 訂正記録（Phase B 初回記述の誤り — 再発防止）**
+>
+> Phase B の初版はここで **A-2 を「却下 — 前提が誤り（既に充足済み）」と誤って記録していた**。
+> 根拠として `git show 934b6fa:src/queries/paypal.ts` を「ラウンド開始時点」として引き、
+> `capturedCustomId !== orderId` が L228・status 分岐が L233 で**既に上流にある**と述べていた。
+>
+> **これは範囲記法の off-by-one による誤読である。** `934b6fa` は baseline ではなく
+> **A-2 の修正コミットそのもの**（メッセージ: `fix(paypal): validate custom_id before any
+> status-driven order write`）。上記は「修正後」の姿を「修正前」と取り違えていた。
+>
+> **真の baseline `72e8004` での実測**（`git show 72e8004:src/queries/paypal.ts`）:
+>
+> | リビジョン | `capturedCustomId !== orderId` | `status !== "COMPLETED"` | 判定 |
+> |---|---|---|---|
+> | `72e8004`（baseline） | L242 | **L219** | 検証が後ろ → **脆弱性は実在した** |
+> | `934b6fa`（A-2 修正後） | **L228** | L233 | 修正済み |
+>
+> **教訓（次ラウンドの判断基準に追加）**: 「指摘は既に解消済みでは」と判定する際、
+> **参照するリビジョンが baseline か修正後かを必ず確認する**こと。`A..B` は A を含まないため、
+> 範囲の左端をそのまま「開始時点」として `git show` すると、**当該ラウンド自身の修正を
+> 「元からそうだった」と誤認する**。baseline を見るなら `A^` を使う。
 
 ### Round 14 が既存台帳へ与える影響（reconcile）
 
