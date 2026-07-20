@@ -29,7 +29,7 @@
 > |---|---|---|---|
 > | R1〜R9・R13 | improve スキルの監査 | **適用** | なし（各ラウンドのクローズで機械検証済み） |
 > | R10〜R12 | CodeRabbit 指摘の triage（plans/ の文書修正） | 管轄外（結果的に `plans/**` のみ） | なし |
-> | **R14** | CodeRabbit 指摘の **triage + 実装** | **管轄外** | **あり（決済・注文冪等性の 5 コミット）** |
+> | **R14** | CodeRabbit 指摘の **triage + 実装** | **管轄外** | **あり（決済・注文冪等性の 6 コミット）** |
 
 ---
 
@@ -37,10 +37,12 @@
 
 > **⚠️ 本ラウンドは improve スキルの監査ラウンドではない。** CodeRabbit の指摘に対する
 > **実装セッション**であり、`src/` と `tests/` を実際に変更している。
-> `git diff 934b6fa..b5d0c66 --stat -- src tests` は**空ではない** —
+> `git diff 72e8004..b5d0c66 --stat -- src tests` は**空ではない** —
 > 他ラウンドのクローズ条件（diff 空の機械検証）を本ラウンドに適用しないこと。
 
-- **対象範囲**: `934b6fa..b5d0c66`（branch: `dev` / **5 コミット**）
+- **対象範囲**: `72e8004..b5d0c66`（branch: `dev` / **6 コミット**）。
+  左端は **baseline `72e8004`**（Round 13 末尾）。`934b6fa` は**範囲内の A-2 修正コミット**であり
+  baseline ではない — `A..B` は A を含まないため、`934b6fa..b5d0c66` と書くと A-2 が脱落する
 - **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に実施したレビュー。
   VSCode「問題」パネルの **114 件**（⚠49 + ⓘ65）は **NEW REVIEW + PREVIOUS REVIEWS (2)
   の合算**であり新規指摘数ではない。精査後の実体は `plans/ja/*` ミラー重複 5 /
@@ -65,19 +67,28 @@
 | 3 | Phase A-5 `placeOrder` のサーバー側冪等性 | ✅ DONE | `824e224`（`user.ts` + `user.test.ts`） |
 | 4 | Phase A-4a spy リーク修正（`afterEach` へ集約） | ✅ DONE | `15aef5c`（`index-products/route.test.ts`） |
 | 5 | Phase A-4b security-headers E2E の status 検証 | ✅ DONE | `b5d0c66`（`security-headers.spec.ts`） |
-| 6 | Phase A-2 `custom_id` 検証の上流化 | ❌ **不要（前提が誤り）** | 着手前から充足済み。詳細は下記 |
+| 6 | Phase A-2 `custom_id` 検証の上流化 | ✅ DONE | `934b6fa`（`paypal.ts` + `paypal.test.ts`）。※初版で「不要」と誤記録 — 下記訂正記録を参照 |
 | 7 | Phase B 監査台帳の整合性回復（本タスク） | ✅ DONE | findings-06/13/14/17 + VETTED_FINDINGS + README ×2 + 本ファイル（1 ファイル = 1 コミット） |
 | 8 | Phase C 個別プラン文書 約 60 件 | ⬜ **未着手** | `plans/003`〜`plans/062`。1 プラン = 1 コミット |
 
-### Round 14 の rejected（再監査防止）
+### Round 14 の rejected（0 件）
 
-**A-2「`custom_id` 検証を全 status 書き込みの上流へ」— 却下（前提が誤り・既に充足済み）**。
-計画は「`if (captureData.status !== "COMPLETED")` が `custom_id` 突合より前にあり、他人の
-PayPal Order id で自分の注文を `Failed` に落とせる」としたが、**ラウンド開始時点で既に
-検証が上流にあった**（`git show 934b6fa:src/queries/paypal.ts` → `capturedCustomId !== orderId`
-が **L228**、status 分岐が **L233**。現行も `paypal.ts:248` / `:253` で同順）。
-**Phase A のコミットは計画の 6 本ではなく 5 本で正しい。**
-Round 12 の判断基準 8（「指摘が既に解消済みのことがある」）と同型の事例。
+**本ラウンドに rejected はない。** Phase A は計画どおり A-1〜A-5 の **6 コミット全てが実装済み**。
+
+> **⚠️ 訂正記録（本節の初版が誤っていた — 再発防止）**
+>
+> 初版はここで A-2 を「却下（前提が誤り・既に充足済み）」とし、根拠に
+> `git show 934b6fa:src/queries/paypal.ts` を「ラウンド開始時点」として引いていた。
+> **`934b6fa` は baseline ではなく A-2 の修正コミットそのもの**であり、
+> 「修正後」を「修正前」と取り違えた **`A..B` 記法の off-by-one** だった。
+>
+> 真の baseline `72e8004` では `status !== "COMPLETED"` が **L219**、
+> `capturedCustomId !== orderId` が **L242** の順で、**脆弱性は実在した**
+> （`934b6fa` 適用後に L228 → L233 へ逆転）。
+>
+> **判断基準（次ラウンドへ引き継ぐ）**: 「既に解消済みでは」と判定する前に、
+> **参照リビジョンが baseline か修正後かを確認する**。baseline を見るなら `A^` を使う。
+> 詳細な訂正記録は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
 
 ### Round 14 が解消した既存 deferred
 
