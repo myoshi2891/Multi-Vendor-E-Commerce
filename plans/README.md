@@ -15,9 +15,10 @@ Round 10–12 (CodeRabbit ローカルレビュー triage 全 3 弾 — 73 件 /
 （独立した findings ファイルは作らない）。
 Round 13 (`deep security` focus — セキュリティ特化 deep 監査 第 3 弾): 2026-07-17,
 against HEAD `7080b12` (branch `dev`). → plans **058–062**.
-Round 14 (CodeRabbit レビュー第4弾 + **Phase A 実装**): 2026-07-19, `934b6fa..b5d0c66` (branch `dev`).
+Round 14 (CodeRabbit レビュー第4弾 + **Phase A 実装**): 2026-07-19, `72e8004..b5d0c66` (branch `dev`).
 **⚠️ 本ラウンドのみ `src/` と `tests/` を実際に変更している**（決済・注文冪等性の
-セキュリティ修正 5 コミット）。他ラウンドの「ソース無変更」規律は Round 14 には適用されない。
+セキュリティ修正 6 コミット）。他ラウンドの「ソース無変更」規律は Round 14 には適用されない。
+範囲の左端は **baseline `72e8004`**（`934b6fa` は範囲内の A-2 修正コミットであり baseline ではない）。
 詳細と reconcile は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
