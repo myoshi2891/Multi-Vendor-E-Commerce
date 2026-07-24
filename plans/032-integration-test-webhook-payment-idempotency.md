@@ -186,10 +186,12 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 - 内容が S1 と同一（upsert update 経路が同値で上書き）
 
 > **逐次再送だけでは「冪等性」の主張を満たさない。** Stripe は再試行を**並行**配送しうるため、
-> 逐次 2 回のみを検証して「冪等」と名乗るのは過大主張。次のどちらかにすること:
-> - **並行ケースを追加**（推奨）: 同一イベントを `Promise.all` で 2 回配送し、`paymentDetails.count`
->   が **1** のままであることを assert（upsert の一意制約が並行 upsert を直列化することの回帰網）。
-> - もしくは S2 の主張を「**逐次**再送に対する冪等性」に**明示的に狭める**（並行は別途 TODO と記す）。
+> 逐次 2 回のみを検証して「冪等」と名乗るのは過大主張。
+>
+> **決定（この二択の決着）: 推奨案「並行ケースを追加」を採用する。** 同一イベントを `Promise.all` で
+> 2 回配送し、`paymentDetails.count` が **1** のままであることを assert する（upsert の一意制約が
+> 並行 upsert を直列化することの回帰網）。これを Scenario S2 の必須シナリオとし、下記 Done criteria
+> でも機械検証する。逐次のみに狭める代替案は採らない（並行こそが本プランの主眼のため）。
 
 **Scenario S3: 状態遷移イベントは upsert 更新される**
 `payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
@@ -323,6 +325,9 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test:integration` exits 0; `webhook-payment.test.ts` の新規テストが全 pass
 - [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する（grep で確認可:
       `grep -n "count" tests/integration/webhook-payment.test.ts` に該当行がある）
+- [ ] Scenario S2 に**並行再送ケース**（同一イベントを `Promise.all` で 2 回配送）が存在し、
+      `paymentDetails.count === 1` を assert する（採用した二択の決着を機械検証。grep 確認可:
+      `grep -n "Promise.all" tests/integration/webhook-payment.test.ts`）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0（集計不変）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了

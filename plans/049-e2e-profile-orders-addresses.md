@@ -137,20 +137,31 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
 >
 >   ```typescript
 >   test.afterAll(async () => {
+>       let primaryError: unknown;
 >       try {
 >           // 1. 子（住所）を先に消す —— これが無いと 2. が P2003 で黙って失敗する。
 >           //    ここで `.catch(() => {})` を付けないこと: 削除失敗を握り潰すと、上で警告している
 >           //    「User が FK RESTRICT で消えず黙って残る」カスケードをまさに引き起こす。
->           //    deleteMany は 0 件でも throw しないので、投げる時は本物の異常 —— 表面化させて落とす。
+>           //    deleteMany は 0 件でも throw しないので、投げる時は本物の異常 —— 保持して最後に投げる。
 >           await prisma.shippingAddress.deleteMany({ where: { userId } });
+>       } catch (error: unknown) {
+>           primaryError = error; // 元エラーを退避（下の cleanup で握り潰さないため）
 >       } finally {
 >           // 2. 親（User）と Clerk を消し、最後に切断する。**finally に置く**のは、
 >           //    上の deleteMany が throw しても Clerk ユーザー削除 + `$disconnect` を
 >           //    必ず実行するため。直列に並べると deleteMany 失敗時に cleanup() が
 >           //    スキップされ、Clerk ユーザーと Prisma 接続がリークする。
->           //    finally は元の deleteMany エラーを握り潰さず、cleanup 後に再送出する。
->           await session.cleanup();
+>           //    ただし素の try/finally では cleanup() が throw すると**元の deleteMany エラーを
+>           //    上書きして隠してしまう**（JS では finally の例外が try の例外に優先する）。
+>           //    そこで cleanup() も個別に try/catch し、元エラーを優先して送出する。
+>           try {
+>               await session.cleanup();
+>           } catch (cleanupError: unknown) {
+>               if (primaryError === undefined) primaryError = cleanupError;
+>               else console.error("[afterAll] cleanup() も失敗:", cleanupError);
+>           }
 >       }
+>       if (primaryError !== undefined) throw primaryError; // 元の削除失敗を表面化させて落とす
 >   });
 >   ```
 >

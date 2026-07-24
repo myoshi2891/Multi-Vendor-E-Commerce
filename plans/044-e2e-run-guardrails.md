@@ -237,6 +237,10 @@ globalTimeout: 3600 * 1000,
 
 - [ ] `bash -n scripts/e2e/run-local.sh` exit 0
 - [ ] :3000 占有時に run-local.sh が exit 1 + 対処メッセージ
+- [ ] **TOCTOU を閉じる実装自体が存在する**（機械検証。Scope の必須変更が入っていること）:
+      `grep -n "E2E_NO_REUSE" playwright.config.ts scripts/e2e/run-local.sh` が
+      config 側（`reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE`）と
+      run-local.sh 側（`E2E_NO_REUSE=1` の export）の**両方**にヒットする
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] フルランで `test-results/.last-run.json` の status が "timedout" でない
 - [ ] `plans/README.md` の 044 行を DONE に更新

@@ -270,6 +270,10 @@ try {
    >   冪等に回復できるようにする。
    > - 制約名は**このテスト固有**にし（衝突回避）、この DDL テストは**直列**で走らせる
    >   （`Spec` を触る他テストと並行させない）。
+   > - 直列化は**スイート単位だけでなく CI ジョブ単位でも**担保する —— 同一共有 DB に対して
+   >   複数の integration ジョブ/シャードが並行すると、テストランナー内の直列化では防げない
+   >    DDL ロック競合が起きる。この DDL テストを含むスイートは専用ジョブに分離するか、
+   >   同一 DB を使う integration ジョブと並行実行しない（`needs:` 直列 or concurrency group）。
    > - 可能なら専用の tx / セーブポイント内に閉じ込め、スイート全体へ滲み出させない。
 
 **Verify**: `bun run test:integration -- tests/integration/product-update.test.ts` → all pass（5 テスト以上）

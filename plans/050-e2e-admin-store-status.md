@@ -248,6 +248,12 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 > `toHaveCount(0)` で「公開されていない」ことだけを契約にし、500 である事実は
 > コメントと Maintenance notes に記録する（**assert では固定しない** —
 > 理由は Step 4 の blockquote）。
+> **ただし `response?.status()` の `?.` を「成功」扱いしないこと。** `page.goto()` は
+> ナビゲーションが発生しない場合などに `null` を返し、そのとき `response?.status()` は
+> `undefined` になって `undefined !== 200` で**アサーションが空振り（vacuously pass）**する。
+> これは「公開されていない」の証明にならない。まず `expect(response).not.toBeNull()` で
+> レスポンス取得自体を保証してから、`expect(response!.status()).not.toBe(200)` を評価すること
+> （null を非事象として素通りさせない）。
 > **404 を観測した場合も STOP しない** —— `not.toBe(200)` はそのまま通る。
 > `notFound()` が導入済みだったということなので、Current state の記述と
 > Maintenance notes を現状に合わせて更新し、報告する。
