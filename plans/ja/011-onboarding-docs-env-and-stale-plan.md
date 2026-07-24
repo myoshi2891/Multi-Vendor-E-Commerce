@@ -160,9 +160,9 @@ WEBHOOK_SECRET
 **検証**:
 
 ```bash
-grep -rn "unimplemented-screens-plan" . --include="*.md" \
-  | grep -v node_modules \
-  | grep -v "archive/unimplemented-screens-plan"
+grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+  | grep -v "node_modules" \
+  | grep -vE "(^|/)archive/unimplemented-screens-plan"
 ```
 
 → **ヒット 0 件**。ヒットが 1 件でもあれば、それは**旧パスへの生きた参照**である。
@@ -177,6 +177,12 @@ grep -rn "unimplemented-screens-plan" . --include="*.md" \
 >
 > この変更によりゲートは**二値判定**になる。旧版の「または残る全参照が新しいアーカイブパスを
 > 指す」という但し書きは、コマンド単体では真偽を決められず人間の目視判断を要求していたため削除した。
+>
+> **行単位ではなく出現単位で照合する。** 行志向の `grep -v`（`grep "…" | grep -v "archive/…"`）は
+> アーカイブ文字列を含む**行全体**を落とすため、**旧新両方のパス**を書いた行（例: 「旧
+> `unimplemented-screens-plan.md` から `archive/unimplemented-screens-plan.md` へ移動」）に潜む
+> 旧参照を見逃す。上記の `grep -oE` は各パストークンを個別に抽出するので、旧パストークンが
+> `archive/` 除外を生き延び、ゲートが取りこぼさない。
 
 ### Step 2: README の env ブロックを補完する
 
