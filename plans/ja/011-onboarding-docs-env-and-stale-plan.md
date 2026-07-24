@@ -160,12 +160,20 @@ WEBHOOK_SECRET
 **検証**:
 
 ```bash
+# 本プラン自身（旧トークンを「旧 → archive/ へ移動」の移行例として引用している）と
+# plans/audit/*（監査証跡）は **走査対象から除外**する。これらは上の但し書きで
+# 「残ってよい」参照であり、走査に含めると本文中の旧トークン例示に常にヒットして
+# ゲートが構造的に永久失敗する（＝誤検出）。除外は grep -r の段階で行う
+# （-h でファイル名が落ちるため、抽出後にファイル単位で弾けない）。
 grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+  --exclude="011-onboarding-docs-env-and-stale-plan.md" \
+  --exclude-dir="audit" \
   | grep -v "node_modules" \
   | grep -vE "(^|/)archive/unimplemented-screens-plan"
 ```
 
-→ **ヒット 0 件**。ヒットが 1 件でもあれば、それは**旧パスへの生きた参照**である。
+→ **ヒット 0 件**。ヒットが 1 件でもあれば、それは（本プラン・監査証跡を除いた）
+**旧パスへの生きた参照**である。
 
 > **除外は `docs/archive` ではなく `archive/unimplemented-screens-plan` で行うこと。**
 > 旧版のゲートは `grep -v docs/archive` で除外していたが、これは**正しく更新した参照を
