@@ -271,10 +271,15 @@ past what the steps describe, so do not read the step text as the current spec:
    after the non-`COMPLETED` branch; the shipped code moved the `custom_id` match
    **ahead of** the `paymentStatus: "Failed"` write, so a mismatched PayPal order
    id cannot flip another user's order to Failed.
-4. **Prefer verifying the PayPal order before invoking capture.** The steps verify
-   the capture response after money has already moved. Retrieving and matching the
-   order (amount / `custom_id` / currency) *before* `capture` is the stronger shape;
-   track as a follow-up if not already covered by the webhook hardening (SECURITY-17).
+4. **Prefer verifying the PayPal order before invoking capture. Status: OPEN —
+   not fixed by this plan.** The steps (and the shipped code) verify the capture
+   response *after* money has already moved. Retrieving and matching the order
+   (amount / `custom_id` / currency) *before* `capture` is the stronger shape.
+   This is **not** covered by the webhook hardening (SECURITY-17): that path is
+   explicitly out of scope here (see Maintenance notes below) and itself deferred,
+   so the earlier "if not already covered" hedge does not apply — treat this as a
+   tracked open follow-up. Do **not** record pre-capture order verification as
+   resolved anywhere (plan index / security reports) until it lands.
 
 ## Maintenance notes
 
