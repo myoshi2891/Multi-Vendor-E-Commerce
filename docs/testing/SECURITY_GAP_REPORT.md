@@ -299,8 +299,11 @@ PaymentIntent の `metadata.orderId` / `amount` / `currency` 突合を行うの�
 
 ### 9.2 修正（コミット `6a31da1`）
 
-- `src/queries/stripe.ts`: `isSettledPaymentStatus` を export（唯一の変更・ロジック不変）。
-  確定済みステータス（Paid/Refunded/PartiallyRefunded/ChargeBack）の SSOT を両決済で共有。
+- 確定済みステータス（Paid/Refunded/PartiallyRefunded/ChargeBack）の SSOT は
+  `src/lib/payment-status.ts`（`SETTLED_PAYMENT_STATUSES` / `isSettledPaymentStatus`）で、
+  Stripe/PayPal 両ガードが import して共有する。
+  （コミット `6a31da1` 時点では `src/queries/stripe.ts` の export だったが、その後
+  `src/lib/payment-status.ts` へ抽出。現行の import 元は両決済とも `@/lib/payment-status`。）
 - `src/queries/paypal.ts`:
   - capture フェッチ前（try 外・認可ガードと同じ領域）に settled ガードを追加 —
     確定済み注文は `"Order payment is already settled."` で PayPal API 呼び出し前に拒否。
