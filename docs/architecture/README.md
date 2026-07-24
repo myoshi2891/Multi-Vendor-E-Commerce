@@ -63,8 +63,9 @@ ADR（Architecture Decision Records）は、大規模な技術選定や設計変
 
 詳細は [`README.md`](../../README.md) を参照してください。
 
-**技術スタック**（メジャーバージョンのみ。**正確なバージョンの SSOT は
-[`package.json`](../../package.json)**、規約面の SSOT は
+**技術スタック**（メジャーバージョンのみ。**宣言レンジ（`~16.2.10` 等の許容範囲）の
+SSOT は [`package.json`](../../package.json)**、**解決済みの正確なバージョンの SSOT は
+lockfile（`bun.lock`）**、規約面の SSOT は
 [`.claude/steering/tech.md`](../../.claude/steering/tech.md)。ここに patch
 バージョンを書かないのは、この README が拡張計画の入口として参照される一方で
 依存更新のたびには更新されず、古い前提を配り続けるため）:
