@@ -206,11 +206,15 @@ rowData: await getCoupon(coupon?.id),
 ```
 to:
 ```tsx
-rowData: await getCoupon(coupon?.id, params.storeUrl),
+rowData: await getCoupon(coupon.id, params.storeUrl),
 ```
 
-`params.storeUrl` is already used in the same block (line ~154). Confirm `params` is in scope
-(it is — the component reads `params.storeUrl`).
+**Drop the `?.` — `getCoupon(couponId: string, storeURL: string)` requires a non-null `string`, so
+`coupon?.id` (`string | undefined`) violates the contract under strict mode.** The non-null
+guarantee already exists here: `coupon` is the table row's `row.original` and is dereferenced without
+`?.` on the line just above (`data={{ ...coupon }}`), so it is always defined — use `coupon.id`.
+(If a future refactor ever makes `coupon` nullable, guard it before the call instead of re-adding
+`?.`.) `params.storeUrl` is already used in the same block (line ~154); `params` is in scope.
 
 **Verify**: `bunx tsc --noEmit` → exit 0.
 

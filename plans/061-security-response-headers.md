@@ -174,13 +174,20 @@ export default nextConfig;
 
 Start the dev server (`bun run dev`) and confirm the headers are present **with the exact expected
 values**. A name-only `grep` is not sufficient: it matches `X-Frame-Options: ALLOWALL` just as
-happily as `SAMEORIGIN`, so a weakened value would pass silently. The check below extracts all five
+happily as `SAMEORIGIN`, so a weakened value would pass silently. The check below extracts the
 headers, normalizes only the **name** casing (HTTP header names are case-insensitive; values are
-not — `SAMEORIGIN` must keep its casing), and compares the whole set against the expected set:
+not — `SAMEORIGIN` must keep its casing), and compares the whole set against the expected set.
+
+**HSTS is environment-gated, so the expected count differs by environment** (see the blockquote
+below): `bun run dev` runs with `NODE_ENV !== 'production'`, so it emits **4 headers (no HSTS)** —
+demanding 5/5 against the dev server would always fail. Pass `expect_hsts=1` only when checking a
+production-equivalent server (`next start` with `NODE_ENV=production` and not a Vercel preview),
+where **5 headers** are expected.
 
 ```bash
+# usage: check_security_headers <url> <expect_hsts:0|1>
 check_security_headers() {
-  local url="$1" got want
+  local url="$1" expect_hsts="${2:-0}" got want
   got=$(curl -sS -D - -o /dev/null "$url" | tr -d '\r' \
     | awk 'index($0, ": ") > 0 {
         name = tolower(substr($0, 1, index($0, ": ") - 1));
@@ -188,24 +195,34 @@ check_security_headers() {
         if (name ~ /^(x-frame-options|x-content-type-options|referrer-policy|permissions-policy|strict-transport-security)$/)
           print name ": " value;
       }' | sort)
-  want=$(printf '%s\n' \
+  local base hsts n
+  base=$(printf '%s\n' \
     'permissions-policy: camera=(), microphone=(), geolocation=()' \
     'referrer-policy: strict-origin-when-cross-origin' \
-    'strict-transport-security: max-age=63072000; includeSubDomains; preload' \
     'x-content-type-options: nosniff' \
-    'x-frame-options: SAMEORIGIN' | sort)
+    'x-frame-options: SAMEORIGIN')
+  if [ "$expect_hsts" = 1 ]; then
+    hsts='strict-transport-security: max-age=63072000; includeSubDomains; preload'
+    want=$(printf '%s\n%s\n' "$base" "$hsts" | sort); n=5
+  else
+    want=$(printf '%s\n' "$base" | sort); n=4
+  fi
   if [ "$got" = "$want" ]; then
-    echo "OK   $url (5/5 headers match exactly)"
+    echo "OK   $url ($n/$n headers match exactly)"
   else
     echo "FAIL $url"; diff <(echo "$want") <(echo "$got"); return 1
   fi
 }
 
-check_security_headers http://localhost:3000/
-check_security_headers http://localhost:3000/checkout
+# dev server (bun run dev): HSTS is gated OFF -> expect 4 headers
+check_security_headers http://localhost:3000/          0
+check_security_headers http://localhost:3000/checkout  0
+# production-equivalent (next start, NODE_ENV=production, non-preview): expect 5
+# check_security_headers https://<prod-host>/          1
 ```
 
-Both must print `OK ... (5/5 headers match exactly)`. A missing header, an extra-but-wrong value, or
+Each must print `OK ... (N/N headers match exactly)` for the appropriate N (4 on dev, 5 on
+production-equivalent). A missing header, an extra-but-wrong value, or
 a typo all surface as a `diff` showing exactly which line differs. `/checkout` will redirect to
 sign-in when unauthenticated — that's fine; the headers should still be present on that redirect
 response (do **not** add `-L`, so the redirect's own headers are what gets checked). If you cannot
@@ -245,14 +262,16 @@ ALL must hold:
 - [x] `reactStrictMode: false` and the `images.remotePatterns` block are unchanged
 - [x] `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"` prints `function`
 - [x] `bun run lint` exits 0
-- [x] **`check_security_headers` reports `5/5 headers match exactly` for BOTH `/` and `/checkout`** —
-      i.e. every one of the following name **and value** pairs is asserted, not merely the presence
+- [x] **`check_security_headers` reports `N/N headers match exactly` for BOTH `/` and `/checkout`**
+      with the environment-correct N — **4/4 on the dev server (`bun run dev`, HSTS gated OFF)** and
+      **5/5 on a production-equivalent server (`next start`, `NODE_ENV=production`, non-preview)** —
+      i.e. every applicable name **and value** pair is asserted, not merely the presence
       of a header name (or the check is explicitly flagged pending in the report):
   - [x] `x-frame-options: SAMEORIGIN`
   - [x] `x-content-type-options: nosniff`
   - [x] `referrer-policy: strict-origin-when-cross-origin`
   - [x] `permissions-policy: camera=(), microphone=(), geolocation=()`
-  - [x] `strict-transport-security: max-age=63072000; includeSubDomains; preload`
+  - [x] `strict-transport-security: max-age=63072000; includeSubDomains; preload` **(production-equivalent only)**
 - [x] **`tests/e2e/security-headers.spec.ts` asserts those same five exact values on `/` and
       `/checkout` and passes** (regression guard, so the values cannot be weakened later without a
       failing test)
