@@ -168,6 +168,14 @@ fi
 
 **Verify**: `bash -n scripts/e2e/run-local.sh` → exit 0
 
+> **この事前チェックはレースを「縮める」だけで「無くさない」。** `lsof` はスクリプト開始時に
+> 一度走るだけなので、(a) チェック通過後〜Playwright が :3000 を bind するまでの間に別プロセスが
+> 割り込む TOCTOU 窓が残り、(b) 実行中に立ち上がるサーバーの再利用は止められない。**レースを
+> 根絶する**には、根本原因である `reuseExistingServer:!CI` を断つこと — `playwright.config.ts` の
+> `webServer.reuseExistingServer` を **`false`** に固定（常に自前サーバーを起動し、他環境のサーバーを
+> 決して再利用しない）するか、動的な空きポートを使う。事前チェックはそれを補う早期失敗であって、
+> 単独では保証にならない。`reuseExistingServer` の変更可否は本プランのスコープで判断する。
+
 ### Step 2: ガードの発火と通過を実機確認する
 
 1. `docker compose up -d app` で :3000 を占有させる。
