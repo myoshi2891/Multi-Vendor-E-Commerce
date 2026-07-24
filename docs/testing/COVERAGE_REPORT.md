@@ -17,7 +17,7 @@
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-06-06 ダッシュボード再生成時点（`coverage-dashboard.html` の自動マトリクスと一致。旧 `17/80 (21%)` はダッシュボードに対して未同期だったため是正） |
-| lcov エントリ数 | **297** (2026-07-17 ローカル再生成時点。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| lcov エントリ数 | **297** (2026-07-18 の Phase 1 完了後に再生成した時点の基準に合わせる。カバレッジ率の SSOT は [`QA_HANDOFF.md`](./QA_HANDOFF.md) の「lcov 2026-07-18 実測」行〔Statements 66.06% / Branches 46.04% / Functions 54.58% / Lines 65.04%〕。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
 | 未採用カテゴリ | Visual / Snapshot, a11y, Performance |
 | 型エラー | **0 件** (2026-05-21 解消済み) |
 
