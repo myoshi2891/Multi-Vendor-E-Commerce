@@ -322,8 +322,10 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 - [ ] `signInWithPassword` に **1 段 / 2 段の分岐が存在しない**
       （チェックは **sign-in ヘルパー本体に限定**すること — `helpers/*.ts` 全体を対象にすると
       他ヘルパーが正当に `isVisible()` を使っていても false-fail する。関数本体だけを取り出して
-      検査する: `awk '/signInWithPassword/,/^}/' tests/e2e/helpers/auth.ts | grep -c 'isVisible()'`
-      → `0`。UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
+      検査する: `awk '/signInWithPassword/,/^}/' tests/e2e/helpers/auth.ts | grep -cE 'isVisible\s*\('`
+      → `0`。**パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible\s*\(` にすること** —
+      前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を見逃して false-pass する。
+      UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
       で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**
       （コメントだけで終わっていないこと）
