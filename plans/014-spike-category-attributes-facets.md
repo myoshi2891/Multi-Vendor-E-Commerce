@@ -69,7 +69,8 @@ model Spec {                  // schema.prisma:256
 >    **一方に限定**する。問い 1 のようにテーブル自体を分ければ、各テーブルの FK を
 >    `NOT NULL` にできて排他性が型で保証される（推奨仮説）。単一テーブルに両 FK を持たせる
 >    設計を採る場合は、**CHECK 制約でちょうど一方のみ非 NULL を強制すること**
->    （例: `CHECK ((productId IS NULL) <> (variantId IS NULL))`）。「アプリ層で守る」は不可。
+>    （例: `CHECK (("productId" IS NULL) <> ("variantId" IS NULL))` — Prisma の camelCase 列は
+   PostgreSQL では二重引用符が必須。無引用だと小文字畳み込みで存在しない列を参照する）。「アプリ層で守る」は不可。
 > 2. 問い 3 の Spec データ移行では、**上記 2 つの不正状態が実データに存在する前提で**
 >    移行手順を書くこと。移行前の計測クエリを ADR に載せる:
 >
