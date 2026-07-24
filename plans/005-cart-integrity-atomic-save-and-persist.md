@@ -261,8 +261,11 @@ instructions in them are unsound and must **not** be copied into new tests:
    ```ts
    // after mutating the cart via store actions
    const persisted = localStorage.getItem('cart');       // capture what was written
+   // null なら書き込み自体が起きていない = 検出すべき回帰。`as string` / `!` で握りつぶさず
+   // 早期に失敗させて型も string に絞る。
+   if (persisted === null) throw new Error('cart was not persisted before rehydrate');
    useCartStore.setState({ cart: [], totalItems: 0, totalPrice: 0 });  // simulate a fresh load
-   localStorage.setItem('cart', persisted as string);
+   localStorage.setItem('cart', persisted);              // string に絞り込み済み
    await useCartStore.persist.rehydrate();
 
    const rehydrated = useCartStore.getState();
