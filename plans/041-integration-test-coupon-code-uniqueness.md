@@ -256,7 +256,9 @@ P2002 で弾こうが正しく緑・正しく赤になる。実装の内部構�
 
 ```typescript
 mockDb.coupon.findFirst.mockResolvedValue(null);   // 事前チェックは素通りさせる
-mockDb.coupon.create.mockRejectedValue(
+// 実装は create ではなく `db.coupon.upsert` を呼ぶ（coupon.ts:57）。P2002 はその upsert の
+// race フォールバック（coupon.ts:83）で捕捉されるため、モックは upsert に仕込む。
+mockDb.coupon.upsert.mockRejectedValue(
     new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
         code: "P2002",
         clientVersion: "5.22.0",
