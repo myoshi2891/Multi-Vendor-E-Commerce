@@ -112,11 +112,20 @@ export const getStoreOrders = async (storeUrl: string) => {
 
 ### Step 1: Add a bounded `take` to `getStoreOrders`
 
-In `src/queries/store.ts`, add a module-level constant and apply it in the `findMany`:
+Define the bound in the **shared** module `src/lib/store-constants.ts` (not inline in
+`store.ts`) so the query and the seller page's truncation notice (Step 3b) import the
+**same** constant and cannot drift:
 
 ```ts
+// src/lib/store-constants.ts
 // 無制限の findMany を防ぐ防御的上限。将来はサーバーサイドページネーションへ移行（PERF-04 follow-up）。
-const STORE_ORDERS_MAX = 200;
+export const STORE_ORDERS_MAX = 200;
+```
+
+Then import it in `src/queries/store.ts` (same source as Step 3b's UI import):
+
+```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 ```
 
 In the `getStoreOrders` `findMany`, add `take: STORE_ORDERS_MAX` alongside `orderBy`:
