@@ -179,13 +179,24 @@ async function seedSearchableProduct(input: {
 }
 ```
 
-GET 呼び出しヘルパー（unit テストの `:19` と同じ形）:
+GET 呼び出しヘルパー（unit テストの `:19` と同じ形）。**実装が実際に読むキーは `q`**
+（`src/app/api/search-products/route.ts` の `searchParams.get("q")`）。シナリオ文中で
+「`search` パラメータ」と書いていた箇所は**すべて `q` の誤り**なので `q` に統一すること
+（`searchParams.get("search")` ではなく `searchParams.get("q")` を読む）:
 
 ```typescript
+// クエリ付き GET（通常ケース）
 const search = async (q: string) => {
     const res = await GET(
         new Request(`http://localhost:3000/api/search-products?q=${encodeURIComponent(q)}`)
     );
+    return { status: res.status, body: await res.json() };
+};
+
+// パラメータ欠落 GET（`q` を **一切付けない** = `searchParams.get("q") === null` を再現する専用 helper）。
+// 上の `search` は常に `?q=...` を付与するため null ケースを作れない。5b はこちらを使う。
+const searchWithoutParam = async () => {
+    const res = await GET(new Request("http://localhost:3000/api/search-products"));
     return { status: res.status, body: await res.json() };
 };
 ```
@@ -205,9 +216,11 @@ C = name "Gamma Case" / desc "unrelated leather case"）:
 4. **ヒットなし**: `search("nonexistentterm12345")` → 200・空配列
 5. **空クエリ早期 return**: `search("   ")` → 200・空配列（DB 到達前に return —
    商品を 1 件も seed しない状態でも成立）
-5b. **クエリ欠落の早期 return（別ケース）**: `search` パラメータが**そもそも無い**
-   （`?search=` を付けない = `searchParams.get("search")` が `null`）場合も 200・空配列。
-   空白トリム（5）とは分岐が異なる（`null` vs 空文字列）ため独立したケースとして固定する。
+5b. **クエリ欠落の早期 return（別ケース）**: `q` パラメータが**そもそも無い**
+   （`?q=` を付けない = `searchParams.get("q")` が `null`）場合も 200・空配列。
+   上の `searchWithoutParam()` helper（`q` を一切付けない）で再現する —— 通常の `search()` は
+   常に `?q=...` を付与するため、この null ケースは作れない。空白トリム（5）とは分岐が異なる
+   （`null` vs 空文字列）ため独立したケースとして固定する。
 6. **パラメータ化の安全性**: `search("'; DROP TABLE \"Product\"; --")` → 200
    （500 でない = SQL として解釈されない）+ 直後に `db.product.count()` が seed 数のまま
 7. **複数語 plainto_tsquery（AND 意味論）**: `search("beta gadget")` → B のみ

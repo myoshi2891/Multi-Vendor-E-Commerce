@@ -307,9 +307,16 @@ Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, Paymen
 > // Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
 > ```
 >
-> **注意**: `Promise.all` の 2 本は同時に接続を要求するため、**接続プールが 2 以上**必要
-> （`jest.integration.config.js` は `maxWorkers: 1` だがこれはプロセス並列度であって
-> 接続数ではない）。プール枯渇でハングした場合は接続文字列の `connection_limit` を確認すること。
+> **注意（並行性の機械的保証）**: `Promise.all` は 2 本の呼び出しを**並べるだけ**で、DB 上で
+> 実際に重なる保証にはならない。**接続プールが 1 なら 2 本は逐次実行**され、CAS の並行性を
+> 検証しないまま緑になる（偽陽性）。`maxWorkers: 1` はプロセス並列度であって接続数ではない。
+> したがって **`connection_limit >= 2` をテストの前提として明示検証すること**:
+> - 接続文字列（`DATABASE_URL` の `connection_limit` パラメータ / プール設定）を読み、
+>   **2 未満なら成功扱いにせず `expect` で明示的にブロック**する（例: `expect(poolSize).toBeGreaterThanOrEqual(2)`）。
+>   「並行を検証できない環境」を silently pass させない。
+> - プール枯渇でハングした場合も同様に `connection_limit` を確認する。
+> - 真の重なりをさらに固めたい場合は、両呼び出しが同時に in-flight になるバリア（両者が
+>   到達してから解放する latch）を挟むことを検討する（`Promise.all` の同時ディスパッチだけに依存しない）。
 > 万一このテストが赤くなった場合は、テストを緩めるのではなく **`d0005bb` の CAS が退行して
 > いないか**を先に疑い、STOP して報告する（それは本物の回帰である）。
 
