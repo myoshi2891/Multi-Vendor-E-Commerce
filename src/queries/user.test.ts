@@ -852,6 +852,52 @@ describe("placeOrder", () => {
             expect(mockDb.size.updateMany).not.toHaveBeenCalled();
         });
 
+        it("tx 外チェック後に住所が再割当てされたら注文を作成せず Shipping address not found. を投げる（TOCTOU）", async () => {
+            // tx 外の所有権チェック（1 回目の findFirst）は通るが、商品検証や配送料計算の
+            // 間に住所が別ユーザーへ付け替えられ、tx 内の再検証（2 回目の findFirst）で
+            // 消失するケース。tx 内で読み直さないと、他人の住所を注文に付けられてしまう。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            // 1 回目（tx 外）は所有・2 回目（tx 内 recheck）は再割当てで null
+            mockDb.shippingAddress.findFirst
+                .mockReset()
+                .mockResolvedValueOnce(shippingAddress)
+                .mockResolvedValue(null);
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Shipping address not found.");
+
+            // tx 内 recheck が id + userId でスコープされていること
+            expect(mockDb.shippingAddress.findFirst).toHaveBeenLastCalledWith({
+                where: {
+                    id: shippingAddress.id,
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                },
+                select: { id: true },
+            });
+            // 再検証は order.create より前に走り、注文は作成されない
+            expect(mockDb.order.create).not.toHaveBeenCalled();
+        });
+
         it("単一店舗の注文を正常に作成する", async () => {
             const cart = {
                 ...createMockCart(),

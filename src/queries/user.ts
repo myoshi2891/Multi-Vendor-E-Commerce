@@ -640,11 +640,23 @@ export const placeOrder = async (
         })
         if (consumed.count === 0) throw new Error('Cart not found.')
 
+        // TOCTOU 閉塞: shippingAddressId を書く「直前」に、同一 tx 内で所有権を再検証する。
+        // tx 外の findFirst（上部の所有権チェック）から order.create までの間には
+        // 商品取得・配送料計算など長い非同期処理があり、その隙に住所が **別ユーザーへ
+        // 再割当て** されると、FK は有効なまま他人の住所を注文に付けられてしまう
+        // （削除なら FK 制約で弾かれるが、userId 付け替えは弾かれない）。書き込みと
+        // 同一 tx・隣接文で読み直すことで、チェックと使用が乖離しない（plan 003）。
+        const txOwnedAddress = await tx.shippingAddress.findFirst({
+            where: { id: ownedAddress.id, userId },
+            select: { id: true },
+        })
+        if (!txOwnedAddress) throw new Error('Shipping address not found.')
+
         // Create the order
         const order = await tx.order.create({
             data: {
                 userId,
-                shippingAddressId: ownedAddress.id,
+                shippingAddressId: txOwnedAddress.id,
                 orderStatus: 'Pending',
                 paymentStatus: 'Pending',
                 shippingFees: 0,
