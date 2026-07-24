@@ -169,11 +169,17 @@ grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md"
   --exclude="011-onboarding-docs-env-and-stale-plan.md" \
   --exclude-dir="audit" \
   | grep -v "node_modules" \
-  | grep -vE "(^|/)archive/unimplemented-screens-plan"
+  | grep -vE "(^|/)archive/unimplemented-screens-plan" \
+  || true
+# ↑ 末尾の `|| true` が無いと、成功ケース（ヒット 0 件 = 旧パス参照なし）で
+#   末尾の `grep -v` が「出力行ゼロ」により **exit 1** を返し、exit code を見る
+#   CI ゲートが誤って失敗する。合否は「出力された行の有無」で判断すること
+#   （0 行＝pass）。exit code を合否に使うなら次段の判定形にする。
 ```
 
-→ **ヒット 0 件**。ヒットが 1 件でもあれば、それは（本プラン・監査証跡を除いた）
-**旧パスへの生きた参照**である。
+→ **ヒット 0 件**（＝出力が空）なら pass。ヒットが 1 件でもあれば、それは（本プラン・
+監査証跡を除いた）**旧パスへの生きた参照**である。exit code ではなく**出力行の有無**で
+判定すること（上記のとおり成功ケースでも末尾 `grep` は exit 1 を返しうる）。
 
 > **除外は `docs/archive` ではなく `archive/unimplemented-screens-plan` で行うこと。**
 > 旧版のゲートは `grep -v docs/archive` で除外していたが、これは**正しく更新した参照を

@@ -172,7 +172,7 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 - **Effort**: S（パッケージごとの代替評価） / **Risk**: LOW / **Confidence**: MED（ピン/ロック状態は検証済み。「非メンテ」は保守シグナル判断）
 - **Fix sketch**: レガシー UI 依存をウォッチリストに記録し、次の React/Next メジャー時に生存確認。`react-tag-input` の exact ピンの意図を確定。
 
-### [DEPS-08] Next.js 16.2.1 — 監査時点では最新・パッチアクション不要
+### [DEPS-08] Next.js — ✅ 解決済み（2026-07-19・plan 057 で `~16.2.10` へ bump）／「パッチアクション不要」判定は撤回済み
 
 - **Evidence（実測できる範囲）**: `package.json:80` `"next": "^16.2.1"`、`bun.lock` +
   `node_modules/next/package.json` とも **16.2.1**（インストール実体）。
