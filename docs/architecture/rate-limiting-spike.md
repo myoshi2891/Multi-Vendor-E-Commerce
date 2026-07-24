@@ -174,7 +174,8 @@ to a hosting platform** (see the deployment-neutrality requirement in
 |---|---|---|
 | Vercel | `x-vercel-forwarded-for` (platform-set, not client-settable) | `x-forwarded-for` is also rewritten, but the vendor header is the documented contract. Assume exactly one platform hop. |
 | Cloudflare (proxied) | `CF-Connecting-IP` | Only trustworthy when the origin is *not* reachable directly — otherwise the header is attacker-settable. Requires origin lock-down (Tunnel / IP allowlist / mTLS). |
-| AWS ALB / CloudFront | right-most value of `x-forwarded-for` | The ALB *appends*; the left-most entries are attacker-supplied. Count hops explicitly if CloudFront sits in front of the ALB. |
+| AWS ALB (no CloudFront) | right-most value of `x-forwarded-for` | The ALB *appends* the client IP; the left-most entries are attacker-supplied. Valid only when the ALB is the single edge hop. |
+| AWS CloudFront (in front of ALB/origin) | `CloudFront-Viewer-Address` (platform-set) | With CloudFront in front, the right-most `x-forwarded-for` is a *CloudFront* hop, not the client — do **not** reuse the ALB row's "right-most" rule. Use `CloudFront-Viewer-Address` (strip the port), or count the CloudFront→ALB hops explicitly and index from the right. |
 | Nginx / self-managed reverse proxy | value written by `set_real_ip_from` + `real_ip_header` | The proxy must be configured to *overwrite*, not append; otherwise strip the header at the edge. |
 | Bare Node (no proxy) | socket remote address only | `x-forwarded-for` MUST be ignored entirely — there is no trusted hop to attribute it to. |
 
