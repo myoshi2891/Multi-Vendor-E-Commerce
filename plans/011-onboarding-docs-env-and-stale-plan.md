@@ -238,11 +238,20 @@ Cross-check against the live env-name grep + `.env.docker.example` so nothing re
   `PAYPAL_SECRET`, tokens, webhook signing secrets, URLs that vary per environment) are left **empty**
   (`NAME=`) — never a real credential.
 - **Non-secret routing config the app requires a specific value for** (`NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`,
-  `…SIGN_UP_URL=/sign-up`, `…AFTER_SIGN_IN_URL=/`) carries its **literal** value, because the app ships
+  `…SIGN_UP_URL=/sign-up`, `…AFTER_SIGN_IN_URL=/`, **and `PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`**)
+  carries its **literal** value, because the app ships
   custom `src/app/(auth)/` pages and the Clerk defaults would point elsewhere — an empty value here
-  breaks auth. The inline comments already explain why these are not placeholders.
+  breaks auth. `PAYPAL_API_BASE` is likewise a non-secret endpoint (the sandbox base URL is not a
+  credential) and is classified as a **non-secret default**, not a blank. The inline comments already
+  explain why these are not placeholders.
 
 So the rule is **not** "no values ever": it is "no secrets" — required non-secret config keeps its literal value.
+
+**Both files apply the same classification.** `PAYPAL_API_BASE` is a non-secret default in the README
+block (step 2) *and* in `.env.example` (step 3): it carries `https://api-m.sandbox.paypal.com` in both,
+never blanked. This removes the apparent contradiction where step 3's example set it while step 2's
+policy left routing config unclassified — the classification (secret ⇒ empty / non-secret ⇒ literal
+default) is authoritative for both files.
 
 **Verify**: every name from `grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ | sort -u` (except `ELASTICSEARCH_*`, `NODE_ENV`, `E2E_BASE_URL`) appears in the README block.
 

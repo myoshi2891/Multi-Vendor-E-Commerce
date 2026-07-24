@@ -88,7 +88,7 @@ WEBHOOK_SECRET
 ### 規約（documentation-guide）
 
 - stale なドキュメントは削除またはアーカイブすべき（`.claude/steering/documentation-guide.md` — 「古い情報の放置」がアンチパターンとして挙げられている）。真に未解決の作業は stale なプランドキュメントではなく `specs/.../08-open-questions.md` に入れる。
-- **シークレットの規則（厳格）**: 変数**名**のみを参照する。いかなる `.env*` ファイルからも実際の値を README や `.env.example` にコピーしないこと。プレースホルダー/空値のみ。
+- **シークレットの規則（厳格）**: 変数**名**のみを参照する。いかなる `.env*` ファイルからも実際の**シークレット**値を README や `.env.example` にコピーしないこと。シークレット/環境依存値は空欄、**非シークレットのルーティング/エンドポイント既定値は例外**。具体的には `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in` 系と **`PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`**（sandbox の base URL はシークレットではない）は、README ブロックと `.env.example` の**両方**で同じリテラル既定値を持つ（空欄にしない）。ルール＝「値を一切書かない」ではなく「シークレットを書かない」。EN 版 `plans/011` の "Empty-value vs literal-value policy" と同一分類。
 
 ## 必要なコマンド
 
@@ -180,6 +180,24 @@ grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md"
 → **ヒット 0 件**（＝出力が空）なら pass。ヒットが 1 件でもあれば、それは（本プラン・
 監査証跡を除いた）**旧パスへの生きた参照**である。exit code ではなく**出力行の有無**で
 判定すること（上記のとおり成功ケースでも末尾 `grep` は exit 1 を返しうる）。
+
+**（補助）監査ディレクトリ専用スキャン**: 上のメインゲートは `--exclude-dir="audit"` で
+`plans/audit/*` を**丸ごと**外すが、前段の但し書きは「監査証跡の参照も新しいアーカイブパスへ
+**向け直す**」ことを求めている。ディレクトリごと除外すると、audit 内に残った**旧パスの
+生きた参照**（＝アーカイブパスへ向いていない参照）を取りこぼす。そこで audit だけを対象に、
+**アーカイブパスに向いていない**旧トークン参照を洗い出す（ゲートは**落とさず**目視レビュー用に
+一覧化する）:
+
+```bash
+# audit 配下のみ。archive/ へ向いている参照は「向け直し済み」として除外し、
+# 残り（= 旧パスのままの参照）を列挙する。0 行なら向け直し完了。
+grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" plans/audit --include="*.md" \
+  | grep -vE "(^|/)archive/unimplemented-screens-plan" \
+  || true
+# 出力された各行は「意図的な履歴引用（旧トークンをそのまま示す例）」か
+# 「向け直し漏れ」のどちらか。前者なら残置可・後者は archive パスへ修正する
+# （メインゲートとは別に人間が判断する。ここで機械的に fail はさせない）。
+```
 
 > **除外は `docs/archive` ではなく `archive/unimplemented-screens-plan` で行うこと。**
 > 旧版のゲートは `grep -v docs/archive` で除外していたが、これは**正しく更新した参照を
