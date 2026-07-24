@@ -100,6 +100,10 @@ executor's environment. Skip the section otherwise.)
 **In scope** (the only files you should modify):
 - `src/orders/api.ts`
 - `src/orders/api.test.ts` (create)
+- `<plan-dir>/README.md` — the status-row update required by the Executor instructions
+  and Done criteria; land it in a **separate docs commit** (and skip it entirely when a
+  reviewer dispatched you and owns the index). List it here so "the only files you should
+  modify" does not contradict the instruction to update the index.
 
 **Out of scope** (do NOT touch, even though they look related):
 - `src/orders/legacy-api.ts` — deprecated path, scheduled for deletion;
