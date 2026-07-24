@@ -241,10 +241,12 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
    >
    > ```typescript
    > // tests/integration/setup/query-mocks.ts
-   > import type { getDeliveryDetailsForStoreByCountry } from "@/queries/product";
+   > // 型注釈はインライン import 型クエリで完結させる（別途 `import type { … }` を置いて
+   > // `typeof <名前>` で参照する形は避ける — 型のみインポートの値名に対する `typeof` は
+   > // 環境設定によって解釈が割れるため、`typeof import("…").fn` で一意にコンパイルさせる）。
    >
    > /** 実装透過の delivery 取得（requireActual の三重複を 1 箇所に集約） */
-   > export const actualDeliveryDetails: typeof getDeliveryDetailsForStoreByCountry = (
+   > export const actualDeliveryDetails: typeof import("@/queries/product")["getDeliveryDetailsForStoreByCountry"] = (
    >     ...args
    > ) =>
    >     jest
