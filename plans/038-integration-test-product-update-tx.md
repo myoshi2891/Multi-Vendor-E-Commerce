@@ -261,6 +261,16 @@ try {
    > Size 置換が実行されれば id は必ず新しくなる。失敗後に**旧 id のまま**なら、
    > 「Size 置換は実行されたが tx のロールバックで取り消された」ことを意味する。
    > 制約の DROP は `finally` で必ず行う（`resetDb` は TRUNCATE であり制約を落とさない）。
+   >
+   > **この一時 DDL は統合スイート本体から隔離すること。** `ALTER TABLE … ADD CONSTRAINT` は
+   > 共有 DB の**スキーマそのもの**を変える。`finally` に届く前にプロセスが落ちれば制約が残留し、
+   > 以降の全実行の `Spec` 挿入を汚染する。さらに他の `Spec` テストと並行すると DDL のロックで
+   > 競合しフレーク化する。隔離策:
+   > - **ADD の直前に `DROP CONSTRAINT IF EXISTS "tmp_block_boom"`** を入れ、過去のリーク実行から
+   >   冪等に回復できるようにする。
+   > - 制約名は**このテスト固有**にし（衝突回避）、この DDL テストは**直列**で走らせる
+   >   （`Spec` を触る他テストと並行させない）。
+   > - 可能なら専用の tx / セーブポイント内に閉じ込め、スイート全体へ滲み出させない。
 
 **Verify**: `bun run test:integration -- tests/integration/product-update.test.ts` → all pass（5 テスト以上）
 
