@@ -5,6 +5,13 @@ import { clerkClient, WebhookEvent } from "@clerk/nextjs/server";
 import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
+
+/**
+ * SupportTicket の PII 列を消去する際に入れる秘匿プレースホルダ。
+ * name/email/subject/message はいずれも NOT NULL のため null 化できず、
+ * GDPR 消去では redaction マーカーで上書きする。
+ */
+export const REDACTED_PII = "[deleted]";
 /**
  * Handle Clerk (Svix) webhook POST requests, verify the Svix signature, and synchronize Clerk user events with the database.
  *
@@ -114,10 +121,26 @@ export async function POST(req: Request) {
 	if (evt.type === "user.deleted") {
 		const userId = (evt.data as { id: string }).id;
 		try {
-			await db.user.deleteMany({
-				where: {
-					id: userId,
-				},
+			// GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
+			// ユーザー削除だけではチケット行の PII 列（name/email/subject/message・
+			// いずれも NOT NULL）が残存する。ユーザー削除で userId が null 化される前に、
+			// 当該ユーザーのチケットの PII を秘匿値へ上書きする。上書きと削除は単一 tx に
+			// まとめ、片方だけ成立して整合が崩れることを防ぐ。
+			await db.$transaction(async (tx) => {
+				await tx.supportTicket.updateMany({
+					where: { userId },
+					data: {
+						name: REDACTED_PII,
+						email: REDACTED_PII,
+						subject: REDACTED_PII,
+						message: REDACTED_PII,
+					},
+				});
+				await tx.user.deleteMany({
+					where: {
+						id: userId,
+					},
+				});
 			});
 		} catch (error) {
 			console.error("Webhook user deletion failed:", error);

@@ -1,14 +1,21 @@
-import { POST } from "./route";
+import { POST, REDACTED_PII } from "./route";
 
 // ---- モック設定 ----
 const mockUpsert = jest.fn();
 const mockDeleteMany = jest.fn();
+const mockSupportTicketUpdateMany = jest.fn();
+const mockTransaction = jest.fn();
 jest.mock("@/lib/db", () => ({
     db: {
         user: {
             upsert: (...args: unknown[]) => mockUpsert(...args),
             deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
         },
+        supportTicket: {
+            updateMany: (...args: unknown[]) =>
+                mockSupportTicketUpdateMany(...args),
+        },
+        $transaction: (...args: unknown[]) => mockTransaction(...args),
     },
 }));
 
@@ -326,6 +333,21 @@ describe("POST /api/webhooks", () => {
     describe("user.deleted", () => {
         beforeEach(() => {
             setSvixHeaders();
+            // $transaction はコールバックに tx を渡して実行する。tx.supportTicket /
+            // tx.user は同じモック関数へ委譲し、呼び出し引数・順序を検証可能にする。
+            mockTransaction.mockImplementation(
+                async (
+                    cb: (tx: {
+                        supportTicket: { updateMany: typeof mockSupportTicketUpdateMany };
+                        user: { deleteMany: typeof mockDeleteMany };
+                    }) => Promise<unknown>
+                ) =>
+                    cb({
+                        supportTicket: { updateMany: mockSupportTicketUpdateMany },
+                        user: { deleteMany: mockDeleteMany },
+                    })
+            );
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 0 });
         });
 
         it("ユーザー削除時にDBから削除する", async () => {
@@ -346,6 +368,37 @@ describe("POST /api/webhooks", () => {
             expect(mockDeleteMany).toHaveBeenCalledWith({
                 where: { id: "user_to_delete" },
             });
+        });
+
+        it("ユーザー削除より前に SupportTicket の PII 列を秘匿値へ上書きする（GDPR 消去）", async () => {
+            // SET NULL は userId を切り離すだけで name/email/subject/message を残す。
+            // 削除より前（userId が null 化される前）に、当該ユーザーのチケットの
+            // PII を redaction 値へ上書きすることを固定する。
+            const eventData = { data: { id: "user_with_tickets" } };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 2 });
+            mockDeleteMany.mockResolvedValue({ count: 1 });
+
+            const response = await POST(createWebhookRequest(eventData));
+
+            expect(response.status).toBe(200);
+            // 当該ユーザーのチケットの PII 列を全て秘匿値へ上書きすること
+            expect(mockSupportTicketUpdateMany).toHaveBeenCalledWith({
+                where: { userId: "user_with_tickets" },
+                data: {
+                    name: REDACTED_PII,
+                    email: REDACTED_PII,
+                    subject: REDACTED_PII,
+                    message: REDACTED_PII,
+                },
+            });
+            // PII 消去はユーザー削除より前に走ること（削除後は userId で辿れない）
+            expect(
+                mockSupportTicketUpdateMany.mock.invocationCallOrder[0]
+            ).toBeLessThan(mockDeleteMany.mock.invocationCallOrder[0]);
         });
 
         it("既に削除済みユーザーの場合でも200を返す（冪等性）", async () => {
