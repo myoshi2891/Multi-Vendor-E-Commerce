@@ -26,12 +26,25 @@ const nextConfig = {
                 key: 'Permissions-Policy',
                 value: 'camera=(), microphone=(), geolocation=()',
             },
-            // HTTPS 強制（本番のみ意味を持つ。max-age は 2 年）
-            {
+        ];
+
+        // HSTS は「本番ドメイン」でのみ付与する。`includeSubDomains; preload` を
+        // 非本番（localhost / Vercel preview の *.vercel.app 等）へ送ると、HTTPS で
+        // 配信される preview では実際にブラウザへ記録され、全サブドメインの HTTPS 強制と
+        // preload リスト入り（取り消しに数週間〜数ヶ月かかる非可逆操作）を誤って引き起こす。
+        // したがって全環境・全サブドメインへ無条件適用せず、NODE_ENV=production かつ
+        // Vercel の preview デプロイでない場合に限定する（`VERCEL_ENV` は本番=production /
+        // preview / development）。
+        const isProduction = process.env.NODE_ENV === 'production';
+        const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+        if (isProduction && !isVercelPreview) {
+            securityHeaders.push({
+                // HTTPS 強制（max-age は 2 年）
                 key: 'Strict-Transport-Security',
                 value: 'max-age=63072000; includeSubDomains; preload',
-            },
-        ];
+            });
+        }
+
         return [
             {
                 // すべてのルート（ページ・API・静的アセット）に適用
