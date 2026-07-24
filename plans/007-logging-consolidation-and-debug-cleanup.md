@@ -196,5 +196,11 @@ Stop and report if:
 
 - **Deferred follow-up (separate plan)**: migrate the ~90 legacy 3-arg `console.error("Error in X:", error.message, error.stack)` + duplicated `instanceof Error` blocks across `src/queries/*` (category, store, product, user, subCategory, offer-tag, …) to `logError`. That is mechanical but touches many files and many test assertions — do it as its own reviewable batch, not here.
 - New `src/queries/` catch blocks should call `logError` from day one.
+- **Toast は「サーバーが返す文言がユーザー安全である」前提でのみ `error.message` を出す。**
+  Step 4 の `toast.error(error instanceof Error ? error.message : "…")` が許容されるのは、
+  `applyCoupon` 等が **curated（"Coupon expired" 等の利用者向け）メッセージのみ throw する**
+  ためである。ラップされていない生の Prisma/内部エラーが `.message` として到達しうる呼び出し元では、
+  内部詳細の漏洩を防ぐため**汎用文言に固定**する（`.message` を無条件で表示しない）。
+  ログ（`logError`）には生の詳細を残し、UI には安全な文言のみを出す分離を守ること。
 - Reviewer should confirm the non-Error branch logs `{ error }` (raw), matching the documented convention, and that no thrown message text changed.
 - If a structured logging backend (e.g. from a future observability plan) is added, `logError` is the single seam to route through it.
