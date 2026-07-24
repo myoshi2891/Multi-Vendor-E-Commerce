@@ -149,6 +149,15 @@ Add to `src/app/api/index-products/route.test.ts`, following the existing test s
 - **GET 500 is generic** — same for the GET handler (mock its `db` call to throw), asserting the
   body is `{ error: "Internal Server Error" }`.
 
+> **The error must escape the inner fallback to reach the 500 branch.** Each handler wraps its
+> primary search in an inner `try/catch (searchError)` (`route.ts:73` / `:311`) that falls back to
+> a second query; only an error escaping that fallback hits the outer `catch (error)` that returns
+> 500 (`route.ts:132` / `:417`). Mocking **only** the primary path lets the fallback swallow the
+> throw and return `200` — the 500 case never fires and the test passes vacuously. Make the error
+> reach the outer catch: mock the fallback query to reject too (`mockRejectedValue`, not
+> `…Once`), or throw from a `db` call that runs **outside** the inner `try`. Assert `res.status`
+> is actually `500` (not merely that the body lacks the token) so a swallowed error fails the test.
+
 **Verify**: `bun run test -- src/app/api/index-products/route.test.ts` → all pass, including the two
 new cases.
 
