@@ -119,9 +119,11 @@
   in-scope。a11y/checkout.spec.ts のセットアップも `createCustomerSession()` で最初から
   認証済み。**「ゲスト状態でカートを作ってから認証する」順序**を踏むテストは存在しない。
 - **Impact**: カート持ち越しは購入コンバージョンの主要経路（ゲストで商品を貯めてから
-  会員化する導線）。`saveUserCart` の integration テストは plan 005（カート整合性の
-  correctness 修正）先行で deferred 継続中（R5〜R7 台帳）のため、この経路は現状
+  会員化する導線）。~~`saveUserCart` の integration テストは plan 005（カート整合性の
+  correctness 修正）先行で deferred 継続中（R5〜R7 台帳）のため~~、この経路は現状
   **どの層でも自動検証されていない**。
+  （**取り消し線部は 2026-07-19 に失効した旧前提** — plan 005 は DONE。「未検証」という結論は
+  変わらないが、その理由は「先行プラン待ち」ではない。正しい現状は直下の追記を参照。）
   > **⚠️ 2026-07-19 追記 — 上記の deferred 理由は失効している**。先行依存としていた
   > **plan 005 は DONE**（[`../README.md`](../README.md) の Status 表が SSOT）。
   > よって `saveUserCart` の integration テストは**待ち状態ではなく昇格の再評価対象**で、
