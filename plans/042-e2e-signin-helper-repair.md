@@ -320,8 +320,10 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       （`grep -n 'name: "Continue"' tests/e2e/helpers/*.ts` の全ヒットに `exact: true` がある。
       Google ボタンの名前 `Sign in with Google Continue with Google` に部分一致するため）
 - [ ] `signInWithPassword` に **1 段 / 2 段の分岐が存在しない**
-      （`grep -n 'isVisible()' tests/e2e/helpers/*.ts` が sign-in ヘルパー内で 0 ヒット。
-      UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
+      （チェックは **sign-in ヘルパー本体に限定**すること — `helpers/*.ts` 全体を対象にすると
+      他ヘルパーが正当に `isVisible()` を使っていても false-fail する。関数本体だけを取り出して
+      検査する: `awk '/signInWithPassword/,/^}/' tests/e2e/helpers/auth.ts | grep -c 'isVisible()'`
+      → `0`。UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
       で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**
       （コメントだけで終わっていないこと）
