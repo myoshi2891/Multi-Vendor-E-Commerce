@@ -249,6 +249,33 @@ Stop and report (do not improvise) if:
   must read the amount from wherever the existing mark-Paid code reads it.
 - Typecheck or tests fail twice after a reasonable fix attempt.
 
+## Divergence since this plan shipped (2026-07-18)
+
+This plan is **DONE**. The 2026-07-18 CodeRabbit Phase 1 round hardened the code
+past what the steps describe, so do not read the step text as the current spec:
+
+1. **The settled guard is atomic (CAS), not read-then-act.** Step 2 checks
+   `isSettledPaymentStatus(order.paymentStatus)` and then updates — two statements
+   with a TOCTOU window. The shipped `paypal.ts` folds the guard into the write's
+   `where` (`paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] }`) and catches
+   Prisma `P2025` as "already settled". The read-then-act check is kept only as an
+   early return to skip a wasted PayPal API call.
+2. **The settled helper is NOT exported from `stripe.ts`.** Steps 1-2 export
+   `isSettledPaymentStatus` from `src/queries/stripe.ts`, but that module is
+   `"use server"` and may only export async Server Actions — a **synchronous**
+   helper exported there is invalid. The helper and `SETTLED_PAYMENT_STATUSES` now
+   live in `src/lib/payment-status.ts`; both `stripe.ts` and `paypal.ts` import
+   from there. The Scope note "do not introduce a shared `payment-status.ts` util"
+   is therefore **superseded** — the shared module is the correct home and shipped.
+3. **`custom_id` is validated before any status-driven write.** Step 3 verifies
+   after the non-`COMPLETED` branch; the shipped code moved the `custom_id` match
+   **ahead of** the `paymentStatus: "Failed"` write, so a mismatched PayPal order
+   id cannot flip another user's order to Failed.
+4. **Prefer verifying the PayPal order before invoking capture.** The steps verify
+   the capture response after money has already moved. Retrieving and matching the
+   order (amount / `custom_id` / currency) *before* `capture` is the stronger shape;
+   track as a follow-up if not already covered by the webhook hardening (SECURITY-17).
+
 ## Maintenance notes
 
 - If PayPal's capture response schema changes (`custom_id` location, captures array shape), the
