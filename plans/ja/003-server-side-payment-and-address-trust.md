@@ -289,9 +289,12 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 
 ### 本プラン完了後の乖離（2026-07-18 追記）
 
-本プランは **DONE**（PR #158 としてマージ済み）。上記ステップは commit
-`f9752c0` 時点の計画の記録であり、意図的に改変していない。以下 3 点はその後
-変化しているため、**ステップ本文を現行仕様として読まないこと**:
+本プランは **DONE**（PR #158 としてマージ済み）だが、**対象は当初スコープ
+（サーバー側 Stripe 再取得と住所所有権の `findFirst`）に限る**。上記ステップは commit
+`f9752c0` 時点の計画の記録であり、意図的に改変していない。以下 **5 点**のうち、
+**1–2** はその後コード側で*移動*したため **ステップ本文を現行仕様として読まないこと**。
+**3–5 の 3 点は本プランの DONE では閉じない未解決の follow-up** であり、特に住所所有権の
+TOCTOU（**5**）は未修正。3–5 は完了済みではなく追跡中のギャップとして扱うこと:
 
 1. **`requires_payment_method` は無条件 `Failed` ではない。**
    Step 4 は当該ステータスを `paymentStatus: "Failed"` へ写像する前提だが、
@@ -320,10 +323,13 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
    （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
    amount が食い違う（または非 `usd`）retrieve 済み intent が
    `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
-5. **住所所有権の読み取りは注文トランザクション内に置くべき。** Step 3（202-209 行）は
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。
+   Status: OPEN — 本プランでは未修正。** Step 3（202-209 行）は
    `findFirst` を `$transaction` の**外**で行うため、チェックと `order.create` の間で
    住所が削除・再割当てされる TOCTOU 窓が残る。恒久的な形は、`shippingAddressId` を書く
    同一 `tx` の中で所有権を読む（または再検証する）ことで、チェックと使用が乖離しない。
+   これが入るまで、住所所有権 TOCTOU を解決済みとして（plan index / セキュリティ報告に）
+   記録しないこと。
 
 本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。共有ヘルパー
 `isSettledPaymentStatus` を `src/lib/payment-status.ts` から再利用する —
