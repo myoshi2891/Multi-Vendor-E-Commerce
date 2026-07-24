@@ -157,7 +157,11 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   上記「遵守すべきリポジトリ規約」）だけで、**作成（INSERT）側は無防備**。
    >   本リポジトリは同型の実害を経験済み（`place-order` の二重送信ガード = plan 006 /
    >   `src/components/store/cards/place-order.tsx`）。方式は spike が決める（例: クライアント
-   >   由来の冪等性キー + `@@unique`、`[orderItemId, status, requestedQuantity]` 等の自然キー制約、
+   >   由来の冪等性キー + `@@unique`、または OrderItem 単位の重複を縛る自然キー制約
+   >   （**ただし可変フィールドを鍵にしないこと** — `status` は RMA ライフサイクルで遷移し、
+   >   `requestedQuantity` も再申請で変わりうるため、`[orderItemId, status, requestedQuantity]`
+   >   のような組を鍵にすると status 遷移後に重複が素通りする。鍵は**不変列**か
+   >   クライアント由来の冪等性キーに限る）、
    >   短時間の重複申請の拒否）。UI 側のガードだけに依存しないこと（再送・並行タブ・API 直叩きで
    >   破れる）。plan 021 の通知冪等性キー（Q6 の (β) outbox が参照するもの）と概念を揃え、
    >   相互参照を書く。
