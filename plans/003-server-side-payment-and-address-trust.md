@@ -286,9 +286,14 @@ Stop and report if:
 
 ### Divergence since this plan shipped (2026-07-18)
 
-This plan is **DONE** (merged as PR #158). The steps above record the work as
-planned at commit `f9752c0` and are deliberately left unedited. Three points
-have since moved, so do **not** read the step text as the current spec:
+This plan is **DONE** (merged as PR #158) **for its original scope only** —
+server-side Stripe re-fetch and address-ownership `findFirst`. The steps above
+record the work as planned at commit `f9752c0` and are deliberately left
+unedited. Two points (**1–2**) have since *moved in the code*, so do **not** read
+the step text as the current spec. Three further points (**3–5**) are **open
+follow-ups that this plan's DONE status does not close** — in particular the
+address-ownership TOCTOU (**5**) is still unfixed. Treat 3–5 as tracked gaps,
+not completed work:
 
 1. **`requires_payment_method` is no longer an unconditional `Failed`.**
    Step 4 (line ~231) expects that status to map to `paymentStatus: "Failed"`.
@@ -319,12 +324,14 @@ have since moved, so do **not** read the step text as the current spec:
    (lines 174-178). Add a case: retrieved intent with matching `metadata.orderId`
    but a mismatched amount (or non-`usd` currency) must throw
    `"Payment intent amount/currency mismatch."` with no `order.update`.
-5. **The address-ownership read should sit inside the order transaction.** Step 3
+5. **The address-ownership read should sit inside the order transaction.**
+   **Status: OPEN — not fixed by this plan.** Step 3
    (lines 202-209) does the `findFirst` *before* the `$transaction`, leaving a
    TOCTOU window where the address is deleted/reassigned between the check and
    the `order.create`. The durable form reads (or re-validates) ownership inside
    the same `tx` that writes `shippingAddressId`, so the check and the use cannot
-   diverge.
+   diverge. Until that lands, do **not** record the address-ownership TOCTOU as
+   resolved anywhere (plan index / security reports).
 
 Later payment work built on this plan: `plans/059` (PayPal capture verification,
 which reuses the shared `isSettledPaymentStatus` from `src/lib/payment-status.ts`
