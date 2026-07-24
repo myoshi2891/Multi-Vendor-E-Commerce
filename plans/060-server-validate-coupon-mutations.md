@@ -39,6 +39,13 @@ drives an order group / order `total` **negative**. This is the sharp, money-cri
 the broader "server actions skip Zod" gap; this plan fixes coupons and establishes the pattern the
 other actions (review, shipping address, product) can follow later.
 
+> **`discount` must also be constrained to integers.** `CouponFormSchema.discount` is
+> `z.number().min(1).max(99)` — it accepts `50.5`, but the column is `Int`, so a fractional value
+> passes the `safeParse` gate only to be rejected/truncated at the Prisma boundary. Add `.int()`
+> (`z.number().int().min(1).max(99)`) so the range check and the storage type agree at the same
+> boundary. **Live-code follow-up**: `src/lib/schemas.ts:542-548` still lacks `.int()` as of
+> 2026-07-24; add it in a code commit (schema + a rejects-`50.5` test), separate from this docs pass.
+
 ## Current state
 
 - **`upsertCoupon` — `src/queries/coupon.ts:33-91`** (signature `(coupon: Coupon, storeURL: string)`):
@@ -121,6 +128,8 @@ other actions (review, shipping address, product) can follow later.
 - `src/queries/coupon.test.ts` — add tests
 - `src/lib/schemas.ts` — **only if** you need to export `CouponFormSchema`/`AdminCouponFormSchema`
   (they are already exported — likely no change needed; confirm before editing)
+- `plans/README.md` — the 060 status-row update required by the Executor instructions and Done
+  criteria; land it in a **separate docs commit** after the code commit (not with the code diff)
 
 **Out of scope** (do NOT touch):
 - `applyCoupon` / `placeOrder` — do not change the discount *math*; this plan blocks bad data at the
