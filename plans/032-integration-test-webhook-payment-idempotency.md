@@ -185,6 +185,12 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 - `db.paymentDetails.count({ where: { orderId } })` === **1**
 - 内容が S1 と同一（upsert update 経路が同値で上書き）
 
+> **逐次再送だけでは「冪等性」の主張を満たさない。** Stripe は再試行を**並行**配送しうるため、
+> 逐次 2 回のみを検証して「冪等」と名乗るのは過大主張。次のどちらかにすること:
+> - **並行ケースを追加**（推奨）: 同一イベントを `Promise.all` で 2 回配送し、`paymentDetails.count`
+>   が **1** のままであることを assert（upsert の一意制約が並行 upsert を直列化することの回帰網）。
+> - もしくは S2 の主張を「**逐次**再送に対する冪等性」に**明示的に狭める**（並行は別途 TODO と記す）。
+
 **Scenario S3: 状態遷移イベントは upsert 更新される**
 `payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
 - PaymentDetails は 1 行のまま `status === "Refunded"`
@@ -236,8 +242,11 @@ try {
     // Act: webhook イベントを配送
     //   tx 内: paymentDetails.upsert は成功（Order は実在するので FK OK）
     //          → order.update が CHECK 違反で throw → tx ロールバック
-    // Assert: 5xx（またはハンドリング済みのエラー応答）かつ
-    //   await db.paymentDetails.count({ where: { orderId } }) === 0
+    // Assert: 具体的な応答ステータスを固定すること — 曖昧な「5xx またはハンドリング済み応答」
+    //   ではなく、ハンドラが実際に返す値を assert する。Stripe webhook は内部エラー時に
+    //   `new Response("Internal Server Error", { status: 500 })`（route.ts:193）を返すので
+    //   `res.status === 500` を assert し、かつ
+    //   await db.paymentDetails.count({ where: { orderId } }) === 0（tx ロールバックで副作用なし）
 } finally {
     await db.$executeRawUnsafe(`ALTER TABLE "Order" DROP CONSTRAINT tmp_block_stripe`);
 }
