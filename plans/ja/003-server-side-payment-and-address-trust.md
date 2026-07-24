@@ -314,8 +314,18 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
    恒久的な assertion は「永続化された注文が **DB から取得した**住所を
    持つこと」— 例えば `findFirst` にクライアント供給オブジェクトとは異なる
    値の住所を返させ、保存値が引数ではなく DB 行と一致することを検証する。
+4. **amount/currency の突合には独立した回帰テストが要る。** Step 4 のリスト
+   （230 行付近）は metadata 不一致と status 写像を固定するが、
+   `paymentIntent.amount !== expectedAmount || currency !== "usd"` ガード
+   （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
+   amount が食い違う（または非 `usd`）retrieve 済み intent が
+   `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。** Step 3（202-209 行）は
+   `findFirst` を `$transaction` の**外**で行うため、チェックと `order.create` の間で
+   住所が削除・再割当てされる TOCTOU 窓が残る。恒久的な形は、`shippingAddressId` を書く
+   同一 `tx` の中で所有権を読む（または再検証する）ことで、チェックと使用が乖離しない。
 
-本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。
-本モジュールから `isSettledPaymentStatus` を export して再利用）および
-2026-07-18 の CodeRabbit Phase 1（冪等キー付与 + ステータス書き込みの CAS 化）
-— 詳細は `docs/testing/COVERAGE_REPORT.md §7`。
+本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。共有ヘルパー
+`isSettledPaymentStatus` を `src/lib/payment-status.ts` から再利用する —
+**本モジュールから再 export はしない**）および 2026-07-18 の CodeRabbit Phase 1
+（冪等キー付与 + ステータス書き込みの CAS 化）— 詳細は `docs/testing/COVERAGE_REPORT.md §7`。
