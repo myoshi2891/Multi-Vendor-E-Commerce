@@ -138,12 +138,15 @@ const nextConfig = {
                 value: 'camera=(), microphone=(), geolocation=()',
             },
         ];
-        // HSTS は **本番の HTTPS でのみ**付与する。localhost だけはブラウザが無視するが、
+        // HSTS は **本番ドメインでのみ**付与する。localhost だけはブラウザが無視するが、
         // HTTPS で配信される preview/staging ドメイン（*.vercel.app 等）では実際に記録され、
         // `includeSubDomains; preload` が全サブドメインの HTTPS 強制と preload リスト入り
         // （取り消しに数週間〜数ヶ月かかる非可逆操作）を誤って引き起こす。
-        // したがって全環境・全サブドメインへ無条件適用せず、NODE_ENV でゲートする。
-        if (process.env.NODE_ENV === 'production') {
+        // したがって全環境・全サブドメインへ無条件適用せず、NODE_ENV=production かつ
+        // Vercel の preview デプロイでない場合に限定する。
+        const isProduction = process.env.NODE_ENV === 'production';
+        const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+        if (isProduction && !isVercelPreview) {
             securityHeaders.push({
                 key: 'Strict-Transport-Security',
                 value: 'max-age=63072000; includeSubDomains; preload',
@@ -209,16 +212,18 @@ response (do **not** add `-L`, so the redirect's own headers are what gets check
 run the dev server in your environment, record in your report that this smoke check is **pending**
 rather than skipping it silently.
 
-> HSTS is emitted **only when `NODE_ENV === 'production'`** (see the config above). On local
-> `http://localhost` browsers ignore the header anyway, but a preview/staging deployment served
-> over **HTTPS** would honor `includeSubDomains; preload` and poison every subdomain (and enroll the
-> apex in the browser preload list, which is hard to reverse). Gating on production avoids sending
-> HSTS to any non-production host. Do not remove the gate to "make the header show up locally".
+> HSTS is emitted **only when `NODE_ENV === 'production'` and `VERCEL_ENV !== 'preview'`** (see the
+> config above). On local `http://localhost` browsers ignore the header anyway, but a preview/staging
+> deployment served over **HTTPS** would honor `includeSubDomains; preload` and poison every subdomain
+> (and enroll the apex in the browser preload list, which is hard to reverse). Gating on the real
+> production deployment avoids sending HSTS to any non-production host. Do not remove the gate to
+> "make the header show up locally".
 >
-> **Divergence (OPEN):** the shipped `next.config.mjs` currently pushes the HSTS header
-> *unconditionally* (all environments / all subdomains), and `tests/e2e/security-headers.spec.ts`
-> asserts it in every environment. Reconciling the shipped config + spec with this production gate is
-> a tracked follow-up — until then, do not record "HSTS scoped to production" as resolved.
+> **Resolved (was OPEN).** The shipped `next.config.mjs` previously pushed HSTS *unconditionally*
+> (all environments / all subdomains). It is now gated on production-and-not-preview, and
+> `tests/e2e/security-headers.spec.ts` mirrors the same env signals (`E2E_USE_DEV` / `VERCEL_ENV`) so
+> it asserts HSTS present under the default `next start` E2E run and **absent** in dev / preview —
+> catching both a regression back to unconditional HSTS and an accidental production drop.
 
 ## Test plan
 
