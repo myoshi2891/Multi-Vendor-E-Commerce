@@ -277,10 +277,15 @@ expect(couponAfter._count.users).toBe(0); // _CouponToUser の行が CASCADE で
    シナリオ 2〜4 と同じく**現挙動の characterization** — 将来の匿名化・ソフト削除で反転する。
    > 他の RESTRICT シナリオと分離する理由: Store は「顧客の削除」ではなく「販売者の削除」の
    > 経路であり、修正時の設計（店舗の所有権移譲 / 店舗の閉鎖）が顧客側とは別物になるため。
-6. **SupportTicket（orderId なし）持ちユーザーは削除され、ticket が匿名化される（SET NULL）**:
+6. **SupportTicket（orderId なし）持ちユーザーは削除され、ticket の `userId` が切り離される（SET NULL）**:
    `seedUser` + `db.supportTicket.create`（`userId: user.id`, `orderId` は指定しない）→
    `postUserDeleted(user.id)` → **status 200**。
    assert: User 消滅、`db.supportTicket.findUnique` の行は**残存**し `userId` === null
+   > **これは「匿名化」ではなく `userId` FK の切り離しにすぎない。** SupportTicket は
+   > `name` / `email` / `subject` / `message`（`@db.Text`）という PII 列を持ち、SET NULL は
+   > それらを一切消さない。行は残り、氏名・メール・本文はそのまま。真の匿名化を主張するなら
+   > これらの PII 列がクリアされることまで assert する必要がある（現状は未クリア = characterization
+   > として「PII 残存」を固定し、将来の匿名化実装で反転する）。
 7. **存在しない userId は 200（deleteMany の冪等性）**: seed なしで
    `postUserDeleted("user_does_not_exist")` → **status 200**（deleteMany は count:0 で正常終了）
 
