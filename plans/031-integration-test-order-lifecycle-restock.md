@@ -291,12 +291,18 @@ Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, Paymen
 > したがって並行テストは「本体未対応ゆえに意図的に赤くする」ものではなく、**緑になることを
 > 期待して書く回帰網**である。
 >
-> 逐次 2 回に加えて、以下を assert すること:
+> 逐次 2 回に加えて、以下を assert すること。**ただし並行ケースは逐次ケースが使った
+> `order` を流用しないこと** — 逐次 2 回で `order` は既に `Cancelled`（終端）に落ちており、
+> 同じ id で `Promise.all` しても両呼び出しが `count === 0` になって restock が一切走らず、
+> レースを検証しない空テストになる。**未キャンセルの新しい注文フィクスチャを Arrange してから**
+> 並行実行する:
 >
 > ```typescript
+> // 逐次テストの order とは別に、非終端状態の新しい注文を用意する
+> const concurrentOrder = await seedCancelableOrder(/* 8 個・decrement 3 済み 等、Scenario 1 と同条件 */);
 > await Promise.all([
->     updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled),
->     updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled),
+>     updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled),
+>     updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled),
 > ]);
 > // Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
 > ```
