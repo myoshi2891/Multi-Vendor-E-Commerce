@@ -137,10 +137,11 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
 >
 >   ```typescript
 >   test.afterAll(async () => {
->       // 1. 子（住所）を先に消す —— これが無いと 2. が P2003 で黙って失敗する
->       await prisma.shippingAddress
->           .deleteMany({ where: { userId } })
->           .catch(() => {});
+>       // 1. 子（住所）を先に消す —— これが無いと 2. が P2003 で黙って失敗する。
+>       //    ここで `.catch(() => {})` を付けないこと: 削除失敗を握り潰すと、上で警告している
+>       //    「User が FK RESTRICT で消えず黙って残る」カスケードをまさに引き起こす。
+>       //    deleteMany は 0 件でも throw しないので、投げる時は本物の異常 —— 表面化させて落とす。
+>       await prisma.shippingAddress.deleteMany({ where: { userId } });
 >       // 2. そのあとに親（User）と Clerk を消し、最後に切断する
 >       await session.cleanup();
 >   });
