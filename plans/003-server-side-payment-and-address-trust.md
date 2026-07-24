@@ -313,8 +313,21 @@ have since moved, so do **not** read the step text as the current spec:
    e.g. have `findFirst` resolve an address whose fields differ from the
    client-supplied object and assert the stored values match the DB row, not
    the argument.
+4. **Amount/currency reconciliation needs its own regression test.** The Step 4
+   list (line ~230) pins metadata-mismatch and status mapping but not the
+   `paymentIntent.amount !== expectedAmount || currency !== "usd"` guard
+   (lines 174-178). Add a case: retrieved intent with matching `metadata.orderId`
+   but a mismatched amount (or non-`usd` currency) must throw
+   `"Payment intent amount/currency mismatch."` with no `order.update`.
+5. **The address-ownership read should sit inside the order transaction.** Step 3
+   (lines 202-209) does the `findFirst` *before* the `$transaction`, leaving a
+   TOCTOU window where the address is deleted/reassigned between the check and
+   the `order.create`. The durable form reads (or re-validates) ownership inside
+   the same `tx` that writes `shippingAddressId`, so the check and the use cannot
+   diverge.
 
 Later payment work built on this plan: `plans/059` (PayPal capture verification,
-which exported `isSettledPaymentStatus` from this module for reuse) and the
-2026-07-18 CodeRabbit Phase 1 round (idempotency key + compare-and-set on the
-status write) — see `docs/testing/COVERAGE_REPORT.md §7`.
+which reuses the shared `isSettledPaymentStatus` from `src/lib/payment-status.ts`
+— **not** re-exported from this module) and the 2026-07-18 CodeRabbit Phase 1
+round (idempotency key + compare-and-set on the status write) — see
+`docs/testing/COVERAGE_REPORT.md §7`.
