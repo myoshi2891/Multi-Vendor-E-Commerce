@@ -201,7 +201,9 @@ unfilled — so the spike remains live. Separately, the **order-level** restock 
 *with* an exactly-once guard: `restockOrderItems` / `isRestockTerminalOrderStatus`, plus a
 conditional `updateMany` in `updateOrderPaymentStatus` whose `where` excludes already-settled
 payment statuses and which keys both child cascade and restock on `transition.count === 1`.
-**Use that as the reference implementation for mechanism (a)** rather than designing a guard from
+**Use that as the reference implementation for mechanism (b)** — a conditional `updateMany` on the
+status transition (`transition.count === 1`), with no schema column, which is exactly option (b)
+above, *not* the `restocked` boolean column of option (a) — rather than designing a guard from
 scratch; the remaining design question is how the item-level path composes with it without
 double-restocking.
 
