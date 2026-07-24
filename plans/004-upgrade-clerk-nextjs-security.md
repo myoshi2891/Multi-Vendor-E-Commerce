@@ -6,7 +6,8 @@
 > When done, update the status row for this plan in `plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts plans/README.md`
-> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.1 or newer (the v7 advisory-fixed version),
+> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.4 or newer (the version this plan
+> targets — the CRITICAL advisory was fixed in 7.2.1, and 7.2.4 also clears the transitive HIGH `js-cookie`),
 > the advisory may already be resolved — STOP and report the installed version
 > before doing anything.
 
