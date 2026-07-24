@@ -320,16 +320,18 @@ Step 2 のシナリオ 1〜5 が本体。構造の手本は `tests/integration/o
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `coupon-code-uniqueness.test.ts` の新規テストが全 pass
-- [ ] シナリオ 2 に「reject + 既存行無傷 + 新規行なし」の 3 点の assert が存在する
-- [ ] シナリオ 2 に**経路の切り分け** assert が存在する:
-      (a) 事前チェックと同一条件の `findFirst` が null（自店舗スコープで素通りする証明）、
-      (b) 生の `db.coupon.create` が `P2002` で reject する（実 unique 制約の発火の証明）。
-      シナリオ 1 と 2 はエラーメッセージが同一のため、この 2 点が無いと
-      どちらの経路で拒否されたか区別できない
-- [ ] シナリオ 3 にも「事前チェック素通り」assert（PLATFORM 行は `storeId: null` のため
-      自店舗スコープの findFirst に掛からない）が存在する
+- [ ] シナリオ 2 は**実 DB で観測可能な振る舞いのみ**を assert する:
+      「reject + 既存行無傷（`id` / `storeId` 一致）+ 新規行なし（件数不変）」の 3 点。
+      どちらの経路（事前チェック / P2002）で拒否されたかを**テスト側の再クエリで推論しない**
+      （本文「(1)」の不変条件そのものを検証する）
+- [ ] P2002 → メッセージ変換は `src/queries/coupon.test.ts` の**独立したユニットテスト**で固定する:
+      `db.coupon.upsert` を `P2002` で reject させ（`findFirst` は null で事前チェックを素通りさせる）、
+      "このクーポンコードは既に使用されています" への変換を直接駆動して証明する（本文「(2)」）
+- [ ] シナリオ 3 も**観測可能な振る舞いのみ**を assert する:
+      「reject + PLATFORM 行無傷（`scope` === "PLATFORM" / `storeId` === null）+ 新規行なし」。
+      「事前チェック素通り」を**テスト側の再クエリで示さない**（P2002 変換は上記ユニットテストでカバー済み）
 - [ ] シナリオ 4 に「resolve + discount 更新 + 行数 1」の assert が存在する
-- [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
+- [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test`（上記ユニットテスト含む）exits 0
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 041 行が DONE に更新済み
