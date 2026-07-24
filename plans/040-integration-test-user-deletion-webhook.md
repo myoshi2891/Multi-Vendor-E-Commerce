@@ -46,16 +46,33 @@ Wishlist は黙って連鎖消滅し、SupportTicket は匿名化される。こ
 
 ## Current state
 
-- `src/app/api/webhooks/route.ts:114-127` — 検証対象。**変更しない。** 抜粋:
+- `src/app/api/webhooks/route.ts:121-150` — 検証対象。**変更しない。** 抜粋（**PII 秘匿化が
+  landed 済みの現行実装**。かつては `db.user.deleteMany` 単体だったが、現在は SupportTicket の
+  PII 列を `REDACTED_PII` へ `updateMany` で上書きしてから削除する処理を単一 `$transaction` に
+  まとめている。`REDACTED_PII = "[deleted]"` は同ファイル冒頭で定義）:
 
 ```typescript
     if (evt.type === "user.deleted") {
         const userId = (evt.data as { id: string }).id;
         try {
-            await db.user.deleteMany({
-                where: {
-                    id: userId,
-                },
+            // GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
+            // ユーザー削除で userId が null 化される前に PII 列を秘匿値へ上書きする。
+            // 上書きと削除は単一 tx にまとめ、片方だけ成立して整合が崩れることを防ぐ。
+            await db.$transaction(async (tx) => {
+                await tx.supportTicket.updateMany({
+                    where: { userId },
+                    data: {
+                        name: REDACTED_PII,
+                        email: REDACTED_PII,
+                        subject: REDACTED_PII,
+                        message: REDACTED_PII,
+                    },
+                });
+                await tx.user.deleteMany({
+                    where: {
+                        id: userId,
+                    },
+                });
             });
         } catch (error) {
             console.error("Webhook user deletion failed:", error);
@@ -339,8 +356,10 @@ Machine-checkable. ALL must hold:
 Stop and report back (do not improvise) if:
 
 - `docker info` が失敗する（→ `BLOCKED (Docker unavailable)`）
-- Drift check で `route.ts:114-127` が本プランの抜粋と一致しない（特に匿名化・ソフト削除・
-  子テーブル先行削除が既に入っている場合 — 本プランの前提が消えている）
+- Drift check で `route.ts:121-150` が本プランの抜粋（PII 秘匿化 `$transaction` を含む現行実装）と
+  一致しない。**PII 秘匿化（`supportTicket.updateMany` → `user.deleteMany` の単一 tx）は landed 済みの
+  前提**なので、それが**無くなっている**場合や、さらなる匿名化・ソフト削除が新たに入っている場合は
+  本プランの前提が変わっているため STOP して報告する
 - **シナリオ 2〜5 のいずれかで削除が成功（200）してしまう** — FK が RESTRICT でなくなっている
   （schema/migration が変わった）。characterization の前提が崩れているので、実際の FK 定義を
   添えて報告
