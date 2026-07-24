@@ -115,11 +115,20 @@ export const getStoreOrders = async (storeUrl: string) => {
 
 ### Step 1: `getStoreOrders` に有界な `take` を追加
 
-`src/queries/store.ts` に、モジュールレベル定数を追加し `findMany` に適用する:
+定数は `store.ts` にインライン定義せず、**共有モジュール** `src/lib/store-constants.ts` に置く。
+こうすることでクエリと seller ページの切り捨て告知（Step 3b）が**同一の**定数を import し、
+ドリフトしない:
 
 ```ts
+// src/lib/store-constants.ts
 // 無制限の findMany を防ぐ防御的上限。将来はサーバーサイドページネーションへ移行（PERF-04 follow-up）。
-const STORE_ORDERS_MAX = 200;
+export const STORE_ORDERS_MAX = 200;
+```
+
+そのうえで `src/queries/store.ts` で import する（Step 3b の UI import と同一ソース）:
+
+```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 ```
 
 `getStoreOrders` の `findMany` にて、`orderBy` の隣に `take: STORE_ORDERS_MAX` を追加する:
