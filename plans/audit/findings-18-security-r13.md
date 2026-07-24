@@ -25,8 +25,10 @@
 | `bun audit` | **90 件**（critical 1 / high 30 / moderate 45 / low 14） |
 
 > **`bun audit` 90 件の内訳（本番到達性で分類）**:
-> - **本番到達・直接依存**: `next`（`<16.2.5` の HIGH クラスタ — **plan 057 が 16.2.5 bump で
->   包括対応済み** の TODO。SSRF/DoS/複数 middleware bypass はすべてこの範囲）/
+> - **本番到達・直接依存**: `next`（`<16.2.5` の HIGH クラスタ。fix floor は 16.2.5。
+>   **監査 HEAD `7080b12` 時点では `16.2.1` に解決され、まだ脆弱**。**plan 057**（lockfile の
+>   floor を `~16.2.10` へ引き上げる）で包括対応する **TODO**（この HEAD では未適用 →
+>   2026-07-18 に実行され DONE）。SSRF/DoS/複数 middleware bypass はすべてこの範囲）/
 >   `dompurify`（`>=3.1.3 <3.2.7` の XSS 系。`src/utils/sanitize.ts` の sink 防御に直結 →
 >   **SECURITY-11 で起票**）。
 > - **本番到達・間接**: `qs`（stripe 経由・DoS moderate/low）/ `postcss`（ビルド時のみ）/
