@@ -199,7 +199,10 @@ Open questions 1・2・6 に答える: 生成列 + GIN の DDL、検索とブラ
 >   一意な列を最終キーに置いて全順序にする（`id` は主キーで一意性が保証される。
 >   `createdAt` は同時刻がありうるため単独では不可）。
 > - **キーセットページング（seek method）を第一候補として比較する**:
->   `WHERE (ts_rank, id) < (:lastRank, :lastId) ORDER BY ts_rank DESC, id ASC LIMIT n`。
+>   `WHERE ts_rank < :lastRank OR (ts_rank = :lastRank AND id > :lastId) ORDER BY ts_rank DESC, id ASC LIMIT n`。
+>   （**行値比較 `(ts_rank, id) < (:lastRank, :lastId)` は使わないこと** — 行値比較は全列が
+>   同一方向の時のみ正しく、`ts_rank DESC` と `id ASC` の**混在方向**では tie 行の走査方向が
+>   逆になり、同点行がページ間で重複・欠落する。混在方向のシークは上記のように述語を展開する。）
 >   `OFFSET` は深いページで前段行を毎回読み捨てるため件数増加に伴い劣化し、
 >   さらに**ページ間で行が挿入・削除されるとずれる**（`OFFSET` は「何件飛ばすか」
 >   であって「どこから続けるか」ではない）。更新が入るカタログでは正しさの面でも
