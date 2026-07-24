@@ -290,10 +290,11 @@ This plan is **DONE** (merged as PR #158) **for its original scope only** —
 server-side Stripe re-fetch and address-ownership `findFirst`. The steps above
 record the work as planned at commit `f9752c0` and are deliberately left
 unedited. Two points (**1–2**) have since *moved in the code*, so do **not** read
-the step text as the current spec. Three further points (**3–5**) are **open
-follow-ups that this plan's DONE status does not close** — in particular the
-address-ownership TOCTOU (**5**) is still unfixed. Treat 3–5 as tracked gaps,
-not completed work:
+the step text as the current spec. Three further points (**3–5**) are
+follow-ups beyond the original scope: **5** (the address-ownership TOCTOU) has
+since been **fixed** (re-validation inside the order `tx`); **3–4** remain open
+gaps this plan's DONE status does not close. Treat 3–4 as tracked gaps, not
+completed work:
 
 1. **`requires_payment_method` is no longer an unconditional `Failed`.**
    Step 4 (line ~231) expects that status to map to `paymentStatus: "Failed"`.
@@ -325,13 +326,14 @@ not completed work:
    but a mismatched amount (or non-`usd` currency) must throw
    `"Payment intent amount/currency mismatch."` with no `order.update`.
 5. **The address-ownership read should sit inside the order transaction.**
-   **Status: OPEN — not fixed by this plan.** Step 3
-   (lines 202-209) does the `findFirst` *before* the `$transaction`, leaving a
-   TOCTOU window where the address is deleted/reassigned between the check and
-   the `order.create`. The durable form reads (or re-validates) ownership inside
-   the same `tx` that writes `shippingAddressId`, so the check and the use cannot
-   diverge. Until that lands, do **not** record the address-ownership TOCTOU as
-   resolved anywhere (plan index / security reports).
+   **Status: RESOLVED.** Step 3 (lines 202-209) did the `findFirst` *before* the
+   `$transaction`, leaving a TOCTOU window where the address could be
+   deleted/reassigned between the check and the `order.create`. `placeOrder`
+   (`src/queries/user.ts`) now **re-validates ownership inside the same `tx`**,
+   immediately before writing `shippingAddressId` (`tx.shippingAddress.findFirst`
+   scoped by `{ id, userId }` → throw `"Shipping address not found."` on miss),
+   so the check and the use can no longer diverge. Regression: a unit test drives
+   "owned before tx, reassigned during tx" and asserts no `order.create`.
 
 Later payment work built on this plan: `plans/059` (PayPal capture verification,
 which reuses the shared `isSettledPaymentStatus` from `src/lib/payment-status.ts`

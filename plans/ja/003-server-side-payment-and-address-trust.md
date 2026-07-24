@@ -293,8 +293,9 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 （サーバー側 Stripe 再取得と住所所有権の `findFirst`）に限る**。上記ステップは commit
 `f9752c0` 時点の計画の記録であり、意図的に改変していない。以下 **5 点**のうち、
 **1–2** はその後コード側で*移動*したため **ステップ本文を現行仕様として読まないこと**。
-**3–5 の 3 点は本プランの DONE では閉じない未解決の follow-up** であり、特に住所所有権の
-TOCTOU（**5**）は未修正。3–5 は完了済みではなく追跡中のギャップとして扱うこと:
+**3–5** は当初スコープ外の follow-up で、**5**（住所所有権の TOCTOU）は**修正済み**
+（注文 `tx` 内での再検証）、**3–4** は本プランの DONE では閉じない未解決のギャップ。
+3–4 は完了済みではなく追跡中のギャップとして扱うこと:
 
 1. **`requires_payment_method` は無条件 `Failed` ではない。**
    Step 4 は当該ステータスを `paymentStatus: "Failed"` へ写像する前提だが、
@@ -323,13 +324,13 @@ TOCTOU（**5**）は未修正。3–5 は完了済みではなく追跡中のギ
    （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
    amount が食い違う（または非 `usd`）retrieve 済み intent が
    `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
-5. **住所所有権の読み取りは注文トランザクション内に置くべき。
-   Status: OPEN — 本プランでは未修正。** Step 3（202-209 行）は
-   `findFirst` を `$transaction` の**外**で行うため、チェックと `order.create` の間で
-   住所が削除・再割当てされる TOCTOU 窓が残る。恒久的な形は、`shippingAddressId` を書く
-   同一 `tx` の中で所有権を読む（または再検証する）ことで、チェックと使用が乖離しない。
-   これが入るまで、住所所有権 TOCTOU を解決済みとして（plan index / セキュリティ報告に）
-   記録しないこと。
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。Status: RESOLVED。**
+   Step 3（202-209 行）は `findFirst` を `$transaction` の**外**で行っていたため、
+   チェックと `order.create` の間で住所が削除・再割当てされる TOCTOU 窓が残っていた。
+   `placeOrder`（`src/queries/user.ts`）は現在、`shippingAddressId` を書く**直前に同一 `tx`
+   内で所有権を再検証**する（`tx.shippingAddress.findFirst` を `{ id, userId }` でスコープ →
+   不一致なら `"Shipping address not found."` を throw）ため、チェックと使用が乖離しない。
+   回帰テスト: 「tx 外は所有・tx 内で再割当て」を駆動し `order.create` が走らないことを固定。
 
 本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。共有ヘルパー
 `isSettledPaymentStatus` を `src/lib/payment-status.ts` から再利用する —
