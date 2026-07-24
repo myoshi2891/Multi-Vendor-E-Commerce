@@ -205,6 +205,9 @@ C = name "Gamma Case" / desc "unrelated leather case"）:
 4. **ヒットなし**: `search("nonexistentterm12345")` → 200・空配列
 5. **空クエリ早期 return**: `search("   ")` → 200・空配列（DB 到達前に return —
    商品を 1 件も seed しない状態でも成立）
+5b. **クエリ欠落の早期 return（別ケース）**: `search` パラメータが**そもそも無い**
+   （`?search=` を付けない = `searchParams.get("search")` が `null`）場合も 200・空配列。
+   空白トリム（5）とは分岐が異なる（`null` vs 空文字列）ため独立したケースとして固定する。
 6. **パラメータ化の安全性**: `search("'; DROP TABLE \"Product\"; --")` → 200
    （500 でない = SQL として解釈されない）+ 直後に `db.product.count()` が seed 数のまま
 7. **複数語 plainto_tsquery（AND 意味論）**: `search("beta gadget")` → B のみ
