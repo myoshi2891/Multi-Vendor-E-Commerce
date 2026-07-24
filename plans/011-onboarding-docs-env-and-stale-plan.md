@@ -159,9 +159,9 @@ The relative-link form appears in **9 files** under `docs/design/*/README.md` (`
 **Verify**:
 
 ```bash
-grep -rn "unimplemented-screens-plan" . --include="*.md" \
-  | grep -v node_modules \
-  | grep -v "archive/unimplemented-screens-plan"
+grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+  | grep -v "node_modules" \
+  | grep -vE "(^|/)archive/unimplemented-screens-plan"
 ```
 
 → **zero hits**. Any hit is a live reference to the *old* path.
@@ -177,6 +177,13 @@ grep -rn "unimplemented-screens-plan" . --include="*.md" \
 > This also makes the gate **binary**. The old wording's escape hatch ("or all remaining references
 > point to the new archive path") could not be decided by the command itself and required a human to
 > eyeball the output, so it is removed.
+>
+> **Match per occurrence, not per line.** A line-oriented `grep -v` (`grep "…" | grep -v
+> "archive/…"`) drops the *whole line* when it contains the archive string — so a line that mentions
+> **both** paths (e.g. "moved from `unimplemented-screens-plan.md` to
+> `archive/unimplemented-screens-plan.md`") hides the live old reference sitting on the same line.
+> The `grep -oE` above extracts each path token separately, so the old-path token survives the
+> `archive/` exclusion and the gate still catches it.
 
 ### Step 2: Complete the README env block
 
@@ -217,7 +224,18 @@ IPINFO_TOKEN=                       # 地域判定 (userCountry)
 NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 ```
 
-Cross-check against the live env-name grep + `.env.docker.example` so nothing required is missing and nothing abandoned (Elasticsearch) is added. Names/placeholders only — no real values.
+Cross-check against the live env-name grep + `.env.docker.example` so nothing required is missing and nothing abandoned (Elasticsearch) is added.
+
+**Empty-value vs literal-value policy** (resolve the apparent contradiction with the block above):
+- **Secrets / deployment-specific values** (`DATABASE_URL`, `CLERK_SECRET_KEY`, `STRIPE_SECRET_KEY`,
+  `PAYPAL_SECRET`, tokens, webhook signing secrets, URLs that vary per environment) are left **empty**
+  (`NAME=`) — never a real credential.
+- **Non-secret routing config the app requires a specific value for** (`NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`,
+  `…SIGN_UP_URL=/sign-up`, `…AFTER_SIGN_IN_URL=/`) carries its **literal** value, because the app ships
+  custom `src/app/(auth)/` pages and the Clerk defaults would point elsewhere — an empty value here
+  breaks auth. The inline comments already explain why these are not placeholders.
+
+So the rule is **not** "no values ever": it is "no secrets" — required non-secret config keeps its literal value.
 
 **Verify**: every name from `grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ | sort -u` (except `ELASTICSEARCH_*`, `NODE_ENV`, `E2E_BASE_URL`) appears in the README block.
 
