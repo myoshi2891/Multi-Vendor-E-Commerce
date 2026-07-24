@@ -137,12 +137,18 @@ const nextConfig = {
                 key: 'Permissions-Policy',
                 value: 'camera=(), microphone=(), geolocation=()',
             },
-            // HTTPS 強制（本番のみ意味を持つ。max-age は 2 年）
-            {
+        ];
+        // HSTS は **本番の HTTPS でのみ**付与する。localhost だけはブラウザが無視するが、
+        // HTTPS で配信される preview/staging ドメイン（*.vercel.app 等）では実際に記録され、
+        // `includeSubDomains; preload` が全サブドメインの HTTPS 強制と preload リスト入り
+        // （取り消しに数週間〜数ヶ月かかる非可逆操作）を誤って引き起こす。
+        // したがって全環境・全サブドメインへ無条件適用せず、NODE_ENV でゲートする。
+        if (process.env.NODE_ENV === 'production') {
+            securityHeaders.push({
                 key: 'Strict-Transport-Security',
                 value: 'max-age=63072000; includeSubDomains; preload',
-            },
-        ];
+            });
+        }
         return [
             {
                 // すべてのルート（ページ・API・静的アセット）に適用
@@ -203,8 +209,16 @@ response (do **not** add `-L`, so the redirect's own headers are what gets check
 run the dev server in your environment, record in your report that this smoke check is **pending**
 rather than skipping it silently.
 
-> HSTS only takes effect over HTTPS in production; on local `http://localhost` the header is sent
-> but browsers ignore it. That is expected — do not try to "fix" it locally.
+> HSTS is emitted **only when `NODE_ENV === 'production'`** (see the config above). On local
+> `http://localhost` browsers ignore the header anyway, but a preview/staging deployment served
+> over **HTTPS** would honor `includeSubDomains; preload` and poison every subdomain (and enroll the
+> apex in the browser preload list, which is hard to reverse). Gating on production avoids sending
+> HSTS to any non-production host. Do not remove the gate to "make the header show up locally".
+>
+> **Divergence (OPEN):** the shipped `next.config.mjs` currently pushes the HSTS header
+> *unconditionally* (all environments / all subdomains), and `tests/e2e/security-headers.spec.ts`
+> asserts it in every environment. Reconciling the shipped config + spec with this production gate is
+> a tracked follow-up — until then, do not record "HSTS scoped to production" as resolved.
 
 ## Test plan
 
