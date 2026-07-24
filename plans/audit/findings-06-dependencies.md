@@ -7,7 +7,7 @@
 ### [DEPS-01] `@clerk/nextjs` を auth-bypass アドバイザリ圏外へ更新（7.0.7 → 7.5.x）
 
 > **✅ 解消済み（実測 2026-07-18）**: `package.json` は `"@clerk/nextjs": "^7.5.0"`、
-> `@clerk/testing` は `^2.2.9`。GHSA-vqx2-fgx2-5wq9 の影響範囲（`>=7.0.0 <=7.2.3`）の
+> `@clerk/testing` は `^2.2.9`。GHSA-vqx2-fgx2-5wq9 の影響範囲（`>=7.0.0 <7.2.1`）の
 > **外**にあり、本 finding はクローズ済み。実施は [plan 004](../004-upgrade-clerk-nextjs-security.md)（DONE）。
 >
 > DEPS-02 の「✅ ゲート通過（実測 2026-07-17）」は**この DEPS-01 のバンプが完了して
@@ -21,7 +21,7 @@
 > 厳密ピンは採用していない。
 
 - **Evidence**:
-  - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <=7.2.3、修正 7.2.4+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
+  - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <7.2.1、修正 7.2.1+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
   - `src/middleware.ts:6-13` — アドバイザリが標的とするまさにこのパターン: `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`, `/dashboard/(.*)`, `/checkout`, `/profile`, `/profile/(.*)` を保護。
   - 影響範囲（アップグレード面）は小さい: Clerk import はテスト以外で約10箇所 — `src/middleware.ts:1`、`src/app/layout.tsx:12`（ClerkProvider）、`(auth)/sign-in|sign-up`・`(store)/profile/settings/page.tsx`（UI コンポーネント）、`src/app/api/webhooks/route.ts:4`（clerkClient + WebhookEvent）、`src/queries/store.ts:586`（動的 import）、各 dashboard layout / `src/queries/*`（order, product, review, profile, user, stripe, paypal, support）の `currentUser()`。7.0→7.5 間で削除された API は未使用。
   - peer 互換は既に充足: `@clerk/nextjs@7.0.7` の peer は `next: ^16.1.0-0`、リポジトリは `next@16.2.1`。7.5.x も同じ Next 16 / React 19 peer 窓で、Next/React の変更を強制しない。
@@ -33,7 +33,7 @@
 - > **✅ 解決済み（2026-07-17 / Round 13 の実装状態 reconcile で確認）— 以下は履歴**。
   > 確定結果: `package.json:21` は **`"@clerk/nextjs": "^7.5.0"`**（範囲指定のまま記録する
   > 方針を採用・厳密ピンは不採用）。`bun.lock` 上の解決版は GHSA-vqx2-fgx2-5wq9 の
-  > 修正版（7.2.4+）と HIGH GHSA-w24r-5266-9c3c の**両方**を満たし、`js-cookie` は
+  > 修正版（7.2.1+）と HIGH GHSA-w24r-5266-9c3c の**両方**を満たし、`js-cookie` は
   > `@clerk/shared@4.25.4` 経由で `3.0.7`。**下記 TODO は着手不要**（本節冒頭の
   > blockquote と同一の結論。以降の手順・確認事項は当時の未確定事項の記録として残す）。
   >
@@ -47,7 +47,7 @@
   > cat node_modules/@clerk/nextjs/package.json | grep '"version"'
   > ```
   > **確定すべきこと**: (a) 解決されたパッチ版が GHSA-vqx2-fgx2-5wq9 の修正版
-  > （7.2.4+）**および** HIGH GHSA-w24r-5266-9c3c の修正版の**両方**を満たすか、
+  > （7.2.1+）**および** HIGH GHSA-w24r-5266-9c3c の修正版の**両方**を満たすか、
   > (b) その版を `package.json` にどう記録するか（範囲のままか、
   > 再現性のため厳密ピンにするか）。判定はユーザー確認の上で行い、
   > **実測した解決版を本ファイルと plan 004 の両方に記録**すること

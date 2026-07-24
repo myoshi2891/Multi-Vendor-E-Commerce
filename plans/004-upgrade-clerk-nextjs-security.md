@@ -6,7 +6,7 @@
 > When done, update the status row for this plan in `plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts plans/README.md`
-> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.4 or newer,
+> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.1 or newer (the v7 advisory-fixed version),
 > the advisory may already be resolved — STOP and report the installed version
 > before doing anything.
 
@@ -21,7 +21,7 @@
 
 ## Why this matters
 
-`@clerk/nextjs` is pinned at `^7.0.7` and resolves to `7.0.7`, which is inside the affected range of **GHSA-vqx2-fgx2-5wq9** (CRITICAL, middleware-based route-protection bypass, affects `>=7.0.0 <=7.2.3`, fixed in `7.2.4`) plus HIGH GHSA-w24r-5266-9c3c. This repo's `src/middleware.ts` uses exactly the pattern the advisory targets: `createRouteMatcher([...])` + `await auth.protect()` gating `/dashboard`, `/checkout`, `/profile`. An attacker could reach those protected route shells without a valid session. Defense-in-depth (server actions re-check via `src/lib/auth-guards.ts`, dashboard layouts call `currentUser()`) reduces but does not eliminate exposure — any page that relies on middleware as its only gate is at risk. Upgrading within the v7 line closes the advisory with a small, well-contained blast radius. This upgrade also lifts the transitive HIGH `js-cookie@3.0.5` (via `@clerk/shared`) when Clerk pulls a patched `@clerk/shared`.
+`@clerk/nextjs` is pinned at `^7.0.7` and resolves to `7.0.7`, which is inside the affected range of **GHSA-vqx2-fgx2-5wq9** (CRITICAL, middleware-based route-protection bypass, affects `>=7.0.0 <7.2.1`, fixed in `7.2.1`) plus HIGH GHSA-w24r-5266-9c3c. This repo's `src/middleware.ts` uses exactly the pattern the advisory targets: `createRouteMatcher([...])` + `await auth.protect()` gating `/dashboard`, `/checkout`, `/profile`. An attacker could reach those protected route shells without a valid session. Defense-in-depth (server actions re-check via `src/lib/auth-guards.ts`, dashboard layouts call `currentUser()`) reduces but does not eliminate exposure — any page that relies on middleware as its only gate is at risk. Upgrading within the v7 line closes the advisory with a small, well-contained blast radius. This upgrade also lifts the transitive HIGH `js-cookie@3.0.5` (via `@clerk/shared`) when Clerk pulls a patched `@clerk/shared`.
 
 ## Current state
 
@@ -188,7 +188,7 @@ the present state:
 
 | Item | As planned (`f9752c0`) | Current tree |
 |---|---|---|
-| `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <=7.2.3`) | `^7.5.0` — outside the affected range |
+| `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <7.2.1`) | `^7.5.0` — outside the affected range |
 | `@clerk/testing` | `^2.0.7` | `^2.2.9` |
 | `js-cookie` (transitive) | `3.0.5` via `@clerk/shared` (HIGH) | `3.0.7` via `@clerk/shared@4.25.4` |
 
