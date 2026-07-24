@@ -286,6 +286,11 @@ expect(couponAfter._count.users).toBe(0); // _CouponToUser の行が CASCADE で
    > それらを一切消さない。行は残り、氏名・メール・本文はそのまま。真の匿名化を主張するなら
    > これらの PII 列がクリアされることまで assert する必要がある（現状は未クリア = characterization
    > として「PII 残存」を固定し、将来の匿名化実装で反転する）。
+   > **この characterization テストが緑であることは「PII 残存が許容された」という意味ではない。**
+   > SupportTicket の PII 列残存は **OPEN のプライバシー/コンプライアンス課題（GDPR 等の
+   > 消去要求への未対応）** であり、本プラン（現挙動の固定のみ）では**解決しない**。
+   > 真の匿名化が入るまで、この PII 残存を「解決済み」として plan index / セキュリティ・
+   > プライバシー報告に記録しないこと（シナリオ 2〜5 の RESTRICT による PII 残存も同様）。
 7. **存在しない userId は 200（deleteMany の冪等性）**: seed なしで
    `postUserDeleted("user_does_not_exist")` → **status 200**（deleteMany は count:0 で正常終了）
 
