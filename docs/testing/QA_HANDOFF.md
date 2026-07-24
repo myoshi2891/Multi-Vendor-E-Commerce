@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-07-18 / **HEAD**: `c77cdd7`（CodeRabbit 指摘対応 Phase 1 完了 — Stripe PaymentIntent の冪等キー付与 [`ae585a7`] / 決済状態更新の CAS 化（webhook との退行レース解消）[`c77cdd7`] / `saveUserCart` の P2034 再試行 [`d8108b5`/`e5903c8`] / `emptyCart()` 失敗時の注文遷移継続 [`f4aba5f`] / 空 `it.each([])` の計数是正 [`b5eb8d1`]）。直前: improve Round 13 P2 プラン完了 — plan 061: レスポンス強化ヘッダ 5 種を全ルートへ付与 + E2E 厳密値ガード [`4e2c4fa`/`afd22b3`] / plan 062: `index-products` の生 `error.message` 漏洩停止 + `error: any` 撤去 [`5ef0dfe`/`492e9ac`]）。その前: Round 13 P1 全 4 プラン完了 — plan 057: `next` を ~16.2.10 へ bump [`10e35f3`] / plan 058: `getCoupon` IDOR read 修正 [`15c9a96`] / plan 059: PayPal capture の金額/相関/通貨検証 + settled ガード [`6a31da1`] / plan 060: クーポン mutation のサーバー側 Zod 検証 — discount>99 → 負値 total 防止 [`c67b833`]
+> **最終更新**: 2026-07-24 / **HEAD**: `e886b57`（CodeRabbit ローカルレビュー対応 — plan/audit doc 21 件の整合修正に加え、実コード 3 件のセキュリティ修正〔HSTS を本番ドメイン限定化（Vercel preview 毒回避）`2960381` / `placeOrder` の住所所有権 TOCTOU を tx 内再検証で閉塞 `b95f847` / `user.deleted` webhook で SupportTicket PII を削除前に秘匿化（GDPR 消去）`7e3e507`〕・回帰テスト +2）。直前: 2026-07-18 CodeRabbit 指摘対応 Phase 1 完了 — Stripe PaymentIntent の冪等キー付与 [`ae585a7`] / 決済状態更新の CAS 化（webhook との退行レース解消）[`c77cdd7`] / `saveUserCart` の P2034 再試行 [`d8108b5`/`e5903c8`] / `emptyCart()` 失敗時の注文遷移継続 [`f4aba5f`] / 空 `it.each([])` の計数是正 [`b5eb8d1`]）。直前: improve Round 13 P2 プラン完了 — plan 061: レスポンス強化ヘッダ 5 種を全ルートへ付与 + E2E 厳密値ガード [`4e2c4fa`/`afd22b3`] / plan 062: `index-products` の生 `error.message` 漏洩停止 + `error: any` 撤去 [`5ef0dfe`/`492e9ac`]）。その前: Round 13 P1 全 4 プラン完了 — plan 057: `next` を ~16.2.10 へ bump [`10e35f3`] / plan 058: `getCoupon` IDOR read 修正 [`15c9a96`] / plan 059: PayPal capture の金額/相関/通貨検証 + settled ガード [`6a31da1`] / plan 060: クーポン mutation のサーバー側 Zod 検証 — discount>99 → 負値 total 防止 [`c67b833`]
 
 ---
 
@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1738** passed / 1741 total / 175 スイート（174 passed + 1 skipped suite） |
+| Jest テスト総数 (unit/component) | **1746** passed / 1749 total / 175 スイート（174 passed + 1 skipped suite）。2026-07-24 に CodeRabbit セキュリティ修正の回帰 +2（`user.test.ts` placeOrder 住所所有権 TOCTOU / `webhooks/route.test.ts` SupportTicket PII 秘匿化）。旧 1738 との差分の一部は計測時点のドリフト |
 | カバレッジ全体（lcov 2026-07-18 実測） | Statements 66.06% / Branches 46.04% / Functions 54.58% / Lines 65.04% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

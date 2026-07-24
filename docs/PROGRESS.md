@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1738 passed / 1741 total / 175 スイート（3 skipped）** — 2026-07-18 実測（CodeRabbit ローカルレビュー Phase 1 完了時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1746 passed / 1749 total / 175 スイート（3 skipped）** — 2026-07-24 実測（CodeRabbit セキュリティ修正の回帰 +2 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1720,5 +1720,32 @@ Phase 3-4 として別途対応する。
 |------|--------|--------|
 | テスト総数 | 1719 passed / 1722 total | **1738 passed / 1741 total** |
 | スイート数 | 174 | **175**（`src/lib/db-retry.test.ts` 新設） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit ローカルレビュー対応（plan/audit doc + 実コード 3 件のセキュリティ修正）(2026-07-24)
+
+#### 概要
+
+CodeRabbit のローカルレビュー指摘を精査し、plan/audit ドキュメント 21 件の整合修正に加え、
+ドキュメント上で OPEN と明示した実コードの脆弱性 3 件を Red→Green で修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `next.config.mjs` / `security-headers.spec.ts` | HSTS を `NODE_ENV=production && VERCEL_ENV!=='preview'` に限定（Vercel preview 毒回避）。E2E は付与条件を鏡写しに | `2960381` / `8857847` |
+| `src/queries/user.ts` / `user.test.ts` | `placeOrder` の住所所有権 TOCTOU を tx 内再検証で閉塞（+1 テスト） | `b95f847` / `8e2d6dd` |
+| `src/app/api/webhooks/route.ts` / `route.test.ts` | `user.deleted` で SupportTicket PII を削除前に秘匿化（GDPR 消去・+1 テスト） | `7e3e507` / `e886b57` |
+| plan/audit docs 21 件 | 本文と Done criteria の乖離・SSOT パス・件数・旧前提の履歴化・検証コマンド誤検出などの整合修正 | 個別コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1738 passed / 1741 total | **1746 passed / 1749 total** |
+| スイート数 | 175 | **175**（変化なし） |
 | スナップショット | 127 | **127**（変化なし） |
 | 型エラー | 0 件 | **0 件** |

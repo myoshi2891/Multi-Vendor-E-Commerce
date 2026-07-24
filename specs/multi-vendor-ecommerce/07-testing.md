@@ -12,6 +12,10 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1746 passed / 1749 total across 175 suites (3 skipped), as of 2026-07-24.
+  Two security regressions from the CodeRabbit local review, doc/code round (+2, no new suites):
+  `user.test.ts` pins the placeOrder shipping-address ownership TOCTOU (re-validate inside the
+  order tx), and `webhooks/route.test.ts` pins the SupportTicket PII redaction on user deletion.
 - 1738 passed / 1741 total across 175 suites (3 skipped), as of 2026-07-18.
   Nineteen regressions from the CodeRabbit local review, Phase 1 (+19, one new suite).
   `src/lib/db-retry.test.ts` is the new suite (+8): `saveUserCart` declared
