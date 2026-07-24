@@ -188,7 +188,9 @@ await expect(page.getByText("Total price:", { exact: false })).toHaveCount(2);
 // 金額は **セント整数** に正規化してから検算する（Number の小数演算をしない）。
 // 表示は $X.XX 固定なので、1 回だけ丸めて整数化すれば以降の加減算は誤差ゼロになる。
 const parseMoneyToCents = (text: string): number => {
-    const matched = text.match(/([0-9]+(?:\.[0-9]{1,2})?)/);
+    // 通貨トークン（`$X.XX`）を取る。行内の別の数値（"2 items" の点数等）を先に拾わないよう
+    // `$` にアンカーする。表示は常に小数 2 桁なので `[0-9]{2}` で固定。
+    const matched = text.match(/\$\s*([0-9]+\.[0-9]{2})/);
     if (!matched) throw new Error(`金額を抽出できません: ${text}`);
     return Math.round(Number(matched[1]) * 100); // 丸めはここ 1 回だけ
 };
