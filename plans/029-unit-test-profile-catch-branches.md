@@ -147,8 +147,12 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 
 `getUserOrders` / `getUserPayments` / `getUserReviews` に対し、`period` 引数
 `"last-6-months"` / `"last-1-year"` / `"last-2-years"` の各値で呼び、対応する mock
-`findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert
-（既存のフィルタ系テストの assert 形式を踏襲。日付値そのものは `expect.any(Date)` でよい）。
+`findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert する。
+**日付値は `expect.any(Date)` で済ませず、実際の境界を検証すること** — 時刻を固定
+（`jest.useFakeTimers().setSystemTime(new Date("2026-07-01T00:00:00Z"))` 等）した上で、
+各期間が生む `gte` の**具体値**（6 か月前 / 1 年前 / 2 年前）を assert する。`expect.any(Date)`
+は「Date であること」しか見ず、下の必須テスト数の根拠である**月数の取り違え・年跨ぎの誤り**を
+まさに素通しさせる（型は緑でも境界がズレる）。
 
 Step 1 と**同じ規則**で必要テスト数を機械的に定義する（lcov の実測任せ・「間引いてよい」を排除する）:
 
