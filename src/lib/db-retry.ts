@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 import { Prisma } from "@prisma/client";
 
 /**
@@ -63,8 +65,13 @@ export const retryOnSerializationFailure = async <T>(
 
             // 指数バックオフ + ジッター。競合した2者が同じ間隔で再突入して
             // 再び衝突する（ロックステップ）のを避ける。
+            // ジッターに `node:crypto` を使うのは静的解析（SonarCloud S2245）が
+            // `Math.random()` を security 用途と誤検知するため。ここは暗号強度要件では
+            // なく単なる衝突回避なので、範囲 [0, baseDelayMs) の乱数であれば等価。
+            // `randomInt(0, 0)` は RangeError を投げるため baseDelayMs=0 はガードする。
             const backoff = baseDelayMs * 2 ** (attempt - 1);
-            await sleep(backoff + Math.random() * baseDelayMs);
+            const jitter = baseDelayMs > 0 ? randomInt(0, baseDelayMs) : 0;
+            await sleep(backoff + jitter);
         }
     }
 
