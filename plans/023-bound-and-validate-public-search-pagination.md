@@ -231,7 +231,14 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run lint` exits 0.
 - [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 normalization cases (FULLTEXT path) exist and pass.
 - [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
-- [ ] `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET handler's pagination block (the normalized code uses `Number(...)`).
+- [ ] The GET handler contains no `parseInt` and parses page/limit with `Number(...)`. **Use the
+      GET-scoped gate, not a whole-file grep** — see "Correction (2026-07-19)" below:
+      `awk '/^export async function GET/,0' src/app/api/index-products/route.ts | grep -c "parseInt"` → `0`.
+      (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
+      failure if the POST handler legitimately uses `parseInt`.)
+- [ ] Normalization **behavior** (Infinity/NaN/fractional/`<1` → clamped, not token presence) is
+      pinned by a unit test, not by grep alone — grep only proves `Number(...)`/`MAX_LIMIT` appear,
+      not that the `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : …` clamp actually holds.
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
 - [ ] Before the **code commit**, `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files. (The `plans/audit/findings-11-security-followup.md` status row and the `spec-sync-after-test` docs go in later, separate commits.)
 
