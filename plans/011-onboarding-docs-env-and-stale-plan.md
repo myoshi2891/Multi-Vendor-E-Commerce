@@ -159,12 +159,19 @@ The relative-link form appears in **9 files** under `docs/design/*/README.md` (`
 **Verify**:
 
 ```bash
+# Exclude this plan itself (it quotes the old token as a "moved from … to archive/…" example)
+# and plans/audit/* (the audit trail) **from the scan**. Per the note above these are references
+# that are *expected to remain*; scanning them makes the illustrative old-path tokens in their prose
+# match forever, so the gate fails structurally (a false positive). Exclude at the grep -r stage
+# because -h drops filenames, so you cannot filter per-file after extraction.
 grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+  --exclude="011-onboarding-docs-env-and-stale-plan.md" \
+  --exclude-dir="audit" \
   | grep -v "node_modules" \
   | grep -vE "(^|/)archive/unimplemented-screens-plan"
 ```
 
-→ **zero hits**. Any hit is a live reference to the *old* path.
+→ **zero hits**. Any hit (outside this plan and the audit trail) is a live reference to the *old* path.
 
 > **Exclude on `archive/unimplemented-screens-plan`, not on `docs/archive`.** The earlier gate used
 > `grep -v docs/archive`, which **fails references that were correctly updated**. As the table above
