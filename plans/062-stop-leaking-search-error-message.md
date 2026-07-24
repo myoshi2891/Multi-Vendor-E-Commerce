@@ -166,7 +166,9 @@ new cases.
 - New tests: the two 500-branch cases above (POST + GET), asserting the generic body.
 - Structural pattern: the existing tests in `src/app/api/index-products/route.test.ts` (handler
   import + `db` mock). If that file mocks `db` via `jest.mock("@/lib/db")`, reuse that mock and make
-  the relevant method `mockRejectedValueOnce(new Error(...))`.
+  the relevant method `mockRejectedValue(new Error(...))` — **persistent, not `…Once`**. A one-shot
+  reject only fails the primary query; the inner fallback then resolves and the handler returns `200`,
+  so the 500 branch never fires and the test passes vacuously (see the Step 2 note above).
 - Verification: `bun run test -- src/app/api/index-products/route.test.ts` all pass.
 
 ## Done criteria
