@@ -79,7 +79,7 @@ Read this before running anything, so a pre-existing red does not get misdiagnos
 
 | Purpose         | Command                                     | Expected                     |
 |-----------------|---------------------------------------------|------------------------------|
-| Latest version  | `bun info next version`                     | prints latest 16.x           |
+| Latest 16.2.x   | `bun info next versions \| tr ',' '\n' \| grep -o "16\.2\.[0-9]*" \| tail -1` | newest 16.2.x（`bun info next version` は使わない — 全体の最新を返し 16.2.x に固定されない。Correction 2026-07-19 参照） |
 | Install         | `bun install`                               | exit 0, lock updated         |
 | Audit (check)   | `bun audit`                                 | `next` advisories gone       |
 | Typecheck       | `bunx tsc --noEmit`                         | exit 0                       |
