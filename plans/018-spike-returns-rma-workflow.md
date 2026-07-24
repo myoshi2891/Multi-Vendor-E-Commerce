@@ -161,7 +161,11 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   （**ただし可変フィールドを鍵にしないこと** — `status` は RMA ライフサイクルで遷移し、
    >   `requestedQuantity` も再申請で変わりうるため、`[orderItemId, status, requestedQuantity]`
    >   のような組を鍵にすると status 遷移後に重複が素通りする。鍵は**不変列**か
-   >   クライアント由来の冪等性キーに限る）、
+   >   クライアント由来の冪等性キーに限る。**さらにクライアント由来キーは主体・対象・入力に
+   >   束縛すること** —— キー単体だと別ユーザー・別 OrderItem へ使い回して他者の RMA に
+   >   影響させられる/リプレイできるため、`@@unique([userId, orderItemId, idempotencyKey])`
+   >   のように subject(userId)・target(orderItemId)・入力ハッシュへスコープし、キー再利用が
+   >   別エンティティに作用しないことを制約で保証する）、
    >   短時間の重複申請の拒否）。UI 側のガードだけに依存しないこと（再送・並行タブ・API 直叩きで
    >   破れる）。plan 021 の通知冪等性キー（Q6 の (β) outbox が参照するもの）と概念を揃え、
    >   相互参照を書く。

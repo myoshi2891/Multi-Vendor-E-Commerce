@@ -156,6 +156,12 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    > 1. **一意性のスコープ**: グローバル一意（`url @unique` を維持）か、親内一意
    >    （`@@unique([parentId, url])`）か。後者は `/browse/electronics/camera` のような
    >    パス全体方式（問い 4）と整合し、**将来の**衝突自体が消える。前者を採るなら 2. が必須。
+   >    **ただし親内一意を採る場合、ルートカテゴリの一意性戦略を別途明記すること** ——
+   >    ルートは `parentId = NULL` であり、PostgreSQL は NULL 同士を「区別される」と扱うため
+   >    `@@unique([parentId, url])` は**ルート同士の `url` 重複を防げない**（`electronics` を
+   >    2 つ作れてしまう）。ルート一意性は別手段で担保する: 部分ユニークインデックス
+   >    （`CREATE UNIQUE INDEX ... ON "Category"(url) WHERE "parentId" IS NULL`）か、
+   >    番兵ルート parentId（NULL を使わず固定 UUID の仮想ルートを親にする）のいずれか。
    >    **ただし親内一意を採っても、既存の slug 解決契約（3. の URL 後方互換）は完了条件から
    >    外せない** —— 既存 URL は現行のグローバル一意な slug で届いており、親内スコープへ移した
    >    瞬間に「どの親配下の slug か」を旧 URL から解決する規則が必要になる。「衝突が消える」のは
