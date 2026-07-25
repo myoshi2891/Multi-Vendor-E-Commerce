@@ -187,6 +187,24 @@ echo "PASS: no live references to the old path"
 reference to the *old* path, and the gate exits **1**. Before the move lands this gate is expected
 to fail — that is the Red state it is written to detect.
 
+**(Auxiliary) audit-directory-only scan**: the main gate above excludes `plans/audit/*` **entirely**
+(`grep -vE "^(\./)?plans/audit/"`), but the caveat above still requires that audit-trail references be
+**re-pointed** at the new archive path. Excluding the directory wholesale means a **live old-path
+reference** left inside `plans/audit/` (i.e. one not pointing at the archive path) is never surfaced.
+So scan `audit` alone for old-path tokens that are **not** aimed at the archive path. This one
+**does not fail the gate** — it produces a list for human review:
+
+```bash
+# plans/audit only. References already aimed at archive/ count as re-pointed and are excluded;
+# whatever remains is still on the old path. Zero lines = re-pointing complete.
+grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" plans/audit --include="*.md" \
+  | grep -vE "(^|/)archive/unimplemented-screens-plan" \
+  || true
+# Each line printed is either an intentional historical quotation (showing the old token as an
+# example) or a missed re-point. The former may stay; the latter must be corrected to the archive
+# path. A human decides — this scan deliberately does not fail mechanically.
+```
+
 > **Exclude by path, not by basename.** `grep --exclude=` matches the **basename**, so the earlier
 > gate's `--exclude="011-onboarding-docs-env-and-stale-plan.md"` dropped **both** `plans/011-…​.md`
 > **and** `plans/ja/011-…​.md`. The ja copy is a translation, not the audit trail — a genuine
