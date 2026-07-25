@@ -43,8 +43,11 @@ other actions (review, shipping address, product) can follow later.
 > `z.number().min(1).max(99)` — it accepts `50.5`, but the column is `Int`, so a fractional value
 > passes the `safeParse` gate only to be rejected/truncated at the Prisma boundary. Add `.int()`
 > (`z.number().int().min(1).max(99)`) so the range check and the storage type agree at the same
-> boundary. **Live-code follow-up**: `src/lib/schemas.ts:542-548` still lacks `.int()` as of
-> 2026-07-24; add it in a code commit (schema + a rejects-`50.5` test), separate from this docs pass.
+> boundary. **✅ 完了（2026-07-26）**: `src/lib/schemas.ts` の `CouponFormSchema.discount` に
+> `.int()` を追加済み。`AdminCouponFormSchema` は `CouponFormSchema.extend()` のため継承する
+> （`discount` を再定義していないことを確認済み）。回帰テストは `src/queries/coupon.test.ts` の
+> 「小数の discount は拒否され、DB 書き込みが発生しない」×2（seller / admin 経路）。
+> Red 時点では admin 経路が **reject せず resolve** していた（`50.5` が Int 列まで到達）。
 
 ## Current state
 
@@ -126,8 +129,9 @@ other actions (review, shipping address, product) can follow later.
 **In scope** (the only files you should modify):
 - `src/queries/coupon.ts` — add `safeParse` gates + explicit field mapping in both upsert actions
 - `src/queries/coupon.test.ts` — add tests
-- `src/lib/schemas.ts` — **only if** you need to export `CouponFormSchema`/`AdminCouponFormSchema`
-  (they are already exported — likely no change needed; confirm before editing)
+- `src/lib/schemas.ts` — add `.int()` to `CouponFormSchema.discount` (see the note in
+  "Why this matters"). `CouponFormSchema`/`AdminCouponFormSchema` are already exported, so no
+  export change is needed.
 - `plans/README.md` — the 060 status-row update required by the Executor instructions and Done
   criteria; land it in a **separate docs commit** after the code commit (not with the code diff)
 

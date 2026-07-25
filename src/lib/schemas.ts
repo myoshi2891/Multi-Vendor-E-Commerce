@@ -544,6 +544,9 @@ export const CouponFormSchema = z.object({
             required_error: "Discount percentage is required",
             invalid_type_error: "Discount percentage must be a number",
         })
+        // Coupon.discount は Prisma 上 Int。範囲チェックと格納型の検証を同じ境界で行い、
+        // 小数が safeParse を通過して Prisma 境界まで運ばれるのを防ぐ
+        .int("Discount percentage must be a whole number")
         .min(1, "Discount percentage must be at least 1%")
         .max(99, "Discount percentage cannot exceed 99%"),
 });
