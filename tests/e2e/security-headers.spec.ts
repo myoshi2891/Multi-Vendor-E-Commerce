@@ -8,11 +8,16 @@ import { expect, test } from "@playwright/test";
  * 重要（値だけが緩められた場合〔例: SAMEORIGIN → ALLOWALL〕を検知できないため）。
  *
  * HSTS（`Strict-Transport-Security`）は**本番ドメインのみ**付与する（非本番・
- * Vercel preview へ `includeSubDomains; preload` を送ると HTTPS な preview で
- * ブラウザに毒される）。E2E の webServer は既定で `next start`（NODE_ENV=production）
- * のため present を期待し、`E2E_USE_DEV=1` の dev 起動、または `VERCEL_ENV=preview`
- * では absent を期待する。テストランナーと webServer はこの env を共有するため、
- * 同じ判定でサーバー挙動を鏡写しにできる。
+ * Vercel preview へ送ると HTTPS な preview でブラウザに記録される）。E2E の webServer は
+ * 既定で `next start`（NODE_ENV=production）のため present を期待し、`E2E_USE_DEV=1` の
+ * dev 起動、または `VERCEL_ENV=preview` では absent を期待する。テストランナーと
+ * webServer はこの env を共有するため、同じ判定でサーバー挙動を鏡写しにできる。
+ *
+ * さらに `includeSubDomains` / `preload` は**明示 opt-in**（`HSTS_INCLUDE_SUBDOMAINS` /
+ * `HSTS_PRELOAD`）でのみ付く。NODE_ENV=production は「本番ドメインで配信中」を意味せず、
+ * self-host の staging も production ビルドで動くため、環境名だけで非可逆な preload 登録を
+ * 誘発させない設計（plan 061 / CodeRabbit 指摘）。期待値も同じ規則で組み立てて、
+ * 「opt-in なしで拡張ディレクティブが付く」退行を検知する。
  *
  * ブラウザ描画は不要なため page ではなく request（APIRequestContext）を使う。
  */
@@ -24,12 +29,22 @@ const CORE_SECURITY_HEADERS = {
 } as const;
 
 const HSTS_HEADER = "strict-transport-security";
-const HSTS_VALUE = "max-age=63072000; includeSubDomains; preload";
 
 // next.config.mjs の HSTS ゲート（NODE_ENV=production かつ VERCEL_ENV!==preview）と
 // 同じ条件。E2E_USE_DEV=1 の dev 起動は NODE_ENV=development になるため HSTS は付かない。
 const expectHsts =
     !process.env.E2E_USE_DEV && process.env.VERCEL_ENV !== "preview";
+
+// next.config.mjs と同じ opt-in 判定・同じディレクティブ順で期待値を組み立てる
+const isEnabled = (name: string): boolean => process.env[name]?.trim() === "1";
+const expectPreload = isEnabled("HSTS_PRELOAD");
+const expectSubDomains = expectPreload || isEnabled("HSTS_INCLUDE_SUBDOMAINS");
+
+const HSTS_VALUE = [
+    "max-age=63072000",
+    ...(expectSubDomains ? ["includeSubDomains"] : []),
+    ...(expectPreload ? ["preload"] : []),
+].join("; ");
 
 test.describe("セキュリティレスポンスヘッダ", () => {
     // 公開ページと保護ページ（未認証ではサインインへリダイレクト）の双方を確認
