@@ -150,7 +150,25 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 `findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert する。
 **日付値は `expect.any(Date)` で済ませず、実際の境界を検証すること** — 時刻を固定
 （`jest.useFakeTimers().setSystemTime(new Date("2026-07-01T00:00:00Z"))` 等）した上で、
-各期間が生む `gte` の**具体値**（6 か月前 / 1 年前 / 2 年前）を assert する。`expect.any(Date)`
+各期間が生む `gte` の**具体値**（6 か月前 / 1 年前 / 2 年前）を assert する。
+
+> **fake timer は必ず復元すること（必須）。** `jest.useFakeTimers()` はモジュール/グローバルの
+> タイマーと `Date` を差し替えるため、復元しないと**同一ファイルの後続テストと他スイート**へ
+> 固定時刻が漏れる。相対日付を使う共有フィクスチャ（`src/config/test-scenarios.ts` は
+> 相対日付ベース）が偽の "now" を見て、原因がこのテストの外にある失敗を生む。
+>
+> ```typescript
+> afterEach(() => {
+>     jest.useRealTimers();   // 例外で落ちたテストの後でも必ず実行される
+> });
+> ```
+>
+> `afterEach` に置くこと（テスト末尾の呼び出しでは、assert が失敗した時点で到達しない）。
+> 期間フィルタのテストだけを別の `describe` に隔離し、その `describe` 内で
+> `beforeEach(() => jest.useFakeTimers().setSystemTime(...))` / `afterEach(() => jest.useRealTimers())`
+> を対で置くのが最も安全。
+
+`expect.any(Date)`
 は「Date であること」しか見ず、下の必須テスト数の根拠である**月数の取り違え・年跨ぎの誤り**を
 まさに素通しさせる（型は緑でも境界がズレる）。
 
@@ -194,6 +212,10 @@ Step 1 と**同じ規則**で必要テスト数を機械的に定義する（lco
 - [ ] profile.ts 単体 Branches ≥ 95%
 - [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各関数 4 本・計 20 本）
 - [ ] 3 関数（`getUserOrders` / `getUserPayments` / `getUserReviews`）で 3 期間すべてが揃っている（各関数 3 本・計 9 本）
+- [ ] fake timer を使う箇所に `afterEach(() => jest.useRealTimers())` が**対で**存在する
+      （テスト末尾での復元は不可 — assert 失敗時に到達しない）。
+      検証: `bun run test`（全スイート）が exit 0、かつ `profile.test.ts` を単独実行した場合と
+      全体実行した場合で結果が変わらない（時刻の漏れがあると他スイートの相対日付が壊れる）
 - [ ] 全 5 関数で「汎用メッセージ完全一致 + 詳細非漏洩」の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` / `bun run test` exit 0
 - [ ] 変更が `src/queries/profile.test.ts`（+ spec-sync docs 群）のみ

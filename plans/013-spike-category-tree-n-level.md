@@ -170,7 +170,22 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    >    前置して `electronics-camera`、それでも衝突する場合の連番付与規則）。移行を再実行しても
    >    同じ結果になることを要件に含める。
    > 3. **リネームした slug の URL 後方互換**: リネームは既存 URL を壊すため、問い 4 の
-   >    リダイレクト戦略と**同じ表**で管理する（旧 slug → 新 slug の対応表を移行の成果物とする）。
+   >    リダイレクト戦略と**同じ表**で管理する（対応表を移行の成果物とする）。
+   >
+   >    **対応表のキーは「旧 slug」単体にしないこと。** 上で確認したとおり、統合前は
+   >    Category `camera` と SubCategory `camera` が**合法に共存し得る**。旧 slug だけを
+   >    キーにすると、まさに衝突してリネームが必要になったペア —— つまり表が存在する理由
+   >    そのもの —— が 1 つのキーに 2 行ぶつかり、引けなくなる。キーには
+   >    **エンティティ種別または親コンテキストを含める**:
+   >
+   >    - `(entityType, oldSlug)` — 例 `("Category", "camera")` / `("SubCategory", "camera")`
+   >    - または `(parentSlug, oldSlug)` — 例 `(null, "camera")` / `("electronics", "camera")`
+   >
+   >    どちらでもよいが、**旧 URL の形からキーを一意に構成できること**を要件にする。
+   >    現行 URL は `/browse/{category}`（種別 = Category・親なし）と
+   >    `/browse/{category}/{subCategory}`（種別 = SubCategory・親 = `{category}`）で
+   >    区別できるため、両案とも旧 URL からキーが決まる。この「旧 URL → キー → 新 slug」の
+   >    経路が閉じていることを ADR に明記し、完了条件に含めること。
    > 4. **事前計測**: 移行を書く前に、実データで衝突件数を数えるクエリを ADR に載せる:
    >    `SELECT count(*) FROM (SELECT url FROM "Category" INTERSECT SELECT url FROM "SubCategory") AS collisions;`
    >    （**件数を返すこと** — 素の `INTERSECT` は衝突 slug の一覧を返すだけで「何件か」を答えない。
