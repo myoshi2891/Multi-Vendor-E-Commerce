@@ -197,6 +197,18 @@ describe("upsertCoupon", () => {
             expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
         });
 
+        it("小数の discount は拒否され、DB 書き込みが発生しない", async () => {
+            // Coupon.discount は Prisma 上 Int。範囲チェック (min/max) だけでは 50.5 が
+            // safeParse を通過し、Prisma 境界まで不正値が運ばれる。範囲と格納型の検証を
+            // 同じ境界に揃えるため .int() で弾く
+            const coupon = createValidCouponInput({ discount: 50.5 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
         it("不正な code (英数字以外) は拒否され、DB 書き込みが発生しない", async () => {
             const coupon = createValidCouponInput({ code: "!!" });
 
@@ -1441,6 +1453,20 @@ describe("upsertCouponAsAdmin", () => {
                 privateMetadata: { role: "ADMIN" },
             });
             const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("小数の discount は拒否され、DB 書き込みが発生しない", async () => {
+            // AdminCouponFormSchema は CouponFormSchema.extend() のため .int() を継承する
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createValidCouponInput({ discount: 50.5 });
 
             await expect(
                 upsertCouponAsAdmin(coupon as never)
