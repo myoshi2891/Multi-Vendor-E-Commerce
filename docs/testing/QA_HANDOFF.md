@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1748** passed / 1751 total / 175 スイート（174 passed + 1 skipped suite）。2026-07-26 に CodeRabbit レビュー対応の回帰 +2（`coupon.test.ts` の小数 discount 拒否 — seller / admin 両経路。`CouponFormSchema.discount` の `.int()` 追加に対応）。スイート・スナップショットは不変 |
+| Jest テスト総数 (unit/component) | **1749** passed / 1752 total / 175 スイート（174 passed + 1 skipped suite）。2026-07-26 に CodeRabbit レビュー対応の回帰 +3（`coupon.test.ts` の小数 discount 拒否 ×2 [seller / admin 両経路・`CouponFormSchema.discount` の `.int()` 追加に対応]、`stripe.test.ts` の「再読しても未確定なら P2025 を settled へ正規化しない」×1）。スイート・スナップショットは不変 |
 | カバレッジ全体（lcov 2026-07-18 実測） | Statements 66.06% / Branches 46.04% / Functions 54.58% / Lines 65.04% |
 | Jest Integration テスト総数 | **17** / 2 スイート（`cart-checkout.test.ts` 11 + `order-placement.test.ts` 6）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

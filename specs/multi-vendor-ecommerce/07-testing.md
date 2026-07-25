@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1748 passed / 1751 total across 175 suites (3 skipped), as of 2026-07-26.
+- 1749 passed / 1752 total across 175 suites (3 skipped), as of 2026-07-26.
   Two regressions from the CodeRabbit review round (+2, no new suites): `coupon.test.ts` pins
   rejection of a fractional `discount` on both the seller and admin upsert paths, matching the
   `.int()` added to `CouponFormSchema.discount` (the value reached the `Int` column before).
