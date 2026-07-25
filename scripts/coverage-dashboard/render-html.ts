@@ -202,11 +202,11 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     },
     {
         priority: "medium",
-        title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
-        target: "src/components/store/home/main/featured.tsx + .lighthouserc.json",
-        tool: "遅延 useState 初期化 + @lhci/cli",
-        cost: "M",
-        impact: "ホーム / の SSR 500 を解消し売上導線トップを LCP/CLS/TBT で予算化",
+        title: "Performance 行の着手 (lhci に / 追加)",
+        target: ".lighthouserc.json + .github/workflows/lhci.yml",
+        tool: "@lhci/cli",
+        cost: "S",
+        impact: "前提だった OI-9 は解消済み (2026-06-06 c196e3d5 / 2026-07-26 に E2E で SSR 200 を実測)。計測 URL に / を追加するだけで売上導線トップを LCP/CLS/TBT で予算化できる",
     },
     {
         // OI-11 (2026-06-19 発見): 本番 SSR で seller ルートが ReferenceError: self
