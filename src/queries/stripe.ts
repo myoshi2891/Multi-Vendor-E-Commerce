@@ -138,7 +138,11 @@ export const createStripePaymentIntent = async (orderId: string) => {
         };
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error creating payment intent:", error.message, error.stack);
+            console.error(
+                "Error creating payment intent:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error creating payment intent:", error);
         }
@@ -182,7 +186,8 @@ export const createStripePayment = async (
         }
 
         // 権威的なソースは Stripe。クライアント値ではなく retrieve した intent から導出する。
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const paymentIntent =
+            await stripe.paymentIntents.retrieve(paymentIntentId);
 
         // intent 作成時に付与した metadata.orderId で、対象注文との対応を検証する。
         if (paymentIntent.metadata?.orderId !== orderId) {
@@ -275,14 +280,46 @@ export const createStripePayment = async (
     } catch (error: unknown) {
         // 条件付き更新が一致しなかった = 読み取り後に他経路が決済を確定させた。
         // 汎用エラーで潰さず、事前チェックと同じ意味のエラーへ正規化する。
+        //
+        // ただし P2025 は CAS 不一致に固有のコードではない。トランザクション内の
+        // order の並行削除や paymentDetails.connect の対象消失でも同じコードが返るため、
+        // 無条件に正規化すると本当の障害が「決済確定済み」として報告される。
+        // 実際に確定済みへ変わっているかを再読で確かめ、そのときだけ正規化する。
         if (
             error instanceof Prisma.PrismaClientKnownRequestError &&
             error.code === "P2025"
         ) {
-            throw new Error("Order payment is already settled.");
+            let settled = false;
+            try {
+                const current = await db.order.findUnique({
+                    where: { id: orderId },
+                    select: { paymentStatus: true },
+                });
+                settled =
+                    !!current && isSettledPaymentStatus(current.paymentStatus);
+            } catch (reReadError: unknown) {
+                // 再読自体が失敗した場合は判別できない。元の P2025 を失わないよう、
+                // ここでは握りつぶさず記録だけして下の共通経路へ流す。
+                console.error(
+                    "[Stripe:createStripePayment] Failed to re-read order after P2025",
+                    reReadError instanceof Error
+                        ? {
+                              error: reReadError.message,
+                              stack: reReadError.stack,
+                          }
+                        : { error: reReadError }
+                );
+            }
+            if (settled) {
+                throw new Error("Order payment is already settled.");
+            }
         }
         if (error instanceof Error) {
-            console.error("Error creating payment:", error.message, error.stack);
+            console.error(
+                "Error creating payment:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error creating payment:", error);
         }
