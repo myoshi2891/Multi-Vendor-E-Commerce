@@ -262,19 +262,25 @@ try {
    > 「Size 置換は実行されたが tx のロールバックで取り消された」ことを意味する。
    > 制約の DROP は `finally` で必ず行う（`resetDb` は TRUNCATE であり制約を落とさない）。
    >
-   > **この一時 DDL は統合スイート本体から隔離すること。** `ALTER TABLE … ADD CONSTRAINT` は
-   > 共有 DB の**スキーマそのもの**を変える。`finally` に届く前にプロセスが落ちれば制約が残留し、
-   > 以降の全実行の `Spec` 挿入を汚染する。さらに他の `Spec` テストと並行すると DDL のロックで
-   > 競合しフレーク化する。隔離策:
-   > - **ADD の直前に `DROP CONSTRAINT IF EXISTS "tmp_block_boom"`** を入れ、過去のリーク実行から
-   >   冪等に回復できるようにする。
-   > - 制約名は**このテスト固有**にし（衝突回避）、この DDL テストは**直列**で走らせる
-   >   （`Spec` を触る他テストと並行させない）。
-   > - 直列化は**スイート単位だけでなく CI ジョブ単位でも**担保する —— 同一共有 DB に対して
-   >   複数の integration ジョブ/シャードが並行すると、テストランナー内の直列化では防げない
-   >    DDL ロック競合が起きる。この DDL テストを含むスイートは専用ジョブに分離するか、
-   >   同一 DB を使う integration ジョブと並行実行しない（`needs:` 直列 or concurrency group）。
-   > - 可能なら専用の tx / セーブポイント内に閉じ込め、スイート全体へ滲み出させない。
+   > **この一時 DDL は統合スイート本体から隔離すること（すべて MUST — 「可能なら」ではない）。**
+   > `ALTER TABLE … ADD CONSTRAINT` は共有 DB の**スキーマそのもの**を変える。`finally` に届く前に
+   > プロセスが落ちれば制約が残留し、**以降の全実行の `Spec` 挿入を汚染する**（次の実行が失敗する
+   > 理由は当該テストの外にあるため、原因究明が極端に難しい）。さらに他の `Spec` テストと並行すると
+   > DDL のロックで競合しフレーク化する。以下は**すべて必須条件**:
+   >
+   > 1. **ADD の直前に `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` を必ず実行する** —— 過去の
+   >    リーク実行から冪等に回復できるようにする。`finally` の DROP と**対**で置くこと
+   >    （`finally` だけでは強制終了時に回復手段が無い）。
+   > 2. **制約名はこのテスト固有にする** —— 衝突回避。
+   > 3. **この DDL テストは直列で走らせる** —— `Spec` を触る他テストと並行させない。
+   > 4. **直列化は CI ジョブ単位でも担保する** —— 同一共有 DB に対して複数の integration
+   >    ジョブ/シャードが並行すると、テストランナー内の直列化では防げない DDL ロック競合が起きる。
+   >    この DDL テストを含むスイートは**専用ジョブに分離する**か、同一 DB を使う integration
+   >    ジョブと**並行実行しない**（`needs:` による直列化 or concurrency group）。どちらを採ったかを
+   >    ワークフローに残すこと。
+   > 5. **専用の tx / セーブポイント内に閉じ込める** —— スイート全体へ滲み出させない。
+   >    （旧版は「可能なら」としていたが、1〜4 を満たしても DDL の可視範囲が絞れていなければ
+   >    並行実行時のロック競合は残るため、必須とする。）
 
 **Verify**: `bun run test:integration -- tests/integration/product-update.test.ts` → all pass（5 テスト以上）
 
@@ -305,6 +311,13 @@ Machine-checkable. ALL must hold:
       かつ **旧 Size.id が保たれている**ことを assert している（置換実行後の巻き戻しの証拠）
 - [ ] シナリオ 5 の一時 CHECK 制約が `finally` で DROP され、同一ファイルの
       2 回連続実行が 2 回とも pass する
+- [ ] 一時 CHECK 制約の **ADD の直前**にも `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` があり、
+      リーク状態からの冪等回復が効く（検証: 手で `ALTER TABLE "Spec" ADD CONSTRAINT
+      "tmp_block_boom" …` を残した状態からスイートを走らせても pass すること）
+- [ ] DDL テストを含むスイートが**同一 DB を使う他 integration ジョブと並行しない**構成に
+      なっている（専用ジョブ分離 / `needs:` 直列 / concurrency group のいずれか）。
+      採用した方式が `.github/workflows/` に反映されている
+- [ ] 一時 DDL が専用の tx / セーブポイント内に閉じており、スイート全体へ滲み出していない
 - [ ] シナリオ 4 に Wishlist SetNull と CartItem stale の**両方**の assert が存在する
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
