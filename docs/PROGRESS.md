@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-07-24 時点）
+## 現在の状態（2026-07-26 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1746 passed / 1749 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-24 実測（CodeRabbit セキュリティ修正の回帰 +2 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1748 passed / 1751 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-26 実測（CodeRabbit レビュー対応の回帰 +2 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1746,6 +1746,42 @@ CodeRabbit のローカルレビュー指摘を精査し、plan/audit ドキュ�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 1738 passed / 1741 total | **1746 passed / 1749 total** |
+| スイート数 | 175 | **175**（変化なし） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 24 件対応（docs 22 件 + 実コード 2 件） (2026-07-26)
+
+#### 概要
+
+CodeRabbit のレビュー指摘 24 件を精査（誤検出なし）。plan/docs/specs の記述整合 22 件に加え、
+プラン文書が「実コード未対応」と自認していた 2 件を、文書だけ直すとドリフトが確定するため
+実コードごと修正した（`.int()` は Red→Green）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/schemas.ts` / `coupon.test.ts` | `CouponFormSchema.discount` に `.int()`。`50.5` が `safeParse` を通過し Prisma の `Int` 列まで到達していた（admin 経路は reject せず resolve）。plan 060 の未達 Done criterion を解消（+2 テスト） | `11d68f89`(Red) / `6d0cd9dc`(Green) |
+| `next.config.mjs` / `security-headers.spec.ts` / `.env.docker.example` | HSTS の `includeSubDomains; preload` を環境名判定から明示 opt-in（`HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD`）へ分離。`NODE_ENV=production` は本番ドメイン配信を意味せず、self-host staging で非可逆な preload 登録を誤発火させ得た | `10b3fd1f` / `66ed444f` |
+| `plans/011`(en+ja) | スキャンゲートのベース名除外が ja 版を巻き添えにしていた問題と、`\|\| true` で常に exit 0 になる問題を修正。Clerk URL 変数の optional/required 矛盾も解消 | `39b5b480` |
+| `plans/031` / `032` | `Promise.all` だけでは並行性を証明できない（プール 1 で逐次化）ため、バリア（latch）を必須化。032 の `grep "Promise.all"` ゲートを名指しテスト実行へ置換 | `f74f6fba` |
+| `plans/033` / `041` | 5b 追加分の Verify 件数（8→9）と、041 の撤回済み STOP 条件・unit scope 矛盾を是正 | `d73e7dac` |
+| `plans/038` | 共有 DB のスキーマを変える一時 DDL の隔離・直列化を任意表現から MUST へ格上げ | `6aa87b9e` |
+| `plans/013` / `018` / `029` | 旧 URL 対応表のキー曖昧性、冪等性キーの入力束縛の実装不能形、fake timer 未復元を是正 | `f7796188` |
+| `plans/047` | セント整数と `Prisma.Decimal` 規約の適用境界を明示 | `0fd1e67c` |
+| `plans/057` / `plans/README.md` | `^16` では 16.2.x に固定できない問題（自プランの STOP 条件を踏む）を `~16.2` へ。058〜062 の完了済み実行順を履歴化 | `5e8e7379` |
+| `plans/audit/*` / `ADVISOR_STATE.md` / `ja/004` | Clerk advisory の影響範囲が台帳内で 2 通りに割れていた件を、`gh api /advisories/GHSA-vqx2-fgx2-5wq9`（`>=7.0.0 <7.2.1` / patched 7.2.1）で確定して統一。DEPS-08 の履歴値と現行値を分離。CAS ガードを tx 原子性の解消と扱わないよう切り分け（実コード確認: Stripe は tx 化済み・PayPal は非原子のまま） | `6ab1c4a4` / `bc5d9241` |
+| `docs/PROGRESS.md` / `rate-limiting-spike.md` | 基準日のずれ、CloudFront-Viewer-Address の Origin Request Policy 前提とフェイルクローズ要件を追記 | `24679550` |
+| `specs/07-testing.md` | 1738→1746 の差分 +8 と「+2」の単位不一致を SSOT の説明へ整合 | `a688080f` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1746 passed / 1749 total | **1748 passed / 1751 total** |
 | スイート数 | 175 | **175**（変化なし） |
 | スナップショット | 127 | **127**（変化なし） |
 | 型エラー | 0 件 | **0 件** |
