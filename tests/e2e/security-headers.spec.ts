@@ -50,16 +50,26 @@ test.describe("セキュリティレスポンスヘッダ", () => {
     // 公開ページと保護ページ（未認証ではサインインへリダイレクト）の双方を確認
     for (const path of ["/", "/checkout"]) {
         test(`${path} が強化ヘッダを正確な値で返す`, async ({ request }) => {
-            // リダイレクトを追わず、そのレスポンス自体のヘッダを検証する
-            const response = await request.get(path, { maxRedirects: 0 });
+            // リダイレクトを追わず、そのレスポンス自体のヘッダを検証する。
+            //
+            // ブラウザのページ遷移と同じヘッダを明示的に送る。Clerk の `auth.protect()`
+            // は「文書リクエストならサインインへ 3xx / それ以外は 404」と振る舞いを
+            // 変えるため、既定の APIRequestContext（`Accept: */*`・`Sec-Fetch-*` なし）
+            // では保護ルートが 404 を返し、下のステータス検証が落ちる。
+            const response = await request.get(path, {
+                maxRedirects: 0,
+                headers: {
+                    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "sec-fetch-dest": "document",
+                    "sec-fetch-mode": "navigate",
+                    "sec-fetch-site": "none",
+                },
+            });
 
             // ヘッダは 500 エラーページにも付与されるため、ステータスを検証しないと
             // アプリが壊れていてもこのテストは緑のままになる。`/` は 200、
             // `/checkout` は未認証でサインインへの 3xx を返すので 4xx/5xx を弾く。
-            expect(
-                response.status(),
-                `${path} のステータス`
-            ).toBeLessThan(400);
+            expect(response.status(), `${path} のステータス`).toBeLessThan(400);
 
             const headers = response.headers(); // キーは小文字に正規化済み
 
