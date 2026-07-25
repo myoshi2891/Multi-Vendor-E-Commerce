@@ -262,19 +262,30 @@ insist on keeping it version-only. Silently following a `latest` that crossed a 
 a patch bump into a major upgrade. It would also break the peer compatibility this plan verified:
 `@clerk/nextjs@7.5.19` peers `^16.1.0-0`, which 17.x does not satisfy.
 
-**Corrected row.** Constrain the query to the major line being patched:
+**Corrected row.** Constrain the query to the line being patched:
 
 | Purpose | Command | Expected |
 |---|---|---|
-| Latest 16.x version | `bun info 'next@^16' version` | prints the newest 16.x (e.g. `16.2.10`) |
+| Latest 16.2.x version | `bun info 'next@~16.2' version` | prints the newest 16.2.x (e.g. `16.2.11`) |
 
-Quote the argument — `^` is a shell history-expansion character in some shells, and the `@` range
-must reach `bun`, not the shell. Verified 2026-07-19 on Bun 1.3.12: `bun info 'next@^16' version` →
-`16.2.10`; the mechanism was cross-checked with `bun info 'next@^15' version` → `15.5.20` (the newest
-15.x, not the global latest), confirming the range constrains the query rather than being ignored.
+Quote the argument — `^` and `~` are shell metacharacters in some shells, and the `@` range must
+reach `bun`, not the shell.
+
+> **Correction 2026-07-26 — use `~16.2`, not `^16`.** An earlier version of this row used
+> `bun info 'next@^16' version`. That **cannot pin to 16.2.x**: `^16` means `>=16.0.0 <17.0.0`, so
+> once 16.3.0 ships the command returns it, and this plan would bump straight past its own **STOP
+> condition** (16.3+/17.x — see Scope and Stop conditions). It also contradicted the
+> "Commands you will need" row above, which correctly restricts to 16.2.x.
+>
+> The `^16` form looks correct today only by accident: verified 2026-07-26 on Bun 1.3.12,
+> `bun info 'next@^16' version` → `16.2.11` and `bun info 'next@~16.2' version` → `16.2.11` — the
+> same answer **because 16.3.0 does not exist yet**. A command that is right only until the next
+> minor release is not a gate. `~16.2` (`>=16.2.0 <16.3.0`) states the constraint the plan actually
+> declares, and matches the tilde used for the `package.json` pin itself.
 
 Generalize this when writing future dependency plans: **an advisory-driven bump should query the
-line it intends to stay on**, not the registry's global `latest`.
+exact line it intends to stay on** — not the registry's global `latest`, and not a range wider than
+the plan's own stop conditions allow.
 
 ### Standing maintenance notes
 

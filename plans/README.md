@@ -172,18 +172,21 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     のと同じ攻撃面がフレームワーク層で開いたまま**になっている（004 は Next.js を明示的に
     スコープ外としていたため別プラン）。16.2.x 内のパッチ bump のみで、`src/` は無変更。
     E2E/統合系プラン（042〜056）とはファイル競合がなく並行着手可能。
-16. **Round 13 security plans (058–062)** — セキュリティ特化 deep 監査（第 3 弾）の産物
-    （詳細: `audit/findings-18-security-r13.md`）。**058 / 059 / 060 が P1**（順不同・相互依存なし・
-    いずれも S〜S–M・LOW risk）で、テスト系プラン群より優先する。推奨順は
-    **058（getCoupon IDOR — 情報漏洩）→ 059（PayPal 過少支払い→Paid — 決済整合性）→
-    060（discount>99→注文 total 負値化）→ 061（レスポンスヘッダ）→ 062（生 error.message 漏洩）**。
-    **057 との優先関係**: 057（`next` bump・HIGH advisory）は依存層の P1 で、058〜062 とファイル
-    競合がなく並行着手可能。フレームワーク層（057）とアプリ層（058〜062）は独立に進められる。
-    **注意**: 059 は `isSettledPaymentStatus` を `src/queries/stripe.ts` から export して共有する
-    ため stripe.ts に軽微に触れる（他プランと競合なし）。058 と 060 は同じ `src/queries/coupon.ts`
-    を触るため、同時実行時は後発が先発の diff を取り込むこと（058=`getCoupon`、060=`upsertCoupon`
-    系で関数は異なるが同一ファイル）。各プランはセキュリティ修正のため回帰テスト必須
-    （認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の 3 階層 IDOR パターン）。
+16. **Round 13 security plans (057–062) — ✅ 全て DONE（履歴）** — セキュリティ特化 deep 監査
+    （第 3 弾）の産物（詳細: `audit/findings-18-security-r13.md`）。
+    **⚠️ 以下は完了済みの実行記録であり、現行の着手順ではない。次に着手すべきものは上の
+    Status 表で `TODO` の行を見ること**（本項を「次の推奨順」として読まないこと）。
+    実行順は **058（getCoupon IDOR — 情報漏洩）→ 059（PayPal 過少支払い→Paid — 決済整合性）→
+    060（discount>99→注文 total 負値化）→ 061（レスポンスヘッダ）→ 062（生 error.message 漏洩）**
+    であった。058 / 059 / 060 を P1（相互依存なし・いずれも S〜S–M・LOW risk）としてテスト系
+    プラン群より優先した。057（`next` bump・HIGH advisory）は依存層の P1 で、058〜062 とファイル
+    競合が無いため並行して進めた（フレームワーク層とアプリ層は独立）。
+    **当時の実行上の注意（記録）**: 059 は `isSettledPaymentStatus` を `src/queries/stripe.ts` から
+    export して共有するため stripe.ts に軽微に触れた。058 と 060 は同じ `src/queries/coupon.ts`
+    を触るため、同時実行時は後発が先発の diff を取り込む必要があった（058=`getCoupon`、
+    060=`upsertCoupon` 系で関数は異なるが同一ファイル）。各プランはセキュリティ修正のため
+    回帰テストを必須とした（認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の
+    3 階層 IDOR パターン）。
 
 ## Dependency notes
 
