@@ -6,10 +6,26 @@
 > When done, update the status row for this plan in `plans/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts plans/README.md`
-> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.4 or newer (the version this plan
-> targets — the CRITICAL advisory was fixed in 7.2.1, and 7.2.4 also clears the transitive HIGH `js-cookie`),
-> the advisory may already be resolved — STOP and report the installed version
-> before doing anything.
+> If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.1 or newer, the **CRITICAL**
+> advisory (GHSA-vqx2-fgx2-5wq9, 7.x range `>=7.0.0 <7.2.1`) is cleared — STOP and report the
+> installed version before doing anything.
+>
+> **A `@clerk/nextjs` version alone is not a sufficient condition for *both* advisories.** The HIGH
+> `js-cookie` advisory is a **transitive** dependency reached through `@clerk/shared`, so it is the
+> **resolved `js-cookie` version in `bun.lock`** that decides it — not the `@clerk/nextjs` number.
+> A given `@clerk/nextjs` release can still resolve an unfixed `js-cookie` depending on how the
+> lockfile pins `@clerk/shared`. Check the two independently:
+>
+> ```bash
+> node -p "require('./node_modules/@clerk/nextjs/package.json').version"   # CRITICAL: need >= 7.2.1
+> grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u                        # HIGH: need the fixed js-cookie
+> node -p "require('./node_modules/@clerk/shared/package.json').version"    # the path that pulls js-cookie
+> ```
+>
+> **Measured (2026-07-26)**: `@clerk/nextjs@7.5.19` (range `^7.5.0`), `@clerk/shared@4.25.4`,
+> `js-cookie@3.0.7` — both advisories clear. Authoritative advisory ranges are recorded in
+> [`plans/audit/findings-06-dependencies.md`](audit/findings-06-dependencies.md); do not restate
+> them here (same GHSA carries different ranges per major series — 6.x is `<6.39.2`, 5.x is `<5.7.6`).
 
 ## Status
 
@@ -90,8 +106,14 @@ In `package.json`, change `"@clerk/nextjs": "^7.0.7"` to the latest `7.x` (targe
 bun install
 ```
 
-**Verify**: `bun install` exits 0 and `bun.lock` now resolves `@clerk/nextjs` to a version `>= 7.2.4`. Check with:
-`grep -A2 '"@clerk/nextjs"' bun.lock | head` (should show the new version).
+**Verify**: `bun install` exits 0 and `bun.lock` now resolves `@clerk/nextjs` to a version `>= 7.2.1`
+(CRITICAL) **and** resolves `js-cookie` to a fixed version (HIGH — transitive via `@clerk/shared`,
+so it must be checked separately rather than inferred from the `@clerk/nextjs` number):
+
+```bash
+grep -A2 '"@clerk/nextjs"' bun.lock | head
+grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u
+```
 
 ### Step 2: Typecheck + run the Clerk-touching tests
 
@@ -155,8 +177,12 @@ This step cannot be fully automated in the executor sandbox. Document for the re
 
 ALL must hold:
 
-- [ ] `package.json` shows `@clerk/nextjs` at `>= 7.2.4` (target `^7.5.x`)
-- [ ] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.4`
+- [ ] `package.json` shows `@clerk/nextjs` at `>= 7.2.1` (target `^7.5.x`)
+- [ ] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
+- [ ] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
+      transitive advisory. This is **not implied** by the `@clerk/nextjs` number; it is reached via
+      `@clerk/shared`, so verify it on its own:
+      `grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`
 - [ ] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `bun run test` exits 0 (full unit suite green)
