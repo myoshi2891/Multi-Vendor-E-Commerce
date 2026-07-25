@@ -163,23 +163,36 @@ WEBHOOK_SECRET
 # 本プラン自身（旧トークンを「旧 → archive/ へ移動」の移行例として引用している）と
 # plans/audit/*（監査証跡）は **走査対象から除外**する。これらは上の但し書きで
 # 「残ってよい」参照であり、走査に含めると本文中の旧トークン例示に常にヒットして
-# ゲートが構造的に永久失敗する（＝誤検出）。除外は grep -r の段階で行う
-# （-h でファイル名が落ちるため、抽出後にファイル単位で弾けない）。
-grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
-  --exclude="011-onboarding-docs-env-and-stale-plan.md" \
-  --exclude-dir="audit" \
-  | grep -v "node_modules" \
-  | grep -vE "(^|/)archive/unimplemented-screens-plan" \
-  || true
-# ↑ 末尾の `|| true` が無いと、成功ケース（ヒット 0 件 = 旧パス参照なし）で
-#   末尾の `grep -v` が「出力行ゼロ」により **exit 1** を返し、exit code を見る
-#   CI ゲートが誤って失敗する。合否は「出力された行の有無」で判断すること
-#   （0 行＝pass）。exit code を合否に使うなら次段の判定形にする。
+# ゲートが構造的に永久失敗する（＝誤検出）。
+#
+# `-h` ではなく `-n` を使う: 除外を**パス単位**で判定するためファイル名を残す必要がある。
+# `--exclude=` は**ベース名**マッチのため、`--exclude="011-…​.md"` は
+# `plans/ja/011-…​.md` まで巻き添えで除外し、ja 側に残った旧パス参照を隠してしまう。
+leftovers=$(
+  grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+    | grep -v "/node_modules/" \
+    | grep -vE "^(\./)?plans/(ja/)?011-onboarding-docs-env-and-stale-plan\.md:" \
+    | grep -vE "^(\./)?plans/audit/" \
+    | awk '{ tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+             if (index(tok, "archive/unimplemented-screens-plan") == 0) print }'
+)
+if [ -n "$leftovers" ]; then
+  printf '%s\n' "$leftovers"
+  echo "FAIL: 旧パスへの生きた参照が残っている"
+  exit 1
+fi
+echo "PASS: 旧パスへの生きた参照なし"
 ```
 
-→ **ヒット 0 件**（＝出力が空）なら pass。ヒットが 1 件でもあれば、それは（本プラン・
-監査証跡を除いた）**旧パスへの生きた参照**である。exit code ではなく**出力行の有無**で
-判定すること（上記のとおり成功ケースでも末尾 `grep` は exit 1 を返しうる）。
+→ **ヒット 0 件（＝ exit 0）** なら pass。ヒットが 1 件でもあれば、それは（本プラン・その ja 版・
+監査証跡を除いた）**旧パスへの生きた参照**であり、ゲートは **exit 1** を返す。
+
+> **旧版の `|| true` は撤去した。** 旧版は末尾に `|| true` を置き「合否は exit code ではなく
+> 出力行の有無で判断せよ」と注記していたが、それでは**コマンド単体を CI ゲートにできない**
+> （常に exit 0 になるため、旧パス参照が残っていても CI は緑になる）。`|| true` が必要だったのは
+> 「ヒット 0 件のとき末尾の `grep -v` が exit 1 を返す」ためだが、その問題は結果を変数へ束ねて
+> `[ -n "$leftovers" ]` で判定すれば消える。上の形は **成功 = exit 0 / 失敗 = exit 1** を満たし、
+> 出力行の有無と exit code が一致する。
 
 **（補助）監査ディレクトリ専用スキャン**: 上のメインゲートは `--exclude-dir="audit"` で
 `plans/audit/*` を**丸ごと**外すが、前段の但し書きは「監査証跡の参照も新しいアーカイブパスへ
@@ -199,6 +212,13 @@ grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" plans/audit --incl
 # （メインゲートとは別に人間が判断する。ここで機械的に fail はさせない）。
 ```
 
+> **除外はベース名ではなくパスで行うこと。** `grep --exclude=` は**ベース名**マッチのため、
+> 旧版の `--exclude="011-onboarding-docs-env-and-stale-plan.md"` は `plans/011-…​.md` と
+> `plans/ja/011-…​.md` の**両方**を落としていた。ja 版は翻訳であって監査証跡ではないので、
+> ja 側に旧パス参照が残っていても永久に報告されない。`--exclude-dir="audit"` も同様に
+> ツリー内の**任意の** `audit` ディレクトリを落とす。`-n` を保ってパス前方一致
+> （`^(\./)?plans/ja/011-…`, `^(\./)?plans/audit/`）で弾けば、除外の意図がそのまま式になる。
+>
 > **除外は `docs/archive` ではなく `archive/unimplemented-screens-plan` で行うこと。**
 > 旧版のゲートは `grep -v docs/archive` で除外していたが、これは**正しく更新した参照を
 > 失敗と判定する**。上表のとおり `docs/design/*/README.md` の 9 ファイルは相対リンク形であり、
@@ -230,7 +250,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
 # 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
-# 本リポジトリは src/app/(auth)/ にカスタム認証ページを持つため、既定値ではなく下記の値を使う。
+# 下記 3 つは Clerk の既定値と同一だが、既定値の変更に依存しないよう明示的にピンする。
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
@@ -256,6 +276,18 @@ NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 ```
 
 実際の env 名 grep + `.env.docker.example` と突合し、必要なものが欠けておらず放棄済み（Elasticsearch）のものが追加されていないことを確認する。名前/プレースホルダーのみ — 実際の値は入れない。
+
+> **分類の軸は「シークレット / 非シークレット」であり、「任意 / 必須」ではない**（両者を混同しないこと）。
+> シークレット・環境依存値は空欄、非シークレット設定はリテラル値を持つ（上記 `PAYPAL_API_BASE` 等）。
+>
+> **訂正: Clerk の URL 3 変数は「必須」ではなく「任意」。** EN 版の旧記述は「カスタム
+> `src/app/(auth)/` ページがあるため既定値では動かず、空欄にすると認証が壊れる」を literal 値の
+> 根拠にしていたが、**これは事実誤認**であり、env ブロック自身の「任意 (未設定なら Clerk の既定値)」
+> というコメントとも矛盾していた。本リポジトリのカスタムページは `/sign-in` / `/sign-up`
+> （`src/app/(auth)/sign-in/[[...sign-in]]/page.tsx` / `…/sign-up/[[...sign-up]]/page.tsx`）に解決され、
+> これは **Clerk の既定値そのもの**。`AFTER_SIGN_IN_URL=/` も既定値。空欄でも認証は壊れない。
+> ピンする本当の理由は**防御的**なもの — Clerk 側の既定値が将来変わっても認証の経路が
+> 黙って変わらないよう、リポジトリ側で契約を固定する。
 
 **検証**: `grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ | sort -u`（`ELASTICSEARCH_*`、`NODE_ENV`、`E2E_BASE_URL` を除く）の全名前が README ブロックに現れる。
 

@@ -160,19 +160,41 @@ The relative-link form appears in **9 files** under `docs/design/*/README.md` (`
 
 ```bash
 # Exclude this plan itself (it quotes the old token as a "moved from … to archive/…" example)
-# and plans/audit/* (the audit trail) **from the scan**. Per the note above these are references
-# that are *expected to remain*; scanning them makes the illustrative old-path tokens in their prose
-# match forever, so the gate fails structurally (a false positive). Exclude at the grep -r stage
-# because -h drops filenames, so you cannot filter per-file after extraction.
-grep -rhoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
-  --exclude="011-onboarding-docs-env-and-stale-plan.md" \
-  --exclude-dir="audit" \
-  | grep -v "node_modules" \
-  | grep -vE "(^|/)archive/unimplemented-screens-plan"
+# and plans/audit/* (the audit trail). Per the note above these are references that are
+# *expected to remain*; scanning them makes the illustrative old-path tokens in their prose
+# match forever, so the gate fails structurally (a false positive).
+#
+# Keep `-n` (NOT `-h`): filenames must survive extraction so the exclusions can be applied
+# **per path**. `--exclude=` matches the *basename* only, so `--exclude="011-…​.md"` would also
+# drop `plans/ja/011-…​.md` — silently hiding any live old-path reference in the ja copy.
+leftovers=$(
+  grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+    | grep -v "/node_modules/" \
+    | grep -vE "^(\./)?plans/(ja/)?011-onboarding-docs-env-and-stale-plan\.md:" \
+    | grep -vE "^(\./)?plans/audit/" \
+    | awk '{ tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+             if (index(tok, "archive/unimplemented-screens-plan") == 0) print }'
+)
+if [ -n "$leftovers" ]; then
+  printf '%s\n' "$leftovers"
+  echo "FAIL: live references to the OLD path remain"
+  exit 1
+fi
+echo "PASS: no live references to the old path"
 ```
 
-→ **zero hits**. Any hit (outside this plan and the audit trail) is a live reference to the *old* path.
+→ **zero hits / exit 0**. Any hit (outside this plan, its ja copy, and the audit trail) is a live
+reference to the *old* path, and the gate exits **1**. Before the move lands this gate is expected
+to fail — that is the Red state it is written to detect.
 
+> **Exclude by path, not by basename.** `grep --exclude=` matches the **basename**, so the earlier
+> gate's `--exclude="011-onboarding-docs-env-and-stale-plan.md"` dropped **both** `plans/011-…​.md`
+> **and** `plans/ja/011-…​.md`. The ja copy is a translation, not the audit trail — a genuine
+> leftover old-path reference in it would never have been reported. The same applies to
+> `--exclude-dir="audit"`, which drops *any* directory named `audit` anywhere in the tree. Keeping
+> `-n` and filtering on the path prefix (`^(\./)?plans/ja/011-…`, `^(\./)?plans/audit/`) makes the
+> exclusion say exactly what it means.
+>
 > **Exclude on `archive/unimplemented-screens-plan`, not on `docs/archive`.** The earlier gate used
 > `grep -v docs/archive`, which **fails references that were correctly updated**. As the table above
 > shows, the 9 files under `docs/design/*/README.md` use the relative-link form, so after the fix
@@ -206,7 +228,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
 # 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
-# 本リポジトリは src/app/(auth)/ にカスタム認証ページを持つため、既定値ではなく下記の値を使う。
+# 下記 3 つは Clerk の既定値と同一だが、既定値の変更に依存しないよう明示的にピンする。
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
@@ -233,19 +255,31 @@ NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 
 Cross-check against the live env-name grep + `.env.docker.example` so nothing required is missing and nothing abandoned (Elasticsearch) is added.
 
-**Empty-value vs literal-value policy** (resolve the apparent contradiction with the block above):
+**Empty-value vs literal-value policy** (resolve the apparent contradiction with the block above).
+Note this axis is **secret vs non-secret**, *not* optional vs required — the two must not be conflated:
+
 - **Secrets / deployment-specific values** (`DATABASE_URL`, `CLERK_SECRET_KEY`, `STRIPE_SECRET_KEY`,
   `PAYPAL_SECRET`, tokens, webhook signing secrets, URLs that vary per environment) are left **empty**
   (`NAME=`) — never a real credential.
-- **Non-secret routing config the app requires a specific value for** (`NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`,
-  `…SIGN_UP_URL=/sign-up`, `…AFTER_SIGN_IN_URL=/`, **and `PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`**)
-  carries its **literal** value, because the app ships
-  custom `src/app/(auth)/` pages and the Clerk defaults would point elsewhere — an empty value here
-  breaks auth. `PAYPAL_API_BASE` is likewise a non-secret endpoint (the sandbox base URL is not a
-  credential) and is classified as a **non-secret default**, not a blank. The inline comments already
-  explain why these are not placeholders.
+- **Non-secret config** (`NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `…SIGN_UP_URL=/sign-up`,
+  `…AFTER_SIGN_IN_URL=/`, **and `PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`**) carries its
+  **literal** value. The sandbox base URL is an endpoint, not a credential, so it is a
+  **non-secret default** rather than a blank.
 
-So the rule is **not** "no values ever": it is "no secrets" — required non-secret config keeps its literal value.
+So the rule is **not** "no values ever": it is **"no secrets"** — non-secret config keeps its literal value.
+
+> **Correction — the three Clerk URL vars are *optional*, not required.** An earlier version of this
+> policy justified their literal values with "the app ships custom `src/app/(auth)/` pages and the
+> Clerk defaults would point elsewhere — an empty value here breaks auth". **That is factually
+> wrong**, and it contradicted the env block's own inline comment ("任意 (未設定なら Clerk の既定値)").
+> The repo's custom pages resolve to `/sign-in` and `/sign-up`
+> (`src/app/(auth)/sign-in/[[...sign-in]]/page.tsx` / `…/sign-up/[[...sign-up]]/page.tsx`), which are
+> **exactly Clerk's defaults**; `AFTER_SIGN_IN_URL=/` is the default too. Leaving them empty does not
+> break auth.
+>
+> The real reason to pin them is **defensive**: it fixes the routing contract in the repo so a future
+> change to Clerk's defaults cannot silently reroute auth. Both the inline comment and this policy now
+> state the same thing — optional, pinned deliberately, and non-secret.
 
 **Both files apply the same classification.** `PAYPAL_API_BASE` is a non-secret default in the README
 block (step 2) *and* in `.env.example` (step 3): it carries `https://api-m.sandbox.paypal.com` in both,
