@@ -216,10 +216,31 @@
 > （[`../README.md`](../README.md) の Status 表が実行実態の SSOT）。
 > したがって**下 2 行**（`saveUserCart`＝plan 005 待ち / TESTS-02 capture 経路＝plan 003 待ち）の
 > deferred 理由（「コード修正が先行依存だから待つ」）は**既に消滅**しており、
-> 両者とも**昇格の再評価が可能な状態**にある。さらに Round 14（2026-07-19）で capture 経路へ
-> CAS ガードが入った（`4261be0` / `e63474b`）ため、TESTS-02 の「非原子 2 書き込みは不変」も
-> 現状に当てはまらない。**この表を根拠に「まだ待ち」と判断しないこと** —
+> 両者とも**昇格の再評価が可能な状態**にある。**この表を根拠に「まだ待ち」と判断しないこと** —
 > 再評価の起点は [`VETTED_FINDINGS.md`](VETTED_FINDINGS.md) の「Round 14 追記」節。
+>
+> **⚠️ ただし CAS ガードの追加を「非原子性の解消」と読まないこと。** Round 14（2026-07-19）で
+> capture 経路へ CAS ガードが入った（`4261be0` / `e63474b`）が、これは**別の性質の対策**である:
+>
+> | | CAS ガード（条件付き `updateMany` + `where` 再評価） | tx 原子性（`db.$transaction`） |
+> |---|---|---|
+> | 防ぐもの | **ロストアップデート** — read-then-act の隙に別経路が書いた値を上書きする退行 | **部分適用** — 2 書き込みの片方だけが永続化される状態 |
+> | 防げないもの | 1 書き込み目の成功後に 2 書き込み目が失敗した場合の不整合 | 並行更新による上書き（分離レベル次第） |
+>
+> **2 経路で状況が異なる（実測 2026-07-26）**:
+>
+> - **Stripe**: `src/queries/stripe.ts:231-258` は `paymentDetails.upsert` と `order.update` が
+>   **同一 `tx` 内**にあり、かつ `where` に `paymentStatus: { notIn: SETTLED_PAYMENT_STATUSES }`
+>   の CAS を持つ。原子性・ロストアップデートとも解消済み。
+> - **PayPal**: `src/queries/paypal.ts:281`（`db.paymentDetails.upsert`）と `:323`
+>   （`db.order.update`）は**トップレベルの別呼び出しのまま**で、`$transaction` に入っていない。
+>   CAS ガード（`:22` の `SETTLED_PAYMENT_STATUS_GUARD`）は付いたが、**非原子 2 書き込みは残存**。
+>
+> したがって「非原子 2 書き込みは不変」が当てはまらなくなったのは **Stripe 側だけ**であり、
+> **PayPal 側では plan 003 の課題がそのまま残っている**。正しい要約は「TESTS-02 は**解消済み**」
+> ではなく「**検証すべきシナリオが経路ごとに変わった**」—— Stripe は CAS + tx の回帰網、
+> PayPal は CAS の回帰網に加えて原子性シナリオ（片側書き込みの巻き戻し）が依然必要。
+> 昇格時は経路ごとに区別して設計に含めること。
 
 ## Considered and rejected（Round 6・再監査防止）
 
