@@ -170,12 +170,23 @@ Subtotal ${subTotal.toFixed(2)} / Shipping Fee +${shippingFees.toFixed(2)} / Tot
 > 積み上げないこと。配送料は必ず `src/lib/shipping-utils.ts` の `computeShippingTotal` を
 > 使う（計算ロジックの一元管理）。
 >
-> **経路 B に `Prisma.Decimal` を持ち込む必要はない。** DOM に届いた時点で金額は既に
-> **表示文字列**であり（`src/components/store/cards/order/total.tsx:29` /
+> **経路 B のセント整数は規約違反ではない —— 規約の適用範囲の外側にある。**
+> `.claude/steering/tech.md` の金額規約（`Decimal(12,2)` 必須 / 演算は `Prisma.Decimal`
+> メソッド / 中間集計での `.toNumber()` 禁止）が縛るのは、**`Decimal` 列に対するサーバー側の
+> 金額演算**である。規約が防ごうとしているのは「DB の正確な 10 進値を `number` に落として
+> 積み上げ、丸め誤差を蓄積させること」であり、その誤差はサーバー側の集計でしか生まれない。
+>
+> 経路 B が触るのは DOM に届いた**表示文字列**で、これは既にサーバーで丸め済みの終端値である
+> （`src/components/store/cards/order/total.tsx:29` /
 > `src/components/store/order-page/group-table.tsx` はいずれも `.toFixed(2)` で描画。
-> 桁区切りカンマは入らず常に `$X.XX` 形式）、そこに `Decimal` を被せても精度は増えない。
+> 桁区切りカンマは入らず常に `$X.XX` 形式）。**失われた精度は `Decimal` を被せても戻らない**ため、
+> ここで `Prisma.Decimal` を使っても厳密性は 1 ビットも増えず、依存だけが増える。
 > 小数第 2 位までと決まった文字列は、**パース時に 1 度だけ丸めてセント整数化**すれば
-> 以降の加減算が厳密になる。これが下記の実装である。
+> 以降の加減算が厳密（整数演算）になる。これが下記の実装である。
+>
+> **境界の要約**: `Decimal` 列の値を計算する → 規約適用（経路 A）。
+> 丸め済みの表示文字列どうしの関係を検算する → 規約対象外・セント整数（経路 B）。
+> 経路 A で `number` に落として積み上げることは、E2E であっても禁止のままである。
 
 推奨実装（経路 B）:
 
