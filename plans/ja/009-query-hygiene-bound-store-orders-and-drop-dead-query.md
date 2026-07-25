@@ -219,7 +219,24 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` が上限適用を示す
-- [ ] `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` が定数由来の切り捨て告知を示す（2026-07-18 追加 — 上限と告知は同時に出荷する。告知なしの上限は caveat が禁じるサイレント切り捨てになる）
+- [ ] 切り捨て告知が**共有定数由来**であること（2026-07-18 追加 — 上限と告知は同時に出荷する。告知なしの上限は caveat が禁じるサイレント切り捨てになる）。
+    トークンの出現を数えるだけの `grep -n "STORE_ORDERS_MAX" <page.tsx>` では**不十分**:
+    ページ側で同名の定数をローカル再宣言していても一致してしまい、`store.ts` の上限を
+    引き上げた際に告知の数字だけが取り残される（両者が独立に drift する）。**import 文で
+    共有元から取り込んでいること**を検証する:
+
+    ```bash
+    PAGE="src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"
+    # 1) 共有定数を import していること（ローカル再宣言ではない）
+    grep -nE '^import .*\bSTORE_ORDERS_MAX\b.*from' "$PAGE"
+    # 2) ページ内でローカル再宣言していないこと → ヒット 0 件
+    grep -nE '^\s*(const|let|var)\s+STORE_ORDERS_MAX\b' "$PAGE" && \
+      { echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; exit 1; }
+    # 3) 告知文が定数を値として埋め込んでいること（ハードコードした数字ではない）
+    grep -n 'STORE_ORDERS_MAX' "$PAGE" | grep -vE '^\s*[0-9]+:import'
+    ```
+
+    1 がヒットし 2 がヒット 0 件のときのみ、告知が共有定数に追随することが保証される。
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` がマッチしない
 - [ ] `bun run test -- src/queries/store.test.ts` が exit 0；`take` アサーションが pass
 - [ ] `bun run lint` が exit 0

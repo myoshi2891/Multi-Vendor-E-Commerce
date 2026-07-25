@@ -233,9 +233,18 @@ Machine-checkable. ALL must hold:
 - [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
 - [ ] The GET handler contains no `parseInt` and parses page/limit with `Number(...)`. **Use the
       GET-scoped gate, not a whole-file grep** — see "Correction (2026-07-19)" below:
-      `awk '/^export async function GET/,0' src/app/api/index-products/route.ts | grep -c "parseInt"` → `0`.
+      `awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"` → `0`.
       (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
       failure if the POST handler legitimately uses `parseInt`.)
+
+    > **End the range at the function boundary, not at `0`.** The earlier form
+    > `awk '/^export async function GET/,0'` used `0` as the end pattern — `0` is falsy and
+    > therefore *never matches*, so the range ran to **EOF**, not to the end of `GET`. It happens
+    > to give the right answer today only because `POST` is declared **before** `GET`
+    > (`route.ts:14` vs `:153`), leaving nothing after `GET` to catch. The moment another handler
+    > or helper is added below `GET`, the gate silently widens again and re-introduces exactly the
+    > false failure the GET-scoping was added to prevent. `/^}/` terminates at the first
+    > column-0 closing brace, which is the function's own boundary under this file's formatting.
 - [ ] Normalization **behavior** (Infinity/NaN/fractional/`<1` → clamped, not token presence) is
       pinned by a unit test, not by grep alone — grep only proves `Number(...)`/`MAX_LIMIT` appear,
       not that the `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : …` clamp actually holds.
