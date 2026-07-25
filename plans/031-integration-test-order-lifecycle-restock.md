@@ -300,23 +300,40 @@ Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, Paymen
 > ```typescript
 > // 逐次テストの order とは別に、非終端状態の新しい注文を用意する
 > const concurrentOrder = await seedCancelableOrder(/* 8 個・decrement 3 済み 等、Scenario 1 と同条件 */);
-> await Promise.all([
->     updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled),
->     updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled),
-> ]);
+>
+> // バリア（必須）: 2 本が「同時に in-flight」になってから初めて DB へ進ませる。
+> // Promise.all の同時ディスパッチだけに依存しない（下記「注意」参照）。
+> let release!: () => void;
+> const gate = new Promise<void>((resolve) => { release = resolve; });
+> let arrived = 0;
+> const arm = async () => {
+>     arrived += 1;
+>     if (arrived === 2) release();   // 2 本目が到達した時点で両方を解放
+>     await gate;
+>     return updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled);
+> };
+>
+> await Promise.all([arm(), arm()]);
 > // Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
 > ```
 >
 > **注意（並行性の機械的保証）**: `Promise.all` は 2 本の呼び出しを**並べるだけ**で、DB 上で
 > 実際に重なる保証にはならない。**接続プールが 1 なら 2 本は逐次実行**され、CAS の並行性を
 > 検証しないまま緑になる（偽陽性）。`maxWorkers: 1` はプロセス並列度であって接続数ではない。
-> したがって **`connection_limit >= 2` をテストの前提として明示検証すること**:
-> - 接続文字列（`DATABASE_URL` の `connection_limit` パラメータ / プール設定）を読み、
->   **2 未満なら成功扱いにせず `expect` で明示的にブロック**する（例: `expect(poolSize).toBeGreaterThanOrEqual(2)`）。
->   「並行を検証できない環境」を silently pass させない。
-> - プール枯渇でハングした場合も同様に `connection_limit` を確認する。
-> - 真の重なりをさらに固めたい場合は、両呼び出しが同時に in-flight になるバリア（両者が
->   到達してから解放する latch）を挟むことを検討する（`Promise.all` の同時ディスパッチだけに依存しない）。
+> したがって以下の 2 つは **どちらも必須**（片方だけでは並行性を主張できない）:
+>
+> 1. **バリア（latch）を必ず挟む** — 上のスニペットのとおり、両呼び出しが到達するまで
+>    ブロックし、揃ってから解放する。これが無いと 1 本目が完了してから 2 本目が始まる
+>    実行順でも緑になり、テストは「逐次 2 回」と区別できない。**「検討する」ではなく必須**。
+> 2. **`connection_limit >= 2` を明示検証する** — 接続文字列（`DATABASE_URL` の
+>    `connection_limit` パラメータ / プール設定）を読み、**2 未満なら成功扱いにせず
+>    `expect` で明示的にブロック**する（例: `expect(poolSize).toBeGreaterThanOrEqual(2)`）。
+>    「並行を検証できない環境」を silently pass させない。プール枯渇でハングした場合も
+>    同様に `connection_limit` を確認する。
+>
+> バリアだけではプールが 1 のときに 2 本目が接続待ちで直列化され、`connection_limit` だけでは
+> 解放タイミングがずれて重ならない。**両方**揃って初めて「2 本が同時に DB へ届いた」と言える。
+>
 > 万一このテストが赤くなった場合は、テストを緩めるのではなく **`d0005bb` の CAS が退行して
 > いないか**を先に疑い、STOP して報告する（それは本物の回帰である）。
 
@@ -377,6 +394,11 @@ Integration テスト数の SSOT は `docs/testing/QA_HANDOFF.md` のテスト�
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `order-lifecycle.test.ts` の新規テストが全 pass
+- [ ] Scenario 2 の**並行**ケースが、(a) 両呼び出しを揃えるバリア（latch）と
+      (b) `connection_limit >= 2` の `expect` の**両方**を持つ。`Promise.all` を並べただけの
+      形は不可（プール 1 で逐次実行されても緑になり、逐次ケースと区別できないため）
+- [ ] 並行ケースが逐次ケースの `order` を流用せず、**非終端状態の新しい注文**を Arrange している
+      （終端済み注文では両呼び出しが `count === 0` になり restock が一切走らない空テストになる）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0
 - [ ] `bun run test`（unit）exits 0 で**テスト数が増減しない**（integration は unit 集計外）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）

@@ -188,10 +188,28 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 > **逐次再送だけでは「冪等性」の主張を満たさない。** Stripe は再試行を**並行**配送しうるため、
 > 逐次 2 回のみを検証して「冪等」と名乗るのは過大主張。
 >
-> **決定（この二択の決着）: 推奨案「並行ケースを追加」を採用する。** 同一イベントを `Promise.all` で
-> 2 回配送し、`paymentDetails.count` が **1** のままであることを assert する（upsert の一意制約が
+> **決定（この二択の決着）: 推奨案「並行ケースを追加」を採用する。** 同一イベントを 2 回**同時に**
+> 配送し、`paymentDetails.count` が **1** のままであることを assert する（upsert の一意制約が
 > 並行 upsert を直列化することの回帰網）。これを Scenario S2 の必須シナリオとし、下記 Done criteria
 > でも機械検証する。逐次のみに狭める代替案は採らない（並行こそが本プランの主眼のため）。
+>
+> **ただし `Promise.all` を並べるだけでは並行 upsert の冪等性を証明できない。**
+> `Promise.all` は 2 本を同時にディスパッチするだけで、DB 上で実際に重なる保証にはならない。
+> **接続プールが 1 なら 2 本は逐次実行**され、その場合このテストは S2 の逐次ケースと同じものを
+> 2 度書いたに過ぎず、「並行 upsert が直列化される」ことを一切検証しないまま緑になる（偽陽性）。
+>
+> plan 031 の Scenario 2（在庫復元の CAS）と**同型の問題**であり、対処も同じ。以下は
+> **どちらも必須**:
+>
+> 1. **バリア（latch）を必ず挟む** — 2 本の配送が揃って in-flight になるまでブロックし、
+>    揃ってから解放する。実装例は
+>    [`plans/031`](031-integration-test-order-lifecycle-restock.md) の Scenario 2 と同じ形。
+> 2. **`connection_limit >= 2` を明示検証する** — 2 未満なら成功扱いにせず `expect` で
+>    ブロックする（`expect(poolSize).toBeGreaterThanOrEqual(2)`）。「並行を検証できない環境」を
+>    silently pass させない。
+>
+> バリアだけではプール 1 で接続待ち直列化され、`connection_limit` だけでは解放タイミングが
+> ずれて重ならない。**両方**揃って初めて「2 本が同時に DB へ届いた」と言える。
 
 **Scenario S3: 状態遷移イベントは upsert 更新される**
 `payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
@@ -323,11 +341,20 @@ Step 2〜3 のシナリオ S1〜S4 / P1〜P4 が本体。構造の手本は
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `webhook-payment.test.ts` の新規テストが全 pass
-- [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する（grep で確認可:
-      `grep -n "count" tests/integration/webhook-payment.test.ts` に該当行がある）
-- [ ] Scenario S2 に**並行再送ケース**（同一イベントを `Promise.all` で 2 回配送）が存在し、
-      `paymentDetails.count === 1` を assert する（採用した二択の決着を機械検証。grep 確認可:
-      `grep -n "Promise.all" tests/integration/webhook-payment.test.ts`）
+- [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する
+- [ ] Scenario S2 の**並行再送ケース**が、テスト名を指定した実行で単独 pass する:
+      `bun run test:integration -- -t "concurrent redelivery keeps a single PaymentDetails row"`
+      が **1 テストを実行して exit 0**（0 テスト実行は fail 扱い。Jest は `-t` が何にも
+      マッチしない場合でも exit 0 になりうるため、出力の `Tests: 1 passed` を確認すること）
+- [ ] その並行ケースが、(a) 両配送を揃えるバリア（latch）と (b) `connection_limit >= 2` の
+      `expect` の**両方**を持つ
+
+> **grep ゲートは使わない。** 旧版は `grep -n "Promise.all" tests/integration/webhook-payment.test.ts`
+> で並行ケースの存在を判定していたが、これは**意味を検証していない**。`Promise.all` は
+> セットアップの並列 seed など**別のテスト**にもごく普通に現れるため、並行再送ケースを
+> 一行も書かなくてもゲートは緑になる。逆に latch 実装へ書き換えて `Promise.all` の綴りが
+> 変われば、正しいテストがあるのに赤くなる。**当該テストを名指しで実行して pass すること**を
+> 条件にすれば、存在・命名・実際に通ることが同時に担保される。
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0（集計不変）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
