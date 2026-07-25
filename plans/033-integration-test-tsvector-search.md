@@ -235,7 +235,7 @@ C = name "Gamma Case" / desc "unrelated leather case"）:
 ### Step 3: 全体回帰
 
 **Verify**:
-1. `bun run test:integration` → 既存 + 新規（8 テスト目安）全 pass
+1. `bun run test:integration` → 既存 + 新規（**9 テスト**: シナリオ 1〜8 + 5b）全 pass
 2. `bunx tsc --noEmit` → exit 0
 3. `bun run lint` → exit 0
 4. `bun run test` → unit 全 pass（集計不変）
@@ -252,6 +252,10 @@ Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `search-products.test.ts` の新規テストが全 pass
 - [ ] シナリオ 3（関連度順）と 6（パラメータ化）の assert が存在する
+- [ ] シナリオ **5b**（`q` パラメータ自体が無い = `searchParams.get("q")` が `null`）が
+      5（空白トリム）とは**独立したテスト**として存在する。分岐が異なる（`null` vs 空文字列）ため
+      統合しないこと。`searchWithoutParam()` helper を使う
+- [ ] `search-products.test.ts` の新規テストが **9 件**（シナリオ 1〜8 + 5b）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0（集計不変）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了

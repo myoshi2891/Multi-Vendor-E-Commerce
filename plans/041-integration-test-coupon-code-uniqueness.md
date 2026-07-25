@@ -148,6 +148,9 @@ function mockAuthAs(userId: string, role: "SELLER" | "ADMIN"): void {
 
 **In scope**（変更してよいファイル）:
 - `tests/integration/coupon-code-uniqueness.test.ts` — **新規作成**
+- `src/queries/coupon.test.ts` — シナリオ 2 の (2)（P2002 → 日本語メッセージ変換）を
+  実 DB に頼らず直接駆動するユニットテストを **追記**する。本文 (2) が要求しているため
+  in-scope（`bun run test` の総数が +1 される）
 
 **Out of scope**（触らない）:
 - `src/queries/coupon.ts` — 検証対象本体。**「事前チェックをグローバル化する」「code を
@@ -306,7 +309,9 @@ await expect(upsertCoupon(input, storeA.url))
 1. `bun run test:integration` → 既存 + 新規 全 pass
 2. `bunx tsc --noEmit` → exit 0
 3. `bun run lint` → exit 0
-4. `bun run test` → unit 全 pass（本プランは unit に触れないため不変のはず）
+4. `bun run test` → unit 全 pass。**テスト数は増える**（`src/queries/coupon.test.ts` に
+   シナリオ 2 の (2) で追加する P2002 変換ユニットテスト **+1**）。
+   「本プランは unit に触れないため不変」は本文 (2) と矛盾するため撤回した
 
 ## Test plan
 
@@ -349,9 +354,9 @@ Stop and report back (do not improvise) if:
   実際の unique 定義を添えて報告
 - シナリオ 2 のエラーメッセージが日本語メッセージでなく生の Prisma エラーになる —
   P2002 フォールバック（coupon.ts:94-100）のドリフト。実際のエラー内容を添えて報告
-- シナリオ 2 の切り分け assert (a) が **null にならない**（事前チェックが他店舗の行を
-  検出している）— 事前チェックのスコープがグローバル化されており、P2002 経路は
-  もはや到達不能。本プランの前提が変わっているので、変更コミットを添えて報告
+- シナリオ 2 で **既存行が変化する / 行数が増える**（拒否されたのに副作用が残っている）—
+  「拒否は副作用なしで成立する」という本プランの不変条件そのものが崩れている。
+  実際の行内容を添えて報告
 - 検証コマンドが 2 回の修正試行後も失敗する
 
 ## Maintenance notes
