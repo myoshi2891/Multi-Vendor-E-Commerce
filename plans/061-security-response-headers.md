@@ -92,6 +92,9 @@ the highest-value, lowest-risk gap immediately.
 - `next.config.mjs` — add an `async headers()` block
 - `tests/e2e/security-headers.spec.ts` — exact-value regression guard (approved scope extension;
   see Test plan)
+- `.env.docker.example` — document the `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` opt-in variables
+  (approved scope extension added by the 2026-07-26 correction; an env var that gates an
+  irreversible action must be discoverable — see that correction below)
 
 **Out of scope** (do NOT touch):
 - `src/middleware.ts` — no header logic here.
@@ -325,9 +328,12 @@ ALL must hold:
       `/checkout` and passes** (regression guard, so the values cannot be weakened later without a
       failing test)
 - [x] No `Content-Security-Policy` (enforcing) header was added
-- [x] Only `next.config.mjs` and `tests/e2e/security-headers.spec.ts` are modified (`git status`) —
-      the E2E spec is an explicitly approved scope extension over the original "next.config.mjs only"
-      constraint
+- [x] Only `next.config.mjs`, `tests/e2e/security-headers.spec.ts` and `.env.docker.example` are
+      modified (`git status`). Two approved extensions over the original "next.config.mjs only"
+      constraint: the E2E spec (regression guard), and `.env.docker.example` — the
+      `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` opt-in variables introduced by the 2026-07-26
+      correction must be discoverable, since an env var that gates an irreversible action
+      (preload-list registration) is useless if operators cannot find it (`66ed444f`)
 - [x] `plans/README.md` status row for 061 updated
 
 ## STOP conditions
