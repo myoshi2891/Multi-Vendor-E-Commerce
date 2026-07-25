@@ -19,6 +19,14 @@
 > 範囲指定 `^7.5.0` のまま記録する形を採り、`bun.lock` 上の解決版が両アドバイザリの
 > 修正版を満たすことを確認済み（`js-cookie` は `@clerk/shared@4.25.4` 経由で `3.0.7`）。
 > 厳密ピンは採用していない。
+>
+> **影響範囲の正値（2026-07-26 に GitHub Advisory API で確定）**: `@clerk/nextjs` の 7 系は
+> **`>=7.0.0 <7.2.1` が影響・修正版 `7.2.1`**（`gh api /advisories/GHSA-vqx2-fgx2-5wq9`）。
+> 監査台帳内で `<=7.2.3` 影響・修正 `7.2.4` と記していた箇所（`recon.md` / `plans/ja/004` /
+> `ADVISOR_STATE.md`）は**誤り**で、本 finding と `plans/004`（EN）の値が正しかった。
+> 3 箇所を正値へ統一済み。**以後この値を台帳の単一の出典とすること**（アドバイザリは
+> 同一 GHSA 内でパッケージ・メジャー系列ごとに別レンジを持つため、7 系以外の行
+> —— 6 系は `<6.39.2`、5 系は `<5.7.6` —— と取り違えないこと）。
 
 - **Evidence**:
   - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <7.2.1、修正 7.2.1+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
@@ -174,10 +182,13 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 
 ### [DEPS-08] Next.js — ✅ 解決済み（2026-07-19・plan 057 で `~16.2.10` へ bump）／「パッチアクション不要」判定は撤回済み
 
-- **Evidence（実測できる範囲）**: `package.json:80` `"next": "^16.2.1"`、`bun.lock` +
-  `node_modules/next/package.json` とも **16.2.1**（インストール実体）。
-  peer（React 19、`@playwright/test` ^1.51）充足。`middleware→proxy` / AVIF 警告の
-  非対応は決定済みトレードオフ（recon）。
+- **現行値（本 finding を読む人が必要とする唯一の「今」）**: `package.json:80`
+  `"next": "~16.2.10"` / `bun.lock` 解決版 **16.2.10**（plan 057 で bump 済み）。
+- **Evidence — ⚠️ 以下は監査時点（2026-07-03 / HEAD `f9752c0`）の実測値であり、現行値ではない**:
+  `package.json:80` `"next": "^16.2.1"`、`bun.lock` + `node_modules/next/package.json` とも
+  **16.2.1**（当時のインストール実体）。peer（React 19、`@playwright/test` ^1.51）充足。
+  `middleware→proxy` / AVIF 警告の非対応は決定済みトレードオフ（recon）。
+  **この行の `^16.2.1` / 16.2.1 を現在の状態として引用しないこと** —— 直上の「現行値」が正。
 - > **✅ 解決済み（2026-07-19）— 以下は履歴。本 finding の「アクション不要」判定は撤回済み**。
   > 下記 2 分岐のうち **「より新しい版が出ている」が現実**となった: Round 9 以降に
   > **GHSA-26hh-7cqf-hhc6**（HIGH — App Router の Middleware/Proxy バイパス）が公表され、

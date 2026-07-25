@@ -716,7 +716,7 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 > | tsc / lint | 0 エラー / 15 警告 | 同左（Round 13 で再実測・変化なし） |
 
 - ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件 ← **R1 時点**
-- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、<=7.2.3 影響・修正版 7.2.4+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補 ← **plan 004 で解消済み**
+- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、`>=7.0.0 <7.2.1` 影響・修正版 7.2.1+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補 ← **plan 004 で解消済み**
 - 既知・未対応（プラン化候補）: OI-9 ホーム SSR 500 / OI-11 seller `self is not defined` / OI-10 a11y color-contrast / C2 bundle size / applyCoupon total ロストアップデート / E2E 120s ハング
   ← **OI-9 / OI-11 は Round 9 時点でも「未着手」を確認済み**（`docs/testing/QA_HANDOFF.md`）。
   最新の解消状況は QA_HANDOFF 側を正とする

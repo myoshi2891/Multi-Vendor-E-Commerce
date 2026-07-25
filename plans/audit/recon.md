@@ -62,7 +62,7 @@
 
 | # | パッケージ | 深刻度 | Advisory ID | 経路 | 修正版 | ランタイム到達性 |
 |---|---|---|---|---|---|---|
-| 1 | `@clerk/nextjs` 7.0.7 | **CRITICAL** | [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス。影響: >=7.0.0 <=7.2.3） | **直接依存**（`package.json`） | 7.2.4 以降（当時の最新 stable 7.5.x） | ✅ 認証経路 |
+| 1 | `@clerk/nextjs` 7.0.7 | **CRITICAL** | [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス。影響: `>=7.0.0 <7.2.1`） | **直接依存**（`package.json`） | 7.2.1 以降（当時の最新 stable 7.5.x） | ✅ 認証経路 |
 | 2 | `@clerk/nextjs` 7.0.7 | HIGH | [GHSA-w24r-5266-9c3c](https://github.com/advisories/GHSA-w24r-5266-9c3c) | **直接依存**（同上） | 同上（plan 004 参照） | ✅ 認証経路 |
 | 3 | `js-cookie` 3.0.5 | HIGH | **未特定** — 当時の `bun audit` ログが scratchpad と共に失われ、ID を採取できていない（推測で埋めない） | transitive: `@clerk/nextjs › @clerk/backend › @clerk/shared@4.3.2` がピン | Clerk 更新で追従（DEPS-02 のゲート） | ✅ Clerk セッション cookie 操作 |
 | 4 | `jodit` 4.6.2 | moderate（prototype pollution） | **未特定** — [`findings-06-dependencies.md`](findings-06-dependencies.md) DEPS-03 の同定表も「未記載」と記録 | transitive: `jodit-react@^4.1.2` 経由 | 未特定 | ⚠️ 限定的（認証済み seller 自身のエディタ内。ストアフロント側は DOMPurify で閉鎖済み — DEPS-03） |

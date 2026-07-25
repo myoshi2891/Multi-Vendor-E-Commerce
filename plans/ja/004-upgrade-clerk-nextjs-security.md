@@ -8,7 +8,9 @@
 > このプランのステータス行を更新する。
 >
 > **ドリフトチェック（最初に実行）**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts`
-> `package.json`/`bun.lock` が既に `@clerk/nextjs` を 7.2.4 以降にしている場合、
+> `package.json`/`bun.lock` が既に `@clerk/nextjs` を 7.2.4 以降（本プランの目標値 —
+> CRITICAL 勧告自体の修正版は **7.2.1** だが、7.2.4 は推移的 HIGH `js-cookie` も解消するため
+> こちらを目標にしている）にしている場合、
 > 勧告は既に解消済みの可能性がある — 何もする前に STOP してインストール済み
 > バージョンを報告すること。
 
@@ -23,7 +25,7 @@
 
 ## なぜ重要か
 
-`@clerk/nextjs` は `^7.0.7` にピン留めされ 7.0.7 に解決される。これは **GHSA-vqx2-fgx2-5wq9**（CRITICAL、ミドルウェアベースのルート保護バイパス、`>=7.0.0 <=7.2.3` に影響、`7.2.4` で修正）と HIGH の GHSA-w24r-5266-9c3c の影響範囲内にある。本リポジトリの `src/middleware.ts` は、まさにこの勧告が標的とするパターン — `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`、`/checkout`、`/profile` をゲート — を使用している。攻撃者は有効なセッションなしにこれらの保護されたルートシェルに到達できる可能性がある。多層防御（サーバーアクションは `src/lib/auth-guards.ts` 経由で再検証し、dashboard レイアウトは `currentUser()` を呼ぶ）は露出を減らすが排除はしない — ミドルウェアを唯一のゲートとして依存しているページはすべてリスクにさらされる。v7 系内でのアップグレードは、小さく十分に限定された影響範囲でこの勧告を解消する。このアップグレードは、Clerk がパッチ済みの `@clerk/shared` を引くようになると、推移的依存の HIGH `js-cookie@3.0.5`（`@clerk/shared` 経由）も解消する。
+`@clerk/nextjs` は `^7.0.7` にピン留めされ 7.0.7 に解決される。これは **GHSA-vqx2-fgx2-5wq9**（CRITICAL、ミドルウェアベースのルート保護バイパス、`>=7.0.0 <7.2.1` に影響、`7.2.1` で修正）と HIGH の GHSA-w24r-5266-9c3c の影響範囲内にある。本リポジトリの `src/middleware.ts` は、まさにこの勧告が標的とするパターン — `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`、`/checkout`、`/profile` をゲート — を使用している。攻撃者は有効なセッションなしにこれらの保護されたルートシェルに到達できる可能性がある。多層防御（サーバーアクションは `src/lib/auth-guards.ts` 経由で再検証し、dashboard レイアウトは `currentUser()` を呼ぶ）は露出を減らすが排除はしない — ミドルウェアを唯一のゲートとして依存しているページはすべてリスクにさらされる。v7 系内でのアップグレードは、小さく十分に限定された影響範囲でこの勧告を解消する。このアップグレードは、Clerk がパッチ済みの `@clerk/shared` を引くようになると、推移的依存の HIGH `js-cookie@3.0.5`（`@clerk/shared` 経由）も解消する。
 
 ## Current state
 
@@ -186,7 +188,7 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 
 | 項目 | 計画時（`f9752c0`） | 現行ツリー |
 |---|---|---|
-| `@clerk/nextjs` | `^7.0.7` → `7.0.7` に解決（GHSA-vqx2-fgx2-5wq9 の影響範囲 `>=7.0.0 <=7.2.3` 内） | `^7.5.0` — 影響範囲外 |
+| `@clerk/nextjs` | `^7.0.7` → `7.0.7` に解決（GHSA-vqx2-fgx2-5wq9 の影響範囲 `>=7.0.0 <7.2.1` 内） | `^7.5.0` — 影響範囲外 |
 | `@clerk/testing` | `^2.0.7` | `^2.2.9` |
 | `js-cookie`（推移的） | `@clerk/shared` 経由の `3.0.5`（HIGH） | `@clerk/shared@4.25.4` 経由の `3.0.7` |
 
