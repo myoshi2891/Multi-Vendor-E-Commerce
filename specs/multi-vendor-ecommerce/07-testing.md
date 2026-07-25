@@ -13,9 +13,12 @@
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
 - 1746 passed / 1749 total across 175 suites (3 skipped), as of 2026-07-24.
-  Two security regressions from the CodeRabbit local review, doc/code round (+2, no new suites):
+  That is **+8 against the 1738 measured on 2026-07-18**, of which **+2 are the intentional
+  security regressions** from the CodeRabbit local review, doc/code round (no new suites):
   `user.test.ts` pins the placeOrder shipping-address ownership TOCTOU (re-validate inside the
   order tx), and `webhooks/route.test.ts` pins the SupportTicket PII redaction on user deletion.
+  The remaining +6 is measurement drift between the two runs, not new deliberate coverage — see
+  the note in [`QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) (the SSOT for these figures).
 - 1738 passed / 1741 total across 175 suites (3 skipped), as of 2026-07-18.
   Nineteen regressions from the CodeRabbit local review, Phase 1 (+19, one new suite).
   `src/lib/db-retry.test.ts` is the new suite (+8): `saveUserCart` declared
