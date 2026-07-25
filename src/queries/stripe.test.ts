@@ -716,7 +716,9 @@ describe("createStripePayment", () => {
                 createMockOrder({ total: 99.99, paymentStatus: "Paid" })
             );
             mockDb.paymentDetails.findUnique.mockResolvedValue(
-                createMockPaymentDetails({ paymentIntentId: mockPaymentIntent.id })
+                createMockPaymentDetails({
+                    paymentIntentId: mockPaymentIntent.id,
+                })
             );
             mockStripePaymentIntentsRetrieve.mockResolvedValue({
                 ...mockPaymentIntent,
@@ -794,18 +796,54 @@ describe("createStripePayment", () => {
             );
         });
 
+        const p2025 = () =>
+            new Prisma.PrismaClientKnownRequestError("record not found", {
+                code: "P2025",
+                clientVersion: "test",
+            });
+
         // 条件付き更新が 0 件 = 読み取り後に他経路(webhook)が確定させた。
         // 汎用 DB エラーで潰さず、確定済みであることを呼び出し元へ伝える。
+        //
+        // findUnique は 2 回呼ばれる: 1 回目は冒頭の事前チェック（この時点では未確定
+        // だからこそ処理が先へ進む）、2 回目は P2025 を捕まえた後の再読。本番で CAS が
+        // 外れるのは webhook が Paid を書いたからなので、再読は確定済みを返す。
         it("読み取り後に確定済みへ変わっていた場合は settled エラーを返す", async () => {
-            const notFound = new Prisma.PrismaClientKnownRequestError(
-                "record not found",
-                { code: "P2025", clientVersion: "test" }
-            );
-            mockDb.order.update.mockRejectedValue(notFound);
+            mockDb.order.findUnique
+                .mockResolvedValueOnce(createMockOrder({ total: 99.99 }))
+                .mockResolvedValueOnce(
+                    createMockOrder({ total: 99.99, paymentStatus: "Paid" })
+                );
+            mockDb.order.update.mockRejectedValue(p2025());
 
             await expect(
                 createStripePayment("order-001", mockPaymentIntent.id)
             ).rejects.toThrow("Order payment is already settled.");
+        });
+
+        // P2025 は CAS 不一致だけで出るわけではない — order の並行削除や
+        // paymentDetails.connect の対象消失でも同じコードが返る。再読しても
+        // 未確定のままなら「確定済み」ではないので、settled へ正規化して
+        // 本当の障害を隠してはならない。
+        it("再読しても未確定なら P2025 を settled へ正規化しない", async () => {
+            // 事前チェック・再読とも未確定（＝確定させた他経路が存在しない）
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.order.update.mockRejectedValue(p2025());
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            // 元の P2025 がそのまま伝播すること（settled で覆い隠さない）
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.not.toThrow("Order payment is already settled.");
+
+            consoleSpy.mockRestore();
         });
     });
 
