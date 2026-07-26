@@ -339,3 +339,86 @@ describe("setCart", () => {
         expect(state.totalPrice).toBe(0);
     });
 });
+
+// ==================================================
+// persist ラウンドトリップ（リロード再現）
+//
+// plan 005 の主張「永続化されたカートはリロード後も復元される」を検証する。
+// 上の各 describe は localStorage に書かれた「形」しか見ておらず、その中身が
+// 実際に読み戻せるかは未検証だった。
+//
+// 重要: rehydrate() の前に **インメモリ状態を捨てる**こと。同一ストアインスタンスは
+// 変更直後の値を既に保持しているため、状態を残したまま rehydrate() を呼んで
+// getState() を見るテストは、rehydrate() が完全な no-op でも通ってしまい、
+// 検出対象の回帰では落ちない（plan 005「Corrections to the test steps」参照）。
+// ==================================================
+describe("persist ラウンドトリップ", () => {
+    /**
+     * リロードを再現する: 保存済みペイロードを退避 → インメモリ状態を破棄 →
+     * ペイロードを書き戻して rehydrate。復元値は storage 由来でしか説明がつかない。
+     */
+    const reloadFromStorage = async (): Promise<void> => {
+        const persisted = localStorage.getItem("cart");
+        // null なら書き込み自体が起きていない = 検出すべき回帰。`as string` / `!` で
+        // 握りつぶさず早期に失敗させ、同時に型も string へ絞る。
+        if (persisted === null) {
+            throw new Error("cart was not persisted before rehydrate");
+        }
+
+        // setState 自体が persist を走らせて空状態を書くため、退避したペイロードを
+        // その後に書き戻す（順序が逆だと空カートを読むだけになる）。
+        useCartStore.setState({ cart: [], totalItems: 0, totalPrice: 0 });
+        localStorage.setItem("cart", persisted);
+
+        await useCartStore.persist.rehydrate();
+    };
+
+    it("追加した商品がリロード後も復元される", async () => {
+        const product1 = createCartProduct({ productId: "p1", price: 10 });
+        const product2 = createCartProduct({
+            productId: "p2",
+            price: 20,
+            quantity: 2,
+        });
+        useCartStore.getState().addToCart(product1);
+        useCartStore.getState().addToCart(product2);
+
+        await reloadFromStorage();
+
+        const state = useCartStore.getState();
+        expect(state.cart).toHaveLength(2);
+        expect(state.cart.map((item) => item.productId)).toEqual(["p1", "p2"]);
+        expect(state.totalItems).toBe(2);
+        expect(state.totalPrice).toBe(50); // 10*1 + 20*2
+    });
+
+    it("削除後の残り商品がリロード後も復元される", async () => {
+        // 手動 localStorage 書き込みが persist のラッパーを潰していた元バグの経路。
+        // 素の配列が書かれていると rehydrate が state を読み出せず、カートは空のまま復元されない。
+        const product1 = createCartProduct({ productId: "p1", price: 10 });
+        const product2 = createCartProduct({ productId: "p2", price: 20 });
+        useCartStore.getState().addToCart(product1);
+        useCartStore.getState().addToCart(product2);
+
+        useCartStore.getState().removeFromCart(product1);
+        await reloadFromStorage();
+
+        const state = useCartStore.getState();
+        expect(state.cart).toHaveLength(1);
+        expect(state.cart[0].productId).toBe("p2");
+        expect(state.totalItems).toBe(1);
+        expect(state.totalPrice).toBe(20);
+    });
+
+    it("空にしたカートはリロード後も空のまま（古い内容が甦らない）", async () => {
+        useCartStore.getState().addToCart(createCartProduct());
+
+        useCartStore.getState().emptyCart();
+        await reloadFromStorage();
+
+        const state = useCartStore.getState();
+        expect(state.cart).toEqual([]);
+        expect(state.totalItems).toBe(0);
+        expect(state.totalPrice).toBe(0);
+    });
+});
