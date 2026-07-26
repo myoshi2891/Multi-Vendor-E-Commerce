@@ -198,15 +198,49 @@ Open questions 1・2・6 に答える: 生成列 + GIN の DDL、検索とブラ
 > - **決定的な tie-breaker を必ず付ける**: `ORDER BY ts_rank DESC, id ASC` のように
 >   一意な列を最終キーに置いて全順序にする（`id` は主キーで一意性が保証される。
 >   `createdAt` は同時刻がありうるため単独では不可）。
-> - **キーセットページング（seek method）を第一候補として比較する**:
->   `WHERE ts_rank < :lastRank OR (ts_rank = :lastRank AND id > :lastId) ORDER BY ts_rank DESC, id ASC LIMIT n`。
->   （**行値比較 `(ts_rank, id) < (:lastRank, :lastId)` は使わないこと** — 行値比較は全列が
->   同一方向の時のみ正しく、`ts_rank DESC` と `id ASC` の**混在方向**では tie 行の走査方向が
->   逆になり、同点行がページ間で重複・欠落する。混在方向のシークは上記のように述語を展開する。）
+> - **キーセットページング（seek method）を第一候補として比較する**。
 >   `OFFSET` は深いページで前段行を毎回読み捨てるため件数増加に伴い劣化し、
 >   さらに**ページ間で行が挿入・削除されるとずれる**（`OFFSET` は「何件飛ばすか」
 >   であって「どこから続けるか」ではない）。更新が入るカタログでは正しさの面でも
 >   キーセットが有利。
+>
+>   **seek 述語は `ranked` CTE（またはサブクエリ）で rank を確定してから外側で適用すること。**
+>   PostgreSQL は SELECT リストの出力別名を**同じクエリブロックの `WHERE` から参照できない**
+>   （`WHERE` は SELECT リストの評価より前に処理される）。`ORDER BY` は別名を参照**できる**ため、
+>   現行実装（`src/app/api/search-products/route.ts:42` の `ORDER BY relevance DESC`）の書き方を
+>   そのまま `WHERE` へ移すと `column "relevance" does not exist` で失敗する。`ts_rank` は
+>   関数名なので、裸で `WHERE ts_rank < …` と書くのも同様に不正。
+>
+>   ```sql
+>   -- ① 内側でフィルタ適用 + rank 確定（フィルタ → ソート → ページングの順を守る）
+>   WITH ranked AS (
+>       SELECT p.id,
+>              ts_rank(p.search_vector, plainto_tsquery('simple', $1)) AS rank
+>       FROM "Product" p
+>       WHERE p.search_vector @@ plainto_tsquery('simple', $1)
+>         -- カテゴリ / 価格帯 / 属性ファセットの述語はすべてここ（LIMIT より前）
+>         AND ($5::uuid IS NULL OR p."categoryId" = $5)
+>   )
+>   -- ② 外側で seek 条件。rank は確定済みの列なので WHERE から参照できる
+>   SELECT id, rank
+>   FROM ranked
+>   WHERE $2::real IS NULL                        -- 1 ページ目は seek 述語なし
+>      OR rank < $2
+>      OR (rank = $2 AND id > $3)
+>   ORDER BY rank DESC, id ASC
+>   LIMIT $4;
+>   ```
+>
+>   `search_vector` は Open question 1 で決める生成列（現行はまだ式ベース
+>   `to_tsvector('simple', p.name || ' ' || COALESCE(p.description, ''))`）。生成列を採らない場合は
+>   その式を CTE 内に置くこと —— **CTE 化の利点は、rank 式を 1 箇所にしか書かずに済む**点でもある。
+>
+>   代替として同じ `ts_rank(...)` 式を `WHERE` に**展開する**書き方も正しく動くが、式が
+>   `SELECT` / `WHERE` / `ORDER BY` の 3 箇所に重複し、片方だけ直す事故を招くので CTE を推奨する。
+>
+>   （**行値比較 `(rank, id) < ($2, $3)` は使わないこと** — 行値比較は全列が
+>   同一方向の時のみ正しく、`rank DESC` と `id ASC` の**混在方向**では tie 行の走査方向が
+>   逆になり、同点行がページ間で重複・欠落する。混在方向のシークは上記のように述語を展開する。）
 > - どちらを採る場合も tie-breaker は共通であり、`totalCount` の算出とも整合させる。
 >
 > 現行実装は `LIMIT 50` 固定（`src/app/api/search-products/route.ts`）でページングを
@@ -216,6 +250,17 @@ Open questions 1・2・6 に答える: 生成列 + GIN の DDL、検索とブラ
 **Verify**: 統合後の「検索語 + カテゴリ + 価格帯 + 属性ファセット」を1リクエストで処理する
 シーケンス図（テキストで可）と各段の SQL/Prisma 雛形が design doc 案にあり、**フィルタが LIMIT より
 前に適用される**ことが雛形上で確認できる。
+
+加えて、**雛形を紙上で終わらせず実 PostgreSQL で実行して確認すること**。上の seek 述語のように
+「読めば正しそうだが実行すると落ちる」形（出力別名を `WHERE` から参照）は、実行しない限り
+検出できない。`make setup` のローカル PostgreSQL、または `docker-compose` の DB コンテナに対して:
+
+- ① 1 ページ目（seek 述語なし = `$2` に NULL）と ② 2 ページ目（前ページ末尾の `rank` / `id` を渡す）を
+  実際に発行し、**エラーなく返ること**と**両ページに同一 id が現れないこと**を確認する。
+- 同点行が多いクエリ語（1 語・出現 1 回程度）を意図的に選び、tie-breaker が効いていることを見る。
+- `EXPLAIN` を取り、GIN インデックスが使われているか（Seq Scan に落ちていないか）も併せて記録する。
+
+design doc には**実行したクエリ全文と実行結果の要約**を貼ること（「動くはず」ではなく「動かした」）。
 
 ### Step 3: ファセット集計と価格ソートの設計
 
