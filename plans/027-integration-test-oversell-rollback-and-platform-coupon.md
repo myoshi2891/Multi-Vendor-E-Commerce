@@ -257,6 +257,55 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
    > テスト側は `jest.mock(...)` の 1 行だけをファイル冒頭に残し、`mockImplementationOnce` /
    > `afterEach` の張り直しは `actualDeliveryDetails` を参照する（これらは巻き上げの影響を
    > 受けない通常のコードなので import 参照で問題ない）。
+   >
+   > **ヘルパー化後の factory は下記の形になる**（切り出し前と同一 —— factory 内は
+   > **ローカルの `jest.requireActual`** のままにする。ここだけがヘルパーを使わない例外である）:
+   >
+   > ```typescript
+   > // tests/integration/order-placement.test.ts 冒頭
+   > import { getDeliveryDetailsForStoreByCountry } from "@/queries/product";
+   > import { actualDeliveryDetails } from "./setup/query-mocks";
+   >
+   > // ✅ factory 内はローカル requireActual。import した値を一切参照しない。
+   > jest.mock("@/queries/product", () => {
+   >     const actual = jest.requireActual<typeof import("@/queries/product")>(
+   >         "@/queries/product"
+   >     );
+   >     return {
+   >         ...actual,
+   >         getDeliveryDetailsForStoreByCountry: jest.fn(
+   >             actual.getDeliveryDetailsForStoreByCountry
+   >         ),
+   >     };
+   > });
+   >
+   > const mockedDelivery =
+   >     getDeliveryDetailsForStoreByCountry as jest.MockedFunction<
+   >         typeof getDeliveryDetailsForStoreByCountry
+   >     >;
+   >
+   > // ✅ 巻き上げの影響を受けない通常コード。ここでだけヘルパーを使う。
+   > afterEach(() => {
+   >     mockedDelivery.mockReset();
+   >     mockedDelivery.mockImplementation(actualDeliveryDetails);
+   > });
+   > ```
+   >
+   > ```typescript
+   > // ❌ これは動かない。jest.mock は import より上へ巻き上げられるため、
+   > //    factory 実行時点で actualDeliveryDetails はまだ初期化されていない。
+   > jest.mock("@/queries/product", () => ({
+   >     ...jest.requireActual("@/queries/product"),
+   >     getDeliveryDetailsForStoreByCountry: jest.fn(actualDeliveryDetails),
+   > }));
+   > ```
+   >
+   > babel-jest なら「not allowed to reference any out-of-scope variables」として
+   > **静的に**弾かれるが、本設定は `ts-jest` でありその検証が無いため、この誤りは
+   > 実行時エラーとして遅れて現れる（`bun run test:integration --
+   > tests/integration/order-placement.test.ts` で初めて露見する）。
+   > `mock` 始まりの識別子（例 `mockDeliveryDetails`）に改名しても **ts-jest では解決しない** ——
+   > あの命名規則は babel-jest の検査を通すためのものであり、初期化順序そのものは変わらない。
 
 2. Arrange: 在庫 **5**・カート数量 **5**（検証時はキャップ非発動で quantity 5 のまま通過）を seed。
    モックは **実関数の型で宣言**する（`as jest.Mock` は型を消すので使わない）。
