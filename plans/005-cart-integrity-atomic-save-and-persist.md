@@ -277,8 +277,33 @@ instructions in them are unsound and must **not** be copied into new tests:
    resets the store this way — the reset is the load-bearing part, not the
    `rehydrate()` call.
 
-**Current coverage gap**: only the wrapper-shape assertions from the first half
-of Step 4 were implemented (`useCartStore.test.ts:239`, `:274`, `:302`). No
-round-trip test exists in any form, so "a persisted cart survives a reload" —
-the stated point of this plan — is still unverified. Adding one is tracked as
-follow-up work, not as part of this DONE plan.
+**Coverage gap — closed (2026-07-26)**: for a period this plan was marked DONE
+while only the wrapper-shape assertions from the first half of Step 4 existed
+(`useCartStore.test.ts:239`, `:274`, `:302`). Those assert what gets *written*
+to storage; nothing read it back, so "a persisted cart survives a reload" — the
+stated point of this plan — was unverified, and DONE overstated the result.
+
+That is now fixed rather than relabelled. `useCartStore.test.ts` has a
+`persist ラウンドトリップ` describe block with three tests built on the pattern
+above (capture payload → discard in-memory state → restore payload →
+`await persist.rehydrate()` → assert). It is a completion criterion of this
+plan, not follow-up work — see the Done criteria addition below.
+
+The tests were confirmed **non-vacuous** by reintroducing the exact bug removed
+in `f77f0965` (the bare-array `setItem` *after* `set()` in `removeFromCart` /
+`removeMultipleFromCart`, and `removeItem('cart')` in `emptyCart`): two of the
+three fail. The third exercises the `addToCart` path, which never carried a
+manual write, so it stays green by design.
+
+> **Injection order matters when re-checking this.** Placing the bare-array
+> `setItem` *before* the `set()` call does **not** reproduce the bug — `persist`
+> writes on every `set()`, so it immediately overwrites the bare array with the
+> correct wrapper and every test stays green. The historical bug wrote *after*
+> `set()`, which is why it clobbered the wrapper. A "the test still passes"
+> result from a mis-ordered injection proves nothing about the test.
+
+**Done criteria addendum (2026-07-26)**: this plan is DONE only while a
+round-trip test exists that discards in-memory state before rehydrating.
+Deleting or weakening the `persist ラウンドトリップ` block (for example by
+asserting on `getState()` without the preceding `setState({ cart: [] })`)
+returns the plan to an unverified state.
