@@ -26,19 +26,35 @@
 
 > **`bun audit` 90 件の内訳（本番到達性で分類）**:
 > - **本番到達・直接依存**: `next`（`<16.2.5` の HIGH クラスタ。fix floor は 16.2.5。
->   **監査 HEAD `7080b12` 時点では `16.2.1` に解決され、まだ脆弱**。**plan 057**（lockfile の
->   floor を `~16.2.10` へ引き上げる）で包括対応する **TODO**（この HEAD では未適用 →
->   2026-07-18 に実行され DONE）。SSRF/DoS/複数 middleware bypass はすべてこの範囲）/
+>   **監査 HEAD `7080b12` 時点では `16.2.1` に解決され、まだ脆弱**。SSRF/DoS/複数
+>   middleware bypass はすべてこの範囲。対応は **plan 057**（lockfile の floor を
+>   `~16.2.10` へ引き上げる）で、この HEAD では **未適用**）/
 >   `dompurify`（`>=3.1.3 <3.2.7` の XSS 系。`src/utils/sanitize.ts` の sink 防御に直結 →
 >   **SECURITY-11 で起票**）。
 > - **本番到達・間接**: `qs`（stripe 経由・DoS moderate/low）/ `postcss`（ビルド時のみ）/
 >   `uuid`（`src/**/*-details.tsx` で `v4()` を **React key 用途のみ**に使用 — 勧告は
 >   `buf` 付き v3/v5/v6 の bounds 欠落であり **v4 no-buf は非該当** → 対応不要）。
 > - **dev/CI のみ（本番非到達）**: `handlebars`（critical・**ts-jest 経由**）/ `ws` / `picomatch` /
->   `minimatch` / `lodash`(react-color/testcontainers 等) / `tmp` / `undici`(testcontainers) /
+>   `minimatch` / `tmp` / `undici`(testcontainers) /
 >   `brace-expansion` / `flatted` / `js-yaml` / `glob` / `@babel/core` / `jodit`(seller エディタ、
 >   ストアフロントは DOMPurify で閉鎖済み — DEPS-03) → **DEPS-05「dev-only は routine refresh に
 >   畳む」の既定方針を維持**（本ラウンドでも個別プラン化しない）。
+> - **runtime transitive・悪用経路は現状未到達**: `lodash` / `lodash-es`
+>   （`react-color` / `react-tag-input` / `@tremor/react` が `dependencies` にあるため本番
+>   ツリーへ到達する。`_.template` を攻撃者制御文字列で呼ぶ経路は無い）→ §4 **DEPS-06**
+>   の分類訂正に従う。対応は DEPS-05 の routine refresh に含める。
+>   **本行は recon §0 の「dev/CI のみ」分類を上書きする**（同一パッケージを 2 か所で
+>   別ラベルにしないこと）。
+
+#### 監査後の変化（この §0 の観測値には含めない）
+
+上のベースラインは HEAD `7080b12`・2026-07-17 時点の観測であり、以後の対応で変化した
+ものはここに分けて記録する（観測値の行に事後の結果を混ぜると、「監査時に何が見えていたか」
+が読み取れなくなるため）。
+
+| 項目 | 監査時点（`7080b12`） | その後 |
+|---|---|---|
+| `next` | `16.2.1` に解決・HIGH クラスタの影響下 | **2026-07-18: plan 057 実行で `~16.2.10` へ bump（DONE）** |
 
 ### 既存セキュリティ所見の実装状態 reconcile（現 HEAD で直接確認）
 
@@ -131,7 +147,7 @@
 ### [SECURITY-14] `upsertCoupon`/`upsertCouponAsAdmin` にサーバー側 Zod 検証を必須化する（割引上限・mass assignment）
 
 - **Evidence**: `src/queries/coupon.ts:81-89`（`upsertCoupon`）と `coupon.ts:397-398`（`upsertCouponAsAdmin`）— `db.coupon.upsert` に `...coupon`（クライアント供給 `Coupon` 全体）を展開。`storeId`/`scope` は上書きするが `discount`・`code`・`startDate`・`endDate`・`id` は未検証。フォーム契約 `CouponFormSchema`（`src/lib/schemas.ts:523,542-548`）は `discount` を `.min(1).max(99)` に制限するが、サーバーアクションからは呼ばれていない（`coupon.ts` に `parse(` 無し）。所有権検証（`existingById` の storeId 照合 `coupon.ts:51-61`）は済んでいるため、本件は**入力検証**の欠落に限定。
-- **Impact**: SELLER がフォームを介さず直接アクションを呼べば `discount > 99`（DB 上 `Int` 無上限）を保存でき、`applyCoupon`（`coupon.ts:294`）と `placeOrder`（`user.ts:679`）の `total.mul(discount).div(100)` が割引額 > 商品総額 → グループ/注文 `total` を負値化しうる。フォーム契約（<100%）とサーバー実装のドリフト。
+- **Impact**: SELLER がフォームを介さず直接アクションを呼べば **`discount > 99`**（DB 上 `Int` 無上限）を保存できる。ここから先は 2 段階で影響が変わるので分けて記す —— `applyCoupon`（`coupon.ts:294`）と `placeOrder`（`user.ts:679`）は `total.mul(discount).div(100)` で割引額を出すため、**`discount = 100` で割引額 = 商品総額（`total` が 0）**、**`discount > 100`（`Int` なので実質 101 以上）で割引額 > 商品総額 → グループ/注文 `total` が負値**になる。すなわち「フォーム契約（`.max(99)`）違反」の閾値と「`total` 負値化」の閾値は同じではない。いずれもフォーム契約とサーバー実装のドリフトである点は変わらない。
 - **Effort**: S–M
 - **Risk**: LOW–MED — 既存の不正値クーポンがあると更新時に弾かれうる。
 - **Confidence**: HIGH — サーバー側検証の不在をコードで確認。負値 total 化は演算式から確実。
@@ -146,7 +162,7 @@
 
 ### [SECURITY-19] 公開検索エンドポイントに検索語の最大長を設ける（per-request コスト有界化）— deferred
 
-- **Evidence**: `src/app/api/index-products/route.ts:16-25`（POST `query`）と `src/app/api/search-products/route.ts:22-26`（GET `q`）は presence/type のみ検証し**文字列長上限なし**。`setUserCountryInCookies/route.ts:4,28-31` は `MAX_FIELD_LEN=100` を強制しており粒度が非一貫。SQL 自体は `Prisma.sql` でパラメータ化済み（注入なし）。
+- **Evidence**: `src/app/api/index-products/route.ts:16-25`（POST `query`）/ 同 `route.ts:153-` の **GET ハンドラ**（`q` — plan 023 が page/limit の境界を入れた経路）/ `src/app/api/search-products/route.ts:22-26`（GET `q`）の **3 経路**が、いずれも presence/type のみ検証し**文字列長上限なし**（下の Fix sketch の「3 経路」はこの 3 本を指す）。`setUserCountryInCookies/route.ts:4,28-31` は `MAX_FIELD_LEN=100` を強制しており粒度が非一貫。SQL 自体は `Prisma.sql` でパラメータ化済み（注入なし）。
 - **Impact**: 認証不要の公開検索に巨大文字列を送ると 1 リクエストの全文検索コストを増幅可能。レート制限（NEW-3 / plan 025）は頻度、本件は単発コストを制御する直交防御。
 - **Effort**: S／**Risk**: LOW／**Confidence**: MED（非検証は確実、DoS 増幅度は DB プラン依存）。
 - **Fix sketch**: 3 経路の検索語に共通最大長を設け超過時 400。→ **deferred**（rate-limit spike 025 と併走が自然）。
