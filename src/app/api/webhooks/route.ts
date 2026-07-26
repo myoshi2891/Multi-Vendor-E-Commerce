@@ -1,17 +1,12 @@
 // import { User } from "@/generated/prisma";
 // import { User } from "@/generated/prisma";
 import { db } from "@/lib/db";
+import { REDACTED_PII } from "@/lib/pii";
 import { clerkClient, WebhookEvent } from "@clerk/nextjs/server";
 import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 
-/**
- * SupportTicket の PII 列を消去する際に入れる秘匿プレースホルダ。
- * name/email/subject/message はいずれも NOT NULL のため null 化できず、
- * GDPR 消去では redaction マーカーで上書きする。
- */
-export const REDACTED_PII = "[deleted]";
 /**
  * Handle Clerk (Svix) webhook POST requests, verify the Svix signature, and synchronize Clerk user events with the database.
  *

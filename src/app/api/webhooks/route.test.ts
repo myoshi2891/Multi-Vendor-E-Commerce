@@ -1,4 +1,5 @@
-import { POST, REDACTED_PII } from "./route";
+import { REDACTED_PII } from "@/lib/pii";
+import { POST } from "./route";
 
 // ---- モック設定 ----
 const mockUpsert = jest.fn();
