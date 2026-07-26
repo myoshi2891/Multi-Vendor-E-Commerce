@@ -11,9 +11,9 @@
 > **外**にあり、本 finding はクローズ済み。実施は [plan 004](../004-upgrade-clerk-nextjs-security.md)（DONE）。
 >
 > DEPS-02 の「✅ ゲート通過（実測 2026-07-17）」は**この DEPS-01 のバンプが完了して
-> いることを前提とした記述**であり、以下の Evidence（`^7.0.7` が現状という記述）と
-> 矛盾していた。以下は**バンプ前＝監査時点（2026-07-03 / HEAD `f9752c0`）の記録**
-> として読むこと。
+> いることを前提とした記述**であり、当初の Evidence（`^7.0.7` が現状という記述）と
+> 矛盾していた。この節は以降 **「現行状態」と「監査時点の記録」を別見出しに分離**して
+> あり、`^7.0.7` を含む記述はすべて後者に属する。
 >
 > なお下の TODO(needs-detail)「バンプ先の具体的なピンが未確定」も**解決済み**:
 > 範囲指定 `^7.5.0` のまま記録する形を採り、`bun.lock` 上の解決版が両アドバイザリの
@@ -28,8 +28,24 @@
 > 同一 GHSA 内でパッケージ・メジャー系列ごとに別レンジを持つため、7 系以外の行
 > —— 6 系は `<6.39.2`、5 系は `<5.7.6` —— と取り違えないこと）。
 
-- **Evidence**:
-  - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <7.2.1、修正 7.2.1+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
+#### 現行状態（2026-07-18 実測）
+
+| 項目 | 値 |
+|---|---|
+| `package.json:21` | `"@clerk/nextjs": "^7.5.0"` |
+| `js-cookie`（推移依存） | `3.0.7`（`@clerk/shared@4.25.4` 経由） |
+| GHSA-vqx2-fgx2-5wq9（CRITICAL） | 解消（影響 `>=7.0.0 <7.2.1` の外） |
+| GHSA-w24r-5266-9c3c（HIGH） | 解消 |
+| 本 finding | **クローズ済み**（実施: [plan 004](../004-upgrade-clerk-nextjs-security.md)） |
+
+#### 監査時点の記録（2026-07-03 / HEAD `f9752c0`）— 以下はすべて履歴であり現行値ではない
+
+> この見出し以降の Evidence / Impact / Effort / Risk / Fix sketch は、**バンプ前**の状態を
+> 記述したものである。単独で引用すると `^7.0.7` が現行値であるかのように読めるため、
+> 現行値は必ず上の「現行状態」表を参照すること。
+
+- **Evidence（2026-07-03 時点・履歴）**:
+  - `package.json:21` — 当時 `"@clerk/nextjs": "^7.0.7"`（**現在は `^7.5.0`**）。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <7.2.1、修正 7.2.1+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内**だった**。
   - `src/middleware.ts:6-13` — アドバイザリが標的とするまさにこのパターン: `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`, `/dashboard/(.*)`, `/checkout`, `/profile`, `/profile/(.*)` を保護。
   - 影響範囲（アップグレード面）は小さい: Clerk import はテスト以外で約10箇所 — `src/middleware.ts:1`、`src/app/layout.tsx:12`（ClerkProvider）、`(auth)/sign-in|sign-up`・`(store)/profile/settings/page.tsx`（UI コンポーネント）、`src/app/api/webhooks/route.ts:4`（clerkClient + WebhookEvent）、`src/queries/store.ts:586`（動的 import）、各 dashboard layout / `src/queries/*`（order, product, review, profile, user, stripe, paypal, support）の `currentUser()`。7.0→7.5 間で削除された API は未使用。
   - peer 互換は既に充足: `@clerk/nextjs@7.0.7` の peer は `next: ^16.1.0-0`、リポジトリは `next@16.2.1`。7.5.x も同じ Next 16 / React 19 peer 窓で、Next/React の変更を強制しない。
