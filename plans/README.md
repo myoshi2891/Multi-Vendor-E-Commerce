@@ -165,19 +165,25 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     →〔043 完了〕→ 054。home（`/`）の a11y / VRT は OI-9（SSR 500）解消後の追加項目として
     052 / 054 の Maintenance notes に記録済み。各プラン完了時の docs 同期義務は R8 と同じ
     （`spec-sync-after-test`・E2E 統計 SSOT = `docs/testing/QA_HANDOFF.md`）。
-15. **Dependency security (057)** — **P1・依存ゼロ・即着手可能**。上記のテスト系プラン群より
-    優先する。`next@16.2.1` が GHSA-26hh-7cqf-hhc6（HIGH — App Router の
+15. **Dependency security (057) — ✅ DONE（履歴）** — **⚠️ 以下は着手判断の記録であり、
+    現行の着手順ではない**（2026-07-18 に実行済み。`10e35f3`）。当時は **P1・依存ゼロ・
+    即着手可能**として上記のテスト系プラン群より優先した。`next@16.2.1` が
+    GHSA-26hh-7cqf-hhc6（HIGH — App Router の
     Middleware/Proxy バイパス）の影響範囲内であり、`src/middleware.ts` が
     `/dashboard`・`/checkout`・`/profile` を守っている以上、**plan 004 が Clerk 側で塞いだ
-    のと同じ攻撃面がフレームワーク層で開いたまま**になっている（004 は Next.js を明示的に
+    のと同じ攻撃面がフレームワーク層で開いたまま**になっていた（004 は Next.js を明示的に
     スコープ外としていたため別プラン）。16.2.x 内のパッチ bump のみで、`src/` は無変更。
-    E2E/統合系プラン（042〜056）とはファイル競合がなく並行着手可能。
-16. **Round 13 security plans (057–062) — ✅ 全て DONE（履歴）** — セキュリティ特化 deep 監査
-    （第 3 弾）の産物（詳細: `audit/findings-18-security-r13.md`）。
+    E2E/統合系プラン（042〜056）とはファイル競合が無いため並行して進めた。
+16. **Round 13 security plans (058–062) — ✅ 全て DONE（履歴）** — セキュリティ特化 deep 監査
+    （第 3 弾）が起こした **5 本**（詳細: `audit/findings-18-security-r13.md` §5）。
+    **057 はこの 5 本に含まれない** —— 依存メンテ枠の別系統プラン（上の項目 15）で、
+    findings-18 §0 では「plan 057 で対応する既存 TODO」として参照されている。
+    下の実行順に 057 が現れるのはそのためで、Round 13 の計画範囲は 058–062 である。
     **⚠️ 以下は完了済みの実行記録であり、現行の着手順ではない。次に着手すべきものは上の
     Status 表で `TODO` の行を見ること**（本項を「次の推奨順」として読まないこと）。
     実行順は **058（getCoupon IDOR — 情報漏洩）→ 059（PayPal 過少支払い→Paid — 決済整合性）→
-    060（discount>99→注文 total 負値化）→ 061（レスポンスヘッダ）→ 062（生 error.message 漏洩）**
+    060（discount 上限のサーバー側未検証 → 注文 total 負値化）→ 061（レスポンスヘッダ）→
+    062（生 error.message 漏洩）**
     であった。058 / 059 / 060 を P1（相互依存なし・いずれも S〜S–M・LOW risk）としてテスト系
     プラン群より優先した。057（`next` bump・HIGH advisory）は依存層の P1 で、058〜062 とファイル
     競合が無いため並行して進めた（フレームワーク層とアプリ層は独立）。
@@ -243,7 +249,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **Round 9 deferred（詳細: [`audit/findings-17-e2e-coverage-r9.md`](audit/findings-17-e2e-coverage-r9.md)）**: R8 deferred 5 件は**全件維持**（ソース無変更のため先行条件が不変であることを再裁定済み）。新規 deferred: Newsletter 購読の**成功系** E2E（route + スキーマ + 保存先が丸ごと不在 — 機能実装プランが先行。characterization は plan 056 が担当）・home（`/`）の a11y / VRT（OI-9 `featured.tsx` SSR 500 の解消が先行 — 解消後に plan 052 / 054 の形式で追加）。
 - **Round 9 rejected（詳細: findings-17 Rejected 節）**: カスタム 404 ページ E2E（`not-found.tsx` 不在 — Next デフォルト挙動の検証は低価値、実装が先）・フルサインアップ E2E（確認コード入力までのフロー全長は Clerk 自身のテスト責務に近い — ウィジェット描画スモーク〔plan 053〕で UI ドリフト検出は達成）・言語/通貨セレクタ E2E（静的表示のみで操作可能な機能が無い。多通貨は product.md スコープ外）。
 - **Round 8 rejected（詳細: findings-16 Rejected 節）**: ページネーションの route-mock 方式復活（SSR に効かず壊れた実績）・3 ブラウザフル E2E の CI 常設（wall-clock 25.5m+ と Clerk 実キー secrets 運用が前提 — chromium 限定 nightly を別途設計）・a11y `color-contrast` ルール有効化（既知デザイン負債として QA_HANDOFF で追跡中）。
-- **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — plan 003 の `$transaction` 化が先行依存のため deferred 維持（Round 5 で再確認。003 完了後は plan 032 の `webhook-payment.test.ts` に同型シナリオを追加するのが低コスト）。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
+- **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — **先行依存だった plan 003 は DONE（PR #158 マージ済み・上の Status 表）**。したがって「003 待ち」を理由に deferred を維持する状態は解消済みで、着手可能。低コストな入り口は plan 032 の `webhook-payment.test.ts` へ同型シナリオを追加すること（新規スイートを起こさない）。現状 deferred のままなのは**優先度の判断**であって依存によるブロックではない。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
 - **Round 5 rejected（詳細: [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md)）**: saveUserCart 統合（plan 005 のコード修正が先行 — 005 完了後の追加候補。**Round 6 で deferred 維持を再確認**）・sendMessage 配列 tx（低レバレッジ）・~~`updateProduct` specs/questions tx + `generateUniqueSlug`（次点候補）~~ → **Round 6 で plan 038 に昇格**・`ORDER BY RANDOM()` 単独プラン化（033 の従属シナリオで充足）・removeCoupon 拡張（unit 網羅済み）。
 - **Round 6 rejected（詳細: [`audit/findings-14-integration-coverage-r6.md`](audit/findings-14-integration-coverage-r6.md)）**: followStore トグル（implicit M2M unique が保護・unit 網羅済み）・addToWishlist 重複ガード（複合 unique 制約が存在せず実 DB で検証できる制約がない — unique 追加はスキーマ変更系）・~~dashboard taxonomy/coupon upsert 群（次点候補）~~ → **Round 7 で coupon のみ plan 041 に昇格**（事前チェックのスコープ不一致により P2002 が決定論的到達可能と判明。category 系は R7 rejected 維持）・applyCoupon total ロストアップデート（コード修正 `$transaction` 化が先行する correctness 事案 — 上記 Deferred 記録を維持）・~~`getStoreOrders` 等ダッシュボード一覧系の実 DB ページング（閲覧頻度・リスク低）~~ → **Round 7 で deferred へ変更**（plan 009 が bound を追加予定のため 009 完了後の追加候補 — テスト先行は書き直しになる）。
 - **Round 7 rejected（詳細: [`audit/findings-15-integration-coverage-r7.md`](audit/findings-15-integration-coverage-r7.md)）**: category/subCategory/offerTag upsert 群（事前チェックがグローバルスコープで unique と整合 — P2002 は race 限定・フォールバック未実装はコード修正が先行する事案）・applySeller/upsertStore 一意性（name/phone は DB 非強制だが事前チェックは unit 網羅済み・plan 002 が update 経路を変更予定）・profile 読み取り群（plan 039 と同じ Prisma セマンティクス族 — 039 完了後の横展開候補）・dashboard 集計系（`unstable_cache` の試験環境リスクが増分価値を上回る）・upsertShippingRate（複合 unique を where に使う正しいイディオム — ギャップなし）・getStorePageDetails 等単純 read（低レバレッジ）。
