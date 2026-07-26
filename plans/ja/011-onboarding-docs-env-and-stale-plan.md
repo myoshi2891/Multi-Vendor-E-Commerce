@@ -289,7 +289,52 @@ NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 > ピンする本当の理由は**防御的**なもの — Clerk 側の既定値が将来変わっても認証の経路が
 > 黙って変わらないよう、リポジトリ側で契約を固定する。
 
-**検証**: `grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ | sort -u`（`ELASTICSEARCH_*`、`NODE_ENV`、`E2E_BASE_URL` を除く）の全名前が README ブロックに現れる。
+**検証**: README ブロックを、**本ステップが使えと指示しているのと同じ superset** と突き合わせる —
+すなわち `src/` の `process.env` 参照と `.env.docker.example` の変数名の**和集合**。
+
+`process.env` の走査だけでは不十分であり、その穴は仮定の話ではない。Clerk と Prisma は
+ライブラリ内部で設定を読むため、`CLERK_SECRET_KEY` / `DATABASE_URL` / `DIRECT_URL` は
+`src/` に `process.env.*` として現れない。旧走査（13 変数）では、**アプリが起動すらできない
+この 3 変数を README から落としても** ゲートは PASS を出す。
+
+```bash
+# 期待集合 = (src/ + ルート設定の process.env 参照) ∪ (.env.docker.example の変数名)
+#
+# grep のルートに next.config.mjs を含める: HSTS_* はリポジトリルートの設定ファイルで
+# 読まれるため `src/` だけを見ると取りこぼす（今は除外対象だが、将来ルート設定に足された
+# 変数が黙って母数から漏れるのを防ぐ）。
+expected=$(
+  {
+    grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ next.config.mjs | sed 's/process\.env\.//'
+    grep -oE '^[A-Z_][A-Z0-9_]*=' .env.docker.example | tr -d '='
+  } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
+)
+
+# README の env ブロック（```env フェンス）が列挙する変数名
+actual=$(sed -n '/^```env$/,/^```$/p' README.md | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
+
+missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+if [ -n "$missing" ]; then
+  printf 'FAIL: missing from README env block:\n%s\n' "$missing"
+  exit 1
+fi
+echo "PASS: README env block covers the superset"
+```
+
+**除外は明示的に列挙し、理由を持たせること**（暗黙に母数から漏れるのが元の欠陥だったため）:
+
+| 除外 | 理由 |
+|---|---|
+| `ELASTICSEARCH_*` | 放棄済みの経路（`src/lib/elastic-search.ts` はコメントアウト） |
+| `NODE_ENV` / `VERCEL_ENV` | ランタイム／プラットフォームが供給する。運用者が設定するものではない |
+| `E2E_BASE_URL` | E2E 実行専用。`docs/testing/` 側で扱う |
+| `SONAR_TOKEN` / `SONAR_HOST_URL` | ローカル静的解析（`docker-compose.sonar.yml` / ADR-005）。アプリのランタイム変数ではない |
+| `HSTS_*` | 本番ドメイン所有者向けの opt-in（plan 061）。ローカル開発の README ブロックには意図的に載せない |
+
+**実測（2026-07-26）**: この `expected` は Step 2 の目標ブロックが列挙する **19 変数と完全に一致**する
+（`diff` で差分ゼロ）。すなわちゲートの母数と Step 2 の指示が同一の集合を指しており、
+「指示は superset・検証は部分集合」というズレは解消されている。
+本ステップ実行前の現 README（9 変数）に対しては当然 **FAIL** し、それがこのゲートの Red 状態である。
 
 ### Step 3: `.env.example` を追加する
 
