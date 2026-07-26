@@ -237,10 +237,22 @@ globalTimeout: 3600 * 1000,
 
 - [ ] `bash -n scripts/e2e/run-local.sh` exit 0
 - [ ] :3000 占有時に run-local.sh が exit 1 + 対処メッセージ
-- [ ] **TOCTOU を閉じる実装自体が存在する**（機械検証。Scope の必須変更が入っていること）:
-      `grep -n "E2E_NO_REUSE" playwright.config.ts scripts/e2e/run-local.sh` が
-      config 側（`reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE`）と
-      run-local.sh 側（`E2E_NO_REUSE=1` の export）の**両方**にヒットする
+- [ ] **TOCTOU を閉じる実装自体が存在する**（機械検証。Scope の必須変更が入っていること）。
+      **トークンの出現ではなく実装の形を検証すること** — 素の
+      `grep -n "E2E_NO_REUSE" …` は「`E2E_NO_REUSE` を後で導入する」と書いた
+      コメントや TODO にもヒットするため、未実装のまま PASS しうる:
+
+  ```bash
+  # config 側: reuseExistingServer の判定式に組み込まれていること
+  grep -nE 'reuseExistingServer:.*E2E_NO_REUSE' playwright.config.ts
+  # run-local.sh 側: 実際に export していること（値の代入があること）
+  grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=' scripts/e2e/run-local.sh
+  ```
+
+  両方が 1 行以上ヒットすること（`grep` の exit 0）。現行の
+  `playwright.config.ts:47` は `reuseExistingServer: !process.env.CI` で
+  `E2E_NO_REUSE` を一切見ていないため、実装前は 1 本目が空で落ちる
+  （＝このゲートが空振りしないことの確認になる）。
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] フルランで `test-results/.last-run.json` の status が "timedout" でない
 - [ ] `plans/README.md` の 044 行を DONE に更新
