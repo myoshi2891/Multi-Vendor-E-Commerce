@@ -228,6 +228,13 @@ function buildUpdateInput(
 
 ```typescript
 // 旧 spec("old-spec") / 旧 question / 旧 size を Arrange 済みの状態から開始する
+//
+// ADD の直前に必ず DROP IF EXISTS を打つ（下の必須要件 1）。過去の実行が finally に
+// 届かず落ちていると制約が残留しており、ADD が duplicate_object で失敗して
+// 「テスト本体に無関係な理由」で赤くなる。冪等に回復できる形にしておく。
+await db.$executeRawUnsafe(
+    `ALTER TABLE "Spec" DROP CONSTRAINT IF EXISTS "tmp_block_boom"`
+);
 await db.$executeRawUnsafe(
     `ALTER TABLE "Spec" ADD CONSTRAINT "tmp_block_boom" CHECK ("value" <> 'BOOM')`
 );
