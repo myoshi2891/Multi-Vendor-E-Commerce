@@ -321,10 +321,29 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       Google ボタンの名前 `Sign in with Google Continue with Google` に部分一致するため）
 - [ ] `signInWithPassword` に **1 段 / 2 段の分岐が存在しない**
       （チェックは **sign-in ヘルパー本体に限定**すること — `helpers/*.ts` 全体を対象にすると
-      他ヘルパーが正当に `isVisible()` を使っていても false-fail する。関数本体だけを取り出して
-      検査する: `awk '/signInWithPassword/,/^}/' tests/e2e/helpers/auth.ts | grep -cE 'isVisible\s*\('`
-      → `0`。**パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible\s*\(` にすること** —
-      前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を見逃して false-pass する。
+      他ヘルパーが正当に `isVisible()` を使っていても false-fail する。関数本体だけを
+      取り出して検査する:
+
+  ```bash
+  # 宣言行（本体を開く `{` で終わる行・JSDoc 行は除外）から、波括弧の深さが
+  # 0 に戻る行までを抜き出す。終端文字列に依存しないので、`}` / `};` / `},`
+  # のいずれで閉じても、object メソッドとしてインデントされていても効く。
+  awk '!f && /signInWithPassword/ && /\{[[:space:]]*$/ && !/^[[:space:]]*\*/ {f=1}
+       f{print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if(seen && n==0) exit; if(n>0) seen=1}' \
+      tests/e2e/helpers/auth.ts | grep -cE 'isVisible[[:space:]]*\('
+  # → 0
+  ```
+
+      **終端を `/^}/` に固定しないこと** — 現行 `auth.ts` の sign-in は object メソッド
+      （`async signIn(page) {` … `},`）で、閉じ括弧が字下げされている。`/^}/` は
+      これを飛び越してファクトリ関数の末尾まで拾い、他ヘルパーの `isVisible()` を
+      巻き込んで false-fail する。`signInWithPassword` を関数宣言で書くか
+      メソッドのまま残すかは実装時に決まるため、ゲートは宣言形に依存させない。
+
+      **パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible[[:space:]]*\(` に
+      すること** — 前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を
+      見逃して false-pass する。`\s` は GNU 拡張で macOS の BSD grep では文字クラスとして
+      解釈されないため、POSIX の `[[:space:]]` を使う。
       UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
       で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**

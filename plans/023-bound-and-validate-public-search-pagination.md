@@ -287,14 +287,19 @@ all — the positive checks are what actually pin the behavior):
 
 ```bash
 # Positive: page/limit are parsed with Number(...) and clamped by both bounds
-awk '/^export async function GET/,0' src/app/api/index-products/route.ts \
+awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
   | grep -nE 'Number\(url\.searchParams\.get\("(page|limit)"\)\)|MAX_(LIMIT|PAGE)'
 
-# Negative: no parseInt anywhere in the GET handler (awk scopes from GET to EOF,
-# so it is not tied to line numbers that drift)
-awk '/^export async function GET/,0' src/app/api/index-products/route.ts | grep -c "parseInt"
+# Negative: no parseInt inside the GET handler. The range ends at the first
+# column-0 closing brace — i.e. GET's own boundary — so the gate is tied to the
+# function, not to line numbers that drift and not to whatever follows it.
+awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"
 # → 0
 ```
+
+Both commands end the range at `/^}/`, matching the Done criteria above. Do **not** revert to
+`,0` as the end pattern: `0` is falsy and never matches, so the range runs to EOF and silently
+re-widens the gate over any handler declared below `GET`.
 
 **Verified against the shipped implementation (2026-07-19)**: the negative check returns `0`, and
 the positive check matches `MAX_LIMIT = 50` / `MAX_PAGE = 10_000` plus
