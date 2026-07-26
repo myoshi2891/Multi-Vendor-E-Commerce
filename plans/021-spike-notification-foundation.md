@@ -158,11 +158,13 @@ model Message {                 // schema.prisma:736
    保持期間・既読一括化・ページングの要件も確定する。
 
    > **通知イベントの冪等性・重複排除を必須設計項目にすること**（同一イベントの再処理・リトライ・
-   > webhook 再送で通知が二重に飛ぶのを防ぐ）:
+   > webhook 再送で通知が**行として**二重に作られるのを防ぐ）:
    > - 各通知に **冪等性キー**を持たせる（例: `dedupeKey = hash(eventType + sourceRef + recipientId + 状態遷移識別子)`）。
    >   Notification（および Outbox を採るなら Outbox 行）に `@@unique(dedupeKey)` を張り、
    >   二重挿入を DB レベルで弾く（upsert or `ON CONFLICT DO NOTHING`）。
-   > - 送信側も **at-least-once 前提**で重複耐性を持たせる（同じ dedupeKey は 1 回だけ送る）。
+   > - 送信側は **at-least-once 前提**で組む。ここで保証されるのは「行が二重に作られない」ことまでで、
+   >   **外部送信が 1 回に収まることは保証されない**（理由と選択肢は下記「`dedupeKey` は
+   >   『行の重複』を防ぐだけ」を参照）。外部送信の配信契約はそこで**どちらか一方を選んで**確定させる。
    >   webhook（bounce 等）受信も冪等化する。
    >
    > **「送信済み」は外部送信の前に記録しないこと**。送る前に送信済みフラグを立てると、
