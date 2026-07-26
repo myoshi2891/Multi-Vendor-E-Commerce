@@ -12,6 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1752 passed / 1755 total across 175 suites (3 skipped), as of 2026-07-26.
+  Three regressions from the CodeRabbit review round, second pass (+3, no new suites):
+  `useCartStore.test.ts` gains a `persist ラウンドトリップ` block that discards the in-memory
+  state before `persist.rehydrate()`, so the restored cart can only have come from storage —
+  plan 005's headline claim ("a persisted cart survives a reload") had no test until now.
 - 1749 passed / 1752 total across 175 suites (3 skipped), as of 2026-07-26.
   Two regressions from the CodeRabbit review round (+2, no new suites): `coupon.test.ts` pins
   rejection of a fractional `discount` on both the seller and admin upsert paths, matching the
