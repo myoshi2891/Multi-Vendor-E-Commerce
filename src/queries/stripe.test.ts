@@ -46,6 +46,10 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
+    // clearAllMocks は mockResolvedValueOnce の未消化キューを捨てない。
+    // 消化されなかった once 値が次のテストへ持ち越されると、そのテストは
+    // 自分が仕込んだ戻り値ではなく前テストの残りを受け取る。
+    mockStripePaymentIntentsCreate.mockReset();
     // createStripePayment の transaction callback を同じ DB モックで実行する。
     mockDb.$transaction.mockImplementation(
         async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
@@ -288,6 +292,77 @@ describe("createStripePaymentIntent", () => {
             expect(firstOptions.idempotencyKey).not.toBe(
                 secondOptions.idempotencyKey
             );
+        });
+
+        // 冪等キーは「同じキー → 同じ intent」を保証するが、その intent が canceled に
+        // なった後も同じものが返り続ける。canceled の client_secret は confirm できない
+        // ため、キーを固定したままだと当該注文はその金額のまま恒久的に決済不能になる。
+        it("canceled 済み intent が返った場合は別の冪等キーで作り直す", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate
+                .mockResolvedValueOnce({
+                    id: "pi_canceled_001",
+                    client_secret: "pi_canceled_001_secret",
+                    status: "canceled",
+                    currency: "usd",
+                })
+                .mockResolvedValueOnce({
+                    id: "pi_fresh_001",
+                    client_secret: "pi_fresh_001_secret",
+                    status: "requires_payment_method",
+                    currency: "usd",
+                });
+
+            const result = await createStripePaymentIntent("order-canceled");
+
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledTimes(2);
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+            expect(secondOptions.idempotencyKey).not.toBe(
+                firstOptions.idempotencyKey
+            );
+
+            // 呼び出し元にも DB にも「作り直した側」の intent が渡ること。
+            // 古い canceled の id を保存すると createStripePayment の一致確認で
+            // 新しい intent が拒否される。
+            expect(result).toEqual({
+                paymentIntentId: "pi_fresh_001",
+                clientSecret: "pi_fresh_001_secret",
+            });
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    create: expect.objectContaining({
+                        paymentIntentId: "pi_fresh_001",
+                    }),
+                    update: expect.objectContaining({
+                        paymentIntentId: "pi_fresh_001",
+                    }),
+                })
+            );
+        });
+
+        it("canceled 以外の status では作り直さない（二重送信防御を維持）", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_pending_001",
+                client_secret: "pi_pending_001_secret",
+                status: "requires_action",
+                currency: "usd",
+            });
+
+            const result = await createStripePaymentIntent("order-pending");
+
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({
+                paymentIntentId: "pi_pending_001",
+                clientSecret: "pi_pending_001_secret",
+            });
         });
     });
 
