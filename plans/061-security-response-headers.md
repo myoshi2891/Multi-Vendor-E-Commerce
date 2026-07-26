@@ -92,9 +92,9 @@ the highest-value, lowest-risk gap immediately.
 - `next.config.mjs` — add an `async headers()` block
 - `tests/e2e/security-headers.spec.ts` — exact-value regression guard (approved scope extension;
   see Test plan)
-- `.env.docker.example` — document the `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` opt-in variables
-  (approved scope extension added by the 2026-07-26 correction; an env var that gates an
-  irreversible action must be discoverable — see that correction below)
+- `.env.docker.example` — document the `HSTS_ENABLED` / `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD`
+  opt-in variables (approved scope extension added by the 2026-07-26 corrections; an env var that
+  gates a hard-to-revoke action must be discoverable — see those corrections below)
 
 **Out of scope** (do NOT touch):
 - `src/middleware.ts` — no header logic here.
@@ -143,21 +143,28 @@ const nextConfig = {
         ];
         // HSTS は **本番ドメインでのみ**付与する。localhost だけはブラウザが無視するが、
         // HTTPS で配信される preview/staging ドメイン（*.vercel.app 等）では実際に記録される。
-        // したがって NODE_ENV=production かつ Vercel の preview デプロイでない場合に限定する。
+        //
+        // 判定軸は環境名ではなく**配信先**。NODE_ENV=production は「本番ドメインで配信中」を
+        // 意味しない（self-host の staging も production ビルドで動く）ため、実際の配信先を
+        // 示す明示シグナルを要求する。
         const isProduction = process.env.NODE_ENV === 'production';
         const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+        const isVercelProduction = process.env.VERCEL_ENV === 'production';
 
-        // `includeSubDomains` / `preload` は環境名だけで有効化しない（明示 opt-in が必須）。
-        // NODE_ENV=production は「本番ドメインで配信中」を意味しない —— self-host の staging も
-        // production ビルドで動くため、環境名だけを条件にすると全サブドメインの HTTPS 強制と
-        // preload リスト入り（取り消しに数週間〜数ヶ月かかる非可逆操作）を、その意図がない
-        // ドメインで誤発火させる。
         const isEnabled = (name) => process.env[name]?.trim() === '1';
-        // preload はブラウザ要件として includeSubDomains を伴う必要がある
+
+        // Vercel は VERCEL_ENV で本番を自己申告する。self-host はドメイン所有者が
+        // HSTS_ENABLED=1 を立てる。どちらも無ければ付与しない（fail safe）。
+        const isProductionDomain = isVercelProduction || isEnabled('HSTS_ENABLED');
+
+        // 拡張ディレクティブはさらに個別 opt-in。preload はブラウザ要件として
+        // includeSubDomains を伴う必要がある。
         const withPreload = isEnabled('HSTS_PRELOAD');
         const withSubDomains = withPreload || isEnabled('HSTS_INCLUDE_SUBDOMAINS');
 
-        if (isProduction && !isVercelPreview) {
+        // !isVercelPreview は独立した拒否条件（プロジェクト全体に HSTS_ENABLED=1 を
+        // 設定すると preview デプロイにも env が渡るため）。
+        if (isProduction && !isVercelPreview && isProductionDomain) {
             const directives = ['max-age=63072000']; // 2 年
             if (withSubDomains) directives.push('includeSubDomains');
             if (withPreload) directives.push('preload');
@@ -190,18 +197,42 @@ export default nextConfig;
 >
 > 対策として拡張ディレクティブを環境変数の**明示 opt-in** に切り出した
 > （`HSTS_INCLUDE_SUBDOMAINS=1` / `HSTS_PRELOAD=1`。`HSTS_PRELOAD` はブラウザ要件から
-> `includeSubDomains` を自動で伴う）。base の `max-age` は従来どおり production 非 preview で付与。
-> 値は `.claude/steering/tech.md` の環境変数方針に従い `trim()` 後に比較する
-> （`"true"` 等の想定外値は**無効側**に倒れる = fail safe）。
-> 変数は `.env.docker.example` に記載済み。実測（`next.config.mjs` を env 別に読み込み）:
+> `includeSubDomains` を自動で伴う）。値は `.claude/steering/tech.md` の環境変数方針に従い
+> `trim()` 後に比較する（`"true"` 等の想定外値は**無効側**に倒れる = fail safe）。
+> 変数は `.env.docker.example` に記載済み。
+>
+> ---
+>
+> **訂正その 2（2026-07-26 / CodeRabbit 指摘）— base の `max-age` も環境名だけでは付与しない。**
+> 上の訂正 1 は拡張ディレクティブのみを opt-in にし、base の `max-age=63072000` は
+> `NODE_ENV=production && VERCEL_ENV!=='preview'` のままにしていた。これは**同じ根拠の
+> 適用漏れ**である —— 「`NODE_ENV=production` は本番ドメインで配信中を意味しない」が
+> 真なら、self-host の staging・社内環境にも 2 年の `max-age` が付く。
+>
+> base の `max-age` も取り消しは容易ではない: そのホストから `max-age=0` を**残存 TTL の間
+> ずっと**配信する必要があり、しかも**再訪したブラウザにしか**届かない。preload ほどではない
+> にせよ「環境名の誤りで踏んでよい」性質の設定ではない。
+>
+> そこで判定軸を「環境名」から「**配信先**」へ移した。HSTS は次の 3 条件がすべて揃ったときだけ
+> 付与する: (1) `NODE_ENV=production`、(2) `VERCEL_ENV!=='preview'`、(3) 配信先が本番である
+> 明示シグナル（`VERCEL_ENV==='production'` **または** `HSTS_ENABLED=1`）。Vercel の本番デプロイは
+> (3) を自動で満たし、self-host はドメイン所有者が `HSTS_ENABLED=1` を立てる。
+> (2) は (3) と重複しない拒否条件として残す —— Vercel でプロジェクト全体に `HSTS_ENABLED=1` を
+> 設定すると preview デプロイにも env が渡るため。
+>
+> 実測（`next.config.mjs` を env 別に読み込み、9 ケース）:
 >
 > | 環境 | 出力 |
 > |---|---|
-> | production（opt-in なし） | `max-age=63072000` |
-> | `HSTS_INCLUDE_SUBDOMAINS=1` | `max-age=63072000; includeSubDomains` |
-> | `HSTS_PRELOAD=1` | `max-age=63072000; includeSubDomains; preload` |
-> | `VERCEL_ENV=preview` | （付与なし） |
-> | `HSTS_PRELOAD="true"` | `max-age=63072000`（fail safe） |
+> | dev（シグナルなし） | （付与なし） |
+> | production ビルド・**シグナルなし** | （付与なし）← 訂正 2 の要点 |
+> | `HSTS_ENABLED=1` | `max-age=63072000` |
+> | `VERCEL_ENV=production` | `max-age=63072000` |
+> | `VERCEL_ENV=preview` + `HSTS_ENABLED=1` | （付与なし）← preview 拒否が優先 |
+> | `HSTS_ENABLED=1` + `HSTS_INCLUDE_SUBDOMAINS=1` | `max-age=63072000; includeSubDomains` |
+> | `HSTS_ENABLED=1` + `HSTS_PRELOAD=1` | `max-age=63072000; includeSubDomains; preload` |
+> | `HSTS_ENABLED="true"` | （付与なし・fail safe） |
+> | `HSTS_INCLUDE_SUBDOMAINS=1` のみ | （付与なし）← 拡張だけでは HSTS を有効化できない |
 
 **Verify**:
 - `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"`
@@ -262,7 +293,10 @@ check_security_headers() {
 # dev server (bun run dev): HSTS is gated OFF -> expect 4 headers
 check_security_headers http://localhost:3000/          0
 check_security_headers http://localhost:3000/checkout  0
-# production-equivalent (next start, NODE_ENV=production, non-preview): expect 5
+# A bare `next start` also expects 4: NODE_ENV=production alone no longer emits HSTS.
+# To reach 5 the server must carry the production-domain signal
+# (VERCEL_ENV=production, or HSTS_ENABLED=1 for self-host):
+# HSTS_ENABLED=1 bun run start  &&  check_security_headers http://localhost:3000/  1
 # check_security_headers https://<prod-host>/          1
 ```
 
@@ -274,23 +308,25 @@ response (do **not** add `-L`, so the redirect's own headers are what gets check
 run the dev server in your environment, record in your report that this smoke check is **pending**
 rather than skipping it silently.
 
-> HSTS is emitted **only when `NODE_ENV === 'production'` and `VERCEL_ENV !== 'preview'`** (see the
-> config above). On local `http://localhost` browsers ignore the header anyway, but a preview/staging
-> deployment served over **HTTPS** would honor it. Gating on the real production deployment avoids
-> sending HSTS to any non-production host. Do not remove the gate to "make the header show up
-> locally".
+> HSTS is emitted **only when `NODE_ENV === 'production'`, `VERCEL_ENV !== 'preview'`, and the
+> deployment target is named explicitly** (`VERCEL_ENV === 'production'` or `HSTS_ENABLED=1`) — see
+> the config above. On local `http://localhost` browsers ignore the header anyway, but a
+> preview/staging deployment served over **HTTPS** would honor it. Do not remove the gate to "make
+> the header show up locally"; set `HSTS_ENABLED=1` on the run you actually want to check.
 >
-> **That gate alone is not sufficient for `includeSubDomains; preload`** — `NODE_ENV=production`
-> only tells you a production *build* is running, not that it is served on the production *domain*
-> (a self-hosted staging host outside Vercel passes this gate). Those two directives therefore
-> require the explicit `HSTS_INCLUDE_SUBDOMAINS=1` / `HSTS_PRELOAD=1` opt-in; see the 2026-07-26
-> correction above.
+> **`NODE_ENV=production` is not a domain signal.** It only tells you a production *build* is
+> running, not that it is served on the production *domain* — a self-hosted staging host outside
+> Vercel passes that check. This is why the base `max-age` needs the explicit signal (correction 2)
+> and `includeSubDomains; preload` need their own further opt-in (correction 1): the base directive
+> is revoked only by serving `max-age=0` for the remaining TTL to returning browsers, and preload
+> registration takes weeks-to-months to undo.
 >
 > **Resolved (was OPEN).** The shipped `next.config.mjs` previously pushed HSTS *unconditionally*
-> (all environments / all subdomains). It is now gated on production-and-not-preview, and
-> `tests/e2e/security-headers.spec.ts` mirrors the same env signals (`E2E_USE_DEV` / `VERCEL_ENV`) so
-> it asserts HSTS present under the default `next start` E2E run and **absent** in dev / preview —
-> catching both a regression back to unconditional HSTS and an accidental production drop.
+> (all environments / all subdomains). It is now gated on the three conditions above, and
+> `tests/e2e/security-headers.spec.ts` mirrors the same env signals (`E2E_USE_DEV` / `VERCEL_ENV` /
+> `HSTS_ENABLED`) so it asserts HSTS **absent** in dev, in preview, and under a bare `next start`,
+> and **present** only when the signal is set — catching both a regression back to unconditional
+> HSTS and an accidental production drop.
 
 ## Test plan
 
@@ -313,27 +349,29 @@ ALL must hold:
 - [x] `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"` prints `function`
 - [x] `bun run lint` exits 0
 - [x] **`check_security_headers` reports `N/N headers match exactly` for BOTH `/` and `/checkout`**
-      with the environment-correct N — **4/4 on the dev server (`bun run dev`, HSTS gated OFF)** and
-      **5/5 on a production-equivalent server (`next start`, `NODE_ENV=production`, non-preview)** —
-      i.e. every applicable name **and value** pair is asserted, not merely the presence
+      with the environment-correct N — **4/4 on the dev server (`bun run dev`, HSTS gated OFF)**,
+      **4/4 on a bare `next start`** (production build without the domain signal), and **5/5 with
+      the production-domain signal set** (`VERCEL_ENV=production`, or `HSTS_ENABLED=1` for
+      self-host) — i.e. every applicable name **and value** pair is asserted, not merely the presence
       of a header name (or the check is explicitly flagged pending in the report):
   - [x] `x-frame-options: SAMEORIGIN`
   - [x] `x-content-type-options: nosniff`
   - [x] `referrer-policy: strict-origin-when-cross-origin`
   - [x] `permissions-policy: camera=(), microphone=(), geolocation=()`
-  - [x] `strict-transport-security: max-age=63072000` **(production-equivalent only)**.
+  - [x] `strict-transport-security: max-age=63072000` **(only with the production-domain signal)**.
         `; includeSubDomains` / `; preload` are appended **only** when `HSTS_INCLUDE_SUBDOMAINS=1` /
-        `HSTS_PRELOAD=1` is set — see the 2026-07-26 correction above.
+        `HSTS_PRELOAD=1` is additionally set — see the two 2026-07-26 corrections above.
 - [x] **`tests/e2e/security-headers.spec.ts` asserts those same five exact values on `/` and
       `/checkout` and passes** (regression guard, so the values cannot be weakened later without a
       failing test)
 - [x] No `Content-Security-Policy` (enforcing) header was added
 - [x] Only `next.config.mjs`, `tests/e2e/security-headers.spec.ts` and `.env.docker.example` are
       modified (`git status`). Two approved extensions over the original "next.config.mjs only"
-      constraint: the E2E spec (regression guard), and `.env.docker.example` — the
+      constraint: the E2E spec (regression guard), and `.env.docker.example` — the `HSTS_ENABLED` /
       `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` opt-in variables introduced by the 2026-07-26
-      correction must be discoverable, since an env var that gates an irreversible action
-      (preload-list registration) is useless if operators cannot find it (`66ed444f`)
+      corrections must be discoverable, since an env var that gates a hard-to-revoke action
+      (a 2-year `max-age`, or preload-list registration) is useless if operators cannot find it
+      (`66ed444f`, and the correction-2 commit)
 - [x] `plans/README.md` status row for 061 updated
 
 ## STOP conditions
