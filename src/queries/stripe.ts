@@ -7,6 +7,7 @@ import {
 } from "@/lib/payment-status";
 import { currentUser } from "@clerk/nextjs/server";
 import { PaymentStatus, Prisma } from "@prisma/client";
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -95,15 +96,28 @@ export const createStripePaymentIntent = async (orderId: string) => {
         // Stripe は「同一キー・異なるパラメータ」の再送をエラーで拒否するため、
         // 金額をキーに含める。クーポン適用等で合計が正当に変われば別キーになり、
         // 同一パラメータの再送だけが同じ intent を返す。
-        const paymentIntent = await stripe.paymentIntents.create(
-            {
-                amount,
-                currency: "usd",
-                automatic_payment_methods: { enabled: true },
-                metadata: { orderId },
-            },
-            { idempotencyKey: `order_${orderId}_${amount}` }
-        );
+        const intentParams: Stripe.PaymentIntentCreateParams = {
+            amount,
+            currency: "usd",
+            automatic_payment_methods: { enabled: true },
+            metadata: { orderId },
+        };
+        const idempotencyKey = `order_${orderId}_${amount}`;
+
+        let paymentIntent = await stripe.paymentIntents.create(intentParams, {
+            idempotencyKey,
+        });
+
+        // 冪等キーの保証（同じキー → 同じ intent）は、その intent が canceled に
+        // なった後も効き続ける。canceled の client_secret は confirm できないため、
+        // キーを固定したままだと当該注文はその金額のまま恒久的に決済不能になる。
+        // canceled を観測したときだけ新しいキーで作り直す（通常 status では
+        // 作り直さないので、二重送信に対する防御はそのまま維持される）。
+        if (paymentIntent.status === "canceled") {
+            paymentIntent = await stripe.paymentIntents.create(intentParams, {
+                idempotencyKey: `${idempotencyKey}_r${randomUUID()}`,
+            });
+        }
 
         // この注文で「有効な」intent はこれ 1 つであることを記録する。
         // createStripePayment はこの id との一致を要求し、古い intent を拒否する。
