@@ -69,6 +69,10 @@ const shippingAddress = { id: 'address-001' } as ShippingAddress
 
 beforeEach(() => {
     jest.clearAllMocks()
+    // clearAllMocks は呼び出し履歴しか消さないため、mockImplementation で仕込んだ
+    // throw（localStorage 書き込み失敗の注入）は次のテストへ persist する。
+    // emptyCart は複数テストで実装を差し替えるので、実装ごと戻す。
+    mockEmptyCart.mockReset()
     ;(useRouter as jest.Mock).mockReturnValue({ push })
 })
 
