@@ -12,6 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1754 passed / 1757 total across 175 suites (3 skipped), as of 2026-07-26.
+  Two regressions from the CodeRabbit review round, third pass (+2, no new suites):
+  `stripe.test.ts` pins that a canceled PaymentIntent returned by the fixed idempotency key is
+  recreated under a fresh key, and that non-canceled statuses are *not* recreated — without the
+  first, an order stays permanently unpayable at that amount once its intent is canceled.
 - 1752 passed / 1755 total across 175 suites (3 skipped), as of 2026-07-26.
   Three regressions from the CodeRabbit review round, second pass (+3, no new suites):
   `useCartStore.test.ts` gains a `persist ラウンドトリップ` block that discards the in-memory

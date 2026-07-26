@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1749 passed / 1752 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-26 実測（CodeRabbit レビュー対応の回帰 +3 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1754 passed / 1757 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-26 実測（CodeRabbit レビュー対応 第 3 弾の回帰 +2 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1821,4 +1821,42 @@ CodeRabbit のレビュー指摘 24 件を精査（誤検出なし）。plan/doc
 | テスト総数 | 1749 passed / 1752 total | **1752 passed / 1755 total** |
 | スイート数 | 175 | **175**（変化なし） |
 | スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 46 コメントの精査と対応 (2026-07-26)
+
+#### 概要
+
+`dev` ブランチ向け CodeRabbit レビュー（25 issue / 46 コメント）を全件実ファイルに当てて検証し、
+実欠陥 22 / 偽陽性 10 / 環境制約で保留 1 に仕分けたうえで対応した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/pii.ts`(new) / `src/app/api/webhooks/route.ts` | App Router の route ファイルが許さない named export `REDACTED_PII` を共有モジュールへ退避 | `bfcf52ba` |
+| `src/components/store/cards/place-order.test.tsx` | `clearAllMocks` を越えて残る `mockImplementation` の throw を `mockReset()` で遮断 | `7fe521e5` |
+| `src/queries/stripe.ts` / `stripe.test.ts` | 冪等キーが canceled 済み intent を返し続け、注文がその金額で恒久的に決済不能になる経路を閉塞（Red → Green・回帰 +2） | `4111e0ad` / `96856785` |
+| `plans/023` `plans/042` `plans/044` `plans/ja/009` `plans/ja/011` | 検証コマンドのスコープと POSIX 互換化（awk の範囲・実装形状の検証・`\s` 依存・双方向 comm） | `5ee2fc33`〜`642c8b51` |
+| `plans/031` `plans/032` | in-process latch は並行性の必要条件であって証明ではない旨へ表現を修正 | `83808001` |
+| `plans/047` `plans/056` `plans/013` `plans/015` `plans/018` `plans/021` `plans/038` | assertion 契約と spike 仕様の欠落（金額トークンのアンカー・2xx 判定・URL 後方互換・Seq Scan・NOT NULL 冪等キー・排除済み選択肢・事前 DROP） | `75ac134f`〜`ac967364` |
+| `plans/audit/findings-18` `plans/audit/recon.md` `plans/README.md` `docs/architecture/rate-limiting-spike.md` | 監査台帳の値割れ 5 件・Round 13 の計画範囲と 057 の完了状態・ALB の XFF append 前提 | `02dd60b9`〜`7d063a10` |
+
+**未対応（理由付き）**:
+
+- `package.json` の `next` 16.2.11 bump — 作業環境がネットワーク到達不可で lockfile 更新も
+  `bun audit` による advisory 照合もできない。ネットワーク有り環境で実測込みで対応する。
+- 「未来日付の実測を確定実績として記録するな」系 10 件 — リポジトリ全体を grep しても
+  2026-07-26 を超える日付は存在しない（ヒットはクーポン有効期限 `2026-12-31` と
+  テストフィクスチャ `2027-12-31` のみ）。偽陽性として変更しない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1752 passed / 1755 total | **1754 passed / 1757 total** |
+| スイート数 | 175 | **175**（不変） |
+| スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
