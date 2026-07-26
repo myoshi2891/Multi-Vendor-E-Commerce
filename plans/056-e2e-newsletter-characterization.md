@@ -98,7 +98,8 @@ Newsletter フォームが `/api/newsletter` へ POST するのに **route が�
  * 購読者モデル無し）、全購読操作は失敗し "Failed to subscribe." トーストに終わる
  * （dormant 機能ギャップ — plans/audit/findings-17-e2e-coverage-r9.md TESTS-39）。
  * 観測されたステータスは 404 だが、**それは route 不在という偶発的な機構**であり
- * 契約ではない。assert は `not.toBe(200)`（購読が成功しない）で固定し、404 そのものは
+ * 契約ではない。assert は `response.ok() === false`（＝ 2xx でない = 購読が成功しない）で
+ * 固定し、404 そのものは
  * 記録に留める。
  *
  * このテストは「壊れた挙動」を意図的に固定している。route が実装されて購読が成功する
@@ -110,7 +111,7 @@ Newsletter フォームが `/api/newsletter` へ POST するのに **route が�
 テスト（ゲスト・seed 不要・`/browse` で実施）:
 
 1. **購読の試行は成功せず、失敗トーストが表示される**（実測は 404 だが assert は
-   `not.toBe(200)`。理由は下記 blockquote）—
+   `response.ok()` が false であること。理由は下記 blockquote）—
    - `/browse` へ goto → フッターまでスクロール
      （`page.locator("#newsletter-email").scrollIntoViewIfNeeded()`）
    - `page.locator("#newsletter-email")` に `e2e-newsletter@example.com` を fill
@@ -124,7 +125,10 @@ await page.getByRole("button", { name: "Sign up" }).click();
 const response = await responsePromise;
 
 // 購読が成功していないことだけを契約にする（404 を成功条件として固定しない — 下記参照）。
-expect(response.status()).not.toBe(200);
+// 2xx を一括で拒否すること。`not.toBe(200)` だけだと 201 Created / 202 Accepted /
+// 204 No Content を「成功していない」と見なしてしまい、route が実装されて
+// 201 を返し始めた瞬間にこの characterization は緑のまま嘘をつく。
+expect(response.ok()).toBe(false);   // Playwright の ok() は 200-299 で true
 
 // 観測値は記録するがゲートにしない。2026-07-12 時点では 404（route 不在）。
 console.info(`[characterization] /api/newsletter status = ${response.status()}`);
@@ -143,10 +147,13 @@ await expect(page.getByText("Failed to subscribe.")).toBeVisible({ timeout: 1000
 >    501 を返すようになったり、route 実装後のエラー経路が 500 を返したりしただけで、
 >    ユーザーから見た挙動は何も変わっていないのに赤くなる。
 >
-> `not.toBe(200)` なら恒久的な命題だけを固定できる。**route が実装されて実際に成功する
-> ようになった時にはきちんと赤くなる**ので、docstring が要求する「成功系テストへ書き直す」
-> トリガーは失われない —— トリガーがステータスコードの偶発ではなく意味のある命題に
-> 紐づくだけである。
+> `ok()` が false であること（＝ 2xx でないこと）なら恒久的な命題だけを固定できる。
+> **route が実装されて実際に成功するようになった時にはきちんと赤くなる**ので、docstring が
+> 要求する「成功系テストへ書き直す」トリガーは失われない —— トリガーがステータスコードの
+> 偶発ではなく意味のある命題に紐づくだけである。
+>
+> **ただし「200 以外」ではなく「2xx 以外」で書くこと。** `not.toBe(200)` は 201/202/204 を
+> 通してしまい、成功応答の形が変わっただけでこのテストは黙って緑のままになる。
 >
 > これは同ラウンドの plan 050 が非 ACTIVE 店舗ページについて確立した原則と同一
 > （`plans/050-e2e-admin-store-status.md` Step 4 の blockquote:「修正を罰するテストは書かない」）。
@@ -277,11 +284,11 @@ expect(newsletterRequests).toHaveLength(0);
 
 - `src/app/api/newsletter/` が既に存在する（機能が実装済み — characterization は無効。
   成功系テストへの書き直しを提案して報告）。
-- POST のレスポンスが **200**（購読が成功する）— 機能が実装済みということなので
+- POST のレスポンスが **2xx**（購読が成功する）— 機能が実装済みということなので
   characterization は無効。成功系テストへの書き直しを提案して報告する。
 
   > **404 以外の失敗ステータス（405 / 500 等）は STOP 条件ではない。** 契約は
-  > `not.toBe(200)` なのでそのまま通る。旧版はここで「404 以外なら前提が違う」として
+  > 「2xx でないこと」なのでそのまま通る。旧版はここで「404 以外なら前提が違う」として
   > 停止を求めていたが、それは `toBe(404)` を前提にした記述であり、上記の契約変更と
   > 矛盾するため削除した。観測値が 404 から変わっていた場合は、**止まらずに**
   > `console.info` の記録・docstring・Maintenance notes の「実測 404」の記述を

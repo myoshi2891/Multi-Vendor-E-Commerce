@@ -201,9 +201,15 @@ await expect(page.getByText("Total price:", { exact: false })).toHaveCount(2);
 const parseMoneyToCents = (text: string): number => {
     // 通貨トークン（`$X.XX`）を取る。行内の別の数値（"2 items" の点数等）を先に拾わないよう
     // `$` にアンカーする。表示は常に小数 2 桁なので `[0-9]{2}` で固定。
-    const matched = text.match(/\$\s*([0-9]+\.[0-9]{2})/);
+    //
+    // トークンの**末尾もアンカーする**こと。両端を留めないと、桁が想定と違ったときに
+    // 例外ではなく「静かに間違った値」を返し、検算式が偽の緑になる:
+    //   - `$12.345` → 末尾アンカー無しだと `12.34`（3 桁目を切り落とす）
+    //   - `$1,234.56` → 桁区切りを想定していないと `234.56`（上位桁を落とす）
+    // `(?![0-9])` で数字の続きを拒否し、桁区切りは明示的に許容して除去する。
+    const matched = text.match(/\$\s*([0-9]+(?:,[0-9]{3})*\.[0-9]{2})(?![0-9])/);
     if (!matched) throw new Error(`金額を抽出できません: ${text}`);
-    return Math.round(Number(matched[1]) * 100); // 丸めはここ 1 回だけ
+    return Math.round(Number(matched[1].replace(/,/g, "")) * 100); // 丸めはここ 1 回だけ
 };
 
 // 算術不変条件: 各グループで subtotal + shipping - discount === total（**完全一致**）
