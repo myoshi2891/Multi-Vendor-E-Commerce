@@ -334,18 +334,19 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   # → 0
   ```
 
-      **終端を `/^}/` に固定しないこと** — 現行 `auth.ts` の sign-in は object メソッド
-      （`async signIn(page) {` … `},`）で、閉じ括弧が字下げされている。`/^}/` は
-      これを飛び越してファクトリ関数の末尾まで拾い、他ヘルパーの `isVisible()` を
-      巻き込んで false-fail する。`signInWithPassword` を関数宣言で書くか
-      メソッドのまま残すかは実装時に決まるため、ゲートは宣言形に依存させない。
+  **終端を `/^}/` に固定しないこと** — 現行 `auth.ts` の sign-in は object メソッド
+  （`async signIn(page) {` … `},`）で、閉じ括弧が字下げされている。`/^}/` は
+  これを飛び越してファクトリ関数の末尾まで拾い、他ヘルパーの `isVisible()` を
+  巻き込んで false-fail する。`signInWithPassword` を関数宣言で書くか
+  メソッドのまま残すかは実装時に決まるため、ゲートは宣言形に依存させない。
 
-      **パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible[[:space:]]*\(` に
-      すること** — 前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を
-      見逃して false-pass する。`\s` は GNU 拡張で macOS の BSD grep では文字クラスとして
-      解釈されないため、POSIX の `[[:space:]]` を使う。
-      UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
-      で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
+  **パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible[[:space:]]*\(` に
+  すること** — 前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を
+  見逃して false-pass する。`\s` は POSIX ERE に無い GNU 拡張で解釈が実装依存
+  （macOS 26 の `/usr/bin/grep` は解釈するが、これに寄りかからない）なので、
+  移植性のため POSIX の `[[:space:]]` を使う。
+  UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
+  で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**
       （コメントだけで終わっていないこと）
 - [ ] chromium で a11y 4 spec / messages / platform-coupon / seller-onboarding / stock-decrement すべて passed

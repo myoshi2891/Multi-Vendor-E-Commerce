@@ -318,7 +318,16 @@ if [ -n "$missing" ]; then
   printf 'FAIL: missing from README env block:\n%s\n' "$missing"
   exit 1
 fi
-echo "PASS: README env block covers the superset"
+
+# 逆向きも見る: README にしか無い変数（= 期待集合の外）
+# 片方向だけだと「典型的なコピペで増えた変数」「上の除外表に載せるべき変数」
+# 「リネーム後の旧名」が README に残り続けても PASS してしまう。
+extra=$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+if [ -n "$extra" ]; then
+  printf 'FAIL: not in the expected superset (remove, or add to the exclusion table with a reason):\n%s\n' "$extra"
+  exit 1
+fi
+echo "PASS: README env block matches the superset exactly"
 ```
 
 **除外は明示的に列挙し、理由を持たせること**（暗黙に母数から漏れるのが元の欠陥だったため）:

@@ -228,15 +228,20 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
     ```bash
     PAGE="src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"
     # 1) 共有定数を import していること（ローカル再宣言ではない）
-    grep -nE '^import .*\bSTORE_ORDERS_MAX\b.*from' "$PAGE"
+    grep -nE '^import .*STORE_ORDERS_MAX.*from' "$PAGE"
     # 2) ページ内でローカル再宣言していないこと → ヒット 0 件
-    grep -nE '^\s*(const|let|var)\s+STORE_ORDERS_MAX\b' "$PAGE" && \
+    grep -nE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE" && \
       { echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; exit 1; }
     # 3) 告知文が定数を値として埋め込んでいること（ハードコードした数字ではない）
-    grep -n 'STORE_ORDERS_MAX' "$PAGE" | grep -vE '^\s*[0-9]+:import'
+    grep -n 'STORE_ORDERS_MAX' "$PAGE" | grep -vE '^[[:space:]]*[0-9]+:import'
     ```
 
     1 がヒットし 2 がヒット 0 件のときのみ、告知が共有定数に追随することが保証される。
+
+    **`\s` / `\b` は使わない**（2026-07-26 修正）。どちらも POSIX ERE には無い
+    GNU 拡張で、解釈は grep 実装依存になる。文字クラスは `[[:space:]]`、語境界は
+    区切り文字の明示（`([[:space:]]|=|:|$)`）で置き換える。1 の `\b` は
+    `STORE_ORDERS_MAX` を含む別識別子が存在しないため単純に落とした。
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` がマッチしない
 - [ ] `bun run test -- src/queries/store.test.ts` が exit 0；`take` アサーションが pass
 - [ ] `bun run lint` が exit 0
