@@ -209,7 +209,14 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 >    silently pass させない。
 >
 > バリアだけではプール 1 で接続待ち直列化され、`connection_limit` だけでは解放タイミングが
-> ずれて重ならない。**両方**揃って初めて「2 本が同時に DB へ届いた」と言える。
+> ずれて重ならない。
+>
+> **この 2 つは必要条件であって十分条件ではない**（plan 031 の同節と同じ扱い）。バリアが
+> 保証するのは「2 本がクエリ発行の直前まで揃っていた」ことだけで、DB 側で 2 つの upsert が
+> 実際に重なったことは示さない。したがって Done criteria には「並行 upsert を**証明した**」
+> ではなく「**重ならなかった場合に緑になる構成上の穴を塞いだ**」と書くこと。重なりまで
+> 機械的に示したい場合の追加手段（`pg_advisory_xact_lock` で一方を DB 内で待たせる /
+> `pg_stat_activity` で active バックエンド 2 本を観測する）は plan 031 に記載した。
 
 **Scenario S3: 状態遷移イベントは upsert 更新される**
 `payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
