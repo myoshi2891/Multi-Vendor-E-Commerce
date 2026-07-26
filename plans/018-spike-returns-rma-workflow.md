@@ -172,6 +172,11 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   - **不変列 `requestHash`** を持たせる（正規化した申請内容 —— `requestedQuantity`・
    >     理由コード・希望解決方法 —— の安定ハッシュ。`status` のような可変列は**含めない**）。
    >   - 制約は `@@unique([userId, orderItemId, idempotencyKey])`。**`requestHash` は入れない。**
+   >   - **`idempotencyKey` はクライアント必須入力（`String`・NOT NULL）にすること。**
+   >     nullable にすると PostgreSQL は NULL 同士を「区別される」と扱うため、キー未指定の
+   >     申請が何件でも一意制約を通り抜け、この制約は**存在しないのと同じ**になる
+   >     （ルート一意性で plan 013 が踏むのと同じ NULL の穴）。省略されたリクエストは
+   >     400 で拒否する（サーバー側で生成して埋めると、再送のたびに別キーになり冪等でなくなる）。
    >   - INSERT が一意制約で衝突したら、既存行を引いて `requestHash` を突き合わせる:
    >     - **一致** → 同一意図の再送。既存 RMA をそのまま返す（冪等リプレイ・新規作成しない）
    >     - **不一致** → 同じキーで別内容を送っている。**409 相当で拒否**する（キー再利用）
