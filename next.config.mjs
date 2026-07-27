@@ -13,6 +13,19 @@ const nextConfig = {
             },
         ],
     },
+    // ⚠️ `headers()` は **`next build` 時に 1 回だけ評価**され、結果が
+    // `.next/routes-manifest.json` へ直列化される。`next start` はその manifest を
+    // 配るだけなので、**実行時に env を変えてもヘッダは変わらない**。
+    //
+    // つまり下の `HSTS_ENABLED` / `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` /
+    // `VERCEL_ENV` は **ビルド環境に存在している必要がある**:
+    //   - Vercel: `VERCEL_ENV` はビルド時にも注入されるため追加設定は不要
+    //   - self-host: `HSTS_ENABLED=1 bun run build` のようにビルドへ渡す。
+    //     `docker run -e HSTS_ENABLED=1` や `HSTS_ENABLED=1 bun run start` は**効かない**
+    // 確認方法: `node -p "JSON.stringify(require('./.next/routes-manifest.json').headers)"`
+    //
+    // なお `next dev` は起動のたびに config を読み直すため、開発時は起動時 env が効く
+    // （ただし `isProduction` が false なので HSTS はいずれにせよ付与されない）。
     async headers() {
         const securityHeaders = [
             // クリックジャッキング防御（/checkout の決済面が第三者に frame されるのを防ぐ）

@@ -294,9 +294,10 @@ check_security_headers() {
 check_security_headers http://localhost:3000/          0
 check_security_headers http://localhost:3000/checkout  0
 # A bare `next start` also expects 4: NODE_ENV=production alone no longer emits HSTS.
-# To reach 5 the server must carry the production-domain signal
-# (VERCEL_ENV=production, or HSTS_ENABLED=1 for self-host):
-# HSTS_ENABLED=1 bun run start  &&  check_security_headers http://localhost:3000/  1
+# To reach 5 the production-domain signal must be present **at build time**
+# (VERCEL_ENV=production, or HSTS_ENABLED=1 for self-host) — see the correction below:
+# HSTS_ENABLED=1 bun run build  &&  bun run start
+# check_security_headers http://localhost:3000/        1
 # check_security_headers https://<prod-host>/          1
 ```
 
@@ -312,7 +313,23 @@ rather than skipping it silently.
 > deployment target is named explicitly** (`VERCEL_ENV === 'production'` or `HSTS_ENABLED=1`) — see
 > the config above. On local `http://localhost` browsers ignore the header anyway, but a
 > preview/staging deployment served over **HTTPS** would honor it. Do not remove the gate to "make
-> the header show up locally"; set `HSTS_ENABLED=1` on the run you actually want to check.
+> the header show up locally"; set `HSTS_ENABLED=1` on the **build** you actually want to check.
+>
+> **Correction (2026-07-27): these env vars are read at BUILD time, not at runtime.**
+> An earlier revision of the smoke check above ran `HSTS_ENABLED=1 bun run start`, which
+> **cannot work**. Next.js evaluates `headers()` once during `next build` and serialises the
+> result into `.next/routes-manifest.json`; `next start` only replays that manifest, so the
+> serving process never re-reads `HSTS_ENABLED`. Verify with:
+>
+> ```bash
+> node -p "JSON.stringify(require('./.next/routes-manifest.json').headers)"
+> ```
+>
+> The same applies to deployment: `docker run -e HSTS_ENABLED=1` has no effect, and a self-host
+> pipeline must pass the flag to the build step (`HSTS_ENABLED=1 bun run build`). Vercel is
+> unaffected because it injects `VERCEL_ENV` into the build environment as well.
+> `next dev` re-reads the config on each start, but `isProduction` is false there so HSTS is
+> gated off regardless — dev can never be used to observe the header.
 >
 > **`NODE_ENV=production` is not a domain signal.** It only tells you a production *build* is
 > running, not that it is served on the production *domain* — a self-hosted staging host outside
