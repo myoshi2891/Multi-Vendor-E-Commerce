@@ -325,17 +325,46 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       取り出して検査する:
 
   ```bash
-  # 宣言行（本体を開く `{` で終わる行・JSDoc 行は除外）から、波括弧の深さが
-  # 0 に戻る行までを抜き出す。終端文字列に依存しないので、`}` / `};` / `},`
-  # のいずれで閉じても、object メソッドとしてインデントされていても効く。
+  # 宣言行から、波括弧の深さが 0 に戻る行までを抜き出す。終端文字列に依存しないので、
+  # `}` / `};` / `},` のいずれで閉じても、object メソッドとしてインデントされていても効く。
   # 抜き出した本体は tr で 1 行へ正規化してから照合する（下の「行単位で照合しない」参照）。
-  awk '!f && /signInWithPassword/ && /\{[[:space:]]*$/ && !/^[[:space:]]*\*/ {f=1}
-       f{print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if(seen && n==0) exit; if(n>0) seen=1}' \
-      tests/e2e/helpers/auth.ts \
+  #
+  # 宣言の検出は「宣言らしさ」で行い、**宣言行が `{` で終わることを要求しない**。
+  # Prettier が引数を折り返すとシグネチャが複数行になり `{` が次行以降へ移るため
+  # （下の「空抽出を PASS にしないこと」参照）。深さ計測は最初の `{` が現れてから始まる。
+  body=$(awk '
+    !f && /(function[[:space:]]+signInWithPassword|signInWithPassword[[:space:]]*[=:]|async[[:space:]]+signInWithPassword)/ \
+        && !/^[[:space:]]*\*/ && !/^[[:space:]]*\/\// { f=1 }
+    f { print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if (seen && n==0) exit; if (n>0) seen=1 }
+  ' tests/e2e/helpers/auth.ts)
+
+  # 空抽出は「禁止パターンなし」ではなく「検査できていない」。必ず FAIL させる。
+  [ -n "$body" ] || {
+      echo "FAIL: signInWithPassword の本体を抽出できなかった（ゲートが無効化されている）"; false;
+  }
+
+  printf '%s' "$body" \
     | tr '\n' ' ' \
     | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\(' \
     && { echo "FAIL: signInWithPassword に実行時分岐が残っている"; false; }
   ```
+
+  **空抽出を PASS にしないこと（2026-07-28 修正）。** 旧形は awk の起動条件に
+  `/\{[[:space:]]*$/`（宣言行が `{` で終わる）を要求していた。Prettier が引数を
+  折り返してシグネチャが複数行になると、この条件が成立せず `f=1` が立たない:
+
+  ```ts
+  export async function signInWithPassword(
+      page: Page,
+      email: string,
+  ) {                          // ← `{` は宣言行ではなくこの行にある
+  ```
+
+  awk は何も出力せず、`grep -q` は当然ヒットせず、`&& { echo FAIL; false; }` は
+  実行されない。**禁止パターンが本体に残っていてもゲートは黙って PASS する**。
+  実際、本プラン未実行の現時点で上の旧コマンドを走らせると抽出行数は **0** である
+  （`signInWithPassword` はまだ存在しない）。「検査対象が見つからない」と
+  「禁止パターンが無い」は別の結果であり、前者は必ず FAIL にしなければならない。
 
   **行単位で照合しないこと（2026-07-27 修正）。** 元の形は `awk … | grep -cE …` と
   行単位だったため、チェーンを改行で折るだけで検査をすり抜けた:
