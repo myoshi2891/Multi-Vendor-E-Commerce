@@ -268,8 +268,21 @@ ALL を満たすこと:
 - [ ] `docs/design/category-tree/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] ADR（ツリー表現方式）が MADR 形式で存在し、3方式の比較を含む
 - [ ] **統合方式を採る場合**、ADR が slug 一意性のスコープ（グローバル一意 vs
-      `@@unique([parentId, url])`）を明示し、グローバル一意を選ぶなら決定論的なリネーム規則と
-      旧→新 slug 対応表の生成方針、および衝突件数の事前計測クエリを含む（Open question 2）
+      `@@unique([parentId, url])`）を明示し、**どちらを選んでも** URL 互換性への影響と
+      衝突件数の事前計測クエリを含む（Open question 2）。
+      加えて、グローバル一意を選ぶ場合のみ決定論的なリネーム規則と旧→新 slug 対応表の
+      生成方針を含む
+  - **親内一意（`@@unique([parentId, url])`）も URL 互換性の検討を免れない。** 現行スキーマは
+    `Category.url` / `SubCategory.url` がともに `@unique`（`prisma/schema.prisma:46,62`）で、
+    **既存の参照は slug 単体で解決している** —— browse の絞り込みは
+    `src/queries/product.ts:631-640` が `db.category.findFirst({ where: { url: filters.category } })`
+    で category を引き当てている。親内一意へ緩めると、異なる親の下に同一 slug が並んだ時点で
+    この照合が**曖昧になり任意の 1 件を拾う**（404 ではなく静かに誤ったカテゴリの商品を返す）。
+    したがって親内一意を選ぶ場合、ADR は次の 3 点を持つこと:
+    1. slug 単体で引いている既存コードパスの棚卸し（最低でも `product.ts` の browse フィルタ）
+    2. それらを親パス込みの解決（`/browse?category=parent/child` 等）へ移す方針、または
+       「同一 slug を全ツリーで許さない」運用制約を課す方針のいずれか
+    3. 現データで親をまたぐ slug 重複が何件出るかの事前計測クエリ（グローバル一意側と同じ計測）
 - [ ] `plans/0NN-implement-category-tree.md` が存在し、テンプレート準拠で zero-context executor が実行可能
 - [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 013 ステータス行を更新し、後続プランを索引に追加した
