@@ -32,11 +32,23 @@ check** — its JSDoc even mislabels it `@PermissionLevel Public`. Every sibling
 (`getStoreCoupons`, `deleteCoupon`, `upsertCoupon`) enforces `requireStoreOwner`; this read is the
 lone gap.
 
-Because server actions are reachable POST endpoints, any authenticated caller supplying an
-arbitrary `couponId` receives the full coupon row (`code`, `discount`, `storeId`, dates) for **any
-store** — a cross-tenant IDOR read. Leaked discount codes can then be redeemed via `applyCoupon` at
-checkout. Closing this makes coupon reads match the ownership contract the rest of the module
-already enforces.
+Because server actions are reachable POST endpoints, **any caller** — authenticated or not —
+supplying an arbitrary `couponId` receives the full coupon row (`code`, `discount`, `storeId`,
+dates) for **any store**: a cross-tenant IDOR read. Leaked discount codes can then be redeemed via
+`applyCoupon` at checkout. Closing this makes coupon reads match the ownership contract the rest of
+the module already enforces.
+
+> **Do not scope the threat model to authenticated callers.** The middleware
+> (`src/middleware.ts:6-13`) protects only `/dashboard*`, `/checkout` and `/profile*`. A server
+> action is dispatched by its action id against **whatever route path the request targets**, so an
+> attacker posts the id to a public path (`/`, `/browse`, …), never crosses a protected matcher, and
+> the action runs. Sign-in is therefore not a precondition for this read, and "an authenticated user
+> could see another store's coupons" understates both the reachable population and the severity.
+>
+> The general rule this instance illustrates: **route-level middleware is not an authorization
+> control for server actions.** Every action carries its own authorization or it has none — which is
+> exactly why `.claude/steering/tech.md` requires the `src/lib/auth-guards.ts` helpers inside each
+> action rather than relying on where the action is rendered.
 
 ## Current state
 

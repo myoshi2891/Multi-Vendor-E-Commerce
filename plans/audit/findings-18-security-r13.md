@@ -36,9 +36,21 @@
 >   `buf` 付き v3/v5/v6 の bounds 欠落であり **v4 no-buf は非該当** → 対応不要）。
 > - **dev/CI のみ（本番非到達）**: `handlebars`（critical・**ts-jest 経由**）/ `ws` / `picomatch` /
 >   `minimatch` / `tmp` / `undici`(testcontainers) /
->   `brace-expansion` / `flatted` / `js-yaml` / `glob` / `@babel/core` / `jodit`(seller エディタ、
->   ストアフロントは DOMPurify で閉鎖済み — DEPS-03) → **DEPS-05「dev-only は routine refresh に
->   畳む」の既定方針を維持**（本ラウンドでも個別プラン化しない）。
+>   `brace-expansion` / `flatted` / `js-yaml` / `glob` / `@babel/core`
+>   → **DEPS-05「dev-only は routine refresh に畳む」の既定方針を維持**
+>   （本ラウンドでも個別プラン化しない）。
+> - **本番到達・直接依存（追加）**: `jodit` / `jodit-react` —— **dev/CI のみに分類しないこと。**
+>   `jodit-react` は `package.json:77` の **`dependencies`**（`devDependencies` ではない）で、
+>   seller ダッシュボードのリッチテキストエディタとして**本番バンドルに乗り、本番ブラウザで
+>   実行される**。「本番非到達」は誤り。
+>   ただし**リスク評価は別問題**であり、以下の理由で本ラウンドでは個別プラン化しない:
+>   (a) 到達できるのは認証済み SELLER 自身のダッシュボードに限られ、攻撃者が他人の
+>   エディタへ入力を送り込む経路が無い（自己 XSS 相当）、(b) 生成された HTML が
+>   ストアフロントで描画される段は DOMPurify で閉鎖済み（DEPS-03）。
+>   → 対応は **DEPS-05 の routine refresh に含める**（畳む先は dev-only 枠と同じだが、
+>   **理由は「本番非到達」ではなく「本番到達だが攻撃者到達性が無い」**）。
+>   **本行は recon §0 の「dev/CI のみ」分類を上書きする**（同一パッケージを 2 か所で
+>   別ラベルにしないこと）。
 > - **runtime transitive・悪用経路は現状未到達**: `lodash` / `lodash-es`
 >   （`react-color` / `react-tag-input` / `@tremor/react` が `dependencies` にあるため本番
 >   ツリーへ到達する。`_.template` を攻撃者制御文字列で呼ぶ経路は無い）→ §4 **DEPS-06**
