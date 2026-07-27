@@ -23,6 +23,28 @@ const isGuardError = (error: unknown): error is Error => {
 };
 
 /**
+ * ドメインエラー（入力検証・業務ルール由来の意図的な throw）かを判定する。
+ *
+ * これらは try の内側で throw されるため、素通しにしないと catch の
+ * `Error occurred while ... : ${message}` に上書きされ、フォームへ
+ * 「クーポンの入力値が不正です。」を返せなくなる。認可ガードを try/catch の外へ
+ * 出しているのと同じ原則（tech.md「認可エラーを汎用 DB エラーメッセージで
+ * 上書きしない」）を、DB 読み取りの後段に位置して try 外へ出せない検証にも適用する。
+ *
+ * ユーザー起因のため logError にも載せない（運用ログのノイズになる）。
+ */
+const isDomainError = (error: unknown): error is Error => {
+    if (!(error instanceof Error)) return false;
+    const domainMessages = [
+        'クーポンの入力値が不正です。',
+        'このクーポンコードは既に使用されています',
+        'Please provide coupon data.',
+        'Please provide a valid store ID.'
+    ];
+    return domainMessages.includes(error.message);
+};
+
+/**
  * @Function upsertCoupon
  * @Description Upserts a coupon into the database, updating if it exists or creating a new one if not.
  * @PermissionLevel Seller only
@@ -112,6 +134,9 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
         return couponDetails
     } catch (error: unknown) {
+        // 入力検証・重複コードの意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:upsertCoupon] failed to upsert coupon', error)
 
         // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
@@ -488,6 +513,9 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
         })
         return couponDetails
     } catch (error: unknown) {
+        // 入力検証・storeId 不正の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         // P2002: Unique constraint violation（instanceof チェック不要: code だけで識別）
         if (
             typeof (error as Record<string, unknown>).code === 'string' &&
