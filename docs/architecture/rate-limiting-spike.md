@@ -175,12 +175,46 @@ to a hosting platform** (see the deployment-neutrality requirement in
 | Vercel | `x-vercel-forwarded-for` (platform-set, not client-settable) | `x-forwarded-for` is also rewritten, but the vendor header is the documented contract. Assume exactly one platform hop. |
 | Cloudflare (proxied) | `CF-Connecting-IP` | Only trustworthy when the origin is *not* reachable directly — otherwise the header is attacker-settable. Requires origin lock-down (Tunnel / IP allowlist / mTLS). |
 | AWS ALB (no CloudFront) | right-most value of `x-forwarded-for` | **Prerequisite: the listener's XFF handling must be in `append` mode** (`routing.http.xff_header_processing.mode = append`, the default). In `preserve` mode the ALB passes the client-supplied header through untouched, and in `remove` mode it strips it — in both cases the right-most value is *not* the client, so the rule silently reads an attacker-controlled value. Record the listener attribute in the ADR alongside the rule. Given append mode, the ALB appends the client IP and the left-most entries are attacker-supplied. Valid only when the ALB is the single edge hop. |
-| AWS CloudFront (in front of ALB/origin) | `CloudFront-Viewer-Address` (platform-set) | **Prerequisite: CloudFront does not forward this header to the origin by default.** The distribution's cache/origin request policy must include it (the managed `AllViewerAndCloudFrontHeaders-2022-06`, or a custom origin request policy naming `CloudFront-Viewer-Address`); without that the header simply is not present at the origin. Because a missing header is indistinguishable from a stripped one, the implementation must **fail closed** when it is absent (apply the limit or reject) — never fall back to `x-forwarded-for` or treat the client as unidentified-but-allowed. With CloudFront in front, the right-most `x-forwarded-for` is a *CloudFront* hop, not the client — do **not** reuse the ALB row's "right-most" rule. Strip the port from the value (it is `IP:port`), and note it may be an IPv6 literal. |
+| AWS CloudFront (in front of ALB/origin) | `CloudFront-Viewer-Address` (platform-set) | **Prerequisite: CloudFront does not forward this header to the origin by default.** The distribution's cache/origin request policy must include it (the managed `AllViewerAndCloudFrontHeaders-2022-06`, or a custom origin request policy naming `CloudFront-Viewer-Address`); without that the header simply is not present at the origin. Because a missing header is indistinguishable from a stripped one, the implementation must **fail closed** when it is absent (apply the limit or reject) — never fall back to `x-forwarded-for` or treat the client as unidentified-but-allowed. With CloudFront in front, the right-most `x-forwarded-for` is a *CloudFront* hop, not the client — do **not** reuse the ALB row's "right-most" rule. The value carries a port and may be IPv6; parsing it is not `split(":")` — see "Parsing `CloudFront-Viewer-Address`" below. |
 | Nginx / self-managed reverse proxy | value written by `set_real_ip_from` + `real_ip_header` | The proxy must be configured to *overwrite*, not append; otherwise strip the header at the edge. |
 | Bare Node (no proxy) | socket remote address only | `x-forwarded-for` MUST be ignored entirely — there is no trusted hop to attribute it to. |
 
 If the chosen target is not in this table, do not guess: establish the contract
 from the vendor's documentation and add the row before implementing.
+
+### Parsing `CloudFront-Viewer-Address`
+
+The CloudFront row above is the only one whose trusted value is not already a
+bare address, so its parsing contract must be pinned rather than left to the
+implementer.  The header is `<address>:<port>`, and **the IPv6 form is not
+bracketed** — a v6 viewer yields something like `2001:db8::1:52786`, not
+`[2001:db8::1]:52786`.  Three consequences, all of which must hold:
+
+1. **Split on the last colon, once.**  Take `lastIndexOf(':')` and treat
+   everything to its left as the address.  `split(':')` and "take element 0"
+   are both wrong: on IPv6 they return `2001`, which is neither the client nor
+   an address, and the limiter then buckets every v6 viewer sharing that prefix
+   into one counter.  A regex anchored to IPv4 shape is equally wrong — it
+   fails to match v6 entirely.
+2. **Validate the left-hand side as IPv4 or IPv6, and fail closed if it does
+   not parse.**  This is the same rule the row already states for a missing
+   header: an unparseable value is indistinguishable from a tampered one, so
+   apply the limit or reject rather than treating the client as
+   unidentified-but-allowed.  Do not fall back to `x-forwarded-for`.
+3. **Normalize before hashing.**  Lower-case the value and collapse the IPv6
+   representation to a single canonical form (zero-compression and leading
+   zeros both vary: `2001:db8::1`, `2001:0db8:0000:…:0001` and
+   `2001:DB8::1` are the same host).  Without this, one client occupies several
+   buckets under different spellings and the limit is trivially multiplied.
+   Normalization must happen *before* the keyed HMAC described below, since the
+   HMAC destroys any chance to canonicalize afterwards.
+
+Decide and record whether v6 clients are bucketed per-address or per-prefix
+(commonly /64, since a single subscriber is routinely delegated a whole /64).
+Per-address v6 limiting is close to no limit at all against an attacker holding
+a delegated prefix; per-prefix risks grouping unrelated users behind some
+carrier deployments.  This is a policy choice, not a parsing detail — state it
+in the ADR alongside the rule.
 
 If that contract cannot be established for the selected hosting arrangement,
 do not use an application-level IP key.  Prefer an edge/WAF control that owns
