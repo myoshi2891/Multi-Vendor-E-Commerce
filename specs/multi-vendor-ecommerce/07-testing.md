@@ -12,6 +12,16 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1761 passed / 1764 total across 175 suites (3 skipped), as of 2026-07-27.
+  Seven regressions from the CodeRabbit review round, fourth pass (+7, no new suites):
+  `coupon.test.ts` (+4) anchors the *exact* message of validation and duplicate-code failures —
+  the pre-existing assertions used `toThrow(string)`, whose substring match passed even while the
+  `catch` rewrote them to `Error occurred while trying to upsert coupon: …`, so the form could
+  never surface `クーポンの入力値が不正です。`; one case also pins that a user input mistake emits
+  no `logError`. `scan-tests.test.ts` (+3) pins that modifier-suffixed tests (`test.skip` etc.)
+  count toward `testCount`, plus two guards against over-counting once modifiers are allowed
+  (`test.describe` / `test.describe.skip` stay excluded as wrappers; `it.each` is not
+  double-counted against the `EACH_PATTERN` expansion).
 - 1754 passed / 1757 total across 175 suites (3 skipped), as of 2026-07-26.
   Two regressions from the CodeRabbit review round, third pass (+2, no new suites):
   `stripe.test.ts` pins that a canceled PaymentIntent returned by the fixed idempotency key is

@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1754 passed / 1757 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-26 実測（CodeRabbit レビュー対応 第 3 弾の回帰 +2 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1761 passed / 1764 total / 175 スイート（174 passed + 1 skipped suite）** — 2026-07-27 実測（CodeRabbit レビュー対応 第 4 弾の回帰 +7 時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -1857,6 +1857,50 @@ CodeRabbit のレビュー指摘 24 件を精査（誤検出なし）。plan/doc
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 1752 passed / 1755 total | **1754 passed / 1757 total** |
+| スイート数 | 175 | **175**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 19 コメントの精査と対応（第 4 弾） (2026-07-27)
+
+#### 概要
+
+`dev → main` PR に付いた CodeRabbit 19 コメント（見出しのみ判明）を実測でリポジトリに
+突き合わせ、**確認済み 18 / 誤検知 1** に仕分けたうえで実コード 2 件を Red → Green で修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.test.ts` | 検証・重複コードエラーの文言を正規表現アンカーで完全一致に固定（Red・+4） | `76a96296` |
+| `src/queries/coupon.ts` | `isDomainError` を追加し、意図的 throw を catch 冒頭で素通し（Green） | `fba1cf46` |
+| `scripts/coverage-dashboard/scan-tests.test.ts` | 修飾子付きテストの計上 + 過大計上ガード 2 件（Red・+3） | `ff9f5c28` |
+| `scripts/coverage-dashboard/scan-tests.ts` | `BLOCK_PATTERN` に修飾子を列挙形で許容（Green） | `8637bca5` |
+
+**根本原因の要点**:
+
+- **coupon**: `safeParse` 失敗の throw が `try` の内側にあり、catch が
+  `Error occurred while trying to upsert coupon: ${message}` で上書きしていた。
+  フォームへ「クーポンの入力値が不正です。」を返せず、ユーザー入力ミスが `logError` にも載っていた。
+  **既存テストが検出できなかった理由**は `toThrow(string)` の部分一致で、ラップ後の文言にも
+  部分文字列として含まれていたため。
+- **dashboard**: `BLOCK_PATTERN` が `test.skip(` にマッチせず（`test` の直後が `.`）、
+  `tests/e2e` の skip 14 件が 0 件計上。`e2e × pages` が 23 と表示され、SSOT の 37
+  （= 111 テスト ÷ 3 ブラウザ）と乖離していた。`it.each` の欠陥（`c1be6d7`）と同型の再発。
+
+**誤検知（修正せず記録）**:
+
+- 「`coverage-dashboard.html` の `byDomain` に `api-routes` が無く、ドメイン合計 187 件」
+  — 直近 5 バージョンすべてに `"api-routes":6` が存在し、合計は 193 = `totalTestFiles`。
+  指摘値 187 はちょうど `193 - 6` で、当該キーを読み落とした集計。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1754 passed / 1757 total | **1761 passed / 1764 total** |
 | スイート数 | 175 | **175**（不変） |
 | スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
