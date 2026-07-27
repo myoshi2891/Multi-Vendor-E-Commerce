@@ -182,6 +182,32 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(4);
     });
 
+    // 修飾子は .each の「手前」に付く（it.skip.each / test.only.each）。
+    // BLOCK_PATTERN は `.skip` の直後が `(` でないため一致せず、EACH_PATTERN も
+    // `it.each` という部分列を持たないため一致しない。両方すり抜けてテーブル行数が
+    // 丸ごと欠測する。scan-tests.ts は同型の欠陥で 2 度壊れている（c1be6d7 / ff9f5c28）。
+    it("修飾子付きの it.skip.each / test.only.each も展開して testCount に数える", async () => {
+        root = makeFixture({
+            "src/queries/modifier-each.test.ts": `
+                it.skip.each([
+                    { a: 1 },
+                    { a: 2 },
+                ])('skipped case $a', ({ a }) => {});
+                test.only.each\`
+                    a    | b
+                    \${1} | \${2}
+                    \${3} | \${4}
+                \`('only case $a', ({ a, b }) => {});
+                it('regular', () => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 2 (it.skip.each の行) + 2 (test.only.each の行) + 1 (通常の it) = 5
+        expect(results[0]?.testCount).toBe(5);
+    });
+
     // 空テーブルは実行時に 0 件へ展開される（Jest では空 each 自体がエラー扱い）。
     // 配列の開き括弧自身を「内容あり」と見なすと 1 件に化け、testCount が過大になる。
     it("空の it.each([]) は 0 件として数える", async () => {
