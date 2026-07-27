@@ -17,12 +17,27 @@
 > [`findings-12-test-coverage.md`](findings-12-test-coverage.md)（reconcile 表 TESTS-01 行 →
 > 「部分解消」/ 残余は **plan 030**）を正とする。
 
-- **Evidence（訂正後）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし（`git ls-tree f9752c0 tests/component/` および co-located の双方で確認 — **監査時点 HEAD `f9752c0` / 2026-07-03**）。**2026-07-18 の再測定時点でも未カバー**。
+- **Evidence（訂正後・監査時点）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし。**測定: 2026-07-03 / HEAD `f9752c0`**。再現コマンド:
 
-  > **「現 HEAD」と書かないこと**: この finding は複数ラウンドにまたがって参照される
-  > ため、日付の無い「現 HEAD」は読んだ時点によって指すコミットが変わり、いつの
-  > 測定なのか復元できなくなる。カバレッジ状態を更新する際は**必ず測定日を添える**
-  > こと（監査時点の値は上書きせず、測定日付きの行を足す）。
+  ```bash
+  git ls-tree -r --name-only f9752c0 tests/component/   # tests/component/ 側に該当なし
+  git ls-tree -r --name-only f9752c0 src/components/store/cards/payment/ | grep -i test
+  ```
+
+- **再測定（2026-07-18 / HEAD 未記録）**: 上記 4 ファイルは**依然として未カバー**。
+  ⚠️ **この行は測定 HEAD を欠いている** —— 当時インラインで追記されたため記録が残っていない。
+  同日の最終コミットは `c77cdd7d`（`git log --until='2026-07-18 23:59' -1` で得た上界）だが、
+  測定時点の作業ツリーがこれと一致していた保証は無い。**次回の再測定時に上のコマンドを
+  実行し、日付 + HEAD 付きの行で置き換えること**（この不備自体が下の規約の実例）。
+
+  > **測定は「日付 + HEAD + 再現コマンド」の 3 点セットで、行を分けて追記すること**。
+  > この finding は複数ラウンドにまたがって参照されるため、
+  > (a) 日付の無い「現 HEAD」は読んだ時点によって指すコミットが変わり、いつの測定なのか
+  > 復元できなくなる。(b) 日付だけあっても HEAD が無ければ、その日の作業ツリーが
+  > どの状態だったか再現できない。(c) 監査時点の Evidence 行に後日の再測定を
+  > **インラインで混ぜると**、「監査時に何が見えていたか」と「その後どうなったか」が
+  > 分離できなくなる（この行自体が 2026-07-27 まで違反していた）。
+  > 更新時は監査時点の値を上書きせず、**測定日付きの独立した行を足す**こと。
 - **Evidence（誤りとして撤回）**: ~~`cards/place-order.tsx`（`placeOrder`）~~ — 監査時点で `tests/component/store/place-order-card.test.tsx` によりカバー済み。
 - **Impact**: capture をいつ呼ぶか・失敗ハンドリング・二重送信ガードを担うクライアント層の回帰が無検出で通る。唯一の演習は間欠ハングが追跡中の E2E のみ（ただし place-order の再入ガードは component テストで演習済み）。
 - **Effort**: L / **Risk**: LOW / **Confidence**: HIGH（訂正後の 4 ファイルについて）
