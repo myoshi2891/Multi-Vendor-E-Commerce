@@ -16,8 +16,16 @@ import { expect, test } from "@playwright/test";
  * E2E の webServer は既定で `next start`（NODE_ENV=production）だが、そのシグナルを
  * 持たないため **既定では absent を期待**する。present 側の分岐を実際に走らせるには
  * `HSTS_ENABLED=1 bunx playwright test tests/e2e/security-headers.spec.ts` のように
- * 明示シグナルを立てて実行する。テストランナーと webServer はこの env を共有するため、
- * 同じ判定でサーバー挙動を鏡写しにできる。
+ * 明示シグナルを立てて実行する。webServer は `bun run build && bun run start`（既定）で
+ * **ビルドごとこの env を共有する**ため、同じ判定でサーバー挙動を鏡写しにできる。
+ *
+ * ⚠️ ただし `reuseExistingServer`（ローカル = 有効）で既存サーバーが再利用されると
+ * **ビルドが走らない**。next.config.mjs の `headers()` は `next build` 時に 1 回だけ
+ * 評価され `.next/routes-manifest.json` へ焼き込まれるため、旧ビルドを配っている
+ * サーバーは `HSTS_ENABLED` を後から立てても HSTS を返さず、present 期待が
+ * false-fail する。present 側を検証するときは既存サーバーを止めてから実行すること。
+ * 実際に焼き込まれた値は次で確認できる:
+ *   node -p "JSON.stringify(require('./.next/routes-manifest.json').headers)"
  *
  * さらに `includeSubDomains` / `preload` は**個別の明示 opt-in**（`HSTS_INCLUDE_SUBDOMAINS` /
  * `HSTS_PRELOAD`）でのみ付く。全サブドメインの HTTPS 強制と preload リスト登録は
