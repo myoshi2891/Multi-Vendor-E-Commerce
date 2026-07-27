@@ -328,12 +328,33 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   # 宣言行（本体を開く `{` で終わる行・JSDoc 行は除外）から、波括弧の深さが
   # 0 に戻る行までを抜き出す。終端文字列に依存しないので、`}` / `};` / `},`
   # のいずれで閉じても、object メソッドとしてインデントされていても効く。
+  # 抜き出した本体は tr で 1 行へ正規化してから照合する（下の「行単位で照合しない」参照）。
   awk '!f && /signInWithPassword/ && /\{[[:space:]]*$/ && !/^[[:space:]]*\*/ {f=1}
        f{print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if(seen && n==0) exit; if(n>0) seen=1}' \
       tests/e2e/helpers/auth.ts \
-    | grep -cE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\(.*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\('
-  # → 0
+    | tr '\n' ' ' \
+    | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\(' \
+    && { echo "FAIL: signInWithPassword に実行時分岐が残っている"; false; }
   ```
+
+  **行単位で照合しないこと（2026-07-27 修正）。** 元の形は `awk … | grep -cE …` と
+  行単位だったため、チェーンを改行で折るだけで検査をすり抜けた:
+
+  ```ts
+  await passwordInput.waitFor({ timeout: 1000 })
+      .catch(() => …);          // waitFor と .catch が別行 → ヒット 0 件と報告される
+  ```
+
+  Prettier の折り返し幅次第で**同じコードが検出されたりされなかったり**するため、
+  ゲートとして成立しない。`tr '\n' ' '` で本体を 1 行へ正規化してから照合する。
+  正規化後は `.*` がファイル全体を跨いで貪欲マッチしうるので、`waitFor(...).catch`
+  の中間は `[^;]*` として**文の境界で止める**（無関係な `waitFor(` と後方の `.catch`
+  が結合する偽陽性を防ぐ）。
+
+  併せて **`grep -c … → 0` を合格条件にしないこと**。`grep` は 0 件のとき exit 1 を返すため、
+  合格が失敗として扱われる（`tr` で 1 行化した後は `-c` の返り値が 0/1 に潰れ件数としても
+  意味を失う）。不在ゲートは `grep -qE … && { echo FAIL; false; }` で表現する
+  （`exit 1` は対話シェルに貼るとセッションを落とすため `false` を使う）。
 
   **`isVisible` だけを見ないこと** —— このゲートが排除したいのは「UI が 1 段か 2 段かを
   実行時に見分ける分岐」であって、`isVisible` という特定の API 名ではない。同じ分岐は

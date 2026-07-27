@@ -232,10 +232,27 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 normalization cases (FULLTEXT path) exist and pass.
 - [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
 - [ ] The GET handler contains no `parseInt` and parses page/limit with `Number(...)`. **Use the
-      GET-scoped gate, not a whole-file grep** — see "Correction (2026-07-19)" below:
-      `awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"` → `0`.
+      GET-scoped gate, not a whole-file grep**, and phrase it as an **absence** gate — see the two
+      corrections below:
+      `awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -qE 'parseInt' && { echo "FAIL: GET still uses parseInt"; false; }`
       (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
       failure if the POST handler legitimately uses `parseInt`.)
+
+    > **Do not express this gate as `grep -c … → 0` (2026-07-27 correction).** `grep` exits **1**
+    > when it matches nothing, so the *passing* case (`0` occurrences) returns a **failing** exit
+    > status. Under `set -e`, inside an `&&` chain, or as a CI step, the criterion aborts the run
+    > precisely when it is satisfied. Verified on this repo:
+    >
+    > ```console
+    > $ awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"
+    > 0
+    > $ echo $?
+    > 1
+    > ```
+    >
+    > Phrase absence gates as `grep -qE … && { echo FAIL; false; }` so that "no match" is the
+    > silent success path and a match is the only thing that fails. Use `false`, **not `exit 1`** —
+    > pasting a snippet with `exit 1` into an interactive shell kills the session.
 
     > **End the range at the function boundary, not at `0`.** The earlier form
     > `awk '/^export async function GET/,0'` used `0` as the end pattern — `0` is falsy and
