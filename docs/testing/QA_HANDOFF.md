@@ -347,7 +347,7 @@ plans/README.md の 051 行を DONE に更新すること。
 055 は「plan 042 DONE」、054 は「plan 043 DONE」を冒頭で確認し、未完なら BLOCKED 記録で
 STOP と付記して依頼する）
 
-#### D2: Performance 行の着手（lhci に `/` 追加）
+#### D2: Performance 行の着手（lhci の計測 URL に `/` を追加）
 
 ```text
 ヒートマップ Performance 0% 行を前進させるため、Lighthouse CI の計測対象に / を追加してください。

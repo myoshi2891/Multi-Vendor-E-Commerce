@@ -202,7 +202,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     },
     {
         priority: "medium",
-        title: "Performance 行の着手 (lhci に / 追加)",
+        title: "Performance 行の着手（lhci の計測 URL に \"/\" を追加）",
         target: ".lighthouserc.json + .github/workflows/lhci.yml",
         tool: "@lhci/cli",
         cost: "S",
