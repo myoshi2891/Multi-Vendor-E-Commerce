@@ -71,20 +71,31 @@ The facts the executor needs, inlined — never "as discussed" or "see audit":
 
 ## Commands you will need
 
-| Purpose   | Command                  | Expected on success |
-|-----------|--------------------------|---------------------|
-| Install   | `bun install`            | exit 0              |
-| Typecheck | `bunx tsc --noEmit`      | exit 0, no errors   |
-| Tests     | `bunx jest <path>`       | all pass            |
-| Lint      | `bun run lint`           | exit 0              |
+| Purpose    | Command                            | Expected on success |
+|------------|------------------------------------|---------------------|
+| Install    | `bun install`                      | exit 0              |
+| Typecheck  | `bunx tsc --noEmit`                | exit 0, no errors   |
+| Unit tests | `bunx jest <path>`                 | all pass            |
+| E2E tests  | `bunx playwright test <spec>`      | all pass            |
+| Lint       | `bun run lint`                     | exit 0              |
 
 (Exact commands from this repo — verified during recon, not guessed. This repo
 uses **Bun**, not pnpm/npm; take the authoritative list from `CLAUDE.md`
 "開発コマンド" and `package.json` `scripts` rather than copying this table
-verbatim. Note the test filter form: pass the path as a positional argument
+verbatim.)
+
+**Keep the two test runners on separate rows.** They are different tools with
+different scopes, costs and failure modes: Jest covers unit/component tests
+under `src/` and finishes in seconds, while Playwright drives three browsers
+against a dev server and takes minutes. A single "Tests" row lets the executor
+run one and report the plan verified — usually Jest, leaving E2E regressions
+undetected. Include only the rows the plan actually needs: a plan that touches
+no E2E surface should drop the Playwright row rather than carry it unused.
+
+Note the Jest filter form: pass the path as a positional argument
 (`bunx jest src/queries/store.test.ts`) — the old `--testPathPattern` flag was
 renamed to `--testPathPatterns` in the current Jest, so the positional form is
-the one that survives version drift.)
+the one that survives version drift.
 
 ## Suggested executor toolkit
 
