@@ -39,6 +39,7 @@ const isDomainError = (error: unknown): error is Error => {
         'クーポンの入力値が不正です。',
         'このクーポンコードは既に使用されています',
         'Please provide coupon data.',
+        'Please provide coupon ID.',
         'Please provide a valid store ID.'
     ];
     return domainMessages.includes(error.message);
@@ -209,6 +210,9 @@ export const getCoupon = async (couponId: string, storeURL: string) => {
 
         return coupon
     } catch (error: unknown) {
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:getCoupon] failed to fetch coupon', error)
 
         throw new Error(
@@ -241,6 +245,9 @@ export const getCouponAsAdmin = async (couponId: string) => {
 
         return coupon
     } catch (error: unknown) {
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:getCouponAsAdmin] failed to fetch coupon', error)
 
         throw new Error(
@@ -278,6 +285,9 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: unknown) {
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:deleteCoupon] failed to delete coupon', error)
 
         throw new Error(
@@ -555,6 +565,8 @@ export const deleteCouponAsAdmin = async (couponId: string) => {
         return response !== null
     } catch (error: unknown) {
         if (isGuardError(error)) throw error
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
 
         if (error instanceof Error) {
             console.error('[Coupon:deleteCouponAsAdmin] Failed to delete coupon', {
@@ -592,6 +604,8 @@ export const toggleCouponActive = async (couponId: string) => {
         return updated
     } catch (error: unknown) {
         if (isGuardError(error)) throw error
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
 
         if (error instanceof Error) {
             console.error('[Coupon:toggleCouponActive] Failed to toggle coupon', {
