@@ -117,7 +117,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
-| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
+| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE (1 criterion pending) |
 | [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
 | [059](059-paypal-capture-verification.md) | PayPal capture の金額/相関/通貨検証 + settled ガード（Stripe パリティ・SECURITY-12/13） | security | P1 | S | LOW | — | DONE |
 | [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
@@ -165,8 +165,13 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     →〔043 完了〕→ 054。home（`/`）の a11y / VRT は OI-9（SSR 500）解消後の追加項目として
     052 / 054 の Maintenance notes に記録済み。各プラン完了時の docs 同期義務は R8 と同じ
     （`spec-sync-after-test`・E2E 統計 SSOT = `docs/testing/QA_HANDOFF.md`）。
-15. **Dependency security (057) — ✅ DONE（履歴）** — **⚠️ 以下は着手判断の記録であり、
-    現行の着手順ではない**（2026-07-18 に実行済み。`10e35f3`）。当時は **P1・依存ゼロ・
+15. **Dependency security (057) — ✅ DONE（1 criterion pending・履歴）** — **⚠️ 以下は着手判断の記録であり、
+    現行の着手順ではない**（2026-07-18 に実行済み。`10e35f3`）。
+    **⚠️ Status は「DONE」ではなく「DONE (1 criterion pending)」**（2026-07-27 訂正）:
+    advisory 解消というセキュリティ目的は達成済みだが、057 の Done criteria は
+    "ALL must hold" と定めており Step 5（未認証 `/dashboard` の redirect スモーク）の
+    実施記録が無い。`bun run dev` を起こせる環境で実施し、結果を 057 に追記した時点で
+    素の DONE へ戻すこと。当時は **P1・依存ゼロ・
     即着手可能**として上記のテスト系プラン群より優先した。`next@16.2.1` が
     GHSA-26hh-7cqf-hhc6（HIGH — App Router の
     Middleware/Proxy バイパス）の影響範囲内であり、`src/middleware.ts` が

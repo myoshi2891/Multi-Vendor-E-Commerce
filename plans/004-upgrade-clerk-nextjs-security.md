@@ -206,16 +206,29 @@ Stop and report if:
 - Reviewer should confirm the diff is version-only (plus lockfile) and that the manual unauthenticated `/dashboard` smoke was performed or explicitly flagged pending.
 - Follow-up: the Prisma 5→6 major lag (DEPS-04) is a separate, larger upgrade — do not bundle it with this security bump.
 
-### Resolution status (verified 2026-07-18)
+### Resolution status (last verified 2026-07-26)
 
 This plan is **DONE** and **both advisories are closed in the current tree**.
 The "Why this matters" and "Current state" sections above describe the tree at
 commit `f9752c0` and are left as the historical record — do not read them as
 the present state:
 
-| Item | As planned (`f9752c0`) | Current tree |
+> **Dates in this document (2026-07-27 clarification).** This file carries two
+> verification timestamps and they are *not* interchangeable — always read the one
+> attached to the claim you are checking:
+>
+> - **2026-07-18** — when the resolution was *first* confirmed and this section written.
+> - **2026-07-26** — the most recent re-measurement, recorded in the "Measured" note at
+>   the top of this plan (`@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`).
+>   The table below reflects **this** run.
+>
+> The heading previously read "verified 2026-07-18" while the table already carried the
+> 2026-07-26 values, so the section looked staler than it was. Later re-measurements must
+> update **both** the heading date and the "Measured" note, or the two drift apart again.
+
+| Item | As planned (`f9752c0`) | Current tree (2026-07-26) |
 |---|---|---|
-| `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <7.2.1`) | `^7.5.0` — outside the affected range |
+| `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <7.2.1`) | `^7.5.0` → resolves `7.5.19` — outside the affected range |
 | `@clerk/testing` | `^2.0.7` | `^2.2.9` |
 | `js-cookie` (transitive) | `3.0.5` via `@clerk/shared` (HIGH) | `3.0.7` via `@clerk/shared@4.25.4` |
 

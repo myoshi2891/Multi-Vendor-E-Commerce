@@ -707,13 +707,18 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 > 「完了済みの要点」であるため現況表と誤読されやすいが、以下の数値・判定の多くは
 > 後続ラウンドで変化している。**現在値が必要なときは実測するか、下表の参照先を見ること。**
 >
-> | 項目 | Round 1 時点 | 現在（最終確認: 2026-07-19 / Round 14） |
+> **右列は「最新スナップショット」であり継続的な現在値ではない。** 各セルに測定時点を
+> 個別に併記してある（行ごとに確認日が異なるため、列見出しに 1 つの日付を置くと
+> 更新の新しい行まで古く見える／古い行が新しく見える）。列見出しの日付だけを
+> 見て鮮度を判断しないこと。
+>
+> | 項目 | Round 1 時点 | 最新スナップショット（測定時点は各セルに併記） |
 > |---|---|---|
-> | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — Round 13 実測。詳細 `audit/findings-18-security-r13.md` §0） |
-> | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消） |
-> | `next` | `^16.2.1` | **`~16.2.10`**（[plan 057](057-upgrade-next-middleware-bypass.md) DONE。R1 の「最新・対応不要」判定は撤回済み） |
+> | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — **2026-07-19 / Round 13 実測**。詳細 `audit/findings-18-security-r13.md` §0） |
+> | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消。解決レンジの正値は `audit/findings-06-dependencies.md` を単一の出典とする — **2026-07-26 実測**: `@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`） |
+> | `next` | `^16.2.1` | **`~16.2.10`**（[plan 057](057-upgrade-next-middleware-bypass.md) は **DONE (1 criterion pending)** — advisory は解消済みだが Step 5 スモークの記録が未達。R1 の「最新・対応不要」判定は撤回済み。**2026-07-27 確認**） |
 > | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / README Deferred で継続追跡） |
-> | tsc / lint | 0 エラー / 15 警告 | 同左（Round 13 で再実測・変化なし） |
+> | tsc / lint | 0 エラー / 15 警告 | 同左（**2026-07-27 再実測**・変化なし） |
 
 - ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件 ← **R1 時点**
 - **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、`>=7.0.0 <7.2.1` 影響・修正版 7.2.1+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補 ← **plan 004 で解消済み**

@@ -18,6 +18,11 @@
 - **Depends on**: none
 - **Category**: dependencies
 - **Planned at**: commit `fab6315`, 2026-07-17
+- **Completion**: **DONE (1 criterion pending)** — セキュリティ目的（advisory 解消）は
+  `10e35f3a` で達成済み。ただし Done criteria は "ALL must hold" と定めており、
+  Step 5（未認証 `/dashboard` の redirect スモーク）の実施記録が無いため
+  **全項目充足ではない**。`plans/README.md` の Status もこの表記に合わせてある。
+  残項目の内容は下の Done criteria 末尾を参照（2026-07-27 追記）。
 
 ## Why this matters
 
