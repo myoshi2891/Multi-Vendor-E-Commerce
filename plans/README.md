@@ -123,6 +123,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
 | [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | DONE |
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
+| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
@@ -247,7 +248,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- **CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars) — **コード修正は Round 14 (`e63474b`) で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**残るのは既存行の backfill のみで、これは未起票**（過去の Stripe 決済行はセント値のまま）。本項目を「コード修正が必要」と読まないこと。
+- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO）。本項目を「コード修正が必要」と読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
