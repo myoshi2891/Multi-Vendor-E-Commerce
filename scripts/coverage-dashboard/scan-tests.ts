@@ -38,7 +38,13 @@ const BLOCK_PATTERN =
     /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
 // it.each / test.each は実行時にテーブル行数ぶんのテストへ展開される。
 // BLOCK_PATTERN は `it(` 形式しか拾えず each を 0 件と数えてしまうため、別途展開する。
-const EACH_PATTERN = /\b(it|test)\.each\b/g;
+//
+// 修飾子は `.each` の**手前**に付く（`it.skip.each` / `test.only.each`）。
+// BLOCK_PATTERN は `.skip` の直後が `(` でないため一致せず、ここが `it.each` 固定だと
+// `it.skip.each` は両方をすり抜けてテーブル行数が丸ごと欠測する。
+// BLOCK_PATTERN と同じ修飾子を**列挙**で許容する（総称形にしない理由は上のコメント参照）。
+const EACH_PATTERN =
+    /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\.each\b/g;
 
 /** 空白・行コメント・ブロックコメントを読み飛ばし、次の有効文字の位置を返す */
 function skipTrivia(content: string, start: number): number {
