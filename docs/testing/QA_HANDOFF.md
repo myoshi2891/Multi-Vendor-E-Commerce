@@ -395,6 +395,35 @@ STOP と付記して依頼する）
 - 同族先行例: OI-9（featured.tsx の SSR window 参照）
 ```
 
+#### plan 063: Stripe 既存決済行の `PaymentDetails.amount` backfill 🆕 2026-07-27 起票
+
+CORRECTNESS-05 の残件。コード修正（Stripe 経路が `paymentIntent.amount`（セント）を
+`Decimal(12,2)` = ドル建てカラムへ書いていたバグ）は `e63474b6` で完了済みで、**残るのは
+それ以前に書かれた履歴データのみ**。本番決済データへの `UPDATE` を伴うため、
+`safe-migration` skill と人手承認ゲートが前提。
+
+```text
+plans/063-backfill-stripe-payment-amount.md を読んで、プラン記載のステップどおりに実行してください。
+
+ルール:
+- 本体コード（src/queries/stripe.ts / paypal.ts）は変更禁止。コード側は e63474b6 で修正済み。
+- Step 3 の dry-run レポートを提示して人手承認を得るまで、いかなる UPDATE も実行しない。
+- 候補行の述語は肯定形 paymentMethod = 'Stripe' を使う（否定形は d8f770d2 以前の
+  "Paypal" 表記の行を巻き込むため禁止）。
+- 各 Step の Verify コマンドを必ず実行し、STOP conditions に該当したら中断して報告。
+
+完了条件:
+1. Step 2 のクエリが backfill 後に ratio 外れ値 0 行を返す（プラン Done criteria 全項目）。
+2. plans/README.md の 063 行を DONE に更新し、Deferred の CORRECTNESS-05 記述をクローズする。
+3. render-html.ts の NEXT_ACTIONS から 063 を削除し、本プロンプトも削除（二重 SSOT 同期）。
+   削除後は bun run coverage:dashboard を実行して docs/coverage-dashboard.html を再生成する。
+
+参考:
+- 起票の経緯: plans/README.md Deferred の CORRECTNESS-05 行
+- コード修正コミット: e63474b6（fix(stripe): store payment amount in dollars ...）
+- コミット規約: .claude/rules/02-tdd-step-commit.md
+```
+
 ### 🟢 Mid–Long Term (low)
 
 SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。
