@@ -27,8 +27,15 @@ const IGNORED_DIRS = new Set([
 const JEST_TEST_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx|mts|cts)$/;
 const PLAYWRIGHT_DIR_FRAGMENT = `${sep}tests${sep}e2e${sep}`;
 const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/;
-// describe は wrapper のため testCount からは除外
-const BLOCK_PATTERN = /\b(it|test)\s*\(/g;
+// describe は wrapper のため testCount からは除外。
+//
+// 修飾子は**列挙**する（`(\.\w+)?` のような総称形にしない）。理由は 2 つ:
+//  - `test.describe(` / `test.step(` を拾ってしまう（wrapper・非テストブロック）
+//  - `it.each(` を拾うと EACH_PATTERN の展開ぶんと二重計上になる
+// skip / only 等は実行時に reporter へ「テストケース」として出るため計上する
+// （除外すると tests/e2e が 37 → 23 に化け、QA_HANDOFF の SSOT と乖離する）。
+const BLOCK_PATTERN =
+    /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
 // it.each / test.each は実行時にテーブル行数ぶんのテストへ展開される。
 // BLOCK_PATTERN は `it(` 形式しか拾えず each を 0 件と数えてしまうため、別途展開する。
 const EACH_PATTERN = /\b(it|test)\.each\b/g;
