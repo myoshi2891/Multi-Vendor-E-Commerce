@@ -111,6 +111,18 @@ PayPal to parity with the Stripe guards. The authoritative values already exist:
 
 ## Scope
 
+> **⚠️ この節と Steps は 2026-07-18 時点で一部 superseded。** 下の
+> [Divergence since this plan shipped](#divergence-since-this-plan-shipped-2026-07-18) を
+> **先に読むこと**。具体的には、以下 2 点はここに書かれているとおりには shipped していない:
+>
+> - `isSettledPaymentStatus` は `stripe.ts` から export **されていない**（`stripe.ts` は
+>   `"use server"` で、同期ヘルパーの export は無効なため）。実際は
+>   `src/lib/payment-status.ts` に置かれている。
+> - したがって下の Out of scope「共有 `payment-status.ts` を導入するな / STOP して報告せよ」は
+>   **無効**。共有モジュールが正しい設計として既に shipped 済みで、STOP 条件ではない。
+>
+> 本節は当時の計画として保存してあり、現状の仕様ではない。
+
 **In scope** (the only files you should modify):
 - `src/queries/stripe.ts` — **export** `isSettledPaymentStatus` (and `SETTLED_PAYMENT_STATUSES` if
   needed) so PayPal can reuse the single source of truth. **This is the only change to stripe.ts —

@@ -202,8 +202,18 @@ const restockOrderItems = async (
 その後**ちょうど一度だけのガード付きで実装済み**である: `restockOrderItems` /
 `isRestockTerminalOrderStatus` に加え、`updateOrderPaymentStatus` 内の条件付き `updateMany`
 （`where` で確定済み決済ステータスを除外し、子連動と在庫復元の両方を `transition.count === 1`
-に紐付ける）。**メカニズム (a) の参照実装としてこれを使うこと**。ガードをゼロから設計し直す
-必要はなく、残る設計課題は「アイテムレベル経路がこれと二重復元せずにどう合成されるか」である。
+に紐付ける）。これは **メカニズム (b)（status 遷移から「既に復元済み」を導出する形。
+`restockedAt` 等のマーカー列を足していないのでスキーマ移行も無い）の参照実装であり、
+(a) ではない** —— **メカニズム (b) の参照実装としてこれを使うこと**。ガードをゼロから
+設計し直す必要はない。
+
+ただし Open question 1 の**「(b) の注意点」がそのまま効く**: この実装が exactly-once を
+根拠づけているのは**注文レベルの行**の遷移であって、アイテム単位ではない。
+`updateOrderItemStatusAsAdmin` は**別の行**を遷移させるため、注文レベルの `count === 1` は
+アイテムレベル経路との二重復元を何も防がない。したがって残る設計課題は
+「アイテムレベル経路がこれと二重復元せずにどう合成されるか」であり、(b) を踏襲するなら
+exactly-once の根拠を**アイテム単位の条件付き `updateMany` / marker** に移す必要がある
+（両経路が同じ `$transaction` 内で check-and-set する形）。
 
 ## Maintenance notes
 
