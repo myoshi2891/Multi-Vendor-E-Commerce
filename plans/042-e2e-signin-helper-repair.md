@@ -330,9 +330,23 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   # のいずれで閉じても、object メソッドとしてインデントされていても効く。
   awk '!f && /signInWithPassword/ && /\{[[:space:]]*$/ && !/^[[:space:]]*\*/ {f=1}
        f{print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if(seen && n==0) exit; if(n>0) seen=1}' \
-      tests/e2e/helpers/auth.ts | grep -cE 'isVisible[[:space:]]*\('
+      tests/e2e/helpers/auth.ts \
+    | grep -cE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\(.*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\('
   # → 0
   ```
+
+  **`isVisible` だけを見ないこと** —— このゲートが排除したいのは「UI が 1 段か 2 段かを
+  実行時に見分ける分岐」であって、`isVisible` という特定の API 名ではない。同じ分岐は
+  以下の形でも書けてしまい、`isVisible` 単独のパターンはそのすべてを見逃す:
+
+  | 見逃す書き方 | なぜ同じ問題か |
+  |---|---|
+  | `if (await locator.count()) { … }` | 存在チェックで分岐。要素が遅延描画なら 0 を見て誤った枝へ入る |
+  | `await locator.waitFor({ timeout: 1000 }).catch(() => …)` | タイムアウトを分岐条件に使う典型形。まさに時間ベースの判定 |
+  | `await Promise.race([oneStep, twoStep])` | どちらが先に解決したかで枝が決まる（実行時レース） |
+  | `page.locator(a).or(page.locator(b))` | 1 段/2 段の両方を許容してしまい、ドリフトを検知しない |
+
+  上の和集合パターンはこれらを一括で拾う。**ヒット 0 が要求値**である。
 
   **終端を `/^}/` に固定しないこと** — 現行 `auth.ts` の sign-in は object メソッド
   （`async signIn(page) {` … `},`）で、閉じ括弧が字下げされている。`/^}/` は

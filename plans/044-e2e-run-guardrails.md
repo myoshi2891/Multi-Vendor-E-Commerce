@@ -245,14 +245,30 @@ globalTimeout: 3600 * 1000,
   ```bash
   # config 側: reuseExistingServer の判定式に組み込まれていること
   grep -nE 'reuseExistingServer:.*E2E_NO_REUSE' playwright.config.ts
-  # run-local.sh 側: 実際に export していること（値の代入があること）
-  grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=' scripts/e2e/run-local.sh
+
+  # run-local.sh 側: 非空値を代入して export していること。
+  # `=[^[:space:]]` が必須 — `export E2E_NO_REUSE=` は空文字列を代入するため
+  # `process.env.E2E_NO_REUSE` が falsy になり reuse が残る（実装した気になれる無効形）。
+  grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]' scripts/e2e/run-local.sh
+
+  # かつ export が playwright 起動より前にあること（行番号で順序を検証）。
+  # 環境変数はプロセス起動時に読まれるので、起動行より後ろの export は無意味。
+  awk '
+    /^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]/ && !e { e = NR }
+    /playwright[[:space:]]+test/ && !p { p = NR }
+    END {
+      if (!e) { print "FAIL: no non-empty export of E2E_NO_REUSE"; exit 1 }
+      if (!p) { print "FAIL: no playwright test invocation found"; exit 1 }
+      if (e > p) { printf "FAIL: export at line %d is after the run at line %d\n", e, p; exit 1 }
+      printf "PASS: export(%d) precedes playwright test(%d)\n", e, p
+    }' scripts/e2e/run-local.sh
   ```
 
-  両方が 1 行以上ヒットすること（`grep` の exit 0）。現行の
-  `playwright.config.ts:47` は `reuseExistingServer: !process.env.CI` で
-  `E2E_NO_REUSE` を一切見ていないため、実装前は 1 本目が空で落ちる
-  （＝このゲートが空振りしないことの確認になる）。
+  3 本すべてが PASS すること。**トークンの存在だけを見ると、値が空でも・起動行の後ろに
+  あっても緑になる** —— どちらも実行時には何の効果も持たないので、ゲートとしては
+  未実装を見逃したのと同じである。現行の `playwright.config.ts:47` は
+  `reuseExistingServer: !process.env.CI` で `E2E_NO_REUSE` を一切見ていないため、
+  実装前は 1 本目が空で落ちる（＝このゲートが空振りしないことの確認になる）。
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] フルランで `test-results/.last-run.json` の status が "timedout" でない
 - [ ] `plans/README.md` の 044 行を DONE に更新

@@ -79,13 +79,26 @@ Read this before running anything, so a pre-existing red does not get misdiagnos
 
 | Purpose         | Command                                     | Expected                     |
 |-----------------|---------------------------------------------|------------------------------|
-| Latest 16.2.x   | `bun info next versions \| tr ',' '\n' \| grep -o "16\.2\.[0-9]*" \| tail -1` | newest 16.2.x（`bun info next version` は使わない — 全体の最新を返し 16.2.x に固定されない。Correction 2026-07-19 参照） |
+| Latest 16.2.x   | `bun info next versions \| tr -d ' "[]' \| tr ',' '\n' \| grep -E '^16\.2\.[0-9]+$' \| sort -V \| tail -1` | newest **stable** 16.2.x（下の注記を参照） |
 | Install         | `bun install`                               | exit 0, lock updated         |
 | Audit (check)   | `bun audit`                                 | `next` advisories gone       |
 | Typecheck       | `bunx tsc --noEmit`                         | exit 0                       |
 | Middleware test | `bun run test -- src/middleware.test.ts`    | all pass                     |
 | Full unit suite | `bun run test`                              | 1685 passed / 1688 total     |
 | Lint            | `bun run lint`                              | exit 0 (warns ok)            |
+
+> **バージョン抽出コマンドの注意**（安定版だけを取るための 3 点）:
+>
+> 1. **`bun info next version`（単数）は使わない** — 全体の最新を返し `16.2.x` に固定されない
+>    （Correction 2026-07-19 参照）。
+> 2. **`grep -o "16\.2\.[0-9]*"` は使わない** — `-o` は行の一部を切り出すため、
+>    prerelease から安定版**に見える文字列を合成してしまう**。`16.2.13-canary.0` は
+>    `16.2.13` として出力され、実在しない安定版を掴まされる。`next` は 16.x だけで
+>    384 件の prerelease を publish しており（`16.2.0-canary.*` を含む）、これは仮定の話ではない。
+>    行全体を `^…$` でアンカーする `grep -E '^16\.2\.[0-9]+$'` なら prerelease は構造的に落ちる。
+> 3. **`tail -1` の前に `sort -V` を挟む** — `tail -1` 単体はレジストリの列挙順に依存する。
+>    バージョン順であることは契約されていないので、辞書順でも publish 順でもなく
+>    **バージョン順**で最大を取るよう明示する（`sort -V`）。
 
 ## Scope
 

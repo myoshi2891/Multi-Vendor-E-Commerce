@@ -330,12 +330,32 @@ expected=$(
 actual=$(sed -n '/^```env$/,/^```$/p' README.md | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
 
 missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+# README 側の余剰も検出する（下記「両方向を見る理由」参照）
+extra=$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+
+status=0
 if [ -n "$missing" ]; then
   printf 'FAIL: missing from README env block:\n%s\n' "$missing"
-  exit 1
+  status=1
 fi
-echo "PASS: README env block covers the superset"
+if [ -n "$extra" ]; then
+  printf 'FAIL: listed in README but not in the expected superset:\n%s\n' "$extra"
+  status=1
+fi
+[ "$status" -eq 0 ] || exit 1
+echo "PASS: README env block matches the superset exactly"
 ```
+
+**両方向を見る理由**: `missing`（`comm -23`）だけでは README が**古い変数を持ち続けている**
+ケースを PASS させる。削除済み・改名済みの変数が README に残ると、新規オンボーディング時に
+「設定したのに効かない」変数を `.env.local` に書かせることになり、これは欠落と同じ種類の
+（そして原因が分かりにくい）事故になる。**README に載っているが期待集合に無い変数**が出たら、
+次のどちらかで解消する（「黙って通る」状態にはしない）:
+
+- **コード側に実在しない**（削除・改名済み）→ README から消す
+- **実在するが下の除外表で意図的に落としている**（`HSTS_*` / `SONAR_*` 等）→ README から消すか、
+  除外表からその行を外して期待集合に戻す。「除外している＝README にも載せない」が
+  除外表の前提なので、両方に載っている状態は表そのものの誤りを意味する
 
 **除外は明示的に列挙し、理由を持たせること**（暗黙に母数から漏れるのが元の欠陥だったため）:
 
