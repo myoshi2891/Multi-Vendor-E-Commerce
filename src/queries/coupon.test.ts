@@ -218,6 +218,53 @@ describe("upsertCoupon", () => {
             expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
         });
 
+        it("検証エラーは汎用 DB エラー文言でラップされず、そのままの文言でスローされる", async () => {
+            // 回帰: safeParse の throw が try の内側にあると catch が
+            // "Error occurred while trying to upsert coupon: ..." で上書きしてしまう。
+            // 上の各ケースは toThrow(string) の部分一致で通ってしまうため、
+            // ここでは完全一致（正規表現アンカー）でラップの不在を固定する。
+            // tech.md「認可エラーを汎用 DB エラーメッセージで上書きしない」と同じ原則。
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(/^クーポンの入力値が不正です。$/);
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("検証エラーはサーバーログ (logError) を発生させない", async () => {
+            // ユーザーの入力ミスは運用上のエラーではない。try の内側に置くと
+            // catch の logError がユーザー起因の 4xx 相当をログノイズとして出し続ける。
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            try {
+                await expect(
+                    upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+                ).rejects.toThrow("クーポンの入力値が不正です。");
+                expect(consoleErrorSpy).not.toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
+
+        it("コード重複エラーは汎用 DB エラー文言でラップされない", async () => {
+            // 事前チェック (findFirst) の意図的 throw も同じ catch に捕まる。
+            // P2002 分岐は error.code を見るため素の Error はここに該当せず、
+            // "Error occurred while trying to upsert coupon: ..." に埋もれていた。
+            const coupon = createValidCouponInput({ id: "new-coupon" });
+            mockDb.coupon.findFirst.mockResolvedValue(
+                createMockCoupon({ id: "existing-coupon" })
+            );
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(/^このクーポンコードは既に使用されています$/);
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
         it("スプレッド書き込みが撤去され、検証済みフィールドの明示マッピングで書き込まれる", async () => {
             // クライアント供給の scope / storeId / isActive 等はサーバー強制値・既定値が優先され、
             // 書き込みは parsed.data の 4 フォームフィールド + サーバー強制フィールドに限定される
@@ -1471,6 +1518,21 @@ describe("upsertCouponAsAdmin", () => {
             await expect(
                 upsertCouponAsAdmin(coupon as never)
             ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("検証エラーは汎用 DB エラー文言でラップされず、そのままの文言でスローされる", async () => {
+            // 回帰: upsertCoupon と同型。admin 側の catch は
+            // "Error occurred while upserting coupon: ..." で上書きしていた。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow(/^クーポンの入力値が不正です。$/);
             expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
         });
     });
