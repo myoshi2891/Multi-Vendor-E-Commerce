@@ -156,14 +156,14 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   販売者の重複対応を招く。本プランが既に持つ冪等化は **遷移**側（「条件付き updateMany」・
    >   上記「遵守すべきリポジトリ規約」）だけで、**作成（INSERT）側は無防備**。
    >   本リポジトリは同型の実害を経験済み（`place-order` の二重送信ガード = plan 006 /
-   >   `src/components/store/cards/place-order.tsx`）。方式は spike が決める（例: クライアント
-   >   由来の冪等性キー + `@@unique`、または OrderItem 単位の重複を縛る自然キー制約
-   >   （**ただし可変フィールドを鍵にしないこと** — `status` は RMA ライフサイクルで遷移し、
-   >   `requestedQuantity` も再申請で変わりうるため、`[orderItemId, status, requestedQuantity]`
-   >   のような組を鍵にすると status 遷移後に重複が素通りする。鍵は**不変列**か
-   >   クライアント由来の冪等性キーに限る。**さらにクライアント由来キーは主体・対象・入力に
-   >   束縛すること** —— キー単体だと別ユーザー・別 OrderItem へ使い回して他者の RMA に
-   >   影響させられる/リプレイできるため。
+   >   `src/components/store/cards/place-order.tsx`）。方式は spike が決める —— 例:
+   >   クライアント由来の冪等性キー + `@@unique`、または OrderItem 単位の重複を縛る
+   >   自然キー制約。**ただし可変フィールドを鍵にしないこと** — `status` は RMA
+   >   ライフサイクルで遷移し、`requestedQuantity` も再申請で変わりうるため、
+   >   `[orderItemId, status, requestedQuantity]` のような組を鍵にすると status 遷移後に
+   >   重複が素通りする。鍵は**不変列**かクライアント由来の冪等性キーに限る。
+   >   **さらにクライアント由来キーは主体・対象・入力に束縛すること** —— キー単体だと
+   >   別ユーザー・別 OrderItem へ使い回して他者の RMA に影響させられる/リプレイできるため。
    >
    >   **束縛の実装形（3 要素を混ぜないこと）**: 主体と対象は**制約**で、入力は**比較**で縛る。
    >   入力ハッシュを unique 制約に入れてはならない —— 入力が 1 バイト違えば別行になるので、
@@ -172,6 +172,14 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >   - **不変列 `requestHash`** を持たせる（正規化した申請内容 —— `requestedQuantity`・
    >     理由コード・希望解決方法 —— の安定ハッシュ。`status` のような可変列は**含めない**）。
    >   - 制約は `@@unique([userId, orderItemId, idempotencyKey])`。**`requestHash` は入れない。**
+   >     **ただしこの形は「1 RMA = 1 OrderItem」を前提にしている。** Q1 は対象 OrderItem を
+   >     「複数可か」として未決のまま残しているため、**複数 OrderItem を 1 件の RMA に
+   >     まとめる設計を採るなら制約はヘッダ側へ移すこと** —— RMA ヘッダに
+   >     `@@unique([userId, idempotencyKey])` を置き、対象 OrderItem は明細行
+   >     （`ReturnRequestItem` 等）で表す。ヘッダに `orderItemId` 列が存在しない以上、
+   >     上の 3 列複合キーは複数明細の RMA では**そもそも表現できない**。
+   >     spike は Q1 の「複数可か」と本制約の形を**同時に**確定すること
+   >     （片方だけ決めると、決めたつもりの冪等性が実装段階で成立しない）。
    >   - **`idempotencyKey` はクライアント必須入力（`String`・NOT NULL）にすること。**
    >     nullable にすると PostgreSQL は NULL 同士を「区別される」と扱うため、キー未指定の
    >     申請が何件でも一意制約を通り抜け、この制約は**存在しないのと同じ**になる
@@ -182,10 +190,11 @@ enum ProductStatus {            // schema.prisma:560 — OrderItem の配送状�
    >     - **不一致** → 同じキーで別内容を送っている。**409 相当で拒否**する（キー再利用）
    >
    >   これで subject(userId)・target(orderItemId) はスキーマが保証し、入力の同一性は
-   >   衝突時の比較が保証する。旧版は「入力ハッシュへスコープし」と書きながら制約例に
-   >   ハッシュが無く、実装形として成立していなかった）、
-   >   短時間の重複申請の拒否）。UI 側のガードだけに依存しないこと（再送・並行タブ・API 直叩きで
-   >   破れる）。plan 021 の通知冪等性キー（Q6 の (β) outbox が参照するもの）と概念を揃え、
+   >   衝突時の比較が保証する（旧版は「入力ハッシュへスコープし」と書きながら制約例に
+   >   ハッシュが無く、実装形として成立していなかった）。
+   >
+   >   **UI 側のガードだけに依存しないこと**（再送・並行タブ・API 直叩きで破れる）。
+   >   plan 021 の通知冪等性キー（Q6 の (β) outbox が参照するもの）と概念を揃え、
    >   相互参照を書く。
 2. **SupportTicket との関係**: RETURN_REQUEST チケットを RMA へ「昇格」させるのか、
    注文履歴からの直接申請で RMA を作り、チケットは相談窓口として並立させるのか。
