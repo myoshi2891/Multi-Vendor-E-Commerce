@@ -39,10 +39,18 @@
 >   `brace-expansion` / `flatted` / `js-yaml` / `glob` / `@babel/core`
 >   → **DEPS-05「dev-only は routine refresh に畳む」の既定方針を維持**
 >   （本ラウンドでも個別プラン化しない）。
-> - **本番到達・直接依存（追加）**: `jodit` / `jodit-react` —— **dev/CI のみに分類しないこと。**
->   `jodit-react` は `package.json:77` の **`dependencies`**（`devDependencies` ではない）で、
->   seller ダッシュボードのリッチテキストエディタとして**本番バンドルに乗り、本番ブラウザで
->   実行される**。「本番非到達」は誤り。
+> - **本番到達（追加）**: `jodit-react`（**直接依存**）/ `jodit`（**transitive**）
+>   —— **dev/CI のみに分類しないこと。**
+>   - `jodit-react@^4.1.2` は `package.json:77` の **`dependencies`**（`devDependencies` ではない）
+>     に記載された**直接依存**。`src/components/dashboard/forms/product-details.tsx:59` が
+>     `import JoditEditor from 'jodit-react'` で参照する。
+>   - `jodit@^4.2.10` は **`jodit-react` の `dependencies` 経由の transitive** であり、
+>     `package.json` には現れない。`src/` から直接 import してもいない。
+>     **依存種別を `jodit-react` と同じ「直接」と書かないこと**（bump 手段が異なる —— 直接依存は
+>     `package.json` を編集して上げるが、transitive は親の版を上げるか override を置く必要がある）。
+>
+>   到達性の結論は両者とも同じ: seller ダッシュボードのリッチテキストエディタとして
+>   **本番バンドルに乗り、本番ブラウザで実行される**。「本番非到達」は誤り。
 >   ただし**リスク評価は別問題**であり、以下の理由で本ラウンドでは個別プラン化しない:
 >   (a) 到達できるのは認証済み SELLER 自身のダッシュボードに限られ、攻撃者が他人の
 >   エディタへ入力を送り込む経路が無い（自己 XSS 相当）、(b) 生成された HTML が
