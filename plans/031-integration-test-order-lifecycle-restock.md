@@ -318,9 +318,35 @@ Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, Paymen
 >     return updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled);
 > };
 >
-> await Promise.all([arm(), arm()]);
-> // Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
+> // **戻り値を捨てないこと**（下記「戻り値も assert する」参照）
+> const settled = await Promise.allSettled([arm(), arm()]);
+>
+> // 1) 敗者も含めて 2 本とも fulfill すること（呼び出し元から見て冪等）
+> expect(settled.map((s) => s.status)).toEqual(["fulfilled", "fulfilled"]);
+>
+> // 2) 2 本とも「要求した status」を返すこと（敗者だけ別値／別例外にならない）
+> expect(settled.map((s) => (s as PromiseFulfilledResult<PaymentStatus>).value))
+>     .toEqual([PaymentStatus.Cancelled, PaymentStatus.Cancelled]);
+>
+> // 3) Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
 > ```
+>
+> **戻り値も assert すること（2026-07-27 追記）。** 元の版は `await Promise.all([arm(), arm()])`
+> の結果を捨てて `Size.quantity` だけを見ていた。これは **restock 側の側面検証**しか
+> しておらず、**呼び出し元から見た契約**が壊れても素通りする。具体的には、後日
+> 「敗者側で `Order already cancelled.` を throw する」「敗者は遷移前の status を返す」
+> といった変更が入っても、在庫は 8 のままなのでテストは緑を保つ。
+>
+> `updateOrderPaymentStatus` の契約は**「要求した status が結果 status である」**であり、
+> 勝者・敗者を問わず成立する（実装は `didTransition` に関わらず末尾で `return status`
+> する）。この冪等性こそ管理画面の二重クリックや webhook 再送が安全である根拠なので、
+> 明示的に固定する。
+>
+> **`count` を assert しようとしないこと。** 「どちらが遷移させたか」を判別する
+> `transition.count` は `$transaction` 内部のローカル変数（`didTransition`）であって
+> **戻り値には現れない**（`updateOrderPaymentStatus` の戻り型は `Promise<PaymentStatus>`）。
+> 「遷移はちょうど 1 回」という事実が観測できるのは副作用側だけなので、その担保は
+> 上の (3) と、必要なら `OrderGroup` / `OrderItem` の status 件数で行う。
 >
 > **注意（並行性の機械的保証）**: `Promise.all` は 2 本の呼び出しを**並べるだけ**で、DB 上で
 > 実際に重なる保証にはならない。**接続プールが 1 なら 2 本は逐次実行**され、CAS の並行性を

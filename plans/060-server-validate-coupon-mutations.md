@@ -270,6 +270,28 @@ Cover both actions:
 - Structural pattern: existing `upsertCoupon` tests in `coupon.test.ts`.
 - Verification: `bun run test -- src/queries/coupon.test.ts` all pass.
 
+### Added after this plan shipped (keep in the regression set)
+
+> These landed in later reviews against the same schema/guard this plan introduced. They are
+> listed here so the coupon-validation regression set is discoverable from one place — a reader
+> comparing `coupon.test.ts` against the five cases above would otherwise treat them as strays.
+
+- **fractional `discount` (2026-07-26)** — `discount: 50.5` must be rejected on **both** the
+  seller (`upsertCoupon`) and admin (`upsertCouponAsAdmin`) paths, with no DB write.
+  The original five cases only pinned the `min(1)` / `max(99)` **range**, so `50.5` passed
+  `safeParse` and was carried to the Prisma boundary, where `Coupon.discount` is `Int`.
+  `CouponFormSchema.discount` now carries `.int()` (`src/lib/schemas.ts`) so the range check and
+  the storage-type check sit at the same boundary. `AdminCouponFormSchema` inherits it via
+  `.extend()`. (+2)
+
+- **validation errors must not be wrapped (2026-07-27)** — the rejection message must be
+  *exactly* `クーポンの入力値が不正です。`, not
+  `Error occurred while trying to upsert coupon: クーポンの入力値が不正です。`.
+  **Assert with an anchored regex** (`/^…$/`), not `toThrow(string)`: the substring match of the
+  latter passes against the wrapped form, which is precisely why the defect survived the five
+  cases above. Same for the duplicate-code message, and one case pins that a user input mistake
+  emits no `logError`. (+4)
+
 ## Done criteria
 
 ALL must hold:
