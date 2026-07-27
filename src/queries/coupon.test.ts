@@ -646,7 +646,7 @@ describe("getCoupon", () => {
         it("couponIdが空の場合エラーをスローする", async () => {
             await expect(
                 getCoupon("", TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
 
         it("storeURLが空の場合エラーをスローする", async () => {
@@ -708,7 +708,7 @@ describe("getCouponAsAdmin", () => {
 
         it("couponIdが空の場合エラーをスローする", async () => {
             await expect(getCouponAsAdmin("")).rejects.toThrow(
-                "Please provide coupon ID."
+                /^Please provide coupon ID\.$/
             );
         });
     });
@@ -750,7 +750,7 @@ describe("deleteCoupon", () => {
         it("couponIdが空の場合エラーをスローする", async () => {
             await expect(
                 deleteCoupon("", TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
 
         it("storeURLが空の場合エラーをスローする", async () => {
@@ -1572,7 +1572,7 @@ describe("deleteCouponAsAdmin", () => {
 
             await expect(
                 deleteCouponAsAdmin("")
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
     });
 
@@ -1630,7 +1630,7 @@ describe("toggleCouponActive", () => {
 
             await expect(
                 toggleCouponActive("")
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
     });
 
