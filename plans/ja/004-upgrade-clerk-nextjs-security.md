@@ -175,8 +175,18 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 
 以下すべてを満たすこと:
 
-- [ ] `package.json` が `@clerk/nextjs` を `>= 7.2.4`（目標 `^7.5.x`）で示している
-- [ ] `bun.lock` が `@clerk/nextjs` を `>= 7.2.4` に解決している
+- [ ] `package.json` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**。目標 `^7.5.x`）で示している
+- [ ] `bun.lock` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**）に解決している
+
+  > **`7.2.4` は本プランの目標値であって、CRITICAL 勧告の修正版ではない。**
+  > GHSA-vqx2-fgx2-5wq9 の 7 系修正版は **`7.2.1`**（影響レンジ `>=7.0.0 <7.2.1`）。
+  > 7.2.4 を目標に置いているのは、推移的 HIGH の `js-cookie` も同時に解消したいという
+  > **本プラン都合**による上乗せである。両者を混同して「勧告の修正版は 7.2.4」と
+  > 書かないこと。勧告レンジの単一の出典は
+  > [`plans/audit/findings-06-dependencies.md`](../audit/findings-06-dependencies.md)
+  > （同一 GHSA でもメジャー系列ごとにレンジが違う — 6 系は `<6.39.2`、5 系は `<5.7.6`）。
+  > なお `js-cookie` は `@clerk/nextjs` のバージョン単独では決まらないため、
+  > `bun.lock` の解決結果を**独立に**確認すること。
 - [ ] `bun audit` が `@clerk/nextjs` の GHSA-vqx2-fgx2-5wq9 をもう報告しない
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `bun run test` が exit 0（フルユニットスイート green）
