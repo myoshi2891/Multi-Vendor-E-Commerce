@@ -12,6 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1769 passed / 1772 total across 176 suites (3 skipped), as of 2026-07-28.
+  Eight regressions from the CodeRabbit review round, fifth pass (+8, +1 suite):
+  `coupons/columns.test.tsx` (+7, **new suite**) covers the seller coupon edit modal, whose
+  `setOpen` fetch callback let a `getCoupon` rejection escape unhandled — the modal-provider's
+  fire-and-forget IIFE only logged it, so the user saw no notification and the modal stayed open
+  on an unverified row snapshot; the suite pins the toast, the `setClose()`, and the structured log.
+  `scan-tests.test.ts` (+1) pins that modifier-prefixed `it.skip.each` / `test.only.each` expand to
+  their table row counts — both `BLOCK_PATTERN` and `EACH_PATTERN` missed them, leaving 4 of 5
+  fixture cases invisible to the dashboard scanner. `coupon.test.ts` gained no cases: its five
+  existing `Please provide coupon ID.` assertions were substring matches that passed while the
+  `catch` rewrote the message, and were re-anchored to exact match.
 - 1761 passed / 1764 total across 175 suites (3 skipped), as of 2026-07-27.
   Seven regressions from the CodeRabbit review round, fourth pass (+7, no new suites):
   `coupon.test.ts` (+4) anchors the *exact* message of validation and duplicate-code failures —
