@@ -159,10 +159,12 @@ take: STORE_ORDERS_MAX,
 
 `src/queries/store.test.ts` の `getStoreOrders` describe（~1243行目開始）にて、クエリが上限を伴うことを assert するよう成功テストを追加/調整する:
 ```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
 expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
     expect.objectContaining({
         where: { storeId: /* the mocked store id */ },
-        take: 200,
+        take: STORE_ORDERS_MAX,
         orderBy: { updatedAt: "desc" },
     })
 );
@@ -199,7 +201,25 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 **検証**:
 
-- `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` → import と補間の両方が出ること（＝文言が定数由来であり、リテラル `200` ではないこと）。
+- 定数由来であることの確認（**2 つのゲートを両方満たすこと**）:
+
+  ```bash
+  PAGE='src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx'
+
+  # (a) 存在ゲート: import と補間の 2 箇所で参照されていること。
+  #     件数を数える（`grep -n` の目視では「2 箇所あるつもり」で 1 箇所でも通ってしまう）。
+  [ "$(grep -c 'STORE_ORDERS_MAX' "$PAGE")" -ge 2 ] \
+    || { echo "FAIL: STORE_ORDERS_MAX の参照が import + 補間の 2 箇所に満たない"; false; }
+
+  # (b) 不在ゲート: 告知文にリテラル 200 が残っていないこと。
+  #     (a) は「定数も使っている」ことしか言えず、リテラルの併存を検出できない。
+  grep -qE 'latest[[:space:]]+200|up to[[:space:]]+200' "$PAGE" \
+    && { echo "FAIL: 告知文にリテラル 200 が残っている"; false; }
+  ```
+
+  **(a) だけを合格条件にしないこと。** `grep -n "STORE_ORDERS_MAX"` がヒットしても、
+  それは「定数が使われている」ことの証明にすぎず、「リテラル `200` が使われていない」ことの
+  証明にはならない。両者は独立した主張であり、後者には不在ゲート (b) が要る。
 - `bunx tsc --noEmit` → exit 0。
 
 ### Step 4: 完全な lint
@@ -208,7 +228,7 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 ## Test plan
 
-- `store.test.ts`: `getStoreOrders` が `take: 200`（上限あり）を渡すことを assert；既存の認可/所有権テストは green のまま。
+- `store.test.ts`: `getStoreOrders` が `take: STORE_ORDERS_MAX`（上限あり）を渡すことを assert；既存の認可/所有権テストは green のまま。リテラル `200` ではなく定数を参照すること（Step 1 の「クエリと UI が同一の定数を import する」という設計意図をテスト側でも維持するため）。
 - browse の削除については型チェック/lint 以上のテストは不要（dead code の除去）；`browse/page.tsx` にテストがあれば引き続き pass することを確認する。
 - 構造パターン: `store.test.ts` 内の既存 `getStoreOrders` describe。
 - 検証: `bun run test -- src/queries/store.test.ts` → 全件 pass。
