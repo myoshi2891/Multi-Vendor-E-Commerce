@@ -274,21 +274,24 @@ Cover both actions:
 
 ALL must hold:
 
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `upsertCoupon` and `upsertCouponAsAdmin` each call `safeParse` on the incoming coupon and
+> 下記のチェックは **2026-07-27 に再実測**したもの（`safeParse` は `coupon.ts:83` /
+> `:448`、`.int()` は `schemas.ts:549`、`...coupon` スプレッドは 0 ヒットを確認）。
+
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `upsertCoupon` and `upsertCouponAsAdmin` each call `safeParse` on the incoming coupon and
       throw before any `db.coupon.upsert` when validation fails
-- [ ] Neither action still writes via `{ ...coupon }` spread — fields are mapped explicitly from
+- [x] Neither action still writes via `{ ...coupon }` spread — fields are mapped explicitly from
       `parsed.data` (+ server-forced `storeId`/`scope`)
-- [ ] `grep -n "\.\.\.coupon" src/queries/coupon.ts` → no matches inside the upsert `update`/`create`
+- [x] `grep -n "\.\.\.coupon" src/queries/coupon.ts` → no matches inside the upsert `update`/`create`
       objects (verify the spread is gone from the write path)
-- [ ] `bun run test -- src/queries/coupon.test.ts` passes with the new discount-range tests
-- [ ] `CouponFormSchema.discount` (and `AdminCouponFormSchema.discount`) carry `.int()`
+- [x] `bun run test -- src/queries/coupon.test.ts` passes with the new discount-range tests
+- [x] `CouponFormSchema.discount` (and `AdminCouponFormSchema.discount`) carry `.int()`
       (`z.number().int().min(1).max(99)`) so the range check and the `Int` storage type agree at the
       same boundary, with a test that rejects a fractional value (e.g. `50.5`)
       (`grep -n "discount" src/lib/schemas.ts` shows `.int()` on the coupon discount)
-- [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `plans/README.md` status row for 060 updated
+- [x] `bun run lint` exits 0
+- [x] No files outside the in-scope list are modified (`git status`)
+- [x] `plans/README.md` status row for 060 updated
 
 ## STOP conditions
 

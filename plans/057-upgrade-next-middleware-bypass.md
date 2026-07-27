@@ -226,16 +226,25 @@ Expect a redirect to the Clerk sign-in URL, not `200` with dashboard markup. If 
 
 ALL must hold:
 
-- [ ] `package.json` declares `next` as `~16.2.x` with a floor `>= 16.2.5` (tilde — a `^` range would permit 16.3+, which is out of scope)
-- [ ] `bun.lock` and `node_modules/next/package.json` both resolve `next` to `>= 16.2.5`
-- [ ] `bun audit` reports none of GHSA-26hh-7cqf-hhc6 / GHSA-8h8q-6873-q5fj / GHSA-3g8h-86w9-wvmq
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `bun run test -- src/middleware.test.ts` passes
-- [ ] `bun run test` exits 0 (full unit suite green; expect 1685/1688 unless other work landed)
-- [ ] `bun run lint` exits 0
-- [ ] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
-- [ ] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
+> 下記のチェックは **2026-07-27 に再実測**したもの（実行コマンドは各行に併記）。
+> 当時の実行時点ではなく、この日付時点で成立していることを示す。
+
+- [x] `package.json` declares `next` as `~16.2.x` with a floor `>= 16.2.5` (tilde — a `^` range would permit 16.3+, which is out of scope) — 実測: `"next": "~16.2.10"`
+- [x] `bun.lock` and `node_modules/next/package.json` both resolve `next` to `>= 16.2.5` — 実測: `16.2.10`
+- [x] `bun audit` reports none of GHSA-26hh-7cqf-hhc6 / GHSA-8h8q-6873-q5fj / GHSA-3g8h-86w9-wvmq — 実測: 3 件とも 0 ヒット
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `bun run test -- src/middleware.test.ts` passes
+- [x] `bun run test` exits 0 (full unit suite green) — 実測: **1754 passed / 1757 total**（3 skipped・174 suites）。
+      計画時の期待値 1685/1688 からの増加は、その後のテスト追加によるもの（"unless other work landed" 条項に該当）
+- [x] `bun run lint` exits 0 — 実測: 0 errors / 15 warnings（warnings 可）
+- [x] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
+      — 実測: bump commit `10e35f3a` の変更は `package.json` + `bun.lock` の 2 ファイルのみ
+- [x] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
 - [ ] Step 5 smoke result recorded (done, or explicitly flagged pending)
+      — ⚠️ **未達**: Step 5（未認証 `/dashboard` の redirect スモーク）の結果は本プランにも
+      `plans/README.md` にも記録が無い。report-only の手動チェックであり自動テストの代替では
+      ないため、`bun run dev` を起こせる環境で実施して結果をここに追記すること
+      （実施済みなら「いつ・何を観測したか」を書けば足りる）。実測 2026-07-27
 
 ## STOP conditions
 

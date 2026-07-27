@@ -237,16 +237,23 @@ cases.
 
 ALL must hold:
 
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `isSettledPaymentStatus` is exported from `src/queries/stripe.ts` (only change to that file)
-- [ ] `capturePayPalPayment` throws before capture when `order.paymentStatus` is settled
-- [ ] `capturePayPalPayment` throws (and does not mark Paid) on amount, custom_id, or currency
-      mismatch, verified against `order.total` / `orderId` / `"USD"`
-- [ ] `bun run test -- src/queries/paypal.test.ts` passes with the new negative cases
-- [ ] `bun run test -- src/queries/stripe.test.ts` still passes (no logic change)
-- [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `plans/README.md` status row for 059 updated
+- [x] `bunx tsc --noEmit` exits 0
+- [ ] ~~`isSettledPaymentStatus` is exported from `src/queries/stripe.ts` (only change to that file)~~
+      — **この条件は成立せず、成立させるべきでもない（superseded）**。`stripe.ts` は `"use server"`
+      なので同期ヘルパーを export できない。実装は `src/lib/payment-status.ts:30` に置かれ、
+      `stripe.ts:5` / `paypal.ts:10` の双方が import している。詳細は
+      [Divergence since this plan shipped](#divergence-since-this-plan-shipped-2026-07-18) の 2 番。
+      **未チェックのまま残すこと** — 実測 2026-07-27。
+- [x] `capturePayPalPayment` throws before capture when `order.paymentStatus` is settled
+      （`paypal.ts:208` の早期 return + `:22` の CAS `notIn: [...SETTLED_PAYMENT_STATUSES]`。
+      shipped 版は Divergence 1 のとおり read-then-act ではなく条件付き書き込み）
+- [x] `capturePayPalPayment` throws (and does not mark Paid) on amount, custom_id, or currency
+      mismatch, verified against `order.total` / `orderId` / `"USD"`（`paypal.ts:240-270`）
+- [x] `bun run test -- src/queries/paypal.test.ts` passes with the new negative cases
+- [x] `bun run test -- src/queries/stripe.test.ts` still passes (no logic change)
+- [x] `bun run lint` exits 0
+- [x] No files outside the in-scope list are modified (`git status`)
+- [x] `plans/README.md` status row for 059 updated
 
 ## STOP conditions
 

@@ -271,15 +271,17 @@ Cover the IDOR 3-tier pattern (per `docs/testing/SECURITY_GAP_REPORT.md` §5.2):
 
 ALL must hold:
 
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `getCoupon` signature is `(couponId: string, storeURL: string)` and its query is scoped to
+> 下記のチェックは **2026-07-27 に再実測**したもの。
+
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `getCoupon` signature is `(couponId: string, storeURL: string)` and its query is scoped to
       `{ id: couponId, storeId: store.id }` via `requireStoreOwner`
-- [ ] `getCouponAsAdmin` exists, gated by `requireAdmin()`, and is the admin caller's function
-- [ ] `grep -n "@PermissionLevel Public" src/queries/coupon.ts` → no match (the stale doc is gone)
-- [ ] `bun run test -- src/queries/coupon.test.ts` passes with the new (a)/(b)/(c) tests
-- [ ] `bun run lint` exits 0
-- [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `plans/README.md` status row for 058 updated
+- [x] `getCouponAsAdmin` exists, gated by `requireAdmin()`, and is the admin caller's function
+- [x] `grep -n "@PermissionLevel Public" src/queries/coupon.ts` → no match (the stale doc is gone)
+- [x] `bun run test -- src/queries/coupon.test.ts` passes with the new (a)/(b)/(c) tests
+- [x] `bun run lint` exits 0
+- [x] No files outside the in-scope list are modified (`git status`)
+- [x] `plans/README.md` status row for 058 updated
 
 ## STOP conditions
 
