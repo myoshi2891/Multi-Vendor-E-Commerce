@@ -101,6 +101,67 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(3);
     });
 
+    // skip / only 等の修飾子付きテストも実行時には「テストケース」として計上される
+    // （Jest は skipped、Playwright は skipped として reporter に出る）。
+    // 静的走査で 0 件扱いにすると、tests/e2e の 37 ケースが 23 と報告され、
+    // SSOT（QA_HANDOFF「3 ブラウザ 111 テスト」= 37 × 3）と乖離する。
+    it("skip / only 等の修飾子付きテストも testCount に数える", async () => {
+        root = makeFixture({
+            "src/queries/modifier.test.ts": `
+                describe('group', () => {
+                    it('plain', () => {});
+                    it.skip('skipped', () => {});
+                    test.skip('skipped too', () => {});
+                    it.only('focused', () => {});
+                    test.failing('known bug', () => {});
+                    test.concurrent('parallel', () => {});
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(6);
+    });
+
+    // Playwright の test.describe / test.describe.skip は wrapper であり、
+    // 修飾子を許容した結果これらを数え始めると testCount が過大になる。
+    it("test.describe / test.describe.skip は wrapper として testCount から除外する", async () => {
+        root = makeFixture({
+            "tests/e2e/wrapper.spec.ts": `
+                test.describe('group', () => {
+                    test('a', () => {});
+                    test.skip('b', () => {});
+                });
+                test.describe.skip('skipped group', () => {
+                    test('c', () => {});
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(3);
+    });
+
+    // it.each は EACH_PATTERN 側でテーブル行数へ展開される。修飾子を許容した
+    // ブロックパターンが .each も拾うと、each 1 件につき 1 件ぶん二重計上される。
+    it("it.each を修飾子付きブロックとして二重計上しない", async () => {
+        root = makeFixture({
+            "src/queries/each-dup.test.ts": `
+                it.each([
+                    { a: 1 },
+                    { a: 2 },
+                ])('case $a', ({ a }) => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 2 (テーブル行) のみ。ブロックパターン側で +1 されないこと
+        expect(results[0]?.testCount).toBe(2);
+    });
+
     // it.each は実行時にテーブル行数ぶんのテストへ展開される。静的走査で 0 件として
     // 扱うと、ダッシュボードの testCount が実測（bun run test）と食い違う。
     it("it.each のテーブル行数を展開して testCount に数える", async () => {
