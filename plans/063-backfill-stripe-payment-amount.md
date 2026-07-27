@@ -120,11 +120,35 @@ The `ratio` column is the decision signal: affected rows should land at **≈100
 **≈1**. Any row that is neither is an anomaly — it must be listed in the report and excluded from
 the automated update, then handled by hand.
 
+> **`ratio IS NULL` is a fourth bucket, not a member of "neither".** `NULLIF(o.total, 0)` returns
+> NULL for zero-total orders, so `ratio` is NULL for them. Under SQL three-valued logic a NULL
+> ratio satisfies **neither** `ratio ≈ 100` **nor** `ratio NOT BETWEEN 0.99 AND 1.01` — such rows
+> are silently absent from every range-based count. They therefore (a) escape the Step 4 update and
+> (b) escape the Step 5 verification, so a cents-valued row on a zero-total order would be left
+> uncorrected *and* reported as clean. Enumerate them explicitly:
+>
+> ```sql
+> -- zero-total 注文（ratio が計算不能）を必ず別立てで列挙する
+> SELECT pd.id, pd."paymentIntentId", pd.amount, o.total, pd."createdAt"
+> FROM "PaymentDetails" pd
+> JOIN "Order" o ON o.id = pd."orderId"
+> WHERE pd."createdAt" < :deploy_boundary
+>   AND pd."paymentMethod" = 'Stripe'
+>   AND (o.total IS NULL OR o.total = 0);
+> ```
+>
+> Each such row must be resolved by hand (the order total itself is likely the defect) or recorded
+> as unresolved with a reason. Do not let them fall through the range predicates unnoticed.
+
 ### Step 3: Produce a dry-run report and get human approval
 
 Write the Step 2 result to a file and summarise:
 
-- total candidate rows, and how many have `ratio ≈ 100` / `ratio ≈ 1` / neither
+- total candidate rows, and how many have `ratio ≈ 100` / `ratio ≈ 1` / neither / **`ratio IS NULL`
+  (zero-total orders)** — the four buckets must sum to the candidate total, which is the arithmetic
+  check that no row was silently dropped by three-valued logic
+- **the exact count of rows the Step 4 `UPDATE` is expected to affect** (the `ratio ≈ 100` bucket).
+  This number is what the approver signs off on, and Step 4 compares against it before `COMMIT`.
 - the min/max `createdAt` of the rows to be updated
 - the total monetary delta the update will apply
 
@@ -140,7 +164,18 @@ Only after approval. Use a corrective migration (never edit an existing migratio
 ```sql
 BEGIN;
 
--- 影響行数を先に確認してから UPDATE する（想定件数と一致しなければ ROLLBACK）
+-- 1) 影響行数を UPDATE の前に確定させる（述語は下の UPDATE と完全に同一にすること）
+SELECT count(*) AS will_update
+FROM   "PaymentDetails" pd
+JOIN   "Order" o ON o.id = pd."orderId"
+WHERE  pd."createdAt" < :deploy_boundary
+  AND  pd."paymentMethod" = 'Stripe'
+  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;
+
+-- 2) この値を Step 3 の承認済みレポートの件数と目視で突合する。
+--    一致しなければ ROLLBACK; を実行してここで中断する（承認の前提が崩れているため）。
+
+-- 3) 一致した場合のみ UPDATE を実行する
 UPDATE "PaymentDetails" pd
 SET    amount = pd.amount / 100
 FROM   "Order" o
@@ -149,8 +184,21 @@ WHERE  o.id = pd."orderId"
   AND  pd."paymentMethod" = 'Stripe'                        -- Step 2 と同じ肯定形の述語
   AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;   -- ratio ≈ 100 のみ
 
+-- 4) psql が返す `UPDATE <n>` の n が 1) の will_update と一致することを確認する。
+--    不一致なら ROLLBACK;（並行書き込みが入った可能性がある）
+
 COMMIT;
 ```
+
+The count check is **not optional bookkeeping**. Between the Step 3 report and the Step 4 execution
+an unbounded amount of time passes — the approval is asynchronous by design. New Stripe rows written
+in that window sit after `:deploy_boundary` and cannot match, but a manual data edit or a restored
+backup can change the candidate set underneath the approval. `COMMIT`ting a row count nobody
+approved defeats the purpose of the approval gate.
+
+> Run this in a session where a failed comparison can actually stop the script. Do **not** paste the
+> whole block into `psql` at once — the `COMMIT` at the bottom would execute regardless of what the
+> count showed, which is exactly the failure the check exists to prevent.
 
 The `ratio BETWEEN 99 AND 101` predicate makes the update **self-guarding and idempotent**: a row
 already in dollars has `ratio ≈ 1` and cannot match, so re-running the statement is a no-op rather
@@ -160,8 +208,23 @@ understatement that no longer has a clean signal to detect it.
 
 ### Step 5: Verify
 
-Re-run the Step 2 query. Every row must now show `ratio ≈ 1`. Record the before/after counts in
-`docs/PROGRESS.md` and close the CORRECTNESS-05 entry in `plans/README.md`.
+Re-run the Step 2 query. Every row must now show `ratio ≈ 1`, **and the `ratio IS NULL` bucket must
+be re-counted separately** — a range predicate alone cannot see it (see the three-valued-logic note
+in Step 2). Verification passes only when both hold:
+
+```sql
+-- 範囲外の行が 0 であること。NULL は範囲比較では検出できないため IS NULL を明示的に OR する。
+SELECT count(*) AS still_wrong
+FROM   "PaymentDetails" pd
+JOIN   "Order" o ON o.id = pd."orderId"
+WHERE  pd."createdAt" < :deploy_boundary
+  AND  pd."paymentMethod" = 'Stripe'
+  AND  (pd.amount / NULLIF(o.total, 0) NOT BETWEEN 0.99 AND 1.01
+        OR pd.amount / NULLIF(o.total, 0) IS NULL);   -- ← これが無いと zero-total が素通りする
+```
+
+Record the before/after counts in `docs/PROGRESS.md` and close the CORRECTNESS-05 entry in
+`plans/README.md`.
 
 ## Test plan
 
@@ -178,9 +241,16 @@ from Jest:
 ALL must hold:
 
 - [ ] The deploy boundary (not merely the commit timestamp) is recorded in this plan.
-- [ ] The Step 2 query returns 0 rows with `ratio` outside `[0.99, 1.01]` after the backfill.
+- [ ] The Step 5 query returns `still_wrong = 0` — which, by including the explicit `IS NULL` arm,
+      covers both out-of-range rows **and** rows whose `ratio` is NULL.
 - [ ] Rows that were neither `≈1` nor `≈100` are enumerated and individually resolved, or
       explicitly recorded as unresolved with a reason.
+- [ ] **Rows with `ratio IS NULL` (zero-total orders) are enumerated and individually resolved, or
+      explicitly recorded as unresolved with a reason.** These never match the Step 4 predicate, so
+      "the update reported 0 affected rows" is not evidence that they were correct.
+- [ ] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
+- [ ] The Step 4 pre-`UPDATE` count matched the approved report count, and the `UPDATE <n>` echo
+      matched it as well.
 - [ ] Step 4 was run twice on staging and the second run reported 0 affected rows.
 - [ ] Human approval for the production write is recorded (who, when, on which report).
 - [ ] `plans/README.md` CORRECTNESS-05 entry updated to reflect the closed remainder.
