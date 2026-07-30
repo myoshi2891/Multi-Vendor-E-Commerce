@@ -390,8 +390,25 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 
   併せて **`grep -c … → 0` を合格条件にしないこと**。`grep` は 0 件のとき exit 1 を返すため、
   合格が失敗として扱われる（`tr` で 1 行化した後は `-c` の返り値が 0/1 に潰れ件数としても
-  意味を失う）。不在ゲートは `grep -qE … && { echo FAIL; false; }` で表現する
-  （`exit 1` は対話シェルに貼るとセッションを落とすため `false` を使う）。
+  意味を失う）。不在ゲートは上のコマンド本体と同じ
+
+  ```bash
+  if printf '%s' "$body" | tr '\n' ' ' | grep -qE '<禁止パターン>'; then
+      echo "FAIL: …"; false;
+  else
+      echo "OK: …";
+  fi
+  ```
+
+  の **`if … then FAIL … else OK … fi` 形**で表現する（`exit 1` は対話シェルに貼ると
+  セッションを落とすため `false` を使う）。
+
+  **`grep -qE … && { echo FAIL; false; }` の形にはしないこと。** 禁止パターンが
+  **不在（＝合格）** のとき `grep` は exit 1 を返し、`&&` が短絡して右辺が実行されないため、
+  リスト全体の終了ステータスは grep の 1（＝失敗）のまま残る。**合格が exit 0 にならない
+  ゲートは CI で使えない**。この点は上のコマンド本体のコメント（`⚠️` 注記）と
+  [`plans/023`](023-bound-and-validate-public-search-pagination.md) の Done criteria blockquote が
+  検証のうえ既に否定しており、本節もそれに揃える。
 
   **`isVisible` だけを見ないこと** —— このゲートが排除したいのは「UI が 1 段か 2 段かを
   実行時に見分ける分岐」であって、`isVisible` という特定の API 名ではない。同じ分岐は

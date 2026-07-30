@@ -23,15 +23,41 @@
 > lockfile pins `@clerk/shared`. Check the two independently:
 >
 > ```bash
+> # CRITICAL / the path that pulls js-cookie. `node -p` は不在時に非 0 で loud に失敗するため、
+> # 「パッケージが消えていた」を「合格」と読み違えない。
 > node -p "require('./node_modules/@clerk/nextjs/package.json').version"   # CRITICAL: need >= 7.2.1
-> grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u                        # HIGH: need the fixed js-cookie
-> node -p "require('./node_modules/@clerk/shared/package.json').version"    # the path that pulls js-cookie
+> node -p "require('./node_modules/@clerk/shared/package.json').version"   # the path that pulls js-cookie
+> node -p "require('./node_modules/js-cookie/package.json').version"       # HIGH: installed js-cookie
+>
+> # HIGH: lockfile 側の**解決済み**バージョン（node_modules と二重に確認する）
+> resolved=$(grep -oE '"js-cookie": \["js-cookie@[^"]+"' bun.lock \
+>   | sed -E 's/.*js-cookie@//; s/"$//' | sort -u)
+> if [ -z "$resolved" ]; then
+>     echo "FAIL: no resolved js-cookie entry in bun.lock"; false
+> else
+>     echo "OK: js-cookie resolved to: $resolved"
+> fi
 > ```
 >
+> **旧版の `grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u` は 2 つの理由で成立しない**
+> （どちらも実測で確認済み）:
+>
+> 1. **見ている対象が違う。** そのパターンが当たるのは `@clerk/shared` の依存宣言
+>    （`"js-cookie": "3.0.7"`）であって、本文が「これが決める」と言っている**解決済みエントリ**
+>    （`"js-cookie": ["js-cookie@3.0.7", …]`、`bun.lock` のパッケージ表）ではない。宣言レンジと
+>    解決結果は一致しないことがあり、まさにその乖離を検出したいのだからここは致命的。
+> 2. **空振りが成功として現れる（fail open）。** `grep` が 0 件でも末尾の `sort` が exit 0 を
+>    返すため、lockfile 形式の変更や依存の消滅で**何も照合できていない**状態が「合格」になる。
+>    上の形は結果を変数へ束ね `[ -z … ]` で判定するので、空振り = exit 1 になる
+>    （`if … then FAIL … else OK … fi` 形の根拠は [`plans/023`](023-bound-and-validate-public-search-pagination.md)
+>    の Done criteria blockquote と同じ）。
+>
 > **Measured (2026-07-26)**: `@clerk/nextjs@7.5.19` (range `^7.5.0`), `@clerk/shared@4.25.4`,
-> `js-cookie@3.0.7` — both advisories clear. Authoritative advisory ranges are recorded in
-> [`plans/audit/findings-06-dependencies.md`](audit/findings-06-dependencies.md); do not restate
-> them here (same GHSA carries different ranges per major series — 6.x is `<6.39.2`, 5.x is `<5.7.6`).
+> `js-cookie@3.0.7` — both advisories clear. 上の新しいゲートでも再実測（2026-07-30）し、
+> 合格側 exit 0 / 空振り側 exit 1 の**両方向**を確認済み。Authoritative advisory ranges are
+> recorded in [`plans/audit/findings-06-dependencies.md`](audit/findings-06-dependencies.md); do not
+> restate them here (same GHSA carries different ranges per major series — 6.x is `<6.39.2`, 5.x is
+> `<5.7.6`).
 
 ## Status
 
