@@ -19,7 +19,7 @@
 ### 技術スタック（現行）
 | パッケージ | バージョン |
 |-----------|-----------|
-| Next.js | ~16.2.10（App Router） |
+| Next.js | ~16.2.12（App Router） |
 | React | 19 |
 | @clerk/nextjs | v7 |
 | ESLint | 9（flat config） |

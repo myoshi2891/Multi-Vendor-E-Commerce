@@ -210,18 +210,31 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 - **Effort**: S（パッケージごとの代替評価） / **Risk**: LOW / **Confidence**: MED（ピン/ロック状態は検証済み。「非メンテ」は保守シグナル判断）
 - **Fix sketch**: レガシー UI 依存をウォッチリストに記録し、次の React/Next メジャー時に生存確認。`react-tag-input` の exact ピンの意図を確定。
 
-### [DEPS-08] Next.js — ✅ 解決済み（2026-07-19・plan 057 で `~16.2.10` へ bump）／「パッチアクション不要」判定は撤回済み
+### [DEPS-08] Next.js — ✅ 解決済み（2026-07-30・`~16.2.12` へ bump）／「パッチアクション不要」判定は撤回済み
 
 #### 現況（本 finding を読む人が必要とする唯一の「今」）
 
-- **現行値**: `package.json:80` `"next": "~16.2.10"` / `bun.lock` 解決版 **16.2.10**
-  （plan 057 で bump 済み）。
-- **解決（2026-07-19）**: Round 9 以降に **GHSA-26hh-7cqf-hhc6**（HIGH — App Router の
+- **現行値**: `package.json:80` `"next": "~16.2.12"` / `bun.lock` 解決版 **16.2.12**。
+- **解決 ①（2026-07-19・plan 057）**: Round 9 以降に **GHSA-26hh-7cqf-hhc6**（HIGH — App Router の
   Middleware/Proxy バイパス）が公表され、`next@16.2.1` は影響範囲内だった。独立 finding として
-  起票され **[plan 057](../057-upgrade-next-middleware-bypass.md)（DONE）** で解消済み。
+  起票され **[plan 057](../057-upgrade-next-middleware-bypass.md)** で `~16.2.10` へ bump して解消。
   本 finding の本来の目的（**Clerk/Prisma の作業に Next バンプを同梱しない**）は、
   057 が独立プランになったことで維持されている。
-- **Impact**: **アドバイザリは解決済み**（`16.2.10` で GHSA-26hh-7cqf-hhc6 の影響範囲外）。
+- **解決 ②（2026-07-30・再露出 → `~16.2.12`）**: `bun audit` の実測で `~16.2.10` が
+  **新規 9 advisory（HIGH 4 / MODERATE 5）の影響範囲 `>=16.0.0 <16.2.11` に再び入っている**
+  ことが判明した。うち **GHSA-6gpp-xcg3-4w24**（HIGH — App Router の Middleware/Proxy バイパス、
+  Turbopack + single locale）は **①が閉じた GHSA-26hh-7cqf-hhc6 と同じ脅威モデルの再発**であり、
+  `src/middleware.ts` が `auth.protect()` で `/dashboard` `/checkout` `/profile` をゲートする
+  本リポジトリに直接効く。patched は `16.2.11`、16.2.x 系の最新 `16.2.12` へ引き上げて解消
+  （tilde 維持 — `^` は 16.3+ を許容し [`057:150-151`](../057-upgrade-next-middleware-bypass.md) の
+  scope 判断に反するため）。**これは 057 の再実行ではなく独立した依存メンテ行動**であり、
+  057 の Done criteria に記録された「実測: `~16.2.10`」（2026-07-27 時点の監査記録）は上書きしない。
+  - 残る 8 件: `GHSA-89xv-2m56-2m9x` / `GHSA-m99w-x7hq-7vfj` / `GHSA-p9j2-gv94-2wf4`（HIGH）、
+    `GHSA-68g3-v927-f742` / `GHSA-4633-3j49-mh5q` / `GHSA-4c39-4ccg-62r3` /
+    `GHSA-q8wf-6r8g-63ch` / `GHSA-955p-x3mx-jcvp`（MODERATE）。
+  - 実測（2026-07-30）: `bun audit` の `next` ブロック消失 / `node_modules/next` 解決版 **16.2.12** /
+    `bunx tsc --noEmit` exit 0 / `bun run build` 成功 / `src/middleware.test.ts` 11 件 green。
+- **Impact**: **アドバイザリは解決済み**（`16.2.12` で上記 9 件すべての影響範囲外）。
   ただし plan 057 自体は **DONE (1 criterion pending)** であり「未解決事項なし」ではない ——
   Step 5（未認証 `/dashboard` の redirect スモーク）の結果が
   [`057:246-251`](../057-upgrade-next-middleware-bypass.md) にも
@@ -229,9 +242,11 @@ cat node_modules/js-cookie/package.json | grep '"version"'
   自動テストの代替ではないため、`bun run dev` を起こせる環境で実施し結果を 057 に追記する
   必要がある。**この保留は本 finding の依存アドバイザリ判定には影響しない**（bump は
   完了しており版は実測済み）が、「057 = 完全にクローズ」と読まないこと。
-- **Effort**: — / **Risk**: — / **Confidence**: HIGH（`package.json` / `bun.lock` を実測）
-- **Fix sketch**: 依存側は**不要（plan 057 で対応済み）**。以後は 16.2.x のパッチ追跡のみ。
+- **Effort**: — / **Risk**: — / **Confidence**: HIGH（`package.json` / `bun.lock` / `bun audit` を実測）
+- **Fix sketch**: 依存側は**不要（`~16.2.12` で解消済み）**。以後は 16.2.x のパッチ追跡のみ。
   057 側の残作業は上記 Step 5 スモークの記録のみ。
+  **教訓**: 「plan NNN で bump 済み ＝ 恒久解決」ではない。同一メジャー内でも新規 advisory で
+  再露出しうるため、本エントリの現況は `bun audit` 実測日とセットで読むこと。
 - **⚠️ 本 finding を「Next は対応不要」の根拠として再利用しないこと**
   （[`../README.md`](../README.md) の rejected 節 DEPS-08 にも同じ注意書きあり）。
 
