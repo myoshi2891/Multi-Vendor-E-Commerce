@@ -121,6 +121,35 @@ describe("retryOnSerializationFailure", () => {
         }
     );
 
+    // `baseDelayMs` は `randomInt(0, baseDelayMs)` に素通しされる。`randomInt` は
+    // **整数引数しか受理しない**ため、小数を渡すと catch の中から ERR_INVALID_ARG_TYPE が
+    // 投げられ、本来投げ返すはずの P2034 が TypeError に化ける（＝呼び出し側の
+    // `isSerializationFailure` / `code === "P2034"` 判定が全て空振りする）。
+    // NaN / 負値は throw しないが `setTimeout` が即発火するのでバックオフが黙って
+    // 消える。いずれも「リトライ経路を一周させて初めて」露出するため、
+    // operation が maxAttempts 回呼ばれたこと（＝ジッター経路を通ったこと）も固定する。
+    it.each([
+        ["小数", 25.5],
+        ["NaN", Number.NaN],
+        ["負値", -1],
+    ])(
+        "baseDelayMs が %s でも P2034 をそのまま投げ返す（別のエラーに化けない）",
+        async (_label, baseDelayMs) => {
+            const operation = jest
+                .fn()
+                .mockRejectedValue(makeSerializationFailure());
+
+            await expect(
+                retryOnSerializationFailure(operation, {
+                    maxAttempts: 2,
+                    baseDelayMs,
+                })
+            ).rejects.toMatchObject({ code: "P2034" });
+
+            expect(operation).toHaveBeenCalledTimes(2);
+        }
+    );
+
     it("maxAttempts が 0 でも P2034 は undefined ではなく Error として投げ返す", async () => {
         const operation = jest
             .fn()
