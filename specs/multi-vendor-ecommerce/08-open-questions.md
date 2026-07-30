@@ -156,6 +156,61 @@ TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`c
 **記録日**: 2026-06-17
 **ステータス**: 未対応（残課題として記録、対応は transaction リファクタを伴う別タスク）
 
+### applyCoupon: 意図的 domain error が汎用メッセージで上書きされる（`isDomainError` 未適用）
+
+**影響範囲**: `src/queries/coupon.ts::applyCoupon`（`:311-446`）の catch（`:429-433`）。
+
+**症状**:
+- `applyCoupon` の catch は `isDomainError`（`coupon.ts:36`）を**一切呼ばない**。そのため
+  関数内で意図的に throw しているユーザー起因エラーが、すべて
+  `Error occurred while applying coupon: <元の文言>` に上書きされ、さらに
+  `logError('[Coupon:applyCoupon] failed to apply coupon', error)` で運用ログにも載る。
+- 上書きされる意図的 throw は **6 種**（実測 2026-07-30）:
+
+  | 行 | メッセージ |
+  |---|---|
+  | `:328` | `Coupon not found.` |
+  | `:336` | `Coupon is not valid for this date.` |
+  | `:341` | `This coupon has been deactivated.` |
+  | `:357` | `Cart not found`（**末尾ピリオドなし** — `domainMessages` の `'Cart not found.'` 系と表記が揺れている） |
+  | `:362` / `:408` | `Coupon is already applied to this cart.` |
+  | `:374` | `No items in the cart belong to the store associated with this coupon.` |
+
+- `applyCoupon` は `coupon.ts` の 10 個の export のうち **`isDomainError` 素通しが無い唯一の関数**
+  （他 7 箇所は `:142` / `:217` / `:252` / `:292` / `:530` / `:572` / `:611` で適用済み）。
+
+**根本原因**:
+`isDomainError` は upsert 系（Round 14）→ get/delete 系（Round 17）と段階的に適用されてきたが、
+`applyCoupon` は当時どちらのバッチにも入っていなかった。同一欠陥クラスの残存。
+
+**既存テストが検出できない理由**:
+`coupon.test.ts` の applyCoupon 系アサーション（`:835` の `toThrow("Coupon not found.")` 等）は
+**`toThrow(string)` の部分一致**で、ラップ後の `Error occurred while applying coupon: Coupon not found.`
+にも部分文字列として含まれるため**全件 pass する**。前ラウンドで upsert / get / delete 系に対して
+是正したのと同型の空振り。
+
+> **これらのアサーションは本 Issue の対応時まで意図的に触らない。** 正規表現アンカー
+> （`/^Coupon not found\.$/`）へ変えると現状のコードでは fail するため、コード修正と
+> 同一コミットで行う必要がある。先にテストだけアンカー化すると Red のまま残る。
+
+**長期対応案**:
+1. `domainMessages` に applyCoupon の 6 文言を追加（`Cart not found` の表記揺れをどう扱うかを
+   同時に決める。ピリオドを足すなら実装側も変えるためユーザー可視の文言変更になる）。
+2. `applyCoupon` の catch 冒頭に `if (isDomainError(error)) throw error` を追加。
+3. 上記アサーション 7 件をアンカー化（Red を観測してから Green）。
+
+**別プランとして実施する理由**: エラー表面が 6 箇所変わり、うち 1 件はユーザー可視の文言統一
+（`Cart not found` のピリオド）を伴うため、独立したレビューが必要。
+
+**関連ファイル**:
+- `src/queries/coupon.ts`（`isDomainError` `:36-50` / `applyCoupon` `:311-446`）
+- `src/queries/coupon.test.ts`（applyCoupon の toThrow アサーション群）
+- `.claude/steering/tech.md`「エラーハンドリング」（認可・domain エラーを汎用 DB エラーで
+  上書きしない原則）
+
+**記録日**: 2026-07-30
+**ステータス**: 未対応（起票のみ。コード変更は別プラン）
+
 ## Resolved Issues
 
 - `getUserWishlist` (`src/queries/profile.ts`): `variants[0]` への直接アクセスが
