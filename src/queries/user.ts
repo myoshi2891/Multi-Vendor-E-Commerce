@@ -640,12 +640,21 @@ export const placeOrder = async (
         })
         if (consumed.count === 0) throw new Error('Cart not found.')
 
-        // TOCTOU 閉塞: shippingAddressId を書く「直前」に、同一 tx 内で所有権を再検証する。
+        // TOCTOU 緩和: shippingAddressId を書く「直前」に、同一 tx 内で所有権を再検証する。
         // tx 外の findFirst（上部の所有権チェック）から order.create までの間には
         // 商品取得・配送料計算など長い非同期処理があり、その隙に住所が **別ユーザーへ
-        // 再割当て** されると、FK は有効なまま他人の住所を注文に付けられてしまう
-        // （削除なら FK 制約で弾かれるが、userId 付け替えは弾かれない）。書き込みと
-        // 同一 tx・隣接文で読み直すことで、チェックと使用が乖離しない（plan 003）。
+        // 再割当て** されると、FK は有効なまま他人の住所を注文に付けられてしまう。
+        //
+        // 削除経路は FK が閉じる: order.create の INSERT が参照先 ShippingAddress 行へ
+        // FOR KEY SHARE ロックを取り、これは DELETE と競合するため並行削除は commit まで
+        // ブロックされる。一方 userId 付け替えは参照キー列を触らないため FOR NO KEY UPDATE
+        // となり、FOR KEY SHARE と競合しない。
+        //
+        // したがってこの再読み取りは窓を「多数の await」から「隣接 2 文」へ **縮める** が、
+        // 閉じきってはいない —— 下の findFirst は素の SELECT で行ロックを取らないため、
+        // Read Committed 下では再読み取りと order.create の間に付け替えが commit されうる。
+        // 完全閉塞には $queryRaw の SELECT ... FOR UPDATE か、Serializable +
+        // retryOnSerializationFailure（src/lib/db-retry.ts）が要る（plan 003 の未解決項目）。
         const txOwnedAddress = await tx.shippingAddress.findFirst({
             where: { id: ownedAddress.id, userId },
             select: { id: true },

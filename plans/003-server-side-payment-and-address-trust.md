@@ -326,14 +326,40 @@ completed work:
    but a mismatched amount (or non-`usd` currency) must throw
    `"Payment intent amount/currency mismatch."` with no `order.update`.
 5. **The address-ownership read should sit inside the order transaction.**
-   **Status: RESOLVED.** Step 3 (lines 202-209) did the `findFirst` *before* the
-   `$transaction`, leaving a TOCTOU window where the address could be
-   deleted/reassigned between the check and the `order.create`. `placeOrder`
-   (`src/queries/user.ts`) now **re-validates ownership inside the same `tx`**,
-   immediately before writing `shippingAddressId` (`tx.shippingAddress.findFirst`
-   scoped by `{ id, userId }` → throw `"Shipping address not found."` on miss),
-   so the check and the use can no longer diverge. Regression: a unit test drives
-   "owned before tx, reassigned during tx" and asserts no `order.create`.
+   **Status: MITIGATED (window minimised) — not fully closed.** Step 3 (lines 202-209)
+   did the `findFirst` *before* the `$transaction`, leaving a TOCTOU window where the
+   address could be deleted/reassigned between the check and the `order.create`.
+   `placeOrder` (`src/queries/user.ts`) now **re-validates ownership inside the same
+   `tx`**, immediately before writing `shippingAddressId` (`tx.shippingAddress.findFirst`
+   scoped by `{ id, userId }` → throw `"Shipping address not found."` on miss).
+   Regression: a unit test drives "owned before tx, reassigned during tx" and asserts
+   no `order.create`.
+
+   > **Why this is "mitigated", not "resolved".** The two halves of the original
+   > threat close differently, and only one of them is actually closed:
+   >
+   > - **Deletion — closed (by the FK, not by the re-read).** Inserting the `Order`
+   >   row makes PostgreSQL take a `FOR KEY SHARE` lock on the referenced
+   >   `ShippingAddress` row (`Order.shippingAddressId` → `ShippingAddress.id`,
+   >   `prisma/schema.prisma:513-514`). That lock conflicts with `DELETE`, so a
+   >   concurrent delete of the checked address blocks until this transaction
+   >   commits. (Separately: the relation is `onDelete: Cascade`, so a delete
+   >   *after* commit removes the order too — a retention concern, not a TOCTOU one.)
+   > - **`userId` reassignment — still open.** `tx.shippingAddress.findFirst` compiles
+   >   to a **plain `SELECT`, which takes no row lock at all**
+   >   (`src/queries/user.ts:649`). And an `UPDATE … SET "userId" = …` does not touch
+   >   the referenced key column, so it takes `FOR NO KEY UPDATE`, which **does not
+   >   conflict with the FK's `FOR KEY SHARE`**. Under Read Committed, a concurrent
+   >   reassignment committing between the re-read and the `order.create` is therefore
+   >   still possible.
+   >
+   > Moving the read inside the transaction shrinks the window from "product fetch +
+   > shipping-fee computation" (many awaits) down to two adjacent statements. That is
+   > a real and worthwhile reduction, but **narrowing a window is not the same as
+   > closing it**. Full closure needs either a row lock on the address
+   > (`SELECT … FOR UPDATE` via `$queryRaw`, since Prisma's fluent API cannot express
+   > it) or a `Serializable` isolation level combined with
+   > `retryOnSerializationFailure` (`src/lib/db-retry.ts`).
 
 Later payment work built on this plan: `plans/059` (PayPal capture verification,
 which reuses the shared `isSettledPaymentStatus` from `src/lib/payment-status.ts`

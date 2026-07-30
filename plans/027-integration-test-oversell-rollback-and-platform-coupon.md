@@ -123,6 +123,29 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
   `actualDeliveryDetails` を集約（Step 3 参照）。`jest.requireActual` 式の三重複を除去する。
   `src/config/` には置かない（`seed.ts` と同じ「shape は踏襲・実体は setup/」規約）
 
+  > **`CLAUDE.md` の「モックユーティリティ = `src/config/test-helpers.ts`」規約との関係。**
+  > これは規約に**反する**のではなく、integration 層が規約の**適用範囲外**である。
+  > 実測（2026-07-30）で `tests/integration/` は `src/config/` を**一切 import していない**
+  > —— `grep -rn "src/config\|@/config" tests/integration/` のヒットは
+  > `setup/seed.ts:4,12` の**コメント（出自の参照）だけ**で、実行される import は 0 件。
+  > つまり本プランが新しく例外を作るのではなく、**既存の層境界を踏襲している**。
+  >
+  > 分離が成立している理由は 2 つある:
+  >
+  > 1. **別 Jest config で走る。** integration は `jest.integration.config.js`
+  >    （`testEnvironment: jsdom` + testcontainers の `globalSetup` + `maxWorkers: 1`）で、
+  >    unit/component の `jest.config.js` とは `moduleNameMapper` も `transform` も違う。
+  >    `src/config/` は後者の前提で書かれており、共有すると両 config の制約が結合する。
+  > 2. **`src/config/test-scenarios.ts` は相対日付ベース**（`Date.now()` 起点 —
+  >    `src/config/test-scenarios.ts:39`）で、**実 DB に seed した固定行と噛み合わない**。
+  >    integration は TRUNCATE → seed → assert の実データ検証なので、
+  >    「実行時刻によって中身が変わるフィクスチャ」を土台にできない。
+  >
+  > したがって規約の適用範囲は「**`src/` 配下のユニット/コンポーネントテスト**」であり、
+  > 実 DB を持つ integration の setup ヘルパーは `tests/integration/setup/` に置く。
+  > これは `prisma/seed/__tests__/` を `src/config/` 非依存とする既存方針
+  > （[`.claude/steering/tech.md`](../.claude/steering/tech.md) テスト要件表）と同型である。
+
 **In scope — ドキュメント同期（後続の別コミット）**:
 - `spec-sync-after-test` の成果物一式（Step 6）— Integration テスト数が 17→20 に変動するため
   `.claude/rules/02-tdd-step-commit.md` に従い同期。SSOT は `docs/testing/QA_HANDOFF.md`、

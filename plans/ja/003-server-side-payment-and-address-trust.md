@@ -324,13 +324,35 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
    （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
    amount が食い違う（または非 `usd`）retrieve 済み intent が
    `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
-5. **住所所有権の読み取りは注文トランザクション内に置くべき。Status: RESOLVED。**
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。Status: 緩和済み（窓を最小化）
+   —— 完全閉塞ではない。**
    Step 3（202-209 行）は `findFirst` を `$transaction` の**外**で行っていたため、
    チェックと `order.create` の間で住所が削除・再割当てされる TOCTOU 窓が残っていた。
    `placeOrder`（`src/queries/user.ts`）は現在、`shippingAddressId` を書く**直前に同一 `tx`
    内で所有権を再検証**する（`tx.shippingAddress.findFirst` を `{ id, userId }` でスコープ →
-   不一致なら `"Shipping address not found."` を throw）ため、チェックと使用が乖離しない。
+   不一致なら `"Shipping address not found."` を throw）。
    回帰テスト: 「tx 外は所有・tx 内で再割当て」を駆動し `order.create` が走らないことを固定。
+
+   > **なぜ「解決済み」ではなく「緩和済み」なのか。** 元の脅威は 2 つの経路に分かれ、
+   > **閉じているのは一方だけ**である:
+   >
+   > - **削除 —— 閉じている（ただし再読み取りではなく FK による）。** `Order` 行の
+   >   INSERT 時、PostgreSQL は参照先の `ShippingAddress` 行に `FOR KEY SHARE` ロックを
+   >   取る（`Order.shippingAddressId` → `ShippingAddress.id`、`prisma/schema.prisma:513-514`）。
+   >   このロックは `DELETE` と競合するため、検証済み住所への並行削除は本トランザクションの
+   >   commit までブロックされる。（別件として、リレーションは `onDelete: Cascade` なので
+   >   commit **後**の削除は注文ごと消える —— これは保持ポリシーの問題であり TOCTOU ではない。）
+   > - **`userId` 付け替え —— まだ開いている。** `tx.shippingAddress.findFirst` は
+   >   **素の `SELECT` にコンパイルされ、行ロックを一切取らない**（`src/queries/user.ts:649`）。
+   >   さらに `UPDATE … SET "userId" = …` は参照キー列を触らないため `FOR NO KEY UPDATE` となり、
+   >   FK の `FOR KEY SHARE` と**競合しない**。したがって Read Committed 下では、再読み取りと
+   >   `order.create` の間に付け替えが commit される経路が残る。
+   >
+   > 読み取りを tx 内へ移したことで、窓は「商品取得 + 配送料計算」（多数の await）から
+   > **隣接 2 文**まで縮んだ。これは実質的な改善だが、**窓を狭めることと閉じることは別**である。
+   > 完全閉塞には、住所行への行ロック（Prisma の fluent API では表現できないため
+   > `$queryRaw` による `SELECT … FOR UPDATE`）か、`Serializable` 分離レベル +
+   > `retryOnSerializationFailure`（`src/lib/db-retry.ts`）のいずれかが要る。
 
 本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。共有ヘルパー
 `isSettledPaymentStatus` を `src/lib/payment-status.ts` から再利用する —
