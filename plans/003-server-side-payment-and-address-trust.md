@@ -279,10 +279,10 @@ Stop and report if:
 
 ## Maintenance notes
 
-- This makes the signed webhook and this action agree on `amount`/`currency` source (both Stripe-authoritative), reducing drift risk — but the `PaymentDetails.amount` unit mismatch across providers (CORRECTNESS-05) is still open and should be planned separately.
+- This makes the signed webhook and this action agree on `amount`/`currency` source (both Stripe-authoritative), reducing drift risk. The `PaymentDetails.amount` unit mismatch across providers (CORRECTNESS-05) was **out of scope here and has since been split in two**: the **code** defect is fixed (`e63474b6`, 2026-07-19 — all four Stripe write sites now store `order.total` in dollars, and `toStripeAmount()` is used only for values handed to the Stripe API), and the remaining **historical rows** written in minor units are tracked as `plans/063-backfill-stripe-payment-amount.md` (P2, TODO). The "still open / plan it separately" wording that used to sit here predates both and is retracted — the out-of-scope line 129 above is step text frozen at `f9752c0` and is not the current status.
 - Reviewer should confirm no `paymentIntent.status`/`.amount` is read from the argument after the change — only from the retrieved object.
 - If PayPal capture (`paypal.ts`) is later hardened the same way, mirror this pattern (server-side re-fetch + order match).
-- Follow-up deferred: currency-unit normalization and the older 3-arg logging in `stripe.ts` (convert to structured logging in a tech-debt pass).
+- Follow-up deferred: the older 3-arg logging in `stripe.ts` (convert to structured logging in a tech-debt pass). Currency-unit normalization is **no longer deferred here** — see the CORRECTNESS-05 note above (code done, data backfill = plan 063).
 
 ### Divergence since this plan shipped (2026-07-18)
 
