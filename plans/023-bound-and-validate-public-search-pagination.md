@@ -232,27 +232,51 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 normalization cases (FULLTEXT path) exist and pass.
 - [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
 - [ ] The GET handler contains no `parseInt` and parses page/limit with `Number(...)`. **Use the
-      GET-scoped gate, not a whole-file grep**, and phrase it as an **absence** gate — see the two
-      corrections below:
-      `awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -qE 'parseInt' && { echo "FAIL: GET still uses parseInt"; false; }`
-      (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
-      failure if the POST handler legitimately uses `parseInt`.)
+      GET-scoped gate, not a whole-file grep**, and phrase it as an **absence** gate in `if/then/else`
+      form — see the two corrections below:
 
-    > **Do not express this gate as `grep -c … → 0` (2026-07-27 correction).** `grep` exits **1**
-    > when it matches nothing, so the *passing* case (`0` occurrences) returns a **failing** exit
-    > status. Under `set -e`, inside an `&&` chain, or as a CI step, the criterion aborts the run
-    > precisely when it is satisfied. Verified on this repo:
+  ```bash
+  if awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
+       | grep -qE 'parseInt'; then
+      echo "FAIL: GET still uses parseInt"; false
+  else
+      echo "OK: no parseInt in GET"
+  fi
+  ```
+
+  (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
+  failure if the POST handler legitimately uses `parseInt`.)
+
+    > **Neither `grep -c … → 0` nor `grep -q … && { …; false; }` works as an absence gate
+    > (2026-07-27 correction, amended 2026-07-30).** `grep` exits **1** when it matches nothing,
+    > so in both forms the *passing* case returns a **failing** exit status:
+    >
+    > - `grep -c` form: the count prints `0` (correct) but the exit status is grep's own `1`.
+    > - `grep -q … && { …; false; }` form: on **no match** the `&&` **short-circuits**, the right
+    >   side never runs, and the list's exit status is the left side's — again grep's `1`. The
+    >   `false` is only reachable on a *match*, so this form can never exit 0.
+    >
+    > Verified on this repo (2026-07-30):
     >
     > ```console
     > $ awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"
     > 0
     > $ echo $?
     > 1
+    > $ awk '…' src/app/api/index-products/route.ts | grep -qE 'parseInt' && { echo FAIL; false; }
+    > $ echo $?
+    > 1                      # ← 合格しているのに 1
+    > $ if awk '…' src/app/api/index-products/route.ts | grep -qE 'parseInt'; then echo FAIL; false; else echo OK; fi
+    > OK
+    > $ echo $?
+    > 0                      # ← 合格が 0
     > ```
     >
-    > Phrase absence gates as `grep -qE … && { echo FAIL; false; }` so that "no match" is the
-    > silent success path and a match is the only thing that fails. Use `false`, **not `exit 1`** —
-    > pasting a snippet with `exit 1` into an interactive shell kills the session.
+    > Use the `if … then echo FAIL; false; else echo OK; fi` form: it assigns an exit status to
+    > **both** branches, so "no match" is a genuine `exit 0` success and a match is the only
+    > failure. Under `set -e`, in an `&&` chain, or as a CI step, only this form behaves.
+    > Use `false`, **not `exit 1`** — pasting a snippet with `exit 1` into an interactive shell
+    > kills the session.
 
     > **End the range at the function boundary, not at `0`.** The earlier form
     > `awk '/^export async function GET/,0'` used `0` as the end pattern — `0` is falsy and
