@@ -37,7 +37,9 @@ const sleep = (ms: number): Promise<void> =>
  *                    トランザクション全体をこの中に入れること（部分適用されると
  *                    再試行で二重適用になる）。
  * @param options.maxAttempts - 初回を含む最大試行回数（既定 3）
- * @param options.baseDelayMs - 指数バックオフの基準待ち時間（既定 25ms）
+ * @param options.baseDelayMs - 指数バックオフの基準待ち時間（既定 25ms）。
+ *                    小数は切り捨て・負値は 0・非有限値は既定値へ正規化される
+ *                    （`randomInt` が整数しか受理しないため）
  *
  * @example
  * const cart = await retryOnSerializationFailure(() =>
@@ -57,7 +59,17 @@ export const retryOnSerializationFailure = async <T>(
     const maxAttempts = Number.isFinite(requestedAttempts)
         ? Math.max(1, Math.floor(requestedAttempts))
         : 1;
-    const baseDelayMs = options?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
+    // `baseDelayMs` は `randomInt(0, baseDelayMs)` へ渡るが、`randomInt` は整数しか
+    // 受理しない（小数は ERR_INVALID_ARG_TYPE）。正規化が無いと catch の内側から
+    // 別のエラーが投げられ、本来投げ返すはずの P2034 が化けて呼び出し側の
+    // `isSerializationFailure` 判定が空振りする。
+    // `maxAttempts` と違い**非有限なら既定値へ戻す**: 待ち時間は呼び出し側の契約では
+    // なく実装詳細であり、NaN を 0 に倒すとジッターが消えてロックステップ回避という
+    // 本来の目的が黙って失われるため。負値は 0 へ（バックオフ無し = 即再試行）。
+    const requestedDelay = options?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
+    const baseDelayMs = Number.isFinite(requestedDelay)
+        ? Math.max(0, Math.floor(requestedDelay))
+        : DEFAULT_BASE_DELAY_MS;
 
     let lastError: unknown;
 
