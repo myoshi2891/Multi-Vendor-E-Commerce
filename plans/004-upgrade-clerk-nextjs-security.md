@@ -7,8 +7,14 @@
 >
 > **Drift check (run first)**: `git diff --stat f9752c0..HEAD -- package.json bun.lock src/middleware.ts plans/README.md`
 > If `package.json`/`bun.lock` already show `@clerk/nextjs` at 7.2.1 or newer, the **CRITICAL**
-> advisory (GHSA-vqx2-fgx2-5wq9, 7.x range `>=7.0.0 <7.2.1`) is cleared — STOP and report the
-> installed version before doing anything.
+> advisory (GHSA-vqx2-fgx2-5wq9, 7.x range `>=7.0.0 <7.2.1`) is cleared.
+>
+> **STOP only when *both* advisories are clear** — i.e. `@clerk/nextjs` >= 7.2.1 **and** the
+> `js-cookie` resolved in `bun.lock` is a fixed version. Do **not** stop on the `@clerk/nextjs`
+> number alone: that closes the plan with the HIGH advisory unverified, since the two are decided
+> by different packages (see the next paragraph). If only the CRITICAL is clear, **continue** —
+> skip the `@clerk/nextjs` bump, verify and if necessary remediate the `js-cookie` path, and
+> report which of the two was already satisfied.
 >
 > **A `@clerk/nextjs` version alone is not a sufficient condition for *both* advisories.** The HIGH
 > `js-cookie` advisory is a **transitive** dependency reached through `@clerk/shared`, so it is the

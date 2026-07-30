@@ -209,19 +209,41 @@ understatement that no longer has a clean signal to detect it.
 ### Step 5: Verify
 
 Re-run the Step 2 query. Every row must now show `ratio ≈ 1`, **and the `ratio IS NULL` bucket must
-be re-counted separately** — a range predicate alone cannot see it (see the three-valued-logic note
-in Step 2). Verification passes only when both hold:
+be counted separately** — a range predicate alone cannot see it (see the three-valued-logic note
+in Step 2).
+
+**The two counts have different pass conditions and must not be summed.** Merging them (a single
+`still_wrong` with `OR ratio IS NULL`) contradicts Step 2, which explicitly permits a zero-total row
+to be **recorded as unresolved with a reason** rather than fixed. Under the merged form any such
+approved exception keeps `still_wrong` above zero forever, so CORRECTNESS-05 could never be closed
+even though the plan was followed exactly as written.
 
 ```sql
--- 範囲外の行が 0 であること。NULL は範囲比較では検出できないため IS NULL を明示的に OR する。
-SELECT count(*) AS still_wrong
+-- 1 クエリ 2 カウント（同一行集合の上で測るため、取りこぼしが起きない）。
+--   still_wrong : 範囲外。**0 でなければ不合格**
+--   null_ratio  : zero-total（ratio 計算不能）。Step 3 で承認済みの未解決リストと**件数一致**が条件
+-- NULL は範囲比較では検出できないため、FILTER 句で明示的に分けて数える。
+SELECT
+    count(*) FILTER (
+        WHERE pd.amount / NULLIF(o.total, 0) NOT BETWEEN 0.99 AND 1.01
+    ) AS still_wrong,
+    count(*) FILTER (
+        WHERE pd.amount / NULLIF(o.total, 0) IS NULL
+    ) AS null_ratio
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
 WHERE  pd."createdAt" < :deploy_boundary
-  AND  pd."paymentMethod" = 'Stripe'
-  AND  (pd.amount / NULLIF(o.total, 0) NOT BETWEEN 0.99 AND 1.01
-        OR pd.amount / NULLIF(o.total, 0) IS NULL);   -- ← これが無いと zero-total が素通りする
+  AND  pd."paymentMethod" = 'Stripe';
 ```
+
+Verification passes only when **both** hold:
+
+1. `still_wrong` = **0**（例外を認めない。範囲外の行が残っていれば backfill は未完）
+2. `null_ratio` = Step 3 で人間が承認した未解決 zero-total 行の件数と**一致**
+   （0 とは限らない。ただし「承認された件数」より多ければ、承認外の行が紛れているので不合格）
+
+`null_ratio` が承認件数と一致することを、承認リストの id とも突き合わせること
+（件数一致だけでは、解決した行と新たに壊れた行が相殺して同数になる可能性を排除できない）。
 
 Record the before/after counts in `docs/PROGRESS.md` and close the CORRECTNESS-05 entry in
 `plans/README.md`.

@@ -88,6 +88,24 @@ other actions (review, shipping address, product) can follow later.
 - **The schemas that already encode the contract — `src/lib/schemas.ts:523-573`**:
   - `CouponFormSchema` (`:523`): `code` (2–50, `^[A-Za-z0-9]+$`), `startDate` (string), `endDate`
     (string), `discount` (`.number().min(1).max(99)`).
+
+  > **⚠️ Cross-plan collision — `code` rejects hyphens, and
+  > [`plans/041`](041-integration-test-coupon-code-uniqueness.md):298-300 depends on one.**
+  > `^[A-Za-z0-9]+$` has no `-`, so once this plan puts a `safeParse` gate in front of the coupon
+  > mutations, `code: "ADMIN-CLASH"` is rejected as a **validation** error. Plan 041's scenario 5
+  > asserts a **P2002 unique-constraint** conversion (`"このクーポンコードは既に使用されています"`)
+  > and counts rows to prove no side effect — with the gate in place the call never reaches the
+  > database, so 041 tests validation instead of the uniqueness path it was written for, while
+  > still passing on the surface (both paths throw).
+  >
+  > **Resolution: 041 changes its fixture code to an alphanumeric value (e.g. `ADMINCLASH`)** —
+  > the hyphen is incidental to that test, which is about *collision*, not about punctuation.
+  > Do **not** relax `^[A-Za-z0-9]+$` to accommodate it: the regex is the shipped form contract,
+  > and widening it here would let the UI and the server action disagree.
+  >
+  > That edit belongs to 041's own execution and is **out of scope for this plan** (a test plan
+  > does not silently rewrite another plan's fixtures). If 041 has already run when this plan is
+  > executed, treat the now-misdirected scenario 5 as a finding and report it.
   - `AdminCouponFormSchema` (`:553`): extends `CouponFormSchema` with `isActive`, `scope`, `storeId`
     + a `superRefine` (STORE ⇒ storeId required; PLATFORM ⇒ storeId empty).
 
