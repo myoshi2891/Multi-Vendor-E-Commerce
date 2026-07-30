@@ -291,10 +291,10 @@ server-side Stripe re-fetch and address-ownership `findFirst`. The steps above
 record the work as planned at commit `f9752c0` and are deliberately left
 unedited. Two points (**1–2**) have since *moved in the code*, so do **not** read
 the step text as the current spec. Three further points (**3–5**) are
-follow-ups beyond the original scope: **5** (the address-ownership TOCTOU) has
-since been **fixed** (re-validation inside the order `tx`); **3–4** remain open
-gaps this plan's DONE status does not close. Treat 3–4 as tracked gaps, not
-completed work:
+follow-ups beyond the original scope: **5** (the address-ownership TOCTOU) is
+now **RESOLVED** — a row lock inside the order `tx`, landed 2026-07-31; **3–4**
+remain open gaps this plan's DONE status does not close. Treat 3–4 as tracked
+gaps, not completed work:
 
 1. **`requires_payment_method` is no longer an unconditional `Failed`.**
    Step 4 (line ~231) expects that status to map to `paymentStatus: "Failed"`.
@@ -326,40 +326,48 @@ completed work:
    but a mismatched amount (or non-`usd` currency) must throw
    `"Payment intent amount/currency mismatch."` with no `order.update`.
 5. **The address-ownership read should sit inside the order transaction.**
-   **Status: MITIGATED (window minimised) — not fully closed.** Step 3 (lines 202-209)
-   did the `findFirst` *before* the `$transaction`, leaving a TOCTOU window where the
-   address could be deleted/reassigned between the check and the `order.create`.
-   `placeOrder` (`src/queries/user.ts`) now **re-validates ownership inside the same
-   `tx`**, immediately before writing `shippingAddressId` (`tx.shippingAddress.findFirst`
-   scoped by `{ id, userId }` → throw `"Shipping address not found."` on miss).
-   Regression: a unit test drives "owned before tx, reassigned during tx" and asserts
-   no `order.create`.
+   **Status: RESOLVED (2026-07-31).** Step 3 (lines 202-209) did the `findFirst`
+   *before* the `$transaction`, leaving a TOCTOU window where the address could be
+   deleted/reassigned between the check and the `order.create`. `placeOrder`
+   (`src/queries/user.ts`) now takes a **row lock inside the same `tx`**,
+   immediately before writing `shippingAddressId`: a `$queryRaw`
+   `SELECT "id" FROM "ShippingAddress" WHERE "id" = … AND "userId" = … FOR UPDATE`,
+   throwing `"Shipping address not found."` when it returns no row. Regression: a
+   unit test drives an empty lock result and asserts the statement is a `FOR UPDATE`
+   scoped by both columns, with no `order.create`.
 
-   > **Why this is "mitigated", not "resolved".** The two halves of the original
-   > threat close differently, and only one of them is actually closed:
+   > **How each half of the threat closes.** The two halves close by different
+   > mechanisms, which is why the earlier plain re-read was not enough:
    >
-   > - **Deletion — closed (by the FK, not by the re-read).** Inserting the `Order`
-   >   row makes PostgreSQL take a `FOR KEY SHARE` lock on the referenced
-   >   `ShippingAddress` row (`Order.shippingAddressId` → `ShippingAddress.id`,
+   > - **Deletion — closed by the FK.** Inserting the `Order` row makes PostgreSQL
+   >   take a `FOR KEY SHARE` lock on the referenced `ShippingAddress` row
+   >   (`Order.shippingAddressId` → `ShippingAddress.id`,
    >   `prisma/schema.prisma:513-514`). That lock conflicts with `DELETE`, so a
    >   concurrent delete of the checked address blocks until this transaction
    >   commits. (Separately: the relation is `onDelete: Cascade`, so a delete
    >   *after* commit removes the order too — a retention concern, not a TOCTOU one.)
-   > - **`userId` reassignment — still open.** `tx.shippingAddress.findFirst` compiles
-   >   to a **plain `SELECT`, which takes no row lock at all**
-   >   (`src/queries/user.ts:649`). And an `UPDATE … SET "userId" = …` does not touch
-   >   the referenced key column, so it takes `FOR NO KEY UPDATE`, which **does not
-   >   conflict with the FK's `FOR KEY SHARE`**. Under Read Committed, a concurrent
-   >   reassignment committing between the re-read and the `order.create` is therefore
-   >   still possible.
+   > - **`userId` reassignment — closed by the explicit `FOR UPDATE`.** This half was
+   >   the one that stayed open under the earlier `tx.shippingAddress.findFirst`,
+   >   which compiles to a **plain `SELECT` and takes no row lock at all**; an
+   >   `UPDATE … SET "userId" = …` does not touch the referenced key column, so it
+   >   takes `FOR NO KEY UPDATE` and **does not conflict with the FK's
+   >   `FOR KEY SHARE`**. `FOR UPDATE` does conflict with it, so a concurrent
+   >   reassignment now blocks until this transaction commits. And because
+   >   PostgreSQL re-evaluates the predicate once the lock is granted (EvalPlanQual),
+   >   a reassignment that committed *first* drops the row from the result and the
+   >   call throws.
    >
-   > Moving the read inside the transaction shrinks the window from "product fetch +
-   > shipping-fee computation" (many awaits) down to two adjacent statements. That is
-   > a real and worthwhile reduction, but **narrowing a window is not the same as
-   > closing it**. Full closure needs either a row lock on the address
-   > (`SELECT … FOR UPDATE` via `$queryRaw`, since Prisma's fluent API cannot express
-   > it) or a `Serializable` isolation level combined with
-   > `retryOnSerializationFailure` (`src/lib/db-retry.ts`).
+   > The alternative considered and not taken was `Serializable` +
+   > `retryOnSerializationFailure` (`src/lib/db-retry.ts`). It would have applied to
+   > the whole `placeOrder` transaction — product fetches, shipping-fee computation,
+   > stock decrements — raising the abort rate of a long transaction to close a
+   > two-statement window. The row lock is scoped to the row that is actually
+   > contended.
+   >
+   > **Not covered by unit tests.** The mock boundary can only pin the shape of the
+   > statement, not that PostgreSQL blocks a concurrent writer. Real concurrency
+   > belongs in `tests/integration/` (testcontainers) — tracked in the deferred list
+   > of [`plans/README.md`](README.md).
 
 Later payment work built on this plan: `plans/059` (PayPal capture verification,
 which reuses the shared `isSettledPaymentStatus` from `src/lib/payment-status.ts`
