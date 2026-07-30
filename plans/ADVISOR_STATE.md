@@ -618,10 +618,13 @@ Phase A / Phase B が完了。** Round 14 は**監査ではなく実装ラウン
    二重管理でドリフトさせないため）。E2E 系は **042 が絶対の先頭**（signIn ヘルパーの
    Clerk UI ドリフトで認証系 16 件が全滅中 / 047–050・052・055 が待ち）。
    依存ゼロで即着手できるのは **051 / 056 / 044 / 045**。
-3. **Round 14 が生んだ未起票の残件**（いずれも小さく独立）:
-   - `PaymentDetails.amount` の**既存行 backfill**（コード修正は `e63474b` で完了済み）
-   - `applyCoupon` の lost-update `$transaction` リファクタ
-   - 住所 `default: true` 重複バグの remediation（plan 037 の characterization が先行）
+3. **Round 14 が生んだ残件**（いずれも小さく独立）:
+   - `PaymentDetails.amount` の**既存行 backfill**（コード修正は `e63474b` で完了済み）—
+     **起票済み: [plan 063](063-backfill-stripe-payment-amount.md)**（P2 / TODO・
+     [`README.md`](README.md) の Status 表 :126 に行あり）。未起票として数えないこと。
+   - **未起票**: `applyCoupon` の lost-update `$transaction` リファクタ
+     （`specs/multi-vendor-ecommerce/08-open-questions.md` が追跡）
+   - **未起票**: 住所 `default: true` 重複バグの remediation（plan 037 の characterization が先行）
 
 ### 完了済み（次アクションとして推奨しないこと）
 

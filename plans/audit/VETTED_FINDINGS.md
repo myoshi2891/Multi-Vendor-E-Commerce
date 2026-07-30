@@ -913,8 +913,11 @@ LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / 
 1. **CORRECTNESS-05**（`PaymentDetails.amount` の単位不一致 Stripe セント vs PayPal ドル）—
    [`../README.md`](../README.md) の Deferred 節に「needs backfill」として記載。
    **コード側は A-3 で解消**したが、**過去に Stripe 決済で作成された行はセント値のまま残る**。
-   → **データ補正（backfill）は未起票のまま**。Deferred 記載は維持し、範囲を
-   「コード修正」から「既存行の backfill のみ」へ縮小して読むこと。
+   → **データ補正（backfill）は [plan 063](../063-backfill-stripe-payment-amount.md) として
+   起票済み**（P2 / TODO・[`../README.md`](../README.md) の Status 表 :126）。
+   「未起票のまま」と書いていた旧記述は 2026-07-27 の起票時点で失効している。
+   Deferred 記載は維持し、範囲を「コード修正」から「既存行の backfill のみ」へ縮小して
+   読むこと（README :251 の該当行も同じ結論に更新済み）。
 2. **「Server-side `placeOrder` idempotency」**（plan 006 から deferred されていた項目）—
    **A-5 で解消**。README Deferred 節の該当行は消化済み。
 3. **TESTS-02 capture 経路**（R1 raw / R5〜R6 deferred）— 先行依存としていた plan 003 は DONE、
