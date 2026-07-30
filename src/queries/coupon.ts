@@ -40,7 +40,10 @@ const isDomainError = (error: unknown): error is Error => {
         'このクーポンコードは既に使用されています',
         'Please provide coupon data.',
         'Please provide coupon ID.',
-        'Please provide a valid store ID.'
+        'Please provide a valid store ID.',
+        // 入力検証と同じくユーザー起因（存在しない ID の指定）。DB 読み取りの
+        // 後段で throw するため try 外へ出せず、素通ししないとラップされる。
+        'Coupon not found.'
     ];
     return domainMessages.includes(error.message);
 };
