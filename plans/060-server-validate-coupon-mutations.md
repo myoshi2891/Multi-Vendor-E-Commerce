@@ -192,10 +192,25 @@ const couponDetails = await db.coupon.upsert({
 ```
 
 > Keep `id: coupon.id` only in `create` (upsert needs the id to create the row; the `where` already
-> keys on it). If `id` is optional/absent for new coupons in the current flow, check how the
-> existing code handles it — if `coupon.id` is `""`/undefined for new records, mirror whatever the
-> current spread relied on (Prisma generates `@default(uuid())` when `id` is omitted). If unsure,
-> STOP and report rather than guessing the id semantics.
+> keys on it).
+>
+> **id semantics — settled, no longer a STOP condition (2026-07-30).** An earlier revision said
+> "if unsure, STOP and report rather than guessing the id semantics". That question is answered by
+> the shipped implementation and by both call sites, so do not stop on it:
+>
+> - **The client always generates the id.** Both coupon forms send `id: data?.id ?? v4()` —
+>   seller: [`coupon-details.tsx:59`](../src/components/dashboard/forms/coupon-details.tsx),
+>   admin: [`admin-coupon-details.tsx:89`](../src/components/dashboard/forms/admin-coupon-details.tsx).
+>   `coupon.id` is therefore never `""` / `undefined`: an edit reuses the row's id, a new coupon
+>   carries a fresh UUID. Prisma's `@default(uuid())` fallback is never exercised on this path.
+> - **The shipped code matches.** `upsertCouponAsAdmin` (`src/queries/coupon.ts:513-515`) passes
+>   `id: coupon.id` in `create` only, with the comment
+>   `// id はフォーム側で常にクライアント生成される (data?.id ?? v4())`.
+> - Consequence for the `where`: `{ id: coupon.id }` never matches on a create, so the upsert takes
+>   the `create` branch — which is why the id must be present there.
+>
+> If a **new** caller ever omits `id`, that is a change to this contract and needs its own plan
+> (dropping `id` from `create` to let `@default(uuid())` run is the fix, not a local guess).
 
 Ensure `CouponFormSchema` is imported from `@/lib/schemas` at the top of `coupon.ts`.
 
