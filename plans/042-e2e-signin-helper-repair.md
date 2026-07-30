@@ -343,10 +343,18 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       echo "FAIL: signInWithPassword の本体を抽出できなかった（ゲートが無効化されている）"; false;
   }
 
-  printf '%s' "$body" \
-    | tr '\n' ' ' \
-    | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\(' \
-    && { echo "FAIL: signInWithPassword に実行時分岐が残っている"; false; }
+  # ⚠️ `grep -qE … && { echo FAIL; false; }` の形にしないこと。禁止パターンが
+  #    **不在（＝合格）** のとき grep は exit 1 を返し、`&&` が短絡して右辺が実行されない
+  #    ため、リスト全体の終了ステータスは grep の 1（＝失敗）になる。合格が exit 0 に
+  #    ならないゲートは CI で使えない（plans/023 の Done criteria が同じ形を検証のうえ
+  #    否定済み）。`if … then FAIL … else OK … fi` が唯一正しい形。
+  if printf '%s' "$body" \
+       | tr '\n' ' ' \
+       | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\('; then
+      echo "FAIL: signInWithPassword に実行時分岐が残っている"; false;
+  else
+      echo "OK: 実行時分岐なし";
+  fi
   ```
 
   **空抽出を PASS にしないこと（2026-07-28 修正）。** 旧形は awk の起動条件に

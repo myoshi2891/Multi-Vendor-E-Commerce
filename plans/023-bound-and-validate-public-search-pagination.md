@@ -334,8 +334,16 @@ awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
 # Negative: no parseInt inside the GET handler. The range ends at the first
 # column-0 closing brace — i.e. GET's own boundary — so the gate is tied to the
 # function, not to line numbers that drift and not to whatever follows it.
-awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"
-# → 0
+#
+# ⚠️ Do NOT rewrite this as `| grep -c "parseInt"` or as
+#    `| grep -qE 'parseInt' && { echo FAIL; false; }`. Both were tried and
+#    rejected — see the Done criteria blockquote above: grep exits 1 when it
+#    matches nothing, so in both forms the *passing* case returns a *failing*
+#    exit status and the gate can never be used in CI. The if-form below is the
+#    only shape where passing is exit 0.
+if awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
+     | grep -qE 'parseInt'; then echo "FAIL: parseInt in GET handler"; false; else echo OK; fi
+# → OK (exit 0)
 ```
 
 Both commands end the range at `/^}/`, matching the Done criteria above. Do **not** revert to

@@ -166,7 +166,11 @@ spec の骨組み（describe + `requiresClerkAdmin` ゲート + `createCustomerS
 // （notFound() 導入時にこのテストが落ちないようにするため）。
 // 参照: src/queries/store.ts:729（throw）/ src/app/(store)/store/[storeUrl]/page.tsx（null 未処理）
 const response = await page.goto(`/store/${storeUrl}`);
-expect(response?.status()).not.toBe(200);
+// `response?.status()` を直接 not.toBe(200) に渡さないこと。goto が null を返すと
+// `undefined !== 200` で空振り合格し、「公開されていない」の証明にならない
+// （下の blockquote 参照）。まずレスポンス取得自体を保証する。
+expect(response).not.toBeNull();
+expect(response!.status()).not.toBe(200);
 
 // 店舗情報が描画されていないこと（本質的な契約）。
 await expect(page.getByText(store.name)).toHaveCount(0);
@@ -216,8 +220,10 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] chromium 1 passed / 3 ブラウザ 3 passed
-- [ ] 非公開の assert が **`response.status()).not.toBe(200)`**（500 でも 404 でも通る耐久契約）と
-      **店舗名の非表示**（`toHaveCount(0)`）の両方を含む。**`toBe(500)` で固定していないこと**
+- [ ] 非公開の assert が **`expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)`**
+      （500 でも 404 でも通る耐久契約）と **店舗名の非表示**（`toHaveCount(0)`）の両方を含む。
+      **`toBe(500)` で固定していないこと**、かつ **`response?.status()` の形になっていないこと**
+      （`?.` は goto が null を返したとき `undefined !== 200` で空振り合格する — Step 4 の blockquote 参照）
 - [ ] **BAN 前の control**（`toBe(200)` + 店舗名 `toBeVisible()`）が BAN の assert より前にある
       — これが無いと、ページが最初から壊れていても非表示 assert が緑になる（Step 4 の blockquote 参照）
 - [ ] platform-coupon（chromium）が引き続き passed（共有店舗無傷）

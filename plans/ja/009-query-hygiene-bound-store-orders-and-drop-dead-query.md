@@ -201,28 +201,45 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
 **検証**:
 
-- 定数由来であることの確認（**2 つのゲートを両方満たすこと**）:
+- 定数由来であることの確認（**下の 3 ゲートを全て満たすこと**。Done criteria と同一の構造検証）:
 
   ```bash
   PAGE='src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx'
 
-  # (a) 存在ゲート: import と補間の 2 箇所で参照されていること。
-  #     件数を数える（`grep -n` の目視では「2 箇所あるつもり」で 1 箇所でも通ってしまう）。
-  [ "$(grep -c 'STORE_ORDERS_MAX' "$PAGE")" -ge 2 ] \
-    || { echo "FAIL: STORE_ORDERS_MAX の参照が import + 補間の 2 箇所に満たない"; false; }
-
-  # (b) 不在ゲート: 告知文にリテラル 200 が残っていないこと。
-  #     (a) は「定数も使っている」ことしか言えず、リテラルの併存を検出できない。
-  if grep -qE 'latest[[:space:]]+200|up to[[:space:]]+200' "$PAGE"; then
-      echo "FAIL: 告知文にリテラル 200 が残っている"; false
+  # 1) 共有定数を import していること（ローカル再宣言ではない）
+  if grep -qE '^import .*STORE_ORDERS_MAX.*from' "$PAGE"; then
+      echo "OK: 共有定数を import している"
   else
-      echo "OK: リテラル 200 は残っていない"
+      echo "FAIL: STORE_ORDERS_MAX を import していない"; false
+  fi
+
+  # 2) ページ内でローカル再宣言していないこと
+  if grep -qE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE"; then
+      echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; false
+  else
+      echo "OK: ページ内での再宣言は無い"
+  fi
+
+  # 3) 告知文そのものが定数を JSX 式として埋め込んでいること
+  #    （改行チェーンに耐えるよう tr で 1 行化してから照合する）
+  if tr '\n' ' ' < "$PAGE" \
+       | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders'; then
+      echo "OK: 告知文が定数を値として埋め込んでいる"
+  else
+      echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false
   fi
   ```
 
-  **(a) だけを合格条件にしないこと。** `grep -n "STORE_ORDERS_MAX"` がヒットしても、
-  それは「定数が使われている」ことの証明にすぎず、「リテラル `200` が使われていない」ことの
-  証明にはならない。両者は独立した主張であり、後者には不在ゲート (b) が要る。
+  **トークンの出現数（`grep -c … -ge 2`）で代替しないこと。** それは「どこかに 2 回出る」
+  しか言えず、ページ内でのローカル再宣言（import + `const STORE_ORDERS_MAX = 100`）でも
+  合格してしまう。守りたいのは「`store.ts` の上限を引き上げたとき告知の数字も一緒に動く」
+  ことなので、**import 由来であること・再宣言が無いこと・告知の固定文言と定数展開が同じ式に
+  共在すること**の 3 点を直接検証する必要がある（詳細な根拠は Done criteria 節を参照）。
+
+  **文言依存の literal-200 正規表現（`latest[[:space:]]+200` 等）で代替しないこと。**
+  リテラル `200` の不在は「定数由来である」ことを含意しない —— 告知文が別のハードコード値
+  （例: `latest 100 orders`）でも通ってしまう。またアンカー語を実装と別言語で書くと
+  正しい実装に対して偽の FAIL を返す（同じ事故の記録は Done criteria 節の 2026-07-30 修正）。
 
   > **不在ゲートを `grep -qE … && { …; false; }` で書かないこと（2026-07-30 修正）。**
   > 以前の (b) はこの形だった。`grep` は不一致（= 合格）で **exit 1** を返し、`&&` は
