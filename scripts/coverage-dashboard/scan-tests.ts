@@ -32,8 +32,14 @@ const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/;
 // 修飾子は**列挙**する（`(\.\w+)?` のような総称形にしない）。理由は 2 つ:
 //  - `test.describe(` / `test.step(` を拾ってしまう（wrapper・非テストブロック）
 //  - `it.each(` を拾うと EACH_PATTERN の展開ぶんと二重計上になる
-// skip / only 等は実行時に reporter へ「テストケース」として出るため計上する
-// （除外すると tests/e2e が 37 → 23 に化け、QA_HANDOFF の SSOT と乖離する）。
+//
+// 修飾子付きの一致は**宣言形と注釈形の 2 通りがある**ため、正規表現だけでは
+// 計上を決められない（`countBlockDeclarations` が第 1 引数で判別する）:
+//  - 宣言形 `test.skip('title', fn)` … 実行時に skipped なテストケースとして
+//    reporter に出るので計上する
+//  - 注釈形 `test.skip(cond, 'reason')` … Playwright のテスト**本体内**に置く
+//    conditional modifier。囲みの `test('title')` が既に計上済みなので、
+//    これを数えると二重計上になる
 const BLOCK_PATTERN =
     /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
 // it.each / test.each は実行時にテーブル行数ぶんのテストへ展開される。
@@ -190,6 +196,44 @@ function countTemplateTableRows(content: string, start: number): number {
 }
 
 /**
+ * ファイル内の `it(` / `test(` ブロック**宣言**の件数を返す。
+ *
+ * 修飾子付きの一致（`test.skip(` 等）は、第 1 引数が文字列リテラルかどうかで
+ * 宣言形と注釈形を判別する:
+ *
+ * - `test.skip('title', fn)` → **宣言**。実行時に skipped なテストケースとして
+ *   reporter に出るので計上する。
+ * - `test.skip(cond, 'reason')` / `test.skip()` → **注釈**（Playwright の
+ *   conditional modifier）。テスト本体の中に置かれ、囲みの `test('title')` が
+ *   既に 1 件として計上されているため、数えると二重計上になる。
+ *
+ * 素の `it(` / `test(` は常に宣言なのでこの判別を通さない
+ * （タイトルが変数・テンプレートリテラルの場合を落とさないため）。
+ *
+ * @param content - ファイル全体の内容
+ */
+function countBlockDeclarations(content: string): number {
+    let total = 0;
+    BLOCK_PATTERN.lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = BLOCK_PATTERN.exec(content)) !== null) {
+        // match[2] は `.skip` 等の修飾子部分。無ければ素の宣言なので無条件に計上。
+        if (match[2] === undefined) {
+            total++;
+            continue;
+        }
+
+        // 修飾子付き: `(` の次の有効文字が引用符なら宣言（テストタイトル）。
+        const argStart = skipTrivia(content, match.index + match[0].length);
+        const first = content[argStart];
+        if (first === '"' || first === "'" || first === "`") total++;
+    }
+
+    return total;
+}
+
+/**
  * ファイル内の `it.each` / `test.each` が実行時に展開されるテスト数の合計を返す。
  *
  * @param content - ファイル全体の内容
@@ -271,10 +315,12 @@ async function inspectFile(absPath: string): Promise<{ hasSkip: boolean; testCou
     try {
         const content = await readFile(absPath, "utf-8");
         return {
+            // hasSkip は「ファイルに skip マーカーが存在するか」の意味を維持する
+            // （注釈形の条件付き skip も skip マーカーではあるため区別しない）。
+            // testCount とは別の統計に紐づくので、意味を変えない。
             hasSkip: SKIP_PATTERN.test(content),
             testCount:
-                (content.match(BLOCK_PATTERN) ?? []).length +
-                countEachCases(content),
+                countBlockDeclarations(content) + countEachCases(content),
         };
     } catch {
         return { hasSkip: false, testCount: 0 };
