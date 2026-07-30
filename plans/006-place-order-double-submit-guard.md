@@ -118,7 +118,15 @@ In `src/components/store/cards/place-order.tsx`:
    ```ts
    const isPlacingOrderRef = useRef(false)
    ```
-3. Rewrite `handlePlaceOrder` to guard on the ref and always release it:
+3. Rewrite `handlePlaceOrder` to guard on the ref and release it **on the failure path only**:
+
+   > ⚠️ **この下の `finally` は無条件解除 — そのまま採用しない。** 実装は
+   > [「Superseded: the guard is deliberately NOT released after a successful order」](#superseded-the-guard-is-deliberately-not-released-after-a-successful-order-2026-07-18)
+   > の形（`if (!orderPlaced)` で囲む）を採っている。`push()` は await できず
+   > コンポーネントは遷移中もマウントされたままなので、無条件解除は成功直後に
+   > ボタンを再武装させ二重送信を復活させる（実測で `placeOrder` が 2 回）。
+   > 以下は歴史的記録。
+
    ```ts
    const handlePlaceOrder = async () => {
        if (isPlacingOrderRef.current) return
@@ -138,12 +146,13 @@ In `src/components/store/cards/place-order.tsx`:
        } catch (_error) {
            toast.error('Something went wrong while placing your order.')
        } finally {
+           // ⚠️ 無条件解除は採用しない（上の警告 / Superseded 節を参照）
            isPlacingOrderRef.current = false
            setLoading(false)
        }
    }
    ```
-   Note: the early `return` for the missing address now sits inside the `try`, so the `finally` still releases the ref and clears `loading` — fixing a latent "stuck loading" path too.
+   Note: the early `return` for the missing address now sits inside the `try`, so the `finally` still releases the ref and clears `loading` — fixing a latent "stuck loading" path too. その「必ず解除される」性質のうち、**成功パスだけ**は Superseded 節のとおり意図的に外れている（失敗・住所未選択時の解除はこのまま有効）。
 
 **Verify**: `bunx tsc --noEmit` → exit 0.
 
