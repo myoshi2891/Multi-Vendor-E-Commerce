@@ -52,9 +52,10 @@
 >    （`if … then FAIL … else OK … fi` 形の根拠は [`plans/023`](023-bound-and-validate-public-search-pagination.md)
 >    の Done criteria blockquote と同じ）。
 >
-> **Measured (2026-07-26)**: `@clerk/nextjs@7.5.19` (range `^7.5.0`), `@clerk/shared@4.25.4`,
-> `js-cookie@3.0.7` — both advisories clear. 上の新しいゲートでも再実測（2026-07-30）し、
-> 合格側 exit 0 / 空振り側 exit 1 の**両方向**を確認済み。Authoritative advisory ranges are
+> **Measured (2026-07-31)**: `@clerk/nextjs@7.5.19` (range `^7.5.0`), `@clerk/shared@4.25.4`,
+> `js-cookie@3.0.7` — both advisories clear（値は 2026-07-26 の実測から不変）。ゲート自体も
+> 合格側 exit 0 / 空振り側 exit 1 の**両方向**を再確認済み（2026-07-30 に本節のゲート、
+> 2026-07-31 に Step 1 の js-cookie ゲート）。Authoritative advisory ranges are
 > recorded in [`plans/audit/findings-06-dependencies.md`](audit/findings-06-dependencies.md); do not
 > restate them here (same GHSA carries different ranges per major series — 6.x is `<6.39.2`, 5.x is
 > `<5.7.6`).
@@ -144,8 +145,23 @@ so it must be checked separately rather than inferred from the `@clerk/nextjs` n
 
 ```bash
 grep -A2 '"@clerk/nextjs"' bun.lock | head
-grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u
+grep -oE '"js-cookie@[0-9][^"]*"' bun.lock | tr -d '"' | sort -u   # → js-cookie@3.0.7
 ```
+
+> **なぜ `'"js-cookie": "[^"]*"'` ではないか。** `bun.lock` は同じキー名を 2 つの意味で使う:
+>
+> - **宣言レンジ** — 依存元の `dependencies` 内。`"js-cookie": "3.0.7"`（コロンの後は文字列）
+> - **解決済みエントリ** — トップレベルのパッケージ表。`"js-cookie": ["js-cookie@3.0.7", …]`
+>   （コロンの後は**配列**）
+>
+> 旧コマンドはコロン直後に `"` を要求するため、**構造的に宣言レンジ側にしか当たらない**。
+> ここで確かめたいのは「`bun install` が実際に何を解決したか」なので、宣言を見ていては
+> 検査の主張が成立しない（レンジは patched 版を許すが、lock が古い版に留まる状況こそが
+> このステップの警戒対象）。`"js-cookie@<version>"` の形は解決済みエントリにしか現れない。
+>
+> **両方向を確認済み（2026-07-31）**: 合格側は `js-cookie@3.0.7` を 1 行出力。パッケージ名を
+> 実在しないものに差し替えると出力が空になり、`[ -z … ]` 判定側で exit 1 に落ちる
+> （空振りが PASS にならないこと＝ fail closed であることの確認）。
 
 ### Step 2: Typecheck + run the Clerk-touching tests
 
@@ -238,27 +254,29 @@ Stop and report if:
 - Reviewer should confirm the diff is version-only (plus lockfile) and that the manual unauthenticated `/dashboard` smoke was performed or explicitly flagged pending.
 - Follow-up: the Prisma 5→6 major lag (DEPS-04) is a separate, larger upgrade — do not bundle it with this security bump.
 
-### Resolution status (last verified 2026-07-26)
+### Resolution status (last verified 2026-07-31)
 
 This plan is **DONE** and **both advisories are closed in the current tree**.
 The "Why this matters" and "Current state" sections above describe the tree at
 commit `f9752c0` and are left as the historical record — do not read them as
 the present state:
 
-> **Dates in this document (2026-07-27 clarification).** This file carries two
-> verification timestamps and they are *not* interchangeable — always read the one
-> attached to the claim you are checking:
+> **Dates in this document (2026-07-27 clarification, updated 2026-07-31).** This file
+> carries more than one verification timestamp and they are *not* interchangeable —
+> always read the one attached to the claim you are checking:
 >
 > - **2026-07-18** — when the resolution was *first* confirmed and this section written.
-> - **2026-07-26** — the most recent re-measurement, recorded in the "Measured" note at
->   the top of this plan (`@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`).
->   The table below reflects **this** run.
+> - **2026-07-31** — the most recent re-measurement, recorded in the "Measured" note at
+>   the top of this plan (`@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`
+>   — unchanged from the 2026-07-26 run). The table below reflects **this** run.
 >
-> The heading previously read "verified 2026-07-18" while the table already carried the
-> 2026-07-26 values, so the section looked staler than it was. Later re-measurements must
-> update **both** the heading date and the "Measured" note, or the two drift apart again.
+> The heading previously read "verified 2026-07-18" while the table already carried newer
+> values, so the section looked staler than it was. Later re-measurements must update the
+> heading date, the table column header, **and** the "Measured" note together, or they
+> drift apart again. The 2026-07-30 entry that briefly sat only in the "Measured" note was
+> this same failure recurring; it is folded in above.
 
-| Item | As planned (`f9752c0`) | Current tree (2026-07-26) |
+| Item | As planned (`f9752c0`) | Current tree (2026-07-31) |
 |---|---|---|
 | `@clerk/nextjs` | `^7.0.7` → resolves `7.0.7` (inside GHSA-vqx2-fgx2-5wq9, `>=7.0.0 <7.2.1`) | `^7.5.0` → resolves `7.5.19` — outside the affected range |
 | `@clerk/testing` | `^2.0.7` | `^2.2.9` |
