@@ -276,8 +276,13 @@ describe("capturePayPalPayment", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            // 所有権チェック（IDOR 防止）で利用される findUnique
-            mockDb.order.findUnique.mockResolvedValue(createMockOrder());
+            // 所有権チェック（IDOR 防止）で利用される findUnique。
+            // total は capture 前の retrieve 突合（金額/通貨）を通過させるため
+            // `buildOrderRetrieveResponse` の既定値 99.99 に合わせる。ここで検証したいのは
+            // **capture 応答側**の分岐なので、その手前で落ちないようにする。
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
         });
 
         it("キャプチャ失敗時にOrder.paymentStatusをFailedに更新する", async () => {

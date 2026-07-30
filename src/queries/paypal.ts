@@ -28,6 +28,24 @@ const isRecordNotFound = (error: unknown): boolean =>
     error.code === "P2025";
 
 /**
+ * 検証で意図的に throw する拒否メッセージ。catch の汎用メッセージで上書きせず
+ * 透過させる（`coupon.ts` の `isDomainError` と同じ「意図的 throw の保全」パターン）。
+ *
+ * capture の**前**（retrieve 突合）と**後**（capture 応答突合）で別メッセージを使う。
+ * 前者は「課金していない」、後者は「課金済みで返金が必要」という運用上まったく違う
+ * 状態を指すため、呼び出し側・ログで区別できる必要がある。
+ */
+const VERIFICATION_REJECTIONS = new Set([
+    "PayPal order does not match order.",
+    "PayPal order amount/currency mismatch.",
+    "PayPal capture does not match order.",
+    "PayPal capture amount/currency mismatch.",
+]);
+
+const isVerificationRejection = (error: unknown): error is Error =>
+    error instanceof Error && VERIFICATION_REJECTIONS.has(error.message);
+
+/**
  * @Function createPayPalPayment
  * @Description Creates a PayPal payment and returns payment details
  * @PermissionLevel User only
@@ -53,7 +71,10 @@ export const createPayPalPayment = async (orderId: string) => {
                 error.stack
             );
         } else {
-            console.error("[paypal:createPayPalPayment] Failed to fetch current user", error);
+            console.error(
+                "[paypal:createPayPalPayment] Failed to fetch current user",
+                error
+            );
         }
         throw new Error(`Failed to fetch current user: ${message}`);
     }
@@ -80,7 +101,10 @@ export const createPayPalPayment = async (orderId: string) => {
                 error.stack
             );
         } else {
-            console.error("[paypal:createPayPalPayment] Failed to fetch order", error);
+            console.error(
+                "[paypal:createPayPalPayment] Failed to fetch order",
+                error
+            );
         }
         throw new Error(`Failed to fetch order: ${message}`);
     }
@@ -120,7 +144,9 @@ export const createPayPalPayment = async (orderId: string) => {
 
         if (response.ok === false) {
             const errorBody = await response.text();
-            throw new Error(`PayPal API responded with status ${response.status}: ${errorBody}`);
+            throw new Error(
+                `PayPal API responded with status ${response.status}: ${errorBody}`
+            );
         }
 
         const paymentData = await response.json();
@@ -129,7 +155,11 @@ export const createPayPalPayment = async (orderId: string) => {
     } catch (error: unknown) {
         clearTimeout(timeoutId);
         if (error instanceof Error) {
-            console.error("Error in createPayPalPayment:", error.message, error.stack);
+            console.error(
+                "Error in createPayPalPayment:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in createPayPalPayment:", error);
         }
@@ -197,7 +227,10 @@ export const capturePayPalPayment = async (
                 error.stack
             );
         } else {
-            console.error("[paypal:capturePayPalPayment] Failed to fetch order", error);
+            console.error(
+                "[paypal:capturePayPalPayment] Failed to fetch order",
+                error
+            );
         }
         throw new Error(`Failed to fetch order: ${message}`);
     }
@@ -213,6 +246,54 @@ export const capturePayPalPayment = async (
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
+        // capture の**前**に PayPal Order を取得して突合する。capture 応答の検証
+        // （下の相関・金額チェック）は金が動いた後にしか働かないため、過少支払いや
+        // 他人の PayPal Order の流用は throw しても課金自体は成立してしまい、
+        // 返金という別経路の運用が必要になる。不一致なら capture を呼ばない。
+        //
+        // capture 後の検証は削除せず残す（PayPal 側で capture 時に値が変わる経路と、
+        // retrieve → capture の間に承認が差し替わる TOCTOU への二重防御）。
+        const orderResponse = await fetch(
+            `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
+                },
+                signal: controller.signal,
+            }
+        );
+
+        if (orderResponse.ok === false) {
+            const errorBody = await orderResponse.text();
+            throw new Error(
+                `PayPal API responded with status ${orderResponse.status}: ${errorBody}`
+            );
+        }
+
+        const orderData = await orderResponse.json();
+        const purchaseUnit = orderData.purchase_units?.[0];
+
+        // 相関は金額より先に見る。他人の PayPal Order だと判明した時点で、
+        // その金額の一致・不一致は判断材料にならない。
+        if (purchaseUnit?.custom_id !== orderId) {
+            throw new Error("PayPal order does not match order.");
+        }
+
+        // 作成時に createPayPalPayment が格納した正値（order.total / "USD"）と突合する。
+        // 金額比較は Prisma.Decimal.equals（float === は 2 進丸めで誤判定しうる）。
+        const orderValue = purchaseUnit?.amount?.value;
+        const orderCurrency = purchaseUnit?.amount?.currency_code;
+
+        if (
+            orderCurrency !== "USD" ||
+            orderValue === undefined ||
+            !new Prisma.Decimal(orderValue).equals(order.total)
+        ) {
+            throw new Error("PayPal order amount/currency mismatch.");
+        }
+
         // Capture the payment using PayPal API
         const captureResponse = await fetch(
             `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
@@ -230,7 +311,9 @@ export const capturePayPalPayment = async (
 
         if (captureResponse.ok === false) {
             const errorBody = await captureResponse.text();
-            throw new Error(`PayPal API responded with status ${captureResponse.status}: ${errorBody}`);
+            throw new Error(
+                `PayPal API responded with status ${captureResponse.status}: ${errorBody}`
+            );
         }
 
         const captureData = await captureResponse.json();
@@ -387,13 +470,9 @@ export const capturePayPalPayment = async (
                 throw new Error("Order payment is already settled.");
             }
         }
-        // capture 検証エラーは意図した拒否のため、汎用メッセージで上書きせず透過させる
-        // (coupon.ts の isGuardError と同じ「意図的 throw の保全」パターン)
-        if (
-            error instanceof Error &&
-            (error.message === "PayPal capture does not match order." ||
-                error.message === "PayPal capture amount/currency mismatch.")
-        ) {
+        // 検証エラー（capture 前の retrieve 突合 / capture 応答突合）は意図した拒否のため、
+        // 汎用メッセージで上書きせず透過させる。列挙は VERIFICATION_REJECTIONS が SSOT。
+        if (isVerificationRejection(error)) {
             throw error;
         }
         throw new Error("Failed to capture PayPal payment");

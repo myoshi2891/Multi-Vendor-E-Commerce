@@ -290,15 +290,29 @@ past what the steps describe, so do not read the step text as the current spec:
    after the non-`COMPLETED` branch; the shipped code moved the `custom_id` match
    **ahead of** the `paymentStatus: "Failed"` write, so a mismatched PayPal order
    id cannot flip another user's order to Failed.
-4. **Prefer verifying the PayPal order before invoking capture. Status: OPEN —
-   not fixed by this plan.** The steps (and the shipped code) verify the capture
-   response *after* money has already moved. Retrieving and matching the order
-   (amount / `custom_id` / currency) *before* `capture` is the stronger shape.
-   This is **not** covered by the webhook hardening (SECURITY-17): that path is
-   explicitly out of scope here (see Maintenance notes below) and itself deferred,
-   so the earlier "if not already covered" hedge does not apply — treat this as a
-   tracked open follow-up. Do **not** record pre-capture order verification as
-   resolved anywhere (plan index / security reports) until it lands.
+4. **The PayPal order is verified *before* `capture` is invoked. Status: RESOLVED
+   (2026-07-30, CodeRabbit round 8).** The steps — and the code as this plan
+   shipped it — verified the capture response *after* money had already moved, so
+   a mismatch could only be reported, not prevented (remediation meant a refund,
+   a different operational path). `capturePayPalPayment` now issues
+   `GET /v2/checkout/orders/{paymentId}` immediately after the settled guard and
+   matches `purchase_units[0].custom_id` / `amount.value`
+   (`Prisma.Decimal.equals`) / `amount.currency_code` **before** the capture POST.
+   A mismatch throws without calling capture.
+   - The **post-capture** checks are deliberately kept as defence in depth: the
+     retrieve and capture responses can disagree, and the retrieve → capture
+     window is itself a TOCTOU gap that pre-verification cannot close.
+   - The two stages use **distinct messages** because they describe different
+     operational states — `PayPal order …` means nothing was charged, whereas
+     `PayPal capture …` means a charge landed and needs a refund. Both are listed
+     in `VERIFICATION_REJECTIONS` (`paypal.ts`), the SSOT for messages that pass
+     through the generic catch untouched.
+   - Regression tests: `src/queries/paypal.test.ts` →
+     `describe("capture 前の PayPal Order 検証（課金前に不一致を拒否）")` — mismatched
+     `custom_id` / amount / currency each reject **with zero capture calls**, plus
+     an ordering test pinning `GET orders/{id}` → `POST orders/{id}/capture`.
+   - Still **not** covered here: the webhook path (`SECURITY-17`, see Maintenance
+     notes) remains out of scope and deferred.
 
 ## Maintenance notes
 
