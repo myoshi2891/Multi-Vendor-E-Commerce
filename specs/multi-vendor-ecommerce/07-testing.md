@@ -12,6 +12,22 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1799 passed / 1802 total across 176 suites (3 skipped), as of 2026-07-30.
+  Nine regressions from the CodeRabbit review round, eighth pass (+9, no new suites).
+  `db-retry.test.ts` 16→19 (an `it.each` of two rows — `2 ** 48` and `Number.MAX_SAFE_INTEGER` —
+  plus one backoff-ceiling case. The seventh pass clamped *non-finite* values but let a **finite**
+  huge one through untouched, since `Math.floor` never shrinks a value. `randomInt` requires
+  `max - min < 2 ** 48`, so the same defect class survived: the throw came *from inside the catch
+  block* as `ERR_OUT_OF_RANGE` and replaced the P2034. The rows assert the error is still a
+  `PrismaClientKnownRequestError`, i.e. that it was not transmuted).
+  `stripe.test.ts` 39→41 (observing the same canceled intent twice must derive the **same**
+  recreate idempotency key — the previous `randomUUID()` suffix made every call unique, so
+  double-submit protection vanished precisely after a cancellation was observed; and once the
+  recreate ceiling is hit the action must throw rather than persist a canceled intent id).
+  `paypal.test.ts` 23→27 (`GET /v2/checkout/orders/{id}` must run **before** capture: a mismatched
+  `custom_id`, `amount`, or `currency_code` each throws with the capture URL never requested, and
+  the happy path pins the GET→POST ordering. Verifying after capture meant the money had already
+  moved by the time the check failed).
 - 1790 passed / 1793 total across 176 suites (3 skipped), as of 2026-07-30.
   Four regressions from the CodeRabbit review round, seventh pass (+4, no new suites).
   `db-retry.test.ts` 13→16 (an `it.each` of three rows: a fractional / `NaN` / negative
