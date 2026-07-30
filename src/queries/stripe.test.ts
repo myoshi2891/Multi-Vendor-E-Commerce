@@ -345,6 +345,83 @@ describe("createStripePaymentIntent", () => {
             );
         });
 
+        // 再作成キーが乱数由来だと、canceled を観測した後だけ冪等性が失われる。
+        // 二重クリックのたびに別キー → 別 intent が作られて孤児が量産され、
+        // 最後の 1 つだけが「有効な intent id」として保存されるため、先行 intent で
+        // 決済中のユーザーが createStripePayment で拒否される（= 冪等キー導入前に
+        // 戻る裏口）。キーは「観測した canceled intent の id」から導出すること。
+        it("同一の canceled intent を観測した再実行では同じ再作成キーを送る", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            const canceled = {
+                id: "pi_canceled_dup",
+                client_secret: "pi_canceled_dup_secret",
+                status: "canceled",
+                currency: "usd",
+            };
+            const fresh = {
+                id: "pi_fresh_dup",
+                client_secret: "pi_fresh_dup_secret",
+                status: "requires_payment_method",
+                currency: "usd",
+            };
+            // 1 回目: 基本キー → canceled / 再作成キー → fresh
+            // 2 回目（二重送信）: Stripe は同じキーに同じ intent を返すので同じ並び
+            mockStripePaymentIntentsCreate
+                .mockResolvedValueOnce(canceled)
+                .mockResolvedValueOnce(fresh)
+                .mockResolvedValueOnce(canceled)
+                .mockResolvedValueOnce(fresh);
+
+            await createStripePaymentIntent("order-canceled-dup");
+            await createStripePaymentIntent("order-canceled-dup");
+
+            const [, firstRecreate] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+            const [, secondRecreate] =
+                mockStripePaymentIntentsCreate.mock.calls[3];
+
+            // 決定論的 = 同じ canceled を見たら同じ再作成キー
+            expect(secondRecreate.idempotencyKey).toBe(
+                firstRecreate.idempotencyKey
+            );
+            // かつ観測した canceled intent の id に紐づいていること
+            expect(firstRecreate.idempotencyKey).toContain("pi_canceled_dup");
+        });
+
+        // 再作成した intent もまた canceled だった場合、キーが前進しなければ
+        // 同じ canceled が返り続ける。上限まで前進させ、それでも canceled なら
+        // **canceled の id を保存せず** 明示的に失敗する（保存すると
+        // createStripePayment が confirm 不能な intent と一致してしまう）。
+        it("canceled が続く場合は上限で失敗し、canceled の id を保存しない", async () => {
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => undefined);
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            // 毎回「別の」canceled を返す（キーが前進していることの裏付け）
+            let seq = 0;
+            mockStripePaymentIntentsCreate.mockImplementation(async () => {
+                seq += 1;
+                return {
+                    id: `pi_canceled_chain_${seq}`,
+                    client_secret: `pi_canceled_chain_${seq}_secret`,
+                    status: "canceled",
+                    currency: "usd",
+                };
+            });
+
+            await expect(
+                createStripePaymentIntent("order-canceled-chain")
+            ).rejects.toThrow("Stripe payment intent could not be recreated.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
         it("canceled 以外の status では作り直さない（二重送信防御を維持）", async () => {
             mockDb.order.findUnique.mockResolvedValue(
                 createMockOrder({ total: 42.5 })
