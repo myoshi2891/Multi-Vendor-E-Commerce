@@ -114,7 +114,20 @@ export async function POST(req: Request) {
 	}
 
 	if (evt.type === "user.deleted") {
-		const userId = (evt.data as { id: string }).id;
+		// Clerk の DeletedObjectJSON.id は optional。無検証キャストで undefined が
+		// 流れ込むと Prisma は `where: { userId: undefined }` を「その条件を
+		// 指定しなかった」と解釈するため、updateMany は全 SupportTicket の PII を
+		// 上書きし、deleteMany は全 User を削除する。トランザクションに入る前に
+		// 絞り込みキーとして使える文字列であることを確定させる。
+		const rawUserId = (evt.data as { id?: unknown }).id;
+		if (typeof rawUserId !== "string" || rawUserId.trim() === "") {
+			console.error(
+				"Webhook user.deleted event missing a usable user id"
+			);
+			return new Response("Missing user id", { status: 400 });
+		}
+		const userId = rawUserId;
+
 		try {
 			// GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
 			// ユーザー削除だけではチケット行の PII 列（name/email/subject/message・
