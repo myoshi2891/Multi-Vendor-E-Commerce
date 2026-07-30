@@ -29,8 +29,15 @@
   ```bash
   git ls-tree -r --name-only 09275b5d tests/component/ | grep -i payment          # ヒット 0
   git ls-tree -r --name-only 09275b5d src/components/store/cards/payment/ | grep -i test  # ヒット 0
-  ls src/components/store/checkout-page/ src/components/store/order-page/ | grep -i test  # ヒット 0
+  git ls-tree -r --name-only 09275b5d src/components/store/checkout-page/ src/components/store/order-page/ | grep -i test  # ヒット 0
   ```
+
+  > **3 行目を `ls <dir> | grep -i test` に戻さないこと（2026-07-30 修正）。** 旧形は
+  > (a) **非再帰**でサブディレクトリ配下のテストを取りこぼし、(b) pin した HEAD
+  > `09275b5d` ではなく**その時の作業ツリー**を見ていた（1・2 行目は `git ls-tree -r`）。
+  > 同じ主張を裏付けるコマンドが違うツリーを見ていては、後続ラウンドが再検証できない。
+  > 3 行とも `git ls-tree -r` に統一し、上の「3 点セット」規約と整合させた。
+  > 修正後も**ヒット 0**（2026-07-30 実測）で、結論そのものは変わらない。
 
   > **削除した旧行について（2026-07-27）**: ここには「再測定（2026-07-18 / HEAD 未記録）」という
   > 行が残っていた。測定 HEAD を欠く行は、下の規約が要求する 3 点セットを満たさないため

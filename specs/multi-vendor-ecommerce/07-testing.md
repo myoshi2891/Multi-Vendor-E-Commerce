@@ -58,6 +58,11 @@
   state before `persist.rehydrate()`, so the restored cart can only have come from storage —
   plan 005's headline claim ("a persisted cart survives a reload") had no test until now.
 - 1749 passed / 1752 total across 175 suites (3 skipped), as of 2026-07-26.
+  One regression from the CodeRabbit review round, second pass (+1, no new suites):
+  `stripe.test.ts` pins that a P2025 is only normalized to "already settled" when a re-read
+  confirms it — the normalization used to cover the whole `$transaction`, so a concurrent order
+  delete or a vanished `paymentDetails.connect` target was misreported as a completed payment.
+- 1748 passed / 1751 total across 175 suites (3 skipped), as of 2026-07-26.
   Two regressions from the CodeRabbit review round (+2, no new suites): `coupon.test.ts` pins
   rejection of a fractional `discount` on both the seller and admin upsert paths, matching the
   `.int()` added to `CouponFormSchema.discount` (the value reached the `Int` column before).

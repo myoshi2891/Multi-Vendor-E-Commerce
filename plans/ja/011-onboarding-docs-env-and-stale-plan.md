@@ -318,8 +318,25 @@ expected=$(
   } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
 )
 
-# README の env ブロック（```env フェンス）が列挙する変数名
-actual=$(sed -n '/^```env$/,/^```$/p' README.md | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
+# README の env ブロックが列挙する変数名。
+#
+# ⚠️ `sed -n '/^```env$/,/^```$/p' README.md` を README 全体に掛けないこと。
+#    それは README 内の**すべての** ```env フェンスを連結する。現在は「必要な環境変数」節に
+#    1 個しか無いので偶然一致するが、Docker 用ブロック等が増えた瞬間、この検査の主張が
+#    「その節との完全一致」から「全ブロックの和集合との一致」へ**黙って変質**する
+#    （検査は緑のまま意味だけが変わるので気づけない）。
+#    対策は 2 段構え: (1) 節見出しで範囲を切ってから拾う (2) その範囲内のフェンスが
+#    ちょうど 1 個であることも assert する。
+section=$(awk '/^### 必要な環境変数$/{f=1; next} f && /^#{1,3} /{exit} f' README.md)
+
+fence_count=$(printf '%s\n' "$section" | grep -c '^```env$')
+if [ "$fence_count" -ne 1 ]; then
+  printf 'FAIL: 「必要な環境変数」節の ```env フェンスが %s 個（1 個であることが前提）\n' "$fence_count"
+  exit 1
+fi
+
+actual=$(printf '%s\n' "$section" | sed -n '/^```env$/,/^```$/p' \
+           | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
 
 missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
 if [ -n "$missing" ]; then
