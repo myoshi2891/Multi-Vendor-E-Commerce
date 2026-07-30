@@ -354,8 +354,38 @@ export const capturePayPalPayment = async (
         }
         // CAS 条件が 0 件マッチ = read-then-act ガード通過後に別リクエストが確定させた。
         // 同期ガードと同じメッセージへ写像し、外から見た挙動を一致させる。
+        //
+        // ただし P2025 は CAS 不一致に固有のコードではない。トランザクション内の
+        // order の並行削除や `paymentDetails.connect` の対象消失でも同じコードが返るため、
+        // 無条件に正規化すると本当の障害が「決済確定済み」として報告される
+        // （呼び出し側は「もう払えている」と信じて調査もリトライもしなくなる）。
+        // 実際に確定済みへ変わっているかを再読で確かめ、そのときだけ正規化する
+        // （stripe.ts の createStripePayment と同じ契約）。
         if (isRecordNotFound(error)) {
-            throw new Error("Order payment is already settled.");
+            let settled = false;
+            try {
+                const current = await db.order.findUnique({
+                    where: { id: orderId },
+                    select: { paymentStatus: true },
+                });
+                settled =
+                    !!current && isSettledPaymentStatus(current.paymentStatus);
+            } catch (reReadError: unknown) {
+                // 再読自体が失敗した場合は判別できない。元の P2025 を失わないよう、
+                // ここでは握りつぶさず記録だけして下の共通経路へ流す。
+                console.error(
+                    "[paypal:capturePayPalPayment] Failed to re-read order after P2025",
+                    reReadError instanceof Error
+                        ? {
+                              error: reReadError.message,
+                              stack: reReadError.stack,
+                          }
+                        : { error: reReadError }
+                );
+            }
+            if (settled) {
+                throw new Error("Order payment is already settled.");
+            }
         }
         // capture 検証エラーは意図した拒否のため、汎用メッセージで上書きせず透過させる
         // (coupon.ts の isGuardError と同じ「意図的 throw の保全」パターン)
