@@ -39,7 +39,9 @@ describe("retryOnSerializationFailure", () => {
     it("成功した場合は再試行せず結果を返す", async () => {
         const operation = jest.fn().mockResolvedValue("ok");
 
-        await expect(retryOnSerializationFailure(operation)).resolves.toBe("ok");
+        await expect(retryOnSerializationFailure(operation)).resolves.toBe(
+            "ok"
+        );
 
         expect(operation).toHaveBeenCalledTimes(1);
     });
@@ -149,6 +151,70 @@ describe("retryOnSerializationFailure", () => {
             expect(operation).toHaveBeenCalledTimes(2);
         }
     );
+
+    // 有限でも巨大な `baseDelayMs` は上の正規化（小数切り捨て・下限 0・非有限→既定値）を
+    // すべて通り抜ける（`Math.floor` は値を縮めない）。しかし
+    // 1. `randomInt(0, max)` は Node の要件として `max - min < 2**48` を満たす必要があり、
+    //    `2**48` 以上では **catch の内側から `ERR_OUT_OF_RANGE`（RangeError）が投げられ**、
+    //    投げ返すはずの P2034 が化けて下流の `isSerializationFailure` 判定が空振りする。
+    //    小数 → `ERR_INVALID_ARG_TYPE` と**同一の欠陥クラス**（上の it.each）の残存。
+    // 2. `backoff` が `2**31 - 1` を超えると `setTimeout` が黙って ~1ms へ丸めるため、
+    //    「巨大値を渡すとかえってバックオフが消える」という逆転が起きる。
+    // どちらも上限クランプで閉じる。fake timer はクランプ後の待ち時間を実時間で
+    // 待たないために使う（復元は afterEach — 失敗したテストの後でも必ず走る）。
+    describe("baseDelayMs の上限クランプ", () => {
+        // クランプ上限（60s）+ ジッター上限（< 60s）を必ず消化できる進め幅。
+        const BEYOND_MAX_DELAY_MS = 120_000;
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it.each([
+            ["2**48（randomInt の範囲上限）", 2 ** 48],
+            ["MAX_SAFE_INTEGER", Number.MAX_SAFE_INTEGER],
+        ])(
+            "baseDelayMs が %s でも P2034 をそのまま投げ返す（RangeError に化けない）",
+            async (_label, baseDelayMs) => {
+                const operation = jest
+                    .fn()
+                    .mockRejectedValue(makeSerializationFailure());
+
+                // reject を先に捕まえてから時計を進める（unhandled rejection を作らない）
+                const settled = retryOnSerializationFailure(operation, {
+                    maxAttempts: 2,
+                    baseDelayMs,
+                }).catch((error: unknown) => error);
+
+                await jest.advanceTimersByTimeAsync(BEYOND_MAX_DELAY_MS);
+
+                expect(await settled).toMatchObject({ code: "P2034" });
+                // ジッター経路で throw していたら 1 回で止まる。再試行到達も固定する。
+                expect(operation).toHaveBeenCalledTimes(2);
+            }
+        );
+
+        it("巨大な baseDelayMs でもバックオフが上限内で消化される", async () => {
+            const operation = jest
+                .fn()
+                .mockRejectedValueOnce(makeSerializationFailure())
+                .mockResolvedValue("ok");
+
+            const settled = retryOnSerializationFailure(operation, {
+                maxAttempts: 2,
+                baseDelayMs: 2 ** 48,
+            });
+
+            await jest.advanceTimersByTimeAsync(BEYOND_MAX_DELAY_MS);
+
+            await expect(settled).resolves.toBe("ok");
+            expect(operation).toHaveBeenCalledTimes(2);
+        });
+    });
 
     it("maxAttempts が 0 でも P2034 は undefined ではなく Error として投げ返す", async () => {
         const operation = jest
