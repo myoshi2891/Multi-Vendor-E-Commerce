@@ -64,13 +64,22 @@
   in the `where` clause. The Stripe webhook (`src/app/api/webhooks/stripe/`)
   writes the same row through an independent path, so a plain guard-then-write
   would let a late server action regress a settled `Paid` order back to
-  `Pending`. A non-matching update surfaces as P2025 and is normalized to the
-  same "already settled" error the pre-check raises.
-- Transactions declared `isolationLevel: Serializable` are retried on P2034 via
-  `retryOnSerializationFailure` (`src/lib/db-retry.ts`). Serializable converts a
-  conflict into a retryable error rather than corrupt data, so it only works
-  paired with a retry; without one it merely replaces P2002/P2025 with P2034 and
-  the legitimate concurrent request still fails.
+  `Pending`. The CAS miss surfaces as **P2025, which is a designed outcome, not a
+  fault**: the row exists but no longer matches the `notIn` predicate, so it is
+  normalized to the same "already settled" error the pre-check raises. This P2025
+  is **not retried** — retrying cannot change the answer, because the order is
+  settled and will stay settled.
+- **P2034 is a separate event from the CAS P2025 above.** Transactions declared
+  `isolationLevel: Serializable` are retried on P2034 via
+  `retryOnSerializationFailure` (`src/lib/db-retry.ts`). P2034 means the database
+  refused to serialize two concurrent transactions and asks the caller to *redo*
+  the work; the outcome is undetermined, so a retry can succeed. Serializable
+  only converts a conflict into this retryable form — it does not eliminate the
+  conflict — so declaring it without a retry just turns a would-be lost update
+  into a failed request, and the legitimate concurrent caller still gets an error.
+  The two codes must not be conflated when reading logs or writing handlers:
+  P2025 from a CAS `where` is a **terminal, expected** signal; P2034 is a
+  **transient, retryable** one.
 - Work that follows an irreversible side effect is best-effort. After
   `placeOrder` succeeds, both the local (`emptyCart`) and server-side
   (`emptyUserCart`) cart cleanups are individually guarded so a failure cannot
