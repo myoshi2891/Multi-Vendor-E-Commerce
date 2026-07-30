@@ -45,6 +45,37 @@ const VERIFICATION_REJECTIONS = new Set([
 const isVerificationRejection = (error: unknown): error is Error =>
     error instanceof Error && VERIFICATION_REJECTIONS.has(error.message);
 
+/** PayPal API 1 呼び出しあたりのタイムアウト（ms）。予算は呼び出しごとに独立する。 */
+const PAYPAL_TIMEOUT_MS = 10_000;
+
+/**
+ * PayPal API を **その呼び出し専用の** タイムアウト予算付きで叩く。
+ *
+ * 1 つの `AbortController` を複数の fetch で共有すると、タイムアウトは個々の
+ * 呼び出しの期限ではなく**合計の期限**になる。`capturePayPalPayment` は
+ * retrieve（GET orders/{id}）→ capture（POST /capture）の 2 段構成なので、
+ * 共有すると retrieve が遅いほど capture に残る時間が減る —— **金が動く側の
+ * 呼び出しほど中断されやすい**という最悪の相関が生まれる。capture が途中で
+ * abort されても PayPal 側で課金が成立していることはあり、その場合は返金という
+ * 別経路の運用が必要になる。
+ *
+ * `finally` で必ず `clearTimeout` するため、fetch が解決・拒否のどちらで
+ * 抜けてもタイマーはイベントループに残らない。
+ */
+const fetchPayPal = async (
+    url: string,
+    init: RequestInit
+): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), PAYPAL_TIMEOUT_MS);
+
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+};
+
 /**
  * @Function createPayPalPayment
  * @Description Creates a PayPal payment and returns payment details
@@ -110,12 +141,9 @@ export const createPayPalPayment = async (orderId: string) => {
     }
     if (!order) throw new Error("Order not found");
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
     try {
         // Here you can call the PayPal API to create a payment
-        const response = await fetch(
+        const response = await fetchPayPal(
             "https://api.sandbox.paypal.com/v2/checkout/orders",
             {
                 method: "POST",
@@ -136,11 +164,8 @@ export const createPayPalPayment = async (orderId: string) => {
                         },
                     ],
                 }),
-                signal: controller.signal,
             }
         );
-
-        clearTimeout(timeoutId);
 
         if (response.ok === false) {
             const errorBody = await response.text();
@@ -153,7 +178,6 @@ export const createPayPalPayment = async (orderId: string) => {
 
         return paymentData;
     } catch (error: unknown) {
-        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error(
                 "Error in createPayPalPayment:",
@@ -242,9 +266,6 @@ export const capturePayPalPayment = async (
         throw new Error("Order payment is already settled.");
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
     try {
         // capture の**前**に PayPal Order を取得して突合する。capture 応答の検証
         // （下の相関・金額チェック）は金が動いた後にしか働かないため、過少支払いや
@@ -253,7 +274,7 @@ export const capturePayPalPayment = async (
         //
         // capture 後の検証は削除せず残す（PayPal 側で capture 時に値が変わる経路と、
         // retrieve → capture の間に承認が差し替わる TOCTOU への二重防御）。
-        const orderResponse = await fetch(
+        const orderResponse = await fetchPayPal(
             `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}`,
             {
                 method: "GET",
@@ -261,7 +282,6 @@ export const capturePayPalPayment = async (
                     "Content-Type": "application/json",
                     Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
                 },
-                signal: controller.signal,
             }
         );
 
@@ -295,7 +315,10 @@ export const capturePayPalPayment = async (
         }
 
         // Capture the payment using PayPal API
-        const captureResponse = await fetch(
+        // retrieve とは**別の**予算で叩く（fetchPayPal が呼び出しごとに
+        // AbortController を起こす）。retrieve に何秒かかっていようと、
+        // capture は満額のタイムアウトから始まる。
+        const captureResponse = await fetchPayPal(
             `https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
             {
                 method: "POST",
@@ -303,11 +326,8 @@ export const capturePayPalPayment = async (
                     "Content-Type": "application/json",
                     Authorization: `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`).toString("base64")}`,
                 },
-                signal: controller.signal,
             }
         );
-
-        clearTimeout(timeoutId);
 
         if (captureResponse.ok === false) {
             const errorBody = await captureResponse.text();
@@ -425,7 +445,6 @@ export const capturePayPalPayment = async (
 
         return updatedOrder;
     } catch (error: unknown) {
-        clearTimeout(timeoutId);
         if (error instanceof Error) {
             console.error(
                 "Error in capturePayPalPayment:",
