@@ -1682,9 +1682,35 @@ describe("toggleCouponActive", () => {
             });
             mockDb.coupon.findUnique.mockResolvedValue(null);
 
+            // 完全一致アンカー。部分一致 (`toThrow("Coupon not found.")`) だと
+            // catch が `Error occurred while toggling coupon active state: Coupon
+            // not found.` にラップしても通ってしまい、欠陥を検出できない。
             await expect(
                 toggleCouponActive("coupon-001")
-            ).rejects.toThrow("Coupon not found.");
+            ).rejects.toThrow(/^Coupon not found\.$/);
+        });
+
+        it("不在エラーはサーバーログ (logError) を発生させない", async () => {
+            // 「存在しない ID を指定した」はユーザー起因の 4xx 相当。汎用 DB エラーと
+            // 同じ扱いで console.error に載せるとログノイズになる。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.coupon.findUnique.mockResolvedValue(null);
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                await expect(
+                    toggleCouponActive("coupon-001")
+                ).rejects.toThrow(/^Coupon not found\.$/);
+
+                expect(consoleErrorSpy).not.toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 
