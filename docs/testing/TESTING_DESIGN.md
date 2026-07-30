@@ -203,6 +203,28 @@ if (!Number.isFinite(unitPrice)) {
 - ❌ `process.env.VALUE || fallback` - 空文字列 `""` が falsy 扱いされ、数値 `0` が必要な場合に fallback が使われる
 - ✅ `const v = process.env.VALUE?.trim(); v ? Number(v) : fallback` - 推奨パターン
 
+#### 真偽値（opt-in フラグ）環境変数
+
+**有効値は `1` のみ**とする（`trim()` 後に厳密比較）。素の真偽値判定
+（`!!process.env.X`）は `"0"` / `"false"` / `" "` も有効にしてしまい、
+「無効化したつもりが有効」という fail open を招く。
+
+```typescript
+const isEnabled = (name: string): boolean => process.env[name]?.trim() === "1";
+```
+
+| 変数 | 用途 | 参照箇所 |
+|-----|------|---------|
+| `E2E_USE_DEV` | E2E の webServer を `bun run dev` へ退避（既定は本番ビルド起動） | `playwright.config.ts` / `tests/e2e/security-headers.spec.ts` |
+| `HSTS_ENABLED` | 配信先が本番ドメインであることの明示シグナル | `next.config.mjs` / 同 spec |
+| `HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD` | HSTS 拡張ディレクティブの個別 opt-in | 同上 |
+
+> **⚠️ 2026-07-30 の破壊的変更**: `E2E_USE_DEV` は以前は真偽値判定だったため
+> `=true` / `=0` でも dev 起動になっていた。現在は **`=1` のみ**有効。
+> `playwright.config.ts` と `security-headers.spec.ts` を同一規則に揃えたのは、
+> spec が webServer の起動モードを鏡写しにして HSTS の有無を期待するためで、
+> 片方だけ変えると正しい実装でも期待値が壊れる。
+
 ---
 
 ## ❌ シークレット管理ルール（必須）
