@@ -7,13 +7,22 @@ import {
 } from "@/lib/payment-status";
 import { currentUser } from "@clerk/nextjs/server";
 import { PaymentStatus, Prisma } from "@prisma/client";
-import { randomUUID } from "crypto";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: "2025-02-24.acacia",
     // Additional Stripe options can be added here
 });
+
+/**
+ * canceled intent を観測した際に「別キーで作り直す」回数の上限。
+ *
+ * 再作成キーは観測した canceled intent の id 由来なので、作り直した intent も
+ * canceled なら次周でキーが前進する（無限ループにはならない）。それでも上限を
+ * 置くのは、Stripe 側が canceled を返し続ける異常時に API 呼び出しを無制限に
+ * 増やさないため。上限到達時は保存せず throw する。
+ */
+const MAX_INTENT_RECREATE_ATTEMPTS = 3;
 
 /**
  * Stripe の PaymentIntent.status を Order.paymentStatus へ写像する。
@@ -113,10 +122,29 @@ export const createStripePaymentIntent = async (orderId: string) => {
         // キーを固定したままだと当該注文はその金額のまま恒久的に決済不能になる。
         // canceled を観測したときだけ新しいキーで作り直す（通常 status では
         // 作り直さないので、二重送信に対する防御はそのまま維持される）。
-        if (paymentIntent.status === "canceled") {
+        //
+        // 再作成キーは**観測した canceled intent の id から決定論的に導出する**。
+        // 乱数（randomUUID）にすると二重クリックのたびに別キー = 別 intent が
+        // 作られて孤児が量産され、canceled 経路でだけ冪等性が失われる。
+        // id 由来なら「同じ canceled を見た再送は同じキー → Stripe が同じ intent を
+        // 返す」が成立し、かつ再作成後も canceled なら次周で id が変わるため
+        // キーが自動的に前進する（ループが止まらない）。
+        let recreateAttempts = 0;
+        while (
+            paymentIntent.status === "canceled" &&
+            recreateAttempts < MAX_INTENT_RECREATE_ATTEMPTS
+        ) {
             paymentIntent = await stripe.paymentIntents.create(intentParams, {
-                idempotencyKey: `${idempotencyKey}_r${randomUUID()}`,
+                idempotencyKey: `${idempotencyKey}_r_${paymentIntent.id}`,
             });
+            recreateAttempts++;
+        }
+
+        // 上限まで前進させても canceled なら、その id を保存せずに失敗させる。
+        // 保存すると createStripePayment の一致確認が confirm 不能な intent を
+        // 「有効」と認めてしまい、決済不能の原因が下流に転嫁される。
+        if (paymentIntent.status === "canceled") {
+            throw new Error("Stripe payment intent could not be recreated.");
         }
 
         // この注文で「有効な」intent はこれ 1 つであることを記録する。
