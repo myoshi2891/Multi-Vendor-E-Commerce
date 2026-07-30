@@ -95,4 +95,46 @@ describe("retryOnSerializationFailure", () => {
 
         expect(operation).toHaveBeenCalledTimes(1);
     });
+
+    // `?? DEFAULT_MAX_ATTEMPTS` は nullish 合体なので 0 / NaN を弾けない。
+    // クランプが無いと for が 1 周も回らず lastError 未代入のまま `throw undefined`
+    // になり、呼び出し側の `instanceof Error` 型ガードが全て崩れる。
+    // 「最低 1 回は試す」が正直な契約なので、下限 1 でクランプする。
+    it.each([
+        ["0", 0],
+        ["負値", -5],
+        ["NaN", Number.NaN],
+        ["小数", 1.9],
+    ])(
+        "maxAttempts が %s でも operation を 1 回は実行し、結果を返す",
+        async (_label, maxAttempts) => {
+            const operation = jest.fn().mockResolvedValue("ok");
+
+            await expect(
+                retryOnSerializationFailure(operation, {
+                    maxAttempts,
+                    baseDelayMs: 0,
+                })
+            ).resolves.toBe("ok");
+
+            expect(operation).toHaveBeenCalledTimes(1);
+        }
+    );
+
+    it("maxAttempts が 0 でも P2034 は undefined ではなく Error として投げ返す", async () => {
+        const operation = jest
+            .fn()
+            .mockRejectedValue(makeSerializationFailure());
+
+        // `throw undefined` だと rejects.toMatchObject が使えず、下流の
+        // `error instanceof Error` も false になる。Error であることを固定する。
+        await expect(
+            retryOnSerializationFailure(operation, {
+                maxAttempts: 0,
+                baseDelayMs: 0,
+            })
+        ).rejects.toMatchObject({ code: "P2034" });
+
+        expect(operation).toHaveBeenCalledTimes(1);
+    });
 });
