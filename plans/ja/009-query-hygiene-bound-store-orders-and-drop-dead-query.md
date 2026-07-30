@@ -213,13 +213,26 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 
   # (b) 不在ゲート: 告知文にリテラル 200 が残っていないこと。
   #     (a) は「定数も使っている」ことしか言えず、リテラルの併存を検出できない。
-  grep -qE 'latest[[:space:]]+200|up to[[:space:]]+200' "$PAGE" \
-    && { echo "FAIL: 告知文にリテラル 200 が残っている"; false; }
+  if grep -qE 'latest[[:space:]]+200|up to[[:space:]]+200' "$PAGE"; then
+      echo "FAIL: 告知文にリテラル 200 が残っている"; false
+  else
+      echo "OK: リテラル 200 は残っていない"
+  fi
   ```
 
   **(a) だけを合格条件にしないこと。** `grep -n "STORE_ORDERS_MAX"` がヒットしても、
   それは「定数が使われている」ことの証明にすぎず、「リテラル `200` が使われていない」ことの
   証明にはならない。両者は独立した主張であり、後者には不在ゲート (b) が要る。
+
+  > **不在ゲートを `grep -qE … && { …; false; }` で書かないこと（2026-07-30 修正）。**
+  > 以前の (b) はこの形だった。`grep` は不一致（= 合格）で **exit 1** を返し、`&&` は
+  > 左辺が偽なら右辺を実行せず短絡するため、**リスト全体の終了ステータスが grep の 1**
+  > になる。`false` に到達できるのは一致（= 失格）時だけなので、この形は決して 0 で
+  > 終われない。`if … then echo FAIL; false; else echo OK; fi` は両分岐に終了ステータスを
+  > 与えるので合格が exit 0 になる。逆向きの **存在**ゲート（(a) や下の 3）が
+  > `|| { …; false; }` で正しいのは、合格側で grep が 0 を返し `||` がそれを短絡で
+  > そのまま返すため。同じ論点は [`plans/023`](../023-bound-and-validate-public-search-pagination.md)
+  > の Done criteria にも記録している。
 - `bunx tsc --noEmit` → exit 0。
 
 ### Step 4: 完全な lint
@@ -250,14 +263,17 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
     # 1) 共有定数を import していること（ローカル再宣言ではない）
     grep -nE '^import .*STORE_ORDERS_MAX.*from' "$PAGE"
     # 2) ページ内でローカル再宣言していないこと → ヒット 0 件
-    grep -nE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE" && \
-      { echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; false; }
+    if grep -nE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE"; then
+        echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; false
+    else
+        echo "OK: ページ内での再宣言は無い"
+    fi
     # 3) 告知文そのものが定数を JSX 式として埋め込んでいること。
     #    「告知文の中で使われている」ことを見るため、告知の固定文言と同じ式の中に
     #    {STORE_ORDERS_MAX} が現れることを 1 つのパターンで要求する
     #    （改行チェーンに耐えるよう tr で 1 行化してから照合する）。
     tr '\n' ' ' < "$PAGE" \
-      | grep -qE '最新[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*件' \
+      | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders' \
       || { echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false; }
     ```
 
@@ -274,7 +290,12 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
     ハードコードした数字（例: 「最新 100 件」）のままでも合格する**。
     このチェックが守りたいのは「上限を引き上げたとき告知の数字も一緒に動く」ことなので、
     告知の固定文言と定数展開が**同じ式に共在する**ことを直接検証する必要がある。
-    告知の文言を変える場合は上のパターン（`最新` / `件`）も併せて更新すること。
+    告知の文言を変える場合は上のパターンのアンカー語（`latest` / `orders`）も併せて
+    更新すること。**アンカー語は実装が出している文言と同じ言語にすること**（2026-07-30 修正）:
+    以前は `最新` / `件` の日本語パターンだったが、実装（`page.tsx:38`）と本プランの
+    スニペット（:198）はどちらも英語の
+    `Showing up to the latest {STORE_ORDERS_MAX} orders.` を出している。実測すると
+    日本語パターンは**正しい実装に対して exit 1**（偽の FAIL）を返していた。
 
     **`\s` / `\b` は使わない**（2026-07-26 修正）。どちらも POSIX ERE には無い
     GNU 拡張で、解釈は grep 実装依存になる。文字クラスは `[[:space:]]`、語境界は
