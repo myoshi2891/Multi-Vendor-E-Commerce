@@ -722,6 +722,76 @@ describe("capturePayPalPayment", () => {
                 expect.objectContaining({ method: "GET" })
             );
         });
+
+        it("retrieve と capture は独立した AbortSignal（= 独立したタイムアウト予算）を受け取る", async () => {
+            // 単一の AbortController を 2 つの fetch で共有すると、10 秒は
+            // 「retrieve + capture の合計」に課される期限になる。retrieve が
+            // 9.9 秒かかった場合、capture は残り 0.1 秒で中断されうる —— つまり
+            // **金が動く側の呼び出しほど中断されやすい**という最悪の相関が生まれる。
+            // capture が途中 abort されると、PayPal 側で課金が成立していても
+            // 呼び出し元には失敗が返り、返金という別経路の運用が必要になる。
+            mockPayPalFetch({
+                captureResponse: {
+                    status: "COMPLETED",
+                    purchase_units: [
+                        {
+                            custom_id: "order-001",
+                            payments: {
+                                captures: [
+                                    {
+                                        amount: {
+                                            value: "99.99",
+                                            currency_code: "USD",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+
+            await capturePayPalPayment("order-001", "PAYPAL-ORDER-123");
+
+            const retrieveSignal = mockFetch.mock.calls[0][1].signal;
+            const captureSignal = mockFetch.mock.calls[1][1].signal;
+
+            expect(retrieveSignal).toBeInstanceOf(AbortSignal);
+            expect(captureSignal).toBeInstanceOf(AbortSignal);
+            // 同一インスタンスなら予算を共有している = 上記の相関が成立する
+            expect(captureSignal).not.toBe(retrieveSignal);
+            // capture 発行時点で中断されていないこと
+            expect(captureSignal.aborted).toBe(false);
+        });
+
+        it("retrieve 側で拒否しても保留中のタイムアウトを残さない", async () => {
+            // 現行実装でも既に成立している性質（catch が clearTimeout を持つ）だが、
+            // タイムアウト予算を fetch ごとに分割するリファクタで最も壊しやすいのが
+            // ここ —— 予算が 2 つに増えると、解放漏れの経路も 2 倍になる。
+            // 予算の持ち主が変わっても「関数を抜けたらタイマーは残らない」が保たれる
+            // ことを固定する回帰ガードとして置く（Red ではなく不変条件の明文化）。
+            jest.useFakeTimers();
+            try {
+                mockPayPalFetch({
+                    orderResponse: buildOrderRetrieveResponse({
+                        customId: "other-order-999",
+                    }),
+                });
+
+                await expect(
+                    capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+                ).rejects.toThrow("PayPal order does not match order.");
+
+                expect(captureCalls()).toHaveLength(0);
+                expect(jest.getTimerCount()).toBe(0);
+            } finally {
+                jest.useRealTimers();
+            }
+        });
     });
 
     describe("IDOR防止（他人の orderId 拒否）", () => {
