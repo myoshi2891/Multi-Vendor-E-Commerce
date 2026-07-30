@@ -12,6 +12,22 @@ const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_BASE_DELAY_MS = 25;
 
 /**
+ * バックオフ待ち時間の上限（ms）。`baseDelayMs` と、指数バックオフ後の実待ち時間の
+ * **両方**に掛ける。
+ *
+ * 有限でも巨大な値は下の正規化（小数切り捨て・下限 0・非有限→既定値）を素通りするため、
+ * 上限が無いと 2 通りの形で壊れる:
+ * - `randomInt(0, max)` は `max - min <= 2**48 - 1` が Node の要件。超えると
+ *   **catch の内側から `ERR_OUT_OF_RANGE` が投げられ**、投げ返すはずの P2034 が化ける。
+ * - `setTimeout` は `2**31 - 1` を超える遅延を黙って ~1ms へ丸める。つまり巨大値を
+ *   渡すとかえってバックオフが消える。
+ *
+ * 60 秒は上記 2 つの機械的限界より十分小さく、かつ直列化異常の再試行（既定 3 回）で
+ * 実用上到達しない水準。ここは方針ではなく**安全網**であり、通常経路の値には影響しない。
+ */
+const MAX_DELAY_MS = 60_000;
+
+/**
  * 直列化異常（P2034）かどうかを判定する型ガード。
  *
  * `any` を使わず `unknown` から絞り込む（`.claude/steering/tech.md` の規約）。
@@ -38,8 +54,9 @@ const sleep = (ms: number): Promise<void> =>
  *                    再試行で二重適用になる）。
  * @param options.maxAttempts - 初回を含む最大試行回数（既定 3）
  * @param options.baseDelayMs - 指数バックオフの基準待ち時間（既定 25ms）。
- *                    小数は切り捨て・負値は 0・非有限値は既定値へ正規化される
- *                    （`randomInt` が整数しか受理しないため）
+ *                    小数は切り捨て・負値は 0・非有限値は既定値・上限 `MAX_DELAY_MS`
+ *                    へ正規化される（`randomInt` が整数かつ `2**48` 未満の範囲しか
+ *                    受理せず、`setTimeout` は `2**31-1` 超を黙って丸めるため）
  *
  * @example
  * const cart = await retryOnSerializationFailure(() =>
@@ -66,9 +83,11 @@ export const retryOnSerializationFailure = async <T>(
     // `maxAttempts` と違い**非有限なら既定値へ戻す**: 待ち時間は呼び出し側の契約では
     // なく実装詳細であり、NaN を 0 に倒すとジッターが消えてロックステップ回避という
     // 本来の目的が黙って失われるため。負値は 0 へ（バックオフ無し = 即再試行）。
+    // `Math.floor` は値を縮めないため、**有限の巨大値には下限クランプが効かない**。
+    // 上限（`MAX_DELAY_MS`）も掛けて `randomInt` / `setTimeout` の機械的限界の内側に収める。
     const requestedDelay = options?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
     const baseDelayMs = Number.isFinite(requestedDelay)
-        ? Math.max(0, Math.floor(requestedDelay))
+        ? Math.min(MAX_DELAY_MS, Math.max(0, Math.floor(requestedDelay)))
         : DEFAULT_BASE_DELAY_MS;
 
     let lastError: unknown;
@@ -89,9 +108,11 @@ export const retryOnSerializationFailure = async <T>(
             // `Math.random()` を security 用途と誤検知するため。ここは暗号強度要件では
             // なく単なる衝突回避なので、範囲 [0, baseDelayMs) の乱数であれば等価。
             // `randomInt(0, 0)` は RangeError を投げるため baseDelayMs=0 はガードする。
+            // `baseDelayMs` を上限内に収めても `2 ** (attempt - 1)` 倍で再び越えるため、
+            // 実待ち時間にも同じ上限を掛ける（`setTimeout` の暗黙クランプに落とさない）。
             const backoff = baseDelayMs * 2 ** (attempt - 1);
             const jitter = baseDelayMs > 0 ? randomInt(0, baseDelayMs) : 0;
-            await sleep(backoff + jitter);
+            await sleep(Math.min(MAX_DELAY_MS, backoff + jitter));
         }
     }
 
