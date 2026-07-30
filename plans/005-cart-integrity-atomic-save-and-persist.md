@@ -181,9 +181,15 @@ satisfy `toHaveProperty('state')` and still fail to rehydrate (wrong `version`, 
 `partialize` that drops the field). Since the whole point of this plan is that a persisted cart
 survives a reload, verify it end-to-end:
 
+> ⚠️ **この下のスニペットはそのまま貼らない — 空振りする。** 先に
+> [「Corrections to the test steps」の 2 番](#corrections-to-the-test-steps-2026-07-18)
+> を読み、そこの訂正版（in-memory state を破棄してから rehydrate する形）を使うこと。
+> 以下は歴史的記録として残しているだけで、採用可能な手順ではない。
+
 ```ts
+// ⚠️ 採用しない（空振り版）: 下の Corrections 2 の訂正スニペットを使う
 // after mutating the cart via store actions
-await useCartStore.persist.rehydrate();          // re-read the persisted entry
+await useCartStore.persist.rehydrate();          // ← 同一インスタンスのまま = no-op でも通る
 const rehydrated = useCartStore.getState();
 expect(rehydrated.cart).toHaveLength(<expected>); // the items came back
 expect(rehydrated.totalItems).toBe(<expected>);   // derived state recomputed, not stale
