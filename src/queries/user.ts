@@ -1,22 +1,22 @@
-'use server'
+"use server";
 
-import { db } from '@/lib/db'
-import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils"
-import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
-import { serializeCart } from '@/lib/serialize-cart'
-import { retryOnSerializationFailure } from '@/lib/db-retry'
-import { CartItem, Country as CountryDB, Prisma } from '@prisma/client'
-import { CartProductType, SerializedCartType, Country } from '@/lib/types'
-import { currentUser } from '@clerk/nextjs/server'
-import { requireUser } from '@/lib/auth-guards'
-import { getCookie } from 'cookies-next'
-import { cookies } from 'next/headers'
+import { db } from "@/lib/db";
+import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils";
+import { isCouponCurrentlyValid } from "@/lib/coupon-utils";
+import { serializeCart } from "@/lib/serialize-cart";
+import { retryOnSerializationFailure } from "@/lib/db-retry";
+import { CartItem, Country as CountryDB, Prisma } from "@prisma/client";
+import { CartProductType, SerializedCartType, Country } from "@/lib/types";
+import { currentUser } from "@clerk/nextjs/server";
+import { requireUser } from "@/lib/auth-guards";
+import { getCookie } from "cookies-next";
+import { cookies } from "next/headers";
 import {
     getDeliveryDetailsForStoreByCountry,
     getProductShippingFee,
     getShippingDetails,
-} from './product'
-import { ShippingAddress } from '@prisma/client'
+} from "./product";
+import { ShippingAddress } from "@prisma/client";
 
 /**
  * @name followStore
@@ -30,18 +30,18 @@ import { ShippingAddress } from '@prisma/client'
 export const followStore = async (storeId: string): Promise<boolean> => {
     try {
         // Get the current authenticated user
-        const user = await currentUser()
+        const user = await currentUser();
 
         // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
+        if (!user) throw new Error("Unauthenticated.");
 
         // Check if the store exists
-        const store = await db.store.findUnique({ where: { id: storeId } })
-        if (!store) throw new Error('Store not found.') // Store does not exist, cannot follow or unfollow
+        const store = await db.store.findUnique({ where: { id: storeId } });
+        if (!store) throw new Error("Store not found."); // Store does not exist, cannot follow or unfollow
 
         // Check if the user exists
-        const userData = await db.user.findUnique({ where: { id: user.id } })
-        if (!userData) throw new Error('User not found.') // User does not exist, cannot follow or unfollow
+        const userData = await db.user.findUnique({ where: { id: user.id } });
+        if (!userData) throw new Error("User not found."); // User does not exist, cannot follow or unfollow
 
         // Check if the user is already following the store
         const userFollowingStore = await db.user.findFirst({
@@ -53,7 +53,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
                     },
                 },
             },
-        })
+        });
 
         if (userFollowingStore) {
             // Unfollow the store and return false
@@ -66,8 +66,8 @@ export const followStore = async (storeId: string): Promise<boolean> => {
                         disconnect: { id: userData.id },
                     },
                 },
-            })
-            return false
+            });
+            return false;
         } else {
             // Follow the store and return true
             await db.store.update({
@@ -79,8 +79,8 @@ export const followStore = async (storeId: string): Promise<boolean> => {
                         connect: { id: userData.id },
                     },
                 },
-            })
-            return true // Follow status updated successfully
+            });
+            return true; // Follow status updated successfully
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -88,9 +88,9 @@ export const followStore = async (storeId: string): Promise<boolean> => {
         } else {
             console.error("Error following store:", error);
         }
-        throw new Error('Error following store')
+        throw new Error("Error following store");
     }
-}
+};
 
 /**
  * @Function saveUserCart
@@ -106,204 +106,232 @@ export const saveUserCart = async (
     cartProducts: CartProductType[]
 ): Promise<boolean> => {
     try {
-    // Get current user
-    const user = await currentUser()
+        // Get current user
+        const user = await currentUser();
 
-    // Ensure user is authenticated
-    if (!user) throw new Error('Unauthenticated.')
+        // Ensure user is authenticated
+        if (!user) throw new Error("Unauthenticated.");
 
-    const userId = user.id
+        const userId = user.id;
 
-    // Fetch product, variant, and size data from the database for validation
-    const validatedCartItems = await Promise.all(
-        cartProducts.map(async (cartProduct) => {
-            const { productId, variantId, sizeId, quantity } = cartProduct
+        // Fetch product, variant, and size data from the database for validation
+        const validatedCartItems = await Promise.all(
+            cartProducts.map(async (cartProduct) => {
+                const { productId, variantId, sizeId, quantity } = cartProduct;
 
-            // Fetch the product, variant, and size from the database
-            const product = await db.product.findUnique({
-                where: {
-                    id: productId,
-                },
-                include: {
-                    store: true,
-                    freeShipping: {
-                        include: {
-                            eligibleCountries: true,
-                        },
-                    },
-                    variants: {
-                        where: {
-                            id: variantId,
-                        },
-                        include: {
-                            sizes: {
-                                where: {
-                                    id: sizeId,
-                                },
-                            },
-                            images: true,
-                        },
-                    },
-                },
-            })
-
-            if (
-                !product ||
-                product.variants.length === 0 ||
-                product.variants[0].sizes.length === 0
-            ) {
-                throw new Error(
-                    `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
-                )
-            }
-
-            const variant = product.variants[0]
-            const size = variant.sizes[0]
-
-            // Validate stock and price
-            const validQuantity = Math.min(quantity, size.quantity)
-
-            const priceObj = size.discount
-                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : new Prisma.Decimal(size.price.toString())
-
-            // Calculate shipping details
-            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
-
-            let details = {
-                shippingFee: 0,
-                extraShippingFee: 0,
-                isFreeShipping: false,
-            }
-
-            if (countryCookie) {
-                const country = parseUserCountryCookie(countryCookie)
-                const temp_details = await getShippingDetails(
-                    product.shippingFeeMethod,
-                    country,
-                    product.store,
-                    product.freeShipping
-                )
-                if (typeof temp_details !== 'boolean') {
-                    details = temp_details
-                }
-            }
-
-            let shippingFee = new Prisma.Decimal("0")
-            const { shippingFeeMethod } = product
-
-            if (shippingFeeMethod === 'ITEM') {
-                shippingFee =
-                    validQuantity === 1
-                        ? new Prisma.Decimal(details.shippingFee)
-                        : new Prisma.Decimal(details.shippingFee).add(
-                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
-                          )
-            } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
-            } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = new Prisma.Decimal(details.shippingFee)
-            }
-
-            const validQuantityObj = new Prisma.Decimal(validQuantity.toString());
-            const shippingFeeObj = new Prisma.Decimal(shippingFee.toString());
-            const totalPrice = priceObj.mul(validQuantityObj).add(shippingFeeObj)
-
-            return {
-                productId,
-                variantId,
-                productSlug: product.slug,
-                variantSlug: variant.slug,
-                sizeId,
-                storeId: product.storeId,
-                sku: variant.sku,
-                name: `${product.name} ・ ${variant.variantName}`,
-                image: variant.images[0].url,
-                size: size.size,
-                quantity: validQuantity,
-                price: priceObj,
-                shippingFee,
-                totalPrice,
-            }
-        })
-    )
-
-    // Recalculate the cart's total price and shipping fees
-    const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)),
-        new Prisma.Decimal("0")
-    )
-
-    const shippingFee = validatedCartItems.reduce(
-        (acc, item) => acc.add(item.shippingFee),
-        new Prisma.Decimal("0")
-    )
-
-    const total = subTotal.add(shippingFee)
-
-    // 検証成功後に既存カートを置換する。削除と作成を同一トランザクションに入れ、
-    // 作成に失敗した場合も既存カートが失われないようにする。
-    //
-    // Cart.userId は @unique。同一ユーザーの並行保存では、削除と作成が交錯して
-    // delete の P2025 / create の P2002 で正当なリクエストが落ちうる。
-    // Serializable で DB 側に直列化させ、deleteMany で削除を冪等にする
-    // （他リクエストが先に削除済みでも count:0 が返るだけで失敗しない）。
-    //
-    // Serializable は競合を「やり直せるエラー(P2034)」へ変換するだけなので、
-    // 再試行と組み合わせて初めて正当なリクエストを守れる。トランザクション全体を
-    // 再実行対象にする（部分適用による二重適用を避けるため）。
-    const cart = await retryOnSerializationFailure(() =>
-        db.$transaction(
-            async (tx) => {
-                await tx.cart.deleteMany({
+                // Fetch the product, variant, and size from the database
+                const product = await db.product.findUnique({
                     where: {
-                        userId,
+                        id: productId,
                     },
-                })
-
-                // Save the validated items to the cart in the database
-                return tx.cart.create({
-                    data: {
-                        cartItems: {
-                            create: validatedCartItems.map((item) => ({
-                                productId: item.productId,
-                                variantId: item.variantId,
-                                sizeId: item.sizeId,
-                                storeId: item.storeId,
-                                sku: item.sku,
-                                productSlug: item.productSlug,
-                                variantSlug: item.variantSlug,
-                                name: item.name,
-                                image: item.image,
-                                quantity: item.quantity,
-                                size: item.size,
-                                price: item.price,
-                                shippingFee: item.shippingFee,
-                                totalPrice: item.totalPrice,
-                            })),
+                    include: {
+                        store: true,
+                        freeShipping: {
+                            include: {
+                                eligibleCountries: true,
+                            },
                         },
-                        shippingFees: shippingFee,
-                        subTotal,
-                        total,
-                        userId,
+                        variants: {
+                            where: {
+                                id: variantId,
+                            },
+                            include: {
+                                sizes: {
+                                    where: {
+                                        id: sizeId,
+                                    },
+                                },
+                                images: true,
+                            },
+                        },
                     },
-                })
-            },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
-        )
-    )
+                });
 
-    if (cart) return true
-    return false
+                if (
+                    !product ||
+                    product.variants.length === 0 ||
+                    product.variants[0].sizes.length === 0
+                ) {
+                    throw new Error(
+                        `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
+                    );
+                }
+
+                const variant = product.variants[0];
+                const size = variant.sizes[0];
+
+                // Validate stock and price
+                const validQuantity = Math.min(quantity, size.quantity);
+
+                const priceObj = size.discount
+                    ? new Prisma.Decimal(size.price.toString())
+                          .mul(
+                              new Prisma.Decimal(
+                                  (100 - size.discount).toString()
+                              )
+                          )
+                          .div("100")
+                    : new Prisma.Decimal(size.price.toString());
+
+                // Calculate shipping details
+                const countryCookie = getCookie("userCountry", { cookies }) as
+                    | string
+                    | undefined;
+
+                let details = {
+                    shippingFee: 0,
+                    extraShippingFee: 0,
+                    isFreeShipping: false,
+                };
+
+                if (countryCookie) {
+                    const country = parseUserCountryCookie(countryCookie);
+                    const temp_details = await getShippingDetails(
+                        product.shippingFeeMethod,
+                        country,
+                        product.store,
+                        product.freeShipping
+                    );
+                    if (typeof temp_details !== "boolean") {
+                        details = temp_details;
+                    }
+                }
+
+                let shippingFee = new Prisma.Decimal("0");
+                const { shippingFeeMethod } = product;
+
+                if (shippingFeeMethod === "ITEM") {
+                    shippingFee =
+                        validQuantity === 1
+                            ? new Prisma.Decimal(details.shippingFee)
+                            : new Prisma.Decimal(details.shippingFee).add(
+                                  new Prisma.Decimal(
+                                      details.extraShippingFee
+                                  ).mul(validQuantity - 1)
+                              );
+                } else if (shippingFeeMethod === "WEIGHT") {
+                    shippingFee = new Prisma.Decimal(details.shippingFee)
+                        .mul(variant.weight)
+                        .mul(validQuantity);
+                } else if (shippingFeeMethod === "FIXED") {
+                    shippingFee = new Prisma.Decimal(details.shippingFee);
+                }
+
+                const validQuantityObj = new Prisma.Decimal(
+                    validQuantity.toString()
+                );
+                const shippingFeeObj = new Prisma.Decimal(
+                    shippingFee.toString()
+                );
+                const totalPrice = priceObj
+                    .mul(validQuantityObj)
+                    .add(shippingFeeObj);
+
+                return {
+                    productId,
+                    variantId,
+                    productSlug: product.slug,
+                    variantSlug: variant.slug,
+                    sizeId,
+                    storeId: product.storeId,
+                    sku: variant.sku,
+                    name: `${product.name} ・ ${variant.variantName}`,
+                    image: variant.images[0].url,
+                    size: size.size,
+                    quantity: validQuantity,
+                    price: priceObj,
+                    shippingFee,
+                    totalPrice,
+                };
+            })
+        );
+
+        // Recalculate the cart's total price and shipping fees
+        const subTotal = validatedCartItems.reduce(
+            (acc, item) =>
+                acc.add(
+                    new Prisma.Decimal(item.price.toString()).mul(item.quantity)
+                ),
+            new Prisma.Decimal("0")
+        );
+
+        const shippingFee = validatedCartItems.reduce(
+            (acc, item) => acc.add(item.shippingFee),
+            new Prisma.Decimal("0")
+        );
+
+        const total = subTotal.add(shippingFee);
+
+        // 検証成功後に既存カートを置換する。削除と作成を同一トランザクションに入れ、
+        // 作成に失敗した場合も既存カートが失われないようにする。
+        //
+        // Cart.userId は @unique。同一ユーザーの並行保存では、削除と作成が交錯して
+        // delete の P2025 / create の P2002 で正当なリクエストが落ちうる。
+        // Serializable で DB 側に直列化させ、deleteMany で削除を冪等にする
+        // （他リクエストが先に削除済みでも count:0 が返るだけで失敗しない）。
+        //
+        // Serializable は競合を「やり直せるエラー(P2034)」へ変換するだけなので、
+        // 再試行と組み合わせて初めて正当なリクエストを守れる。トランザクション全体を
+        // 再実行対象にする（部分適用による二重適用を避けるため）。
+        const cart = await retryOnSerializationFailure(() =>
+            db.$transaction(
+                async (tx) => {
+                    await tx.cart.deleteMany({
+                        where: {
+                            userId,
+                        },
+                    });
+
+                    // Save the validated items to the cart in the database
+                    return tx.cart.create({
+                        data: {
+                            cartItems: {
+                                create: validatedCartItems.map((item) => ({
+                                    productId: item.productId,
+                                    variantId: item.variantId,
+                                    sizeId: item.sizeId,
+                                    storeId: item.storeId,
+                                    sku: item.sku,
+                                    productSlug: item.productSlug,
+                                    variantSlug: item.variantSlug,
+                                    name: item.name,
+                                    image: item.image,
+                                    quantity: item.quantity,
+                                    size: item.size,
+                                    price: item.price,
+                                    shippingFee: item.shippingFee,
+                                    totalPrice: item.totalPrice,
+                                })),
+                            },
+                            shippingFees: shippingFee,
+                            subTotal,
+                            total,
+                            userId,
+                        },
+                    });
+                },
+                {
+                    isolationLevel:
+                        Prisma.TransactionIsolationLevel.Serializable,
+                }
+            )
+        );
+
+        if (cart) return true;
+        return false;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error saving user cart:", error.message, error.stack);
+            console.error(
+                "Error saving user cart:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error saving user cart:", error);
         }
-        throw error
+        throw error;
     }
-}
+};
 
 /**
  * @Function getUserShippingAddresses
@@ -316,10 +344,10 @@ export const saveUserCart = async (
 export const getUserShippingAddresses = async () => {
     try {
         // Get current user
-        const user = await currentUser()
+        const user = await currentUser();
 
         // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
+        if (!user) throw new Error("Unauthenticated.");
 
         // Fetch shipping addresses from the database
         const shippingAddresses = await db.shippingAddress.findMany({
@@ -330,18 +358,22 @@ export const getUserShippingAddresses = async () => {
                 user: true,
                 country: true,
             },
-        })
+        });
 
-        return shippingAddresses
+        return shippingAddresses;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error fetching shipping addresses:", error.message, error.stack);
+            console.error(
+                "Error fetching shipping addresses:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error fetching shipping addresses:", error);
         }
-        throw error
+        throw error;
     }
-}
+};
 
 /**
  * @Function upsertShippingAddress
@@ -354,13 +386,13 @@ export const getUserShippingAddresses = async () => {
 export const upsertShippingAddress = async (address: ShippingAddress) => {
     try {
         // Get current user
-        const user = await currentUser()
+        const user = await currentUser();
 
         // Ensure user is authenticated
-        if (!user) throw new Error('Unauthenticated.')
+        if (!user) throw new Error("Unauthenticated.");
 
         // Ensure address data is provide
-        if (!address) throw new Error('Please provide shipping address data.')
+        if (!address) throw new Error("Please provide shipping address data.");
 
         // Handle making the rest of address default false when we are adding a new default
         if (address.default) {
@@ -368,7 +400,7 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                 where: {
                     id: address.id,
                 },
-            })
+            });
             if (addressDB) {
                 try {
                     await db.shippingAddress.updateMany({
@@ -379,14 +411,21 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
                         data: {
                             default: false,
                         },
-                    })
+                    });
                 } catch (error: unknown) {
                     if (error instanceof Error) {
-                        console.error("Error updating default addresses:", error.message, error.stack);
+                        console.error(
+                            "Error updating default addresses:",
+                            error.message,
+                            error.stack
+                        );
                     } else {
-                        console.error("Error updating default addresses:", error);
+                        console.error(
+                            "Error updating default addresses:",
+                            error
+                        );
                     }
-                    throw new Error('Error making the default address.')
+                    throw new Error("Error making the default address.");
                 }
             }
         }
@@ -394,30 +433,34 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
         // 所有権検証付きの upsert（他ユーザーのアドレス上書き防止）
         const existing = await db.shippingAddress.findFirst({
             where: { id: address.id, userId: user.id },
-        })
+        });
 
-        let upsertedAddresses
+        let upsertedAddresses;
         if (existing) {
             upsertedAddresses = await db.shippingAddress.update({
                 where: { id: address.id },
                 data: { ...address, userId: user.id },
-            })
+            });
         } else {
             upsertedAddresses = await db.shippingAddress.create({
                 data: { ...address, userId: user.id },
-            })
+            });
         }
 
-        return upsertedAddresses
+        return upsertedAddresses;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error upserting shipping addresses:", error.message, error.stack);
+            console.error(
+                "Error upserting shipping addresses:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error upserting shipping addresses:", error);
         }
-        throw error
+        throw error;
     }
-}
+};
 
 /**
  * @Function placeOrder
@@ -433,392 +476,445 @@ export const placeOrder = async (
     cartId: string
 ): Promise<{ orderId: string }> => {
     try {
-    // Ensure the user is authenticated
-    const user = await currentUser()
-    if (!user) throw new Error('Unauthenticated.')
+        // Ensure the user is authenticated
+        const user = await currentUser();
+        if (!user) throw new Error("Unauthenticated.");
 
-    const userId = user.id
+        const userId = user.id;
 
-    // Fetch user's cart will all items（userId で所有権検証）
-    const cart = await db.cart.findUnique({
-        where: { id: cartId, userId },
-        include: {
-            cartItems: true,
-            coupon: true,
-        },
-    })
-
-    if (!cart) throw new Error('Cart not found.')
-
-    // shippingAddress の所有権検証（IDOR 防止: 他ユーザーの住所 id を注文に付けさせない）
-    const ownedAddress = await db.shippingAddress.findFirst({
-        where: { id: shippingAddress.id, userId },
-    })
-    if (!ownedAddress) throw new Error('Shipping address not found.')
-
-    const cartItems = cart.cartItems
-    const cartCoupon = cart.coupon // The coupon, if it exists
-
-    // Fetch product, variant, and size data from the database for validation
-    const validatedCartItems = await Promise.all(
-        cartItems.map(async (cartProduct) => {
-            const { productId, variantId, sizeId, quantity } = cartProduct
-
-            // Fetch the product, variant, and size from the database
-            const product = await db.product.findUnique({
-                where: {
-                    id: productId,
-                },
-                include: {
-                    store: true,
-                    freeShipping: {
-                        include: {
-                            eligibleCountries: true,
-                        },
-                    },
-                    variants: {
-                        where: {
-                            id: variantId,
-                        },
-                        include: {
-                            sizes: {
-                                where: {
-                                    id: sizeId,
-                                },
-                            },
-                            images: true,
-                        },
-                    },
-                },
-            })
-
-            if (
-                !product ||
-                product.variants.length === 0 ||
-                product.variants[0].sizes.length === 0
-            ) {
-                throw new Error(
-                    `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
-                )
-            }
-
-            const variant = product.variants[0]
-            const size = variant.sizes[0]
-
-            // Validate stock and price
-            const validQuantity = Math.min(quantity, size.quantity)
-
-            const priceObj = size.discount
-                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : new Prisma.Decimal(size.price.toString())
-
-            // Calculate shipping details
-            // 所有権検証済みの ownedAddress（サーバー値）を使う。
-            // クライアント供給の shippingAddress.countryId は改ざん可能なため信頼しない。
-            const countryId = ownedAddress.countryId
-
-            const temp_country = await db.country.findUnique({
-                where: {
-                    id: countryId,
-                },
-            })
-
-            if (!temp_country) {
-                throw new Error(`Failed to get Shipping details for order.`)
-            }
-
-            const country = {
-                name: temp_country.name,
-                code: temp_country.code,
-                city: '',
-                region: '',
-            }
-
-            let details = {
-                shippingFee: 0,
-                extraShippingFee: 0,
-                isFreeShipping: false,
-            }
-
-            if (country) {
-                const temp_details = await getShippingDetails(
-                    product.shippingFeeMethod,
-                    country,
-                    product.store,
-                    product.freeShipping
-                )
-                if (typeof temp_details !== 'boolean') {
-                    details = temp_details
-                }
-            }
-
-            let shippingFee = new Prisma.Decimal("0")
-            const { shippingFeeMethod } = product
-
-            if (shippingFeeMethod === 'ITEM') {
-                shippingFee =
-                    validQuantity === 1
-                        ? new Prisma.Decimal(details.shippingFee)
-                        : new Prisma.Decimal(details.shippingFee).add(
-                              new Prisma.Decimal(details.extraShippingFee).mul(validQuantity - 1)
-                          )
-            } else if (shippingFeeMethod === 'WEIGHT') {
-                shippingFee = new Prisma.Decimal(details.shippingFee).mul(variant.weight).mul(validQuantity)
-            } else if (shippingFeeMethod === 'FIXED') {
-                shippingFee = new Prisma.Decimal(details.shippingFee)
-            }
-
-            const validQuantityObj = new Prisma.Decimal(validQuantity.toString());
-            const shippingFeeObj = new Prisma.Decimal(shippingFee.toString());
-            const totalPrice = priceObj.mul(validQuantityObj).add(shippingFeeObj)
-
-            return {
-                productId,
-                variantId,
-                productSlug: product.slug,
-                variantSlug: variant.slug,
-                sizeId,
-                storeId: product.storeId,
-                sku: variant.sku,
-                name: `${product.name} ・ ${variant.variantName}`,
-                image: variant.images[0].url,
-                size: size.size,
-                quantity: validQuantity,
-                price: priceObj,
-                shippingFee,
-                totalPrice,
-            }
-        })
-    )
-
-    // console.log('validatedCartItems', validatedCartItems)
-
-    // Define the type for grouped items by store
-    type GroupedItems = { [storeId: string]: typeof validatedCartItems }
-
-    // Group validated items by store
-    const groupedItems = validatedCartItems.reduce<GroupedItems>(
-        (acc, item) => {
-            if (!acc[item.storeId]) acc[item.storeId] = []
-            acc[item.storeId].push(item)
-            return acc
-        },
-        {} as GroupedItems
-    )
-
-    // 事前にdelivery詳細を全store分取得（トランザクション外）
-    const deliveryDetailsMap = new Map<string, {
-        shippingService: string | undefined;
-        deliveryTimeMin: number | undefined;
-        deliveryTimeMax: number | undefined;
-    }>();
-    const storeIds = Object.keys(groupedItems);
-    const deliveryResults = await Promise.all(
-        storeIds.map((storeId) =>
-            getDeliveryDetailsForStoreByCountry(storeId, ownedAddress.countryId)
-        )
-    );
-    storeIds.forEach((storeId, index) => {
-        deliveryDetailsMap.set(storeId, deliveryResults[index]);
-    });
-
-    // 全DB操作をトランザクションでラップ
-    const order = await db.$transaction(async (tx) => {
-        // 冪等性ゲート: カート行を「単一使用トークン」として消費する。
-        //
-        // place-order.tsx の isPlacingOrderRef はクライアント側ガードにすぎず、
-        // Server Action を直接叩けば迂回できる。ここで注文作成より前に条件付き削除を
-        // 行うと、カート行の行ロックで並行リクエストが直列化され、削除に成功した
-        // 1 リクエストだけが注文へ進む（count === 0 側は下で throw してロールバック）。
-        //
-        // 在庫不足等で tx がロールバックすればカート削除も巻き戻るため、ユーザーは
-        // 再試行できる。CartItem は Cart から onDelete: Cascade で連鎖削除される。
-        // 条件式は在庫減算の check-and-decrement（下の tx.size.updateMany）と同じ
-        // 「条件付き書き込み + count 判定」イディオム。
-        const consumed = await tx.cart.deleteMany({
+        // Fetch user's cart will all items（userId で所有権検証）
+        const cart = await db.cart.findUnique({
             where: { id: cartId, userId },
-        })
-        if (consumed.count === 0) throw new Error('Cart not found.')
-
-        // TOCTOU 緩和: shippingAddressId を書く「直前」に、同一 tx 内で所有権を再検証する。
-        // tx 外の findFirst（上部の所有権チェック）から order.create までの間には
-        // 商品取得・配送料計算など長い非同期処理があり、その隙に住所が **別ユーザーへ
-        // 再割当て** されると、FK は有効なまま他人の住所を注文に付けられてしまう。
-        //
-        // 削除経路は FK が閉じる: order.create の INSERT が参照先 ShippingAddress 行へ
-        // FOR KEY SHARE ロックを取り、これは DELETE と競合するため並行削除は commit まで
-        // ブロックされる。一方 userId 付け替えは参照キー列を触らないため FOR NO KEY UPDATE
-        // となり、FOR KEY SHARE と競合しない。
-        //
-        // したがってこの再読み取りは窓を「多数の await」から「隣接 2 文」へ **縮める** が、
-        // 閉じきってはいない —— 下の findFirst は素の SELECT で行ロックを取らないため、
-        // Read Committed 下では再読み取りと order.create の間に付け替えが commit されうる。
-        // 完全閉塞には $queryRaw の SELECT ... FOR UPDATE か、Serializable +
-        // retryOnSerializationFailure（src/lib/db-retry.ts）が要る（plan 003 の未解決項目）。
-        const txOwnedAddress = await tx.shippingAddress.findFirst({
-            where: { id: ownedAddress.id, userId },
-            select: { id: true },
-        })
-        if (!txOwnedAddress) throw new Error('Shipping address not found.')
-
-        // Create the order
-        const order = await tx.order.create({
-            data: {
-                userId,
-                shippingAddressId: txOwnedAddress.id,
-                orderStatus: 'Pending',
-                paymentStatus: 'Pending',
-                shippingFees: 0,
-                subTotal: 0,
-                total: 0,
+            include: {
+                cartItems: true,
+                coupon: true,
             },
-        })
+        });
 
-        // Iterate over each store's items and create OrderGroup and OrderItems
-        let orderTotalPrice = new Prisma.Decimal("0")
-        let orderShippingFee = new Prisma.Decimal("0")
+        if (!cart) throw new Error("Cart not found.");
 
-        // PLATFORM スコープのクーポンはカート全体の割引総額を先に算出し、
-        // 最終グループで「総割引 − Σ確定済グループ割引」を割り当てて端数を吸収する（判断5-4）
-        const cartCouponValid = cartCoupon ? isCouponCurrentlyValid(cartCoupon) : false
-        const isPlatformCoupon = cartCoupon?.scope === 'PLATFORM' && cartCouponValid
-        const cartTotalPrice = validatedCartItems.reduce(
-            (acc, item) => acc.add(item.totalPrice),
-            new Prisma.Decimal("0")
-        )
-        const platformTotalDiscount = isPlatformCoupon && cartCoupon
-            ? cartTotalPrice.mul(cartCoupon.discount).div(100)
-            : new Prisma.Decimal("0")
-        let cumulativePlatformDiscount = new Prisma.Decimal("0")
+        // shippingAddress の所有権検証（IDOR 防止: 他ユーザーの住所 id を注文に付けさせない）
+        const ownedAddress = await db.shippingAddress.findFirst({
+            where: { id: shippingAddress.id, userId },
+        });
+        if (!ownedAddress) throw new Error("Shipping address not found.");
 
-        // 端数吸収するストアが実行ごとにブレないよう、storeId でソートして決定論的な順序にする
-        const storeEntries = Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b))
+        const cartItems = cart.cartItems;
+        const cartCoupon = cart.coupon; // The coupon, if it exists
 
-        for (const [index, [storeId, items]] of storeEntries.entries()) {
-            // Calculate store-specific totals
-            const groupedTotalPrice = items.reduce(
-                (acc, item) => acc.add(item.totalPrice),
-                new Prisma.Decimal("0")
-            )
+        // Fetch product, variant, and size data from the database for validation
+        const validatedCartItems = await Promise.all(
+            cartItems.map(async (cartProduct) => {
+                const { productId, variantId, sizeId, quantity } = cartProduct;
 
-            const groupShippingFee = items.reduce(
-                (acc, item) => acc.add(item.shippingFee),
-                new Prisma.Decimal("0")
-            )
+                // Fetch the product, variant, and size from the database
+                const product = await db.product.findUnique({
+                    where: {
+                        id: productId,
+                    },
+                    include: {
+                        store: true,
+                        freeShipping: {
+                            include: {
+                                eligibleCountries: true,
+                            },
+                        },
+                        variants: {
+                            where: {
+                                id: variantId,
+                            },
+                            include: {
+                                sizes: {
+                                    where: {
+                                        id: sizeId,
+                                    },
+                                },
+                                images: true,
+                            },
+                        },
+                    },
+                });
 
-            const deliveryDetails = deliveryDetailsMap.get(storeId)
-            const shippingService = deliveryDetails?.shippingService
-            const deliveryTimeMin = deliveryDetails?.deliveryTimeMin
-            const deliveryTimeMax = deliveryDetails?.deliveryTimeMax
+                if (
+                    !product ||
+                    product.variants.length === 0 ||
+                    product.variants[0].sizes.length === 0
+                ) {
+                    throw new Error(
+                        `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
+                    );
+                }
 
-            // Check coupon scope/store and validity（isActive=false または期間外のクーポンは割引不適用）
-            const check = isPlatformCoupon || (storeId === cartCoupon?.storeId && cartCouponValid)
+                const variant = product.variants[0];
+                const size = variant.sizes[0];
 
-            // Calculate discount based on coupon
-            let discountedAmount = new Prisma.Decimal("0")
-            if (check && cartCoupon) {
-                if (isPlatformCoupon && index === storeEntries.length - 1) {
-                    discountedAmount = platformTotalDiscount.sub(cumulativePlatformDiscount)
-                } else {
-                    discountedAmount = groupedTotalPrice.mul(cartCoupon.discount).div(100)
-                    if (isPlatformCoupon) {
-                        cumulativePlatformDiscount = cumulativePlatformDiscount.add(discountedAmount)
+                // Validate stock and price
+                const validQuantity = Math.min(quantity, size.quantity);
+
+                const priceObj = size.discount
+                    ? new Prisma.Decimal(size.price.toString())
+                          .mul(
+                              new Prisma.Decimal(
+                                  (100 - size.discount).toString()
+                              )
+                          )
+                          .div("100")
+                    : new Prisma.Decimal(size.price.toString());
+
+                // Calculate shipping details
+                // 所有権検証済みの ownedAddress（サーバー値）を使う。
+                // クライアント供給の shippingAddress.countryId は改ざん可能なため信頼しない。
+                const countryId = ownedAddress.countryId;
+
+                const temp_country = await db.country.findUnique({
+                    where: {
+                        id: countryId,
+                    },
+                });
+
+                if (!temp_country) {
+                    throw new Error(
+                        `Failed to get Shipping details for order.`
+                    );
+                }
+
+                const country = {
+                    name: temp_country.name,
+                    code: temp_country.code,
+                    city: "",
+                    region: "",
+                };
+
+                let details = {
+                    shippingFee: 0,
+                    extraShippingFee: 0,
+                    isFreeShipping: false,
+                };
+
+                if (country) {
+                    const temp_details = await getShippingDetails(
+                        product.shippingFeeMethod,
+                        country,
+                        product.store,
+                        product.freeShipping
+                    );
+                    if (typeof temp_details !== "boolean") {
+                        details = temp_details;
                     }
                 }
+
+                let shippingFee = new Prisma.Decimal("0");
+                const { shippingFeeMethod } = product;
+
+                if (shippingFeeMethod === "ITEM") {
+                    shippingFee =
+                        validQuantity === 1
+                            ? new Prisma.Decimal(details.shippingFee)
+                            : new Prisma.Decimal(details.shippingFee).add(
+                                  new Prisma.Decimal(
+                                      details.extraShippingFee
+                                  ).mul(validQuantity - 1)
+                              );
+                } else if (shippingFeeMethod === "WEIGHT") {
+                    shippingFee = new Prisma.Decimal(details.shippingFee)
+                        .mul(variant.weight)
+                        .mul(validQuantity);
+                } else if (shippingFeeMethod === "FIXED") {
+                    shippingFee = new Prisma.Decimal(details.shippingFee);
+                }
+
+                const validQuantityObj = new Prisma.Decimal(
+                    validQuantity.toString()
+                );
+                const shippingFeeObj = new Prisma.Decimal(
+                    shippingFee.toString()
+                );
+                const totalPrice = priceObj
+                    .mul(validQuantityObj)
+                    .add(shippingFeeObj);
+
+                return {
+                    productId,
+                    variantId,
+                    productSlug: product.slug,
+                    variantSlug: variant.slug,
+                    sizeId,
+                    storeId: product.storeId,
+                    sku: variant.sku,
+                    name: `${product.name} ・ ${variant.variantName}`,
+                    image: variant.images[0].url,
+                    size: size.size,
+                    quantity: validQuantity,
+                    price: priceObj,
+                    shippingFee,
+                    totalPrice,
+                };
+            })
+        );
+
+        // console.log('validatedCartItems', validatedCartItems)
+
+        // Define the type for grouped items by store
+        type GroupedItems = { [storeId: string]: typeof validatedCartItems };
+
+        // Group validated items by store
+        const groupedItems = validatedCartItems.reduce<GroupedItems>(
+            (acc, item) => {
+                if (!acc[item.storeId]) acc[item.storeId] = [];
+                acc[item.storeId].push(item);
+                return acc;
+            },
+            {} as GroupedItems
+        );
+
+        // 事前にdelivery詳細を全store分取得（トランザクション外）
+        const deliveryDetailsMap = new Map<
+            string,
+            {
+                shippingService: string | undefined;
+                deliveryTimeMin: number | undefined;
+                deliveryTimeMax: number | undefined;
             }
-
-            // Calculate the total after applying the discount
-            const totalAfterDiscount = groupedTotalPrice.sub(discountedAmount)
-
-            // Create an OrderGroup for this store
-            const orderGroup = await tx.orderGroup.create({
-                data: {
-                    orderId: order.id,
+        >();
+        const storeIds = Object.keys(groupedItems);
+        const deliveryResults = await Promise.all(
+            storeIds.map((storeId) =>
+                getDeliveryDetailsForStoreByCountry(
                     storeId,
-                    status: "Pending",
-                    subTotal: groupedTotalPrice.sub(groupShippingFee),
-                    shippingFees: groupShippingFee,
-                    total: totalAfterDiscount,
-                    shippingService: shippingService || "International Delivery",
-                    shippingDeliveryMin: deliveryTimeMin || 7,
-                    shippingDeliveryMax: deliveryTimeMax || 30,
-                    couponId: check && cartCoupon ? cartCoupon?.id : null,
+                    ownedAddress.countryId
+                )
+            )
+        );
+        storeIds.forEach((storeId, index) => {
+            deliveryDetailsMap.set(storeId, deliveryResults[index]);
+        });
+
+        // 全DB操作をトランザクションでラップ
+        const order = await db.$transaction(async (tx) => {
+            // 冪等性ゲート: カート行を「単一使用トークン」として消費する。
+            //
+            // place-order.tsx の isPlacingOrderRef はクライアント側ガードにすぎず、
+            // Server Action を直接叩けば迂回できる。ここで注文作成より前に条件付き削除を
+            // 行うと、カート行の行ロックで並行リクエストが直列化され、削除に成功した
+            // 1 リクエストだけが注文へ進む（count === 0 側は下で throw してロールバック）。
+            //
+            // 在庫不足等で tx がロールバックすればカート削除も巻き戻るため、ユーザーは
+            // 再試行できる。CartItem は Cart から onDelete: Cascade で連鎖削除される。
+            // 条件式は在庫減算の check-and-decrement（下の tx.size.updateMany）と同じ
+            // 「条件付き書き込み + count 判定」イディオム。
+            const consumed = await tx.cart.deleteMany({
+                where: { id: cartId, userId },
+            });
+            if (consumed.count === 0) throw new Error("Cart not found.");
+
+            // TOCTOU 閉塞: shippingAddressId を書く「直前」に、同一 tx 内で所有権を
+            // **行ロック付きで** 再検証する。tx 外の findFirst（上部の所有権チェック）から
+            // order.create までの間には商品取得・配送料計算など長い非同期処理があり、
+            // その隙に住所が **別ユーザーへ再割当て** されると、FK は有効なまま他人の住所を
+            // 注文に付けられてしまう。
+            //
+            // 素の SELECT（findFirst）では足りない。削除経路は FK が閉じる —— order.create の
+            // INSERT が参照先 ShippingAddress 行へ FOR KEY SHARE を取り、DELETE と競合する
+            // ため並行削除は commit までブロックされる。しかし userId 付け替えは参照キー列を
+            // 触らないので FOR NO KEY UPDATE となり、FOR KEY SHARE と **競合しない**。
+            // 行ロックを取らない再読み取りは窓を縮めるだけで、Read Committed 下では
+            // 再読み取りと order.create の間に付け替えが commit されうる。
+            //
+            // FOR UPDATE は FOR NO KEY UPDATE と競合するため、並行付け替えはこの tx の
+            // commit までブロックされる。さらにロック取得後に PostgreSQL が述語を再評価
+            // （EvalPlanQual）するので、先に付け替えが commit していた場合は行が脱落し、
+            // 下の length === 0 で throw に落ちる。Prisma の fluent API はロック句を
+            // 表現できないため $queryRaw を使う（値は常にパラメータ化される）。
+            const lockedAddress = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "ShippingAddress"
+            WHERE "id" = ${ownedAddress.id} AND "userId" = ${userId}
+            FOR UPDATE
+        `;
+            if (lockedAddress.length === 0)
+                throw new Error("Shipping address not found.");
+
+            // Create the order
+            const order = await tx.order.create({
+                data: {
+                    userId,
+                    shippingAddressId: lockedAddress[0].id,
+                    orderStatus: "Pending",
+                    paymentStatus: "Pending",
+                    shippingFees: 0,
+                    subTotal: 0,
+                    total: 0,
                 },
             });
 
-            // Create OrderItems for this OrderGroup
-            for (const item of items) {
-                await tx.orderItem.create({
+            // Iterate over each store's items and create OrderGroup and OrderItems
+            let orderTotalPrice = new Prisma.Decimal("0");
+            let orderShippingFee = new Prisma.Decimal("0");
+
+            // PLATFORM スコープのクーポンはカート全体の割引総額を先に算出し、
+            // 最終グループで「総割引 − Σ確定済グループ割引」を割り当てて端数を吸収する（判断5-4）
+            const cartCouponValid = cartCoupon
+                ? isCouponCurrentlyValid(cartCoupon)
+                : false;
+            const isPlatformCoupon =
+                cartCoupon?.scope === "PLATFORM" && cartCouponValid;
+            const cartTotalPrice = validatedCartItems.reduce(
+                (acc, item) => acc.add(item.totalPrice),
+                new Prisma.Decimal("0")
+            );
+            const platformTotalDiscount =
+                isPlatformCoupon && cartCoupon
+                    ? cartTotalPrice.mul(cartCoupon.discount).div(100)
+                    : new Prisma.Decimal("0");
+            let cumulativePlatformDiscount = new Prisma.Decimal("0");
+
+            // 端数吸収するストアが実行ごとにブレないよう、storeId でソートして決定論的な順序にする
+            const storeEntries = Object.entries(groupedItems).sort(([a], [b]) =>
+                a.localeCompare(b)
+            );
+
+            for (const [index, [storeId, items]] of storeEntries.entries()) {
+                // Calculate store-specific totals
+                const groupedTotalPrice = items.reduce(
+                    (acc, item) => acc.add(item.totalPrice),
+                    new Prisma.Decimal("0")
+                );
+
+                const groupShippingFee = items.reduce(
+                    (acc, item) => acc.add(item.shippingFee),
+                    new Prisma.Decimal("0")
+                );
+
+                const deliveryDetails = deliveryDetailsMap.get(storeId);
+                const shippingService = deliveryDetails?.shippingService;
+                const deliveryTimeMin = deliveryDetails?.deliveryTimeMin;
+                const deliveryTimeMax = deliveryDetails?.deliveryTimeMax;
+
+                // Check coupon scope/store and validity（isActive=false または期間外のクーポンは割引不適用）
+                const check =
+                    isPlatformCoupon ||
+                    (storeId === cartCoupon?.storeId && cartCouponValid);
+
+                // Calculate discount based on coupon
+                let discountedAmount = new Prisma.Decimal("0");
+                if (check && cartCoupon) {
+                    if (isPlatformCoupon && index === storeEntries.length - 1) {
+                        discountedAmount = platformTotalDiscount.sub(
+                            cumulativePlatformDiscount
+                        );
+                    } else {
+                        discountedAmount = groupedTotalPrice
+                            .mul(cartCoupon.discount)
+                            .div(100);
+                        if (isPlatformCoupon) {
+                            cumulativePlatformDiscount =
+                                cumulativePlatformDiscount.add(
+                                    discountedAmount
+                                );
+                        }
+                    }
+                }
+
+                // Calculate the total after applying the discount
+                const totalAfterDiscount =
+                    groupedTotalPrice.sub(discountedAmount);
+
+                // Create an OrderGroup for this store
+                const orderGroup = await tx.orderGroup.create({
                     data: {
-                        orderGroupId: orderGroup.id,
-                        productId: item.productId,
-                        variantId: item.variantId,
-                        sizeId: item.sizeId,
-                        productSlug: item.productSlug,
-                        variantSlug: item.variantSlug,
-                        sku: item.sku,
-                        name: item.name,
-                        image: item.image,
-                        size: item.size,
-                        quantity: item.quantity,
-                        price: item.price,
-                        shippingFee: item.shippingFee,
-                        totalPrice: item.totalPrice,
+                        orderId: order.id,
+                        storeId,
+                        status: "Pending",
+                        subTotal: groupedTotalPrice.sub(groupShippingFee),
+                        shippingFees: groupShippingFee,
+                        total: totalAfterDiscount,
+                        shippingService:
+                            shippingService || "International Delivery",
+                        shippingDeliveryMin: deliveryTimeMin || 7,
+                        shippingDeliveryMax: deliveryTimeMax || 30,
+                        couponId: check && cartCoupon ? cartCoupon?.id : null,
                     },
                 });
 
-                // F3: 在庫のアトミック減算（check-and-decrement）
-                // 条件付き updateMany で「読み取り → 減算」を単一 UPDATE に畳み込み、
-                // count===0（条件を満たす行なし）を在庫不足として検知する（TOCTOU レース回避）。
-                // 減算量は確定済み item.quantity（= validQuantity, L494 のクランプ値）を使う。
-                const stock = await tx.size.updateMany({
-                    where: { id: item.sizeId, quantity: { gte: item.quantity } },
-                    data: { quantity: { decrement: item.quantity } },
-                });
-                if (stock.count === 0) {
-                    // $transaction 全体をロールバック（部分確定なし）
-                    throw new Error("在庫が不足しています");
+                // Create OrderItems for this OrderGroup
+                for (const item of items) {
+                    await tx.orderItem.create({
+                        data: {
+                            orderGroupId: orderGroup.id,
+                            productId: item.productId,
+                            variantId: item.variantId,
+                            sizeId: item.sizeId,
+                            productSlug: item.productSlug,
+                            variantSlug: item.variantSlug,
+                            sku: item.sku,
+                            name: item.name,
+                            image: item.image,
+                            size: item.size,
+                            quantity: item.quantity,
+                            price: item.price,
+                            shippingFee: item.shippingFee,
+                            totalPrice: item.totalPrice,
+                        },
+                    });
+
+                    // F3: 在庫のアトミック減算（check-and-decrement）
+                    // 条件付き updateMany で「読み取り → 減算」を単一 UPDATE に畳み込み、
+                    // count===0（条件を満たす行なし）を在庫不足として検知する（TOCTOU レース回避）。
+                    // 減算量は確定済み item.quantity（= validQuantity, L494 のクランプ値）を使う。
+                    const stock = await tx.size.updateMany({
+                        where: {
+                            id: item.sizeId,
+                            quantity: { gte: item.quantity },
+                        },
+                        data: { quantity: { decrement: item.quantity } },
+                    });
+                    if (stock.count === 0) {
+                        // $transaction 全体をロールバック（部分確定なし）
+                        throw new Error("在庫が不足しています");
+                    }
                 }
+
+                // Update order totals
+                orderTotalPrice = orderTotalPrice.add(totalAfterDiscount);
+                orderShippingFee = orderShippingFee.add(groupShippingFee);
             }
 
-            // Update order totals
-            orderTotalPrice = orderTotalPrice.add(totalAfterDiscount)
-            orderShippingFee = orderShippingFee.add(groupShippingFee)
-        }
+            // Update the main order with the final totals
+            await tx.order.update({
+                where: {
+                    id: order.id,
+                },
+                data: {
+                    subTotal: orderTotalPrice.sub(orderShippingFee),
+                    shippingFees: orderShippingFee,
+                    total: orderTotalPrice,
+                },
+            });
 
-        // Update the main order with the final totals
-        await tx.order.update({
-            where: {
-                id: order.id,
-            },
-            data: {
-                subTotal: orderTotalPrice.sub(orderShippingFee),
-                shippingFees: orderShippingFee,
-                total: orderTotalPrice,
-            },
-        })
+            return order;
+        });
 
-        return order
-    })
-
-    return { orderId: order.id }
+        return { orderId: order.id };
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error(`Error in placeOrder (cartId: ${cartId}):`, error.message, error.stack);
+            console.error(
+                `Error in placeOrder (cartId: ${cartId}):`,
+                error.message,
+                error.stack
+            );
         } else {
             console.error(`Error in placeOrder (cartId: ${cartId}):`, error);
         }
         throw error;
     }
-}
+};
 
 export const emptyUserCart = async () => {
     try {
         // Ensure the user is authenticated
-        const user = await currentUser()
-        if (!user) throw new Error('Unauthenticated.')
+        const user = await currentUser();
+        if (!user) throw new Error("Unauthenticated.");
 
-        const userId = user.id
+        const userId = user.id;
 
         // placeOrder が注文トランザクション内でカートを消費済みの場合があるため、
         // delete（対象なしで P2025）ではなく deleteMany を使い冪等にする。
@@ -827,18 +923,22 @@ export const emptyUserCart = async () => {
             where: {
                 userId,
             },
-        })
+        });
 
-        return true
+        return true;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in emptyUserCart:", error.message, error.stack);
+            console.error(
+                "Error in emptyUserCart:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in emptyUserCart:", error);
         }
-        throw error
+        throw error;
     }
-}
+};
 
 /**
  * @Function updateCartWithLatest
@@ -854,7 +954,7 @@ export const updateCartWithLatest = async (
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
-            const { productId, variantId, sizeId, quantity } = cartProduct
+            const { productId, variantId, sizeId, quantity } = cartProduct;
 
             // Fetch the product, variant, and size from the database
             const product = await db.product.findUnique({
@@ -882,7 +982,7 @@ export const updateCartWithLatest = async (
                         },
                     },
                 },
-            })
+            });
 
             if (
                 !product ||
@@ -892,13 +992,15 @@ export const updateCartWithLatest = async (
                 // return cartProduct
                 throw new Error(
                     `Product not found or variant or size not found.`
-                )
+                );
             }
-            const variant = product.variants[0]
-            const size = variant.sizes[0]
+            const variant = product.variants[0];
+            const size = variant.sizes[0];
 
             // Calculate Shipping details
-            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
+            const countryCookie = getCookie("userCountry", { cookies }) as
+                | string
+                | undefined;
 
             let details = {
                 shippingService: product.store.defaultShippingService,
@@ -907,28 +1009,28 @@ export const updateCartWithLatest = async (
                 isFreeShipping: false,
                 deliveryTimeMin: 0,
                 deliveryTimeMax: 0,
-            }
+            };
 
             if (countryCookie) {
-                const country = parseUserCountryCookie(countryCookie)
+                const country = parseUserCountryCookie(countryCookie);
                 const temp_details = await getShippingDetails(
                     product.shippingFeeMethod,
                     country,
                     product.store,
                     product.freeShipping
-                )
+                );
 
-                if (typeof temp_details !== 'boolean') {
-                    details = temp_details
+                if (typeof temp_details !== "boolean") {
+                    details = temp_details;
                 }
             }
 
             const priceNumber = toNumberSafe(size.price);
             const price = size.discount
                 ? priceNumber - (priceNumber * size.discount) / 100
-                : priceNumber
+                : priceNumber;
 
-            const validated_qty = Math.min(quantity, size.quantity)
+            const validated_qty = Math.min(quantity, size.quantity);
 
             return {
                 productId,
@@ -953,11 +1055,11 @@ export const updateCartWithLatest = async (
                 deliveryTimeMin: details.deliveryTimeMin,
                 deliveryTimeMax: details.deliveryTimeMax,
                 isFreeShipping: details.isFreeShipping,
-            }
+            };
         })
-    )
-    return validatedCartItems
-}
+    );
+    return validatedCartItems;
+};
 
 /**
  * Add a product to the user's wishlist.
@@ -973,10 +1075,10 @@ export const addToWishlist = async (
 ) => {
     try {
         // Ensure the user is authenticated
-        const user = await currentUser()
-        if (!user) throw new Error('Unauthenticated.')
+        const user = await currentUser();
+        if (!user) throw new Error("Unauthenticated.");
 
-        const userId = user.id
+        const userId = user.id;
         // Create the wishlist item
         const existingWishlistItem = await db.wishlist.findFirst({
             where: {
@@ -984,10 +1086,10 @@ export const addToWishlist = async (
                 productId,
                 variantId,
             },
-        })
+        });
 
         if (existingWishlistItem) {
-            throw new Error('Product is already in the wishlist.')
+            throw new Error("Product is already in the wishlist.");
         }
 
         return await db.wishlist.create({
@@ -997,16 +1099,20 @@ export const addToWishlist = async (
                 variantId,
                 sizeId,
             },
-        })
+        });
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in addToWishlist:", error.message, error.stack);
+            console.error(
+                "Error in addToWishlist:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in addToWishlist:", error);
         }
-        throw error
+        throw error;
     }
-}
+};
 
 /**
  * @Function updateCheckoutProductWithLatest
@@ -1022,36 +1128,40 @@ export const addToWishlist = async (
 export const updateCheckoutProductWithLatest = async (
     cartProducts: Pick<
         CartItem,
-        'id' | 'cartId' | 'productId' | 'variantId' | 'sizeId' | 'quantity'
+        "id" | "cartId" | "productId" | "variantId" | "sizeId" | "quantity"
     >[],
     address: CountryDB | undefined
 ): Promise<SerializedCartType> => {
-    if (cartProducts.length === 0) throw new Error('No cart products provided.')
-    const user = await requireUser()
+    if (cartProducts.length === 0)
+        throw new Error("No cart products provided.");
+    const user = await requireUser();
 
-    const cartId = cartProducts[0].cartId
+    const cartId = cartProducts[0].cartId;
     // payload 整合性: 全 item が単一 cartId に属すること（複数カート混在を拒否）
     if (cartProducts.some((p) => p.cartId !== cartId)) {
-        throw new Error('Unauthorized: cart items belong to multiple carts.')
+        throw new Error("Unauthorized: cart items belong to multiple carts.");
     }
 
     // 所有権 + 実在 cartItem を権威ソースとして取得（id だけで update する前のガード）
     const ownedCart = await db.cart.findFirst({
         where: { id: cartId, userId: user.id },
         include: { cartItems: { select: { id: true } } },
-    })
-    if (!ownedCart) throw new Error('Unauthorized: cart does not belong to current user.')
+    });
+    if (!ownedCart)
+        throw new Error("Unauthorized: cart does not belong to current user.");
 
     // cartProduct.id が実際にこのカートに属することを検証（他カートの item.id 混入による IDOR を防止）
-    const ownedItemIds = new Set(ownedCart.cartItems.map((item) => item.id))
+    const ownedItemIds = new Set(ownedCart.cartItems.map((item) => item.id));
     if (cartProducts.some((p) => !ownedItemIds.has(p.id))) {
-        throw new Error('Unauthorized: cart item does not belong to current user.')
+        throw new Error(
+            "Unauthorized: cart item does not belong to current user."
+        );
     }
 
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
-            const { productId, variantId, sizeId, quantity } = cartProduct
+            const { productId, variantId, sizeId, quantity } = cartProduct;
 
             // Fetch the product, variant, and size from the database
             const product = await db.product.findUnique({
@@ -1079,7 +1189,7 @@ export const updateCheckoutProductWithLatest = async (
                         },
                     },
                 },
-            })
+            });
 
             if (
                 !product ||
@@ -1089,34 +1199,43 @@ export const updateCheckoutProductWithLatest = async (
                 // return cartProduct
                 throw new Error(
                     `Product not found or variant or size not found.`
-                )
+                );
             }
 
-            const variant = product.variants[0]
-            const size = variant.sizes[0]
+            const variant = product.variants[0];
+            const size = variant.sizes[0];
 
             // Calculate Shipping details
-            const countryCookie = getCookie('userCountry', { cookies }) as string | undefined
+            const countryCookie = getCookie("userCountry", { cookies }) as
+                | string
+                | undefined;
 
             const country: Country | null = address
-                ? { name: address.name, code: address.code, city: "", region: "" }
+                ? {
+                      name: address.name,
+                      code: address.code,
+                      city: "",
+                      region: "",
+                  }
                 : countryCookie
                   ? parseUserCountryCookie(countryCookie)
-                  : null
+                  : null;
 
             if (!country) {
-                throw new Error("Couldn't retrieve country data.")
+                throw new Error("Couldn't retrieve country data.");
             }
 
-            const { shippingFeeMethod, freeShipping, store } = product
+            const { shippingFeeMethod, freeShipping, store } = product;
 
             const priceObj = size.discount
-                ? new Prisma.Decimal(size.price.toString()).mul(new Prisma.Decimal((100 - size.discount).toString())).div("100")
-                : new Prisma.Decimal(size.price.toString())
+                ? new Prisma.Decimal(size.price.toString())
+                      .mul(new Prisma.Decimal((100 - size.discount).toString()))
+                      .div("100")
+                : new Prisma.Decimal(size.price.toString());
 
-            const validated_qty = Math.min(quantity, size.quantity)
+            const validated_qty = Math.min(quantity, size.quantity);
 
-            let shippingFee = new Prisma.Decimal("0")
+            let shippingFee = new Prisma.Decimal("0");
 
             const fee = await getProductShippingFee(
                 shippingFeeMethod,
@@ -1125,13 +1244,13 @@ export const updateCheckoutProductWithLatest = async (
                 freeShipping,
                 variant.weight,
                 validated_qty
-            )
+            );
 
             if (!fee.isZero()) {
-                shippingFee = fee
+                shippingFee = fee;
             }
 
-            const totalPrice = priceObj.mul(validated_qty).add(shippingFee)
+            const totalPrice = priceObj.mul(validated_qty).add(shippingFee);
 
             try {
                 const newCartItem = await db.cartItem.update({
@@ -1146,8 +1265,8 @@ export const updateCheckoutProductWithLatest = async (
                         shippingFee,
                         totalPrice,
                     },
-                })
-                return newCartItem
+                });
+                return newCartItem;
             } catch (error: unknown) {
                 if (error instanceof Error) {
                     console.error(
@@ -1164,7 +1283,7 @@ export const updateCheckoutProductWithLatest = async (
                 throw error;
             }
         })
-    )
+    );
 
     // Apply coupon if exist
     const cartCoupon = await db.cart.findUnique({
@@ -1178,34 +1297,45 @@ export const updateCheckoutProductWithLatest = async (
                 },
             },
         },
-    })
+    });
     // Recalculate the cart's total price and shipping fees
     const subTotal = validatedCartItems.reduce(
-        (acc, item) => acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)),
+        (acc, item) =>
+            acc.add(
+                new Prisma.Decimal(item.price.toString()).mul(item.quantity)
+            ),
         new Prisma.Decimal("0")
-    )
+    );
     const shippingFees = validatedCartItems.reduce(
         (acc, item) => acc.add(item.shippingFee),
         new Prisma.Decimal("0")
-    )
-    let total = subTotal.add(shippingFees)
+    );
+    let total = subTotal.add(shippingFees);
 
     // Apply coupon discount if applicable
     if (cartCoupon?.coupon) {
-        const { coupon } = cartCoupon
+        const { coupon } = cartCoupon;
 
         if (isCouponCurrentlyValid(coupon)) {
             // PLATFORM スコープは全item対象、STORE スコープは対象店舗のみ
-            const isPlatform = coupon.scope === 'PLATFORM'
+            const isPlatform = coupon.scope === "PLATFORM";
             const applicableStoreItems = isPlatform
                 ? validatedCartItems
-                : validatedCartItems.filter((item) => item.storeId === coupon.storeId)
+                : validatedCartItems.filter(
+                      (item) => item.storeId === coupon.storeId
+                  );
 
             if (applicableStoreItems.length > 0) {
                 // Calculate subTotal for the coupon's store (including shipping fees)
                 const storeSubTotal = applicableStoreItems.reduce(
                     (acc, item) =>
-                        acc.add(new Prisma.Decimal(item.price.toString()).mul(item.quantity)).add(item.shippingFee),
+                        acc
+                            .add(
+                                new Prisma.Decimal(item.price.toString()).mul(
+                                    item.quantity
+                                )
+                            )
+                            .add(item.shippingFee),
                     new Prisma.Decimal("0")
                 );
                 // Apply coupon discount to the store's subTotal
@@ -1234,9 +1364,9 @@ export const updateCheckoutProductWithLatest = async (
                 },
             },
         },
-    })
+    });
 
-    if (!cart) throw new Error('Something went wrong while updating the cart.')
+    if (!cart) throw new Error("Something went wrong while updating the cart.");
 
-    return serializeCart(cart)
-}
+    return serializeCart(cart);
+};
