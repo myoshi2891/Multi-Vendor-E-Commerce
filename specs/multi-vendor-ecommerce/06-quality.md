@@ -64,11 +64,19 @@
   in the `where` clause. The Stripe webhook (`src/app/api/webhooks/stripe/`)
   writes the same row through an independent path, so a plain guard-then-write
   would let a late server action regress a settled `Paid` order back to
-  `Pending`. The CAS miss surfaces as **P2025, which is a designed outcome, not a
-  fault**: the row exists but no longer matches the `notIn` predicate, so it is
-  normalized to the same "already settled" error the pre-check raises. This P2025
-  is **not retried** — retrying cannot change the answer, because the order is
-  settled and will stay settled.
+  `Pending`. A CAS miss surfaces as **P2025, which in that case is a designed
+  outcome, not a fault**: the row exists but no longer matches the `notIn`
+  predicate.
+- **P2025 must not be normalized unconditionally.** The code is not specific to a
+  CAS miss — a concurrent delete of the order, or a `paymentDetails.connect`
+  whose target disappeared, raises the same P2025 from inside the same
+  transaction. Mapping every P2025 to "already settled" would report a genuine
+  failure as a completed payment. `createStripePayment` therefore **re-reads the
+  order and normalizes only when the row is actually settled**; otherwise the
+  original error propagates. If the re-read itself fails the outcome is
+  undecidable, so it is logged and the original P2025 is rethrown rather than
+  swallowed. A normalized P2025 is **not retried** — retrying cannot change the
+  answer, because the order is settled and will stay settled.
 - **P2034 is a separate event from the CAS P2025 above.** Transactions declared
   `isolationLevel: Serializable` are retried on P2034 via
   `retryOnSerializationFailure` (`src/lib/db-retry.ts`). P2034 means the database
