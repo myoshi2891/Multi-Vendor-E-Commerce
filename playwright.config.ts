@@ -2,6 +2,18 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
 
+/**
+ * opt-in フラグの判定。`trim()` 後に `"1"` のみを有効とする（fail safe）。
+ *
+ * 素の真偽値判定（`!!process.env.X`）だと `"0"` / `"false"` / `" "` も有効に
+ * なってしまう。next.config.mjs の HSTS ゲートと
+ * tests/e2e/security-headers.spec.ts が既にこの規則を採っているため、
+ * E2E 起動モードの判定軸も同一に揃える（spec 側は本 config の起動モードを
+ * 鏡写しにして HSTS の有無を期待するので、規則がズレると期待値が壊れる）。
+ */
+const isEnabled = (name: string): boolean =>
+  process.env[name]?.trim() === "1";
+
 export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
   // 全体タイムアウト（ハング防止の安全ネット）。本番ビルド起動（next build）と
@@ -40,7 +52,8 @@ export default defineConfig({
     //       消え、getByRole('button',{name:'Next'}) 衝突や a11y(axe) の dev 由来
     //       false positive が無くなる、(3) CI/本番の実態と一致する。
     // ローカルの高速反復には E2E_USE_DEV=1 で従来の dev 起動へ退避できる。
-    command: process.env.E2E_USE_DEV
+    // 有効値は `1` のみ（`true` / `0` などは本番ビルド起動のまま）。
+    command: isEnabled("E2E_USE_DEV")
       ? "bun run dev"
       : "bun run build && bun run start",
     url: baseURL,

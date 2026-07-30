@@ -51,8 +51,13 @@ const isEnabled = (name: string): boolean => process.env[name]?.trim() === "1";
 //   NODE_ENV=production（E2E_USE_DEV=1 の dev 起動は development になるため付かない）
 //   かつ VERCEL_ENV!==preview（preload 変数が preview に漏れても弾く拒否条件）
 //   かつ 配信先が本番であるシグナル（VERCEL_ENV=production または HSTS_ENABLED=1）
+//
+// E2E_USE_DEV も他の opt-in 変数と同じ `isEnabled` で判定する。素の真偽値判定だと
+// `E2E_USE_DEV=0` で「dev 起動」と誤認して HSTS を absent 期待にしてしまう。
+// playwright.config.ts の webServer も同じ `isEnabled` を使っており、
+// **起動モードと期待値が同一規則**であることがこの spec の前提。
 const expectHsts =
-    !process.env.E2E_USE_DEV &&
+    !isEnabled("E2E_USE_DEV") &&
     process.env.VERCEL_ENV !== "preview" &&
     (process.env.VERCEL_ENV === "production" || isEnabled("HSTS_ENABLED"));
 
