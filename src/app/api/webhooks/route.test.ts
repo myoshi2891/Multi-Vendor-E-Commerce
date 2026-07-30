@@ -422,6 +422,44 @@ describe("POST /api/webhooks", () => {
             });
         });
 
+        // Clerk の DeletedObjectJSON.id は optional。無検証のまま Prisma の where へ
+        // 渡すと `where: { userId: undefined }` が「フィルタなし」と解釈され、
+        // 全 SupportTicket の PII 上書き + 全 User 削除へ退化する。
+        // トランザクションに入る前に弾くことを固定する。
+        it.each([
+            ["id が欠落", {}],
+            ["id が空文字", { id: "" }],
+            ["id が空白のみ", { id: "   " }],
+            ["id が文字列でない", { id: 12345 }],
+        ])(
+            "%s の場合、400 を返しトランザクションを開始しない",
+            async (_label, data) => {
+                mockVerify.mockReturnValue({ type: "user.deleted", data });
+                const consoleErrorSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => {});
+
+                try {
+                    const response = await POST(
+                        createWebhookRequest({ data })
+                    );
+
+                    expect(response.status).toBe(400);
+                    // 全件破壊を防ぐ本質: tx 自体が始まらないこと
+                    expect(mockTransaction).not.toHaveBeenCalled();
+                    expect(
+                        mockSupportTicketUpdateMany
+                    ).not.toHaveBeenCalled();
+                    expect(mockDeleteMany).not.toHaveBeenCalled();
+                    expect(consoleErrorSpy).toHaveBeenCalledWith(
+                        "Webhook user.deleted event missing a usable user id"
+                    );
+                } finally {
+                    consoleErrorSpy.mockRestore();
+                }
+            }
+        );
+
         it("db.user.deleteManyが失敗した場合500を返す", async () => {
             const eventData = {
                 data: {
