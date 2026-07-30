@@ -12,6 +12,20 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1786 passed / 1789 total across 176 suites (3 skipped), as of 2026-07-30.
+  Seventeen regressions from the CodeRabbit review round, sixth pass (+17, **no new suites** — every
+  case landed in a file that already existed). `webhooks/route.test.ts` 15→19 (an `it.each` of four
+  rows: `user.deleted` with a missing / empty / whitespace-only / non-string `id` must return 400
+  **and never open the transaction** — an unvalidated `undefined` reaches Prisma as
+  `where: { userId: undefined }`, which it reads as *no filter*, redacting every SupportTicket and
+  deleting every User). `db-retry.test.ts` 8→13 (an `it.each` of four rows plus one single case:
+  `maxAttempts` of `0` / negative / `NaN` / fractional must still run the operation once instead of
+  `throw undefined`, which broke every downstream `instanceof Error` guard). `admin/coupons/
+  columns.test.tsx` 20→25 (the admin edit modal's `getCouponAsAdmin` rejection path — the seller
+  variant already had try/catch + destructive toast + `setClose()`; only admin was missing it).
+  `scan-tests.test.ts` 15→17 (declaration-form `test.skip('title', fn)` counts, in-body annotation
+  `test.skip(cond, reason)` does not). `coupon.test.ts` 95→96 (`toggleCouponActive`'s
+  `'Coupon not found.'` re-anchored to exact match and passed through `isDomainError`).
 - 1769 passed / 1772 total across 176 suites (3 skipped), as of 2026-07-28.
   Eight regressions from the CodeRabbit review round, fifth pass (+8, +1 suite):
   `coupons/columns.test.tsx` (+7, **new suite**) covers the seller coupon edit modal, whose
