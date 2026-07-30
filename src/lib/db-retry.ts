@@ -48,7 +48,15 @@ export const retryOnSerializationFailure = async <T>(
     operation: () => Promise<T>,
     options?: { maxAttempts?: number; baseDelayMs?: number }
 ): Promise<T> => {
-    const maxAttempts = options?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+    // `??` は nullish 合体なので 0 / NaN / 負値を既定値へ倒せない。クランプが無いと
+    // ループが 1 周も回らず lastError 未代入のまま `throw undefined` になり、
+    // 呼び出し側の `instanceof Error` 型ガードが全て崩れる（catch で握れない）。
+    // 「最低 1 回は試す」が本関数の正直な契約なので、既定値へ戻さず下限 1 で
+    // クランプする（呼び出し側の明示値を黙って 3 に膨らませない）。
+    const requestedAttempts = options?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+    const maxAttempts = Number.isFinite(requestedAttempts)
+        ? Math.max(1, Math.floor(requestedAttempts))
+        : 1;
     const baseDelayMs = options?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
 
     let lastError: unknown;
