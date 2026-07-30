@@ -12,6 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1790 passed / 1793 total across 176 suites (3 skipped), as of 2026-07-30.
+  Four regressions from the CodeRabbit review round, seventh pass (+4, no new suites).
+  `db-retry.test.ts` 13→16 (an `it.each` of three rows: a fractional / `NaN` / negative
+  `baseDelayMs` must still surface the P2034. `randomInt` only accepts integers, so a fractional
+  value threw `ERR_INVALID_ARG_TYPE` *from inside the catch block* and replaced the P2034 every
+  downstream `isSerializationFailure` check looks for; the rows also assert the operation ran
+  `maxAttempts` times, which is what proves the jitter path was reached at all).
+  `paypal.test.ts` 22→23 (a P2025 whose re-read shows an unsettled order must not be normalized to
+  "already settled" — the PayPal counterpart of the stripe.ts fix landed at 1749; the
+  concurrent-capture case now models both `findUnique` calls instead of leaving the re-read
+  unexercised).
 - 1786 passed / 1789 total across 176 suites (3 skipped), as of 2026-07-30.
   Seventeen regressions from the CodeRabbit review round, sixth pass (+17, **no new suites** — every
   case landed in a file that already existed). `webhooks/route.test.ts` 15→19 (an `it.each` of four
