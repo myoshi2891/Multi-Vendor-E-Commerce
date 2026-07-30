@@ -174,13 +174,53 @@ to a hosting platform** (see the deployment-neutrality requirement in
 |---|---|---|
 | Vercel | `x-vercel-forwarded-for` (platform-set, not client-settable) | `x-forwarded-for` is also rewritten, but the vendor header is the documented contract. Assume exactly one platform hop. |
 | Cloudflare (proxied) | `CF-Connecting-IP` | Only trustworthy when the origin is *not* reachable directly — otherwise the header is attacker-settable. Requires origin lock-down (Tunnel / IP allowlist / mTLS). |
-| AWS ALB (no CloudFront) | right-most value of `x-forwarded-for` | **Prerequisite: the listener's XFF handling must be in `append` mode** (`routing.http.xff_header_processing.mode = append`, the default). In `preserve` mode the ALB passes the client-supplied header through untouched, and in `remove` mode it strips it — in both cases the right-most value is *not* the client, so the rule silently reads an attacker-controlled value. Record the listener attribute in the ADR alongside the rule. Given append mode, the ALB appends the client IP and the left-most entries are attacker-supplied. Valid only when the ALB is the single edge hop. |
+| AWS ALB (no CloudFront) | right-most value of `x-forwarded-for` | **Two listener attributes must be recorded in the ADR before this rule is valid.** (1) **XFF processing must be in `append` mode** (`routing.http.xff_header_processing.mode = append`, the default). In `preserve` mode the ALB passes the client-supplied header through untouched, and in `remove` mode it strips it — in both cases the right-most value is *not* the client, so the rule silently reads an attacker-controlled value. (2) **Client-port appending must be accounted for** (`routing.http.xff_client_port.enabled`). When enabled the right-most entry becomes `<address>:<port>` rather than a bare address, so "right-most value = the client address" no longer holds as written — see the note below. Given append mode, the ALB appends the client IP and the left-most entries are attacker-supplied. Valid only when the ALB is the single edge hop. |
 | AWS CloudFront (in front of ALB/origin) | `CloudFront-Viewer-Address` (platform-set) | **Prerequisite: CloudFront does not forward this header to the origin by default.** The distribution's cache/origin request policy must include it (the managed `AllViewerAndCloudFrontHeaders-2022-06`, or a custom origin request policy naming `CloudFront-Viewer-Address`); without that the header simply is not present at the origin. Because a missing header is indistinguishable from a stripped one, the implementation must **fail closed** when it is absent (apply the limit or reject) — never fall back to `x-forwarded-for` or treat the client as unidentified-but-allowed. With CloudFront in front, the right-most `x-forwarded-for` is a *CloudFront* hop, not the client — do **not** reuse the ALB row's "right-most" rule. The value carries a port and may be IPv6; parsing it is not `split(":")` — see "Parsing `CloudFront-Viewer-Address`" below. |
 | Nginx / self-managed reverse proxy | value written by `set_real_ip_from` + `real_ip_header` | The proxy must be configured to *overwrite*, not append; otherwise strip the header at the edge. |
 | Bare Node (no proxy) | socket remote address only | `x-forwarded-for` MUST be ignored entirely — there is no trusted hop to attribute it to. |
 
 If the chosen target is not in this table, do not guess: establish the contract
 from the vendor's documentation and add the row before implementing.
+
+### ALB with `routing.http.xff_client_port.enabled`
+
+The ALB row's rule is phrased as "right-most value of `x-forwarded-for` **is** the
+client address".  That phrasing is only true while the listener appends a bare
+address.  With `routing.http.xff_client_port.enabled = true`, the ALB appends
+`<address>:<port>` instead, and the right-most entry is no longer an address —
+feeding it to the limiter keys buckets on `address:port`, and since the source
+port changes on essentially every connection, **each request lands in its own
+bucket and the rate limit stops limiting anything**.  This fails open silently:
+there is no error, just a limiter that never triggers.
+
+Consequently, when the attribute is enabled, the right-most entry must be parsed,
+not used verbatim — and the parsing problem is **the same one** the CloudFront row
+has.  All three contracts under "Parsing `CloudFront-Viewer-Address`" below apply
+unchanged:
+
+1. **Split on the last colon, once** (`lastIndexOf(':')`) — `split(':')[0]` breaks
+   on IPv6.
+2. **Validate the left-hand side as IPv4 or IPv6 and fail closed** if it does not
+   parse — never fall back to another header or treat the client as
+   unidentified-but-allowed.
+3. **Normalize before hashing** — lower-case and canonicalize the IPv6
+   representation, ahead of the keyed HMAC.
+
+Two things must be settled from AWS's documentation rather than assumed:
+
+- **Whether the v6 form is bracketed.**  The CloudFront section pins
+  `CloudFront-Viewer-Address` as *unbracketed* (`2001:db8::1:52786`).  **Do not
+  carry that finding over to ALB** — it is a per-product serialization choice, and
+  the two are documented separately.  Establish ALB's form from the vendor's
+  documentation before writing the parser; if it *is* bracketed, rule 1 changes
+  shape (strip brackets, then split), and a parser written for the other form is
+  wrong in exactly the silent way this section is trying to prevent.
+- **The attribute's actual value in the target account.**  Both
+  `routing.http.xff_header_processing.mode` and
+  `routing.http.xff_client_port.enabled` are **per-listener** attributes that an
+  infrastructure change can flip without touching application code.  Record the
+  observed values in the implementation ADR next to the extraction rule, so a
+  later reader can tell whether the rule still matches the deployment.
 
 ### Parsing `CloudFront-Viewer-Address`
 

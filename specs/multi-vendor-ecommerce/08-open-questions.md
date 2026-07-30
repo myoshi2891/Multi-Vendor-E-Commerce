@@ -176,8 +176,19 @@ TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`c
   | `:362` / `:408` | `Coupon is already applied to this cart.` |
   | `:374` | `No items in the cart belong to the store associated with this coupon.` |
 
-- `applyCoupon` は `coupon.ts` の 10 個の export のうち **`isDomainError` 素通しが無い唯一の関数**
-  （他 7 箇所は `:142` / `:217` / `:252` / `:292` / `:530` / `:572` / `:611` で適用済み）。
+- `coupon.ts` の 10 個の export のうち `isDomainError` の適用は **7 箇所**
+  （`:142` / `:217` / `:252` / `:292` / `:530` / `:572` / `:611`）。残る **3 つ**
+  （`getStoreCoupons` / `getAllCoupons` / `applyCoupon`）は未適用であり、
+  10 − 7 = 3 で釣り合う。
+- そのうち **`applyCoupon` だけが修正を要する**。判定基準は「export 数」ではなく
+  **try ブロック内に意図的な domain throw を持つか**である:
+  - `getStoreCoupons`（`:174-186`）と `getAllCoupons` は、try 内に意図的な throw が**無く**、
+    catch 内の汎用 DB エラー throw しか持たない。認可ガード（`requireStoreOwner` /
+    `requireAdmin`）は tech.md の規約どおり **try/catch の外**にあるため、認可エラーが
+    汎用メッセージで上書きされる経路がそもそも存在しない。**`isDomainError` は不要**。
+  - `applyCoupon` は try 内に上表の domain throw を多数持つため、`isDomainError` が
+    無いとそれらが catch の汎用メッセージへ潰される。**未適用 3 つのうち、意図的な
+    domain throw を持つのは `applyCoupon` のみ**。
 
 **根本原因**:
 `isDomainError` は upsert 系（Round 14）→ get/delete 系（Round 17）と段階的に適用されてきたが、
