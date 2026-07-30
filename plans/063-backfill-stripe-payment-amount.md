@@ -151,6 +151,22 @@ Write the Step 2 result to a file and summarise:
   This number is what the approver signs off on, and Step 4 compares against it before `COMMIT`.
 - the min/max `createdAt` of the rows to be updated
 - the total monetary delta the update will apply
+- **the unresolved zero-total list — an enumeration, not a count.** For the `ratio IS NULL` bucket,
+  list **every row's `paymentDetails.id` / `orderId` / `pd.amount` / `o.total` together with the
+  reason it is being left unresolved** (e.g. fully coupon-discounted order, test/seed row,
+  cancelled before capture). This list is an **approval artifact in its own right** — the approver
+  signs off on *which specific rows* stay unresolved, not merely on how many.
+
+  > **なぜ件数では足りないか。** Step 5 の合格条件 2 は `null_ratio` を「承認済みの未解決リスト」と
+  > 突き合わせ、さらに **id レベルで一致すること**を要求する（件数一致だけでは「解決した行」と
+  > 「新たに壊れた行」が相殺して同数になる経路を排除できないため）。その突合先となる
+  > **id のリストが成果物として定義されていなければ、Step 5 の条件は実行不能**になる
+  > ——「承認済みの未解決リスト」という参照先が存在しないまま参照されている状態だった。
+  > ここで列挙を成果物に含めることで、Step 5 の比較対象が一意に定まる。
+  >
+  > 各行に**理由**を要求するのは、zero-total が「正当（全額クーポン等）」と
+  > 「別のバグ（`total` が書かれていない）」の両方を含みうるためである。理由を書かせると
+  > 後者は承認の時点で表面化し、`ratio IS NULL` バケットに紛れて恒久的に見逃されることを防げる。
 
 **Stop here and present the report.** Per
 [`.claude/steering/tech.md`](../.claude/steering/tech.md), destructive or corrective production
@@ -239,11 +255,14 @@ WHERE  pd."createdAt" < :deploy_boundary
 Verification passes only when **both** hold:
 
 1. `still_wrong` = **0**（例外を認めない。範囲外の行が残っていれば backfill は未完）
-2. `null_ratio` = Step 3 で人間が承認した未解決 zero-total 行の件数と**一致**
+2. `null_ratio` = **Step 3 の「unresolved zero-total list」**（承認済み成果物）の件数と**一致**
    （0 とは限らない。ただし「承認された件数」より多ければ、承認外の行が紛れているので不合格）
 
-`null_ratio` が承認件数と一致することを、承認リストの id とも突き合わせること
-（件数一致だけでは、解決した行と新たに壊れた行が相殺して同数になる可能性を排除できない）。
+比較先は Step 3 で**列挙され承認された当のリスト**であり、件数だけの報告ではない。
+`null_ratio` が承認件数と一致することに加え、**`ratio IS NULL` で残った行の id 集合が
+承認リストの id 集合と完全一致する**ことを確認すること（件数一致だけでは、解決した行と
+新たに壊れた行が相殺して同数になる可能性を排除できない）。集合として突き合わせるには
+Step 3 が id を列挙していることが前提であり、そのためにあの列挙を承認成果物にしている。
 
 Record the before/after counts in `docs/PROGRESS.md` and close the CORRECTNESS-05 entry in
 `plans/README.md`.

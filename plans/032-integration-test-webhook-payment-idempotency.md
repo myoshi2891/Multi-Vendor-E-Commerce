@@ -262,6 +262,14 @@ CHECK 制約を一時的に張る:
 
 ```typescript
 // Arrange: Order（paymentMethod は未設定）と User を seed した後
+
+// 前回実行が finally に到達せず落ちた（プロセス kill / タイムアウト強制終了 / DB 接続断）
+// 場合、tmp_block_stripe が DB に残る。残っていると次の ADD が
+// 「constraint already exists」で必ず失敗し、テストが**恒久的に**赤くなる
+// （しかも失敗理由は本来の検証内容と無関係）。ADD の直前に必ず落としておく。
+await db.$executeRawUnsafe(
+    `ALTER TABLE "Order" DROP CONSTRAINT IF EXISTS tmp_block_stripe`
+);
 await db.$executeRawUnsafe(
     `ALTER TABLE "Order" ADD CONSTRAINT tmp_block_stripe CHECK ("paymentMethod" IS DISTINCT FROM 'Stripe'::"PaymentMethod")`
 );
@@ -275,13 +283,23 @@ try {
     //   `res.status === 500` を assert し、かつ
     //   await db.paymentDetails.count({ where: { orderId } }) === 0（tx ロールバックで副作用なし）
 } finally {
-    await db.$executeRawUnsafe(`ALTER TABLE "Order" DROP CONSTRAINT tmp_block_stripe`);
+    // ADD 側と同じく IF EXISTS を付ける。ADD が失敗した経路では制約が存在しないため、
+    // 素の DROP だと finally 自身が throw し、本来報告すべき ADD/Act 側の失敗を
+    // 上書きしてしまう（デバッグ時に真因が見えなくなる）。
+    await db.$executeRawUnsafe(
+        `ALTER TABLE "Order" DROP CONSTRAINT IF EXISTS tmp_block_stripe`
+    );
 }
 ```
 
 - `IS DISTINCT FROM` を使うのは、既存行の `paymentMethod` が `NULL` でも制約追加が通るようにするため
   （`NULL IS DISTINCT FROM 'Stripe'` は true）。`<>` だと NULL 比較が `NULL` になり挙動が変わる。
 - 制約の削除は **`finally` で必ず行う**（残すと後続テストの `order.update` を巻き込んで壊す）。
+- **ADD の直前にも `DROP … IF EXISTS` を置く**（上記コード参照）。`finally` は
+  「このプロセスが最後まで動いた」ことを前提にした後始末であり、**プロセスが強制終了された
+  場合には走らない**。その状態で残った制約は次回実行の ADD を確実に失敗させ、
+  かつ失敗理由が本来の検証内容と無関係になるため原因追跡が難しい。
+  **事前 DROP（自己修復）と事後 DROP（後始末）は役割が違い、両方要る。**
 - **対照（control）assert を必ず添えること**: 同じイベントを**制約なし**で配送すると
   `paymentDetails.count({ where: { orderId } })` === **1** になることを確認する。
   これが無いと「制約のせいで 1 番目すら書かれなかった」場合と区別できず、
