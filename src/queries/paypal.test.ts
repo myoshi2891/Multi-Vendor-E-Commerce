@@ -498,27 +498,74 @@ describe("capturePayPalPayment", () => {
             expect(mockDb.order.update).not.toHaveBeenCalled();
         });
 
+        const p2025 = () =>
+            new Prisma.PrismaClientKnownRequestError(
+                "An operation failed because it depends on one or more records that were required but not found.",
+                { code: "P2025", clientVersion: "5.22.0" }
+            );
+
         it("並行 capture: findUnique 通過後に確定した場合も CAS で拒否される", async () => {
             // read-then-act ガードは単一プロセス内でしか効かない。findUnique が
             // Pending を返した後に別リクエストが Paid を確定させると、update の
             // where が 0 件マッチとなり Prisma が P2025 を投げる。これを既存の
             // settled メッセージへ写像し、外から見た挙動を同期ガードと揃える。
+            //
+            // findUnique は 2 回呼ばれる: 1 回目は冒頭の事前チェック（この時点では
+            // 未確定だからこそ処理が先へ進む）、2 回目は P2025 を捕まえた後の再読。
+            // 本番で CAS が外れるのは他経路が Paid を書いたからなので、再読は
+            // 確定済みを返す。
             mockFetch.mockResolvedValue({
                 json: () => Promise.resolve(buildCaptureResponse({})),
             });
             mockDb.paymentDetails.upsert.mockResolvedValue(
                 createMockPaymentDetails()
             );
-            mockDb.order.update.mockRejectedValue(
-                new Prisma.PrismaClientKnownRequestError(
-                    "An operation failed because it depends on one or more records that were required but not found.",
-                    { code: "P2025", clientVersion: "5.22.0" }
-                )
-            );
+            mockDb.order.findUnique
+                .mockResolvedValueOnce(createMockOrder({ total: 99.99 }))
+                .mockResolvedValueOnce(
+                    createMockOrder({ total: 99.99, paymentStatus: "Paid" })
+                );
+            mockDb.order.update.mockRejectedValue(p2025());
 
             await expect(
                 capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
             ).rejects.toThrow("Order payment is already settled.");
+        });
+
+        // P2025 は CAS 不一致に固有のコードではない — order の並行削除や
+        // `paymentDetails.connect` の対象消失でも同じコードが返る。無条件に
+        // settled へ写像すると、実際の障害が「決済確定済み」として誤報告され、
+        // 呼び出し側は「もう払えている」と信じて調査もリトライもしなくなる。
+        // 再読しても未確定なら正規化してはならない（stripe.ts と同じ契約）。
+        it("再読しても未確定なら P2025 を settled へ正規化しない", async () => {
+            mockFetch.mockResolvedValue({
+                json: () => Promise.resolve(buildCaptureResponse({})),
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            // 事前チェック・再読とも未確定（＝確定させた他経路が存在しない）。
+            // `jest.clearAllMocks()` は呼び出し履歴しか消さず `mockResolvedValueOnce`
+            // のキューは残るため、直前テストの積み残しを踏まないよう明示的に reset する
+            // （これが無いと事前チェックが他テストの Paid を拾い、:209 の同期ガードで
+            // 落ちて「settled に化けた」ように見える別の失敗になる）。
+            mockDb.order.findUnique.mockReset();
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.order.update.mockRejectedValue(p2025());
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            // paypal.ts は stripe.ts と違い元エラーを再 throw せず汎用メッセージで
+            // 包む設計。ここで固定するのは「settled に化けないこと」であり、
+            // 汎用経路へ落ちること自体は既存の契約どおり。
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Failed to capture PayPal payment");
+
+            consoleSpy.mockRestore();
         });
     });
 
