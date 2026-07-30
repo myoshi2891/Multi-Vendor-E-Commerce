@@ -124,6 +124,54 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(6);
     });
 
+    // Playwright の `test.skip(condition, reason)` は **テスト本体の中に置く注釈**
+    // （conditional modifier）であって、テスト宣言ではない。囲みの `test('title')`
+    // が既に 1 件として計上されているため、注釈も数えると二重計上になる。
+    // 実測: tests/e2e の修飾子 22 件のうち 16 件がこの注釈形で、
+    // 静的走査 52 に対し `bunx playwright test --list` の実測は 39。
+    it("本体内の test.skip(condition) 注釈は testCount に数えない", async () => {
+        root = makeFixture({
+            "tests/e2e/annotation.spec.ts": `
+                test.describe('a11y', () => {
+                    test('checkout が違反ゼロ', async ({ page }, testInfo) => {
+                        test.skip(testInfo.project.name !== 'chromium', 'chromium 限定');
+                        test.slow();
+                        await page.goto('/checkout');
+                    });
+                    test('profile が違反ゼロ', async () => {
+                        test.skip(
+                            !process.env.CLERK_SECRET_KEY,
+                            'Clerk 未設定'
+                        );
+                    });
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は 2 件のみ（注釈 test.skip x2 / test.slow x1 は数えない）
+        expect(results[0]?.testCount).toBe(2);
+    });
+
+    // 一方で `test.skip('title', fn)` は**宣言**であり、実行時に skipped な
+    // テストケースとして reporter に出る。注釈と区別して計上を維持する。
+    it("宣言形の test.skip('title', fn) は引き続き testCount に数える", async () => {
+        root = makeFixture({
+            "tests/e2e/declaration.spec.ts": `
+                test.describe('group', () => {
+                    test('running', () => {});
+                    test.skip('pending rewrite', () => {});
+                    test.fixme('broken', async () => {});
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(3);
+    });
+
     // Playwright の test.describe / test.describe.skip は wrapper であり、
     // 修飾子を許容した結果これらを数え始めると testCount が過大になる。
     it("test.describe / test.describe.skip は wrapper として testCount から除外する", async () => {
