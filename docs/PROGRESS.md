@@ -1904,3 +1904,164 @@ CodeRabbit のレビュー指摘 24 件を精査（誤検出なし）。plan/doc
 | スイート数 | 175 | **175**（不変） |
 | スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 17 コメントの精査と対応（第 5 弾） (2026-07-28)
+
+#### 概要
+
+全 17 件を実測でリポジトリに突き合わせ、**確認済み 17 / 誤検知 0**。実コード 3 件を
+Red → Green で修正し、docs 11 件は plan/audit の整合修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.test.ts` | `get`/`delete` 系 5 関数の文言を正規表現アンカーで完全一致に固定（Red・件数不変） | `8a648282` |
+| `src/queries/coupon.ts` | 第 4 弾で `upsert` 系に入れた `isDomainError` を `get`/`delete` 系へ適用（Green） | `2cc7368d` |
+| `src/components/dashboard/.../columns.test.tsx`（seller クーポン） | 編集モーダルの reject 処理を固定する新規スイート（**+7**） | `e1a8b710` |
+| seller クーポン `columns.tsx` | `getCoupon` reject に try/catch + destructive トースト + `setClose()`（Green） | `8df613c1` |
+| `scripts/coverage-dashboard/scan-tests.test.ts` / `.ts` | `EACH_PATTERN` が `it.skip.each` / `test.only.each` を拾わない欠陥（回帰 +1） | `73d68b57` / `15ff8eb2` |
+
+**根本原因の要点**:
+
+- **coupon（第 4 弾の同一欠陥クラスの残存）**: `if (!couponId) throw` が `try` の内側にあり
+  catch が汎用文言で上書き。既存 5 アサーションは `toThrow(string)` の**部分一致**で、
+  ラップ後の文言にも部分文字列として含まれるため**全件 pass しており欠陥を守っていなかった**。
+- **モーダル**: plan 058 で `storeURL` 引数が加わり reject 経路ができたが、ADR-003 の
+  fire-and-forget IIFE が `console.error` するだけで、**ユーザーには何も伝わらずモーダルは
+  行スナップショットのまま開き続け、未検証データを編集できた**。
+- **scan-tests**: `it.each` 欠測（`c1be6d7`）・`test.skip(` 欠測（`ff9f5c28`）に続く**同型 3 度目**。
+  リポジトリ内に該当構文が 0 件のため集計値は不変で、将来のドリフトに対する防御。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1761 passed / 1764 total | **1769 passed**（+8） |
+| スイート数 | 175 | **176**（`columns.test.tsx` 新規） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.18% | **66.48%** |
+
+---
+
+### CodeRabbit レビュー 20 コメントの精査と対応（第 6 弾） (2026-07-30)
+
+#### 概要
+
+全 20 件を実測で突き合わせ、**確認済み 20 / 誤検知 0**（実コード 6 / docs 14）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/api/webhooks/route.ts` | `user.deleted` の id 無検証キャストを tx 開始前の 400 で閉塞（`it.each` +4） | `4e4534d1` / `87a766df` |
+| `src/lib/db-retry.ts` | `maxAttempts` の `0` / `NaN` を下限 1 でクランプ（+5） | `333c5e26` / `cd6cc148` |
+| `src/queries/coupon.ts` | `toggleCouponActive` の `'Coupon not found.'` を `isDomainError` へ追加（+1） | `f36716a2` / `4c0d2bbc` |
+| admin クーポン `columns.tsx` | `getCouponAsAdmin` reject の未処理を seller 版と同形に（+5） | `563488b3` / `31b3f269` |
+| `security-headers.spec.ts` / `playwright.config.ts` | `E2E_USE_DEV` を `isEnabled`（`trim()==="1"`）へ統一（**破壊的変更**） | `7d6347df` / `37e1603b` |
+| `scripts/coverage-dashboard/scan-tests.ts` | 注釈形 `test.skip(cond, reason)` の二重計上を是正（+2） | `83673910` / `88f4eee5` |
+
+**根本原因の要点**:
+
+- **webhook（最重大）**: Clerk の `DeletedObjectJSON.id` は optional。`undefined` を Prisma の
+  `where` に渡すと**「フィルタなし」と解釈される**ため、`updateMany({ where: { userId: undefined } })`
+  = **全 SupportTicket の PII 上書き**、`deleteMany({ where: { id: undefined } })` = **全 User 削除**へ退化。
+- **db-retry**: `?? DEFAULT` は `0` / `NaN` が nullish でないため素通り。`0` だと for が 1 周も
+  回らず `throw undefined` になり、下流の `instanceof Error` 型ガードが全崩れする。
+- **E2E 集計の訂正（重要）**: 第 4 弾の「23→37 で一致」という記録は、**注釈形 16 件ぶんの
+  過大計上がたまたま古い基準値 37 に着地したもの**で真の値ではなかった。実行時実測は **39**
+  （`--list` の 117 tests ÷ 3 ブラウザ）、修正後の静的値は **36**。残差 **3** はループ生成ぶんで、
+  **静的走査の原理的限界**として明記した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1769 passed | **1786 passed**（+17） |
+| スイート数 | 176 | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.48% | **66.53%** |
+
+---
+
+### CodeRabbit レビュー 21 コメントの精査と対応（第 7 弾） (2026-07-30)
+
+#### 概要
+
+全 21 件を実測で突き合わせ、**確認済み 21 / 誤検知 0**（依存 1 / 実コード 2 / docs・plans 18）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `package.json` | `next` を `~16.2.12` へ bump（新規 9 advisory・HIGH 4 の圏内に**再露出**していた） | `129dfcac` / `74ad8f0e` |
+| `src/lib/db-retry.ts` | `baseDelayMs` の小数・非有限を正規化（+3） | `992d19a2` / `406751a1` |
+| `src/queries/paypal.ts` | P2025 の無条件 `already settled` 写像を、再読で確定した場合のみに限定（+1） | `3fdc64a9` / `910a2b4a` |
+
+**根本原因の要点**:
+
+- **依存の再露出**: `GHSA-6gpp-xcg3-4w24`（App Router の Middleware/Proxy バイパス）は plan 057 が
+  閉じた `GHSA-26hh-7cqf-hhc6` と**同じ脅威モデルの再発**。「plan NNN で bump 済み ＝ 恒久解決」
+  ではないことを DEPS-08 に教訓として記録した（057 の Done criteria は履歴として上書きしない）。
+- **db-retry**: `randomInt` は整数しか受理せず、小数で**catch の内側から `ERR_INVALID_ARG_TYPE`**
+  が飛び、投げ返すはずの P2034 が TypeError に化けて `isSerializationFailure` が全て空振りした。
+- **paypal**: P2025 は CAS 不一致に固有でなく、order の並行削除等でも返る。**実障害が
+  「決済確定済み」として誤報告**され呼び出し側が調査もリトライもしなくなる。`stripe.ts` の
+  既存解法（catch 内で再読し実際に settled のときだけ正規化・`d976b1e8`）を移植した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1786 passed | **1790 passed**（+4） |
+| スイート数 | 176 | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.53% | **66.55%** |
+
+---
+
+### CodeRabbit レビュー 20 コメントの精査と対応（第 8 弾） (2026-07-30)
+
+#### 概要
+
+全 20 件を実測で突き合わせ、**確認済み 20 / 誤検知 0**（実コード 3 / docs 17）。実コード 3 件は
+いずれも Red → Green を別コミットで実測。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/db-retry.ts` | `baseDelayMs` の**有限の巨大値**を `MAX_BASE_DELAY_MS = 60_000` で上限クランプ（+3） | `82b38c02` / `8159bb2c` |
+| `src/queries/stripe.ts` | canceled 後の再作成キーを**観測した canceled intent の id** から導出（上限 3 回・+2） | `5aa5f6f8` / `f9d7a50f` |
+| `src/queries/paypal.ts` | capture **前**に `GET /v2/checkout/orders/{id}` で相関・金額・通貨を検証（+4） | `7138512c` / `71104354` |
+| docs 17 件 | 実行可能ゲート 3 / 完了ゲート昇格 3 / 自己矛盾 5 / 根拠精度 2 / 数値是正 2 / 統計同期 2 | `1201b907` 他 |
+
+**根本原因の要点**:
+
+- **db-retry（第 7 弾の残存）**: 第 7 弾は小数・非有限を閉じたが、`2 ** 48` 以上の**有限の巨大値**は
+  素通しのままで `randomInt` が `ERR_OUT_OF_RANGE` を投げ、同じく P2034 が化けていた。
+- **stripe**: canceled 後の再作成キーが `randomUUID()` 由来で**呼び出しごとに別キー**になり、
+  **canceled を観測した後だけ二重送信防御が消えて**いた（`4111e0ad` が閉じたはずの経路の裏口）。
+- **paypal（資金移動）**: capture を**先に**叩き `custom_id` / `amount` / `currency` を**課金後**に
+  検証していたため、検証で throw しても**金は既に動いている**。既存の capture 後検証は
+  **削除せず二重防御として残した**。
+- **docs 側の実行可能ゲート 3 件は、合格側 exit 0 / 違反注入側 exit 1 を実際に実行して両方向確認**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1790 passed | **1799 passed / 1802 total**（+9） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+> **付記**: 本ラウンドで `COVERAGE_REPORT.md §1` の「テスト総数」行が第 7 弾の +4 を取り込めず
+> 1786 のまま据え置かれていた**台帳ドリフト**を 1799 へ是正した（SSOT の `QA_HANDOFF.md` は
+> 当時から正しく 1790 を保持していた）。PROGRESS.md 側は第 4 弾（1761）で終端しており、
+> 本エントリ群（第 5〜8 弾）がその 4 ラウンドぶんの遡及反映にあたる。
