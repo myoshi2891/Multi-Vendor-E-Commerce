@@ -357,6 +357,29 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   fi
   ```
 
+- [ ] `signInWithPassword` に **`expect(passwordInput).toBeVisible()` が存在する**
+      （`:219` が必須と定めたアサーション）。上の 3 本は「分岐が**無い**こと」しか見ておらず、
+      **アサーションごと消しても全部 PASS する** —— 分岐を消す最も簡単な方法は待機そのものを
+      削ることなので、禁止だけを検査するゲートは「直し方を間違えた実装」を素通しする。
+      不在検査と存在検査は別物なので、同じ `$body` に対して別に掛ける:
+
+  ```bash
+  # 上のブロックで抽出済みの $body を再利用する（抽出失敗は既に FAIL 済み）。
+  # `expect(passwordInput)` と `.toBeVisible(` の間で Prettier が改行しうるため、
+  # ここでも tr で 1 行化してから照合する。
+  if printf '%s' "$body" \
+       | tr '\n' ' ' \
+       | grep -qE 'expect\([[:space:]]*passwordInput[[:space:]]*\)[[:space:]]*\.toBeVisible[[:space:]]*\('; then
+      echo "OK: passwordInput の可視性アサーションが存在する";
+  else
+      echo "FAIL: 必須の expect(passwordInput).toBeVisible() が無い"; false;
+  fi
+  ```
+
+  実測（2026-07-31）: `signInWithPassword` を持つ合成フィクスチャに対し、
+  アサーションあり = **exit 0** / アサーションを削除した版 = **exit 1**。
+  改行チェーン（`await expect(passwordInput)\n    .toBeVisible({ … })`）でも合格側を検出することを確認済み。
+
   **空抽出を PASS にしないこと（2026-07-28 修正）。** 旧形は awk の起動条件に
   `/\{[[:space:]]*$/`（宣言行が `{` で終わる）を要求していた。Prettier が引数を
   折り返してシグネチャが複数行になると、この条件が成立せず `f=1` が立たない:
