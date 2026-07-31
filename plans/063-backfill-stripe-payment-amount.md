@@ -282,8 +282,13 @@ from Jest:
 ALL must hold:
 
 - [ ] The deploy boundary (not merely the commit timestamp) is recorded in this plan.
-- [ ] The Step 5 query returns `still_wrong = 0` — which, by including the explicit `IS NULL` arm,
-      covers both out-of-range rows **and** rows whose `ratio` is NULL.
+- [ ] The Step 5 query satisfies **both** of its counts, judged separately (they must not be summed
+      — see "Verification passes only when both hold" in Step 5):
+      **(a)** `still_wrong = 0` (out-of-range rows admit no exception), **and**
+      **(b)** `null_ratio` equals the count of the approved "unresolved zero-total list" from Step 3
+      — not necessarily 0 — with the surviving `ratio IS NULL` **id set** matching that list, not
+      merely its cardinality. `still_wrong` does **not** cover the NULL bucket: the `NOT BETWEEN`
+      FILTER is three-valued, so a NULL ratio is neither true nor false and never counted there.
 - [ ] Rows that were neither `≈1` nor `≈100` are enumerated and individually resolved, or
       explicitly recorded as unresolved with a reason.
 - [ ] **Rows with `ratio IS NULL` (zero-total orders) are enumerated and individually resolved, or
