@@ -147,8 +147,30 @@ Write the Step 2 result to a file and summarise:
 - total candidate rows, and how many have `ratio ≈ 100` / `ratio ≈ 1` / neither / **`ratio IS NULL`
   (zero-total orders)** — the four buckets must sum to the candidate total, which is the arithmetic
   check that no row was silently dropped by three-valued logic
-- **the exact count of rows the Step 4 `UPDATE` is expected to affect** (the `ratio ≈ 100` bucket).
-  This number is what the approver signs off on, and Step 4 compares against it before `COMMIT`.
+- **the exact count of rows the Step 4 `UPDATE` is expected to affect** (the `ratio ≈ 100` bucket),
+  **together with a checksum of that bucket's `id` set**. Both are what the approver signs off on,
+  and Step 4 compares against both before `COMMIT`.
+
+  ```sql
+  -- Step 4 が同じ述語で再計算して突合する。件数と id 集合の両方を出す。
+  SELECT count(*)                                                       AS will_update,
+         md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id), '')) AS candidate_digest
+  FROM   "PaymentDetails" pd
+  JOIN   "Order" o ON o.id = pd."orderId"
+  WHERE  pd."createdAt" < :deploy_boundary
+    AND  pd."paymentMethod" = 'Stripe'
+    AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;
+  ```
+
+  > **なぜ件数だけでは足りないか。** 承認と実行の間は非同期に空くので、その間に候補集合が
+  > **入れ替わる**ことがある —— 1 行が手作業で修正されて候補から外れ、別の 1 行が新たに
+  > 候補へ入れば、**件数は一致したまま対象行が違う**。件数の一致は「承認された行に対して
+  > UPDATE した」ことを含意しない。`ORDER BY` 付きの `string_agg` は id 集合を決定論的な
+  > 1 文字列へ畳むので、集合が 1 行でも変われば digest が変わる。
+  >
+  > `coalesce(…, '')` は候補 0 件のときに `string_agg` が NULL を返し、`md5(NULL)` = NULL に
+  > なって**比較が常に不成立（NULL）になる**のを避けるため。0 件は 0 件として
+  > 決定論的な digest（空文字列の md5）を持つべきで、「比較不能」に落としてはいけない。
 - the min/max `createdAt` of the rows to be updated
 - the total monetary delta the update will apply
 - **the unresolved zero-total list — an enumeration, not a count.** For the `ratio IS NULL` bucket,
@@ -180,18 +202,22 @@ Only after approval. Use a corrective migration (never edit an existing migratio
 ```sql
 BEGIN;
 
--- 1) 影響行数を UPDATE の前に確定させる（述語は下の UPDATE と完全に同一にすること）
-SELECT count(*) AS will_update
+-- 1) 影響行数**と対象 id 集合の digest** を UPDATE の前に確定させる
+--    （述語は下の UPDATE と完全に同一にすること）
+SELECT count(*)                                                       AS will_update,
+       md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id), '')) AS candidate_digest
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
 WHERE  pd."createdAt" < :deploy_boundary
   AND  pd."paymentMethod" = 'Stripe'
   AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;
 
--- 2) この値を Step 3 の承認済みレポートの件数と目視で突合する。
---    一致しなければ ROLLBACK; を実行してここで中断する（承認の前提が崩れているため）。
+-- 2) **件数と digest の両方**を Step 3 の承認済みレポートと突合する。
+--    どちらか一方でも違えば ROLLBACK; してここで中断する（承認の前提が崩れているため）。
+--    digest が要るのは、承認から実行までの間に 1 行が候補を外れ 1 行が候補に入ると
+--    **件数は一致したまま対象行が入れ替わる**ため。件数一致は行集合の同一性を含意しない。
 
--- 3) 一致した場合のみ UPDATE を実行する
+-- 3) 両方一致した場合のみ UPDATE を実行する
 UPDATE "PaymentDetails" pd
 SET    amount = pd.amount / 100
 FROM   "Order" o
@@ -206,15 +232,21 @@ WHERE  o.id = pd."orderId"
 COMMIT;
 ```
 
-The count check is **not optional bookkeeping**. Between the Step 3 report and the Step 4 execution
-an unbounded amount of time passes — the approval is asynchronous by design. New Stripe rows written
-in that window sit after `:deploy_boundary` and cannot match, but a manual data edit or a restored
-backup can change the candidate set underneath the approval. `COMMIT`ting a row count nobody
-approved defeats the purpose of the approval gate.
+The count-and-digest check is **not optional bookkeeping**. Between the Step 3 report and the Step 4
+execution an unbounded amount of time passes — the approval is asynchronous by design. New Stripe
+rows written in that window sit after `:deploy_boundary` and cannot match, but a manual data edit or
+a restored backup can change the candidate set underneath the approval. `COMMIT`ting a row set
+nobody approved defeats the purpose of the approval gate.
+
+> **The count alone cannot detect that.** A count is a lossy summary of a set: if one row is fixed
+> by hand (leaving the `ratio ≈ 100` bucket) while another regresses into it, the count is
+> unchanged and the comparison passes — while the rows actually updated are not the rows that were
+> approved. The `md5(string_agg(id ORDER BY id))` digest is what makes the check about *which rows*
+> rather than *how many*, and any single-row difference changes it.
 
 > Run this in a session where a failed comparison can actually stop the script. Do **not** paste the
 > whole block into `psql` at once — the `COMMIT` at the bottom would execute regardless of what the
-> count showed, which is exactly the failure the check exists to prevent.
+> comparison showed, which is exactly the failure the check exists to prevent.
 
 The `ratio BETWEEN 99 AND 101` predicate makes the update **self-guarding and idempotent**: a row
 already in dollars has `ratio ≈ 1` and cannot match, so re-running the statement is a no-op rather
@@ -295,8 +327,10 @@ ALL must hold:
       explicitly recorded as unresolved with a reason.** These never match the Step 4 predicate, so
       "the update reported 0 affected rows" is not evidence that they were correct.
 - [ ] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
-- [ ] The Step 4 pre-`UPDATE` count matched the approved report count, and the `UPDATE <n>` echo
-      matched it as well.
+- [ ] The Step 4 pre-`UPDATE` count **and `candidate_digest`** both matched the approved report,
+      and the `UPDATE <n>` echo matched the count as well. The digest is required, not a nicety:
+      equal counts do not prove the same rows — one row leaving the bucket while another enters
+      keeps the count identical while changing what gets written.
 - [ ] Step 4 was run twice on staging and the second run reported 0 affected rows.
 - [ ] Human approval for the production write is recorded (who, when, on which report).
 - [ ] `plans/README.md` CORRECTNESS-05 entry updated to reflect the closed remainder.
