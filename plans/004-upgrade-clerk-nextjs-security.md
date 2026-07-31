@@ -229,8 +229,27 @@ ALL must hold:
 - [ ] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
 - [ ] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
       transitive advisory. This is **not implied** by the `@clerk/nextjs` number; it is reached via
-      `@clerk/shared`, so verify it on its own:
-      `grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`
+      `@clerk/shared`, so verify it on its own.
+
+      Read the **resolved** entry, not a dependency declaration. `bun.lock` writes the two in
+      different shapes: `"js-cookie": "3.0.7"` inside `@clerk/shared`'s `dependencies` object is
+      the **range that package asks for**, while `"js-cookie": ["js-cookie@3.0.7", …]` at the top
+      level is **what bun actually installed**. Only the latter answers "which version ships".
+      The old form (`grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`) matched only the
+      declaration — and piping into `sort` made it **fail open**, since `sort` exits 0 on empty
+      input, so a lockfile with no js-cookie at all passed the gate.
+
+  ```bash
+  # 解決エントリ（配列形）だけを見る。0 件は「安全」ではなく「検査できていない」
+  if grep -qE '^[[:space:]]*"js-cookie": \["js-cookie@' bun.lock; then
+      grep -oE '"js-cookie": \["js-cookie@[^"]*"' bun.lock
+  else
+      echo "FAIL: bun.lock に js-cookie の解決エントリが無い（検査不成立）"; false
+  fi
+  ```
+
+      実測（2026-07-31）: 現行 `bun.lock` で **exit 0**・`"js-cookie": ["js-cookie@3.0.7"` を出力。
+      解決エントリを除去した複製に対しては **exit 1**（違反注入側も確認済み）。
 - [ ] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `bun run test` exits 0 (full unit suite green)
