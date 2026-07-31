@@ -154,8 +154,8 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    > spike で決めるべきこと:
    >
    > 1. **一意性のスコープ**: グローバル一意（`url @unique` を維持）か、親内一意
-   >    （`@@unique([parentId, url])`）か。後者は `/browse/electronics/camera` のような
-   >    パス全体方式（問い 4）と整合し、**将来の**衝突自体が消える。前者を採るなら 2. が必須。
+   >    （`@@unique([parentId, url])`）か。後者は `?category=electronics/camera` のような
+   >    **親パス込みの slug 解決**（問い 4）と整合し、**将来の**衝突自体が消える。前者を採るなら 2. が必須。
    >    **ただし親内一意を採る場合、ルートカテゴリの一意性戦略を別途明記すること** ——
    >    ルートは `parentId = NULL` であり、PostgreSQL は NULL 同士を「区別される」と扱うため
    >    `@@unique([parentId, url])` は**ルート同士の `url` 重複を防げない**（`electronics` を
@@ -177,7 +177,7 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    >      旧 URL が壊れる。
    >    - **親内一意を採る場合**: リネームは起きないが、URL の**解決規則そのもの**が
    >      「フラットな slug」から「親コンテキスト付き slug」へ変わる。旧 URL
-   >      `/browse/camera` がどの親配下の `camera` を指すのかを決める規則が要り、
+   >      `/browse?category=camera` がどの親配下の `camera` を指すのかを決める規則が要り、
    >      それを書き下したものが結局この対応表になる。
    >
    >    **対応表のキーは「旧 slug」単体にしないこと。** 上で確認したとおり、統合前は
@@ -190,9 +190,17 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    >    - または `(parentSlug, oldSlug)` — 例 `(null, "camera")` / `("electronics", "camera")`
    >
    >    どちらでもよいが、**旧 URL の形からキーを一意に構成できること**を要件にする。
-   >    現行 URL は `/browse/{category}`（種別 = Category・親なし）と
-   >    `/browse/{category}/{subCategory}`（種別 = SubCategory・親 = `{category}`）で
-   >    区別できるため、両案とも旧 URL からキーが決まる。この「旧 URL → キー → 新 slug」の
+   >    現行 URL は **クエリパラメータ**で種別を区別する ——
+   >    `/browse?category={category}`（種別 = Category・親なし）と
+   >    `/browse?subCategory={subCategory}`（種別 = SubCategory）で、
+   >    **どちらのキーで届いたかが URL 上に明示されている**ため、両案とも旧 URL からキーが決まる。
+   >    （`/browse` はパスセグメントを取らない単一ルート
+   >    〔[`src/app/(store)/browse/page.tsx`](../src/app/(store)/browse/page.tsx) の `searchParams`〕
+   >    で、リンク生成側も一貫して `/browse?category=…` / `/browse?subCategory=…` を組み立てる
+   >    〔`category-card.tsx` / `footer/links.tsx` / `categories-menu.tsx`〕。
+   >    **`/browse/{category}/{subCategory}` というパス形のルートは存在しない**ので、
+   >    この spike で「パス全体方式へ移す」判断をする場合は URL 形式の変更そのものが
+   >    移行対象になる。）この「旧 URL → キー → 新 slug」の
    >    経路が閉じていることを ADR に明記し、完了条件に含めること。
    > 4. **事前計測**: 移行を書く前に、実データで衝突件数を数えるクエリを ADR に載せる:
    >    `SELECT count(*) FROM (SELECT url FROM "Category" INTERSECT SELECT url FROM "SubCategory") AS collisions;`
@@ -208,8 +216,12 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
    既存クエリ（`getProducts` の category/subCategory フィルタ、`getAllCategories` の
    storeUrl フィルタ）の書き換え形を示す。
 4. **URL 後方互換**: 既存の `Category.url` / `SubCategory.url`（ともに `@unique`）で届く
-   ストアフロント URL を 301/リライトなしで生かせるか。パス全体（`/browse/electronics/camera`）
-   方式に変える場合のリダイレクト戦略。
+   ストアフロント URL を 301/リライトなしで生かせるか。現行は
+   `/browse?category=electronics&subCategory=camera` というクエリ形なので、選択肢は
+   (a) クエリ形のまま値へ親パスを入れる（`?category=electronics/camera`）か、
+   (b) パス形ルート（`/browse/electronics/camera`）を**新設**して現行クエリ形から
+   リダイレクトするか。(b) は新しいルートセグメントの追加を伴うため、
+   移行コストは (a) より大きい。いずれを採ってもリダイレクト戦略を示すこと。
 5. **深さ制限と運用ルール**: バリデーション上の最大深度（推奨: 5）、「新規商品はリーフのみに
    紐づけ可」の強制方法、非リーフへの既存紐づけの経過措置。
 
@@ -281,9 +293,15 @@ ALL を満たすこと:
   - **親内一意（`@@unique([parentId, url])`）も URL 互換性の検討を免れない。** 現行スキーマは
     `Category.url` / `SubCategory.url` がともに `@unique`（`prisma/schema.prisma:46,62`）で、
     **既存の参照は slug 単体で解決している** —— browse の絞り込みは
-    `src/queries/product.ts:631-640` が `db.category.findFirst({ where: { url: filters.category } })`
-    で category を引き当てている。親内一意へ緩めると、異なる親の下に同一 slug が並んだ時点で
-    この照合が**曖昧になり任意の 1 件を拾う**（404 ではなく静かに誤ったカテゴリの商品を返す）。
+    `src/queries/product.ts:632-640` が `db.category.findUnique({ where: { url: filters.category } })`
+    で category を引き当てている（`subCategory` も直後で同型）。
+    **`findUnique` である点が重要**: このメソッドは Prisma が一意と認識する列でしか
+    呼べないため、`url @unique` を外して `@@unique([parentId, url])` へ移した瞬間に
+    **型エラーで通らなくなる**。つまりこの照合は「親内一意にすると曖昧になる」のではなく
+    **書き換えが強制される**（`findFirst` へ落とせば通るが、それは異なる親の下の同一 slug から
+    任意の 1 件を拾う実装 —— 404 ではなく静かに誤ったカテゴリの商品を返す —— になる）。
+    コンパイルが落ちる箇所は棚卸しで漏れないが、`findFirst` で黙らせる誘惑があるため
+    ADR に方針を書き下すこと。
     したがって親内一意を選ぶ場合、ADR は次の 3 点を持つこと:
     1. slug 単体で引いている既存コードパスの棚卸し（最低でも `product.ts` の browse フィルタ）
     2. それらを親パス込みの解決（`/browse?category=parent/child` 等）へ移す方針、または
