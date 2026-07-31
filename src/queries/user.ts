@@ -19,6 +19,29 @@ import {
 import { ShippingAddress } from "@prisma/client";
 
 /**
+ * `placeOrder` の注文トランザクションに課す実行時間上限。
+ *
+ * Prisma の interactive transaction は既定で `maxWait 2s` / `timeout 5s`。
+ * 注文トランザクションはカート消費 → 住所の `SELECT … FOR UPDATE` → 商品取得 →
+ * 店舗ごとの OrderGroup / OrderItem 作成 → 在庫の条件付き減算 → 合計確定、と
+ * 書き込みが多く、**注文点数に比例して伸びる**。既定の 5s を超えると P2028 で
+ * ロールバックし、ユーザーには注文失敗として返る。
+ *
+ * 上限を明示するのは可読性のためだけではない。このトランザクションは住所行の
+ * 排他ロックを保持するため、**timeout は並行チェックアウトが待たされる時間の
+ * 上限でもある**。暗黙の既定値に委ねてよい値ではない。
+ *
+ * - `timeout`: 大きめの注文でも通るよう既定 5s → 20s。DB 側で無限に居座らせない
+ *   ための天井であって、通常の所要時間ではない。
+ * - `maxWait`: プールから接続を待つ上限。既定 2s のままだと接続が逼迫した瞬間に
+ *   注文が落ちるため 5s へ。
+ */
+const ORDER_TRANSACTION_OPTIONS = {
+    maxWait: 5_000,
+    timeout: 20_000,
+} as const;
+
+/**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.1
  *              - If the user is already following the store, unfollow it.
@@ -689,7 +712,7 @@ export const placeOrder = async (
             deliveryDetailsMap.set(storeId, deliveryResults[index]);
         });
 
-        // 全DB操作をトランザクションでラップ
+        // 全DB操作をトランザクションでラップ（上限は ORDER_TRANSACTION_OPTIONS）
         const order = await db.$transaction(async (tx) => {
             // 冪等性ゲート: カート行を「単一使用トークン」として消費する。
             //
@@ -891,7 +914,7 @@ export const placeOrder = async (
             });
 
             return order;
-        });
+        }, ORDER_TRANSACTION_OPTIONS);
 
         return { orderId: order.id };
     } catch (error: unknown) {
