@@ -250,7 +250,8 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 > **500 は STOP 条件ではない。** 未処理例外が error boundary へ到達する現実装は
 > **既知のアプリバグ**（本来は `notFound()` で 404 が正しい）だが、本プランは
 > characterization テストであり、**現挙動を記録した上でテストは pass させる**。
-> 500 を観測しても止まらず、Step 4 のとおり `expect(response?.status()).not.toBe(200)` +
+> 500 を観測しても止まらず、Step 4 のとおり
+> `expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)` +
 > `toHaveCount(0)` で「公開されていない」ことだけを契約にし、500 である事実は
 > コメントと Maintenance notes に記録する（**assert では固定しない** —
 > 理由は Step 4 の blockquote）。
