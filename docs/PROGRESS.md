@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-07-30 時点）
+## 現在の状態（2026-07-31 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1799 passed / 1802 total / 176 スイート（175 passed + 1 skipped suite）** — 2026-07-30 実測（CodeRabbit レビュー対応 第 8 弾の回帰 +9・スイート数不変）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1803 passed / 1806 total / 176 スイート（175 passed + 1 skipped suite）** — 2026-07-31 実測（CodeRabbit レビュー対応 第 10 弾の回帰 +2・スイート数不変）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -2122,3 +2122,84 @@ Red → Green で修正し、docs 11 件は plan/audit の整合修正。
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
 | カバレッジ | S 66.61 / B 46.71 / F 55.03 / L 65.63 | **S 66.61 / B 46.71 / F 55.09 / L 65.61** |
+
+### CodeRabbit ローカルレビュー 22 コメントの精査と対応（第 10 弾） (2026-07-31)
+
+VS Code の CodeRabbit 拡張が `main ← dev` に対して出したローカルレビュー 22 件。GitHub PR の
+コメントではないため `gh api` では取得できず、指摘の見出しと実ファイルを突き合わせて判定した。
+結果は **確認済み 21 / 誤検知 1**。
+
+#### 実コード 2 件（いずれも Red → Green を別コミットで実測）
+
+- **`src/queries/paypal.ts` — タイムアウト予算が本文読み取りに掛かっていなかった**。
+  `fetch` は**ヘッダ受信時点で解決**するので、`finally` の `clearTimeout` を fetch 直後に置くと
+  呼び出し側の `await response.json()` / `.text()` は**予算の外**で走る。PayPal が本文を送り渋る、
+  あるいは接続が半開きのまま滞留すると server action がそこで無期限に待つ。第 9 弾で
+  「retrieve と capture の予算共有」を閉じたが、**どちらの予算もヘッダ境界で終わっていた**。
+  `Response` を返す形自体が誤用を誘発する（呼び出し側が `await response.json()` と書いた瞬間に
+  予算外へ出る）ため、ヘルパー内で `text()` まで読み切ってから解放し `{ ok, status, body }` を
+  返す形へ変更した。パースは呼び出し側の `JSON.parse`、`json()` ではなく `text()` を使うのは
+  非 JSON のエラー本文でヘルパー内 throw させないため（+1・`bf725e39` Red → `9f614860` Green）。
+- **`src/queries/user.ts` — 注文トランザクションの実行時間上限が暗黙だった**。
+  `placeOrder` の `db.$transaction` はオプション無しで、上限は Prisma 既定の
+  maxWait 2s / timeout 5s。カート消費 → 住所の `SELECT … FOR UPDATE` → 商品取得 →
+  店舗ごとの OrderGroup / OrderItem 作成 → 在庫 CAS → 合計確定と書き込みが多く、
+  注文点数に比例して伸びる。**この timeout は住所行の排他ロックを保持する時間の上限＝
+  並行チェックアウトが待たされる時間の上限でもある**ため、暗黙の既定値に委ねてよい値ではない。
+  `ORDER_TRANSACTION_OPTIONS`（maxWait 5s / timeout 20s）で明示した。`saveUserCart` の
+  トランザクションは Serializable + 再試行付きの 2 文で既定内に収まるため変更していない
+  （+1・`9ebbe104` Red → `af786cb5` Green）。
+
+#### 誤検知 1 件（修正せず記録）
+
+`src/app/api/webhooks/route.test.ts:341-344` の「`supportTicket` / `user` がそれぞれ二重に宣言され
+型リテラルが `Duplicate identifier` で失敗する」という指摘は、**リポジトリの実体と一致しない**。
+`grep -c` は両プロパティとも **1**、`bunx tsc --noEmit --pretty false` は **exit 0 / 出力 0 行**。
+提示された diff の削除行は実ファイルに存在せず、適用すれば `route.ts:137-149` が実際に使っている
+正しい型宣言を壊す。
+
+#### docs 19 件
+
+- **実行可能ゲート 4 件**（すべて合格側 exit 0 / 違反注入側 exit 1 を実測して確認）:
+  004 の js-cookie 検証が `@clerk/shared` の**依存宣言**にしか当たらず解決エントリ
+  （`"js-cookie": ["js-cookie@3.0.7", …]`）を取りこぼし、かつ `sort` が空入力で exit 0 を返す
+  **fail open** だった件 / 042 が必須と定めた `expect(passwordInput).toBeVisible()` を
+  **存在検査していなかった**件（禁止だけを見るゲートは「待機ごと削除した実装」を素通しする）/
+  044 のゲートが `reuseExistingServer` の**極性**を見ず `!!` 反転でも合格し、実行行検出が
+  コメントにも当たっていた件 / ja/009 の構造ゲートが 1 行化でコメント・デッドコードも
+  合格させていた件。
+- **自己矛盾 4 件**: 003 en·ja の TOCTOU が `RESOLVED` と書きながら末尾で実 DB 未検証を認めていた /
+  021 の組み合わせ表が **(B) 遅延ワーカー × (P3) 主処理を失敗させる**を成立扱いしていた
+  （B は記録が主処理の**後**に来るのでロールバック対象が存在せず、成立させようとすると
+  必ず (P1) 原子的 Outbox に吸収される）/ 050 が禁止した `response?.status()` を処方として
+  残していた / 057 の `DONE (1 criterion pending)`。
+- **参照先ドリフト 3 件**: 013 の browse URL がパス形とクエリ形で割れていた
+  （実装は `searchParams` 単一ルートでパス形は存在しない）＋ `findFirst` は実体が
+  **`findUnique`**（`@unique` 前提のため親内一意化すると型エラーで書き換えが強制される）/
+  041 の coupon.ts 行参照が全面的に 50〜100 行ずれ / findings-06 の Next 現行版 `~16.2.12` が
+  README の rejected 節へ未伝播。
+- **契約の穴 2 件**: 029 の `process.env.TZ` 復元漏れ（ワーカー共有のため後続ファイルへ波及）/
+  063 の承認ゲートが**件数一致だけ**で、1 行離脱＋1 行流入でも同数になり行集合の同一性を
+  保証できなかった件（`md5(string_agg(id ORDER BY id))` の digest 突合を追加）。
+- **現況の分解 1 件**: findings-13 の TESTS-02 を決済経路ごとに分けた。実測で
+  **Stripe は `$transaction` + CAS で解消済み**（`stripe.ts:275-310`）、**PayPal は未解消**
+  （`paypal.ts:399` の upsert と `:441` の update が別書き込み。`4261be0` が入れたのは
+  `notSettled()` の CAS 条件であって `$transaction` ではない）。deferred の理由が
+  「優先度」と「依存」で異なる。
+- **完了形の誤記 1 件**: 044 の Maintenance notes が `E2E_NO_REUSE` を「閉じてある」と断言して
+  いたが、`playwright.config.ts:60` は `reuseExistingServer: !process.env.CI` のみ、
+  `run-local.sh` に該当 export は 0 件、README の Status も TODO。
+- **SSOT 統一 1 件**: D2 の導入コストが `render-html.ts`=S / `QA_HANDOFF.md`・
+  `COVERAGE_REPORT.md`=M で割れていた（`documentation-guide.md` 規定に従い S へ統一）。
+- **本ラウンドの統計同期 3 件**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1801 passed / 1804 total | **1803 passed / 1806 total**（+2） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.61 / B 46.71 / F 55.09 / L 65.61 | **S 66.66 / B 46.71 / F 55.15 / L 65.65** |

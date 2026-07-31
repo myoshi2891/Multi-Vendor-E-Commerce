@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1801 passed / 1804 total across 176 suites (3 skipped), as of 2026-07-31.
+- 1803 passed / 1806 total across 176 suites (3 skipped), as of 2026-07-31.
   Two regressions from the CodeRabbit review round, ninth pass (+2, no new suites).
   `paypal.test.ts` 27→29 (retrieve and capture shared a single 10s timer / `AbortController`,
   so a slow retrieve could abort the capture mid-flight, and `clearTimeout` ran only after a
