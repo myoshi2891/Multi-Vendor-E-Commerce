@@ -325,7 +325,12 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
    （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
    amount が食い違う（または非 `usd`）retrieve 済み intent が
    `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
-5. **住所所有権の読み取りは注文トランザクション内に置くべき。Status: 解決済み（2026-07-31）。**
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。**
+   **Status: コード修正は完了（2026-07-31）／実 DB 並行検証は deferred。**
+   2 つを意図的に分けて追跡する。文は正しいロックを取るようになった（ユニットテストで
+   検証済み）が、「PostgreSQL が実際に並行書き込みをブロックすること」は実 DB に対して
+   一度も実行していない。これを一律の「解決済み」と読むと、**未消化の検証項目が
+   閉じたことになってしまう** —— 本項末尾の「ユニットテストでは覆えない範囲」を参照。
    Step 3（202-209 行）は `findFirst` を `$transaction` の**外**で行っていたため、
    チェックと `order.create` の間で住所が削除・再割当てされる TOCTOU 窓が残っていた。
    `placeOrder`（`src/queries/user.ts`）は現在、`shippingAddressId` を書く**直前に同一 `tx`

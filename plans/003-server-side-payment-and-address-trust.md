@@ -326,7 +326,13 @@ gaps, not completed work:
    but a mismatched amount (or non-`usd` currency) must throw
    `"Payment intent amount/currency mismatch."` with no `order.update`.
 5. **The address-ownership read should sit inside the order transaction.**
-   **Status: RESOLVED (2026-07-31).** Step 3 (lines 202-209) did the `findFirst`
+   **Status: code fix landed (2026-07-31) — real-DB verification still deferred.**
+   The two halves are tracked separately on purpose: the statement now takes the
+   right lock (verified by unit test), but "PostgreSQL actually blocks the
+   concurrent writer" has not been executed against a real database. Reading this
+   as a flat RESOLVED would retire an open verification item that is still open —
+   see the *Not covered by unit tests* note at the end of this entry.
+   Step 3 (lines 202-209) did the `findFirst`
    *before* the `$transaction`, leaving a TOCTOU window where the address could be
    deleted/reassigned between the check and the `order.create`. `placeOrder`
    (`src/queries/user.ts`) now takes a **row lock inside the same `tx`**,
