@@ -34,6 +34,20 @@ jest.mock("@/lib/db", () => ({
 const mockFetch = jest.fn() as jest.Mock<Promise<Partial<Response>>>;
 global.fetch = mockFetch as unknown as typeof fetch;
 
+/**
+ * JSON 本文を返す fetch 応答モック。
+ *
+ * 実装は `Response` を呼び出し側へ渡さず、**タイムアウト予算の内側で `text()` まで
+ * 読み切ってから** 本文文字列を返す（`paypal.ts` の `fetchPayPal`）。したがって
+ * モックが備えるべきは `json()` ではなく `text()`。`json()` を生やしても実装は
+ * 呼ばないため、テストが実装の読み取り経路とずれる。
+ */
+const jsonResponse = (body: unknown): Partial<Response> => ({
+    ok: true,
+    status: 200,
+    text: () => Promise.resolve(JSON.stringify(body)),
+});
+
 const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
@@ -80,13 +94,9 @@ describe("createPayPalPayment", () => {
         it("正しい金額でPayPal Orderを作成する", async () => {
             const order = createMockOrder({ total: 99.99 });
             mockDb.order.findUnique.mockResolvedValue(order);
-            mockFetch.mockResolvedValue({
-                json: () =>
-                    Promise.resolve({
-                        id: "PAYPAL-ORDER-123",
-                        status: "CREATED",
-                    }),
-            });
+            mockFetch.mockResolvedValue(
+                jsonResponse({ id: "PAYPAL-ORDER-123", status: "CREATED" })
+            );
 
             const result = await createPayPalPayment("order-001");
 
@@ -106,13 +116,9 @@ describe("createPayPalPayment", () => {
         it("通貨がUSDで送信される", async () => {
             const order = createMockOrder({ total: 50.0 });
             mockDb.order.findUnique.mockResolvedValue(order);
-            mockFetch.mockResolvedValue({
-                json: () =>
-                    Promise.resolve({
-                        id: "PAYPAL-ORDER-456",
-                        status: "CREATED",
-                    }),
-            });
+            mockFetch.mockResolvedValue(
+                jsonResponse({ id: "PAYPAL-ORDER-456", status: "CREATED" })
+            );
 
             await createPayPalPayment("order-001");
 
@@ -123,10 +129,9 @@ describe("createPayPalPayment", () => {
         it("intentがCAPTUREで送信される", async () => {
             const order = createMockOrder({ total: 25.0 });
             mockDb.order.findUnique.mockResolvedValue(order);
-            mockFetch.mockResolvedValue({
-                json: () =>
-                    Promise.resolve({ id: "PP-789", status: "CREATED" }),
-            });
+            mockFetch.mockResolvedValue(
+                jsonResponse({ id: "PP-789", status: "CREATED" })
+            );
 
             await createPayPalPayment("order-001");
 
@@ -139,10 +144,9 @@ describe("createPayPalPayment", () => {
             // 内部 Order を逆引きするため、custom_id の付与は破壊的変更として保護する。
             const order = createMockOrder({ total: 25.0 });
             mockDb.order.findUnique.mockResolvedValue(order);
-            mockFetch.mockResolvedValue({
-                json: () =>
-                    Promise.resolve({ id: "PP-meta", status: "CREATED" }),
-            });
+            mockFetch.mockResolvedValue(
+                jsonResponse({ id: "PP-meta", status: "CREATED" })
+            );
 
             await createPayPalPayment("order-custom-id");
 
@@ -242,15 +246,13 @@ const mockPayPalFetch = ({
     captureResponse?: unknown;
 }) => {
     mockFetch.mockImplementation((input: unknown) =>
-        Promise.resolve({
-            ok: true,
-            json: () =>
-                Promise.resolve(
-                    String(input).endsWith("/capture")
-                        ? captureResponse
-                        : orderResponse
-                ),
-        })
+        Promise.resolve(
+            jsonResponse(
+                String(input).endsWith("/capture")
+                    ? captureResponse
+                    : orderResponse
+            )
+        )
     );
 };
 

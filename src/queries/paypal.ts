@@ -61,16 +61,34 @@ const PAYPAL_TIMEOUT_MS = 10_000;
  *
  * `finally` で必ず `clearTimeout` するため、fetch が解決・拒否のどちらで
  * 抜けてもタイマーはイベントループに残らない。
+ *
+ * **本文の読み取りまでが予算の内側**であることが重要。`fetch` は
+ * **ヘッダを受信した時点で解決**し、本文はまだ 1 バイトも読めていない。
+ * ここで `clearTimeout` してから呼び出し側に `Response` を返すと、その後の
+ * `json()` / `text()` は予算の外で走る —— PayPal が本文を送り渋る、あるいは
+ * 接続が半開きのまま滞留すると、**そこで無期限に待つ**。AbortController は
+ * 本文ストリームの中断も担うので、読み切るまでタイマーを生かしておく。
+ *
+ * そのため本関数は `Response` ではなく**読み取り済みの本文**を返す。呼び出し側で
+ * `await response.json()` を書ける形にすると、その一行が必ず予算の外へ出てしまう。
  */
 const fetchPayPal = async (
     url: string,
     init: RequestInit
-): Promise<Response> => {
+): Promise<{ ok: boolean; status: number; body: string }> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PAYPAL_TIMEOUT_MS);
 
     try {
-        return await fetch(url, { ...init, signal: controller.signal });
+        const response = await fetch(url, {
+            ...init,
+            signal: controller.signal,
+        });
+        // 成功・失敗のどちらでも本文は読む（失敗時はエラーメッセージに載せる）。
+        // text() は json() と違いパースを伴わないため、非 JSON のエラー本文でも
+        // ここで throw しない。JSON への変換は予算の外（呼び出し側）で行う。
+        const body = await response.text();
+        return { ok: response.ok, status: response.status, body };
     } finally {
         clearTimeout(timeoutId);
     }
@@ -168,13 +186,12 @@ export const createPayPalPayment = async (orderId: string) => {
         );
 
         if (response.ok === false) {
-            const errorBody = await response.text();
             throw new Error(
-                `PayPal API responded with status ${response.status}: ${errorBody}`
+                `PayPal API responded with status ${response.status}: ${response.body}`
             );
         }
 
-        const paymentData = await response.json();
+        const paymentData = JSON.parse(response.body);
 
         return paymentData;
     } catch (error: unknown) {
@@ -286,13 +303,12 @@ export const capturePayPalPayment = async (
         );
 
         if (orderResponse.ok === false) {
-            const errorBody = await orderResponse.text();
             throw new Error(
-                `PayPal API responded with status ${orderResponse.status}: ${errorBody}`
+                `PayPal API responded with status ${orderResponse.status}: ${orderResponse.body}`
             );
         }
 
-        const orderData = await orderResponse.json();
+        const orderData = JSON.parse(orderResponse.body);
         const purchaseUnit = orderData.purchase_units?.[0];
 
         // 相関は金額より先に見る。他人の PayPal Order だと判明した時点で、
@@ -330,13 +346,12 @@ export const capturePayPalPayment = async (
         );
 
         if (captureResponse.ok === false) {
-            const errorBody = await captureResponse.text();
             throw new Error(
-                `PayPal API responded with status ${captureResponse.status}: ${errorBody}`
+                `PayPal API responded with status ${captureResponse.status}: ${captureResponse.body}`
             );
         }
 
-        const captureData = await captureResponse.json();
+        const captureData = JSON.parse(captureResponse.body);
 
         const capture =
             captureData.purchase_units?.[0]?.payments?.captures?.[0];
