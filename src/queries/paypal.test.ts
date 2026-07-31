@@ -792,6 +792,65 @@ describe("capturePayPalPayment", () => {
                 jest.useRealTimers();
             }
         });
+
+        it("応答本文の読み取り中もタイムアウト予算が効いている", async () => {
+            // `fetch` は **ヘッダ受信時点で解決する**。本文はまだ 1 バイトも
+            // 読めていない。したがって `clearTimeout` を fetch の直後に置くと、
+            // その後の本文読み取り（`json()` / `text()`）は**予算の外**に出る。
+            // PayPal が Content-Length を宣言したまま本文を送り渋る／
+            // TCP が半開きのまま滞留すると、そこで**無期限に待つ**。
+            //
+            // AbortController は本文ストリームの中断も担うので、タイマーは
+            // 本文を読み切るまで生かしておくのが正しい。予算内に本文読み取りが
+            // 入っているかは「本文が返らないまま予算ぶん時間を進めたとき、
+            // fetch に渡した signal が abort されるか」で判定できる。
+            jest.useFakeTimers();
+            try {
+                let capturedSignal: AbortSignal | undefined;
+                // ヘッダは即座に返るが、本文は永久に解決しない応答。
+                // 現行実装は `json()`、修正後は `text()` を読むため両方を塞ぐ。
+                const neverSettles = () => new Promise<never>(() => {});
+                mockFetch.mockImplementation(
+                    (_input: unknown, init: { signal: AbortSignal }) => {
+                        capturedSignal = init.signal;
+                        return Promise.resolve({
+                            ok: true,
+                            status: 200,
+                            json: neverSettles,
+                            text: neverSettles,
+                        });
+                    }
+                );
+
+                // 本文が返らないので解決しない。ぶら下げたまま予算だけ進める
+                // （未処理 rejection を出さないよう catch を付ける）。
+                const pending = capturePayPalPayment(
+                    "order-001",
+                    "PAYPAL-ORDER-123"
+                ).catch(() => undefined);
+
+                // 実装が「本文読み取りで停止している」地点まで確実に進める。
+                // ここを飛ばして時間を進めると、fetch 解決後の `clearTimeout` が
+                // まだ走っていないだけの状態を「予算が効いている」と誤判定する
+                // （マイクロタスク 1〜2 回では await 連鎖を抜けきらない）。
+                for (let i = 0; i < 50; i++) await Promise.resolve();
+
+                // signal を受け取れていないなら、そもそも検証が成立していない
+                expect(mockFetch).toHaveBeenCalled();
+                expect(capturedSignal).toBeInstanceOf(AbortSignal);
+
+                // paypal.ts の PAYPAL_TIMEOUT_MS（module-private のため直値）
+                jest.advanceTimersByTime(10_000);
+
+                // 予算が本文読み取りに掛かっていれば abort されている。
+                // fetch 直後に clearTimeout していると false のまま = 無期限待ち。
+                expect(capturedSignal?.aborted).toBe(true);
+
+                void pending;
+            } finally {
+                jest.useRealTimers();
+            }
+        });
     });
 
     describe("IDOR防止（他人の orderId 拒否）", () => {
