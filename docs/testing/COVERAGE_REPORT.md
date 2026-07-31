@@ -137,7 +137,7 @@
   > [!NOTE]
   > `scripts/coverage-dashboard/render-html.ts:NEXT_ACTIONS` is the authoritative SSOT to prevent future drift.
 - **背景**: 下記 C1 残課題「ホーム `/` は OI-9（featured.tsx の SSR window バグ）で計測対象外」の解消。`/` を予算化し売上導線トップの退行を検知
-- **コスト感**: **M**
+- **コスト感**: **S**（[`scripts/coverage-dashboard/render-html.ts`](../../scripts/coverage-dashboard/render-html.ts) の `NEXT_ACTIONS` が SSOT。2026-07-31 に本表と `QA_HANDOFF.md` を SSOT の `cost: "S"` へ同期）
 - **期待効果**: Performance 0% 行を前進。OI-9 クローズで本番 SSR の 500 リスクも同時に解消
 - **即時 TODO**: [`QA_HANDOFF.md`「次回着手用 依頼プロンプト」D2](./QA_HANDOFF.md)
 
