@@ -170,11 +170,33 @@
 
 | # | 所見 | Round 5 時点の現状（直接確認） | 裁定 |
 |---|---|---|---|
-| TESTS-02 | capture 経路の非原子 2 書き込みが統合テスト不能 | 未解消。`src/queries/stripe.ts` / `paypal.ts` の capture 側はテスト以前に `$transaction` 化（plan 003 隣接）が先 | **deferred 維持**（コード修正が先行依存。032 の webhook 側とは対象コードが別）<br>**⚠️ 2026-07-19 追記**: 先行依存としていた **plan 003 は DONE**（[`../README.md`](../README.md) の Status 表が正）。さらに Round 14 で capture 経路が 2 つの**別事象**で変化したため、本行の「未解消」は **Round 5 時点の記述**。<br>2 コミットを併記すると「両方が CAS 対応」と読めるので分けて記す: `4261be0` = **PayPal の settled-state ガードを CAS update 条件で原子化**（`fix(paypal): make the settled-state guard atomic with a CAS update condition`）/ `e63474b` = **Stripe の金額単位修正**（`fix(stripe): store payment amount in dollars to match the Decimal(12,2) column` — CAS ではなく `Decimal(12,2)` 列に合わせたドル建て保存。CORRECTNESS-05 のコード側、残件は [plan 063](../063-backfill-stripe-payment-amount.md)）。再評価は [`VETTED_FINDINGS.md`](VETTED_FINDINGS.md) の「Round 14 追記」節を参照 |
+| TESTS-02 | capture 経路の非原子 2 書き込みが統合テスト不能 | **決済経路ごとに状況が違う（下記）。Round 5 時点の「未解消」は Stripe 側については古い** | **deferred 維持**（ただし理由は経路で異なる — 下記）。032 の webhook 側とは対象コードが別 |
 | TESTS-04 | webhook ハンドラーの実 DB 冪等性なし | 未解消を再確認（両 route の unit テストは db 全モック） | **TESTS-16 に昇格 → plan 032** |
 | TESTS-05+08 | placeOrder オーバーセルロールバック + PLATFORM 端数 | plan 027（TODO）が既存。本ラウンドの 031 は**注文後のライフサイクル（restock 側）**でシナリオ非重複 | plan 027 維持（重複プラン作成せず） |
 | TESTS-06 | restock 二重実行ガードの実 DB テストなし | 未解消を再確認（`order.ts:562-651` / `:459-510`） | **TESTS-15 に昇格 → plan 031** |
 | TESTS-14 | 2026-06 追加機能のゲスト E2E 導線 | E2E 領域のため本ラウンド対象外 | deferred 維持（Round 4 裁定を変更しない） |
+
+### TESTS-02 の現況 — 決済経路ごと（2026-07-31 実測）
+
+TESTS-02 は元々「capture 経路の**非原子 2 書き込み**（`paymentDetails.upsert` → `order.update`）」
+という**単一の所見**として起票されたが、その後 Stripe と PayPal は**別々のコミットで別々の方向**へ
+動いた。1 行に畳むと「両方が同じ状態」と読めてしまうため、経路ごとに分けて記す。
+
+| 経路 | 原子性の現況（実測） | 先行依存 | deferred の理由 |
+|---|---|---|---|
+| **Stripe**（`src/queries/stripe.ts:275-310`） | **解消済み**。`db.$transaction` 内で `tx.paymentDetails.upsert` → `tx.order.update` を実行し、`order.update` の `where` に `paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] }`（CAS）を持つ | **なし**（コード修正は完了） | **優先度の判断のみ**。原子性の前提が整ったので統合テストは**着手可能** |
+| **PayPal**（`src/queries/paypal.ts:399-455`） | **未解消**。`db.paymentDetails.upsert`（`:399`）と `db.order.update`（`:441`）は**別々の書き込み**でトランザクションに入っていない。`4261be0` が入れたのは `notSettled()` の **CAS 条件**であって `$transaction` ではない —— 退行レース（webhook との競合）は閉じたが、**upsert 成功後に update が落ちれば PaymentDetails だけが進む**という部分適用は残る | **`$transaction` 化のコード修正**が先行 | **依存によるブロック**（Stripe 側とは理由が違う） |
+
+- Round 14 で動いた 2 コミットは**別事象**なので併記しない: `4261be0` = PayPal の settled-state
+  ガードを CAS update 条件で原子化（`fix(paypal): make the settled-state guard atomic with a CAS
+  update condition`）/ `e63474b` = Stripe の**金額単位**修正（`fix(stripe): store payment amount in
+  dollars to match the Decimal(12,2) column` — CAS ではなく `Decimal(12,2)` 列に合わせたドル建て
+  保存。CORRECTNESS-05 のコード側、残件は [plan 063](../063-backfill-stripe-payment-amount.md)）。
+  **どちらも「capture 経路を `$transaction` 化した」コミットではない。**
+- 先行依存としていた **plan 003 は DONE**（[`../README.md`](../README.md):66 の Status 表が正）なので、
+  「003 待ち」を理由にした deferred は Stripe / PayPal どちらにも**もう当てはまらない**。
+  PayPal 側に残る依存は 003 ではなく、上表の「`$transaction` 化のコード修正」である。
+- 再評価は [`VETTED_FINDINGS.md`](VETTED_FINDINGS.md) の「Round 14 追記」節を参照。
 
 ## Considered and rejected（Round 5・再監査防止）
 
