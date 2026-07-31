@@ -235,7 +235,7 @@ cat node_modules/js-cookie/package.json | grep '"version"'
   - 実測（2026-07-30）: `bun audit` の `next` ブロック消失 / `node_modules/next` 解決版 **16.2.12** /
     `bunx tsc --noEmit` exit 0 / `bun run build` 成功 / `src/middleware.test.ts` 11 件 green。
 - **Impact**: **アドバイザリは解決済み**（`16.2.12` で上記 9 件すべての影響範囲外）。
-  ただし plan 057 自体は **DONE (1 criterion pending)** であり「未解決事項なし」ではない ——
+  ただし plan 057 自体は **DONE (security) / 1 criterion pending** であり「未解決事項なし」ではない ——
   Step 5（未認証 `/dashboard` の redirect スモーク）の結果が
   [`057:246-251`](../057-upgrade-next-middleware-bypass.md) にも
   [`../README.md`](../README.md):120 にも記録されていない。report-only の手動チェックで
