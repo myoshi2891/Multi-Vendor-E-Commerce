@@ -27,11 +27,20 @@ import { expect, test } from "@playwright/test";
  * 実際に焼き込まれた値は次で確認できる:
  *   node -p "JSON.stringify(require('./.next/routes-manifest.json').headers)"
  *
- * さらに `includeSubDomains` / `preload` は**個別の明示 opt-in**（`HSTS_INCLUDE_SUBDOMAINS` /
+ * さらに `includeSubDomains` / `preload` は**明示 opt-in**（`HSTS_INCLUDE_SUBDOMAINS` /
  * `HSTS_PRELOAD`）でのみ付く。全サブドメインの HTTPS 強制と preload リスト登録は
  * 取り消しが非可逆に近いため、本番ドメインであっても所有者が個別に選ぶ設計
- * （plan 061 / CodeRabbit 指摘）。期待値も同じ規則で組み立てて、
- * 「opt-in なしで拡張ディレクティブが付く」退行を検知する。
+ * （plan 061 / CodeRabbit 指摘）。
+ *
+ * ただし 2 つは**独立ではない**。`HSTS_PRELOAD=1` は `includeSubDomains` を
+ * **強制する** —— preload リストの登録要件が `includeSubDomains` を伴う宣言を
+ * 求めるため、片方だけの「不完全な preload 宣言」を作らせない
+ * （next.config.mjs:66-69 と同じ規則）。したがって opt-in の組み合わせは
+ * 3 通り: なし / includeSubDomains のみ / includeSubDomains + preload。
+ * 「preload だけが付く」状態は存在しない。
+ *
+ * 期待値も同じ規則で組み立てて、「opt-in なしで拡張ディレクティブが付く」退行と
+ * 「preload が includeSubDomains を伴わない」退行の両方を検知する。
  *
  * ブラウザ描画は不要なため page ではなく request（APIRequestContext）を使う。
  */
