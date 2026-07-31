@@ -490,5 +490,8 @@ Stop and report back (do not improvise) if:
 
   したがって「本体が未対応だから並行ディスパッチテストを書かない」は `updateOrderPaymentStatus` には
   当てはまらない。group-level 側のみ、条件付き `updateMany` への統一（`updateOrderPaymentStatus`
-  と同型の修正）が**本体修正**として残っており、これを別プラン候補として README の deferred に残す。
-  本プランはテスト追加のみのため group-level の本体修正は行わない。
+  と同型の修正）が**本体修正**として残っており、別プラン候補として
+  [`plans/README.md` の Deferred 節](README.md#deferred-meaningful-findings-not-planned-this-round)
+  に「`updateOrderGroupStatusAsAdmin` の並行二重復元」として**記録済み**（2026-07-31）。
+  本プランはテスト追加のみのため group-level の本体修正は行わない。したがって本プラン完了後も
+  group-level の並行二重復元は**未解決のまま残る**（プラン完了 ≠ ギャップ解消）。
