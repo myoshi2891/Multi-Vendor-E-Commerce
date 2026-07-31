@@ -1515,6 +1515,32 @@ describe("placeOrder", () => {
             });
         });
     });
+
+    describe("トランザクションの実行時間上限", () => {
+        it("注文トランザクションは明示的な timeout / maxWait を宣言する", async () => {
+            // Prisma の interactive transaction は既定 maxWait 2s / timeout 5s。
+            // placeOrder はカート消費 → 住所の FOR UPDATE ロック → 商品取得 →
+            // 店舗ごとの OrderGroup / OrderItem 作成 → 在庫 CAS → 合計確定 と
+            // 書き込みが多く、注文点数に比例して伸びる。既定 5s を超えると
+            // P2028 でロールバックされるが、**その 5s はコードのどこにも書かれて
+            // いない** —— 上限を読むには Prisma の既定値を知っている必要がある。
+            //
+            // 上限そのものより「上限が明示されていること」を固定する。ロック
+            // （SELECT … FOR UPDATE）を保持する時間の上限は、並行リクエストの
+            // 待ち時間の上限でもあるため、暗黙の既定値に委ねてよい値ではない。
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            expect(mockDb.$transaction).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    timeout: expect.any(Number),
+                    maxWait: expect.any(Number),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
