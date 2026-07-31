@@ -12,6 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1801 passed / 1804 total across 176 suites (3 skipped), as of 2026-07-31.
+  Two regressions from the CodeRabbit review round, ninth pass (+2, no new suites).
+  `paypal.test.ts` 27→29 (retrieve and capture shared a single 10s timer / `AbortController`,
+  so a slow retrieve could abort the capture mid-flight, and `clearTimeout` ran only after a
+  successful capture — the verification-mismatch throws leaked the timer. The rows assert the two
+  `fetch` calls receive **distinct `signal` instances** and that the retrieve-side mismatch path
+  still releases its timer).
+  `user.test.ts` stays at 67 — closing the shipping-address ownership race replaced the existing
+  TOCTOU assertions rather than adding to them: `tx.shippingAddress.findFirst` (a plain SELECT
+  that takes no row lock) became `$queryRaw` + `SELECT … FOR UPDATE`, so the test now pins that
+  the locking read happens before `order.create` and that an empty result throws
+  `"Shipping address not found."` without creating an order.
 - 1799 passed / 1802 total across 176 suites (3 skipped), as of 2026-07-30.
   Nine regressions from the CodeRabbit review round, eighth pass (+9, no new suites).
   `db-retry.test.ts` 16→19 (an `it.each` of two rows — `2 ** 48` and `Number.MAX_SAFE_INTEGER` —

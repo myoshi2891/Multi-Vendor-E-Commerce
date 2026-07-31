@@ -2065,3 +2065,60 @@ Red → Green で修正し、docs 11 件は plan/audit の整合修正。
 > 1786 のまま据え置かれていた**台帳ドリフト**を 1799 へ是正した（SSOT の `QA_HANDOFF.md` は
 > 当時から正しく 1790 を保持していた）。PROGRESS.md 側は第 4 弾（1761）で終端しており、
 > 本エントリ群（第 5〜8 弾）がその 4 ラウンドぶんの遡及反映にあたる。
+
+---
+
+### CodeRabbit レビュー 15 コメントの精査と対応（第 9 弾） (2026-07-31)
+
+#### 概要
+
+`dev → main` PR の CodeRabbit 15 コメントを実測でリポジトリに突き合わせ、
+**確認済み 14 / 誤検知 1**（実コード 2 / docs 13）。実コード 2 件は資金移動と IDOR に
+直結するため Red → Green を別コミットで実測した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/paypal.test.ts` | retrieve と capture が**異なる `signal`** を受け取ることを固定（Red・**+2**） | `ee61b9bb` |
+| `src/queries/paypal.ts` | 各 fetch を「controller 生成 → fetch → `finally` で `clearTimeout`」のヘルパーへ分離（Green） | `5ac6022b` |
+| `src/queries/user.test.ts` | `$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する契約へ書き換え（Red・件数不変） | `4600451c` |
+| `src/queries/user.ts` | 住所所有権の再検証を `SELECT … FOR UPDATE` へ置換（Green） | `f77dafd8` |
+| `specs/.../06-quality.md` | P2025 の正規化を「再読で確定した場合のみ」へ実装と整合 | `8e60a417` |
+| `plans/003-*.md` + `ja/003` | 住所 TOCTOU を「行ロックで閉塞済み」へ更新 | `a9d7f420` |
+| `plans/004-*.md` | 検証日時の 3 箇所統一 + js-cookie ゲートを解決済みエントリ向けに修正 | `c9d1b07a` |
+| `plans/031-*.md` + `plans/README.md` | group-level の並行二重復元を deferred として**実際に起票** | `e6b93f50` |
+| `plans/057-*.md` | Step 1 の旧バージョン抽出コマンドを正典パイプラインへ | `7e82f1ac` |
+| `plans/059-*.md` / `061` / `063` | helper 参照先 / five headers / 完了条件の二条件判定 | `e626664d` / `3a4a4656` / `6009ff74` |
+| `plans/ja/011-*.md` / `ja/002` | bash 要求の明記 / enum 実測根拠の追記 | `8573fd8e` / `6efb0573` |
+| `plans/audit/findings-13-*.md` | SHA 略記を台帳と同じ 7 桁へ統一 | `e80a06d9` |
+| `docs/PROGRESS.md` | 第 5〜8 弾の履歴を backfill | `c86465ea` |
+
+**根本原因の要点**:
+
+- **paypal（資金移動）**: 第 8 弾で capture **前**の検証 GET を挿入した結果、1 リクエストぶん
+  だった 10s 予算に 2 本目が乗った。`controller` は 1 個しか作られず両者が同じ `signal` を
+  共有するため、**retrieve が 9.9s かかると capture は残 0.1s で abort される**。さらに
+  `clearTimeout` は capture 成功後にしか無く、検証不一致の throw 経路ではタイマーが残っていた。
+- **user（IDOR）**: `tx.shippingAddress.findFirst` は**素の SELECT で行ロックを取らない**ため、
+  チェックと `order.create` の間に `userId` 付け替えが割り込めた。`FOR UPDATE` は付け替え側の
+  `FOR NO KEY UPDATE` と競合するので Read Committed 下でも commit までブロックされ、
+  ロック取得後の述語再評価（EvalPlanQual）で先行 commit 時は行が脱落して throw する。
+  実 DB での並行閉塞は unit がモック境界で止まるため観測できず、`plans/README.md` の
+  deferred に testcontainers での検証として記録した。
+- **誤検知 1 件（修正の性格が違う）**: findings-13 の `4261be0c` / `e63474b6` は「誤った SHA」
+  ではなく**同一コミットの 8 桁略記**で、`git cat-file -e` は解決する。監査追跡は壊れていない。
+  台帳（VETTED_FINDINGS.md / README.md）が 7 桁で書いている段落内での**表記統一**として修正した。
+  実測ではリポジトリ全体の略記はユニークで 7 桁 421 / 8 桁 92 であり、8 桁も広く使われている
+  ため一括統一は行っていない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1799 passed / 1802 total | **1801 passed / 1804 total**（+2） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.61 / B 46.71 / F 55.03 / L 65.63 | **S 66.61 / B 46.71 / F 55.09 / L 65.61** |
