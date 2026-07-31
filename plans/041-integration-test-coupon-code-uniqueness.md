@@ -43,12 +43,12 @@ UX の回帰網になり、「code をグローバル一意のままにするか
 
 - `prisma/schema.prisma:672` — `code String @unique`（**グローバル一意**）。Coupon model は
   `storeId String?`（nullable — PLATFORM クーポンは null）+ `scope CouponScope @default(STORE)`。
-- `src/queries/coupon.ts:32-106` — seller 経路 `upsertCoupon(coupon: Coupon, storeURL: string)`。
+- `src/queries/coupon.ts:61-167` — seller 経路 `upsertCoupon(coupon: Coupon, storeURL: string)`。
   **変更しない。** 要点:
-  - `:38` — `requireStoreOwner(storeURL)` で SELLER + 店舗所有権を検証
-  - `:50-60` — `coupon.id` の既存行を findUnique し、他店舗/PLATFORM 所有なら
+  - `:67` — `requireStoreOwner(storeURL)` で SELLER + 店舗所有権を検証
+  - `:81-88` — `coupon.id` の既存行を findUnique し、他店舗/PLATFORM 所有なら
     `'Forbidden: coupon not owned by current store.'`
-  - `:64-76` — 事前重複チェック（**自店舗スコープのみ**）:
+  - `:93-105` — 事前重複チェック（**自店舗スコープのみ**）:
 
 ```typescript
         const existingCoupon = await db.coupon.findFirst({
@@ -66,9 +66,9 @@ UX の回帰網になり、「code をグローバル一意のままにするか
         }
 ```
 
-  - `:80-88` — `db.coupon.upsert({ where: { id: coupon.id }, ... })`。update/create とも
+  - `:117-143` — `db.coupon.upsert({ where: { id: coupon.id }, ... })`。update/create とも
     `storeId: store.id` + `scope: 'STORE'` を強制
-  - `:94-100` — P2002 フォールバック（**他店舗/PLATFORM との code 衝突はここだけが捕捉する**）:
+  - `:146-151` — P2002 フォールバック（**他店舗/PLATFORM との code 衝突はここだけが捕捉する**）:
 
 ```typescript
         if (
@@ -79,10 +79,10 @@ UX の回帰網になり、「code をグローバル一意のままにするか
         }
 ```
 
-- `src/queries/coupon.ts:379-419` — admin 経路 `upsertCouponAsAdmin(coupon: Coupon)`。
-  **変更しない。** `requireAdmin()`（:380）→ 事前チェック**なし**で upsert（:395-399）→
-  P2002 を同じ日本語メッセージへ変換（:402-408）。scope は入力を尊重
-  （PLATFORM なら storeId を null に正規化、STORE なら storeId 必須 — :384-393）。
+- `src/queries/coupon.ts:478-557` — admin 経路 `upsertCouponAsAdmin(coupon: Coupon)`。
+  **変更しない。** `requireAdmin()`（:479）→ 事前チェック**なし**で upsert（:504-527）→
+  P2002 を同じ日本語メッセージへ変換（:532-537）。scope は入力を尊重
+  （PLATFORM なら storeId を null に正規化、STORE なら storeId 必須 — :485-502）。
 - **認可ガードのモック形**（`src/lib/auth-guards.ts`）:
   - `requireStoreOwner` は `requireSeller`（`privateMetadata?.role !== "SELLER"` で判定）→
     `db.store.findUnique({ where: { url: storeUrl, userId: user.id } })`。Clerk mock は
@@ -90,7 +90,7 @@ UX の回帰網になり、「code をグローバル一意のままにするか
     （store は実 DB から引くため `seedStore` の `url` と `userId` が一致している必要がある）
   - `requireAdmin` は `privateMetadata?.role !== "ADMIN"` で判定。admin シナリオでは
     `{ id: adminUserId, privateMetadata: { role: "ADMIN" } }` に差し替える
-- **`Coupon` は `@prisma/client` の型**（coupon.ts:8）。テストから渡す入力はフル shape が必要:
+- **`Coupon` は `@prisma/client` の型**（coupon.ts:11）。テストから渡す入力はフル shape が必要:
 
 ```typescript
 function buildCouponInput(overrides: Partial<Coupon> = {}): Coupon {
@@ -259,8 +259,11 @@ P2002 で弾こうが正しく緑・正しく赤になる。実装の内部構�
 
 ```typescript
 mockDb.coupon.findFirst.mockResolvedValue(null);   // 事前チェックは素通りさせる
-// 実装は create ではなく `db.coupon.upsert` を呼ぶ（coupon.ts:57）。P2002 はその upsert の
-// race フォールバック（coupon.ts:83）で捕捉されるため、モックは upsert に仕込む。
+// 実装は create ではなく `db.coupon.upsert` を呼ぶ（seller 経路: coupon.ts:117）。
+// P2002 はその upsert の race フォールバック（coupon.ts:146-151）で捕捉されるため、
+// モックは upsert に仕込む。admin 経路も同型で、upsert が coupon.ts:504、
+// P2002 分岐が coupon.ts:532-537（`upsertCouponAsAdmin`）。両経路とも
+// `'このクーポンコードは既に使用されています'` へ変換する。
 mockDb.coupon.upsert.mockRejectedValue(
     new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
         code: "P2002",
@@ -364,7 +367,7 @@ Stop and report back (do not improvise) if:
   グローバルでなくなっている（schema が変わった）。characterization の前提が崩れているので、
   実際の unique 定義を添えて報告
 - シナリオ 2 のエラーメッセージが日本語メッセージでなく生の Prisma エラーになる —
-  P2002 フォールバック（coupon.ts:94-100）のドリフト。実際のエラー内容を添えて報告
+  P2002 フォールバック（coupon.ts:146-151）のドリフト。実際のエラー内容を添えて報告
 - シナリオ 2 で **既存行が変化する / 行数が増える**（拒否されたのに副作用が残っている）—
   「拒否は副作用なしで成立する」という本プランの不変条件そのものが崩れている。
   実際の行内容を添えて報告
