@@ -313,6 +313,19 @@ data: {
 `StoreStatus` は `import { ..., StoreStatus, ... } from "@/lib/types"` で取り込む。
 本訂正は**プラン本文を実装に合わせた**ものであり、実装側の変更は伴わない。
 
+**実測根拠**（2026-07-31 再確認。「enum を代入して大丈夫なのか」を読者が再検証せずに済ませるため）:
+
+| 実測項目 | 結果 |
+|---|---|
+| アプリ側の型 | `src/lib/types.ts:509` の **TS `enum`**（文字列 enum。`PENDING = "PENDING"` 他 4 メンバー） |
+| Prisma 側の型 | `node_modules/.prisma/client/index.d.ts:182-189` — `export type StoreStatus = (typeof StoreStatus)[keyof typeof StoreStatus]` すなわち **リテラル union** `'PENDING' \| 'ACTIVE' \| 'BANNED' \| 'DISABLED'` |
+| 代入可否 | 文字列 enum メンバーの型は基底となる文字列リテラル型の subtype なので、**union へ代入可能**（逆向き＝ union から enum への代入は不可） |
+| コンパイル検証 | `bunx tsc --noEmit` → **exit 0**（`src/queries/store.ts:180` `upsertStore` / `:514` `applySeller` の 2 箇所が `status: StoreStatus.PENDING` を含んだ状態で） |
+
+したがって Step 4 の主張（インライン `data: { … }` は contextual typing が効くので `"PENDING"`
+でも通る／enum でも通る）は、**型定義の形とコンパイル結果の両方で裏付けられている**。
+一方 Step 3 のような独立リテラルは widening が起きるため enum 表記が必須である点も変わらない。
+
 ### 通常の保守メモ
 
 - `prisma/schema.prisma` に新しい seller 編集可能な Store カラムが追加された場合、`SELLER_EDITABLE_STORE_FIELDS` に追加すること — さもないと seller によるそのフィールドの編集がサイレントに no-op になる。
