@@ -320,6 +320,10 @@ past what the steps describe, so do not read the step text as the current spec:
   verification in Step 3 must be revisited — it defensively reads `custom_id` from two locations.
 - The webhook path (`src/app/api/webhooks/paypal/route.ts`) has the **same class of gap**
   (unconditional status overwrite — SECURITY-17). This plan deliberately does not touch it; when
-  that deferred finding is planned, reuse the exported `isSettledPaymentStatus` here.
+  that deferred finding is planned, reuse `isSettledPaymentStatus` — it lives in
+  [`src/lib/payment-status.ts`](../src/lib/payment-status.ts), **not** in `paypal.ts`. The helper
+  cannot be exported from `src/queries/paypal.ts` because that file carries `"use server"`, where
+  every export must be an async function; a synchronous predicate would fail the compile. The
+  webhook route can therefore import it directly from `@/lib/payment-status`.
 - Reviewer should confirm the amount comparison uses `Prisma.Decimal.equals` (not float `===`) and
   that every mismatch path prevents the `Paid` update rather than merely logging.
