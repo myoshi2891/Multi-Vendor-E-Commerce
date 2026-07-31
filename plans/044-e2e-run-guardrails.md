@@ -48,7 +48,7 @@
    > **(C) 実行経路ごとに再利用可否を切り替える**を採用する:
    >
    > ```ts
-   > // playwright.config.ts:47
+   > // playwright.config.ts:60（現行行）
    > reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE,
    > ```
    >
@@ -289,7 +289,7 @@ globalTimeout: 3600 * 1000,
 
   3 本すべてが PASS すること。**トークンの存在だけを見ると、値が空でも・起動行の後ろに
   あっても緑になる** —— どちらも実行時には何の効果も持たないので、ゲートとしては
-  未実装を見逃したのと同じである。現行の `playwright.config.ts:47` は
+  未実装を見逃したのと同じである。現行の `playwright.config.ts:60` は
   `reuseExistingServer: !process.env.CI` で `E2E_NO_REUSE` を一切見ていないため、
   実装前は 1 本目が空で落ちる（＝このゲートが空振りしないことの確認になる）。
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
@@ -307,13 +307,20 @@ globalTimeout: 3600 * 1000,
 
 - テスト総数が大きく増えた場合（plans 045〜050 の実装後）、`globalTimeout` の再見積りが
   必要になり得る。判断材料はフルラン実測の wall-clock（run-local.sh の出力に表示される）。
-- **:3000 の TOCTOU は `E2E_NO_REUSE` で閉じてある**（Why this matters の解決節を参照）。
-  `run-local.sh` が `E2E_NO_REUSE=1` を立て、`reuseExistingServer` が
-  `!CI && !E2E_NO_REUSE` を評価するため、実測経路では再利用が構造的に起こらない。
+> **以下は本プラン実装**後**の到達状態を書いたものであり、現状の説明ではない。**
+> 実測（2026-07-31）: `playwright.config.ts:60` は `reuseExistingServer: !process.env.CI`
+> のみで `E2E_NO_REUSE` を見ておらず、`scripts/e2e/run-local.sh` に該当 export は
+> **0 件**。`plans/README.md` の 044 Status も **TODO**。
+> つまり **:3000 の TOCTOU は現時点では開いている**。この節を「もう閉じてある」と
+> 読んで実装をスキップしないこと。
+
+- **:3000 の TOCTOU は `E2E_NO_REUSE` で閉じる**（Why this matters の解決節を参照）。
+  実装後は `run-local.sh` が `E2E_NO_REUSE=1` を立て、`reuseExistingServer` が
+  `!CI && !E2E_NO_REUSE` を評価するため、実測経路では再利用が構造的に起こらなくなる。
   事前 `lsof` チェックは**安全性の根拠ではなく**、占有時のエラーを読みやすくする
-  ためだけに残している — チェックを消しても安全性は変わらないが、失敗メッセージが
+  ためだけに残す — チェックを消しても安全性は変わらないが、失敗メッセージが
   分かりにくくなる。
-- したがって **`reuseExistingServer` を素の `false` へ書き換えないこと**。素の
+- 実装後は **`reuseExistingServer` を素の `false` へ書き換えないこと**。素の
   `bunx playwright test` で毎回 build/起動が走り、ローカル反復が遅くなる。
   区別すべきは「CI か否か」ではなく「実測経路か反復経路か」であり、それを担うのが
   `E2E_NO_REUSE` である。
