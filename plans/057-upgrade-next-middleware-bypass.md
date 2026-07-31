@@ -43,7 +43,7 @@ The fix is a patch-level bump inside 16.2.x with a small, well-contained blast r
 ## Current state
 
 - `package.json:80` — `"next": "^16.2.1"`; installed/resolved `16.2.1`.
-- Latest available at planning time: **16.2.10** (`bun info next version`). The declared `^16.2.1` already *permits* 16.2.5+, so the lockfile is what currently holds the vulnerable version — but the floor is raised anyway so nobody can resolve back to a vulnerable 16.2.x.
+- Latest available at planning time: **16.2.10** (measured with the pinned-line query — `bun info 'next@~16.2' version`; **not** the unpinned `bun info next version`, see the Correction below). The declared `^16.2.1` already *permits* 16.2.5+, so the lockfile is what currently holds the vulnerable version — but the floor is raised anyway so nobody can resolve back to a vulnerable 16.2.x.
 - `src/middleware.ts` — the protected-route gate (the load-bearing lines):
 
   ```ts
@@ -142,8 +142,18 @@ npm view "next@16.2" version | tail -1
 >
 > `npm view "next@16.2" version` resolves the range `16.2` and prints every matching version in
 > ascending order (one per line, `next@16.2.10 '16.2.10'` form when several match), so `tail -1`
-> takes the newest 16.2.x. `bun info next versions | tr ',' '\n' | grep -o "16\.2\.[0-9]*" | tail -1`
-> is an equivalent bun-only alternative.
+> takes the newest 16.2.x. The bun-only equivalents are `bun info 'next@~16.2' version` (range-pinned
+> query — see the Correction section) or the full pipeline from **Commands you will need** above:
+>
+> ```
+> bun info next versions | tr -d ' "[]' | tr ',' '\n' | grep -E '^16\.2\.[0-9]+$' | sort -V | tail -1
+> ```
+>
+> **Do not** use `bun info next versions | tr ',' '\n' | grep -o "16\.2\.[0-9]*" | tail -1` — it
+> violates points 2 and 3 of the extraction note above (`grep -o` synthesises stable-looking strings
+> out of prereleases; `tail -1` without `sort -V` trusts registry order). 実測 2026-07-31: the 16.2
+> line carries **149** prerelease entries (`16.2.0-canary.*` 他), so `-o` would emit `16.2.0` for
+> `16.2.0-canary.0`; the anchored `^…$` form drops all 149 structurally and returns `16.2.12`.
 
 In `package.json:80`, change `"next": "^16.2.1"` to the latest `16.2.x` pinned with a **tilde**: `~16.2.10` at planning time. **The floor must be at least `16.2.5`** — that is the fixed version the advisories name.
 
