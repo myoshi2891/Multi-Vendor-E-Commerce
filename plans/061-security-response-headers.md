@@ -350,7 +350,9 @@ rather than skipping it silently.
 - No unit test framework exists for Next.js response headers in this repo; verification is the
   config-parses check (Step 1) plus the exact-value curl smoke (Step 2).
 - **Regression guard (added, approved scope extension)**: `tests/e2e/security-headers.spec.ts`
-  asserts all five headers' exact values on `/` and `/checkout`. It uses the `request`
+  asserts the four core headers' exact values on `/` and `/checkout`, plus HSTS **mirrored through
+  the same gate as the config** (`expectHsts` at `security-headers.spec.ts:59` — present with the
+  exact directive string when the signal is on, asserted *absent* when it is off). It uses the `request`
   (APIRequestContext) fixture rather than `page` — no DOM rendering is needed — with
   `maxRedirects: 0` so the `/checkout` redirect response's own headers are what gets asserted.
   Playwright lowercases header names in `response.headers()`, so the expectation map is keyed in
@@ -361,7 +363,12 @@ rather than skipping it silently.
 
 ALL must hold:
 
-- [x] `next.config.mjs` has an `async headers()` returning the five headers above for `source: '/:path*'`
+- [x] `next.config.mjs` has an `async headers()` for `source: '/:path*'` returning the **four
+      unconditional** headers above (`X-Frame-Options` / `X-Content-Type-Options` /
+      `Referrer-Policy` / `Permissions-Policy`), **plus `Strict-Transport-Security` only when the
+      production-domain signal is present** (`next.config.mjs:74` — `isProduction &&
+      !isVercelPreview && isProductionDomain`). "Five headers unconditionally" would contradict the
+      environment-split `4/4` vs `5/5` gate in the criterion below; HSTS is fail-safe OFF by design.
 - [x] `reactStrictMode: false` and the `images.remotePatterns` block are unchanged
 - [x] `node --input-type=module -e "import('./next.config.mjs').then(m=>console.log(typeof m.default.headers))"` prints `function`
 - [x] `bun run lint` exits 0
