@@ -341,7 +341,26 @@ NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 `src/` に `process.env.*` として現れない。旧走査（13 変数）では、**アプリが起動すらできない
 この 3 変数を README から落としても** ゲートは PASS を出す。
 
+> **実行シェルは bash（または zsh）必須。`sh script.sh` で走らせないこと。**
+> 下のゲートは `comm -23 <(…) <(…)` の**プロセス置換**を使う。これは POSIX sh には無い
+> bash/zsh 拡張であり、`[ -n … ]` 等の POSIX 風の書き方が混在しているため「sh でも動く」と
+> 誤読されやすい。実際には**構文エラーで即死**する（実測 2026-07-31）:
+>
+> ```
+> $ dash -c 'comm -23 <(printf "A\n") <(printf "B\n")'
+> dash: 1: Syntax error: "(" unexpected
+> $ sh   -c 'comm -23 <(printf "A\n") <(printf "B\n")'      # macOS /bin/sh = bash --posix
+> sh: -c: line 0: syntax error near unexpected token `('
+> $ bash -c 'comm -23 <(printf "A\n") <(printf "B\n")'      # → A（PASS）
+> ```
+>
+> 構文エラーは**ゲート本体が走る前**に起きるため、CI で `sh` を使うと「変数の欠落を
+> 検出しなかった」のではなく「検査そのものが実行されなかった」失敗になる。フェンスの
+> ```` ```bash ```` 表記は shell 要求の宣言ではないので、スクリプト化する場合は
+> `#!/usr/bin/env bash` を先頭に置き、CI からは `bash script.sh` で呼ぶこと。
+
 ```bash
+#!/usr/bin/env bash
 # 期待集合 = (src/ + ルート設定の process.env 参照) ∪ (.env.docker.example の変数名)
 #
 # grep のルートに next.config.mjs を含める: HSTS_* はリポジトリルートの設定ファイルで
