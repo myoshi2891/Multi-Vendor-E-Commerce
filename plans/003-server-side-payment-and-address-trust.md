@@ -319,6 +319,29 @@ gaps, not completed work:
    e.g. have `findFirst` resolve an address whose fields differ from the
    client-supplied object and assert the stored values match the DB row, not
    the argument.
+
+   > **The stored address fields are not the only thing the client can steer —
+   > pin the shipping *fee* to the DB row too.** `placeOrder` resolves the buyer's
+   > country from the **owned** row (`user.ts:678-679`,
+   > `const countryId = ownedAddress.countryId;`, whose comment already states that
+   > the client-supplied `shippingAddress.countryId` is not trusted) and feeds it to
+   > `resolveCartShippingFee` (`:700`) and
+   > `getDeliveryDetailsForStoreByCountry` (`:746`). So the country decides **money**,
+   > not just the address text printed on the order.
+   >
+   > **The implementation is already correct; what is missing is the test that keeps
+   > it correct.** A regression that swapped `ownedAddress.countryId` back to
+   > `shippingAddress.countryId` would still pass every assertion listed in Step 5,
+   > because none of them look at the fee. This is therefore a *characterization*
+   > test over existing behaviour, not a fix.
+   >
+   > Make the two countries differ and assert on the value: have the ownership read
+   > resolve an address in country **A** while the argument claims country **B**,
+   > where A and B carry different `ShippingRate` rows, and assert the persisted
+   > `OrderItem.shippingFee` / `OrderGroup.shippingFees` match the rate for **A**.
+   > Asserting the fee (not merely that the DB row was read) is what makes the
+   > regression visible — reading the row and then computing from the argument is
+   > exactly the shape of the bug this plan exists to close.
 4. **Amount/currency reconciliation needs its own regression test.** The Step 4
    list (line ~230) pins metadata-mismatch and status mapping but not the
    `paymentIntent.amount !== expectedAmount || currency !== "usd"` guard
