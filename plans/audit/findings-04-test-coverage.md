@@ -24,7 +24,32 @@
   git ls-tree -r --name-only f9752c0 src/components/store/cards/payment/ | grep -i test
   ```
 
-- **再測定（2026-07-27 / HEAD `09275b5d`）**: 上記 4 ファイルは**依然として未カバー**。再現コマンド:
+- **再測定（2026-07-27 / HEAD `09275b5d`）**: 上記の対象は**依然として未カバー**。再現コマンド:
+
+  > **「4 ファイル」は Evidence が名指しした代表であって、監査対象の総数ではない**
+  > （2026-08-01 明示化）。Evidence の 4 番目は `order-page/*` という**グロブ**で、
+  > その配下が何ファイルなのかが本文からは読めない。件数を書かずにグロブで示すと、
+  > 「未カバー 4 件」と読んだ後続ラウンドが実際の規模（下記 11 件）を過小評価する。
+  > 以下に**実測の全リスト**を置く。
+
+  **監査対象（実測 2026-08-01 / HEAD `1e15ea5a`）— 計 11 ファイル / テスト 0 件**:
+
+  | ディレクトリ | ファイル |
+  |---|---|
+  | `cards/payment/stripe/` | `stripe-payment.tsx` / `stripe-wrapper.tsx` |
+  | `cards/payment/paypal/` | `paypal-payment.tsx` / `paypal-wrapper.tsx` |
+  | `checkout-page/` | `container.tsx` |
+  | `order-page/` | `group-table.tsx` / `groups-container.tsx` / `header.tsx` / `payment.tsx` / `pdf-invoice.tsx` / `product-row.tsx` |
+
+  ```bash
+  # 件数の再現（テスト 0 件であることと、母数 11 の両方を出す）
+  find src/components/store/cards/payment \
+       src/components/store/checkout-page \
+       src/components/store/order-page -name "*.tsx" | wc -l          # → 11
+  find src/components/store/cards/payment \
+       src/components/store/checkout-page \
+       src/components/store/order-page -iname "*test*" | wc -l        # → 0
+  ```
 
   ```bash
   git ls-tree -r --name-only 09275b5d tests/component/ | grep -i payment          # ヒット 0
