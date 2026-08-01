@@ -150,7 +150,16 @@ function mockAuthAs(userId: string, role: "SELLER" | "ADMIN"): void {
 - `tests/integration/coupon-code-uniqueness.test.ts` — **新規作成**
 - `src/queries/coupon.test.ts` — シナリオ 2 の (2)（P2002 → 日本語メッセージ変換）を
   実 DB に頼らず直接駆動するユニットテストを **追記**する。本文 (2) が要求しているため
-  in-scope（`bun run test` の総数が +1 される）
+  in-scope（`bun run test` の総数が **+2** される）
+
+  > **`+1` ではなく `+2`（2026-08-01 訂正）。** Done criteria は
+  > 「**seller 経路（`upsertCoupon`）と admin 経路（`upsertCouponAsAdmin`）の両方**について、
+  > **それぞれ独立したテスト**を持つこと」を必須と定めている。両経路は共通ヘルパーを
+  > 経由せず**別々に同じ変換を実装**しているため（`coupon.ts:146-152` と `:532-538`）、
+  > 片方のテストがもう片方を一切カバーしない。さらに admin 経路には
+  > `if (isDomainError(error)) throw error`（`:530`）という seller 側に無い前段があり、
+  > P2002 が確かに変換分岐へ到達することも admin 側テストでしか固定できない。
+  > Scope が `+1` と書いていると、seller 側 1 本で足りると読めて Done criteria と食い違う。
 
 **Out of scope**（触らない）:
 - `src/queries/coupon.ts` — 検証対象本体。**「事前チェックをグローバル化する」「code を
