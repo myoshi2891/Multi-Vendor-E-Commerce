@@ -9,6 +9,7 @@ import {
     SETTLED_PAYMENT_STATUSES,
     isSettledPaymentStatus,
 } from "@/lib/payment-status";
+import { hasOrderSettledAfterConflict } from "@/lib/order-settlement";
 
 /**
  * 状態遷移を伴う `order.update` に付与する CAS 条件。
@@ -468,31 +469,14 @@ export const capturePayPalPayment = async (
         // （呼び出し側は「もう払えている」と信じて調査もリトライもしなくなる）。
         // 実際に確定済みへ変わっているかを再読で確かめ、そのときだけ正規化する
         // （stripe.ts の createStripePayment と同じ契約）。
-        if (isRecordNotFound(error)) {
-            let settled = false;
-            try {
-                const current = await db.order.findUnique({
-                    where: { id: orderId },
-                    select: { paymentStatus: true },
-                });
-                settled =
-                    !!current && isSettledPaymentStatus(current.paymentStatus);
-            } catch (reReadError: unknown) {
-                // 再読自体が失敗した場合は判別できない。元の P2025 を失わないよう、
-                // ここでは握りつぶさず記録だけして下の共通経路へ流す。
-                console.error(
-                    "[paypal:capturePayPalPayment] Failed to re-read order after P2025",
-                    reReadError instanceof Error
-                        ? {
-                              error: reReadError.message,
-                              stack: reReadError.stack,
-                          }
-                        : { error: reReadError }
-                );
-            }
-            if (settled) {
-                throw new Error("Order payment is already settled.");
-            }
+        if (
+            isRecordNotFound(error) &&
+            (await hasOrderSettledAfterConflict(
+                orderId,
+                "[paypal:capturePayPalPayment]"
+            ))
+        ) {
+            throw new Error("Order payment is already settled.");
         }
         // 検証エラー（capture 前の retrieve 突合 / capture 応答突合）は意図した拒否のため、
         // 汎用メッセージで上書きせず透過させる。列挙は VERIFICATION_REJECTIONS が SSOT。

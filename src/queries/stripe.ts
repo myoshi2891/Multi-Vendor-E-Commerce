@@ -5,6 +5,7 @@ import {
     isSettledPaymentStatus,
     SETTLED_PAYMENT_STATUSES,
 } from "@/lib/payment-status";
+import { hasOrderSettledAfterConflict } from "@/lib/order-settlement";
 import { currentUser } from "@clerk/nextjs/server";
 import { PaymentStatus, Prisma } from "@prisma/client";
 import Stripe from "stripe";
@@ -331,28 +332,12 @@ export const createStripePayment = async (
             error instanceof Prisma.PrismaClientKnownRequestError &&
             error.code === "P2025"
         ) {
-            let settled = false;
-            try {
-                const current = await db.order.findUnique({
-                    where: { id: orderId },
-                    select: { paymentStatus: true },
-                });
-                settled =
-                    !!current && isSettledPaymentStatus(current.paymentStatus);
-            } catch (reReadError: unknown) {
-                // 再読自体が失敗した場合は判別できない。元の P2025 を失わないよう、
-                // ここでは握りつぶさず記録だけして下の共通経路へ流す。
-                console.error(
-                    "[Stripe:createStripePayment] Failed to re-read order after P2025",
-                    reReadError instanceof Error
-                        ? {
-                              error: reReadError.message,
-                              stack: reReadError.stack,
-                          }
-                        : { error: reReadError }
-                );
-            }
-            if (settled) {
+            if (
+                await hasOrderSettledAfterConflict(
+                    orderId,
+                    "[Stripe:createStripePayment]"
+                )
+            ) {
                 throw new Error("Order payment is already settled.");
             }
         }
