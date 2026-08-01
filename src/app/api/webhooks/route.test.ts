@@ -460,6 +460,36 @@ describe("POST /api/webhooks", () => {
             }
         );
 
+        it("前後に空白を含む id は trim 後の値で絞り込む", async () => {
+            // 検証は `rawUserId.trim() === ""` で行うため `"  user_x  "` は通過する。
+            // 検証した値と実際に絞り込みへ渡す値が食い違うと、trim 後なら一致する
+            // ユーザーに対して 0 件ヒットの削除・PII 秘匿が「成功」として 200 を返し、
+            // GDPR 消去が黙って空振りする。検証対象と使用値を一致させることを固定する。
+            const eventData = { data: { id: "  user_padded  " } };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 1 });
+            mockDeleteMany.mockResolvedValue({ count: 1 });
+
+            const response = await POST(createWebhookRequest(eventData));
+
+            expect(response.status).toBe(200);
+            expect(mockSupportTicketUpdateMany).toHaveBeenCalledWith({
+                where: { userId: "user_padded" },
+                data: {
+                    name: REDACTED_PII,
+                    email: REDACTED_PII,
+                    subject: REDACTED_PII,
+                    message: REDACTED_PII,
+                },
+            });
+            expect(mockDeleteMany).toHaveBeenCalledWith({
+                where: { id: "user_padded" },
+            });
+        });
+
         it("db.user.deleteManyが失敗した場合500を返す", async () => {
             const eventData = {
                 data: {
