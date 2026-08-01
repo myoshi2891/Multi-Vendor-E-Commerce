@@ -551,6 +551,49 @@ describe("saveUserCart", () => {
 
             expect(mockGetShippingDetails).toHaveBeenCalled();
         });
+
+        it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
+            // Arrange: ITEM 方式・在庫 0。追加個数は max(0, 0-1) = 0 個として扱われ、
+            // 基本配送料のみが残るべき。追加配送料を「マイナス 1 個分」引いてはならない。
+            const cartProducts = [createMockCartProduct({ quantity: 1 })];
+            mockGetCookie.mockReturnValue(
+                JSON.stringify({ name: "Japan", code: "JP" })
+            );
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 10,
+                extraShippingFee: 3,
+                isFreeShipping: false,
+            });
+            const outOfStockProduct = createMockFullProduct({
+                variants: [
+                    {
+                        ...createMockProductVariant(),
+                        sizes: [createMockSize({ quantity: 0 })],
+                        images: [createMockVariantImage()],
+                    },
+                ],
+            });
+            mockDb.product.findUnique.mockResolvedValue(outOfStockProduct);
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            // Act
+            await saveUserCart(cartProducts as never);
+
+            // Assert: 10 + 3 * 0 = 10（10 - 3 = 7 になってはいけない）
+            expect(mockDb.cart.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        cartItems: expect.objectContaining({
+                            create: expect.arrayContaining([
+                                expect.objectContaining({
+                                    shippingFee: new Prisma.Decimal("10"),
+                                }),
+                            ]),
+                        }),
+                    }),
+                })
+            );
+        });
     });
 });
 
@@ -828,6 +871,59 @@ describe("placeOrder", () => {
             expect(
                 mockDb.cart.deleteMany.mock.invocationCallOrder[0]
             ).toBeLessThan(mockDb.order.create.mock.invocationCallOrder[0]);
+        });
+
+        it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
+            // Arrange: 在庫 0 の商品が注文明細に載っても、負の配送料が
+            // OrderItem / OrderGroup 合計へ流れ込んではならない
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct({
+                    variants: [
+                        {
+                            ...createMockProductVariant(),
+                            sizes: [createMockSize({ quantity: 0 })],
+                            images: [createMockVariantImage()],
+                        },
+                    ],
+                })
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 10,
+                extraShippingFee: 3,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.order.create.mockResolvedValue(createMockOrder());
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+
+            // Act
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // Assert: 10 + 3 * 0 = 10（10 - 3 = 7 になってはいけない）
+            expect(mockDb.orderItem.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        shippingFee: new Prisma.Decimal("10"),
+                    }),
+                })
+            );
         });
 
         it("カートが既に消費済みなら注文を作成せず Cart not found. を投げる", async () => {
