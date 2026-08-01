@@ -12,9 +12,27 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1829 passed / 1832 total across 177 suites (3 skipped), as of 2026-08-01.
+  Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
+  `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template
+  literals and comments as code. A file that carries scanned-source **as fixture strings** inflated
+  to a multiple of its real size — `scan-tests.test.ts` itself reported **81 on the dashboard
+  against 21 at runtime**, and `hasSkip` was a false positive from the same source. `findMaskedSpans`
+  now enumerates the non-code ranges once per file and `BLOCK_PATTERN` / `EACH_PATTERN` /
+  `SKIP_PATTERN` discard any match landing inside one. **The literals are not stripped** — the title
+  in `it("title", fn)` *is* a string literal, so stripping would destroy the declaration itself;
+  the test is on the match position. Dashboard corrections: `scan-tests.test.ts` **81→24** and
+  `size.test.ts` **9→8** (the latter had a **commented-out** `it(` at `:144` counted as a
+  declaration). No other file's `testCount` or `hasSkip` moved).
+  **Two figures in the eleventh-pass entry are corrected here.** `webhooks/route.test.ts` was
+  **19→20, not 20→21** — the raw `it(` count is 15 at `4e4534d1` and 16 at `5c1ec584`, and the
+  runtime figure including `it.each` expansion goes 19→20. The **+1 delta was right; both absolute
+  values were one too high**. `scan-tests.test.ts` 17→21 is correct as a runtime figure, but the
+  dashboard read **81** at that moment, so the entry and the generated artifact disagreed; the
+  twelfth pass closes that split at its source.
 - 1826 passed / 1829 total across 177 suites (3 skipped), as of 2026-08-01.
   Seven regressions from the CodeRabbit review round, eleventh pass (+7, no new suites).
-  `webhooks/route.test.ts` 20→21 (`user.deleted` validated `rawUserId.trim() === ""` but bound the
+  `webhooks/route.test.ts` 19→20 (`user.deleted` validated `rawUserId.trim() === ""` but bound the
   **untrimmed** value as the filter key, so `"  user_x  "` passed validation and the SupportTicket
   PII redaction plus the delete both matched **zero rows while returning 200** — the GDPR erasure
   silently no-opped).
@@ -27,9 +45,13 @@
   carry it).
   `scan-tests.test.ts` 17→21 (`it.each(<identifier>)` counted as 0 — the same defect class as the
   `it.each([...])` undercount fixed in `c1be6d7`, but for tables lifted into a named constant.
-  Same-file `const` and single-hop `@/` / relative imports now resolve; anything else stays at 0 so
-  the scanner never over-counts. `order-settlement.test.ts` moves from 6 to **14 cases** on the
-  dashboard, matching its runtime value).
+  Same-file `const` and single-hop `@/` / relative imports now resolve; anything else stays at 0, so
+  **identifier resolution** never over-counts. `order-settlement.test.ts` moves from 6 to
+  **14 cases** on the dashboard, matching its runtime value. Note the original wording here —
+  "the scanner never over-counts" — was too broad and was **disproved by this file's own entry**:
+  the fail-safe covers unresolved identifiers only, and a separate path (string literals read as
+  code) was over-counting by 60 on `scan-tests.test.ts` at the very moment this was written.
+  Closed in the twelfth pass above).
 - 1819 passed / 1822 total across 177 suites (3 skipped), as of 2026-08-01.
   Sixteen regressions from the SonarCloud duplication cleanup (+16, **one new suite**).
   `src/lib/order-settlement.test.ts` is new (14): `hasOrderSettledAfterConflict` was extracted from
