@@ -332,11 +332,26 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   # 宣言の検出は「宣言らしさ」で行い、**宣言行が `{` で終わることを要求しない**。
   # Prettier が引数を折り返すとシグネチャが複数行になり `{` が次行以降へ移るため
   # （下の「空抽出を PASS にしないこと」参照）。深さ計測は最初の `{` が現れてから始まる。
-  body=$(awk '
+  # 抽出の**前**にコメントを除去し、以降の検査を実行コードだけに限定する。
+  # 文字列リテラルを先に交替の左側で捕まえて温存するので、`"a//b"` や
+  # `"https://…"` を壊さない（`[^:]` のような一点狙いのガードでは不十分）。
+  strip_comments() {
+      perl -0777 -pe '
+        s{
+           ("(?:\\.|[^"\\])*")            # 二重引用符文字列
+         | (\x27(?:\\.|[^\x27\\])*\x27)   # 単一引用符文字列
+         | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
+         | (/\*.*?\*/)                    # ブロックコメント
+         | (//[^\n]*)                     # 行コメント
+        }{ defined($1)||defined($2)||defined($3) ? $& : q{ } }gexs
+      ' "$1"
+  }
+
+  body=$(strip_comments tests/e2e/helpers/auth.ts | awk '
     !f && /(function[[:space:]]+signInWithPassword|signInWithPassword[[:space:]]*[=:]|async[[:space:]]+signInWithPassword)/ \
         && !/^[[:space:]]*\*/ && !/^[[:space:]]*\/\// { f=1 }
     f { print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if (seen && n==0) exit; if (n>0) seen=1 }
-  ' tests/e2e/helpers/auth.ts)
+  ')
 
   # 空抽出は「禁止パターンなし」ではなく「検査できていない」。必ず FAIL させる。
   [ -n "$body" ] || {
@@ -365,6 +380,10 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 
   ```bash
   # 上のブロックで抽出済みの $body を再利用する（抽出失敗は既に FAIL 済み）。
+  # $body は strip_comments 済みなので、**コメントアウトされたアサーションは
+  # 存在扱いにならない**。生の本文を grep していた旧形は
+  # `// await expect(passwordInput).toBeVisible();` でも PASS しており、
+  # 「アサーションを消す」より簡単な「アサーションをコメントにする」を素通しした。
   # `expect(passwordInput)` と `.toBeVisible(` の間で Prettier が改行しうるため、
   # ここでも tr で 1 行化してから照合する。
   if printf '%s' "$body" \
@@ -375,6 +394,14 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       echo "FAIL: 必須の expect(passwordInput).toBeVisible() が無い"; false;
   fi
   ```
+
+  > **実測（2026-08-01・三方向）**: plan 042 は未実装で `signInWithPassword` がまだ無いため、
+  > 実装後の状態を模した fixture で両方向を確認した。アサーションを持つ本体 → `OK` / exit 0、
+  > 同じ本体でアサーションを `//` でコメントアウト → `FAIL` / exit 1、現行の
+  > `tests/e2e/helpers/auth.ts`（関数が存在しない）→ 抽出空で exit 1（＝「検査できていない」を
+  > PASS にしない既定動作）。`strip_comments` は抽出の前段に置いてあるので、**上の
+  > 「実行時分岐が存在しない」検査も同じく実行コードだけを見る** —— コメント内の
+  > `isVisible()` を根拠に false-fail することもなくなる。
 
   実測（2026-07-31）: `signInWithPassword` を持つ合成フィクスチャに対し、
   アサーションあり = **exit 0** / アサーションを削除した版 = **exit 1**。
