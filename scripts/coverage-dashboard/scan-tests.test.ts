@@ -426,6 +426,40 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(1);
     });
 
+    it("文字列リテラル内の .skip / xdescribe は hasSkip に数えない", async () => {
+        // testCount と同じ取り違えが hasSkip 側にもある。hasSkip はヒートマップの
+        // `◐`（partial）判定に効くため、フィクスチャ文字列を根拠に partial 扱い
+        // されると「skip があるので不完全」という誤った読みが台帳へ伝播する。
+        root = makeFixture({
+            "src/lib/skip-in-fixture.test.ts": [
+                "const fixture = \"it.skip('inner', () => {})\";",
+                "const another = 'xdescribe(\\'inner\\', () => {})';",
+                "",
+                "it('the only real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.hasSkip).toBe(false);
+        expect(results[0]?.testCount).toBe(1);
+    });
+
+    it("実コード上の .skip は引き続き hasSkip=true にする", async () => {
+        // 上のテストが「常に false を返す」実装で緑にならないことを固定する。
+        root = makeFixture({
+            "src/lib/skip-in-code.test.ts": [
+                "const fixture = \"harmless string\";",
+                "",
+                "it.skip('really skipped', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.hasSkip).toBe(true);
+    });
+
     it("存在しない root では空配列を返す", async () => {
         const result = await scanTests(join(tmpdir(), "definitely-not-exists-xyz"));
         expect(result).toEqual([]);
