@@ -134,6 +134,11 @@ the module already enforces.
 - `src/app/dashboard/seller/stores/[storeUrl]/coupons/columns.tsx` — pass `storeUrl`
 - `src/app/dashboard/admin/coupons/columns.tsx` — call `getCouponAsAdmin`
 - `src/queries/coupon.test.ts` — add tests
+- `plans/README.md` — この plan の Status 行を DONE へ更新する。冒頭の
+  executor instructions（`> When done, update the status row for this plan in
+  plans/README.md.`）と Done criteria の該当項目が**modification を指示している**以上、
+  「In scope = 変更してよい唯一のファイル群」から漏れていると、指示と禁止が
+  正面から衝突する。**コミットは分けること**（コード変更 → テスト → 台帳更新）
 
 **Out of scope** (do NOT touch):
 - `upsertCoupon` / `applyCoupon` / `deleteCoupon` and any other coupon action — the discount
