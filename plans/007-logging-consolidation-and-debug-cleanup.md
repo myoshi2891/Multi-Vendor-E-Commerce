@@ -197,10 +197,26 @@ Stop and report if:
 - **Deferred follow-up (separate plan)**: migrate the ~90 legacy 3-arg `console.error("Error in X:", error.message, error.stack)` + duplicated `instanceof Error` blocks across `src/queries/*` (category, store, product, user, subCategory, offer-tag, …) to `logError`. That is mechanical but touches many files and many test assertions — do it as its own reviewable batch, not here.
 - New `src/queries/` catch blocks should call `logError` from day one.
 - **Toast は「サーバーが返す文言がユーザー安全である」前提でのみ `error.message` を出す。**
-  Step 4 の `toast.error(error instanceof Error ? error.message : "…")` が許容されるのは、
-  `applyCoupon` 等が **curated（"Coupon expired" 等の利用者向け）メッセージのみ throw する**
-  ためである。ラップされていない生の Prisma/内部エラーが `.message` として到達しうる呼び出し元では、
+  ラップされていない生の Prisma/内部エラーが `.message` として到達しうる呼び出し元では、
   内部詳細の漏洩を防ぐため**汎用文言に固定**する（`.message` を無条件で表示しない）。
   ログ（`logError`）には生の詳細を残し、UI には安全な文言のみを出す分離を守ること。
+
+  > **⚠️ `applyCoupon` を「安全なメッセージのみ throw する」例として挙げないこと（2026-08-01 訂正）。**
+  > 本項は当初 Step 4 の `toast.error(error.message)` を `applyCoupon` を根拠に許容していたが、
+  > **前提が実装と一致していない**。`applyCoupon` の catch（`coupon.ts:429-433`）は
+  > 同ファイルの他 8 関数と違い **`isDomainError` を一切呼ばず**、
+  > `Error occurred while applying coupon: ${error.message}` で**すべてを**包み直す。
+  > 帰結は 2 つとも Step 4 の前提を壊す:
+  >
+  > 1. **curated メッセージが届かない** —— 意図的 throw 6 種（`Coupon not found.` 等・
+  >    実測は [`08-open-questions.md`](../specs/multi-vendor-ecommerce/08-open-questions.md)
+  >    「applyCoupon: 意図的 domain error が汎用メッセージで上書きされる」）が
+  >    全部この汎用文言に化ける。
+  > 2. **生の内部詳細がそのまま UI へ出る** —— 包み直しは `error.message` を**文字列補間**
+  >    するため、Prisma のエラーメッセージが `toast.error` の表示文字列に混ざる。
+  >    「curated だから安全」どころか、**この関数は漏洩側の例**である。
+  >
+  > したがって `applyCoupon` の呼び出し元は上の原則どおり**汎用文言に固定**する側に属する。
+  > `isDomainError` の適用は別プラン（コード変更）であり、それが入るまでこの例外は復活させない。
 - Reviewer should confirm the non-Error branch logs `{ error }` (raw), matching the documented convention, and that no thrown message text changed.
 - If a structured logging backend (e.g. from a future observability plan) is added, `logError` is the single seam to route through it.
