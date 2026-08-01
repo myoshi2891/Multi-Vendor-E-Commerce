@@ -199,38 +199,72 @@ judgement, even if every row looks unambiguous.
 
 Only after approval. Use a corrective migration (never edit an existing migration file):
 
+突合は**コメントではなく実行される検査**にすること。「一致しなければ ROLLBACK する」と
+散文で書いても、実行者が読み飛ばせば `UPDATE` は素通しで走る。承認値を psql 変数として
+渡し、一致しなければ**トランザクションごと中断する**形にする:
+
 ```sql
+-- 実行例:
+--   psql -v ON_ERROR_STOP=on \
+--        -v deploy_boundary='2026-06-01' \
+--        -v approved_count=<Step 3 の will_update> \
+--        -v approved_digest=<Step 3 の candidate_digest> \
+--        -f backfill.sql
+\set ON_ERROR_STOP on
 BEGIN;
 
 -- 1) 影響行数**と対象 id 集合の digest** を UPDATE の前に確定させる
 --    （述語は下の UPDATE と完全に同一にすること）
-SELECT count(*)                                                       AS will_update,
-       md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id), '')) AS candidate_digest
+SELECT count(*)                                                       AS actual_count,
+       md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id), '')) AS actual_digest
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
-WHERE  pd."createdAt" < :deploy_boundary
+WHERE  pd."createdAt" < :'deploy_boundary'
   AND  pd."paymentMethod" = 'Stripe'
-  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;
+  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101
+\gset
 
--- 2) **件数と digest の両方**を Step 3 の承認済みレポートと突合する。
---    どちらか一方でも違えば ROLLBACK; してここで中断する（承認の前提が崩れているため）。
+-- 2) **件数と digest の両方**を Step 3 の承認済みレポートと機械的に突合する。
 --    digest が要るのは、承認から実行までの間に 1 行が候補を外れ 1 行が候補に入ると
 --    **件数は一致したまま対象行が入れ替わる**ため。件数一致は行集合の同一性を含意しない。
+SELECT (:actual_count = :approved_count)
+   AND (:'actual_digest' = :'approved_digest') AS gate_ok \gset
+
+\if :gate_ok
+  \echo 'GATE OK: candidate set matches the approved report'
+\else
+  \warn 'GATE FAIL: candidate set drifted since approval'
+  \warn 'approved:' :approved_count :'approved_digest'
+  \warn 'actual  :' :actual_count :'actual_digest'
+  ROLLBACK;
+  -- `\quit 1` は使わない: psql のバージョンによっては引数が無視され
+  -- （`\quit: extra argument "1" ignored`）**exit 0 で終了する**ため、
+  -- CI から見ると合格と区別できない。RAISE なら ON_ERROR_STOP と併せて exit 3 になる。
+  DO $$ BEGIN RAISE EXCEPTION 'candidate set drifted since approval - aborting'; END $$;
+\endif
 
 -- 3) 両方一致した場合のみ UPDATE を実行する
 UPDATE "PaymentDetails" pd
 SET    amount = pd.amount / 100
 FROM   "Order" o
 WHERE  o.id = pd."orderId"
-  AND  pd."createdAt" < :deploy_boundary
+  AND  pd."createdAt" < :'deploy_boundary'
   AND  pd."paymentMethod" = 'Stripe'                        -- Step 2 と同じ肯定形の述語
   AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;   -- ratio ≈ 100 のみ
 
--- 4) psql が返す `UPDATE <n>` の n が 1) の will_update と一致することを確認する。
+-- 4) psql が返す `UPDATE <n>` の n が 1) の actual_count と一致することを確認する。
 --    不一致なら ROLLBACK;（並行書き込みが入った可能性がある）
 
 COMMIT;
 ```
+
+> **実測（2026-08-01・実 PostgreSQL 16 で三方向）**: 承認値と一致 → `GATE OK` / **exit 0** /
+> `UPDATE` 適用。**件数は同じまま候補集合だけ入れ替えた**ケース（1 行を候補から外し
+> 別の 1 行を候補へ入れる）→ digest 不一致を検出して `GATE FAIL` / **exit 3** /
+> `UPDATE` は走らず金額は元のまま —— これが件数だけでは捕まえられない当のケースである。
+> 初版は `\quit 1` を使っていたが、psql が引数を無視して **exit 0** を返したため
+> `DO … RAISE EXCEPTION` へ差し替えた（`\quit` の挙動はバージョン依存で、
+> ゲートの成否が exit code に出ないのは fail open）。
 
 The count-and-digest check is **not optional bookkeeping**. Between the Step 3 report and the Step 4
 execution an unbounded amount of time passes — the approval is asynchronous by design. New Stripe
@@ -277,24 +311,43 @@ SELECT
     ) AS still_wrong,
     count(*) FILTER (
         WHERE pd.amount / NULLIF(o.total, 0) IS NULL
-    ) AS null_ratio
+    ) AS null_ratio,
+    -- 承認リストと**集合として**突き合わせるための id 集合。件数だけを返していると
+    -- 下の合格条件 2 が「id 集合が完全一致すること」を要求しているのに、
+    -- 突合の材料が出力されず**実行不能な条件**になる。
+    md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id)
+                 FILTER (WHERE pd.amount / NULLIF(o.total, 0) IS NULL), '')) AS null_ratio_digest,
+    coalesce(string_agg(pd.id::text, E'\n' ORDER BY pd.id)
+             FILTER (WHERE pd.amount / NULLIF(o.total, 0) IS NULL), '(none)') AS null_ratio_ids
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
-WHERE  pd."createdAt" < :deploy_boundary
+WHERE  pd."createdAt" < :'deploy_boundary'
   AND  pd."paymentMethod" = 'Stripe';
 ```
+
+`null_ratio_digest` は Step 3 の承認済み「unresolved zero-total list」に対して**同じ式で**
+計算した digest と直接比較できる（承認リストの id を同順で `string_agg` して md5 を取る）。
+`null_ratio_ids` は不一致時に**どの行が入れ替わったか**を目視するための出力で、
+判定そのものは digest で行う。
 
 Verification passes only when **both** hold:
 
 1. `still_wrong` = **0**（例外を認めない。範囲外の行が残っていれば backfill は未完）
 2. `null_ratio` = **Step 3 の「unresolved zero-total list」**（承認済み成果物）の件数と**一致**
    （0 とは限らない。ただし「承認された件数」より多ければ、承認外の行が紛れているので不合格）
+3. `null_ratio_digest` = 承認リストの id を**同じ式で**畳んだ digest と**一致**
+   （承認リストの id を昇順で `string_agg(id, ',')` し `md5` を取る＝上のクエリと同一手順）
 
 比較先は Step 3 で**列挙され承認された当のリスト**であり、件数だけの報告ではない。
-`null_ratio` が承認件数と一致することに加え、**`ratio IS NULL` で残った行の id 集合が
-承認リストの id 集合と完全一致する**ことを確認すること（件数一致だけでは、解決した行と
-新たに壊れた行が相殺して同数になる可能性を排除できない）。集合として突き合わせるには
-Step 3 が id を列挙していることが前提であり、そのためにあの列挙を承認成果物にしている。
+条件 3 が独立に要る理由は、**件数一致が行集合の同一性を含意しない**ため —— 承認後に
+1 行が解決して候補を外れ、別の 1 行が新たに壊れて `ratio IS NULL` に入ると、
+`null_ratio` は同数のまま**中身が入れ替わる**。digest はその入れ替えを検出する。
+不一致時は `null_ratio_ids` の出力を承認リストと突き合わせ、どの行が増減したかを特定する。
+
+> **実測（2026-08-01・実 PostgreSQL 16）**: 上の検証クエリは
+> `still_wrong=0 / null_ratio=1 / null_ratio_digest=7bc3ca68… / null_ratio_ids=p3` を返し、
+> digest は同じ id 集合を単独で畳んだ値と一致した（`FILTER` 付き `string_agg` が
+> `count(*) FILTER` と同一の行集合を見ていることの確認）。
 
 Record the before/after counts in `docs/PROGRESS.md` and close the CORRECTNESS-05 entry in
 `plans/README.md`.
