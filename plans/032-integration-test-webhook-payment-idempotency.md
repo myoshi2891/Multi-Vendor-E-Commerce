@@ -207,6 +207,21 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 > 2. **`connection_limit >= 2` を明示検証する** — 2 未満なら成功扱いにせず `expect` で
 >    ブロックする（`expect(poolSize).toBeGreaterThanOrEqual(2)`）。「並行を検証できない環境」を
 >    silently pass させない。
+> 3. **2 本の配送が**どちらも**HTTP 成功（2xx）で完了したことを assert する** —
+>    `paymentDetails.count === 1` だけでは**冪等性を示せない**。片方の配送が一意制約違反を
+>    捕まえ損ねて 500 で落ちても、生き残った 1 本が行を作るので `count` は 1 のままであり、
+>    テストは緑になる。それは「冪等に処理した」ではなく「**1 本が失敗した**」——
+>    実運用では Stripe が失敗した側を再配送し続けることになる。
+>
+>    ```ts
+>    const [a, b] = await Promise.all([deliver(evt), deliver(evt)]);
+>    expect(a.status).toBeLessThan(300);
+>    expect(b.status).toBeLessThan(300);   // ← これが無いと 500 が隠れる
+>    expect(await countPaymentDetails(orderId)).toBe(1);
+>    ```
+>
+>    冪等性の主張は「**両方が成功し、かつ副作用は 1 回**」の連言である。
+>    後半だけを検証するのは、前半を暗黙の仮定に格下げすることに等しい。
 >
 > バリアだけではプール 1 で接続待ち直列化され、`connection_limit` だけでは解放タイミングが
 > ずれて重ならない。
@@ -371,8 +386,12 @@ Machine-checkable. ALL must hold:
       `bun run test:integration -- -t "concurrent redelivery keeps a single PaymentDetails row"`
       が **1 テストを実行して exit 0**（0 テスト実行は fail 扱い。Jest は `-t` が何にも
       マッチしない場合でも exit 0 になりうるため、出力の `Tests: 1 passed` を確認すること）
-- [ ] その並行ケースが、(a) 両配送を揃えるバリア（latch）と (b) `connection_limit >= 2` の
-      `expect` の**両方**を持つ
+- [ ] その並行ケースが、(a) 両配送を揃えるバリア（latch）、(b) `connection_limit >= 2` の
+      `expect`、(c) **2 本の配送がどちらも HTTP 2xx で完了したことの `expect`** の
+      **3 つすべて**を持つ
+      （(c) が無いと、片方が 500 で落ちても生き残った 1 本が行を作るため
+      `count === 1` は成立し、「1 本が失敗した」状態が緑になる。冪等性の主張は
+      「両方が成功し、かつ副作用は 1 回」の連言なので、後半だけの検証では足りない）
 
 > **grep ゲートは使わない。** 旧版は `grep -n "Promise.all" tests/integration/webhook-payment.test.ts`
 > で並行ケースの存在を判定していたが、これは**意味を検証していない**。`Promise.all` は
