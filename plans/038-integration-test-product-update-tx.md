@@ -260,7 +260,12 @@ try {
     const questions = await db.question.findMany({ where: { productId: product.id } });
     expect(questions[0].question).toBe(oldQuestion.question);
 } finally {
-    await db.$executeRawUnsafe(`ALTER TABLE "Spec" DROP CONSTRAINT "tmp_block_boom"`);
+    // IF EXISTS 必須: ADD 側が落ちて制約が存在しない状態でも finally は必ず走るため、
+    // 素の DROP はここで別の例外を投げ、**本来の失敗原因を握り潰す**（finally の throw が
+    // try の例外を置き換える）。デバッグ時に見えるのが「制約が無い」という二次エラーだけになる。
+    await db.$executeRawUnsafe(
+        `ALTER TABLE "Spec" DROP CONSTRAINT IF EXISTS "tmp_block_boom"`
+    );
 }
 ```
 
@@ -278,6 +283,11 @@ try {
    > 1. **ADD の直前に `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` を必ず実行する** —— 過去の
    >    リーク実行から冪等に回復できるようにする。`finally` の DROP と**対**で置くこと
    >    （`finally` だけでは強制終了時に回復手段が無い）。
+   >    **`finally` 側の DROP にも `IF EXISTS` を付けること。** `finally` は ADD が失敗した
+   >    経路でも必ず走るため、素の DROP は「制約が存在しない」で**別の例外を投げ、
+   >    try 側の本来の失敗原因を置き換える**。テストが落ちた理由として表示されるのが
+   >    二次エラーだけになり、失敗注入が成立したのかどうかすら判別できなくなる。
+   >    どちらの位置でも `IF EXISTS` は冪等性のためであって、省略してよい側は無い。
    > 2. **制約名はこのテスト固有にする** —— 衝突回避。
    > 3. **この DDL テストは直列で走らせる** —— `Spec` を触る他テストと並行させない。
    > 4. **直列化は CI ジョブ単位でも担保する** —— 同一共有 DB に対して複数の integration
@@ -323,7 +333,10 @@ Machine-checkable. ALL must hold:
 - [ ] シナリオ 5 に「reject + 旧 spec/question/size 残存 + 新行ゼロ」の assert が存在し、
       かつ **旧 Size.id が保たれている**ことを assert している（置換実行後の巻き戻しの証拠）
 - [ ] シナリオ 5 の一時 CHECK 制約が `finally` で DROP され、同一ファイルの
-      2 回連続実行が 2 回とも pass する
+      2 回連続実行が 2 回とも pass する。**`finally` 側の DROP も `IF EXISTS` 付き**である
+      （検証: ADD を意図的に失敗させた状態で走らせ、報告される例外が「制約が無い」という
+      二次エラーではなく **ADD 側の本来の失敗**であること。素の DROP だと `finally` の
+      throw が try の例外を置き換え、失敗注入が成立したかすら判別できなくなる）
 - [ ] 一時 CHECK 制約の **ADD の直前**にも `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` があり、
       リーク状態からの冪等回復が効く（検証: 手で `ALTER TABLE "Spec" ADD CONSTRAINT
       "tmp_block_boom" …` を残した状態からスイートを走らせても pass すること）
