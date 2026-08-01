@@ -110,7 +110,28 @@
   既修正（PayPal/Stripe userId スコープ・upsertCoupon 所有権・applyCoupon CAS・review IDOR）。
 - **rejected（VETTED_FINDINGS）**: SECURITY-07（PayPal sandbox — 意図確認要 LOW）/
   SECURITY-08（旧 query の raw error 補間 — Next.js server-action マスキングで緩和 LOW）/
-  SECURITY-09（upsertReview 購入検証なし — 1 アカ 1 レビューで限定 LOW）/ DEPS-05（dev-only 勧告）。
+  SECURITY-09（upsertReview 購入検証なし — 1 アカ 1 レビューで限定 LOW）/
+  DEPS-05（**routine refresh へ畳む**枠。下記の分類注記を参照）。
+
+  > **DEPS-05 を「dev-only 勧告」と要約しないこと（2026-08-01 統一）。** 本ファイルの
+  > DEPS-06 節（`:240`）が既に台帳を訂正しており、`lodash` / `lodash-es` は
+  > `react-color` / `react-tag-input` / `@tremor/react` 経由で **`dependencies`（runtime）**
+  > に到達する **runtime transitive** である（本番非到達ではない）。その訂正で
+  > lodash 系は **DEPS-05 の routine refresh 対象に含める**と決めた以上、DEPS-05 を
+  > 「dev-only」とラベルし直すと同一ファイル内で分類が割れる。
+  >
+  > 正しい要約は「**低優先だが理由は一様ではない** —— dev-only の勧告に加え、
+  > runtime transitive だが実悪用経路が未到達（`_.template` を攻撃者制御文字列で
+  > 呼んでいない）ものを含む枠」。**再監査の抑止に効くのは「本番非到達だから」ではなく
+  > 「到達するが悪用経路が無い」の方**なので、そこを潰さないこと。
+  > これは本ファイル `:58-61` が既に定めた「同一パッケージを 2 か所で別ラベルに
+  > しないこと」の適用でもある。
+  >
+  > **未同期の残り（別ファイルなので本コミットでは触らない）**:
+  > [`findings-06-dependencies.md:192`](findings-06-dependencies.md) の見出し
+  > 「dev 専用アドバイザリは**本番非到達**」と
+  > [`VETTED_FINDINGS.md:108`](VETTED_FINDINGS.md) の「dev-only advisory」は
+  > 旧ラベルのまま。次に当該台帳へ触るラウンドで上の要約へ揃えること。
 - **決定済みトレードオフ**: ADR-001 CSRF トークンモジュール新設禁止 / `reactStrictMode:false` /
   Elasticsearch コメントアウト / DB ページ `force-dynamic` / `middleware`→`proxy`・AVIF 警告 /
   product.md スコープ外（多通貨・税・高度分析・配送キャリア連携）。
