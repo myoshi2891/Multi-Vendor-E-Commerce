@@ -243,17 +243,37 @@ globalTimeout: 3600 * 1000,
       コメントや TODO にもヒットするため、未実装のまま PASS しうる:
 
   ```bash
+  # 検査は**実行される行**だけに掛ける。コメントを剥がさずに grep すると、
+  # `// TODO: reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE,`
+  # のように**コメントの中にだけ書いた偽実装**で PASS する。本節冒頭が
+  # 「トークンの出現ではなく実装の形を検証すること」と言っている当のものなので、
+  # コメント除去はゲートの前提条件であって装飾ではない。
+  # 文字列リテラルは交替の左側で温存する（`"https://…"` を壊さないため）。
+  strip_comments() {
+      perl -0777 -pe '
+        s{
+           ("(?:\\.|[^"\\])*")            # 二重引用符文字列
+         | (\x27(?:\\.|[^\x27\\])*\x27)   # 単一引用符文字列
+         | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
+         | (/\*.*?\*/)                    # ブロックコメント
+         | (//[^\n]*)                     # 行コメント
+        }{ defined($1)||defined($2)||defined($3) ? $& : q{ } }gexs
+      ' "$1"
+  }
+
   # config 側: reuseExistingServer の判定式に **否定形で** 組み込まれていること。
   # `.*E2E_NO_REUSE` だけでは極性を見ないため、意味が真逆の
   # `reuseExistingServer: !process.env.CI && !!process.env.E2E_NO_REUSE`
   # （= フラグを立てたときだけ再利用する）でも PASS してしまう。
   # `[^!]!` で「直前が `!` でない `!`」を要求し、`!!` を弾く。
-  grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE' \
-      playwright.config.ts
+  strip_comments playwright.config.ts \
+    | grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE'
 
   # run-local.sh 側: 非空値を代入して export していること。
   # `=[^[:space:]]` が必須 — `export E2E_NO_REUSE=` は空文字列を代入するため
   # `process.env.E2E_NO_REUSE` が falsy になり reuse が残る（実装した気になれる無効形）。
+  # こちらは `^[[:space:]]*export` に錨を打っているのでコメント行（`# export …`）には
+  # 構造的に当たらない。config 側と違い strip_comments は要らない。
   grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]' scripts/e2e/run-local.sh
 
   # かつ export が playwright **起動行** より前にあること（行番号で順序を検証）。
@@ -277,10 +297,16 @@ globalTimeout: 3600 * 1000,
     }' scripts/e2e/run-local.sh
   ```
 
-  実測（2026-07-31・合成フィクスチャ。`E2E_NO_REUSE` は未実装のため現物では走らせられない）:
-  - config ゲート — `!process.env.CI && !process.env.E2E_NO_REUSE` = **一致** /
+  実測（2026-07-31・合成フィクスチャ。`E2E_NO_REUSE` は未実装のため現物では走らせられない。
+  **2026-08-01 に strip_comments 追加後の 4 方向を再実測**）:
+  - config ゲート — `!process.env.CI && !process.env.E2E_NO_REUSE` = **一致（exit 0）** /
     `!process.env.E2E_NO_REUSE` 単独 = **一致** /
-    `!!process.env.E2E_NO_REUSE`（極性反転）= **不一致**。
+    `!!process.env.E2E_NO_REUSE`（極性反転）= **不一致（exit 1）** /
+    **コメント行にだけ書いた偽実装**（`// TODO: reuseExistingServer: … && !process.env.E2E_NO_REUSE,`
+    を足しつつ実行行は `!process.env.CI` のまま）= **不一致（exit 1）**。
+    最後の 1 本が strip_comments 追加前は **PASS していた** —— 本節冒頭が禁じている
+    「トークンの出現で実装を判定する」ものそのもので、コメントに書いただけで
+    未実装が緑になっていた。
     なお `process.env.E2E_NO_REUSE !== "1"` のような別形も**不一致**になる ——
     本プランは `!CI && !E2E_NO_REUSE` の形を指定しているので意図どおりだが、
     実装形を変えるならゲートも同時に変えること。
