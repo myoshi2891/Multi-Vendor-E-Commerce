@@ -12,6 +12,24 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1826 passed / 1829 total across 177 suites (3 skipped), as of 2026-08-01.
+  Seven regressions from the CodeRabbit review round, eleventh pass (+7, no new suites).
+  `webhooks/route.test.ts` 20→21 (`user.deleted` validated `rawUserId.trim() === ""` but bound the
+  **untrimmed** value as the filter key, so `"  user_x  "` passed validation and the SupportTicket
+  PII redaction plus the delete both matched **zero rows while returning 200** — the GDPR erasure
+  silently no-opped).
+  `paypal.test.ts` 30→32 (the capture correlation check was written as
+  `purchase_units[0].custom_id ?? capture?.custom_id`; `??` short-circuits on the first non-nullish
+  value, so once the outer id matched `orderId` the capture-level id was **never examined**. The
+  capture object is what represents the actual movement of money, so a response correlated to the
+  caller's order on the outside and to a different order on the inside reached the Paid write.
+  Now every present `custom_id` must match; a separate test pins that either location may still
+  carry it).
+  `scan-tests.test.ts` 17→21 (`it.each(<identifier>)` counted as 0 — the same defect class as the
+  `it.each([...])` undercount fixed in `c1be6d7`, but for tables lifted into a named constant.
+  Same-file `const` and single-hop `@/` / relative imports now resolve; anything else stays at 0 so
+  the scanner never over-counts. `order-settlement.test.ts` moves from 6 to **14 cases** on the
+  dashboard, matching its runtime value).
 - 1819 passed / 1822 total across 177 suites (3 skipped), as of 2026-08-01.
   Sixteen regressions from the SonarCloud duplication cleanup (+16, **one new suite**).
   `src/lib/order-settlement.test.ts` is new (14): `hasOrderSettledAfterConflict` was extracted from
