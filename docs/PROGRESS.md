@@ -2203,3 +2203,83 @@ VS Code の CodeRabbit 拡張が `main ← dev` に対して出したローカ�
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
 | カバレッジ | S 66.61 / B 46.71 / F 55.09 / L 65.61 | **S 66.66 / B 46.71 / F 55.15 / L 65.65** |
+
+---
+
+### SonarCloud 重複解消リファクタ + 負の配送料バグ修正 (2026-08-01)
+
+#### 概要
+
+PR #164 の SonarCloud Quality Gate が `new_duplicated_lines_density` **3.9% > 3%** の 1 条件だけで
+ERROR になっていたため、重複ブロックを抽出して解消した。その過程で重複コード内に「在庫 0 のとき
+ITEM 方式の配送料が負値になる」既存バグを発見し、抽出で 1 箇所に集約した上で修正した。
+
+#### 診断
+
+`gh pr checks 164` では GitHub Actions のジョブ（Lint / Unit / Integration / Build / E2E /
+Lighthouse）が全て pass しており、失敗していたのは **SonarCloud アプリが直接送る Check** だけ。
+ワークフローの `sonarcloud` ジョブは `continue-on-error: true` だが、アプリ側の Check はその
+管轄外なので、コードを直す以外に緑にできない。
+
+| 条件 | しきい値 | 実測 | 判定 |
+|------|---------|------|------|
+| `new_duplicated_lines_density` | ≤ 3% | 3.9% | ❌ |
+| `new_coverage` | ≥ 80% | 86.1% | OK |
+| reliability / security / maintainability rating | 1 | 1 | OK |
+| `security_hotspots_reviewed` | 100% | 100% | OK |
+
+Sonar API（`/api/duplications/show`）から重複ブロックの実レンジを取得し、3 クラスタへ整理した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | `findCartProductWithVariantAndSize` を抽出（`db.product.findUnique` の include + 3 条件検証が 4 経路で重複）。呼び出し元ごとにメッセージが違うため throw せず `null` を返す形 | `333b6171` |
+| `src/queries/user.ts` | `calculateDiscountedUnitPrice` を抽出（3 経路） | `2db937c2` |
+| `src/queries/user.ts` | `resolveCartShippingFee` を抽出（`getShippingDetails` + ITEM/WEIGHT/FIXED の Decimal 計算・2 経路）。国の解決方法が違うため解決済み `Country \| null` を引数で受ける | `3f9547d0` |
+| `src/queries/user.ts` | `buildValidatedCartItem` を抽出（明細オブジェクトの組み立て・2 経路） | `cb375d11` |
+| `src/queries/paypal.ts` | `requirePayPalUser` / `findOwnedPayPalOrder` を抽出（53 行 × 2 の前段・差分はログ prefix のみ） | `8b6ed8bb` |
+| `src/lib/order-settlement.ts` (新規) | `hasOrderSettledAfterConflict` を新設し `stripe.ts` / `paypal.ts` の P2025 再読ブロック（25 行 × 2）を置換 | `632f1037` |
+| `src/lib/order-settlement.test.ts` (新規) | 14 テスト。抽出元でテストが 0 件だった `catch (reReadError)` 分岐を含め新規ファイル 100% カバー | `639db82b` |
+| `src/queries/user.test.ts` | 在庫 0 時の ITEM 配送料に対する Red テスト 2 件（実測 `shippingFee: "7"`） | `14d8bbab` |
+| `src/queries/user.ts` | `Math.max(0, quantity - 1)` で追加個数をクランプ（Green） | `98f309f2` |
+
+#### 設計判断
+
+- **クラスタ A / C は同一ファイル内のモジュールプライベートヘルパー**。`"use server"` が要求するのは
+  **export が async であること**だけで、非 export の宣言はファイル内に置ける（既存の
+  `ORDER_TRANSACTION_OPTIONS` / `notSettled` / `fetchPayPal` が前例）。`src/lib/` へ出さないのは、
+  `user.test.ts` の `jest.mock("./product")` 構成をそのまま流用でき、かつ新規ファイルの未カバー行で
+  `new_coverage` を薄めないため。
+- **クラスタ B のみ `src/lib/`**。`stripe.ts` ↔ `paypal.ts` のファイル跨ぎであり、`payment-status.ts`
+  が同じ理由（`"use server"` の全 export async 制約）で既に `src/lib/` に置かれている。
+- **`getProductShippingFee` には寄せない**。既に Decimal 版の ITEM/WEIGHT/FIXED 計算を持っており
+  重複を消す最短経路に見えるが、(1) 追加個数の丸め方が違う（`Math.max(0, qty-1)` vs `qty-1`）、
+  (2) 無料配送時に `shippingRate.findFirst` を発行しないためクエリ形状が変わる、
+  (3) `user.test.ts` が両者を別々にモックしている。**純粋リファクタと銘打った変更で金額計算の
+  挙動が変わる**のを避け、インラインを逐語抽出してから式を直す順序にした。
+- 逐語保存した契約: 2 種類の not-found メッセージ（詳細版 / 簡易版）、PayPal の `"Order not found"`
+  （ピリオド無し）と Stripe の `"Order not found."`（有り）、`error.message ===` の文字列比較、
+  `where: { id, userId }` の形、ログ文字列のバイト一致。
+
+#### 修正したバグ
+
+ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuantity - 1)` で個数を
+クランプしておらず、在庫切れ（または改ざん payload の `quantity: 0`）で `validQuantity === 0` に
+なると `(0 - 1) = -1` により **`fee - extra` = 負の配送料**が算出されていた。値は
+`saveUserCart` では `CartItem.shippingFee` / `Cart.shippingFees` / `Cart.total` へ、`placeOrder`
+では `OrderItem.shippingFee` と `OrderGroup` / `Order` 合計へそのまま伝播する。同じロジックが
+4 箇所にコピーされていたため、抽出で 1 箇所へ集約してから修正した。修正後は
+`updateCheckoutProductWithLatest` を含む 3 経路の配送料計算式が一致する。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1803 passed / 1806 total | **1819 passed / 1822 total**（+16） |
+| スイート数 | 176（175 passed + 1 skipped） | **177**（176 passed + 1 skipped・**+1**） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.66 / B 46.71 / F 55.15 / L 65.65 | **S 66.8 / B 46.78 / F 55.34 / L 65.8** |
+| Integration | 17 / 2 スイート | **17 / 2 スイート**（不変・testcontainers 実 DB で pass） |

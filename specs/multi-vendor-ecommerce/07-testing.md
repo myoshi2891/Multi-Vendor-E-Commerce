@@ -12,6 +12,22 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
+- 1819 passed / 1822 total across 177 suites (3 skipped), as of 2026-08-01.
+  Sixteen regressions from the SonarCloud duplication cleanup (+16, **one new suite**).
+  `src/lib/order-settlement.test.ts` is new (14): `hasOrderSettledAfterConflict` was extracted from
+  the identical P2025 re-read blocks in `stripe.ts` and `paypal.ts`. Its `catch (reReadError)` arm
+  had **no test at either origin** — both P2025 tests drive the re-read with `mockResolvedValue`
+  only — and `src/lib/**` is excluded from neither `collectCoverageFrom` nor
+  `sonar.coverage.exclusions`, so an uncovered arm in a small new file would breach the
+  `new_coverage >= 80%` gate. The suite drives settled/unsettled statuses (expanded from
+  `SETTLED_PAYMENT_STATUSES` so the SSOT is not duplicated), a missing order, the query shape
+  (deliberately not filtered by `userId`), and both the `Error` and non-`Error` re-read failures.
+  New-file coverage: 100% statements / branches / functions / lines.
+  `user.test.ts` 68→70 (ITEM shipping fee did not clamp the additional-item count, so
+  `validQuantity === 0` — an out-of-stock size, or a tampered `quantity: 0` payload — computed
+  `fee + extra * (0 - 1)` = a **negative shipping fee** that propagated into `Cart.total` via
+  `saveUserCart` and into `OrderItem.shippingFee` / `OrderGroup` totals via `placeOrder`. Both
+  paths were pinned Red at `shippingFee: "7"` before `Math.max(0, quantity - 1)` made them Green).
 - 1803 passed / 1806 total across 176 suites (3 skipped), as of 2026-07-31.
   Two regressions from the CodeRabbit review round, ninth pass (+2, no new suites).
   `paypal.test.ts` 27→29 (retrieve and capture shared a single 10s timer / `AbortController`,

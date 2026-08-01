@@ -62,6 +62,17 @@ Dashboard:
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
+- Because `"use server"` files may only export `async` functions, helpers shared between
+  query modules live in `src/lib/`: `payment-status.ts` (`isSettledPaymentStatus`,
+  `SETTLED_PAYMENT_STATUSES` — the SSOT for irreversible payment states) and
+  `order-settlement.ts` (`hasOrderSettledAfterConflict(orderId, logPrefix)` — after a CAS
+  `update` returns P2025, re-reads the order and reports whether it actually reached a settled
+  state, so that a concurrent delete or a lost `connect` target is not misreported as
+  "already paid"; returns `false` without throwing when the re-read itself fails, preserving
+  the original P2025). Both are shared by `stripe.ts` and `paypal.ts`.
+- Helpers used by only one query module stay module-private inside that file
+  (non-exported declarations are unconstrained by `"use server"`), e.g. `user.ts`'s cart-item
+  validation helpers and `paypal.ts`'s `requirePayPalUser` / `findOwnedPayPalOrder`.
 
 ### dashboard module (`src/queries/dashboard.ts`)
 
