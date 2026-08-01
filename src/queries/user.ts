@@ -196,6 +196,47 @@ const resolveCartShippingFee = async (
 };
 
 /**
+ * 検証済みカート明細（saveUserCart / placeOrder が Cart / Order へ書き込む形）を
+ * 組み立てる。
+ *
+ * `productId` / `variantId` / `sizeId` は DB エンティティではなく入力キーから取る。
+ * クエリが同じ id で絞っている以上値は一致するが、既存コードと同一の出所を保つ。
+ *
+ * `variant.images[0].url` にはあえて optional chaining を入れない。画像 0 件で
+ * TypeError になる現行の挙動を維持する（防御の追加は挙動変更にあたる）。
+ */
+const buildValidatedCartItem = (
+    key: { productId: string; variantId: string; sizeId: string },
+    product: CartValidatedProduct,
+    variant: CartValidatedVariant,
+    size: CartValidatedSize,
+    quantity: number,
+    price: Prisma.Decimal,
+    shippingFee: Prisma.Decimal
+) => {
+    const validQuantityObj = new Prisma.Decimal(quantity.toString());
+    const shippingFeeObj = new Prisma.Decimal(shippingFee.toString());
+    const totalPrice = price.mul(validQuantityObj).add(shippingFeeObj);
+
+    return {
+        productId: key.productId,
+        variantId: key.variantId,
+        productSlug: product.slug,
+        variantSlug: variant.slug,
+        sizeId: key.sizeId,
+        storeId: product.storeId,
+        sku: variant.sku,
+        name: `${product.name} ・ ${variant.variantName}`,
+        image: variant.images[0].url,
+        size: size.size,
+        quantity,
+        price,
+        shippingFee,
+        totalPrice,
+    };
+};
+
+/**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.1
  *              - If the user is already following the store, unfollow it.
@@ -333,32 +374,15 @@ export const saveUserCart = async (
                     validQuantity
                 );
 
-                const validQuantityObj = new Prisma.Decimal(
-                    validQuantity.toString()
+                return buildValidatedCartItem(
+                    { productId, variantId, sizeId },
+                    product,
+                    variant,
+                    size,
+                    validQuantity,
+                    priceObj,
+                    shippingFee
                 );
-                const shippingFeeObj = new Prisma.Decimal(
-                    shippingFee.toString()
-                );
-                const totalPrice = priceObj
-                    .mul(validQuantityObj)
-                    .add(shippingFeeObj);
-
-                return {
-                    productId,
-                    variantId,
-                    productSlug: product.slug,
-                    variantSlug: variant.slug,
-                    sizeId,
-                    storeId: product.storeId,
-                    sku: variant.sku,
-                    name: `${product.name} ・ ${variant.variantName}`,
-                    image: variant.images[0].url,
-                    size: size.size,
-                    quantity: validQuantity,
-                    price: priceObj,
-                    shippingFee,
-                    totalPrice,
-                };
             })
         );
 
@@ -677,32 +701,15 @@ export const placeOrder = async (
                     validQuantity
                 );
 
-                const validQuantityObj = new Prisma.Decimal(
-                    validQuantity.toString()
+                return buildValidatedCartItem(
+                    { productId, variantId, sizeId },
+                    product,
+                    variant,
+                    size,
+                    validQuantity,
+                    priceObj,
+                    shippingFee
                 );
-                const shippingFeeObj = new Prisma.Decimal(
-                    shippingFee.toString()
-                );
-                const totalPrice = priceObj
-                    .mul(validQuantityObj)
-                    .add(shippingFeeObj);
-
-                return {
-                    productId,
-                    variantId,
-                    productSlug: product.slug,
-                    variantSlug: variant.slug,
-                    sizeId,
-                    storeId: product.storeId,
-                    sku: variant.sku,
-                    name: `${product.name} ・ ${variant.variantName}`,
-                    image: variant.images[0].url,
-                    size: size.size,
-                    quantity: validQuantity,
-                    price: priceObj,
-                    shippingFee,
-                    totalPrice,
-                };
             })
         );
 
