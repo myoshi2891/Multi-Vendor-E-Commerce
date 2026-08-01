@@ -17,7 +17,87 @@
 > [`findings-12-test-coverage.md`](findings-12-test-coverage.md)（reconcile 表 TESTS-01 行 →
 > 「部分解消」/ 残余は **plan 030**）を正とする。
 
-- **Evidence（訂正後）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし（`git ls-tree f9752c0 tests/component/` および co-located の双方で確認）。**現 HEAD でも未カバー**。
+- **Evidence（訂正後・監査時点）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし。**測定: 2026-07-03 / HEAD `f9752c0`**。再現コマンド:
+
+  ```bash
+  # (a) tests/component/ 側に、上の 4 対象に対応するテストが無いこと → 出力 0 行
+  git ls-tree -r --name-only f9752c0 tests/component/ \
+    | grep -iE 'payment|stripe|paypal|checkout|order-page'
+
+  # (b) 対象ソース配下に co-located テストが無いこと → 出力 0 行
+  git ls-tree -r --name-only f9752c0 \
+       src/components/store/cards/payment/ \
+       src/components/store/checkout-page/ \
+       src/components/store/order-page/ \
+    | grep -iE '\.(test|spec)\.'
+  ```
+
+  > **対象パスに限定すること（2026-08-01 訂正）。** 旧形は
+  > `git ls-tree -r --name-only f9752c0 tests/component/` に
+  > `# tests/component/ 側に該当なし` というコメントを付けていたが、これは
+  > **ディレクトリ全体（同 HEAD で 123 エントリ）を列挙するコマンド**であり、
+  > 出力にはこのファイル冒頭の訂正が認めている `tests/component/store/place-order-card.test.tsx`
+  > も**含まれる**。つまり**コマンドの出力とコメントが正面から矛盾**しており、
+  > 実行しても「該当なし」を確認できない（むしろ反証が出る）。
+  > 上の (a)(b) は所見の対象領域だけに絞ってあり、**どちらも 0 行**になることを
+  > 同 HEAD で実測済み。所見が主張する範囲と、それを検証するコマンドの範囲を一致させる。
+
+- **再測定（2026-07-27 / HEAD `09275b5d`）**: 上記の対象は**依然として未カバー**。再現コマンド:
+
+  > **「4 ファイル」は Evidence が名指しした代表であって、監査対象の総数ではない**
+  > （2026-08-01 明示化）。Evidence の 4 番目は `order-page/*` という**グロブ**で、
+  > その配下が何ファイルなのかが本文からは読めない。件数を書かずにグロブで示すと、
+  > 「未カバー 4 件」と読んだ後続ラウンドが実際の規模（下記 11 件）を過小評価する。
+  > 以下に**実測の全リスト**を置く。
+
+  **監査対象（実測 2026-08-01 / HEAD `1e15ea5a`）— 計 11 ファイル / テスト 0 件**:
+
+  | ディレクトリ | ファイル |
+  |---|---|
+  | `cards/payment/stripe/` | `stripe-payment.tsx` / `stripe-wrapper.tsx` |
+  | `cards/payment/paypal/` | `paypal-payment.tsx` / `paypal-wrapper.tsx` |
+  | `checkout-page/` | `container.tsx` |
+  | `order-page/` | `group-table.tsx` / `groups-container.tsx` / `header.tsx` / `payment.tsx` / `pdf-invoice.tsx` / `product-row.tsx` |
+
+  ```bash
+  # 件数の再現（テスト 0 件であることと、母数 11 の両方を出す）
+  find src/components/store/cards/payment \
+       src/components/store/checkout-page \
+       src/components/store/order-page -name "*.tsx" | wc -l          # → 11
+  find src/components/store/cards/payment \
+       src/components/store/checkout-page \
+       src/components/store/order-page -iname "*test*" | wc -l        # → 0
+  ```
+
+  ```bash
+  git ls-tree -r --name-only 09275b5d tests/component/ | grep -i payment          # ヒット 0
+  git ls-tree -r --name-only 09275b5d src/components/store/cards/payment/ | grep -i test  # ヒット 0
+  git ls-tree -r --name-only 09275b5d src/components/store/checkout-page/ src/components/store/order-page/ | grep -i test  # ヒット 0
+  ```
+
+  > **3 行目を `ls <dir> | grep -i test` に戻さないこと（2026-07-30 修正）。** 旧形は
+  > (a) **非再帰**でサブディレクトリ配下のテストを取りこぼし、(b) pin した HEAD
+  > `09275b5d` ではなく**その時の作業ツリー**を見ていた（1・2 行目は `git ls-tree -r`）。
+  > 同じ主張を裏付けるコマンドが違うツリーを見ていては、後続ラウンドが再検証できない。
+  > 3 行とも `git ls-tree -r` に統一し、上の「3 点セット」規約と整合させた。
+  > 修正後も**ヒット 0**（2026-07-30 実測）で、結論そのものは変わらない。
+
+  > **削除した旧行について（2026-07-27）**: ここには「再測定（2026-07-18 / HEAD 未記録）」という
+  > 行が残っていた。測定 HEAD を欠く行は、下の規約が要求する 3 点セットを満たさないため
+  > **監査記録として使えない**（どの作業ツリーを見た結果か復元できず、後続ラウンドが
+  > 再検証も反証もできない）。同日の最終コミット `c77cdd7d` は `git log --until` で得た
+  > 上界にすぎず、測定時点のツリーと一致する保証も無かった。旧行は「次回の再測定時に
+  > 置き換えること」と自ら指示していたので、本再測定をもって上の 3 点セット付きの行へ
+  > 置換した。**HEAD 不明の測定は残さず、再測定するか行ごと落とすこと。**
+
+  > **測定は「日付 + HEAD + 再現コマンド」の 3 点セットで、行を分けて追記すること**。
+  > この finding は複数ラウンドにまたがって参照されるため、
+  > (a) 日付の無い「現 HEAD」は読んだ時点によって指すコミットが変わり、いつの測定なのか
+  > 復元できなくなる。(b) 日付だけあっても HEAD が無ければ、その日の作業ツリーが
+  > どの状態だったか再現できない。(c) 監査時点の Evidence 行に後日の再測定を
+  > **インラインで混ぜると**、「監査時に何が見えていたか」と「その後どうなったか」が
+  > 分離できなくなる（この行自体が 2026-07-27 まで違反していた）。
+  > 更新時は監査時点の値を上書きせず、**測定日付きの独立した行を足す**こと。
 - **Evidence（誤りとして撤回）**: ~~`cards/place-order.tsx`（`placeOrder`）~~ — 監査時点で `tests/component/store/place-order-card.test.tsx` によりカバー済み。
 - **Impact**: capture をいつ呼ぶか・失敗ハンドリング・二重送信ガードを担うクライアント層の回帰が無検出で通る。唯一の演習は間欠ハングが追跡中の E2E のみ（ただし place-order の再入ガードは component テストで演習済み）。
 - **Effort**: L / **Risk**: LOW / **Confidence**: HIGH（訂正後の 4 ファイルについて）

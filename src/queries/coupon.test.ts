@@ -4,6 +4,7 @@ import {
     upsertCoupon,
     getStoreCoupons,
     getCoupon,
+    getCouponAsAdmin,
     deleteCoupon,
     applyCoupon,
     getAllCoupons,
@@ -49,6 +50,24 @@ jest.mock("@/lib/db", () => ({
 }));
 
 const mockDb = require("@/lib/db").db;
+
+/**
+ * サーバー側 Zod 検証 (CouponFormSchema / AdminCouponFormSchema) を通る有効なクーポン入力を生成する。
+ *
+ * Prisma の Coupon.startDate / endDate は String だが、共有 fixture (MockCoupon) は
+ * Date のまま乖離しているため、upsert 系テストではここで ISO 文字列へ正規化した入力を使う。
+ */
+const createValidCouponInput = (
+    overrides: Record<string, unknown> = {}
+): Record<string, unknown> => {
+    const base = createMockCoupon();
+    return {
+        ...base,
+        startDate: base.startDate.toISOString(),
+        endDate: base.endDate.toISOString(),
+        ...overrides,
+    };
+};
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -133,7 +152,7 @@ describe("upsertCoupon", () => {
         });
 
         it("findFirstの事前チェックをすり抜けてもupsertがP2002をrejectした場合、coupon.ts upsertCouponは統一日本語メッセージをスローする", async () => {
-            const coupon = createMockCoupon({ id: "new-coupon" });
+            const coupon = createValidCouponInput({ id: "new-coupon" });
             mockDb.store.findUnique.mockResolvedValue(createMockStore());
             mockDb.coupon.findFirst.mockResolvedValue(null); // 事前チェックをすり抜ける
             const p2002Error = Object.assign(new Error("Unique constraint failed"), {
@@ -144,6 +163,139 @@ describe("upsertCoupon", () => {
             await expect(
                 upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
             ).rejects.toThrow("このクーポンコードは既に使用されています");
+        });
+    });
+
+    describe("サーバー側 Zod 検証（SECURITY-14: 直接呼び出しの discount>99 → 負値 total 防止）", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.coupon.findUnique.mockResolvedValue(null);
+            mockDb.coupon.findFirst.mockResolvedValue(null);
+        });
+
+        it("discount > 99 は拒否され、DB 書き込みが発生しない", async () => {
+            // applyCoupon / placeOrder は total.mul(discount).div(100) を計算するため、
+            // discount > 100 は注文 total を負値化する money-critical ベクトル
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("discount < 1 は拒否され、DB 書き込みが発生しない", async () => {
+            const coupon = createValidCouponInput({ discount: 0 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("小数の discount は拒否され、DB 書き込みが発生しない", async () => {
+            // Coupon.discount は Prisma 上 Int。範囲チェック (min/max) だけでは 50.5 が
+            // safeParse を通過し、Prisma 境界まで不正値が運ばれる。範囲と格納型の検証を
+            // 同じ境界に揃えるため .int() で弾く
+            const coupon = createValidCouponInput({ discount: 50.5 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("不正な code (英数字以外) は拒否され、DB 書き込みが発生しない", async () => {
+            const coupon = createValidCouponInput({ code: "!!" });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("検証エラーは汎用 DB エラー文言でラップされず、そのままの文言でスローされる", async () => {
+            // 回帰: safeParse の throw が try の内側にあると catch が
+            // "Error occurred while trying to upsert coupon: ..." で上書きしてしまう。
+            // 上の各ケースは toThrow(string) の部分一致で通ってしまうため、
+            // ここでは完全一致（正規表現アンカー）でラップの不在を固定する。
+            // tech.md「認可エラーを汎用 DB エラーメッセージで上書きしない」と同じ原則。
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(/^クーポンの入力値が不正です。$/);
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("検証エラーはサーバーログ (logError) を発生させない", async () => {
+            // ユーザーの入力ミスは運用上のエラーではない。try の内側に置くと
+            // catch の logError がユーザー起因の 4xx 相当をログノイズとして出し続ける。
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            try {
+                await expect(
+                    upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+                ).rejects.toThrow("クーポンの入力値が不正です。");
+                expect(consoleErrorSpy).not.toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
+        });
+
+        it("コード重複エラーは汎用 DB エラー文言でラップされない", async () => {
+            // 事前チェック (findFirst) の意図的 throw も同じ catch に捕まる。
+            // P2002 分岐は error.code を見るため素の Error はここに該当せず、
+            // "Error occurred while trying to upsert coupon: ..." に埋もれていた。
+            const coupon = createValidCouponInput({ id: "new-coupon" });
+            mockDb.coupon.findFirst.mockResolvedValue(
+                createMockCoupon({ id: "existing-coupon" })
+            );
+
+            await expect(
+                upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(/^このクーポンコードは既に使用されています$/);
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("スプレッド書き込みが撤去され、検証済みフィールドの明示マッピングで書き込まれる", async () => {
+            // クライアント供給の scope / storeId / isActive 等はサーバー強制値・既定値が優先され、
+            // 書き込みは parsed.data の 4 フォームフィールド + サーバー強制フィールドに限定される
+            const coupon = createValidCouponInput({
+                scope: "PLATFORM",
+                storeId: "attacker-store",
+            });
+            mockDb.coupon.upsert.mockResolvedValue(createMockCoupon());
+
+            await upsertCoupon(coupon as never, TEST_CONFIG.TEST_STORE_URL);
+
+            expect(mockDb.coupon.upsert).toHaveBeenCalledWith({
+                where: { id: coupon.id },
+                update: {
+                    code: coupon.code,
+                    startDate: coupon.startDate,
+                    endDate: coupon.endDate,
+                    discount: coupon.discount,
+                    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    scope: "STORE",
+                },
+                create: {
+                    id: coupon.id,
+                    code: coupon.code,
+                    startDate: coupon.startDate,
+                    endDate: coupon.endDate,
+                    discount: coupon.discount,
+                    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                    scope: "STORE",
+                },
+            });
         });
     });
 
@@ -233,41 +385,46 @@ describe("upsertCoupon", () => {
         });
 
         it("新規クーポンを正常に作成する", async () => {
-            const coupon = createMockCoupon();
-            mockDb.coupon.upsert.mockResolvedValue(coupon);
+            const coupon = createValidCouponInput();
+            const persisted = createMockCoupon();
+            mockDb.coupon.upsert.mockResolvedValue(persisted);
 
             const result = await upsertCoupon(
                 coupon as never,
                 TEST_CONFIG.TEST_STORE_URL
             );
 
-            expect(result).toEqual(coupon);
+            expect(result).toEqual(persisted);
             expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { id: coupon.id },
                     create: expect.objectContaining({
+                        // scope / storeId はクライアント入力ではなくサーバー強制値
                         storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        scope: "STORE",
                     }),
                 })
             );
         });
 
         it("既存クーポンを更新する", async () => {
-            const coupon = createMockCoupon({ discount: 20 });
+            const coupon = createValidCouponInput({ discount: 20 });
+            const persisted = createMockCoupon({ discount: 20 });
             // 既存行は自店舗所有 (storeId = store123 = store.id) → 所有権検証を通過
             mockDb.coupon.findUnique.mockResolvedValue(createMockCoupon());
-            mockDb.coupon.upsert.mockResolvedValue(coupon);
+            mockDb.coupon.upsert.mockResolvedValue(persisted);
 
             const result = await upsertCoupon(
                 coupon as never,
                 TEST_CONFIG.TEST_STORE_URL
             );
 
-            expect(result).toEqual(coupon);
+            expect(result).toEqual(persisted);
             expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     update: expect.objectContaining({
                         storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        scope: "STORE",
                     }),
                 })
             );
@@ -404,33 +561,155 @@ describe("getStoreCoupons", () => {
 // getCoupon
 // ==================================================
 describe("getCoupon", () => {
-    describe("バリデーション", () => {
-        it("couponIdが空の場合エラーをスローする", async () => {
-            await expect(getCoupon("")).rejects.toThrow(
-                "Please provide coupon ID."
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(
+                getCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Unauthenticated.");
+        });
+
+        it("SELLERロール以外の場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "USER" },
+            });
+
+            await expect(
+                getCoupon("coupon-001", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow("Only sellers can perform this action.");
+        });
+    });
+
+    describe("IDOR防止", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+        });
+
+        it("(a) 非所有ストア URL では Forbidden をスローし、クーポン読み取りは発生しない", async () => {
+            // 他人の店舗 URL → requireStoreOwner の where: { url, userId } が null を返す
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            await expect(
+                getCoupon("coupon-001", "not-my-store")
+            ).rejects.toThrow("Forbidden: store not owned by current user.");
+            // 副作用なし検証: クーポン取得クエリ自体が呼ばれていない
+            expect(mockDb.coupon.findFirst).not.toHaveBeenCalled();
+        });
+
+        it("(b) 取得クエリが id + storeId の複合 where でスコープされる", async () => {
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            const coupon = createMockCoupon();
+            mockDb.coupon.findFirst.mockResolvedValue(coupon);
+
+            const result = await getCoupon(
+                "coupon-001",
+                TEST_CONFIG.TEST_STORE_URL
             );
+
+            expect(result).toEqual(coupon);
+            expect(mockDb.coupon.findFirst).toHaveBeenCalledWith({
+                where: {
+                    id: "coupon-001",
+                    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                },
+            });
+        });
+
+        it("(c) 他店舗クーポンの id を渡しても null が返る (storeId スコープにより不可視)", async () => {
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            // 自店舗スコープの findFirst では他店舗クーポンはヒットしない
+            mockDb.coupon.findFirst.mockResolvedValue(null);
+
+            const result = await getCoupon(
+                "other-store-coupon",
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe("バリデーション", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+        });
+
+        it("couponIdが空の場合エラーをスローする", async () => {
+            await expect(
+                getCoupon("", TEST_CONFIG.TEST_STORE_URL)
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
+        });
+
+        it("storeURLが空の場合エラーをスローする", async () => {
+            await expect(getCoupon("coupon-001", "")).rejects.toThrow(
+                "Please provide store URL."
+            );
+        });
+    });
+});
+
+// ==================================================
+// getCouponAsAdmin
+// ==================================================
+describe("getCouponAsAdmin", () => {
+    describe("認証・権限エラー", () => {
+        it("未認証ユーザーの場合エラーをスローする", async () => {
+            (currentUser as jest.Mock).mockResolvedValue(null);
+
+            await expect(getCouponAsAdmin("coupon-001")).rejects.toThrow(
+                "Unauthenticated."
+            );
+        });
+
+        it("ADMIN以外の場合エラーをスローし、クーポン読み取りは発生しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+
+            await expect(getCouponAsAdmin("coupon-001")).rejects.toThrow(
+                "Only admins can perform this action."
+            );
+            expect(mockDb.coupon.findUnique).not.toHaveBeenCalled();
         });
     });
 
     describe("正常系", () => {
-        it("クーポンを正常に取得する", async () => {
-            const coupon = createMockCoupon();
-            mockDb.coupon.findUnique.mockResolvedValue(coupon);
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+        });
 
-            const result = await getCoupon("coupon-001");
+        it("ADMINは任意のクーポンを取得できる (PLATFORM クーポン含む・非スコープ findUnique)", async () => {
+            const platformCoupon = createMockCoupon({
+                storeId: null,
+                scope: "PLATFORM",
+            });
+            mockDb.coupon.findUnique.mockResolvedValue(platformCoupon);
 
-            expect(result).toEqual(coupon);
+            const result = await getCouponAsAdmin("coupon-001");
+
+            expect(result).toEqual(platformCoupon);
             expect(mockDb.coupon.findUnique).toHaveBeenCalledWith({
                 where: { id: "coupon-001" },
             });
         });
 
-        it("存在しないクーポンの場合nullを返す", async () => {
-            mockDb.coupon.findUnique.mockResolvedValue(null);
-
-            const result = await getCoupon("nonexistent");
-
-            expect(result).toBeNull();
+        it("couponIdが空の場合エラーをスローする", async () => {
+            await expect(getCouponAsAdmin("")).rejects.toThrow(
+                /^Please provide coupon ID\.$/
+            );
         });
     });
 });
@@ -471,7 +750,7 @@ describe("deleteCoupon", () => {
         it("couponIdが空の場合エラーをスローする", async () => {
             await expect(
                 deleteCoupon("", TEST_CONFIG.TEST_STORE_URL)
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
 
         it("storeURLが空の場合エラーをスローする", async () => {
@@ -1180,12 +1459,13 @@ describe("upsertCouponAsAdmin", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
-            const coupon = createMockCoupon();
-            mockDb.coupon.upsert.mockResolvedValue(coupon);
+            const coupon = createValidCouponInput();
+            const persisted = createMockCoupon();
+            mockDb.coupon.upsert.mockResolvedValue(persisted);
 
             const result = await upsertCouponAsAdmin(coupon as never);
 
-            expect(result).toEqual(coupon);
+            expect(result).toEqual(persisted);
             expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: { id: coupon.id },
@@ -1200,7 +1480,7 @@ describe("upsertCouponAsAdmin", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
-            const coupon = createMockCoupon();
+            const coupon = createValidCouponInput();
             const p2002Error = Object.assign(new Error("Unique constraint"), {
                 code: "P2002",
                 name: "PrismaClientKnownRequestError",
@@ -1210,6 +1490,50 @@ describe("upsertCouponAsAdmin", () => {
             await expect(
                 upsertCouponAsAdmin(coupon as never)
             ).rejects.toThrow("このクーポンコードは既に使用されています");
+        });
+    });
+
+    describe("サーバー側 Zod 検証（SECURITY-14）", () => {
+        it("discount > 99 は拒否され、DB 書き込みが発生しない", async () => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("小数の discount は拒否され、DB 書き込みが発生しない", async () => {
+            // AdminCouponFormSchema は CouponFormSchema.extend() のため .int() を継承する
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createValidCouponInput({ discount: 50.5 });
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow("クーポンの入力値が不正です。");
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
+        });
+
+        it("検証エラーは汎用 DB エラー文言でラップされず、そのままの文言でスローされる", async () => {
+            // 回帰: upsertCoupon と同型。admin 側の catch は
+            // "Error occurred while upserting coupon: ..." で上書きしていた。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            const coupon = createValidCouponInput({ discount: 150 });
+
+            await expect(
+                upsertCouponAsAdmin(coupon as never)
+            ).rejects.toThrow(/^クーポンの入力値が不正です。$/);
+            expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
         });
     });
 });
@@ -1248,7 +1572,7 @@ describe("deleteCouponAsAdmin", () => {
 
             await expect(
                 deleteCouponAsAdmin("")
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
     });
 
@@ -1306,7 +1630,7 @@ describe("toggleCouponActive", () => {
 
             await expect(
                 toggleCouponActive("")
-            ).rejects.toThrow("Please provide coupon ID.");
+            ).rejects.toThrow(/^Please provide coupon ID\.$/);
         });
     });
 
@@ -1358,9 +1682,35 @@ describe("toggleCouponActive", () => {
             });
             mockDb.coupon.findUnique.mockResolvedValue(null);
 
+            // 完全一致アンカー。部分一致 (`toThrow("Coupon not found.")`) だと
+            // catch が `Error occurred while toggling coupon active state: Coupon
+            // not found.` にラップしても通ってしまい、欠陥を検出できない。
             await expect(
                 toggleCouponActive("coupon-001")
-            ).rejects.toThrow("Coupon not found.");
+            ).rejects.toThrow(/^Coupon not found\.$/);
+        });
+
+        it("不在エラーはサーバーログ (logError) を発生させない", async () => {
+            // 「存在しない ID を指定した」はユーザー起因の 4xx 相当。汎用 DB エラーと
+            // 同じ扱いで console.error に載せるとログノイズになる。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.coupon.findUnique.mockResolvedValue(null);
+            const consoleErrorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            try {
+                await expect(
+                    toggleCouponActive("coupon-001")
+                ).rejects.toThrow(/^Coupon not found\.$/);
+
+                expect(consoleErrorSpy).not.toHaveBeenCalled();
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 
@@ -1424,14 +1774,18 @@ describe("upsertCouponAsAdmin (バリデーション・エラーハンドリン�
         ).rejects.toThrow("Please provide coupon data.");
     });
 
-    it("異常系: storeIdが空の場合エラーをスローする", async () => {
+    it("異常系: scope=STOREでstoreIdが空の場合エラーをスローする (AdminCouponFormSchema superRefine が先に検出)", async () => {
         // Arrange
-        const coupon = createMockCoupon({ storeId: "" });
+        // safeParse ゲートが normalizedStoreId 計算より先に走るため、
+        // superRefine (STORE ⇒ storeId 必須) が検証エラーとして検出する。
+        // 後段の "Please provide a valid store ID." は defense-in-depth として残置。
+        const coupon = createValidCouponInput({ storeId: "" });
 
         // Act & Assert
         await expect(
             upsertCouponAsAdmin(coupon as never)
-        ).rejects.toThrow("Please provide a valid store ID.");
+        ).rejects.toThrow("クーポンの入力値が不正です。");
+        expect(mockDb.coupon.upsert).not.toHaveBeenCalled();
     });
 
     it("エラーハンドリング: 非P2002 DBエラーをログ出力しラップしてスローする", async () => {
@@ -1439,7 +1793,7 @@ describe("upsertCouponAsAdmin (バリデーション・エラーハンドリン�
         const consoleSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => undefined);
-        const coupon = createMockCoupon();
+        const coupon = createValidCouponInput();
         mockDb.coupon.upsert.mockRejectedValue(new Error("DB connection failed"));
 
         // Act & Assert
@@ -1452,14 +1806,15 @@ describe("upsertCouponAsAdmin (バリデーション・エラーハンドリン�
 
     it("正常系: scope=PLATFORMの場合storeIdが空でもstoreId:nullでupsertされる", async () => {
         // Arrange
-        const coupon = createMockCoupon({ scope: "PLATFORM", storeId: null });
-        mockDb.coupon.upsert.mockResolvedValue(coupon);
+        const coupon = createValidCouponInput({ scope: "PLATFORM", storeId: null });
+        const persisted = createMockCoupon({ scope: "PLATFORM", storeId: null });
+        mockDb.coupon.upsert.mockResolvedValue(persisted);
 
         // Act
         const result = await upsertCouponAsAdmin(coupon as never);
 
         // Assert
-        expect(result).toEqual(coupon);
+        expect(result).toEqual(persisted);
         expect(mockDb.coupon.upsert).toHaveBeenCalledWith(
             expect.objectContaining({
                 create: expect.objectContaining({ storeId: null }),

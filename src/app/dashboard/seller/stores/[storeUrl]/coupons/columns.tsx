@@ -154,8 +154,40 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
                                     />
                                 </CustomModal>,
                                 async () => {
-                                    return {
-                                        rowData: await getCoupon(coupon?.id),
+                                    try {
+                                        return {
+                                            rowData: await getCoupon(
+                                                coupon?.id,
+                                                params.storeUrl
+                                            ),
+                                        }
+                                    } catch (error: unknown) {
+                                        if (error instanceof Error) {
+                                            console.error(
+                                                '[CouponColumns:EditDetails] failed to fetch coupon',
+                                                {
+                                                    error: error.message,
+                                                    stack: error.stack,
+                                                }
+                                            )
+                                        } else {
+                                            console.error(
+                                                '[CouponColumns:EditDetails] unknown error',
+                                                { error }
+                                            )
+                                        }
+
+                                        toast({
+                                            variant: 'destructive',
+                                            title: 'Oops!',
+                                            description:
+                                                'Failed to load the coupon. Please try again.',
+                                        })
+
+                                        // クーポンの現況を確認できていないため、
+                                        // 行スナップショットのまま編集させずモーダルを閉じる
+                                        setClose()
+                                        return {}
                                     }
                                 }
                             )

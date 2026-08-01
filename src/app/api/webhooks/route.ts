@@ -1,10 +1,12 @@
 // import { User } from "@/generated/prisma";
 // import { User } from "@/generated/prisma";
 import { db } from "@/lib/db";
+import { REDACTED_PII } from "@/lib/pii";
 import { clerkClient, WebhookEvent } from "@clerk/nextjs/server";
 import { User } from "@prisma/client";
 import { headers } from "next/headers";
 import { Webhook } from "svix";
+
 /**
  * Handle Clerk (Svix) webhook POST requests, verify the Svix signature, and synchronize Clerk user events with the database.
  *
@@ -112,12 +114,44 @@ export async function POST(req: Request) {
 	}
 
 	if (evt.type === "user.deleted") {
-		const userId = (evt.data as { id: string }).id;
+		// Clerk の DeletedObjectJSON.id は optional。無検証キャストで undefined が
+		// 流れ込むと Prisma は `where: { userId: undefined }` を「その条件を
+		// 指定しなかった」と解釈するため、updateMany は全 SupportTicket の PII を
+		// 上書きし、deleteMany は全 User を削除する。トランザクションに入る前に
+		// 絞り込みキーとして使える文字列であることを確定させる。
+		const rawUserId = (evt.data as { id?: unknown }).id;
+		if (typeof rawUserId !== "string" || rawUserId.trim() === "") {
+			console.error(
+				"Webhook user.deleted event missing a usable user id"
+			);
+			return new Response("Missing user id", { status: 400 });
+		}
+		// 検証したのは trim 後の値なので、絞り込みにも同じ値を使う。
+		// 未 trim のまま渡すと検証対象と使用値が食い違い、trim 後なら一致する
+		// ユーザーに対して 0 件ヒットの削除・PII 秘匿が「成功」として通る。
+		const userId = rawUserId.trim();
+
 		try {
-			await db.user.deleteMany({
-				where: {
-					id: userId,
-				},
+			// GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
+			// ユーザー削除だけではチケット行の PII 列（name/email/subject/message・
+			// いずれも NOT NULL）が残存する。ユーザー削除で userId が null 化される前に、
+			// 当該ユーザーのチケットの PII を秘匿値へ上書きする。上書きと削除は単一 tx に
+			// まとめ、片方だけ成立して整合が崩れることを防ぐ。
+			await db.$transaction(async (tx) => {
+				await tx.supportTicket.updateMany({
+					where: { userId },
+					data: {
+						name: REDACTED_PII,
+						email: REDACTED_PII,
+						subject: REDACTED_PII,
+						message: REDACTED_PII,
+					},
+				});
+				await tx.user.deleteMany({
+					where: {
+						id: userId,
+					},
+				});
 			});
 		} catch (error) {
 			console.error("Webhook user deletion failed:", error);

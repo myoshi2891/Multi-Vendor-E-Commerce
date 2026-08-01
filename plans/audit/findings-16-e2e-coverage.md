@@ -296,8 +296,14 @@ pass/fail の実測記録が存在しないため、この全滅状態は本ラ�
 - **Impact**: 店舗 BAN の顧客側反映（商品非表示）は運営の主要オペレーションだが未固定。
 - **Effort**: M〜L（**TESTS-26 先行依存** + ADMIN ロールセッション。`createCustomerSession()` は
   `role` 指定可能（`auth.ts` の `opts.role`）で流用できる）
-- **Risk**: 中（admin 画面の Cloudinary 依存範囲の事前確認が必要）
-- **Confidence**: Medium-High（ステータス変更 UI の Cloudinary 依存有無のみ未確認）
+- **Risk**: 中（残るリスクは ADMIN セッションの Clerk `privateMetadata` 設定と、
+  下記の商品露出ギャップ。Cloudinary 依存は Evidence (1) で解消済み）
+- **Confidence**: **High** — Evidence (1) で `StoreStatusSelect`
+  (`src/components/dashboard/forms/store-status-select.tsx`) が Cloudinary 非依存
+  であることを確定済みのため、「ステータス変更 UI の Cloudinary 依存有無」は
+  **未確認事項ではない**。OI-11 の影響圏外として先行可能。
+  （2026-07-18: Evidence (1) の確定内容がリスク評価へ反映されておらず、解消済みの
+  事前確認が Confidence を不要に下げていたのを是正。）
 
 ---
 

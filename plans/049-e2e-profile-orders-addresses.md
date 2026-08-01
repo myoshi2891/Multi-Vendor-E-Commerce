@@ -126,6 +126,47 @@ a11y スキャン 1 本（それも Round 8 実測まで認証破損で fail）�
 > - **後始末は `afterAll` で `shippingAddress.deleteMany({ where: { userId } })` を明示的に行う**
 >   （テスト 1・テスト 2 が作った分を両方まとめて消せる）。実績のあるパターンは
 >   `tests/e2e/stock-decrement.spec.ts:96-106`。
+>   **必ず `session.cleanup()` より前に実行すること。順序が正しさを決める。**
+>   `cleanup()`（`tests/e2e/helpers/auth.ts:124-138`）は 2 つの理由で「後」だと壊れる:
+>
+>   1. `prisma.user.delete(...).catch(() => {})` — 住所が残っていると FK RESTRICT で
+>      P2003 になり、その失敗が握り潰されて **User 行が黙って残る**。
+>   2. `finally { await prisma?.$disconnect(); }` — `cleanup()` は**抜ける際に接続を切る**。
+>      後ろに置いた `deleteMany` は「遅い」だけでなく、**切断済みクライアントに対して
+>      発行される**ことになる。
+>
+>   ```typescript
+>   test.afterAll(async () => {
+>       let primaryError: unknown;
+>       try {
+>           // 1. 子（住所）を先に消す —— これが無いと 2. が P2003 で黙って失敗する。
+>           //    ここで `.catch(() => {})` を付けないこと: 削除失敗を握り潰すと、上で警告している
+>           //    「User が FK RESTRICT で消えず黙って残る」カスケードをまさに引き起こす。
+>           //    deleteMany は 0 件でも throw しないので、投げる時は本物の異常 —— 保持して最後に投げる。
+>           await prisma.shippingAddress.deleteMany({ where: { userId } });
+>       } catch (error: unknown) {
+>           primaryError = error; // 元エラーを退避（下の cleanup で握り潰さないため）
+>       } finally {
+>           // 2. 親（User）と Clerk を消し、最後に切断する。**finally に置く**のは、
+>           //    上の deleteMany が throw しても Clerk ユーザー削除 + `$disconnect` を
+>           //    必ず実行するため。直列に並べると deleteMany 失敗時に cleanup() が
+>           //    スキップされ、Clerk ユーザーと Prisma 接続がリークする。
+>           //    ただし素の try/finally では cleanup() が throw すると**元の deleteMany エラーを
+>           //    上書きして隠してしまう**（JS では finally の例外が try の例外に優先する）。
+>           //    そこで cleanup() も個別に try/catch し、元エラーを優先して送出する。
+>           try {
+>               await session.cleanup();
+>           } catch (cleanupError: unknown) {
+>               if (primaryError === undefined) primaryError = cleanupError;
+>               else console.error("[afterAll] cleanup() も失敗:", cleanupError);
+>           }
+>       }
+>       if (primaryError !== undefined) throw primaryError; // 元の削除失敗を表面化させて落とす
+>   });
+>   ```
+>
+>   `stock-decrement.spec.ts:96-106` はこの順序（住所 → User → Clerk → `$disconnect()` が最後）を
+>   そのまま体現している。**引用しているのは deleteMany の書き方だけでなく、この並び順である。**
 >   **「ユーザーを消せばカスケードで住所も消える」は誤り** —— `ShippingAddress.userId` は
 >   **RESTRICT**（`prisma/schema.prisma` / plan 040 の FK 表）であり、カスケードは存在しない。
 >   むしろ住所が残っていると `user.delete` 自体が P2003 で失敗する。しかも

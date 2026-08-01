@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import Stripe from "stripe";
+import { Prisma } from "@prisma/client";
 import { createStripePaymentIntent, createStripePayment } from "./stripe";
 import { TEST_CONFIG } from "../config/test-config";
 import {
@@ -14,6 +15,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 jest.mock("@/lib/db", () => ({
     db: {
+        $transaction: jest.fn(),
         order: {
             findUnique: jest.fn(),
             update: jest.fn(),
@@ -44,6 +46,15 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
+    // clearAllMocks は mockResolvedValueOnce の未消化キューを捨てない。
+    // 消化されなかった once 値が次のテストへ持ち越されると、そのテストは
+    // 自分が仕込んだ戻り値ではなく前テストの残りを受け取る。
+    mockStripePaymentIntentsCreate.mockReset();
+    // createStripePayment の transaction callback を同じ DB モックで実行する。
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
 });
 
 // ==================================================
@@ -93,16 +104,49 @@ describe("createStripePaymentIntent", () => {
 
             const result = await createStripePaymentIntent("order-001");
 
-            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith({
-                amount: 9999, // $99.99 → 9999セント
-                currency: "usd",
-                automatic_payment_methods: { enabled: true },
-                metadata: { orderId: "order-001" },
-            });
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
+                {
+                    amount: 9999, // $99.99 → 9999セント
+                    currency: "usd",
+                    automatic_payment_methods: { enabled: true },
+                    metadata: { orderId: "order-001" },
+                },
+                expect.objectContaining({
+                    idempotencyKey: expect.any(String),
+                })
+            );
             expect(result).toEqual({
                 paymentIntentId: "pi_test_123",
                 clientSecret: "pi_test_123_secret",
             });
+        });
+
+        it("PaymentDetails.amount は Decimal(12,2) 準拠のドル建てで保存する", async () => {
+            // Stripe API は minor unit (セント) を要求するが、PaymentDetails.amount は
+            // Decimal(12,2) = ドル建て。両者を混同すると $99.99 の注文が 9999.00 として
+            // 記録され、PayPal 側 (ドル建て) との集計が破綻する。
+            const order = createMockOrder({ total: 99.99 });
+            mockDb.order.findUnique.mockResolvedValue(order);
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_unit_001",
+                client_secret: "pi_unit_001_secret",
+                amount: 9999,
+                currency: "usd",
+                status: "requires_payment_method",
+            });
+
+            await createStripePaymentIntent("order-001");
+
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    create: expect.objectContaining({
+                        amount: new Prisma.Decimal("99.99"),
+                    }),
+                    update: expect.objectContaining({
+                        amount: new Prisma.Decimal("99.99"),
+                    }),
+                })
+            );
         });
 
         it("Webhook 相関用に metadata.orderId を PaymentIntent に付与する", async () => {
@@ -120,7 +164,8 @@ describe("createStripePaymentIntent", () => {
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     metadata: { orderId: "order-meta-test" },
-                })
+                }),
+                expect.anything()
             );
         });
 
@@ -138,7 +183,8 @@ describe("createStripePaymentIntent", () => {
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     amount: 1001,
-                })
+                }),
+                expect.anything()
             );
         });
 
@@ -153,8 +199,247 @@ describe("createStripePaymentIntent", () => {
             await createStripePaymentIntent("order-001");
 
             expect(mockStripePaymentIntentsCreate).toHaveBeenCalledWith(
-                expect.objectContaining({ amount: 1 })
+                expect.objectContaining({ amount: 1 }),
+                expect.anything()
             );
+        });
+    });
+
+    // 冪等キーが無いと、二重クリックやネットワーク再送のたびに Stripe 側へ
+    // 新しい intent が作られ、孤児 intent が量産される。さらに paymentDetails の
+    // 「有効な intent id」が毎回上書きされるため、先行 intent で決済中のユーザーが
+    // createStripePayment で拒否されうる。
+    describe("冪等性", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("同一注文・同一金額の再実行では同じ冪等キーを送る", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_001",
+                client_secret: "pi_idem_001_secret",
+            });
+
+            await createStripePaymentIntent("order-idem");
+            await createStripePaymentIntent("order-idem");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).toBe(
+                secondOptions.idempotencyKey
+            );
+            expect(firstOptions.idempotencyKey).toContain("order-idem");
+        });
+
+        it("注文ごとに異なる冪等キーを送る", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_002",
+                client_secret: "pi_idem_002_secret",
+            });
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            await createStripePaymentIntent("order-a");
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            await createStripePaymentIntent("order-b");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).not.toBe(
+                secondOptions.idempotencyKey
+            );
+        });
+
+        // Stripe は「同一キー・異なるパラメータ」の再送をエラーで拒否する。
+        // 金額をキーに含めないと、クーポン適用等で合計が正当に変わった際に
+        // 決済が永久に通らなくなる。
+        it("同一注文でも金額が変われば異なる冪等キーを送る", async () => {
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_idem_003",
+                client_secret: "pi_idem_003_secret",
+            });
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 100 })
+            );
+            await createStripePaymentIntent("order-amount");
+
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 80 })
+            );
+            await createStripePaymentIntent("order-amount");
+
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+
+            expect(firstOptions.idempotencyKey).not.toBe(
+                secondOptions.idempotencyKey
+            );
+        });
+
+        // 冪等キーは「同じキー → 同じ intent」を保証するが、その intent が canceled に
+        // なった後も同じものが返り続ける。canceled の client_secret は confirm できない
+        // ため、キーを固定したままだと当該注文はその金額のまま恒久的に決済不能になる。
+        it("canceled 済み intent が返った場合は別の冪等キーで作り直す", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate
+                .mockResolvedValueOnce({
+                    id: "pi_canceled_001",
+                    client_secret: "pi_canceled_001_secret",
+                    status: "canceled",
+                    currency: "usd",
+                })
+                .mockResolvedValueOnce({
+                    id: "pi_fresh_001",
+                    client_secret: "pi_fresh_001_secret",
+                    status: "requires_payment_method",
+                    currency: "usd",
+                });
+
+            const result = await createStripePaymentIntent("order-canceled");
+
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledTimes(2);
+            const [, firstOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[0];
+            const [, secondOptions] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+            expect(secondOptions.idempotencyKey).not.toBe(
+                firstOptions.idempotencyKey
+            );
+
+            // 呼び出し元にも DB にも「作り直した側」の intent が渡ること。
+            // 古い canceled の id を保存すると createStripePayment の一致確認で
+            // 新しい intent が拒否される。
+            expect(result).toEqual({
+                paymentIntentId: "pi_fresh_001",
+                clientSecret: "pi_fresh_001_secret",
+            });
+            expect(mockDb.paymentDetails.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    create: expect.objectContaining({
+                        paymentIntentId: "pi_fresh_001",
+                    }),
+                    update: expect.objectContaining({
+                        paymentIntentId: "pi_fresh_001",
+                    }),
+                })
+            );
+        });
+
+        // 再作成キーが乱数由来だと、canceled を観測した後だけ冪等性が失われる。
+        // 二重クリックのたびに別キー → 別 intent が作られて孤児が量産され、
+        // 最後の 1 つだけが「有効な intent id」として保存されるため、先行 intent で
+        // 決済中のユーザーが createStripePayment で拒否される（= 冪等キー導入前に
+        // 戻る裏口）。キーは「観測した canceled intent の id」から導出すること。
+        it("同一の canceled intent を観測した再実行では同じ再作成キーを送る", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            const canceled = {
+                id: "pi_canceled_dup",
+                client_secret: "pi_canceled_dup_secret",
+                status: "canceled",
+                currency: "usd",
+            };
+            const fresh = {
+                id: "pi_fresh_dup",
+                client_secret: "pi_fresh_dup_secret",
+                status: "requires_payment_method",
+                currency: "usd",
+            };
+            // 1 回目: 基本キー → canceled / 再作成キー → fresh
+            // 2 回目（二重送信）: Stripe は同じキーに同じ intent を返すので同じ並び
+            mockStripePaymentIntentsCreate
+                .mockResolvedValueOnce(canceled)
+                .mockResolvedValueOnce(fresh)
+                .mockResolvedValueOnce(canceled)
+                .mockResolvedValueOnce(fresh);
+
+            await createStripePaymentIntent("order-canceled-dup");
+            await createStripePaymentIntent("order-canceled-dup");
+
+            const [, firstRecreate] =
+                mockStripePaymentIntentsCreate.mock.calls[1];
+            const [, secondRecreate] =
+                mockStripePaymentIntentsCreate.mock.calls[3];
+
+            // 決定論的 = 同じ canceled を見たら同じ再作成キー
+            expect(secondRecreate.idempotencyKey).toBe(
+                firstRecreate.idempotencyKey
+            );
+            // かつ観測した canceled intent の id に紐づいていること
+            expect(firstRecreate.idempotencyKey).toContain("pi_canceled_dup");
+        });
+
+        // 再作成した intent もまた canceled だった場合、キーが前進しなければ
+        // 同じ canceled が返り続ける。上限まで前進させ、それでも canceled なら
+        // **canceled の id を保存せず** 明示的に失敗する（保存すると
+        // createStripePayment が confirm 不能な intent と一致してしまう）。
+        it("canceled が続く場合は上限で失敗し、canceled の id を保存しない", async () => {
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => undefined);
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            // 毎回「別の」canceled を返す（キーが前進していることの裏付け）
+            let seq = 0;
+            mockStripePaymentIntentsCreate.mockImplementation(async () => {
+                seq += 1;
+                return {
+                    id: `pi_canceled_chain_${seq}`,
+                    client_secret: `pi_canceled_chain_${seq}_secret`,
+                    status: "canceled",
+                    currency: "usd",
+                };
+            });
+
+            await expect(
+                createStripePaymentIntent("order-canceled-chain")
+            ).rejects.toThrow("Stripe payment intent could not be recreated.");
+
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
+        });
+
+        it("canceled 以外の status では作り直さない（二重送信防御を維持）", async () => {
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 42.5 })
+            );
+            mockStripePaymentIntentsCreate.mockResolvedValue({
+                id: "pi_pending_001",
+                client_secret: "pi_pending_001_secret",
+                status: "requires_action",
+                currency: "usd",
+            });
+
+            const result = await createStripePaymentIntent("order-pending");
+
+            expect(mockStripePaymentIntentsCreate).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({
+                paymentIntentId: "pi_pending_001",
+                clientSecret: "pi_pending_001_secret",
+            });
         });
     });
 
@@ -284,7 +569,9 @@ describe("createStripePayment", () => {
                     create: expect.objectContaining({
                         paymentIntentId: "pi_test_123",
                         paymentMethod: "Stripe",
-                        amount: 9999,
+                        // PaymentDetails.amount は Decimal(12,2) = ドル建て。
+                        // Stripe API の minor unit (9999) をそのまま入れない。
+                        amount: new Prisma.Decimal("99.99"),
                         currency: "usd",
                         status: "Completed",
                         orderId: "order-001",
@@ -303,7 +590,9 @@ describe("createStripePayment", () => {
 
             expect(mockDb.order.update).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: { id: "order-001" },
+                    // where には CAS 条件（未確定であること）も含まれる。
+                    // 詳細は「決済状態更新の原子性 (CAS)」の describe を参照。
+                    where: expect.objectContaining({ id: "order-001" }),
                     data: expect.objectContaining({
                         paymentStatus: "Paid",
                         paymentMethod: "Stripe",
@@ -579,7 +868,9 @@ describe("createStripePayment", () => {
                 createMockOrder({ total: 99.99, paymentStatus: "Paid" })
             );
             mockDb.paymentDetails.findUnique.mockResolvedValue(
-                createMockPaymentDetails({ paymentIntentId: mockPaymentIntent.id })
+                createMockPaymentDetails({
+                    paymentIntentId: mockPaymentIntent.id,
+                })
             );
             mockStripePaymentIntentsRetrieve.mockResolvedValue({
                 ...mockPaymentIntent,
@@ -606,6 +897,105 @@ describe("createStripePayment", () => {
             ).rejects.toThrow("Order payment is already settled.");
 
             expect(mockStripePaymentIntentsCreate).not.toHaveBeenCalled();
+        });
+    });
+
+    // 冒頭の isSettledPaymentStatus チェックは read-then-act であり、読み取りから
+    // 書き込みまでの間に webhook (src/app/api/webhooks/stripe) が Paid を書き込むと、
+    // 後発の本 server action が Pending へ退行させてしまう。書き込み自体を
+    // 「未確定のままである場合のみ」の条件付き更新にして原子性を担保する。
+    describe("決済状態更新の原子性 (CAS)", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.paymentDetails.findUnique.mockResolvedValue(null);
+            mockDb.paymentDetails.upsert.mockResolvedValue(
+                createMockPaymentDetails()
+            );
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+            mockStripePaymentIntentsRetrieve.mockResolvedValue(
+                mockPaymentIntent
+            );
+        });
+
+        it("PaymentDetails と Order の更新を単一transactionで行う", async () => {
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        });
+
+        it("確定済みでない場合のみ更新する条件をwhereに含める", async () => {
+            await createStripePayment("order-001", mockPaymentIntent.id);
+
+            expect(mockDb.order.update).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        id: "order-001",
+                        paymentStatus: {
+                            notIn: expect.arrayContaining([
+                                "Paid",
+                                "Refunded",
+                                "PartiallyRefunded",
+                                "ChargeBack",
+                            ]),
+                        },
+                    }),
+                })
+            );
+        });
+
+        const p2025 = () =>
+            new Prisma.PrismaClientKnownRequestError("record not found", {
+                code: "P2025",
+                clientVersion: "test",
+            });
+
+        // 条件付き更新が 0 件 = 読み取り後に他経路(webhook)が確定させた。
+        // 汎用 DB エラーで潰さず、確定済みであることを呼び出し元へ伝える。
+        //
+        // findUnique は 2 回呼ばれる: 1 回目は冒頭の事前チェック（この時点では未確定
+        // だからこそ処理が先へ進む）、2 回目は P2025 を捕まえた後の再読。本番で CAS が
+        // 外れるのは webhook が Paid を書いたからなので、再読は確定済みを返す。
+        it("読み取り後に確定済みへ変わっていた場合は settled エラーを返す", async () => {
+            mockDb.order.findUnique
+                .mockResolvedValueOnce(createMockOrder({ total: 99.99 }))
+                .mockResolvedValueOnce(
+                    createMockOrder({ total: 99.99, paymentStatus: "Paid" })
+                );
+            mockDb.order.update.mockRejectedValue(p2025());
+
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow("Order payment is already settled.");
+        });
+
+        // P2025 は CAS 不一致だけで出るわけではない — order の並行削除や
+        // paymentDetails.connect の対象消失でも同じコードが返る。再読しても
+        // 未確定のままなら「確定済み」ではないので、settled へ正規化して
+        // 本当の障害を隠してはならない。
+        it("再読しても未確定なら P2025 を settled へ正規化しない", async () => {
+            // 事前チェック・再読とも未確定（＝確定させた他経路が存在しない）
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+            mockDb.order.update.mockRejectedValue(p2025());
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+
+            // 元の P2025 がそのまま伝播すること（settled で覆い隠さない）
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+            await expect(
+                createStripePayment("order-001", mockPaymentIntent.id)
+            ).rejects.not.toThrow("Order payment is already settled.");
+
+            consoleSpy.mockRestore();
         });
     });
 

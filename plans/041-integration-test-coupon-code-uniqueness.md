@@ -43,12 +43,12 @@ UX の回帰網になり、「code をグローバル一意のままにするか
 
 - `prisma/schema.prisma:672` — `code String @unique`（**グローバル一意**）。Coupon model は
   `storeId String?`（nullable — PLATFORM クーポンは null）+ `scope CouponScope @default(STORE)`。
-- `src/queries/coupon.ts:32-106` — seller 経路 `upsertCoupon(coupon: Coupon, storeURL: string)`。
+- `src/queries/coupon.ts:61-167` — seller 経路 `upsertCoupon(coupon: Coupon, storeURL: string)`。
   **変更しない。** 要点:
-  - `:38` — `requireStoreOwner(storeURL)` で SELLER + 店舗所有権を検証
-  - `:50-60` — `coupon.id` の既存行を findUnique し、他店舗/PLATFORM 所有なら
+  - `:67` — `requireStoreOwner(storeURL)` で SELLER + 店舗所有権を検証
+  - `:81-88` — `coupon.id` の既存行を findUnique し、他店舗/PLATFORM 所有なら
     `'Forbidden: coupon not owned by current store.'`
-  - `:64-76` — 事前重複チェック（**自店舗スコープのみ**）:
+  - `:93-105` — 事前重複チェック（**自店舗スコープのみ**）:
 
 ```typescript
         const existingCoupon = await db.coupon.findFirst({
@@ -66,9 +66,9 @@ UX の回帰網になり、「code をグローバル一意のままにするか
         }
 ```
 
-  - `:80-88` — `db.coupon.upsert({ where: { id: coupon.id }, ... })`。update/create とも
+  - `:117-143` — `db.coupon.upsert({ where: { id: coupon.id }, ... })`。update/create とも
     `storeId: store.id` + `scope: 'STORE'` を強制
-  - `:94-100` — P2002 フォールバック（**他店舗/PLATFORM との code 衝突はここだけが捕捉する**）:
+  - `:146-151` — P2002 フォールバック（**他店舗/PLATFORM との code 衝突はここだけが捕捉する**）:
 
 ```typescript
         if (
@@ -79,10 +79,10 @@ UX の回帰網になり、「code をグローバル一意のままにするか
         }
 ```
 
-- `src/queries/coupon.ts:379-419` — admin 経路 `upsertCouponAsAdmin(coupon: Coupon)`。
-  **変更しない。** `requireAdmin()`（:380）→ 事前チェック**なし**で upsert（:395-399）→
-  P2002 を同じ日本語メッセージへ変換（:402-408）。scope は入力を尊重
-  （PLATFORM なら storeId を null に正規化、STORE なら storeId 必須 — :384-393）。
+- `src/queries/coupon.ts:478-557` — admin 経路 `upsertCouponAsAdmin(coupon: Coupon)`。
+  **変更しない。** `requireAdmin()`（:479）→ 事前チェック**なし**で upsert（:504-527）→
+  P2002 を同じ日本語メッセージへ変換（:532-537）。scope は入力を尊重
+  （PLATFORM なら storeId を null に正規化、STORE なら storeId 必須 — :485-502）。
 - **認可ガードのモック形**（`src/lib/auth-guards.ts`）:
   - `requireStoreOwner` は `requireSeller`（`privateMetadata?.role !== "SELLER"` で判定）→
     `db.store.findUnique({ where: { url: storeUrl, userId: user.id } })`。Clerk mock は
@@ -90,7 +90,7 @@ UX の回帰網になり、「code をグローバル一意のままにするか
     （store は実 DB から引くため `seedStore` の `url` と `userId` が一致している必要がある）
   - `requireAdmin` は `privateMetadata?.role !== "ADMIN"` で判定。admin シナリオでは
     `{ id: adminUserId, privateMetadata: { role: "ADMIN" } }` に差し替える
-- **`Coupon` は `@prisma/client` の型**（coupon.ts:8）。テストから渡す入力はフル shape が必要:
+- **`Coupon` は `@prisma/client` の型**（coupon.ts:11）。テストから渡す入力はフル shape が必要:
 
 ```typescript
 function buildCouponInput(overrides: Partial<Coupon> = {}): Coupon {
@@ -148,6 +148,18 @@ function mockAuthAs(userId: string, role: "SELLER" | "ADMIN"): void {
 
 **In scope**（変更してよいファイル）:
 - `tests/integration/coupon-code-uniqueness.test.ts` — **新規作成**
+- `src/queries/coupon.test.ts` — シナリオ 2 の (2)（P2002 → 日本語メッセージ変換）を
+  実 DB に頼らず直接駆動するユニットテストを **追記**する。本文 (2) が要求しているため
+  in-scope（`bun run test` の総数が **+2** される）
+
+  > **`+1` ではなく `+2`（2026-08-01 訂正）。** Done criteria は
+  > 「**seller 経路（`upsertCoupon`）と admin 経路（`upsertCouponAsAdmin`）の両方**について、
+  > **それぞれ独立したテスト**を持つこと」を必須と定めている。両経路は共通ヘルパーを
+  > 経由せず**別々に同じ変換を実装**しているため（`coupon.ts:146-152` と `:532-538`）、
+  > 片方のテストがもう片方を一切カバーしない。さらに admin 経路には
+  > `if (isDomainError(error)) throw error`（`:530`）という seller 側に無い前段があり、
+  > P2002 が確かに変換分岐へ到達することも admin 側テストでしか固定できない。
+  > Scope が `+1` と書いていると、seller 側 1 本で足りると読めて Done criteria と食い違う。
 
 **Out of scope**（触らない）:
 - `src/queries/coupon.ts` — 検証対象本体。**「事前チェックをグローバル化する」「code を
@@ -204,41 +216,87 @@ P2002 フォールバックの実発火 / 副作用なし）と ADR-004 参照�
    > したがって `rejects.toThrow(...)` だけでは、**どちらの経路で拒否されたのかを
    > 区別できない**。「事前チェックは自店舗スコープなので素通りし、P2002 だけが
    > このメッセージを出す」という本シナリオの主張は、メッセージの一致では**証明されない**。
-   > 以下 2 つの assert を追加して初めて経路が特定できる。
+   > このため、経路をメッセージ一致から推論するのではなく、下記のとおり
+   > 検証手段そのものを分割する。
+   >
+   > **訂正（2026-07-18）**: 以前の版はここで「事前チェックと**同一条件**の
+   > `findFirst` をテスト側で実行し、`null` を確認する」方法（`preCheckHit`）を
+   > 指定していた。これは**経路の証明にならない**ので採用しないこと。
+   >
+   > 理由: その `findFirst` は `upsertCoupon` **内部の**事前チェックを観測して
+   > いない。テスト側で `storeId: storeA.id` をハードコードした同じクエリを
+   > 再実行しているだけで、実装とは独立している。将来 `coupon.ts` の事前チェックが
+   > グローバル検索へ変更されて P2002 経路が**一度も実行されなくなっても**、
+   > テスト側のクエリは `storeA.id` のままなので `null` を返し続け、
+   > テストは green のままになる。本プランが検証したかった「実 unique 制約の発火」が
+   > 無検証で腐るという、まさに (a) が防ぐはずだった事態を (a) 自身が招く。
+   > （加えて、旧スニペットの `rawCouponData` はどこにも定義されておらず、
+   > そのままでは動かなかった。）
+   >
+   > **代わりに、証明したい 2 つを別々の手段で検証する**:
+
+**(1) 実 DB 統合テスト — 観測可能な振る舞いを固定する**
+
+内部経路を推測せず、外から見える結果だけを assert する。
 
 ```typescript
-// (a) 事前チェック（coupon.ts:64-76 と同一条件）は素通りする = ここでは拒否していない
-const preCheckHit = await db.coupon.findFirst({
-    where: {
-        AND: [
-            { code: "SHARED" },
-            { storeId: storeA.id },       // 自店舗スコープ: 店舗 B の行は視界に入らない
-            { NOT: { id: input.id } },
-        ],
-    },
-});
-expect(preCheckHit).toBeNull();           // 事前チェックでは検出できないことの直接証明
+// 前提: 店舗 B に code "SHARED" の行が 1 件ある
+const before = await db.coupon.findMany({ where: { code: "SHARED" } });
+expect(before).toHaveLength(1);
 
-// (b) 実 DB の unique 制約が P2002 を出すことを独立に確認する
+// 店舗 A オーナーとして同じ code を作ろうとすると拒否される
 await expect(
-    db.coupon.create({
-        data: { ...rawCouponData, id: randomUUID(), code: "SHARED", storeId: storeA.id },
-    })
-).rejects.toMatchObject({ code: "P2002" });
+    upsertCoupon(buildCouponInput({ code: "SHARED" }), storeA.url)
+).rejects.toThrow("このクーポンコードは既に使用されています");
+
+// 既存行は無傷、かつ行が増えていない（＝拒否が副作用なしで成立した）
+const after = await db.coupon.findMany({ where: { code: "SHARED" } });
+expect(after).toHaveLength(1);
+expect(after[0]).toMatchObject({ id: before[0].id, storeId: storeB.id });
 ```
 
-   > (a) で「事前チェックは素通り」、(b) で「衝突時に DB が出すのは P2002」を示せば、
-   > `upsertCoupon` が投げたメッセージの出所は **P2002 フォールバック以外にありえない**
-   > と切り分けられる。(a) を省くと、将来事前チェックがグローバルスコープ化されて
-   > P2002 経路が**一度も実行されなくなっても**このテストは green のままになり、
-   > 本プランが検証したかった「実 unique 制約の発火」が無検証で腐る。
-   > ※ (b) は独立確認のため `rejects` 後に行が増えていないこと（`db.coupon.count()` === 1）
-   > を最終 assert で担保すること。
+これは「他店舗の code と衝突する作成が、既存行を保ったまま拒否される」という
+**プランが本当に守りたい不変条件**そのものであり、実装が事前チェックで弾こうが
+P2002 で弾こうが正しく緑・正しく赤になる。実装の内部構造に結合しない。
+
+**(2) P2002 → メッセージ変換は、その分岐を直接駆動して証明する**
+
+「どちらの経路を通ったか」を実 DB の挙動から推論するのをやめ、P2002 分岐だけを
+直接叩くユニットテストを `src/queries/coupon.test.ts` に置く。Prisma を
+モックして `create`（または `update`）に P2002 を投げさせれば、事前チェックの
+スコープが将来どう変わっても、この分岐の存在と変換内容が独立に固定される。
+
+```typescript
+mockDb.coupon.findFirst.mockResolvedValue(null);   // 事前チェックは素通りさせる
+// 実装は create ではなく `db.coupon.upsert` を呼ぶ（seller 経路: coupon.ts:117）。
+// P2002 はその upsert の race フォールバック（coupon.ts:146-151）で捕捉されるため、
+// モックは upsert に仕込む。admin 経路も同型で、upsert が coupon.ts:504、
+// P2002 分岐が coupon.ts:532-537（`upsertCouponAsAdmin`）。両経路とも
+// `'このクーポンコードは既に使用されています'` へ変換する。
+mockDb.coupon.upsert.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "5.22.0",
+        meta: { target: ["code"] },
+    })
+);
+
+await expect(upsertCoupon(input, storeA.url))
+    .rejects.toThrow("このクーポンコードは既に使用されています");
+```
+
+   > この分割により、(1) は「振る舞いが守られているか」を実 DB で、(2) は
+   > 「P2002 を正しく変換しているか」を実装経路上で、それぞれ**取り違えようのない
+   > 形で**検証する。1 本のテストで両方を兼ねようとしたことが、経路を
+   > メッセージ一致から推論するという弱い証明を招いていた。
 3. **PLATFORM クーポンの code と衝突する seller create も P2002 経路**:
    事前チェックは `storeId: store.id` 固定のため `storeId: null` の PLATFORM 行を
-   構造的に検出できない（シナリオ 2 と同じ切り分けの理屈）。本シナリオでも
-   シナリオ 2 の (a) と同型の「事前チェック素通り」assert を置くこと
-   （`findFirst` の条件を PLATFORM 行に対して実行 → null）。
+   構造的に検出できない（シナリオ 2 と同じ切り分けの理屈）。本シナリオも
+   シナリオ 2 と同じ方針で検証すること — すなわち**「事前チェック素通り」を
+   テスト側の再クエリで示そうとしない**（同じトートロジーになる）。
+   実 DB 側では観測可能な振る舞い（拒否される・PLATFORM 行が無傷・行が増えない）
+   のみを assert し、P2002 変換自体はシナリオ 2 の (2) と同じユニットテストで
+   カバー済みとする。
    `db.coupon.create({ data: { id: randomUUID(), code: "PLATFORM10", startDate, endDate,
    discount: 15, scope: "PLATFORM", storeId: null } })` → 店舗 A オーナーとして
    `upsertCoupon(buildCouponInput({ code: "PLATFORM10" }), storeA.url)` →
@@ -263,7 +321,9 @@ await expect(
 1. `bun run test:integration` → 既存 + 新規 全 pass
 2. `bunx tsc --noEmit` → exit 0
 3. `bun run lint` → exit 0
-4. `bun run test` → unit 全 pass（本プランは unit に触れないため不変のはず）
+4. `bun run test` → unit 全 pass。**テスト数は増える**（`src/queries/coupon.test.ts` に
+   シナリオ 2 の (2) で追加する P2002 変換ユニットテスト **+1**）。
+   「本プランは unit に触れないため不変」は本文 (2) と矛盾するため撤回した
 
 ## Test plan
 
@@ -277,16 +337,29 @@ Step 2 のシナリオ 1〜5 が本体。構造の手本は `tests/integration/o
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `coupon-code-uniqueness.test.ts` の新規テストが全 pass
-- [ ] シナリオ 2 に「reject + 既存行無傷 + 新規行なし」の 3 点の assert が存在する
-- [ ] シナリオ 2 に**経路の切り分け** assert が存在する:
-      (a) 事前チェックと同一条件の `findFirst` が null（自店舗スコープで素通りする証明）、
-      (b) 生の `db.coupon.create` が `P2002` で reject する（実 unique 制約の発火の証明）。
-      シナリオ 1 と 2 はエラーメッセージが同一のため、この 2 点が無いと
-      どちらの経路で拒否されたか区別できない
-- [ ] シナリオ 3 にも「事前チェック素通り」assert（PLATFORM 行は `storeId: null` のため
-      自店舗スコープの findFirst に掛からない）が存在する
+- [ ] シナリオ 2 は**実 DB で観測可能な振る舞いのみ**を assert する:
+      「reject + 既存行無傷（`id` / `storeId` 一致）+ 新規行なし（件数不変）」の 3 点。
+      どちらの経路（事前チェック / P2002）で拒否されたかを**テスト側の再クエリで推論しない**
+      （本文「(1)」の不変条件そのものを検証する）
+- [ ] P2002 → メッセージ変換は `src/queries/coupon.test.ts` の**独立したユニットテスト**で固定する:
+      `db.coupon.upsert` を `P2002` で reject させ（`findFirst` は null で事前チェックを素通りさせる）、
+      "このクーポンコードは既に使用されています" への変換を直接駆動して証明する（本文「(2)」）。
+      **seller 経路（`upsertCoupon`）と admin 経路（`upsertCouponAsAdmin`）の両方**について、
+      **それぞれ独立したテスト**を持つこと
+  - 両経路は**別々に**同じ変換を実装している（`coupon.ts:146-152` と `coupon.ts:532-538`）。
+    共通ヘルパーを経由していないため、**片方のテストがもう片方を一切カバーしない** ——
+    一方だけリファクタされて変換が落ちても、もう一方のテストは緑のままになる。
+  - admin 経路は変換前に `if (isDomainError(error)) throw error`（`coupon.ts:530`）を通るので、
+    P2002 が domain error として先に再 throw されず**確かに変換分岐へ到達する**ことも
+    このテストで固定される（seller 経路には無い前段であり、経路固有の退行点）。
+  - 本プラン本文が扱う **"ADMIN-CLASH" シナリオ（シナリオ 3）**は admin 経路の
+    **観測可能な振る舞い**のみを assert する設計なので、admin 側の P2002 変換は
+    このユニットテストでしか固定されない。seller 側 1 本で済ませると admin 経路が無検証になる。
+- [ ] シナリオ 3 も**観測可能な振る舞いのみ**を assert する:
+      「reject + PLATFORM 行無傷（`scope` === "PLATFORM" / `storeId` === null）+ 新規行なし」。
+      「事前チェック素通り」を**テスト側の再クエリで示さない**（P2002 変換は上記ユニットテストでカバー済み）
 - [ ] シナリオ 4 に「resolve + discount 更新 + 行数 1」の assert が存在する
-- [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
+- [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test`（上記ユニットテスト含む）exits 0
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
 - [ ] `plans/README.md` の 041 行が DONE に更新済み
@@ -303,10 +376,10 @@ Stop and report back (do not improvise) if:
   グローバルでなくなっている（schema が変わった）。characterization の前提が崩れているので、
   実際の unique 定義を添えて報告
 - シナリオ 2 のエラーメッセージが日本語メッセージでなく生の Prisma エラーになる —
-  P2002 フォールバック（coupon.ts:94-100）のドリフト。実際のエラー内容を添えて報告
-- シナリオ 2 の切り分け assert (a) が **null にならない**（事前チェックが他店舗の行を
-  検出している）— 事前チェックのスコープがグローバル化されており、P2002 経路は
-  もはや到達不能。本プランの前提が変わっているので、変更コミットを添えて報告
+  P2002 フォールバック（coupon.ts:146-151）のドリフト。実際のエラー内容を添えて報告
+- シナリオ 2 で **既存行が変化する / 行数が増える**（拒否されたのに副作用が残っている）—
+  「拒否は副作用なしで成立する」という本プランの不変条件そのものが崩れている。
+  実際の行内容を添えて報告
 - 検証コマンドが 2 回の修正試行後も失敗する
 
 ## Maintenance notes

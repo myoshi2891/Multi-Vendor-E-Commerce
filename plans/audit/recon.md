@@ -43,16 +43,27 @@
 
 ### bun audit の要点（ランタイム到達性で選別）
 
-> **本表が `bun audit` 実測のリポジトリ内証跡**（方針 (A) を採用し 2026-07-17 に作成）。
-> **値はすべて監査時点（HEAD `f9752c0` / 2026-07-03 / `bun audit` 実測）のもの**であり、
-> 現在の依存状態ではない（その後の変化は下の「監査後の変化」を参照）。
-> 実行ログ全文はセッション scratchpad にあり失われたため、**本表が唯一の証跡**となる。
+> **本表が `bun audit` のリポジトリ内証跡**。**2 つの日付を混同しないこと**:
+>
+> | | 日付 | HEAD | 内容 |
+> |---|---|---|---|
+> | **測定日** | 2026-07-03 | `f9752c0` | `bun audit` を実際に実行し、下表の値を得た日 |
+> | **証跡再構成日** | 2026-07-17 | — | 方針 (A) を採用し、その結果を本ファイルへ**転記**した日 |
+>
+> **2026-07-17 に `bun audit` を再実行してはいない。** 下表の値は 2026-07-03 の
+> 測定結果であり、2026-07-17 時点の依存状態でも、まして現在の依存状態でもない
+> （その後の変化は下の「監査後の変化」を参照）。実行ログ全文はセッション
+> scratchpad にあり失われたため、**本表が唯一の証跡**である。
+>
+> 転記元が失われている以上、本表の値は**再測定によってしか検証できない**。
+> 依存状態を判断材料にする場合は、本表を根拠にせず `bun audit` を実行すること。
 
-**ランタイム到達性のある advisory（判断に効く 3 件）**:
+**ランタイム到達性のある advisory（判断に効く 4 件 = 3 パッケージ）**: 単位に注意 —— 表の行は
+**advisory 単位**で 4 行（`@clerk/nextjs` が 2 件の GHSA を抱えるため）、パッケージ単位では 3 本。
 
 | # | パッケージ | 深刻度 | Advisory ID | 経路 | 修正版 | ランタイム到達性 |
 |---|---|---|---|---|---|---|
-| 1 | `@clerk/nextjs` 7.0.7 | **CRITICAL** | [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス。影響: >=7.0.0 <=7.2.3） | **直接依存**（`package.json`） | 7.2.4 以降（当時の最新 stable 7.5.x） | ✅ 認証経路 |
+| 1 | `@clerk/nextjs` 7.0.7 | **CRITICAL** | [GHSA-vqx2-fgx2-5wq9](https://github.com/advisories/GHSA-vqx2-fgx2-5wq9)（ミドルウェアベースのルート保護バイパス。影響: `>=7.0.0 <7.2.1`） | **直接依存**（`package.json`） | 7.2.1 以降（当時の最新 stable 7.5.x） | ✅ 認証経路 |
 | 2 | `@clerk/nextjs` 7.0.7 | HIGH | [GHSA-w24r-5266-9c3c](https://github.com/advisories/GHSA-w24r-5266-9c3c) | **直接依存**（同上） | 同上（plan 004 参照） | ✅ 認証経路 |
 | 3 | `js-cookie` 3.0.5 | HIGH | **未特定** — 当時の `bun audit` ログが scratchpad と共に失われ、ID を採取できていない（推測で埋めない） | transitive: `@clerk/nextjs › @clerk/backend › @clerk/shared@4.3.2` がピン | Clerk 更新で追従（DEPS-02 のゲート） | ✅ Clerk セッション cookie 操作 |
 | 4 | `jodit` 4.6.2 | moderate（prototype pollution） | **未特定** — [`findings-06-dependencies.md`](findings-06-dependencies.md) DEPS-03 の同定表も「未記載」と記録 | transitive: `jodit-react@^4.1.2` 経由 | 未特定 | ⚠️ 限定的（認証済み seller 自身のエディタ内。ストアフロント側は DOMPurify で閉鎖済み — DEPS-03） |
@@ -61,7 +72,7 @@
 `ws`（jsdom / @lhci/cli 経由）、`picomatch`（jest/tailwind 等）。
 
 > **dev 専用（本番非到達）の 90 件超をそのまま「97 件」として引用しない**こと。
-> 判断に効くのは上表のランタイム到達性のある 3 パッケージ（Clerk / js-cookie / jodit）であり、
+> 判断に効くのは上表のランタイム到達性のある 3 パッケージ（Clerk / js-cookie / jodit・advisory 4 件）であり、
 > 総数は深刻度の指標として誤解を招く。
 
 **当時の内訳（参考値）**: critical 3 / high 35 / moderate 45 / low 14（計 97）。
@@ -74,7 +85,7 @@
 
 | 項目 | 監査時点（`f9752c0`） | 現在 | 根拠 |
 |---|---|---|---|
-| `@clerk/nextjs` | 7.0.7（#1 #2 の影響下） | **`^7.5.0`** — 修正版 7.2.4 を満たす | `package.json:21` |
+| `@clerk/nextjs` | 7.0.7（#1 #2 の影響下） | **`^7.5.0`**（実測 `7.5.19`）— CRITICAL の修正版 **7.2.1** を満たす。推移的 HIGH の `js-cookie` は `@clerk/shared@4.25.4` 経由で `3.0.7` に解決され独立に解消済み | `package.json:21` |
 | `js-cookie` | 3.0.5（#3） | **3.0.7**（`@clerk/shared@4.25.4` 経由）= パッチ済み | `bun.lock:1796`, `:224` |
 | `jodit` | 4.6.2（#4） | `jodit-react@^4.1.2` のまま（変更なし） | `package.json:77` |
 

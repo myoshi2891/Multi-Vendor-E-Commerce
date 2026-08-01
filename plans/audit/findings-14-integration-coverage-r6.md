@@ -85,6 +85,18 @@
   必須で明記する。タグが無いと後任が `=== 2` を**満たすべき契約**と誤読し、
   バグ修正時に「テストが壊れた」として修正側を差し戻す）、③他ユーザーの住所 id を指定した上書きが所有権検証で
   新規 create に落ちる（IDOR 防御の実挙動）、を検証。→ **plan 037**
+- > **remediation（バグ本体の修正）の追跡先 — 2026-07-19 時点で「未起票」**:
+  > plan 037 は **characterization（現挙動の固定）のみ**を担当し、`default: true` の
+  > 重複を解消する**コード修正プランは存在しない**。`TODO(characterization)` タグは
+  > テストコード側に反転指示を残すだけで、**修正そのものを誰かのキューに載せない**ため、
+  > 台帳側にも追跡先を明記しておく必要がある。
+  > - **修正対象**: `upsertShippingAddress`（`src/queries/user.ts`）— 新規 create 経路で
+  >   既存 default を落とす処理が無い。更新経路（`:` 既存 default を false に落とす）とは非対称。
+  > - **起票の条件**: 単独の correctness プラン化。plan 037 が緑になった時点で
+  >   「期待値 2 → 1 への反転」とセットで実施すると差分が機械的に見える。
+  > - **依存**: plan 037 完了が先行（テストが無い状態で修正すると回帰検知器が無い）。
+  > - **同型の未起票 remediation**: 下記 TESTS-23 ⑥ の fail-open（存在しない category URL で
+  >   全件返却。store / offer の URL 解決にも同型）も characterization のみで修正プランは未起票。
 
 ### [TESTS-22] `updateProduct`（handleProductAndVariantUpdate）の削除+再作成 tx と slug 一意性・SetNull 副作用が実 DB 未検証 — R5 次点候補の昇格
 
@@ -196,8 +208,56 @@
 | 項目 | Round 6 時点の現状（直接確認） | 裁定 |
 |---|---|---|
 | `updateProduct` specs/questions tx + `generateUniqueSlug`（R5 次点候補） | `product.ts:297-469` 再読。SetNull 連鎖（Wishlist.sizeId）の新事実を追加確認 | **TESTS-22 に昇格 → plan 038** |
-| `saveUserCart` 統合（R5 rejected） | plan 005 が依然 TODO。非原子構造は不変 | **deferred 維持**（005 完了後の追加候補。変更なし） |
-| TESTS-02 capture 経路（R1 raw / R5 deferred） | plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変 | **deferred 維持**（003 完了後に plan 032 の同型シナリオ追加が低コスト、の R5 裁定を維持） |
+| `saveUserCart` 統合（R5 rejected） | ~~plan 005 が依然 TODO。非原子構造は不変~~ → **plan 005 は DONE**（`../README.md:68`） | **deferred 維持**（ただし「005 待ち」という理由は消滅済み。昇格の再評価が可能） |
+| TESTS-02 capture 経路（R1 raw / R5 deferred） | ~~plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変~~ → **plan 003 は DONE**（`../README.md:66`）。**残課題は PayPal 側のみ**: `stripe.ts` は tx + CAS で解消済み、`paypal.ts` の 2 書き込みはトップレベルの別呼び出しのまま（下の注記参照） | **deferred 維持**（ただし理由が変わった —— 「003 待ち」ではなく **「`$transaction` 化のコード修正」が先行依存**。下の注記を参照して経路ごとに再評価すること） |
+
+> **⚠️ 上表の「Round 6 時点の現状」列は 2026-07-11 のスナップショットであり、
+> 先行依存としている plan 003 / 005 は現在いずれも DONE**
+> （[`../README.md`](../README.md) の Status 表が実行実態の SSOT）。
+> したがって**下 2 行**（`saveUserCart`＝plan 005 待ち / TESTS-02 capture 経路＝plan 003 待ち）の
+> deferred 理由（「コード修正が先行依存だから待つ」）は**既に消滅**しており、
+> 両者とも**昇格の再評価が可能な状態**にある。**この表を根拠に「まだ待ち」と判断しないこと** —
+> 再評価の起点は [`VETTED_FINDINGS.md`](VETTED_FINDINGS.md) の「Round 14 追記」節。
+>
+> **⚠️ ただし CAS ガードの追加を「非原子性の解消」と読まないこと。** Round 14（2026-07-19）で
+> capture 経路へ CAS ガードが入った（`4261be0` / `e63474b`）が、これは**別の性質の対策**である:
+>
+> | | CAS ガード（条件付き `updateMany` + `where` 再評価） | tx 原子性（`db.$transaction`） |
+> |---|---|---|
+> | 防ぐもの | **ロストアップデート** — read-then-act の隙に別経路が書いた値を上書きする退行 | **部分適用** — 2 書き込みの片方だけが永続化される状態 |
+> | 防げないもの | 1 書き込み目の成功後に 2 書き込み目が失敗した場合の不整合 | 並行更新による上書き（分離レベル次第） |
+>
+> **2 経路で状況が異なる。現況の SSOT は
+> [`findings-13-integration-coverage.md`](findings-13-integration-coverage.md) の
+> 「TESTS-02 の現況 — 決済経路ごと」表**（`../README.md` もそこを SSOT と宣言している）。
+> 本ファイルは要約のみを持ち、**行番号は書かない**:
+>
+> - **Stripe**（`src/queries/stripe.ts` の capture 経路）: `paymentDetails.upsert` と
+>   `order.update` が**同一 `tx` 内**にあり、かつ `where` に
+>   `paymentStatus: { notIn: SETTLED_PAYMENT_STATUSES }` の CAS を持つ。原子性・
+>   ロストアップデートとも**解消済み**。
+> - **PayPal**（`src/queries/paypal.ts` の capture 経路）: `db.paymentDetails.upsert` と
+>   `db.order.update` が**トップレベルの別呼び出しのまま**で、`$transaction` に入っていない。
+>   CAS ガード（`SETTLED_PAYMENT_STATUS_GUARD`）は付いたが、**非原子 2 書き込みは残存**。
+>
+> **⚠️ 行番号を書かないのは意図的（2026-08-01 訂正）。** 旧版は `paypal.ts:281` / `:323` を
+> 直書きしていたが、これは採取時点の値で**現物は既に別の行**（同ファイルはその後
+> リファクタで前段ヘルパー抽出を受けている）。README・findings-13 も別の値を書いており、
+> **3 つの台帳が 3 つとも違う行番号を指す**状態になっていた。関数名と経路で指し、
+> 具体的な位置は findings-13 の SSOT 表を見ること。
+>
+> **残課題の呼び名も findings-13 に揃える。** 旧版はこれを
+> 「PayPal 側の**原子性シナリオが未設計**」＝テスト設計のギャップとして書いていたが、
+> findings-13 と README は同じものを「**`$transaction` 化のコード修正が先行依存**」＝
+> コード側の依存として記録している。前者の書き方だと「テストを設計すれば着手できる」と
+> 読めてしまうが、実際は**本体を tx 化するまで原子性シナリオは書けない**（現挙動を
+> characterization しても、tx 化の時点で書き直しになる）。呼称は後者に統一する。
+>
+> したがって「非原子 2 書き込みは不変」が当てはまらなくなったのは **Stripe 側だけ**。
+> 正しい要約は「TESTS-02 は**解消済み**」ではなく「**検証すべきシナリオが経路ごとに
+> 変わった**」—— Stripe は CAS + tx の回帰網（**着手可能**）、PayPal は CAS の回帰網に加えて
+> 原子性シナリオが必要だが、**そちらは `$transaction` 化を待つ**。
+> 昇格時は経路ごとに区別して設計に含めること。
 
 ## Considered and rejected（Round 6・再監査防止）
 

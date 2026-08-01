@@ -71,14 +71,31 @@ The facts the executor needs, inlined — never "as discussed" or "see audit":
 
 ## Commands you will need
 
-| Purpose   | Command                  | Expected on success |
-|-----------|--------------------------|---------------------|
-| Install   | `pnpm install`           | exit 0              |
-| Typecheck | `pnpm typecheck`         | exit 0, no errors   |
-| Tests     | `pnpm test -- <filter>`  | all pass            |
-| Lint      | `pnpm lint`              | exit 0              |
+| Purpose    | Command                            | Expected on success |
+|------------|------------------------------------|---------------------|
+| Install    | `bun install`                      | exit 0              |
+| Typecheck  | `bunx tsc --noEmit`                | exit 0, no errors   |
+| Unit tests | `bunx jest <path>`                 | all pass            |
+| E2E tests  | `bunx playwright test <spec>`      | all pass            |
+| Lint       | `bun run lint`                     | exit 0              |
 
-(Exact commands from this repo — verified during recon, not guessed.)
+(Exact commands from this repo — verified during recon, not guessed. This repo
+uses **Bun**, not pnpm/npm; take the authoritative list from `CLAUDE.md`
+"開発コマンド" and `package.json` `scripts` rather than copying this table
+verbatim.)
+
+**Keep the two test runners on separate rows.** They are different tools with
+different scopes, costs and failure modes: Jest covers unit/component tests
+under `src/` and finishes in seconds, while Playwright drives three browsers
+against a dev server and takes minutes. A single "Tests" row lets the executor
+run one and report the plan verified — usually Jest, leaving E2E regressions
+undetected. Include only the rows the plan actually needs: a plan that touches
+no E2E surface should drop the Playwright row rather than carry it unused.
+
+Note the Jest filter form: pass the path as a positional argument
+(`bunx jest src/queries/store.test.ts`) — the old `--testPathPattern` flag was
+renamed to `--testPathPatterns` in the current Jest, so the positional form is
+the one that survives version drift.
 
 ## Suggested executor toolkit
 
@@ -94,6 +111,10 @@ executor's environment. Skip the section otherwise.)
 **In scope** (the only files you should modify):
 - `src/orders/api.ts`
 - `src/orders/api.test.ts` (create)
+- `<plan-dir>/README.md` — the status-row update required by the Executor instructions
+  and Done criteria; land it in a **separate docs commit** (and skip it entirely when a
+  reviewer dispatched you and owns the index). List it here so "the only files you should
+  modify" does not contradict the instruction to update the index.
 
 **Out of scope** (do NOT touch, even though they look related):
 - `src/orders/legacy-api.ts` — deprecated path, scheduled for deletion;
@@ -136,8 +157,8 @@ callers, then remove old path.)
 
 Machine-checkable. ALL must hold:
 
-- [ ] `pnpm typecheck` exits 0
-- [ ] `pnpm test` exits 0; new tests for <X> exist and pass
+- [ ] `bunx tsc --noEmit` exits 0
+- [ ] `bun run test` exits 0; new tests for <X> exist and pass
 - [ ] `grep -rn "<old pattern>" src/` returns no matches
 - [ ] No files outside the in-scope list are modified (`git status`)
 - [ ] For direct execution, `<plan-dir>/README.md` status row updated; when dispatched through `execute`, this criterion is owned by the reviewer and skipped by the executor

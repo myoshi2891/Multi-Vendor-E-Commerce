@@ -17,6 +17,160 @@
 >
 > **例外はラウンド開始時に明示的に宣言すること**（宣言のない範囲外編集は Hard Rule 1 違反）。
 > いずれの場合も **`src/` のソースコードは一切変更しない**という中核は不変。
+>
+> **⚠️ ただし Hard Rule 1 が適用されるのは「improve スキルの監査ラウンド」だけである**。
+> 本ファイルは監査ラウンド（R1〜R9・R13）に加えて、**CodeRabbit レビュー由来の
+> triage / 実装ラウンド（R10〜R12・R14）も履歴として記録**している。後者は improve
+> スキルの実行ではないため Hard Rule 1 の管轄外で、**Round 14 は実際に `src/` と
+> `tests/` を変更している**（それが目的のラウンドであり、違反ではない）。
+> ラウンドごとの性格は下表のとおり:
+>
+> | ラウンド | 性格 | Hard Rule 1 | `src/` 変更 |
+> |---|---|---|---|
+> | R1〜R9・R13 | improve スキルの監査 | **適用** | なし（各ラウンドのクローズで機械検証済み） |
+> | R10〜R12 | CodeRabbit 指摘の triage（plans/ の文書修正） | 管轄外（結果的に `plans/**` のみ） | なし |
+> | **R14** | CodeRabbit 指摘の **triage + 実装** | **管轄外** | **あり（決済・注文冪等性の 6 コミット）** |
+
+---
+
+## Round 14 — CodeRabbit レビュー第4弾 + Phase A 実装（**監査ではない** / 2026-07-19）
+
+> **⚠️ 本ラウンドは improve スキルの監査ラウンドではない。** CodeRabbit の指摘に対する
+> **実装セッション**であり、`src/` と `tests/` を実際に変更している。
+> `git diff 72e8004..b5d0c66 --stat -- src tests` は**空ではない** —
+> 他ラウンドのクローズ条件（diff 空の機械検証）を本ラウンドに適用しないこと。
+
+- **対象範囲**: `72e8004..b5d0c66`（branch: `dev` / **6 コミット**）。
+  左端は **baseline `72e8004`**（Round 13 末尾）。`934b6fa` は**範囲内の A-2 修正コミット**であり
+  baseline ではない — `A..B` は A を含まないため、`934b6fa..b5d0c66` と書くと A-2 が脱落する
+- **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に実施したレビュー。
+  精査後の実体は `plans/ja/*` ミラー重複 5 /
+  言い換え重複 4 / 既に解消済み（誤検知）3 / **要対応 約 81**（コード 5 + 文書 76）
+
+  > **⚠️ 当初ここに書いていた「VSCode『問題』パネルの 114 件（⚠49 + ⓘ65）は NEW REVIEW +
+  > PREVIOUS REVIEWS (2) の合算」という説明は誤りだった（2026-08-01 訂正・第 12 弾）。**
+  > 「問題」パネルの件数は **CodeRabbit 由来ではなく**、Spell Checker 拡張の
+  > 「Unknown word」（プロジェクト固有語。リポジトリに cspell 設定が無いため大量に出る）と
+  > markdownlint の既存違反である。CodeRabbit の指摘は「**コメント**」タブに出る別系統。
+  > 詳細と対処は下の「次のアクション（NEXT）」節内
+  > **「issues が減らない」の原因**を参照。
+- **実行計画**: `~/.claude/plans/claude-rules-02-tdd-step-commit-md-peaceful-globe.md`
+- **ユーザー確認済みの決定**:
+  - Phase A（コード修正）は **TDD（Red → Green）**・1 論理単位 = 1 コミット
+  - PayPal settled ガードの CAS 不一致は既存メッセージ `"Order payment is already settled."`
+    で再 throw する（read-then-act の事前判定は無駄な PayPal API 呼び出し回避のため**残す**）
+  - `PaymentDetails.amount` は**ドル建てに統一**（`schema.prisma:699` の `Decimal(12,2)` に従う。
+    マイグレーション不要 — Stripe 側のコード修正のみ）
+  - `placeOrder` の冪等性は**カート行を使い捨てトークン**として扱う（マイグレーション不要）
+- **採番**: 監査台帳は新設せず、**`audit/VETTED_FINDINGS.md` の「Round 14 追記」節**に記録
+  （R10〜R12 の triage ラウンドと同じ扱い）
+
+### Round 14 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | Phase A-1 PayPal settled ガードの CAS 原子化 | ✅ DONE | `4261be0`（`paypal.ts` + `paypal.test.ts`） |
+| 2 | Phase A-3 `PaymentDetails.amount` のドル建て統一 | ✅ DONE | `e63474b`（`stripe.ts` + `stripe.test.ts`） |
+| 3 | Phase A-5 `placeOrder` のサーバー側冪等性 | ✅ DONE | `824e224`（`user.ts` + `user.test.ts`） |
+| 4 | Phase A-4a spy リーク修正（`afterEach` へ集約） | ✅ DONE | `15aef5c`（`index-products/route.test.ts`） |
+| 5 | Phase A-4b security-headers E2E の status 検証 | ✅ DONE | `b5d0c66`（`security-headers.spec.ts`） |
+| 6 | Phase A-2 `custom_id` 検証の上流化 | ✅ DONE | `934b6fa`（`paypal.ts` + `paypal.test.ts`）。※初版で「不要」と誤記録 — 下記訂正記録を参照 |
+| 7 | Phase B 監査台帳の整合性回復（本タスク） | ✅ DONE | findings-06/13/14/17 + VETTED_FINDINGS + README ×2 + 本ファイル（1 ファイル = 1 コミット） |
+| 8 | Phase C 個別プラン文書 約 60 件 | ⬜ **未着手** | `plans/003`〜`plans/062`。1 プラン = 1 コミット |
+
+### Round 14 の rejected（0 件）
+
+**本ラウンドに rejected はない。** Phase A は計画どおり A-1〜A-5 の **6 コミット全てが実装済み**。
+
+> **⚠️ 訂正記録（本節の初版が誤っていた — 再発防止）**
+>
+> 初版はここで A-2 を「却下（前提が誤り・既に充足済み）」とし、根拠に
+> `git show 934b6fa:src/queries/paypal.ts` を「ラウンド開始時点」として引いていた。
+> **`934b6fa` は baseline ではなく A-2 の修正コミットそのもの**であり、
+> 「修正後」を「修正前」と取り違えた **`A..B` 記法の off-by-one** だった。
+>
+> 真の baseline `72e8004` では `status !== "COMPLETED"` が **L219**、
+> `capturedCustomId !== orderId` が **L242** の順で、**脆弱性は実在した**
+> （`934b6fa` 適用後に L228 → L233 へ逆転）。
+>
+> **判断基準（次ラウンドへ引き継ぐ）**: 「既に解消済みでは」と判定する前に、
+> **参照リビジョンが baseline か修正後かを確認する**。baseline を見るなら `A^` を使う。
+> 詳細な訂正記録は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
+
+### Round 14 が解消した既存 deferred
+
+- **「Server-side `placeOrder` idempotency」**（plan 006 から deferred）→ **A-5 で解消**。
+  ただし同項目に併記されていた **`applyCoupon` の lost-update `$transaction` リファクタは未解決**
+  （別事案として分離済み — `README.md` Deferred 節）。
+- **CORRECTNESS-05**（`PaymentDetails.amount` 単位不一致）→ **コード側は A-3 で解消**。
+  **既存行の backfill は未起票**（過去の Stripe 決済行はセント値のまま残る）。
+- **TESTS-02 capture 経路** / **`saveUserCart` 統合** → 先行依存だった plan 003 / 005 が
+  DONE になり、**deferred 理由そのものが失効**（昇格の再評価対象）。
+
+---
+
+## Round 13 — セキュリティ特化 deep 監査（`deep security` フォーカス / 開始 2026-07-17）
+
+- **開始日**: 2026-07-17 / **監査対象 HEAD**: `7080b12`（branch: `dev` — Round 12 triage クローズ
+  コミット。R10〜12 は CodeRabbit triage ラウンドで、`src/` には plan 003/005/006 相当の
+  fix コミット群（`f046d22` / `ab97f8f` / `cc7468c` 等）が入っている — Round 9 以前と異なり
+  **ソースが動いた後の初のセキュリティ監査**）
+- **バリアント**: `security` フォーカス・**effort = deep**（リポジトリ全体・全セキュリティ領域を
+  並列 Explore サブエージェント ≤8 で網羅）。Round 1 の findings-02（SECURITY-01〜09）と
+  security follow-up（findings-11 / NEW-1〜3）に続く第 3 のセキュリティラウンド
+- **目的**: Amazon 級の世界トップクラス EC サイトを目標水準として、認可/IDOR・インジェクション/XSS・
+  決済/ビジネスロジック悪用・Webhook/SSRF・ヘッダ/CSP/レート制限・依存/サプライチェーン/PII の
+  6 領域を deep 監査し、新規所見を Sonnet が zero-context で実行できる自己完結プラン
+  （**058〜**）に落とす
+- **ユーザー確認済みの決定**:
+  - 実装は一切しない（プラン化のみ。`src/`・`tests/`・`prisma/`・`docs/` は無変更）
+  - プラン承認済み（`~/.claude/plans/agent-skills-improve-skill-md-amazon-ec-drifting-breeze.md`）
+  - **effort = deep**（AskUserQuestion で明示選択）
+  - **プラン化は自動選定**（vet 済み所見からレバレッジ順 3〜6 本目安。水増しせず、候補が
+    薄ければ正直に減らす — R7 前例。AskUserQuestion で明示選択）
+  - 成果物は日本語のみ（Round 2 以降の決定を継承）
+  - **編集可能範囲は `plans/**` のみ**（スコープ例外なし — R4〜R9 の docs/testing 例外は
+    本ラウンドでは不要: テスト統計が動かないため）
+  - 既 vet/rejected（SECURITY-01〜09・NEW-1〜3・VETTED_FINDINGS の rejected・
+    決定済みトレードオフ ADR-001 CSRF 等）の再監査はしない
+- **既知の reconcile 対象（Step 2 で実測確認 → Step 6 で README 修正）**: findings-11 冒頭注記は
+  「023/024 は実装済み（回帰テストあり）」と記すが README Status 表は両方 TODO のまま。
+  直近 git log の fix コミット群から 003/005/006 も DONE の可能性が高い
+- **採番**: 監査台帳 = `audit/findings-18-security-r13.md` / 新規所見 = SECURITY-10〜 /
+  新規プラン = 058〜
+- **成果物**: findings-18（監査台帳・clean 再確認 + 新規所見 + deferred + rejected）+
+  plans 058〜（自動選定分）+ README 索引（Status ドリフト修正含む）+ VETTED_FINDINGS R13 追記
+
+### Round 13 チェックリスト
+
+| # | マイルストーン | 状態 | 成果物 / コミット |
+|---|---|---|---|
+| 1 | ADVISOR_STATE 新ラウンド記録 | ✅ DONE | 本セクション（`82febbf`） |
+| 2 | Recon リフレッシュ（ベースライン実測 + 既存資産突合 + 実装状態 reconcile） | ✅ DONE | findings-18 §0（`03f9a74`）。`tsc` 0 / `lint` 0 / `bun audit` 90。023/024 の Status ドリフト検出 |
+| 3 | deep 監査（並列サブエージェント A〜F） | ✅ DONE | 6 領域 Explore（認可/入力/決済/webhook/ヘッダ/依存）。全所見を本体が file:line で vet |
+| 4 | Vet + 監査台帳（findings-18 + VETTED_FINDINGS R13 追記） | ✅ DONE | `d2aff76`。新規 SECURITY-10〜19 + AUTHZ/LOGIC + DEPS-06、clean 領域・rejected 記録 |
+| 5 | plans 058〜 執筆（自動選定・1 プラン = 1 コミット） | ✅ DONE | 058（`2a1e6b6`）/ 059（`56ae6fb`）/ 060（`efcbffa`）/ 061（`cdfa685`）/ 062（`3ba0f6c`） |
+| 6 | README 索引更新（058〜 追加 + Status ドリフト修正 + deferred/rejected 記録） | ✅ DONE | `c148915`。058〜062 追加・023/024 を DONE 補正・sequencing #16・deferred/rejected R13 |
+| 7 | ADVISOR_STATE クローズ（`git diff 7080b12..HEAD --stat -- src tests prisma` = 空 を検証） | ✅ DONE | 本コミット。**検証: diff 空を確認済み（src/tests/prisma 無変更）** |
+
+### Round 13 クローズ記録（2026-07-17）
+
+- **成果物**: 監査台帳 `audit/findings-18-security-r13.md`（新規 SECURITY-10〜19・AUTHZ-02/03・
+  LOGIC-22/23・SECURITY-24・DEPS-06、clean 6 領域の再確認、rejected/by-design）+ VETTED_FINDINGS
+  Round 13 節 + プラン **058〜062**（5 本）+ README 索引（Status ドリフト修正含む）。
+- **プラン選定（自動・水増しなし）**: HIGH confidence × 高レバレッジ 5 本に限定。
+  - **P1**: 058（getCoupon cross-store IDOR read）/ 059（PayPal capture 金額・相関・通貨検証 +
+    settled ガード）/ 060（クーポン mutation のサーバー側 Zod 検証・discount>99→負値 total 防止）
+  - **P2**: 061（レスポンス強化ヘッダ・clickjacking/HSTS 等）/ 062（検索 route の生 error.message
+    漏洩停止 + `error:any` 撤去）
+- **未プラン化の既存所見をプラン化**: SECURITY-05（→062）・SECURITY-06（→061）は Round 1 で
+  fix sketch 止まりだったものを Sonnet 実行可能プランに昇格。
+- **reconcile 修正**: plans 023 / 024 を README で DONE に補正（実装済みだが TODO のままドリフト）。
+- **機械検証**: `git diff 7080b12..HEAD --stat -- src tests prisma` = **空**（ソース無変更を確認）。
+  本ラウンドの全コミットは `docs(plans):` / `docs(audit):` 形式・1 マイルストーン=1 コミット。
+- **次アクション（実行順）**: 依存 P1 の **057**（`next` bump）と本ラウンド P1 の **058→059→060**
+  を優先（相互にファイル競合なし・並行可）。次いで 061 / 062。deferred 11 件は findings-18 §3 の
+  昇格条件つき（dompurify は依存 refresh、SECURITY-15 は 060 の横展開、SECURITY-24 は仕様判断先行 等）。
 
 ---
 
@@ -446,29 +600,154 @@ README の該当注記を修正）。
 
 ## 次のアクション（NEXT）
 
-**✅ 最新ラウンドは Round 9（E2E 残余監査）で、2026-07-12 に完了済み。**
-ソースコード（`src/` `tests/` `prisma/`）は Round 4〜9 を通じて無変更
-（監査ラウンドは読み取り + プラン執筆のみ）。
+> **本節はファイル末尾寄りにあるが「Round 1 の続き」ではなく、全ラウンドを通じた現在地**である。
+> ラウンド節は降順（最新が上）に並ぶのに本節だけが Round 1 節の末尾に置かれているため、
+> **更新漏れが起きやすい構造**になっている（実際に Round 13 まで「最新は Round 9」「次は 057」の
+> ままドリフトし、**完了済みプランを次アクションとして推奨していた**）。
+> **ラウンドをクローズしたら必ず本節も更新すること。**
 
-**次セッションの着手先: プラン 057 → 051 → 056 の実行**（いずれも**依存ゼロで即実行可能**）:
+**✅ 最新は CodeRabbit レビュー対応の第 12 弾（2026-08-01）。** Round 14（CodeRabbit 第 4 弾 +
+Phase A 実装）で Phase A / Phase B が完了して以降、**第 5〜12 弾のレビュー対応ラウンドが
+継続して走っている**（各弾の内訳・実コード修正・回帰件数は
+[`docs/testing/QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) 冒頭の HEAD 行が SSOT）。
+これらは Round 14 と同じく**実装ラウンド**であり、`src/` `tests/` は変更されている
+（R4〜R13 の「無変更」規律は適用されない）。
 
-1. **[057](057-upgrade-next-middleware-bypass.md)**（P1 / dependencies / Depends on `—`）—
-   **テスト系プラン群より優先する**（[`README.md`](README.md) の
-   「Recommended sequencing #15」）。`next@16.2.1` が GHSA-26hh-7cqf-hhc6
-   （HIGH — App Router の Middleware/Proxy バイパス）の影響範囲内で、
-   `src/middleware.ts` が `/dashboard`・`/checkout`・`/profile` を守っている以上、
-   **plan 004 が Clerk 側で塞いだのと同じ攻撃面がフレームワーク層で開いたまま**。
-   16.2.x 内のパッチ bump のみで `src/` は無変更、042〜056 とファイル競合なし。
-2. **[051](051-e2e-country-selector.md)**（P1 / 国セレクタの cookie ラウンドトリップ）—
-   Depends on `—`。
-3. **[056](056-e2e-newsletter-characterization.md)**（Newsletter dormant 404 の
-   characterization。route + schema とも不在というアプリ側ギャップの現挙動固定）。
+> **第 12 弾（2026-08-01・19 コメント）の内訳。** 全 19 件を実測で突き合わせ、**確認済み 19 /
+> 誤検知 0**。生成器 1 / 統計同期 2 / ドキュメント 16。コミットは 12 本
+> （`6e12e3fe`〜`0fe16394`）で、テーマ別に 8 論理単位へ束ねた。
+>
+> - **生成器 1 件**（Red → Green の 2 対を別コミットで実測）: `scan-tests.ts` が
+>   **文字列リテラル・テンプレート・コメントの中身をコードと同じに扱っていた**。走査対象
+>   コードをフィクスチャ文字列として持つファイルが実件数の数倍に膨らみ、
+>   **`scan-tests.test.ts` 自身が実行時 21 件に対しダッシュボード 81 件**という自己矛盾を
+>   起こしていた（`hasSkip` も同源の false positive）。`findMaskedSpans` で非コード範囲を
+>   列挙し、一致位置がそこに入るなら捨てる。**リテラルを剥がした文字列は作らない** ——
+>   `it("title", fn)` のタイトル自体が文字列リテラルなので剥がすと宣言が壊れる。
+>   ダッシュボード是正は `scan-tests.test.ts` **81→24** と `size.test.ts` **9→8**
+>   （後者は `:144` の**コメントアウトされた** `it(`。指摘には無かったが同じ根で自動的に閉じた）。
+> - **統計同期 2 件**: 11 巡目の内訳のうち `webhooks/route.test.ts` は **20→21 ではなく 19→20**
+>   （差分 +1 は正しく絶対値だけ過大）、`scan-tests.test.ts` の 17→21 は実行時としては正しいが
+>   ダッシュボード 81 と割れていた。
+> - **ドキュメント 16 件**: 実行可能ゲートの穴 4（042 / 044 / ja-009 / ja-011 —— **全件、
+>   合格側 exit 0 / 違反側 exit 1 を合成フィクスチャで実測してからコミット**）、台帳ドリフト 4
+>   （README×2 / findings-04 / findings-14）、自己矛盾 5（005 / 007 / 029 / 030 / 041）、
+>   spike 契約不足 3（018 / 022 / 031）、runbook 1（063 —— **PostgreSQL 16 実機で三方向実測**）。
+>
+> **この弾で得た再利用可能な知見 3 点**:
+>
+> 1. **静的検査は「文字列リテラルをコードと取り違える」欠陥を持ちやすい。** 生成器 1 件と
+>    プラン 3 件（042 / 044 / ja-009）は**すべて同一クラス**だった。042 は偽 FAIL、044 は
+>    偽 PASS と症状が逆で別物に見えるが、根は同じ。プラン側は `strip_code` に統一し、
+>    3 ファイルの定義が byte 一致することを diff で確認している。
+> 2. **`grep` の終了ステータスは実装間で契約が違う。** 実測（macOS 26）: 走査対象が存在しない
+>    とき **BSD grep 2.6.0-FreeBSD は 1**（＝「一致なし」と区別不能）/ **ugrep 7.5.0 は 2**。
+>    読めないディレクトリ・不正な正規表現はどちらも 2。したがって `status -ge 2` の検査だけでは
+>    足りず、**陽性対照**（必ず検出されるはずのトークンが実際に出たか）が要る。
+> 3. **コメントで書いた手順は実行されない。** plan 063 の「不一致なら ROLLBACK」は SQL コメント
+>    で、直後に無条件 `COMMIT;` があった。実機で流すと、既にドル建てだった行が
+>    `20.00 → 0.20` に壊れたまま **exit 0** で完了した。事前ゲートが `\gset` + `\if` で
+>    機械化済みなのに事後だけ目視委任、という**非対称が穴の在り処**だった。
 
-その先の実行順・依存は **[`README.md`](README.md) の Status 表と
-「Recommended sequencing #13」を正とする**（042 が signIn ヘルパーを修復するまで
-認証系 E2E 047〜050・052・055 は着手不可 / 054 は 043 の VRT 再撮影が前提）。
-新ラウンドを起こす場合は、E2E の未スイープ切り口が Round 9 でほぼ枯渇しているため、
-**plans 042〜056 の実行結果と OI-9 / OI-11 の解消状況を先に確認すること**。
+---
+
+### ⚠️ 「issues が減らない」の原因（2026-08-01 調査・**過去の記録を訂正**）
+
+VSCode「問題」パネルの件数が消化しても動かない件を調査した結果、**本ファイルの Round 14 節
+（`:44-46`）に書かれた説明は誤りである**ことが分かった。旧記述:
+
+> VSCode「問題」パネルの **114 件**（⚠49 + ⓘ65）は **NEW REVIEW + PREVIOUS REVIEWS (2)
+> の合算**であり新規指摘数ではない
+
+**訂正**: 「問題」パネルの件数は **CodeRabbit 由来ではない**。実測した内訳:
+
+| 出所 | 症状 | 根拠 |
+|---|---|---|
+| **Spell Checker 拡張** | `"SSOT"` `"IDOR"` `"tsvector"` `"Svix"` `"GHSA"` `"TECHDEBT"` 等を **Unknown word（Information）** として大量報告 | パネルのタブが「**Spell Checker 101**」と表示。**リポジトリに `cspell.json` / `.cspell.json` / `.vscode/settings.json` が 1 つも無く**、プロジェクト固有語の辞書登録がされていない |
+| **markdownlint** | `MD013`（行長）/ `MD028`（blockquote 内の空行）/ `MD031`（fence 前後の空行）/ `MD007` / `MD038` 等（Warning） | `.markdownlint.json` は存在するが、`plans/**` の長大な日本語散文に対して既存違反が残っている |
+| **CodeRabbit** | サイドバー「NEW REVIEW 19 件 + NITPICKS 4」／「0 of 19 issues resolved」 | **「コメント」タブに出る**。「問題」パネルとは**別系統**のカウンタ |
+
+**帰結**: CodeRabbit の指摘を何件消化しても「問題」パネルの数値は動かない —— **そもそも
+別のものを数えている**。減らしたいなら手段が分かれる:
+
+- **問題パネル**: `cspell.json`（または `.vscode/settings.json` の `cSpell.words`）に
+  プロジェクト語彙を登録するのが最大の効き目。次いで markdownlint の既存違反の解消 or 設定調整
+- **CodeRabbit の「0 of 19 resolved」**: 解決判定は**次のレビュー実行**が行うため、ローカル編集
+  では動かない。コミット → 再レビューで反映される
+- **CodeRabbit の指摘が尽きない構造**: レビュー対象が **`main...dev` の全差分**（2026-08-01 時点で
+  **391 コミット / 110 ファイル**、`main` への最終マージは 2026-07-17 の PR #153）。
+  マージしていないので**過去の弾で直したファイルも毎回対象に残り**、指摘を直すコミット自体が
+  差分を増やす。しかも 110 のうち **59 が `plans/**` の散文**で、散文は「より正確に書ける」
+  指摘が原理的に尽きない。**`dev → main` のマージが差分ベースラインをリセットする唯一の根本解**。
+  併せて `.coderabbit.yaml`（`f088dca3` で削除済み・現在不在）を復活させ `path_filters` で
+  `plans/ja/**`（ja ミラー）を除けば、第 5〜12 弾で繰り返し triage してきた
+  「ja ミラー重複」のクラスが発生源で消える。
+
+**⚠️ 進捗指標にパネルの総数を使わないこと。** 追うべきは CodeRabbit サイドバーの
+**NEW REVIEW リスト**である。
+
+> **第 11 弾（2026-08-01）で本ファイルを含む 24 の plan/audit 文書を更新した。**
+> 内訳: 実行可能ゲートの穴 8 件（004 / 011 / 042 / 044 / ja-009 / ja-011×3 —
+> **全件、合格側 exit 0 / 違反側 exit 1 を実測してからコミット**）、自己矛盾・過小契約
+> 12 件（003 / 007 / 018 / 021 / 023 / 032 / 038 / 058 / 059 / 063×2 /
+> rate-limiting-spike）、台帳ドリフト 5 件（本ファイル / findings-04 / findings-14 /
+> findings-18 / ja-003）。実コード 2 件（`webhooks/route.ts` の trim 不一致・
+> `paypal.ts` の `??` 短絡）と生成器 1 件（`scan-tests.ts` の `it.each(<識別子>)`）は
+> いずれも Red → Green を別コミットで実測済み。
+
+### 直近の着手先
+
+1. **Round 14 Phase C（残り）— 最優先**。`plans/003`〜`plans/063` の個別プラン文書に
+   対する CodeRabbit 指摘。**1 プラン = 1 コミット**。
+   **⚠️ 「約 60 件」は Round 14 時点の見積もりであって現在の残数ではない。**
+   第 5〜12 弾で継続的に消化しており（第 11 弾だけで plan/audit 24 文書、第 12 弾で 16 文書）、
+   残数は**次回レビューの未解決コメントを正**とすること — ここに数値を書くと
+   本節の構造的な更新漏れ（冒頭の警告参照）でそのままドリフトする。
+   **⚠️ 実装が DONE のプラン（001–009・023・024・057–062）は Phase C の着手先から除外する** ——
+   下の「完了済み」節と重複するため、着手先として再掲しない（doc 指摘が残る場合も、
+   セキュリティ実装系①はすべて DONE なので新規着手対象ではない）。**残る着手先**は依存の強い順で
+   ①spike 系（013–022・025）→ ②テスト計画系（027–041）→ ③E2E 系（042–056）→ ④その他 docs。
+   **⚠️ 約 15 件はタイトルだけでは修正内容を確定できない**ため、着手時に該当コメントの
+   詳細本文を入手すること（Round 11 判断基準 3）。
+2. **未実行プランの実行**。**058〜062 は全て DONE**。残る TODO は
+   **[`README.md`](README.md) の Status 表を正とする**（本節に一覧を再掲しない —
+   二重管理でドリフトさせないため）。E2E 系は **042 が絶対の先頭**（signIn ヘルパーの
+   Clerk UI ドリフトで認証系 16 件が全滅中 / 047–050・052・055 が待ち）。
+   依存ゼロで即着手できるのは **051 / 056 / 044 / 045**。
+3. **Round 14 が生んだ残件**（いずれも小さく独立）:
+   - `PaymentDetails.amount` の**既存行 backfill**（コード修正は `e63474b` で完了済み）—
+     **起票済み: [plan 063](063-backfill-stripe-payment-amount.md)**（P2 / TODO・
+     [`README.md`](README.md) の Status 表 :126 に行あり）。未起票として数えないこと。
+   - **未起票**: `applyCoupon` の lost-update `$transaction` リファクタ
+     （`specs/multi-vendor-ecommerce/08-open-questions.md` が追跡）
+   - **未起票**: 住所 `default: true` 重複バグの remediation（plan 037 の characterization が先行）
+
+### 完了済み（次アクションとして推奨しないこと）
+
+**001–009・023・024・058–062 は DONE**。**057 は素の DONE ではなく
+[`DONE (security) / 1 criterion pending`](README.md)**（README :120 / :169-174 が SSOT）——
+advisory 解消というセキュリティ目的は達成済みだが、Done criteria は "ALL must hold" と
+定めており Step 5（未認証 `/dashboard` の redirect スモーク）の実施記録が無い。
+「057 は DONE」と読んで残 1 項目を落とさないこと。
+
+過去の本節が 057 を「次に実行する」と書いていたのは **Round 13 時点で既に古い記述**だった。
+実行実態は常に **[`README.md`](README.md) の Status 表**が SSOT であり、本節はその同期先にすぎない。
+
+> **バージョンの現況は本節で読まないこと。** 057 が着地させたのは `~16.2.10` だが、
+> 現行は **`~16.2.12`**（2026-07-30・新規 9 advisory による再露出への対応。
+> `audit/findings-06-dependencies.md` DEPS-08 解決②）。依存の「今」は上の依存表と
+> DEPS-08 を見ること。
+
+### 新ラウンドを起こす場合
+
+- **E2E**: 未スイープ切り口は Round 9 でほぼ枯渇 → plans 042〜056 の実行結果と
+  OI-9 / OI-11 の解消状況を先に確認する。
+- **Integration**: 先行依存だった plan 003 / 005 が DONE になり、**TESTS-02 capture 経路と
+  `saveUserCart` 統合の deferred 理由が失効**している（昇格の再評価が可能）。
+- **Security**: Round 13 deferred 11 件が `audit/findings-18-security-r13.md` §3 に
+  昇格条件つきで残る。**SECURITY-17（webhook の無条件上書き）は Round 14 の A-1 が
+  確立した CAS イディオム（`paypal.ts` の `notSettled()`）を横展開すれば解消**でき、
+  昇格条件がより具体化している。
 
 ---
 
@@ -529,11 +808,31 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 完了済みフェーズは再実行せず、このファイルのチェックリストを更新しながら進めること。
 ```
 
-## 完了済みの要点（次セッションが再導出しなくてよい事実）
+## 完了済みの要点（**Round 1 時点の記録** — 現在値ではない）
 
-- ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件
-- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、<=7.2.3 影響・修正版 7.2.4+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補
+> **⚠️ 本節は Round 1（2026-07-03 / HEAD `f9752c0`）時点のスナップショットであり、
+> 「次セッションが再導出しなくてよい**現在の**事実」ではない。** 見出しが
+> 「完了済みの要点」であるため現況表と誤読されやすいが、以下の数値・判定の多くは
+> 後続ラウンドで変化している。**現在値が必要なときは実測するか、下表の参照先を見ること。**
+>
+> **右列は「最新スナップショット」であり継続的な現在値ではない。** 各セルに測定時点を
+> 個別に併記してある（行ごとに確認日が異なるため、列見出しに 1 つの日付を置くと
+> 更新の新しい行まで古く見える／古い行が新しく見える）。列見出しの日付だけを
+> 見て鮮度を判断しないこと。
+>
+> | 項目 | Round 1 時点 | 最新スナップショット（測定時点は各セルに併記） |
+> |---|---|---|
+> | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — **2026-07-19 / Round 13 実測**。詳細 `audit/findings-18-security-r13.md` §0） |
+> | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消。解決レンジの正値は `audit/findings-06-dependencies.md` を単一の出典とする — **2026-07-26 実測**: `@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`） |
+> | `next` | `^16.2.1` | **`~16.2.12`**（**2026-07-30 実測**。`~16.2.10` が新規 9 advisory の影響範囲 `<16.2.11` に再露出したため独立の依存メンテとして bump — `audit/findings-06-dependencies.md` DEPS-08 解決②。[plan 057](057-upgrade-next-middleware-bypass.md) は依然 **DONE (security) / 1 criterion pending** — Step 5 スモークの記録が未達。R1 の「最新・対応不要」判定は撤回済み） |
+> | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / README Deferred で継続追跡） |
+> | tsc / lint | 0 エラー / 15 警告 | 同左（**2026-07-27 再実測**・変化なし） |
+
+- ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件 ← **R1 時点**
+- **最重要のセキュリティ既発見**: `@clerk/nextjs` 7.0.7 に CRITICAL ミドルウェア保護バイパス（GHSA-vqx2-fgx2-5wq9、`>=7.0.0 <7.2.1` 影響・修正版 7.2.1+/最新 7.5.x）。`js-cookie` HIGH も Clerk 経由。→ 依存カテゴリのプラン最有力候補 ← **plan 004 で解消済み**
 - 既知・未対応（プラン化候補）: OI-9 ホーム SSR 500 / OI-11 seller `self is not defined` / OI-10 a11y color-contrast / C2 bundle size / applyCoupon total ロストアップデート / E2E 120s ハング
+  ← **OI-9 / OI-11 は Round 9 時点でも「未着手」を確認済み**（`docs/testing/QA_HANDOFF.md`）。
+  最新の解消状況は QA_HANDOFF 側を正とする
 - **direction 残候補: 一覧は [`plans/README.md`](README.md) の Deferred 節を参照**（**単一の出所**）。
   > 本ファイルに一覧を再掲していたが、README 側と**二重管理**になり、片方だけ更新されて
   > ドリフトしていた（例: `/dashboard/admin/orders`・`/dashboard/admin/coupons`・

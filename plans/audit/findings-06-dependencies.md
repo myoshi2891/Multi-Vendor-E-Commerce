@@ -6,17 +6,76 @@
 
 ### [DEPS-01] `@clerk/nextjs` を auth-bypass アドバイザリ圏外へ更新（7.0.7 → 7.5.x）
 
-- **Evidence**:
-  - `package.json:21` — `"@clerk/nextjs": "^7.0.7"`。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <=7.2.3、修正 7.2.4+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内。
+> **✅ 解消済み（実測 2026-07-18）**: `package.json` は `"@clerk/nextjs": "^7.5.0"`、
+> `@clerk/testing` は `^2.2.9`。GHSA-vqx2-fgx2-5wq9 の影響範囲（`>=7.0.0 <7.2.1`）の
+> **外**にあり、本 finding はクローズ済み。実施は [plan 004](../004-upgrade-clerk-nextjs-security.md)（DONE）。
+>
+> DEPS-02 の「✅ ゲート通過（実測 2026-07-17）」は**この DEPS-01 のバンプが完了して
+> いることを前提とした記述**であり、当初の Evidence（`^7.0.7` が現状という記述）と
+> 矛盾していた。この節は以降 **「現行状態」と「監査時点の記録」を別見出しに分離**して
+> あり、`^7.0.7` を含む記述はすべて後者に属する。
+>
+> なお下の TODO(needs-detail)「バンプ先の具体的なピンが未確定」も**解決済み**:
+> 範囲指定 `^7.5.0` のまま記録する形を採り、`bun.lock` 上の解決版が両アドバイザリの
+> 修正版を満たすことを確認済み（`js-cookie` は `@clerk/shared@4.25.4` 経由で `3.0.7`）。
+> 厳密ピンは採用していない。
+>
+> **影響範囲の正値（2026-07-26 に GitHub Advisory API で確定）**: `@clerk/nextjs` の 7 系は
+> **`>=7.0.0 <7.2.1` が影響・修正版 `7.2.1`**（`gh api /advisories/GHSA-vqx2-fgx2-5wq9`）。
+> 監査台帳内で `<=7.2.3` 影響・修正 `7.2.4` と記していた箇所（`recon.md` / `plans/ja/004` /
+> `ADVISOR_STATE.md`）は**誤り**で、本 finding と `plans/004`（EN）の値が正しかった。
+> **以後この値を台帳の単一の出典とすること**（アドバイザリは
+> 同一 GHSA 内でパッケージ・メジャー系列ごとに別レンジを持つため、7 系以外の行
+> —— 6 系は `<6.39.2`、5 系は `<5.7.6` —— と取り違えないこと）。
+>
+> **統一の完了状況（2026-07-27 訂正）**: 上の段落は当初「3 箇所を正値へ統一済み」と
+> 完了を宣言していたが、**実際には未完了だった**。2026-07-27 時点の実測で
+> `recon.md:88` は依然「修正版 7.2.4 を満たす」と記しており、`plans/ja/004` の
+> Done criteria も `>= 7.2.4` を勧告値と読める形のまま残っていた。同コミットで:
+>
+> - `recon.md:88` → 「CRITICAL の修正版 **7.2.1** を満たす」へ訂正し、`js-cookie` は
+>   独立に解消済みである旨を分離して記載
+> - `plans/ja/004` の Done criteria → `7.2.4` が**本プランの目標値**であって勧告の
+>   修正版ではないことを明示（`js-cookie` を同時に解消するための上乗せ）
+> - `ADVISOR_STATE.md` → 誤値の記載は無く、本 finding を出典として参照する形へ更新済み
+>
+> **完了宣言は実測とセットで書くこと。** 宣言だけが残ると、後続ラウンドが
+> 「統一済み」を前提に再確認をスキップし、誤値が生き残る（本件がその実例）。
+
+#### 現行状態（2026-07-18 実測）
+
+| 項目 | 値 |
+|---|---|
+| `package.json:21` | `"@clerk/nextjs": "^7.5.0"` |
+| `js-cookie`（推移依存） | `3.0.7`（`@clerk/shared@4.25.4` 経由） |
+| GHSA-vqx2-fgx2-5wq9（CRITICAL） | 解消（影響 `>=7.0.0 <7.2.1` の外） |
+| GHSA-w24r-5266-9c3c（HIGH） | 解消 |
+| 本 finding | **クローズ済み**（実施: [plan 004](../004-upgrade-clerk-nextjs-security.md)） |
+
+#### 監査時点の記録（2026-07-03 / HEAD `f9752c0`）— 以下はすべて履歴であり現行値ではない
+
+> この見出し以降の Evidence / Impact / Effort / Risk / Fix sketch は、**バンプ前**の状態を
+> 記述したものである。単独で引用すると `^7.0.7` が現行値であるかのように読めるため、
+> 現行値は必ず上の「現行状態」表を参照すること。
+
+- **Evidence（2026-07-03 時点・履歴）**:
+  - `package.json:21` — 当時 `"@clerk/nextjs": "^7.0.7"`（**現在は `^7.5.0`**）。`bun.lock` と `node_modules/@clerk/nextjs/package.json` でインストール実体 7.0.7 を確認。CRITICAL [GHSA-vqx2-fgx2-5wq9]（影響 >=7.0.0 <7.2.1、修正 7.2.1+）+ HIGH GHSA-w24r-5266-9c3c の影響圏内**だった**。
   - `src/middleware.ts:6-13` — アドバイザリが標的とするまさにこのパターン: `createRouteMatcher([...])` + `await auth.protect()` で `/dashboard`, `/dashboard/(.*)`, `/checkout`, `/profile`, `/profile/(.*)` を保護。
   - 影響範囲（アップグレード面）は小さい: Clerk import はテスト以外で約10箇所 — `src/middleware.ts:1`、`src/app/layout.tsx:12`（ClerkProvider）、`(auth)/sign-in|sign-up`・`(store)/profile/settings/page.tsx`（UI コンポーネント）、`src/app/api/webhooks/route.ts:4`（clerkClient + WebhookEvent）、`src/queries/store.ts:586`（動的 import）、各 dashboard layout / `src/queries/*`（order, product, review, profile, user, stripe, paypal, support）の `currentUser()`。7.0→7.5 間で削除された API は未使用。
-  - peer 互換は既に充足: `@clerk/nextjs@7.0.7` の peer は `next: ^16.1.0-0`、リポジトリは `next@16.2.1`。7.5.x も同じ Next 16 / React 19 peer 窓で、Next/React の変更を強制しない。
+  - peer 互換は既に充足: `@clerk/nextjs@7.0.7` の peer は `next: ^16.1.0-0`、リポジトリは当時 `next@16.2.1`（**現在は `~16.2.12`** — 下の DEPS-08「現況」節が SSOT）。7.5.x も同じ Next 16 / React 19 peer 窓で、Next/React の変更を強制しない。
 - **Impact**: middleware 保護ルートシェル（`/dashboard`、`/checkout`、`/profile`）への未認証アクセス。実際のデータ露出は defense-in-depth で**減衰するがゼロではない**: `src/queries/` の server action は `src/lib/auth-guards.ts` で再検証し、dashboard layout はサーバー側で `currentUser()` を呼ぶ。残余リスクは「middleware が唯一のゲートであるページ/ルート」（保護ページ本文のサーバーレンダー内容が自前で再ガードしないケース）。依存カテゴリで最優先。
 - **Effort**: S — バージョンバンプ + `bun install`。`src/middleware.test.ts` と Clerk モックの `src/queries/*.test.ts` を再実行。
 - **Risk**: LOW-MED — v7 内のマイナーバンプ。使用 API 面は 7.0→7.5 で安定。Clerk のマイナーは `auth()`/`clerkMiddleware` 内部を変えることがあるため MED 寄り。全テスト + 未認証での保護ルート手動スモークでカバー。
 - **Confidence**: HIGH — インストール版・影響範囲・使用面すべて直接検証済み。
 - **Fix sketch**: `package.json` を `^7.5.x` にバンプ → 再インストールで `bun.lock` 更新 → Clerk モックのユニット + middleware テスト → 保護ルート1本を未認証スモーク。
-- > **TODO(needs-detail)**: **バンプ先の具体的なピンが未確定**。本 finding の `7.5.x` は
+- > **✅ 解決済み（2026-07-17 / Round 13 の実装状態 reconcile で確認）— 以下は履歴**。
+  > 確定結果: `package.json:21` は **`"@clerk/nextjs": "^7.5.0"`**（範囲指定のまま記録する
+  > 方針を採用・厳密ピンは不採用）。`bun.lock` 上の解決版は GHSA-vqx2-fgx2-5wq9 の
+  > 修正版（7.2.1+）と HIGH GHSA-w24r-5266-9c3c の**両方**を満たし、`js-cookie` は
+  > `@clerk/shared@4.25.4` 経由で `3.0.7`。**下記 TODO は着手不要**（本節冒頭の
+  > blockquote と同一の結論。以降の手順・確認事項は当時の未確定事項の記録として残す）。
+  >
+  > **TODO(needs-detail)〔当時・解決済み〕**: **バンプ先の具体的なピンが未確定**。本 finding の `7.5.x` は
   > 監査時点（2026-07-03 / HEAD `f9752c0`）の記述であり、**現時点で何が解決されるかは
   > 実行して確かめる必要がある**（`^7.5.x` は範囲指定なので、いつ実行するかで
   > 解決版が変わる）。確認手順:
@@ -26,7 +85,7 @@
   > cat node_modules/@clerk/nextjs/package.json | grep '"version"'
   > ```
   > **確定すべきこと**: (a) 解決されたパッチ版が GHSA-vqx2-fgx2-5wq9 の修正版
-  > （7.2.4+）**および** HIGH GHSA-w24r-5266-9c3c の修正版の**両方**を満たすか、
+  > （7.2.1+）**および** HIGH GHSA-w24r-5266-9c3c の修正版の**両方**を満たすか、
   > (b) その版を `package.json` にどう記録するか（範囲のままか、
   > 再現性のため厳密ピンにするか）。判定はユーザー確認の上で行い、
   > **実測した解決版を本ファイルと plan 004 の両方に記録**すること
@@ -151,32 +210,76 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 - **Effort**: S（パッケージごとの代替評価） / **Risk**: LOW / **Confidence**: MED（ピン/ロック状態は検証済み。「非メンテ」は保守シグナル判断）
 - **Fix sketch**: レガシー UI 依存をウォッチリストに記録し、次の React/Next メジャー時に生存確認。`react-tag-input` の exact ピンの意図を確定。
 
-### [DEPS-08] Next.js 16.2.1 — 監査時点では最新・パッチアクション不要
+### [DEPS-08] Next.js — ✅ 解決済み（2026-07-30・`~16.2.12` へ bump）／「パッチアクション不要」判定は撤回済み
 
-- **Evidence（実測できる範囲）**: `package.json:80` `"next": "^16.2.1"`、`bun.lock` +
-  `node_modules/next/package.json` とも **16.2.1**（インストール実体）。
-  peer（React 19、`@playwright/test` ^1.51）充足。`middleware→proxy` / AVIF 警告の
-  非対応は決定済みトレードオフ（recon）。
-- > **TODO(needs-detail)**: **「16.2.1 が最新」という判定は監査時点
-  > （2026-07-03 / HEAD `f9752c0`）のものであり、リポジトリ内からは検証できない**
-  > （最新版の情報は外部レジストリにしか無い）。本 finding が実測で言えるのは
-  > **「インストール実体が 16.2.1 である」ことまで**で、それが最新かどうかは別の主張。
-  > 確認事項: **現時点の Next.js の最新安定版**（`bun outdated next` /
-  > `npm view next version` / リリースノート）。
-  > - **16.2.1 が最新のまま** → 本 finding は「アクション不要」で確定。判定日を追記する。
-  > - **より新しい版が出ている** → 「最新」の記述を撤回し、差分がセキュリティ修正を
-  >   含むかを確認する。含む場合は独立した finding として起票する
-  >   （**Clerk/Prisma の作業に Next バンプを同梱しない**という本 finding の
-  >   本来の目的は維持すること）。
-  >
-  > **「最新である」は時間で腐る主張**なので、再監査のたびに判定日とセットで
-  > 更新すること（判定日の無い「最新」は次のラウンドで誤情報になる）。
-- **Impact**: 監査時点で未解決事項なし。Clerk/Prisma 作業に不要な Next バンプを
+#### 現況（本 finding を読む人が必要とする唯一の「今」）
+
+- **現行値**: `package.json:80` `"next": "~16.2.12"` / `bun.lock` 解決版 **16.2.12**。
+- **解決 ①（2026-07-19・plan 057）**: Round 9 以降に **GHSA-26hh-7cqf-hhc6**（HIGH — App Router の
+  Middleware/Proxy バイパス）が公表され、`next@16.2.1` は影響範囲内だった。独立 finding として
+  起票され **[plan 057](../057-upgrade-next-middleware-bypass.md)** で `~16.2.10` へ bump して解消。
+  本 finding の本来の目的（**Clerk/Prisma の作業に Next バンプを同梱しない**）は、
+  057 が独立プランになったことで維持されている。
+- **解決 ②（2026-07-30・再露出 → `~16.2.12`）**: `bun audit` の実測で `~16.2.10` が
+  **新規 9 advisory（HIGH 4 / MODERATE 5）の影響範囲 `>=16.0.0 <16.2.11` に再び入っている**
+  ことが判明した。うち **GHSA-6gpp-xcg3-4w24**（HIGH — App Router の Middleware/Proxy バイパス、
+  Turbopack + single locale）は **①が閉じた GHSA-26hh-7cqf-hhc6 と同じ脅威モデルの再発**であり、
+  `src/middleware.ts` が `auth.protect()` で `/dashboard` `/checkout` `/profile` をゲートする
+  本リポジトリに直接効く。patched は `16.2.11`、16.2.x 系の最新 `16.2.12` へ引き上げて解消
+  （tilde 維持 — `^` は 16.3+ を許容し [`057:150-151`](../057-upgrade-next-middleware-bypass.md) の
+  scope 判断に反するため）。**これは 057 の再実行ではなく独立した依存メンテ行動**であり、
+  057 の Done criteria に記録された「実測: `~16.2.10`」（2026-07-27 時点の監査記録）は上書きしない。
+  - 残る 8 件: `GHSA-89xv-2m56-2m9x` / `GHSA-m99w-x7hq-7vfj` / `GHSA-p9j2-gv94-2wf4`（HIGH）、
+    `GHSA-68g3-v927-f742` / `GHSA-4633-3j49-mh5q` / `GHSA-4c39-4ccg-62r3` /
+    `GHSA-q8wf-6r8g-63ch` / `GHSA-955p-x3mx-jcvp`（MODERATE）。
+  - 実測（2026-07-30）: `bun audit` の `next` ブロック消失 / `node_modules/next` 解決版 **16.2.12** /
+    `bunx tsc --noEmit` exit 0 / `bun run build` 成功 / `src/middleware.test.ts` 11 件 green。
+- **Impact**: **アドバイザリは解決済み**（`16.2.12` で上記 9 件すべての影響範囲外）。
+  ただし plan 057 自体は **DONE (security) / 1 criterion pending** であり「未解決事項なし」ではない ——
+  Step 5（未認証 `/dashboard` の redirect スモーク）の結果が
+  [`057:246-251`](../057-upgrade-next-middleware-bypass.md) にも
+  [`../README.md`](../README.md):120 にも記録されていない。report-only の手動チェックで
+  自動テストの代替ではないため、`bun run dev` を起こせる環境で実施し結果を 057 に追記する
+  必要がある。**この保留は本 finding の依存アドバイザリ判定には影響しない**（bump は
+  完了しており版は実測済み）が、「057 = 完全にクローズ」と読まないこと。
+- **Effort**: — / **Risk**: — / **Confidence**: HIGH（`package.json` / `bun.lock` / `bun audit` を実測）
+- **Fix sketch**: 依存側は**不要（`~16.2.12` で解消済み）**。以後は 16.2.x のパッチ追跡のみ。
+  057 側の残作業は上記 Step 5 スモークの記録のみ。
+  **教訓**: 「plan NNN で bump 済み ＝ 恒久解決」ではない。同一メジャー内でも新規 advisory で
+  再露出しうるため、本エントリの現況は `bun audit` 実測日とセットで読むこと。
+- **⚠️ 本 finding を「Next は対応不要」の根拠として再利用しないこと**
+  （[`../README.md`](../README.md) の rejected 節 DEPS-08 にも同じ注意書きあり）。
+
+<details>
+<summary>履歴（監査時点の記録・判定は撤回済み。参照のみ）</summary>
+
+> 以下はすべて **2026-07-03（HEAD `f9752c0`）の監査時点**の記録であり、**現行の状態でも
+> 現行の行動指針でもない**。上の「現況」が正。ここの値を現在の状態として引用しないこと。
+
+- **Evidence〔当時〕**: `package.json:80` `"next": "^16.2.1"`、`bun.lock` +
+  `node_modules/next/package.json` とも **16.2.1**（当時のインストール実体）。
+  peer（React 19、`@playwright/test` ^1.51）充足。`middleware→proxy` / AVIF 警告の非対応は
+  決定済みトレードオフ（recon）。
+- **Impact〔当時〕**: 監査時点で未解決事項なし。Clerk/Prisma 作業に不要な Next バンプを
   同梱しないための完備記録。
-- **Effort**: S（監視のみ） / **Risk**: LOW /
+- **Effort〔当時〕**: S（監視のみ） / **Risk**: LOW /
   **Confidence**: HIGH（インストール実体 16.2.1）/ **未確認**（それが最新であること）
-- **Fix sketch**: 変更なし。16.2.x パッチリリースの追跡を継続し、
+- **Fix sketch〔当時・撤回済み〕**: 変更なし。16.2.x パッチリリースの追跡を継続し、
   **判定日を添えて**「最新」の記述を更新する。
+- **TODO(needs-detail)〔当時・解決済み〕**: 「16.2.1 が最新」という判定は監査時点のもので、
+  リポジトリ内からは検証できない（最新版の情報は外部レジストリにしか無い）。本 finding が
+  実測で言えるのは「インストール実体が 16.2.1 である」ことまで。当時の 2 分岐:
+  - **16.2.1 が最新のまま** → 「アクション不要」で確定。判定日を追記する。
+  - **より新しい版が出ている** → 「最新」の記述を撤回し、差分がセキュリティ修正を含むかを
+    確認する。含む場合は独立した finding として起票する。
+
+  → **後者が現実となった**（GHSA-26hh-7cqf-hhc6 / plan 057）。この分岐はすでに決着済みであり、
+  **未着手の作業指示として読まないこと**。
+
+**教訓**: 「最新である」は時間で腐る主張なので、再監査のたびに判定日とセットで更新すること
+（判定日の無い「最新」は次のラウンドで誤情報になる）。
+
+</details>
 
 ---
 

@@ -286,3 +286,95 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 - レビュアーは変更後、引数からは `paymentIntent.status`/`.amount` が一切読まれず、取得済みオブジェクトからのみ読まれることを確認すること。
 - PayPal capture（`paypal.ts`）が後に同様に堅牢化される場合、このパターン（サーバー側再取得 + order マッチ）を踏襲すること。
 - 先送り事項: 通貨単位の正規化と `stripe.ts` の古い3引数ログ（tech-debt パスで構造化ログへ変換）。
+
+### 本プラン完了後の乖離（2026-07-18 追記）
+
+本プランは **DONE**（PR #158 としてマージ済み）だが、**対象は当初スコープ
+（サーバー側 Stripe 再取得と住所所有権の `findFirst`）に限る**。上記ステップは commit
+`f9752c0` 時点の計画の記録であり、意図的に改変していない。以下 **5 点**のうち、
+**1–2** はその後コード側で*移動*したため **ステップ本文を現行仕様として読まないこと**。
+**3–5** は当初スコープ外の follow-up で、**5**（住所所有権の TOCTOU）は
+**解決済み**（注文 `tx` 内での行ロック。2026-07-31）、**3–4** は本プランの DONE では
+閉じない未解決のギャップ。
+3–4 は完了済みではなく追跡中のギャップとして扱うこと:
+
+1. **`requires_payment_method` は無条件 `Failed` ではない。**
+   Step 4 は当該ステータスを `paymentStatus: "Failed"` へ写像する前提だが、
+   現行の `src/queries/stripe.ts` は `last_payment_error` の有無で分岐する。
+   このステータスは「拒否されて再入力が必要」と「まだ決済手段が付いていない
+   初期状態」の双方で返るため、status だけでは失敗と判別できない。初期状態を
+   `Failed` で確定させると再試行を塞ぐ。現行の写像は
+   `last_payment_error ? "Failed" : "Pending"`。
+2. **セント換算は共通化され、float ベースではなくなった。**
+   79-84 行の抜粋は作成時の `Math.round(order.total.toNumber() * 100)` を
+   示すが、現在は作成時・照合時とも単一のヘルパー `toStripeAmount()`
+   (`stripe.ts:52`) を呼ぶ。実装は `.claude/steering/tech.md` の
+   `Prisma.Decimal` 規約に従い `total.mul(100).toDecimalPlaces(0).toNumber()`。
+   作成時と照合時で導出方法が異なると、正当な決済が
+   `paymentIntent.amount !== expectedAmount` ガードで弾かれる。
+3. **住所所有権のテストは「クライアント由来フィールドを使わないこと」を
+   assert すべき。** Step 5 のテスト（239-247 行付近）は拒否経路
+   （`findFirst` → null）と正常系を固定するが、引数の
+   `shippingAddress.<field>` を密かに読み続ける回帰はこれを通過してしまう。
+   恒久的な assertion は「永続化された注文が **DB から取得した**住所を
+   持つこと」— 例えば `findFirst` にクライアント供給オブジェクトとは異なる
+   値の住所を返させ、保存値が引数ではなく DB 行と一致することを検証する。
+4. **amount/currency の突合には独立した回帰テストが要る。** Step 4 のリスト
+   （230 行付近）は metadata 不一致と status 写像を固定するが、
+   `paymentIntent.amount !== expectedAmount || currency !== "usd"` ガード
+   （174-178 行）を固定していない。ケースを追加する: `metadata.orderId` は一致するが
+   amount が食い違う（または非 `usd`）retrieve 済み intent が
+   `"Payment intent amount/currency mismatch."` を throw し、`order.update` が走らないこと。
+5. **住所所有権の読み取りは注文トランザクション内に置くべき。**
+   **Status: コード修正は完了（2026-07-31）／実 DB 並行検証は deferred。**
+   2 つを意図的に分けて追跡する。文は正しいロックを取るようになった（ユニットテストで
+   検証済み）が、「PostgreSQL が実際に並行書き込みをブロックすること」は実 DB に対して
+   一度も実行していない。これを一律の「解決済み」と読むと、**未消化の検証項目が
+   閉じたことになってしまう** —— 本項末尾の「ユニットテストでは覆えない範囲」を参照。
+   Step 3（202-209 行）は `findFirst` を `$transaction` の**外**で行っていたため、
+   チェックと `order.create` の間で住所が削除・再割当てされる TOCTOU 窓が残っていた。
+   `placeOrder`（`src/queries/user.ts`）は現在、`shippingAddressId` を書く**直前に同一 `tx`
+   内で行ロックを取る**（`$queryRaw` による
+   `SELECT "id" FROM "ShippingAddress" WHERE "id" = … AND "userId" = … FOR UPDATE`。
+   0 行なら `"Shipping address not found."` を throw）。
+   回帰テスト: ロック結果が空のケースを駆動し、文が両列スコープの `FOR UPDATE` であることと
+   `order.create` が走らないことを固定。
+
+   > **2 つの経路がそれぞれ別の仕組みで閉じる。** 以前の素の再読み取りでは足りなかった理由でもある:
+   >
+   > - **削除 —— FK が閉じる。** `Order` 行の INSERT 時、PostgreSQL は参照先の
+   >   `ShippingAddress` 行に `FOR KEY SHARE` ロックを取る（`Order.shippingAddressId` →
+   >   `ShippingAddress.id`、`prisma/schema.prisma:513-514`）。
+   >   このロックは `DELETE` と競合するため、検証済み住所への並行削除は本トランザクションの
+   >   commit までブロックされる。（別件として、リレーションは `onDelete: Cascade` なので
+   >   commit **後**の削除は注文ごと消える —— これは保持ポリシーの問題であり TOCTOU ではない。）
+   > - **`userId` 付け替え —— 明示的な `FOR UPDATE` が閉じる。** 以前の
+   >   `tx.shippingAddress.findFirst` で開いたままだったのがこちら。素の `SELECT` に
+   >   コンパイルされ行ロックを一切取らず、`UPDATE … SET "userId" = …` は参照キー列を
+   >   触らないため `FOR NO KEY UPDATE` となり、FK の `FOR KEY SHARE` と**競合しない**。
+   >   `FOR UPDATE` はこれと競合するので、並行付け替えは本トランザクションの commit まで
+   >   ブロックされる。さらにロック取得後に PostgreSQL が述語を再評価（EvalPlanQual）
+   >   するため、**先に**付け替えが commit していた場合は行が結果から脱落し throw に落ちる。
+   >
+   > 採らなかった代替は `Serializable` + `retryOnSerializationFailure`
+   > （`src/lib/db-retry.ts`）。これは `placeOrder` の tx 全体 —— 商品取得・配送料計算・
+   > 在庫減算 —— に掛かるため、隣接 2 文の窓を閉じるために長い tx の abort 率を上げることに
+   > なる。行ロックなら実際に競合する行だけにスコープできる。
+   >
+   > **ユニットテストでは覆えない範囲。** モック境界で固定できるのは文の形だけであり、
+   > 「PostgreSQL が並行書き込みを実際にブロックすること」は検証できない。実並行は
+   > `tests/integration/`（testcontainers）の領域 —— [`plans/README.md`](../README.md) の
+   > deferred で追跡する。
+
+本プランを土台にした後続の決済作業（**いずれも完了済み**）:
+
+- `plans/059`（PayPal capture 検証）— **DONE**（[`../README.md`](../README.md) の Status 表が
+  実行実態の SSOT）。共有ヘルパー `isSettledPaymentStatus` を
+  `src/lib/payment-status.ts` から再利用する契約は実装で守られている
+  （**本モジュールから再 export はしない**）。
+  なお 2026-08-01 に、実装された相関検証が
+  `purchase_units[0].custom_id ?? capture?.custom_id` の形で **`??` の短絡により
+  2 つ目の `custom_id` を検査していなかった**欠陥を修正済み（`0d82f790`）。
+- 2026-07-18 の CodeRabbit Phase 1（冪等キー付与 + ステータス書き込みの CAS 化）— 完了。
+
+詳細は `docs/testing/COVERAGE_REPORT.md §7`。

@@ -35,16 +35,35 @@
    > Time-of-use）を残す**。チェック時点で :3000 が空いていても、Playwright が webServer を
    > 起動するまでの間に別プロセス（`docker compose up` の遅延起動、エディタの dev サーバー等）が
    > :3000 を掴めば、結局 `reuseExistingServer: !CI` が他人のサーバーを再利用してしまう。
-   > チェックは**窓を狭めるだけで塞がない**。方針をユーザーに確認すること:
-   > - **(A) 残存を許容**（本プランの現案）: 事前チェックのみ。実行者が手順を踏めば
-   >   ほぼ防げる。`reuseExistingServer: !CI` のローカル高速反復の利便を維持できる。
-   > - **(B) `reuseExistingServer: false` で根治**: Playwright に必ず自前の webServer を
-   >   起動させる。:3000 が占有されていれば起動自体が失敗するため、他環境の再利用は
-   >   **構造的に不可能**になる。代償はローカルでの反復速度（毎回 build/起動が走る）と、
-   >   現 Out of scope（`reuseExistingServer` の値変更）の見直し。
+   > チェックは**窓を狭めるだけで塞がない**。
    >
-   > 判定が出るまでは (A) の実装で進めてよいが、その場合も残存リスクとして
-   > Maintenance notes に明記すること（「ガードがあるから安全」と読ませない）。
+   > **解決（2026-07-18 確定）**: 当初は (A) 残存許容 / (B) `reuseExistingServer: false`
+   > で根治、の二択としてユーザー判断待ちにしていたが、**(A) は採らない**。
+   > TOCTOU が残ると、テストが pass しても「意図したアプリ・環境を検証した」保証が
+   > 得られない — グリーンの意味が壊れるため、これは既知リスクとして許容できる
+   > 種類のものではない。一方 (B) を無条件に適用すると素の
+   > `bunx playwright test` でも毎回 build/起動が走り、ローカル反復の利便を失う。
+   >
+   > 二択に見えたのは「設定が実行経路を区別できない」ことが原因なので、
+   > **(C) 実行経路ごとに再利用可否を切り替える**を採用する:
+   >
+   > ```ts
+   > // playwright.config.ts:60（現行行）
+   > reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE,
+   > ```
+   >
+   > `scripts/e2e/run-local.sh` は `export E2E_NO_REUSE=1` してから Playwright を
+   > 起動する。これにより:
+   >
+   > - **実測を行う run-local.sh 経由では再利用が構造的に不可能**になる。:3000 が
+   >   誰かに掴まれていれば webServer の起動自体が失敗するので、TOCTOU の窓は
+   >   「狭まる」のではなく**閉じる**。事前 `lsof` チェックは、失敗をより読みやすい
+   >   メッセージに変えるための UX 改善として残す（安全性の根拠ではなくなる）。
+   > - **素の `bunx playwright test` は従来どおり**既存 dev サーバーを再利用でき、
+   >   ローカル反復の速度が落ちない。
+   >
+   > これは現 Out of scope の「`reuseExistingServer` の値変更」に触れるため、
+   > Scope を更新すること（値の固定変更ではなく、環境変数による条件化）。
 2. `globalTimeout: 1200s`（20 分）は「概ね pass する」前提の値で、失敗リトライを含む実測
    25.5 分に不足し、`did not run` 打ち切りが発生した。
 
@@ -114,7 +133,11 @@ globalTimeout: 1200 * 1000,
 - `playwright.config.ts`（`globalTimeout` の値とコメントのみ）
 
 **Out of scope**:
-- `reuseExistingServer` の値変更（ローカルの高速反復用途を壊す。ガードは run-local.sh 側で行う）
+- `reuseExistingServer` を**固定値へ**変更すること（`false` 直書きはローカルの高速反復
+  用途を壊す）。**ただし環境変数による条件化は in scope**:
+  `reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE` へ変更し、
+  `run-local.sh` から `E2E_NO_REUSE=1` を立てる（TOCTOU を閉じるための必須変更。
+  Why this matters の解決節を参照）。
 - `workers` / `retries` / `timeout` 等 config の他項目
 - `.github/workflows/` — CI への E2E 導入は別判断（findings-16 Rejected 節参照）
 
@@ -144,6 +167,16 @@ fi
 ```
 
 **Verify**: `bash -n scripts/e2e/run-local.sh` → exit 0
+
+> **この事前チェックはレースを「縮める」だけで「無くさない」。** `lsof` はスクリプト開始時に
+> 一度走るだけなので、(a) チェック通過後〜Playwright が :3000 を bind するまでの間に別プロセスが
+> 割り込む TOCTOU 窓が残り、(b) 実行中に立ち上がるサーバーの再利用は止められない。**レースを
+> 根絶する**には、根本原因である `reuseExistingServer:!CI` を断つこと。本プランは（2026-07-18 確定）
+> `playwright.config.ts` の `webServer.reuseExistingServer` を
+> `!process.env.CI && !process.env.E2E_NO_REUSE` へ変更し、`run-local.sh` から `E2E_NO_REUSE=1` を
+> 立てる方針を採る（**素の `false` 直書きはローカルの高速反復を壊すため採らない** — Why this matters
+> の「解決」節および Maintenance notes を参照。この一点に統一すること）。事前チェックはそれを補う
+> 早期失敗であって、単独では保証にならない。
 
 ### Step 2: ガードの発火と通過を実機確認する
 
@@ -204,6 +237,116 @@ globalTimeout: 3600 * 1000,
 
 - [ ] `bash -n scripts/e2e/run-local.sh` exit 0
 - [ ] :3000 占有時に run-local.sh が exit 1 + 対処メッセージ
+- [ ] **TOCTOU を閉じる実装自体が存在する**（機械検証。Scope の必須変更が入っていること）。
+      **トークンの出現ではなく実装の形を検証すること** — 素の
+      `grep -n "E2E_NO_REUSE" …` は「`E2E_NO_REUSE` を後で導入する」と書いた
+      コメントや TODO にもヒットするため、未実装のまま PASS しうる:
+
+  ```bash
+  # 検査は**実行される行**だけに掛ける。コメントを剥がさずに grep すると、
+  # `// TODO: reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE,`
+  # のように**コメントの中にだけ書いた偽実装**で PASS する。本節冒頭が
+  # 「トークンの出現ではなく実装の形を検証すること」と言っている当のものなので、
+  # コメント除去はゲートの前提条件であって装飾ではない。
+  #
+  # **文字列リテラルも同じ理由で中身を潰す**。交替の左側で捕まえるのは
+  # `"https://…"` を行コメントと誤認しないためだが、**捕まえたうえで中身を温存すると
+  # 穴は塞がっていない**:
+  #
+  #   const note = "reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE";
+  #   export default { webServer: { reuseExistingServer: !process.env.CI } };
+  #
+  # これは E2E_NO_REUSE を**一切見ていない未実装**なのに、温存形の grep は
+  # 文字列の中身に当たって PASS する。コメントの偽実装を弾いておきながら
+  # 文字列の偽実装を通すのでは、同じ穴の裏側が開いたままになる。
+  # 逆方向（文字列内のトークンで**偽 FAIL** する）は
+  # [`plans/042`](042-e2e-signin-helper-repair.md) が踏んでおり、**両プランで同一の
+  # 関数を使う**こと（片方だけ直すと定義が分岐して再発する）。
+  #
+  # クォートの対は残して中身だけ空白へ潰すので、構文の骨格と行番号は保たれる。
+  strip_code() {
+      perl -0777 -pe '
+        s{
+           ("(?:\\.|[^"\\])*")            # 二重引用符文字列
+         | (\x27(?:\\.|[^\x27\\])*\x27)   # 単一引用符文字列
+         | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
+         | (/\*.*?\*/)                    # ブロックコメント
+         | (//[^\n]*)                     # 行コメント
+        }{
+           my $lit = defined($1) ? $1 : defined($2) ? $2 : $3;
+           if (defined $lit) {
+               my $q = substr($lit, 0, 1);
+               my $body = substr($lit, 1, -1);
+               $body =~ s/[^\n]/ /g;      # 改行は残し行番号を保つ
+               $q . $body . $q;
+           } else {
+               my $c = $&; $c =~ s/[^\n]/ /g; $c;
+           }
+        }gexs
+      ' "$1"
+  }
+
+  # config 側: reuseExistingServer の判定式に **否定形で** 組み込まれていること。
+  # `.*E2E_NO_REUSE` だけでは極性を見ないため、意味が真逆の
+  # `reuseExistingServer: !process.env.CI && !!process.env.E2E_NO_REUSE`
+  # （= フラグを立てたときだけ再利用する）でも PASS してしまう。
+  # `[^!]!` で「直前が `!` でない `!`」を要求し、`!!` を弾く。
+  strip_code playwright.config.ts \
+    | grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE'
+
+  # run-local.sh 側: 非空値を代入して export していること。
+  # `=[^[:space:]]` が必須 — `export E2E_NO_REUSE=` は空文字列を代入するため
+  # `process.env.E2E_NO_REUSE` が falsy になり reuse が残る（実装した気になれる無効形）。
+  # こちらは `^[[:space:]]*export` に錨を打っているのでコメント行（`# export …`）には
+  # 構造的に当たらない。config 側と違い strip_code は要らない。
+  grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]' scripts/e2e/run-local.sh
+
+  # かつ export が playwright **起動行** より前にあること（行番号で順序を検証）。
+  # 環境変数はプロセス起動時に読まれるので、起動行より後ろの export は無意味。
+  #
+  # 起動行の検出は「実際に走る行」に限ること。素の /playwright[[:space:]]+test/ は
+  # コメント（`# … bunx playwright test を叩く`）や echo にも当たるため、
+  # **本物の起動が無いスクリプトでも p が立ち**、順序判定が成立してしまう。
+  awk '
+    # コメント行・echo 行は実行行として数えない
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*(export[[:space:]]+)?echo[[:space:]]/ { next }
+    /^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]/ && !e { e = NR }
+    # コマンド位置（行頭 / 区切り / コマンド置換の直後）に現れる playwright test のみ
+    /(^|[[:space:];&|]|\$\()[[:alnum:]_.\/-]*(playwright)[[:space:]]+test([[:space:]]|$)/ && !p { p = NR }
+    END {
+      if (!e) { print "FAIL: no non-empty export of E2E_NO_REUSE"; exit 1 }
+      if (!p) { print "FAIL: no playwright test invocation found"; exit 1 }
+      if (e > p) { printf "FAIL: export at line %d is after the run at line %d\n", e, p; exit 1 }
+      printf "PASS: export(%d) precedes playwright test(%d)\n", e, p
+    }' scripts/e2e/run-local.sh
+  ```
+
+  実測（2026-07-31・合成フィクスチャ。`E2E_NO_REUSE` は未実装のため現物では走らせられない。
+  **2026-08-01 に strip_code（コメント + 文字列リテラル）対応後の 5 方向を再実測**）:
+  - config ゲート — `!process.env.CI && !process.env.E2E_NO_REUSE` = **一致（exit 0）** /
+    `!process.env.E2E_NO_REUSE` 単独 = **一致** /
+    `!!process.env.E2E_NO_REUSE`（極性反転）= **不一致（exit 1）** /
+    **コメント行にだけ書いた偽実装**（`// TODO: reuseExistingServer: … && !process.env.E2E_NO_REUSE,`
+    を足しつつ実行行は `!process.env.CI` のまま）= **不一致（exit 1）**。
+    **文字列リテラルにだけ書いた偽実装**（`const note = "reuseExistingServer: !process.env.CI
+    && !process.env.E2E_NO_REUSE";` を足しつつ実行行は `!process.env.CI` のまま）=
+    **不一致（exit 1）**。
+    後ろ 2 本はいずれも除去追加前は **PASS していた** —— 本節冒頭が禁じている
+    「トークンの出現で実装を判定する」ものそのもので、コメントや文字列に書いただけで
+    未実装が緑になっていた。コメント側だけを潰した中間形も、**文字列側の偽実装は
+    PASS のまま**だった（`strip_code` で両方を閉じた）。
+    なお `process.env.E2E_NO_REUSE !== "1"` のような別形も**不一致**になる ——
+    本プランは `!CI && !E2E_NO_REUSE` の形を指定しているので意図どおりだが、
+    実装形を変えるならゲートも同時に変えること。
+  - 順序ゲート — export → 起動 = **exit 0** / コメントで言及するだけの版 = **exit 1**
+    （export 不在で落ちる。起動行の誤検出も同時に排除） / 起動の後に export = **exit 1**。
+
+  3 本すべてが PASS すること。**トークンの存在だけを見ると、値が空でも・起動行の後ろに
+  あっても緑になる** —— どちらも実行時には何の効果も持たないので、ゲートとしては
+  未実装を見逃したのと同じである。現行の `playwright.config.ts:60` は
+  `reuseExistingServer: !process.env.CI` で `E2E_NO_REUSE` を一切見ていないため、
+  実装前は 1 本目が空で落ちる（＝このゲートが空振りしないことの確認になる）。
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] フルランで `test-results/.last-run.json` の status が "timedout" でない
 - [ ] `plans/README.md` の 044 行を DONE に更新
@@ -219,11 +362,23 @@ globalTimeout: 3600 * 1000,
 
 - テスト総数が大きく増えた場合（plans 045〜050 の実装後）、`globalTimeout` の再見積りが
   必要になり得る。判断材料はフルラン実測の wall-clock（run-local.sh の出力に表示される）。
-- **本プランの :3000 チェックは TOCTOU を残す**（Why this matters の
-  TODO(needs-detail) 参照）。チェック通過後に :3000 を掴まれた場合は依然として別環境の
-  サーバーが再利用されうるため、「ガードがあるから安全」とは読まないこと。根治は
-  `reuseExistingServer: false`（ユーザー判断待ち）。
-- `reuseExistingServer: !CI` は「ローカル反復では既存 dev サーバーを使い回す」利便のための
-  設定であり、本プランのガードはそれを **run-local.sh 経由の実測時のみ**禁止する構造。
-  素の `bunx playwright test` にはガードが効かない点は既知の制約（実測は必ず
-  run-local.sh 経由で行う運用）。
+> **以下は本プラン実装**後**の到達状態を書いたものであり、現状の説明ではない。**
+> 実測（2026-07-31）: `playwright.config.ts:60` は `reuseExistingServer: !process.env.CI`
+> のみで `E2E_NO_REUSE` を見ておらず、`scripts/e2e/run-local.sh` に該当 export は
+> **0 件**。`plans/README.md` の 044 Status も **TODO**。
+> つまり **:3000 の TOCTOU は現時点では開いている**。この節を「もう閉じてある」と
+> 読んで実装をスキップしないこと。
+
+- **:3000 の TOCTOU は `E2E_NO_REUSE` で閉じる**（Why this matters の解決節を参照）。
+  実装後は `run-local.sh` が `E2E_NO_REUSE=1` を立て、`reuseExistingServer` が
+  `!CI && !E2E_NO_REUSE` を評価するため、実測経路では再利用が構造的に起こらなくなる。
+  事前 `lsof` チェックは**安全性の根拠ではなく**、占有時のエラーを読みやすくする
+  ためだけに残す — チェックを消しても安全性は変わらないが、失敗メッセージが
+  分かりにくくなる。
+- 実装後は **`reuseExistingServer` を素の `false` へ書き換えないこと**。素の
+  `bunx playwright test` で毎回 build/起動が走り、ローカル反復が遅くなる。
+  区別すべきは「CI か否か」ではなく「実測経路か反復経路か」であり、それを担うのが
+  `E2E_NO_REUSE` である。
+- 逆に、`run-local.sh` から `E2E_NO_REUSE` の export を外すと TOCTOU が復活する。
+  この 2 つ（config の条件式と run-local.sh の export）は**対で意味を持つ**ので、
+  一方だけを変更しないこと。

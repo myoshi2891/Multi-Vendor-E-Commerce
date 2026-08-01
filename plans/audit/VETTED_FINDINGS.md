@@ -642,8 +642,9 @@ triage を挟んだ理由そのもの。
 
 > **対象**: Round 11 未着手の 34 件（spike P-07〜P-17 / テスト実装 P-18〜P-28 /
 > E2E・依存 P-29〜P-37 / ja 個別 P-47・P-53・P-59）。**これで 73 件すべての triage が完了**。
-> **本ラウンドの結果**: 妥当 31 件を修正 / 却下 3 件（P-27・P-28・P-30。うち P-34 は当初
-> 却下候補として実測検証した結果 誤検知と確定）。正確には **accepted 30 / rejected 4**（下表）。
+> **本ラウンドの結果**: **accepted 30 / rejected 4**（30 + 4 = 34 で対象件数と一致）。
+> rejected は **P-27・P-28・P-30・P-34** の 4 件（内訳は下記「Round 12 rejected」節。
+> P-34 は当初 accepted 候補だったが、実測検証の結果 誤検知と確定して rejected へ移した）。
 > 出所・制約は Round 10 の冒頭注記と同じ（GitHub に存在せず `gh api` 不可・根拠は
 > スクリーンショットの 1 行タイトルのみ・行番号は採取時点）。
 > **`src/` は 1 行も変更していない**（全 27 コミットが `plans/` 配下のみ）ため、テスト数は
@@ -775,3 +776,167 @@ triage 中に実物照合で判明したが、34 件のいずれにも該当し�
 | **合計** | **73 件** | **67** | **6** |
 
 **CodeRabbit ローカルレビュー 73 件の triage はこれで完了**。未着手はゼロ。
+
+---
+
+## Round 13 追記 — セキュリティ特化 deep 監査（2026-07-17 / HEAD `7080b12`）
+
+- **方法**: `deep security` フォーカス。並列 Explore サブエージェント A〜F（認可/IDOR・入力/XSS・
+  決済/ロジック・Webhook/SSRF・ヘッダ/列挙・依存/秘密/PII）で領域分割し、**全所見を本体が
+  引用 file:line を直接開いて vet**。詳細台帳:
+  [`findings-18-security-r13.md`](findings-18-security-r13.md)。既存 findings-02（SECURITY-01〜09）・
+  findings-11（NEW-1〜3）に続く第 3 のセキュリティラウンド。
+- **ベースライン実測**: `bunx tsc --noEmit` 0 / `bun run lint` 0（warn のみ）/ `bun audit` 90 件
+  （critical 1 / high 30 / moderate 45 / low 14）。内訳は findings-18 §0 を参照。
+- **実装状態 reconcile**: plans 001〜004 は README・実装ともに DONE で整合。**NEW-1（plan 023）/
+  NEW-2（plan 024）は実装済みなのに README Status が TODO のまま**（ドリフト → Round 13 の
+  README 更新で DONE に補正）。
+
+### Round 13 vetted findings 表（leverage 順）— HEAD `7080b12` / 2026-07-17
+
+| # | Finding | Category | Impact | Effort | Risk | Confidence | Evidence |
+|---|---|---|---|---|---|---|---|
+| R13-1 | SECURITY-10 `getCoupon` が認可・所有権なしでクーポン行を返す（cross-store IDOR read） | security | 他店舗/PLATFORM のクーポン code・discount 漏洩→不正利用 | S | LOW | HIGH | `coupon.ts:1,147-165` |
+| R13-2 | SECURITY-12 PayPal capture が金額・注文相関・通貨を未検証（Stripe パリティ欠落） | security | 過少支払いで高額注文が Paid に | S | LOW | HIGH | `paypal.ts:186-283` vs `stripe.ts:189-216` |
+| R13-3 | SECURITY-13 PayPal capture に settled-status ガードなし（確定済み決済の退行） | security | 確定注文を Failed へ退行可能 | S | LOW | HIGH | `paypal.ts:210-218` vs `stripe.ts:182-184` |
+| R13-4 | SECURITY-14 `upsertCoupon`/`upsertCouponAsAdmin` がサーバー側 Zod 未検証（discount>99 → 注文 total 負値化） | security | フォーム契約(<100%)とサーバー実装のドリフト | S–M | LOW–MED | HIGH | `coupon.ts:81-89,397-398` / `schemas.ts:542-548` |
+| R13-5 | SECURITY-06（再掲・未プラン化の現存所見）セキュリティレスポンスヘッダ不在 | security | /checkout 決済面の clickjacking/CSP 防御欠如 | M | LOW | HIGH | `next.config.mjs` / `middleware.ts` |
+| R13-6 | SECURITY-05（再掲・未プラン化の現存所見）検索 route が生 `error.message` を 500 で返す + `catch(error:any)` | security | 内部エラー詳細の情報開示 | S | LOW | HIGH | `index-products/route.ts:134,414` |
+| R13-7 | SECURITY-15 主要ミューテーションのサーバー側 Zod 検証欠落（広域・SECURITY-14 の上位集合） | security | データ品質・境界検証の穴 | M | MED | HIGH | `product.ts:71`/`review.ts:15`/`user.ts:347` ほか |
+| R13-8 | SECURITY-16 Cloudinary unsigned upload preset・type/size 制約欠如 | security | 第三者アップロード濫用（preset 構成依存） | M | MED | MED | `image-upload.tsx:92` ほか |
+| R13-9 | SECURITY-17 Webhook ステータスの無条件上書き（out-of-order 退行） | security | 確定決済状態の退行余地 | S–M | LOW | MED | `webhooks/stripe/route.ts:153-180`・`paypal/route.ts:241-268` |
+| R13-10 | SECURITY-18 Clerk/Svix 検証が raw body でない（fail-closed 信頼性） | security | 正当 webhook の検証失敗→user 同期欠落 | S | LOW | MED | `webhooks/route.ts:40-41` |
+| R13-11 | SECURITY-19 公開検索エンドポイントに入力長上限なし | security | per-request 検索コスト増幅（DoS 補助） | S | LOW | MED | `index-products/route.ts:16-25`・`search-products/route.ts:22-26` |
+| R13-12 | AUTHZ-02 seller-store layout が `[storeUrl]` 所有権未検証（多層防御） | security | クエリ層が実データを守るため境界一貫性ギャップ | S | LOW | MED | `stores/[storeUrl]/layout.tsx:19-45` |
+| R13-13 | AUTHZ-03 `getProductMainInfo` が caller チェックなし | security | 大半公開のため LOW | S | LOW | HIGH(欠如)/LOW(影響) | `product.ts:478-506` |
+| R13-14 | LOGIC-22 送料計算の二系統分岐（Decimal 内製 vs float 表示） | tech-debt | 表示額と課金額の drift・規約違反 | M | MED | HIGH | `user.ts:548-566`・`shipping-utils.ts:13-42` |
+| R13-15 | LOGIC-23 `placeOrder` が qty=0 行を受理し ITEM 送料が負値化 | correctness | 注文データ汚染・合計過小化 | S | LOW | HIGH | `user.ts:502,551-557,730-733` |
+| R13-16 | SECURITY-24 クーポン利用回数制限なし・`CouponToUser` 未使用 | security | 単一クーポンの無制限再利用（仕様確認要） | M | MED | MED | `schema.prisma:670-692`・`coupon.ts:262-265` |
+| R13-17 | DEPS-06 recon の lodash「本番非到達」分類が誤り（runtime transitive で到達） | dependencies | 台帳整合（実悪用到達性は低） | S | LOW | MED | `package.json` deps / `bun audit` |
+
+### Round 13 プラン化（自動選定・5 本）
+
+**058**（SECURITY-10）/ **059**（SECURITY-12 + SECURITY-13）/ **060**（SECURITY-14）/
+**061**（SECURITY-06）/ **062**（SECURITY-05）。
+
+**着手順**: 058 / 059 / 060 / 061 / 062 はいずれも相互依存なし。059 は `isSettledPaymentStatus`
+共有化のため `stripe.ts` に軽微に触れる。**水増しせず HIGH confidence × 高レバレッジ 5 本に限定**
+（R7 前例に倣い、候補は薄くないが P3/LOW は deferred へ回した）。
+
+### Round 13 deferred（再評価条件つき）
+
+R13-7〜R13-17 は findings-18 §3 の deferred 表に条件付きで記録（SECURITY-11 dompurify は依存
+refresh 枠 / SECURITY-15 は plan 060 の横展開 / SECURITY-16 は investigate 先行 / SECURITY-17 は
+plan 059 の settled-guard 展開 + plan 032 調整 / SECURITY-18・19 は低コスト同梱 / AUTHZ-02/03・
+LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / DEPS-06 は台帳訂正のみ）。
+
+### Round 13 considered and rejected / by-design（再監査防止）
+
+- `chart.tsx:81-98` の `dangerouslySetInnerHTML`: 開発者定義 config 由来・外部入力なし・shadcn 上流標準 → **by-design**。
+- `subCategory.ts:188-190` の `ORDER BY RANDOM() LIMIT ${limit}`: `number|null` 束縛・連結なし → **注入なし clean**。
+- PayPal sandbox URL ハードコード（`paypal.ts:189`）: rejected 済み SECURITY-07 と同一 → **再報告せず**。
+- `applyCoupon` の `cart.total` ロストアップデート: `08-open-questions.md` 既記録 → **再報告せず**。
+- CORS / 認証系列挙 / セッション / CI SHA pin / 秘密取り扱い / PII ログ: いずれも **clean**（詳細 findings-18 §4）。
+
+### Round 13 の副産物（本ラウンドのスコープ外 — 次ラウンド候補）
+
+- **JSDoc の stale**: `getCoupon` の `@PermissionLevel Public`（`coupon.ts:145`）と `upsertReview` の
+  `@access Admin only`（`review.ts:9`）は実装と乖離。plan 058/060 で認可を足す際に併せて訂正すると
+  差分が機械的に見える（プラン内 Maintenance note で言及）。
+- **`product-description.tsx:1` の `'use-client'` 誤記**（正しくは `'use client'`）: 実質サーバー
+  コンポーネント化しているが sanitize は jsdom でサーバー実行可能なため XSS 影響なし。tech-debt レベル。
+
+---
+
+## Round 14 追記 — CodeRabbit レビュー第4弾 + Phase A 実装（2026-07-19 / HEAD `b5d0c66`）
+
+> **⚠️ 本ラウンドは他ラウンドと性格が異なる — `src/` と `tests/` を実際に変更している**。
+> Round 1〜13 は improve スキルの監査ラウンドで Hard Rule 1（advisor はソースを変更しない）に
+> 従っていたが、Round 14 は **CodeRabbit レビューの指摘に対する実装セッション**であり、
+> 監査ではない。したがって `plans/**` のみ編集という制約は適用されない。
+> **「ソース無変更」を Round 14 に期待しないこと**（`git diff 72e8004..b5d0c66 --stat -- src tests`
+> は空ではない — これは違反ではなく本ラウンドの目的そのもの）。
+>
+> **⚠️ 範囲記法の注意**: 本ラウンドの baseline は **`72e8004`**（Round 13 末尾のコミット）であり、
+> `934b6fa` は **Phase A-2 の修正コミットそのもの**である。git の `A..B` は A を含まないため、
+> `934b6fa..b5d0c66` と書くと A-2 が範囲から脱落する。**範囲は `72e8004..b5d0c66`（6 コミット）**
+> と書くこと（`934b6fa^..b5d0c66` でも同義）。
+
+- **出所**: CodeRabbit が `dev`（vs `main` / 81 ファイル）に対して実施したレビュー。
+  VSCode の「問題」パネル表示は **114 件**（⚠49 + ⓘ65）だが、これは
+  **NEW REVIEW + PREVIOUS REVIEWS (2) の合算**であり純粋な新規指摘数ではない。
+  精査後の実体: `plans/ja/*` ミラー重複 5 / 同一箇所の言い換え重複 4 / 既に解消済み（誤検知）3 /
+  **要対応 約 81**（コード 5 + プラン/ドキュメント 76）。
+- **実行計画**: `~/.claude/plans/claude-rules-02-tdd-step-commit-md-peaceful-globe.md`
+  （Phase A = コード修正 / Phase B = 監査台帳の整合性回復 / Phase C = 個別プラン文書 約 60 件）。
+- **コミット規律**: `.claude/rules/02-tdd-step-commit.md` に従い 1 論理単位 = 1 コミット。
+
+### Round 14 Phase A — 実装済み（6 コミット / `72e8004..b5d0c66`）
+
+| # | 修正 | 深刻度 | コミット | 変更ファイル |
+|---|------|-------|---------|-------------|
+| A-2 | `custom_id` の相関検証を `captureData` パース直後・**全 status 書き込みの上流**へ移動（従来は `status !== "COMPLETED"` 分岐の後ろにあり、他人の PayPal Order の DENIED/DECLINED 応答で自分の注文を `Failed` に落とせた。金額/通貨の突合は COMPLETED 応答にしか値が載らないため現位置に残す） | 高 | `934b6fa` | `paypal.ts` + `paypal.test.ts` |
+| A-1 | PayPal/Stripe の settled ガードを CAS 条件で原子化（`update.where` に `paymentStatus: { notIn: [...SETTLED_PAYMENT_STATUSES] }` を混ぜ、P2025 を既存メッセージ `"Order payment is already settled."` へ写像） | 高 | `4261be0` | `paypal.ts` + `paypal.test.ts` |
+| A-3 | `PaymentDetails.amount` を **ドル建て**へ統一（Stripe 側が `paymentIntent.amount`（セント: 3000）を `Decimal(12,2)` 列へ書いていた単純バグ。`order.total` を `Prisma.Decimal` のまま渡す形へ） | 中 | `e63474b` | `stripe.ts` + `stripe.test.ts` |
+| A-5 | `placeOrder` のサーバー側冪等性（`$transaction` 先頭で `cart.deleteMany({ id, userId })` → `count === 0` を CAS ゲートに。カート行が単一使用トークンとして働き、同一 `cartId` の二重注文を行ロックで直列化） | 高 | `824e224` | `user.ts` + `user.test.ts` |
+| A-4a | `route.test.ts` の `mockRestore()` を `afterEach(jest.restoreAllMocks)` へ集約（アサーション失敗時に spy が漏れて後続テストを汚染していた） | 低 | `15aef5c` | `index-products/route.test.ts` |
+| A-4b | security-headers E2E に `response.status()` の検証を追加（500 でもヘッダが付けば pass していた） | 低 | `b5d0c66` | `security-headers.spec.ts` |
+
+### Round 14 rejected（0 件）
+
+**本ラウンドに rejected はない。** Phase A は計画どおり A-1〜A-5 の **6 コミット全てが実装済み**。
+
+> **⚠️ 訂正記録（Phase B 初回記述の誤り — 再発防止）**
+>
+> Phase B の初版はここで **A-2 を「却下 — 前提が誤り（既に充足済み）」と誤って記録していた**。
+> 根拠として `git show 934b6fa:src/queries/paypal.ts` を「ラウンド開始時点」として引き、
+> `capturedCustomId !== orderId` が L228・status 分岐が L233 で**既に上流にある**と述べていた。
+>
+> **これは範囲記法の off-by-one による誤読である。** `934b6fa` は baseline ではなく
+> **A-2 の修正コミットそのもの**（メッセージ: `fix(paypal): validate custom_id before any
+> status-driven order write`）。上記は「修正後」の姿を「修正前」と取り違えていた。
+>
+> **真の baseline `72e8004` での実測**（`git show 72e8004:src/queries/paypal.ts`）:
+>
+> | リビジョン | `capturedCustomId !== orderId` | `status !== "COMPLETED"` | 判定 |
+> |---|---|---|---|
+> | `72e8004`（baseline） | L242 | **L219** | 検証が後ろ → **脆弱性は実在した** |
+> | `934b6fa`（A-2 修正後） | **L228** | L233 | 修正済み |
+>
+> **教訓（次ラウンドの判断基準に追加）**: 「指摘は既に解消済みでは」と判定する際、
+> **参照するリビジョンが baseline か修正後かを必ず確認する**こと。`A..B` は A を含まないため、
+> 範囲の左端をそのまま「開始時点」として `git show` すると、**当該ラウンド自身の修正を
+> 「元からそうだった」と誤認する**。baseline を見るなら `A^` を使う。
+
+### Round 14 が既存台帳へ与える影響（reconcile）
+
+1. **CORRECTNESS-05**（`PaymentDetails.amount` の単位不一致 Stripe セント vs PayPal ドル）—
+   [`../README.md`](../README.md) の Deferred 節に「needs backfill」として記載。
+   **コード側は A-3 で解消**したが、**過去に Stripe 決済で作成された行はセント値のまま残る**。
+   → **データ補正（backfill）は [plan 063](../063-backfill-stripe-payment-amount.md) として
+   起票済み**（P2 / TODO・[`../README.md`](../README.md) の Status 表 :126）。
+   「未起票のまま」と書いていた旧記述は 2026-07-27 の起票時点で失効している。
+   Deferred 記載は維持し、範囲を「コード修正」から「既存行の backfill のみ」へ縮小して
+   読むこと（README :251 の該当行も同じ結論に更新済み）。
+2. **「Server-side `placeOrder` idempotency」**（plan 006 から deferred されていた項目）—
+   **A-5 で解消**。README Deferred 節の該当行は消化済み。
+3. **TESTS-02 capture 経路**（R1 raw / R5〜R6 deferred）— 先行依存としていた plan 003 は DONE、
+   さらに A-1 / A-3 で capture 経路自体が変化した。**deferred 理由が失効**しており昇格の
+   再評価対象（[`findings-13`](findings-13-integration-coverage.md) /
+   [`findings-14`](findings-14-integration-coverage-r6.md) の該当行に注記済み）。
+4. **`saveUserCart` 統合**（R5 rejected / R6〜R7 deferred 維持）— 先行依存の plan 005 は DONE。
+   **同じく deferred 理由が失効**（[`findings-17`](findings-17-e2e-coverage-r9.md) TESTS-42 に注記済み）。
+5. **SECURITY-17**（webhook ステータスの無条件上書き → out-of-order 退行 / R13 deferred）—
+   A-1 が確立した CAS ガードのイディオムを **webhook 側へ横展開**すれば解消できる。
+   findings-18 §3 の「plan 059 の settled-guard を webhook へ展開」という昇格条件は
+   **A-1 の着地でより具体化した**（`notSettled()` ヘルパーが `paypal.ts` に実在する）。
+
+### Round 14 未着手（Phase C — 約 60 件）
+
+`plans/003`〜`plans/062` の個別プラン文書に対する指摘。**1 プラン = 1 コミット**で進める。
+このうち**約 15 件は CodeRabbit のタイトルのみでは修正内容を確定できない**
+（例: `plans/013`「Make ADR numbering deterministic」/ `plans/025`「Align the "repo-wide" claim」/
+`plans/044`「port check does not eliminate server-reuse races」/ `plans/017`「Include every
+result-shaping input in recommendation cache keys」/ `plans/038`「Isolate the temporary DDL
+constraint from the integration suite」）。**着手時に該当コメントの詳細本文を入手すること**
+（Round 11 の判断基準 3「指摘タイトルの字面適用は設計意図を壊す」）。

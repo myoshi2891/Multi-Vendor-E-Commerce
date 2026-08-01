@@ -199,8 +199,8 @@ const createData = {
     phone: store.phone || "",
     logo: store.logo || "",
     cover: store.cover || "",
-    featured: false,          // 特権: 常にサーバー既定
-    status: "PENDING",        // 特権: 常にサーバー既定（admin のみ変更可）
+    featured: false,                 // 特権: 常にサーバー既定
+    status: StoreStatus.PENDING,     // 特権: 常にサーバー既定（admin のみ変更可）
     defaultShippingService: store.defaultShippingService || "International Delivery",
     returnPolicy: store.returnPolicy || "Return in 30 days.",
     userId: user.id,
@@ -220,7 +220,7 @@ data: {
     email: store.email!,
     url: store.url!,
     featured: false,
-    status: "PENDING",   // 申請は必ず PENDING（admin レビュー必須）
+    status: StoreStatus.PENDING,   // 申請は必ず PENDING（admin レビュー必須）
     defaultShippingService: store.defaultShippingService || "International Delivery",
     returnPolicy: store.returnPolicy || "Return in 30 days.",
     userId: user.id,
@@ -288,6 +288,45 @@ data: {
 - （`store.ts` 以外の）他のサーバーアクションでも同様にクライアントの store データを create/update に spread している箇所を見つけた場合 — 記録はするがここでは修正せず、フォローアッププランとして報告する。
 
 ## Maintenance notes
+
+### 訂正（2026-07-19）: Step 3 / Step 4 の `status` を `StoreStatus.PENDING` に修正
+
+本プランは DONE だが、**執筆時点から誤っていた技術的事実**のため本文を訂正した（履歴は本節に残す）。
+
+- **訂正前**: Step 3 / Step 4 の code snippet が `status: "PENDING"`（文字列リテラル）だった。
+- **訂正後**: 両方とも `status: StoreStatus.PENDING`（`@/lib/types` の enum）。
+
+**なぜ誤りだったか（2 箇所で理由が異なる）**:
+
+1. **Step 3 は型エラーになる**。Step 3 は `const createData = { ... }` という**独立した
+   オブジェクトリテラル**を作り、後から `db.store.create({ data: createData })` に渡す形。
+   独立リテラルには contextual type が無いため `"PENDING"` は `string` に**幅拡大（widening）**
+   され、`StoreStatus` に代入不可となる。つまりこの snippet のままでは Step 3 自身の検証ゲート
+   `bunx tsc --noEmit` → exit 0 を通らない。
+2. **Step 4 は型エラーにはならない**。Step 4 は `data: { ... }` と**インラインで**書くため
+   contextual typing が効き、`"PENDING"` はリテラル型のまま通る。こちらは型の誤りではなく
+   **Step 3 との記法の不統一**であり、揃えるために併せて訂正した。
+
+**実装の実態**: 実際にマージされたコードは両箇所とも enum を使っている
+（[`src/queries/store.ts`](../../src/queries/store.ts) の `upsertStore` create 分岐 /
+`applySeller` create 分岐、いずれも `status: StoreStatus.PENDING`）。
+`StoreStatus` は `import { ..., StoreStatus, ... } from "@/lib/types"` で取り込む。
+本訂正は**プラン本文を実装に合わせた**ものであり、実装側の変更は伴わない。
+
+**実測根拠**（2026-07-31 再確認。「enum を代入して大丈夫なのか」を読者が再検証せずに済ませるため）:
+
+| 実測項目 | 結果 |
+|---|---|
+| アプリ側の型 | `src/lib/types.ts:509` の **TS `enum`**（文字列 enum。`PENDING = "PENDING"` 他 4 メンバー） |
+| Prisma 側の型 | `node_modules/.prisma/client/index.d.ts:182-189` — `export type StoreStatus = (typeof StoreStatus)[keyof typeof StoreStatus]` すなわち **リテラル union** `'PENDING' \| 'ACTIVE' \| 'BANNED' \| 'DISABLED'` |
+| 代入可否 | 文字列 enum メンバーの型は基底となる文字列リテラル型の subtype なので、**union へ代入可能**（逆向き＝ union から enum への代入は不可） |
+| コンパイル検証 | `bunx tsc --noEmit` → **exit 0**（`src/queries/store.ts:180` `upsertStore` / `:514` `applySeller` の 2 箇所が `status: StoreStatus.PENDING` を含んだ状態で） |
+
+したがって Step 4 の主張（インライン `data: { … }` は contextual typing が効くので `"PENDING"`
+でも通る／enum でも通る）は、**型定義の形とコンパイル結果の両方で裏付けられている**。
+一方 Step 3 のような独立リテラルは widening が起きるため enum 表記が必須である点も変わらない。
+
+### 通常の保守メモ
 
 - `prisma/schema.prisma` に新しい seller 編集可能な Store カラムが追加された場合、`SELLER_EDITABLE_STORE_FIELDS` に追加すること — さもないと seller によるそのフィールドの編集がサイレントに no-op になる。
 - 新しい**特権**カラムが追加された場合、それが allowlist に**含まれない**こと、create 時にサーバー設定されることを確認する。

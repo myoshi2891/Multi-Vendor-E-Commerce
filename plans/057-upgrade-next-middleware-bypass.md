@@ -18,6 +18,11 @@
 - **Depends on**: none
 - **Category**: dependencies
 - **Planned at**: commit `fab6315`, 2026-07-17
+- **Completion**: **DONE (security) / 1 criterion pending** — セキュリティ目的（advisory 解消）は
+  `10e35f3a` で達成済み。ただし Done criteria は "ALL must hold" と定めており、
+  Step 5（未認証 `/dashboard` の redirect スモーク）の実施記録が無いため
+  **全項目充足ではない**。`plans/README.md` の Status もこの表記に合わせてある。
+  残項目の内容は下の Done criteria 末尾を参照（2026-07-27 追記）。
 
 ## Why this matters
 
@@ -38,7 +43,7 @@ The fix is a patch-level bump inside 16.2.x with a small, well-contained blast r
 ## Current state
 
 - `package.json:80` — `"next": "^16.2.1"`; installed/resolved `16.2.1`.
-- Latest available at planning time: **16.2.10** (`bun info next version`). The declared `^16.2.1` already *permits* 16.2.5+, so the lockfile is what currently holds the vulnerable version — but the floor is raised anyway so nobody can resolve back to a vulnerable 16.2.x.
+- Latest available at planning time: **16.2.10** (measured with the pinned-line query — `bun info 'next@~16.2' version`; **not** the unpinned `bun info next version`, see the Correction below). The declared `^16.2.1` already *permits* 16.2.5+, so the lockfile is what currently holds the vulnerable version — but the floor is raised anyway so nobody can resolve back to a vulnerable 16.2.x.
 - `src/middleware.ts` — the protected-route gate (the load-bearing lines):
 
   ```ts
@@ -79,13 +84,26 @@ Read this before running anything, so a pre-existing red does not get misdiagnos
 
 | Purpose         | Command                                     | Expected                     |
 |-----------------|---------------------------------------------|------------------------------|
-| Latest version  | `bun info next version`                     | prints latest 16.x           |
+| Latest 16.2.x   | `bun info next versions \| tr -d ' "[]' \| tr ',' '\n' \| grep -E '^16\.2\.[0-9]+$' \| sort -V \| tail -1` | newest **stable** 16.2.x（下の注記を参照） |
 | Install         | `bun install`                               | exit 0, lock updated         |
 | Audit (check)   | `bun audit`                                 | `next` advisories gone       |
 | Typecheck       | `bunx tsc --noEmit`                         | exit 0                       |
 | Middleware test | `bun run test -- src/middleware.test.ts`    | all pass                     |
 | Full unit suite | `bun run test`                              | 1685 passed / 1688 total     |
 | Lint            | `bun run lint`                              | exit 0 (warns ok)            |
+
+> **バージョン抽出コマンドの注意**（安定版だけを取るための 3 点）:
+>
+> 1. **`bun info next version`（単数）は使わない** — 全体の最新を返し `16.2.x` に固定されない
+>    （Correction 2026-07-19 参照）。
+> 2. **`grep -o "16\.2\.[0-9]*"` は使わない** — `-o` は行の一部を切り出すため、
+>    prerelease から安定版**に見える文字列を合成してしまう**。`16.2.13-canary.0` は
+>    `16.2.13` として出力され、実在しない安定版を掴まされる。`next` は 16.x だけで
+>    384 件の prerelease を publish しており（`16.2.0-canary.*` を含む）、これは仮定の話ではない。
+>    行全体を `^…$` でアンカーする `grep -E '^16\.2\.[0-9]+$'` なら prerelease は構造的に落ちる。
+> 3. **`tail -1` の前に `sort -V` を挟む** — `tail -1` 単体はレジストリの列挙順に依存する。
+>    バージョン順であることは契約されていないので、辞書順でも publish 順でもなく
+>    **バージョン順**で最大を取るよう明示する（`sort -V`）。
 
 ## Scope
 
@@ -124,8 +142,18 @@ npm view "next@16.2" version | tail -1
 >
 > `npm view "next@16.2" version` resolves the range `16.2` and prints every matching version in
 > ascending order (one per line, `next@16.2.10 '16.2.10'` form when several match), so `tail -1`
-> takes the newest 16.2.x. `bun info next versions | tr ',' '\n' | grep -o "16\.2\.[0-9]*" | tail -1`
-> is an equivalent bun-only alternative.
+> takes the newest 16.2.x. The bun-only equivalents are `bun info 'next@~16.2' version` (range-pinned
+> query — see the Correction section) or the full pipeline from **Commands you will need** above:
+>
+> ```
+> bun info next versions | tr -d ' "[]' | tr ',' '\n' | grep -E '^16\.2\.[0-9]+$' | sort -V | tail -1
+> ```
+>
+> **Do not** use `bun info next versions | tr ',' '\n' | grep -o "16\.2\.[0-9]*" | tail -1` — it
+> violates points 2 and 3 of the extraction note above (`grep -o` synthesises stable-looking strings
+> out of prereleases; `tail -1` without `sort -V` trusts registry order). 実測 2026-07-31: the 16.2
+> line carries **149** prerelease entries (`16.2.0-canary.*` 他), so `-o` would emit `16.2.0` for
+> `16.2.0-canary.0`; the anchored `^…$` form drops all 149 structurally and returns `16.2.12`.
 
 In `package.json:80`, change `"next": "^16.2.1"` to the latest `16.2.x` pinned with a **tilde**: `~16.2.10` at planning time. **The floor must be at least `16.2.5`** — that is the fixed version the advisories name.
 
@@ -213,16 +241,25 @@ Expect a redirect to the Clerk sign-in URL, not `200` with dashboard markup. If 
 
 ALL must hold:
 
-- [ ] `package.json` declares `next` as `~16.2.x` with a floor `>= 16.2.5` (tilde — a `^` range would permit 16.3+, which is out of scope)
-- [ ] `bun.lock` and `node_modules/next/package.json` both resolve `next` to `>= 16.2.5`
-- [ ] `bun audit` reports none of GHSA-26hh-7cqf-hhc6 / GHSA-8h8q-6873-q5fj / GHSA-3g8h-86w9-wvmq
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `bun run test -- src/middleware.test.ts` passes
-- [ ] `bun run test` exits 0 (full unit suite green; expect 1685/1688 unless other work landed)
-- [ ] `bun run lint` exits 0
-- [ ] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
-- [ ] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
+> 下記のチェックは **2026-07-27 に再実測**したもの（実行コマンドは各行に併記）。
+> 当時の実行時点ではなく、この日付時点で成立していることを示す。
+
+- [x] `package.json` declares `next` as `~16.2.x` with a floor `>= 16.2.5` (tilde — a `^` range would permit 16.3+, which is out of scope) — 実測: `"next": "~16.2.10"`
+- [x] `bun.lock` and `node_modules/next/package.json` both resolve `next` to `>= 16.2.5` — 実測: `16.2.10`
+- [x] `bun audit` reports none of GHSA-26hh-7cqf-hhc6 / GHSA-8h8q-6873-q5fj / GHSA-3g8h-86w9-wvmq — 実測: 3 件とも 0 ヒット
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `bun run test -- src/middleware.test.ts` passes
+- [x] `bun run test` exits 0 (full unit suite green) — 実測: **1754 passed / 1757 total**（3 skipped・174 suites）。
+      計画時の期待値 1685/1688 からの増加は、その後のテスト追加によるもの（"unless other work landed" 条項に該当）
+- [x] `bun run lint` exits 0 — 実測: 0 errors / 15 warnings（warnings 可）
+- [x] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
+      — 実測: bump commit `10e35f3a` の変更は `package.json` + `bun.lock` の 2 ファイルのみ
+- [x] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
 - [ ] Step 5 smoke result recorded (done, or explicitly flagged pending)
+      — ⚠️ **未達**: Step 5（未認証 `/dashboard` の redirect スモーク）の結果は本プランにも
+      `plans/README.md` にも記録が無い。report-only の手動チェックであり自動テストの代替では
+      ないため、`bun run dev` を起こせる環境で実施して結果をここに追記すること
+      （実施済みなら「いつ・何を観測したか」を書けば足りる）。実測 2026-07-27
 
 ## STOP conditions
 
@@ -236,6 +273,58 @@ Stop and report if:
 - The latest 16.2.x is still inside an advisory range (i.e. a newer advisory has superseded this one) — report rather than bumping to 16.3/17.x on your own initiative.
 
 ## Maintenance notes
+
+### Correction (2026-07-19): the "Latest version" command is not pinned to the 16.x line
+
+This plan is DONE; the steps are left as the historical record. This note corrects one row of the
+**Commands you will need** table so that anyone re-running the recipe (or copying it into a future
+upgrade plan) does not get bitten.
+
+**The defect.** The row reads:
+
+| Purpose | Command | Expected |
+|---|---|---|
+| Latest version | `bun info next version` | prints latest 16.x |
+
+`bun info next version` resolves the **`latest` dist-tag — whichever major that happens to be**. The
+Expected column claims the 16.x line specifically. The two are not the same query.
+
+Today they coincide, so the row passes by luck: `bun info next version` → `16.2.10`, identical to
+`npm view next version`, and `bun info next dist-tags` confirms `"latest": "16.2.10"`. **Once Next.js
+17 ships, this command prints 17.x** while the plan tells the reader it is the latest 16.x.
+
+**Why that matters for this plan specifically.** 057 is a *minimal floor-raise off a security
+advisory* — the Scope section restricts the diff to a version bump, and Maintenance notes below
+insist on keeping it version-only. Silently following a `latest` that crossed a major boundary turns
+a patch bump into a major upgrade. It would also break the peer compatibility this plan verified:
+`@clerk/nextjs@7.5.19` peers `^16.1.0-0`, which 17.x does not satisfy.
+
+**Corrected row.** Constrain the query to the line being patched:
+
+| Purpose | Command | Expected |
+|---|---|---|
+| Latest 16.2.x version | `bun info 'next@~16.2' version` | prints the newest 16.2.x (e.g. `16.2.11`) |
+
+Quote the argument — `^` and `~` are shell metacharacters in some shells, and the `@` range must
+reach `bun`, not the shell.
+
+> **Correction 2026-07-26 — use `~16.2`, not `^16`.** An earlier version of this row used
+> `bun info 'next@^16' version`. That **cannot pin to 16.2.x**: `^16` means `>=16.0.0 <17.0.0`, so
+> once 16.3.0 ships the command returns it, and this plan would bump straight past its own **STOP
+> condition** (16.3+/17.x — see Scope and Stop conditions). It also contradicted the
+> "Commands you will need" row above, which correctly restricts to 16.2.x.
+>
+> The `^16` form looks correct today only by accident: verified 2026-07-26 on Bun 1.3.12,
+> `bun info 'next@^16' version` → `16.2.11` and `bun info 'next@~16.2' version` → `16.2.11` — the
+> same answer **because 16.3.0 does not exist yet**. A command that is right only until the next
+> minor release is not a gate. `~16.2` (`>=16.2.0 <16.3.0`) states the constraint the plan actually
+> declares, and matches the tilde used for the `package.json` pin itself.
+
+Generalize this when writing future dependency plans: **an advisory-driven bump should query the
+exact line it intends to stay on** — not the registry's global `latest`, and not a range wider than
+the plan's own stop conditions allow.
+
+### Standing maintenance notes
 
 - **Do not bundle other upgrades.** The `handlebars` CRITICAL (dev-only, DEPS-05) and the Prisma 5→6 major (DEPS-04) are separate, deliberately deferred items — keep this diff version-only.
 - `next-cloudinary`'s missing 16.x peer declaration is a real (pre-existing) latent issue and is entangled with **OI-11**; if it is ever addressed, do it in the OI-11 work, not in a security bump.

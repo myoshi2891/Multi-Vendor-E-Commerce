@@ -146,13 +146,33 @@ Use the actual enclosing function name for each `[Coupon:<fn>]` tag (read each c
 ### Step 4: Remove the debug UI logs
 
 1. `src/components/store/cart-page/container.tsx` (line ~39): delete the `console.log('updatedCart--->', updatedCart)` line entirely. Nothing else in that block depends on it.
-2. `src/components/store/forms/apply-coupon.tsx` (line ~52-55): the catch is `catch (error: any)`. Change it to `catch (error: unknown)`, replace `console.log(error)` with `logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)` (import `logError`), and make the toast safe for `unknown`:
+2. `src/components/store/forms/apply-coupon.tsx` (line ~52-55): the catch is `catch (error: any)`. Change it to `catch (error: unknown)`, replace `console.log(error)` with `logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)` (import `logError`), and **show a fixed, generic message** — do not surface `error.message`:
    ```ts
    } catch (error: unknown) {
        logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)
-       toast.error(error instanceof Error ? error.message : "Failed to apply coupon.")
+       // 生の詳細はログにだけ残す。UI には固定文言のみ（下の注記）。
+       toast.error("Failed to apply coupon.")
    }
    ```
+
+   > **⚠️ `toast.error(error instanceof Error ? error.message : …)` としないこと（2026-08-01 訂正）。**
+   > 旧版はこの三項演算子の形を指示していたが、`applyCoupon` の catch
+   > （`src/queries/coupon.ts`）は同ファイルの**他 7 つの catch**（`isDomainError` は
+   > `:36` で定義され `:142` `:217` `:252` `:292` `:530` `:572` `:611` の 7 箇所から
+   > 呼ばれる — 実測 2026-08-01）と違い **`isDomainError` を一切呼ばず**、
+   > `Error occurred while applying coupon: ${error.message}` で
+   > **すべてを包み直す**。`error.message` を**文字列補間**するため、Prisma の
+   > 生エラーメッセージがそのまま `toast` の表示文字列に載る。
+   > つまりこの呼び出し元では `error instanceof Error` は常に真で、
+   > **三項演算子の安全側の枝には決して落ちない**。
+   >
+   > 併せて意図的 throw 6 種（`Coupon not found.` 等）もこの汎用文言に化けるので、
+   > `error.message` を出しても**ユーザーに有用な情報は得られない** —— 漏洩リスクだけが
+   > 残る形になっている。詳細は下の Maintenance notes と
+   > [`08-open-questions.md`](../specs/multi-vendor-ecommerce/08-open-questions.md)。
+   >
+   > `isDomainError` を `applyCoupon` へ適用するのは**別プラン（コード変更）**であり、
+   > それが入るまでこの固定文言を `error.message` へ戻さないこと。
 
 **Verify**: `grep -rn "console.log" src/components/store/forms/apply-coupon.tsx src/components/store/cart-page/container.tsx` → no matches; `bunx tsc --noEmit` → exit 0.
 
@@ -196,5 +216,29 @@ Stop and report if:
 
 - **Deferred follow-up (separate plan)**: migrate the ~90 legacy 3-arg `console.error("Error in X:", error.message, error.stack)` + duplicated `instanceof Error` blocks across `src/queries/*` (category, store, product, user, subCategory, offer-tag, …) to `logError`. That is mechanical but touches many files and many test assertions — do it as its own reviewable batch, not here.
 - New `src/queries/` catch blocks should call `logError` from day one.
+- **Toast は「サーバーが返す文言がユーザー安全である」前提でのみ `error.message` を出す。**
+  ラップされていない生の Prisma/内部エラーが `.message` として到達しうる呼び出し元では、
+  内部詳細の漏洩を防ぐため**汎用文言に固定**する（`.message` を無条件で表示しない）。
+  ログ（`logError`）には生の詳細を残し、UI には安全な文言のみを出す分離を守ること。
+
+  > **⚠️ `applyCoupon` を「安全なメッセージのみ throw する」例として挙げないこと（2026-08-01 訂正）。**
+  > 本項は当初 Step 4 の `toast.error(error.message)` を `applyCoupon` を根拠に許容していたが、
+  > **前提が実装と一致していない**。`applyCoupon` の catch（`coupon.ts:429-433`）は
+  > 同ファイルの**他 7 つの catch** と違い **`isDomainError` を一切呼ばず**
+  > （実測 2026-08-01: `isDomainError` は `:36` 定義・呼び出しは `:142` `:217` `:252`
+  > `:292` `:530` `:572` `:611` の 7 箇所。旧記述の「8 関数」は 1 件過大だった）、
+  > `Error occurred while applying coupon: ${error.message}` で**すべてを**包み直す。
+  > 帰結は 2 つとも Step 4 の前提を壊す:
+  >
+  > 1. **curated メッセージが届かない** —— 意図的 throw 6 種（`Coupon not found.` 等・
+  >    実測は [`08-open-questions.md`](../specs/multi-vendor-ecommerce/08-open-questions.md)
+  >    「applyCoupon: 意図的 domain error が汎用メッセージで上書きされる」）が
+  >    全部この汎用文言に化ける。
+  > 2. **生の内部詳細がそのまま UI へ出る** —— 包み直しは `error.message` を**文字列補間**
+  >    するため、Prisma のエラーメッセージが `toast.error` の表示文字列に混ざる。
+  >    「curated だから安全」どころか、**この関数は漏洩側の例**である。
+  >
+  > したがって `applyCoupon` の呼び出し元は上の原則どおり**汎用文言に固定**する側に属する。
+  > `isDomainError` の適用は別プラン（コード変更）であり、それが入るまでこの例外は復活させない。
 - Reviewer should confirm the non-Error branch logs `{ error }` (raw), matching the documented convention, and that no thrown message text changed.
 - If a structured logging backend (e.g. from a future observability plan) is added, `logError` is the single seam to route through it.

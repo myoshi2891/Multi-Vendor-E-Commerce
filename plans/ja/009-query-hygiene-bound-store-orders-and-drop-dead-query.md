@@ -115,11 +115,20 @@ export const getStoreOrders = async (storeUrl: string) => {
 
 ### Step 1: `getStoreOrders` に有界な `take` を追加
 
-`src/queries/store.ts` に、モジュールレベル定数を追加し `findMany` に適用する:
+定数は `store.ts` にインライン定義せず、**共有モジュール** `src/lib/store-constants.ts` に置く。
+こうすることでクエリと seller ページの切り捨て告知（Step 3b）が**同一の**定数を import し、
+ドリフトしない:
 
 ```ts
+// src/lib/store-constants.ts
 // 無制限の findMany を防ぐ防御的上限。将来はサーバーサイドページネーションへ移行（PERF-04 follow-up）。
-const STORE_ORDERS_MAX = 200;
+export const STORE_ORDERS_MAX = 200;
+```
+
+そのうえで `src/queries/store.ts` で import する（Step 3b の UI import と同一ソース）:
+
+```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 ```
 
 `getStoreOrders` の `findMany` にて、`orderBy` の隣に `take: STORE_ORDERS_MAX` を追加する:
@@ -150,10 +159,12 @@ take: STORE_ORDERS_MAX,
 
 `src/queries/store.test.ts` の `getStoreOrders` describe（~1243行目開始）にて、クエリが上限を伴うことを assert するよう成功テストを追加/調整する:
 ```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
 expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
     expect.objectContaining({
         where: { storeId: /* the mocked store id */ },
-        take: 200,
+        take: STORE_ORDERS_MAX,
         orderBy: { updatedAt: "desc" },
     })
 );
@@ -162,13 +173,138 @@ expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
 
 **検証**: `bun run test -- src/queries/store.test.ts` → 全件 pass。
 
+### Step 3b: seller 注文ページに切り捨て告知を表示する
+
+> **事後documented（2026-07-18 追記）**。Scope は `orders/page.tsx` を
+> in-scope に挙げ、告知を behavior-change caveat が*要求する*ものと明記して
+> いるが、Step 1-4 は執筆を一度も指示せず、Done criteria も検証していなかった。
+> 告知自体は実際に出荷されている。本ステップは実施済みの作業を記録し、
+> プランの内部整合を回復して、再実行時に要件が黙って落ちないようにするもの。
+
+`take` の上限と利用者向け告知は **2 つの変更ではなく 1 つ**である。
+`take: STORE_ORDERS_MAX` だけを追加すると「全注文」が「最新 200 件、ただし
+無告知」に変わり、200 件を超える order group を持つ販売者からは古い注文が
+上限の存在を示すものなく消える。これは behavior-change caveat が禁じる
+サイレント切り捨てそのものであり、上限を告知なしで出荷してはならない。
+
+`src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx` にて、テーブルの
+上に上限を表示する。数値は `200` をハードコードせず共有定数から導出すること
+（文言がクエリ側とドリフトしないようにするため）:
+
+```tsx
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
+<p className="mb-4 text-sm text-muted-foreground">
+    Showing up to the latest {STORE_ORDERS_MAX} orders.
+</p>
+```
+
+**検証**:
+
+- 定数由来であることの確認（**下の 3 ゲートを全て満たすこと**。Done criteria と同一の構造検証）:
+
+  ```bash
+  PAGE='src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx'
+
+  # 1) 共有定数を import していること（ローカル再宣言ではない）
+  if grep -qE '^import .*STORE_ORDERS_MAX.*from' "$PAGE"; then
+      echo "OK: 共有定数を import している"
+  else
+      echo "FAIL: STORE_ORDERS_MAX を import していない"; false
+  fi
+
+  # 2) ページ内でローカル再宣言していないこと
+  if grep -qE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE"; then
+      echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; false
+  else
+      echo "OK: ページ内での再宣言は無い"
+  fi
+
+  # 3) 告知文そのものが定数を JSX 式として埋め込んでいること
+  #    （改行チェーンに耐えるよう tr で 1 行化してから照合する）
+  #
+  #    照合の**前にコメントを除去する**こと。1 行化すると `//` 行コメントの内容が
+  #    後続コードと同じ行に潰れ、`/* … */` や JSX の `{/* … */}` も本文と地続きになる。
+  #    その結果「告知文をコメントで下書きしただけ」「削除し忘れたデッドコードに
+  #    同じ式が残っているだけ」でも合格する —— 守りたいのは**実際にレンダリングされる
+  #    告知**が定数に追随することなので、コメントは検査対象から外す。
+  #
+  #    **文字列リテラルを交替の左側で先に捕まえること。** `[^:]` で `https://…` だけを
+  #    避ける旧形は `//` を含む**あらゆる文字列**を壊す。実測: `const proto = "a//b";` が
+  #    `const proto = "a` へ切り詰められ、以降の照合対象が別物になる（`:` が前に無い
+  #    `//` はすべて行コメント扱いになるため、ガードは URL の一形にしか効かない）。
+  #
+  #    **捕まえたリテラルは中身まで空白へ潰す**（クォートの対は残す）。告知文は JSX
+  #    テキストなので潰しても照合対象は無傷で、代わりに「文字列の中に下書きしただけ」
+  #    が合格しなくなる —— コメント下書きを弾くのと同じ理由であり、極性も同じ
+  #    （存在検査なので、潰す方向は偽 PASS を減らす側にしか働かない）。
+  #    定義は [`plans/042`](../042-e2e-signin-helper-repair.md) /
+  #    [`plans/044`](../044-e2e-run-guardrails.md) と**同一のものを使う**こと。
+  strip_code() {
+      perl -0777 -pe '
+        s{
+           ("(?:\\.|[^"\\])*")            # 二重引用符文字列
+         | (\x27(?:\\.|[^\x27\\])*\x27)   # 単一引用符文字列
+         | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
+         | (/\*.*?\*/)                    # ブロックコメント
+         | (//[^\n]*)                     # 行コメント
+        }{
+           my $lit = defined($1) ? $1 : defined($2) ? $2 : $3;
+           if (defined $lit) {
+               my $q = substr($lit, 0, 1);
+               my $body = substr($lit, 1, -1);
+               $body =~ s/[^\n]/ /g;      # 改行は残し行番号を保つ
+               $q . $body . $q;
+           } else {
+               my $c = $&; $c =~ s/[^\n]/ /g; $c;
+           }
+        }gexs
+      ' "$1"
+  }
+  if strip_code "$PAGE" | tr '\n' ' ' \
+       | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders'; then
+      echo "OK: 告知文が定数を値として埋め込んでいる"
+  else
+      echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false
+  fi
+  ```
+
+  > **実測（2026-08-01・三方向）**: 現行の `orders/page.tsx` → `OK` / exit 0、
+  > 告知式を `{/* … */}` で囲んだ複製 → `FAIL` / exit 1、
+  > 先頭に `const proto = "a//b";` を足した複製 → `OK` / exit 0（文字列リテラルを
+  > 壊さないことの確認）。**旧 `[^:]` ガード版は 3 本目で `const proto = "a` へ
+  > 切り詰めていた** —— `:` が直前に無い `//` をすべて行コメントとみなすため、
+  > ガードは `https://` の一形にしか効いていなかった。
+
+  **トークンの出現数（`grep -c … -ge 2`）で代替しないこと。** それは「どこかに 2 回出る」
+  しか言えず、ページ内でのローカル再宣言（import + `const STORE_ORDERS_MAX = 100`）でも
+  合格してしまう。守りたいのは「`store.ts` の上限を引き上げたとき告知の数字も一緒に動く」
+  ことなので、**import 由来であること・再宣言が無いこと・告知の固定文言と定数展開が同じ式に
+  共在すること**の 3 点を直接検証する必要がある（詳細な根拠は Done criteria 節を参照）。
+
+  **文言依存の literal-200 正規表現（`latest[[:space:]]+200` 等）で代替しないこと。**
+  リテラル `200` の不在は「定数由来である」ことを含意しない —— 告知文が別のハードコード値
+  （例: `latest 100 orders`）でも通ってしまう。またアンカー語を実装と別言語で書くと
+  正しい実装に対して偽の FAIL を返す（同じ事故の記録は Done criteria 節の 2026-07-30 修正）。
+
+  > **不在ゲートを `grep -qE … && { …; false; }` で書かないこと（2026-07-30 修正）。**
+  > 以前の (b) はこの形だった。`grep` は不一致（= 合格）で **exit 1** を返し、`&&` は
+  > 左辺が偽なら右辺を実行せず短絡するため、**リスト全体の終了ステータスが grep の 1**
+  > になる。`false` に到達できるのは一致（= 失格）時だけなので、この形は決して 0 で
+  > 終われない。`if … then echo FAIL; false; else echo OK; fi` は両分岐に終了ステータスを
+  > 与えるので合格が exit 0 になる。逆向きの **存在**ゲート（(a) や下の 3）が
+  > `|| { …; false; }` で正しいのは、合格側で grep が 0 を返し `||` がそれを短絡で
+  > そのまま返すため。同じ論点は [`plans/023`](../023-bound-and-validate-public-search-pagination.md)
+  > の Done criteria にも記録している。
+- `bunx tsc --noEmit` → exit 0。
+
 ### Step 4: 完全な lint
 
 **検証**: `bun run lint` → exit 0。
 
 ## Test plan
 
-- `store.test.ts`: `getStoreOrders` が `take: 200`（上限あり）を渡すことを assert；既存の認可/所有権テストは green のまま。
+- `store.test.ts`: `getStoreOrders` が `take: STORE_ORDERS_MAX`（上限あり）を渡すことを assert；既存の認可/所有権テストは green のまま。リテラル `200` ではなく定数を参照すること（Step 1 の「クエリと UI が同一の定数を import する」という設計意図をテスト側でも維持するため）。
 - browse の削除については型チェック/lint 以上のテストは不要（dead code の除去）；`browse/page.tsx` にテストがあれば引き続き pass することを確認する。
 - 構造パターン: `store.test.ts` 内の既存 `getStoreOrders` describe。
 - 検証: `bun run test -- src/queries/store.test.ts` → 全件 pass。
@@ -179,6 +315,75 @@ expect(mockDb.orderGroup.findMany).toHaveBeenCalledWith(
 
 - [ ] `bunx tsc --noEmit` が exit 0
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` が上限適用を示す
+- [ ] 切り捨て告知が**共有定数由来**であること（2026-07-18 追加 — 上限と告知は同時に出荷する。告知なしの上限は caveat が禁じるサイレント切り捨てになる）。
+    トークンの出現を数えるだけの `grep -n "STORE_ORDERS_MAX" <page.tsx>` では**不十分**:
+    ページ側で同名の定数をローカル再宣言していても一致してしまい、`store.ts` の上限を
+    引き上げた際に告知の数字だけが取り残される（両者が独立に drift する）。**import 文で
+    共有元から取り込んでいること**を検証する:
+
+    ```bash
+    PAGE="src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"
+    # 1) 共有定数を import していること（ローカル再宣言ではない）
+    grep -nE '^import .*STORE_ORDERS_MAX.*from' "$PAGE"
+    # 2) ページ内でローカル再宣言していないこと → ヒット 0 件
+    if grep -nE '^[[:space:]]*(const|let|var)[[:space:]]+STORE_ORDERS_MAX([[:space:]]|=|:|$)' "$PAGE"; then
+        echo "FAIL: STORE_ORDERS_MAX がページ内で再宣言されている"; false
+    else
+        echo "OK: ページ内での再宣言は無い"
+    fi
+    # 3) 告知文そのものが定数を JSX 式として埋め込んでいること。
+    #    「告知文の中で使われている」ことを見るため、告知の固定文言と同じ式の中に
+    #    {STORE_ORDERS_MAX} が現れることを 1 つのパターンで要求する
+    #    （改行チェーンに耐えるよう tr で 1 行化してから照合する）。
+    #    **1 行化の前に非コードを潰す** —— 潰すとコメントが本文と地続きになり、
+    #    下書きコメントやデッドコードでも合格してしまう（Done criteria 側と同じ理由）。
+    #
+    #    使うのは Done criteria が定義する `strip_code`（上の「機械検証」ブロック）。
+    #    **この 1 行 perl の旧形は使わない** —— `(^|[^:])//` は「直前が `:` でない `//`」
+    #    しか避けないため、`const proto = "a//b";` のような**URL 以外の文字列**を
+    #    切り詰めて照合対象を別物にする。同一プラン内で 2 種類の除去ロジックを持つと、
+    #    Done criteria と Step で判定が食い違う。
+    strip_code "$PAGE" \
+      | tr '\n' ' ' \
+      | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders' \
+      || { echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false; }
+    ```
+
+    1 がヒットし、2 がヒット 0 件、3 が成功したときのみ、告知が共有定数に追随することが保証される。
+
+    実測（2026-07-31・合成フィクスチャ）: 実際に `{STORE_ORDERS_MAX}` をレンダリングする版 =
+    **合格** / 告知文はリテラル `100` のままで `//` コメントに式を下書きした版 = **不合格** /
+    JSX コメント `{/* latest {STORE_ORDERS_MAX} orders */}` に式が残っている版 = **不合格**。
+    コメント除去を挟まない旧形では後者 2 つも合格していた。
+
+    追加実測（2026-08-01・`strip_code` へ統一後）: 告知式を**文字列リテラルの中に
+    下書きしただけ**の版（`const draft = "latest {STORE_ORDERS_MAX} orders";` を置き、
+    JSX 側はリテラル `100` のまま）= **不合格**。旧 1 行 perl も上の温存形 `strip_comments`
+    も、この版を**合格**にしていた。告知は JSX テキストなのでリテラルを潰しても
+    正常系の検出には影響しない（同実測で現行相当の版は引き続き**合格**）。
+
+    **3 を「token の出現数」で代替しないこと（2026-07-27 修正）。** 以前の形
+
+    ```bash
+    grep -n 'STORE_ORDERS_MAX' "$PAGE" | grep -vE '^[[:space:]]*[0-9]+:import'
+    ```
+
+    は「import 行**以外**のどこかに token がある」しか示さない。コメント内の言及・
+    `take` へ渡すだけの利用・デッドコードでも通ってしまい、**告知文が
+    ハードコードした数字（例: 「最新 100 件」）のままでも合格する**。
+    このチェックが守りたいのは「上限を引き上げたとき告知の数字も一緒に動く」ことなので、
+    告知の固定文言と定数展開が**同じ式に共在する**ことを直接検証する必要がある。
+    告知の文言を変える場合は上のパターンのアンカー語（`latest` / `orders`）も併せて
+    更新すること。**アンカー語は実装が出している文言と同じ言語にすること**（2026-07-30 修正）:
+    以前は `最新` / `件` の日本語パターンだったが、実装（`page.tsx:38`）と本プランの
+    スニペット（:198）はどちらも英語の
+    `Showing up to the latest {STORE_ORDERS_MAX} orders.` を出している。実測すると
+    日本語パターンは**正しい実装に対して exit 1**（偽の FAIL）を返していた。
+
+    **`\s` / `\b` は使わない**（2026-07-26 修正）。どちらも POSIX ERE には無い
+    GNU 拡張で、解釈は grep 実装依存になる。文字クラスは `[[:space:]]`、語境界は
+    区切り文字の明示（`([[:space:]]|=|:|$)`）で置き換える。1 の `\b` は
+    `STORE_ORDERS_MAX` を含む別識別子が存在しないため単純に落とした。
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` がマッチしない
 - [ ] `bun run test -- src/queries/store.test.ts` が exit 0；`take` アサーションが pass
 - [ ] `bun run lint` が exit 0

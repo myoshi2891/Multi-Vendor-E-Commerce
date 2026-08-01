@@ -12,7 +12,192 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1699 passed / 1702 total across 174 suites (3 skipped), as of 2026-07-17.
+- 1829 passed / 1832 total across 177 suites (3 skipped), as of 2026-08-01.
+  Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
+  `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template
+  literals and comments as code. A file that carries scanned-source **as fixture strings** inflated
+  to a multiple of its real size — `scan-tests.test.ts` itself reported **81 on the dashboard
+  against 21 at runtime**, and `hasSkip` was a false positive from the same source. `findMaskedSpans`
+  now enumerates the non-code ranges once per file and `BLOCK_PATTERN` / `EACH_PATTERN` /
+  `SKIP_PATTERN` discard any match landing inside one. **The literals are not stripped** — the title
+  in `it("title", fn)` *is* a string literal, so stripping would destroy the declaration itself;
+  the test is on the match position. Dashboard corrections: `scan-tests.test.ts` **81→24** and
+  `size.test.ts` **9→8** (the latter had a **commented-out** `it(` at `:144` counted as a
+  declaration). No other file's `testCount` or `hasSkip` moved).
+  **Two figures in the eleventh-pass entry are corrected here.** `webhooks/route.test.ts` was
+  **19→20, not 20→21** — the raw `it(` count is 15 at `4e4534d1` and 16 at `5c1ec584`, and the
+  runtime figure including `it.each` expansion goes 19→20. The **+1 delta was right; both absolute
+  values were one too high**. `scan-tests.test.ts` 17→21 is correct as a runtime figure, but the
+  dashboard read **81** at that moment, so the entry and the generated artifact disagreed; the
+  twelfth pass closes that split at its source.
+- 1826 passed / 1829 total across 177 suites (3 skipped), as of 2026-08-01.
+  Seven regressions from the CodeRabbit review round, eleventh pass (+7, no new suites).
+  `webhooks/route.test.ts` 19→20 (`user.deleted` validated `rawUserId.trim() === ""` but bound the
+  **untrimmed** value as the filter key, so `"  user_x  "` passed validation and the SupportTicket
+  PII redaction plus the delete both matched **zero rows while returning 200** — the GDPR erasure
+  silently no-opped).
+  `paypal.test.ts` 30→32 (the capture correlation check was written as
+  `purchase_units[0].custom_id ?? capture?.custom_id`; `??` short-circuits on the first non-nullish
+  value, so once the outer id matched `orderId` the capture-level id was **never examined**. The
+  capture object is what represents the actual movement of money, so a response correlated to the
+  caller's order on the outside and to a different order on the inside reached the Paid write.
+  Now every present `custom_id` must match; a separate test pins that either location may still
+  carry it).
+  `scan-tests.test.ts` 17→21 (`it.each(<identifier>)` counted as 0 — the same defect class as the
+  `it.each([...])` undercount fixed in `c1be6d7`, but for tables lifted into a named constant.
+  Same-file `const` and single-hop `@/` / relative imports now resolve; anything else stays at 0, so
+  **identifier resolution** never over-counts. `order-settlement.test.ts` moves from 6 to
+  **14 cases** on the dashboard, matching its runtime value. Note the original wording here —
+  "the scanner never over-counts" — was too broad and was **disproved by this file's own entry**:
+  the fail-safe covers unresolved identifiers only, and a separate path (string literals read as
+  code) was over-counting by 60 on `scan-tests.test.ts` at the very moment this was written.
+  Closed in the twelfth pass above).
+- 1819 passed / 1822 total across 177 suites (3 skipped), as of 2026-08-01.
+  Sixteen regressions from the SonarCloud duplication cleanup (+16, **one new suite**).
+  `src/lib/order-settlement.test.ts` is new (14): `hasOrderSettledAfterConflict` was extracted from
+  the identical P2025 re-read blocks in `stripe.ts` and `paypal.ts`. Its `catch (reReadError)` arm
+  had **no test at either origin** — both P2025 tests drive the re-read with `mockResolvedValue`
+  only — and `src/lib/**` is excluded from neither `collectCoverageFrom` nor
+  `sonar.coverage.exclusions`, so an uncovered arm in a small new file would breach the
+  `new_coverage >= 80%` gate. The suite drives settled/unsettled statuses (expanded from
+  `SETTLED_PAYMENT_STATUSES` so the SSOT is not duplicated), a missing order, the query shape
+  (deliberately not filtered by `userId`), and both the `Error` and non-`Error` re-read failures.
+  New-file coverage: 100% statements / branches / functions / lines.
+  `user.test.ts` 68→70 (ITEM shipping fee did not clamp the additional-item count, so
+  `validQuantity === 0` — an out-of-stock size, or a tampered `quantity: 0` payload — computed
+  `fee + extra * (0 - 1)` = a **negative shipping fee** that propagated into `Cart.total` via
+  `saveUserCart` and into `OrderItem.shippingFee` / `OrderGroup` totals via `placeOrder`. Both
+  paths were pinned Red at `shippingFee: "7"` before `Math.max(0, quantity - 1)` made them Green).
+- 1803 passed / 1806 total across 176 suites (3 skipped), as of 2026-07-31.
+  Two regressions from the CodeRabbit review round, ninth pass (+2, no new suites).
+  `paypal.test.ts` 27→29 (retrieve and capture shared a single 10s timer / `AbortController`,
+  so a slow retrieve could abort the capture mid-flight, and `clearTimeout` ran only after a
+  successful capture — the verification-mismatch throws leaked the timer. The rows assert the two
+  `fetch` calls receive **distinct `signal` instances** and that the retrieve-side mismatch path
+  still releases its timer).
+  `user.test.ts` stays at 67 — closing the shipping-address ownership race replaced the existing
+  TOCTOU assertions rather than adding to them: `tx.shippingAddress.findFirst` (a plain SELECT
+  that takes no row lock) became `$queryRaw` + `SELECT … FOR UPDATE`, so the test now pins that
+  the locking read happens before `order.create` and that an empty result throws
+  `"Shipping address not found."` without creating an order.
+- 1799 passed / 1802 total across 176 suites (3 skipped), as of 2026-07-30.
+  Nine regressions from the CodeRabbit review round, eighth pass (+9, no new suites).
+  `db-retry.test.ts` 16→19 (an `it.each` of two rows — `2 ** 48` and `Number.MAX_SAFE_INTEGER` —
+  plus one backoff-ceiling case. The seventh pass clamped *non-finite* values but let a **finite**
+  huge one through untouched, since `Math.floor` never shrinks a value. `randomInt` requires
+  `max - min < 2 ** 48`, so the same defect class survived: the throw came *from inside the catch
+  block* as `ERR_OUT_OF_RANGE` and replaced the P2034. The rows assert the error is still a
+  `PrismaClientKnownRequestError`, i.e. that it was not transmuted).
+  `stripe.test.ts` 39→41 (observing the same canceled intent twice must derive the **same**
+  recreate idempotency key — the previous `randomUUID()` suffix made every call unique, so
+  double-submit protection vanished precisely after a cancellation was observed; and once the
+  recreate ceiling is hit the action must throw rather than persist a canceled intent id).
+  `paypal.test.ts` 23→27 (`GET /v2/checkout/orders/{id}` must run **before** capture: a mismatched
+  `custom_id`, `amount`, or `currency_code` each throws with the capture URL never requested, and
+  the happy path pins the GET→POST ordering. Verifying after capture meant the money had already
+  moved by the time the check failed).
+- 1790 passed / 1793 total across 176 suites (3 skipped), as of 2026-07-30.
+  Four regressions from the CodeRabbit review round, seventh pass (+4, no new suites).
+  `db-retry.test.ts` 13→16 (an `it.each` of three rows: a fractional / `NaN` / negative
+  `baseDelayMs` must still surface the P2034. `randomInt` only accepts integers, so a fractional
+  value threw `ERR_INVALID_ARG_TYPE` *from inside the catch block* and replaced the P2034 every
+  downstream `isSerializationFailure` check looks for; the rows also assert the operation ran
+  `maxAttempts` times, which is what proves the jitter path was reached at all).
+  `paypal.test.ts` 22→23 (a P2025 whose re-read shows an unsettled order must not be normalized to
+  "already settled" — the PayPal counterpart of the stripe.ts fix landed at 1749; the
+  concurrent-capture case now models both `findUnique` calls instead of leaving the re-read
+  unexercised).
+- 1786 passed / 1789 total across 176 suites (3 skipped), as of 2026-07-30.
+  Seventeen regressions from the CodeRabbit review round, sixth pass (+17, **no new suites** — every
+  case landed in a file that already existed). `webhooks/route.test.ts` 15→19 (an `it.each` of four
+  rows: `user.deleted` with a missing / empty / whitespace-only / non-string `id` must return 400
+  **and never open the transaction** — an unvalidated `undefined` reaches Prisma as
+  `where: { userId: undefined }`, which it reads as *no filter*, redacting every SupportTicket and
+  deleting every User). `db-retry.test.ts` 8→13 (an `it.each` of four rows plus one single case:
+  `maxAttempts` of `0` / negative / `NaN` / fractional must still run the operation once instead of
+  `throw undefined`, which broke every downstream `instanceof Error` guard). `admin/coupons/
+  columns.test.tsx` 20→25 (the admin edit modal's `getCouponAsAdmin` rejection path — the seller
+  variant already had try/catch + destructive toast + `setClose()`; only admin was missing it).
+  `scan-tests.test.ts` 15→17 (declaration-form `test.skip('title', fn)` counts, in-body annotation
+  `test.skip(cond, reason)` does not). `coupon.test.ts` 95→96 (`toggleCouponActive`'s
+  `'Coupon not found.'` re-anchored to exact match and passed through `isDomainError`).
+- 1769 passed / 1772 total across 176 suites (3 skipped), as of 2026-07-28.
+  Eight regressions from the CodeRabbit review round, fifth pass (+8, +1 suite):
+  `coupons/columns.test.tsx` (+7, **new suite**) covers the seller coupon edit modal, whose
+  `setOpen` fetch callback let a `getCoupon` rejection escape unhandled — the modal-provider's
+  fire-and-forget IIFE only logged it, so the user saw no notification and the modal stayed open
+  on an unverified row snapshot; the suite pins the toast, the `setClose()`, and the structured log.
+  `scan-tests.test.ts` (+1) pins that modifier-prefixed `it.skip.each` / `test.only.each` expand to
+  their table row counts — both `BLOCK_PATTERN` and `EACH_PATTERN` missed them, leaving 4 of 5
+  fixture cases invisible to the dashboard scanner. `coupon.test.ts` gained no cases: its five
+  existing `Please provide coupon ID.` assertions were substring matches that passed while the
+  `catch` rewrote the message, and were re-anchored to exact match.
+- 1761 passed / 1764 total across 175 suites (3 skipped), as of 2026-07-27.
+  Seven regressions from the CodeRabbit review round, fourth pass (+7, no new suites):
+  `coupon.test.ts` (+4) anchors the *exact* message of validation and duplicate-code failures —
+  the pre-existing assertions used `toThrow(string)`, whose substring match passed even while the
+  `catch` rewrote them to `Error occurred while trying to upsert coupon: …`, so the form could
+  never surface `クーポンの入力値が不正です。`; one case also pins that a user input mistake emits
+  no `logError`. `scan-tests.test.ts` (+3) pins that modifier-suffixed tests (`test.skip` etc.)
+  count toward `testCount`, plus two guards against over-counting once modifiers are allowed
+  (`test.describe` / `test.describe.skip` stay excluded as wrappers; `it.each` is not
+  double-counted against the `EACH_PATTERN` expansion).
+- 1754 passed / 1757 total across 175 suites (3 skipped), as of 2026-07-26.
+  Two regressions from the CodeRabbit review round, third pass (+2, no new suites):
+  `stripe.test.ts` pins that a canceled PaymentIntent returned by the fixed idempotency key is
+  recreated under a fresh key, and that non-canceled statuses are *not* recreated — without the
+  first, an order stays permanently unpayable at that amount once its intent is canceled.
+- 1752 passed / 1755 total across 175 suites (3 skipped), as of 2026-07-26.
+  Three regressions from the CodeRabbit review round, second pass (+3, no new suites):
+  `useCartStore.test.ts` gains a `persist ラウンドトリップ` block that discards the in-memory
+  state before `persist.rehydrate()`, so the restored cart can only have come from storage —
+  plan 005's headline claim ("a persisted cart survives a reload") had no test until now.
+- 1749 passed / 1752 total across 175 suites (3 skipped), as of 2026-07-26.
+  One regression from the CodeRabbit review round, second pass (+1, no new suites):
+  `stripe.test.ts` pins that a P2025 is only normalized to "already settled" when a re-read
+  confirms it — the normalization used to cover the whole `$transaction`, so a concurrent order
+  delete or a vanished `paymentDetails.connect` target was misreported as a completed payment.
+- 1748 passed / 1751 total across 175 suites (3 skipped), as of 2026-07-26.
+  Two regressions from the CodeRabbit review round (+2, no new suites): `coupon.test.ts` pins
+  rejection of a fractional `discount` on both the seller and admin upsert paths, matching the
+  `.int()` added to `CouponFormSchema.discount` (the value reached the `Int` column before).
+- 1746 passed / 1749 total across 175 suites (3 skipped), as of 2026-07-24.
+  That is **+8 against the 1738 measured on 2026-07-18**, of which **+2 are the intentional
+  security regressions** from the CodeRabbit local review, doc/code round (no new suites):
+  `user.test.ts` pins the placeOrder shipping-address ownership TOCTOU (re-validate inside the
+  order tx), and `webhooks/route.test.ts` pins the SupportTicket PII redaction on user deletion.
+  The remaining +6 is measurement drift between the two runs, not new deliberate coverage — see
+  the note in [`QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) (the SSOT for these figures).
+- 1738 passed / 1741 total across 175 suites (3 skipped), as of 2026-07-18.
+  Nineteen regressions from the CodeRabbit local review, Phase 1 (+19, one new suite).
+  `src/lib/db-retry.test.ts` is the new suite (+8): `saveUserCart` declared
+  `isolationLevel: Serializable` without any retry, which only converts a P2002/P2025 conflict into
+  a P2034 one — the legitimate concurrent request still fails. `retryOnSerializationFailure` retries
+  P2034 with exponential backoff and jitter, and the tests pin that non-P2034 errors are rethrown on
+  the first attempt (retrying a unique-constraint violation only repeats the same failure).
+  `stripe.test.ts` (+6) covers two payment defects: the idempotency tests require a deterministic
+  key derived from order id **and** amount, because Stripe rejects a reused key carrying different
+  parameters — keying on the order alone would permanently block payment after a legitimate total
+  change (coupon). The CAS tests require `PaymentDetails` and `Order` to be updated inside one
+  transaction with `paymentStatus: { notIn: SETTLED }` in the `where`: the previous read-then-act
+  let the Stripe webhook write `Paid` between the guard's read and the action's write, regressing a
+  settled order to `Pending`. `user.test.ts` (+2) asserts the retry is wired through the real
+  transaction. `place-order.test.tsx` (+1) requires navigation to survive a throwing `emptyCart()`
+  — the store is persisted, so the synchronous call can still throw on a storage failure, and an
+  unguarded throw left the user with a placed order, an error toast, no navigation, and a
+  permanently disabled button. `scan-tests.test.ts` (+2) pins `it.each([])` to zero cases; the
+  scanner's opening-bracket branch set `hasContent`, inflating an empty table to one.
+- 1719 passed / 1722 total across 174 suites (3 skipped), as of 2026-07-18.
+  Two security regressions from plan 062 (+2, no new suites). `index-products/route.test.ts` (+2)
+  pins both handlers' 500 branch to a fixed `{ error: "Internal Server Error" }` body: the previous
+  `catch (error: any)` returned raw `error.message`, exposing internal detail (DB driver text,
+  connection host/port) to unauthenticated clients. The tests reach the outer catch by rejecting the
+  mocked `db.product.findMany` twice — the fallback `contains` query inside the inner catch is not
+  itself wrapped, so the second rejection propagates. A new Playwright spec
+  `tests/e2e/security-headers.spec.ts` (2 tests × 3 browsers) asserts the exact values of the five
+  response-hardening headers added by plan 061 on `/` and `/checkout`; asserting values rather than
+  header names is what catches a weakened setting (e.g. `SAMEORIGIN` → `ALLOWALL`).
+- 1717 passed / 1720 total across 174 suites (3 skipped), as of 2026-07-18.
   Ten regressions from the CodeRabbit local review (+10, no new suites). `place-order.test.tsx`
   (+1) pins the guard to order confirmation: a failing `emptyUserCart()` cleanup must not release
   it, because the order is already placed and irreversible (previously the `catch`/`finally` path

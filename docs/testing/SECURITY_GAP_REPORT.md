@@ -239,3 +239,148 @@ const updatedCart = await db.cart.findFirstOrThrow({
 エラー/返却セマンティクスが変わるため別タスクとする。
 
 詳細・追跡は SDD `specs/multi-vendor-ecommerce/08-open-questions.md` の Known Issues を SSOT とする。
+
+---
+
+## 8. 追加修正（2026-07-18）— `getCoupon` cross-store IDOR read（plan 058 / SECURITY-10）
+
+### 8.1 発見
+
+Round 13 セキュリティ監査（`plans/audit/findings-18-security-r13.md`）で特定。
+`getCoupon(couponId)` は `'use server'` ファイル内の唯一の非認証読取で、
+`db.coupon.findUnique({ where: { id } })` を認証・ロール・所有権チェックなしで実行していた
+（JSDoc も `@PermissionLevel Public` と誤記）。サーバーアクションは到達可能な POST
+エンドポイントのため、任意の `couponId` を渡すだけで他店舗クーポンの全行
+（`code` / `discount` / `storeId` / 期間）を読める cross-store IDOR read。
+漏洩した code はチェックアウトの `applyCoupon` で行使可能。
+
+### 8.2 修正（コミット `15c9a96`）
+
+- `getCoupon(couponId, storeURL)`: `requireStoreOwner(storeURL)` を try/catch の外で実行し、
+  読取を `findFirst({ where: { id: couponId, storeId: store.id } })` の複合スコープへ変更
+  （`deleteCoupon` と同型。`findUnique` は unique フィールドしか where に取れないため `findFirst`）。
+- `getCouponAsAdmin(couponId)`: admin ダッシュボードは PLATFORM クーポン（`storeId = null`）を
+  扱うため store スコープ不可。`requireAdmin()` ゲートの非スコープ `findUnique` として分離新設。
+- 呼び出し元 2 箇所を更新: seller `coupons/columns.tsx` は `params.storeUrl` を追加渡し、
+  admin `coupons/columns.tsx` は `getCouponAsAdmin` へ切替。
+
+### 8.3 追加テスト（3 階層 (a)(b)(c) — §5.2 パターン準拠）
+
+`coupon.test.ts` 77 → 84（+7。full suite 1699 → 1707 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| (a) スロー検証 | 非所有ストア URL で `"Forbidden: store not owned by current user."` スロー + `db.coupon.findFirst` 非呼び出し（副作用なし） |
+| (b) where 構造検証 | 成功経路の `findFirst` が `where: { id, storeId: <owned store id> }` の複合スコープであること |
+| (c) 到達不能検証 | 他店舗クーポン id はスコープにより `null`（不可視）。admin 経路は非 ADMIN で拒否 + `findUnique` 非呼び出し、ADMIN は PLATFORM クーポンを取得可能 |
+
+### 8.4 関連
+
+- 実行プラン: [`plans/058-scope-get-coupon-to-owner.md`](../../plans/058-scope-get-coupon-to-owner.md)
+- 監査台帳: `plans/audit/findings-18-security-r13.md`（SECURITY-10）
+- 残る同族ギャップ: SECURITY-15（review / shipping-address / product のサーバー側 Zod 検証欠落）は
+  plan 060 がクーポンで確立するパターンの横展開 follow-up として deferred
+
+---
+
+## 9. 追加修正（2026-07-18）— PayPal capture の検証欠落（plan 059 / SECURITY-12・13）
+
+### 9.1 発見
+
+Round 13 セキュリティ監査で特定。Stripe capture（`confirmStripePayment`）は確定済み注文の拒否 +
+PaymentIntent の `metadata.orderId` / `amount` / `currency` 突合を行うのに対し、
+`capturePayPalPayment` は所有権チェック後、capture 応答の `status` のみで `Paid` を確定していた。
+
+- **SECURITY-12（過少支払い）**: capture は `orderId`（サーバー供給）と `paymentId`
+  （クライアント供給）を緩く結合するだけのため、安い注文で作成した PayPal Order を
+  高い注文の capture に流用すると、過少支払いで高い注文が `Paid` になる。
+- **SECURITY-13（確定済み退行）**: 遅延 / `DENIED` capture が非 `COMPLETED` 分岐で
+  `paymentStatus: "Failed"` を無条件書き込みし、`Paid` / `Refunded` を退行させられる。
+
+### 9.2 修正（コミット `6a31da1`）
+
+- 確定済みステータス（Paid/Refunded/PartiallyRefunded/ChargeBack）の SSOT は
+  `src/lib/payment-status.ts`（`SETTLED_PAYMENT_STATUSES` / `isSettledPaymentStatus`）で、
+  Stripe/PayPal 両ガードが import して共有する。
+  （コミット `6a31da1` 時点では `src/queries/stripe.ts` の export だったが、その後
+  `src/lib/payment-status.ts` へ抽出。現行の import 元は両決済とも `@/lib/payment-status`。）
+- `src/queries/paypal.ts`:
+  - capture フェッチ前（try 外・認可ガードと同じ領域）に settled ガードを追加 —
+    確定済み注文は `"Order payment is already settled."` で PayPal API 呼び出し前に拒否。
+  - `Paid` 確定前に、作成時の正値（`createPayPalPayment` が格納した
+    `purchase_units[0].custom_id = orderId` / `amount.value = order.total` /
+    `currency_code = "USD"`）と capture 応答を突合。金額比較は float `===` ではなく
+    `new Prisma.Decimal(capturedValue).equals(order.total)`。不一致はすべて throw で
+    `paymentDetails.upsert` / `order.update` に到達しない。
+  - 検証エラーは catch の汎用 `"Failed to capture PayPal payment"` で上書きせず透過
+    （coupon.ts `isGuardError` と同じ意図的 throw の保全パターン）。
+
+### 9.3 追加テスト
+
+`paypal.test.ts` 15 → 20（+5。full suite 1707 → 1712 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| 金額不一致（value=1.00 ≠ total=99.99） | `"PayPal capture amount/currency mismatch."` スロー + upsert/update 非呼び出し |
+| custom_id 不一致 | `"PayPal capture does not match order."` スロー + 書き込みなし |
+| 通貨不一致（JPY） | mismatch スロー + 書き込みなし |
+| 確定済み（Paid） | `"Order payment is already settled."` スロー + **fetch 自体が非呼び出し** |
+| 確定済み（Refunded） | 同上 |
+
+既存 happy path モックには `custom_id: "order-001"` と `total: 99.99` の整合を追加（挙動不変）。
+
+### 9.4 関連
+
+- 実行プラン: [`plans/059-paypal-capture-verification.md`](../../plans/059-paypal-capture-verification.md)
+- 同族の残ギャップ: **SECURITY-17**（webhook `src/app/api/webhooks/paypal/route.ts` の
+  無条件ステータス上書き）は deferred — 対応時は本修正で export した
+  `isSettledPaymentStatus` を再利用する（plan 059 Maintenance notes 参照）。
+
+---
+
+## 10. 追加修正（2026-07-18）— クーポン mutation のサーバー側 Zod 検証（plan 060 / SECURITY-14）
+
+### 10.1 発見
+
+Round 13 セキュリティ監査で特定。`upsertCoupon` / `upsertCouponAsAdmin` は
+クライアント供給の `Coupon` オブジェクトを `{ ...coupon }` の未検証スプレッドで DB へ書き込み、
+`CouponFormSchema`（`discount` の `.min(1).max(99)`、`code` の `^[A-Za-z0-9]+$` 等）は
+ブラウザの `zodResolver` でしか実行されなかった。サーバーアクションを直接呼び出すと
+`discount > 99` を永続化でき、`applyCoupon`（coupon.ts）と `placeOrder`（user.ts）が
+`total.mul(discount).div(100)` を計算するため、**注文 total を負値化**できる money-critical ギャップ。
+
+### 10.2 修正（コミット `c67b833`）
+
+- `upsertCoupon`: 所有権検証後・upsert 前に `CouponFormSchema.safeParse(coupon)` ゲートを追加
+  （`z.object` は未知キーを除去するため `Coupon` 全体を渡して 4 フォームフィールドのみ検証）。
+  書き込みを `parsed.data` の明示マッピング + サーバー強制 `storeId: store.id` / `scope: 'STORE'`
+  に置換し、スプレッドを撤去。
+- `upsertCouponAsAdmin`: `AdminCouponFormSchema.safeParse` ゲート（`superRefine` が
+  STORE ⇒ storeId 必須 / PLATFORM ⇒ storeId 空の不変条件も検証）。既存の
+  `normalizedStoreId` ロジックは defense-in-depth として残置し、同様に明示マッピング化。
+- 検証失敗はいずれも `"クーポンの入力値が不正です。"` で書き込み前に throw。
+- 検証: `grep "\.\.\.coupon" src/queries/coupon.ts` → 0 件（スプレッド撤去の機械確認）。
+
+### 10.3 追加テスト
+
+`coupon.test.ts` 84 → 89（+5。full suite 1712 → 1717 passed）:
+
+| シナリオ | 検証 |
+|---|---|
+| discount > 99（seller） | 検証エラースロー + `db.coupon.upsert` 非呼び出し（負値 total ベクトルを書き込み前に遮断） |
+| discount < 1（seller） | 同上 |
+| 不正 code `"!!"`（seller） | 同上 |
+| 明示マッピング（seller） | クライアント供給の `scope: "PLATFORM"` / `storeId: "attacker-store"` が無視され、書き込みが検証済み 4 フィールド + サーバー強制値のみであることを厳密一致で検証 |
+| discount > 99（admin） | 検証エラースロー + 書き込みなし |
+
+既存の upsert 系テスト入力は `createValidCouponInput`（ISO 文字列日付）へ更新
+（共有 fixture `MockCoupon` の `startDate`/`endDate` が `Date` 型で、Prisma モデルの
+`String` と乖離しているため — fixture 本体の是正はスコープ外の別課題）。
+
+### 10.4 関連
+
+- 実行プラン: [`plans/060-server-validate-coupon-mutations.md`](../../plans/060-server-validate-coupon-mutations.md)
+- **SECURITY-15**（`upsertReview` / `upsertShippingAddress` / `upsertProduct` の同族ギャップ）は
+  本修正の `safeParse` → 明示マッピングパターンを参照実装とする deferred follow-up。
+  `upsertProduct` は `ProductWithVariantType` とスキーマの型差分の突合が必要（plan 060
+  Maintenance notes 参照）。

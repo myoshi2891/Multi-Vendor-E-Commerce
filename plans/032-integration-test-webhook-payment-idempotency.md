@@ -185,6 +185,54 @@ S1 と同じイベントを**2 回**配送 → 両方 200。DB assert:
 - `db.paymentDetails.count({ where: { orderId } })` === **1**
 - 内容が S1 と同一（upsert update 経路が同値で上書き）
 
+> **逐次再送だけでは「冪等性」の主張を満たさない。** Stripe は再試行を**並行**配送しうるため、
+> 逐次 2 回のみを検証して「冪等」と名乗るのは過大主張。
+>
+> **決定（この二択の決着）: 推奨案「並行ケースを追加」を採用する。** 同一イベントを 2 回**同時に**
+> 配送し、`paymentDetails.count` が **1** のままであることを assert する（upsert の一意制約が
+> 並行 upsert を直列化することの回帰網）。これを Scenario S2 の必須シナリオとし、下記 Done criteria
+> でも機械検証する。逐次のみに狭める代替案は採らない（並行こそが本プランの主眼のため）。
+>
+> **ただし `Promise.all` を並べるだけでは並行 upsert の冪等性を証明できない。**
+> `Promise.all` は 2 本を同時にディスパッチするだけで、DB 上で実際に重なる保証にはならない。
+> **接続プールが 1 なら 2 本は逐次実行**され、その場合このテストは S2 の逐次ケースと同じものを
+> 2 度書いたに過ぎず、「並行 upsert が直列化される」ことを一切検証しないまま緑になる（偽陽性）。
+>
+> plan 031 の Scenario 2（在庫復元の CAS）と**同型の問題**であり、対処も同じ。以下は
+> **どちらも必須**:
+>
+> 1. **バリア（latch）を必ず挟む** — 2 本の配送が揃って in-flight になるまでブロックし、
+>    揃ってから解放する。実装例は
+>    [`plans/031`](031-integration-test-order-lifecycle-restock.md) の Scenario 2 と同じ形。
+> 2. **`connection_limit >= 2` を明示検証する** — 2 未満なら成功扱いにせず `expect` で
+>    ブロックする（`expect(poolSize).toBeGreaterThanOrEqual(2)`）。「並行を検証できない環境」を
+>    silently pass させない。
+> 3. **2 本の配送が**どちらも**HTTP 成功（2xx）で完了したことを assert する** —
+>    `paymentDetails.count === 1` だけでは**冪等性を示せない**。片方の配送が一意制約違反を
+>    捕まえ損ねて 500 で落ちても、生き残った 1 本が行を作るので `count` は 1 のままであり、
+>    テストは緑になる。それは「冪等に処理した」ではなく「**1 本が失敗した**」——
+>    実運用では Stripe が失敗した側を再配送し続けることになる。
+>
+>    ```ts
+>    const [a, b] = await Promise.all([deliver(evt), deliver(evt)]);
+>    expect(a.status).toBeLessThan(300);
+>    expect(b.status).toBeLessThan(300);   // ← これが無いと 500 が隠れる
+>    expect(await countPaymentDetails(orderId)).toBe(1);
+>    ```
+>
+>    冪等性の主張は「**両方が成功し、かつ副作用は 1 回**」の連言である。
+>    後半だけを検証するのは、前半を暗黙の仮定に格下げすることに等しい。
+>
+> バリアだけではプール 1 で接続待ち直列化され、`connection_limit` だけでは解放タイミングが
+> ずれて重ならない。
+>
+> **この 2 つは必要条件であって十分条件ではない**（plan 031 の同節と同じ扱い）。バリアが
+> 保証するのは「2 本がクエリ発行の直前まで揃っていた」ことだけで、DB 側で 2 つの upsert が
+> 実際に重なったことは示さない。したがって Done criteria には「並行 upsert を**証明した**」
+> ではなく「**重ならなかった場合に緑になる構成上の穴を塞いだ**」と書くこと。重なりまで
+> 機械的に示したい場合の追加手段（`pg_advisory_xact_lock` で一方を DB 内で待たせる /
+> `pg_stat_activity` で active バックエンド 2 本を観測する）は plan 031 に記載した。
+
 **Scenario S3: 状態遷移イベントは upsert 更新される**
 `payment_intent.succeeded` → `charge.refunded`（同一 orderId）の順で配送。DB assert:
 - PaymentDetails は 1 行のまま `status === "Refunded"`
@@ -229,6 +277,14 @@ CHECK 制約を一時的に張る:
 
 ```typescript
 // Arrange: Order（paymentMethod は未設定）と User を seed した後
+
+// 前回実行が finally に到達せず落ちた（プロセス kill / タイムアウト強制終了 / DB 接続断）
+// 場合、tmp_block_stripe が DB に残る。残っていると次の ADD が
+// 「constraint already exists」で必ず失敗し、テストが**恒久的に**赤くなる
+// （しかも失敗理由は本来の検証内容と無関係）。ADD の直前に必ず落としておく。
+await db.$executeRawUnsafe(
+    `ALTER TABLE "Order" DROP CONSTRAINT IF EXISTS tmp_block_stripe`
+);
 await db.$executeRawUnsafe(
     `ALTER TABLE "Order" ADD CONSTRAINT tmp_block_stripe CHECK ("paymentMethod" IS DISTINCT FROM 'Stripe'::"PaymentMethod")`
 );
@@ -236,16 +292,29 @@ try {
     // Act: webhook イベントを配送
     //   tx 内: paymentDetails.upsert は成功（Order は実在するので FK OK）
     //          → order.update が CHECK 違反で throw → tx ロールバック
-    // Assert: 5xx（またはハンドリング済みのエラー応答）かつ
-    //   await db.paymentDetails.count({ where: { orderId } }) === 0
+    // Assert: 具体的な応答ステータスを固定すること — 曖昧な「5xx またはハンドリング済み応答」
+    //   ではなく、ハンドラが実際に返す値を assert する。Stripe webhook は内部エラー時に
+    //   `new Response("Internal Server Error", { status: 500 })`（route.ts:193）を返すので
+    //   `res.status === 500` を assert し、かつ
+    //   await db.paymentDetails.count({ where: { orderId } }) === 0（tx ロールバックで副作用なし）
 } finally {
-    await db.$executeRawUnsafe(`ALTER TABLE "Order" DROP CONSTRAINT tmp_block_stripe`);
+    // ADD 側と同じく IF EXISTS を付ける。ADD が失敗した経路では制約が存在しないため、
+    // 素の DROP だと finally 自身が throw し、本来報告すべき ADD/Act 側の失敗を
+    // 上書きしてしまう（デバッグ時に真因が見えなくなる）。
+    await db.$executeRawUnsafe(
+        `ALTER TABLE "Order" DROP CONSTRAINT IF EXISTS tmp_block_stripe`
+    );
 }
 ```
 
 - `IS DISTINCT FROM` を使うのは、既存行の `paymentMethod` が `NULL` でも制約追加が通るようにするため
   （`NULL IS DISTINCT FROM 'Stripe'` は true）。`<>` だと NULL 比較が `NULL` になり挙動が変わる。
 - 制約の削除は **`finally` で必ず行う**（残すと後続テストの `order.update` を巻き込んで壊す）。
+- **ADD の直前にも `DROP … IF EXISTS` を置く**（上記コード参照）。`finally` は
+  「このプロセスが最後まで動いた」ことを前提にした後始末であり、**プロセスが強制終了された
+  場合には走らない**。その状態で残った制約は次回実行の ADD を確実に失敗させ、
+  かつ失敗理由が本来の検証内容と無関係になるため原因追跡が難しい。
+  **事前 DROP（自己修復）と事後 DROP（後始末）は役割が違い、両方要る。**
 - **対照（control）assert を必ず添えること**: 同じイベントを**制約なし**で配送すると
   `paymentDetails.count({ where: { orderId } })` === **1** になることを確認する。
   これが無いと「制約のせいで 1 番目すら書かれなかった」場合と区別できず、
@@ -312,8 +381,24 @@ Step 2〜3 のシナリオ S1〜S4 / P1〜P4 が本体。構造の手本は
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `webhook-payment.test.ts` の新規テストが全 pass
-- [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する（grep で確認可:
-      `grep -n "count" tests/integration/webhook-payment.test.ts` に該当行がある）
+- [ ] Scenario S2 / P2 で `paymentDetails.count === 1` の assert が存在する
+- [ ] Scenario S2 の**並行再送ケース**が、テスト名を指定した実行で単独 pass する:
+      `bun run test:integration -- -t "concurrent redelivery keeps a single PaymentDetails row"`
+      が **1 テストを実行して exit 0**（0 テスト実行は fail 扱い。Jest は `-t` が何にも
+      マッチしない場合でも exit 0 になりうるため、出力の `Tests: 1 passed` を確認すること）
+- [ ] その並行ケースが、(a) 両配送を揃えるバリア（latch）、(b) `connection_limit >= 2` の
+      `expect`、(c) **2 本の配送がどちらも HTTP 2xx で完了したことの `expect`** の
+      **3 つすべて**を持つ
+      （(c) が無いと、片方が 500 で落ちても生き残った 1 本が行を作るため
+      `count === 1` は成立し、「1 本が失敗した」状態が緑になる。冪等性の主張は
+      「両方が成功し、かつ副作用は 1 回」の連言なので、後半だけの検証では足りない）
+
+> **grep ゲートは使わない。** 旧版は `grep -n "Promise.all" tests/integration/webhook-payment.test.ts`
+> で並行ケースの存在を判定していたが、これは**意味を検証していない**。`Promise.all` は
+> セットアップの並列 seed など**別のテスト**にもごく普通に現れるため、並行再送ケースを
+> 一行も書かなくてもゲートは緑になる。逆に latch 実装へ書き換えて `Promise.all` の綴りが
+> 変われば、正しいテストがあるのに赤くなる。**当該テストを名指しで実行して pass すること**を
+> 条件にすれば、存在・命名・実際に通ることが同時に担保される。
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0（集計不変）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了

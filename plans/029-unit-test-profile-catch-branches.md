@@ -147,8 +147,87 @@ wishlist.findMany / user.findUnique 等 — 既存正常系テストが使って
 
 `getUserOrders` / `getUserPayments` / `getUserReviews` に対し、`period` 引数
 `"last-6-months"` / `"last-1-year"` / `"last-2-years"` の各値で呼び、対応する mock
-`findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert
-（既存のフィルタ系テストの assert 形式を踏襲。日付値そのものは `expect.any(Date)` でよい）。
+`findMany` の `where` 引数に `createdAt: { gte: <Date> }` 条件が含まれることを assert する。
+**日付値は `expect.any(Date)` で済ませず、実際の境界を検証すること** — 時刻を固定
+（`jest.useFakeTimers().setSystemTime(new Date("2026-07-01T00:00:00Z"))` 等）した上で、
+各期間が生む `gte` の**具体値**（6 か月前 / 1 年前 / 2 年前）を assert する。
+
+> **fake timer は必ず復元すること（必須）。** `jest.useFakeTimers()` はモジュール/グローバルの
+> タイマーと `Date` を差し替えるため、復元しないと**同一ファイルの後続テストと他スイート**へ
+> 固定時刻が漏れる。相対日付を使う共有フィクスチャ（`src/config/test-scenarios.ts` は
+> 相対日付ベース）が偽の "now" を見て、原因がこのテストの外にある失敗を生む。
+>
+> ```typescript
+> afterEach(() => {
+>     jest.useRealTimers();   // 例外で落ちたテストの後でも必ず実行される
+> });
+> ```
+>
+> `afterEach` に置くこと（テスト末尾の呼び出しでは、assert が失敗した時点で到達しない）。
+> 期間フィルタのテストだけを別の `describe` に隔離し、その `describe` 内で
+> `beforeEach(() => jest.useFakeTimers().setSystemTime(...))` / `afterEach(() => jest.useRealTimers())`
+> を対で置くのが最も安全。
+>
+> **(必須) 期間境界のタイムゾーン契約。** `gte` の**具体値**を assert する以上、
+> その具体値が何に依存するかを先に固定しなければテストは環境依存で落ちる。
+> 実装（`src/queries/profile.ts:76-92`）は `date-fns` の `subMonths` / `subYears` を使うが、
+> **これらはローカル時刻で月・年を減算する**ため、結果は**実行環境の TZ に依存する**。
+>
+> **`setSystemTime` に UTC の瞬間を与えるだけでは不十分**（これが最も間違えやすい点）。
+> 同じ UTC 瞬間でも TZ が違えば結果が変わることを実測で確認した:
+>
+> | TZ | `subMonths(new Date("2026-07-01T00:00:00Z"), 6)` |
+> |---|---|
+> | `UTC` | `2026-01-01T00:00:00.000Z` |
+> | `Asia/Tokyo` | `2026-01-01T00:00:00.000Z` |
+> | `America/New_York` | **`2025-12-31T01:00:00.000Z`** ← 日付も時刻もずれる |
+>
+> `America/New_York` では、UTC 深夜の瞬間がローカルでは**前日**（`2026-06-30 20:00 EDT`）に
+> なり、そこから 6 か月引くため日付が 1 日戻る。さらに戻り先が EST（冬時間）なので
+> **DST 差の 1 時間**が UTC 表現に現れる。テスト契約として次の 3 点を定める:
+>
+> 1. **TZ を UTC に固定する。** `process.env.TZ = "UTC"` をテストプロセスで固定するか
+>    （`jest.config.js` の `globalSetup` / npm script の `TZ=UTC` 前置）、当該 `describe` の
+>    `beforeAll` で設定する。**固定しないなら具体値 assert 自体を採らない**
+>    （CI と開発機で TZ が違えば同じコードが片方でだけ落ちる）。`setSystemTime` は
+>    「いつか」を固定するだけで「どの TZ から見るか」は固定しないため、両方要る。
+>
+>    **`beforeAll` で書き換えるなら `afterAll` で必ず戻すこと。** `process.env` は
+>    **ワーカープロセス単位で共有される**ので、書き換えたまま抜けると同一ワーカーに
+>    載った後続のテストファイルまで UTC で走る。それらが偶然通っても、**ファイル単体で
+>    実行すると落ちる**（あるいはその逆）という、実行順に依存する再現困難な壊れ方をする。
+>    元値が未設定のケースがあるので、`""` ではなく `delete` で戻す:
+>
+>    ```typescript
+>    const originalTZ = process.env.TZ;
+>    beforeAll(() => { process.env.TZ = "UTC"; });
+>    afterAll(() => {
+>        // 未設定だった場合に "" を代入すると「空文字の TZ」という別状態になる
+>        if (originalTZ === undefined) delete process.env.TZ;
+>        else process.env.TZ = originalTZ;
+>    });
+>    ```
+>
+>    **ただし第一選択は `TZ=UTC` の前置（またはグローバル設定）。** Node は最初の
+>    日付操作でタイムゾーンを解決してキャッシュするため、**プロセス起動後に
+>    `process.env.TZ` を代入しても反映されないことがある**（保証されるのは
+>    プロセス起動時に環境が決まっている場合）。`beforeAll` で書き換える形は
+>    「効かないかもしれない」経路であり、採るなら**そのテスト内で実際に UTC 起点の
+>    値が得られていることを 1 件確認**してから具体値 assert を積むこと。
+> 2. **期待値は実装と同じ導出関数で作らない。** `expect(...).toEqual(subMonths(now, 6))` は
+>    実装と同じ `subMonths` を呼ぶため、**月数の取り違えも境界の誤りもそのまま両辺に伝播して
+>    常に一致する**（トートロジー）。期待値は `new Date("2026-01-01T00:00:00.000Z")` のような
+>    **リテラル**で書き、人間が読んで正しさを判断できる形にすること。
+> 3. **月末クランプ挙動を明記する。** `subMonths` は減算先の月に同じ日が無い場合、
+>    **その月の末日へクランプ**する（実測: `subMonths(2026-08-31T00:00:00Z, 6)` は
+>    2 月 31 日が無いため `2026-02-28T00:00:00.000Z`）。固定時刻を月末に置くか月央に置くかで
+>    テストの意味が変わるため、**どちらを検証しているのかをテスト名かコメントに書く**。
+>    月末クランプ自体を検証したい場合は、クランプが起きる固定時刻（例: 8/31）を別テストとして
+>    明示的に持つこと。
+
+`expect.any(Date)`
+は「Date であること」しか見ず、下の必須テスト数の根拠である**月数の取り違え・年跨ぎの誤り**を
+まさに素通しさせる（型は緑でも境界がズレる）。
 
 Step 1 と**同じ規則**で必要テスト数を機械的に定義する（lcov の実測任せ・「間引いてよい」を排除する）:
 
@@ -190,6 +269,27 @@ Step 1 と**同じ規則**で必要テスト数を機械的に定義する（lco
 - [ ] profile.ts 単体 Branches ≥ 95%
 - [ ] 全 5 関数で「currentUser reject / DB reject の Error・非 Error 4 ケース」が揃っている（各関数 4 本・計 20 本）
 - [ ] 3 関数（`getUserOrders` / `getUserPayments` / `getUserReviews`）で 3 期間すべてが揃っている（各関数 3 本・計 9 本）
+- [ ] **期間フィルタの具体値 assert が TZ 固定の下で走っている**（本文「(必須) 期間境界の
+      タイムゾーン契約」に対応する完了条件。旧版はこの契約を本文に (必須) と書きながら
+      Done criteria に持っていなかった）。次のいずれかを満たすこと:
+  - **第一選択**: テストプロセス起動時に `TZ=UTC` が決まっている
+    （`jest.config.js` の `globalSetup` / npm script の `TZ=UTC` 前置）。
+    Node は最初の日付操作でタイムゾーンを解決してキャッシュするため、
+    **プロセス起動後に `process.env.TZ` を代入しても反映されないことがある**
+  - `beforeAll` で書き換える形を採る場合は、(a) `afterAll` で**元値へ戻す**
+    （未設定だったケースがあるので `""` 代入ではなく `delete`）、かつ
+    (b) **そのテスト内で実際に UTC 起点の値が得られていることを 1 件確認**してから
+    具体値 assert を積む（「効かないかもしれない」経路のため）
+  - **どちらも満たせないなら具体値 assert 自体を採らない**（CI と開発機で TZ が
+    違えば同じコードが片方でだけ落ちる）
+- [ ] 期間フィルタの期待値が**リテラル**（`new Date("2026-01-01T00:00:00.000Z")` 等）で
+      書かれている。**実装と同じ `subMonths` / `subYears` で期待値を作らない**
+      —— 月数の取り違えも境界の誤りも両辺に伝播して常に一致するトートロジーになる
+      （本文「2. 期待値は実装と同じ導出関数で作らない」に対応）
+- [ ] fake timer を使う箇所に `afterEach(() => jest.useRealTimers())` が**対で**存在する
+      （テスト末尾での復元は不可 — assert 失敗時に到達しない）。
+      検証: `bun run test`（全スイート）が exit 0、かつ `profile.test.ts` を単独実行した場合と
+      全体実行した場合で結果が変わらない（時刻の漏れがあると他スイートの相対日付が壊れる）
 - [ ] 全 5 関数で「汎用メッセージ完全一致 + 詳細非漏洩」の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` / `bun run test` exit 0
 - [ ] 変更が `src/queries/profile.test.ts`（+ spec-sync docs 群）のみ

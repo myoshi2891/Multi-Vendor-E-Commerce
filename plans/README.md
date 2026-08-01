@@ -9,11 +9,39 @@ Round 6 (`tests` focus — Integration 次点候補の深掘り・実測 17/17 p
 Round 7 (`tests` focus — Integration 残余領域の第 3 弾・実測 17/17 pass 再確認): 2026-07-11, against HEAD `9111f41` (branch `dev`).
 Round 8 (`tests` focus — E2E テスト網羅性監査・初の 3 ブラウザフル実測): 2026-07-11, against HEAD `fbd1020` (branch `dev`).
 Round 9 (`tests` focus — E2E 残余監査): 2026-07-12, against HEAD `25e50d9` (branch `dev`).
+Round 10–12 (CodeRabbit ローカルレビュー triage 全 3 弾 — 73 件 / accepted 67・rejected 6):
+2026-07-17, against HEAD `739097c` → `27757a3` → `3a875cd` (branch `dev`)。
+**監査ではなく指摘 triage のラウンド**で、成果物は `audit/VETTED_FINDINGS.md` の Round 10–12 節
+（独立した findings ファイルは作らない）。
+Round 13 (`deep security` focus — セキュリティ特化 deep 監査 第 3 弾): 2026-07-17,
+against HEAD `7080b12` (branch `dev`). → plans **058–062**.
+Round 14 (CodeRabbit レビュー第4弾 + **Phase A 実装**): 2026-07-19, `72e8004..b5d0c66` (branch `dev`).
+**⚠️ 監査ラウンド (R1〜R9・R13) の中では本ラウンドだけが `src/` と `tests/` を変更している**
+（決済・注文冪等性のセキュリティ修正 6 コミット）。「ソース無変更」規律は Round 14 には適用されない。
+範囲の左端は **baseline `72e8004`**（`934b6fa` は範囲内の A-2 修正コミットであり baseline ではない）。
+詳細と reconcile は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
+
+**⚠️ ただし「Round 14 のみがソースを変更した」と読まないこと（2026-08-01 訂正）。** Round 14 以降も
+**CodeRabbit レビュー対応の第 5〜12 弾が実装ラウンドとして継続しており、いずれも `src/` `tests/` を
+変更している**（`src/queries/paypal.ts` / `src/queries/user.ts` / `src/app/api/webhooks/route.ts` /
+`src/lib/order-settlement.ts` / `scripts/coverage-dashboard/scan-tests.ts` 等）。これらは improve
+スキルの監査ではないため Hard Rule 1 の管轄外である。ラウンドごとの性格と `src/` 変更の有無は
+[`ADVISOR_STATE.md`](ADVISOR_STATE.md) 冒頭の表と「次のアクション（NEXT）」節が SSOT であり、
+**本ファイルの記述はそこから外れないこと**（過去に「本ラウンドのみ」と書いたまま第 5〜12 弾が
+積み上がり、両者が食い違っていた）。
+
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
-the audit itself changed no source code.
+the *audit* rounds themselves changed no source code, **with the sole exception of Round 14**, which
+did change `src/` and `tests/` (the 6 payment/order-idempotency security commits; see the Round 14
+note above). **The CodeRabbit review rounds that followed (fifth through twelfth pass) are
+implementation rounds and do change source** — they are not audits, so the read-only discipline does
+not describe them. See `ADVISOR_STATE.md` for the per-round breakdown.
 
-- Raw audit findings: Round 1 ([01 correctness](audit/findings-01-correctness.md) / [02 security](audit/findings-02-security.md) / [03 performance](audit/findings-03-performance.md) / [04 test coverage](audit/findings-04-test-coverage.md) / [05 tech debt](audit/findings-05-tech-debt.md) / [06 dependencies](audit/findings-06-dependencies.md) / [07 DX/docs](audit/findings-07-dx-docs.md) / [08 direction](audit/findings-08-direction.md)) / [Round 2](audit/findings-09-direction-expansion.md) / [Round 3](audit/findings-10-direction-operations-growth.md) / [security follow-up](audit/findings-11-security-followup.md) / [Round 4](audit/findings-12-test-coverage.md) / [Round 5](audit/findings-13-integration-coverage.md) / [Round 6](audit/findings-14-integration-coverage-r6.md) / [Round 7](audit/findings-15-integration-coverage-r7.md) / [Round 8](audit/findings-16-e2e-coverage.md) / [Round 9](audit/findings-17-e2e-coverage-r9.md)
+- Raw audit findings: Round 1 ([01 correctness](audit/findings-01-correctness.md) / [02 security](audit/findings-02-security.md) / [03 performance](audit/findings-03-performance.md) / [04 test coverage](audit/findings-04-test-coverage.md) / [05 tech debt](audit/findings-05-tech-debt.md) / [06 dependencies](audit/findings-06-dependencies.md) / [07 DX/docs](audit/findings-07-dx-docs.md) / [08 direction](audit/findings-08-direction.md)) / [Round 2](audit/findings-09-direction-expansion.md) / [Round 3](audit/findings-10-direction-operations-growth.md) / [security follow-up](audit/findings-11-security-followup.md) / [Round 4](audit/findings-12-test-coverage.md) / [Round 5](audit/findings-13-integration-coverage.md) / [Round 6](audit/findings-14-integration-coverage-r6.md) / [Round 7](audit/findings-15-integration-coverage-r7.md) / [Round 8](audit/findings-16-e2e-coverage.md) / [Round 9](audit/findings-17-e2e-coverage-r9.md) / [Round 13 security](audit/findings-18-security-r13.md)
+  — **Round 10–12（CodeRabbit triage）と Round 14（CodeRabbit 第4弾 + 実装）は独立した
+  findings ファイルを持たない**。両者の台帳は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md)
+  の該当ラウンド節にある（監査ではなく指摘 triage / 実装のラウンドのため）。
 - **direction の正式版 SSOT**: [`docs/architecture/expansion/`](../docs/architecture/expansion/) —
   Round 2/3 の [`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) /
   [`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md)
@@ -68,8 +96,8 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計 | direction | P3 | M | LOW | — | TODO |
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | M | LOW-MED | — | TODO |
-| [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | TODO |
-| [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | TODO |
+| [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | DONE |
+| [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
@@ -102,11 +130,33 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
-| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | TODO |
+| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE (security) / 1 criterion pending |
+| [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
+| [059](059-paypal-capture-verification.md) | PayPal capture の金額/相関/通貨検証 + settled ガード（Stripe パリティ・SECURITY-12/13） | security | P1 | S | LOW | — | DONE |
+| [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
+| [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | DONE |
+| [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
+| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
+> `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
+> 024=`setUserCountryInCookies/route.ts` の `isCountry()` 検証）だが、Status 表が長らく `TODO` の
+> ままドリフトしていた（findings-11 冒頭注記と不一致）。Round 13 の実装状態 reconcile
+> （[`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §0）で確認し `DONE` に補正。
+
 ## Recommended sequencing
+
+> **⚠️ 本節は全体が「各ラウンド起票時点の推奨順」であり、現行の着手順ではない（2026-08-01 明示化）。**
+> 項目 1〜16 は Round 1〜13 がプランを起こしたときに記録した順序で、**その多くは既に DONE**。
+> 上から読むと完了済みプランが「次にやること」に見えるため、**次の着手先は必ず上の Status 表で
+> `TODO` の行を見ること**。
+>
+> 履歴宣言をこれまで項目 15 / 16 だけに付けていたのは、当時その 2 つが特に誤読されたためで、
+> **他の項目が現行の推奨順だという意味ではなかった**。節レベルへ引き上げて曖昧さを消す。
+> 各項目に残る「推奨順」「実行順」の記述は、**当時どういう依存関係でその順を選んだか**という
+> 判断の記録として読むこと（依存関係そのものは今も有効な情報だが、未着手かどうかは別）。
 
 1. **Security first (001–004)** — highest priority. 001/002/004 are S-effort, LOW-risk quick wins; 003 is the meatier MED-risk payment-trust fix. These are independent and can be parallelized across executors.
 2. **Correctness (005, 006)** — user-facing data-loss / double-order bugs; small and safe.
@@ -139,13 +189,39 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     →〔043 完了〕→ 054。home（`/`）の a11y / VRT は OI-9（SSR 500）解消後の追加項目として
     052 / 054 の Maintenance notes に記録済み。各プラン完了時の docs 同期義務は R8 と同じ
     （`spec-sync-after-test`・E2E 統計 SSOT = `docs/testing/QA_HANDOFF.md`）。
-15. **Dependency security (057)** — **P1・依存ゼロ・即着手可能**。上記のテスト系プラン群より
-    優先する。`next@16.2.1` が GHSA-26hh-7cqf-hhc6（HIGH — App Router の
+15. **Dependency security (057) — `DONE (security) / 1 criterion pending`（履歴）** — **⚠️ 以下は着手判断の記録であり、
+    現行の着手順ではない**（2026-07-18 に実行済み。`10e35f3`）。
+    **⚠️ Status は素の「DONE」ではなく「DONE (security) / 1 criterion pending」**（2026-07-27 訂正・2026-07-31 表記統一）:
+    advisory 解消というセキュリティ目的は達成済みだが、057 の Done criteria は
+    "ALL must hold" と定めており Step 5（未認証 `/dashboard` の redirect スモーク）の
+    実施記録が無い。`bun run dev` を起こせる環境で実施し、結果を 057 に追記した時点で
+    素の DONE へ戻すこと。当時は **P1・依存ゼロ・
+    即着手可能**として上記のテスト系プラン群より優先した。`next@16.2.1` が
+    GHSA-26hh-7cqf-hhc6（HIGH — App Router の
     Middleware/Proxy バイパス）の影響範囲内であり、`src/middleware.ts` が
     `/dashboard`・`/checkout`・`/profile` を守っている以上、**plan 004 が Clerk 側で塞いだ
-    のと同じ攻撃面がフレームワーク層で開いたまま**になっている（004 は Next.js を明示的に
+    のと同じ攻撃面がフレームワーク層で開いたまま**になっていた（004 は Next.js を明示的に
     スコープ外としていたため別プラン）。16.2.x 内のパッチ bump のみで、`src/` は無変更。
-    E2E/統合系プラン（042〜056）とはファイル競合がなく並行着手可能。
+    E2E/統合系プラン（042〜056）とはファイル競合が無いため並行して進めた。
+16. **Round 13 security plans (058–062) — ✅ 全て DONE（履歴）** — セキュリティ特化 deep 監査
+    （第 3 弾）が起こした **5 本**（詳細: `audit/findings-18-security-r13.md` §5）。
+    **057 はこの 5 本に含まれない** —— 依存メンテ枠の別系統プラン（上の項目 15）で、
+    findings-18 §0 では「plan 057 で対応する既存 TODO」として参照されている。
+    下の実行順に 057 が現れるのはそのためで、Round 13 の計画範囲は 058–062 である。
+    **⚠️ 以下は完了済みの実行記録であり、現行の着手順ではない。次に着手すべきものは上の
+    Status 表で `TODO` の行を見ること**（本項を「次の推奨順」として読まないこと）。
+    実行順は **058（getCoupon IDOR — 情報漏洩）→ 059（PayPal 過少支払い→Paid — 決済整合性）→
+    060（discount 上限のサーバー側未検証 → 注文 total 負値化）→ 061（レスポンスヘッダ）→
+    062（生 error.message 漏洩）**
+    であった。058 / 059 / 060 を P1（相互依存なし・いずれも S〜S–M・LOW risk）としてテスト系
+    プラン群より優先した。057（`next` bump・HIGH advisory）は依存層の P1 で、058〜062 とファイル
+    競合が無いため並行して進めた（フレームワーク層とアプリ層は独立）。
+    **当時の実行上の注意（記録）**: 059 は `isSettledPaymentStatus` を `src/queries/stripe.ts` から
+    export して共有するため stripe.ts に軽微に触れた。058 と 060 は同じ `src/queries/coupon.ts`
+    を触るため、同時実行時は後発が先発の diff を取り込む必要があった（058=`getCoupon`、
+    060=`upsertCoupon` 系で関数は異なるが同一ファイル）。各プランはセキュリティ修正のため
+    回帰テストを必須とした（認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の
+    3 階層 IDOR パターン）。
 
 ## Dependency notes
 
@@ -195,14 +271,14 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- **CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars) — needs backfill.
+- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO）。本項目を「コード修正が必要」と読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
 - **Round 9 deferred（詳細: [`audit/findings-17-e2e-coverage-r9.md`](audit/findings-17-e2e-coverage-r9.md)）**: R8 deferred 5 件は**全件維持**（ソース無変更のため先行条件が不変であることを再裁定済み）。新規 deferred: Newsletter 購読の**成功系** E2E（route + スキーマ + 保存先が丸ごと不在 — 機能実装プランが先行。characterization は plan 056 が担当）・home（`/`）の a11y / VRT（OI-9 `featured.tsx` SSR 500 の解消が先行 — 解消後に plan 052 / 054 の形式で追加）。
 - **Round 9 rejected（詳細: findings-17 Rejected 節）**: カスタム 404 ページ E2E（`not-found.tsx` 不在 — Next デフォルト挙動の検証は低価値、実装が先）・フルサインアップ E2E（確認コード入力までのフロー全長は Clerk 自身のテスト責務に近い — ウィジェット描画スモーク〔plan 053〕で UI ドリフト検出は達成）・言語/通貨セレクタ E2E（静的表示のみで操作可能な機能が無い。多通貨は product.md スコープ外）。
 - **Round 8 rejected（詳細: findings-16 Rejected 節）**: ページネーションの route-mock 方式復活（SSR に効かず壊れた実績）・3 ブラウザフル E2E の CI 常設（wall-clock 25.5m+ と Clerk 実キー secrets 運用が前提 — chromium 限定 nightly を別途設計）・a11y `color-contrast` ルール有効化（既知デザイン負債として QA_HANDOFF で追跡中）。
-- **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — plan 003 の `$transaction` 化が先行依存のため deferred 維持（Round 5 で再確認。003 完了後は plan 032 の `webhook-payment.test.ts` に同型シナリオを追加するのが低コスト）。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
+- **TESTS-02**（Round 1 raw）capture 経路（`src/queries/stripe.ts` / `paypal.ts` 同期パス）の実 DB 統合テスト — **先行依存だった plan 003 は DONE（PR #158 マージ済み・上の Status 表）**。したがって「003 待ち」を理由に deferred を維持する状態は解消済みで、着手可能。低コストな入り口は plan 032 の `webhook-payment.test.ts` へ同型シナリオを追加すること（新規スイートを起こさない）。現状 deferred のままなのは、**Stripe 側は優先度の判断**であって依存によるブロックではない（`stripe.ts:275-310` は既に `db.$transaction` + CAS で原子化済み）。**PayPal 側は依存が残る** —— `paypal.ts:399` の `paymentDetails.upsert` と `:441` の `order.update` は**別々の書き込み**で、`4261be0` が入れたのは `notSettled()` の CAS 条件であって `$transaction` ではない（退行レースは閉じたが部分適用は残る）。経路ごとの現況は [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md) の 「TESTS-02 の現況」表が SSOT。~~TESTS-04（webhook）・TESTS-06（restock）~~ → **Round 5 で plan 032 / 031 に昇格**。
 - **Round 5 rejected（詳細: [`audit/findings-13-integration-coverage.md`](audit/findings-13-integration-coverage.md)）**: saveUserCart 統合（plan 005 のコード修正が先行 — 005 完了後の追加候補。**Round 6 で deferred 維持を再確認**）・sendMessage 配列 tx（低レバレッジ）・~~`updateProduct` specs/questions tx + `generateUniqueSlug`（次点候補）~~ → **Round 6 で plan 038 に昇格**・`ORDER BY RANDOM()` 単独プラン化（033 の従属シナリオで充足）・removeCoupon 拡張（unit 網羅済み）。
 - **Round 6 rejected（詳細: [`audit/findings-14-integration-coverage-r6.md`](audit/findings-14-integration-coverage-r6.md)）**: followStore トグル（implicit M2M unique が保護・unit 網羅済み）・addToWishlist 重複ガード（複合 unique 制約が存在せず実 DB で検証できる制約がない — unique 追加はスキーマ変更系）・~~dashboard taxonomy/coupon upsert 群（次点候補）~~ → **Round 7 で coupon のみ plan 041 に昇格**（事前チェックのスコープ不一致により P2002 が決定論的到達可能と判明。category 系は R7 rejected 維持）・applyCoupon total ロストアップデート（コード修正 `$transaction` 化が先行する correctness 事案 — 上記 Deferred 記録を維持）・~~`getStoreOrders` 等ダッシュボード一覧系の実 DB ページング（閲覧頻度・リスク低）~~ → **Round 7 で deferred へ変更**（plan 009 が bound を追加予定のため 009 完了後の追加候補 — テスト先行は書き直しになる）。
 - **Round 7 rejected（詳細: [`audit/findings-15-integration-coverage-r7.md`](audit/findings-15-integration-coverage-r7.md)）**: category/subCategory/offerTag upsert 群（事前チェックがグローバルスコープで unique と整合 — P2002 は race 限定・フォールバック未実装はコード修正が先行する事案）・applySeller/upsertStore 一意性（name/phone は DB 非強制だが事前チェックは unit 網羅済み・plan 002 が update 経路を変更予定）・profile 読み取り群（plan 039 と同じ Prisma セマンティクス族 — 039 完了後の横展開候補）・dashboard 集計系（`unstable_cache` の試験環境リスクが増分価値を上回る）・upsertShippingRate（複合 unique を where に使う正しいイディオム — ギャップなし）・getStorePageDetails 等単純 read（低レバレッジ）。
@@ -213,19 +289,23 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-01 (bulk)** the ~90-site legacy `console.error` → `logError` migration (after plan 007).
 - **TECHDEBT-02** break up `product-details.tsx` (1382-line god component) — L effort, characterization tests first.
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
-- **Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006; overlaps the `applyCoupon` lost-update `$transaction` refactor.
+- ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
+- **`updateOrderGroupStatusAsAdmin` の並行二重復元** — deferred from [plan 031](031-integration-test-order-lifecycle-restock.md)（2026-07-31 記録）。`order.ts:441-471` は `findUnique` で `prev.status` を読んでから `update` する **read-then-act** のため行ロックを取らず、並行 2 者が同じ非終端 status を読んで**両方が `restockOrderItems` を実行しうる**。修正は `updateOrderPaymentStatus` と同型の**条件付き `updateMany`（CAS）**への統一（`where` に `status: { notIn: [...] }` を置き `count === 1` の内側でのみ復元 — 前例 `d0005bb`）。plan 031 はテスト追加のみのスコープであり、Scenario 2 が並行安全性を固定しているのは `updateOrderPaymentStatus` 側**のみ**。本項目は**本体修正**として未着手。
+- **`placeOrder` の住所所有権ロックの実 DB 並行検証** — deferred from CodeRabbit round（2026-07-31 記録）。`user.ts` の `SELECT … FOR UPDATE`（`f77dafd`）が並行 `userId` 付け替えを実際にブロックすることは、unit テストがモック境界で止まるため観測できない。検証は Integration（testcontainers）でのみ可能で、低コストな入り口は `tests/integration/` の既存スイートへ 2 トランザクション競合シナリオを足すこと（新規スイートを起こさない）。unit 側は「`$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する」呼び出し契約の固定まで完了済み。
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。
+- **Round 13 deferred（詳細: [`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §3）**: 5 本をプラン化（058〜062）した後の残余。**SECURITY-11**（`dompurify >=3.1.3 <3.2.7` XSS advisory・`src/utils/sanitize.ts` 経由で本番 UI 到達だが sink は sanitize 済み → 依存 refresh 枠で patched 版へ。plan 057 の `next` bump と同じ依存メンテ、個別プラン化しない）・**SECURITY-15**（主要ミューテーションのサーバー側 Zod 検証欠落〔review/shipping-address/product〕— plan 060 が coupon で確立するパターンの横展開 follow-up。`upsertProduct` は `ProductWithVariantType` の型差分の突合が必要）・**SECURITY-16**（Cloudinary unsigned upload — preset の signed/unsigned・ダッシュボード制約がコード外のため investigate 先行）・**SECURITY-17**（webhook ステータスの無条件上書き→out-of-order 退行 — plan 059 の settled-guard を webhook へ展開 + plan 032 と調整）・**SECURITY-18**（Clerk/Svix 検証が raw body でない fail-closed 信頼性 — 低コスト、次の webhook 作業に同梱）・**SECURITY-19**（公開検索の入力長上限なし — rate-limit spike plan 025 と併走）・**AUTHZ-02**（seller-store layout の `[storeUrl]` 所有権未検証・多層防御 — クエリ層が実データを守るため MED）・**AUTHZ-03**（`getProductMainInfo` caller チェックなし — 大半公開で LOW）・**LOGIC-22**（送料計算の二系統分岐 Decimal vs float — tech-debt / 規約ドリフト）・**LOGIC-23**（`placeOrder` qty=0 → ITEM 送料負値化 — LOW correctness）・**SECURITY-24**（クーポン利用回数制限なし・`CouponToUser` 未使用 — 1人1回制限が仕様意図か product 判断先行）。
 
 ## Findings considered and rejected (so nobody re-audits them)
 
 - **SECURITY-07** PayPal sandbox endpoint hardcoded (`paypal.ts:72,189`): LOW confidence — verify intended prod env wiring first; investigate, not a fix.
 - **SECURITY-08/09** older raw-`error.message` interpolation / `upsertReview` purchase verification: LOW confidence, mitigated by Next.js server-action error masking.
 - **DEPS-05** dev-only advisories (handlebars/ws/picomatch): not production-reachable; fold into routine dev-tool refresh.
-- **DEPS-08** Next.js 16.2.1: already current — no action. **⚠️ この却下は Round 1（2026-07-03 / HEAD `f9752c0`）時点の判断であり、現在は無効**。Round 9 以降に GHSA-26hh-7cqf-hhc6（HIGH — App Router の Middleware/Proxy バイパス）が公表され、`next@16.2.1` は影響範囲内。**対応は [plan 057](057-upgrade-next-middleware-bypass.md)（P1・依存ゼロ・即着手可能）**で、16.2.x 内のパッチ bump のみ。「already current」を理由に 057 を再監査済みの却下事項と誤認しないこと。
+- **DEPS-08** Next.js 16.2.1: already current — no action. **⚠️ この却下は Round 1（2026-07-03 / HEAD `f9752c0`）時点の判断であり、現在は無効**。Round 9 以降に GHSA-26hh-7cqf-hhc6（HIGH — App Router の Middleware/Proxy バイパス）が公表され、`next@16.2.1` は影響範囲内だった。**対応は [plan 057](057-upgrade-next-middleware-bypass.md)** で `~16.2.10` へ bump 済み。**現行は `~16.2.12`**（`package.json:80` 実測。`~16.2.10` が新規 9 advisory の影響範囲 `<16.2.11` に再露出したため、057 の再実行ではなく**独立した依存メンテ**として 2026-07-30 に bump）。現況の SSOT は [`audit/findings-06-dependencies.md`](audit/findings-06-dependencies.md) DEPS-08 の「現況」節であり、版番号はそちらと `package.json` を突き合わせて読むこと。「already current」を理由に 057 を再監査済みの却下事項と誤認しないこと。
 - **DX-09** `.editorconfig`, **TECHDEBT-07** shared dashboard-form scaffold: low value / debatable — spike only if revisited.
 - **Decided tradeoffs (NOT findings)**: ADR-001 CSRF (no token module), ADR-002 CI `--verbose`, ADR-003 `setOpen` sync, ADR-004 testcontainers, ADR-005 SonarCloud non-blocking, `reactStrictMode: false`, Elasticsearch commented out (tsvector chosen), DB-page `force-dynamic` (SSG abandonment documented), `middleware`→`proxy` / AVIF warnings unaddressed, and product scope-outs (multi-currency / tax / advanced analytics / shipping-carrier integration). See [`audit/recon.md`](audit/recon.md) "決定済みトレードオフ".
 - **Already-fixed security** (still healthy, no regression): PayPal/Stripe userId scoping, `upsertCoupon` ownership, `applyCoupon` CAS, review IDOR — per `docs/testing/SECURITY_GAP_REPORT.md`.
+- **Round 13 rejected / by-design（詳細: [`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §4）**: `src/components/ui/chart.tsx:81-98` の `dangerouslySetInnerHTML`（開発者定義 config 由来・外部入力なし・shadcn 上流標準 — by-design）・`src/queries/subCategory.ts:188-190` の `ORDER BY RANDOM() LIMIT ${limit}`（`number|null` 束縛・文字列連結なし — 注入なし）・CORS / 認証系列挙 / セッション（自前実装なし・Clerk 委譲 — clean）・CI SHA pin / 秘密取り扱い / PII ログ（rule 01 充足・`.env` 追跡外・`console.error` は PII 非出力 — clean）。**DEPS-06** は台帳分類の訂正のみ（recon の lodash「本番非到達」は誤り、runtime transitive で到達するが `_.template` 悪用経路は現状未到達 → DEPS-05 の routine refresh に lodash/lodash-es を含める。個別プラン化しない）。
 
 ## What was NOT audited (deep, but scoped)
 

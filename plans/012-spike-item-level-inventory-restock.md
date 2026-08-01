@@ -171,9 +171,41 @@ ALL must hold:
 
 Stop and report if:
 
-- The current code already restocks on item-level transitions (the TODO at `order.ts:538` has been filled) — then this spike is moot; report that and close it.
+- The current code already restocks on item-level transitions **and does so exactly once**. See the
+  qualification below — a filled-in TODO is not on its own sufficient to close this spike.
 - The exactly-once design requires a schema migration you're not certain is safe — recommend option (b) (no migration) and flag the tradeoff rather than committing to a migration in a spike.
 - You discover restock and the DIRECTION-01 refund flow are already coupled in a way that changes the design — document and report.
+
+> **A filled-in TODO does not close this spike.** The first STOP condition is about *behavior*, not
+> about the presence or absence of a comment. Deleting the TODO and dropping a `restockOrderItems`
+> call next to the `orderItem.update` satisfies "the TODO has been filled" while leaving the design
+> question entirely open — and the naive version is exactly the one that double-restocks when an
+> item is cancelled item-level and the order is subsequently refunded order-level. That scenario is
+> this plan's own key acceptance gate (see Maintenance notes).
+>
+> Close the spike only if **all** of the following are true:
+>
+> 1. An item-level transition into a restock-triggering `ProductStatus` actually increments
+>    `Size.quantity` (read the code path, don't trust the comment).
+> 2. That increment is guarded so it happens **exactly once** across the item-level and order-level
+>    paths — i.e. there is a state-transition guard, not an unconditional call.
+> 3. A test proves (2) for the item-cancel-then-order-refund sequence. Absent such a test, the
+>    guard is unverified and the spike still has work to do.
+>
+> If (1) holds but (2) or (3) does not, **do not close the spike** — re-scope it to designing and
+> proving the exactly-once guard for the existing implementation, and report the re-scope.
+
+**Drift note (2026-07-19)**: the TODO cited above as `order.ts:538` now sits at
+[`order.ts:509`](../src/queries/order.ts), inside `updateOrderItemStatusAsAdmin`, and is still
+unfilled — so the spike remains live. Separately, the **order-level** restock has since shipped
+*with* an exactly-once guard: `restockOrderItems` / `isRestockTerminalOrderStatus`, plus a
+conditional `updateMany` in `updateOrderPaymentStatus` whose `where` excludes already-settled
+payment statuses and which keys both child cascade and restock on `transition.count === 1`.
+**Use that as the reference implementation for mechanism (b)** — a conditional `updateMany` on the
+status transition (`transition.count === 1`), with no schema column, which is exactly option (b)
+above, *not* the `restocked` boolean column of option (a) — rather than designing a guard from
+scratch; the remaining design question is how the item-level path composes with it without
+double-restocking.
 
 ## Maintenance notes
 

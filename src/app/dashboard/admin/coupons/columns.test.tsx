@@ -20,7 +20,7 @@ jest.mock('@/providers/modal-provider', () => ({
 
 jest.mock('@/queries/coupon', () => ({
     deleteCouponAsAdmin: jest.fn(),
-    getCoupon: jest.fn(),
+    getCouponAsAdmin: jest.fn(),
     toggleCouponActive: jest.fn(),
 }))
 
@@ -115,6 +115,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useModal } from '@/providers/modal-provider'
 import {
     deleteCouponAsAdmin,
+    getCouponAsAdmin,
     toggleCouponActive,
 } from '@/queries/coupon'
 import { columns } from './columns'
@@ -366,5 +367,121 @@ describe('CellActions', () => {
                 })
             )
         })
+    })
+})
+
+// ==================================================
+// 編集モーダルの fetchData — 取得成功・失敗の両系統
+//
+// setOpen の fetchData は ModalProvider 側で fire-and-forget IIFE として実行される
+// （ADR-003）。reject を fetchData 自身で処理しないと、provider の console.error
+// だけが残りユーザーには何も伝わらず、行スナップショットのまま編集できてしまう。
+// seller 版（[storeUrl]/coupons/columns.test.tsx）と同一の観点を admin 版にも敷く。
+// ==================================================
+describe('編集モーダルの fetchData', () => {
+    function clickEditAndGetFetchData(): () => Promise<unknown> {
+        renderCell(7, mockCoupon)
+        fireEvent.click(screen.getByText('Edit Details'))
+
+        expect(mockSetOpen).toHaveBeenCalledTimes(1)
+        const fetchData = mockSetOpen.mock.calls[0][1]
+        if (typeof fetchData !== 'function') {
+            throw new Error('setOpen に fetchData コールバックが渡されていない')
+        }
+        return fetchData as () => Promise<unknown>
+    }
+
+    it('正常系: getCouponAsAdmin の結果を rowData として返す', async () => {
+        // Arrange
+        const fetched = { ...mockCoupon, code: 'FETCHED10' }
+        ;(getCouponAsAdmin as jest.Mock).mockResolvedValue(fetched)
+
+        // Act
+        const fetchData = clickEditAndGetFetchData()
+        const result = await fetchData()
+
+        // Assert
+        expect(getCouponAsAdmin).toHaveBeenCalledWith(mockCoupon.id)
+        expect(result).toEqual({ rowData: fetched })
+        expect(mockToast).not.toHaveBeenCalled()
+        expect(mockSetClose).not.toHaveBeenCalled()
+    })
+
+    it('異常系: getCouponAsAdmin が reject してもコールバックは throw しない', async () => {
+        // Arrange
+        ;(getCouponAsAdmin as jest.Mock).mockRejectedValue(
+            new Error('Only admins can perform this action.')
+        )
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {})
+
+        // Act
+        const fetchData = clickEditAndGetFetchData()
+
+        // Assert
+        await expect(fetchData()).resolves.toEqual({})
+        consoleSpy.mockRestore()
+    })
+
+    it('異常系: getCouponAsAdmin が reject したら destructive トーストで通知する', async () => {
+        // Arrange
+        ;(getCouponAsAdmin as jest.Mock).mockRejectedValue(
+            new Error('DB unreachable')
+        )
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {})
+
+        // Act
+        const fetchData = clickEditAndGetFetchData()
+        await fetchData()
+
+        // Assert
+        await waitFor(() => {
+            expect(mockToast).toHaveBeenCalledWith(
+                expect.objectContaining({ variant: 'destructive' })
+            )
+        })
+        consoleSpy.mockRestore()
+    })
+
+    it('異常系: getCouponAsAdmin が reject したらモーダルを閉じる', async () => {
+        // Arrange
+        ;(getCouponAsAdmin as jest.Mock).mockRejectedValue(
+            new Error('DB unreachable')
+        )
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {})
+
+        // Act
+        const fetchData = clickEditAndGetFetchData()
+        await fetchData()
+
+        // Assert — 現況を確認できていないため行スナップショットのまま編集させない
+        expect(mockSetClose).toHaveBeenCalledTimes(1)
+        consoleSpy.mockRestore()
+    })
+
+    it('異常系: getCouponAsAdmin が reject したら構造化ログを出力する', async () => {
+        // Arrange
+        ;(getCouponAsAdmin as jest.Mock).mockRejectedValue(
+            new Error('DB unreachable')
+        )
+        const consoleSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {})
+
+        // Act
+        const fetchData = clickEditAndGetFetchData()
+        await fetchData()
+
+        // Assert
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AdminCouponColumns:EditDetails]'),
+            expect.objectContaining({ error: 'DB unreachable' })
+        )
+        consoleSpy.mockRestore()
     })
 })

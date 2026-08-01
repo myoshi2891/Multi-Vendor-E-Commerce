@@ -139,15 +139,98 @@ Zod 側も両方必須 UUID: `src/lib/schemas.ts:202`（categoryId）/ `:208`（
 2. **SubCategory の処遇**: `Category` へ統合して `SubCategory` テーブルを廃止するか、
    ビュー/互換レイヤーとして残すか。統合する場合の data migration 手順
    （SubCategory 行 → Category 行 + parentId 設定、id 衝突の扱い）を具体化する。
+
+   > **統合を採る場合、`url`（slug）衝突の解決方式を設計上の必須論点として決めること。**
+   > これは「移行時に気をつける」レベルの話ではなく、**制約の意味が変わる**ことによる構造的な問題:
+   >
+   > - **現状**: `Category.url @unique` と `SubCategory.url @unique` は**別テーブル上の別制約**。
+   >   したがって Category `camera` と SubCategory `camera` は**現在まったく合法に共存できる**。
+   > - **統合後**: 単一の `Category.url @unique` が両者の**和集合**を覆う。共存していたペアは
+   >   そのまま P2002 となり、**data migration が途中で落ちる**。
+   >
+   > `id` 衝突（上記の括弧内）は `@default(uuid())` のため実質起こらない。**実際に起きるのは
+   > slug 衝突**であり、現状の問い立てはあり得ない衝突を挙げてあり得る衝突を落としている。
+   >
+   > spike で決めるべきこと:
+   >
+   > 1. **一意性のスコープ**: グローバル一意（`url @unique` を維持）か、親内一意
+   >    （`@@unique([parentId, url])`）か。後者は `?category=electronics/camera` のような
+   >    **親パス込みの slug 解決**（問い 4）と整合し、**将来の**衝突自体が消える。前者を採るなら 2. が必須。
+   >    **ただし親内一意を採る場合、ルートカテゴリの一意性戦略を別途明記すること** ——
+   >    ルートは `parentId = NULL` であり、PostgreSQL は NULL 同士を「区別される」と扱うため
+   >    `@@unique([parentId, url])` は**ルート同士の `url` 重複を防げない**（`electronics` を
+   >    2 つ作れてしまう）。ルート一意性は別手段で担保する: 部分ユニークインデックス
+   >    （`CREATE UNIQUE INDEX ... ON "Category"(url) WHERE "parentId" IS NULL`）か、
+   >    番兵ルート parentId（NULL を使わず固定 UUID の仮想ルートを親にする）のいずれか。
+   >    **ただし親内一意を採っても、既存の slug 解決契約（3. の URL 後方互換）は完了条件から
+   >    外せない** —— 既存 URL は現行のグローバル一意な slug で届いており、親内スコープへ移した
+   >    瞬間に「どの親配下の slug か」を旧 URL から解決する規則が必要になる。「衝突が消える」のは
+   >    新規入力の話であって、既存 URL の後方互換は依然として設計・完了条件に含めること。
+   > 2. **衝突時のリネーム規則**: 決定論的で冪等な規則を定めること（例: 子側に親 slug を
+   >    前置して `electronics-camera`、それでも衝突する場合の連番付与規則）。移行を再実行しても
+   >    同じ結果になることを要件に含める。
+   > 3. **URL 後方互換（対応表）**: 既存 URL を壊す変更は、問い 4 のリダイレクト戦略と
+   >    **同じ表**で管理する（対応表を移行の成果物とする）。**これは 1. でどちらを選んでも
+   >    必須の完了条件**であり、リネームが起きる場合に限った話ではない:
+   >
+   >    - **グローバル一意を採る場合**: 衝突ペアの片方が 2. の規則でリネームされ、その slug の
+   >      旧 URL が壊れる。
+   >    - **親内一意を採る場合**: リネームは起きないが、URL の**解決規則そのもの**が
+   >      「フラットな slug」から「親コンテキスト付き slug」へ変わる。旧 URL
+   >      `/browse?category=camera` がどの親配下の `camera` を指すのかを決める規則が要り、
+   >      それを書き下したものが結局この対応表になる。
+   >
+   >    **対応表のキーは「旧 slug」単体にしないこと。** 上で確認したとおり、統合前は
+   >    Category `camera` と SubCategory `camera` が**合法に共存し得る**。旧 slug だけを
+   >    キーにすると、まさに衝突してリネームが必要になったペア —— つまり表が存在する理由
+   >    そのもの —— が 1 つのキーに 2 行ぶつかり、引けなくなる。キーには
+   >    **エンティティ種別または親コンテキストを含める**:
+   >
+   >    - `(entityType, oldSlug)` — 例 `("Category", "camera")` / `("SubCategory", "camera")`
+   >    - または `(parentSlug, oldSlug)` — 例 `(null, "camera")` / `("electronics", "camera")`
+   >
+   >    どちらでもよいが、**旧 URL の形からキーを一意に構成できること**を要件にする。
+   >    現行 URL は **クエリパラメータ**で種別を区別する ——
+   >    `/browse?category={category}`（種別 = Category・親なし）と
+   >    `/browse?subCategory={subCategory}`（種別 = SubCategory）で、
+   >    **どちらのキーで届いたかが URL 上に明示されている**ため、両案とも旧 URL からキーが決まる。
+   >    （`/browse` はパスセグメントを取らない単一ルート
+   >    〔[`src/app/(store)/browse/page.tsx`](../src/app/(store)/browse/page.tsx) の `searchParams`〕
+   >    で、リンク生成側も一貫して `/browse?category=…` / `/browse?subCategory=…` を組み立てる
+   >    〔`category-card.tsx` / `footer/links.tsx` / `categories-menu.tsx`〕。
+   >    **`/browse/{category}/{subCategory}` というパス形のルートは存在しない**ので、
+   >    この spike で「パス全体方式へ移す」判断をする場合は URL 形式の変更そのものが
+   >    移行対象になる。）この「旧 URL → キー → 新 slug」の
+   >    経路が閉じていることを ADR に明記し、完了条件に含めること。
+   > 4. **事前計測**: 移行を書く前に、実データで衝突件数を数えるクエリを ADR に載せる:
+   >    `SELECT count(*) FROM (SELECT url FROM "Category" INTERSECT SELECT url FROM "SubCategory") AS collisions;`
+   >    （**件数を返すこと** — 素の `INTERSECT` は衝突 slug の一覧を返すだけで「何件か」を答えない。
+   >    移行前の意思決定に必要なのは件数なので `count(*)` で畳む。）
+   >    件数 0 でも規則は決めておくこと（将来の admin 入力で発生し得るため）。
+   >
+   > **ローカル開発では再現しない点に注意**: `bun run seed:luxury` の生成データは
+   > `lux-<category>-<subcategory>` という前置命名（例: `lux-watches` / `lux-watches-sport`）を
+   > 採っており、**偶然**衝突しない。シードで通ったことを衝突が無い証拠として扱わないこと。
 3. **Product FK の移行**: `categoryId`（必須）+ `subCategoryId`（必須）→ 「リーフノード 1 FK」へ
    どう移すか。中間段階（旧 FK と新 FK の並走期間）を設けるか、一括切替か。
    既存クエリ（`getProducts` の category/subCategory フィルタ、`getAllCategories` の
    storeUrl フィルタ）の書き換え形を示す。
 4. **URL 後方互換**: 既存の `Category.url` / `SubCategory.url`（ともに `@unique`）で届く
-   ストアフロント URL を 301/リライトなしで生かせるか。パス全体（`/browse/electronics/camera`）
-   方式に変える場合のリダイレクト戦略。
+   ストアフロント URL を 301/リライトなしで生かせるか。現行は
+   `/browse?category=electronics&subCategory=camera` というクエリ形なので、選択肢は
+   (a) クエリ形のまま値へ親パスを入れる（`?category=electronics/camera`）か、
+   (b) パス形ルート（`/browse/electronics/camera`）を**新設**して現行クエリ形から
+   リダイレクトするか。(b) は新しいルートセグメントの追加を伴うため、
+   移行コストは (a) より大きい。いずれを採ってもリダイレクト戦略を示すこと。
 5. **深さ制限と運用ルール**: バリデーション上の最大深度（推奨: 5）、「新規商品はリーフのみに
-   紐づけ可」の強制方法（Zod refine か DB CHECK か）、非リーフへの既存紐づけの経過措置。
+   紐づけ可」の強制方法、非リーフへの既存紐づけの経過措置。
+
+   > **素の DB CHECK ではリーフ強制はできない。** 「リーフか否か」は *他の行* に子があるかどうかで
+   > 決まる**関係的な性質**であり、単一行の列だけを見る `CHECK` 制約では表現できない
+   > （CHECK は同一行の値しか参照できない）。強制手段は次のいずれか: (a) アプリ層で
+   > 「子を持つカテゴリには紐づけ不可」を検証（Zod refine + サーバーアクションでの子存在チェック）、
+   > (b) トリガー、(c) `isLeaf`/`childCount` を tx 内で維持する非正規化列に対する CHECK。
+   > 「DB CHECK で担保」と一言で片付けないこと。
 6. **表示順とツリー UI**: `sortOrder` カラム追加の要否、admin のツリーエディタ
    （既存フラットテーブルの拡張 vs ツリービュー新設）の方針。工数見積に含める。
 
@@ -196,6 +279,34 @@ ALL を満たすこと:
 
 - [ ] `docs/design/category-tree/design.md` が存在し、Open questions 全6問に決定 + 証拠がある
 - [ ] ADR（ツリー表現方式）が MADR 形式で存在し、3方式の比較を含む
+- [ ] **統合方式を採る場合**、ADR が slug 一意性のスコープ（グローバル一意 vs
+      `@@unique([parentId, url])`）を明示し、**どちらを選んでも** URL 互換性への影響と
+      衝突件数の事前計測クエリ、**および決定論的な旧→新 URL 対応表とその生成方針**を含む
+      （Open question 2）。
+      対応表が**どちらの選択でも必須**なのは、両者とも既存 URL の形を変えるためである:
+      グローバル一意はリネーム規則によって **slug 自体**が変わり、親内一意は下記
+      sub-bullet 2 の「親パス込みの解決へ移す」方針によって **URL の形状**（`?category=child`
+      → `?category=parent/child`）が変わる。**変わり方が違うだけで、旧 URL が壊れる点は同じ**
+      であり、リダイレクト・正規 URL・外部被リンクの扱いは対応表なしには決められない。
+      「同一 slug を全ツリーで許さない」運用制約側を選んだ場合のみ、対応表は
+      「変更 0 件であることを示す空の表 + その根拠となる計測クエリ結果」で足りる。
+  - **親内一意（`@@unique([parentId, url])`）も URL 互換性の検討を免れない。** 現行スキーマは
+    `Category.url` / `SubCategory.url` がともに `@unique`（`prisma/schema.prisma:46,62`）で、
+    **既存の参照は slug 単体で解決している** —— browse の絞り込みは
+    `src/queries/product.ts:632-640` が `db.category.findUnique({ where: { url: filters.category } })`
+    で category を引き当てている（`subCategory` も直後で同型）。
+    **`findUnique` である点が重要**: このメソッドは Prisma が一意と認識する列でしか
+    呼べないため、`url @unique` を外して `@@unique([parentId, url])` へ移した瞬間に
+    **型エラーで通らなくなる**。つまりこの照合は「親内一意にすると曖昧になる」のではなく
+    **書き換えが強制される**（`findFirst` へ落とせば通るが、それは異なる親の下の同一 slug から
+    任意の 1 件を拾う実装 —— 404 ではなく静かに誤ったカテゴリの商品を返す —— になる）。
+    コンパイルが落ちる箇所は棚卸しで漏れないが、`findFirst` で黙らせる誘惑があるため
+    ADR に方針を書き下すこと。
+    したがって親内一意を選ぶ場合、ADR は次の 3 点を持つこと:
+    1. slug 単体で引いている既存コードパスの棚卸し（最低でも `product.ts` の browse フィルタ）
+    2. それらを親パス込みの解決（`/browse?category=parent/child` 等）へ移す方針、または
+       「同一 slug を全ツリーで許さない」運用制約を課す方針のいずれか
+    3. 現データで親をまたぐ slug 重複が何件出るかの事前計測クエリ（グローバル一意側と同じ計測）
 - [ ] `plans/0NN-implement-category-tree.md` が存在し、テンプレート準拠で zero-context executor が実行可能
 - [ ] ソースコード・スキーマは未変更（`git status` の変更が新規ドキュメント/プランと、下記の `plans/README.md` 更新のみ）
 - [ ] `plans/README.md` の 013 ステータス行を更新し、後続プランを索引に追加した

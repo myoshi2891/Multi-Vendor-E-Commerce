@@ -265,22 +265,123 @@ function mockAuthAsAdmin(): void {
 - OrderGroup: `status === "Canceled"`、OrderItem: `status === "Canceled"`（子連動）
 - `Size.quantity` が減算前の値に**復元**されている（例: 8 → decrement 3 → 5 → restock → 8）
 
-**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）— 逐次のみ**
+**Scenario 2: 二重キャンセルの冪等性（TOCTOU ガード）— 逐次 + 並行ディスパッチ**
+
+> 後半のケースは「**並行ディスパッチ**の回帰テスト」であって、DB 上でトランザクションが
+> 重なったことの証明ではない（下の「注意（並行性の機械的保証）」を参照）。呼称を
+> 「並行テスト」で止めると、証明していないものを証明したと読ませてしまうため、
+> 見出し・コミットメッセージ・docs のいずれでもこの限定を落とさないこと。
 Scenario 1 と同じ Arrange の後、`updateOrderPaymentStatus(order.id, PaymentStatus.Cancelled)` を
 **2 回逐次**実行し、以下を assert:
 - 2 回とも throw しない（戻り値は両方 `Cancelled` — 関数は遷移スキップ時も status を返す設計）
 - `Size.quantity` の復元は **1 回ぶんのみ**（8 のまま。16 になっていたら二重復元バグ）
 - `Cancelled` → `Refunded` の再遷移でも復元が走らないこと（quantity 不変）を追加 assert
 
-> **並行実行時の二重 restock は本シナリオの対象外（既知の TOCTOU 制約）**。この逐次テストは
-> 「読んで→分岐して→復元する」の *逐次* 冪等性のみを保証する。同一注文への
-> `Promise.all([updateOrderPaymentStatus(...), updateOrderPaymentStatus(...)])` のような
-> **並行**呼び出しでは、両者が「まだ Cancelled でない」を読んでから両者が復元し、二重 restock が
-> 起こりうる（現実装のガードが `SELECT`→分岐→`UPDATE` を単一の条件付き更新に畳んでいない場合）。
-> これを塞ぐには「終端状態への遷移＋在庫復元」を条件付き `updateMany`（`where` に現ステータス条件）
-> や行ロックで原子化する本体修正が必要で、**本プラン（テスト追加のみ）の scope 外**。
-> 並行 restock ガードの実 DB テストは別プラン候補として Maintenance notes / README deferred に記録する
-> （下記参照）。ここで並行テストは書かない（本体が未対応のため意図的に赤くしない）。
+> **並行実行も本シナリオに含める（前提更新 2026-07-19）**。旧版はここで「並行実行時の二重
+> restock は既知の TOCTOU 制約につき対象外」としていたが、その但し書きは
+> **「現実装のガードが `SELECT`→分岐→`UPDATE` を単一の条件付き更新に畳んでいない場合」**という
+> 条件付きで書かれており、**この条件はもはや成立しない**。
+>
+> commit `d0005bb`（*refactor(order): make restock idempotent with conditional updateMany*）が
+> まさにその畳み込みを実装済みである（`src/queries/order.ts` の `updateOrderPaymentStatus`）:
+>
+> - `tx.order.updateMany` の `where` が `paymentStatus: { notIn: [Cancelled, Refunded] }` を持ち、
+>   「非終端 → 終端」の遷移を**単一の原子的 UPDATE** に畳んでいる
+> - `didTransition = transition.count === 1`
+> - 子連動（`orderGroup` / `orderItem` の `updateMany`）と `restockOrderItems` の**両方**が
+>   `if (isCancelOrRefund && didTransition)` の内側にある
+>
+> READ COMMITTED 下では、同一行への並行 `updateMany` は行ロックで直列化される。後発は先発の
+> commit 後に `where` を再評価して `count === 0` となるため、**在庫復元はちょうど 1 回**に定まる。
+> したがって並行ディスパッチテストは「本体未対応ゆえに意図的に赤くする」ものではなく、**緑になることを
+> 期待して書く回帰網**である。
+>
+> 逐次 2 回に加えて、以下を assert すること。**ただし並行ケースは逐次ケースが使った
+> `order` を流用しないこと** — 逐次 2 回で `order` は既に `Cancelled`（終端）に落ちており、
+> 同じ id で `Promise.all` しても両呼び出しが `count === 0` になって restock が一切走らず、
+> レースを検証しない空テストになる。**未キャンセルの新しい注文フィクスチャを Arrange してから**
+> 並行実行する:
+>
+> ```typescript
+> // 逐次テストの order とは別に、非終端状態の新しい注文を用意する
+> const concurrentOrder = await seedCancelableOrder(/* 8 個・decrement 3 済み 等、Scenario 1 と同条件 */);
+>
+> // バリア（必須）: 2 本が「同時に in-flight」になってから初めて DB へ進ませる。
+> // Promise.all の同時ディスパッチだけに依存しない（下記「注意」参照）。
+> let release!: () => void;
+> const gate = new Promise<void>((resolve) => { release = resolve; });
+> let arrived = 0;
+> const arm = async () => {
+>     arrived += 1;
+>     if (arrived === 2) release();   // 2 本目が到達した時点で両方を解放
+>     await gate;
+>     return updateOrderPaymentStatus(concurrentOrder.id, PaymentStatus.Cancelled);
+> };
+>
+> // **戻り値を捨てないこと**（下記「戻り値も assert する」参照）
+> const settled = await Promise.allSettled([arm(), arm()]);
+>
+> // 1) 敗者も含めて 2 本とも fulfill すること（呼び出し元から見て冪等）
+> expect(settled.map((s) => s.status)).toEqual(["fulfilled", "fulfilled"]);
+>
+> // 2) 2 本とも「要求した status」を返すこと（敗者だけ別値／別例外にならない）
+> expect(settled.map((s) => (s as PromiseFulfilledResult<PaymentStatus>).value))
+>     .toEqual([PaymentStatus.Cancelled, PaymentStatus.Cancelled]);
+>
+> // 3) Size.quantity の復元は 1 回ぶんのみ（8 のまま。16 なら CAS が壊れている）
+> ```
+>
+> **戻り値も assert すること（2026-07-27 追記）。** 元の版は `await Promise.all([arm(), arm()])`
+> の結果を捨てて `Size.quantity` だけを見ていた。これは **restock 側の側面検証**しか
+> しておらず、**呼び出し元から見た契約**が壊れても素通りする。具体的には、後日
+> 「敗者側で `Order already cancelled.` を throw する」「敗者は遷移前の status を返す」
+> といった変更が入っても、在庫は 8 のままなのでテストは緑を保つ。
+>
+> `updateOrderPaymentStatus` の契約は**「要求した status が結果 status である」**であり、
+> 勝者・敗者を問わず成立する（実装は `didTransition` に関わらず末尾で `return status`
+> する）。この冪等性こそ管理画面の二重クリックや webhook 再送が安全である根拠なので、
+> 明示的に固定する。
+>
+> **`count` を assert しようとしないこと。** 「どちらが遷移させたか」を判別する
+> `transition.count` は `$transaction` 内部のローカル変数（`didTransition`）であって
+> **戻り値には現れない**（`updateOrderPaymentStatus` の戻り型は `Promise<PaymentStatus>`）。
+> 「遷移はちょうど 1 回」という事実が観測できるのは副作用側だけなので、その担保は
+> 上の (3) と、必要なら `OrderGroup` / `OrderItem` の status 件数で行う。
+>
+> **注意（並行性の機械的保証）**: `Promise.all` は 2 本の呼び出しを**並べるだけ**で、DB 上で
+> 実際に重なる保証にはならない。**接続プールが 1 なら 2 本は逐次実行**され、CAS の並行性を
+> 検証しないまま緑になる（偽陽性）。`maxWorkers: 1` はプロセス並列度であって接続数ではない。
+> したがって以下の 2 つは **どちらも必須**（片方だけでは並行性を主張できない）:
+>
+> 1. **バリア（latch）を必ず挟む** — 上のスニペットのとおり、両呼び出しが到達するまで
+>    ブロックし、揃ってから解放する。これが無いと 1 本目が完了してから 2 本目が始まる
+>    実行順でも緑になり、テストは「逐次 2 回」と区別できない。**「検討する」ではなく必須**。
+> 2. **`connection_limit >= 2` を明示検証する** — 接続文字列（`DATABASE_URL` の
+>    `connection_limit` パラメータ / プール設定）を読み、**2 未満なら成功扱いにせず
+>    `expect` で明示的にブロック**する（例: `expect(poolSize).toBeGreaterThanOrEqual(2)`）。
+>    「並行を検証できない環境」を silently pass させない。プール枯渇でハングした場合も
+>    同様に `connection_limit` を確認する。
+>
+> バリアだけではプールが 1 のときに 2 本目が接続待ちで直列化され、`connection_limit` だけでは
+> 解放タイミングがずれて重ならない。
+>
+> **ただしこの 2 つは必要条件であって十分条件ではない。** バリアが保証するのは
+> 「2 本がクエリを**発行する直前**まで揃っていた」ことだけで、DB 側で 2 つのトランザクションが
+> 実際に重なったことは示さない（解放後に OS/ドライバのスケジューリングで片方が先に
+> 完走しうる）。したがってこのテストは「**重ならなかった場合に緑になる**構成上の穴を塞ぐ」
+> ものであり、「並行実行を証明した」とは書かないこと。2 つを満たさない構成は偽陽性が
+> **確定**する、というのが正しい主張の強さである。
+>
+> 重なりまで機械的に示したい場合は、次のどちらかを足す（本プランでは必須としない）:
+>
+> - **一方を DB 内で待たせる**: 先行側の tx で `pg_advisory_xact_lock(<key>)` を取り、
+>   後続側が同じキーで待つ形にすれば、後続が到達した時点で先行の tx が未コミットである
+>   ことが保証される（重なりが構成上確定する）。
+> - **重なりを観測する**: 解放直後に `pg_stat_activity` を引き、当該 DB に対して
+>   `state = 'active'` のバックエンドが 2 つあることを assert する。
+>
+> 万一このテストが赤くなった場合は、テストを緩めるのではなく **`d0005bb` の CAS が退行して
+> いないか**を先に疑い、STOP して報告する（それは本物の回帰である）。
 
 **Scenario 3: Refunded 遷移の子連動**
 `updateOrderPaymentStatus(order.id, PaymentStatus.Refunded)` で
@@ -339,6 +440,20 @@ Integration テスト数の SSOT は `docs/testing/QA_HANDOFF.md` のテスト�
 Machine-checkable. ALL must hold:
 
 - [ ] `bun run test:integration` exits 0; `order-lifecycle.test.ts` の新規テストが全 pass
+- [ ] Scenario 2 の**並行ディスパッチ**ケースが、(a) 両呼び出しを揃えるバリア（latch）と
+      (b) `connection_limit >= 2` の `expect` の**両方**を持つ。`Promise.all` を並べただけの
+      形は不可（プール 1 で逐次実行されても緑になり、逐次ケースと区別できないため）
+  - **このテストが主張してよいのは「並行ディスパッチの回帰テスト」までであり、
+    「DB 上でトランザクションが重なったことの証明」ではない。** バリアと
+    `connection_limit >= 2` が保証するのは「2 本がクエリ発行の直前まで揃っていた」ことだけで、
+    解放後に片方が先に完走する実行順でも緑になる（詳細は Scenario 2 の「注意（並行性の
+    機械的保証）」）。したがって Done 判定・PR 説明・`QA_HANDOFF.md` のいずれにも
+    **「並行実行を証明した」と書かないこと**。この 2 条件の価値は、
+    **重ならなかった場合に緑になる構成上の穴を塞ぐ**（＝偽陽性が確定する構成を排除する）点にある。
+  - 重なりまで機械的に示したい場合は `pg_advisory_xact_lock` / `pg_stat_activity` を足す
+    （Scenario 2 に記載。**本プランでは必須としない** —— 必須化するなら別途プランを起こすこと）
+- [ ] 並行ケースが逐次ケースの `order` を流用せず、**非終端状態の新しい注文**を Arrange している
+      （終端済み注文では両呼び出しが `count === 0` になり restock が一切走らない空テストになる）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0
 - [ ] `bun run test`（unit）exits 0 で**テスト数が増減しない**（integration は unit 集計外）
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
@@ -365,10 +480,46 @@ Stop and report back (do not improvise) if:
   実装変更時に期待値の更新が必要になる（テストが正しく赤くなる、が意図）。
 - plan 027 実行後は `order-placement.test.ts`（減算側）と本ファイル（復元側）で
   在庫整合の両側が閉じる。レビュー時は両ファイルの JSDoc 境界列挙が重複しないことを確認。
-- **並行 restock（TOCTOU）ガードは未カバー**（Scenario 2 の注記参照）。同一注文への並行キャンセルで
-  二重復元が起きうる現実装の制約を塞ぐには、「終端遷移＋在庫復元」を条件付き `updateMany` /
-  行ロックで原子化する**本体修正**が必要。これは別プラン候補として README の deferred に残す
-  （本プランは逐次冪等性のみを固定する）。
-- `updateOrderGroupStatusAsAdmin` の遷移ガードは read-then-act（条件付き updateMany ではない）。
-  並行実行の完全な TOCTOU 耐性はスコープ外とし、逐次 2 回呼び出しの冪等性のみ固定した。
-  並行キャンセルの厳密な検証が必要になったら別プランで扱う。
+- **並行 restock ガードは関数によって状況が異なる**（前提更新 2026-07-19）。旧版はこれを
+  「未カバー・本体未修正」と一律に扱っていたが、実装を確認すると 2 経路で異なる:
+
+  | 関数 | 遷移ガードの形 | 並行時の二重復元 | 本プランでの扱い |
+  |---|---|---|---|
+  | `updateOrderPaymentStatus` | **条件付き `updateMany`（CAS）** — `where` に `paymentStatus: { notIn: [...] }`、復元は `transition.count === 1` の内側（commit `d0005bb`） | 起きない（行ロックで直列化され後発は `count === 0`） | **Scenario 2 で並行ディスパッチテストを書く**（緑を期待） |
+  | `updateOrderGroupStatusAsAdmin` | **read-then-act** — `findUnique` で `prev.status` を読んでから分岐して `update`（`order.ts:441-471`） | **起きうる**（`findUnique` は行ロックを取らないため両者が非終端を読める） | 逐次冪等性のみ固定。並行は対象外 |
+
+  したがって「本体が未対応だから並行ディスパッチテストを書かない」は `updateOrderPaymentStatus` には
+  当てはまらない。group-level 側のみ、条件付き `updateMany` への統一（`updateOrderPaymentStatus`
+  と同型の修正）が**本体修正**として残っており、別プラン候補として
+  [`plans/README.md` の Deferred 節](README.md#deferred-meaningful-findings-not-planned-this-round)
+  に「`updateOrderGroupStatusAsAdmin` の並行二重復元」として**記録済み**（2026-07-31）。
+  本プランはテスト追加のみのため group-level の本体修正は行わない。したがって本プラン完了後も
+  group-level の並行二重復元は**未解決のまま残る**（プラン完了 ≠ ギャップ解消）。
+
+- **⚠️ リリースゲート: `updateOrderGroupStatusAsAdmin` の並行二重在庫復元（2026-08-01 昇格）**
+
+  上の残課題を Maintenance notes の 1 行と `README.md` の Deferred 項目だけで扱うのは
+  **弱すぎる**。本プランが DONE になると台帳上は「注文ライフサイクルの在庫復元は
+  統合テストで検証済み」と読めるが、実際には **money-critical な穴が開いたまま**だからだ:
+
+  - `restockOrderItems` が並行に 2 回走ると在庫が**注文数量の 2 倍**戻る
+  - 戻りすぎた在庫はそのまま**販売可能数**になるので、次の購入で**オーバーセル**が発生する
+  - 発火条件は「管理者が同じ OrderGroup のステータスを二重クリック / 複数タブで操作」
+    という**日常操作**であり、攻撃を要しない
+
+  したがって次を**リリース判断の明示的な条件**として扱うこと:
+
+  - [ ] 在庫整合を「検証済み」と説明する場面（リリースノート・監査報告・
+        `COVERAGE_REPORT` のヒートマップ解釈）では、**`updateOrderPaymentStatus`（CAS 済み）と
+        `updateOrderGroupStatusAsAdmin`（read-then-act・未対応）を必ず区別**する。
+        本プランの Scenario 2 が並行安全性を固定しているのは**前者のみ**
+  - [ ] 本体修正（条件付き `updateMany` への統一・前例 `d0005bb`）が入るまで、
+        **admin のステータス変更 UI に二重送信ガードを置く**か、
+        **未解決リスクとして受容した記録を残す**かのどちらかを選ぶ。
+        UI ガードは API 直叩き・並行タブでは破れるので**緩和であって解決ではない**
+        （plan 006 / `place-order.tsx` と同じ位置づけ）
+  - [ ] 本体修正のプラン化時に、本プランの Scenario 5（「group-level のみ復元」という
+        現仕様の characterization）の期待値更新が必要になることを申し送る
+
+  **この項目を落とすと「テストが通っている」ことが「安全である」と誤読される。**
+  本プランのスコープはテスト追加であり、ギャップを**閉じた**とは主張しない。

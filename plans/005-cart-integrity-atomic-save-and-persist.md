@@ -158,7 +158,16 @@ Do **not** remove the `set(() => ({ ... }))` calls that precede them — those d
 
 In `src/queries/user.test.ts`, in the `saveUserCart` describe (line ~217), add a test proving the delete+create is **wired through a single `$transaction`** and that a callback rejection surfaces:
 - Mock `db.$transaction` to invoke its callback with a `tx` where `tx.cart.create` **rejects**; assert `saveUserCart(...)` rejects and the operation does not report success (the delete+create are issued via the transaction callback, not as independent top-level calls).
-- Adjust existing happy-path tests: they currently likely mock `db.cart.delete` / `db.cart.create` directly. Since the code now calls `db.$transaction(cb)`, make the mock `db.$transaction.mockImplementation(async (cb) => cb(mockTx))` where `mockTx.cart.delete`/`create` are jest fns — mirror how other transaction-using tests in this repo mock it (search the file for existing `$transaction` mock usage; `order.test.ts` uses the `callback(mockDb)` passthrough pattern).
+- Adjust existing happy-path tests: they currently likely mock `db.cart.delete` / `db.cart.create` directly. Since the code now calls `db.$transaction(cb)`, make the mock `db.$transaction.mockImplementation(async (cb) => cb(mockTx))` where `mockTx.cart.delete`/`create` are jest fns.
+
+  > **⚠️ この段落の続きは訂正済み（2026-07-18）。原文の「ファイル内の既存 `$transaction`
+  > モック使用箇所を検索して真似よ（`order.test.ts` の `callback(mockDb)` passthrough
+  > パターン）」という指示には従わないこと。** テスト作成者ごとに別々のアドホックな
+  > モックが生まれるため、下の「Corrections to the test steps」§1 で unsound と
+  > 判定されている。**`tx` ダブルは `src/config/test-helpers.ts` から取り**、
+  > ケースが足りなければそのモジュールを拡張する（`CLAUDE.md`「テスト構成」が定める
+  > 共通テストインフラ）。原文はプランが DONE になった当時の記録として残すが、
+  > 新しいテストへ複写しないこと。
 
 **Verify**: `bun run test -- src/queries/user.test.ts` → all pass.
 
@@ -181,9 +190,15 @@ satisfy `toHaveProperty('state')` and still fail to rehydrate (wrong `version`, 
 `partialize` that drops the field). Since the whole point of this plan is that a persisted cart
 survives a reload, verify it end-to-end:
 
+> ⚠️ **この下のスニペットはそのまま貼らない — 空振りする。** 先に
+> [「Corrections to the test steps」の 2 番](#corrections-to-the-test-steps-2026-07-18)
+> を読み、そこの訂正版（in-memory state を破棄してから rehydrate する形）を使うこと。
+> 以下は歴史的記録として残しているだけで、採用可能な手順ではない。
+
 ```ts
+// ⚠️ 採用しない（空振り版）: 下の Corrections 2 の訂正スニペットを使う
 // after mutating the cart via store actions
-await useCartStore.persist.rehydrate();          // re-read the persisted entry
+await useCartStore.persist.rehydrate();          // ← 同一インスタンスのまま = no-op でも通る
 const rehydrated = useCartStore.getState();
 expect(rehydrated.cart).toHaveLength(<expected>); // the items came back
 expect(rehydrated.totalItems).toBe(<expected>);   // derived state recomputed, not stale
@@ -232,3 +247,78 @@ Stop and report if:
 - If a future feature needs to hydrate the cart from the server, do it through `setCart`/`persist`, never by writing the `'cart'` localStorage key directly — that reintroduces this corruption.
 - Reviewer should confirm `persist` is the *only* writer of the `'cart'` key after this change.
 - The store's `totalPrice` still uses float summation; if money precision becomes a concern, that's a separate Decimal migration (not in this plan).
+
+### Corrections to the test steps (2026-07-18)
+
+This plan is **DONE**; the steps are left as the historical record. Two
+instructions in them are unsound and must **not** be copied into new tests:
+
+1. **Step 3 defers the transaction-mock shape to "search the file".** Telling
+   the executor to mirror whatever `$transaction` mocking already exists in the
+   file produces a different ad-hoc mock per test author. This repo has shared
+   test infrastructure for exactly this — `src/config/test-helpers.ts` (mock
+   utilities), `test-fixtures.ts` (typed factories), `test-scenarios.ts`, and
+   `test-config.ts` (see `CLAUDE.md` "テスト構成"). New transaction tests should
+   take the `tx` double from there, and extend that module when it lacks a case,
+   rather than re-deriving a local `callback(mockDb)` passthrough.
+
+2. **Step 4's `rehydrate()` round trip does not prove what it claims.** The
+   snippet calls `useCartStore.persist.rehydrate()` and then asserts on
+   `useCartStore.getState()` — but that is the *same* store instance that just
+   performed the mutation, so its in-memory state already holds the expected
+   values. `rehydrate()` could be a complete no-op (or read a corrupt payload
+   and bail) and every assertion would still pass. It cannot fail for the
+   regression it was written to catch.
+
+   To actually exercise a reload, the in-memory state must be discarded before
+   rehydrating, so the values can only come back from storage:
+
+   ```ts
+   // after mutating the cart via store actions
+   const persisted = localStorage.getItem('cart');       // capture what was written
+   // null なら書き込み自体が起きていない = 検出すべき回帰。`as string` / `!` で握りつぶさず
+   // 早期に失敗させて型も string に絞る。
+   if (persisted === null) throw new Error('cart was not persisted before rehydrate');
+   useCartStore.setState({ cart: [], totalItems: 0, totalPrice: 0 });  // simulate a fresh load
+   localStorage.setItem('cart', persisted);              // string に絞り込み済み
+   await useCartStore.persist.rehydrate();
+
+   const rehydrated = useCartStore.getState();
+   expect(rehydrated.cart).toHaveLength(<expected>);   // came back from storage
+   expect(rehydrated.totalItems).toBe(<expected>);     // derived state recomputed
+   ```
+
+   Note the `beforeEach` at `src/cart-store/useCartStore.test.ts:54` already
+   resets the store this way — the reset is the load-bearing part, not the
+   `rehydrate()` call.
+
+**Coverage gap — closed (2026-07-26)**: for a period this plan was marked DONE
+while only the wrapper-shape assertions from the first half of Step 4 existed
+(`useCartStore.test.ts:239`, `:274`, `:302`). Those assert what gets *written*
+to storage; nothing read it back, so "a persisted cart survives a reload" — the
+stated point of this plan — was unverified, and DONE overstated the result.
+
+That is now fixed rather than relabelled. `useCartStore.test.ts` has a
+`persist ラウンドトリップ` describe block with three tests built on the pattern
+above (capture payload → discard in-memory state → restore payload →
+`await persist.rehydrate()` → assert). It is a completion criterion of this
+plan, not follow-up work — see the Done criteria addition below.
+
+The tests were confirmed **non-vacuous** by reintroducing the exact bug removed
+in `f77f0965` (the bare-array `setItem` *after* `set()` in `removeFromCart` /
+`removeMultipleFromCart`, and `removeItem('cart')` in `emptyCart`): two of the
+three fail. The third exercises the `addToCart` path, which never carried a
+manual write, so it stays green by design.
+
+> **Injection order matters when re-checking this.** Placing the bare-array
+> `setItem` *before* the `set()` call does **not** reproduce the bug — `persist`
+> writes on every `set()`, so it immediately overwrites the bare array with the
+> correct wrapper and every test stays green. The historical bug wrote *after*
+> `set()`, which is why it clobbered the wrapper. A "the test still passes"
+> result from a mis-ordered injection proves nothing about the test.
+
+**Done criteria addendum (2026-07-26)**: this plan is DONE only while a
+round-trip test exists that discards in-memory state before rehydrating.
+Deleting or weakening the `persist ラウンドトリップ` block (for example by
+asserting on `getState()` without the preceding `setState({ cart: [] })`)
+returns the plan to an unverified state.

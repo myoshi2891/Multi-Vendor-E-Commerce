@@ -6,6 +6,8 @@ import { SerializedCartType } from '@/lib/types'
 import { serializeCart } from '@/lib/serialize-cart'
 // 認可ガード経由で SELLER + store 所有権チェックを集約 (IDOR 防御)
 import { requireUser, requireStoreOwner, requireAdmin } from '@/lib/auth-guards'
+// フォーム契約のサーバー側強制 (SECURITY-14: 直接呼び出しによる discount>99 等の回避防止)
+import { CouponFormSchema, AdminCouponFormSchema } from '@/lib/schemas'
 import { Coupon, Prisma } from '@prisma/client'
 
 const isGuardError = (error: unknown): error is Error => {
@@ -18,6 +20,32 @@ const isGuardError = (error: unknown): error is Error => {
         'Only admins can perform this action.'
     ];
     return guardMessages.includes(error.message);
+};
+
+/**
+ * ドメインエラー（入力検証・業務ルール由来の意図的な throw）かを判定する。
+ *
+ * これらは try の内側で throw されるため、素通しにしないと catch の
+ * `Error occurred while ... : ${message}` に上書きされ、フォームへ
+ * 「クーポンの入力値が不正です。」を返せなくなる。認可ガードを try/catch の外へ
+ * 出しているのと同じ原則（tech.md「認可エラーを汎用 DB エラーメッセージで
+ * 上書きしない」）を、DB 読み取りの後段に位置して try 外へ出せない検証にも適用する。
+ *
+ * ユーザー起因のため logError にも載せない（運用ログのノイズになる）。
+ */
+const isDomainError = (error: unknown): error is Error => {
+    if (!(error instanceof Error)) return false;
+    const domainMessages = [
+        'クーポンの入力値が不正です。',
+        'このクーポンコードは既に使用されています',
+        'Please provide coupon data.',
+        'Please provide coupon ID.',
+        'Please provide a valid store ID.',
+        // 入力検証と同じくユーザー起因（存在しない ID の指定）。DB 読み取りの
+        // 後段で throw するため try 外へ出せず、素通ししないとラップされる。
+        'Coupon not found.'
+    ];
+    return domainMessages.includes(error.message);
 };
 
 /**
@@ -76,13 +104,33 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
             throw new Error('このクーポンコードは既に使用されています')
         }
 
+        // フォーム契約をサーバー側でも強制する（直接呼び出しで discount>99 等を回避させない）。
+        // z.object は未知キーを除去するため、Coupon 全体を渡して 4 フォームフィールドのみ検証される。
+        const parsed = CouponFormSchema.safeParse(coupon)
+        if (!parsed.success) {
+            throw new Error('クーポンの入力値が不正です。')
+        }
+
         // Upsert coupon into the database
-        // scope はクライアント入力を信用せず STORE に固定する（SELLER による PLATFORM クーポン作成を防ぐ）
+        // クライアント入力のスプレッドは行わず、検証済みフィールドを明示マッピングする。
+        // scope / storeId はクライアント入力を信用せずサーバー強制（SELLER による PLATFORM クーポン作成を防ぐ）
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: store.id, scope: 'STORE' },
+            update: {
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                storeId: store.id,
+                scope: 'STORE',
+            },
             create: {
-                ...coupon,
+                // id はフォーム側で常にクライアント生成される (data?.id ?? v4())
+                id: coupon.id,
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
                 storeId: store.id,
                 scope: 'STORE',
             },
@@ -90,6 +138,9 @@ export const upsertCoupon = async (coupon: Coupon, storeURL: string) => {
 
         return couponDetails
     } catch (error: unknown) {
+        // 入力検証・重複コードの意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:upsertCoupon] failed to upsert coupon', error)
 
         // P2002: ユニーク制約違反（findFirst の事前チェックをすり抜けた競合時のフォールバック）
@@ -137,26 +188,70 @@ export const getStoreCoupons = async (storeURL: string) => {
 
 /**
  * @Function getCoupon
- * @Description Retrieves a specific coupon from the database.
- * @PermissionLevel Public
+ * @Description Retrieves a coupon owned by the given store. Seller-only.
+ * @PermissionLevel Seller (must own storeURL)
  * @Parameters
  *  - couponId: ID of the coupon to be retrieved.
- * @Return Coupon details if found, otherwise undefined.
+ *  - storeURL: String representing the URL of the store, used to verify ownership.
+ * @Return Coupon details if found and owned by the store, otherwise null.
  */
 
-export const getCoupon = async (couponId: string) => {
+export const getCoupon = async (couponId: string, storeURL: string) => {
+    // 認可 + 店舗所有権を集約検証 (IDOR 防御)。認可ガードは try/catch の外。
+    const { store } = await requireStoreOwner(storeURL)
+
     try {
         // Ensure couponId is provided
         if (!couponId) throw new Error('Please provide coupon ID.')
 
         // Retrieve coupon from the database
+        // findUnique は unique フィールドのみ where に取れるため、
+        // storeId との複合スコープには findFirst を使う。
+        const coupon = await db.coupon.findFirst({
+            where: { id: couponId, storeId: store.id },
+        })
+
+        return coupon
+    } catch (error: unknown) {
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
+        logError('[Coupon:getCoupon] failed to fetch coupon', error)
+
+        throw new Error(
+            `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
+}
+
+/**
+ * @Function getCouponAsAdmin
+ * @Description Retrieves any coupon (incl. PLATFORM coupons with storeId = null). Admin-only.
+ * @PermissionLevel Admin only
+ * @Parameters
+ *  - couponId: ID of the coupon to be retrieved.
+ * @Return Coupon details if found, otherwise null.
+ */
+
+export const getCouponAsAdmin = async (couponId: string) => {
+    // 認可ガードは try/catch の外。
+    await requireAdmin()
+
+    try {
+        // Ensure couponId is provided
+        if (!couponId) throw new Error('Please provide coupon ID.')
+
+        // PLATFORM クーポン (storeId = null) を含む全クーポンが対象のため非スコープ
         const coupon = await db.coupon.findUnique({
             where: { id: couponId },
         })
 
         return coupon
     } catch (error: unknown) {
-        logError('[Coupon:getCoupon] failed to fetch coupon', error)
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
+        logError('[Coupon:getCouponAsAdmin] failed to fetch coupon', error)
 
         throw new Error(
             `Error occurred while trying to fetch coupon: ${error instanceof Error ? error.message : String(error)}`
@@ -193,6 +288,9 @@ export const deleteCoupon = async (couponId: string, storeURL: string) => {
 
         return response === null ? false : true // Return true if the coupon was deleted successfully, false otherwise.
     } catch (error: unknown) {
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         logError('[Coupon:deleteCoupon] failed to delete coupon', error)
 
         throw new Error(
@@ -382,8 +480,17 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
 
     try {
         if (!coupon) throw new Error('Please provide coupon data.')
+
+        // フォーム契約をサーバー側でも強制する (SECURITY-14)。superRefine が
+        // STORE ⇒ storeId 必須 / PLATFORM ⇒ storeId 空 の不変条件も検証する。
+        const parsed = AdminCouponFormSchema.safeParse(coupon)
+        if (!parsed.success) {
+            throw new Error('クーポンの入力値が不正です。')
+        }
+
         const isPlatform = coupon.scope === 'PLATFORM'
 
+        // safeParse 通過後の defense-in-depth として残置（通常は superRefine が先に検出）
         let normalizedStoreId: string | null
         if (isPlatform) {
             normalizedStoreId = null
@@ -393,13 +500,35 @@ export const upsertCouponAsAdmin = async (coupon: Coupon) => {
             normalizedStoreId = trimmed
         }
 
+        // クライアント入力のスプレッドは行わず、検証済みフィールドを明示マッピングする
         const couponDetails = await db.coupon.upsert({
             where: { id: coupon.id },
-            update: { ...coupon, storeId: normalizedStoreId },
-            create: { ...coupon, storeId: normalizedStoreId },
+            update: {
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                isActive: parsed.data.isActive,
+                scope: parsed.data.scope,
+                storeId: normalizedStoreId,
+            },
+            create: {
+                // id はフォーム側で常にクライアント生成される (data?.id ?? v4())
+                id: coupon.id,
+                code: parsed.data.code,
+                startDate: parsed.data.startDate,
+                endDate: parsed.data.endDate,
+                discount: parsed.data.discount,
+                isActive: parsed.data.isActive,
+                scope: parsed.data.scope,
+                storeId: normalizedStoreId,
+            },
         })
         return couponDetails
     } catch (error: unknown) {
+        // 入力検証・storeId 不正の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
+
         // P2002: Unique constraint violation（instanceof チェック不要: code だけで識別）
         if (
             typeof (error as Record<string, unknown>).code === 'string' &&
@@ -439,6 +568,8 @@ export const deleteCouponAsAdmin = async (couponId: string) => {
         return response !== null
     } catch (error: unknown) {
         if (isGuardError(error)) throw error
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
 
         if (error instanceof Error) {
             console.error('[Coupon:deleteCouponAsAdmin] Failed to delete coupon', {
@@ -476,6 +607,8 @@ export const toggleCouponActive = async (couponId: string) => {
         return updated
     } catch (error: unknown) {
         if (isGuardError(error)) throw error
+        // 入力検証の意図的 throw は素通しする（ラップもログもしない）
+        if (isDomainError(error)) throw error
 
         if (error instanceof Error) {
             console.error('[Coupon:toggleCouponActive] Failed to toggle coupon', {

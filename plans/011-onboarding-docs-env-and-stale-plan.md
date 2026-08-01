@@ -133,6 +133,17 @@ Then `git mv docs/unimplemented-screens-plan.md docs/archive/unimplemented-scree
 After moving, update any doc that links to the old path:
 `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules` — fix or remove each reference (e.g. recon/roadmap docs that cite it as a direction source).
 
+**References are written in two path forms. Update both** (measured at audit time):
+
+| Form | Example | After the move |
+|---|---|---|
+| Repo-root relative | `docs/unimplemented-screens-plan.md` | `docs/archive/unimplemented-screens-plan.md` |
+| Relative link | `../../unimplemented-screens-plan.md` | `../../archive/unimplemented-screens-plan.md` |
+
+The relative-link form appears in **9 files** under `docs/design/*/README.md` (`offers`,
+`admin-dashboard`, `profile-settings`, `track-order`, `storefront-static-pages`, `compare`,
+`profile-messages`, `support-forms`, `seller-dashboard`). A grep rooted at `docs/` misses them.
+
 > **Search the whole repo, not a hand-picked subset.** An earlier revision of this step scanned only
 > `docs/ README.md .claude/ specs/`, which is **narrower than the Verify command below** — so a
 > reference outside those four paths survives the fix and then fails the gate. That is not
@@ -145,7 +156,89 @@ After moving, update any doc that links to the old path:
 > cite the file as the audit's own evidence. Point them at the new archive path rather than deleting
 > them; the Verify command below accepts that (it only requires no live references to the *old* path).
 
-**Verify**: `grep -rn "unimplemented-screens-plan" . --include="*.md" | grep -v node_modules | grep -v docs/archive` → no live references outside the archive (or all remaining references point to the new archive path).
+**Verify**:
+
+```bash
+# Exclude this plan itself (it quotes the old token as a "moved from … to archive/…" example)
+# and plans/audit/* (the audit trail). Per the note above these are references that are
+# *expected to remain*; scanning them makes the illustrative old-path tokens in their prose
+# match forever, so the gate fails structurally (a false positive).
+#
+# Keep `-n` (NOT `-h`): filenames must survive extraction so the exclusions can be applied
+# **per path**. `--exclude=` matches the *basename* only, so `--exclude="011-…​.md"` would also
+# drop `plans/ja/011-…​.md` — silently hiding any live old-path reference in the ja copy.
+leftovers=$(
+  grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" . --include="*.md" \
+    | grep -v "/node_modules/" \
+    | grep -vE "^(\./)?plans/(ja/)?011-onboarding-docs-env-and-stale-plan\.md:" \
+    | grep -vE "^(\./)?plans/audit/" \
+    | awk '{ tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+             if (index(tok, "archive/unimplemented-screens-plan") == 0) print }'
+)
+if [ -n "$leftovers" ]; then
+  printf '%s\n' "$leftovers"
+  echo "FAIL: live references to the OLD path remain"
+  exit 1
+fi
+echo "PASS: no live references to the old path"
+```
+
+→ **zero hits / exit 0**. Any hit (outside this plan, its ja copy, and the audit trail) is a live
+reference to the *old* path, and the gate exits **1**. Before the move lands this gate is expected
+to fail — that is the Red state it is written to detect.
+
+**(Auxiliary) audit-directory-only scan**: the main gate above excludes `plans/audit/*` **entirely**
+(`grep -vE "^(\./)?plans/audit/"`), but the caveat above still requires that audit-trail references be
+**re-pointed** at the new archive path. Excluding the directory wholesale means a **live old-path
+reference** left inside `plans/audit/` (i.e. one not pointing at the archive path) is never surfaced.
+So scan `audit` alone for old-path tokens that are **not** aimed at the archive path. This one
+**does not fail the gate** — it produces a list for human review:
+
+```bash
+# plans/audit only. References already aimed at archive/ count as re-pointed and are excluded;
+# whatever remains is still on the old path. Zero lines = re-pointing complete.
+#
+# 除外は**トークンに対して**掛けること。`grep -rno` の出力は `path:line:token` なので、
+# 行全体に `grep -vE "(^|/)archive/…"` を掛けると**ファイルのパス側**が条件を満たして
+# しまい、生きた旧パス参照が黙って落ちる。実測: `plans/audit/archive/
+# unimplemented-screens-plan-notes.md` が `docs/unimplemented-screens-plan.md`（旧パス）を
+# 参照している場合、行全体で除外すると出力 0 行 = 「再ポイント完了」に見えるが、
+# トークン単位で判定すると当該行が正しく残る。
+grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" plans/audit --include="*.md" \
+  | awk '{ tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+           if (tok !~ /(^|\/)archive\/unimplemented-screens-plan/) print }' \
+  || true
+# Each line printed is either an intentional historical quotation (showing the old token as an
+# example) or a missed re-point. The former may stay; the latter must be corrected to the archive
+# path. A human decides — this scan deliberately does not fail mechanically.
+```
+
+> **Exclude by path, not by basename.** `grep --exclude=` matches the **basename**, so the earlier
+> gate's `--exclude="011-onboarding-docs-env-and-stale-plan.md"` dropped **both** `plans/011-…​.md`
+> **and** `plans/ja/011-…​.md`. The ja copy is a translation, not the audit trail — a genuine
+> leftover old-path reference in it would never have been reported. The same applies to
+> `--exclude-dir="audit"`, which drops *any* directory named `audit` anywhere in the tree. Keeping
+> `-n` and filtering on the path prefix (`^(\./)?plans/ja/011-…`, `^(\./)?plans/audit/`) makes the
+> exclusion say exactly what it means.
+>
+> **Exclude on `archive/unimplemented-screens-plan`, not on `docs/archive`.** The earlier gate used
+> `grep -v docs/archive`, which **fails references that were correctly updated**. As the table above
+> shows, the 9 files under `docs/design/*/README.md` use the relative-link form, so after the fix
+> they read `../../archive/unimplemented-screens-plan.md` — a string that contains `archive/` but
+> **not** `docs/archive`. Under the old gate all 9 counted as leftovers. Excluding on the path
+> segment immediately before the filename (`archive/`) is agnostic to whether the reference is
+> repo-root relative or link-relative.
+>
+> This also makes the gate **binary**. The old wording's escape hatch ("or all remaining references
+> point to the new archive path") could not be decided by the command itself and required a human to
+> eyeball the output, so it is removed.
+>
+> **Match per occurrence, not per line.** A line-oriented `grep -v` (`grep "…" | grep -v
+> "archive/…"`) drops the *whole line* when it contains the archive string — so a line that mentions
+> **both** paths (e.g. "moved from `unimplemented-screens-plan.md` to
+> `archive/unimplemented-screens-plan.md`") hides the live old reference sitting on the same line.
+> The `grep -oE` above extracts each path token separately, so the old-path token survives the
+> `archive/` exclusion and the gate still catches it.
 
 ### Step 2: Complete the README env block
 
@@ -161,7 +254,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
 # 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
-# 本リポジトリは src/app/(auth)/ にカスタム認証ページを持つため、既定値ではなく下記の値を使う。
+# 下記 3 つは Clerk の既定値と同一だが、既定値の変更に依存しないよう明示的にピンする。
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
@@ -186,9 +279,106 @@ IPINFO_TOKEN=                       # 地域判定 (userCountry)
 NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 ```
 
-Cross-check against the live env-name grep + `.env.docker.example` so nothing required is missing and nothing abandoned (Elasticsearch) is added. Names/placeholders only — no real values.
+Cross-check against the live env-name grep + `.env.docker.example` so nothing required is missing and nothing abandoned (Elasticsearch) is added.
 
-**Verify**: every name from `grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ | sort -u` (except `ELASTICSEARCH_*`, `NODE_ENV`, `E2E_BASE_URL`) appears in the README block.
+**Empty-value vs literal-value policy** (resolve the apparent contradiction with the block above).
+Note this axis is **secret vs non-secret**, *not* optional vs required — the two must not be conflated:
+
+- **Secrets / deployment-specific values** (`DATABASE_URL`, `CLERK_SECRET_KEY`, `STRIPE_SECRET_KEY`,
+  `PAYPAL_SECRET`, tokens, webhook signing secrets, URLs that vary per environment) are left **empty**
+  (`NAME=`) — never a real credential.
+- **Non-secret config** (`NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `…SIGN_UP_URL=/sign-up`,
+  `…AFTER_SIGN_IN_URL=/`, **and `PAYPAL_API_BASE=https://api-m.sandbox.paypal.com`**) carries its
+  **literal** value. The sandbox base URL is an endpoint, not a credential, so it is a
+  **non-secret default** rather than a blank.
+
+So the rule is **not** "no values ever": it is **"no secrets"** — non-secret config keeps its literal value.
+
+> **Correction — the three Clerk URL vars are *optional*, not required.** An earlier version of this
+> policy justified their literal values with "the app ships custom `src/app/(auth)/` pages and the
+> Clerk defaults would point elsewhere — an empty value here breaks auth". **That is factually
+> wrong**, and it contradicted the env block's own inline comment ("任意 (未設定なら Clerk の既定値)").
+> The repo's custom pages resolve to `/sign-in` and `/sign-up`
+> (`src/app/(auth)/sign-in/[[...sign-in]]/page.tsx` / `…/sign-up/[[...sign-up]]/page.tsx`), which are
+> **exactly Clerk's defaults**; `AFTER_SIGN_IN_URL=/` is the default too. Leaving them empty does not
+> break auth.
+>
+> The real reason to pin them is **defensive**: it fixes the routing contract in the repo so a future
+> change to Clerk's defaults cannot silently reroute auth. Both the inline comment and this policy now
+> state the same thing — optional, pinned deliberately, and non-secret.
+
+**Both files apply the same classification.** `PAYPAL_API_BASE` is a non-secret default in the README
+block (step 2) *and* in `.env.example` (step 3): it carries `https://api-m.sandbox.paypal.com` in both,
+never blanked. This removes the apparent contradiction where step 3's example set it while step 2's
+policy left routing config unclassified — the classification (secret ⇒ empty / non-secret ⇒ literal
+default) is authoritative for both files.
+
+**Verify**: compare the README block against **the same superset this step is told to use** —
+the union of the `src/` `process.env` references *and* the names in `.env.docker.example`.
+
+A `process.env`-only scan is not sufficient, and the gap is not hypothetical: Clerk and Prisma read
+their config inside the library, so `CLERK_SECRET_KEY`, `DATABASE_URL` and `DIRECT_URL` never appear
+as `process.env.*` in `src/`. Under the old scan (13 names) the README could drop all three — the
+variables without which the app cannot start — and the gate would still print PASS.
+
+```bash
+# 期待集合 = (src/ + root config の process.env 参照) ∪ (.env.docker.example の変数名)
+#
+# grep のルートに next.config.mjs を含める: HSTS_* はリポジトリルートの設定ファイルで
+# 読まれるため `src/` だけを見ると取りこぼす（今は除外対象だが、将来ルート設定に足された
+# 変数が黙って母数から漏れるのを防ぐ）。
+expected=$(
+  {
+    grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ next.config.mjs | sed 's/process\.env\.//'
+    grep -oE '^[A-Z_][A-Z0-9_]*=' .env.docker.example | tr -d '='
+  } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
+)
+
+# README の env ブロック（```env フェンス）が列挙する変数名
+actual=$(sed -n '/^```env$/,/^```$/p' README.md | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
+
+missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+# README 側の余剰も検出する（下記「両方向を見る理由」参照）
+extra=$(comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+
+status=0
+if [ -n "$missing" ]; then
+  printf 'FAIL: missing from README env block:\n%s\n' "$missing"
+  status=1
+fi
+if [ -n "$extra" ]; then
+  printf 'FAIL: listed in README but not in the expected superset:\n%s\n' "$extra"
+  status=1
+fi
+[ "$status" -eq 0 ] || exit 1
+echo "PASS: README env block matches the superset exactly"
+```
+
+**両方向を見る理由**: `missing`（`comm -23`）だけでは README が**古い変数を持ち続けている**
+ケースを PASS させる。削除済み・改名済みの変数が README に残ると、新規オンボーディング時に
+「設定したのに効かない」変数を `.env.local` に書かせることになり、これは欠落と同じ種類の
+（そして原因が分かりにくい）事故になる。**README に載っているが期待集合に無い変数**が出たら、
+次のどちらかで解消する（「黙って通る」状態にはしない）:
+
+- **コード側に実在しない**（削除・改名済み）→ README から消す
+- **実在するが下の除外表で意図的に落としている**（`HSTS_*` / `SONAR_*` 等）→ README から消すか、
+  除外表からその行を外して期待集合に戻す。「除外している＝README にも載せない」が
+  除外表の前提なので、両方に載っている状態は表そのものの誤りを意味する
+
+**除外は明示的に列挙し、理由を持たせること**（暗黙に母数から漏れるのが元の欠陥だったため）:
+
+| 除外 | 理由 |
+|---|---|
+| `ELASTICSEARCH_*` | 放棄済みの経路（`src/lib/elastic-search.ts` はコメントアウト） |
+| `NODE_ENV` / `VERCEL_ENV` | ランタイム／プラットフォームが供給する。運用者が設定するものではない |
+| `E2E_BASE_URL` | E2E 実行専用。`docs/testing/` 側で扱う |
+| `SONAR_TOKEN` / `SONAR_HOST_URL` | ローカル静的解析（`docker-compose.sonar.yml` / ADR-005）。アプリのランタイム変数ではない |
+| `HSTS_*` | 本番ドメイン所有者向けの opt-in（plan 061）。ローカル開発の README ブロックには意図的に載せない |
+
+**実測（2026-07-26）**: この `expected` は Step 2 の目標ブロックが列挙する **19 変数と完全に一致**する
+（`diff` で差分ゼロ）。すなわちゲートの母数と Step 2 の指示が同一の集合を指しており、
+「指示は superset・検証は部分集合」というズレは解消されている。
+本ステップ実行前の現 README（9 変数）に対しては当然 **FAIL** し、それがこのゲートの Red 状態である。
 
 ### Step 3: Add `.env.example`
 

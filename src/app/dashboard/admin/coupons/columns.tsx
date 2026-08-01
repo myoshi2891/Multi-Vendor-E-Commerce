@@ -37,7 +37,7 @@ import { Edit, MoreHorizontal, Power, Trash } from 'lucide-react'
 // Queries
 import {
     deleteCouponAsAdmin,
-    getCoupon,
+    getCouponAsAdmin,
     toggleCouponActive,
 } from '@/queries/coupon'
 
@@ -146,9 +146,43 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
                                 <CustomModal>
                                     <AdminCouponDetails data={coupon} />
                                 </CustomModal>,
-                                async () => ({
-                                    rowData: await getCoupon(coupon.id),
-                                })
+                                async () => {
+                                    try {
+                                        return {
+                                            rowData:
+                                                await getCouponAsAdmin(
+                                                    coupon.id
+                                                ),
+                                        }
+                                    } catch (error: unknown) {
+                                        if (error instanceof Error) {
+                                            console.error(
+                                                '[AdminCouponColumns:EditDetails] failed to fetch coupon',
+                                                {
+                                                    error: error.message,
+                                                    stack: error.stack,
+                                                }
+                                            )
+                                        } else {
+                                            console.error(
+                                                '[AdminCouponColumns:EditDetails] unknown error',
+                                                { error }
+                                            )
+                                        }
+
+                                        toast({
+                                            variant: 'destructive',
+                                            title: 'Oops!',
+                                            description:
+                                                'Failed to load the coupon. Please try again.',
+                                        })
+
+                                        // クーポンの現況を確認できていないため、
+                                        // 行スナップショットのまま編集させずモーダルを閉じる
+                                        setClose()
+                                        return {}
+                                    }
+                                }
                             )
                         }}
                     >

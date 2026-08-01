@@ -119,6 +119,32 @@ if (isPlatformCoupon && index === storeEntries.length - 1) {
   **あわせて `storeId` を `string | null` に広げる**（現状は `storeId: string` で必須・非 null のため
   PLATFORM クーポンを `storeId: null` で seed できない。`prisma/schema.prisma` の `Coupon.storeId` は
   `String?` なので DB 側は元から null 可）。既存の呼び出し側は文字列を渡しており影響を受けない
+- `tests/integration/setup/query-mocks.ts`（**新規**）— Scenario 8 の部分モックが使う透過実装
+  `actualDeliveryDetails` を集約（Step 3 参照）。`jest.requireActual` 式の三重複を除去する。
+  `src/config/` には置かない（`seed.ts` と同じ「shape は踏襲・実体は setup/」規約）
+
+  > **`CLAUDE.md` の「モックユーティリティ = `src/config/test-helpers.ts`」規約との関係。**
+  > これは規約に**反する**のではなく、integration 層が規約の**適用範囲外**である。
+  > 実測（2026-07-30）で `tests/integration/` は `src/config/` を**一切 import していない**
+  > —— `grep -rn "src/config\|@/config" tests/integration/` のヒットは
+  > `setup/seed.ts:4,12` の**コメント（出自の参照）だけ**で、実行される import は 0 件。
+  > つまり本プランが新しく例外を作るのではなく、**既存の層境界を踏襲している**。
+  >
+  > 分離が成立している理由は 2 つある:
+  >
+  > 1. **別 Jest config で走る。** integration は `jest.integration.config.js`
+  >    （`testEnvironment: jsdom` + testcontainers の `globalSetup` + `maxWorkers: 1`）で、
+  >    unit/component の `jest.config.js` とは `moduleNameMapper` も `transform` も違う。
+  >    `src/config/` は後者の前提で書かれており、共有すると両 config の制約が結合する。
+  > 2. **`src/config/test-scenarios.ts` は相対日付ベース**（`Date.now()` 起点 —
+  >    `src/config/test-scenarios.ts:39`）で、**実 DB に seed した固定行と噛み合わない**。
+  >    integration は TRUNCATE → seed → assert の実データ検証なので、
+  >    「実行時刻によって中身が変わるフィクスチャ」を土台にできない。
+  >
+  > したがって規約の適用範囲は「**`src/` 配下のユニット/コンポーネントテスト**」であり、
+  > 実 DB を持つ integration の setup ヘルパーは `tests/integration/setup/` に置く。
+  > これは `prisma/seed/__tests__/` を `src/config/` 非依存とする既存方針
+  > （[`.claude/steering/tech.md`](../.claude/steering/tech.md) テスト要件表）と同型である。
 
 **In scope — ドキュメント同期（後続の別コミット）**:
 - `spec-sync-after-test` の成果物一式（Step 6）— Integration テスト数が 17→20 に変動するため
@@ -213,6 +239,97 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
 
    import に `import { getDeliveryDetailsForStoreByCountry } from "@/queries/product";` を追加。
 
+   > **透過実装は共通ヘルパーに切り出すこと（アドホックな部分モックをテスト本文に散らさない）。**
+   > 上の factory・下の `mockImplementationOnce`・`afterEach` の張り直しで、
+   > `jest.requireActual<typeof import("@/queries/product")>("@/queries/product")
+   > .getDeliveryDetailsForStoreByCountry` という同じ式が **3 回** 現れる。この三重複が、
+   > 「reset したが張り直し忘れ」というリークの温床になる（実際、手順 5 の注意書きは
+   > まさにその事故を防ぐためのもの）。
+   >
+   > **置き場所**: `tests/integration/setup/query-mocks.ts`（新規）。`src/config/` **ではない**。
+   > `jest.integration.config.js` は `^@/(.*)$ → src/$1` を map しているので `src/config/*` は
+   > *解決自体はできる*が、本リポジトリの規約は「`src/config/` の shape を**踏襲**しつつ
+   > integration 固有の実体は `tests/integration/setup/` に置く」である
+   > （`tests/integration/setup/seed.ts` の冒頭 JSDoc が
+   > 「既存 `src/config/test-fixtures.ts` の shape を踏襲しつつ、メモリ上 fixture ではなく」と
+   > 明記している先例）。integration 専用の mock seam を unit/component 共通層に持ち込まないこと。
+   >
+   > **落とし穴 — `jest.mock` の宣言自体はテストファイルに残す必要がある**:
+   > `jest.mock()` は **import より上へ巻き上げられる**ため、factory の内部から import した
+   > ヘルパーを参照すると、その時点でヘルパーは未初期化である。babel-jest はこれを
+   > 「not allowed to reference any out-of-scope variables」として検出する（`mock` 始まりの
+   > 識別子のみ許可）が、本設定は `preset: "ts-jest"` であり ts-jest の巻き上げは**この検証を
+   > 行わない**ため、同じ誤りが分かりにくい実行時エラーとして現れる。
+   > したがって切り出すのは **factory 本体ではなく透過実装（と割り込みヘルパー）** に限る:
+   >
+   > ```typescript
+   > // tests/integration/setup/query-mocks.ts
+   > // 型注釈はインライン import 型クエリで完結させる（別途 `import type { … }` を置いて
+   > // `typeof <名前>` で参照する形は避ける — 型のみインポートの値名に対する `typeof` は
+   > // 環境設定によって解釈が割れるため、`typeof import("…").fn` で一意にコンパイルさせる）。
+   >
+   > /** 実装透過の delivery 取得（requireActual の三重複を 1 箇所に集約） */
+   > export const actualDeliveryDetails: typeof import("@/queries/product")["getDeliveryDetailsForStoreByCountry"] = (
+   >     ...args
+   > ) =>
+   >     jest
+   >         .requireActual<typeof import("@/queries/product")>("@/queries/product")
+   >         .getDeliveryDetailsForStoreByCountry(...args);
+   > ```
+   >
+   > テスト側は `jest.mock(...)` の 1 行だけをファイル冒頭に残し、`mockImplementationOnce` /
+   > `afterEach` の張り直しは `actualDeliveryDetails` を参照する（これらは巻き上げの影響を
+   > 受けない通常のコードなので import 参照で問題ない）。
+   >
+   > **ヘルパー化後の factory は下記の形になる**（切り出し前と同一 —— factory 内は
+   > **ローカルの `jest.requireActual`** のままにする。ここだけがヘルパーを使わない例外である）:
+   >
+   > ```typescript
+   > // tests/integration/order-placement.test.ts 冒頭
+   > import { getDeliveryDetailsForStoreByCountry } from "@/queries/product";
+   > import { actualDeliveryDetails } from "./setup/query-mocks";
+   >
+   > // ✅ factory 内はローカル requireActual。import した値を一切参照しない。
+   > jest.mock("@/queries/product", () => {
+   >     const actual = jest.requireActual<typeof import("@/queries/product")>(
+   >         "@/queries/product"
+   >     );
+   >     return {
+   >         ...actual,
+   >         getDeliveryDetailsForStoreByCountry: jest.fn(
+   >             actual.getDeliveryDetailsForStoreByCountry
+   >         ),
+   >     };
+   > });
+   >
+   > const mockedDelivery =
+   >     getDeliveryDetailsForStoreByCountry as jest.MockedFunction<
+   >         typeof getDeliveryDetailsForStoreByCountry
+   >     >;
+   >
+   > // ✅ 巻き上げの影響を受けない通常コード。ここでだけヘルパーを使う。
+   > afterEach(() => {
+   >     mockedDelivery.mockReset();
+   >     mockedDelivery.mockImplementation(actualDeliveryDetails);
+   > });
+   > ```
+   >
+   > ```typescript
+   > // ❌ これは動かない。jest.mock は import より上へ巻き上げられるため、
+   > //    factory 実行時点で actualDeliveryDetails はまだ初期化されていない。
+   > jest.mock("@/queries/product", () => ({
+   >     ...jest.requireActual("@/queries/product"),
+   >     getDeliveryDetailsForStoreByCountry: jest.fn(actualDeliveryDetails),
+   > }));
+   > ```
+   >
+   > babel-jest なら「not allowed to reference any out-of-scope variables」として
+   > **静的に**弾かれるが、本設定は `ts-jest` でありその検証が無いため、この誤りは
+   > 実行時エラーとして遅れて現れる（`bun run test:integration --
+   > tests/integration/order-placement.test.ts` で初めて露見する）。
+   > `mock` 始まりの識別子（例 `mockDeliveryDetails`）に改名しても **ts-jest では解決しない** ——
+   > あの命名規則は babel-jest の検査を通すためのものであり、初期化順序そのものは変わらない。
+
 2. Arrange: 在庫 **5**・カート数量 **5**（検証時はキャップ非発動で quantity 5 のまま通過）を seed。
    モックは **実関数の型で宣言**する（`as jest.Mock` は型を消すので使わない）。
    テスト内で `mockImplementationOnce` により一度だけ割り込む:
@@ -226,11 +343,11 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
    mockedDelivery.mockImplementationOnce(async (storeId, countryId) => {
        // カート検証（キャップ）通過後・decrement 前に、別トランザクションで在庫を 2 に減らす
        await db.size.update({ where: { id: size.id }, data: { quantity: 2 } });
-       return jest
-           .requireActual<typeof import("@/queries/product")>("@/queries/product")
-           .getDeliveryDetailsForStoreByCountry(storeId, countryId);
+       return actualDeliveryDetails(storeId, countryId);
    });
    ```
+
+   （`actualDeliveryDetails` は上記 `tests/integration/setup/query-mocks.ts` から import する。）
 
 3. Act: `await expect(placeOrder(address as ShippingAddress, cart.id)).rejects.toThrow("在庫が不足しています")`
    （decrement は `where: { quantity: { gte: 5 } }` に対し在庫 2 → `count === 0` → throw → 全ロールバック）
@@ -238,8 +355,9 @@ decrement は `$transaction` 内（`:720`）。この間に **`getDeliveryDetail
    - `db.order.count()` / `db.orderGroup.count()` / `db.orderItem.count()` がすべて **0**
    - `db.size.findUniqueOrThrow(...)` の quantity が **2 のまま**（decrement されていない）
 5. 後始末（**strict-safe**）: `afterEach` で `mockedDelivery.mockReset()` した後、
-   **透過実装を張り直す**:
-   `mockedDelivery.mockImplementation(jest.requireActual<typeof import("@/queries/product")>("@/queries/product").getDeliveryDetailsForStoreByCountry)`。
+   **透過実装を張り直す**: `mockedDelivery.mockImplementation(actualDeliveryDetails)`
+   （共通ヘルパー経由。生の `jest.requireActual(...)` 式をここで再度書かないこと — 三重複が
+   まさに張り直し忘れの温床である）。
 
    > 重要: `mockClear()` は `mock.calls` を消すだけで、**`mockImplementationOnce` のキューや
    > `mockImplementation` はリセットしない**。もし Act が once 実装を消費する前に throw すると、

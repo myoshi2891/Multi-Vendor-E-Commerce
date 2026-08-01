@@ -95,17 +95,23 @@ Newsletter フォームが `/api/newsletter` へ POST するのに **route が�
  * Characterization: Newsletter 購読フォームの現挙動を固定する。
  *
  * 2026-07-12 時点で `/api/newsletter` route はリポジトリに存在せず（schema にも
- * 購読者モデル無し）、全購読操作は 404 → "Failed to subscribe." トーストに終わる
+ * 購読者モデル無し）、全購読操作は失敗し "Failed to subscribe." トーストに終わる
  * （dormant 機能ギャップ — plans/audit/findings-17-e2e-coverage-r9.md TESTS-39）。
+ * 観測されたステータスは 404 だが、**それは route 不在という偶発的な機構**であり
+ * 契約ではない。assert は `response.ok() === false`（＝ 2xx でない = 購読が成功しない）で
+ * 固定し、404 そのものは
+ * 記録に留める。
  *
- * このテストは「壊れた挙動」を意図的に固定している。route が実装されたら
- * このスイートは fail する — その時は成功系テストへ**書き直す**こと（skip で黙らせない）。
+ * このテストは「壊れた挙動」を意図的に固定している。route が実装されて購読が成功する
+ * ようになったらこのスイートは fail する — その時は成功系テストへ**書き直す**こと
+ * （skip で黙らせない）。
  */
 ```
 
 テスト（ゲスト・seed 不要・`/browse` で実施）:
 
-1. **購読の試行は 404 に終わり、失敗トーストが表示される** —
+1. **購読の試行は成功せず、失敗トーストが表示される**（実測は 404 だが assert は
+   `response.ok()` が false であること。理由は下記 blockquote）—
    - `/browse` へ goto → フッターまでスクロール
      （`page.locator("#newsletter-email").scrollIntoViewIfNeeded()`）
    - `page.locator("#newsletter-email")` に `e2e-newsletter@example.com` を fill
@@ -117,9 +123,41 @@ const responsePromise = page.waitForResponse(
 );
 await page.getByRole("button", { name: "Sign up" }).click();
 const response = await responsePromise;
-expect(response.status()).toBe(404); // characterization: route 不在
+
+// 購読が成功していないことだけを契約にする（404 を成功条件として固定しない — 下記参照）。
+// 2xx を一括で拒否すること。`not.toBe(200)` だけだと 201 Created / 202 Accepted /
+// 204 No Content を「成功していない」と見なしてしまい、route が実装されて
+// 201 を返し始めた瞬間にこの characterization は緑のまま嘘をつく。
+expect(response.ok()).toBe(false);   // Playwright の ok() は 200-299 で true
+
+// 観測値は記録するがゲートにしない。2026-07-12 時点では 404（route 不在）。
+console.info(`[characterization] /api/newsletter status = ${response.status()}`);
+
+// 本質的な保証: ユーザーに見える失敗の契約
 await expect(page.getByText("Failed to subscribe.")).toBeVisible({ timeout: 10000 });
 ```
+
+> **`toBe(404)` で固定しないこと。** 404 を*成功条件*にすると、テストは
+> 「何かが**存在しない**こと」を理由に緑になる。これは 2 つの向きで壊れる:
+>
+> 1. **偽の健全性**: ルーティング回帰で API route が軒並み 404 になっても、本テストは
+>    緑のまま「characterization どおり」と報告する。本当は全部壊れている。
+> 2. **誤った失敗トリガー**: 404 は*恒久的な命題*（購読は成功せず "Failed to subscribe."
+>    が出る）ではなく*偶発的な機構*（route ファイルが無いから 404）である。catch-all route が
+>    501 を返すようになったり、route 実装後のエラー経路が 500 を返したりしただけで、
+>    ユーザーから見た挙動は何も変わっていないのに赤くなる。
+>
+> `ok()` が false であること（＝ 2xx でないこと）なら恒久的な命題だけを固定できる。
+> **route が実装されて実際に成功するようになった時にはきちんと赤くなる**ので、docstring が
+> 要求する「成功系テストへ書き直す」トリガーは失われない —— トリガーがステータスコードの
+> 偶発ではなく意味のある命題に紐づくだけである。
+>
+> **ただし「200 以外」ではなく「2xx 以外」で書くこと。** `not.toBe(200)` は 201/202/204 を
+> 通してしまい、成功応答の形が変わっただけでこのテストは黙って緑のままになる。
+>
+> これは同ラウンドの plan 050 が非 ACTIVE 店舗ページについて確立した原則と同一
+> （`plans/050-e2e-admin-store-status.md` Step 4 の blockquote:「修正を罰するテストは書かない」）。
+> 両プランで契約の形を揃えること。
 
 2. **失敗時は入力値が保持される（`form.reset()` は成功時のみ）** — テスト 1 の続きで
    `await expect(page.locator("#newsletter-email")).toHaveValue("e2e-newsletter@example.com")`。
@@ -193,7 +231,7 @@ expect(newsletterRequests).toHaveLength(0);
    > リクエストを取りこぼす）。`window` へのフラグ設置は `any` を使わず
    > `Window & { __newsletterInvalidFired?: boolean }` で型付けする（`.claude/steering/tech.md`）。
    >
-   > **control はテスト 1 が兼ねる**: テスト 1（有効なメールで POST が 404 に終わる）が
+   > **control はテスト 1 が兼ねる**: テスト 1（有効なメールで POST が発生し、成功しない）が
    > 通っていることが、「`page.on("request")` の捕捉が実際に機能している」ことの裏付けになる。
    > テスト 1 が壊れている状態では本テストの `toHaveLength(0)` は無意味に緑になるので、
    > 本テストが落ちないのにテスト 1 が落ちている場合は、まずテスト 1 を直すこと。
@@ -246,8 +284,15 @@ expect(newsletterRequests).toHaveLength(0);
 
 - `src/app/api/newsletter/` が既に存在する（機能が実装済み — characterization は無効。
   成功系テストへの書き直しを提案して報告）。
-- POST のレスポンスが 404 以外（405 / 500 等）— characterization の前提が違う。実測値を
-  記録して報告（テストの expect を実測に合わせて書き直すのは**報告後**）。
+- POST のレスポンスが **2xx**（購読が成功する）— 機能が実装済みということなので
+  characterization は無効。成功系テストへの書き直しを提案して報告する。
+
+  > **404 以外の失敗ステータス（405 / 500 等）は STOP 条件ではない。** 契約は
+  > 「2xx でないこと」なのでそのまま通る。旧版はここで「404 以外なら前提が違う」として
+  > 停止を求めていたが、それは `toBe(404)` を前提にした記述であり、上記の契約変更と
+  > 矛盾するため削除した。観測値が 404 から変わっていた場合は、**止まらずに**
+  > `console.info` の記録・docstring・Maintenance notes の「実測 404」の記述を
+  > 実測値へ更新し、報告する。
 - toast が 10s 待っても出ない（AbortController のタイムアウト 8s と競合している可能性 —
   trace を添えて報告）。
 

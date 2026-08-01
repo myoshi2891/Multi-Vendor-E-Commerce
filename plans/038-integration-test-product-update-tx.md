@@ -228,6 +228,13 @@ function buildUpdateInput(
 
 ```typescript
 // 旧 spec("old-spec") / 旧 question / 旧 size を Arrange 済みの状態から開始する
+//
+// ADD の直前に必ず DROP IF EXISTS を打つ（下の必須要件 1）。過去の実行が finally に
+// 届かず落ちていると制約が残留しており、ADD が duplicate_object で失敗して
+// 「テスト本体に無関係な理由」で赤くなる。冪等に回復できる形にしておく。
+await db.$executeRawUnsafe(
+    `ALTER TABLE "Spec" DROP CONSTRAINT IF EXISTS "tmp_block_boom"`
+);
 await db.$executeRawUnsafe(
     `ALTER TABLE "Spec" ADD CONSTRAINT "tmp_block_boom" CHECK ("value" <> 'BOOM')`
 );
@@ -253,7 +260,12 @@ try {
     const questions = await db.question.findMany({ where: { productId: product.id } });
     expect(questions[0].question).toBe(oldQuestion.question);
 } finally {
-    await db.$executeRawUnsafe(`ALTER TABLE "Spec" DROP CONSTRAINT "tmp_block_boom"`);
+    // IF EXISTS 必須: ADD 側が落ちて制約が存在しない状態でも finally は必ず走るため、
+    // 素の DROP はここで別の例外を投げ、**本来の失敗原因を握り潰す**（finally の throw が
+    // try の例外を置き換える）。デバッグ時に見えるのが「制約が無い」という二次エラーだけになる。
+    await db.$executeRawUnsafe(
+        `ALTER TABLE "Spec" DROP CONSTRAINT IF EXISTS "tmp_block_boom"`
+    );
 }
 ```
 
@@ -261,6 +273,37 @@ try {
    > Size 置換が実行されれば id は必ず新しくなる。失敗後に**旧 id のまま**なら、
    > 「Size 置換は実行されたが tx のロールバックで取り消された」ことを意味する。
    > 制約の DROP は `finally` で必ず行う（`resetDb` は TRUNCATE であり制約を落とさない）。
+   >
+   > **この一時 DDL は統合スイート本体から隔離すること（すべて MUST — 「可能なら」ではない）。**
+   > `ALTER TABLE … ADD CONSTRAINT` は共有 DB の**スキーマそのもの**を変える。`finally` に届く前に
+   > プロセスが落ちれば制約が残留し、**以降の全実行の `Spec` 挿入を汚染する**（次の実行が失敗する
+   > 理由は当該テストの外にあるため、原因究明が極端に難しい）。さらに他の `Spec` テストと並行すると
+   > DDL のロックで競合しフレーク化する。以下は**すべて必須条件**:
+   >
+   > 1. **ADD の直前に `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` を必ず実行する** —— 過去の
+   >    リーク実行から冪等に回復できるようにする。`finally` の DROP と**対**で置くこと
+   >    （`finally` だけでは強制終了時に回復手段が無い）。
+   >    **`finally` 側の DROP にも `IF EXISTS` を付けること。** `finally` は ADD が失敗した
+   >    経路でも必ず走るため、素の DROP は「制約が存在しない」で**別の例外を投げ、
+   >    try 側の本来の失敗原因を置き換える**。テストが落ちた理由として表示されるのが
+   >    二次エラーだけになり、失敗注入が成立したのかどうかすら判別できなくなる。
+   >    どちらの位置でも `IF EXISTS` は冪等性のためであって、省略してよい側は無い。
+   > 2. **制約名はこのテスト固有にする** —— 衝突回避。
+   > 3. **この DDL テストは直列で走らせる** —— `Spec` を触る他テストと並行させない。
+   > 4. **直列化は CI ジョブ単位でも担保する** —— 同一共有 DB に対して複数の integration
+   >    ジョブ/シャードが並行すると、テストランナー内の直列化では防げない DDL ロック競合が起きる。
+   >    この DDL テストを含むスイートは**専用ジョブに分離する**か、同一 DB を使う integration
+   >    ジョブと**並行実行しない**（`needs:` による直列化 or concurrency group）。どちらを採ったかを
+   >    ワークフローに残すこと。
+   > 5. **~~専用の tx / セーブポイント内に閉じ込める~~ — この要件は撤回する（2026-07-26）。**
+   >    上の注入手段と**両立しない**。制約を効かせる相手は `upsertProduct` が内部で開く
+   >    **別のトランザクション**であり、そこから見えるためには DDL が**コミット済み**で
+   >    なければならない。セーブポイント／専用 tx に閉じてロールバックすると、制約は
+   >    SUT のトランザクションから一度も見えず、`Spec` の create は落ちない —— 失敗注入が
+   >    成立せず、テストは「原子性を検証した」と称しながら何も検証しない緑になる。
+   >    したがって DDL は**トップレベルでコミットして**実行し、可視範囲を絞る代わりに
+   >    1〜4（冪等な事前 DROP・固有の制約名・直列実行・CI ジョブ単位の直列化）で
+   >    残留とロック競合を封じる。1〜4 は引き続き**すべて必須**。
 
 **Verify**: `bun run test:integration -- tests/integration/product-update.test.ts` → all pass（5 テスト以上）
 
@@ -290,7 +333,20 @@ Machine-checkable. ALL must hold:
 - [ ] シナリオ 5 に「reject + 旧 spec/question/size 残存 + 新行ゼロ」の assert が存在し、
       かつ **旧 Size.id が保たれている**ことを assert している（置換実行後の巻き戻しの証拠）
 - [ ] シナリオ 5 の一時 CHECK 制約が `finally` で DROP され、同一ファイルの
-      2 回連続実行が 2 回とも pass する
+      2 回連続実行が 2 回とも pass する。**`finally` 側の DROP も `IF EXISTS` 付き**である
+      （検証: ADD を意図的に失敗させた状態で走らせ、報告される例外が「制約が無い」という
+      二次エラーではなく **ADD 側の本来の失敗**であること。素の DROP だと `finally` の
+      throw が try の例外を置き換え、失敗注入が成立したかすら判別できなくなる）
+- [ ] 一時 CHECK 制約の **ADD の直前**にも `DROP CONSTRAINT IF EXISTS "tmp_block_boom"` があり、
+      リーク状態からの冪等回復が効く（検証: 手で `ALTER TABLE "Spec" ADD CONSTRAINT
+      "tmp_block_boom" …` を残した状態からスイートを走らせても pass すること）
+- [ ] DDL テストを含むスイートが**同一 DB を使う他 integration ジョブと並行しない**構成に
+      なっている（専用ジョブ分離 / `needs:` 直列 / concurrency group のいずれか）。
+      採用した方式が `.github/workflows/` に反映されている
+- [ ] 一時 DDL が**トップレベルでコミット実行**されている（SUT の別 tx から見える必要があるため。
+      セーブポイントに閉じると失敗注入が成立せず、テストが空回りの緑になる）。残留とロック競合は
+      「ADD 直前の冪等な `DROP CONSTRAINT IF EXISTS`」「テスト固有の制約名」「直列実行」
+      「CI ジョブ単位の直列化」の 4 点で封じられている
 - [ ] シナリオ 4 に Wishlist SetNull と CartItem stale の**両方**の assert が存在する
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）

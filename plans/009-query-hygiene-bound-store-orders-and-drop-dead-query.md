@@ -112,11 +112,20 @@ export const getStoreOrders = async (storeUrl: string) => {
 
 ### Step 1: Add a bounded `take` to `getStoreOrders`
 
-In `src/queries/store.ts`, add a module-level constant and apply it in the `findMany`:
+Define the bound in the **shared** module `src/lib/store-constants.ts` (not inline in
+`store.ts`) so the query and the seller page's truncation notice (Step 3b) import the
+**same** constant and cannot drift:
 
 ```ts
+// src/lib/store-constants.ts
 // 無制限の findMany を防ぐ防御的上限。将来はサーバーサイドページネーションへ移行（PERF-04 follow-up）。
-const STORE_ORDERS_MAX = 200;
+export const STORE_ORDERS_MAX = 200;
+```
+
+Then import it in `src/queries/store.ts` (same source as Step 3b's UI import):
+
+```ts
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 ```
 
 In the `getStoreOrders` `findMany`, add `take: STORE_ORDERS_MAX` alongside `orderBy`:
@@ -159,6 +168,38 @@ Use `expect.objectContaining` so the large `include` block doesn't have to be re
 
 **Verify**: `bun run test -- src/queries/store.test.ts` → all pass.
 
+### Step 3b: Surface the truncation notice on the seller orders page
+
+> **Retroactively documented (2026-07-18).** The Scope section lists
+> `orders/page.tsx` as in-scope and states the notice is *required* by the
+> behavior-change caveat, but Steps 1-4 never told the executor to write it and
+> the Done criteria never checked it. The notice did ship; this step records the
+> work that was actually done, so the plan is internally consistent and the
+> requirement is not silently droppable on a re-run.
+
+The `take` bound and the user-facing notice are **one change, not two**. Adding
+`take: STORE_ORDERS_MAX` alone converts "all orders" into "the newest 200,
+silently" — a seller with more than 200 order groups sees older orders simply
+vanish with no indication the list is capped. That is the silent truncation the
+behavior-change caveat forbids, so the bound must not be shipped without the
+notice in the same change.
+
+In `src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx`, render the cap
+above the table, deriving the number from the shared constant rather than
+hardcoding `200` (so the text cannot drift from the query):
+
+```tsx
+import { STORE_ORDERS_MAX } from "@/lib/store-constants";
+
+<p className="mb-4 text-sm text-muted-foreground">
+    Showing up to the latest {STORE_ORDERS_MAX} orders.
+</p>
+```
+
+**Verify**:
+- `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` → shows both the import and the interpolation (i.e. the copy is derived, not a literal `200`).
+- `bunx tsc --noEmit` → exit 0.
+
 ### Step 4: Full lint
 
 **Verify**: `bun run lint` → exit 0.
@@ -176,6 +217,7 @@ ALL must hold:
 
 - [ ] `bunx tsc --noEmit` exits 0
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` shows the bound applied
+- [ ] `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` shows the truncation notice, derived from the constant (added 2026-07-18 — the bound and the notice ship together; a bound without a notice is the silent truncation the caveat forbids)
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` returns no matches
 - [ ] `bun run test -- src/queries/store.test.ts` exits 0; the `take` assertion passes
 - [ ] `bun run lint` exits 0

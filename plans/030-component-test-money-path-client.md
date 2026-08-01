@@ -232,12 +232,52 @@ place-order-card.test.tsx と同様に stub 化。
    テストで reject を発生させ、**常に「望ましい挙動」を assert 対象にする**
    （`useEffect` 内で catch され、ユーザーに失敗が伝わる = `toast.error` 等が呼ばれる）:
    - 望ましい挙動が**実装済み**なら、通常の `it(...)` でそのまま assert する。
-   - 現行実装が **unhandled rejection を起こす**（= 望ましい挙動が未実装）なら、
-     **同じ assert のまま `it.failing(...)` でマークする**（Jest 30 — `it.failing` は Jest 28+）。
-     テスト名は `hydrate rejection is surfaced to the user` のように**望ましい挙動**で書き、
+   - 現行実装が **unhandled rejection を起こす**（= 望ましい挙動が未実装）場合は、
+     **`it.failing` に頼る前に下の「STOP: it.failing の適用限界」を必ず読むこと**。
+     条件を満たすと確認できた場合に限り、**同じ assert のまま `it.failing(...)` で
+     マークする**（Jest 30 — `it.failing` は Jest 28+）。テスト名は
+     `hydrate rejection is surfaced to the user` のように**望ましい挙動**で書き、
      `SECURITY_GAP_REPORT` 等の finding に登録する（本体修正は out of scope だが、
      **テストで検知点を作る**）。
 
+   > **STOP: `it.failing` の適用限界（2026-07-18 追記）**
+   >
+   > `it.failing` が反転するのは **テスト本体の assertion 結果**であって、
+   > **unhandled promise rejection を捕捉する機構ではない**。`useEffect` の外へ
+   > 漏れた rejection は、テスト関数の戻り値とは無関係に Node のプロセスレベル
+   > イベントとして浮上する。したがって:
+   >
+   > - rejection が assertion の失敗として現れるなら → `it.failing` は機能する。
+   > - rejection が `useEffect` から漏れて未処理のまま浮上するなら → `it.failing`
+   >   は**それを吸収しない**。Jest の worker が run 全体の失敗として報告したり、
+   >   別のテストに帰属して報告されたりしうる（Node のバージョンと Jest 設定に
+   >   依存する）。この場合 `it.failing` は問題を隠すどころか、**発生源から
+   >   切り離された不安定な失敗**を作る。
+   >
+   > **したがって、`it.failing` を採用する前に最小再現で検証すること**:
+   >
+   > 1. 当該テスト 1 本だけを実際の設定で走らせる
+   >    （`bunx jest tests/component/... -t "hydrate rejection"`）。
+   > 2. **単独実行が緑**であることに加え、**スイート全体でも緑**であることを確認する
+   >    （`bun run test`）。単独では通るがフルランで落ちるなら、rejection が
+   >    テスト境界を越えている証拠。
+   > 3. 2 回以上連続で同じ結果になることを確認する（環境差フレークの排除）。
+   >
+   > **検証が通らない場合は `it.failing` を使わない。** 代替は次の順で検討する:
+   >
+   > - **(a) 本体側で握る（推奨）**: `useEffect` 内の非同期処理を try/catch し、
+   >   失敗をユーザーに伝える（`toast.error`）。これは
+   >   `.claude/steering/tech.md` の「useEffect キャンセルフラグ」パターンが
+   >   既に示している形であり、そもそも本来あるべき実装。out of scope の
+   >   建前より、**テストを成立させるための前提条件**として扱ってよい。
+   >   この場合テストは通常の `it(...)` で書ける。
+   > - **(b) テストを書かず finding のみ登録**: (a) が本当に別プランに属する場合、
+   >   検知点を作れないことを明示して `SECURITY_GAP_REPORT` に残す。
+   >   **不安定なテストを残すよりは、ギャップとして可視化されている方が良い。**
+   >
+   > 「unhandled になるならテストを書かない」を安易に選ばない方針は変わらないが、
+   > その回避策が**フレークを持ち込むなら本末転倒**である。
+   >
    > **「未ハンドルであること」を assert して緑になるテストにしないこと**。それは誘因を反転させる ——
    > バグがある間は緑で、**誰かが catch を実装した瞬間に赤**になる。修正を罰するテストは回帰検知点では
    > なく、**欠陥のロック**になる（次の担当者は「直したらテストが壊れた」と受け取る）。
@@ -277,11 +317,28 @@ place-order-card.test.tsx と同様に stub 化。
 
 ## Done criteria
 
-- [ ] 新規 6 テストファイルがすべて緑（`bun run test` でスイート数 +6）
-- [ ] 対象 6 コンポーネントの lcov Lines が 0% → 60%+（`bun run test -- --coverage` 後に確認）
+> **件数は「6」固定ではない（2026-08-01 訂正）。** 本文は hydrate rejection の検証が
+> 通らない場合の代替として **(b)「テストを書かず finding のみ登録」** を明示的に認めている
+> （`it.failing` がフレークを持ち込むなら本末転倒、という判断）。にもかかわらず旧版の
+> Done criteria は「新規 **6** ファイル / スイート **+6** / コミット **6**+1」と固定して
+> おり、**(b) を採った瞬間に Done criteria が構造的に満たせなくなる**。
+> 以下の `N` は「実際にテストを書いた対象コンポーネント数」とし、**(b) を採った対象は
+> `N` から除いて `SECURITY_GAP_REPORT` への登録で代替する**。(a)（本体側で握る）を
+> 採った場合は通常の `it(...)` で書けるので `N` に含める。
+
+- [ ] 新規 `N` テストファイルがすべて緑（`bun run test` でスイート数 **+N**）。
+      `N` は対象 6 のうち **(b) で finding 登録に振り替えた分を除いた数**
+- [ ] **`N < 6` の場合、差分の各対象について `SECURITY_GAP_REPORT` に
+      「検知点を作れない理由」が記録されている**（ギャップを可視化したうえでの
+      意図的な不作成であり、単なる未実施ではないことを示す）
+- [ ] テストを書いた `N` 個の対象で lcov Lines が 0% → 60%+（`bun run test -- --coverage` 後に確認）
 - [ ] リエントランシーガード（newsletter）と二重呼び出し防止の assert が存在する
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0・**本体 6 ファイルに diff なし**
-- [ ] コミットが 6（テスト）+ 1（docs 同期）に分かれている
+      （ただし代替 **(a)**「`useEffect` の非同期処理を try/catch し `toast.error` で伝える」を
+      採った場合は、その対象ファイルのみ本体 diff が出る。**(a) を採ったなら
+      「本体に diff なし」は該当対象に適用しない** —— 本文が (a) を推奨として認めているため）
+- [ ] コミットが `N`（テスト）+ 1（docs 同期）に分かれている
+      （(a) を採った場合は本体修正もテストと別コミット）
 - [ ] `plans/README.md` の 030 行を DONE に更新
 
 ## STOP conditions

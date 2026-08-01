@@ -166,7 +166,11 @@ spec の骨組み（describe + `requiresClerkAdmin` ゲート + `createCustomerS
 // （notFound() 導入時にこのテストが落ちないようにするため）。
 // 参照: src/queries/store.ts:729（throw）/ src/app/(store)/store/[storeUrl]/page.tsx（null 未処理）
 const response = await page.goto(`/store/${storeUrl}`);
-expect(response?.status()).not.toBe(200);
+// `response?.status()` を直接 not.toBe(200) に渡さないこと。goto が null を返すと
+// `undefined !== 200` で空振り合格し、「公開されていない」の証明にならない
+// （下の blockquote 参照）。まずレスポンス取得自体を保証する。
+expect(response).not.toBeNull();
+expect(response!.status()).not.toBe(200);
 
 // 店舗情報が描画されていないこと（本質的な契約）。
 await expect(page.getByText(store.name)).toHaveCount(0);
@@ -216,8 +220,10 @@ await expect(page.getByText(store.name)).toHaveCount(0);
 
 - [ ] `bunx tsc --noEmit` / `bun run lint` exit 0
 - [ ] chromium 1 passed / 3 ブラウザ 3 passed
-- [ ] 非公開の assert が **`response.status()).not.toBe(200)`**（500 でも 404 でも通る耐久契約）と
-      **店舗名の非表示**（`toHaveCount(0)`）の両方を含む。**`toBe(500)` で固定していないこと**
+- [ ] 非公開の assert が **`expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)`**
+      （500 でも 404 でも通る耐久契約）と **店舗名の非表示**（`toHaveCount(0)`）の両方を含む。
+      **`toBe(500)` で固定していないこと**、かつ **`response?.status()` の形になっていないこと**
+      （`?.` は goto が null を返したとき `undefined !== 200` で空振り合格する — Step 4 の blockquote 参照）
 - [ ] **BAN 前の control**（`toBe(200)` + 店舗名 `toBeVisible()`）が BAN の assert より前にある
       — これが無いと、ページが最初から壊れていても非表示 assert が緑になる（Step 4 の blockquote 参照）
 - [ ] platform-coupon（chromium）が引き続き passed（共有店舗無傷）
@@ -231,18 +237,30 @@ await expect(page.getByText(store.name)).toHaveCount(0);
   （認可経路が Current state の記述から変わっている）。
 - `Store` モデルの必須フィールドが多く、使い捨て店舗の Prisma 作成が
   30 行を超える複雑さになる（seed ヘルパー側に共通化すべきか判断が要る — 報告）。
-- 非 ACTIVE store ページの実挙動が **500 以外**（例: 既に `notFound()` が導入されて 404、
-  あるいは店舗名が描画されて公開されたまま）— 前者は Current state の読解が古い
-  （修正コミットを特定して期待値を 404 へ反転してよいか報告）、後者は
+- 非 ACTIVE store ページで**店舗名が描画されて公開されたまま**（`toHaveCount(0)` が赤）—
   **ステータスフィルタが効いていない重大所見**として即報告。
+
+  > **404 は STOP 条件ではない**（旧版はここに「既に `notFound()` が導入されて 404」を
+  > STOP として挙げていたが、下の blockquote および Step 4 の設計と矛盾していたため削除した）。
+  > 本プランの契約は `not.toBe(200)` であり、**404 はアサーションにとって非事象**で、
+  > そのまま緑になる。404 が無効化するのは*アサーション*ではなく*記述*（Current state と
+  > Maintenance notes が「500」と書いている点）なので、対応は **STOP でも期待値の変更でもなく、
+  > 記述の更新 + 報告**である。
 
 > **500 は STOP 条件ではない。** 未処理例外が error boundary へ到達する現実装は
 > **既知のアプリバグ**（本来は `notFound()` で 404 が正しい）だが、本プランは
 > characterization テストであり、**現挙動を記録した上でテストは pass させる**。
-> 500 を観測しても止まらず、Step 4 のとおり `expect(response?.status()).not.toBe(200)` +
+> 500 を観測しても止まらず、Step 4 のとおり
+> `expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)` +
 > `toHaveCount(0)` で「公開されていない」ことだけを契約にし、500 である事実は
 > コメントと Maintenance notes に記録する（**assert では固定しない** —
 > 理由は Step 4 の blockquote）。
+> **ただし `response?.status()` の `?.` を「成功」扱いしないこと。** `page.goto()` は
+> ナビゲーションが発生しない場合などに `null` を返し、そのとき `response?.status()` は
+> `undefined` になって `undefined !== 200` で**アサーションが空振り（vacuously pass）**する。
+> これは「公開されていない」の証明にならない。まず `expect(response).not.toBeNull()` で
+> レスポンス取得自体を保証してから、`expect(response!.status()).not.toBe(200)` を評価すること
+> （null を非事象として素通りさせない）。
 > **404 を観測した場合も STOP しない** —— `not.toBe(200)` はそのまま通る。
 > `notFound()` が導入済みだったということなので、Current state の記述と
 > Maintenance notes を現状に合わせて更新し、報告する。
@@ -255,8 +273,11 @@ await expect(page.getByText(store.name)).toHaveCount(0);
   が正しく、500 は顧客に無用なエラー画面を見せるアプリバグ。本 spec は
   「BANNED にしたら顧客から見えなくなる」ことの保証が目的のため、**500 を現挙動として
   記録しつつ pass させる**（`toHaveCount(0)` が本質的な保証を担う）。
-  `notFound()` が導入されたら Step 4 の期待値を 404 へ反転すること
-  （`TODO(characterization)` コメントが目印）。次回 correctness 監査ラウンドの候補。
+  `notFound()` が導入されたら、**Step 4 の assert は変更しない**（`not.toBe(200)` は 404 でも
+  そのまま通る。これが耐久契約を選んだ理由であり、`toBe(404)` へ書き換えることは
+  Step 4 の blockquote が退けた「修正を罰するテスト」へ逆戻りする）。更新するのは
+  **記述のみ** —— 本節と Current state の「500」を 404 に直し、`TODO(characterization)`
+  コメント（目印）を削除する。次回 correctness 監査ラウンドの候補。
 - **アプリ側ギャップ（重要）**: `getProducts` に store status フィルタが無く、BANNED 店舗の
   商品が /browse に出続ける。§20 P1 の完全な達成には `src/queries/product.ts` の
   whereClause への store status 条件追加（+ Integration/E2E の拡張）が必要。

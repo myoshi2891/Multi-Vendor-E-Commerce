@@ -46,16 +46,33 @@ Wishlist は黙って連鎖消滅し、SupportTicket は匿名化される。こ
 
 ## Current state
 
-- `src/app/api/webhooks/route.ts:114-127` — 検証対象。**変更しない。** 抜粋:
+- `src/app/api/webhooks/route.ts:121-150` — 検証対象。**変更しない。** 抜粋（**PII 秘匿化が
+  landed 済みの現行実装**。かつては `db.user.deleteMany` 単体だったが、現在は SupportTicket の
+  PII 列を `REDACTED_PII` へ `updateMany` で上書きしてから削除する処理を単一 `$transaction` に
+  まとめている。`REDACTED_PII = "[deleted]"` は同ファイル冒頭で定義）:
 
 ```typescript
     if (evt.type === "user.deleted") {
         const userId = (evt.data as { id: string }).id;
         try {
-            await db.user.deleteMany({
-                where: {
-                    id: userId,
-                },
+            // GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
+            // ユーザー削除で userId が null 化される前に PII 列を秘匿値へ上書きする。
+            // 上書きと削除は単一 tx にまとめ、片方だけ成立して整合が崩れることを防ぐ。
+            await db.$transaction(async (tx) => {
+                await tx.supportTicket.updateMany({
+                    where: { userId },
+                    data: {
+                        name: REDACTED_PII,
+                        email: REDACTED_PII,
+                        subject: REDACTED_PII,
+                        message: REDACTED_PII,
+                    },
+                });
+                await tx.user.deleteMany({
+                    where: {
+                        id: userId,
+                    },
+                });
             });
         } catch (error) {
             console.error("Webhook user deletion failed:", error);
@@ -277,10 +294,20 @@ expect(couponAfter._count.users).toBe(0); // _CouponToUser の行が CASCADE で
    シナリオ 2〜4 と同じく**現挙動の characterization** — 将来の匿名化・ソフト削除で反転する。
    > 他の RESTRICT シナリオと分離する理由: Store は「顧客の削除」ではなく「販売者の削除」の
    > 経路であり、修正時の設計（店舗の所有権移譲 / 店舗の閉鎖）が顧客側とは別物になるため。
-6. **SupportTicket（orderId なし）持ちユーザーは削除され、ticket が匿名化される（SET NULL）**:
+6. **SupportTicket（orderId なし）持ちユーザーは削除され、ticket の `userId` が切り離され（SET NULL）、PII 列が秘匿化される**:
    `seedUser` + `db.supportTicket.create`（`userId: user.id`, `orderId` は指定しない）→
    `postUserDeleted(user.id)` → **status 200**。
-   assert: User 消滅、`db.supportTicket.findUnique` の行は**残存**し `userId` === null
+   assert: User 消滅、`db.supportTicket.findUnique` の行は**残存**し `userId` === null、
+   かつ `name` / `email` / `subject` / `message` がすべて `"[deleted]"`（`REDACTED_PII`）。
+   > **Status: RESOLVED（PII 秘匿化を実装済み）。** かつて SET NULL は `userId` を切り離すだけで
+   > `name` / `email` / `subject` / `message`（`@db.Text`）の PII 列を一切消さず「PII 残存」だった。
+   > `src/app/api/webhooks/route.ts` の `user.deleted` ハンドラは現在、ユーザー削除の**前**に
+   > 当該ユーザーのチケットの PII 列を `REDACTED_PII` へ `updateMany` で上書きし、上書きと削除を
+   > 単一 `$transaction` にまとめる（GDPR「忘れられる権利」対応）。したがって本シナリオは
+   > **PII が消去されること**を assert する（characterization ではなく正の保証）。
+   > **注意**: シナリオ 2〜5 の RESTRICT による PII 残存は**別問題で依然 OPEN** — あちらは
+   > 子テーブルが RESTRICT のため**削除自体が阻止**され、User 行ごと PII が残る（SET NULL 経路の
+   > 本修正では解消しない）。RESTRICT 群の残存を「解決済み」として記録しないこと。
 7. **存在しない userId は 200（deleteMany の冪等性）**: seed なしで
    `postUserDeleted("user_does_not_exist")` → **status 200**（deleteMany は count:0 で正常終了）
 
@@ -317,7 +344,8 @@ Machine-checkable. ALL must hold:
 - [ ] シナリオ 5（**Store 保有ユーザー**）に「500 + User/Store 残存」の assert が存在する
       — Why this matters が RESTRICT 群の筆頭に挙げる経路であり、欠かすと販売者側の
       PII 残存が未検証のまま残る
-- [ ] シナリオ 6 に「200 + ticket 残存 + userId NULL 化」の assert が存在する
+- [ ] シナリオ 6 に「200 + ticket 残存 + userId NULL 化 + **PII 列（name/email/subject/message）が
+      `REDACTED_PII` へ秘匿化**」の assert が存在する（PII 消去は実装済み＝正の保証）
 - [ ] `bunx tsc --noEmit` exits 0 / `bun run lint` exits 0 / `bun run test` exits 0
 - [ ] **コードコミットの直前**で、`git status` に in-scope 外の変更がない（プラン index の更新と `spec-sync-after-test` の docs 同期は、後続の別コミット）
 - [ ] docs 同期（QA_HANDOFF 統計 + ダッシュボード再生成）が別コミットで完了
@@ -328,8 +356,10 @@ Machine-checkable. ALL must hold:
 Stop and report back (do not improvise) if:
 
 - `docker info` が失敗する（→ `BLOCKED (Docker unavailable)`）
-- Drift check で `route.ts:114-127` が本プランの抜粋と一致しない（特に匿名化・ソフト削除・
-  子テーブル先行削除が既に入っている場合 — 本プランの前提が消えている）
+- Drift check で `route.ts:121-150` が本プランの抜粋（PII 秘匿化 `$transaction` を含む現行実装）と
+  一致しない。**PII 秘匿化（`supportTicket.updateMany` → `user.deleteMany` の単一 tx）は landed 済みの
+  前提**なので、それが**無くなっている**場合や、さらなる匿名化・ソフト削除が新たに入っている場合は
+  本プランの前提が変わっているため STOP して報告する
 - **シナリオ 2〜5 のいずれかで削除が成功（200）してしまう** — FK が RESTRICT でなくなっている
   （schema/migration が変わった）。characterization の前提が崩れているので、実際の FK 定義を
   添えて報告
@@ -352,5 +382,7 @@ Stop and report back (do not improvise) if:
 - シナリオ 5（Store 保有）の修正方向は顧客側（シナリオ 2〜4）と別設計になりうる
   （店舗の所有権移譲・閉鎖フロー）。spike 016（出品審査）/ 022（セラー指標）と接続して
   検討すること。
-- 将来 `user.deleted` 経路に匿名化が入ると、シナリオ 6（SupportTicket SET NULL）は
-  「webhook 到達前から匿名」に意味が変わる — 修正プラン側でテスト意図のコメントを更新すること。
+- `user.deleted` 経路の SupportTicket PII 秘匿化は**実装済み**（`route.ts` が削除前に
+  PII 列を `REDACTED_PII` へ上書き）。シナリオ 6 は SET NULL の characterization ではなく
+  **PII 消去の正の保証**を検証する（上記シナリオ 6 参照）。RESTRICT 群（シナリオ 2〜5）の
+  PII 残存は別問題で依然 OPEN。

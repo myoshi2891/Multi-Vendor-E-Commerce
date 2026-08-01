@@ -319,7 +319,205 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 - [ ] `signInWithPassword` の Continue 取得が `{ exact: true }` 付き
       （`grep -n 'name: "Continue"' tests/e2e/helpers/*.ts` の全ヒットに `exact: true` がある。
       Google ボタンの名前 `Sign in with Google Continue with Google` に部分一致するため）
-- [ ] 1 段 / 2 段の分岐が `isVisible()` の即時評価ではなく `waitFor` の解決結果で判定している
+- [ ] `signInWithPassword` に **1 段 / 2 段の分岐が存在しない**
+      （チェックは **sign-in ヘルパー本体に限定**すること — `helpers/*.ts` 全体を対象にすると
+      他ヘルパーが正当に `isVisible()` を使っていても false-fail する。関数本体だけを
+      取り出して検査する:
+
+  ```bash
+  # 宣言行から、波括弧の深さが 0 に戻る行までを抜き出す。終端文字列に依存しないので、
+  # `}` / `};` / `},` のいずれで閉じても、object メソッドとしてインデントされていても効く。
+  # 抜き出した本体は tr で 1 行へ正規化してから照合する（下の「行単位で照合しない」参照）。
+  #
+  # 宣言の検出は「宣言らしさ」で行い、**宣言行が `{` で終わることを要求しない**。
+  # Prettier が引数を折り返すとシグネチャが複数行になり `{` が次行以降へ移るため
+  # （下の「空抽出を PASS にしないこと」参照）。深さ計測は最初の `{` が現れてから始まる。
+  # 抽出の**前**に非コードを潰し、以降の検査を実行コードだけに限定する。
+  # 潰す対象は**コメントと文字列リテラルの中身の両方**。文字列リテラルを交替の
+  # 左側で捕まえるのは `"a//b"` / `"https://…"` を行コメントと誤認しないためだが、
+  # **捕まえたうえで中身まで温存してはならない**（`[^:]` のような一点狙いの
+  # ガードが不十分なのと同じ理由で、中身の温存も検査を壊す）:
+  #
+  #   const hint = "if the field is missing call isVisible() first";
+  #
+  # 温存すると下の禁止パターンがこの文字列に当たり、**分岐が無いのに FAIL** する。
+  # 逆に [`plans/044`](044-e2e-run-guardrails.md) 側では、文字列の中に書いただけの
+  # 偽実装が**実装として PASS** する。同じ穴の裏表なので両プランで同一の関数を使う。
+  #
+  # クォートの対（`""` `''` ` `` `）は残して中身だけを空白へ潰す。構文の骨格が
+  # 保たれるので `page.getByLabel("        ")` は呼び出しのまま残り、改行も維持して
+  # 行番号がずれない。
+  strip_code() {
+      perl -0777 -pe '
+        s{
+           ("(?:\\.|[^"\\])*")            # 二重引用符文字列
+         | (\x27(?:\\.|[^\x27\\])*\x27)   # 単一引用符文字列
+         | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
+         | (/\*.*?\*/)                    # ブロックコメント
+         | (//[^\n]*)                     # 行コメント
+        }{
+           my $lit = defined($1) ? $1 : defined($2) ? $2 : $3;
+           if (defined $lit) {
+               my $q = substr($lit, 0, 1);
+               my $body = substr($lit, 1, -1);
+               $body =~ s/[^\n]/ /g;      # 改行は残し行番号を保つ
+               $q . $body . $q;
+           } else {
+               my $c = $&; $c =~ s/[^\n]/ /g; $c;
+           }
+        }gexs
+      ' "$1"
+  }
+
+  body=$(strip_code tests/e2e/helpers/auth.ts | awk '
+    !f && /(function[[:space:]]+signInWithPassword|signInWithPassword[[:space:]]*[=:]|async[[:space:]]+signInWithPassword)/ \
+        && !/^[[:space:]]*\*/ && !/^[[:space:]]*\/\// { f=1 }
+    f { print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if (seen && n==0) exit; if (n>0) seen=1 }
+  ')
+
+  # 空抽出は「禁止パターンなし」ではなく「検査できていない」。必ず FAIL させる。
+  [ -n "$body" ] || {
+      echo "FAIL: signInWithPassword の本体を抽出できなかった（ゲートが無効化されている）"; false;
+  }
+
+  # ⚠️ `grep -qE … && { echo FAIL; false; }` の形にしないこと。禁止パターンが
+  #    **不在（＝合格）** のとき grep は exit 1 を返し、`&&` が短絡して右辺が実行されない
+  #    ため、リスト全体の終了ステータスは grep の 1（＝失敗）になる。合格が exit 0 に
+  #    ならないゲートは CI で使えない（plans/023 の Done criteria が同じ形を検証のうえ
+  #    否定済み）。`if … then FAIL … else OK … fi` が唯一正しい形。
+  if printf '%s' "$body" \
+       | tr '\n' ' ' \
+       | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\('; then
+      echo "FAIL: signInWithPassword に実行時分岐が残っている"; false;
+  else
+      echo "OK: 実行時分岐なし";
+  fi
+  ```
+
+- [ ] `signInWithPassword` に **`expect(passwordInput).toBeVisible()` が存在する**
+      （`:219` が必須と定めたアサーション）。上の 3 本は「分岐が**無い**こと」しか見ておらず、
+      **アサーションごと消しても全部 PASS する** —— 分岐を消す最も簡単な方法は待機そのものを
+      削ることなので、禁止だけを検査するゲートは「直し方を間違えた実装」を素通しする。
+      不在検査と存在検査は別物なので、同じ `$body` に対して別に掛ける:
+
+  ```bash
+  # 上のブロックで抽出済みの $body を再利用する（抽出失敗は既に FAIL 済み）。
+  # $body は strip_code 済みなので、**コメントアウトされたアサーションは
+  # 存在扱いにならない**。生の本文を grep していた旧形は
+  # `// await expect(passwordInput).toBeVisible();` でも PASS しており、
+  # 「アサーションを消す」より簡単な「アサーションをコメントにする」を素通しした。
+  # `expect(passwordInput)` と `.toBeVisible(` の間で Prettier が改行しうるため、
+  # ここでも tr で 1 行化してから照合する。
+  if printf '%s' "$body" \
+       | tr '\n' ' ' \
+       | grep -qE 'expect\([[:space:]]*passwordInput[[:space:]]*\)[[:space:]]*\.toBeVisible[[:space:]]*\('; then
+      echo "OK: passwordInput の可視性アサーションが存在する";
+  else
+      echo "FAIL: 必須の expect(passwordInput).toBeVisible() が無い"; false;
+  fi
+  ```
+
+  > **実測（2026-08-01・三方向）**: plan 042 は未実装で `signInWithPassword` がまだ無いため、
+  > 実装後の状態を模した fixture で両方向を確認した。アサーションを持つ本体 → `OK` / exit 0、
+  > 同じ本体でアサーションを `//` でコメントアウト → `FAIL` / exit 1、現行の
+  > `tests/e2e/helpers/auth.ts`（関数が存在しない）→ 抽出空で exit 1（＝「検査できていない」を
+  > PASS にしない既定動作）。`strip_code` は抽出の前段に置いてあるので、**上の
+  > 「実行時分岐が存在しない」検査も同じく実行コードだけを見る** —— コメント内の
+  > `isVisible()` を根拠に false-fail することもなくなる。
+  >
+  > **追加実測（2026-08-01・文字列リテラル対応後の三方向）**: 旧 `strip_comments` は
+  > コメントだけを潰し**文字列リテラルの中身を温存**していたため、
+  > `const hint = "if the field is missing call isVisible() first";` を本体に持つ
+  > フィクスチャで **偽 FAIL** した（分岐は存在しないのに「実行時分岐が残っている」）。
+  > 中身まで潰す `strip_code` では: 実コードのみ → `OK` / exit 0、
+  > **禁止トークンが文字列内にあるだけ** → `OK` / exit 0（旧形は FAIL）、
+  > 実コード上に `isVisible()` の分岐 → `FAIL` / exit 1。
+  > 潰した後も `page.getByLabel("        ")` は呼び出しのまま残るので、awk の
+  > 括弧深さ計測と `$body` 抽出は影響を受けない。
+
+  実測（2026-07-31）: `signInWithPassword` を持つ合成フィクスチャに対し、
+  アサーションあり = **exit 0** / アサーションを削除した版 = **exit 1**。
+  改行チェーン（`await expect(passwordInput)\n    .toBeVisible({ … })`）でも合格側を検出することを確認済み。
+
+  **空抽出を PASS にしないこと（2026-07-28 修正）。** 旧形は awk の起動条件に
+  `/\{[[:space:]]*$/`（宣言行が `{` で終わる）を要求していた。Prettier が引数を
+  折り返してシグネチャが複数行になると、この条件が成立せず `f=1` が立たない:
+
+  ```ts
+  export async function signInWithPassword(
+      page: Page,
+      email: string,
+  ) {                          // ← `{` は宣言行ではなくこの行にある
+  ```
+
+  awk は何も出力せず、`grep -q` は当然ヒットせず、`&& { echo FAIL; false; }` は
+  実行されない。**禁止パターンが本体に残っていてもゲートは黙って PASS する**。
+  実際、本プラン未実行の現時点で上の旧コマンドを走らせると抽出行数は **0** である
+  （`signInWithPassword` はまだ存在しない）。「検査対象が見つからない」と
+  「禁止パターンが無い」は別の結果であり、前者は必ず FAIL にしなければならない。
+
+  **行単位で照合しないこと（2026-07-27 修正）。** 元の形は `awk … | grep -cE …` と
+  行単位だったため、チェーンを改行で折るだけで検査をすり抜けた:
+
+  ```ts
+  await passwordInput.waitFor({ timeout: 1000 })
+      .catch(() => …);          // waitFor と .catch が別行 → ヒット 0 件と報告される
+  ```
+
+  Prettier の折り返し幅次第で**同じコードが検出されたりされなかったり**するため、
+  ゲートとして成立しない。`tr '\n' ' '` で本体を 1 行へ正規化してから照合する。
+  正規化後は `.*` がファイル全体を跨いで貪欲マッチしうるので、`waitFor(...).catch`
+  の中間は `[^;]*` として**文の境界で止める**（無関係な `waitFor(` と後方の `.catch`
+  が結合する偽陽性を防ぐ）。
+
+  併せて **`grep -c … → 0` を合格条件にしないこと**。`grep` は 0 件のとき exit 1 を返すため、
+  合格が失敗として扱われる（`tr` で 1 行化した後は `-c` の返り値が 0/1 に潰れ件数としても
+  意味を失う）。不在ゲートは上のコマンド本体と同じ
+
+  ```bash
+  if printf '%s' "$body" | tr '\n' ' ' | grep -qE '<禁止パターン>'; then
+      echo "FAIL: …"; false;
+  else
+      echo "OK: …";
+  fi
+  ```
+
+  の **`if … then FAIL … else OK … fi` 形**で表現する（`exit 1` は対話シェルに貼ると
+  セッションを落とすため `false` を使う）。
+
+  **`grep -qE … && { echo FAIL; false; }` の形にはしないこと。** 禁止パターンが
+  **不在（＝合格）** のとき `grep` は exit 1 を返し、`&&` が短絡して右辺が実行されないため、
+  リスト全体の終了ステータスは grep の 1（＝失敗）のまま残る。**合格が exit 0 にならない
+  ゲートは CI で使えない**。この点は上のコマンド本体のコメント（`⚠️` 注記）と
+  [`plans/023`](023-bound-and-validate-public-search-pagination.md) の Done criteria blockquote が
+  検証のうえ既に否定しており、本節もそれに揃える。
+
+  **`isVisible` だけを見ないこと** —— このゲートが排除したいのは「UI が 1 段か 2 段かを
+  実行時に見分ける分岐」であって、`isVisible` という特定の API 名ではない。同じ分岐は
+  以下の形でも書けてしまい、`isVisible` 単独のパターンはそのすべてを見逃す:
+
+  | 見逃す書き方 | なぜ同じ問題か |
+  |---|---|
+  | `if (await locator.count()) { … }` | 存在チェックで分岐。要素が遅延描画なら 0 を見て誤った枝へ入る |
+  | `await locator.waitFor({ timeout: 1000 }).catch(() => …)` | タイムアウトを分岐条件に使う典型形。まさに時間ベースの判定 |
+  | `await Promise.race([oneStep, twoStep])` | どちらが先に解決したかで枝が決まる（実行時レース） |
+  | `page.locator(a).or(page.locator(b))` | 1 段/2 段の両方を許容してしまい、ドリフトを検知しない |
+
+  上の和集合パターンはこれらを一括で拾う。**ヒット 0 が要求値**である。
+
+  **終端を `/^}/` に固定しないこと** — 現行 `auth.ts` の sign-in は object メソッド
+  （`async signIn(page) {` … `},`）で、閉じ括弧が字下げされている。`/^}/` は
+  これを飛び越してファクトリ関数の末尾まで拾い、他ヘルパーの `isVisible()` を
+  巻き込んで false-fail する。`signInWithPassword` を関数宣言で書くか
+  メソッドのまま残すかは実装時に決まるため、ゲートは宣言形に依存させない。
+
+  **パターンは `isVisible()`（空括弧）完全一致ではなく `isVisible[[:space:]]*\(` に
+  すること** — 前者は排除対象そのものである `isVisible({ timeout: … })`（引数付き変種）を
+  見逃して false-pass する。`\s` は POSIX ERE に無い GNU 拡張で解釈が実装依存
+  （macOS 26 の `/usr/bin/grep` は解釈するが、これに寄りかからない）なので、
+  移植性のため POSIX の `[[:space:]]` を使う。
+  UI 形式は Clerk 設定で決まる静的な性質なので、`expect(passwordInput).toBeVisible()`
+  で 1 段を assert し、時間ベースの判定を一切持たない — 根拠は Step 1）
 - [ ] `toBeHidden` の後に `page.waitForURL`（`/sign-in` 離脱）が**実装されている**
       （コメントだけで終わっていないこと）
 - [ ] chromium で a11y 4 spec / messages / platform-coupon / seller-onboarding / stock-decrement すべて passed
@@ -347,5 +545,12 @@ Stop and report back (do not improvise) if:
 - CI には Playwright ジョブが無く（`.github/workflows/ci.yml` の e2e ジョブは seed 冪等性のみ）、
   この種の退行は CI で検出されない。CI への E2E 導入判断は findings-16 の Rejected 節
   （chromium 限定 + nightly 案）を参照。
-- レビュー観点: signIn の フォールバック分岐（2 ステップ UI）はデッドコードに見えるが
-  Clerk インスタンス設定差分への保険として意図的。
+- レビュー観点: signIn に 2 ステップ UI のフォールバック分岐が**入っていない**ことを
+  確認する。これは削り忘れではなく Step 1 の設計判断であり、「保険として残す」形へ
+  戻さないこと。理由は、分岐を持つには「今どちらの UI か」を実行時に判定する必要が
+  あり、その判定手段（`isVisible()` の即時評価も短い timeout 付き `waitFor` も）が
+  いずれも「時間」を測っているだけで「UI 形式」を測っていないため。遅い CI や
+  コールドスタートで描画が閾値を超えると、1 段 UI なのに 2 段へ誤分岐し、本プランが
+  撲滅しようとしている閾値付近フレークを修復コード自身が再導入する。
+  将来 Clerk 設定が 2 段へ変わったら `expect(passwordInput).toBeVisible()` が明確な
+  メッセージで失敗するので、そのとき helper を意図的に更新すればよい。

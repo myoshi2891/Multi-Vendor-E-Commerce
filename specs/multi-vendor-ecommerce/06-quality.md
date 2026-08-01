@@ -51,6 +51,48 @@
 
 ## Reliability
 - Payment details are upserted and linked to orders.
+- Stripe PaymentIntent creation passes a deterministic `idempotencyKey` derived
+  from the order id **and** the amount (`src/queries/stripe.ts`). Without a key,
+  every double-click or network retry mints a new intent and overwrites the
+  recorded "active" intent id, locking out a user already paying on the earlier
+  one. The amount is part of the key because Stripe rejects a reused key sent
+  with different parameters — keying on the order alone would permanently block
+  payment after a legitimate total change (e.g. a coupon).
+- Payment status transitions are compare-and-set, not read-then-act.
+  `createStripePayment` updates `PaymentDetails` and `Order` inside a single
+  `db.$transaction` with `paymentStatus: { notIn: SETTLED_PAYMENT_STATUSES }`
+  in the `where` clause. The Stripe webhook (`src/app/api/webhooks/stripe/`)
+  writes the same row through an independent path, so a plain guard-then-write
+  would let a late server action regress a settled `Paid` order back to
+  `Pending`. A CAS miss surfaces as **P2025, which in that case is a designed
+  outcome, not a fault**: the row exists but no longer matches the `notIn`
+  predicate.
+- **P2025 must not be normalized unconditionally.** The code is not specific to a
+  CAS miss — a concurrent delete of the order, or a `paymentDetails.connect`
+  whose target disappeared, raises the same P2025 from inside the same
+  transaction. Mapping every P2025 to "already settled" would report a genuine
+  failure as a completed payment. `createStripePayment` therefore **re-reads the
+  order and normalizes only when the row is actually settled**; otherwise the
+  original error propagates. If the re-read itself fails the outcome is
+  undecidable, so it is logged and the original P2025 is rethrown rather than
+  swallowed. A normalized P2025 is **not retried** — retrying cannot change the
+  answer, because the order is settled and will stay settled.
+- **P2034 is a separate event from the CAS P2025 above.** Transactions declared
+  `isolationLevel: Serializable` are retried on P2034 via
+  `retryOnSerializationFailure` (`src/lib/db-retry.ts`). P2034 means the database
+  refused to serialize two concurrent transactions and asks the caller to *redo*
+  the work; the outcome is undetermined, so a retry can succeed. Serializable
+  only converts a conflict into this retryable form — it does not eliminate the
+  conflict — so declaring it without a retry just turns a would-be lost update
+  into a failed request, and the legitimate concurrent caller still gets an error.
+  The two codes must not be conflated when reading logs or writing handlers:
+  P2025 from a CAS `where` is a **terminal, expected** signal; P2034 is a
+  **transient, retryable** one.
+- Work that follows an irreversible side effect is best-effort. After
+  `placeOrder` succeeds, both the local (`emptyCart`) and server-side
+  (`emptyUserCart`) cart cleanups are individually guarded so a failure cannot
+  block navigation to the order — the persisted Zustand store means even the
+  synchronous call can throw on a storage failure.
 - User records are upserted via webhook using immutable Clerk user ID as
   lookup key, ensuring correct matching even after email changes.
 - User deletion via webhook uses `deleteMany` for idempotent retry handling

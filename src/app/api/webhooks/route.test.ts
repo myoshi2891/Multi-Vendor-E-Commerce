@@ -1,14 +1,22 @@
+import { REDACTED_PII } from "@/lib/pii";
 import { POST } from "./route";
 
 // ---- モック設定 ----
 const mockUpsert = jest.fn();
 const mockDeleteMany = jest.fn();
+const mockSupportTicketUpdateMany = jest.fn();
+const mockTransaction = jest.fn();
 jest.mock("@/lib/db", () => ({
     db: {
         user: {
             upsert: (...args: unknown[]) => mockUpsert(...args),
             deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
         },
+        supportTicket: {
+            updateMany: (...args: unknown[]) =>
+                mockSupportTicketUpdateMany(...args),
+        },
+        $transaction: (...args: unknown[]) => mockTransaction(...args),
     },
 }));
 
@@ -326,6 +334,21 @@ describe("POST /api/webhooks", () => {
     describe("user.deleted", () => {
         beforeEach(() => {
             setSvixHeaders();
+            // $transaction はコールバックに tx を渡して実行する。tx.supportTicket /
+            // tx.user は同じモック関数へ委譲し、呼び出し引数・順序を検証可能にする。
+            mockTransaction.mockImplementation(
+                async (
+                    cb: (tx: {
+                        supportTicket: { updateMany: typeof mockSupportTicketUpdateMany };
+                        user: { deleteMany: typeof mockDeleteMany };
+                    }) => Promise<unknown>
+                ) =>
+                    cb({
+                        supportTicket: { updateMany: mockSupportTicketUpdateMany },
+                        user: { deleteMany: mockDeleteMany },
+                    })
+            );
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 0 });
         });
 
         it("ユーザー削除時にDBから削除する", async () => {
@@ -348,6 +371,37 @@ describe("POST /api/webhooks", () => {
             });
         });
 
+        it("ユーザー削除より前に SupportTicket の PII 列を秘匿値へ上書きする（GDPR 消去）", async () => {
+            // SET NULL は userId を切り離すだけで name/email/subject/message を残す。
+            // 削除より前（userId が null 化される前）に、当該ユーザーのチケットの
+            // PII を redaction 値へ上書きすることを固定する。
+            const eventData = { data: { id: "user_with_tickets" } };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 2 });
+            mockDeleteMany.mockResolvedValue({ count: 1 });
+
+            const response = await POST(createWebhookRequest(eventData));
+
+            expect(response.status).toBe(200);
+            // 当該ユーザーのチケットの PII 列を全て秘匿値へ上書きすること
+            expect(mockSupportTicketUpdateMany).toHaveBeenCalledWith({
+                where: { userId: "user_with_tickets" },
+                data: {
+                    name: REDACTED_PII,
+                    email: REDACTED_PII,
+                    subject: REDACTED_PII,
+                    message: REDACTED_PII,
+                },
+            });
+            // PII 消去はユーザー削除より前に走ること（削除後は userId で辿れない）
+            expect(
+                mockSupportTicketUpdateMany.mock.invocationCallOrder[0]
+            ).toBeLessThan(mockDeleteMany.mock.invocationCallOrder[0]);
+        });
+
         it("既に削除済みユーザーの場合でも200を返す（冪等性）", async () => {
             const eventData = {
                 data: {
@@ -365,6 +419,74 @@ describe("POST /api/webhooks", () => {
             expect(response.status).toBe(200);
             expect(mockDeleteMany).toHaveBeenCalledWith({
                 where: { id: "user_already_deleted" },
+            });
+        });
+
+        // Clerk の DeletedObjectJSON.id は optional。無検証のまま Prisma の where へ
+        // 渡すと `where: { userId: undefined }` が「フィルタなし」と解釈され、
+        // 全 SupportTicket の PII 上書き + 全 User 削除へ退化する。
+        // トランザクションに入る前に弾くことを固定する。
+        it.each([
+            ["id が欠落", {}],
+            ["id が空文字", { id: "" }],
+            ["id が空白のみ", { id: "   " }],
+            ["id が文字列でない", { id: 12345 }],
+        ])(
+            "%s の場合、400 を返しトランザクションを開始しない",
+            async (_label, data) => {
+                mockVerify.mockReturnValue({ type: "user.deleted", data });
+                const consoleErrorSpy = jest
+                    .spyOn(console, "error")
+                    .mockImplementation(() => {});
+
+                try {
+                    const response = await POST(
+                        createWebhookRequest({ data })
+                    );
+
+                    expect(response.status).toBe(400);
+                    // 全件破壊を防ぐ本質: tx 自体が始まらないこと
+                    expect(mockTransaction).not.toHaveBeenCalled();
+                    expect(
+                        mockSupportTicketUpdateMany
+                    ).not.toHaveBeenCalled();
+                    expect(mockDeleteMany).not.toHaveBeenCalled();
+                    expect(consoleErrorSpy).toHaveBeenCalledWith(
+                        "Webhook user.deleted event missing a usable user id"
+                    );
+                } finally {
+                    consoleErrorSpy.mockRestore();
+                }
+            }
+        );
+
+        it("前後に空白を含む id は trim 後の値で絞り込む", async () => {
+            // 検証は `rawUserId.trim() === ""` で行うため `"  user_x  "` は通過する。
+            // 検証した値と実際に絞り込みへ渡す値が食い違うと、trim 後なら一致する
+            // ユーザーに対して 0 件ヒットの削除・PII 秘匿が「成功」として 200 を返し、
+            // GDPR 消去が黙って空振りする。検証対象と使用値を一致させることを固定する。
+            const eventData = { data: { id: "  user_padded  " } };
+            mockVerify.mockReturnValue({
+                type: "user.deleted",
+                data: eventData.data,
+            });
+            mockSupportTicketUpdateMany.mockResolvedValue({ count: 1 });
+            mockDeleteMany.mockResolvedValue({ count: 1 });
+
+            const response = await POST(createWebhookRequest(eventData));
+
+            expect(response.status).toBe(200);
+            expect(mockSupportTicketUpdateMany).toHaveBeenCalledWith({
+                where: { userId: "user_padded" },
+                data: {
+                    name: REDACTED_PII,
+                    email: REDACTED_PII,
+                    subject: REDACTED_PII,
+                    message: REDACTED_PII,
+                },
+            });
+            expect(mockDeleteMany).toHaveBeenCalledWith({
+                where: { id: "user_padded" },
             });
         });
 

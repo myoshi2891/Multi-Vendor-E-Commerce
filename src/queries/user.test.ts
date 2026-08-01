@@ -93,6 +93,7 @@ jest.mock("@/lib/db", () => ({
         coupon: {
             findUnique: jest.fn(),
         },
+        $queryRaw: jest.fn(),
         $transaction: jest.fn(),
     },
 }));
@@ -270,7 +271,13 @@ describe("saveUserCart", () => {
             const variant = createMockProductVariant();
             mockDb.product.findUnique.mockResolvedValue({
                 ...createMockFullProduct(),
-                variants: [{ ...variant, sizes: [], images: [createMockVariantImage()] }],
+                variants: [
+                    {
+                        ...variant,
+                        sizes: [],
+                        images: [createMockVariantImage()],
+                    },
+                ],
             });
 
             await expect(saveUserCart(cartProducts as never)).rejects.toThrow(
@@ -380,22 +387,76 @@ describe("saveUserCart", () => {
             );
             mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
 
-            await expect(
-                saveUserCart(cartProducts as never)
-            ).resolves.toBe(true);
+            await expect(saveUserCart(cartProducts as never)).resolves.toBe(
+                true
+            );
 
             expect(mockDb.cart.delete).not.toHaveBeenCalled();
+        });
+
+        // Serializable は競合を「壊れたデータ」ではなく「やり直せるエラー(P2034)」へ
+        // 変換する。再試行がなければ P2002/P2025 を P2034 に置き換えただけになり、
+        // 正当なリクエストが落ちる問題は解決しない。
+        it("直列化異常(P2034)で失敗したtransactionを再試行する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            const serializationFailure =
+                new Prisma.PrismaClientKnownRequestError(
+                    "could not serialize access",
+                    { code: "P2034", clientVersion: "test" }
+                );
+            mockDb.$transaction
+                .mockRejectedValueOnce(serializationFailure)
+                .mockImplementation(
+                    async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                        callback(mockDb)
+                );
+
+            await expect(saveUserCart(cartProducts as never)).resolves.toBe(
+                true
+            );
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(2);
+        });
+
+        it("直列化異常以外のtransaction失敗は再試行せず伝播する", async () => {
+            const cartProducts = [createMockCartProduct()];
+            mockDb.cart.findFirst.mockResolvedValue(null);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+
+            const uniqueViolation = new Prisma.PrismaClientKnownRequestError(
+                "unique constraint failed",
+                { code: "P2002", clientVersion: "test" }
+            );
+            mockDb.$transaction.mockRejectedValue(uniqueViolation);
+
+            await expect(
+                saveUserCart(cartProducts as never)
+            ).rejects.toMatchObject({ code: "P2002" });
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
         });
 
         it("削除・作成を単一transactionへ配線し、コールバック内の失敗を伝播する", async () => {
             const cartProducts = [createMockCartProduct()];
             const transactionCart = {
                 deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
-                create: jest.fn().mockRejectedValue(new Error("Cart creation failed")),
+                create: jest
+                    .fn()
+                    .mockRejectedValue(new Error("Cart creation failed")),
             };
 
             mockDb.cart.findFirst.mockResolvedValue(createMockCart());
-            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
             mockDb.$transaction.mockImplementation(
                 async (callback: (tx: unknown) => Promise<unknown>) =>
                     callback({ cart: transactionCart })
@@ -442,9 +503,7 @@ describe("saveUserCart", () => {
         });
 
         it("カート合計金額が正しく計算される", async () => {
-            const cartProducts = [
-                createMockCartProduct({ quantity: 2 }),
-            ];
+            const cartProducts = [createMockCartProduct({ quantity: 2 })];
             const dbProduct = createMockFullProduct();
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
             mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
@@ -492,6 +551,49 @@ describe("saveUserCart", () => {
 
             expect(mockGetShippingDetails).toHaveBeenCalled();
         });
+
+        it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
+            // Arrange: ITEM 方式・在庫 0。追加個数は max(0, 0-1) = 0 個として扱われ、
+            // 基本配送料のみが残るべき。追加配送料を「マイナス 1 個分」引いてはならない。
+            const cartProducts = [createMockCartProduct({ quantity: 1 })];
+            mockGetCookie.mockReturnValue(
+                JSON.stringify({ name: "Japan", code: "JP" })
+            );
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 10,
+                extraShippingFee: 3,
+                isFreeShipping: false,
+            });
+            const outOfStockProduct = createMockFullProduct({
+                variants: [
+                    {
+                        ...createMockProductVariant(),
+                        sizes: [createMockSize({ quantity: 0 })],
+                        images: [createMockVariantImage()],
+                    },
+                ],
+            });
+            mockDb.product.findUnique.mockResolvedValue(outOfStockProduct);
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            // Act
+            await saveUserCart(cartProducts as never);
+
+            // Assert: 10 + 3 * 0 = 10（10 - 3 = 7 になってはいけない）
+            expect(mockDb.cart.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        cartItems: expect.objectContaining({
+                            create: expect.arrayContaining([
+                                expect.objectContaining({
+                                    shippingFee: new Prisma.Decimal("10"),
+                                }),
+                            ]),
+                        }),
+                    }),
+                })
+            );
+        });
     });
 });
 
@@ -519,7 +621,10 @@ describe("getUserShippingAddresses", () => {
         it("ユーザーの全配送先住所を返す", async () => {
             const addresses = [
                 createMockShippingAddress(),
-                createMockShippingAddress({ id: "address-002", default: false }),
+                createMockShippingAddress({
+                    id: "address-002",
+                    default: false,
+                }),
             ];
             mockDb.shippingAddress.findMany.mockResolvedValue(addresses);
 
@@ -583,9 +688,9 @@ describe("upsertShippingAddress", () => {
         });
 
         it("住所データが提供されない場合エラーをスローする", async () => {
-            await expect(
-                upsertShippingAddress(null as never)
-            ).rejects.toThrow("Please provide shipping address data.");
+            await expect(upsertShippingAddress(null as never)).rejects.toThrow(
+                "Please provide shipping address data."
+            );
         });
     });
 
@@ -701,9 +806,7 @@ describe("placeOrder", () => {
 
             await expect(
                 placeOrder(shippingAddress as never, "cart-001")
-            ).rejects.toThrow(
-                "Invalid product, variant, or size combination"
-            );
+            ).rejects.toThrow("Invalid product, variant, or size combination");
         });
     });
 
@@ -715,12 +818,199 @@ describe("placeOrder", () => {
             mockDb.shippingAddress.findFirst.mockResolvedValue(shippingAddress);
             // $transaction モック: コールバックに mockDb を渡して実行
             mockDb.$transaction.mockImplementation(
-                async (
-                    callback: (tx: typeof mockDb) => Promise<unknown>
-                ) => callback(mockDb)
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
             );
             // F3: 在庫減算は既定で「在庫十分（1 行更新）」として既存成功系を壊さない
             mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+            // 冪等性ゲート: カート消費は既定で成功（1 行削除）とする
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
+            // tx 内の住所ロック（SELECT … FOR UPDATE）は既定で「所有のまま 1 行返る」
+            mockDb.$queryRaw.mockResolvedValue([{ id: shippingAddress.id }]);
+        });
+
+        it("注文トランザクション内でカートを消費し、二重注文を防ぐ", async () => {
+            // カート行を単一使用トークンとして扱う。クライアントの多重送信ガードは
+            // Server Action を直接叩けば迂回できるため、サーバー側で直列化する。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.order.create.mockResolvedValue(createMockOrder());
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // 所有権込みの条件付き削除であること（他人のカートを消費させない）
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
+                where: { id: "cart-001", userId: TEST_CONFIG.DEFAULT_USER_ID },
+            });
+            // 注文作成より前に消費すること（ゲートとして機能する順序）
+            expect(
+                mockDb.cart.deleteMany.mock.invocationCallOrder[0]
+            ).toBeLessThan(mockDb.order.create.mock.invocationCallOrder[0]);
+        });
+
+        it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
+            // Arrange: 在庫 0 の商品が注文明細に載っても、負の配送料が
+            // OrderItem / OrderGroup 合計へ流れ込んではならない
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct({
+                    variants: [
+                        {
+                            ...createMockProductVariant(),
+                            sizes: [createMockSize({ quantity: 0 })],
+                            images: [createMockVariantImage()],
+                        },
+                    ],
+                })
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 10,
+                extraShippingFee: 3,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.order.create.mockResolvedValue(createMockOrder());
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
+            mockDb.orderItem.create.mockResolvedValue({
+                id: "order-item-001",
+            });
+            mockDb.order.update.mockResolvedValue(createMockOrder());
+
+            // Act
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            // Assert: 10 + 3 * 0 = 10（10 - 3 = 7 になってはいけない）
+            expect(mockDb.orderItem.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        shippingFee: new Prisma.Decimal("10"),
+                    }),
+                })
+            );
+        });
+
+        it("カートが既に消費済みなら注文を作成せず Cart not found. を投げる", async () => {
+            // 並行 2 リクエストのうち削除に成功するのは 1 つだけ。もう一方は
+            // count === 0 となり、$transaction ごとロールバックされる。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Cart not found.");
+
+            expect(mockDb.order.create).not.toHaveBeenCalled();
+            expect(mockDb.size.updateMany).not.toHaveBeenCalled();
+        });
+
+        it("tx 内の住所ロックが空なら注文を作成せず Shipping address not found. を投げる（TOCTOU）", async () => {
+            // tx 外の所有権チェック（findFirst）は通るが、商品検証や配送料計算の間に
+            // 住所が別ユーザーへ付け替えられるケース。tx 内で読み直さないと他人の住所を
+            // 注文に付けられてしまう。
+            //
+            // 素の SELECT（findFirst）では窓が縮むだけで閉じない —— 行ロックを取らない
+            // ため、再読と order.create の間に付け替えが commit されうる。FK が取る
+            // FOR KEY SHARE は DELETE とは競合するが、userId の付け替えは参照キー列を
+            // 触らないので FOR NO KEY UPDATE となり競合しない。よって明示的な
+            // SELECT … FOR UPDATE が要る。
+            const cart = {
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            };
+            mockDb.cart.findUnique.mockResolvedValue(cart);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockGetDeliveryDetails.mockResolvedValue({
+                shippingService: TEST_CONFIG.DEFAULT_SHIPPING_SERVICE,
+                deliveryTimeMax: 14,
+                deliveryTimeMin: 3,
+            });
+            // tx 外の所有権チェックは通る
+            mockDb.shippingAddress.findFirst
+                .mockReset()
+                .mockResolvedValue(shippingAddress);
+            // tx 内のロック取得後、述語の再評価で行が脱落（= 付け替え済み）
+            mockDb.$queryRaw.mockResolvedValue([]);
+
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow("Shipping address not found.");
+
+            // ロックは FOR UPDATE で、id と userId の両方にスコープされていること。
+            // タグ付きテンプレートなので呼び出しは (strings, ...values) の形になる。
+            const [sqlParts, ...values] = mockDb.$queryRaw.mock.calls[0];
+            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+            expect(sqlParts.join("?")).toMatch(/"ShippingAddress"/);
+            expect(values).toEqual([
+                shippingAddress.id,
+                TEST_CONFIG.DEFAULT_USER_ID,
+            ]);
+            // 再検証は order.create より前に走り、注文は作成されない
+            expect(mockDb.order.create).not.toHaveBeenCalled();
         });
 
         it("単一店舗の注文を正常に作成する", async () => {
@@ -783,7 +1073,9 @@ describe("placeOrder", () => {
                 coupon: null,
             };
             mockDb.cart.findUnique.mockResolvedValue(cart);
-            mockDb.product.findUnique.mockResolvedValue(createMockFullProduct());
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
             mockDb.country.findUnique.mockResolvedValue(createMockCountry());
             mockGetShippingDetails.mockResolvedValue({
                 shippingFee: 5.0,
@@ -797,7 +1089,9 @@ describe("placeOrder", () => {
             });
             const mockOrder = createMockOrder();
             mockDb.order.create.mockResolvedValue(mockOrder);
-            mockDb.orderGroup.create.mockResolvedValue({ id: "order-group-001" });
+            mockDb.orderGroup.create.mockResolvedValue({
+                id: "order-group-001",
+            });
             mockDb.orderItem.create.mockResolvedValue({ id: "order-item-001" });
             mockDb.order.update.mockResolvedValue(mockOrder);
 
@@ -1159,7 +1453,9 @@ describe("placeOrder", () => {
             }
 
             // storeA: 10 - (10*0.15=1.50) = 8.50 / storeB(最終グループ): 20 - (4.50-1.50=3.00) = 17.00
-            const totals = calls.map((call: typeof calls[number]) => call[0].data.total.toString());
+            const totals = calls.map((call: (typeof calls)[number]) =>
+                call[0].data.total.toString()
+            );
             expect(totals).toEqual(["8.5", "17"]);
 
             // 端数吸収後の合計はカート全体の割引(30*0.15=4.50)と一致する
@@ -1245,9 +1541,8 @@ describe("placeOrder", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
             mockDb.$transaction.mockImplementation(
-                async (
-                    callback: (tx: typeof mockDb) => Promise<unknown>
-                ) => callback(mockDb)
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
             );
 
             const cart = {
@@ -1316,6 +1611,32 @@ describe("placeOrder", () => {
             });
         });
     });
+
+    describe("トランザクションの実行時間上限", () => {
+        it("注文トランザクションは明示的な timeout / maxWait を宣言する", async () => {
+            // Prisma の interactive transaction は既定 maxWait 2s / timeout 5s。
+            // placeOrder はカート消費 → 住所の FOR UPDATE ロック → 商品取得 →
+            // 店舗ごとの OrderGroup / OrderItem 作成 → 在庫 CAS → 合計確定 と
+            // 書き込みが多く、注文点数に比例して伸びる。既定 5s を超えると
+            // P2028 でロールバックされるが、**その 5s はコードのどこにも書かれて
+            // いない** —— 上限を読むには Prisma の既定値を知っている必要がある。
+            //
+            // 上限そのものより「上限が明示されていること」を固定する。ロック
+            // （SELECT … FOR UPDATE）を保持する時間の上限は、並行リクエストの
+            // 待ち時間の上限でもあるため、暗黙の既定値に委ねてよい値ではない。
+            mockDb.size.updateMany.mockResolvedValue({ count: 1 });
+
+            await placeOrder(shippingAddress as never, "cart-001");
+
+            expect(mockDb.$transaction).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    timeout: expect.any(Number),
+                    maxWait: expect.any(Number),
+                })
+            );
+        });
+    });
 });
 
 // ==================================================
@@ -1335,14 +1656,25 @@ describe("emptyUserCart", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            mockDb.cart.delete.mockResolvedValue(createMockCart());
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 1 });
 
             const result = await emptyUserCart();
 
             expect(result).toBe(true);
-            expect(mockDb.cart.delete).toHaveBeenCalledWith({
+            expect(mockDb.cart.deleteMany).toHaveBeenCalledWith({
                 where: { userId: TEST_CONFIG.DEFAULT_USER_ID },
             });
+        });
+
+        it("カートが既に存在しない場合もエラーにせず true を返す（冪等）", async () => {
+            // placeOrder が注文トランザクション内でカートを消費した後、
+            // クライアントの後片付け呼び出しが偽のエラーログを出さないこと。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.cart.deleteMany.mockResolvedValue({ count: 0 });
+
+            await expect(emptyUserCart()).resolves.toBe(true);
         });
     });
 });
@@ -1577,7 +1909,9 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct();
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("5.0"));
+            mockGetProductShippingFee.mockResolvedValue(
+                new Prisma.Decimal("5.0")
+            );
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({ price: 29.99, quantity: 2 })
             );
@@ -1604,7 +1938,9 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct(); // 在庫50
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
+            mockGetProductShippingFee.mockResolvedValue(
+                new Prisma.Decimal("0")
+            );
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({ quantity: 50 })
             );
@@ -1631,13 +1967,18 @@ describe("updateCheckoutProductWithLatest", () => {
 
         it("クーポンが有効な場合割引が適用される", async () => {
             const cartItems = [
-                createMockCartItem({ quantity: 1, storeId: TEST_CONFIG.DEFAULT_STORE_ID }),
+                createMockCartItem({
+                    quantity: 1,
+                    storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                }),
             ];
             const address = createMockCountry();
             const dbProduct = createMockFullProduct();
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
+            mockGetProductShippingFee.mockResolvedValue(
+                new Prisma.Decimal("0")
+            );
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({
                     quantity: 1,
@@ -1701,7 +2042,9 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct({ storeId: "store-A" });
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetProductShippingFee.mockResolvedValue(new Prisma.Decimal("0"));
+            mockGetProductShippingFee.mockResolvedValue(
+                new Prisma.Decimal("0")
+            );
             mockDb.cartItem.update.mockResolvedValue(
                 createMockCartItem({
                     quantity: 1,
@@ -1719,7 +2062,9 @@ describe("updateCheckoutProductWithLatest", () => {
                 endDate: new Date("2027-12-31"),
                 store: undefined,
             });
-            mockDb.cart.findUnique.mockResolvedValue({ coupon: platformCoupon });
+            mockDb.cart.findUnique.mockResolvedValue({
+                coupon: platformCoupon,
+            });
 
             const updatedCart = {
                 ...createMockCart(),
@@ -1743,8 +2088,8 @@ describe("updateCheckoutProductWithLatest", () => {
                     }),
                 })
             );
-            const calledTotal =
-                mockDb.cart.update.mock.calls[0][0].data.total as Prisma.Decimal;
+            const calledTotal = mockDb.cart.update.mock.calls[0][0].data
+                .total as Prisma.Decimal;
             // 29.99 - (29.99 * 10 / 100) = 26.991
             expect(calledTotal.toString()).toBe("26.991");
         });

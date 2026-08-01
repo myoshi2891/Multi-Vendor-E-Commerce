@@ -62,6 +62,17 @@ Dashboard:
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
+- Because `"use server"` files may only export `async` functions, helpers shared between
+  query modules live in `src/lib/`: `payment-status.ts` (`isSettledPaymentStatus`,
+  `SETTLED_PAYMENT_STATUSES` — the SSOT for irreversible payment states) and
+  `order-settlement.ts` (`hasOrderSettledAfterConflict(orderId, logPrefix)` — after a CAS
+  `update` returns P2025, re-reads the order and reports whether it actually reached a settled
+  state, so that a concurrent delete or a lost `connect` target is not misreported as
+  "already paid"; returns `false` without throwing when the re-read itself fails, preserving
+  the original P2025). Both are shared by `stripe.ts` and `paypal.ts`.
+- Helpers used by only one query module stay module-private inside that file
+  (non-exported declarations are unconstrained by `"use server"`), e.g. `user.ts`'s cart-item
+  validation helpers and `paypal.ts`'s `requirePayPalUser` / `findOwnedPayPalOrder`.
 
 ### dashboard module (`src/queries/dashboard.ts`)
 
@@ -92,11 +103,13 @@ Admin-only functions require ADMIN role via `requireAdmin()` (outside `try/catch
 | Function | Permission | Description |
 |----------|-----------|-------------|
 | `getAllCoupons()` | Admin | All-store coupon list with `store` included. Max 100 rows. |
-| `upsertCouponAsAdmin(coupon)` | Admin | Create/update coupon. P2002 unique violation → Japanese error message. |
+| `upsertCouponAsAdmin(coupon)` | Admin | Create/update coupon. Server-side `AdminCouponFormSchema.safeParse` gate + explicit field mapping (plan 060). P2002 unique violation → Japanese error message. |
 | `deleteCouponAsAdmin(couponId)` | Admin | Delete coupon without store ownership check. |
 | `toggleCouponActive(couponId)` | Admin | Flip `isActive` boolean. Returns updated coupon. |
-| `upsertCoupon(coupon, storeUrl)` | Seller | Create/update coupon for own store (IDOR-guarded via `requireStoreOwner`). |
+| `getCouponAsAdmin(couponId)` | Admin | Unscoped single-coupon read (incl. PLATFORM coupons with `storeId = null`). Added in plan 058. |
+| `upsertCoupon(coupon, storeUrl)` | Seller | Create/update coupon for own store (IDOR-guarded via `requireStoreOwner`). Server-side `CouponFormSchema.safeParse` gate + explicit field mapping — blocks `discount > 99` → negative order totals (plan 060). |
 | `getStoreCoupons(storeUrl)` | Seller | Own-store coupons only. |
+| `getCoupon(couponId, storeUrl)` | Seller | Own-store single-coupon read, scoped `findFirst { id, storeId }`. Was an unauthenticated `findUnique` (cross-store IDOR read, SECURITY-10) until plan 058. |
 | `deleteCoupon(couponId, storeUrl)` | Seller | Delete own-store coupon. |
 | `applyCoupon(code, cartId)` | Public | Apply coupon to cart. Validates date range, `isActive`, store match. |
 

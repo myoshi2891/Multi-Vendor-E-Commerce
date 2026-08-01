@@ -202,11 +202,11 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     },
     {
         priority: "medium",
-        title: "Performance 行の着手 (OI-9 修正 → lhci に / 追加)",
-        target: "src/components/store/home/main/featured.tsx + .lighthouserc.json",
-        tool: "遅延 useState 初期化 + @lhci/cli",
-        cost: "M",
-        impact: "ホーム / の SSR 500 を解消し売上導線トップを LCP/CLS/TBT で予算化",
+        title: "Performance 行の着手（lhci の計測 URL に \"/\" を追加）",
+        target: ".lighthouserc.json + .github/workflows/lhci.yml",
+        tool: "@lhci/cli",
+        cost: "S",
+        impact: "前提だった OI-9 は解消済み (2026-06-06 c196e3d5 / 2026-07-26 に E2E で SSR 200 を実測)。計測 URL に / を追加するだけで売上導線トップを LCP/CLS/TBT で予算化できる",
     },
     {
         // OI-11 (2026-06-19 発見): 本番 SSR で seller ルートが ReferenceError: self
@@ -217,6 +217,21 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         tool: "next/dynamic ssr:false 遅延 import",
         cost: "S",
         impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
+    },
+    {
+        // plan 063 (2026-07-27 起票): CORRECTNESS-05 の残件。コード修正は e63474b6 で
+        // 完了しているが、それ以前に Stripe 経路が書いた PaymentDetails.amount は
+        // minor unit (セント) のまま Decimal(12,2) = ドル建てカラムに残っている。
+        // 本番決済データへの UPDATE を伴うため safe-migration skill と人手承認が必須で、
+        // dry-run レポート (プラン Step 3) の提示前に UPDATE を打ってはならない。
+        // QA_HANDOFF「次回着手用 依頼プロンプト」063 と一対一対応。完了時に
+        // 本エントリと QA_HANDOFF 側プロンプトを同時削除すること。
+        priority: "medium",
+        title: "plan 063: Stripe 既存決済行の amount backfill",
+        target: "PaymentDetails.amount のうち paymentMethod=Stripe かつ e63474b6 デプロイ前の行",
+        tool: "plans/063 の自己完結プラン (safe-migration skill 必須・人手承認ゲート付き)",
+        cost: "S",
+        impact: "修正日をまたぐ売上集計・支払履歴・返金照合が 100 倍ずれた行と正しい行を混在させている状態を解消する (コード側は修正済みで、残るのは履歴データのみ)",
     },
     {
         priority: "low",

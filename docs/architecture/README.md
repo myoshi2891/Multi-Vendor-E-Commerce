@@ -63,12 +63,22 @@ ADR（Architecture Decision Records）は、大規模な技術選定や設計変
 
 詳細は [`README.md`](../../README.md) を参照してください。
 
-**技術スタック**:
-- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+**技術スタック**（メジャーバージョンのみ。**宣言レンジ（`~16.2.x` 等の許容範囲）の
+SSOT は [`package.json`](../../package.json)**、**解決済みの正確なバージョンの SSOT は
+lockfile（`bun.lock`）**、規約面の SSOT は
+[`.claude/steering/tech.md`](../../.claude/steering/tech.md)。ここに patch
+バージョンを書かないのは、この README が拡張計画の入口として参照される一方で
+依存更新のたびには更新されず、古い前提を配り続けるため）:
+
+- **Frontend**: Next.js 16 (App Router) + React 19 + TypeScript strict + Tailwind CSS / shadcn/ui
 - **Backend**: Next.js Server Actions + Prisma ORM
 - **Database**: PostgreSQL (Neon) + Prisma Accelerate
-- **Authentication**: Clerk
+- **Authentication**: Clerk v7
 - **Payment**: Stripe / PayPal
+- **Package manager**: Bun
+
+> Next.js 14 → 16 / React 18 → 19 / Clerk v6 → v7 の移行経緯は
+> [`docs/migration/06-framework-upgrade.md`](../migration/06-framework-upgrade.md) を参照。
 
 **主要な設計判断**:
 - サーバーアクションは `src/queries/` に集約

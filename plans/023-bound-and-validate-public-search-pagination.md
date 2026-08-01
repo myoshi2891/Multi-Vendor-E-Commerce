@@ -231,7 +231,85 @@ Machine-checkable. ALL must hold:
 - [ ] `bun run lint` exits 0.
 - [ ] `bun run test -- src/app/api/index-products` exits 0; the 5 normalization cases (FULLTEXT path) exist and pass.
 - [ ] **At least 1 additional case pins the contains-fallback path's `take`/`skip`** (first search call rejected so the `catch` runs) — the FULLTEXT-path cases alone leave the fallback's `take: limit` (Current state, line ~385) unverified. See Step 2.
-- [ ] `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET handler's pagination block (the normalized code uses `Number(...)`).
+- [ ] The GET handler contains no `parseInt` and parses page/limit with `Number(...)`. **Use the
+      GET-scoped gate, not a whole-file grep**, and phrase it as an **absence** gate in `if/then/else`
+      form — see the two corrections below:
+
+  ```bash
+  if awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
+       | grep -qE 'parseInt'; then
+      echo "FAIL: GET still uses parseInt"; false
+  else
+      echo "OK: no parseInt in GET"
+  fi
+  ```
+
+  (A bare whole-file `grep -n "parseInt" …` is scoped wider than this criterion and gives a false
+  failure if the POST handler legitimately uses `parseInt`.)
+
+    > **Neither `grep -c … → 0` nor `grep -q … && { …; false; }` works as an absence gate
+    > (2026-07-27 correction, amended 2026-07-30).** `grep` exits **1** when it matches nothing,
+    > so in both forms the *passing* case returns a **failing** exit status:
+    >
+    > - `grep -c` form: the count prints `0` (correct) but the exit status is grep's own `1`.
+    > - `grep -q … && { …; false; }` form: on **no match** the `&&` **short-circuits**, the right
+    >   side never runs, and the list's exit status is the left side's — again grep's `1`. The
+    >   `false` is only reachable on a *match*, so this form can never exit 0.
+    >
+    > Verified on this repo (2026-07-30):
+    >
+    > ```console
+    > $ awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts | grep -c "parseInt"
+    > 0
+    > $ echo $?
+    > 1
+    > $ awk '…' src/app/api/index-products/route.ts | grep -qE 'parseInt' && { echo FAIL; false; }
+    > $ echo $?
+    > 1                      # ← 合格しているのに 1
+    > $ if awk '…' src/app/api/index-products/route.ts | grep -qE 'parseInt'; then echo FAIL; false; else echo OK; fi
+    > OK
+    > $ echo $?
+    > 0                      # ← 合格が 0
+    > ```
+    >
+    > Use the `if … then echo FAIL; false; else echo OK; fi` form: it assigns an exit status to
+    > **both** branches, so "no match" is a genuine `exit 0` success and a match is the only
+    > failure. Under `set -e`, in an `&&` chain, or as a CI step, only this form behaves.
+    > Use `false`, **not `exit 1`** — pasting a snippet with `exit 1` into an interactive shell
+    > kills the session.
+
+    > **End the range at the function boundary, not at `0`.** The earlier form
+    > `awk '/^export async function GET/,0'` used `0` as the end pattern — `0` is falsy and
+    > therefore *never matches*, so the range ran to **EOF**, not to the end of `GET`. It happens
+    > to give the right answer today only because `POST` is declared **before** `GET`
+    > (`route.ts:14` vs `:153`), leaving nothing after `GET` to catch. The moment another handler
+    > or helper is added below `GET`, the gate silently widens again and re-introduces exactly the
+    > false failure the GET-scoping was added to prevent. `/^}/` terminates at the first
+    > column-0 closing brace, which is the function's own boundary under this file's formatting.
+- [ ] Normalization **behavior** (Infinity/NaN/fractional/`<1` → clamped, not token presence) is
+      pinned by a unit test, not by grep alone — grep only proves `Number(...)`/`MAX_LIMIT` appear,
+      not that the `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : …` clamp actually holds.
+
+    > **Enumerate the inputs — "Infinity/NaN/fractional/`<1`" as prose does not tell the
+    > implementer which values to write.** The predicate rejects for two *different*
+    > clauses (`Number.isFinite(raw)` and `raw >= 1`), so a suite that exercises only one
+    > of them leaves the other live. Minimum set, each asserting the fallback
+    > (`1` for `page`, `MAX_LIMIT` for `limit`):
+    >
+    > - `"Infinity"` and `"-Infinity"` — `Number.isFinite` false. `-Infinity` is the one
+    >   that catches a `Math.max(1, raw)`-style "fix", which would clamp it to `1` via the
+    >   wrong clause instead of falling back.
+    > - `"1e999"` — overflows to `Infinity` during `Number(...)`. Behaves as above, but is
+    >   reachable from a plausible query string in a way the literal `"Infinity"` is not.
+    > - `"abc"` → `NaN` — `Number.isFinite` false.
+    > - `"0"`, `"-3"`, `"0.5"` — finite but `>= 1` false, so the `Math.floor` branch must
+    >   **not** run.
+    > - `"2.7"` — finite **and** `>= 1`, so it takes the other branch: expect `2`
+    >   (`Math.floor`), not `2.7` and not `3`.
+    >
+    > `"2.7"` and `"0.5"` are the pair that matters most: both are fractional, but they
+    > take **opposite branches**. Testing only one cannot distinguish `Math.floor(raw)`
+    > from `Math.round(raw)` or from an unclamped pass-through.
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
 - [ ] Before the **code commit**, `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files. (The `plans/audit/findings-11-security-followup.md` status row and the `spec-sync-after-test` docs go in later, separate commits.)
 
@@ -245,6 +323,60 @@ Stop and report back (do not improvise) if:
 - Any step's verification fails twice after a reasonable fix attempt.
 
 ## Maintenance notes
+
+### Correction (2026-07-19): the `parseInt` gate was scoped wider than its own criterion
+
+This plan is DONE; the step bodies above are left as the historical record. This note documents a
+defect in one Done-criteria gate so that anyone **re-running the gates** (or copying this pattern
+into a new plan) uses the corrected form.
+
+**The defect.** The criterion reads:
+
+> `grep -n "parseInt" src/app/api/index-products/route.ts` returns **no matches** in the GET
+> handler's pagination block (the normalized code uses `Number(...)`).
+
+The prose scopes the assertion to *the GET handler's pagination block*, but the command scans the
+**whole file** — including the POST handler at `route.ts:14`. The two disagree, under a heading that
+claims "Machine-checkable".
+
+Today it passes only incidentally: `parseInt` occurs nowhere in the file. Add a legitimate `parseInt`
+to the POST handler and the command fails while the stated criterion remains satisfied — a false
+failure that a future executor would have to debug.
+
+**Corrected gates.** Scope the negative check to the GET handler, and lead with the positive
+assertions (a bare "X is absent" check also passes for a file that does no pagination parsing at
+all — the positive checks are what actually pin the behavior):
+
+```bash
+# Positive: page/limit are parsed with Number(...) and clamped by both bounds
+awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
+  | grep -nE 'Number\(url\.searchParams\.get\("(page|limit)"\)\)|MAX_(LIMIT|PAGE)'
+
+# Negative: no parseInt inside the GET handler. The range ends at the first
+# column-0 closing brace — i.e. GET's own boundary — so the gate is tied to the
+# function, not to line numbers that drift and not to whatever follows it.
+#
+# ⚠️ Do NOT rewrite this as `| grep -c "parseInt"` or as
+#    `| grep -qE 'parseInt' && { echo FAIL; false; }`. Both were tried and
+#    rejected — see the Done criteria blockquote above: grep exits 1 when it
+#    matches nothing, so in both forms the *passing* case returns a *failing*
+#    exit status and the gate can never be used in CI. The if-form below is the
+#    only shape where passing is exit 0.
+if awk '/^export async function GET/,/^}/' src/app/api/index-products/route.ts \
+     | grep -qE 'parseInt'; then echo "FAIL: parseInt in GET handler"; false; else echo OK; fi
+# → OK (exit 0)
+```
+
+Both commands end the range at `/^}/`, matching the Done criteria above. Do **not** revert to
+`,0` as the end pattern: `0` is falsy and never matches, so the range runs to EOF and silently
+re-widens the gate over any handler declared below `GET`.
+
+**Verified against the shipped implementation (2026-07-19)**: the negative check returns `0`, and
+the positive check matches `MAX_LIMIT = 50` / `MAX_PAGE = 10_000` plus
+`Number(url.searchParams.get("page"))` / `...get("limit")` with `Math.min` / `Math.floor` clamping —
+i.e. the delivered code satisfies the corrected gates. No source change accompanies this note.
+
+### Standing maintenance notes
 
 - **Test-stats sync**: adding tests changes the project's `Tests:` total. Per `.claude/rules/02-tdd-step-commit.md`, after this lands you must run the `spec-sync-after-test` skill (regenerate `docs/coverage-dashboard.html` + sync `QA_HANDOFF.md` etc.) in a **separate docs commit**. Keep the test-code commit and the docs-sync commit distinct.
 - **SECURITY-05 overlap**: the raw `{ error: error.message }` 500 responses (lines ~134, ~403) remain — a future plan should replace them with a constant, user-safe string and log details **server-side only, using the repo's structured-log convention** (`.claude/steering/tech.md`「構造化ログ」): first arg the string `"[Module:Function] Error message"`, second arg the object `{ error: error.message, stack: error.stack }` — not an ad-hoc `console.error(error)`. If you fix SECURITY-05 in the same PR later, keep it a separate commit from this pagination change.

@@ -5,12 +5,12 @@
 
 ---
 
-## 現在の状態（2026-07-17 時点）
+## 現在の状態（2026-08-01 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1699 passed / 1702 total / 174 スイート（3 skipped）** — 2026-07-17 実測（CodeRabbit ローカルレビュー対応 第4弾時点）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1829 passed / 1832 total / 177 スイート（176 passed + 1 skipped suite）** — 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -19,7 +19,7 @@
 ### 技術スタック（現行）
 | パッケージ | バージョン |
 |-----------|-----------|
-| Next.js | 16.2.1（App Router） |
+| Next.js | ~16.2.12（App Router） |
 | React | 19 |
 | @clerk/nextjs | v7 |
 | ESLint | 9（flat config） |
@@ -1544,3 +1544,742 @@ CodeRabbit VSCode 拡張が未プッシュの 25 コミットに対して出し�
 | スイート数 | 174 | **174**（変化なし） |
 | Integration（ダッシュボード集計） | 14（実測 17 と乖離） | **17**（実測と一致） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### improve Round 13 P1 第1弾: plan 057 + plan 058（2026-07-18）
+
+#### 概要
+
+依存層 P1 の plan 057（`next` の HIGH advisory 解消）と Round 13 セキュリティ P1 の
+plan 058（`getCoupon` cross-store IDOR read 修正）を dev に順次コミットで実行した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `package.json` / `bun.lock` | `next` を `^16.2.1` → `~16.2.10` に bump（GHSA-26hh-7cqf-hhc6 HIGH ほか 3 advisory 解消。tilde で 16.2.x に固定） | `10e35f3` |
+| `src/queries/coupon.ts` | `getCoupon` を `requireStoreOwner` + `findFirst { id, storeId }` にスコープ、`getCouponAsAdmin`（`requireAdmin` + 非スコープ）新設 | `15c9a96` |
+| seller / admin `coupons/columns.tsx` | 新シグネチャ / 新関数への呼び出し更新（計 2 箇所） | `15c9a96` |
+| `src/queries/coupon.test.ts` | IDOR 3 階層回帰テスト追加 + 既存 getCoupon テストの署名更新（77→84） | `15c9a96` |
+
+#### 検証
+
+- `bun audit`: next の 3 advisory 消滅（handlebars CRITICAL は既知の dev-only 残存 = DEPS-05）
+- 未認証 `/dashboard` / `/profile` は Clerk へ 307 リダイレクト（smoke 実施済み。非 document リクエストは 404 = いずれも保護動作）
+- 詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §8
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1699 passed / 1702 total | **1707 passed / 1710 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### improve Round 13 P1 第2弾: plan 059（2026-07-18）
+
+#### 概要
+
+PayPal capture 経路を Stripe capture と同水準のガードに引き上げた（plan 059 / SECURITY-12・13）。
+過少支払いによる Paid 化と、遅延/DENIED capture による確定済みステータスの退行を遮断。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.ts` | `isSettledPaymentStatus` を export（ロジック不変・確定済みステータス SSOT の共有） | `6a31da1` |
+| `src/queries/paypal.ts` | capture 前の settled ガード + custom_id/金額（`Prisma.Decimal.equals`）/通貨の突合。検証エラーは catch で透過 | `6a31da1` |
+| `src/queries/paypal.test.ts` | 負系 5 ケース追加（15→20）。既存モックに custom_id・total 整合を追加 | `6a31da1` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1707 passed / 1710 total | **1712 passed / 1715 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §9
+
+---
+
+### improve Round 13 P1 第3弾: plan 060（2026-07-18・P1 全 4 プラン完走）
+
+#### 概要
+
+クーポン mutation にサーバー側 Zod 検証を導入した（plan 060 / SECURITY-14）。
+直接呼び出しで discount>99 を永続化し注文 total を負値化できる money-critical ギャップを
+書き込み境界で遮断。これで Round 13 P1（058/059/060）+ 依存層 P1（057）の 4 プランが完走。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.ts` | `upsertCoupon` に `CouponFormSchema.safeParse` ゲート、`upsertCouponAsAdmin` に `AdminCouponFormSchema.safeParse` ゲート。両者ともスプレッド書き込みを `parsed.data` + サーバー強制フィールドの明示マッピングへ置換 | `c67b833` |
+| `src/queries/coupon.test.ts` | 負系 4 + 明示マッピング検証 1 を追加（84→89）。upsert 系既存テストを `createValidCouponInput`（ISO 文字列日付）へ更新 | `c67b833` |
+
+#### 判断メモ
+
+- 共有 fixture `MockCoupon` の `startDate`/`endDate` は `Date` 型で、Prisma モデルの
+  `String` と乖離している（既存テストは `as never` で黙殺）。本番 shape はスキーマと
+  一致するためプランの STOP 条件（「dates are not strings after all」）には該当せず、
+  テストファイル内ヘルパーで ISO 文字列入力を生成する最小対応とした。
+  fixture 本体の是正は全域に波及するためスコープ外の別課題。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1712 passed / 1715 total | **1717 passed / 1720 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+詳細記録: `docs/testing/SECURITY_GAP_REPORT.md` §10
+
+---
+
+### improve Round 13 P2 — レスポンス強化ヘッダ + 検索 route の error.message 漏洩停止 (2026-07-18)
+
+#### 概要
+
+security 分類の P2 プラン 2 本（061 / 062）を TDD（Red→Green）で実装。いずれも
+未認証クライアントに対する露出面を塞ぐ変更で、相互依存はない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/security-headers.spec.ts` | 新規。5 ヘッダの**値**を `/` と `/checkout` で厳密アサート（Red 確認済み） | `4e2c4fa` |
+| `next.config.mjs` | `async headers()` で全ルート（`/:path*`）へ 5 ヘッダを付与 | `afd22b3` |
+| `src/app/api/index-products/route.test.ts` | POST/GET の 500 分岐テスト +2（Red 時に漏洩を実証） | `5ef0dfe` |
+| `src/app/api/index-products/route.ts` | catch 2 か所を `unknown` + 固定 `"Internal Server Error"` へ。JSDoc も同期 | `492e9ac` |
+
+#### 設計上の要点
+
+- **ヘッダは名前ではなく値をアサートする**: `grep -iE 'x-frame-options|...'` 方式ではヘッダ名の
+  存在しか見ておらず、`X-Frame-Options: ALLOWALL` のような値の緩和を検知できない。E2E と
+  curl smoke の双方で 5 値すべてを厳密比較する方式に統一した。
+- **500 分岐への到達方法**: `route.ts` は入れ子 try/catch で、内側 catch のフォールバック
+  `findMany` は try で包まれていない。よってモックを 2 回 reject させると outer catch へ伝播し、
+  route を改変せずに 500 を踏める。
+- **CSP は意図的に対象外**: Clerk / Stripe / PayPal / Cloudinary の allowlist と Report-Only
+  ロールアウトが必要なため、SECURITY-06 の CSP 分は継続課題として残す。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1717 passed / 1720 total | **1719 passed / 1722 total** |
+| スイート数 | 174 | **174**（変化なし） |
+| Playwright E2E スペック | 9 | **10**（security-headers 追加・3 ブラウザ 6/6 pass） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+検証: curl 厳密値 smoke が `/` `/checkout` 両方で 5/5 完全一致を報告。
+
+---
+
+### CodeRabbit ローカルレビュー対応 Phase 1（ソースコード実バグ 5 件）(2026-07-18)
+
+#### 概要
+
+VSCode CodeRabbit 拡張のローカルレビュー 50 件のうち、ソースコードに対する
+指摘 5 件を精査して修正した。残る 45 件（`plans/**` 40 件・`docs/`・`.agent/` 5 件）は
+Phase 3-4 として別途対応する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `.coderabbit.yaml` | 設定コメント（plans/ 全除外）と実装（1 ファイルのみ除外）の食い違いを解消するため廃止 | `f088dca` |
+| `scripts/coverage-dashboard/scan-tests.ts` | 開き括弧自身が `hasContent` を立て `it.each([])` を 1 件と数えていたのを是正 | `b5eb8d1` |
+| `src/components/store/cards/place-order.tsx` | 無保護だった同期 `emptyCart()` を try/catch で包み、成立済み注文の遷移を継続 | `f4aba5f` |
+| `src/lib/db-retry.ts` (新規) | `retryOnSerializationFailure`（P2034 限定・指数バックオフ + ジッター） | `d8108b5` |
+| `src/queries/user.ts` | `saveUserCart` の Serializable transaction に P2034 再試行を適用 | `e5903c8` |
+| `src/queries/stripe.ts` | `paymentIntents.create` に orderId + 金額由来の冪等キーを付与 | `ae585a7` |
+| `src/queries/stripe.ts` / `src/lib/payment-status.ts` | 決済状態更新を単一 transaction + 条件付き update（CAS）へ変更。`SETTLED_PAYMENT_STATUSES` を公開 | `c77cdd7` |
+
+#### 判断メモ
+
+- **`src/queries/store.ts:436` は修正しない**。「200 件超が無告知で閲覧不能」という指摘の
+  前提が誤りで、呼び出し元 `orders/page.tsx` に `Showing up to the latest {STORE_ORDERS_MAX}
+  orders.` の告知があり、`store-constants.ts` にも PERF-04 follow-up と明記されている。
+- **冪等キーに金額を含める**のは、Stripe が「同一キー・異なるパラメータ」の再送をエラーで
+  拒否するため。`orderId` だけを鍵にすると、クーポン適用等で合計が正当に変わった時点で
+  決済が永久に通らなくなる。
+- **CAS の相手は webhook**。`src/app/api/webhooks/stripe/route.ts` は `$transaction` を
+  使っているが条件付き update ではないため、server action 側で「未確定であること」を
+  where に含めて退行を防ぐ設計とした。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1719 passed / 1722 total | **1738 passed / 1741 total** |
+| スイート数 | 174 | **175**（`src/lib/db-retry.test.ts` 新設） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit ローカルレビュー対応（plan/audit doc + 実コード 3 件のセキュリティ修正）(2026-07-24)
+
+#### 概要
+
+CodeRabbit のローカルレビュー指摘を精査し、plan/audit ドキュメント 21 件の整合修正に加え、
+ドキュメント上で OPEN と明示した実コードの脆弱性 3 件を Red→Green で修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `next.config.mjs` / `security-headers.spec.ts` | HSTS を `NODE_ENV=production && VERCEL_ENV!=='preview'` に限定（Vercel preview 毒回避）。E2E は付与条件を鏡写しに | `2960381` / `8857847` |
+| `src/queries/user.ts` / `user.test.ts` | `placeOrder` の住所所有権 TOCTOU を tx 内再検証で閉塞（+1 テスト） | `b95f847` / `8e2d6dd` |
+| `src/app/api/webhooks/route.ts` / `route.test.ts` | `user.deleted` で SupportTicket PII を削除前に秘匿化（GDPR 消去・+1 テスト） | `7e3e507` / `e886b57` |
+| plan/audit docs 21 件 | 本文と Done criteria の乖離・SSOT パス・件数・旧前提の履歴化・検証コマンド誤検出などの整合修正 | 個別コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1738 passed / 1741 total | **1746 passed / 1749 total** |
+| スイート数 | 175 | **175**（変化なし） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 24 件対応（docs 22 件 + 実コード 2 件） (2026-07-26)
+
+#### 概要
+
+CodeRabbit のレビュー指摘 24 件を精査（誤検出なし）。plan/docs/specs の記述整合 22 件に加え、
+プラン文書が「実コード未対応」と自認していた 2 件を、文書だけ直すとドリフトが確定するため
+実コードごと修正した（`.int()` は Red→Green）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/schemas.ts` / `coupon.test.ts` | `CouponFormSchema.discount` に `.int()`。`50.5` が `safeParse` を通過し Prisma の `Int` 列まで到達していた（admin 経路は reject せず resolve）。plan 060 の未達 Done criterion を解消（+2 テスト） | `11d68f89`(Red) / `6d0cd9dc`(Green) |
+| `next.config.mjs` / `security-headers.spec.ts` / `.env.docker.example` | HSTS の `includeSubDomains; preload` を環境名判定から明示 opt-in（`HSTS_INCLUDE_SUBDOMAINS` / `HSTS_PRELOAD`）へ分離。`NODE_ENV=production` は本番ドメイン配信を意味せず、self-host staging で非可逆な preload 登録を誤発火させ得た | `10b3fd1f` / `66ed444f` |
+| `plans/011`(en+ja) | スキャンゲートのベース名除外が ja 版を巻き添えにしていた問題と、`\|\| true` で常に exit 0 になる問題を修正。Clerk URL 変数の optional/required 矛盾も解消 | `39b5b480` |
+| `plans/031` / `032` | `Promise.all` だけでは並行性を証明できない（プール 1 で逐次化）ため、バリア（latch）を必須化。032 の `grep "Promise.all"` ゲートを名指しテスト実行へ置換 | `f74f6fba` |
+| `plans/033` / `041` | 5b 追加分の Verify 件数（8→9）と、041 の撤回済み STOP 条件・unit scope 矛盾を是正 | `d73e7dac` |
+| `plans/038` | 共有 DB のスキーマを変える一時 DDL の隔離・直列化を任意表現から MUST へ格上げ | `6aa87b9e` |
+| `plans/013` / `018` / `029` | 旧 URL 対応表のキー曖昧性、冪等性キーの入力束縛の実装不能形、fake timer 未復元を是正 | `f7796188` |
+| `plans/047` | セント整数と `Prisma.Decimal` 規約の適用境界を明示 | `0fd1e67c` |
+| `plans/057` / `plans/README.md` | `^16` では 16.2.x に固定できない問題（自プランの STOP 条件を踏む）を `~16.2` へ。058〜062 の完了済み実行順を履歴化 | `5e8e7379` |
+| `plans/audit/*` / `ADVISOR_STATE.md` / `ja/004` | Clerk advisory の影響範囲が台帳内で 2 通りに割れていた件を、`gh api /advisories/GHSA-vqx2-fgx2-5wq9`（`>=7.0.0 <7.2.1` / patched 7.2.1）で確定して統一。DEPS-08 の履歴値と現行値を分離。CAS ガードを tx 原子性の解消と扱わないよう切り分け（実コード確認: Stripe は tx 化済み・PayPal は非原子のまま） | `6ab1c4a4` / `bc5d9241` |
+| `docs/PROGRESS.md` / `rate-limiting-spike.md` | 基準日のずれ、CloudFront-Viewer-Address の Origin Request Policy 前提とフェイルクローズ要件を追記 | `24679550` |
+| `specs/07-testing.md` | 1738→1746 の差分 +8 と「+2」の単位不一致を SSOT の説明へ整合 | `a688080f` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1746 passed / 1749 total | **1749 passed / 1752 total** |
+| スイート数 | 175 | **175**（変化なし） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 24 件の残 8 件対応（「本文が無いと確定できない」区分の解消） (2026-07-26)
+
+#### 概要
+
+見出しのみで判断を保留していた 8 件について、コメント本文の提供を受けて全件を再精査した結果、
+**8 件すべてが実欠陥**と確定したため対応した。うち 2 件は実コード、6 件はプラン／監査台帳の欠陥。
+
+特に HSTS は、`next.config.mjs` が**同一ファイル内で**「`NODE_ENV=production` は本番ドメインで
+配信中を意味しない」と明記しながら、その論理を拡張ディレクティブにしか適用していない
+非対称な状態だった（前回対応の適用漏れ）。plan 005 は DONE でありながら自身の主張が未検証
+であることを自認しており、ステータス格下げではなくテスト追加で解消した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `next.config.mjs` / `security-headers.spec.ts` / `.env.docker.example` | HSTS の付与判定を「環境名」から「**配信先シグナル**」（`VERCEL_ENV=production` または `HSTS_ENABLED=1`）へ移行。bare な production ビルド（self-host staging 等）に 2 年 max-age が記録されるのを閉塞。`!isVercelPreview` はプロジェクト全体 env の漏れ対策として独立した拒否条件で残置。9 env 組合せで実測 | `a1f00f79`(Red) / `dcc41fe6`(Green) |
+| `src/cart-store/useCartStore.test.ts` | `persist ラウンドトリップ` を新設（+3）。インメモリ状態を破棄してから `persist.rehydrate()` する形で「リロード後に復元される」を検証。`f77f0965` の元バグ再注入で 2 件 fail を確認し非空振りを実証 | `4531d574` |
+| `plans/005` | DONE のまま未検証ギャップを抱えていた状態を解消。ラウンドトリップテストを完了条件へ昇格。バグ再注入の位置（`set()` の前だと persist が即上書きするため再現しない）も明記 | `894b741f` |
+| `plans/061` | 訂正その 2 として三条件ゲートと 9 ケースの実測表を追記。curl スモークの期待値（bare `next start` は 4/4）と Done criteria を同期 | `d4130659` |
+| `plans/011`(en+ja) | env 検証が `src/` の `process.env` 13 変数しか見ておらず、Clerk/Prisma がライブラリ内部で読む `CLERK_SECRET_KEY` / `DATABASE_URL` / `DIRECT_URL` の欠落を検出できなかった（Step 2 の superset 指示と不一致）。両ソースの和集合を走査する実行可能ゲートへ差し替え、除外は理由付きで明示列挙。実測で Step 2 の 19 変数と完全一致 | `efbe9790` |
+| `plans/015` | ts_rank キーセット述語が PostgreSQL で実行不能だった（`WHERE` から SELECT 出力別名は参照不可。既存実装の `ORDER BY relevance` が合法なため誤解を誘発）。`ranked` CTE 形へ書き換え + 実 SQL 実行を Verify 要件化 | `b156f2a8` |
+| `plans/021` | Q4 と STOP 条件がベンダー中立化済みの前提節に反し Vercel 固定のままだった件を実行モデル記述へ。`dedupeKey` の「1 回だけ送る」絶対保証が直後の at-least-once 選択肢と矛盾していた件を、unique 制約が実際に保証する範囲へ限定 | `e024b72b` / `cded2ed8` |
+| `plans/027` | ヘルパー化後の `jest.mock` factory 実装を明示（巻き上げのため factory 内はローカル `requireActual` 固定・NG 例併記）。`mock` 接頭辞の命名規則は ts-jest では救済にならない点も追記 | `93f5770f` |
+| `plans/audit/findings-06` | 現行状態（`^7.5.0`）と監査時点 Evidence（`^7.0.7`）を別見出し + 日付で構造分離。単一バレットの引用でも誤読しないようにした | `b23c1676` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1749 passed / 1752 total | **1752 passed / 1755 total** |
+| スイート数 | 175 | **175**（変化なし） |
+| スナップショット | 127 | **127**（変化なし） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 46 コメントの精査と対応 (2026-07-26)
+
+#### 概要
+
+`dev` ブランチ向け CodeRabbit レビュー（25 issue / 46 コメント）を全件実ファイルに当てて検証し、
+実欠陥 22 / 偽陽性 10 / 環境制約で保留 1 に仕分けたうえで対応した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/pii.ts`(new) / `src/app/api/webhooks/route.ts` | App Router の route ファイルが許さない named export `REDACTED_PII` を共有モジュールへ退避 | `bfcf52ba` |
+| `src/components/store/cards/place-order.test.tsx` | `clearAllMocks` を越えて残る `mockImplementation` の throw を `mockReset()` で遮断 | `7fe521e5` |
+| `src/queries/stripe.ts` / `stripe.test.ts` | 冪等キーが canceled 済み intent を返し続け、注文がその金額で恒久的に決済不能になる経路を閉塞（Red → Green・回帰 +2） | `4111e0ad` / `96856785` |
+| `plans/023` `plans/042` `plans/044` `plans/ja/009` `plans/ja/011` | 検証コマンドのスコープと POSIX 互換化（awk の範囲・実装形状の検証・`\s` 依存・双方向 comm） | `5ee2fc33`〜`642c8b51` |
+| `plans/031` `plans/032` | in-process latch は並行性の必要条件であって証明ではない旨へ表現を修正 | `83808001` |
+| `plans/047` `plans/056` `plans/013` `plans/015` `plans/018` `plans/021` `plans/038` | assertion 契約と spike 仕様の欠落（金額トークンのアンカー・2xx 判定・URL 後方互換・Seq Scan・NOT NULL 冪等キー・排除済み選択肢・事前 DROP） | `75ac134f`〜`ac967364` |
+| `plans/audit/findings-18` `plans/audit/recon.md` `plans/README.md` `docs/architecture/rate-limiting-spike.md` | 監査台帳の値割れ 5 件・Round 13 の計画範囲と 057 の完了状態・ALB の XFF append 前提 | `02dd60b9`〜`7d063a10` |
+
+**未対応（理由付き）**:
+
+- `package.json` の `next` 16.2.11 bump — 作業環境がネットワーク到達不可で lockfile 更新も
+  `bun audit` による advisory 照合もできない。ネットワーク有り環境で実測込みで対応する。
+- 「未来日付の実測を確定実績として記録するな」系 10 件 — リポジトリ全体を grep しても
+  2026-07-26 を超える日付は存在しない（ヒットはクーポン有効期限 `2026-12-31` と
+  テストフィクスチャ `2027-12-31` のみ）。偽陽性として変更しない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1752 passed / 1755 total | **1754 passed / 1757 total** |
+| スイート数 | 175 | **175**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 19 コメントの精査と対応（第 4 弾） (2026-07-27)
+
+#### 概要
+
+`dev → main` PR に付いた CodeRabbit 19 コメント（見出しのみ判明）を実測でリポジトリに
+突き合わせ、**確認済み 18 / 誤検知 1** に仕分けたうえで実コード 2 件を Red → Green で修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.test.ts` | 検証・重複コードエラーの文言を正規表現アンカーで完全一致に固定（Red・+4） | `76a96296` |
+| `src/queries/coupon.ts` | `isDomainError` を追加し、意図的 throw を catch 冒頭で素通し（Green） | `fba1cf46` |
+| `scripts/coverage-dashboard/scan-tests.test.ts` | 修飾子付きテストの計上 + 過大計上ガード 2 件（Red・+3） | `ff9f5c28` |
+| `scripts/coverage-dashboard/scan-tests.ts` | `BLOCK_PATTERN` に修飾子を列挙形で許容（Green） | `8637bca5` |
+
+**根本原因の要点**:
+
+- **coupon**: `safeParse` 失敗の throw が `try` の内側にあり、catch が
+  `Error occurred while trying to upsert coupon: ${message}` で上書きしていた。
+  フォームへ「クーポンの入力値が不正です。」を返せず、ユーザー入力ミスが `logError` にも載っていた。
+  **既存テストが検出できなかった理由**は `toThrow(string)` の部分一致で、ラップ後の文言にも
+  部分文字列として含まれていたため。
+- **dashboard**: `BLOCK_PATTERN` が `test.skip(` にマッチせず（`test` の直後が `.`）、
+  `tests/e2e` の skip 14 件が 0 件計上。`e2e × pages` が 23 と表示され、SSOT の 37
+  （= 111 テスト ÷ 3 ブラウザ）と乖離していた。`it.each` の欠陥（`c1be6d7`）と同型の再発。
+
+**誤検知（修正せず記録）**:
+
+- 「`coverage-dashboard.html` の `byDomain` に `api-routes` が無く、ドメイン合計 187 件」
+  — 直近 5 バージョンすべてに `"api-routes":6` が存在し、合計は 193 = `totalTestFiles`。
+  指摘値 187 はちょうど `193 - 6` で、当該キーを読み落とした集計。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1754 passed / 1757 total | **1761 passed / 1764 total** |
+| スイート数 | 175 | **175**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー 17 コメントの精査と対応（第 5 弾） (2026-07-28)
+
+#### 概要
+
+全 17 件を実測でリポジトリに突き合わせ、**確認済み 17 / 誤検知 0**。実コード 3 件を
+Red → Green で修正し、docs 11 件は plan/audit の整合修正。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/coupon.test.ts` | `get`/`delete` 系 5 関数の文言を正規表現アンカーで完全一致に固定（Red・件数不変） | `8a648282` |
+| `src/queries/coupon.ts` | 第 4 弾で `upsert` 系に入れた `isDomainError` を `get`/`delete` 系へ適用（Green） | `2cc7368d` |
+| `src/components/dashboard/.../columns.test.tsx`（seller クーポン） | 編集モーダルの reject 処理を固定する新規スイート（**+7**） | `e1a8b710` |
+| seller クーポン `columns.tsx` | `getCoupon` reject に try/catch + destructive トースト + `setClose()`（Green） | `8df613c1` |
+| `scripts/coverage-dashboard/scan-tests.test.ts` / `.ts` | `EACH_PATTERN` が `it.skip.each` / `test.only.each` を拾わない欠陥（回帰 +1） | `73d68b57` / `15ff8eb2` |
+
+**根本原因の要点**:
+
+- **coupon（第 4 弾の同一欠陥クラスの残存）**: `if (!couponId) throw` が `try` の内側にあり
+  catch が汎用文言で上書き。既存 5 アサーションは `toThrow(string)` の**部分一致**で、
+  ラップ後の文言にも部分文字列として含まれるため**全件 pass しており欠陥を守っていなかった**。
+- **モーダル**: plan 058 で `storeURL` 引数が加わり reject 経路ができたが、ADR-003 の
+  fire-and-forget IIFE が `console.error` するだけで、**ユーザーには何も伝わらずモーダルは
+  行スナップショットのまま開き続け、未検証データを編集できた**。
+- **scan-tests**: `it.each` 欠測（`c1be6d7`）・`test.skip(` 欠測（`ff9f5c28`）に続く**同型 3 度目**。
+  リポジトリ内に該当構文が 0 件のため集計値は不変で、将来のドリフトに対する防御。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1761 passed / 1764 total | **1769 passed**（+8） |
+| スイート数 | 175 | **176**（`columns.test.tsx` 新規） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.18% | **66.48%** |
+
+---
+
+### CodeRabbit レビュー 20 コメントの精査と対応（第 6 弾） (2026-07-30)
+
+#### 概要
+
+全 20 件を実測で突き合わせ、**確認済み 20 / 誤検知 0**（実コード 6 / docs 14）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/api/webhooks/route.ts` | `user.deleted` の id 無検証キャストを tx 開始前の 400 で閉塞（`it.each` +4） | `4e4534d1` / `87a766df` |
+| `src/lib/db-retry.ts` | `maxAttempts` の `0` / `NaN` を下限 1 でクランプ（+5） | `333c5e26` / `cd6cc148` |
+| `src/queries/coupon.ts` | `toggleCouponActive` の `'Coupon not found.'` を `isDomainError` へ追加（+1） | `f36716a2` / `4c0d2bbc` |
+| admin クーポン `columns.tsx` | `getCouponAsAdmin` reject の未処理を seller 版と同形に（+5） | `563488b3` / `31b3f269` |
+| `security-headers.spec.ts` / `playwright.config.ts` | `E2E_USE_DEV` を `isEnabled`（`trim()==="1"`）へ統一（**破壊的変更**） | `7d6347df` / `37e1603b` |
+| `scripts/coverage-dashboard/scan-tests.ts` | 注釈形 `test.skip(cond, reason)` の二重計上を是正（+2） | `83673910` / `88f4eee5` |
+
+**根本原因の要点**:
+
+- **webhook（最重大）**: Clerk の `DeletedObjectJSON.id` は optional。`undefined` を Prisma の
+  `where` に渡すと**「フィルタなし」と解釈される**ため、`updateMany({ where: { userId: undefined } })`
+  = **全 SupportTicket の PII 上書き**、`deleteMany({ where: { id: undefined } })` = **全 User 削除**へ退化。
+- **db-retry**: `?? DEFAULT` は `0` / `NaN` が nullish でないため素通り。`0` だと for が 1 周も
+  回らず `throw undefined` になり、下流の `instanceof Error` 型ガードが全崩れする。
+- **E2E 集計の訂正（重要）**: 第 4 弾の「23→37 で一致」という記録は、**注釈形 16 件ぶんの
+  過大計上がたまたま古い基準値 37 に着地したもの**で真の値ではなかった。実行時実測は **39**
+  （`--list` の 117 tests ÷ 3 ブラウザ）、修正後の静的値は **36**。残差 **3** はループ生成ぶんで、
+  **静的走査の原理的限界**として明記した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1769 passed | **1786 passed**（+17） |
+| スイート数 | 176 | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.48% | **66.53%** |
+
+---
+
+### CodeRabbit レビュー 21 コメントの精査と対応（第 7 弾） (2026-07-30)
+
+#### 概要
+
+全 21 件を実測で突き合わせ、**確認済み 21 / 誤検知 0**（依存 1 / 実コード 2 / docs・plans 18）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `package.json` | `next` を `~16.2.12` へ bump（新規 9 advisory・HIGH 4 の圏内に**再露出**していた） | `129dfcac` / `74ad8f0e` |
+| `src/lib/db-retry.ts` | `baseDelayMs` の小数・非有限を正規化（+3） | `992d19a2` / `406751a1` |
+| `src/queries/paypal.ts` | P2025 の無条件 `already settled` 写像を、再読で確定した場合のみに限定（+1） | `3fdc64a9` / `910a2b4a` |
+
+**根本原因の要点**:
+
+- **依存の再露出**: `GHSA-6gpp-xcg3-4w24`（App Router の Middleware/Proxy バイパス）は plan 057 が
+  閉じた `GHSA-26hh-7cqf-hhc6` と**同じ脅威モデルの再発**。「plan NNN で bump 済み ＝ 恒久解決」
+  ではないことを DEPS-08 に教訓として記録した（057 の Done criteria は履歴として上書きしない）。
+- **db-retry**: `randomInt` は整数しか受理せず、小数で**catch の内側から `ERR_INVALID_ARG_TYPE`**
+  が飛び、投げ返すはずの P2034 が TypeError に化けて `isSerializationFailure` が全て空振りした。
+- **paypal**: P2025 は CAS 不一致に固有でなく、order の並行削除等でも返る。**実障害が
+  「決済確定済み」として誤報告**され呼び出し側が調査もリトライもしなくなる。`stripe.ts` の
+  既存解法（catch 内で再読し実際に settled のときだけ正規化・`d976b1e8`）を移植した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1786 passed | **1790 passed**（+4） |
+| スイート数 | 176 | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lcov | 66.53% | **66.55%** |
+
+---
+
+### CodeRabbit レビュー 20 コメントの精査と対応（第 8 弾） (2026-07-30)
+
+#### 概要
+
+全 20 件を実測で突き合わせ、**確認済み 20 / 誤検知 0**（実コード 3 / docs 17）。実コード 3 件は
+いずれも Red → Green を別コミットで実測。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/db-retry.ts` | `baseDelayMs` の**有限の巨大値**を `MAX_BASE_DELAY_MS = 60_000` で上限クランプ（+3） | `82b38c02` / `8159bb2c` |
+| `src/queries/stripe.ts` | canceled 後の再作成キーを**観測した canceled intent の id** から導出（上限 3 回・+2） | `5aa5f6f8` / `f9d7a50f` |
+| `src/queries/paypal.ts` | capture **前**に `GET /v2/checkout/orders/{id}` で相関・金額・通貨を検証（+4） | `7138512c` / `71104354` |
+| docs 17 件 | 実行可能ゲート 3 / 完了ゲート昇格 3 / 自己矛盾 5 / 根拠精度 2 / 数値是正 2 / 統計同期 2 | `1201b907` 他 |
+
+**根本原因の要点**:
+
+- **db-retry（第 7 弾の残存）**: 第 7 弾は小数・非有限を閉じたが、`2 ** 48` 以上の**有限の巨大値**は
+  素通しのままで `randomInt` が `ERR_OUT_OF_RANGE` を投げ、同じく P2034 が化けていた。
+- **stripe**: canceled 後の再作成キーが `randomUUID()` 由来で**呼び出しごとに別キー**になり、
+  **canceled を観測した後だけ二重送信防御が消えて**いた（`4111e0ad` が閉じたはずの経路の裏口）。
+- **paypal（資金移動）**: capture を**先に**叩き `custom_id` / `amount` / `currency` を**課金後**に
+  検証していたため、検証で throw しても**金は既に動いている**。既存の capture 後検証は
+  **削除せず二重防御として残した**。
+- **docs 側の実行可能ゲート 3 件は、合格側 exit 0 / 違反注入側 exit 1 を実際に実行して両方向確認**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1790 passed | **1799 passed / 1802 total**（+9） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+> **付記**: 本ラウンドで `COVERAGE_REPORT.md §1` の「テスト総数」行が第 7 弾の +4 を取り込めず
+> 1786 のまま据え置かれていた**台帳ドリフト**を 1799 へ是正した（SSOT の `QA_HANDOFF.md` は
+> 当時から正しく 1790 を保持していた）。PROGRESS.md 側は第 4 弾（1761）で終端しており、
+> 本エントリ群（第 5〜8 弾）がその 4 ラウンドぶんの遡及反映にあたる。
+
+---
+
+### CodeRabbit レビュー 15 コメントの精査と対応（第 9 弾） (2026-07-31)
+
+#### 概要
+
+`dev → main` PR の CodeRabbit 15 コメントを実測でリポジトリに突き合わせ、
+**確認済み 14 / 誤検知 1**（実コード 2 / docs 13）。実コード 2 件は資金移動と IDOR に
+直結するため Red → Green を別コミットで実測した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/paypal.test.ts` | retrieve と capture が**異なる `signal`** を受け取ることを固定（Red・**+2**） | `ee61b9bb` |
+| `src/queries/paypal.ts` | 各 fetch を「controller 生成 → fetch → `finally` で `clearTimeout`」のヘルパーへ分離（Green） | `5ac6022b` |
+| `src/queries/user.test.ts` | `$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する契約へ書き換え（Red・件数不変） | `4600451c` |
+| `src/queries/user.ts` | 住所所有権の再検証を `SELECT … FOR UPDATE` へ置換（Green） | `f77dafd8` |
+| `specs/.../06-quality.md` | P2025 の正規化を「再読で確定した場合のみ」へ実装と整合 | `8e60a417` |
+| `plans/003-*.md` + `ja/003` | 住所 TOCTOU を「行ロックで閉塞済み」へ更新 | `a9d7f420` |
+| `plans/004-*.md` | 検証日時の 3 箇所統一 + js-cookie ゲートを解決済みエントリ向けに修正 | `c9d1b07a` |
+| `plans/031-*.md` + `plans/README.md` | group-level の並行二重復元を deferred として**実際に起票** | `e6b93f50` |
+| `plans/057-*.md` | Step 1 の旧バージョン抽出コマンドを正典パイプラインへ | `7e82f1ac` |
+| `plans/059-*.md` / `061` / `063` | helper 参照先 / five headers / 完了条件の二条件判定 | `e626664d` / `3a4a4656` / `6009ff74` |
+| `plans/ja/011-*.md` / `ja/002` | bash 要求の明記 / enum 実測根拠の追記 | `8573fd8e` / `6efb0573` |
+| `plans/audit/findings-13-*.md` | SHA 略記を台帳と同じ 7 桁へ統一 | `e80a06d9` |
+| `docs/PROGRESS.md` | 第 5〜8 弾の履歴を backfill | `c86465ea` |
+
+**根本原因の要点**:
+
+- **paypal（資金移動）**: 第 8 弾で capture **前**の検証 GET を挿入した結果、1 リクエストぶん
+  だった 10s 予算に 2 本目が乗った。`controller` は 1 個しか作られず両者が同じ `signal` を
+  共有するため、**retrieve が 9.9s かかると capture は残 0.1s で abort される**。さらに
+  `clearTimeout` は capture 成功後にしか無く、検証不一致の throw 経路ではタイマーが残っていた。
+- **user（IDOR）**: `tx.shippingAddress.findFirst` は**素の SELECT で行ロックを取らない**ため、
+  チェックと `order.create` の間に `userId` 付け替えが割り込めた。`FOR UPDATE` は付け替え側の
+  `FOR NO KEY UPDATE` と競合するので Read Committed 下でも commit までブロックされ、
+  ロック取得後の述語再評価（EvalPlanQual）で先行 commit 時は行が脱落して throw する。
+  実 DB での並行閉塞は unit がモック境界で止まるため観測できず、`plans/README.md` の
+  deferred に testcontainers での検証として記録した。
+- **誤検知 1 件（修正の性格が違う）**: findings-13 の `4261be0c` / `e63474b6` は「誤った SHA」
+  ではなく**同一コミットの 8 桁略記**で、`git cat-file -e` は解決する。監査追跡は壊れていない。
+  台帳（VETTED_FINDINGS.md / README.md）が 7 桁で書いている段落内での**表記統一**として修正した。
+  実測ではリポジトリ全体の略記はユニークで 7 桁 421 / 8 桁 92 であり、8 桁も広く使われている
+  ため一括統一は行っていない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1799 passed / 1802 total | **1801 passed / 1804 total**（+2） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.61 / B 46.71 / F 55.03 / L 65.63 | **S 66.61 / B 46.71 / F 55.09 / L 65.61** |
+
+### CodeRabbit ローカルレビュー 22 コメントの精査と対応（第 10 弾） (2026-07-31)
+
+VS Code の CodeRabbit 拡張が `main ← dev` に対して出したローカルレビュー 22 件。GitHub PR の
+コメントではないため `gh api` では取得できず、指摘の見出しと実ファイルを突き合わせて判定した。
+結果は **確認済み 21 / 誤検知 1**。
+
+#### 実コード 2 件（いずれも Red → Green を別コミットで実測）
+
+- **`src/queries/paypal.ts` — タイムアウト予算が本文読み取りに掛かっていなかった**。
+  `fetch` は**ヘッダ受信時点で解決**するので、`finally` の `clearTimeout` を fetch 直後に置くと
+  呼び出し側の `await response.json()` / `.text()` は**予算の外**で走る。PayPal が本文を送り渋る、
+  あるいは接続が半開きのまま滞留すると server action がそこで無期限に待つ。第 9 弾で
+  「retrieve と capture の予算共有」を閉じたが、**どちらの予算もヘッダ境界で終わっていた**。
+  `Response` を返す形自体が誤用を誘発する（呼び出し側が `await response.json()` と書いた瞬間に
+  予算外へ出る）ため、ヘルパー内で `text()` まで読み切ってから解放し `{ ok, status, body }` を
+  返す形へ変更した。パースは呼び出し側の `JSON.parse`、`json()` ではなく `text()` を使うのは
+  非 JSON のエラー本文でヘルパー内 throw させないため（+1・`bf725e39` Red → `9f614860` Green）。
+- **`src/queries/user.ts` — 注文トランザクションの実行時間上限が暗黙だった**。
+  `placeOrder` の `db.$transaction` はオプション無しで、上限は Prisma 既定の
+  maxWait 2s / timeout 5s。カート消費 → 住所の `SELECT … FOR UPDATE` → 商品取得 →
+  店舗ごとの OrderGroup / OrderItem 作成 → 在庫 CAS → 合計確定と書き込みが多く、
+  注文点数に比例して伸びる。**この timeout は住所行の排他ロックを保持する時間の上限＝
+  並行チェックアウトが待たされる時間の上限でもある**ため、暗黙の既定値に委ねてよい値ではない。
+  `ORDER_TRANSACTION_OPTIONS`（maxWait 5s / timeout 20s）で明示した。`saveUserCart` の
+  トランザクションは Serializable + 再試行付きの 2 文で既定内に収まるため変更していない
+  （+1・`9ebbe104` Red → `af786cb5` Green）。
+
+#### 誤検知 1 件（修正せず記録）
+
+`src/app/api/webhooks/route.test.ts:341-344` の「`supportTicket` / `user` がそれぞれ二重に宣言され
+型リテラルが `Duplicate identifier` で失敗する」という指摘は、**リポジトリの実体と一致しない**。
+`grep -c` は両プロパティとも **1**、`bunx tsc --noEmit --pretty false` は **exit 0 / 出力 0 行**。
+提示された diff の削除行は実ファイルに存在せず、適用すれば `route.ts:137-149` が実際に使っている
+正しい型宣言を壊す。
+
+#### docs 19 件
+
+- **実行可能ゲート 4 件**（すべて合格側 exit 0 / 違反注入側 exit 1 を実測して確認）:
+  004 の js-cookie 検証が `@clerk/shared` の**依存宣言**にしか当たらず解決エントリ
+  （`"js-cookie": ["js-cookie@3.0.7", …]`）を取りこぼし、かつ `sort` が空入力で exit 0 を返す
+  **fail open** だった件 / 042 が必須と定めた `expect(passwordInput).toBeVisible()` を
+  **存在検査していなかった**件（禁止だけを見るゲートは「待機ごと削除した実装」を素通しする）/
+  044 のゲートが `reuseExistingServer` の**極性**を見ず `!!` 反転でも合格し、実行行検出が
+  コメントにも当たっていた件 / ja/009 の構造ゲートが 1 行化でコメント・デッドコードも
+  合格させていた件。
+- **自己矛盾 4 件**: 003 en·ja の TOCTOU が `RESOLVED` と書きながら末尾で実 DB 未検証を認めていた /
+  021 の組み合わせ表が **(B) 遅延ワーカー × (P3) 主処理を失敗させる**を成立扱いしていた
+  （B は記録が主処理の**後**に来るのでロールバック対象が存在せず、成立させようとすると
+  必ず (P1) 原子的 Outbox に吸収される）/ 050 が禁止した `response?.status()` を処方として
+  残していた / 057 の `DONE (1 criterion pending)`。
+- **参照先ドリフト 3 件**: 013 の browse URL がパス形とクエリ形で割れていた
+  （実装は `searchParams` 単一ルートでパス形は存在しない）＋ `findFirst` は実体が
+  **`findUnique`**（`@unique` 前提のため親内一意化すると型エラーで書き換えが強制される）/
+  041 の coupon.ts 行参照が全面的に 50〜100 行ずれ / findings-06 の Next 現行版 `~16.2.12` が
+  README の rejected 節へ未伝播。
+- **契約の穴 2 件**: 029 の `process.env.TZ` 復元漏れ（ワーカー共有のため後続ファイルへ波及）/
+  063 の承認ゲートが**件数一致だけ**で、1 行離脱＋1 行流入でも同数になり行集合の同一性を
+  保証できなかった件（`md5(string_agg(id ORDER BY id))` の digest 突合を追加）。
+- **現況の分解 1 件**: findings-13 の TESTS-02 を決済経路ごとに分けた。実測で
+  **Stripe は `$transaction` + CAS で解消済み**（`stripe.ts:275-310`）、**PayPal は未解消**
+  （`paypal.ts:399` の upsert と `:441` の update が別書き込み。`4261be0` が入れたのは
+  `notSettled()` の CAS 条件であって `$transaction` ではない）。deferred の理由が
+  「優先度」と「依存」で異なる。
+- **完了形の誤記 1 件**: 044 の Maintenance notes が `E2E_NO_REUSE` を「閉じてある」と断言して
+  いたが、`playwright.config.ts:60` は `reuseExistingServer: !process.env.CI` のみ、
+  `run-local.sh` に該当 export は 0 件、README の Status も TODO。
+- **SSOT 統一 1 件**: D2 の導入コストが `render-html.ts`=S / `QA_HANDOFF.md`・
+  `COVERAGE_REPORT.md`=M で割れていた（`documentation-guide.md` 規定に従い S へ統一）。
+- **本ラウンドの統計同期 3 件**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1801 passed / 1804 total | **1803 passed / 1806 total**（+2） |
+| スイート数 | 176（175 passed + 1 skipped） | **176**（不変） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.61 / B 46.71 / F 55.09 / L 65.61 | **S 66.66 / B 46.71 / F 55.15 / L 65.65** |
+
+---
+
+### SonarCloud 重複解消リファクタ + 負の配送料バグ修正 (2026-08-01)
+
+#### 概要
+
+PR #164 の SonarCloud Quality Gate が `new_duplicated_lines_density` **3.9% > 3%** の 1 条件だけで
+ERROR になっていたため、重複ブロックを抽出して解消した。その過程で重複コード内に「在庫 0 のとき
+ITEM 方式の配送料が負値になる」既存バグを発見し、抽出で 1 箇所に集約した上で修正した。
+
+#### 診断
+
+`gh pr checks 164` では GitHub Actions のジョブ（Lint / Unit / Integration / Build / E2E /
+Lighthouse）が全て pass しており、失敗していたのは **SonarCloud アプリが直接送る Check** だけ。
+ワークフローの `sonarcloud` ジョブは `continue-on-error: true` だが、アプリ側の Check はその
+管轄外なので、コードを直す以外に緑にできない。
+
+| 条件 | しきい値 | 実測 | 判定 |
+|------|---------|------|------|
+| `new_duplicated_lines_density` | ≤ 3% | 3.9% | ❌ |
+| `new_coverage` | ≥ 80% | 86.1% | OK |
+| reliability / security / maintainability rating | 1 | 1 | OK |
+| `security_hotspots_reviewed` | 100% | 100% | OK |
+
+Sonar API（`/api/duplications/show`）から重複ブロックの実レンジを取得し、3 クラスタへ整理した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | `findCartProductWithVariantAndSize` を抽出（`db.product.findUnique` の include + 3 条件検証が 4 経路で重複）。呼び出し元ごとにメッセージが違うため throw せず `null` を返す形 | `333b6171` |
+| `src/queries/user.ts` | `calculateDiscountedUnitPrice` を抽出（3 経路） | `2db937c2` |
+| `src/queries/user.ts` | `resolveCartShippingFee` を抽出（`getShippingDetails` + ITEM/WEIGHT/FIXED の Decimal 計算・2 経路）。国の解決方法が違うため解決済み `Country \| null` を引数で受ける | `3f9547d0` |
+| `src/queries/user.ts` | `buildValidatedCartItem` を抽出（明細オブジェクトの組み立て・2 経路） | `cb375d11` |
+| `src/queries/paypal.ts` | `requirePayPalUser` / `findOwnedPayPalOrder` を抽出（53 行 × 2 の前段・差分はログ prefix のみ） | `8b6ed8bb` |
+| `src/lib/order-settlement.ts` (新規) | `hasOrderSettledAfterConflict` を新設し `stripe.ts` / `paypal.ts` の P2025 再読ブロック（25 行 × 2）を置換 | `632f1037` |
+| `src/lib/order-settlement.test.ts` (新規) | 14 テスト。抽出元でテストが 0 件だった `catch (reReadError)` 分岐を含め新規ファイル 100% カバー | `639db82b` |
+| `src/queries/user.test.ts` | 在庫 0 時の ITEM 配送料に対する Red テスト 2 件（実測 `shippingFee: "7"`） | `14d8bbab` |
+| `src/queries/user.ts` | `Math.max(0, quantity - 1)` で追加個数をクランプ（Green） | `98f309f2` |
+
+#### 設計判断
+
+- **クラスタ A / C は同一ファイル内のモジュールプライベートヘルパー**。`"use server"` が要求するのは
+  **export が async であること**だけで、非 export の宣言はファイル内に置ける（既存の
+  `ORDER_TRANSACTION_OPTIONS` / `notSettled` / `fetchPayPal` が前例）。`src/lib/` へ出さないのは、
+  `user.test.ts` の `jest.mock("./product")` 構成をそのまま流用でき、かつ新規ファイルの未カバー行で
+  `new_coverage` を薄めないため。
+- **クラスタ B のみ `src/lib/`**。`stripe.ts` ↔ `paypal.ts` のファイル跨ぎであり、`payment-status.ts`
+  が同じ理由（`"use server"` の全 export async 制約）で既に `src/lib/` に置かれている。
+- **`getProductShippingFee` には寄せない**。既に Decimal 版の ITEM/WEIGHT/FIXED 計算を持っており
+  重複を消す最短経路に見えるが、(1) 追加個数の丸め方が違う（`Math.max(0, qty-1)` vs `qty-1`）、
+  (2) 無料配送時に `shippingRate.findFirst` を発行しないためクエリ形状が変わる、
+  (3) `user.test.ts` が両者を別々にモックしている。**純粋リファクタと銘打った変更で金額計算の
+  挙動が変わる**のを避け、インラインを逐語抽出してから式を直す順序にした。
+- 逐語保存した契約: 2 種類の not-found メッセージ（詳細版 / 簡易版）、PayPal の `"Order not found"`
+  （ピリオド無し）と Stripe の `"Order not found."`（有り）、`error.message ===` の文字列比較、
+  `where: { id, userId }` の形、ログ文字列のバイト一致。
+
+#### 修正したバグ
+
+ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuantity - 1)` で個数を
+クランプしておらず、在庫切れ（または改ざん payload の `quantity: 0`）で `validQuantity === 0` に
+なると `(0 - 1) = -1` により **`fee - extra` = 負の配送料**が算出されていた。値は
+`saveUserCart` では `CartItem.shippingFee` / `Cart.shippingFees` / `Cart.total` へ、`placeOrder`
+では `OrderItem.shippingFee` と `OrderGroup` / `Order` 合計へそのまま伝播する。同じロジックが
+4 箇所にコピーされていたため、抽出で 1 箇所へ集約してから修正した。修正後は
+`updateCheckoutProductWithLatest` を含む 3 経路の配送料計算式が一致する。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 1803 passed / 1806 total | **1819 passed / 1822 total**（+16） |
+| スイート数 | 176（175 passed + 1 skipped） | **177**（176 passed + 1 skipped・**+1**） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+| カバレッジ | S 66.66 / B 46.71 / F 55.15 / L 65.65 | **S 66.8 / B 46.78 / F 55.34 / L 65.8** |
+| Integration | 17 / 2 スイート | **17 / 2 スイート**（不変・testcontainers 実 DB で pass） |

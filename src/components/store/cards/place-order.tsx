@@ -48,7 +48,17 @@ const PlaceOrderCard: FC<Props> = ({
                 // 注文成立は不可逆。この時点でガードを恒久化し、以降の後片付けが
                 // 失敗しても再注文させない。
                 orderPlaced = true
-                emptyCart()
+                try {
+                    // emptyCart は同期関数だが、persist ミドルウェアが
+                    // localStorage へ書き出すため storage 失敗で throw しうる。
+                    // 無保護だと成立済みの注文が遷移できず復帰不能になる。
+                    emptyCart()
+                } catch (error: unknown) {
+                    logError(
+                        '[PlaceOrder:handlePlaceOrder] local cart clear failed',
+                        error
+                    )
+                }
                 try {
                     await emptyUserCart()
                 } catch (error: unknown) {

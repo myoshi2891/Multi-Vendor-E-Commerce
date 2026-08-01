@@ -14,9 +14,13 @@ jest.mock('@/queries/user', () => ({
     placeOrder: jest.fn(),
 }))
 
+// `mock` 接頭辞は jest.mock ファクトリのホイスティング制約を満たすために必須。
+// テスト側から emptyCart の失敗を注入できるようモジュールスコープに持つ。
+const mockEmptyCart = jest.fn()
+
 jest.mock('@/cart-store/useCartStore', () => ({
     useCartStore: (selector: (state: { emptyCart: jest.Mock }) => unknown) =>
-        selector({ emptyCart: jest.fn() }),
+        selector({ emptyCart: mockEmptyCart }),
 }))
 
 jest.mock('react-hot-toast', () => ({
@@ -65,6 +69,10 @@ const shippingAddress = { id: 'address-001' } as ShippingAddress
 
 beforeEach(() => {
     jest.clearAllMocks()
+    // clearAllMocks は呼び出し履歴しか消さないため、mockImplementation で仕込んだ
+    // throw（localStorage 書き込み失敗の注入）は次のテストへ persist する。
+    // emptyCart は複数テストで実装を差し替えるので、実装ごと戻す。
+    mockEmptyCart.mockReset()
     ;(useRouter as jest.Mock).mockReturnValue({ push })
 })
 
@@ -153,6 +161,42 @@ describe('PlaceOrderCard', () => {
             expect(button).toBeDisabled()
         })
         expect(mockedPlaceOrder).toHaveBeenCalledTimes(1)
+    })
+
+    // useCartStore は persist 構成のため、emptyCart() は同期関数でありながら
+    // localStorage 書き込み失敗（Safari プライベートモード・容量超過）で throw しうる。
+    // 無保護だと「注文は成立・エラー表示・遷移なし・ボタン永久 disabled」という
+    // 復帰不能状態に落ちる。
+    it('ローカルカート削除が失敗しても成立済み注文の遷移を継続する', async () => {
+        mockedPlaceOrder.mockResolvedValue({ orderId: 'order-004' })
+        mockedEmptyUserCart.mockResolvedValue(true)
+        mockEmptyCart.mockImplementation(() => {
+            throw new Error('QuotaExceededError')
+        })
+
+        render(
+            <PlaceOrderCard
+                shippingAddress={shippingAddress}
+                cartData={cartData}
+                setCartData={jest.fn()}
+            />
+        )
+        const button = screen.getByRole('button', { name: 'Place order' })
+
+        fireEvent.click(button)
+
+        // 注文は成立しているので必ず注文詳細へ遷移する
+        await waitFor(() => {
+            expect(push).toHaveBeenCalledWith('/order/order-004')
+        })
+
+        // 成立済みの注文に対して失敗を示すトーストを出さない
+        expect(mockedToastError).not.toHaveBeenCalledWith(
+            'Something went wrong while placing your order.'
+        )
+
+        // サーバー側の後片付けもスキップされない
+        expect(mockedEmptyUserCart).toHaveBeenCalledTimes(1)
     })
 
     it('注文が失敗した場合はガードを解除して再試行できる', async () => {
