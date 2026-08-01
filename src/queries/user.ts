@@ -178,11 +178,14 @@ const resolveCartShippingFee = async (
     const { shippingFeeMethod } = product;
 
     if (shippingFeeMethod === "ITEM") {
-        return quantity === 1
-            ? new Prisma.Decimal(details.shippingFee)
-            : new Prisma.Decimal(details.shippingFee).add(
-                  new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
-              );
+        // 追加個数は 0 で下限を切る。在庫切れ（validQuantity === 0）や改ざんされた
+        // quantity: 0 で (0 - 1) = -1 となり、基本料から追加料を差し引いた
+        // **負の配送料**が Cart / Order の合計へ伝播するのを防ぐ。
+        // product.ts の getProductShippingFee と同じ丸め方に揃えている。
+        const additionalItems = Math.max(0, quantity - 1);
+        return new Prisma.Decimal(details.shippingFee).add(
+            new Prisma.Decimal(details.extraShippingFee).mul(additionalItems)
+        );
     }
     if (shippingFeeMethod === "WEIGHT") {
         return new Prisma.Decimal(details.shippingFee)
