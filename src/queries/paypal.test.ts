@@ -465,14 +465,23 @@ describe("capturePayPalPayment", () => {
             customId?: string;
             value?: string;
             currencyCode?: string;
+            /** purchase_units[0].custom_id を載せない（capture 側のみに載る応答版） */
+            omitUnitCustomId?: boolean;
+            /** capture オブジェクト側の custom_id（応答バージョンによっては複製される） */
+            captureCustomId?: string;
         }) => ({
             status: "COMPLETED",
             purchase_units: [
                 {
-                    custom_id: overrides.customId ?? "order-001",
+                    ...(overrides.omitUnitCustomId
+                        ? {}
+                        : { custom_id: overrides.customId ?? "order-001" }),
                     payments: {
                         captures: [
                             {
+                                ...(overrides.captureCustomId === undefined
+                                    ? {}
+                                    : { custom_id: overrides.captureCustomId }),
                                 amount: {
                                     value: overrides.value ?? "99.99",
                                     currency_code:
@@ -519,6 +528,50 @@ describe("capturePayPalPayment", () => {
             ).rejects.toThrow("PayPal capture does not match order.");
             expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
             expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("purchase_units 側が一致でも capture 側の custom_id が不一致ならスローする", async () => {
+            // `a ?? b` は最初の非 nullish で短絡するため、外側が一致すると
+            // capture 側は一度も検査されない。capture オブジェクトこそ実際の
+            // 資金移動を表すので、外側だけ自注文に相関し内側が別注文を指す応答が
+            // 検証を通過して Paid 確定まで到達する。
+            // 「両方を許容する」は「どちらの位置に載っていてもよい」の意味であり、
+            // 「先に見つかった方だけ見る」ではない。存在するものは全て一致を要求する。
+            mockPayPalFetch({
+                captureResponse: buildCaptureResponse({
+                    customId: "order-001",
+                    captureCustomId: "other-order-999",
+                }),
+            });
+
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("PayPal capture does not match order.");
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        it("capture 側のみに custom_id が載る応答でも一致すれば通過する", async () => {
+            // 応答バージョン差の吸収（どちらの位置に載っていてもよい）は維持する。
+            // 上のテストの修正で「外側必須」に狭めてしまわないことを固定する。
+            mockPayPalFetch({
+                captureResponse: buildCaptureResponse({
+                    omitUnitCustomId: true,
+                    captureCustomId: "order-001",
+                }),
+            });
+            const paymentDetails = createMockPaymentDetails({
+                paymentMethod: "PayPal",
+            });
+            mockDb.paymentDetails.upsert.mockResolvedValue(paymentDetails);
+            mockDb.order.update.mockResolvedValue({
+                ...createMockOrder({ paymentStatus: "Paid" }),
+                paymentDetails,
+            });
+
+            await capturePayPalPayment("order-001", "PAYPAL-ORDER-123");
+
+            expect(mockDb.order.update).toHaveBeenCalled();
         });
 
         it("currency_code が USD 以外の場合スローし、Paid 更新しない", async () => {
