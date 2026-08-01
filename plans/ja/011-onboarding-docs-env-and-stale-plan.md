@@ -216,10 +216,31 @@ fail-closed ゲートを掛ける:
 # リンクではないため対象外 —— 監査証跡は当時の観測を保存する文書であり、
 # 向け直すと記録として成立しなくなる。リンクは「今クリックして辿る参照」なので
 # 壊れたままにできない、という線でメインゲートと定義を揃えている。
-audit_links=$(
-  grep -rnoE '\]\([^)]*unimplemented-screens-plan[^)]*\)' plans/audit --include="*.md" \
-    | grep -vE "(^|/)archive/unimplemented-screens-plan"
-)
+#
+# ① 検索できなかったことを「ヒット 0 件」と取り違えないこと。
+#    `audit_links` が空になる理由は「旧パス参照が無い」だけではなく
+#    「対象が存在しない / 読めない」でもありうる。後者を PASS に変換すると、
+#    ディレクトリ改名や実行位置の取り違えでゲートが**恒久的に緑**になる。
+#    **exit code だけでは足りない**: GNU grep は読み取りエラーで 2 を返すが、
+#    **BSD grep（macOS 既定）は存在しないパスに対して 1 を返し**「不一致」と
+#    区別できない（実測: `/usr/bin/grep -r … plans/does-not-exist` → exit 1）。
+#    そこで対象の存在を先に assert し、exit code 検査はその補強として併用する。
+[ -d plans/audit ] || {
+  echo "FAIL: plans/audit が存在しない（検索できていないので判定不能）"; exit 1;
+}
+
+audit_raw=$(grep -rnoE '\]\([^)]*unimplemented-screens-plan[^)]*\)' plans/audit --include="*.md")
+status=$?
+[ "$status" -le 1 ] || {
+  echo "FAIL: 旧パス参照の検索自体が失敗した (grep exit $status)"; exit 1;
+}
+
+# ② 除外は**トークンに対して**掛けること。`grep -rno` の出力は `path:line:token` なので、
+#    行全体に `grep -vE "(^|/)archive/…"` を掛けると**ファイルのパス側**が条件を満たし、
+#    生きた旧パス参照が黙って落ちる（同じ欠陥と実測は plans/011 の補助ゲート参照）。
+audit_links=$(printf '%s' "$audit_raw" | awk 'NF { tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+    if (tok !~ /(^|\/)archive\/unimplemented-screens-plan/) print }')
+
 if [ -n "$audit_links" ]; then
   printf '%s\n' "$audit_links"
   echo "FAIL: plans/audit にリンク形の旧パス参照が残っている"
@@ -227,6 +248,11 @@ if [ -n "$audit_links" ]; then
 fi
 echo "PASS: plans/audit にリンク形の旧パス参照なし"
 ```
+
+> **実測（2026-08-01・四方向）**: 現行 `plans/audit` → `PASS` / exit 0、
+> 存在しないディレクトリ → `FAIL: … 存在しない` / exit 1（**旧形は `PASS` / exit 0**）、
+> リンク形の旧パス参照を注入 → `FAIL` / exit 1、
+> `docs/archive/…` へ再ポイント済みのリンクのみ → `PASS` / exit 0。
 
 **（別掲・advisory）列挙用コマンド**: リンク形以外も含めた全出現を一覧するには次を使う。
 これは**ゲートではない**（常に exit 0）。人間が「歴史引用として残置してよいか」を判断する
@@ -366,12 +392,30 @@ NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 # grep のルートに next.config.mjs を含める: HSTS_* はリポジトリルートの設定ファイルで
 # 読まれるため `src/` だけを見ると取りこぼす（今は除外対象だが、将来ルート設定に足された
 # 変数が黙って母数から漏れるのを防ぐ）。
+# 母数の入力が欠けていたら**明示的に落とす**。`grep` が対象不在で空を返しても
+# `expected` は空集合になるだけで、後段の `comm -23` は「missing なし」を返し
+# **PASS に化ける**（母数が空なら差集合も空）。しかも BSD grep（macOS 既定）は
+# 存在しないパスに対して 1 を返し「不一致」と区別できないため、exit code 検査だけでは
+# 足りない。入力ファイル / ディレクトリの存在を先に assert する。
+for required in src next.config.mjs .env.docker.example README.md; do
+  [ -e "$required" ] || {
+    echo "FAIL: $required が無い（期待集合を組み立てられないので判定不能）"; exit 1;
+  }
+done
+
 expected=$(
   {
     grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ next.config.mjs | sed 's/process\.env\.//'
     grep -oE '^[A-Z_][A-Z0-9_]*=' .env.docker.example | tr -d '='
   } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
 )
+
+# 空の期待集合は「環境変数を 1 つも使っていない」ではなく「抽出に失敗した」。
+# 差集合が空 = 合格、という後段の論理が母数の空で自明に成立してしまうため、
+# ここで打ち切る。
+[ -n "$expected" ] || {
+  echo "FAIL: 期待集合が空（process.env 参照を 1 件も抽出できていない）"; exit 1;
+}
 
 # README の env ブロックが列挙する変数名。
 #
@@ -387,6 +431,15 @@ section=$(awk '/^### 必要な環境変数$/{f=1; next} f && /^#{1,3} /{exit} f'
 fence_count=$(printf '%s\n' "$section" | grep -c '^```env$')
 if [ "$fence_count" -ne 1 ]; then
   printf 'FAIL: 「必要な環境変数」節の ```env フェンスが %s 個（1 個であることが前提）\n' "$fence_count"
+  exit 1
+fi
+
+# **終了フェンスも検証すること。** 開始フェンスの個数だけを見ても、閉じが無ければ
+# 下の `sed -n '/^```env$/,/^```$/p'` は範囲の終端に出会えず**節の末尾まで**拾う。
+# 抽出対象が黙って広がるのに検査は緑のままなので、開始側と同じ理由で assert する。
+close_count=$(printf '%s\n' "$section" | grep -c '^```$')
+if [ "$close_count" -lt 1 ]; then
+  echo 'FAIL: 「必要な環境変数」節の ```env フェンスが閉じていない'
   exit 1
 fi
 
@@ -419,6 +472,11 @@ echo "PASS: README env block matches the superset exactly"
 | `E2E_BASE_URL` | E2E 実行専用。`docs/testing/` 側で扱う |
 | `SONAR_TOKEN` / `SONAR_HOST_URL` | ローカル静的解析（`docker-compose.sonar.yml` / ADR-005）。アプリのランタイム変数ではない |
 | `HSTS_*` | 本番ドメイン所有者向けの opt-in（plan 061）。ローカル開発の README ブロックには意図的に載せない |
+
+> **実測（2026-08-01・前提検査の両方向）**: 現行 README → `PASS`（`expected` 19 件）/ exit 0、
+> 「必要な環境変数」節の終了フェンスを削除した複製 → `FAIL: … 閉じていない` / exit 1。
+> **旧形は 2 本目でも PASS していた** —— 開始フェンスは 1 個のままなので個数検査を通り、
+> `sed` の範囲が節末尾まで暗黙に広がっていた。
 
 **実測（2026-07-26）**: この `expected` は Step 2 の目標ブロックが列挙する **19 変数と完全に一致**する
 （`diff` で差分ゼロ）。すなわちゲートの母数と Step 2 の指示が同一の集合を指しており、
