@@ -243,20 +243,73 @@ SELECT (:actual_count = :approved_count)
   DO $$ BEGIN RAISE EXCEPTION 'candidate set drifted since approval - aborting'; END $$;
 \endif
 
--- 3) 両方一致した場合のみ UPDATE を実行する
-UPDATE "PaymentDetails" pd
-SET    amount = pd.amount / 100
-FROM   "Order" o
-WHERE  o.id = pd."orderId"
-  AND  pd."createdAt" < :'deploy_boundary'
-  AND  pd."paymentMethod" = 'Stripe'                        -- Step 2 と同じ肯定形の述語
-  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;   -- ratio ≈ 100 のみ
+-- 3) 両方一致した場合のみ UPDATE を実行し、**影響行の集合をその場で捕捉する**。
+--    `UPDATE ... RETURNING` を CTE に包むと、件数と id digest を \gset で変数へ取れる。
+WITH updated AS (
+    UPDATE "PaymentDetails" pd
+    SET    amount = pd.amount / 100
+    FROM   "Order" o
+    WHERE  o.id = pd."orderId"
+      AND  pd."createdAt" < :'deploy_boundary'
+      AND  pd."paymentMethod" = 'Stripe'                        -- Step 2 と同じ肯定形の述語
+      AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101    -- ratio ≈ 100 のみ
+    RETURNING pd.id
+)
+SELECT count(*)                                                 AS updated_count,
+       md5(coalesce(string_agg(id::text, ',' ORDER BY id), '')) AS updated_digest
+FROM   updated
+\gset
 
--- 4) psql が返す `UPDATE <n>` の n が 1) の actual_count と一致することを確認する。
---    不一致なら ROLLBACK;（並行書き込みが入った可能性がある）
+-- 4) 影響行数**と id 集合**が 1) の確定値と一致することを機械的に検査する。
+--    不一致は並行書き込み等で対象がずれた合図。1) と同様に digest まで見るのは、
+--    件数一致が行集合の同一性を含意しないため。
+SELECT (:updated_count = :actual_count)
+   AND (:'updated_digest' = :'actual_digest') AS post_ok \gset
 
+\if :post_ok
+  \echo 'POST OK: the updated set matches the pre-checked candidate set'
+\else
+  \warn 'POST FAIL: the updated set differs from the pre-checked candidates'
+  \warn 'pre :' :actual_count :'actual_digest'
+  \warn 'post:' :updated_count :'updated_digest'
+  ROLLBACK;
+  DO $$ BEGIN RAISE EXCEPTION 'updated set differs from pre-checked candidates - aborting'; END $$;
+\endif
+
+-- 5) ここまで到達したときだけ COMMIT する
 COMMIT;
 ```
+
+> **⚠️ UPDATE 結果を検証する前に COMMIT しないこと（2026-08-01 訂正）。** 旧版の 4) は
+>
+> ```sql
+> -- 4) psql が返す `UPDATE <n>` の n が 1) の actual_count と一致することを確認する。
+> --    不一致なら ROLLBACK;（並行書き込みが入った可能性がある）
+>
+> COMMIT;
+> ```
+>
+> という**コメントだけの指示**で、その直後に**無条件の `COMMIT;`** が置かれていた。
+> 本節冒頭が指定する `psql -f backfill.sql`（ファイル実行）では、人間が `UPDATE <n>` を
+> 読んで介入する余地は無く、**検証は一度も行われないまま COMMIT が実行される**。
+> 事前ゲート（1〜2）は `\gset` + `\if` + `RAISE` で機械化されていたのに、
+> **事後検証だけが人間の目視に委ねられて穴になっていた** —— しかも金額を書き換える
+> UPDATE なので、素通りの帰結はデータ破損である。上の 3〜5 は事前ゲートと同じ機構で
+> 事後も機械化する。
+>
+> **実測（2026-08-01・PostgreSQL 16 実機 / 3 行のフィクスチャ = 候補 2 + 非候補 1）**:
+>
+> | ケース | 結果 | データ |
+> |---|---|---|
+> | 承認値と一致（正常系） | `GATE OK` → `POST OK` / **exit 0** | 候補 2 件のみ 1/100 に補正（`10000→100` / `5000→50`）、非候補は不変 |
+> | 事前ゲート不一致（承認 digest がドリフト） | `GATE FAIL` / **exit 3** | **全件不変**（UPDATE に到達しない） |
+> | 事後ゲート不一致（UPDATE が別集合に当たった状況を模擬） | `POST FAIL` / **exit 3** | **全件不変**（ROLLBACK が効く） |
+>
+> **旧形を同じドリフト状況で流すと**: **exit 0** で完了し、
+> **既にドル建てだった非候補行が `20.00 → 0.20` に壊れたまま COMMIT された**。
+> 4) のコメントは実行されないので、何の防御にもなっていなかった。
+> これは本プランが解消しようとしている CORRECTNESS-05（金額単位の不整合）を
+> **runbook 自身が新たに作り出す**形であり、事後ゲートの機械化は必須である。
 
 > **実測（2026-08-01・実 PostgreSQL 16 で三方向）**: 承認値と一致 → `GATE OK` / **exit 0** /
 > `UPDATE` 適用。**件数は同じまま候補集合だけ入れ替えた**ケース（1 行を候補から外し
