@@ -366,7 +366,15 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
    > `tests/integration/`（testcontainers）の領域 —— [`plans/README.md`](../README.md) の
    > deferred で追跡する。
 
-本プランを土台にした後続の決済作業: `plans/059`（PayPal capture 検証。共有ヘルパー
-`isSettledPaymentStatus` を `src/lib/payment-status.ts` から再利用する —
-**本モジュールから再 export はしない**）および 2026-07-18 の CodeRabbit Phase 1
-（冪等キー付与 + ステータス書き込みの CAS 化）— 詳細は `docs/testing/COVERAGE_REPORT.md §7`。
+本プランを土台にした後続の決済作業（**いずれも完了済み**）:
+
+- `plans/059`（PayPal capture 検証）— **DONE**（[`../README.md`](../README.md) の Status 表が
+  実行実態の SSOT）。共有ヘルパー `isSettledPaymentStatus` を
+  `src/lib/payment-status.ts` から再利用する契約は実装で守られている
+  （**本モジュールから再 export はしない**）。
+  なお 2026-08-01 に、実装された相関検証が
+  `purchase_units[0].custom_id ?? capture?.custom_id` の形で **`??` の短絡により
+  2 つ目の `custom_id` を検査していなかった**欠陥を修正済み（`0d82f790`）。
+- 2026-07-18 の CodeRabbit Phase 1（冪等キー付与 + ステータス書き込みの CAS 化）— 完了。
+
+詳細は `docs/testing/COVERAGE_REPORT.md §7`。
