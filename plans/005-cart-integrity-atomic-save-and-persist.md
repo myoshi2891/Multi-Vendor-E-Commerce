@@ -158,7 +158,16 @@ Do **not** remove the `set(() => ({ ... }))` calls that precede them — those d
 
 In `src/queries/user.test.ts`, in the `saveUserCart` describe (line ~217), add a test proving the delete+create is **wired through a single `$transaction`** and that a callback rejection surfaces:
 - Mock `db.$transaction` to invoke its callback with a `tx` where `tx.cart.create` **rejects**; assert `saveUserCart(...)` rejects and the operation does not report success (the delete+create are issued via the transaction callback, not as independent top-level calls).
-- Adjust existing happy-path tests: they currently likely mock `db.cart.delete` / `db.cart.create` directly. Since the code now calls `db.$transaction(cb)`, make the mock `db.$transaction.mockImplementation(async (cb) => cb(mockTx))` where `mockTx.cart.delete`/`create` are jest fns — mirror how other transaction-using tests in this repo mock it (search the file for existing `$transaction` mock usage; `order.test.ts` uses the `callback(mockDb)` passthrough pattern).
+- Adjust existing happy-path tests: they currently likely mock `db.cart.delete` / `db.cart.create` directly. Since the code now calls `db.$transaction(cb)`, make the mock `db.$transaction.mockImplementation(async (cb) => cb(mockTx))` where `mockTx.cart.delete`/`create` are jest fns.
+
+  > **⚠️ この段落の続きは訂正済み（2026-07-18）。原文の「ファイル内の既存 `$transaction`
+  > モック使用箇所を検索して真似よ（`order.test.ts` の `callback(mockDb)` passthrough
+  > パターン）」という指示には従わないこと。** テスト作成者ごとに別々のアドホックな
+  > モックが生まれるため、下の「Corrections to the test steps」§1 で unsound と
+  > 判定されている。**`tx` ダブルは `src/config/test-helpers.ts` から取り**、
+  > ケースが足りなければそのモジュールを拡張する（`CLAUDE.md`「テスト構成」が定める
+  > 共通テストインフラ）。原文はプランが DONE になった当時の記録として残すが、
+  > 新しいテストへ複写しないこと。
 
 **Verify**: `bun run test -- src/queries/user.test.ts` → all pass.
 

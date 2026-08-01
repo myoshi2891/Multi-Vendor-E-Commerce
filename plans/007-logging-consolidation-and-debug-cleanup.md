@@ -146,13 +146,33 @@ Use the actual enclosing function name for each `[Coupon:<fn>]` tag (read each c
 ### Step 4: Remove the debug UI logs
 
 1. `src/components/store/cart-page/container.tsx` (line ~39): delete the `console.log('updatedCart--->', updatedCart)` line entirely. Nothing else in that block depends on it.
-2. `src/components/store/forms/apply-coupon.tsx` (line ~52-55): the catch is `catch (error: any)`. Change it to `catch (error: unknown)`, replace `console.log(error)` with `logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)` (import `logError`), and make the toast safe for `unknown`:
+2. `src/components/store/forms/apply-coupon.tsx` (line ~52-55): the catch is `catch (error: any)`. Change it to `catch (error: unknown)`, replace `console.log(error)` with `logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)` (import `logError`), and **show a fixed, generic message** — do not surface `error.message`:
    ```ts
    } catch (error: unknown) {
        logError("[ApplyCoupon:handleSubmit] failed to apply coupon", error)
-       toast.error(error instanceof Error ? error.message : "Failed to apply coupon.")
+       // 生の詳細はログにだけ残す。UI には固定文言のみ（下の注記）。
+       toast.error("Failed to apply coupon.")
    }
    ```
+
+   > **⚠️ `toast.error(error instanceof Error ? error.message : …)` としないこと（2026-08-01 訂正）。**
+   > 旧版はこの三項演算子の形を指示していたが、`applyCoupon` の catch
+   > （`src/queries/coupon.ts`）は同ファイルの**他 7 つの catch**（`isDomainError` は
+   > `:36` で定義され `:142` `:217` `:252` `:292` `:530` `:572` `:611` の 7 箇所から
+   > 呼ばれる — 実測 2026-08-01）と違い **`isDomainError` を一切呼ばず**、
+   > `Error occurred while applying coupon: ${error.message}` で
+   > **すべてを包み直す**。`error.message` を**文字列補間**するため、Prisma の
+   > 生エラーメッセージがそのまま `toast` の表示文字列に載る。
+   > つまりこの呼び出し元では `error instanceof Error` は常に真で、
+   > **三項演算子の安全側の枝には決して落ちない**。
+   >
+   > 併せて意図的 throw 6 種（`Coupon not found.` 等）もこの汎用文言に化けるので、
+   > `error.message` を出しても**ユーザーに有用な情報は得られない** —— 漏洩リスクだけが
+   > 残る形になっている。詳細は下の Maintenance notes と
+   > [`08-open-questions.md`](../specs/multi-vendor-ecommerce/08-open-questions.md)。
+   >
+   > `isDomainError` を `applyCoupon` へ適用するのは**別プラン（コード変更）**であり、
+   > それが入るまでこの固定文言を `error.message` へ戻さないこと。
 
 **Verify**: `grep -rn "console.log" src/components/store/forms/apply-coupon.tsx src/components/store/cart-page/container.tsx` → no matches; `bunx tsc --noEmit` → exit 0.
 
@@ -204,7 +224,9 @@ Stop and report if:
   > **⚠️ `applyCoupon` を「安全なメッセージのみ throw する」例として挙げないこと（2026-08-01 訂正）。**
   > 本項は当初 Step 4 の `toast.error(error.message)` を `applyCoupon` を根拠に許容していたが、
   > **前提が実装と一致していない**。`applyCoupon` の catch（`coupon.ts:429-433`）は
-  > 同ファイルの他 8 関数と違い **`isDomainError` を一切呼ばず**、
+  > 同ファイルの**他 7 つの catch** と違い **`isDomainError` を一切呼ばず**
+  > （実測 2026-08-01: `isDomainError` は `:36` 定義・呼び出しは `:142` `:217` `:252`
+  > `:292` `:530` `:572` `:611` の 7 箇所。旧記述の「8 関数」は 1 件過大だった）、
   > `Error occurred while applying coupon: ${error.message}` で**すべてを**包み直す。
   > 帰結は 2 つとも Step 4 の前提を壊す:
   >
