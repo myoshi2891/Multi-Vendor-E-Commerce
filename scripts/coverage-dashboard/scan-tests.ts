@@ -234,11 +234,138 @@ function countBlockDeclarations(content: string): number {
 }
 
 /**
+ * `const <name> = [` / `export const <name>: T[] = [` の配列リテラル開始位置を返す。
+ * 型注釈（`: readonly PaymentStatus[]`）をまたげるよう、`=` の後の最初の `[` を探す。
+ *
+ * @param content - 検索対象のファイル内容
+ * @param name - 探す定数名
+ * @returns 配列開始 `[` の位置。見つからなければ -1
+ */
+function findConstArrayStart(content: string, name: string): number {
+    // 名前は識別子なので正規表現メタ文字を含まない（EACH_IDENT_PATTERN で抽出済み）。
+    const declPattern = new RegExp(
+        `\\b(?:export\\s+)?(?:const|let|var)\\s+${name}\\s*(?::[^=]*)?=`,
+        "g"
+    );
+    const match = declPattern.exec(content);
+    if (match === null) return -1;
+
+    const i = skipTrivia(content, match.index + match[0].length);
+    return content[i] === "[" ? i : -1;
+}
+
+/**
+ * `import { <name> } from "<specifier>"` の指定子を返す。
+ * default import / namespace import は対象外（テーブル定数は named export 前提）。
+ *
+ * @param content - 検索対象のファイル内容
+ * @param name - 探すインポート名
+ * @returns モジュール指定子。見つからなければ null
+ */
+function findImportSpecifier(content: string, name: string): string | null {
+    const importPattern = /import\s*\{([^}]*)\}\s*from\s*["']([^"']+)["']/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = importPattern.exec(content)) !== null) {
+        const named = match[1]
+            .split(",")
+            .map((entry) => entry.trim().split(/\s+as\s+/)[0].trim());
+        if (named.includes(name)) return match[2];
+    }
+    return null;
+}
+
+/**
+ * モジュール指定子をファイルパスへ解決する（**単一ホップのみ**）。
+ *
+ * 対応するのは `@/` エイリアス（→ `<root>/src/`）と相対パスだけ。
+ * パッケージ名・多段 re-export・動的生成は追わない —— 推測で件数を盛るより、
+ * 過小計上のまま残すほうが安全なため（静的走査の原理的限界）。
+ *
+ * @param specifier - `import ... from` の指定子
+ * @param fromFile - import 元ファイルの絶対パス
+ * @param root - 走査ルートの絶対パス
+ * @returns 解決した絶対パス。解決できなければ null
+ */
+async function resolveModulePath(
+    specifier: string,
+    fromFile: string,
+    root: string
+): Promise<string | null> {
+    let base: string;
+    if (specifier.startsWith("@/")) {
+        base = join(root, "src", specifier.slice(2));
+    } else if (specifier.startsWith(".")) {
+        base = join(fromFile, "..", specifier);
+    } else {
+        return null;
+    }
+
+    for (const candidate of [
+        base,
+        `${base}.ts`,
+        `${base}.tsx`,
+        join(base, "index.ts"),
+    ]) {
+        try {
+            if ((await stat(candidate)).isFile()) return candidate;
+        } catch {
+            // 存在しない候補は次へ。
+        }
+    }
+    return null;
+}
+
+/**
+ * `it.each(IDENT)` の識別子から、展開されるテーブル行数を解決する。
+ *
+ * 1. 同一ファイル内の `const IDENT = [...]`
+ * 2. `import { IDENT } from "@/..."`（または相対パス）の単一ホップ先の
+ *    `export const IDENT = [...]`
+ *
+ * どちらでも解決できなければ 0（過大計上しない fail-safe）。
+ *
+ * @param name - `it.each(` の引数として現れた識別子
+ * @param content - 呼び出し元ファイルの内容
+ * @param absPath - 呼び出し元ファイルの絶対パス
+ * @param root - 走査ルートの絶対パス
+ */
+async function resolveIdentifierTableSize(
+    name: string,
+    content: string,
+    absPath: string,
+    root: string
+): Promise<number> {
+    const localStart = findConstArrayStart(content, name);
+    if (localStart !== -1) return countArrayElements(content, localStart);
+
+    const specifier = findImportSpecifier(content, name);
+    if (specifier === null) return 0;
+
+    const modulePath = await resolveModulePath(specifier, absPath, root);
+    if (modulePath === null) return 0;
+
+    try {
+        const moduleContent = await readFile(modulePath, "utf-8");
+        const start = findConstArrayStart(moduleContent, name);
+        return start === -1 ? 0 : countArrayElements(moduleContent, start);
+    } catch {
+        return 0;
+    }
+}
+
+/**
  * ファイル内の `it.each` / `test.each` が実行時に展開されるテスト数の合計を返す。
  *
  * @param content - ファイル全体の内容
+ * @param absPath - 対象ファイルの絶対パス（識別子参照の import 解決に使う）
+ * @param root - 走査ルートの絶対パス（`@/` エイリアス解決に使う）
  */
-function countEachCases(content: string): number {
+async function countEachCases(
+    content: string,
+    absPath: string,
+    root: string
+): Promise<number> {
     let total = 0;
     EACH_PATTERN.lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -258,13 +385,30 @@ function countEachCases(content: string): number {
             continue;
         }
 
+        if (content[i] !== "(") continue;
+        i = skipTrivia(content, i + 1);
+
         // it.each([...]) の配列リテラル
-        if (content[i] === "(") {
-            i = skipTrivia(content, i + 1);
-            if (content[i] === "[") {
-                total += countArrayElements(content, i);
-            }
+        if (content[i] === "[") {
+            total += countArrayElements(content, i);
+            continue;
         }
+
+        // it.each(IDENT) の識別子参照。テーブルを名前付き定数へ括り出した形で、
+        // ここを見ないとファイルのケース数が丸ごと過小計上される。
+        const identMatch = /^[A-Za-z_$][\w$]*/.exec(content.slice(i));
+        if (identMatch === null) continue;
+
+        // 呼び出し `IDENT(...)` や メンバ参照 `IDENT.x` はテーブルではない。
+        const after = skipTrivia(content, i + identMatch[0].length);
+        if (content[after] !== ")") continue;
+
+        total += await resolveIdentifierTableSize(
+            identMatch[0],
+            content,
+            absPath,
+            root
+        );
     }
     return total;
 }
@@ -309,9 +453,13 @@ function classify(absPath: string): TestKind | null {
  * Determines whether a test file contains skip markers and counts test blocks.
  *
  * @param absPath - Absolute path to the file to inspect
+ * @param root - 走査ルートの絶対パス（`it.each(IDENT)` の import 解決に使う）
  * @returns An object with `hasSkip`: `true` if the file contains skip markers (e.g., `.skip`, `xit`, `xdescribe`), `false` otherwise; and `testCount`: the number of `it(`/`test(` occurrences in the file. On read failure returns `{ hasSkip: false, testCount: 0 }`.
  */
-async function inspectFile(absPath: string): Promise<{ hasSkip: boolean; testCount: number }> {
+async function inspectFile(
+    absPath: string,
+    root: string
+): Promise<{ hasSkip: boolean; testCount: number }> {
     try {
         const content = await readFile(absPath, "utf-8");
         return {
@@ -320,7 +468,8 @@ async function inspectFile(absPath: string): Promise<{ hasSkip: boolean; testCou
             // testCount とは別の統計に紐づくので、意味を変えない。
             hasSkip: SKIP_PATTERN.test(content),
             testCount:
-                countBlockDeclarations(content) + countEachCases(content),
+                countBlockDeclarations(content) +
+                (await countEachCases(content, absPath, root)),
         };
     } catch {
         return { hasSkip: false, testCount: 0 };
@@ -358,7 +507,7 @@ export async function scanTests(root: string): Promise<ScannedTest[]> {
     for (const abs of files) {
         const kind = classify(abs);
         if (!kind) continue;
-        const { hasSkip, testCount } = await inspectFile(abs);
+        const { hasSkip, testCount } = await inspectFile(abs, root);
         results.push({
             relativePath: toPosix(relative(root, abs)),
             kind,
