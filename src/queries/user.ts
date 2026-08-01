@@ -122,6 +122,23 @@ const findCartProductWithVariantAndSize = async (
 };
 
 /**
+ * 割引後の単価を Prisma.Decimal で算出する。
+ *
+ * tech.md の「金額を number で積み上げない」に従い、除算まで Decimal のまま行う。
+ * `discount` は Float であり `0`（= 割引なし）は falsy として元価格をそのまま返す
+ * 既存の truthy 判定を維持している。
+ */
+const calculateDiscountedUnitPrice = (
+    price: Prisma.Decimal,
+    discount: number
+): Prisma.Decimal =>
+    discount
+        ? new Prisma.Decimal(price.toString())
+              .mul(new Prisma.Decimal((100 - discount).toString()))
+              .div("100")
+        : new Prisma.Decimal(price.toString());
+
+/**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.1
  *              - If the user is already following the store, unfollow it.
@@ -240,15 +257,10 @@ export const saveUserCart = async (
                 // Validate stock and price
                 const validQuantity = Math.min(quantity, size.quantity);
 
-                const priceObj = size.discount
-                    ? new Prisma.Decimal(size.price.toString())
-                          .mul(
-                              new Prisma.Decimal(
-                                  (100 - size.discount).toString()
-                              )
-                          )
-                          .div("100")
-                    : new Prisma.Decimal(size.price.toString());
+                const priceObj = calculateDiscountedUnitPrice(
+                    size.price,
+                    size.discount
+                );
 
                 // Calculate shipping details
                 const countryCookie = getCookie("userCountry", { cookies }) as
@@ -602,15 +614,10 @@ export const placeOrder = async (
                 // Validate stock and price
                 const validQuantity = Math.min(quantity, size.quantity);
 
-                const priceObj = size.discount
-                    ? new Prisma.Decimal(size.price.toString())
-                          .mul(
-                              new Prisma.Decimal(
-                                  (100 - size.discount).toString()
-                              )
-                          )
-                          .div("100")
-                    : new Prisma.Decimal(size.price.toString());
+                const priceObj = calculateDiscountedUnitPrice(
+                    size.price,
+                    size.discount
+                );
 
                 // Calculate shipping details
                 // 所有権検証済みの ownedAddress（サーバー値）を使う。
@@ -1226,11 +1233,10 @@ export const updateCheckoutProductWithLatest = async (
 
             const { shippingFeeMethod, freeShipping, store } = product;
 
-            const priceObj = size.discount
-                ? new Prisma.Decimal(size.price.toString())
-                      .mul(new Prisma.Decimal((100 - size.discount).toString()))
-                      .div("100")
-                : new Prisma.Decimal(size.price.toString());
+            const priceObj = calculateDiscountedUnitPrice(
+                size.price,
+                size.discount
+            );
 
             const validated_qty = Math.min(quantity, size.quantity);
 
