@@ -95,16 +95,19 @@ const fetchPayPal = async (
 };
 
 /**
- * @Function createPayPalPayment
- * @Description Creates a PayPal payment and returns payment details
- * @PermissionLevel User only
- * @Parameters
- *   - orderId: The ID of the order to process payment for.
- * @Returns Details of the created payment from PayPal.
+ * Clerk の `currentUser()` を取得し、未認証を拒否する共通前段。
+ *
+ * `currentUser()` は外部呼び出しなので try/catch でラップし、Clerk 由来の障害を
+ * `Failed to fetch current user: …` へ写像する。ただし**意図的 throw である
+ * `"Unauthenticated."` はそのまま透過させる** —— 汎用メッセージで潰すと、
+ * 呼び出し側が文字列比較で認可エラーを見分けられなくなる。
+ *
+ * `logPrefix` を引数に取るのは createPayPalPayment / capturePayPalPayment で
+ * ログの発生源を区別するため。ログ以外に両者の差分はない。
  */
-
-export const createPayPalPayment = async (orderId: string) => {
-    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+const requirePayPalUser = async (
+    logPrefix: string
+): Promise<NonNullable<Awaited<ReturnType<typeof currentUser>>>> => {
     let user: Awaited<ReturnType<typeof currentUser>>;
     try {
         user = await currentUser();
@@ -115,27 +118,40 @@ export const createPayPalPayment = async (orderId: string) => {
         const message = error instanceof Error ? error.message : String(error);
         if (error instanceof Error) {
             console.error(
-                "[paypal:createPayPalPayment] Failed to fetch current user",
+                `${logPrefix} Failed to fetch current user`,
                 error.message,
                 error.stack
             );
         } else {
-            console.error(
-                "[paypal:createPayPalPayment] Failed to fetch current user",
-                error
-            );
+            console.error(`${logPrefix} Failed to fetch current user`, error);
         }
         throw new Error(`Failed to fetch current user: ${message}`);
     }
     if (!user) throw new Error("Unauthenticated.");
+    return user;
+};
 
-    // IDOR 防止: 注文所有権を確認してから PayPal API を呼ぶ
+/**
+ * IDOR 防止: `userId` で絞った所有権付きの注文取得。
+ *
+ * `where` に `userId` を含めることが本関数の存在理由であり、PayPal API を叩く前
+ * （= 金が動く前）に必ず通す。
+ *
+ * 例外メッセージは **`"Order not found"`（末尾ピリオド無し）**。`stripe.ts` 側は
+ * `"Order not found."`（ピリオド有り）で、双方ともテストが固定しているため
+ * 統一してはならない。本ヘルパーは PayPal 側専用。
+ */
+const findOwnedPayPalOrder = async (
+    orderId: string,
+    userId: string,
+    logPrefix: string
+): Promise<Order> => {
     let order: Order | null;
     try {
         order = await db.order.findUnique({
             where: {
                 id: orderId,
-                userId: user.id,
+                userId,
             },
         });
     } catch (error: unknown) {
@@ -145,19 +161,38 @@ export const createPayPalPayment = async (orderId: string) => {
         const message = error instanceof Error ? error.message : String(error);
         if (error instanceof Error) {
             console.error(
-                "[paypal:createPayPalPayment] Failed to fetch order",
+                `${logPrefix} Failed to fetch order`,
                 error.message,
                 error.stack
             );
         } else {
-            console.error(
-                "[paypal:createPayPalPayment] Failed to fetch order",
-                error
-            );
+            console.error(`${logPrefix} Failed to fetch order`, error);
         }
         throw new Error(`Failed to fetch order: ${message}`);
     }
     if (!order) throw new Error("Order not found");
+    return order;
+};
+
+/**
+ * @Function createPayPalPayment
+ * @Description Creates a PayPal payment and returns payment details
+ * @PermissionLevel User only
+ * @Parameters
+ *   - orderId: The ID of the order to process payment for.
+ * @Returns Details of the created payment from PayPal.
+ */
+
+export const createPayPalPayment = async (orderId: string) => {
+    // Get current user — Clerk 外部呼び出しを try/catch でラップ
+    const user = await requirePayPalUser("[paypal:createPayPalPayment]");
+
+    // IDOR 防止: 注文所有権を確認してから PayPal API を呼ぶ
+    const order = await findOwnedPayPalOrder(
+        orderId,
+        user.id,
+        "[paypal:createPayPalPayment]"
+    );
 
     try {
         // Here you can call the PayPal API to create a payment
@@ -223,59 +258,14 @@ export const capturePayPalPayment = async (
     paymentId: string
 ) => {
     // Get current user — Clerk 外部呼び出しを try/catch でラップ
-    let user: Awaited<ReturnType<typeof currentUser>>;
-    try {
-        user = await currentUser();
-    } catch (error: unknown) {
-        if (error instanceof Error && error.message === "Unauthenticated.") {
-            throw error;
-        }
-        const message = error instanceof Error ? error.message : String(error);
-        if (error instanceof Error) {
-            console.error(
-                "[paypal:capturePayPalPayment] Failed to fetch current user",
-                error.message,
-                error.stack
-            );
-        } else {
-            console.error(
-                "[paypal:capturePayPalPayment] Failed to fetch current user",
-                error
-            );
-        }
-        throw new Error(`Failed to fetch current user: ${message}`);
-    }
-    if (!user) throw new Error("Unauthenticated.");
+    const user = await requirePayPalUser("[paypal:capturePayPalPayment]");
 
     // IDOR 防止: PayPal の capture 課金前に注文所有権を確認する
-    let order: Order | null;
-    try {
-        order = await db.order.findUnique({
-            where: {
-                id: orderId,
-                userId: user.id,
-            },
-        });
-    } catch (error: unknown) {
-        if (error instanceof Error && error.message === "Order not found") {
-            throw error;
-        }
-        const message = error instanceof Error ? error.message : String(error);
-        if (error instanceof Error) {
-            console.error(
-                "[paypal:capturePayPalPayment] Failed to fetch order",
-                error.message,
-                error.stack
-            );
-        } else {
-            console.error(
-                "[paypal:capturePayPalPayment] Failed to fetch order",
-                error
-            );
-        }
-        throw new Error(`Failed to fetch order: ${message}`);
-    }
-    if (!order) throw new Error("Order not found");
+    const order = await findOwnedPayPalOrder(
+        orderId,
+        user.id,
+        "[paypal:capturePayPalPayment]"
+    );
 
     // 確定済み決済は capture 応答で上書きしない（Paid/Refunded を古い/DENIED capture で退行させない）。
     // Stripe capture (confirmStripePayment) と同一の settled ガード。認可ガード同様 try/catch の外。
