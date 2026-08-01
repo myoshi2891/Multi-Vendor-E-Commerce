@@ -139,6 +139,63 @@ const calculateDiscountedUnitPrice = (
         : new Prisma.Decimal(price.toString());
 
 /**
+ * 配送先の国から明細 1 行分の配送料を Decimal で確定する
+ * （saveUserCart / placeOrder 共通）。
+ *
+ * `getShippingDetails` は国が見つからないとき `boolean` を返す仕様のため、
+ * 型ガードで弾いて既定値（すべて 0）に留める既存の挙動をそのまま保持する。
+ *
+ * NOTE: `product.ts` の `getProductShippingFee` に寄せてはならない。あちらは
+ * 無料配送時に `shippingRate.findFirst` を発行しないためクエリ形状が変わり、
+ * `user.test.ts` は両者を別々にモックしている。
+ *
+ * @param country - `null` の場合は配送料を算出せず 0 を返す（Cookie 未設定など）
+ */
+const resolveCartShippingFee = async (
+    product: CartValidatedProduct,
+    country: Country | null,
+    weight: number,
+    quantity: number
+): Promise<Prisma.Decimal> => {
+    let details = {
+        shippingFee: 0,
+        extraShippingFee: 0,
+        isFreeShipping: false,
+    };
+
+    if (country) {
+        const temp_details = await getShippingDetails(
+            product.shippingFeeMethod,
+            country,
+            product.store,
+            product.freeShipping
+        );
+        if (typeof temp_details !== "boolean") {
+            details = temp_details;
+        }
+    }
+
+    const { shippingFeeMethod } = product;
+
+    if (shippingFeeMethod === "ITEM") {
+        return quantity === 1
+            ? new Prisma.Decimal(details.shippingFee)
+            : new Prisma.Decimal(details.shippingFee).add(
+                  new Prisma.Decimal(details.extraShippingFee).mul(quantity - 1)
+              );
+    }
+    if (shippingFeeMethod === "WEIGHT") {
+        return new Prisma.Decimal(details.shippingFee)
+            .mul(weight)
+            .mul(quantity);
+    }
+    if (shippingFeeMethod === "FIXED") {
+        return new Prisma.Decimal(details.shippingFee);
+    }
+    return new Prisma.Decimal("0");
+};
+
+/**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.1
  *              - If the user is already following the store, unfollow it.
@@ -267,44 +324,14 @@ export const saveUserCart = async (
                     | string
                     | undefined;
 
-                let details = {
-                    shippingFee: 0,
-                    extraShippingFee: 0,
-                    isFreeShipping: false,
-                };
-
-                if (countryCookie) {
-                    const country = parseUserCountryCookie(countryCookie);
-                    const temp_details = await getShippingDetails(
-                        product.shippingFeeMethod,
-                        country,
-                        product.store,
-                        product.freeShipping
-                    );
-                    if (typeof temp_details !== "boolean") {
-                        details = temp_details;
-                    }
-                }
-
-                let shippingFee = new Prisma.Decimal("0");
-                const { shippingFeeMethod } = product;
-
-                if (shippingFeeMethod === "ITEM") {
-                    shippingFee =
-                        validQuantity === 1
-                            ? new Prisma.Decimal(details.shippingFee)
-                            : new Prisma.Decimal(details.shippingFee).add(
-                                  new Prisma.Decimal(
-                                      details.extraShippingFee
-                                  ).mul(validQuantity - 1)
-                              );
-                } else if (shippingFeeMethod === "WEIGHT") {
-                    shippingFee = new Prisma.Decimal(details.shippingFee)
-                        .mul(variant.weight)
-                        .mul(validQuantity);
-                } else if (shippingFeeMethod === "FIXED") {
-                    shippingFee = new Prisma.Decimal(details.shippingFee);
-                }
+                const shippingFee = await resolveCartShippingFee(
+                    product,
+                    countryCookie
+                        ? parseUserCountryCookie(countryCookie)
+                        : null,
+                    variant.weight,
+                    validQuantity
+                );
 
                 const validQuantityObj = new Prisma.Decimal(
                     validQuantity.toString()
@@ -643,43 +670,12 @@ export const placeOrder = async (
                     region: "",
                 };
 
-                let details = {
-                    shippingFee: 0,
-                    extraShippingFee: 0,
-                    isFreeShipping: false,
-                };
-
-                if (country) {
-                    const temp_details = await getShippingDetails(
-                        product.shippingFeeMethod,
-                        country,
-                        product.store,
-                        product.freeShipping
-                    );
-                    if (typeof temp_details !== "boolean") {
-                        details = temp_details;
-                    }
-                }
-
-                let shippingFee = new Prisma.Decimal("0");
-                const { shippingFeeMethod } = product;
-
-                if (shippingFeeMethod === "ITEM") {
-                    shippingFee =
-                        validQuantity === 1
-                            ? new Prisma.Decimal(details.shippingFee)
-                            : new Prisma.Decimal(details.shippingFee).add(
-                                  new Prisma.Decimal(
-                                      details.extraShippingFee
-                                  ).mul(validQuantity - 1)
-                              );
-                } else if (shippingFeeMethod === "WEIGHT") {
-                    shippingFee = new Prisma.Decimal(details.shippingFee)
-                        .mul(variant.weight)
-                        .mul(validQuantity);
-                } else if (shippingFeeMethod === "FIXED") {
-                    shippingFee = new Prisma.Decimal(details.shippingFee);
-                }
+                const shippingFee = await resolveCartShippingFee(
+                    product,
+                    country,
+                    variant.weight,
+                    validQuantity
+                );
 
                 const validQuantityObj = new Prisma.Decimal(
                     validQuantity.toString()
