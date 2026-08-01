@@ -194,12 +194,19 @@ bucket and the rate limit stops limiting anything**.  This fails open silently:
 there is no error, just a limiter that never triggers.
 
 Consequently, when the attribute is enabled, the right-most entry must be parsed,
-not used verbatim — and the parsing problem is **the same one** the CloudFront row
-has.  All three contracts under "Parsing `CloudFront-Viewer-Address`" below apply
-unchanged:
+not used verbatim — and the parsing problem is **the same class** as the one the
+CloudFront row has.  The three contracts under "Parsing `CloudFront-Viewer-Address`"
+below carry over, but **rule 1 is conditional on ALB's serialization**, which is not
+yet established (see the open question immediately after this list).  Rules 2 and 3
+apply unchanged in either case:
 
-1. **Split on the last colon, once** (`lastIndexOf(':')`) — `split(':')[0]` breaks
-   on IPv6.
+1. **Split off the port, once, from the right** — the exact operation depends on the
+   form ALB emits.  If it is *unbracketed* (as CloudFront's is), use
+   `lastIndexOf(':')`; if it is *bracketed* (`[2001:db8::1]:52786`), strip the
+   brackets first and take the port after the closing `]`.  In neither case is
+   `split(':')[0]` correct — that breaks on IPv6 under both forms.  **Do not
+   implement this rule until the form is settled**; a parser written for the wrong
+   form fails in exactly the silent way this section exists to prevent.
 2. **Validate the left-hand side as IPv4 or IPv6 and fail closed** if it does not
    parse — never fall back to another header or treat the client as
    unidentified-but-allowed.
@@ -212,9 +219,9 @@ Two things must be settled from AWS's documentation rather than assumed:
   `CloudFront-Viewer-Address` as *unbracketed* (`2001:db8::1:52786`).  **Do not
   carry that finding over to ALB** — it is a per-product serialization choice, and
   the two are documented separately.  Establish ALB's form from the vendor's
-  documentation before writing the parser; if it *is* bracketed, rule 1 changes
-  shape (strip brackets, then split), and a parser written for the other form is
-  wrong in exactly the silent way this section is trying to prevent.
+  documentation before writing the parser.  This is the open question rule 1 above
+  is conditioned on: unbracketed → `lastIndexOf(':')`; bracketed → strip brackets,
+  then take the port after `]`.  Settle it first, then pick the branch.
 - **The attribute's actual value in the target account.**  Both
   `routing.http.xff_header_processing.mode` and
   `routing.http.xff_client_port.enabled` are **per-listener** attributes that an
