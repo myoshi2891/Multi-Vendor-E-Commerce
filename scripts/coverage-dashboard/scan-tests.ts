@@ -26,7 +26,9 @@ const IGNORED_DIRS = new Set([
 
 const JEST_TEST_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx|mts|cts)$/;
 const PLAYWRIGHT_DIR_FRAGMENT = `${sep}tests${sep}e2e${sep}`;
-const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/;
+// グローバルフラグ付き: 一致位置を文字列リテラル・コメント範囲と突き合わせるため、
+// `.test()` の真偽値ではなく `.exec()` の `index` が要る（`hasSkipMarker` を参照）。
+const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/g;
 // describe は wrapper のため testCount からは除外。
 //
 // 修飾子は**列挙**する（`(\.\w+)?` のような総称形にしない）。理由は 2 つ:
@@ -263,6 +265,30 @@ function countTemplateTableRows(content: string, start: number): number {
 
     // ヘッダ行を除いたデータ行数
     return Math.max(rows.length - 1, 0);
+}
+
+/**
+ * ファイルに **実コード上の** skip マーカー（`it.skip` / `xdescribe` 等）が
+ * あるかを返す。
+ *
+ * 文字列リテラル・コメント内の一致は数えない —— hasSkip はヒートマップの
+ * `◐`（partial）判定に効くので、フィクスチャ文字列を根拠に partial 扱いすると
+ * 「skip があるので不完全」という誤った読みが台帳へ伝播する。
+ *
+ * @param content - ファイル全体の内容
+ * @param spans - `findMaskedSpans` が返す非コード範囲
+ */
+function hasSkipMarker(
+    content: string,
+    spans: ReadonlyArray<readonly [number, number]>
+): boolean {
+    SKIP_PATTERN.lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = SKIP_PATTERN.exec(content)) !== null) {
+        if (!isMasked(spans, match.index)) return true;
+    }
+    return false;
 }
 
 /**
@@ -555,7 +581,7 @@ async function inspectFile(
             // hasSkip は「ファイルに skip マーカーが存在するか」の意味を維持する
             // （注釈形の条件付き skip も skip マーカーではあるため区別しない）。
             // testCount とは別の統計に紐づくので、意味を変えない。
-            hasSkip: SKIP_PATTERN.test(content),
+            hasSkip: hasSkipMarker(content, spans),
             testCount:
                 countBlockDeclarations(content, spans) +
                 (await countEachCases(content, spans, absPath, root)),
