@@ -126,7 +126,10 @@ export async function POST(req: Request) {
 			);
 			return new Response("Missing user id", { status: 400 });
 		}
-		const userId = rawUserId;
+		// 検証したのは trim 後の値なので、絞り込みにも同じ値を使う。
+		// 未 trim のまま渡すと検証対象と使用値が食い違い、trim 後なら一致する
+		// ユーザーに対して 0 件ヒットの削除・PII 秘匿が「成功」として通る。
+		const userId = rawUserId.trim();
 
 		try {
 			// GDPR「忘れられる権利」: SupportTicket.userId は onDelete: SetNull のため、
