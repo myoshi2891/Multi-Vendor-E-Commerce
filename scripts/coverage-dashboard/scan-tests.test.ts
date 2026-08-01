@@ -402,6 +402,30 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(1);
     });
 
+    it("文字列リテラル内の it( / test.skip( / it.each( は宣言として数えない", async () => {
+        // 走査器のテストのように、**走査対象コードを文字列フィクスチャとして持つ**
+        // ファイルが存在する。文字列の中身をコードと取り違えると件数が跳ね上がる ——
+        // 本ファイル自身がまさにその形で、実行時 21 件がダッシュボード上 81 件に
+        // 膨らんでいた（`grep -cE "it\(|it\.each"` = 48 件が実テストでない）。
+        //
+        // 三種のリテラル（単一引用符 / 二重引用符 / テンプレート）をすべて張る。
+        // テンプレート内には配列リテラル付きの `it.each` を置き、BLOCK_PATTERN と
+        // EACH_PATTERN の**両方**が文字列内を読まないことを 1 本で固定する。
+        root = makeFixture({
+            "src/lib/fixture-holder.test.ts": [
+                "const singleQuoted = 'it(\\'inner\\', () => {})';",
+                'const doubleQuoted = "test.skip(\'inner\', () => {})";',
+                "const templated = `it.each([[1], [2], [3]])('row=%s', () => {})`;",
+                "",
+                "it('the only real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     it("存在しない root では空配列を返す", async () => {
         const result = await scanTests(join(tmpdir(), "definitely-not-exists-xyz"));
         expect(result).toEqual([]);
