@@ -30,14 +30,28 @@
 > node -p "require('./node_modules/js-cookie/package.json').version"       # HIGH: installed js-cookie
 >
 > # HIGH: lockfile 側の**解決済み**バージョン（node_modules と二重に確認する）
+> # 修正版の下限は findings-06 §DEPS-02 の判定「解決版がパッチ済み（>3.0.5 の修正版）」に従う。
+> # ここは**下限だけ**を持ち、advisory のレンジ本体は復唱しない（SSOT は findings-06）。
+> min_fixed=3.0.6
 > resolved=$(grep -oE '"js-cookie": \["js-cookie@[^"]+"' bun.lock \
->   | sed -E 's/.*js-cookie@//; s/"$//' | sort -u)
+>   | sed -E 's/.*js-cookie@//; s/"$//' | sort -uV)
 > if [ -z "$resolved" ]; then
 >     echo "FAIL: no resolved js-cookie entry in bun.lock"; false
+> elif [ "$(printf '%s\n%s\n' "$min_fixed" "$resolved" | sort -V | head -n1)" != "$min_fixed" ]; then
+>     # 複数エントリに解決されうるので**最小**を見る。最小が下限未満なら不合格。
+>     echo "FAIL: js-cookie resolved below the fixed version ($min_fixed): $resolved"; false
 > else
->     echo "OK: js-cookie resolved to: $resolved"
+>     echo "OK: js-cookie resolved to: $resolved (>= $min_fixed)"
 > fi
 > ```
+>
+> **バージョンを表示するだけでは検査になっていない（2026-08-01 追加）。** 上の `elif` を持たない
+> 旧形は、`resolved` が空でないことしか見ておらず、**脆弱版に解決していても `OK:` を出して
+> exit 0** を返した。「js-cookie が**固定版であること**」がこのゲートの主張なのだから、
+> 抽出した値を下限と突き合わせるところまでが検査本体である。
+> 実測（2026-08-01・**三方向**）: 現 `bun.lock`（3.0.7）→ `OK` / exit 0、
+> `js-cookie@3.0.5` を注入した複製 → `FAIL: … resolved below the fixed version` / exit 1、
+> 解決エントリを削除した複製 → `FAIL: no resolved js-cookie entry` / exit 1。
 >
 > **旧版の `grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u` は 2 つの理由で成立しない**
 > （どちらも実測で確認済み）:
