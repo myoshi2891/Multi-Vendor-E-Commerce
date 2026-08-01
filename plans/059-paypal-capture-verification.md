@@ -22,6 +22,13 @@
 - **Depends on**: none
 - **Category**: security
 - **Planned at**: commit `d2aff76`, 2026-07-17
+- **Post-implementation fix (2026-08-01)**: 実装された相関検証が
+  `purchase_units[0].custom_id ?? capture?.custom_id` の形になっており、
+  **`??` の短絡で 2 つ目の `custom_id` が検査されない**欠陥があった。
+  外側が `orderId` と一致すれば capture 側は見られないため、外側だけ自注文に
+  相関し内側が別注文を指す応答が Paid 確定まで到達しうる。存在する
+  `custom_id` の**全一致**を要求する形へ修正済み（本文のスニペットも同期）。
+  Red → Green: `c8e0327b` / `0d82f790`（`paypal.test.ts` 30→32）
 
 ## Why this matters
 
@@ -187,11 +194,25 @@ const capture = captureData.purchase_units?.[0]?.payments?.captures?.[0];
 const capturedValue = capture?.amount?.value;
 const capturedCurrency = capture?.amount?.currency_code;
 // custom_id は purchase_units[0].custom_id（作成時に orderId を格納）に載る。
-// PayPal の応答バージョンによっては capture 側にも複製されるため両方を許容する。
-const capturedCustomId =
-    captureData.purchase_units?.[0]?.custom_id ?? capture?.custom_id;
+// PayPal の応答バージョンによっては capture 側にも複製されるため、
+// 「どちらの位置に載っていてもよい」を許容する。
+//
+// ⚠️ `a ?? b` で束ねないこと（2026-08-01 修正）。`??` は最初の非 nullish で
+// 短絡するため、外側が一致した時点で capture 側は一度も検査されない。
+// capture オブジェクトこそ実際の資金移動を表すので、外側だけ自注文に相関し
+// 内側が別注文を指す応答が検証を通過して Paid 確定まで到達する。
+// 位置は問わないが、存在するものは**すべて** orderId と一致することを要求する。
+const presentCustomIds = [
+    captureData.purchase_units?.[0]?.custom_id,
+    capture?.custom_id,
+].filter((value): value is string => typeof value === "string");
 
-if (capturedCustomId !== orderId) {
+// どちらの位置にも載っていない応答は相関を確認できないため拒否する
+// （`undefined !== orderId` で throw していた従来挙動の維持）。
+if (
+    presentCustomIds.length === 0 ||
+    presentCustomIds.some((customId) => customId !== orderId)
+) {
     throw new Error("PayPal capture does not match order.");
 }
 if (
