@@ -209,7 +209,7 @@
 |---|---|---|
 | `updateProduct` specs/questions tx + `generateUniqueSlug`（R5 次点候補） | `product.ts:297-469` 再読。SetNull 連鎖（Wishlist.sizeId）の新事実を追加確認 | **TESTS-22 に昇格 → plan 038** |
 | `saveUserCart` 統合（R5 rejected） | ~~plan 005 が依然 TODO。非原子構造は不変~~ → **plan 005 は DONE**（`../README.md:68`） | **deferred 維持**（ただし「005 待ち」という理由は消滅済み。昇格の再評価が可能） |
-| TESTS-02 capture 経路（R1 raw / R5 deferred） | ~~plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変~~ → **plan 003 は DONE**（`../README.md:66`）。**残課題は PayPal 側のみ**: `stripe.ts` は tx + CAS で解消済み、`paypal.ts` の 2 書き込みはトップレベルの別呼び出しのまま（実測 2026-07-26・下の注記参照） | **deferred 維持**（ただし理由が変わった —— 「003 待ち」ではなく「PayPal 側の原子性シナリオが未設計」。下の注記を参照して経路ごとに再評価すること） |
+| TESTS-02 capture 経路（R1 raw / R5 deferred） | ~~plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変~~ → **plan 003 は DONE**（`../README.md:66`）。**残課題は PayPal 側のみ**: `stripe.ts` は tx + CAS で解消済み、`paypal.ts` の 2 書き込みはトップレベルの別呼び出しのまま（下の注記参照） | **deferred 維持**（ただし理由が変わった —— 「003 待ち」ではなく **「`$transaction` 化のコード修正」が先行依存**。下の注記を参照して経路ごとに再評価すること） |
 
 > **⚠️ 上表の「Round 6 時点の現状」列は 2026-07-11 のスナップショットであり、
 > 先行依存としている plan 003 / 005 は現在いずれも DONE**
@@ -227,19 +227,36 @@
 > | 防ぐもの | **ロストアップデート** — read-then-act の隙に別経路が書いた値を上書きする退行 | **部分適用** — 2 書き込みの片方だけが永続化される状態 |
 > | 防げないもの | 1 書き込み目の成功後に 2 書き込み目が失敗した場合の不整合 | 並行更新による上書き（分離レベル次第） |
 >
-> **2 経路で状況が異なる（実測 2026-07-26）**:
+> **2 経路で状況が異なる。現況の SSOT は
+> [`findings-13-integration-coverage.md`](findings-13-integration-coverage.md) の
+> 「TESTS-02 の現況 — 決済経路ごと」表**（`../README.md` もそこを SSOT と宣言している）。
+> 本ファイルは要約のみを持ち、**行番号は書かない**:
 >
-> - **Stripe**: `src/queries/stripe.ts:231-258` は `paymentDetails.upsert` と `order.update` が
->   **同一 `tx` 内**にあり、かつ `where` に `paymentStatus: { notIn: SETTLED_PAYMENT_STATUSES }`
->   の CAS を持つ。原子性・ロストアップデートとも解消済み。
-> - **PayPal**: `src/queries/paypal.ts:281`（`db.paymentDetails.upsert`）と `:323`
->   （`db.order.update`）は**トップレベルの別呼び出しのまま**で、`$transaction` に入っていない。
->   CAS ガード（`:22` の `SETTLED_PAYMENT_STATUS_GUARD`）は付いたが、**非原子 2 書き込みは残存**。
+> - **Stripe**（`src/queries/stripe.ts` の capture 経路）: `paymentDetails.upsert` と
+>   `order.update` が**同一 `tx` 内**にあり、かつ `where` に
+>   `paymentStatus: { notIn: SETTLED_PAYMENT_STATUSES }` の CAS を持つ。原子性・
+>   ロストアップデートとも**解消済み**。
+> - **PayPal**（`src/queries/paypal.ts` の capture 経路）: `db.paymentDetails.upsert` と
+>   `db.order.update` が**トップレベルの別呼び出しのまま**で、`$transaction` に入っていない。
+>   CAS ガード（`SETTLED_PAYMENT_STATUS_GUARD`）は付いたが、**非原子 2 書き込みは残存**。
 >
-> したがって「非原子 2 書き込みは不変」が当てはまらなくなったのは **Stripe 側だけ**であり、
-> **PayPal 側では plan 003 の課題がそのまま残っている**。正しい要約は「TESTS-02 は**解消済み**」
-> ではなく「**検証すべきシナリオが経路ごとに変わった**」—— Stripe は CAS + tx の回帰網、
-> PayPal は CAS の回帰網に加えて原子性シナリオ（片側書き込みの巻き戻し）が依然必要。
+> **⚠️ 行番号を書かないのは意図的（2026-08-01 訂正）。** 旧版は `paypal.ts:281` / `:323` を
+> 直書きしていたが、これは採取時点の値で**現物は既に別の行**（同ファイルはその後
+> リファクタで前段ヘルパー抽出を受けている）。README・findings-13 も別の値を書いており、
+> **3 つの台帳が 3 つとも違う行番号を指す**状態になっていた。関数名と経路で指し、
+> 具体的な位置は findings-13 の SSOT 表を見ること。
+>
+> **残課題の呼び名も findings-13 に揃える。** 旧版はこれを
+> 「PayPal 側の**原子性シナリオが未設計**」＝テスト設計のギャップとして書いていたが、
+> findings-13 と README は同じものを「**`$transaction` 化のコード修正が先行依存**」＝
+> コード側の依存として記録している。前者の書き方だと「テストを設計すれば着手できる」と
+> 読めてしまうが、実際は**本体を tx 化するまで原子性シナリオは書けない**（現挙動を
+> characterization しても、tx 化の時点で書き直しになる）。呼称は後者に統一する。
+>
+> したがって「非原子 2 書き込みは不変」が当てはまらなくなったのは **Stripe 側だけ**。
+> 正しい要約は「TESTS-02 は**解消済み**」ではなく「**検証すべきシナリオが経路ごとに
+> 変わった**」—— Stripe は CAS + tx の回帰網（**着手可能**）、PayPal は CAS の回帰網に加えて
+> 原子性シナリオが必要だが、**そちらは `$transaction` 化を待つ**。
 > 昇格時は経路ごとに区別して設計に含めること。
 
 ## Considered and rejected（Round 6・再監査防止）

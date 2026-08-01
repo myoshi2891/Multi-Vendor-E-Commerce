@@ -16,14 +16,27 @@ Round 10–12 (CodeRabbit ローカルレビュー triage 全 3 弾 — 73 件 /
 Round 13 (`deep security` focus — セキュリティ特化 deep 監査 第 3 弾): 2026-07-17,
 against HEAD `7080b12` (branch `dev`). → plans **058–062**.
 Round 14 (CodeRabbit レビュー第4弾 + **Phase A 実装**): 2026-07-19, `72e8004..b5d0c66` (branch `dev`).
-**⚠️ 本ラウンドのみ `src/` と `tests/` を実際に変更している**（決済・注文冪等性の
-セキュリティ修正 6 コミット）。他ラウンドの「ソース無変更」規律は Round 14 には適用されない。
+**⚠️ 監査ラウンド (R1〜R9・R13) の中では本ラウンドだけが `src/` と `tests/` を変更している**
+（決済・注文冪等性のセキュリティ修正 6 コミット）。「ソース無変更」規律は Round 14 には適用されない。
 範囲の左端は **baseline `72e8004`**（`934b6fa` は範囲内の A-2 修正コミットであり baseline ではない）。
 詳細と reconcile は [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) の Round 14 節。
+
+**⚠️ ただし「Round 14 のみがソースを変更した」と読まないこと（2026-08-01 訂正）。** Round 14 以降も
+**CodeRabbit レビュー対応の第 5〜12 弾が実装ラウンドとして継続しており、いずれも `src/` `tests/` を
+変更している**（`src/queries/paypal.ts` / `src/queries/user.ts` / `src/app/api/webhooks/route.ts` /
+`src/lib/order-settlement.ts` / `scripts/coverage-dashboard/scan-tests.ts` 等）。これらは improve
+スキルの監査ではないため Hard Rule 1 の管轄外である。ラウンドごとの性格と `src/` 変更の有無は
+[`ADVISOR_STATE.md`](ADVISOR_STATE.md) 冒頭の表と「次のアクション（NEXT）」節が SSOT であり、
+**本ファイルの記述はそこから外れないこと**（過去に「本ラウンドのみ」と書いたまま第 5〜12 弾が
+積み上がり、両者が食い違っていた）。
+
 Each executor: read the plan fully before starting, honor its STOP conditions, run its verification
 gates, and update your row in the table below when done. Plans are **read-only advisory output** —
-the audit itself changed no source code, **with the sole exception of Round 14**, which did change
-`src/` and `tests/` (the 6 payment/order-idempotency security commits; see the Round 14 note above).
+the *audit* rounds themselves changed no source code, **with the sole exception of Round 14**, which
+did change `src/` and `tests/` (the 6 payment/order-idempotency security commits; see the Round 14
+note above). **The CodeRabbit review rounds that followed (fifth through twelfth pass) are
+implementation rounds and do change source** — they are not audits, so the read-only discipline does
+not describe them. See `ADVISOR_STATE.md` for the per-round breakdown.
 
 - Raw audit findings: Round 1 ([01 correctness](audit/findings-01-correctness.md) / [02 security](audit/findings-02-security.md) / [03 performance](audit/findings-03-performance.md) / [04 test coverage](audit/findings-04-test-coverage.md) / [05 tech debt](audit/findings-05-tech-debt.md) / [06 dependencies](audit/findings-06-dependencies.md) / [07 DX/docs](audit/findings-07-dx-docs.md) / [08 direction](audit/findings-08-direction.md)) / [Round 2](audit/findings-09-direction-expansion.md) / [Round 3](audit/findings-10-direction-operations-growth.md) / [security follow-up](audit/findings-11-security-followup.md) / [Round 4](audit/findings-12-test-coverage.md) / [Round 5](audit/findings-13-integration-coverage.md) / [Round 6](audit/findings-14-integration-coverage-r6.md) / [Round 7](audit/findings-15-integration-coverage-r7.md) / [Round 8](audit/findings-16-e2e-coverage.md) / [Round 9](audit/findings-17-e2e-coverage-r9.md) / [Round 13 security](audit/findings-18-security-r13.md)
   — **Round 10–12（CodeRabbit triage）と Round 14（CodeRabbit 第4弾 + 実装）は独立した
@@ -134,6 +147,16 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > （[`audit/findings-18-security-r13.md`](audit/findings-18-security-r13.md) §0）で確認し `DONE` に補正。
 
 ## Recommended sequencing
+
+> **⚠️ 本節は全体が「各ラウンド起票時点の推奨順」であり、現行の着手順ではない（2026-08-01 明示化）。**
+> 項目 1〜16 は Round 1〜13 がプランを起こしたときに記録した順序で、**その多くは既に DONE**。
+> 上から読むと完了済みプランが「次にやること」に見えるため、**次の着手先は必ず上の Status 表で
+> `TODO` の行を見ること**。
+>
+> 履歴宣言をこれまで項目 15 / 16 だけに付けていたのは、当時その 2 つが特に誤読されたためで、
+> **他の項目が現行の推奨順だという意味ではなかった**。節レベルへ引き上げて曖昧さを消す。
+> 各項目に残る「推奨順」「実行順」の記述は、**当時どういう依存関係でその順を選んだか**という
+> 判断の記録として読むこと（依存関係そのものは今も有効な情報だが、未着手かどうかは別）。
 
 1. **Security first (001–004)** — highest priority. 001/002/004 are S-effort, LOW-risk quick wins; 003 is the meatier MED-risk payment-trust fix. These are independent and can be parallelized across executors.
 2. **Correctness (005, 006)** — user-facing data-loss / double-order bugs; small and safe.

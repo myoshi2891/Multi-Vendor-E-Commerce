@@ -20,9 +20,27 @@
 - **Evidence（訂正後・監査時点）**: `src/components/store/cards/payment/stripe/stripe-payment.tsx`（`createStripePayment` 呼び出し）/ `payment/paypal/paypal-payment.tsx`（`capturePayPalPayment`）/ `checkout-page/container.tsx` / `order-page/*` — テストなし。**測定: 2026-07-03 / HEAD `f9752c0`**。再現コマンド:
 
   ```bash
-  git ls-tree -r --name-only f9752c0 tests/component/   # tests/component/ 側に該当なし
-  git ls-tree -r --name-only f9752c0 src/components/store/cards/payment/ | grep -i test
+  # (a) tests/component/ 側に、上の 4 対象に対応するテストが無いこと → 出力 0 行
+  git ls-tree -r --name-only f9752c0 tests/component/ \
+    | grep -iE 'payment|stripe|paypal|checkout|order-page'
+
+  # (b) 対象ソース配下に co-located テストが無いこと → 出力 0 行
+  git ls-tree -r --name-only f9752c0 \
+       src/components/store/cards/payment/ \
+       src/components/store/checkout-page/ \
+       src/components/store/order-page/ \
+    | grep -iE '\.(test|spec)\.'
   ```
+
+  > **対象パスに限定すること（2026-08-01 訂正）。** 旧形は
+  > `git ls-tree -r --name-only f9752c0 tests/component/` に
+  > `# tests/component/ 側に該当なし` というコメントを付けていたが、これは
+  > **ディレクトリ全体（同 HEAD で 123 エントリ）を列挙するコマンド**であり、
+  > 出力にはこのファイル冒頭の訂正が認めている `tests/component/store/place-order-card.test.tsx`
+  > も**含まれる**。つまり**コマンドの出力とコメントが正面から矛盾**しており、
+  > 実行しても「該当なし」を確認できない（むしろ反証が出る）。
+  > 上の (a)(b) は所見の対象領域だけに絞ってあり、**どちらも 0 行**になることを
+  > 同 HEAD で実測済み。所見が主張する範囲と、それを検証するコマンドの範囲を一致させる。
 
 - **再測定（2026-07-27 / HEAD `09275b5d`）**: 上記の対象は**依然として未カバー**。再現コマンド:
 
