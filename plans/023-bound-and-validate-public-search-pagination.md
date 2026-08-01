@@ -289,6 +289,27 @@ Machine-checkable. ALL must hold:
 - [ ] Normalization **behavior** (Infinity/NaN/fractional/`<1` → clamped, not token presence) is
       pinned by a unit test, not by grep alone — grep only proves `Number(...)`/`MAX_LIMIT` appear,
       not that the `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : …` clamp actually holds.
+
+    > **Enumerate the inputs — "Infinity/NaN/fractional/`<1`" as prose does not tell the
+    > implementer which values to write.** The predicate rejects for two *different*
+    > clauses (`Number.isFinite(raw)` and `raw >= 1`), so a suite that exercises only one
+    > of them leaves the other live. Minimum set, each asserting the fallback
+    > (`1` for `page`, `MAX_LIMIT` for `limit`):
+    >
+    > - `"Infinity"` and `"-Infinity"` — `Number.isFinite` false. `-Infinity` is the one
+    >   that catches a `Math.max(1, raw)`-style "fix", which would clamp it to `1` via the
+    >   wrong clause instead of falling back.
+    > - `"1e999"` — overflows to `Infinity` during `Number(...)`. Behaves as above, but is
+    >   reachable from a plausible query string in a way the literal `"Infinity"` is not.
+    > - `"abc"` → `NaN` — `Number.isFinite` false.
+    > - `"0"`, `"-3"`, `"0.5"` — finite but `>= 1` false, so the `Math.floor` branch must
+    >   **not** run.
+    > - `"2.7"` — finite **and** `>= 1`, so it takes the other branch: expect `2`
+    >   (`Math.floor`), not `2.7` and not `3`.
+    >
+    > `"2.7"` and `"0.5"` are the pair that matters most: both are fractional, but they
+    > take **opposite branches**. Testing only one cannot distinguish `Math.floor(raw)`
+    > from `Math.round(raw)` or from an unclamped pass-through.
 - [ ] `grep -n "MAX_LIMIT" src/app/api/index-products/route.ts` returns a match.
 - [ ] Before the **code commit**, `git status` shows only `src/app/api/index-products/route.ts` and its test file changed — no other files. (The `plans/audit/findings-11-security-followup.md` status row and the `spec-sync-after-test` docs go in later, separate commits.)
 
