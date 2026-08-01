@@ -322,6 +322,86 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(2);
     });
 
+    it("同一ファイル内の const を参照する it.each(IDENT) を展開して数える", async () => {
+        // src/lib/order-settlement.test.ts が使う形式。テーブルを名前付き定数に
+        // 括り出すと、配列リテラルしか見ない走査では 0 件と数えられ、
+        // ファイルのケース数が丸ごと過小計上される。
+        root = makeFixture({
+            "src/lib/local-each.test.ts": `
+                const STATUSES = ["Pending", "Failed", "Declined"];
+
+                it('regular', () => {});
+                it.each(STATUSES)('status=%s', (status) => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 素の it 1 + 展開 3
+        expect(results[0]?.testCount).toBe(4);
+    });
+
+    it("import した const を参照する it.each(IDENT) を展開して数える", async () => {
+        // `@/` エイリアス（→ src/）と相対パスの単一ホップだけを辿る。
+        root = makeFixture({
+            "src/lib/payment-status.ts": `
+                export const SETTLED: readonly string[] = [
+                    "Paid",
+                    "Refunded",
+                    "ChargeBack",
+                ];
+            `,
+            "src/lib/alias-each.test.ts": `
+                import { SETTLED } from "@/lib/payment-status";
+
+                it('regular', () => {});
+                it.each(SETTLED)('status=%s', (status) => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        const target = results.find(
+            (r) => r.relativePath === "src/lib/alias-each.test.ts"
+        );
+        // 素の it 1 + 展開 3（型注釈 `: readonly string[]` をまたげること）
+        expect(target?.testCount).toBe(4);
+    });
+
+    it("解決できない識別子の it.each は 0 件のままにする（過大計上しない）", async () => {
+        // 多段 re-export・動的生成などは追わない。推測で数を盛るより
+        // 過小計上のまま残すほうが安全（静的走査の原理的限界）。
+        root = makeFixture({
+            "src/lib/unresolved-each.test.ts": `
+                import { TABLE } from "some-external-package";
+
+                it('regular', () => {});
+                it.each(TABLE)('row=%s', (row) => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(1);
+    });
+
+    it("識別子解決を足しても空の it.each([]) は 0 件のまま", async () => {
+        // 既存契約の回帰網。識別子分岐の追加で配列リテラル経路を壊さない。
+        root = makeFixture({
+            "src/lib/empty-still-zero.test.ts": `
+                const EMPTY = [];
+
+                it('regular', () => {});
+                it.each([])('never', () => {});
+                it.each(EMPTY)('never either', () => {});
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     it("存在しない root では空配列を返す", async () => {
         const result = await scanTests(join(tmpdir(), "definitely-not-exists-xyz"));
         expect(result).toEqual([]);
