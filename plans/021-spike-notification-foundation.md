@@ -165,8 +165,20 @@ model Message {                 // schema.prisma:736
    > **通知イベントの冪等性・重複排除を必須設計項目にすること**（同一イベントの再処理・リトライ・
    > webhook 再送で通知が**行として**二重に作られるのを防ぐ）:
    > - 各通知に **冪等性キー**を持たせる（例: `dedupeKey = hash(eventType + sourceRef + recipientId + 状態遷移識別子)`）。
-   >   Notification（および Outbox を採るなら Outbox 行）に `@@unique(dedupeKey)` を張り、
+   >   Notification（および Outbox を採るなら Outbox 行）に一意制約を張り、
    >   二重挿入を DB レベルで弾く（upsert or `ON CONFLICT DO NOTHING`）。
+   >
+   >   **記法**: 単一カラムなのでフィールド属性 `dedupeKey String @unique` を使う。
+   >   `@@unique(dedupeKey)` は Prisma スキーマとして**不正**（ブロック属性
+   >   `@@unique` は配列を取るため `@@unique([dedupeKey])`）。複合キーに拡張する
+   >   可能性があるなら最初から `@@unique([...])` 形で書く。
+   >
+   >   **`dedupeKey` は `String`（NOT NULL）にすること。** nullable にすると
+   >   PostgreSQL は NULL 同士を「区別される」と扱うため、キーが埋まらなかった
+   >   通知は何件でも一意制約を通り抜け、**制約が存在しないのと同じ**になる
+   >   —— まさにこの節が防ごうとしている「行としての二重作成」がキー欠落時だけ
+   >   素通しになる。キーを生成できないイベントは投入前に弾くこと
+   >   （plan 018 の `idempotencyKey`・plan 013 のルート一意性と同じ NULL の穴）。
    > - 送信側は **at-least-once 前提**で組む。ここで保証されるのは「行が二重に作られない」ことまでで、
    >   **外部送信が 1 回に収まることは保証されない**（理由と選択肢は下記「`dedupeKey` は
    >   『行の重複』を防ぐだけ」を参照）。外部送信の配信契約はそこで**どちらか一方を選んで**確定させる。
