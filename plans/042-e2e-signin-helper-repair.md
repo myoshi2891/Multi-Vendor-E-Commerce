@@ -332,10 +332,22 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   # 宣言の検出は「宣言らしさ」で行い、**宣言行が `{` で終わることを要求しない**。
   # Prettier が引数を折り返すとシグネチャが複数行になり `{` が次行以降へ移るため
   # （下の「空抽出を PASS にしないこと」参照）。深さ計測は最初の `{` が現れてから始まる。
-  # 抽出の**前**にコメントを除去し、以降の検査を実行コードだけに限定する。
-  # 文字列リテラルを先に交替の左側で捕まえて温存するので、`"a//b"` や
-  # `"https://…"` を壊さない（`[^:]` のような一点狙いのガードでは不十分）。
-  strip_comments() {
+  # 抽出の**前**に非コードを潰し、以降の検査を実行コードだけに限定する。
+  # 潰す対象は**コメントと文字列リテラルの中身の両方**。文字列リテラルを交替の
+  # 左側で捕まえるのは `"a//b"` / `"https://…"` を行コメントと誤認しないためだが、
+  # **捕まえたうえで中身まで温存してはならない**（`[^:]` のような一点狙いの
+  # ガードが不十分なのと同じ理由で、中身の温存も検査を壊す）:
+  #
+  #   const hint = "if the field is missing call isVisible() first";
+  #
+  # 温存すると下の禁止パターンがこの文字列に当たり、**分岐が無いのに FAIL** する。
+  # 逆に [`plans/044`](044-e2e-run-guardrails.md) 側では、文字列の中に書いただけの
+  # 偽実装が**実装として PASS** する。同じ穴の裏表なので両プランで同一の関数を使う。
+  #
+  # クォートの対（`""` `''` ` `` `）は残して中身だけを空白へ潰す。構文の骨格が
+  # 保たれるので `page.getByLabel("        ")` は呼び出しのまま残り、改行も維持して
+  # 行番号がずれない。
+  strip_code() {
       perl -0777 -pe '
         s{
            ("(?:\\.|[^"\\])*")            # 二重引用符文字列
@@ -343,11 +355,21 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
          | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
          | (/\*.*?\*/)                    # ブロックコメント
          | (//[^\n]*)                     # 行コメント
-        }{ defined($1)||defined($2)||defined($3) ? $& : q{ } }gexs
+        }{
+           my $lit = defined($1) ? $1 : defined($2) ? $2 : $3;
+           if (defined $lit) {
+               my $q = substr($lit, 0, 1);
+               my $body = substr($lit, 1, -1);
+               $body =~ s/[^\n]/ /g;      # 改行は残し行番号を保つ
+               $q . $body . $q;
+           } else {
+               my $c = $&; $c =~ s/[^\n]/ /g; $c;
+           }
+        }gexs
       ' "$1"
   }
 
-  body=$(strip_comments tests/e2e/helpers/auth.ts | awk '
+  body=$(strip_code tests/e2e/helpers/auth.ts | awk '
     !f && /(function[[:space:]]+signInWithPassword|signInWithPassword[[:space:]]*[=:]|async[[:space:]]+signInWithPassword)/ \
         && !/^[[:space:]]*\*/ && !/^[[:space:]]*\/\// { f=1 }
     f { print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if (seen && n==0) exit; if (n>0) seen=1 }
@@ -380,7 +402,7 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
 
   ```bash
   # 上のブロックで抽出済みの $body を再利用する（抽出失敗は既に FAIL 済み）。
-  # $body は strip_comments 済みなので、**コメントアウトされたアサーションは
+  # $body は strip_code 済みなので、**コメントアウトされたアサーションは
   # 存在扱いにならない**。生の本文を grep していた旧形は
   # `// await expect(passwordInput).toBeVisible();` でも PASS しており、
   # 「アサーションを消す」より簡単な「アサーションをコメントにする」を素通しした。
@@ -399,9 +421,19 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
   > 実装後の状態を模した fixture で両方向を確認した。アサーションを持つ本体 → `OK` / exit 0、
   > 同じ本体でアサーションを `//` でコメントアウト → `FAIL` / exit 1、現行の
   > `tests/e2e/helpers/auth.ts`（関数が存在しない）→ 抽出空で exit 1（＝「検査できていない」を
-  > PASS にしない既定動作）。`strip_comments` は抽出の前段に置いてあるので、**上の
+  > PASS にしない既定動作）。`strip_code` は抽出の前段に置いてあるので、**上の
   > 「実行時分岐が存在しない」検査も同じく実行コードだけを見る** —— コメント内の
   > `isVisible()` を根拠に false-fail することもなくなる。
+  >
+  > **追加実測（2026-08-01・文字列リテラル対応後の三方向）**: 旧 `strip_comments` は
+  > コメントだけを潰し**文字列リテラルの中身を温存**していたため、
+  > `const hint = "if the field is missing call isVisible() first";` を本体に持つ
+  > フィクスチャで **偽 FAIL** した（分岐は存在しないのに「実行時分岐が残っている」）。
+  > 中身まで潰す `strip_code` では: 実コードのみ → `OK` / exit 0、
+  > **禁止トークンが文字列内にあるだけ** → `OK` / exit 0（旧形は FAIL）、
+  > 実コード上に `isVisible()` の分岐 → `FAIL` / exit 1。
+  > 潰した後も `page.getByLabel("        ")` は呼び出しのまま残るので、awk の
+  > 括弧深さ計測と `$body` 抽出は影響を受けない。
 
   実測（2026-07-31）: `signInWithPassword` を持つ合成フィクスチャに対し、
   アサーションあり = **exit 0** / アサーションを削除した版 = **exit 1**。

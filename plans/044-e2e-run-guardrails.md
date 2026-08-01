@@ -248,8 +248,23 @@ globalTimeout: 3600 * 1000,
   # のように**コメントの中にだけ書いた偽実装**で PASS する。本節冒頭が
   # 「トークンの出現ではなく実装の形を検証すること」と言っている当のものなので、
   # コメント除去はゲートの前提条件であって装飾ではない。
-  # 文字列リテラルは交替の左側で温存する（`"https://…"` を壊さないため）。
-  strip_comments() {
+  #
+  # **文字列リテラルも同じ理由で中身を潰す**。交替の左側で捕まえるのは
+  # `"https://…"` を行コメントと誤認しないためだが、**捕まえたうえで中身を温存すると
+  # 穴は塞がっていない**:
+  #
+  #   const note = "reuseExistingServer: !process.env.CI && !process.env.E2E_NO_REUSE";
+  #   export default { webServer: { reuseExistingServer: !process.env.CI } };
+  #
+  # これは E2E_NO_REUSE を**一切見ていない未実装**なのに、温存形の grep は
+  # 文字列の中身に当たって PASS する。コメントの偽実装を弾いておきながら
+  # 文字列の偽実装を通すのでは、同じ穴の裏側が開いたままになる。
+  # 逆方向（文字列内のトークンで**偽 FAIL** する）は
+  # [`plans/042`](042-e2e-signin-helper-repair.md) が踏んでおり、**両プランで同一の
+  # 関数を使う**こと（片方だけ直すと定義が分岐して再発する）。
+  #
+  # クォートの対は残して中身だけ空白へ潰すので、構文の骨格と行番号は保たれる。
+  strip_code() {
       perl -0777 -pe '
         s{
            ("(?:\\.|[^"\\])*")            # 二重引用符文字列
@@ -257,7 +272,17 @@ globalTimeout: 3600 * 1000,
          | (`(?:\\.|[^`\\])*`)            # テンプレートリテラル
          | (/\*.*?\*/)                    # ブロックコメント
          | (//[^\n]*)                     # 行コメント
-        }{ defined($1)||defined($2)||defined($3) ? $& : q{ } }gexs
+        }{
+           my $lit = defined($1) ? $1 : defined($2) ? $2 : $3;
+           if (defined $lit) {
+               my $q = substr($lit, 0, 1);
+               my $body = substr($lit, 1, -1);
+               $body =~ s/[^\n]/ /g;      # 改行は残し行番号を保つ
+               $q . $body . $q;
+           } else {
+               my $c = $&; $c =~ s/[^\n]/ /g; $c;
+           }
+        }gexs
       ' "$1"
   }
 
@@ -266,14 +291,14 @@ globalTimeout: 3600 * 1000,
   # `reuseExistingServer: !process.env.CI && !!process.env.E2E_NO_REUSE`
   # （= フラグを立てたときだけ再利用する）でも PASS してしまう。
   # `[^!]!` で「直前が `!` でない `!`」を要求し、`!!` を弾く。
-  strip_comments playwright.config.ts \
+  strip_code playwright.config.ts \
     | grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE'
 
   # run-local.sh 側: 非空値を代入して export していること。
   # `=[^[:space:]]` が必須 — `export E2E_NO_REUSE=` は空文字列を代入するため
   # `process.env.E2E_NO_REUSE` が falsy になり reuse が残る（実装した気になれる無効形）。
   # こちらは `^[[:space:]]*export` に錨を打っているのでコメント行（`# export …`）には
-  # 構造的に当たらない。config 側と違い strip_comments は要らない。
+  # 構造的に当たらない。config 側と違い strip_code は要らない。
   grep -nE '^[[:space:]]*export[[:space:]]+E2E_NO_REUSE=[^[:space:]]' scripts/e2e/run-local.sh
 
   # かつ export が playwright **起動行** より前にあること（行番号で順序を検証）。
@@ -298,15 +323,19 @@ globalTimeout: 3600 * 1000,
   ```
 
   実測（2026-07-31・合成フィクスチャ。`E2E_NO_REUSE` は未実装のため現物では走らせられない。
-  **2026-08-01 に strip_comments 追加後の 4 方向を再実測**）:
+  **2026-08-01 に strip_code（コメント + 文字列リテラル）対応後の 5 方向を再実測**）:
   - config ゲート — `!process.env.CI && !process.env.E2E_NO_REUSE` = **一致（exit 0）** /
     `!process.env.E2E_NO_REUSE` 単独 = **一致** /
     `!!process.env.E2E_NO_REUSE`（極性反転）= **不一致（exit 1）** /
     **コメント行にだけ書いた偽実装**（`// TODO: reuseExistingServer: … && !process.env.E2E_NO_REUSE,`
     を足しつつ実行行は `!process.env.CI` のまま）= **不一致（exit 1）**。
-    最後の 1 本が strip_comments 追加前は **PASS していた** —— 本節冒頭が禁じている
-    「トークンの出現で実装を判定する」ものそのもので、コメントに書いただけで
-    未実装が緑になっていた。
+    **文字列リテラルにだけ書いた偽実装**（`const note = "reuseExistingServer: !process.env.CI
+    && !process.env.E2E_NO_REUSE";` を足しつつ実行行は `!process.env.CI` のまま）=
+    **不一致（exit 1）**。
+    後ろ 2 本はいずれも除去追加前は **PASS していた** —— 本節冒頭が禁じている
+    「トークンの出現で実装を判定する」ものそのもので、コメントや文字列に書いただけで
+    未実装が緑になっていた。コメント側だけを潰した中間形も、**文字列側の偽実装は
+    PASS のまま**だった（`strip_code` で両方を閉じた）。
     なお `process.env.E2E_NO_REUSE !== "1"` のような別形も**不一致**になる ——
     本プランは `!CI && !E2E_NO_REUSE` の形を指定しているので意図どおりだが、
     実装形を変えるならゲートも同時に変えること。
