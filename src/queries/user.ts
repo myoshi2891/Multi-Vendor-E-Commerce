@@ -42,6 +42,86 @@ const ORDER_TRANSACTION_OPTIONS = {
 } as const;
 
 /**
+ * カート検証で読み込む Product の関連込みペイロード型。
+ *
+ * `variants` / `sizes` は `where` で 1 件に絞り込むが、`where` は payload の型に
+ * 影響しないため include の形だけを与える。saveUserCart / placeOrder /
+ * updateCartWithLatest / updateCheckoutProductWithLatest の 4 経路が同じ形を共有する。
+ */
+type CartValidatedProduct = Prisma.ProductGetPayload<{
+    include: {
+        store: true;
+        freeShipping: { include: { eligibleCountries: true } };
+        variants: { include: { sizes: true; images: true } };
+    };
+}>;
+
+type CartValidatedVariant = CartValidatedProduct["variants"][number];
+type CartValidatedSize = CartValidatedVariant["sizes"][number];
+
+/**
+ * productId / variantId / sizeId の組み合わせで商品を引き、その variant と size が
+ * 実在することまで検証する。
+ *
+ * include は静的にできない —— `variants.where.id` と `sizes.where.id` に引数を
+ * 差し込むため、定数ではなく関数内で組み立てる必要がある。
+ *
+ * **ここでは throw しない**。呼び出し元ごとに投げるメッセージが異なり
+ * （saveUserCart / placeOrder は id を含む詳細版、updateCartWithLatest /
+ * updateCheckoutProductWithLatest は簡易版）、いずれも既存テストが固定している
+ * 契約であるため、メッセージの決定は呼び出し元に残す。
+ *
+ * @returns 3 つすべてが実在すれば `{ product, variant, size }`、いずれか欠ければ `null`
+ */
+const findCartProductWithVariantAndSize = async (
+    productId: string,
+    variantId: string,
+    sizeId: string
+): Promise<{
+    product: CartValidatedProduct;
+    variant: CartValidatedVariant;
+    size: CartValidatedSize;
+} | null> => {
+    const product = await db.product.findUnique({
+        where: {
+            id: productId,
+        },
+        include: {
+            store: true,
+            freeShipping: {
+                include: {
+                    eligibleCountries: true,
+                },
+            },
+            variants: {
+                where: {
+                    id: variantId,
+                },
+                include: {
+                    sizes: {
+                        where: {
+                            id: sizeId,
+                        },
+                    },
+                    images: true,
+                },
+            },
+        },
+    });
+
+    if (
+        !product ||
+        product.variants.length === 0 ||
+        product.variants[0].sizes.length === 0
+    ) {
+        return null;
+    }
+
+    const variant = product.variants[0];
+    return { product, variant, size: variant.sizes[0] };
+};
+
+/**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.1
  *              - If the user is already following the store, unfollow it.
@@ -143,45 +223,19 @@ export const saveUserCart = async (
                 const { productId, variantId, sizeId, quantity } = cartProduct;
 
                 // Fetch the product, variant, and size from the database
-                const product = await db.product.findUnique({
-                    where: {
-                        id: productId,
-                    },
-                    include: {
-                        store: true,
-                        freeShipping: {
-                            include: {
-                                eligibleCountries: true,
-                            },
-                        },
-                        variants: {
-                            where: {
-                                id: variantId,
-                            },
-                            include: {
-                                sizes: {
-                                    where: {
-                                        id: sizeId,
-                                    },
-                                },
-                                images: true,
-                            },
-                        },
-                    },
-                });
+                const found = await findCartProductWithVariantAndSize(
+                    productId,
+                    variantId,
+                    sizeId
+                );
 
-                if (
-                    !product ||
-                    product.variants.length === 0 ||
-                    product.variants[0].sizes.length === 0
-                ) {
+                if (!found) {
                     throw new Error(
                         `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
                     );
                 }
 
-                const variant = product.variants[0];
-                const size = variant.sizes[0];
+                const { product, variant, size } = found;
 
                 // Validate stock and price
                 const validQuantity = Math.min(quantity, size.quantity);
@@ -531,45 +585,19 @@ export const placeOrder = async (
                 const { productId, variantId, sizeId, quantity } = cartProduct;
 
                 // Fetch the product, variant, and size from the database
-                const product = await db.product.findUnique({
-                    where: {
-                        id: productId,
-                    },
-                    include: {
-                        store: true,
-                        freeShipping: {
-                            include: {
-                                eligibleCountries: true,
-                            },
-                        },
-                        variants: {
-                            where: {
-                                id: variantId,
-                            },
-                            include: {
-                                sizes: {
-                                    where: {
-                                        id: sizeId,
-                                    },
-                                },
-                                images: true,
-                            },
-                        },
-                    },
-                });
+                const found = await findCartProductWithVariantAndSize(
+                    productId,
+                    variantId,
+                    sizeId
+                );
 
-                if (
-                    !product ||
-                    product.variants.length === 0 ||
-                    product.variants[0].sizes.length === 0
-                ) {
+                if (!found) {
                     throw new Error(
                         `Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`
                     );
                 }
 
-                const variant = product.variants[0];
-                const size = variant.sizes[0];
+                const { product, variant, size } = found;
 
                 // Validate stock and price
                 const validQuantity = Math.min(quantity, size.quantity);
@@ -980,45 +1008,19 @@ export const updateCartWithLatest = async (
             const { productId, variantId, sizeId, quantity } = cartProduct;
 
             // Fetch the product, variant, and size from the database
-            const product = await db.product.findUnique({
-                where: {
-                    id: productId,
-                },
-                include: {
-                    store: true,
-                    freeShipping: {
-                        include: {
-                            eligibleCountries: true,
-                        },
-                    },
-                    variants: {
-                        where: {
-                            id: variantId,
-                        },
-                        include: {
-                            sizes: {
-                                where: {
-                                    id: sizeId,
-                                },
-                            },
-                            images: true,
-                        },
-                    },
-                },
-            });
+            const found = await findCartProductWithVariantAndSize(
+                productId,
+                variantId,
+                sizeId
+            );
 
-            if (
-                !product ||
-                product.variants.length === 0 ||
-                product.variants[0].sizes.length === 0
-            ) {
+            if (!found) {
                 // return cartProduct
                 throw new Error(
                     `Product not found or variant or size not found.`
                 );
             }
-            const variant = product.variants[0];
-            const size = variant.sizes[0];
+            const { product, variant, size } = found;
 
             // Calculate Shipping details
             const countryCookie = getCookie("userCountry", { cookies }) as
@@ -1187,46 +1189,20 @@ export const updateCheckoutProductWithLatest = async (
             const { productId, variantId, sizeId, quantity } = cartProduct;
 
             // Fetch the product, variant, and size from the database
-            const product = await db.product.findUnique({
-                where: {
-                    id: productId,
-                },
-                include: {
-                    store: true,
-                    freeShipping: {
-                        include: {
-                            eligibleCountries: true,
-                        },
-                    },
-                    variants: {
-                        where: {
-                            id: variantId,
-                        },
-                        include: {
-                            sizes: {
-                                where: {
-                                    id: sizeId,
-                                },
-                            },
-                            images: true,
-                        },
-                    },
-                },
-            });
+            const found = await findCartProductWithVariantAndSize(
+                productId,
+                variantId,
+                sizeId
+            );
 
-            if (
-                !product ||
-                product.variants.length === 0 ||
-                product.variants[0].sizes.length === 0
-            ) {
+            if (!found) {
                 // return cartProduct
                 throw new Error(
                     `Product not found or variant or size not found.`
                 );
             }
 
-            const variant = product.variants[0];
-            const size = variant.sizes[0];
+            const { product, variant, size } = found;
 
             // Calculate Shipping details
             const countryCookie = getCookie("userCountry", { cookies }) as
