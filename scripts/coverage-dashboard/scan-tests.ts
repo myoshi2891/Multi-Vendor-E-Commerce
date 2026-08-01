@@ -89,6 +89,76 @@ function skipString(content: string, start: number): number {
     return i;
 }
 
+/**
+ * 文字列リテラル・テンプレートリテラル・コメントが占める `[start, end)` 範囲を
+ * ファイル先頭から線形に列挙する（開始位置の昇順）。
+ *
+ * **リテラルを剥がした文字列を作るのではなく、範囲だけを返す**のが要点。
+ * `it("title", fn)` のテストタイトル自体が文字列リテラルなので、剥がしてから
+ * 照合すると宣言そのものが壊れる。判定は「一致位置が範囲内か」で行う。
+ *
+ * テンプレートリテラルは `${}` の中身も含めて丸ごと 1 範囲として扱う
+ * （補間内のコードは走査しない）。過大計上より過小計上を選ぶ本モジュールの
+ * fail-safe 方針に合わせている。
+ *
+ * @param content - ファイル全体の内容
+ */
+function findMaskedSpans(content: string): Array<[number, number]> {
+    const spans: Array<[number, number]> = [];
+    let i = 0;
+
+    while (i < content.length) {
+        const c = content[i];
+
+        if (c === "/" && content[i + 1] === "/") {
+            const nl = content.indexOf("\n", i);
+            const end = nl === -1 ? content.length : nl;
+            spans.push([i, end]);
+            i = end;
+            continue;
+        }
+
+        if (c === "/" && content[i + 1] === "*") {
+            const close = content.indexOf("*/", i + 2);
+            const end = close === -1 ? content.length : close + 2;
+            spans.push([i, end]);
+            i = end;
+            continue;
+        }
+
+        if (c === '"' || c === "'" || c === "`") {
+            const end = skipString(content, i);
+            spans.push([i, end]);
+            i = end;
+            continue;
+        }
+
+        i++;
+    }
+
+    return spans;
+}
+
+/**
+ * `index` が `spans` のいずれかの範囲に含まれるかを返す。
+ *
+ * `spans` は開始位置の昇順なので、`index` が範囲の開始より手前に来た時点で
+ * 以降は見るまでもない（早期リターン）。
+ *
+ * @param spans - `findMaskedSpans` の戻り値
+ * @param index - 判定したい位置
+ */
+function isMasked(
+    spans: ReadonlyArray<readonly [number, number]>,
+    index: number
+): boolean {
+    for (const [start, end] of spans) {
+        if (index < start) return false;
+        if (index < end) return true;
+    }
+    return false;
+}
+
 /** `<...>` の型引数を釣り合いを取って読み飛ばす */
 function skipGenerics(content: string, start: number): number {
     let depth = 0;
@@ -210,14 +280,24 @@ function countTemplateTableRows(content: string, start: number): number {
  * 素の `it(` / `test(` は常に宣言なのでこの判別を通さない
  * （タイトルが変数・テンプレートリテラルの場合を落とさないため）。
  *
+ * 文字列リテラル・コメントの中に現れた一致は**コードではない**ので捨てる。
+ * 走査対象コードを文字列フィクスチャとして持つファイル（本モジュールのテスト等）が
+ * 実件数の数倍に膨れるのを防ぐ。
+ *
  * @param content - ファイル全体の内容
+ * @param spans - `findMaskedSpans` が返す非コード範囲
  */
-function countBlockDeclarations(content: string): number {
+function countBlockDeclarations(
+    content: string,
+    spans: ReadonlyArray<readonly [number, number]>
+): number {
     let total = 0;
     BLOCK_PATTERN.lastIndex = 0;
     let match: RegExpExecArray | null;
 
     while ((match = BLOCK_PATTERN.exec(content)) !== null) {
+        if (isMasked(spans, match.index)) continue;
+
         // match[2] は `.skip` 等の修飾子部分。無ければ素の宣言なので無条件に計上。
         if (match[2] === undefined) {
             total++;
@@ -357,12 +437,16 @@ async function resolveIdentifierTableSize(
 /**
  * ファイル内の `it.each` / `test.each` が実行時に展開されるテスト数の合計を返す。
  *
+ * 文字列リテラル・コメント内の一致は `countBlockDeclarations` と同じ理由で捨てる。
+ *
  * @param content - ファイル全体の内容
+ * @param spans - `findMaskedSpans` が返す非コード範囲
  * @param absPath - 対象ファイルの絶対パス（識別子参照の import 解決に使う）
  * @param root - 走査ルートの絶対パス（`@/` エイリアス解決に使う）
  */
 async function countEachCases(
     content: string,
+    spans: ReadonlyArray<readonly [number, number]>,
     absPath: string,
     root: string
 ): Promise<number> {
@@ -371,6 +455,8 @@ async function countEachCases(
     let match: RegExpExecArray | null;
 
     while ((match = EACH_PATTERN.exec(content)) !== null) {
+        if (isMasked(spans, match.index)) continue;
+
         let i = skipTrivia(content, match.index + match[0].length);
 
         // it.each<T>([...]) の型引数を読み飛ばす
@@ -462,14 +548,17 @@ async function inspectFile(
 ): Promise<{ hasSkip: boolean; testCount: number }> {
     try {
         const content = await readFile(absPath, "utf-8");
+        // 文字列リテラル・コメントの範囲はファイルごとに 1 回だけ求め、
+        // 両カウンタで共有する。
+        const spans = findMaskedSpans(content);
         return {
             // hasSkip は「ファイルに skip マーカーが存在するか」の意味を維持する
             // （注釈形の条件付き skip も skip マーカーではあるため区別しない）。
             // testCount とは別の統計に紐づくので、意味を変えない。
             hasSkip: SKIP_PATTERN.test(content),
             testCount:
-                countBlockDeclarations(content) +
-                (await countEachCases(content, absPath, root)),
+                countBlockDeclarations(content, spans) +
+                (await countEachCases(content, spans, absPath, root)),
         };
     } catch {
         return { hasSkip: false, testCount: 0 };
