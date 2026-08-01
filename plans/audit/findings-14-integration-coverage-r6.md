@@ -208,8 +208,8 @@
 | 項目 | Round 6 時点の現状（直接確認） | 裁定 |
 |---|---|---|
 | `updateProduct` specs/questions tx + `generateUniqueSlug`（R5 次点候補） | `product.ts:297-469` 再読。SetNull 連鎖（Wishlist.sizeId）の新事実を追加確認 | **TESTS-22 に昇格 → plan 038** |
-| `saveUserCart` 統合（R5 rejected） | plan 005 が依然 TODO。非原子構造は不変 | **deferred 維持**（005 完了後の追加候補。変更なし） |
-| TESTS-02 capture 経路（R1 raw / R5 deferred） | plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変 | **deferred 維持**（003 完了後に plan 032 の同型シナリオ追加が低コスト、の R5 裁定を維持） |
+| `saveUserCart` 統合（R5 rejected） | ~~plan 005 が依然 TODO。非原子構造は不変~~ → **plan 005 は DONE**（`../README.md:68`） | **deferred 維持**（ただし「005 待ち」という理由は消滅済み。昇格の再評価が可能） |
+| TESTS-02 capture 経路（R1 raw / R5 deferred） | ~~plan 003 が依然 TODO。`stripe.ts`/`paypal.ts` の非原子 2 書き込みは不変~~ → **plan 003 は DONE**（`../README.md:66`）。**残課題は PayPal 側のみ**: `stripe.ts` は tx + CAS で解消済み、`paypal.ts` の 2 書き込みはトップレベルの別呼び出しのまま（実測 2026-07-26・下の注記参照） | **deferred 維持**（ただし理由が変わった —— 「003 待ち」ではなく「PayPal 側の原子性シナリオが未設計」。下の注記を参照して経路ごとに再評価すること） |
 
 > **⚠️ 上表の「Round 6 時点の現状」列は 2026-07-11 のスナップショットであり、
 > 先行依存としている plan 003 / 005 は現在いずれも DONE**
