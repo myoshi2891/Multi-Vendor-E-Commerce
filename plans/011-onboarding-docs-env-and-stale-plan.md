@@ -197,8 +197,16 @@ So scan `audit` alone for old-path tokens that are **not** aimed at the archive 
 ```bash
 # plans/audit only. References already aimed at archive/ count as re-pointed and are excluded;
 # whatever remains is still on the old path. Zero lines = re-pointing complete.
+#
+# 除外は**トークンに対して**掛けること。`grep -rno` の出力は `path:line:token` なので、
+# 行全体に `grep -vE "(^|/)archive/…"` を掛けると**ファイルのパス側**が条件を満たして
+# しまい、生きた旧パス参照が黙って落ちる。実測: `plans/audit/archive/
+# unimplemented-screens-plan-notes.md` が `docs/unimplemented-screens-plan.md`（旧パス）を
+# 参照している場合、行全体で除外すると出力 0 行 = 「再ポイント完了」に見えるが、
+# トークン単位で判定すると当該行が正しく残る。
 grep -rnoE "[^ )\"'\`]*unimplemented-screens-plan[^ )\"'\`]*" plans/audit --include="*.md" \
-  | grep -vE "(^|/)archive/unimplemented-screens-plan" \
+  | awk '{ tok = $0; sub(/^[^:]*:[0-9]+:/, "", tok);
+           if (tok !~ /(^|\/)archive\/unimplemented-screens-plan/) print }' \
   || true
 # Each line printed is either an intentional historical quotation (showing the old token as an
 # example) or a missed re-point. The former may stay; the latter must be corrected to the archive
