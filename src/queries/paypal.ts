@@ -347,14 +347,26 @@ export const capturePayPalPayment = async (
         const capture =
             captureData.purchase_units?.[0]?.payments?.captures?.[0];
         // custom_id は purchase_units[0].custom_id（作成時に orderId を格納）に載る。
-        // PayPal の応答バージョンによっては capture 側にも複製されるため両方を許容する。
-        const capturedCustomId =
-            captureData.purchase_units?.[0]?.custom_id ?? capture?.custom_id;
+        // PayPal の応答バージョンによっては capture 側にも複製されるため、
+        // 「どちらの位置に載っていてもよい」を許容する。
+        // ただし `a ?? b` で束ねると最初の非 nullish で短絡し、外側が一致した時点で
+        // capture 側は一度も検査されない。capture オブジェクトこそ実際の資金移動を
+        // 表すため、外側だけ自注文に相関し内側が別注文を指す応答が通過してしまう。
+        // 位置は問わないが、存在するものは**すべて** orderId と一致することを要求する。
+        const presentCustomIds = [
+            captureData.purchase_units?.[0]?.custom_id,
+            capture?.custom_id,
+        ].filter((value): value is string => typeof value === "string");
 
         // 相関検証は status を問わず、あらゆる状態書き込みより前に行う。
         // status 分岐の後ろに置くと、他人の PayPal Order の DENIED/DECLINED 応答で
         // 自分の注文を Failed へ落とせてしまう（検証コードに到達しない書き込み経路）。
-        if (capturedCustomId !== orderId) {
+        // どちらの位置にも載っていない応答は相関を確認できないため拒否する
+        // （`undefined !== orderId` で throw していた従来挙動の維持）。
+        if (
+            presentCustomIds.length === 0 ||
+            presentCustomIds.some((customId) => customId !== orderId)
+        ) {
             throw new Error("PayPal capture does not match order.");
         }
 
