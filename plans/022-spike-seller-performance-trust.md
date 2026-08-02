@@ -266,12 +266,19 @@ enum StoreStatus {              // schema.prisma:76
    >      >   ```sql
    >      >   CHECK (
    >      >       CASE actorType
-   >      >           WHEN 'SYSTEM'  THEN actorRef LIKE 'system:%'
-   >      >           WHEN 'WEBHOOK' THEN actorRef LIKE 'system:%'
+   >      >           -- system:<source>:<name> —— 3 セグメントすべて非空を要求する
+   >      >           WHEN 'SYSTEM'  THEN actorRef ~ '^system:[^:]+:[^:]+$'
+   >      >           WHEN 'WEBHOOK' THEN actorRef ~ '^system:[^:]+:[^:]+$'
    >      >           ELSE actorRef NOT LIKE 'system:%'   -- USER / SELLER / ADMIN
    >      >       END
    >      >   )
    >      >   ```
+   >      >
+   >      >   `LIKE 'system:%'` では**足りない** —— `system:`（発生源も名前も無し）や
+   >      >   `system:webhook`（名前無し）まで通ってしまう。それらは下の 3.
+   >      >   「発生源を別列で持つ」の意図と噛み合わず、監査時に「どの webhook /
+   >      >   どのジョブ由来か」を復元できない行を生む。`[^:]+` を 2 つ要求して、
+   >      >   `<source>` と `<name>` の非空を DB 側で保証すること。
    >      >
    >      >   `actorType <> 'USER' OR …` の形にしないこと —— **人間ロールのうち
    >      >   `USER` しか縛らない**ため、`actorType='SELLER'` +
