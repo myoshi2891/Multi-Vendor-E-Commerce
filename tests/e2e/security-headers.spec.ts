@@ -81,8 +81,18 @@ const HSTS_VALUE = [
 ].join("; ");
 
 test.describe("セキュリティレスポンスヘッダ", () => {
-    // 公開ページと保護ページ（未認証ではサインインへリダイレクト）の双方を確認
-    for (const path of ["/", "/checkout"]) {
+    // 公開ページと保護ページ（未認証ではサインインへリダイレクト）の双方を確認。
+    //
+    // **期待ステータスはパスごとに持つ。** 両者を `< 400` で束ねると、
+    // `/` が 3xx へ退行しても（＝公開ページがリダイレクトするようになっても）、
+    // `/checkout` が 200 を返しても（＝認証ゲートが外れても）緑のままになる。
+    // 後者は認可の消失そのもので、このスイートが最も検知すべき退行である。
+    const CASES = [
+        { path: "/", expect: "200" as const },
+        { path: "/checkout", expect: "sign-in" as const },
+    ];
+
+    for (const { path, expect: expectedStatus } of CASES) {
         test(`${path} が強化ヘッダを正確な値で返す`, async ({ request }) => {
             // リダイレクトを追わず、そのレスポンス自体のヘッダを検証する。
             //
@@ -97,13 +107,40 @@ test.describe("セキュリティレスポンスヘッダ", () => {
                     "sec-fetch-dest": "document",
                     "sec-fetch-mode": "navigate",
                     "sec-fetch-site": "none",
+                    // Clerk の **development instance** は `__clerk_db_jwt` を持たない
+                    // 初回リクエストを必ず 307 handshake
+                    // （`x-clerk-auth-reason: dev-browser-missing`）へ飛ばす。
+                    // これは `/` でも `/checkout` でも**同じ 307** なので、
+                    // cookie 無しでは保護ルートの認可を一切検証できない
+                    // —— handshake の 3xx で緑になってしまう。
+                    // ダミー値で dev browser 済みとみなさせ、handshake を外して
+                    // 素の応答（`/` は 200 / `/checkout` はサインインへの 3xx）を見る。
+                    // production instance ではこの cookie は無視されるため無害。
+                    cookie: "__clerk_db_jwt=e2e-dev-browser",
                 },
             });
 
             // ヘッダは 500 エラーページにも付与されるため、ステータスを検証しないと
-            // アプリが壊れていてもこのテストは緑のままになる。`/` は 200、
-            // `/checkout` は未認証でサインインへの 3xx を返すので 4xx/5xx を弾く。
-            expect(response.status(), `${path} のステータス`).toBeLessThan(400);
+            // アプリが壊れていてもこのテストは緑のままになる。
+            // `/` は公開ページなので 200、`/checkout` は未認証なので
+            // Clerk のサインインへの 3xx —— どちらも**その値ちょうど**を要求する。
+            const status = response.status();
+            if (expectedStatus === "200") {
+                expect(status, `${path} のステータス（公開ページ）`).toBe(200);
+            } else {
+                // 3xx であるだけでは足りない。**行き先**まで見て、サインインへの
+                // リダイレクトであることを要求する。ステータスだけだと Clerk の
+                // handshake や任意の別リダイレクトでも通ってしまい、
+                // 「認証ゲートが生きている」証拠にならない。
+                expect(
+                    status,
+                    `${path} のステータス（未認証はサインインへリダイレクト）`
+                ).toBe(307);
+                expect(
+                    response.headers()["location"],
+                    `${path} のリダイレクト先（サインインであること）`
+                ).toMatch(/^\/sign-in(\?|$)/);
+            }
 
             const headers = response.headers(); // キーは小文字に正規化済み
 
