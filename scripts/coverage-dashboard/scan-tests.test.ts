@@ -493,11 +493,14 @@ describe("scanTests", () => {
         // ため、直後の `/` は除算。記号の後を一律「正規表現の開始」と読むと
         // 同一行の次の `/` までがマスクされ、その間の宣言が欠測する
         // （`skipRegex` は改行で降参するので、被害は同一行に閉じる）。
+        //
+        // `++` / `--` の両方を 1 行に置き、**それぞれの直後に `it()` を挟む**。
+        // マスクは次の `/` までしか伸びないため、`it()` を挟まずに並べると
+        // 片方の誤読が「無害な宣言だけを飲み込む」形になり、緑のまま通る。
         root = makeFixture({
             "src/lib/postfix-division.test.ts": [
-                "let i = 0;",
-                "const total = i++/count; it('first real test', () => {}); const ratio = a/b;",
-                "it('second real test', () => {});",
+                "let i = 0; let j = 0;",
+                "const total = i++/count; it('first real test', () => {}); const delta = j--/count; it('second real test', () => {}); const ratio = a/b;",
             ].join("\n"),
         });
 
