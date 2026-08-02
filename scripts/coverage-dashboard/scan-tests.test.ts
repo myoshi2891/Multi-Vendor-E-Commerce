@@ -426,6 +426,68 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(1);
     });
 
+    it("正規表現リテラル内の引用符を文字列の開始と誤読しない", async () => {
+        // `findMaskedSpans` は `"` / `'` / `` ` `` を見た時点で文字列の開始と
+        // みなす。正規表現リテラルを走査対象に含めていないため、`/["']/` の
+        // ような**正規表現の中の引用符**が文字列の開始として読まれ、そこから
+        // 次の同種引用符（＝はるか下のコード）までが丸ごと非コード範囲として
+        // マスクされる。その範囲に落ちたテスト宣言は丸ごと欠測する。
+        //
+        // `it.each` 欠測 (c1be6d7) / `test.skip(` 欠測 (ff9f5c28) /
+        // `it.skip.each` 欠測 (73d68b57) に続く同型 4 度目。
+        root = makeFixture({
+            "src/lib/regex-holder.test.ts": [
+                "const quoteClass = /[\"']/;",
+                "const apostrophe = /don't/;",
+                "",
+                "it('first real test', () => {});",
+                "it('second real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(2);
+    });
+
+    it("正規表現リテラル内の it( / .skip は宣言・skip として数えない", async () => {
+        // 逆向きの取り違え。正規表現をマスクしないと、その中のトークンが
+        // 実コードとして計上される。走査器自身のパターン定義
+        // （`/\b(it|test)\s*\(/g` 等）がまさにこの形。
+        root = makeFixture({
+            "src/lib/regex-tokens.test.ts": [
+                "const blockPattern = /\\b(it|test)\\s*\\(/g;",
+                "const skipPattern = /\\b(it|test)\\.skip\\b/g;",
+                "",
+                "it('the only real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(1);
+        expect(results[0]?.hasSkip).toBe(false);
+    });
+
+    it("除算のスラッシュを正規表現の開始と誤読しない", async () => {
+        // 正規表現対応を入れる際の反対側の失敗。`a / b` の `/` を正規表現の
+        // 開始として読むと、次の `/` までが非コード範囲になり、その間にある
+        // 宣言が欠測する。判定は「直前の非空白トークン」で行う必要がある。
+        root = makeFixture({
+            "src/lib/division.test.ts": [
+                "const ratio = total / count;",
+                "",
+                "it('first real test', () => {});",
+                "const other = a / b;",
+                "it('second real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(2);
+    });
+
     it("文字列リテラル内の .skip / xdescribe は hasSkip に数えない", async () => {
         // testCount と同じ取り違えが hasSkip 側にもある。hasSkip はヒートマップの
         // `◐`（partial）判定に効くため、フィクスチャ文字列を根拠に partial 扱い
