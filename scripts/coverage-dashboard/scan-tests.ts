@@ -92,8 +92,99 @@ function skipString(content: string, start: number): number {
 }
 
 /**
- * 文字列リテラル・テンプレートリテラル・コメントが占める `[start, end)` 範囲を
- * ファイル先頭から線形に列挙する（開始位置の昇順）。
+ * 直前が正規表現リテラルを許す位置なら `true`。
+ *
+ * `/` は正規表現の開始と除算演算子の両方になりうる。JavaScript の字句規則は
+ * 「**直前のトークンが値になりうるか**」で決める —— 値の後（識別子・数値・
+ * `)` `]` 等）なら除算、それ以外なら正規表現。
+ *
+ * `return` / `typeof` のようなキーワードは英字で終わるが値ではないため、
+ * 識別子と区別して別扱いする。判定できないときは **`false`（＝マスクしない）**
+ * に倒す。本モジュールは過大計上より過小計上を選ぶ fail-safe 方針だが、
+ * ここでは逆で、誤ってマスクすると**実テストが丸ごと欠測**して被害が大きい。
+ *
+ * @param content - ファイル全体の内容
+ * @param slashIndex - `/` の位置
+ */
+const REGEX_ALLOWING_KEYWORDS = new Set([
+    "return",
+    "typeof",
+    "instanceof",
+    "in",
+    "of",
+    "new",
+    "delete",
+    "void",
+    "throw",
+    "case",
+    "do",
+    "else",
+    "yield",
+    "await",
+]);
+
+function isRegexPosition(content: string, slashIndex: number): boolean {
+    let i = slashIndex - 1;
+    while (i >= 0 && /\s/.test(content[i])) i--;
+    if (i < 0) return true; // ファイル冒頭
+
+    const prev = content[i];
+
+    // 値で終わるトークンの後 → 除算
+    if (/[)\]}]/.test(prev)) return false;
+    if (/["'`]/.test(prev)) return false;
+
+    if (/[\w$]/.test(prev)) {
+        // 識別子・数値の後 → 除算。ただしキーワードの後は正規表現。
+        let start = i;
+        while (start >= 0 && /[\w$]/.test(content[start])) start--;
+        const word = content.slice(start + 1, i + 1);
+        return REGEX_ALLOWING_KEYWORDS.has(word);
+    }
+
+    // `(` `,` `=` `:` `[` `!` `&` `|` `?` `{` `;` `+` `-` `*` `%` `~` `^` `<` `>`
+    // など、値になりえない記号の後 → 正規表現
+    return /[(,=:[!&|?{;+\-*%~^<>]/.test(prev);
+}
+
+/**
+ * 正規表現リテラルの終端の次の位置を返す。開始位置が正規表現でなければ `start`
+ * を返す（＝マスクしない）。
+ *
+ * 文字クラス `[...]` の内側では `/` は区切りにならないため、クラス内かどうかを
+ * 追跡する。改行に出会った時点で正規表現ではない（リテラルは行をまたげない）
+ * ので、その場合も `start` を返して**マスクしない**側に倒す。
+ *
+ * @param content - ファイル全体の内容
+ * @param start - `/` の位置
+ */
+function skipRegex(content: string, start: number): number {
+    let i = start + 1;
+    let inClass = false;
+
+    while (i < content.length) {
+        const c = content[i];
+        if (c === "\n") return start; // 未終端 → 正規表現ではない
+        if (c === "\\") {
+            i += 2;
+            continue;
+        }
+        if (c === "[") inClass = true;
+        else if (c === "]") inClass = false;
+        else if (c === "/" && !inClass) {
+            i++;
+            // フラグ（g / i / m / s / u / y / d / v）を読み飛ばす
+            while (i < content.length && /[a-z]/.test(content[i])) i++;
+            return i;
+        }
+        i++;
+    }
+    return start; // 終端が見つからない → マスクしない
+}
+
+/**
+ * 文字列リテラル・テンプレートリテラル・正規表現リテラル・コメントが占める
+ * `[start, end)` 範囲を、ファイル先頭から線形に列挙する（開始位置の昇順）。
  *
  * **リテラルを剥がした文字列を作るのではなく、範囲だけを返す**のが要点。
  * `it("title", fn)` のテストタイトル自体が文字列リテラルなので、剥がしてから
@@ -133,6 +224,18 @@ function findMaskedSpans(content: string): Array<[number, number]> {
             spans.push([i, end]);
             i = end;
             continue;
+        }
+
+        // 正規表現リテラル。コメント判定（`//` / `/*`）の**後**に置く。
+        // マスクしないと `/["']/` の引用符が文字列の開始として読まれ、
+        // そこから次の同種引用符までのコードが丸ごと欠測する。
+        if (c === "/" && isRegexPosition(content, i)) {
+            const end = skipRegex(content, i);
+            if (end > i) {
+                spans.push([i, end]);
+                i = end;
+                continue;
+            }
         }
 
         i++;
