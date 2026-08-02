@@ -293,8 +293,18 @@ Machine-checkable. ALL must hold:
     > **Enumerate the inputs — "Infinity/NaN/fractional/`<1`" as prose does not tell the
     > implementer which values to write.** The predicate rejects for two *different*
     > clauses (`Number.isFinite(raw)` and `raw >= 1`), so a suite that exercises only one
-    > of them leaves the other live. Minimum set, each asserting the fallback
-    > (`1` for `page`, `MAX_LIMIT` for `limit`):
+    > of them leaves the other live. Minimum set, each asserting the fallback —
+    > **`1` for `page`, `20` for `limit`**:
+    >
+    > > **`limit`'s fallback is the default `20`, not `MAX_LIMIT` (corrected 2026-08-02).**
+    > > `MAX_LIMIT` is the *ceiling* applied by `Math.min` on the accepted branch, not the
+    > > value an invalid input falls back to — see
+    > > [`route.ts:184-187`](../src/app/api/index-products/route.ts#L184-L187):
+    > > `Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.min(Math.floor(rawLimit), MAX_LIMIT) : 20`.
+    > > A suite written from the old wording asserts `50` for `"abc"` and fails against a
+    > > correct implementation. The `page` line has the same shape (`MAX_PAGE` ceiling,
+    > > `1` fallback) and was already stated correctly, which is what made the `limit`
+    > > line easy to misread.
     >
     > - `"Infinity"` and `"-Infinity"` — `Number.isFinite` false. `-Infinity` is the one
     >   that catches a `Math.max(1, raw)`-style "fix", which would clamp it to `1` via the

@@ -356,8 +356,15 @@ Stop and report (do not improvise) if:
 - `CouponFormSchema.safeParse(coupon)` fails on a **valid** coupon during the happy-path test — that
   means the `Coupon` object shape diverges from the schema (e.g. dates are not strings after all);
   report the actual field types before adapting the schema.
-- The new-coupon `id` semantics are unclear (is `coupon.id` empty for creates?) — report rather than
-  guessing; a wrong id mapping could overwrite the wrong row.
+- ~~The new-coupon `id` semantics are unclear (is `coupon.id` empty for creates?)~~ —
+  **removed 2026-08-02: this contradicted this same document.** The "id semantics — settled,
+  no longer a STOP condition (2026-07-30)" note at `:215-231` already resolved the question
+  (both forms send `id: data?.id ?? v4()`, so `coupon.id` is never empty, and
+  `upsertCouponAsAdmin` passes `id` in the `create` branch only). Leaving the STOP condition
+  in place told the executor to halt on something the plan had already answered 3 lines-worth
+  of prose earlier — the most expensive kind of self-contradiction, because stopping is the
+  one outcome that produces no work. If a **new** caller ever omits `id`, that is a change to
+  the contract and needs its own plan, per the note's closing paragraph.
 - Typecheck or tests fail twice after a reasonable fix attempt.
 
 ## Maintenance notes

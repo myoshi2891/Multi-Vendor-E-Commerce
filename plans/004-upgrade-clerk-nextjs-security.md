@@ -260,9 +260,9 @@ This step cannot be fully automated in the executor sandbox. Document for the re
 
 ALL must hold:
 
-- [ ] `package.json` shows `@clerk/nextjs` at `>= 7.2.1` (target `^7.5.x`)
-- [ ] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
-- [ ] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
+- [x] `package.json` shows `@clerk/nextjs` at `>= 7.2.1` (target `^7.5.x`)
+- [x] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
+- [x] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
       transitive advisory. This is **not implied** by the `@clerk/nextjs` number; it is reached via
       `@clerk/shared`, so verify it on its own.
 
@@ -306,12 +306,30 @@ ALL must hold:
       | `min_fixed=3.0.8`（下限未満の模擬） | 該当なし | `FAIL: … resolved below …: 3.0.7` / exit **1** |
 
       3 行目が本修正の核心 —— 旧形は**脆弱版そのもの**を合格させていた。
-- [ ] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `bun run test` exits 0 (full unit suite green)
-- [ ] `bun run lint` exits 0
+- [x] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `bun run test` exits 0 (full unit suite green)
+- [x] `bun run lint` exits 0
 - [ ] No source files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock` (and optionally test-mock files if a mock changed)
-- [ ] `plans/README.md` status row for 004 updated — in a **separate docs commit**, after the bump commit
+- [x] `plans/README.md` status row for 004 updated — in a **separate docs commit**, after the bump commit
+
+> **チェック状態の根拠（2026-08-02 実測）。** 下の「解消状況」節が本プランを **DONE** と
+> 宣言する一方、Done criteria は全 9 項目が `- [ ]` のまま据え置かれており、
+> 完了宣言とチェックボックスが食い違っていた。現行ツリーで再実測して一致させた:
+>
+> | 条件 | 実測値 |
+> |---|---|
+> | `package.json` | `"@clerk/nextjs": "^7.5.0"` |
+> | `bun.lock` 解決 | `@clerk/nextjs@7.5.19` |
+> | `js-cookie` 解決 | `3.0.7`（`>= 3.0.6`。上の Step 1 ゲートが `OK` / exit 0） |
+> | `bun audit` | `@clerk/nextjs` / GHSA-vqx2-fgx2-5wq9 のヒット **0 件** |
+> | `bunx tsc --noEmit` | exit 0 |
+> | `bun run test` | 1838 passed / 3 skipped / 177 スイート |
+> | `bun run lint` | exit 0 |
+> | `plans/README.md` | 004 の行が **DONE** |
+>
+> 残る 1 項目（`src/` 配下が未変更）は **bump コミット時点**の作業ツリー状態を問う条件で、
+> 事後に再実測できない。履歴として未チェックのまま残す（`git log` で確認すること）。
 
 ## STOP conditions
 
