@@ -873,9 +873,18 @@ describe("placeOrder", () => {
             ).toBeLessThan(mockDb.order.create.mock.invocationCallOrder[0]);
         });
 
-        it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
-            // Arrange: 在庫 0 の商品が注文明細に載っても、負の配送料が
-            // OrderItem / OrderGroup 合計へ流れ込んではならない
+        it("在庫0のサイズは注文を拒否し、数量0の明細を作らない", async () => {
+            // Arrange: `validQuantity = Math.min(quantity, size.quantity)` は 0 を通すため、
+            // 在庫 0 のサイズが **quantity: 0 の OrderItem** として確定していた。
+            //
+            // 直後のアトミック減算は `where: { quantity: { gte: 0 } }` /
+            // `decrement: 0` になるので必ず 1 行にマッチし、`count === 0` の
+            // 在庫不足検知を**素通り**する。さらに ITEM 方式では
+            // `Math.max(0, 0 - 1) = 0` で基本配送料だけが残るため、
+            // **数量 0 の行に送料が課金される**。
+            //
+            // 正しい振る舞いは、アトミック減算が在庫不足で throw するのと同じ
+            // `"在庫が不足しています"` で、$transaction を開く前に拒否すること。
             const cart = {
                 ...createMockCart(),
                 cartItems: [createMockCartItem()],
@@ -913,17 +922,16 @@ describe("placeOrder", () => {
             });
             mockDb.order.update.mockResolvedValue(createMockOrder());
 
-            // Act
-            await placeOrder(shippingAddress as never, "cart-001");
+            // Act & Assert: アトミック減算と同じ文言で拒否される
+            await expect(
+                placeOrder(shippingAddress as never, "cart-001")
+            ).rejects.toThrow(/^在庫が不足しています$/);
 
-            // Assert: 10 + 3 * 0 = 10（10 - 3 = 7 になってはいけない）
-            expect(mockDb.orderItem.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    data: expect.objectContaining({
-                        shippingFee: new Prisma.Decimal("10"),
-                    }),
-                })
-            );
+            // 検証は $transaction の外（:757 より前）にあるため、注文リソースは
+            // 1 つも作られない。数量 0 の明細が残らないことが本テストの主眼。
+            expect(mockDb.order.create).not.toHaveBeenCalled();
+            expect(mockDb.orderGroup.create).not.toHaveBeenCalled();
+            expect(mockDb.orderItem.create).not.toHaveBeenCalled();
         });
 
         it("カートが既に消費済みなら注文を作成せず Cart not found. を投げる", async () => {
