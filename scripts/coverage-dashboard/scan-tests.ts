@@ -669,7 +669,22 @@ function classify(absPath: string): TestKind | null {
  *
  * @param absPath - Absolute path to the file to inspect
  * @param root - 走査ルートの絶対パス（`it.each(IDENT)` の import 解決に使う）
- * @returns An object with `hasSkip`: `true` if the file contains skip markers (e.g., `.skip`, `xit`, `xdescribe`), `false` otherwise; and `testCount`: the number of `it(`/`test(` occurrences in the file. On read failure returns `{ hasSkip: false, testCount: 0 }`.
+ * @returns An object with `hasSkip`: `true` if the file contains skip markers (e.g., `.skip`, `xit`, `xdescribe`), `false` otherwise; and `testCount`: the number of test cases the file contributes at runtime. On read failure returns `{ hasSkip: false, testCount: 0 }`.
+ *
+ * `testCount` は `it(` / `test(` の**出現回数ではない**。内訳は
+ * `countBlockDeclarations` + `countEachCases` で、次の規則に従う:
+ *
+ * - **宣言形のみ**を数える。第 1 引数が文字列リテラルでない
+ *   `test.skip(condition, reason)` のような**注釈形**は、囲みの
+ *   `test('title')` が既に計上済みなので二重計上を避けて除外する（`83673910`）
+ * - `test.describe` / `test.step` などの wrapper は除外する
+ * - `it.each` / `test.each`（修飾子付きを含む）は**テーブル行数へ展開**して数える。
+ *   実行時にはその行数ぶんのテストになるため
+ * - 文字列・テンプレート・正規表現リテラル・コメントの中身は
+ *   `findMaskedSpans` により除外する
+ *
+ * なお `for (const … of […]) { test(…) }` のようなループ生成は展開できない
+ * （静的走査の原理的限界）。実行時値との残差はこの経路で生じる。
  */
 async function inspectFile(
     absPath: string,
