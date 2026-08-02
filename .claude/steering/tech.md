@@ -26,7 +26,7 @@
 |-----|------|
 | **TypeScript** | `any` 禁止（`unknown` + 型ガードで代替） |
 | **ESLint** | `next/core-web-vitals` + `plugin:tailwindcss/recommended` |
-| **金額・数値精度** | `Float` 禁止。金額フィールドは `Decimal(12,2)` を必須とし、演算は必ず `Prisma.Decimal` メソッド（`.add()`, `.mul()`, `.sub()` 等）で行うこと。**中間集計ループ内で `.toNumber()` して `number` 同士で加算することは禁止**（各ステップで IEEE 754 丸め誤差が蓄積するため）。`toNumber()` は return 境界のみで呼ぶこと |
+| **金額・数値精度** | `Float` 禁止。金額フィールドは `Decimal(12,2)` を必須とし、演算は必ず `Prisma.Decimal` メソッド（`.add()`, `.mul()`, `.sub()` 等）で行うこと。**中間集計ループ内で `.toNumber()` して `number` 同士で加算することは禁止**（各ステップで IEEE 754 丸め誤差が蓄積するため）。`toNumber()` は return 境界のみで呼ぶこと。**唯一の例外は E2E の表示文字列検算**（下記） |
 | **エラーハンドリング** | 外部呼び出し（Prisma, Clerk, Stripe/PayPal）は必ず `try/catch` でラップし、`instanceof Error` による型ガードを行う。**例外: 認可ガード（`requireAdmin()` 等 `src/lib/auth-guards.ts`）は `try/catch` の外に置く**。認可エラー（"Unauthenticated." / "Only admins can perform this action." 等）を汎用 DB エラーメッセージで上書きしないための意図的な設計 |
 | **構造化ログ** | `src/queries/` の `console.error` は第1引数 `"[Module:Function] Error message"`（文字列）、第2引数 `{ error: error.message, stack: error.stack }`（オブジェクト）の2引数形式で構造化すること。実装例: `src/queries/paypal.ts` |
 | **アトミック操作** | 注文処理や在庫減算など、複数のテーブルを更新する際は `db.$transaction` によるアトミック化を必須とする |
@@ -45,6 +45,46 @@
 ---
 
 ## 実装パターン例
+
+### 金額規約の唯一の例外: E2E の表示文字列検算（セント整数）
+
+**適用範囲**: `tests/e2e/**` で、**DOM に描画済みの金額文字列どうしの関係**を検算する場合に限る。
+この 1 ケースだけ、パース時に**一度だけ**丸めてセント整数化し、以降を素の整数演算で行ってよい。
+
+```typescript
+// 表示は常に $X.XX（サーバー側で .toFixed(2) 済み）。1 回だけ丸めて整数化する。
+const parseMoneyToCents = (text: string): number => {
+    const matched = text.match(
+        /\$\s*((?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})*)\.[0-9]{2})(?![\w.,])/
+    );
+    if (!matched) throw new Error(`金額を抽出できません: ${text}`);
+    return Math.round(Number(matched[1].replace(/,/g, "")) * 100); // 丸めはここ 1 回だけ
+};
+
+// 以降は整数演算なので誤差ゼロ
+expect(subtotalCents + shippingCents).toBe(totalCents);
+```
+
+**なぜ例外にできるか**: 規約が防ぐのは「DB の正確な 10 進値を `number` に落として積み上げ、
+丸め誤差を蓄積させること」で、その誤差は**サーバー側の集計でしか生まれない**。E2E が触るのは
+サーバーで丸め済みの**終端表示文字列**であり、**失われた精度は `Prisma.Decimal` を被せても
+戻らない**。ここで Decimal を使っても厳密性は 1 ビットも増えず、依存だけが増える。
+
+**なぜ規約に書くか**: この判断はもともと plan 047 の本文だけに書かれていたが、金額規約は
+`**/*.{ts,tsx}` 全体に掛かるため、**plan 内の自称では規約は曲がらない**。例外は規約側に
+持つこと（[ADR / documentation-guide](documentation-guide.md) の「不変のルールは tech.md」）。
+
+**適用外（従来どおり禁止）**:
+
+- `Decimal` 列の値を計算するあらゆるサーバー側コード（`src/**`）
+- E2E であっても、DB / API から取得した `Decimal` 由来の値を `number` で積み上げること
+
+> **正規表現の桁区切りは `[0-9]{1,3}` で始めること。** `[0-9]+(?:,[0-9]{3})*` だと
+> `$1234,567.89` のような**不正な桁区切り**を受理して `1234567.89` を返す。
+> 先頭が 1〜3 桁のカンマ形式と、カンマ無しの数値とを `(?:…|…)` で分けて表現する。
+> 末尾の `(?![\w.,])` も必須（`$12.345` を `12.34` と読む取りこぼしを防ぐ）。
+
+**実装例**: [plans/047](../../plans/047-e2e-checkout-order-detail.md) の「推奨実装（経路 B）」
 
 ### 配送料計算の中央集約
 
