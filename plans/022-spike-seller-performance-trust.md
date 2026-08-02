@@ -276,7 +276,7 @@ enum StoreStatus {              // schema.prisma:76
    >      >   `actorType <> 'USER' OR …` の形にしないこと —— **人間ロールのうち
    >      >   `USER` しか縛らない**ため、`actorType='SELLER'` +
    >      >   `actorRef='system:webhook:stripe'` が通ってしまう。それは下の集計クエリ
-   >      >   （`actorType IN ('SELLER','ADMIN')`）が拾う行なので、**システム遷移が
+   >      >   （`actorType = 'SELLER'`）が拾う行なので、**システム遷移が
    >      >   セラーの行動として指標に混入する** —— 本 spike が防ごうとしている
    >      >   まさにその取り違えが、制約をすり抜けて DB に入る。逆向き
    >      >   （`SYSTEM` に人間の id）も同時に塞ぐこと。
@@ -284,7 +284,9 @@ enum StoreStatus {              // schema.prisma:76
    >      >   一旦 nullable で足し、backfill 後に `SET NOT NULL` する 2 段階
    >      >   （backfill の値が決められない行があるなら、それは 1 の前提が崩れている合図）。
    >      > - **集計クエリ**: 「セラーの行動を測る」指標は
-   >      >   `WHERE actorType IN ('SELLER','ADMIN')` で人間 actor に絞る。
+   >      >   `WHERE actorType = 'SELLER'` に絞る。`ADMIN` を混ぜると
+   >      >   運営の介入がセラーの実績として計上されるため含めない
+   >      >   （`SYSTEM` / `WEBHOOK` を除くのと同じ理由）。
    >      >   `actorRef` を `User` と結合したいときは `LEFT JOIN` にする
    >      >   （システム行は結合先が無いので `INNER JOIN` だと黙って落ちる）。
    >      >
