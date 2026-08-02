@@ -343,11 +343,32 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
     #    しか避けないため、`const proto = "a//b";` のような**URL 以外の文字列**を
     #    切り詰めて照合対象を別物にする。同一プラン内で 2 種類の除去ロジックを持つと、
     #    Done criteria と Step で判定が食い違う。
-    strip_code "$PAGE" \
+    #
+    # ⚠️ `strip_code` は **Done criteria の「機械検証」ブロックで定義される**。
+    #    本 Step だけをコピーして実行すると未定義のまま走り、`command not found`
+    #    （exit 127）で空文字が下流へ流れる。極性の都合でたまたま FAIL には落ちるが、
+    #    **「告知文が無い」という誤った理由**が表示されるため、原因を取り違える。
+    #    定義済みかを先に assert して、未定義を未定義として報告する。
+    #    定義をここへ複製しないこと —— 除去ロジックが 2 つになると上の警告どおり
+    #    Done criteria と Step で判定が食い違う。
+    if ! declare -F strip_code >/dev/null 2>&1; then
+        echo "FAIL: strip_code が未定義（Done criteria の「機械検証」ブロックを先に読み込むこと）"; false
+    elif strip_code "$PAGE" \
       | tr '\n' ' ' \
-      | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders' \
-      || { echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false; }
+      | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders'; then
+        echo "OK: 告知文が定数を値として埋め込んでいる"
+    else
+        echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false
+    fi
     ```
+
+    > **`declare -F` は bash 組み込み**なので、このブロックは **bash で実行すること**
+    > （`sh` では `declare: not found` になる）。ja/011 の env ゲートが
+    > プロセス置換のため bash を要求しているのと同じ制約で、本プラン内で軸が揃う。
+    >
+    > 形も Done criteria 側（`:264`）の `if/then/else` へ揃えた。旧形の
+    > `… || { echo FAIL; false; }` は極性自体は正しかったが、合格時に何も出力せず、
+    > 同一プラン内で 2 種類のゲート形が併存していた。
 
     1 がヒットし、2 がヒット 0 件、3 が成功したときのみ、告知が共有定数に追随することが保証される。
 
