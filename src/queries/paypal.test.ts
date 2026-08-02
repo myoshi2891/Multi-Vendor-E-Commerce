@@ -468,7 +468,8 @@ describe("capturePayPalPayment", () => {
         // 不一致時は Paid 確定を拒否する。確定済み注文は capture 前に拒否する。
         const buildCaptureResponse = (overrides: {
             customId?: string;
-            value?: string;
+            /** retrieve 側と同じく `null` / 非数値も渡せる（Decimal throw の検証用） */
+            value?: string | null;
             currencyCode?: string;
             /** purchase_units[0].custom_id を載せない（capture 側のみに載る応答版） */
             omitUnitCustomId?: boolean;
@@ -488,7 +489,10 @@ describe("capturePayPalPayment", () => {
                                     ? {}
                                     : { custom_id: overrides.captureCustomId }),
                                 amount: {
-                                    value: overrides.value ?? "99.99",
+                                    value:
+                                        "value" in overrides
+                                            ? overrides.value
+                                            : "99.99",
                                     currency_code:
                                         overrides.currencyCode ?? "USD",
                                 },
@@ -519,6 +523,30 @@ describe("capturePayPalPayment", () => {
             ).rejects.toThrow("PayPal capture amount/currency mismatch.");
             expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
             expect(mockDb.order.update).not.toHaveBeenCalled();
+        });
+
+        // capture **後**の突合にも retrieve 側と同一の欠陥があった。
+        // こちらは既に課金が成立しているため、原因が汎用文言に化けると
+        // 「返金が必要な不一致」なのか「単なる API 障害」なのかを
+        // 運用側が切り分けられない。retrieve 側と同じ形で固定する。
+        it.each([
+            ["null", null],
+            ["非数値文字列", "abc"],
+            ["空文字列", ""],
+        ])(
+            "capture の amount.value が %s なら Decimal を通さず mismatch として拒否する",
+            async (_label, value) => {
+                mockPayPalFetch({
+                    captureResponse: buildCaptureResponse({ value }),
+                });
+
+                await expect(
+                    capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+                ).rejects.toThrow(
+                    /^PayPal capture amount\/currency mismatch\.$/
+                );
+                expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+                expect(mockDb.order.update).not.toHaveBeenCalled();
         });
 
         it("custom_id が orderId と不一致の場合スローし、Paid 更新しない", async () => {
