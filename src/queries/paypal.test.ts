@@ -213,7 +213,12 @@ describe("createPayPalPayment", () => {
 const buildOrderRetrieveResponse = (
     overrides: {
         customId?: string;
-        value?: string;
+        /**
+         * `null` / 非数値文字列も渡せる。PayPal が返しうる異常値に対して
+         * `Prisma.Decimal` のコンストラクタ throw ではなく、意図した
+         * mismatch エラーへ収束することを検証するため。
+         */
+        value?: string | null;
         currencyCode?: string;
     } = {}
 ) => ({
@@ -224,7 +229,7 @@ const buildOrderRetrieveResponse = (
             custom_id: overrides.customId ?? "order-001",
             amount: {
                 currency_code: overrides.currencyCode ?? "USD",
-                value: overrides.value ?? "99.99",
+                value: "value" in overrides ? overrides.value : "99.99",
             },
         },
     ],
@@ -723,6 +728,33 @@ describe("capturePayPalPayment", () => {
             expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
             expect(mockDb.order.update).not.toHaveBeenCalled();
         });
+
+        // `amount.value` の異常値は「未設定」ではなく「不正」として扱う。
+        // `orderValue === undefined` だけを見ていた旧実装は、`null` や非数値を
+        // `new Prisma.Decimal(...)` へ素通しし、コンストラクタが投げる
+        // `[DecimalError] Invalid argument` が catch の汎用文言に化けていた。
+        // 金額不一致という**原因**がログからも呼び出し側からも消えるため、
+        // 意図した mismatch エラーに収束することを固定する。
+        it.each([
+            ["null", null],
+            ["非数値文字列", "abc"],
+            ["空文字列", ""],
+        ])(
+            "amount.value が %s なら Decimal を通さず mismatch として拒否する",
+            async (_label, value) => {
+                mockPayPalFetch({
+                    orderResponse: buildOrderRetrieveResponse({ value }),
+                });
+
+                await expect(
+                    capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+                ).rejects.toThrow(/^PayPal order amount\/currency mismatch\.$/);
+
+                expect(captureCalls()).toHaveLength(0);
+                expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+                expect(mockDb.order.update).not.toHaveBeenCalled();
+            }
+        );
 
         it("currency_code が USD 以外なら capture を呼ばずに拒否する", async () => {
             mockPayPalFetch({
