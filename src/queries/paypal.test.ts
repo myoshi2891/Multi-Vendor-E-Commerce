@@ -214,11 +214,13 @@ const buildOrderRetrieveResponse = (
     overrides: {
         customId?: string;
         /**
-         * `null` / 非数値文字列も渡せる。PayPal が返しうる異常値に対して
-         * `Prisma.Decimal` のコンストラクタ throw ではなく、意図した
-         * mismatch エラーへ収束することを検証するため。
+         * `null` / 非数値文字列 / **JSON 数値**も渡せる。PayPal が返しうる
+         * 異常値に対して `Prisma.Decimal` のコンストラクタ throw ではなく、
+         * 意図した mismatch エラーへ収束することを検証するため。
+         * （`JSON.parse` は `"value": 99.99` を `number` にするので、
+         * 型を `string` に固定するとこの経路をテストで表現できない。）
          */
-        value?: string | null;
+        value?: unknown;
         currencyCode?: string;
     } = {}
 ) => ({
@@ -468,8 +470,8 @@ describe("capturePayPalPayment", () => {
         // 不一致時は Paid 確定を拒否する。確定済み注文は capture 前に拒否する。
         const buildCaptureResponse = (overrides: {
             customId?: string;
-            /** retrieve 側と同じく `null` / 非数値も渡せる（Decimal throw の検証用） */
-            value?: string | null;
+            /** retrieve 側と同じく `null` / 非数値 / JSON 数値も渡せる（Decimal throw の検証用） */
+            value?: unknown;
             currencyCode?: string;
             /** purchase_units[0].custom_id を載せない（capture 側のみに載る応答版） */
             omitUnitCustomId?: boolean;
@@ -529,10 +531,15 @@ describe("capturePayPalPayment", () => {
         // こちらは既に課金が成立しているため、原因が汎用文言に化けると
         // 「返金が必要な不一致」なのか「単なる API 障害」なのかを
         // 運用側が切り分けられない。retrieve 側と同じ形で固定する。
+        // `数値` は「値としては正しいのに型だけ違う」ケース。`JSON.parse` は
+        // `"value": 99.99` を `number` にするため、`typeof value === "string"`
+        // を落とすと **金額が一致してしまい素通しする**。文字列要求が効いて
+        // いることは、この行だけが証明できる。
         it.each([
             ["null", null],
             ["非数値文字列", "abc"],
             ["空文字列", ""],
+            ["数値", 99.99],
         ])(
             "capture の amount.value が %s なら Decimal を通さず mismatch として拒否する",
             async (_label, value) => {
@@ -763,10 +770,13 @@ describe("capturePayPalPayment", () => {
         // `[DecimalError] Invalid argument` が catch の汎用文言に化けていた。
         // 金額不一致という**原因**がログからも呼び出し側からも消えるため、
         // 意図した mismatch エラーに収束することを固定する。
+        // 「数値」は上と同じ趣旨 —— 値は一致するが型が違う。`isDecimalString`
+        // の `typeof === "string"` が外れると capture まで進んでしまう。
         it.each([
             ["null", null],
             ["非数値文字列", "abc"],
             ["空文字列", ""],
+            ["数値", 99.99],
         ])(
             "amount.value が %s なら Decimal を通さず mismatch として拒否する",
             async (_label, value) => {

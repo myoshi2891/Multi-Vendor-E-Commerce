@@ -91,21 +91,6 @@ function skipString(content: string, start: number): number {
     return i;
 }
 
-/**
- * 直前が正規表現リテラルを許す位置なら `true`。
- *
- * `/` は正規表現の開始と除算演算子の両方になりうる。JavaScript の字句規則は
- * 「**直前のトークンが値になりうるか**」で決める —— 値の後（識別子・数値・
- * `)` `]` 等）なら除算、それ以外なら正規表現。
- *
- * `return` / `typeof` のようなキーワードは英字で終わるが値ではないため、
- * 識別子と区別して別扱いする。判定できないときは **`false`（＝マスクしない）**
- * に倒す。本モジュールは過大計上より過小計上を選ぶ fail-safe 方針だが、
- * ここでは逆で、誤ってマスクすると**実テストが丸ごと欠測**して被害が大きい。
- *
- * @param content - ファイル全体の内容
- * @param slashIndex - `/` の位置
- */
 const REGEX_ALLOWING_KEYWORDS = new Set([
     "return",
     "typeof",
@@ -123,6 +108,21 @@ const REGEX_ALLOWING_KEYWORDS = new Set([
     "await",
 ]);
 
+/**
+ * 直前が正規表現リテラルを許す位置なら `true`。
+ *
+ * `/` は正規表現の開始と除算演算子の両方になりうる。JavaScript の字句規則は
+ * 「**直前のトークンが値になりうるか**」で決める —— 値の後（識別子・数値・
+ * `)` `]` 等）なら除算、それ以外なら正規表現。
+ *
+ * `return` / `typeof` のようなキーワードは英字で終わるが値ではないため、
+ * 識別子と区別して別扱いする。判定できないときは **`false`（＝マスクしない）**
+ * に倒す。本モジュールは過大計上より過小計上を選ぶ fail-safe 方針だが、
+ * ここでは逆で、誤ってマスクすると**実テストが丸ごと欠測**して被害が大きい。
+ *
+ * @param content - ファイル全体の内容
+ * @param slashIndex - `/` の位置
+ */
 function isRegexPosition(content: string, slashIndex: number): boolean {
     let i = slashIndex - 1;
     while (i >= 0 && /\s/.test(content[i])) i--;
@@ -141,6 +141,11 @@ function isRegexPosition(content: string, slashIndex: number): boolean {
         const word = content.slice(start + 1, i + 1);
         return REGEX_ALLOWING_KEYWORDS.has(word);
     }
+
+    // 後置 `++` / `--` だけは例外で、記号で終わりながら**値を返す** → 除算。
+    // 下の記号集合は `+` `-` を含むため、この判定を先に置かないと
+    // `i++/count` の `/` を正規表現の開始と読み、以降が丸ごとマスクされる。
+    if ((prev === "+" || prev === "-") && content[i - 1] === prev) return false;
 
     // `(` `,` `=` `:` `[` `!` `&` `|` `?` `{` `;` `+` `-` `*` `%` `~` `^` `<` `>`
     // など、値になりえない記号の後 → 正規表現

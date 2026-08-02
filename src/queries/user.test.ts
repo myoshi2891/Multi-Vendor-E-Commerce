@@ -929,6 +929,10 @@ describe("placeOrder", () => {
 
             // 検証は $transaction の外（:757 より前）にあるため、注文リソースは
             // 1 つも作られない。数量 0 の明細が残らないことが本テストの主眼。
+            // トランザクション自体が開かれていないことも固定する（create 群が
+            // 未呼び出しでも、トランザクションを開いてから中で落ちる実装なら
+            // 接続とロックを無駄に取る — 「外で弾く」設計はここでしか守れない）。
+            expect(mockDb.$transaction).not.toHaveBeenCalled();
             expect(mockDb.order.create).not.toHaveBeenCalled();
             expect(mockDb.orderGroup.create).not.toHaveBeenCalled();
             expect(mockDb.orderItem.create).not.toHaveBeenCalled();

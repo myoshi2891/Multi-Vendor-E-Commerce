@@ -488,6 +488,24 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(2);
     });
 
+    it("後置 ++ / -- の直後の除算スラッシュを正規表現の開始と誤読しない", async () => {
+        // 上の除算テストの取りこぼし。`++` / `--` は記号で終わるが**値を返す**
+        // ため、直後の `/` は除算。記号の後を一律「正規表現の開始」と読むと
+        // 同一行の次の `/` までがマスクされ、その間の宣言が欠測する
+        // （`skipRegex` は改行で降参するので、被害は同一行に閉じる）。
+        root = makeFixture({
+            "src/lib/postfix-division.test.ts": [
+                "let i = 0;",
+                "const total = i++/count; it('first real test', () => {}); const ratio = a/b;",
+                "it('second real test', () => {});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        expect(results[0]?.testCount).toBe(2);
+    });
+
     it("文字列リテラル内の .skip / xdescribe は hasSkip に数えない", async () => {
         // testCount と同じ取り違えが hasSkip 側にもある。hasSkip はヒートマップの
         // `◐`（partial）判定に効くため、フィクスチャ文字列を根拠に partial 扱い
