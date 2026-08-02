@@ -235,9 +235,24 @@ Two things must be settled from AWS's documentation rather than assumed:
   next to the extraction rule, so a later reader can tell whether the rule still
   matches the deployment.
 
+  **取得して終わりにしないこと。** 期待値と突き合わせて**不一致なら失敗**させる
+  （取得に成功しただけでは、`mode=remove` や `xff_client_port.enabled=true` の
+  デプロイをそのまま通してしまう。抽出規則はこの 2 値を前提にしている）:
+
   ```bash
-  aws elbv2 describe-load-balancer-attributes --load-balancer-arn "$ALB_ARN" \
-    --query "Attributes[?Key=='routing.http.xff_header_processing.mode' || Key=='routing.http.xff_client_port.enabled']"
+  attrs=$(aws elbv2 describe-load-balancer-attributes --load-balancer-arn "$ALB_ARN" \
+    --query "Attributes[?Key=='routing.http.xff_header_processing.mode' || Key=='routing.http.xff_client_port.enabled']" \
+    --output json)
+  mode=$(echo "$attrs" | jq -r '.[] | select(.Key=="routing.http.xff_header_processing.mode") | .Value')
+  port=$(echo "$attrs" | jq -r '.[] | select(.Key=="routing.http.xff_client_port.enabled") | .Value')
+
+  # 未設定（空文字列）も不一致として落ちる —— fail closed
+  if [ "$mode" = "append" ] && [ "$port" = "false" ]; then
+      echo "OK: xff mode=$mode / client_port=$port（抽出規則の前提と一致）"
+  else
+      echo "FAIL: expected mode=append / client_port=false, got mode=${mode:-<unset>} / client_port=${port:-<unset>}"
+      false
+  fi
   ```
 
 ### Parsing `CloudFront-Viewer-Address`
