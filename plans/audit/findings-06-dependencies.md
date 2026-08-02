@@ -206,7 +206,7 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 
 - **Evidence**:
   - **dev-only**: `handlebars` は `ts-jest`（`package.json:106`）、`ws` は `jsdom`/`jest-environment-jsdom`（`:78,130`）+ `@lhci/cli`（`:117`）、`picomatch` は jest/tailwind ツーリング経由。すべて devDependencies または dev ツール transitive で、`src/` ランタイムからの import なし。
-  - **runtime transitive だが悪用経路が未到達**: `lodash` / `lodash-es` は `react-color` / `react-tag-input` / `@tremor/react` 経由で `dependencies` に到達する。勧告は `_.template` 系だが、本リポジトリは攻撃者制御文字列でこれを呼んでいない（詳細は下の DEPS-06 節）。
+  - **runtime transitive だが悪用経路が未到達**: `lodash` / `lodash-es` は `react-color` / `react-tag-input` / `@tremor/react` 経由で `dependencies` に到達する。勧告は `_.template` 系だが、本リポジトリは攻撃者制御文字列でこれを呼んでいない（到達経路と未呼び出しの根拠は [`findings-18-security-r13.md`](findings-18-security-r13.md) の DEPS-05 分類注記。**下の DEPS-06 節ではない** —— あちらはマイグレーション履歴と `.DS_Store` の話で lodash を扱っていない）。
 - **Impact**: `bun audit` 97 件のかさ増し要因。dev-only 分はデプロイバンドル・サーバーランタイムに非到達で本番セキュリティ利益ゼロ。runtime transitive 分は**到達するが実悪用経路が無い**。いずれも定期的な依存リフレッシュで扱う。
 - **Effort**: S / **Risk**: LOW / **Confidence**: HIGH
 - **Fix sketch**: 優先度を下げ、セキュリティ修正バッチではなく定期 devDeps 更新に折り込む。

@@ -70,8 +70,11 @@
   git ls-tree -r --name-only "$REV" $DIRS | grep -c '\.tsx$'                 # → 11
   # 同ツリーにテストファイル 0 件
   git ls-tree -r --name-only "$REV" $DIRS | grep -ci test                    # → 0
-  # 対応するコンポーネントテストも 0 件
-  git ls-tree -r --name-only "$REV" tests/component/ | grep -ci payment      # → 0
+  # 対応するコンポーネントテストも 0 件。**11 件の対象すべて**を覆うパターンで見る
+  # （`payment` だけで絞ると checkout-page/ と order-page/ の 2 ディレクトリが
+  #  検査対象から外れ、「テストが無い」の主張が母数の一部でしか立たない）
+  git ls-tree -r --name-only "$REV" tests/component/ \
+    | grep -ciE 'payment|checkout|order-page'                                # → 0
   ```
 
   > **測定 HEAD と再現コマンドの revision を一致させること（2026-08-02 修正）。**
@@ -80,6 +83,8 @@
   > の 2 系統に分かれていた。`09275b5d` は 1 つ上の「再測定（2026-07-27）」の HEAD であり、
   > **主張と裏付けが別のツリーを指していた**。3 行とも `$REV` に固定して解消。
   > 実測（2026-08-02・`1e15ea5a`）で **11 / 0 / 0** を再現ずみ。
+  > 3 行目のパターンを `payment` から `payment|checkout|order-page` へ広げた後も
+  > **0 件**（同 rev で再実測）—— 母数 11 の全対象を覆ったうえで主張が成立する。
   >
   > 2026-07-30 の修正（`ls <dir> | grep -i test` を `git ls-tree -r` へ）も同じ理由に
   > 基づく —— 旧形は **非再帰**でサブディレクトリ配下を取りこぼし、かつ pin した HEAD

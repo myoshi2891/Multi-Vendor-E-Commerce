@@ -434,7 +434,7 @@ ALL must hold:
       "the update reported 0 affected rows" is not evidence that they were correct.
 - [ ] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
 - [ ] Step 4's **pre**-gate passed: the count **and `candidate_digest`** both matched the approved
-      report (`\if :ok` at step 2 of the script, otherwise `RAISE EXCEPTION`).
+      report (`\if :gate_ok` at step 2 of the script, otherwise `RAISE EXCEPTION`).
 - [ ] Step 4's **post**-gate passed: `POST OK: the updated set matches the pre-checked candidate set`
       was printed — i.e. `updated_count = actual_count` **and** `updated_digest = actual_digest`.
       The digest is required, not a nicety: equal counts do not prove the same rows — one row

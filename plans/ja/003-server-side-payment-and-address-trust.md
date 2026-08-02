@@ -282,10 +282,10 @@ if (!ownedAddress) throw new Error("Shipping address not found.");
 
 ## Maintenance notes
 
-- これにより署名済み webhook とこのアクションが `amount`/`currency` のソース（どちらも Stripe 権威）で一致し、ドリフトリスクが減る — ただしプロバイダ間の `PaymentDetails.amount` 単位不一致（CORRECTNESS-05）は未解決であり別途プラン化すべき。
+- これにより署名済み webhook とこのアクションが `amount`/`currency` のソース（どちらも Stripe 権威）で一致し、ドリフトリスクが減る。プロバイダ間の `PaymentDetails.amount` 単位不一致（CORRECTNESS-05）は**当初スコープ外であり、その後 2 つに分割された**: **コード**側の欠陥は**修正済み**（`e63474b6`・2026-07-19 — Stripe の書き込み 4 箇所すべてが `order.total` をドル単位で保存し、`toStripeAmount()` は Stripe API へ渡す値にのみ使う）。残るのは minor unit で書かれた**過去データの行**だけで、`plans/063-backfill-stripe-payment-amount.md`（P2・TODO）で追跡する。ここにあった「未解決・別途プラン化すべき」の記述は両者より前の版であり撤回する —— 上の 131 行目のスコープ外表記は `f9752c0` 時点で凍結したステップ本文であって、現況ではない。
 - レビュアーは変更後、引数からは `paymentIntent.status`/`.amount` が一切読まれず、取得済みオブジェクトからのみ読まれることを確認すること。
 - PayPal capture（`paypal.ts`）が後に同様に堅牢化される場合、このパターン（サーバー側再取得 + order マッチ）を踏襲すること。
-- 先送り事項: 通貨単位の正規化と `stripe.ts` の古い3引数ログ（tech-debt パスで構造化ログへ変換）。
+- 先送り事項: `stripe.ts` の古い3引数ログ（tech-debt パスで構造化ログへ変換）。通貨単位の正規化は**もはやここでの先送りではない** —— 上の CORRECTNESS-05 の注記を参照（コードは完了・データ backfill は plan 063）。
 
 ### 本プラン完了後の乖離（2026-07-18 追記）
 

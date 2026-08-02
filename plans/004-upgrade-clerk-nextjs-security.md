@@ -266,13 +266,13 @@ ALL must hold:
       transitive advisory. This is **not implied** by the `@clerk/nextjs` number; it is reached via
       `@clerk/shared`, so verify it on its own.
 
-      Read the **resolved** entry, not a dependency declaration. `bun.lock` writes the two in
-      different shapes: `"js-cookie": "3.0.7"` inside `@clerk/shared`'s `dependencies` object is
-      the **range that package asks for**, while `"js-cookie": ["js-cookie@3.0.7", …]` at the top
-      level is **what bun actually installed**. Only the latter answers "which version ships".
-      The old form (`grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`) matched only the
-      declaration — and piping into `sort` made it **fail open**, since `sort` exits 0 on empty
-      input, so a lockfile with no js-cookie at all passed the gate.
+  Read the **resolved** entry, not a dependency declaration. `bun.lock` writes the two in
+  different shapes: `"js-cookie": "3.0.7"` inside `@clerk/shared`'s `dependencies` object is
+  the **range that package asks for**, while `"js-cookie": ["js-cookie@3.0.7", …]` at the top
+  level is **what bun actually installed**. Only the latter answers "which version ships".
+  The old form (`grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`) matched only the
+  declaration — and piping into `sort` made it **fail open**, since `sort` exits 0 on empty
+  input, so a lockfile with no js-cookie at all passed the gate.
 
   ```bash
   # 解決エントリ（配列形）だけを見る。0 件は「安全」ではなく「検査できていない」。
@@ -291,21 +291,21 @@ ALL must hold:
   fi
   ```
 
-      **存在確認から版比較へ強化（2026-08-02）。** 旧形は解決エントリが 1 つでもあれば
-      合格したため、`js-cookie@3.0.5`（＝**脆弱版**）でも PASS していた。HIGH advisory の
-      解消を主張するゲートとしては不成立だったので、Step 0（`:33-45`）と同じ
-      「最小値 vs `min_fixed`」の比較へ揃えた。
+  **存在確認から版比較へ強化（2026-08-02）。** 旧形は解決エントリが 1 つでもあれば
+  合格したため、`js-cookie@3.0.5`（＝**脆弱版**）でも PASS していた。HIGH advisory の
+  解消を主張するゲートとしては不成立だったので、Step 0（`:33-45`）と同じ
+  「最小値 vs `min_fixed`」の比較へ揃えた。
 
-      実測（2026-08-02・4 方向）:
+  実測（2026-08-02・4 方向）:
 
-      | 入力 | 旧形（存在確認のみ） | 新形（版比較） |
-      |---|---|---|
-      | 現行 `bun.lock`（3.0.7） | PASS / exit 0 | `OK: … 3.0.7 (>= 3.0.6)` / exit **0** |
-      | 解決エントリを除去した複製 | FAIL / exit 1 | `FAIL: … 解決エントリが無い` / exit **1** |
-      | **3.0.5 に差し替えた複製** | **PASS / exit 0** ← 脆弱版を素通し | `FAIL: … resolved below …: 3.0.5` / exit **1** |
-      | `min_fixed=3.0.8`（下限未満の模擬） | 該当なし | `FAIL: … resolved below …: 3.0.7` / exit **1** |
+  | 入力 | 旧形（存在確認のみ） | 新形（版比較） |
+  |---|---|---|
+  | 現行 `bun.lock`（3.0.7） | PASS / exit 0 | `OK: … 3.0.7 (>= 3.0.6)` / exit **0** |
+  | 解決エントリを除去した複製 | FAIL / exit 1 | `FAIL: … 解決エントリが無い` / exit **1** |
+  | **3.0.5 に差し替えた複製** | **PASS / exit 0** ← 脆弱版を素通し | `FAIL: … resolved below …: 3.0.5` / exit **1** |
+  | `min_fixed=3.0.8`（下限未満の模擬） | 該当なし | `FAIL: … resolved below …: 3.0.7` / exit **1** |
 
-      3 行目が本修正の核心 —— 旧形は**脆弱版そのもの**を合格させていた。
+  3 行目が本修正の核心 —— 旧形は**脆弱版そのもの**を合格させていた。
 - [x] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
 - [x] `bunx tsc --noEmit` exits 0
 - [x] `bun run test` exits 0 (full unit suite green)

@@ -65,7 +65,7 @@ const restockOrderItems = async (
 ```
 
 (2) `updateOrderPaymentStatus`（`order.ts:530-616`）— TOCTOU ガード付きキャンセル/返金連動。
-要点（`:588-638`）:
+要点（`:556-616`）:
 
 ```typescript
 let didTransition = false;

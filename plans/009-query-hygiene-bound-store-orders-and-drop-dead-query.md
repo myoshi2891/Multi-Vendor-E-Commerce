@@ -226,9 +226,18 @@ ALL must hold:
   ```bash
   # 定義が共有モジュールに 1 つだけあること
   grep -nE '^export const STORE_ORDERS_MAX' src/lib/store-constants.ts
-  # 両 consumer が共有モジュールから import していること（ローカル再宣言なら 0 件になる）
-  grep -c 'from "@/lib/store-constants"' src/queries/store.ts \
-    "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"
+  # 両 consumer が共有モジュールから import していること（ローカル再宣言なら落ちる）。
+  # **1 ファイルずつ判定する** —— `grep -c f1 f2` は片方が 0 件でも、もう片方が
+  # 当たれば全体の exit code が 0 になる。件数は per-file で表示されるが、
+  # チェックリストとして機械的に見るのは exit code なので、合算では素通りする。
+  for f in src/queries/store.ts \
+           "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"; do
+      if grep -q 'from "@/lib/store-constants"' "$f"; then
+          echo "OK: $f が共有モジュールから import している"
+      else
+          echo "FAIL: $f が共有モジュールから import していない"; false
+      fi
+  done
   ```
 
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` shows the bound applied
@@ -253,11 +262,11 @@ ALL must hold:
   fi
   ```
 
-      （added 2026-07-18 — the bound and the notice ship together; a bound without a
-      notice is the silent truncation the caveat forbids. Gate strengthened 2026-08-02:
-      the old token-presence form passed on the import line alone. Measured both ways —
-      current page → `OK` / exit 0; the same page with the literal `100` substituted for
-      `{STORE_ORDERS_MAX}` → `FAIL` / exit 1.)
+  （added 2026-07-18 — the bound and the notice ship together; a bound without a
+  notice is the silent truncation the caveat forbids. Gate strengthened 2026-08-02:
+  the old token-presence form passed on the import line alone. Measured both ways —
+  current page → `OK` / exit 0; the same page with the literal `100` substituted for
+  `{STORE_ORDERS_MAX}` → `FAIL` / exit 1.)
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` returns no matches
 - [ ] `bun run test -- src/queries/store.test.ts` exits 0; the `take` assertion passes
 - [ ] `bun run lint` exits 0

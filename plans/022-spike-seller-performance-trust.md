@@ -261,7 +261,25 @@ enum StoreStatus {              // schema.prisma:76
    >      > - **制約**: 両列 NOT NULL。`actorRef` の形式は `actorType` ごとに決まる
    >      >   （人間 = Clerk user id / システム = `system:<source>:<name>` の予約名前空間）。
    >      >   Clerk の id は `user_` 前缀なので `system:` と衝突しない。
-   >      >   DB レベルで縛るなら `CHECK (actorType <> 'USER' OR actorRef NOT LIKE 'system:%')`。
+   >      >   DB レベルで縛るなら、**列挙の全値を覆う双方向の CHECK** にすること:
+   >      >
+   >      >   ```sql
+   >      >   CHECK (
+   >      >       CASE actorType
+   >      >           WHEN 'SYSTEM'  THEN actorRef LIKE 'system:%'
+   >      >           WHEN 'WEBHOOK' THEN actorRef LIKE 'system:%'
+   >      >           ELSE actorRef NOT LIKE 'system:%'   -- USER / SELLER / ADMIN
+   >      >       END
+   >      >   )
+   >      >   ```
+   >      >
+   >      >   `actorType <> 'USER' OR …` の形にしないこと —— **人間ロールのうち
+   >      >   `USER` しか縛らない**ため、`actorType='SELLER'` +
+   >      >   `actorRef='system:webhook:stripe'` が通ってしまう。それは下の集計クエリ
+   >      >   （`actorType IN ('SELLER','ADMIN')`）が拾う行なので、**システム遷移が
+   >      >   セラーの行動として指標に混入する** —— 本 spike が防ごうとしている
+   >      >   まさにその取り違えが、制約をすり抜けて DB に入る。逆向き
+   >      >   （`SYSTEM` に人間の id）も同時に塞ぐこと。
    >      > - **移行**: 既存行が無い新規テーブルなら単純追加。既存行に後付けするなら
    >      >   一旦 nullable で足し、backfill 後に `SET NOT NULL` する 2 段階
    >      >   （backfill の値が決められない行があるなら、それは 1 の前提が崩れている合図）。

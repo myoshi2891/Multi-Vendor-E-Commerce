@@ -191,7 +191,7 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 - [x] `bunx tsc --noEmit` が exit 0
 - [x] `bun run test` が exit 0（フルユニットスイート green）
 - [x] `bun run lint` が exit 0
-- [ ] `src/` 配下のソースファイルが一切変更されていない — **bump コミットの直前**で `git status` が `package.json` + `bun.lock` のみ（モックが変更された場合はテストモックファイルも）を示す
+- [x] `src/` 配下のソースファイルが一切変更されていない — 作業ツリーではなく**履歴**で検証する（下の注記を参照）
 - [x] `plans/README.md` の 004 のステータス行が更新されている — bump コミットの後、**別の docs コミット**で
 
 > **チェック状態の根拠（2026-08-02 実測）。** 下の「解消状況」節が本プランを **DONE** と
@@ -208,8 +208,21 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 > | `bun run lint` | exit 0 |
 > | `plans/README.md` | 004 の行が **DONE** |
 >
-> 残る 1 項目（`src/` 配下が未変更）は **bump コミット時点**の作業ツリー状態を問う条件で、
-> 事後に再実測できない。履歴として未チェックのまま残す（`git log` で確認すること）。
+> `src/` 未変更の条件は **bump コミット時点**の作業ツリー状態を問うため `git status` では
+> 事後確認できないが、**その状態はコミットに保存されている**ので履歴から再検証できる。
+> 「再実測できないので未チェックのまま残す」と書いていた旧版は、条件を検証不能扱いにして
+> DONE 宣言との食い違いを固定していた。bump コミットは `b11375e5`
+> (`chore(deps): upgrade Clerk security dependencies`):
+>
+> ```bash
+> git show --stat b11375e5 -- src/ | grep -q . \
+>   && echo "FAIL: bump コミットが src/ を触っている" \
+>   || echo "OK: bump コミットに src/ の変更なし"
+> ```
+>
+> 実測（2026-08-02）: `OK`。コミット全体の変更ファイルは `bun.lock` / `package.json` /
+> `plans/README.md` の 3 件で、`src/` 配下は 0 件（`plans/README.md` が同一コミットに
+> 入っている点は、直下の「別の docs コミットで」という記述との差異として記録しておく）。
 
 ## STOP conditions
 
