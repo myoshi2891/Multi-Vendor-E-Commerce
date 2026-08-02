@@ -284,27 +284,44 @@ bun run test:perf               # 未実装（予定: k6 run tests/performance/b
 
 ### `playwright.config.ts`
 
+> **この抜粋は要点のみ**。完全な定義は [`playwright.config.ts`](../../playwright.config.ts) が
+> 唯一のソースであり、本節はそこから逸れないこと。特に `webServer.command` は
+> 上記「opt-in 環境変数」節の `isEnabled("E2E_USE_DEV")` と**同じ判定**でなければ、
+> 規約と例が同一ファイル内で矛盾する。
+
 ```ts
 import { defineConfig, devices } from "@playwright/test";
+
+const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
+// 有効値は `1` のみ（上記「opt-in 環境変数」節と同一規則）
+const isEnabled = (name: string): boolean => process.env[name]?.trim() === "1";
 
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30 * 1000,
-  expect: { timeout: 5 * 1000 },
+  expect: { timeout: 5 * 1000, toHaveScreenshot: { maxDiffPixelRatio: 0.01 } },
   fullyParallel: true,
+  workers: 1,              // 共有 DB・認証セッションの衝突を避けるため直列
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    locale: "en-US",       // VRT のため固定
+    timezoneId: "UTC",
   },
   webServer: {
-    command: "bun run dev",   // CI では next build + next start を推奨
-    url: "http://localhost:3000",
+    // 既定は本番ビルド起動。dev 退避は E2E_USE_DEV=1 の opt-in のみ
+    command: isEnabled("E2E_USE_DEV")
+      ? "bun run dev"
+      : "bun run build && bun run start",
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 600 * 1000,   // build を含むため 120s では足りない
+    stdout: "pipe",        // 起動状況・クラッシュの可視化
+    stderr: "pipe",
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

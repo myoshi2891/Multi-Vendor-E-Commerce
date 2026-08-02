@@ -224,10 +224,21 @@ Two things must be settled from AWS's documentation rather than assumed:
   then take the port after `]`.  Settle it first, then pick the branch.
 - **The attribute's actual value in the target account.**  Both
   `routing.http.xff_header_processing.mode` and
-  `routing.http.xff_client_port.enabled` are **per-listener** attributes that an
-  infrastructure change can flip without touching application code.  Record the
-  observed values in the implementation ADR next to the extraction rule, so a
-  later reader can tell whether the rule still matches the deployment.
+  `routing.http.xff_client_port.enabled` are **load balancer attributes**, not
+  listener attributes — they are read and written with
+  `describe-load-balancer-attributes` / `modify-load-balancer-attributes` and
+  apply to the whole ALB, so a single infrastructure change flips the behaviour
+  for **every** listener at once without touching application code.  Getting the
+  scope wrong turns the verification step into a false negative: checking one
+  listener proves nothing about the others, and there is no per-listener
+  override to inspect.  Record the observed values in the implementation ADR
+  next to the extraction rule, so a later reader can tell whether the rule still
+  matches the deployment.
+
+  ```bash
+  aws elbv2 describe-load-balancer-attributes --load-balancer-arn "$ALB_ARN" \
+    --query "Attributes[?Key=='routing.http.xff_header_processing.mode' || Key=='routing.http.xff_client_port.enabled']"
+  ```
 
 ### Parsing `CloudFront-Viewer-Address`
 
