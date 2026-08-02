@@ -240,11 +240,42 @@ enum StoreStatus {              // schema.prisma:76
    >
    >   spike は最低限これを確定すること:
    >
-   >   1. **actor id は NOT NULL とし、システム主体に予約 id を割り当てる**
-   >      （人間 id 空間と衝突しない形。例: `system:webhook:stripe`）。
-   >      「未記録」は表現できない状態にする
+   >   1. **actor は NOT NULL とし、システム主体にも必ず値を入れる**
+   >      —— 「未記録」を表現できない状態にする。
+   >
+   >      > **ただし `User` への外部キーにはできない（2026-08-02 明示化）。** 予約 id
+   >      > （例 `system:webhook:stripe`）に対応する `User` 行は存在しないため、
+   >      > FK 制約が webhook / バッチ由来の遷移の**書き込み自体を拒否する**。
+   >      > 「NOT NULL の actor id」とだけ書くと、素直に `actorId String @db.Uuid` +
+   >      > `@relation(fields: [actorId], references: [id])` を引いてしまい、
+   >      > **監査記録を保存できないスキーマ**が出来上がる。保存形式まで決めること。
+   >      >
+   >      > **第一候補: FK を張らない 2 列構成**
+   >      >
+   >      > ```prisma
+   >      > actorType ActorType   // 下の 2. の独立列挙。NOT NULL
+   >      > actorRef  String      // NOT NULL。人間なら Clerk user id、
+   >      >                       // システムなら予約 id（system:webhook:stripe 等）
+   >      > ```
+   >      >
+   >      > - **制約**: 両列 NOT NULL。`actorRef` の形式は `actorType` ごとに決まる
+   >      >   （人間 = Clerk user id / システム = `system:<source>:<name>` の予約名前空間）。
+   >      >   Clerk の id は `user_` 前缀なので `system:` と衝突しない。
+   >      >   DB レベルで縛るなら `CHECK (actorType <> 'USER' OR actorRef NOT LIKE 'system:%')`。
+   >      > - **移行**: 既存行が無い新規テーブルなら単純追加。既存行に後付けするなら
+   >      >   一旦 nullable で足し、backfill 後に `SET NOT NULL` する 2 段階
+   >      >   （backfill の値が決められない行があるなら、それは 1 の前提が崩れている合図）。
+   >      > - **集計クエリ**: 「セラーの行動を測る」指標は
+   >      >   `WHERE actorType IN ('SELLER','ADMIN')` で人間 actor に絞る。
+   >      >   `actorRef` を `User` と結合したいときは `LEFT JOIN` にする
+   >      >   （システム行は結合先が無いので `INNER JOIN` だと黙って落ちる）。
+   >      >
+   >      > **代替: 予約システム行を `User` に持つ**。FK を維持できる代わりに、
+   >      > 実在しない「ユーザー」が `User` テーブルに混ざり、ユーザー数の集計・
+   >      > Clerk 同期・GDPR 削除フローすべてにこの例外を持ち込む。**採らないなら
+   >      > その理由を spike の成果物に書き残すこと**（後続ラウンドの再検討を防ぐため）。
    >   2. **ロール列挙に人間ロール以外を持たせる** —— `Role`（`USER`/`SELLER`/`ADMIN`）を
-   >      そのまま使わず、`SYSTEM` / `WEBHOOK` を含む**別の列挙**にする。
+   >      そのまま使わず、`SYSTEM` / `WEBHOOK` を含む**別の列挙**（上の `ActorType`）にする。
    >      Prisma の `Role` を拡張すると Clerk のロール同期と干渉するため分離すること
    >   3. **発生源を別列で持つ**（どの webhook / どのジョブか）。同じ `SYSTEM` でも
    >      Stripe webhook 由来と再判定バッチ由来は監査上の意味が違う
