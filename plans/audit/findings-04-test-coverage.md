@@ -60,27 +60,30 @@
   | `order-page/` | `group-table.tsx` / `groups-container.tsx` / `header.tsx` / `payment.tsx` / `pdf-invoice.tsx` / `product-row.tsx` |
 
   ```bash
-  # 件数の再現（テスト 0 件であることと、母数 11 の両方を出す）
-  find src/components/store/cards/payment \
-       src/components/store/checkout-page \
-       src/components/store/order-page -name "*.tsx" | wc -l          # → 11
-  find src/components/store/cards/payment \
-       src/components/store/checkout-page \
-       src/components/store/order-page -iname "*test*" | wc -l        # → 0
+  # 上の「実測 2026-08-01 / HEAD 1e15ea5a」を再現する。**測定した revision に固定する**
+  # こと —— 作業ツリーを見る `find` では、後日走らせたときに別の答えが出ても
+  # 「所見が古いのか、ツリーが変わったのか」を切り分けられない。
+  REV=1e15ea5a
+  DIRS="src/components/store/cards/payment src/components/store/checkout-page src/components/store/order-page"
+
+  # 母数 11（対象ディレクトリ配下の .tsx）
+  git ls-tree -r --name-only "$REV" $DIRS | grep -c '\.tsx$'                 # → 11
+  # 同ツリーにテストファイル 0 件
+  git ls-tree -r --name-only "$REV" $DIRS | grep -ci test                    # → 0
+  # 対応するコンポーネントテストも 0 件
+  git ls-tree -r --name-only "$REV" tests/component/ | grep -ci payment      # → 0
   ```
 
-  ```bash
-  git ls-tree -r --name-only 09275b5d tests/component/ | grep -i payment          # ヒット 0
-  git ls-tree -r --name-only 09275b5d src/components/store/cards/payment/ | grep -i test  # ヒット 0
-  git ls-tree -r --name-only 09275b5d src/components/store/checkout-page/ src/components/store/order-page/ | grep -i test  # ヒット 0
-  ```
-
-  > **3 行目を `ls <dir> | grep -i test` に戻さないこと（2026-07-30 修正）。** 旧形は
-  > (a) **非再帰**でサブディレクトリ配下のテストを取りこぼし、(b) pin した HEAD
-  > `09275b5d` ではなく**その時の作業ツリー**を見ていた（1・2 行目は `git ls-tree -r`）。
-  > 同じ主張を裏付けるコマンドが違うツリーを見ていては、後続ラウンドが再検証できない。
-  > 3 行とも `git ls-tree -r` に統一し、上の「3 点セット」規約と整合させた。
-  > 修正後も**ヒット 0**（2026-07-30 実測）で、結論そのものは変わらない。
+  > **測定 HEAD と再現コマンドの revision を一致させること（2026-08-02 修正）。**
+  > 直前の版は、11 ファイルのリストを「実測 2026-08-01 / HEAD `1e15ea5a`」と宣言しながら、
+  > 再現コマンドが **(a) 作業ツリーを見る `find`** と **(b) `git ls-tree -r 09275b5d`**
+  > の 2 系統に分かれていた。`09275b5d` は 1 つ上の「再測定（2026-07-27）」の HEAD であり、
+  > **主張と裏付けが別のツリーを指していた**。3 行とも `$REV` に固定して解消。
+  > 実測（2026-08-02・`1e15ea5a`）で **11 / 0 / 0** を再現ずみ。
+  >
+  > 2026-07-30 の修正（`ls <dir> | grep -i test` を `git ls-tree -r` へ）も同じ理由に
+  > 基づく —— 旧形は **非再帰**でサブディレクトリ配下を取りこぼし、かつ pin した HEAD
+  > ではなくその時の作業ツリーを見ていた。今回はその統一を revision まで徹底した形。
 
   > **削除した旧行について（2026-07-27）**: ここには「再測定（2026-07-18 / HEAD 未記録）」という
   > 行が残っていた。測定 HEAD を欠く行は、下の規約が要求する 3 点セットを満たさないため

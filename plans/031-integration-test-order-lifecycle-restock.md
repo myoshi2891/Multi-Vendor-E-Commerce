@@ -45,7 +45,7 @@
 
 - `src/queries/order.ts` — 検証対象。**変更しない。** 3 つの検証対象ロジック:
 
-(1) 在庫復元ヘルパーと終端判定（`order.ts:15-33`）:
+(1) 在庫復元ヘルパーと終端判定（`order.ts:20-38`）:
 
 ```typescript
 const isRestockTerminalOrderStatus = (status: OrderStatus | undefined): boolean =>
@@ -64,7 +64,7 @@ const restockOrderItems = async (
 };
 ```
 
-(2) `updateOrderPaymentStatus`（`order.ts:562-651`）— TOCTOU ガード付きキャンセル/返金連動。
+(2) `updateOrderPaymentStatus`（`order.ts:530-616`）— TOCTOU ガード付きキャンセル/返金連動。
 要点（`:588-638`）:
 
 ```typescript
@@ -94,11 +94,11 @@ if (isCancelOrRefund && didTransition) {
 }
 ```
 
-enum スペル注意（`order.ts:569-581` コメントより）: 親 `PaymentStatus` は **"Cancelled"（l 2つ）**、
+enum スペル注意（`order.ts:536-544` コメントより）: 親 `PaymentStatus` は **"Cancelled"（l 2つ）**、
 子 `OrderStatus` は **"Canceled"（l 1つ）**。`PaymentStatus.Refunded` → 子 `OrderStatus.Refunded` /
 `ProductStatus.Refunded`、`PaymentStatus.Cancelled` → 子 `Canceled`。
 
-(3) `updateOrderGroupStatusAsAdmin`（`order.ts:459-510`）— グループ単位の遷移ガード + 親集約:
+(3) `updateOrderGroupStatusAsAdmin`（`order.ts:433-481`）— グループ単位の遷移ガード + 親集約:
 
 ```typescript
 return await db.$transaction(async (tx) => {
@@ -117,7 +117,7 @@ return await db.$transaction(async (tx) => {
 });
 ```
 
-親集約規則（`reconcileParentOrderStatus`、`order.ts:415-448`）: 全 Delivered→Delivered /
+親集約規則（`reconcileParentOrderStatus`、`order.ts:389-422`）: 全 Delivered→Delivered /
 全 Shipped→Shipped / 全 Canceled→Canceled / 全 Refunded→Refunded /
 一部 Shipped or Delivered→PartiallyShipped / それ以外→Processing。
 
@@ -486,7 +486,7 @@ Stop and report back (do not improvise) if:
   | 関数 | 遷移ガードの形 | 並行時の二重復元 | 本プランでの扱い |
   |---|---|---|---|
   | `updateOrderPaymentStatus` | **条件付き `updateMany`（CAS）** — `where` に `paymentStatus: { notIn: [...] }`、復元は `transition.count === 1` の内側（commit `d0005bb`） | 起きない（行ロックで直列化され後発は `count === 0`） | **Scenario 2 で並行ディスパッチテストを書く**（緑を期待） |
-  | `updateOrderGroupStatusAsAdmin` | **read-then-act** — `findUnique` で `prev.status` を読んでから分岐して `update`（`order.ts:441-471`） | **起きうる**（`findUnique` は行ロックを取らないため両者が非終端を読める） | 逐次冪等性のみ固定。並行は対象外 |
+  | `updateOrderGroupStatusAsAdmin` | **read-then-act** — `findUnique` で `prev.status` を読んでから分岐して `update`（`order.ts:441-470`） | **起きうる**（`findUnique` は行ロックを取らないため両者が非終端を読める） | 逐次冪等性のみ固定。並行は対象外 |
 
   したがって「本体が未対応だから並行ディスパッチテストを書かない」は `updateOrderPaymentStatus` には
   当てはまらない。group-level 側のみ、条件付き `updateMany` への統一（`updateOrderPaymentStatus`
