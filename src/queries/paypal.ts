@@ -413,9 +413,12 @@ export const capturePayPalPayment = async (
         const capturedValue = capture?.amount?.value;
         const capturedCurrency = capture?.amount?.currency_code;
 
+        // retrieve 側と同一のガード。ここは既に課金が成立しているため、
+        // Decimal の throw で原因が汎用文言に化けると「返金が必要な金額不一致」と
+        // 「単なる API 障害」を運用側が切り分けられなくなる。
         if (
             capturedCurrency !== "USD" ||
-            capturedValue === undefined ||
+            !isDecimalString(capturedValue) ||
             !new Prisma.Decimal(capturedValue).equals(order.total)
         ) {
             throw new Error("PayPal capture amount/currency mismatch.");
