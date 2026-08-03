@@ -31,6 +31,10 @@ test.describe("国選択セレクタ（Ship to）", () => {
     // ヘッダーは (store) レイアウト共通なのでどちらでも同じ表示になる。
     const PAGE_WITH_HEADER = "/browse";
 
+    // cookie の紐付け先オリジンと、後段の https 判定の両方が参照する単一の基準値。
+    // `playwright.config.ts` の `baseURL` と同じフォールバックに揃えること。
+    const BASE_URL = process.env.E2E_BASE_URL || "http://localhost:3000";
+
     // middleware / route handler と同じ shape（`isCountry` の 4 フィールド必須）
     const US_COUNTRY = {
         name: "United States",
@@ -45,7 +49,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
             {
                 name: "userCountry",
                 value: JSON.stringify(US_COUNTRY),
-                url: process.env.E2E_BASE_URL || "http://localhost:3000",
+                url: BASE_URL,
             },
         ]);
         await page.goto(PAGE_WITH_HEADER);
@@ -70,9 +74,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
         // 実測: POST は 200 を返し `Secure; HttpOnly; SameSite=lax` を送っている。
         // これはアプリの欠陥ではなく配信スキームの問題なので、https 配信時は実行する。
         // （テスト 1 は Playwright が cookie を直接注入するため WebKit でも通る。）
-        const isHttps = (
-            process.env.E2E_BASE_URL || "http://localhost:3000"
-        ).startsWith("https:");
+        const isHttps = BASE_URL.startsWith("https:");
         test.skip(
             testInfo.project.name === "webkit" && !isHttps,
             "WebKit: Secure cookie は http 配信では保存されない（https 配信時のみ実行）"
