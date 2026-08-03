@@ -1,16 +1,43 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
 import { buildE2ESeed } from "./seed/constants";
 import { signInWithPassword } from "./helpers/auth";
-import {
-    gotoStable,
-    setupE2ETestState,
-    waitForCartPersist,
-    waitForPostSignInSettle,
-} from "@/config/test-helpers";
+import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
 
 const prisma = new PrismaClient();
+
+/**
+ * 表示済みの金額文字列を **セント整数** に正規化する。
+ *
+ * 金額規約（`.claude/steering/tech.md`）の唯一の例外である
+ * 「E2E の表示文字列検算」に該当する。DOM に届く値はサーバー側で `.toFixed(2)` 済みの
+ * 終端表示であり、失われた精度は `Prisma.Decimal` を被せても戻らない。パース時に
+ * 1 度だけ丸めて整数化すれば、以降の加減算は厳密になり許容誤差が不要になる。
+ *
+ * fail-fast の要件:
+ * - `$` トークンは 1 つに固定する。`match` は最初の一致を返すため、個数を固定しないと
+ *   不正なトークン（`"$1,23.45 $12.34"` の 1 つ目）を読み飛ばして後続の正常値を返す。
+ * - 整数部は「カンマ無し」と「1〜3 桁始まりのカンマ形式」を分けて表す。
+ *   `[0-9]+(?:,[0-9]{3})*` だと `$1234,567.89` のような不正な桁区切りを受理する。
+ * - 末尾境界は `(?![\w.,])`。`(?![0-9])` では `$12.34.56` / `$12.34abc` を
+ *   静かに `1234` と読んでしまう。`Total: $12.34 USD` 等は許容される。
+ */
+const parseMoneyToCents = (text: string): number => {
+    const tokenCount = (text.match(/\$/g) ?? []).length;
+    if (tokenCount !== 1) {
+        throw new Error(`金額トークンが 1 つではありません: ${text}`);
+    }
+    const matched = text.match(
+        /\$\s*((?:[0-9]+|[0-9]{1,3}(?:,[0-9]{3})*)\.[0-9]{2})(?![\w.,])/
+    );
+    if (!matched) throw new Error(`金額を抽出できません: ${text}`);
+    return Math.round(Number(matched[1].replace(/,/g, "")) * 100); // 丸めはここ 1 回だけ
+};
+
+/** locator のテキストをセント整数で取り出す */
+const readMoneyCents = async (locator: Locator): Promise<number> =>
+    parseMoneyToCents((await locator.innerText()).trim());
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 const clerk = clerkSecretKey
@@ -111,11 +138,16 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         // Sign in as the pre-created Clerk test user
         // （テストトークン注入と Clerk ウィジェット操作は共有ヘルパーが行う）
         await signInWithPassword(page, userEmail, userPassword);
-        // サインイン後のホームへの遅延リダイレクト着地を待ち、後続 goto の割り込みを防ぐ
-        await waitForPostSignInSettle(page);
 
-        // Store A の商品をカートに追加（遅延リダイレクト割り込み時は再試行）
-        await gotoStable(page, `/product/${seed.product.slug}/${seed.variant.slug}`);
+        // Store A の商品をカートに追加。
+        // サインイン直後に `waitForPostSignInSettle` + `gotoStable` を挟まないこと。
+        // 両者を通すと商品ページへの goto がリクエストを発行しないままハングし、
+        // per-goto 予算 × リトライ回数を丸ごと消費する（実測: 45s × 3 を 3 回連続。
+        // 同時刻にシェルから同 URL を curl すると 0.5〜1.5s で 200 が返りサーバーは健全）。
+        // これは run-local.sh ヘッダーと plan 042 実行記録にある「重い注文フローの
+        // 間欠ハング」の正体で、素の goto に揃えた a11y/checkout.spec.ts は
+        // 同一フローを 9.3s で完走する。
+        await page.goto(`/product/${seed.product.slug}/${seed.variant.slug}`);
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
@@ -156,10 +188,61 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
 
         // 両ストアの OrderGroup が存在し、それぞれにクーポン割引が反映されていることを確認
         await expect(page.locator("p", { hasText: "Order Id:" })).toHaveCount(2);
-        await expect(
-            page.locator("p", {
-                hasText: `Coupon (${seed.platformCoupon.code})`,
-            })
-        ).toHaveCount(2);
+        const couponRows = page.locator("p", {
+            hasText: `Coupon (${seed.platformCoupon.code})`,
+        });
+        await expect(couponRows).toHaveCount(2);
+
+        // --- 金額明細の検証（TESTS-31）---------------------------------------
+        // 表示金額はハードコードせず、(1) 明細行の構造 (2) グループ内の算術不変条件
+        // (3) 全体合計との一致 を検証する。比較はセント整数の完全一致（許容誤差なし）。
+
+        // (1) 構造: グループ毎の明細行が 2 グループ分そろっている
+        const subtotalRows = page.locator("p", { hasText: "Subtotal:" });
+        const shippingRows = page.locator("p", { hasText: "Shipping Fees:" });
+        const totalRows = page.locator("p", { hasText: "Total price:" });
+        await expect(subtotalRows).toHaveCount(2);
+        await expect(shippingRows).toHaveCount(2);
+        await expect(totalRows).toHaveCount(2);
+
+        // (2) グループ内検算: subtotal + shipping - discount === total
+        // 行は DOM 順（= グループ順）に並ぶため nth(i) 同士が同一グループに対応する。
+        const groupTotalsCents: number[] = [];
+        for (let i = 0; i < 2; i++) {
+            const subtotalCents = await readMoneyCents(subtotalRows.nth(i));
+            const shippingCents = await readMoneyCents(shippingRows.nth(i));
+            const discountCents = await readMoneyCents(couponRows.nth(i));
+            const totalCents = await readMoneyCents(totalRows.nth(i));
+
+            expect(subtotalCents + shippingCents - discountCents).toBe(
+                totalCents
+            );
+            groupTotalsCents.push(totalCents);
+        }
+
+        // (3) 全体合計カード（cards/order/total.tsx）。
+        // 決済待ちの注文では左カラムと支払いカラムの 2 箇所に描画されるため first() を使う。
+        // 値の p は金額列のみが `$` を含むので、ラベル列と機械的に分離できる。
+        const totalCard = page
+            .locator("div.shadow-sm")
+            .filter({ has: page.getByText("Shipping Fee", { exact: true }) })
+            .first();
+        const totalCardAmounts = totalCard.locator("p").filter({ hasText: "$" });
+        // Subtotal / Shipping Fee / Taxes / Total の 4 行
+        await expect(totalCardAmounts).toHaveCount(4);
+
+        const orderSubtotalCents = await readMoneyCents(
+            totalCardAmounts.nth(0)
+        );
+        const orderShippingCents = await readMoneyCents(
+            totalCardAmounts.nth(1)
+        );
+        const orderTotalCents = await readMoneyCents(totalCardAmounts.nth(3));
+
+        expect(orderSubtotalCents + orderShippingCents).toBe(orderTotalCents);
+        expect(groupTotalsCents[0] + groupTotalsCents[1]).toBe(orderTotalCents);
+
+        // (4) 支払い領域の存在（決済プロバイダ非依存のコンテナ testid）。実決済はしない。
+        await expect(page.getByTestId("order-payment")).toBeVisible();
     });
 });
