@@ -730,7 +730,10 @@ VSCode「問題」パネルの件数が消化しても動かない件を調査�
 
 ### 完了済み（次アクションとして推奨しないこと）
 
-**001–009・023・024・057・058–062 は DONE**。057 は一時
+**001–009・023・024・051・057・058–062 は DONE**（051 = 国選択セレクタの cookie 往復 E2E・
+2026-08-03 `5f2143b3`。**042 は含まない** —— Step 1–4 の signIn 修復は達成したが Step 5–6 が
+STOP 条件で未達のため [`README.md`](README.md) の Status 表では `IN PROGRESS`。ただし
+後続プランに対する hard dependency としては上の項目 2 のとおり解除済み）。057 は一時
 `DONE (security) / 1 criterion pending` だった（Done criteria が "ALL must hold" である一方、
 Step 5＝未認証 `/dashboard` の redirect スモークの実施記録が無かった）が、
 **2026-08-03 にスモークを実施し PASS**（保護 4 ルートは 307 → `/sign-in`、対照群 `/` は 200。
