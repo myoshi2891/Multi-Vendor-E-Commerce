@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
 import { buildE2ESeed } from "./seed/constants";
+import { signInWithPassword } from "./helpers/auth";
 import {
     gotoStable,
     setupE2ETestState,
@@ -107,14 +107,10 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         page,
     }) => {
         await setupE2ETestState(page, seed);
-        await setupClerkTestingToken({ page });
 
         // Sign in as the pre-created Clerk test user
-        await page.goto("/sign-in");
-        await page.getByLabel("Email address").fill(userEmail);
-        await page.getByRole("button", { name: "Continue", exact: true }).click();
-        await page.getByLabel("Password", { exact: true }).fill(userPassword);
-        await page.getByRole("button", { name: "Continue", exact: true }).click();
+        // （テストトークン注入と Clerk ウィジェット操作は共有ヘルパーが行う）
+        await signInWithPassword(page, userEmail, userPassword);
         // サインイン後のホームへの遅延リダイレクト着地を待ち、後続 goto の割り込みを防ぐ
         await waitForPostSignInSettle(page);
 
