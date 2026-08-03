@@ -12,7 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1829 passed / 1832 total across 177 suites (3 skipped), as of 2026-08-01.
+- 1841 passed / 1844 total across 177 suites (3 skipped), as of 2026-08-03.
+  **Corrected against a fresh run** (`bun run test -- --no-coverage`). The previous entry read
+  1829 / 1832 — a **12-test drift** that predates plans 042 / 051, both of which touched only
+  E2E specs and added no Jest test. Suite count and skip count matched the record.
+- Playwright E2E: 41 tests per browser across 17 files (123 total over chromium/firefox/webkit),
+  as of 2026-08-03 — up 2 from `tests/e2e/country-selector.spec.ts` (plan 051, Ship-to cookie
+  round-trip). One of the two is gated off on WebKit, which drops `Secure` cookies on insecure
+  origins while local E2E serves the production build over http.
+- Earlier entry (2026-08-01): 1829 passed / 1832 total across 177 suites (3 skipped).
   Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
   `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template
   literals and comments as code. A file that carries scanned-source **as fixture strings** inflated

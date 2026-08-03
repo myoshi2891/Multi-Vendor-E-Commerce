@@ -2283,3 +2283,58 @@ ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuan
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
 | カバレッジ | S 66.66 / B 46.71 / F 55.15 / L 65.65 | **S 66.8 / B 46.78 / F 55.34 / L 65.8** |
 | Integration | 17 / 2 スイート | **17 / 2 スイート**（不変・testcontainers 実 DB で pass） |
+
+---
+
+### plans 042 / 051 の実行 — E2E signIn ヘルパー修復と国選択セレクタ E2E (2026-08-03)
+
+#### 概要
+
+`plans/README.md` の Status 表で P1 かつ TODO だった 042（E2E signIn ヘルパー修復）と
+051（国選択セレクタの cookie 往復 E2E）を実行した。042 はサインイン修復とフッター SVG の
+実 WCAG 違反是正を達成したが、注文フローの既知ハングにより**部分完了**で停止した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/helpers/auth.ts` | 共有 `signInWithPassword` を新設。`.cl-signIn-root` へスコープし `input[name=...]` で特定（ラベル文言のグローバル一致を廃止）。1 段/2 段の実行時分岐は持たない | `235754b8` |
+| `tests/e2e/stock-decrement.spec.ts` / `platform-coupon.spec.ts` | インラインのサインイン手順を共有関数呼び出しへ置換 | `5f635485` |
+| `tests/e2e/messages.spec.ts` / `seller-onboarding.spec.ts` | 同上（messages はローカル `signIn` を削除、seller-onboarding は 2 箇所） | `a5816c0c` |
+| `src/components/store/icons/send.tsx` / `wishlist.tsx` / `order.tsx` | `role="img"` の SVG に `aria-label` を付与（axe `svg-img-alt` / serious の是正） | `c25a8768` |
+| `tests/e2e/country-selector.spec.ts` | 新規。Ship to の hover → 国選択 → cookie 書き込み → `router.refresh()` → リロード永続 | `5f2143b3` |
+
+#### 根本原因（042）
+
+`/sign-in` は共通フッター付きで、Newsletter フォームが
+`<label class="sr-only">Email address</label>` を持つ。Clerk ウィジェットは client-only の
+ため**ハイドレーション前は Newsletter 欄だけが存在**し、`getByLabel` がそちらへ解決していた。
+識別子が空のままサインインが成立せず `toBeHidden` が 20s でタイムアウトしていた。
+
+#### 実測で判明した前提の誤り（051）
+
+プランは「cookie 未設定なら DEFAULT_COUNTRY（United States）」を前提としていたが、
+`src/middleware.ts:18-27` が cookie 不在時に ipinfo.io で IP から国を判定して先に設定するため、
+**初期表示は実行マシンの所在地に依存する**（日本から実行すると `Japan/EN/`）。
+既知の cookie を事前投入して middleware の分岐を迂回する形に変更し、外部ネットワークにも
+実行地にも依存しない決定論的なテストにした。
+
+#### 未達（次セッションへの引き継ぎ）
+
+- **042 は部分完了**。`stock-decrement` / `platform-coupon` が**サインイン成立後**の
+  商品ページ `goto`（30s × 3 リトライ）でタイムアウトする。`scripts/e2e/run-local.sh`
+  ヘッダー記載の「重い注文フローの間欠 120s ハング」と一致し、実行ごとに落ちるテストが
+  移動する（1 回目は stock-decrement のみ、2 回目は両方）。プランの STOP 条件
+  「locator 以外の失敗モード」に該当するため改変せず停止した。
+- 3 ブラウザフルラン（042 Step 6）は未実施。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1829（記録値） | **1841 passed / 1844 total**（実測で訂正・12 件のドリフトを解消） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 39 tests/browser・16 files | **41 tests/browser・17 files**（3 ブラウザ計 123） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
