@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
-import { setupE2ETestState } from "@/config/test-helpers";
+import { createCustomerSession, requiresClerkAdmin } from "./helpers/auth";
+import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
 
 test.describe("決済異常系", () => {
   let seed: ReturnType<typeof buildE2ESeed>;
@@ -21,33 +22,69 @@ test.describe("決済異常系", () => {
     await page.waitForURL(/sign-in/, { timeout: 10000 });
   });
 
-  // TODO: Clerk 認証セッション完全セットアップ後に有効化
-  // アンブロック条件: setupClerkTestingToken が /checkout への認証済みアクセスを許可し、address 選択画面まで正常動作すること
-  // 期限: 2026-04-30
-  // 再現手順: (1) 認証済みセッションで /checkout に遷移 (2) 住所未選択で Place Order クリック → "Select a shipping address" エラー表示を確認
-  // 関連: setupClerkTestingToken はテストトークンを設定するのみで、ミドルウェア保護ルートへの完全認証は提供しない
-  test.skip("住所未選択で注文ボタンをクリックするとエラーメッセージが表示される -- Clerk認証セッションが必要", async ({ page }) => {
-    await setupClerkTestingToken({ page });
-    const productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
-    const variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
+  // 認証済み顧客の異常系。session の生成に Clerk Admin API を使うため、
+  // ネストした describe に閉じ込めて上の未認証テストへ skip 条件を波及させない。
+  test.describe("認証済み顧客", () => {
+    test.skip(
+      () => requiresClerkAdmin,
+      "Requires CLERK_SECRET_KEY for Clerk admin operations."
+    );
 
-    // go to product, select size, and add to cart
-    await page.goto(`/product/${productSlug}/${variantSlug}`);
-    const firstSize = page.locator('[data-testid^="size-option-"]').first();
-    await firstSize.click();
-    await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
-    await page.getByTestId("add-to-cart").click();
-    // Zustand persist が localStorage に書き込むのを待つ
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+    // 住所を投入しない = 「住所未選択」状態が既定で成立する顧客
+    const session = createCustomerSession();
 
-    // go to checkout
-    await page.goto("/checkout");
+    test.beforeAll(async () => {
+      await session.create({ role: "USER" });
+    });
 
-    // click place order without selecting address
-    const placeOrderBtn = page.getByRole("button", { name: /Place Order/i });
-    await expect(placeOrderBtn).toBeVisible();
-    await placeOrderBtn.click();
-    await expect(page.getByText(/Select a shipping address/i)).toBeVisible({ timeout: 5000 });
+    test.afterAll(async () => {
+      await session.cleanup();
+    });
+
+    test("住所未選択で注文ボタンをクリックするとエラーメッセージが表示される", async ({
+      page,
+    }) => {
+      // signIn + 商品ページ + カート投入 + checkout 遷移を含む重いフロー。
+      // 本番ビルドでの認証フローに既定 30s では不足する（a11y/checkout.spec.ts:45 と同値）。
+      //
+      // サインイン直後の遷移に `waitForPostSignInSettle` + `gotoStable` は使わない。
+      // 両者を挟むと商品ページへの goto がリクエストすら発行されないまま
+      // ハングする（実測: 45s × 3 リトライを 3 回連続で消費。同時刻にシェルから
+      // 同じ URL を curl すると 0.5〜1.5s で 200 が返るのでサーバー側は健全）。
+      // 素の goto へ揃えた a11y/checkout.spec.ts は同一フローを 9.3s で完走する。
+      test.setTimeout(90000);
+      const productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
+      const variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
+
+      await session.signIn(page);
+
+      // go to product, select size, and add to cart
+      await page.goto(`/product/${productSlug}/${variantSlug}`);
+      const firstSize = page.locator('[data-testid^="size-option-"]').first();
+      await firstSize.click();
+      await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
+      await page.getByTestId("add-to-cart").click();
+      // Zustand persist が localStorage に書き込むのを待つ
+      await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+      await waitForCartPersist(page);
+
+      // /cart 経由で Checkout を押し DB Cart に同期する。
+      // /checkout は DB Cart が空だと /cart にリダイレクトするため、
+      // 直接 goto では到達できない（saveUserCart は /cart の Checkout で発火）。
+      await page.goto("/cart", { waitUntil: "commit" });
+      await page.waitForLoadState("domcontentloaded", { timeout: 15000 });
+      await page.getByTestId("checkout").click();
+      // Checkout ボタンは saveUserCart（サーバーアクション）の完了後に遷移する。
+      // 本番ビルド + ローカル Postgres でも 10s を超える実測があったため 30s とる
+      // （待ち時間の予算であって、検証内容の緩和ではない）。
+      await page.waitForURL(/\/checkout/, { timeout: 30000 });
+
+      // click place order without selecting address
+      const placeOrderBtn = page.getByRole("button", { name: /Place order/i });
+      await expect(placeOrderBtn).toBeVisible();
+      await placeOrderBtn.click();
+      await expect(page.getByText(/Select a shipping address/i)).toBeVisible({ timeout: 5000 });
+    });
   });
 
   // TODO: 在庫切れロジック実装後に有効化
