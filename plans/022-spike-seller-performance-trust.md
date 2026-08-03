@@ -269,7 +269,11 @@ enum StoreStatus {              // schema.prisma:76
    >      >           -- system:<source>:<name> —— 3 セグメントすべて非空を要求する
    >      >           WHEN 'SYSTEM'  THEN actorRef ~ '^system:[^:]+:[^:]+$'
    >      >           WHEN 'WEBHOOK' THEN actorRef ~ '^system:[^:]+:[^:]+$'
-   >      >           ELSE actorRef NOT LIKE 'system:%'   -- USER / SELLER / ADMIN
+   >      >           -- 人間ロールは 1 値ずつ明示する（ELSE で束ねない）
+   >      >           WHEN 'USER'    THEN actorRef NOT LIKE 'system:%'
+   >      >           WHEN 'SELLER'  THEN actorRef NOT LIKE 'system:%'
+   >      >           WHEN 'ADMIN'   THEN actorRef NOT LIKE 'system:%'
+   >      >           ELSE FALSE
    >      >       END
    >      >   )
    >      >   ```
@@ -287,6 +291,16 @@ enum StoreStatus {              // schema.prisma:76
    >      >   セラーの行動として指標に混入する** —— 本 spike が防ごうとしている
    >      >   まさにその取り違えが、制約をすり抜けて DB に入る。逆向き
    >      >   （`SYSTEM` に人間の id）も同時に塞ぐこと。
+   >      >
+   >      >   同じ理由で **`ELSE` に人間ロールの規則を書かないこと**。`ELSE` は
+   >      >   「今の列挙に無い値」も一緒に受けるため、後から `ActorType` に
+   >      >   `CRON` / `IMPORT` 等を足した瞬間、その新しい値は
+   >      >   **`system:` を禁じる側（＝人間ロール扱い）へ黙って落ちる** ——
+   >      >   マイグレーションもレビューも通るのに、システム主体が予約 id を
+   >      >   書けなくなる。列挙値は 1 つずつ `WHEN` に書き、`ELSE FALSE` で
+   >      >   未知の値を**明示的に拒否**する。こうしておけば、列挙の追加時に
+   >      >   CHECK の更新漏れが**書き込み失敗として即座に露見**する
+   >      >   （沈黙して誤分類されるより、落ちる方が安全側）。
    >      > - **移行**: 既存行が無い新規テーブルなら単純追加。既存行に後付けするなら
    >      >   一旦 nullable で足し、backfill 後に `SET NOT NULL` する 2 段階
    >      >   （backfill の値が決められない行があるなら、それは 1 の前提が崩れている合図）。
