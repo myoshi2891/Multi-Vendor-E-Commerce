@@ -189,10 +189,25 @@ cat node_modules/js-cookie/package.json | grep '"version"'
 - **Confidence**: MED — スキーマ/Accelerate 面は検証済み。6.x 破壊的変更の正確な影響はブランチ spike が必要。
 - **Fix sketch**: ブランチで spike: 3パッケージ同時バンプ → `prisma validate`/`generate` → tsvector クエリと統合スイート実行 → 必要な `fullTextSearch` クエリ書き換えを記録。
 
-### [DEPS-05] dev 専用アドバイザリは本番非到達 — 低優先を維持
+### [DEPS-05] 低優先だが理由は一様ではない — routine refresh へ畳む
 
-- **Evidence**: `handlebars` は `ts-jest`（`package.json:106`）、`ws` は `jsdom`/`jest-environment-jsdom`（`:78,130`）+ `@lhci/cli`（`:117`）、`picomatch` は jest/tailwind ツーリング経由。すべて devDependencies または dev ツール transitive。`src/` ランタイムからの import なし。
-- **Impact**: `bun audit` 97 件のかさ増し要因だが、デプロイバンドル・サーバーランタイムに非到達。本番セキュリティ利益ゼロ。定期的な dev ツールリフレッシュで扱う。
+> **見出しを「dev 専用アドバイザリは本番非到達」に戻さないこと（2026-08-02 同期）。**
+> 同一ファイルの **DEPS-06 節**が既に台帳を訂正しており、`lodash` / `lodash-es` は
+> `react-color` / `react-tag-input` / `@tremor/react` 経由で **`dependencies`（runtime）** に
+> 到達する **runtime transitive** である（本番非到達ではない）。その訂正で lodash 系を
+> DEPS-05 の routine refresh 対象に含めると決めた以上、この節を「dev 専用 / 本番非到達」と
+> 要約すると**同一ファイル内で分類が割れる**。
+>
+> 正しい要約は「**低優先だが理由は一様ではない** —— dev-only の勧告に加え、runtime
+> transitive だが実悪用経路が未到達（`_.template` を攻撃者制御文字列で呼んでいない）
+> ものを含む枠」。**再監査の抑止に効くのは「本番非到達だから」ではなく「到達するが
+> 悪用経路が無い」の方**なので、そこを潰さないこと。
+> 出典: [`findings-18-security-r13.md`](findings-18-security-r13.md) の DEPS-05 分類注記。
+
+- **Evidence**:
+  - **dev-only**: `handlebars` は `ts-jest`（`package.json:106`）、`ws` は `jsdom`/`jest-environment-jsdom`（`:78,130`）+ `@lhci/cli`（`:117`）、`picomatch` は jest/tailwind ツーリング経由。すべて devDependencies または dev ツール transitive で、`src/` ランタイムからの import なし。
+  - **runtime transitive だが悪用経路が未到達**: `lodash` / `lodash-es` は `react-color` / `react-tag-input` / `@tremor/react` 経由で `dependencies` に到達する。勧告は `_.template` 系だが、本リポジトリは攻撃者制御文字列でこれを呼んでいない（到達経路と未呼び出しの根拠は [`findings-18-security-r13.md`](findings-18-security-r13.md) の DEPS-05 分類注記。**下の DEPS-06 節ではない** —— あちらはマイグレーション履歴と `.DS_Store` の話で lodash を扱っていない）。
+- **Impact**: `bun audit` 97 件のかさ増し要因。dev-only 分はデプロイバンドル・サーバーランタイムに非到達で本番セキュリティ利益ゼロ。runtime transitive 分は**到達するが実悪用経路が無い**。いずれも定期的な依存リフレッシュで扱う。
 - **Effort**: S / **Risk**: LOW / **Confidence**: HIGH
 - **Fix sketch**: 優先度を下げ、セキュリティ修正バッチではなく定期 devDeps 更新に折り込む。
 

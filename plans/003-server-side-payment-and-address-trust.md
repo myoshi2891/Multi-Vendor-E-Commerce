@@ -291,10 +291,24 @@ server-side Stripe re-fetch and address-ownership `findFirst`. The steps above
 record the work as planned at commit `f9752c0` and are deliberately left
 unedited. Two points (**1–2**) have since *moved in the code*, so do **not** read
 the step text as the current spec. Three further points (**3–5**) are
-follow-ups beyond the original scope: **5** (the address-ownership TOCTOU) is
-now **RESOLVED** — a row lock inside the order `tx`, landed 2026-07-31; **3–4**
-remain open gaps this plan's DONE status does not close. Treat 3–4 as tracked
-gaps, not completed work:
+follow-ups beyond the original scope. **None of 3–5 is closed**, though they are
+open for different reasons — read each one's own status line rather than this
+summary:
+
+- **3–4** are untouched gaps this plan's DONE status does not close.
+- **5** (the address-ownership TOCTOU) is **code fix landed (2026-07-31) —
+  real-DB concurrency verification still deferred**. The statement now takes the
+  right lock and that is pinned by a unit test, but "PostgreSQL actually blocks
+  the concurrent writer" has never been executed against a real database.
+
+  > **Do not compress this into a flat "RESOLVED" (corrected 2026-08-02).**
+  > The earlier wording here said exactly that, while the point's own entry
+  > below (see *"5. The address-ownership read should sit inside the order
+  > transaction"*) already carried the two-part status. A reader who stops at
+  > this summary retires an integration-verification item that is still open.
+  > The two halves are tracked separately on purpose.
+
+Treat 3–5 as tracked gaps, not completed work:
 
 1. **`requires_payment_method` is no longer an unconditional `Failed`.**
    Step 4 (line ~231) expects that status to map to `paymentStatus: "Failed"`.

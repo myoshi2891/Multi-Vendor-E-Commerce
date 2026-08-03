@@ -91,6 +91,10 @@ export const getStoreOrders = async (storeUrl: string) => {
 ## Scope
 
 **In scope**:
+- `src/lib/store-constants.ts` — **new file**; holds `STORE_ORDERS_MAX`, the single
+  source both the query (Step 1) and the truncation notice (Step 3b) import. Step 1
+  mandates creating it, so it belongs in scope explicitly rather than being implied
+  by the step body.
 - `src/queries/store.ts` — add a bounded `take` to `getStoreOrders`
 - `src/app/(store)/browse/page.tsx` — remove the discarded call + unused import
 - `src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx` — surface the "showing the latest N orders" notice **required by the behavior-change caveat above**. Without this the plan mandates a user-facing signal it gives no in-scope file to write it in; shipping the bare `take` would be the silent truncation the caveat forbids.
@@ -216,8 +220,53 @@ import { STORE_ORDERS_MAX } from "@/lib/store-constants";
 ALL must hold:
 
 - [ ] `bunx tsc --noEmit` exits 0
+- [ ] `src/lib/store-constants.ts` exists and exports the bound, and **both** consumers
+      import it from there rather than declaring their own copy:
+
+  ```bash
+  # 定義が共有モジュールに 1 つだけあること
+  grep -nE '^export const STORE_ORDERS_MAX' src/lib/store-constants.ts
+  # 両 consumer が共有モジュールから import していること（ローカル再宣言なら落ちる）。
+  # **1 ファイルずつ判定する** —— `grep -c f1 f2` は片方が 0 件でも、もう片方が
+  # 当たれば全体の exit code が 0 になる。件数は per-file で表示されるが、
+  # チェックリストとして機械的に見るのは exit code なので、合算では素通りする。
+  for f in src/queries/store.ts \
+           "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"; do
+      if grep -q 'from "@/lib/store-constants"' "$f"; then
+          echo "OK: $f が共有モジュールから import している"
+      else
+          echo "FAIL: $f が共有モジュールから import していない"; false
+      fi
+  done
+  ```
+
 - [ ] `grep -n "take: STORE_ORDERS_MAX" src/queries/store.ts` shows the bound applied
-- [ ] `grep -n "STORE_ORDERS_MAX" "src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"` shows the truncation notice, derived from the constant (added 2026-07-18 — the bound and the notice ship together; a bound without a notice is the silent truncation the caveat forbids)
+- [ ] The truncation notice on the seller orders page **embeds the constant as a value**,
+      not merely mentions the token. A bare `grep -n "STORE_ORDERS_MAX"` on that file is
+      satisfied by the `import` line alone (measured: it is line 4 of the current file),
+      so it proves nothing about the notice. Use the same structural gate the Japanese
+      copy already defines — see
+      [`plans/ja/009` Step 3b](ja/009-query-hygiene-bound-store-orders-and-drop-dead-query.md),
+      which strips non-code first so a draft in a comment or a string literal cannot pass:
+
+  ```bash
+  PAGE="src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx"
+  # strip_code は ja/009 の「機械検証」ブロックが定義するものと同一（bash 必須）
+  if ! declare -F strip_code >/dev/null 2>&1; then
+      echo "FAIL: strip_code が未定義（ja/009 の機械検証ブロックを先に読み込むこと）"; false
+  elif strip_code "$PAGE" | tr '\n' ' ' \
+    | grep -qE 'latest[^<>]*\{[[:space:]]*STORE_ORDERS_MAX[[:space:]]*\}[^<>]*orders'; then
+      echo "OK: 告知文が定数を値として埋め込んでいる"
+  else
+      echo "FAIL: 告知文が STORE_ORDERS_MAX を値として埋め込んでいない"; false
+  fi
+  ```
+
+  （added 2026-07-18 — the bound and the notice ship together; a bound without a
+  notice is the silent truncation the caveat forbids. Gate strengthened 2026-08-02:
+  the old token-presence form passed on the import line alone. Measured both ways —
+  current page → `OK` / exit 0; the same page with the literal `100` substituted for
+  `{STORE_ORDERS_MAX}` → `FAIL` / exit 1.)
 - [ ] `grep -n "getFilteredSizes" "src/app/(store)/browse/page.tsx"` returns no matches
 - [ ] `bun run test -- src/queries/store.test.ts` exits 0; the `take` assertion passes
 - [ ] `bun run lint` exits 0

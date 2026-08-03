@@ -46,6 +46,24 @@ const VERIFICATION_REJECTIONS = new Set([
 const isVerificationRejection = (error: unknown): error is Error =>
     error instanceof Error && VERIFICATION_REJECTIONS.has(error.message);
 
+/**
+ * PayPal 応答の `amount.value` が `Prisma.Decimal` に安全に渡せる形かを判定する。
+ *
+ * `new Prisma.Decimal(null)` / `new Prisma.Decimal("abc")` は
+ * `[DecimalError] Invalid argument` を **throw** する。この throw は金額検証の
+ * `try` の内側で起きるため catch の汎用メッセージ
+ * （"Failed to capture PayPal payment"）に化け、`isVerificationRejection` の
+ * 素通しにも乗らない ——「金額が不正だった」という原因が呼び出し側にもログにも
+ * 残らなくなる。Decimal に渡す**前**に弾いて、意図した mismatch へ収束させる。
+ *
+ * PayPal の金額は仕様上つねに 10 進文字列なので、文字列であることと
+ * 10 進表記であることの両方を要求する（`"1e3"` のような指数表記も拒否する
+ * —— Decimal は解釈できるが PayPal は返さないため、受理すると
+ * 「想定外の応答」を静かに通すことになる）。
+ */
+const isDecimalString = (value: unknown): value is string =>
+    typeof value === "string" && /^-?[0-9]+(\.[0-9]+)?$/.test(value);
+
 /** PayPal API 1 呼び出しあたりのタイムアウト（ms）。予算は呼び出しごとに独立する。 */
 const PAYPAL_TIMEOUT_MS = 10_000;
 
@@ -313,9 +331,14 @@ export const capturePayPalPayment = async (
         const orderValue = purchaseUnit?.amount?.value;
         const orderCurrency = purchaseUnit?.amount?.currency_code;
 
+        // `undefined` だけでなく `null` / 非数値も弾いてから Decimal に渡す。
+        // `new Prisma.Decimal(null)` や `new Prisma.Decimal("abc")` は
+        // `[DecimalError] Invalid argument` を投げ、下の catch が
+        // "Failed to capture PayPal payment" で上書きするため、
+        // 金額不一致という原因が呼び出し側にもログにも残らなくなる。
         if (
             orderCurrency !== "USD" ||
-            orderValue === undefined ||
+            !isDecimalString(orderValue) ||
             !new Prisma.Decimal(orderValue).equals(order.total)
         ) {
             throw new Error("PayPal order amount/currency mismatch.");
@@ -390,9 +413,12 @@ export const capturePayPalPayment = async (
         const capturedValue = capture?.amount?.value;
         const capturedCurrency = capture?.amount?.currency_code;
 
+        // retrieve 側と同一のガード。ここは既に課金が成立しているため、
+        // Decimal の throw で原因が汎用文言に化けると「返金が必要な金額不一致」と
+        // 「単なる API 障害」を運用側が切り分けられなくなる。
         if (
             capturedCurrency !== "USD" ||
-            capturedValue === undefined ||
+            !isDecimalString(capturedValue) ||
             !new Prisma.Decimal(capturedValue).equals(order.total)
         ) {
             throw new Error("PayPal capture amount/currency mismatch.");

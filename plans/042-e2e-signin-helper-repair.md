@@ -375,17 +375,23 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
     f { print; n+=gsub(/\{/,"{"); n-=gsub(/\}/,"}"); if (seen && n==0) exit; if (n>0) seen=1 }
   ')
 
-  # 空抽出は「禁止パターンなし」ではなく「検査できていない」。必ず FAIL させる。
-  [ -n "$body" ] || {
-      echo "FAIL: signInWithPassword の本体を抽出できなかった（ゲートが無効化されている）"; false;
-  }
-
-  # ⚠️ `grep -qE … && { echo FAIL; false; }` の形にしないこと。禁止パターンが
+  # ⚠️ 空抽出の判定は **同じ if 連鎖の中**に置くこと（2026-08-02 修正）。
+  #    旧形は独立した `[ -n "$body" ] || { echo FAIL; false; }` で、`set -e` の無い
+  #    素の shell では `false` が**実行を止めない**。$? をセットするだけなので、
+  #    直後の `if/else` が空の body に対して「OK」を出し、$? を 0 で上書きする。
+  #    結果、**FAIL メッセージを出しながら exit 0 を返す**（＝第 5 弾が閉じたはずの
+  #    vacuous PASS がそのまま残っていた）。
+  #
+  # ⚠️ `grep -qE … && { echo FAIL; false; }` の形にもしないこと。禁止パターンが
   #    **不在（＝合格）** のとき grep は exit 1 を返し、`&&` が短絡して右辺が実行されない
   #    ため、リスト全体の終了ステータスは grep の 1（＝失敗）になる。合格が exit 0 に
   #    ならないゲートは CI で使えない（plans/023 の Done criteria が同じ形を検証のうえ
-  #    否定済み）。`if … then FAIL … else OK … fi` が唯一正しい形。
-  if printf '%s' "$body" \
+  #    否定済み）。
+  #
+  # 正しい形は **単一の if/elif/else** —— 終了ステータスを決める枝がちょうど 1 つになる。
+  if [ -z "$body" ]; then
+      echo "FAIL: signInWithPassword の本体を抽出できなかった（ゲートが無効化されている）"; false;
+  elif printf '%s' "$body" \
        | tr '\n' ' ' \
        | grep -qE 'isVisible[[:space:]]*\(|\.count[[:space:]]*\(|waitFor[[:space:]]*\([^;]*\)[[:space:]]*\.catch|Promise\.race|\.or[[:space:]]*\('; then
       echo "FAIL: signInWithPassword に実行時分岐が残っている"; false;
@@ -393,6 +399,23 @@ skill が使えない環境では QA_HANDOFF.md の「テスト統計」テー�
       echo "OK: 実行時分岐なし";
   fi
   ```
+
+  > **`set -o pipefail` 有効下で 3 状態すべてを実行して確認（2026-08-02）。**
+  > フィクスチャは (a) 分岐なしの本体 / (b) `isVisible()` を含む本体 /
+  > (c) `signInWithPassword` が存在しないファイル、の 3 本。
+  >
+  > | 状態 | 旧形 | 新形 |
+  > |---|---|---|
+  > | (a) 合格 | `OK` / exit **0** | `OK` / exit **0** |
+  > | (b) 違反 | `FAIL` / exit **1** | `FAIL` / exit **1** |
+  > | (c) 空抽出 | `FAIL` と `OK` を**両方**出力 / exit **0** ← fail open | `FAIL` / exit **1** |
+  >
+  > 現行ツリーは plan 未実施のため `signInWithPassword` が存在せず、実行すると
+  > 状態 (c) になる。旧形はそこで exit 0 を返していた。
+  >
+  > なお `printf … | tr … | grep -q` のパイプを `if` 条件に置くこと自体は
+  > pipefail 下でも安全である（`tr '\n' ' '` の出力は 1 行なので `grep -q` は
+  > 全入力を読み切り、SIGPIPE による中断が起きない。実測 `PIPESTATUS=0 0 0`）。
 
 - [ ] `signInWithPassword` に **`expect(passwordInput).toBeVisible()` が存在する**
       （`:219` が必須と定めたアサーション）。上の 3 本は「分岐が**無い**こと」しか見ておらず、

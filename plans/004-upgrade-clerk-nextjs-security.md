@@ -159,7 +159,20 @@ so it must be checked separately rather than inferred from the `@clerk/nextjs` n
 
 ```bash
 grep -A2 '"@clerk/nextjs"' bun.lock | head
-grep -oE '"js-cookie@[0-9][^"]*"' bun.lock | tr -d '"' | sort -u   # → js-cookie@3.0.7
+
+# js-cookie は「解決されたことがある」ではなく「**修正版以上**に解決されている」を検査する。
+# 判定は Step 0（本ファイル冒頭）の形と同一 —— 空結果を FAIL にし、
+# 複数エントリの**最小**を下限と比較する。
+min_fixed=3.0.6
+resolved=$(grep -oE '"js-cookie": \["js-cookie@[^"]+"' bun.lock \
+  | sed -E 's/.*js-cookie@//; s/"$//' | sort -uV)
+if [ -z "$resolved" ]; then
+    echo "FAIL: no resolved js-cookie entry in bun.lock"; false
+elif [ "$(printf '%s\n%s\n' "$min_fixed" "$resolved" | sort -V | head -n1)" != "$min_fixed" ]; then
+    echo "FAIL: js-cookie resolved below the fixed version ($min_fixed): $resolved"; false
+else
+    echo "OK: js-cookie resolved to: $resolved (>= $min_fixed)"
+fi
 ```
 
 > **なぜ `'"js-cookie": "[^"]*"'` ではないか。** `bun.lock` は同じキー名を 2 つの意味で使う:
@@ -173,9 +186,17 @@ grep -oE '"js-cookie@[0-9][^"]*"' bun.lock | tr -d '"' | sort -u   # → js-cook
 > 検査の主張が成立しない（レンジは patched 版を許すが、lock が古い版に留まる状況こそが
 > このステップの警戒対象）。`"js-cookie@<version>"` の形は解決済みエントリにしか現れない。
 >
-> **両方向を確認済み（2026-07-31）**: 合格側は `js-cookie@3.0.7` を 1 行出力。パッケージ名を
-> 実在しないものに差し替えると出力が空になり、`[ -z … ]` 判定側で exit 1 に落ちる
-> （空振りが PASS にならないこと＝ fail closed であることの確認）。
+> **存在確認では足りない（2026-08-02 修正）。** 直前の版は
+> `grep -oE … | tr -d '"' | sort -u` で終わっており、(1) 一致 0 件でも `sort` が
+> **exit 0** を返すため空振りが PASS になり、(2) 何かが解決されてさえいれば
+> `js-cookie@3.0.5`（＝**脆弱版**）でも合格していた。HIGH advisory を解消したという
+> 主張が、どちらの経路でも成立していなかった。
+>
+> **両方向を確認済み（2026-08-02）**: 現行 `bun.lock` で
+> `OK: js-cookie resolved to: 3.0.7 (>= 3.0.6)` / exit 0。パッケージ名を実在しない
+> ものへ差し替えると `FAIL: no resolved js-cookie entry` / exit 1、
+> `min_fixed=3.0.8`（＝解決版が下限未満になる状況の模擬）では
+> `FAIL: js-cookie resolved below the fixed version` / exit 1。
 
 ### Step 2: Typecheck + run the Clerk-touching tests
 
@@ -239,37 +260,76 @@ This step cannot be fully automated in the executor sandbox. Document for the re
 
 ALL must hold:
 
-- [ ] `package.json` shows `@clerk/nextjs` at `>= 7.2.1` (target `^7.5.x`)
-- [ ] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
-- [ ] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
+- [x] `package.json` shows `@clerk/nextjs` at `>= 7.2.1` (target `^7.5.x`)
+- [x] `bun.lock` resolves `@clerk/nextjs` to `>= 7.2.1` — clears the **CRITICAL** advisory
+- [x] **Separately**, `bun.lock` resolves `js-cookie` to a fixed version — clears the **HIGH**
       transitive advisory. This is **not implied** by the `@clerk/nextjs` number; it is reached via
       `@clerk/shared`, so verify it on its own.
 
-      Read the **resolved** entry, not a dependency declaration. `bun.lock` writes the two in
-      different shapes: `"js-cookie": "3.0.7"` inside `@clerk/shared`'s `dependencies` object is
-      the **range that package asks for**, while `"js-cookie": ["js-cookie@3.0.7", …]` at the top
-      level is **what bun actually installed**. Only the latter answers "which version ships".
-      The old form (`grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`) matched only the
-      declaration — and piping into `sort` made it **fail open**, since `sort` exits 0 on empty
-      input, so a lockfile with no js-cookie at all passed the gate.
+  Read the **resolved** entry, not a dependency declaration. `bun.lock` writes the two in
+  different shapes: `"js-cookie": "3.0.7"` inside `@clerk/shared`'s `dependencies` object is
+  the **range that package asks for**, while `"js-cookie": ["js-cookie@3.0.7", …]` at the top
+  level is **what bun actually installed**. Only the latter answers "which version ships".
+  The old form (`grep -oE '"js-cookie": "[^"]*"' bun.lock | sort -u`) matched only the
+  declaration — and piping into `sort` made it **fail open**, since `sort` exits 0 on empty
+  input, so a lockfile with no js-cookie at all passed the gate.
 
   ```bash
-  # 解決エントリ（配列形）だけを見る。0 件は「安全」ではなく「検査できていない」
-  if grep -qE '^[[:space:]]*"js-cookie": \["js-cookie@' bun.lock; then
-      grep -oE '"js-cookie": \["js-cookie@[^"]*"' bun.lock
-  else
+  # 解決エントリ（配列形）だけを見る。0 件は「安全」ではなく「検査できていない」。
+  # さらに**版を比較する**（存在確認だけでは js-cookie@3.0.5 でも合格してしまう）。
+  # 下限は findings-06 §DEPS-02 が SSOT（Step 0 と同一値・advisory レンジ本体は復唱しない）。
+  min_fixed=3.0.6
+  resolved=$(grep -oE '"js-cookie": \["js-cookie@[^"]+"' bun.lock \
+    | sed -E 's/.*js-cookie@//; s/"$//' | sort -uV)
+  if [ -z "$resolved" ]; then
       echo "FAIL: bun.lock に js-cookie の解決エントリが無い（検査不成立）"; false
+  elif [ "$(printf '%s\n%s\n' "$min_fixed" "$resolved" | sort -V | head -n1)" != "$min_fixed" ]; then
+      # 複数エントリに解決されうるので**最小**を見る。最小が下限未満なら不合格。
+      echo "FAIL: js-cookie resolved below the fixed version ($min_fixed): $resolved"; false
+  else
+      echo "OK: js-cookie resolved to: $resolved (>= $min_fixed)"
   fi
   ```
 
-      実測（2026-07-31）: 現行 `bun.lock` で **exit 0**・`"js-cookie": ["js-cookie@3.0.7"` を出力。
-      解決エントリを除去した複製に対しては **exit 1**（違反注入側も確認済み）。
-- [ ] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
-- [ ] `bunx tsc --noEmit` exits 0
-- [ ] `bun run test` exits 0 (full unit suite green)
-- [ ] `bun run lint` exits 0
+  **存在確認から版比較へ強化（2026-08-02）。** 旧形は解決エントリが 1 つでもあれば
+  合格したため、`js-cookie@3.0.5`（＝**脆弱版**）でも PASS していた。HIGH advisory の
+  解消を主張するゲートとしては不成立だったので、Step 0（`:33-45`）と同じ
+  「最小値 vs `min_fixed`」の比較へ揃えた。
+
+  実測（2026-08-02・4 方向）:
+
+  | 入力 | 旧形（存在確認のみ） | 新形（版比較） |
+  |---|---|---|
+  | 現行 `bun.lock`（3.0.7） | PASS / exit 0 | `OK: … 3.0.7 (>= 3.0.6)` / exit **0** |
+  | 解決エントリを除去した複製 | FAIL / exit 1 | `FAIL: … 解決エントリが無い` / exit **1** |
+  | **3.0.5 に差し替えた複製** | **PASS / exit 0** ← 脆弱版を素通し | `FAIL: … resolved below …: 3.0.5` / exit **1** |
+  | `min_fixed=3.0.8`（下限未満の模擬） | 該当なし | `FAIL: … resolved below …: 3.0.7` / exit **1** |
+
+  3 行目が本修正の核心 —— 旧形は**脆弱版そのもの**を合格させていた。
+- [x] `bun audit` no longer reports GHSA-vqx2-fgx2-5wq9 for `@clerk/nextjs`
+- [x] `bunx tsc --noEmit` exits 0
+- [x] `bun run test` exits 0 (full unit suite green)
+- [x] `bun run lint` exits 0
 - [ ] No source files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock` (and optionally test-mock files if a mock changed)
-- [ ] `plans/README.md` status row for 004 updated — in a **separate docs commit**, after the bump commit
+- [x] `plans/README.md` status row for 004 updated — in a **separate docs commit**, after the bump commit
+
+> **チェック状態の根拠（2026-08-02 実測）。** 下の「解消状況」節が本プランを **DONE** と
+> 宣言する一方、Done criteria は全 9 項目が `- [ ]` のまま据え置かれており、
+> 完了宣言とチェックボックスが食い違っていた。現行ツリーで再実測して一致させた:
+>
+> | 条件 | 実測値 |
+> |---|---|
+> | `package.json` | `"@clerk/nextjs": "^7.5.0"` |
+> | `bun.lock` 解決 | `@clerk/nextjs@7.5.19` |
+> | `js-cookie` 解決 | `3.0.7`（`>= 3.0.6`。上の Step 1 ゲートが `OK` / exit 0） |
+> | `bun audit` | `@clerk/nextjs` / GHSA-vqx2-fgx2-5wq9 のヒット **0 件** |
+> | `bunx tsc --noEmit` | exit 0 |
+> | `bun run test` | 1838 passed / 3 skipped / 177 スイート |
+> | `bun run lint` | exit 0 |
+> | `plans/README.md` | 004 の行が **DONE** |
+>
+> 残る 1 項目（`src/` 配下が未変更）は **bump コミット時点**の作業ツリー状態を問う条件で、
+> 事後に再実測できない。履歴として未チェックのまま残す（`git log` で確認すること）。
 
 ## STOP conditions
 

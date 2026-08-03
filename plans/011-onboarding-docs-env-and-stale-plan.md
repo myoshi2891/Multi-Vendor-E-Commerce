@@ -334,8 +334,32 @@ expected=$(
   } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
 )
 
-# README の env ブロック（```env フェンス）が列挙する変数名
-actual=$(sed -n '/^```env$/,/^```$/p' README.md | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
+# README の env ブロック（```env フェンス）が列挙する変数名。
+#
+# **README 全体ではなく、対象の節だけを見ること**（2026-08-02 修正・ja/011 と同期）。
+# `sed -n '/^```env$/,/^```$/p' README.md` を README 全体に当てると、
+# (1) 他の節に ```env フェンスが増えたときそれも黙って混ざり、
+# (2) 対象フェンスが閉じていない場合は範囲の終端に出会えずファイル末尾まで拾う。
+# どちらも「抽出対象が黙って広がるのに検査は緑のまま」という同じ壊れ方をする。
+# 対策は 2 段構え: 節見出しで範囲を切り、その範囲内のフェンスが**ちょうど 1 個**
+# であることも assert する。
+section=$(awk '/^### 必要な環境変数$/{f=1; next} f && /^#{1,3} /{exit} f' README.md)
+
+open_count=$(printf '%s\n' "$section" | grep -c '^```env$')
+if [ "$open_count" -ne 1 ]; then
+  printf 'FAIL: 「必要な環境変数」節の ```env フェンスが %s 個（1 個であることが前提）\n' "$open_count"
+  exit 1
+fi
+
+# **終了フェンスも検証する。** 開始フェンスの直後に閉じが無ければ、下の `sed` は
+# 範囲の終端に出会えず節末尾まで拾う。開始と同じ理由で assert する。
+if ! printf '%s\n' "$section" | awk '/^```env$/{f=1; next} f && /^```$/{found=1; exit} END{exit !found}'; then
+  echo 'FAIL: 「必要な環境変数」節の ```env フェンスが閉じていない'
+  exit 1
+fi
+
+actual=$(printf '%s\n' "$section" | sed -n '/^```env$/,/^```$/p' \
+           | grep -oE '^[A-Z_][A-Z0-9_]*=' | tr -d '=' | sort -u)
 
 missing=$(comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
 # README 側の余剰も検出する（下記「両方向を見る理由」参照）
@@ -353,6 +377,19 @@ fi
 [ "$status" -eq 0 ] || exit 1
 echo "PASS: README env block matches the superset exactly"
 ```
+
+> **実測（2026-08-02）**: 本プランは **TODO**（未実施）なので、現行ツリーで走らせると
+> 正しく **FAIL / exit 1** になる —— `expected` **19 変数**に対し README の env ブロックは
+> **9 変数**しか列挙しておらず、`IPINFO_TOKEN` / `NEXT_PUBLIC_APP_URL` /
+> `NEXT_PUBLIC_CLERK_{SIGN_IN,SIGN_UP,AFTER_SIGN_IN}_URL` /
+> `NEXT_PUBLIC_CLOUDINARY_{CLOUD_NAME,PRESET_NAME}` / `PAYPAL_API_BASE` /
+> `PAYPAL_WEBHOOK_ID` / `STRIPE_WEBHOOK_SECRET` の **10 件**が欠けている。
+> これが本プランの closing 対象そのものであり、ゲートが機能している証拠でもある。
+>
+> **節スコープ化は現時点の結果を変えない**（旧形の `actual` と新形の `actual` は
+> 実測で同一の 9 変数）。README の ```env フェンスが現在 1 個しかないためで、
+> 将来 2 個目が増えたときや対象フェンスが閉じられなかったときに黙って
+> 抽出範囲が広がるのを防ぐための予防的強化である。
 
 **両方向を見る理由**: `missing`（`comm -23`）だけでは README が**古い変数を持ち続けている**
 ケースを PASS させる。削除済み・改名済みの変数が README に残ると、新規オンボーディング時に

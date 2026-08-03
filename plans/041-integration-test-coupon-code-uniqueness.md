@@ -322,8 +322,16 @@ await expect(upsertCoupon(input, storeA.url))
 2. `bunx tsc --noEmit` → exit 0
 3. `bun run lint` → exit 0
 4. `bun run test` → unit 全 pass。**テスト数は増える**（`src/queries/coupon.test.ts` に
-   シナリオ 2 の (2) で追加する P2002 変換ユニットテスト **+1**）。
-   「本プランは unit に触れないため不変」は本文 (2) と矛盾するため撤回した
+   シナリオ 2 の (2) で追加する P2002 変換ユニットテスト **+2** ——
+   seller 経路 `upsertCoupon` と admin 経路 `upsertCouponAsAdmin` の**それぞれ 1 本**）。
+   「本プランは unit に触れないため不変」は本文 (2) と矛盾するため撤回した。
+
+   > **`+1` ではなく `+2`（2026-08-02 同期）。** Scope（`:153`）は 2026-08-01 に
+   > `+2` へ訂正済みだったが、本 Verify だけが `+1` のまま据え置かれていた。
+   > 根拠は Scope 側の注記と同一 —— 両経路は共通ヘルパーを経由せず
+   > **別々に同じ変換を実装**しており（`coupon.ts:146-152` と `:532-538`）、
+   > 片方のテストがもう片方をカバーしない。同一プラン内で件数が割れていると、
+   > executor がどちらを満たせばよいか判断できない。
 
 ## Test plan
 

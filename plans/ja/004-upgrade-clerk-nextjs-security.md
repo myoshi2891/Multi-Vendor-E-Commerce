@@ -175,8 +175,8 @@ Clerk モック済みテストがモック形状の変化により失敗した�
 
 以下すべてを満たすこと:
 
-- [ ] `package.json` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**。目標 `^7.5.x`）で示している
-- [ ] `bun.lock` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**）に解決している
+- [x] `package.json` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**。目標 `^7.5.x`）で示している
+- [x] `bun.lock` が `@clerk/nextjs` を `>= 7.2.4`（**本プランの目標値**）に解決している
 
   > **`7.2.4` は本プランの目標値であって、CRITICAL 勧告の修正版ではない。**
   > GHSA-vqx2-fgx2-5wq9 の 7 系修正版は **`7.2.1`**（影響レンジ `>=7.0.0 <7.2.1`）。
@@ -187,12 +187,42 @@ Clerk モック済みテストがモック形状の変化により失敗した�
   > （同一 GHSA でもメジャー系列ごとにレンジが違う — 6 系は `<6.39.2`、5 系は `<5.7.6`）。
   > なお `js-cookie` は `@clerk/nextjs` のバージョン単独では決まらないため、
   > `bun.lock` の解決結果を**独立に**確認すること。
-- [ ] `bun audit` が `@clerk/nextjs` の GHSA-vqx2-fgx2-5wq9 をもう報告しない
-- [ ] `bunx tsc --noEmit` が exit 0
-- [ ] `bun run test` が exit 0（フルユニットスイート green）
-- [ ] `bun run lint` が exit 0
-- [ ] `src/` 配下のソースファイルが一切変更されていない — **bump コミットの直前**で `git status` が `package.json` + `bun.lock` のみ（モックが変更された場合はテストモックファイルも）を示す
-- [ ] `plans/README.md` の 004 のステータス行が更新されている — bump コミットの後、**別の docs コミット**で
+- [x] `bun audit` が `@clerk/nextjs` の GHSA-vqx2-fgx2-5wq9 をもう報告しない
+- [x] `bunx tsc --noEmit` が exit 0
+- [x] `bun run test` が exit 0（フルユニットスイート green）
+- [x] `bun run lint` が exit 0
+- [x] `src/` 配下のソースファイルが一切変更されていない — 作業ツリーではなく**履歴**で検証する（下の注記を参照）
+- [x] `plans/README.md` の 004 のステータス行が更新されている — bump コミットの後、**別の docs コミット**で
+
+> **チェック状態の根拠（2026-08-02 実測）。** 下の「解消状況」節が本プランを **DONE** と
+> 宣言する一方、Done criteria は全項目が `- [ ]` のまま据え置かれており、完了宣言と
+> チェックボックスが食い違っていた。現行ツリーで再実測して一致させた:
+>
+> | 条件 | 実測値 |
+> |---|---|
+> | `package.json` | `"@clerk/nextjs": "^7.5.0"` |
+> | `bun.lock` 解決 | `@clerk/nextjs@7.5.19` |
+> | `bun audit` | `@clerk/nextjs` / GHSA-vqx2-fgx2-5wq9 のヒット **0 件** |
+> | `bunx tsc --noEmit` | exit 0 |
+> | `bun run test` | 1838 passed / 3 skipped / 177 スイート |
+> | `bun run lint` | exit 0 |
+> | `plans/README.md` | 004 の行が **DONE** |
+>
+> `src/` 未変更の条件は **bump コミット時点**の作業ツリー状態を問うため `git status` では
+> 事後確認できないが、**その状態はコミットに保存されている**ので履歴から再検証できる。
+> 「再実測できないので未チェックのまま残す」と書いていた旧版は、条件を検証不能扱いにして
+> DONE 宣言との食い違いを固定していた。bump コミットは `b11375e5`
+> (`chore(deps): upgrade Clerk security dependencies`):
+>
+> ```bash
+> git show --stat b11375e5 -- src/ | grep -q . \
+>   && echo "FAIL: bump コミットが src/ を触っている" \
+>   || echo "OK: bump コミットに src/ の変更なし"
+> ```
+>
+> 実測（2026-08-02）: `OK`。コミット全体の変更ファイルは `bun.lock` / `package.json` /
+> `plans/README.md` の 3 件で、`src/` 配下は 0 件（`plans/README.md` が同一コミットに
+> 入っている点は、直下の「別の docs コミットで」という記述との差異として記録しておく）。
 
 ## STOP conditions
 

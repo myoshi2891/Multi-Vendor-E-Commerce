@@ -105,7 +105,13 @@
 - **PERF-11 / SECURITY-05 の index-products 重複**: `index-products` と `search-products` のほぼ重複は既知（tech-debt 統合機会）。SECURITY-05 の error.message 漏洩は 011 と別だが低優先のため今回プラン化せず、011 の完了後に単独修正推奨として README に残す。
 - **SECURITY-07（PayPal sandbox ハードコード）**: LOW confidence。本番 env 配線の確認が先で、finding としては investigate 止まり。プラン化せず README に investigate として記載。
 - **SECURITY-08/09（古い error 補間 / upsertReview 購入検証）**: LOW confidence・Next.js の server-action マスキングで緩和。プラン化見送り。
-- **DEPS-05/08、DX-09、TECHDEBT-07**: 非アクション/低優先（dev-only advisory・Next 最新・editorconfig・フォーム抽象 spike）。README の deferred に記載。
+- **DEPS-05/08、DX-09、TECHDEBT-07**: 非アクション/低優先（DEPS-05 は **低優先だが理由は一様ではない** —— dev-only の勧告に加え、runtime transitive だが実悪用経路が未到達なもの〔lodash 系〕を含む枠。以下 Next 最新・editorconfig・フォーム抽象 spike）。README の deferred に記載。
+
+  > **DEPS-05 を「dev-only advisory」と要約しないこと（2026-08-02 同期）。** `lodash` / `lodash-es` は
+  > `react-color` / `react-tag-input` / `@tremor/react` 経由で `dependencies`（runtime）へ到達する。
+  > 再監査の抑止に効くのは「本番非到達だから」ではなく「**到達するが悪用経路が無い**」の方なので、
+  > そこを潰さない。同一パッケージを 2 か所で別ラベルにしない規定
+  > （[`findings-18-security-r13.md`](findings-18-security-r13.md) `:58-61`）の適用でもある。
 - **DEPS-04（Prisma 6.x）/ PERF-01 / PERF-05 / CORRECTNESS-01 / TESTS-05 / DX-01**: 意味のある finding だが 12本の枠外。README の「次点候補」に列挙し、後日 `execute`/追加プラン化の対象とする。
 - **Direction findings（D1〜D5）の扱い** — 各 1 行で確定させる（再監査防止）:
   - **D1 DIRECTION-02（在庫復元フック）**: **プラン化済み** → plan 012（design/spike）。
@@ -914,10 +920,15 @@ LOGIC-22/23・SECURITY-24 はレバレッジ下位または仕様判断先行 / 
    [`../README.md`](../README.md) の Deferred 節に「needs backfill」として記載。
    **コード側は A-3 で解消**したが、**過去に Stripe 決済で作成された行はセント値のまま残る**。
    → **データ補正（backfill）は [plan 063](../063-backfill-stripe-payment-amount.md) として
-   起票済み**（P2 / TODO・[`../README.md`](../README.md) の Status 表 :126）。
+   起票済み**（P2 / TODO・[`../README.md`](../README.md) の Status 表の **063 の行**）。
    「未起票のまま」と書いていた旧記述は 2026-07-27 の起票時点で失効している。
    Deferred 記載は維持し、範囲を「コード修正」から「既存行の backfill のみ」へ縮小して
-   読むこと（README :251 の該当行も同じ結論に更新済み）。
+   読むこと（README の **Deferred 節の CORRECTNESS-05 の項**も同じ結論に更新済み）。
+
+   > **参照は plan ID / 見出しで書くこと（2026-08-02 修正）。** 旧記述は
+   > 「Status 表 :126」「README :251」と**行番号**で指していたが、README に 1 行入る
+   > だけで別の場所を指す。実測では `:126` は既に **plan 050 の行**、`:251` は
+   > 「soft 依存」の説明文になっており、どちらも意図した対象を指していなかった。
 2. **「Server-side `placeOrder` idempotency」**（plan 006 から deferred されていた項目）—
    **A-5 で解消**。README Deferred 節の該当行は消化済み。
 3. **TESTS-02 capture 経路**（R1 raw / R5〜R6 deferred）— 先行依存としていた plan 003 は DONE、

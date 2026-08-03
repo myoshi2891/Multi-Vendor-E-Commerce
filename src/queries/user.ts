@@ -668,6 +668,19 @@ export const placeOrder = async (
                 // Validate stock and price
                 const validQuantity = Math.min(quantity, size.quantity);
 
+                // 数量 0 の明細は注文として成立しない。ここで弾かないと
+                // quantity: 0 の OrderItem が確定してしまい、下流の
+                // アトミック減算（L927 付近）は
+                // `where: { quantity: { gte: 0 } }` / `decrement: 0` になるため
+                // **必ず 1 行にマッチして在庫不足を検知できない**。
+                // さらに ITEM 方式の配送料は `Math.max(0, 0 - 1) = 0` で
+                // 基本料だけが残り、数量 0 の行に送料が課金される。
+                // 文言はアトミック減算の在庫不足と揃える（同じ失敗である）。
+                // $transaction を開く前なので、注文リソースは一切作られない。
+                if (validQuantity === 0) {
+                    throw new Error("在庫が不足しています");
+                }
+
                 const priceObj = calculateDiscountedUnitPrice(
                     size.price,
                     size.discount

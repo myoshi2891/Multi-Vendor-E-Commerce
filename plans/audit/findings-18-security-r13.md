@@ -127,11 +127,19 @@
   > これは本ファイル `:58-61` が既に定めた「同一パッケージを 2 か所で別ラベルに
   > しないこと」の適用でもある。
   >
-  > **未同期の残り（別ファイルなので本コミットでは触らない）**:
-  > [`findings-06-dependencies.md:192`](findings-06-dependencies.md) の見出し
-  > 「dev 専用アドバイザリは**本番非到達**」と
-  > [`VETTED_FINDINGS.md:108`](VETTED_FINDINGS.md) の「dev-only advisory」は
-  > 旧ラベルのまま。次に当該台帳へ触るラウンドで上の要約へ揃えること。
+  > **~~未同期の残り~~ → 2026-08-02 に解消。** かつてここには
+  > 「[`findings-06-dependencies.md:192`](findings-06-dependencies.md) の見出し
+  > 『dev 専用アドバイザリは**本番非到達**』と
+  > [`VETTED_FINDINGS.md:108`](VETTED_FINDINGS.md) の『dev-only advisory』は旧ラベルのまま。
+  > 次に当該台帳へ触るラウンドで揃えること」と書いていた。**両ファイルとも上の要約へ
+  > 同期済み**（findings-06 は見出しを「低優先だが理由は一様ではない — routine refresh へ
+  > 畳む」へ変更し Evidence を dev-only / runtime transitive の 2 分類に分割、
+  > VETTED_FINDINGS は該当行に同じ注記を追加）。
+  >
+  > **「別ファイルなので本コミットでは触らない」を残した結果、旧ラベルが 1 ラウンド以上
+  > 生き延びた。** 分類の訂正は、それを参照する台帳と**同一 PR 内**で同期すること ——
+  > 訂正だけ先に入れると、同じパッケージが 2 か所で別ラベルという状態が可視のまま残り、
+  > 本節 `:58-61` が禁じた事態そのものになる。
 - **決定済みトレードオフ**: ADR-001 CSRF トークンモジュール新設禁止 / `reactStrictMode:false` /
   Elasticsearch コメントアウト / DB ページ `force-dynamic` / `middleware`→`proxy`・AVIF 警告 /
   product.md スコープ外（多通貨・税・高度分析・配送キャリア連携）。

@@ -433,10 +433,23 @@ ALL must hold:
       explicitly recorded as unresolved with a reason.** These never match the Step 4 predicate, so
       "the update reported 0 affected rows" is not evidence that they were correct.
 - [ ] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
-- [ ] The Step 4 pre-`UPDATE` count **and `candidate_digest`** both matched the approved report,
-      and the `UPDATE <n>` echo matched the count as well. The digest is required, not a nicety:
-      equal counts do not prove the same rows — one row leaving the bucket while another enters
-      keeps the count identical while changing what gets written.
+- [ ] Step 4's **pre**-gate passed: the count **and `candidate_digest`** both matched the approved
+      report (`\if :gate_ok` at step 2 of the script, otherwise `RAISE EXCEPTION`).
+- [ ] Step 4's **post**-gate passed: `POST OK: the updated set matches the pre-checked candidate set`
+      was printed — i.e. `updated_count = actual_count` **and** `updated_digest = actual_digest`.
+      The digest is required, not a nicety: equal counts do not prove the same rows — one row
+      leaving the bucket while another enters keeps the count identical while changing what gets
+      written.
+
+  > **Do not phrase this as "the `UPDATE <n>` echo matched" (corrected 2026-08-02).** The script
+  > wraps the `UPDATE ... RETURNING` in a CTE and selects `updated_count` / `updated_digest` from
+  > it, so psql's command tag is **never surfaced as a separate, checkable value** — and the
+  > script is run as `psql -f backfill.sql`, where the note above already establishes that a human
+  > reading the tag is not part of the flow. The old wording therefore stated a criterion the
+  > shipped script **cannot satisfy by construction**. `post_ok` is the mechanised equivalent and
+  > is strictly stronger, because it also compares the row identities. If a future revision does
+  > want the raw command tag, that is a change to the script (drop the CTE, capture the tag), not
+  > something to assert about the current one.
 - [ ] Step 4 was run twice on staging and the second run reported 0 affected rows.
 - [ ] Human approval for the production write is recorded (who, when, on which report).
 - [ ] `plans/README.md` CORRECTNESS-05 entry updated to reflect the closed remainder.

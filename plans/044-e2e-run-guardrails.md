@@ -286,13 +286,49 @@ globalTimeout: 3600 * 1000,
       ' "$1"
   }
 
-  # config 側: reuseExistingServer の判定式に **否定形で** 組み込まれていること。
-  # `.*E2E_NO_REUSE` だけでは極性を見ないため、意味が真逆の
-  # `reuseExistingServer: !process.env.CI && !!process.env.E2E_NO_REUSE`
-  # （= フラグを立てたときだけ再利用する）でも PASS してしまう。
-  # `[^!]!` で「直前が `!` でない `!`」を要求し、`!!` を弾く。
-  strip_code playwright.config.ts \
-    | grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE'
+  # config 側: reuseExistingServer の **値の式全体**が期待どおりであること。
+  #
+  # ⚠️ 部分一致で極性だけを見るのは不十分（2026-08-02 強化）。旧形
+  #   `grep -nE 'reuseExistingServer:[^,]*[^!]![[:space:]]*(process\.env\.)?E2E_NO_REUSE'`
+  #   は「式のどこかに `!E2E_NO_REUSE` があるか」しか見ないため、**別の項が混ざって
+  #   ガードを無効化する形**を素通しする:
+  #     reuseExistingServer: !!process.env.FORCE_REUSE || !process.env.E2E_NO_REUSE
+  #       → FORCE_REUSE を立てれば E2E_NO_REUSE に関係なく再利用する
+  #     reuseExistingServer: process.env.X ? true : !process.env.E2E_NO_REUSE
+  #       → X 次第で無条件再利用
+  #   `[^,]*` は最初のカンマで止まるだけで「式の終わり」を意味しない点も同様に危うい。
+  #
+  # そこで**値を丸ごと取り出して正規化し、期待式と完全一致で突き合わせる**。
+  # 空白差だけを吸収し、項の追加・順序変更・極性反転はすべて不一致として落とす。
+  expected='!process.env.CI&&!process.env.E2E_NO_REUSE'
+  actual=$(strip_code playwright.config.ts \
+    | tr '\n' ' ' \
+    | grep -oE 'reuseExistingServer:[^,]*' \
+    | head -n1 \
+    | sed -E 's/^reuseExistingServer://' \
+    | tr -d '[:space:]')
+
+  if [ -z "$actual" ]; then
+      echo "FAIL: playwright.config.ts に reuseExistingServer が見つからない（検査不成立）"; false
+  elif [ "$actual" != "$expected" ]; then
+      printf 'FAIL: reuseExistingServer の式が期待と違う\n  expected: %s\n  actual:   %s\n' \
+        "$expected" "$actual"; false
+  else
+      echo "OK: reuseExistingServer の式が期待どおり"
+  fi
+
+  # 実測（2026-08-02・5 方向）:
+  #
+  #   入力                                                    旧形      新形
+  #   ------------------------------------------------------  --------  ------------
+  #   !CI && !E2E_NO_REUSE（期待形）                          PASS      OK / exit 0
+  #   !!FORCE_REUSE || !E2E_NO_REUSE（別項でバイパス）        PASS ←穴  FAIL / exit 1
+  #   X ? true : !E2E_NO_REUSE（三項でバイパス）              PASS ←穴  FAIL / exit 1
+  #   !CI && !!E2E_NO_REUSE（極性反転）                       FAIL      FAIL / exit 1
+  #   !CI（現行ツリー = 本プラン未実施）                      FAIL      FAIL / exit 1
+  #
+  # 2・3 行目が本強化の核心 —— 旧形は「ガードを名目上含むが実際には効かない式」を
+  # 素通ししていた。
 
   # run-local.sh 側: 非空値を代入して export していること。
   # `=[^[:space:]]` が必須 — `export E2E_NO_REUSE=` は空文字列を代入するため
