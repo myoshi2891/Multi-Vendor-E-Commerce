@@ -45,7 +45,7 @@ const clerkSecretKey = process.env.CLERK_SECRET_KEY;
  * フッター Newsletter が `<label class="sr-only">Email address</label>` を持つ
  * （`src/components/store/layout/footer/newsletter.tsx`）。Clerk ウィジェットは
  * client-only なのでハイドレーション前は Newsletter 欄だけが存在し、
- * `page.getByLabel("Email address")` はそちらへ解決してしまう（plan 042 の根本原因）。
+ * そのラベルを `getByLabel` で引くとフッター側へ解決してしまう（plan 042 の根本原因）。
  * そのため **Clerk ルートへスコープしてから `input[name=...]` で特定する**。
  *
  * **1 段 / 2 段 UI の実行時分岐は持たない。** UI 形式は Clerk 側の設定で決まる静的な
