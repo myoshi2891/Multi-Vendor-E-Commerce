@@ -115,7 +115,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
-| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | TODO |
+| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE (signIn 修復 + a11y) / Step 5–6 は STOP 条件で未達 |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
@@ -124,7 +124,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
-| [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | TODO |
+| [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
@@ -139,6 +139,40 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **042 / 051 の実行記録（2026-08-03・`235754b8`〜`bb95f426`）**
+>
+> **051 は素の DONE。** ただしプラン本文の前提 1 つが実測で覆っている ——
+> 「cookie 未設定なら DEFAULT_COUNTRY（United States）が初期表示」は成立しない。
+> [`src/middleware.ts:18-27`](../src/middleware.ts) が cookie 不在時に ipinfo.io で
+> IP から国を判定して**先に cookie を設定する**ため、初期表示は実行マシンの所在地に
+> 依存する（日本から実行すると `Japan/EN/`）。spec は既知 cookie を事前投入して
+> この分岐を迂回する形にした（外部ネットワークにも実行地にも依存しない）。
+> WebKit は `Secure` cookie を安全でないオリジンで破棄するため、変更テストのみ
+> スキーマ条件付きでゲートしている（ローカル E2E は本番ビルドを http 配信する）。
+>
+> **042 は部分完了。** 本体である signIn 修復は**完全に達成**した ——
+> `grep -rn 'getByLabel("Email address")' tests/e2e/` は 0 件、
+> `signInWithPassword` 起因の失敗は**ゼロ**、a11y は 4 spec すべて passed
+> （従前は seller-apply のみ）、認証依存バッチは chromium で **7 passed / 2 failed**。
+> 未達は Step 5（failed 0）と Step 6（3 ブラウザフルラン）で、原因は
+> **サインインではない** —— 失敗 2 件はいずれもサインイン成立後（失敗時 DOM は
+> サインイン済みヘッダー）に商品ページの `goto` が 30s × 3 でタイムアウトする。
+> これは [`scripts/e2e/run-local.sh`](../scripts/e2e/run-local.sh) のヘッダーが
+> プラン 042 より前から記録している「重い注文フローの間欠 120s ハング（実行ごとに
+> 落ちるテストが移動する）」と同一症状で、実際に 1 回目は stock-decrement のみ、
+> 2 回目は stock-decrement + platform-coupon が落ちた。プラン 042 の STOP 条件
+> 「locator 以外の失敗モード（アプリ側の退行の可能性 — 本プランの範囲外）」に
+> 該当するため、改変せず停止した（下の Deferred 節に新規項目として起票）。
+>
+> **実行環境の注意（次の実行者へ）**: `playwright.config.ts` の
+> `reuseExistingServer: !CI` により、:3000 で**別プロジェクトの dev サーバー**が
+> 動いていると黙って再利用され、全テストがそのアプリの 404 を踏む（本セッションで
+> 実際に発生し、1 ラン分の結果が無効になった）。`run-local.sh` のヘッダーは
+> 「:3000 を停止してから実行」と指示しているが、**他プロジェクトを止めずに済む
+> `PORT=3100 E2E_BASE_URL=http://localhost:3100` への退避のほうが安全**
+> （`webServer.url` が `baseURL` を共有し、`next start` は `PORT` を読むため
+> 両者が自動的に揃う）。plan 044 のガード設計時に併せて検討すること。
 
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
@@ -290,6 +324,21 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
 - ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
 - **`updateOrderGroupStatusAsAdmin` の並行二重復元** — deferred from [plan 031](031-integration-test-order-lifecycle-restock.md)（2026-07-31 記録）。`order.ts:441-471` は `findUnique` で `prev.status` を読んでから `update` する **read-then-act** のため行ロックを取らず、並行 2 者が同じ非終端 status を読んで**両方が `restockOrderItems` を実行しうる**。修正は `updateOrderPaymentStatus` と同型の**条件付き `updateMany`（CAS）**への統一（`where` に `status: { notIn: [...] }` を置き `count === 1` の内側でのみ復元 — 前例 `d0005bb`）。plan 031 はテスト追加のみのスコープであり、Scenario 2 が並行安全性を固定しているのは `updateOrderPaymentStatus` 側**のみ**。本項目は**本体修正**として未着手。
+- **重い注文フロー E2E の間欠 120s ハング（サインイン後の商品ページ `goto` タイムアウト）** —
+  deferred from [plan 042](042-e2e-signin-helper-repair.md)（2026-08-03 記録）。
+  042 が signIn ヘルパーを修復した**後**も `stock-decrement` / `platform-coupon` が落ちる。
+  失敗点は `gotoStable(page, /product/<slug>/<variant>)`（`src/config/test-helpers.ts:218`）で、
+  per-goto 30s × 3 リトライを使い切り、テスト予算 120s を超える。**サインインは成立している**
+  （失敗時 DOM はサインイン済みヘッダー `img "user name"` を含み、`signInWithPassword` 起因の
+  エラーは 0 件）。これは [`scripts/e2e/run-local.sh`](../scripts/e2e/run-local.sh) のヘッダーが
+  **042 起票より前から**記録している既知ハングで、同ヘッダーは「Neon 負荷を疑ってローカル
+  Postgres へ向けても再現した（3 run 中 1 run で platform-coupon がハング）」と結論づけている。
+  本セッションの実測も**実行ごとに落ちるテストが移動する**性質を再現した（1 回目は
+  stock-decrement のみ、2 回目は両方）。同じ `goto` を持つ他 spec は通るため、URL やデータの
+  不備ではなく**負荷下の SSR 応答遅延またはサインイン後のナビゲーション/データ準備レース**が
+  疑わしい。調査は trace（`npx playwright show-trace`）のネットワークタイムラインで
+  「product ページの SSR 応答が返っているか」を確認するところから。
+  **042 のスコープ外**（テスト側の locator 修復のみが対象）。
 - **`placeOrder` の住所所有権ロックの実 DB 並行検証** — deferred from CodeRabbit round（2026-07-31 記録）。`user.ts` の `SELECT … FOR UPDATE`（`f77dafd`）が並行 `userId` 付け替えを実際にブロックすることは、unit テストがモック境界で止まるため観測できない。検証は Integration（testcontainers）でのみ可能で、低コストな入り口は `tests/integration/` の既存スイートへ 2 トランザクション競合シナリオを足すこと（新規スイートを起こさない）。unit 側は「`$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する」呼び出し契約の固定まで完了済み。
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。
