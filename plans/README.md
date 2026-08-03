@@ -120,7 +120,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
-| [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | TODO |
+| [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
@@ -173,6 +173,39 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > `PORT=3100 E2E_BASE_URL=http://localhost:3100` への退避のほうが安全**
 > （`webServer.url` が `baseURL` を共有し、`next start` は `PORT` を読むため
 > 両者が自動的に揃う）。plan 044 のガード設計時に併せて検討すること。
+>
+> **047 の実行記録（2026-08-03・`0c5540c0`〜`4aa0f73f`）**
+>
+> **DONE。** Done criteria を実測で充足（3 ブラウザ **9 passed / 6 skipped / 0 failed / flaky 0**。
+> payment-error の残 skip は `:58` / `:70` の 2 件 × 3 ブラウザのみ）。金額検算はセント整数の
+> `toBe` 完全一致で、グループ内 `subtotal + shipping - discount === total` と
+> `Σ group total === order total` がいずれも一致した（アプリ側の丸めズレは検出されず）。
+>
+> **プランからの逸脱 3 点**（いずれも実測に基づく）:
+>
+> 1. **認証セットアップは入れ子 describe に閉じ込めた。** プラン Step 1 は describe 直下への
+>    `test.skip(() => requiresClerkAdmin)` 追加を指示していたが、それだと **Clerk 不要な既存の
+>    未認証テスト（`:17`）まで CLERK_SECRET_KEY 未設定時に skip される**。
+> 2. **支払い領域のアンカーとして `src/` に 1 行追加した。** `OrderPayment` には testid も
+>    見出しテキストも無く、プランの STOP 条件（プロバイダ非依存アンカー不在）に該当したため
+>    オペレーター判断を仰ぎ、`data-testid="order-payment"` 付与の承認を得た（`edef9711`）。
+> 3. **`platform-coupon.spec.ts` の到達フローに手を入れた**（プランは「金額 assert 追記のみ」）。
+>    修正しないと assert に到達する前に spec がハングして落ちるため。
+>
+> **042 が「原因不明の別事案」として残した間欠ハングは本ラウンドで解決した。** 真因は
+> **`waitForPostSignInSettle`**（サインイン後の networkidle 待ち）で、これを通すと後続の
+> `page.goto` が**リクエストを 1 件も発行しないまま**ハングし、per-goto 予算 × リトライを
+> 丸ごと消費する（実測: platform-coupon が 3 回連続 2 分 timeout。同時刻にシェルから同 URL を
+> curl すると 0.5〜1.5s で 200、トレースの network ログにも当該リクエストが現れない）。
+> settle を使っていない `a11y/checkout.spec.ts` だけが安定していたのはこのため。除去後は
+> 同一フローが 9〜11s で完走する。**`gotoStable` は無罪なので残すこと** —— Firefox は
+> サインイン後のソフトリダイレクトが goto に割り込んで `NS_BINDING_ABORTED` を投げ、
+> 素の goto だと 3 ブラウザ実測で flaky になる。`scripts/e2e/run-local.sh` のヘッダーにも
+> 追記済み。**042 の未達（Step 5 / 6）はこの修正で解除可能な見込み**だが、042 の対象 spec
+> 全体の再実測は本プランの範囲外として実施していない（次の実行者への申し送り）。
+>
+> **実行環境**: :3000 は別プロジェクトの `next-server` が占有していたため、051 の記録どおり
+> `PORT=3100 E2E_BASE_URL=http://localhost:3100` へ退避して実行した（この方式は問題なく機能する）。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、

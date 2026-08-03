@@ -9,7 +9,17 @@
 #
 #   当初は Neon 負荷が原因と仮説したが、ローカル Postgres へ向けても flake は再現した
 #   （3 run 中 1 run で platform-coupon が 120s ハング）。よって DB は真因ではなく、ハングは
-#   sign-in 後のブラウザ側ナビゲーション/データ準備レースである。本スクリプトの狙いは:
+#   sign-in 後のブラウザ側ナビゲーションの問題である。
+#
+#   【2026-08-03・plan 047 で真因を特定】この 120s ハングの正体は
+#   `waitForPostSignInSettle`（サインイン後の networkidle 待ち）だった。これを通すと後続の
+#   `page.goto` がリクエストを 1 件も発行しないままハングし、per-goto 予算 × リトライを
+#   丸ごと消費する（同時刻にシェルから同 URL を curl すると 0.5〜1.5s で 200 が返る）。
+#   注文フロー spec から除去済みで、同一フローは 9〜11s で完走する。新規 spec でも
+#   サインイン直後にこのヘルパーを挟まないこと（`gotoStable` は Firefox の
+#   NS_BINDING_ABORTED 吸収に必要なので残す）。
+#
+#   本スクリプトの狙いは:
 #     (1) Neon/Accelerate を変数から外す（クラウド到達性に E2E を依存させない）
 #     (2) CI と同じ retries で間欠ハングを吸収する（CI=retries:2 / ローカル既定=0）
 #   詳細は docs/development/docker-dev.md を参照。

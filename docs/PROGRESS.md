@@ -2338,3 +2338,52 @@ ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuan
 | スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 047: チェックアウト異常系の un-skip + 注文詳細の金額明細検証 (2026-08-03)
+
+#### 概要
+
+住所未選択で Place order を押したときのエラー表示 E2E を un-skip し（TESTS-30）、注文詳細ページの
+請求金額をセント整数の完全一致で検算する assert を追加した（TESTS-31）。あわせて plan 042 が
+「原因不明の別事案」として残した**サインイン後ナビゲーションの間欠ハングを根本解決**した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/payment-error.spec.ts` | 住所未選択エラーを un-skip。認証セッションは入れ子 describe に閉じ込め、`CLERK_SECRET_KEY` 未設定時の skip を既存の未認証テストへ波及させない。`/checkout` へは `/cart` の Checkout 経由で到達 | `0c5540c0` |
+| `src/components/store/order-page/payment.tsx` | 決済プロバイダ非依存の `data-testid="order-payment"` を付与（src 変更は 1 行・オペレーター承認済み） | `edef9711` |
+| `tests/e2e/platform-coupon.spec.ts` | 注文詳細の金額明細 assert を追加（構造 ×2 グループ / グループ内検算 / 全体合計一致 / 支払い領域の存在） | `87f6ce05` |
+| `tests/e2e/payment-error.spec.ts` / `platform-coupon.spec.ts` | `waitForPostSignInSettle` を除去してハングを解消。`gotoStable` は Firefox 対策として残す。checkout 後の `waitForURL` を 10s → 30s | `ec32b174` |
+
+#### 根本原因（間欠ハング）
+
+`waitForPostSignInSettle`（サインイン後の networkidle 待ち）を通すと、後続の `page.goto` が
+**リクエストを 1 件も発行しないまま**ハングし、per-goto 予算 × リトライを丸ごと消費する
+（実測: platform-coupon が 3 回連続 2 分 timeout。同時刻にシェルから同 URL を curl すると
+0.5〜1.5s で 200 が返り、トレースの network ログにも当該リクエストが現れない）。settle を
+使っていない `a11y/checkout.spec.ts` だけが安定していたのはこのため。除去後は同一フローが
+9〜11s で完走する。`gotoStable` は無罪で、Firefox のソフトリダイレクト割り込み
+（`NS_BINDING_ABORTED`）を吸収するため必要。
+
+#### 金額検算の方式
+
+表示金額はハードコードせず、`$X.XX` を**パース時に 1 度だけ丸めてセント整数化**してから
+整数演算で検算する（`.claude/steering/tech.md` が定める「金額規約の唯一の例外 = E2E の
+表示文字列検算」）。許容誤差は持たず `toBe` の完全一致で、グループ内
+`subtotal + shipping - discount === total` と `Σ group total === order total` の両方が
+3 ブラウザで一致した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1841 passed / 1844 total**（不変・E2E のみの変更） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 41 tests/browser・17 files | **41 tests/browser・17 files**（不変。un-skip は skip/active の内訳のみを動かす） |
+| 対象 2 spec の 3 ブラウザ実測 | platform-coupon が間欠 failed / 住所未選択は 3 ブラウザとも skip | **9 passed / 6 skipped / 0 failed / flaky 0** |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

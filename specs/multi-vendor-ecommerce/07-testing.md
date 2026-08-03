@@ -20,6 +20,17 @@
   as of 2026-08-03 — up 2 from `tests/e2e/country-selector.spec.ts` (plan 051, Ship-to cookie
   round-trip). One of the two is gated off on WebKit, which drops `Secure` cookies on insecure
   origins while local E2E serves the production build over http.
+- Plan 047 (2026-08-03) did not change that total: un-skipping a declared test moves it from
+  skipped to active without adding a case. What changed is the split — `payment-error.spec.ts`
+  now runs the "place order without a shipping address" check on all three browsers, and
+  `platform-coupon.spec.ts` asserts the order-detail amount breakdown (per-group
+  `subtotal + shipping - discount === total` and `Σ group totals === order total`, compared as
+  cent integers with no tolerance). Measured across three browsers with
+  `scripts/e2e/run-local.sh`: 9 passed / 6 skipped / 0 failed / 0 flaky.
+- Order-flow specs must not call `waitForPostSignInSettle` before navigating. Doing so makes the
+  next `page.goto` hang without ever issuing a request (measured: three consecutive 2-minute
+  timeouts while the same URL answered in 0.5–1.5s from curl). `gotoStable` stays: Firefox
+  aborts the goto with `NS_BINDING_ABORTED` when the post-sign-in soft redirect interrupts it.
 - Earlier entry (2026-08-01): 1829 passed / 1832 total across 177 suites (3 skipped).
   Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
   `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template
