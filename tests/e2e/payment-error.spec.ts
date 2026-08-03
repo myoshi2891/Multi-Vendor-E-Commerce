@@ -2,7 +2,11 @@ import { expect, test } from "@playwright/test";
 import { buildE2ESeed } from "./seed/constants";
 import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { createCustomerSession, requiresClerkAdmin } from "./helpers/auth";
-import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
+import {
+  gotoStable,
+  setupE2ETestState,
+  waitForCartPersist,
+} from "@/config/test-helpers";
 
 test.describe("決済異常系", () => {
   let seed: ReturnType<typeof buildE2ESeed>;
@@ -47,11 +51,14 @@ test.describe("決済異常系", () => {
       // signIn + 商品ページ + カート投入 + checkout 遷移を含む重いフロー。
       // 本番ビルドでの認証フローに既定 30s では不足する（a11y/checkout.spec.ts:45 と同値）。
       //
-      // サインイン直後の遷移に `waitForPostSignInSettle` + `gotoStable` は使わない。
-      // 両者を挟むと商品ページへの goto がリクエストすら発行されないまま
-      // ハングする（実測: 45s × 3 リトライを 3 回連続で消費。同時刻にシェルから
-      // 同じ URL を curl すると 0.5〜1.5s で 200 が返るのでサーバー側は健全）。
-      // 素の goto へ揃えた a11y/checkout.spec.ts は同一フローを 9.3s で完走する。
+      // サインイン直後に `waitForPostSignInSettle` を挟まないこと。挟むと後続の
+      // 商品ページ goto がリクエストすら発行しないままハングする（実測: 45s × 3
+      // リトライを 3 回連続で消費。同時刻にシェルから同 URL を curl すると
+      // 0.5〜1.5s で 200 が返るのでサーバー側は健全）。同じ session ヘルパーで
+      // settle を使わない a11y/checkout.spec.ts は同一フローを 9.3s で完走する。
+      // 一方 `gotoStable` は残す —— Firefox はサインイン後のソフトリダイレクトが
+      // goto に割り込んで `NS_BINDING_ABORTED` を投げるため、素の goto だと
+      // 3 ブラウザ実測で flaky になる（gotoStable はこれを再試行で吸収する）。
       test.setTimeout(90000);
       const productSlug = process.env.E2E_PRODUCT_SLUG || seed.product.slug;
       const variantSlug = process.env.E2E_VARIANT_SLUG || seed.variant.slug;
@@ -59,7 +66,7 @@ test.describe("決済異常系", () => {
       await session.signIn(page);
 
       // go to product, select size, and add to cart
-      await page.goto(`/product/${productSlug}/${variantSlug}`);
+      await gotoStable(page, `/product/${productSlug}/${variantSlug}`);
       const firstSize = page.locator('[data-testid^="size-option-"]').first();
       await firstSize.click();
       await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });

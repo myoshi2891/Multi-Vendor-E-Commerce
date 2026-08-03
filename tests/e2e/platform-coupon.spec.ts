@@ -3,7 +3,11 @@ import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
 import { buildE2ESeed } from "./seed/constants";
 import { signInWithPassword } from "./helpers/auth";
-import { setupE2ETestState, waitForCartPersist } from "@/config/test-helpers";
+import {
+    gotoStable,
+    setupE2ETestState,
+    waitForCartPersist,
+} from "@/config/test-helpers";
 
 const prisma = new PrismaClient();
 
@@ -139,15 +143,16 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         // （テストトークン注入と Clerk ウィジェット操作は共有ヘルパーが行う）
         await signInWithPassword(page, userEmail, userPassword);
 
-        // Store A の商品をカートに追加。
-        // サインイン直後に `waitForPostSignInSettle` + `gotoStable` を挟まないこと。
-        // 両者を通すと商品ページへの goto がリクエストを発行しないままハングし、
-        // per-goto 予算 × リトライ回数を丸ごと消費する（実測: 45s × 3 を 3 回連続。
+        // Store A の商品をカートに追加（遅延リダイレクト割り込み時は再試行）。
+        //
+        // サインイン直後に `waitForPostSignInSettle` を挟まないこと。挟むと後続の
+        // 商品ページ goto がリクエストを発行しないままハングし、per-goto 予算 ×
+        // リトライ回数を丸ごと消費する（実測: 本 spec が 3 回連続で 2 分 timeout。
         // 同時刻にシェルから同 URL を curl すると 0.5〜1.5s で 200 が返りサーバーは健全）。
-        // これは run-local.sh ヘッダーと plan 042 実行記録にある「重い注文フローの
-        // 間欠ハング」の正体で、素の goto に揃えた a11y/checkout.spec.ts は
-        // 同一フローを 9.3s で完走する。
-        await page.goto(`/product/${seed.product.slug}/${seed.variant.slug}`);
+        // これは run-local.sh ヘッダーと plan 042 実行記録が「重い注文フローの
+        // 間欠ハング」として記録していた症状の正体。settle を外すと同一フローが
+        // 10.9s で完走する（settle を使わない a11y/checkout.spec.ts と同じ形）。
+        await gotoStable(page, `/product/${seed.product.slug}/${seed.variant.slug}`);
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
@@ -171,8 +176,10 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         await expect(page.getByTestId("cart-item-name")).toHaveCount(2);
 
         // チェックアウトへ（saveUserCart で DB Cart に同期される）
+        // 遷移はサーバーアクション完了後に起きる。Firefox で 10s を超える実測が
+        // あったため 30s とる（待ち時間の予算であって検証内容の緩和ではない）。
         await page.getByTestId("checkout").click();
-        await page.waitForURL(/\/checkout/, { timeout: 10000 });
+        await page.waitForURL(/\/checkout/, { timeout: 30000 });
 
         // PLATFORM クーポンを適用
         await page.getByPlaceholder("Coupon code").fill(seed.platformCoupon.code);
