@@ -18,11 +18,12 @@
 - **Depends on**: none
 - **Category**: dependencies
 - **Planned at**: commit `fab6315`, 2026-07-17
-- **Completion**: **DONE (security) / 1 criterion pending** — セキュリティ目的（advisory 解消）は
-  `10e35f3a` で達成済み。ただし Done criteria は "ALL must hold" と定めており、
-  Step 5（未認証 `/dashboard` の redirect スモーク）の実施記録が無いため
-  **全項目充足ではない**。`plans/README.md` の Status もこの表記に合わせてある。
-  残項目の内容は下の Done criteria 末尾を参照（2026-07-27 追記）。
+- **Completion**: **DONE** — セキュリティ目的（advisory 解消）は `10e35f3a` で達成済み。
+  最後まで未達だった Step 5（未認証 `/dashboard` の redirect スモーク）を
+  **2026-08-03 に実施して PASS**（`next@16.2.12`。観測値は Step 5 の「実施結果」節）、
+  Done criteria は "ALL must hold" を全項目充足した。
+  なお現行の `next` は `~16.2.12`（057 の `~16.2.10` から、別件の依存メンテとして
+  2026-07-30 に bump — 経緯は `plans/README.md` の DEPS-08 節を参照）。
 
 ## Why this matters
 
@@ -231,6 +232,58 @@ Expect a redirect to the Clerk sign-in URL, not `200` with dashboard markup. If 
 
 > This is a smoke check of the gate, **not** a proof that the segment-prefetch bypass is closed — reproducing the advisory's prefetch vector is out of scope. The version bump is the fix; this only confirms the gate still functions normally after it.
 
+#### 実施結果（2026-08-03 / `next@16.2.12` / dev server `bun run dev`）— **PASS**
+
+未認証（Clerk セッション cookie なし）でのドキュメント要求:
+
+| Path | Status | Location |
+|---|---|---|
+| `/` (対照群・非保護) | **200** | — |
+| `/dashboard` | **307** | `/sign-in?redirect_url=…%2Fdashboard` |
+| `/dashboard/seller` | **307** | `/sign-in?redirect_url=…%2Fdashboard%2Fseller` |
+| `/checkout` | **307** | `/sign-in?redirect_url=…%2Fcheckout` |
+| `/profile` | **307** | `/sign-in?redirect_url=…%2Fprofile` |
+
+保護ルートは 4 本とも sign-in へリダイレクトし、ダッシュボードのマークアップは一切返らない。
+非保護の `/` が 200 を返すことで、リダイレクトが「全 URL に一律で掛かっている」のではなく
+`createRouteMatcher` の対象にのみ効いていることを確認した（**対照群は必須** — 下の落とし穴 2 を参照）。
+
+**補足（out of scope の参考測定）**: advisory の攻撃面である RSC セグメントプリフェッチ経路
+（`RSC: 1` + `Next-Router-Prefetch: 1` + `Next-Router-Segment-Prefetch: /_index`）でも
+`/dashboard` / `/checkout` はともに **404 / 179 bytes** で、RSC ペイロードは返らなかった。
+middleware が通過していることの傍証ではあるが、**advisory の再現検証ではない**
+（プラン冒頭の注記どおり、修正は版上げそのものである）。
+
+##### 再実行時の落とし穴 2 点（次に誰かが走らせるとき用）
+
+1. **素の `curl` は 404 を返す（リダイレクトではない）。** Clerk の `auth.protect()` は
+   リクエスト種別で応答を変え、ドキュメント要求（`Accept: text/html`）なら sign-in へ 307、
+   それ以外（API/fetch 相当。`curl` 既定の `Accept: */*` を含む）は情報を漏らさないため 404 を返す。
+   プラン本文の `curl` 行をそのまま実行すると `404`（＝ゲートは効いている）が返り、
+   期待値「redirect」と食い違って**誤って STOP 条件と誤読しかねない**。ブラウザ相当のヘッダを付けること:
+
+   ```
+   curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+     -H 'Accept: text/html,application/xhtml+xml' \
+     -H 'Sec-Fetch-Dest: document' -H 'Sec-Fetch-Mode: navigate' \
+     -H 'User-Agent: Mozilla/5.0' \
+     http://localhost:3000/dashboard
+   ```
+
+2. **初回の 307 は認可ゲートではなく Clerk の dev-browser ハンドシェイク。** dev インスタンスでは
+   `__clerk_db_jwt` cookie が無い間、**非保護ルートを含む全ドキュメント要求**が
+   `https://<slug>.clerk.accounts.dev/v1/client/handshake?…&__clerk_hs_reason=dev-browser-missing`
+   へ 307 される。保護ルートだけを測ると「307 が出たので PASS」と読めてしまうが、
+   同時に `/` も 307 しているので**ゲートの証明になっていない**。
+   cookie jar でハンドシェイクを一度完了させてから再測すること:
+
+   ```
+   curl -sS -L -c jar.txt -b jar.txt -o /dev/null http://localhost:3000/   # ハンドシェイク完了
+   curl -sS -b jar.txt -o /dev/null -w '%{http_code} %{redirect_url}\n' … /dashboard
+   ```
+
+   `/` が 200 に変わったことを確認できて初めて、保護ルートの 307 が `auth.protect()` 由来だと言える。
+
 ## Test plan
 
 - No new automated tests are required (this is a version bump). The regression gate is the existing suite: `src/middleware.test.ts` plus the full unit run must stay green.
@@ -255,11 +308,11 @@ ALL must hold:
 - [x] No files under `src/` were modified — before the **bump commit**, `git status` shows only `package.json` + `bun.lock`
       — 実測: bump commit `10e35f3a` の変更は `package.json` + `bun.lock` の 2 ファイルのみ
 - [x] `plans/README.md` status row for 057 updated — in a **separate docs commit**, after the bump commit
-- [ ] Step 5 smoke result recorded (done, or explicitly flagged pending)
-      — ⚠️ **未達**: Step 5（未認証 `/dashboard` の redirect スモーク）の結果は本プランにも
-      `plans/README.md` にも記録が無い。report-only の手動チェックであり自動テストの代替では
-      ないため、`bun run dev` を起こせる環境で実施して結果をここに追記すること
-      （実施済みなら「いつ・何を観測したか」を書けば足りる）。実測 2026-07-27
+- [x] Step 5 smoke result recorded (done, or explicitly flagged pending)
+      — **実施済み 2026-08-03**（`next@16.2.12` / `bun run dev`）。未認証のドキュメント要求で
+      `/dashboard` `/dashboard/seller` `/checkout` `/profile` はいずれも **307 → `/sign-in`**、
+      対照群の `/` は **200**。詳細な観測値・再実行時の落とし穴 2 点は Step 5 の
+      「実施結果」節を参照
 
 ## STOP conditions
 

@@ -250,16 +250,15 @@ cat node_modules/js-cookie/package.json | grep '"version"'
   - 実測（2026-07-30）: `bun audit` の `next` ブロック消失 / `node_modules/next` 解決版 **16.2.12** /
     `bunx tsc --noEmit` exit 0 / `bun run build` 成功 / `src/middleware.test.ts` 11 件 green。
 - **Impact**: **アドバイザリは解決済み**（`16.2.12` で上記 9 件すべての影響範囲外）。
-  ただし plan 057 自体は **DONE (security) / 1 criterion pending** であり「未解決事項なし」ではない ——
-  Step 5（未認証 `/dashboard` の redirect スモーク）の結果が
-  [`057:246-251`](../057-upgrade-next-middleware-bypass.md) にも
-  [`../README.md`](../README.md):120 にも記録されていない。report-only の手動チェックで
-  自動テストの代替ではないため、`bun run dev` を起こせる環境で実施し結果を 057 に追記する
-  必要がある。**この保留は本 finding の依存アドバイザリ判定には影響しない**（bump は
-  完了しており版は実測済み）が、「057 = 完全にクローズ」と読まないこと。
+  plan 057 は一時 **DONE (security) / 1 criterion pending** だった（Step 5＝未認証 `/dashboard` の
+  redirect スモークの記録が無かったため）が、**2026-08-03 に実施し PASS**
+  （保護 4 ルートは 307 → `/sign-in`、対照群 `/` は 200。観測値は
+  [057](../057-upgrade-next-middleware-bypass.md) の Step 5「実施結果」節）したため
+  **素の DONE**。この保留は当時も本 finding の依存アドバイザリ判定には影響していない
+  （bump は完了しており版は実測済み）。
 - **Effort**: — / **Risk**: — / **Confidence**: HIGH（`package.json` / `bun.lock` / `bun audit` を実測）
 - **Fix sketch**: 依存側は**不要（`~16.2.12` で解消済み）**。以後は 16.2.x のパッチ追跡のみ。
-  057 側の残作業は上記 Step 5 スモークの記録のみ。
+  057 側の残作業も無し（Step 5 スモークを 2026-08-03 に実施・記録済み）。
   **教訓**: 「plan NNN で bump 済み ＝ 恒久解決」ではない。同一メジャー内でも新規 advisory で
   再露出しうるため、本エントリの現況は `bun audit` 実測日とセットで読むこと。
 - **⚠️ 本 finding を「Next は対応不要」の根拠として再利用しないこと**
