@@ -32,10 +32,18 @@
 #   bun run test:e2e:local -- tests/e2e/stock-decrement.spec.ts   # 単一スペック
 #
 # 注意:
-#   playwright.config.ts は reuseExistingServer:!CI のため、:3000 に Neon 向き dev サーバーが
-#   起動中だと再利用される。本スクリプト実行前に :3000 の既存サーバーを停止すること。
+#   playwright.config.ts は reuseExistingServer:!CI のため、baseURL のポートに既存サーバーが
+#   居ると内容を問わず再利用される。既定の :3000 には Neon 向き dev サーバーや**別リポジトリ**の
+#   アプリが居がちで、後者を掴むと全ルートが 404 を返し「テスト失敗」として記録される。
+#   これを構造的に避けるため、本スクリプトは専用ポート :3100 で起動・接続する。
+#   別ポートを使いたい場合のみ E2E_PORT を渡すこと（例: E2E_PORT=3200 bun run test:e2e:local）。
 #
 set -euo pipefail
+
+# 専用ポート。:3000 の他プロセス（他リポジトリのアプリ含む）を誤って再利用しないための隔離。
+readonly E2E_PORT="${E2E_PORT:-3100}"
+export PORT="$E2E_PORT"                       # webServer の next dev / next start が読む
+export E2E_BASE_URL="http://localhost:${E2E_PORT}"  # playwright.config.ts の baseURL
 
 # 非シークレット: docker-compose.yml の db サービスと一致するローカル接続情報。
 readonly LOCAL_DB_URL="postgresql://dev:dev@localhost:5432/multivendor_dev"
@@ -74,5 +82,5 @@ bunx prisma migrate deploy
 echo "==> E2E シード投入 (seed:e2e)..."
 bun run seed:e2e
 
-echo "==> Playwright E2E 実行 (ローカル Postgres, retries=2 で CI と同じ flake 吸収)..."
+echo "==> Playwright E2E 実行 (ローカル Postgres, :${E2E_PORT}, retries=2 で CI と同じ flake 吸収)..."
 bunx playwright test --retries=2 "$@"
