@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|----|
 | Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **20テスト / 2スイート**（`cart-checkout` 11 + `order-placement` **9**）— 2026-08-04 実測 20/20 pass / 4.054s（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jest Integration テスト | **28テスト / 3スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8**）— 2026-08-04 実測 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -2627,6 +2627,52 @@ improve Round 4 の plan 027 を実行し、`placeOrder` の money-critical な 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Jest Integration テスト | 17 / 2 スイート | **20 / 2 スイート**（order-placement 6 → 9） |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 031 実行: 注文キャンセル/返金の子連動・在庫復元を実 DB で固定 (2026-08-04)
+
+#### 概要
+
+improve Round 5 の plan 031 を実行し、注文確定**後**のライフサイクル（`src/queries/order.ts`）を
+testcontainers の実 PostgreSQL で固定した。plan 027 が固定した在庫**減算**側と対になる
+**復元**側で、これで在庫整合の両側が閉じた。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/setup/seed.ts` | `seedOrderWithGroupAndItem` を追加（Order + OrderGroup + OrderItem を FK 結線。**在庫は触らない**設計） | `b0f5066a` |
+| `tests/integration/order-lifecycle.test.ts` | 新規。6 シナリオ / 8 テスト | `61eacfb1` |
+
+#### 固定した内容と、主張しないこと
+
+- キャンセル/返金の親子連動（親 `PaymentStatus` は "Cancelled"、子 `OrderStatus` は
+  "Canceled" というスペル差も含む）と、在庫が減算前まで戻ること
+- **二重キャンセルの冪等性**: 逐次 2 回でも復元は 1 回ぶんのみ。`Cancelled → Refunded` の
+  再遷移も条件付き `updateMany` の `where` に弾かれる
+- group 単位キャンセルはそのグループの在庫のみ復元し、親 status は混在→`Processing` /
+  全 Canceled→`Canceled` へ集約
+- 非 ADMIN は**両** admin 関数とも拒否され、副作用ゼロ
+- **⚠️ 主張しないこと 2 点**: (a) 並行ケースは「並行ディスパッチの回帰テスト」であって
+  DB 上でトランザクションが重なったことの証明ではない。(b) 並行安全性を固定したのは
+  `updateOrderPaymentStatus`（CAS 済み）のみで、`updateOrderGroupStatusAsAdmin` は
+  read-then-act のままなので**並行二重復元は未解決**（`plans/README.md` の Deferred）
+
+#### 実装上の落とし穴（次の実行者向け）
+
+`OrderStatus` / `PaymentStatus` は `@prisma/client` と `src/lib/types.ts` の**両方に同名で存在**し、
+値が同一なので **Jest は緑のまま `tsc --noEmit` だけが落ちる**。SUT (`order.ts`) と同じ
+`@/lib/types` から取ること。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 20 / 2 スイート | **28 / 3 スイート** |
 | Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

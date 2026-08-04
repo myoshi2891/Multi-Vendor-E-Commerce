@@ -429,9 +429,10 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 20 integration tests across 2 suites
+- 28 integration tests across 3 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
-  `tests/integration/order-placement.test.ts` 9) as of 2026-08-04.
+  `tests/integration/order-placement.test.ts` 9 +
+  `tests/integration/order-lifecycle.test.ts` 8) as of 2026-08-04.
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`
@@ -440,6 +441,16 @@
   (IDOR) guard, rollback on invalid product combinations, the atomic stock
   decrement amount, oversell rollback (stock stolen between validation and
   decrement — no partial commit), and PLATFORM coupon remainder absorption.
+  `order-lifecycle.test.ts` covers the post-checkout side of the same
+  inventory invariant (`src/queries/order.ts`): cancel/refund cascades to
+  OrderGroup/OrderItem, restock restores the pre-order quantity, double
+  cancellation restocks exactly once (sequential and concurrently dispatched),
+  non-cancel transitions touch neither children nor stock, group-level
+  cancellation restocks only that group while the parent status is
+  re-aggregated, and both admin mutations reject non-admins without side
+  effects. Note: only `updateOrderPaymentStatus` is CAS-guarded;
+  `updateOrderGroupStatusAsAdmin` remains read-then-act, so its concurrent
+  double-restock is unresolved (tracked in `plans/README.md` Deferred).
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent

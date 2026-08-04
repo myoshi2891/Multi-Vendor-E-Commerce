@@ -128,13 +128,15 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
     // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
     // QA_HANDOFF R5 を同時削除すること。
+    // 2026-08-04 時点: 031 が DONE (order-lifecycle.test.ts / +8・スイート +1)。
+    // 残るは 032〜035。
     {
         priority: "medium",
-        title: "R5: Integration テストギャップ解消 (plans 031〜035)",
-        target: "order ライフサイクル restock / webhook 冪等性 / tsvector 検索 / レビュー集計 / ロール昇格",
-        tool: "plans/031〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        title: "R5: Integration テストギャップ解消 (残り plans 032〜035)",
+        target: "webhook 冪等性 / tsvector 検索 / レビュー集計 / ロール昇格 (031 の order ライフサイクル restock は完了)",
+        tool: "plans/032〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
         cost: "M",
-        impact: "在庫二重復元・webhook 再送・raw SQL 回帰など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 17→約45 テスト / 2→6 スイート)",
+        impact: "webhook 再送・raw SQL 回帰など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 28→約45 テスト / 3→6 スイート)",
     },
     // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
     // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
