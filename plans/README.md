@@ -115,9 +115,9 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
-| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | IN PROGRESS（Step 1–4 = signIn 修復 + a11y は DONE / Step 5–6 は STOP 条件で未達。**hard dependency としては解除済み** — 下の実行記録を参照） |
+| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
-| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
+| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
@@ -206,6 +206,45 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >
 > **実行環境**: :3000 は別プロジェクトの `next-server` が占有していたため、051 の記録どおり
 > `PORT=3100 E2E_BASE_URL=http://localhost:3100` へ退避して実行した（この方式は問題なく機能する）。
+>
+> **044 / 042 の実行記録（2026-08-04・`d7ffbb88`〜`d939b697`）**
+>
+> **044 は DONE。ただし実装はプラン本文と形が違う。** プラン Step 1–2 は「:3000 の `lsof`
+> 事前チェック」を指示していたが、先行セッション（`eeb9422b` / `fdc0ee9f`）は
+> **専用ポート :3100 への隔離 + `E2E_NO_REUSE=1` による再利用の無効化**として実装した。
+> これは逸脱ではなく**プラン本文の結論に沿った上位互換** —— 044 の Why this matters 自身が
+> 「事前チェックは TOCTOU を縮めるだけで塞がない。根治は `reuseExistingServer` を
+> `!CI && !E2E_NO_REUSE` にすること」と 2026-07-18 に確定しており、実装はその根治側だけを
+> 採って、ポート番号も :3000 から退避させた（他プロジェクトの :3000 常駐を停止せずに済む
+> —— 042 / 051 の実行記録が「退避のほうが安全」と申し送っていた通り）。`lsof` チェックは
+> :3100 に対して残っており、早期・可読な失敗のための補助という位置づけもプラン通り。
+> 本セッションの残作業は **Step 3（`globalTimeout` 1200s→3600s・`d7ffbb88`）** のみだった。
+> Step 4 の判定基準（`.last-run.json` の status が `"timedout"` でない）はフルランで充足
+> （実測値は `"failed"` = visual 3 件による）。
+>
+> **042 は DONE。** 042 が STOP 条件で停止した原因（サインイン成立後の商品ページ `goto` が
+> 30s×3 でタイムアウト）は plan 047 が真因を特定済みだったが、**除去は 2 spec のみで
+> `tests/e2e/stock-decrement.spec.ts:148` に 1 箇所残っていた**。これを外すと当該 spec は
+> 120s ハング → **7.3s 完走**に転じ、Step 5（chromium 認証バッチ）は **9 passed / 0 failed**
+> （1.9m）、Step 6（3 ブラウザフルラン）は **83 passed / 3 failed / 37 skipped / flaky 0**
+> （5.8m）で完了した。**残る failed 3 件は `visual/cart.spec.ts` ×2 と
+> `visual/checkout.spec.ts` ×1 のベースライン陳腐化のみ**（plan 043 の担当）で、Step 6 の
+> 期待値「visual 3 件以外の failed が 0」を満たす。Done criteria の機械検証ゲート 5 項目
+> （`getByLabel("Email address")` 残存 0 / `signInWithPassword` に実行時分岐なし /
+> `expect(passwordInput).toBeVisible()` 存在 / Continue の `exact: true` / `waitForURL` 実装）も
+> すべて PASS。
+>
+> **フルラン所要は 25.5m → 5.8m。** ベースライン（2026-07-11）の 25.5m は、失敗 13 件が
+> それぞれリトライ 2 回ぶんの per-goto 予算を燃やしていた結果であり、ハング除去でそれが
+> 消えた。`globalTimeout: 3600s` は**それでもなお**必要 —— 短い値は「失敗」ではなく
+> 「未実行（`did not run`）」を生み、**測定の分母を黙って縮める**ためのり代を残す。
+>
+> **次の実行者への申し送り**: フルランを完全に green にする残件は **plan 043（VRT 3 枚の
+> 目視ゲート付き再撮影）のみ**。042 を hard dependency にしていた
+> **048 / 049 / 050 / 052 / 053（サインアウト部）/ 055 は着手条件が解除された**。
+> 新規 E2E spec を書く際は、サインイン直後に `waitForPostSignInSettle` を挟まないこと
+> （`src/config/test-helpers.ts` に定義は残るが、E2E の呼び出し箇所は本コミットで**ゼロ**に
+> なった。`gotoStable` は Firefox の `NS_BINDING_ABORTED` 吸収に必要なので残す）。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
