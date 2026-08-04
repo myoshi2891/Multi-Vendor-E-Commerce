@@ -31,6 +31,15 @@
   next `page.goto` hang without ever issuing a request (measured: three consecutive 2-minute
   timeouts while the same URL answered in 0.5–1.5s from curl). `gotoStable` stays: Firefox
   aborts the goto with `NS_BINDING_ABORTED` when the post-sign-in soft redirect interrupts it.
+- Plans 044 / 042 closed on 2026-08-04. Plan 047 had removed the settle wait from two specs but
+  `stock-decrement.spec.ts` still carried it; removing that last site took the spec from a
+  120s hang to 7.3s. First clean full run since the sign-in drift was introduced:
+  **83 passed / 3 failed / 37 skipped / 0 flaky in 5.8 minutes** (`scripts/e2e/run-local.sh`,
+  three browsers). The 3 failures are the stale visual baselines owned by plan 043 — no
+  authentication failure remains. Wall-clock fell from the 25.5-minute baseline because the
+  hang no longer burns the per-goto budget times two retries. `globalTimeout` is now 3600s
+  (plan 044): the old 1200s could not hold a run with retries and truncated 3 tests as
+  "did not run", which silently shrinks the measured denominator.
 - Earlier entry (2026-08-01): 1829 passed / 1832 total across 177 suites (3 skipped).
   Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
   `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template

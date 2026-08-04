@@ -2387,3 +2387,59 @@ ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuan
 | スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plans 044 / 042 の完了 — E2E 運用ガードと signIn 修復の最終検証 (2026-08-04)
+
+#### 概要
+
+`plans/README.md` の Status 表で唯一残っていた P1（042 = IN PROGRESS）を閉じ、
+その前提となる P2/DX（044）を先に完了させた。042 の残ブロッカーは plan 047 が特定した
+サインイン後ハングの**除去漏れ 1 箇所**で、これを外したことで 3 ブラウザフルランが
+初めて「visual ベースライン以外 failed 0」に到達した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `playwright.config.ts` | `globalTimeout` を 1200s → 3600s（plan 044 Step 3）。1200s は 25.5m のランを収容できず 3 件を `did not run` で打ち切っていた | `d7ffbb88` |
+| `tests/e2e/stock-decrement.spec.ts` | `waitForPostSignInSettle` の呼び出しと import を除去（plan 047 の除去漏れ）。除去理由を他 spec と同型のコメントで固定 | `d939b697` |
+
+#### 実測結果
+
+| 実測 | 結果 |
+|------|------|
+| chromium 認証バッチ（stock-decrement / platform-coupon / seller-onboarding / messages / a11y） | **9 passed / 0 failed**（1.9m） |
+| 3 ブラウザフルラン（`bash scripts/e2e/run-local.sh`） | **83 passed / 3 failed / 37 skipped / flaky 0**（5.8m） |
+| `.last-run.json` の status | `failed`（**`timedout` ではない** = plan 044 Step 4 の判定基準を充足） |
+| 042 の機械検証ゲート 5 項目 | すべて PASS |
+
+failed 3 件は `visual/cart.spec.ts` × 2 と `visual/checkout.spec.ts` × 1 の
+ベースライン陳腐化のみで、**plan 043（目視ゲート付き再撮影）の担当**。
+
+#### plan 044 の実装がプラン本文と異なる点
+
+044 Step 1–2 はプラン本文では「:3000 の `lsof` 事前チェック」だったが、実装は
+**専用ポート :3100 への隔離 + `E2E_NO_REUSE=1` による再利用の無効化**（`eeb9422b` /
+`fdc0ee9f`）。プラン本文の Why this matters が「事前チェックは TOCTOU を縮めるだけで
+塞がない」と自ら認めており、`E2E_NO_REUSE` が本質的なガードだと結論していたため、
+実装はその結論に沿った上位互換。ポート隔離は他プロジェクトの :3000 常駐を
+停止せずに済む副次利点も持つ。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1841 passed / 1844 total**（不変・E2E のみの変更） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 41 tests/browser・17 files（123） | **41 tests/browser・17 files（123）**（不変） |
+| 3 ブラウザフルラン | 52 passed / 17 failed / 39 skipped / 3 did not run（25.5m・2026-07-11） | **83 passed / 3 failed / 37 skipped / 0 did not run**（5.8m） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+#### 後続への影響
+
+042 の完了により、hard dependency として 042 を待っていた
+**plans 047（済）/ 048 / 049 / 050 / 052 / 053（サインアウト部）/ 055** の着手条件が解除された。
