@@ -7,7 +7,6 @@ import {
     gotoStable,
     setupE2ETestState,
     waitForCartPersist,
-    waitForPostSignInSettle,
 } from "@/config/test-helpers";
 
 const prisma = new PrismaClient();
@@ -144,11 +143,18 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         // Sign in as the pre-created Clerk test user
         // （テストトークン注入と Clerk ウィジェット操作は共有ヘルパーが行う）
         await signInWithPassword(page, userEmail, userPassword);
-        // サインイン後のホームへの遅延リダイレクト着地を待ち、後続 goto の割り込みを防ぐ
-        await waitForPostSignInSettle(page);
 
         // Act: 商品をカートに追加（既定 quantity=1）
-        // 遅延サインインリダイレクトに割り込まれた場合は再試行する
+        // 遅延サインインリダイレクトに割り込まれた場合は再試行する。
+        //
+        // サインイン直後に `waitForPostSignInSettle` を挟まないこと。挟むと後続の
+        // 商品ページ goto がリクエストを発行しないままハングし、per-goto 予算 ×
+        // リトライ回数を丸ごと消費する（同時刻にシェルから同 URL を curl すると
+        // 0.5〜1.5s で 200 が返りサーバーは健全）。これは run-local.sh ヘッダーと
+        // plan 042 実行記録が「重い注文フローの間欠ハング」として記録していた症状の
+        // 正体で、plan 047 が payment-error / platform-coupon から除去済み（本 spec は
+        // その除去漏れ）。一方 `gotoStable` は残す —— Firefox はサインイン後のソフト
+        // リダイレクトが goto に割り込んで `NS_BINDING_ABORTED` を投げるため。
         await gotoStable(page, `/product/${seed.product.slug}/${seed.variant.slug}`);
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });

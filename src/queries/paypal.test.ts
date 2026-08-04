@@ -1008,3 +1008,349 @@ describe("capturePayPalPayment", () => {
         });
     });
 });
+
+// ==================================================
+// catch 分岐網羅（Error / unknown 両系統）
+// ==================================================
+// characterization テスト: 現状の挙動を固定するものであり、
+// `.claude/steering/tech.md` の構造化ログ規約（2 引数形式）への準拠を
+// 証明するものではない。paypal.ts の console.error は 3 引数の位置指定形式で、
+// ここではその**現状**をそのまま assert する（本体は 1 行も変更しない）。
+//
+// なお currentUser / order 取得の catch は共通ヘルパー
+// `requirePayPalUser` / `findOwnedPayPalOrder` に抽出されており、
+// createPayPalPayment と capturePayPalPayment はログ prefix だけが異なる。
+// そのため分岐本体は createPayPalPayment 側で通し、capture 側は
+// prefix が切り替わることだけを 1 ケースずつ確認する（機械的な二重化はしない）。
+describe("catch 分岐網羅（Error / unknown 両系統）", () => {
+    let consoleErrorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        consoleErrorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
+    });
+
+    describe("requirePayPalUser の catch", () => {
+        it('"Unauthenticated." はラップせずそのまま再スローする', async () => {
+            // Arrange: 認可エラーを汎用メッセージで潰すと、呼び出し側が
+            // 文字列比較で認可エラーを見分けられなくなる。
+            (currentUser as jest.Mock).mockRejectedValue(
+                new Error("Unauthenticated.")
+            );
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                /^Unauthenticated\.$/
+            );
+        });
+
+        it("Error で reject した場合、message を補間して message と stack をログする", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockRejectedValue(
+                new Error("clerk down")
+            );
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                "Failed to fetch current user: clerk down"
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:createPayPalPayment] Failed to fetch current user",
+                "clerk down",
+                expect.any(String)
+            );
+        });
+
+        it("非 Error で reject した場合、String(error) を補間し生の値をログする", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockRejectedValue("boom");
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                "Failed to fetch current user: boom"
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:createPayPalPayment] Failed to fetch current user",
+                "boom"
+            );
+        });
+
+        it("capturePayPalPayment 経由ではログ prefix が capture 側に切り替わる", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockRejectedValue(
+                new Error("clerk down")
+            );
+
+            // Act & Assert
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Failed to fetch current user: clerk down");
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:capturePayPalPayment] Failed to fetch current user",
+                "clerk down",
+                expect.any(String)
+            );
+        });
+    });
+
+    describe("findOwnedPayPalOrder の catch", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it('"Order not found" はラップせずそのまま再スローする', async () => {
+            // Arrange
+            mockDb.order.findUnique.mockRejectedValue(
+                new Error("Order not found")
+            );
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                /^Order not found$/
+            );
+        });
+
+        it("Error で reject した場合、message を補間して message と stack をログする", async () => {
+            // Arrange
+            mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                "Failed to fetch order: db down"
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:createPayPalPayment] Failed to fetch order",
+                "db down",
+                expect.any(String)
+            );
+        });
+
+        it("非 Error（Prisma の生オブジェクト）で reject した場合、String(error) を補間する", async () => {
+            // Arrange
+            const rawError = { code: "P2024" };
+            mockDb.order.findUnique.mockRejectedValue(rawError);
+
+            // Act & Assert
+            // String({ code: "P2024" }) === "[object Object]"（現状の実挙動）
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                "Failed to fetch order: [object Object]"
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:createPayPalPayment] Failed to fetch order",
+                rawError
+            );
+        });
+
+        it("capturePayPalPayment 経由ではログ prefix が capture 側に切り替わる", async () => {
+            // Arrange
+            mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+            // Act & Assert
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow("Failed to fetch order: db down");
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "[paypal:capturePayPalPayment] Failed to fetch order",
+                "db down",
+                expect.any(String)
+            );
+        });
+    });
+
+    describe("createPayPalPayment の外側 catch", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+        });
+
+        it("PayPal API が非 OK を返した場合、status と本文をログして汎用メッセージへ縮退する", async () => {
+            // Arrange
+            mockFetch.mockResolvedValue({
+                ok: false,
+                status: 500,
+                text: () => Promise.resolve("server err"),
+            });
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                /^Failed to create PayPal payment$/
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in createPayPalPayment:",
+                expect.stringContaining(
+                    "PayPal API responded with status 500"
+                ),
+                expect.any(String)
+            );
+        });
+
+        it("fetch が非 Error で reject した場合、生の値をログして汎用メッセージへ縮退する", async () => {
+            // Arrange
+            mockFetch.mockRejectedValue("network boom");
+
+            // Act & Assert
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                /^Failed to create PayPal payment$/
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in createPayPalPayment:",
+                "network boom"
+            );
+        });
+
+        it("エラーログに注文者の PII（email）が含まれない", async () => {
+            // Arrange: Clerk のユーザーオブジェクトに PII を載せた状態で失敗させる。
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                emailAddresses: [{ emailAddress: "buyer@example.com" }],
+            });
+            mockFetch.mockRejectedValue(new Error("network down"));
+
+            // Act
+            await expect(createPayPalPayment("order-001")).rejects.toThrow(
+                "Failed to create PayPal payment"
+            );
+
+            // Assert: 全ログ引数を文字列化しても PII が現れない
+            const loggedText = consoleErrorSpy.mock.calls
+                .flat()
+                .map((arg) => String(arg))
+                .join(" ");
+            expect(loggedText).not.toContain("buyer@example.com");
+        });
+    });
+
+    describe("capturePayPalPayment の外側 catch", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 99.99 })
+            );
+        });
+
+        it("retrieve（GET）が非 OK なら課金前に汎用メッセージへ縮退する", async () => {
+            // Arrange
+            mockFetch.mockResolvedValue({
+                ok: false,
+                status: 502,
+                text: () => Promise.resolve("bad gateway"),
+            });
+
+            // Act & Assert
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow(/^Failed to capture PayPal payment$/);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in capturePayPalPayment:",
+                expect.stringContaining(
+                    "PayPal API responded with status 502"
+                ),
+                expect.any(String)
+            );
+            // 課金前に落ちているので capture URL は叩かれていない
+            expect(captureCalls()).toHaveLength(0);
+        });
+
+        it("capture（POST）が非 OK なら status と本文をログして汎用メッセージへ縮退する", async () => {
+            // Arrange: retrieve は正常・capture だけ非 OK にする
+            mockFetch.mockImplementation((input: unknown) =>
+                Promise.resolve(
+                    String(input).endsWith("/capture")
+                        ? {
+                              ok: false,
+                              status: 422,
+                              text: () =>
+                                  Promise.resolve("UNPROCESSABLE_ENTITY"),
+                          }
+                        : jsonResponse(buildOrderRetrieveResponse())
+                )
+            );
+
+            // Act & Assert
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow(/^Failed to capture PayPal payment$/);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in capturePayPalPayment:",
+                expect.stringContaining(
+                    "PayPal API responded with status 422"
+                ),
+                expect.any(String)
+            );
+        });
+
+        it("fetch が非 Error で reject した場合、生の値をログして汎用メッセージへ縮退する", async () => {
+            // Arrange
+            mockFetch.mockRejectedValue("network boom");
+
+            // Act & Assert
+            await expect(
+                capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+            ).rejects.toThrow(/^Failed to capture PayPal payment$/);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Error in capturePayPalPayment:",
+                "network boom"
+            );
+        });
+    });
+});
+
+// ==================================================
+// 不正応答の防御（optional chaining ガード）
+// ==================================================
+// plan 059 が追加した capture 前後の検証は `?.` で欠損に備えている。
+// PayPal が purchase_units / captures を欠いた応答を返しても、
+// 例外が TypeError に化けず意図した拒否メッセージへ収束することを固定する。
+describe("不正応答の防御（purchase_units / captures の欠損）", () => {
+    beforeEach(() => {
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+        });
+        mockDb.order.findUnique.mockResolvedValue(
+            createMockOrder({ total: 99.99 })
+        );
+    });
+
+    it("retrieve 応答に purchase_units が無い場合、相関不一致として課金前に拒否する", async () => {
+        // Arrange
+        mockPayPalFetch({
+            orderResponse: { id: "PAYPAL-ORDER-123", status: "APPROVED" },
+        });
+
+        // Act & Assert
+        await expect(
+            capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+        ).rejects.toThrow("PayPal order does not match order.");
+        expect(captureCalls()).toHaveLength(0);
+    });
+
+    it("capture 応答に captures が無い場合、金額/通貨の不一致として拒否する", async () => {
+        // Arrange: 相関（外側 custom_id）は通るが capture オブジェクトが欠ける
+        mockPayPalFetch({
+            captureResponse: {
+                status: "COMPLETED",
+                purchase_units: [{ custom_id: "order-001" }],
+            },
+        });
+
+        // Act & Assert
+        await expect(
+            capturePayPalPayment("order-001", "PAYPAL-ORDER-123")
+        ).rejects.toThrow("PayPal capture amount/currency mismatch.");
+        expect(mockDb.order.update).not.toHaveBeenCalled();
+        expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+    });
+});

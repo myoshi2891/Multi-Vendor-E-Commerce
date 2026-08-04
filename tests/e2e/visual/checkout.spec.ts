@@ -25,6 +25,18 @@ test.describe("Visual: Checkout (未認証)", () => {
         await page.goto("/checkout", { waitUntil: "domcontentloaded" });
         // middleware の auth.protect() で /sign-in に飛ばされる
         await page.waitForURL(/\/sign-in/, { timeout: 10000 });
+
+        // Clerk ウィジェットは client-only のため、URL 到達直後はまだ本文が空。
+        // その状態でも 100ms 間隔の 2 枚が一致するので toHaveScreenshot は
+        // 「安定」と判定してしまい、ヘッダー＋フッターだけのベースラインを固定する
+        // （plan 043 の実測 — 3 試行ともバイト同一の空本文だった）。それでは
+        // サインイン画面の差分検出器にならず、マシン速度が変われば描画が間に合って
+        // 恒常 red にもなる。helpers/auth.ts:67-82 と同じアンカーで描画完了を待つ。
+        const clerkRoot = page.locator(".cl-signIn-root");
+        await expect(clerkRoot.locator('input[name="password"]')).toBeVisible({
+            timeout: 15000,
+        });
+
         await expect(page).toHaveScreenshot("checkout-redirect-signin.png", {
             fullPage: true,
         });

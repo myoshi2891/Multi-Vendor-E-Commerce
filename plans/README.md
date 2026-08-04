@@ -99,10 +99,10 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | DONE |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
-| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
+| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | DONE（2026-08-04・`c3699b9c`。**プラン本文の baseline が陳腐化しており Drift check に実際に引っかかった** — 実測 40 テスト / Branches 72.05% を起点に 56 テスト / **91.91%** へ。下の実行記録を参照） |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
-| [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | TODO |
-| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | TODO |
+| [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
+| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
@@ -115,9 +115,9 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
-| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | IN PROGRESS（Step 1–4 = signIn 修復 + a11y は DONE / Step 5–6 は STOP 条件で未達。**hard dependency としては解除済み** — 下の実行記録を参照） |
-| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
-| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
+| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
+| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
+| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
@@ -206,6 +206,120 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >
 > **実行環境**: :3000 は別プロジェクトの `next-server` が占有していたため、051 の記録どおり
 > `PORT=3100 E2E_BASE_URL=http://localhost:3100` へ退避して実行した（この方式は問題なく機能する）。
+>
+> **044 / 042 の実行記録（2026-08-04・`d7ffbb88`〜`d939b697`）**
+>
+> **044 は DONE。ただし実装はプラン本文と形が違う。** プラン Step 1–2 は「:3000 の `lsof`
+> 事前チェック」を指示していたが、先行セッション（`eeb9422b` / `fdc0ee9f`）は
+> **専用ポート :3100 への隔離 + `E2E_NO_REUSE=1` による再利用の無効化**として実装した。
+> これは逸脱ではなく**プラン本文の結論に沿った上位互換** —— 044 の Why this matters 自身が
+> 「事前チェックは TOCTOU を縮めるだけで塞がない。根治は `reuseExistingServer` を
+> `!CI && !E2E_NO_REUSE` にすること」と 2026-07-18 に確定しており、実装はその根治側だけを
+> 採って、ポート番号も :3000 から退避させた（他プロジェクトの :3000 常駐を停止せずに済む
+> —— 042 / 051 の実行記録が「退避のほうが安全」と申し送っていた通り）。`lsof` チェックは
+> :3100 に対して残っており、早期・可読な失敗のための補助という位置づけもプラン通り。
+> 本セッションの残作業は **Step 3（`globalTimeout` 1200s→3600s・`d7ffbb88`）** のみだった。
+> Step 4 の判定基準（`.last-run.json` の status が `"timedout"` でない）はフルランで充足
+> （実測値は `"failed"` = visual 3 件による）。
+>
+> **042 は DONE。** 042 が STOP 条件で停止した原因（サインイン成立後の商品ページ `goto` が
+> 30s×3 でタイムアウト）は plan 047 が真因を特定済みだったが、**除去は 2 spec のみで
+> `tests/e2e/stock-decrement.spec.ts:148` に 1 箇所残っていた**。これを外すと当該 spec は
+> 120s ハング → **7.3s 完走**に転じ、Step 5（chromium 認証バッチ）は **9 passed / 0 failed**
+> （1.9m）、Step 6（3 ブラウザフルラン）は **83 passed / 3 failed / 37 skipped / flaky 0**
+> （5.8m）で完了した。**残る failed 3 件は `visual/cart.spec.ts` ×2 と
+> `visual/checkout.spec.ts` ×1 のベースライン陳腐化のみ**（plan 043 の担当）で、Step 6 の
+> 期待値「visual 3 件以外の failed が 0」を満たす。Done criteria の機械検証ゲート 5 項目
+> （`getByLabel("Email address")` 残存 0 / `signInWithPassword` に実行時分岐なし /
+> `expect(passwordInput).toBeVisible()` 存在 / Continue の `exact: true` / `waitForURL` 実装）も
+> すべて PASS。
+>
+> **フルラン所要は 25.5m → 5.8m。** ベースライン（2026-07-11）の 25.5m は、失敗 13 件が
+> それぞれリトライ 2 回ぶんの per-goto 予算を燃やしていた結果であり、ハング除去でそれが
+> 消えた。`globalTimeout: 3600s` は**それでもなお**必要 —— 短い値は「失敗」ではなく
+> 「未実行（`did not run`）」を生み、**測定の分母を黙って縮める**ためのり代を残す。
+>
+> **次の実行者への申し送り**: フルランを完全に green にする残件は **plan 043（VRT 3 枚の
+> 目視ゲート付き再撮影）のみ**。042 を hard dependency にしていた
+> **048 / 049 / 050 / 052 / 053（サインアウト部）/ 055 は着手条件が解除された**。
+> 新規 E2E spec を書く際は、サインイン直後に `waitForPostSignInSettle` を挟まないこと
+> （`src/config/test-helpers.ts` に定義は残るが、E2E の呼び出し箇所は本コミットで**ゼロ**に
+> なった。`gotoStable` は Firefox の `NS_BINDING_ABORTED` 吸収に必要なので残す）。
+>
+> **043 の実行記録（2026-08-04・`2d7ac110`〜`15cbca83`）**
+>
+> **DONE。ただし checkout は「ベースラインの陳腐化」ではなかった。** cart 2 枚はプラン本文
+> どおりの陳腐化で、目視ゲートの結果も想定内 —— 旧ベースラインは **1280x720 でフッターが
+> 写っておらず、左下に Next.js の dev インジケータ（"N" バッジ）が写り込んでいた**（dev
+> サーバー時代の撮影）。+351px の増分の実体は Newsletter バナー＋フッターリンク群の描画で、
+> 要素の重なり・見切れ・異常な空白は無し。cart-with-item も商品行が完全に揃っている。
+>
+> **checkout はプランの想定（「Clerk UI が 2 ステップ型 → 1 画面統合型へ変わった」）と違った。**
+> 旧ベースラインは**真っ白**（ウィジェット未描画）で、再撮影しても actual は
+> **ヘッダー＋空の本文＋フッター**にしかならない。Clerk は client-only のため URL 到達直後は
+> 本文が空で、**100ms 間隔の 2 枚が一致してしまい `toHaveScreenshot` が「安定」と誤判定する**
+> （3 試行ともバイト同一の 150420B ＝ フレークではなく決定論的）。error-context の a11y
+> スナップショットにはウィジェットが写るので、DOM には存在するが撮影に間に合っていない。
+> **そのまま固定すると「サインイン画面の差分検出器」にならず、マシン速度が変われば描画が
+> 間に合って恒常 red にもなる**ため、オペレーター承認を得て
+> [`tests/e2e/visual/checkout.spec.ts`](../tests/e2e/visual/checkout.spec.ts) に描画待ちを
+> 追加した（プラン本文では spec は Out of scope）。アンカーは
+> [`tests/e2e/helpers/auth.ts:67-82`](../tests/e2e/helpers/auth.ts) と同じ
+> `.cl-signIn-root` + `input[name="password"]` の可視で、リポジトリ既定に揃えている。
+>
+> **数の対応**: Step 1 の failed **3** = 更新された .png **3 枚** = 最終 passed **3**
+> （プランの機械的証拠がそのまま成立）。連続 2 回 green も充足。
+>
+> **フルラン実測（3 ブラウザ）: 83 passed / 0 failed / 3 flaky / 37 skipped（7.4m）。**
+> 042 の実行記録が申し送った「残 failed 3 件は VRT のみ」が**解消**され、failed はゼロ。
+> flaky 3 件（payment-error@chromium / platform-coupon@firefox / layout-chrome@webkit）は
+> いずれもリトライで pass しており、**別事案として残る**（VRT とは無関係）。
+>
+> **次の実行者への申し送り**: 054（VRT 対象を商品詳細・browse へ拡大）の着手条件が解除された。
+> 新規 VRT を書く際は、**client-only ウィジェットを含む画面では「描画完了アンカー」を
+> spec 側に明示すること** —— `toHaveScreenshot` の安定判定は「連続 2 枚の一致」でしかなく、
+> 未描画の空画面も安定と見なす。
+>
+> **026 の実行記録（2026-08-04・`c3699b9c`）**
+>
+> **DONE。ただしプラン本文の baseline は実測で覆っている。** 026 は Drift check に
+> 「`paypal.ts` 本体が変わっていたら STOP」と書いていたが、**実際に変わっていた** ——
+> plan 059（PayPal capture の金額/相関/通貨検証）が `b6591f9` 比で **+391 行**を入れ、
+> テストも **17 → 40** に成長していた。したがって本文の数値（Branches 28.6% / 17→32 テスト）は
+> そのまま Done criteria に使えない。**ケース表の中身（catch の 3 分岐 × 2 箇所・非 OK 応答・
+> 外側 catch の非 Error 分岐）は現行コードでも有効だった**ため、表は活かして数値目標だけを
+> 実測から再導出する形で続行した（オペレーター判断）。結果は **40 → 56 テスト /
+> Branches 72.05%（98/136）→ 91.91%**（目標 90% 達成）、Statements / Lines / Functions は **100%**。
+>
+> **構造上の変化 1 点**: currentUser / order 取得の catch は共通ヘルパー
+> `requirePayPalUser` / `findOwnedPayPalOrder`（[`src/queries/paypal.ts:127-194`](../src/queries/paypal.ts)）
+> へ抽出済みで、`createPayPalPayment` と `capturePayPalPayment` の差は**ログ prefix だけ**。
+> プラン Step 3 は「Step 2 と同型の 7 ケースを capture 側にも」と指示していたが、
+> **分岐本体は create 側で通し、capture 側は prefix が切り替わることだけを 1 ケースずつ確認**
+> する形にした（機械的な二重化はカバレッジを増やさず読む量だけ増やす）。
+>
+> **ケース表外の追加 2 件**: `purchase_units` / `captures` 欠損応答の防御。プラン 026 の
+> 「新しい種類のテストを発明しない」に触れるが、**残りの未カバー分岐が plan 059 由来の
+> optional-chaining ガードのみで、これ無しでは 90% に届かなかった**ため追加した
+> （TypeError へ化けず意図した拒否メッセージへ収束することの固定）。
+>
+> **規約との関係（レビュー時に注意）**: 本テストは **現状の 3 引数ログ形式をそのまま
+> assert する characterization** であり、`.claude/steering/tech.md` の 2 引数構造化ログ規約への
+> **準拠を証明しない**（`paypal.ts` は規約の実装例として名指しされていながら準拠していない、
+> という乖離はプラン 026 本文が明記したまま残っている）。本体は 1 行も変更していない。
+>
+> **028 / 029 の実行記録（2026-08-04・`68f636d5` / `70803930`）**
+>
+> **両者とも素の DONE（逸脱なし）。** 028 は `src/queries/country.test.ts` を新設して 4 テスト、
+> country.ts 単体で Statements/Branches/Functions/Lines とも **100%**。
+> `ls src/queries/*.test.ts | wc -l` が実装 20 モジュールと一致し、CLAUDE.md
+> 「Jest ユニットテストの対象は全サーバーアクション」の不変条件が回復した。
+> 029 は `profile.test.ts` を **34 → 63**（catch 20 + 期間フィルタ 9）に拡張し、
+> `profile.ts` の Branches は目標 95% に対し実測 **100%（87/87）**。
+> **期間フィルタで判明した既存テストの弱さ**: 従来の 1 件は `gte: expect.any(Date)` までしか
+> 見ておらず last-6-months / last-1-year / last-2-years を**区別できていなかった**。
+> `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
+> 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
