@@ -102,7 +102,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
-| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | TODO |
+| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
