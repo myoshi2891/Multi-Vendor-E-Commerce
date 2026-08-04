@@ -100,7 +100,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | DONE（2026-08-04・`c3699b9c`。**プラン本文の baseline が陳腐化しており Drift check に実際に引っかかった** — 実測 40 テスト / Branches 72.05% を起点に 56 テスト / **91.91%** へ。下の実行記録を参照） |
-| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
+| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | DONE（2026-08-04・`ee86ef32`〜`4efed303`。Integration 17 → **20**、order-placement 6 → **9**。**プラン本文の PLATFORM 割引額 $10.00 は実測 $12.00**〔割引基数が送料込みのため〕— 下の実行記録を参照） |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
@@ -320,6 +320,48 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 見ておらず last-6-months / last-1-year / last-2-years を**区別できていなかった**。
 > `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
 > 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
+>
+> **027 の実行記録（2026-08-04・`ee86ef32`〜`4efed303`）**
+>
+> **DONE。** Integration は **17 → 20**（`order-placement.test.ts` 6 → **9** シナリオ・スイート数不変。
+> `bun run test:integration` 実測 **20/20 pass / 4.054s**）。`src/queries/user.ts` は 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** baseline `b6591f9` から `user.ts` は
+> **+856 / −645 行**動いていた（Round 14 の冪等性ゲート等）が、プランが STOP 条件に挙げていたのは
+> **形状**の変化であり、条件付き `updateMany` + `count === 0` throw / PLATFORM 分岐
+> （`isPlatformCoupon` / `cumulativePlatformDiscount`）/ 割り込み点となる「トランザクション外」の
+> `getDeliveryDetailsForStoreByCountry` はいずれも健在だった（行番号のみ `:939-950` / `:835-890` /
+> `:747-759` へ移動）。plan 026 が確立した扱い（ケース表は活かし数値だけ実測から再導出）に倣った。
+>
+> **プランからの逸脱 1 点（数値）**: プラン Step 4 は「商品小計 $100.00 → PLATFORM 10% =
+> **$10.00**」を前提にしていたが、実装の割引基数 `cartTotalPrice` は `item.totalPrice`
+> （**送料込み**）の合計であり、実測は $120.00 → **$12.00**。既存 Scenario 4 が
+> 110（= 商品 100 + 送料 10）に 10% を掛けて 99 としているのと同じ規則で、**実装側が正しく
+> プラン本文の算術だけが送料を落としていた**。ケース設計（2 店舗 $33.33 / $66.67・`storeId: null`・
+> `scope: "PLATFORM"`）はそのまま活かし、期待値のみ実測から再導出した。
+>
+> **併せて判明した性質（次の実行者向け）**: 割引率は `Int`・除数は固定 100 なので
+> `Prisma.Decimal` の除算は必ず有限小数になり、**「最終グループが残差を吸収」は素朴な
+> 各グループ 10% と数学的に一致する**（`r×T − Σ r×gᵢ = r×g_last`）。つまり端数吸収分岐は
+> 丸め順序を実行ごとにブレさせないための**防御**であって、数値的な別経路ではない。
+> したがって Scenario 9 の識別力の本体は次の 2 点にある: (a)「`storeId` が null のクーポンなのに
+> **全グループ**へ適用される」= PLATFORM 分岐の一意な証明（`user.ts:870-872` の判定は
+> `isPlatformCoupon || (storeId === cartCoupon?.storeId && …)` の**論理和**なので、クーポンに
+> 店舗を持たせると「STORE 一致の項で通っただけ」の可能性が排除できない）、(b) 割引合計が
+> ちょうど総割引に一致するセント精度の固定。
+>
+> **Scenario 8 は空振りでないことを機械的に確認した。** 割り込み（`mockImplementationOnce` で
+> 在庫を 5 → 2）を一時的に外すと**当該シナリオだけが落ちる**ことを実測してから戻している
+> （rule 02 の Red 規律を、本体を変更できないテスト追加作業に適用する形）。ロールバックの
+> 固定は 3 点 —— Order / OrderGroup / OrderItem がいずれも 0 件、在庫は横取り後の 2 のまま、
+> **カート行も復元されて再試行できる**（Round 14 が入れた冪等性ゲートの `cart.deleteMany` が
+> 巻き戻ることの確認）。
+>
+> **基盤の追加 2 点**: `seedCoupon` に `scope?: CouponScope` を追加し `storeId` を
+> `string | null` へ緩和（`Coupon.scope @default(STORE)` を schema で確認済みなので
+> `undefined` パススルーで既定が入る）。`requireActual` の三重複を除くため
+> `tests/integration/setup/query-mocks.ts` を新設（`jest.mock` の factory 内だけは巻き上げの
+> ためローカル `requireActual` のまま — プラン Step 3 の指示どおり）。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
