@@ -12,7 +12,14 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1845 passed / 1848 total across 178 suites (3 skipped), as of 2026-08-04.
+- 1874 passed / 1877 total across 178 suites (3 skipped), as of 2026-08-04.
+  Plan 029 took `src/queries/profile.test.ts` from 34 to 63 tests (+29, no new suite) and
+  `profile.ts` from 67.81% branch coverage (59/87) to 100% (87/87). The gap was the two
+  try/catch sites in each of the five query functions — `currentUser` and the DB fetch, each
+  splitting on `instanceof Error` — plus the period filter in `getUserOrders` /
+  `getUserPayments` / `getUserReviews`. The existing period test asserted only
+  `gte: expect.any(Date)`, which cannot tell last-6-months from last-2-years; the new ones
+  pin a fixed clock and compare against `subMonths` / `subYears` directly.
   Plan 028 added `src/queries/country.test.ts` (+4 tests / +1 suite), closing the last
   server-action module that had no unit test — `ls src/queries/*.test.ts | wc -l` now equals
   the 20 implementation modules, restoring the CLAUDE.md invariant that every server action is

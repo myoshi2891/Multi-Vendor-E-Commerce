@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1845 passed / 1848 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1874 passed / 1877 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -2498,3 +2498,44 @@ error-context の a11y スナップショットにはウィジェットが写る
 フルランの flaky 3 件（payment-error@chromium / platform-coupon@firefox /
 layout-chrome@webkit）はいずれもリトライで pass しており VRT とは無関係。
 別事案として残る。
+
+---
+
+### plan 029 の実行（profile.ts のエラー経路 + 期間フィルタ網羅） (2026-08-04)
+
+#### 概要
+
+`src/queries/profile.ts`（プロフィール系 5 テーブルを供給する server action 群）の
+Branches を 67.81% から 100% へ引き上げた。本体は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/profile.test.ts` | catch 分岐 20 件 + 期間フィルタ 9 件を追加（34→63） | `70803930` |
+
+#### 何がテストされていなかったか
+
+5 関数（`getUserOrders` / `getUserPayments` / `getUserReviews` / `getUserWishlist` /
+`getUserFollowedStores`）はいずれも「currentUser 用」「DB フェッチ用」の 2 つの
+try/catch を持ち、どちらも `instanceof Error` の真偽でログの引数形状を変える。
+この **20 分岐が丸ごと未検証**で、「エラー時に内部詳細を漏らさず汎用メッセージへ
+縮退する」という PII 非漏洩の契約が固定されていなかった。
+
+期間フィルタは既存テストが 1 件あったが、`gte: expect.any(Date)` までしか見ておらず
+**last-6-months / last-1-year / last-2-years を区別できない**ものだった。
+`jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と
+突き合わせる形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため
+TZ 依存も生じない）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1845 passed / 1848 total | **1874 passed / 1877 total**（+29） |
+| Jest スイート数 | 178 | **178**（不変） |
+| profile.ts Branches | 67.81%（59/87） | **100%（87/87）** |
+| lcov 全体 Branches | 46.94% | **47.48%** |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
