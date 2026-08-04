@@ -13,6 +13,8 @@
  * - prisma/schema.prisma
  */
 import {
+    OrderStatus,
+    PaymentStatus,
     Prisma,
     Role,
     ShippingFeeMethod,
@@ -23,6 +25,9 @@ import {
     type Country,
     type Coupon,
     type CouponScope,
+    type Order,
+    type OrderGroup,
+    type OrderItem,
     type PrismaClient,
     type Product,
     type ProductVariant,
@@ -428,4 +433,96 @@ export async function seedShippingAddress(
             ...overrides,
         },
     });
+}
+
+// ----------------------------------------------------------------------------
+// Order + OrderGroup + OrderItem
+// ----------------------------------------------------------------------------
+
+export interface SeedOrderInput {
+    userId: string;
+    shippingAddressId: string;
+    storeId: string;
+    /** OrderItem が参照する商品一式（seedProductWithVariantAndSize の戻り値） */
+    product: Product;
+    variant: ProductVariant;
+    size: Size;
+    /** 注文数量（default 1）。Size.quantity はこの値ぶん減算済みの前提で作る */
+    quantity?: number;
+    /** Order.paymentStatus の初期値（default Pending） */
+    paymentStatus?: PaymentStatus;
+    /** OrderGroup.status の初期値（default Pending） */
+    groupStatus?: OrderStatus;
+}
+
+/**
+ * Create a minimal placed order: one Order with one OrderGroup and one OrderItem.
+ *
+ * 在庫復元（restock）の検証用フィクスチャ。`placeOrder` を経由せず注文済み状態を直接作るため、
+ * 呼び出し側は必要に応じて `Size.quantity` を注文数量ぶん減算しておくこと
+ * （このヘルパーは在庫を触らない）。
+ *
+ * 金額はすべて `Prisma.Decimal` のメソッドで組み立てる（`.claude/steering/tech.md` の
+ * 金額・数値精度規約により `number` の生演算は使わない）。送料は 0 とし、
+ * Order / OrderGroup の `subTotal` と `total` は行合計（`price × quantity`）で一致させる。
+ *
+ * @param input - 必須: `userId` / `shippingAddressId` / `storeId` / `product` / `variant` / `size`。
+ *                任意: `quantity`（default 1）/ `paymentStatus`（default Pending）/
+ *                `groupStatus`（default Pending）
+ * @returns 作成した `order` / `group` / `item`
+ */
+export async function seedOrderWithGroupAndItem(
+    db: PrismaClient,
+    input: SeedOrderInput
+): Promise<{ order: Order; group: OrderGroup; item: OrderItem }> {
+    const quantity = input.quantity ?? 1;
+    const unitPrice = input.size.price;
+    const lineTotal = unitPrice.mul(quantity);
+    const noShipping = new Prisma.Decimal(0);
+
+    const order = await db.order.create({
+        data: {
+            userId: input.userId,
+            shippingAddressId: input.shippingAddressId,
+            subTotal: lineTotal,
+            shippingFees: noShipping,
+            total: lineTotal,
+            paymentStatus: input.paymentStatus ?? PaymentStatus.Pending,
+        },
+    });
+
+    const group = await db.orderGroup.create({
+        data: {
+            orderId: order.id,
+            storeId: input.storeId,
+            status: input.groupStatus ?? OrderStatus.Pending,
+            subTotal: lineTotal,
+            shippingFees: noShipping,
+            total: lineTotal,
+            shippingService: "Standard",
+            shippingDeliveryMin: 7,
+            shippingDeliveryMax: 14,
+        },
+    });
+
+    const item = await db.orderItem.create({
+        data: {
+            orderGroupId: group.id,
+            productId: input.product.id,
+            variantId: input.variant.id,
+            sizeId: input.size.id,
+            productSlug: input.product.slug,
+            variantSlug: input.variant.slug,
+            sku: input.variant.sku,
+            name: `${input.product.name} - ${input.variant.variantName}`,
+            image: input.variant.variantImage,
+            size: input.size.size,
+            price: unitPrice,
+            quantity,
+            shippingFee: noShipping,
+            totalPrice: lineTotal,
+        },
+    });
+
+    return { order, group, item };
 }
