@@ -6,7 +6,7 @@
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest は 2026-08-04 実測・E2E は 2026-08-04 フルラン実測。lcov カバレッジは 2026-08-01 実測のまま）
+### テスト統計（Jest は 2026-08-04 実測・E2E は 2026-08-04 フルラン実測。lcov カバレッジも 2026-08-04 実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -24,7 +24,7 @@
 | 型エラー | **0 件** |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **197** / lcov エントリ **302** / マトリクス 18/80 セル (23%)。2026-08-04 実測（plan 028 の `country.test.ts` で +1）。直前: 196・2026-08-03 実測（`bun run coverage:dashboard` → `docs/coverage-dashboard.html` の `matrix-data`）。lcov 由来の値のみ `coverage/lcov.info` に依存するため **2026-08-01 の測定値**。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| テストファイル総数（ダッシュボード集計） | **197** / lcov エントリ **302** / マトリクス 18/80 セル (23%)。2026-08-04 実測（plan 028 の `country.test.ts` で +1）。直前: 196・2026-08-03 実測（`bun run coverage:dashboard` → `docs/coverage-dashboard.html` の `matrix-data`）。lcov 由来の値（エントリ 302）も 2026-08-04 に `coverage/lcov.info` を測り直した後の再生成なので **2026-08-04 の測定値**（生成物の `generatedAt` は `2026-08-04T08:54:36.322Z`）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 
 > **恒久メモ（Unit 行・Integration 行の到達点）**: Unit 行は `queries / pages / store / dashbd /
 > shared / lib` が ✦、`api` は構造的 N/A（categorize 上 api-contract 固定・実カバーは API/Contract 行 ✦
