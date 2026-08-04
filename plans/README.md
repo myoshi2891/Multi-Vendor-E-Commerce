@@ -357,21 +357,13 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
 - ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
 - **`updateOrderGroupStatusAsAdmin` の並行二重復元** — deferred from [plan 031](031-integration-test-order-lifecycle-restock.md)（2026-07-31 記録）。`order.ts:441-471` は `findUnique` で `prev.status` を読んでから `update` する **read-then-act** のため行ロックを取らず、並行 2 者が同じ非終端 status を読んで**両方が `restockOrderItems` を実行しうる**。修正は `updateOrderPaymentStatus` と同型の**条件付き `updateMany`（CAS）**への統一（`where` に `status: { notIn: [...] }` を置き `count === 1` の内側でのみ復元 — 前例 `d0005bb`）。plan 031 はテスト追加のみのスコープであり、Scenario 2 が並行安全性を固定しているのは `updateOrderPaymentStatus` 側**のみ**。本項目は**本体修正**として未着手。
-- **重い注文フロー E2E の間欠 120s ハング（サインイン後の商品ページ `goto` タイムアウト）** —
-  deferred from [plan 042](042-e2e-signin-helper-repair.md)（2026-08-03 記録）。
-  042 が signIn ヘルパーを修復した**後**も `stock-decrement` / `platform-coupon` が落ちる。
-  失敗点は `gotoStable(page, /product/<slug>/<variant>)`（`src/config/test-helpers.ts:218`）で、
-  per-goto 30s × 3 リトライを使い切り、テスト予算 120s を超える。**サインインは成立している**
-  （失敗時 DOM はサインイン済みヘッダー `img "user name"` を含み、`signInWithPassword` 起因の
-  エラーは 0 件）。これは [`scripts/e2e/run-local.sh`](../scripts/e2e/run-local.sh) のヘッダーが
-  **042 起票より前から**記録している既知ハングで、同ヘッダーは「Neon 負荷を疑ってローカル
-  Postgres へ向けても再現した（3 run 中 1 run で platform-coupon がハング）」と結論づけている。
-  本セッションの実測も**実行ごとに落ちるテストが移動する**性質を再現した（1 回目は
-  stock-decrement のみ、2 回目は両方）。同じ `goto` を持つ他 spec は通るため、URL やデータの
-  不備ではなく**負荷下の SSR 応答遅延またはサインイン後のナビゲーション/データ準備レース**が
-  疑わしい。調査は trace（`npx playwright show-trace`）のネットワークタイムラインで
-  「product ページの SSR 応答が返っているか」を確認するところから。
-  **042 のスコープ外**（テスト側の locator 修復のみが対象）。
+- ~~**重い注文フロー E2E の間欠 120s ハング（サインイン後の商品ページ `goto` タイムアウト）** —
+  deferred from [plan 042](042-e2e-signin-helper-repair.md)（2026-08-03 記録）。~~ →
+  **[plan 047](047-e2e-checkout-order-detail.md) で解消**（2026-08-03）。真因は
+  `waitForPostSignInSettle`（サインイン後の networkidle 待ち）で、これを通すと後続の `goto` が
+  リクエストを 1 件も発行しないままハングしていた。注文フロー spec から除去し、3 ブラウザ実測で
+  **9 passed / 6 skipped / 0 failed / flaky 0**。`gotoStable` は Firefox の `NS_BINDING_ABORTED`
+  吸収に必要なため残置。**残件**: plan 042 の Step 5-6（全 spec の再実測・検証）は未実施のまま。
 - **`placeOrder` の住所所有権ロックの実 DB 並行検証** — deferred from CodeRabbit round（2026-07-31 記録）。`user.ts` の `SELECT … FOR UPDATE`（`f77dafd`）が並行 `userId` 付け替えを実際にブロックすることは、unit テストがモック境界で止まるため観測できない。検証は Integration（testcontainers）でのみ可能で、低コストな入り口は `tests/integration/` の既存スイートへ 2 トランザクション競合シナリオを足すこと（新規スイートを起こさない）。unit 側は「`$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する」呼び出し契約の固定まで完了済み。
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。
