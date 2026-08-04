@@ -104,7 +104,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
-| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
+| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | TODO |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
@@ -320,6 +320,49 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 見ておらず last-6-months / last-1-year / last-2-years を**区別できていなかった**。
 > `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
 > 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
+>
+> **031 の実行記録（2026-08-04・`b0f5066a`〜`1c8ec27e`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/order-lifecycle.test.ts` を新設し
+> **6 シナリオ / 8 テスト**。Integration は **20 → 28 / スイート 2 → 3**（実測 28/28 pass）。
+> `src/queries/order.ts` は 1 行も変更していない。**plan 027（減算側）と本プラン（復元側）で
+> 在庫整合の両側が閉じた。**
+>
+> **Drift check**: baseline `1750ef2` から `order.ts` は **+35 / −70 行**動いていたが、
+> 縮小はログの `logError` 統合によるもので、プランが抜粋していた 3 つの検証対象
+> —— `isRestockTerminalOrderStatus` / `restockOrderItems`（`:20-38`）、
+> `updateOrderPaymentStatus` の条件付き `updateMany` + `didTransition`（`:556-606`）、
+> `updateOrderGroupStatusAsAdmin` の read-then-act（`:441-471`）—— は**行番号までほぼ一致**した。
+> STOP には該当せず。
+>
+> **本プランが主張しないこと（重要・そのまま申し送る）**:
+>
+> 1. **「並行実行を証明した」とは書けない。** Scenario 2 の並行ケースはバリア（2 本が揃うまで
+>    ブロック）と `connection_limit >= 2` の明示 `expect` を持つが、これが保証するのは
+>    「2 本がクエリ発行の直前まで揃っていた」ことだけで、解放後に片方が先に完走する実行順でも
+>    緑になる。**価値は「重ならなかった場合に緑になる構成上の穴を塞ぐ」点にある**
+>    （重なりまで示すなら `pg_advisory_xact_lock` / `pg_stat_activity` が要る — プラン本文どおり
+>    本プランでは必須としていない）。
+> 2. **並行安全性を固定したのは `updateOrderPaymentStatus`（CAS 済み・`d0005bb`）のみ。**
+>    `updateOrderGroupStatusAsAdmin` は `findUnique` → 分岐 → `update` の **read-then-act** の
+>    ままで、**並行二重復元は未解決**（本体修正は下の Deferred 節「`updateOrderGroupStatusAsAdmin`
+>    の並行二重復元」に記録済み）。**プラン完了 ≠ ギャップ解消**であり、在庫整合を「検証済み」と
+>    説明する場面では両関数を必ず区別すること。Scenario 5 は「group-level のみ復元」という
+>    **現仕様の characterization** なので、本体修正時には期待値の更新が必要になる。
+>
+> **次の実行者が踏むであろう落とし穴 1 点**: `OrderStatus` / `PaymentStatus` は
+> **`@prisma/client` と `src/lib/types.ts` の両方に同名で存在する**。値（文字列）が同一なので
+> **Jest は緑のまま `tsc --noEmit` だけが落ちる**（本セッションで実際に踏んだ）。SUT である
+> `order.ts` が `@/lib/types` から import しているので、テストも同じ側から取ること
+> （unit の `src/queries/order.test.ts` も同じ理由で `../lib/types` を使っている）。
+> rule 02 の「各コミット時点で `tsc --noEmit` が通ること」は、この種の**実行結果からは
+> 見えない不整合**を捕まえるためのゲートである。
+>
+> **基盤の追加 1 点**: `seedOrderWithGroupAndItem`（`tests/integration/setup/seed.ts`）。
+> **在庫を touch しない設計**にして、減算はテスト本文の
+> `db.size.update({ data: { quantity: { decrement: 3 } } })` に明示させた
+> （「8 → decrement 3 → 5 → restock → 8」という復元の期待値の出どころを読めるようにするため）。
+> plan 027 の `seedCoupon` 拡張とは同一ファイルだが別関数で、両追記は共存している。
 >
 > **027 の実行記録（2026-08-04・`ee86ef32`〜`4efed303`）**
 >
