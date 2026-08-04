@@ -12,7 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1874 passed / 1877 total across 178 suites (3 skipped), as of 2026-08-04.
+- 1890 passed / 1893 total across 178 suites (3 skipped), as of 2026-08-04.
+  Plan 026 took `src/queries/paypal.test.ts` from 40 to 56 tests (+16, no new suite) and
+  `paypal.ts` from 72.05% branch coverage to 91.91%, with statements, lines and functions at
+  100%. The plan's stated baseline (17 tests / 28.6% branches) was already stale — plan 059's
+  capture verification had grown the file — so the case table was kept but the numeric target
+  was re-derived from a fresh measurement. Because both entry points share
+  `requirePayPalUser` / `findOwnedPayPalOrder`, the branch bodies are driven through
+  `createPayPalPayment` and the capture side only checks that the log prefix switches.
+  These are characterization tests: they pin the current three-argument `console.error` shape,
+  which does **not** match the two-argument structured-logging convention in
+  `.claude/steering/tech.md`, and `paypal.ts` itself is unchanged.
   Plan 029 took `src/queries/profile.test.ts` from 34 to 63 tests (+29, no new suite) and
   `profile.ts` from 67.81% branch coverage (59/87) to 100% (87/87). The gap was the two
   try/catch sites in each of the five query functions — `currentUser` and the DB fetch, each

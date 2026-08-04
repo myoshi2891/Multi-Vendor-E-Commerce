@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1874 passed / 1877 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -2537,5 +2537,55 @@ TZ 依存も生じない）。
 | profile.ts Branches | 67.81%（59/87） | **100%（87/87）** |
 | lcov 全体 Branches | 46.94% | **47.48%** |
 | スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 026 の実行（paypal.ts のエラー経路網羅） (2026-08-04)
+
+#### 概要
+
+決済モジュール `src/queries/paypal.ts` のエラー経路を unit テストで網羅し、
+Branches を 72.05% から 91.91%（Statements / Lines / Functions は 100%）へ。
+本体は 1 行も変更していない characterization テスト。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/paypal.test.ts` | ヘルパー catch 8 + 外側 catch 6 + 不正応答 2 を追加（40→56） | `c3699b9c` |
+
+#### プラン本文からの逸脱（Drift check に実際に引っかかった）
+
+プラン 026 の baseline は「17 テスト / Branches 28.6%」だったが、その後 plan 059 が
+capture 検証を追加して `paypal.ts` は +391 行、テストは 17→40 に成長していた。
+ケース表（catch の 3 分岐 × 2 箇所、非 OK 応答、外側 catch の非 Error 分岐）は
+そのまま有効だったので活かし、**数値目標だけを実測から再導出**した。
+
+また catch は共通ヘルパー `requirePayPalUser` / `findOwnedPayPalOrder` へ抽出済みで、
+`createPayPalPayment` と `capturePayPalPayment` の差はログ prefix のみ。そのため
+分岐本体は create 側で通し、capture 側は prefix 切り替えのみを確認する形にした
+（機械的な二重化はカバレッジを増やさず読む量だけ増やす）。
+
+末尾 2 件（`purchase_units` / `captures` 欠損）はケース表に無いが、90% 到達に
+必要な optional-chaining 分岐であり追加した。
+
+#### 規約との関係（重要）
+
+本テストは **現状の 3 引数ログ形式をそのまま assert している**。
+`.claude/steering/tech.md` が定める構造化ログ規約は 2 引数形式であり、
+**paypal.ts は規約の実装例として名指しされていながら準拠していない**。
+このテストは規約準拠を証明するものではなく、現状の挙動を固定するもの。
+将来 `logError` へ移行する際は、この乖離がテストを壊す変更として機械的に見える。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1874 passed / 1877 total | **1890 passed / 1893 total**（+16） |
+| Jest スイート数 | 178 | **178**（不変） |
+| paypal.ts Branches | 72.05%（98/136） | **91.91%** |
+| lcov 全体 Branches | 47.48% | **48.00%** |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
