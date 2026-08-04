@@ -16,10 +16,12 @@ const isEnabled = (name: string): boolean =>
 
 export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
-  // 全体タイムアウト（ハング防止の安全ネット）。本番ビルド起動（next build）と
-  // 3ブラウザ分の全スイートを 1 worker で直列実行する wall-clock を含むため 20 分とする。
-  // 600s では build + 全テストが収まらず途中で "did not run" 打ち切りが発生していた。
-  globalTimeout: 1200 * 1000,
+  // 全体タイムアウト（ハング防止の安全ネット）。本番ビルド起動（next build）+
+  // 3ブラウザ全スイートの 1 worker 直列 + 失敗時 retries=2 の wall-clock を含む。
+  // 2026-07-11 実測: 認証系 13 件が fail（各 3 リトライ）したランで 25.5 分。
+  // 1200s では収まらず 3 件が "did not run" で打ち切られた（plans/044）。
+  // リトライを含む最悪ケースを吸収するため 60 分とする。
+  globalTimeout: 3600 * 1000,
   testDir: "./tests/e2e",
   timeout: 30 * 1000,
   expect: {
