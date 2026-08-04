@@ -429,15 +429,17 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 17 integration tests across 2 suites
+- 20 integration tests across 2 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
-  `tests/integration/order-placement.test.ts` 6) as of 2026-05-31.
+  `tests/integration/order-placement.test.ts` 9) as of 2026-08-04.
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`
   (`src/queries/user.ts`) end-to-end with a real `$transaction`: per-store
   OrderGroup split, stock capping, store-scoped coupon discount, ownership
-  (IDOR) guard, and rollback on invalid product combinations.
+  (IDOR) guard, rollback on invalid product combinations, the atomic stock
+  decrement amount, oversell rollback (stock stolen between validation and
+  decrement — no partial commit), and PLATFORM coupon remainder absorption.
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent

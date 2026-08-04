@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|----|
 | Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jest Integration テスト | **20テスト / 2スイート**（`cart-checkout` 11 + `order-placement` **9**）— 2026-08-04 実測 20/20 pass / 4.054s（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -2587,5 +2587,46 @@ capture 検証を追加して `paypal.ts` は +391 行、テストは 17→40 �
 | Jest スイート数 | 178 | **178**（不変） |
 | paypal.ts Branches | 72.05%（98/136） | **91.91%** |
 | lcov 全体 Branches | 47.48% | **48.00%** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 027 実行: `placeOrder` のオーバーセルロールバックと PLATFORM クーポン端数吸収を実 DB で固定 (2026-08-04)
+
+#### 概要
+
+improve Round 4 の plan 027 を実行し、`placeOrder` の money-critical な 2 分岐（在庫のアトミック
+減算まわりと PLATFORM クーポンの端数吸収）を testcontainers の実 PostgreSQL で固定した。
+`src/queries/user.ts` は 1 行も変更していない（純追加のテスト作業）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/setup/seed.ts` | `SeedCouponInput` に `scope?: CouponScope` を追加、`storeId` を `string \| null` へ緩和（PLATFORM クーポンは店舗に所有されない） | `ee86ef32` |
+| `tests/integration/setup/query-mocks.ts` | 新規。`requireActual` の三重複を除くための実装透過ヘルパー `actualDeliveryDetails` を集約 | `b0e488b5` |
+| `tests/integration/order-placement.test.ts` | Scenario 7（実減算量）/ 8（オーバーセルロールバック）/ 9（PLATFORM 端数吸収）を追加。6 → 9 シナリオ | `b0e488b5` |
+
+#### 設計上のポイント
+
+- **Scenario 8 の割り込み点**: 事前キャップ `Math.min(quantity, size.quantity)` があるため単純な
+  在庫不足では throw に到達しない。`placeOrder` が `$transaction` の**外**で呼ぶ
+  `getDeliveryDetailsForStoreByCountry` を seam にして、検証通過後・減算前に在庫を 5 → 2 へ
+  横取りすることで `count === 0` 経路を決定論的に再現した。**割り込みを外すと本シナリオだけが
+  落ちる**ことを実測して、空振りテストでないことを確認済み。
+- **プラン本文からの数値の逸脱 1 点**: プランは PLATFORM 10% の総割引を $10.00 と想定していたが、
+  実装の割引基数 `cartTotalPrice` は `item.totalPrice`（**送料込み**）の合計のため実測は **$12.00**。
+- **併せて判明**: 割引率は Int・除数は固定 100 なので `Prisma.Decimal` の除算は必ず有限小数になり、
+  **残差吸収は素朴な各グループ計算と数学的に一致する**（端数吸収分岐は丸め順序をブレさせない
+  ための防御）。Scenario 9 の識別力は「`storeId: null` のクーポンが全グループへ適用される」=
+  PLATFORM 分岐の一意な証明と、割引合計のセント一致にある。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 17 / 2 スイート | **20 / 2 スイート**（order-placement 6 → 9） |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
