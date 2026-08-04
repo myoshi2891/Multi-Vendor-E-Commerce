@@ -116,7 +116,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
-| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
+| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
@@ -245,6 +245,40 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 新規 E2E spec を書く際は、サインイン直後に `waitForPostSignInSettle` を挟まないこと
 > （`src/config/test-helpers.ts` に定義は残るが、E2E の呼び出し箇所は本コミットで**ゼロ**に
 > なった。`gotoStable` は Firefox の `NS_BINDING_ABORTED` 吸収に必要なので残す）。
+>
+> **043 の実行記録（2026-08-04・`2d7ac110`〜`15cbca83`）**
+>
+> **DONE。ただし checkout は「ベースラインの陳腐化」ではなかった。** cart 2 枚はプラン本文
+> どおりの陳腐化で、目視ゲートの結果も想定内 —— 旧ベースラインは **1280x720 でフッターが
+> 写っておらず、左下に Next.js の dev インジケータ（"N" バッジ）が写り込んでいた**（dev
+> サーバー時代の撮影）。+351px の増分の実体は Newsletter バナー＋フッターリンク群の描画で、
+> 要素の重なり・見切れ・異常な空白は無し。cart-with-item も商品行が完全に揃っている。
+>
+> **checkout はプランの想定（「Clerk UI が 2 ステップ型 → 1 画面統合型へ変わった」）と違った。**
+> 旧ベースラインは**真っ白**（ウィジェット未描画）で、再撮影しても actual は
+> **ヘッダー＋空の本文＋フッター**にしかならない。Clerk は client-only のため URL 到達直後は
+> 本文が空で、**100ms 間隔の 2 枚が一致してしまい `toHaveScreenshot` が「安定」と誤判定する**
+> （3 試行ともバイト同一の 150420B ＝ フレークではなく決定論的）。error-context の a11y
+> スナップショットにはウィジェットが写るので、DOM には存在するが撮影に間に合っていない。
+> **そのまま固定すると「サインイン画面の差分検出器」にならず、マシン速度が変われば描画が
+> 間に合って恒常 red にもなる**ため、オペレーター承認を得て
+> [`tests/e2e/visual/checkout.spec.ts`](../tests/e2e/visual/checkout.spec.ts) に描画待ちを
+> 追加した（プラン本文では spec は Out of scope）。アンカーは
+> [`tests/e2e/helpers/auth.ts:67-82`](../tests/e2e/helpers/auth.ts) と同じ
+> `.cl-signIn-root` + `input[name="password"]` の可視で、リポジトリ既定に揃えている。
+>
+> **数の対応**: Step 1 の failed **3** = 更新された .png **3 枚** = 最終 passed **3**
+> （プランの機械的証拠がそのまま成立）。連続 2 回 green も充足。
+>
+> **フルラン実測（3 ブラウザ）: 83 passed / 0 failed / 3 flaky / 37 skipped（7.4m）。**
+> 042 の実行記録が申し送った「残 failed 3 件は VRT のみ」が**解消**され、failed はゼロ。
+> flaky 3 件（payment-error@chromium / platform-coupon@firefox / layout-chrome@webkit）は
+> いずれもリトライで pass しており、**別事案として残る**（VRT とは無関係）。
+>
+> **次の実行者への申し送り**: 054（VRT 対象を商品詳細・browse へ拡大）の着手条件が解除された。
+> 新規 VRT を書く際は、**client-only ウィジェットを含む画面では「描画完了アンカー」を
+> spec 側に明示すること** —— `toHaveScreenshot` の安定判定は「連続 2 枚の一致」でしかなく、
+> 未描画の空画面も安定と見なす。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
