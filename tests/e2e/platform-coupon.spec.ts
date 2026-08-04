@@ -230,10 +230,7 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         // (3) 全体合計カード（cards/order/total.tsx）。
         // 決済待ちの注文では左カラムと支払いカラムの 2 箇所に描画されるため first() を使う。
         // 値の p は金額列のみが `$` を含むので、ラベル列と機械的に分離できる。
-        const totalCard = page
-            .locator("div.shadow-sm")
-            .filter({ has: page.getByText("Shipping Fee", { exact: true }) })
-            .first();
+        const totalCard = page.getByTestId("order-total").first();
         const totalCardAmounts = totalCard.locator("p").filter({ hasText: "$" });
         // Subtotal / Shipping Fee / Taxes / Total の 4 行
         await expect(totalCardAmounts).toHaveCount(4);
