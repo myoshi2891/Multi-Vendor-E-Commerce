@@ -781,7 +781,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
                 );
 
                 // Act & Assert
-                await expect(fn()).rejects.toThrow(genericMessage);
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     logPrefix,
                     "clerk down",
@@ -828,7 +828,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
                 (currentUser as jest.Mock).mockRejectedValue("clerk boom");
 
                 // Act & Assert
-                await expect(fn()).rejects.toThrow(genericMessage);
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     logPrefix,
                     "clerk boom"
@@ -887,7 +887,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
                 mockDb[model].findMany.mockRejectedValue(new Error("db down"));
 
                 // Act & Assert
-                await expect(fn()).rejects.toThrow(genericMessage);
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     logPrefix,
                     "db down",
@@ -940,7 +940,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
                 mockDb[model].findMany.mockRejectedValue(rawError);
 
                 // Act & Assert
-                await expect(fn()).rejects.toThrow(genericMessage);
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
                 expect(consoleErrorSpy).toHaveBeenCalledWith(
                     logPrefix,
                     rawError

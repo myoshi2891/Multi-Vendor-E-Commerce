@@ -59,7 +59,7 @@ describe("getAllCountries", () => {
 
             // Act & Assert
             await expect(getAllCountries()).rejects.toThrow(
-                "Failed to retrieve countries."
+                /^Failed to retrieve countries\.$/
             );
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error retrieving countries:",
@@ -74,7 +74,7 @@ describe("getAllCountries", () => {
 
             // Act & Assert
             await expect(getAllCountries()).rejects.toThrow(
-                "Failed to retrieve countries."
+                /^Failed to retrieve countries\.$/
             );
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error retrieving countries:",

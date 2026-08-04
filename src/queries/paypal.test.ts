@@ -1189,7 +1189,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error in createPayPalPayment:",
                 expect.stringContaining(
-                    "PayPal API responded with status 500"
+                    "PayPal API responded with status 500: server err"
                 ),
                 expect.any(String)
             );
@@ -1222,12 +1222,25 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
                 "Failed to create PayPal payment"
             );
 
-            // Assert: 全ログ引数を文字列化しても PII が現れない
-            const loggedText = consoleErrorSpy.mock.calls
-                .flat()
-                .map((arg) => String(arg))
-                .join(" ");
-            expect(loggedText).not.toContain("buyer@example.com");
+            // Assert: 引数を 1 つずつ検査する。`String(arg)` で平坦化すると
+            // オブジェクト引数が "[object Object]" に潰れ、その中の PII を
+            // 見逃す（＝素通りする空振りアサーションになる）。
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            for (const call of consoleErrorSpy.mock.calls) {
+                for (const arg of call) {
+                    // 文字列引数はそのまま照合（非文字列は not.stringContaining が通る）
+                    expect(arg).toEqual(
+                        expect.not.stringContaining("buyer@example.com")
+                    );
+                    if (typeof arg === "string") continue;
+                    // 非文字列引数は中身まで見る（Error は JSON.stringify で "{}" になる）
+                    const serialized =
+                        arg instanceof Error
+                            ? `${arg.message} ${arg.stack ?? ""}`
+                            : JSON.stringify(arg);
+                    expect(serialized).not.toContain("buyer@example.com");
+                }
+            }
         });
     });
 
@@ -1256,7 +1269,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error in capturePayPalPayment:",
                 expect.stringContaining(
-                    "PayPal API responded with status 502"
+                    "PayPal API responded with status 502: bad gateway"
                 ),
                 expect.any(String)
             );
@@ -1286,7 +1299,7 @@ describe("catch 分岐網羅（Error / unknown 両系統）", () => {
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Error in capturePayPalPayment:",
                 expect.stringContaining(
-                    "PayPal API responded with status 422"
+                    "PayPal API responded with status 422: UNPROCESSABLE_ENTITY"
                 ),
                 expect.any(String)
             );
