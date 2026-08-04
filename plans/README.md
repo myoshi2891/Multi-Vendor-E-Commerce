@@ -99,7 +99,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | DONE |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
-| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
+| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | DONE（2026-08-04・`c3699b9c`。**プラン本文の baseline が陳腐化しており Drift check に実際に引っかかった** — 実測 40 テスト / Branches 72.05% を起点に 56 テスト / **91.91%** へ。下の実行記録を参照） |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
@@ -279,6 +279,47 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 新規 VRT を書く際は、**client-only ウィジェットを含む画面では「描画完了アンカー」を
 > spec 側に明示すること** —— `toHaveScreenshot` の安定判定は「連続 2 枚の一致」でしかなく、
 > 未描画の空画面も安定と見なす。
+>
+> **026 の実行記録（2026-08-04・`c3699b9c`）**
+>
+> **DONE。ただしプラン本文の baseline は実測で覆っている。** 026 は Drift check に
+> 「`paypal.ts` 本体が変わっていたら STOP」と書いていたが、**実際に変わっていた** ——
+> plan 059（PayPal capture の金額/相関/通貨検証）が `b6591f9` 比で **+391 行**を入れ、
+> テストも **17 → 40** に成長していた。したがって本文の数値（Branches 28.6% / 17→32 テスト）は
+> そのまま Done criteria に使えない。**ケース表の中身（catch の 3 分岐 × 2 箇所・非 OK 応答・
+> 外側 catch の非 Error 分岐）は現行コードでも有効だった**ため、表は活かして数値目標だけを
+> 実測から再導出する形で続行した（オペレーター判断）。結果は **40 → 56 テスト /
+> Branches 72.05%（98/136）→ 91.91%**（目標 90% 達成）、Statements / Lines / Functions は **100%**。
+>
+> **構造上の変化 1 点**: currentUser / order 取得の catch は共通ヘルパー
+> `requirePayPalUser` / `findOwnedPayPalOrder`（[`src/queries/paypal.ts:127-194`](../src/queries/paypal.ts)）
+> へ抽出済みで、`createPayPalPayment` と `capturePayPalPayment` の差は**ログ prefix だけ**。
+> プラン Step 3 は「Step 2 と同型の 7 ケースを capture 側にも」と指示していたが、
+> **分岐本体は create 側で通し、capture 側は prefix が切り替わることだけを 1 ケースずつ確認**
+> する形にした（機械的な二重化はカバレッジを増やさず読む量だけ増やす）。
+>
+> **ケース表外の追加 2 件**: `purchase_units` / `captures` 欠損応答の防御。プラン 026 の
+> 「新しい種類のテストを発明しない」に触れるが、**残りの未カバー分岐が plan 059 由来の
+> optional-chaining ガードのみで、これ無しでは 90% に届かなかった**ため追加した
+> （TypeError へ化けず意図した拒否メッセージへ収束することの固定）。
+>
+> **規約との関係（レビュー時に注意）**: 本テストは **現状の 3 引数ログ形式をそのまま
+> assert する characterization** であり、`.claude/steering/tech.md` の 2 引数構造化ログ規約への
+> **準拠を証明しない**（`paypal.ts` は規約の実装例として名指しされていながら準拠していない、
+> という乖離はプラン 026 本文が明記したまま残っている）。本体は 1 行も変更していない。
+>
+> **028 / 029 の実行記録（2026-08-04・`68f636d5` / `70803930`）**
+>
+> **両者とも素の DONE（逸脱なし）。** 028 は `src/queries/country.test.ts` を新設して 4 テスト、
+> country.ts 単体で Statements/Branches/Functions/Lines とも **100%**。
+> `ls src/queries/*.test.ts | wc -l` が実装 20 モジュールと一致し、CLAUDE.md
+> 「Jest ユニットテストの対象は全サーバーアクション」の不変条件が回復した。
+> 029 は `profile.test.ts` を **34 → 63**（catch 20 + 期間フィルタ 9）に拡張し、
+> `profile.ts` の Branches は目標 95% に対し実測 **100%（87/87）**。
+> **期間フィルタで判明した既存テストの弱さ**: 従来の 1 件は `gte: expect.any(Date)` までしか
+> 見ておらず last-6-months / last-1-year / last-2-years を**区別できていなかった**。
+> `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
+> 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
 >
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
