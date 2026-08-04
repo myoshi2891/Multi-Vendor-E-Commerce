@@ -22,6 +22,7 @@ import {
     type Category,
     type Country,
     type Coupon,
+    type CouponScope,
     type PrismaClient,
     type Product,
     type ProductVariant,
@@ -217,7 +218,17 @@ export async function seedProductWithVariantAndSize(
 // ----------------------------------------------------------------------------
 
 export interface SeedCouponInput {
-    storeId: string;
+    /**
+     * 紐付ける店舗。PLATFORM スコープのクーポンは店舗に所有されないため `null` を渡す。
+     * 必須プロパティのまま（`?` は付けない）にして、STORE / PLATFORM いずれの場合も
+     * 呼び出し側に明示させ、書き忘れによる暗黙の紐付けを防ぐ。
+     */
+    storeId: string | null;
+    /**
+     * クーポンスコープ。未指定時は Prisma スキーマの `@default(STORE)`
+     * (`prisma/schema.prisma` の `Coupon.scope`) に従う。
+     */
+    scope?: CouponScope;
     /** 割引率 (0-100)。Coupon.discount は Int */
     discount?: number;
     /** 有効期間。デフォルトは過去 1 日〜未来 1 年 */
@@ -238,9 +249,11 @@ export interface SeedCouponInput {
  * - `code` defaults to `COUPON-<SUFFIX>` when `input.code` is not provided.
  * - `startDate` defaults to 24 hours in the past and `endDate` defaults to one year from now when not provided.
  * - `discount` defaults to `10` when not provided.
+ * - `scope` is passed through as-is; `undefined` means the column is omitted and Prisma applies
+ *   the schema default (`@default(STORE)`).
  * - If `input.connectUserIds` is provided and non-empty, the coupon will be connected to those users; otherwise no user connections are made.
  *
- * @param input - SeedCouponInput describing required `storeId` and optional fields (`discount`, `startDate`, `endDate`, `code`, `connectUserIds`) and their defaulting behavior
+ * @param input - SeedCouponInput describing required `storeId` (nullable for PLATFORM coupons) and optional fields (`scope`, `discount`, `startDate`, `endDate`, `code`, `connectUserIds`) and their defaulting behavior
  */
 export async function seedCoupon(
     db: PrismaClient,
@@ -256,6 +269,7 @@ export async function seedCoupon(
             endDate:
                 input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
             discount: input.discount ?? 10,
+            scope: input.scope,
             storeId: input.storeId,
             users: input.connectUserIds && input.connectUserIds.length > 0
                 ? { connect: input.connectUserIds.map((id) => ({ id })) }
