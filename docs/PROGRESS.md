@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|----|
 | Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **28テスト / 3スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8**）— 2026-08-04 実測 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jest Integration テスト | **39テスト / 4スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **11**）— 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -2673,6 +2673,54 @@ testcontainers の実 PostgreSQL で固定した。plan 027 が固定した在�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Jest Integration テスト | 20 / 2 スイート | **28 / 3 スイート** |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 032 実行: 決済 webhook の実 DB 冪等性を固定 (2026-08-04)
+
+#### 概要
+
+improve Round 5 の plan 032 を実行し、Stripe / PayPal webhook の冪等性の本体
+（`PaymentDetails.orderId` の unique 制約 + `upsert` の実挙動 + 2 書き込みの原子性）を
+testcontainers の実 PostgreSQL で検証した。unit の両 `route.test.ts` は `@/lib/db` を
+全モックしており、これらは**一度も実行されていなかった**。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/webhook-payment.test.ts` | 新規。Stripe 7 + PayPal 4 = 11 テスト | `9e1682b7` |
+
+#### 🆕 新規 finding（未修正・characterization で固定）
+
+**プロバイダー切替時に `PaymentDetails.amount` / `currency` が更新されない。**
+両 route の `upsert` は `update` 分岐にこの 2 列を持たず `create` 分岐にしかないため、
+Stripe → PayPal の切替後の行は「`paymentMethod: PayPal` なのに `amount` は Stripe の
+**セント値** 9999（正しくは `Order.total` = 110.00）」という**単位混在**で残る。
+CORRECTNESS-05 と同じ単位問題の族で、二重計上・返金額誤りに直結しうる。
+プランの STOP 条件には該当しないため現挙動を Scenario P4 で固定し、修正時に正しく
+赤くなる形にしたうえで `plans/README.md` の Deferred に起票した。
+
+#### 実装上のポイント
+
+- **並行再送は「両方 2xx」も assert する**。`count === 1` だけでは片方が 500 で落ちても
+  緑になり、「冪等に処理した」ではなく「1 本が失敗した」（= Stripe が再配送し続ける）
+  状態を見逃す。冪等性の主張は「両方成功 **かつ** 副作用 1 回」の連言。
+- **原子性の対照（control）は制約を落とした後に置く**。先に置くと
+  `Order.paymentMethod='Stripe'` の行が残り `ADD CONSTRAINT` が
+  `is violated by some row` で落ちる（実際に踏んだ）。
+- **本ファイルのみ `testEnvironment: node`**（docblock）。jsdom には Fetch API の
+  `Request` / `Response` が無く Route Handler を直接呼べない。config は無変更。
+  `structuredClone` も無いため fixture の deep clone は JSON round-trip で行う。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 28 / 3 スイート | **39 / 4 スイート** |
 | Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
