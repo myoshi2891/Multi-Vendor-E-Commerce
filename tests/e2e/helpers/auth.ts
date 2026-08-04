@@ -38,6 +38,64 @@ export type CustomerSession = {
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
 
+/**
+ * Clerk の sign-in ウィジェット経由でパスワードサインインする共有関数。
+ *
+ * **ラベル文言でグローバルに探さないこと。** `/sign-in` は共通ヘッダー/フッター付きで、
+ * フッター Newsletter が `<label class="sr-only">Email address</label>` を持つ
+ * （`src/components/store/layout/footer/newsletter.tsx`）。Clerk ウィジェットは
+ * client-only なのでハイドレーション前は Newsletter 欄だけが存在し、
+ * そのラベルを `getByLabel` で引くとフッター側へ解決してしまう（plan 042 の根本原因）。
+ * そのため **Clerk ルートへスコープしてから `input[name=...]` で特定する**。
+ *
+ * **1 段 / 2 段 UI の実行時分岐は持たない。** UI 形式は Clerk 側の設定で決まる静的な
+ * 性質であり、`isVisible()` や短い timeout 付き `waitFor` が測っているのは「時間」で
+ * あって「UI 形式」ではない。遅い環境では 1 段 UI なのに 2 段へ誤分岐し、閾値付近でのみ
+ * 再現する最悪のフレークになる。現行の 1 段（識別子 + パスワード同一画面）を
+ * `expect(passwordInput).toBeVisible()` で assert し、将来 2 段へ変わったら
+ * ここが明確なメッセージで失敗するのに任せる。
+ */
+export async function signInWithPassword(
+    page: Page,
+    email: string,
+    password: string
+): Promise<void> {
+    await setupClerkTestingToken({ page });
+    await page.goto("/sign-in");
+
+    // Clerk ウィジェットのハイドレーション完了を待つ（フッターへの誤爆防止）
+    const clerkRoot = page.locator(".cl-signIn-root");
+    await clerkRoot.waitFor({ state: "visible", timeout: 15000 });
+
+    // 識別子の name 属性はラベル文言（現行 "Email address or username"）より安定
+    await clerkRoot.locator('input[name="identifier"]').fill(email);
+
+    // `exact: true` は必須。Google ソーシャルボタンのアクセシブル名が
+    // "Sign in with Google Continue with Google" のため、部分一致だと
+    // strict mode violation か OAuth 遷移になる。
+    const continueButton = clerkRoot.getByRole("button", {
+        name: "Continue",
+        exact: true,
+    });
+
+    const passwordInput = clerkRoot.locator('input[name="password"]');
+    await expect(passwordInput).toBeVisible({ timeout: 15000 });
+
+    await passwordInput.fill(password);
+    await continueButton.click();
+
+    // サインイン成立 = Clerk フォームが DOM から消える
+    await expect(clerkRoot).toBeHidden({ timeout: 20000 });
+
+    // フォームの消滅は「Clerk が受理した」ことしか意味せず、リダイレクト完了は
+    // 保証しない。ここで待ち切らないと呼び出し側の最初の goto/click が
+    // リダイレクト途中に割り込み、/sign-in へ差し戻されるレースが残る。
+    await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
+        timeout: 20000,
+    });
+    await page.waitForLoadState("domcontentloaded");
+}
+
 const clerk = clerkSecretKey
     ? createClerkClient({ secretKey: clerkSecretKey })
     : null;
@@ -95,31 +153,7 @@ export function createCustomerSession(): CustomerSession {
                     "Call create() in beforeAll before signIn()."
                 );
             }
-            await setupClerkTestingToken({ page });
-            await page.goto("/sign-in");
-            await page.getByLabel("Email address").fill(session.email);
-            await page
-                .getByRole("button", { name: "Continue", exact: true })
-                .click();
-            await page
-                .getByLabel("Password", { exact: true })
-                .fill(session.password);
-            await page
-                .getByRole("button", { name: "Continue", exact: true })
-                .click();
-            // サインイン後、Clerk が「Sign in」ボタンを非表示にするのを待つ
-            await expect(
-                page.getByRole("button", { name: "Sign in" })
-            ).toBeHidden({ timeout: 20000 });
-            try {
-                await page.waitForURL(
-                    (url) => !url.pathname.includes("/sign-in"),
-                    { timeout: 15000 }
-                );
-            } catch (err) {
-                throw new Error(`Authentication timed out: failed to redirect away from /sign-in within 15 seconds. (Error: ${err instanceof Error ? err.message : String(err)})`);
-            }
-            await page.waitForLoadState("domcontentloaded");
+            await signInWithPassword(page, session.email, session.password);
         },
         async cleanup() {
             try {

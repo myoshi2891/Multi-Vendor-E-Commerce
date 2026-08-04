@@ -14,6 +14,7 @@ export default function OrderIcon() {
 				viewBox="0 0 512 512"
 				fill="currentColor"
 				role="img"
+				aria-label="Orders"
 				style={{ display: "inline-block", verticalAlign: "middle" }}
 				xmlns="http://www.w3.org/2000/svg"
 			>

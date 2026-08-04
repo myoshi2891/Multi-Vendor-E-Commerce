@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { setupClerkTestingToken } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
+import { signInWithPassword } from "./helpers/auth";
 
 // Use a shared Prisma client for DB assertions/updates
 const prisma = new PrismaClient();
@@ -72,20 +72,10 @@ test.describe.serial("Seller オンボーディング", () => {
   });
 
   test("申請フォーム 4 ステップを順に完了できる & Pending 状態の確認", async ({ page }) => {
-    await setupClerkTestingToken({ page });
-
     // Setup: Instead of UI Sign up, just go to Sign In!
-    await page.goto("/sign-in");
-    await page.getByLabel("Email address").fill(userEmail);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.getByLabel("Password", { exact: true }).fill(userPassword);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    // （テストトークン注入・Clerk ウィジェット操作・/sign-in 離脱待ちは共有ヘルパーが行う）
+    await signInWithPassword(page, userEmail, userPassword);
 
-    // Wait for navigation after sign in - looking for the user menu button or home page redirect
-    await expect(page.getByRole("button", { name: "Sign in" })).toBeHidden({ timeout: 20000 });
-    
-    // Ensure we are redirecting away from sign-in
-    await page.waitForURL((url) => !url.pathname.includes('/sign-in'), { timeout: 15000 }).catch(() => {});
     // Explicitly wait for home page or next destination
     await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 }).catch(() => {});
     // networkidle は dev サーバーの HMR WebSocket により到達しないため domcontentloaded を使用
@@ -173,15 +163,9 @@ test.describe.serial("Seller オンボーディング", () => {
        console.warn("CLERK_SECRET_KEY not found, skipping Clerk role update. The dashboard access test might fail.");
     }
 
-    await setupClerkTestingToken({ page });
-    
     // Login as the user again
-    await page.goto("/sign-in");
-    await page.getByLabel("Email address").fill(userEmail);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.getByLabel("Password", { exact: true }).fill(userPassword);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await page.waitForURL((url) => !url.pathname.includes("/sign-in"), { timeout: 15000 });
+    // （テストトークン注入・Clerk ウィジェット操作・/sign-in 離脱待ちは共有ヘルパーが行う）
+    await signInWithPassword(page, userEmail, userPassword);
     // Explicitly wait for home page or next destination
     await page.waitForURL((url) => url.pathname === "/", { timeout: 15000 });
     // networkidle は dev サーバーの HMR WebSocket により到達しないため domcontentloaded を使用

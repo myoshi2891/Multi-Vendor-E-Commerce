@@ -1,7 +1,7 @@
-import { expect, Page, test } from "@playwright/test";
-import { setupClerkTestingToken } from "@clerk/testing/playwright";
+import { expect, test } from "@playwright/test";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
+import { signInWithPassword } from "./helpers/auth";
 
 /**
  * 購入者 ↔ 販売者 メッセージング往復 E2E（AC-M8）。
@@ -48,31 +48,6 @@ test.describe.serial("購入者↔販売者 メッセージング往復", () => 
     let storeId: string | undefined;
 
     test.setTimeout(180000); // 2 コンテキスト sign-in + ポーリング待ちを考慮
-
-    /**
-     * 指定ページに Clerk テストトークンを注入し、UI 経由でサインインする。
-     * `helpers/auth.ts` の signIn と同じ待機手順（HMR で networkidle に到達しないため
-     * domcontentloaded を使用）。
-     */
-    const signIn = async (page: Page, email: string, password: string) => {
-        await setupClerkTestingToken({ page });
-        await page.goto("/sign-in");
-        await page.getByLabel("Email address").fill(email);
-        await page
-            .getByRole("button", { name: "Continue", exact: true })
-            .click();
-        await page.getByLabel("Password", { exact: true }).fill(password);
-        await page
-            .getByRole("button", { name: "Continue", exact: true })
-            .click();
-        await expect(page.getByRole("button", { name: "Sign in" })).toBeHidden({
-            timeout: 20000,
-        });
-        await page.waitForURL((url) => !url.pathname.includes("/sign-in"), {
-            timeout: 15000,
-        });
-        await page.waitForLoadState("domcontentloaded");
-    };
 
     test.beforeAll(async () => {
         if (!clerk) {
@@ -233,7 +208,7 @@ test.describe.serial("購入者↔販売者 メッセージング往復", () => 
 
         try {
             // --- 購入者: サインイン → 送信 ---
-            await signIn(buyerPage, buyerEmail, buyerPassword);
+            await signInWithPassword(buyerPage, buyerEmail, buyerPassword);
             await expect(async () => {
                 await buyerPage.goto("/profile/messages");
                 expect(buyerPage.url()).toContain("/profile/messages");
@@ -256,7 +231,7 @@ test.describe.serial("購入者↔販売者 メッセージング往復", () => 
             });
 
             // --- 販売者: サインイン → 受信確認 → 返信 ---
-            await signIn(sellerPage, sellerEmail, sellerPassword);
+            await signInWithPassword(sellerPage, sellerEmail, sellerPassword);
             await expect(async () => {
                 await sellerPage.goto(
                     `/dashboard/seller/stores/${storeUrl}/messages`

@@ -6,6 +6,7 @@ import {
     getUserFollowedStores,
 } from "./profile";
 import { currentUser } from "@clerk/nextjs/server";
+import { subMonths, subYears } from "date-fns";
 import { TEST_CONFIG } from "../config/test-config";
 
 // ---- モック設定 ----
@@ -716,5 +717,325 @@ describe("getUserFollowedStores", () => {
             expect(result.stores).toEqual([]);
             expect(result.totalPages).toBe(0);
         });
+    });
+});
+
+// ==================================================
+// catch 分岐網羅（Error / unknown 両系統）
+// ==================================================
+// 5 関数はいずれも「currentUser 用」「DB フェッチ用」の 2 つの try/catch を持ち、
+// どちらも `instanceof Error` の真偽で console.error の引数形状を変える。
+// ここでは 5 関数 × 2 catch × 2 系統 = 20 分岐を通し、内部エラー詳細が
+// 呼び出し側へ漏れず関数ごとの汎用メッセージへ縮退することを固定する。
+describe("catch 分岐網羅（Error / unknown 両系統）", () => {
+    let consoleErrorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        consoleErrorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
+    });
+
+    describe("currentUser の catch", () => {
+        it.each([
+            [
+                "getUserOrders",
+                getUserOrders,
+                "[Profile:getUserOrders] Error retrieving current user:",
+                "Failed to get user orders.",
+            ],
+            [
+                "getUserPayments",
+                getUserPayments,
+                "[Profile:getUserPayments] Error retrieving current user:",
+                "Failed to get user payments.",
+            ],
+            [
+                "getUserReviews",
+                getUserReviews,
+                "[Profile:getUserReviews] Error retrieving current user:",
+                "Failed to get user reviews.",
+            ],
+            [
+                "getUserWishlist",
+                getUserWishlist,
+                "[Profile:getUserWishlist] Error retrieving current user:",
+                "Failed to fetch wishlist.",
+            ],
+            [
+                "getUserFollowedStores",
+                getUserFollowedStores,
+                "[Profile:getUserFollowedStores] Error retrieving current user:",
+                "Failed to fetch followed stores.",
+            ],
+        ])(
+            "%s: Error で reject した場合、汎用メッセージをスローし message と stack をログする",
+            async (_name, fn, logPrefix, genericMessage) => {
+                // Arrange
+                (currentUser as jest.Mock).mockRejectedValue(
+                    new Error("clerk down")
+                );
+
+                // Act & Assert
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    logPrefix,
+                    "clerk down",
+                    expect.any(String)
+                );
+            }
+        );
+
+        it.each([
+            [
+                "getUserOrders",
+                getUserOrders,
+                "[Profile:getUserOrders] Error retrieving current user:",
+                "Failed to get user orders.",
+            ],
+            [
+                "getUserPayments",
+                getUserPayments,
+                "[Profile:getUserPayments] Error retrieving current user:",
+                "Failed to get user payments.",
+            ],
+            [
+                "getUserReviews",
+                getUserReviews,
+                "[Profile:getUserReviews] Error retrieving current user:",
+                "Failed to get user reviews.",
+            ],
+            [
+                "getUserWishlist",
+                getUserWishlist,
+                "[Profile:getUserWishlist] Error retrieving current user:",
+                "Failed to fetch wishlist.",
+            ],
+            [
+                "getUserFollowedStores",
+                getUserFollowedStores,
+                "[Profile:getUserFollowedStores] Error retrieving current user:",
+                "Failed to fetch followed stores.",
+            ],
+        ])(
+            "%s: 非 Error で reject した場合、生の値をそのままログする",
+            async (_name, fn, logPrefix, genericMessage) => {
+                // Arrange
+                (currentUser as jest.Mock).mockRejectedValue("clerk boom");
+
+                // Act & Assert
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    logPrefix,
+                    "clerk boom"
+                );
+            }
+        );
+    });
+
+    describe("DB フェッチの catch", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it.each([
+            [
+                "getUserOrders",
+                getUserOrders,
+                "order",
+                "[Profile:getUserOrders] Error fetching orders:",
+                "Failed to get user orders.",
+            ],
+            [
+                "getUserPayments",
+                getUserPayments,
+                "paymentDetails",
+                "[Profile:getUserPayments] Error fetching payments:",
+                "Failed to get user payments.",
+            ],
+            [
+                "getUserReviews",
+                getUserReviews,
+                "review",
+                "[Profile:getUserReviews] Error fetching reviews:",
+                "Failed to get user reviews.",
+            ],
+            [
+                "getUserWishlist",
+                getUserWishlist,
+                "wishlist",
+                "[Profile:getUserWishlist] Error fetching wishlist:",
+                "Failed to fetch wishlist.",
+            ],
+            [
+                "getUserFollowedStores",
+                getUserFollowedStores,
+                "store",
+                "[Profile:getUserFollowedStores] Error fetching followed stores:",
+                "Failed to fetch followed stores.",
+            ],
+        ])(
+            "%s: Error で reject した場合、汎用メッセージをスローし message と stack をログする",
+            async (_name, fn, model, logPrefix, genericMessage) => {
+                // Arrange
+                mockDb[model].findMany.mockRejectedValue(new Error("db down"));
+
+                // Act & Assert
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    logPrefix,
+                    "db down",
+                    expect.any(String)
+                );
+            }
+        );
+
+        it.each([
+            [
+                "getUserOrders",
+                getUserOrders,
+                "order",
+                "[Profile:getUserOrders] Error fetching orders:",
+                "Failed to get user orders.",
+            ],
+            [
+                "getUserPayments",
+                getUserPayments,
+                "paymentDetails",
+                "[Profile:getUserPayments] Error fetching payments:",
+                "Failed to get user payments.",
+            ],
+            [
+                "getUserReviews",
+                getUserReviews,
+                "review",
+                "[Profile:getUserReviews] Error fetching reviews:",
+                "Failed to get user reviews.",
+            ],
+            [
+                "getUserWishlist",
+                getUserWishlist,
+                "wishlist",
+                "[Profile:getUserWishlist] Error fetching wishlist:",
+                "Failed to fetch wishlist.",
+            ],
+            [
+                "getUserFollowedStores",
+                getUserFollowedStores,
+                "store",
+                "[Profile:getUserFollowedStores] Error fetching followed stores:",
+                "Failed to fetch followed stores.",
+            ],
+        ])(
+            "%s: 非 Error（Prisma の生オブジェクト）で reject した場合、生の値をそのままログする",
+            async (_name, fn, model, logPrefix, genericMessage) => {
+                // Arrange
+                const rawError = { code: "P2024" };
+                mockDb[model].findMany.mockRejectedValue(rawError);
+
+                // Act & Assert
+                await expect(fn()).rejects.toThrow(new Error(genericMessage));
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    logPrefix,
+                    rawError
+                );
+            }
+        );
+    });
+});
+
+// ==================================================
+// 期間フィルタ（3 関数 × 3 期間）
+// ==================================================
+// 既存の「期間フィルタ」テストは gte: expect.any(Date) までしか見ておらず、
+// last-6-months / last-1-year / last-2-years を区別できない。ここでは
+// 固定時刻を敷いて subMonths / subYears の実値と突き合わせ、
+// どの期間が選ばれたかを固定する。
+describe("期間フィルタの境界値（3 関数 × 3 期間）", () => {
+    // 実装は `new Date()` を都度評価する。固定時刻を敷かないと
+    // 期待値の生成と実装の評価がミリ秒単位でずれる。
+    const FIXED_NOW = new Date("2026-08-04T12:00:00.000Z");
+
+    beforeEach(() => {
+        jest.useFakeTimers({ now: FIXED_NOW });
+        (currentUser as jest.Mock).mockResolvedValue({
+            id: TEST_CONFIG.DEFAULT_USER_ID,
+        });
+        mockDb.order.findMany.mockResolvedValue([]);
+        mockDb.order.count.mockResolvedValue(0);
+        mockDb.paymentDetails.findMany.mockResolvedValue([]);
+        mockDb.paymentDetails.count.mockResolvedValue(0);
+        mockDb.review.findMany.mockResolvedValue([]);
+        mockDb.review.count.mockResolvedValue(0);
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    it.each([
+        ["getUserOrders", getUserOrders, "order"],
+        ["getUserPayments", getUserPayments, "paymentDetails"],
+        ["getUserReviews", getUserReviews, "review"],
+    ])("%s: last-6-months は 6 ヶ月前を gte に載せる", async (_name, fn, model) => {
+        // Act
+        await fn("", "last-6-months");
+
+        // Assert
+        expect(mockDb[model].findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    AND: expect.arrayContaining([
+                        { createdAt: { gte: subMonths(FIXED_NOW, 6) } },
+                    ]),
+                },
+            })
+        );
+    });
+
+    it.each([
+        ["getUserOrders", getUserOrders, "order"],
+        ["getUserPayments", getUserPayments, "paymentDetails"],
+        ["getUserReviews", getUserReviews, "review"],
+    ])("%s: last-1-year は 1 年前を gte に載せる", async (_name, fn, model) => {
+        // Act
+        await fn("", "last-1-year");
+
+        // Assert
+        expect(mockDb[model].findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    AND: expect.arrayContaining([
+                        { createdAt: { gte: subYears(FIXED_NOW, 1) } },
+                    ]),
+                },
+            })
+        );
+    });
+
+    it.each([
+        ["getUserOrders", getUserOrders, "order"],
+        ["getUserPayments", getUserPayments, "paymentDetails"],
+        ["getUserReviews", getUserReviews, "review"],
+    ])("%s: last-2-years は 2 年前を gte に載せる", async (_name, fn, model) => {
+        // Act
+        await fn("", "last-2-years");
+
+        // Assert
+        expect(mockDb[model].findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    AND: expect.arrayContaining([
+                        { createdAt: { gte: subYears(FIXED_NOW, 2) } },
+                    ]),
+                },
+            })
+        );
     });
 });

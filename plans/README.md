@@ -99,10 +99,10 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | S | LOW | — | DONE |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
-| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | TODO |
+| [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | DONE（2026-08-04・`c3699b9c`。**プラン本文の baseline が陳腐化しており Drift check に実際に引っかかった** — 実測 40 テスト / Branches 72.05% を起点に 56 テスト / **91.91%** へ。下の実行記録を参照） |
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
-| [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | TODO |
-| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | TODO |
+| [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
+| [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
@@ -115,22 +115,22 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
-| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | TODO |
-| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | TODO |
-| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | TODO |
+| [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
+| [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
+| [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
-| [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | TODO |
+| [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
-| [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | TODO |
+| [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
-| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE (security) / 1 criterion pending |
+| [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
 | [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
 | [059](059-paypal-capture-verification.md) | PayPal capture の金額/相関/通貨検証 + settled ガード（Stripe パリティ・SECURITY-12/13） | security | P1 | S | LOW | — | DONE |
 | [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
@@ -140,6 +140,187 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **042 / 051 の実行記録（2026-08-03・`235754b8`〜`bb95f426`）**
+>
+> **051 は素の DONE。** ただしプラン本文の前提 1 つが実測で覆っている ——
+> 「cookie 未設定なら DEFAULT_COUNTRY（United States）が初期表示」は成立しない。
+> [`src/middleware.ts:18-27`](../src/middleware.ts) が cookie 不在時に ipinfo.io で
+> IP から国を判定して**先に cookie を設定する**ため、初期表示は実行マシンの所在地に
+> 依存する（日本から実行すると `Japan/EN/`）。spec は既知 cookie を事前投入して
+> この分岐を迂回する形にした（外部ネットワークにも実行地にも依存しない）。
+> WebKit は `Secure` cookie を安全でないオリジンで破棄するため、変更テストのみ
+> スキーマ条件付きでゲートしている（ローカル E2E は本番ビルドを http 配信する）。
+>
+> **042 は部分完了。** 本体である signIn 修復は**完全に達成**した ——
+> `grep -rn 'getByLabel("Email address")' tests/e2e/` は 0 件、
+> `signInWithPassword` 起因の失敗は**ゼロ**、a11y は 4 spec すべて passed
+> （従前は seller-apply のみ）、認証依存バッチは chromium で **7 passed / 2 failed**。
+> 未達は Step 5（failed 0）と Step 6（3 ブラウザフルラン）で、原因は
+> **サインインではない** —— 失敗 2 件はいずれもサインイン成立後（失敗時 DOM は
+> サインイン済みヘッダー）に商品ページの `goto` が 30s × 3 でタイムアウトする。
+> これは [`scripts/e2e/run-local.sh`](../scripts/e2e/run-local.sh) のヘッダーが
+> プラン 042 より前から記録している「重い注文フローの間欠 120s ハング（実行ごとに
+> 落ちるテストが移動する）」と同一症状で、実際に 1 回目は stock-decrement のみ、
+> 2 回目は stock-decrement + platform-coupon が落ちた。プラン 042 の STOP 条件
+> 「locator 以外の失敗モード（アプリ側の退行の可能性 — 本プランの範囲外）」に
+> 該当するため、改変せず停止した（下の Deferred 節に新規項目として起票）。
+>
+> **実行環境の注意（次の実行者へ）**: `playwright.config.ts` の
+> `reuseExistingServer: !CI` により、:3000 で**別プロジェクトの dev サーバー**が
+> 動いていると黙って再利用され、全テストがそのアプリの 404 を踏む（本セッションで
+> 実際に発生し、1 ラン分の結果が無効になった）。`run-local.sh` のヘッダーは
+> 「:3000 を停止してから実行」と指示しているが、**他プロジェクトを止めずに済む
+> `PORT=3100 E2E_BASE_URL=http://localhost:3100` への退避のほうが安全**
+> （`webServer.url` が `baseURL` を共有し、`next start` は `PORT` を読むため
+> 両者が自動的に揃う）。plan 044 のガード設計時に併せて検討すること。
+>
+> **047 の実行記録（2026-08-03・`0c5540c0`〜`4aa0f73f`）**
+>
+> **DONE。** Done criteria を実測で充足（3 ブラウザ **9 passed / 6 skipped / 0 failed / flaky 0**。
+> payment-error の残 skip は `:58` / `:70` の 2 件 × 3 ブラウザのみ）。金額検算はセント整数の
+> `toBe` 完全一致で、グループ内 `subtotal + shipping - discount === total` と
+> `Σ group total === order total` がいずれも一致した（アプリ側の丸めズレは検出されず）。
+>
+> **プランからの逸脱 3 点**（いずれも実測に基づく）:
+>
+> 1. **認証セットアップは入れ子 describe に閉じ込めた。** プラン Step 1 は describe 直下への
+>    `test.skip(() => requiresClerkAdmin)` 追加を指示していたが、それだと **Clerk 不要な既存の
+>    未認証テスト（`:17`）まで CLERK_SECRET_KEY 未設定時に skip される**。
+> 2. **支払い領域のアンカーとして `src/` に 1 行追加した。** `OrderPayment` には testid も
+>    見出しテキストも無く、プランの STOP 条件（プロバイダ非依存アンカー不在）に該当したため
+>    オペレーター判断を仰ぎ、`data-testid="order-payment"` 付与の承認を得た（`edef9711`）。
+> 3. **`platform-coupon.spec.ts` の到達フローに手を入れた**（プランは「金額 assert 追記のみ」）。
+>    修正しないと assert に到達する前に spec がハングして落ちるため。
+>
+> **042 が「原因不明の別事案」として残した間欠ハングは本ラウンドで解決した。** 真因は
+> **`waitForPostSignInSettle`**（サインイン後の networkidle 待ち）で、これを通すと後続の
+> `page.goto` が**リクエストを 1 件も発行しないまま**ハングし、per-goto 予算 × リトライを
+> 丸ごと消費する（実測: platform-coupon が 3 回連続 2 分 timeout。同時刻にシェルから同 URL を
+> curl すると 0.5〜1.5s で 200、トレースの network ログにも当該リクエストが現れない）。
+> settle を使っていない `a11y/checkout.spec.ts` だけが安定していたのはこのため。除去後は
+> 同一フローが 9〜11s で完走する。**`gotoStable` は無罪なので残すこと** —— Firefox は
+> サインイン後のソフトリダイレクトが goto に割り込んで `NS_BINDING_ABORTED` を投げ、
+> 素の goto だと 3 ブラウザ実測で flaky になる。`scripts/e2e/run-local.sh` のヘッダーにも
+> 追記済み。**042 の未達（Step 5 / 6）はこの修正で解除可能な見込み**だが、042 の対象 spec
+> 全体の再実測は本プランの範囲外として実施していない（次の実行者への申し送り）。
+>
+> **実行環境**: :3000 は別プロジェクトの `next-server` が占有していたため、051 の記録どおり
+> `PORT=3100 E2E_BASE_URL=http://localhost:3100` へ退避して実行した（この方式は問題なく機能する）。
+>
+> **044 / 042 の実行記録（2026-08-04・`d7ffbb88`〜`d939b697`）**
+>
+> **044 は DONE。ただし実装はプラン本文と形が違う。** プラン Step 1–2 は「:3000 の `lsof`
+> 事前チェック」を指示していたが、先行セッション（`eeb9422b` / `fdc0ee9f`）は
+> **専用ポート :3100 への隔離 + `E2E_NO_REUSE=1` による再利用の無効化**として実装した。
+> これは逸脱ではなく**プラン本文の結論に沿った上位互換** —— 044 の Why this matters 自身が
+> 「事前チェックは TOCTOU を縮めるだけで塞がない。根治は `reuseExistingServer` を
+> `!CI && !E2E_NO_REUSE` にすること」と 2026-07-18 に確定しており、実装はその根治側だけを
+> 採って、ポート番号も :3000 から退避させた（他プロジェクトの :3000 常駐を停止せずに済む
+> —— 042 / 051 の実行記録が「退避のほうが安全」と申し送っていた通り）。`lsof` チェックは
+> :3100 に対して残っており、早期・可読な失敗のための補助という位置づけもプラン通り。
+> 本セッションの残作業は **Step 3（`globalTimeout` 1200s→3600s・`d7ffbb88`）** のみだった。
+> Step 4 の判定基準（`.last-run.json` の status が `"timedout"` でない）はフルランで充足
+> （実測値は `"failed"` = visual 3 件による）。
+>
+> **042 は DONE。** 042 が STOP 条件で停止した原因（サインイン成立後の商品ページ `goto` が
+> 30s×3 でタイムアウト）は plan 047 が真因を特定済みだったが、**除去は 2 spec のみで
+> `tests/e2e/stock-decrement.spec.ts:148` に 1 箇所残っていた**。これを外すと当該 spec は
+> 120s ハング → **7.3s 完走**に転じ、Step 5（chromium 認証バッチ）は **9 passed / 0 failed**
+> （1.9m）、Step 6（3 ブラウザフルラン）は **83 passed / 3 failed / 37 skipped / flaky 0**
+> （5.8m）で完了した。**残る failed 3 件は `visual/cart.spec.ts` ×2 と
+> `visual/checkout.spec.ts` ×1 のベースライン陳腐化のみ**（plan 043 の担当）で、Step 6 の
+> 期待値「visual 3 件以外の failed が 0」を満たす。Done criteria の機械検証ゲート 5 項目
+> （`getByLabel("Email address")` 残存 0 / `signInWithPassword` に実行時分岐なし /
+> `expect(passwordInput).toBeVisible()` 存在 / Continue の `exact: true` / `waitForURL` 実装）も
+> すべて PASS。
+>
+> **フルラン所要は 25.5m → 5.8m。** ベースライン（2026-07-11）の 25.5m は、失敗 13 件が
+> それぞれリトライ 2 回ぶんの per-goto 予算を燃やしていた結果であり、ハング除去でそれが
+> 消えた。`globalTimeout: 3600s` は**それでもなお**必要 —— 短い値は「失敗」ではなく
+> 「未実行（`did not run`）」を生み、**測定の分母を黙って縮める**ためのり代を残す。
+>
+> **次の実行者への申し送り**: フルランを完全に green にする残件は **plan 043（VRT 3 枚の
+> 目視ゲート付き再撮影）のみ**。042 を hard dependency にしていた
+> **048 / 049 / 050 / 052 / 053（サインアウト部）/ 055 は着手条件が解除された**。
+> 新規 E2E spec を書く際は、サインイン直後に `waitForPostSignInSettle` を挟まないこと
+> （`src/config/test-helpers.ts` に定義は残るが、E2E の呼び出し箇所は本コミットで**ゼロ**に
+> なった。`gotoStable` は Firefox の `NS_BINDING_ABORTED` 吸収に必要なので残す）。
+>
+> **043 の実行記録（2026-08-04・`2d7ac110`〜`15cbca83`）**
+>
+> **DONE。ただし checkout は「ベースラインの陳腐化」ではなかった。** cart 2 枚はプラン本文
+> どおりの陳腐化で、目視ゲートの結果も想定内 —— 旧ベースラインは **1280x720 でフッターが
+> 写っておらず、左下に Next.js の dev インジケータ（"N" バッジ）が写り込んでいた**（dev
+> サーバー時代の撮影）。+351px の増分の実体は Newsletter バナー＋フッターリンク群の描画で、
+> 要素の重なり・見切れ・異常な空白は無し。cart-with-item も商品行が完全に揃っている。
+>
+> **checkout はプランの想定（「Clerk UI が 2 ステップ型 → 1 画面統合型へ変わった」）と違った。**
+> 旧ベースラインは**真っ白**（ウィジェット未描画）で、再撮影しても actual は
+> **ヘッダー＋空の本文＋フッター**にしかならない。Clerk は client-only のため URL 到達直後は
+> 本文が空で、**100ms 間隔の 2 枚が一致してしまい `toHaveScreenshot` が「安定」と誤判定する**
+> （3 試行ともバイト同一の 150420B ＝ フレークではなく決定論的）。error-context の a11y
+> スナップショットにはウィジェットが写るので、DOM には存在するが撮影に間に合っていない。
+> **そのまま固定すると「サインイン画面の差分検出器」にならず、マシン速度が変われば描画が
+> 間に合って恒常 red にもなる**ため、オペレーター承認を得て
+> [`tests/e2e/visual/checkout.spec.ts`](../tests/e2e/visual/checkout.spec.ts) に描画待ちを
+> 追加した（プラン本文では spec は Out of scope）。アンカーは
+> [`tests/e2e/helpers/auth.ts:67-82`](../tests/e2e/helpers/auth.ts) と同じ
+> `.cl-signIn-root` + `input[name="password"]` の可視で、リポジトリ既定に揃えている。
+>
+> **数の対応**: Step 1 の failed **3** = 更新された .png **3 枚** = 最終 passed **3**
+> （プランの機械的証拠がそのまま成立）。連続 2 回 green も充足。
+>
+> **フルラン実測（3 ブラウザ）: 83 passed / 0 failed / 3 flaky / 37 skipped（7.4m）。**
+> 042 の実行記録が申し送った「残 failed 3 件は VRT のみ」が**解消**され、failed はゼロ。
+> flaky 3 件（payment-error@chromium / platform-coupon@firefox / layout-chrome@webkit）は
+> いずれもリトライで pass しており、**別事案として残る**（VRT とは無関係）。
+>
+> **次の実行者への申し送り**: 054（VRT 対象を商品詳細・browse へ拡大）の着手条件が解除された。
+> 新規 VRT を書く際は、**client-only ウィジェットを含む画面では「描画完了アンカー」を
+> spec 側に明示すること** —— `toHaveScreenshot` の安定判定は「連続 2 枚の一致」でしかなく、
+> 未描画の空画面も安定と見なす。
+>
+> **026 の実行記録（2026-08-04・`c3699b9c`）**
+>
+> **DONE。ただしプラン本文の baseline は実測で覆っている。** 026 は Drift check に
+> 「`paypal.ts` 本体が変わっていたら STOP」と書いていたが、**実際に変わっていた** ——
+> plan 059（PayPal capture の金額/相関/通貨検証）が `b6591f9` 比で **+391 行**を入れ、
+> テストも **17 → 40** に成長していた。したがって本文の数値（Branches 28.6% / 17→32 テスト）は
+> そのまま Done criteria に使えない。**ケース表の中身（catch の 3 分岐 × 2 箇所・非 OK 応答・
+> 外側 catch の非 Error 分岐）は現行コードでも有効だった**ため、表は活かして数値目標だけを
+> 実測から再導出する形で続行した（オペレーター判断）。結果は **40 → 56 テスト /
+> Branches 72.05%（98/136）→ 91.91%**（目標 90% 達成）、Statements / Lines / Functions は **100%**。
+>
+> **構造上の変化 1 点**: currentUser / order 取得の catch は共通ヘルパー
+> `requirePayPalUser` / `findOwnedPayPalOrder`（[`src/queries/paypal.ts:127-194`](../src/queries/paypal.ts)）
+> へ抽出済みで、`createPayPalPayment` と `capturePayPalPayment` の差は**ログ prefix だけ**。
+> プラン Step 3 は「Step 2 と同型の 7 ケースを capture 側にも」と指示していたが、
+> **分岐本体は create 側で通し、capture 側は prefix が切り替わることだけを 1 ケースずつ確認**
+> する形にした（機械的な二重化はカバレッジを増やさず読む量だけ増やす）。
+>
+> **ケース表外の追加 2 件**: `purchase_units` / `captures` 欠損応答の防御。プラン 026 の
+> 「新しい種類のテストを発明しない」に触れるが、**残りの未カバー分岐が plan 059 由来の
+> optional-chaining ガードのみで、これ無しでは 90% に届かなかった**ため追加した
+> （TypeError へ化けず意図した拒否メッセージへ収束することの固定）。
+>
+> **規約との関係（レビュー時に注意）**: 本テストは **現状の 3 引数ログ形式をそのまま
+> assert する characterization** であり、`.claude/steering/tech.md` の 2 引数構造化ログ規約への
+> **準拠を証明しない**（`paypal.ts` は規約の実装例として名指しされていながら準拠していない、
+> という乖離はプラン 026 本文が明記したまま残っている）。本体は 1 行も変更していない。
+>
+> **028 / 029 の実行記録（2026-08-04・`68f636d5` / `70803930`）**
+>
+> **両者とも素の DONE（逸脱なし）。** 028 は `src/queries/country.test.ts` を新設して 4 テスト、
+> country.ts 単体で Statements/Branches/Functions/Lines とも **100%**。
+> `ls src/queries/*.test.ts | wc -l` が実装 20 モジュールと一致し、CLAUDE.md
+> 「Jest ユニットテストの対象は全サーバーアクション」の不変条件が回復した。
+> 029 は `profile.test.ts` を **34 → 63**（catch 20 + 期間フィルタ 9）に拡張し、
+> `profile.ts` の Branches は目標 95% に対し実測 **100%（87/87）**。
+> **期間フィルタで判明した既存テストの弱さ**: 従来の 1 件は `gte: expect.any(Date)` までしか
+> 見ておらず last-6-months / last-1-year / last-2-years を**区別できていなかった**。
+> `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
+> 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
+>
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
 > 024=`setUserCountryInCookies/route.ts` の `isCountry()` 検証）だが、Status 表が長らく `TODO` の
@@ -189,13 +370,12 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     →〔043 完了〕→ 054。home（`/`）の a11y / VRT は OI-9（SSR 500）解消後の追加項目として
     052 / 054 の Maintenance notes に記録済み。各プラン完了時の docs 同期義務は R8 と同じ
     （`spec-sync-after-test`・E2E 統計 SSOT = `docs/testing/QA_HANDOFF.md`）。
-15. **Dependency security (057) — `DONE (security) / 1 criterion pending`（履歴）** — **⚠️ 以下は着手判断の記録であり、
+15. **Dependency security (057) — ✅ DONE（履歴）** — **⚠️ 以下は着手判断の記録であり、
     現行の着手順ではない**（2026-07-18 に実行済み。`10e35f3`）。
-    **⚠️ Status は素の「DONE」ではなく「DONE (security) / 1 criterion pending」**（2026-07-27 訂正・2026-07-31 表記統一）:
-    advisory 解消というセキュリティ目的は達成済みだが、057 の Done criteria は
-    "ALL must hold" と定めており Step 5（未認証 `/dashboard` の redirect スモーク）の
-    実施記録が無い。`bun run dev` を起こせる環境で実施し、結果を 057 に追記した時点で
-    素の DONE へ戻すこと。当時は **P1・依存ゼロ・
+    Status は一時「DONE (security) / 1 criterion pending」だった（2026-07-27 訂正）が、
+    保留だった Step 5（未認証 `/dashboard` の redirect スモーク）を **2026-08-03 に実施し PASS**
+    （`next@16.2.12`。保護 4 ルートは 307 → `/sign-in`、対照群 `/` は 200。観測値と再実行時の
+    落とし穴は 057 の Step 5「実施結果」節）したため、**素の DONE へ復帰**。当時は **P1・依存ゼロ・
     即着手可能**として上記のテスト系プラン群より優先した。`next@16.2.1` が
     GHSA-26hh-7cqf-hhc6（HIGH — App Router の
     Middleware/Proxy バイパス）の影響範囲内であり、`src/middleware.ts` が
@@ -291,6 +471,13 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
 - ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
 - **`updateOrderGroupStatusAsAdmin` の並行二重復元** — deferred from [plan 031](031-integration-test-order-lifecycle-restock.md)（2026-07-31 記録）。`order.ts:441-471` は `findUnique` で `prev.status` を読んでから `update` する **read-then-act** のため行ロックを取らず、並行 2 者が同じ非終端 status を読んで**両方が `restockOrderItems` を実行しうる**。修正は `updateOrderPaymentStatus` と同型の**条件付き `updateMany`（CAS）**への統一（`where` に `status: { notIn: [...] }` を置き `count === 1` の内側でのみ復元 — 前例 `d0005bb`）。plan 031 はテスト追加のみのスコープであり、Scenario 2 が並行安全性を固定しているのは `updateOrderPaymentStatus` 側**のみ**。本項目は**本体修正**として未着手。
+- ~~**重い注文フロー E2E の間欠 120s ハング（サインイン後の商品ページ `goto` タイムアウト）** —
+  deferred from [plan 042](042-e2e-signin-helper-repair.md)（2026-08-03 記録）。~~ →
+  **[plan 047](047-e2e-checkout-order-detail.md) で解消**（2026-08-03）。真因は
+  `waitForPostSignInSettle`（サインイン後の networkidle 待ち）で、これを通すと後続の `goto` が
+  リクエストを 1 件も発行しないままハングしていた。注文フロー spec から除去し、3 ブラウザ実測で
+  **9 passed / 6 skipped / 0 failed / flaky 0**。`gotoStable` は Firefox の `NS_BINDING_ABORTED`
+  吸収に必要なため残置。**残件**: plan 042 の Step 5-6（全 spec の再実測・検証）は未実施のまま。
 - **`placeOrder` の住所所有権ロックの実 DB 並行検証** — deferred from CodeRabbit round（2026-07-31 記録）。`user.ts` の `SELECT … FOR UPDATE`（`f77dafd`）が並行 `userId` 付け替えを実際にブロックすることは、unit テストがモック境界で止まるため観測できない。検証は Integration（testcontainers）でのみ可能で、低コストな入り口は `tests/integration/` の既存スイートへ 2 トランザクション競合シナリオを足すこと（新規スイートを起こさない）。unit 側は「`$queryRaw` が `order.create` より前に呼ばれ、0 行なら throw する」呼び出し契約の固定まで完了済み。
 - **Full server-side pagination of seller orders** — deferred from plan 009 (changes `StoreOrderType` + DataTable search).
 - **Direction**: DIRECTION-01 refund execution (L, HIGH risk), DIRECTION-03 support-ticket console, DIRECTION-04 i18n foundation, DIRECTION-05 error monitoring (roadmap Phase 5). → Round 2 でロードマップ上に配置済み（[`direction/EXPANSION_BLUEPRINT.md`](direction/EXPANSION_BLUEPRINT.md) §5: Phase C に 01/02/03/05、Phase D に 04）。

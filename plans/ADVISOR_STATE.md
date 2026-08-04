@@ -711,9 +711,15 @@ VSCode「問題」パネルの件数が消化しても動かない件を調査�
    詳細本文を入手すること（Round 11 判断基準 3）。
 2. **未実行プランの実行**。**058〜062 は全て DONE**。残る TODO は
    **[`README.md`](README.md) の Status 表を正とする**（本節に一覧を再掲しない —
-   二重管理でドリフトさせないため）。E2E 系は **042 が絶対の先頭**（signIn ヘルパーの
-   Clerk UI ドリフトで認証系 16 件が全滅中 / 047–050・052・055 が待ち）。
-   依存ゼロで即着手できるのは **051 / 056 / 044 / 045**。
+   二重管理でドリフトさせないため）。
+   **⚠️ 2026-08-03 更新: 042 と 051 を実行した**（`235754b8`〜`bb95f426`）。
+   **042 の signIn 修復は達成済みなので「認証系 16 件が全滅中」はもう現況ではない** ——
+   `signInWithPassword` 起因の失敗はゼロ、a11y は 4 spec すべて passed、認証依存バッチは
+   chromium で 7 passed / 2 failed。したがって **047–050・052・055 のブロックは解除された**。
+   ただし 042 自体は Step 5–6 未達の**部分完了**で、残る 2 failed はサインインではなく
+   「重い注文フローの間欠 120s ハング」（README の Deferred 節に新規起票）。
+   051 は素の DONE。依存ゼロで即着手できるのは **056 / 044 / 045**、
+   042 待ちが解けた **047（P1）** が次の先頭候補。
 3. **Round 14 が生んだ残件**（いずれも小さく独立）:
    - `PaymentDetails.amount` の**既存行 backfill**（コード修正は `e63474b` で完了済み）—
      **起票済み: [plan 063](063-backfill-stripe-payment-amount.md)**（P2 / TODO・
@@ -724,11 +730,15 @@ VSCode「問題」パネルの件数が消化しても動かない件を調査�
 
 ### 完了済み（次アクションとして推奨しないこと）
 
-**001–009・023・024・058–062 は DONE**。**057 は素の DONE ではなく
-[`DONE (security) / 1 criterion pending`](README.md)**（README :120 / :169-174 が SSOT）——
-advisory 解消というセキュリティ目的は達成済みだが、Done criteria は "ALL must hold" と
-定めており Step 5（未認証 `/dashboard` の redirect スモーク）の実施記録が無い。
-「057 は DONE」と読んで残 1 項目を落とさないこと。
+**001–009・023・024・051・057・058–062 は DONE**（051 = 国選択セレクタの cookie 往復 E2E・
+2026-08-03 `5f2143b3`。**042 は含まない** —— Step 1–4 の signIn 修復は達成したが Step 5–6 が
+STOP 条件で未達のため [`README.md`](README.md) の Status 表では `IN PROGRESS`。ただし
+後続プランに対する hard dependency としては上の項目 2 のとおり解除済み）。057 は一時
+`DONE (security) / 1 criterion pending` だった（Done criteria が "ALL must hold" である一方、
+Step 5＝未認証 `/dashboard` の redirect スモークの実施記録が無かった）が、
+**2026-08-03 にスモークを実施し PASS**（保護 4 ルートは 307 → `/sign-in`、対照群 `/` は 200。
+観測値は [057](057-upgrade-next-middleware-bypass.md) の Step 5「実施結果」節）したため
+**素の DONE へ復帰**。Status の SSOT は [`README.md`](README.md) の Status 表。
 
 過去の本節が 057 を「次に実行する」と書いていたのは **Round 13 時点で既に古い記述**だった。
 実行実態は常に **[`README.md`](README.md) の Status 表**が SSOT であり、本節はその同期先にすぎない。
@@ -824,7 +834,7 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 > |---|---|---|
 > | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — **2026-07-19 / Round 13 実測**。詳細 `audit/findings-18-security-r13.md` §0） |
 > | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消。解決レンジの正値は `audit/findings-06-dependencies.md` を単一の出典とする — **2026-07-26 実測**: `@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`） |
-> | `next` | `^16.2.1` | **`~16.2.12`**（**2026-07-30 実測**。`~16.2.10` が新規 9 advisory の影響範囲 `<16.2.11` に再露出したため独立の依存メンテとして bump — `audit/findings-06-dependencies.md` DEPS-08 解決②。[plan 057](057-upgrade-next-middleware-bypass.md) は依然 **DONE (security) / 1 criterion pending** — Step 5 スモークの記録が未達。R1 の「最新・対応不要」判定は撤回済み） |
+> | `next` | `^16.2.1` | **`~16.2.12`**（**2026-07-30 実測**。`~16.2.10` が新規 9 advisory の影響範囲 `<16.2.11` に再露出したため独立の依存メンテとして bump — `audit/findings-06-dependencies.md` DEPS-08 解決②。[plan 057](057-upgrade-next-middleware-bypass.md) は **DONE** — 保留だった Step 5 スモークを 2026-08-03 に実施し PASS。R1 の「最新・対応不要」判定は撤回済み） |
 > | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / README Deferred で継続追跡） |
 > | tsc / lint | 0 エラー / 15 警告 | 同左（**2026-07-27 再実測**・変化なし） |
 

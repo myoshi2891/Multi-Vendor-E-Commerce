@@ -16,10 +16,12 @@ const isEnabled = (name: string): boolean =>
 
 export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/global-setup.ts'),
-  // 全体タイムアウト（ハング防止の安全ネット）。本番ビルド起動（next build）と
-  // 3ブラウザ分の全スイートを 1 worker で直列実行する wall-clock を含むため 20 分とする。
-  // 600s では build + 全テストが収まらず途中で "did not run" 打ち切りが発生していた。
-  globalTimeout: 1200 * 1000,
+  // 全体タイムアウト（ハング防止の安全ネット）。本番ビルド起動（next build）+
+  // 3ブラウザ全スイートの 1 worker 直列 + 失敗時 retries=2 の wall-clock を含む。
+  // 2026-07-11 実測: 認証系 13 件が fail（各 3 リトライ）したランで 25.5 分。
+  // 1200s では収まらず 3 件が "did not run" で打ち切られた（plans/044）。
+  // リトライを含む最悪ケースを吸収するため 60 分とする。
+  globalTimeout: 3600 * 1000,
   testDir: "./tests/e2e",
   timeout: 30 * 1000,
   expect: {
@@ -57,7 +59,13 @@ export default defineConfig({
       ? "bun run dev"
       : "bun run build && bun run start",
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // 再利用の判定は「baseURL のポートが LISTEN されているか」だけで行われ、そこに居るのが
+    // 本アプリかどうかは問われない。別リポジトリのアプリを掴むと全ルートが 404 を返し
+    // 「テスト失敗」として記録される（plans/044）。ポート所有だけを根拠に再利用させたくない
+    // 実行系（scripts/e2e/run-local.sh）は E2E_NO_REUSE=1 を立てて再利用を無効化し、
+    // 「既存サーバーを使う」ではなく「自分で起動する（居たら bind 失敗で止まる）」へ倒す。
+    // ローカルの高速反復（手動 dev サーバーの再利用）は既定のまま維持する。
+    reuseExistingServer: !process.env.CI && !isEnabled("E2E_NO_REUSE"),
     // build を含むため十分なタイムアウトを確保（ビルド + 起動）
     timeout: 600 * 1000,
     stdout: "pipe", // サーバー出力を表示（起動状況・クラッシュの可視化）

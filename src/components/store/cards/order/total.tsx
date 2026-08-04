@@ -10,7 +10,9 @@ export default function OrderTotalDetailsCard({
     const { subTotal, shippingFees, total } = details;
     return (
         <div>
-            <div className="w-full p-4 shadow-sm">
+            {/* E2E は金額明細の検算にこのカードを掴む。スタイルクラス（shadow-sm）に
+                依存させないため、`order-payment` と同じ testid 規約で固定する。 */}
+            <div className="w-full p-4 shadow-sm" data-testid="order-total">
                 <div className="flex justify-between">
                     <div className="space-y-4">
                         <p className="text-lg font-semibold text-main-primary">

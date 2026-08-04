@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1829 passed / 1832 total / 177 スイート（176 passed + 1 skipped suite）** — 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -2283,3 +2283,309 @@ ITEM 方式の配送料が `validQuantity === 1 ? fee : fee + extra * (validQuan
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
 | カバレッジ | S 66.66 / B 46.71 / F 55.15 / L 65.65 | **S 66.8 / B 46.78 / F 55.34 / L 65.8** |
 | Integration | 17 / 2 スイート | **17 / 2 スイート**（不変・testcontainers 実 DB で pass） |
+
+---
+
+### plans 042 / 051 の実行 — E2E signIn ヘルパー修復と国選択セレクタ E2E (2026-08-03)
+
+#### 概要
+
+`plans/README.md` の Status 表で P1 かつ TODO だった 042（E2E signIn ヘルパー修復）と
+051（国選択セレクタの cookie 往復 E2E）を実行した。042 はサインイン修復とフッター SVG の
+実 WCAG 違反是正を達成したが、注文フローの既知ハングにより**部分完了**で停止した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/helpers/auth.ts` | 共有 `signInWithPassword` を新設。`.cl-signIn-root` へスコープし `input[name=...]` で特定（ラベル文言のグローバル一致を廃止）。1 段/2 段の実行時分岐は持たない | `235754b8` |
+| `tests/e2e/stock-decrement.spec.ts` / `platform-coupon.spec.ts` | インラインのサインイン手順を共有関数呼び出しへ置換 | `5f635485` |
+| `tests/e2e/messages.spec.ts` / `seller-onboarding.spec.ts` | 同上（messages はローカル `signIn` を削除、seller-onboarding は 2 箇所） | `a5816c0c` |
+| `src/components/store/icons/send.tsx` / `wishlist.tsx` / `order.tsx` | `role="img"` の SVG に `aria-label` を付与（axe `svg-img-alt` / serious の是正） | `c25a8768` |
+| `tests/e2e/country-selector.spec.ts` | 新規。Ship to の hover → 国選択 → cookie 書き込み → `router.refresh()` → リロード永続 | `5f2143b3` |
+
+#### 根本原因（042）
+
+`/sign-in` は共通フッター付きで、Newsletter フォームが
+`<label class="sr-only">Email address</label>` を持つ。Clerk ウィジェットは client-only の
+ため**ハイドレーション前は Newsletter 欄だけが存在**し、`getByLabel` がそちらへ解決していた。
+識別子が空のままサインインが成立せず `toBeHidden` が 20s でタイムアウトしていた。
+
+#### 実測で判明した前提の誤り（051）
+
+プランは「cookie 未設定なら DEFAULT_COUNTRY（United States）」を前提としていたが、
+`src/middleware.ts:18-27` が cookie 不在時に ipinfo.io で IP から国を判定して先に設定するため、
+**初期表示は実行マシンの所在地に依存する**（日本から実行すると `Japan/EN/`）。
+既知の cookie を事前投入して middleware の分岐を迂回する形に変更し、外部ネットワークにも
+実行地にも依存しない決定論的なテストにした。
+
+#### 未達（次セッションへの引き継ぎ）
+
+- **042 は部分完了**。`stock-decrement` / `platform-coupon` が**サインイン成立後**の
+  商品ページ `goto`（30s × 3 リトライ）でタイムアウトする。`scripts/e2e/run-local.sh`
+  ヘッダー記載の「重い注文フローの間欠 120s ハング」と一致し、実行ごとに落ちるテストが
+  移動する（1 回目は stock-decrement のみ、2 回目は両方）。プランの STOP 条件
+  「locator 以外の失敗モード」に該当するため改変せず停止した。
+- 3 ブラウザフルラン（042 Step 6）は未実施。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1829（記録値） | **1841 passed / 1844 total**（実測で訂正・12 件のドリフトを解消） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 39 tests/browser・16 files | **41 tests/browser・17 files**（3 ブラウザ計 123） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 047: チェックアウト異常系の un-skip + 注文詳細の金額明細検証 (2026-08-03)
+
+#### 概要
+
+住所未選択で Place order を押したときのエラー表示 E2E を un-skip し（TESTS-30）、注文詳細ページの
+請求金額をセント整数の完全一致で検算する assert を追加した（TESTS-31）。あわせて plan 042 が
+「原因不明の別事案」として残した**サインイン後ナビゲーションの間欠ハングを根本解決**した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/payment-error.spec.ts` | 住所未選択エラーを un-skip。認証セッションは入れ子 describe に閉じ込め、`CLERK_SECRET_KEY` 未設定時の skip を既存の未認証テストへ波及させない。`/checkout` へは `/cart` の Checkout 経由で到達 | `0c5540c0` |
+| `src/components/store/order-page/payment.tsx` | 決済プロバイダ非依存の `data-testid="order-payment"` を付与（src 変更は 1 行・オペレーター承認済み） | `edef9711` |
+| `tests/e2e/platform-coupon.spec.ts` | 注文詳細の金額明細 assert を追加（構造 ×2 グループ / グループ内検算 / 全体合計一致 / 支払い領域の存在） | `87f6ce05` |
+| `tests/e2e/payment-error.spec.ts` / `platform-coupon.spec.ts` | `waitForPostSignInSettle` を除去してハングを解消。`gotoStable` は Firefox 対策として残す。checkout 後の `waitForURL` を 10s → 30s | `ec32b174` |
+
+#### 根本原因（間欠ハング）
+
+`waitForPostSignInSettle`（サインイン後の networkidle 待ち）を通すと、後続の `page.goto` が
+**リクエストを 1 件も発行しないまま**ハングし、per-goto 予算 × リトライを丸ごと消費する
+（実測: platform-coupon が 3 回連続 2 分 timeout。同時刻にシェルから同 URL を curl すると
+0.5〜1.5s で 200 が返り、トレースの network ログにも当該リクエストが現れない）。settle を
+使っていない `a11y/checkout.spec.ts` だけが安定していたのはこのため。除去後は同一フローが
+9〜11s で完走する。`gotoStable` は無罪で、Firefox のソフトリダイレクト割り込み
+（`NS_BINDING_ABORTED`）を吸収するため必要。
+
+#### 金額検算の方式
+
+表示金額はハードコードせず、`$X.XX` を**パース時に 1 度だけ丸めてセント整数化**してから
+整数演算で検算する（`.claude/steering/tech.md` が定める「金額規約の唯一の例外 = E2E の
+表示文字列検算」）。許容誤差は持たず `toBe` の完全一致で、グループ内
+`subtotal + shipping - discount === total` と `Σ group total === order total` の両方が
+3 ブラウザで一致した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1841 passed / 1844 total**（不変・E2E のみの変更） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 41 tests/browser・17 files | **41 tests/browser・17 files**（不変。un-skip は skip/active の内訳のみを動かす） |
+| 対象 2 spec の 3 ブラウザ実測 | platform-coupon が間欠 failed / 住所未選択は 3 ブラウザとも skip | **9 passed / 6 skipped / 0 failed / flaky 0** |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plans 044 / 042 の完了 — E2E 運用ガードと signIn 修復の最終検証 (2026-08-04)
+
+#### 概要
+
+`plans/README.md` の Status 表で唯一残っていた P1（042 = IN PROGRESS）を閉じ、
+その前提となる P2/DX（044）を先に完了させた。042 の残ブロッカーは plan 047 が特定した
+サインイン後ハングの**除去漏れ 1 箇所**で、これを外したことで 3 ブラウザフルランが
+初めて「visual ベースライン以外 failed 0」に到達した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `playwright.config.ts` | `globalTimeout` を 1200s → 3600s（plan 044 Step 3）。1200s は 25.5m のランを収容できず 3 件を `did not run` で打ち切っていた | `d7ffbb88` |
+| `tests/e2e/stock-decrement.spec.ts` | `waitForPostSignInSettle` の呼び出しと import を除去（plan 047 の除去漏れ）。除去理由を他 spec と同型のコメントで固定 | `d939b697` |
+
+#### 実測結果
+
+| 実測 | 結果 |
+|------|------|
+| chromium 認証バッチ（stock-decrement / platform-coupon / seller-onboarding / messages / a11y） | **9 passed / 0 failed**（1.9m） |
+| 3 ブラウザフルラン（`bash scripts/e2e/run-local.sh`） | **83 passed / 3 failed / 37 skipped / flaky 0**（5.8m） |
+| `.last-run.json` の status | `failed`（**`timedout` ではない** = plan 044 Step 4 の判定基準を充足） |
+| 042 の機械検証ゲート 5 項目 | すべて PASS |
+
+failed 3 件は `visual/cart.spec.ts` × 2 と `visual/checkout.spec.ts` × 1 の
+ベースライン陳腐化のみで、**plan 043（目視ゲート付き再撮影）の担当**。
+
+#### plan 044 の実装がプラン本文と異なる点
+
+044 Step 1–2 はプラン本文では「:3000 の `lsof` 事前チェック」だったが、実装は
+**専用ポート :3100 への隔離 + `E2E_NO_REUSE=1` による再利用の無効化**（`eeb9422b` /
+`fdc0ee9f`）。プラン本文の Why this matters が「事前チェックは TOCTOU を縮めるだけで
+塞がない」と自ら認めており、`E2E_NO_REUSE` が本質的なガードだと結論していたため、
+実装はその結論に沿った上位互換。ポート隔離は他プロジェクトの :3000 常駐を
+停止せずに済む副次利点も持つ。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1841 passed / 1844 total**（不変・E2E のみの変更） |
+| Jest スイート数 | 177 | **177**（不変） |
+| Playwright E2E | 41 tests/browser・17 files（123） | **41 tests/browser・17 files（123）**（不変） |
+| 3 ブラウザフルラン | 52 passed / 17 failed / 39 skipped / 3 did not run（25.5m・2026-07-11） | **83 passed / 3 failed / 37 skipped / 0 did not run**（5.8m） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+#### 後続への影響
+
+042 の完了により、hard dependency として 042 を待っていた
+**plans 047（済）/ 048 / 049 / 050 / 052 / 053（サインアウト部）/ 055** の着手条件が解除された。
+
+---
+
+### plans 043 / 028 の実行（VRT 再ベースライン + 最後の未テスト server action） (2026-08-04)
+
+#### 概要
+
+VRT ベースライン 3 枚を目視ゲート付きで再撮影し、3 ブラウザフルランの failed をゼロにした
+（plan 043）。併せて `src/queries/` で唯一テストが無かった `country.ts` に unit テストを
+新設し、「全サーバーアクションがテスト済み」の不変条件を回復した（plan 028）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/visual/cart.spec.ts-snapshots/*.png` | 空カート / 商品追加後カートのベースライン再撮影（720px→1071px） | `2d7ac110` |
+| `tests/e2e/visual/checkout.spec.ts` | Clerk ウィジェットの描画完了アンカーを追加してから撮影 | `15cbca83` |
+| `tests/e2e/visual/checkout.spec.ts-snapshots/*.png` | サインイン画面が写ったベースラインへ差し替え | `15cbca83` |
+| `src/queries/country.test.ts` | `getAllCountries` の unit テスト 4 本を新規作成 | `68f636d5` |
+
+#### plan 043 で判明した「陳腐化ではない失敗」
+
+cart 2 枚はプラン想定どおりの陳腐化だった —— 旧ベースラインは **dev サーバー時代の
+720px** で、フッターが描画される前の状態を固定しており、左下に Next.js の dev
+インジケータまで写り込んでいた。+351px の増分の実体は Newsletter バナー＋フッター
+リンク群で、要素の重なり・見切れは無い。
+
+**checkout は違った。** 旧ベースラインは真っ白で、再撮影しても actual は
+「ヘッダー＋空の本文＋フッター」にしかならない。Clerk は client-only のため URL 到達
+直後は本文が空で、**`toHaveScreenshot` の安定判定（100ms 間隔の 2 枚が一致）が空画面を
+「安定」と誤認**していた（3 試行ともバイト同一の 150420B ＝ フレークではなく決定論的。
+error-context の a11y スナップショットにはウィジェットが写るので DOM には存在する）。
+
+そのまま固定すると「サインイン画面の差分検出器」にならず、マシン速度が変われば描画が
+間に合って恒常 red にもなるため、オペレーター承認を得て spec に描画完了アンカー
+（`.cl-signIn-root` + `input[name="password"]` の可視。`tests/e2e/helpers/auth.ts:67-82`
+と同一）を追加した。プラン本文では spec は Out of scope であり、意図的逸脱として記録する。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1845 passed / 1848 total**（plan 028 で +4） |
+| Jest スイート数 | 177 | **178**（+1） |
+| Playwright Visual | 3 テストとも failed | **3 テストとも passed**（連続 2 回 green） |
+| 3 ブラウザフルラン | 83 passed / 3 failed / 37 skipped / flaky 0（5.8m） | **83 passed / 0 failed / 37 skipped / flaky 3**（7.4m） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+#### 残課題
+
+フルランの flaky 3 件（payment-error@chromium / platform-coupon@firefox /
+layout-chrome@webkit）はいずれもリトライで pass しており VRT とは無関係。
+別事案として残る。
+
+---
+
+### plan 029 の実行（profile.ts のエラー経路 + 期間フィルタ網羅） (2026-08-04)
+
+#### 概要
+
+`src/queries/profile.ts`（プロフィール系 5 テーブルを供給する server action 群）の
+Branches を 67.81% から 100% へ引き上げた。本体は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/profile.test.ts` | catch 分岐 20 件 + 期間フィルタ 9 件を追加（34→63） | `70803930` |
+
+#### 何がテストされていなかったか
+
+5 関数（`getUserOrders` / `getUserPayments` / `getUserReviews` / `getUserWishlist` /
+`getUserFollowedStores`）はいずれも「currentUser 用」「DB フェッチ用」の 2 つの
+try/catch を持ち、どちらも `instanceof Error` の真偽でログの引数形状を変える。
+この **20 分岐が丸ごと未検証**で、「エラー時に内部詳細を漏らさず汎用メッセージへ
+縮退する」という PII 非漏洩の契約が固定されていなかった。
+
+期間フィルタは既存テストが 1 件あったが、`gte: expect.any(Date)` までしか見ておらず
+**last-6-months / last-1-year / last-2-years を区別できない**ものだった。
+`jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と
+突き合わせる形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため
+TZ 依存も生じない）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1845 passed / 1848 total | **1874 passed / 1877 total**（+29） |
+| Jest スイート数 | 178 | **178**（不変） |
+| profile.ts Branches | 67.81%（59/87） | **100%（87/87）** |
+| lcov 全体 Branches | 46.94% | **47.48%** |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 026 の実行（paypal.ts のエラー経路網羅） (2026-08-04)
+
+#### 概要
+
+決済モジュール `src/queries/paypal.ts` のエラー経路を unit テストで網羅し、
+Branches を 72.05% から 91.91%（Statements / Lines / Functions は 100%）へ。
+本体は 1 行も変更していない characterization テスト。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/paypal.test.ts` | ヘルパー catch 8 + 外側 catch 6 + 不正応答 2 を追加（40→56） | `c3699b9c` |
+
+#### プラン本文からの逸脱（Drift check に実際に引っかかった）
+
+プラン 026 の baseline は「17 テスト / Branches 28.6%」だったが、その後 plan 059 が
+capture 検証を追加して `paypal.ts` は +391 行、テストは 17→40 に成長していた。
+ケース表（catch の 3 分岐 × 2 箇所、非 OK 応答、外側 catch の非 Error 分岐）は
+そのまま有効だったので活かし、**数値目標だけを実測から再導出**した。
+
+また catch は共通ヘルパー `requirePayPalUser` / `findOwnedPayPalOrder` へ抽出済みで、
+`createPayPalPayment` と `capturePayPalPayment` の差はログ prefix のみ。そのため
+分岐本体は create 側で通し、capture 側は prefix 切り替えのみを確認する形にした
+（機械的な二重化はカバレッジを増やさず読む量だけ増やす）。
+
+末尾 2 件（`purchase_units` / `captures` 欠損）はケース表に無いが、90% 到達に
+必要な optional-chaining 分岐であり追加した。
+
+#### 規約との関係（重要）
+
+本テストは **現状の 3 引数ログ形式をそのまま assert している**。
+`.claude/steering/tech.md` が定める構造化ログ規約は 2 引数形式であり、
+**paypal.ts は規約の実装例として名指しされていながら準拠していない**。
+このテストは規約準拠を証明するものではなく、現状の挙動を固定するもの。
+将来 `logError` へ移行する際は、この乖離がテストを壊す変更として機械的に見える。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1874 passed / 1877 total | **1890 passed / 1893 total**（+16） |
+| Jest スイート数 | 178 | **178**（不変） |
+| paypal.ts Branches | 72.05%（98/136） | **91.91%** |
+| lcov 全体 Branches | 47.48% | **48.00%** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
