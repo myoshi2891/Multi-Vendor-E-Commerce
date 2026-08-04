@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1829 passed / 1832 total / 177 スイート（176 passed + 1 skipped suite）** — 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1845 passed / 1848 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -2443,3 +2443,58 @@ failed 3 件は `visual/cart.spec.ts` × 2 と `visual/checkout.spec.ts` × 1 �
 
 042 の完了により、hard dependency として 042 を待っていた
 **plans 047（済）/ 048 / 049 / 050 / 052 / 053（サインアウト部）/ 055** の着手条件が解除された。
+
+---
+
+### plans 043 / 028 の実行（VRT 再ベースライン + 最後の未テスト server action） (2026-08-04)
+
+#### 概要
+
+VRT ベースライン 3 枚を目視ゲート付きで再撮影し、3 ブラウザフルランの failed をゼロにした
+（plan 043）。併せて `src/queries/` で唯一テストが無かった `country.ts` に unit テストを
+新設し、「全サーバーアクションがテスト済み」の不変条件を回復した（plan 028）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/visual/cart.spec.ts-snapshots/*.png` | 空カート / 商品追加後カートのベースライン再撮影（720px→1071px） | `2d7ac110` |
+| `tests/e2e/visual/checkout.spec.ts` | Clerk ウィジェットの描画完了アンカーを追加してから撮影 | `15cbca83` |
+| `tests/e2e/visual/checkout.spec.ts-snapshots/*.png` | サインイン画面が写ったベースラインへ差し替え | `15cbca83` |
+| `src/queries/country.test.ts` | `getAllCountries` の unit テスト 4 本を新規作成 | `68f636d5` |
+
+#### plan 043 で判明した「陳腐化ではない失敗」
+
+cart 2 枚はプラン想定どおりの陳腐化だった —— 旧ベースラインは **dev サーバー時代の
+720px** で、フッターが描画される前の状態を固定しており、左下に Next.js の dev
+インジケータまで写り込んでいた。+351px の増分の実体は Newsletter バナー＋フッター
+リンク群で、要素の重なり・見切れは無い。
+
+**checkout は違った。** 旧ベースラインは真っ白で、再撮影しても actual は
+「ヘッダー＋空の本文＋フッター」にしかならない。Clerk は client-only のため URL 到達
+直後は本文が空で、**`toHaveScreenshot` の安定判定（100ms 間隔の 2 枚が一致）が空画面を
+「安定」と誤認**していた（3 試行ともバイト同一の 150420B ＝ フレークではなく決定論的。
+error-context の a11y スナップショットにはウィジェットが写るので DOM には存在する）。
+
+そのまま固定すると「サインイン画面の差分検出器」にならず、マシン速度が変われば描画が
+間に合って恒常 red にもなるため、オペレーター承認を得て spec に描画完了アンカー
+（`.cl-signIn-root` + `input[name="password"]` の可視。`tests/e2e/helpers/auth.ts:67-82`
+と同一）を追加した。プラン本文では spec は Out of scope であり、意図的逸脱として記録する。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 1841 passed / 1844 total | **1845 passed / 1848 total**（plan 028 で +4） |
+| Jest スイート数 | 177 | **178**（+1） |
+| Playwright Visual | 3 テストとも failed | **3 テストとも passed**（連続 2 回 green） |
+| 3 ブラウザフルラン | 83 passed / 3 failed / 37 skipped / flaky 0（5.8m） | **83 passed / 0 failed / 37 skipped / flaky 3**（7.4m） |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+#### 残課題
+
+フルランの flaky 3 件（payment-error@chromium / platform-coupon@firefox /
+layout-chrome@webkit）はいずれもリトライで pass しており VRT とは無関係。
+別事案として残る。

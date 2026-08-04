@@ -12,10 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1841 passed / 1844 total across 177 suites (3 skipped), as of 2026-08-03.
-  **Corrected against a fresh run** (`bun run test -- --no-coverage`). The previous entry read
-  1829 / 1832 — a **12-test drift** that predates plans 042 / 051, both of which touched only
-  E2E specs and added no Jest test. Suite count and skip count matched the record.
+- 1845 passed / 1848 total across 178 suites (3 skipped), as of 2026-08-04.
+  Plan 028 added `src/queries/country.test.ts` (+4 tests / +1 suite), closing the last
+  server-action module that had no unit test — `ls src/queries/*.test.ts | wc -l` now equals
+  the 20 implementation modules, restoring the CLAUDE.md invariant that every server action is
+  unit-tested. The 2026-08-03 entry (1841 / 1844 across 177 suites) itself corrected a 12-test
+  drift that predated plans 042 / 051.
 - Playwright E2E: 41 tests per browser across 17 files (123 total over chromium/firefox/webkit),
   as of 2026-08-03 — up 2 from `tests/e2e/country-selector.spec.ts` (plan 051, Ship-to cookie
   round-trip). One of the two is gated off on WebKit, which drops `Secure` cookies on insecure
@@ -40,6 +42,18 @@
   hang no longer burns the per-goto budget times two retries. `globalTimeout` is now 3600s
   (plan 044): the old 1200s could not hold a run with retries and truncated 3 tests as
   "did not run", which silently shrinks the measured denominator.
+- Plan 043 closed on 2026-08-04, taking the full run to **83 passed / 0 failed / 3 flaky /
+  37 skipped in 7.4 minutes**. The cart baselines were stale exactly as planned (the old ones
+  were 720px tall, shot on a dev server before the footer rendered, Next's dev indicator baked
+  in). The checkout baseline was **not** stale: Clerk renders client-side, so at capture time
+  the page body was still empty, and `toHaveScreenshot`'s stability rule — two shots 100ms
+  apart that match — accepts an empty page as stable (three runs produced byte-identical
+  actuals). Re-baselining that would freeze a screenshot that cannot detect sign-in UI changes
+  and would go permanently red on a machine fast enough to paint in time, so the spec now waits
+  on a render anchor (`.cl-signIn-root` + a visible `input[name="password"]`, the same anchor
+  `tests/e2e/helpers/auth.ts` uses) before capturing. The 3 flaky tests
+  (payment-error@chromium, platform-coupon@firefox, layout-chrome@webkit) all passed on retry
+  and are unrelated to VRT.
 - Earlier entry (2026-08-01): 1829 passed / 1832 total across 177 suites (3 skipped).
   Three regressions from the CodeRabbit review round, twelfth pass (+3, no new suites).
   `scan-tests.test.ts` 21→24 (the scanner treated the contents of string literals, template
