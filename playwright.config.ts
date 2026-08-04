@@ -57,7 +57,13 @@ export default defineConfig({
       ? "bun run dev"
       : "bun run build && bun run start",
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // 再利用の判定は「baseURL のポートが LISTEN されているか」だけで行われ、そこに居るのが
+    // 本アプリかどうかは問われない。別リポジトリのアプリを掴むと全ルートが 404 を返し
+    // 「テスト失敗」として記録される（plans/044）。ポート所有だけを根拠に再利用させたくない
+    // 実行系（scripts/e2e/run-local.sh）は E2E_NO_REUSE=1 を立てて再利用を無効化し、
+    // 「既存サーバーを使う」ではなく「自分で起動する（居たら bind 失敗で止まる）」へ倒す。
+    // ローカルの高速反復（手動 dev サーバーの再利用）は既定のまま維持する。
+    reuseExistingServer: !process.env.CI && !isEnabled("E2E_NO_REUSE"),
     // build を含むため十分なタイムアウトを確保（ビルド + 起動）
     timeout: 600 * 1000,
     stdout: "pipe", // サーバー出力を表示（起動状況・クラッシュの可視化）

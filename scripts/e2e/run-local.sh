@@ -32,10 +32,15 @@
 #   bun run test:e2e:local -- tests/e2e/stock-decrement.spec.ts   # 単一スペック
 #
 # 注意:
-#   playwright.config.ts は reuseExistingServer:!CI のため、baseURL のポートに既存サーバーが
-#   居ると内容を問わず再利用される。既定の :3000 には Neon 向き dev サーバーや**別リポジトリ**の
-#   アプリが居がちで、後者を掴むと全ルートが 404 を返し「テスト失敗」として記録される。
-#   これを構造的に避けるため、本スクリプトは専用ポート :3100 で起動・接続する。
+#   playwright.config.ts の reuseExistingServer は「baseURL のポートが応答するか」しか見ず、
+#   そこに居るのが本アプリかは問わない。既定の :3000 には Neon 向き dev サーバーや**別リポジトリ**
+#   のアプリが居がちで、後者を掴むと全ルートが 404 を返し「テスト失敗」として記録される。
+#   本スクリプトは二段で塞ぐ:
+#     (1) 専用ポート :3100 を使い、:3000 の常駐プロセスと衝突させない（隔離）
+#     (2) E2E_NO_REUSE=1 で再利用そのものを無効化し、必ず自分でサーバーを起動する（同定）
+#   (1) だけではポート所有＝本アプリと見なす誤りが残る（:3100 を別アプリが掴んでいても再利用
+#   される）ため、(2) が本質的なガード。下の事前チェックは早期に分かりやすく失敗させるための
+#   補助で、単独では TOCTOU を閉じない。
 #   別ポートを使いたい場合のみ E2E_PORT を渡すこと（例: E2E_PORT=3200 bun run test:e2e:local）。
 #
 set -euo pipefail
@@ -45,10 +50,25 @@ readonly E2E_PORT="${E2E_PORT:-3100}"
 export PORT="$E2E_PORT"                       # webServer の next dev / next start が読む
 export E2E_BASE_URL="http://localhost:${E2E_PORT}"  # playwright.config.ts の baseURL
 
+# 既存サーバーの再利用を無効化する。ポートが応答することは「本アプリが居ること」を意味しない
+# ため、再利用を許すと別アプリを掴んだまま全ルート 404 で走り切ってしまう。
+export E2E_NO_REUSE=1
+
 # 非シークレット: docker-compose.yml の db サービスと一致するローカル接続情報。
 readonly LOCAL_DB_URL="postgresql://dev:dev@localhost:5432/multivendor_dev"
 
 cd "$(dirname "$0")/../.."
+
+# :${E2E_PORT} の占有を先に弾く。E2E_NO_REUSE=1 により Playwright は必ず自分で起動するので、
+# 占有されていれば webServer は bind に失敗する。ただしその失敗は migrate/seed（数十秒）を
+# 消費した後に、原因の分かりにくいメッセージで出る。ここで早期に理由付きで落とす。
+# ※ これはレースを縮めるだけで無くさない（チェック後に割り込むプロセスは止められない）。
+#   保証は E2E_NO_REUSE 側にあり、本チェックは体験改善のための補助。
+if lsof -nP -iTCP:"${E2E_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "ERROR: :${E2E_PORT} は既に使用中です。E2E 用サーバーを起動できないため中止します。" >&2
+    echo "  対処: そのプロセスを停止するか、E2E_PORT=<別ポート> を指定して再実行してください。" >&2
+    exit 1
+fi
 
 echo "==> ローカル Postgres (db サービス) を起動..."
 docker compose up -d db
