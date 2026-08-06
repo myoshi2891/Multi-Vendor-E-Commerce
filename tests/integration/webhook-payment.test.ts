@@ -21,8 +21,11 @@
  *   - 状態遷移イベント（succeeded → charge.refunded）が同じ行を更新すること
  *   - Order 不在時に 404 を返し、副作用を一切残さないこと
  *   - `$transaction` の原子性（2 番目の書き込みが失敗したら 1 番目も巻き戻ること）
- *   - プロバイダー切替時（Stripe → PayPal）に 1 行が保たれること
- *     **および現状 `amount` / `currency` が切替後も更新されないこと**（characterization。下記 P4）
+ *   - プロバイダー切替時（Stripe → PayPal）に 1 行が保たれ、`amount` / `currency` も
+ *     切替後の provider の値に更新されること（下記 P4）
+ *
+ * `PaymentDetails.amount` の単位契約は**両経路とも `Order.total`（ドル建て `Decimal(12,2)`）**。
+ * 同期パス `src/queries/stripe.ts` と同一で、Stripe event の minor unit (cents) は保存しない。
  *
  * ⚠️ 並行ケースが主張できるのは「**並行ディスパッチの回帰テスト**」までであり、
  * 「DB 上で 2 つの upsert が重なったことの証明」ではない。バリアと `connection_limit >= 2` が
@@ -79,14 +82,13 @@ import captureRefundedFixture from "../fixtures/webhooks/paypal/payment-capture-
 
 const db = getTestDb();
 
-/** Order.total（PayPal 経路が PaymentDetails.amount に格納する権威値） */
+/** Order.total（両経路が PaymentDetails.amount に格納する権威値。ドル建て） */
 const ORDER_TOTAL = "110.00";
-/** Stripe fixture が持つ amount（cents 単位。PayPal 経路のドル建てと単位が異なる） */
-const STRIPE_FIXTURE_AMOUNT_CENTS = 9999;
 
 type StripeEventFixture = {
     type: string;
-    data: { object: { metadata?: Record<string, string> } };
+    // currency は P4 でプロバイダー間の差分を作るために上書きする（route が読む列）
+    data: { object: { metadata?: Record<string, string>; currency?: string } };
 };
 type PayPalEventFixture = {
     event_type: string;
@@ -277,10 +279,9 @@ describe("Scenario S1: first Stripe event creates PaymentDetails", () => {
         expect(details.paymentMethod).toBe("Stripe");
         expect(details.paymentIntentId).toBe("pi_test_succeeded");
         expect(details.userId).toBe(userId);
-        // Stripe 経路は event 値（cents）をそのまま格納する（同期パスと単位を揃える設計）
-        expect(details.amount.toFixed(2)).toBe(
-            new Prisma.Decimal(STRIPE_FIXTURE_AMOUNT_CENTS).toFixed(2)
-        );
+        // Stripe 経路も event の cents ではなく Order.total（ドル建て）を格納する
+        // （同期パス src/queries/stripe.ts と同一の単位契約）
+        expect(details.amount.toFixed(2)).toBe(ORDER_TOTAL);
         expect(details.currency).toBe("usd");
 
         const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
@@ -556,27 +557,21 @@ describe("Scenario P3: PayPal refund updates the same row", () => {
 
 describe("Scenario P4: switching provider keeps one row", () => {
     /**
-     * ⚠️ **characterization テスト（現挙動の固定・要修正の記録）**
+     * 切替後の行は「行 1 本」だけでなく **`amount` / `currency` も切替後の provider の値**へ
+     * 収束しなければならない。両 route の `upsert` は `update` 分岐にも両列を持つ
+     * （持たなかった頃は「`paymentMethod: PayPal` なのに Stripe 由来の値が残る」状態になった）。
      *
-     * plan 032 は「切替後は `amount` も PayPal 経路の権威値（`order.total`）に更新される」
-     * ことを期待していたが、**実装はそうなっていない**。両 route の `upsert` の `update` 分岐は
-     * `paymentIntentId` / `paymentMethod` / `status` / `userId` しか書かず、
-     * **`amount` と `currency` は `create` 分岐にしか無い**
-     * （`src/app/api/webhooks/stripe/route.ts` / `paypal/route.ts` の upsert）。
-     *
-     * 結果として切替後の行は「`paymentMethod: PayPal` なのに `amount` は Stripe の
-     * **セント値**」という**単位混在**の状態で残る（CORRECTNESS-05 と同じ単位問題の族）。
-     * 本テストはこの現挙動をそのまま固定し、修正時に**正しく赤くなる**ようにしてある。
-     * 修正が入ったら下の 2 つの expect を反転すること（`ORDER_TOTAL` に一致させる）。
+     * `currency` が実際に上書きされたことを検出するため、**Stripe 側だけ `eur`** で配送し、
+     * PayPal 経路の `usd` へ変わることを assert する（共有 fixture JSON は変更しない）。
      */
-    it("updates method and intent id but leaves the previous provider's amount (current behavior)", async () => {
+    it("updates method, intent id, amount and currency after the switch", async () => {
         // Arrange
         const { orderId } = await seedOrderForWebhook();
+        const stripeEvent = stripeEventFor(paymentIntentSucceededFixture, orderId);
+        stripeEvent.data.object.currency = "eur";
 
         // Act: Stripe → PayPal の順に配送
-        const stripeRes = await deliverStripe(
-            stripeEventFor(paymentIntentSucceededFixture, orderId)
-        );
+        const stripeRes = await deliverStripe(stripeEvent);
         const paypalRes = await deliverPayPal(
             paypalEventFor(captureCompletedFixture, orderId)
         );
@@ -592,12 +587,9 @@ describe("Scenario P4: switching provider keeps one row", () => {
         expect(details.paymentIntentId).toBe("CAPTURE-COMPLETED-001");
         expect(details.status).toBe("Paid");
 
-        // ⚠️ 現挙動: amount / currency は update 分岐に無いため切替前の値が残る。
-        // 期待される姿は ORDER_TOTAL（"110.00"）だが、実際は Stripe の 9999（cents）。
-        expect(details.amount.toFixed(2)).toBe(
-            new Prisma.Decimal(STRIPE_FIXTURE_AMOUNT_CENTS).toFixed(2)
-        );
-        expect(details.amount.toFixed(2)).not.toBe(ORDER_TOTAL);
+        // amount / currency も update 分岐で切替後の provider の値に更新される
+        expect(details.amount.toFixed(2)).toBe(ORDER_TOTAL);
+        expect(details.currency).toBe("usd");
 
         const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
         expect(order.paymentMethod).toBe("PayPal");

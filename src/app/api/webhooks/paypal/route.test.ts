@@ -84,6 +84,12 @@ beforeEach(() => {
     );
 });
 
+/**
+ * PaymentDetails.amount は Order.total（ドル建て）を格納する契約なので、
+ * 期待値はこの order の total から取る（Stripe 経路と共通の単位契約）。
+ */
+const SUCCESS_ORDER = createMockOrder({ id: "order-paypal-success" });
+
 const createPayPalRequest = (body: unknown) =>
     new Request("http://localhost:3000/api/webhooks/paypal", {
         method: "POST",
@@ -206,9 +212,7 @@ describe("POST /api/webhooks/paypal", () => {
     describe("PAYMENT.CAPTURE.COMPLETED イベント", () => {
         beforeEach(() => {
             mockSignatureVerification("SUCCESS");
-            mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ id: "order-paypal-success" })
-            );
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
             mockDb.paymentDetails.upsert.mockResolvedValue({});
             mockDb.order.update.mockResolvedValue({});
         });
@@ -238,6 +242,17 @@ describe("POST /api/webhooks/paypal", () => {
                         paymentIntentId: "CAPTURE-COMPLETED-001",
                         paymentMethod: "PayPal",
                         status: "Paid",
+                        amount: SUCCESS_ORDER.total,
+                        currency: "usd",
+                    }),
+                    // update 分岐にも amount / currency を持たせる。欠けると provider 切替時に
+                    // 前 provider の値が残る（統合テスト Scenario P4）。
+                    update: expect.objectContaining({
+                        paymentIntentId: "CAPTURE-COMPLETED-001",
+                        paymentMethod: "PayPal",
+                        status: "Paid",
+                        amount: SUCCESS_ORDER.total,
+                        currency: "usd",
                     }),
                 })
             );
