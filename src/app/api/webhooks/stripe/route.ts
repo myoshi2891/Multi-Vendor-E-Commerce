@@ -62,15 +62,16 @@ const extractCorrelationIds = (
 };
 
 /**
- * Stripe イベントから amount (cents) と currency を取り出す。
- * PaymentIntent / Charge いずれも amount/currency をトップレベルに持つ。
- * 既存の同期パス（src/queries/stripe.ts:96-97）と単位を揃えるための共通化。
+ * Stripe イベントから currency を取り出す。PaymentIntent / Charge いずれも
+ * currency をトップレベルに持つ。
+ *
+ * amount は**意図的に取り出さない**。`PaymentDetails.amount` は `Decimal(12,2)` の
+ * ドル建てであり、Stripe event の amount は minor unit (cents) のため、
+ * ここから配線すると 100 倍ずれる（src/queries/stripe.ts の同期パスも `order.total` を保存する）。
  */
-const extractAmountAndCurrency = (
-    event: Stripe.Event
-): { amount: number; currency: string } => {
+const extractCurrency = (event: Stripe.Event): string => {
     const obj = event.data.object as StripePaymentIntentObject | StripeChargeObject;
-    return { amount: obj.amount, currency: obj.currency };
+    return obj.currency;
 };
 
 /**
@@ -144,26 +145,32 @@ export async function POST(req: Request) {
             return new Response("Order not found", { status: 404 });
         }
 
-        // amount/currency は event 値（PaymentIntent/Charge の cents + 通貨コード）を使う。
-        // 同期パス (src/queries/stripe.ts) と単位を揃え、PaymentDetails 内の混在を防ぐ。
-        const { amount, currency } = extractAmountAndCurrency(event);
+        // amount は event の cents ではなく order.total（ドル建て）を保存する。
+        // PaymentDetails.amount は Decimal(12,2) で、同期パス (src/queries/stripe.ts) も
+        // PayPal 経路も order.total を書く。混在させると集計・表示が 100 倍ずれる。
+        // currency のみ event の実値を使う。
+        const currency = extractCurrency(event);
 
         // 冪等性: paymentIntentId を持つ PaymentDetails を upsert（orderId が unique）。
         // PaymentDetails と Order の更新はアトミックに行い、片方だけ反映される状態を防ぐ。
         await db.$transaction(async (tx) => {
             await tx.paymentDetails.upsert({
                 where: { orderId },
+                // update 分岐にも amount / currency を持たせる。持たないと
+                // プロバイダー切替（PayPal → Stripe）で前 provider の値が残る。
                 update: {
                     paymentIntentId,
                     paymentMethod: "Stripe",
                     status: paymentStatus,
+                    amount: order.total,
+                    currency,
                     userId: order.userId,
                 },
                 create: {
                     paymentIntentId,
                     paymentMethod: "Stripe",
                     status: paymentStatus,
-                    amount,
+                    amount: order.total,
                     currency,
                     orderId,
                     userId: order.userId,

@@ -241,10 +241,14 @@ export async function POST(req: Request) {
         await db.$transaction(async (tx) => {
             await tx.paymentDetails.upsert({
                 where: { orderId },
+                // update 分岐にも amount / currency を持たせる。持たないと
+                // プロバイダー切替（Stripe → PayPal）で前 provider の値が残る。
                 update: {
                     paymentIntentId: captureId,
                     paymentMethod: "PayPal",
                     status: paymentStatus,
+                    amount: order.total,
+                    currency: "usd",
                     userId: order.userId,
                 },
                 create: {
