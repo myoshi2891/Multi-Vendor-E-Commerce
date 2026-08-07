@@ -75,6 +75,14 @@ const extractCurrency = (event: Stripe.Event): string => {
 };
 
 /**
+ * `PaymentDetails` が表現できる唯一の通貨。`amount` には `order.total` を保存するが、
+ * `Order.total` は USD 建て（多通貨は現フェーズのスコープ外 —— `.claude/steering/product.md`）。
+ * したがって `currency` に event の実値をそのまま流すと、USD の金額に別通貨のラベルが
+ * 付いた行ができる（`amount` と `currency` が別々の通貨を指す）。
+ */
+const SUPPORTED_CURRENCY = "usd";
+
+/**
  * Handle Stripe webhook POST requests with signature verification and idempotent
  * Order/PaymentDetails updates for payment_intent.succeeded / payment_intent.payment_failed /
  * charge.refunded events.
@@ -148,8 +156,20 @@ export async function POST(req: Request) {
         // amount は event の cents ではなく order.total（ドル建て）を保存する。
         // PaymentDetails.amount は Decimal(12,2) で、同期パス (src/queries/stripe.ts) も
         // PayPal 経路も order.total を書く。混在させると集計・表示が 100 倍ずれる。
-        // currency のみ event の実値を使う。
-        const currency = extractCurrency(event);
+        //
+        // その order.total は USD 建てなので、currency に event の実値を流すと
+        // 「USD の金額に別通貨のラベル」という行ができる。両列の単位を揃えるため、
+        // USD 以外の event はここで明示的に拒否する（握りつぶして 200 を返すと、
+        // 決済が記録されないまま Stripe 側は成功扱いになる）。
+        const eventCurrency = extractCurrency(event);
+        if (eventCurrency !== SUPPORTED_CURRENCY) {
+            console.error(
+                "[webhooks:stripe] Unsupported currency for PaymentDetails",
+                { currency: eventCurrency, orderId, paymentIntentId }
+            );
+            return new Response("Unsupported currency", { status: 400 });
+        }
+        const currency = SUPPORTED_CURRENCY;
 
         // 冪等性: paymentIntentId を持つ PaymentDetails を upsert（orderId が unique）。
         // PaymentDetails と Order の更新はアトミックに行い、片方だけ反映される状態を防ぐ。

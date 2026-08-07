@@ -87,7 +87,7 @@ const ORDER_TOTAL = "110.00";
 
 type StripeEventFixture = {
     type: string;
-    // currency は P4 でプロバイダー間の差分を作るために上書きする（route が読む列）
+    // currency は S8（USD 以外の拒否）で上書きする（route が読む列）
     data: { object: { metadata?: Record<string, string>; currency?: string } };
 };
 type PayPalEventFixture = {
@@ -561,23 +561,44 @@ describe("Scenario P4: switching provider keeps one row", () => {
      * 収束しなければならない。両 route の `upsert` は `update` 分岐にも両列を持つ
      * （持たなかった頃は「`paymentMethod: PayPal` なのに Stripe 由来の値が残る」状態になった）。
      *
-     * `currency` が実際に上書きされたことを検出するため、**Stripe 側だけ `eur`** で配送し、
-     * PayPal 経路の `usd` へ変わることを assert する（共有 fixture JSON は変更しない）。
+     * `currency` の上書きは **Stripe 側を `eur` で配送して検出することはできない** ——
+     * Stripe route は USD 以外を 400 で拒否するようになったため（`amount` に入る
+     * `order.total` が USD 建てで、event 通貨を流すと両列が別通貨を指す）。
+     * 代わりに、Stripe 配送後の行を**直接 stale な値へ書き戻してから** PayPal を配送し、
+     * PayPal 経路の `update` 分岐が両列を実際に上書きすることを assert する。
      */
     it("updates method, intent id, amount and currency after the switch", async () => {
         // Arrange
         const { orderId } = await seedOrderForWebhook();
         const stripeEvent = stripeEventFor(paymentIntentSucceededFixture, orderId);
-        stripeEvent.data.object.currency = "eur";
 
-        // Act: Stripe → PayPal の順に配送
+        // Act 1: Stripe 配送（create 分岐）
         const stripeRes = await deliverStripe(stripeEvent);
+
+        // Assert 1: 切替**前**の時点で単位契約が満たされていること。
+        // ここを見ずに切替後だけ見ると、Stripe 側が cents / 別通貨を書いていても
+        // PayPal 側の上書きに隠れて緑になる。
+        expect(stripeRes.status).toBe(200);
+        const afterStripe = await db.paymentDetails.findUniqueOrThrow({
+            where: { orderId },
+        });
+        expect(afterStripe.paymentMethod).toBe("Stripe");
+        expect(afterStripe.amount.toFixed(2)).toBe(ORDER_TOTAL);
+        expect(afterStripe.currency).toBe("usd");
+
+        // Arrange 2: PayPal の update 分岐が両列を書くことを観測可能にするため、
+        // 行を stale な値（旧 Stripe cents 経路が残していた形）へ戻す
+        await db.paymentDetails.update({
+            where: { orderId },
+            data: { amount: new Prisma.Decimal("11000"), currency: "eur" },
+        });
+
+        // Act 2: PayPal 配送（update 分岐）
         const paypalRes = await deliverPayPal(
             paypalEventFor(captureCompletedFixture, orderId)
         );
 
-        // Assert: 行は 1 本のまま、プロバイダー識別子は切替後の値になる
-        expect(stripeRes.status).toBe(200);
+        // Assert 2: 行は 1 本のまま、プロバイダー識別子は切替後の値になる
         expect(paypalRes.status).toBe(200);
         expect(await countPaymentDetails(orderId)).toBe(1);
         const details = await db.paymentDetails.findUniqueOrThrow({
@@ -593,5 +614,33 @@ describe("Scenario P4: switching provider keeps one row", () => {
 
         const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
         expect(order.paymentMethod).toBe("PayPal");
+    });
+});
+
+// ============================================================================
+// Scenario S8: USD 以外の Stripe イベントは拒否される
+// ============================================================================
+
+describe("Scenario S8: non-USD Stripe events are rejected", () => {
+    /**
+     * `PaymentDetails.amount` には `order.total`（USD 建て）が入る。event の通貨を
+     * そのまま `currency` へ流すと、金額と通貨ラベルが別の通貨を指す行ができる。
+     * 多通貨は現フェーズのスコープ外（`.claude/steering/product.md`）なので、
+     * 表現できない入力は 400 で拒否し、**行を作らない**のが正しい。
+     */
+    it("returns 400 and writes nothing for a non-USD event", async () => {
+        // Arrange
+        const { orderId } = await seedOrderForWebhook();
+        const event = stripeEventFor(paymentIntentSucceededFixture, orderId);
+        event.data.object.currency = "eur";
+
+        // Act
+        const res = await deliverStripe(event);
+
+        // Assert
+        expect(res.status).toBe(400);
+        expect(await countPaymentDetails(orderId)).toBe(0);
+        const order = await db.order.findUniqueOrThrow({ where: { id: orderId } });
+        expect(order.paymentStatus).toBe("Pending");
     });
 });
