@@ -12,13 +12,13 @@
 > **Drift check (run first)**:
 >
 > ```bash
-> git diff --stat e63474b6 -- src/queries/stripe.ts prisma/schema.prisma
-> git status --porcelain -- src/queries/stripe.ts
+> git diff --stat c4a6fb41 -- src/queries/stripe.ts src/app/api/webhooks/stripe/route.ts prisma/schema.prisma
+> git status --porcelain -- src/queries/stripe.ts src/app/api/webhooks/stripe/route.ts
 > ```
 >
-> If `src/queries/stripe.ts` no longer writes `order.total` into `PaymentDetails.amount`,
-> or `PaymentDetails.amount` is no longer `Decimal(12,2)`, the premise below has changed —
-> treat it as a STOP condition.
+> If either Stripe write path (同期パス / webhook) no longer writes `order.total` into
+> `PaymentDetails.amount`, or `PaymentDetails.amount` is no longer `Decimal(12,2)`,
+> the premise below has changed — treat it as a STOP condition.
 
 ## Status
 
@@ -55,6 +55,10 @@ units. Revenue reporting, per-user payment history, and refund reconciliation al
 - `src/queries/stripe.ts` writes `amount: order.total` (`Prisma.Decimal`, dollars) at all write
   sites. `toStripeAmount()` remains for values handed to the Stripe API, which legitimately wants
   minor units.
+- `src/app/api/webhooks/stripe/route.ts` also writes `order.total` **since `c4a6fb41`
+  (2026-08-07)** — before that it wrote the event's minor units, so it kept producing
+  cents rows after `e63474b6`. The helper that returned the raw `amount` was removed
+  (`extractCurrency` now returns only the currency) so the unit cannot be re-wired by accident.
 - `src/queries/paypal.ts` writes dollars and was never affected.
 - `prisma/schema.prisma:699` — `amount Decimal @db.Decimal(12, 2)`.
 - No migration has touched existing rows.
@@ -75,11 +79,25 @@ before `e63474b6`, plus the query used to identify them and the record of what w
 
 ### Step 1: Establish the cutover boundary
 
-Find the deployment time of `e63474b6`, not just its commit time — rows written between commit and
+> **⚠️ 境界は `e63474b6` ではない（2026-08-07 訂正）。** `e63474b6` が直したのは
+> **同期パス `src/queries/stripe.ts`** だけで、**webhook 経路
+> `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**
+> （`extractAmountAndCurrency` が `paymentIntent.amount` / `charge.amount` を
+> そのまま `PaymentDetails.amount` に配線していた）。webhook 側を `order.total` に
+> 揃えたのは **`c4a6fb41`（2026-08-07）**。したがって cents 行を生む経路が閉じたのは
+> こちらであり、**境界は `c4a6fb41` のデプロイ時刻**まで延びる。
+> `e63474b6` を境界に使うと、その後 webhook が書いた cents 行を**すべて取りこぼす**。
+>
+> 補足: `e63474b6` 〜 `c4a6fb41` の間の行は、同じ注文に対して同期パスと webhook が
+> 交互に上書きしうるため、**最後にどちらが書いたかで単位が決まる**（`ratio` は
+> ≈1 と ≈100 のどちらにもなりうる）。Step 2 の `ratio` 判定はこの期間の行にも
+> そのまま機能する（値そのものを見ているため）。
+
+Find the deployment time of `c4a6fb41`, not just its commit time — rows written between commit and
 deploy are still affected.
 
 ```bash
-git show -s --format='%H %cI %s' e63474b6
+git show -s --format='%H %cI %s' c4a6fb41
 ```
 
 Record both the commit timestamp and the actual production deploy timestamp (from the hosting

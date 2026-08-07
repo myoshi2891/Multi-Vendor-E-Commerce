@@ -64,6 +64,11 @@ await db.$transaction(async (tx) => {
 });
 ```
 
+> **⚠️ 上の抜粋はプラン作成時（`1750ef2`）の姿。`c4a6fb41`（2026-08-07）で
+> `update` 分岐にも `amount` / `currency` が入り、`amount` は event の cents ではなく
+> `order.total` になった（PayPal 経路と同一の単位契約）。** 本プランの実行記録・
+> Scenario S1 / P4 の期待値もそれに合わせて反転済み。
+
   - レスポンス: 成功 200 / 署名不正 400 / metadata 欠落 400 / Order 不在 404 /
     未知イベント 200 "Ignored" / 内部エラー 500
 - `src/app/api/webhooks/paypal/route.ts` — 検証対象 2。**変更しない。** 同型の
@@ -177,7 +182,9 @@ fixture 差し替えヘルパー（deep clone; `structuredClone` 可）で
 `payment_intent.succeeded` を 1 回配送 → 200。DB assert:
 - `db.paymentDetails.findUnique({ where: { orderId } })` が 1 行存在し
   `status === "Paid"` / `paymentMethod === "Stripe"` / `paymentIntentId` = fixture の intent id /
-  `amount` = fixture の amount（cents）
+  `amount` = **`Order.total`（ドル建て）**
+  （初版は「fixture の amount（cents）」としていた。実装が cents を書いていたためだが、
+  それ自体が単位バグで `c4a6fb41`（2026-08-07）に是正済み。S1 の期待値も反転した）
 - `db.order` の `paymentStatus === "Paid"` / `paymentMethod === "Stripe"`
 
 **Scenario S2: 同一イベント再送で 1 行のまま（冪等性の本体）**
