@@ -136,13 +136,13 @@ const verifyPayPalSignature = async (
 };
 
 /**
- * Handles PayPal webhook events and updates the associated order and payment state.
+ * Processes verified PayPal webhook events and updates the associated order and payment details.
  *
- * Unsupported event types are acknowledged without modifying order data. Supported capture events
- * are signature-verified before their payment details and order status are updated atomically.
+ * Unsupported event types are acknowledged without modifying order data. Supported events update
+ * payment details and order status atomically.
  *
- * @param req - The incoming HTTP request containing the webhook JSON payload
- * @returns A response indicating whether the event was processed, ignored, rejected, or failed
+ * @param req - The incoming request containing the PayPal webhook payload
+ * @returns A response with status 200 for successful or ignored events, 400 for invalid input or signatures, 404 when the order is missing, or 500 for processing failures
  * @throws If `PAYPAL_WEBHOOK_ID` is not configured
  */
 export async function POST(req: Request) {

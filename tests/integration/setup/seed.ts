@@ -246,12 +246,9 @@ export interface SeedCouponInput {
 }
 
 /**
- * Creates a coupon with configurable scope, discount, validity period, code, and user connections.
+ * Creates a coupon with configurable scope, discount, validity period, code, store, and user connections.
  *
- * Defaults the code to a unique value, the discount to `10`, and the validity period to one day ago
- * through one year ahead.
- *
- * @param input - Coupon data and optional overrides, including the store scope and connected users
+ * @param input - Coupon data and optional overrides, including the store association and connected users
  * @returns The created coupon
  */
 export async function seedCoupon(
@@ -400,13 +397,10 @@ export interface SeedShippingAddressInput {
 }
 
 /**
- * Create a persistent ShippingAddress for a given user and country to use in integration tests.
+ * Creates a shipping address for a user and country for use in integration tests.
  *
- * This address is suitable for use by `placeOrder`, which resolves shipping details from the
- * shipping address `id` and `countryId`.
- *
- * @param input - Seed data: required `userId` and `countryId`; optional `overrides` merged into the created record.
- * @returns The created `ShippingAddress` record
+ * @param input - Seed data containing the owning user, country, and optional field overrides.
+ * @returns The created `ShippingAddress` record.
  */
 export async function seedShippingAddress(
     db: PrismaClient,
@@ -450,13 +444,11 @@ export interface SeedOrderInput {
 }
 
 /**
- * Creates a placed order with one order group and one order item for a product size.
+ * Creates an order with one order group and one order item for a product size.
  *
- * The fixture does not modify inventory. Shipping fees are zero, and order totals
- * are calculated from the size price and requested quantity.
+ * Shipping fees are set to zero, and totals are calculated from the size price and requested quantity. Inventory is unchanged.
  *
- * @param input - Order details, including the user, shipping address, store, product,
- * variant, and size; quantity and statuses are optional.
+ * @param input - Order details, including the user, shipping address, store, product, variant, and size; quantity and statuses are optional.
  * @returns The created order, order group, and order item.
  */
 export async function seedOrderWithGroupAndItem(
