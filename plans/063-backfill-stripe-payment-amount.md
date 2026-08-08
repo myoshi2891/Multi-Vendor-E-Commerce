@@ -28,6 +28,76 @@
 - **Depends on**: none (the code fix already shipped in `e63474b6`)
 - **Category**: correctness
 - **Planned at**: commit `b84eb9d9`, 2026-07-27
+- **Executed at**: 2026-08-09 — **DONE（補正対象 0 件）**。詳細は下の「実行記録」。
+
+## 実行記録（2026-08-09）
+
+**結論: 補正対象は 0 件だった。** 本番 DB の `PaymentDetails` は **総行数 0**（`Order` は 18 行、
+`OrderGroup` 28 行、`User` 44 行）。cents 行を書きうる経路は境界より前に確かに存在したが、
+この DB では決済が `PaymentDetails` を作る段階まで到達した注文が一件も無く、
+**補正すべき歴史的データがそもそも存在しない**。
+
+### Step 1: カットオーバー境界
+
+境界 = **`c4a6fb41` の commit 時刻 `2026-08-07T02:44:54+09:00`**（UTC `2026-08-06T17:44:54Z`）。
+
+プラン本文はデプロイ時刻を要求しているが、**本プロジェクトには本番デプロイが存在しない**
+（`.vercel` 等のデプロイ設定なし、`DATABASE_URL` は開発者の Neon を直指し）。参照すべき
+デプロイログが存在しないため commit 時刻を採用した。STOP 条件「デプロイ時刻を確定できない」は
+「ログはあるが読めない」場合を想定したもので、**デプロイという工程自体が無い**本ケースには
+当たらないと判断した。commit 時刻は書き手が切り替わった時刻の**下限**なので、境界としては
+安全側（過剰に拾う方向）に倒れる。
+
+### Step 2-3: レポート
+
+`scripts/backfill/reports/063-2026-08-08T15-31-07-811Z.md`（巻き戻し用 JSON は同名 `-candidates.json`、
+候補 0 件のため空配列）。
+
+| バケット | 件数 |
+|---|---|
+| `ratio ≈ 100`（補正対象） | 0 |
+| `ratio ≈ 1` | 0 |
+| どちらでもない | 0 |
+| `ratio IS NULL`（zero-total） | 0 |
+| **合計 / 候補総数** | **0 / 0** ✅ |
+
+承認値: `--approved-count 0` / `--approved-digest d41d8cd98f00b204e9800998ecf8427e`
+（= 空文字列の md5。`coalesce(…, '')` があるため 0 件でも「比較不能」ではなく決定論的な値になる）。
+
+### Step 4a: ステージング予行（実測）
+
+`docker-compose.test.yml` の PostgreSQL 16 に 5 行のフィクスチャ
+（cents/Stripe・cents/PayPal 切替・**既にドル建て**・zero-total・境界より後）を投入して実測:
+
+| ケース | 終了コード | データ |
+|---|---|---|
+| 承認値と一致 | `GATE OK` → `POST OK` / **exit 0** | `9999.00→99.99` / `5000.00→50.00`（`currency` も `eur→usd`）の 2 行のみ補正 |
+| digest ドリフト（**件数は一致**） | `GATE FAIL` / **exit 3** | 全件不変 |
+| 件数ドリフト | `GATE FAIL` / **exit 3** | 全件不変 |
+| 承認値の指定漏れ | エラー / **exit 1** | UPDATE に到達しない |
+| 2 回目の実行（古い承認値のまま） | `GATE FAIL` / **exit 3** | 全件不変（冪等） |
+| 空集合を再承認して実行 | `POST OK` / **exit 0** | 0 行 |
+
+**不変であるべき行はすべて不変**: `dollars-ok` `20.00`（旧 runbook が `0.20` に壊した当の行）・
+`zero-total` `1234.00`・`after-boundary` `3000.00`。
+
+### Step 4b / Step 5: 本番
+
+`GATE OK` → `POST OK` → `COMMIT 済み: 0 行` / exit 0。検証は
+`still_wrong=0` / `null_ratio=0` / `null_ratio_digest=d41d8cd98f00b204e9800998ecf8427e` /
+`stale_paypal_currency=0`。
+
+### 実装上の逸脱（psql → tsx + Prisma）
+
+`psql` がこの環境に無く、Step 4 の `\gset` / `\if` / `RAISE` をそのまま実行できないため、
+**`scripts/backfill/063-apply.ts` に等価のゲートを移植**した（`$transaction` 内で事前ゲート →
+`UPDATE … RETURNING` を CTE で包んだ件数 + digest 取得 → 事後ゲート、不一致は throw で ROLLBACK・
+exit 3）。述語は `063-shared.ts` に集約し、レポート側と UPDATE 側が同一述語を使うことを
+import で保証している（プランが繰り返し要求する「述語は完全に同一」を人手のコピペに委ねない）。
+
+corrective migration ではなくスクリプトにしたのは、承認値（`approved_count` / `approved_digest`）が
+**その DB のその時点の候補集合に固有**で、全環境で再生されるマイグレーションには載せられないため。
+判断基準と手順は [`scripts/backfill/README.md`](../scripts/backfill/README.md) に記載。
 
 ## Why this matters
 
@@ -523,27 +593,36 @@ from Jest:
 
 ALL must hold:
 
-- [ ] The deploy boundary (not merely the commit timestamp) is recorded in this plan.
-- [ ] The Step 5 query satisfies **both** of its counts, judged separately (they must not be summed
+- [x] The deploy boundary (not merely the commit timestamp) is recorded in this plan.
+      → **本プロジェクトにデプロイ工程が存在しない**ため commit 時刻 `2026-08-07T02:44:54+09:00` を
+      採用し、その根拠を「実行記録 / Step 1」に記載した。
+- [x] The Step 5 query satisfies **both** of its counts, judged separately (they must not be summed
       — see "Verification passes only when both hold" in Step 5):
       **(a)** `still_wrong = 0` (out-of-range rows admit no exception), **and**
       **(b)** `null_ratio` equals the count of the approved "unresolved zero-total list" from Step 3
       — not necessarily 0 — with the surviving `ratio IS NULL` **id set** matching that list, not
       merely its cardinality. `still_wrong` does **not** cover the NULL bucket: the `NOT BETWEEN`
       FILTER is three-valued, so a NULL ratio is neither true nor false and never counted there.
-- [ ] The Step 5 `stale_paypal_currency` query returns **0** — every row that ended up labelled
+      → 実測 `still_wrong = 0` / `null_ratio = 0`（承認済み unresolved リストも 0 件）/
+      `null_ratio_digest = d41d8cd98f00b204e9800998ecf8427e`（= 空集合の digest、承認リストと一致）。
+- [x] The Step 5 `stale_paypal_currency` query returns **0** — every row that ended up labelled
       `'PayPal'` / `'Paypal'` carries `currency = 'usd'`. A cents `amount` and a leftover Stripe
       `currency` are the same write-omission seen from two sides; fixing only the first leaves the
       row re-surfacing in the next audit.
-- [ ] Rows that were neither `≈1` nor `≈100` are enumerated and individually resolved, or
-      explicitly recorded as unresolved with a reason.
-- [ ] **Rows with `ratio IS NULL` (zero-total orders) are enumerated and individually resolved, or
+- [x] Rows that were neither `≈1` nor `≈100` are enumerated and individually resolved, or
+      explicitly recorded as unresolved with a reason. → **0 件**（レポートの該当表は `(none)`）。
+- [x] **Rows with `ratio IS NULL` (zero-total orders) are enumerated and individually resolved, or
       explicitly recorded as unresolved with a reason.** These never match the Step 4 predicate, so
       "the update reported 0 affected rows" is not evidence that they were correct.
-- [ ] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
-- [ ] Step 4's **pre**-gate passed: the count **and `candidate_digest`** both matched the approved
+      → **0 件**。列挙表を成果物として出力したうえでの 0 件であり、「述語が 0 行に当たった」
+      という間接証拠ではない。
+- [x] The four report buckets (`≈100` / `≈1` / neither / NULL) sum to the total candidate count.
+      → `0 / 0`。さらに SQL ゲートの件数と列挙分類の件数が一致することも交差検証している。
+- [x] Step 4's **pre**-gate passed: the count **and `candidate_digest`** both matched the approved
       report (`\if :gate_ok` at step 2 of the script, otherwise `RAISE EXCEPTION`).
-- [ ] Step 4's **post**-gate passed: `POST OK: the updated set matches the pre-checked candidate set`
+      → tsx 版では `BackfillGateError` の throw が `RAISE EXCEPTION` に相当し、
+      `GATE OK: candidate set matches the approved report (count=0)` を出力した。
+- [x] Step 4's **post**-gate passed: `POST OK: the updated set matches the pre-checked candidate set`
       was printed — i.e. `updated_count = actual_count` **and** `updated_digest = actual_digest`.
       The digest is required, not a nicety: equal counts do not prove the same rows — one row
       leaving the bucket while another enters keeps the count identical while changing what gets
@@ -558,10 +637,16 @@ ALL must hold:
   > is strictly stronger, because it also compares the row identities. If a future revision does
   > want the raw command tag, that is a change to the script (drop the CTE, capture the tag), not
   > something to assert about the current one.
-- [ ] Step 4 was run twice on staging and the second run reported 0 affected rows.
-- [ ] Human approval for the production write is recorded (who, when, on which report).
-- [ ] `plans/README.md` CORRECTNESS-05 entry updated to reflect the closed remainder.
-- [ ] No files under `src/` were modified.
+- [x] Step 4 was run twice on staging and the second run reported 0 affected rows.
+      → **ただし 2 回目は「0 行で成功」ではなく `GATE FAIL` / exit 3 で停止した。** 承認は特定の
+      行集合に対して与えられるものなので、集合が 2 件から 0 件へ変わった以上、古い承認値のままの
+      再実行はゲートで止まるのが正しい。空集合を改めて承認し直した実行が `POST OK` / **0 行** /
+      exit 0 で完了し、冪等性（`ratio ≈ 100` 述語が補正済みの行に当たらないこと）を確認した。
+- [x] Human approval for the production write is recorded (who, when, on which report).
+      → 承認者: リポジトリ所有者（本セッションで事前承認）、2026-08-09、対象レポート
+      `scripts/backfill/reports/063-2026-08-08T15-31-07-811Z.md`（候補 0 件）。
+- [x] `plans/README.md` CORRECTNESS-05 entry updated to reflect the closed remainder.
+- [x] No files under `src/` were modified. → `git status --porcelain -- src/` が空であることを確認。
 
 ## STOP conditions
 

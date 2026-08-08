@@ -136,9 +136,30 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
 | [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | DONE |
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
-| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | TODO |
+| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **063 の実行記録（2026-08-09）**
+>
+> **補正対象は 0 件だった。** 本番 DB の `PaymentDetails` は総行数 0（`Order` は 18 行）。
+> cents 行を書く経路は境界より前に確かに存在したが、この DB では決済が `PaymentDetails` を
+> 作る段階まで到達した注文が一件も無く、補正すべき歴史的データが存在しない。
+> 検証は `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`。
+>
+> **境界は commit 時刻を採用した。** プランはデプロイ時刻を要求しているが、本プロジェクトには
+> デプロイ工程自体が存在しない（`.vercel` 等なし）。STOP 条件「デプロイ時刻を確定できない」は
+> 「ログはあるが読めない」場合を想定したもので本ケースには当たらないと判断した。
+>
+> **`psql` 不在のため runbook を tsx + Prisma へ移植した。** `\gset` / `\if` / `RAISE` に相当する
+> 事前・事後ゲートを [`scripts/backfill/063-apply.ts`](../scripts/backfill/063-apply.ts) に実装し、
+> 述語は [`063-shared.ts`](../scripts/backfill/063-shared.ts) に集約してレポート側と UPDATE 側の
+> 一致を import で保証している。**ステージング予行で 6 ケースを実測**し、digest ドリフト
+> （件数は一致）でも `GATE FAIL` / exit 3 / 全件不変になること、および旧 runbook が
+> `20.00 → 0.20` に壊した「既にドル建ての行」が不変であることを確認した。
+> 手順は [`scripts/backfill/README.md`](../scripts/backfill/README.md)。
+
+---
 
 > **042 / 051 の実行記録（2026-08-03・`235754b8`〜`bb95f426`）**
 >
@@ -349,7 +370,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > （S1 が固定していた「Stripe は cents」という現挙動そのものがバグ）。両 route の
 > `update` 分岐に `amount` / `currency` を追加し、Stripe 側は `order.total` 保存に統一。
 > S1 / P4 の期待値は反転済み（`607c2b88`）で、`bun run test:integration` は 11/11 pass。
-> 既存行の backfill は plan 063 が担当（境界は `c4a6fb41`）。
+> 既存行の backfill は plan 063 が担当し **2026-08-09 に DONE**（境界は `c4a6fb41`。補正対象 0 件）。
 >
 > **プラン本文の指示から外れた実装判断 2 点**（いずれも実測に基づく）:
 >
@@ -588,7 +609,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) と `c4a6fb41`（2026-08-07）で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**⚠️ `e63474b` が直したのは同期パス `src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**（plan 032 の Scenario S1 が characterization として固定していた）。webhook 側は `c4a6fb41` で `order.total` 保存に統一済み。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO。**カットオーバー境界は `e63474b` ではなく `c4a6fb41`**）。本項目を「コード修正が必要」と読まないこと。
+- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) と `c4a6fb41`（2026-08-07）で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**⚠️ `e63474b` が直したのは同期パス `src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**（plan 032 の Scenario S1 が characterization として固定していた）。webhook 側は `c4a6fb41` で `order.total` 保存に統一済み。**残っていた既存行の backfill も [plan 063](063-backfill-stripe-payment-amount.md) で完了（2026-08-09・DONE）**（**カットオーバー境界は `e63474b` ではなく `c4a6fb41`**。実測では補正対象 0 件 —— 本番 DB の `PaymentDetails` が総行数 0 で、補正すべき歴史的データが存在しなかった。検証は `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`）。**本項目はコード・データとも完了**であり、「コード修正が必要」とも「backfill が残っている」とも読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
@@ -613,7 +634,8 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
   cents を返す `extractAmountAndCurrency` は `extractCurrency` に縮小し、再配線の余地を消した）。
   plan 032 の Scenario P4 は characterization を解除し、切替後に `amount = ORDER_TOTAL` /
   `currency = usd` へ更新されることを検証する形に反転済み（`607c2b88`）。
-  **既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) が担当**（TODO のまま）。
+  **既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) が担当し、2026-08-09 に
+  DONE**（実測で補正対象 0 件 —— `PaymentDetails` が総行数 0 だった）。
   063 の**カットオーバー境界は `e63474b6` ではなく `c4a6fb41`** —— `e63474b6` が直したのは
   同期パスだけで、webhook はその後も cents を書き続けていたため（063 Step 1 に訂正記録あり）。
   以下は発見時の記録:

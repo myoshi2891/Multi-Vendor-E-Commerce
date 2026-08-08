@@ -25,6 +25,12 @@
 | ESLint | 9（flat config） |
 | Swiper | 12.x |
 
+### データ補正記録
+
+| 日付 | 対象 | before | after | 記録 |
+|------|------|--------|-------|------|
+| 2026-08-09 | `PaymentDetails.amount`（Stripe セント→ドル・CORRECTNESS-05 残件） | 補正対象 **0 件**（`PaymentDetails` 総行数 0 / `Order` 18 行） | 0 件（no-op で COMMIT） | [plan 063](../plans/063-backfill-stripe-payment-amount.md) 実行記録。検証 `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`。手順とゲート設計は [`scripts/backfill/README.md`](../scripts/backfill/README.md) |
+
 ---
 
 ## フェーズ別サマリ（経緯）
