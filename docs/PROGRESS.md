@@ -2798,3 +2798,42 @@ unit テスト（`src/app/api/search-products/route.test.ts`）は `@/lib/db` �
 | テストファイル総数（ダッシュボード） | 199 | **200** |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 036: deleteProduct の FK Restrict / カスケードを実 DB で固定 (2026-08-09)
+
+#### 概要
+
+`deleteProduct` のハード削除がどこまで連鎖し、何に阻止されるかを testcontainers の実 PostgreSQL で 4 シナリオ固定した。`src/` と `prisma/` は 1 行も変更していない。
+
+#### なぜ必要だったか
+
+`deleteProduct` は `db.product.delete` を呼ぶだけで、実際の削除範囲は FK 定義（`prisma/schema.prisma` の `onDelete`）が決める。unit テストは `db.product.delete` をモックするため、**CASCADE も RESTRICT も原理的に検証できない**。schema 変更や Prisma メジャーアップグレードで挙動が変わっても、どのテストも気づけない状態だった。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/product-deletion.test.ts` | 新規作成（4 テスト）。CASCADE 9 種の全件消滅（孫の FreeShippingCountry 含む）/ Review による RESTRICT（P2003）/ 失敗時の原子性 / 所有権ガードと not-found の副作用なし | `7986d9fb` |
+| `docs/testing/QA_HANDOFF.md` ほか | テスト統計同期・ダッシュボード再生成・plans/README の Status 更新 | (docs 同期コミット) |
+
+#### 設計上のポイント
+
+- **削除前の件数を厳密な `toEqual` で固定した**（spec のみ 2・他は 1）。`>= 1` のような下限にすると、Arrange の取りこぼしを「0 件のものを数えて 0 件だった」と誤読でき、CASCADE の検証が空振りになる。
+- **RESTRICT 失敗時は子テーブル全件の不変を assert する**。商品と variant だけを数えても「部分的に子だけ消えていない」ことは示せない（DB は tx 内で子の CASCADE を実行してから RESTRICT に到達しうる）。
+- `requireSeller` は `user.privateMetadata?.role !== "SELLER"` で判定するため、Clerk mock は `{ id, privateMetadata: { role: "SELLER" } }` の形が必要（`placeOrder` 系の mock とは形が異なる）。
+
+#### この記録が主張しないこと
+
+シナリオ 2 は **現挙動の characterization** であり、「レビュー付き商品は削除できない」を正しい仕様として肯定するものではない。削除可能にする場合（レビュー先行削除 / ソフト削除化 / onDelete 変更）は期待値を意図的に反転させること。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 49 / 5 スイート | **53 / 6 スイート** |
+| Jest ユニット/コンポーネント | 1891 passed / 178 スイート | **1891 passed / 178 スイート**（不変） |
+| テストファイル総数（ダッシュボード） | 200 | **201** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

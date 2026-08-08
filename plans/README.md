@@ -109,7 +109,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
-| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | TODO |
+| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | TODO |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
@@ -140,6 +140,36 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **036 の実行記録（2026-08-09・`7986d9fb`）**
+>
+> **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/product-deletion.test.ts` を
+> 新設し **4 シナリオ**。Integration は **49 → 53 / スイート 5 → 6**（実測 53/53 pass）。
+> `src/queries/product.ts` と `prisma/schema.prisma` はいずれも 1 行も変更していない。
+>
+> **Drift check は完全一致。** `deleteProduct` は baseline `4ec6b5b` から**無変更**で、
+> `grep -nE "onDelete" prisma/schema.prisma` の実定義もプラン Current state の CASCADE 表と
+> 行番号まで一致した（186 / 210 / 224 / 237 / 262 / 265 / 280 / 330 / 341 / 648 / 651）。
+> `Review.productId` に `onDelete` が無い＝ Prisma 既定の Restrict である点も確認済み。
+>
+> **STOP 条件 3 点はいずれも非該当**: シナリオ 2 の削除は成功せず **P2003** で reject、
+> シナリオ 1 の子テーブルは 9 種すべて 0、シナリオ 2 の子テーブル件数は Arrange 前後で不変。
+>
+> **識別力を機械的に確認した。** 削除前件数の `spec: 2 → 1` と reject コードの
+> `P2003 → P2025` に崩すと**その 2 件だけが落ちる**ことを実測してから戻している
+> （plan 033 / 027 と同じ扱い）。
+>
+> **プランが強調していた 2 つの設計判断は実際に効いている**: (a) 削除前件数を `>= 1` では
+> なく厳密な `toEqual` で固定すること —— 下限だと Arrange の取りこぼしを「0 件のものを
+> 数えて 0 件だった」と誤読でき、CASCADE の検証そのものが空振りになる。(b) RESTRICT 失敗時に
+> **子テーブル全件の不変**を見ること —— 商品と variant だけでは「部分的に子だけ消えていない」
+> ことを示せない（DB は tx 内で子の CASCADE を実行してから RESTRICT に到達しうる）。
+>
+> **次の実行者への申し送り**: シナリオ 2 は**現挙動の characterization** であり、「レビュー付き
+> 商品は削除できない」を正しい仕様として肯定していない。削除可能化（レビュー先行削除 /
+> ソフト削除化 / onDelete 変更）を入れる際は期待値を意図的に反転させること。onDelete の変更は
+> migration を伴うため [`.claude/rules/03-data-model-diagram-sync.md`](../.claude/rules/03-data-model-diagram-sync.md)
+> の ERD 再生成義務にも注意。
+>
 > **033 の実行記録（2026-08-09・`6514e0c6`）**
 >
 > **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/search-products.test.ts` を新設し
