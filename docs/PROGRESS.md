@@ -2837,3 +2837,45 @@ unit テスト（`src/app/api/search-products/route.test.ts`）は `@/lib/db` �
 | テストファイル総数（ダッシュボード） | 200 | **201** |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 037: upsertShippingAddress の default 不変条件を実 DB で固定 (2026-08-09)
+
+#### 概要
+
+配送先住所の `default` フラグが「1 ユーザー = 最大 1 件」に保たれるかを testcontainers の実 PostgreSQL で 4 シナリオ固定した。`src/queries/user.ts` は 1 行も変更していない。
+
+#### なぜ必要だったか
+
+checkout の配送先自動選択は `addresses.find((a) => a.default)` で**最初の default を採る**。したがって default が 2 件併存すると、**どちらへ配送されるかが行の並び順に依存する非決定**になる。この行状態はモック unit では観測できない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/shipping-address-default.test.ts` | 新規作成（4 テスト）。更新経路の解除 / 新規経路のスキップ（characterization）/ P2002 による IDOR 防御 / 未認証拒否 | `bc663893` |
+| `docs/testing/QA_HANDOFF.md` ほか | テスト統計同期・ダッシュボード再生成・plans/README の Status 更新 | (docs 同期コミット) |
+
+#### 判明した非対称（既知バグ TESTS-21）
+
+実装は `findUnique(address.id)` が行を返したときにしか他住所の `default` を解除しない。したがって:
+
+- **既存住所を default に更新** → 解除が走り `count === 1`（正常）
+- **新規住所を default 付きで作成** → 条件が偽になり解除がスキップされ `count === 2`（バグ）
+
+シナリオ 2 はこの**現挙動の characterization** であり、正しい期待値ではない。テスト内に `TODO(characterization)` タグ・TESTS-21 参照・正しい不変条件・「修正時に 1 へ反転」を明記してある。これが無いと後任が `=== 2` を満たすべき契約と誤読し、修正側を差し戻す事故が起きる。
+
+#### IDOR 防御の実体
+
+他ユーザーの住所 id を渡すと所有権 `findFirst` が null を返し、同一 id での `create` が **P2002** で reject される。つまり「上書きされない」ことの根拠は明示的な認可エラーではなく **PK 一意制約**であり、被害者の行は無傷のまま残る。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 53 / 6 スイート | **57 / 7 スイート** |
+| Jest ユニット/コンポーネント | 1891 passed / 178 スイート | **1891 passed / 178 スイート**（不変） |
+| テストファイル総数（ダッシュボード） | 201 | **202** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

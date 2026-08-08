@@ -110,7 +110,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
-| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | TODO |
+| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは未修正のまま**で characterization として固定（実測 `default: true` = 2）。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
@@ -140,6 +140,40 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **037 の実行記録（2026-08-09・`bc663893`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/shipping-address-default.test.ts` を
+> 新設し **4 シナリオ**。Integration は **53 → 57 / スイート 6 → 7**（実測 57/57 pass）。
+> `src/queries/user.ts` は 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `user.ts` は baseline `4ec6b5b` から
+> **+856 / −645 行**動いていた（Round 14 の冪等性ゲート等）が、プランが STOP 条件に挙げていたのは
+> 「新規経路の解除スキップが**既に修正されている**こと」であり、`upsertShippingAddress` の形状
+> —— `findUnique(address.id)` → `if (addressDB)` の `updateMany` → 所有権 `findFirst` →
+> update / create の分岐 —— は健在で、スキップもそのまま残っていた。plan 027 が確立した扱い
+> （ケース設計は活かし実測から再導出）に倣って続行した。
+>
+> **シナリオ 2 のギャップは未修正のまま**（実測 `count({ default: true }) === 2`）。
+> これは**バグの characterization** であり、テスト本文に `TODO(characterization)` タグ・
+> TESTS-21 参照・正しい不変条件（1 ユーザー = default 最大 1 件）・「修正時に 1 へ反転」の
+> 4 点をコメントで明記してある。**このタグが無いと後任が `=== 2` を満たすべき契約と誤読し、
+> バグ修正を「テストが壊れた」として差し戻す**（プラン本文が警告していた典型的な事故）。
+>
+> **シナリオ 3 で判明した性質（記録）**: 他ユーザーの住所 id を渡したときに上書きされない
+> 根拠は、明示的な認可エラーではなく **PK 一意制約（P2002）** である。所有権 `findFirst` が
+> null を返す → 同一 id で `create` を試みる → PK 衝突、という経路であり、
+> **「認可で弾いている」のではなく「たまたま衝突している」**。被害者の行は無傷で攻撃者側の
+> 行も 0 件なので実害は無いが、将来 id 採番方式が変わればこの防御は消える。
+>
+> **識別力を機械的に確認した。** シナリオ 1 の解除期待と 3 の被害者 `userId` を崩すと
+> **その 2 件だけが落ちる**ことを実測してから戻している。
+>
+> **次の実行者への申し送り**: シナリオ 2 の本体修正（新規経路にも解除を追加し
+> `updateMany` + `create` を `$transaction` 化するのが最小修正）を入れる際は、期待値を
+> `count === 1` へ反転して回帰ガードに転用すること。恒久解決として
+> **部分 unique index**（`CREATE UNIQUE INDEX ... WHERE "default" = true`）を張る案もあり、
+> その場合シナリオ 2 は DB エラー期待に書き換わる。
+>
 > **036 の実行記録（2026-08-09・`7986d9fb`）**
 >
 > **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/product-deletion.test.ts` を

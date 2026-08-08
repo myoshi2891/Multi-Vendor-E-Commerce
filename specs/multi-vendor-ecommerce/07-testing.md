@@ -434,14 +434,20 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 53 integration tests across 6 suites
+- 57 integration tests across 7 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
   `tests/integration/webhook-payment.test.ts` 12 +
   `tests/integration/search-products.test.ts` 9 +
-  `tests/integration/product-deletion.test.ts` 4) as of 2026-08-09,
-  measured 53/53 pass. Plan 036 added the `deleteProduct` FK suite (49 → 53;
+  `tests/integration/product-deletion.test.ts` 4 +
+  `tests/integration/shipping-address-default.test.ts` 4) as of 2026-08-09,
+  measured 57/57 pass. Plan 037 added the shipping-address default-flag suite
+  (53 → 57; suites 6 → 7). It pins the asymmetry between the update path (which
+  clears other defaults) and the create path (which skips the clear, leaving two
+  defaults) — the latter is a characterization of a known gap (TESTS-21), tagged
+  `TODO(characterization)` in the test so it is flipped to 1 when fixed. Plan 036
+  added the `deleteProduct` FK suite (49 → 53;
   suites 5 → 6), pinning the CASCADE chain (nine child tables, including the
   grandchild `FreeShippingCountry`) and the `Review` RESTRICT that makes a
   reviewed product undeletable (P2003) — a characterization of current
