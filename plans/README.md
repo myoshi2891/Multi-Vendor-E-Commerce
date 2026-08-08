@@ -113,7 +113,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは未修正のまま**で characterization として固定（実測 `default: true` = 2）。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
-| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
+| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
@@ -140,6 +140,45 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **040 の実行記録（2026-08-09・`c364a75d`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/user-deletion-webhook.test.ts` を
+> 新設し **7 シナリオ**。Integration は **57 → 64 / スイート 7 → 8**（実測 64/64 pass）。
+> `src/app/api/webhooks/route.ts` と `prisma/` はいずれも 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `route.ts` は baseline `9111f41` から
+> **+39 / −5 行**動いていたが、差分は CodeRabbit 第 11 弾の id 検証強化（検証した
+> `rawUserId.trim()` を絞り込みキーにも使う修正）であり、プランが**前提**とする PII 秘匿化
+> `$transaction`（`supportTicket.updateMany` → `user.deleteMany`）は健在だった。プランの STOP
+> 条件は「秘匿化が**無くなっている**」「さらなる匿名化・ソフト削除が新たに入っている」であり、
+> どちらにも当たらない。
+>
+> **STOP 条件（FK 側）も非該当**: シナリオ 2〜5 はいずれも 500 で RESTRICT は健在、
+> シナリオ 1 の子行は全て 0、セラー側リソースの巻き添えも無し。
+>
+> **識別力を機械的に確認した。** シナリオ 1 の `_count.followers === 0` と
+> シナリオ 6 の PII 秘匿期待を崩すと**その 2 件だけが落ちる**ことを実測してから戻している。
+>
+> **本プランが主張しないこと（重要・そのまま申し送る）**:
+>
+> 1. **RESTRICT 群（シナリオ 2〜5）は現挙動の characterization であり、「削除できないのが
+>    正しい」という主張ではない。** 注文・レビュー・住所・店舗のいずれか 1 件でも持つ
+>    ユーザーは Clerk 削除に DB が追従できず、**PII を含む User 行が残り続ける**（Svix の
+>    リトライ上限後は誰も気付かない）。修正（PII 匿名化 + 行温存 / ソフト削除 / onDelete 変更）
+>    を入れる際は期待値を反転させること。
+> 2. **PII 残存の解消状況を混同しないこと。** SET NULL 経路（SupportTicket）の PII 秘匿化は
+>    `7e3e507`（2026-07-24）で **landed 済み**でありシナリオ 6 は**正の保証**を検証している。
+>    一方 **RESTRICT 群の PII 残存は別問題で依然 OPEN**。「PII 消去は対応済み」と一括りに
+>    説明しないこと。
+> 3. **`PaymentDetails` の CASCADE は検証していない**（到達不能）。`PaymentDetails.orderId` は
+>    Order への必須 FK なので、PaymentDetails を持つユーザーは必ず Order を持ち、削除は常に
+>    Order の RESTRICT で先に阻止される。
+>
+> **次の実行者が踏むであろう落とし穴 1 点**: implicit M2M（`_UserFollowingStore` /
+> `_CouponToUser`）は Prisma から**直接クエリできない**。相手側（Store / Coupon）の `_count` を
+> 引いて 0 を確認すること —— Store 残存の assert だけでは**中間テーブル行が孤児として残っても
+> green になる**。
+>
 > **037 の実行記録（2026-08-09・`bc663893`）**
 >
 > **DONE（プラン本文からの逸脱なし）。** `tests/integration/shipping-address-default.test.ts` を

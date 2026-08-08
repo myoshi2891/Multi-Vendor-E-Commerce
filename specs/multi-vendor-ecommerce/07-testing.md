@@ -434,15 +434,22 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 57 integration tests across 7 suites
+- 64 integration tests across 8 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
   `tests/integration/webhook-payment.test.ts` 12 +
   `tests/integration/search-products.test.ts` 9 +
   `tests/integration/product-deletion.test.ts` 4 +
-  `tests/integration/shipping-address-default.test.ts` 4) as of 2026-08-09,
-  measured 57/57 pass. Plan 037 added the shipping-address default-flag suite
+  `tests/integration/shipping-address-default.test.ts` 4 +
+  `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
+  measured 64/64 pass. Plan 040 added the Clerk `user.deleted` FK suite
+  (57 → 64; suites 7 → 8), pinning all three FK behaviours that a mocked
+  `deleteMany` cannot reach: CASCADE (cart, wishlist, conversation, message and
+  both implicit M2M join tables), RESTRICT (order / review / address / store —
+  the deletion fails permanently and the user's PII stays in the database; a
+  characterization, not an endorsement), and SET NULL with PII redaction on
+  `SupportTicket` (a positive guarantee, landed in `7e3e507`). Plan 037 added the shipping-address default-flag suite
   (53 → 57; suites 6 → 7). It pins the asymmetry between the update path (which
   clears other defaults) and the create path (which skips the clear, leaving two
   defaults) — the latter is a characterization of a known gap (TESTS-21), tagged

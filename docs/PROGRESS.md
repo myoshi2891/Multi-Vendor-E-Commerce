@@ -2879,3 +2879,42 @@ checkout の配送先自動選択は `addresses.find((a) => a.default)` で**最
 | テストファイル総数（ダッシュボード） | 201 | **202** |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 040: Clerk user.deleted webhook の FK 連鎖を実 DB で固定 (2026-08-09)
+
+#### 概要
+
+Clerk の `user.deleted` イベントを受けた webhook が、User への 3 種の FK（RESTRICT / CASCADE / SET NULL）にどう反応するかを testcontainers の実 PostgreSQL で 7 シナリオ固定した。`src/app/api/webhooks/route.ts` と `prisma/` は 1 行も変更していない。
+
+#### なぜ必要だったか
+
+`user.deleted` は `db.user.deleteMany` のハード削除だが、User への FK は 3 種が混在する。注文・レビュー・住所・店舗のいずれか 1 件でも持つユーザーが Clerk 上でアカウントを削除すると、DB 側の削除は P2003 で**永続的に失敗**し webhook は 500 を返し続ける。Svix のリトライは有限回で打ち切られるため、**誰も気付かないままユーザーの PII が DB に残存し続ける**（GDPR 等の削除要求と衝突するコンプライアンス隣接事案）。この 3 値境界は `deleteMany` をモックする unit テストでは原理的に検証できない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/user-deletion-webhook.test.ts` | 新規作成（7 テスト）。CASCADE 7 種 / RESTRICT 4 経路 / SET NULL + PII 秘匿化 / deleteMany の冪等性 | `c364a75d` |
+| `docs/testing/QA_HANDOFF.md` ほか | テスト統計同期・ダッシュボード再生成・plans/README の Status 更新 | (docs 同期コミット) |
+
+#### 設計上のポイント
+
+- **implicit M2M は相手側から `_count` を引く**。`_UserFollowingStore` / `_CouponToUser` は Prisma から直接クエリできないため、Store / Coupon 側の `_count` が 0 になることで中間テーブル行の消滅を確認する。Store 残存の assert だけでは、孤児行が残っても green になってしまう。
+- **Conversation は `orderId` が optional** なので Order 無しで成立する。これにより Order の RESTRICT に触れずに Conversation / Message の CASCADE を発火できる。
+- **`PaymentDetails` の CASCADE は到達不能**。`PaymentDetails.orderId` は Order への必須 FK なので、PaymentDetails を持つユーザーは必ず Order を持ち、削除は常に Order の RESTRICT で先に阻止される。
+
+#### この記録が主張しないこと
+
+シナリオ 2〜5（RESTRICT 群）は**現挙動の characterization** であり、「削除できないのが正しい」という主張ではない。修正（PII 匿名化 + 行温存 / ソフト削除 / onDelete 変更）が入ったら期待値を反転させること。一方シナリオ 6 の PII 秘匿化は `7e3e507` で実装済みの**正の保証**であり、性質が異なる。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 57 / 7 スイート | **64 / 8 スイート** |
+| Jest ユニット/コンポーネント | 1891 passed / 178 スイート | **1891 passed / 178 スイート**（不変） |
+| テストファイル総数（ダッシュボード） | 202 | **203** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
