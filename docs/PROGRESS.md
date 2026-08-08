@@ -2760,3 +2760,41 @@ Stripe webhook の非 USD 拒否分岐が SonarCloud で未カバー扱い（Cov
 | Jest スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 033: tsvector 全文検索の raw SQL を実 DB で固定 (2026-08-09)
+
+#### 概要
+
+`/api/search-products` が `$queryRaw` で発行する PostgreSQL 全文検索 SQL を、testcontainers の実 PostgreSQL に対して初めて実行し 9 シナリオで固定した。`src/` は 1 行も変更していない。
+
+#### なぜ必要だったか
+
+unit テスト（`src/app/api/search-products/route.test.ts`）は `@/lib/db` を全モックしているため、**SQL 文字列そのものはユニット・統合いずれのテストでも一度も実行されていなかった**。この SQL は Elasticsearch → tsvector 移行（`docs/migration/`）の中核でありながら、構文エラー・`'simple'` トークナイザーの挙動・関連度順ソートの回帰をどのテストも検知できない状態だった。テーブル名やカラム名の変更に raw SQL は自動追従しないため、Prisma メジャーアップグレードや schema 変更で静かに壊れうる。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/search-products.test.ts` | 新規作成（9 テスト）。トークナイザーの小文字化 / name・description 双方のヒット / `ts_rank` 降順 / `plainto_tsquery` の AND 意味論 / 空白トリムと `q` 欠落の 2 分岐 / パラメータ化の安全性 / 従属の `ORDER BY RANDOM()` | `6514e0c6` |
+| `docs/testing/QA_HANDOFF.md` ほか | テスト統計同期・ダッシュボード再生成・plans/README の Status 更新 | (docs 同期コミット) |
+
+#### 実装上の判断 2 点
+
+- **`testEnvironment: node` をファイル単位 docblock で上書き**（plan 032 と同じ）。`jest.integration.config.js` の既定は jsdom だが、jsdom には Fetch API の `Request` / `Response` グローバルが無く Route Handler を直接呼べない。config は無変更。
+- **商品は `db.product.create` を直接使う**。`seedProductWithVariantAndSize` は name が `Product ${suffix}` に固定されており、検索語の出現位置・頻度を制御できないため。variant / size は検索 SQL に不要。
+
+#### 識別力の確認（rule 02 の Red 規律）
+
+本体を変更できないテスト追加作業でも空振りを避けるため、識別力の要になる 2 シナリオ（3 = 関連度順、6 = パラメータ化）の期待値を一時的に崩して**その 2 件だけが赤くなる**ことを実測してから戻した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 40 / 4 スイート | **49 / 5 スイート** |
+| Jest ユニット/コンポーネント | 1891 passed / 1894 total / 178 スイート | **1891 passed / 1894 total / 178 スイート**（不変） |
+| テストファイル総数（ダッシュボード） | 199 | **200** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

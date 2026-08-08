@@ -434,13 +434,17 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 40 integration tests across 4 suites
+- 49 integration tests across 5 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
-  `tests/integration/webhook-payment.test.ts` 12) as of 2026-08-08
-  (`a4d01b27` added the non-USD rejection scenario S8, 39 → 40; suite count
-  unchanged. The last full run measured 39/39 pass on 2026-08-04).
+  `tests/integration/webhook-payment.test.ts` 12 +
+  `tests/integration/search-products.test.ts` 9) as of 2026-08-09,
+  measured 49/49 pass (plan 033 added the tsvector full-text search suite,
+  40 → 49; suites 4 → 5. It is the first time the `$queryRaw` string behind
+  `/api/search-products` is executed by any test — the unit suite mocks
+  `@/lib/db` wholesale. Before that, `a4d01b27` added the non-USD rejection
+  scenario S8, 39 → 40, with the suite count unchanged).
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`

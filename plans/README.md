@@ -106,7 +106,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
-| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | TODO |
+| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | TODO |
@@ -140,6 +140,31 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **033 の実行記録（2026-08-09・`6514e0c6`）**
+>
+> **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/search-products.test.ts` を新設し
+> **9 テスト**（シナリオ 1〜8 + 5b）。Integration は **40 → 49 / スイート 4 → 5**（実測 49/49 pass）。
+> `src/app/api/search-products/route.ts` と `src/queries/subCategory.ts` はいずれも 1 行も変更していない。
+> Drift check は一致（raw SQL・`ORDER BY RANDOM()` ともプラン本文の抜粋どおり）で STOP 非該当。
+>
+> **STOP 条件に挙がっていた 3 点はいずれも期待どおりだった** —— シナリオ 3（関連度順）は
+> "widget" を 3 回持つ B が 1 回の A より先頭、シナリオ 7（AND 意味論）は "beta gadget" が B のみ、
+> シナリオ 6（パラメータ化）は 200 かつ `product.count()` 不変。期待値の書き換えは一切していない。
+>
+> **識別力を機械的に確認した。** シナリオ 3 の期待順序と 6 の件数期待を一時的に崩すと
+> **その 2 件だけが落ちる**ことを実測してから戻している（rule 02 の Red 規律を、本体を変更できない
+> テスト追加作業へ適用する形。plan 027 の Scenario 8 と同じ扱い）。
+>
+> **実行環境**: plan 032 と同じくファイル単位 docblock で `testEnvironment: node` に上書きした
+> （jsdom には Fetch API の `Request` / `Response` が無く Route Handler を直接呼べない）。
+> プランの Out of scope は `jest.integration.config.js` の変更であり、config は**無変更**のため
+> スコープ内。
+>
+> **次の実行者への申し送り**: この SQL は毎クエリ `to_tsvector` を計算しており式インデックスを
+> 持たない。GIN 式インデックスを入れる migration を書く際、**式が 1 文字でも違うとインデックスが
+> 使われない**ため、本テストが「式とインデックス定義のズレ」の回帰検知として機能する
+> （プラン 033 の Maintenance notes に記載どおり）。
+>
 > **063 の実行記録（2026-08-09）**
 >
 > **補正対象は 0 件だった。** 本番 DB の `PaymentDetails` は総行数 0（`Order` は 18 行）。
