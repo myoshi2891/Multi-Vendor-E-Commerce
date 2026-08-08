@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1890 passed / 1893 total across 178 suites (3 skipped), as of 2026-08-04.
+- 1891 passed / 1894 total across 178 suites (3 skipped), as of 2026-08-08.
+  Integration tests are excluded from the default `bun run test` run
+  (`jest.config.js` `testPathIgnorePatterns`), so branches covered only there never reach
+  `coverage/lcov.info` and SonarCloud reports them as uncovered New Code. Every new branch
+  therefore also needs at least one unit-level test (2026-08-08: the non-USD rejection in
+  `src/app/api/webhooks/stripe/route.ts`, +1 test, no new suite).
   Plan 026 took `src/queries/paypal.test.ts` from 40 to 56 tests (+16, no new suite) and
   `paypal.ts` from 72.05% branch coverage to 91.91%, with statements, lines and functions at
   100%. The plan's stated baseline (17 tests / 28.6% branches) was already stale — plan 059's
@@ -429,15 +434,44 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 17 integration tests across 2 suites
+- 40 integration tests across 4 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
-  `tests/integration/order-placement.test.ts` 6) as of 2026-05-31.
+  `tests/integration/order-placement.test.ts` 9 +
+  `tests/integration/order-lifecycle.test.ts` 8 +
+  `tests/integration/webhook-payment.test.ts` 12) as of 2026-08-08
+  (`a4d01b27` added the non-USD rejection scenario S8, 39 → 40; suite count
+  unchanged. The last full run measured 39/39 pass on 2026-08-04).
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`
   (`src/queries/user.ts`) end-to-end with a real `$transaction`: per-store
   OrderGroup split, stock capping, store-scoped coupon discount, ownership
-  (IDOR) guard, and rollback on invalid product combinations.
+  (IDOR) guard, rollback on invalid product combinations, the atomic stock
+  decrement amount, oversell rollback (stock stolen between validation and
+  decrement — no partial commit), and PLATFORM coupon remainder absorption.
+  `order-lifecycle.test.ts` covers the post-checkout side of the same
+  inventory invariant (`src/queries/order.ts`): cancel/refund cascades to
+  OrderGroup/OrderItem, restock restores the pre-order quantity, double
+  cancellation restocks exactly once (sequential and concurrently dispatched),
+  non-cancel transitions touch neither children nor stock, group-level
+  cancellation restocks only that group while the parent status is
+  re-aggregated, and both admin mutations reject non-admins without side
+  effects. Note: only `updateOrderPaymentStatus` is CAS-guarded;
+  `updateOrderGroupStatusAsAdmin` remains read-then-act, so its concurrent
+  double-restock is unresolved (tracked in `plans/README.md` Deferred).
+  `webhook-payment.test.ts` drives the Stripe and PayPal webhook route handlers
+  against the real database (the unit suites mock `@/lib/db` entirely, so the
+  idempotency machinery itself was never executed): first-event row creation,
+  single-row invariant on sequential *and* concurrently dispatched redelivery,
+  status transitions updating the same row, 404 without side effects, and
+  `$transaction` rollback when the second write fails, and rejection of a
+  non-USD Stripe event with 400 and no writes (S8). The provider-switch
+  scenario was originally a characterization of a known gap (the upsert
+  `update` branch carried no `amount`/`currency`); `c4a6fb41` fixed that
+  branch and `607c2b88` flipped the expectation, so it now asserts that the
+  row is updated to `Order.total` / `usd`. This file overrides
+  `testEnvironment` to `node` via docblock because jsdom lacks the Fetch API
+  `Request`/`Response` globals that Route Handlers require.
 - Mock patterns:
   - `MockPrismaClient` interface for typed Prisma mocks in store tests.
   - `$transaction` mock: callback receives mock client for transparent

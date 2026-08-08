@@ -13,6 +13,8 @@
  * - prisma/schema.prisma
  */
 import {
+    OrderStatus,
+    PaymentStatus,
     Prisma,
     Role,
     ShippingFeeMethod,
@@ -22,6 +24,10 @@ import {
     type Category,
     type Country,
     type Coupon,
+    type CouponScope,
+    type Order,
+    type OrderGroup,
+    type OrderItem,
     type PrismaClient,
     type Product,
     type ProductVariant,
@@ -217,7 +223,17 @@ export async function seedProductWithVariantAndSize(
 // ----------------------------------------------------------------------------
 
 export interface SeedCouponInput {
-    storeId: string;
+    /**
+     * 紐付ける店舗。PLATFORM スコープのクーポンは店舗に所有されないため `null` を渡す。
+     * 必須プロパティのまま（`?` は付けない）にして、STORE / PLATFORM いずれの場合も
+     * 呼び出し側に明示させ、書き忘れによる暗黙の紐付けを防ぐ。
+     */
+    storeId: string | null;
+    /**
+     * クーポンスコープ。未指定時は Prisma スキーマの `@default(STORE)`
+     * (`prisma/schema.prisma` の `Coupon.scope`) に従う。
+     */
+    scope?: CouponScope;
     /** 割引率 (0-100)。Coupon.discount は Int */
     discount?: number;
     /** 有効期間。デフォルトは過去 1 日〜未来 1 年 */
@@ -230,17 +246,10 @@ export interface SeedCouponInput {
 }
 
 /**
- * Creates and inserts a coupon record with sensible defaults for testing.
+ * Creates a coupon with configurable scope, discount, validity period, code, store, and user connections.
  *
- * The returned value is the created Coupon record.
- *
- * Detailed behavior:
- * - `code` defaults to `COUPON-<SUFFIX>` when `input.code` is not provided.
- * - `startDate` defaults to 24 hours in the past and `endDate` defaults to one year from now when not provided.
- * - `discount` defaults to `10` when not provided.
- * - If `input.connectUserIds` is provided and non-empty, the coupon will be connected to those users; otherwise no user connections are made.
- *
- * @param input - SeedCouponInput describing required `storeId` and optional fields (`discount`, `startDate`, `endDate`, `code`, `connectUserIds`) and their defaulting behavior
+ * @param input - Coupon data and optional overrides, including the store association and connected users
+ * @returns The created coupon
  */
 export async function seedCoupon(
     db: PrismaClient,
@@ -256,6 +265,7 @@ export async function seedCoupon(
             endDate:
                 input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
             discount: input.discount ?? 10,
+            scope: input.scope,
             storeId: input.storeId,
             users: input.connectUserIds && input.connectUserIds.length > 0
                 ? { connect: input.connectUserIds.map((id) => ({ id })) }
@@ -387,13 +397,10 @@ export interface SeedShippingAddressInput {
 }
 
 /**
- * Create a persistent ShippingAddress for a given user and country to use in integration tests.
+ * Creates a shipping address for a user and country for use in integration tests.
  *
- * This address is suitable for use by `placeOrder`, which resolves shipping details from the
- * shipping address `id` and `countryId`.
- *
- * @param input - Seed data: required `userId` and `countryId`; optional `overrides` merged into the created record.
- * @returns The created `ShippingAddress` record
+ * @param input - Seed data containing the owning user, country, and optional field overrides.
+ * @returns The created `ShippingAddress` record.
  */
 export async function seedShippingAddress(
     db: PrismaClient,
@@ -414,4 +421,88 @@ export async function seedShippingAddress(
             ...overrides,
         },
     });
+}
+
+// ----------------------------------------------------------------------------
+// Order + OrderGroup + OrderItem
+// ----------------------------------------------------------------------------
+
+export interface SeedOrderInput {
+    userId: string;
+    shippingAddressId: string;
+    storeId: string;
+    /** OrderItem が参照する商品一式（seedProductWithVariantAndSize の戻り値） */
+    product: Product;
+    variant: ProductVariant;
+    size: Size;
+    /** 注文数量（default 1）。Size.quantity はこの値ぶん減算済みの前提で作る */
+    quantity?: number;
+    /** Order.paymentStatus の初期値（default Pending） */
+    paymentStatus?: PaymentStatus;
+    /** OrderGroup.status の初期値（default Pending） */
+    groupStatus?: OrderStatus;
+}
+
+/**
+ * Creates an order with one order group and one order item for a product size.
+ *
+ * Shipping fees are set to zero, and totals are calculated from the size price and requested quantity. Inventory is unchanged.
+ *
+ * @param input - Order details, including the user, shipping address, store, product, variant, and size; quantity and statuses are optional.
+ * @returns The created order, order group, and order item.
+ */
+export async function seedOrderWithGroupAndItem(
+    db: PrismaClient,
+    input: SeedOrderInput
+): Promise<{ order: Order; group: OrderGroup; item: OrderItem }> {
+    const quantity = input.quantity ?? 1;
+    const unitPrice = input.size.price;
+    const lineTotal = unitPrice.mul(quantity);
+    const noShipping = new Prisma.Decimal(0);
+
+    const order = await db.order.create({
+        data: {
+            userId: input.userId,
+            shippingAddressId: input.shippingAddressId,
+            subTotal: lineTotal,
+            shippingFees: noShipping,
+            total: lineTotal,
+            paymentStatus: input.paymentStatus ?? PaymentStatus.Pending,
+        },
+    });
+
+    const group = await db.orderGroup.create({
+        data: {
+            orderId: order.id,
+            storeId: input.storeId,
+            status: input.groupStatus ?? OrderStatus.Pending,
+            subTotal: lineTotal,
+            shippingFees: noShipping,
+            total: lineTotal,
+            shippingService: "Standard",
+            shippingDeliveryMin: 7,
+            shippingDeliveryMax: 14,
+        },
+    });
+
+    const item = await db.orderItem.create({
+        data: {
+            orderGroupId: group.id,
+            productId: input.product.id,
+            variantId: input.variant.id,
+            sizeId: input.size.id,
+            productSlug: input.product.slug,
+            variantSlug: input.variant.slug,
+            sku: input.variant.sku,
+            name: `${input.product.name} - ${input.variant.variantName}`,
+            image: input.variant.variantImage,
+            size: input.size.size,
+            price: unitPrice,
+            quantity,
+            shippingFee: noShipping,
+            totalPrice: lineTotal,
+        },
+    });
+
+    return { order, group, item };
 }

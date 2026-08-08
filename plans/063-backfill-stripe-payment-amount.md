@@ -12,13 +12,13 @@
 > **Drift check (run first)**:
 >
 > ```bash
-> git diff --stat e63474b6 -- src/queries/stripe.ts prisma/schema.prisma
-> git status --porcelain -- src/queries/stripe.ts
+> git diff --stat c4a6fb41 -- src/queries/stripe.ts src/app/api/webhooks/stripe/route.ts prisma/schema.prisma
+> git status --porcelain -- src/queries/stripe.ts src/app/api/webhooks/stripe/route.ts
 > ```
 >
-> If `src/queries/stripe.ts` no longer writes `order.total` into `PaymentDetails.amount`,
-> or `PaymentDetails.amount` is no longer `Decimal(12,2)`, the premise below has changed —
-> treat it as a STOP condition.
+> If either Stripe write path (同期パス / webhook) no longer writes `order.total` into
+> `PaymentDetails.amount`, or `PaymentDetails.amount` is no longer `Decimal(12,2)`,
+> the premise below has changed — treat it as a STOP condition.
 
 ## Status
 
@@ -55,6 +55,17 @@ units. Revenue reporting, per-user payment history, and refund reconciliation al
 - `src/queries/stripe.ts` writes `amount: order.total` (`Prisma.Decimal`, dollars) at all write
   sites. `toStripeAmount()` remains for values handed to the Stripe API, which legitimately wants
   minor units.
+- `src/app/api/webhooks/stripe/route.ts` also writes `order.total` **since `c4a6fb41`
+  (2026-08-07)** — before that it wrote the event's minor units, so it kept producing
+  cents rows after `e63474b6`. The helper that returned the raw `amount` was removed
+  (`extractCurrency` now returns only the currency) so the unit cannot be re-wired by accident.
+  同コミットは **PayPal webhook の `update` 分岐にも `amount` / `currency` を追加**している。
+  それ以前は同分岐が両列を書かなかったため、Stripe が作った cents 行に PayPal イベントが
+  届くと **`paymentMethod` だけ `'PayPal'` に変わり金額は cents のまま**という行が残った
+  （Step 2 の候補述語がこれを拾えるよう拡張してある）。
+- Stripe webhook は USD 以外の event を 400 で拒否する。`amount` に入る `order.total` が
+  USD 建てである以上、event 通貨をそのまま `currency` に流すと両列が別通貨を指すため。
+  よって**境界より後**に「ドル建て金額 + 非 USD 通貨」の行が新たに増えることはない。
 - `src/queries/paypal.ts` writes dollars and was never affected.
 - `prisma/schema.prisma:699` — `amount Decimal @db.Decimal(12, 2)`.
 - No migration has touched existing rows.
@@ -75,11 +86,25 @@ before `e63474b6`, plus the query used to identify them and the record of what w
 
 ### Step 1: Establish the cutover boundary
 
-Find the deployment time of `e63474b6`, not just its commit time — rows written between commit and
+> **⚠️ 境界は `e63474b6` ではない（2026-08-07 訂正）。** `e63474b6` が直したのは
+> **同期パス `src/queries/stripe.ts`** だけで、**webhook 経路
+> `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**
+> （`extractAmountAndCurrency` が `paymentIntent.amount` / `charge.amount` を
+> そのまま `PaymentDetails.amount` に配線していた）。webhook 側を `order.total` に
+> 揃えたのは **`c4a6fb41`（2026-08-07）**。したがって cents 行を生む経路が閉じたのは
+> こちらであり、**境界は `c4a6fb41` のデプロイ時刻**まで延びる。
+> `e63474b6` を境界に使うと、その後 webhook が書いた cents 行を**すべて取りこぼす**。
+>
+> 補足: `e63474b6` 〜 `c4a6fb41` の間の行は、同じ注文に対して同期パスと webhook が
+> 交互に上書きしうるため、**最後にどちらが書いたかで単位が決まる**（`ratio` は
+> ≈1 と ≈100 のどちらにもなりうる）。Step 2 の `ratio` 判定はこの期間の行にも
+> そのまま機能する（値そのものを見ているため）。
+
+Find the deployment time of `c4a6fb41`, not just its commit time — rows written between commit and
 deploy are still affected.
 
 ```bash
-git show -s --format='%H %cI %s' e63474b6
+git show -s --format='%H %cI %s' c4a6fb41
 ```
 
 Record both the commit timestamp and the actual production deploy timestamp (from the hosting
@@ -89,13 +114,36 @@ alone under-selects rows.
 ### Step 2: Identify affected rows (read-only)
 
 Selecting on `createdAt < boundary` alone is **not sufficient** — it would also sweep in the
-PayPal rows, which are already correct. Constrain to the Stripe path.
+PayPal rows, which are already correct. But constraining to `paymentMethod = 'Stripe'` is
+**too narrow**, for the reason set out immediately below.
+
+> **⚠️ `paymentMethod` は行の出自を表さない（2026-08-07 訂正）。** `c4a6fb41` **以前**の
+> PayPal webhook (`src/app/api/webhooks/paypal/route.ts`) は `upsert` の **`update` 分岐に
+> `amount` / `currency` を持っていなかった**（同コミットの diff が `paypal/route.ts` に
+> +4 行を足しているのがこれ）。したがって、
+>
+> 1. Stripe webhook が cents で行を作る（`amount = 9999`, `paymentMethod = 'Stripe'`）
+> 2. 同じ注文に PayPal webhook が届く → `paymentMethod` は `'PayPal'` に、
+>    `paymentIntentId` は capture id に**書き換わるが、`amount` / `currency` は
+>    Stripe 由来のまま残る**
+>
+> という既知の状態が存在する。この行は **cents のまま `paymentMethod = 'PayPal'`** なので、
+> `paymentMethod = 'Stripe'` 述語では**一件も拾えない**。`paymentIntentId` による出自判定
+> （`pi_` 前置）も、PayPal が capture id で上書きしているので**この行では効かない**。
+>
+> 拾える signal は**値そのもの、すなわち `ratio ≈ 100`** しかない。PayPal 経路は
+> 初日からドル建てしか書いていないので、**`ratio ≈ 100` の行は provider ラベルが何であれ
+> Stripe 由来**と断定できる（これは肯定形の述語であり、"PayPal でないもの" の否定形が
+> 抱えていた `'Paypal'` 表記ゆれの問題も持たない）。
 
 ```sql
 -- Read-only. Produces the candidate set and a magnitude check per row.
+-- 出自は paymentMethod ではなく ratio で判定する（上の訂正ノートを参照）。
+-- provider ラベルは除外条件ではなく、Step 4 で currency をどちらの契約へ揃えるかの分岐に使う。
 SELECT pd.id,
        pd."paymentIntentId",
        pd."paymentMethod",
+       pd.currency,
        pd.amount        AS stored_amount,
        o.total          AS order_total,
        pd.amount / NULLIF(o.total, 0) AS ratio,
@@ -103,22 +151,37 @@ SELECT pd.id,
 FROM "PaymentDetails" pd
 JOIN "Order" o ON o.id = pd."orderId"
 WHERE pd."createdAt" < :deploy_boundary
-  AND pd."paymentMethod" = 'Stripe'
+  AND (
+        pd."paymentMethod" = 'Stripe'                        -- Stripe のまま確定した行
+     OR pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101    -- provider が切替わった cents 行
+      )
 ORDER BY pd."createdAt";
 ```
 
-`paymentMethod = 'Stripe'` is safe as a **positive** predicate: `src/queries/stripe.ts` has written
-the literal `"Stripe"` at every write site since the original integration (`7fca45c0`), and
-`git log -S'paymentMethod: "Stripe"'` shows no other value ever reached the column.
+`paymentMethod = 'Stripe'` is safe as a **positive** predicate for the first arm:
+`src/queries/stripe.ts` has written the literal `"Stripe"` at every write site since the original
+integration (`7fca45c0`), and `git log -S'paymentMethod: "Stripe"'` shows no other value ever
+reached the column. It is simply not *complete* on its own.
 
 **Do not invert it into "everything that is not PayPal".** The PayPal path wrote `"Paypal"`
 (lower-case `a`) until `d8f770d2` (2026-05-29), so rows predating that commit would escape a
-`!= 'PayPal'` filter and be swept into the update. If a row's provenance is still ambiguous, fall
-back to the `paymentIntentId` shape — Stripe intents are prefixed `pi_`.
+`!= 'PayPal'` filter and be swept into the update.
 
 The `ratio` column is the decision signal: affected rows should land at **≈100**, correct rows at
 **≈1**. Any row that is neither is an anomaly — it must be listed in the report and excluded from
 the automated update, then handled by hand.
+
+Group the `ratio ≈ 100` rows by `pd."paymentMethod"` in the report. The two groups get **different
+`currency` treatment** in Step 4:
+
+| 最終的な provider ラベル | `amount` | `currency` |
+|---|---|---|
+| `'Stripe'` | `/ 100` | そのまま（Stripe event の実値） |
+| `'PayPal'` / `'Paypal'` | `/ 100` | `'usd'` へ補正（PayPal 契約。`paypal/route.ts` は常に `'usd'` を書く） |
+
+PayPal として確定した行に Stripe 由来の `currency` が残っているのは、`amount` が cents で
+残っているのと**同じ書き漏れの裏表**である。`amount` だけ直して `currency` を放置すると、
+「PayPal 決済なのに通貨が `eur`」という行が残り、次の監査で再び候補として掘り起こされる。
 
 > **`ratio IS NULL` is a fourth bucket, not a member of "neither".** `NULLIF(o.total, 0)` returns
 > NULL for zero-total orders, so `ratio` is NULL for them. Under SQL three-valued logic a NULL
@@ -129,7 +192,7 @@ the automated update, then handled by hand.
 >
 > ```sql
 > -- zero-total 注文（ratio が計算不能）を必ず別立てで列挙する
-> SELECT pd.id, pd."paymentIntentId", pd.amount, o.total, pd."createdAt"
+> SELECT pd.id, pd."paymentIntentId", pd."paymentMethod", pd.amount, o.total, pd."createdAt"
 > FROM "PaymentDetails" pd
 > JOIN "Order" o ON o.id = pd."orderId"
 > WHERE pd."createdAt" < :deploy_boundary
@@ -139,6 +202,18 @@ the automated update, then handled by hand.
 >
 > Each such row must be resolved by hand (the order total itself is likely the defect) or recorded
 > as unresolved with a reason. Do not let them fall through the range predicates unnoticed.
+>
+> **この列挙が `paymentMethod = 'Stripe'` のままなのは意図的**（Step 2 本体の拡張と食い違って
+> 見えるので明示する）。拡張した第 2 の arm は `ratio BETWEEN 99 AND 101` であり、
+> zero-total 行では `ratio` が NULL なので**この arm には構造的に入り得ない** ——
+> よって NULL バケットは第 1 の arm の部分集合であり、Step 3 の「四バケットが候補総数に
+> 一致する」検算はこの形で閉じる。
+>
+> ただし裏返すと、**zero-total 注文の行が provider 切替で `'PayPal'` になっていた場合、
+> どの述語でも拾えない**（金額 signal が計算不能、ラベル signal も失われている）。
+> これは検出不能領域として受け入れる。境界より前の zero-total な PayPal 行が
+> 存在するかは、`SELECT count(*) … WHERE o.total = 0 AND pd."paymentMethod" IN ('PayPal','Paypal')`
+> で**件数だけ確認し、0 でなければ STOP して人手で調べること**。
 
 ### Step 3: Produce a dry-run report and get human approval
 
@@ -153,14 +228,20 @@ Write the Step 2 result to a file and summarise:
 
   ```sql
   -- Step 4 が同じ述語で再計算して突合する。件数と id 集合の両方を出す。
+  -- `paymentMethod` の制約は**入れない**。ratio ≈ 100 だけが出自の signal であり
+  -- （PayPal 経路はドル建てしか書いていないので ratio ≈ 100 になり得ない）、
+  -- ラベルで絞ると provider 切替後の cents 行を取りこぼす（Step 2 の訂正ノート参照）。
   SELECT count(*)                                                       AS will_update,
          md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id), '')) AS candidate_digest
   FROM   "PaymentDetails" pd
   JOIN   "Order" o ON o.id = pd."orderId"
   WHERE  pd."createdAt" < :deploy_boundary
-    AND  pd."paymentMethod" = 'Stripe'
     AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101;
   ```
+
+  この同じ集合を `pd."paymentMethod"` で内訳表示し、**PayPal 側へ確定する行数**（Step 4 で
+  `currency` も `'usd'` へ補正される行）を承認者へ別掲すること。`amount` の補正だけでなく
+  `currency` の書き換えも承認対象に含める。
 
   > **なぜ件数だけでは足りないか。** 承認と実行の間は非同期に空くので、その間に候補集合が
   > **入れ替わる**ことがある —— 1 行が手作業で修正されて候補から外れ、別の 1 行が新たに
@@ -220,8 +301,7 @@ SELECT count(*)                                                       AS actual_
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
 WHERE  pd."createdAt" < :'deploy_boundary'
-  AND  pd."paymentMethod" = 'Stripe'
-  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101
+  AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101   -- 出自 signal は ratio のみ
 \gset
 
 -- 2) **件数と digest の両方**を Step 3 の承認済みレポートと機械的に突合する。
@@ -247,12 +327,18 @@ SELECT (:actual_count = :approved_count)
 --    `UPDATE ... RETURNING` を CTE に包むと、件数と id digest を \gset で変数へ取れる。
 WITH updated AS (
     UPDATE "PaymentDetails" pd
-    SET    amount = pd.amount / 100
+    SET    amount   = pd.amount / 100,
+           -- provider 切替で PayPal として確定した行は currency も PayPal 契約
+           -- （`paypal/route.ts` は常に 'usd'）へ揃える。Stripe のままの行は
+           -- event の実通貨が正なので触らない。
+           currency = CASE
+                          WHEN pd."paymentMethod" IN ('PayPal', 'Paypal') THEN 'usd'
+                          ELSE pd.currency
+                      END
     FROM   "Order" o
     WHERE  o.id = pd."orderId"
       AND  pd."createdAt" < :'deploy_boundary'
-      AND  pd."paymentMethod" = 'Stripe'                        -- Step 2 と同じ肯定形の述語
-      AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101    -- ratio ≈ 100 のみ
+      AND  pd.amount / NULLIF(o.total, 0) BETWEEN 99 AND 101    -- ratio ≈ 100 のみ（唯一の出自 signal）
     RETURNING pd.id
 )
 SELECT count(*)                                                 AS updated_count,
@@ -375,7 +461,25 @@ SELECT
 FROM   "PaymentDetails" pd
 JOIN   "Order" o ON o.id = pd."orderId"
 WHERE  pd."createdAt" < :'deploy_boundary'
-  AND  pd."paymentMethod" = 'Stripe';
+  AND  pd."paymentMethod" IN ('Stripe', 'PayPal', 'Paypal');
+```
+
+> **検証の母集合は Step 2 の候補集合より広く取る。** ここで `paymentMethod = 'Stripe'` に
+> 絞ると、**Step 4 が実際に書き換えた PayPal ラベルの行が検証から丸ごと外れる** ——
+> 補正が効いていなくても `still_wrong = 0` が返り、「クリーン」と報告されてしまう。
+> Step 2 の候補述語（`ratio ≈ 100`）をそのまま使えないのは、補正後の行は定義上
+> `ratio ≈ 1` になっていて**候補述語から抜けてしまう**ためで、事後検証は
+> 「元の候補だった行」ではなく「境界より前の決済行すべて」を見る必要がある。
+
+加えて、PayPal として確定した行の `currency` が Step 4 で `'usd'` に揃ったことを別途確認する:
+
+```sql
+-- 0 件でなければ Step 4 の currency 補正が漏れている
+SELECT count(*) AS stale_paypal_currency
+FROM   "PaymentDetails" pd
+WHERE  pd."createdAt" < :'deploy_boundary'
+  AND  pd."paymentMethod" IN ('PayPal', 'Paypal')
+  AND  pd.currency <> 'usd';
 ```
 
 `null_ratio_digest` は Step 3 の承認済み「unresolved zero-total list」に対して**同じ式で**
@@ -427,6 +531,10 @@ ALL must hold:
       — not necessarily 0 — with the surviving `ratio IS NULL` **id set** matching that list, not
       merely its cardinality. `still_wrong` does **not** cover the NULL bucket: the `NOT BETWEEN`
       FILTER is three-valued, so a NULL ratio is neither true nor false and never counted there.
+- [ ] The Step 5 `stale_paypal_currency` query returns **0** — every row that ended up labelled
+      `'PayPal'` / `'Paypal'` carries `currency = 'usd'`. A cents `amount` and a leftover Stripe
+      `currency` are the same write-omission seen from two sides; fixing only the first leaves the
+      row re-surfacing in the next audit.
 - [ ] Rows that were neither `≈1` nor `≈100` are enumerated and individually resolved, or
       explicitly recorded as unresolved with a reason.
 - [ ] **Rows with `ratio IS NULL` (zero-total orders) are enumerated and individually resolved, or

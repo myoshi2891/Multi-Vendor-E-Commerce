@@ -66,6 +66,12 @@ beforeEach(() => {
     );
 });
 
+/**
+ * PaymentDetails.amount は event の minor unit ではなく **Order.total**（ドル建て）を格納する
+ * 契約なので、期待値もこの order の total から取る（src/queries/stripe.ts と同一契約）。
+ */
+const SUCCESS_ORDER = createMockOrder({ id: "order-stripe-success" });
+
 const createStripeRequest = (body: unknown) =>
     new Request("http://localhost:3000/api/webhooks/stripe", {
         method: "POST",
@@ -108,9 +114,7 @@ describe("POST /api/webhooks/stripe", () => {
 
         it("正常署名の場合は constructEvent に raw body と署名を渡す", async () => {
             mockConstructEvent.mockReturnValue(paymentIntentSucceededFixture);
-            mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ id: "order-stripe-success" })
-            );
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
             mockDb.paymentDetails.upsert.mockResolvedValue({});
             mockDb.order.update.mockResolvedValue({});
 
@@ -130,9 +134,7 @@ describe("POST /api/webhooks/stripe", () => {
     describe("payment_intent.succeeded イベント", () => {
         beforeEach(() => {
             mockConstructEvent.mockReturnValue(paymentIntentSucceededFixture);
-            mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ id: "order-stripe-success" })
-            );
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
             mockDb.paymentDetails.upsert.mockResolvedValue({});
             mockDb.order.update.mockResolvedValue({});
         });
@@ -163,12 +165,16 @@ describe("POST /api/webhooks/stripe", () => {
                         paymentMethod: "Stripe",
                         status: "Paid",
                         orderId: "order-stripe-success",
-                        amount: 9999, // fixture: payment_intent.amount (cents)
+                        amount: SUCCESS_ORDER.total, // Order.total（ドル建て）
                         currency: "usd", // fixture: payment_intent.currency
                     }),
+                    // update 分岐にも amount / currency を持たせる。欠けると provider 切替や
+                    // 再送で「前回の値が残る」状態になる（統合テスト Scenario P4）。
                     update: expect.objectContaining({
                         paymentIntentId: "pi_test_succeeded",
                         status: "Paid",
+                        amount: SUCCESS_ORDER.total,
+                        currency: "usd",
                     }),
                 })
             );
@@ -201,9 +207,7 @@ describe("POST /api/webhooks/stripe", () => {
 
     describe("charge.refunded イベント", () => {
         beforeEach(() => {
-            mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ id: "order-stripe-success" })
-            );
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
             mockDb.paymentDetails.upsert.mockResolvedValue({});
             mockDb.order.update.mockResolvedValue({});
         });
@@ -242,7 +246,7 @@ describe("POST /api/webhooks/stripe", () => {
             );
         });
 
-        it("paymentIntentId は charge.payment_intent から取得し、amount/currency は charge から取得する", async () => {
+        it("paymentIntentId は charge.payment_intent、currency は charge、amount は Order.total から取得する", async () => {
             mockConstructEvent.mockReturnValue(chargeRefundedFullFixture);
 
             await POST(createStripeRequest(chargeRefundedFullFixture));
@@ -251,8 +255,12 @@ describe("POST /api/webhooks/stripe", () => {
                 expect.objectContaining({
                     create: expect.objectContaining({
                         paymentIntentId: "pi_test_succeeded",
-                        amount: 9999, // fixture: charge.amount
+                        amount: SUCCESS_ORDER.total, // charge.amount (cents) ではない
                         currency: "usd", // fixture: charge.currency
+                    }),
+                    update: expect.objectContaining({
+                        amount: SUCCESS_ORDER.total,
+                        currency: "usd",
                     }),
                 })
             );
@@ -304,9 +312,7 @@ describe("POST /api/webhooks/stripe", () => {
 
         it("冪等性: 同一イベントを 2 回送信しても upsert で安全に処理される", async () => {
             mockConstructEvent.mockReturnValue(paymentIntentSucceededFixture);
-            mockDb.order.findUnique.mockResolvedValue(
-                createMockOrder({ id: "order-stripe-success" })
-            );
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
             mockDb.paymentDetails.upsert.mockResolvedValue({});
             mockDb.order.update.mockResolvedValue({});
 
@@ -322,6 +328,34 @@ describe("POST /api/webhooks/stripe", () => {
             expect(calls[0][0].create.paymentIntentId).toBe(
                 calls[1][0].create.paymentIntentId
             );
+        });
+
+        it("USD 以外の通貨のイベントは 400 を返し、DB へ何も書かない", async () => {
+            // Arrange: PaymentDetails.amount には order.total（USD 建て）が入るため、
+            // event の通貨をそのまま currency へ流すと金額と通貨ラベルが別通貨を指す行になる。
+            // 多通貨はスコープ外（.claude/steering/product.md）なので 400 で拒否し、行を作らない。
+            // ※ 統合テスト Scenario S8 と同一契約だが、統合テストは jest.config.js の
+            //   testPathIgnorePatterns で lcov 対象外のため、ユニット層でも固定する。
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            const event = JSON.parse(
+                JSON.stringify(paymentIntentSucceededFixture)
+            ) as { data: { object: { currency: string } } };
+            event.data.object.currency = "eur";
+            mockConstructEvent.mockReturnValue(event);
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
+
+            // Act
+            const response = await POST(createStripeRequest(event));
+
+            // Assert
+            expect(response.status).toBe(400);
+            expect(await response.text()).toBe("Unsupported currency");
+            expect(mockDb.$transaction).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
         });
 
         it("DB エラー時は 500 を返す", async () => {

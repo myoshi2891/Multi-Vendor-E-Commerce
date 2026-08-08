@@ -136,15 +136,14 @@ const verifyPayPalSignature = async (
 };
 
 /**
- * Handle incoming PayPal webhook POSTs and update order/payment state for handled capture events.
+ * Processes verified PayPal webhook events and updates the associated order and payment details.
  *
- * Validates required PayPal signature headers, verifies the webhook signature, parses the webhook
- * payload, and idempotently updates PaymentDetails and Order when the event type is one of
- * PAYMENT.CAPTURE.COMPLETED, PAYMENT.CAPTURE.DENIED, or PAYMENT.CAPTURE.REFUNDED.
+ * Unsupported event types are acknowledged without modifying order data. Supported events update
+ * payment details and order status atomically.
  *
- * @param req - The incoming HTTP Request containing the webhook JSON payload
- * @returns A Response with status 200 for successful or ignored events, 400 for signature or payload
- *          metadata errors, 404 if the referenced Order is not found, or 500 for internal/service errors
+ * @param req - The incoming request containing the PayPal webhook payload
+ * @returns A response with status 200 for successful or ignored events, 400 for invalid input or signatures, 404 when the order is missing, or 500 for processing failures
+ * @throws If `PAYPAL_WEBHOOK_ID` is not configured
  */
 export async function POST(req: Request) {
     const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID;
@@ -241,10 +240,14 @@ export async function POST(req: Request) {
         await db.$transaction(async (tx) => {
             await tx.paymentDetails.upsert({
                 where: { orderId },
+                // update 分岐にも amount / currency を持たせる。持たないと
+                // プロバイダー切替（Stripe → PayPal）で前 provider の値が残る。
                 update: {
                     paymentIntentId: captureId,
                     paymentMethod: "PayPal",
                     status: paymentStatus,
+                    amount: order.total,
+                    currency: "usd",
                     userId: order.userId,
                 },
                 create: {

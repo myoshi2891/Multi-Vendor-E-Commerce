@@ -5,13 +5,13 @@
 
 ---
 
-## 現在の状態（2026-08-01 時点）
+## 現在の状態（2026-08-08 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1890 passed / 1893 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-04 実測（plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | 17テスト / 2スイート（`cart-checkout` 11 + `order-placement` 6）— 2026-05-31 placeOrder 統合テスト +6 / +1 スイート。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jestユニットテスト | **1891 passed / 1894 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | **40テスト / 4スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12**）— 2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -2587,5 +2587,170 @@ capture 検証を追加して `paypal.ts` は +391 行、テストは 17→40 �
 | Jest スイート数 | 178 | **178**（不変） |
 | paypal.ts Branches | 72.05%（98/136） | **91.91%** |
 | lcov 全体 Branches | 47.48% | **48.00%** |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 027 実行: `placeOrder` のオーバーセルロールバックと PLATFORM クーポン端数吸収を実 DB で固定 (2026-08-04)
+
+#### 概要
+
+improve Round 4 の plan 027 を実行し、`placeOrder` の money-critical な 2 分岐（在庫のアトミック
+減算まわりと PLATFORM クーポンの端数吸収）を testcontainers の実 PostgreSQL で固定した。
+`src/queries/user.ts` は 1 行も変更していない（純追加のテスト作業）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/setup/seed.ts` | `SeedCouponInput` に `scope?: CouponScope` を追加、`storeId` を `string \| null` へ緩和（PLATFORM クーポンは店舗に所有されない） | `ee86ef32` |
+| `tests/integration/setup/query-mocks.ts` | 新規。`requireActual` の三重複を除くための実装透過ヘルパー `actualDeliveryDetails` を集約 | `b0e488b5` |
+| `tests/integration/order-placement.test.ts` | Scenario 7（実減算量）/ 8（オーバーセルロールバック）/ 9（PLATFORM 端数吸収）を追加。6 → 9 シナリオ | `b0e488b5` |
+
+#### 設計上のポイント
+
+- **Scenario 8 の割り込み点**: 事前キャップ `Math.min(quantity, size.quantity)` があるため単純な
+  在庫不足では throw に到達しない。`placeOrder` が `$transaction` の**外**で呼ぶ
+  `getDeliveryDetailsForStoreByCountry` を seam にして、検証通過後・減算前に在庫を 5 → 2 へ
+  横取りすることで `count === 0` 経路を決定論的に再現した。**割り込みを外すと本シナリオだけが
+  落ちる**ことを実測して、空振りテストでないことを確認済み。
+- **プラン本文からの数値の逸脱 1 点**: プランは PLATFORM 10% の総割引を $10.00 と想定していたが、
+  実装の割引基数 `cartTotalPrice` は `item.totalPrice`（**送料込み**）の合計のため実測は **$12.00**。
+- **併せて判明**: 割引率は Int・除数は固定 100 なので `Prisma.Decimal` の除算は必ず有限小数になり、
+  **残差吸収は素朴な各グループ計算と数学的に一致する**（端数吸収分岐は丸め順序をブレさせない
+  ための防御）。Scenario 9 の識別力は「`storeId: null` のクーポンが全グループへ適用される」=
+  PLATFORM 分岐の一意な証明と、割引合計のセント一致にある。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 17 / 2 スイート | **20 / 2 スイート**（order-placement 6 → 9） |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 031 実行: 注文キャンセル/返金の子連動・在庫復元を実 DB で固定 (2026-08-04)
+
+#### 概要
+
+improve Round 5 の plan 031 を実行し、注文確定**後**のライフサイクル（`src/queries/order.ts`）を
+testcontainers の実 PostgreSQL で固定した。plan 027 が固定した在庫**減算**側と対になる
+**復元**側で、これで在庫整合の両側が閉じた。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/setup/seed.ts` | `seedOrderWithGroupAndItem` を追加（Order + OrderGroup + OrderItem を FK 結線。**在庫は触らない**設計） | `b0f5066a` |
+| `tests/integration/order-lifecycle.test.ts` | 新規。6 シナリオ / 8 テスト | `61eacfb1` |
+
+#### 固定した内容と、主張しないこと
+
+- キャンセル/返金の親子連動（親 `PaymentStatus` は "Cancelled"、子 `OrderStatus` は
+  "Canceled" というスペル差も含む）と、在庫が減算前まで戻ること
+- **二重キャンセルの冪等性**: 逐次 2 回でも復元は 1 回ぶんのみ。`Cancelled → Refunded` の
+  再遷移も条件付き `updateMany` の `where` に弾かれる
+- group 単位キャンセルはそのグループの在庫のみ復元し、親 status は混在→`Processing` /
+  全 Canceled→`Canceled` へ集約
+- 非 ADMIN は**両** admin 関数とも拒否され、副作用ゼロ
+- **⚠️ 主張しないこと 2 点**: (a) 並行ケースは「並行ディスパッチの回帰テスト」であって
+  DB 上でトランザクションが重なったことの証明ではない。(b) 並行安全性を固定したのは
+  `updateOrderPaymentStatus`（CAS 済み）のみで、`updateOrderGroupStatusAsAdmin` は
+  read-then-act のままなので**並行二重復元は未解決**（`plans/README.md` の Deferred）
+
+#### 実装上の落とし穴（次の実行者向け）
+
+`OrderStatus` / `PaymentStatus` は `@prisma/client` と `src/lib/types.ts` の**両方に同名で存在**し、
+値が同一なので **Jest は緑のまま `tsc --noEmit` だけが落ちる**。SUT (`order.ts`) と同じ
+`@/lib/types` から取ること。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 20 / 2 スイート | **28 / 3 スイート** |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 032 実行: 決済 webhook の実 DB 冪等性を固定 (2026-08-04)
+
+#### 概要
+
+improve Round 5 の plan 032 を実行し、Stripe / PayPal webhook の冪等性の本体
+（`PaymentDetails.orderId` の unique 制約 + `upsert` の実挙動 + 2 書き込みの原子性）を
+testcontainers の実 PostgreSQL で検証した。unit の両 `route.test.ts` は `@/lib/db` を
+全モックしており、これらは**一度も実行されていなかった**。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/webhook-payment.test.ts` | 新規。Stripe 7 + PayPal 4 = 11 テスト | `9e1682b7` |
+
+#### 🆕 新規 finding（未修正・characterization で固定）
+
+**プロバイダー切替時に `PaymentDetails.amount` / `currency` が更新されない。**
+両 route の `upsert` は `update` 分岐にこの 2 列を持たず `create` 分岐にしかないため、
+Stripe → PayPal の切替後の行は「`paymentMethod: PayPal` なのに `amount` は Stripe の
+**セント値** 9999（正しくは `Order.total` = 110.00）」という**単位混在**で残る。
+CORRECTNESS-05 と同じ単位問題の族で、二重計上・返金額誤りに直結しうる。
+プランの STOP 条件には該当しないため現挙動を Scenario P4 で固定し、修正時に正しく
+赤くなる形にしたうえで `plans/README.md` の Deferred に起票した。
+
+#### 実装上のポイント
+
+- **並行再送は「両方 2xx」も assert する**。`count === 1` だけでは片方が 500 で落ちても
+  緑になり、「冪等に処理した」ではなく「1 本が失敗した」（= Stripe が再配送し続ける）
+  状態を見逃す。冪等性の主張は「両方成功 **かつ** 副作用 1 回」の連言。
+- **原子性の対照（control）は制約を落とした後に置く**。先に置くと
+  `Order.paymentMethod='Stripe'` の行が残り `ADD CONSTRAINT` が
+  `is violated by some row` で落ちる（実際に踏んだ）。
+- **本ファイルのみ `testEnvironment: node`**（docblock）。jsdom には Fetch API の
+  `Request` / `Response` が無く Route Handler を直接呼べない。config は無変更。
+  `structuredClone` も無いため fixture の deep clone は JSON round-trip で行う。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration テスト | 28 / 3 スイート | **39 / 4 スイート** |
+| Jest ユニット/コンポーネント | 1890 passed / 178 スイート | **1890 passed / 178 スイート**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### SonarCloud PR #169 New Code カバレッジ 70% の是正 (2026-08-08)
+
+#### 概要
+
+Stripe webhook の非 USD 拒否分岐が SonarCloud で未カバー扱い（Coverage on New Code 70.0% / 未カバー 2 行・未カバー条件 1）になっていた問題を、ユニット層のテスト追加で解消した。
+
+#### 根本原因
+
+分岐自体は `tests/integration/webhook-payment.test.ts` の Scenario S8 が検証済みだった。しかし `jest.config.js` の `testPathIgnorePatterns` が `tests/integration/` を除外しているため、統合テストの実行結果は `coverage/lcov.info` に載らない。SonarCloud は `sonar-project.properties` 経由でこの lcov のみを読むため、**統合テストだけで守った分岐は New Code カバレッジに算入されない**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/api/webhooks/stripe/route.test.ts` | 非 USD イベントが 400 を返し、`$transaction` / `paymentDetails.upsert` / `order.update` を一切呼ばないことを検証するケースを追加（+1） | `0089f4a4` |
+| `docs/testing/QA_HANDOFF.md` ほか | テスト統計同期・ダッシュボード再生成 | (本コミット) |
+
+`route.ts` の Lines は 87.5% → **90.62%**。残る未カバー行（36 / 97 / 126 / 141 / 147 / 218）はいずれも New Code 外の既存行。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest ユニット/コンポーネント | 1890 passed / 1893 total / 178 スイート | **1891 passed / 1894 total / 178 スイート** |
+| Jest スナップショット | 127 | **127**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |

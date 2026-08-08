@@ -100,12 +100,12 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | S | LOW | — | DONE |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | M | LOW-MED | — | TODO |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | S | LOW | — | DONE（2026-08-04・`c3699b9c`。**プラン本文の baseline が陳腐化しており Drift check に実際に引っかかった** — 実測 40 テスト / Branches 72.05% を起点に 56 テスト / **91.91%** へ。下の実行記録を参照） |
-| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | TODO |
+| [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | DONE（2026-08-04・`ee86ef32`〜`4efed303`。Integration 17 → **20**、order-placement 6 → **9**。**プラン本文の PLATFORM 割引額 $10.00 は実測 $12.00**〔割引基数が送料込みのため〕— 下の実行記録を参照） |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
-| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | TODO |
-| [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | TODO |
+| [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
+| [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | TODO |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
@@ -321,6 +321,143 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > `jest.useFakeTimers({ now })` で固定時刻を敷き `subMonths` / `subYears` の実値と突き合わせる
 > 形へ強化した（実装の `new Date()` と期待値生成が同一時刻を見るため TZ 依存も生じない）。
 >
+> **032 の実行記録（2026-08-04・`9e1682b7`〜`df7c0466`）**
+>
+> **DONE。** `tests/integration/webhook-payment.test.ts` を新設し **11 テスト**（Stripe 7 +
+> PayPal 4）。Integration は **28 → 39 / スイート 3 → 4**（実測 39/39 pass）。
+> `src/app/api/webhooks/**` は 1 行も変更していない。Done criteria の名指し実行ゲート
+> （`bun run test:integration -- -t "concurrent redelivery keeps a single PaymentDetails row"`）は
+> **`Tests: 1 passed`** で充足。
+>
+> **Drift check**: `src/app/api/webhooks/{stripe,paypal}/route.ts` は baseline `1750ef2` から
+> **無変更**（`webhooks/route.ts` = Clerk user-sync 側のみ変更されていたが本プランの対象外）。
+> fixture も無変更。STOP 非該当。
+>
+> **🆕 新規 finding（本プランで発見・未修正）: プロバイダー切替で `PaymentDetails.amount` /
+> `currency` が更新されない。** プラン Step 3 の Scenario P4 は「切替後は `amount` も PayPal 経路の
+> 権威値（`order.total`）に更新される」ことを期待していたが、**実装はそうなっていない** ——
+> 両 route の `upsert` は `update` 分岐に `amount` / `currency` を持たず、**`create` 分岐にしか
+> 無い**。結果、Stripe → PayPal 切替後の行は「`paymentMethod: PayPal` なのに `amount` は
+> Stripe の**セント値** 9999（正しくは 110.00）」という**単位混在**で残る。
+> Deferred の **CORRECTNESS-05（Stripe cents vs PayPal dollars）と同じ単位問題の族**であり、
+> 二重計上・返金額誤りに直結しうる。プランの STOP 条件（S2/P2 が 2 行になる / S3/P3 が
+> 更新されない）には該当しないため、**現挙動を characterization として固定**し
+> （修正が入れば P4 が正しく赤くなる）、下の Deferred 節に本体修正として起票した。
+>
+> **→ 追記（2026-08-07・`c4a6fb41`）: 本体修正済み。** 調査の結果、CORRECTNESS-05 は
+> 同期パスしか直っておらず、**webhook 経路が cents を書き続けていた**ことが判明した
+> （S1 が固定していた「Stripe は cents」という現挙動そのものがバグ）。両 route の
+> `update` 分岐に `amount` / `currency` を追加し、Stripe 側は `order.total` 保存に統一。
+> S1 / P4 の期待値は反転済み（`607c2b88`）で、`bun run test:integration` は 11/11 pass。
+> 既存行の backfill は plan 063 が担当（境界は `c4a6fb41`）。
+>
+> **プラン本文の指示から外れた実装判断 2 点**（いずれも実測に基づく）:
+>
+> 1. **本ファイルのみ `testEnvironment: node`（docblock）。** `jest.integration.config.js` の
+>    既定は jsdom だが、jsdom には Fetch API の `Request` / `Response` グローバルが無く、
+>    Route Handler を直接呼ぶテストが**書けない**（unit の webhook テストが `jest.config.js` の
+>    `testEnvironment: "node"` で動いているのと同じ理由）。プランの STOP 条件は
+>    「config の変更が必要になったら STOP」だが、**config は変更していない** ——
+>    Jest 標準のファイル単位 docblock で上書きしており、本ファイルは DOM を使わないため
+>    副作用もない。`structuredClone` も両環境に無いため、fixture の deep clone は
+>    JSON round-trip にした。
+> 2. **原子性テストの対照（control）配送を、制約 DROP の「後」に移した。** プラン本文は
+>    Arrange の先頭に置く形で書かれていたが、**その順序だと動かない** —— 対照配送が
+>    `Order.paymentMethod = 'Stripe'` の行を残すため、続く `ADD CONSTRAINT` が
+>    `is violated by some row` で失敗する（実際に踏んだ）。対照の目的（「ロールバックされた」と
+>    「そもそも 1 番目も書かれなかった」の区別）は順序に依存しないので、後置で要件を満たす。
+>
+> **並行ケースの主張の限界は plan 031 と同じ**（「並行ディスパッチの回帰テスト」までであり
+> DB 上の重なりの証明ではない）。加えて本プランでは **両配送が 2xx であることも assert**
+> している —— `count === 1` だけでは片方が 500 で落ちても緑になり、「冪等に処理した」ではなく
+> 「**1 本が失敗した**」（= Stripe が失敗側を再配送し続ける）状態を見逃すため。
+> 冪等性の主張は「両方成功 **かつ** 副作用 1 回」の連言である。
+>
+> **031 の実行記録（2026-08-04・`b0f5066a`〜`1c8ec27e`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/order-lifecycle.test.ts` を新設し
+> **6 シナリオ / 8 テスト**。Integration は **20 → 28 / スイート 2 → 3**（実測 28/28 pass）。
+> `src/queries/order.ts` は 1 行も変更していない。**plan 027（減算側）と本プラン（復元側）で
+> 在庫整合の両側が閉じた。**
+>
+> **Drift check**: baseline `1750ef2` から `order.ts` は **+35 / −70 行**動いていたが、
+> 縮小はログの `logError` 統合によるもので、プランが抜粋していた 3 つの検証対象
+> —— `isRestockTerminalOrderStatus` / `restockOrderItems`（`:20-38`）、
+> `updateOrderPaymentStatus` の条件付き `updateMany` + `didTransition`（`:556-606`）、
+> `updateOrderGroupStatusAsAdmin` の read-then-act（`:441-471`）—— は**行番号までほぼ一致**した。
+> STOP には該当せず。
+>
+> **本プランが主張しないこと（重要・そのまま申し送る）**:
+>
+> 1. **「並行実行を証明した」とは書けない。** Scenario 2 の並行ケースはバリア（2 本が揃うまで
+>    ブロック）と `connection_limit >= 2` の明示 `expect` を持つが、これが保証するのは
+>    「2 本がクエリ発行の直前まで揃っていた」ことだけで、解放後に片方が先に完走する実行順でも
+>    緑になる。**価値は「重ならなかった場合に緑になる構成上の穴を塞ぐ」点にある**
+>    （重なりまで示すなら `pg_advisory_xact_lock` / `pg_stat_activity` が要る — プラン本文どおり
+>    本プランでは必須としていない）。
+> 2. **並行安全性を固定したのは `updateOrderPaymentStatus`（CAS 済み・`d0005bb`）のみ。**
+>    `updateOrderGroupStatusAsAdmin` は `findUnique` → 分岐 → `update` の **read-then-act** の
+>    ままで、**並行二重復元は未解決**（本体修正は下の Deferred 節「`updateOrderGroupStatusAsAdmin`
+>    の並行二重復元」に記録済み）。**プラン完了 ≠ ギャップ解消**であり、在庫整合を「検証済み」と
+>    説明する場面では両関数を必ず区別すること。Scenario 5 は「group-level のみ復元」という
+>    **現仕様の characterization** なので、本体修正時には期待値の更新が必要になる。
+>
+> **次の実行者が踏むであろう落とし穴 1 点**: `OrderStatus` / `PaymentStatus` は
+> **`@prisma/client` と `src/lib/types.ts` の両方に同名で存在する**。値（文字列）が同一なので
+> **Jest は緑のまま `tsc --noEmit` だけが落ちる**（本セッションで実際に踏んだ）。SUT である
+> `order.ts` が `@/lib/types` から import しているので、テストも同じ側から取ること
+> （unit の `src/queries/order.test.ts` も同じ理由で `../lib/types` を使っている）。
+> rule 02 の「各コミット時点で `tsc --noEmit` が通ること」は、この種の**実行結果からは
+> 見えない不整合**を捕まえるためのゲートである。
+>
+> **基盤の追加 1 点**: `seedOrderWithGroupAndItem`（`tests/integration/setup/seed.ts`）。
+> **在庫を touch しない設計**にして、減算はテスト本文の
+> `db.size.update({ data: { quantity: { decrement: 3 } } })` に明示させた
+> （「8 → decrement 3 → 5 → restock → 8」という復元の期待値の出どころを読めるようにするため）。
+> plan 027 の `seedCoupon` 拡張とは同一ファイルだが別関数で、両追記は共存している。
+>
+> **027 の実行記録（2026-08-04・`ee86ef32`〜`4efed303`）**
+>
+> **DONE。** Integration は **17 → 20**（`order-placement.test.ts` 6 → **9** シナリオ・スイート数不変。
+> `bun run test:integration` 実測 **20/20 pass / 4.054s**）。`src/queries/user.ts` は 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** baseline `b6591f9` から `user.ts` は
+> **+856 / −645 行**動いていた（Round 14 の冪等性ゲート等）が、プランが STOP 条件に挙げていたのは
+> **形状**の変化であり、条件付き `updateMany` + `count === 0` throw / PLATFORM 分岐
+> （`isPlatformCoupon` / `cumulativePlatformDiscount`）/ 割り込み点となる「トランザクション外」の
+> `getDeliveryDetailsForStoreByCountry` はいずれも健在だった（行番号のみ `:939-950` / `:835-890` /
+> `:747-759` へ移動）。plan 026 が確立した扱い（ケース表は活かし数値だけ実測から再導出）に倣った。
+>
+> **プランからの逸脱 1 点（数値）**: プラン Step 4 は「商品小計 $100.00 → PLATFORM 10% =
+> **$10.00**」を前提にしていたが、実装の割引基数 `cartTotalPrice` は `item.totalPrice`
+> （**送料込み**）の合計であり、実測は $120.00 → **$12.00**。既存 Scenario 4 が
+> 110（= 商品 100 + 送料 10）に 10% を掛けて 99 としているのと同じ規則で、**実装側が正しく
+> プラン本文の算術だけが送料を落としていた**。ケース設計（2 店舗 $33.33 / $66.67・`storeId: null`・
+> `scope: "PLATFORM"`）はそのまま活かし、期待値のみ実測から再導出した。
+>
+> **併せて判明した性質（次の実行者向け）**: 割引率は `Int`・除数は固定 100 なので
+> `Prisma.Decimal` の除算は必ず有限小数になり、**「最終グループが残差を吸収」は素朴な
+> 各グループ 10% と数学的に一致する**（`r×T − Σ r×gᵢ = r×g_last`）。つまり端数吸収分岐は
+> 丸め順序を実行ごとにブレさせないための**防御**であって、数値的な別経路ではない。
+> したがって Scenario 9 の識別力の本体は次の 2 点にある: (a)「`storeId` が null のクーポンなのに
+> **全グループ**へ適用される」= PLATFORM 分岐の一意な証明（`user.ts:870-872` の判定は
+> `isPlatformCoupon || (storeId === cartCoupon?.storeId && …)` の**論理和**なので、クーポンに
+> 店舗を持たせると「STORE 一致の項で通っただけ」の可能性が排除できない）、(b) 割引合計が
+> ちょうど総割引に一致するセント精度の固定。
+>
+> **Scenario 8 は空振りでないことを機械的に確認した。** 割り込み（`mockImplementationOnce` で
+> 在庫を 5 → 2）を一時的に外すと**当該シナリオだけが落ちる**ことを実測してから戻している
+> （rule 02 の Red 規律を、本体を変更できないテスト追加作業に適用する形）。ロールバックの
+> 固定は 3 点 —— Order / OrderGroup / OrderItem がいずれも 0 件、在庫は横取り後の 2 のまま、
+> **カート行も復元されて再試行できる**（Round 14 が入れた冪等性ゲートの `cart.deleteMany` が
+> 巻き戻ることの確認）。
+>
+> **基盤の追加 2 点**: `seedCoupon` に `scope?: CouponScope` を追加し `storeId` を
+> `string | null` へ緩和（`Coupon.scope @default(STORE)` を schema で確認済みなので
+> `undefined` パススルーで既定が入る）。`requireActual` の三重複を除くため
+> `tests/integration/setup/query-mocks.ts` を新設（`jest.mock` の factory 内だけは巻き上げの
+> ためローカル `requireActual` のまま — プラン Step 3 の指示どおり）。
+>
 > **023 / 024 の Status 訂正（Round 13）**: 両者は実装済み（023=`index-products/route.ts` の
 > `MAX_LIMIT`/`MAX_PAGE`/`Number.isFinite` クランプ + `route.test.ts` の正規化ケース、
 > 024=`setUserCountryInCookies/route.ts` の `isCountry()` 検証）だが、Status 表が長らく `TODO` の
@@ -451,7 +588,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO）。本項目を「コード修正が必要」と読まないこと。
+- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) と `c4a6fb41`（2026-08-07）で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**⚠️ `e63474b` が直したのは同期パス `src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**（plan 032 の Scenario S1 が characterization として固定していた）。webhook 側は `c4a6fb41` で `order.total` 保存に統一済み。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO。**カットオーバー境界は `e63474b` ではなく `c4a6fb41`**）。本項目を「コード修正が必要」と読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
@@ -470,6 +607,28 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **TECHDEBT-02** break up `product-details.tsx` (1382-line god component) — L effort, characterization tests first.
 - **TECHDEBT-03** extract `usePaginatedFilteredList` from the 3 profile tables.
 - ~~**Server-side `placeOrder` idempotency** (concurrent double-submit) — deferred from plan 006.~~ → **Round 14 (`824e224`) で解消**。`$transaction` 先頭の `cart.deleteMany({ id, userId })` の削除件数を CAS ゲートにし、カート行を単一使用トークンとして扱う（既存の在庫減算 CAS と同一イディオム）。**残件**: `applyCoupon` の lost-update `$transaction` リファクタは**別事案として未解決**（下の tech-debt 群および `08-open-questions.md` を参照）。
+- ~~**webhook の `upsert` がプロバイダー切替時に `PaymentDetails.amount` / `currency` を更新しない**~~
+  → **`c4a6fb41`（2026-08-07）で解消。** 両 route の `update` 分岐に `amount` / `currency` を追加し、
+  あわせて **Stripe webhook の単位バグ本体**も直した（event の cents ではなく `order.total` を保存。
+  cents を返す `extractAmountAndCurrency` は `extractCurrency` に縮小し、再配線の余地を消した）。
+  plan 032 の Scenario P4 は characterization を解除し、切替後に `amount = ORDER_TOTAL` /
+  `currency = usd` へ更新されることを検証する形に反転済み（`607c2b88`）。
+  **既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) が担当**（TODO のまま）。
+  063 の**カットオーバー境界は `e63474b6` ではなく `c4a6fb41`** —— `e63474b6` が直したのは
+  同期パスだけで、webhook はその後も cents を書き続けていたため（063 Step 1 に訂正記録あり）。
+  以下は発見時の記録:
+  — **[plan 032](032-integration-test-webhook-payment-idempotency.md) の実行中に発見**（2026-08-04 記録）。
+  `src/app/api/webhooks/stripe/route.ts` と `paypal/route.ts` の `paymentDetails.upsert` は、
+  `update` 分岐に **`amount` と `currency` を持たない**（`create` 分岐にしか無い）。そのため同一注文が
+  別プロバイダーで確定し直されると、行は 1 本に保たれるものの
+  **「`paymentMethod: PayPal` なのに `amount` は Stripe が書いたセント値」**という**単位混在**で残る。
+  Stripe 経路は event の `amount`（**cents**）を、PayPal 経路は `order.total`（**ドル建て**）を
+  格納する設計なので、残留値は単位ごと誤る（例: 正しくは `110.00` のところ `9999`）。
+  **CORRECTNESS-05（Stripe cents vs PayPal dollars）と同じ族**で、二重計上・返金額誤りに直結しうる。
+  修正は `update` 分岐にも `amount` / `currency` を含めること（各経路の格納規則は現状のまま）。
+  現挙動は plan 032 の **Scenario P4 が characterization として固定済み**なので、修正時には
+  当該テストが正しく赤くなる（期待値を `ORDER_TOTAL` 側へ反転する）。
+  （↑ここまで発見時の記録。実際に P4 は反転され、本体修正は上記のとおり完了した。）
 - **`updateOrderGroupStatusAsAdmin` の並行二重復元** — deferred from [plan 031](031-integration-test-order-lifecycle-restock.md)（2026-07-31 記録）。`order.ts:441-471` は `findUnique` で `prev.status` を読んでから `update` する **read-then-act** のため行ロックを取らず、並行 2 者が同じ非終端 status を読んで**両方が `restockOrderItems` を実行しうる**。修正は `updateOrderPaymentStatus` と同型の**条件付き `updateMany`（CAS）**への統一（`where` に `status: { notIn: [...] }` を置き `count === 1` の内側でのみ復元 — 前例 `d0005bb`）。plan 031 はテスト追加のみのスコープであり、Scenario 2 が並行安全性を固定しているのは `updateOrderPaymentStatus` 側**のみ**。本項目は**本体修正**として未着手。
 - ~~**重い注文フロー E2E の間欠 120s ハング（サインイン後の商品ページ `goto` タイムアウト）** —
   deferred from [plan 042](042-e2e-signin-helper-repair.md)（2026-08-03 記録）。~~ →
