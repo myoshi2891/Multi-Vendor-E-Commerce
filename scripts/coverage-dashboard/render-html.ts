@@ -136,7 +136,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         target: "tsvector 検索 / レビュー集計 / ロール昇格 (031 の restock・032 の webhook 冪等性は完了)",
         tool: "plans/033〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
         cost: "M",
-        impact: "raw SQL 回帰・評価集計・ロール昇格など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 39→約45 テスト / 4→6 スイート)",
+        impact: "raw SQL 回帰・評価集計・ロール昇格など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 40→約46 テスト / 4→6 スイート)",
     },
     // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
     // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
@@ -222,8 +222,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
     },
     {
-        // plan 063 (2026-07-27 起票): CORRECTNESS-05 の残件。コード修正は e63474b6 で
-        // 完了しているが、それ以前に Stripe 経路が書いた PaymentDetails.amount は
+        // plan 063 (2026-07-27 起票): CORRECTNESS-05 の残件。コード修正は同期パスが
+        // e63474b6、webhook 経路が c4a6fb41 で完了しており、カットオーバー境界は
+        // 後者。それ以前に Stripe 経路が書いた PaymentDetails.amount は
         // minor unit (セント) のまま Decimal(12,2) = ドル建てカラムに残っている。
         // 本番決済データへの UPDATE を伴うため safe-migration skill と人手承認が必須で、
         // dry-run レポート (プラン Step 3) の提示前に UPDATE を打ってはならない。
@@ -231,7 +232,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         // 本エントリと QA_HANDOFF 側プロンプトを同時削除すること。
         priority: "medium",
         title: "plan 063: Stripe 既存決済行の amount backfill",
-        target: "PaymentDetails.amount のうち paymentMethod=Stripe かつ e63474b6 デプロイ前の行",
+        target: "PaymentDetails.amount のうち paymentMethod=Stripe かつ c4a6fb41 デプロイ前の行",
         tool: "plans/063 の自己完結プラン (safe-migration skill 必須・人手承認ゲート付き)",
         cost: "S",
         impact: "修正日をまたぐ売上集計・支払履歴・返金照合が 100 倍ずれた行と正しい行を混在させている状態を解消する (コード側は修正済みで、残るのは履歴データのみ)",

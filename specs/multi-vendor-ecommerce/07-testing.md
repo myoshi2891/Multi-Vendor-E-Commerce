@@ -434,11 +434,13 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 39 integration tests across 4 suites
+- 40 integration tests across 4 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
-  `tests/integration/webhook-payment.test.ts` 11) as of 2026-08-04.
+  `tests/integration/webhook-payment.test.ts` 12) as of 2026-08-08
+  (`a4d01b27` added the non-USD rejection scenario S8, 39 → 40; suite count
+  unchanged. The last full run measured 39/39 pass on 2026-08-04).
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`
@@ -462,10 +464,12 @@
   idempotency machinery itself was never executed): first-event row creation,
   single-row invariant on sequential *and* concurrently dispatched redelivery,
   status transitions updating the same row, 404 without side effects, and
-  `$transaction` rollback when the second write fails. It also pins a known
-  gap as characterization — on provider switch the upsert `update` branch does
-  not carry `amount`/`currency`, so the row keeps the previous provider's
-  amount in the previous provider's unit. This file overrides
+  `$transaction` rollback when the second write fails, and rejection of a
+  non-USD Stripe event with 400 and no writes (S8). The provider-switch
+  scenario was originally a characterization of a known gap (the upsert
+  `update` branch carried no `amount`/`currency`); `c4a6fb41` fixed that
+  branch and `607c2b88` flipped the expectation, so it now asserts that the
+  row is updated to `Order.total` / `usd`. This file overrides
   `testEnvironment` to `node` via docblock because jsdom lacks the Fetch API
   `Request`/`Response` globals that Route Handlers require.
 - Mock patterns:

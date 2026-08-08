@@ -16,7 +16,7 @@
 |------|-----|
 | Jest テスト総数 (unit/component) | **1891** passed / 1894 total / **178 スイート**（177 passed + 1 skipped suite）。2026-08-08 実測（`bun run test`。SonarCloud PR #169 の New Code カバレッジ 70% を受けて `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否のケースを追加し **+1**・スイート不変）。直前は 1890 passed / 1893 total・2026-08-04 実測（plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート、plan 029 で `profile.test.ts` を 34→63 に拡張し +29、plan 026 で `paypal.test.ts` を 40→56 に拡張し +16。029/026 はスイート数不変）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | カバレッジ全体（lcov 2026-08-04 実測・plans 028/029/026 後） | Statements **67.71%** (5862/8657) / Branches **48.00%** (2498/5204) / Functions **55.48%** (921/1660) / Lines **66.79%** (5279/7903)（前回 66.8 / 46.86 / 55.39 / 65.81 — Statements +0.91 / Branches +1.14 / Functions +0.09 / Lines +0.98。内訳は plan 029（`profile.ts` Branches 67.81%→**100%**）と plan 026（`paypal.ts` Branches 72.05%→**91.91%**・Statements/Lines/Functions **100%**）が大半で、plan 028 の country.ts は 19 行の小モジュールなので寄与は小さい。Functions がほぼ動かないのは 3 プランとも既存関数の分岐を埋める作業で新規関数を増やさないため） |
-| Jest Integration テスト総数 | **39** / **4 スイート**（`cart-checkout.test.ts` 11 + `order-placement.test.ts` **9** + `order-lifecycle.test.ts` **8** + `webhook-payment.test.ts` **11**）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-08-04 実測: 39/39 pass**（plan 032 で `webhook-payment.test.ts` を新設し **+11 / スイート +1**。Stripe 7 + PayPal 4。**本ファイルのみ docblock で `testEnvironment: node` に上書き**している —— jsdom には Fetch API の `Request` / `Response` が無く Route Handler を直接呼べないため。config は無変更）。**同日 28/28 pass**（plan 031 で `order-lifecycle.test.ts` を新設し **+8 / スイート +1**。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性〔逐次 + 並行ディスパッチ〕、group 単位キャンセルの親集約、両 admin 関数の認可ガード。**`updateOrderPaymentStatus`（CAS 済み）と `updateOrderGroupStatusAsAdmin`（read-then-act・未対応）は区別すること** —— 並行安全性を固定しているのは前者のみ）。**同日 20/20 pass / 4.054s**（plan 027 で order-placement に Scenario 7 = 在庫の実減算量 / Scenario 8 = オーバーセルロールバック / Scenario 9 = PLATFORM クーポン端数吸収 の 3 本を追加。直前は 17 / order-placement 6）。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
+| Jest Integration テスト総数 | **40** / **4 スイート**（`cart-checkout.test.ts` 11 + `order-placement.test.ts` **9** + `order-lifecycle.test.ts` **8** + `webhook-payment.test.ts` **12**）。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-08-08 計上: 40**（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否の Scenario S8 を追加し **+1 / スイート不変**。Stripe 8 + PayPal 4。ダッシュボードの静的走査と一致。**フルラン実測は 2026-08-04 の 39/39 pass が最新**で、S8 追加後の実行実測はまだ取っていない）。**2026-08-04 実測: 39/39 pass**（plan 032 で `webhook-payment.test.ts` を新設し **+11 / スイート +1**。Stripe 7 + PayPal 4。**本ファイルのみ docblock で `testEnvironment: node` に上書き**している —— jsdom には Fetch API の `Request` / `Response` が無く Route Handler を直接呼べないため。config は無変更）。**同日 28/28 pass**（plan 031 で `order-lifecycle.test.ts` を新設し **+8 / スイート +1**。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性〔逐次 + 並行ディスパッチ〕、group 単位キャンセルの親集約、両 admin 関数の認可ガード。**`updateOrderPaymentStatus`（CAS 済み）と `updateOrderGroupStatusAsAdmin`（read-then-act・未対応）は区別すること** —— 並行安全性を固定しているのは前者のみ）。**同日 20/20 pass / 4.054s**（plan 027 で order-placement に Scenario 7 = 在庫の実減算量 / Scenario 8 = オーバーセルロールバック / Scenario 9 = PLATFORM クーポン端数吸収 の 3 本を追加。直前は 17 / order-placement 6）。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **41 tests/browser**（17 files・3 ブラウザ計 **123**）。**17 files の内訳 = E2E メイン 11 + Visual 2 + a11y 4**（`testDir` が `tests/e2e` 単一のため `--list` は 3 系統を合算する。「E2E メイン 11」の区分は [`COVERAGE_REPORT.md §1`](./COVERAGE_REPORT.md) の定義と一致し、Visual / a11y の内訳は下 2 行が担当）。E2E メインの **11 スペック**（purchase-flow / seller-onboarding / payment-error / search-filter / mobile-responsive / platform-coupon / stock-decrement / country-selector / messages / layout-chrome / security-headers）。Clerk 依存 spec は `CLERK_SECRET_KEY` 未設定時に自動 skip。2026-08-04 実測: 全プロジェクト `bunx playwright test --list` が `Total: 123 tests in 17 files`、`--project=chromium` / `firefox` / `webkit` が**各 41**（3 ブラウザ計は掛け算ではなく実測値。projects は 3 つとも同一 `testDir` を走査するため各ブラウザで件数が一致する）。**2026-08-04 フルラン実測（plan 043 完了後・`bash scripts/e2e/run-local.sh`）: 83 passed / 0 failed / 3 flaky / 37 skipped / 7.4m**。**failed はゼロ**（042/044 完了時点で残っていた visual 3 件を plan 043 が解消）。flaky 3 件（payment-error@chromium / platform-coupon@firefox / layout-chrome@webkit）はいずれもリトライで pass しており **VRT とは無関係の別事案**として残る。所要は従前ベースライン 25.5m から短縮（サインイン後ハングの除去でリトライ消費が消滅）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **2 スペック**（cart / checkout）・**3 テストとも passed**（chromium 限定）。2026-08-04 に plan 043 で再撮影して解消（連続 2 回 green で再現性確認済み）。cart 2 枚は旧ベースラインが dev サーバー時代の 720px（フッター未描画・Next dev インジケータ写り込み）だった陳腐化。**checkout はベースライン陳腐化ではなかった** —— Clerk が client-only のため撮影時に本文が空で、`toHaveScreenshot` の安定判定（100ms 間隔 2 枚の一致）が空画面を「安定」と誤認していた。spec 側に描画完了アンカー（`.cl-signIn-root` + `input[name="identifier"]` の可視）を追加して解決（`15cbca83`、locator は `62b915a4` で `password` → `identifier` に是正 —— ベースラインは `<SignIn />` の初期表示＝識別子入力ステップで、パスワード欄は写っていない） |
@@ -398,15 +398,22 @@ STOP と付記して依頼する）
 #### plan 063: Stripe 既存決済行の `PaymentDetails.amount` backfill 🆕 2026-07-27 起票
 
 CORRECTNESS-05 の残件。コード修正（Stripe 経路が `paymentIntent.amount`（セント）を
-`Decimal(12,2)` = ドル建てカラムへ書いていたバグ）は `e63474b6` で完了済みで、**残るのは
-それ以前に書かれた履歴データのみ**。本番決済データへの `UPDATE` を伴うため、
-`safe-migration` skill と人手承認ゲートが前提。
+`Decimal(12,2)` = ドル建てカラムへ書いていたバグ）は 2 段階で完了しており、**残るのは
+カットオーバー以前に書かれた履歴データのみ**。本番決済データへの `UPDATE` を伴うため、
+`safe-migration` skill と人手承認ゲートが前提。**カットオーバー境界は `c4a6fb41`（2026-08-07・
+webhook 経路を `Order.total` に統一）である** —— `e63474b6`（2026-07-19）が直したのは同期パス
+`src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` はその後も cents を
+書き続けていた。境界を `e63474b6` に取ると、その間に webhook が書いた cents 行を取りこぼす
+（詳細は plan 063 Step 1 の訂正記録）。
 
 ```text
 plans/063-backfill-stripe-payment-amount.md を読んで、プラン記載のステップどおりに実行してください。
 
 ルール:
-- 本体コード（src/queries/stripe.ts / paypal.ts）は変更禁止。コード側は e63474b6 で修正済み。
+- 本体コード（src/queries/stripe.ts / paypal.ts / src/app/api/webhooks/**）は変更禁止。
+  コード側は同期パスが e63474b6、webhook 経路が c4a6fb41 で修正済み。
+- カットオーバー境界は c4a6fb41（webhook が cents を書かなくなった時点）を使う。
+  e63474b6 を境界にすると、その後 webhook が書いた cents 行を取りこぼすため禁止。
 - Step 3 の dry-run レポートを提示して人手承認を得るまで、いかなる UPDATE も実行しない。
 - 候補行の述語は肯定形 paymentMethod = 'Stripe' を使う（否定形は d8f770d2 以前の
   "Paypal" 表記の行を巻き込むため禁止）。
@@ -420,7 +427,8 @@ plans/063-backfill-stripe-payment-amount.md を読んで、プラン記載のス
 
 参考:
 - 起票の経緯: plans/README.md Deferred の CORRECTNESS-05 行
-- コード修正コミット: e63474b6（fix(stripe): store payment amount in dollars ...）
+- コード修正コミット: e63474b6（同期パス: fix(stripe): store payment amount in dollars ...）
+  / c4a6fb41（webhook 経路 = カットオーバー境界: PaymentDetails.amount を Order.total に統一）
 - コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
