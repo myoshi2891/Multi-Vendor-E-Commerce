@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1890 passed / 1893 total across 178 suites (3 skipped), as of 2026-08-04.
+- 1891 passed / 1894 total across 178 suites (3 skipped), as of 2026-08-08.
+  Integration tests are excluded from the default `bun run test` run
+  (`jest.config.js` `testPathIgnorePatterns`), so branches covered only there never reach
+  `coverage/lcov.info` and SonarCloud reports them as uncovered New Code. Every new branch
+  therefore also needs at least one unit-level test (2026-08-08: the non-USD rejection in
+  `src/app/api/webhooks/stripe/route.ts`, +1 test, no new suite).
   Plan 026 took `src/queries/paypal.test.ts` from 40 to 56 tests (+16, no new suite) and
   `paypal.ts` from 72.05% branch coverage to 91.91%, with statements, lines and functions at
   100%. The plan's stated baseline (17 tests / 28.6% branches) was already stale — plan 059's
