@@ -83,13 +83,11 @@ const extractCurrency = (event: Stripe.Event): string => {
 const SUPPORTED_CURRENCY = "usd";
 
 /**
- * Handle Stripe webhook POST requests with signature verification and idempotent
- * Order/PaymentDetails updates for payment_intent.succeeded / payment_intent.payment_failed /
- * charge.refunded events.
+ * Processes Stripe webhook events and synchronizes payment details and order status.
  *
- * @param req - The incoming HTTP Request containing the raw webhook payload
- * @returns 200 on success or ignored event; 400 on signature/metadata failure;
- *          404 if Order not found; 500 on internal error
+ * @param req - The request containing the raw Stripe webhook payload.
+ * @returns A response with status 200 for successful or ignored events, 400 for invalid or unsupported input, 404 when the order is not found, or 500 for internal failures.
+ * @throws Error if `STRIPE_WEBHOOK_SECRET` is not configured.
  */
 export async function POST(req: Request) {
     const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;

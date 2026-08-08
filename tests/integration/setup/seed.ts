@@ -246,19 +246,13 @@ export interface SeedCouponInput {
 }
 
 /**
- * Creates and inserts a coupon record with sensible defaults for testing.
+ * Creates a coupon with configurable scope, discount, validity period, code, and user connections.
  *
- * The returned value is the created Coupon record.
+ * Defaults the code to a unique value, the discount to `10`, and the validity period to one day ago
+ * through one year ahead.
  *
- * Detailed behavior:
- * - `code` defaults to `COUPON-<SUFFIX>` when `input.code` is not provided.
- * - `startDate` defaults to 24 hours in the past and `endDate` defaults to one year from now when not provided.
- * - `discount` defaults to `10` when not provided.
- * - `scope` is passed through as-is; `undefined` means the column is omitted and Prisma applies
- *   the schema default (`@default(STORE)`).
- * - If `input.connectUserIds` is provided and non-empty, the coupon will be connected to those users; otherwise no user connections are made.
- *
- * @param input - SeedCouponInput describing required `storeId` (nullable for PLATFORM coupons) and optional fields (`scope`, `discount`, `startDate`, `endDate`, `code`, `connectUserIds`) and their defaulting behavior
+ * @param input - Coupon data and optional overrides, including the store scope and connected users
+ * @returns The created coupon
  */
 export async function seedCoupon(
     db: PrismaClient,
@@ -456,20 +450,14 @@ export interface SeedOrderInput {
 }
 
 /**
- * Create a minimal placed order: one Order with one OrderGroup and one OrderItem.
+ * Creates a placed order with one order group and one order item for a product size.
  *
- * 在庫復元（restock）の検証用フィクスチャ。`placeOrder` を経由せず注文済み状態を直接作るため、
- * 呼び出し側は必要に応じて `Size.quantity` を注文数量ぶん減算しておくこと
- * （このヘルパーは在庫を触らない）。
+ * The fixture does not modify inventory. Shipping fees are zero, and order totals
+ * are calculated from the size price and requested quantity.
  *
- * 金額はすべて `Prisma.Decimal` のメソッドで組み立てる（`.claude/steering/tech.md` の
- * 金額・数値精度規約により `number` の生演算は使わない）。送料は 0 とし、
- * Order / OrderGroup の `subTotal` と `total` は行合計（`price × quantity`）で一致させる。
- *
- * @param input - 必須: `userId` / `shippingAddressId` / `storeId` / `product` / `variant` / `size`。
- *                任意: `quantity`（default 1）/ `paymentStatus`（default Pending）/
- *                `groupStatus`（default Pending）
- * @returns 作成した `order` / `group` / `item`
+ * @param input - Order details, including the user, shipping address, store, product,
+ * variant, and size; quantity and statuses are optional.
+ * @returns The created order, order group, and order item.
  */
 export async function seedOrderWithGroupAndItem(
     db: PrismaClient,
