@@ -330,6 +330,34 @@ describe("POST /api/webhooks/stripe", () => {
             );
         });
 
+        it("USD 以外の通貨のイベントは 400 を返し、DB へ何も書かない", async () => {
+            // Arrange: PaymentDetails.amount には order.total（USD 建て）が入るため、
+            // event の通貨をそのまま currency へ流すと金額と通貨ラベルが別通貨を指す行になる。
+            // 多通貨はスコープ外（.claude/steering/product.md）なので 400 で拒否し、行を作らない。
+            // ※ 統合テスト Scenario S8 と同一契約だが、統合テストは jest.config.js の
+            //   testPathIgnorePatterns で lcov 対象外のため、ユニット層でも固定する。
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            const event = JSON.parse(
+                JSON.stringify(paymentIntentSucceededFixture)
+            ) as { data: { object: { currency: string } } };
+            event.data.object.currency = "eur";
+            mockConstructEvent.mockReturnValue(event);
+            mockDb.order.findUnique.mockResolvedValue(SUCCESS_ORDER);
+
+            // Act
+            const response = await POST(createStripeRequest(event));
+
+            // Assert
+            expect(response.status).toBe(400);
+            expect(await response.text()).toBe("Unsupported currency");
+            expect(mockDb.$transaction).not.toHaveBeenCalled();
+            expect(mockDb.paymentDetails.upsert).not.toHaveBeenCalled();
+            expect(mockDb.order.update).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+
         it("DB エラー時は 500 を返す", async () => {
             const consoleSpy = jest
                 .spyOn(console, "error")
