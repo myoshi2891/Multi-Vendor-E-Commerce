@@ -9,12 +9,14 @@
  *
  * 実 DB (testcontainers PostgreSQL) で固定する境界:
  *
- *   - **更新経路**: 既存住所を default に更新すると、他住所の default は解除される（正常）
- *   - **新規経路**: 新規 id + `default: true` では解除がスキップされ default が併存する
- *     （**既知バグの characterization** — シナリオ 2 の注記を参照）
+ *   - **更新経路**: 既存住所を default に更新すると、他住所の default は解除される
+ *   - **新規経路**: 新規 id + `default: true` でも解除は走り、default は 1 件に保たれる
+ *     （**TESTS-21 の回帰ガード**。修正前は解除がスキップされ 2 件併存していた — plan 064）
  *   - **IDOR 防御の実体**: 他ユーザーの住所 id を渡すと所有権 `findFirst` が null になり、
  *     同一 id での create が **PK 一意制約違反 (P2002)** で reject される。silent overwrite には
  *     ならない
+ *   - **原子性**: その reject 時、攻撃者自身の default 解除も同一トランザクションで
+ *     ロールバックされる（拒否されたのに副作用が残る状態を作らない）
  *   - 未認証時の拒否と副作用なし
  *
  * 関連:
@@ -104,29 +106,39 @@ describe("upsertShippingAddress — default フラグの不変条件", () => {
         expect(await countDefaults(ownerId)).toBe(1);
     });
 
-    it("シナリオ2: 新規住所を default 付きで作成すると既存 default が残存し 2 件併存する（既知バグの characterization）", async () => {
+    it("シナリオ2: 新規住所を default 付きで作成すると既存 default が解除され 1 件のみになる", async () => {
         // Arrange
         mockAuthAs(ownerId);
         const newId = randomUUID();
 
-        // Act — 新規 id なので実装の findUnique が null を返し、他住所の default 解除がスキップされる
+        // Act — UI は新規住所に v4() の id を採番する。その経路でも解除が走ること
         await expect(
             upsertShippingAddress({ ...addressA, id: newId, default: true })
         ).resolves.toMatchObject({ id: newId, default: true });
 
         // Assert
         //
-        // TODO(characterization): 既知バグ TESTS-21。修正時にこの期待値を 1 に反転する。
-        //
-        // ⚠️ 2 は「正しい期待値」ではない。本来の不変条件は
-        //    **「1 ユーザーにつき default: true は最大 1 件」** である
-        //    （address.list.tsx の `addresses.find((a) => a.default)` が最初の 1 件を採るため、
-        //     2 件併存するとどちらが選ばれるかが行順に依存し非決定になる）。
-        //    ここで固定しているのは現在のバグ挙動であり、修正（新規経路にも解除を追加し
-        //    updateMany + create を $transaction 化する）と同時に **必ず 1 へ反転させる**。
-        //    出典: plans/audit/findings-14-integration-coverage-r6.md の TESTS-21
-        expect(await countDefaults(ownerId)).toBe(2);
-        expect(await db.shippingAddress.count({ where: { userId: ownerId } })).toBe(3);
+        // 回帰ガード (TESTS-21 / plan 064)。修正前の実装は解除を
+        // `findUnique({ where: { id: address.id } })` が非 null であることに条件付けており、
+        // **新規 id では常に null → 解除が丸ごとスキップされ default が 2 件併存**した。
+        // 2 件あると address.list.tsx の `addresses.find((a) => a.default)` がどちらを
+        // 拾うかが物理行順依存になり、配送先の自動選択が非決定になる。
+        // この期待値は 1 以外に緩めてはならない。
+        expect(await countDefaults(ownerId)).toBe(1);
+
+        const created = await db.shippingAddress.findUnique({
+            where: { id: newId },
+        });
+        expect(created?.default).toBe(true);
+
+        const previous = await db.shippingAddress.findUnique({
+            where: { id: addressA.id },
+        });
+        expect(previous?.default).toBe(false);
+
+        expect(
+            await db.shippingAddress.count({ where: { userId: ownerId } })
+        ).toBe(3);
     });
 
     it("シナリオ3: 他ユーザーの住所 id の上書きは PK 衝突で reject され、被害者の行は無傷のまま", async () => {
@@ -145,6 +157,11 @@ describe("upsertShippingAddress — default フラグの不変条件", () => {
         });
         expect(victim?.userId).toBe(ownerId);
         expect(victim?.firstName).toBe(addressA.firstName);
+        // default も無傷であること。攻撃ペイロードは `default: true` を含むため、
+        // 実装の「他住所の default 解除」updateMany が userId でスコープされて
+        // いなければ、**PK 衝突で reject される前に**被害者の default が落ちる。
+        // 拒否されたことだけを見ていると、この副作用は素通りする。
+        expect(victim?.default).toBe(true);
         expect(
             await db.shippingAddress.count({ where: { userId: attacker.id } })
         ).toBe(0);
@@ -160,6 +177,34 @@ describe("upsertShippingAddress — default フラグの不変条件", () => {
             upsertShippingAddress({ ...addressB, default: true })
         ).rejects.toThrow("Unauthenticated.");
         expect(await db.shippingAddress.count()).toBe(before);
+        expect(await countDefaults(ownerId)).toBe(1);
+    });
+
+    it("シナリオ5: create が PK 衝突で失敗すると攻撃者自身の default 解除もロールバックされる", async () => {
+        // Arrange — 攻撃者にも default 住所を 1 件持たせる
+        const attacker = await seedUser(db);
+        const attackerAddress = await seedShippingAddress(db, {
+            userId: attacker.id,
+            countryId,
+            overrides: { default: true },
+        });
+        mockAuthAs(attacker.id);
+
+        // Act — 被害者の id で default: true を送る。所有権 findFirst は null なので
+        // 解除 updateMany が走った直後に create が P2002 で落ちる
+        await expect(
+            upsertShippingAddress({ ...addressA, default: true })
+        ).rejects.toMatchObject({ code: "P2002" });
+
+        // Assert — 解除と create が同一トランザクションに無ければ、**拒否されたのに
+        // 攻撃者自身の default だけが落ちて 0 件になる**（副作用が残る）。
+        // シナリオ3 の victim?.default は userId スコープだけでも通るため、
+        // ロールバックを立証しているのはこのシナリオだけである。
+        const own = await db.shippingAddress.findUnique({
+            where: { id: attackerAddress.id },
+        });
+        expect(own?.default).toBe(true);
+        expect(await countDefaults(attacker.id)).toBe(1);
         expect(await countDefaults(ownerId)).toBe(1);
     });
 });
