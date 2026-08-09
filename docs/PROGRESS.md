@@ -2965,3 +2965,42 @@ default が 2 件併存していた。2 件あると `address.list.tsx:21` の `
 | Integration スイート数 | 8 | **8**（不変） |
 | テストファイル総数（ダッシュボード） | 203 | **203**（不変・新規ファイルなし） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 045 の実行 — ゲスト導線 E2E（TESTS-33） (2026-08-09)
+
+#### 概要
+
+認証不要のゲスト導線（compare / track-order / offers / 静的ページ）の E2E を新設した。
+`plans/README.md` の Status 表で P2 かつ依存ゼロだったため、E2E トラックの先頭として着手。
+`src/` は 1 行も変更していない（E2E シード拡張とテスト追加のみ）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/seed/constants.ts` / `seed-e2e.ts` | OfferTag を 1 件シードし productB に紐付け（url のみワーカーサフィックス） | `eaac5c06` |
+| `tests/e2e/guest-flows.spec.ts` | 新規 6 テスト（compare 2 / track-order 2 / offers 1 / 静的ページ 1） | `515a736f` |
+
+#### 実装との突き合わせで判明した 2 点（プラン本文からの逸脱）
+
+1. 商品カードの `data-testid="product-card-<slug>"` は `<Link>` に付いており、アクションボタンは
+   `group-hover` オーバーレイ内＝ Link の**外**にある。カード単位のスコープは testid 配下ではなく
+   **group コンテナ**で取る必要がある（`page` 直下だと複数カードで strict mode violation）。
+2. `OfferTag.url` だけがワーカーサフィックス付きで **name は全ワーカー共通**のため、/offers の
+   見出しは一意な **href でスコープしてから**文言を検証する（過去 run のタグが upsert で残る）。
+
+識別力は 2 箇所（compare の件数期待・`/contact` の見出し）を意図的に崩し、
+**その 2 テストだけが落ちる**ことを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 41 tests/browser・17 files（計 123） | **47 tests/browser・18 files**（計 **141**） |
+| E2E メインスペック | 11 | **12**（+ `guest-flows.spec.ts`） |
+| Jest テスト総数 (unit/component) | 1894 | **1894**（不変） |
+| Integration テスト総数 | 66 | **66**（不変） |
+| テストファイル総数（ダッシュボード） | 203 | **204** |
+| 型エラー | 0 件 | **0 件** |
