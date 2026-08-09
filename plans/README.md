@@ -118,14 +118,14 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
-| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
+| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
-| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
+| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
@@ -141,6 +141,90 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **052 の実行記録（2026-08-09・`df4d4f7e`〜`f685271d`）**
+>
+> **DONE。** `tests/e2e/a11y/` に `browse` / `product` / `cart` を新設（各 1 テスト）。
+> E2E は **47 → 50 tests/browser / 18 → 21 files / 3 ブラウザ計 141 → 150**、
+> a11y スペックは 4 → **7** でスイート **7 passed**（chromium）。Step 0 の前提
+> （042 Step 4 の `aria-label`）と Drift check（`git diff --stat 99ede89..HEAD`）はいずれも
+> クリアで、`tests/e2e/a11y/` は無変更だった。
+>
+> **Step 2 で STOP 条件に該当した（`color-contrast` 以外の違反を検出）。** 報告のうえ
+> オペレーター承認を得て、**プランが out of scope としていた `src/` の修正までスコープを
+> 拡大**した（`df4d4f7e`）。検出内容:
+>
+> | ページ | rule | impact | 発生元 |
+> |---|---|---|---|
+> | `/browse` `/product` | `label` | critical | `sort.tsx` の `<label htmlFor="">` が空文字で input と未接続 |
+> | `/product` | `button-name` | critical | `quantity-selector.tsx` の数量 +/- がアイコンのみ |
+> | `/product` | `label` | critical | `quantity-selector.tsx` の数量 `<input readOnly>` |
+> | `/product` | `list` + `listitem` | serious | `categories-menu.tsx` の `<ul>` 直下が `<li>` でなく `<Link>` |
+>
+> **`disabled` / `readOnly` でも axe はラベルを要求する**（スクリーンリーダーは読み上げる）
+> 点が実装側の盲点だった。ID は静的値ではなく `useId()` で採番している
+> （`quantity-selector.tsx` では**早期リターンより前**に置くこと —— 後ろに置いて
+> `react-hooks/rules-of-hooks` で lint が赤になった）。
+>
+> **プラン本文からの逸脱 1 点**: `/browse` の readinessLocator はプラン記載の prefix セレクタ
+> `[data-testid^="product-card-"]` ではなく **seed slug 完全一致の testid** を使う。prefix は
+> カード内の `product-card-price`（`product-price.tsx:112`）にも当たり、`.first()` が
+> カードを掴めるかどうかが描画順依存になるため。`guest-flows.spec.ts:62` と同じ形。
+>
+> **副産物（a11y とは別件のバグ）**: axe の html ダンプから `categories-menu.tsx` の href
+> テンプレート末尾に余分な `}`（`` ?category=${category.url}} ``）があるのを発見し除去した。
+>
+> **ドリフト発見**: プラン本文の「home（`/`）は OI-9 未解消のため対象外」は執筆時点
+> （2026-07-12）の誤りで、**OI-9 は 2026-06-06 に解消済み**（`c196e3d5`）。
+> `tests/e2e/a11y/home.spec.ts` は依存なしで着手できる（a11y README / QA_HANDOFF /
+> `render-html.ts` の NEXT_ACTIONS に記録済み）。
+>
+> **回帰**: a11y 7 passed / Jest **1894 passed**（不変）/ VRT 3 passed /
+> purchase-flow + guest-flows 11 passed / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors。
+
+> **045 の実行記録（2026-08-09・`eaac5c06`〜`515a736f`）**
+>
+> **DONE。** `tests/e2e/guest-flows.spec.ts` を新設し **6 テスト**（compare 2 / track-order 2 /
+> offers 1 / 静的ページ 1）。E2E は **41 → 47 tests/browser / 17 → 18 files / 3 ブラウザ計
+> 123 → 141**、E2E メインスペックは 11 → **12**。`src/` は 1 行も変更していない。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は**空**で、
+> `OfferTag.url` の `@unique`・compare/track-order/静的ページの文言もプラン本文と一致した。
+>
+> **プラン本文からの逸脱 2 点（いずれもセレクタの取り方。プランの意図は保持している）**:
+>
+> 1. **compare ボタンのスコープを testid ではなく group コンテナで取った。** プランは
+>    `card.getByRole("button", { name: "Add to compare" })` を指示していたが、
+>    `data-testid="product-card-<slug>"` は **`<Link>` に付いており、アクションボタンは
+>    その Link の外**（`group-hover:block` の兄弟オーバーレイ内・`product-card.tsx:103-141`）。
+>    testid 配下では**ボタンが 1 つも見つからない**。`page.locator("div.group").filter({ has: cardLink })`
+>    でカードを取り直した。プランが警告していた「page 直下で取ると strict mode violation か
+>    別商品を押す」という危険は、この形でも回避できている。
+> 2. **offers の見出しをリンクの href でスコープしてから検証した。** `OfferTag.url` は
+>    globally unique なのでワーカーサフィックスを付けたが、**name は全ワーカー共通**のまま
+>    （既存 seed の慣行）。/offers には過去 run のタグも upsert で残るため、
+>    `page.getByRole("heading", { name })` 直引きは strict mode violation になりうる。
+>
+> **識別力を機械的に確認した。** compare の `toHaveCount(1)` を 2 に、`/contact` の期待見出しを
+> `About` に崩すと**その 2 テストだけが落ちる**ことを実測してから戻している
+> （plan 033 / 036 / 040 と同じ扱い）。
+>
+> **トグル確認は toast ではなく `aria-pressed` を見ている。** toast は自動消滅するため
+> 時間依存になる。状態属性なら遅い WebKit でも同じ判定になり、実際 3 ブラウザとも
+> リトライなしで green だった。
+>
+> **本プランが主張しないこと**: (1) compare の上限 4 件の境界はスコープ外（プラン本文の
+> 判断どおり。追加するなら toast ではなく `aria-pressed` で assert すること）、
+> (2) track-order の**成功系**（実在注文の照会）は検証していない —— 6 テストはいずれも
+> not-found / バリデーションの異常系とゲスト表示のみ、(3) フルラン（全 spec × 3 ブラウザ）は
+> 再取得していない。E2E 全体の最新フルラン実測は **2026-08-04 の 83 passed / 0 failed /
+> 3 flaky / 37 skipped** のままである。
+>
+> **次の実行者への申し送り**: 本プランが `tests/e2e/seed/`（`constants.ts` + `seed-e2e.ts`）に
+> OfferTag を追加したため、**plan 046 は先にこの diff を取り込むこと**（プラン 045 の
+> Maintenance notes が予告していたコンフリクト源が実際に生じている）。
+>
+> 統計: Jest unit **1894**（不変）、Integration **66**（不変）、ダッシュボード集計
+> **203 → 204**。docs 同期は `0c990251`。
+>
 > **064 の実行記録（2026-08-09・`cbd32067` + `433ffd4c`）**
 >
 > **DONE（TESTS-21 の remediation 完了）。** `upsertShippingAddress` が不変条件

@@ -2965,3 +2965,86 @@ default が 2 件併存していた。2 件あると `address.list.tsx:21` の `
 | Integration スイート数 | 8 | **8**（不変） |
 | テストファイル総数（ダッシュボード） | 203 | **203**（不変・新規ファイルなし） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 045 の実行 — ゲスト導線 E2E（TESTS-33） (2026-08-09)
+
+#### 概要
+
+認証不要のゲスト導線（compare / track-order / offers / 静的ページ）の E2E を新設した。
+`plans/README.md` の Status 表で P2 かつ依存ゼロだったため、E2E トラックの先頭として着手。
+`src/` は 1 行も変更していない（E2E シード拡張とテスト追加のみ）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/seed/constants.ts` / `seed-e2e.ts` | OfferTag を 1 件シードし productB に紐付け（url のみワーカーサフィックス） | `eaac5c06` |
+| `tests/e2e/guest-flows.spec.ts` | 新規 6 テスト（compare 2 / track-order 2 / offers 1 / 静的ページ 1） | `515a736f` |
+
+#### 実装との突き合わせで判明した 2 点（プラン本文からの逸脱）
+
+1. 商品カードの `data-testid="product-card-<slug>"` は `<Link>` に付いており、アクションボタンは
+   `group-hover` オーバーレイ内＝ Link の**外**にある。カード単位のスコープは testid 配下ではなく
+   **group コンテナ**で取る必要がある（`page` 直下だと複数カードで strict mode violation）。
+2. `OfferTag.url` だけがワーカーサフィックス付きで **name は全ワーカー共通**のため、/offers の
+   見出しは一意な **href でスコープしてから**文言を検証する（過去 run のタグが upsert で残る）。
+
+識別力は 2 箇所（compare の件数期待・`/contact` の見出し）を意図的に崩し、
+**その 2 テストだけが落ちる**ことを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 41 tests/browser・17 files（計 123） | **47 tests/browser・18 files**（計 **141**） |
+| E2E メインスペック | 11 | **12**（+ `guest-flows.spec.ts`） |
+| Jest テスト総数 (unit/component) | 1894 | **1894**（不変） |
+| Integration テスト総数 | 66 | **66**（不変） |
+| テストファイル総数（ダッシュボード） | 203 | **204** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 052 の実行 — a11y スキャンをストアフロント主要ページへ拡大（TESTS-43） (2026-08-09)
+
+#### 概要
+
+axe（WCAG 2.1 AA）スキャンの対象が認証系 4 ページのみで、顧客の滞在時間が最も長い
+ゲストページ（browse / 商品詳細 / cart）に検出経路が無かった。3 spec を追加したところ
+**初回スキャンで critical 3 種 / serious 2 種の実違反を検出**したため、オペレーター承認の
+うえプランのスコープを拡大して `src/` を修正し、green 化した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/browse-page/sort.tsx` | 空の `htmlFor` を `useId()` 由来の ID で input と接続（`label` / critical） | `df4d4f7e` |
+| `src/components/store/product-page/quantity-selector.tsx` | +/- ボタンに `aria-label`、数量 input に `aria-labelledby`（`button-name` / `label` ともに critical） | `df4d4f7e` |
+| `src/components/store/layout/categories-header/categories-menu.tsx` | `<ul>` 直下を `<li>` に是正（`list` / `listitem` / serious）。併せて href 末尾の余分な `}` を除去 | `df4d4f7e` |
+| `tests/e2e/a11y/{browse,product,cart}.spec.ts` | WCAG 2.1 AA スキャン 3 spec を新設（chromium 限定ゲート + `color-contrast` 既知負債 disable） | `e0cdb735` |
+
+**検証**: a11y スイート **7 passed**（chromium）/ Jest **1894 passed**（不変）/ VRT **3 passed** /
+purchase-flow + guest-flows **11 passed** / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors。
+
+**プランからの逸脱 2 点**: (1) `/browse` の readinessLocator はプラン記載の prefix セレクタ
+`[data-testid^="product-card-"]` ではなく seed slug 完全一致の testid を使う（prefix はカード内
+`product-card-price` にも当たり、描画順依存の脆い待機になるため）、(2) `src/` は out of scope と
+されていたが、実違反の検出を受けてオペレーター承認のうえ拡大した。
+
+**ドリフト発見**: plan 052 本文の「home（`/`）は OI-9 未解消のため対象外」は執筆時点
+（2026-07-12）の誤りで、**OI-9 は 2026-06-06 に解消済み**（`c196e3d5`）。
+`tests/e2e/a11y/home.spec.ts` の追加は依存なしで着手できる。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 47 tests/browser・18 files（計 141） | **50 tests/browser・21 files**（計 **150**） |
+| Playwright a11y | 4 スペック | **7 スペック**（+ browse / product / cart） |
+| E2E メインスペック | 12 | **12**（不変。a11y は別カテゴリ計上） |
+| Jest テスト総数 (unit/component) | 1894 | **1894**（不変） |
+| Integration テスト総数 | 66 | **66**（不変） |
+| テストファイル総数（ダッシュボード） | 204 | **207** |
+| 型エラー | 0 件 | **0 件** |

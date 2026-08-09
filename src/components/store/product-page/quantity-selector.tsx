@@ -2,7 +2,7 @@ import { useCartStore } from '@/cart-store/useCartStore'
 import useFromStore from '@/hooks/useFromStore'
 import { CartProductType } from '@/lib/types'
 import { Minus, Plus } from 'lucide-react'
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useEffect, useId, useMemo } from 'react'
 
 interface QuantitySelectorProps {
     productId: string
@@ -44,6 +44,11 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
         return stock
     }, [cart, productId, variantId, sizeId, stock])
 
+    // 可視ラベル "Select quantity" を input のアクセシブル名として参照させる ID。
+    // 商品ページに複数描画されても衝突しないよう useId で一意化する。
+    // フックは早期リターン（下の !sizeId 分岐）より前に置くこと。
+    const quantityLabelId = useId()
+
     // If no sizeId is provided, return null to prevent rendering the component
     // if (!sizeId) return null
     if (!sizeId) {
@@ -72,7 +77,10 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
         <div className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2">
             <div className="flex w-full items-center justify-between gap-x-5">
                 <div className="grow">
-                    <span className="block text-xs text-gray-500">
+                    <span
+                        id={quantityLabelId}
+                        className="block text-xs text-gray-500"
+                    >
                         Select quantity
                     </span>
                     <span className="block text-xs text-gray-500">
@@ -81,6 +89,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                     </span>
                     <input
                         type="number"
+                        aria-labelledby={quantityLabelId}
                         className="w-full border-0 bg-transparent p-0 text-gray-800 focus:outline-0"
                         min={1}
                         value={
@@ -96,6 +105,8 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                 </div>
                 <div className="flex items-center justify-end gap-x-1.5">
                     <button
+                        type="button"
+                        aria-label="Decrease quantity"
                         onClick={handleDecrease}
                         className="inline-flex size-6 items-center justify-center gap-x-2 rounded-full border border-gray-200 bg-white text-sm font-medium shadow-sm focus:bg-gray-50 focus:outline-none disabled:pointer-events-none disabled:opacity-50"
                         disabled={quantity === 1}
@@ -103,6 +114,8 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
                         <Minus className="w-3" />
                     </button>
                     <button
+                        type="button"
+                        aria-label="Increase quantity"
                         onClick={handleIncrease}
                         className="inline-flex size-6 items-center justify-center gap-x-2 rounded-full border border-gray-200 bg-white text-sm font-medium shadow-sm focus:bg-gray-50 focus:outline-none disabled:pointer-events-none disabled:opacity-50"
                         disabled={quantity >= maxQty}
