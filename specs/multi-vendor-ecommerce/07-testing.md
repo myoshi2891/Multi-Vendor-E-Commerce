@@ -40,8 +40,14 @@
   the 20 implementation modules, restoring the CLAUDE.md invariant that every server action is
   unit-tested. The 2026-08-03 entry (1841 / 1844 across 177 suites) itself corrected a 12-test
   drift that predated plans 042 / 051.
-- Playwright E2E: 47 tests per browser across 18 files (141 total over chromium/firefox/webkit),
-  as of 2026-08-09 — up 6 from `tests/e2e/guest-flows.spec.ts` (plan 045, guest journeys:
+- Playwright E2E: 50 tests per browser across 21 files (150 total over chromium/firefox/webkit),
+  as of 2026-08-09 — up 3 from the a11y specs `tests/e2e/a11y/{browse,product,cart}.spec.ts`
+  (plan 052, WCAG 2.1 AA scans of the guest storefront). All a11y specs are gated to chromium,
+  so the firefox/webkit copies are skipped by design. The first scan surfaced real violations
+  (3 critical, 2 serious) in `sort.tsx`, `quantity-selector.tsx` and `categories-menu.tsx`,
+  which were fixed in the same change set; the suite is 7 passed on chromium.
+  The previous total was 47 per browser across 18 files (141 total), as of 2026-08-09 —
+  up 6 from `tests/e2e/guest-flows.spec.ts` (plan 045, guest journeys:
   compare / track-order / offers / static pages). The spec needs no Clerk session, so it runs
   regardless of the auth-dependent suites' state; measured 6 passed on chromium and 18 passed
   across the three browsers with zero flakes.
