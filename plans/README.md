@@ -125,7 +125,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
-| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
+| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
@@ -140,6 +140,46 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **052 の実行記録（2026-08-09・`df4d4f7e`〜`f685271d`）**
+>
+> **DONE。** `tests/e2e/a11y/` に `browse` / `product` / `cart` を新設（各 1 テスト）。
+> E2E は **47 → 50 tests/browser / 18 → 21 files / 3 ブラウザ計 141 → 150**、
+> a11y スペックは 4 → **7** でスイート **7 passed**（chromium）。Step 0 の前提
+> （042 Step 4 の `aria-label`）と Drift check（`git diff --stat 99ede89..HEAD`）はいずれも
+> クリアで、`tests/e2e/a11y/` は無変更だった。
+>
+> **Step 2 で STOP 条件に該当した（`color-contrast` 以外の違反を検出）。** 報告のうえ
+> オペレーター承認を得て、**プランが out of scope としていた `src/` の修正までスコープを
+> 拡大**した（`df4d4f7e`）。検出内容:
+>
+> | ページ | rule | impact | 発生元 |
+> |---|---|---|---|
+> | `/browse` `/product` | `label` | critical | `sort.tsx` の `<label htmlFor="">` が空文字で input と未接続 |
+> | `/product` | `button-name` | critical | `quantity-selector.tsx` の数量 +/- がアイコンのみ |
+> | `/product` | `label` | critical | `quantity-selector.tsx` の数量 `<input readOnly>` |
+> | `/product` | `list` + `listitem` | serious | `categories-menu.tsx` の `<ul>` 直下が `<li>` でなく `<Link>` |
+>
+> **`disabled` / `readOnly` でも axe はラベルを要求する**（スクリーンリーダーは読み上げる）
+> 点が実装側の盲点だった。ID は静的値ではなく `useId()` で採番している
+> （`quantity-selector.tsx` では**早期リターンより前**に置くこと —— 後ろに置いて
+> `react-hooks/rules-of-hooks` で lint が赤になった）。
+>
+> **プラン本文からの逸脱 1 点**: `/browse` の readinessLocator はプラン記載の prefix セレクタ
+> `[data-testid^="product-card-"]` ではなく **seed slug 完全一致の testid** を使う。prefix は
+> カード内の `product-card-price`（`product-price.tsx:112`）にも当たり、`.first()` が
+> カードを掴めるかどうかが描画順依存になるため。`guest-flows.spec.ts:62` と同じ形。
+>
+> **副産物（a11y とは別件のバグ）**: axe の html ダンプから `categories-menu.tsx` の href
+> テンプレート末尾に余分な `}`（`` ?category=${category.url}} ``）があるのを発見し除去した。
+>
+> **ドリフト発見**: プラン本文の「home（`/`）は OI-9 未解消のため対象外」は執筆時点
+> （2026-07-12）の誤りで、**OI-9 は 2026-06-06 に解消済み**（`c196e3d5`）。
+> `tests/e2e/a11y/home.spec.ts` は依存なしで着手できる（a11y README / QA_HANDOFF /
+> `render-html.ts` の NEXT_ACTIONS に記録済み）。
+>
+> **回帰**: a11y 7 passed / Jest **1894 passed**（不変）/ VRT 3 passed /
+> purchase-flow + guest-flows 11 passed / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors。
 
 > **045 の実行記録（2026-08-09・`eaac5c06`〜`515a736f`）**
 >
