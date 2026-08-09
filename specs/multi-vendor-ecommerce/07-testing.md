@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1894 passed / 1897 total across 178 suites (3 skipped), as of 2026-08-09.
+- 1895 passed / 1898 total across 178 suites (3 skipped), as of 2026-08-09.
   Integration tests are excluded from the default `bun run test` run
   (`jest.config.js` `testPathIgnorePatterns`), so branches covered only there never reach
   `coverage/lcov.info` and SonarCloud reports them as uncovered New Code. Every new branch
