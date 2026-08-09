@@ -82,12 +82,13 @@ export default function CategoriesMenu({
                     )}
                 >
                     {categories.map((category) => (
-                        <Link
-                            key={category.id}
-                            href={`/browse?category=${category.url}}`}
-                            className="text-[#222]"
-                        >
-                            <li className="relative m-0 flex items-center p-3 pl-6 hover:bg-white">
+                        // <ul> の直下は <li> でなければならない（WCAG 1.3.1 /
+                        // axe: list, listitem）。<Link> は <li> の内側に置く。
+                        <li key={category.id} className="m-0">
+                            <Link
+                                href={`/browse?category=${category.url}`}
+                                className="relative flex items-center p-3 pl-6 text-[#222] hover:bg-white"
+                            >
                                 <Image
                                     src={category.image}
                                     alt={category.name}
@@ -99,8 +100,8 @@ export default function CategoriesMenu({
                                 <span className="ml-2 line-clamp-2 overflow-hidden break-words text-sm font-normal text-main-primary">
                                     {category.name}
                                 </span>
-                            </li>
-                        </Link>
+                            </Link>
+                        </li>
                     ))}
                 </ul>
             </div>

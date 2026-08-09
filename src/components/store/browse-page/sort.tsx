@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const sortArray = [
     {
@@ -45,6 +45,10 @@ export default function ProductSort() {
 
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
+    // label と input を紐付ける ID。静的 ID だと同一ページに Sort が複数描画された
+    // 際に衝突するため、React の useId で一意化する（SSR/CSR で同値）。
+    const sortInputId = useId();
+
     return (
         <div className="duration-[30ms] relative w-full transition-all">
             <div className="relative inline-block pr-[50px]">
@@ -61,12 +65,13 @@ export default function ProductSort() {
                                     <div className="relative inline-flex w-full">
                                         <div className="relative">
                                             <span className="duration-[20ms] absolute top-0 flex h-full w-[70px] items-center justify-center transition-all">
-                                                <label htmlFor="">
+                                                <label htmlFor={sortInputId}>
                                                     Sort by
                                                 </label>
                                             </span>
                                         </div>
                                         <input
+                                            id={sortInputId}
                                             type="text"
                                             disabled
                                             value={sort}
