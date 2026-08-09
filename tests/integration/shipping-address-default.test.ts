@@ -207,4 +207,23 @@ describe("upsertShippingAddress — default フラグの不変条件", () => {
         expect(await countDefaults(attacker.id)).toBe(1);
         expect(await countDefaults(ownerId)).toBe(1);
     });
+
+    it("シナリオ6: アプリを迂回して 2 件目の default を立てると DB の部分 unique index が拒否する", async () => {
+        // Arrange / Act — upsertShippingAddress を通さず直接 update する。
+        // アプリ層の tx は「この関数を通る書き込み」しか守らないため、シーダー・
+        // 管理画面・手動 SQL などの別経路に対する最終防衛線として
+        // `CREATE UNIQUE INDEX ... ("userId") WHERE "default"` を張っている
+        // （prisma/migrations/20260809064416_add_shipping_address_single_default_index）。
+        //
+        // Assert — index が失われた場合、この update は素通りして 2 件併存に戻る。
+        // つまり本シナリオは「index がまだ存在すること」の回帰ガードである。
+        await expect(
+            db.shippingAddress.update({
+                where: { id: addressB.id },
+                data: { default: true },
+            })
+        ).rejects.toMatchObject({ code: "P2002" });
+
+        expect(await countDefaults(ownerId)).toBe(1);
+    });
 });
