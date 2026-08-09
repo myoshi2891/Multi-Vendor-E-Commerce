@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1891 passed / 1894 total across 178 suites (3 skipped), as of 2026-08-08.
+- 1894 passed / 1897 total across 178 suites (3 skipped), as of 2026-08-09.
   Integration tests are excluded from the default `bun run test` run
   (`jest.config.js` `testPathIgnorePatterns`), so branches covered only there never reach
   `coverage/lcov.info` and SonarCloud reports them as uncovered New Code. Every new branch
@@ -434,26 +434,35 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 64 integration tests across 8 suites
+- 66 integration tests across 8 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
   `tests/integration/webhook-payment.test.ts` 12 +
   `tests/integration/search-products.test.ts` 9 +
   `tests/integration/product-deletion.test.ts` 4 +
-  `tests/integration/shipping-address-default.test.ts` 4 +
+  `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
-  measured 64/64 pass. Plan 040 added the Clerk `user.deleted` FK suite
+  measured 66/66 pass. Plan 064 fixed TESTS-21 and turned the shipping-address
+  characterization into a regression guard (57 → 64 → 66; suites unchanged) — see below.
+  Plan 040 added the Clerk `user.deleted` FK suite
   (57 → 64; suites 7 → 8), pinning all three FK behaviours that a mocked
   `deleteMany` cannot reach: CASCADE (cart, wishlist, conversation, message and
   both implicit M2M join tables), RESTRICT (order / review / address / store —
   the deletion fails permanently and the user's PII stays in the database; a
   characterization, not an endorsement), and SET NULL with PII redaction on
   `SupportTicket` (a positive guarantee, landed in `7e3e507`). Plan 037 added the shipping-address default-flag suite
-  (53 → 57; suites 6 → 7). It pins the asymmetry between the update path (which
-  clears other defaults) and the create path (which skips the clear, leaving two
-  defaults) — the latter is a characterization of a known gap (TESTS-21), tagged
-  `TODO(characterization)` in the test so it is flipped to 1 when fixed. Plan 036
+  (53 → 57; suites 6 → 7), pinning the asymmetry between the update path (which
+  cleared other defaults) and the create path (which skipped the clear, leaving two
+  defaults) — the latter as a characterization of the known gap TESTS-21, tagged
+  `TODO(characterization)`. **Plan 064 fixed that gap and flipped the expectation to 1**
+  (57 → 66 with plan 040's suite in between; suites unchanged), so the file is now a
+  regression guard rather than a record of a bug. The suite additionally pins two
+  properties that the fix depends on: the clear is rolled back with the failing
+  `create` when an attacker submits another user's address id (proving the write is
+  atomic — the victim-side assertion alone passes on `userId` scoping without a
+  transaction), and a second default written *around* the server action is rejected by
+  the partial unique index `ShippingAddress("userId") WHERE "default"`. Plan 036
   added the `deleteProduct` FK suite (49 → 53;
   suites 5 → 6), pinning the CASCADE chain (nine child tables, including the
   grandchild `FreeShippingCountry`) and the `Review` RESTRICT that makes a

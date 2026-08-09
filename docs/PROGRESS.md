@@ -10,8 +10,8 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1891 passed / 1894 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **40テスト / 4スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12**）— 2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jestユニットテスト | **1894 passed / 1897 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | **66テスト / 8スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7**）— 2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -2918,3 +2918,50 @@ Clerk の `user.deleted` イベントを受けた webhook が、User への 3 �
 | テストファイル総数（ダッシュボード） | 202 | **203** |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings** |
+
+---
+
+### plan 064 / TESTS-21: 配送先 default 不変条件の修正 (2026-08-09)
+
+#### 概要
+
+`upsertShippingAddress` が「1 ユーザーにつき `default: true` は最大 1 件」という不変条件を
+**新規作成経路で破っていた**件を修正し、plan 037 が固定していた characterization を回帰ガードへ反転した。
+
+#### 原因と修正
+
+他住所の default 解除が `findUnique({ where: { id: address.id } })` の非 null に条件付けられていた。
+新規住所の id は UI が `v4()` で採番するため常に null になり、**新規経路では解除が丸ごとスキップ**されて
+default が 2 件併存していた。2 件あると `address.list.tsx:21` の `addresses.find((a) => a.default)` が
+どちらを拾うかが物理行順依存になり、**checkout の配送先自動選択が非決定**になる。
+
+修正は 2 段構え:
+
+1. **アプリ層** — 解除条件を `address.default` のみにし、所有権検証・解除・作成/更新を `db.$transaction` で束ねた。
+   `$transaction` は装飾ではなく**前提条件**である: 解除を無条件化すると、他ユーザーの id を渡された
+   IDOR 経路で「create が P2002 で落ちる**前に**攻撃者自身の default が解除される」= 拒否されたのに
+   副作用が残る状態が生まれる（追加したシナリオ5 が修正前の実装で実際に赤くなり実証された）。
+2. **DB 層** — 部分 unique index `ShippingAddress("userId") WHERE "default"` を手書き migration で追加。
+   Prisma スキーマ構文では表現できないため `migrate dev --create-only` + SQL 手書き。適用前に本番相当 DB を
+   調査し「総 6 行 / default 5 行 / 重複ユーザー 0 件」を確認、適用後に `migrate dev` が DROP を
+   提案しないことも確認済み。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.test.ts` | unit +3（新規経路の解除 / tx 経由 / P2002 伝播） | `879e3d33` |
+| `tests/integration/shipping-address-default.test.ts` | シナリオ2 を 2 → 1 に反転、原子性シナリオ5 を追加 | `058c5437` |
+| `src/queries/user.ts` | 解除の無条件化 + `$transaction` 化 + `NOT: { id }` | `cbd32067` |
+| `prisma/migrations/20260809064416_.../migration.sql` | 部分 unique index 追加、シナリオ6 で回帰ガード化 | `433ffd4c` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1891 passed | **1894 passed** |
+| スイート数 (unit/component) | 178 | **178**（不変） |
+| Integration テスト総数 | 64 | **66** |
+| Integration スイート数 | 8 | **8**（不変） |
+| テストファイル総数（ダッシュボード） | 203 | **203**（不変・新規ファイルなし） |
+| 型エラー | 0 件 | **0 件** |

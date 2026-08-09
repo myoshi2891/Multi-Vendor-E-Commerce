@@ -34,6 +34,16 @@
   order items, total update) in a single `db.$transaction` for atomicity.
   Read-only queries (delivery details) are pre-fetched before the
   transaction to minimize lock duration.
+- A user has **at most one** `ShippingAddress` with `default = true`. Checkout
+  auto-selects the delivery address with `addresses.find((a) => a.default)` and the
+  source query is unordered, so a second default makes that selection depend on
+  physical row order. `upsertShippingAddress` clears the other defaults and writes
+  the address in one `db.$transaction` — atomicity is required, not merely
+  desirable, because the clear must not survive a rejected write (an id belonging
+  to another user fails the create with P2002 *after* the clear would have run).
+  The invariant is additionally enforced in the database by the partial unique index
+  `ShippingAddress("userId") WHERE "default"`, which also covers writes that bypass
+  the server action.
 - All money fields use `Decimal(12,2)` for exact arithmetic. Internal
   calculations use `Prisma.Decimal` methods; conversion to `number` happens
   only at presentation boundaries.
