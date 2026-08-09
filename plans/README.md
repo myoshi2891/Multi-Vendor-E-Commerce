@@ -118,7 +118,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
-| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
+| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
@@ -141,6 +141,50 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **045 の実行記録（2026-08-09・`eaac5c06`〜`515a736f`）**
+>
+> **DONE。** `tests/e2e/guest-flows.spec.ts` を新設し **6 テスト**（compare 2 / track-order 2 /
+> offers 1 / 静的ページ 1）。E2E は **41 → 47 tests/browser / 17 → 18 files / 3 ブラウザ計
+> 123 → 141**、E2E メインスペックは 11 → **12**。`src/` は 1 行も変更していない。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は**空**で、
+> `OfferTag.url` の `@unique`・compare/track-order/静的ページの文言もプラン本文と一致した。
+>
+> **プラン本文からの逸脱 2 点（いずれもセレクタの取り方。プランの意図は保持している）**:
+>
+> 1. **compare ボタンのスコープを testid ではなく group コンテナで取った。** プランは
+>    `card.getByRole("button", { name: "Add to compare" })` を指示していたが、
+>    `data-testid="product-card-<slug>"` は **`<Link>` に付いており、アクションボタンは
+>    その Link の外**（`group-hover:block` の兄弟オーバーレイ内・`product-card.tsx:103-141`）。
+>    testid 配下では**ボタンが 1 つも見つからない**。`page.locator("div.group").filter({ has: cardLink })`
+>    でカードを取り直した。プランが警告していた「page 直下で取ると strict mode violation か
+>    別商品を押す」という危険は、この形でも回避できている。
+> 2. **offers の見出しをリンクの href でスコープしてから検証した。** `OfferTag.url` は
+>    globally unique なのでワーカーサフィックスを付けたが、**name は全ワーカー共通**のまま
+>    （既存 seed の慣行）。/offers には過去 run のタグも upsert で残るため、
+>    `page.getByRole("heading", { name })` 直引きは strict mode violation になりうる。
+>
+> **識別力を機械的に確認した。** compare の `toHaveCount(1)` を 2 に、`/contact` の期待見出しを
+> `About` に崩すと**その 2 テストだけが落ちる**ことを実測してから戻している
+> （plan 033 / 036 / 040 と同じ扱い）。
+>
+> **トグル確認は toast ではなく `aria-pressed` を見ている。** toast は自動消滅するため
+> 時間依存になる。状態属性なら遅い WebKit でも同じ判定になり、実際 3 ブラウザとも
+> リトライなしで green だった。
+>
+> **本プランが主張しないこと**: (1) compare の上限 4 件の境界はスコープ外（プラン本文の
+> 判断どおり。追加するなら toast ではなく `aria-pressed` で assert すること）、
+> (2) track-order の**成功系**（実在注文の照会）は検証していない —— 6 テストはいずれも
+> not-found / バリデーションの異常系とゲスト表示のみ、(3) フルラン（全 spec × 3 ブラウザ）は
+> 再取得していない。E2E 全体の最新フルラン実測は **2026-08-04 の 83 passed / 0 failed /
+> 3 flaky / 37 skipped** のままである。
+>
+> **次の実行者への申し送り**: 本プランが `tests/e2e/seed/`（`constants.ts` + `seed-e2e.ts`）に
+> OfferTag を追加したため、**plan 046 は先にこの diff を取り込むこと**（プラン 045 の
+> Maintenance notes が予告していたコンフリクト源が実際に生じている）。
+>
+> 統計: Jest unit **1894**（不変）、Integration **66**（不変）、ダッシュボード集計
+> **203 → 204**。docs 同期は `0c990251`。
+>
 > **064 の実行記録（2026-08-09・`cbd32067` + `433ffd4c`）**
 >
 > **DONE（TESTS-21 の remediation 完了）。** `upsertShippingAddress` が不変条件

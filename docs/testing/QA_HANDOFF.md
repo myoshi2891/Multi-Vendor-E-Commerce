@@ -301,51 +301,51 @@ STOP conditions に該当したら中断して報告。完了後は spec-sync-af
 #### R8: improve Round 8 E2E 網羅性ギャップ解消（plans 042〜050）🆕 2026-07-11 起票
 
 2026-07-11 の初 E2E フル実測 + 網羅性監査（`plans/audit/findings-16-e2e-coverage.md`）で
-特定した 9 件の実行プラン。**最優先は 042**（signIn ヘルパーの Clerk UI ドリフトが
-5 サイトに複製され認証系 16 テストが全滅中 — 047/048/049/050 の先行依存）。
-042 と並行して依存ゼロの 045（ゲスト導線）/ 044（運用ガード）/ 043（VRT）/
-046（/browse ページネーション配線）に着手可能。045・046 は同じ
-`tests/e2e/seed/` を触るため後発が先発の diff を取り込むこと。
-全プラン `CLERK_SECRET_KEY` + ローカル Docker Postgres 前提。**実行前に :3000 を解放**
-（`docker compose stop app` — 怠ると別環境のサーバーを無警告で再利用し実測が無効化される。
-2026-07-11 実測 #1 の事故として findings-16 に記録済み）。
+特定した 9 件の実行プラン。**2026-08-09 時点で 042 / 043 / 044 / 045 / 047 が DONE**
+（042 の signIn 修復完了により **048 / 049 / 050 の先行依存は解除済み**）。
+**残るは 046 / 048 / 049 / 050**。045 が `tests/e2e/seed/`（constants.ts + seed-e2e.ts に
+OfferTag を追加）を触ったため、**046 はその diff を取り込んでから**ページネーション用の
+シード拡張を行うこと。
+全プラン `CLERK_SECRET_KEY` + ローカル Docker Postgres 前提。**実行は
+`bash scripts/e2e/run-local.sh <spec>`**（plan 044 が :3100 隔離 + `E2E_NO_REUSE=1` を実装済みで、
+:3000 の他プロジェクトを停止する必要はもう無い）。
 
 ```
-plans/042-e2e-signin-helper-repair.md を読んで、プラン記載のステップどおりに実行してください。
-ルール: 変更は In scope のファイルのみ（tests/e2e/ の 5 ファイル + src/components/store/icons/ の
-aria-label 追加 3 行）。実行前に lsof -nP -iTCP:3000 -sTCP:LISTEN が空であることを確認し、
-占有されていたら docker compose stop app。各 Step の Verify コマンドを必ず実行し、
+plans/048-e2e-engagement-flows.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 変更は In scope のファイルのみ。実行は bash scripts/e2e/run-local.sh を使う
+（:3100 隔離 + E2E_NO_REUSE=1）。各 Step の Verify コマンドを必ず実行し、
 STOP conditions に該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期
-（別コミット）を行い、plans/README.md の 042 行を DONE に更新すること。
+（別コミット）を行い、plans/README.md の 048 行を DONE に更新すること。
 ```
 
-（043〜050 も同形式: パスを各プランに差し替える。047〜050 は「plan 042 が DONE であること」を
-冒頭で確認し、未完なら BLOCKED 記録で STOP と付記して依頼する）
+（046 / 049 / 050 も同形式: パスを各プランに差し替える。**046 は `src/` の最小 feature 配線を
+含む MED risk** なので、テストのみのプランと同じ扱いにしないこと）
 
 #### R9: improve Round 9 E2E 残余ギャップ解消（plans 051〜056）🆕 2026-07-12 起票
 
 2026-07-12 の E2E 残余監査（`plans/audit/findings-17-e2e-coverage-r9.md` — R8 未スイープの
 新規切り口 8 系統を精査。ベースラインは R8 実測 #2 を SSOT 引き継ぎ・再実測なし）で
-特定した 6 件の実行プラン。**051（国選択セレクタ — 依存ゼロ・P1）と
-056（Newsletter dormant 404 の characterization — 依存ゼロ）は R8 プランを待たず即着手可能**。
-052（a11y 拡大）は plan 042 Step 4（svg-img-alt 修正）完了後、055（カート引き継ぎ）と
-053 のサインアウト部は 042 全体の完了後、054（VRT 拡大）は plan 043 完了後。
+特定した 6 件の実行プラン。**2026-08-09 時点で 051 が DONE、残るは 052〜056**。
+plan 042（Step 4 の svg-img-alt 修正を含む全体）と 043 がいずれも DONE のため、
+**052（a11y 拡大）・053・054（VRT 拡大）・055（カート引き継ぎ）の先行依存はすべて解除済み**で、
+056（Newsletter dormant 404 の characterization）は元から依存ゼロ。
+**推奨着手順は 052 → 053 → 055 → 056 → 054**（052 は認証不要ページのみを対象とし、
+plan 045 と同じく認証系の状態に依存せず回る）。
 **監査で新規発見したアプリ側ギャップ**: フッター Newsletter フォームの `/api/newsletter` が
 **リポジトリに不在**（curl 実測 404・schema に購読者モデルも無し）— 全購読操作が失敗する
 dormant 機能。成功系は機能実装プランの起票が先（characterization は plan 056 が担当）。
 
 ```
-plans/051-e2e-country-selector.md を読んで、プラン記載のステップどおりに実行してください。
-ルール: 変更は In scope のファイルのみ（tests/e2e/country-selector.spec.ts 新規のみ・src/ 変更禁止）。
-実行前に lsof -nP -iTCP:3000 -sTCP:LISTEN が空であることを確認し、占有されていたら
-docker compose stop app。各 Step の Verify コマンドを必ず実行し、STOP conditions に該当したら
-中断して報告。完了後は spec-sync-after-test skill で docs 同期（別コミット）を行い、
-plans/README.md の 051 行を DONE に更新すること。
+plans/052-e2e-a11y-storefront-expansion.md を読んで、プラン記載のステップどおりに実行してください。
+ルール: 変更は In scope のファイルのみ（tests/e2e/a11y/ の新規 spec・src/ 変更禁止）。
+実行は bash scripts/e2e/run-local.sh を使う（:3100 隔離 + E2E_NO_REUSE=1 なので :3000 の
+他プロセスを止める必要はない）。各 Step の Verify コマンドを必ず実行し、STOP conditions に
+該当したら中断して報告。完了後は spec-sync-after-test skill で docs 同期（別コミット）を行い、
+plans/README.md の 052 行を DONE に更新すること。
 ```
 
-（052〜056 も同形式: パスを各プランに差し替える。052 は「plan 042 Step 4 完了」、
-055 は「plan 042 DONE」、054 は「plan 043 DONE」を冒頭で確認し、未完なら BLOCKED 記録で
-STOP と付記して依頼する）
+（053〜056 も同形式: パスを各プランに差し替える。**先行依存はすべて解除済み**なので
+BLOCKED 判定は不要だが、各プラン冒頭の Drift check は必ず実行すること）
 
 #### D2: Performance 行の着手（lhci の計測 URL に `/` を追加）
 
