@@ -28,9 +28,9 @@ test.describe("a11y: /browse", () => {
             readinessLocator: page.getByTestId(
                 `product-card-${seed.product.slug}`
             ),
-            // TODO(a11y): color-contrast は既知のデザイン負債（#eef4fc 背景の
+            // TODO(OI-10): color-contrast は既知のデザイン負債（#eef4fc 背景の
             // グレー/ブルー系テキストが 4.5:1 未満）。配色是正は別タスクで対応する。
-            // 追跡: docs/testing/QA_HANDOFF.md「a11y color-contrast 負債」
+            // 追跡: docs/testing/QA_HANDOFF.md の OI-10（残課題表・§OI-10 是正手順）
             disabledRules: ["color-contrast"],
         });
     });
