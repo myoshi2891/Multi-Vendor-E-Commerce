@@ -669,6 +669,17 @@ describe("getUserShippingAddresses", () => {
 // upsertShippingAddress
 // ==================================================
 describe("upsertShippingAddress", () => {
+    beforeEach(() => {
+        // 実装は所有権検証・default 解除・作成/更新を db.$transaction で束ねる。
+        // 既定の $transaction は jest.fn()（undefined を返す）なので、コールバックを
+        // 同じ DB モックで実行するパススルーを敷く。ルート beforeEach の
+        // clearAllMocks() が実装を消すため、describe ごとに貼り直す必要がある。
+        mockDb.$transaction.mockImplementation(
+            async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                callback(mockDb)
+        );
+    });
+
     describe("認証エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
@@ -721,8 +732,6 @@ describe("upsertShippingAddress", () => {
 
         it("デフォルト住所設定時に既存のデフォルトをfalseにする", async () => {
             const address = createMockShippingAddress({ default: true });
-            // findUnique: default=true 時の既存アドレス確認
-            mockDb.shippingAddress.findUnique.mockResolvedValue(address);
             mockDb.shippingAddress.updateMany.mockResolvedValue({ count: 1 });
             // findFirst: 所有権検証 → update
             mockDb.shippingAddress.findFirst.mockResolvedValue(address);
@@ -734,9 +743,100 @@ describe("upsertShippingAddress", () => {
                 where: {
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                     default: true,
+                    // 対象自身は除外する（直後の update で true に戻す行を二度書きしない）
+                    NOT: { id: address.id },
                 },
                 data: { default: false },
             });
+        });
+
+        it("新規住所でも default 指定なら既存の default を解除する（TESTS-21 回帰防止）", async () => {
+            // 新規 id なので所有権 findFirst は null。修正前の実装は
+            // findUnique(id) が null であることを理由に解除をスキップしており、
+            // UI が v4() で採番する新規住所では default が 2 件併存していた。
+            const address = createMockShippingAddress({
+                id: "address-new-001",
+                default: true,
+            });
+            mockDb.shippingAddress.findFirst.mockResolvedValue(null);
+            mockDb.shippingAddress.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.shippingAddress.create.mockResolvedValue(address);
+
+            const result = await upsertShippingAddress(address as never);
+
+            expect(result).toEqual(address);
+            expect(mockDb.shippingAddress.updateMany).toHaveBeenCalledWith({
+                where: {
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                    default: true,
+                    NOT: { id: address.id },
+                },
+                data: { default: false },
+            });
+            expect(mockDb.shippingAddress.create).toHaveBeenCalledTimes(1);
+            // 解除が「id が既に存在するか」に条件付けられていないこと（旧ゲートの不在）
+            expect(mockDb.shippingAddress.findUnique).not.toHaveBeenCalled();
+        });
+
+        it("解除と作成が同一トランザクション内（tx 経由）で実行される", async () => {
+            const address = createMockShippingAddress({
+                id: "address-new-002",
+                default: true,
+            });
+            // db とは別オブジェクトを tx として渡し、書き込みが tx 経由であることを
+            // 構造的に立証する。db 直呼びだと create 失敗時に解除だけが確定しうる。
+            const txShippingAddress = {
+                findFirst: jest.fn().mockResolvedValue(null),
+                updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+                update: jest.fn(),
+                create: jest.fn().mockResolvedValue(address),
+            };
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: unknown) => Promise<unknown>) =>
+                    callback({ shippingAddress: txShippingAddress })
+            );
+
+            await expect(
+                upsertShippingAddress(address as never)
+            ).resolves.toEqual(address);
+
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(txShippingAddress.findFirst).toHaveBeenCalledTimes(1);
+            expect(txShippingAddress.updateMany).toHaveBeenCalledTimes(1);
+            expect(txShippingAddress.create).toHaveBeenCalledTimes(1);
+            expect(mockDb.shippingAddress.updateMany).not.toHaveBeenCalled();
+            expect(mockDb.shippingAddress.create).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("エラーハンドリング", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+        });
+
+        it("PK 衝突 (P2002) は code を保ったまま呼び出し元へ伝播する", async () => {
+            // 他ユーザーの住所 id を渡した経路。所有権 findFirst が null → 同一 id で
+            // create → 一意制約違反。外側 catch は握り潰さず原本を投げ返すこと。
+            const address = createMockShippingAddress({ default: true });
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => undefined);
+            const uniqueViolation = new Prisma.PrismaClientKnownRequestError(
+                "unique constraint failed",
+                { code: "P2002", clientVersion: "test" }
+            );
+            mockDb.shippingAddress.findFirst.mockResolvedValue(null);
+            mockDb.shippingAddress.updateMany.mockResolvedValue({ count: 1 });
+            mockDb.shippingAddress.create.mockRejectedValue(uniqueViolation);
+
+            await expect(
+                upsertShippingAddress(address as never)
+            ).rejects.toMatchObject({ code: "P2002" });
+            expect(consoleSpy).toHaveBeenCalled();
+
+            consoleSpy.mockRestore();
         });
     });
 });
