@@ -85,7 +85,11 @@
   必須で明記する。タグが無いと後任が `=== 2` を**満たすべき契約**と誤読し、
   バグ修正時に「テストが壊れた」として修正側を差し戻す）、③他ユーザーの住所 id を指定した上書きが所有権検証で
   新規 create に落ちる（IDOR 防御の実挙動）、を検証。→ **plan 037**
-- > **remediation（バグ本体の修正）の追跡先 — 2026-07-19 時点で「未起票」**:
+- > **remediation（バグ本体の修正）の追跡先 — 2026-08-09 に [plan 064](../064-fix-shipping-address-default-invariant.md) で起票・完了（`cbd32067` + `433ffd4c`）**:
+  > 以下は 2026-07-19 時点の「未起票」記録で、本注記が要求した条件（単独 correctness プラン化 /
+  > plan 037 完了後 / 期待値 2 → 1 の反転とセット）はすべて満たされた。修正は解除条件の無条件化 +
+  > `$transaction` 化（アプリ層）と部分 unique index `("userId") WHERE "default"`（DB 層）の 2 段。
+  > 追加で原子性（P2002 時に解除もロールバック）と index 存在の回帰ガードを固定している。
   > plan 037 は **characterization（現挙動の固定）のみ**を担当し、`default: true` の
   > 重複を解消する**コード修正プランは存在しない**。`TODO(characterization)` タグは
   > テストコード側に反転指示を残すだけで、**修正そのものを誰かのキューに載せない**ため、
@@ -97,6 +101,7 @@
   > - **依存**: plan 037 完了が先行（テストが無い状態で修正すると回帰検知器が無い）。
   > - **同型の未起票 remediation**: 下記 TESTS-23 ⑥ の fail-open（存在しない category URL で
   >   全件返却。store / offer の URL 解決にも同型）も characterization のみで修正プランは未起票。
+  >   **（2026-08-09 時点でこちらは未着手のまま。）**
 
 ### [TESTS-22] `updateProduct`（handleProductAndVariantUpdate）の削除+再作成 tx と slug 一意性・SetNull 副作用が実 DB 未検証 — R5 次点候補の昇格
 

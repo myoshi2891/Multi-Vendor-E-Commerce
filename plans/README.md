@@ -110,7 +110,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
-| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは未修正のまま**で characterization として固定（実測 `default: true` = 2）。下の実行記録を参照） |
+| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
@@ -137,8 +137,43 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | DONE |
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
+| [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **064 の実行記録（2026-08-09・`cbd32067` + `433ffd4c`）**
+>
+> **DONE（TESTS-21 の remediation 完了）。** `upsertShippingAddress` が不変条件
+> 「1 ユーザーにつき `default: true` は最大 1 件」を**新規作成経路で破っていた**件を修正した。
+> 原因は解除の条件式で、`findUnique({ where: { id: address.id } })` の非 null に条件付けられていたため、
+> UI が `v4()` で採番する新規住所では**常に null → 解除が丸ごとスキップ**され default が 2 件併存していた。
+>
+> **`$transaction` は装飾ではなく前提条件だった。** 解除を無条件化すると、他ユーザーの id を渡された
+> IDOR 経路で「create が P2002 で落ちる**前に**攻撃者自身の default が解除される」= **拒否されたのに
+> 副作用が残る**状態が生まれる。これは理屈上の話ではなく、追加した**シナリオ5 が修正前の実装で実際に
+> 赤くなる**ことで実証された（旧実装も `findUnique` を id だけで引いていたため発火していた）。
+> 既存シナリオ3 の `victim?.default === true` は `userId` スコープだけでも通るので、
+> **ロールバックを立証しているのはシナリオ5 だけ**である。
+>
+> **DB 層にも二重で張った。** 部分 unique index `("userId") WHERE "default"` を手書き migration で追加
+> （`20260809064416`）。Prisma スキーマ構文では表現できないため `migrate dev --create-only` + SQL 手書き。
+> **適用前提を実測で確認**: 既存重複があると作成に失敗するため事前調査し、本番相当 DB は
+> 総 6 行 / default 5 行 / **重複ユーザー 0 件**だった（したがって backfill は不要）。
+> **ドリフトも確認済み**: index は `schema.prisma` に現れないが、`migrate dev --create-only` が生成する
+> migration は空で Prisma は DROP を提案しない。シナリオ6 が「アプリを迂回した 2 件目の default が
+> P2002 で拒否される」= index の存在そのものを回帰ガード化している。
+>
+> **plan 037 の申し送りとの差異（重要）**: 037 は「部分 index を選ぶならシナリオ 2 は DB エラー期待に
+> 書き換わる」と申し送っていたが、それは **index だけに頼る場合**の話。本プランはアプリ層で先に解除するため、
+> シナリオ 2 は正常系（`countDefaults === 1`）のままで正しい。
+>
+> **本プランが主張しないこと**: (1) 既存重複行の backfill は含まない（0 件のため不要。将来発生しても
+> 当該ユーザーが次に「default にする」を押した時点で自己修復する）、(2) default を外して 0 件になるのは
+> 修正前からの挙動で変えていない、(3) `requireUser()` 化と `getUserShippingAddresses` の `orderBy` は
+> 意図的に範囲外（correctness ではなく整合性の改善なので、P2002 伝播の修正に混ぜない）。
+>
+> 統計: unit **1891 → 1894**（スイート不変）、Integration **64 → 66**（スイート不変・
+> `shipping-address-default.test.ts` 4 → 6）、実測 66/66 pass。docs 同期は `95abed00`。
 
 > **040 の実行記録（2026-08-09・`c364a75d`）**
 >
@@ -635,7 +670,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 8. **Round 3 expansion spikes (018–022)** — 運用・信頼・成長ブループリント（[`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md) §4）に従う: 推奨順は **021（通知 — C 内の共通前提）→ 018（RMA）→ 019（レビュー）→ 022（セラー品質）**、**020（販促）は独立**（Phase D）。すべて design/spike のため相互に並行着手可能だが、021 を先に確定させると 016/018 の通知定義が単純化し、018/022 はタイムスタンプ方式の整合が必要（どちらか先行した方の決定に他方が従う）。後続実装プランは Round 2 と同じく Phase 0 完了後の実行を推奨。
 9. **Round 4 test-coverage plans (026–030)** — 純追加のテスト拡充で相互に独立・いつでも並行着手可能。推奨順は **026（paypal・money-critical）→ 027（統合・Docker 必須）→ 028 → 029 → 030**。plan **010**（shipping-utils・Round 1）とも独立・併走可（重複なし — 026〜030 は 010 と対象ファイルが異なる）。027 は Docker が使えない環境では BLOCKED として記録し他を先行する。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02）。
 10. **Round 5 integration-test plans (031–035)** — Integration（testcontainers）特化の純追加テスト拡充。全プラン **Docker 必須**（`docker info` 失敗時は各プラン Step 0 の STOP 条件に従い BLOCKED 記録）。相互に独立・並行着手可能だが、**031 と 027 は両方 `tests/integration/setup/seed.ts` を拡張**するため同時実行時はマージで両追記の共存を確認する。推奨順は **031（在庫復元・money-critical）→ 032（webhook 決済・money-critical）→ 033（tsvector 検索）→ 034（レビュー集計）→ 035（ロール昇格）**。027（placeOrder の減算側）と 031（キャンセルの復元側）で在庫整合の両側が閉じるため、可能なら 027 → 031 の順が理想。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02。Integration 統計の SSOT は `docs/testing/QA_HANDOFF.md`）。
-11. **Round 6 integration-test plans (036–039)** — Integration 特化の第 2 弾（R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse フィルタ）。全プラン **Docker 必須**・相互に独立・**seed.ts を変更しない**ため 027/031〜035 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→ 038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）**。037 のシナリオ 2 と 039 のシナリオ 2・4 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-14-integration-coverage-r6.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
+11. **Round 6 integration-test plans (036–039)** — Integration 特化の第 2 弾（R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse フィルタ）。全プラン **Docker 必須**・相互に独立・**seed.ts を変更しない**ため 027/031〜035 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→ 038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）**。037 のシナリオ 2 と 039 のシナリオ 2・4 は起票時点では**現挙動の characterization**（既知ギャップの固定）で、修正プラン実行時に期待値を反転する前提だった。**037 の分は plan 064 が 2026-08-09 に実施済み**（反転完了・回帰ガードへ転用）。039 の 2 件は未着手 — 詳細は各プラン本文と `audit/findings-14-integration-coverage-r6.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 12. **Round 7 integration-test plans (040–041)** — Integration 特化の第 3 弾（R5/R6 未スイープの切り口: Clerk user-sync webhook の FK 連鎖・グローバル unique 制約の実発火）。両プラン **Docker 必須**・相互に独立・**seed.ts / reset-db.ts を変更しない**ため 027/031〜039 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **040（user.deleted FK 連鎖 — PII 残存/Svix のリトライ枯渇のコンプライアンス隣接）→ 041（coupon code unique — セラー日常運用のエラー UX）**。040 のシナリオ 2〜4 と 041 のシナリオ 2・3 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-15-integration-coverage-r7.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 13. **Round 8 E2E plans (042–050)** — 初の E2E 特化ラウンド（3 ブラウザフル実測ベースライン付き。
     詳細: `audit/findings-16-e2e-coverage.md`）。**042 が絶対の先頭**（signIn ヘルパーの
