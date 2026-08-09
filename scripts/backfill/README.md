@@ -54,8 +54,12 @@ bun run scripts/backfill/063-apply.ts \
     --approved-count <will_update> \
     --approved-digest <candidate_digest>
 
-# 4. 検証
-bun run scripts/backfill/063-report.ts --verify
+# 4. 検証。zero-total（`ratio IS NULL`）の承認値もレポートから渡す。
+#    渡さない場合は「null_ratio = 0」を期待する実行として扱われ、
+#    1 件でも残っていれば不合格になる
+bun run scripts/backfill/063-report.ts --verify \
+    --approved-null-count <null_ratio> \
+    --approved-null-digest <null_ratio_digest>
 ```
 
 ### ステージング予行

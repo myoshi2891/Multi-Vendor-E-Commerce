@@ -4,7 +4,8 @@
  * 使い方:
  *   bun run scripts/backfill/063-report.ts                       # 既定境界でレポート生成
  *   bun run scripts/backfill/063-report.ts --boundary <ISO8601>  # 境界を明示
- *   bun run scripts/backfill/063-report.ts --verify              # Step 5 の検証クエリ
+ *   bun run scripts/backfill/063-report.ts --verify \
+ *       --approved-null-count <n> --approved-null-digest <md5>   # Step 5 の検証クエリ
  *
  * レポートは `scripts/backfill/reports/` に Markdown と候補行の JSON
  * （UPDATE 前の巻き戻し材料）として保存される。JSON は承認の対象物であり、
@@ -16,15 +17,18 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import {
+    ALLOWED_PAYMENT_METHODS,
     candidateGateSql,
     candidateRowsSql,
     createBackfillClient,
     getStringArg,
     maskDatabaseUrl,
+    nullRatioGateSql,
     parseArgs,
+    paymentMethodCensusSql,
     PAYPAL_LABELS,
     RATIO_CENTS_MAX,
     RATIO_CENTS_MIN,
@@ -70,6 +74,42 @@ function classify(ratio: string | null): Bucket {
     return "neither";
 }
 
+/**
+ * 境界前の `paymentMethod` を全列挙し、許可ラベル以外があれば停止する。
+ *
+ * プラン本文の STOP 条件「`'Stripe'` / `'PayPal'` / `'Paypal'` 以外の
+ * `paymentMethod` が存在する」を実行時に保証する。**候補集合を絞り込む前**に
+ * 問い合わせるのが要点で、絞り込み後の集合を見ても「絞り込みから漏れたラベル」は
+ * そこに現れない。未知ラベル × zero-total の行は、レポートの候補述語
+ * （`paymentMethod = 'Stripe'` OR `ratio ≈ 100`）にも Step 5 の検証母集合にも
+ * 現れないため、この関門が無いと**どのレポートにも載らないまま**素通りする。
+ *
+ * @returns ラベルごとの件数（レポートへ載せる）
+ * @throws 許可ラベル以外が 1 件でも存在する場合
+ */
+async function assertKnownPaymentMethods(
+    db: PrismaClient,
+    boundary: Date
+): Promise<{ payment_method: string; count: number }[]> {
+    const census = await db.$queryRaw<
+        { payment_method: string; count: number }[]
+    >(paymentMethodCensusSql(boundary));
+
+    const allowed = new Set<string>(ALLOWED_PAYMENT_METHODS);
+    const unknown = census.filter((row) => !allowed.has(row.payment_method));
+
+    if (unknown.length > 0) {
+        const detail = unknown
+            .map((row) => `${row.payment_method}=${row.count}`)
+            .join(", ");
+        throw new Error(
+            `STOP: 未知の paymentMethod が境界前に存在する（候補集合を安全に絞り込めない）: ${detail}`
+        );
+    }
+
+    return census;
+}
+
 /** Markdown のテーブル行へ整形する。 */
 function toTableRow(row: CandidateRow): string {
     return `| \`${row.id}\` | ${row.payment_method} | ${row.currency} | ${row.stored_amount} | ${row.order_total ?? "NULL"} | ${row.ratio ?? "NULL"} | ${row.created_at.toISOString()} |`;
@@ -86,6 +126,9 @@ async function runReport(boundary: Date): Promise<void> {
             Prisma.sql`SELECT count(*)::int AS count FROM "PaymentDetails"`
         );
         console.log(`PaymentDetails 総行数: ${totalRows}`);
+
+        // 候補を絞り込む前に、境界前の paymentMethod を全列挙して STOP 条件を判定する。
+        const census = await assertKnownPaymentMethods(db, boundary);
 
         const candidates = await db.$queryRaw<CandidateRow[]>(
             candidateRowsSql(boundary)
@@ -109,6 +152,13 @@ async function runReport(boundary: Date): Promise<void> {
         // JS 分類（enumerate ベース）と SQL ゲート（述語ベース）が一致するかの交差検証。
         // 片方だけで数えると、三値論理の取りこぼしも JS 側の分類バグも検出できない。
         const centsMatches = buckets.cents.length === gate.count;
+
+        // 未解決 zero-total 集合の承認値。Step 5 の `--approved-null-*` に渡す。
+        // 検証側と同一の SQL（`nullRatioGateSql`）から取ることで、承認時に見た
+        // 集合と補正後に残った集合を id レベルで照合できる。
+        const [nullGate] = await db.$queryRaw<GateRow[]>(
+            nullRatioGateSql(boundary)
+        );
 
         const [stats] = await db.$queryRaw<
             {
@@ -159,6 +209,37 @@ async function runReport(boundary: Date): Promise<void> {
             buckets.neither.length +
             buckets.nullRatio.length;
 
+        // STOP 条件はレポート/巻き戻し JSON を書く**前**に判定する。
+        // 失格した実行がレポートを残すと、`scripts/backfill/reports/` に
+        // 「承認値（`--approved-count` / `--approved-digest`）を載せた、見た目は
+        // 正常なレポート」が並ぶことになり、後から承認の材料として拾われうる。
+        // 失格時は成果物を一切作らないのが唯一の安全側で、診断に必要な数値は
+        // 例外メッセージへ載せる。
+        if (!centsMatches) {
+            throw new Error(
+                `SQL ゲートと列挙分類が不一致: gate=${gate.count} enumerated=${buckets.cents.length}（レポートは書き出していない）`
+            );
+        }
+        if (bucketSum !== candidates.length) {
+            throw new Error(
+                `バケット合計が候補総数と不一致: ${bucketSum} !== ${candidates.length}（レポートは書き出していない）`
+            );
+        }
+        if (zeroTotalPaypal > 0) {
+            throw new Error(
+                `STOP: zero-total かつ PayPal ラベルの行が ${zeroTotalPaypal} 件ある（検出不能領域・レポートは書き出していない）`
+            );
+        }
+        // 上の 3 条件を通れば、検証側の母集合（許可ラベル全体）で数えた zero-total と
+        // レポートの `nullRatio` バケットは一致するはずである（ラベルが 'Stripe' 以外の
+        // zero-total 行は zeroTotalPaypal で既に止まっている）。ずれるなら承認値と
+        // 承認リストが別物を指しているので、レポートを出さずに止める。
+        if (nullGate.count !== buckets.nullRatio.length) {
+            throw new Error(
+                `zero-total の承認値と未解決リストが不一致: gate=${nullGate.count} listed=${buckets.nullRatio.length}（レポートは書き出していない）`
+            );
+        }
+
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
         mkdirSync(REPORTS_DIR, { recursive: true });
 
@@ -169,6 +250,7 @@ async function runReport(boundary: Date): Promise<void> {
             `- 接続先: \`${maskDatabaseUrl(process.env.DATABASE_URL)}\``,
             `- カットオーバー境界: \`${boundary.toISOString()}\``,
             `- PaymentDetails 総行数: ${totalRows}`,
+            `- 境界前の paymentMethod 分布: ${census.map((row) => `${row.payment_method}=${row.count}`).join(", ") || "(none)"}（許可ラベル以外は 0 件 ✅）`,
             ``,
             `## 4 バケット（合計は候補総数に一致すること）`,
             ``,
@@ -209,7 +291,10 @@ async function runReport(boundary: Date): Promise<void> {
             `## unresolved zero-total list（\`ratio IS NULL\`）`,
             ``,
             `Step 5 の \`null_ratio\` / \`null_ratio_digest\` はこのリストと突き合わせる。`,
-            `各行に未解決の理由を記入して承認を得ること。`,
+            `各行に未解決の理由を記入して承認を得たうえで、下の承認値を Step 5 へ渡すこと。`,
+            ``,
+            `- \`--approved-null-count\`: **${nullGate.count}**`,
+            `- \`--approved-null-digest\`: **${nullGate.digest}**`,
             ``,
             `| id | paymentMethod | stored_amount | order_total | createdAt | 理由 |`,
             `|---|---|---|---|---|---|`,
@@ -255,22 +340,6 @@ async function runReport(boundary: Date): Promise<void> {
         console.log(lines.join("\n"));
         console.log(`\nレポート: ${reportPath}`);
         console.log(`巻き戻し材料: ${backupPath}`);
-
-        if (!centsMatches) {
-            throw new Error(
-                `SQL ゲートと列挙分類が不一致: gate=${gate.count} enumerated=${buckets.cents.length}`
-            );
-        }
-        if (bucketSum !== candidates.length) {
-            throw new Error(
-                `バケット合計が候補総数と不一致: ${bucketSum} !== ${candidates.length}`
-            );
-        }
-        if (zeroTotalPaypal > 0) {
-            throw new Error(
-                `STOP: zero-total かつ PayPal ラベルの行が ${zeroTotalPaypal} 件ある（検出不能領域）`
-            );
-        }
     } finally {
         await db.$disconnect();
     }
@@ -284,15 +353,20 @@ async function runReport(boundary: Date): Promise<void> {
  * また `paymentMethod = 'Stripe'` に絞ると、Step 4 が実際に書き換えた
  * PayPal ラベルの行が検証から丸ごと外れる。
  */
-async function runVerify(boundary: Date): Promise<void> {
+async function runVerify(
+    boundary: Date,
+    approvedNullRatio: GateRow | undefined
+): Promise<void> {
     const db = createBackfillClient();
 
     try {
+        // 検証母集合は許可ラベルで絞る。未知ラベルの行があると**検証から丸ごと
+        // 外れる**ため、絞り込む前に全ラベルを列挙して停止条件を判定する。
+        await assertKnownPaymentMethods(db, boundary);
+
         const [result] = await db.$queryRaw<
             {
                 still_wrong: number;
-                null_ratio: number;
-                null_ratio_digest: string;
                 null_ratio_ids: string;
             }[]
         >(Prisma.sql`
@@ -301,18 +375,18 @@ async function runVerify(boundary: Date): Promise<void> {
                     WHERE pd.amount / NULLIF(o.total, 0)
                           NOT BETWEEN ${RATIO_DOLLARS_MIN} AND ${RATIO_DOLLARS_MAX}
                 )::int AS still_wrong,
-                count(*) FILTER (
-                    WHERE pd.amount / NULLIF(o.total, 0) IS NULL
-                )::int AS null_ratio,
-                md5(coalesce(string_agg(pd.id::text, ',' ORDER BY pd.id)
-                             FILTER (WHERE pd.amount / NULLIF(o.total, 0) IS NULL), '')) AS null_ratio_digest,
                 coalesce(string_agg(pd.id::text, E'\n' ORDER BY pd.id)
                          FILTER (WHERE pd.amount / NULLIF(o.total, 0) IS NULL), '(none)') AS null_ratio_ids
             FROM   "PaymentDetails" pd
             JOIN   "Order" o ON o.id = pd."orderId"
             WHERE  pd."createdAt" < ${boundary}
-              AND  pd."paymentMethod" IN ('Stripe', ${Prisma.join(PAYPAL_LABELS)})
+              AND  pd."paymentMethod" IN (${Prisma.join(ALLOWED_PAYMENT_METHODS)})
         `);
+
+        // 件数と digest はレポートと同一の SQL から取る（書き写しを避ける）。
+        const [nullGate] = await db.$queryRaw<GateRow[]>(
+            nullRatioGateSql(boundary)
+        );
 
         const [{ count: stalePaypalCurrency }] = await db.$queryRaw<
             { count: number }[]
@@ -328,9 +402,9 @@ async function runVerify(boundary: Date): Promise<void> {
             `still_wrong           : ${result.still_wrong}  (合格値: 0)`
         );
         console.log(
-            `null_ratio            : ${result.null_ratio}  (合格値: 承認済み unresolved リストの件数)`
+            `null_ratio            : ${nullGate.count}  (合格値: ${approvedNullRatio?.count ?? "承認済み unresolved リストの件数"})`
         );
-        console.log(`null_ratio_digest     : ${result.null_ratio_digest}`);
+        console.log(`null_ratio_digest     : ${nullGate.digest}`);
         console.log(`null_ratio_ids        :\n${result.null_ratio_ids}`);
         console.log(
             `stale_paypal_currency : ${stalePaypalCurrency}  (合格値: 0)`
@@ -347,23 +421,74 @@ async function runVerify(boundary: Date): Promise<void> {
                 `検証不合格: stale_paypal_currency = ${stalePaypalCurrency}`
             );
         }
+
+        // zero-total の照合は「承認された集合と同じか」であって「0 件か」ではない。
+        // 件数だけを見ると、承認済みの 1 行が解決し別の 1 行が新たに zero-total に
+        // なった場合に**件数据え置きで中身が入れ替わる**ため、digest も比較する。
+        if (approvedNullRatio === undefined) {
+            if (nullGate.count !== 0) {
+                throw new Error(
+                    `検証不合格: null_ratio = ${nullGate.count} だが承認値が渡されていない（--approved-null-count / --approved-null-digest をレポートの値で渡すこと）`
+                );
+            }
+        } else if (
+            approvedNullRatio.count !== nullGate.count ||
+            approvedNullRatio.digest !== nullGate.digest
+        ) {
+            throw new Error(
+                `検証不合格: zero-total 集合が承認と不一致 — approved=(count=${approvedNullRatio.count}, digest=${approvedNullRatio.digest}) actual=(count=${nullGate.count}, digest=${nullGate.digest})`
+            );
+        }
+
         console.log(
-            "\n✅ still_wrong = 0 / stale_paypal_currency = 0。null_ratio は承認リストと突合すること。"
+            "\n✅ still_wrong = 0 / stale_paypal_currency = 0 / null_ratio は承認済み集合と一致。"
         );
     } finally {
         await db.$disconnect();
     }
 }
 
+/**
+ * `--approved-null-count` / `--approved-null-digest` を読む。
+ *
+ * 両方欠落なら undefined（`null_ratio = 0` を期待する実行）。片方だけの指定は、
+ * 「digest を渡したつもりで件数だけ照合されていた」という取り違えを生むので拒否する。
+ */
+function parseApprovedNullRatio(
+    args: Map<string, string | true>
+): GateRow | undefined {
+    const rawCount = getStringArg(args, "approved-null-count");
+    const digest = getStringArg(args, "approved-null-digest");
+
+    if (rawCount === undefined && digest === undefined) return undefined;
+    if (rawCount === undefined || digest === undefined) {
+        throw new Error(
+            "--approved-null-count と --approved-null-digest は両方まとめて渡してください"
+        );
+    }
+
+    const count = Number(rawCount);
+    if (!Number.isInteger(count) || count < 0) {
+        throw new Error(`--approved-null-count が不正です: ${rawCount}`);
+    }
+    if (!/^[0-9a-f]{32}$/.test(digest)) {
+        throw new Error(
+            `--approved-null-digest が md5 の形式ではありません: ${digest}`
+        );
+    }
+
+    return { count, digest };
+}
+
 async function main(): Promise<void> {
-    const args = parseArgs(process.argv.slice(2));
+    const args = parseArgs(process.argv.slice(2), ["verify"]);
     const boundary = resolveBoundary(getStringArg(args, "boundary"));
 
     console.log(`接続先: ${maskDatabaseUrl(process.env.DATABASE_URL)}`);
     console.log(`境界: ${boundary.toISOString()}\n`);
 
     if (args.has("verify")) {
-        await runVerify(boundary);
+        await runVerify(boundary, parseApprovedNullRatio(args));
         return;
     }
 

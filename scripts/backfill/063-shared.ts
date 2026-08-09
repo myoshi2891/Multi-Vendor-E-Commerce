@@ -45,6 +45,17 @@ export const RATIO_DOLLARS_MAX = 1.01;
  */
 export const PAYPAL_LABELS = ["PayPal", "Paypal"] as const;
 
+/**
+ * 境界前の行に現れてよい `paymentMethod` の全体集合。
+ *
+ * Step 5 の検証母集合はこのラベル集合で絞り込まれるため、ここに無いラベルの行が
+ * 存在すると**検証から丸ごと外れる**（レポートの候補述語も `ratio IS NULL` の行は
+ * `'Stripe'` ラベルでしか拾わないため、未知ラベル × zero-total は両方をすり抜ける）。
+ * プラン本文の STOP 条件「`'Stripe'` / `'PayPal'` / `'Paypal'` 以外の `paymentMethod` が
+ * 存在する」を、レポートの目視ではなく実行時に機械で保証するための集合。
+ */
+export const ALLOWED_PAYMENT_METHODS = ["Stripe", ...PAYPAL_LABELS] as const;
+
 /** ゲート照合に使う「件数 + id 集合 digest」。 */
 export type GateRow = {
     count: number;
@@ -160,14 +171,67 @@ export function candidateRowsSql(boundary: Date): Prisma.Sql {
 }
 
 /**
+ * 境界前に存在する `paymentMethod` の実際の分布（ラベルと件数）。
+ *
+ * 候補述語で絞り込む**前**に問い合わせること。絞り込んだ集合を数えても、
+ * 「絞り込みから漏れたラベル」は定義上そこに現れないため検出できない。
+ */
+export function paymentMethodCensusSql(boundary: Date): Prisma.Sql {
+    return Prisma.sql`
+        SELECT pd."paymentMethod"::text AS payment_method,
+               count(*)::int            AS count
+        FROM   "PaymentDetails" pd
+        WHERE  pd."createdAt" < ${boundary}
+        GROUP BY pd."paymentMethod"
+        ORDER BY pd."paymentMethod"
+    `;
+}
+
+/**
+ * `ratio IS NULL`（zero-total）行の件数と id digest。
+ *
+ * レポート（UPDATE 前）と検証（UPDATE 後）が**同一の SQL** から取ること自体が
+ * 要点である。UPDATE は `amount` / `currency` しか触らず `o.total` も
+ * `paymentMethod` も動かさないので、この集合は補正の前後で不変であるべきで、
+ * 「承認時に見た未解決リスト」と「補正後に残った未解決リスト」の同一性を
+ * 件数だけでなく id 集合で照合できる。母集合の書き写しを 2 箇所に置くと、
+ * 片方だけ編集された瞬間にこの照合は意味を失う。
+ *
+ * @param boundary この時刻より前に作成された行のみを対象にする
+ */
+export function nullRatioGateSql(boundary: Date): Prisma.Sql {
+    return Prisma.sql`
+        SELECT count(*)::int AS count,
+               ${digestExpr}  AS digest
+        FROM   "PaymentDetails" pd
+        JOIN   "Order" o ON o.id = pd."orderId"
+        WHERE  pd."createdAt" < ${boundary}
+          AND  pd."paymentMethod" IN (${Prisma.join(ALLOWED_PAYMENT_METHODS)})
+          AND  pd.amount / NULLIF(o.total, 0) IS NULL
+    `;
+}
+
+/**
  * 引数を `--key value` 形式で読む最小のパーサ。
  *
  * 値が欠けた指定（`--boundary` の直後が別のフラグ、または末尾）は黙って
  * undefined にせず throw する。金額を書き換えるスクリプトで「引数が渡って
  * いなかったので既定値で走った」という経路を作らないため。
+ *
+ * 値を取らないフラグ（`--verify` 等）は `booleanFlags` で**明示的に**宣言する。
+ * 宣言を既定の空集合にしてあるのは、綴り間違いなど未知のキーを値必須側へ
+ * 倒して throw させるためである（未知キーを boolean 扱いにすると、
+ * `--boundry 2026-…` のような打ち間違いが「境界未指定 + 余った位置引数」として
+ * 静かに既定値で走る）。
+ *
+ * @throws 値必須のオプションに値が無い場合
  */
-export function parseArgs(argv: readonly string[]): Map<string, string | true> {
+export function parseArgs(
+    argv: readonly string[],
+    booleanFlags: readonly string[] = []
+): Map<string, string | true> {
     const args = new Map<string, string | true>();
+    const flags = new Set(booleanFlags);
 
     for (let i = 0; i < argv.length; i++) {
         const token = argv[i];
@@ -176,9 +240,13 @@ export function parseArgs(argv: readonly string[]): Map<string, string | true> {
         const key = token.slice(2);
         const next = argv[i + 1];
 
-        if (next === undefined || next.startsWith("--")) {
+        if (flags.has(key)) {
             args.set(key, true);
             continue;
+        }
+
+        if (next === undefined || next.startsWith("--")) {
+            throw new Error(`--${key} には値が必要です`);
         }
 
         args.set(key, next);
