@@ -49,6 +49,19 @@ describe("renderHtml", () => {
         expect(html).toContain("Security");
     });
 
+    // plan 052 は browse・商品詳細・cart の 3 ページだけを a11y スキャン下に置いた。
+    // home は対象外のまま（tests/e2e/a11y/home.spec.ts は未作成）なので、
+    // §03 Next Actions が「a11y 拡大は完了」と読める文言に退行しないよう固定する。
+    it("Next Actions が a11y の完了範囲を 3 ページに限定し home を別タスクとして残す", () => {
+        // 052 の完了範囲
+        expect(html).toContain("browse・商品詳細・cart");
+        // home は未着手の独立エントリとして起票されている
+        expect(html).toContain("home (/) の a11y spec 追加");
+        expect(html).toContain("tests/e2e/a11y/home.spec.ts");
+        // 「a11y 拡大そのものが完了」と読める旧文言は復活させない
+        expect(html).not.toContain("a11y 拡大は 052 で完了");
+    });
+
     it("Editorial Laboratory フォントを CDN 経由でロードする", () => {
         expect(html).toContain("fonts.googleapis.com");
         expect(html).toContain("Fraunces");
