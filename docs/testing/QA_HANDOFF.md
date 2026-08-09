@@ -14,7 +14,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **1894** passed / 1897 total / **178 スイート**（177 passed + 1 skipped suite）。2026-08-09 実測（`bun run test`。plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に **+3**・スイート不変 —— 新規経路でも default 解除が走ること / 解除と作成が tx 経由であること / P2002 が code を保って伝播すること）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受けて `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否のケースを追加し **+1**・スイート不変）。その前は 1890 passed / 1893 total・2026-08-04 実測（plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート、plan 029 で `profile.test.ts` を 34→63 に拡張し +29、plan 026 で `paypal.test.ts` を 40→56 に拡張し +16。029/026 はスイート数不変）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **1895** passed / 1898 total / **178 スイート**（177 passed + 1 skipped suite）。2026-08-09 実測（`bun run test`。CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に **+1**・スイート不変 —— §03 Next Actions が「a11y 拡大は完了」と読める文言へ退行しないことを固定）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に **+3**・スイート不変 —— 新規経路でも default 解除が走ること / 解除と作成が tx 経由であること / P2002 が code を保って伝播すること）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受けて `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否のケースを追加し **+1**・スイート不変）。その前は 1890 passed / 1893 total・2026-08-04 実測（plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート、plan 029 で `profile.test.ts` を 34→63 に拡張し +29、plan 026 で `paypal.test.ts` を 40→56 に拡張し +16。029/026 はスイート数不変）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | カバレッジ全体（lcov 2026-08-04 実測・plans 028/029/026 後） | Statements **67.71%** (5862/8657) / Branches **48.00%** (2498/5204) / Functions **55.48%** (921/1660) / Lines **66.79%** (5279/7903)（前回 66.8 / 46.86 / 55.39 / 65.81 — Statements +0.91 / Branches +1.14 / Functions +0.09 / Lines +0.98。内訳は plan 029（`profile.ts` Branches 67.81%→**100%**）と plan 026（`paypal.ts` Branches 72.05%→**91.91%**・Statements/Lines/Functions **100%**）が大半で、plan 028 の country.ts は 19 行の小モジュールなので寄与は小さい。Functions がほぼ動かないのは 3 プランとも既存関数の分岐を埋める作業で新規関数を増やさないため） |
 | Jest Integration テスト総数 | **66** / **8 スイート**（`cart-checkout.test.ts` 11 + `order-placement.test.ts` **9** + `order-lifecycle.test.ts` **8** + `webhook-payment.test.ts` **12** + `search-products.test.ts` **9** + `product-deletion.test.ts` **4** + `shipping-address-default.test.ts` **6** + `user-deletion-webhook.test.ts` **7**）。**2026-08-09 実測: 66/66 pass**（plan 064 / TESTS-21 で `shipping-address-default.test.ts` が 4 → **6**・スイート不変。シナリオ2 の characterization〔default 2 件併存〕を不変条件へ反転し、原子性〔P2002 時に攻撃者自身の default 解除もロールバック〕と DB 部分 unique index の存在を検証するシナリオ 5 / 6 を追加）。直前: **64** / 8 スイート。`bun run test:integration`（testcontainers + 専用 config）で実行、`bun run test` の集計外。**2026-08-09 実測: 64/64 pass**（plan 040 で `user-deletion-webhook.test.ts` を新設し **+7 / スイート +1**。Clerk `user.deleted` の FK 連鎖 —— CASCADE 7 種の消滅〔implicit M2M は相手側の `_count` で確認〕・**RESTRICT 4 経路の 500 characterization**〔Order / Review / 住所 / Store。PII を含む User 行が残存し続ける〕・SupportTicket の SET NULL + PII 秘匿化〔正の保証〕・deleteMany の冪等性）。**同日 57/57 pass**（plan 037 で `shipping-address-default.test.ts` を新設し **+4 / スイート +1**。default フラグの不変条件 —— 更新経路は解除が効くが**新規経路はスキップされ 2 件併存する既知バグ TESTS-21 の characterization**〔`TODO(characterization)` タグ付き・修正時に 1 へ反転〕・他ユーザー住所 id の上書きが P2002 で reject される IDOR 防御の実体）。**同日 53/53 pass**（plan 036 で `product-deletion.test.ts` を新設し **+4 / スイート +1**。`deleteProduct` の FK セマンティクス —— CASCADE 9 種の全件消滅〔孫の FreeShippingCountry を含む〕・Review による **RESTRICT（P2003）** の characterization・失敗時に子が 1 件も欠けない原子性・所有権ガードの副作用なし）。**同日 49/49 pass**（plan 033 で `search-products.test.ts` を新設し **+9 / スイート +1**。tsvector 全文検索の raw SQL を実 DB で初めて実行 —— トークナイザーの小文字化・`ts_rank` 降順・`plainto_tsquery` の AND 意味論・空白トリムと `q` 欠落の 2 分岐・パラメータ化の安全性・従属の `ORDER BY RANDOM()`。**本ファイルのみ docblock で `testEnvironment: node`**〔plan 032 と同じ理由〕）。**2026-08-08 計上: 40**（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否の Scenario S8 を追加し **+1 / スイート不変**。Stripe 8 + PayPal 4。ダッシュボードの静的走査と一致。**フルラン実測は 2026-08-04 の 39/39 pass が最新**で、S8 追加後の実行実測はまだ取っていない）。**2026-08-04 実測: 39/39 pass**（plan 032 で `webhook-payment.test.ts` を新設し **+11 / スイート +1**。Stripe 7 + PayPal 4。**本ファイルのみ docblock で `testEnvironment: node` に上書き**している —— jsdom には Fetch API の `Request` / `Response` が無く Route Handler を直接呼べないため。config は無変更）。**同日 28/28 pass**（plan 031 で `order-lifecycle.test.ts` を新設し **+8 / スイート +1**。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性〔逐次 + 並行ディスパッチ〕、group 単位キャンセルの親集約、両 admin 関数の認可ガード。**`updateOrderPaymentStatus`（CAS 済み）と `updateOrderGroupStatusAsAdmin`（read-then-act・未対応）は区別すること** —— 並行安全性を固定しているのは前者のみ）。**同日 20/20 pass / 4.054s**（plan 027 で order-placement に Scenario 7 = 在庫の実減算量 / Scenario 8 = オーバーセルロールバック / Scenario 9 = PLATFORM クーポン端数吸収 の 3 本を追加。直前は 17 / order-placement 6）。**2026-07-11 実測: 17/17 pass / 4.779s**（Round 4 時点の「Docker 停止により未実測」を解消）。**同日 Round 6 冒頭に 17/17 pass / 4.008s、Round 7 冒頭に 17/17 pass / 4.473s を再実測**（いずれもソース無変更の確認込み）。**2026-07-17: ダッシュボードの `integration × queries` が 14 と表示され本行の 17 と乖離していた問題を解消**（`scan-tests.ts` が `it.each` を 0 件と数えていた静的走査の欠陥。`c1be6d7` で展開対応し 14→17 で一致） |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
@@ -351,6 +351,28 @@ plans/README.md の該当行を DONE に更新すること。
 BLOCKED 判定は不要だが、各プラン冒頭の Drift check は必ず実行すること。
 052 のように「out of scope に実バグが潜んでいた」ケースでは、勝手に修正せず
 STOP して報告 → スコープ拡大の可否をオペレーターに確認すること）
+
+#### A11y-home: home（`/`）の a11y spec 追加（052 の残り 1 ページ）
+
+plan 052 が a11y スキャン下に置いたのは **browse・商品詳細・cart の 3 ページのみ**で、
+home は上記のドリフト（「OI-9 で対象外」は誤り）により未着手のまま残っている。
+R9 の残プラン（053〜056）とは独立した単独タスクとして扱う。
+
+```text
+tests/e2e/a11y/home.spec.ts を新規作成し、home（/）の WCAG 2.1 AA スキャンを追加してください。
+
+方針:
+1. tests/e2e/a11y/browse.spec.ts を雛形にする（runA11yScan / chromium 限定の test.skip）。
+2. readinessLocator は home の SSR 済み要素を 1 つ選ぶ（seed 依存を増やさない）。
+3. color-contrast は既知負債 OI-10 なので disabledRules で抑制し、TODO(OI-10) を明記する。
+4. 初回スキャンで実違反が出た場合は勝手に src/ を直さず STOP して報告する
+   （052 では critical 3 種 / serious 2 種が出た）。
+
+完了条件:
+1. bunx playwright test tests/e2e/a11y/home.spec.ts --project=chromium がグリーン。
+2. spec-sync-after-test skill で docs 同期（別コミット）。
+3. render-html.ts の NEXT_ACTIONS から本エントリを削除し、本プロンプトも削除（二重 SSOT 同期）。
+```
 
 #### D2: Performance 行の着手（lhci の計測 URL に `/` を追加）
 
