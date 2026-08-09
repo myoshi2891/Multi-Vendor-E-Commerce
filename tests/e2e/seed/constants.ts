@@ -135,6 +135,12 @@ const BASE_E2E_SEED = {
     startDate: "2020-01-01",
     endDate: "2099-12-31",
   },
+  // /offers 一覧 → /browse?offer=<url> 導線のゲスト E2E 用（plan 045）。
+  // url は OfferTag.url が globally unique なため category と同じくサフィックスを付ける。
+  offerTag: {
+    name: "E2E Offer",
+    url: "e2e-offer",
+  },
 } as const;
 
 const normalizeSeedSegment = (value: string) =>
@@ -300,6 +306,10 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
     platformCoupon: {
       ...BASE_E2E_SEED.platformCoupon,
       code: withSuffix(BASE_E2E_SEED.platformCoupon.code, uppercaseSuffix),
+    },
+    offerTag: {
+      ...BASE_E2E_SEED.offerTag,
+      url: withSuffix(BASE_E2E_SEED.offerTag.url, suffix),
     },
   };
 };
