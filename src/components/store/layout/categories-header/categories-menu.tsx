@@ -63,6 +63,11 @@ export default function CategoriesMenu({
                     一切できず WCAG 2.1.1 違反になる）。 */}
                 <button
                     type="button"
+                    // 可視ラベル ("All Categories") は xl 未満で hidden になり、
+                    // 残る Menu アイコンは aria-hidden な SVG なので、モバイルでは
+                    // ボタンの Accessible Name が空になる（WCAG 4.1.2 / axe: button-name）。
+                    // 可視テキストと同一文字列を aria-label で常設して名前を保証する。
+                    aria-label="All Categories"
                     aria-expanded={open}
                     aria-controls={listId}
                     onClick={() => toggleMenu(!open)}
