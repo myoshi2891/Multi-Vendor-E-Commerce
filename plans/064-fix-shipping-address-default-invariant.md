@@ -76,7 +76,10 @@ SELECT "userId", count(*) FROM "ShippingAddress" WHERE "default" GROUP BY "userI
 ### Step 1: RED（unit）— `879e3d33`
 
 `describe("upsertShippingAddress")` に `$transaction` パススルーを敷いた（従来この describe には
-存在せず、ルート `beforeEach` の `jest.clearAllMocks()` が実装を消すため貼り直しが要る）。
+存在しなかったため新規に追加した。なお**ルート `beforeEach` の `jest.clearAllMocks()` は呼び出し
+履歴のみを消去し、`mockImplementation` は保持する**ため、テストごとの貼り直しは本来不要である
+—— 実装を破棄するのは `jest.resetAllMocks()` / `mockReset()` であり、`jest.config.js` に
+`resetMocks` の指定も無い）。
 テストは +3:
 
 1. 新規経路でも解除が走る（旧 `findUnique` ゲートの不在を `not.toHaveBeenCalled()` で固定）
