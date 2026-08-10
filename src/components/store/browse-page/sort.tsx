@@ -33,6 +33,10 @@ const sortArray = [
         query: "price-high-to-low",
     },
 ];
+
+/** sort クエリが未指定 / 未知の値だったときに採用する既定の選択肢。 */
+const DEFAULT_SORT = sortArray[0];
+
 export default function ProductSort() {
     const searchParams = useSearchParams();
     const params = new URLSearchParams(searchParams);
@@ -40,12 +44,13 @@ export default function ProductSort() {
 
     const { replace } = useRouter();
 
-    const sortQuery = params.get("sort") || "most-popular";
-    // sortQuery は上の `||` で必ず非空。未知の値（手打ち URL 等）では find が
-    // undefined を返すため、?? で既定ラベルへフォールバックしてトリガーの
-    // アクセシブル名が「Sort by」だけになるのを防ぐ。
-    const sort =
-        sortArray.find((s) => s.query === sortQuery)?.name ?? "Most Popular";
+    // 未知の値（手打ち URL 等）は既定の選択肢へ正規化する。ラベルと
+    // RadioGroup の value / 太字判定が同じ値を参照するため、「Most Popular と
+    // 表示されているのに aria-checked がどれも false」という不整合を防ぐ。
+    const activeSort =
+        sortArray.find((s) => s.query === params.get("sort")) ?? DEFAULT_SORT;
+    const sortQuery = activeSort.query;
+    const sort = activeSort.name;
 
     const handleSort = (sort: string) => {
         params.set("sort", sort);

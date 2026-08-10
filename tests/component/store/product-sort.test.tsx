@@ -69,6 +69,19 @@ describe("ProductSort", () => {
         ).toBeInTheDocument();
     });
 
+    it("未知の sort 値では既定項目が選択状態になる", () => {
+        // Arrange
+        renderSort("sort=unknown-sort");
+
+        // Act
+        const menu = openMenu();
+
+        // Assert: 表示ラベルと選択状態が一致する（未正規化だと全項目 false）
+        expect(
+            within(menu).getByRole("menuitemradio", { name: "Most Popular" })
+        ).toHaveAttribute("aria-checked", "true");
+    });
+
     it("可視ラベル Sort by と現在値を合成したアクセシブル名を持つ", () => {
         // Arrange & Act
         renderSort("sort=top-rated");
