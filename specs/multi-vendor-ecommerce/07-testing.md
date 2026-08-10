@@ -457,7 +457,8 @@
   `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
   measured 66/66 pass. Plan 064 fixed TESTS-21 and turned the shipping-address
-  characterization into a regression guard (57 → 64 → 66; suites unchanged) — see below.
+  characterization into a regression guard (overall 57 / 7 suites → 64 / 8 → 66 / 8; plan 064's
+  own step is 64 → 66 with suites unchanged at 8) — see below.
   Plan 040 added the Clerk `user.deleted` FK suite
   (57 → 64; suites 7 → 8), pinning all three FK behaviours that a mocked
   `deleteMany` cannot reach: CASCADE (cart, wishlist, conversation, message and
@@ -469,7 +470,8 @@
   cleared other defaults) and the create path (which skipped the clear, leaving two
   defaults) — the latter as a characterization of the known gap TESTS-21, tagged
   `TODO(characterization)`. **Plan 064 fixed that gap and flipped the expectation to 1**
-  (57 → 66 with plan 040's suite in between; suites unchanged), so the file is now a
+  (57 → 66 with plan 040's suite in between, which took suites 7 → 8; plan 064's own
+  64 → 66 left suites unchanged at 8), so the file is now a
   regression guard rather than a record of a bug. The suite additionally pins two
   properties that the fix depends on: the clear is rolled back with the failing
   `create` when an attacker submits another user's address id (proving the write is
