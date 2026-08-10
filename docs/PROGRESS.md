@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1895 passed / 1898 total / 178 スイート（177 passed + 1 skipped suite）** — 2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1915 passed / 1918 total / 180 スイート（179 passed + 1 skipped suite）** — 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | **66テスト / 8スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7**）— 2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -3048,3 +3048,40 @@ purchase-flow + guest-flows **11 passed** / `bunx tsc --noEmit` 0 件 / `bun run
 | Integration テスト総数 | 66 | **66**（不変） |
 | テストファイル総数（ダッシュボード） | 204 | **207** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー対応 — ストアフロント UI の a11y / 状態整合 (2026-08-10)
+
+#### 概要
+
+CodeRabbit の指摘 5 件を現行コードに突き合わせて検証し、**4 件を修正・1 件を却下**した。あわせて、先行コミット `879763a0` でスキップされていたテスト統計の同期ドリフト（13 テスト・2 スイート）を是正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/browse-page/sort.tsx` | 未知の `sort` 値を `DEFAULT_SORT` へ正規化。表示ラベル / `RadioGroup` の `value` / 太字判定を `activeSort` 1 箇所から導出し、「Most Popular と表示されているのに `aria-checked` がどれも false」という不整合を解消 | `4bba7872` |
+| `tests/component/store/product-sort.test.tsx` | 未知 sort 値で既定項目が `aria-checked="true"` になることを固定（+1） | `4bba7872` |
+| `src/components/store/layout/categories-header/categories-menu.tsx` | 表示遅延タイマーを `useRef` で保持し離脱・再入・アンマウントで破棄／トリガーを `div` → `<button type="button">` 化し `aria-expanded` / `aria-controls` を同期／閉じた `<ul>` を `invisible` でフォーカス順から除外 | `3a6ccf83` |
+| `tests/component/store/categories-menu.test.tsx` | タイマー破棄・Enter / Space / クリック開閉・`aria-expanded`・閉時のフォーカス除外を固定（+6。タイマー破棄は旧実装での Red を実測） | `3a6ccf83` |
+| `docs/testing/COVERAGE_REPORT.md` | 「未採用カテゴリ」から Visual / a11y を除去（plan 052 までに両者とも実装・green 化済み）。「Jest スイート総数」行を unit/component 限定と明示（integration 8 は別・合算 188） | 本コミット |
+
+#### 却下した指摘（1 件）
+
+- **tailwind `classnames-order` の autofix**: `bunx eslint src/components/store/browse-page/sort.tsx` の findings は **0 件**。出力の `duration-[30ms] is ambiguous` は Tailwind パーサーの情報メッセージであり、順序ルールの違反ではない。
+
+#### 設計判断（レビュー指摘と異なる箇所）
+
+閉じたリストをフォーカス順から外すのに `hidden` / `inert` ではなく **`invisible`（`visibility: hidden`）** を採用した。前者は要素をアクセシビリティツリーから消すため既存の `getByRole("list")` 5 件が全滅するが、`visibility: hidden` はブラウザでは同じくフォーカス不可にでき、jsdom は Tailwind の CSS を評価しないためテストが生き残る。`transition-all` 下では discrete に切り替わるので開閉アニメーションも壊れない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1895 passed / 1898 total | **1915 passed / 1918 total** |
+| スイート数 | 178（177 passed + 1 skipped） | **180（179 passed + 1 skipped）** |
+| スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+> 更新前の 1895 / 178 は実測ではなくドリフトした値だった。差 20 のうち **13 テスト・2 スイートは `879763a0`（categories-menu / product-sort スイート新設）の未同期分**で、当該コミットで `spec-sync-after-test` が起動されていなかったことによる（[`.claude/rules/02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md)）。
