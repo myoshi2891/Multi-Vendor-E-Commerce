@@ -44,7 +44,15 @@
   unit-tested. The 2026-08-03 entry (1841 / 1844 across 177 suites) itself corrected a 12-test
   drift that predated plans 042 / 051.
 - Playwright E2E: 50 tests per browser across 21 files (150 total over chromium/firefox/webkit),
-  as of 2026-08-09 — up 3 from the a11y specs `tests/e2e/a11y/{browse,product,cart}.spec.ts`
+  as of 2026-08-09. **50 is the runtime count** (what `bunx playwright test` actually executes);
+  `docs/coverage-dashboard.html` reports **47** for the same tree (e2e 37 + a11y 7 + visual 3)
+  because it is a *static* filesystem scan counting `test(` declaration sites and cannot expand
+  loops — `tests/e2e/layout-chrome.spec.ts` declares 5 but runs 7 (`for (const path of
+  chromePages)` wraps one `test()`), and `tests/e2e/security-headers.spec.ts` declares 1 but
+  runs 2, so 47 + 3 = 50. The two numbers are different *units*, not a drift; always state which
+  one is meant rather than reconciling them to a single value. The 21-file total spans all
+  categories (12 main E2E + 7 a11y + 2 visual). Up 3 from the a11y specs
+  `tests/e2e/a11y/{browse,product,cart}.spec.ts`
   (plan 052, WCAG 2.1 AA scans of the guest storefront). All a11y specs are gated to chromium,
   so the firefox/webkit copies are skipped by design. The first scan surfaced real violations
   (3 critical, 2 serious) in `sort.tsx`, `quantity-selector.tsx` and `categories-menu.tsx`,
