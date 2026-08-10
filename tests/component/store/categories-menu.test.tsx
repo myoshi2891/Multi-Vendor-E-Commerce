@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import CategoriesMenu from "@/components/store/layout/categories-header/categories-menu";
 import { createMockCategory } from "@/config/test-fixtures";
@@ -112,6 +113,77 @@ describe("CategoriesMenu", () => {
         } finally {
             jest.useRealTimers();
         }
+    });
+
+    it("100ms 以内にマウスが離脱した場合はドロップダウンを開かない", () => {
+        // Arrange
+        jest.useFakeTimers();
+        try {
+            const { container } = renderMenu();
+            const root = container.firstElementChild as HTMLElement;
+
+            // Act: 表示タイマーが発火する前に離脱する
+            fireEvent.mouseEnter(root);
+            fireEvent.mouseLeave(root);
+            act(() => {
+                jest.advanceTimersByTime(100);
+            });
+
+            // Assert: 保留中タイマーが破棄され、開き直さない
+            expect(screen.getByRole("list")).toHaveClass(
+                "max-h-0",
+                "opacity-0"
+            );
+        } finally {
+            jest.useRealTimers();
+        }
+    });
+
+    it.each([
+        ["Enter", "{Enter}"],
+        ["Space", " "],
+    ])("キーボード（%s）でトリガーを開ける（WCAG 2.1.1）", async (_, keys) => {
+        // Arrange
+        const user = userEvent.setup();
+        const { setOpen } = renderMenu();
+
+        // Act: 実ボタンなのでフォーカスして打鍵するだけで活性化する
+        await user.tab();
+        await user.keyboard(keys);
+
+        // Assert
+        expect(setOpen).toHaveBeenCalledWith(true);
+    });
+
+    it("クリックでトリガーを開閉できる", async () => {
+        // Arrange
+        const user = userEvent.setup();
+        const { setOpen } = renderMenu(true);
+
+        // Act: open=true から閉じる
+        await user.click(screen.getByRole("button"));
+
+        // Assert
+        expect(setOpen).toHaveBeenCalledWith(false);
+    });
+
+    it("open=true のときトリガーは aria-expanded=true を公開する", () => {
+        // Arrange & Act
+        renderMenu(true);
+
+        // Assert
+        expect(screen.getByRole("button")).toHaveAttribute(
+            "aria-expanded",
+            "true"
+        );
+    });
+
+    it("閉じているドロップダウンをフォーカス順から外す", () => {
+        // Arrange & Act
+        renderMenu();
+
+        // Assert: max-h-0 だけでは高さ 0 でもリンクがフォーカス可能なまま残る
+        expect(screen.getByRole("list")).toHaveClass("invisible");
     });
 
     it("open=true のときトリガーに展開スタイルを適用する", () => {
