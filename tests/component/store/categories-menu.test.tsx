@@ -151,7 +151,17 @@ describe("CategoriesMenu", () => {
         await user.tab();
         await user.keyboard(keys);
 
-        // Assert
+        // Assert: 可視ラベルが xl 未満で hidden になっても Accessible Name が
+        // 残ること（WCAG 4.1.2 / axe: button-name の回帰防止）。
+        //
+        // **name 指定のロール検索だけでは守れない**: jsdom は Tailwind の CSS を
+        // 評価しないため `hidden xl:inline-flex` が効かず、span のテキストが
+        // 常に Accessible Name として計算される —— aria-label を外しても緑のまま
+        // になる（実測済み）。実ブラウザでのみ壊れる差分なので、名前の供給源で
+        // ある aria-label 属性そのものを固定する。
+        const trigger = screen.getByRole("button", { name: "All Categories" });
+        expect(trigger).toHaveFocus();
+        expect(trigger).toHaveAttribute("aria-label", "All Categories");
         expect(setOpen).toHaveBeenCalledWith(true);
     });
 
