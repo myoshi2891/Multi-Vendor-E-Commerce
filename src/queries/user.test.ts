@@ -673,7 +673,9 @@ describe("upsertShippingAddress", () => {
         // 実装は所有権検証・default 解除・作成/更新を db.$transaction で束ねる。
         // 既定の $transaction は jest.fn()（undefined を返す）なので、コールバックを
         // 同じ DB モックで実行するパススルーを敷く。ルート beforeEach の
-        // clearAllMocks() が実装を消すため、describe ごとに貼り直す必要がある。
+        // clearAllMocks() は呼び出し履歴のみを消去し mockImplementation は保持する
+        // （実装を破棄するのは resetAllMocks / mockReset）ため、この beforeEach は
+        // 貼り直しではなく本 describe 用のセットアップとして機能する。
         mockDb.$transaction.mockImplementation(
             async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
                 callback(mockDb)
