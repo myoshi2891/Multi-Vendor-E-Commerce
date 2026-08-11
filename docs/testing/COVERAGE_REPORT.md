@@ -68,8 +68,12 @@
 > の `matrix-data.summary.byDomain` が SSOT**（2026-08-10 実測: queries 28 / api-routes 6 / pages 30 /
 > store-ui 36 / dashboard-ui 22 / shared-ui 56 / hooks-state 6 / lib-utils 9 / seed 10 / other 6）。
 > 本表はホットスポットの**相対的な薄さ**を示す目的で残しており、絶対値の引用元にはしないこと。
-> なお、ダッシュボードの件数はすべて `test(` の**宣言箇所**を数える静的スキャン件数であり、
-> `bunx playwright test` 等の**実行時件数**とは単位が異なる（§1「テスト総数」行の 47/50 の注記を参照）。
+>
+> **`byDomain` の単位はテスト「ファイル」数**（[`build-matrix.ts`](../../scripts/coverage-dashboard/build-matrix.ts)
+> が走査済みテストファイルを 1 件ずつドメインへ加算する）。本表の列と同じ単位なので、そのまま比較できる。
+> 一方、セル側の **`testCount` は `test(` / `it(` の宣言箇所を数える静的スキャン件数**（`.each` はテーブル
+> 行数へ展開、wrapper と注釈形は除外）であり、`bunx playwright test` 等の**実行時件数**とは単位が異なる
+> （§1「テスト総数」行の 47/50 の注記を参照）。**両者を混ぜて引用しないこと。**
 
 | ドメイン | 既存テストファイル数（2026-06-21 時点の履歴値） | 状態 |
 |---|---|---|

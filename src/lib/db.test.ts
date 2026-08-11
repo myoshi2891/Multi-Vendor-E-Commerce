@@ -55,6 +55,22 @@ const setGlobalPrisma = (value: unknown): void => {
 const getGlobalPrisma = (): unknown =>
     (globalThis as unknown as { prisma: unknown }).prisma;
 
+/**
+ * `fn()` が throw した値そのものを返す。
+ *
+ * `expect(fn).toThrow(err)` は **message の一致**しか見ないため、
+ * 「元の error をラップせずそのまま再 throw する」契約（`src/lib/db.ts`）を
+ * 検証できない。throw された値を取り出して参照同一性で比較する。
+ */
+const captureThrown = (fn: () => unknown): unknown => {
+    try {
+        fn();
+    } catch (error: unknown) {
+        return error;
+    }
+    throw new Error("throw されませんでした");
+};
+
 /** NODE_ENV は readonly 型なので defineProperty で差し替える。 */
 const setNodeEnv = (value: string): void => {
     Object.defineProperty(process.env, "NODE_ENV", {
@@ -190,7 +206,9 @@ describe("db (遅延初期化 Proxy)", () => {
             });
             const { db } = await loadDb();
 
-            expect(() => readProp(db, "clientVersion")).toThrow(boom);
+            expect(captureThrown(() => readProp(db, "clientVersion"))).toBe(
+                boom
+            );
             expect(errorSpy).toHaveBeenCalledWith(
                 "[Db:getClient] Prisma クライアントの初期化に失敗しました",
                 expect.objectContaining({
@@ -208,7 +226,9 @@ describe("db (遅延初期化 Proxy)", () => {
             });
             const { db } = await loadDb();
 
-            expect(() => readProp(db, "clientVersion")).toThrow(boom);
+            expect(captureThrown(() => readProp(db, "clientVersion"))).toBe(
+                boom
+            );
             expect(mockConstructPrismaClient).toHaveBeenCalledTimes(1);
             expect(errorSpy).toHaveBeenCalledWith(
                 "[Db:getClient] Prisma クライアントの初期化に失敗しました",
@@ -219,17 +239,20 @@ describe("db (遅延初期化 Proxy)", () => {
         });
 
         it("Error 以外が throw された場合も文脈をログして再 throw する", async () => {
+            // 文字列だと「そのまま再 throw」と「文字列化して再 throw」を
+            // 区別できないため、参照で識別できるオブジェクトを sentinel に使う
+            const boom = { code: "NON_ERROR_FAILURE" };
             mockExtends.mockImplementation(() => {
-                throw "string failure";
+                throw boom;
             });
             const { db } = await loadDb();
 
-            expect(() => readProp(db, "clientVersion")).toThrow(
-                "string failure"
+            expect(captureThrown(() => readProp(db, "clientVersion"))).toBe(
+                boom
             );
             expect(errorSpy).toHaveBeenCalledWith(
                 "[Db:getClient] Prisma クライアントの初期化に失敗しました (Unknown error)",
-                expect.objectContaining({ error: "string failure" })
+                expect.objectContaining({ error: boom })
             );
         });
 
