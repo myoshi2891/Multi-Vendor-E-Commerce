@@ -472,6 +472,12 @@ export function renderHtml(matrix: Matrix, options: RenderOptions): string {
 
     const matrixJson = escapeJson({
         generatedAt: options.generatedAt.toISOString(),
+        // 全 testCount は「静的スキャン件数」= ソース中の `test(` / `it(` の**宣言箇所**数。
+        // ループで生成されるテスト（例: `for (const p of pages) test(...)`）は展開できないため、
+        // `bunx playwright test` / `bun run test` の**実行時件数**とは一致しない。
+        // 例: E2E は静的 47（e2e 37 + a11y 7 + visual 3）に対し実行時 50。
+        // 両者は矛盾ではなく単位違いなので、引用時は必ずどちらの単位かを明記すること。
+        countingUnit: "static-declaration-sites",
         summary: matrix.summary,
         cells: matrix.cells,
     });
@@ -582,7 +588,7 @@ export function renderHtml(matrix: Matrix, options: RenderOptions): string {
       </div>
       <div class="colophon__col">
         <span class="colophon__eyebrow">Method</span>
-        <span>filesystem scan + lcov · zero runtime data fetching</span>
+        <span>filesystem scan + lcov · zero runtime data fetching · counts are static <code>test(</code> declaration sites, not runtime results (E2E: 47 static / 50 runtime)</span>
       </div>
     </footer>
   </main>
