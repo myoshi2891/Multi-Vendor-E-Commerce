@@ -24,7 +24,9 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
     return (
         <div className="w-full px-4 py-0 sm:px-6 lg:px-0">
             <div className="flex w-full items-center justify-end gap-x-4 border-t border-gray-200">
-                <div
+                <button
+                    type="button"
+                    aria-disabled={page <= 1}
                     onClick={() => handlePrevious()}
                     className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
                 >
@@ -32,11 +34,13 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                     <p className="ml-3 text-sm font-medium leading-none">
                         Previous
                     </p>
-                </div>
+                </button>
                 <div className="flex flex-wrap">
                     {Array.from({ length: totalPages }).map((_, i) => (
-                        <span
+                        <button
                             key={i}
+                            type="button"
+                            aria-current={i + 1 === page ? "page" : undefined}
                             className={cn(
                                 "mr-4 cursor-pointer border-t border-transparent px-2 pt-3 text-sm font-medium leading-none text-gray-600 hover:text-orange-background",
                                 {
@@ -47,10 +51,12 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                             onClick={() => setPage(i + 1)}
                         >
                             {i + 1}
-                        </span>
+                        </button>
                     ))}
                 </div>
-                <div
+                <button
+                    type="button"
+                    aria-disabled={page >= totalPages}
                     onClick={() => handleNext()}
                     className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
                 >
@@ -58,7 +64,7 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                     <p className="ml-3 text-sm font-medium leading-none">
                         Next
                     </p>
-                </div>
+                </button>
             </div>
         </div>
     );

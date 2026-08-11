@@ -3212,7 +3212,7 @@ BAN 後の期待を `not.toBe(200)` → `toBe(200)` に崩すと `Expected: 200 
 
 #### 概要
 
-SonarCloud の PR #173 Measures が `src/components/store/browse-page/browse-pagination.tsx` を **Coverage on New Code 0.0%（未カバー 11 行 / 未カバー 2 条件）** として報告していた。plan 050 の周辺で追加された当該コンポーネントに Jest テストが 1 件も無かったのが原因で、コンポーネントテストを新設して解消した。
+SonarCloud の PR #173 Measures が `src/components/store/browse-page/browse-pagination.tsx` を **Coverage on New Code 0.0%（未カバー 11 行 / 未カバー 2 条件）** として報告していた。plan 046 で追加された当該コンポーネントに Jest テストが 1 件も無かったのが原因で、コンポーネントテストを新設して解消した。
 
 #### 実施内容
 

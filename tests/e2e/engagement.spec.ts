@@ -15,18 +15,17 @@ import { gotoStable, setupE2ETestState } from "@/config/test-helpers";
  * 3 テストは別リソース（wishlist / follow / review）を触り、フォローはテスト内で
  * unfollow まで戻すため相互干渉しない。リトライ時は Playwright がワーカーを破棄して
  * モジュールを再 import するため `beforeAll` が別の Clerk ユーザーを作り直す
- * （`helpers/auth.ts` の `uniqueId` はモジュールスコープ採番）。
+ * （`helpers/auth.ts` の `uniqueId` は `createCustomerSession()` の**呼び出しごと**に
+ * 採番される）。
  */
 /**
  * Clerk のクライアント初期化完了を待つ。
  *
- * **StoreCard のフォロー導線ではこれが必須。** `store-card.tsx:30-31` は
- * `useUser()` の `isSignedIn` だけを見て `router.push('/sign-in')` する（しかも `return`
- * が無い）。`useUser()` は Clerk のロード完了まで `isSignedIn: false` を返すため、
- * ハイドレーション直後にクリックすると **実際にはサインイン済みでもホームへ飛ばされ、
- * フォローも成立しない**（実測: クリック後 URL が `/` になり toast も出ない。
- * `/sign-in` はサインイン済みユーザーを `/` へ跳ね返すため最終的に `/` に着く）。
- * これはアプリ側の潜在バグだが plan 048 の In scope 外なので、テスト側で待って回避する。
+ * `store-card.tsx` の `handleStoreFollow` は `useUser()` の `isLoaded` を待ってから
+ * `isSignedIn` を見るため、ロード前クリックは**何も起きない**（以前は `isSignedIn`
+ * だけを見ており、ハイドレーション直後のクリックがサインイン済みユーザーを
+ * `/sign-in` 経由でホームへ飛ばしていた）。取りこぼしのない安定したクリックのため、
+ * ここでロード完了まで待ってから操作する。
  */
 async function waitForClerkLoaded(page: import("@playwright/test").Page) {
     await page.waitForFunction(
@@ -111,9 +110,12 @@ test.describe("顧客エンゲージメント導線", () => {
         await gotoStable(page, productUrl);
         await waitForClerkLoaded(page);
 
-        // StoreCard は商品詳細ページに描画される。フォロー要素は button ロールではなく
-        // onClick 付き div なので、テキストで取る（store-card.tsx:82-97）。
-        const followControl = page.getByText("Follow", { exact: true });
+        // StoreCard は商品詳細ページに描画される。フォロー要素はキーボード操作可能な
+        // `<button type="button">`（store-card.tsx）なので role で取る。
+        const followControl = page.getByRole("button", {
+            name: "Follow",
+            exact: true,
+        });
         await expect(followControl).toBeVisible({ timeout: 15000 });
 
         // Followers 数はクリック前に読んでおき、+1 されることを確認する。
@@ -131,7 +133,7 @@ test.describe("顧客エンゲージメント導線", () => {
             page.getByText(`You are now following ${seed.store.name}`)
         ).toBeVisible({ timeout: 10000 });
         await expect(
-            page.getByText("Following", { exact: true })
+            page.getByRole("button", { name: "Following", exact: true })
         ).toBeVisible();
         await expect(followersCount.first()).toHaveText(String(before + 1));
 
@@ -144,14 +146,19 @@ test.describe("顧客エンゲージメント導線", () => {
         // （同一 spec 内の他テストと状態を奪い合わないため）。
         await gotoStable(page, productUrl);
         await waitForClerkLoaded(page);
-        const followingControl = page.getByText("Following", { exact: true });
+        const followingControl = page.getByRole("button", {
+            name: "Following",
+            exact: true,
+        });
         await expect(followingControl).toBeVisible({ timeout: 15000 });
         await followingControl.click();
 
         await expect(
             page.getByText(`You unfollowed ${seed.store.name}`)
         ).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText("Follow", { exact: true })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: "Follow", exact: true })
+        ).toBeVisible();
     });
 
     test("レビューを投稿すると成功トーストが出て一覧に反映される", async ({
