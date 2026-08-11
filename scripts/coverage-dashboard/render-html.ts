@@ -177,13 +177,16 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
     // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
     // 本エントリと QA_HANDOFF R8 を同時削除すること。
+    // 2026-08-09 時点: 042 / 043 / 044 / 045 / 047 が DONE。残るは 046 / 048 / 049 / 050。
+    // (045 = guest-flows.spec.ts 新設・E2E +6/browser。042 の signIn 修復完了により
+    //  048 / 049 / 050 のブロックは解除済み。)
     {
         priority: "medium",
-        title: "R8: E2E 網羅性ギャップ解消 (plans 042〜050)",
-        target: "signIn ヘルパー修復 (認証系 16 件回復) / VRT 再撮影 / ゲスト導線 / /browse ページネーション配線 / 注文詳細金額 / エンゲージメント / admin 店舗ステータス",
-        tool: "plans/042〜050 の自己完結プラン (Sonnet 実行可・042 が認証系の先行依存・spec-sync 必須)",
+        title: "R8: E2E 網羅性ギャップ解消 (残り plans 046 / 048〜050)",
+        target: "/browse ページネーション配線 / エンゲージメント (wishlist・フォロー・レビュー) / プロフィール住所・注文履歴 / admin 店舗ステータス (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・047 注文詳細金額は完了)",
+        tool: "plans/046 / 048〜050 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
         cost: "M",
-        impact: "全滅中の認証系 E2E (在庫減算・複数店舗クーポン = §20 P0 相当) を回復し、請求表示・顧客エンゲージメント・管理者オペレーションをブラウザ導線で回帰検知下に置く (E2E 修復 16 + 新規約 13 テスト ×3 ブラウザ)",
+        impact: "顧客エンゲージメントと管理者オペレーションをブラウザ導線で回帰検知下に置き、カタログ成長時に商品へ到達できない /browse の dormant バグ (ページャ未実装) を配線ごと閉じる",
     },
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
@@ -195,13 +198,29 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // plans/audit/findings-17-e2e-coverage-r9.md。QA_HANDOFF「次回着手用 依頼
     // プロンプト」R9 と一対一対応。全 6 プラン完了時に本エントリと QA_HANDOFF R9 を
     // 同時削除すること。
+    // 2026-08-09: 052 完了 (e0cdb735)。a11y を browse/商品詳細/cart へ拡大し、
+    // 初回スキャンで出た実違反 (critical 3 / serious 2) を df4d4f7e で修正した。
+    // 併せて判明: plan 052 本文の「home は OI-9 で対象外」は執筆時点の誤りで、
+    // OI-9 は 2026-06-06 に解消済み。home の a11y spec は依存なしで着手でき、
+    // R9 とは別エントリ（下記「home (/) の a11y spec 追加」）として起票した。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (plans 051〜056)",
-        target: "国選択 cookie 往復 / a11y 拡大 (browse・商品詳細・cart) / 認証サーフェススモーク / VRT 拡大 / ゲストカート引き継ぎ / Newsletter dormant 404 characterization",
-        tool: "plans/051〜056 の自己完結プラン (Sonnet 実行可・051/056 は依存ゼロ・spec-sync 必須)",
+        title: "R9: E2E 残余ギャップ解消 (plans 051・053〜056 — 052 は完了)",
+        target: "国選択 cookie 往復 / 認証サーフェススモーク / VRT 拡大 / ゲストカート引き継ぎ / Newsletter dormant 404 characterization（052 の a11y 拡大は browse・商品詳細・cart の 3 ページで完了。home は 052 の対象外で未着手 — 下の専用エントリを参照）",
+        tool: "plans/051・053〜056 の自己完結プラン (Sonnet 実行可・051/056 は依存ゼロ・spec-sync 必須)",
         cost: "M",
-        impact: "配送先 cookie・ゲスト→会員化のカート持ち越し・sign-up ウィジェットドリフトなどゲスト側の中核導線を回帰検知下に置き、a11y/VRT を売上導線ページへ拡大 (E2E 新規約 11 テスト ×3 ブラウザ + VRT 2 枚)",
+        impact: "配送先 cookie・ゲスト→会員化のカート持ち越し・sign-up ウィジェットドリフトなどゲスト側の中核導線を回帰検知下に置く。a11y は 052 で browse・商品詳細・cart へ拡大済み (実違反 5 種を検出・修正)",
+    },
+    // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
+    // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。
+    // 依存はゼロで、既存 tests/e2e/a11y/_helpers.ts の runA11yScan をそのまま使える。
+    {
+        priority: "medium",
+        title: "home (/) の a11y spec 追加 (052 の残り 1 ページ)",
+        target: "tests/e2e/a11y/home.spec.ts (未作成) — 052 で browse・商品詳細・cart は完了済み",
+        tool: "@axe-core/playwright (tests/e2e/a11y/_helpers.ts の runA11yScan・chromium 限定)",
+        cost: "S",
+        impact: "売上導線の入口である home を WCAG 2.1 AA の回帰検知下に置く。browse/商品詳細/cart では初回スキャンで critical 3 + serious 2 の実違反が出ており、未スキャンの home にも同種の負債が残っている可能性が高い",
     },
     {
         priority: "medium",
@@ -453,6 +472,12 @@ export function renderHtml(matrix: Matrix, options: RenderOptions): string {
 
     const matrixJson = escapeJson({
         generatedAt: options.generatedAt.toISOString(),
+        // 全 testCount は「静的スキャン件数」= ソース中の `test(` / `it(` の**宣言箇所**数。
+        // ループで生成されるテスト（例: `for (const p of pages) test(...)`）は展開できないため、
+        // `bunx playwright test` / `bun run test` の**実行時件数**とは一致しない。
+        // 例: E2E は静的 47（e2e 37 + a11y 7 + visual 3）に対し実行時 50。
+        // 両者は矛盾ではなく単位違いなので、引用時は必ずどちらの単位かを明記すること。
+        countingUnit: "static-declaration-sites",
         summary: matrix.summary,
         cells: matrix.cells,
     });
@@ -563,7 +588,7 @@ export function renderHtml(matrix: Matrix, options: RenderOptions): string {
       </div>
       <div class="colophon__col">
         <span class="colophon__eyebrow">Method</span>
-        <span>filesystem scan + lcov · zero runtime data fetching</span>
+        <span>filesystem scan + lcov · zero runtime data fetching · counts are static <code>test(</code> declaration sites, not runtime results (E2E: 47 static / 50 runtime)</span>
       </div>
     </footer>
   </main>

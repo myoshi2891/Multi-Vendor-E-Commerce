@@ -1,8 +1,15 @@
 "use client";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const sortArray = [
     {
@@ -26,6 +33,10 @@ const sortArray = [
         query: "price-high-to-low",
     },
 ];
+
+/** sort クエリが未指定 / 未知の値だったときに採用する既定の選択肢。 */
+const DEFAULT_SORT = sortArray[0];
+
 export default function ProductSort() {
     const searchParams = useSearchParams();
     const params = new URLSearchParams(searchParams);
@@ -33,17 +44,27 @@ export default function ProductSort() {
 
     const { replace } = useRouter();
 
-    const sortQuery = params.get("sort") || "most-popular";
-    const sort = sortQuery
-        ? sortArray.find((s) => s.query === sortQuery)?.name
-        : "Most Popular";
+    // 未知の値（手打ち URL 等）は既定の選択肢へ正規化する。ラベルと
+    // RadioGroup の value / 太字判定が同じ値を参照するため、「Most Popular と
+    // 表示されているのに aria-checked がどれも false」という不整合を防ぐ。
+    const activeSort =
+        sortArray.find((s) => s.query === params.get("sort")) ?? DEFAULT_SORT;
+    const sortQuery = activeSort.query;
+    const sort = activeSort.name;
 
     const handleSort = (sort: string) => {
         params.set("sort", sort);
         replace(`${pathname}?${params.toString()}`);
     };
 
+    // 開閉状態はシェブロンの回転にのみ使う（開閉制御そのものは Radix が持つ）。
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
+    // 可視ラベル "Sort by" とトリガーボタンを紐付ける ID。静的 ID だと同一ページに
+    // Sort が複数描画された際に衝突するため、React の useId で一意化する
+    // （SSR/CSR で同値）。
+    const sortLabelId = useId();
+    const sortTriggerId = useId();
 
     return (
         <div className="duration-[30ms] relative w-full transition-all">
@@ -51,74 +72,86 @@ export default function ProductSort() {
                 <div className="flex">
                     <div className="!float-right h-9 w-[227px]">
                         <div className="!float-left h-9 w-[227px]">
-                            <div
-                                className="group relative z-20 inline-block h-9 w-[227px] outline-0"
-                                onMouseEnter={() => setIsMenuOpen(true)}
-                                onMouseLeave={() => setIsMenuOpen(false)}
-                            >
-                                {/* Trigger */}
-                                <div className="h-9 w-[227px]">
-                                    <div className="relative inline-flex w-full">
-                                        <div className="relative">
-                                            <span className="duration-[20ms] absolute top-0 flex h-full w-[70px] items-center justify-center transition-all">
-                                                <label htmlFor="">
+                            <div className="group relative z-20 inline-block h-9 w-[227px] outline-0">
+                                {/* Trigger + Menu。role="menu" を手書きせず Radix の
+                                    DropdownMenu に委譲することで、ArrowUp/ArrowDown /
+                                    Home/End / 先頭文字タイプアヘッド / Escape での
+                                    トリガーへのフォーカス復帰 / aria-checked を
+                                    プリミティブ側が担保する（ARIA APG menu パターン）。 */}
+                                <DropdownMenu
+                                    open={isMenuOpen}
+                                    onOpenChange={setIsMenuOpen}
+                                >
+                                    <div className="h-9 w-[227px]">
+                                        <div className="relative inline-flex w-full">
+                                            <div className="relative">
+                                                <span
+                                                    id={sortLabelId}
+                                                    className="duration-[20ms] pointer-events-none absolute top-0 z-10 flex h-full w-[70px] items-center justify-center transition-all"
+                                                >
                                                     Sort by
-                                                </label>
-                                            </span>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            disabled
-                                            value={sort}
-                                            className="h-9 w-full cursor-pointer border bg-transparent bg-none px-3 pl-[70px] pr-10 align-bottom text-sm font-bold text-main-primary outline-0"
-                                        />
-                                        <div className="relative">
-                                            <span
-                                                className="absolute right-0 top-0 box-border flex h-full w-10 items-center justify-center transition-transform duration-200 ease-in-out"
-                                                style={{
-                                                    transform: isMenuOpen
-                                                        ? "rotate(180deg)"
-                                                        : "rotate(0deg)",
-                                                }}
-                                            >
-                                                <ChevronDown className="w-3" />
-                                            </span>
+                                                </span>
+                                            </div>
+                                            {/* キーボード操作可能な実ボタン。disabled な
+                                                <input> ではフォーカスも開閉もできないため
+                                                （WCAG 2.1.1）、メニューボタンパターンにする。
+                                                aria-haspopup / aria-expanded / aria-controls は
+                                                DropdownMenuTrigger が付与する。 */}
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    id={sortTriggerId}
+                                                    type="button"
+                                                    // 「Sort by」＋現在値（例: Most Popular）を
+                                                    // 合成してアクセシブル名にする。
+                                                    aria-labelledby={`${sortLabelId} ${sortTriggerId}`}
+                                                    className="h-9 w-full cursor-pointer border bg-transparent bg-none px-3 pl-[70px] pr-10 text-left align-bottom text-sm font-bold text-main-primary"
+                                                >
+                                                    {sort}
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <div className="relative">
+                                                <span
+                                                    className="pointer-events-none absolute right-0 top-0 box-border flex h-full w-10 items-center justify-center transition-transform duration-200 ease-in-out"
+                                                    style={{
+                                                        transform: isMenuOpen
+                                                            ? "rotate(180deg)"
+                                                            : "rotate(0deg)",
+                                                    }}
+                                                >
+                                                    <ChevronDown className="w-3" />
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                {/* Menu */}
-                                <ul
-                                    className={cn(
-                                        "absolute max-h-72 w-full overflow-auto bg-white py-2 shadow-2xl transition-all duration-300 ease-in-out",
-                                        {
-                                            "translate-y-0 opacity-100":
-                                                isMenuOpen,
-                                            "pointer-events-none -translate-y-2 opacity-0":
-                                                !isMenuOpen,
-                                        }
-                                    )}
-                                >
-                                    {sortArray.map((option) => (
-                                        <li
-                                            key={option.query}
-                                            className="flex h-8 w-full cursor-pointer items-center justify-between bg-white px-4 text-xs hover:bg-gray-100"
-                                            onClick={() =>
-                                                handleSort(option.query)
-                                            }
+                                    <DropdownMenuContent
+                                        align="start"
+                                        sideOffset={0}
+                                        className="max-h-72 w-[227px] overflow-auto py-2"
+                                    >
+                                        <DropdownMenuRadioGroup
+                                            value={sortQuery}
+                                            onValueChange={handleSort}
                                         >
-                                            <span
-                                                className={cn({
-                                                    "font-bold":
-                                                        option.query ===
-                                                        sortQuery,
-                                                })}
-                                            >
-                                                {option.name}
-                                            </span>
-                                            {option.query === sortQuery && <Check className="w-3" />}
-                                        </li>
-                                    ))}
-                                </ul>
+                                            {sortArray.map((option) => (
+                                                <DropdownMenuRadioItem
+                                                    key={option.query}
+                                                    value={option.query}
+                                                    className="h-8 cursor-pointer rounded-none px-4 pl-8 text-xs"
+                                                >
+                                                    <span
+                                                        className={cn({
+                                                            "font-bold":
+                                                                option.query ===
+                                                                sortQuery,
+                                                        })}
+                                                    >
+                                                        {option.name}
+                                                    </span>
+                                                </DropdownMenuRadioItem>
+                                            ))}
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
                     </div>

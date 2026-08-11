@@ -20,6 +20,13 @@
   Deleting an Order cascades to its OrderGroups and OrderItems
   (`onDelete: Cascade` on OrderGroup→Order and OrderItem→OrderGroup).
 - ShippingAddress and Country: address data used for orders and shipping.
+  A partial unique index (`ShippingAddress("userId") WHERE "default"`) enforces
+  "at most one default address per user" at the database level. Prisma's schema
+  syntax cannot express a partial unique index, so it lives in a hand-written
+  migration (`20260809064416_add_shipping_address_single_default_index`) rather
+  than in `schema.prisma`; `prisma migrate dev` was verified not to propose
+  dropping it. Rationale and the application-level counterpart are in
+  [`06-quality.md`](06-quality.md) § Data Integrity.
 - Coupon: store coupon usable in carts and order groups.
 - PaymentDetails: payment record tied to an order and user
   (`Decimal(12,2)` for amount).

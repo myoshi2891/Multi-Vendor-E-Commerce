@@ -106,26 +106,26 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
-| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | TODO |
+| [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
-| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | TODO |
-| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | TODO |
+| [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
+| [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
-| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | TODO |
+| [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
-| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | TODO |
+| [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
-| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | TODO |
+| [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
@@ -136,9 +136,277 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [060](060-server-validate-coupon-mutations.md) | クーポン mutation のサーバー側 Zod 検証（discount>99→負値 total 防止・SECURITY-14） | security | P1 | S–M | LOW–MED | — | DONE |
 | [061](061-security-response-headers.md) | レスポンス強化ヘッダ（clickjacking/MIME/referrer/HSTS・SECURITY-06） | security | P2 | M | LOW | — | DONE |
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
-| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | TODO |
+| [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
+| [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **052 の実行記録（2026-08-09・`df4d4f7e`〜`f685271d`）**
+>
+> **DONE。** `tests/e2e/a11y/` に `browse` / `product` / `cart` を新設（各 1 テスト）。
+> E2E は **47 → 50 tests/browser / 18 → 21 files / 3 ブラウザ計 141 → 150**、
+> a11y スペックは 4 → **7** でスイート **7 passed**（chromium）。Step 0 の前提
+> （042 Step 4 の `aria-label`）と Drift check（`git diff --stat 99ede89..HEAD`）はいずれも
+> クリアで、`tests/e2e/a11y/` は無変更だった。
+>
+> **Step 2 で STOP 条件に該当した（`color-contrast` 以外の違反を検出）。** 報告のうえ
+> オペレーター承認を得て、**プランが out of scope としていた `src/` の修正までスコープを
+> 拡大**した（`df4d4f7e`）。検出内容:
+>
+> | ページ | rule | impact | 発生元 |
+> |---|---|---|---|
+> | `/browse` `/product` | `label` | critical | `sort.tsx` の `<label htmlFor="">` が空文字で input と未接続 |
+> | `/product` | `button-name` | critical | `quantity-selector.tsx` の数量 +/- がアイコンのみ |
+> | `/product` | `label` | critical | `quantity-selector.tsx` の数量 `<input readOnly>` |
+> | `/product` | `list` + `listitem` | serious | `categories-menu.tsx` の `<ul>` 直下が `<li>` でなく `<Link>` |
+>
+> **`disabled` / `readOnly` でも axe はラベルを要求する**（スクリーンリーダーは読み上げる）
+> 点が実装側の盲点だった。ID は静的値ではなく `useId()` で採番している
+> （`quantity-selector.tsx` では**早期リターンより前**に置くこと —— 後ろに置いて
+> `react-hooks/rules-of-hooks` で lint が赤になった）。
+>
+> **プラン本文からの逸脱 1 点**: `/browse` の readinessLocator はプラン記載の prefix セレクタ
+> `[data-testid^="product-card-"]` ではなく **seed slug 完全一致の testid** を使う。prefix は
+> カード内の `product-card-price`（`product-price.tsx:112`）にも当たり、`.first()` が
+> カードを掴めるかどうかが描画順依存になるため。`guest-flows.spec.ts:62` と同じ形。
+>
+> **副産物（a11y とは別件のバグ）**: axe の html ダンプから `categories-menu.tsx` の href
+> テンプレート末尾に余分な `}`（`` ?category=${category.url}} ``）があるのを発見し除去した。
+>
+> **ドリフト発見**: プラン本文の「home（`/`）は OI-9 未解消のため対象外」は執筆時点
+> （2026-07-12）の誤りで、**OI-9 は 2026-06-06 に解消済み**（`c196e3d5`）。
+> `tests/e2e/a11y/home.spec.ts` は依存なしで着手できる（a11y README / QA_HANDOFF /
+> `render-html.ts` の NEXT_ACTIONS に記録済み）。
+>
+> **回帰**: a11y 7 passed / Jest **1894 passed**（不変）/ VRT 3 passed /
+> purchase-flow + guest-flows 11 passed / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors。
+
+> **045 の実行記録（2026-08-09・`eaac5c06`〜`515a736f`）**
+>
+> **DONE。** `tests/e2e/guest-flows.spec.ts` を新設し **6 テスト**（compare 2 / track-order 2 /
+> offers 1 / 静的ページ 1）。E2E は **41 → 47 tests/browser / 17 → 18 files / 3 ブラウザ計
+> 123 → 141**、E2E メインスペックは 11 → **12**。`src/` は 1 行も変更していない。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は**空**で、
+> `OfferTag.url` の `@unique`・compare/track-order/静的ページの文言もプラン本文と一致した。
+>
+> **プラン本文からの逸脱 2 点（いずれもセレクタの取り方。プランの意図は保持している）**:
+>
+> 1. **compare ボタンのスコープを testid ではなく group コンテナで取った。** プランは
+>    `card.getByRole("button", { name: "Add to compare" })` を指示していたが、
+>    `data-testid="product-card-<slug>"` は **`<Link>` に付いており、アクションボタンは
+>    その Link の外**（`group-hover:block` の兄弟オーバーレイ内・`product-card.tsx:103-141`）。
+>    testid 配下では**ボタンが 1 つも見つからない**。`page.locator("div.group").filter({ has: cardLink })`
+>    でカードを取り直した。プランが警告していた「page 直下で取ると strict mode violation か
+>    別商品を押す」という危険は、この形でも回避できている。
+> 2. **offers の見出しをリンクの href でスコープしてから検証した。** `OfferTag.url` は
+>    globally unique なのでワーカーサフィックスを付けたが、**name は全ワーカー共通**のまま
+>    （既存 seed の慣行）。/offers には過去 run のタグも upsert で残るため、
+>    `page.getByRole("heading", { name })` 直引きは strict mode violation になりうる。
+>
+> **識別力を機械的に確認した。** compare の `toHaveCount(1)` を 2 に、`/contact` の期待見出しを
+> `About` に崩すと**その 2 テストだけが落ちる**ことを実測してから戻している
+> （plan 033 / 036 / 040 と同じ扱い）。
+>
+> **トグル確認は toast ではなく `aria-pressed` を見ている。** toast は自動消滅するため
+> 時間依存になる。状態属性なら遅い WebKit でも同じ判定になり、実際 3 ブラウザとも
+> リトライなしで green だった。
+>
+> **本プランが主張しないこと**: (1) compare の上限 4 件の境界はスコープ外（プラン本文の
+> 判断どおり。追加するなら toast ではなく `aria-pressed` で assert すること）、
+> (2) track-order の**成功系**（実在注文の照会）は検証していない —— 6 テストはいずれも
+> not-found / バリデーションの異常系とゲスト表示のみ、(3) フルラン（全 spec × 3 ブラウザ）は
+> 再取得していない。E2E 全体の最新フルラン実測は **2026-08-04 の 83 passed / 0 failed /
+> 3 flaky / 37 skipped** のままである。
+>
+> **次の実行者への申し送り**: 本プランが `tests/e2e/seed/`（`constants.ts` + `seed-e2e.ts`）に
+> OfferTag を追加したため、**plan 046 は先にこの diff を取り込むこと**（プラン 045 の
+> Maintenance notes が予告していたコンフリクト源が実際に生じている）。
+>
+> 統計: Jest unit **1894**（不変）、Integration **66**（不変）、ダッシュボード集計
+> **203 → 204**。docs 同期は `0c990251`。
+>
+> **064 の実行記録（2026-08-09・`cbd32067` + `433ffd4c`）**
+>
+> **DONE（TESTS-21 の remediation 完了）。** `upsertShippingAddress` が不変条件
+> 「1 ユーザーにつき `default: true` は最大 1 件」を**新規作成経路で破っていた**件を修正した。
+> 原因は解除の条件式で、`findUnique({ where: { id: address.id } })` の非 null に条件付けられていたため、
+> UI が `v4()` で採番する新規住所では**常に null → 解除が丸ごとスキップ**され default が 2 件併存していた。
+>
+> **`$transaction` は装飾ではなく前提条件だった。** 解除を無条件化すると、他ユーザーの id を渡された
+> IDOR 経路で「create が P2002 で落ちる**前に**攻撃者自身の default が解除される」= **拒否されたのに
+> 副作用が残る**状態が生まれる。これは理屈上の話ではなく、追加した**シナリオ5 が修正前の実装で実際に
+> 赤くなる**ことで実証された（旧実装も `findUnique` を id だけで引いていたため発火していた）。
+> 既存シナリオ3 の `victim?.default === true` は `userId` スコープだけでも通るので、
+> **ロールバックを立証しているのはシナリオ5 だけ**である。
+>
+> **DB 層にも二重で張った。** 部分 unique index `("userId") WHERE "default"` を手書き migration で追加
+> （`20260809064416`）。Prisma スキーマ構文では表現できないため `migrate dev --create-only` + SQL 手書き。
+> **適用前提を実測で確認**: 既存重複があると作成に失敗するため事前調査し、本番相当 DB は
+> 総 6 行 / default 5 行 / **重複ユーザー 0 件**だった（したがって backfill は不要）。
+> **ドリフトも確認済み**: index は `schema.prisma` に現れないが、`migrate dev --create-only` が生成する
+> migration は空で Prisma は DROP を提案しない。シナリオ6 が「アプリを迂回した 2 件目の default が
+> P2002 で拒否される」= index の存在そのものを回帰ガード化している。
+>
+> **plan 037 の申し送りとの差異（重要）**: 037 は「部分 index を選ぶならシナリオ 2 は DB エラー期待に
+> 書き換わる」と申し送っていたが、それは **index だけに頼る場合**の話。本プランはアプリ層で先に解除するため、
+> シナリオ 2 は正常系（`countDefaults === 1`）のままで正しい。
+>
+> **本プランが主張しないこと**: (1) 既存重複行の backfill は含まない（0 件のため不要。将来発生しても
+> 当該ユーザーが次に「default にする」を押した時点で自己修復する）、(2) default を外して 0 件になるのは
+> 修正前からの挙動で変えていない、(3) `requireUser()` 化と `getUserShippingAddresses` の `orderBy` は
+> 意図的に範囲外（correctness ではなく整合性の改善なので、P2002 伝播の修正に混ぜない）。
+>
+> 統計: unit **1891 → 1894**（スイート不変）、Integration **64 → 66**（スイート不変・
+> `shipping-address-default.test.ts` 4 → 6）、実測 66/66 pass。docs 同期は `95abed00`。
+
+> **040 の実行記録（2026-08-09・`c364a75d`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/user-deletion-webhook.test.ts` を
+> 新設し **7 シナリオ**。Integration は **57 → 64 / スイート 7 → 8**（実測 64/64 pass）。
+> `src/app/api/webhooks/route.ts` と `prisma/` はいずれも 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `route.ts` は baseline `9111f41` から
+> **+39 / −5 行**動いていたが、差分は CodeRabbit 第 11 弾の id 検証強化（検証した
+> `rawUserId.trim()` を絞り込みキーにも使う修正）であり、プランが**前提**とする PII 秘匿化
+> `$transaction`（`supportTicket.updateMany` → `user.deleteMany`）は健在だった。プランの STOP
+> 条件は「秘匿化が**無くなっている**」「さらなる匿名化・ソフト削除が新たに入っている」であり、
+> どちらにも当たらない。
+>
+> **STOP 条件（FK 側）も非該当**: シナリオ 2〜5 はいずれも 500 で RESTRICT は健在、
+> シナリオ 1 の子行は全て 0、セラー側リソースの巻き添えも無し。
+>
+> **識別力を機械的に確認した。** シナリオ 1 の `_count.followers === 0` と
+> シナリオ 6 の PII 秘匿期待を崩すと**その 2 件だけが落ちる**ことを実測してから戻している。
+>
+> **本プランが主張しないこと（重要・そのまま申し送る）**:
+>
+> 1. **RESTRICT 群（シナリオ 2〜5）は現挙動の characterization であり、「削除できないのが
+>    正しい」という主張ではない。** 注文・レビュー・住所・店舗のいずれか 1 件でも持つ
+>    ユーザーは Clerk 削除に DB が追従できず、**PII を含む User 行が残り続ける**（Svix の
+>    リトライ上限後は誰も気付かない）。修正（PII 匿名化 + 行温存 / ソフト削除 / onDelete 変更）
+>    を入れる際は期待値を反転させること。
+> 2. **PII 残存の解消状況を混同しないこと。** SET NULL 経路（SupportTicket）の PII 秘匿化は
+>    `7e3e507`（2026-07-24）で **landed 済み**でありシナリオ 6 は**正の保証**を検証している。
+>    一方 **RESTRICT 群の PII 残存は別問題で依然 OPEN**。「PII 消去は対応済み」と一括りに
+>    説明しないこと。
+> 3. **`PaymentDetails` の CASCADE は検証していない**（到達不能）。`PaymentDetails.orderId` は
+>    Order への必須 FK なので、PaymentDetails を持つユーザーは必ず Order を持ち、削除は常に
+>    Order の RESTRICT で先に阻止される。
+>
+> **次の実行者が踏むであろう落とし穴 1 点**: implicit M2M（`_UserFollowingStore` /
+> `_CouponToUser`）は Prisma から**直接クエリできない**。相手側（Store / Coupon）の `_count` を
+> 引いて 0 を確認すること —— Store 残存の assert だけでは**中間テーブル行が孤児として残っても
+> green になる**。
+>
+> **037 の実行記録（2026-08-09・`bc663893`）**
+>
+> **DONE（プラン本文からの逸脱なし）。** `tests/integration/shipping-address-default.test.ts` を
+> 新設し **4 シナリオ**。Integration は **53 → 57 / スイート 6 → 7**（実測 57/57 pass）。
+> `src/queries/user.ts` は 1 行も変更していない。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `user.ts` は baseline `4ec6b5b` から
+> **+856 / −645 行**動いていた（Round 14 の冪等性ゲート等）が、プランが STOP 条件に挙げていたのは
+> 「新規経路の解除スキップが**既に修正されている**こと」であり、`upsertShippingAddress` の形状
+> —— `findUnique(address.id)` → `if (addressDB)` の `updateMany` → 所有権 `findFirst` →
+> update / create の分岐 —— は健在で、スキップもそのまま残っていた。plan 027 が確立した扱い
+> （ケース設計は活かし実測から再導出）に倣って続行した。
+>
+> **シナリオ 2 のギャップは未修正のまま**（実測 `count({ default: true }) === 2`）。
+> これは**バグの characterization** であり、テスト本文に `TODO(characterization)` タグ・
+> TESTS-21 参照・正しい不変条件（1 ユーザー = default 最大 1 件）・「修正時に 1 へ反転」の
+> 4 点をコメントで明記してある。**このタグが無いと後任が `=== 2` を満たすべき契約と誤読し、
+> バグ修正を「テストが壊れた」として差し戻す**（プラン本文が警告していた典型的な事故）。
+>
+> **シナリオ 3 で判明した性質（記録）**: 他ユーザーの住所 id を渡したときに上書きされない
+> 根拠は、明示的な認可エラーではなく **PK 一意制約（P2002）** である。所有権 `findFirst` が
+> null を返す → 同一 id で `create` を試みる → PK 衝突、という経路であり、
+> **「認可で弾いている」のではなく「たまたま衝突している」**。被害者の行は無傷で攻撃者側の
+> 行も 0 件なので実害は無いが、将来 id 採番方式が変わればこの防御は消える。
+>
+> **識別力を機械的に確認した。** シナリオ 1 の解除期待と 3 の被害者 `userId` を崩すと
+> **その 2 件だけが落ちる**ことを実測してから戻している。
+>
+> **次の実行者への申し送り**: シナリオ 2 の本体修正（新規経路にも解除を追加し
+> `updateMany` + `create` を `$transaction` 化するのが最小修正）を入れる際は、期待値を
+> `count === 1` へ反転して回帰ガードに転用すること。恒久解決として
+> **部分 unique index**（`CREATE UNIQUE INDEX ... WHERE "default" = true`）を張る案もあり、
+> その場合シナリオ 2 は DB エラー期待に書き換わる。
+>
+> **036 の実行記録（2026-08-09・`7986d9fb`）**
+>
+> **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/product-deletion.test.ts` を
+> 新設し **4 シナリオ**。Integration は **49 → 53 / スイート 5 → 6**（実測 53/53 pass）。
+> `src/queries/product.ts` と `prisma/schema.prisma` はいずれも 1 行も変更していない。
+>
+> **Drift check は完全一致。** `deleteProduct` は baseline `4ec6b5b` から**無変更**で、
+> `grep -nE "onDelete" prisma/schema.prisma` の実定義もプラン Current state の CASCADE 表と
+> 行番号まで一致した（186 / 210 / 224 / 237 / 262 / 265 / 280 / 330 / 341 / 648 / 651）。
+> `Review.productId` に `onDelete` が無い＝ Prisma 既定の Restrict である点も確認済み。
+>
+> **STOP 条件 3 点はいずれも非該当**: シナリオ 2 の削除は成功せず **P2003** で reject、
+> シナリオ 1 の子テーブルは 9 種すべて 0、シナリオ 2 の子テーブル件数は Arrange 前後で不変。
+>
+> **識別力を機械的に確認した。** 削除前件数の `spec: 2 → 1` と reject コードの
+> `P2003 → P2025` に崩すと**その 2 件だけが落ちる**ことを実測してから戻している
+> （plan 033 / 027 と同じ扱い）。
+>
+> **プランが強調していた 2 つの設計判断は実際に効いている**: (a) 削除前件数を `>= 1` では
+> なく厳密な `toEqual` で固定すること —— 下限だと Arrange の取りこぼしを「0 件のものを
+> 数えて 0 件だった」と誤読でき、CASCADE の検証そのものが空振りになる。(b) RESTRICT 失敗時に
+> **子テーブル全件の不変**を見ること —— 商品と variant だけでは「部分的に子だけ消えていない」
+> ことを示せない（DB は tx 内で子の CASCADE を実行してから RESTRICT に到達しうる）。
+>
+> **次の実行者への申し送り**: シナリオ 2 は**現挙動の characterization** であり、「レビュー付き
+> 商品は削除できない」を正しい仕様として肯定していない。削除可能化（レビュー先行削除 /
+> ソフト削除化 / onDelete 変更）を入れる際は期待値を意図的に反転させること。onDelete の変更は
+> migration を伴うため [`.claude/rules/03-data-model-diagram-sync.md`](../.claude/rules/03-data-model-diagram-sync.md)
+> の ERD 再生成義務にも注意。
+>
+> **033 の実行記録（2026-08-09・`6514e0c6`）**
+>
+> **素の DONE（プラン本文からの逸脱なし）。** `tests/integration/search-products.test.ts` を新設し
+> **9 テスト**（シナリオ 1〜8 + 5b）。Integration は **40 → 49 / スイート 4 → 5**（実測 49/49 pass）。
+> `src/app/api/search-products/route.ts` と `src/queries/subCategory.ts` はいずれも 1 行も変更していない。
+> Drift check は一致（raw SQL・`ORDER BY RANDOM()` ともプラン本文の抜粋どおり）で STOP 非該当。
+>
+> **STOP 条件に挙がっていた 3 点はいずれも期待どおりだった** —— シナリオ 3（関連度順）は
+> "widget" を 3 回持つ B が 1 回の A より先頭、シナリオ 7（AND 意味論）は "beta gadget" が B のみ、
+> シナリオ 6（パラメータ化）は 200 かつ `product.count()` 不変。期待値の書き換えは一切していない。
+>
+> **識別力を機械的に確認した。** シナリオ 3 の期待順序と 6 の件数期待を一時的に崩すと
+> **その 2 件だけが落ちる**ことを実測してから戻している（rule 02 の Red 規律を、本体を変更できない
+> テスト追加作業へ適用する形。plan 027 の Scenario 8 と同じ扱い）。
+>
+> **実行環境**: plan 032 と同じくファイル単位 docblock で `testEnvironment: node` に上書きした
+> （jsdom には Fetch API の `Request` / `Response` が無く Route Handler を直接呼べない）。
+> プランの Out of scope は `jest.integration.config.js` の変更であり、config は**無変更**のため
+> スコープ内。
+>
+> **次の実行者への申し送り**: この SQL は毎クエリ `to_tsvector` を計算しており式インデックスを
+> 持たない。GIN 式インデックスを入れる migration を書く際、**式が 1 文字でも違うとインデックスが
+> 使われない**ため、本テストが「式とインデックス定義のズレ」の回帰検知として機能する
+> （プラン 033 の Maintenance notes に記載どおり）。
+>
+> **063 の実行記録（2026-08-09）**
+>
+> **補正対象は 0 件だった。** 本番 DB の `PaymentDetails` は総行数 0（`Order` は 18 行）。
+> cents 行を書く経路は境界より前に確かに存在したが、この DB では決済が `PaymentDetails` を
+> 作る段階まで到達した注文が一件も無く、補正すべき歴史的データが存在しない。
+> 検証は `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`。
+>
+> **境界は commit 時刻を採用した。** プランはデプロイ時刻を要求しているが、本プロジェクトには
+> デプロイ工程自体が存在しない（`.vercel` 等なし）。STOP 条件「デプロイ時刻を確定できない」は
+> 「ログはあるが読めない」場合を想定したもので本ケースには当たらないと判断した。
+>
+> **`psql` 不在のため runbook を tsx + Prisma へ移植した。** `\gset` / `\if` / `RAISE` に相当する
+> 事前・事後ゲートを [`scripts/backfill/063-apply.ts`](../scripts/backfill/063-apply.ts) に実装し、
+> 述語は [`063-shared.ts`](../scripts/backfill/063-shared.ts) に集約してレポート側と UPDATE 側の
+> 一致を import で保証している。**ステージング予行で 6 ケースを実測**し、digest ドリフト
+> （件数は一致）でも `GATE FAIL` / exit 3 / 全件不変になること、および旧 runbook が
+> `20.00 → 0.20` に壊した「既にドル建ての行」が不変であることを確認した。
+> 手順は [`scripts/backfill/README.md`](../scripts/backfill/README.md)。
+
+---
 
 > **042 / 051 の実行記録（2026-08-03・`235754b8`〜`bb95f426`）**
 >
@@ -349,7 +617,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > （S1 が固定していた「Stripe は cents」という現挙動そのものがバグ）。両 route の
 > `update` 分岐に `amount` / `currency` を追加し、Stripe 側は `order.total` 保存に統一。
 > S1 / P4 の期待値は反転済み（`607c2b88`）で、`bun run test:integration` は 11/11 pass。
-> 既存行の backfill は plan 063 が担当（境界は `c4a6fb41`）。
+> 既存行の backfill は plan 063 が担当し **2026-08-09 に DONE**（境界は `c4a6fb41`。補正対象 0 件）。
 >
 > **プラン本文の指示から外れた実装判断 2 点**（いずれも実測に基づく）:
 >
@@ -486,7 +754,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 8. **Round 3 expansion spikes (018–022)** — 運用・信頼・成長ブループリント（[`direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md`](direction/OPERATIONS_TRUST_GROWTH_BLUEPRINT.md) §4）に従う: 推奨順は **021（通知 — C 内の共通前提）→ 018（RMA）→ 019（レビュー）→ 022（セラー品質）**、**020（販促）は独立**（Phase D）。すべて design/spike のため相互に並行着手可能だが、021 を先に確定させると 016/018 の通知定義が単純化し、018/022 はタイムスタンプ方式の整合が必要（どちらか先行した方の決定に他方が従う）。後続実装プランは Round 2 と同じく Phase 0 完了後の実行を推奨。
 9. **Round 4 test-coverage plans (026–030)** — 純追加のテスト拡充で相互に独立・いつでも並行着手可能。推奨順は **026（paypal・money-critical）→ 027（統合・Docker 必須）→ 028 → 029 → 030**。plan **010**（shipping-utils・Round 1）とも独立・併走可（重複なし — 026〜030 は 010 と対象ファイルが異なる）。027 は Docker が使えない環境では BLOCKED として記録し他を先行する。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02）。
 10. **Round 5 integration-test plans (031–035)** — Integration（testcontainers）特化の純追加テスト拡充。全プラン **Docker 必須**（`docker info` 失敗時は各プラン Step 0 の STOP 条件に従い BLOCKED 記録）。相互に独立・並行着手可能だが、**031 と 027 は両方 `tests/integration/setup/seed.ts` を拡張**するため同時実行時はマージで両追記の共存を確認する。推奨順は **031（在庫復元・money-critical）→ 032（webhook 決済・money-critical）→ 033（tsvector 検索）→ 034（レビュー集計）→ 035（ロール昇格）**。027（placeOrder の減算側）と 031（キャンセルの復元側）で在庫整合の両側が閉じるため、可能なら 027 → 031 の順が理想。各プラン完了時は `spec-sync-after-test` skill による docs 同期コミットが必須（rule 02。Integration 統計の SSOT は `docs/testing/QA_HANDOFF.md`）。
-11. **Round 6 integration-test plans (036–039)** — Integration 特化の第 2 弾（R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse フィルタ）。全プラン **Docker 必須**・相互に独立・**seed.ts を変更しない**ため 027/031〜035 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→ 038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）**。037 のシナリオ 2 と 039 のシナリオ 2・4 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-14-integration-coverage-r6.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
+11. **Round 6 integration-test plans (036–039)** — Integration 特化の第 2 弾（R5 未スイープの切り口: FK/カスケード実セマンティクス・default 不変条件・全置換 tx・browse フィルタ）。全プラン **Docker 必須**・相互に独立・**seed.ts を変更しない**ため 027/031〜035 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **036（deleteProduct FK — セラー障害直結）→ 037（住所 default — checkout 信頼性）→ 038（updateProduct 編集フロー）→ 039（browse フィルタ — Prisma 6 回帰網）**。037 のシナリオ 2 と 039 のシナリオ 2・4 は起票時点では**現挙動の characterization**（既知ギャップの固定）で、修正プラン実行時に期待値を反転する前提だった。**037 の分は plan 064 が 2026-08-09 に実施済み**（反転完了・回帰ガードへ転用）。039 の 2 件は未着手 — 詳細は各プラン本文と `audit/findings-14-integration-coverage-r6.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 12. **Round 7 integration-test plans (040–041)** — Integration 特化の第 3 弾（R5/R6 未スイープの切り口: Clerk user-sync webhook の FK 連鎖・グローバル unique 制約の実発火）。両プラン **Docker 必須**・相互に独立・**seed.ts / reset-db.ts を変更しない**ため 027/031〜039 とも並行着手可能（新規テストファイルのみ追加）。推奨順は **040（user.deleted FK 連鎖 — PII 残存/Svix のリトライ枯渇のコンプライアンス隣接）→ 041（coupon code unique — セラー日常運用のエラー UX）**。040 のシナリオ 2〜4 と 041 のシナリオ 2・3 は**現挙動の characterization**（既知ギャップの固定）であり、将来の修正プラン実行時に期待値を反転する前提 — 詳細は各プラン本文と `audit/findings-15-integration-coverage-r7.md`。各プラン完了時の docs 同期義務は Round 5 と同じ。
 13. **Round 8 E2E plans (042–050)** — 初の E2E 特化ラウンド（3 ブラウザフル実測ベースライン付き。
     詳細: `audit/findings-16-e2e-coverage.md`）。**042 が絶対の先頭**（signIn ヘルパーの
@@ -588,7 +856,7 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.
 - **CORRECTNESS-01** Stripe `charge.refunded` webhook correlation (correlate by `paymentIntentId`).
-- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) と `c4a6fb41`（2026-08-07）で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**⚠️ `e63474b` が直したのは同期パス `src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**（plan 032 の Scenario S1 が characterization として固定していた）。webhook 側は `c4a6fb41` で `order.total` 保存に統一済み。**残っていた既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) に昇格済み**（上の Status 表 / TODO。**カットオーバー境界は `e63474b` ではなく `c4a6fb41`**）。本項目を「コード修正が必要」と読まないこと。
+- ~~**CORRECTNESS-05** `PaymentDetails.amount` unit mismatch (Stripe cents vs PayPal dollars)~~ — **コード修正は Round 14 (`e63474b`) と `c4a6fb41`（2026-08-07）で完了**。`schema.prisma:699` が `Decimal(12,2)` = ドル建てを宣言しており PayPal 側は元から正しく、Stripe 側が `paymentIntent.amount`（セント）を書いていた単純バグだった。**⚠️ `e63474b` が直したのは同期パス `src/queries/stripe.ts` だけで、webhook `src/app/api/webhooks/stripe/route.ts` は cents を書き続けていた**（plan 032 の Scenario S1 が characterization として固定していた）。webhook 側は `c4a6fb41` で `order.total` 保存に統一済み。**残っていた既存行の backfill も [plan 063](063-backfill-stripe-payment-amount.md) で完了（2026-08-09・DONE）**（**カットオーバー境界は `e63474b` ではなく `c4a6fb41`**。実測では補正対象 0 件 —— 本番 DB の `PaymentDetails` が総行数 0 で、補正すべき歴史的データが存在しなかった。検証は `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`）。**本項目はコード・データとも完了**であり、「コード修正が必要」とも「backfill が残っている」とも読まないこと。
 - ~~**TESTS-05** integration test for `placeOrder` oversell-rollback branch (testcontainers).~~ → **Round 4 で plan 027 に昇格**（TESTS-08 と統合）。
 - ~~**TESTS-14**（Round 4）2026-06 追加機能（track-order / support-forms / compare / offers / static pages）のゲスト E2E 導線 — component 層は厚く増分価値は中。026〜030 完了後に再評価。~~ → **Round 8 で plan 045 に昇格**（E2E 実測で認証系が全滅中と判明し、認証不要で安定して回るゲスト導線の相対価値が上昇）。
 - **Round 8 deferred（詳細: [`audit/findings-16-e2e-coverage.md`](audit/findings-16-e2e-coverage.md)）**: 販売者ダッシュボード CRUD E2E（OI-11 `self is not defined` 本番ビルド SSR ブロッカーの解消が先行 — ユーザー決定済み）・決済失敗ロールバック E2E §20 P0（Stripe 実キー + 失敗カード前提で effort L。Integration plan 032 が DB 巻き戻しを部分カバー）・payment-error `:58` 在庫切れ表示（機能未実装）/`:70` 二重送信（plan 006 先行）・mobile-responsive skip 2 件（ハンバーガー / 375px カートとも機能未実装）。**アプリ側ギャップの新規発見 2 件**: /browse にページネーション UI 未実装（plan 046 が最小配線ごと担当）・`getProducts` に store status フィルタが無く BANNED 店舗の商品が /browse に露出（§20 P1 の半分が未達 — 次回 correctness ラウンドの P1 候補、findings-16 TESTS-38 追記参照）。
@@ -613,7 +881,8 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
   cents を返す `extractAmountAndCurrency` は `extractCurrency` に縮小し、再配線の余地を消した）。
   plan 032 の Scenario P4 は characterization を解除し、切替後に `amount = ORDER_TOTAL` /
   `currency = usd` へ更新されることを検証する形に反転済み（`607c2b88`）。
-  **既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) が担当**（TODO のまま）。
+  **既存行の backfill は [plan 063](063-backfill-stripe-payment-amount.md) が担当し、2026-08-09 に
+  DONE**（実測で補正対象 0 件 —— `PaymentDetails` が総行数 0 だった）。
   063 の**カットオーバー境界は `e63474b6` ではなく `c4a6fb41`** —— `e63474b6` が直したのは
   同期パスだけで、webhook はその後も cents を書き続けていたため（063 Step 1 に訂正記録あり）。
   以下は発見時の記録:

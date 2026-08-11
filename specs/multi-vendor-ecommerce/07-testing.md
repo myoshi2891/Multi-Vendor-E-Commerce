@@ -12,7 +12,10 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1891 passed / 1894 total across 178 suites (3 skipped), as of 2026-08-08.
+- 1915 passed / 1918 total across 180 suites (3 skipped), as of 2026-08-10.
+  The CodeRabbit review round added 7 tests (`tests/component/store/categories-menu.test.tsx`
+  +6, `product-sort.test.tsx` +1) with no new suites; the remaining delta from the previous
+  entry (1895 / 178 suites) is the unsynced count of those two suites, added in `879763a0`.
   Integration tests are excluded from the default `bun run test` run
   (`jest.config.js` `testPathIgnorePatterns`), so branches covered only there never reach
   `coverage/lcov.info` and SonarCloud reports them as uncovered New Code. Every new branch
@@ -40,9 +43,27 @@
   the 20 implementation modules, restoring the CLAUDE.md invariant that every server action is
   unit-tested. The 2026-08-03 entry (1841 / 1844 across 177 suites) itself corrected a 12-test
   drift that predated plans 042 / 051.
-- Playwright E2E: 41 tests per browser across 17 files (123 total over chromium/firefox/webkit),
-  as of 2026-08-03 — up 2 from `tests/e2e/country-selector.spec.ts` (plan 051, Ship-to cookie
-  round-trip). One of the two is gated off on WebKit, which drops `Secure` cookies on insecure
+- Playwright E2E: 50 tests per browser across 21 files (150 total over chromium/firefox/webkit),
+  as of 2026-08-09. **50 is the runtime count** (what `bunx playwright test` actually executes);
+  `docs/coverage-dashboard.html` reports **47** for the same tree (e2e 37 + a11y 7 + visual 3)
+  because it is a *static* filesystem scan counting `test(` declaration sites and cannot expand
+  loops — `tests/e2e/layout-chrome.spec.ts` declares 5 but runs 7 (`for (const path of
+  chromePages)` wraps one `test()`), and `tests/e2e/security-headers.spec.ts` declares 1 but
+  runs 2, so 47 + 3 = 50. The two numbers are different *units*, not a drift; always state which
+  one is meant rather than reconciling them to a single value. The 21-file total spans all
+  categories (12 main E2E + 7 a11y + 2 visual). Up 3 from the a11y specs
+  `tests/e2e/a11y/{browse,product,cart}.spec.ts`
+  (plan 052, WCAG 2.1 AA scans of the guest storefront). All a11y specs are gated to chromium,
+  so the firefox/webkit copies are skipped by design. The first scan surfaced real violations
+  (3 critical, 2 serious) in `sort.tsx`, `quantity-selector.tsx` and `categories-menu.tsx`,
+  which were fixed in the same change set; the suite is 7 passed on chromium.
+  The previous total was 47 per browser across 18 files (141 total), as of 2026-08-09 —
+  up 6 from `tests/e2e/guest-flows.spec.ts` (plan 045, guest journeys:
+  compare / track-order / offers / static pages). The spec needs no Clerk session, so it runs
+  regardless of the auth-dependent suites' state; measured 6 passed on chromium and 18 passed
+  across the three browsers with zero flakes.
+  The previous total was 41 per browser across 17 files (123 total), as of 2026-08-03 — up 2
+  from `tests/e2e/country-selector.spec.ts` (plan 051, Ship-to cookie round-trip). One of the two is gated off on WebKit, which drops `Secure` cookies on insecure
   origins while local E2E serves the production build over http.
 - Plan 047 (2026-08-03) did not change that total: un-skipping a declared test moves it from
   skipped to active without adding a case. What changed is the split — `payment-error.spec.ts`
@@ -434,13 +455,46 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 40 integration tests across 4 suites
+- 66 integration tests across 8 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
-  `tests/integration/webhook-payment.test.ts` 12) as of 2026-08-08
-  (`a4d01b27` added the non-USD rejection scenario S8, 39 → 40; suite count
-  unchanged. The last full run measured 39/39 pass on 2026-08-04).
+  `tests/integration/webhook-payment.test.ts` 12 +
+  `tests/integration/search-products.test.ts` 9 +
+  `tests/integration/product-deletion.test.ts` 4 +
+  `tests/integration/shipping-address-default.test.ts` 6 +
+  `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
+  measured 66/66 pass. Plan 064 fixed TESTS-21 and turned the shipping-address
+  characterization into a regression guard (overall 57 / 7 suites → 64 / 8 → 66 / 8; plan 064's
+  own step is 64 → 66 with suites unchanged at 8) — see below.
+  Plan 040 added the Clerk `user.deleted` FK suite
+  (57 → 64; suites 7 → 8), pinning all three FK behaviours that a mocked
+  `deleteMany` cannot reach: CASCADE (cart, wishlist, conversation, message and
+  both implicit M2M join tables), RESTRICT (order / review / address / store —
+  the deletion fails permanently and the user's PII stays in the database; a
+  characterization, not an endorsement), and SET NULL with PII redaction on
+  `SupportTicket` (a positive guarantee, landed in `7e3e507`). Plan 037 added the shipping-address default-flag suite
+  (53 → 57; suites 6 → 7), pinning the asymmetry between the update path (which
+  cleared other defaults) and the create path (which skipped the clear, leaving two
+  defaults) — the latter as a characterization of the known gap TESTS-21, tagged
+  `TODO(characterization)`. **Plan 064 fixed that gap and flipped the expectation to 1**
+  (57 → 66 with plan 040's suite in between, which took suites 7 → 8; plan 064's own
+  64 → 66 left suites unchanged at 8), so the file is now a
+  regression guard rather than a record of a bug. The suite additionally pins two
+  properties that the fix depends on: the clear is rolled back with the failing
+  `create` when an attacker submits another user's address id (proving the write is
+  atomic — the victim-side assertion alone passes on `userId` scoping without a
+  transaction), and a second default written *around* the server action is rejected by
+  the partial unique index `ShippingAddress("userId") WHERE "default"`. Plan 036
+  added the `deleteProduct` FK suite (49 → 53;
+  suites 5 → 6), pinning the CASCADE chain (nine child tables, including the
+  grandchild `FreeShippingCountry`) and the `Review` RESTRICT that makes a
+  reviewed product undeletable (P2003) — a characterization of current
+  behaviour, not an endorsement of it. Plan 033 added the tsvector full-text
+  search suite before that (40 → 49; suites 4 → 5); it is the first time the
+  `$queryRaw` string behind `/api/search-products` is executed by any test —
+  the unit suite mocks `@/lib/db` wholesale. Earlier, `a4d01b27` added the
+  non-USD rejection scenario S8, 39 → 40, with the suite count unchanged.
   Run via `bun run test:integration` against a testcontainers-managed
   PostgreSQL (see ADR-004). Excluded from the default `bun run test` run via
   `testPathIgnorePatterns`. `order-placement.test.ts` exercises `placeOrder`

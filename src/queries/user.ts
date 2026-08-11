@@ -537,58 +537,58 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
         // Ensure address data is provide
         if (!address) throw new Error("Please provide shipping address data.");
 
-        // Handle making the rest of address default false when we are adding a new default
-        if (address.default) {
-            const addressDB = await db.shippingAddress.findUnique({
-                where: {
-                    id: address.id,
-                },
+        // 不変条件「1 ユーザーにつき default: true は最大 1 件」を守るため、
+        // 所有権検証・他住所の default 解除・対象住所の作成/更新を 1 トランザクションに束ねる。
+        //
+        // トランザクション化が必須な理由:
+        //   他ユーザーの住所 id を渡された場合（IDOR 試行）、所有権 findFirst が null →
+        //   同一 id での create が PK 一意制約違反 (P2002) で落ちる。解除が同じ tx に
+        //   いなければ **攻撃者自身の default が解除されたままリクエストだけが拒否される**
+        //   （拒否されたのに副作用が残る）。ロールバックがこれを打ち消す。
+        //
+        // 解除の条件を `address.default` だけにしたのが TESTS-21 の修正点:
+        //   従来は findUnique(address.id) が非 null であることを条件にしていたが、
+        //   新規住所の id は UI が v4() で採番する（address-details.tsx）ため常に null で、
+        //   **新規経路では解除が丸ごとスキップされ default が 2 件併存**していた。
+        //
+        // トランザクションオプションは付けない（文は 3 本・外部 I/O 無しで既定 timeout 5s に
+        // 収まる）。ORDER_TRANSACTION_OPTIONS は住所行の FOR UPDATE を握る注文処理向けに
+        // 20s へ広げた値であり、流用すると checkout を待たせる窓を無用に広げる。
+        // 分離レベルも既定 (ReadCommitted) のまま: 同一ユーザーの「default にする」が同時到達
+        // しても、後続 tx の updateMany は先行 tx の行ロックで待たされ解放後に更新後の行を
+        // 読み直すため lost update にならない。
+        const upsertedAddresses = await db.$transaction(async (tx) => {
+            // 所有権検証（他ユーザーのアドレス上書き防止）
+            const existing = await tx.shippingAddress.findFirst({
+                where: { id: address.id, userId: user.id },
             });
-            if (addressDB) {
-                try {
-                    await db.shippingAddress.updateMany({
-                        where: {
-                            userId: user.id,
-                            default: true,
-                        },
-                        data: {
-                            default: false,
-                        },
-                    });
-                } catch (error: unknown) {
-                    if (error instanceof Error) {
-                        console.error(
-                            "Error updating default addresses:",
-                            error.message,
-                            error.stack
-                        );
-                    } else {
-                        console.error(
-                            "Error updating default addresses:",
-                            error
-                        );
-                    }
-                    throw new Error("Error making the default address.");
-                }
+
+            // 新規・既存のどちらの経路でも、default を立てるなら他の default を解除する。
+            // NOT: { id } で対象自身を除外するのは、直後の update で true に戻す行を
+            // 二度書きしない（＝同一行を二度ロックしない）ため。userId スコープは
+            // 他ユーザーの default を巻き添えにしないための必須条件。
+            if (address.default) {
+                await tx.shippingAddress.updateMany({
+                    where: {
+                        userId: user.id,
+                        default: true,
+                        NOT: { id: address.id },
+                    },
+                    data: { default: false },
+                });
             }
-        }
 
-        // 所有権検証付きの upsert（他ユーザーのアドレス上書き防止）
-        const existing = await db.shippingAddress.findFirst({
-            where: { id: address.id, userId: user.id },
+            if (existing) {
+                return tx.shippingAddress.update({
+                    where: { id: address.id },
+                    data: { ...address, userId: user.id },
+                });
+            }
+
+            return tx.shippingAddress.create({
+                data: { ...address, userId: user.id },
+            });
         });
-
-        let upsertedAddresses;
-        if (existing) {
-            upsertedAddresses = await db.shippingAddress.update({
-                where: { id: address.id },
-                data: { ...address, userId: user.id },
-            });
-        } else {
-            upsertedAddresses = await db.shippingAddress.create({
-                data: { ...address, userId: user.id },
-            });
-        }
 
         return upsertedAddresses;
     } catch (error: unknown) {

@@ -2,8 +2,9 @@
 
 ## 概要
 
-`@axe-core/playwright` を使ったフォーム a11y スキャン。WCAG 2.1 AA 適合を計測する。
-本ディレクトリは MVP として未認証ページ 2 つ (`/sign-in`, `/seller/apply` Step 1) を対象とする。
+`@axe-core/playwright` を使った a11y スキャン。WCAG 2.1 AA 適合を計測する。
+認証フォーム（MVP / Phase 2）に加え、顧客の滞在時間が長いゲストのストアフロント
+主要ページ（Phase 3）を対象とする。
 
 ## スコープ
 
@@ -13,7 +14,20 @@
 | Seller Apply Step 1 | `/seller/apply` | 不要 | **MVP** |
 | Checkout | `/checkout` | 必須 (USER) | **Phase 2**（2026-05-22 追加、OI-3） |
 | Profile | `/profile` | 必須 (USER) | **Phase 2**（2026-05-22 追加、OI-3） |
+| Browse | `/browse` | 不要 | **Phase 3**（2026-08-09 追加、plan 052 / TESTS-43） |
+| Product 詳細 | `/product/[productSlug]/[variantSlug]` | 不要 | **Phase 3**（同上。URL は seed 依存） |
+| Cart（空状態） | `/cart` | 不要 | **Phase 3**（同上。商品入りは checkout と重複のため対象外） |
+| Home | `/` | 不要 | 今後（**着手可能**）|
 | Seller Apply Step 2-4 | `/seller/apply` | 必須 | 今後 |
+
+> Phase 3 の初回スキャンで critical 3 種 / serious 2 種の実違反を検出し、
+> `sort.tsx` / `quantity-selector.tsx` / `categories-menu.tsx` を修正した
+> （commit `df4d4f7`）。
+>
+> **Home の前提だった OI-9（`featured.tsx` の SSR 500）は 2026-06-06 に解消済み**
+> （`c196e3d5`。2026-07-26 に E2E で SSR 200 を実測）。plan 052 本文は執筆時点
+> （2026-07-12）の情報で「OI-9 未解消」と書いているが、実際には解消後だった。
+> `home.spec.ts` の追加は依存なしで着手できる。
 
 ## 実行
 

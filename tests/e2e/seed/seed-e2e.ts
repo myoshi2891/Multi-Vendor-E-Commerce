@@ -423,6 +423,24 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // オファータグ（/offers 一覧 → /browse?offer=<url> 導線の E2E 用）。
+    // productB に紐付けることで /offers のカードが「1 商品」以上を表示する。
+    const offerTag = await prisma.offerTag.upsert({
+        where: { url: seed.offerTag.url },
+        create: {
+            name: seed.offerTag.name,
+            url: seed.offerTag.url,
+        },
+        update: {
+            name: seed.offerTag.name,
+        },
+    });
+
+    await prisma.product.update({
+        where: { id: productB.id },
+        data: { offerTagId: offerTag.id },
+    });
+
     // PLATFORM スコープクーポン（storeId なし・全店舗対象）
     const platformCoupon = await prisma.coupon.upsert({
         where: { code: seed.platformCoupon.code },
@@ -458,6 +476,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         productB,
         variantB,
         platformCoupon,
+        offerTag,
     };
 };
 

@@ -3,7 +3,14 @@ import { Category } from '@prisma/client'
 import { ChevronDown, Menu } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Dispatch, SetStateAction, useState } from 'react'
+import {
+    Dispatch,
+    SetStateAction,
+    useEffect,
+    useId,
+    useRef,
+    useState,
+} from 'react'
 
 export default function CategoriesMenu({
     categories,
@@ -15,15 +22,33 @@ export default function CategoriesMenu({
     setOpen: Dispatch<SetStateAction<boolean>>
 }) {
     const [dropdownVisible, setDropdownVisible] = useState<boolean>(false)
+    // 表示遅延タイマーの ID。破棄しないと、100ms 以内にマウスが離脱した場合に
+    // 「閉じた直後にタイマーが発火して開き直す」競合が起きる（アンマウント後は
+    // 解放済みコンポーネントへの setState になる）。
+    const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const listId = useId()
+
+    const clearShowTimer = () => {
+        if (showTimerRef.current === null) return
+        clearTimeout(showTimerRef.current)
+        showTimerRef.current = null
+    }
+
+    // アンマウント時に保留中のタイマーを解放する。
+    useEffect(() => clearShowTimer, [])
 
     const toggleMenu = (state: boolean) => {
         setOpen(state)
-        // Delay showing the dropdown until the trigger has finished expanding
-        if (state) {
-            setTimeout(() => setDropdownVisible(true), 100)
-        } else {
+        clearShowTimer()
+        if (!state) {
             setDropdownVisible(false)
+            return
         }
+        // Delay showing the dropdown until the trigger has finished expanding
+        showTimerRef.current = setTimeout(() => {
+            showTimerRef.current = null
+            setDropdownVisible(true)
+        }, 100)
     }
     return (
         <div
@@ -33,8 +58,19 @@ export default function CategoriesMenu({
         >
             {/* Trigger and Dropdown Container */}
             <div className="relative">
-                {/* Trigger */}
-                <div
+                {/* Trigger: hover だけでなく Enter / Space / クリックでも
+                    開閉できる実ボタンにする（div ではキーボード操作が
+                    一切できず WCAG 2.1.1 違反になる）。 */}
+                <button
+                    type="button"
+                    // 可視ラベル ("All Categories") は xl 未満で hidden になり、
+                    // 残る Menu アイコンは aria-hidden な SVG なので、モバイルでは
+                    // ボタンの Accessible Name が空になる（WCAG 4.1.2 / axe: button-name）。
+                    // 可視テキストと同一文字列を aria-label で常設して名前を保証する。
+                    aria-label="All Categories"
+                    aria-expanded={open}
+                    aria-controls={listId}
+                    onClick={() => toggleMenu(!open)}
                     className={cn(
                         'relative flex h-12 w-12 -translate-y-1 cursor-pointer items-center rounded-full bg-[#535353] text-[20px] text-white transition-all duration-100 ease-in-out xl:h-11 xl:w-[256px] xl:translate-y-0',
                         {
@@ -70,24 +106,29 @@ export default function CategoriesMenu({
                             }
                         )}
                     />
-                </div>
+                </button>
                 {/* Dropdown */}
+                {/* 閉じているときは invisible（visibility: hidden）にする。
+                    max-h-0 / opacity-0 だけでは高さ 0 でもリンクが
+                    フォーカス可能なまま残り、Tab が不可視のリンクへ迷い込む。 */}
                 <ul
+                    id={listId}
                     className={cn(
                         'scrollbar absolute left-0 top-10 w-[256px] overflow-y-auto bg-[#f5f5f5] shadow-lg transition-all duration-100 ease-in-out',
                         {
-                            'max-h-[523px] opacity-100': dropdownVisible, // Show dropdown
-                            'max-h-0 opacity-0': !dropdownVisible, // Hide dropdown
+                            'visible max-h-[523px] opacity-100': dropdownVisible, // Show dropdown
+                            'invisible max-h-0 opacity-0': !dropdownVisible, // Hide dropdown
                         }
                     )}
                 >
                     {categories.map((category) => (
-                        <Link
-                            key={category.id}
-                            href={`/browse?category=${category.url}}`}
-                            className="text-[#222]"
-                        >
-                            <li className="relative m-0 flex items-center p-3 pl-6 hover:bg-white">
+                        // <ul> の直下は <li> でなければならない（WCAG 1.3.1 /
+                        // axe: list, listitem）。<Link> は <li> の内側に置く。
+                        <li key={category.id} className="m-0">
+                            <Link
+                                href={`/browse?category=${category.url}`}
+                                className="relative flex items-center p-3 pl-6 text-[#222] hover:bg-white"
+                            >
                                 <Image
                                     src={category.image}
                                     alt={category.name}
@@ -99,8 +140,8 @@ export default function CategoriesMenu({
                                 <span className="ml-2 line-clamp-2 overflow-hidden break-words text-sm font-normal text-main-primary">
                                     {category.name}
                                 </span>
-                            </li>
-                        </Link>
+                            </Link>
+                        </li>
                     ))}
                 </ul>
             </div>
