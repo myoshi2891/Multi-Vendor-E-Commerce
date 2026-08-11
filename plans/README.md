@@ -123,7 +123,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`7db28f6e`〜`c1ad7c64`。E2E 50 → **53 tests/browser** / 21 → **22 files** / 計 150 → **159**。実測 chromium 3 passed / 3 ブラウザ 9 passed。`src/` はプランの上限どおり aria-label 1 行のみ。**out of scope とされていた `store-card.tsx` の `return` 欠落が、実際にフォロー導線を壊していることを実測で確認**（テスト側で回避）。下の実行記録を参照） |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
-| [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
+| [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`52ab59ab`〜`a3874701`。E2E 53 → **54 tests/browser** / 22 → **23 files** / 計 159 → **162**。実測 chromium 1 passed / 3 ブラウザ 3 passed・**flaky 0**。`src/` のアプリコードは無変更。**プラン記載の「成功 toast」は存在せず、素朴な待ち方は誤った理由で緑になる**（逸脱 1 点）。下の実行記録を参照） |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
@@ -141,6 +141,61 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **050 の実行記録（2026-08-11・`52ab59ab`〜`a3874701`）**
+>
+> **DONE。** `tests/e2e/admin-store-status.spec.ts` を新設し **1 テスト**（ACTIVE 公開の
+> control → admin UI で BANNED → store ページ非公開 → Active へ復帰）。E2E は
+> **53 → 54 tests/browser / 22 → 23 files / 3 ブラウザ計 159 → 162**。実測 chromium
+> **1 passed** / 3 ブラウザ **3 passed**・**flaky 0**。共有 seed 店舗の無傷は
+> platform-coupon（chromium）passed で確認。`src/` のアプリコードは**無変更**。
+> Drift check の結果 `src/queries/store.ts` は baseline から動いていたが、
+> `getStorePageDetails` の `status: "ACTIVE"` フィルタ + throw、`updateStoreStatus` の
+> privateMetadata 判定はいずれも Current state の記述どおりで **STOP 非該当**。
+>
+> **ADMIN セッションは spec 内で直接 Clerk metadata を設定する方式を採った**
+> （プランが認めていた 2 案のうち後者。`seller-onboarding.spec.ts:148` の前例）。
+> `auth.ts` の `create()` を拡張すると他プランの USER セッションに影響しうるため。
+> **`/dashboard/admin` の認可は DB の `User.role` ではなく Clerk の privateMetadata を
+> 見る**ので、`create({ role: "ADMIN" })` だけでは通らない点は本文どおりだった。
+>
+> **プラン本文からの逸脱 1 点（成功シグナルの取り方・重要）**: プランは手順 3 で
+> 「成功 toast を確認」と書いているが、`store-status-select.tsx` は
+> **エラー時にしか toast を出さない**。さらに素朴に `row.getByText("Banned")` の
+> 可視性を待つと **誤った理由で緑になる** —— ドロップダウンが開いている間は
+> 「**選択肢としての** Banned タグ」が行内に存在するため、「更新が成功した」ではなく
+> 「ドロップダウンが開いた」ことを見てしまう。実際これで server action の完了を待たずに
+> 先へ進み、**DB がまだ ACTIVE のうちに store ページを見に行って落ちた**
+> （推測ではなく `prisma.store.findUnique` を仕込んで実測: DB status=ACTIVE /
+> store ページ 200）。`handleClick` は **成功時にだけ `setIsOpen(false)`** する
+> （失敗時は開いたまま）ので、**「旧ステータスのタグが消えた」= 選択肢ごと閉じた**ことを
+> 完了条件にしている。プランの control 設計と同じ発想 —— 見えることではなく
+> **見えなくなったこと**でしか区別できない状態がある。
+>
+> **フレークを原因ごと除去した（プラン想定外）**。初回の 3 ブラウザ実行は **2 flaky**
+> （firefox `NS_BINDING_ABORTED` / webkit `interrupted by another navigation`）。
+> 原因は sign-in 直後の遅延リダイレクトによる `page.goto` の割り込みで、本リポジトリが
+> **`gotoStable` で既に解いていた既知現象**（`scripts/e2e/run-local.sh` のヘッダーが
+> 明記している）。ただし本 spec は HTTP ステータスを検証するためレスポンスが必要で、
+> `gotoStable` は戻り値を捨てていた。**割り込み処理を spec 側へ複製するより、
+> ヘルパーが `Response | null` を返す方が再試行ロジックの単一の在り処を保てる**と
+> 判断して後者を採った（`52ab59ab`。既存の呼び出し側は戻り値を無視しており後方互換）。
+> 結果 **flaky 0**。
+>
+> **プランの耐久契約はそのまま守っている**: 非公開の assert は
+> `expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)` +
+> 店舗名 `toHaveCount(0)` で、**500 を期待値に固定していない**。
+> **識別力を機械的に確認**: `not.toBe(200)` を `toBe(200)` に崩すと
+> `Expected: 200 / Received: 500` で落ちることを実測してから戻している
+> —— 現挙動が 500 であるという事実はこの実測で記録し、assert では固定しない。
+>
+> **本プランが主張しないこと**: (1) **BANNED 店舗の商品が /browse に出続けるギャップは
+> 未解消**（`getProducts` に store status フィルタが無い。プランの Out of scope どおり
+> 直していない。実装されたら本 spec に「/browse から商品が消える」assert を追加すること）、
+> (2) 非 ACTIVE の store ページが **404 ではなく 500** を返すのはアプリバグのままで、
+> 本 spec は現挙動を記録しつつ**修正後も生き残る契約**だけを assert している、
+> (3) PENDING / DISABLED への遷移は検証していない（BANNED のみ）、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない。
+>
 > **048 の実行記録（2026-08-11・`7db28f6e`〜`c1ad7c64`）**
 >
 > **DONE。** `tests/e2e/engagement.spec.ts` を新設し **3 テスト**（wishlist 追加 → 一覧反映 /

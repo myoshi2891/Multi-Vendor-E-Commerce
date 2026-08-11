@@ -3164,3 +3164,44 @@ CodeRabbit の指摘 5 件を現行コードに突き合わせて検証し、**4
 | Playwright E2E | 50 tests/browser（21 files・計 150） | **53 tests/browser（22 files・計 159）** |
 | テストファイル総数（ダッシュボード） | 210 | **211** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 050 — 管理者による店舗ステータス変更 E2E (2026-08-11)
+
+#### 概要
+
+店舗の BAN / 無効化は運営の主要オペレーションだが、admin UI からの操作 → ストアフロント反映の E2E がゼロだった（TESTS-38）。隣接する `seller-onboarding.spec.ts` はステータスを Prisma 直更新しており admin UI を通らないため、この導線はこれまで一度も検証されていなかった。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/config/test-helpers.ts` | `gotoStable` がナビゲーションのレスポンス（`Response \| null`）を返すようにした。HTTP ステータスを検証する呼び出し側が割り込みリトライを自前で再実装せずに済む。既存呼び出し側は戻り値を無視しており後方互換 | `52ab59ab` |
+| `tests/e2e/admin-store-status.spec.ts` | 新規・1 テスト（ACTIVE 公開の control → admin UI で BANNED → store ページ非公開 → Active へ復帰） | `a3874701` |
+
+`src/` のアプリケーションコードは無変更。
+
+#### プラン本文からの逸脱（1 件・成功シグナルの取り方）
+
+プランは「成功 toast を確認」と記していたが、`store-status-select.tsx` は**エラー時にしか toast を出さない**。さらに素朴に `row.getByText("Banned")` を待つと**誤った理由で緑になる** —— ドロップダウンが開いている間は「**選択肢としての** Banned タグ」が行内に存在するため、更新完了ではなく「ドロップダウンが開いた」ことを見てしまう。実際これで server action の完了を待たずに進み、**DB がまだ ACTIVE のうちに store ページを見に行って落ちた**（実測: DB status=ACTIVE / store ページ 200）。
+
+`handleClick` は**成功時にだけ `setIsOpen(false)`** するので、「旧ステータスのタグが消えた（＝選択肢ごと閉じた）」ことを完了条件にした。
+
+#### フレークの原因特定と除去
+
+初回の 3 ブラウザ実行は **2 flaky**（firefox `NS_BINDING_ABORTED` / webkit `interrupted by another navigation`）。原因は sign-in 直後の遅延リダイレクトによる `page.goto` の割り込みで、このリポジトリが `gotoStable` で既に解いていた既知現象だった。ステータス検証にレスポンスが必要だったため、割り込み処理をスペックへ複製せず**ヘルパー側がレスポンスを返す**ようにした。結果 **flaky 0**。
+
+#### 識別力の機械的確認
+
+BAN 後の期待を `not.toBe(200)` → `toBe(200)` に崩すと `Expected: 200 / Received: 500` で落ちることを実測してから戻した。非公開の assert は `not.toBe(200)` に留め、**500 を期待値に固定していない**（`notFound()` で 404 に直した瞬間に赤くなる「修正を罰するテスト」を避けるため）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1928 passed / 1931 total | **1928 passed / 1931 total**（不変） |
+| スイート数 | 180 | **180**（不変） |
+| Playwright E2E | 53 tests/browser（22 files・計 159） | **54 tests/browser（23 files・計 162）** |
+| テストファイル総数（ダッシュボード） | 211 | **212** |
+| 型エラー | 0 件 | **0 件** |

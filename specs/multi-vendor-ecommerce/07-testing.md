@@ -13,7 +13,7 @@
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
 - 1928 passed / 1931 total across 180 suites (3 skipped), as of 2026-08-11.
-- Playwright E2E: 53 tests/browser across 22 files (159 across the three browsers), as of 2026-08-11.
+- Playwright E2E: 54 tests/browser across 23 files (162 across the three browsers), as of 2026-08-11.
   The CodeRabbit review round added 7 tests (`tests/component/store/categories-menu.test.tsx`
   +6, `product-sort.test.tsx` +1) with no new suites; the remaining delta from the previous
   entry (1895 / 178 suites) is the unsynced count of those two suites, added in `879763a0`.
