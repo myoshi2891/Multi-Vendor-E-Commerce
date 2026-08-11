@@ -119,6 +119,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
                         <Button
                             variant="black"
                             size="icon"
+                            aria-label="Add to wishlist"
                             onClick={() => handleAddToWishlist()}
                         >
                             <Heart className="w-5" />

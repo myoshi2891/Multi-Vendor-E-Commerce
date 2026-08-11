@@ -199,15 +199,13 @@ describe("ProductCard", () => {
 });
 
 /**
- * wishlist（Heart）ボタンを特定する。アクションボタンは「Add to cart」(テキスト)、
- * wishlist(無ラベル)、compare(aria-label) の3つ。wishlist のみ aria-label が無く
- * かつテキストを持たないため、その条件で一意に取得できる。
+ * wishlist（Heart）ボタンをアクセシブル名で特定する。
+ *
+ * 旧実装は「aria-label もテキストも持たない唯一のボタン」という**不在**で識別していたが、
+ * これは wishlist ボタンにアクセシブル名が無いこと自体に依存する形で、
+ * `aria-label="Add to wishlist"` を付けた瞬間に対象を見失う（plan 048 Step 1）。
+ * ロケータは肯定形で書くこと。
  */
 function getWishlistButton(): HTMLElement {
-    const buttons = screen.getAllByRole("button");
-    const wishlistBtn = buttons.find(
-        (b) => !b.getAttribute("aria-label") && !b.textContent?.trim()
-    );
-    if (!wishlistBtn) throw new Error("wishlist button not found");
-    return wishlistBtn;
+    return screen.getByRole("button", { name: "Add to wishlist" });
 }
