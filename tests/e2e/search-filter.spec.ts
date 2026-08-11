@@ -59,29 +59,34 @@ test.describe("検索・フィルタ", () => {
     await expect(page.getByText(/No Products/i)).toBeVisible({ timeout: 10000 });
   });
 
-  test.skip("ページネーションで次ページに遷移できる", async ({ page }) => {
-    // Intercept API or provide a robust mock if it's a client fetch, otherwise just test URL logic
-    await page.route("**/api/index-products*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          products: Array(15).fill(seed.product),
-          total: 30,
-          page: 1,
-          limit: 15,
-          totalPages: 2
-        }),
-      });
-    });
-    // Fallback: forcefully navigate with mock pagination to ensure button exists
-    await page.goto("/browse");
-    
-    // If the button exists via SSR (which route mocking might not affect), we click it.
-    // If it doesn't exist, we evaluate a script to inject a dummy one to test the routing logic, OR we use setupE2ETestState properly.
-    const nextButton = page.getByRole("button", { name: /Next/i });
-    await expect(nextButton).toBeVisible();
-    await nextButton.click();
-    await expect(page).toHaveURL(/.*page=2.*/);
+  test("ページネーションで次ページに遷移できる", async ({ page }) => {
+    // 専用カテゴリ（12 商品 > pageSize 10）を使い、2 ページ構成を決定的にする。
+    // 既存の共有カテゴリでは他 spec の seed 追加で件数が動くため件数 assert が壊れる。
+    const category = seed.paginationCategory.url;
+
+    // 商品カードのカウントに `[data-testid^="product-card-"]` を使わないこと。
+    // この prefix はカード内の価格 `data-testid="product-card-price"`
+    // （product-page/product-info/product-price.tsx:112）にも一致し、件数が二重に数えられる。
+    // seed slug まで含めた prefix ならカードのリンクだけに一致する。
+    const cards = page.locator('[data-testid^="product-card-e2e-page-item-"]');
+
+    await page.goto(`/browse?category=${category}`);
+    await expect(cards).toHaveCount(10);
+
+    // Next は共有 Pagination の `<div><p>Next</p></div>`（button ロールではない）。
+    await page.getByText("Next", { exact: true }).click();
+    await page.waitForURL(/[?&]page=2/);
+
+    // page=2 になったことだけでなく、**既存の category クエリが保持されている**ことを検証する。
+    // BrowsePagination は「既存クエリを保持したまま page だけ差し替える」実装であり、
+    // これを検証しないと category を落とす実装（全商品の 2 ページ目へ飛ぶ）でも green になる。
+    // その場合 1 ページ目 10 件 / 2 ページ目 2 件という件数も偶然一致しうるため、
+    // 件数 assert だけでは category 脱落を検出できない。
+    await expect(page).toHaveURL(new RegExp(`[?&]category=${category}(&|$)`));
+    await expect(cards).toHaveCount(2);
+
+    // 不正な page 値は 1 ページ目に正規化される（tech.md の URL パラメータ正規化規約）。
+    await page.goto(`/browse?category=${category}&page=abc`);
+    await expect(cards).toHaveCount(10);
   });
 });
