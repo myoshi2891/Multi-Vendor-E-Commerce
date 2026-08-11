@@ -121,7 +121,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | DONE（2026-08-11・`f10a5b89`〜`4adb0b3b`。E2E は **件数不変（50 tests/browser・計 150）で skip が 1 件解消** —— search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**。**プラン本文のカードセレクタが実 DOM と食い違っており逸脱 1 点**〔prefix が価格 testid にも一致〕。下の実行記録を参照） |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
-| [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
+| [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`7db28f6e`〜`c1ad7c64`。E2E 50 → **53 tests/browser** / 21 → **22 files** / 計 150 → **159**。実測 chromium 3 passed / 3 ブラウザ 9 passed。`src/` はプランの上限どおり aria-label 1 行のみ。**out of scope とされていた `store-card.tsx` の `return` 欠落が、実際にフォロー導線を壊していることを実測で確認**（テスト側で回避）。下の実行記録を参照） |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
@@ -141,6 +141,55 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **048 の実行記録（2026-08-11・`7db28f6e`〜`c1ad7c64`）**
+>
+> **DONE。** `tests/e2e/engagement.spec.ts` を新設し **3 テスト**（wishlist 追加 → 一覧反映 /
+> フォロー → 一覧反映 → unfollow / レビュー投稿 → 一覧反映）。E2E は **50 → 53 tests/browser /
+> 21 → 22 files / 3 ブラウザ計 150 → 159**、E2E メインスペックは 12 → **13**。
+> 実測 chromium **3 passed** / 3 ブラウザ **9 passed**（リトライなし）。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は**空**で、
+> Current state の記述（wishlist の toast 文言 / StoreCard の Follow・Following 表記 /
+> `star-wrapper-${index}` / `Submit Review`）はすべて実 DOM と一致した。
+> `src/` の変更は**プランの上限どおり `product-card.tsx` の `aria-label` 1 行のみ**。
+>
+> **プランが out of scope としていた `store-card.tsx:30-31` のバグは、実際にこの導線を
+> 壊していた（最重要の発見）。** `if (!user.isSignedIn) router.push('/sign-in')` に `return` が
+> 無い件は、プラン本文では「アプリの潜在バグ」とだけ書かれていた。しかし Clerk の
+> `useUser()` は**ロード完了まで `isSignedIn: false` を返す**ため、ハイドレーション直後に
+> フォローを押すと **(a)** サインイン済みでも `/sign-in` へ push され（そこからサインイン済み
+> として `/` へ跳ね返される）、**(b)** `return` が無いので `followStore` も同時に走るが
+> 画面はもう別ページ、という二重の破綻になる。初回実装では 3 回とも「クリック後 URL が `/`・
+> toast なし・フォロワー 0 のまま」で決定論的に落ちた（推測ではなく `page.on("console")` +
+> URL ログで実測）。**プランは `src/` 変更を 1 行に限っているため修正はせず**、テスト側で
+> `window.Clerk.loaded === true` を待って回避した（`waitForClerkLoaded`）。
+> **本体を修正する際はこのヘルパーの必要性を再評価すること**（修正後は不要になる可能性が高い）。
+>
+> **実 DOM とプラン記述の差 2 点（いずれもセレクタの取り方）**:
+>
+> 1. **商品カードのアクションボタンは testid の外**。`data-testid="product-card-<slug>"` は
+>    `<Link>` に付いており、ボタンは `group-hover:block` のオーバーレイ＝ Link の兄弟。
+>    plan 045 が確立した `page.locator("div.group").filter({ has: cardLink })` でスコープした。
+> 2. **`placeholder="Select size"` は 2 要素に一致する**。size の Select だけでなく
+>    **quantity の `<input type="number">`** にも同じプレースホルダが付いている
+>    （`review-details.tsx:375` —— おそらくコピペ由来のラベル誤り）。
+>    `:not([type="number"])` で除外している。
+>
+> **既存 component テストのロケータを是正した（プラン想定外の副作用）**。
+> `product-card.test.tsx` は wishlist ボタンを「**aria-label もテキストも持たない**唯一の
+> ボタン」という**不在**で識別しており、Step 1 でアクセシブル名を与えた瞬間に 2 件 fail した。
+> 肯定形（`getByRole("button", { name: "Add to wishlist" })`）へ直している ——
+> **不在で識別するロケータは、対象が改善されると壊れる**。
+>
+> **識別力を機械的に確認した。** フォロワー数の期待を +1 → +2 に、レビュー本文の期待を
+> 存在しない文字列に崩すと**その 2 件だけが落ち**、wishlist は通ったままであることを
+> 実測してから戻している。
+>
+> **本プランが主張しないこと**: (1) wishlist の**解除**（一覧からの削除 UI）は未検証、
+> (2) レビューの**編集・削除**および画像アップロード（Cloudinary）は対象外、
+> (3) wishlist / following の**ページング**は未検証（plan 049 と統合判断）、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は
+> **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
 > **046 の実行記録（2026-08-11・`f10a5b89`〜`4adb0b3b`）**
 >
 > **DONE。** skip の真因はプラン本文のとおり「テストの不備ではなく **/browse に
@@ -908,6 +957,18 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 
 Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates for a future round or `execute`/added plans:
 
+- **CORRECTNESS-06（新規・2026-08-11 起票 / plan 048 の実行中に実測）**
+  `src/components/store/cards/store-card.tsx:30-31` の
+  `if (!user.isSignedIn) router.push('/sign-in')` に **`return` が無い**。加えて Clerk の
+  `useUser()` は**ロード完了まで `isSignedIn: false` を返す**ため、
+  **サインイン済みのユーザーがハイドレーション直後にフォローを押すと、`/sign-in` へ push
+  され（サインイン済みなので `/` へ跳ね返され）フォローも成立しない**。
+  plan 048 の初回実装で 3 回とも決定論的に再現した（クリック後 URL が `/`・toast なし・
+  フォロワー 0 のまま）。最小修正は `if (!isLoaded) return;` の追加と
+  `router.push` 後の `return`。**修正したら `tests/e2e/engagement.spec.ts` の
+  `waitForClerkLoaded` が不要になる可能性が高い**ので併せて見直すこと。
+  同じ形（`isSignedIn` だけを見て早期に分岐する client component）が他にも無いか
+  横断確認する価値がある。
 - **DEPS-04** Prisma 5.22 → 6.x major upgrade (spike; full-text-search + Accelerate revalidation).
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.

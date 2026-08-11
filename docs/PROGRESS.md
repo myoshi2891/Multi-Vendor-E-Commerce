@@ -3128,3 +3128,39 @@ CodeRabbit の指摘 5 件を現行コードに突き合わせて検証し、**4
 > （Prisma クライアントの遅延初期化 Proxy と初期化エラー再 throw）の未同期分の是正である。
 > E2E 総数が動かないのは `--list` が skip も数えるためで、本プランで変わったのは
 > **skip の 0 件化**（search-filter が chromium 5 passed / skip 0、3 ブラウザ 15 passed）。
+
+---
+
+### plan 048 — 顧客エンゲージメント導線 E2E (2026-08-11)
+
+#### 概要
+
+ウィッシュリスト・ストアフォロー・レビュー投稿は UI・server action・専用プロフィールページがすべて実装済みなのに E2E がゼロだった（TESTS-34/35/36）。リピート購入を支える主要導線として 3 テストを 1 spec にまとめた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/cards/product/product-card.tsx` | wishlist ボタン（Heart アイコンのみでアクセシブル名なし）に `aria-label="Add to wishlist"` を付与。**本プラン唯一の `src/` 変更** | `7db28f6e` |
+| `src/components/store/cards/product/product-card.test.tsx` | ロケータを不在ベース（「aria-label もテキストも持たない唯一のボタン」）から肯定形（`getByRole("button", { name: "Add to wishlist" })`）へ是正。アクセシブル名を与えた時点で旧ロケータは 2 件 fail した | `7db28f6e` |
+| `tests/e2e/engagement.spec.ts` | 新規・3 テスト（wishlist / follow・unfollow / review 投稿） | `c1ad7c64` |
+
+#### 実測で確認したアプリ側の潜在バグ（本プランでは修正しない）
+
+`store-card.tsx:30-31` の `if (!user.isSignedIn) router.push('/sign-in')` は **`return` を持たない**。Clerk の `useUser()` はロード完了まで `isSignedIn: false` を返すため、**ハイドレーション直後にフォローを押すとサインイン済みでもホームへ飛ばされ、フォロー自体も成立しない**（`/sign-in` はサインイン済みユーザーを `/` へ跳ね返す）。プランは「潜在バグ」とだけ記していたが、初回実装では 3 回とも「クリック後 URL が `/`・toast なし・フォロワー 0 のまま」で、実際にこの導線を壊していた。
+
+プランが `src/` 変更を Step 1 の 1 行に限っているため、修正ではなくテスト側で `window.Clerk.loaded === true` を待って回避した（`waitForClerkLoaded`）。**本体を修正する際はこのヘルパーの必要性を再評価すること。**
+
+#### 識別力の機械的確認
+
+フォロワー数の期待を +1 → +2 に、レビュー本文の期待を存在しない文字列に崩すと、**その 2 件だけが落ち** wishlist は通ったままであることを実測してから戻した。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1928 passed / 1931 total | **1928 passed / 1931 total**（不変・ロケータ修正のみ） |
+| スイート数 | 180 | **180**（不変） |
+| Playwright E2E | 50 tests/browser（21 files・計 150） | **53 tests/browser（22 files・計 159）** |
+| テストファイル総数（ダッシュボード） | 210 | **211** |
+| 型エラー | 0 件 | **0 件** |

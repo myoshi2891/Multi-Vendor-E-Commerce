@@ -177,17 +177,21 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
     // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
     // 本エントリと QA_HANDOFF R8 を同時削除すること。
-    // 2026-08-11 時点: 042 / 043 / 044 / 045 / 046 / 047 が DONE。残るは 048 / 049 / 050。
+    // 2026-08-11 時点: 042〜048 が DONE。残るは 049 / 050。
     // (045 = guest-flows.spec.ts 新設・E2E +6/browser。042 の signIn 修復完了により
-    //  048 / 049 / 050 のブロックは解除済み。046 = /browse ページネーション配線 +
-    //  skip 解除。テスト数は不変で skip が 1 件解消。)
+    //  049 / 050 のブロックは解除済み。046 = /browse ページネーション配線 + skip 解除
+    //  〔テスト数は不変で skip が 1 件解消〕。048 = engagement.spec.ts 新設・+3/browser。)
+    // 048 の申し送り: Clerk の useUser() はロード完了まで isSignedIn: false を返すため、
+    // isSignedIn だけを見て router.push('/sign-in') する client component
+    // (store-card.tsx:30-31・return 無し) をハイドレーション直後にクリックすると
+    // サインイン済みでも操作が成立しない。engagement.spec.ts の waitForClerkLoaded を参照。
     {
         priority: "medium",
-        title: "R8: E2E 網羅性ギャップ解消 (残り plans 048〜050)",
-        target: "エンゲージメント (wishlist・フォロー・レビュー) / プロフィール住所・注文履歴 / admin 店舗ステータス (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・046 /browse ページネーション・047 注文詳細金額は完了)",
-        tool: "plans/048〜050 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
+        title: "R8: E2E 網羅性ギャップ解消 (残り plans 049 / 050)",
+        target: "プロフィール住所・注文履歴 / admin 店舗ステータス (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・046 /browse ページネーション・047 注文詳細金額・048 エンゲージメントは完了)",
+        tool: "plans/049 / 050 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
         cost: "M",
-        impact: "顧客エンゲージメントと管理者オペレーションをブラウザ導線で回帰検知下に置く (カタログ成長時に商品へ到達できない /browse の dormant バグは 046 で配線ごと解消済み)",
+        impact: "管理者オペレーション (店舗 BAN → ストアフロント非公開) と顧客プロフィール系をブラウザ導線で回帰検知下に置く",
     },
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
