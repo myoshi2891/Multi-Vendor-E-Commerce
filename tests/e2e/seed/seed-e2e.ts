@@ -463,6 +463,129 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // /browse ページネーション E2E 用（plan 046）。
+    // 専用カテゴリに 12 商品（pageSize 10 超）を隔離して 2 ページ構成を決定的にする。
+    // 既存 category に足すと search-filter のカテゴリフィルタ assert と
+    // purchase-flow の件数前提が壊れる。
+    const paginationCategory = await prisma.category.upsert({
+        where: { url: seed.paginationCategory.url },
+        create: {
+            name: seed.paginationCategory.name,
+            url: seed.paginationCategory.url,
+            image: seed.paginationCategory.image,
+            featured: false,
+        },
+        update: {
+            name: seed.paginationCategory.name,
+            image: seed.paginationCategory.image,
+            featured: false,
+        },
+    });
+
+    const paginationSubCategory = await prisma.subCategory.upsert({
+        where: { url: seed.paginationSubCategory.url },
+        create: {
+            name: seed.paginationSubCategory.name,
+            url: seed.paginationSubCategory.url,
+            image: seed.paginationSubCategory.image,
+            featured: false,
+            categoryId: paginationCategory.id,
+        },
+        update: {
+            name: seed.paginationSubCategory.name,
+            image: seed.paginationSubCategory.image,
+            featured: false,
+            categoryId: paginationCategory.id,
+        },
+    });
+
+    const paginationProducts: Array<{ id: string; slug: string }> = [];
+    for (const p of seed.paginationProducts) {
+        const paginationProduct = await prisma.product.upsert({
+            where: { slug: p.slug },
+            create: {
+                name: p.name,
+                description: p.description,
+                slug: p.slug,
+                brand: p.brand,
+                shippingFeeMethod: "ITEM",
+                storeId: store.id,
+                categoryId: paginationCategory.id,
+                subCategoryId: paginationSubCategory.id,
+            },
+            update: {
+                name: p.name,
+                description: p.description,
+                brand: p.brand,
+                shippingFeeMethod: "ITEM",
+                storeId: store.id,
+                categoryId: paginationCategory.id,
+                subCategoryId: paginationSubCategory.id,
+            },
+        });
+
+        const paginationVariant = await prisma.productVariant.upsert({
+            where: { slug: p.variant.slug },
+            create: {
+                variantName: p.variant.name,
+                variantDescription: p.variant.description,
+                variantImage: p.variant.image,
+                slug: p.variant.slug,
+                sku: p.variant.sku,
+                weight: p.variant.weight,
+                productId: paginationProduct.id,
+            },
+            update: {
+                variantName: p.variant.name,
+                variantDescription: p.variant.description,
+                variantImage: p.variant.image,
+                sku: p.variant.sku,
+                weight: p.variant.weight,
+                productId: paginationProduct.id,
+            },
+        });
+
+        await prisma.size.deleteMany({
+            where: { productVariantId: paginationVariant.id },
+        });
+        await prisma.productVariantImage.deleteMany({
+            where: { productVariantId: paginationVariant.id },
+        });
+        await prisma.color.deleteMany({
+            where: { productVariantId: paginationVariant.id },
+        });
+
+        await prisma.size.create({
+            data: {
+                size: p.variant.size.size,
+                quantity: p.variant.size.quantity,
+                price: p.variant.size.price,
+                discount: p.variant.size.discount,
+                productVariantId: paginationVariant.id,
+            },
+        });
+
+        await prisma.productVariantImage.create({
+            data: {
+                url: p.variant.variantImage.url,
+                alt: p.variant.variantImage.alt,
+                productVariantId: paginationVariant.id,
+            },
+        });
+
+        await prisma.color.create({
+            data: {
+                name: p.variant.color.name,
+                productVariantId: paginationVariant.id,
+            },
+        });
+
+        paginationProducts.push({
+            id: paginationProduct.id,
+            slug: paginationProduct.slug,
+        });
+    }
+
     return {
         country,
         user,
@@ -477,6 +600,9 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         variantB,
         platformCoupon,
         offerTag,
+        paginationCategory,
+        paginationSubCategory,
+        paginationProducts,
     };
 };
 
