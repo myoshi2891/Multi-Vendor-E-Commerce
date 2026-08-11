@@ -3205,3 +3205,39 @@ BAN 後の期待を `not.toBe(200)` → `toBe(200)` に崩すと `Expected: 200 
 | Playwright E2E | 53 tests/browser（22 files・計 159） | **54 tests/browser（23 files・計 162）** |
 | テストファイル総数（ダッシュボード） | 211 | **212** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud PR #173 — browse-pagination の New Code カバレッジ 0.0% 解消 (2026-08-11)
+
+#### 概要
+
+SonarCloud の PR #173 Measures が `src/components/store/browse-page/browse-pagination.tsx` を **Coverage on New Code 0.0%（未カバー 11 行 / 未カバー 2 条件）** として報告していた。plan 050 の周辺で追加された当該コンポーネントに Jest テストが 1 件も無かったのが原因で、コンポーネントテストを新設して解消した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/store/browse-pagination.test.tsx` | 新設（6 テスト）。値形式 `setPage(i + 1)` / 関数形式 `setPage(prev => prev ± 1)` の両分岐、既存クエリ（category / sort）保持、端（先頭 Previous / 最終 Next）で `router.push` が走らないことを検証 | `2f2b77eb` |
+| `src/**` | **無変更**（テスト追加のみ） | — |
+
+#### 未カバー 2 条件の実体
+
+`browse-pagination.tsx` の `typeof next === "function" ? next(page) : next` の両側。共有ページャ（`src/components/store/shared/pagination.tsx`）は**番号クリックでは値形式**、**Prev/Next では関数形式**で `setPage` を呼び分けるため、どちらか一方の操作しか叩かないと分岐が閉じない。両方を叩いて当該ファイルは **Stmts / Branch / Funcs / Lines すべて 100%**（`bunx jest <path> --coverage --collectCoverageFrom=<当該ファイル>` で単体実測）。
+
+#### 同期時に是正したドリフト 2 件
+
+1. **スイート数**: 各ドキュメントは 180 と記載していたが、本対応前の実測が既に **181**（テスト総数 1931 は一致していたため差分はスイート数のみ）。本対応の +1 を含めて **182** に更新。
+2. **lcov カバレッジ**: 2026-08-04 実測のまま据え置かれていたため再測定。分母（8657 → 8697）も動いており、差分は本 PR 単独ではなく 08-04 以降の全コミット分を含む。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1928 passed / 1931 total | **1934 passed / 1937 total** |
+| スイート数 | 180（記載値。実測は 181） | **182（181 passed + 1 skipped）** |
+| Integration テスト総数 | 66 | **66**（不変） |
+| Playwright E2E | 54 tests/browser（23 files・計 162） | **54 tests/browser（23 files・計 162）**（不変） |
+| テストファイル総数（ダッシュボード） | 212 | **213** |
+| カバレッジ全体（lcov） | 67.71 / 48.00 / 55.48 / 66.79（2026-08-04） | **68.49 / 48.46 / 56.57 / 67.58**（2026-08-11 実測） |
+| 型エラー | 0 件 | **0 件** |

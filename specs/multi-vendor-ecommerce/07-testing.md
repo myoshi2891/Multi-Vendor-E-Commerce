@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1928 passed / 1931 total across 180 suites (3 skipped), as of 2026-08-11.
+- 1934 passed / 1937 total across 182 suites (3 skipped), as of 2026-08-11.
+  SonarCloud PR #173 reported 0.0% coverage on new code for
+  `src/components/store/browse-page/browse-pagination.tsx` (11 uncovered lines, 2 uncovered
+  conditions); `tests/component/store/browse-pagination.test.tsx` closes it with +6 tests
+  (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
+  pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
+  Previous/Next, so both call shapes are needed to cover the branch.
 - Playwright E2E: 54 tests/browser across 23 files (162 across the three browsers), as of 2026-08-11.
   The CodeRabbit review round added 7 tests (`tests/component/store/categories-menu.test.tsx`
   +6, `product-sort.test.tsx` +1) with no new suites; the remaining delta from the previous
