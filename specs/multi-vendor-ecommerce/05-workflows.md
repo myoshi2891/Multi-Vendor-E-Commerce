@@ -1,7 +1,11 @@
 # Workflows
 
 ## Customer Purchase Flow
-1) Browse or search products.
+1) Browse or search products. `/browse` paginates at 10 products per page: the page reads the
+   `page` query parameter, passes it to `getProducts`, and renders the shared pager only when
+   `totalPages > 1`. Paging preserves the active filters, sort, and search terms — the pager
+   rewrites only the `page` parameter. Invalid values (`NaN`, `Infinity`, fractions, `< 1`)
+   fall back to page 1.
 2) Open product page and choose a variant and size.
 3) Add to cart (Zustand + localStorage).
 4) Server-side cart validation via `saveUserCart()` recalculates prices, stock, and shipping from DB.

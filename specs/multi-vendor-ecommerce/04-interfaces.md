@@ -3,7 +3,7 @@
 ## UI Routes (App Router)
 Storefront:
 - `/` home
-- `/browse` browse and search
+- `/browse` browse and search; supports a `page` query parameter (1-based, normalized per the tech.md URL-parameter rule) that is passed to `getProducts(filters, sort, page)`. The pager renders only when `totalPages > 1`, via the client wrapper `src/components/store/browse-page/browse-pagination.tsx`, which preserves all existing query parameters (filters, sort, search) and replaces only `page`.
 - `/offers` platform-wide offer (OfferTag) landing; each tag links to `/browse?offer=<url>` (reuses `getAllOfferTags`, `force-dynamic`)
 - `/about` `/legal` `/faqs` `/product-support` static content pages (DB-independent, SSG; rendered via shared `StaticPageLayout` fed by typed content constants in `src/components/store/static/content/`)
 - `/customer-service` support hub portal (cards linking to `/contact` `/returns-exchange` `/faqs` `/track-order` `/product-support`)

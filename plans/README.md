@@ -119,7 +119,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
-| [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
+| [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | DONE（2026-08-11・`f10a5b89`〜`4adb0b3b`。E2E は **件数不変（50 tests/browser・計 150）で skip が 1 件解消** —— search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**。**プラン本文のカードセレクタが実 DOM と食い違っており逸脱 1 点**〔prefix が価格 testid にも一致〕。下の実行記録を参照） |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
@@ -141,6 +141,62 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **046 の実行記録（2026-08-11・`f10a5b89`〜`4adb0b3b`）**
+>
+> **DONE。** skip の真因はプラン本文のとおり「テストの不備ではなく **/browse に
+> ページネーション UI が存在しない**」ことだった。`getProducts` は `page` / `pageSize` /
+> `totalPages` を実装済みなのに browse ページが `page` searchParam を読んでおらず、
+> **商品が 11 件以上あっても先頭 10 件にしか到達できない dormant バグ**が生きていた。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は `browse/page.tsx` −2 /
+> `sort.tsx`（052 の a11y 修正）/ `seed/*`（045 の OfferTag）で**動いていたが STOP 非該当** ——
+> プランが前提とする Current state（`page` 未読み取り・`getProducts` は 4 引数・共有
+> `Pagination` の props が `{ page, totalPages, setPage }`）はいずれも健在だった。
+> 045 の申し送り「046 は 045 の seed diff を取り込むこと」は 045 がマージ済みのため自動解消。
+>
+> **E2E の件数は増えない。** `--list` は skip も数えるため総数は **50 tests/browser・
+> 3 ブラウザ計 150 のまま**で、本プランで変わったのは **skip の 0 件化**である
+> （search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**・リトライなし）。
+> 統計行に「+1」と書かないこと。
+>
+> **プラン本文からの逸脱 1 点**: カード件数のセレクタはプラン記載の
+> `[data-testid^="product-card-"]` ではなく、seed slug まで含めた
+> `[data-testid^="product-card-e2e-page-item-"]` を使う。前者は**カード内の価格**
+> `data-testid="product-card-price"`（`product-page/product-info/product-price.tsx:112`）にも
+> 一致し、10 件のはずが 20 件と数えられる。**plan 052 が /browse で踏んだのと同じクラスの罠**
+> （あちらは `.first()` がカードを掴めるかが描画順依存になる形で顕在化した）。
+>
+> **識別力を機械的に確認した。** ラッパーの `goTo` を「既存クエリを保持しない」実装へ
+> 一時的に崩すと、**このテストだけが** `category` 保持の assert で落ちる
+> （`Received "…/browse?page=2"`）ことを実測してから戻している。件数 10 → 2 は
+> **category を落とした実装でも偶然一致する**ため、この assert が無ければ検証は空振りになる
+> —— プラン本文が Done criteria に「`page=2` だけの assert では不十分」と明記していた根拠が
+> そのまま実証された形。
+>
+> **実装上の判断 2 点（プラン本文に無い）**:
+>
+> 1. **`FiltersQueryType.page` は追加したが `ProductFilters` へは渡していない。**
+>    `FiltersHeader` は `Object.entries(queries)` を回して**キーごとにフィルタチップを描画**する
+>    （`filters/header.tsx:87`）ため、`page` を混ぜるとページ番号がチップとして表示され
+>    Filter 件数も +1 される。オプショナルにしたのは、必須にすると既存の object literal 全箇所が
+>    型エラーになり修正の波及がスコープを超えるため。
+> 2. **seed は専用カテゴリ `E2E Pagination` に隔離した**（プランの指示どおり）。既存
+>    `E2E Category` に 12 件足すと search-filter のカテゴリフィルタ assert と purchase-flow の
+>    件数前提が壊れる。`bun run seed:e2e` の 2 回連続 exit 0（冪等）を実測済み。
+>
+> **本プランが主張しないこと**: (1) ソートとページングの**組合せ**は検証していない
+> （プランの Out of scope。ただし `BrowsePagination` がクエリを保持する設計が前提になるので、
+> ラッパーを迂回して `<Link href>` 直書きに変えるとソート維持が壊れる）、(2) 共有
+> `Pagination` は `totalPages` 分の番号ボタンを全描画する実装のままで、数百ページ規模の
+> 省略表示（`…`）は入れていない、(3) フルラン（全 spec × 3 ブラウザ）は再取得していない ——
+> E2E 全体の最新フルラン実測は **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped**
+> のままである。
+>
+> **統計の注意（ドリフト是正を混同しないこと）**: Jest **1915 → 1928（+13）**と
+> ダッシュボードのファイル数 **209 → 210** は**本プランの成果ではない**。いずれも先行コミット
+> `a9083b17`〜`7064f9f3`（Prisma クライアントの遅延初期化 Proxy と初期化エラー再 throw）の
+> 未同期分で、本セッションで併せて是正した。回帰: purchase-flow + layout-chrome（chromium）
+> **12 passed** / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors（15 warnings は既存ベースライン）。
+>
 > **052 の実行記録（2026-08-09・`df4d4f7e`〜`f685271d`）**
 >
 > **DONE。** `tests/e2e/a11y/` に `browse` / `product` / `cart` を新設（各 1 テスト）。

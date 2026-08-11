@@ -3085,3 +3085,46 @@ CodeRabbit の指摘 5 件を現行コードに突き合わせて検証し、**4
 | 型エラー | 0 件 | **0 件** |
 
 > 更新前の 1895 / 178 は実測ではなくドリフトした値だった。差 20 のうち **13 テスト・2 スイートは `879763a0`（categories-menu / product-sort スイート新設）の未同期分**で、当該コミットで `spec-sync-after-test` が起動されていなかったことによる（[`.claude/rules/02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md)）。
+
+---
+
+### plan 046 — /browse ページネーション配線 + E2E 有効化 (2026-08-11)
+
+#### 概要
+
+`plans/README.md` の Status 表で TODO だった P2 プランのうち、唯一 `src/` の実バグ修正を含む plan 046（TESTS-32）を実行した。`search-filter.spec.ts` のページネーションテストが skip されたままだった真因は「テストが壊れていた」ことではなく、**/browse にページネーション UI が存在しなかった**ことである。`getProducts` は `page` / `pageSize` / `totalPages` を実装済みなのに browse ページが `page` searchParam を読んでおらず、**商品が 11 件以上あっても先頭 10 件にしか到達できない dormant バグ**として放置されていた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(store)/browse/page.tsx` | `page` searchParam を tech.md の URL パラメータ正規化規約で処理し `getProducts` の第 3 引数へ配線。`totalPages > 1` のときだけページャを描画 | `f10a5b89` |
+| `src/components/store/browse-page/browse-pagination.tsx` | 新規（client）。共有 `Pagination`（`setPage: Dispatch<SetStateAction<number>>` のクライアント state 型）を「既存クエリを保持したまま `page` だけ差し替えて push」する形へ橋渡しする薄いラッパー。共有コンポーネント本体は他 3 箇所で使用中のため不変 | `f10a5b89` |
+| `src/lib/types.ts` | `FiltersQueryType.page` をオプショナルで追加。**`ProductFilters` へは意図的に渡さない** —— `FiltersHeader` が `Object.entries(queries)` を回してキーごとにフィルタチップを描画するため、混ぜるとページ番号がチップとして表示され Filter 件数も増える | `f10a5b89` |
+| `tests/e2e/seed/constants.ts` / `seed-e2e.ts` | 専用カテゴリ `E2E Pagination` に商品 12 件を隔離投入（既存 `E2E Category` に足すと search-filter のカテゴリフィルタ assert と purchase-flow の件数前提が壊れる）。`bun run seed:e2e` 2 回連続 exit 0 の冪等性を実測 | `96ca7bc7` |
+| `tests/e2e/search-filter.spec.ts` | skip を解除し、SSR ページに効かない route-mock を捨てて実データ検証へ全面書き換え | `4adb0b3b` |
+
+#### プラン本文からの逸脱（1 件）
+
+カード件数のセレクタは、プラン記載の `[data-testid^="product-card-"]` ではなく seed slug まで含めた `[data-testid^="product-card-e2e-page-item-"]` を使った。前者はカード内の価格 `data-testid="product-card-price"`（`product-page/product-info/product-price.tsx:112`）にも一致し、件数が二重に数えられる（plan 052 が別ページで踏んだのと同じクラスの罠）。
+
+#### 識別力の機械的確認
+
+ラッパーの `goTo` を「既存クエリを保持しない」実装へ一時的に崩すと、**このテストだけが** `category` 保持の assert で落ちることを実測してから戻した（`Received "…/browse?page=2"`）。件数 10 → 2 は category を落とした実装でも偶然一致するため、この assert が無いと検証そのものが空振りになる。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1915 passed / 1918 total | **1928 passed / 1931 total** |
+| スイート数 | 180 | **180**（不変） |
+| Integration テスト総数 | 66 | **66**（不変） |
+| Playwright E2E | 50 tests/browser（計 150） | **50 tests/browser（計 150）**（不変・skip が 1 件解消） |
+| テストファイル総数（ダッシュボード） | 209 | **210** |
+| 型エラー | 0 件 | **0 件** |
+
+> **plan 046 は Jest テストもテストファイルも増やしていない。** unit/component の +13 と
+> ファイル +1（`src/lib/db.test.ts`）はいずれも先行コミット `a9083b17`〜`7064f9f3`
+> （Prisma クライアントの遅延初期化 Proxy と初期化エラー再 throw）の未同期分の是正である。
+> E2E 総数が動かないのは `--list` が skip も数えるためで、本プランで変わったのは
+> **skip の 0 件化**（search-filter が chromium 5 passed / skip 0、3 ブラウザ 15 passed）。
