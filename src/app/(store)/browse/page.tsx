@@ -1,3 +1,4 @@
+import BrowsePagination from "@/components/store/browse-page/browse-pagination";
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
@@ -27,7 +28,15 @@ export default async function BrowsePage({
         maxPrice,
         minPrice,
         color,
+        page,
     } = await searchParams;
+
+    // ページ番号の正規化（.claude/steering/tech.md「URL パラメータ正規化」規約）。
+    // Infinity / NaN / 小数 / 0 以下はすべて 1 ページ目として扱う。
+    const rawPage = Number(Array.isArray(page) ? page[0] : page);
+    const currentPage =
+        Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+
     const products_data = await getProducts(
         {
             search,
@@ -47,9 +56,10 @@ export default async function BrowsePage({
                   ? [color] // Convert single color string to array
                   : undefined, // If no color, keep it undefined
         },
-        sort
+        sort,
+        currentPage
     );
-    const { products } = products_data;
+    const { products, totalPages } = products_data;
 
     return (
         <div className="mx-auto max-w-[95%]">
@@ -59,6 +69,12 @@ export default async function BrowsePage({
                     <ProductSort />
                     {/* Product list */}
                     <ProductList products={products} />
+                    {totalPages > 1 && (
+                        <BrowsePagination
+                            page={currentPage}
+                            totalPages={totalPages}
+                        />
+                    )}
                 </div>
             </div>
         </div>

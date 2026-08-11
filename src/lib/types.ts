@@ -412,6 +412,12 @@ export type FiltersQueryType = {
     minPrice: string; // Added minPrice
     maxPrice: string; // Added maxPrice
     color: string | string[];
+    /**
+     * ページ番号（1 始まり）。URL に無い場合があるためオプショナル。
+     * フィルタチップを描画する `FiltersHeader` にはページ番号を渡さないこと
+     * （`Object.entries(queries)` を回すため、混ぜるとページ番号がチップとして表示される）。
+     */
+    page?: string;
 };
 
 export type CategoryWithSubsType = Category & {
