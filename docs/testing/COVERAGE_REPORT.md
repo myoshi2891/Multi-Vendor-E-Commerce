@@ -58,7 +58,7 @@
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
 | Security | 2/10 | **20%** | A1 完了: queries（IDOR認可テスト）+ lib（middleware/sanitize） |
 | Visual / Snapshot | 1/10 | **10%** | A2 完了: pages（cart/checkout spec — baseline 未コミット） |
-| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec・chromium で全 passed）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
+| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec）。スキャンは **chromium 限定**で実行し、`color-contrast` ルールは既知負債 **OI-10** として `disabledRules` で除外している（[QA_HANDOFF.md OI-10](./QA_HANDOFF.md#active-open-issues) 参照）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
 | Performance | 0/10 | **0%** | 全列未対応 |
 
 ### ドメイン別 (列) のホットスポット

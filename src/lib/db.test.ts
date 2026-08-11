@@ -167,4 +167,84 @@ describe("db (遅延初期化 Proxy)", () => {
 
         expect(readProp(db, "unknownProperty")).toBeUndefined();
     });
+
+    describe("初期化失敗時", () => {
+        let errorSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            errorSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            errorSpy.mockRestore();
+        });
+
+        it("new PrismaClient() の失敗は文脈をログしたうえで元の error を再 throw する", async () => {
+            const boom = new Error("PrismaClient init failed");
+            // `clearAllMocks` は実装をリセットしないため、後続テストへ
+            // 漏れないよう Once で登録する
+            mockConstructPrismaClient.mockImplementationOnce(() => {
+                throw boom;
+            });
+            const { db } = await loadDb();
+
+            expect(() => readProp(db, "clientVersion")).toThrow(boom);
+            expect(errorSpy).toHaveBeenCalledWith(
+                "[Db:getClient] Prisma クライアントの初期化に失敗しました",
+                expect.objectContaining({
+                    error: "PrismaClient init failed",
+                    nodeEnv: process.env.NODE_ENV,
+                    reusedGlobal: false,
+                })
+            );
+        });
+
+        it("$extends() の失敗は文脈をログしたうえで元の error を再 throw する", async () => {
+            const boom = new Error("accelerate extension failed");
+            mockExtends.mockImplementation(() => {
+                throw boom;
+            });
+            const { db } = await loadDb();
+
+            expect(() => readProp(db, "clientVersion")).toThrow(boom);
+            expect(mockConstructPrismaClient).toHaveBeenCalledTimes(1);
+            expect(errorSpy).toHaveBeenCalledWith(
+                "[Db:getClient] Prisma クライアントの初期化に失敗しました",
+                expect.objectContaining({
+                    error: "accelerate extension failed",
+                })
+            );
+        });
+
+        it("Error 以外が throw された場合も文脈をログして再 throw する", async () => {
+            mockExtends.mockImplementation(() => {
+                throw "string failure";
+            });
+            const { db } = await loadDb();
+
+            expect(() => readProp(db, "clientVersion")).toThrow(
+                "string failure"
+            );
+            expect(errorSpy).toHaveBeenCalledWith(
+                "[Db:getClient] Prisma クライアントの初期化に失敗しました (Unknown error)",
+                expect.objectContaining({ error: "string failure" })
+            );
+        });
+
+        it("失敗後は client をキャッシュせず、次回アクセスで再試行する", async () => {
+            mockExtends.mockImplementationOnce(() => {
+                throw new Error("transient failure");
+            });
+            const { db } = await loadDb();
+
+            expect(() => readProp(db, "clientVersion")).toThrow(
+                "transient failure"
+            );
+            // 2 回目は正常系の mockExtends 実装に戻るため成功する
+            expect(readProp(db, "clientVersion")).toBe("test");
+            expect(mockConstructPrismaClient).toHaveBeenCalledTimes(2);
+        });
+    });
 });

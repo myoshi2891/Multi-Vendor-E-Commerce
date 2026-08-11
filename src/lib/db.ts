@@ -26,8 +26,32 @@ let client: ExtendedPrismaClient | undefined;
 const getClient = (): ExtendedPrismaClient => {
 	if (client) return client;
 
-	client = globalThis.prisma ?? createPrismaClient();
-	if (process.env.NODE_ENV !== "production") globalThis.prisma = client;
+	try {
+		client = globalThis.prisma ?? createPrismaClient();
+		if (process.env.NODE_ENV !== "production") globalThis.prisma = client;
+	} catch (error: unknown) {
+		// 初期化は Proxy の任意のプロパティアクセス経由で起きるため、素の
+		// スタックだけでは「どこで DB クライアントを作ろうとして落ちたか」が
+		// 追えない。文脈を残したうえで元の error をそのまま再 throw する
+		// （ラップすると Prisma の型付きエラーを呼び出し側が判別できなくなる）。
+		const context = {
+			nodeEnv: process.env.NODE_ENV,
+			reusedGlobal: globalThis.prisma !== undefined,
+		};
+		if (error instanceof Error) {
+			console.error("[Db:getClient] Prisma クライアントの初期化に失敗しました", {
+				...context,
+				error: error.message,
+				stack: error.stack,
+			});
+		} else {
+			console.error(
+				"[Db:getClient] Prisma クライアントの初期化に失敗しました (Unknown error)",
+				{ ...context, error }
+			);
+		}
+		throw error;
+	}
 
 	return client;
 };
