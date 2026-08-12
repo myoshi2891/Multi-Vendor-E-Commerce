@@ -128,7 +128,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
-| [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
+| [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
 | [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
@@ -141,6 +141,50 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **055 の実行記録（2026-08-12・`9704903c`〜`7f09918a`）**
+>
+> **DONE。** `tests/e2e/cart-login-handoff.spec.ts` を新設し **1 テスト**（ゲストでカート構築 →
+> サインイン → 引き継ぎ確認 → Checkout でサーバー保存 → **localStorage を持たない新規
+> コンテキストから /checkout を再取得**の直列検証）。E2E は **57 → 58 tests/browser /
+> 24 → 25 files / 3 ブラウザ計 171 → 174**、E2E メインスペックは 15 → **16**。
+> 実測 chromium **1 passed** / 3 ブラウザ **3 passed**・**flaky 0**（リトライなし）。
+> 回帰 `purchase-flow`（chromium）**5 passed**。`src/` は **1 行も変更していない**。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/user.ts` が baseline
+> `99ede89` から **+1565/−703** と大きく動いていたが、差分はヘルパー抽出
+> （`findCartProductWithVariantAndSize`）と構造化ログの refactor であり、プランが**前提とする
+> 契約**はいずれも健在だった —— 未認証で `Unauthenticated.` を throw（`user.ts:333`）/
+> `summary.tsx` は `saveUserCart` 成功時のみ `router.push("/checkout")`（`:25-36`）/
+> testid `checkout`（`:85`）・`cart-total`（`:77`）。`container.tsx` の −1 行はデバッグ
+> `console.log` の除去。`purchase-flow.spec.ts` は無変更。**「差分があるか」ではなく
+> 「プランが依拠する記述が壊れているか」で判定する**という Drift check の趣旨どおりに扱った。
+>
+> **プラン本文に無い追加が 1 点（前提の機械化）**: 新規コンテキストで signIn した直後に
+> `localStorage.getItem("cart")` が空であることを assert している。プランは step 5 の設計理由を
+> 詳しく書いているが、**「新規コンテキストだから localStorage は空のはず」はコメントで主張する
+> だけでは保証にならない** —— ここが空でなければ、以降の検証は再びクライアント永続を見ている
+> だけになり、`saveUserCart` が壊れていても green になる。前提そのものを assert に落とした。
+>
+> **識別力を機械的に確認した。** step 5 の期待値を存在しない文字列へ崩すと落ちることを実測して
+> から戻している。なお `page.reload()` への「簡略化」がなぜ検証を無意味にするかは
+> プラン本文と spec 内コメントの両方に根拠を残してある（**後続の実行者が最も踏みやすい罠**）。
+>
+> **本プランが主張しないこと**: (1) **金額・数量の厳密検証はしていない** —— `saveUserCart` は
+> plan 005 の correctness 修正対象なので、修正が入っても壊れない「アイテムが存在する」レベルに
+> 留める意図的な設計。**005 の executor は本 spec を回帰テストとして使い、そのうえで検証を
+> 強化すること**、(2) DB の Cart 行を Prisma で直接検証していない（deferred の saveUserCart
+> integration テストの担当領域。責務を分けて重複させない）、(3) /checkout 以降の操作
+> （住所選択・Place Order）は plan 047 / platform-coupon の担当、(4) フルラン（全 spec ×
+> 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は **2026-08-04 の
+> 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> **観測したが本プランでは触っていないもの**: 実行中サーバーログに
+> `Error: Couldn't retrieve country data.` が繰り返し出る。テストは全て green で、
+> 本プランの検証対象（カートの引き継ぎとサーバー保存）とは別系統のため放置した。
+>
+> 統計: Jest **1976 passed / 1979 total / 183 スイート**で**不変**（本プランは E2E のみ）。
+> ダッシュボード集計 **215 → 216**。docs 同期は `7f09918a`。
+>
 > **053 の実行記録（2026-08-12・`45cb7e1b`〜`b2a8f202`）**
 >
 > **DONE。** `tests/e2e/auth-surface.spec.ts` を新設し **3 テスト**（Clerk サインアップ
