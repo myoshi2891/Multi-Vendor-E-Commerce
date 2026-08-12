@@ -1,6 +1,7 @@
 import WishlistContainer from "@/components/store/profile/wishlist/container";
 import { normalizePageParam } from "@/lib/utils";
 import { getUserWishlist } from "@/queries/profile";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,14 @@ export default async function ProfileWishlistPage({
     const page = normalizePageParam(pageParam);
     const wishlist_data = await getUserWishlist(page);
     const { wishlist, totalPages } = wishlist_data;
+
+    // 範囲外ページは最終ページ（該当 0 件なら 1 ページ目）へ寄せる。
+    // 遷移後は canonicalPage === page になるためループしない。
+    // redirect() は NEXT_REDIRECT を throw するため try/catch の外に置くこと。
+    const canonicalPage = totalPages >= 1 ? Math.min(page, totalPages) : 1;
+    if (canonicalPage !== page) {
+        redirect(`/profile/wishlist/${canonicalPage}`);
+    }
 
     return (
         <div className="bg-white px-6 py-4">

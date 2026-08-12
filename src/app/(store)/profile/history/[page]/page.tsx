@@ -5,6 +5,37 @@ import { getProductsByIds } from "@/queries/product";
 import { ProductType } from "@/lib/types";
 import { normalizePageParam } from "@/lib/utils";
 import { use, useEffect, useState } from "react";
+
+/**
+ * 履歴の指定ページを取得し、範囲外なら最終ページ（該当 0 件なら 1 ページ目）へ寄せて再取得する。
+ *
+ * 他のページネーション画面は Server Component なので `redirect()` で正準 URL へ寄せるが、
+ * ここは Client Component で、初回マウント後の `page` は URL ではなく `setPage` で動く。
+ * URL を書き換えても state と辻褄が合わないため、state 上で正規化する。
+ * 追加の往復が発生するのは範囲外アクセス時のみ。
+ *
+ * @param ids - localStorage から読んだ商品 ID 群
+ * @param requestedPage - 要求されたページ番号（正規化済み）
+ * @returns 商品・総ページ数・実際に採用したページ番号
+ */
+async function fetchHistoryPage(
+    ids: string[],
+    requestedPage: number
+): Promise<{ products: ProductType[]; totalPages: number; page: number }> {
+    const requested = await getProductsByIds(ids, requestedPage);
+    const canonicalPage =
+        requested.totalPages >= 1
+            ? Math.min(requestedPage, requested.totalPages)
+            : 1;
+
+    if (canonicalPage === requestedPage) {
+        return { ...requested, page: canonicalPage };
+    }
+
+    const clamped = await getProductsByIds(ids, canonicalPage);
+    return { ...clamped, page: canonicalPage };
+}
+
 /**
  * Renders the "Your product view history" page and its paginated product list.
  *
@@ -51,11 +82,11 @@ export default function ProfileHistoryPage({
                     }
                     return;
                 }
-                const res = await getProductsByIds(productHistory, currentPage);
+                const res = await fetchHistoryPage(productHistory, currentPage);
                 if (!cancelled) {
                     setProducts(res.products);
                     setTotalPages(res.totalPages);
-                    setPage(currentPage);
+                    setPage(res.page);
                 }
             } catch (error: unknown) {
                 if (error instanceof Error) {

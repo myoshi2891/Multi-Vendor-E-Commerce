@@ -5,8 +5,35 @@ import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { normalizePageParam } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * 現在のクエリを保持したまま `page` だけ差し替えた /browse の URL を組み立てる。
+ *
+ * クライアント側の同等処理は `browse-pagination.tsx` の `goTo` にあるが、あちらは
+ * `useSearchParams` 依存で Server Component から再利用できないため対の実装として置く。
+ * どちらかを変えるときは両方を確認すること（フィルタ・ソートの保持が壊れる）。
+ *
+ * @param query - `searchParams` を解決した生のクエリオブジェクト
+ * @param page - 差し替え後のページ番号
+ * @returns `/browse?...&page=<page>` 形式の URL
+ */
+function buildBrowseHref(query: FiltersQueryType, page: number): string {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+        if (key === "page" || value === undefined || value === null) continue;
+        // size / color は同名パラメータが複数付き得るため append で全要素を残す
+        if (Array.isArray(value)) {
+            value.forEach((item) => params.append(key, item));
+            continue;
+        }
+        params.set(key, String(value));
+    }
+    params.set("page", String(page));
+    return `/browse?${params.toString()}`;
+}
 
 /**
  * Renders the store browse page with filter controls, sorting UI, and a product list derived from URL query parameters.
@@ -19,6 +46,7 @@ export default async function BrowsePage({
 }: {
     searchParams: Promise<FiltersQueryType>;
 }) {
+    const query = await searchParams;
     const {
         category,
         offer,
@@ -30,7 +58,7 @@ export default async function BrowsePage({
         minPrice,
         color,
         page,
-    } = await searchParams;
+    } = query;
 
     // ページ番号の正規化（.claude/steering/tech.md「URL パラメータ正規化」規約）。
     // Infinity / NaN / 小数 / 0 以下は 1 ページ目、MAX_PAGE 超は上限へクランプする。
@@ -59,6 +87,17 @@ export default async function BrowsePage({
         currentPage
     );
     const { products, totalPages } = products_data;
+
+    // 範囲外ページ（?page=999）は空リストを描画せず正準 URL へ寄せる。
+    // ページャは page={currentPage} をハイライトするため、寄せないと
+    // URL・ハイライト・表示内容の 3 者が食い違う。
+    // 該当 0 件（totalPages === 0）のときは 1 ページ目を正準とする。
+    // 遷移後は canonicalPage === currentPage になるのでループしない。
+    // redirect() は NEXT_REDIRECT を throw するため try/catch の外に置くこと。
+    const canonicalPage = totalPages >= 1 ? Math.min(currentPage, totalPages) : 1;
+    if (canonicalPage !== currentPage) {
+        redirect(buildBrowseHref(query, canonicalPage));
+    }
 
     return (
         <div className="mx-auto max-w-[95%]">
