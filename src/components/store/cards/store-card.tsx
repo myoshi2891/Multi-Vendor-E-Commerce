@@ -88,8 +88,12 @@ const StoreCard: FC<Props> = ({ store }) => {
                 <div className="flex">
                     <button
                         type="button"
+                        // Clerk のロード完了までは押せないようにする（ハンドラ側のガードだけだと
+                        // 押下は成立するのに何も起きない「無反応」状態に見えるため）
+                        disabled={!isLoaded}
+                        aria-pressed={following}
                         className={cn(
-                            'mx-2 flex h-9 cursor-pointer items-center rounded-full border border-black px-4 text-base font-bold hover:bg-black hover:text-white',
+                            'mx-2 flex h-9 cursor-pointer items-center rounded-full border border-black px-4 text-base font-bold hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50',
                             {
                                 'bg-black text-white': following,
                             }

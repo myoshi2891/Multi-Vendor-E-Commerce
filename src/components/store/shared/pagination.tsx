@@ -26,14 +26,14 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
             <div className="flex w-full items-center justify-end gap-x-4 border-t border-gray-200">
                 <button
                     type="button"
-                    aria-disabled={page <= 1}
+                    disabled={page <= 1}
                     onClick={() => handlePrevious()}
-                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
+                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:text-gray-300"
                 >
                     <MoveLeft className="w-3" />
-                    <p className="ml-3 text-sm font-medium leading-none">
+                    <span className="ml-3 text-sm font-medium leading-none">
                         Previous
-                    </p>
+                    </span>
                 </button>
                 <div className="flex flex-wrap">
                     {Array.from({ length: totalPages }).map((_, i) => (
@@ -56,14 +56,14 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                 </div>
                 <button
                     type="button"
-                    aria-disabled={page >= totalPages}
+                    disabled={page >= totalPages}
                     onClick={() => handleNext()}
-                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background"
+                    className="flex cursor-pointer items-center pt-3 text-gray-600 hover:text-orange-background disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:text-gray-300"
                 >
                     <MoveRight className="w-3" />
-                    <p className="ml-3 text-sm font-medium leading-none">
+                    <span className="ml-3 text-sm font-medium leading-none">
                         Next
-                    </p>
+                    </span>
                 </button>
             </div>
         </div>
