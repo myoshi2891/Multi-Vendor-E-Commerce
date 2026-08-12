@@ -1,7 +1,16 @@
-import { ShippingFeeMethod } from "@prisma/client";
+import { Prisma, ShippingFeeMethod } from "@prisma/client";
 
 /**
  * 配送料を計算する
+ *
+ * 中間計算はすべて `Prisma.Decimal` で行う（`.claude/steering/tech.md` の金額規約）。
+ * 旧実装は IEEE 754 の `number` で積み上げてから `Math.round((x + EPSILON) * 100) / 100`
+ * で丸めていたが、EPSILON は 1 前後の大きさに合わせた**絶対値**の定数なので、
+ * 100 倍したスケールで生じる誤差は補正できない。
+ * 例: WEIGHT 方式で fee 0.15 × weight 1.45 × qty 10 は 10 進では厳密に 2.175 で
+ * half-up なら 2.18 だが、`* 100` が 217.49999999999997 になるため旧実装は 2.17 を返した。
+ *
+ * 丸めは `toDecimalPlaces(2, ROUND_HALF_UP)` の 1 回だけ、`toNumber()` は return 境界のみ。
  *
  * @param shippingFeeMethod - 配送料計算方式 ("ITEM" | "WEIGHT" | "FIXED")
  * @param shippingFee - 基本配送料
@@ -20,23 +29,24 @@ export function computeShippingTotal(
 	// 早期ガード: quantity が 0 以下の場合は送料 0
 	if (quantity <= 0) return 0;
 
-	let result: number;
+	const fee = new Prisma.Decimal(shippingFee);
+	let result: Prisma.Decimal;
 
 	switch (shippingFeeMethod) {
 		case "ITEM": {
 			const qty = quantity > 1 ? quantity - 1 : 0;
-			result = shippingFee + qty * extraShippingFee;
+			result = fee.add(new Prisma.Decimal(extraShippingFee).mul(qty));
 			break;
 		}
 		case "WEIGHT":
-			result = shippingFee * weight * quantity;
+			result = fee.mul(weight).mul(quantity);
 			break;
 		case "FIXED":
-			result = shippingFee;
+			result = fee;
 			break;
 	}
 
-	// 浮動小数点誤差を防ぐため 2 桁に正規化（EPSILON 補正）
-	// TODO: decimal.js などの正確な decimal ライブラリへの移行を検討
-	return Math.round((result + Number.EPSILON) * 100) / 100;
+	// 丸めはここ 1 回だけ。half-up は旧実装 (Math.round) の挙動を維持する
+	// —— banker's rounding に変えると .xx5 が偶数側へ倒れ、既存の期待値が動く。
+	return result.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toNumber();
 }
