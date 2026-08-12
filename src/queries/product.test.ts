@@ -892,22 +892,33 @@ describe("getProducts", () => {
         // 実際に E2E のシード欠落時、/browse?category=<存在しない URL> が全カタログを描画した。
         describe("存在しない URL を指定した場合は 0 件を返す", () => {
             it.each([
-                ["store", "store", { store: "missing-store" }],
-                ["category", "category", { category: "missing-category" }],
+                ["store", { store: "missing-store" }, "missing-store"],
+                [
+                    "category",
+                    { category: "missing-category" },
+                    "missing-category",
+                ],
                 [
                     "subCategory",
-                    "subCategory",
                     { subCategory: "missing-subcategory" },
+                    "missing-subcategory",
                 ],
-                ["offerTag", "offer", { offer: "missing-offer" }],
+                ["offerTag", { offer: "missing-offer" }, "missing-offer"],
             ] as const)(
                 "%s が見つからないとき空の結果を返し、商品を取得しない",
-                async (model, _key, filters) => {
+                async (model, filters, expectedUrl) => {
                     // Arrange — 対象モデルの findUnique だけが null を返す
                     mockDb[model].findUnique.mockResolvedValue(null);
 
                     // Act
                     const result = await getProducts(filters);
+
+                    // Assert — 対象モデルを URL で引いたうえで未マッチと判定している
+                    // （別モデルの解決結果や前ケースのモック実装に依存しない）
+                    expect(mockDb[model].findUnique).toHaveBeenCalledWith({
+                        where: { url: expectedUrl },
+                        select: { id: true },
+                    });
 
                     // Assert — フィルタを捨てて全件を返してはならない
                     expect(result.products).toEqual([]);

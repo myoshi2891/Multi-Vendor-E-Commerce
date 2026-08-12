@@ -172,6 +172,29 @@ describe("BrowsePage", () => {
         expect(parseRedirectUrl().getAll("color")).toEqual(["red", "blue"]);
     });
 
+    it("page が配列（?page=2&page=999）なら先頭要素を採り、リダイレクトしない", async () => {
+        // Arrange — 2 ページ目が範囲内になるだけの結果を返す。
+        // ここで totalPages < 2 にすると redirect が走り、
+        // 「先頭要素を採ったか」が範囲外クランプに隠れてしまう。
+        mockProductsResult(3, 1);
+
+        // Act
+        render(
+            await BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: ["2", "999"] })),
+            })
+        );
+
+        // Assert — 2 件目の 999 ではなく先頭の 2 で問い合わせる
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.any(Object),
+            undefined,
+            2
+        );
+        expect(mockRedirect).not.toHaveBeenCalled();
+        expect(screen.getByTestId("pagination")).toHaveTextContent("2/3");
+    });
+
     it("該当 0 件（totalPages=0）で page>1 なら 1 ページ目へリダイレクトする", async () => {
         // Arrange
         mockProductsResult(0, 0);

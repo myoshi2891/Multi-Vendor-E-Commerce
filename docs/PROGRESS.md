@@ -3326,3 +3326,31 @@ E2E `search-filter.spec.ts` の「ページネーションで次ページに遷�
 | テスト総数 (unit/component) | 1970 passed / 1973 total | **1975 passed / 1978 total** |
 | スイート数 | 183（182 passed + 1 skipped） | **183**（不変） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### レビュー指摘対応（配列 page パラメータのテスト追加ほか） (2026-08-12)
+
+#### 概要
+
+コードレビュー指摘 3 件を現行コードに対して検証し、いずれも有効だったため修正した。
+
+#### 実施内容
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/app/(store)/browse/page.test.tsx` | +1 テスト（`?page=2&page=999` で `normalizePageParam` が先頭要素 2 を採り、`getProducts` に 2 を渡してリダイレクトしないこと）。既存テストは `color` の配列だけを覆っており、`page` の配列経路は未検証だった |
+| `src/queries/product.test.ts` | 未マッチ URL の `it.each` に期待 URL を追加し、対象モデルの `findUnique` が `{ where: { url }, select: { id: true } }` で呼ばれたことを検証（件数不変）。別モデルの解決結果や前ケースのモック実装に依存しないテストになる |
+| `docs/testing/COVERAGE_REPORT.md` | §1 の「Jest スイート総数」行が 182（181 passed + 1 skipped）で停留しており、SSOT の `QA_HANDOFF.md`（183 / 182 passed + 1 skipped）と割れていた分を是正 |
+
+#### 検証
+
+- Jest 全体: **1976 passed / 3 skipped**（183 スイート）、tsc 0、lint 0 errors / 15 warnings
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1975 passed / 1978 total | **1976 passed / 1979 total** |
+| スイート数 | 183（182 passed + 1 skipped） | **183**（不変） |
+| 型エラー | 0 件 | **0 件** |
