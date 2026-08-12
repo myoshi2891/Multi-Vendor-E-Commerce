@@ -68,9 +68,19 @@ const cookieStore = await cookies();
 
 ### Page Param Normalization
 
-When normalizing page params to integers, use `Number.isFinite` to catch `Infinity` and `-Infinity` (which `Number()` accepts without error):
+When normalizing page params to integers, use `Number.isFinite` to catch `Infinity` and `-Infinity` (which `Number()` accepts without error).
+
+The inline form below was the original migration-time fix; it has since been **superseded by the
+shared helper** `normalizePageParam()` in `src/lib/utils.ts`, which adds the required upper-bound
+clamp (`MAX_PAGE`). New code must use the helper — see the "URL 数値パラメータの正規化" section in
+[`.claude/steering/tech.md`](../../.claude/steering/tech.md).
 
 ```typescript
+// 現行（共通ヘルパー）
+import { normalizePageParam } from "@/lib/utils";
+const page = normalizePageParam(pageParam);
+
+// 移行当時のインライン形（上限クランプが無く ?page=1e21 が skip へ到達する）
 const raw = Number(pageParam);
 const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
 ```

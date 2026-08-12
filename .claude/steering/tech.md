@@ -36,7 +36,7 @@
 | **リエントランシーガード** | 非同期操作での多重実行防止には `useRef` によるフラグ管理を行う（例: `newsletter.tsx`） |
 | **環境変数の数値変換** | 数値型環境変数は `trim()` 後に変換し、空文字列には fallback を適用すること |
 | **cookie パース** | 外部 cookie の JSON パースは必ず `parseUserCountryCookie()` を使用すること（`src/lib/utils.ts`）。生の `JSON.parse` + キャストは禁止 |
-| **URL パラメータ正規化** | ページ番号など数値パラメータは `Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1` で正規化すること（`Infinity` / `NaN` / 小数を排除） |
+| **URL パラメータ正規化** | URL 由来の数値パラメータは `normalizePageParam()` / `normalizePositiveIntParam()`（`src/lib/utils.ts`）を使用すること。**インライン展開の新規追加は禁止**。上限クランプ無しの値で `skip` / `take` を算出することも禁止（詳細: 下記「URL 数値パラメータの正規化」項） |
 | **CSRF** | Next.js 16 Server Actions の Origin/Host 検証と Clerk `SameSite=Lax` セッション Cookie に依拠する。`src/lib/csrf*` 等のトークンモジュールを新設しないこと。例外時は [ADR 001](../../docs/architecture/decisions/001-csrf-policy.md) を Superseded で更新する |
 | **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する |
 | **静的解析（SonarCloud）** | CI の `sonarcloud` ジョブは **非ブロッキング**（`continue-on-error: true`、`SONAR_TOKEN` 未登録時は skip）。カバレッジは `jest.config.js` の `--coverage` が出す `coverage/lcov.info` を `sonar-project.properties` 経由で取り込む。`sonar.coverage.exclusions` は `collectCoverageFrom` の除外と**一致**させること（分母の二重計上を防ぐ）。Quality Gate のブロッキング化は New Code 基準を整えてから（[ADR-005](../../docs/architecture/decisions/005-sonarqube-static-analysis.md)） |
@@ -176,6 +176,38 @@ const userCountry = parseUserCountryCookie(cookieStore.get("userCountry")?.value
 - 生の `JSON.parse as Country` キャストを排除
 
 **実装例**: `src/lib/utils.ts` の `parseUserCountryCookie` / `isCountry`
+
+### URL 数値パラメータの正規化
+
+URL から読んだページ番号・件数は `src/lib/utils.ts` の共通ヘルパーで正規化する:
+
+```typescript
+import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
+
+const page = normalizePageParam(sp.page);                                  // 下限 1・上限 MAX_PAGE(10_000)
+const limit = normalizePositiveIntParam(sp.limit, { fallback: 20, max: 50 });
+```
+
+**必ず上限をクランプすること。** Prisma の `skip` / `take` は `Int`（32bit）なので、
+上限が無いと `?page=1e21` が `skip = (page - 1) * pageSize` へそのまま到達し、
+DB クエリが実行時に失敗する。件数側も上限が無いと巨大 `take` で OOM/DoS の入口になる。
+
+**なぜ `Number.isSafeInteger` では不十分か。** 「`Number.isFinite` + `Math.floor` を
+`Number.isSafeInteger` に置き換える」という指摘を受けることがあるが、これは**根本原因を
+塞がない**。`?page=1e15` は safe integer 判定を**通過する**ため `skip = 1e16` となり、
+`Int` を超える点は変わらない。防御は整数判定の強化ではなく**上限クランプ**である。
+
+**なぜ `Math.floor` を保つか。** 「小数は切り捨てて扱う」は文書化済みの既定挙動。
+`Math.floor` を落とすと `?page=1.5` が黙って 1 ページ目へフォールバックする挙動へ変わる。
+
+**その他の仕様**:
+- `NaN` / `Infinity` / 0 以下 / 非数値 → `fallback`（ページ番号は 1）
+- Next.js は同名パラメータが複数付く（`?page=1&page=2`）と配列を渡すため、配列は先頭要素を採る
+- 範囲外ページ（`?page=999`）は `totalPages` 取得後に正準 URL へ `redirect()` して寄せる
+  （Client Component では state 上で正規化する。実装例: `src/app/(store)/profile/history/[page]/page.tsx`）
+
+**実装例**: `src/lib/utils.ts` の `normalizePageParam` / `normalizePositiveIntParam`、
+呼び出し側は `src/app/(store)/browse/page.tsx`、`src/app/api/index-products/route.ts`
 
 ### useEffect キャンセルフラグ（非同期レースコンディション防止）
 
