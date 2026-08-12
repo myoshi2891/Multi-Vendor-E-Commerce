@@ -33,7 +33,17 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 54 tests/browser across 23 files (162 across the three browsers), as of 2026-08-11.
+- Playwright E2E: 57 tests/browser across 24 files (171 across the three browsers), as of 2026-08-12.
+  Plan 053 added `tests/e2e/auth-surface.spec.ts` (+3 tests/browser, +1 file): the Clerk sign-up
+  widget renders, the header Register link reaches `/sign-up`, and sign-out returns the guest
+  chrome. Only the sign-out test needs `CLERK_SECRET_KEY`; the two guest tests always run. Two
+  locator facts generalize beyond this spec: `<UserMenu />` is rendered **twice** in the header
+  (mobile `lg:hidden` and desktop `hidden lg:flex`), so a text match alone is a strict-mode
+  violation — filter on `visible: true`; and opening the hover dropdown requires
+  `hover({ force: true })`, because the panel is `absolute … top-0` and covers its own trigger
+  once open, so Playwright's pointer-event check never passes (measured with
+  `document.elementFromPoint` before and after moving the mouse). The failure surfaces as
+  "waiting for element to be visible and stable" even though the layout is provably static.
   The CodeRabbit review round added 7 tests (`tests/component/store/categories-menu.test.tsx`
   +6, `product-sort.test.tsx` +1) with no new suites; the remaining delta from the previous
   entry (1895 / 178 suites) is the unsynced count of those two suites, added in `879763a0`.

@@ -3354,3 +3354,72 @@ E2E `search-filter.spec.ts` の「ページネーションで次ページに遷�
 | テスト総数 (unit/component) | 1975 passed / 1978 total | **1976 passed / 1979 total** |
 | スイート数 | 183（182 passed + 1 skipped） | **183**（不変） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 053 — 認証サーフェスのスモーク E2E（TESTS-41） (2026-08-12)
+
+#### 概要
+
+Clerk のサインアップウィジェット描画・ヘッダーの Register 導線・サインアウト往復が E2E ゼロだった
+（`plans/audit/findings-17-e2e-coverage-r9.md` TESTS-41）。R8 監査ではサインイン UI のドリフトが
+認証系 E2E 16 件の全滅として初めて顕在化したが、**サインアップ側には同型のドリフトを早期検出する
+canary が存在しない**（テストインフラはユーザー作成を Clerk API 直で行うため、サインアップ UI は
+どのテストも通らない）。Clerk メジャーアップグレード（plan 004）時の回帰検出器も兼ねる。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/auth-surface.spec.ts` | 新設・3 テスト（サインアップウィジェット描画 / Register 導線 / サインアウト往復） | `45cb7e1b` |
+
+`src/` は **1 行も変更していない**（プランの Out of scope どおり）。
+
+#### プラン本文と実 DOM の差 2 点（いずれも実測で是正）
+
+1. **`<UserMenu />` はヘッダー内に 2 回描画される** — `header.tsx:32`（モバイル用 `lg:hidden`）と
+   `:48`（デスクトップ用 `hidden lg:flex`）。両方 DOM に存在するため、テキスト一致だけでは
+   strict mode violation になる。`filter({ visible: true })` で「今ユーザーが操作できる方」を指す
+   —— どのビューポートで動かしても成立する。
+2. **hover には `force: true` が必須（自己遮蔽デッドロック）** — ドロップダウンの器は
+   `absolute -left-20 top-0 … group-hover:block` で、開くと**トリガー自身の上に重なる**。
+   素の `hover()` は「対象がポインタイベントを受け取れるか」を確認してからマウスを動かすため、
+   マウスが乗った瞬間に器が覆いかぶさって判定が永久に通らず 30s タイムアウトする。
+   **症状の文言と真因がズレる典型例**: ログは "waiting for element to be visible and stable" と
+   出るが、`boundingBox` を 6 フレーム測ると完全に静止していた。真因はマウス移動の前後で
+   `document.elementFromPoint` を撮って確定（`SPAN` → `DIV.absolute -left-20 top-0 …`）。
+   プラン記載の `.cl-userButtonTrigger` も同根で使えない —— `<UserButton />`（`user-menu.tsx:87`）は
+   器の**内側**にあり、開く前は不可視（「開くために開いた状態が要る」鶏卵）。プランの
+   STOP conditions が代替として挙げる `.group` 配下のアバターを hover 対象にした。
+   **この器を開けたい後続テストは全て同じ罠を踏む。**
+
+#### 検証
+
+- 新スペック: chromium **3 passed** / 3 ブラウザ **9 passed**・**flaky 0**（リトライなし）
+- 識別力の機械的確認: 3 assert を個別に崩すと**その test だけ**が落ちる
+  （sign-up + Register を崩して **2 failed / 1 passed**、sign-out を崩して **1 failed / 2 passed**）
+- 回帰: `layout-chrome`（chromium）**7 passed**
+- `bunx tsc --noEmit` **0 件** / `bun run lint` **0 errors**（15 warnings は既存ベースライン）
+- Drift check（`git diff --stat 99ede89..HEAD -- 'src/app/(auth)/' …/user-menu/ tests/e2e/helpers/`）:
+  差分は `helpers/auth.ts` のみ ＝ plan 042 の signIn 修復で、プランが明示的に STOP 免除としている分
+
+#### 本プランが主張しないこと
+
+- フルサインアップ（確認コード入力 → セッション成立）は**意図的に対象外**（findings-17 Rejected 節）。
+  将来必要になったら Clerk test mode の固定確認コード + `+clerk_test` メールで別 spec として設計する
+- サインイン UI の検証は plan 042 の担当（重複させない）
+- E2E フルラン（全 spec × 3 ブラウザ）は再取得していない —— 最新実測は
+  **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のまま
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 54 tests/browser・23 files・3 ブラウザ計 162 | **57 tests/browser・24 files・計 171** |
+| E2E メインスペック | 14 | **15** |
+| Jest テスト総数 (unit/component) | 1976 passed / 1979 total・183 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 213（QA_HANDOFF 記載）/ 214（実測） | **215** |
+| 型エラー | 0 件 | **0 件** |
+
+> **ダッシュボード集計の注意**: 213 → 215 の +2 のうち plan 053 の成果は 1 件だけで、
+> もう 1 件は先行コミット `bda2df7a` の `src/app/(store)/browse/page.test.tsx`（未同期分）。
