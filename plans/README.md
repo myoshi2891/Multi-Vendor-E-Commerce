@@ -195,6 +195,17 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > （15 warnings は既存ベースライン）・`scripts/coverage-dashboard` **87 passed**。
 > docs 同期は `914e7199`。
 >
+> **追記（2026-08-13・レビュー指摘対応）**: 上の「本プランが主張しないこと (1)」は
+> **解消済み**。`upsertReview` の集計を単一 `$transaction` に束ね、Product 行への
+> `SELECT … FOR UPDATE`（レビュー書き込みより**手前**）で直列化した。統合スイートには
+> 並行シナリオを 2 件追加（同一ユーザーの同時二重投稿 / 別ユーザーの輻輳）。
+> **ただし多ユーザー並行ケースは修正前の実装でも緑のまま**である —— 同形の呼び出しは
+> 往復ごとに歩調が揃い、全員の create が出揃ってから全員の findMany が走るため、
+> レイテンシが均一なローカル DB では「古い件数を読んだ側が最後に update する」並びを
+> 踏めない。lost update に対する決定論的なガードは `src/queries/review.test.ts` の
+> 「集計の原子性」（`$transaction` と行ロックの**配線**を固定するユニットテスト）側にある。
+> 同一ユーザーの二重投稿ケースは修正前だと 3 回中 2 回 fail する確率的ガード。
+>
 > **041 の実行記録（2026-08-13・`c6a5064f`〜`7ee7baa5`）**
 >
 > **DONE。** `tests/integration/coupon-code-uniqueness.test.ts` を新設し **5 シナリオ**
@@ -315,6 +326,20 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 同時に更新すること**）、(2) 統合テストが本関数をオラクルに使っている箇所は**そのまま**
 > （プランの Out of scope）、(3) `Decimal` への移行は行っていない（`shipping-utils.ts` の
 > TODO コメントのまま。本テストはその移行を固定値で検証するための足場）。
+>
+> **追記（2026-08-13・レビュー指摘対応）**: 上の (3) は**実施済み**。`computeShippingTotal`
+> の中間計算を `Prisma.Decimal`（`.add()` / `.mul()`）に置き換え、丸めは
+> `toDecimalPlaces(2, ROUND_HALF_UP)` の 1 回・`toNumber()` は return 境界のみとした
+> （`.claude/steering/tech.md` の金額規約に整合）。TODO コメントは削除。
+> **足場は実際に機能した** —— 既存 8 ケースは期待値を 1 つも変えずに緑のまま通った。
+> 回帰ケースを 1 件追加（**+1 / スイート不変**）: WEIGHT 方式 fee `0.15` × weight `1.45`
+> × qty `10` は 10 進で厳密に `2.175` なので half-up で **2.18** だが、旧実装は **2.17** を
+> 返していた。原因は積ではなく `* 100` のスケーリングで、`Number.EPSILON` は 1 前後の
+> 大きさに合わせた**絶対値**の定数なので 217 のスケールで生じる誤差を補正できない
+> （`(2.175 + EPSILON) * 100` が `217.49999999999997` になり `Math.round` が切り下げる）。
+> **レビューが挙げた例（fee 0.03 × weight 4.35 × qty 10 → 1.31）は識別力が無い**:
+> 旧実装もここでは 1.31 を返す（EPSILON 加算が偶然境界を越えさせる）。
+> 総当たりで実際に食い違う入力を探して差し替えた。
 >
 > 回帰: `bun run test` **1984 passed / 3 skipped**・`bunx tsc --noEmit` **0 件**・
 > `bun run lint` **0 errors**（15 warnings は既存ベースライン）。docs 同期は `424f1b56`。

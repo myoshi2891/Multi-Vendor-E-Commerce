@@ -12,7 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1984 passed / 1987 total across 184 suites (3 skipped), as of 2026-08-13.
+- 1987 passed / 1990 total across 184 suites (3 skipped), as of 2026-08-13.
+  Review-fix pass (+3, no new suite). `src/queries/review.test.ts` gained 2 cases pinning
+  that the review write and the aggregation update are wired into a single `$transaction`
+  and that the `Product` row lock is taken *before* the write — these, not the integration
+  suite, are the deterministic guard against the aggregation lost update.
+  `src/lib/shipping-utils.test.ts` gained 1 regression case for the `Prisma.Decimal`
+  migration: WEIGHT `0.15 × 1.45 × 10` is exactly 2.175 in decimal, so half-up gives 2.18,
+  but the old `Math.round((x + EPSILON) * 100) / 100` returned 2.17 — `Number.EPSILON` is
+  an absolute constant sized for magnitudes near 1 and cannot correct error introduced by
+  the `* 100` scaling.
+- Earlier entry: 1984 passed / 1987 total across 184 suites (3 skipped), as of 2026-08-13.
   `computeShippingTotal` — the repo's single source of truth for shipping-fee math — had no
   direct unit test; it was only exercised inside integration tests that computed the expected
   value with the same function, making a self-consistent bug invisible. `src/lib/shipping-utils.test.ts`
@@ -499,7 +509,7 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 76 integration tests across 10 suites
+- 78 integration tests across 10 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -509,22 +519,34 @@
   `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7 +
   `tests/integration/coupon-code-uniqueness.test.ts` 5 +
-  `tests/integration/review-aggregation.test.ts` 5) as of 2026-08-13,
-  measured 76/76 pass.
+  `tests/integration/review-aggregation.test.ts` 7) as of 2026-08-13,
+  measured 78/78 pass.
   Plan 034 added the review-aggregation suite (71 → 76; suites 9 → 10). A product's
   `rating` / `numReviews` are recomputed by re-reading every review on each submission,
   and the fully mocked unit tests can only pin the call structure — whether a repeat
   submission by the same user becomes an update rather than a create, and whether the
   average is actually derived from stored rows, are unobservable without a real database.
   The suite also covers the User fallback upsert (on-demand DB user creation when the
-  Clerk webhook missed a sync). Note that the aggregation is **not** transactional
-  (create → findMany → `product.update`), so concurrent submissions could lose an update;
-  only the sequential case is pinned here.
+  Clerk webhook missed a sync). The aggregation used to run as three separate round trips
+  (create → findMany → `product.update`), which could lose an update under concurrent
+  submissions; it is now a single `$transaction` serialized by a `SELECT … FOR UPDATE` on
+  the `Product` row, taken *before* the review write. Two concurrency scenarios were added
+  (+2): same-user double submit must not inflate the row count, and contending submissions
+  from distinct users must all succeed without deadlock or tx timeout. Note what each
+  scenario can actually prove — the multi-user one **stays green against the pre-fix
+  implementation** (identical call sequences stay phase-locked on a uniform-latency local
+  DB, so every caller reads the correct count by accident), so the deterministic guard for
+  the lost update is the wiring assertion in `src/queries/review.test.ts`
+  ("集計の原子性"), not the integration test.
   Plan 041 added the coupon-code global-uniqueness suite (66 → 71; suites 8 → 9).
   `Coupon.code` is globally unique, but the seller-path pre-check only searches within the
   caller's own store — so a code already taken by another store or by a PLATFORM coupon
-  reaches the real unique constraint. That is not a race: two stores both creating
-  "SUMMER10" hit it deterministically. The suite asserts only externally observable
+  reaches the real unique constraint. No concurrency is needed to open that gap: once the
+  colliding row is committed, the pre-check passes and the *next* insert fails on the
+  constraint every time. Two stores concurrently creating an as-yet-unused "SUMMER10" is a
+  different case — one insert wins and the other gets P2002 — and the suite does not cover
+  it (every scenario seeds the colliding row up front and then calls once). It asserts only
+  externally observable
   invariants (rejected + existing row untouched + row count unchanged) because the
   pre-check and the P2002 fallback throw the *same* message, so a test cannot tell the
   paths apart from the message — and a test-side re-query would keep passing even if the
