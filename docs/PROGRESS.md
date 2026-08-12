@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1915 passed / 1918 total / 180 スイート（179 passed + 1 skipped suite）** — 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **1984 passed / 1987 total / 184 スイート（183 passed + 1 skipped suite）** — 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | **66テスト / 8スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7**）— 2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -3495,3 +3495,55 @@ refactor で、プランが**前提とする契約**はいずれも健在だっ�
 | Jest テスト総数 (unit/component) | 1976 passed / 1979 total・183 スイート | **不変** |
 | ダッシュボード集計ファイル数 | 215 | **216** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 010 — 配送料 SSOT `computeShippingTotal` の直接ユニットテスト (2026-08-13)
+
+#### 概要
+
+`.claude/steering/tech.md` が「すべての配送料計算はここを通す」と規約化している
+`computeShippingTotal` に、初めて**直接の**ユニットテストを追加した。
+
+#### なぜ必要だったか（オラクル問題）
+
+本関数はこれまで統合テスト内でのみ間接的に実行されていたが、**そこでは期待値の算出にも
+`computeShippingTotal` 自身が使われていた**。自分自身をオラクルにしているため、
+関数が一貫して間違っていても検出できない —— 金額に触れる SSOT としては致命的な穴だった。
+本テストの期待値は**すべて手計算した定数のハードコード**で、関数を呼んで導出したものは無い。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/shipping-utils.test.ts` | 新設・8 ケース（quantity ガード 2 / ITEM 2 / WEIGHT 3 / FIXED 1） | `8b83c185` |
+| `src/lib/shipping-utils.ts` | **無変更**（本プランは characterization のみ） | — |
+
+カバーした分岐: `quantity <= 0` の早期ガード（0 / 負値）、ITEM の単数（extra 項ゼロ）と
+複数（`base + (qty-1) * extra`）、WEIGHT の整数計算・float 誤差の 2 桁正規化
+（`0.1 × 0.1 × 3` = 0.030000000000000006 → 0.03）・`.xx5` の half-up 丸め境界
+（`0.25 × 0.5 × 1` = 0.125 → **0.13**）、FIXED の weight / quantity / extra 非依存。
+
+**float 正規化と丸め境界は別の分岐**なので両方必要。前者は「誤差を落とせているか」、
+後者は「境界でどちらに倒れるか」を見ており、片方だけでは half-up が banker's rounding に
+変わっても気づけない。
+
+#### 識別力の機械的確認
+
+丸め境界ケースの期待値を 0.12 へ崩すと、**当該テストのみ**が
+`Expected: 0.12 / Received: 0.13` で落ちることを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1976 passed / 1979 total | **1984 passed / 1987 total** |
+| Jest スイート数 | 183 | **184** |
+| Jest Integration | 66 / 8 スイート | **不変** |
+| Playwright E2E | 58 tests/browser・計 174 | **不変** |
+| ダッシュボード集計ファイル数 | 216 | **217** |
+| 型エラー | 0 件 | **0 件** |
+
+> **⚠️ 上表の「更新前」は SSOT（`QA_HANDOFF.md`）の値である。** 本ファイルのテスト統計
+> テーブルは 1915 / 180 スイートのまま据え置かれており、本セッションで**61 テスト・
+> 3 スイート分の未同期を併せて是正**した。plan 010 の成果は +8 / +1 スイートのみ。

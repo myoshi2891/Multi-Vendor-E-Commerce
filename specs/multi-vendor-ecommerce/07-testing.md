@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1976 passed / 1979 total across 183 suites (3 skipped), as of 2026-08-12.
+- 1984 passed / 1987 total across 184 suites (3 skipped), as of 2026-08-13.
+  `computeShippingTotal` — the repo's single source of truth for shipping-fee math — had no
+  direct unit test; it was only exercised inside integration tests that computed the expected
+  value with the same function, making a self-consistent bug invisible. `src/lib/shipping-utils.test.ts`
+  pins all three methods and the edge cases with hand-computed constants (+8 tests, +1 suite).
+- Earlier entry: 1976 passed / 1979 total across 183 suites (3 skipped), as of 2026-08-12.
   `getProducts` used to drop a `store` / `category` / `subCategory` / `offer` filter whose URL
   resolved to no row, turning "no such category" into "show the whole catalog"; it now returns
   an empty result (+5 tests, no new suite). This also removes a false-green path in
