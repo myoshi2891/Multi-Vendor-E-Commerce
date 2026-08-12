@@ -3241,3 +3241,45 @@ SonarCloud の PR #173 Measures が `src/components/store/browse-page/browse-pag
 | テストファイル総数（ダッシュボード） | 212 | **213** |
 | カバレッジ全体（lcov） | 67.71 / 48.00 / 55.48 / 66.79（2026-08-04） | **68.49 / 48.46 / 56.57 / 67.58**（2026-08-11 実測） |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### URL 数値パラメータ正規化の恒久対応（共通ヘルパー化 + 範囲外ページの正準リダイレクト） (2026-08-12)
+
+#### 概要
+
+コードレビューで保留になっていた 2 件（`Number.isSafeInteger` への置き換え / 範囲外ページが空リスト）を、
+1 ファイルの最小パッチではなく規約と実装の両方を前へ進める恒久対応として閉じた。
+
+#### 判断の要点
+
+- **`Number.isSafeInteger` は採らない**: `?page=1e15` は safe integer 判定を**通過する**ため
+  `skip = (page - 1) * pageSize = 1e16` が Prisma の `Int`（32bit）を超える点は変わらず、根本原因を塞がない。
+  また `Math.floor` を落とすと「小数は切り捨て」という文書化済みの挙動が黙って変わる。
+- **真の防御は上限クランプ**で、`api/index-products/route.ts` と `dashboard/admin/orders/page.tsx` は
+  既に `MAX_PAGE = 10_000` で実装済みだった。つまり **`tech.md` の規約行のほうが実装より古い**のが本質。
+- **範囲外ページはリダイレクト**で解決。ページャは `page={currentPage}` をハイライトするため、
+  寄せないと URL・ハイライト・表示内容の 3 者が食い違う。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/utils.ts` | `normalizePositiveIntParam` / `normalizePageParam` / `MAX_PAGE` を新設。既存ローカル実装の `max ? ... : ...`（`max === 0` を falsy で取りこぼす）を `max !== undefined` へ是正 | `c6f96b73` |
+| `src/lib/utils.test.ts` | +28 テスト（正常系・異常系・上限クランプ・配列先頭採用・`max: 0` 回帰ガード） | `c6f96b73` |
+| `browse` / `profile` 3 ページ / `api/index-products` / `admin/orders` | URL page パラメータ 6 箇所をヘルパーへ集約。未クランプだった 4 箇所は挙動変更、既存 2 箇所は挙動不変 | `ccf37303` |
+| `src/app/(store)/browse/page.tsx` ほか | 範囲外ページを正準 URL へ `redirect()`。browse は `buildBrowseHref` で既存フィルタを保持、history のみ Client Component のため state 上で正規化 | `bda2df7a` |
+| `src/app/(store)/browse/page.test.tsx` | 新設（8 テスト）。クエリ保持 assert は `buildBrowseHref` を壊すと当該 2 件だけが落ちることを実測して識別力を確認 | `bda2df7a` |
+| `.claude/steering/tech.md` | 「URL パラメータ正規化」行を共通ヘルパー必須へ差し替え、却下理由（isSafeInteger では不十分 / `Math.floor` を保つ理由）を実装パターン節に記録 | `9521a81b` |
+| `docs/migration/06-framework-upgrade.md` | インライン形の how-to に superseded 注記 | `9521a81b` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1934 passed / 1937 total | **1970 passed / 1973 total** |
+| スイート数 | 182（181 passed + 1 skipped） | **183（182 passed + 1 skipped）** |
+| Integration テスト総数 | 66 | **66**（不変） |
+| Playwright E2E | 54 tests/browser（23 files・計 162） | **54 tests/browser（23 files・計 162）**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| lint | 0 errors / 15 warnings | **0 errors / 15 warnings**（不変） |

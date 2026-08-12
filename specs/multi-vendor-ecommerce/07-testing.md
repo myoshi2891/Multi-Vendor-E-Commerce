@@ -12,7 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1934 passed / 1937 total across 182 suites (3 skipped), as of 2026-08-11.
+- 1970 passed / 1973 total across 183 suites (3 skipped), as of 2026-08-12.
+  URL numeric-param normalization was consolidated into `normalizePageParam` /
+  `normalizePositiveIntParam` (`src/lib/utils.ts`) with a mandatory `MAX_PAGE` clamp, adding
+  +28 tests to `src/lib/utils.test.ts` and a new suite
+  `src/app/(store)/browse/page.test.tsx` (+8 tests, +1 suite) covering the canonical redirect
+  for out-of-range pages. The clamp — not a stricter integer check — is what protects the
+  query layer: `?page=1e15` passes `Number.isSafeInteger` yet still yields
+  `skip = (page - 1) * pageSize = 1e16`, which exceeds Prisma's 32-bit `Int`.
+- Earlier entry: 1934 passed / 1937 total across 182 suites (3 skipped), as of 2026-08-11.
   SonarCloud PR #173 reported 0.0% coverage on new code for
   `src/components/store/browse-page/browse-pagination.tsx` (11 uncovered lines, 2 uncovered
   conditions); `tests/component/store/browse-pagination.test.tsx` closes it with +6 tests
