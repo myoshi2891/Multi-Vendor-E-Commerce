@@ -499,7 +499,7 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 66 integration tests across 8 suites
+- 71 integration tests across 9 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -507,7 +507,19 @@
   `tests/integration/search-products.test.ts` 9 +
   `tests/integration/product-deletion.test.ts` 4 +
   `tests/integration/shipping-address-default.test.ts` 6 +
-  `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
+  `tests/integration/user-deletion-webhook.test.ts` 7 +
+  `tests/integration/coupon-code-uniqueness.test.ts` 5) as of 2026-08-13,
+  measured 71/71 pass.
+  Plan 041 added the coupon-code global-uniqueness suite (66 → 71; suites 8 → 9).
+  `Coupon.code` is globally unique, but the seller-path pre-check only searches within the
+  caller's own store — so a code already taken by another store or by a PLATFORM coupon
+  reaches the real unique constraint. That is not a race: two stores both creating
+  "SUMMER10" hit it deterministically. The suite asserts only externally observable
+  invariants (rejected + existing row untouched + row count unchanged) because the
+  pre-check and the P2002 fallback throw the *same* message, so a test cannot tell the
+  paths apart from the message — and a test-side re-query would keep passing even if the
+  P2002 path stopped executing entirely.
+  Earlier entry: 66 integration tests across 8 suites as of 2026-08-09,
   measured 66/66 pass. Plan 064 fixed TESTS-21 and turned the shipping-address
   characterization into a regression guard (overall 57 / 7 suites → 64 / 8 → 66 / 8; plan 064's
   own step is 64 → 66 with suites unchanged at 8) — see below.
