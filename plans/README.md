@@ -107,7 +107,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
-| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
+| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | DONE（2026-08-13・`734a34b4`〜`914e7199`。Integration 71 → **76** / スイート 9 → **10**。プラン本文どおり 5 シナリオ・**逸脱なし**。STOP 条件はいずれも非該当（集計は全シナリオで初回から正しく、本体バグは検出されなかった）。**R5 は残り 035 のみ**。下の実行記録を参照） |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
@@ -141,6 +141,60 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **034 の実行記録（2026-08-13・`734a34b4`〜`914e7199`）**
+>
+> **DONE。** `tests/integration/review-aggregation.test.ts` を新設し **5 シナリオ**
+> （初回投稿 + User フォールバック upsert / 複数ユーザーの平均 / 同一ユーザー再投稿は
+> update / 商品間の独立性 / 未認証 reject + 副作用なし）。Integration は
+> **71 → 76 / スイート 9 → 10**、ダッシュボード集計 **218 → 219**。Jest unit は
+> **1984 で不変**。実測 **5 passed**（単体）/ **76 passed**（全体・13.923s）。
+> `src/queries/review.ts` は **1 行も変更していない**。**プラン本文からの逸脱なし**。
+> **これで R5 ラウンドの残りは 035 のみ**（`render-html.ts` の `NEXT_ACTIONS` と
+> `QA_HANDOFF.md` の R5 プロンプトを同一コミットで 035 向けへ差し替え済み）。
+>
+> **Drift check は空。** `git diff --stat 1750ef2..HEAD -- src/queries/review.ts` に差分なし。
+> 集計部分は `:107-131`（プラン記載 `:106-131`）でプラン抜粋と一致した。
+>
+> **STOP 条件はいずれも非該当。** 「シナリオ 3 で件数が増える」「シナリオ 2 の平均が
+> 合わない」は本体バグの発見として報告すべき事象だが、**5 シナリオすべて初回から
+> 期待どおり**だった。plan 010 と同じく、本スイートは「壊れたものを見つけた」型ではなく
+> 「今後の変更を捕まえる網を張った」型の成果である。
+>
+> **プラン本文に無い設計判断 1 点（前提の機械化）**: シナリオ 1 は呼び出し**前**に
+> `db.user.findUnique({ where: { id: "reviewer-1" } })` が `null` であることを assert している
+> （プラン本文も Step 2 で同趣旨を指示しており、それを忠実に実装した）。**これが無いと
+> テストは空振りする** —— reviewer が既に DB に居た場合、User フォールバックの create 分岐を
+> 素通りして「既存ユーザーで投稿できた」だけを見ることになり、検証したい経路を一度も
+> 通らないまま緑になる。plan 055 が step 5 で `localStorage` の空を assert したのと同型の話で、
+> **「〜のはず」はコメントで主張するだけでは保証にならない**。
+>
+> **画像枚数はグローバルに数えてはいけない（プラン本文の指示。実装で厳守した）。**
+> `deleteMany + create` による総入れ替えの検証は、まず対象 review を
+> `findFirstOrThrow({ where: { productId, userId } })` で特定してから
+> `db.reviewImage.count({ where: { reviewId } })` で数える。素の `db.reviewImage.count()` は
+> シナリオ 2 の reviewer-2 やシナリオ 4 の Product B の画像も拾うため、**総入れ替えが
+> 壊れても検出できない / 逆に無関係な理由で落ちる**。
+>
+> **識別力を機械的に確認した。** シナリオ 3 の `review.count` 期待値を 2 → 3 に崩すと、
+> **当該テストのみ**が `Expected: 3 / Received: 2` で落ち、他の 4 件は通ったままである
+> ことを実測してから戻している。ここは **upsert 分岐が create に落ちる回帰の検知点**であり、
+> このスイートで最も価値のある 1 行。
+>
+> **本プランが主張しないこと**: (1) **並行投稿の lost update は未検証** —— 集計は
+> **非トランザクション**（create → findMany → `product.update` の 3 往復）なので理論上は
+> 起こりうるが、固定したのは**逐次実行時の集計正しさのみ**である。`$transaction` 化や
+> DB 側集計を入れる場合、本スイートはそのまま回帰ガードとして使える、
+> (2) `Store.averageRating` の集計は対象外（`upsertReview` は Product の rating のみ更新する。
+> Store 側は Round 3 spike 022 の設計対象）、(3) レビューの**編集 UI・削除**および
+> 画像の部分更新は対象外 —— 部分更新 UI が入る場合はシナリオ 3 の期待値の見直しが必要、
+> (4) `Product.rating` は `Float` なので平均の assert は `toBeCloseTo` を使っている
+> （金額ではないため Decimal 規約の対象外）。
+>
+> 回帰: `bun run test:integration` **76 passed / 10 スイート**・`bun run test`
+> **1984 passed**（不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**
+> （15 warnings は既存ベースライン）・`scripts/coverage-dashboard` **87 passed**。
+> docs 同期は `914e7199`。
+>
 > **041 の実行記録（2026-08-13・`c6a5064f`〜`7ee7baa5`）**
 >
 > **DONE。** `tests/integration/coupon-code-uniqueness.test.ts` を新設し **5 シナリオ**
