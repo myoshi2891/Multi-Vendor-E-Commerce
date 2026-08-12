@@ -136,24 +136,36 @@ test.describe("sign-out", () => {
     test("サインアウトするとゲスト状態に戻る", async ({ page }) => {
         await auth.signIn(page);
         await page.goto("/browse");
-        // 認証成立の裏付け: 未認証時の "Sign in / Register" が消えている
-        await expect(page.getByText("Sign in / Register")).toBeHidden();
+        // 認証成立の裏付け: 未認証時の "Sign in / Register" が消えている。
+        // 認証時はゲスト用トリガーが**そもそも描画されない**（user-menu.tsx:52-69 の
+        // 三項が user の有無で分岐）ので「見えない」ではなく「存在しない」で assert する。
+        await expect(page.getByText("Sign in / Register")).toHaveCount(0);
 
         // ドロップダウンは user-menu.tsx:74 の `hidden group-hover:block` で制御される。
         // つまり **トリガーを hover するまで Sign out は DOM 上 hidden** であり、
         // いきなり click するとメニューが開かないまま可視性待ちでタイムアウトする。
         // 必ず「トリガーを hover → メニューが開いたのを確認 → click」の順に行う。
-        // 認証時のトリガーは user-menu.tsx:87 の <UserButton />（Clerk のアバターボタン）。
-        // Clerk が付与する .cl-userButtonTrigger をアンカーにする。
-        // 実 DOM でクラス名を確認し、変わっていれば STOP して報告すること
-        // （plan 042 が .cl-signIn-root で同種の Clerk クラス依存を導入済み）。
-        const userMenuTrigger = page.locator(".cl-userButtonTrigger");
-        await userMenuTrigger.hover();
+        //
+        // 認証時のトリガーは user-menu.tsx:44-51 のアバター <Image alt="user name">。
+        // **`.cl-userButtonTrigger` は使えない** —— <UserButton />（user-menu.tsx:87）は
+        // `hidden group-hover:block` の**内側**にあり、開く前は不可視。hover 対象にすると
+        // 「開くために開いた状態が要る」鶏卵になり可視性待ちでタイムアウトする。
+        //
+        // `<UserMenu />` はヘッダーに 2 回描画される（header.tsx:32 モバイル /
+        // :48 デスクトップ）ため、`filter({ visible: true })` で今操作できる方に絞る。
+        // hover は `force: true` 必須 —— 開いた器がトリガー自身に重なり、素の hover()
+        // は「ポインタイベントを受け取れるか」の判定が永久に通らない（自己遮蔽）。
+        const avatar = page.getByAltText("user name").filter({ visible: true });
+        await avatar.hover({ force: true });
 
-        const signOut = page.getByRole("button", { name: "Sign out" });
+        const signOut = page
+            .getByRole("button", { name: "Sign out" })
+            .filter({ visible: true });
         await expect(signOut).toBeVisible(); // group-hover でメニューが開いたことの確認
         await signOut.click();
-        await expect(page.getByText("Sign in / Register")).toBeVisible({ timeout: 15000 });
+        await expect(
+            page.getByText("Sign in / Register").filter({ visible: true })
+        ).toBeVisible({ timeout: 15000 });
     });
 });
 ```
@@ -203,9 +215,8 @@ assert は「ゲスト表示（Sign in / Register）の復帰」に限定する�
   （publishable key 未設定 or ウィジェット破損の可能性 — サーバーログと error-context を
   添えて報告）。
 - ユーザーメニューの hover ドロップダウンが開かない（CSS 構造変更 — 報告）。
-- `.cl-userButtonTrigger` が存在しない（Clerk のクラス名変更 — hover 対象を実 DOM から
-  特定し直す必要があるため報告。`user-menu.tsx:40` の `.group` 配下のトリガー領域が
-  代替候補）。
+- `user-menu.tsx:44-51` のアバター `<Image alt="user name">` が存在しない、または alt が
+  変わっている（hover 対象を実 DOM から特定し直す必要があるため報告）。
 - Step 3 で `auth.signIn` が失敗する（plan 042 の修復が不完全 — 042 側の問題として報告し、
   本プランでは signIn を修正しない）。
 

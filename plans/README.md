@@ -214,7 +214,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >    真因はマウス移動の前後で `document.elementFromPoint` を撮って確定した ——
 >    移動前 `SPAN` / 移動後 `DIV.absolute -left-20 top-0 … group-hover:block`。
 >
-> **プラン Step 3 のサンプルコードは実 DOM では動かない（重要）。** プランは
+> **プラン Step 3 のサンプルコードは実 DOM では動かなかった（重要／プラン本文は修正済み）。** プランは当初
 > `.cl-userButtonTrigger` を hover 対象に指定しているが、`<UserButton />`（`user-menu.tsx:87`）は
 > **ドロップダウンの内側**にあり、開く前は不可視。つまり「開くために開いた状態が要る」鶏卵で、
 > Playwright は可視性待ちでタイムアウトする。本プランの STOP conditions が代替として挙げている
