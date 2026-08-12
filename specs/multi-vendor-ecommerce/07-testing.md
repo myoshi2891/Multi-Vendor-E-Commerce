@@ -33,7 +33,15 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 57 tests/browser across 24 files (171 across the three browsers), as of 2026-08-12.
+- Playwright E2E: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
+  Plan 055 added `tests/e2e/cart-login-handoff.spec.ts` (+1 test/browser, +1 file): a cart built
+  as a guest survives sign-in and is persisted server-side by the Checkout button. The load-bearing
+  detail is that step 5 reopens `/checkout` in a **fresh `browser.newContext()`**, not via
+  `page.reload()` — a reload keeps the same localStorage, so Zustand rehydrates from the client and
+  the test would stay green even if `saveUserCart` wrote nothing to the database. The spec also
+  asserts that `localStorage.getItem("cart")` is empty in that fresh context, so the premise is
+  pinned by a check rather than by a comment. Amounts are deliberately not asserted: `saveUserCart`
+  is plan 005's correctness target, so the assertions stay at "the item is present".
   Plan 053 added `tests/e2e/auth-surface.spec.ts` (+3 tests/browser, +1 file): the Clerk sign-up
   widget renders, the header Register link reaches `/sign-up`, and sign-out returns the guest
   chrome. Only the sign-out test needs `CLERK_SECRET_KEY`; the two guest tests always run. Two

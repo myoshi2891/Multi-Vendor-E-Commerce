@@ -215,14 +215,16 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // サインアップウィジェット描画 / Register 導線 / サインアウト往復の 3 テスト。
     // 併せて是正: 本エントリは 051 を未着手として掲げ続けていたが、051 は
     // plans/README.md の Status 表（実行実態の SSOT）で既に DONE だった。
-    // 残るのは 054〜056 の 3 プラン。
+    // 2026-08-12: 055 完了 (9704903c)。tests/e2e/cart-login-handoff.spec.ts を新設。
+    // 検証の肝は browser.newContext() によるコンテキスト分離で、page.reload() では
+    // localStorage が残り saveUserCart が壊れていても green になる。残るのは 054 と 056。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (plans 054〜056 — 051・052・053 は完了)",
-        target: "VRT 拡大 (054) / ゲストカート引き継ぎ (055) / Newsletter dormant 404 characterization (056)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
-        tool: "plans/054〜056 の自己完結プラン (Sonnet 実行可・056 は依存ゼロ / 054 は 043・055 は 042 が先行・spec-sync 必須)",
-        cost: "M",
-        impact: "ゲスト→会員化のカート持ち越し (055) は認証遷移をまたぐ唯一の未カバー導線で、saveUserCart の integration テストが plan 005 待ちで deferred のため現状ノーガード。sign-up ウィジェットのドリフト検出は 053 で canary を設置済み",
+        title: "R9: E2E 残余ギャップ解消 (plans 054・056 — 051・052・053・055 は完了)",
+        target: "VRT 拡大 (054) / Newsletter dormant 404 characterization (056)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
+        tool: "plans/054・056 の自己完結プラン (Sonnet 実行可・056 は依存ゼロ / 054 は 043 が先行・spec-sync 必須)",
+        cost: "S",
+        impact: "056 は /api/newsletter がリポジトリに不在（curl 実測 404）という dormant 機能を characterization で固定し、実装時に期待値を反転させる足場を作る。054 は VRT 対象を商品詳細・browse へ広げ、売上導線の UI 崩れをマージ前に阻止する",
     },
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。

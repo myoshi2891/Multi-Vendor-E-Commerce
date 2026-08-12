@@ -3423,3 +3423,75 @@ canary が存在しない**（テストインフラはユーザー作成を Cler
 
 > **ダッシュボード集計の注意**: 213 → 215 の +2 のうち plan 053 の成果は 1 件だけで、
 > もう 1 件は先行コミット `bda2df7a` の `src/app/(store)/browse/page.test.tsx`（未同期分）。
+
+---
+
+### plan 055 — ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） (2026-08-12)
+
+#### 概要
+
+「ゲスト状態で構築したカートが、サインイン後もそのまま使えて /checkout に持ち越される」という
+**認証遷移をまたぐ導線**がどの層でも検証されていなかった（`plans/audit/findings-17-e2e-coverage-r9.md`
+TESTS-42）。既存カバーは「未認証で Checkout → 認証エラー表示」（purchase-flow）と
+「最初から認証済みでカート構築」（a11y/checkout・plan 047）のみ。`saveUserCart` の integration
+テストは plan 005（カート整合性修正）待ちで deferred 継続中のため、**この経路は現状ノーガード**だった。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/cart-login-handoff.spec.ts` | 新設・1 テスト（ゲスト構築 → サインイン → 引き継ぎ → サーバー保存 → 新規コンテキストでの再取得を直列検証） | `9704903c` |
+
+`src/` は **1 行も変更していない**（プランの Out of scope どおり）。
+
+#### 検証の肝 —— なぜ `page.reload()` ではダメか
+
+reload は**同一ブラウザコンテキスト**のままなので localStorage が残り、Zustand ストアが
+そこから再水和して同じ商品名を描画する。つまり **`saveUserCart` が完全に壊れて DB に 1 行も
+書かれていなくても green になる**。「表示元がサーバーの Cart であること」を主張するには、
+クライアント側の永続状態を持たない場所から開くしかない —— `browser.newContext()` で開き直し、
+`finally` で `close()` している（`storageState` の使い回しも localStorage ごと復元するため不可）。
+
+**プラン本文に無い追加を 1 点入れた**: 新規コンテキストで signIn した直後に
+`localStorage.getItem("cart")` が空であることを assert している。「新規コンテキストだから
+空のはず」はコメントで主張するだけでは保証にならず、ここが空でなければ下の検証は再び
+クライアント永続を見ているだけになる。**前提を機械で固定した。**
+
+#### Drift check（引っかかったが STOP 非該当）
+
+`git diff --stat 99ede89..HEAD` の in-scope パスで `src/queries/user.ts` が **+1565/−703** と
+大きく動いていた。差分はヘルパー抽出（`findCartProductWithVariantAndSize`）と構造化ログの
+refactor で、プランが**前提とする契約**はいずれも健在だった:
+
+- `saveUserCart` は未認証で `Unauthenticated.` を throw する（`user.ts:333`）
+- `summary.tsx` は `saveUserCart` 成功時のみ `router.push("/checkout")`（`:25-36`）
+- testid `checkout`（`:85`）/ `cart-total`（`:77`）
+
+`container.tsx` の −1 行はデバッグ `console.log` の除去。`purchase-flow.spec.ts` は無変更。
+
+#### 検証
+
+- 新スペック: chromium **1 passed** / 3 ブラウザ **3 passed**・**flaky 0**（リトライなし）
+- 識別力の機械的確認: step 5 の期待値を存在しない文字列へ崩すと落ちることを実測してから戻した
+- 回帰: `purchase-flow`（chromium）**5 passed**
+- `bunx tsc --noEmit` **0 件** / `bun run lint` **0 errors**（15 warnings は既存ベースライン）
+
+#### 本プランが主張しないこと
+
+- **金額・数量の厳密検証はしない**（`saveUserCart` は plan 005 の correctness 修正対象。
+  修正が入っても壊れない「アイテムが存在する」レベルに留める意図的な設計。
+  **005 実装後は本 spec を回帰テストとして使い、検証を強化すること**）
+- DB の Cart 行を Prisma で直接検証していない（deferred の saveUserCart integration テストの担当）
+- /checkout 以降の操作（住所選択・Place Order）は plan 047 / platform-coupon の担当
+- E2E フルラン（全 spec × 3 ブラウザ）は再取得していない —— 最新実測は
+  **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のまま
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 57 tests/browser・24 files・3 ブラウザ計 171 | **58 tests/browser・25 files・計 174** |
+| E2E メインスペック | 15 | **16** |
+| Jest テスト総数 (unit/component) | 1976 passed / 1979 total・183 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 215 | **216** |
+| 型エラー | 0 件 | **0 件** |
