@@ -126,7 +126,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`52ab59ab`〜`a3874701`。E2E 53 → **54 tests/browser** / 22 → **23 files** / 計 159 → **162**。実測 chromium 1 passed / 3 ブラウザ 3 passed・**flaky 0**。`src/` のアプリコードは無変更。**プラン記載の「成功 toast」は存在せず、素朴な待ち方は誤った理由で緑になる**（逸脱 1 点）。下の実行記録を参照） |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
-| [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
+| [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
@@ -141,6 +141,61 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **053 の実行記録（2026-08-12・`45cb7e1b`〜`b2a8f202`）**
+>
+> **DONE。** `tests/e2e/auth-surface.spec.ts` を新設し **3 テスト**（Clerk サインアップ
+> ウィジェット描画 / ヘッダー Register 導線 / サインアウト往復）。E2E は
+> **54 → 57 tests/browser / 23 → 24 files / 3 ブラウザ計 162 → 171**、E2E メインスペックは
+> 14 → **15**。実測 chromium **3 passed** / 3 ブラウザ **9 passed**・**flaky 0**（リトライなし）。
+> `src/` は **1 行も変更していない**。**042 が DONE のため Step 3（サインアウト往復）も実施**した。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `git diff --stat 99ede89..HEAD` の
+> in-scope パスで動いていたのは `tests/e2e/helpers/auth.ts`（+59/−25）のみで、これは plan 042 の
+> signIn 修復＝本プランが**明示的に STOP 免除としている差分**。`user-menu.tsx` と
+> `sign-up/page.tsx` は無変更で Current state の記述と一致した。
+>
+> **プラン本文からの逸脱 2 点（いずれもセレクタ／操作の取り方。プランの意図は保持）**:
+>
+> 1. **`<UserMenu />` はヘッダー内に 2 回描画される。** `header.tsx:32` のモバイル用
+>    （`lg:hidden`）と `:48` のデスクトップ用（`hidden lg:flex`）で、**両方 DOM に存在する**。
+>    どちらが見えるかはビューポート次第なので、プラン記載の素の `getByText("Sign in / Register")`
+>    は strict mode violation になる（実測: `resolved to 2 elements`）。
+>    `filter({ visible: true })` で「今ユーザーが操作できる方」を指すようにした。
+> 2. **hover には `force: true` が必須（自己遮蔽デッドロック）。** ドロップダウンの器は
+>    `absolute -left-20 top-0 … group-hover:block` で、**開くとトリガー自身の上に重なる**。
+>    素の `hover()` は「対象がポインタイベントを受け取れるか」を確認してからマウスを動かすため、
+>    マウスが乗った瞬間に器が覆いかぶさって判定が永久に通らず **30s タイムアウト**する。
+>    **症状の文言と真因がズレる典型例**: ログは "waiting for element to be visible and stable" と
+>    出るが、`boundingBox` を 6 フレーム測ると**完全に静止**していた（推測ではなく実測）。
+>    真因はマウス移動の前後で `document.elementFromPoint` を撮って確定した ——
+>    移動前 `SPAN` / 移動後 `DIV.absolute -left-20 top-0 … group-hover:block`。
+>
+> **プラン Step 3 のサンプルコードは実 DOM では動かない（重要）。** プランは
+> `.cl-userButtonTrigger` を hover 対象に指定しているが、`<UserButton />`（`user-menu.tsx:87`）は
+> **ドロップダウンの内側**にあり、開く前は不可視。つまり「開くために開いた状態が要る」鶏卵で、
+> Playwright は可視性待ちでタイムアウトする。本プランの STOP conditions が代替として挙げている
+> **`.group` 配下のトリガー領域**（`user-menu.tsx:44-51` のアバター `<Image alt="user name">`）を
+> 使った——STOP 条件自身がこの代替を許容しているため報告して止める必要はないと判断した。
+> **この器を開けたい後続テストは全て同じ罠を踏む**ので、spec 内にコメントで根拠を残してある。
+>
+> **識別力を機械的に確認した。** 3 つの assert を個別に崩すと**その test だけ**が落ちることを
+> 実測してから戻している（sign-up の `input[name]` と Register の期待 URL を崩して
+> **2 failed / 1 passed**、`signOut.click()` を外して **1 failed / 2 passed**）。
+>
+> **本プランが主張しないこと**: (1) **フルサインアップ**（確認コード入力 → セッション成立）は
+> 意図的に対象外（findings-17 Rejected 節。将来やるなら Clerk test mode の固定確認コード +
+> `+clerk_test` メールで別 spec として設計する）、(2) サインイン UI の検証は plan 042 の担当で
+> 重複させていない、(3) サインアウト後の**リダイレクト先は assert していない** ——
+> Clerk 既定に委ねられており固定すると設定変更で壊れるため、「ゲスト表示の復帰」だけを見ている、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は
+> **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> **統計の注意**: Jest は **1976 passed / 1979 total / 183 スイート**で**不変**（本プランは E2E
+> のみ）。ダッシュボード集計 **213 → 215** の +2 のうち本プランの成果は 1 件だけで、もう 1 件は
+> 先行コミット `bda2df7a` の `src/app/(store)/browse/page.test.tsx`（未同期分）。
+> 回帰: `layout-chrome`（chromium）**7 passed** / `bunx tsc --noEmit` 0 件 /
+> `bun run lint` 0 errors（15 warnings は既存ベースライン）。docs 同期は `b2a8f202`。
+>
 > **050 の実行記録（2026-08-11・`52ab59ab`〜`a3874701`）**
 >
 > **DONE。** `tests/e2e/admin-store-status.spec.ts` を新設し **1 テスト**（ACTIVE 公開の
