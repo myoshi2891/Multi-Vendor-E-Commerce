@@ -615,6 +615,18 @@ export const getProducts = async (
         AND: [],
     };
 
+    // URL 由来のフィルタ（store / category / subCategory / offer）は、対応する行が
+    // 存在しないことがある（古いブックマーク・打ち間違い・攻撃的な入力）。
+    // 見つからないときにフィルタを**黙って捨てる**と「該当なし」が「全件表示」に化けるため
+    // （存在しないカテゴリ URL で全カタログが出る）、明示的に 0 件を返す。
+    const noMatchResult = {
+        products: [] as typeof productsWithFilteredVariants,
+        totalPages: 0,
+        currentPage,
+        pageSize,
+        totalCount: 0,
+    };
+
     // Apply store filter (using store URL)
     if (filters.store) {
         const store = await db.store.findUnique({
@@ -623,9 +635,8 @@ export const getProducts = async (
             },
             select: { id: true },
         });
-        if (store) {
-            whereClause.AND.push({ storeId: store.id });
-        }
+        if (!store) return noMatchResult;
+        whereClause.AND.push({ storeId: store.id });
     }
 
     // Apply category filter (using category URL)
@@ -636,9 +647,8 @@ export const getProducts = async (
             },
             select: { id: true },
         });
-        if (category) {
-            whereClause.AND.push({ categoryId: category.id });
-        }
+        if (!category) return noMatchResult;
+        whereClause.AND.push({ categoryId: category.id });
     }
 
     // Apply subCategory filter (using subCategory URL)
@@ -649,9 +659,8 @@ export const getProducts = async (
             },
             select: { id: true },
         });
-        if (subCategory) {
-            whereClause.AND.push({ subCategoryId: subCategory.id });
-        }
+        if (!subCategory) return noMatchResult;
+        whereClause.AND.push({ subCategoryId: subCategory.id });
     }
 
     // Apply size filter (using array of sizes)
@@ -677,9 +686,8 @@ export const getProducts = async (
             },
             select: { id: true },
         });
-        if (offer) {
-            whereClause.AND.push({ offerTagId: offer.id });
-        }
+        if (!offer) return noMatchResult;
+        whereClause.AND.push({ offerTagId: offer.id });
     }
 
     // Apply search filter (search term in product name or description)
