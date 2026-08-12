@@ -128,15 +128,20 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
     // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
     // QA_HANDOFF R5 を同時削除すること。
-    // 2026-08-04 時点: 031 (order-lifecycle / +8) と 032 (webhook-payment / +11) が DONE。
-    // 残るは 033〜035。
+    // 2026-08-13 時点: 031 / 032 / 033 / 034 が DONE。**残るは 035 のみ**。
+    // (033 = search-products.test.ts 新設・+9/スイート +1・`6514e0c6`。
+    //  034 = review-aggregation.test.ts 新設・+5/スイート +1・`734a34b4`。)
+    // 034 の申し送り: upsertReview の集計は非トランザクション (create → findMany →
+    // product.update の 3 往復) なので、並行投稿では lost update が理論上起こりうる。
+    // 本スイートが固定したのは逐次実行時の集計正しさのみ。$transaction 化や DB 側集計を
+    // 入れる場合、本スイートはそのまま回帰ガードとして使える。
     {
         priority: "medium",
-        title: "R5: Integration テストギャップ解消 (残り plans 033〜035)",
-        target: "tsvector 検索 / レビュー集計 / ロール昇格 (031 の restock・032 の webhook 冪等性は完了)",
-        tool: "plans/033〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "M",
-        impact: "raw SQL 回帰・評価集計・ロール昇格など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 40→約46 テスト / 4→6 スイート)",
+        title: "R5: Integration テストギャップ解消 (残り plan 035)",
+        target: "updateStoreStatus の PENDING→ACTIVE ロール昇格 (031 の restock・032 の webhook 冪等性・033 の tsvector 検索・034 のレビュー集計は完了)",
+        tool: "plans/035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "S",
+        impact: "店舗承認時に User.role が SELLER へ昇格する遷移を実 DB で固定し、R5 の Integration ギャップを閉じ切る",
     },
     // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
     // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /

@@ -499,7 +499,7 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 71 integration tests across 9 suites
+- 76 integration tests across 10 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -508,8 +508,18 @@
   `tests/integration/product-deletion.test.ts` 4 +
   `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7 +
-  `tests/integration/coupon-code-uniqueness.test.ts` 5) as of 2026-08-13,
-  measured 71/71 pass.
+  `tests/integration/coupon-code-uniqueness.test.ts` 5 +
+  `tests/integration/review-aggregation.test.ts` 5) as of 2026-08-13,
+  measured 76/76 pass.
+  Plan 034 added the review-aggregation suite (71 → 76; suites 9 → 10). A product's
+  `rating` / `numReviews` are recomputed by re-reading every review on each submission,
+  and the fully mocked unit tests can only pin the call structure — whether a repeat
+  submission by the same user becomes an update rather than a create, and whether the
+  average is actually derived from stored rows, are unobservable without a real database.
+  The suite also covers the User fallback upsert (on-demand DB user creation when the
+  Clerk webhook missed a sync). Note that the aggregation is **not** transactional
+  (create → findMany → `product.update`), so concurrent submissions could lose an update;
+  only the sequential case is pinned here.
   Plan 041 added the coupon-code global-uniqueness suite (66 → 71; suites 8 → 9).
   `Coupon.code` is globally unique, but the seller-path pre-check only searches within the
   caller's own store — so a code already taken by another store or by a PLATFORM coupon

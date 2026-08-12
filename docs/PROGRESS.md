@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|----|
 | Jestユニットテスト | **1984 passed / 1987 total / 184 スイート（183 passed + 1 skipped suite）** — 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **71テスト / 9スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5**）— 2026-08-13 実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jest Integration テスト | **76テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **5**）— 2026-08-13 実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
@@ -3617,4 +3617,73 @@ unit テストは P2002 をモックの reject で注入するだけなので、
 | Jest テスト総数 (unit/component) | 1984 passed / 184 スイート | **不変** |
 | Playwright E2E | 58 tests/browser・計 174 | **不変** |
 | ダッシュボード集計ファイル数 | 217 | **218** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 034 — `upsertReview` の評価集計を実 DB 統合テストで固定 (2026-08-13)
+
+#### 概要
+
+商品の `rating` / `numReviews` は商品カード・商品詳細・プロフィールに広く出る**信頼シグナル**
+だが、その集計 —— レビュー投稿のたびに全レビューを読み直して平均を再計算し
+`product.update` する（`src/queries/review.ts:107-131`）—— は実 DB で一度も検証されて
+いなかった。全モックの unit テスト（`src/queries/review.test.ts`）は**呼び出し構造しか
+固定できず**、次の 2 点は原理的に観測できない:
+
+- 同一ユーザーの再投稿が create ではなく **update** になる（`numReviews` が増えない）
+- 複数ユーザーの平均が**実データから**正しく導出される
+
+集計ドリフトは静かに蓄積し、表示上の平均と実レビューの乖離として顧客に露出する。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/review-aggregation.test.ts` | 新設・5 シナリオ | `734a34b4` |
+| `src/queries/review.ts` | **無変更**（characterization のみ） | — |
+| `scripts/coverage-dashboard/render-html.ts` | R5 の残タスクを「033〜035」→「035 のみ」へ | docs 同期コミット |
+| `docs/testing/QA_HANDOFF.md` | R5 プロンプトを 035 向けへ差し替え（二重 SSOT の同期） | 同上 |
+
+シナリオ: 初回投稿（rating=4 / numReviews=1 + **User フォールバック upsert** による
+reviewer の自動作成）/ 複数ユーザーの平均（4 と 2 → 3）/ 同一ユーザー再投稿
+（5 → 件数 2 のまま・平均 3.5・画像は総入れ替えで 1 件）/ 商品間の独立性 /
+未認証 reject + 副作用なし。
+
+#### 設計判断 2 点
+
+1. **前提を assert に落とした。** シナリオ 1 は呼び出し**前**に
+   `db.user.findUnique({ where: { id: "reviewer-1" } })` が `null` であることを検証する。
+   「新規 reviewer だから DB に居ないはず」をコメントで主張するだけでは、もし居た場合に
+   User フォールバックの create 分岐を素通りし、**検証したい経路を一度も通らないまま
+   緑になる**。
+2. **画像枚数は対象 review に限定して数える。** グローバルな `db.reviewImage.count()` は
+   reviewer-2 の画像や他 Product の画像も拾うため、`deleteMany + create` の総入れ替えが
+   壊れても検出できない / 逆に無関係な理由で落ちる。まず対象 review を特定してから
+   `where: { reviewId }` で数えている。
+
+#### 申し送り（本プランが主張しないこと）
+
+- **並行投稿の lost update は未検証。** 集計は非トランザクション（create → findMany →
+  `product.update` の 3 往復）なので理論上は起こりうる。本スイートが固定したのは
+  **逐次実行時の集計正しさのみ**である。`$transaction` 化や DB 側集計を入れる場合、
+  本スイートはそのまま回帰ガードとして使える。
+- `Store.averageRating` の集計は対象外（`upsertReview` は Product の rating のみ更新する。
+  Store 側は Round 3 spike 022 の設計対象）。
+- レビューの**編集 UI・削除**および画像の部分更新は対象外。
+
+#### 識別力の機械的確認
+
+シナリオ 3 の `review.count` 期待値を 2 → 3 に崩すと、**当該テストのみ**が
+`Expected: 3 / Received: 2` で落ちることを実測してから戻している（upsert 分岐が create に
+落ちる回帰の検知点）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration | 71 / 9 スイート | **76 / 10 スイート** |
+| Jest テスト総数 (unit/component) | 1984 passed / 184 スイート | **不変** |
+| Playwright E2E | 58 tests/browser・計 174 | **不変** |
+| ダッシュボード集計ファイル数 | 218 | **219** |
 | 型エラー | 0 件 | **0 件** |
