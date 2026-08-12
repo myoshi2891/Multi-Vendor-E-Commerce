@@ -83,7 +83,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [007](007-logging-consolidation-and-debug-cleanup.md) | `logError` helper; remove debug `console.log`; fix coupon logs | tech-debt | P3 | M | LOW | — | DONE |
 | [008](008-remove-dead-search-copy-and-relocate-schema.md) | Delete dead `search copy.tsx`; relocate inline Zod schema | tech-debt | P3 | S | LOW | — | DONE |
 | [009](009-query-hygiene-bound-store-orders-and-drop-dead-query.md) | Bound `getStoreOrders`; remove discarded browse query | perf | P3 | S | LOW | — | DONE |
-| [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | TODO |
+| [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | DONE（2026-08-13・`8b83c185`〜`424f1b56`。プラン本文どおり 8 ケース・**逸脱なし**。Jest 1976 → **1984** / スイート 183 → **184**。STOP 条件 3 点はいずれも非該当（手計算値と実測は全一致 = 本体バグなし）。下の実行記録を参照） |
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | TODO |
@@ -141,6 +141,56 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **010 の実行記録（2026-08-13・`8b83c185`〜`424f1b56`）**
+>
+> **DONE。** `src/lib/shipping-utils.test.ts` を新設し **8 ケース**（quantity ガード 2 /
+> ITEM 2 / WEIGHT 3 / FIXED 1）。Jest は **1976 → 1984 passed / 1979 → 1987 total /
+> 183 → 184 スイート**、ダッシュボード集計 **216 → 217**。Integration（66 / 8 スイート）と
+> E2E（58 tests/browser・計 174）は**不変**。`src/lib/shipping-utils.ts` は **1 行も
+> 変更していない**。**プラン本文からの逸脱なし**（ケース内容・期待値・件数すべて本文どおり）。
+>
+> **Drift check は空。** `git diff --stat f9752c0..HEAD -- src/lib/shipping-utils.ts` に差分なし。
+> プラン抜粋と現行実装の差は JSDoc の追加のみで、ロジックは完全一致だった。
+>
+> **STOP 条件 3 点はいずれも非該当。** 特に「手計算値と関数の出力が食い違えば本体バグとして
+> 報告」については、**8 ケース全てで初回から一致**した —— つまり本テストは現時点でバグを
+> 暴いていない。これは「テストを書いたら壊れているものが見つかった」型の成果ではなく、
+> **今後の変更を捕まえる網を張った**型の成果である（プラン本文の Maintenance notes が言う
+> 「`shipping-utils.ts` の decimal ライブラリ移行を固定値で検証できるようにする」がその用途）。
+>
+> **なぜ直接テストが必要だったか（このプランの核心）**: 本関数は
+> `.claude/steering/tech.md` が「すべての配送料計算はここを通す」と規約化する SSOT でありながら、
+> 実行されるのは統合テストの中だけだった。しかも**そこでは期待値の算出にも
+> `computeShippingTotal` 自身が使われている** —— 自分自身をオラクルにしているため、
+> 関数が一貫して間違っていても永久に緑になる。本テストの期待値は**すべて手計算した定数の
+> ハードコード**で、関数を呼んで導出したものは 1 つも無い。**後続の executor がここを
+> 「DRY でない」と言って関数呼び出しに置き換えると、このプランの価値は丸ごと消える。**
+>
+> **float 誤差の正規化と丸め境界は別のケースとして両方要る。**
+> `0.1 × 0.1 × 3` = `0.030000000000000006` → `0.03` は「誤差を落とせているか」を見るケース、
+> `0.25 × 0.5 × 1` = `0.125` → **`0.13`** は「ちょうど境界でどちらへ倒れるか」を見るケース。
+> 前者だけだと `Math.round`（half-up）が banker's rounding に差し替わっても気づけない
+> —— banker's rounding なら 0.125 は偶数側の **0.12** になる。
+>
+> **識別力を機械的に確認した。** 丸め境界ケースの期待値を 0.12 へ崩すと、**当該テストのみ**が
+> `Expected: 0.12 / Received: 0.13` で落ち、他の 7 件は通ったままであることを実測してから
+> 戻している。
+>
+> **統計の注意（ドリフト是正を混同しないこと）**: `docs/PROGRESS.md` のテスト統計テーブルは
+> **1915 / 180 スイート**のまま据え置かれており、SSOT の `QA_HANDOFF.md`（2026-08-12 時点で
+> 1976 / 183）から **61 テスト・3 スイート**ずれていた。docs 同期コミットで併せて是正したが、
+> **本プランの成果は +8 / スイート +1 のみ**である。
+>
+> **本プランが主張しないこと**: (1) `ShippingFeeMethod` に enum 値が追加された場合の挙動は
+> 未検証 —— 実装は `switch` に default 節を持たず、未知の値では `result` が未代入のまま
+> `Math.round` に渡る（プランの Maintenance notes が指摘。**enum 追加時は実装とテストを
+> 同時に更新すること**）、(2) 統合テストが本関数をオラクルに使っている箇所は**そのまま**
+> （プランの Out of scope）、(3) `Decimal` への移行は行っていない（`shipping-utils.ts` の
+> TODO コメントのまま。本テストはその移行を固定値で検証するための足場）。
+>
+> 回帰: `bun run test` **1984 passed / 3 skipped**・`bunx tsc --noEmit` **0 件**・
+> `bun run lint` **0 errors**（15 warnings は既存ベースライン）。docs 同期は `424f1b56`。
+>
 > **055 の実行記録（2026-08-12・`9704903c`〜`7f09918a`）**
 >
 > **DONE。** `tests/e2e/cart-login-handoff.spec.ts` を新設し **1 テスト**（ゲストでカート構築 →
