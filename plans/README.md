@@ -114,7 +114,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
-| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
+| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | DONE（2026-08-13・`c6a5064f`〜`7ee7baa5`。Integration 66 → **71** / スイート 8 → **9**。**これで R7 ラウンドが閉じ切った**。**プラン本文からの逸脱 2 点**〔要求された P2002 ユニットテスト +2 は既存 / `"ADMIN-CLASH"` は Zod の英数字制約を通らない〕— 下の実行記録を参照） |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
@@ -141,6 +141,80 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **041 の実行記録（2026-08-13・`c6a5064f`〜`7ee7baa5`）**
+>
+> **DONE。** `tests/integration/coupon-code-uniqueness.test.ts` を新設し **5 シナリオ**
+> （同一店舗の重複 / 他店舗 code との衝突 / PLATFORM code との衝突 / 自クーポンの code
+> 据え置き update / admin 経路の衝突）。Integration は **66 → 71 / スイート 8 → 9**、
+> ダッシュボード集計 **217 → 218**。Jest unit は **1984 で不変**。実測
+> **5 passed**（単体）/ **71 passed**（全体・13.073s）。`src/` は **1 行も変更していない**。
+> **040 が DONE 済みだったため、本プランの完了で R7 ラウンドが閉じ切った** ——
+> `render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md` の R7 プロンプト節を
+> **同一コミットで**削除している（二重 SSOT。片方だけ残すと drift する）。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/coupon.ts` は
+> baseline `9111f41` から **+164 行**動いていたが、プランが依拠する契約はすべて健在で、
+> **行番号までプラン記載と一致**した —— `:61` `upsertCoupon` / `:67` `requireStoreOwner` /
+> `:93` 自店舗スコープの `findFirst` / `:117` `db.coupon.upsert` / `:146-151` P2002 変換 /
+> `:478` `upsertCouponAsAdmin` / `:530` `isDomainError` 前段 / `:532-537` P2002 変換、
+> `prisma/schema.prisma:672` の `code String @unique`。**「差分があるか」ではなく
+> 「プランが依拠する記述が壊れているか」で判定する**という Drift check の趣旨どおりに扱った。
+>
+> **プラン本文からの逸脱 2 点（いずれもプラン側が実装に追い越されていた）**:
+>
+> 1. **要求された P2002 変換ユニットテスト（+2）は追加していない。** プランの Scope /
+>    Verify / Done criteria は `src/queries/coupon.test.ts` に seller 経路と admin 経路の
+>    P2002 変換テストを**それぞれ 1 本**（計 +2）追加せよと要求し、2026-08-01 と 08-02 に
+>    「+1 ではなく +2」という訂正まで入っている。しかし**両方とも既に存在する** ——
+>    seller は `:154`「findFirstの事前チェックをすり抜けても upsert が P2002 を reject した
+>    場合…」、admin は `:1478` `describe("コードグローバル重複エラー")` の「Prisma P2002 を
+>    日本語メッセージに変換する」。しかも**プランが指定する形そのもの**（`findFirst` を
+>    null にして事前チェックを素通りさせ、`upsert` に P2002 を投げさせる）。
+>    Done criteria の実質は既に満たされているため重複追加はせず、**Jest は +0**。
+>    プラン本文の「+2」は執筆後に実装が追いついた結果の陳腐化である。
+> 2. **プラン記載の code `"ADMIN-CLASH"` では検証したい経路に入らない。**
+>    `CouponFormSchema`（`src/lib/schemas.ts:531`）が `/^[A-Za-z0-9]+$/` を要求するため、
+>    ハイフン入り code は **unique 制約に到達する前に**「クーポンの入力値が不正です。」で
+>    弾かれる。`ADMINCLASH` へ変更した。**この Zod 検証（`coupon.ts:107-112`）自体が
+>    プランの Current state に無い** —— plan 060 / SECURITY-14 で**事前チェックと upsert の
+>    間**に追加されたもので、プラン執筆時点には存在しなかった。**code / discount を扱う
+>    後続テストは全て同じ関門を通る**ので、入力は英数字 code・1〜99 の整数 discount にすること。
+>
+> **経路をテスト側で推論しない設計を厳守した（プランの最重要指示）。** 事前チェックと
+> P2002 フォールバックは**まったく同じエラーメッセージ**を投げるため、`rejects.toThrow` では
+> どちらで拒否されたか判別できない。プランが 2026-07-18 に撤回した「テスト側で同条件の
+> `findFirst` を再実行して null を確認する」手法は採らなかった —— そのクエリは実装内部の
+> 事前チェックを**観測しておらず**、事前チェックがグローバル化されて P2002 経路が死んでも
+> 同じ結果を返し続けるので**緑のまま腐る**。本テストは外から観測可能な不変条件
+> （拒否 + 既存行無傷 + 行数不変）だけを assert している。
+>
+> **副産物: 実行時 stderr が経路を実証した（assert には使っていない）。**
+> `Unique constraint failed on the fields: (code)` が `coupon.ts:117`（upsert）で発生し
+> `logError`（`:144`）を経て P2002 分岐へ到達していた。事前チェック経路は `isDomainError`
+> により `:142` で **logError より手前**で再 throw されるため、**ログが出たこと自体が
+> 「実 unique 制約が発火した」証拠**になる。ただしログ形式に結合する検証は入れていない
+> （実装のログを assert すると、構造化ログの refactor で無関係に壊れる）。
+>
+> **識別力を機械的に確認した。** シナリオ 2 の `storeId` 期待値を `storeB.id` → `storeA.id` へ
+> 崩すと、**当該テストのみ**が落ち他の 4 件は通ったままであることを実測してから戻している。
+>
+> **本プランが主張しないこと**: (1) **`Coupon.code` をグローバル一意のままにするのが正しい
+> 仕様だとは主張していない** —— 本テストは現仕様の characterization であり、店舗ごとの
+> code 再利用を許すプロダクト判断をする場合は `@@unique([storeId, code])` への migration +
+> 事前チェックの整合が必要で、その際はシナリオ 2・3 の期待値を意図的に反転させること
+> （`.claude/rules/03-data-model-diagram-sync.md` の ERD 再生成義務にも注意）、
+> (2) **並行作成（真の race）は検証していない** —— 本テストが踏むのは逐次実行で決定論的に
+> 到達する経路のみ、(3) `applyCoupon` / `removeCoupon` の CAS・二重適用は
+> `cart-checkout.test.ts` S3 の担当で重複させていない、(4) 事前チェックを
+> グローバル検索へ広げる修正が入った場合、シナリオ 2 は P2002 ではなく事前チェック経路で
+> 同じメッセージになる —— **テストは通り続けるが P2002 フォールバックが死蔵コードになる**
+> ので、その修正のレビューでは本テストの緑を根拠にしないこと。
+>
+> 回帰: `bun run test:integration` **71 passed / 9 スイート**・`bun run test` **1984 passed**
+> （不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は既存
+> ベースライン）・`render-html.test.ts` を含む `scripts/coverage-dashboard` **87 passed**。
+> docs 同期は `7ee7baa5`。
+>
 > **010 の実行記録（2026-08-13・`8b83c185`〜`424f1b56`）**
 >
 > **DONE。** `src/lib/shipping-utils.test.ts` を新設し **8 ケース**（quantity ガード 2 /
