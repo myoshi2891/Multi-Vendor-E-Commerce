@@ -24,6 +24,10 @@ jest.mock("@/lib/db", () => ({
         product: {
             update: jest.fn(),
         },
+        // レビュー書き込み + 集計更新は単一の interactive transaction で走る。
+        // Product 行の `SELECT … FOR UPDATE` は $queryRaw 経由。
+        $queryRaw: jest.fn(),
+        $transaction: jest.fn(),
     },
 }));
 
@@ -36,6 +40,12 @@ beforeEach(() => {
     mockDb.user.upsert.mockResolvedValue({
         id: TEST_CONFIG.DEFAULT_USER_ID,
     });
+    // transaction callback を同じ DB モックで実行する（user.test.ts と同じ配線）。
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
+    mockDb.$queryRaw.mockResolvedValue([{ id: "product-001" }]);
 });
 
 // ==================================================
@@ -330,6 +340,74 @@ describe("upsertReview", () => {
                     },
                 })
             );
+        });
+    });
+
+    describe("集計の原子性（並行投稿の lost update 防止）", () => {
+        it("レビュー書き込みと集計更新を単一の $transaction へ配線する", async () => {
+            // Arrange: tx として渡す client を db モックとは別物にする。実装が
+            // `db.review.*` を直接叩いていたら（= tx の外に出ていたら）この
+            // モックには記録が残らないので、配線の抜けを検出できる。
+            const reviewInput = createMockReview({ rating: 4 });
+            const txClient = {
+                $queryRaw: jest.fn().mockResolvedValue([{ id: "product-001" }]),
+                review: {
+                    findFirst: jest.fn().mockResolvedValue(null),
+                    create: jest.fn().mockResolvedValue(reviewInput),
+                    update: jest.fn(),
+                    findMany: jest
+                        .fn()
+                        .mockResolvedValue([{ rating: 5 }, { rating: 3 }]),
+                },
+                product: { update: jest.fn().mockResolvedValue({}) },
+            };
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: typeof txClient) => Promise<unknown>) =>
+                    callback(txClient)
+            );
+
+            // Act
+            await upsertReview("product-001", reviewInput);
+
+            // Assert: 3 段（書き込み → 読み直し → 集計反映）すべてが tx client 側
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(txClient.review.create).toHaveBeenCalledTimes(1);
+            expect(txClient.review.findMany).toHaveBeenCalledTimes(1);
+            expect(txClient.product.update).toHaveBeenCalledWith({
+                where: { id: "product-001" },
+                data: { rating: 4, numReviews: 2 },
+            });
+            // tx の外に漏れていないこと
+            expect(mockDb.review.create).not.toHaveBeenCalled();
+            expect(mockDb.product.update).not.toHaveBeenCalled();
+        });
+
+        it("Product 行の排他ロックをレビュー書き込みより先に取得する", async () => {
+            // Arrange
+            const reviewInput = createMockReview({ rating: 4 });
+            mockDb.review.findFirst.mockResolvedValue(null);
+            mockDb.review.create.mockResolvedValue(reviewInput);
+            mockDb.review.findMany.mockResolvedValue([{ rating: 4 }]);
+            mockDb.product.update.mockResolvedValue({});
+
+            // Act
+            await upsertReview("product-001", reviewInput);
+
+            // Assert: ロックは取られている。$transaction で囲うだけでは
+            // Read Committed 下で両者が相手の行を見ないまま findMany を撃てるため、
+            // 直列化にはこのロックが要る。
+            expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
+            const [sqlFragments, boundProductId] =
+                mockDb.$queryRaw.mock.calls[0];
+            expect(sqlFragments.join("?")).toContain("FOR UPDATE");
+            // productId は文字列連結ではなくパラメータとして渡すこと（SQL インジェクション防止）
+            expect(boundProductId).toBe("product-001");
+
+            // Assert: ロック取得が create より**手前**。後ろで取ると
+            // 「両者が insert 済み」になるまでの窓が開いたままになる。
+            expect(
+                mockDb.$queryRaw.mock.invocationCallOrder[0]
+            ).toBeLessThan(mockDb.review.create.mock.invocationCallOrder[0]);
         });
     });
 
