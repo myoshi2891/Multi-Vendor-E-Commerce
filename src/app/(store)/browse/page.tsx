@@ -3,6 +3,7 @@ import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
+import { normalizePageParam } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
 
 export const dynamic = 'force-dynamic';
@@ -32,10 +33,8 @@ export default async function BrowsePage({
     } = await searchParams;
 
     // ページ番号の正規化（.claude/steering/tech.md「URL パラメータ正規化」規約）。
-    // Infinity / NaN / 小数 / 0 以下はすべて 1 ページ目として扱う。
-    const rawPage = Number(Array.isArray(page) ? page[0] : page);
-    const currentPage =
-        Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+    // Infinity / NaN / 小数 / 0 以下は 1 ページ目、MAX_PAGE 超は上限へクランプする。
+    const currentPage = normalizePageParam(page);
 
     const products_data = await getProducts(
         {

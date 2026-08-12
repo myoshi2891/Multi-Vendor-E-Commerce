@@ -1,4 +1,5 @@
 import WishlistContainer from "@/components/store/profile/wishlist/container";
+import { normalizePageParam } from "@/lib/utils";
 import { getUserWishlist } from "@/queries/profile";
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +18,7 @@ export default async function ProfileWishlistPage({
     params: Promise<{ page: string }>;
 }) {
     const { page: pageParam } = await params;
-    const raw = Number(pageParam);
-    const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    const page = normalizePageParam(pageParam);
     const wishlist_data = await getUserWishlist(page);
     const { wishlist, totalPages } = wishlist_data;
 

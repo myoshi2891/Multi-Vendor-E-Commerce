@@ -1,4 +1,5 @@
 import FollowingContainer from "@/components/store/profile/following/container";
+import { normalizePageParam } from "@/lib/utils";
 import { getUserFollowedStores } from "@/queries/profile";
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +16,7 @@ export default async function ProfileFollowingPage({
     params: Promise<{ page: string }>;
     }) {
     const { page: pageParam } = await params;
-    const raw = Number(pageParam);
-    const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    const page = normalizePageParam(pageParam);
     const res = await getUserFollowedStores(page)
     return <div className="bg-white px-6 py-4">
         <h1 className="mb-3 text-lg font-bold">Stores you follow</h1>

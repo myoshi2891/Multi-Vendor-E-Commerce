@@ -3,6 +3,7 @@ import Pagination from "@/components/store/shared/pagination";
 import ProductList from "@/components/store/shared/product-list";
 import { getProductsByIds } from "@/queries/product";
 import { ProductType } from "@/lib/types";
+import { normalizePageParam } from "@/lib/utils";
 import { use, useEffect, useState } from "react";
 /**
  * Renders the "Your product view history" page and its paginated product list.
@@ -18,8 +19,7 @@ export default function ProfileHistoryPage({
     params: Promise<{ page: string }>;
 }) {
     const { page: pageParam } = use(params);
-    const raw = Number(pageParam);
-    const currentPage = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    const currentPage = normalizePageParam(pageParam);
     const [products, setProducts] = useState<ProductType[]>([]);
     const [page, setPage] = useState<number>(currentPage);
     const [totalPages, setTotalPages] = useState<number>(0);
