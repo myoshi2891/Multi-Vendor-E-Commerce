@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1970 passed / 1973 total across 183 suites (3 skipped), as of 2026-08-12.
+- 1975 passed / 1978 total across 183 suites (3 skipped), as of 2026-08-12.
+  `getProducts` used to drop a `store` / `category` / `subCategory` / `offer` filter whose URL
+  resolved to no row, turning "no such category" into "show the whole catalog"; it now returns
+  an empty result (+5 tests, no new suite). This also removes a false-green path in
+  `tests/e2e/search-filter.spec.ts`, which rendered the full catalog whenever the E2E seed was
+  missing.
+- Earlier entry: 1970 passed / 1973 total across 183 suites (3 skipped), as of 2026-08-12.
   URL numeric-param normalization was consolidated into `normalizePageParam` /
   `normalizePositiveIntParam` (`src/lib/utils.ts`) with a mandatory `MAX_PAGE` clamp, adding
   +28 tests to `src/lib/utils.test.ts` and a new suite

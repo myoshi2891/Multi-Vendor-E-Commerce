@@ -3283,3 +3283,46 @@ SonarCloud の PR #173 Measures が `src/components/store/browse-page/browse-pag
 | Playwright E2E | 54 tests/browser（23 files・計 162） | **54 tests/browser（23 files・計 162）**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | lint | 0 errors / 15 warnings | **0 errors / 15 warnings**（不変） |
+
+---
+
+### `getProducts` の未マッチ URL フィルタ是正（E2E 失敗調査の副産物） (2026-08-12)
+
+#### 概要
+
+E2E `search-filter.spec.ts` の「ページネーションで次ページに遷移できる」が失敗。
+**直接原因はシードデータの欠落**（`e2e-pagination*` カテゴリが DB に 0 件）だったが、
+調査の過程で `getProducts` の実バグが露出したため併せて修正した。
+
+#### 原因特定の決め手
+
+失敗時スナップショットで「フィルタチップは `e2e-pagination-chromium-w0` を表示しているのに、
+商品リストは他ワーカーの商品を含む**全カタログ（ページャ 7 ページ）**」という矛盾が出ていた。
+チップと商品リストは `browse/page.tsx` の**同じ `category` 変数**から描画されるため、
+この不一致はページ側では起こり得ない。原因は `getProducts` 側の `if (found) { push }` で、
+**未マッチのフィルタを黙って捨てて全件を返していた**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/product.ts` | store / category / subCategory / offer の URL が解決できない場合は明示的に 0 件を返す（`product.findMany` / `count` を発行しない） | `cce53407` |
+| `src/queries/product.test.ts` | +5 テスト（未マッチ 4 モデル + `currentPage` / `pageSize` 保持） | `cce53407` |
+| DB | `bun run seed:e2e` を実行（3 ターゲット × 12 商品を投入） | — |
+
+#### 検証
+
+- Jest 全体: **1975 passed / 3 skipped**（183 スイート）、tsc 0、lint 0 errors / 15 warnings
+- E2E（chromium）: `search-filter` **5 passed** / `guest-flows` **6 passed**（計 11 passed）
+- 識別力の実測: category のガードを元の実装へ戻すと**当該 1 件だけ**が落ちる
+- 実アプリ: `/browse?category=does-not-exist-xyz` → **No Products**、実在カテゴリ → **10 件**
+- リダイレクトの実アプリ検証（前作業分）: `?page=999` / `?page=1e21` ともに `307` で
+  フィルタ・ソートを保持したまま最終ページへ。Prisma エラーなし
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 (unit/component) | 1970 passed / 1973 total | **1975 passed / 1978 total** |
+| スイート数 | 183（182 passed + 1 skipped） | **183**（不変） |
+| 型エラー | 0 件 | **0 件** |
