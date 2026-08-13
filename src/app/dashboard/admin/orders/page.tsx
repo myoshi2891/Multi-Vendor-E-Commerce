@@ -2,32 +2,14 @@ import DataTable from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { getAllOrders } from "@/queries/order";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
+import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-// limit / page の上限（getAllOrders 側の AdminOrderFilterSchema でも clamp されるが UI 側でも明示）
+// limit の上限（getAllOrders 側の AdminOrderFilterSchema でも clamp されるが UI 側でも明示）。
+// page の上限は共通の MAX_PAGE（src/lib/utils.ts）を使う。
 const MAX_LIMIT = 100;
-const MAX_PAGE = 10_000;
 const DEFAULT_LIMIT = 50;
-
-/**
- * Normalizes a string URL parameter to a positive integer.
- *
- * @param raw - The raw string from search parameters
- * @param fallback - The value returned if normalization fails
- * @param max - Optional upper bound to cap the result
- * @returns The normalized positive integer (at least 1), or the `fallback` value, capped at `max` if provided
- */
-function normalizePositiveInt(
-    raw: string | undefined,
-    fallback: number,
-    max?: number
-): number {
-    const num = Number(raw);
-    const normalized =
-        Number.isFinite(num) && num >= 1 ? Math.floor(num) : fallback;
-    return max ? Math.min(normalized, max) : normalized;
-}
 
 /**
  * Narrows a string value to a valid enum member.
@@ -47,7 +29,7 @@ function toEnumValue<T extends Record<string, string>>(
 }
 
 /**
- * Renders an admin page for managing orders across all stores.
+ * Renders the admin orders page with pagination, search, and status filters.
  */
 export default async function AdminOrdersPage({
     searchParams,
@@ -61,8 +43,11 @@ export default async function AdminOrdersPage({
     }>;
 }) {
     const sp = await searchParams;
-    const page = normalizePositiveInt(sp.page, 1, MAX_PAGE);
-    const limit = normalizePositiveInt(sp.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    const page = normalizePageParam(sp.page);
+    const limit = normalizePositiveIntParam(sp.limit, {
+        fallback: DEFAULT_LIMIT,
+        max: MAX_LIMIT,
+    });
     const paymentStatus = toEnumValue(PaymentStatus, sp.paymentStatus);
     const orderStatus = toEnumValue(OrderStatus, sp.orderStatus);
 

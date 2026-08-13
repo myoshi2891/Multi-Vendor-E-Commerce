@@ -83,7 +83,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [007](007-logging-consolidation-and-debug-cleanup.md) | `logError` helper; remove debug `console.log`; fix coupon logs | tech-debt | P3 | M | LOW | — | DONE |
 | [008](008-remove-dead-search-copy-and-relocate-schema.md) | Delete dead `search copy.tsx`; relocate inline Zod schema | tech-debt | P3 | S | LOW | — | DONE |
 | [009](009-query-hygiene-bound-store-orders-and-drop-dead-query.md) | Bound `getStoreOrders`; remove discarded browse query | perf | P3 | S | LOW | — | DONE |
-| [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | TODO |
+| [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | DONE（2026-08-13・`8b83c185`〜`424f1b56`。プラン本文どおり 8 ケース・**逸脱なし**。Jest 1976 → **1984** / スイート 183 → **184**。STOP 条件 3 点はいずれも非該当（手計算値と実測は全一致 = 本体バグなし）。下の実行記録を参照） |
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | TODO |
@@ -107,28 +107,28 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
-| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | TODO |
+| [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | DONE（2026-08-13・`734a34b4`〜`914e7199`。Integration 71 → **76** / スイート 9 → **10**。プラン本文どおり 5 シナリオ・**逸脱なし**。STOP 条件はいずれも非該当（集計は全シナリオで初回から正しく、本体バグは検出されなかった）。**R5 は残り 035 のみ**。下の実行記録を参照） |
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
-| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | TODO |
+| [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | DONE（2026-08-13・`c6a5064f`〜`7ee7baa5`。Integration 66 → **71** / スイート 8 → **9**。**これで R7 ラウンドが閉じ切った**。**プラン本文からの逸脱 2 点**〔要求された P2002 ユニットテスト +2 は既存 / `"ADMIN-CLASH"` は Zod の英数字制約を通らない〕— 下の実行記録を参照） |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
 | [043](043-e2e-vrt-rebaseline.md) | VRT ベースライン 3 枚の目視ゲート付き再撮影（TESTS-28） | tests | P2 | S | MED | — | DONE（**checkout は再撮影だけでは閉じず spec に描画待ちを 1 行追加**。3 ブラウザフルランは **83 passed / 0 failed / 3 flaky / 37 skipped** — 下の実行記録を参照） |
 | [044](044-e2e-run-guardrails.md) | E2E 実測の運用ガード（:3000 チェック + globalTimeout 60 分）（TESTS-29） | dx | P2 | S | LOW | — | DONE（**実装は :3000 チェックではなく :3100 隔離 + `E2E_NO_REUSE`** — 下の実行記録を参照） |
 | [045](045-e2e-guest-flows.md) | ゲスト導線 E2E（compare / track-order / offers / 静的）（TESTS-33、TESTS-14 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-09・`eaac5c06`〜`515a736f`。E2E 41 → **47 tests/browser** / 17 → **18 files** / 計 123 → **141**。プラン本文どおり 6 テストだが、**セレクタの取り方 2 点が実 DOM と食い違っており逸脱**（testid は `<Link>` 側でボタンはその外 / offers の name は非サフィックス）— 下の実行記録を参照） |
-| [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | TODO |
+| [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | DONE（2026-08-11・`f10a5b89`〜`4adb0b3b`。E2E は **件数不変（50 tests/browser・計 150）で skip が 1 件解消** —— search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**。**プラン本文のカードセレクタが実 DOM と食い違っており逸脱 1 点**〔prefix が価格 testid にも一致〕。下の実行記録を参照） |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
-| [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | TODO |
+| [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`7db28f6e`〜`c1ad7c64`。E2E 50 → **53 tests/browser** / 21 → **22 files** / 計 150 → **159**。実測 chromium 3 passed / 3 ブラウザ 9 passed。`src/` はプランの上限どおり aria-label 1 行のみ。**out of scope とされていた `store-card.tsx` の `return` 欠落が、実際にフォロー導線を壊していることを実測で確認**（テスト側で回避）。下の実行記録を参照） |
 | [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
-| [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | TODO |
+| [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`52ab59ab`〜`a3874701`。E2E 53 → **54 tests/browser** / 22 → **23 files** / 計 159 → **162**。実測 chromium 1 passed / 3 ブラウザ 3 passed・**flaky 0**。`src/` のアプリコードは無変更。**プラン記載の「成功 toast」は存在せず、素朴な待ち方は誤った理由で緑になる**（逸脱 1 点）。下の実行記録を参照） |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
-| [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | TODO |
+| [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
-| [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | TODO |
+| [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
 | [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
@@ -141,6 +141,468 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **034 の実行記録（2026-08-13・`734a34b4`〜`914e7199`）**
+>
+> **DONE。** `tests/integration/review-aggregation.test.ts` を新設し **5 シナリオ**
+> （初回投稿 + User フォールバック upsert / 複数ユーザーの平均 / 同一ユーザー再投稿は
+> update / 商品間の独立性 / 未認証 reject + 副作用なし）。Integration は
+> **71 → 76 / スイート 9 → 10**、ダッシュボード集計 **218 → 219**。Jest unit は
+> **1984 で不変**。実測 **5 passed**（単体）/ **76 passed**（全体・13.923s）。
+> `src/queries/review.ts` は **1 行も変更していない**。**プラン本文からの逸脱なし**。
+> **これで R5 ラウンドの残りは 035 のみ**（`render-html.ts` の `NEXT_ACTIONS` と
+> `QA_HANDOFF.md` の R5 プロンプトを同一コミットで 035 向けへ差し替え済み）。
+>
+> **Drift check は空。** `git diff --stat 1750ef2..HEAD -- src/queries/review.ts` に差分なし。
+> 集計部分は `:107-131`（プラン記載 `:106-131`）でプラン抜粋と一致した。
+>
+> **STOP 条件はいずれも非該当。** 「シナリオ 3 で件数が増える」「シナリオ 2 の平均が
+> 合わない」は本体バグの発見として報告すべき事象だが、**5 シナリオすべて初回から
+> 期待どおり**だった。plan 010 と同じく、本スイートは「壊れたものを見つけた」型ではなく
+> 「今後の変更を捕まえる網を張った」型の成果である。
+>
+> **プラン本文に無い設計判断 1 点（前提の機械化）**: シナリオ 1 は呼び出し**前**に
+> `db.user.findUnique({ where: { id: "reviewer-1" } })` が `null` であることを assert している
+> （プラン本文も Step 2 で同趣旨を指示しており、それを忠実に実装した）。**これが無いと
+> テストは空振りする** —— reviewer が既に DB に居た場合、User フォールバックの create 分岐を
+> 素通りして「既存ユーザーで投稿できた」だけを見ることになり、検証したい経路を一度も
+> 通らないまま緑になる。plan 055 が step 5 で `localStorage` の空を assert したのと同型の話で、
+> **「〜のはず」はコメントで主張するだけでは保証にならない**。
+>
+> **画像枚数はグローバルに数えてはいけない（プラン本文の指示。実装で厳守した）。**
+> `deleteMany + create` による総入れ替えの検証は、まず対象 review を
+> `findFirstOrThrow({ where: { productId, userId } })` で特定してから
+> `db.reviewImage.count({ where: { reviewId } })` で数える。素の `db.reviewImage.count()` は
+> シナリオ 2 の reviewer-2 やシナリオ 4 の Product B の画像も拾うため、**総入れ替えが
+> 壊れても検出できない / 逆に無関係な理由で落ちる**。
+>
+> **識別力を機械的に確認した。** シナリオ 3 の `review.count` 期待値を 2 → 3 に崩すと、
+> **当該テストのみ**が `Expected: 3 / Received: 2` で落ち、他の 4 件は通ったままである
+> ことを実測してから戻している。ここは **upsert 分岐が create に落ちる回帰の検知点**であり、
+> このスイートで最も価値のある 1 行。
+>
+> **本プランが主張しないこと**: (1) **並行投稿の lost update は未検証** —— 集計は
+> **非トランザクション**（create → findMany → `product.update` の 3 往復）なので理論上は
+> 起こりうるが、固定したのは**逐次実行時の集計正しさのみ**である。`$transaction` 化や
+> DB 側集計を入れる場合、本スイートはそのまま回帰ガードとして使える、
+> (2) `Store.averageRating` の集計は対象外（`upsertReview` は Product の rating のみ更新する。
+> Store 側は Round 3 spike 022 の設計対象）、(3) レビューの**編集 UI・削除**および
+> 画像の部分更新は対象外 —— 部分更新 UI が入る場合はシナリオ 3 の期待値の見直しが必要、
+> (4) `Product.rating` は `Float` なので平均の assert は `toBeCloseTo` を使っている
+> （金額ではないため Decimal 規約の対象外）。
+>
+> 回帰: `bun run test:integration` **76 passed / 10 スイート**・`bun run test`
+> **1984 passed**（不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**
+> （15 warnings は既存ベースライン）・`scripts/coverage-dashboard` **87 passed**。
+> docs 同期は `914e7199`。
+>
+> **追記（2026-08-13・レビュー指摘対応）**: 上の「本プランが主張しないこと (1)」は
+> **解消済み**。`upsertReview` の集計を単一 `$transaction` に束ね、Product 行への
+> `SELECT … FOR UPDATE`（レビュー書き込みより**手前**）で直列化した。統合スイートには
+> 並行シナリオを 2 件追加（同一ユーザーの同時二重投稿 / 別ユーザーの輻輳）。
+> **ただし多ユーザー並行ケースは修正前の実装でも緑のまま**である —— 同形の呼び出しは
+> 往復ごとに歩調が揃い、全員の create が出揃ってから全員の findMany が走るため、
+> レイテンシが均一なローカル DB では「古い件数を読んだ側が最後に update する」並びを
+> 踏めない。lost update に対する決定論的なガードは `src/queries/review.test.ts` の
+> 「集計の原子性」（`$transaction` と行ロックの**配線**を固定するユニットテスト）側にある。
+> 同一ユーザーの二重投稿ケースは修正前だと 3 回中 2 回 fail する確率的ガード。
+>
+> **041 の実行記録（2026-08-13・`c6a5064f`〜`7ee7baa5`）**
+>
+> **DONE。** `tests/integration/coupon-code-uniqueness.test.ts` を新設し **5 シナリオ**
+> （同一店舗の重複 / 他店舗 code との衝突 / PLATFORM code との衝突 / 自クーポンの code
+> 据え置き update / admin 経路の衝突）。Integration は **66 → 71 / スイート 8 → 9**、
+> ダッシュボード集計 **217 → 218**。Jest unit は **1984 で不変**。実測
+> **5 passed**（単体）/ **71 passed**（全体・13.073s）。`src/` は **1 行も変更していない**。
+> **040 が DONE 済みだったため、本プランの完了で R7 ラウンドが閉じ切った** ——
+> `render-html.ts` の `NEXT_ACTIONS` と `QA_HANDOFF.md` の R7 プロンプト節を
+> **同一コミットで**削除している（二重 SSOT。片方だけ残すと drift する）。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/coupon.ts` は
+> baseline `9111f41` から **+164 行**動いていたが、プランが依拠する契約はすべて健在で、
+> **行番号までプラン記載と一致**した —— `:61` `upsertCoupon` / `:67` `requireStoreOwner` /
+> `:93` 自店舗スコープの `findFirst` / `:117` `db.coupon.upsert` / `:146-151` P2002 変換 /
+> `:478` `upsertCouponAsAdmin` / `:530` `isDomainError` 前段 / `:532-537` P2002 変換、
+> `prisma/schema.prisma:672` の `code String @unique`。**「差分があるか」ではなく
+> 「プランが依拠する記述が壊れているか」で判定する**という Drift check の趣旨どおりに扱った。
+>
+> **プラン本文からの逸脱 2 点（いずれもプラン側が実装に追い越されていた）**:
+>
+> 1. **要求された P2002 変換ユニットテスト（+2）は追加していない。** プランの Scope /
+>    Verify / Done criteria は `src/queries/coupon.test.ts` に seller 経路と admin 経路の
+>    P2002 変換テストを**それぞれ 1 本**（計 +2）追加せよと要求し、2026-08-01 と 08-02 に
+>    「+1 ではなく +2」という訂正まで入っている。しかし**両方とも既に存在する** ——
+>    seller は `:154`「findFirstの事前チェックをすり抜けても upsert が P2002 を reject した
+>    場合…」、admin は `:1478` `describe("コードグローバル重複エラー")` の「Prisma P2002 を
+>    日本語メッセージに変換する」。しかも**プランが指定する形そのもの**（`findFirst` を
+>    null にして事前チェックを素通りさせ、`upsert` に P2002 を投げさせる）。
+>    Done criteria の実質は既に満たされているため重複追加はせず、**Jest は +0**。
+>    プラン本文の「+2」は執筆後に実装が追いついた結果の陳腐化である。
+> 2. **プラン記載の code `"ADMIN-CLASH"` では検証したい経路に入らない。**
+>    `CouponFormSchema`（`src/lib/schemas.ts:531`）が `/^[A-Za-z0-9]+$/` を要求するため、
+>    ハイフン入り code は **unique 制約に到達する前に**「クーポンの入力値が不正です。」で
+>    弾かれる。`ADMINCLASH` へ変更した。**この Zod 検証（`coupon.ts:107-112`）自体が
+>    プランの Current state に無い** —— plan 060 / SECURITY-14 で**事前チェックと upsert の
+>    間**に追加されたもので、プラン執筆時点には存在しなかった。**code / discount を扱う
+>    後続テストは全て同じ関門を通る**ので、入力は英数字 code・1〜99 の整数 discount にすること。
+>
+> **経路をテスト側で推論しない設計を厳守した（プランの最重要指示）。** 事前チェックと
+> P2002 フォールバックは**まったく同じエラーメッセージ**を投げるため、`rejects.toThrow` では
+> どちらで拒否されたか判別できない。プランが 2026-07-18 に撤回した「テスト側で同条件の
+> `findFirst` を再実行して null を確認する」手法は採らなかった —— そのクエリは実装内部の
+> 事前チェックを**観測しておらず**、事前チェックがグローバル化されて P2002 経路が死んでも
+> 同じ結果を返し続けるので**緑のまま腐る**。本テストは外から観測可能な不変条件
+> （拒否 + 既存行無傷 + 行数不変）だけを assert している。
+>
+> **副産物: 実行時 stderr が経路を実証した（assert には使っていない）。**
+> `Unique constraint failed on the fields: (code)` が `coupon.ts:117`（upsert）で発生し
+> `logError`（`:144`）を経て P2002 分岐へ到達していた。事前チェック経路は `isDomainError`
+> により `:142` で **logError より手前**で再 throw されるため、**ログが出たこと自体が
+> 「実 unique 制約が発火した」証拠**になる。ただしログ形式に結合する検証は入れていない
+> （実装のログを assert すると、構造化ログの refactor で無関係に壊れる）。
+>
+> **識別力を機械的に確認した。** シナリオ 2 の `storeId` 期待値を `storeB.id` → `storeA.id` へ
+> 崩すと、**当該テストのみ**が落ち他の 4 件は通ったままであることを実測してから戻している。
+>
+> **本プランが主張しないこと**: (1) **`Coupon.code` をグローバル一意のままにするのが正しい
+> 仕様だとは主張していない** —— 本テストは現仕様の characterization であり、店舗ごとの
+> code 再利用を許すプロダクト判断をする場合は `@@unique([storeId, code])` への migration +
+> 事前チェックの整合が必要で、その際はシナリオ 2・3 の期待値を意図的に反転させること
+> （`.claude/rules/03-data-model-diagram-sync.md` の ERD 再生成義務にも注意）、
+> (2) **並行作成（真の race）は検証していない** —— 本テストが踏むのは逐次実行で決定論的に
+> 到達する経路のみ、(3) `applyCoupon` / `removeCoupon` の CAS・二重適用は
+> `cart-checkout.test.ts` S3 の担当で重複させていない、(4) 事前チェックを
+> グローバル検索へ広げる修正が入った場合、シナリオ 2 は P2002 ではなく事前チェック経路で
+> 同じメッセージになる —— **テストは通り続けるが P2002 フォールバックが死蔵コードになる**
+> ので、その修正のレビューでは本テストの緑を根拠にしないこと。
+>
+> 回帰: `bun run test:integration` **71 passed / 9 スイート**・`bun run test` **1984 passed**
+> （不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は既存
+> ベースライン）・`render-html.test.ts` を含む `scripts/coverage-dashboard` **87 passed**。
+> docs 同期は `7ee7baa5`。
+>
+> **010 の実行記録（2026-08-13・`8b83c185`〜`424f1b56`）**
+>
+> **DONE。** `src/lib/shipping-utils.test.ts` を新設し **8 ケース**（quantity ガード 2 /
+> ITEM 2 / WEIGHT 3 / FIXED 1）。Jest は **1976 → 1984 passed / 1979 → 1987 total /
+> 183 → 184 スイート**、ダッシュボード集計 **216 → 217**。Integration（66 / 8 スイート）と
+> E2E（58 tests/browser・計 174）は**不変**。`src/lib/shipping-utils.ts` は **1 行も
+> 変更していない**。**プラン本文からの逸脱なし**（ケース内容・期待値・件数すべて本文どおり）。
+>
+> **Drift check は空。** `git diff --stat f9752c0..HEAD -- src/lib/shipping-utils.ts` に差分なし。
+> プラン抜粋と現行実装の差は JSDoc の追加のみで、ロジックは完全一致だった。
+>
+> **STOP 条件 3 点はいずれも非該当。** 特に「手計算値と関数の出力が食い違えば本体バグとして
+> 報告」については、**8 ケース全てで初回から一致**した —— つまり本テストは現時点でバグを
+> 暴いていない。これは「テストを書いたら壊れているものが見つかった」型の成果ではなく、
+> **今後の変更を捕まえる網を張った**型の成果である（プラン本文の Maintenance notes が言う
+> 「`shipping-utils.ts` の decimal ライブラリ移行を固定値で検証できるようにする」がその用途）。
+>
+> **なぜ直接テストが必要だったか（このプランの核心）**: 本関数は
+> `.claude/steering/tech.md` が「すべての配送料計算はここを通す」と規約化する SSOT でありながら、
+> 実行されるのは統合テストの中だけだった。しかも**そこでは期待値の算出にも
+> `computeShippingTotal` 自身が使われている** —— 自分自身をオラクルにしているため、
+> 関数が一貫して間違っていても永久に緑になる。本テストの期待値は**すべて手計算した定数の
+> ハードコード**で、関数を呼んで導出したものは 1 つも無い。**後続の executor がここを
+> 「DRY でない」と言って関数呼び出しに置き換えると、このプランの価値は丸ごと消える。**
+>
+> **float 誤差の正規化と丸め境界は別のケースとして両方要る。**
+> `0.1 × 0.1 × 3` = `0.030000000000000006` → `0.03` は「誤差を落とせているか」を見るケース、
+> `0.25 × 0.5 × 1` = `0.125` → **`0.13`** は「ちょうど境界でどちらへ倒れるか」を見るケース。
+> 前者だけだと `Math.round`（half-up）が banker's rounding に差し替わっても気づけない
+> —— banker's rounding なら 0.125 は偶数側の **0.12** になる。
+>
+> **識別力を機械的に確認した。** 丸め境界ケースの期待値を 0.12 へ崩すと、**当該テストのみ**が
+> `Expected: 0.12 / Received: 0.13` で落ち、他の 7 件は通ったままであることを実測してから
+> 戻している。
+>
+> **統計の注意（ドリフト是正を混同しないこと）**: `docs/PROGRESS.md` のテスト統計テーブルは
+> **1915 / 180 スイート**のまま据え置かれており、SSOT の `QA_HANDOFF.md`（2026-08-12 時点で
+> 1976 / 183）から **61 テスト・3 スイート**ずれていた。docs 同期コミットで併せて是正したが、
+> **本プランの成果は +8 / スイート +1 のみ**である。
+>
+> **本プランが主張しないこと**: (1) `ShippingFeeMethod` に enum 値が追加された場合の挙動は
+> 未検証 —— 実装は `switch` に default 節を持たず、未知の値では `result` が未代入のまま
+> `Math.round` に渡る（プランの Maintenance notes が指摘。**enum 追加時は実装とテストを
+> 同時に更新すること**）、(2) 統合テストが本関数をオラクルに使っている箇所は**そのまま**
+> （プランの Out of scope）、(3) `Decimal` への移行は行っていない（`shipping-utils.ts` の
+> TODO コメントのまま。本テストはその移行を固定値で検証するための足場）。
+>
+> **追記（2026-08-13・レビュー指摘対応）**: 上の (3) は**実施済み**。`computeShippingTotal`
+> の中間計算を `Prisma.Decimal`（`.add()` / `.mul()`）に置き換え、丸めは
+> `toDecimalPlaces(2, ROUND_HALF_UP)` の 1 回・`toNumber()` は return 境界のみとした
+> （`.claude/steering/tech.md` の金額規約に整合）。TODO コメントは削除。
+> **足場は実際に機能した** —— 既存 8 ケースは期待値を 1 つも変えずに緑のまま通った。
+> 回帰ケースを 1 件追加（**+1 / スイート不変**）: WEIGHT 方式 fee `0.15` × weight `1.45`
+> × qty `10` は 10 進で厳密に `2.175` なので half-up で **2.18** だが、旧実装は **2.17** を
+> 返していた。原因は積ではなく `* 100` のスケーリングで、`Number.EPSILON` は 1 前後の
+> 大きさに合わせた**絶対値**の定数なので 217 のスケールで生じる誤差を補正できない
+> （`(2.175 + EPSILON) * 100` が `217.49999999999997` になり `Math.round` が切り下げる）。
+> **レビューが挙げた例（fee 0.03 × weight 4.35 × qty 10 → 1.31）は識別力が無い**:
+> 旧実装もここでは 1.31 を返す（EPSILON 加算が偶然境界を越えさせる）。
+> 総当たりで実際に食い違う入力を探して差し替えた。
+>
+> 回帰: `bun run test` **1984 passed / 3 skipped tests（1 skipped suite）**・`bunx tsc --noEmit` **0 件**・
+> `bun run lint` **0 errors**（15 warnings は既存ベースライン）。docs 同期は `424f1b56`。
+>
+> **055 の実行記録（2026-08-12・`9704903c`〜`7f09918a`）**
+>
+> **DONE。** `tests/e2e/cart-login-handoff.spec.ts` を新設し **1 テスト**（ゲストでカート構築 →
+> サインイン → 引き継ぎ確認 → Checkout でサーバー保存 → **localStorage を持たない新規
+> コンテキストから /checkout を再取得**の直列検証）。E2E は **57 → 58 tests/browser /
+> 24 → 25 files / 3 ブラウザ計 171 → 174**、E2E メインスペックは 15 → **16**。
+> 実測 chromium **1 passed** / 3 ブラウザ **3 passed**・**flaky 0**（リトライなし）。
+> 回帰 `purchase-flow`（chromium）**5 passed**。`src/` は **1 行も変更していない**。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/user.ts` が baseline
+> `99ede89` から **+1565/−703** と大きく動いていたが、差分はヘルパー抽出
+> （`findCartProductWithVariantAndSize`）と構造化ログの refactor であり、プランが**前提とする
+> 契約**はいずれも健在だった —— 未認証で `Unauthenticated.` を throw（`user.ts:333`）/
+> `summary.tsx` は `saveUserCart` 成功時のみ `router.push("/checkout")`（`:25-36`）/
+> testid `checkout`（`:85`）・`cart-total`（`:77`）。`container.tsx` の −1 行はデバッグ
+> `console.log` の除去。`purchase-flow.spec.ts` は無変更。**「差分があるか」ではなく
+> 「プランが依拠する記述が壊れているか」で判定する**という Drift check の趣旨どおりに扱った。
+>
+> **プラン本文に無い追加が 1 点（前提の機械化）**: 新規コンテキストで signIn した直後に
+> `localStorage.getItem("cart")` が空であることを assert している。プランは step 5 の設計理由を
+> 詳しく書いているが、**「新規コンテキストだから localStorage は空のはず」はコメントで主張する
+> だけでは保証にならない** —— ここが空でなければ、以降の検証は再びクライアント永続を見ている
+> だけになり、`saveUserCart` が壊れていても green になる。前提そのものを assert に落とした。
+>
+> **識別力を機械的に確認した。** step 5 の期待値を存在しない文字列へ崩すと落ちることを実測して
+> から戻している。なお `page.reload()` への「簡略化」がなぜ検証を無意味にするかは
+> プラン本文と spec 内コメントの両方に根拠を残してある（**後続の実行者が最も踏みやすい罠**）。
+>
+> **本プランが主張しないこと**: (1) **金額・数量の厳密検証はしていない** —— `saveUserCart` は
+> plan 005 の correctness 修正対象なので、修正が入っても壊れない「アイテムが存在する」レベルに
+> 留める意図的な設計。**005 の executor は本 spec を回帰テストとして使い、そのうえで検証を
+> 強化すること**、(2) DB の Cart 行を Prisma で直接検証していない（deferred の saveUserCart
+> integration テストの担当領域。責務を分けて重複させない）、(3) /checkout 以降の操作
+> （住所選択・Place Order）は plan 047 / platform-coupon の担当、(4) フルラン（全 spec ×
+> 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は **2026-08-04 の
+> 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> **観測したが本プランでは触っていないもの**: 実行中サーバーログに
+> `Error: Couldn't retrieve country data.` が繰り返し出る。テストは全て green で、
+> 本プランの検証対象（カートの引き継ぎとサーバー保存）とは別系統のため放置した。
+>
+> 統計: Jest **1976 passed / 1979 total / 183 スイート**で**不変**（本プランは E2E のみ）。
+> ダッシュボード集計 **215 → 216**。docs 同期は `7f09918a`。
+>
+> **053 の実行記録（2026-08-12・`45cb7e1b`〜`b2a8f202`）**
+>
+> **DONE。** `tests/e2e/auth-surface.spec.ts` を新設し **3 テスト**（Clerk サインアップ
+> ウィジェット描画 / ヘッダー Register 導線 / サインアウト往復）。E2E は
+> **54 → 57 tests/browser / 23 → 24 files / 3 ブラウザ計 162 → 171**、E2E メインスペックは
+> 14 → **15**。実測 chromium **3 passed** / 3 ブラウザ **9 passed**・**flaky 0**（リトライなし）。
+> `src/` は **1 行も変更していない**。**042 が DONE のため Step 3（サインアウト往復）も実施**した。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `git diff --stat 99ede89..HEAD` の
+> in-scope パスで動いていたのは `tests/e2e/helpers/auth.ts`（+59/−25）のみで、これは plan 042 の
+> signIn 修復＝本プランが**明示的に STOP 免除としている差分**。`user-menu.tsx` と
+> `sign-up/page.tsx` は無変更で Current state の記述と一致した。
+>
+> **プラン本文からの逸脱 2 点（いずれもセレクタ／操作の取り方。プランの意図は保持）**:
+>
+> 1. **`<UserMenu />` はヘッダー内に 2 回描画される。** `header.tsx:32` のモバイル用
+>    （`lg:hidden`）と `:48` のデスクトップ用（`hidden lg:flex`）で、**両方 DOM に存在する**。
+>    どちらが見えるかはビューポート次第なので、プラン記載の素の `getByText("Sign in / Register")`
+>    は strict mode violation になる（実測: `resolved to 2 elements`）。
+>    `filter({ visible: true })` で「今ユーザーが操作できる方」を指すようにした。
+> 2. **hover には `force: true` が必須（自己遮蔽デッドロック）。** ドロップダウンの器は
+>    `absolute -left-20 top-0 … group-hover:block` で、**開くとトリガー自身の上に重なる**。
+>    素の `hover()` は「対象がポインタイベントを受け取れるか」を確認してからマウスを動かすため、
+>    マウスが乗った瞬間に器が覆いかぶさって判定が永久に通らず **30s タイムアウト**する。
+>    **症状の文言と真因がズレる典型例**: ログは "waiting for element to be visible and stable" と
+>    出るが、`boundingBox` を 6 フレーム測ると**完全に静止**していた（推測ではなく実測）。
+>    真因はマウス移動の前後で `document.elementFromPoint` を撮って確定した ——
+>    移動前 `SPAN` / 移動後 `DIV.absolute -left-20 top-0 … group-hover:block`。
+>
+> **プラン Step 3 のサンプルコードは実 DOM では動かなかった（重要／プラン本文は修正済み）。** プランは当初
+> `.cl-userButtonTrigger` を hover 対象に指定しているが、`<UserButton />`（`user-menu.tsx:87`）は
+> **ドロップダウンの内側**にあり、開く前は不可視。つまり「開くために開いた状態が要る」鶏卵で、
+> Playwright は可視性待ちでタイムアウトする。本プランの STOP conditions が代替として挙げている
+> **`.group` 配下のトリガー領域**（`user-menu.tsx:44-51` のアバター `<Image alt="user name">`）を
+> 使った——STOP 条件自身がこの代替を許容しているため報告して止める必要はないと判断した。
+> **この器を開けたい後続テストは全て同じ罠を踏む**ので、spec 内にコメントで根拠を残してある。
+>
+> **識別力を機械的に確認した。** 3 つの assert を個別に崩すと**その test だけ**が落ちることを
+> 実測してから戻している（sign-up の `input[name]` と Register の期待 URL を崩して
+> **2 failed / 1 passed**、`signOut.click()` を外して **1 failed / 2 passed**）。
+>
+> **本プランが主張しないこと**: (1) **フルサインアップ**（確認コード入力 → セッション成立）は
+> 意図的に対象外（findings-17 Rejected 節。将来やるなら Clerk test mode の固定確認コード +
+> `+clerk_test` メールで別 spec として設計する）、(2) サインイン UI の検証は plan 042 の担当で
+> 重複させていない、(3) サインアウト後の**リダイレクト先は assert していない** ——
+> Clerk 既定に委ねられており固定すると設定変更で壊れるため、「ゲスト表示の復帰」だけを見ている、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は
+> **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> **統計の注意**: Jest は **1976 passed / 1979 total / 183 スイート**で**不変**（本プランは E2E
+> のみ）。ダッシュボード集計 **213 → 215** の +2 のうち本プランの成果は 1 件だけで、もう 1 件は
+> 先行コミット `bda2df7a` の `src/app/(store)/browse/page.test.tsx`（未同期分）。
+> 回帰: `layout-chrome`（chromium）**7 passed** / `bunx tsc --noEmit` 0 件 /
+> `bun run lint` 0 errors（15 warnings は既存ベースライン）。docs 同期は `b2a8f202`。
+>
+> **050 の実行記録（2026-08-11・`52ab59ab`〜`a3874701`）**
+>
+> **DONE。** `tests/e2e/admin-store-status.spec.ts` を新設し **1 テスト**（ACTIVE 公開の
+> control → admin UI で BANNED → store ページ非公開 → Active へ復帰）。E2E は
+> **53 → 54 tests/browser / 22 → 23 files / 3 ブラウザ計 159 → 162**。実測 chromium
+> **1 passed** / 3 ブラウザ **3 passed**・**flaky 0**。共有 seed 店舗の無傷は
+> platform-coupon（chromium）passed で確認。`src/` のアプリコードは**無変更**。
+> Drift check の結果 `src/queries/store.ts` は baseline から動いていたが、
+> `getStorePageDetails` の `status: "ACTIVE"` フィルタ + throw、`updateStoreStatus` の
+> privateMetadata 判定はいずれも Current state の記述どおりで **STOP 非該当**。
+>
+> **ADMIN セッションは spec 内で直接 Clerk metadata を設定する方式を採った**
+> （プランが認めていた 2 案のうち後者。`seller-onboarding.spec.ts:148` の前例）。
+> `auth.ts` の `create()` を拡張すると他プランの USER セッションに影響しうるため。
+> **`/dashboard/admin` の認可は DB の `User.role` ではなく Clerk の privateMetadata を
+> 見る**ので、`create({ role: "ADMIN" })` だけでは通らない点は本文どおりだった。
+>
+> **プラン本文からの逸脱 1 点（成功シグナルの取り方・重要）**: プランは手順 3 で
+> 「成功 toast を確認」と書いているが、`store-status-select.tsx` は
+> **エラー時にしか toast を出さない**。さらに素朴に `row.getByText("Banned")` の
+> 可視性を待つと **誤った理由で緑になる** —— ドロップダウンが開いている間は
+> 「**選択肢としての** Banned タグ」が行内に存在するため、「更新が成功した」ではなく
+> 「ドロップダウンが開いた」ことを見てしまう。実際これで server action の完了を待たずに
+> 先へ進み、**DB がまだ ACTIVE のうちに store ページを見に行って落ちた**
+> （推測ではなく `prisma.store.findUnique` を仕込んで実測: DB status=ACTIVE /
+> store ページ 200）。`handleClick` は **成功時にだけ `setIsOpen(false)`** する
+> （失敗時は開いたまま）ので、**「旧ステータスのタグが消えた」= 選択肢ごと閉じた**ことを
+> 完了条件にしている。プランの control 設計と同じ発想 —— 見えることではなく
+> **見えなくなったこと**でしか区別できない状態がある。
+>
+> **フレークを原因ごと除去した（プラン想定外）**。初回の 3 ブラウザ実行は **2 flaky**
+> （firefox `NS_BINDING_ABORTED` / webkit `interrupted by another navigation`）。
+> 原因は sign-in 直後の遅延リダイレクトによる `page.goto` の割り込みで、本リポジトリが
+> **`gotoStable` で既に解いていた既知現象**（`scripts/e2e/run-local.sh` のヘッダーが
+> 明記している）。ただし本 spec は HTTP ステータスを検証するためレスポンスが必要で、
+> `gotoStable` は戻り値を捨てていた。**割り込み処理を spec 側へ複製するより、
+> ヘルパーが `Response | null` を返す方が再試行ロジックの単一の在り処を保てる**と
+> 判断して後者を採った（`52ab59ab`。既存の呼び出し側は戻り値を無視しており後方互換）。
+> 結果 **flaky 0**。
+>
+> **プランの耐久契約はそのまま守っている**: 非公開の assert は
+> `expect(response).not.toBeNull()` → `expect(response!.status()).not.toBe(200)` +
+> 店舗名 `toHaveCount(0)` で、**500 を期待値に固定していない**。
+> **識別力を機械的に確認**: `not.toBe(200)` を `toBe(200)` に崩すと
+> `Expected: 200 / Received: 500` で落ちることを実測してから戻している
+> —— 現挙動が 500 であるという事実はこの実測で記録し、assert では固定しない。
+>
+> **本プランが主張しないこと**: (1) **BANNED 店舗の商品が /browse に出続けるギャップは
+> 未解消**（`getProducts` に store status フィルタが無い。プランの Out of scope どおり
+> 直していない。実装されたら本 spec に「/browse から商品が消える」assert を追加すること）、
+> (2) 非 ACTIVE の store ページが **404 ではなく 500** を返すのはアプリバグのままで、
+> 本 spec は現挙動を記録しつつ**修正後も生き残る契約**だけを assert している、
+> (3) PENDING / DISABLED への遷移は検証していない（BANNED のみ）、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない。
+>
+> **048 の実行記録（2026-08-11・`7db28f6e`〜`c1ad7c64`）**
+>
+> **DONE。** `tests/e2e/engagement.spec.ts` を新設し **3 テスト**（wishlist 追加 → 一覧反映 /
+> フォロー → 一覧反映 → unfollow / レビュー投稿 → 一覧反映）。E2E は **50 → 53 tests/browser /
+> 21 → 22 files / 3 ブラウザ計 150 → 159**、E2E メインスペックは 12 → **13**。
+> 実測 chromium **3 passed** / 3 ブラウザ **9 passed**（リトライなし）。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は**空**で、
+> Current state の記述（wishlist の toast 文言 / StoreCard の Follow・Following 表記 /
+> `star-wrapper-${index}` / `Submit Review`）はすべて実 DOM と一致した。
+> `src/` の変更は**プランの上限どおり `product-card.tsx` の `aria-label` 1 行のみ**。
+>
+> **プランが out of scope としていた `store-card.tsx:30-31` のバグは、実際にこの導線を
+> 壊していた（最重要の発見）。** `if (!user.isSignedIn) router.push('/sign-in')` に `return` が
+> 無い件は、プラン本文では「アプリの潜在バグ」とだけ書かれていた。しかし Clerk の
+> `useUser()` は**ロード完了まで `isSignedIn: false` を返す**ため、ハイドレーション直後に
+> フォローを押すと **(a)** サインイン済みでも `/sign-in` へ push され（そこからサインイン済み
+> として `/` へ跳ね返される）、**(b)** `return` が無いので `followStore` も同時に走るが
+> 画面はもう別ページ、という二重の破綻になる。初回実装では 3 回とも「クリック後 URL が `/`・
+> toast なし・フォロワー 0 のまま」で決定論的に落ちた（推測ではなく `page.on("console")` +
+> URL ログで実測）。**プランは `src/` 変更を 1 行に限っているため修正はせず**、テスト側で
+> `window.Clerk.loaded === true` を待って回避した（`waitForClerkLoaded`）。
+> **本体を修正する際はこのヘルパーの必要性を再評価すること**（修正後は不要になる可能性が高い）。
+>
+> **実 DOM とプラン記述の差 2 点（いずれもセレクタの取り方）**:
+>
+> 1. **商品カードのアクションボタンは testid の外**。`data-testid="product-card-<slug>"` は
+>    `<Link>` に付いており、ボタンは `group-hover:block` のオーバーレイ＝ Link の兄弟。
+>    plan 045 が確立した `page.locator("div.group").filter({ has: cardLink })` でスコープした。
+> 2. **`placeholder="Select size"` は 2 要素に一致する**。size の Select だけでなく
+>    **quantity の `<input type="number">`** にも同じプレースホルダが付いている
+>    （`review-details.tsx:375` —— おそらくコピペ由来のラベル誤り）。
+>    `:not([type="number"])` で除外している。
+>
+> **既存 component テストのロケータを是正した（プラン想定外の副作用）**。
+> `product-card.test.tsx` は wishlist ボタンを「**aria-label もテキストも持たない**唯一の
+> ボタン」という**不在**で識別しており、Step 1 でアクセシブル名を与えた瞬間に 2 件 fail した。
+> 肯定形（`getByRole("button", { name: "Add to wishlist" })`）へ直している ——
+> **不在で識別するロケータは、対象が改善されると壊れる**。
+>
+> **識別力を機械的に確認した。** フォロワー数の期待を +1 → +2 に、レビュー本文の期待を
+> 存在しない文字列に崩すと**その 2 件だけが落ち**、wishlist は通ったままであることを
+> 実測してから戻している。
+>
+> **本プランが主張しないこと**: (1) wishlist の**解除**（一覧からの削除 UI）は未検証、
+> (2) レビューの**編集・削除**および画像アップロード（Cloudinary）は対象外、
+> (3) wishlist / following の**ページング**は未検証（plan 049 と統合判断）、
+> (4) フルラン（全 spec × 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は
+> **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> **046 の実行記録（2026-08-11・`f10a5b89`〜`4adb0b3b`）**
+>
+> **DONE。** skip の真因はプラン本文のとおり「テストの不備ではなく **/browse に
+> ページネーション UI が存在しない**」ことだった。`getProducts` は `page` / `pageSize` /
+> `totalPages` を実装済みなのに browse ページが `page` searchParam を読んでおらず、
+> **商品が 11 件以上あっても先頭 10 件にしか到達できない dormant バグ**が生きていた。
+> Drift check（`git diff --stat 6ad7b05..HEAD` の in-scope 全パス）は `browse/page.tsx` −2 /
+> `sort.tsx`（052 の a11y 修正）/ `seed/*`（045 の OfferTag）で**動いていたが STOP 非該当** ——
+> プランが前提とする Current state（`page` 未読み取り・`getProducts` は 4 引数・共有
+> `Pagination` の props が `{ page, totalPages, setPage }`）はいずれも健在だった。
+> 045 の申し送り「046 は 045 の seed diff を取り込むこと」は 045 がマージ済みのため自動解消。
+>
+> **E2E の件数は増えない。** `--list` は skip も数えるため総数は **50 tests/browser・
+> 3 ブラウザ計 150 のまま**で、本プランで変わったのは **skip の 0 件化**である
+> （search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**・リトライなし）。
+> 統計行に「+1」と書かないこと。
+>
+> **プラン本文からの逸脱 1 点**: カード件数のセレクタはプラン記載の
+> `[data-testid^="product-card-"]` ではなく、seed slug まで含めた
+> `[data-testid^="product-card-e2e-page-item-"]` を使う。前者は**カード内の価格**
+> `data-testid="product-card-price"`（`product-page/product-info/product-price.tsx:112`）にも
+> 一致し、10 件のはずが 20 件と数えられる。**plan 052 が /browse で踏んだのと同じクラスの罠**
+> （あちらは `.first()` がカードを掴めるかが描画順依存になる形で顕在化した）。
+>
+> **識別力を機械的に確認した。** ラッパーの `goTo` を「既存クエリを保持しない」実装へ
+> 一時的に崩すと、**このテストだけが** `category` 保持の assert で落ちる
+> （`Received "…/browse?page=2"`）ことを実測してから戻している。件数 10 → 2 は
+> **category を落とした実装でも偶然一致する**ため、この assert が無ければ検証は空振りになる
+> —— プラン本文が Done criteria に「`page=2` だけの assert では不十分」と明記していた根拠が
+> そのまま実証された形。
+>
+> **実装上の判断 2 点（プラン本文に無い）**:
+>
+> 1. **`FiltersQueryType.page` は追加したが `ProductFilters` へは渡していない。**
+>    `FiltersHeader` は `Object.entries(queries)` を回して**キーごとにフィルタチップを描画**する
+>    （`filters/header.tsx:87`）ため、`page` を混ぜるとページ番号がチップとして表示され
+>    Filter 件数も +1 される。オプショナルにしたのは、必須にすると既存の object literal 全箇所が
+>    型エラーになり修正の波及がスコープを超えるため。
+> 2. **seed は専用カテゴリ `E2E Pagination` に隔離した**（プランの指示どおり）。既存
+>    `E2E Category` に 12 件足すと search-filter のカテゴリフィルタ assert と purchase-flow の
+>    件数前提が壊れる。`bun run seed:e2e` の 2 回連続 exit 0（冪等）を実測済み。
+>
+> **本プランが主張しないこと**: (1) ソートとページングの**組合せ**は検証していない
+> （プランの Out of scope。ただし `BrowsePagination` がクエリを保持する設計が前提になるので、
+> ラッパーを迂回して `<Link href>` 直書きに変えるとソート維持が壊れる）、(2) 共有
+> `Pagination` は `totalPages` 分の番号ボタンを全描画する実装のままで、数百ページ規模の
+> 省略表示（`…`）は入れていない、(3) フルラン（全 spec × 3 ブラウザ）は再取得していない ——
+> E2E 全体の最新フルラン実測は **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped**
+> のままである。
+>
+> **統計の注意（ドリフト是正を混同しないこと）**: Jest **1915 → 1928（+13）**と
+> ダッシュボードのファイル数 **209 → 210** は**本プランの成果ではない**。いずれも先行コミット
+> `a9083b17`〜`7064f9f3`（Prisma クライアントの遅延初期化 Proxy と初期化エラー再 throw）の
+> 未同期分で、本セッションで併せて是正した。回帰: purchase-flow + layout-chrome（chromium）
+> **12 passed** / `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors（15 warnings は既存ベースライン）。
+>
 > **052 の実行記録（2026-08-09・`df4d4f7e`〜`f685271d`）**
 >
 > **DONE。** `tests/e2e/a11y/` に `browse` / `product` / `cart` を新設（各 1 テスト）。
@@ -852,6 +1314,18 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 
 Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates for a future round or `execute`/added plans:
 
+- **CORRECTNESS-06（新規・2026-08-11 起票 / plan 048 の実行中に実測）**
+  `src/components/store/cards/store-card.tsx:30-31` の
+  `if (!user.isSignedIn) router.push('/sign-in')` に **`return` が無い**。加えて Clerk の
+  `useUser()` は**ロード完了まで `isSignedIn: false` を返す**ため、
+  **サインイン済みのユーザーがハイドレーション直後にフォローを押すと、`/sign-in` へ push
+  され（サインイン済みなので `/` へ跳ね返され）フォローも成立しない**。
+  plan 048 の初回実装で 3 回とも決定論的に再現した（クリック後 URL が `/`・toast なし・
+  フォロワー 0 のまま）。最小修正は `if (!isLoaded) return;` の追加と
+  `router.push` 後の `return`。**修正したら `tests/e2e/engagement.spec.ts` の
+  `waitForClerkLoaded` が不要になる可能性が高い**ので併せて見直すこと。
+  同じ形（`isSignedIn` だけを見て早期に分岐する client component）が他にも無いか
+  横断確認する価値がある。
 - **DEPS-04** Prisma 5.22 → 6.x major upgrade (spike; full-text-search + Accelerate revalidation).
 - **PERF-01** cart/checkout per-item N+1 (batch product/shipping/country lookups) — MED risk, money-critical.
 - **PERF-05** cache stable reference data (categories/countries/offer tags) via `unstable_cache`/Accelerate.

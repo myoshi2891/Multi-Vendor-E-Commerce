@@ -1,14 +1,14 @@
-import { ShippingFeeMethod } from "@prisma/client";
+import { Prisma, ShippingFeeMethod } from "@prisma/client";
 
 /**
- * 配送料を計算する
+ * Calculates the shipping charge for the selected method and quantity.
  *
- * @param shippingFeeMethod - 配送料計算方式 ("ITEM" | "WEIGHT" | "FIXED")
- * @param shippingFee - 基本配送料
- * @param extraShippingFee - 追加配送料（ITEM 方式で使用）
- * @param weight - 商品重量（WEIGHT 方式で使用）
- * @param quantity - 商品数量
- * @returns 計算された配送料（2桁に正規化）
+ * @param shippingFeeMethod - The calculation method: `"ITEM"`, `"WEIGHT"`, or `"FIXED"`.
+ * @param shippingFee - The base shipping charge.
+ * @param extraShippingFee - The additional charge for each item after the first when using `"ITEM"`.
+ * @param weight - The item weight when using `"WEIGHT"`.
+ * @param quantity - The number of items.
+ * @returns The shipping charge rounded to two decimal places using half-up rounding, or `0` when `quantity` is zero or less.
  */
 export function computeShippingTotal(
 	shippingFeeMethod: ShippingFeeMethod,
@@ -20,23 +20,24 @@ export function computeShippingTotal(
 	// 早期ガード: quantity が 0 以下の場合は送料 0
 	if (quantity <= 0) return 0;
 
-	let result: number;
+	const fee = new Prisma.Decimal(shippingFee);
+	let result: Prisma.Decimal;
 
 	switch (shippingFeeMethod) {
 		case "ITEM": {
 			const qty = quantity > 1 ? quantity - 1 : 0;
-			result = shippingFee + qty * extraShippingFee;
+			result = fee.add(new Prisma.Decimal(extraShippingFee).mul(qty));
 			break;
 		}
 		case "WEIGHT":
-			result = shippingFee * weight * quantity;
+			result = fee.mul(weight).mul(quantity);
 			break;
 		case "FIXED":
-			result = shippingFee;
+			result = fee;
 			break;
 	}
 
-	// 浮動小数点誤差を防ぐため 2 桁に正規化（EPSILON 補正）
-	// TODO: decimal.js などの正確な decimal ライブラリへの移行を検討
-	return Math.round((result + Number.EPSILON) * 100) / 100;
+	// 丸めはここ 1 回だけ。half-up は旧実装 (Math.round) の挙動を維持する
+	// —— banker's rounding に変えると .xx5 が偶数側へ倒れ、既存の期待値が動く。
+	return result.toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP).toNumber();
 }

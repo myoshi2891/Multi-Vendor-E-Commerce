@@ -885,6 +885,68 @@ describe("getProducts", () => {
             });
         });
 
+        // ==================================================
+        // 未マッチのフィルタ（存在しない URL）
+        // ==================================================
+        // 見つからないフィルタを黙って捨てると「該当なし」が「全件表示」に化ける。
+        // 実際に E2E のシード欠落時、/browse?category=<存在しない URL> が全カタログを描画した。
+        describe("存在しない URL を指定した場合は 0 件を返す", () => {
+            it.each([
+                ["store", { store: "missing-store" }, "missing-store"],
+                [
+                    "category",
+                    { category: "missing-category" },
+                    "missing-category",
+                ],
+                [
+                    "subCategory",
+                    { subCategory: "missing-subcategory" },
+                    "missing-subcategory",
+                ],
+                ["offerTag", { offer: "missing-offer" }, "missing-offer"],
+            ] as const)(
+                "%s が見つからないとき空の結果を返し、商品を取得しない",
+                async (model, filters, expectedUrl) => {
+                    // Arrange — 対象モデルの findUnique だけが null を返す
+                    mockDb[model].findUnique.mockResolvedValue(null);
+
+                    // Act
+                    const result = await getProducts(filters);
+
+                    // Assert — 対象モデルを URL で引いたうえで未マッチと判定している
+                    // （別モデルの解決結果や前ケースのモック実装に依存しない）
+                    expect(mockDb[model].findUnique).toHaveBeenCalledWith({
+                        where: { url: expectedUrl },
+                        select: { id: true },
+                    });
+
+                    // Assert — フィルタを捨てて全件を返してはならない
+                    expect(result.products).toEqual([]);
+                    expect(result.totalCount).toBe(0);
+                    expect(result.totalPages).toBe(0);
+                    expect(mockDb.product.findMany).not.toHaveBeenCalled();
+                    expect(mockDb.product.count).not.toHaveBeenCalled();
+                }
+            );
+
+            it("currentPage / pageSize は要求値を保つ", async () => {
+                // Arrange
+                mockDb.category.findUnique.mockResolvedValue(null);
+
+                // Act
+                const result = await getProducts(
+                    { category: "missing-category" },
+                    "",
+                    3,
+                    20
+                );
+
+                // Assert
+                expect(result.currentPage).toBe(3);
+                expect(result.pageSize).toBe(20);
+            });
+        });
+
         it("価格範囲でフィルタする", async () => {
             await getProducts({ minPrice: 10, maxPrice: 100 });
 

@@ -412,6 +412,14 @@ export type FiltersQueryType = {
     minPrice: string; // Added minPrice
     maxPrice: string; // Added maxPrice
     color: string | string[];
+    /**
+     * ページ番号（1 始まり）。URL に無い場合があるためオプショナル。
+     * `?page=1&page=2` のように**同名パラメータが複数付くと Next.js は配列を渡す**ため
+     * `string[]` も許容する（`/browse` 側で先頭要素を採って正規化する）。
+     * フィルタチップを描画する `FiltersHeader` にはページ番号を渡さないこと
+     * （`Object.entries(queries)` を回すため、混ぜるとページ番号がチップとして表示される）。
+     */
+    page?: string | string[];
 };
 
 export type CategoryWithSubsType = Category & {

@@ -6,6 +6,9 @@ import {
     censorName,
     getTimeUntil,
     getStockStatus,
+    normalizePositiveIntParam,
+    normalizePageParam,
+    MAX_PAGE,
 } from "./utils";
 import { createMockCartProduct } from "@/config/test-fixtures";
 
@@ -52,6 +55,95 @@ const createValidCartProduct = (
         deliveryTimeMax: 7,
         ...overrides,
     });
+
+// ==================================================
+// normalizePositiveIntParam
+// ==================================================
+describe("normalizePositiveIntParam", () => {
+    it.each([
+        ["3", 3],
+        ["1", 1],
+        [3, 3],
+    ])("正の整数 %p はそのまま %i を返す", (raw, expected) => {
+        // Arrange / Act
+        const actual = normalizePositiveIntParam(raw);
+
+        // Assert
+        expect(actual).toBe(expected);
+    });
+
+    it.each([
+        ["未定義", undefined],
+        ["空文字", ""],
+        ["非数値", "abc"],
+        ["ゼロ", "0"],
+        ["負値", "-5"],
+        ["1 未満の小数", "0.9"],
+        ["NaN", NaN],
+        ["Infinity", Infinity],
+        ["-Infinity", -Infinity],
+        ["null", null],
+    ])("%s (%p) は fallback へ落ちる", (_label, raw) => {
+        // Arrange / Act / Assert
+        expect(normalizePositiveIntParam(raw)).toBe(1);
+    });
+
+    it("小数は切り捨てる（1.9 → 1）", () => {
+        expect(normalizePositiveIntParam("1.9")).toBe(1);
+        expect(normalizePositiveIntParam("2.9")).toBe(2);
+    });
+
+    it("配列は先頭要素を採る（?page=2&page=5 → 2）", () => {
+        expect(normalizePositiveIntParam(["2", "5"])).toBe(2);
+    });
+
+    it("fallback を指定するとその値へ落ちる", () => {
+        expect(normalizePositiveIntParam("abc", { fallback: 20 })).toBe(20);
+    });
+
+    it("max 指定時は上限でクランプする", () => {
+        expect(normalizePositiveIntParam("500", { max: 50 })).toBe(50);
+        expect(normalizePositiveIntParam("10", { max: 50 })).toBe(10);
+    });
+
+    it("max: 0 は falsy でも上限として機能する", () => {
+        // `max ? ... : ...` 実装だと 0 が無視されて 1 が返ってしまう回帰ガード
+        expect(normalizePositiveIntParam("5", { max: 0 })).toBe(0);
+    });
+
+    it("max 未指定なら上限クランプしない", () => {
+        expect(normalizePositiveIntParam("999999")).toBe(999999);
+    });
+});
+
+// ==================================================
+// normalizePageParam
+// ==================================================
+describe("normalizePageParam", () => {
+    it("正常なページ番号はそのまま返す", () => {
+        expect(normalizePageParam("3")).toBe(3);
+    });
+
+    it.each([undefined, "abc", "0", "-1", Infinity, NaN])(
+        "不正な値 %p は 1 ページ目へフォールバックする",
+        (raw) => {
+            expect(normalizePageParam(raw)).toBe(1);
+        }
+    );
+
+    it("MAX_PAGE を超える値はクランプする（skip 暴走の防止）", () => {
+        // Number.isSafeInteger でも通過してしまう 1e15 と、通過しない 1e21 の両方を確認
+        expect(normalizePageParam("1e15")).toBe(MAX_PAGE);
+        expect(normalizePageParam("1e21")).toBe(MAX_PAGE);
+        expect(normalizePageParam(String(Number.MAX_SAFE_INTEGER))).toBe(
+            MAX_PAGE
+        );
+    });
+
+    it("max を明示指定すればその上限が優先される", () => {
+        expect(normalizePageParam("500", 100)).toBe(100);
+    });
+});
 
 // ==================================================
 // getGridClassName

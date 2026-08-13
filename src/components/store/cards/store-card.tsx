@@ -25,10 +25,17 @@ const StoreCard: FC<Props> = ({ store }) => {
     const [following, setFollowing] = useState<boolean>(isUserFollowingStore)
     const [storeFollowersCount, setStoreFollowersCount] =
         useState<number>(followersCount)
-    const user = useUser()
+    const { isLoaded, isSignedIn } = useUser()
     const router = useRouter()
     const handleStoreFollow = async () => {
-        if (!user.isSignedIn) router.push('/sign-in')
+        // Clerk のロード完了前は `isSignedIn` が false を返すため、先に `isLoaded` を見る。
+        // これを省くとハイドレーション直後のクリックでサインイン済みユーザーまで
+        // `/sign-in` へ飛ばされ、フォローも成立しない。
+        if (!isLoaded) return
+        if (!isSignedIn) {
+            router.push('/sign-in')
+            return // push は非同期。return しないと未認証のまま followStore が走る
+        }
         try {
             const res = await followStore(id)
             setFollowing(res)
@@ -79,9 +86,14 @@ const StoreCard: FC<Props> = ({ store }) => {
                     </div>
                 </div>
                 <div className="flex">
-                    <div
+                    <button
+                        type="button"
+                        // Clerk のロード完了までは押せないようにする（ハンドラ側のガードだけだと
+                        // 押下は成立するのに何も起きない「無反応」状態に見えるため）
+                        disabled={!isLoaded}
+                        aria-pressed={following}
                         className={cn(
-                            'mx-2 flex h-9 cursor-pointer items-center rounded-full border border-black px-4 text-base font-bold hover:bg-black hover:text-white',
+                            'mx-2 flex h-9 cursor-pointer items-center rounded-full border border-black px-4 text-base font-bold hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50',
                             {
                                 'bg-black text-white': following,
                             }
@@ -94,7 +106,7 @@ const StoreCard: FC<Props> = ({ store }) => {
                             <Plus className="me-1 w-4" />
                         )}
                         <span>{following ? 'Following' : 'Follow'}</span>
-                    </div>
+                    </button>
                     <div className="mx-2 flex h-9 cursor-pointer items-center rounded-full border border-black bg-black px-4 text-base font-bold text-white">
                         <MessageSquareMore className="me-1 w-4" />
                         <span>Message</span>

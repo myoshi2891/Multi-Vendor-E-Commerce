@@ -8,6 +8,12 @@ interface HasToNumber {
     toNumber: () => number;
 }
 
+/**
+ * Determines whether a value exposes a callable `toNumber` method.
+ *
+ * @param value - The value to inspect
+ * @returns `true` if the value has a callable `toNumber` method, `false` otherwise.
+ */
 function hasToNumber(value: unknown): value is HasToNumber {
     return (
         value !== null &&
@@ -18,9 +24,10 @@ function hasToNumber(value: unknown): value is HasToNumber {
 }
 
 /**
- * Safely parses a potentially Decimal/BigNumber-like object or primitive into a number.
- * @param value The value to parse (can be number, string, Prisma.Decimal, etc.)
- * @returns The converted number
+ * Converts a value to a JavaScript number.
+ *
+ * @param value - The value to convert, including objects with a callable `toNumber` method
+ * @returns The converted number, or `0` when conversion with `Number` produces an invalid result
  */
 export function toNumberSafe(value: unknown): number {
     if (typeof value === "number") return value;
@@ -30,6 +37,46 @@ export function toNumberSafe(value: unknown): number {
     const num = Number(value);
     return isNaN(num) ? 0 : num;
 }
+
+/**
+ * ページ番号の上限。`skip = (page - 1) * pageSize` の暴走と DB の巨大 OFFSET を防ぐ。
+ * Prisma の `skip` は Int（32bit）なので、上限が無いと `?page=1e21` のような
+ * 入力がそのまま `skip` に到達して実行時エラーになる。
+ */
+export const MAX_PAGE = 10_000;
+
+/**
+ * Normalizes a raw URL parameter value to a positive integer.
+ *
+ * Array inputs use their first element. Invalid values use the fallback, decimal values are rounded down, and a specified maximum limits the result.
+ *
+ * @param raw - The raw URL parameter value.
+ * @param options.fallback - The value to use when normalization fails; defaults to `1`.
+ * @param options.max - The optional maximum allowed value.
+ * @returns The normalized positive integer.
+ */
+export function normalizePositiveIntParam(
+    raw: unknown,
+    { fallback = 1, max }: { fallback?: number; max?: number } = {}
+): number {
+    const num = Number(Array.isArray(raw) ? raw[0] : raw);
+    const normalized =
+        Number.isFinite(num) && num >= 1 ? Math.floor(num) : fallback;
+    // `max ? ...` だと max === 0 を falsy として取りこぼすため undefined 判定にする。
+    return max !== undefined ? Math.min(normalized, max) : normalized;
+}
+
+/**
+ * ページ番号専用のショートハンド（下限 1・上限 `MAX_PAGE`）。
+ *
+ * @param raw - URL から読んだ生のページ値
+ * @param max - 上限（既定 `MAX_PAGE`）
+ * @returns 1 以上 `max` 以下の整数
+ */
+export const normalizePageParam = (
+    raw: unknown,
+    max: number = MAX_PAGE
+): number => normalizePositiveIntParam(raw, { fallback: 1, max });
 
 /**
  * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.

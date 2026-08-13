@@ -141,6 +141,27 @@ const BASE_E2E_SEED = {
     name: "E2E Offer",
     url: "e2e-offer",
   },
+  // /browse ページネーション E2E 用（plan 046）。
+  // 既存 category には絶対に足さないこと —— search-filter のカテゴリフィルタ assert と
+  // purchase-flow の件数前提を壊すため、専用カテゴリに隔離して 2 ページ構成を決定的にする。
+  // count は /browse の pageSize（getProducts の既定 10）を上回る必要がある。
+  paginationCategory: {
+    name: "E2E Pagination",
+    url: "e2e-pagination",
+    image: "/assets/images/no_image.png",
+  },
+  paginationSubCategory: {
+    name: "E2E Pagination Subcategory",
+    url: "e2e-pagination-subcategory",
+    image: "/assets/images/no_image.png",
+  },
+  paginationProducts: {
+    count: 12,
+    namePrefix: "E2E Page Item",
+    slugPrefix: "e2e-page-item",
+    variantSlugPrefix: "e2e-page-variant",
+    skuPrefix: "E2E-SKU-PAGE",
+  },
 } as const;
 
 const normalizeSeedSegment = (value: string) =>
@@ -230,6 +251,44 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
   }
   const primaryVariant = variants[0];
 
+  // ページネーション用の商品群。slug / sku はグローバル unique のため suffix を付ける。
+  // 表示名は 2 桁ゼロ埋めで並び順が字句順と一致するようにしておく（デバッグ時の読みやすさ）。
+  const paginationProducts = Array.from(
+    { length: BASE_E2E_SEED.paginationProducts.count },
+    (_, i) => {
+      const index = String(i + 1).padStart(2, "0");
+      return {
+        name: `${BASE_E2E_SEED.paginationProducts.namePrefix} ${index}`,
+        slug: withSuffix(
+          `${BASE_E2E_SEED.paginationProducts.slugPrefix}-${index}`,
+          suffix
+        ),
+        description: `Seeded product #${index} for /browse pagination E2E.`,
+        brand: "E2E Brand",
+        variant: {
+          name: "Default",
+          slug: withSuffix(
+            `${BASE_E2E_SEED.paginationProducts.variantSlugPrefix}-${index}`,
+            suffix
+          ),
+          sku: withSuffix(
+            `${BASE_E2E_SEED.paginationProducts.skuPrefix}-${index}`,
+            uppercaseSuffix
+          ),
+          description: "Default variant for pagination E2E.",
+          image: "/assets/images/no_image.png",
+          weight: 1,
+          size: { size: "M", quantity: 10, price: 19, discount: 0 },
+          variantImage: {
+            url: "/assets/images/no_image.png",
+            alt: `E2E pagination product image ${index}`,
+          },
+          color: { name: "Black" },
+        },
+      };
+    }
+  );
+
   return {
     country: {
       name: withSuffix(
@@ -311,6 +370,15 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
       ...BASE_E2E_SEED.offerTag,
       url: withSuffix(BASE_E2E_SEED.offerTag.url, suffix),
     },
+    paginationCategory: {
+      ...BASE_E2E_SEED.paginationCategory,
+      url: withSuffix(BASE_E2E_SEED.paginationCategory.url, suffix),
+    },
+    paginationSubCategory: {
+      ...BASE_E2E_SEED.paginationSubCategory,
+      url: withSuffix(BASE_E2E_SEED.paginationSubCategory.url, suffix),
+    },
+    paginationProducts,
   };
 };
 

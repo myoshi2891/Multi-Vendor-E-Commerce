@@ -196,6 +196,9 @@ export const waitForPostSignInSettle = async (page: Page) => {
  * @param retries 一過性失敗（割り込み / タイムアウト）の最大リトライ回数（既定 2）
  * @param timeoutMs per-goto タイムアウト（既定 30000）。ハング時に全テスト予算を
  *   食い潰さず fail-fast → 再試行できるようにする。
+ * @returns `page.goto` の戻り値（`Response | null`）。HTTP ステータスを検証したい
+ *   呼び出し側が、割り込みリトライを自前で再実装せずに済むように返す
+ *   （既存の呼び出し側は戻り値を無視しており後方互換）。
  */
 export const gotoStable = async (
     page: Page,
@@ -215,11 +218,10 @@ export const gotoStable = async (
             // waitUntil:"domcontentloaded" を明示する。既定の "load" は
             // Cloudinary 画像など継続的なリソース読み込みで発火せず、goto が
             // テストタイムアウトまでハングしうる（WebKit/Chromium で観測）。
-            await page.goto(url, {
+            return await page.goto(url, {
                 waitUntil: "domcontentloaded",
                 timeout: timeoutMs,
             });
-            return;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
             const transient = transientSignatures.some((sig) =>

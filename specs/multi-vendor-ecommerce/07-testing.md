@@ -12,7 +12,61 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1915 passed / 1918 total across 180 suites (3 skipped), as of 2026-08-10.
+- 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
+  Review-fix pass (+3, no new suite). `src/queries/review.test.ts` gained 2 cases pinning
+  that the review write and the aggregation update are wired into a single `$transaction`
+  and that the `Product` row lock is taken *before* the write — these, not the integration
+  suite, are the deterministic guard against the aggregation lost update.
+  `src/lib/shipping-utils.test.ts` gained 1 regression case for the `Prisma.Decimal`
+  migration: WEIGHT `0.15 × 1.45 × 10` is exactly 2.175 in decimal, so half-up gives 2.18,
+  but the old `Math.round((x + EPSILON) * 100) / 100` returned 2.17 — `Number.EPSILON` is
+  an absolute constant sized for magnitudes near 1 and cannot correct error introduced by
+  the `* 100` scaling.
+- Earlier entry: 1984 passed / 1987 total across 184 suites (3 skipped), as of 2026-08-13.
+  `computeShippingTotal` — the repo's single source of truth for shipping-fee math — had no
+  direct unit test; it was only exercised inside integration tests that computed the expected
+  value with the same function, making a self-consistent bug invisible. `src/lib/shipping-utils.test.ts`
+  pins all three methods and the edge cases with hand-computed constants (+8 tests, +1 suite).
+- Earlier entry: 1976 passed / 1979 total across 183 suites (3 skipped), as of 2026-08-12.
+  `getProducts` used to drop a `store` / `category` / `subCategory` / `offer` filter whose URL
+  resolved to no row, turning "no such category" into "show the whole catalog"; it now returns
+  an empty result (+5 tests, no new suite). This also removes a false-green path in
+  `tests/e2e/search-filter.spec.ts`, which rendered the full catalog whenever the E2E seed was
+  missing.
+- Earlier entry: 1970 passed / 1973 total across 183 suites (3 skipped), as of 2026-08-12.
+  URL numeric-param normalization was consolidated into `normalizePageParam` /
+  `normalizePositiveIntParam` (`src/lib/utils.ts`) with a mandatory `MAX_PAGE` clamp, adding
+  +28 tests to `src/lib/utils.test.ts` and a new suite
+  `src/app/(store)/browse/page.test.tsx` (+8 tests, +1 suite) covering the canonical redirect
+  for out-of-range pages. The clamp — not a stricter integer check — is what protects the
+  query layer: `?page=1e15` passes `Number.isSafeInteger` yet still yields
+  `skip = (page - 1) * pageSize = 1e16`, which exceeds Prisma's 32-bit `Int`.
+- Earlier entry: 1934 passed / 1937 total across 182 suites (3 skipped), as of 2026-08-11.
+  SonarCloud PR #173 reported 0.0% coverage on new code for
+  `src/components/store/browse-page/browse-pagination.tsx` (11 uncovered lines, 2 uncovered
+  conditions); `tests/component/store/browse-pagination.test.tsx` closes it with +6 tests
+  (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
+  pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
+  Previous/Next, so both call shapes are needed to cover the branch.
+- Playwright E2E: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
+  Plan 055 added `tests/e2e/cart-login-handoff.spec.ts` (+1 test/browser, +1 file): a cart built
+  as a guest survives sign-in and is persisted server-side by the Checkout button. The load-bearing
+  detail is that step 5 reopens `/checkout` in a **fresh `browser.newContext()`**, not via
+  `page.reload()` — a reload keeps the same localStorage, so Zustand rehydrates from the client and
+  the test would stay green even if `saveUserCart` wrote nothing to the database. The spec also
+  asserts that `localStorage.getItem("cart")` is empty in that fresh context, so the premise is
+  pinned by a check rather than by a comment. Amounts are deliberately not asserted: `saveUserCart`
+  is plan 005's correctness target, so the assertions stay at "the item is present".
+  Plan 053 added `tests/e2e/auth-surface.spec.ts` (+3 tests/browser, +1 file): the Clerk sign-up
+  widget renders, the header Register link reaches `/sign-up`, and sign-out returns the guest
+  chrome. Only the sign-out test needs `CLERK_SECRET_KEY`; the two guest tests always run. Two
+  locator facts generalize beyond this spec: `<UserMenu />` is rendered **twice** in the header
+  (mobile `lg:hidden` and desktop `hidden lg:flex`), so a text match alone is a strict-mode
+  violation — filter on `visible: true`; and opening the hover dropdown requires
+  `hover({ force: true })`, because the panel is `absolute … top-0` and covers its own trigger
+  once open, so Playwright's pointer-event check never passes (measured with
+  `document.elementFromPoint` before and after moving the mouse). The failure surfaces as
+  "waiting for element to be visible and stable" even though the layout is provably static.
   The CodeRabbit review round added 7 tests (`tests/component/store/categories-menu.test.tsx`
   +6, `product-sort.test.tsx` +1) with no new suites; the remaining delta from the previous
   entry (1895 / 178 suites) is the unsynced count of those two suites, added in `879763a0`.
@@ -455,7 +509,7 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 66 integration tests across 8 suites
+- 78 integration tests across 10 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -463,7 +517,41 @@
   `tests/integration/search-products.test.ts` 9 +
   `tests/integration/product-deletion.test.ts` 4 +
   `tests/integration/shipping-address-default.test.ts` 6 +
-  `tests/integration/user-deletion-webhook.test.ts` 7) as of 2026-08-09,
+  `tests/integration/user-deletion-webhook.test.ts` 7 +
+  `tests/integration/coupon-code-uniqueness.test.ts` 5 +
+  `tests/integration/review-aggregation.test.ts` 7) as of 2026-08-13,
+  measured 78/78 pass.
+  Plan 034 added the review-aggregation suite (71 → 76; suites 9 → 10). A product's
+  `rating` / `numReviews` are recomputed by re-reading every review on each submission,
+  and the fully mocked unit tests can only pin the call structure — whether a repeat
+  submission by the same user becomes an update rather than a create, and whether the
+  average is actually derived from stored rows, are unobservable without a real database.
+  The suite also covers the User fallback upsert (on-demand DB user creation when the
+  Clerk webhook missed a sync). The aggregation used to run as three separate round trips
+  (create → findMany → `product.update`), which could lose an update under concurrent
+  submissions; it is now a single `$transaction` serialized by a `SELECT … FOR UPDATE` on
+  the `Product` row, taken *before* the review write. Two concurrency scenarios were added
+  (+2): same-user double submit must not inflate the row count, and contending submissions
+  from distinct users must all succeed without deadlock or tx timeout. Note what each
+  scenario can actually prove — the multi-user one **stays green against the pre-fix
+  implementation** (identical call sequences stay phase-locked on a uniform-latency local
+  DB, so every caller reads the correct count by accident), so the deterministic guard for
+  the lost update is the wiring assertion in `src/queries/review.test.ts`
+  ("集計の原子性"), not the integration test.
+  Plan 041 added the coupon-code global-uniqueness suite (66 → 71; suites 8 → 9).
+  `Coupon.code` is globally unique, but the seller-path pre-check only searches within the
+  caller's own store — so a code already taken by another store or by a PLATFORM coupon
+  reaches the real unique constraint. No concurrency is needed to open that gap: once the
+  colliding row is committed, the pre-check passes and the *next* insert fails on the
+  constraint every time. Two stores concurrently creating an as-yet-unused "SUMMER10" is a
+  different case — one insert wins and the other gets P2002 — and the suite does not cover
+  it (every scenario seeds the colliding row up front and then calls once). It asserts only
+  externally observable
+  invariants (rejected + existing row untouched + row count unchanged) because the
+  pre-check and the P2002 fallback throw the *same* message, so a test cannot tell the
+  paths apart from the message — and a test-side re-query would keep passing even if the
+  P2002 path stopped executing entirely.
+  Earlier entry: 66 integration tests across 8 suites as of 2026-08-09,
   measured 66/66 pass. Plan 064 fixed TESTS-21 and turned the shipping-address
   characterization into a regression guard (overall 57 / 7 suites → 64 / 8 → 66 / 8; plan 064's
   own step is 64 → 66 with suites unchanged at 8) — see below.
@@ -762,17 +850,25 @@ describe("ProductShippingFee", () => {
 The centralized `computeShippingTotal` function ensures consistent precision:
 
 ```typescript
-// src/lib/__tests__/shipping-utils.test.ts
+// src/lib/shipping-utils.test.ts
 describe("computeShippingTotal", () => {
-  it("applies floating-point correction for WEIGHT method", () => {
-    const result = computeShippingTotal("WEIGHT", 2.5, 0, 1.5, 2);
-    expect(result).toBe(7.5); // Not 7.499999999999999
+  it("rounds WEIGHT half-up at the decimal level", () => {
+    // 0.15 × 1.45 × 10 is exactly 2.175 in decimal → half-up gives 2.18
+    const result = computeShippingTotal("WEIGHT", 0.15, 0, 1.45, 10);
+    expect(result).toBe(2.18);
   });
 });
 ```
 
-**Implementation**: Uses `Math.round((result + Number.EPSILON) * 100) / 100` to
-guarantee 2-decimal precision for all monetary calculations.
+**Implementation**: intermediate math runs entirely on `Prisma.Decimal`
+(`.add()` / `.mul()`), with a single `toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)`
+at the end and `toNumber()` only at the return boundary — per the money rule in
+[`.claude/steering/tech.md`](../../.claude/steering/tech.md).
+
+> **Historical note**: the previous implementation accumulated in `number` and rounded with
+> `Math.round((result + Number.EPSILON) * 100) / 100`. `Number.EPSILON` is an *absolute*
+> constant sized for magnitudes near 1, so it cannot correct error introduced by the `* 100`
+> scaling: the case above became `217.49999999999997` and returned 2.17.
 
 ## CI & Quality Integration
 

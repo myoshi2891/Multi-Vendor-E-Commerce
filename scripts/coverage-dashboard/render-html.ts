@@ -128,15 +128,20 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
     // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
     // QA_HANDOFF R5 を同時削除すること。
-    // 2026-08-04 時点: 031 (order-lifecycle / +8) と 032 (webhook-payment / +11) が DONE。
-    // 残るは 033〜035。
+    // 2026-08-13 時点: 031 / 032 / 033 / 034 が DONE。**残るは 035 のみ**。
+    // (033 = search-products.test.ts 新設・+9/スイート +1・`6514e0c6`。
+    //  034 = review-aggregation.test.ts 新設・+5/スイート +1・`734a34b4`。)
+    // 034 の申し送り: upsertReview の集計は非トランザクション (create → findMany →
+    // product.update の 3 往復) なので、並行投稿では lost update が理論上起こりうる。
+    // 本スイートが固定したのは逐次実行時の集計正しさのみ。$transaction 化や DB 側集計を
+    // 入れる場合、本スイートはそのまま回帰ガードとして使える。
     {
         priority: "medium",
-        title: "R5: Integration テストギャップ解消 (残り plans 033〜035)",
-        target: "tsvector 検索 / レビュー集計 / ロール昇格 (031 の restock・032 の webhook 冪等性は完了)",
-        tool: "plans/033〜035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "M",
-        impact: "raw SQL 回帰・評価集計・ロール昇格など実 DB セマンティクスの障害クラスを回帰検知下に置く (Integration 40→約46 テスト / 4→6 スイート)",
+        title: "R5: Integration テストギャップ解消 (残り plan 035)",
+        target: "updateStoreStatus の PENDING→ACTIVE ロール昇格 (031 の restock・032 の webhook 冪等性・033 の tsvector 検索・034 のレビュー集計は完了)",
+        tool: "plans/035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        cost: "S",
+        impact: "店舗承認時に User.role が SELLER へ昇格する遷移を実 DB で固定し、R5 の Integration ギャップを閉じ切る",
     },
     // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
     // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
@@ -153,22 +158,15 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
     },
-    // R7 は improve Round 7 Integration 第 3 弾監査 (2026-07-11) 起票。R5/R6 未スイープの
-    // 切り口 (Clerk user-sync webhook の FK 連鎖 / グローバル unique 制約の実発火) で
-    // 2 件をプラン化 (高レバレッジ候補が 2 件のみのため水増しせず 2 本)。
-    // seed.ts / reset-db.ts 非変更のため R4〜R6 プランと並行可。実行手順の SSOT は
-    // plans/040〜041 (自己完結プラン・全プラン Docker 必須)、監査台帳は
-    // plans/audit/findings-15-integration-coverage-r7.md。QA_HANDOFF
-    // 「次回着手用 依頼プロンプト」R7 と一対一対応。全 2 プラン完了時に本エントリと
-    // QA_HANDOFF R7 を同時削除すること。
-    {
-        priority: "medium",
-        title: "R7: Integration 残余ギャップ解消 (plans 040〜041)",
-        target: "Clerk user.deleted webhook の FK 連鎖 / Coupon.code グローバル unique P2002",
-        tool: "plans/040〜041 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "S",
-        impact: "退会ユーザーの PII 残存 + Svix 無限リトライ・店舗間クーポンコード衝突の実 unique 発火を回帰検知下に置く (Integration +2 スイート / 約11 テスト)",
-    },
+    // R7 (improve Round 7 Integration 第 3 弾監査 / plans 040〜041) は 2026-08-13 に
+    // 完了したため本エントリを削除した。QA_HANDOFF「次回着手用 依頼プロンプト」の
+    // R7 節も同一コミットで削除済み (両者は二重 SSOT で、片方だけ残すと drift する)。
+    //   - 040 = user-deletion-webhook.test.ts 新設 (+7 / スイート +1)・2026-08-09 `c364a75d`
+    //   - 041 = coupon-code-uniqueness.test.ts 新設 (+5 / スイート +1)・2026-08-13 `c6a5064f`
+    // 041 で判明した申し送り: Coupon の事前重複チェックは自店舗スコープなので、他店舗 /
+    // PLATFORM との code 衝突は実 DB の unique 制約だけが止めている。両経路は同一の
+    // エラーメッセージを投げるため、統合テスト側で経路を推論してはならない
+    // (テスト側の再クエリは実装と独立しており、実装が変わっても緑のまま腐る)。
     // R8 は improve Round 8 E2E 網羅性監査 (2026-07-11) 起票。全 Round を通じて初の
     // 3 ブラウザフル実測 (111 テスト / 25.5m) で 52 passed / 17 failed / 39 skipped /
     // 3 did not run — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト (5 サイト複製)
@@ -177,16 +175,24 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
     // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
     // 本エントリと QA_HANDOFF R8 を同時削除すること。
-    // 2026-08-09 時点: 042 / 043 / 044 / 045 / 047 が DONE。残るは 046 / 048 / 049 / 050。
-    // (045 = guest-flows.spec.ts 新設・E2E +6/browser。042 の signIn 修復完了により
-    //  048 / 049 / 050 のブロックは解除済み。)
+    // 2026-08-11 時点: 042〜048 と 050 が DONE。残るは 049 のみ。
+    // (045 = guest-flows.spec.ts 新設・E2E +6/browser。046 = /browse ページネーション配線
+    //  + skip 解除〔テスト数は不変で skip が 1 件解消〕。048 = engagement.spec.ts 新設
+    //  ・+3/browser。050 = admin-store-status.spec.ts 新設・+1/browser。)
+    // 048 の申し送り: Clerk の useUser() はロード完了まで isSignedIn: false を返すため、
+    // isSignedIn だけを見て router.push('/sign-in') する client component
+    // (store-card.tsx:30-31・return 無し) をハイドレーション直後にクリックすると
+    // サインイン済みでも操作が成立しない。engagement.spec.ts の waitForClerkLoaded を参照。
+    // 050 の申し送り: sign-in 直後の最初の goto は遅延リダイレクトに割り込まれるため
+    // gotoStable を使う (2026-08-11 からレスポンスも返すので status 検証に使える)。
+    // 開閉するドロップダウンの完了判定は「新ラベルの可視性」ではなく「旧ラベルの消滅」で行う。
     {
         priority: "medium",
-        title: "R8: E2E 網羅性ギャップ解消 (残り plans 046 / 048〜050)",
-        target: "/browse ページネーション配線 / エンゲージメント (wishlist・フォロー・レビュー) / プロフィール住所・注文履歴 / admin 店舗ステータス (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・047 注文詳細金額は完了)",
-        tool: "plans/046 / 048〜050 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
+        title: "R8: E2E 網羅性ギャップ解消 (残り plan 049)",
+        target: "プロフィール住所・注文履歴 (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・046 /browse ページネーション・047 注文詳細金額・048 エンゲージメント・050 admin 店舗ステータスは完了)",
+        tool: "plans/049 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
         cost: "M",
-        impact: "顧客エンゲージメントと管理者オペレーションをブラウザ導線で回帰検知下に置き、カタログ成長時に商品へ到達できない /browse の dormant バグ (ページャ未実装) を配線ごと閉じる",
+        impact: "顧客プロフィール系 (住所管理・注文履歴) をブラウザ導線で回帰検知下に置き、R8 の E2E 網羅性ギャップを閉じ切る",
     },
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
@@ -203,13 +209,20 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 併せて判明: plan 052 本文の「home は OI-9 で対象外」は執筆時点の誤りで、
     // OI-9 は 2026-06-06 に解消済み。home の a11y spec は依存なしで着手でき、
     // R9 とは別エントリ（下記「home (/) の a11y spec 追加」）として起票した。
+    // 2026-08-12: 053 完了 (45cb7e1b)。tests/e2e/auth-surface.spec.ts を新設し
+    // サインアップウィジェット描画 / Register 導線 / サインアウト往復の 3 テスト。
+    // 併せて是正: 本エントリは 051 を未着手として掲げ続けていたが、051 は
+    // plans/README.md の Status 表（実行実態の SSOT）で既に DONE だった。
+    // 2026-08-12: 055 完了 (9704903c)。tests/e2e/cart-login-handoff.spec.ts を新設。
+    // 検証の肝は browser.newContext() によるコンテキスト分離で、page.reload() では
+    // localStorage が残り saveUserCart が壊れていても green になる。残るのは 054 と 056。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (plans 051・053〜056 — 052 は完了)",
-        target: "国選択 cookie 往復 / 認証サーフェススモーク / VRT 拡大 / ゲストカート引き継ぎ / Newsletter dormant 404 characterization（052 の a11y 拡大は browse・商品詳細・cart の 3 ページで完了。home は 052 の対象外で未着手 — 下の専用エントリを参照）",
-        tool: "plans/051・053〜056 の自己完結プラン (Sonnet 実行可・051/056 は依存ゼロ・spec-sync 必須)",
-        cost: "M",
-        impact: "配送先 cookie・ゲスト→会員化のカート持ち越し・sign-up ウィジェットドリフトなどゲスト側の中核導線を回帰検知下に置く。a11y は 052 で browse・商品詳細・cart へ拡大済み (実違反 5 種を検出・修正)",
+        title: "R9: E2E 残余ギャップ解消 (plans 054・056 — 051・052・053・055 は完了)",
+        target: "VRT 拡大 (054) / Newsletter dormant 404 characterization (056)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
+        tool: "plans/054・056 の自己完結プラン (Sonnet 実行可・056 は依存ゼロ / 054 は 043 が先行・spec-sync 必須)",
+        cost: "S",
+        impact: "056 は /api/newsletter がリポジトリに不在（curl 実測 404）という dormant 機能を characterization で固定し、実装時に期待値を反転させる足場を作る。054 は VRT 対象を商品詳細・browse へ広げ、売上導線の UI 崩れをマージ前に阻止する",
     },
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。

@@ -3,14 +3,39 @@ import Pagination from "@/components/store/shared/pagination";
 import ProductList from "@/components/store/shared/product-list";
 import { getProductsByIds } from "@/queries/product";
 import { ProductType } from "@/lib/types";
+import { normalizePageParam } from "@/lib/utils";
 import { use, useEffect, useState } from "react";
+
 /**
- * Renders the "Your product view history" page and its paginated product list.
+ * Fetches a page of history products and adjusts out-of-range requests to a valid page.
  *
- * Loads product IDs from localStorage, resolves the provided `params` promise to determine the current page, fetches the corresponding product data, and displays a loading state, the product list with pagination, or an empty state when no history exists.
+ * @param ids - Product IDs loaded from local storage
+ * @param requestedPage - The normalized page number to fetch
+ * @returns The products, total page count, and page number used for the result
+ */
+async function fetchHistoryPage(
+    ids: string[],
+    requestedPage: number
+): Promise<{ products: ProductType[]; totalPages: number; page: number }> {
+    const requested = await getProductsByIds(ids, requestedPage);
+    const canonicalPage =
+        requested.totalPages >= 1
+            ? Math.min(requestedPage, requested.totalPages)
+            : 1;
+
+    if (canonicalPage === requestedPage) {
+        return { ...requested, page: canonicalPage };
+    }
+
+    const clamped = await getProductsByIds(ids, canonicalPage);
+    return { ...clamped, page: canonicalPage };
+}
+
+/**
+ * Displays the user's product view history with pagination.
  *
- * @param params - A promise that resolves to an object with a `page` string used to compute the current page number.
- * @returns The React element for the profile history page including header, loading indicator, product list with pagination, or an empty message.
+ * @param params - The route parameters containing the requested page.
+ * @returns The rendered product history page.
  */
 export default function ProfileHistoryPage({
     params,
@@ -18,8 +43,7 @@ export default function ProfileHistoryPage({
     params: Promise<{ page: string }>;
 }) {
     const { page: pageParam } = use(params);
-    const raw = Number(pageParam);
-    const currentPage = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    const currentPage = normalizePageParam(pageParam);
     const [products, setProducts] = useState<ProductType[]>([]);
     const [page, setPage] = useState<number>(currentPage);
     const [totalPages, setTotalPages] = useState<number>(0);
@@ -51,11 +75,11 @@ export default function ProfileHistoryPage({
                     }
                     return;
                 }
-                const res = await getProductsByIds(productHistory, currentPage);
+                const res = await fetchHistoryPage(productHistory, currentPage);
                 if (!cancelled) {
                     setProducts(res.products);
                     setTotalPages(res.totalPages);
-                    setPage(currentPage);
+                    setPage(res.page);
                 }
             } catch (error: unknown) {
                 if (error instanceof Error) {

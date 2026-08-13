@@ -1,15 +1,13 @@
 import { db } from "@/lib/db";
+import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
 /**
- * Handle POST search requests and return matching product–variant suggestions.
+ * Handles product search requests and builds product-variant suggestions.
  *
- * Attempts a FULLTEXT search and falls back to a case-insensitive contains search if FULLTEXT is unavailable or fails.
+ * Blank queries produce no results. Matching uses product and variant search fields, with description matching available as a fallback.
  *
- * @returns A NextResponse containing JSON:
- * - Success (200): `{ results: Array<{ name: string; link: string; image: string }> }` where each result represents a product variant suggestion.
- * - Invalid input (400): `{ error: "Invalid query" }`.
- * - Server error (500): `{ error: "Internal Server Error" }` (詳細はサーバーログにのみ出力).
+ * @returns A response containing matching suggestions, an invalid-query error, or a generic server-error response.
  */
 export async function POST(req: Request) {
     try {
@@ -141,14 +139,11 @@ export async function POST(req: Request) {
 }
 
 /**
- * Searches products by the "search" query parameter and returns paginated results.
+ * Searches products by the `search` query parameter and returns paginated results.
  *
- * Attempts a FULLTEXT search first and falls back to a case-insensitive contains search if FULLTEXT fails.
+ * Uses FULLTEXT matching when available and falls back to case-insensitive matching if the FULLTEXT search fails.
  *
- * @returns A JSON HTTP response:
- * - On success: { products, total, page, limit, totalPages } where `products` is an array of product records with related store, category, subCategory, variants (with first image and sizes) and recent reviews; `total` is the total match count and `totalPages` is Math.ceil(total / limit).
- * - If the search parameter is missing or empty: { products: [], total: 0 }.
- * - On server error: { error: "Internal Server Error" } with status 500 (詳細はサーバーログにのみ出力).
+ * @returns A JSON response containing matching products and pagination metadata, an empty result for a missing or blank search query, or a generic error with status 500 if the request fails.
  */
 export async function GET(req: Request) {
     try {
@@ -174,17 +169,11 @@ export async function GET(req: Request) {
         // ページネーション用パラメータ。NaN / 負値は既定値へフォールバックし、
         // 小数は切り捨て、過大値は上限へクランプする（いずれも拒否はしない）。
         const MAX_LIMIT = 50; // POST ハンドラの take:50 と一致させる
-        const MAX_PAGE = 10_000; // page の上限（skip 暴走・DB の巨大 OFFSET を防ぐ）
-        const rawPage = Number(url.searchParams.get("page"));
-        const rawLimit = Number(url.searchParams.get("limit"));
-        const page =
-            Number.isFinite(rawPage) && rawPage >= 1
-                ? Math.min(Math.floor(rawPage), MAX_PAGE)
-                : 1; // 下限 1・上限 MAX_PAGE でクランプ
-        const limit =
-            Number.isFinite(rawLimit) && rawLimit >= 1
-                ? Math.min(Math.floor(rawLimit), MAX_LIMIT)
-                : 20; // 既定 20、上限 MAX_LIMIT
+        const page = normalizePageParam(url.searchParams.get("page")); // 下限 1・上限 MAX_PAGE
+        const limit = normalizePositiveIntParam(url.searchParams.get("limit"), {
+            fallback: 20,
+            max: MAX_LIMIT,
+        });
         const skip = (page - 1) * limit; // page/limit 双方が有界なので skip も有界
 
         let products, totalCount;
