@@ -7,16 +7,11 @@ import { normalizePageParam } from "@/lib/utils";
 import { use, useEffect, useState } from "react";
 
 /**
- * 履歴の指定ページを取得し、範囲外なら最終ページ（該当 0 件なら 1 ページ目）へ寄せて再取得する。
+ * Fetches a page of history products and adjusts out-of-range requests to a valid page.
  *
- * 他のページネーション画面は Server Component なので `redirect()` で正準 URL へ寄せるが、
- * ここは Client Component で、初回マウント後の `page` は URL ではなく `setPage` で動く。
- * URL を書き換えても state と辻褄が合わないため、state 上で正規化する。
- * 追加の往復が発生するのは範囲外アクセス時のみ。
- *
- * @param ids - localStorage から読んだ商品 ID 群
- * @param requestedPage - 要求されたページ番号（正規化済み）
- * @returns 商品・総ページ数・実際に採用したページ番号
+ * @param ids - Product IDs loaded from local storage
+ * @param requestedPage - The normalized page number to fetch
+ * @returns The products, total page count, and page number used for the result
  */
 async function fetchHistoryPage(
     ids: string[],

@@ -5,15 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SetStateAction } from "react";
 
 /**
- * 共有ページャ（`src/components/store/shared/pagination.tsx`）を URL 遷移へ橋渡しする薄いラッパー。
+ * Provides pagination controls that navigate within the `/browse` route.
  *
- * 共有ページャはクライアント state 前提の `setPage: Dispatch<SetStateAction<number>>` を受け取るため、
- * SSR の /browse でそのまま使えない。ここで「既存クエリを保持したまま `page` だけ差し替えて push」する
- * 関数へ変換する。フィルタ・ソートを保持するのはこのラッパーの責務であり、
- * `<Link href>` 直書きへ置き換えるとソート・フィルタの維持が壊れる。
+ * Existing query parameters are preserved while the `page` parameter is updated.
  *
- * @param page - 現在のページ番号（1 始まり。呼び出し側で正規化済み）
- * @param totalPages - 総ページ数
+ * @param page - The current one-based page number
+ * @param totalPages - The total number of pages
+ * @returns Pagination controls for navigating between pages
  */
 export default function BrowsePagination({
     page,

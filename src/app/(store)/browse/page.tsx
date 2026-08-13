@@ -10,15 +10,11 @@ import { redirect } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 /**
- * 現在のクエリを保持したまま `page` だけ差し替えた /browse の URL を組み立てる。
+ * Builds a `/browse` URL with the specified page while preserving the other query parameters.
  *
- * クライアント側の同等処理は `browse-pagination.tsx` の `goTo` にあるが、あちらは
- * `useSearchParams` 依存で Server Component から再利用できないため対の実装として置く。
- * どちらかを変えるときは両方を確認すること（フィルタ・ソートの保持が壊れる）。
- *
- * @param query - `searchParams` を解決した生のクエリオブジェクト
- * @param page - 差し替え後のページ番号
- * @returns `/browse?...&page=<page>` 形式の URL
+ * @param query - The resolved search parameter values.
+ * @param page - The page number to include in the URL.
+ * @returns A `/browse` URL containing the preserved parameters and specified page.
  */
 function buildBrowseHref(query: FiltersQueryType, page: number): string {
     const params = new URLSearchParams();
@@ -36,10 +32,10 @@ function buildBrowseHref(query: FiltersQueryType, page: number): string {
 }
 
 /**
- * Renders the store browse page with filter controls, sorting UI, and a product list derived from URL query parameters.
+ * Renders the store browse page using URL query parameters for filtering, sorting, and pagination.
  *
- * @param searchParams - A promise resolving to the query parameters used to filter and sort products.
- * @returns The browse page React element containing the product filters, sort controls, and filtered product list.
+ * @param searchParams - Query parameters that define the product filters, sort order, and page.
+ * @returns The browse page containing filter controls, sorting controls, products, and pagination when applicable.
  */
 export default async function BrowsePage({
     searchParams,

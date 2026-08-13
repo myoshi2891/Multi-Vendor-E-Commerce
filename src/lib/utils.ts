@@ -18,9 +18,10 @@ function hasToNumber(value: unknown): value is HasToNumber {
 }
 
 /**
- * Safely parses a potentially Decimal/BigNumber-like object or primitive into a number.
- * @param value The value to parse (can be number, string, Prisma.Decimal, etc.)
- * @returns The converted number
+ * Converts a numeric value or number-like object to a JavaScript number.
+ *
+ * @param value - The value to convert, including objects with a `toNumber()` method
+ * @returns The converted number, or `0` when conversion produces an invalid number
  */
 export function toNumberSafe(value: unknown): number {
     if (typeof value === "number") return value;
@@ -39,15 +40,14 @@ export function toNumberSafe(value: unknown): number {
 export const MAX_PAGE = 10_000;
 
 /**
- * URL 由来の数値パラメータを正の整数へ正規化する。
+ * Normalizes a raw URL parameter value to a positive integer.
  *
- * NaN / Infinity / 0 以下 / 非数値は `fallback` へ、小数は切り捨て、`max` 指定時は上限クランプ。
- * Next.js は同名パラメータが複数付く（`?page=1&page=2`）と配列を渡すため、配列は先頭要素を採る。
+ * Array inputs use their first element. Invalid values use the fallback, decimal values are rounded down, and a specified maximum limits the result.
  *
- * @param raw - URL から読んだ生の値（`string | string[] | undefined` を想定）
- * @param options.fallback - 正規化に失敗したときの既定値（既定 1）
- * @param options.max - 上限。指定時は `Math.min` でクランプする
- * @returns 正規化済みの正の整数
+ * @param raw - The raw URL parameter value.
+ * @param options.fallback - The value to use when normalization fails; defaults to `1`.
+ * @param options.max - The optional maximum allowed value.
+ * @returns The normalized positive integer.
  */
 export function normalizePositiveIntParam(
     raw: unknown,

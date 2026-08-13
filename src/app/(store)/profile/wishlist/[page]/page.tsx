@@ -6,12 +6,12 @@ import { redirect } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the user's wishlist page, normalizing the requested page and displaying paginated results.
+ * Renders the authenticated user's wishlist with pagination.
  *
- * The `page` parameter is normalized to an integer >= 1 (defaults to 1) and used to fetch the wishlist for that page.
+ * Out-of-range pages are redirected to the nearest valid page.
  *
- * @param params - A promise that resolves to an object with a `page` string representing the requested page number.
- * @returns The React element for the wishlist page, containing a paginated product list when items exist or an empty-state message otherwise.
+ * @param params - Route parameters containing the requested page number.
+ * @returns The wishlist page content with paginated items or an empty-state message.
  */
 export default async function ProfileWishlistPage({
     params,

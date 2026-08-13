@@ -1,23 +1,14 @@
 import { Prisma, ShippingFeeMethod } from "@prisma/client";
 
 /**
- * 配送料を計算する
+ * Calculates the shipping charge for the specified method and quantity.
  *
- * 中間計算はすべて `Prisma.Decimal` で行う（`.claude/steering/tech.md` の金額規約）。
- * 旧実装は IEEE 754 の `number` で積み上げてから `Math.round((x + EPSILON) * 100) / 100`
- * で丸めていたが、EPSILON は 1 前後の大きさに合わせた**絶対値**の定数なので、
- * 100 倍したスケールで生じる誤差は補正できない。
- * 例: WEIGHT 方式で fee 0.15 × weight 1.45 × qty 10 は 10 進では厳密に 2.175 で
- * half-up なら 2.18 だが、`* 100` が 217.49999999999997 になるため旧実装は 2.17 を返した。
- *
- * 丸めは `toDecimalPlaces(2, ROUND_HALF_UP)` の 1 回だけ、`toNumber()` は return 境界のみ。
- *
- * @param shippingFeeMethod - 配送料計算方式 ("ITEM" | "WEIGHT" | "FIXED")
- * @param shippingFee - 基本配送料
- * @param extraShippingFee - 追加配送料（ITEM 方式で使用）
- * @param weight - 商品重量（WEIGHT 方式で使用）
- * @param quantity - 商品数量
- * @returns 計算された配送料（2桁に正規化）
+ * @param shippingFeeMethod - The shipping charge method: `"ITEM"`, `"WEIGHT"`, or `"FIXED"`.
+ * @param shippingFee - The base shipping charge.
+ * @param extraShippingFee - The additional per-item charge for the `"ITEM"` method.
+ * @param weight - The item weight for the `"WEIGHT"` method.
+ * @param quantity - The number of items.
+ * @returns The shipping charge rounded to two decimal places, or `0` when the quantity is zero or less.
  */
 export function computeShippingTotal(
 	shippingFeeMethod: ShippingFeeMethod,

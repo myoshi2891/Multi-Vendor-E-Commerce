@@ -6,10 +6,10 @@ import { redirect } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the "Stores you follow" profile page for a given page number.
+ * Renders the followed-stores profile page for the requested page.
  *
- * @param params - A promise that resolves to route params; expects a `page` string representing the requested page number.
- * @returns A React element displaying the followed stores for the requested page, including pagination state.
+ * @param params - Route parameters containing the requested page number.
+ * @returns A page displaying the followed stores and pagination information.
  */
 export default async function ProfileFollowingPage({
     params,

@@ -29,7 +29,7 @@ function toEnumValue<T extends Record<string, string>>(
 }
 
 /**
- * Renders an admin page for managing orders across all stores.
+ * Renders the admin orders page with pagination, search, and status filters.
  */
 export default async function AdminOrdersPage({
     searchParams,

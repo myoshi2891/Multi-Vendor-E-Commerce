@@ -142,14 +142,11 @@ export async function POST(req: Request) {
 }
 
 /**
- * Searches products by the "search" query parameter and returns paginated results.
+ * Searches products by the `search` query parameter and returns paginated results.
  *
- * Attempts a FULLTEXT search first and falls back to a case-insensitive contains search if FULLTEXT fails.
+ * Uses FULLTEXT matching when available and falls back to case-insensitive matching if the FULLTEXT search fails.
  *
- * @returns A JSON HTTP response:
- * - On success: { products, total, page, limit, totalPages } where `products` is an array of product records with related store, category, subCategory, variants (with first image and sizes) and recent reviews; `total` is the total match count and `totalPages` is Math.ceil(total / limit).
- * - If the search parameter is missing or empty: { products: [], total: 0 }.
- * - On server error: { error: "Internal Server Error" } with status 500 (詳細はサーバーログにのみ出力).
+ * @returns A JSON response containing matching products and pagination metadata, an empty result for a missing or blank search query, or a generic error with status 500 if the request fails.
  */
 export async function GET(req: Request) {
     try {
