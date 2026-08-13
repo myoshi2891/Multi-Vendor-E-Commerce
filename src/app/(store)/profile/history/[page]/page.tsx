@@ -32,12 +32,10 @@ async function fetchHistoryPage(
 }
 
 /**
- * Renders the "Your product view history" page and its paginated product list.
+ * Displays the user's product view history with pagination.
  *
- * Loads product IDs from localStorage, resolves the provided `params` promise to determine the current page, fetches the corresponding product data, and displays a loading state, the product list with pagination, or an empty state when no history exists.
- *
- * @param params - A promise that resolves to an object with a `page` string used to compute the current page number.
- * @returns The React element for the profile history page including header, loading indicator, product list with pagination, or an empty message.
+ * @param params - The route parameters containing the requested page.
+ * @returns The rendered product history page.
  */
 export default function ProfileHistoryPage({
     params,

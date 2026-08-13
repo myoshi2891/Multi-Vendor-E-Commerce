@@ -8,6 +8,12 @@ interface HasToNumber {
     toNumber: () => number;
 }
 
+/**
+ * Determines whether a value exposes a callable `toNumber` method.
+ *
+ * @param value - The value to inspect
+ * @returns `true` if the value has a callable `toNumber` method, `false` otherwise.
+ */
 function hasToNumber(value: unknown): value is HasToNumber {
     return (
         value !== null &&
@@ -18,10 +24,10 @@ function hasToNumber(value: unknown): value is HasToNumber {
 }
 
 /**
- * Converts a numeric value or number-like object to a JavaScript number.
+ * Converts a value to a JavaScript number.
  *
- * @param value - The value to convert, including objects with a `toNumber()` method
- * @returns The converted number, or `0` when conversion produces an invalid number
+ * @param value - The value to convert, including objects with a callable `toNumber` method
+ * @returns The converted number, or `0` when conversion with `Number` produces an invalid result
  */
 export function toNumberSafe(value: unknown): number {
     if (typeof value === "number") return value;

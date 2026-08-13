@@ -8,8 +8,10 @@ export const dynamic = 'force-dynamic';
 /**
  * Renders the followed-stores profile page for the requested page.
  *
- * @param params - Route parameters containing the requested page number.
- * @returns A page displaying the followed stores and pagination information.
+ * Out-of-range pages redirect to the last available page, or to page 1 when no pages are available.
+ *
+ * @param params - Route parameters containing the requested page.
+ * @returns The followed stores and pagination information.
  */
 export default async function ProfileFollowingPage({
     params,

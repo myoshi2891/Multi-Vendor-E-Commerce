@@ -1,14 +1,14 @@
 import { Prisma, ShippingFeeMethod } from "@prisma/client";
 
 /**
- * Calculates the shipping charge for the specified method and quantity.
+ * Calculates the shipping charge for the selected method and quantity.
  *
- * @param shippingFeeMethod - The shipping charge method: `"ITEM"`, `"WEIGHT"`, or `"FIXED"`.
+ * @param shippingFeeMethod - The calculation method: `"ITEM"`, `"WEIGHT"`, or `"FIXED"`.
  * @param shippingFee - The base shipping charge.
- * @param extraShippingFee - The additional per-item charge for the `"ITEM"` method.
- * @param weight - The item weight for the `"WEIGHT"` method.
+ * @param extraShippingFee - The additional charge for each item after the first when using `"ITEM"`.
+ * @param weight - The item weight when using `"WEIGHT"`.
  * @param quantity - The number of items.
- * @returns The shipping charge rounded to two decimal places, or `0` when the quantity is zero or less.
+ * @returns The shipping charge rounded to two decimal places using half-up rounding, or `0` when `quantity` is zero or less.
  */
 export function computeShippingTotal(
 	shippingFeeMethod: ShippingFeeMethod,
