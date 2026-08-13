@@ -341,7 +341,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 旧実装もここでは 1.31 を返す（EPSILON 加算が偶然境界を越えさせる）。
 > 総当たりで実際に食い違う入力を探して差し替えた。
 >
-> 回帰: `bun run test` **1984 passed / 3 skipped**・`bunx tsc --noEmit` **0 件**・
+> 回帰: `bun run test` **1984 passed / 3 skipped tests（1 skipped suite）**・`bunx tsc --noEmit` **0 件**・
 > `bun run lint` **0 errors**（15 warnings は既存ベースライン）。docs 同期は `424f1b56`。
 >
 > **055 の実行記録（2026-08-12・`9704903c`〜`7f09918a`）**

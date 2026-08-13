@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1987 passed / 1990 total across 184 suites (3 skipped), as of 2026-08-13.
+- 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
   Review-fix pass (+3, no new suite). `src/queries/review.test.ts` gained 2 cases pinning
   that the review write and the aggregation update are wired into a single `$transaction`
   and that the `Product` row lock is taken *before* the write — these, not the integration
@@ -850,17 +850,25 @@ describe("ProductShippingFee", () => {
 The centralized `computeShippingTotal` function ensures consistent precision:
 
 ```typescript
-// src/lib/__tests__/shipping-utils.test.ts
+// src/lib/shipping-utils.test.ts
 describe("computeShippingTotal", () => {
-  it("applies floating-point correction for WEIGHT method", () => {
-    const result = computeShippingTotal("WEIGHT", 2.5, 0, 1.5, 2);
-    expect(result).toBe(7.5); // Not 7.499999999999999
+  it("rounds WEIGHT half-up at the decimal level", () => {
+    // 0.15 × 1.45 × 10 is exactly 2.175 in decimal → half-up gives 2.18
+    const result = computeShippingTotal("WEIGHT", 0.15, 0, 1.45, 10);
+    expect(result).toBe(2.18);
   });
 });
 ```
 
-**Implementation**: Uses `Math.round((result + Number.EPSILON) * 100) / 100` to
-guarantee 2-decimal precision for all monetary calculations.
+**Implementation**: intermediate math runs entirely on `Prisma.Decimal`
+(`.add()` / `.mul()`), with a single `toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)`
+at the end and `toNumber()` only at the return boundary — per the money rule in
+[`.claude/steering/tech.md`](../../.claude/steering/tech.md).
+
+> **Historical note**: the previous implementation accumulated in `number` and rounded with
+> `Math.round((result + Number.EPSILON) * 100) / 100`. `Number.EPSILON` is an *absolute*
+> constant sized for magnitudes near 1, so it cannot correct error introduced by the `* 100`
+> scaling: the case above became `217.49999999999997` and returned 2.17.
 
 ## CI & Quality Integration
 
