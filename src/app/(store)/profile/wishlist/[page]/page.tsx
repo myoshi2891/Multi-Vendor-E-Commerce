@@ -6,12 +6,12 @@ import { redirect } from "next/navigation";
 export const dynamic = 'force-dynamic';
 
 /**
- * Renders the authenticated user's wishlist with pagination.
+ * Renders the authenticated user's wishlist for the requested page.
  *
- * Out-of-range pages are redirected to the nearest valid page.
+ * Out-of-range pages are redirected to the canonical page.
  *
  * @param params - Route parameters containing the requested page number.
- * @returns The wishlist page content with paginated items or an empty-state message.
+ * @returns The wishlist content with pagination, or an empty-state message.
  */
 export default async function ProfileWishlistPage({
     params,

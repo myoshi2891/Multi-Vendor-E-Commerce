@@ -3,14 +3,11 @@ import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
 /**
- * Handle POST search requests and return matching product–variant suggestions.
+ * Handles product search requests and builds product-variant suggestions.
  *
- * Attempts a FULLTEXT search and falls back to a case-insensitive contains search if FULLTEXT is unavailable or fails.
+ * Blank queries produce no results. Matching uses product and variant search fields, with description matching available as a fallback.
  *
- * @returns A NextResponse containing JSON:
- * - Success (200): `{ results: Array<{ name: string; link: string; image: string }> }` where each result represents a product variant suggestion.
- * - Invalid input (400): `{ error: "Invalid query" }`.
- * - Server error (500): `{ error: "Internal Server Error" }` (詳細はサーバーログにのみ出力).
+ * @returns A response containing matching suggestions, an invalid-query error, or a generic server-error response.
  */
 export async function POST(req: Request) {
     try {
