@@ -369,15 +369,24 @@ describe("upsertReview", () => {
             // Act
             await upsertReview("product-001", reviewInput);
 
-            // Assert: 3 段（書き込み → 読み直し → 集計反映）すべてが tx client 側
+            // Assert: 4 段（行ロック → 書き込み → 読み直し → 集計反映）すべてが tx client 側。
+            // ロックを tx client で検証するのが要点 —— 既定の $transaction モックは
+            // callback に mockDb 自身を渡すため、mockDb.$queryRaw 側の検証では
+            // 「ロックがトランザクションの外で取られている」実装を見逃す。
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+            expect(txClient.$queryRaw).toHaveBeenCalledTimes(1);
             expect(txClient.review.create).toHaveBeenCalledTimes(1);
+            // ロック取得は書き込みより手前（後ろで取ると両者 insert 済みの窓が開く）
+            expect(
+                txClient.$queryRaw.mock.invocationCallOrder[0]
+            ).toBeLessThan(txClient.review.create.mock.invocationCallOrder[0]);
             expect(txClient.review.findMany).toHaveBeenCalledTimes(1);
             expect(txClient.product.update).toHaveBeenCalledWith({
                 where: { id: "product-001" },
                 data: { rating: 4, numReviews: 2 },
             });
             // tx の外に漏れていないこと
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
             expect(mockDb.review.create).not.toHaveBeenCalled();
             expect(mockDb.product.update).not.toHaveBeenCalled();
         });

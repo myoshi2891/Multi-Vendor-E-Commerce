@@ -61,6 +61,7 @@ test.describe("ゲストカートのサインイン引き継ぎ", () => {
     test("ゲストで積んだカートがサインイン後も残り、サーバーにも保存される", async ({
         page,
         browser,
+        baseURL,
     }, testInfo) => {
         // ゲストのカート構築 + サインイン往復 + 新規コンテキストでの再サインインを
         // 直列に含むため、既定 30s では不足する。
@@ -106,7 +107,12 @@ test.describe("ゲストカートのサインイン引き継ぎ", () => {
         //    green になる。「表示元がサーバーの Cart であること」を主張するには、
         //    クライアント永続を一切持たない場所から開くしかない。
         //    `storageState` の使い回しも同じ理由で不可（localStorage ごと復元される）。
-        const freshContext = await browser.newContext();
+        //
+        //    `baseURL` は明示的に渡す —— `browser.newContext()` は config の
+        //    `use.baseURL` を引き継がない（baseURL は `page` / `context` フィクスチャに
+        //    だけ適用される）。渡さないと `gotoStable(freshPage, "/checkout")` の
+        //    相対 URL が解決できず落ちる。
+        const freshContext = await browser.newContext({ baseURL });
         try {
             const freshPage = await freshContext.newPage();
             await setupE2ETestState(freshPage, seed);
