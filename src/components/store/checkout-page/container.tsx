@@ -12,6 +12,7 @@ import PlaceOrderCard from '../cards/place-order'
 import CountryNote from '../shared/country-note'
 import { updateCheckoutProductWithLatest } from '@/queries/user'
 import { isCouponCurrentlyValid } from '@/lib/coupon-utils'
+import toast from 'react-hot-toast'
 
 interface Props {
     cart: SerializedCartType
@@ -38,15 +39,38 @@ const CheckoutContainer: FC<Props> = ({
     const { cartItems } = cart
 
     useEffect(() => {
+        let cancelled = false
+
         const hydrateCheckoutCart = async () => {
-            const updatedCart = await updateCheckoutProductWithLatest(
-                cartItems,
-                activeCountry
-            )
-            setCartData(updatedCart)
+            try {
+                const updatedCart = await updateCheckoutProductWithLatest(
+                    cartItems,
+                    activeCountry
+                )
+                // アンマウント後 or 国が切り替わった後は、古いレスポンスで上書きしない
+                if (!cancelled) setCartData(updatedCart)
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        '[CheckoutContainer:hydrateCheckoutCart] Failed to refresh checkout cart',
+                        { error: error.message, stack: error.stack }
+                    )
+                } else {
+                    console.error(
+                        '[CheckoutContainer:hydrateCheckoutCart] Unknown error',
+                        { error }
+                    )
+                }
+                // 握りつぶさない: 失敗を伝えないと、古い金額のまま注文を確定できてしまう
+                if (!cancelled) toast.error('Failed to refresh checkout details.')
+            }
         }
         if (cartItems.length > 0) {
             hydrateCheckoutCart()
+        }
+
+        return () => {
+            cancelled = true
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCountry])
