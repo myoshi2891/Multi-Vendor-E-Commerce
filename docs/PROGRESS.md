@@ -14,7 +14,7 @@
 | Jest Integration テスト | **107テスト / 13スイート**（… + `product-update` **5** + `product-browse` **16**）— 2026-08-23 実測 107/107 pass（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
-| Playwright E2E | **62 tests/browser / 27 files（3ブラウザ計 186）** — 2026-08-23 実測。Chromium / Firefox / WebKit |
+| Playwright E2E | **63 tests/browser / 28 files（3ブラウザ計 189）** — 2026-08-23 実測。Visual は cart / checkout / browse の 3 スペック（chromium 限定）。Chromium / Firefox / WebKit |
 
 ### 技術スタック（現行）
 | パッケージ | バージョン |
@@ -4087,4 +4087,54 @@ seed は並列分離のため国名にサフィックスを付ける（実測: `
 | Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **2017 passed / 191 スイート** |
 | Jest Integration | 107 / 13 スイート | **不変** |
 | ダッシュボード集計ファイル数 | 229 | **231** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 054 の実行（VRT 対象の拡大 / TESTS-44）— **部分完了** (2026-08-23)
+
+#### 概要
+
+VRT の対象は cart 2 枚 + checkout リダイレクト 1 枚のみで、購買判断が起きるページの
+レイアウト回帰を検出する層が無かった。**browse のみベースライン化**し、
+**商品詳細は目視ゲートで欠陥を検出したため見送った**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/visual/browse.spec.ts` + ベースライン PNG | 新規作成（1 テスト） | `0dba44de` |
+
+#### 商品詳細を見送った理由（プラン Step 3 の目視ゲート）
+
+撮影したベースラインで、右側の購入パネル（Ship to / Buy now / **Add to cart**）が
+**1280px ビューポートでクリップされている**ことを検出した。客観測定では
+`scrollWidth === clientWidth === 1280` で**ドキュメントの横スクロールは発生しておらず**、
+親コンテナ側で切れている。
+
+**VRT のベースライン PNG は「意図した見た目」の宣言**である。この状態を固定すると
+**欠陥をロック**することになり、次の担当者は「直したらテストが壊れた」と受け取る
+（plan 050 が確立した「修正を罰するテストは書かない」原則と同型）。
+**レイアウト修正は未起票**で、修正後に改めて撮影する。
+
+#### browse ベースラインの目視確認結果
+
+グリッドは seed 商品 10 件を 4 列で描画し、サイドバーのフィルタ・ソート・
+ページネーション・フッターまで崩れなく出ている。マゼンタの矩形は Playwright の
+**mask 描画**であって未ロード画像ではない。
+
+#### 再現性
+
+ベースライン撮影後、更新フラグなしで **2 回連続実行して 2 回とも 4 passed**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 62 tests/browser・27 files・計 186 | **63 tests/browser・28 files・計 189** |
+| Playwright Visual | 2 スペック / 3 テスト | **3 スペック / 4 テスト** |
+| Jest テスト総数 (unit/component) | 2017 passed / 191 スイート | **不変** |
+| Jest Integration | 107 / 13 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 231 | **232** |
 | 型エラー | 0 件 | **0 件** |

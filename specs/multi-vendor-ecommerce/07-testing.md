@@ -68,7 +68,17 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 62 tests/browser across 27 files (186 across the three browsers), as of 2026-08-23.
+- Playwright E2E: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
+  Plan 054 added `tests/e2e/visual/browse.spec.ts` (+1 test/browser; VRT is chromium-only, so
+  the other two projects skip it), bringing visual regression coverage to cart, checkout and
+  browse. The product-detail baseline was deliberately **not** committed: the captured image
+  showed the right-hand purchase panel — including the primary "Add to cart" button — clipped
+  at a 1280px viewport. Measurement confirmed `scrollWidth === clientWidth === 1280`, so the
+  document itself does not scroll horizontally; a parent container is cutting the panel off.
+  A VRT baseline is a declaration of the intended appearance, so freezing that state would
+  lock the defect in and make the eventual fix look like a test failure. The layout fix is not
+  yet filed; the product-detail baseline should be captured after it lands.
+- Earlier entry: 62 tests/browser across 27 files (186 across the three browsers), as of 2026-08-23.
   Plan 049 added `tests/e2e/profile.spec.ts` (+2 tests/browser, +1 file) covering address
   creation through the form and an order appearing in the history, and it uncovered two real
   defects that the suite then pinned. First, `/profile/orders` failed to render at all:
