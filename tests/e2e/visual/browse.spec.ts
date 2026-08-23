@@ -17,7 +17,11 @@ test.describe("Visual: browse グリッド", () => {
         "Visual Regression は chromium 限定（フォントレンダリング差のため）"
     );
 
-    test("browse の商品グリッド表示", async ({ page }) => {
+    // seed フィクスチャを受け取ることで setupE2ETestState が goto 前に走り、
+    // cookie / localStorage が決定論的な初期状態になる（未要求だとフィクスチャ自体が
+    // 生成されず、前テストの残留状態がスクリーンショットに混ざりうる）。
+    // 値そのものは使わないため `_seed` で受ける（cart.spec.ts / checkout.spec.ts と同形）。
+    test("browse の商品グリッド表示", async ({ page, seed: _seed }) => {
         await page.goto("/browse", { waitUntil: "commit" });
         // カードが 1 枚でも出るまで待つ（空グリッドを固定しない）
         await expect(

@@ -251,7 +251,10 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         await page.getByRole("button", { name: "Place order" }).click();
         await page.waitForURL(/\/order\//, { timeout: 15000 });
 
-        const orderId = page.url().split("/order/")[1];
+        // クエリ文字列やハッシュを orderId に混入させない。
+        // `page.url().split("/order/")[1]` だと `?foo=1` や `#bar` まで拾ってしまい、
+        // 行検索 (`#${orderId}`) と URL 待機の両方が静かに外れる。
+        const orderId = new URL(page.url()).pathname.split("/order/")[1];
         expect(orderId).toBeTruthy();
 
         // Assert: 履歴の**その注文の行**から詳細へ遷移できる。
@@ -260,8 +263,11 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         const row = page.locator("tr").filter({ hasText: `#${orderId}` });
         await expect(row).toHaveCount(1, { timeout: 15000 });
         await row.getByRole("link", { name: "View" }).click();
-        await page.waitForURL(new RegExp(`/order/${orderId}`), {
-            timeout: 15000,
-        });
+        // 正規表現に orderId を埋めると ID 内の記号がメタ文字として解釈されうるため、
+        // pathname を直接検証する述語で待つ。
+        await page.waitForURL(
+            (url) => url.pathname === `/order/${orderId}`,
+            { timeout: 15000 }
+        );
     });
 });
