@@ -139,11 +139,25 @@ const AddressDetails: FC<AddressDetailsProps> = ({
     }
 
     const handleCountryChange = (name: string) => {
+        setCountry(name)
+
         const country = countries.find((c) => c.name === name)
         if (country) {
-            form.setValue('countryId', country?.id)
+            form.setValue('countryId', country.id, { shouldValidate: true })
+            form.clearErrors('countryId')
+            return
         }
-        setCountry(name)
+
+        // 一致しない国を**黙って無視してはいけない**。国のリストは静的な ISO 一覧で、
+        // 配送先として扱えるのは DB の Country 行だけなので、両者は乖離しうる
+        // （E2E 環境では国名にサフィックスが付くため、静的リストのどれとも一致しない）。
+        // 無視すると UI 上は国が選ばれたように見えるのに countryId が空のままになり、
+        // 送信時には「国が原因」と分からない検証エラーだけが出る。
+        form.setValue('countryId', '', { shouldValidate: false })
+        form.setError('countryId', {
+            type: 'manual',
+            message: 'This country is not available for shipping.',
+        })
     }
 
     return (
