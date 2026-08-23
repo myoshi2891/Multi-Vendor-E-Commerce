@@ -127,7 +127,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
-| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
+| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | **IN PROGRESS（browse は DONE / 商品詳細は保留）**（2026-08-23・`0dba44de`〜`1847946d`。E2E 62 → **63 tests/browser** / 27 → **28 files** / 計 186 → **189**、Visual 2 → **3 スペック**。**商品詳細はプラン Step 3 の目視ゲートで欠陥を検出したため意図的に見送った** —— 右パネル（Add to cart を含む）が 1280px でクリップ。**レイアウト修正は未起票**で、修正後に撮影する。下の実行記録を参照） |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | DONE（2026-08-23・`50664cc5`〜`462d705d`。E2E 58 → **60 tests/browser** / 25 → **26 files** / 計 174 → **180**。実測 chromium 2 passed / 3 ブラウザ 6 passed・**flaky 0**。`src/` は無変更。**プラン本文どおり 2 テスト・逸脱なし**〔ただし Done criteria の `grep waitForTimeout` → 0 件を満たすためコメントの表現を調整〕。**これで R9 の残りは 054 のみ**。下の実行記録を参照） |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
@@ -141,6 +141,60 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **054 の実行記録（2026-08-23・`0dba44de`〜`1847946d`）— 部分完了**
+>
+> **browse は DONE / 商品詳細は保留。** `tests/e2e/visual/browse.spec.ts` を新設し
+> **+1 test/browser**（E2E **62 → 63 tests/browser / 27 → 28 files / 3 ブラウザ計 186 → 189**、
+> Visual は **2 → 3 スペック / 3 → 4 テスト**）。VRT は chromium 限定なので、firefox / webkit
+> では skip される。ダッシュボード集計 **231 → 232**。`src/` は無変更。
+>
+> **Step 0 の前提は満たされていた。** `bash scripts/e2e/run-local.sh tests/e2e/visual
+> --project=chromium` で既存 3 テストが passed（plan 043 の再撮影が有効なまま）。
+> red なスイートに枚数を足すと差分検出器として機能しないため、この確認は省略できない。
+>
+> **商品詳細の VRT はプラン Step 3 の目視ゲートで止めた（本プランの最重要判断）。**
+> 撮影したベースラインで、右側の購入パネル（Ship to / Buy now / **Add to cart**）が
+> **1280px ビューポートでクリップされている**ことを検出した。客観測定では
+> **`scrollWidth === clientWidth === 1280`** で**ドキュメントの横スクロールは発生しておらず**、
+> 親コンテナ側で切れている（推測ではなく `page.evaluate` で実測した）。
+>
+> > **VRT のベースライン PNG は「意図した見た目」の宣言である。** 壊れた状態を固定すると
+> > **欠陥をロック**することになり、次の担当者は「直したらテストが壊れた」と受け取る。
+> > これは plan 050 が非 ACTIVE 店舗ページについて、plan 056 が dormant 404 について
+> > 確立した「**修正を罰するテストは書かない**」原則と同型である。プラン本文自身も
+> > 「撮影時に UI が壊れていると壊れた状態を固定してしまう。新規ベースラインは必ず
+> > 目視確認する」と Current state に明記しており、その指示どおりに止めた。
+> > **レイアウト修正は未起票**。修正後に商品詳細のベースラインを撮影すれば、
+> > 本プランは完了する（spec の雛形は本記録のとおりで再作成は容易）。
+>
+> **browse のベースラインは目視で妥当と確認した。** グリッドは seed 商品 **10 件を 4 列**で
+> 描画し、サイドバーのフィルタ・ソート・ページネーション・フッターまで崩れなく出ている。
+> **マゼンタの矩形は Playwright の mask 描画であって未ロード画像ではない**
+> （この見分けが付かないと「画像が壊れている」と誤判定して撮り直しループに入る）。
+>
+> **プラン本文の前提 1 点が陳腐化していた（実害なし）。** Why this matters は
+> 「E2E DB には seed の 2 商品しか無いため描画は決定論的」と書いているが、
+> **plan 046 が `paginationProducts` を seed へ追加した**ため実際には 10 件以上ある。
+> 決定論性は損なわれておらず（既定 orderBy が views desc で、seed 値は固定）、
+> **更新フラグなしの 2 回連続実行で 2 回とも 4 passed** を実測して確認した。
+>
+> **`run-local.sh` に `--` を挟まないこと（プランの警告を実際に守った）。** 同スクリプトは
+> 引数をそのまま playwright へ渡すため、`--` を付けると `--update-snapshots` が
+> **テスト名フィルタ**と解釈されて 0 件マッチになり、**ベースラインが更新されないまま
+> 成功したように見える**。両 spec の docstring にこの根拠を残してある。
+>
+> **本プランが主張しないこと**: (1) **商品詳細の VRT は存在しない** —— 購買判断ページの
+> レイアウト回帰は依然として未検知、(2) **クリップの原因特定と修正は行っていない**
+> （`src/` は本プランの Out of scope。未起票）、(3) home（`/`）の VRT は対象外
+> （プランの Out of scope。ただし OI-9 は 2026-06-06 に解消済みなので、
+> 先行依存としては既に外れている）、(4) firefox / webkit への拡大はしない
+> （既存方針どおり VRT は chromium 限定）、(5) `playwright.config.ts` の
+> `maxDiffPixelRatio` 等は一切触っていない。
+>
+> 回帰: `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` **4 passed**
+> （2 回連続）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は
+> 既存ベースライン）。Jest **2017** / Integration **107** はいずれも不変。docs 同期は `1847946d`。
+>
 > **049 の実行記録（2026-08-23・`f7e2bc59`〜`8d35ba27`）**
 >
 > **DONE。** `tests/e2e/profile.spec.ts` を新設し **2 テスト**（住所をフォームから追加 →
