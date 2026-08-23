@@ -12,7 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2013 passed / 2016 total across 190 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
+- 2017 passed / 2020 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
+  Detection points for the two defects plan 049 surfaced (+4 tests, +1 suite): a new
+  `orders-table.test.tsx`, one case in `payments-table.test.tsx`, and one in
+  `shipping-form.test.tsx`.
+- Earlier entry: 2013 passed / 2016 total across 190 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
   Plan 030 covered the six money-path client components that sat at lcov 0% (+26 tests, +6 suites,
   one suite per commit): newsletter, cart summary, PayPal payment, Stripe payment, checkout
   container and cart container. Their Lines coverage moved from 0% to 96.8–100%. Unlike the
@@ -64,7 +68,24 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 60 tests/browser across 26 files (180 across the three browsers), as of 2026-08-23.
+- Playwright E2E: 62 tests/browser across 27 files (186 across the three browsers), as of 2026-08-23.
+  Plan 049 added `tests/e2e/profile.spec.ts` (+2 tests/browser, +1 file) covering address
+  creation through the form and an order appearing in the history, and it uncovered two real
+  defects that the suite then pinned. First, `/profile/orders` failed to render at all:
+  `orders-table.tsx` and `payments-table.tsx` are client components that receive Prisma
+  `Decimal` props from a server component, and a `Decimal` loses its methods when it crosses
+  the RSC boundary, so `order.total.toFixed(2)` and `payment.amount.toNumber()` threw
+  (`TypeError: a.total.toFixed is not a function`). Both now go through the existing
+  `toNumberSafe` helper. The reason unit tests never caught it is instructive: the existing
+  payments test passed `amount: { toNumber: () => 1000 }`, a Decimal-shaped mock, so the
+  serialized path was never exercised — the new detection tests pass a plain number and a
+  plain string instead, and only the string form reproduces the failure since numbers already
+  have `toFixed`. Second, the address form silently ignored a country with no matching row:
+  `CountrySelector` renders a static ISO list while only DB `Country` rows can be saved, so an
+  unmatched pick left `countryId` empty and surfaced a validation error that never mentioned
+  the country. In E2E that happens every time, because the seed suffixes country names for
+  parallel isolation, making it impossible to save an address through the UI at all.
+- Earlier entry: 60 tests/browser across 26 files (180 across the three browsers), as of 2026-08-23.
   Plan 056 added `tests/e2e/newsletter.spec.ts` (+2 tests/browser, +1 file) as a characterization
   suite: `/api/newsletter` does not exist in the repo (no subscriber model in the schema either),
   so every subscription attempt fails with a "Failed to subscribe." toast. The contract is

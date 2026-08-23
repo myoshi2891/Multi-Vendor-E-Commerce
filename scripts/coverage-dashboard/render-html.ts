@@ -158,33 +158,27 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // PLATFORM との code 衝突は実 DB の unique 制約だけが止めている。両経路は同一の
     // エラーメッセージを投げるため、統合テスト側で経路を推論してはならない
     // (テスト側の再クエリは実装と独立しており、実装が変わっても緑のまま腐る)。
-    // R8 は improve Round 8 E2E 網羅性監査 (2026-07-11) 起票。全 Round を通じて初の
-    // 3 ブラウザフル実測 (111 テスト / 25.5m) で 52 passed / 17 failed / 39 skipped /
-    // 3 did not run — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト (5 サイト複製)
-    // の単一根本原因で全滅 (plan 042 が最優先・047〜050 の先行依存)。実行手順の SSOT は
-    // plans/042〜050 (自己完結プラン・CLERK_SECRET_KEY + ローカル Docker Postgres 必須・
-    // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
-    // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
-    // 本エントリと QA_HANDOFF R8 を同時削除すること。
-    // 2026-08-11 時点: 042〜048 と 050 が DONE。残るは 049 のみ。
-    // (045 = guest-flows.spec.ts 新設・E2E +6/browser。046 = /browse ページネーション配線
-    //  + skip 解除〔テスト数は不変で skip が 1 件解消〕。048 = engagement.spec.ts 新設
-    //  ・+3/browser。050 = admin-store-status.spec.ts 新設・+1/browser。)
+    // R8 (improve Round 8 E2E 網羅性監査 / plans 042〜050) は 2026-08-23 に完了。
+    // 049 = profile.spec.ts 新設 (+2/browser)・`b002373e` で R8 が閉じ切ったため、
+    // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R8 を同一コミットで削除した。
     // 048 の申し送り: Clerk の useUser() はロード完了まで isSignedIn: false を返すため、
     // isSignedIn だけを見て router.push('/sign-in') する client component
     // (store-card.tsx:30-31・return 無し) をハイドレーション直後にクリックすると
     // サインイン済みでも操作が成立しない。engagement.spec.ts の waitForClerkLoaded を参照。
     // 050 の申し送り: sign-in 直後の最初の goto は遅延リダイレクトに割り込まれるため
-    // gotoStable を使う (2026-08-11 からレスポンスも返すので status 検証に使える)。
-    // 開閉するドロップダウンの完了判定は「新ラベルの可視性」ではなく「旧ラベルの消滅」で行う。
-    {
-        priority: "medium",
-        title: "R8: E2E 網羅性ギャップ解消 (残り plan 049)",
-        target: "プロフィール住所・注文履歴 (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・046 /browse ページネーション・047 注文詳細金額・048 エンゲージメント・050 admin 店舗ステータスは完了)",
-        tool: "plans/049 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
-        cost: "M",
-        impact: "顧客プロフィール系 (住所管理・注文履歴) をブラウザ導線で回帰検知下に置き、R8 の E2E 網羅性ギャップを閉じ切る",
-    },
+    // gotoStable を使う。開閉するドロップダウンの完了判定は「新ラベルの可視性」ではなく
+    // 「旧ラベルの消滅」で行う。
+    // 049 の申し送り (実バグ 2 件を検出し本体を修正した):
+    //   (1) RSC 境界を越えた Prisma Decimal は**メソッドを失う**。client component で
+    //       .toFixed() / .toNumber() を直接呼ぶとページ全体の描画が失敗する
+    //       (/profile/orders が実際に壊れていた)。toNumberSafe (src/lib/utils.ts) を使う。
+    //       ユニットテストで本物の Decimal 風モックを渡すとこの経路を一度も踏まない ——
+    //       検知点は**素の number / string を渡す**形で書くこと (実障害は string 形)。
+    //   (2) 住所フォームの国は静的 ISO リストと DB の Country を名前一致で結ぶため、
+    //       E2E seed のサフィックス付き国名は選択肢に現れない。spec 側で実国名の
+    //       Country 行を用意すること。氏名は英字のみ (/^[a-zA-Z]+$/)。
+    //   観測のみ (未起票): payments-table.tsx は Stripe 行を表示時に /100 しているが、
+    //   plan 063 の backfill と A-3 で PaymentDetails.amount はドル建てに統一済み。
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
     // 再実測なし)。国選択 cookie 往復・a11y/VRT のストアフロント主要ページ拡大・
