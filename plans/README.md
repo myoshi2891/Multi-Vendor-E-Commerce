@@ -103,7 +103,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [027](027-integration-test-oversell-rollback-and-platform-coupon.md) | `placeOrder` 統合: オーバーセルロールバック + PLATFORM クーポン端数（TESTS-05+08） | tests | P2 | M | LOW | — | DONE（2026-08-04・`ee86ef32`〜`4efed303`。Integration 17 → **20**、order-placement 6 → **9**。**プラン本文の PLATFORM 割引額 $10.00 は実測 $12.00**〔割引基数が送料込みのため〕— 下の実行記録を参照） |
 | [028](028-unit-test-country-query.md) | `country.ts` unit テスト新設（最後の未テスト server action） | tests | P3 | S | LOW | — | DONE（2026-08-04・`68f636d5`。プラン本文どおり 4 テスト / country.ts 単体 Lines・Branches 100% / `ls src/queries/*.test.ts \| wc -l` → 20。逸脱なし） |
 | [029](029-unit-test-profile-catch-branches.md) | `profile.ts` catch 分岐 + 期間フィルタの unit テスト | tests | P3 | S–M | LOW | — | DONE（2026-08-04・`70803930`。プラン本文どおり 34→**63**（catch 20 + 期間 9）。目標 Branches 95%+ に対し実測 **100%（87/87）**。逸脱なし） |
-| [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | TODO |
+| [030](030-component-test-money-path-client.md) | money-path クライアント 6 ファイルの component テスト | tests | P3 | M | LOW-MED | — | DONE（2026-08-23・`13d3dd70`〜`47450390`。Jest 1987 → **2013** / スイート 184 → **190**。対象 6 ファイルの lcov Lines は **0% → 96.8〜100%**。**これで R4 ラウンドが閉じ切った**。**実バグ 2 件を検出** —— hydrate 失敗の未処理 rejection は**本体修正**（`066ffd2f`・オペレーター承認済み）、Stripe の到達不能なエラー表示は characterization で固定・**本体未修正**。**逸脱 2 点**〔`createMockCartItem` は型が合わない / ケース数が本文より多い〕。下の実行記録を参照） |
 | [031](031-integration-test-order-lifecycle-restock.md) | 注文キャンセル/返金の子連動 + restock 統合（TESTS-15、旧 TESTS-06 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`b0f5066a`〜`1c8ec27e`。Integration 20 → **28** / スイート 2 → **3**。**逸脱なし**。ただし `updateOrderGroupStatusAsAdmin` の並行二重復元は**未解決のまま**（本プランはテスト追加のみ） — 下の実行記録を参照） |
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
@@ -141,6 +141,100 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **030 の実行記録（2026-08-23・`13d3dd70`〜`47450390`）**
+>
+> **DONE。** `tests/component/store/` に **6 スイート・26 テスト**を新設
+> （newsletter 4 / cart-summary 4 / paypal-payment 4 / stripe-payment 6 /
+> checkout-container 4 / cart-container 4）。Jest は **1987 → 2013 / スイート 184 → 190**、
+> ダッシュボード集計 **221 → 227**。対象 6 ファイルの lcov Lines は **0% → 96.8〜100%**
+> （paypal 100% / stripe 97.6% / cart-container 100% / cart-summary 100% /
+> checkout-container 96.8% / newsletter 100% —— Done criteria の「60%+」を大きく超過）。
+> **1 ファイル = 1 コミット**（rule 02 の基本単位）+ 本体修正 1 + docs 同期 1 の計 8 コミット。
+> **029 までが DONE 済みだったため、本プランの完了で R4 ラウンドが閉じ切った** ——
+> `render-html.ts` の `NEXT_ACTIONS` R4 エントリと `QA_HANDOFF.md` の R4 プロンプト節を
+> **同一コミットで**削除している（二重 SSOT）。
+>
+> **Drift check は引っかかったが STOP には該当しなかった** —— しかも**プランが予期していた 2 点**
+> だけだった。`stripe-payment.tsx` の `createStripePayment(orderId, paymentIntent)` →
+> `paymentIntent.id`（プラン Step 4 のケース 4 が**まさにこの形を要求**している）と、
+> `cart-page/container.tsx` の `console.log` 除去（plan 007 の対象で、プランが
+> 「触らない」と指定していたもの）。Integration / E2E 統計は本プランでは不変。
+>
+> **本プランは「網を張った」型ではなく「壊れているものを見つけた」型である。**
+> plan 010 / 034 が「8 ケース全て初回から期待どおり」だったのに対し、lcov 0% の面には
+> **実バグが 2 件溜まっていた**:
+>
+> 1. **hydrate 失敗が未処理 rejection になっていた（本体修正済み・`066ffd2f`）。**
+>    `checkout-page/container.tsx:40-51` の `useEffect` は
+>    `updateCheckoutProductWithLatest()` を catch なしで呼んでいた。実害はユーザー側にあり、
+>    引き直しが失敗しても画面には**古い金額が表示されたまま**で、失敗した事実がどこにも出ず
+>    そのまま注文を確定できてしまう。**オペレーターの承認を得て**プランが推奨する代替 (a)
+>    （本体側で握る）を採り、try/catch + `tech.md` 形式の構造化ログ + `toast.error` を追加。
+>    あわせて **`tech.md` の「useEffect キャンセルフラグ」パターン**も適用した ——
+>    `activeCountry` の切替で再実行されるため、古いレスポンスが新しい状態を上書きする
+>    レースが元から存在していた。Red → Green は別コミットで実測済み。
+> 2. **Stripe の intent 取得失敗時のエラー表示が到達不能（未修正・characterization）。**
+>    `stripe-payment.tsx` の `getClientSecret` の catch は `setErrorMessage` を呼ぶが、
+>    直後の早期リターン（`if (!clientSecret || !stripe || !elements)`）が**ローダーを返す**ため、
+>    `errorMessage` を描画する `<form>` には**到達しない**。ユーザーが見るのは**無限スピナー**で、
+>    設定したメッセージは死んでいる。**プラン Step 4 のケース 2 は「error.message が画面に
+>    表示される」と書いているが、実装ではそうならない**。本体はプランの Out of scope なので
+>    修正せず、実挙動を固定して**修正時に期待値を反転させる**旨をテスト内コメントに明記した。
+>
+> **`it.failing` は実測で棄却した（プランの STOP 節が要求する検証を実施）。**
+> プラン Step 5 のケース 4 は `it.failing` での検知点作成を提示しつつ、
+> 「採用前に最小再現で検証せよ」と条件を付けている。実際に試すと **1 failed** で赤になり、
+> しかも**同じ rejection が 2 回報告**された —— `it.failing` が反転するのは
+> **テスト本体の assertion 結果**であって、`useEffect` の外へ漏れた rejection は
+> **Node のプロセスレベルで浮上する**ため吸収されない。プランが警告していた
+> 「発生源から切り離された不安定な失敗を作る」がそのまま再現した形である。
+> **後続プランで同種の判断をする executor は、この実測結果を根拠に検証を省略してよい**
+> （本リポジトリの Jest 30 + jsdom 構成では `it.failing` は unhandled rejection を吸収しない）。
+>
+> **プラン本文からの逸脱 2 点**:
+>
+> 1. **プラン必須指定の `createMockCartItem` は型が合わない。** プランは「アドホックな
+>    オブジェクトリテラルで代用しない」として `createMockCartItem` を名指しするが、
+>    あれが返すのは Prisma `Decimal` を持つ **DB の CartItem** で、`CartSummary` が受け取る
+>    `CartProductType`（`price: number`）とは**別の型**である。同じ
+>    `src/config/test-fixtures.ts` の **`createMockCartProduct`** を使用した ——
+>    共通基盤を使うという要件の趣旨は満たしている。
+> 2. **ケース数がプラン本文より多い**（本文 3+4+5 → 実装 4+4+6）。追加した 2 件はいずれも
+>    **分岐の false 側**で、プランのケース表が漏らしていたもの: (a) `saveUserCart` が
+>    **falsy を resolve** する経路 —— 実装は `if (res) router.push(...)` なので、reject 系だけでは
+>    この分岐が未検証で残る、(b) `createStripePayment` が `paymentDetails` を返さない経路 ——
+>    決済は Stripe 側で成立しているのに保存が欠けた状態で、固定しないと
+>    「保存できていないのに画面だけ更新して支払い済みに見せる」回帰を検出できない。
+>
+> **識別力を 6 スイートすべてで機械的に確認した。** 各スイートの中心 assert を 1 つずつ崩し、
+> **当該テストのみ**が落ちることを実測してから戻している（newsletter: ガードの呼び出し回数
+> 1 → 2 / cart-summary: total 45.50 → 45.51 / paypal: `not.toHaveBeenCalled()` の反転 /
+> stripe: 第 2 引数を id → オブジェクト / checkout-container: 再 hydrate の国を jpCountry →
+> undefined / cart-container: 失敗時の `setCart` 期待値の反転）。
+>
+> **SDK モックは「配線」を見ており「SDK の挙動」を見ていない**（プランの レビュー観点）。
+> `PayPalButtons` は iframe を立てるため jsdom で動かず、`createOrder` / `onApprove` / `onError` を
+> 「押すと発火するボタン」として露出する stub に差し替えた。`Function` / `any` は使わず
+> props 型を明示している（`.claude/steering/tech.md`）。子コンポーネントも stub 化し、
+> 検証対象を各コンテナの配線に限定した（`PlaceOrderCard` / `CartProduct` 自体は既存スイートの担当）。
+>
+> **本プランが主張しないこと**: (1) **newsletter の成功パスは「配線」の特性化であって
+> `/api/newsletter` が動くことの証明ではない** —— route は不在で実ブラウザでは常に 404
+> （実挙動の固定は plan 056 の `tests/e2e/newsletter.spec.ts` が担当）、(2) **Stripe の
+> 到達不能エラー表示は直していない** —— 修正時は `stripe-payment.test.tsx` の当該ケースの
+> 期待値を反転させること、(3) `summary.tsx:30` / `stripe-payment.tsx:28` の
+> **`catch (error: any)` は残置**（no-any 規約違反。プランの Maintenance notes が
+> 後続の単独修正候補として記録済みで、本テストがその回帰検知になる）、
+> (4) **送料計算そのものは検証していない** —— cart-container が固定したのは
+> 「集計値が summary へ渡る配線」だけで、計算は `shipping-utils.test.ts` /
+> `shipping-fee.test.tsx` の担当、(5) 二重送信ガードを検証したのは **newsletter のみ**
+> （place-order 側は plan 006 とその既存テストの担当）。
+>
+> 回帰: `bun run test` **2013 passed / 2016 total / 190 スイート**・`bunx tsc --noEmit` **0 件**・
+> `bun run lint` **0 errors**（15 warnings は既存ベースライン）・`scripts/coverage-dashboard`
+> **87 passed**。lcov 全体は Statements **70.51%** / Branches **50.00%** / Lines **69.67%** へ
+> （直前 68.49% / 48.46% / 67.5% 台）。docs 同期は `47450390`。
+>
 > **056 の実行記録（2026-08-23・`50664cc5`〜`462d705d`）**
 >
 > **DONE。** `tests/e2e/newsletter.spec.ts` を新設し **2 テスト**（購読が成功せず失敗トースト +
