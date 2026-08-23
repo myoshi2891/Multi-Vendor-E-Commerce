@@ -108,7 +108,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [032](032-integration-test-webhook-payment-idempotency.md) | Stripe/PayPal webhook 実 DB 冪等性 統合（TESTS-16、旧 TESTS-04 昇格） | tests | P2 | M | LOW | — | DONE（2026-08-04・`9e1682b7`〜`df7c0466`。Integration 28 → **39** / スイート 3 → **4**。**プラン P4 の期待値が実装と食い違い、新規 finding として起票**〔切替時に `PaymentDetails.amount`/`currency` が更新されない〕 — **`c4a6fb41`（2026-08-07）で本体修正済み**。P4 / S1 は characterization を解除し反転（`607c2b88`）。下の実行記録と Deferred 節を参照） |
 | [033](033-integration-test-tsvector-search.md) | tsvector 全文検索 raw SQL の実 DB 統合（TESTS-17） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`6514e0c6`。Integration 40 → **49** / スイート 4 → **5**。プラン本文どおり 9 テスト（シナリオ 1〜8 + 5b）・**逸脱なし**。下の実行記録を参照） |
 | [034](034-integration-test-review-aggregation.md) | upsertReview 評価集計（rating/numReviews）統合（TESTS-18） | tests | P3 | S | LOW | — | DONE（2026-08-13・`734a34b4`〜`914e7199`。Integration 71 → **76** / スイート 9 → **10**。プラン本文どおり 5 シナリオ・**逸脱なし**。STOP 条件はいずれも非該当（集計は全シナリオで初回から正しく、本体バグは検出されなかった）。**R5 は残り 035 のみ**。下の実行記録を参照） |
-| [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | TODO |
+| [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | DONE（2026-08-23・`e6ebdb15`〜`9b8e0fbe`。Integration 78 → **86** / スイート 10 → **11**。**これで R5 ラウンドが閉じ切った**。**シナリオ 3 の非対称はユーザー判定によりバグとして characterization**〔DB 昇格なし・Clerk 同期あり。認可ソースは Clerk 側なので実際に販売者権限が通る〕— remediation は未起票。**逸脱 1 点**〔`StoreStatus` が 2 系統あり `tsc` だけが落ちる〕。下の実行記録を参照） |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
@@ -141,6 +141,78 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **035 の実行記録（2026-08-23・`e6ebdb15`〜`9b8e0fbe`）**
+>
+> **DONE。** `tests/integration/store-status.test.ts` を新設し **8 シナリオ**
+> （PENDING→ACTIVE の SELLER 昇格 + Clerk 同期 / PENDING→BANNED は非昇格 /
+> DISABLED→ACTIVE は DB 昇格なし・Clerk 同期あり / ACTIVE→ACTIVE 再実行 / 未知 storeId /
+> 非 ADMIN・未認証 / `$transaction` 原子性）。Integration は **78 → 86 / スイート 10 → 11**、
+> ダッシュボード集計 **219 → 220**。Jest unit は **1987 で不変**。実測 **8 passed**（単体）/
+> **86 passed**（全体）。`src/queries/store.ts` は **1 行も変更していない**。
+> **034 / 041 が DONE 済みだったため、本プランの完了で R5 ラウンドが閉じ切った** ——
+> `render-html.ts` の `NEXT_ACTIONS` R5 エントリと `QA_HANDOFF.md` の R5 プロンプト節を
+> **同一コミットで**削除している（二重 SSOT。片方だけ残すと drift する）。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/store.ts` は
+> baseline `1750ef2` から **+75/−29** 動いていたが、プランが依拠する契約はすべて健在だった
+> —— `:596` インライン ADMIN 判定 / `:600` 店舗存在チェック / `:612` `db.$transaction` /
+> `:623` `store.status === "PENDING" && updated.status === "ACTIVE"` /
+> `:638` `updatedStore.status === "ACTIVE"` の Clerk 同期。行番号はプラン記載（`:531-601`）から
+> ずれていたが、**構造と条件式はプラン抜粋と完全一致**した。
+>
+> **シナリオ 3 の非対称はユーザー判定により「バグとして characterization」とした。**
+> プランは STOP 条件で「仕様かバグかの判定をユーザーから得られない場合は止めよ」と要求している。
+> 判定を取ったうえで、**現挙動どおり assert しつつ `TODO(characterization)` タグで反転条件を明記**
+> する方針を採った。非対称の実体: Clerk 同期の条件は `updatedStore.status === "ACTIVE"` のみで
+> **起点ステータスを見ない**ため、DISABLED/BANNED → ACTIVE では DB の `User.role` が USER のまま
+> Clerk の `privateMetadata.role` だけ SELLER になる。**本リポジトリの認可ソースは Clerk 側**
+> （`src/lib/auth-guards.ts` の `requireSeller`）なので、`requireSeller()` は通り
+> **実際に販売者権限が付与される**。**remediation プランは未起票**（前例: plan 037 → 064）。
+>
+> **STOP 条件はいずれも非該当。** 特に「シナリオ 2 / 3 で User.role が SELLER に変わる」
+> （＝昇格条件そのもののバグ）と「シナリオ 7 で Store.status が ACTIVE のまま残る」
+> （＝非原子的）は本体バグとして即報告すべき事象だが、**8 シナリオすべて初回から期待どおり**
+> だった。ロール昇格の DB 側条件と `$transaction` の原子性は健全である。
+>
+> **シナリオ 7（原子性）が本スイートで最も価値のある 1 件。** シナリオ 1〜4 は
+> 「status 更新とロール昇格が**両方成功した**」ことしか示さず、**同一 `$transaction` か**は
+> 後段だけを決定論的に失敗させて前段が巻き戻るのを見ない限り実証できない。失敗注入の手段は
+> 実際に限られていた —— (a) オーナー User の事前削除は `Store.user` が `onDelete` 未指定＝
+> 既定 `Restrict` のため FK で拒否される、(b) 統合テストは実 DB シングルトンを共有するため
+> `tx.user.update` の spy 差し替えも不可。残る手が**一時 CHECK 制約**（`tmp_block_seller`）で、
+> プラン本文の指定どおり実装した。**`resetDb` は TRUNCATE でありテーブル制約を落とさない**ので
+> DROP は `finally` 必須であり、その漏れは**同一ファイルの 2 回連続実行**でしか顕在化しない
+> （Done criteria の指示どおり実測し、2 回とも 8 passed）。
+>
+> **プラン本文からの逸脱 1 点（プラン側の Current state が不完全だった）**:
+> `StoreStatus` は **2 系統**存在する —— `@prisma/client` の生成 enum と、
+> `src/lib/types.ts:517` のアプリ独自 enum。`updateStoreStatus` の引数型は**後者**
+> （`store.ts:4` が `@/lib/types` から import）。TS の enum は名前的型なので値が同一文字列でも
+> 相互代入できず、Prisma 側の enum を渡すと **TS2345 が 9 件**出る。厄介なのは
+> **実行時は素通りするため、テストは 8 passed のまま `tsc --noEmit` だけが落ちる**こと。
+> 呼び出し側は `AppStoreStatus` の別名 import に統一し、その理由をファイル冒頭にコメントで
+> 残してある。プラン本文の Current state は enum を「`prisma/schema.prisma`」としか書いておらず、
+> この二重定義に触れていない。**`src/lib/types.ts` の enum を引数に取る他の query を
+> テストする後続プランは全て同じ罠を踏む。**
+>
+> **識別力を機械的に確認した。** シナリオ 7 の `expect(storeAfter.status).toBe(StoreStatus.PENDING)`
+> を `ACTIVE` へ崩すと、**当該テストのみ**が落ち他の 7 件は通ったままであることを実測してから
+> 戻している。ここは「status 更新とロール昇格が同一 tx から外れる」回帰の検知点。
+>
+> **本プランが主張しないこと**: (1) **シナリオ 3 の現挙動が正しいとは主張していない** ——
+> characterization であり、remediation 時に `mockUpdateUserMetadata` の assert を
+> `not.toHaveBeenCalled()` へ反転させること、(2) **Clerk 実 API との疎通は未検証**
+> （`updateUserMetadata` はモックで引数のみ検証。ネットワーク障害時のリトライ挙動は対象外）、
+> (3) **並行実行（同一店舗への同時 updateStoreStatus）は未検証** —— 固定したのは逐次実行時の
+> 遷移条件のみ、(4) **BANNED / DISABLED への降格時に SELLER ロールを剥奪する処理は存在しない**
+> （spike 022 の自動措置設計と接続する将来課題）、(5) インライン認可を `requireAdmin` へ移す
+> リファクタは行っていない（プランの Out of scope。エラーメッセージが同一なので移行しても本テストは緑）。
+>
+> 回帰: `bun run test:integration` **86 passed / 11 スイート**・`bun run test` **1987 passed /
+> 1990 total / 184 スイート**（不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**
+> （15 warnings は既存ベースライン）・`scripts/coverage-dashboard` **87 passed**。
+> docs 同期は `9b8e0fbe`。
+>
 > **034 の実行記録（2026-08-13・`734a34b4`〜`914e7199`）**
 >
 > **DONE。** `tests/integration/review-aggregation.test.ts` を新設し **5 シナリオ**
