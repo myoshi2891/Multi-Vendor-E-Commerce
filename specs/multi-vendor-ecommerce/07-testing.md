@@ -540,7 +540,30 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 91 integration tests across 12 suites
+- 107 integration tests across 13 suites
+  (adds `tests/integration/product-browse.test.ts` 16), as of 2026-08-23, measured 107/107 pass.
+  Plan 039 pinned `getProducts`, the query behind `/browse` (91 -> 107; suites 12 -> 13), and
+  found a real defect while doing so. With no upper bound the query passed
+  `lte: filters.maxPrice || Infinity`, and Prisma cannot put `Infinity` on a Decimal column —
+  the value drops during serialization and the query throws "Argument `lte` is missing."
+  (measured on Prisma 5.22.0), so any price filter with only a minimum failed outright. The
+  storefront never showed this because `browse/page.tsx` defaults `maxPrice` to
+  `Number.MAX_SAFE_INTEGER`; callers that go straight to `getProducts` do hit it. The fix
+  (`f1be1aa0`, operator-approved) simply omits `lte` when there is no maximum.
+  The suite's Arrange pins every value an assertion depends on. `views` and `createdAt` are
+  set to distinct values because the default `orderBy` is `views desc` and freshly seeded rows
+  all share `views: 0` — PostgreSQL does not guarantee an order among equal rows, so the
+  pagination assertions would otherwise depend on physical row order and flake. Every size's
+  `price` and `discount` is set explicitly too: filters read the raw `price` through `some`
+  (one matching size pulls in the whole product), while the price sorts read the discounted
+  price, so leaving `discount` to the schema default would let a default change silently
+  reorder results. Two departures from the plan text: its scenario 2 asks to characterize
+  fail-open URL filters, but that was already fixed to fail-closed in `cce53407`, so the
+  expectation was inverted as the plan itself prescribed (and the store/offer paths pinned
+  alongside); and its claim that no Clerk mock is needed does not hold — `getProducts` never
+  calls `currentUser`, but the module imports Clerk, so without the mock jest fails to parse
+  `@clerk/backend`'s ESM at load time.
+- Earlier entry: 91 integration tests across 12 suites
   (adds `tests/integration/product-update.test.ts` 5), as of 2026-08-23, measured 91/91 pass.
   Plan 038 pinned the seller product-edit flow (86 -> 91; suites 11 -> 12).
   `handleProductAndVariantUpdate` replaces specs, questions, free-shipping rows, images,

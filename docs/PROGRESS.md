@@ -11,7 +11,7 @@
 | 指標 | 値 |
 |------|----|
 | Jestユニットテスト | **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jest Integration テスト | **107テスト / 13スイート**（… + `product-update` **5** + `product-browse` **16**）— 2026-08-23 実測 107/107 pass（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **60 tests/browser / 26 files（3ブラウザ計 180）** — 2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -3958,4 +3958,64 @@ id は必ず新しくなる）。
 | Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **不変** |
 | Playwright E2E | 60 tests/browser・計 180 | **不変** |
 | ダッシュボード集計ファイル数 | 227 | **228** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 039 の実行（`getProducts` のフィルタ/ソート/ページング統合 / TESTS-23） (2026-08-23)
+
+#### 概要
+
+`/browse` の供給源 `getProducts` の where 動的合成・ソート・ページングを実 DB で初めて
+検証した（**8 シナリオ / 16 テスト**）。本プランの完了で **improve Round 6 が閉じ切った**。
+**実バグを 1 件検出し、オペレーター承認のうえ本体を修正**している。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/product.ts` | **本体修正**（`lte: Infinity` の除去） | `f1be1aa0` |
+| `tests/integration/product-browse.test.ts` | 新規作成（8 シナリオ / 16 テスト） | `e5b2e8a5` |
+
+#### 検出した実バグ: `lte: Infinity` が Prisma の Decimal フィルタで throw する
+
+上限未指定時、実装は `lte: filters.maxPrice || Infinity` を渡していた。Prisma は
+**Decimal カラムのフィルタに Infinity を載せられず**、シリアライズ時に値が落ちて
+`Argument \`lte\` is missing.` で **throw** する（Prisma 5.22.0 実測）。
+つまり「**下限だけ指定した価格絞り込み**」は常に失敗していた。
+
+`/browse` は `page.tsx` が `maxPrice` を `Number.MAX_SAFE_INTEGER` に既定化しているため
+**ストアフロント経由では再現しない**。`getProducts` を直接呼ぶ経路と、複合フィルタ
+`{ category, minPrice }` で落ちる。上限が無いときは `lte` を付けない形へ修正した。
+
+#### Arrange では assert が依存する値をすべて明示する
+
+- **`views` / `createdAt` を相異なる値に固定**しないと、既定 `orderBy`（views desc）が
+  同値になる。**PostgreSQL は同値行の順序を保証しない**ため、ページング検証が
+  実 DB の行順に依存したフレークテストになる
+- **全 Size の `price` と `discount` を明示**する。フィルタは生の `price` を `some` で見る
+  （どれか 1 Size が範囲内なら商品全体がヒットする）ため追加 Size が絞り込みに紛れ込み、
+  ソートは `discount` 込みの割引後価格を見るためスキーマ既定値任せだと並び順が静かに壊れる
+
+#### プラン本文からの逸脱 2 点
+
+1. **シナリオ 2 の fail-open characterization は既に修正済みだった。** プランは
+   「存在しない category URL はフィルタ脱落 → 全件返る」を固定せよと指示するが、その挙動は
+   **`cce53407`（2026-08-12 "fix(queries): return no results when a URL filter matches no
+   row"）で fail-closed に修正済み**。プラン本文が指定する反転先（`totalCount === 0`）へ
+   期待値を反転し、同型の store / offer 経路も併せて固定した（片方だけ退行しても検出できる）。
+2. **「Clerk mock 不要」は成立しない。** `getProducts` は `currentUser` を呼ばないが、
+   **モジュール `src/queries/product.ts` が Clerk を import している**ため、モックが無いと
+   読み込み時点で `@clerk/backend` の ESM を jest が解釈できず SyntaxError になる。
+   判断基準は「その関数が使うか」ではなく「**そのモジュールが読み込むか**」。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration | 91 / 12 スイート | **107 / 13 スイート** |
+| Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **不変** |
+| Playwright E2E | 60 tests/browser・計 180 | **不変** |
+| ダッシュボード集計ファイル数 | 228 | **229** |
 | 型エラー | 0 件 | **0 件** |
