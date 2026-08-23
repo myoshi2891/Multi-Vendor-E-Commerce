@@ -24,13 +24,22 @@ jest.mock("./payment-table-header", () => {
     }) {
         return (
             <div data-testid="dummy-header">
-                <button data-testid="btn-filter" onClick={() => setFilter("PAID")}>
+                <button
+                    data-testid="btn-filter"
+                    onClick={() => setFilter("PAID")}
+                >
                     Set Filter Paid
                 </button>
-                <button data-testid="btn-period" onClick={() => setPeriod("last-month")}>
+                <button
+                    data-testid="btn-period"
+                    onClick={() => setPeriod("last-month")}
+                >
                     Set Period Last Month
                 </button>
-                <button data-testid="btn-search" onClick={() => setSearch("test-search")}>
+                <button
+                    data-testid="btn-search"
+                    onClick={() => setSearch("test-search")}
+                >
                     Set Search Text
                 </button>
             </div>
@@ -40,11 +49,20 @@ jest.mock("./payment-table-header", () => {
 
 // Mock Pagination
 jest.mock("../../shared/pagination", () => {
-    return function DummyPagination({ page, setPage }: { page: number; setPage: (p: number) => void }) {
+    return function DummyPagination({
+        page,
+        setPage,
+    }: {
+        page: number;
+        setPage: (p: number) => void;
+    }) {
         return (
             <div data-testid="dummy-pagination">
                 <span data-testid="current-page">{page}</span>
-                <button data-testid="btn-next" onClick={() => setPage(page + 1)}>
+                <button
+                    data-testid="btn-next"
+                    onClick={() => setPage(page + 1)}
+                >
                     Next
                 </button>
             </div>
@@ -106,7 +124,9 @@ describe("PaymentsTable Component", () => {
 
         let renderResult: any;
         await act(async () => {
-            renderResult = render(<PaymentsTable payments={mockPayments} totalPages={5} />);
+            renderResult = render(
+                <PaymentsTable payments={mockPayments} totalPages={5} />
+            );
         });
 
         // 1. Move to page 2 via pagination
@@ -198,7 +218,9 @@ describe("PaymentsTable Component", () => {
     });
 
     it("logs console error when getUserPayments fails", async () => {
-        const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
         const error = new Error("Database network failure");
         (getUserPayments as jest.Mock).mockRejectedValue(error);
 
@@ -215,7 +237,9 @@ describe("PaymentsTable Component", () => {
     });
 
     it("logs generic console error when non-Error object is thrown", async () => {
-        const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
         (getUserPayments as jest.Mock).mockRejectedValue("string error");
 
         await act(async () => {
@@ -227,5 +251,33 @@ describe("PaymentsTable Component", () => {
             "string error"
         );
         consoleSpy.mockRestore();
+    });
+
+    it("renders the amount when it arrives serialized across the RSC boundary", () => {
+        // RSC 境界を越えた Decimal は**メソッドを失う**。ここで本物の Decimal 風モック
+        // （{ toNumber: () => ... }）を渡すと、実際にユーザーが踏む経路を一度も通らない。
+        (getUserPayments as jest.Mock).mockResolvedValue({
+            payments: [],
+            totalPages: 1,
+        });
+        const serialized = {
+            id: "payment-serialized",
+            paymentIntentId: "pi_serialized",
+            // Stripe 行は表示時に amount / 100 される（セント建ての名残）。
+            // 本テストの関心は**シリアライズ後の値を扱えるか**だけなので、
+            // その正規化が混ざらない PayPal を使う。
+            paymentMethod: "PayPal",
+            status: "Completed",
+            amount: "42.50",
+            currency: "usd",
+            createdAt: new Date("2026-01-01"),
+            updatedAt: new Date("2026-01-01"),
+            orderId: "order-001",
+            userId: "user-001",
+        } as unknown as UserPaymentType;
+
+        render(<PaymentsTable payments={[serialized]} totalPages={1} />);
+
+        expect(screen.getByText("$42.50")).toBeInTheDocument();
     });
 });
