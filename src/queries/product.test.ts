@@ -969,6 +969,56 @@ describe("getProducts", () => {
             });
         });
 
+        it("maxPrice: 0 を「上限未指定」に化けさせず lte: 0 を載せる", async () => {
+            // Arrange: minPrice 100 / maxPrice 0 は空レンジ。truthy 判定だと maxPrice が
+            // 落ちて `gte: 100` だけが残り、全件が通ってしまう（回帰の検知点）。
+            // Act
+            await getProducts({ minPrice: 100, maxPrice: 0 });
+
+            // Assert
+            const callArgs = mockDb.product.findMany.mock.calls[0][0];
+            const priceClause = callArgs.where.AND.find(
+                (c: Record<string, unknown>) =>
+                    JSON.stringify(c).includes("price")
+            );
+
+            expect(priceClause).toEqual({
+                variants: {
+                    some: {
+                        sizes: {
+                            some: {
+                                price: { gte: 100, lte: 0 },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+
+        it("minPrice: 0 単独でも価格フィルタを適用する", async () => {
+            // Arrange / Act: 下限 0 は「未指定」ではなく明示指定
+            await getProducts({ minPrice: 0 });
+
+            // Assert
+            const callArgs = mockDb.product.findMany.mock.calls[0][0];
+            const priceClause = callArgs.where.AND.find(
+                (c: Record<string, unknown>) =>
+                    JSON.stringify(c).includes("price")
+            );
+
+            expect(priceClause).toEqual({
+                variants: {
+                    some: {
+                        sizes: {
+                            some: {
+                                price: { gte: 0 },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+
         it("サイズ配列でフィルタする", async () => {
             await getProducts({ size: ["S", "M"] });
 

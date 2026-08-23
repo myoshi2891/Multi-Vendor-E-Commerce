@@ -729,7 +729,14 @@ export const getProducts = async (
     }
 
     // Apply price filters (min and max price)
-    if (filters.minPrice || filters.maxPrice) {
+    // 「未指定」と「0」を **truthy 判定で混同しない**。`filters.minPrice || filters.maxPrice`
+    // だと `maxPrice: 0`（= 上限 0 円の空レンジ）が「上限未指定」に化け、`gte` だけが
+    // 残って **全件が通ってしまう**。境界は明示的な存在判定で分ける。
+    const hasPriceBound = (value: unknown): value is number =>
+        typeof value === "number" && Number.isFinite(value);
+    const hasMinPrice = hasPriceBound(filters.minPrice);
+    const hasMaxPrice = hasPriceBound(filters.maxPrice);
+    if (hasMinPrice || hasMaxPrice) {
         // 上限が無いときは `lte` を**付けない**。以前は `lte: Infinity` を渡していたが、
         // Prisma は Decimal カラムのフィルタに Infinity を載せられず、シリアライズ時に
         // 値が落ちて "Argument `lte` is missing." で throw していた（Prisma 5.22.0 実測）。
@@ -737,9 +744,9 @@ export const getProducts = async (
         // `/browse` は page.tsx 側で maxPrice を Number.MAX_SAFE_INTEGER に既定化して
         // いるため露見していなかったが、getProducts を直接呼ぶ他の経路では壊れる。
         const priceFilter: { gte: number; lte?: number } = {
-            gte: filters.minPrice || 0, // Default to 0 if no min price is set
+            gte: hasMinPrice ? filters.minPrice : 0, // Default to 0 if no min price is set
         };
-        if (filters.maxPrice) {
+        if (hasMaxPrice) {
             priceFilter.lte = filters.maxPrice;
         }
         whereClause.AND.push({
