@@ -122,7 +122,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [046](046-browse-pagination-e2e.md) | /browse ページネーション最小配線 + 実データ E2E（TESTS-32 訂正版） | tests | P2 | M | MED | — | DONE（2026-08-11・`f10a5b89`〜`4adb0b3b`。E2E は **件数不変（50 tests/browser・計 150）で skip が 1 件解消** —— search-filter が chromium **5 passed / skip 0** / 3 ブラウザ **15 passed**。**プラン本文のカードセレクタが実 DOM と食い違っており逸脱 1 点**〔prefix が価格 testid にも一致〕。下の実行記録を参照） |
 | [047](047-e2e-checkout-order-detail.md) | 住所未選択エラー un-skip + 注文詳細の金額明細検証（TESTS-30+31） | tests | P1 | M | MED | 042 | DONE（3 ブラウザ実測 9 passed / 6 skipped / 0 failed。**042 の残ハングの真因も特定・除去** — 下の実行記録を参照） |
 | [048](048-e2e-engagement-flows.md) | wishlist / フォロー / レビュー投稿 E2E（TESTS-34+35+36） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`7db28f6e`〜`c1ad7c64`。E2E 50 → **53 tests/browser** / 21 → **22 files** / 計 150 → **159**。実測 chromium 3 passed / 3 ブラウザ 9 passed。`src/` はプランの上限どおり aria-label 1 行のみ。**out of scope とされていた `store-card.tsx` の `return` 欠落が、実際にフォロー導線を壊していることを実測で確認**（テスト側で回避）。下の実行記録を参照） |
-| [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | TODO |
+| [049](049-e2e-profile-orders-addresses.md) | プロフィール住所管理 + 注文履歴 E2E（TESTS-37） | tests | P3 | M | MED | 042 | DONE（2026-08-23・`f7e2bc59`〜`8d35ba27`。E2E 60 → **62 tests/browser** / 26 → **27 files** / 計 180 → **186**、Jest 2013 → **2017** / 190 → **191 スイート**。**これで R8 ラウンドが閉じ切った**。**実バグ 2 件を検出し、いずれも本体を修正**（オペレーター承認済み）— `/profile/orders` の RSC 境界 Decimal （`652e4f5b`）/ 住所フォームの選べない国（`f7e2bc59`）。**逸脱 4 点**。下の実行記録を参照） |
 | [050](050-e2e-admin-store-status.md) | 管理者店舗ステータス変更 → store ページ非公開 E2E（TESTS-38） | tests | P2 | M | MED | 042 | DONE（2026-08-11・`52ab59ab`〜`a3874701`。E2E 53 → **54 tests/browser** / 22 → **23 files** / 計 159 → **162**。実測 chromium 1 passed / 3 ブラウザ 3 passed・**flaky 0**。`src/` のアプリコードは無変更。**プラン記載の「成功 toast」は存在せず、素朴な待ち方は誤った理由で緑になる**（逸脱 1 点）。下の実行記録を参照） |
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
@@ -141,6 +141,93 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **049 の実行記録（2026-08-23・`f7e2bc59`〜`8d35ba27`）**
+>
+> **DONE。** `tests/e2e/profile.spec.ts` を新設し **2 テスト**（住所をフォームから追加 →
+> 一覧に表示 / 注文が履歴に載り詳細へ遷移）。E2E は **60 → 62 tests/browser / 26 → 27 files /
+> 3 ブラウザ計 180 → 186**。実測 chromium **2 passed** / 3 ブラウザ **4 passed・2 skipped**
+> （Firefox は `stock-decrement` と同条件の dev モード skip）。**042〜048・050 が DONE 済み
+> なので、本プランの完了で R8 ラウンドが閉じ切った** —— `render-html.ts` の `NEXT_ACTIONS` R8 と
+> `QA_HANDOFF.md` の R8 プロンプト節を**同一コミットで**削除している。
+>
+> **本プランは「壊れているものを見つけた」型の成果である。実バグを 2 件検出し、
+> いずれもオペレーター承認のうえ本体を修正した**（プランは `src/` を Out of scope としているが、
+> 一方はテストが成立しない前提であり、他方は対象ページが丸ごと壊れていた）。
+> 付随して Jest は **2013 → 2017 / スイート 190 → 191**（検知点 4 件）。
+>
+> **バグ 1: `/profile/orders` がページ全体描画に失敗していた（`652e4f5b`）。**
+> `orders-table.tsx` / `payments-table.tsx` はいずれも `"use client"` で、Server Component から
+> Prisma `Decimal` を props で受け取る。**RSC 境界を越えると `Decimal` はメソッドを失った
+> 素の値へシリアライズされる**ため、`order.total.toFixed(2)` /
+> `payment.amount.toNumber()` が TypeError になる。実測ではページが
+> "This page couldn't load" になり、サーバーログに
+> `TypeError: a.total.toFixed is not a function` が出ていた —— **注文履歴という取引の
+> 基本保証が機能していない**状態で、まさに本プランが守ろうとした導線である。
+> 既存ヘルパー `toNumberSafe`（`src/lib/utils.ts:32`）経由へ変更した
+> （Decimal なら `.toNumber()`、素の値なら `Number()` にフォールバックするので
+> **境界の前後どちらでも正しく動く唯一の形**）。
+>
+> > **なぜユニットテストで捕まらなかったか（後続プランが最も学ぶべき点）。**
+> > 既存の `payments-table.test.tsx` は `amount: { toNumber: () => 1000 }` という
+> > **本物の Decimal 風モック**を渡していた。RSC のシリアライズ境界は jsdom のテストに
+> > 存在しないため、**当該経路を一度も踏まない**。ユニットテストを何本足しても
+> > このクラスのバグは捕まらない。検知点は**素の number / string を渡す**形で追加した ——
+> > 実障害は **string 形**で起きる（number は `.toFixed` を持つので素通りする）ので、
+> > number だけを渡すテストは緑のまま腐る。
+>
+> **バグ 2: 住所フォームが選べない国を黙って無視していた（`f7e2bc59`）。**
+> `CountrySelector` は**静的な ISO 国リスト**を描画するが、保存できるのは DB の `Country` 行
+> だけで、両者は**名前一致でしか結びつかない**。`handleCountryChange` は一致した場合しか
+> 処理せず、UI 上は国が選ばれたように見えるのに `countryId` が空のまま残り、送信時には
+> 「国が原因」と分からない検証エラーだけが出ていた。**E2E 環境ではこれが常に起きる** ——
+> seed は並列分離のため国名にサフィックスを付けるので（実測: DB の `Country` は
+> `United States CHROMIUM-W0` / `FIREFOX-W0` / `WEBKIT-W0` の**3 行のみ**）、
+> 静的リストのどれとも一致せず **UI からは住所を 1 件も登録できない**。
+> 国の欄でエラーを表面化させる形へ修正した（Red → Green を component テストで実測）。
+>
+> **プラン本文からの逸脱 4 点（いずれもプラン側の Current state が実装と食い違っていた）**:
+>
+> 1. **送信ボタンは新規追加では `Create Address`。** プラン記載の
+>    `Save Address information` は **`data?.id` がある編集時**のラベルで、新規では現れない
+>    （既存の `tests/component/store/shipping-form.test.tsx` も `Create Address` を使っている）。
+> 2. **国は native `select` ではなくカスタムコンボボックス。**
+>    トグルボタン（`aria-haspopup="listbox"`）→ `placeholder="Search a country"` の検索欄 →
+>    `role="option"` の順に操作する。`selectOption` は使えない。
+> 3. **seed の国は選択肢に現れない**（上記バグ 2）。spec 側で静的リストと一致する
+>    実国名（`"United States"`）の Country 行を用意し、`afterAll` で削除している。
+> 4. **氏名は英字のみ**（`ShippingAddressSchema` の `/^[a-zA-Z]+$/`）。プランが指定する
+>    `First name: E2E` は数字を含むため "First name can only contain letters." で弾かれる。
+>    **失敗の真因はスクリーンショットではなく `error-context.md` の DOM スナップショットで特定した。**
+>
+> **状態をテスト間・実行間で共有しない設計をプランどおり厳守した。** Street はこの実行に
+> 固有の値（DB は実行をまたいで共有されるため、固定値だと住所が累積し 2 回目以降の assert が
+> strict mode violation になる）。テスト 2 はテスト 1 の住所に依存せず自分の default 住所を作る
+> （依存すると住所選択が**テスト実行順に依存**し、`--grep` 単体実行と結果が変わる）。
+> `afterAll` は **住所 → User → Clerk → `$disconnect` の順** —— `ShippingAddress.userId` は
+> **RESTRICT** でカスケードしないため、住所を残したまま User を消すと P2003 で失敗し、
+> しかも `cleanup()` の `.catch(() => {})` が**その失敗を握り潰す**（片付いていないのに
+> 片付いた顔をする）。
+>
+> **注文履歴は行を特定してから View を押している。** 行を特定せずに `View` を押すと、
+> 注文が複数あるときに**別の注文へ飛んでも気づけない**。識別力は行の特定条件を
+> 存在しない注文 ID へ崩して当該テストのみが落ちることを実測済み。
+>
+> **観測したが触っていないもの（未起票）**: `payments-table.tsx` は
+> `paymentMethod === "Stripe"` の行を表示時に **`/ 100`** している（セント建ての名残）。
+> plan 063 の backfill と Round 14 の A-3（`e63474b`）で `PaymentDetails.amount` は
+> **ドル建てに統一済み**なので、**この除算は表示額を 1/100 にしている可能性がある**。
+> 本プランの範囲外のため修正しておらず、起票もされていない。
+>
+> **本プランが主張しないこと**: (1) `/profile/orders/[filter]` のフィルタ・ページングは
+> 未検証（注文を大量に作る必要があり wall-clock コスト過大。プランの Out of scope）、
+> (2) **住所の編集・削除 UI は未検証**（初版は追加 + 表示のみ）、(3) `/profile/history`
+> （localStorage ベースの閲覧履歴）は対象外、(4) **Firefox は dev モードで skip** している ——
+> CI（本番ビルド起動）では実行される、(5) フルラン（全 spec × 3 ブラウザ）は再取得していない。
+>
+> 回帰: `bun run test` **2017 passed / 2020 total / 191 スイート**・`bunx tsc --noEmit` **0 件**・
+> `bun run lint` **0 errors**（15 warnings は既存ベースライン）・`scripts/coverage-dashboard`
+> **87 passed**。Integration **107** は不変。docs 同期は `8d35ba27`。
+>
 > **039 の実行記録（2026-08-23・`f1be1aa0`〜`313af277`）**
 >
 > **DONE。** `tests/integration/product-browse.test.ts` を新設し **8 シナリオ / 16 テスト**
