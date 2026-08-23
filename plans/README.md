@@ -112,7 +112,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
 | [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | DONE（2026-08-23・`85d7e442`〜`2e769bad`。Integration 86 → **91** / スイート 11 → **12**。プラン本文どおり 5 シナリオ・**逸脱なし**。STOP 条件はいずれも非該当（半置換は観測されず、slug は期待どおり `renamed-product-1`）。**Done criteria の CI 直列化要件は既存構成で充足済み**のためワークフローは未変更。**R6 の残りは 039 のみ**。下の実行記録を参照） |
-| [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
+| [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | DONE（2026-08-23・`f1be1aa0`〜`313af277`。Integration 91 → **107** / スイート 12 → **13**。**これで R6 ラウンドが閉じ切った**。**STOP 条件に該当**（`lte: Infinity` が Prisma の Decimal フィルタで throw）— オペレーター承認のうえ**本体を修正**（`f1be1aa0`）。**逸脱 2 点**〔fail-open は `cce53407` で修正済みのため反転 / 「Clerk mock 不要」は不成立〕。下の実行記録を参照） |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | DONE（2026-08-13・`c6a5064f`〜`7ee7baa5`。Integration 66 → **71** / スイート 8 → **9**。**これで R7 ラウンドが閉じ切った**。**プラン本文からの逸脱 2 点**〔要求された P2002 ユニットテスト +2 は既存 / `"ADMIN-CLASH"` は Zod の英数字制約を通らない〕— 下の実行記録を参照） |
 | [042](042-e2e-signin-helper-repair.md) | E2E signIn の Clerk UI ドリフト修復（5 サイト）+ svg-img-alt 是正（TESTS-26+27） | tests | P1 | M | MED | — | DONE（2026-08-04 に Step 5–6 を実測で充足。**3 ブラウザ 83 passed / 3 failed（visual のみ = plan 043 担当）/ 37 skipped / flaky 0** — 下の実行記録を参照） |
@@ -141,6 +141,81 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **039 の実行記録（2026-08-23・`f1be1aa0`〜`313af277`）**
+>
+> **DONE。** `tests/integration/product-browse.test.ts` を新設し **8 シナリオ / 16 テスト**
+> （category・subCategory / 解決不能 URL / size・color のネスト some / 価格境界 /
+> insensitive 検索 / ページング / 複合 AND / ソート 4 種）。Integration は
+> **91 → 107 / スイート 12 → 13**、ダッシュボード集計 **228 → 229**。Jest unit は
+> **2013 で不変**。実測 **16 passed**（単体）/ **107 passed**（全体）。
+> **036〜038 が DONE 済みなので、本プランの完了で R6 ラウンドが閉じ切った** ——
+> `render-html.ts` の `NEXT_ACTIONS` R6 エントリと `QA_HANDOFF.md` の R6 プロンプト節を
+> **同一コミットで**削除している（二重 SSOT）。
+>
+> **STOP 条件に該当し、オペレーター承認のうえ本体を修正した（`f1be1aa0`）。**
+> プランは「シナリオ 4 の minPrice 単独指定が throw したら所見として報告し、`src/` は
+> 修正しない」と指示している。実際に throw した —— `getProducts` は上限未指定時に
+> `lte: filters.maxPrice || Infinity` を渡すが、**Prisma は Decimal カラムのフィルタに
+> Infinity を載せられず**、シリアライズ時に値が落ちて **"Argument `lte` is missing."** で
+> throw する（**Prisma 5.22.0** 実測）。つまり「**下限だけ指定した価格絞り込み**」は
+> 常に失敗していた。**プラン本文のシナリオ 7（`{ category, minPrice: 100 }`）も同じ理由で
+> 落ちる** —— プラン自身が throw する入力を期待値つきで指定していたことになる。
+> 報告のうえ判断を仰ぎ、上限が無いときは `lte` を付けない形へ修正した（Red → Green を
+> 別コミットで実測）。
+>
+> **このバグはストアフロント経由では再現しない。** `/browse` は
+> `src/app/(store)/browse/page.tsx:75` が `maxPrice` を `Number.MAX_SAFE_INTEGER` に
+> 既定化しているため、`Infinity` 分岐へ到達しない。壊れていたのは **`getProducts` の契約**で、
+> 直接呼ぶ経路（他ページ・API・将来の呼び出し元）で落ちる。**「UI で再現しないから健全」
+> ではない**という例。
+>
+> **プラン本文からの逸脱 2 点（いずれもプラン側が実装に追い越されていた）**:
+>
+> 1. **シナリオ 2 の fail-open characterization は既に修正済みだった。** プランは
+>    「存在しない category URL はフィルタ脱落 → **全件返る**」を `totalCount === 3` で
+>    固定せよと指示し、`TODO(characterization)` タグと反転条件まで書いている。しかし
+>    その挙動は **`cce53407`（2026-08-12 "fix(queries): return no results when a URL filter
+>    matches no row"）で fail-closed に修正済み**で、実装には `noMatchResult`（`:618-628`）が
+>    ある。プラン本文が指定する反転先（`totalCount === 0`）へ期待値を反転させ、**同型の
+>    store / offer 経路も併せて固定**した（プランが「修正時はまとめて反転する必要がある」と
+>    付記していた 3 経路。片方だけ fail-open へ退行しても検出できるようにするため）。
+> 2. **「Clerk mock 不要」は成立しない。** プランは「`getProducts` は `currentUser` を
+>    呼ばないので **Clerk mock 自体が不要**」と明記しているが、実際には
+>    **モジュール `src/queries/product.ts` が `@clerk/nextjs/server` を import している**
+>    （`:20`）ため、モックが無いと**テストが読み込んだ時点で** `@clerk/backend` の ESM
+>    （`export const webcrypto = crypto;`）を jest が解釈できず `SyntaxError: Unexpected
+>    token 'export'` になる。判断基準は「**その関数が使うか**」ではなく
+>    「**そのモジュールが読み込むか**」。**同じ罠は `src/queries/` の Public 関数を
+>    統合テストする後続プラン全てに当てはまる。**
+>
+> **Arrange では assert が依存する値をすべて明示した（プランの必須要件）。**
+> (a) **`views` / `createdAt` を相異なる既知の値に固定** —— 既定 `orderBy` は views desc で、
+> seed 直後は全商品 `views: 0` の**同値**になる。**PostgreSQL は同値行の順序を保証しない**ため、
+> 固定しないとページング検証（シナリオ 6）が**実 DB の行順に依存したフレークテスト**になる。
+> (b) **全商品の全 Size の `price` と `discount` を明示** —— フィルタは生の `price` を `some` で
+> 見るので**どれか 1 つの Size が範囲内なら商品全体がヒットし**、追加 Size（商品 A の XL=60）を
+> 決めずに置くと `minPrice: 100` の絞り込みに紛れ込む。ソートは `discount` 込みの
+> 割引後価格（`getMinPrice`）を見るため、スキーマ既定値に委ねると既定が変わった瞬間に
+> **並び順が静かに壊れる**。
+>
+> **price 系ソートは DB の `orderBy` ではなく「ページ内 JS ソート」である。**
+> `:799-826` は取得後の配列を並べ替えるので、`pageSize` を小さくすると
+> 「DB が views desc で選んだ数件だけを価格順に並べ替える」結果になり、全体の価格順とは
+> 一致しない（**ページを跨ぐと価格順が壊れる**という現実装の帰結）。シナリオ 8 は全 3 件が
+> 1 ページに収まる `pageSize: 10` を渡してソート関数そのものを決定論的に検証し、
+> DB レベルソートへ改善された場合に追加すべきケースを `TODO(characterization)` で残してある。
+>
+> **本プランが主張しないこと**: (1) **`filters: any` の型付けは行っていない**
+> （プランの Out of scope。no-any 規約違反として残置）、(2) **price ソートを DB へ移す改善は
+> していない** —— ページ内ソートの制約はそのまま、(3) **tsvector 検索は対象外**
+> （plan 033 の領分。本スイートが検証したのは `contains` + `mode: "insensitive"` の方）、
+> (4) **`top-rated` ソートは未検証**（rating を seed で固定していないため。views /
+> createdAt / price の 3 系統で orderBy 分岐の代表とした）、(5) **並行実行時の一貫性は未検証**。
+>
+> 回帰: `bun run test:integration` **107 passed / 13 スイート**・`bun run test` **2013 passed**
+> （不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は既存
+> ベースライン）・`scripts/coverage-dashboard` **87 passed**。docs 同期は `313af277`。
+>
 > **038 の実行記録（2026-08-23・`85d7e442`〜`2e769bad`）**
 >
 > **DONE。** `tests/integration/product-update.test.ts` を新設し **5 シナリオ**
