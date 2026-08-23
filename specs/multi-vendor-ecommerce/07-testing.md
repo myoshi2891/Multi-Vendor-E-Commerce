@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2017 passed / 2020 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
+- 2020 passed / 2023 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-24.
   Detection points for the two defects plan 049 surfaced (+4 tests, +1 suite): a new
   `orders-table.test.tsx`, one case in `payments-table.test.tsx`, and one in
   `shipping-form.test.tsx`.

@@ -177,8 +177,11 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     //   (2) 住所フォームの国は静的 ISO リストと DB の Country を名前一致で結ぶため、
     //       E2E seed のサフィックス付き国名は選択肢に現れない。spec 側で実国名の
     //       Country 行を用意すること。氏名は英字のみ (/^[a-zA-Z]+$/)。
-    //   観測のみ (未起票): payments-table.tsx は Stripe 行を表示時に /100 しているが、
-    //   plan 063 の backfill と A-3 で PaymentDetails.amount はドル建てに統一済み。
+    //   (3) 上の「観測のみ」だった payments-table.tsx の Stripe 行 /100 は修正済み。
+    //       PaymentDetails.amount は Decimal(12,2) = ドル建てが唯一の単位で、
+    //       plan 063 の backfill (2026-08-09 DONE・補正対象 0 件) と A-3 で
+    //       コード経路・履歴データとも統一済み。表示側の provider 別正規化を撤去し、
+    //       シリアライズ済みドル値の回帰テストを payments-table.test.tsx に追加した。
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
     // 再実測なし)。国選択 cookie 往復・a11y/VRT のストアフロント主要ページ拡大・
@@ -251,22 +254,6 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         tool: "next/dynamic ssr:false 遅延 import",
         cost: "S",
         impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
-    },
-    {
-        // plan 063 (2026-07-27 起票): CORRECTNESS-05 の残件。コード修正は同期パスが
-        // e63474b6、webhook 経路が c4a6fb41 で完了しており、カットオーバー境界は
-        // 後者。それ以前に Stripe 経路が書いた PaymentDetails.amount は
-        // minor unit (セント) のまま Decimal(12,2) = ドル建てカラムに残っている。
-        // 本番決済データへの UPDATE を伴うため safe-migration skill と人手承認が必須で、
-        // dry-run レポート (プラン Step 3) の提示前に UPDATE を打ってはならない。
-        // QA_HANDOFF「次回着手用 依頼プロンプト」063 と一対一対応。完了時に
-        // 本エントリと QA_HANDOFF 側プロンプトを同時削除すること。
-        priority: "medium",
-        title: "plan 063: Stripe 既存決済行の amount backfill",
-        target: "PaymentDetails.amount のうち paymentMethod=Stripe かつ c4a6fb41 デプロイ前の行",
-        tool: "plans/063 の自己完結プラン (safe-migration skill 必須・人手承認ゲート付き)",
-        cost: "S",
-        impact: "修正日をまたぐ売上集計・支払履歴・返金照合が 100 倍ずれた行と正しい行を混在させている状態を解消する (コード側は修正済みで、残るのは履歴データのみ)",
     },
     {
         priority: "low",
