@@ -597,9 +597,13 @@ export const updateStoreStatus = async (
             throw new Error("Only admins can perform this action.");
 
         // Ensure the user is a seller of the specified store
+        // オーナーの現在のロールも同時に読む（Clerk 同期の可否判定に使う）。
         const store = await db.store.findUnique({
             where: {
                 id: storeId,
+            },
+            include: {
+                user: { select: { role: true } },
             },
         });
 
@@ -609,33 +613,52 @@ export const updateStoreStatus = async (
         }
 
         // ステータス更新とロール昇格をアトミックに実行
-        const updatedStore = await db.$transaction(async (tx) => {
-            const updated = await tx.store.update({
-                where: {
-                    id: storeId,
-                },
-                data: {
-                    status,
-                },
-            });
-
-            // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格
-            if (store.status === "PENDING" && updated.status === "ACTIVE") {
-                await tx.user.update({
+        const { updatedStore, ownerIsSeller } = await db.$transaction(
+            async (tx) => {
+                const updated = await tx.store.update({
                     where: {
-                        id: updated.userId,
+                        id: storeId,
                     },
                     data: {
-                        role: "SELLER",
+                        status,
                     },
                 });
+
+                // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格
+                if (store.status === "PENDING" && updated.status === "ACTIVE") {
+                    await tx.user.update({
+                        where: {
+                            id: updated.userId,
+                        },
+                        data: {
+                            role: "SELLER",
+                        },
+                    });
+                    return { updatedStore: updated, ownerIsSeller: true };
+                }
+
+                // 昇格分岐に入らなかった場合、ロールはこの処理で変わらないので
+                // 更新前に読んだ値をそのまま使う（追加クエリ不要）。
+                return {
+                    updatedStore: updated,
+                    ownerIsSeller: store.user?.role === "SELLER",
+                };
             }
+        );
 
-            return updated;
-        });
-
-        // Clerk メタデータ同期（ACTIVE ステータスへの遷移時、冪等操作でリトライ可能）
-        if (updatedStore.status === "ACTIVE") {
+        // Clerk メタデータ同期（冪等操作でリトライ可能）。
+        //
+        // 条件に `ownerIsSeller` を入れているのは**権限昇格を防ぐため**。
+        // 以前は `updatedStore.status === "ACTIVE"` だけを見ていたので、
+        // DISABLED / BANNED 起点の ACTIVE 化でも Clerk 側に SELLER が書かれた。
+        // DB 昇格は PENDING 起点限定なので User.role は USER のままで、
+        // 一方この認可のソースは Clerk の privateMetadata.role
+        // (src/lib/auth-guards.ts の requireSeller) —— つまり DB が許していない
+        // 販売者権限が実際に通っていた。
+        //
+        // 「DB 上 SELLER である」ことを条件にすることで、ACTIVE → ACTIVE の
+        // 再実行による Clerk 側ドリフトの修復（同一値の再送）は従来どおり残る。
+        if (updatedStore.status === "ACTIVE" && ownerIsSeller) {
             const { clerkClient } = await import("@clerk/nextjs/server");
             const clerk = await clerkClient();
             await clerk.users.updateUserMetadata(updatedStore.userId, {

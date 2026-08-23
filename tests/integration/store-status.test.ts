@@ -163,11 +163,11 @@ describe("Scenario 2: PENDING → BANNED does not promote", () => {
 });
 
 // ============================================================================
-// Scenario 3: 非 PENDING 起点 (DISABLED → ACTIVE) — DB 昇格なし / Clerk 同期あり
+// Scenario 3: 非 PENDING 起点 (DISABLED → ACTIVE) — DB 昇格なし / Clerk 同期なし
 // ============================================================================
 
 describe("Scenario 3: DISABLED → ACTIVE skips the DB promotion", () => {
-    it("leaves User.role at USER but still pushes SELLER to Clerk", async () => {
+    it("leaves User.role at USER and does not push SELLER to Clerk", async () => {
         // Arrange
         mockAuthAsAdmin();
         const { owner, store } = await seedOwnerAndStore(StoreStatus.DISABLED);
@@ -189,21 +189,12 @@ describe("Scenario 3: DISABLED → ACTIVE skips the DB promotion", () => {
         // DB 昇格は PENDING 起点限定 (store.ts の `store.status === "PENDING"`)。
         expect(ownerAfter.role).toBe(Role.USER);
 
-        // TODO(characterization): この 2 行は**既知バグ**の固定であって契約ではない。
-        //
-        // Clerk 同期の条件は `updatedStore.status === "ACTIVE"` のみで**起点を見ない**ため、
-        // DB が USER のままでも Clerk 側は SELLER になる。このリポジトリの認可ソースは
-        // DB の User.role ではなく Clerk の privateMetadata.role
-        // (`src/lib/auth-guards.ts` の requireSeller) なので、**実際に販売者権限が通る**。
-        //
-        // remediation プラン (Clerk 同期を DB 昇格と同一条件へ揃える) が入ったら、
-        // 下の 2 行は `expect(mockUpdateUserMetadata).not.toHaveBeenCalled()` へ**反転**させる。
-        // 期待値を現挙動に合わせ込んだのは「未確定のまま消す」ことを避けるためであり、
-        // 現挙動が正しいと主張しているわけではない。
-        expect(mockUpdateUserMetadata).toHaveBeenCalledTimes(1);
-        expect(mockUpdateUserMetadata).toHaveBeenCalledWith(owner.id, {
-            privateMetadata: { role: "SELLER" },
-        });
+        // 以前はここが characterization（既知バグの固定）で、DB が USER のままでも
+        // Clerk 側には SELLER が書かれていた。認可のソースは DB の User.role ではなく
+        // Clerk の privateMetadata.role (`src/lib/auth-guards.ts` の requireSeller) なので、
+        // これは**実際に販売者権限が通る**権限昇格だった。
+        // Clerk 同期を「DB 上 SELLER であること」で条件付けたため、期待値を反転する。
+        expect(mockUpdateUserMetadata).not.toHaveBeenCalled();
     });
 });
 
