@@ -42,6 +42,8 @@ jest.mock('@/components/shared/country-selector', () => ({
         >
             <option value="Japan">Japan</option>
             <option value="United States">United States</option>
+            {/* DB の Country に存在しない国。静的リストと DB の乖離を再現する */}
+            <option value="Atlantis">Atlantis</option>
         </select>
     )
 }))
@@ -172,6 +174,25 @@ describe('AddressDetails', () => {
                 variant: 'destructive',
                 description: expect.stringContaining(errorMessage),
             }))
+        })
+    })
+
+    it('surfaces an error when the chosen country has no matching row', async () => {
+        // Arrange: 静的な国リストは DB の Country と独立しているため、選択肢に出ていても
+        // DB に対応行が無いことがある（E2E 環境では実際にそうなる — 国名にサフィックスが
+        // 付くため静的リストのどれとも一致しない）。
+        const user = userEvent.setup()
+        render(<AddressDetails countries={countries} setShow={mockSetShow} />)
+
+        // Act
+        await user.selectOptions(screen.getByTestId('country-selector'), 'Atlantis')
+
+        // Assert: 黙って無視してはいけない。無視すると UI 上は国が選ばれたように見えるのに
+        // countryId が空のままになり、送信時に「国が原因」と分からない検証エラーだけが出る。
+        await waitFor(() => {
+            expect(
+                screen.getByText('This country is not available for shipping.')
+            ).toBeInTheDocument()
         })
     })
 })
