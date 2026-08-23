@@ -14,6 +14,10 @@ import * as z from 'zod'
 // Schema
 import { ShippingAddressSchema } from '@/lib/schemas'
 
+// Static ISO country list — CountrySelector のドロップダウン自体がこの一覧から
+// 選択肢を描画するため、「選択中の表示」もここを正とする。
+import STATIC_COUNTRIES from '@/data/countries.json'
+
 // UI Components
 import CountrySelector from '@/components/shared/country-selector'
 import {
@@ -160,6 +164,22 @@ const AddressDetails: FC<AddressDetailsProps> = ({
         })
     }
 
+    // 配送不可の国を選んでも、**選択そのものは表示に残す**。
+    // 以前は DB の Country 行にだけ照会し、見つからなければ countries[0] へ
+    // フォールバックしていたため、ユーザーが選んだ国とは無関係な先頭の国が
+    // 選択中として描画され、countryId のエラー文言と噛み合わなかった。
+    // ドロップダウンの選択肢は静的 ISO 一覧 (STATIC_COUNTRIES) から描画されるので、
+    // 表示の解決もそちらを正とする。countryId のエラーは handleCountryChange 側で
+    // 従来どおり立つ（= 送信は止まる）。
+    const selectedCountryOption =
+        (STATIC_COUNTRIES as SelectMenuOption[]).find(
+            (c) => c.name === country
+        ) ??
+        (countries.find((c) => c.name === country) as
+            | SelectMenuOption
+            | undefined) ??
+        (countries[0] as SelectMenuOption)
+
     return (
         <div>
             <Form {...form}>
@@ -236,11 +256,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({
                                                     handleCountryChange(val)
                                                 }
                                                 selectedValue={
-                                                    (countries.find(
-                                                        (c) =>
-                                                            c.name === country
-                                                    ) as SelectMenuOption) ||
-                                                    countries[0]
+                                                    selectedCountryOption
                                                 }
                                             />
                                         </FormControl>
