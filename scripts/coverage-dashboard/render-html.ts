@@ -203,13 +203,20 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 2026-08-12: 055 完了 (9704903c)。tests/e2e/cart-login-handoff.spec.ts を新設。
     // 検証の肝は browser.newContext() によるコンテキスト分離で、page.reload() では
     // localStorage が残り saveUserCart が壊れていても green になる。残るのは 054 と 056。
+    // 2026-08-23: 056 完了 (50664cc5)。tests/e2e/newsletter.spec.ts を新設。契約は
+    // response.ok() === false であって toBe(404) ではない —— 404 は「購読は成功しない」という
+    // 恒久的な命題ではなく「route ファイルが無い」という偶発的な機構なので、固定すると
+    // ルーティング回帰で全 API が 404 になっても緑のまま通り、無害な 501 変更で赤くなる。
+    // 空メールの POST 不発は固定待機ではなく invalid イベント + expect.poll で決定化している
+    // (checkValidity() は click 前でも false を返す純粋関数なので待ちの基準にならない)。
+    // route 実装時は意図的に fail するので、成功系テストへ書き直すこと。残るのは 054 のみ。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (plans 054・056 — 051・052・053・055 は完了)",
-        target: "VRT 拡大 (054) / Newsletter dormant 404 characterization (056)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
-        tool: "plans/054・056 の自己完結プラン (Sonnet 実行可・056 は依存ゼロ / 054 は 043 が先行・spec-sync 必須)",
+        title: "R9: E2E 残余ギャップ解消 (残り plan 054 — 051・052・053・055・056 は完了)",
+        target: "VRT 対象を商品詳細・browse へ拡大 (054)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)・Newsletter dormant 404 の characterization (056)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
+        tool: "plans/054 の自己完結プラン (Sonnet 実行可・043 が先行済み・spec-sync 必須)",
         cost: "S",
-        impact: "056 は /api/newsletter がリポジトリに不在（curl 実測 404）という dormant 機能を characterization で固定し、実装時に期待値を反転させる足場を作る。054 は VRT 対象を商品詳細・browse へ広げ、売上導線の UI 崩れをマージ前に阻止する",
+        impact: "054 は VRT 対象を商品詳細・browse へ広げ、売上導線の UI 崩れをマージ前に阻止する（056 の dormant 404 characterization は 2026-08-23 に完了済み）",
     },
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。

@@ -14,7 +14,7 @@
 | Jest Integration テスト | **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
-| Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
+| Playwright E2E | **60 tests/browser / 26 files（3ブラウザ計 180）** — 2026-08-23 実測。Chromium / Firefox / WebKit |
 
 ### 技術スタック（現行）
 | パッケージ | バージョン |
@@ -3757,4 +3757,59 @@ DROP は `finally` 必須で、その漏れは**同一ファイルの 2 回連�
 | Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **不変** |
 | Playwright E2E | 58 tests/browser・計 174 | **不変** |
 | ダッシュボード集計ファイル数 | 219 | **220** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 056 の実行（Newsletter 購読フォームの dormant 404 を characterization E2E で固定 / TESTS-39） (2026-08-23)
+
+#### 概要
+
+フッターの Newsletter フォームが POST する `/api/newsletter` はリポジトリに存在せず
+（schema にも購読者モデル無し）、全購読操作が失敗する。この dormant なギャップを CI で
+可視化し続けるための characterization spec を新設した。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/newsletter.spec.ts` | 新規作成（2 テスト） | `50664cc5` |
+
+#### 契約の形（本プランの核心）
+
+assert は `response.ok() === false` であって `toBe(404)` では**ない**。404 は
+「購読は成功しない」という恒久的な命題ではなく、「route ファイルが無い」という**偶発的な機構**
+にすぎない。404 を成功条件に固定すると 2 つの向きで壊れる:
+
+1. **偽の健全性** — ルーティング回帰で API が軒並み 404 になっても、緑のまま
+   「characterization どおり」と報告する。実際には全部壊れている
+2. **誤った失敗トリガー** — catch-all が 501 を返す等、ユーザーから見た挙動が変わらない
+   変更で赤くなる
+
+`not.toBe(200)` でも不足で、201 Created / 202 Accepted / 204 No Content を「成功していない」と
+見なしてしまう（`ok()` は 200-299 で true）。plan 050 が確立した「修正を罰するテストは書かない」
+原則と同型。
+
+#### 「起きないこと」を時間で証明しない
+
+空メールでの POST 不発は、固定待機ではなく `invalid` イベントを `expect.poll` で待ち切ってから
+`toHaveLength(0)` を見る。`invalid` は submit 試行時の制約検証失敗**でのみ**発火するため、
+「submit が処理され、かつブロックされた」ことを一意に示す。`checkValidity()` は validity を
+問い合わせるだけの純粋関数で **click 前でも `false`** を返すので、待ちの基準にすると初回評価で
+即成立し、**まだ飛んでいない POST を「無かった」と誤判定する**。
+
+#### 識別力の機械的確認
+
+`response.ok()` の期待値を `true` へ、`toHaveLength(0)` を `(1)` へそれぞれ崩すと
+**2 failed** になることを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 58 tests/browser・25 files・計 174 | **60 tests/browser・26 files・計 180** |
+| Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **不変** |
+| Jest Integration | 86 / 11 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 220 | **221** |
 | 型エラー | 0 件 | **0 件** |

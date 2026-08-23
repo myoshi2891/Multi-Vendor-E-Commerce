@@ -48,7 +48,22 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
+- Playwright E2E: 60 tests/browser across 26 files (180 across the three browsers), as of 2026-08-23.
+  Plan 056 added `tests/e2e/newsletter.spec.ts` (+2 tests/browser, +1 file) as a characterization
+  suite: `/api/newsletter` does not exist in the repo (no subscriber model in the schema either),
+  so every subscription attempt fails with a "Failed to subscribe." toast. The contract is
+  `response.ok() === false`, deliberately **not** `toBe(404)` — a 404 is not the durable
+  proposition ("subscribing does not succeed") but an incidental mechanism ("the route file is
+  missing"). Pinning 404 would keep the suite green through a routing regression that 404s every
+  API, and would turn it red for a harmless change such as a catch-all returning 501.
+  `not.toBe(200)` is likewise insufficient because it admits 201/202/204. The empty-email case
+  proves a negative without a fixed wait: it waits on the `invalid` event, which fires only when
+  constraint validation blocks a submit attempt, and only then asserts that no POST was recorded.
+  `checkValidity()` cannot serve as that signal — it is a pure query that returns false before the
+  click as well, so polling on it settles immediately and would misread a not-yet-dispatched POST
+  as absent. When the route is implemented this suite fails by design and must be rewritten as a
+  success-path test rather than skipped.
+- Earlier entry: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
   Plan 055 added `tests/e2e/cart-login-handoff.spec.ts` (+1 test/browser, +1 file): a cart built
   as a guest survives sign-in and is persisted server-side by the Checkout button. The load-bearing
   detail is that step 5 reopens `/checkout` in a **fresh `browser.newContext()`**, not via
