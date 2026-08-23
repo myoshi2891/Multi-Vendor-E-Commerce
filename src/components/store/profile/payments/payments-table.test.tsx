@@ -110,9 +110,9 @@ describe("PaymentsTable Component", () => {
         expect(screen.getByText("#payment-2")).toBeInTheDocument();
         expect(screen.getByText("intent-1")).toBeInTheDocument();
         expect(screen.getByText("intent-2")).toBeInTheDocument();
-        // Stripe uses cents: 1000 / 100 = 10.00
-        expect(screen.getByText("$10.00")).toBeInTheDocument();
-        // PayPal is dollar-denominated in rendering
+        // PaymentDetails.amount は provider によらずドル建て（Decimal(12,2)）。
+        // Stripe 行も /100 されない。
+        expect(screen.getByText("$1000.00")).toBeInTheDocument();
         expect(screen.getByText("$50.00")).toBeInTheDocument();
     });
 
@@ -263,9 +263,6 @@ describe("PaymentsTable Component", () => {
         const serialized = {
             id: "payment-serialized",
             paymentIntentId: "pi_serialized",
-            // Stripe 行は表示時に amount / 100 される（セント建ての名残）。
-            // 本テストの関心は**シリアライズ後の値を扱えるか**だけなので、
-            // その正規化が混ざらない PayPal を使う。
             paymentMethod: "PayPal",
             status: "Completed",
             amount: "42.50",
@@ -279,5 +276,33 @@ describe("PaymentsTable Component", () => {
         render(<PaymentsTable payments={[serialized]} totalPages={1} />);
 
         expect(screen.getByText("$42.50")).toBeInTheDocument();
+    });
+
+    it("does not divide a serialized Stripe dollar amount by 100", () => {
+        // 回帰検知点: 表示側が paymentMethod === "Stripe" を見て / 100 していた頃、
+        // ドル建てで保存された 42.50 が $0.43 と表示されていた。
+        // 単位は永続化層（Decimal(12,2) = ドル）で一意に決まっており、
+        // provider による表示時正規化は存在しない。
+        (getUserPayments as jest.Mock).mockResolvedValue({
+            payments: [],
+            totalPages: 1,
+        });
+        const stripePayment = {
+            id: "payment-stripe-dollars",
+            paymentIntentId: "pi_dollars",
+            paymentMethod: "Stripe",
+            status: "Completed",
+            amount: "42.50",
+            currency: "usd",
+            createdAt: new Date("2026-01-01"),
+            updatedAt: new Date("2026-01-01"),
+            orderId: "order-002",
+            userId: "user-001",
+        } as unknown as UserPaymentType;
+
+        render(<PaymentsTable payments={[stripePayment]} totalPages={1} />);
+
+        expect(screen.getByText("$42.50")).toBeInTheDocument();
+        expect(screen.queryByText("$0.43")).not.toBeInTheDocument();
     });
 });
