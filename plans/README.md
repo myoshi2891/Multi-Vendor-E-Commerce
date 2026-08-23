@@ -129,7 +129,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
 | [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | TODO |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
-| [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | TODO |
+| [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | DONE（2026-08-23・`50664cc5`〜`462d705d`。E2E 58 → **60 tests/browser** / 25 → **26 files** / 計 174 → **180**。実測 chromium 2 passed / 3 ブラウザ 6 passed・**flaky 0**。`src/` は無変更。**プラン本文どおり 2 テスト・逸脱なし**〔ただし Done criteria の `grep waitForTimeout` → 0 件を満たすためコメントの表現を調整〕。**これで R9 の残りは 054 のみ**。下の実行記録を参照） |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
 | [058](058-scope-get-coupon-to-owner.md) | `getCoupon` を所有店舗にスコープ（cross-store IDOR read・SECURITY-10） | security | P1 | S | LOW | — | DONE |
 | [059](059-paypal-capture-verification.md) | PayPal capture の金額/相関/通貨検証 + settled ガード（Stripe パリティ・SECURITY-12/13） | security | P1 | S | LOW | — | DONE |
@@ -141,6 +141,73 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **056 の実行記録（2026-08-23・`50664cc5`〜`462d705d`）**
+>
+> **DONE。** `tests/e2e/newsletter.spec.ts` を新設し **2 テスト**（購読が成功せず失敗トースト +
+> 入力値保持 / 空メールで POST が発生しない）。E2E は **58 → 60 tests/browser / 25 → 26 files /
+> 3 ブラウザ計 174 → 180**、E2E メインスペックは 16 → **17**、ダッシュボード集計 **220 → 221**。
+> 実測 chromium **2 passed** / 3 ブラウザ **6 passed**・**flaky 0**（リトライなし）。
+> `src/` は **1 行も変更していない**。**これで R9 の残りは 054 のみ**（`render-html.ts` の
+> `NEXT_ACTIONS` と `QA_HANDOFF.md` の R9 プロンプトを同一コミットで 054 向けへ差し替え済み）。
+>
+> **Drift check は空。** `git diff --stat 99ede89..HEAD -- src/components/store/layout/footer/newsletter.tsx`
+> に差分なし。`ls src/app/api/` は `index-products` / `search-products` /
+> `setUserCountryInCookies` / `webhooks` のみで **newsletter route は不在**のまま ——
+> 本プランの前提（characterization の対象が dormant であること）は健在だった。
+> **STOP 条件はいずれも非該当**（route 不在・レスポンスは 2xx でない・toast は 10s 以内に出た）。
+>
+> **実測ステータスは 404**（監査時 2026-07-12 の curl 実測と一致）。ただし
+> **`console.info` の記録に留めておりゲートにはしていない** —— 理由は次項。
+>
+> **契約の形が本プランの核心（後続の characterization が踏襲すべき原則）。**
+> assert は `response.ok() === false` であって `toBe(404)` では**ない**。404 は
+> 「購読は成功しない」という**恒久的な命題ではなく**、「route ファイルが無い」という
+> **偶発的な機構**にすぎない。404 を成功条件として固定すると 2 つの向きで壊れる:
+> (1) **偽の健全性** —— ルーティング回帰で API が軒並み 404 になっても、本テストは緑のまま
+> 「characterization どおり」と報告する（実際には全部壊れている）、(2) **誤った失敗トリガー**
+> —— catch-all が 501 を返す等、ユーザーから見た挙動が何も変わらない変更で赤くなる。
+> **`not.toBe(200)` でも不足**で、201 Created / 202 Accepted / 204 No Content を
+> 「成功していない」と見なしてしまう（Playwright の `ok()` は 200-299 で true）。
+> plan 050 が非 ACTIVE 店舗ページについて確立した「修正を罰するテストは書かない」原則と同型。
+>
+> **「起きないこと」を時間で証明しない。** 空メールでの POST 不発は、固定待機ではなく
+> `invalid` イベントを `expect.poll` で待ち切ってから `toHaveLength(0)` を見る。
+> `invalid` は **submit 試行時の制約検証失敗でのみ**発火するため、「submit が処理され、
+> かつブロックされた」ことを一意に示す —— ここが true になった時点で POST が発火する機会は
+> 既に過ぎている。**`checkValidity()` を待ちの基準にしてはいけない**: あれは validity を
+> 問い合わせるだけの純粋関数で、空の `required` 欄なら **click の前でも常に `false`** を返す。
+> `expect.poll(...).toBe(false)` は初回評価で即成立して**何も待たず**、直後の
+> `toHaveLength(0)` が**まだ飛んでいない POST を「無かった」と誤判定する**。
+> `page.on("request")` の登録は click より**前**に行っている（後だと取りこぼす）。
+>
+> **プラン本文からの逸脱 1 点（軽微・ゲートを迂回しないための調整）**: Done criteria の
+> 機械チェックは `grep -n "waitForTimeout" tests/e2e/newsletter.spec.ts` → **0 件**を要求するが、
+> 初版は「固定の `waitForTimeout` は使わない」という**理由を説明したコメント**の中で
+> その語を使っており 1 件ヒットした。実際の固定待機は存在しないが、
+> 「意図は満たしているから」とゲートを人間の判断で素通りさせると**そのゲートは以後の
+> 実行者にとって無意味になる**ため、コメントから API 名を落として機械的に 0 件へ寄せた。
+> これは第 12 弾が記録した「静的検査は文字列リテラル・コメントをコードと取り違える」の同型例。
+>
+> **識別力を機械的に確認した。** `expect(response.ok()).toBe(false)` を `true` へ、
+> `expect(newsletterRequests).toHaveLength(0)` を `(1)` へそれぞれ崩すと **2 failed**
+> （リトライ込みで 6 回すべて赤）になることを実測してから戻している。
+>
+> **本プランが主張しないこと**: (1) **現挙動が正しいとは主張していない** —— これは
+> 「壊れた挙動」の意図的な固定であり、route が実装されて購読が成功するようになったら
+> **このスイートは意図的に fail する**。その時は成功系テストへ**書き直す**こと
+> （`test.skip` で黙らせない）、(2) **機能実装（route + schema + 保存先設計）は未起票** ——
+> 本プランのスコープ外で、別途 correctness / feature プランとして起票が必要、
+> (3) **AbortController の 8s タイムアウト経路（"Request timed out."）は未検証** ——
+> route 不在では即座に 404 が返るため到達しない、(4) **リエントランシーガード
+> （`isSubmittingRef`）の多重送信防止は未検証** —— `tech.md` が規約の実装例として指名している
+> 箇所だが、本 spec は 1 回の送信しか行わない（plan 030 の component テストの担当領域）、
+> (5) フルラン（全 spec × 3 ブラウザ）は再取得していない —— E2E 全体の最新フルラン実測は
+> **2026-08-04 の 83 passed / 0 failed / 3 flaky / 37 skipped** のままである。
+>
+> 回帰: `bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は既存
+> ベースライン）・`scripts/coverage-dashboard` **87 passed**。Jest unit **1987**・
+> Integration **86** はいずれも不変（本プランは E2E のみ）。docs 同期は `462d705d`。
+>
 > **035 の実行記録（2026-08-23・`e6ebdb15`〜`9b8e0fbe`）**
 >
 > **DONE。** `tests/integration/store-status.test.ts` を新設し **8 シナリオ**
