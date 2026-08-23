@@ -111,7 +111,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [035](035-integration-test-store-status-role-promotion.md) | updateStoreStatus PENDING→ACTIVE ロール昇格 統合（TESTS-19） | tests | P3 | S | LOW | — | DONE（2026-08-23・`e6ebdb15`〜`9b8e0fbe`。Integration 78 → **86** / スイート 10 → **11**。**これで R5 ラウンドが閉じ切った**。**シナリオ 3 の非対称はユーザー判定によりバグとして characterization**〔DB 昇格なし・Clerk 同期あり。認可ソースは Clerk 側なので実際に販売者権限が通る〕— remediation は未起票。**逸脱 1 点**〔`StoreStatus` が 2 系統あり `tsc` だけが落ちる〕。下の実行記録を参照） |
 | [036](036-integration-test-product-deletion-fk.md) | deleteProduct FK Restrict/カスケード実挙動 統合（TESTS-20） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`7986d9fb`。Integration 49 → **53** / スイート 5 → **6**。プラン本文どおり 4 シナリオ・**逸脱なし**。STOP 条件 3 点はいずれも非該当。下の実行記録を参照） |
 | [037](037-integration-test-shipping-address-default.md) | upsertShippingAddress default 不変条件 統合（TESTS-21） | tests | P2 | S | LOW | — | DONE（2026-08-09・`bc663893`。Integration 53 → **57** / スイート 6 → **7**。プラン本文どおり 4 シナリオ。**シナリオ 2 のギャップは 2026-08-09 に [plan 064](064-fix-shipping-address-default-invariant.md) で修正済み**（`cbd32067` + `433ffd4c`）。characterization は解除され期待値は `default: true` = **1** へ反転（`058c5437`）、スイートは 4 → **6** シナリオに拡張された。下の実行記録を参照） |
-| [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | TODO |
+| [038](038-integration-test-product-update-tx.md) | updateProduct 全置換 tx/slug/SetNull 連鎖 統合（TESTS-22、R5 次点昇格） | tests | P3 | M | LOW | — | DONE（2026-08-23・`85d7e442`〜`2e769bad`。Integration 86 → **91** / スイート 11 → **12**。プラン本文どおり 5 シナリオ・**逸脱なし**。STOP 条件はいずれも非該当（半置換は観測されず、slug は期待どおり `renamed-product-1`）。**Done criteria の CI 直列化要件は既存構成で充足済み**のためワークフローは未変更。**R6 の残りは 039 のみ**。下の実行記録を参照） |
 | [039](039-integration-test-product-browse-filters.md) | getProducts フィルタ/ソート/ページング 統合（TESTS-23） | tests | P3 | M | LOW | — | TODO |
 | [040](040-integration-test-user-deletion-webhook.md) | Clerk user.deleted webhook の FK 連鎖（RESTRICT/CASCADE/SET NULL）統合（TESTS-24） | tests | P2 | S–M | LOW | — | DONE（2026-08-09・`c364a75d`。Integration 57 → **64** / スイート 7 → **8**。プラン本文どおり 7 シナリオ・**逸脱なし**。RESTRICT 群（2〜5）は現挙動の characterization のまま。下の実行記録を参照） |
 | [041](041-integration-test-coupon-code-uniqueness.md) | Coupon.code グローバル unique と P2002 フォールバック 統合（TESTS-25） | tests | P3 | S | LOW | — | DONE（2026-08-13・`c6a5064f`〜`7ee7baa5`。Integration 66 → **71** / スイート 8 → **9**。**これで R7 ラウンドが閉じ切った**。**プラン本文からの逸脱 2 点**〔要求された P2002 ユニットテスト +2 は既存 / `"ADMIN-CLASH"` は Zod の英数字制約を通らない〕— 下の実行記録を参照） |
@@ -141,6 +141,84 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **038 の実行記録（2026-08-23・`85d7e442`〜`2e769bad`）**
+>
+> **DONE。** `tests/integration/product-update.test.ts` を新設し **5 シナリオ**
+> （子レコード全置換 / 名前変更時の slug 衝突 `-1` suffix / 名前不変なら slug 不変 /
+> sizes 全置換の下流副作用 / `$transaction` 原子性）。Integration は
+> **86 → 91 / スイート 11 → 12**、ダッシュボード集計 **227 → 228**。Jest unit は
+> **2013 で不変**。実測 **5 passed**（単体）/ **91 passed**（全体）。
+> `src/queries/product.ts` は **1 行も変更していない**。**プラン本文からの逸脱なし**。
+> **036 / 037 が DONE 済みなので R6 の残りは 039 のみ**（`render-html.ts` の `NEXT_ACTIONS` と
+> `QA_HANDOFF.md` の R6 プロンプトを同一コミットで 039 向けへ差し替え済み）。
+>
+> **Drift check は引っかかったが STOP には該当しなかった。** `src/queries/product.ts` は
+> baseline `4ec6b5b` から **+32/−20**、`src/lib/types.ts` は **+8** 動いていたが、
+> プランが依拠する契約はすべて健在で、**行番号までプラン記載と一致**した ——
+> `:28` `generateUniqueSlug` / `:297` `handleProductAndVariantUpdate`。
+> `ProductWithVariantType`（`src/lib/types.ts:64-`）の shape もプラン記載の写しと完全一致で、
+> `buildUpdateInput` はそのまま組めた。
+>
+> **STOP 条件はいずれも非該当。** 特に「シナリオ 5 で半置換が観測される」（$transaction の
+> ロールバックが機能していない重大所見）と「シナリオ 2 の slug が `renamed-product-1` 以外に
+> なる」は即報告すべき事象だが、**5 シナリオすべて初回から期待どおり**だった。
+>
+> **本スイートが固定した最重要の仕様は「編集がカート/ウィッシュリストへ及ぼす副作用」。**
+> sizes は `deleteMany` → `createMany` の全置換なので `Size.id` が**編集のたびに変わる**。
+> その帰結として `Wishlist.sizeId`（実 FK / `ON DELETE SET NULL`）は **NULL 化**する一方、
+> `CartItem.sizeId`（**FK なしの平文字列**）は**古い id のまま残る** —— 参照先の Size 行は
+> 既に存在しない。これは checkout の再検証で弾かれる経路の**前提**であり、
+> テストではその両方（`wishlist.sizeId === null` / `cartItem.sizeId === 旧 id` かつ
+> `db.size.findUnique(旧 id) === null`）を assert している。
+>
+> **失敗注入は tx の「後段」でなければ原子性の証拠にならない（プランの最重要指示）。**
+> tx 冒頭（`product.update`）で落とす当初案（`categoryId` を存在しない値にして P2025）は、
+> Spec / Question / Size の置換を**そもそも一度も実行させない**。旧行が残るのは
+> 「巻き戻った」のではなく「未実行」なだけで、**`$transaction` が無くてもテストは緑になる**。
+> tx 内の最終操作（variant 分の Spec 置換）だけを一時 CHECK 制約
+> （`tmp_block_boom`: `"value" <> 'BOOM'`）で落とし、**旧 `Size.id` が保たれている**ことを
+> 決定的な証拠にした —— シナリオ 1 で確認したとおり置換が実行されれば id は必ず新しくなるので、
+> 旧 id のままなら「実行されたがロールバックで取り消された」ことを意味する。
+>
+> **DDL の後始末を 3 通りで実測検証した（Done criteria の要求）**:
+>
+> 1. **同一ファイル 2 回連続実行** → 2 回とも 5 passed（残留していれば 2 回目で顕在化する）
+> 2. **リーク状態からの冪等回復** —— `beforeEach` で制約を張った状態でも全 pass。
+>    testcontainers は**実行ごとに新しい DB を立てる**ため前回の残留を跨いで再現できず、
+>    同一 run 内で人工的にリークを作って検証した
+> 3. **`finally` 側の `IF EXISTS` が本来の失敗を隠さない** —— ADD を意図的に失敗させると
+>    （存在しない列を参照する CHECK）、報告されるのは **ADD 側のエラー**
+>    （`42703 column "nonexistent_column" does not exist`）であって「制約が無い」という
+>    二次エラーではない。素の DROP だと **`finally` の throw が try の例外を置き換え**、
+>    失敗注入が成立したのかすら判別できなくなる
+>
+> **Done criteria の CI 直列化要件は既存構成で充足済み（ワークフローは変更していない）。**
+> プランは「DDL テストを含むスイートが同一 DB を使う他 integration ジョブと並行しない構成に
+> なっていること」を `.github/workflows/` への反映つきで要求するが、本リポジトリでは
+> **構造的に充足している**: `jest.integration.config.js:63` の **`maxWorkers: 1`** が
+> ランナー内を直列化し、`globalSetup`（`tests/integration/setup/container.ts`）が
+> **実行ごとに専用の testcontainers PostgreSQL を立てる**（ADR-004）ため、
+> **共有 DB を掴む並行ジョブがそもそも存在しない**。CI 側も `integration-tests` の単一ジョブで
+> `services:` ブロックすら使っていない。冗長な変更を加えるより根拠を記録する方が正しいと判断した。
+>
+> **識別力を機械的に確認した。** シナリオ 5 の `expect(sizes[0].id).toBe(seeded.size.id)` を
+> `.not.toBe(...)` へ反転させると、**当該テストのみ**が落ち他の 4 件は通ったままであることを
+> 実測してから戻している。ここが原子性の検知点。
+>
+> **本プランが主張しないこと**: (1) **全置換が正しい設計だとは主張していない** ——
+> `Size.id` が編集のたびに変わるのは既知の設計挙動で、差分更新（update）へ変える場合は
+> シナリオ 1 の「id が変わる」と シナリオ 4 の下流副作用を**意図的に反転**させること、
+> (2) **並行編集（同一商品への同時 upsert）は未検証** —— 固定したのは逐次実行時の挙動のみ、
+> (3) **作成分岐（`handleProductCreate` / `handleVariantCreate`）は対象外** ——
+> シナリオ 2 の衝突相手 seed で間接的に触れるのみ、(4) **`generateUniqueSlug` の
+> 100 回上限 throw は未検証**（到達させるには 100 件の衝突 seed が要り、費用対効果が合わない）、
+> (5) **画像・カラー・freeShipping の全置換は個別に assert していない** ——
+> 同一 tx 内の同型操作であり、Spec / Question / Size の 3 つで代表させた。
+>
+> 回帰: `bun run test:integration` **91 passed / 12 スイート**・`bun run test` **2013 passed**
+> （不変）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は既存
+> ベースライン）・`scripts/coverage-dashboard` **87 passed**。docs 同期は `2e769bad`。
+>
 > **030 の実行記録（2026-08-23・`13d3dd70`〜`47450390`）**
 >
 > **DONE。** `tests/component/store/` に **6 スイート・26 テスト**を新設
