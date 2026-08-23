@@ -540,7 +540,26 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 86 integration tests across 11 suites
+- 91 integration tests across 12 suites
+  (adds `tests/integration/product-update.test.ts` 5), as of 2026-08-23, measured 91/91 pass.
+  Plan 038 pinned the seller product-edit flow (86 -> 91; suites 11 -> 12).
+  `handleProductAndVariantUpdate` replaces specs, questions, free-shipping rows, images,
+  colors and sizes wholesale (deleteMany then createMany) inside one `$transaction`, and the
+  most consequential thing that falls out of that is what it does to shoppers' saved state:
+  because every edit mints new `Size` rows, `Wishlist.sizeId` (a real FK with ON DELETE SET
+  NULL) becomes null, while `CartItem.sizeId` — a plain string with no FK — keeps pointing at
+  a row that no longer exists, which is the precondition for checkout's re-validation to
+  reject the line. The atomicity scenario must inject its failure **late** in the transaction:
+  failing at the first statement (`product.update`) means the replacements never ran at all,
+  so surviving old rows prove nothing and the test would pass even without a transaction. The
+  suite therefore fails only the final statement via a temporary CHECK constraint and treats
+  the **preserved old `Size.id`** as the proof, since a replacement that actually executed
+  would have minted a new id. The temporary DDL drops with `IF EXISTS` both before the ADD
+  (idempotent recovery from a leaked constraint) and in the `finally` — a bare DROP there
+  throws its own "constraint does not exist" error on the path where the ADD failed, masking
+  the real cause. The CI serialization requirement is already met by `maxWorkers: 1` plus a
+  per-run testcontainers database (ADR-004), so no workflow change was needed.
+- Earlier entry: 86 integration tests across 11 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +

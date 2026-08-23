@@ -141,13 +141,24 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 監査台帳は plans/audit/findings-14-integration-coverage-r6.md。QA_HANDOFF
     // 「次回着手用 依頼プロンプト」R6 と一対一対応。全 4 プラン完了時に本エントリと
     // QA_HANDOFF R6 を同時削除すること。
+    // 2026-08-23: 036 / 037 / 038 が DONE。**残るは 039 のみ**。
+    // 038 = product-update.test.ts 新設 (+5 / スイート +1)・`85d7e442`。
+    // 038 の申し送り (後続の DDL 失敗注入テストが必ず踏む):
+    //   - 失敗注入は tx の**後段**に置くこと。tx 冒頭 (product.update) で落とすと
+    //     子テーブルの置換はそもそも未実行で、旧行が残るのはロールバックの結果ではない。
+    //     その経路では $transaction が無くてもテストが緑になり、原子性の証拠にならない。
+    //   - 一時 CHECK 制約は ADD の直前と finally の**両方**で DROP … IF EXISTS を打つ。
+    //     finally 側を素の DROP にすると、ADD が落ちた経路で「制約が無い」という二次例外が
+    //     try 側の本来の失敗を置き換え、失敗注入が成立したかすら判別できなくなる。
+    //   - CI 直列化要件は既存構成で充足済み: maxWorkers:1 かつ globalSetup が実行ごとに
+    //     専用の testcontainers PostgreSQL を立てるため、共有 DB を掴む並行ジョブが無い。
     {
         priority: "medium",
-        title: "R6: Integration 深掘りギャップ解消 (plans 036〜039)",
-        target: "deleteProduct FK 境界 / 住所 default 不変条件 / updateProduct 全置換 tx / getProducts フィルタ",
-        tool: "plans/036〜039 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
+        title: "R6: Integration 深掘りギャップ解消 (残り plan 039)",
+        target: "getProducts フィルタ/ソート/ページング (039)。完了分: deleteProduct FK 境界 (036)・住所 default 不変条件 (037)・updateProduct 全置換 tx (038)",
+        tool: "plans/039 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
         cost: "M",
-        impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
+        impact: "browse のフィルタ/ソート/ページング合成を実 DB で固定し、Prisma のクエリ構築回帰を検知下に置く (036〜038 で FK 境界・default 不変条件・全置換 tx の下流副作用は達成済み)",
     },
     // R7 (improve Round 7 Integration 第 3 弾監査 / plans 040〜041) は 2026-08-13 に
     // 完了したため本エントリを削除した。QA_HANDOFF「次回着手用 依頼プロンプト」の
