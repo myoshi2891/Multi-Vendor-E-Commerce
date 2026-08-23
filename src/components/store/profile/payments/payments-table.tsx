@@ -4,6 +4,7 @@ import {
     PaymentTableFilter,
     UserPaymentType,
 } from "@/lib/types";
+import { toNumberSafe } from "@/lib/utils";
 import { getUserPayments } from "@/queries/profile";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -130,7 +131,9 @@ export default function PaymentsTable({
                                 </thead>
                                 <tbody>
                                     {data.map((payment) => {
-                                        let amount = payment.amount.toNumber();
+                                        let amount = toNumberSafe(
+                                            payment.amount
+                                        );
                                         if (
                                             payment.paymentMethod === "Stripe"
                                         ) {
