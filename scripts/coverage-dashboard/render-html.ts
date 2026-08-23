@@ -121,28 +121,15 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "M",
         impact: "カート/チェックアウトの金額表示クライアント側を回帰検知下に置く (決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収は 026/027 で達成済み)",
     },
-    // R5 は improve Round 5 Integration 特化監査 (2026-07-11) 起票。既存
-    // Integration 17 テストの実測 (17/17 pass / 4.779s) の上で、実 DB でしか
-    // 検証できない未カバー統合面 5 件をプラン化。実行手順の SSOT は
-    // plans/031〜035 (自己完結プラン・全プラン Docker 必須)、監査台帳は
-    // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
-    // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
-    // QA_HANDOFF R5 を同時削除すること。
-    // 2026-08-13 時点: 031 / 032 / 033 / 034 が DONE。**残るは 035 のみ**。
-    // (033 = search-products.test.ts 新設・+9/スイート +1・`6514e0c6`。
-    //  034 = review-aggregation.test.ts 新設・+5/スイート +1・`734a34b4`。)
-    // 034 の申し送り: upsertReview の集計は非トランザクション (create → findMany →
-    // product.update の 3 往復) なので、並行投稿では lost update が理論上起こりうる。
-    // 本スイートが固定したのは逐次実行時の集計正しさのみ。$transaction 化や DB 側集計を
-    // 入れる場合、本スイートはそのまま回帰ガードとして使える。
-    {
-        priority: "medium",
-        title: "R5: Integration テストギャップ解消 (残り plan 035)",
-        target: "updateStoreStatus の PENDING→ACTIVE ロール昇格 (031 の restock・032 の webhook 冪等性・033 の tsvector 検索・034 のレビュー集計は完了)",
-        tool: "plans/035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "S",
-        impact: "店舗承認時に User.role が SELLER へ昇格する遷移を実 DB で固定し、R5 の Integration ギャップを閉じ切る",
-    },
+    // R5 (improve Round 5 Integration 特化監査 / plans 031〜035) は 2026-08-23 に完了。
+    // 035 = store-status.test.ts 新設・+8/スイート +1・`e6ebdb15` で R5 が閉じ切ったため、
+    // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R5 を同一コミットで削除した。
+    // 035 の申し送り: updateStoreStatus の Clerk メタデータ同期は
+    // `updatedStore.status === "ACTIVE"` のみを見て**起点ステータスを見ない**ため、
+    // DISABLED/BANNED → ACTIVE では DB の User.role が USER のまま Clerk だけ SELLER になる。
+    // 認可ソースは Clerk 側 (auth-guards.ts の requireSeller) なので実際に権限が通る。
+    // store-status.test.ts のシナリオ 3 はこの既知バグの characterization であり、
+    // remediation 時に `not.toHaveBeenCalled()` へ反転させること。
     // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
     // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
     // browse フィルタ合成) で 4 件をプラン化。seed.ts 非変更のため R4/R5 プランと

@@ -509,7 +509,7 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 78 integration tests across 10 suites
+- 86 integration tests across 11 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -519,8 +519,25 @@
   `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7 +
   `tests/integration/coupon-code-uniqueness.test.ts` 5 +
-  `tests/integration/review-aggregation.test.ts` 7) as of 2026-08-13,
-  measured 78/78 pass.
+  `tests/integration/review-aggregation.test.ts` 7 +
+  `tests/integration/store-status.test.ts` 8) as of 2026-08-23,
+  measured 86/86 pass.
+  Plan 035 added the store-status suite (78 → 86; suites 10 → 11), closing the R5 round.
+  `updateStoreStatus` promotes the store owner from USER to SELLER, so its transition
+  condition is a permission boundary: the DB promotion fires only for PENDING → ACTIVE,
+  while the Clerk metadata sync fires whenever the *result* is ACTIVE, without looking at
+  the origin status. Because authorization reads Clerk's `privateMetadata.role`
+  (`src/lib/auth-guards.ts`) rather than the DB column, a DISABLED/BANNED → ACTIVE
+  transition grants seller access while the DB still says USER. That scenario is pinned as
+  a `TODO(characterization)` — a known-bug fixture to be inverted, not a contract.
+  The suite's load-bearing case is transactional atomicity: scenarios 1–4 only show that
+  both writes succeeded, so the single-`$transaction` claim is proven by failing the
+  second write deterministically (a temporary CHECK constraint blocking `role = 'SELLER'`)
+  and observing the status update roll back. Deleting the owner cannot serve as the
+  injection point — `Store.user` has no `onDelete`, so the implicit `Restrict` rejects the
+  delete — and the shared real-DB singleton rules out spying on `tx.user.update`. Since
+  `resetDb` truncates rows but does not drop table constraints, the DDL is dropped in a
+  `finally` and the cleanup is verified by running the file twice in a row.
   Plan 034 added the review-aggregation suite (71 → 76; suites 9 → 10). A product's
   `rating` / `numReviews` are recomputed by re-reading every review on each submission,
   and the fully mocked unit tests can only pin the call structure — whether a repeat
