@@ -12,7 +12,23 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
+- 2013 passed / 2016 total across 190 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
+  Plan 030 covered the six money-path client components that sat at lcov 0% (+26 tests, +6 suites,
+  one suite per commit): newsletter, cart summary, PayPal payment, Stripe payment, checkout
+  container and cart container. Their Lines coverage moved from 0% to 96.8–100%. Unlike the
+  net-casting suites added by plans 010 and 034, this one found two real defects.
+  First, `checkout-page/container.tsx` called its hydration query without a `catch`, so a failure
+  escaped the `useEffect` as an unhandled rejection and the page kept showing **stale amounts**
+  with nothing telling the user the refresh had failed; it was fixed under operator approval
+  (`066ffd2f`) with a try/catch, a structured log and a toast, plus the cancellation-flag pattern
+  from `tech.md` since the effect re-runs when the country changes. Building the detection point
+  with `it.failing` was rejected empirically: `it.failing` inverts the *assertion* result, while an
+  unhandled rejection surfaces at Node's process level and is not absorbed — the probe produced one
+  failing test and reported the same rejection twice. Second, the error message set when Stripe's
+  intent request fails is **unreachable**: the early return for `!clientSecret` renders the loader,
+  so the `<form>` that would display it never mounts and the user sees an endless spinner. That one
+  is pinned as characterization; the component was left unchanged (out of scope for this plan).
+- Earlier entry: 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
   Review-fix pass (+3, no new suite). `src/queries/review.test.ts` gained 2 cases pinning
   that the review write and the aggregation update are wired into a single `$transaction`
   and that the `Product` row lock is taken *before* the write — these, not the integration

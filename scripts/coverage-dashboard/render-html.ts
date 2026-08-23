@@ -112,15 +112,19 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 実行手順の SSOT は plans/026〜030 (自己完結プラン)、進捗は plans/README.md
     // の status 列。QA_HANDOFF「次回着手用 依頼プロンプト」R4 と一対一対応。
     // 全 5 プラン完了時に本エントリと QA_HANDOFF R4 を同時削除すること。
-    // 2026-08-04 時点: 026 / 027 / 028 / 029 が DONE、残るは 030 のみ。
-    {
-        priority: "medium",
-        title: "R4: テストギャップ解消 (残り plans 030)",
-        target: "money-path クライアント 6 本の component テスト (026/027/028/029 は完了)",
-        tool: "plans/030-component-test-money-path-client.md の自己完結プラン (Sonnet 実行可・spec-sync 必須)",
-        cost: "M",
-        impact: "カート/チェックアウトの金額表示クライアント側を回帰検知下に置く (決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収は 026/027 で達成済み)",
-    },
+    // R4 (improve Round 4 監査 / plans 026〜030) は 2026-08-23 に完了。
+    // 030 = money-path クライアント 6 スイート・+26 テスト・`13d3dd70`〜`2a04e331` で
+    // R4 が閉じ切ったため、本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R4 を
+    // 同一コミットで削除した。対象 6 ファイルの lcov Lines は 0% → 96.8〜100%。
+    // 030 の申し送り（実バグ 2 件を検出した）:
+    //   (1) checkout-page/container.tsx の hydrate 失敗が未処理 rejection になり、
+    //       画面に古い金額が残ったまま失敗が伝わらなかった → 本体修正済み (066ffd2f)。
+    //       it.failing で検知点を作る案は棄却 —— あれが反転するのは assertion の結果だけで、
+    //       未処理 rejection は Node のプロセスレベルで浮上するため吸収されない。
+    //   (2) stripe-payment.tsx の intent 取得失敗時の setErrorMessage は到達不能
+    //       (直後の早期リターンがローダーを返すため <form> に届かない)。ユーザーが見るのは
+    //       無限スピナー。characterization として固定済みで**本体は未修正** —— 修正時は
+    //       stripe-payment.test.tsx の当該ケースの期待値を反転させること。
     // R5 (improve Round 5 Integration 特化監査 / plans 031〜035) は 2026-08-23 に完了。
     // 035 = store-status.test.ts 新設・+8/スイート +1・`e6ebdb15` で R5 が閉じ切ったため、
     // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R5 を同一コミットで削除した。

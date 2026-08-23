@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1987 passed / 1990 total（3 skipped tests）/ 184 スイート（183 passed + 1 skipped suite）** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -3812,4 +3812,87 @@ assert は `response.ok() === false` であって `toBe(404)` では**ない**�
 | Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **不変** |
 | Jest Integration | 86 / 11 スイート | **不変** |
 | ダッシュボード集計ファイル数 | 220 | **221** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 030 の実行（money-path クライアント 6 ファイルの component テスト / TESTS-01 残余） (2026-08-23)
+
+#### 概要
+
+チェックアウト完了率という最重要 KPI の動線を構成しながら lcov **0%** だった
+クライアントコンポーネント 6 ファイルに component テストを新設した（**+26 テスト / +6 スイート**）。
+**1 ファイル = 1 コミット**（rule 02）。本プランの完了で **improve Round 4 が閉じ切った**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/store/newsletter.test.tsx` | 新規（4 ケース） | `13d3dd70` |
+| `tests/component/store/cart-summary.test.tsx` | 新規（4 ケース） | `33814ae1` |
+| `tests/component/store/paypal-payment.test.tsx` | 新規（4 ケース） | `89155f93` |
+| `tests/component/store/stripe-payment.test.tsx` | 新規（6 ケース） | `87be3ddb` |
+| `src/components/store/checkout-page/container.tsx` | **本体修正**（hydrate 失敗の握り） | `066ffd2f` |
+| `tests/component/store/checkout-container.test.tsx` | 新規（4 ケース） | `235fabcb` |
+| `tests/component/store/cart-container.test.tsx` | 新規（4 ケース） | `2a04e331` |
+
+#### カバレッジ（対象 6 ファイル・lcov Lines）
+
+| ファイル | 更新前 | 更新後 |
+|---|---|---|
+| `cards/payment/paypal/paypal-payment.tsx` | 0% | **100%** (16/16) |
+| `cards/payment/stripe/stripe-payment.tsx` | 0% | **97.6%** (41/42) |
+| `cart-page/container.tsx` | 0% | **100%** (33/33) |
+| `cart-page/summary.tsx` | 0% | **100%** (22/22) |
+| `checkout-page/container.tsx` | 0% | **96.8%** (30/31) |
+| `layout/footer/newsletter.tsx` | 0% | **100%** (29/29) |
+
+#### 検出した実バグ 2 件
+
+本プランは plan 010 / 034 のような「網を張った」型ではなく、**「壊れているものを見つけた」型**の成果である。
+
+1. **hydrate 失敗が未処理 rejection になっていた（修正済み・`066ffd2f`）**
+   `checkout-page/container.tsx` の `useEffect` は `updateCheckoutProductWithLatest()` を
+   catch なしで呼んでいた。実害はユーザー側にあり、引き直しが失敗しても画面には
+   **古い金額が表示されたまま**で、そのまま注文を確定できてしまう。オペレーター承認のうえ
+   try/catch + 構造化ログ + `toast.error` を入れ、あわせて `tech.md` の
+   「useEffect キャンセルフラグ」パターンも適用した（`activeCountry` 切替で再実行されるため
+   古いレスポンスが新しい状態を上書きするレースがあった）。
+2. **Stripe の intent 取得失敗時のエラー表示が到達不能（未修正・characterization）**
+   `getClientSecret` の catch は `setErrorMessage` を呼ぶが、直後の早期リターン
+   （`!clientSecret`）がローダーを返すため、`errorMessage` を描画する `<form>` に到達しない。
+   ユーザーが見るのは**無限スピナー**。プランの Out of scope のため本体は修正せず、
+   実挙動を固定して修正時に期待値を反転させる旨をテスト内に明記した。
+
+#### `it.failing` は使えなかった（実測で棄却）
+
+プラン Step 5 は hydrate 失敗の検知点を `it.failing` で作る案を提示しているが、
+**`it.failing` が反転するのは assertion の結果だけ**である。`useEffect` の外へ漏れた
+rejection は Node のプロセスレベルで浮上するため吸収されず、実測では **1 failed** かつ
+**同じ rejection が 2 重報告**された。プランが要求する検証手順（単独実行が緑 + フルランも緑）を
+満たせなかったため、プランが推奨する代替 (a)「本体側で握る」を採った。
+
+#### プラン本文からの逸脱 2 点
+
+1. **`createMockCartItem` は使えない。** プランは共通ファクトリとしてこれを指定するが、
+   返すのは Prisma `Decimal` を持つ **DB の CartItem** で、`CartSummary` が受け取る
+   `CartProductType`（`price: number`）とは別物。同じ `src/config/test-fixtures.ts` の
+   **`createMockCartProduct`** を使用した（共通基盤を使う要件は満たしている）。
+2. **ケース数はプラン本文より多い**（3+4+5 指定 → 実装 4+4+6）。いずれも分岐の false 側を
+   1 件ずつ追加したもの: `saveUserCart` が falsy を resolve する経路 /
+   `createStripePayment` が `paymentDetails` を返さない経路。前者は
+   実装が `if (res) router.push(...)` なので reject 系だけでは未検証で残る。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **2013 passed / 190 スイート** |
+| lcov Statements | 68.49% | **70.51%** (6154/8727) |
+| lcov Branches | 48.46% | **50.00%** (2611/5221) |
+| lcov Lines | 67.5% 台 | **69.67%** (5548/7963) |
+| Jest Integration | 86 / 11 スイート | **不変** |
+| Playwright E2E | 60 tests/browser・計 180 | **不変** |
+| ダッシュボード集計ファイル数 | 221 | **227** |
 | 型エラー | 0 件 | **0 件** |
