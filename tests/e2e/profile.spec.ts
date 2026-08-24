@@ -78,7 +78,11 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         });
         selectableCountryId = selectable.id;
 
-        const uniqueId = Date.now();
+        // 3 プロジェクト（chromium / firefox / webkit）は並列に beforeAll へ入るため、
+        // Date.now() だけでは同一ミリ秒で衝突し、Clerk 側で重複ユーザーの作成に化ける。
+        // project 名と parallelIndex を混ぜて、並列実行間で必ず一意にする。
+        const runSlug = `${testInfo.project.name.replace(/[^a-z0-9]/gi, "").toLowerCase()}${testInfo.parallelIndex}`;
+        const uniqueId = `${Date.now()}${runSlug}`;
         userEmail = `e2e-profile-${uniqueId}+clerk_test@example.com`;
         userPassword = `TestP@ssw0rd!${uniqueId}`;
 
