@@ -198,6 +198,61 @@ describe("CheckoutContainer", () => {
         expect(screen.getByTestId("country-note")).toHaveTextContent("Japan");
     });
 
+    it("serializes hydrate requests so a stale country cannot persist last", async () => {
+        // Arrange: 初回（住所未選択 = undefined）の引き直しを未解決のまま留める。
+        const cart = buildCart(["variant-1"]);
+        const order: string[] = [];
+        let resolveMount: () => void = () => {};
+        const mountGate = new Promise<void>((resolve) => {
+            resolveMount = resolve;
+        });
+
+        (updateCheckoutProductWithLatest as jest.Mock)
+            .mockImplementationOnce(async () => {
+                await mountGate;
+                order.push("mount-settled");
+                return cart;
+            })
+            .mockImplementationOnce(async () => {
+                order.push("country-started");
+                return { ...cart, total: 77.0 };
+            });
+
+        renderContainer(cart);
+        await waitFor(() => {
+            expect(updateCheckoutProductWithLatest).toHaveBeenCalledTimes(1);
+        });
+
+        // Act: 初回が飛行中のまま住所（= 国）を切り替える
+        fireEvent.click(screen.getByTestId("select-address"));
+
+        // Assert: 2 本目はまだ発火しない。
+        //
+        // これが**永続化の race を塞ぐ本体**である。`updateCheckoutProductWithLatest`
+        // は CartItem / Cart を DB へ書き込むので、並行させると古い国のリクエストが
+        // 後着した場合にそちらの送料・合計が確定して残る。`cancelled` フラグは
+        // クライアント state の上書きしか止められず、サーバー側の書き込みには効かない。
+        expect(updateCheckoutProductWithLatest).toHaveBeenCalledTimes(1);
+
+        // 初回を解決させるとキューが流れて 2 本目が走る
+        resolveMount();
+
+        // Assert: 完了順が呼び出し順と一致する = 最新の国の書き込みが必ず最後に来る
+        await waitFor(() => {
+            expect(updateCheckoutProductWithLatest).toHaveBeenCalledTimes(2);
+        });
+        expect(order).toEqual(["mount-settled", "country-started"]);
+        expect(updateCheckoutProductWithLatest).toHaveBeenLastCalledWith(
+            cart.cartItems,
+            jpCountry
+        );
+        await waitFor(() => {
+            expect(screen.getByTestId("place-order-card")).toHaveTextContent(
+                "77"
+            );
+        });
+    });
+
     it("surfaces a hydrate failure to the user instead of failing silently", async () => {
         // Arrange
         const consoleSpy = jest
