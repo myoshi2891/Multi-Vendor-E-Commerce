@@ -8,8 +8,12 @@
  *
  *   - PENDING → ACTIVE でのみ DB の User.role が USER → SELLER へ昇格する
  *   - 昇格しない遷移 (PENDING → BANNED / 非 PENDING 起点) では role が動かない
- *   - Clerk メタデータ同期の発火条件が DB 昇格条件と**異なる**現仕様
+ *   - Clerk メタデータ同期は「更新後の店舗が ACTIVE」かつ「オーナーの DB role が
+ *     SELLER」の両方が成立する場合にのみ発火する現仕様（旧仕様は更新後 ACTIVE
+ *     だけを見ており、DISABLED/BANNED → ACTIVE でも Clerk に SELLER を書いていた）
  *   - status 更新とロール昇格が同一 `$transaction` で原子的であること
+ *   - 更新前ステータスを tx 内で `FOR UPDATE` して読むため、並行遷移でも
+ *     「昇格したのは PENDING を観測した tx だけ」が保たれること
  *   - 存在しない店舗 / 非 ADMIN / 未認証での拒否 + 副作用なし
  *
  * ロール昇格は**権限境界の変更**であり、条件を外れて発火すると seller
@@ -42,6 +46,8 @@ jest.mock("@clerk/nextjs/server", () => ({
 }));
 
 // ----------------------------------------------------------------------------
+
+import { cpus } from "os";
 
 import { Role, StoreStatus } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
@@ -365,5 +371,99 @@ describe("Scenario 7: transactional atomicity", () => {
                 `ALTER TABLE "User" DROP CONSTRAINT "tmp_block_seller"`
             );
         }
+    });
+});
+
+/**
+ * Prisma の接続プール上限を求める。
+ *
+ * 並行ディスパッチテストは **プールが 1 だと 2 本が接続待ちで直列化され、遷移の並行性を
+ * 検証しないまま緑になる**（偽陽性）。そのため「並行を検証できない環境」を silently pass
+ * させず、テスト内で明示的に expect する。`connection_limit` の指定が無い場合、Prisma は
+ * `num_cpus * 2 + 1` を既定値として使う。
+ *
+ * （`order-lifecycle.test.ts` / `webhook-payment.test.ts` / `review-aggregation.test.ts`
+ * にも同じヘルパーがある。共通化するなら 4 箇所まとめて `setup/` へ出すこと。）
+ */
+function resolveConnectionLimit(): number {
+    const url = process.env.DATABASE_URL;
+    if (!url) throw new Error("DATABASE_URL が未設定です（globalSetup 未実行）");
+    const explicit = new URL(url).searchParams.get("connection_limit");
+    if (explicit !== null) {
+        const parsed = Number(explicit.trim());
+        if (!Number.isFinite(parsed)) {
+            throw new Error(`connection_limit が数値ではありません: ${explicit}`);
+        }
+        return parsed;
+    }
+    return cpus().length * 2 + 1;
+}
+
+// ============================================================================
+// Scenario 8: PENDING → BANNED と PENDING → ACTIVE の並行ディスパッチ
+// ============================================================================
+
+describe("Scenario 8: concurrent PENDING → BANNED / PENDING → ACTIVE", () => {
+    it("SELLER 昇格は更新前 PENDING を観測した tx だけに閉じる", async () => {
+        // 前提: プールが 1 だと 2 本が接続待ちで直列化され、並行性を検証しないまま
+        // 緑になる。「並行を検証できない環境」を silently pass させない。
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(2);
+
+        // Arrange
+        mockAuthAsAdmin();
+        const { owner, store } = await seedOwnerAndStore(StoreStatus.PENDING);
+
+        // バリア: 2 本が in-flight になってから初めて DB へ進ませる。
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let arrived = 0;
+        const arm = async (next: AppStoreStatus): Promise<void> => {
+            arrived += 1;
+            if (arrived === 2) release();
+            await gate;
+            await updateStoreStatus(store.id, next);
+        };
+
+        // Act
+        const settled = await Promise.allSettled([
+            arm(AppStoreStatus.ACTIVE),
+            arm(AppStoreStatus.BANNED),
+        ]);
+
+        // Assert: どちらも成功する（片方を落として整合させる設計ではない）
+        expect(settled.filter((r) => r.status === "rejected")).toEqual([]);
+
+        const storeAfter = await db.store.findUniqueOrThrow({
+            where: { id: store.id },
+        });
+        const ownerAfter = await db.user.findUniqueOrThrow({
+            where: { id: owner.id },
+        });
+
+        // Assert: 到達しうる終状態は 2 通りだけで、いずれも
+        // 「role が SELLER ⟺ ACTIVE 化した tx が更新前 PENDING を観測した」を満たす。
+        //
+        //   - BANNED が先にコミット → ACTIVE 側は更新前 BANNED を読むので昇格しない
+        //     → (ACTIVE, USER)
+        //   - ACTIVE が先にコミット → 昇格し、その後 BANNED が上書きする
+        //     → (BANNED, SELLER)
+        //
+        // 更新前ステータスを tx **外**の findUnique スナップショットから採ると、
+        // 両方の tx が PENDING を観測できてしまい、1 つ目の順序でも昇格が起きる
+        // ——(ACTIVE, SELLER) という 3 つ目の組み合わせが現れる。
+        //
+        // **識別力（実測）**: 更新前ステータスを tx 外スナップショットに戻すと、
+        // 本テストは **4 回中 3 回**落ちる。落ちるのは BANNED が先にコミットした回だけで、
+        // 逆順の回はロック有無に関わらず (BANNED, SELLER) になり通ってしまう。
+        // 「壊すと必ず落ちる」ではなく「壊すと高確率で落ちる」ガードである点に注意。
+        expect([
+            { status: StoreStatus.ACTIVE, role: Role.USER },
+            { status: StoreStatus.BANNED, role: Role.SELLER },
+        ]).toContainEqual({
+            status: storeAfter.status,
+            role: ownerAfter.role,
+        });
     });
 });
