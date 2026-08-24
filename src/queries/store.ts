@@ -615,6 +615,25 @@ export const updateStoreStatus = async (
         // ステータス更新とロール昇格をアトミックに実行
         const { updatedStore, ownerIsSeller } = await db.$transaction(
             async (tx) => {
+                // 昇格判定に使う「更新前ステータス」は tx 内で行ロックを取って
+                // 読み直す。上の findUnique はトランザクションの**外**なので、
+                // 読んでから update するまでの間に別リクエストが status を動かせる
+                // （TOCTOU）。実害の例: PENDING の店舗に BANNED 化と ACTIVE 化が
+                // 並行すると、両者とも「更新前 = PENDING」を見るため、最終状態が
+                // BANNED でも ACTIVE 側の昇格が通り User.role だけ SELLER で残る。
+                // FOR UPDATE で直列化すれば、後続 tx はロック解放後に確定済みの
+                // status を読むので、この窓が閉じる。
+                //
+                // Prisma の fluent API はロック句を表現できないため $queryRaw を
+                // 使う（値は常にパラメータ化される）。列型は DB enum だが、TS の
+                // `StoreStatus` は string enum で文字列リテラルと直接比較できない
+                // ため `string` で受ける。
+                const lockedRows = await tx.$queryRaw<{ status: string }[]>`
+                    SELECT "status" FROM "Store" WHERE "id" = ${storeId} FOR UPDATE
+                `;
+                const previousStatus = lockedRows[0]?.status;
+                if (!previousStatus) throw new Error("Store not found.");
+
                 const updated = await tx.store.update({
                     where: {
                         id: storeId,
@@ -624,8 +643,10 @@ export const updateStoreStatus = async (
                     },
                 });
 
-                // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格
-                if (store.status === "PENDING" && updated.status === "ACTIVE") {
+                // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格。
+                // 起点は tx 内でロックして読んだ `previousStatus` を使う
+                // （tx 外スナップショットの `store.status` ではない）。
+                if (previousStatus === "PENDING" && updated.status === "ACTIVE") {
                     await tx.user.update({
                         where: {
                             id: updated.userId,
