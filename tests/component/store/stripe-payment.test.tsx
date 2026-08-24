@@ -78,7 +78,7 @@ describe("StripePayment", () => {
         ).toBeInTheDocument();
     });
 
-    it("keeps showing the loader when the intent request fails (error text is unreachable)", async () => {
+    it("surfaces the error when the intent request fails instead of spinning forever", async () => {
         // Arrange
         (createStripePaymentIntent as jest.Mock).mockRejectedValue(
             new Error("intent boom")
@@ -90,13 +90,12 @@ describe("StripePayment", () => {
             expect(createStripePaymentIntent).toHaveBeenCalled();
         });
 
-        // Assert: characterization。getClientSecret の catch は setErrorMessage を呼ぶが、
-        // 直後の早期リターン（`if (!clientSecret || !stripe || !elements)`）がローダーを
-        // 返すため、errorMessage を描画する <form> には**到達しない**。
-        // ユーザーに見えるのは無限スピナーで、設定したメッセージは死んでいる。
-        // 本体を修正して失敗を伝えるようにしたら、下 2 行の期待値を反転させること。
-        expect(screen.getByText("Loading...")).toBeInTheDocument();
-        expect(screen.queryByText("intent boom")).not.toBeInTheDocument();
+        // Assert: errorMessage はローダーガードより先に描画されるため、取得失敗は
+        // 無限スピナーではなくメッセージとしてユーザーへ届く。
+        await waitFor(() => {
+            expect(screen.getByText("intent boom")).toBeInTheDocument();
+        });
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
         expect(screen.queryByTestId("payment-element")).not.toBeInTheDocument();
     });
 

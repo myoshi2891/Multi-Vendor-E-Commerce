@@ -70,6 +70,14 @@ export default function StripePayment({ orderId }: { orderId: string }) {
         setLoading(false);
     };
 
+    // 取得失敗はローダーより先に描画する。intent 取得が失敗すると clientSecret は
+    // null のままなので、下のローダーガードを先に通すと errorMessage を描画する
+    // <form> へ永久に到達できず、ユーザーには無限スピナーしか見えない。
+    // clientSecret 取得後の送信時エラー（カード検証など）は従来どおりフォーム内に出す。
+    if (errorMessage && !clientSecret) {
+        return <div className="text-sm text-red-500">{errorMessage}</div>;
+    }
+
     if (!clientSecret || !stripe || !elements) {
         return (
             <div className="flex items-center justify-center">
