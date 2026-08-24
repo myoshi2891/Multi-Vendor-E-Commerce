@@ -42,8 +42,11 @@ jest.mock('@/components/shared/country-selector', () => ({
         >
             <option value="Japan">Japan</option>
             <option value="United States">United States</option>
-            {/* DB の Country に存在しない国。静的リストと DB の乖離を再現する */}
-            <option value="Atlantis">Atlantis</option>
+            {/* STATIC_COUNTRIES には存在するが DB の Country fixture には無い国。
+                静的 ISO 一覧と DB の乖離を再現する（Atlantis のような架空国だと
+                STATIC_COUNTRIES にも無く、表示解決が countries[0] への
+                フォールバック経路に落ちてしまい、回帰の対象経路を通らない）。 */}
+            <option value="Canada">Canada</option>
         </select>
     )
 }))
@@ -185,7 +188,7 @@ describe('AddressDetails', () => {
         render(<AddressDetails countries={countries} setShow={mockSetShow} />)
 
         // Act
-        await user.selectOptions(screen.getByTestId('country-selector'), 'Atlantis')
+        await user.selectOptions(screen.getByTestId('country-selector'), 'Canada')
 
         // Assert: 黙って無視してはいけない。無視すると UI 上は国が選ばれたように見えるのに
         // countryId が空のままになり、送信時に「国が原因」と分からない検証エラーだけが出る。
@@ -194,5 +197,11 @@ describe('AddressDetails', () => {
                 screen.getByText('This country is not available for shipping.')
             ).toBeInTheDocument()
         })
+
+        // Assert: 選択そのものは表示に残る。以前は DB の Country 行にだけ照会し、
+        // 見つからなければ countries[0]（= Japan）へフォールバックしていたため、
+        // ユーザーが選んだ国とは無関係な先頭の国が選択中として描画され、
+        // countryId のエラー文言と噛み合わなかった。
+        expect(screen.getByTestId('country-selector')).toHaveValue('Canada')
     })
 })
