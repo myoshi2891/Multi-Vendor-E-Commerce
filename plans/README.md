@@ -186,7 +186,9 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >
 > **本プランが主張しないこと**: (1) **商品詳細の VRT は存在しない** —— 購買判断ページの
 > レイアウト回帰は依然として未検知、(2) **クリップの原因特定と修正は行っていない**
-> （`src/` は本プランの Out of scope。未起票）、(3) home（`/`）の VRT は対象外
+> （`src/` は本プランの Out of scope。実行時点では未起票だったが、その後
+> **[plan 065](065-fix-product-detail-right-panel-clipping.md) として起票済み**〔2026-08-24〕で
+> 追跡している）、(3) home（`/`）の VRT は対象外
 > （プランの Out of scope。ただし OI-9 は 2026-06-06 に解消済みなので、
 > 先行依存としては既に外れている）、(4) firefox / webkit への拡大はしない
 > （既存方針どおり VRT は chromium 限定）、(5) `playwright.config.ts` の
@@ -267,11 +269,14 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 注文が複数あるときに**別の注文へ飛んでも気づけない**。識別力は行の特定条件を
 > 存在しない注文 ID へ崩して当該テストのみが落ちることを実測済み。
 >
-> **観測したが触っていないもの（未起票）**: `payments-table.tsx` は
-> `paymentMethod === "Stripe"` の行を表示時に **`/ 100`** している（セント建ての名残）。
-> plan 063 の backfill と Round 14 の A-3（`e63474b`）で `PaymentDetails.amount` は
-> **ドル建てに統一済み**なので、**この除算は表示額を 1/100 にしている可能性がある**。
-> 本プランの範囲外のため修正しておらず、起票もされていない。
+> **観測したが触っていないもの（実行時は未起票）→ 2026-08-24 に修正済み**:
+> `payments-table.tsx` は `paymentMethod === "Stripe"` の行を表示時に **`/ 100`**
+> していた（セント建ての名残）。plan 063 の backfill と Round 14 の A-3（`e63474b`）で
+> `PaymentDetails.amount` は **ドル建てに統一済み**だったため、この除算は表示額を
+> 1/100 にしていた。本プランの範囲外だったので実行時は修正も起票もしていないが、
+> その後 **`e918c9d7` で除算を撤去**し、回帰検知点
+> （`payments-table.test.tsx` の "does not divide a serialized Stripe dollar amount by 100"）
+> を追加済み。
 >
 > **本プランが主張しないこと**: (1) `/profile/orders/[filter]` のフィルタ・ページングは
 > 未検証（注文を大量に作る必要があり wall-clock コスト過大。プランの Out of scope）、
