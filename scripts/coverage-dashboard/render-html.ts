@@ -128,12 +128,16 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // R5 (improve Round 5 Integration 特化監査 / plans 031〜035) は 2026-08-23 に完了。
     // 035 = store-status.test.ts 新設・+8/スイート +1・`e6ebdb15` で R5 が閉じ切ったため、
     // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R5 を同一コミットで削除した。
-    // 035 の申し送り: updateStoreStatus の Clerk メタデータ同期は
-    // `updatedStore.status === "ACTIVE"` のみを見て**起点ステータスを見ない**ため、
-    // DISABLED/BANNED → ACTIVE では DB の User.role が USER のまま Clerk だけ SELLER になる。
-    // 認可ソースは Clerk 側 (auth-guards.ts の requireSeller) なので実際に権限が通る。
-    // store-status.test.ts のシナリオ 3 はこの既知バグの characterization であり、
-    // remediation 時に `not.toHaveBeenCalled()` へ反転させること。
+    // 035 の申し送り (2026-08-24 に remediation 済み・履歴として残す):
+    //   [当時] updateStoreStatus の Clerk メタデータ同期は
+    //   `updatedStore.status === "ACTIVE"` のみを見て**起点ステータスを見ない**ため、
+    //   DISABLED/BANNED → ACTIVE では DB の User.role が USER のまま Clerk だけ SELLER に
+    //   なっていた。認可ソースは Clerk 側 (auth-guards.ts の requireSeller) なので
+    //   実際に販売者権限が通る権限昇格バグだった。
+    //   [現況] `7a56c93d` で本体を修正済み —— DB 上 SELLER である場合 (PENDING からの
+    //   昇格後 / 既存 SELLER) のみ Clerk を同期する。store-status.test.ts のシナリオ 3 は
+    //   characterization から**回帰ガードへ反転済み**で、期待値は
+    //   `mockUpdateUserMetadata` が `not.toHaveBeenCalled()` であること。
     // R6 (improve Round 6 Integration 深掘り監査 / plans 036〜039) は 2026-08-23 に完了。
     // 039 = product-browse.test.ts 新設 (+16 / スイート +1)・`e5b2e8a5` で R6 が閉じ切ったため、
     // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R6 を同一コミットで削除した。

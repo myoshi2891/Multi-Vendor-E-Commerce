@@ -3717,13 +3717,20 @@ reviewer の自動作成）/ 複数ユーザーの平均（4 と 2 → 3）/ 同
 6. 非 ADMIN / 未認証の拒否 + `Store.status` 不変
 7. `$transaction` の原子性（後段失敗で前段もロールバック）
 
-#### 申し送り: シナリオ 3 は既知バグの characterization
+#### 申し送り: シナリオ 3 は既知バグの characterization → **2026-08-24 に remediation 済み**
 
-Clerk 同期の条件は `updatedStore.status === "ACTIVE"` のみで**起点ステータスを見ない**。
-このリポジトリの認可ソースは DB の `User.role` ではなく Clerk の `privateMetadata.role`
-（`src/lib/auth-guards.ts` の `requireSeller`）なので、DISABLED/BANNED → ACTIVE では
-**DB が USER のままでも実際に販売者権限が通る**。remediation が入ったら当該 assert を
-`not.toHaveBeenCalled()` へ**反転**させること。
+**当時（plan 035 実行時点）の観測**: Clerk 同期の条件は `updatedStore.status === "ACTIVE"`
+のみで**起点ステータスを見なかった**。このリポジトリの認可ソースは DB の `User.role` では
+なく Clerk の `privateMetadata.role`（`src/lib/auth-guards.ts` の `requireSeller`）なので、
+DISABLED/BANNED → ACTIVE では **DB が USER のままでも実際に販売者権限が通る**権限昇格
+バグだった。上の「検証境界 3」はその characterization である。
+
+**現況**: `7a56c93d`（`fix(auth): updateStoreStatus での意図しない販売者ロール昇格を防止`）
+で本体を修正済み。**DB 上 SELLER である場合**（PENDING からの昇格後 / 既存 SELLER）のみ
+Clerk メタデータを同期する。これに伴い `tests/integration/store-status.test.ts` の
+シナリオ 3 は characterization から**回帰ガードへ反転済み**で、期待値は
+`mockUpdateUserMetadata` が `not.toHaveBeenCalled()` であること
+（`tests/integration/store-status.test.ts:198-203`）。
 
 #### シナリオ 7（原子性）が本スイートの中心
 
@@ -4072,12 +4079,20 @@ seed は並列分離のため国名にサフィックスを付ける（実測: `
 3. **seed の国は選択肢に現れない**ため、spec 側で静的リストと一致する実国名の Country 行を用意した
 4. 氏名は**英字のみ**（`ShippingAddressSchema` の `/^[a-zA-Z]+$/`）。`"E2E"` は数字を含み弾かれる
 
-#### 観測したが触っていないもの（未起票）
+#### 観測したが触っていないもの（当時は未起票）→ **2026-08-24 に修正済み**
 
-`payments-table.tsx` は `paymentMethod === "Stripe"` の行を表示時に **`/ 100`** している
-（セント建ての名残）。plan 063 の backfill と Round 14 A-3（`e63474b`）で
-`PaymentDetails.amount` はドル建てに統一済みなので、**この除算は表示額を 1/100 にしている
-可能性がある**。本プランの範囲外のため修正していない。
+**当時の観測**: `payments-table.tsx` は `paymentMethod === "Stripe"` の行を表示時に
+**`/ 100`** していた（セント建ての名残）。plan 063 の backfill と Round 14 A-3
+（`e63474b`）で `PaymentDetails.amount` はドル建てに統一済みなので、**この除算は表示額を
+1/100 にしている可能性がある**と記録した。本プランの範囲外のため当時は修正していない。
+
+**現況**: `e918c9d7`（`fix(payments): PaymentsTable での Stripe ドル建て金額の二重除算を撤去`）
+で除算を撤去済み。表示は provider によらず `toNumberSafe(payment.amount).toFixed(2)` に
+統一され、`payments-table.tsx:134-145` に「ここで provider を見て `/ 100` すると正しく
+保存された行が 1/100 に化ける」根拠コメントを残してある。**回帰検知点も追加済み** ——
+`src/components/store/profile/payments/payments-table.test.tsx:281` の
+"does not divide a serialized Stripe dollar amount by 100"（RSC 越しに文字列化された
+Stripe のドル建て金額が除算されないことを固定）。
 
 #### テスト統計（更新）
 
