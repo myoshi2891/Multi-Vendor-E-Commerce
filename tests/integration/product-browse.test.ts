@@ -225,7 +225,7 @@ describe("Scenario 3: nested some filters", () => {
 });
 
 // ============================================================================
-// Scenario 4: 価格境界（Decimal + Infinity 経路）
+// Scenario 4: 価格境界（Decimal カラムへの gte/lte 組み立て）
 // ============================================================================
 
 describe("Scenario 4: price boundaries", () => {
@@ -236,9 +236,12 @@ describe("Scenario 4: price boundaries", () => {
         expect(idsOf(result)).toEqual([fx.b.product.id]);
     });
 
-    it("accepts a bare minPrice, which sends lte: Infinity to a Decimal column", async () => {
-        // maxPrice 未指定だと実装は `lte: filters.maxPrice || Infinity` を渡す。
-        // Prisma の Decimal フィルタが Infinity を受理するかは実 DB でしか確認できない。
+    it("accepts a bare minPrice by omitting the lte bound entirely", async () => {
+        // 回帰テスト: 下限のみの価格フィルタが成立することを固定する。
+        // 実装は maxPrice 未指定のとき `lte` を**付けない**（`src/queries/product.ts`）。
+        // 以前は `lte: filters.maxPrice || Infinity` を渡しており、Prisma は Decimal
+        // カラムのフィルタに Infinity を載せられずシリアライズ時に throw していた
+        // （plan 039 の STOP 条件に該当し本体を修正）。実 DB でしか観測できない経路。
         const result = await getProducts({ minPrice: 200 });
 
         expect(result.totalCount).toBe(1);
