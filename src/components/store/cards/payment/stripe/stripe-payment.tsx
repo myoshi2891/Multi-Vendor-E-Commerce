@@ -75,7 +75,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
     // <form> へ永久に到達できず、ユーザーには無限スピナーしか見えない。
     // clientSecret 取得後の送信時エラー（カード検証など）は従来どおりフォーム内に出す。
     if (errorMessage && !clientSecret) {
-        return <div className="text-sm text-red-500">{errorMessage}</div>;
+        return <div className="text-sm text-destructive">{errorMessage}</div>;
     }
 
     if (!clientSecret || !stripe || !elements) {
@@ -93,7 +93,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
         <form onSubmit={handleSubmit} className="rounded-md bg-white p-2">
             {clientSecret && <PaymentElement />}
             {errorMessage && (
-                <div className="text-sm text-red-500">{errorMessage}</div>
+                <div className="text-sm text-destructive">{errorMessage}</div>
             )}
             <button
                 disabled={!stripe || loading}
