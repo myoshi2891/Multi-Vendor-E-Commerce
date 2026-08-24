@@ -328,6 +328,13 @@ describe("Scenario 7: transactional atomicity", () => {
         // Store が存在する限り User の削除自体が FK 制約で拒否される。
         // 統合テストは実 DB シングルトンを共有するため tx.user.update の spy 差し替えも不可。
         // よって一時 CHECK 制約で user.update のみを失敗させる。
+        // ADD の前に必ず落とす。前回の実行がプロセス強制終了などで finally に
+        // 到達できなかった場合、制約が残ったままだと ADD が "already exists" で
+        // 失敗する —— しかもその失敗は try の**手前**で起きるため finally による
+        // 後始末も走らず、手動で DB を触るまで復旧できない。
+        await db.$executeRawUnsafe(
+            `ALTER TABLE "User" DROP CONSTRAINT IF EXISTS "tmp_block_seller"`
+        );
         await db.$executeRawUnsafe(
             `ALTER TABLE "User" ADD CONSTRAINT "tmp_block_seller" CHECK ("role" <> 'SELLER')`
         );
