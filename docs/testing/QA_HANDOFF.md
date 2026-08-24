@@ -211,7 +211,7 @@
 <!-- NA-NS-03 (B3: Cart → Checkout Integration テスト) ✅ 完了 2026-05-29: 4 シナリオ / 11 テスト。ADR-004 参照 -->
 <!-- D1 (categorize.ts 改修 / Integration 行実体化) ✅ 完了 2026-06-02: commit b57841a。詳細: COVERAGE_REPORT.md §3 D1 -->
 
-#### R9: improve Round 9 E2E 残余ギャップ解消（054 は部分完了 — 商品詳細 VRT が残）🆕 2026-07-12 起票
+#### R9: improve Round 9 E2E 残余ギャップ解消（054 は部分完了 — 先に plan 065 のレイアウト修正が要る）🆕 2026-07-12 起票
 
 2026-07-12 の E2E 残余監査（`plans/audit/findings-17-e2e-coverage-r9.md` — R8 未スイープの
 新規切り口 8 系統を精査。ベースラインは R8 実測 #2 を SSOT 引き継ぎ・再実測なし）で
@@ -219,12 +219,14 @@
 （`browse.spec.ts` のみベースライン化。`0dba44de`）。**残るのは商品詳細の VRT**で、
 先に**レイアウト欠陥の修正が必要**: 右側の購入パネル（Ship to / Buy now / **Add to cart**）が
 1280px ビューポートでクリップされている（`scrollWidth === clientWidth === 1280` なので
-ドキュメントの横スクロールは無く、親コンテナ側で切れている）。**この修正は未起票**。
+ドキュメントの横スクロールは無く、親コンテナ側で切れている）。**この修正は 2026-08-24 に
+[plan 065](../../plans/065-fix-product-detail-right-panel-clipping.md) として起票した**
+（それまで未起票だった）。**065 → 054 の順で実行すること**。
 壊れた見た目を先にベースライン化してはいけない —— VRT のベースラインは「意図した見た目」の
 宣言であり、欠陥をロックすると次の担当者が「直したらテストが壊れた」と受け取る。
 plan 043 が DONE のため 054（VRT 拡大）の先行依存は解除済みで、
 056（Newsletter dormant 404 の characterization）は 2026-08-23 に DONE（`50664cc5`）。
-**残る着手先は 054（VRT 拡大）**。
+**残る着手先は 065（レイアウト修正）→ 054（VRT 拡大）**。
 **055 の完了時に得た知見**: サーバー保存の検証を `page.reload()` で済ませてはいけない
 （同一コンテキストでは localStorage が残り、Zustand の再水和で「壊れていても green」になる）。
 `browser.newContext()` で開き直したうえで、**`localStorage` が実際に空であることを assert して
@@ -245,7 +247,9 @@ critical 3 種 / serious 2 種を検出した）。
 dormant 機能。**characterization は plan 056 で完了**（`tests/e2e/newsletter.spec.ts`・2026-08-23 `50664cc5`）。成功系（route + schema + 保存先設計）は**機能実装プランが未起票**であり、実装時は本 spec が意図的に fail して書き直しを強制する。
 
 ```
-plans/054-e2e-vrt-expansion.md を読んで、プラン記載のステップどおりに実行してください。
+plans/065-fix-product-detail-right-panel-clipping.md を読んで、プラン記載のステップどおりに
+実行してください。完了後、続けて plans/054-e2e-vrt-expansion.md の残り（商品詳細の VRT
+ベースライン撮影）をプラン記載のステップどおりに実行してください。
 ルール: 変更は In scope のファイルのみ。実行は bash scripts/e2e/run-local.sh を使う
 （:3100 隔離 + E2E_NO_REUSE=1 なので :3000 の他プロセスを止める必要はない）。各 Step の
 Verify コマンドを必ず実行し、STOP conditions に該当したら中断して報告。完了後は

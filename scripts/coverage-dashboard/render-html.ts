@@ -210,7 +210,8 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // (scrollWidth === clientWidth === 1280 なのでドキュメントの横スクロールは無く、
     // 親コンテナ側で切れている)。VRT のベースラインは「意図した見た目」の宣言であり、
     // 壊れた状態を固定すると欠陥をロックする (次の担当者は「直したらテストが壊れた」と
-    // 受け取る)。レイアウト修正は**未起票**で、修正後に改めて撮影すること。
+    // 受け取る)。2026-08-24: このレイアウト修正を plans/065 として起票した
+    // (それまで未起票だった)。065 → 054 の順で実行すること。
     // 2026-08-23: 056 完了 (50664cc5)。tests/e2e/newsletter.spec.ts を新設。契約は
     // response.ok() === false であって toBe(404) ではない —— 404 は「購読は成功しない」という
     // 恒久的な命題ではなく「route ファイルが無い」という偶発的な機構なので、固定すると
@@ -220,11 +221,11 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // route 実装時は意図的に fail するので、成功系テストへ書き直すこと。残るのは 054 のみ。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (残り plan 054 — 051・052・053・055・056 は完了)",
-        target: "商品詳細の VRT (054 の残り。browse は 2026-08-23 に完了)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)・Newsletter dormant 404 の characterization (056)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
-        tool: "plans/054 の自己完結プラン (Sonnet 実行可・043 が先行済み・spec-sync 必須)",
+        title: "R9: E2E 残余ギャップ解消 (残り plan 054 — 先に plan 065 のレイアウト修正が要る)",
+        target: "(1) plans/065 — 商品詳細の右購入パネルが 1280px でクリップされるレイアウト欠陥の修正 (src/components/store/product-page/container.tsx)。(2) その後 plans/054 の残りである商品詳細の VRT ベースライン撮影 (browse は 2026-08-23 に完了)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)・Newsletter dormant 404 の characterization (056)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
+        tool: "plans/065 (レイアウト修正) → plans/054 (VRT 撮影)。いずれも自己完結プラン (Sonnet 実行可・043 が先行済み・spec-sync 必須)",
         cost: "S",
-        impact: "商品詳細の右パネル (Add to cart を含む) が 1280px でクリップされるレイアウト欠陥を直したうえで撮影すれば、購買判断ページの UI 崩れをマージ前に阻止できる。browse 側は完了済み",
+        impact: "商品詳細の右パネル (Add to cart を含む) が 1280px でクリップされる欠陥は購買導線そのものの実害であり、plans/065 で単独に修正できる。修正後に撮影すれば壊れた見た目をベースラインに固定せずに済み、以後の UI 崩れをマージ前に阻止できる。browse 側は完了済み",
     },
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。
