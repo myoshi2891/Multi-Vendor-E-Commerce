@@ -571,8 +571,10 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 107 integration tests across 13 suites
-  (adds `tests/integration/product-browse.test.ts` 16), as of 2026-08-23, measured 107/107 pass.
+- 108 integration tests across 13 suites
+  (adds `tests/integration/product-browse.test.ts` 16; `store-status.test.ts` 8 → 9 for the
+  concurrent PENDING → BANNED / PENDING → ACTIVE transition), as of 2026-08-24,
+  measured 108/108 pass.
   Plan 039 pinned `getProducts`, the query behind `/browse` (91 -> 107; suites 12 -> 13), and
   found a real defect while doing so. With no upper bound the query passed
   `lte: filters.maxPrice || Infinity`, and Prisma cannot put `Infinity` on a Decimal column —
