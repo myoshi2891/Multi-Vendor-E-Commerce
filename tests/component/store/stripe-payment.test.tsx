@@ -99,6 +99,31 @@ describe("StripePayment", () => {
         expect(screen.queryByTestId("payment-element")).not.toBeInTheDocument();
     });
 
+    it("surfaces an error when the intent resolves without a client secret", async () => {
+        // Arrange: throw ではなく `{ clientSecret: null }` で **静かに失敗**する経路。
+        // 以前はここを握り潰していたため clientSecret が null のままローダーガードに
+        // 捕まり、ユーザーには無限スピナーだけが残った（throw 経路と同じ症状なのに
+        // errorMessage が立たないぶん検出もできない）。
+        (createStripePaymentIntent as jest.Mock).mockResolvedValue({
+            clientSecret: null,
+        });
+
+        // Act
+        render(<StripePayment orderId={ORDER_ID} />);
+        await waitFor(() => {
+            expect(createStripePaymentIntent).toHaveBeenCalled();
+        });
+
+        // Assert
+        await waitFor(() => {
+            expect(
+                screen.getByText("Payment could not be initialized.")
+            ).toBeInTheDocument();
+        });
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("payment-element")).not.toBeInTheDocument();
+    });
+
     it("surfaces elements.submit() validation errors without confirming payment", async () => {
         // Arrange
         await renderReady();

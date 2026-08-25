@@ -24,9 +24,20 @@ export default function StripePayment({ orderId }: { orderId: string }) {
     const getClientSecret = async () => {
         try {
             const res = await createStripePaymentIntent(orderId);
-            if (res.clientSecret) setClientSecret(res.clientSecret);
-        } catch (error: any) {
-            setErrorMessage(error.message);
+            // clientSecret 欠落は「失敗していない」ではなく **静かな失敗**。
+            // ここで握り潰すと clientSecret は null のままローダーガードに
+            // 捕まり、ユーザーには無限スピナーしか残らない（throw 経路と同じ
+            // 症状だが、エラー状態が立たないぶん検出できない）。
+            if (!res.clientSecret) {
+                throw new Error("Payment could not be initialized.");
+            }
+            setClientSecret(res.clientSecret);
+        } catch (error: unknown) {
+            setErrorMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Payment could not be initialized."
+            );
         }
     };
 
