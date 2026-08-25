@@ -8,7 +8,7 @@
  *
  *   - ネストした `variants.some.sizes.some` / `variants.some.colors.some`
  *   - `contains` + `mode: "insensitive"` の OR 検索
- *   - `lte: Infinity` を Decimal カラムへ渡す価格境界
+ *   - 下限のみの価格フィルタ（maxPrice 未指定なら `lte` を付けない）の成立可否
  *   - URL 由来フィルタが解決できないときの挙動（fail-closed。下記シナリオ 2）
  *   - DB ソート（views / createdAt）と**ページ内 JS ソート**（price 系）の違い
  *

@@ -239,4 +239,40 @@ describe("BrowsePage", () => {
         );
         expect(parseRedirectUrl().get("page")).toBe("3");
     });
+
+    it("maxPrice=0 は「上限 0」として getProducts へ渡す（未指定に化けない）", async () => {
+        // Arrange — 修正前は `Number(maxPrice) || Number.MAX_SAFE_INTEGER` により
+        // 0 が falsy で fallback に落ち、「上限 0 の空レンジ」が「上限なし」へ反転して
+        // 全件が通っていた。getProducts 側は既に 0 を正しい境界として扱える。
+        mockProductsResult(1, 0);
+
+        // Act
+        await BrowsePage({
+            searchParams: Promise.resolve(makeQuery({ maxPrice: "0" })),
+        });
+
+        // Assert
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({ minPrice: 0, maxPrice: 0 }),
+            undefined,
+            1
+        );
+    });
+
+    it("maxPrice が未指定・非数値なら上限なし（MAX_SAFE_INTEGER）へフォールバックする", async () => {
+        // Arrange
+        mockProductsResult(1, 0);
+
+        // Act
+        await BrowsePage({
+            searchParams: Promise.resolve(makeQuery({ maxPrice: "abc" })),
+        });
+
+        // Assert
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({ maxPrice: Number.MAX_SAFE_INTEGER }),
+            undefined,
+            1
+        );
+    });
 });
