@@ -77,7 +77,7 @@ test.describe("モバイルレスポンシブ", () => {
     // hang する。CI は本番ビルドで走るため skip されず、3 ブラウザのカバレッジは維持される。
     // 解消条件: `bun run dev` 起動下で当該テストが Firefox 連続 2 回 pass すること。
     // 見直し期限: 2026-10-31。
-    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
+    test.skip(testInfo.project.name === "firefox" && !process.env.CI, "OI-12 / Firefox: cart navigation hangs on the local dev server (HMR). Runs on CI (production build). Resolve when the test passes twice in a row under `bun run dev` on Firefox. Review by 2026-10-31. See docs/testing/QA_HANDOFF.md.");
 
     await page.goto(`/product/${productSlug}/${variantSlug}`);
     // サイズ選択
