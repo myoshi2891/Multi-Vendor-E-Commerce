@@ -367,8 +367,12 @@ describe("Scenario 7: transactional atomicity", () => {
         } finally {
             // 制約は必ず落とす。resetDb は TRUNCATE でありテーブル制約は落とさないため、
             // 残すと後続テスト (および同一ファイルの 2 回目の実行) が巻き添えで落ちる。
+            //
+            // IF EXISTS は setup 側と揃える。制約が既に無い場合に DROP が throw すると、
+            // finally の例外が try 内の**本来の失敗を握り潰して**すり替わり、
+            // 原子性アサートの失敗理由が「制約が無い」に化ける。
             await db.$executeRawUnsafe(
-                `ALTER TABLE "User" DROP CONSTRAINT "tmp_block_seller"`
+                `ALTER TABLE "User" DROP CONSTRAINT IF EXISTS "tmp_block_seller"`
             );
         }
     });

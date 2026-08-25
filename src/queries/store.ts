@@ -597,13 +597,11 @@ export const updateStoreStatus = async (
             throw new Error("Only admins can perform this action.");
 
         // Ensure the user is a seller of the specified store
-        // オーナーの現在のロールも同時に読む（Clerk 同期の可否判定に使う）。
+        // 存在確認のみ。オーナーのロールは tx 内でロック後に読み直す
+        // （tx 外のスナップショットを昇格判定に使わない）。
         const store = await db.store.findUnique({
             where: {
                 id: storeId,
-            },
-            include: {
-                user: { select: { role: true } },
             },
         });
 
@@ -658,11 +656,21 @@ export const updateStoreStatus = async (
                     return { updatedStore: updated, ownerIsSeller: true };
                 }
 
-                // 昇格分岐に入らなかった場合、ロールはこの処理で変わらないので
-                // 更新前に読んだ値をそのまま使う（追加クエリ不要）。
+                // 昇格分岐に入らなかった場合のロールは、tx 外スナップショットの
+                // `store.user?.role` ではなく **ロック取得後の最新値**を読む。
+                // 上の findUnique は $transaction の外なので、読んでから
+                // ここへ来るまでに別リクエストがオーナーのロールを動かせる
+                // （status 側で閉じた TOCTOU と同じ窓が role 側に残っていた）。
+                // 古い USER を掴むと Clerk 同期が飛ばされ、DB は SELLER なのに
+                // Clerk 側が USER のまま取り残されて販売者操作が通らなくなる。
+                const owner = await tx.user.findUnique({
+                    where: { id: updated.userId },
+                    select: { role: true },
+                });
+
                 return {
                     updatedStore: updated,
-                    ownerIsSeller: store.user?.role === "SELLER",
+                    ownerIsSeller: owner?.role === "SELLER",
                 };
             }
         );
