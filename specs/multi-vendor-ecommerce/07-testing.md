@@ -12,7 +12,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+- Earlier entry: 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
   Regression detection points added while fixing code-review findings (+4 tests, suites
   unchanged): `stripe-payment.test.tsx` pins that a `clientSecret: null` response is surfaced
   as an error rather than swallowed — it produces the same infinite-spinner symptom as the
