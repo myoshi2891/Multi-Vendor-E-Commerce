@@ -112,52 +112,47 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 実行手順の SSOT は plans/026〜030 (自己完結プラン)、進捗は plans/README.md
     // の status 列。QA_HANDOFF「次回着手用 依頼プロンプト」R4 と一対一対応。
     // 全 5 プラン完了時に本エントリと QA_HANDOFF R4 を同時削除すること。
-    // 2026-08-04 時点: 026 / 027 / 028 / 029 が DONE、残るは 030 のみ。
-    {
-        priority: "medium",
-        title: "R4: テストギャップ解消 (残り plans 030)",
-        target: "money-path クライアント 6 本の component テスト (026/027/028/029 は完了)",
-        tool: "plans/030-component-test-money-path-client.md の自己完結プラン (Sonnet 実行可・spec-sync 必須)",
-        cost: "M",
-        impact: "カート/チェックアウトの金額表示クライアント側を回帰検知下に置く (決済エラー縮退・オーバーセルロールバック・PLATFORM 端数吸収は 026/027 で達成済み)",
-    },
-    // R5 は improve Round 5 Integration 特化監査 (2026-07-11) 起票。既存
-    // Integration 17 テストの実測 (17/17 pass / 4.779s) の上で、実 DB でしか
-    // 検証できない未カバー統合面 5 件をプラン化。実行手順の SSOT は
-    // plans/031〜035 (自己完結プラン・全プラン Docker 必須)、監査台帳は
-    // plans/audit/findings-13-integration-coverage.md。QA_HANDOFF「次回着手用
-    // 依頼プロンプト」R5 と一対一対応。全 5 プラン完了時に本エントリと
-    // QA_HANDOFF R5 を同時削除すること。
-    // 2026-08-13 時点: 031 / 032 / 033 / 034 が DONE。**残るは 035 のみ**。
-    // (033 = search-products.test.ts 新設・+9/スイート +1・`6514e0c6`。
-    //  034 = review-aggregation.test.ts 新設・+5/スイート +1・`734a34b4`。)
-    // 034 の申し送り: upsertReview の集計は非トランザクション (create → findMany →
-    // product.update の 3 往復) なので、並行投稿では lost update が理論上起こりうる。
-    // 本スイートが固定したのは逐次実行時の集計正しさのみ。$transaction 化や DB 側集計を
-    // 入れる場合、本スイートはそのまま回帰ガードとして使える。
-    {
-        priority: "medium",
-        title: "R5: Integration テストギャップ解消 (残り plan 035)",
-        target: "updateStoreStatus の PENDING→ACTIVE ロール昇格 (031 の restock・032 の webhook 冪等性・033 の tsvector 検索・034 のレビュー集計は完了)",
-        tool: "plans/035 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "S",
-        impact: "店舗承認時に User.role が SELLER へ昇格する遷移を実 DB で固定し、R5 の Integration ギャップを閉じ切る",
-    },
-    // R6 は improve Round 6 Integration 深掘り監査 (2026-07-11) 起票。R5 未スイープの
-    // 切り口 (FK onDelete 実セマンティクス / default 不変条件 / 全置換 tx の下流連鎖 /
-    // browse フィルタ合成) で 4 件をプラン化。seed.ts 非変更のため R4/R5 プランと
-    // 並行可。実行手順の SSOT は plans/036〜039 (自己完結プラン・全プラン Docker 必須)、
-    // 監査台帳は plans/audit/findings-14-integration-coverage-r6.md。QA_HANDOFF
-    // 「次回着手用 依頼プロンプト」R6 と一対一対応。全 4 プラン完了時に本エントリと
-    // QA_HANDOFF R6 を同時削除すること。
-    {
-        priority: "medium",
-        title: "R6: Integration 深掘りギャップ解消 (plans 036〜039)",
-        target: "deleteProduct FK 境界 / 住所 default 不変条件 / updateProduct 全置換 tx / getProducts フィルタ",
-        tool: "plans/036〜039 の自己完結プラン (Sonnet 実行可・Docker 必須・spec-sync 必須)",
-        cost: "M",
-        impact: "レビュー付き商品の削除 500・checkout 配送先の非決定選択・編集の Wishlist/Cart 副作用など FK/不変条件クラスの障害を回帰検知下に置く (Integration +4 スイート / 約20 テスト)",
-    },
+    // R4 (improve Round 4 監査 / plans 026〜030) は 2026-08-23 に完了。
+    // 030 = money-path クライアント 6 スイート・+26 テスト・`13d3dd70`〜`2a04e331` で
+    // R4 が閉じ切ったため、本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R4 を
+    // 同一コミットで削除した。対象 6 ファイルの lcov Lines は 0% → 96.8〜100%。
+    // 030 の申し送り（実バグ 2 件を検出した）:
+    //   (1) checkout-page/container.tsx の hydrate 失敗が未処理 rejection になり、
+    //       画面に古い金額が残ったまま失敗が伝わらなかった → 本体修正済み (066ffd2f)。
+    //       it.failing で検知点を作る案は棄却 —— あれが反転するのは assertion の結果だけで、
+    //       未処理 rejection は Node のプロセスレベルで浮上するため吸収されない。
+    //   (2) stripe-payment.tsx の intent 取得失敗時の setErrorMessage は到達不能
+    //       (直後の早期リターンがローダーを返すため <form> に届かない)。ユーザーが見るのは
+    //       無限スピナー。characterization として固定済みで**本体は未修正** —— 修正時は
+    //       stripe-payment.test.tsx の当該ケースの期待値を反転させること。
+    // R5 (improve Round 5 Integration 特化監査 / plans 031〜035) は 2026-08-23 に完了。
+    // 035 = store-status.test.ts 新設・+8/スイート +1・`e6ebdb15` で R5 が閉じ切ったため、
+    // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R5 を同一コミットで削除した。
+    // 035 の申し送り (2026-08-24 に remediation 済み・履歴として残す):
+    //   [当時] updateStoreStatus の Clerk メタデータ同期は
+    //   `updatedStore.status === "ACTIVE"` のみを見て**起点ステータスを見ない**ため、
+    //   DISABLED/BANNED → ACTIVE では DB の User.role が USER のまま Clerk だけ SELLER に
+    //   なっていた。認可ソースは Clerk 側 (auth-guards.ts の requireSeller) なので
+    //   実際に販売者権限が通る権限昇格バグだった。
+    //   [現況] `7a56c93d` で本体を修正済み —— DB 上 SELLER である場合 (PENDING からの
+    //   昇格後 / 既存 SELLER) のみ Clerk を同期する。store-status.test.ts のシナリオ 3 は
+    //   characterization から**回帰ガードへ反転済み**で、期待値は
+    //   `mockUpdateUserMetadata` が `not.toHaveBeenCalled()` であること。
+    // R6 (improve Round 6 Integration 深掘り監査 / plans 036〜039) は 2026-08-23 に完了。
+    // 039 = product-browse.test.ts 新設 (+16 / スイート +1)・`e5b2e8a5` で R6 が閉じ切ったため、
+    // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R6 を同一コミットで削除した。
+    // 038 / 039 の申し送り (後続の統合テストが必ず踏む):
+    //   - DDL による失敗注入は tx の**後段**に置くこと。tx 冒頭で落とすと子テーブルの置換が
+    //     そもそも未実行で、旧行が残るのはロールバックの結果ではない ($transaction が
+    //     無くても緑になる)。一時 CHECK 制約は ADD 直前と finally の両方で
+    //     DROP … IF EXISTS を打つ (finally 側を素の DROP にすると二次例外が本来の失敗を隠す)。
+    //   - assert が依存する値は Arrange で全部明示する。views/createdAt を固定しないと
+    //     既定 orderBy (views desc) が同値になり、PostgreSQL は同値行の順序を保証しないので
+    //     ページング検証が行順依存でフレークする。Size の price/discount も同様
+    //     (フィルタは生 price を some で見る / ソートは discount 込みの割引後価格を見る)。
+    //   - `getProducts` は currentUser を呼ばないが、モジュールが Clerk を import しているため
+    //     jest.mock('@clerk/nextjs/server') が無いと読み込み時点で ESM の SyntaxError になる。
+    //     判断基準は「その関数が使うか」ではなく「そのモジュールが読み込むか」。
     // R7 (improve Round 7 Integration 第 3 弾監査 / plans 040〜041) は 2026-08-13 に
     // 完了したため本エントリを削除した。QA_HANDOFF「次回着手用 依頼プロンプト」の
     // R7 節も同一コミットで削除済み (両者は二重 SSOT で、片方だけ残すと drift する)。
@@ -167,33 +162,30 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // PLATFORM との code 衝突は実 DB の unique 制約だけが止めている。両経路は同一の
     // エラーメッセージを投げるため、統合テスト側で経路を推論してはならない
     // (テスト側の再クエリは実装と独立しており、実装が変わっても緑のまま腐る)。
-    // R8 は improve Round 8 E2E 網羅性監査 (2026-07-11) 起票。全 Round を通じて初の
-    // 3 ブラウザフル実測 (111 テスト / 25.5m) で 52 passed / 17 failed / 39 skipped /
-    // 3 did not run — 認証系 16 件は signIn ヘルパーの Clerk UI ドリフト (5 サイト複製)
-    // の単一根本原因で全滅 (plan 042 が最優先・047〜050 の先行依存)。実行手順の SSOT は
-    // plans/042〜050 (自己完結プラン・CLERK_SECRET_KEY + ローカル Docker Postgres 必須・
-    // 実行前に :3000 解放)、監査台帳は plans/audit/findings-16-e2e-coverage.md。
-    // QA_HANDOFF「次回着手用 依頼プロンプト」R8 と一対一対応。全 9 プラン完了時に
-    // 本エントリと QA_HANDOFF R8 を同時削除すること。
-    // 2026-08-11 時点: 042〜048 と 050 が DONE。残るは 049 のみ。
-    // (045 = guest-flows.spec.ts 新設・E2E +6/browser。046 = /browse ページネーション配線
-    //  + skip 解除〔テスト数は不変で skip が 1 件解消〕。048 = engagement.spec.ts 新設
-    //  ・+3/browser。050 = admin-store-status.spec.ts 新設・+1/browser。)
+    // R8 (improve Round 8 E2E 網羅性監査 / plans 042〜050) は 2026-08-23 に完了。
+    // 049 = profile.spec.ts 新設 (+2/browser)・`b002373e` で R8 が閉じ切ったため、
+    // 本エントリと QA_HANDOFF「次回着手用 依頼プロンプト」R8 を同一コミットで削除した。
     // 048 の申し送り: Clerk の useUser() はロード完了まで isSignedIn: false を返すため、
     // isSignedIn だけを見て router.push('/sign-in') する client component
     // (store-card.tsx:30-31・return 無し) をハイドレーション直後にクリックすると
     // サインイン済みでも操作が成立しない。engagement.spec.ts の waitForClerkLoaded を参照。
     // 050 の申し送り: sign-in 直後の最初の goto は遅延リダイレクトに割り込まれるため
-    // gotoStable を使う (2026-08-11 からレスポンスも返すので status 検証に使える)。
-    // 開閉するドロップダウンの完了判定は「新ラベルの可視性」ではなく「旧ラベルの消滅」で行う。
-    {
-        priority: "medium",
-        title: "R8: E2E 網羅性ギャップ解消 (残り plan 049)",
-        target: "プロフィール住所・注文履歴 (042 の signIn 修復・043 VRT・044 運用ガード・045 ゲスト導線・046 /browse ページネーション・047 注文詳細金額・048 エンゲージメント・050 admin 店舗ステータスは完了)",
-        tool: "plans/049 の自己完結プラン (Sonnet 実行可・042 の先行依存は解除済み・spec-sync 必須)",
-        cost: "M",
-        impact: "顧客プロフィール系 (住所管理・注文履歴) をブラウザ導線で回帰検知下に置き、R8 の E2E 網羅性ギャップを閉じ切る",
-    },
+    // gotoStable を使う。開閉するドロップダウンの完了判定は「新ラベルの可視性」ではなく
+    // 「旧ラベルの消滅」で行う。
+    // 049 の申し送り (実バグ 2 件を検出し本体を修正した):
+    //   (1) RSC 境界を越えた Prisma Decimal は**メソッドを失う**。client component で
+    //       .toFixed() / .toNumber() を直接呼ぶとページ全体の描画が失敗する
+    //       (/profile/orders が実際に壊れていた)。toNumberSafe (src/lib/utils.ts) を使う。
+    //       ユニットテストで本物の Decimal 風モックを渡すとこの経路を一度も踏まない ——
+    //       検知点は**素の number / string を渡す**形で書くこと (実障害は string 形)。
+    //   (2) 住所フォームの国は静的 ISO リストと DB の Country を名前一致で結ぶため、
+    //       E2E seed のサフィックス付き国名は選択肢に現れない。spec 側で実国名の
+    //       Country 行を用意すること。氏名は英字のみ (/^[a-zA-Z]+$/)。
+    //   (3) 上の「観測のみ」だった payments-table.tsx の Stripe 行 /100 は修正済み。
+    //       PaymentDetails.amount は Decimal(12,2) = ドル建てが唯一の単位で、
+    //       plan 063 の backfill (2026-08-09 DONE・補正対象 0 件) と A-3 で
+    //       コード経路・履歴データとも統一済み。表示側の provider 別正規化を撤去し、
+    //       シリアライズ済みドル値の回帰テストを payments-table.test.tsx に追加した。
     // R9 は improve Round 9 E2E 残余監査 (2026-07-12) 起票。R8 未スイープの切り口
     // 8 系統を精査 (ベースラインは R8 実測 #2 を SSOT 引き継ぎ・ソース無変更のため
     // 再実測なし)。国選択 cookie 往復・a11y/VRT のストアフロント主要ページ拡大・
@@ -216,13 +208,28 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 2026-08-12: 055 完了 (9704903c)。tests/e2e/cart-login-handoff.spec.ts を新設。
     // 検証の肝は browser.newContext() によるコンテキスト分離で、page.reload() では
     // localStorage が残り saveUserCart が壊れていても green になる。残るのは 054 と 056。
+    // 2026-08-23: 054 は**部分完了** (0dba44de)。browse.spec.ts のみベースライン化した。
+    // 商品詳細の VRT は見送っている —— 撮影したベースラインで右側の購入パネル
+    // (Ship to / Buy now / Add to cart) が 1280px ビューポートでクリップされていた
+    // (scrollWidth === clientWidth === 1280 なのでドキュメントの横スクロールは無く、
+    // 親コンテナ側で切れている)。VRT のベースラインは「意図した見た目」の宣言であり、
+    // 壊れた状態を固定すると欠陥をロックする (次の担当者は「直したらテストが壊れた」と
+    // 受け取る)。2026-08-24: このレイアウト修正を plans/065 として起票した
+    // (それまで未起票だった)。065 → 054 の順で実行すること。
+    // 2026-08-23: 056 完了 (50664cc5)。tests/e2e/newsletter.spec.ts を新設。契約は
+    // response.ok() === false であって toBe(404) ではない —— 404 は「購読は成功しない」という
+    // 恒久的な命題ではなく「route ファイルが無い」という偶発的な機構なので、固定すると
+    // ルーティング回帰で全 API が 404 になっても緑のまま通り、無害な 501 変更で赤くなる。
+    // 空メールの POST 不発は固定待機ではなく invalid イベント + expect.poll で決定化している
+    // (checkValidity() は click 前でも false を返す純粋関数なので待ちの基準にならない)。
+    // route 実装時は意図的に fail するので、成功系テストへ書き直すこと。残るのは 054 のみ。
     {
         priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (plans 054・056 — 051・052・053・055 は完了)",
-        target: "VRT 拡大 (054) / Newsletter dormant 404 characterization (056)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
-        tool: "plans/054・056 の自己完結プラン (Sonnet 実行可・056 は依存ゼロ / 054 は 043 が先行・spec-sync 必須)",
+        title: "R9: E2E 残余ギャップ解消 (残り plan 054 — 先に plan 065 のレイアウト修正が要る)",
+        target: "(1) plans/065 — 商品詳細の右購入パネルが 1280px でクリップされるレイアウト欠陥の修正 (src/components/store/product-page/container.tsx)。(2) その後 plans/054 の残りである商品詳細の VRT ベースライン撮影 (browse は 2026-08-23 に完了)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)・Newsletter dormant 404 の characterization (056)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
+        tool: "plans/065 (レイアウト修正) → plans/054 (VRT 撮影)。いずれも自己完結プラン (Sonnet 実行可・043 が先行済み・spec-sync 必須)",
         cost: "S",
-        impact: "056 は /api/newsletter がリポジトリに不在（curl 実測 404）という dormant 機能を characterization で固定し、実装時に期待値を反転させる足場を作る。054 は VRT 対象を商品詳細・browse へ広げ、売上導線の UI 崩れをマージ前に阻止する",
+        impact: "商品詳細の右パネル (Add to cart を含む) が 1280px でクリップされる欠陥は購買導線そのものの実害であり、plans/065 で単独に修正できる。修正後に撮影すれば壊れた見た目をベースラインに固定せずに済み、以後の UI 崩れをマージ前に阻止できる。browse 側は完了済み",
     },
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。
@@ -252,22 +259,6 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         tool: "next/dynamic ssr:false 遅延 import",
         cost: "S",
         impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
-    },
-    {
-        // plan 063 (2026-07-27 起票): CORRECTNESS-05 の残件。コード修正は同期パスが
-        // e63474b6、webhook 経路が c4a6fb41 で完了しており、カットオーバー境界は
-        // 後者。それ以前に Stripe 経路が書いた PaymentDetails.amount は
-        // minor unit (セント) のまま Decimal(12,2) = ドル建てカラムに残っている。
-        // 本番決済データへの UPDATE を伴うため safe-migration skill と人手承認が必須で、
-        // dry-run レポート (プラン Step 3) の提示前に UPDATE を打ってはならない。
-        // QA_HANDOFF「次回着手用 依頼プロンプト」063 と一対一対応。完了時に
-        // 本エントリと QA_HANDOFF 側プロンプトを同時削除すること。
-        priority: "medium",
-        title: "plan 063: Stripe 既存決済行の amount backfill",
-        target: "PaymentDetails.amount のうち paymentMethod=Stripe かつ c4a6fb41 デプロイ前の行",
-        tool: "plans/063 の自己完結プラン (safe-migration skill 必須・人手承認ゲート付き)",
-        cost: "S",
-        impact: "修正日をまたぐ売上集計・支払履歴・返金照合が 100 倍ずれた行と正しい行を混在させている状態を解消する (コード側は修正済みで、残るのは履歴データのみ)",
     },
     {
         priority: "low",

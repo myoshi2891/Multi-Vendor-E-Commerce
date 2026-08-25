@@ -5,16 +5,16 @@
 
 ---
 
-## 現在の状態（2026-08-08 時点）
+## 現在の状態（2026-08-25 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **1987 passed / 1990 total（3 skipped tests）/ 184 スイート（183 passed + 1 skipped suite）** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jestユニットテスト | **2026 passed / 2029 total（3 skipped tests）/ 191 スイート（190 passed + 1 skipped suite）** — 2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | **108テスト / 13スイート**（… + `store-status` **9** + `product-update` **5** + `product-browse` **16**）— 2026-08-24 実測 108/108 pass（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
-| Playwright E2E | Chromium / Firefox / WebKit（3ブラウザ） |
+| Playwright E2E | **63 tests/browser / 28 files（3ブラウザ計 189）** — 2026-08-23 実測。Visual は cart / checkout / browse の 3 スペック（chromium 限定）。Chromium / Firefox / WebKit |
 
 ### 技術スタック（現行）
 | パッケージ | バージョン |
@@ -3687,3 +3687,508 @@ reviewer の自動作成）/ 複数ユーザーの平均（4 と 2 → 3）/ 同
 | Playwright E2E | 58 tests/browser・計 174 | **不変** |
 | ダッシュボード集計ファイル数 | 218 | **219** |
 | 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 035 の実行（`updateStoreStatus` の PENDING→ACTIVE ロール昇格を実 DB 統合テストで固定 / TESTS-19） (2026-08-23)
+
+#### 概要
+
+店舗承認時の**権限境界の変更**（`User.role` を USER → SELLER へ昇格）を実 DB
+（testcontainers PostgreSQL）で初めて検証する統合スイートを新設した。`src/queries/store.ts`
+は 1 行も変更していない。本プランの完了で **improve Round 5 の Integration ギャップが閉じ切った**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/store-status.test.ts` | 新規作成（8 シナリオ） | `e6ebdb15` |
+| `scripts/coverage-dashboard/render-html.ts` | `NEXT_ACTIONS` の R5 エントリを削除（クローズ済みコメントへ置換） | docs 同期コミット |
+| `docs/testing/QA_HANDOFF.md` | 統計 SSOT 更新 + R5 依頼プロンプト節を削除 | docs 同期コミット |
+
+#### 検証境界
+
+1. PENDING → ACTIVE で `User.role` が SELLER へ昇格し、Clerk 同期が 1 回発火する
+2. PENDING → BANNED では昇格せず Clerk も呼ばれない
+3. DISABLED → ACTIVE は **DB 昇格なし・Clerk 同期あり**（`TODO(characterization)`）
+4. ACTIVE → ACTIVE の再実行は DB 冪等・Clerk 呼び出しは累計 2 回（非冪等）
+5. 未知 `storeId` は `"Store not found."` で reject・副作用なし
+6. 非 ADMIN / 未認証の拒否 + `Store.status` 不変
+7. `$transaction` の原子性（後段失敗で前段もロールバック）
+
+#### 申し送り: シナリオ 3 は既知バグの characterization → **2026-08-24 に remediation 済み**
+
+**当時（plan 035 実行時点）の観測**: Clerk 同期の条件は `updatedStore.status === "ACTIVE"`
+のみで**起点ステータスを見なかった**。このリポジトリの認可ソースは DB の `User.role` では
+なく Clerk の `privateMetadata.role`（`src/lib/auth-guards.ts` の `requireSeller`）なので、
+DISABLED/BANNED → ACTIVE では **DB が USER のままでも実際に販売者権限が通る**権限昇格
+バグだった。上の「検証境界 3」はその characterization である。
+
+**現況**: `7a56c93d`（`fix(auth): updateStoreStatus での意図しない販売者ロール昇格を防止`）
+で本体を修正済み。**DB 上 SELLER である場合**（PENDING からの昇格後 / 既存 SELLER）のみ
+Clerk メタデータを同期する。これに伴い `tests/integration/store-status.test.ts` の
+シナリオ 3 は characterization から**回帰ガードへ反転済み**で、期待値は
+`mockUpdateUserMetadata` が `not.toHaveBeenCalled()` であること
+（`tests/integration/store-status.test.ts:198-203`）。
+
+#### シナリオ 7（原子性）が本スイートの中心
+
+シナリオ 1〜4 は「status 更新とロール昇格が**両方成功した**」ことしか示さない。同一
+`$transaction` かどうかは、後段だけを決定論的に失敗させて前段が巻き戻るのを見ない限り
+実証できない。失敗注入の手段は限られる —— オーナー User の事前削除は `Store.user` が
+`onDelete` 未指定＝既定 `Restrict` のため FK で拒否され、統合テストは実 DB シングルトンを
+共有するので `tx.user.update` の spy 差し替えも不可。残る手が**一時 CHECK 制約**
+（`tmp_block_seller`）である。`resetDb` は TRUNCATE でありテーブル制約を落とさないため
+DROP は `finally` 必須で、その漏れは**同一ファイルの 2 回連続実行**でしか顕在化しない
+（実測で 2 回とも pass）。
+
+#### プラン本文からの逸脱 1 点
+
+`StoreStatus` は `@prisma/client` と `@/lib/types`（`types.ts:517`）の **2 系統**があり、
+`updateStoreStatus` の引数型は後者（`store.ts:4` が import）。TS の enum は名前的型なので
+値が同一文字列でも相互代入できず、混同すると**テストは緑のまま `tsc --noEmit` だけが落ちる**。
+呼び出し側は `AppStoreStatus` の別名 import に統一した。プラン本文の Current state は
+この二重定義に触れていない。
+
+#### 識別力の機械的確認
+
+シナリオ 7 の `expect(storeAfter.status).toBe(StoreStatus.PENDING)` を `ACTIVE` へ崩すと、
+**当該テストのみ**が落ち他の 7 件は通ったままであることを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration | 78 / 10 スイート | **86 / 11 スイート** |
+| Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **不変** |
+| Playwright E2E | 58 tests/browser・計 174 | **不変** |
+| ダッシュボード集計ファイル数 | 219 | **220** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 056 の実行（Newsletter 購読フォームの dormant 404 を characterization E2E で固定 / TESTS-39） (2026-08-23)
+
+#### 概要
+
+フッターの Newsletter フォームが POST する `/api/newsletter` はリポジトリに存在せず
+（schema にも購読者モデル無し）、全購読操作が失敗する。この dormant なギャップを CI で
+可視化し続けるための characterization spec を新設した。`src/` は 1 行も変更していない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/newsletter.spec.ts` | 新規作成（2 テスト） | `50664cc5` |
+
+#### 契約の形（本プランの核心）
+
+assert は `response.ok() === false` であって `toBe(404)` では**ない**。404 は
+「購読は成功しない」という恒久的な命題ではなく、「route ファイルが無い」という**偶発的な機構**
+にすぎない。404 を成功条件に固定すると 2 つの向きで壊れる:
+
+1. **偽の健全性** — ルーティング回帰で API が軒並み 404 になっても、緑のまま
+   「characterization どおり」と報告する。実際には全部壊れている
+2. **誤った失敗トリガー** — catch-all が 501 を返す等、ユーザーから見た挙動が変わらない
+   変更で赤くなる
+
+`not.toBe(200)` でも不足で、201 Created / 202 Accepted / 204 No Content を「成功していない」と
+見なしてしまう（`ok()` は 200-299 で true）。plan 050 が確立した「修正を罰するテストは書かない」
+原則と同型。
+
+#### 「起きないこと」を時間で証明しない
+
+空メールでの POST 不発は、固定待機ではなく `invalid` イベントを `expect.poll` で待ち切ってから
+`toHaveLength(0)` を見る。`invalid` は submit 試行時の制約検証失敗**でのみ**発火するため、
+「submit が処理され、かつブロックされた」ことを一意に示す。`checkValidity()` は validity を
+問い合わせるだけの純粋関数で **click 前でも `false`** を返すので、待ちの基準にすると初回評価で
+即成立し、**まだ飛んでいない POST を「無かった」と誤判定する**。
+
+#### 識別力の機械的確認
+
+`response.ok()` の期待値を `true` へ、`toHaveLength(0)` を `(1)` へそれぞれ崩すと
+**2 failed** になることを実測してから戻している。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 58 tests/browser・25 files・計 174 | **60 tests/browser・26 files・計 180** |
+| Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **不変** |
+| Jest Integration | 86 / 11 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 220 | **221** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 030 の実行（money-path クライアント 6 ファイルの component テスト / TESTS-01 残余） (2026-08-23)
+
+#### 概要
+
+チェックアウト完了率という最重要 KPI の動線を構成しながら lcov **0%** だった
+クライアントコンポーネント 6 ファイルに component テストを新設した（**+26 テスト / +6 スイート**）。
+**1 ファイル = 1 コミット**（rule 02）。本プランの完了で **improve Round 4 が閉じ切った**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/store/newsletter.test.tsx` | 新規（4 ケース） | `13d3dd70` |
+| `tests/component/store/cart-summary.test.tsx` | 新規（4 ケース） | `33814ae1` |
+| `tests/component/store/paypal-payment.test.tsx` | 新規（4 ケース） | `89155f93` |
+| `tests/component/store/stripe-payment.test.tsx` | 新規（6 ケース） | `87be3ddb` |
+| `src/components/store/checkout-page/container.tsx` | **本体修正**（hydrate 失敗の握り） | `066ffd2f` |
+| `tests/component/store/checkout-container.test.tsx` | 新規（4 ケース） | `235fabcb` |
+| `tests/component/store/cart-container.test.tsx` | 新規（4 ケース） | `2a04e331` |
+
+#### カバレッジ（対象 6 ファイル・lcov Lines）
+
+| ファイル | 更新前 | 更新後 |
+|---|---|---|
+| `cards/payment/paypal/paypal-payment.tsx` | 0% | **100%** (16/16) |
+| `cards/payment/stripe/stripe-payment.tsx` | 0% | **97.6%** (41/42) |
+| `cart-page/container.tsx` | 0% | **100%** (33/33) |
+| `cart-page/summary.tsx` | 0% | **100%** (22/22) |
+| `checkout-page/container.tsx` | 0% | **96.8%** (30/31) |
+| `layout/footer/newsletter.tsx` | 0% | **100%** (29/29) |
+
+#### 検出した実バグ 2 件
+
+本プランは plan 010 / 034 のような「網を張った」型ではなく、**「壊れているものを見つけた」型**の成果である。
+
+1. **hydrate 失敗が未処理 rejection になっていた（修正済み・`066ffd2f`）**
+   `checkout-page/container.tsx` の `useEffect` は `updateCheckoutProductWithLatest()` を
+   catch なしで呼んでいた。実害はユーザー側にあり、引き直しが失敗しても画面には
+   **古い金額が表示されたまま**で、そのまま注文を確定できてしまう。オペレーター承認のうえ
+   try/catch + 構造化ログ + `toast.error` を入れ、あわせて `tech.md` の
+   「useEffect キャンセルフラグ」パターンも適用した（`activeCountry` 切替で再実行されるため
+   古いレスポンスが新しい状態を上書きするレースがあった）。
+2. **Stripe の intent 取得失敗時のエラー表示が到達不能（未修正・characterization）**
+   `getClientSecret` の catch は `setErrorMessage` を呼ぶが、直後の早期リターン
+   （`!clientSecret`）がローダーを返すため、`errorMessage` を描画する `<form>` に到達しない。
+   ユーザーが見るのは**無限スピナー**。プランの Out of scope のため本体は修正せず、
+   実挙動を固定して修正時に期待値を反転させる旨をテスト内に明記した。
+
+#### `it.failing` は使えなかった（実測で棄却）
+
+プラン Step 5 は hydrate 失敗の検知点を `it.failing` で作る案を提示しているが、
+**`it.failing` が反転するのは assertion の結果だけ**である。`useEffect` の外へ漏れた
+rejection は Node のプロセスレベルで浮上するため吸収されず、実測では **1 failed** かつ
+**同じ rejection が 2 重報告**された。プランが要求する検証手順（単独実行が緑 + フルランも緑）を
+満たせなかったため、プランが推奨する代替 (a)「本体側で握る」を採った。
+
+#### プラン本文からの逸脱 2 点
+
+1. **`createMockCartItem` は使えない。** プランは共通ファクトリとしてこれを指定するが、
+   返すのは Prisma `Decimal` を持つ **DB の CartItem** で、`CartSummary` が受け取る
+   `CartProductType`（`price: number`）とは別物。同じ `src/config/test-fixtures.ts` の
+   **`createMockCartProduct`** を使用した（共通基盤を使う要件は満たしている）。
+2. **ケース数はプラン本文より多い**（3+4+5 指定 → 実装 4+4+6）。いずれも分岐の false 側を
+   1 件ずつ追加したもの: `saveUserCart` が falsy を resolve する経路 /
+   `createStripePayment` が `paymentDetails` を返さない経路。前者は
+   実装が `if (res) router.push(...)` なので reject 系だけでは未検証で残る。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 1987 passed / 184 スイート | **2013 passed / 190 スイート** |
+| lcov Statements | 68.49% | **70.51%** (6154/8727) |
+| lcov Branches | 48.46% | **50.00%** (2611/5221) |
+| lcov Lines | 67.5% 台 | **69.67%** (5548/7963) |
+| Jest Integration | 86 / 11 スイート | **不変** |
+| Playwright E2E | 60 tests/browser・計 180 | **不変** |
+| ダッシュボード集計ファイル数 | 221 | **227** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 038 の実行（`upsertProduct` の全置換 tx・slug 一意性・SetNull 連鎖 / TESTS-22） (2026-08-23)
+
+#### 概要
+
+セラーの商品編集フロー（`handleProductAndVariantUpdate`）を実 DB で初めて検証した。
+`src/queries/product.ts` は 1 行も変更していない。**Integration 86 → 91 / スイート 11 → 12**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/integration/product-update.test.ts` | 新規作成（5 シナリオ） | `85d7e442` |
+
+#### 固定した最重要の仕様: 編集がカート/ウィッシュリストへ及ぼす副作用
+
+sizes は `deleteMany` → `createMany` の**全置換**なので、`Size.id` が**編集のたびに変わる**。
+その帰結として:
+
+- `Wishlist.sizeId` は実 FK（`ON DELETE SET NULL`）なので **NULL 化**する
+- `CartItem.sizeId` は **FK なしの平文字列**なので**古い id のまま残る**（参照先は既に存在しない）
+
+後者は checkout の再検証で弾かれる経路の前提であり、ここに仕様として固定した。
+
+#### 失敗注入は tx の「後段」でなければ原子性の証拠にならない
+
+tx 冒頭（`product.update`）で落とすと、Spec / Question / Size の置換は**そもそも一度も
+実行されない**。旧行が残るのは「巻き戻った」のではなく「未実行」なだけで、
+**`$transaction` が無くてもテストは緑になる**。tx 内の最終操作だけを一時 CHECK 制約で落とし、
+**旧 `Size.id` が保たれている**ことを決定的な証拠にした（シナリオ 1 のとおり、置換が実行されれば
+id は必ず新しくなる）。
+
+#### DDL の後始末を 3 通りで実測検証した
+
+1. 同一ファイル 2 回連続実行 → 2 回とも 5 passed
+2. **リーク状態からの冪等回復** — `beforeEach` で制約を張った状態でも全 pass
+   （testcontainers は実行ごとに新 DB を立てるため、同一 run 内で人工的にリークを再現した）
+3. **`finally` 側の `IF EXISTS` が本来の失敗を隠さない** — ADD を意図的に失敗させると、
+   報告されるのは ADD 側のエラー（`42703 column "nonexistent_column" does not exist`）であって
+   「制約が無い」という二次エラーではない。素の DROP だと `finally` の throw が try の例外を
+   置き換え、失敗注入が成立したのかすら判別できなくなる
+
+#### CI 直列化要件は既存構成で充足済み（ワークフロー未変更）
+
+プランの Done criteria は「DDL テストを他 integration ジョブと並行させない構成が
+`.github/workflows/` に反映されていること」を求めるが、本リポジトリでは構造的に充足済み:
+`jest.integration.config.js:63` の `maxWorkers: 1` がランナー内を直列化し、`globalSetup` が
+**実行ごとに専用の testcontainers PostgreSQL を立てる**（ADR-004）ため、共有 DB を掴む
+並行ジョブがそもそも存在しない。CI も `integration-tests` 単一ジョブで `services:` 不使用。
+冗長な変更は加えず、根拠を記録するに留めた。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration | 86 / 11 スイート | **91 / 12 スイート** |
+| Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **不変** |
+| Playwright E2E | 60 tests/browser・計 180 | **不変** |
+| ダッシュボード集計ファイル数 | 227 | **228** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 039 の実行（`getProducts` のフィルタ/ソート/ページング統合 / TESTS-23） (2026-08-23)
+
+#### 概要
+
+`/browse` の供給源 `getProducts` の where 動的合成・ソート・ページングを実 DB で初めて
+検証した（**8 シナリオ / 16 テスト**）。本プランの完了で **improve Round 6 が閉じ切った**。
+**実バグを 1 件検出し、オペレーター承認のうえ本体を修正**している。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/product.ts` | **本体修正**（`lte: Infinity` の除去） | `f1be1aa0` |
+| `tests/integration/product-browse.test.ts` | 新規作成（8 シナリオ / 16 テスト） | `e5b2e8a5` |
+
+#### 検出した実バグ: `lte: Infinity` が Prisma の Decimal フィルタで throw する
+
+上限未指定時、実装は `lte: filters.maxPrice || Infinity` を渡していた。Prisma は
+**Decimal カラムのフィルタに Infinity を載せられず**、シリアライズ時に値が落ちて
+`Argument \`lte\` is missing.` で **throw** する（Prisma 5.22.0 実測）。
+つまり「**下限だけ指定した価格絞り込み**」は常に失敗していた。
+
+`/browse` は `page.tsx` が `maxPrice` を `Number.MAX_SAFE_INTEGER` に既定化しているため
+**ストアフロント経由では再現しない**。`getProducts` を直接呼ぶ経路と、複合フィルタ
+`{ category, minPrice }` で落ちる。上限が無いときは `lte` を付けない形へ修正した。
+
+#### Arrange では assert が依存する値をすべて明示する
+
+- **`views` / `createdAt` を相異なる値に固定**しないと、既定 `orderBy`（views desc）が
+  同値になる。**PostgreSQL は同値行の順序を保証しない**ため、ページング検証が
+  実 DB の行順に依存したフレークテストになる
+- **全 Size の `price` と `discount` を明示**する。フィルタは生の `price` を `some` で見る
+  （どれか 1 Size が範囲内なら商品全体がヒットする）ため追加 Size が絞り込みに紛れ込み、
+  ソートは `discount` 込みの割引後価格を見るためスキーマ既定値任せだと並び順が静かに壊れる
+
+#### プラン本文からの逸脱 2 点
+
+1. **シナリオ 2 の fail-open characterization は既に修正済みだった。** プランは
+   「存在しない category URL はフィルタ脱落 → 全件返る」を固定せよと指示するが、その挙動は
+   **`cce53407`（2026-08-12 "fix(queries): return no results when a URL filter matches no
+   row"）で fail-closed に修正済み**。プラン本文が指定する反転先（`totalCount === 0`）へ
+   期待値を反転し、同型の store / offer 経路も併せて固定した（片方だけ退行しても検出できる）。
+2. **「Clerk mock 不要」は成立しない。** `getProducts` は `currentUser` を呼ばないが、
+   **モジュール `src/queries/product.ts` が Clerk を import している**ため、モックが無いと
+   読み込み時点で `@clerk/backend` の ESM を jest が解釈できず SyntaxError になる。
+   判断基準は「その関数が使うか」ではなく「**そのモジュールが読み込むか**」。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest Integration | 91 / 12 スイート | **107 / 13 スイート** |
+| Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **不変** |
+| Playwright E2E | 60 tests/browser・計 180 | **不変** |
+| ダッシュボード集計ファイル数 | 228 | **229** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 049 の実行（プロフィール系 E2E: 住所管理 + 注文履歴 / TESTS-37） (2026-08-23)
+
+#### 概要
+
+`/profile` 配下は a11y スキャン 1 本しか E2E が無かった。住所管理と注文履歴をブラウザ導線で
+固定した（**+2 tests/browser / +1 file**）。本プランの完了で **improve Round 8 が閉じ切った**。
+**実バグを 2 件検出し、いずれもオペレーター承認のうえ本体を修正**している。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/shared/shipping-addresses/address-details.tsx` | **本体修正**（選べない国のエラー表面化） | `f7e2bc59` |
+| `tests/component/store/shipping-form.test.tsx` | 検知点 +1 | `0649bf57` |
+| `src/components/store/profile/orders/orders-table.tsx` ほか | **本体修正**（RSC 境界の Decimal） | `652e4f5b` |
+| `src/components/store/profile/orders/orders-table.test.tsx` ほか | 検知点 +3 / スイート +1 | `34134ded` |
+| `tests/e2e/profile.spec.ts` | 新規作成（2 テスト） | `b002373e` |
+
+#### 検出した実バグ 1: `/profile/orders` がページ全体描画に失敗していた
+
+`orders-table.tsx` / `payments-table.tsx` は `"use client"` で、Server Component から
+Prisma `Decimal` を props で受け取る。**RSC 境界を越えると Decimal はメソッドを失った素の値**に
+なるため、`order.total.toFixed(2)` / `payment.amount.toNumber()` が TypeError になる。
+実測では `/profile/orders` が "This page couldn't load" になり、
+サーバーログに `TypeError: a.total.toFixed is not a function` が出ていた。
+既存ヘルパー `toNumberSafe`（`src/lib/utils.ts:32`）経由へ変更した。
+
+**なぜユニットテストで捕まらなかったか**: 既存の `payments-table.test.tsx` は
+`amount: { toNumber: () => 1000 }` という**本物の Decimal 風モック**を渡しており、
+RSC のシリアライズ境界はテストに存在しないため当該経路を一度も踏まない。検知点は
+**素の number / string を渡す**形で追加した（実障害は string 形で起きる ——
+number は `.toFixed` を持つので素通りする）。
+
+#### 検出した実バグ 2: 住所フォームが選べない国を黙って無視していた
+
+`CountrySelector` は**静的な ISO 国リスト**を描画するが、保存できるのは DB の `Country` 行だけで、
+両者は名前一致でしか結びつかない。一致しない場合 `handleCountryChange` は `if (country)` の中でしか
+処理せず、UI 上は国が選ばれたように見えるのに `countryId` が空のまま残り、送信時には
+「国が原因」と分からない検証エラーだけが出ていた。**E2E 環境ではこれが常に起きる** ——
+seed は並列分離のため国名にサフィックスを付ける（実測: `United States CHROMIUM-W0` の 3 行のみ）ので、
+**UI からは住所を 1 件も登録できない**。国の欄でエラーを表面化させる形へ修正した。
+
+#### プラン本文からの逸脱 4 点（いずれもプラン側の記述が実装と食い違っていた）
+
+1. 送信ボタンは新規追加では **`Create Address`**（`Save Address information` は編集時のラベル）
+2. 国は native `select` ではなく**カスタムコンボボックス**（トグル → 検索 → `role="option"`）
+3. **seed の国は選択肢に現れない**ため、spec 側で静的リストと一致する実国名の Country 行を用意した
+4. 氏名は**英字のみ**（`ShippingAddressSchema` の `/^[a-zA-Z]+$/`）。`"E2E"` は数字を含み弾かれる
+
+#### 観測したが触っていないもの（当時は未起票）→ **2026-08-24 に修正済み**
+
+**当時の観測**: `payments-table.tsx` は `paymentMethod === "Stripe"` の行を表示時に
+**`/ 100`** していた（セント建ての名残）。plan 063 の backfill と Round 14 A-3
+（`e63474b`）で `PaymentDetails.amount` はドル建てに統一済みなので、**この除算は表示額を
+1/100 にしている可能性がある**と記録した。本プランの範囲外のため当時は修正していない。
+
+**現況**: `e918c9d7`（`fix(payments): PaymentsTable での Stripe ドル建て金額の二重除算を撤去`）
+で除算を撤去済み。表示は provider によらず `toNumberSafe(payment.amount).toFixed(2)` に
+統一され、`payments-table.tsx:134-145` に「ここで provider を見て `/ 100` すると正しく
+保存された行が 1/100 に化ける」根拠コメントを残してある。**回帰検知点も追加済み** ——
+`src/components/store/profile/payments/payments-table.test.tsx:281` の
+"does not divide a serialized Stripe dollar amount by 100"（RSC 越しに文字列化された
+Stripe のドル建て金額が除算されないことを固定）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 60 tests/browser・26 files・計 180 | **62 tests/browser・27 files・計 186** |
+| Jest テスト総数 (unit/component) | 2013 passed / 190 スイート | **2017 passed / 191 スイート** |
+| Jest Integration | 107 / 13 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 229 | **231** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### plan 054 の実行（VRT 対象の拡大 / TESTS-44）— **部分完了** (2026-08-23)
+
+#### 概要
+
+VRT の対象は cart 2 枚 + checkout リダイレクト 1 枚のみで、購買判断が起きるページの
+レイアウト回帰を検出する層が無かった。**browse のみベースライン化**し、
+**商品詳細は目視ゲートで欠陥を検出したため見送った**。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/visual/browse.spec.ts` + ベースライン PNG | 新規作成（1 テスト） | `0dba44de` |
+
+#### 商品詳細を見送った理由（プラン Step 3 の目視ゲート）
+
+撮影したベースラインで、右側の購入パネル（Ship to / Buy now / **Add to cart**）が
+**1280px ビューポートでクリップされている**ことを検出した。客観測定では
+`scrollWidth === clientWidth === 1280` で**ドキュメントの横スクロールは発生しておらず**、
+親コンテナ側で切れている。
+
+**VRT のベースライン PNG は「意図した見た目」の宣言**である。この状態を固定すると
+**欠陥をロック**することになり、次の担当者は「直したらテストが壊れた」と受け取る
+（plan 050 が確立した「修正を罰するテストは書かない」原則と同型）。
+**レイアウト修正は [plans/065](../plans/065-fix-product-detail-right-panel-clipping.md) として起票済み**（2026-08-24）。**商品詳細のベースラインは 065 完了まで引き続き保留**で、修正後に改めて撮影する。
+
+#### browse ベースラインの目視確認結果
+
+グリッドは seed 商品 10 件を 4 列で描画し、サイドバーのフィルタ・ソート・
+ページネーション・フッターまで崩れなく出ている。マゼンタの矩形は Playwright の
+**mask 描画**であって未ロード画像ではない。
+
+#### 再現性
+
+ベースライン撮影後、更新フラグなしで **2 回連続実行して 2 回とも 4 passed**。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E | 62 tests/browser・27 files・計 186 | **63 tests/browser・28 files・計 189** |
+| Playwright Visual | 2 スペック / 3 テスト | **3 スペック / 4 テスト** |
+| Jest テスト総数 (unit/component) | 2017 passed / 191 スイート | **不変** |
+| Jest Integration | 107 / 13 スイート | **不変** |
+| ダッシュボード集計ファイル数 | 231 | **232** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### コードレビュー指摘の修正（静かな失敗 3 件 + ドキュメントの履歴/現状分離） (2026-08-25)
+
+#### 概要
+
+コードレビューで挙がった 9 件を現行コードに突き合わせて全件有効と判定し、修正した。
+本体側の 3 件はいずれも **「エラーになっていないのに機能していない」= 静かな失敗** で、
+共通する構造は**フォールバック / 握り潰しが失敗を正常系に見せてしまう**ことだった。
+
+#### 実施内容
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/components/store/cards/payment/stripe/stripe-payment.tsx` | `createStripePaymentIntent` が `clientSecret: null` を返した場合を**エラーとして扱う**。従来は握り潰していたため clientSecret が null のままローダーガードに捕まり、ユーザーには無限スピナーだけが残った（throw 経路と同じ症状だがエラー状態が立たず検出不能）。併せて `catch (error: any)` を `unknown` + 型ガードへ |
+| `src/app/(store)/browse/page.tsx` | `Number(maxPrice) \|\| Number.MAX_SAFE_INTEGER` を `normalizePriceParam` に置換。`?maxPrice=0`（上限 0 の空レンジ）が falsy で fallback に落ち、**「上限 0」が「上限なし」へ反転して全件が通っていた**。`getProducts` 側は既に `hasPriceBound` で 0 を正しい境界として扱えており、**クエリ層の防御が入口で無効化されていた**構図 |
+| `src/queries/store.ts` | `updateStoreStatus` の非昇格経路で、オーナーのロールを tx 外スナップショットではなく**ロック取得後の tx 内**で読み直す。`status` 側は `FOR UPDATE` で TOCTOU を閉じていたが、`role` 側に同じ窓が残っていた。古い USER を掴むと Clerk 同期が飛ばされ、DB は SELLER なのに Clerk が USER のまま取り残される |
+| `tests/integration/store-status.test.ts` | finally の cleanup を `DROP CONSTRAINT IF EXISTS` に変更（setup 側と統一）。制約が既に無い場合に finally が throw すると、**try 内の本来の失敗を握り潰してすり替える** |
+| `tests/integration/product-browse.test.ts` | ヘッダの「`lte: Infinity` を Decimal カラムへ渡す価格境界」を現行挙動（maxPrice 未指定なら `lte` を付けない）に合わせて修正 |
+| `tests/e2e/profile.spec.ts` / `tests/e2e/mobile-responsive.spec.ts` | Firefox ローカル skip 3 件に **OI-12**（解消条件・見直し期限 2026-10-31・QA_HANDOFF 参照）の追跡メタデータを付与 |
+| `docs/testing/QA_HANDOFF.md` | OI-12 を「現在アクティブな残課題」へ起票 |
+| `specs/multi-vendor-ecommerce/07-testing.md` | plan 054 の「レイアウト修正は未起票」を **2026-08-23 時点の履歴**と明示し、現在の追跡先が plan 065 であることを追記。plan 035 の `TODO(characterization)` 記述も履歴化し、`7a56c93d` 以降のシナリオ 3 が**回帰ガード**であることを追記 |
+| `plans/065-fix-product-detail-right-panel-clipping.md` | 054 実行記録の「未起票」を実行時の履歴として分離し、現状は本プランが追跡先であると明記 |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2021 passed / 2024 total | **2025 passed / 2028 total** |
+| Jest スイート数 | 191 | **不変** |
+| Jest スナップショット | 127 | **不変** |
+| Playwright E2E | 63 tests/browser・28 files | **不変**（コメントのみ） |
+| Jest Integration | 108 / 13 スイート | **不変**（cleanup のみ） |
+| 型エラー | 0 件 | **0 件** |
+
+> 追加した検知点 4 件: `stripe-payment.test.tsx` +1 / `store.test.ts` +1 / `browse/page.test.tsx` +2。
+> なお QA_HANDOFF / COVERAGE_REPORT の記載値 2020 は実測 2021 と 1 件ドリフトしていたため、
+> 本更新で実測値へ揃えた。

@@ -12,7 +12,39 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
+- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+- Earlier entry: 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+  Regression detection points added while fixing code-review findings (+4 tests, suites
+  unchanged): `stripe-payment.test.tsx` pins that a `clientSecret: null` response is surfaced
+  as an error rather than swallowed — it produces the same infinite-spinner symptom as the
+  throw path but leaves no error state, so nothing could catch it; `store.test.ts` pins that
+  the non-promotion path of `updateStoreStatus` re-reads the owner's role **inside** the
+  transaction (the TOCTOU window that `FOR UPDATE` closed on `status` was still open on
+  `role`); and `browse/page.test.tsx` adds two price-boundary cases so `?maxPrice=0` is not
+  flipped to "no upper bound" by a truthy check.
+- Earlier entry: 2020 passed / 2023 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-24.
+  (The recorded figure drifted by one against the measured 2021 / 2024; corrected in the
+  2026-08-25 entry above.)
+  Detection points for the two defects plan 049 surfaced (+4 tests, +1 suite): a new
+  `orders-table.test.tsx`, one case in `payments-table.test.tsx`, and one in
+  `shipping-form.test.tsx`.
+- Earlier entry: 2013 passed / 2016 total across 190 suites (3 skipped tests in 1 skipped suite), as of 2026-08-23.
+  Plan 030 covered the six money-path client components that sat at lcov 0% (+26 tests, +6 suites,
+  one suite per commit): newsletter, cart summary, PayPal payment, Stripe payment, checkout
+  container and cart container. Their Lines coverage moved from 0% to 96.8–100%. Unlike the
+  net-casting suites added by plans 010 and 034, this one found two real defects.
+  First, `checkout-page/container.tsx` called its hydration query without a `catch`, so a failure
+  escaped the `useEffect` as an unhandled rejection and the page kept showing **stale amounts**
+  with nothing telling the user the refresh had failed; it was fixed under operator approval
+  (`066ffd2f`) with a try/catch, a structured log and a toast, plus the cancellation-flag pattern
+  from `tech.md` since the effect re-runs when the country changes. Building the detection point
+  with `it.failing` was rejected empirically: `it.failing` inverts the *assertion* result, while an
+  unhandled rejection surfaces at Node's process level and is not absorbed — the probe produced one
+  failing test and reported the same rejection twice. Second, the error message set when Stripe's
+  intent request fails is **unreachable**: the early return for `!clientSecret` renders the loader,
+  so the `<form>` that would display it never mounts and the user sees an endless spinner. That one
+  is pinned as characterization; the component was left unchanged (out of scope for this plan).
+- Earlier entry: 1987 passed / 1990 total across 184 suites (3 skipped tests in 1 skipped suite), as of 2026-08-13.
   Review-fix pass (+3, no new suite). `src/queries/review.test.ts` gained 2 cases pinning
   that the review write and the aggregation update are wired into a single `$transaction`
   and that the `Product` row lock is taken *before* the write — these, not the integration
@@ -48,7 +80,51 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
+- Playwright E2E: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
+  Plan 054 added `tests/e2e/visual/browse.spec.ts` (+1 test/browser; VRT is chromium-only, so
+  the other two projects skip it), bringing visual regression coverage to cart, checkout and
+  browse. The product-detail baseline was deliberately **not** committed: the captured image
+  showed the right-hand purchase panel — including the primary "Add to cart" button — clipped
+  at a 1280px viewport. Measurement confirmed `scrollWidth === clientWidth === 1280`, so the
+  document itself does not scroll horizontally; a parent container is cutting the panel off.
+  A VRT baseline is a declaration of the intended appearance, so freezing that state would
+  lock the defect in and make the eventual fix look like a test failure. The layout fix was
+  **not yet filed as of 2026-08-23**, which is what this entry recorded at the time; it is
+  **now tracked by `plans/065-fix-product-detail-right-panel-clipping.md`**. The
+  product-detail baseline should be captured after that fix lands.
+- Earlier entry: 62 tests/browser across 27 files (186 across the three browsers), as of 2026-08-23.
+  Plan 049 added `tests/e2e/profile.spec.ts` (+2 tests/browser, +1 file) covering address
+  creation through the form and an order appearing in the history, and it uncovered two real
+  defects that the suite then pinned. First, `/profile/orders` failed to render at all:
+  `orders-table.tsx` and `payments-table.tsx` are client components that receive Prisma
+  `Decimal` props from a server component, and a `Decimal` loses its methods when it crosses
+  the RSC boundary, so `order.total.toFixed(2)` and `payment.amount.toNumber()` threw
+  (`TypeError: a.total.toFixed is not a function`). Both now go through the existing
+  `toNumberSafe` helper. The reason unit tests never caught it is instructive: the existing
+  payments test passed `amount: { toNumber: () => 1000 }`, a Decimal-shaped mock, so the
+  serialized path was never exercised — the new detection tests pass a plain number and a
+  plain string instead, and only the string form reproduces the failure since numbers already
+  have `toFixed`. Second, the address form silently ignored a country with no matching row:
+  `CountrySelector` renders a static ISO list while only DB `Country` rows can be saved, so an
+  unmatched pick left `countryId` empty and surfaced a validation error that never mentioned
+  the country. In E2E that happens every time, because the seed suffixes country names for
+  parallel isolation, making it impossible to save an address through the UI at all.
+- Earlier entry: 60 tests/browser across 26 files (180 across the three browsers), as of 2026-08-23.
+  Plan 056 added `tests/e2e/newsletter.spec.ts` (+2 tests/browser, +1 file) as a characterization
+  suite: `/api/newsletter` does not exist in the repo (no subscriber model in the schema either),
+  so every subscription attempt fails with a "Failed to subscribe." toast. The contract is
+  `response.ok() === false`, deliberately **not** `toBe(404)` — a 404 is not the durable
+  proposition ("subscribing does not succeed") but an incidental mechanism ("the route file is
+  missing"). Pinning 404 would keep the suite green through a routing regression that 404s every
+  API, and would turn it red for a harmless change such as a catch-all returning 501.
+  `not.toBe(200)` is likewise insufficient because it admits 201/202/204. The empty-email case
+  proves a negative without a fixed wait: it waits on the `invalid` event, which fires only when
+  constraint validation blocks a submit attempt, and only then asserts that no POST was recorded.
+  `checkValidity()` cannot serve as that signal — it is a pure query that returns false before the
+  click as well, so polling on it settles immediately and would misread a not-yet-dispatched POST
+  as absent. When the route is implemented this suite fails by design and must be rewritten as a
+  success-path test rather than skipped.
+- Earlier entry: 58 tests/browser across 25 files (174 across the three browsers), as of 2026-08-12.
   Plan 055 added `tests/e2e/cart-login-handoff.spec.ts` (+1 test/browser, +1 file): a cart built
   as a guest survives sign-in and is persisted server-side by the Checkout button. The load-bearing
   detail is that step 5 reopens `/checkout` in a **fresh `browser.newContext()`**, not via
@@ -509,7 +585,51 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 78 integration tests across 10 suites
+- 108 integration tests across 13 suites
+  (adds `tests/integration/product-browse.test.ts` 16; `store-status.test.ts` 8 → 9 for the
+  concurrent PENDING → BANNED / PENDING → ACTIVE transition), as of 2026-08-24,
+  measured 108/108 pass.
+  Plan 039 pinned `getProducts`, the query behind `/browse` (91 -> 107; suites 12 -> 13), and
+  found a real defect while doing so. With no upper bound the query passed
+  `lte: filters.maxPrice || Infinity`, and Prisma cannot put `Infinity` on a Decimal column —
+  the value drops during serialization and the query throws "Argument `lte` is missing."
+  (measured on Prisma 5.22.0), so any price filter with only a minimum failed outright. The
+  storefront never showed this because `browse/page.tsx` defaults `maxPrice` to
+  `Number.MAX_SAFE_INTEGER`; callers that go straight to `getProducts` do hit it. The fix
+  (`f1be1aa0`, operator-approved) simply omits `lte` when there is no maximum.
+  The suite's Arrange pins every value an assertion depends on. `views` and `createdAt` are
+  set to distinct values because the default `orderBy` is `views desc` and freshly seeded rows
+  all share `views: 0` — PostgreSQL does not guarantee an order among equal rows, so the
+  pagination assertions would otherwise depend on physical row order and flake. Every size's
+  `price` and `discount` is set explicitly too: filters read the raw `price` through `some`
+  (one matching size pulls in the whole product), while the price sorts read the discounted
+  price, so leaving `discount` to the schema default would let a default change silently
+  reorder results. Two departures from the plan text: its scenario 2 asks to characterize
+  fail-open URL filters, but that was already fixed to fail-closed in `cce53407`, so the
+  expectation was inverted as the plan itself prescribed (and the store/offer paths pinned
+  alongside); and its claim that no Clerk mock is needed does not hold — `getProducts` never
+  calls `currentUser`, but the module imports Clerk, so without the mock jest fails to parse
+  `@clerk/backend`'s ESM at load time.
+- Earlier entry: 91 integration tests across 12 suites
+  (adds `tests/integration/product-update.test.ts` 5), as of 2026-08-23, measured 91/91 pass.
+  Plan 038 pinned the seller product-edit flow (86 -> 91; suites 11 -> 12).
+  `handleProductAndVariantUpdate` replaces specs, questions, free-shipping rows, images,
+  colors and sizes wholesale (deleteMany then createMany) inside one `$transaction`, and the
+  most consequential thing that falls out of that is what it does to shoppers' saved state:
+  because every edit mints new `Size` rows, `Wishlist.sizeId` (a real FK with ON DELETE SET
+  NULL) becomes null, while `CartItem.sizeId` — a plain string with no FK — keeps pointing at
+  a row that no longer exists, which is the precondition for checkout's re-validation to
+  reject the line. The atomicity scenario must inject its failure **late** in the transaction:
+  failing at the first statement (`product.update`) means the replacements never ran at all,
+  so surviving old rows prove nothing and the test would pass even without a transaction. The
+  suite therefore fails only the final statement via a temporary CHECK constraint and treats
+  the **preserved old `Size.id`** as the proof, since a replacement that actually executed
+  would have minted a new id. The temporary DDL drops with `IF EXISTS` both before the ADD
+  (idempotent recovery from a leaked constraint) and in the `finally` — a bare DROP there
+  throws its own "constraint does not exist" error on the path where the ADD failed, masking
+  the real cause. The CI serialization requirement is already met by `maxWorkers: 1` plus a
+  per-run testcontainers database (ADR-004), so no workflow change was needed.
+- Earlier entry: 86 integration tests across 11 suites
   (`tests/integration/cart-checkout.test.ts` 11 +
   `tests/integration/order-placement.test.ts` 9 +
   `tests/integration/order-lifecycle.test.ts` 8 +
@@ -519,8 +639,30 @@
   `tests/integration/shipping-address-default.test.ts` 6 +
   `tests/integration/user-deletion-webhook.test.ts` 7 +
   `tests/integration/coupon-code-uniqueness.test.ts` 5 +
-  `tests/integration/review-aggregation.test.ts` 7) as of 2026-08-13,
-  measured 78/78 pass.
+  `tests/integration/review-aggregation.test.ts` 7 +
+  `tests/integration/store-status.test.ts` 8) as of 2026-08-23,
+  measured 86/86 pass.
+  Plan 035 added the store-status suite (78 → 86; suites 10 → 11), closing the R5 round.
+  `updateStoreStatus` promotes the store owner from USER to SELLER, so its transition
+  condition is a permission boundary: the DB promotion fires only for PENDING → ACTIVE,
+  while the Clerk metadata sync fires whenever the *result* is ACTIVE, without looking at
+  the origin status. Because authorization reads Clerk's `privateMetadata.role`
+  (`src/lib/auth-guards.ts`) rather than the DB column, a DISABLED/BANNED → ACTIVE
+  transition grants seller access while the DB still says USER. That scenario was originally
+  pinned as a `TODO(characterization)` — a known-bug fixture to be inverted, not a contract.
+  **That description is history: the bug was fixed in `7a56c93d`**, which gates the Clerk
+  sync on the owner actually being `SELLER` in the DB rather than on the resulting status
+  alone. Scenario 3 (`DISABLED → ACTIVE`) has since had its expectation inverted and now
+  asserts `mockUpdateUserMetadata` is **not** called, so it reads as a **regression guard**
+  against the privilege escalation rather than as a characterization of it.
+  The suite's load-bearing case is transactional atomicity: scenarios 1–4 only show that
+  both writes succeeded, so the single-`$transaction` claim is proven by failing the
+  second write deterministically (a temporary CHECK constraint blocking `role = 'SELLER'`)
+  and observing the status update roll back. Deleting the owner cannot serve as the
+  injection point — `Store.user` has no `onDelete`, so the implicit `Restrict` rejects the
+  delete — and the shared real-DB singleton rules out spying on `tx.user.update`. Since
+  `resetDb` truncates rows but does not drop table constraints, the DDL is dropped in a
+  `finally` and the cleanup is verified by running the file twice in a row.
   Plan 034 added the review-aggregation suite (71 → 76; suites 9 → 10). A product's
   `rating` / `numReviews` are recomputed by re-reading every review on each submission,
   and the fully mocked unit tests can only pin the call structure — whether a repeat

@@ -37,6 +37,31 @@ function buildBrowseHref(query: FiltersQueryType, page: number): string {
  * @param searchParams - Query parameters that define the product filters, sort order, and page.
  * @returns The browse page containing filter controls, sorting controls, products, and pagination when applicable.
  */
+/**
+ * URL 由来の価格パラメータを数値へ解決する。
+ *
+ * `Number(x) || fallback` は使わない —— `?maxPrice=0`（上限 0 の空レンジ）は
+ * falsy なので fallback の `Number.MAX_SAFE_INTEGER` へ化け、
+ * 「上限 0」が「上限なし」に反転して**全件が通ってしまう**。
+ * `src/queries/product.ts` の `getProducts` は既に `hasPriceBound` による
+ * 明示的な存在判定で 0 を正しい境界として受け付けるため、入口側でも
+ * 0 を潰さず `lte: 0` がそのまま届くようにする。
+ *
+ * 未指定 / 空文字 / 空白のみ / 非有限値 / 負値は fallback に寄せる。Next.js は同名
+ * パラメータが複数付くと配列を渡すため、配列は先頭要素を採る
+ * （`normalizePageParam` と同じ規約）。
+ */
+const normalizePriceParam = (value: unknown, fallback: number): number => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (raw === undefined || raw === null) return fallback;
+    // 空白のみの入力（`?maxPrice=%20`）は `Number("   ") === 0` となり、
+    // 「上限 0」の空レンジとして通ってしまう。数値化の前に trim で弾く。
+    if (typeof raw === "string" && raw.trim() === "") return fallback;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+    return parsed;
+};
+
 export default async function BrowsePage({
     searchParams,
 }: {
@@ -71,8 +96,8 @@ export default async function BrowsePage({
                 : size
                   ? [size] // Convert string to array if it's not already an array
                   : undefined, // Default to undefined if size is not provided
-            minPrice: Number(minPrice) || 0, // Default to 0 if minPrice is not provided
-            maxPrice: Number(maxPrice) || Number.MAX_SAFE_INTEGER, // Default to the maximum safe integer if maxPrice is not provided
+            minPrice: normalizePriceParam(minPrice, 0),
+            maxPrice: normalizePriceParam(maxPrice, Number.MAX_SAFE_INTEGER),
             color: Array.isArray(color)
                 ? color
                 : color

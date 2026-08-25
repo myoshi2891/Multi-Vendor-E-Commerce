@@ -24,9 +24,20 @@ export default function StripePayment({ orderId }: { orderId: string }) {
     const getClientSecret = async () => {
         try {
             const res = await createStripePaymentIntent(orderId);
-            if (res.clientSecret) setClientSecret(res.clientSecret);
-        } catch (error: any) {
-            setErrorMessage(error.message);
+            // clientSecret 欠落は「失敗していない」ではなく **静かな失敗**。
+            // ここで握り潰すと clientSecret は null のままローダーガードに
+            // 捕まり、ユーザーには無限スピナーしか残らない（throw 経路と同じ
+            // 症状だが、エラー状態が立たないぶん検出できない）。
+            if (!res.clientSecret) {
+                throw new Error("Payment could not be initialized.");
+            }
+            setClientSecret(res.clientSecret);
+        } catch (error: unknown) {
+            setErrorMessage(
+                error instanceof Error
+                    ? error.message
+                    : "Payment could not be initialized."
+            );
         }
     };
 
@@ -70,6 +81,14 @@ export default function StripePayment({ orderId }: { orderId: string }) {
         setLoading(false);
     };
 
+    // 取得失敗はローダーより先に描画する。intent 取得が失敗すると clientSecret は
+    // null のままなので、下のローダーガードを先に通すと errorMessage を描画する
+    // <form> へ永久に到達できず、ユーザーには無限スピナーしか見えない。
+    // clientSecret 取得後の送信時エラー（カード検証など）は従来どおりフォーム内に出す。
+    if (errorMessage && !clientSecret) {
+        return <div className="text-sm text-destructive">{errorMessage}</div>;
+    }
+
     if (!clientSecret || !stripe || !elements) {
         return (
             <div className="flex items-center justify-center">
@@ -85,7 +104,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
         <form onSubmit={handleSubmit} className="rounded-md bg-white p-2">
             {clientSecret && <PaymentElement />}
             {errorMessage && (
-                <div className="text-sm text-red-500">{errorMessage}</div>
+                <div className="text-sm text-destructive">{errorMessage}</div>
             )}
             <button
                 disabled={!stripe || loading}

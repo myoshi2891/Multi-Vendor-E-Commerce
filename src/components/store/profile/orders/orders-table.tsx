@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Pagination from "../../shared/pagination";
 import { getUserOrders } from "@/queries/profile";
+import { toNumberSafe } from "@/lib/utils";
 import OrderTableHeader from "./order-table-header";
 
 export default function OrdersTable({
@@ -163,7 +164,10 @@ export default function OrdersTable({
                                                     />
                                                 </td>
                                                 <td className="p-4">
-                                                    ${order.total.toFixed(2)}
+                                                    $
+                                                    {toNumberSafe(
+                                                        order.total
+                                                    ).toFixed(2)}
                                                 </td>
                                                 <td className="p-4">
                                                     <Link

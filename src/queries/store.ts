@@ -597,6 +597,8 @@ export const updateStoreStatus = async (
             throw new Error("Only admins can perform this action.");
 
         // Ensure the user is a seller of the specified store
+        // 存在確認のみ。オーナーのロールは tx 内でロック後に読み直す
+        // （tx 外のスナップショットを昇格判定に使わない）。
         const store = await db.store.findUnique({
             where: {
                 id: storeId,
@@ -609,33 +611,83 @@ export const updateStoreStatus = async (
         }
 
         // ステータス更新とロール昇格をアトミックに実行
-        const updatedStore = await db.$transaction(async (tx) => {
-            const updated = await tx.store.update({
-                where: {
-                    id: storeId,
-                },
-                data: {
-                    status,
-                },
-            });
+        const { updatedStore, ownerIsSeller } = await db.$transaction(
+            async (tx) => {
+                // 昇格判定に使う「更新前ステータス」は tx 内で行ロックを取って
+                // 読み直す。上の findUnique はトランザクションの**外**なので、
+                // 読んでから update するまでの間に別リクエストが status を動かせる
+                // （TOCTOU）。実害の例: PENDING の店舗に BANNED 化と ACTIVE 化が
+                // 並行すると、両者とも「更新前 = PENDING」を見るため、最終状態が
+                // BANNED でも ACTIVE 側の昇格が通り User.role だけ SELLER で残る。
+                // FOR UPDATE で直列化すれば、後続 tx はロック解放後に確定済みの
+                // status を読むので、この窓が閉じる。
+                //
+                // Prisma の fluent API はロック句を表現できないため $queryRaw を
+                // 使う（値は常にパラメータ化される）。列型は DB enum だが、TS の
+                // `StoreStatus` は string enum で文字列リテラルと直接比較できない
+                // ため `string` で受ける。
+                const lockedRows = await tx.$queryRaw<{ status: string }[]>`
+                    SELECT "status" FROM "Store" WHERE "id" = ${storeId} FOR UPDATE
+                `;
+                const previousStatus = lockedRows[0]?.status;
+                if (!previousStatus) throw new Error("Store not found.");
 
-            // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格
-            if (store.status === "PENDING" && updated.status === "ACTIVE") {
-                await tx.user.update({
+                const updated = await tx.store.update({
                     where: {
-                        id: updated.userId,
+                        id: storeId,
                     },
                     data: {
-                        role: "SELLER",
+                        status,
                     },
                 });
+
+                // PENDING → ACTIVE 遷移時にユーザーロールを SELLER に昇格。
+                // 起点は tx 内でロックして読んだ `previousStatus` を使う
+                // （tx 外スナップショットの `store.status` ではない）。
+                if (previousStatus === "PENDING" && updated.status === "ACTIVE") {
+                    await tx.user.update({
+                        where: {
+                            id: updated.userId,
+                        },
+                        data: {
+                            role: "SELLER",
+                        },
+                    });
+                    return { updatedStore: updated, ownerIsSeller: true };
+                }
+
+                // 昇格分岐に入らなかった場合のロールは、tx 外スナップショットの
+                // `store.user?.role` ではなく **ロック取得後の最新値**を読む。
+                // 上の findUnique は $transaction の外なので、読んでから
+                // ここへ来るまでに別リクエストがオーナーのロールを動かせる
+                // （status 側で閉じた TOCTOU と同じ窓が role 側に残っていた）。
+                // 古い USER を掴むと Clerk 同期が飛ばされ、DB は SELLER なのに
+                // Clerk 側が USER のまま取り残されて販売者操作が通らなくなる。
+                const owner = await tx.user.findUnique({
+                    where: { id: updated.userId },
+                    select: { role: true },
+                });
+
+                return {
+                    updatedStore: updated,
+                    ownerIsSeller: owner?.role === "SELLER",
+                };
             }
+        );
 
-            return updated;
-        });
-
-        // Clerk メタデータ同期（ACTIVE ステータスへの遷移時、冪等操作でリトライ可能）
-        if (updatedStore.status === "ACTIVE") {
+        // Clerk メタデータ同期（冪等操作でリトライ可能）。
+        //
+        // 条件に `ownerIsSeller` を入れているのは**権限昇格を防ぐため**。
+        // 以前は `updatedStore.status === "ACTIVE"` だけを見ていたので、
+        // DISABLED / BANNED 起点の ACTIVE 化でも Clerk 側に SELLER が書かれた。
+        // DB 昇格は PENDING 起点限定なので User.role は USER のままで、
+        // 一方この認可のソースは Clerk の privateMetadata.role
+        // (src/lib/auth-guards.ts の requireSeller) —— つまり DB が許していない
+        // 販売者権限が実際に通っていた。
+        //
+        // 「DB 上 SELLER である」ことを条件にすることで、ACTIVE → ACTIVE の
+        // 再実行による Clerk 側ドリフトの修復（同一値の再送）は従来どおり残る。
+        if (updatedStore.status === "ACTIVE" && ownerIsSeller) {
             const { clerkClient } = await import("@clerk/nextjs/server");
             const clerk = await clerkClient();
             await clerk.users.updateUserMetadata(updatedStore.userId, {

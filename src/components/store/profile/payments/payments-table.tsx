@@ -4,6 +4,7 @@ import {
     PaymentTableFilter,
     UserPaymentType,
 } from "@/lib/types";
+import { toNumberSafe } from "@/lib/utils";
 import { getUserPayments } from "@/queries/profile";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -130,12 +131,20 @@ export default function PaymentsTable({
                                 </thead>
                                 <tbody>
                                     {data.map((payment) => {
-                                        let amount = payment.amount.toNumber();
-                                        if (
-                                            payment.paymentMethod === "Stripe"
-                                        ) {
-                                            amount = amount / 100;
-                                        }
+                                        // PaymentDetails.amount は
+                                        // `Decimal(12,2)` = **ドル建て**が唯一の単位。
+                                        // Stripe 経路も同期パス
+                                        // (src/queries/stripe.ts) / webhook
+                                        // (api/webhooks/stripe) とも order.total を
+                                        // 書いており、セントは保存されない。
+                                        // ここで provider を見て / 100 すると
+                                        // 正しく保存された行が 1/100 に化けるため、
+                                        // 表示側では正規化しない。
+                                        // 歴史的にセントで残った行は plan 063 の
+                                        // backfill で是正済み（2026-08-09・対象 0 件）。
+                                        const amount = toNumberSafe(
+                                            payment.amount
+                                        );
                                         return (
                                             <tr
                                                 key={payment.id}

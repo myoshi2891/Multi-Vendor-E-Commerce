@@ -46,9 +46,11 @@ jest.mock("@/lib/db", () => ({
             findMany: jest.fn(),
         },
         user: {
+            findUnique: jest.fn(),
             update: jest.fn(),
         },
         $transaction: jest.fn(),
+        $queryRaw: jest.fn(),
     },
 }));
 
@@ -1038,9 +1040,11 @@ interface MockPrismaClient {
         findMany: jest.Mock;
     };
     user: {
+        findUnique: jest.Mock;
         update: jest.Mock;
     };
     $transaction: jest.Mock;
+    $queryRaw: jest.Mock;
 }
 
 const mockPrisma = require("@/lib/db").db as MockPrismaClient;
@@ -1546,6 +1550,14 @@ describe("getAllStores", () => {
 // ==================================================
 // updateStoreStatus
 // ==================================================
+/**
+ * `updateStoreStatus` の tx 内ロック読み取り（`SELECT "status" … FOR UPDATE`）を
+ * モックする。実装は tx 外の `findUnique` ではなく**この値**で昇格を判定するため、
+ * 更新前ステータスはここで与える。
+ */
+const mockLockedStatus = (status: string) =>
+    mockPrisma.$queryRaw.mockResolvedValue([{ status }]);
+
 describe("updateStoreStatus", () => {
     describe("認証・権限エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
@@ -1587,6 +1599,9 @@ describe("updateStoreStatus", () => {
                     ) => Promise<unknown>
                 ) => callback(mockPrisma)
             );
+            // 既定は「更新前 = ACTIVE」（昇格しない起点）。PENDING 起点を
+            // 検証するテストは mockLockedStatus("PENDING") で上書きする。
+            mockLockedStatus("ACTIVE");
         });
 
         it("ストアのステータスを更新する", async () => {
@@ -1613,6 +1628,7 @@ describe("updateStoreStatus", () => {
             mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "PENDING" })
             );
+            mockLockedStatus("PENDING");
             mockPrisma.store.update.mockResolvedValue(
                 TestDataFactory.existingStore({
                     status: "ACTIVE",
@@ -1630,6 +1646,37 @@ describe("updateStoreStatus", () => {
                 where: { id: TEST_CONFIG.DEFAULT_USER_ID },
                 data: { role: "SELLER" },
             });
+        });
+
+        it("非昇格経路のオーナーロールは tx 外スナップショットではなく tx 内で読み直す", async () => {
+            // 回帰テスト: 以前は tx 外の findUnique が返した `store.user.role` で
+            // Clerk 同期の可否を決めていたため、読んでから tx に入るまでの間に
+            // ロールが変わると古い値を掴んだ（status 側で FOR UPDATE により閉じた
+            // TOCTOU が role 側にだけ残っていた）。DB は SELLER なのに Clerk が
+            // USER のまま取り残されると、販売者操作が通らなくなる。
+            mockPrisma.store.findUnique.mockResolvedValue(
+                TestDataFactory.existingStore({ status: "ACTIVE" })
+            );
+            mockPrisma.store.update.mockResolvedValue(
+                TestDataFactory.existingStore({
+                    status: "ACTIVE",
+                    userId: TEST_CONFIG.DEFAULT_USER_ID,
+                })
+            );
+            // tx 内で読み直した「最新の」ロール
+            mockPrisma.user.findUnique.mockResolvedValue({ role: "SELLER" });
+
+            await updateStoreStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "ACTIVE" as never
+            );
+
+            expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+                where: { id: TEST_CONFIG.DEFAULT_USER_ID },
+                select: { role: true },
+            });
+            // 最新値が SELLER なので Clerk 同期まで到達する
+            expect(mockUpdateUserMetadata).toHaveBeenCalled();
         });
 
         it("ACTIVE → DISABLED遷移時にはロール昇格しない", async () => {
@@ -1662,6 +1709,9 @@ describe("updateStoreStatus", () => {
                     ) => Promise<unknown>
                 ) => callback(mockPrisma)
             );
+            // 既定は「更新前 = ACTIVE」（昇格しない起点）。PENDING 起点を
+            // 検証するテストは mockLockedStatus("PENDING") で上書きする。
+            mockLockedStatus("ACTIVE");
         });
 
         afterEach(() => {
@@ -1675,6 +1725,7 @@ describe("updateStoreStatus", () => {
             mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "PENDING" })
             );
+            mockLockedStatus("PENDING");
             mockPrisma.store.update.mockRejectedValue(mockError);
 
             await expect(
@@ -1701,6 +1752,7 @@ describe("updateStoreStatus", () => {
             mockPrisma.store.findUnique.mockResolvedValue(
                 TestDataFactory.existingStore({ status: "PENDING" })
             );
+            mockLockedStatus("PENDING");
             mockPrisma.store.update.mockResolvedValue(
                 TestDataFactory.existingStore({
                     status: "ACTIVE",
