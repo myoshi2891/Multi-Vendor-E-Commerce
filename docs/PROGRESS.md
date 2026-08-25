@@ -4153,3 +4153,42 @@ VRT の対象は cart 2 枚 + checkout リダイレクト 1 枚のみで、購�
 | Jest Integration | 107 / 13 スイート | **不変** |
 | ダッシュボード集計ファイル数 | 231 | **232** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### コードレビュー指摘の修正（静かな失敗 3 件 + ドキュメントの履歴/現状分離） (2026-08-25)
+
+#### 概要
+
+コードレビューで挙がった 9 件を現行コードに突き合わせて全件有効と判定し、修正した。
+本体側の 3 件はいずれも **「エラーになっていないのに機能していない」= 静かな失敗** で、
+共通する構造は**フォールバック / 握り潰しが失敗を正常系に見せてしまう**ことだった。
+
+#### 実施内容
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/components/store/cards/payment/stripe/stripe-payment.tsx` | `createStripePaymentIntent` が `clientSecret: null` を返した場合を**エラーとして扱う**。従来は握り潰していたため clientSecret が null のままローダーガードに捕まり、ユーザーには無限スピナーだけが残った（throw 経路と同じ症状だがエラー状態が立たず検出不能）。併せて `catch (error: any)` を `unknown` + 型ガードへ |
+| `src/app/(store)/browse/page.tsx` | `Number(maxPrice) \|\| Number.MAX_SAFE_INTEGER` を `normalizePriceParam` に置換。`?maxPrice=0`（上限 0 の空レンジ）が falsy で fallback に落ち、**「上限 0」が「上限なし」へ反転して全件が通っていた**。`getProducts` 側は既に `hasPriceBound` で 0 を正しい境界として扱えており、**クエリ層の防御が入口で無効化されていた**構図 |
+| `src/queries/store.ts` | `updateStoreStatus` の非昇格経路で、オーナーのロールを tx 外スナップショットではなく**ロック取得後の tx 内**で読み直す。`status` 側は `FOR UPDATE` で TOCTOU を閉じていたが、`role` 側に同じ窓が残っていた。古い USER を掴むと Clerk 同期が飛ばされ、DB は SELLER なのに Clerk が USER のまま取り残される |
+| `tests/integration/store-status.test.ts` | finally の cleanup を `DROP CONSTRAINT IF EXISTS` に変更（setup 側と統一）。制約が既に無い場合に finally が throw すると、**try 内の本来の失敗を握り潰してすり替える** |
+| `tests/integration/product-browse.test.ts` | ヘッダの「`lte: Infinity` を Decimal カラムへ渡す価格境界」を現行挙動（maxPrice 未指定なら `lte` を付けない）に合わせて修正 |
+| `tests/e2e/profile.spec.ts` / `tests/e2e/mobile-responsive.spec.ts` | Firefox ローカル skip 3 件に **OI-12**（解消条件・見直し期限 2026-10-31・QA_HANDOFF 参照）の追跡メタデータを付与 |
+| `docs/testing/QA_HANDOFF.md` | OI-12 を「現在アクティブな残課題」へ起票 |
+| `specs/multi-vendor-ecommerce/07-testing.md` | plan 054 の「レイアウト修正は未起票」を **2026-08-23 時点の履歴**と明示し、現在の追跡先が plan 065 であることを追記。plan 035 の `TODO(characterization)` 記述も履歴化し、`7a56c93d` 以降のシナリオ 3 が**回帰ガード**であることを追記 |
+| `plans/065-fix-product-detail-right-panel-clipping.md` | 054 実行記録の「未起票」を実行時の履歴として分離し、現状は本プランが追跡先であると明記 |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2021 passed / 2024 total | **2025 passed / 2028 total** |
+| Jest スイート数 | 191 | **不変** |
+| Jest スナップショット | 127 | **不変** |
+| Playwright E2E | 63 tests/browser・28 files | **不変**（コメントのみ） |
+| Jest Integration | 108 / 13 スイート | **不変**（cleanup のみ） |
+| 型エラー | 0 件 | **0 件** |
+
+> 追加した検知点 4 件: `stripe-payment.test.tsx` +1 / `store.test.ts` +1 / `browse/page.test.tsx` +2。
+> なお QA_HANDOFF / COVERAGE_REPORT の記載値 2020 は実測 2021 と 1 件ドリフトしていたため、
+> 本更新で実測値へ揃えた。
