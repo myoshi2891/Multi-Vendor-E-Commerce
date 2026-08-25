@@ -148,6 +148,11 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
     test("住所をフォームから追加すると一覧に表示される", async ({
         page,
     }, testInfo) => {
+        // OI-12（[`docs/testing/QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) の
+        // 「現在アクティブな残課題」）。ローカル dev サーバでのみ Firefox の navigation が
+        // hang する。CI は本番ビルドで走るため skip されず、3 ブラウザのカバレッジは維持される。
+        // 解消条件: `bun run dev` 起動下で当該テストが Firefox 連続 2 回 pass すること。
+        // 見直し期限: 2026-10-31。
         test.skip(
             testInfo.project.name === "firefox" && !process.env.CI,
             "Firefox: navigation hangs in dev mode (HMR issue)"
@@ -202,6 +207,11 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
     });
 
     test("注文が履歴に載り、詳細へ遷移できる", async ({ page }, testInfo) => {
+        // OI-12（[`docs/testing/QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) の
+        // 「現在アクティブな残課題」）。ローカル dev サーバでのみ Firefox の navigation が
+        // hang する。CI は本番ビルドで走るため skip されず、3 ブラウザのカバレッジは維持される。
+        // 解消条件: `bun run dev` 起動下で当該テストが Firefox 連続 2 回 pass すること。
+        // 見直し期限: 2026-10-31。
         test.skip(
             testInfo.project.name === "firefox" && !process.env.CI,
             "Firefox: cart navigation hangs in dev mode (HMR issue)"

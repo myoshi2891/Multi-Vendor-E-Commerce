@@ -72,6 +72,11 @@ test.describe("モバイルレスポンシブ", () => {
 
   test("モバイルでチェックアウトボタンが機能する", async ({ page }, testInfo) => {
     // Firefox: /cart ナビゲーションが dev 環境の HMR でハングする既知の問題（CI では実行）
+    // OI-12（[`docs/testing/QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) の
+    // 「現在アクティブな残課題」）。ローカル dev サーバでのみ Firefox の navigation が
+    // hang する。CI は本番ビルドで走るため skip されず、3 ブラウザのカバレッジは維持される。
+    // 解消条件: `bun run dev` 起動下で当該テストが Firefox 連続 2 回 pass すること。
+    // 見直し期限: 2026-10-31。
     test.skip(testInfo.project.name === "firefox" && !process.env.CI, "Firefox: cart navigation hangs in dev mode (HMR issue)");
 
     await page.goto(`/product/${productSlug}/${variantSlug}`);
