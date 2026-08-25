@@ -259,6 +259,24 @@ describe("BrowsePage", () => {
         );
     });
 
+    it("空白のみの maxPrice は上限なしへフォールバックする（0 に化けない）", async () => {
+        // Arrange — `Number("   ") === 0` なので、trim を挟まないと空白のみの入力が
+        // 「上限 0 の空レンジ」として通り、検索結果が常に空になる。
+        mockProductsResult(1, 0);
+
+        // Act
+        await BrowsePage({
+            searchParams: Promise.resolve(makeQuery({ maxPrice: "   " })),
+        });
+
+        // Assert
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({ maxPrice: Number.MAX_SAFE_INTEGER }),
+            undefined,
+            1
+        );
+    });
+
     it("maxPrice が未指定・非数値なら上限なし（MAX_SAFE_INTEGER）へフォールバックする", async () => {
         // Arrange
         mockProductsResult(1, 0);

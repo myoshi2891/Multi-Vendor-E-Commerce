@@ -47,13 +47,16 @@ function buildBrowseHref(query: FiltersQueryType, page: number): string {
  * 明示的な存在判定で 0 を正しい境界として受け付けるため、入口側でも
  * 0 を潰さず `lte: 0` がそのまま届くようにする。
  *
- * 未指定 / 空文字 / 非有限値 / 負値は fallback に寄せる。Next.js は同名
+ * 未指定 / 空文字 / 空白のみ / 非有限値 / 負値は fallback に寄せる。Next.js は同名
  * パラメータが複数付くと配列を渡すため、配列は先頭要素を採る
  * （`normalizePageParam` と同じ規約）。
  */
 const normalizePriceParam = (value: unknown, fallback: number): number => {
     const raw = Array.isArray(value) ? value[0] : value;
-    if (raw === undefined || raw === null || raw === "") return fallback;
+    if (raw === undefined || raw === null) return fallback;
+    // 空白のみの入力（`?maxPrice=%20`）は `Number("   ") === 0` となり、
+    // 「上限 0」の空レンジとして通ってしまう。数値化の前に trim で弾く。
+    if (typeof raw === "string" && raw.trim() === "") return fallback;
     const parsed = Number(raw);
     if (!Number.isFinite(parsed) || parsed < 0) return fallback;
     return parsed;
