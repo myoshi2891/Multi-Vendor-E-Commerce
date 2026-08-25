@@ -12,7 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2020 passed / 2023 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-24.
+- 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+  Regression detection points added while fixing code-review findings (+4 tests, suites
+  unchanged): `stripe-payment.test.tsx` pins that a `clientSecret: null` response is surfaced
+  as an error rather than swallowed — it produces the same infinite-spinner symptom as the
+  throw path but leaves no error state, so nothing could catch it; `store.test.ts` pins that
+  the non-promotion path of `updateStoreStatus` re-reads the owner's role **inside** the
+  transaction (the TOCTOU window that `FOR UPDATE` closed on `status` was still open on
+  `role`); and `browse/page.test.tsx` adds two price-boundary cases so `?maxPrice=0` is not
+  flipped to "no upper bound" by a truthy check.
+- Earlier entry: 2020 passed / 2023 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-24.
+  (The recorded figure drifted by one against the measured 2021 / 2024; corrected in the
+  2026-08-25 entry above.)
   Detection points for the two defects plan 049 surfaced (+4 tests, +1 suite): a new
   `orders-table.test.tsx`, one case in `payments-table.test.tsx`, and one in
   `shipping-form.test.tsx`.
@@ -76,8 +87,10 @@
   at a 1280px viewport. Measurement confirmed `scrollWidth === clientWidth === 1280`, so the
   document itself does not scroll horizontally; a parent container is cutting the panel off.
   A VRT baseline is a declaration of the intended appearance, so freezing that state would
-  lock the defect in and make the eventual fix look like a test failure. The layout fix is not
-  yet filed; the product-detail baseline should be captured after it lands.
+  lock the defect in and make the eventual fix look like a test failure. The layout fix was
+  **not yet filed as of 2026-08-23**, which is what this entry recorded at the time; it is
+  **now tracked by `plans/065-fix-product-detail-right-panel-clipping.md`**. The
+  product-detail baseline should be captured after that fix lands.
 - Earlier entry: 62 tests/browser across 27 files (186 across the three browsers), as of 2026-08-23.
   Plan 049 added `tests/e2e/profile.spec.ts` (+2 tests/browser, +1 file) covering address
   creation through the form and an order appearing in the history, and it uncovered two real
@@ -634,8 +647,13 @@
   while the Clerk metadata sync fires whenever the *result* is ACTIVE, without looking at
   the origin status. Because authorization reads Clerk's `privateMetadata.role`
   (`src/lib/auth-guards.ts`) rather than the DB column, a DISABLED/BANNED → ACTIVE
-  transition grants seller access while the DB still says USER. That scenario is pinned as
-  a `TODO(characterization)` — a known-bug fixture to be inverted, not a contract.
+  transition grants seller access while the DB still says USER. That scenario was originally
+  pinned as a `TODO(characterization)` — a known-bug fixture to be inverted, not a contract.
+  **That description is history: the bug was fixed in `7a56c93d`**, which gates the Clerk
+  sync on the owner actually being `SELLER` in the DB rather than on the resulting status
+  alone. Scenario 3 (`DISABLED → ACTIVE`) has since had its expectation inverted and now
+  asserts `mockUpdateUserMetadata` is **not** called, so it reads as a **regression guard**
+  against the privilege escalation rather than as a characterization of it.
   The suite's load-bearing case is transactional atomicity: scenarios 1–4 only show that
   both writes succeeded, so the single-`$transaction` claim is proven by failing the
   second write deterministically (a temporary CHECK constraint blocking `role = 'SELLER'`)
