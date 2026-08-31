@@ -12,7 +12,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+- Earlier entry: 2025 passed / 2028 total across 191 suites, as of 2026-08-31 (before the review-fix regression guard on `upsertCategory`).
   Plan 066 (category tree Phase A) folded the seed declaration data into a single tree, so the
   `SEED_SUB_CATEGORIES` assertions in `prisma/seed/__tests__/` were replaced with tree invariants
   (parent reference integrity, no self-parent, depth <= 1, every root has >= 2 children, products
@@ -928,7 +929,8 @@ push しても、Linux CI は `-linux.png` を探して FAIL する。
 ```bash
 # Chromium 限定で baseline を再生成
 bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
-git add tests/e2e/visual/cart.spec.ts-snapshots/ tests/e2e/visual/checkout.spec.ts-snapshots/
+# 全 spec のベースラインをまとめて stage する（browse / product / cart / checkout）
+git add tests/e2e/visual/*.spec.ts-snapshots/
 git commit -m "test(visual): update baseline screenshots"
 ```
 
