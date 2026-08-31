@@ -5,7 +5,7 @@
 import { PrismaClient } from "@prisma/client";
 import { ALL_SEED_PRODUCTS } from "../constants/products";
 import type { SeedMaps } from "../types";
-import { SEED_CATEGORIES } from "../constants/categories";
+import { rootAncestorUrl } from "../category-tree";
 
 /**
  * Seeds products, their variants, sizes, and related records into the database using Prisma.
@@ -23,34 +23,9 @@ import { SEED_CATEGORIES } from "../constants/categories";
  *   - `sizes`: maps "variantSlug:size" → size id
  * @throws Error if a referenced store, category, subcategory, offer tag, or country code from the seed data cannot be resolved via the provided maps
  */
-/**
- * リーフの url からルート祖先の url を求める。
- *
- * Phase A の Product は旧 FK（categoryId = ルート）も書く必要があるが、
- * 商品定数はリーフ 1 本しか持たない。ルートは木の宣言データから一意に決まるので、
- * 商品側に冗長に持たせずここで遡る。
- */
-function rootAncestorUrl(url: string): string {
-    const seen = new Set<string>();
-    let current = url;
-    for (;;) {
-        const node = SEED_CATEGORIES.find((c) => c.url === current);
-        if (!node) throw new Error(`カテゴリが見つかりません: ${current}`);
-        if (!node.parentUrl) return current;
-        if (seen.has(current)) {
-            throw new Error(`カテゴリツリーが循環しています: ${current}`);
-        }
-        seen.add(current);
-        current = node.parentUrl;
-    }
-}
-
 export async function seedProducts(
     prisma: PrismaClient,
-    maps: Pick<
-        SeedMaps,
-        "stores" | "categories" | "offerTags" | "countries"
-    >
+    maps: Pick<SeedMaps, "stores" | "categories" | "offerTags" | "countries">
 ): Promise<{
     products: Map<string, string>;
     variants: Map<string, string>;

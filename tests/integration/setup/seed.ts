@@ -86,9 +86,7 @@ export async function seedUser(
  * `childNode` は同じ子の Category ノード表現（`childNode.id === subCategory.id`）。
  */
 
-export async function seedCategoryWithSubcategory(
-    db: PrismaClient
-): Promise<{
+export async function seedCategoryWithSubcategory(db: PrismaClient): Promise<{
     category: Category;
     subCategory: SubCategory;
     childNode: Category;
@@ -171,6 +169,11 @@ export async function seedStore(
 export interface SeedProductInput {
     storeId: string;
     categoryId: string;
+    /**
+     * `seedCategoryWithSubcategory` が返す **共有 id**（`subCategory.id === childNode.id`）を渡すこと。
+     * Phase A の `Product.categoryNodeId` はこの id をそのまま Category ノードの FK として使うため、
+     * 共有関係にない SubCategory の id を渡すと FK 違反になる。`seedProduct` が事前に検証する。
+     */
     subCategoryId: string;
     /** 商品レベルの配送方式。Cart→Checkout の shipping 計算検証で重要 */
     shippingFeeMethod?: ShippingFeeMethod;
@@ -199,6 +202,19 @@ export async function seedProductWithVariantAndSize(
     size: Size;
     image: ProductVariantImage;
 }> {
+    // categoryNodeId は subCategoryId をそのまま使う（id 共有が前提）。共有関係にない id を
+    // 渡されると Product 作成時に不透明な FK 違反になるので、手前で契約違反として落とす。
+    const categoryNode = await db.category.findUnique({
+        where: { id: input.subCategoryId },
+        select: { id: true },
+    });
+    if (categoryNode === null) {
+        throw new Error(
+            `[seed] subCategoryId=${input.subCategoryId} に対応する Category ノードがありません。` +
+                `seedCategoryWithSubcategory が返す共有 id を渡してください。`
+        );
+    }
+
     const suffix = uniq();
     const product = await db.product.create({
         data: {
@@ -206,7 +222,8 @@ export async function seedProductWithVariantAndSize(
             description: "Integration test product",
             slug: `product-${suffix}`,
             brand: "TestBrand",
-            shippingFeeMethod: input.shippingFeeMethod ?? ShippingFeeMethod.ITEM,
+            shippingFeeMethod:
+                input.shippingFeeMethod ?? ShippingFeeMethod.ITEM,
             storeId: input.storeId,
             categoryId: input.categoryId,
             subCategoryId: input.subCategoryId,
@@ -291,15 +308,16 @@ export async function seedCoupon(
         data: {
             code: input.code ?? `COUPON-${suffix.toUpperCase()}`,
             startDate:
-                input.startDate ?? new Date(now - 24 * 60 * 60 * 1000).toISOString(),
-            endDate:
-                input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
+                input.startDate ??
+                new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+            endDate: input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
             discount: input.discount ?? 10,
             scope: input.scope,
             storeId: input.storeId,
-            users: input.connectUserIds && input.connectUserIds.length > 0
-                ? { connect: input.connectUserIds.map((id) => ({ id })) }
-                : undefined,
+            users:
+                input.connectUserIds && input.connectUserIds.length > 0
+                    ? { connect: input.connectUserIds.map((id) => ({ id })) }
+                    : undefined,
         },
     });
 }

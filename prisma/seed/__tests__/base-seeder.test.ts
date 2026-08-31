@@ -77,9 +77,19 @@ describe("seedBase", () => {
         );
         expect(calls).toHaveLength(2);
         const [categoryCall, subCategoryCall] = calls;
-        expect(subCategoryCall[0].create.id).toBe(
-            `mock-id-${mockUpsert.mock.calls.indexOf(categoryCall) + 1}`
-        );
+        // 期待値は mock の id 採番規則を再現するのではなく、Category upsert が
+        // 実際に返した値から取る（採番実装を変えてもテストが嘘にならない）。
+        const categoryIndex = mockUpsert.mock.calls.indexOf(categoryCall);
+        const categoryResult: unknown =
+            mockUpsert.mock.results[categoryIndex]?.value;
+        if (
+            typeof categoryResult !== "object" ||
+            categoryResult === null ||
+            !("id" in categoryResult)
+        ) {
+            throw new Error("Category upsert が id を返していません");
+        }
+        expect(subCategoryCall[0].create.id).toBe(categoryResult.id);
     });
 
     it("正常ケース: 戻り値のMapが正しいサイズであること", async () => {

@@ -211,9 +211,21 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
 
     // Phase A（plan 066）: 子カテゴリは Category ノードと legacy SubCategory 行の
     // 両方として書く。id を共有させるので categoryNodeId は subCategoryId と常に同値。
+    //
+    // 既存 DB（066 以前にシード済み）には SubCategory 行だけが残っている。その場合に
+    // Category ノードを新しい uuid で作ると id 共有が崩れ、Product.categoryNodeId が
+    // 存在しない Category を指して FK 違反になる（update では PK を変えられないので
+    // 後追いでは直せない）。よって**ノード作成の前に** legacy 行の id を読み、
+    // それを共有 id として使う。
+    const existingSubCategory = await prisma.subCategory.findUnique({
+        where: { url: seed.subCategory.url },
+        select: { id: true },
+    });
+
     const subCategoryNode = await prisma.category.upsert({
         where: { url: seed.subCategory.url },
         create: {
+            ...(existingSubCategory ? { id: existingSubCategory.id } : {}),
             name: seed.subCategory.name,
             url: seed.subCategory.url,
             image: seed.subCategory.image,
@@ -250,6 +262,15 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // id 共有は Product.categoryNodeId の FK 前提そのもの。ここが崩れた DB は
+    // 上の補正でも救えない（両行が別 id で既存）ので、FK 違反より手前で落とす。
+    if (subCategory.id !== subCategoryNode.id) {
+        throw new Error(
+            `[seed-e2e] SubCategory(${subCategory.id}) と Category ノード(${subCategoryNode.id}) の ` +
+                `id が一致しません。E2E DB をリセットしてから再実行してください（url: ${seed.subCategory.url}）。`
+        );
+    }
+
     const product = await prisma.product.upsert({
         where: { slug: seed.product.slug },
         create: {
@@ -261,7 +282,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: store.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
-            categoryNodeId: subCategory.id,
+            categoryNodeId: subCategoryNode.id,
         },
         update: {
             name: seed.product.name,
@@ -271,7 +292,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: store.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
-            categoryNodeId: subCategory.id,
+            categoryNodeId: subCategoryNode.id,
         },
     });
 
@@ -389,7 +410,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: storeB.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
-            categoryNodeId: subCategory.id,
+            categoryNodeId: subCategoryNode.id,
         },
         update: {
             name: seed.productB.name,
@@ -399,7 +420,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: storeB.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
-            categoryNodeId: subCategory.id,
+            categoryNodeId: subCategoryNode.id,
         },
     });
 

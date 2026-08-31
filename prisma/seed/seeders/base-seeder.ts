@@ -8,6 +8,7 @@ import { SEED_COUNTRIES } from "../constants/countries";
 import { SEED_USERS } from "../constants/users";
 import { SEED_CATEGORIES } from "../constants/categories";
 import { SEED_OFFER_TAGS } from "../constants/offer-tags";
+import { depthOf } from "../category-tree";
 import type { SeedMaps } from "../types";
 
 export type BaseSeedResult = Pick<
@@ -70,16 +71,6 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
     //
     // 親が先に無いと path も parentId も決まらないので、depth 順に並べ替えてから回す。
     // 並列化しないのはそのため（ノードは O(10) 件で、並列化の利得より順序の保証が重要）。
-    const depthOf = (url: string, seen = new Set<string>()): number => {
-        const node = SEED_CATEGORIES.find((c) => c.url === url);
-        if (!node) throw new Error(`カテゴリが見つかりません: ${url}`);
-        if (!node.parentUrl) return 0;
-        if (seen.has(url))
-            throw new Error(`カテゴリツリーが循環しています: ${url}`);
-        seen.add(url);
-        return depthOf(node.parentUrl, seen) + 1;
-    };
-
     const ordered = [...SEED_CATEGORIES].sort(
         (a, b) => depthOf(a.url) - depthOf(b.url)
     );
