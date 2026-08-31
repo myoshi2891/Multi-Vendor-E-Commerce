@@ -19,6 +19,34 @@ type CategoryUpsertInput = Omit<
     "parentId" | "path" | "depth" | "sortOrder" | "childCount"
 >;
 
+// ツリー管理列。admin フォームからは書かせず、移行 SQL / plan 067・068 のツリー編集
+// だけが触れる。
+const TREE_MANAGED_FIELDS = [
+    "parentId",
+    "path",
+    "depth",
+    "sortOrder",
+    "childCount",
+] as const;
+
+/**
+ * ツリー管理列を実行時に落とす。
+ *
+ * `CategoryUpsertInput` の `Omit` はコンパイル時にしか効かない —— 余剰プロパティ検査は
+ * オブジェクトリテラルにしか働かないため、DB から読み戻した `Category` をそのまま渡す
+ * 経路は型検査を通過し、`path` / `depth` / `childCount` が Prisma まで素通りしてツリーの
+ * 不変条件を壊す。境界で実際に捨てておく。
+ */
+const stripTreeManagedFields = (
+    category: CategoryUpsertInput
+): CategoryUpsertInput => {
+    const sanitized: Record<string, unknown> = { ...category };
+    for (const field of TREE_MANAGED_FIELDS) {
+        delete sanitized[field];
+    }
+    return sanitized as CategoryUpsertInput;
+};
+
 // Function: upsertCategory
 // Description: Upserts a category into the database, updating if it exists or creating a new one if not.
 // Permission Level: Admin only
@@ -61,16 +89,19 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
             throw new Error(errorMessage);
         }
 
+        // ツリー管理列は create / update のどちらへも渡さない（実行時に落とす）
+        const safeCategory = stripTreeManagedFields(category);
+
         // Upsert category into the database
         const categoryDetails = await db.category.upsert({
             where: {
                 id: category.id,
             },
-            update: category,
+            update: safeCategory,
             // Phase A では admin から作れるのはルートのみ。移行 SQL の A-1 と同じ規則
             // （ルート ⇒ path = url / depth = 0）を満たすように補い、
             // 移行済みの行と新規作成行で不変条件がズレないようにする。
-            create: { ...category, path: category.url, depth: 0 },
+            create: { ...safeCategory, path: safeCategory.url, depth: 0 },
         });
         return categoryDetails;
     } catch (error: unknown) {
@@ -109,16 +140,24 @@ export const getAllCategories = async (storeUrl?: string) => {
             storeId = store.id;
         }
         // Retrieve all categories from the database
+        //
+        // Phase A（plan 066）: 移行 SQL の A-3 が SubCategory を Category の子行として
+        // 取り込んだため、絞り込まないと**サブカテゴリがトップレベルのカテゴリとして
+        // 混ざって返る**（`subCategories` に加えて本体も列挙され、カテゴリメニュー・
+        // browse フィルタ・admin 一覧が二重になる）。Phase A の読み取りは旧 FK のまま
+        // という境界を守るため、ここではルート（parentId = null）だけを返す。
+        // ツリーを返すのは plan 067 / 068 の担当。
         const categories = await db.category.findMany({
             where: storeId
                 ? {
+                      parentId: null,
                       products: {
                           some: {
                               storeId,
                           },
                       },
                   }
-                : {},
+                : { parentId: null },
             include: { subCategories: true },
             orderBy: { updatedAt: "desc" },
         });

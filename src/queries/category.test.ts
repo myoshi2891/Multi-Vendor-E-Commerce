@@ -163,6 +163,35 @@ describe("upsertCategory", () => {
             });
         });
 
+        it("ツリー管理列は create / update のどちらにも渡さない", async () => {
+            // Arrange: 型上は存在しないが、実行時には渡り得る列を混ぜる
+            //（DB から読み戻した Category をそのまま渡す経路など）
+            const category = {
+                ...createMockCategory(),
+                parentId: "attacker-parent",
+                path: "attacker/path",
+                depth: 4,
+                sortOrder: 99,
+                childCount: 7,
+            };
+            mockDb.category.upsert.mockResolvedValue(createMockCategory());
+
+            // Act
+            await upsertCategory(category as never);
+
+            // Assert
+            const callArg = mockDb.category.upsert.mock.calls[0][0];
+            for (const field of ["parentId", "sortOrder", "childCount"]) {
+                expect(callArg.update).not.toHaveProperty(field);
+                expect(callArg.create).not.toHaveProperty(field);
+            }
+            // path / depth は create 側でのみ、ルート規則の値に補われる
+            expect(callArg.update).not.toHaveProperty("path");
+            expect(callArg.update).not.toHaveProperty("depth");
+            expect(callArg.create.path).toBe(category.url);
+            expect(callArg.create.depth).toBe(0);
+        });
+
         it("既存カテゴリを更新する", async () => {
             const category = createMockCategory({ name: "Updated Name" });
             mockDb.category.upsert.mockResolvedValue(category);
@@ -190,8 +219,9 @@ describe("getAllCategories", () => {
         const result = await getAllCategories();
 
         expect(result).toEqual(categories);
+        // Phase A（plan 066）: 移行で取り込まれた子行を混ぜないためルートのみ引く
         expect(mockDb.category.findMany).toHaveBeenCalledWith({
-            where: {},
+            where: { parentId: null },
             include: { subCategories: true },
             orderBy: { updatedAt: "desc" },
         });
@@ -206,6 +236,7 @@ describe("getAllCategories", () => {
         expect(mockDb.category.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: {
+                    parentId: null,
                     products: {
                         some: {
                             storeId: TEST_CONFIG.DEFAULT_STORE_ID,
