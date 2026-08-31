@@ -99,8 +99,9 @@
   cart, checkout, browse and product detail. The `devices["Desktop Chrome"]` viewport is
   1280x720 — exactly the width at which the purchase panel used to be clipped — so the spec
   doubles as a regression detector for that class of defect. Before comparing pixels it also
-  asserts that the right edge of "Add to cart" is within `clientWidth`, which closes the path
-  where a baseline refresh silently freezes a broken layout again.
+  asserts both horizontal edges of "Add to cart": its left edge is at least `0` and its right
+  edge stays within `clientWidth`, so a panel pushed off either side of the viewport fails the
+  spec. That closes the path where a baseline refresh silently freezes a broken layout again.
 - Earlier entry: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
   Plan 054 added `tests/e2e/visual/browse.spec.ts` (+1 test/browser; VRT is chromium-only, so
   the other two projects skip it), bringing visual regression coverage to cart, checkout and

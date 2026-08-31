@@ -17,10 +17,12 @@
 > （黙って「継承を実装した」と書かない）。
 >
 > **Drift check（着手前に必ず実行）**:
+>
 > ```bash
 > git diff --stat 1130aa4d -- prisma/schema.prisma src/lib/schemas.ts src/queries/product.ts src/components/dashboard/forms/product-details.tsx
 > git status --porcelain -- src/ prisma/
 > ```
+>
 > `Spec` モデルが型付き・カテゴリ紐づけへ改修されていたら STOP（design.md §0 の前提が消滅）。
 
 ## Status
@@ -94,11 +96,13 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
 0. **前提の記録**。066 の完了状況を確認し、継承（design.md §3 の祖先パス集合）を
    実装できるか判断する。できない場合は**縮退した旨をプランの実施結果に明記**する。
 1. **実 DB で 3 本の計測を先に走らせる**（`$DIRECT_URL` 経由）。結果を実施結果に記録する:
+
    ```sql
    SELECT name, COUNT(*) FROM "Spec" GROUP BY name ORDER BY 2 DESC LIMIT 50;   -- 表記揺れの実測
    SELECT count(*) FROM "Spec" WHERE "productId" IS NOT NULL AND "variantId" IS NOT NULL;  -- 不正: 両方
    SELECT count(*) FROM "Spec" WHERE "productId" IS NULL AND "variantId" IS NULL;          -- 不正: 孤児
    ```
+
    > **design.md 0-D の BLOCKED を解消する機会である。** spike ではシード実測しか
    > できなかった（`psql` 未インストール）。シードは表記揺れを示さないが、
    > **それは揺れが無い証拠ではない**。本番/開発 DB の実測値を必ず記録すること。
@@ -176,7 +180,10 @@ ALL を満たすこと:
 - [ ] 検証シナリオ **A-1〜A-8 がすべて緑**
 - [ ] **`grep -rn "valueNumber\|valueText\|valueBool" src/ | grep -v attribute-value | grep -v test`
       の結果が 0 件**（Step 4 のヘルパー集約が守られていることの機械的確認）
-- [ ] `grep -rn ": any" src/lib/attribute-schema.ts src/queries/attribute.ts` が **0 件**
+- [ ] **`bunx eslint src/lib/attribute-schema.ts src/queries/attribute.ts --rule '{"@typescript-eslint/no-explicit-any":"error"}'`
+      が 0 error**（`: any` の grep では `any[]` / `Record<string, any>` / `as any` を
+      取りこぼすため、明示的 `any` の検出はルール実行で行う。`no-explicit-any` は
+      `eslint.config.mjs` では有効化されていないので `--rule` で明示する）
 - [ ] `src/queries/attribute.ts` が **`requireAdmin`** を使っている
       （`grep -n "requireAdmin" src/queries/attribute.ts` がヒット）
 - [ ] Step 1 の実測 3 本の結果がプランの実施結果に記録されている

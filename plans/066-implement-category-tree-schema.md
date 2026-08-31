@@ -26,10 +26,12 @@
 > （A-6 の UPDATE は冪等なのでそのまま再実行できる）。
 >
 > **Drift check（着手前に必ず実行）**:
+>
 > ```bash
 > git diff --stat 257b7873 -- prisma/schema.prisma prisma/seed tests/integration/setup tests/e2e/seed
 > git status --porcelain -- prisma/ tests/
 > ```
+>
 > `prisma/schema.prisma` の `Category` / `SubCategory` / `Product` に構造変更が入っていれば
 > STOP して報告する（design.md §0 の前提が崩れる）。
 
