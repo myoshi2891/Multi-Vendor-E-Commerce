@@ -4192,3 +4192,47 @@ VRT の対象は cart 2 枚 + checkout リダイレクト 1 枚のみで、購�
 > 追加した検知点 4 件: `stripe-payment.test.tsx` +1 / `store.test.ts` +1 / `browse/page.test.tsx` +2。
 > なお QA_HANDOFF / COVERAGE_REPORT の記載値 2020 は実測 2021 と 1 件ドリフトしていたため、
 > 本更新で実測値へ揃えた。
+
+---
+
+### plan 065（商品詳細レイアウト修正）→ plan 054 完了（VRT 拡大・R9 クローズ） (2026-08-31)
+
+#### 概要
+
+商品詳細の右購入パネル（Ship to / Buy now / **Add to cart**）が 1280px でクリップされる
+レイアウト欠陥を修正し（plan 065）、そのブロックが外れたことで plan 054 の残りである
+商品詳細の VRT ベースラインを撮影した。これで improve Round 9（plans 051–056）が閉じ切った。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/product-page/container.tsx` | 情報+パネル行の `w-full` を `min-w-0 flex-1` へ置換。flex コンテナ（`xl:flex`）の子における `w-full` は残余幅ではなく**親幅（1248px）**に解決されるため、画像 swiper（456px）と並ぶと確定的に溢れていた | `51c73e4c` |
+| `tests/e2e/visual/product.spec.ts`（新規） | 商品詳細の VRT。chromium 限定 / fullPage / mask は既存 3 スペックと同形。ピクセル比較の前に `Add to cart` の右端が `clientWidth` 以内であることも assert | `bb780b99` |
+| `tests/e2e/visual/product.spec.ts-snapshots/product-detail-chromium-darwin.png`（新規） | 目視ゲート合格後のベースライン | `bb780b99` |
+| `scripts/coverage-dashboard/render-html.ts` | R9 の `NEXT_ACTIONS` エントリを削除（全 6 プラン DONE） | docs 同期コミット |
+| `docs/testing/QA_HANDOFF.md` | 統計テーブル（E2E / Visual / ファイル総数）+ HEAD 更新、R9 依頼プロンプト節を削除（`render-html.ts` と二重 SSOT のため同一コミットで同期） | 同上 |
+
+#### 実測（購入パネルの `getBoundingClientRect().right` vs `clientWidth`）
+
+| 幅 | 修正前 | 修正後 |
+|----|--------|--------|
+| 768px | right=752 / 768（収まり） | 同一（挙動不変） |
+| **1280px** | **right=1434 / 1280（+154px はみ出し）** | **right=1264（-16px 収まり）** |
+| 1440px | right=1434 / 1440（収まり） | right=1424 |
+
+`scrollWidth === clientWidth` は全幅で維持（クリップを横スクロールにすり替えていない）。
+`page.tsx` の `overflow-x-hidden`（症状を計測から隠していた層）はプランの指示どおり削除していない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2026 passed / 2029 total | **不変** |
+| Jest スイート数 | 191 | **不変** |
+| Jest Integration | 108 / 13 スイート | **不変** |
+| Playwright E2E | 63 tests/browser・28 files（計 189） | **64 tests/browser・29 files（計 192）** |
+| Playwright Visual | 3 スペック / 4 テスト | **4 スペック / 5 テスト** |
+| テストファイル総数（ダッシュボード集計） | 232 | **233** |
+| 型エラー | 0 件 | **0 件** |
+

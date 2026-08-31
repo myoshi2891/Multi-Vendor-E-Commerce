@@ -80,7 +80,16 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
+- Playwright E2E: 64 tests/browser across 29 files (192 across the three browsers), as of 2026-08-31.
+  Plan 065 fixed the product-detail layout defect described in the entry below, and the
+  remainder of plan 054 then added `tests/e2e/visual/product.spec.ts` (+1 test/browser; VRT is
+  chromium-only, so the other two projects skip it), bringing visual regression coverage to
+  cart, checkout, browse and product detail. The `devices["Desktop Chrome"]` viewport is
+  1280x720 — exactly the width at which the purchase panel used to be clipped — so the spec
+  doubles as a regression detector for that class of defect. Before comparing pixels it also
+  asserts that the right edge of "Add to cart" is within `clientWidth`, which closes the path
+  where a baseline refresh silently freezes a broken layout again.
+- Earlier entry: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
   Plan 054 added `tests/e2e/visual/browse.spec.ts` (+1 test/browser; VRT is chromium-only, so
   the other two projects skip it), bringing visual regression coverage to cart, checkout and
   browse. The product-detail baseline was deliberately **not** committed: the captured image
@@ -875,13 +884,15 @@ Visual regression tests live in `tests/e2e/visual/` and use Playwright's
 `toHaveScreenshot()`. Chromium only (Firefox/WebKit excluded due to font
 rendering differences; Phase 2 scope).
 
-Covered scenarios (as of 2026-05-22):
+Covered scenarios (as of 2026-08-31):
 
 | Spec | Test | Snapshot file |
 |------|------|---------------|
 | `cart.spec.ts` | 空カートの表示 | `cart-empty-chromium-<os>.png` |
 | `cart.spec.ts` | 商品追加後のカート表示 | `cart-with-item-chromium-<os>.png` |
 | `checkout.spec.ts` | 未認証リダイレクト | `checkout-redirect-signin-chromium-<os>.png` |
+| `browse.spec.ts` | browse の商品グリッド表示 | `browse-grid-chromium-<os>.png` |
+| `product.spec.ts` | 商品詳細の購入パネル表示 | `product-detail-chromium-<os>.png` |
 
 ### Snapshot Naming Convention
 
