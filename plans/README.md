@@ -139,12 +139,95 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 | [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
-| [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | TODO |
+| [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | DONE（2026-08-31・`0f0fa400`〜`868ccf82`。**事前計測は実 DB で実行し slug 衝突 0 件** — STOP 条件はいずれも非該当。Jest 2026 → **2025**（シードのツリー統合に伴う置き換えで −1 / スイート 191 不変）、Integration 108 → **117** / 13 → **14 スイート**。**Done criteria からの逸脱 1 点**〔「`src/queries/**` 差分 0 行」は達成不可能 — オペレーター承認のうえ `category.ts` のみ narrow。`src/components/**` は 0 差分を維持〕。**プラン本文の解釈 2 点**〔「シードを先に」は作業順でありコミット順ではない / 「商品は categoryUrl 1 本」は宣言データの形であって DB 書き込みではない〕。**プラン本文に無い発見 1 点**〔design.md §4 の移行 SQL は冪等でない〕。下の実行記録を参照） |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | TODO |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | TODO |
 | [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | M–L | MED | 014 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **066 の実行記録（2026-08-31・`0f0fa400`〜`868ccf82`）— DONE**
+>
+> **Phase A の境界は守られている。** `git diff --stat 33ea327b -- src/components` は**空**で、
+> `src/queries` の差分は `category.ts`（+17/−2）と `category.test.ts`（+4/−1）のみ。読み取り経路は
+> 1 本も切り替えていないので storefront の挙動は変わらず、ロールバックは新列・新テーブルの drop で足りる。
+>
+> **事前計測は実 DB（Neon dev）で実行した —— シードで代替していない。** `psql` は未インストールだが、
+> `DIRECT_URL` は素の `postgresql://` なので PrismaClient の `$queryRaw` で直接測れる
+> （plan 014 が BLOCKED として 069 へ送った経路が、ここで解けた）。実測:
+>
+> | 指標 | 実測値 |
+> |------|--------|
+> | slug 衝突（`Category` ∩ `SubCategory`） | **0 件**（STOP 条件の 20 件を大きく下回る） |
+> | 規模 | Category **40** / SubCategory **58** / Product **105** |
+> | `Product.categoryId` が subCategory の親と食い違う行 | **0**（A-6 の列コピーが安全であることの根拠） |
+> | SubCategory を持たない Category | **0**（＝ 非リーフ紐づけの既存 Product は存在しない） |
+>
+> 移行後: ルート **40** / 子 **58** / alias **98** / リネーム **0** / `childCount` ドリフト **0** /
+> `categoryNodeId` 未 backfill **0**。対応表は
+> [`slug-migration-map.csv`](../docs/design/category-tree/slug-migration-map.csv)（衝突 0 のためヘッダのみ + 計測値）。
+>
+> **プラン本文に無い発見 —— design.md §4 の移行 SQL は冪等でない。** プランは §4 の A-1〜A-6 を
+> 「同マイグレーションに含める」と指示していたが、A-3 の素の `INSERT ... SELECT FROM "SubCategory"` は
+> 2 回目の実行で `duplicate key value violates unique constraint "Category_pkey"` に落ちる
+> （使い捨ての PostgreSQL で**実測**した）。§4 自身が「SQL レベルの概略」と断っているとおり、
+> `-2`/`-3` の空き番号採番（§2-Q2-2 の 2.）も 1 本の SQL では書けない。**id 既存チェックによる
+> スキップと採番ループを持つ `DO` ブロックへ書き直した**。V-3（冪等性）はこの失敗を潰した結果であって、
+> 後付けの願望ではない。
+>
+> **統合テストはマイグレーション本体を読んで実行する。** globalSetup の `prisma migrate deploy` は
+> **空 DB** に掛かるため、マイグレーション内の DML はテストから見ると常に no-op で通過する。
+> 移行そのものを検証するには旧形状データを入れて能動的に再実行するしかない。SQL をテスト側へ
+> 写経すると SSOT が 2 つになりドリフトするので、`-- >>> PHASE_A_DATA_MOVE >>>` マーカーで
+> 「再実行可能な区間」を宣言し、テストはそこを読み出すだけにした。`$executeRawUnsafe` は
+> 1 呼び出し 1 文なので、ドル引用符・単一引用符・行コメントを跨がない位置でだけ切る分割器を置いている
+> （素朴な `;` split は `DO $PHASE_A$ … $PHASE_A$` を内部のセミコロンで刻む）。
+>
+> **Done criteria からの逸脱 1 点（オペレーター承認済み）—— 「`src/queries/**` の差分 0 行」は
+> 達成不可能だった。** `upsertCategory` は Prisma のモデル型を丸ごと引数に取っており
+> （`category.ts:19`）、呼び出し側は object literal（`category-details.tsx:90`）。
+> **Prisma のモデル型は DB default の有無に関わらず全スカラーを必須プロパティにする**ので、
+> `Category` に列を 1 つ足した時点でこのリテラルが型エラーになる。`@default` を付けても回避できない
+> （任意になるのは `CategoryCreateInput` であってモデル型ではない）。引数型を新列 5 つ分だけ狭め、
+> `create` 側で `path = url` / `depth = 0` を補う対応を採った。**副次的な利得**: admin が Phase A 中に
+> 作るカテゴリも移行 SQL の A-1 と同じ不変条件を満たすため、067 が NULL/空 path を考えなくて済む。
+>
+> **プラン本文の解釈を 2 点、明示的に確定させた。**
+>
+> 1. **「シード 3 系統を先に書き換える」（Step 2）は作業順であってコミット順ではない。**
+>    `parentId` / `path` を書くシードはスキーマ変更前には `tsc` が通らず、rule 02 の
+>    「各コミットは単独で型チェック可能」と正面衝突する。趣旨は「どのテストが本当に壊れたのか
+>    読めなくなるのを防ぐ」ことなので、同一作業単位で書きつつコミットは tsc が通る単位に切った。
+> 2. **「商品側は `categoryUrl`（リーフ）1 本」は宣言データの形であって DB 書き込みの話ではない。**
+>    Phase A の `Product` は旧 2 FK が **NOT NULL のまま**なので、seeder は木を遡って
+>    `categoryId`（ルート）を導出し、`subCategoryId` / `categoryNodeId`（リーフ）と併せて 3 本書く。
+>    depth 1 のノードは **Category と `id` を共有する** legacy SubCategory 行としても書いており、
+>    これによりシード済み DB がマイグレーション A-3（`s.id` 流用）の結果と一致する。
+>
+> **`path` は NOT NULL にした**（オペレーター判断）。既存行のあるテーブルへの NOT NULL 追加なので
+> `migrate dev --create-only` で SQL を起こしてから「nullable 追加 → backfill → SET NOT NULL」の
+> 3 段に書き換えている。nullable のままだと 067 で `path!` の非 null アサーション（グローバル規約で禁止）
+> を誘発する。上の narrow により admin 作成経路も必ず path を書くので、NOT NULL で安全に締められた。
+>
+> **シードは depth 1 を上限として明示的に throw する。** legacy SubCategory はルート直下しか
+> 表現できないため、depth 2 以上のリーフは Phase A の `Product.subCategoryId` に落とせない。
+> 黙って壊れるより先に落とす。3 階層目は読み取りが新 FK へ移る 067 以降で入れる。
+>
+> **範囲外の既知課題を 1 件記録した（066 の変更とは無関係）。** `bun run seed:luxury` は
+> **Neon に対しては Phase 4（Review）で `P2028` に落ちる**。`review-seeder.ts` の `$transaction` が
+> Prisma 既定（maxWait 2s / timeout 5s）のままでリモート遅延に耐えないためで、
+> **ローカル PostgreSQL では 5 フェーズ完走する**ことを実測で確認した（Phase 1〜3 は Neon でも成功し、
+> カテゴリ 32 ノードと商品 36 件が投入されている）。注文処理で `ORDER_TRANSACTION_OPTIONS` を
+> 明示したのと同型の対応が要る。
+>
+> **本プランが主張しないこと**: (1) **読み取りは何も速くなっていない** —— `path` に索引は張ったが、
+> それを使うクエリは 067 まで存在しない。(2) 性能ベンチマークは取っていない。
+> (3) admin UI は 2 ルート（categories / subCategories）のままで、ツリー編集はできない（068 の担当）。
+> (4) リーフ強制（design.md V-5）と深さ上限の検証（V-7）は**アプリ層に入れていない** ——
+> Phase A は `src/queries` を触らない境界なので、シード側の不変条件テストで代替している。
+> (5) 旧 URL の 308 リダイレクト（V-2）は 067 の担当で、本プランは `CategorySlugAlias` の
+> **表を用意しただけ**である。
+>
 
 > **014 の実行記録（2026-08-31・`85d21075`〜`dcb040bd`）— DONE**
 >

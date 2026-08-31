@@ -1,0 +1,20 @@
+# カテゴリツリー Phase A（plan 066）の旧 → 新 slug 対応表
+#
+# 事前計測（2026-08-31・実 DB = Neon dev / DIRECT_URL 経由）の結果、
+# Category.url と SubCategory.url の衝突は 0 件だった。したがって移行で
+# リネームされた slug は 1 件も無く、本表はヘッダのみである。
+#
+# 計測クエリ（design.md §2-Q2-4）と実測値:
+#   SELECT count(*) FROM (SELECT url FROM "Category"
+#                         INTERSECT SELECT url FROM "SubCategory") AS c;   -> 0
+#   Category 40 / SubCategory 58 / Product 105
+#   Product.categoryId が subCategory の親と食い違う行                     -> 0
+#   SubCategory を持たない Category                                        -> 0
+#
+# 移行後の実測: ルート 40 / 子 58 / alias 98 / リネーム 0 /
+#               childCount ドリフト 0 / categoryNodeId 未 backfill 0
+#
+# 注意: シードで 0 件だったことを衝突ゼロの証拠にしていない。上記はすべて
+# 実 DB に対する計測である（seed:luxury の lux- 前置命名は偶然衝突しないだけで、
+# 証拠にはならない —— design.md 0-12）。
+entityType,oldSlug,newSlug,categoryId
