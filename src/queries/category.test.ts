@@ -157,7 +157,9 @@ describe("upsertCategory", () => {
             expect(mockDb.category.upsert).toHaveBeenCalledWith({
                 where: { id: category.id },
                 update: category,
-                create: category,
+                // Phase A（plan 066）: admin から作れるのはルートのみなので、
+                // 作成時は移行 SQL の A-1 と同じ規則で path / depth を補う。
+                create: { ...category, path: category.url, depth: 0 },
             });
         });
 

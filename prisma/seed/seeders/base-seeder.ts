@@ -77,6 +77,9 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
           url: cat.url,
           image: cat.image,
           featured: cat.featured,
+          // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
+          path: cat.url,
+          depth: 0,
         },
       })
     )

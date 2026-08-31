@@ -87,6 +87,9 @@ export async function seedCategoryWithSubcategory(
             name: `Category ${suffix}`,
             image: "https://example.test/category.png",
             url: `category-${suffix}`,
+            // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
+            path: `category-${suffix}`,
+            depth: 0,
         },
     });
     const subCategory = await db.subCategory.create({

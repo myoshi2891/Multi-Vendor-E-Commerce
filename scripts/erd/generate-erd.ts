@@ -511,6 +511,7 @@ const PAGES: PageDef[] = [
         detail: "full",
         models: [
             "Category",
+            "CategorySlugAlias",
             "SubCategory",
             "OfferTag",
             "Question",
@@ -524,6 +525,7 @@ const PAGES: PageDef[] = [
         cells: {
             SubCategory: [0, 0],
             Category: [0, 1],
+            CategorySlugAlias: [1, 0],
             OfferTag: [0, 2],
             Question: [0, 3],
             Product: [1, 1],

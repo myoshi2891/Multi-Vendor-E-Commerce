@@ -197,6 +197,9 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             url: seed.category.url,
             image: seed.category.image,
             featured: false,
+            // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
+            path: seed.category.url,
+            depth: 0,
         },
         update: {
             name: seed.category.name,
@@ -474,6 +477,9 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             url: seed.paginationCategory.url,
             image: seed.paginationCategory.image,
             featured: false,
+            // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
+            path: seed.paginationCategory.url,
+            depth: 0,
         },
         update: {
             name: seed.paginationCategory.name,

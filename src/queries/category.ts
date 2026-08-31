@@ -9,6 +9,16 @@ import { db } from "@/lib/db";
 // Prisma model
 import { Category } from "@prisma/client";
 
+// カテゴリツリー Phase A（plan 066）の列を呼び出し側から隠すための入力型。
+// Prisma のモデル型は DB default の有無に関わらず全スカラーを必須プロパティにするため、
+// `Category` をそのまま引数にすると列を 1 つ足すたびにフォーム側のリテラルが壊れる。
+// ツリーの内部表現（path / depth / parentId 等）は UI が知るべき情報ではないので、
+// ここで落として書き込み時に補う。ツリー編集 UI の導入は plan 067 / 068 の担当。
+type CategoryUpsertInput = Omit<
+    Category,
+    "parentId" | "path" | "depth" | "sortOrder" | "childCount"
+>;
+
 // Function: upsertCategory
 // Description: Upserts a category into the database, updating if it exists or creating a new one if not.
 // Permission Level: Admin only
@@ -16,7 +26,7 @@ import { Category } from "@prisma/client";
 //   - category: Category object containing details of the category to be upserted.
 // Returns: Updated or newly created category details.
 
-export const upsertCategory = async (category: Category) => {
+export const upsertCategory = async (category: CategoryUpsertInput) => {
     try {
         // 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
         await requireAdmin();
@@ -57,7 +67,10 @@ export const upsertCategory = async (category: Category) => {
                 id: category.id,
             },
             update: category,
-            create: category,
+            // Phase A では admin から作れるのはルートのみ。移行 SQL の A-1 と同じ規則
+            // （ルート ⇒ path = url / depth = 0）を満たすように補い、
+            // 移行済みの行と新規作成行で不変条件がズレないようにする。
+            create: { ...category, path: category.url, depth: 0 },
         });
         return categoryDetails;
     } catch (error: unknown) {
