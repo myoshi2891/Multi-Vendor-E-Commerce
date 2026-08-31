@@ -84,6 +84,9 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 | [001](001-csrf-policy.md) | CSRF Protection Policy for Server Actions | Accepted | 2026-05-24 |
 | [002](002-ci-jest-verbose-flag.md) | CI で `bunx jest --verbose --ci` を採用（診断 instrumentation） | Accepted | 2026-05-24 |
 | [003](003-modal-setopen-sync-for-react19.md) | `ModalProvider.setOpen` を同期関数化（React 19 strict act mode 対応） | Partial Mitigation | 2026-05-24 |
+| [004](004-integration-test-db-strategy.md) | Integration テストの DB 戦略: testcontainers + ローカル docker-compose | Accepted | 2026-05-29 |
+| [005](005-sonarqube-static-analysis.md) | 静的解析に SonarCloud (CI) + SonarQube Community (ローカル) を採用 | Accepted | 2026-06-02 |
+| [006](006-category-tree-representation.md) | カテゴリ階層の表現方式 — 隣接リスト + materialized path（ハイブリッド） | Accepted | 2026-08-31 |
 
 <!--
 ### 将来の ADR 候補
