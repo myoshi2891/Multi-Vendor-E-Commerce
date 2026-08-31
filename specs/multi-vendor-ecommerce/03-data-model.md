@@ -35,7 +35,7 @@
   Category is an N-level tree (plan 066 / ADR-006 Phase A): a self-relation `parentId`
   (`onDelete: Restrict`) plus a materialized `path` (e.g. `electronics/camera`, no trailing
   separator), `depth`, `sortOrder`, and a denormalised `childCount` used for leaf detection.
-  Subtree queries are expressed as `{ OR: [{ path: p }, { path: { startsWith: `${p}/` } }] }`;
+  Subtree queries are expressed as ``{ OR: [{ path: p }, { path: { startsWith: `${p}/` } }] }``;
   the trailing separator is what keeps `electronics/camera` from matching
   `electronics/camera-accessories`.
   CategorySlugAlias maps a retired slug to its current node. Its primary key is the composite

@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+- 2027 passed / 2030 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+  A review fix closed a miscount in `scripts/coverage-dashboard/scan-tests.ts`: `BLOCK_PATTERN`
+  used `\b(it|test)\s*\(`, and `\b` also matches the boundary between `.` and an identifier, so
+  `RegExp.prototype.test` member calls such as `/^CREATE\b/i.test(sql)` were counted as test
+  declarations. A negative lookbehind `(?<![.\w$])` closes it; +1 regression test, suites unchanged.
+- Earlier entry: 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
 - Earlier entry: 2025 passed / 2028 total across 191 suites, as of 2026-08-31 (before the review-fix regression guard on `upsertCategory`).
   Plan 066 (category tree Phase A) folded the seed declaration data into a single tree, so the
   `SEED_SUB_CATEGORIES` assertions in `prisma/seed/__tests__/` were replaced with tree invariants
