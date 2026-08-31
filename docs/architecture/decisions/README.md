@@ -87,6 +87,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 | [004](004-integration-test-db-strategy.md) | Integration テストの DB 戦略: testcontainers + ローカル docker-compose | Accepted | 2026-05-29 |
 | [005](005-sonarqube-static-analysis.md) | 静的解析に SonarCloud (CI) + SonarQube Community (ローカル) を採用 | Accepted | 2026-06-02 |
 | [006](006-category-tree-representation.md) | カテゴリ階層の表現方式 — 隣接リスト + materialized path（ハイブリッド） | Accepted | 2026-08-31 |
+| [007](007-attribute-storage.md) | カテゴリ別属性値の格納方式 — 正規化テーブル（型別カラム） | Accepted | 2026-08-31 |
 
 <!--
 ### 将来の ADR 候補
