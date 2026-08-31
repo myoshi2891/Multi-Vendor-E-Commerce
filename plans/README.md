@@ -87,7 +87,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | DONE（2026-08-31・`ae2c96d0`〜`6c6867e8`。**STOP 条件 #4 に該当**〔影響ファイル実測 **82**〕— オペレーター判断で後続実装を **066/067/068 の 3 分割**とした。**逸脱 1 点**〔Q4 はプラン提示の (a)/(b) を採らず「URL の形を変えない」第 3 案〕。**プラン本文に無い発見 1 点**〔`home.ts`/`size.ts` の リレーションフィルタ経路〕。下の実行記録を参照） |
-| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | TODO |
+| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | DONE（2026-08-31・`85d21075`〜`dcb040bd`。後続実装は **069 の 1 本**〔影響 約 20 ファイル = 60 基準内〕。**プラン本文との差分 1 点**〔`createMany` 直書き経路は仮定法ではなく既に 2 つ存在〕。**設計を決めた実測 2 点**〔数値が文字列に埋没 / `Size.size` が既に汎用軸として濫用〕。**BLOCKED 1 点**〔`psql` 未インストールで実 DB の表記揺れ実測は未実施 — 069 Step 1 へ送った〕。下の実行記録を参照） |
 | [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | M | LOW-MED | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | M | LOW | — | TODO |
@@ -142,8 +142,69 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | TODO |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | TODO |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | TODO |
+| [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | M–L | MED | 014 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **014 の実行記録（2026-08-31・`85d21075`〜`dcb040bd`）— DONE**
+>
+> **spike なので `src/` と `prisma/schema.prisma` は 1 行も変更していない。** 成果物は
+> [ADR-007](../docs/architecture/decisions/007-attribute-storage.md)（`85d21075`）/
+> [`docs/design/category-attributes/design.md`](../docs/design/category-attributes/design.md)（`1130aa4d`・389 行）/
+> 後続実装プラン **069**（`dcb040bd`）の 3 点。
+>
+> **後続実装は 1 本（069）。** 既存 `Spec` 参照は **7 ファイル**、属性 CRUD の新規追加を
+> 含めても **約 20 ファイル**で、013 の 82 とは桁が違う。013 と同じ 60 ファイル基準を
+> 適用して**分割していない**（判断根拠は design.md §1 の内訳表）。
+>
+> **格納方式は正規化テーブル + 型別カラムを採用した。** ADR-007 は 3 方式
+> （正規化 / JSONB+GIN / ハイブリッド）の**ファセット集計 SQL を実際に書き下して**比較している。
+> JSONB を採らない決定的な理由は 3 つ: (1) **GIN が効くのは包含条件による絞り込みで、
+> `jsonb_each_text` の展開 + `GROUP BY`（= ファセットの本命）は絞り込み後の集合を全走査する**、
+> (2) 全値が `text` になり数値ファセットが型を失う（属性ごとの式インデックスが要り
+> 「DDL 不要」の利点が崩れる）、(3) ENUM の参照整合性が無く、**解こうとしている表記揺れが
+> JSON の中で再発する**。
+>
+> **プラン本文との差分 1 点。** plan 014 は「現状のアプリケーションコードは安全である…
+> **`createMany` 等の直書き経路が 1 つ増えれば破れる**」と仮定法で書いていたが、
+> **実際には既に 2 経路ある**（`product.ts:350-356` / `:460-466` の `updateProduct` の
+> 「削除 + 再作成」。plan 038 で入ったもの）。不正行はまだ生まれていないが、
+> 排他性を守る責任はネスト `create` の構文的性質から**4 箇所の呼び出し規律へ移っている**。
+> これは「値テーブルを Product 用 / Variant 用に分離して FK を `NOT NULL` にする」決定
+> （ADR-007 D-1）を支える一次証拠になった。
+>
+> **設計を実質的に決めた実測 2 点。**
+>
+> 1. **数値が文字列に埋没している** —— `Dimensions: "200cm x 70cm"` /
+>    `Weight: "28g (45cm) / 32g (50cm)"` / `Heel Height: "100mm with concealed 10mm platform"`。
+>    1 セルに複数の数値と単位が同居しており、**機械変換は原理的に不可能**。
+>    これにより Q3（既存 `Spec` の処遇）は「一括移行して廃止」を選べず、
+>    **温存して「その他仕様」へ降格**が確定した。Q7 の「型変更で変換不能な既存値」も
+>    仮想例ではなく**多数派**であることが分かった。
+> 2. **`Size.size` は既に汎用軸として濫用されている** —— `S` / `M` / `L` に混じって
+>    `"90cm x 90cm"` `"95cm"` `"S (15cm)"` `"One Size"` が入っている。スカーフの
+>    `"90cm x 90cm"` は寸法であってサイズではない。**「第 3 のバリアント軸が必要」は
+>    将来の要件ではなく、既に破綻している現状の記述**である。`AttributeScope.VARIANT` で
+>    塞ぐ一方、`Size` は price/quantity/discount を持つ販売単位の実体なので
+>    **`Size.size` の一般化では吸収しない**と決めた。
+>
+> **BLOCKED 1 点（正直な記録）。** 実 DB での表記揺れ実測は**行えていない** ——
+> `psql` が未インストールで、`DATABASE_URL` は Prisma Accelerate の `prisma://` URL のため
+> psql から接続できない（素の接続文字列は `DIRECT_URL`）。代替根拠のシード実測では
+> **153 行 / 24 種の name すべて表記が揃っており、揺れは 1 件も無い**。
+> **これを「揺れが無い証拠」として扱っていない** —— シードは単一の作者による手書きであり、
+> plan 013 で `lux-` 前置命名が slug 衝突を偶然隠していたのと**同型の罠**である。
+> 実測は **069 の Step 1** へ送り、Done criteria で「シードで確認した」と書くことを禁じた。
+>
+> **明示的に未決として残した点**: 多値属性（アレルゲン等）の格納。
+> `@@unique([productId, definitionId])` は 1 属性 1 値なので、制約を緩めるか
+> `multiValued` フラグを持たせるかを **069 の Step 9** で決める。
+> **見落としではなく、認識したうえで実装時判断へ送った**（design.md §6-4 / §4 の注記）。
+>
+> **本 spike が主張しないこと**: (1) 性能ベンチマークは取っていない —— 比較はクエリの
+> 書ける/書けないとインデックスの効き方の**構造**に基づく。(2) ファセット集計の実行方式
+> （GROUP BY vs マテビュー vs キャッシュ）は plan 015 の領分。(3) 20 部門の属性シード網羅は
+> 範囲外（069 でパイロット 2〜3 部門のみ）。
 
 > **013 の実行記録（2026-08-31・`ae2c96d0`〜`6c6867e8`）— DONE**
 >
@@ -1928,6 +1989,16 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     014 が消費するのは design.md の「属性は `Category.id` 単一 FK に紐づく」という
     前提だけで、実装の完了ではない。
 
+18. **カテゴリ別属性の実装プラン (069)** — spike [014](014-spike-category-attributes-facets.md) が
+    2026-08-31 に確定した設計の実装。**066–068 とは独立に着手できる**（hard 依存は 014 のみ）。
+    ただし属性の**継承**（祖先カテゴリで定義した属性が子孫に効く）は ADR-006 の `path` prefix に
+    依存するため、**066 未完了で着手すると継承が使えない縮退状態**になる（属性は直接紐づく
+    ノードにしか効かない）。069 の Step 0 がこの縮退の記録を義務づけている。
+    したがって **066 → 069 の順が望ましい（soft ordering）** が、前提ではない。
+    069 は [plan 015](015-spike-faceted-search-and-browse.md) の後続実装の前提でもある
+    （`facetable` フラグと `@@index([definitionId, valueNumber])` が集計の土台）。
+    環境前提は 069 の Commands 節が持つ（Docker + `$DIRECT_URL` 経由の psql）。
+
 ## Dependency notes
 
 > **表の "Depends on" 列は hard 依存のみを記載する**（＝ **先行プランが完了していないと
@@ -1950,7 +2021,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 | 種別 | 記載場所 | 対象 |
 |------|---------|------|
 | **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 / **066 → 013 / 067 → 066 / 068 → 067** |
-| **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 |
+| **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 / **069 → 066**（継承を使う場合のみ） |
 | **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041 / `CLERK_SECRET_KEY`: 042 |
 
 - soft 依存は先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
