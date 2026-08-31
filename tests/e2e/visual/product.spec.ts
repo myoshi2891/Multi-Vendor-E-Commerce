@@ -47,6 +47,9 @@ test.describe("Visual: 商品詳細", () => {
         const box = await addToCart.boundingBox();
         const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
         expect(box).not.toBeNull();
+        // 左端も見る。右端だけだと、CTA がビューポート外へ左へ流れた場合に
+        // 「右端は超えていない」ため素通りしてしまう。
+        expect(box!.x).toBeGreaterThanOrEqual(0);
         expect(box!.x + box!.width).toBeLessThanOrEqual(clientWidth);
 
         await expect(page).toHaveScreenshot("product-detail.png", {
