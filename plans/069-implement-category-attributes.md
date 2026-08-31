@@ -130,6 +130,21 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    > `z.string()` / `z.coerce.number()` / `z.boolean()` / `z.enum([...])` を返す。
    > [`click-to-add.tsx`](../src/components/dashboard/forms/click-to-add.tsx) の
    > `Detail<T>`（インデックスシグネチャの緩い型）は**流用しない**。
+
+   **属性値の保存契約（スキーマ生成だけでは往復が閉じない）**。動的スキーマを足しただけでは
+   入力値は DB に届かない。`attributes` を**フォームから読み取りまで一本の経路**として通すこと:
+   - `product-details.tsx` の `useForm<z.infer<typeof schema>>` と submit ハンドラの引数型を
+     `makeProductSchema(defs)` の**戻り値から導出**する（`ProductFormSchema` 固定のままにしない）。
+     `defs` の再取得で型が変わるので、`z.infer<ReturnType<typeof makeProductSchema>>` を基準にする。
+   - `upsertProduct` の payload に `attributes: { definitionId, value }[]` を追加し、
+     保存 `$transaction` 内で `ProductAttributeValue` / `VariantAttributeValue` を
+     `@@unique([productId, definitionId])` に対する upsert + 送信されなかった定義の delete で
+     同期する（部分更新でゴースト値が残らないこと）。
+   - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、
+     **保存直後に同じ値が再読込できる**状態にする。
+   - Step 11 に**往復テスト**を足す: 属性値を入力 → 保存 → 再読込して同値、
+     値を空にして保存 → 行が消える、の 2 本。型別カラム（`valueText` / `valueNumber` /
+     `valueBool` / `optionId`）のどれに入ったかも A-1 と同じ基準で検証する。
 8. **商品詳細の 2 セクション表示**
    （[`product-specs.tsx`](../src/components/store/product-page/product-specs.tsx)）。
    「仕様」= 構造化属性 /「その他仕様」= `Spec`。

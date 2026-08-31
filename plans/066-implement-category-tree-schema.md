@@ -14,6 +14,17 @@
 > この境界を越えないこと —— Phase A が「既存挙動は無傷・ロールバックは新列 drop のみ」で
 > あることが、3 分割の唯一の意味だからである。
 >
+> **同期方針（Phase A は「一度きりの backfill」である）**: A-6 の backfill は移行時点の
+> スナップショットにすぎず、Phase A の書き込み経路は `categoryNodeId` を**書かない**
+> （`grep -rn categoryNodeId src/` が 0 件であることが、本プランが読み取り経路に
+> 触れていないことの裏返しでもある）。よって 066 適用後に作成・カテゴリ変更された
+> `Product`、および追加された `SubCategory` は**新旧参照がずれたまま蓄積する**。
+> これは Phase A の欠陥ではなく設計上の帰結であり、
+> **Phase B の読み取り切替の直前に再同期する**ことで閉じる。再同期 SQL と
+> 「切替と同一トランザクションで行う」順序制約は plan
+> [067](067-implement-category-tree-queries.md) の Done criteria に置いた
+> （A-6 の UPDATE は冪等なのでそのまま再実行できる）。
+>
 > **Drift check（着手前に必ず実行）**:
 > ```bash
 > git diff --stat 257b7873 -- prisma/schema.prisma prisma/seed tests/integration/setup tests/e2e/seed

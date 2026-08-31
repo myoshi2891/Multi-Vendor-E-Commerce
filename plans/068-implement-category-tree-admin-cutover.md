@@ -15,6 +15,7 @@
 >   §2-Q3（Phase 表）/ §2-Q5（リーフ強制）/ §2-Q6（admin UI と sortOrder）
 >
 > **Drift check（着手前に必ず実行）**:
+>
 > ```bash
 > git diff --stat <067 の完了コミット> -- src/app/dashboard prisma/schema.prisma
 > git status --porcelain -- src/ prisma/
@@ -88,7 +89,12 @@ Phase C はその曖昧さを閉じる。
    `sortOrder` を追加。
 2. **商品フォームをツリー選択へ**。**子を持つノードは選択不可**にする（UI 側）。
 3. **リーフ強制をサーバー側に実装**（V-5）。`upsertProduct` の `$transaction` 内で
-   `childCount === 0` を確認する。
+   `childCount === 0` を確認する。**検証は「カテゴリを新規設定した / 変更した」場合のみ**
+   走らせる —— create は常に検証対象、update は送信された `categoryId` が既存値と
+   異なるときだけ検証する。カテゴリを変えない既存商品の更新（在庫・価格・説明の編集）は
+   通す。移行時に強制付け替えをしていない以上、既存の非リーフ紐づけは経過措置として
+   残っており、無条件検証にすると**それらの商品が一切編集できなくなる**（Step 8 の
+   「既存の非リーフ紐づけが壊されていないこと」と正面から矛盾する）。
    > **DB CHECK では担保できない。** リーフ性は*他の行*に子があるかで決まる関係的な
    > 性質であり、CHECK は同一行の値しか参照できない（design.md §2-Q5）。
    > 「CHECK 制約で担保した」と書かないこと。UI の選択不可は**表示上の親切**であって
@@ -101,7 +107,9 @@ Phase C はその曖昧さを閉じる。
    orphan WARNING が 0 件であることを確認。スキーマ差分と同一コミットに入れる。
 7. **`subCategory.ts` の互換 re-export を削除**し、`src/` から `SubCategory` 参照を一掃する。
 8. **テスト**:
-   - **V-5**: 子を持つノードへの商品紐づけが create / update **両方**で拒否される
+   - **V-5**: 子を持つノードへの**新規紐づけ**が create / update **両方**で拒否される
+     （update 側は「非リーフへカテゴリを変更する」ケース）
+   - **V-5b**: 既存の非リーフ紐づけ商品を**カテゴリを変えずに**更新すると成功する
    - **V-7**: `depth = 5` の作成が拒否される
    - 既存の非リーフ紐づけ（経過措置）が**壊されていない**こと —— 移行時に強制付け替えを
      していないので、既存商品は読み取れ続ける
@@ -113,7 +121,12 @@ Phase C はその曖昧さを閉じる。
 
 ALL を満たすこと:
 
-- [ ] `grep -rn "subCategory" src/ -il` の結果が **0 件**（互換レイヤーも含め一掃）
+- [ ] `grep -rn "subCategory" src/ -il` の結果が、**`?subCategory=` を受理する
+      1 ファイル（browse のクエリーパラメーター解決点）を除いて 0 件**（互換レイヤーは一掃）。
+      `?subCategory=` の受理は Out of scope のとおり**恒久要件**なので、参照ゼロにはできない。
+      受理点は `CategorySlugAlias` を引いて `path` へ解決するだけの 1 箇所に閉じ込め、
+      `SubCategory` **モデル**（Prisma の型・クエリ）への参照は 0 件であること —— こちらは
+      `grep -rn "subCategory\." src/ | grep -v searchParams` で機械的に確認する
 - [ ] `prisma/schema.prisma` に `model SubCategory` が存在しない。`Product.categoryId` が
       単一必須 FK
 - [ ] `bun run erd:generate` の stderr に orphan WARNING が 0 件、`.drawio` が

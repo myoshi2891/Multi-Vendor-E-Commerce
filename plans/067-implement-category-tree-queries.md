@@ -130,6 +130,28 @@ ALL を満たすこと:
 - [ ] `src/app/dashboard/**` の差分が **0 行**（068 の領分に踏み込んでいないこと）
 - [ ] 書き込み経路が dual-write であること —— 商品作成後に旧 `subCategoryId` と
       新 `categoryNodeId` の両方が埋まる統合テストが緑
+- [ ] **読み取り切替の前に、未同期の `Product` / `SubCategory` を再同期していること。**
+      066 の backfill は一度きりで、Phase A の書き込み経路は `categoryNodeId` を
+      **一切書かない**（`grep -rn categoryNodeId src/` が 0 件）。したがって 066 適用後に
+      作成・カテゴリ変更された商品は `categoryNodeId` が NULL / 旧値のまま残る。
+      dual-write を有効化する変更と**同一トランザクション**で以下を実行し、
+      再同期 → 切替の順序が逆転しないことを保証する:
+      ```sql
+      BEGIN;
+      -- 066 適用後に追加された depth 1 ノードを legacy 行から補完（id 共有を維持）
+      INSERT INTO "Category" (id, name, url, image, "parentId", path, depth, "sortOrder")
+      SELECT s.id, s.name, s.url, s.image, s."categoryId",
+             c.path || '/' || s.url, 1, 0
+      FROM "SubCategory" s JOIN "Category" c ON c.id = s."categoryId"
+      WHERE NOT EXISTS (SELECT 1 FROM "Category" n WHERE n.id = s.id);
+      UPDATE "Category" p
+      SET "childCount" = (SELECT count(*) FROM "Category" ch WHERE ch."parentId" = p.id);
+      -- 066 の A-6 と同一の冪等 UPDATE
+      UPDATE "Product" SET "categoryNodeId" = "subCategoryId"
+      WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
+      COMMIT;
+      ```
+- [ ] 再同期後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL` が **0** であることを確認した
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
 - [ ] E2E が 3 ブラウザで緑（flaky 0）
 - [ ] `spec-sync-after-test` によるドキュメント同期コミットが存在する

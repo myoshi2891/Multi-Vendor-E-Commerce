@@ -71,6 +71,7 @@ model AttributeOption {
   sortOrder    Int       @default(0)
   archivedAt   DateTime?
   @@unique([definitionId, value])
+  @@unique([id, definitionId])      // 複合 FK の参照先（値テーブルの定義一致を DB で強制）
 }
 
 model ProductAttributeValue {
@@ -84,7 +85,9 @@ model ProductAttributeValue {
   valueNumber Decimal? @db.Decimal(18, 6)        // 金額規約に倣い Float を使わない
   valueBool   Boolean?
   optionId    String?
-  option      AttributeOption? @relation(fields: [optionId], references: [id], onDelete: Restrict)
+  // 複合 FK: optionId 単体ではなく (optionId, definitionId) で参照する。
+  // 単一 FK だと「別定義の許容値」を保存できてしまい、D-3 の参照整合性が成立しない。
+  option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict)
 
   @@unique([productId, definitionId])
   @@index([definitionId, valueNumber])
@@ -92,8 +95,21 @@ model ProductAttributeValue {
 }
 
 model VariantAttributeValue {
-  // ProductAttributeValue と同型。FK は variantId（NOT NULL）
+  id           String  @id @default(uuid())
+  variantId    String                            // NOT NULL —— 排他性が型で保証される
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  definitionId String
+  definition   AttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+
+  valueText   String?
+  valueNumber Decimal? @db.Decimal(18, 6)
+  valueBool   Boolean?
+  optionId    String?
+  option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict)
+
   @@unique([variantId, definitionId])
+  @@index([definitionId, valueNumber])
+  @@index([definitionId, optionId])
 }
 ```
 
@@ -153,9 +169,15 @@ GROUP BY d.key, facet_value
 ORDER BY d.key, product_count DESC;
 
 -- 数値ファセット（範囲バケット）— 型別カラムがあるので素直に書ける
-SELECT d.key, width_bucket(v."valueNumber", 0, 100, 10) AS bucket, count(*)
-FROM "ProductAttributeValue" v
-JOIN "AttributeDefinition" d ON d.id = v."definitionId" AND d.type = 'NUMBER'
+-- 直前の集計と同じ商品・カテゴリ条件と定義条件を課す（でないとサブツリー外の商品まで数える）
+SELECT d.key, width_bucket(v."valueNumber", 0, 100, 10) AS bucket, count(DISTINCT p.id)
+FROM "Product" p
+JOIN "Category" c ON c.id = p."categoryNodeId"
+JOIN "ProductAttributeValue" v ON v."productId" = p.id
+JOIN "AttributeDefinition" d ON d.id = v."definitionId"
+                            AND d.type = 'NUMBER'
+                            AND d.facetable AND d."archivedAt" IS NULL
+WHERE c.path = $1 OR c.path LIKE $1 || '/%'
 GROUP BY d.key, bucket;
 ```
 

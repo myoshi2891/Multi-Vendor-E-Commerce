@@ -296,7 +296,8 @@ model ProductAttributeValue {
   optionId     String?                             // ENUM は FK（Q7 の自動追随）
   @@unique([productId, definitionId])
 }
-// VariantAttributeValue は同型（FK は variantId・NOT NULL）
+// VariantAttributeValue は同型（FK は variantId・NOT NULL）。
+// 完全な定義（複合 FK (optionId, definitionId) を含む）は ADR-007 §Decision を参照。
 ```
 
 ### 継承（plan 013 との接続）
@@ -315,6 +316,35 @@ const defs = await db.attributeDefinition.findMany({
 ```
 
 これは 013 の design.md §3 が約束した「014 側に継承専用の構造は要らない」の具体形である。
+
+#### 継承チェーン上の `key` 重複の解決規則
+
+`@@unique([categoryId, key])` が禁じるのは**同一ノード内**の重複だけで、祖先と子孫が
+同じ `key`（例 `color`）を定義することは防げない。したがって `ancestorPaths` で引いた定義集合には
+同一 `key` が複数現れうる。
+
+**規則: 同一 `key` は最も深いノード（`path` が最長）の定義が勝つ（子孫が祖先を上書きする）。**
+
+定義作成時に拒否する案は採らない。ADR-006 のカテゴリ移動（再親付け）で**既存の定義同士が
+後から衝突しうる**ため、作成時チェックでは不変条件として成立しないからである。
+
+この規則は**読み取り・書き込み・Zod 検証のすべてで同一に適用する**:
+
+```ts
+// ancestorPaths は浅い→深い順。後勝ちで Map に詰めれば最深ノードの定義が残る。
+const effective = new Map<string, AttributeDefinition>();
+for (const d of defs.sort((a, b) => a.category.path.length - b.category.path.length)) {
+    effective.set(d.key, d);
+}
+```
+
+- **読み取り**: 解決後の集合のみを DTO / フォームに出す（影に隠れた定義は出さない）。
+- **書き込み**: 送信された値の `definitionId` が解決後の集合に含まれることを検証し、
+  上書きされた祖先定義への値は拒否する（既存値は残るが読み取りには現れない）。
+- **Zod 検証**: 動的スキーマは解決後の集合から組み立てる（`key` が一意なので衝突しない）。
+
+テストは重複 `key` の継承ケース（祖先・子孫が同一 `key` を定義した状態での
+読み取り・保存・拒否）を必ず含めること。
 
 ---
 
