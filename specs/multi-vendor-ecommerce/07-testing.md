@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+- 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+  Plan 066 (category tree Phase A) folded the seed declaration data into a single tree, so the
+  `SEED_SUB_CATEGORIES` assertions in `prisma/seed/__tests__/` were replaced with tree invariants
+  (parent reference integrity, no self-parent, depth <= 1, every root has >= 2 children, products
+  point only at leaves, the legacy `SubCategory` row shares its id with the `Category` node, and
+  `childCount` is recomputed from the declaration). Net -1 test, suites unchanged.
+- Earlier entry: 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
 - Earlier entry: 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
   Regression detection points added while fixing code-review findings (+4 tests, suites
   unchanged): `stripe-payment.test.tsx` pins that a `clientSecret: null` response is surfaced
@@ -594,7 +600,15 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 108 integration tests across 13 suites
+- 117 integration tests across 14 suites
+  (adds `tests/integration/category-tree-migration.test.ts` 9), as of 2026-08-31, measured 117/117 pass.
+  Covers the category tree Phase A data move (plan 066 / V-3, V-4): root path/depth normalisation,
+  child adoption with id reuse, deterministic collision rename with alias rows coexisting under the
+  `(entityType, oldSlug)` composite key, idempotency across two runs, `childCount` consistency, and
+  the `Product.categoryNodeId` backfill. The suite reads the `PHASE_A_DATA_MOVE` marker section out
+  of the migration file itself rather than restating the SQL, so the migration stays the single
+  source of truth.
+- Earlier entry: 108 integration tests across 13 suites
   (adds `tests/integration/product-browse.test.ts` 16; `store-status.test.ts` 8 → 9 for the
   concurrent PENDING → BANNED / PENDING → ACTIVE transition), as of 2026-08-24,
   measured 108/108 pass.

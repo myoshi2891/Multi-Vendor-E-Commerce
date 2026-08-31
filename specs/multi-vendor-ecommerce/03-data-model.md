@@ -31,7 +31,20 @@
 - PaymentDetails: payment record tied to an order and user
   (`Decimal(12,2)` for amount).
 - Review and ReviewImage: customer reviews for products.
-- Category, SubCategory, OfferTag: taxonomy and merchandising labels.
+- Category, SubCategory, CategorySlugAlias, OfferTag: taxonomy and merchandising labels.
+  Category is an N-level tree (plan 066 / ADR-006 Phase A): a self-relation `parentId`
+  (`onDelete: Restrict`) plus a materialized `path` (e.g. `electronics/camera`, no trailing
+  separator), `depth`, `sortOrder`, and a denormalised `childCount` used for leaf detection.
+  Subtree queries are expressed as `{ OR: [{ path: p }, { path: { startsWith: `${p}/` } }] }`;
+  the trailing separator is what keeps `electronics/camera` from matching
+  `electronics/camera-accessories`.
+  CategorySlugAlias maps a retired slug to its current node. Its primary key is the composite
+  `(entityType, oldSlug)` rather than `oldSlug` alone, because a Category and a SubCategory could
+  legally share a slug before the merge — the very pair that needs an alias would otherwise
+  collide on a single key.
+  SubCategory still exists during Phase A/B and is dropped in Phase C (plan 068). Each
+  depth-1 Category node and its legacy SubCategory row **share the same id**, which is why the
+  `Product.categoryNodeId` backfill is a plain column copy.
 - ShippingRate, FreeShipping, FreeShippingCountry: shipping rules by country
   (`Decimal(12,2)` for fee fields).
 - Conversation and Message: buyer↔seller 1:1 messaging. A Conversation is unique
@@ -63,7 +76,11 @@
 
 ## Indexing and Uniqueness
 - Unique: Store.url, Category.url, SubCategory.url, Product.slug,
-  ProductVariant.slug, Coupon.code.
+  ProductVariant.slug, Coupon.code. Category.url stays **globally** unique rather than
+  unique-per-parent: `home.ts` and `size.ts` resolve slugs through relation filters
+  (`where: { category: { url } }`), which compile fine without a uniqueness guarantee and would
+  silently match a different node. Global uniqueness also keeps the existing query-shaped URLs
+  working unchanged.
 - Composite unique: ShippingRate(storeId, countryId),
   Review(userId, productId), Conversation(userId, storeId).
 - GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.
@@ -78,7 +95,7 @@
   | Page | タブ名 | 掲載エンティティ数 | 概要 |
   |------|--------|--------------------|------|
   | 1 | System Overview | 6 | 主要エンティティを名前のみで表示する全体鳥瞰図 |
-  | 2 | Catalog | 10 | Product 中心の商品カタログドメイン（Category / Variant / Color / Size 等） |
+  | 2 | Catalog | 11 | Product 中心の商品カタログドメイン（Category ツリー / CategorySlugAlias / Variant / Color / Size 等） |
   | 3 | Customer Activity | 4 | Review / ReviewImage / Wishlist の顧客行動ドメイン |
   | 4 | Cart | 5 | カート構造（ProductVariant は参照注記のみ、エッジなし） |
   | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
