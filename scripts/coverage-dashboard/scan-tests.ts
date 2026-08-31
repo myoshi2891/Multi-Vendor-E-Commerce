@@ -42,8 +42,13 @@ const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/g;
 //  - 注釈形 `test.skip(cond, 'reason')` … Playwright のテスト**本体内**に置く
 //    conditional modifier。囲みの `test('title')` が既に計上済みなので、
 //    これを数えると二重計上になる
+//
+// 先頭の否定後読みは**必須**。`\b` はドットと識別子の境界でも成立するため、
+// `/^CREATE\b/i.test(sql)` のような `RegExp.prototype.test` のメンバー呼び出しが
+// 修飾子なしの宣言として計上されてしまう（実例: category-tree-migration.test.ts）。
+// `.` と識別子文字を後読みで弾き、行頭・空白・`(` 等に続く素の `it` / `test` だけを拾う。
 const BLOCK_PATTERN =
-    /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
+    /(?<![.\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
 // it.each / test.each は実行時にテーブル行数ぶんのテストへ展開される。
 // BLOCK_PATTERN は `it(` 形式しか拾えず each を 0 件と数えてしまうため、別途展開する。
 //
@@ -481,9 +486,12 @@ function findImportSpecifier(content: string, name: string): string | null {
     let match: RegExpExecArray | null;
 
     while ((match = importPattern.exec(content)) !== null) {
-        const named = match[1]
-            .split(",")
-            .map((entry) => entry.trim().split(/\s+as\s+/)[0].trim());
+        const named = match[1].split(",").map((entry) =>
+            entry
+                .trim()
+                .split(/\s+as\s+/)[0]
+                .trim()
+        );
         if (named.includes(name)) return match[2];
     }
     return null;
