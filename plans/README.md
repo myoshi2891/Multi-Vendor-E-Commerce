@@ -86,7 +86,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | DONE（2026-08-13・`8b83c185`〜`424f1b56`。プラン本文どおり 8 ケース・**逸脱なし**。Jest 1976 → **1984** / スイート 183 → **184**。STOP 条件 3 点はいずれも非該当（手計算値と実測は全一致 = 本体バグなし）。下の実行記録を参照） |
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
-| [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | TODO |
+| [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | DONE（2026-08-31・`ae2c96d0`〜`6c6867e8`。**STOP 条件 #4 に該当**〔影響ファイル実測 **82**〕— オペレーター判断で後続実装を **066/067/068 の 3 分割**とした。**逸脱 1 点**〔Q4 はプラン提示の (a)/(b) を採らず「URL の形を変えない」第 3 案〕。**プラン本文に無い発見 1 点**〔`home.ts`/`size.ts` の リレーションフィルタ経路〕。下の実行記録を参照） |
 | [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | TODO |
 | [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | M | LOW-MED | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | M | LOW-MED | — | TODO |
@@ -139,8 +139,52 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 | [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
+| [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | TODO |
+| [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | TODO |
+| [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
+
+> **013 の実行記録（2026-08-31・`ae2c96d0`〜`6c6867e8`）— DONE**
+>
+> **spike なので `src/` と `prisma/schema.prisma` は 1 行も変更していない**
+> （`git status --porcelain -- src/ prisma/schema.prisma` が空）。成果物は
+> [ADR-006](../docs/architecture/decisions/006-category-tree-representation.md)（`ae2c96d0`）/
+> [`docs/design/category-tree/design.md`](../docs/design/category-tree/design.md)（`257b7873`・407 行）/
+> 後続実装プラン **066–068**（`6c6867e8`）の 3 点。
+>
+> **STOP 条件 #4 に該当した（影響ファイル 60 超）。** 実測 **82 ファイル** ——
+> 粗集合 94 件から偽陽性 12 件を除いた値である（`SupportForm` の問い合わせ種別 enum 8 件 +
+> 「`// Upserting category data`」という**別フォームから複製されたコメントだけ**がヒットする
+> 4 件）。プランの規定どおり分割案を提示し、**オペレーター判断で 3 分割**（066 / 067 / 068）と
+> なった。分割境界は ADR-006 の Phase A/B/C に一致させ、**各プランが単独でロールバック可能な
+> 状態で閉じる**ようにしてある（066 は新列 drop で戻る / 067 は読み取りを旧 FK へ戻す /
+> 068 の Phase C のみ不可逆でオペレーター確認必須）。
+>
+> **プラン本文からの逸脱 1 点（Q4・URL 後方互換）。** プランは (a) 値に親パスを入れる
+> （`?category=electronics/camera`）/ (b) パス形ルート `/browse/electronics/camera` を新設、の
+> 2 択で問いを立てていたが、**いずれも採らず「URL の形を変えない」第 3 案**を選んだ。
+> これは Q2-1 で **slug のグローバル一意（`url @unique`）を維持**する決定を先に置いたことの
+> 帰結で、フラット slug のままで一意に解決できるためである。選べる条件が Q2-1 に依存している
+> 点は design.md §2-Q4 に明記した。リネームが発生する分だけを
+> `CategorySlugAlias (entityType, oldSlug)` 経由で 308 に寄せる。
+>
+> **プラン本文に無い発見 1 点 —— slug 解決には経路が 2 系統あり、壊れ方が非対称である。**
+> プランは `product.ts` の `findUnique` だけを挙げていたが、実際には
+> `home.ts:138-140` と `size.ts:57-58` が `where: { category: { url: value } }` という
+> **リレーションフィルタ**で slug を引いている。`findUnique` が一意列でしか呼べず
+> **型エラーで露見する**のに対し、リレーションフィルタは一意性を要求しないため
+> **コンパイルが通ったまま実行時に別ノードへ一致し得る**。「壊れても気づけない経路」が
+> 存在することが、親内一意（`@@unique([parentId, url])`）を却下した決め手になった
+> （ADR-006 Option 4）。副次的に、この決定によって経路 B は **067 で書き換え不要**になっている。
+>
+> **本 spike が主張しないこと**: (1) 性能ベンチマークは取っていない —— 方式選定はクエリ
+> **形状**と規模見積（カテゴリは O(10^2〜10^3) 行）に基づく。(2) ツリー UI（DnD エディタ）と
+> 参照タクソノミー 20 部門の投入は範囲外（068 の Out of scope に明記）。(3) `deleteCategory` の
+> 「無効化 + 付け替え」化は別プランで起票する。
+>
+> **副次的な整備**: ADR 一覧の索引に未登録だった **004 / 005** も併せて追加した（`ae2c96d0`）。
+
 
 > **065 の実行記録（2026-08-31・`51c73e4c`）+ 054 の残り（`bb780b99`）— 両方 DONE**
 >
@@ -1871,6 +1915,19 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     回帰テストを必須とした（認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の
     3 階層 IDOR パターン）。
 
+17. **カテゴリツリー実装プラン (066–068)** — spike [013](013-spike-category-tree-n-level.md) が
+    2026-08-31 に確定した設計の実装で、**Round 2 spike から出た最初の実装ラウンド**。
+    実行順は **066 → 067 → 068 の直列**であり、これは soft ordering ではなく
+    **hard 依存**（`path` 列が無ければ 067 の prefix 検索は書けず、067 の dual-write が
+    済んでいなければ 068 の必須化は NULL で落ちる）。**066 と 067 は可逆**で、
+    戻れる最後の地点は 067 —— **068 の Phase C（旧列 drop・`SubCategory` テーブル削除）は
+    不可逆**であり、着手前にオペレーター確認を必須としている。
+    環境前提は各プランの Commands 節が持つ（066/067 は Docker、067/068 は E2E に
+    `CLERK_SECRET_KEY`）。3 本とも `spec-sync-after-test` による docs 同期コミットが
+    必須（rule 02）。**014 / 015 の設計は 066–068 の完了を待たずに進められる** ——
+    014 が消費するのは design.md の「属性は `Category.id` 単一 FK に紐づく」という
+    前提だけで、実装の完了ではない。
+
 ## Dependency notes
 
 > **表の "Depends on" 列は hard 依存のみを記載する**（＝ **先行プランが完了していないと
@@ -1892,7 +1949,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 
 | 種別 | 記載場所 | 対象 |
 |------|---------|------|
-| **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 |
+| **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 / **066 → 013 / 067 → 066 / 068 → 067** |
 | **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 |
 | **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041 / `CLERK_SECRET_KEY`: 042 |
 
