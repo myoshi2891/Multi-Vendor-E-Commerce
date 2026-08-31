@@ -73,14 +73,26 @@ export async function seedUser(
 // ----------------------------------------------------------------------------
 // Category / SubCategory
 /**
- * Create a Category and a SubCategory linked to it in the database for tests.
+ * Create a two-level category tree for tests: a root Category and one child.
  *
- * @returns An object with `category` as the created Category and `subCategory` as the created SubCategory whose `categoryId` references `category.id`.
+ * plan 066 Phase A では新旧の表現が並走する。子ノードは
+ * (a) `parentId` / `path` / `depth` を持つ Category 行と
+ * (b) 同じ id を持つ legacy SubCategory 行
+ * の両方として書き込む。id を共有させるのはマイグレーション A-3 が `s.id` を
+ * 流用しているのと同じ状態にするためで、これにより `Product.categoryNodeId` と
+ * `Product.subCategoryId` が常に同値になる。
+ *
+ * @returns `category` はルート、`subCategory` は legacy 表現の子、
+ * `childNode` は同じ子の Category ノード表現（`childNode.id === subCategory.id`）。
  */
 
 export async function seedCategoryWithSubcategory(
     db: PrismaClient
-): Promise<{ category: Category; subCategory: SubCategory }> {
+): Promise<{
+    category: Category;
+    subCategory: SubCategory;
+    childNode: Category;
+}> {
     const suffix = uniq();
     const category = await db.category.create({
         data: {
@@ -90,17 +102,29 @@ export async function seedCategoryWithSubcategory(
             // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
             path: `category-${suffix}`,
             depth: 0,
+            childCount: 1,
+        },
+    });
+    const childNode = await db.category.create({
+        data: {
+            name: `SubCategory ${suffix}`,
+            image: "https://example.test/subcategory.png",
+            url: `subcategory-${suffix}`,
+            parentId: category.id,
+            path: `category-${suffix}/subcategory-${suffix}`,
+            depth: 1,
         },
     });
     const subCategory = await db.subCategory.create({
         data: {
+            id: childNode.id,
             name: `SubCategory ${suffix}`,
             image: "https://example.test/subcategory.png",
             url: `subcategory-${suffix}`,
             categoryId: category.id,
         },
     });
-    return { category, subCategory };
+    return { category, subCategory, childNode };
 }
 
 // ----------------------------------------------------------------------------
@@ -186,6 +210,9 @@ export async function seedProductWithVariantAndSize(
             storeId: input.storeId,
             categoryId: input.categoryId,
             subCategoryId: input.subCategoryId,
+            // Phase A の新 FK。旧 subCategoryId と id を共有するリーフノードを指す
+            // （seedCategoryWithSubcategory が両表現に同じ id を振っている）。
+            categoryNodeId: input.subCategoryId,
         },
     });
 

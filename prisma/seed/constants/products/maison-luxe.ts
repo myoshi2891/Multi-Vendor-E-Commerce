@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-dresses",
+    categoryUrl: "lux-women-dresses",
     offerTagUrl: "lux-exclusive",
     variants: [
       {
@@ -76,8 +75,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-blouses",
+    categoryUrl: "lux-women-blouses",
     variants: [
       {
         variantName: "Blush Pink",
@@ -170,8 +168,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-coats",
+    categoryUrl: "lux-women-coats",
     offerTagUrl: "lux-best-seller",
     variants: [
       {
@@ -234,8 +231,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-clutches",
+    categoryUrl: "lux-bags-clutches",
     offerTagUrl: "lux-limited-edition",
     variants: [
       {
@@ -293,8 +289,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-gloves",
+    categoryUrl: "lux-acc-gloves",
     variants: [
       {
         variantName: "Black with Gold",
@@ -353,8 +348,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "MAISON LUXE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-maison-luxe",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-dresses",
+    categoryUrl: "lux-women-dresses",
     offerTagUrl: "lux-new-arrival",
     variants: [
       {

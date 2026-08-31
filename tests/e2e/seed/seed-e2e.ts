@@ -200,6 +200,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
             path: seed.category.url,
             depth: 0,
+            childCount: 1,
         },
         update: {
             name: seed.category.name,
@@ -208,9 +209,33 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // Phase A（plan 066）: 子カテゴリは Category ノードと legacy SubCategory 行の
+    // 両方として書く。id を共有させるので categoryNodeId は subCategoryId と常に同値。
+    const subCategoryNode = await prisma.category.upsert({
+        where: { url: seed.subCategory.url },
+        create: {
+            name: seed.subCategory.name,
+            url: seed.subCategory.url,
+            image: seed.subCategory.image,
+            featured: false,
+            parentId: category.id,
+            path: `${seed.category.url}/${seed.subCategory.url}`,
+            depth: 1,
+        },
+        update: {
+            name: seed.subCategory.name,
+            image: seed.subCategory.image,
+            featured: false,
+            parentId: category.id,
+            path: `${seed.category.url}/${seed.subCategory.url}`,
+            depth: 1,
+        },
+    });
+
     const subCategory = await prisma.subCategory.upsert({
         where: { url: seed.subCategory.url },
         create: {
+            id: subCategoryNode.id,
             name: seed.subCategory.name,
             url: seed.subCategory.url,
             image: seed.subCategory.image,
@@ -236,6 +261,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: store.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
+            categoryNodeId: subCategory.id,
         },
         update: {
             name: seed.product.name,
@@ -245,6 +271,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: store.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
+            categoryNodeId: subCategory.id,
         },
     });
 
@@ -362,6 +389,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: storeB.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
+            categoryNodeId: subCategory.id,
         },
         update: {
             name: seed.productB.name,
@@ -371,6 +399,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             storeId: storeB.id,
             categoryId: category.id,
             subCategoryId: subCategory.id,
+            categoryNodeId: subCategory.id,
         },
     });
 
@@ -480,6 +509,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
             path: seed.paginationCategory.url,
             depth: 0,
+            childCount: 1,
         },
         update: {
             name: seed.paginationCategory.name,
@@ -488,9 +518,33 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // Phase A（plan 066）: 子カテゴリは Category ノードと legacy SubCategory 行の
+    // 両方として書く。id を共有させるので categoryNodeId は subCategoryId と常に同値。
+    const paginationSubCategoryNode = await prisma.category.upsert({
+        where: { url: seed.paginationSubCategory.url },
+        create: {
+            name: seed.paginationSubCategory.name,
+            url: seed.paginationSubCategory.url,
+            image: seed.paginationSubCategory.image,
+            featured: false,
+            parentId: paginationCategory.id,
+            path: `${seed.paginationCategory.url}/${seed.paginationSubCategory.url}`,
+            depth: 1,
+        },
+        update: {
+            name: seed.paginationSubCategory.name,
+            image: seed.paginationSubCategory.image,
+            featured: false,
+            parentId: paginationCategory.id,
+            path: `${seed.paginationCategory.url}/${seed.paginationSubCategory.url}`,
+            depth: 1,
+        },
+    });
+
     const paginationSubCategory = await prisma.subCategory.upsert({
         where: { url: seed.paginationSubCategory.url },
         create: {
+            id: paginationSubCategoryNode.id,
             name: seed.paginationSubCategory.name,
             url: seed.paginationSubCategory.url,
             image: seed.paginationSubCategory.image,
@@ -518,6 +572,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
                 storeId: store.id,
                 categoryId: paginationCategory.id,
                 subCategoryId: paginationSubCategory.id,
+                categoryNodeId: paginationSubCategory.id,
             },
             update: {
                 name: p.name,
@@ -527,6 +582,7 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
                 storeId: store.id,
                 categoryId: paginationCategory.id,
                 subCategoryId: paginationSubCategory.id,
+                categoryNodeId: paginationSubCategory.id,
             },
         });
 

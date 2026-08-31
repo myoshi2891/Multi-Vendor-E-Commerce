@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-jewelry",
-    subCategoryUrl: "lux-jewelry-necklaces",
+    categoryUrl: "lux-jewelry-necklaces",
     offerTagUrl: "lux-exclusive",
     variants: [
       {
@@ -74,8 +73,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-jewelry",
-    subCategoryUrl: "lux-jewelry-rings",
+    categoryUrl: "lux-jewelry-rings",
     variants: [
       {
         variantName: "White Gold Pave",
@@ -135,8 +133,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-jewelry",
-    subCategoryUrl: "lux-jewelry-bracelets",
+    categoryUrl: "lux-jewelry-bracelets",
     variants: [
       {
         variantName: "Oxidized Sterling Silver",
@@ -195,8 +192,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-jewelry",
-    subCategoryUrl: "lux-jewelry-earrings",
+    categoryUrl: "lux-jewelry-earrings",
     offerTagUrl: "lux-new-arrival",
     variants: [
       {
@@ -254,8 +250,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-totes",
+    categoryUrl: "lux-bags-totes",
     variants: [
       {
         variantName: "Cognac Brown",
@@ -344,8 +339,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ATELIER DIVINE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-atelier-divine",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-scarves",
+    categoryUrl: "lux-acc-scarves",
     offerTagUrl: "lux-limited-edition",
     variants: [
       {
