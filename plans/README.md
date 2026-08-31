@@ -127,7 +127,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
-| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | **IN PROGRESS（browse は DONE / 商品詳細は保留）**（2026-08-23・`0dba44de`〜`1847946d`。E2E 62 → **63 tests/browser** / 27 → **28 files** / 計 186 → **189**、Visual 2 → **3 スペック**。**商品詳細はプラン Step 3 の目視ゲートで欠陥を検出したため意図的に見送った** —— 右パネル（Add to cart を含む）が 1280px でクリップ。**レイアウト修正は [plan 065](065-fix-product-detail-right-panel-clipping.md) として起票済み**（2026-08-24）で、修正後に撮影する。下の実行記録を参照） |
+| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | DONE（browse: 2026-08-23・`0dba44de`〜`1847946d` / 商品詳細: 2026-08-31・`bb780b99`。**これで R9 ラウンドが閉じ切った**。商品詳細は plan 065 のブロッカー解消後に撮影 —— E2E 63 → **64 tests/browser** / 28 → **29 files** / 計 189 → **192**、Visual 3 → **4 スペック / 5 テスト**。目視ゲート合格・更新フラグなしの 2 回連続実行で 2 回とも 5 passed。下の実行記録を参照） |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | DONE（2026-08-23・`50664cc5`〜`462d705d`。E2E 58 → **60 tests/browser** / 25 → **26 files** / 計 174 → **180**。実測 chromium 2 passed / 3 ブラウザ 6 passed・**flaky 0**。`src/` は無変更。**プラン本文どおり 2 テスト・逸脱なし**〔ただし Done criteria の `grep waitForTimeout` → 0 件を満たすためコメントの表現を調整〕。**これで R9 の残りは 054 のみ**。下の実行記録を参照） |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
@@ -138,10 +138,78 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
-| [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | TODO（2026-08-24 起票。054 実行記録の「レイアウト修正は未起票」の追跡先。**054 の商品詳細 VRT は本プラン完了後に撮影する**） |
+| [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **065 の実行記録（2026-08-31・`51c73e4c`）+ 054 の残り（`bb780b99`）— 両方 DONE**
+>
+> **065 は DONE。** `src/components/store/product-page/container.tsx` の **1 行**のみを変更した
+> （`mt-4 flex w-full flex-col …` → `mt-4 flex min-w-0 flex-1 flex-col …`）。
+> Drift check は clean（`git diff --stat 1847946d -- …` に差分なし）で、
+> プラン本文の Current state は現行コードと一致していた。
+>
+> **再現はプランの指示どおり `getBoundingClientRect().right` で測った（`scrollWidth` は指標にしない）。**
+> 実測（chromium・購入パネル）:
+>
+> | 幅 | 修正前 | 修正後 |
+> |----|--------|--------|
+> | 768px | right=752 / clientWidth=768 | **同一**（挙動不変） |
+> | **1280px** | **right=1434 / 1280 = +154px はみ出し** | **right=1264 = -16px 収まり** |
+> | 1440px | right=1434 / 1440 | right=1424 |
+>
+> `scrollWidth === clientWidth` は全幅で維持されており、**クリップを横スクロールに
+> すり替えていない**ことを確認した。目視ゲート（1280 / 1440 / 768）も
+> `Ship to` / `Buy now` / `Add to cart` が全幅描画で合格。
+>
+> **根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独だった。**
+> flex コンテナ（`xl:flex`）の子における `w-full` は「残余幅」ではなく**親幅（1248px）**に
+> 解決されるため、画像 swiper（サムネ 64 + gap 8 + `md:size-96` 384 ≒ **456px**）と並ぶと
+> 確定的に溢れる。`min-w-0` を伴わせたのは、flex item 既定の `min-width: auto` が
+> min-content 以下への縮小を拒み、**`flex-1` だけでは溢れが残る**ため。
+>
+> **プラン本文からの逸脱 1 点**: プラン Step 2 は購入パネルへ `shrink-0` を付けることも
+> 指示していたが、**1 行目の修正だけで 3 幅すべて解消した**ため見送った。
+> 付けない方が良い実測上の理由がある —— **768px では現状パネルが 390 → 249px に縮んで
+> 収まっている**（修正前後で同値）ので、`shrink-0` を足すと逆に情報列を圧迫する。
+> contingency として用意していた `product-info.tsx` への `min-w-0` 追加も**不要**だった。
+>
+> **`page.tsx:91` の `overflow-x-hidden` はプランの指示どおり削除していない**
+> （原因ではなく発覚を遅らせた層であり、削除しても「クリップ」が「横スクロール」に
+> 置き換わるだけで欠陥は解消しない）。
+>
+> **続けて 054 の残りを実施し、054 も DONE にした（`bb780b99`）。**
+> `tests/e2e/visual/product.spec.ts` を新設し **+1 test/browser**
+> （E2E **63 → 64 tests/browser** / 28 → **29 files** / 3 ブラウザ計 189 → **192**、
+> Visual は **3 → 4 スペック / 4 → 5 テスト**、ダッシュボード集計 **232 → 233**）。
+> Step 0 の前提（既存 VRT が green）は **4 passed** で確認済み。撮影後、更新フラグなしの
+> **2 回連続実行で 2 回とも 5 passed**（flaky 0）。
+>
+> > **目視ゲートは合格した。** 右購入パネル（Ship to / Buy now / **Add to cart**）が
+> > 全幅で描画され、Related products / レビュー / フッターまで崩れていない。
+> > マゼンタの矩形は Playwright の mask 描画であって未ロード画像ではない
+> > （054 の browse 記録と同じ見分け）。
+>
+> **VRT に客観値の assert を 1 つ足した（プラン本文に無い追加 1 点）。** ピクセル比較の前に
+> `Add to cart` の右端が `clientWidth` 以内であることを assert している。**スクリーンショット
+> だけだと、次にベースラインを更新する担当者が壊れた状態をそのまま固定できてしまう** ——
+> まさに 054 が 2026-08-23 に踏みとどまった経路なので、「収まっている」ことは数値でも
+> 主張しておく。なお `devices["Desktop Chrome"]` のビューポートは **1280x720** で、
+> これは 065 でクリップが起きていた幅そのものである。
+>
+> **本プランが主張しないこと**: (1) **他ブレークポイント（sm / 2xl）の作り直しはしていない**
+> —— 1280px の欠損の修正に限定（プランの Out of scope）、(2) `ProductInfo` / `ProductSwiper`
+> の内部構造は無変更、(3) 768px のレイアウト（画像と情報列の間に空きが出る）は
+> **修正前後で数値同一**であり、本プランは改善も悪化もさせていない、
+> (4) firefox / webkit への VRT 拡大はしない（既存方針どおり chromium 限定）、
+> (5) `playwright.config.ts` は一切触っていない。
+>
+> 回帰: `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` **5 passed**
+> （2 回連続）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は
+> 既存ベースライン）・`bun run test` **2026 passed / 2029 total / 191 スイート**（不変）。
+> Integration **108** も不変。docs 同期は `b1a87ebb`（R9 が閉じ切ったため
+> `render-html.ts` の `NEXT_ACTIONS` R9 と `QA_HANDOFF.md` の R9 プロンプト節を同一コミットで削除）。
+>
 > **054 の実行記録（2026-08-23・`0dba44de`〜`1847946d`）— 部分完了**
 >
 > **browse は DONE / 商品詳細は保留。** `tests/e2e/visual/browse.spec.ts` を新設し
