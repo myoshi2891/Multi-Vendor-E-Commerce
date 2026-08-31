@@ -157,13 +157,34 @@ model CategorySlugAlias {
 0-10 のとおり現行 URL は `?category=` / `?subCategory=` の**パラメータ名で種別が明示**
 されているため、旧 URL からキー `(entityType, oldSlug)` を一意に構成できる。
 
-**解決順序**（`/browse` のサーバー側）:
+**解決順序**（`/browse` のサーバー側）— **パラメータの種別で順序が変わる**:
+
+`?subCategory=<slug>` の場合:
+
+1. `CategorySlugAlias` を `(SUB_CATEGORY, slug)` で引く → ヒットすれば
+   **正準 URL へ 308 リダイレクト**。
+2. 外れたら `Category.url` の完全一致を引く → ヒットすればそれが正準。
+3. どちらも外れたら 0 件を返す。
+
+`?category=<slug>` の場合:
 
 1. `Category.url` の完全一致を引く → ヒットすればそれが正準。
-2. 外れたら `CategorySlugAlias` を `(entityType, oldSlug)` で引く → ヒットすれば
-   **正準 URL へ 308 リダイレクト**。
-3. どちらも外れたら 0 件を返す（0-4 の fail-closed 挙動を維持する。**フィルタを黙って
-   捨てて全件表示に化けさせない**）。
+2. 外れたら `CategorySlugAlias` を `(CATEGORY, slug)` で引く → ヒットすれば 308。
+3. どちらも外れたら 0 件を返す。
+
+いずれも、どちらも外れたら 0 件（0-4 の fail-closed 挙動を維持する。**フィルタを黙って
+捨てて全件表示に化けさせない**）。
+
+> **`?subCategory=` だけ完全一致より別名を先に引くのはなぜか。** リネームが起きた組では、
+> **旧 SubCategory の slug が Category 側の現役 slug として生き残っている**。
+> 例: SubCategory `camera` が `electronics-camera` へリネームされ、Category `camera` は
+> 温存される（Q2-2 の「Category 由来を温存」）。ここで `?subCategory=camera` を
+> 完全一致から引くと `Category.url = 'camera'` に**ヒットしてしまい**、利用者が意図した
+> ノードとは別のサブツリーを 200 で返す —— **404 より悪い、黙った誤答**である。
+> `(SUB_CATEGORY, 'camera')` を先に引けば `electronics-camera` へ正しく 308 できる。
+> これが `oldSlug` 単体ではなく `(entityType, oldSlug)` を複合キーにした理由そのものであり、
+> **キーを型付きにしただけでは足りず、引く順序も型で分ける必要がある**。
+> `?category=` 側は逆で、現役 slug が正準なので完全一致が先で正しい。
 
 **移行成果物として、対応表の CSV を `docs/design/category-tree/slug-migration-map.csv`
 に出力する**（実装プランの完了条件）。リネームが 0 件だった場合は
@@ -204,11 +225,23 @@ if (filters.category) {
     whereClause.AND.push({ categoryId: category.id });
 }
 
-// After — 1 系統・サブツリー。slug 解決は url @unique のまま変わらない
-const slug = filters.category ?? filters.subCategory;   // ?subCategory= は互換受理
-if (slug) {
-    const node = await db.category.findUnique({ where: { url: slug }, select: { id: true, path: true } })
-        ?? await resolveAlias(slug, filters.category ? "CATEGORY" : "SUB_CATEGORY");
+// After — 条件はサブツリーへ変わるが、2 系統である点は変えない。
+// slug 解決は url @unique のまま変わらない。
+const findByUrl = (slug: string) =>
+    db.category.findUnique({ where: { url: slug }, select: { id: true, path: true } });
+
+// Q2-3 の解決順序をそのままコードにする（SUB_CATEGORY は別名が先）
+const resolveNode = async (slug: string, entityType: CategoryAliasSource) =>
+    entityType === "SUB_CATEGORY"
+        ? (await resolveAlias(slug, "SUB_CATEGORY")) ?? (await findByUrl(slug))
+        : (await findByUrl(slug)) ?? (await resolveAlias(slug, "CATEGORY"));
+
+for (const [slug, entityType] of [
+    [filters.category, "CATEGORY"],
+    [filters.subCategory, "SUB_CATEGORY"],   // ?subCategory= は互換受理
+] as const) {
+    if (!slug) continue;
+    const node = await resolveNode(slug, entityType);
     if (!node) return noMatchResult;                     // fail-closed を維持
     whereClause.AND.push({ category: subtreeOf(node.path) });
 }
@@ -218,12 +251,51 @@ if (slug) {
 // getAllCategories — category.ts:99-111
 // Before: include: { subCategories: true } / orderBy: { updatedAt: "desc" }
 // After:  ルートのみ取得し、path 昇順の 1 クエリでフラットに引いてアプリ側で木へ組む
+const orderBy = [{ depth: "asc" }, { sortOrder: "asc" }, { name: "asc" }] as const;
+
+if (!storeId) {
+    return buildTree(await db.category.findMany({ orderBy: [...orderBy] }));
+}
+
+// 店舗スコープ: 商品を持つのはリーフだけなので、まず対象リーフを引き、
+// その path から祖先も残す（祖先が落ちると木が繋がらない）。
+const leaves = await db.category.findMany({
+    where: { products: { some: { storeId } } },
+    select: { path: true },
+});
+if (leaves.length === 0) return [];
+
+// "a/b/c" → ["a", "a/b", "a/b/c"]。祖先を含めた path の集合を作る
+const paths = new Set<string>();
+for (const { path } of leaves) {
+    const segments = path.split("/");
+    for (let i = 1; i <= segments.length; i++) {
+        paths.add(segments.slice(0, i).join("/"));
+    }
+}
+
 const nodes = await db.category.findMany({
-    where: storeId ? { products: { some: { storeId } } } : {},
-    orderBy: [{ depth: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+    where: { path: { in: [...paths] } },
+    orderBy: [...orderBy],
 });
 return buildTree(nodes);   // path でネストを復元（再帰クエリ不要）
 ```
+
+> **店舗スコープで祖先を落とさないこと。** `products: { some: { storeId } }` は
+> **直接の**リレーション条件なので、「商品はリーフにのみ紐づく」（Q5）と組み合わさると
+> **リーフだけが返り、その親・祖先は 1 件も返らない**。`buildTree` は返された行の中から
+> 親を探すため、祖先が欠けた枝は**丸ごと消える** —— 店舗ページのカテゴリメニューが空に
+> 見える、という形で表面化する。祖先まで含めた集合を引くこと（上記は path の prefix 展開で
+> 2 クエリ。`path` に索引があるので `IN` で引ける）。`storeId` が無い場合の挙動と
+> 並び順は従来どおり。
+
+> **`category` と `subCategory` を `??` で 1 本に畳まないこと。** 現行実装
+> （[`product.ts:642-663`](../../../src/queries/product.ts)）は 2 つのフィルタを**独立に
+> `AND` へ積んでいる**ため、`??` で片方を選ぶと **両方指定時に `subCategory` が黙って
+> 捨てられ、絞り込みが緩くなる**（0-4 の fail-closed の精神に反する。ユーザーには
+> 「効いているはずの絞り込みが効いていない」としか見えない）。移行の目的は条件を
+> サブツリーへ変えることであって、フィルタの契約を変えることではない。両方指定は
+> **2 つのサブツリーの積**（従来と同じ意味）として扱う。
 
 > **経路 B（0-A）は書き換え不要。** `home.ts:138-140` と `size.ts:57-58` の
 > `{ category: { url: value } }` は `url @unique` を維持したので**意味が変わらない**。
@@ -250,7 +322,20 @@ Q2-1 でグローバル一意を維持したため、**フラット slug のま�
 - **最大深度 5**（`depth ≤ 4`）。`upsertCategory` の親指定時に `parent.depth + 1 ≤ 4` を検証し、
   Zod でも `depth` の範囲を持つ。
 - **リーフのみ紐づけの強制は `upsertProduct` のトランザクション内**で
-  `childCount === 0` を確認する。
+  `childCount === 0` を確認する。**判定対象の親行を `SELECT … FOR UPDATE` でロックしてから
+  読む**こと（Prisma では `$queryRaw` の `SELECT id FROM "Category" WHERE id = $1 FOR UPDATE`）。
+
+> **`childCount === 0` を素で読むと TOCTOU になる。** 「商品をノード N に紐づける」
+> トランザクションと「N の子を作る」トランザクションが並走すると、前者が
+> `childCount = 0` を読んだ直後に後者がコミットし得る。両者とも成功して、
+> **非リーフに商品がぶら下がった状態**が残る —— 不変条件を守るはずの検証が
+> 素通りする。取り得る手段は (a) 親行のロック / (b) `SERIALIZABLE` + 競合時の再試行 /
+> (c) DB トリガーの 3 つで、本設計は **(a)** を採る。理由は、`upsertProduct` は
+> 既に `$transaction` を持っており追加コストが 1 行の行ロックで済むこと、
+> `SERIALIZABLE` は Accelerate 経由の再試行設計を全面的に見直す必要があること、
+> トリガーはリポジトリに先行事例が無いこと（Q5 の (b) を退けた理由と同じ）。
+> 子の追加側（`upsertCategory` の親指定）も**同じ親行を同じ順序でロック**すること —
+> 片側だけロックしても競合は閉じない。
 
 > **素の DB CHECK ではリーフ強制はできない。** 「リーフか否か」は*他の行*に子があるかで
 > 決まる**関係的な性質**であり、CHECK は同一行の値しか参照できない。取り得る手段は
@@ -341,17 +426,52 @@ UPDATE "Category" SET "path" = "url", "depth" = 0 WHERE "parentId" IS NULL;
 -- A-2: 衝突の事前計測（Q2-4）— 0 でも規則は実装しておく
 SELECT count(*) FROM (SELECT url FROM "Category" INTERSECT SELECT url FROM "SubCategory") AS c;
 
--- A-3: SubCategory を Category の子として複製（衝突分は Q2-2 の規則でリネーム）
-INSERT INTO "Category" (id, name, image, url, featured, "parentId", path, depth, "sortOrder", "createdAt", "updatedAt")
-SELECT s.id, s.name, s.image,
-       CASE WHEN EXISTS (SELECT 1 FROM "Category" c2 WHERE c2.url = s.url)
-            THEN p.url || '-' || s.url ELSE s.url END,
-       s.featured, s."categoryId",
-       p.url || '/' || CASE WHEN EXISTS (SELECT 1 FROM "Category" c2 WHERE c2.url = s.url)
-                            THEN p.url || '-' || s.url ELSE s.url END,
-       1, 0, s."createdAt", s."updatedAt"
-FROM "SubCategory" s JOIN "Category" p ON p.id = s."categoryId"
-ORDER BY s."createdAt" ASC, s.id ASC;   -- 決定論性（Q2-2 の 3.）
+-- A-3: SubCategory を Category の子として取り込む（衝突分は Q2-2 の規則でリネーム）。
+--      slug は「単一候補の CASE」では書けない。<親slug>-<旧slug> 自体が既存の
+--      Category.url と衝突し得るため、既存 url と突き合わせて**最初の空き番号**を
+--      決める必要がある（Q2-2 の 2.）。1 行ずつ決めて即 INSERT し、次の行の判定が
+--      直前の INSERT を見られるようにする。
+DO $$
+DECLARE
+    r      RECORD;
+    v_url  TEXT;
+    v_base TEXT;
+    v_n    INT;
+BEGIN
+    FOR r IN
+        SELECT s.id, s.name, s.image, s.url, s.featured, s."categoryId",
+               s."createdAt", s."updatedAt", p.url AS parent_url, p.path AS parent_path
+        FROM "SubCategory" s JOIN "Category" p ON p.id = s."categoryId"
+        ORDER BY s."createdAt" ASC, s.id ASC   -- 決定論性（Q2-2 の 3.）
+    LOOP
+        -- 取り込み済みなら何もしない = 冪等性の要（2 回目は全件 CONTINUE）。
+        -- id を流用するので「同 id が既にある」が「取り込み済み」と同義になる。
+        IF EXISTS (SELECT 1 FROM "Category" c WHERE c.id = r.id) THEN
+            CONTINUE;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM "Category" c WHERE c.url = r.url) THEN
+            v_url := r.url;                       -- 衝突なし: 旧 slug を温存
+        ELSE
+            v_base := r.parent_url || '-' || r.url;
+            v_url  := v_base;
+            v_n    := 1;
+            WHILE EXISTS (SELECT 1 FROM "Category" c WHERE c.url = v_url) LOOP
+                v_n   := v_n + 1;
+                v_url := v_base || '-' || v_n;    -- -2, -3, … 最初の空き番号
+            END LOOP;
+        END IF;
+
+        -- 決めた v_url を url と path の両方に使う（片方だけ別候補にしない）
+        INSERT INTO "Category" (id, name, image, url, featured, "parentId",
+                                path, depth, "sortOrder", "childCount",
+                                "createdAt", "updatedAt")
+        VALUES (r.id, r.name, r.image, v_url, r.featured, r."categoryId",
+                r.parent_path || '/' || v_url, 1, 0, 0,
+                r."createdAt", r."updatedAt");
+    END LOOP;
+END
+$$;
 
 -- A-4: エイリアス投入（冪等 — Q2-2 の 4.）
 INSERT INTO "CategorySlugAlias" ("entityType", "oldSlug", "categoryId")
@@ -375,8 +495,38 @@ UPDATE "Product" SET "categoryNodeId" = "subCategoryId";
 > **単純な列コピー**で済み、対応表を引く必要がない。`id` は UUID なので
 > Category 側との衝突は実質起こらない（Q2-2）。
 
-**ロールバック**: Phase A / B は新列・新テーブルの drop で戻せる。Phase C は不可逆であり、
-実施前に B の状態で本番相当の実測期間を置く。
+> **A-3 は既存 `Category` テーブルに行を増やす —— 旧読み取りとの境界を明示すること。**
+> Phase A の読み取りは旧 FK のままだが、`getAllCategories`
+> （[`category.ts`](../../../src/queries/category.ts)）は `Category` を**全件**引くため、
+> 取り込んだ子行がそのまま**トップレベルのカテゴリとして混ざって返る**
+> （`subCategories` 経由と本体の二重計上。カテゴリメニュー・browse フィルタ・
+> admin 一覧・seller の商品フォームが同時に化ける）。
+> **識別の印は `parentId IS NOT NULL`** —— A-3 が入れた行は必ず親を持ち、
+> 既存行は A-1 で `parentId IS NULL` のままである。Phase A の旧読み取りは
+> `where: { parentId: null }` でルートに限定し、ツリーを返すのは plan 067 / 068 に譲る。
+
+**ロールバック**: Phase B は新列・新テーブルの drop で戻せる。
+**Phase A は「新列・新テーブルの drop」だけでは戻らない** —— A-3 が既存 `Category`
+テーブルへ行を**追加**しているため、列を落としても複製行が残り、元の Category データと
+混在したままになる。逆マイグレーションは**複製行を識別して削除する**こと:
+
+```sql
+-- A-3 の複製行だけを消す。id を流用しているので SubCategory と id で照合できる。
+-- parentId IS NOT NULL だけを条件にしない（将来 admin が作った子まで巻き込むため）。
+DELETE FROM "Category" c
+WHERE c."parentId" IS NOT NULL
+  AND EXISTS (SELECT 1 FROM "SubCategory" s WHERE s.id = c.id);
+
+-- 参照している別名も落とす（categoryId の FK が残らないように先/同時に）
+DELETE FROM "CategorySlugAlias" a
+WHERE a."entityType" = 'SUB_CATEGORY'
+  AND EXISTS (SELECT 1 FROM "SubCategory" s WHERE s.id = a."categoryId");
+```
+
+削除順は FK に従い、`CategorySlugAlias` → `Category` の順（`Product.categoryNodeId` は
+`ON DELETE SET NULL` なので先に列 drop していれば影響しない）。**元の Category 行
+（`parentId IS NULL`）には触れない**。Phase C は不可逆であり、実施前に B の状態で
+本番相当の実測期間を置く。
 
 ---
 
@@ -389,6 +539,7 @@ UPDATE "Product" SET "categoryNodeId" = "subCategoryId";
 | V-3 | 移行スクリプトの**2 回実行**で結果が同一 | Q2-2 の冪等性 |
 | V-4 | `childCount` が `SELECT count(*)` の再計算と一致 | Q5 の非正規化列のドリフト検出 |
 | V-5 | 子を持つノードへの商品紐づけが拒否される（create / update とも） | Q5 のリーフ強制 |
+| V-5b | **リーフ判定と子追加の並行実行**で、非リーフに商品が残らない（商品紐づけと子カテゴリ追加を同時にディスパッチし、どちらか一方だけが成功する） | Q5 のリーフ強制の TOCTOU |
 | V-6 | 存在しない slug で**全件表示に化けない**（0 件が返る） | 0-4 の fail-closed 挙動の回帰 |
 | V-7 | `depth = 5` の作成が拒否される | Q5 の深さ上限 |
 

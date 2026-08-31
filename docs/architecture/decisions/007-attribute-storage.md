@@ -140,10 +140,10 @@ ADR-006 の path prefix（`c.path = $1 OR c.path LIKE $1 || '/%'`）を使う。
 ```sql
 -- ファセット集計: 属性 × 値 × 件数
 SELECT d.key,
-       COALESCE(o.label, v."valueText", v."valueBool"::text) AS facet_value,
+       COALESCE(o.label, v."valueText", v."valueBool"::text, v."valueNumber"::text) AS facet_value,
        count(DISTINCT p.id) AS product_count
 FROM "Product" p
-JOIN "Category" c ON c.id = p."categoryId"
+JOIN "Category" c ON c.id = p."categoryNodeId"   -- 商品のリーフノード（Phase C で categoryId へ rename）
 JOIN "ProductAttributeValue" v ON v."productId" = p.id
 JOIN "AttributeDefinition" d ON d.id = v."definitionId"
                             AND d.facetable AND d."archivedAt" IS NULL
@@ -158,6 +158,12 @@ FROM "ProductAttributeValue" v
 JOIN "AttributeDefinition" d ON d.id = v."definitionId" AND d.type = 'NUMBER'
 GROUP BY d.key, bucket;
 ```
+
+> **`COALESCE` に `valueNumber` を含めること。** `facetable` は型に依らず立てられる
+> （`AttributeType.NUMBER` でも `true` にできる）ので、`label` / `valueText` /
+> `valueBool` だけを並べると **NUMBER 属性の facet_value が全行 NULL に潰れ**、
+> 「値ごとの件数」が 1 グループに畳まれる。範囲バケットを使いたい NUMBER 属性は
+> 上の `width_bucket` 側で扱い、離散値として数えたい場合はこの `COALESCE` が受ける。
 
 **メリット**:
 - 集計が**素の `GROUP BY`**。`@@index([definitionId, valueNumber])` がそのまま効く。
@@ -179,7 +185,7 @@ GROUP BY d.key, bucket;
 -- ファセット集計: JSONB を展開して数える
 SELECT kv.key, kv.value, count(*) AS product_count
 FROM "Product" p
-JOIN "Category" c ON c.id = p."categoryId"
+JOIN "Category" c ON c.id = p."categoryNodeId"   -- 商品のリーフノード（Phase C で categoryId へ rename）
 CROSS JOIN LATERAL jsonb_each_text(p.attributes) AS kv(key, value)
 WHERE c.path = $1 OR c.path LIKE $1 || '/%'
 GROUP BY kv.key, kv.value

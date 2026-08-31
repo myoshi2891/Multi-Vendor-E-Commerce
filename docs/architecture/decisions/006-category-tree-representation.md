@@ -245,7 +245,9 @@ admin の低頻度操作である。一方で読み取りは storefront の毎�
 
 ## Implementation
 
-### 移行前に必ず実行する事前計測（件数を返すこと）
+### 移行時に必ず実行する計測（件数を返すこと）
+
+1) と 2) は移行 SQL を書く前に、3) はデータ移行の直後に実行する。
 
 ```sql
 -- 1) Category と SubCategory の slug 衝突件数（D-2 のリネーム規則が発火する件数）
@@ -258,11 +260,23 @@ SELECT c.url, c.id AS category_id, s.id AS sub_category_id, s."categoryId" AS su
 FROM "Category" c JOIN "SubCategory" s ON s.url = c.url
 ORDER BY c.url;
 
--- 3) 非リーフに紐づく既存 Product 件数（D-5 の経過措置の規模）
+-- 3) 非リーフに紐づく Product 件数（D-5 の経過措置の規模 / plan 066 の STOP 条件）
+--    移行後の商品ノードは A-4 のとおり subCategoryId 由来（categoryNodeId := subCategoryId）。
+--    ゆえに数えるべきは「移行先ノードが子を持つ商品」であって、
+--    旧 categoryId（Phase C で drop される列）が子を持つかではない。
+--    データ移行（A-3〜A-5）の直後、同じトランザクション内で実行する。
 SELECT count(*) FROM "Product" p
-WHERE EXISTS (SELECT 1 FROM "SubCategory" s WHERE s."categoryId" = p."categoryId");
+JOIN "Category" c ON c.id = p."categoryNodeId"
+WHERE c."childCount" > 0;
 ```
 
+> **3 本目は旧 `categoryId` で数えないこと。** `EXISTS (SELECT 1 FROM "SubCategory" s
+> WHERE s."categoryId" = p."categoryId")` と書くと「トップレベルのカテゴリが子を持つ商品」
+> ＝ **ほぼ全商品**が返る。これは D-5 が言う「非リーフ紐づけ」ではない —— 移行後に
+> リーフ強制が掛かるのは新 FK（`categoryNodeId`）の側であり、旧 `categoryId` の
+> 非リーフ参照は Phase C の列 drop で自然に消える。この取り違えは STOP 条件
+> （> 0 なら停止）を常時発火させ、計測を無意味にする。
+>
 > **`count(*)` で畳むこと。** 素の `INTERSECT` は衝突 slug の一覧を返すだけで
 > 「何件か」を答えない。移行前の意思決定に必要なのは件数である。
 >
