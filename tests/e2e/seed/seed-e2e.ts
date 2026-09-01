@@ -541,9 +541,20 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
 
     // Phase A（plan 066）: 子カテゴリは Category ノードと legacy SubCategory 行の
     // 両方として書く。id を共有させるので categoryNodeId は subCategoryId と常に同値。
+    // メインカテゴリ側と同じ理由で、**ノード作成の前に** legacy 行の id を読む
+    // （066 以前にシード済みの DB では SubCategory 行だけが残っており、新しい uuid で
+    //  Category ノードを作ると id 共有が崩れて FK 違反になる）。
+    const existingPaginationSubCategory = await prisma.subCategory.findUnique({
+        where: { url: seed.paginationSubCategory.url },
+        select: { id: true },
+    });
+
     const paginationSubCategoryNode = await prisma.category.upsert({
         where: { url: seed.paginationSubCategory.url },
         create: {
+            ...(existingPaginationSubCategory
+                ? { id: existingPaginationSubCategory.id }
+                : {}),
             name: seed.paginationSubCategory.name,
             url: seed.paginationSubCategory.url,
             image: seed.paginationSubCategory.image,
@@ -579,6 +590,15 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             categoryId: paginationCategory.id,
         },
     });
+
+    // メインカテゴリ側と同じく、id 共有が崩れた DB は後追いでは直せないので
+    // FK 違反より手前で落とす。
+    if (paginationSubCategory.id !== paginationSubCategoryNode.id) {
+        throw new Error(
+            `[seed-e2e] SubCategory(${paginationSubCategory.id}) と Category ノード(${paginationSubCategoryNode.id}) の ` +
+                `id が一致しません。E2E DB をリセットしてから再実行してください（url: ${seed.paginationSubCategory.url}）。`
+        );
+    }
 
     const paginationProducts: Array<{ id: string; slug: string }> = [];
     for (const p of seed.paginationProducts) {
@@ -699,7 +719,21 @@ async function main() {
 
     for (const target of seedTargets) {
         const seed = buildE2ESeed(target);
-        await seedOnce(seed);
+        // どの target で落ちたかを失敗メッセージに残す。並列ワーカーでは target ごとに
+        // URL 名前空間が違うため、素の Prisma エラーだけでは対象を特定できない。
+        try {
+            await seedOnce(seed);
+        } catch (error: unknown) {
+            const label = `${target.projectName ?? "default"}#${target.parallelIndex}`;
+            const cause =
+                error instanceof Error ? error.message : String(error);
+            throw new Error(
+                `[seed-e2e] target ${label} のシードに失敗しました: ${cause}`,
+                {
+                    cause: error,
+                }
+            );
+        }
     }
     console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
 }
