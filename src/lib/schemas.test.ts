@@ -59,6 +59,35 @@ describe("CategoryFormSchema", () => {
         const result = CategoryFormSchema.parse(withoutFeatured);
         expect(result.featured).toBe(false);
     });
+
+    // plan 067 / design.md §2-Q1 —— slug は materialized path のセグメントになるため、
+    // 区切り文字 `/` と LIKE のメタ文字（`%` `_`）を含んではならない。これらを
+    // 文字集合で排除しておくことで `subtreeOf` の startsWith がエスケープ不要になる。
+    it.each([
+        ["区切り文字を含む slug", "electronics/camera"],
+        ["LIKE ワイルドカードの _ を含む slug", "electronics_camera"],
+        ["LIKE ワイルドカードの % を含む slug", "electronics%camera"],
+        ["大文字を含む slug", "Electronics"],
+        ["先頭がハイフンの slug", "-electronics"],
+        ["末尾がハイフンの slug", "electronics-"],
+    ])("%s は拒否される", (_label, url) => {
+        // Arrange / Act
+        const result = CategoryFormSchema.safeParse({ ...validData, url });
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it.each([["electronics"], ["electronics-camera"], ["lux-women-dresses"], ["a1"]])(
+        "小文字英数字とハイフン区切りの slug %s は受理される",
+        (url) => {
+            // Arrange / Act
+            const result = CategoryFormSchema.safeParse({ ...validData, url });
+
+            // Assert
+            expect(result.success).toBe(true);
+        }
+    );
 });
 
 // ==================================================

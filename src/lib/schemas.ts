@@ -30,9 +30,13 @@ export const CategoryFormSchema = z.object({
         })
         .min(2, { message: "Category url must be at least 2 characters long." })
         .max(50, { message: "Category url cannot exceed 50 characters." })
-        .regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+        // slug は Category.path のセグメントになる（materialized path / ADR-006）。
+        // 区切り文字 `/` と LIKE のメタ文字（`%` `_`）を文字集合で排除することで、
+        // `subtreeOf` の startsWith に渡す値のエスケープが不要になる
+        // （design.md §2-Q1）。**この制約を緩めないこと。**
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message:
-                "Only letters, numbers, hyphen, and underscore are allowed in the category url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
+                "Category url must be lowercase alphanumeric segments separated by single hyphens (e.g. electronics-camera).",
         }),
     featured: z.boolean().default(false),
 });
@@ -67,9 +71,11 @@ export const SubCategoryFormSchema = z.object({
             message: "SubCategory url must be at least 2 characters long.",
         })
         .max(50, { message: "SubCategory url cannot exceed 50 characters." })
-        .regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+        // Category と同じ制約（Phase C で SubCategory は Category へ統合されるため、
+        // Phase B の間も両者の slug 規則を揃えておく）。design.md §2-Q1 を参照。
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message:
-                "Only letters, numbers, hyphen, and underscore are allowed in the Subcategory url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
+                "SubCategory url must be lowercase alphanumeric segments separated by single hyphens (e.g. lux-women-dresses).",
         }),
     featured: z.boolean().default(false),
     categoryId: z.string().uuid(),
