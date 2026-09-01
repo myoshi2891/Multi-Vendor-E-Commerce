@@ -107,26 +107,38 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    > できなかった（`psql` 未インストール）。シードは表記揺れを示さないが、
    > **それは揺れが無い証拠ではない**。本番/開発 DB の実測値を必ず記録すること。
    > 不正行の件数が 0 でも、**扱いを決めてから**移行を書く（黙って落とすのは不可）。
-2. **スキーマ + マイグレーション**。design.md §3 / ADR-007 の Decision 節どおり。
+2. **多値属性の扱いを先に決める**（design.md §4 の未決事項）。`allergens` のような複数値は
+   `@@unique([productId, definitionId])` と衝突する。制約を
+   `@@unique([productId, definitionId, optionId])` へ緩めるか、
+   `multiValued Boolean` を定義側に持たせるかを選び、**決定を design.md へ追記する**。
+   > **これは spike の見落としではなく、明示的に 069 へ送られた未決事項である**
+   > （design.md §6-4）。勝手に単値前提で進めて食品部門で詰まらないこと。
+   > **なぜスキーマ移行より前か。** この決定が選ぶのは `@@unique` —— **スキーマ制約そのもの**
+   > である。Step 3 の `migrate dev` を先に打つと、決定次第で補正マイグレーションが要り、
+   > 本リポジトリは既存マイグレーションの編集を禁じている
+   > （[`tech.md`](../.claude/steering/tech.md)）。さらに単値/多値の別は Step 8 の
+   > フォーム（1 値か配列か）と保存契約（upsert のキーと削除の単位）を規定するため、
+   > **後から決めると 3 箇所を同時に書き直すことになる**。
+3. **スキーマ + マイグレーション**。design.md §3 / ADR-007 の Decision 節どおり。
    `bunx prisma migrate dev --name category_attributes`。**既存マイグレーションは編集しない**。
-3. **ER 図を再生成**。`scripts/erd/generate-erd.ts` の `PAGES` に新 4 モデルを追記 →
+4. **ER 図を再生成**。`scripts/erd/generate-erd.ts` の `PAGES` に新 4 モデルを追記 →
    `bun run erd:generate` → **stderr の orphan WARNING が 0 件**であることを確認
    （[`03-data-model-diagram-sync.md`](../.claude/rules/03-data-model-diagram-sync.md)）。
    スキーマ差分と `.drawio` 差分は**同一コミット**に入れる。
-4. **属性値の読み書きヘルパーを 1 箇所に作る**（`src/lib/attribute-value.ts` 等）。
+5. **属性値の読み書きヘルパーを 1 箇所に作る**（`src/lib/attribute-value.ts` 等）。
    `AttributeType` による判別で `valueText` / `valueNumber` / `valueBool` / `optionId` の
    どれを使うかを決める。
    > **散らさないこと。** ADR-007 の Risks が挙げるとおり、`type` と実際に埋まった列の
    > 不整合は**書き込みが複数箇所にあると検出できなくなる**。0-A で見たように、
    > 本リポジトリでは「規律で守る」が既に 4 経路へ広がった前例がある。
-5. **属性定義 CRUD**（`src/queries/attribute.ts`）。認可は
+6. **属性定義 CRUD**（`src/queries/attribute.ts`）。認可は
    [`src/lib/auth-guards.ts`](../src/lib/auth-guards.ts) の **`requireAdmin`** を使う
    （インライン展開は禁止 — [`tech.md`](../.claude/steering/tech.md)）。
    外部呼び出しは `try/catch` + 構造化ログ 2 引数形式。
-6. **admin UI**。`admin/attributes/{page,columns,new/page}.tsx` +
+7. **admin UI**。`admin/attributes/{page,columns,new/page}.tsx` +
    `forms/attribute-details.tsx`。既存 `admin/offer-tags/` の TanStack table パターンを再利用。
    許容値管理は `admin/attributes/[id]/options/`。
-7. **動的 Zod + 商品フォーム**。`makeProductSchema(defs)` は
+8. **動的 Zod + 商品フォーム**。`makeProductSchema(defs)` は
    **`ProductFormSchema.extend()`** で合成する（`z.intersection` は使わない ——
    RHF のエラーパスが二重になる。design.md Q4）。
    `product-details.tsx` はカテゴリ選択の変更で `defs` を再取得し `useMemo` で再生成。
@@ -140,35 +152,50 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    - `product-details.tsx` の `useForm<z.infer<typeof schema>>` と submit ハンドラの引数型を
      `makeProductSchema(defs)` の**戻り値から導出**する（`ProductFormSchema` 固定のままにしない）。
      `defs` の再取得で型が変わるので、`z.infer<ReturnType<typeof makeProductSchema>>` を基準にする。
-   - `upsertProduct` の payload に `attributes: { definitionId, value }[]` を追加し、
-     保存 `$transaction` 内で `ProductAttributeValue` / `VariantAttributeValue` を
-     `@@unique([productId, definitionId])` に対する upsert + 送信されなかった定義の delete で
-     同期する（部分更新でゴースト値が残らないこと）。
+   - `upsertProduct` の payload に `attributes` を追加する。**所有先を型で判別できる形にすること**
+     —— `AttributeScope` は `PRODUCT` / `VARIANT` の 2 値であり、`VariantAttributeValue` は
+     `variantId` で行が決まる:
+
+     ```ts
+     type AttributeValueInput =
+         | { scope: "PRODUCT"; definitionId: string; value: AttributeInputValue }
+         | { scope: "VARIANT"; definitionId: string; variantId: string; value: AttributeInputValue };
+     ```
+
+     > **`{ definitionId, value }[]` では VARIANT 属性を表現できない。** 1 商品に N 個の
+     > バリアントがあると、各バリアントの同一属性は**すべて同じ `definitionId`** を持つ。
+     > 所有先が payload に無いと writer は行を区別できず、**最後の 1 件が黙って他を上書き**し、
+     > `VariantAttributeValue` の `@@unique([variantId, definitionId])` が一度も効かない。
+   - この所有先を **DTO → バリアント単位の UI → `$transaction` の同期**まで貫通させる。
+     `product-details.tsx` は VARIANT スコープの定義を**バリアントごとに**描画し
+     （既存のバリアント編集 UI の中に置く）、PRODUCT スコープは商品レベルに 1 度だけ描画する。
+   - 保存 `$transaction` 内の同期は**キーをスコープごとに変える**:
+     `ProductAttributeValue` は `@@unique([productId, definitionId])`、
+     `VariantAttributeValue` は `@@unique([variantId, definitionId])` に対する upsert とし、
+     **送信されなかった定義の delete も同じ単位でスコープする**
+     （VARIANT 側の delete を `productId` で撃つと、編集していない他バリアントの値まで消える）。
+     部分更新でゴースト値が残らないこと。
    - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、
-     **保存直後に同じ値が再読込できる**状態にする。
-   - Step 11 に**往復テスト**を足す: 属性値を入力 → 保存 → 再読込して同値、
-     値を空にして保存 → 行が消える、の 2 本。型別カラム（`valueText` / `valueNumber` /
+     **保存直後に同じ値が再読込できる**状態にする。VARIANT 属性は `variantId` ごとに束ねる。
+   - Step 11 に**往復テスト**を足す: (1) 属性値を入力 → 保存 → 再読込して同値、
+     (2) 値を空にして保存 → 行が消える、(3) **バリアント 2 つ以上**で別々の値を保存し、
+     互いを上書きしない・一方の編集で他方が消えない、(4) 送信されなかった定義の行が
+     **そのバリアントの分だけ**削除される、の 4 本。型別カラム（`valueText` / `valueNumber` /
      `valueBool` / `optionId`）のどれに入ったかも A-1 と同じ基準で検証する。
-8. **商品詳細の 2 セクション表示**
+9. **商品詳細の 2 セクション表示**
    （[`product-specs.tsx`](../src/components/store/product-page/product-specs.tsx)）。
    「仕様」= 構造化属性 /「その他仕様」= `Spec`。
-9. **多値属性の扱いを決める**（design.md §4 の未決事項）。`allergens` のような複数値は
-   `@@unique([productId, definitionId])` と衝突する。制約を
-   `@@unique([productId, definitionId, optionId])` へ緩めるか、
-   `multiValued Boolean` を定義側に持たせるかを選び、**決定を design.md へ追記する**。
-   > **これは spike の見落としではなく、明示的に 069 へ送られた未決事項である**
-   > （design.md §6-4）。勝手に単値前提で進めて食品部門で詰まらないこと。
 10. **パイロット部門シード**（2〜3 部門）。`@@unique([definitionId, value])` で upsert し
     **冪等**にする。
 11. **テスト**（design.md §5 の A-1〜A-8）。特に:
-    - **A-1**: `type` と埋まった列の一致（Step 4 のヘルパー集約の実効性）
+    - **A-1**: `type` と埋まった列の一致（Step 5 のヘルパー集約の実効性）
     - **A-3**: 必須属性欠落で create / update **両方**が拒否される
     - **A-4**: `AttributeOption.label` の改名が既存商品の表示に自動追随する
     - **A-7**: `TEXT → NUMBER` の型変更で変換不能値が `valueText` に残り **NULL 化されない**
     - **A-8**: `Spec` の読み書きが壊れていない（温存の回帰ガード）
 12. `bun run lint` / `bunx tsc --noEmit` / `bun run test` / 統合。
 13. **docs 同期**: `spec-sync-after-test` skill（テスト数が変わる）。**別コミット**。
-14. `plans/README.md` の 069 ステータス行を更新し、Step 1 の実測値と Step 9 の決定を記録する。
+14. `plans/README.md` の 069 ステータス行を更新し、Step 1 の実測値と Step 2 の決定を記録する。
 
 ## Done criteria
 
@@ -179,7 +206,7 @@ ALL を満たすこと:
       スキーマ変更と同一コミット
 - [ ] 検証シナリオ **A-1〜A-8 がすべて緑**
 - [ ] **`grep -rn "valueNumber\|valueText\|valueBool" src/ | grep -v attribute-value | grep -v test`
-      の結果が 0 件**（Step 4 のヘルパー集約が守られていることの機械的確認）
+      の結果が 0 件**（Step 5 のヘルパー集約が守られていることの機械的確認）
 - [ ] **`bunx eslint src/lib/attribute-schema.ts src/queries/attribute.ts --rule '{"@typescript-eslint/no-explicit-any":"error"}'`
       が 0 error**（`: any` の grep では `any[]` / `Record<string, any>` / `as any` を
       取りこぼすため、明示的 `any` の検出はルール実行で行う。`no-explicit-any` は
@@ -188,7 +215,7 @@ ALL を満たすこと:
       （`grep -n "requireAdmin" src/queries/attribute.ts` がヒット）
 - [ ] Step 1 の実測 3 本の結果がプランの実施結果に記録されている
       （**「シードで確認した」は不可** —— design.md 0-D）
-- [ ] Step 9 の多値属性の決定が design.md へ追記されている
+- [ ] Step 2 の多値属性の決定が design.md へ追記されている
 - [ ] パイロット 2〜3 部門のシードが**冪等**（2 回実行して結果同一）
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
 - [ ] `spec-sync-after-test` によるドキュメント同期コミットが存在する
@@ -204,7 +231,7 @@ ALL を満たすこと:
   0-B により機械移行は不可能。廃止するなら設計から見直す。
 - 動的 Zod で **`any` を通したくなった場合は STOP**。`AttributeType` の判別で
   型を絞れないなら、スキーマ設計側に問題がある。
-- 多値属性（Step 9）で `@@unique` を緩める判断が**食品部門以外にも波及する**と判明した ——
+- 多値属性（Step 2）で `@@unique` を緩める判断が**食品部門以外にも波及する**と判明した ——
   影響範囲を提示して判断を仰ぐ。
 - `docker info` が失敗し統合テストを実測できない → **BLOCKED として記録**（推測で緑と書かない）。
 - `psql "$DIRECT_URL"` に接続できない → Step 1 は **BLOCKED として記録**し、

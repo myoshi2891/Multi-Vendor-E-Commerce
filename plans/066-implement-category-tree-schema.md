@@ -11,8 +11,16 @@
 >
 > **本プランは読み取り経路を一切切り替えない。** 既存の `categoryId` / `subCategoryId` は
 > 生き続け、storefront の挙動は**変化しない**。読み替えは plan 067 の担当である。
-> この境界を越えないこと —— Phase A が「既存挙動は無傷・ロールバックは新列 drop のみ」で
-> あることが、3 分割の唯一の意味だからである。
+> この境界を越えないこと —— Phase A が「既存挙動は無傷・ロールバックは新列 drop と
+> 複製行の削除で閉じる」ことが、3 分割の唯一の意味だからである。
+>
+> **ただし「無変更」は自動では成立しない。** A-3 は SubCategory 全行を `Category` の
+> **子行として複製**するため、`Category` を無条件に全件読む既存経路は、Phase A 適用後に
+> 旧サブカテゴリを**トップレベルのカテゴリとして露出させてしまう**（件数も並びも変わる）。
+> よって Phase A では、旧 `Category` 読み取りを **`parentId` が null の行に限定する**こと
+> （`where: { parentId: null }`）。これは読み替えではなく**既存挙動の保存**であり、
+> 067 の境界を越えない。複製行は `SubCategory` と**同じ id** を持つ（A-3）ので、
+> ロールバック時もこの id 一致で複製行だけを特定・削除できる。
 >
 > **同期方針（Phase A は「一度きりの backfill」である）**: A-6 の backfill は移行時点の
 > スナップショットにすぎず、Phase A の書き込み経路は `categoryNodeId` を**書かない**
@@ -99,8 +107,12 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
 
 ## Steps
 
-1. **事前計測を先に走らせる**。design.md §2-Q2-4 の 3 本のクエリを実行し、
-   結果を本プランの「実施結果」節に記録する。
+1. **事前計測（slug 衝突のみ）を先に走らせる**。design.md §2-Q2-4 の衝突計測クエリを
+   実行し、結果を本プランの「実施結果」節に記録する。
+   > **この時点で計測できるのは slug 衝突だけである。** 非リーフに紐づく商品の件数
+   > （design.md Q3 が参照する計測）は `Product.categoryNodeId` を読むが、その列は
+   > Step 3 のマイグレーションで**初めて追加**され Step 4 の A-6 で backfill される。
+   > 移行前に走らせても `column does not exist` で落ちるため、Step 4 へ送る。
    > **シードで 0 件でも規則は実装する。** `bun run seed:luxury` は
    > `lux-women` / `lux-women-dresses` の**前置命名**で**偶然**衝突しない
    > （design.md 0-12）。シードが通ったことを衝突ゼロの証拠にしないこと。
@@ -114,6 +126,17 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
 4. **データ移行 SQL**（design.md §4 の A-1〜A-6）を同マイグレーションに含める。
    リネーム規則は §2-Q2-2 の 4 点（SubCategory 側をリネーム / `${親slug}-${旧slug}` /
    衝突時は最初の空き番号 / `ORDER BY createdAt ASC, id ASC` で決定論化）。
+   **A-6 の backfill 完了直後に、非リーフに紐づく商品の件数を計測**し、Step 1 の
+   衝突件数と同じ「実施結果」節に記録する（design.md Q3 が規模の事前把握を求めている
+   計測。`childCount` は A-5 で初期化済みなのでこの時点で正しく読める）:
+
+   ```sql
+   -- 非リーフノードに紐づいたままの商品（Phase B の付け替え対象規模）
+   SELECT count(*) FROM "Product" p
+     JOIN "Category" c ON c.id = p."categoryNodeId"
+    WHERE c."childCount" > 0;
+   ```
+
 5. **ER 図を再生成**: `scripts/erd/generate-erd.ts` の `PAGES` に `CategorySlugAlias` を
    追記 → `bun run erd:generate` → **stderr の orphan WARNING がゼロ**であることを確認
    （[`03-data-model-diagram-sync.md`](../.claude/rules/03-data-model-diagram-sync.md)）。
@@ -145,7 +168,14 @@ ALL を満たすこと:
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors
 - [ ] `src/queries/**` と `src/components/**` の差分が **0 行**
       （`git diff --stat <base> -- src/queries src/components` が空 —— Phase A の境界）
-- [ ] 事前計測（Step 1）の実測値がプランの「実施結果」節に記録されている
+- [ ] 事前計測の実測値がプランの「実施結果」節に記録されている
+      （Step 1 の slug 衝突件数 **と** Step 4 の A-6 直後に測る非リーフ紐づけ商品件数の 2 本）
+- [ ] **逆移行が用意され、実行して検証済み**: 新列・新テーブルの drop に加えて、
+      **`SubCategory` と同じ id を持つ複製 `Category` 行を削除**する
+      （`DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;`）。
+      列を drop するだけでは複製行が残り、旧読み取りにトップレベルのカテゴリとして
+      現れ続けるため、ロールバックが完了しない。実行後に `Category` の件数が
+      移行前と一致することを確認する
 - [ ] `spec-sync-after-test` によるドキュメント同期コミットが存在する
 
 ## STOP conditions
@@ -163,8 +193,9 @@ ALL を満たすこと:
 
 ## Maintenance notes
 
-- **Phase A は可逆である**。ロールバックは新列・新テーブルの drop のみで、
-  既存の読み書きは無傷。この性質を壊す変更（旧列の drop・NOT NULL 化）を
+- **Phase A は可逆である**。ロールバックは新列・新テーブルの drop **と、
+  `SubCategory` と同じ id を持つ複製 `Category` 行の削除**で閉じる（drop だけでは
+  複製行が残る）。既存の読み書きは無傷。この性質を壊す変更（旧列の drop・NOT NULL 化）を
   本プランに持ち込まないこと。
 - `Product.categoryNodeId` を **nullable** にしているのは意図的。必須化は Phase C（068）。
 - 移行 SQL の A-3 が `s.id` を新 Category 行の `id` として流用しているため、

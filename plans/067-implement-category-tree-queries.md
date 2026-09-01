@@ -142,14 +142,72 @@ ALL を満たすこと:
       作成・カテゴリ変更された商品は `categoryNodeId` が NULL / 旧値のまま残る。
       dual-write を有効化する変更と**同一トランザクション**で以下を実行し、
       再同期 → 切替の順序が逆転しないことを保証する:
+      **新規行の追加だけでは足りない。** 066 適用後には「SubCategory の rename」
+      「親 Category の付け替え」「`featured` 等の表示属性の変更」も起きており、
+      `WHERE NOT EXISTS` の INSERT はそれらを**一切拾わない**。stale な `path` を
+      残したまま読み取りを切り替えると、その枝の商品が祖先フィルタから静かに落ちる
+      （`path` は全サブツリー検索の prefix キーであるため）。したがって再同期は
+      **A-3 と同じ規則で新規行と既存行の双方に適用する**:
       ```sql
       BEGIN;
-      -- 066 適用後に追加された depth 1 ノードを legacy 行から補完（id 共有を維持）
-      INSERT INTO "Category" (id, name, url, image, "parentId", path, depth, "sortOrder")
-      SELECT s.id, s.name, s.url, s.image, s."categoryId",
-             c.path || '/' || s.url, 1, 0
-      FROM "SubCategory" s JOIN "Category" c ON c.id = s."categoryId"
-      WHERE NOT EXISTS (SELECT 1 FROM "Category" n WHERE n.id = s.id);
+      -- 066 の A-3 と同一の規則（衝突回避・属性同期）を新規行と既存行の双方へ適用する。
+      DO $$
+      DECLARE
+          r      RECORD;
+          v_url  TEXT;
+          v_base TEXT;
+          v_n    INT;
+      BEGIN
+          FOR r IN
+              SELECT s.id, s.name, s.image, s.url, s.featured, s."categoryId",
+                     s."createdAt", s."updatedAt",
+                     p.url AS parent_url, p.path AS parent_path
+              FROM "SubCategory" s JOIN "Category" p ON p.id = s."categoryId"
+              ORDER BY s."createdAt" ASC, s.id ASC   -- A-3 と同じ決定論性
+          LOOP
+              -- slug 候補の決定。既存行の再計算では**自分自身を衝突相手から除く**。
+              IF NOT EXISTS (SELECT 1 FROM "Category" c
+                              WHERE c.url = r.url AND c.id <> r.id) THEN
+                  v_url := r.url;
+              ELSE
+                  v_base := r.parent_url || '-' || r.url;
+                  v_url  := v_base;
+                  v_n    := 1;
+                  WHILE EXISTS (SELECT 1 FROM "Category" c
+                                 WHERE c.url = v_url AND c.id <> r.id) LOOP
+                      v_n   := v_n + 1;
+                      v_url := v_base || '-' || v_n;
+                  END LOOP;
+              END IF;
+              INSERT INTO "Category" (id, name, image, url, featured, "parentId",
+                                      path, depth, "sortOrder", "childCount",
+                                      "createdAt", "updatedAt")
+              VALUES (r.id, r.name, r.image, v_url, r.featured, r."categoryId",
+                      r.parent_path || '/' || v_url, 1, 0, 0,
+                      r."createdAt", r."updatedAt")
+              -- 既存行は rename / 親付け替え / 表示属性の変更を追随させる。
+              -- sortOrder と childCount は Category 側が正なので上書きしない。
+              ON CONFLICT (id) DO UPDATE SET
+                  name        = EXCLUDED.name,
+                  image       = EXCLUDED.image,
+                  url         = EXCLUDED.url,
+                  featured    = EXCLUDED.featured,
+                  "parentId"  = EXCLUDED."parentId",
+                  path        = EXCLUDED.path,     -- 親変更・rename の両方を反映
+                  depth       = EXCLUDED.depth,
+                  "updatedAt" = EXCLUDED."updatedAt";
+          END LOOP;
+      END
+      $$;
+      -- A-4 と同一の冪等エイリアス投入。rename 後も**旧 slug の行は消さない**ので
+      -- 旧 URL の 308 到達性（V-2）が保たれる。
+      INSERT INTO "CategorySlugAlias" ("entityType", "oldSlug", "categoryId")
+      SELECT 'SUB_CATEGORY', s.url, s.id FROM "SubCategory" s
+      ON CONFLICT ("entityType", "oldSlug") DO UPDATE SET "categoryId" = EXCLUDED."categoryId";
+      INSERT INTO "CategorySlugAlias" ("entityType", "oldSlug", "categoryId")
+      SELECT 'CATEGORY', c.url, c.id FROM "Category" c WHERE c."parentId" IS NULL
+      ON CONFLICT ("entityType", "oldSlug") DO UPDATE SET "categoryId" = EXCLUDED."categoryId";
+      -- A-5 と同一（親付け替えで両側の childCount が動くため全件再計算する）
       UPDATE "Category" p
       SET "childCount" = (SELECT count(*) FROM "Category" ch WHERE ch."parentId" = p.id);
       -- 066 の A-6 と同一の冪等 UPDATE
@@ -157,6 +215,9 @@ ALL を満たすこと:
       WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
       COMMIT;
       ```
+      再同期の検証は**新規行だけで合格にしない** —— rename / 親付け替え /
+      `featured` 変更を 066 適用後に起こした既存行が、それぞれ `url` / `path` /
+      `featured` に反映されることを確認する。
 - [ ] 再同期後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL` が **0** であることを確認した
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
 - [ ] E2E が 3 ブラウザで緑（flaky 0）
