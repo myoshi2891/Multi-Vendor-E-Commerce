@@ -1,69 +1,74 @@
 "use client";
-import { CategoryWithSubsType } from "@/lib/types";
+import { CategoryTreeType } from "@/lib/types";
 import { Minus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+/**
+ * カテゴリツリーの 1 ノードと、その子孫を再帰的に描画する。
+ *
+ * カテゴリツリー Phase B（plan 067）で 2 段固定から再帰へ変えた。深さを固定すると
+ * 3 階層目以降が**描画されないだけでなく、絞り込み手段そのものが存在しない**ことになる。
+ *
+ * リンクの生成は `?category=<slug>` に一本化してある。slug はグローバル一意
+ * （design.md §2-Q1）なので、どの深さのノードでも 1 つのパラメータで指せる。
+ * `?subCategory=` は外部被リンクのために受理し続けるが、こちらからは生成しない
+ * （/browse が正準 URL へ 308 で寄せる）。
+ */
 export default function CategoryLink({
     category,
 }: {
-    category: CategoryWithSubsType;
+    category: CategoryTreeType;
 }) {
     const searchParams = useSearchParams();
-    const params = new URLSearchParams(searchParams);
     const pathname = usePathname();
-
     const { replace } = useRouter();
 
-    // Params
     const categoryQuery = searchParams.get("category");
-    const subCategoryQuery = searchParams.get("subCategory");
+    const hasChildren = category.children.length > 0;
 
-    const [expand, setExpand] = useState<boolean>(false);
-    const handleCategoryChange = (category: string) => {
-        if (category === categoryQuery) return;
+    // 選択中のノードを含む枝は開いた状態で描く。閉じたままだと、リロード後に
+    // 「絞り込みが効いているのに、その項目が画面上のどこにも無い」状態になる。
+    const containsSelection = (node: CategoryTreeType): boolean =>
+        node.url === categoryQuery || node.children.some(containsSelection);
+
+    const [expand, setExpand] = useState<boolean>(() =>
+        category.children.some(containsSelection)
+    );
+
+    const handleCategoryChange = (slug: string) => {
+        if (slug === categoryQuery) return;
+        const params = new URLSearchParams(searchParams);
+        // 正準パラメータは category 1 本。旧 subCategory が残っていると
+        // 2 つのサブツリーの積になり、意図しない絞り込みが残る。
         params.delete("subCategory");
-        params.set("category", category);
-        replaceParams();
-    };
-
-    const handleSubCategoryChange = (sub: string) => {
-        if (category.url !== categoryQuery)
-            params.set("category", category.url);
-        if (sub === subCategoryQuery) {
-            params.delete("subCategory");
-        } else {
-            params.set("subCategory", sub);
-        }
-        replaceParams();
-    };
-
-    const replaceParams = () => {
+        params.set("category", slug);
         replace(`${pathname}?${params.toString()}`);
         setExpand(true);
     };
 
     return (
-        <div>
-            <section>
-                <div className="relative mt-2 flex w-full items-center justify-between leading-5">
-                    <label
-                        htmlFor={category.id}
-                        className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
-                        onClick={() => handleCategoryChange(category.url)}
-                    >
-                        <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
-                            {category.url === categoryQuery && (
-                                <div className="inline-block size-1.5 rounded-full bg-black"></div>
-                            )}
-                        </span>
-                        <div className="inline-block flex-1 overflow-visible text-clip whitespace-normal text-xs">
-                            {category.name}
-                        </div>
-                    </label>
+        <section>
+            <div className="relative mt-2 flex w-full items-center justify-between leading-5">
+                <label
+                    htmlFor={category.id}
+                    className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
+                    onClick={() => handleCategoryChange(category.url)}
+                >
+                    <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
+                        {category.url === categoryQuery && (
+                            <div className="inline-block size-1.5 rounded-full bg-black"></div>
+                        )}
+                    </span>
+                    <div className="inline-block flex-1 overflow-visible text-clip whitespace-normal text-xs">
+                        {category.name}
+                    </div>
+                </label>
+                {hasChildren && (
                     <span
                         className="cursor-pointer"
                         onClick={() => setExpand((prev) => !prev)}
+                        aria-label={expand ? "Collapse" : "Expand"}
                     >
                         {expand ? (
                             <Minus className="w-3" />
@@ -71,35 +76,15 @@ export default function CategoryLink({
                             <Plus className="w-3" />
                         )}
                     </span>
-                </div>
-                {expand && (
-                    <>
-                        {category.subCategories.map((sub) => (
-                            <section
-                                key={sub.id}
-                                className="relative mt-2 pl-5 leading-5"
-                            >
-                                <label
-                                    htmlFor={sub.id}
-                                    className="flex w-full cursor-pointer select-none items-center whitespace-nowrap text-left"
-                                    onClick={() =>
-                                        handleSubCategoryChange(sub.url)
-                                    }
-                                >
-                                    <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
-                                        {sub.url === subCategoryQuery && (
-                                            <div className="inline-block size-1.5 rounded-full bg-black"></div>
-                                        )}
-                                    </span>
-                                    <div className="inline-block flex-1 overflow-visible text-clip whitespace-normal text-xs">
-                                        {sub.name}
-                                    </div>
-                                </label>
-                            </section>
-                        ))}
-                    </>
                 )}
-            </section>
-        </div>
+            </div>
+            {hasChildren && expand && (
+                <div className="pl-5">
+                    {category.children.map((child) => (
+                        <CategoryLink key={child.id} category={child} />
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }

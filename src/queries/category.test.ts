@@ -207,44 +207,85 @@ describe("upsertCategory", () => {
 // getAllCategories
 // ==================================================
 describe("getAllCategories", () => {
-    it("全カテゴリをサブカテゴリ付きでupdatedAt降順で取得する", async () => {
-        const categories = [
-            {
-                ...createMockCategory(),
-                subCategories: [createMockSubCategory()],
-            },
-        ];
-        mockDb.category.findMany.mockResolvedValue(categories);
+    /** ツリー組み立ての入力（Prisma が返すフラット行の最小形） */
+    const flatNode = (
+        id: string,
+        parentId: string | null,
+        path: string,
+        url = id
+    ) => ({ ...createMockCategory(), id, parentId, path, url });
 
+    it("フラットな結果を children 付きの木へ組み立てて返す", async () => {
+        // Arrange —— depth 昇順のフラット行
+        mockDb.category.findMany.mockResolvedValue([
+            flatNode("electronics", null, "electronics"),
+            flatNode("camera", "electronics", "electronics/camera"),
+            flatNode("lens", "camera", "electronics/camera/lens"),
+        ]);
+
+        // Act
         const result = await getAllCategories();
 
-        expect(result).toEqual(categories);
-        // Phase A（plan 066）: 移行で取り込まれた子行を混ぜないためルートのみ引く
+        // Assert —— 3 階層目まで木として届く（2 段固定だと lens が落ちる）
+        expect(result).toHaveLength(1);
+        expect(result[0].children[0].id).toBe("camera");
+        expect(result[0].children[0].children[0].id).toBe("lens");
+    });
+
+    it("depth → sortOrder → name の決定論的な順序で引く", async () => {
+        // Arrange —— updatedAt desc は編集のたびに並びが変わるため置き換えた
+        mockDb.category.findMany.mockResolvedValue([]);
+
+        // Act
+        await getAllCategories();
+
+        // Assert
         expect(mockDb.category.findMany).toHaveBeenCalledWith({
-            where: { parentId: null },
-            include: { subCategories: true },
-            orderBy: { updatedAt: "desc" },
+            orderBy: [{ depth: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
         });
     });
 
-    it("storeUrlが指定された場合、そのストアの商品を持つカテゴリのみ取得する", async () => {
+    it("storeUrl 指定時はリーフの祖先まで含めて引く（枝を欠けさせない）", async () => {
+        // Arrange —— 商品はリーフにのみ紐づくので、直接のリレーション条件では
+        // リーフしか返らない。祖先が欠けると木が繋がらず店舗メニューが壊れる。
         mockDb.store.findUnique.mockResolvedValue(createMockStore());
-        mockDb.category.findMany.mockResolvedValue([]);
+        mockDb.category.findMany
+            .mockResolvedValueOnce([{ path: "electronics/camera/lens" }])
+            .mockResolvedValueOnce([]);
 
+        // Act
         await getAllCategories(TEST_CONFIG.TEST_STORE_URL);
 
-        expect(mockDb.category.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: {
-                    parentId: null,
-                    products: {
-                        some: {
-                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-                        },
-                    },
+        // Assert —— 1 回目はリーフの path 取得（新 FK 経由）
+        expect(mockDb.category.findMany).toHaveBeenNthCalledWith(1, {
+            where: {
+                nodeProducts: { some: { storeId: TEST_CONFIG.DEFAULT_STORE_ID } },
+            },
+            select: { path: true },
+        });
+
+        // Assert —— 2 回目は祖先を prefix 展開した集合
+        expect(mockDb.category.findMany).toHaveBeenNthCalledWith(2, {
+            where: {
+                path: {
+                    in: ["electronics", "electronics/camera", "electronics/camera/lens"],
                 },
-            })
-        );
+            },
+            orderBy: [{ depth: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+        });
+    });
+
+    it("storeUrl 指定でリーフが 0 件なら 2 回目のクエリを撃たない", async () => {
+        // Arrange
+        mockDb.store.findUnique.mockResolvedValue(createMockStore());
+        mockDb.category.findMany.mockResolvedValueOnce([]);
+
+        // Act
+        const result = await getAllCategories(TEST_CONFIG.TEST_STORE_URL);
+
+        // Assert
+        expect(result).toEqual([]);
+        expect(mockDb.category.findMany).toHaveBeenCalledTimes(1);
     });
 
     it("存在しないストアURLの場合、空配列を返す", async () => {

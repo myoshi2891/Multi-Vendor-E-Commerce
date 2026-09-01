@@ -77,3 +77,50 @@ export const resolveCategoryNode = async (
         ? ((await byAlias()) ?? (await byUrl()))
         : ((await byUrl()) ?? (await byAlias()));
 };
+
+/** `buildCategoryTree` が読む最小の形。Prisma の `Category` はこれを満たす。 */
+export interface CategoryTreeInput {
+    id: string;
+    parentId: string | null;
+}
+
+/** 木に組み上げた結果。入力の全プロパティを保ち、`children` を足す。 */
+export type CategoryTreeNode<T extends CategoryTreeInput> = T & {
+    children: CategoryTreeNode<T>[];
+};
+
+/**
+ * Rebuild a nested category tree from a flat, query-ordered list of nodes.
+ *
+ * 並び替えはしない —— 各階層の順序は呼び出し側のクエリの `orderBy`
+ * （`[{ depth: asc }, { sortOrder: asc }, { name: asc }]`）が決める。ここで
+ * 並べ替えると順序の決定点が 2 つになる。
+ *
+ * **親が集合に無いノードはルートとして残す（捨てない）。** 祖先を取りこぼした枝を
+ * 黙って落とすと、「店舗ページのカテゴリメニューが空」という形でしか表面化せず
+ * 原因に辿り着けない。階層が 1 段浅く出るほうが検出可能である。
+ *
+ * @param nodes - depth 昇順のフラットなノード配列
+ * @returns ルートノードの配列（各ノードに `children` が付く）
+ */
+export const buildCategoryTree = <T extends CategoryTreeInput>(
+    nodes: readonly T[]
+): CategoryTreeNode<T>[] => {
+    const byId = new Map<string, CategoryTreeNode<T>>();
+    for (const n of nodes) {
+        byId.set(n.id, { ...n, children: [] });
+    }
+
+    const roots: CategoryTreeNode<T>[] = [];
+    for (const n of nodes) {
+        const built = byId.get(n.id);
+        if (built === undefined) continue;
+        const parent = n.parentId === null ? undefined : byId.get(n.parentId);
+        if (parent === undefined) {
+            roots.push(built);
+            continue;
+        }
+        parent.children.push(built);
+    }
+    return roots;
+};

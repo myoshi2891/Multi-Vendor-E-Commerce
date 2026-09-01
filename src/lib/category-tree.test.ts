@@ -1,4 +1,4 @@
-import { resolveCategoryNode, subtreeOf } from "./category-tree";
+import { buildCategoryTree, resolveCategoryNode, subtreeOf } from "./category-tree";
 
 jest.mock("@/lib/db", () => ({
     db: {
@@ -140,5 +140,62 @@ describe("resolveCategoryNode", () => {
 
         // Assert
         expect(node).toBeNull();
+    });
+});
+
+describe("buildCategoryTree", () => {
+    /** テスト用の最小ノード（buildCategoryTree が読むのは id / parentId / path のみ） */
+    const node = (id: string, parentId: string | null, path: string) =>
+        ({ id, parentId, path, name: id, url: id }) as const;
+
+    it("parentId をたどって親子を復元する", () => {
+        // Arrange —— depth 昇順のフラット配列（クエリの orderBy と同じ順）
+        const flat = [
+            node("electronics", null, "electronics"),
+            node("camera", "electronics", "electronics/camera"),
+            node("lens", "camera", "electronics/camera/lens"),
+        ];
+
+        // Act
+        const tree = buildCategoryTree(flat);
+
+        // Assert
+        expect(tree).toHaveLength(1);
+        expect(tree[0].id).toBe("electronics");
+        expect(tree[0].children[0].id).toBe("camera");
+        expect(tree[0].children[0].children[0].id).toBe("lens");
+    });
+
+    it("入力の並び順を各階層で保つ", () => {
+        // Arrange
+        const flat = [
+            node("a", null, "a"),
+            node("b", null, "b"),
+            node("a2", "a", "a/a2"),
+            node("a1", "a", "a/a1"),
+        ];
+
+        // Act
+        const tree = buildCategoryTree(flat);
+
+        // Assert —— 並び替えはクエリの orderBy が担当。ここでは順序を触らない
+        expect(tree.map((n) => n.id)).toEqual(["a", "b"]);
+        expect(tree[0].children.map((n) => n.id)).toEqual(["a2", "a1"]);
+    });
+
+    it("親が集合に無いノードを黙って捨てずルートとして残す", () => {
+        // Arrange —— 祖先の取りこぼしは枝の消失として現れる。捨てると
+        // 「店舗メニューが空」で気づくしかないので、見えるところへ出す。
+        const flat = [node("orphan", "missing-parent", "missing-parent/orphan")];
+
+        // Act
+        const tree = buildCategoryTree(flat);
+
+        // Assert
+        expect(tree.map((n) => n.id)).toEqual(["orphan"]);
+    });
+
+    it("空配列には空配列を返す", () => {
+        expect(buildCategoryTree([])).toEqual([]);
     });
 });

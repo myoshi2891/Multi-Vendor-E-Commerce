@@ -7,7 +7,10 @@ import { requireAdmin } from "@/lib/auth-guards";
 import { db } from "@/lib/db";
 
 // Prisma model
-import { Category } from "@prisma/client";
+import { Category, Prisma } from "@prisma/client";
+
+// カテゴリツリー（materialized path）の共通ヘルパー
+import { buildCategoryTree } from "@/lib/category-tree";
 
 // カテゴリツリー Phase A（plan 066）の列を呼び出し側から隠すための入力型。
 // Prisma のモデル型は DB default の有無に関わらず全スカラーを必須プロパティにするため、
@@ -116,11 +119,11 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
 
 
 // Function: getAllCategories
-// Description: Retrieves all categories from the database, optionally filtered by store URL. If a store URL is provided, only returns categories that have products in that specific store.
+// Description: Retrieves the category tree, optionally filtered by store URL. If a store URL is provided, only branches containing products of that store are returned (ancestors included).
 // Permission Level: Public
 // Parameters:
-//   - storeUrl (optional): URL of the store to filter categories by. If provided, only categories with products in this store will be returned.
-// Returns: Array of categories with their subcategories, sorted by updatedAt date in descending order. Returns empty array if store URL is provided but store is not found.
+//   - storeUrl (optional): URL of the store to filter categories by.
+// Returns: Root category nodes, each carrying a recursive `children` array, ordered by depth / sortOrder / name. Returns empty array if store URL is provided but store is not found.
 
 export const getAllCategories = async (storeUrl?: string) => {
     try {
@@ -139,29 +142,48 @@ export const getAllCategories = async (storeUrl?: string) => {
 
             storeId = store.id;
         }
-        // Retrieve all categories from the database
+        // カテゴリツリー Phase B（plan 067 / design.md §2-Q3）。
         //
-        // Phase A（plan 066）: 移行 SQL の A-3 が SubCategory を Category の子行として
-        // 取り込んだため、絞り込まないと**サブカテゴリがトップレベルのカテゴリとして
-        // 混ざって返る**（`subCategories` に加えて本体も列挙され、カテゴリメニュー・
-        // browse フィルタ・admin 一覧が二重になる）。Phase A の読み取りは旧 FK のまま
-        // という境界を守るため、ここではルート（parentId = null）だけを返す。
-        // ツリーを返すのは plan 067 / 068 の担当。
-        const categories = await db.category.findMany({
-            where: storeId
-                ? {
-                      parentId: null,
-                      products: {
-                          some: {
-                              storeId,
-                          },
-                      },
-                  }
-                : { parentId: null },
-            include: { subCategories: true },
-            orderBy: { updatedAt: "desc" },
+        // 並び順は `updatedAt desc`（= 編集のたびに並びが変わる）をやめ、
+        // depth → sortOrder → name の決定論的な順序にする。深さ昇順で引いておくと
+        // buildCategoryTree が親を先に見るため、1 パスで木に組める。
+        const orderBy = [
+            { depth: "asc" },
+            { sortOrder: "asc" },
+            { name: "asc" },
+        ] satisfies Prisma.CategoryOrderByWithRelationInput[];
+
+        if (storeId === undefined) {
+            return buildCategoryTree(await db.category.findMany({ orderBy }));
+        }
+
+        // 店舗スコープ。**祖先を落とさないこと。**
+        // `nodeProducts: { some: { storeId } }` は直接のリレーション条件なので、
+        // 「商品はリーフにのみ紐づく」と組み合わさると**リーフだけが返り、その
+        // 親・祖先は 1 件も返らない**。buildCategoryTree は返された行の中から親を
+        // 探すため、祖先が欠けた枝は階層が崩れる（店舗ページのカテゴリメニューが
+        // 壊れる形で表面化する）。リーフの path を prefix 展開して祖先まで引く。
+        const leaves = await db.category.findMany({
+            where: { nodeProducts: { some: { storeId } } },
+            select: { path: true },
         });
-        return categories;
+        if (leaves.length === 0) return [];
+
+        // "a/b/c" → "a" / "a/b" / "a/b/c"
+        const paths = new Set<string>();
+        for (const { path } of leaves) {
+            const segments = path.split("/");
+            for (let i = 1; i <= segments.length; i++) {
+                paths.add(segments.slice(0, i).join("/"));
+            }
+        }
+
+        return buildCategoryTree(
+            await db.category.findMany({
+                where: { path: { in: [...paths] } },
+                orderBy,
+            })
+        );
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in getAllCategories:", error.message, error.stack);
