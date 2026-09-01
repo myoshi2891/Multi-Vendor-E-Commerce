@@ -22,141 +22,33 @@
  * - plans/066-implement-category-tree-schema.md
  */
 
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { PrismaClient } from "@prisma/client";
 import { disconnectTestDb, getTestDb } from "./setup/db";
+import {
+    extractMarkedSection,
+    readMigrationSql,
+    runStatements,
+    splitStatements,
+} from "./setup/migration-sql";
 import { resetDb } from "./setup/reset-db";
 
 // ----------------------------------------------------------------------------
 // マイグレーション本体から DML 区間を取り出す
 // ----------------------------------------------------------------------------
-
-const START_MARKER = "-- >>> PHASE_A_DATA_MOVE >>>";
-const END_MARKER = "-- <<< PHASE_A_DATA_MOVE <<<";
-
-/** Phase A のマイグレーション SQL 全文を読む。 */
-function readPhaseAMigration(): string {
-    const root = join(process.cwd(), "prisma", "migrations");
-    const dir = readdirSync(root).find((d) =>
-        d.endsWith("_category_tree_phase_a")
-    );
-    if (!dir) {
-        throw new Error(
-            "category_tree_phase_a のマイグレーションが見つかりません"
-        );
-    }
-    return readFileSync(join(root, dir, "migration.sql"), "utf-8");
-}
-
-/**
- * マーカーで囲まれた DML 区間だけを抜き出す。
- *
- * DDL を巻き込むと 2 回目の実行が `CREATE TYPE ... already exists` で落ちるため、
- * 「再実行できる区間」をマイグレーション側で明示している前提に依存している。
- */
-function extractDataMove(sql: string): string {
-    const start = sql.indexOf(START_MARKER);
-    const end = sql.indexOf(END_MARKER);
-    if (start === -1 || end === -1) {
-        throw new Error("PHASE_A_DATA_MOVE マーカーが見つかりません");
-    }
-    return sql.slice(start + START_MARKER.length, end);
-}
-
-/**
- * SQL を文単位に分割する。
- *
- * Prisma の `$executeRawUnsafe` は 1 呼び出し 1 文しか受け付けない。素朴に `;` で
- * split すると A-3 の `DO $PHASE_A$ ... $PHASE_A$` が内部のセミコロンで刻まれるので、
- * ドル引用符・単一引用符・行コメントを跨がない位置でだけ切る。
- */
-function splitStatements(sql: string): string[] {
-    const statements: string[] = [];
-    let buffer = "";
-    let dollarTag: string | null = null;
-    let inSingleQuote = false;
-    let inLineComment = false;
-    let i = 0;
-
-    while (i < sql.length) {
-        const rest = sql.slice(i);
-        const char = sql[i];
-
-        if (inLineComment) {
-            buffer += char;
-            if (char === "\n") inLineComment = false;
-            i += 1;
-            continue;
-        }
-        if (dollarTag !== null) {
-            if (rest.startsWith(dollarTag)) {
-                buffer += dollarTag;
-                i += dollarTag.length;
-                dollarTag = null;
-                continue;
-            }
-            buffer += char;
-            i += 1;
-            continue;
-        }
-        if (inSingleQuote) {
-            buffer += char;
-            if (char === "'") inSingleQuote = false;
-            i += 1;
-            continue;
-        }
-        if (rest.startsWith("--")) {
-            inLineComment = true;
-            buffer += char;
-            i += 1;
-            continue;
-        }
-        if (char === "'") {
-            inSingleQuote = true;
-            buffer += char;
-            i += 1;
-            continue;
-        }
-        const dollarOpen = /^\$[A-Za-z_]*\$/.exec(rest);
-        if (dollarOpen) {
-            dollarTag = dollarOpen[0];
-            buffer += dollarTag;
-            i += dollarTag.length;
-            continue;
-        }
-        if (char === ";") {
-            statements.push(buffer);
-            buffer = "";
-            i += 1;
-            continue;
-        }
-        buffer += char;
-        i += 1;
-    }
-    statements.push(buffer);
-
-    return statements
-        .map((s) => s.trim())
-        .filter((s) => {
-            const withoutComments = s
-                .split("\n")
-                .filter((line) => !line.trim().startsWith("--"))
-                .join("\n")
-                .trim();
-            return withoutComments.length > 0;
-        });
-}
+//
+// 抽出・分割の実装は `setup/migration-sql.ts` に集約してある（Phase B の再同期テストと
+// 共有する。写経すると分割器のバグを片方だけ直す事故が起きる）。
 
 const DATA_MOVE_STATEMENTS = splitStatements(
-    extractDataMove(readPhaseAMigration())
+    extractMarkedSection(
+        readMigrationSql("_category_tree_phase_a"),
+        "PHASE_A_DATA_MOVE"
+    )
 );
 
 /** Phase A のデータ移行を 1 回実行する。 */
 async function runDataMove(db: PrismaClient): Promise<void> {
-    for (const statement of DATA_MOVE_STATEMENTS) {
-        await db.$executeRawUnsafe(statement);
-    }
+    await runStatements(db, DATA_MOVE_STATEMENTS);
 }
 
 // ----------------------------------------------------------------------------
