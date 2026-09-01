@@ -5,7 +5,8 @@ import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
 import { normalizePageParam } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
-import { redirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
+import { resolveCategoryNode } from "@/lib/category-tree";
 
 export const dynamic = 'force-dynamic';
 
@@ -80,6 +81,47 @@ export default async function BrowsePage({
         color,
         page,
     } = query;
+
+    // 旧 URL（?subCategory=）を正準形（?category=）へ 308 で寄せる。
+    //
+    // 受理そのものは**恒久的に続ける** —— 外部被リンク・ブックマークがこの形で
+    // 届いており、切ると SEO と既存導線を同時に落とす（design.md §2-Q4）。
+    // 寄せるのはパラメータ名と、リネームされた slug の正準化だけである。
+    //
+    // **無条件に ?category=<sub> へ畳まないこと。** category と subCategory は
+    // 2 つのサブツリーの積として効いており、両者が親子でない場合に畳むと
+    // 「0 件」が「sub の結果」へ化けて絞り込みが緩くなる。sub が category の
+    // 子孫（または同一）であるときだけ畳み、それ以外は URL をそのまま残す
+    // （どちらにせよ getProducts 側が両方を解決するので結果は正しい）。
+    if (typeof subCategory === "string" && subCategory.length > 0) {
+        const subNode = await resolveCategoryNode(subCategory, "SUB_CATEGORY");
+        if (subNode !== null) {
+            const parentNode =
+                typeof category === "string" && category.length > 0
+                    ? await resolveCategoryNode(category, "CATEGORY")
+                    : null;
+            const isNested =
+                parentNode === null ||
+                subNode.path === parentNode.path ||
+                subNode.path.startsWith(`${parentNode.path}/`);
+            if (isNested) {
+                const params = new URLSearchParams();
+                for (const [key, value] of Object.entries(query)) {
+                    if (key === "category" || key === "subCategory") continue;
+                    if (value === undefined || value === null) continue;
+                    if (Array.isArray(value)) {
+                        value.forEach((item) => params.append(key, item));
+                        continue;
+                    }
+                    params.set(key, String(value));
+                }
+                params.set("category", subNode.url);
+                // permanentRedirect は 308（redirect は 307）。恒久的な正準化なので
+                // 検索エンジンに正準 URL を伝えられる 308 でなければならない。
+                permanentRedirect(`/browse?${params.toString()}`);
+            }
+        }
+    }
 
     // ページ番号の正規化（.claude/steering/tech.md「URL パラメータ正規化」規約）。
     // Infinity / NaN / 小数 / 0 以下は 1 ページ目、MAX_PAGE 超は上限へクランプする。
