@@ -71,34 +71,42 @@ export async function seedProducts(
         }
 
         // Product upsert
-        const productRecord = await prisma.product.upsert({
-            where: { slug: p.slug },
-            update: {
-                name: p.name,
-                description: p.description,
-                brand: p.brand,
-                shippingFeeMethod: p.shippingFeeMethod,
-                storeId,
-                categoryId: rootId,
-                subCategoryId: leafId,
-                categoryNodeId: leafId,
-                offerTagId,
-            },
-            create: {
-                name: p.name,
-                description: p.description,
-                slug: p.slug,
-                brand: p.brand,
-                shippingFeeMethod: p.shippingFeeMethod,
-                storeId,
-                // Phase A は新旧 FK を並走させる。categoryId はルート、subCategoryId は
-                // リーフを指す従来どおりの意味で、categoryNodeId が新しいリーフ 1 本。
-                categoryId: rootId,
-                subCategoryId: leafId,
-                categoryNodeId: leafId,
-                offerTagId,
-            },
-        });
+        // どの商品で落ちたかを Prisma の生エラーに載せて再送出する（slug で特定する）。
+        let productRecord;
+        try {
+            productRecord = await prisma.product.upsert({
+                where: { slug: p.slug },
+                update: {
+                    name: p.name,
+                    description: p.description,
+                    brand: p.brand,
+                    shippingFeeMethod: p.shippingFeeMethod,
+                    storeId,
+                    categoryId: rootId,
+                    subCategoryId: leafId,
+                    categoryNodeId: leafId,
+                    offerTagId,
+                },
+                create: {
+                    name: p.name,
+                    description: p.description,
+                    slug: p.slug,
+                    brand: p.brand,
+                    shippingFeeMethod: p.shippingFeeMethod,
+                    storeId,
+                    // Phase A は新旧 FK を並走させる。categoryId はルート、subCategoryId は
+                    // リーフを指す従来どおりの意味で、categoryNodeId が新しいリーフ 1 本。
+                    categoryId: rootId,
+                    subCategoryId: leafId,
+                    categoryNodeId: leafId,
+                    offerTagId,
+                },
+            });
+        } catch (error: unknown) {
+            throw new Error(`商品の upsert に失敗しました: ${p.slug}`, {
+                cause: error,
+            });
+        }
         products.set(p.slug, productRecord.id);
 
         // Question: deleteMany → createMany

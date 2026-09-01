@@ -121,10 +121,20 @@ describe("seed定数データ バリデーション", () => {
             for (const cat of SEED_CATEGORIES) {
                 let depth = 0;
                 let current = cat;
+                // 循環を「深さ超過」ではなく循環として検出する。
+                // 深さ上限だけでも走査は止まるが、失敗メッセージが
+                // 「depth が 1 を超えた」になり原因が循環だと分からない。
+                const visited = new Set<string>([current.url]);
                 while (current.parentUrl) {
                     const parent = byUrl.get(current.parentUrl);
                     expect(parent).toBeDefined();
                     if (!parent) break;
+                    if (visited.has(parent.url)) {
+                        throw new Error(
+                            `カテゴリツリーに循環があります: ${[...visited].join(" -> ")} -> ${parent.url}`
+                        );
+                    }
+                    visited.add(parent.url);
                     current = parent;
                     depth += 1;
                     expect(depth).toBeLessThanOrEqual(1);

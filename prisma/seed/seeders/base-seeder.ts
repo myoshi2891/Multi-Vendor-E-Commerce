@@ -102,49 +102,65 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
             path = `${parentPath}/${cat.url}`;
         }
 
-        const record = await prisma.category.upsert({
-            where: { url: cat.url },
-            update: {
-                name: cat.name,
-                image: cat.image,
-                featured: cat.featured,
-                parentId,
-                path,
-                depth,
-            },
-            create: {
-                name: cat.name,
-                url: cat.url,
-                image: cat.image,
-                featured: cat.featured,
-                parentId,
-                path,
-                depth,
-            },
-        });
+        // どのカテゴリで落ちたかを Prisma の生エラーに載せて再送出する。
+        // ツリーは逐次投入なので、URL が無いと 24 件のどれで失敗したか追えない。
+        let record;
+        try {
+            record = await prisma.category.upsert({
+                where: { url: cat.url },
+                update: {
+                    name: cat.name,
+                    image: cat.image,
+                    featured: cat.featured,
+                    parentId,
+                    path,
+                    depth,
+                },
+                create: {
+                    name: cat.name,
+                    url: cat.url,
+                    image: cat.image,
+                    featured: cat.featured,
+                    parentId,
+                    path,
+                    depth,
+                },
+            });
+        } catch (error: unknown) {
+            throw new Error(`カテゴリの upsert に失敗しました: ${cat.url}`, {
+                cause: error,
+            });
+        }
         categories.set(cat.url, record.id);
         paths.set(cat.url, path);
 
         // legacy SubCategory ミラー（Phase C = plan 068 で削除する）。
         // Category ノードと id を共有させるのが要点。
         if (cat.parentUrl && parentId) {
-            await prisma.subCategory.upsert({
-                where: { url: cat.url },
-                update: {
-                    name: cat.name,
-                    image: cat.image,
-                    featured: cat.featured,
-                    categoryId: parentId,
-                },
-                create: {
-                    id: record.id,
-                    name: cat.name,
-                    url: cat.url,
-                    image: cat.image,
-                    featured: cat.featured,
-                    categoryId: parentId,
-                },
-            });
+            try {
+                await prisma.subCategory.upsert({
+                    where: { url: cat.url },
+                    update: {
+                        name: cat.name,
+                        image: cat.image,
+                        featured: cat.featured,
+                        categoryId: parentId,
+                    },
+                    create: {
+                        id: record.id,
+                        name: cat.name,
+                        url: cat.url,
+                        image: cat.image,
+                        featured: cat.featured,
+                        categoryId: parentId,
+                    },
+                });
+            } catch (error: unknown) {
+                throw new Error(
+                    `legacy SubCategory ミラーの upsert に失敗しました: ${cat.url}`,
+                    { cause: error }
+                );
+            }
         }
     }
 
