@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { resolveCategoryNode, subtreeOf } from "@/lib/category-tree";
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils";
 // Types
 import {
@@ -639,28 +640,32 @@ export const getProducts = async (
         whereClause.AND.push({ storeId: store.id });
     }
 
-    // Apply category filter (using category URL)
-    if (filters.category) {
-        const category = await db.category.findUnique({
-            where: {
-                url: filters.category,
-            },
-            select: { id: true },
-        });
-        if (!category) return noMatchResult;
-        whereClause.AND.push({ categoryId: category.id });
-    }
-
-    // Apply subCategory filter (using subCategory URL)
-    if (filters.subCategory) {
-        const subCategory = await db.subCategory.findUnique({
-            where: {
-                url: filters.subCategory,
-            },
-            select: { id: true },
-        });
-        if (!subCategory) return noMatchResult;
-        whereClause.AND.push({ subCategoryId: subCategory.id });
+    // Apply category / subCategory filters (using slugs)
+    //
+    // カテゴリツリー Phase B（ADR-006 / design.md §2-Q3）: 条件は「その 1 ノードと
+    // 完全一致」から「そのノードを根とするサブツリー」へ変わる。これにより
+    // 3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようになる。
+    //
+    // **2 系統である点は変えない。** `category` と `subCategory` を `??` で 1 本に
+    // 畳むと、両方指定時に片方が黙って捨てられて絞り込みが緩くなる。従来どおり
+    // 独立に AND へ積み、両方指定は 2 つのサブツリーの積として扱う。
+    //
+    // `?subCategory=` は恒久的に受理する（外部被リンクを切らないため。design.md §2-Q4）。
+    // 正準 URL への 308 は /browse 側の担当で、ここは解決だけを行う。
+    for (const [slug, entityType] of [
+        [filters.category, "CATEGORY"],
+        [filters.subCategory, "SUB_CATEGORY"],
+    ] as const) {
+        if (!slug) continue;
+        const node = await resolveCategoryNode(slug, entityType);
+        // fail-closed を維持する（未解決のフィルタを捨てて全件表示に化けさせない）
+        if (!node) return noMatchResult;
+        // **新 FK（categoryNode）を引くこと。** 旧 `category` はルートを指すので、
+        // そちらにサブツリー条件を掛けてもリーフに紐づく商品へ届かない
+        // （design.md §2-Q3 の擬似コードは Phase A 実装前に書かれており、
+        //  リレーション名が確定していなかった）。categoryNodeId は Phase A の
+        //  backfill と Phase B の dual-write により全商品で埋まっている。
+        whereClause.AND.push({ categoryNode: subtreeOf(node.path) });
     }
 
     // Apply size filter (using array of sizes)

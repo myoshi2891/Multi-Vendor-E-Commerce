@@ -57,6 +57,9 @@ jest.mock("@/lib/db", () => ({
         category: {
             findUnique: jest.fn(),
         },
+        categorySlugAlias: {
+            findUnique: jest.fn(),
+        },
         subCategory: {
             findUnique: jest.fn(),
         },
@@ -846,30 +849,116 @@ describe("getProducts", () => {
             });
         });
 
-        it("カテゴリURLでフィルタする", async () => {
+        it("カテゴリURLをサブツリー条件へ解決してフィルタする", async () => {
+            // Arrange
             mockDb.category.findUnique.mockResolvedValue({
                 id: "cat-123",
+                path: "electronics",
+                url: "electronics",
             });
 
+            // Act
             await getProducts({ category: "electronics" });
 
+            // Assert —— slug は url 完全一致で解決する
             expect(mockDb.category.findUnique).toHaveBeenCalledWith({
                 where: { url: "electronics" },
-                select: { id: true },
+                select: { id: true, path: true, url: true },
             });
+
+            // Assert —— 条件は旧 categoryId 完全一致ではなく新 FK のサブツリー。
+            // 旧 category はルートを指すため、そちらに掛けるとリーフの商品へ届かない。
+            expect(mockDb.product.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        AND: expect.arrayContaining([
+                            {
+                                categoryNode: {
+                                    OR: [
+                                        { path: "electronics" },
+                                        { path: { startsWith: "electronics/" } },
+                                    ],
+                                },
+                            },
+                        ]),
+                    }),
+                })
+            );
         });
 
-        it("サブカテゴリURLでフィルタする", async () => {
-            mockDb.subCategory.findUnique.mockResolvedValue({
-                id: "subcat-123",
+        it("サブカテゴリURLは別名表を先に引いて解決する（恒久受理）", async () => {
+            // Arrange —— リネーム済み slug が別名表経由で正準ノードへ解決される
+            mockDb.categorySlugAlias.findUnique.mockResolvedValue({
+                category: {
+                    id: "subcat-123",
+                    path: "electronics/smartphones",
+                    url: "electronics-smartphones",
+                },
             });
 
+            // Act
             await getProducts({ subCategory: "smartphones" });
 
-            expect(mockDb.subCategory.findUnique).toHaveBeenCalledWith({
-                where: { url: "smartphones" },
-                select: { id: true },
+            // Assert
+            expect(mockDb.categorySlugAlias.findUnique).toHaveBeenCalledWith({
+                where: {
+                    entityType_oldSlug: {
+                        entityType: "SUB_CATEGORY",
+                        oldSlug: "smartphones",
+                    },
+                },
+                select: { category: { select: { id: true, path: true, url: true } } },
             });
+            expect(mockDb.product.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: expect.objectContaining({
+                        AND: expect.arrayContaining([
+                            {
+                                categoryNode: {
+                                    OR: [
+                                        { path: "electronics/smartphones" },
+                                        {
+                                            path: {
+                                                startsWith: "electronics/smartphones/",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ]),
+                    }),
+                })
+            );
+        });
+
+        it("category と subCategory の同時指定は 2 つのサブツリーの積になる", async () => {
+            // Arrange —— ?? で 1 本に畳むと片方が黙って捨てられ絞り込みが緩くなる。
+            // 従来どおり独立に AND へ積むことを固定する。
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "cat-1",
+                path: "electronics",
+                url: "electronics",
+            });
+            mockDb.categorySlugAlias.findUnique.mockResolvedValue({
+                category: {
+                    id: "cat-2",
+                    path: "electronics/smartphones",
+                    url: "electronics-smartphones",
+                },
+            });
+
+            // Act
+            await getProducts({
+                category: "electronics",
+                subCategory: "smartphones",
+            });
+
+            // Assert
+            const call = mockDb.product.findMany.mock.calls[0][0];
+            const subtreeConditions = call.where.AND.filter(
+                (c: Record<string, unknown>) => "categoryNode" in c
+            );
+            expect(subtreeConditions).toHaveLength(2);
         });
 
         it("オファータグURLでフィルタする", async () => {
@@ -893,16 +982,6 @@ describe("getProducts", () => {
         describe("存在しない URL を指定した場合は 0 件を返す", () => {
             it.each([
                 ["store", { store: "missing-store" }, "missing-store"],
-                [
-                    "category",
-                    { category: "missing-category" },
-                    "missing-category",
-                ],
-                [
-                    "subCategory",
-                    { subCategory: "missing-subcategory" },
-                    "missing-subcategory",
-                ],
                 ["offerTag", { offer: "missing-offer" }, "missing-offer"],
             ] as const)(
                 "%s が見つからないとき空の結果を返し、商品を取得しない",
@@ -929,9 +1008,50 @@ describe("getProducts", () => {
                 }
             );
 
+            // category / subCategory は url 完全一致と別名表の 2 段で解決するため、
+            // **両方が外れて初めて**未マッチになる。片方だけを null にした状態で
+            // 合格にすると、フォールバックが効いていないことを見逃す。
+            it.each([
+                ["category", { category: "missing-category" }, "CATEGORY"],
+                [
+                    "subCategory",
+                    { subCategory: "missing-subcategory" },
+                    "SUB_CATEGORY",
+                ],
+            ] as const)(
+                "%s が url でも別名表でも解決できないとき空の結果を返し、商品を取得しない",
+                async (_label, filters, entityType) => {
+                    // Arrange —— 解決経路を両方とも外す
+                    mockDb.category.findUnique.mockResolvedValue(null);
+                    mockDb.categorySlugAlias.findUnique.mockResolvedValue(null);
+
+                    // Act
+                    const result = await getProducts(filters);
+
+                    // Assert —— 別名表を entityType 付きで引いている
+                    expect(mockDb.categorySlugAlias.findUnique).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            where: {
+                                entityType_oldSlug: expect.objectContaining({
+                                    entityType,
+                                }),
+                            },
+                        })
+                    );
+
+                    // Assert —— フィルタを捨てて全件を返してはならない
+                    expect(result.products).toEqual([]);
+                    expect(result.totalCount).toBe(0);
+                    expect(result.totalPages).toBe(0);
+                    expect(mockDb.product.findMany).not.toHaveBeenCalled();
+                    expect(mockDb.product.count).not.toHaveBeenCalled();
+                }
+            );
+
             it("currentPage / pageSize は要求値を保つ", async () => {
                 // Arrange
                 mockDb.category.findUnique.mockResolvedValue(null);
+                mockDb.categorySlugAlias.findUnique.mockResolvedValue(null);
 
                 // Act
                 const result = await getProducts(
