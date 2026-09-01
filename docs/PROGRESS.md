@@ -10,7 +10,7 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2032 passed / 2035 total（3 skipped tests）/ 192 スイート（191 passed + 1 skipped suite）** — 2026-09-02 実測（`scripts/erd/parse-models.test.ts` 新設で **+4 / スイート +1**。直前は 2028 passed / 2031 total / 191 スイート）。以下は 2028 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `EACH_PATTERN` が `schema.test.each(` のメンバー呼び出しをテーブル展開として計上していた件の回帰ガード。直前は 2027 passed / 2030 total）。以下は 2027 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `BLOCK_PATTERN` が `.test(` のメンバー呼び出しをテスト宣言として計上していた件の回帰ガード。直前は 2026 passed / 2029 total）。以下は 2026 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `upsertCategory` のツリー管理列を実行時に落とすことの回帰ガード。直前は 2025 passed / 2028 total）。以下は 2025 時点までの記録: 2026-08-31 実測（plan 066 でシードの宣言データを単一の木へ統合したのに伴う **−1 / スイート不変**。`SEED_SUB_CATEGORIES` 前提のテストを木の不変条件テストへ置き換えた）。直前は 2026 passed / 2029 total・2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jestユニットテスト | **2062 passed / 2065 total（3 skipped tests）/ 193 スイート（192 passed + 1 skipped suite）** — 2026-09-02 実測（plan 067 Phase B で `src/lib/category-tree.test.ts` 新設 **+1 スイート**。直前は 2032 passed / 192 スイート）。以下は 2032 時点までの記録: 2026-09-02 実測（`scripts/erd/parse-models.test.ts` 新設で **+4 / スイート +1**。直前は 2028 passed / 2031 total / 191 スイート）。以下は 2028 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `EACH_PATTERN` が `schema.test.each(` のメンバー呼び出しをテーブル展開として計上していた件の回帰ガード。直前は 2027 passed / 2030 total）。以下は 2027 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `BLOCK_PATTERN` が `.test(` のメンバー呼び出しをテスト宣言として計上していた件の回帰ガード。直前は 2026 passed / 2029 total）。以下は 2026 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `upsertCategory` のツリー管理列を実行時に落とすことの回帰ガード。直前は 2025 passed / 2028 total）。以下は 2025 時点までの記録: 2026-08-31 実測（plan 066 でシードの宣言データを単一の木へ統合したのに伴う **−1 / スイート不変**。`SEED_SUB_CATEGORIES` 前提のテストを木の不変条件テストへ置き換えた）。直前は 2026 passed / 2029 total・2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
 | Jest Integration テスト | **117テスト / 14スイート**（… + `product-browse` **16** + `category-tree-migration` **9**）— 2026-08-31 実測 117/117 pass（plan 066 / V-3・V-4 で `category-tree-migration.test.ts` を新設し **+9 / スイート +1**）。直前は 108 テスト / 13 スイート・2026-08-24 実測（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -4324,3 +4324,61 @@ plan 067（カテゴリツリー Phase B）に着手する前に作業ツリー�
 | スイート数 | 191（190 passed + 1 skipped） | **192（191 passed + 1 skipped）** |
 | Integration | 117 / 14 スイート | **不変** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### カテゴリツリー Phase B — 読み取りのサブツリー化 (2026-09-02 / plan 067・**IN PROGRESS**)
+
+#### 概要
+
+066 が置いた木の構造を、storefront の読み取りが実際に使うようにした。
+条件を「その 1 ノードと完全一致」から「そのノードを根とするサブツリー」へ変え、
+3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようにしている。
+Phase C（plan 068）は不可逆なので、**戻れる最後の地点がここ**である。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/category-tree.ts` | `subtreeOf` / `isWithinSubtree`（prefix 境界の一元化）、`resolveCategoryNode`（別名フォールバック）、`buildCategoryTree` | `8bebdc6e` `4cd23f1d` `9b4ea311` |
+| `src/lib/schemas.ts` | Category / SubCategory の slug を `/^[a-z0-9]+(?:-[a-z0-9]+)*$/` へ制約 | `10707b6d` |
+| `src/queries/product.ts` | browse フィルタを `categoryNode` のサブツリーへ + dual-write | `168c4ea7` `8cca6a84` |
+| `src/queries/category.ts` | `getAllCategories` をツリー返却へ（店舗スコープは祖先を prefix 展開する 2 クエリ） | `a1dbe5dc` |
+| `src/components/store/browse-page/filters/category/` | 2 段固定 → 再帰コンポーネント | `a1dbe5dc` |
+| `src/app/(store)/browse/page.tsx` | 旧 `?subCategory=` を `permanentRedirect`（308）で正準化 | `c478ec54` |
+| `prisma/migrations/*_category_tree_phase_b_resync` | `PHASE_B_RESYNC` 区間（rename / 親付け替え / featured を既存行にも追随） | `5c4b2501` |
+| `tests/integration/setup/migration-sql.ts` | マーカー抽出・SQL 分割器を Phase A / B で共有 | `5c4b2501` |
+
+#### 設計文書からの逸脱・発見
+
+1. **design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤り。** `category` は旧 FK で
+   **ルート**を指すため、サブツリー条件を掛けてもリーフに紐づく商品へ届かない。
+   066 が追加した `categoryNode` を引く形に直した。設計文書は Phase A 実装前に
+   書かれており、リレーション名が確定していなかったことによる差分である。
+2. **`redirect()` は 307。** 308 が要件なので `permanentRedirect()` を使う。
+3. **`?category=A&subCategory=B` を無条件に畳めない。** 2 つのサブツリーの積として
+   効いているため、A と B が親子でない場合に畳むと「0 件」が「B の結果」へ化ける。
+   B が A の子孫（または同一）のときだけ畳む。
+4. **plan 067 本文の統合テストコマンドが動作しない。** `jest.config.js` が
+   `/tests/integration/` を除外しているため、正しくは `bun run test:integration`。
+5. **Done criteria の `grep startsWith` は検索対象に `src/app` を含んでいない。**
+   実際の重複は `browse/page.tsx` に出た（`isWithinSubtree` へ寄せて解消）。
+
+#### 実測
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2032 passed / 2035 total | **2062 passed / 2065 total** |
+| スイート数 | 192 | **193** |
+| Integration | 117 / 14 スイート | **123 / 15 スイート** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors** |
+
+実 DB 実測（`DIRECT_URL` 経由の `$queryRaw`）: slug 制約違反 **0 件** /
+Category 98 / SubCategory 58 / Product 105 / `categoryNodeId IS NULL` **0 件**。
+
+#### 残作業・BLOCKED
+
+残作業（storefront の残リンク・統合 V-1/V-6/3 階層・E2E V-2・docs 同期・README 更新）と
+BLOCKED（実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用）は
+[`docs/testing/QA_HANDOFF.md`](testing/QA_HANDOFF.md) の「067-B」を参照。

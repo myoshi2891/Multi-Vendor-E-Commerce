@@ -12,7 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2032 passed / 2035 total across 192 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+- 2062 passed / 2065 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Category tree Phase B (plan 067) added `src/lib/category-tree.test.ts` (+1 suite) plus new cases in
+  `schemas.test.ts`, `product.test.ts`, `category.test.ts` and `browse/page.test.tsx`.
+  Integration is 123 tests across 15 suites (`category-tree-resync.test.ts`, +6 / +1 suite).
+- Earlier entry: 2032 passed / 2035 total across 192 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
   Added `scripts/erd/parse-models.test.ts` (+4 tests / +1 suite) pinning the Prisma-schema parser
   notation regressions after it was extracted out of `scripts/erd/generate-erd.ts`.
 - Earlier entry: 2028 passed / 2031 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.

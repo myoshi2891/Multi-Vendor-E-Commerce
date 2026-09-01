@@ -232,6 +232,17 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。
     // 依存はゼロで、既存 tests/e2e/a11y/_helpers.ts の runA11yScan をそのまま使える。
+    // 067-B は plan 067 (カテゴリツリー Phase B) の残作業。2026-09-02 起票。
+    // 着手プロンプトは QA_HANDOFF.md「次回着手用 依頼プロンプト」067-B と
+    // 一対一対応 (二重 SSOT)。完了時は両方から同時に削除すること。
+    {
+        priority: "high",
+        title: "カテゴリツリー Phase B の残作業 (plan 067 / IN PROGRESS)",
+        target: "tests/integration/product-browse.test.ts (V-1 / V-6 / 3 階層 / dual-write) + tests/e2e/search-filter.spec.ts (V-2) + src/components/store/layout/footer/links.tsx",
+        tool: "jest (bun run test:integration) / Playwright",
+        cost: "M",
+        impact: "読み取りのサブツリー化・dual-write・再同期マイグレーション・308 正準化は実装済みで緑 (9b4ea311)。残るテストを入れないと、兄弟 prefix の誤ヒットと fail-closed の退行が検知できないまま 068 (不可逆な Phase C) へ進むことになる。BLOCKED: 実 DB への migrate deploy が権限で拒否されており未適用",
+    },
     {
         priority: "medium",
         title: "home (/) の a11y spec 追加 (052 の残り 1 ページ)",
