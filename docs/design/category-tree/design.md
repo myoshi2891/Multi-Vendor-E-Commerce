@@ -288,7 +288,7 @@ return buildTree(nodes);   // path でネストを復元（再帰クエリ不要
 > 見える、という形で表面化する。祖先まで含めた集合を引くこと（上記は path の prefix 展開で
 > 2 クエリ。`path` に索引があるので `IN` で引ける）。`storeId` が無い場合の挙動と
 > 並び順は従来どおり。
-
+>
 > **`category` と `subCategory` を `??` で 1 本に畳まないこと。** 現行実装
 > （[`product.ts:642-663`](../../../src/queries/product.ts)）は 2 つのフィルタを**独立に
 > `AND` へ積んでいる**ため、`??` で片方を選ぶと **両方指定時に `subCategory` が黙って

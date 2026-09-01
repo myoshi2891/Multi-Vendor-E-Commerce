@@ -75,7 +75,9 @@
   point.
 
 ## Indexing and Uniqueness
-- Unique: Store.url, Category.url, SubCategory.url, Product.slug,
+- Unique: Store.url, Category.url, SubCategory.url（**Phase A / B のみ** ——
+  `SubCategory` は Phase C（[plan 068](../../plans/068-implement-category-tree-admin-cutover.md)）で
+  drop されるため、その時点でこの項目も本リストから削除する）, Product.slug,
   ProductVariant.slug, Coupon.code. Category.url stays **globally** unique rather than
   unique-per-parent: `home.ts` and `size.ts` resolve slugs through relation filters
   (`where: { category: { url } }`), which compile fine without a uniqueness guarantee and would
