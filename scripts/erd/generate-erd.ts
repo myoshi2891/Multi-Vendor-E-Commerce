@@ -168,22 +168,32 @@ function parseModels(src: string, modelNames: Set<string>): Model[] {
         const compositeUniques: string[][] = [];
         let compositeId: string[] = [];
 
+        // ブロック属性 (@@id / @@unique) は**モデル本体全体**に対して走査する。
+        // 行単位で `@@id([...])` を要求すると 2 通りの正当な記法を取りこぼす:
+        //  - オプション付き: `@@id([a, b], name: "pk")` … 閉じ括弧が `]` の直後に来ない
+        //  - 複数行:         `@@id([` 改行 `a,` 改行 `b` 改行 `])` … 1 行に収まらない
+        // モデル本体は `[^{}]*` で切り出しており入れ子が無いため、本体一括で安全に拾える。
+        // `[^\]]` は改行にも一致するので複数行形式もそのまま取れる。
+        const splitFieldList = (raw: string): string[] =>
+            raw
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+
+        for (const uq of body.matchAll(/@@unique\s*\(\s*\[([^\]]*)\]/g)) {
+            compositeUniques.push(splitFieldList(uq[1]));
+        }
+        const pk = body.match(/@@id\s*\(\s*\[([^\]]*)\]/);
+        if (pk) {
+            compositeId = splitFieldList(pk[1]);
+        }
+
         for (const rawLine of body.split("\n")) {
             const line = rawLine.trim();
             if (line.length === 0) continue;
 
-            // ブロック属性 (@@unique / @@index / @@map ...)
-            if (line.startsWith("@@")) {
-                const uq = line.match(/@@unique\(\[([^\]]+)\]\)/);
-                if (uq) {
-                    compositeUniques.push(uq[1].split(",").map((s) => s.trim()));
-                }
-                const pk = line.match(/@@id\(\[([^\]]+)\]\)/);
-                if (pk) {
-                    compositeId = pk[1].split(",").map((s) => s.trim());
-                }
-                continue;
-            }
+            // ブロック属性 (@@unique / @@index / @@map ...) は上で処理済み
+            if (line.startsWith("@@")) continue;
 
             const tokens = line.split(/\s+/);
             if (tokens.length < 2) continue;
