@@ -6,7 +6,7 @@ import { FiltersQueryType } from "@/lib/types";
 import { normalizePageParam } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
 import { permanentRedirect, redirect } from "next/navigation";
-import { resolveCategoryNode } from "@/lib/category-tree";
+import { isWithinSubtree, resolveCategoryNode } from "@/lib/category-tree";
 
 export const dynamic = 'force-dynamic';
 
@@ -100,10 +100,11 @@ export default async function BrowsePage({
                 typeof category === "string" && category.length > 0
                     ? await resolveCategoryNode(category, "CATEGORY")
                     : null;
+            // 親子判定は subtreeOf と同じ境界定義を使う（isWithinSubtree）。
+            // ここで `startsWith` を書き下すと、prefix 境界の定義が 2 箇所に散る。
             const isNested =
                 parentNode === null ||
-                subNode.path === parentNode.path ||
-                subNode.path.startsWith(`${parentNode.path}/`);
+                isWithinSubtree(subNode.path, parentNode.path);
             if (isNested) {
                 const params = new URLSearchParams();
                 for (const [key, value] of Object.entries(query)) {

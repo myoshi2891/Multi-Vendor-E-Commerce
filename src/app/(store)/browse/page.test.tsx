@@ -28,6 +28,9 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/lib/category-tree", () => ({
     resolveCategoryNode: jest.fn(),
+    // 境界判定は本物を使う（モックすると「親子でないなら畳まない」の検証が
+    // モックの都合で緑になり、実装の誤りを見逃す）。
+    isWithinSubtree: jest.requireActual("@/lib/category-tree").isWithinSubtree,
 }));
 
 // 子コンポーネントはページ側のロジック検証に不要（useSearchParams 等の client 依存を切る）

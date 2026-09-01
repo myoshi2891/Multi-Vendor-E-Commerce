@@ -29,6 +29,21 @@ export const subtreeOf = (path: string) =>
         OR: [{ path }, { path: { startsWith: `${path}/` } }],
     }) as const;
 
+/**
+ * Report whether `path` is the ancestor path itself or one of its descendants.
+ *
+ * `subtreeOf` の TypeScript 版。**境界の定義を 2 箇所に散らさないため**、
+ * DB 側（Prisma where）とアプリ側（URL 正準化の親子判定）の両方をここから引く。
+ * 素の `startsWith(ancestor)` は `electronics/camera` が
+ * `electronics/camera-accessories` を拾う点も同じ。
+ *
+ * @param path - 判定対象ノードの path
+ * @param ancestorPath - 祖先候補の path
+ * @returns 同一または子孫なら true
+ */
+export const isWithinSubtree = (path: string, ancestorPath: string): boolean =>
+    path === ancestorPath || path.startsWith(`${ancestorPath}/`);
+
 /** slug 解決の結果。ツリー検索に必要な最小限だけを返す。 */
 export interface ResolvedCategoryNode {
     id: string;
