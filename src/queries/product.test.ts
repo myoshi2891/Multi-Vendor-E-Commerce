@@ -333,6 +333,10 @@ describe("upsertProduct", () => {
                         },
                         category: { connect: { id: "category-001" } },
                         subCategory: { connect: { id: "subcategory-001" } },
+                        // dual-write（Phase B）: 読み取りが新 FK へ移った後も
+                        // 旧 2 列を書き続けることで読み取りを巻き戻せる状態を保つ。
+                        // categoryNodeId = subCategoryId は Phase A の id 共有による。
+                        categoryNode: { connect: { id: "subcategory-001" } },
                     }),
                 })
             );
@@ -455,6 +459,12 @@ describe("upsertProduct", () => {
                     where: { id: "product-001" },
                     data: expect.objectContaining({
                         name: "Updated Product",
+                        // dual-write（Phase B）: 更新経路でも旧 2 列と新 FK の
+                        // 両方を書く。片方だけだと、カテゴリを付け替えた商品が
+                        // 読み取り側（新 FK）から見て古い枝に残る。
+                        category: { connect: { id: "category-001" } },
+                        subCategory: { connect: { id: "subcategory-001" } },
+                        categoryNode: { connect: { id: "subcategory-001" } },
                     }),
                 })
             );

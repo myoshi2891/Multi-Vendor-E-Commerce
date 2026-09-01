@@ -151,8 +151,17 @@ const handleProductCreate = async (
         description: product.description,
         slug: productSlug,
         store: { connect: { id: storeId } },
+        // dual-write（カテゴリツリー Phase B / plan 067）。読み取りは新 FK
+        // （categoryNode）へ切り替わっているが、旧 2 列は Phase C（plan 068）まで
+        // 書き続ける —— 旧列が生きているうちだけ読み取りを巻き戻せるため。
+        //
+        // categoryNodeId に subCategoryId をそのまま使えるのは、Phase A の移行
+        // （A-3）が legacy SubCategory 行の id を流用して Category ノードを作り、
+        // **両者が id を共有している**からである（A-6 の backfill と同じ規則）。
+        // この不変条件は統合シードのガードと統合テストで守られている。
         category: { connect: { id: product.categoryId } },
         subCategory: { connect: { id: product.subCategoryId } },
+        categoryNode: { connect: { id: product.subCategoryId } },
         offerTag: product.offerTagId
             ? { connect: { id: product.offerTagId } }
             : undefined,
@@ -334,8 +343,10 @@ const handleProductAndVariantUpdate = async (
                 description: product.description,
                 slug: productSlug,
                 brand: product.brand,
+                // dual-write（Phase B）。詳細は upsertProduct 側の注記を参照。
                 category: { connect: { id: product.categoryId } },
                 subCategory: { connect: { id: product.subCategoryId } },
+                categoryNode: { connect: { id: product.subCategoryId } },
                 offerTag: product.offerTagId
                     ? { connect: { id: product.offerTagId } }
                     : { disconnect: true },
