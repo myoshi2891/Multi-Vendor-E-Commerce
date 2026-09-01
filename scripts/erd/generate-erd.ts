@@ -25,6 +25,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseModels, type Field, type Model } from "./parse-models";
 
 // ---------------------------------------------------------------------------
 // 0. パス定義
@@ -38,37 +39,6 @@ const OVERRIDES_PATH = resolve(ROOT, "scripts/erd/layout-overrides.json");
 // ---------------------------------------------------------------------------
 // 1. 型定義
 // ---------------------------------------------------------------------------
-interface Field {
-    name: string;
-    /** `[]` / `?` を除いた素の型名 */
-    baseType: string;
-    isList: boolean;
-    isOptional: boolean;
-    isId: boolean;
-    isUnique: boolean;
-    /** `@db.Decimal(p,s)` が付いている場合の表示型（例: "Decimal(12,2)"） */
-    displayType: string;
-    /** リレーションオブジェクトフィールドか（baseType が model 名） */
-    isRelationObject: boolean;
-    /** このフィールドが外部キースカラーか */
-    isForeignKey: boolean;
-    /** `@relation(...)` の中身（owning 側のみ） */
-    relation?: {
-        name: string;
-        fields: string[];
-        references: string[];
-        onDelete?: string;
-    };
-}
-
-interface Model {
-    name: string;
-    fields: Field[];
-    /** `@@unique([a, b])` の複合ユニーク */
-    compositeUniques: string[][];
-    /** `@@id([a, b])` の複合主キー（無い場合は空配列） */
-    compositeId: string[];
-}
 
 interface EnumDef {
     name: string;
@@ -157,93 +127,6 @@ function parseEnums(src: string): EnumDef[] {
     return enums;
 }
 
-function parseModels(src: string, modelNames: Set<string>): Model[] {
-    const models: Model[] = [];
-    const re = /model\s+(\w+)\s*\{([^{}]*)\}/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src)) !== null) {
-        const name = m[1];
-        const body = m[2];
-        const fields: Field[] = [];
-        const compositeUniques: string[][] = [];
-        let compositeId: string[] = [];
-
-        // ブロック属性 (@@id / @@unique) は**モデル本体全体**に対して走査する。
-        // 行単位で `@@id([...])` を要求すると 2 通りの正当な記法を取りこぼす:
-        //  - オプション付き: `@@id([a, b], name: "pk")` … 閉じ括弧が `]` の直後に来ない
-        //  - 複数行:         `@@id([` 改行 `a,` 改行 `b` 改行 `])` … 1 行に収まらない
-        // モデル本体は `[^{}]*` で切り出しており入れ子が無いため、本体一括で安全に拾える。
-        // `[^\]]` は改行にも一致するので複数行形式もそのまま取れる。
-        const splitFieldList = (raw: string): string[] =>
-            raw
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0);
-
-        for (const uq of body.matchAll(/@@unique\s*\(\s*\[([^\]]*)\]/g)) {
-            compositeUniques.push(splitFieldList(uq[1]));
-        }
-        const pk = body.match(/@@id\s*\(\s*\[([^\]]*)\]/);
-        if (pk) {
-            compositeId = splitFieldList(pk[1]);
-        }
-
-        for (const rawLine of body.split("\n")) {
-            const line = rawLine.trim();
-            if (line.length === 0) continue;
-
-            // ブロック属性 (@@unique / @@index / @@map ...) は上で処理済み
-            if (line.startsWith("@@")) continue;
-
-            const tokens = line.split(/\s+/);
-            if (tokens.length < 2) continue;
-            const fieldName = tokens[0];
-            const rawType = tokens[1];
-            const rest = tokens.slice(2).join(" ");
-
-            const isList = /\[\]/.test(rawType);
-            const isOptional = /\?$/.test(rawType);
-            const baseType = rawType.replace(/[[\]?]/g, "");
-
-            // 表示型（Decimal(p,s) を反映）
-            let displayType = baseType + (isList ? "[]" : "") + (isOptional ? "?" : "");
-            const dec = rest.match(/@db\.Decimal\((\d+),\s*(\d+)\)/);
-            if (dec) displayType = `Decimal(${dec[1]},${dec[2]})`;
-
-            const relMatch = rest.match(/@relation\(([^)]*)\)/);
-            let relation: Field["relation"];
-            if (relMatch) {
-                const inner = relMatch[1];
-                const nameM = inner.match(/"([^"]+)"/);
-                const fieldsM = inner.match(/fields:\s*\[([^\]]+)\]/);
-                const refsM = inner.match(/references:\s*\[([^\]]+)\]/);
-                const onDeleteM = inner.match(/onDelete:\s*(\w+)/);
-                relation = {
-                    name: nameM ? nameM[1] : "",
-                    fields: fieldsM ? fieldsM[1].split(",").map((s) => s.trim()) : [],
-                    references: refsM ? refsM[1].split(",").map((s) => s.trim()) : [],
-                    onDelete: onDeleteM ? onDeleteM[1] : undefined,
-                };
-            }
-
-            fields.push({
-                name: fieldName,
-                baseType,
-                isList,
-                isOptional,
-                isId: /@id\b/.test(rest),
-                isUnique: /@unique\b/.test(rest),
-                displayType,
-                isRelationObject: modelNames.has(baseType),
-                isForeignKey: false, // 後で確定
-                relation,
-            });
-        }
-
-        models.push({ name, fields, compositeUniques, compositeId });
-    }
-    return models;
-}
 
 // ---------------------------------------------------------------------------
 // 3. リレーション（エッジ）の導出
