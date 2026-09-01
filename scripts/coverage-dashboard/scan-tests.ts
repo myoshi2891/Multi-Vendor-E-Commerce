@@ -56,8 +56,12 @@ const BLOCK_PATTERN =
 // BLOCK_PATTERN は `.skip` の直後が `(` でないため一致せず、ここが `it.each` 固定だと
 // `it.skip.each` は両方をすり抜けてテーブル行数が丸ごと欠測する。
 // BLOCK_PATTERN と同じ修飾子を**列挙**で許容する（総称形にしない理由は上のコメント参照）。
+//
+// 先頭の否定後読みは BLOCK_PATTERN と同じ理由で**必須**。`\b` はドットと識別子の
+// 境界でも成立するため、`schema.test.each(...)` のようなメンバー呼び出しが
+// `test.each` の宣言として計上されてしまう。
 const EACH_PATTERN =
-    /\b(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\.each\b/g;
+    /(?<![.\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\.each\b/g;
 
 /** 空白・行コメント・ブロックコメントを読み飛ばし、次の有効文字の位置を返す */
 function skipTrivia(content: string, start: number): number {

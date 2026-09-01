@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2027 passed / 2030 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+- 2028 passed / 2031 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
   A review fix closed a miscount in `scripts/coverage-dashboard/scan-tests.ts`: `BLOCK_PATTERN`
   used `\b(it|test)\s*\(`, and `\b` also matches the boundary between `.` and an identifier, so
   `RegExp.prototype.test` member calls such as `/^CREATE\b/i.test(sql)` were counted as test

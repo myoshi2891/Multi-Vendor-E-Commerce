@@ -277,6 +277,29 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(1);
     });
 
+    // BLOCK_PATTERN と同じ穴が EACH_PATTERN 側にもあった。`\b` はドットと識別子の
+    // 境界でも成立するため、`schema.test.each(...)` のようなメンバー呼び出しが
+    // `test.each` の宣言として一致し、テーブル行数ぶん丸ごと過大計上されていた。
+    it("メンバー呼び出しの .test.each はテーブル展開として数えない", async () => {
+        root = makeFixture({
+            "src/queries/member-each.test.ts": `
+                it('real case', () => {
+                    const rows = schema.test.each([
+                        [1],
+                        [2],
+                        [3],
+                    ]);
+                    expect(rows).toBeDefined();
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は `it('real case')` の 1 件だけ。`schema.test.each` の 3 行は数えない。
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     // 空テーブルは実行時に 0 件へ展開される（Jest では空 each 自体がエラー扱い）。
     // 配列の開き括弧自身を「内容あり」と見なすと 1 件に化け、testCount が過大になる。
     it("空の it.each([]) は 0 件として数える", async () => {
