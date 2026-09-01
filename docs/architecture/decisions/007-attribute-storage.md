@@ -58,6 +58,8 @@ model AttributeDefinition {
   sortOrder  Int            @default(0)
   archivedAt DateTime?                           // 論理削除（既定）
   options    AttributeOption[]
+  productValues ProductAttributeValue[]         // 逆リレーション（Prisma の検証に必須）
+  variantValues VariantAttributeValue[]
   @@unique([categoryId, key])
   @@index([categoryId, facetable])
 }
@@ -70,6 +72,8 @@ model AttributeOption {
   label        String                            // 表示名（可変）
   sortOrder    Int       @default(0)
   archivedAt   DateTime?
+  productValues ProductAttributeValue[]         // 逆リレーション（Prisma の検証に必須）
+  variantValues VariantAttributeValue[]
   @@unique([definitionId, value])
   @@unique([id, definitionId])      // 複合 FK の参照先（値テーブルの定義一致を DB で強制）
 }

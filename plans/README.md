@@ -280,7 +280,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >
 > **明示的に未決として残した点**: 多値属性（アレルゲン等）の格納。
 > `@@unique([productId, definitionId])` は 1 属性 1 値なので、制約を緩めるか
-> `multiValued` フラグを持たせるかを **069 の Step 9** で決める。
+> `multiValued` フラグを持たせるかを **069 の Step 2** で決める。
 > **見落としではなく、認識したうえで実装時判断へ送った**（design.md §6-4 / §4 の注記）。
 >
 > **本 spike が主張しないこと**: (1) 性能ベンチマークは取っていない —— 比較はクエリの

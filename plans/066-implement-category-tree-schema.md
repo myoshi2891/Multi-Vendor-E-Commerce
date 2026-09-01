@@ -166,8 +166,13 @@ ALL を満たすこと:
       追随を除いて**移行前と同一**（storefront の読み取り経路を触っていないため）
 - [ ] V-3（冪等性）/ V-4（`childCount` 整合）/ 衝突リネームの 3 シナリオが緑
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors
-- [ ] `src/queries/**` と `src/components/**` の差分が **0 行**
-      （`git diff --stat <base> -- src/queries src/components` が空 —— Phase A の境界）
+- [ ] `src/queries/**` の差分が **`src/queries/category.ts` のルート絞り込み
+      （`where: { parentId: null }`）のみ**で、`src/components/**` の差分は **0 行**
+      （`git diff --stat <base> -- src/components` が空 かつ
+      `git diff --name-only <base> -- src/queries` が `src/queries/category.ts` のみ ——
+      Phase A の境界）。この 1 箇所だけは**既存挙動の保存**であり、読み替え（plan 067）
+      ではない: A-3 が複製した子行を除外しないと、既存の全件読み取りが旧サブカテゴリを
+      トップレベルとして露出させてしまう（本プラン冒頭の注記）
 - [ ] 事前計測の実測値がプランの「実施結果」節に記録されている
       （Step 1 の slug 衝突件数 **と** Step 4 の A-6 直後に測る非リーフ紐づけ商品件数の 2 本）
 - [ ] **逆移行が用意され、実行して検証済み**: 新列・新テーブルの drop に加えて、

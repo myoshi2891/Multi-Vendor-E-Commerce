@@ -406,6 +406,12 @@ for (const d of defs.sort((a, b) => a.category.path.length - b.category.path.len
 > `@@unique([productId, definitionId])` は 1 属性 1 値なので、**多値属性は
 > 069 で明示的に扱うこと** —— 制約を `@@unique([productId, definitionId, optionId])` に
 > 緩めるか、`multiValued Boolean` を定義側に持たせるかを実装時に決める。
+> **ただし「制約を緩めるだけ」では閉じない** —— PostgreSQL の一意インデックスは NULL 同士を
+> 異なる値として扱うため、`optionId` が NULL になる TEXT / NUMBER / BOOLEAN の行が
+> 重複可能になり、単値属性の 1 属性 1 値が失われる。決定は
+> `@@unique` / upsert キー / delete の単位 / `optionId` の nullability / NULL 重複の防止策
+> の 5 項目を PRODUCT・VARIANT 両スコープについて埋めた形で行うこと
+> （チェックリストと推奨解は [plan 069](../../../plans/069-implement-category-attributes.md) Step 2）。
 > **本 spike はこの穴を認識したうえで未決として残す**（見落としではない）。
 
 ---

@@ -119,6 +119,32 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    > （[`tech.md`](../.claude/steering/tech.md)）。さらに単値/多値の別は Step 8 の
    > フォーム（1 値か配列か）と保存契約（upsert のキーと削除の単位）を規定するため、
    > **後から決めると 3 箇所を同時に書き直すことになる**。
+
+   **決定は次の 5 項目を PRODUCT / VARIANT の両スコープについて埋めた形で書くこと**
+   （どれか 1 つでも空欄だと Step 3 のマイグレーションと Step 8 の保存契約が食い違う）:
+
+   | 項目 | 単値 | 多値 |
+   |---|---|---|
+   | `@@unique` | `[productId, definitionId]` / `[variantId, definitionId]` | 下記の NULL 問題を解いた形 |
+   | upsert キー | 同上の複合キー | **upsert しない**（後述） |
+   | delete の単位 | `(所有先, definitionId)` の 1 行 | `(所有先, definitionId)` の**行集合** |
+   | `optionId` の nullability | nullable（TEXT / NUMBER / BOOLEAN では NULL） | — |
+   | NULL 重複の防止 | 不要（複合キーに `optionId` を含めない） | 下記 |
+
+   > **`@@unique([productId, definitionId, optionId])` に緩めるだけでは閉じない。**
+   > PostgreSQL の一意インデックスは **NULL 同士を「異なる値」として扱う**ため、
+   > `optionId` が NULL になる TEXT / NUMBER / BOOLEAN の行は**何行でも重複して入る** ——
+   > 単値属性の 1 属性 1 値がスコープ全体で失われる。多値を選ぶなら、
+   > **多値は ENUM 限定（`optionId` NOT NULL）**とし、
+   > `WHERE "optionId" IS NOT NULL` の**部分一意インデックス**で担保すること。
+   > Prisma スキーマではこの部分インデックスを表現できないので、
+   > `bunx prisma migrate dev --create-only` で生成した**新規**マイグレーションに
+   > 生 SQL を追記して適用する（**既存**マイグレーションの編集ではないので
+   > [`tech.md`](../.claude/steering/tech.md) の禁止事項に触れない）。
+   > 多値側は upsert が成立しない（キーが行ではなく集合）ので、Step 8 の同期は
+   > **`deleteMany`（所有先 + definitionId）→ `createMany`** の置換とする。
+   > 決定は本プランと [`design.md`](../docs/design/category-attributes/design.md) §4 の
+   > 両方へ書き戻し、`multiValued` を定義側に持たせる場合はその列も §3 のスキーマへ反映する。
 3. **スキーマ + マイグレーション**。design.md §3 / ADR-007 の Decision 節どおり。
    `bunx prisma migrate dev --name category_attributes`。**既存マイグレーションは編集しない**。
 4. **ER 図を再生成**。`scripts/erd/generate-erd.ts` の `PAGES` に新 4 モデルを追記 →
@@ -169,12 +195,30 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    - この所有先を **DTO → バリアント単位の UI → `$transaction` の同期**まで貫通させる。
      `product-details.tsx` は VARIANT スコープの定義を**バリアントごとに**描画し
      （既存のバリアント編集 UI の中に置く）、PRODUCT スコープは商品レベルに 1 度だけ描画する。
-   - 保存 `$transaction` 内の同期は**キーをスコープごとに変える**:
-     `ProductAttributeValue` は `@@unique([productId, definitionId])`、
-     `VariantAttributeValue` は `@@unique([variantId, definitionId])` に対する upsert とし、
-     **送信されなかった定義の delete も同じ単位でスコープする**
+   - 保存 `$transaction` 内の同期は**キーをスコープごとに変える**。単値属性は
+     `ProductAttributeValue` が `@@unique([productId, definitionId])`、
+     `VariantAttributeValue` が `@@unique([variantId, definitionId])` に対する upsert とし、
+     **送信されなかった定義の delete も同じ単位でスコープする**。
+     **多値属性は Step 2 の決定に従う** —— upsert ではなく
+     `deleteMany`（所有先 + `definitionId`）→ `createMany` の置換であり、
+     キーは行ではなく**行集合**である。ここを単値と同じ upsert で書かないこと
      （VARIANT 側の delete を `productId` で撃つと、編集していない他バリアントの値まで消える）。
      部分更新でゴースト値が残らないこと。
+   - **`$transaction` に入る前にサーバー側で再検証する（型は認可ではない）**。
+     `AttributeValueInput` は payload の**形**を保証するだけで、その `variantId` /
+     `definitionId` が**呼び出し元のものである**ことは何も保証しない。判別可能な union を
+     通っただけの id をそのまま upsert のキーに使うと、他人の商品・他店舗のバリアントへ
+     書き込む経路（IDOR）が開く。`requireStoreOwner`（[`src/lib/auth-guards.ts`](../src/lib/auth-guards.ts)）
+     で店舗所有権を確認したうえで、次の 3 点を**書き込み前に**検証し、1 つでも外れたら拒否する:
+     1. 各 `attributes[].variantId` が **編集対象の商品に属する**バリアントであること
+        （`ProductVariant.productId === product.id`）
+     2. その商品が **その店舗に属する**こと（`Product.storeId === store.id`）
+     3. 各 `definitionId` が **選択中のカテゴリで有効な定義**であること
+        （`AttributeDefinition.categoryId` が選択ノードの祖先パス集合に含まれ、
+        かつ `archivedAt` が null。scope が payload の `scope` と一致すること）
+     > 検証は `$transaction` の**外側で先に**走らせ、通過した id 集合だけをトランザクションへ
+     > 渡す。トランザクション内で個別に確認すると、拒否のたびにロールバックが要り、
+     > 失敗経路の観測（どの id が弾かれたか）も難しくなる。
    - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、
      **保存直後に同じ値が再読込できる**状態にする。VARIANT 属性は `variantId` ごとに束ねる。
    - Step 11 に**往復テスト**を足す: (1) 属性値を入力 → 保存 → 再読込して同値、
@@ -193,6 +237,13 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
     - **A-4**: `AttributeOption.label` の改名が既存商品の表示に自動追随する
     - **A-7**: `TEXT → NUMBER` の型変更で変換不能値が `valueText` に残り **NULL 化されない**
     - **A-8**: `Spec` の読み書きが壊れていない（温存の回帰ガード）
+    - **認可の拒否 3 本**（Step 8 の再検証に対応。型付き payload だけに依存していない
+      ことの実証）: (1) **別商品**のバリアント id を混ぜた payload が拒否される、
+      (2) **別店舗**の商品 id で呼ぶと拒否される、(3) 選択カテゴリと**無関係な定義**の
+      `definitionId` が拒否される。いずれも
+      [`SECURITY_GAP_REPORT.md`](../docs/testing/SECURITY_GAP_REPORT.md) §5.2 の 3 階層
+      （スロー検証 / `where` 構造検証 / **副作用なし**検証）を満たすこと ——
+      「エラーが返る」だけでは行が書かれていない証明にならない。
 12. `bun run lint` / `bunx tsc --noEmit` / `bun run test` / 統合。
 13. **docs 同期**: `spec-sync-after-test` skill（テスト数が変わる）。**別コミット**。
 14. `plans/README.md` の 069 ステータス行を更新し、Step 1 の実測値と Step 2 の決定を記録する。
