@@ -204,14 +204,41 @@ export async function seedProductWithVariantAndSize(
 }> {
     // categoryNodeId は subCategoryId をそのまま使う（id 共有が前提）。共有関係にない id を
     // 渡されると Product 作成時に不透明な FK 違反になるので、手前で契約違反として落とす。
+    // 存在確認だけでは不十分: FK は「その id が実在するか」しか見ないため、**別カテゴリの**
+    // サブカテゴリ id を渡しても Product は作成に成功してしまい、categoryId と
+    // subCategoryId / categoryNodeId が親子でないテストデータが黙って生まれる。
+    // 親子関係は新旧両系統（Category.parentId と SubCategory.categoryId）で検証する。
     const categoryNode = await db.category.findUnique({
         where: { id: input.subCategoryId },
-        select: { id: true },
+        select: { id: true, parentId: true },
     });
     if (categoryNode === null) {
         throw new Error(
             `[seed] subCategoryId=${input.subCategoryId} に対応する Category ノードがありません。` +
                 `seedCategoryWithSubcategory が返す共有 id を渡してください。`
+        );
+    }
+    if (categoryNode.parentId !== input.categoryId) {
+        throw new Error(
+            `[seed] Category ノード ${input.subCategoryId} の parentId は ` +
+                `${categoryNode.parentId ?? "null"} で、categoryId=${input.categoryId} の子ではありません。` +
+                `同じ seedCategoryWithSubcategory の戻り値から categoryId / subCategoryId を渡してください。`
+        );
+    }
+    const subCategory = await db.subCategory.findUnique({
+        where: { id: input.subCategoryId },
+        select: { categoryId: true },
+    });
+    if (subCategory === null) {
+        throw new Error(
+            `[seed] subCategoryId=${input.subCategoryId} に対応する SubCategory がありません。` +
+                `seedCategoryWithSubcategory が返す共有 id を渡してください。`
+        );
+    }
+    if (subCategory.categoryId !== input.categoryId) {
+        throw new Error(
+            `[seed] SubCategory ${input.subCategoryId} の categoryId は ${subCategory.categoryId} で、` +
+                `渡された categoryId=${input.categoryId} と一致しません。`
         );
     }
 
