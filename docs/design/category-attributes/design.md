@@ -251,7 +251,7 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 | **表示名の変更** | **許可**。`key`（機械キー）と `name`（表示名）を分離しているため表示名だけ変えられる | 影響なし |
 | **`key` の変更** | **禁止**。`@@unique([categoryId, key])` を安定キーとして扱う。変えたい場合は新規定義 + 旧定義の `archivedAt` | 旧定義に紐づいた値はそのまま残る（履歴） |
 | **単位の変更** | **許可するが値の再計算はしない**。`cm → mm` のような換算は**新規定義を作って移行**する | 旧単位のまま旧定義に残る。混在を避けるため旧定義は archive する |
-| **型の変更** | **`TEXT → NUMBER` のみ許可**。逆方向と `ENUM ⇄ NUMBER` は禁止（新規定義を作る） | 変換可能な行は `valueText` → `valueNumber` へ UPDATE、**変換不能な行は `valueText` に残す**（`WHERE valueNumber IS NULL` で列挙可能）。0-B のとおり変換不能が多数派になる前提で、**黙って NULL 化しない** |
+| **型の変更** | **`TEXT → NUMBER` のみ許可**。逆方向と `ENUM ⇄ NUMBER` は禁止（新規定義を作る）。さらに **in-place の型変更は「全行が変換可能」と確認できた場合に限る**（下記「型変更の 2 経路」） | **経路 1（全行変換可能）**: `valueText` → `valueNumber` へ UPDATE してから `type` を変更。`valueText` は NULL に戻す。**経路 2（変換不能な行が 1 行でもある）**: 旧定義の `type` は `TEXT` のまま `archivedAt` を付け、変換可能な値だけを新しい `NUMBER` 定義へ移す。**変換不能な値は旧定義（`TEXT`）側に残り、黙って NULL 化しない**（0-B のとおり変換不能が多数派になる前提） |
 | **enum 許容値の改名** | **許可**。`AttributeOption.label` を更新する | **FK なので既存値は自動追随**（ADR-007 D-3） |
 | **enum 許容値の削除** | **論理削除のみ**（`archivedAt`）。物理削除は `onDelete: Restrict` で阻止 | 既存値は参照を保つ。新規入力の選択肢からは消える |
 | **必須/任意の切替** | **許可**。任意 → 必須にしても既存商品を無効化しない | 値が無い既存商品は `SELECT` で列挙でき、Q5 のとおり**審査の差し戻し対象**として扱う。次回編集時に入口検証で hard に要求される |
@@ -259,6 +259,21 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 | **所属カテゴリノードの変更** | **許可**。FK 付け替え 1 行 | 移動先カテゴリに属さない商品の値は残るが、ファセットには出なくなる。移動前に影響件数を計測すること |
 | **定義の削除** | **論理削除を既定**（`archivedAt`）。物理削除は `Restrict` で阻止 | 値は保持され、plan 015 のファセットから履歴が消えない |
 
+> **型変更の 2 経路（A-1 の不変条件を壊さないため）。** `NUMBER` 定義の下に
+> `valueText` だけが埋まった行を残すことは**禁止**する —— それは検証シナリオ A-1
+> （`type` と実際に埋まっている列が一致する）を定義そのものが破る状態であり、
+> 入口検証・ファセット集計・表示のいずれもどちらの列を正とするか判断できなくなる。
+> したがって型変更の前に必ず変換可能性を計測する:
+>
+> ```sql
+> SELECT count(*) FROM "ProductAttributeValue"
+> WHERE "definitionId" = $1 AND "valueText" !~ '^\s*-?[0-9]+(\.[0-9]+)?\s*$';
+> ```
+>
+> 0 件なら経路 1（in-place 変更）、1 件以上なら経路 2（archive + 新定義）を採る。
+> **不変条件は「定義ごと」に閉じている**ため、経路 2 なら変換不能な値は
+> `TEXT` のままの旧定義に残り、履歴を失わずに A-1 を満たせる。
+>
 > **これらの決定は Q2（格納方式）と強く結合している。** 「enum 改名が自動追随する」
 > 「変換不能行を安全に残せる」「論理削除で履歴が残る」はいずれも**正規化 + FK** の
 > 帰結であり、JSONB を選んでいたらどれも成立しない（ADR-007 の変更コスト比較表）。
@@ -311,6 +326,9 @@ ADR-006 の materialized path を使い、「このノードに効く属性定�
 const ancestorPaths = node.path.split("/").map((_, i, a) => a.slice(0, i + 1).join("/"));
 const defs = await db.attributeDefinition.findMany({
     where: { category: { path: { in: ancestorPaths } }, archivedAt: null },
+    // 後段の重複 key 解決規則が d.category.path を読むため、リレーションを明示的に含める。
+    // Prisma はデフォルトでスカラーのみ返すので、include が無いと d.category は undefined。
+    include: { category: { select: { path: true } } },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
 });
 ```
@@ -402,7 +420,7 @@ for (const d of defs.sort((a, b) => a.category.path.length - b.category.path.len
 | A-4 | `AttributeOption.label` の改名が既存商品の表示に**自動追随**する | Q7 / ADR-007 D-3。FK で持つことの実利 |
 | A-5 | 参照されている `AttributeOption` を物理削除できない（`Restrict` が効く） | Q7 の論理削除既定 |
 | A-6 | `archivedAt` の付いた定義がファセット集計に**出てこない** | ADR-007 の Risks |
-| A-7 | `TEXT → NUMBER` の型変更で、変換不能な既存値が **`valueText` に残り NULL 化されない** | 0-B。黙って落とさないことの担保 |
+| A-7 | `TEXT → NUMBER` の型変更で、変換不能な既存値が **NULL 化されない**。経路 1（全行変換可能）では変換後に `NUMBER` 定義下へ `valueText` だけの行が残らない。経路 2（変換不能あり）では旧定義が `TEXT` のまま archive され、変換不能な値がそこに残る | 0-B。黙って落とさないことと、A-1 の不変条件を両立させる担保 |
 | A-8 | `Spec` の読み書きが**壊れていない**（「その他仕様」として動作する） | Q3 の温存。回帰ガード |
 
 ---

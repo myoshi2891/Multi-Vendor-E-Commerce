@@ -297,7 +297,7 @@ WHERE c."childCount" > 0;
 
 | Phase | 内容 | ロールバック |
 |-------|------|-------------|
-| **A** | `Category` に `parentId` / `path` / `depth` / `sortOrder` / `childCount` を追加。SubCategory 全行を Category の子として複製し、`CategorySlugAlias` を投入。`Product.categoryNodeId`（**nullable**）を追加し `subCategoryId` 由来の新 id で backfill | 新列を drop するだけ。既存の読み書きは無傷 |
+| **A** | `Category` に `parentId` / `path` / `depth` / `sortOrder` / `childCount` を追加。SubCategory 全行を Category の子として複製し、`CategorySlugAlias` を投入。`Product.categoryNodeId`（**nullable**）を追加し `subCategoryId` 由来の新 id で backfill | 新列・新テーブルを drop し、**`SubCategory` と同じ id を持つ複製 `Category` 行を削除**する（複製行は `SubCategory.id` を流用しているので id 一致で特定できる）。列 drop だけでは複製行が残り、旧読み取りにトップレベルのカテゴリとして現れ続ける |
 | **B** | 読み取りを `categoryNodeId` + サブツリー prefix へ切替。書き込みは**新旧 dual-write** | 読み取りを旧列へ戻す |
 | **C** | `categoryNodeId` を必須化 → `subCategoryId` / 旧 `categoryId` を drop → `categoryNodeId` を `categoryId` へ rename。`SubCategory` テーブル drop | **不可逆**。C の前に B での実測期間を設ける |
 
