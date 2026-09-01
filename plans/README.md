@@ -287,7 +287,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 書ける/書けないとインデックスの効き方の**構造**に基づく。(2) ファセット集計の実行方式
 > （GROUP BY vs マテビュー vs キャッシュ）は plan 015 の領分。(3) 20 部門の属性シード網羅は
 > 範囲外（069 でパイロット 2〜3 部門のみ）。
-
+>
 > **013 の実行記録（2026-08-31・`ae2c96d0`〜`6c6867e8`）— DONE**
 >
 > **spike なので `src/` と `prisma/schema.prisma` は 1 行も変更していない**
