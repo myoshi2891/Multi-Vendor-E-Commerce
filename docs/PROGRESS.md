@@ -4430,3 +4430,50 @@ E2E 1 本 —— を実装し、plan 067 を **DONE** にした。
 
 V-1 と dual-write は、本体を壊すと赤になることを実測で確認した（`subtreeOf` から境界文字
 `/` を落とす / `categoryNode` の connect を落とす）。
+
+---
+
+### レビュー指摘対応（カテゴリツリー周辺のコード + 設計ドキュメント） (2026-09-02)
+
+#### 概要
+
+コードレビューの指摘を 1 件ずつ現行コードに突き合わせ、**まだ有効なものだけ**を修正した。
+コードは 5 件（fail-closed / a11y / 例外の握り潰し防止 / シードの不変条件 / 走査器の誤検出）、
+設計ドキュメントは 5 件。2 件は現行コードで既に解消済みだったため見送った（下記「見送り」）。
+
+#### 実施内容（コード）
+
+| 対象 | 変更内容 | 種別 |
+|------|---------|------|
+| `src/queries/product.ts` | `?category=a&category=b` で Next.js が渡す **配列**が `resolveCategoryNode` → Prisma の `where: { url }` へ素通りして実行時に落ちていた。`typeof !== "string"` を fail-closed（0 件）へ寄せ、`/browse` 側の `typeof === "string"` ガードと境界を揃えた | 正しさ |
+| `src/components/store/browse-page/filters/category/category-link.tsx` | カテゴリ選択が**宛先の無い `<label htmlFor>`**、開閉が `<span onClick>` で、どちらもキーボード到達不能かつ状態非公開だった。`<button type="button">` 2 本へ分離し `aria-pressed` / `aria-expanded` を公開。`border-[#ccc]` / `bg-black` をトークン（`border-border` / `bg-foreground`）へ置換 | a11y |
+| `src/lib/category-tree.ts` | `resolveCategoryNode` の Prisma 呼び出しを try/catch でラップ。**`null` に畳まず元の例外を再送出**する —— `null` は「解決不能な slug」= 0 件を意味するので、DB 障害を畳むと障害が「空カタログ 200」として出てしまう | 規約 + 可観測性 |
+| `prisma/seed/seeders/product-seeder.ts` | 商品の `categoryUrl` にルートを指定すると `maps.categories.get(rootUrl)` が**成功してしまい**既存の未検出エラーに掛からない。リーフ必須を明示的に throw | 不変条件 |
+| `scripts/coverage-dashboard/scan-tests.ts` | `BLOCK_PATTERN` / `EACH_PATTERN` の否定後読みが `(?<![.\w$])` で、プライベートメンバ `this.#test(...)` を宣言として計上していた（`test` の直前は `#` で、`.` は `#` の手前にあり後読みに掛からない）。`(?<![.#\w$])` へ広げ、`scan-tests.test.ts` に回帰ガード **+1**（Red→Green 実測: 修正前 1 件一致 / 修正後 0 件） | 計測の正確さ |
+
+#### 実施内容（ドキュメント）
+
+| 対象 | 変更内容 |
+|------|---------|
+| `docs/design/category-tree/design.md` | Phase B の擬似コードが `whereClause.AND.push({ category: … })` のままだった（設計執筆は Phase A 実装前）。実装どおり `categoryNode` へ直し、Phase C の rename で `category` に戻ることを併記 |
+| `docs/design/category-attributes/design.md` | (1) `NUMBER` は `z.coerce.number()` の前に空入力を `undefined` へ正規化する（`Number("") === 0` で「未入力」が `0` として保存され、ファセットに偽の `0` が出る）。`required: false` のときだけ `.optional()`。(2) 型変更 経路 2 は同じ `key` で新旧定義が並ぶため `@@unique([categoryId, key])` と衝突する。`key` は不変（Q7）なので**制約側**をアーカイブ対象外にする部分ユニークインデックスへ変更し、読み書き規則を明記。(3) 「定義の削除」行の「ファセットから履歴が消えない」を、継承クエリの `archivedAt: null` と検証シナリオ A-6 に合わせて「値は残るがファセットには出ない」へ訂正 |
+| `plans/068-implement-category-tree-admin-cutover.md` | 再親子化が対象ノードの `path` しか更新しない設計だった。**全子孫の `path` / `depth` を同一 `$transaction` で追随**させ、**最深子孫**で深さ上限を判定し、**旧親と新親の両方**の `childCount` を再計算することを追記。子孫の取り残しは検索結果でしか表面化しないため、回帰テスト V-7c は DB の値だけでなく `?category=` の検索結果も検算する |
+| `specs/multi-vendor-ecommerce/03-data-model.md` | Product のカテゴリ関係が「category と subcategory に属する」1 行だけだった。Phase A/B の 3 本の FK（root / leaf / 新 leaf の dual-write）と、Phase C（`SubCategory` 削除・`categoryNodeId` → `categoryId` rename で単一ノード参照）を段階ごとに明記 |
+
+#### 見送り（現行コードで無効）
+
+1. **`scripts/erd/parse-models.ts` の `isForeignKey` が常に false**: パーサは初期値を
+   `false` で置くが、`generate-erd.ts:969` の `markForeignKeys(models)` が生成パイプライン内で
+   確定させている（`generate-erd.ts:219`）。指摘中の `optionId` は `schema.prisma` に存在しない。
+2. **`render-html.ts` の 067-B コメントが未来日 2026-09-02**: 2026-09-02 は**発行日そのもの**で
+   未来日ではない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2064 passed / 2067 total | **2065 passed / 2068 total** |
+| スイート数 | 193 | **193**（不変） |
+| Jest スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（15 warnings はすべて既存・変更ファイル外） |
