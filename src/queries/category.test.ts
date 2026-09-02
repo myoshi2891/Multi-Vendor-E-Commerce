@@ -32,6 +32,9 @@ jest.mock("@/lib/db", () => ({
         subCategory: {
             findMany: jest.fn(),
         },
+        categorySlugAlias: {
+            createMany: jest.fn(),
+        },
         store: {
             findUnique: jest.fn(),
         },
@@ -59,6 +62,7 @@ const mockCategoryTx = () => {
     mockDb.category.findUnique.mockResolvedValue(null);
     mockDb.category.findMany.mockResolvedValue([]);
     mockDb.category.count.mockResolvedValue(0);
+    mockDb.categorySlugAlias.createMany.mockResolvedValue({ count: 0 });
 };
 
 /** `SELECT … FOR UPDATE` が返す親行を与える。 */
@@ -106,9 +110,9 @@ describe("upsertCategory", () => {
         });
 
         it("カテゴリデータがnullの場合エラーをスローする", async () => {
-            await expect(
-                upsertCategory(null as never)
-            ).rejects.toThrow("Please provide category data.");
+            await expect(upsertCategory(null as never)).rejects.toThrow(
+                "Please provide category data."
+            );
         });
 
         it("同名のカテゴリが存在する場合エラーをスローする", async () => {
@@ -122,9 +126,7 @@ describe("upsertCategory", () => {
                 upsertCategory(
                     createMockCategory({ name: "Electronics" }) as never
                 )
-            ).rejects.toThrow(
-                "A category with the same name already exists"
-            );
+            ).rejects.toThrow("A category with the same name already exists");
         });
 
         it("同URLのカテゴリが存在する場合エラーをスローする", async () => {
@@ -138,9 +140,7 @@ describe("upsertCategory", () => {
                 upsertCategory(
                     createMockCategory({ url: "electronics" }) as never
                 )
-            ).rejects.toThrow(
-                "A category with the same URL already exists"
-            );
+            ).rejects.toThrow("A category with the same URL already exists");
         });
 
         it("重複チェックで自身のIDを除外する（更新時の自己参照防止）", async () => {
@@ -430,8 +430,14 @@ describe("upsertCategory", () => {
 
             // Assert —— 子孫は新しい親を前置に持ち、depth も 1 段ずつ増える
             const updates = mockDb.category.update.mock.calls.map(
-                (call: [{ where: { id: string }; data: Record<string, unknown> }]) =>
-                    call[0]
+                (
+                    call: [
+                        {
+                            where: { id: string };
+                            data: Record<string, unknown>;
+                        },
+                    ]
+                ) => call[0]
             );
             const lens = updates.find(
                 (u: { where: { id: string } }) => u.where.id === "lens"
@@ -476,6 +482,75 @@ describe("upsertCategory", () => {
             expect(mockDb.category.update).not.toHaveBeenCalled();
         });
 
+        it("url の変更時に旧 slug を CategorySlugAlias へ残す", async () => {
+            // Arrange —— 移行で温存された旧 url（大文字・`_` 等）は正準形へ寄せて
+            // 保存されるため、**通常の運用で rename が起きる**。外部被リンクの
+            // 到達性は別名表だけが担保する。
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "home",
+                parentId: null,
+                path: "Home_Garden",
+                depth: 0,
+                url: "Home_Garden",
+            });
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "home",
+                    name: "Home Garden",
+                    url: "home-garden",
+                } as never) as never
+            );
+
+            // Assert
+            expect(mockDb.categorySlugAlias.createMany).toHaveBeenCalledWith({
+                data: [
+                    {
+                        entityType: "CATEGORY",
+                        oldSlug: "Home_Garden",
+                        categoryId: "home",
+                    },
+                ],
+                // 旧 slug が既に**別ノードの**別名になっている場合は先着を残す。
+                // 奪うと、生きている外部リンクの行き先が黙って変わる。
+                skipDuplicates: true,
+            });
+        });
+
+        it("url が変わらない更新では別名を作らない", async () => {
+            // Arrange
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "electronics",
+                parentId: null,
+                path: "electronics",
+                depth: 0,
+                url: "electronics",
+            });
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "electronics",
+                    url: "electronics",
+                } as never) as never
+            );
+
+            // Assert
+            expect(mockDb.categorySlugAlias.createMany).not.toHaveBeenCalled();
+        });
+
+        it("新規作成では別名を作らない", async () => {
+            // Arrange —— 旧 slug が存在しない
+            mockDb.category.findUnique.mockResolvedValue(null);
+
+            // Act
+            await upsertCategory(createMockCategory() as never);
+
+            // Assert
+            expect(mockDb.categorySlugAlias.createMany).not.toHaveBeenCalled();
+        });
+
         it("V-7d: 旧親と新親の childCount を両方再計算する", async () => {
             // Arrange
             mockDb.category.findUnique.mockResolvedValue({
@@ -500,8 +575,14 @@ describe("upsertCategory", () => {
             // リーフ強制（V-5）が正当なリーフを拒否しはじめる。
             const counted = mockDb.category.update.mock.calls
                 .map(
-                    (call: [{ where: { id: string }; data: Record<string, unknown> }]) =>
-                        call[0]
+                    (
+                        call: [
+                            {
+                                where: { id: string };
+                                data: Record<string, unknown>;
+                            },
+                        ]
+                    ) => call[0]
                 )
                 .filter(
                     (u: { data: Record<string, unknown> }) =>
@@ -571,7 +652,9 @@ describe("getAllCategories", () => {
         // Assert —— 1 回目はリーフの path 取得（新 FK 経由）
         expect(mockDb.category.findMany).toHaveBeenNthCalledWith(1, {
             where: {
-                nodeProducts: { some: { storeId: TEST_CONFIG.DEFAULT_STORE_ID } },
+                nodeProducts: {
+                    some: { storeId: TEST_CONFIG.DEFAULT_STORE_ID },
+                },
             },
             select: { path: true },
         });
@@ -580,7 +663,11 @@ describe("getAllCategories", () => {
         expect(mockDb.category.findMany).toHaveBeenNthCalledWith(2, {
             where: {
                 path: {
-                    in: ["electronics", "electronics/camera", "electronics/camera/lens"],
+                    in: [
+                        "electronics",
+                        "electronics/camera",
+                        "electronics/camera/lens",
+                    ],
                 },
             },
             orderBy: [{ depth: "asc" }, { sortOrder: "asc" }, { name: "asc" }],

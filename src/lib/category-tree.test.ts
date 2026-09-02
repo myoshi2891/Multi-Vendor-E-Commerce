@@ -3,6 +3,7 @@ import {
     flattenCategoryTree,
     resolveCategoryNode,
     subtreeOf,
+    toCanonicalCategorySlug,
 } from "./category-tree";
 
 jest.mock("@/lib/db", () => ({
@@ -29,7 +30,10 @@ describe("subtreeOf", () => {
 
         // Assert
         expect(where).toEqual({
-            OR: [{ path: "electronics/camera" }, { path: { startsWith: "electronics/camera/" } }],
+            OR: [
+                { path: "electronics/camera" },
+                { path: { startsWith: "electronics/camera/" } },
+            ],
         });
     });
 
@@ -88,7 +92,11 @@ describe("resolveCategoryNode", () => {
     it("CATEGORY は url が外れたら別名表へ落ちる", async () => {
         // Arrange
         mockDb.categorySlugAlias.findUnique.mockResolvedValue({
-            category: { id: "cat-9", path: "electronics/camera", url: "electronics-camera" },
+            category: {
+                id: "cat-9",
+                path: "electronics/camera",
+                url: "electronics-camera",
+            },
         });
 
         // Act
@@ -101,8 +109,15 @@ describe("resolveCategoryNode", () => {
             url: "electronics-camera",
         });
         expect(mockDb.categorySlugAlias.findUnique).toHaveBeenCalledWith({
-            where: { entityType_oldSlug: { entityType: "CATEGORY", oldSlug: "camera" } },
-            select: { category: { select: { id: true, path: true, url: true } } },
+            where: {
+                entityType_oldSlug: {
+                    entityType: "CATEGORY",
+                    oldSlug: "camera",
+                },
+            },
+            select: {
+                category: { select: { id: true, path: true, url: true } },
+            },
         });
     });
 
@@ -114,7 +129,11 @@ describe("resolveCategoryNode", () => {
             url: "camera",
         });
         mockDb.categorySlugAlias.findUnique.mockResolvedValue({
-            category: { id: "cat-9", path: "electronics/camera", url: "electronics-camera" },
+            category: {
+                id: "cat-9",
+                path: "electronics/camera",
+                url: "electronics-camera",
+            },
         });
 
         // Act
@@ -133,7 +152,10 @@ describe("resolveCategoryNode", () => {
         });
 
         // Act
-        const node = await resolveCategoryNode("lux-women-dresses", "SUB_CATEGORY");
+        const node = await resolveCategoryNode(
+            "lux-women-dresses",
+            "SUB_CATEGORY"
+        );
 
         // Assert
         expect(node?.id).toBe("cat-2");
@@ -152,7 +174,9 @@ describe("resolveCategoryNode", () => {
         // 障害が「商品が無い」として静かに表示される。
         const failure = new Error("connection terminated");
         mockDb.category.findUnique.mockRejectedValue(failure);
-        const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        const errorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
 
         // Act / Assert
         await expect(resolveCategoryNode("camera", "CATEGORY")).rejects.toThrow(
@@ -207,7 +231,9 @@ describe("buildCategoryTree", () => {
     it("親が集合に無いノードを黙って捨てずルートとして残す", () => {
         // Arrange —— 祖先の取りこぼしは枝の消失として現れる。捨てると
         // 「店舗メニューが空」で気づくしかないので、見えるところへ出す。
-        const flat = [node("orphan", "missing-parent", "missing-parent/orphan")];
+        const flat = [
+            node("orphan", "missing-parent", "missing-parent/orphan"),
+        ];
 
         // Act
         const tree = buildCategoryTree(flat);
@@ -259,5 +285,48 @@ describe("flattenCategoryTree", () => {
 
     it("空配列には空配列を返す", () => {
         expect(flattenCategoryTree([])).toEqual([]);
+    });
+});
+
+// ==================================================
+// toCanonicalCategorySlug
+// ==================================================
+describe("toCanonicalCategorySlug", () => {
+    // plan 066 の移行は既存 url を書き換えず温存する（旧 slug を CategorySlugAlias に
+    // 記録するだけ）ため、大文字・`_`・空白を含む url が現存し得る。それらは
+    // CategoryFormSchema の正規表現を通らず、**その行の編集ごと保存できない**。
+    it.each([
+        ["大文字", "Electronics", "electronics"],
+        ["アンダースコア", "home_garden", "home-garden"],
+        ["空白", "Home Garden", "home-garden"],
+        ["連続する区切り", "home__ &garden", "home-garden"],
+        ["前後の区切り", "-electronics-", "electronics"],
+        ["区切り文字 /", "electronics/camera", "electronics-camera"],
+        ["LIKE ワイルドカード %", "electronics%camera", "electronics-camera"],
+    ])("%s を含む slug を正準形へ寄せる", (_label, raw, expected) => {
+        expect(toCanonicalCategorySlug(raw)).toBe(expected);
+    });
+
+    it("既に正準形の slug は変えない", () => {
+        expect(toCanonicalCategorySlug("lux-women-dresses")).toBe(
+            "lux-women-dresses"
+        );
+    });
+
+    it("変換結果は CategoryFormSchema の正規表現を満たす", () => {
+        // Arrange —— 正規化の目的はフォームを通ること。個別の期待値ではなく
+        // **受理条件そのもの**で検算する（規則が動いてもテストが追随する）。
+        const canonical = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+        // Act / Assert
+        for (const raw of ["Home_Garden", "  Spaced  Name  ", "A/B%C"]) {
+            expect(toCanonicalCategorySlug(raw)).toMatch(canonical);
+        }
+    });
+
+    it("英数字を 1 文字も含まない入力には空文字を返す", () => {
+        // 呼び出し側が「正規化できなかった」ことを検出できるようにする
+        //（黙って "-" のような不正 slug を作らない）
+        expect(toCanonicalCategorySlug("///")).toBe("");
     });
 });
