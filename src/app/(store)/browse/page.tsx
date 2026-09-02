@@ -8,7 +8,7 @@ import { getProducts } from "@/queries/product";
 import { permanentRedirect, redirect } from "next/navigation";
 import { isWithinSubtree, resolveCategoryNode } from "@/lib/category-tree";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Builds a `/browse` URL with the specified page while preserving the other query parameters.
@@ -96,6 +96,15 @@ export default async function BrowsePage({
     if (typeof subCategory === "string" && subCategory.length > 0) {
         const subNode = await resolveCategoryNode(subCategory, "SUB_CATEGORY");
         if (subNode !== null) {
+            // 「category が指定されていない」と「指定されたが解決できない」を
+            // 区別する。後者を「未指定」に丸めると、category を落として
+            // `?category=<sub>` へ畳んでしまい、getProducts が fail-closed で
+            // 返すはずの 0 件が **sub の結果**へ化ける（絞り込みが緩くなる）。
+            // 配列（`?category=a&category=b`）も getProducts 側と同じく
+            // 「解決できない指定」として扱う。
+            const hasCategoryFilter = Array.isArray(category)
+                ? category.length > 0
+                : typeof category === "string" && category.length > 0;
             const parentNode =
                 typeof category === "string" && category.length > 0
                     ? await resolveCategoryNode(category, "CATEGORY")
@@ -103,8 +112,9 @@ export default async function BrowsePage({
             // 親子判定は subtreeOf と同じ境界定義を使う（isWithinSubtree）。
             // ここで `startsWith` を書き下すと、prefix 境界の定義が 2 箇所に散る。
             const isNested =
-                parentNode === null ||
-                isWithinSubtree(subNode.path, parentNode.path);
+                parentNode === null
+                    ? !hasCategoryFilter
+                    : isWithinSubtree(subNode.path, parentNode.path);
             if (isNested) {
                 const params = new URLSearchParams();
                 for (const [key, value] of Object.entries(query)) {
@@ -158,7 +168,8 @@ export default async function BrowsePage({
     // 該当 0 件（totalPages === 0）のときは 1 ページ目を正準とする。
     // 遷移後は canonicalPage === currentPage になるのでループしない。
     // redirect() は NEXT_REDIRECT を throw するため try/catch の外に置くこと。
-    const canonicalPage = totalPages >= 1 ? Math.min(currentPage, totalPages) : 1;
+    const canonicalPage =
+        totalPages >= 1 ? Math.min(currentPage, totalPages) : 1;
     if (canonicalPage !== currentPage) {
         redirect(buildBrowseHref(query, canonicalPage));
     }
@@ -166,7 +177,19 @@ export default async function BrowsePage({
     return (
         <div className="mx-auto max-w-[95%]">
             <div className="mt-5 flex gap-x-5">
-                <ProductFilters queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }} />
+                <ProductFilters
+                    queries={{
+                        category,
+                        offer,
+                        search,
+                        size,
+                        sort,
+                        subCategory,
+                        maxPrice,
+                        minPrice,
+                        color,
+                    }}
+                />
                 <div className="space-y-5 p-4">
                     <ProductSort />
                     {/* Product list */}

@@ -21,31 +21,31 @@ const FOOTER_CATEGORY_LIMIT = 7;
  * @returns The footer layout, including the newsletter section, contact details, category links, and rights bar.
  */
 export default async function Footer() {
-	const nodes = flattenCategoryTree(await getAllCategories());
-	const descendants = nodes.filter((node) => node.depth > 0);
-	const picked = descendants.length > 0 ? descendants : nodes;
-	const categories: FooterCategoryLink[] = picked
-		.slice(0, FOOTER_CATEGORY_LIMIT)
-		.map(({ id, name, url }) => ({ id, name, url }));
-	return (
-		<div data-testid="store-footer" className="w-full bg-white">
-			<Newsletter />
-			<div className="mx-auto max-w-[1430px]">
-				<div className="p-5">
-					<div className="grid md:grid-cols-2 md:gap-x-5">
-						<Contact />
-						<Links categories={categories} />
-					</div>
-				</div>
-			</div>
-			{/* Rights */}
-			<div className="bg-gradient-to-r from-slate-500 to-slate-800 px-2 text-white">
-				<div className="mx-auto flex h-7 max-w-[1430px] items-center">
-					<span className="text-sm">
-						<b>@ GoShop</b> - All Rights Reserved
-					</span>
-				</div>
-			</div>
-		</div>
-	);
+    const nodes = flattenCategoryTree(await getAllCategories());
+    const descendants = nodes.filter((node) => node.depth > 0);
+    const picked = descendants.length > 0 ? descendants : nodes;
+    const categories: FooterCategoryLink[] = picked
+        .slice(0, FOOTER_CATEGORY_LIMIT)
+        .map(({ id, name, url }) => ({ id, name, url }));
+    return (
+        <div data-testid="store-footer" className="w-full bg-background">
+            <Newsletter />
+            <div className="mx-auto max-w-[1430px]">
+                <div className="p-5">
+                    <div className="grid md:grid-cols-2 md:gap-x-5">
+                        <Contact />
+                        <Links categories={categories} />
+                    </div>
+                </div>
+            </div>
+            {/* Rights */}
+            <div className="bg-gradient-to-r from-slate-500 to-slate-800 px-2 text-white">
+                <div className="mx-auto flex h-7 max-w-[1430px] items-center">
+                    <span className="text-sm">
+                        <b>@ GoShop</b> - All Rights Reserved
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
 }

@@ -101,7 +101,11 @@ describe("BrowsePage", () => {
         mockProductsResult(3, 10);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "2" })) }));
+        render(
+            await BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "2" })),
+            })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -118,7 +122,9 @@ describe("BrowsePage", () => {
         mockProductsResult(1, 5);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) }));
+        render(
+            await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -138,7 +144,9 @@ describe("BrowsePage", () => {
 
         // Act / Assert — redirect() は throw するため rejects で受ける
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "999" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "999" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         expect(parseRedirectUrl().get("page")).toBe("3");
@@ -196,7 +204,9 @@ describe("BrowsePage", () => {
         // Act
         render(
             await BrowsePage({
-                searchParams: Promise.resolve(makeQuery({ page: ["2", "999"] })),
+                searchParams: Promise.resolve(
+                    makeQuery({ page: ["2", "999"] })
+                ),
             })
         );
 
@@ -216,7 +226,9 @@ describe("BrowsePage", () => {
 
         // Act
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "5" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "5" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         // Assert
@@ -228,7 +240,11 @@ describe("BrowsePage", () => {
         mockProductsResult(0, 0);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "1" })) }));
+        render(
+            await BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "1" })),
+            })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -243,7 +259,9 @@ describe("BrowsePage", () => {
 
         // Act
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "1e21" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "1e21" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         // Assert — クランプ後の MAX_PAGE で問い合わせ、表示は最終ページへ寄せる
@@ -323,23 +341,33 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
         // Arrange —— リネーム済み slug が別名経由で正準ノードへ解決される
         mockResolveCategoryNode.mockImplementation(async (slug: string) =>
             slug === "camera"
-                ? { id: "n1", path: "electronics/camera", url: "electronics-camera" }
+                ? {
+                      id: "n1",
+                      path: "electronics/camera",
+                      url: "electronics-camera",
+                  }
                 : null
         );
 
         // Act / Assert —— 307 の redirect ではなく 308 の permanentRedirect を使う
         await expect(
             BrowsePage({
-                searchParams: Promise.resolve(makeQuery({ subCategory: "camera" })),
+                searchParams: Promise.resolve(
+                    makeQuery({ subCategory: "camera" })
+                ),
             })
-        ).rejects.toThrow("NEXT_PERMANENT_REDIRECT:/browse?category=electronics-camera");
+        ).rejects.toThrow(
+            "NEXT_PERMANENT_REDIRECT:/browse?category=electronics-camera"
+        );
         expect(mockRedirect).not.toHaveBeenCalled();
     });
 
     it("他のクエリパラメータを保ったまま寄せる", async () => {
         // Arrange
         mockResolveCategoryNode.mockImplementation(async (slug: string) =>
-            slug === "camera" ? { id: "n1", path: "e/camera", url: "camera" } : null
+            slug === "camera"
+                ? { id: "n1", path: "e/camera", url: "camera" }
+                : null
         );
 
         // Act / Assert
@@ -388,10 +416,69 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
         await expect(
             BrowsePage({
                 searchParams: Promise.resolve(
-                    makeQuery({ category: "electronics", subCategory: "camera" })
+                    makeQuery({
+                        category: "electronics",
+                        subCategory: "camera",
+                    })
                 ),
             })
         ).rejects.toThrow("NEXT_PERMANENT_REDIRECT:/browse?category=camera");
+    });
+
+    it("解決できない category では寄せない（fail-closed の 0 件を sub の結果へ化けさせない）", async () => {
+        // Arrange —— category は明示されているが解決できない。これを「未指定」に
+        // 丸めて畳むと、getProducts が返すはずの 0 件が sub の結果へ化ける。
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : null
+        );
+        mockProductsResult(0);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({ category: "renamed-away", subCategory: "camera" })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: "renamed-away",
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
+    });
+
+    it("category が配列なら寄せない（getProducts と同じ fail-closed 境界）", async () => {
+        // Arrange —— `?category=a&category=b` は解決できない指定として扱う。
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : null
+        );
+        mockProductsResult(0);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({
+                    // Next.js は `?category=a&category=b` で string[] を渡すが、
+                    // FiltersQueryType は string 表現。実際の runtime 形を再現する。
+                    category: ["toys", "electronics"] as unknown as string,
+                    subCategory: "camera",
+                })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
     });
 
     it("解決できない subCategory では寄せず、getProducts の fail-closed に委ねる", async () => {
@@ -401,7 +488,9 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
 
         // Act
         const page = await BrowsePage({
-            searchParams: Promise.resolve(makeQuery({ subCategory: "missing" })),
+            searchParams: Promise.resolve(
+                makeQuery({ subCategory: "missing" })
+            ),
         });
         render(page);
 

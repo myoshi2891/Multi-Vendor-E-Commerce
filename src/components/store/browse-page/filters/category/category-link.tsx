@@ -32,9 +32,28 @@ export default function CategoryLink({
     const containsSelection = (node: CategoryTreeType): boolean =>
         node.url === categoryQuery || node.children.some(containsSelection);
 
-    const [expand, setExpand] = useState<boolean>(() =>
-        category.children.some(containsSelection)
+    const hasSelectedDescendant = category.children.some(containsSelection);
+
+    const [expand, setExpand] = useState<boolean>(hasSelectedDescendant);
+
+    // URL 由来の選択変化に追随する。`useState` の初期化子はマウント時に 1 度しか
+    // 走らないが、この枝はクライアント遷移（`replace`）や戻る/進むを跨いで
+    // **マウントされたまま** `?category=` が変わる。同期しないと、別の枝から
+    // 子孫が選択されたとき「絞り込みが効いているのに項目が画面に無い」状態に戻る。
+    //
+    // 同期は **useEffect ではなくレンダー中の調整**で行う（React 公式の
+    // "adjusting state when a prop changes"）。effect で setState すると
+    // カスケードレンダーになり、`react-hooks` の set-state-in-effect にも触れる。
+    //
+    // **開く方向にしか同期しない。** `setExpand(hasSelectedDescendant)` と書くと
+    // 選択が外れた瞬間にユーザーが自分で開いた枝を勝手に畳んでしまう。
+    const [prevHasSelectedDescendant, setPrevHasSelectedDescendant] = useState(
+        hasSelectedDescendant
     );
+    if (hasSelectedDescendant !== prevHasSelectedDescendant) {
+        setPrevHasSelectedDescendant(hasSelectedDescendant);
+        if (hasSelectedDescendant) setExpand(true);
+    }
 
     const handleCategoryChange = (slug: string) => {
         if (slug === categoryQuery) return;
