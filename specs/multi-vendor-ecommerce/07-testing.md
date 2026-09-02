@@ -12,8 +12,18 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2065 passed / 2068 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
-  Review follow-up added +1 regression test (suites unchanged): the coverage dashboard's test
+- 2071 passed / 2074 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Code-review follow-up added +6 tests (+1 suite): `tests/component/store/category-link.test.tsx`
+  (+3, new suite) pins that a category branch re-opens when a descendant becomes selected by a
+  client-side navigation — the `useState` initializer runs once, but the branch stays mounted
+  while `?category=` changes — and that the sync only ever opens, preserving a user's manual
+  collapse. `src/app/(store)/browse/page.test.tsx` (+2) pins that an explicitly supplied but
+  unresolvable `category` (or an array one) is no longer folded into `?category=<sub>` by the
+  308 canonicalization, which had turned `getProducts`' fail-closed zero result into the
+  subcategory's results. `scripts/erd/parse-models.test.ts` (+1) pins that Prisma line comments
+  are not emitted as fields.
+- Earlier entry: 2065 passed / 2068 total across 193 suites (3 skipped tests in 1 skipped suite),
+  as of 2026-09-02. Review follow-up added +1 regression test (suites unchanged): the coverage dashboard's test
   scanner counted private-member calls (`this.#test(...)`) as test declarations, because its
   negative lookbehind excluded `.` but not `#`. Widened to `(?<![.#\w$])` and pinned in
   `scripts/coverage-dashboard/scan-tests.test.ts`.

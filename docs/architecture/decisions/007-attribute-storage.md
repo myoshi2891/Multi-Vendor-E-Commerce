@@ -60,7 +60,12 @@ model AttributeDefinition {
   options    AttributeOption[]
   productValues ProductAttributeValue[]         // 逆リレーション（Prisma の検証に必須）
   variantValues VariantAttributeValue[]
-  @@unique([categoryId, key])
+  // 一意性は「アクティブ行のみ」に掛ける。素の @@unique([categoryId, key]) だと
+  // archive + 同 key 再作成（型変更の経路 2）が INSERT で落ちるため採用しない。
+  // 正準の制約は migration の raw SQL で張る部分ユニークインデックス:
+  //   CREATE UNIQUE INDEX "AttributeDefinition_categoryId_key_active_key"
+  //     ON "AttributeDefinition" ("categoryId", "key") WHERE "archivedAt" IS NULL;
+  // 詳細: docs/design/category-attributes/design.md「経路 2 と一意制約」
   @@index([categoryId, facetable])
 }
 
