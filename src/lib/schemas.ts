@@ -39,6 +39,18 @@ export const CategoryFormSchema = z.object({
                 "Category url must be lowercase alphanumeric segments separated by single hyphens (e.g. electronics-camera).",
         }),
     featured: z.boolean().default(false),
+    // ツリー編集（plan 068）。null はルートを意味する。
+    // `path` / `depth` / `childCount` は **親と url から一意に決まる導出値**なので
+    // フォームには載せない —— `upsertCategory` がサーバー側で計算する。
+    parentId: z.string().nullable().default(null),
+    // 同一階層内の並び順。`getAllCategories` の orderBy が
+    // `[depth, sortOrder, name]` なので、この値が admin の並べ替え手段になる。
+    // RHF の `<input type="number">` は文字列を渡すため coerce が要る。
+    sortOrder: z.coerce
+        .number({ invalid_type_error: "Sort order must be a number." })
+        .int({ message: "Sort order must be an integer." })
+        .min(0, { message: "Sort order cannot be negative." })
+        .default(0),
 });
 
 //SubCategory form schema
@@ -702,8 +714,7 @@ export const SupportTicketSchema = z
         // フォームの controlled input は空欄を "" で渡すため、preprocess で空白→undefined に
         // 正規化してから optional 検証する（"" のまま .min(1) に当てると CONTACT 等が弾かれる）。
         orderId: z.preprocess(
-            (v) =>
-                typeof v === "string" && v.trim() === "" ? undefined : v,
+            (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
             z
                 .string()
                 .trim()
