@@ -126,6 +126,10 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
         for (const rawLine of fieldBody.split("\n")) {
             const line = rawLine.trim();
             if (line.length === 0) continue;
+            // 行コメント（`//` と doc コメント `///`）はフィールドではない。
+            // トークン化すると `//` が fieldName、次語が型として計上されてしまう。
+            // 行末コメントは `rest` に残るだけなので、ここでは行頭のみ弾けばよい。
+            if (line.startsWith("//")) continue;
 
             const tokens = line.split(/\s+/);
             if (tokens.length < 2) continue;
@@ -138,7 +142,8 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
             const baseType = rawType.replace(/[[\]?]/g, "");
 
             // 表示型（Decimal(p,s) を反映）
-            let displayType = baseType + (isList ? "[]" : "") + (isOptional ? "?" : "");
+            let displayType =
+                baseType + (isList ? "[]" : "") + (isOptional ? "?" : "");
             const dec = rest.match(/@db\.Decimal\((\d+),\s*(\d+)\)/);
             if (dec) displayType = `Decimal(${dec[1]},${dec[2]})`;
 
@@ -152,8 +157,12 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
                 const onDeleteM = inner.match(/onDelete:\s*(\w+)/);
                 relation = {
                     name: nameM ? nameM[1] : "",
-                    fields: fieldsM ? fieldsM[1].split(",").map((s) => s.trim()) : [],
-                    references: refsM ? refsM[1].split(",").map((s) => s.trim()) : [],
+                    fields: fieldsM
+                        ? fieldsM[1].split(",").map((s) => s.trim())
+                        : [],
+                    references: refsM
+                        ? refsM[1].split(",").map((s) => s.trim())
+                        : [],
                     onDelete: onDeleteM ? onDeleteM[1] : undefined,
                 };
             }

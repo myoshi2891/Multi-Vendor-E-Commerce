@@ -19,7 +19,11 @@ describe("parseModels", () => {
         // Assert
         expect(model.compositeId).toEqual(["id", "definitionId"]);
         expect(model.compositeUniques).toEqual([["definitionId", "value"]]);
-        expect(model.fields.map((f) => f.name)).toEqual(["id", "definitionId", "value"]);
+        expect(model.fields.map((f) => f.name)).toEqual([
+            "id",
+            "definitionId",
+            "value",
+        ]);
     });
 
     it("複数行に跨る名前付き @@id の継続行をフィールドとして出さない", () => {
@@ -39,6 +43,23 @@ describe("parseModels", () => {
         // Assert
         expect(model.compositeId).toEqual(["id", "definitionId"]);
         expect(model.fields.map((f) => f.name)).toEqual(["id", "definitionId"]);
+    });
+
+    it("行コメント（// と ///）をフィールドとして出さない", () => {
+        // Arrange —— 行コメントは `//` を fieldName、次トークンを型として
+        // 計上され、偽のフィールドになっていた回帰ケース
+        const src = `model AttributeOption {
+  // Phase A で追加した新 FK 経路（Phase C で categoryId に統合される）
+  id           String
+  /// 旧 slug → 現ノードの対応表。
+  value        String   // 行末コメントは従来どおりフィールドを壊さない
+}`;
+
+        // Act
+        const [model] = parseModels(src, modelNames);
+
+        // Assert
+        expect(model.fields.map((f) => f.name)).toEqual(["id", "value"]);
     });
 
     it("オプション付き @@index の閉じ行をフィールドとして出さない", () => {
@@ -73,8 +94,8 @@ describe("parseModels", () => {
         expect(option?.isRelationObject).toBe(true);
         expect(option?.relation?.fields).toEqual(["optionId", "definitionId"]);
         expect(option?.relation?.onDelete).toBe("Restrict");
-        expect(model.fields.find((f) => f.name === "valueNumber")?.displayType).toBe(
-            "Decimal(18,6)"
-        );
+        expect(
+            model.fields.find((f) => f.name === "valueNumber")?.displayType
+        ).toBe("Decimal(18,6)");
     });
 });
