@@ -44,11 +44,27 @@ const sampleCategory = {
     url: "shoes",
     image: "https://img/shoes.png",
     featured: true,
+    parentId: null,
+    path: "shoes",
+    depth: 0,
+    sortOrder: 0,
+    childCount: 0,
 } as Category;
 
-/** 指定列の cell レンダラを最小 CellContext で描画する */
-function renderCell(index: number, category: Category) {
-    const cell = columns[index].cell;
+/** 列のキー（accessorKey か id）。位置ではなくキーで引く。 */
+const columnKey = (column: (typeof columns)[number]): string =>
+    "accessorKey" in column ? String(column.accessorKey) : String(column.id);
+
+/**
+ * 指定列の cell レンダラを最小 CellContext で描画する。
+ *
+ * **位置ではなくキーで引く。** 列を 1 本足すたびに全テストの添字がずれると、
+ * 追加した列とは無関係なテストが赤くなり原因が読めなくなる。
+ */
+function renderCell(key: string, category: Category) {
+    const column = columns.find((c) => columnKey(c) === key);
+    if (!column) throw new Error(`column not found: ${key}`);
+    const cell = column.cell;
     if (typeof cell !== "function") throw new Error("cell is not a function");
     const ctx = { row: { original: category } } as CellContext<
         Category,
@@ -61,43 +77,53 @@ describe("admin/categories columns", () => {
     it("declares the expected accessor keys in order", () => {
         // Assert: 列定義のメタデータ
         const keys = columns.map((c) =>
-            "accessorKey" in c ? c.accessorKey : c.id,
+            "accessorKey" in c ? c.accessorKey : c.id
         );
-        expect(keys).toEqual(["image", "name", "url", "featured", "actions"]);
+        expect(keys).toEqual([
+            "image",
+            "name",
+            "url",
+            "parent",
+            "sortOrder",
+            "featured",
+            "actions",
+        ]);
     });
 
     it("renders the image cell with the category name as alt", () => {
         // Act
-        renderCell(0, sampleCategory);
+        renderCell("image", sampleCategory);
 
         // Assert
         expect(screen.getByAltText("Shoes")).toHaveAttribute(
             "src",
-            "https://img/shoes.png",
+            "https://img/shoes.png"
         );
     });
 
     it("renders the name cell", () => {
-        renderCell(1, sampleCategory);
+        renderCell("name", sampleCategory);
         expect(screen.getByText("Shoes")).toBeInTheDocument();
     });
 
     it("prefixes the url cell with a slash", () => {
-        renderCell(2, sampleCategory);
+        renderCell("url", sampleCategory);
         expect(screen.getByText("/shoes")).toBeInTheDocument();
     });
 
     it("shows the check badge when featured is true", () => {
         // Act
-        const { container } = renderCell(3, sampleCategory);
+        const { container } = renderCell("featured", sampleCategory);
 
         // Assert: featured=true は緑チェック (stroke-green-300)
-        expect(container.querySelector(".stroke-green-300")).toBeInTheDocument();
+        expect(
+            container.querySelector(".stroke-green-300")
+        ).toBeInTheDocument();
     });
 
     it("shows the minus badge when featured is false", () => {
         // Act
-        const { container } = renderCell(3, {
+        const { container } = renderCell("featured", {
             ...sampleCategory,
             featured: false,
         } as Category);
@@ -108,15 +134,62 @@ describe("admin/categories columns", () => {
 
     it("renders the actions trigger for a valid row", () => {
         // Act
-        renderCell(4, sampleCategory);
+        renderCell("actions", sampleCategory);
 
         // Assert: CellActions の DropdownMenu トリガー
         expect(screen.getByText("Open menu")).toBeInTheDocument();
     });
 
+    // ---- ツリー表示（plan 068 Step 6）----
+    it("indents the name cell by depth", () => {
+        // Act —— 深さ 2 のノード
+        const { container } = renderCell("name", {
+            ...sampleCategory,
+            path: "electronics/camera/lens",
+            depth: 2,
+        } as Category);
+
+        // Assert —— 1 テーブルに全階層が並ぶため、深さは字下げでしか読めない
+        expect(container.firstElementChild).toHaveStyle({
+            paddingLeft: "32px",
+        });
+    });
+
+    it("renders the parent slug in the parent cell", () => {
+        // Act
+        renderCell("parent", {
+            ...sampleCategory,
+            path: "electronics/camera/lens",
+            depth: 2,
+        } as Category);
+
+        // Assert —— 親名は path の 1 つ手前のセグメントから読む
+        //（親行を引き直さずに済み、path が正であることの表示にもなる）
+        expect(screen.getByText("/camera")).toBeInTheDocument();
+    });
+
+    it("shows a dash in the parent cell for root nodes", () => {
+        // Act
+        renderCell("parent", sampleCategory);
+
+        // Assert
+        expect(screen.getByText("—")).toBeInTheDocument();
+    });
+
+    it("renders the sort order", () => {
+        // Act
+        renderCell("sortOrder", {
+            ...sampleCategory,
+            sortOrder: 3,
+        } as Category);
+
+        // Assert
+        expect(screen.getByText("3")).toBeInTheDocument();
+    });
+
     it("renders nothing for a row without an id", () => {
         // Act: id 欠落 → CellActions は null
-        const { container } = renderCell(4, {
+        const { container } = renderCell("actions", {
             ...sampleCategory,
             id: "",
         } as Category);
