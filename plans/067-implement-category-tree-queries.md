@@ -99,8 +99,16 @@ design.md §0 の 0-4 / 0-5 / 0-6 / 0-7 を参照。本プランに直結する�
    これは Step 1 の前提 —— `/` と `LIKE` メタ文字（`%` `_`）を slug から排除することで
    エスケープ処理を不要にしている（design.md §2-Q1）。**この制約を緩めないこと**。
 3. **browse フィルタを書き換える**（design.md §2-Q3 の After 形）。
-   `?category=` / `?subCategory=` の両方を受理し、`url` 完全一致 → `CategorySlugAlias` の
-   順で解決、どちらも外れたら **0 件を返す**。
+   `?category=` / `?subCategory=` の両方を受理し、どちらも外れたら **0 件を返す**。
+   **解決順序は entityType で非対称にすること**:
+   - `?category=` → `Category.url` 完全一致 → `CategorySlugAlias` の `(CATEGORY, slug)`。
+     ルートの正準 slug は移行で温存されているので url が先で良い。
+   - `?subCategory=` → `CategorySlugAlias` の `(SUB_CATEGORY, slug)` **完全一致が先**、
+     その後に `Category.url`。
+   > **旧サブカテゴリ slug は他ノードの正準 slug になっている可能性がある。** 移行 A-3 は
+   > 衝突組の SubCategory 側をリネームして上位 URL を温存する（`prisma/migrations/
+   > 20260831102943_category_tree_phase_a`）ので、旧 slug `camera` が別ノードの現 `url`
+   > として生き残る。url を先に引くと**無関係なノードへ着地する**。
    > **fail-closed を維持すること。** 現行実装は不一致時に `noMatchResult` を返す
    > （[`product.ts:618-627`](../src/queries/product.ts)）。フィルタを黙って捨てる実装に
    > 戻すと「該当なし」が「全カタログ表示」に化ける。

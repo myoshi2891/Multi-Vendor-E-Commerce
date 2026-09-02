@@ -67,7 +67,7 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
 | ER 図の再生成 | `bun run erd:generate` |
 | 型 / lint | `bunx tsc --noEmit` / `bun run lint` |
 | ユニット | `bun run test -- src/queries/attribute.test.ts` / `src/lib/schemas.test.ts` |
-| 統合（Docker 必須） | `docker info` 後 `bun run test -- tests/integration/category-attributes.test.ts` |
+| 統合（Docker 必須） | `docker info` 後 `bun run test:integration tests/integration/category-attributes.test.ts`（**`bun run test` は不可** —— 既定の jest config は `tests/integration/` を除外する） |
 | 実 DB 計測（Step 1） | `psql "$DIRECT_URL" -c '...'`（**`$DATABASE_URL` は不可** —— Accelerate の `prisma://`） |
 
 ## Scope
