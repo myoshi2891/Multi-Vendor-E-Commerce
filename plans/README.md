@@ -141,11 +141,61 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | DONE（2026-08-31・`0f0fa400`〜`868ccf82`。**事前計測は実 DB で実行し slug 衝突 0 件** — STOP 条件はいずれも非該当。Jest 2026 → **2025**（シードのツリー統合に伴う置き換えで −1 / スイート 191 不変）、Integration 108 → **117** / 13 → **14 スイート**。**Done criteria からの逸脱 1 点**〔「`src/queries/**` 差分 0 行」は達成不可能 — オペレーター承認のうえ `category.ts` のみ narrow。`src/components/**` は 0 差分を維持〕。**プラン本文の解釈 2 点**〔「シードを先に」は作業順でありコミット順ではない / 「商品は categoryUrl 1 本」は宣言データの形であって DB 書き込みではない〕。**プラン本文に無い発見 1 点**〔design.md §4 の移行 SQL は冪等でない〕。下の実行記録を参照） |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | **DONE**（2026-09-02・`8bebdc6e`〜`0ed9502a`。読み取りのサブツリー化・dual-write・再同期マイグレーション・308 正準化・storefront リンクの正準化・V-1/V-2/V-6 と 3 階層・dual-write のテストまで**完了**〔Jest 2032 → **2064** / 192 → **193 スイート**、Integration 117 → **129** / 14 → **15 スイート**、E2E 192 → **195**〕。**設計文書からの逸脱 3 点**〔design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで新 FK `categoryNode` を引く / `redirect()` は 307 なので `permanentRedirect()` / `?category=A&subCategory=B` は親子のときだけ畳む〕。**プラン本文の誤り 2 点**〔統合テストのコマンドが動作しない / Done criteria の grep が `src/app` を含まない〕。**BLOCKED 1 点**〔実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用 —— これのみ未解消で [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) の「067-B の残 BLOCKED」に記録〕。下の実行記録を参照） |
-| [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | TODO |
+| [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | **IN PROGRESS**（2026-09-02・`c653864f`〜`524ba258`。**Step 1–9（可逆な範囲）まで実装**し、**不可逆な Phase C（Step 5 以降）の手前で停止**した —— 着手にはオペレーター承認と 067 の再同期マイグレーションの実 DB 適用が要る。Jest 2072 → **2121** / スイート 194 不変、Integration 131 → **135** / 15 → **16 スイート**。**E2E 1 本は未検証**（`524ba258`）。**プラン本文に無い発見 2 点** / **実バグ 1 件を修正**。下の実行記録を参照）|
 | [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | M–L | MED | 014 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **068 の実行記録（2026-09-02・`c653864f`〜`524ba258`）— IN PROGRESS（Phase C 手前で停止）**
+>
+> **不可逆な操作は 1 つも行っていない。** `prisma/schema.prisma` の差分は **0 行**、
+> マイグレーションの新規追加も無い。Step 5–7（`categoryNodeId` 必須化 → 旧 2 列 drop →
+> rename → `SubCategory` drop → 互換 re-export 削除）は**未着手**である。
+>
+> **完了した範囲**: Step 1（admin 表のツリー統合）/ Step 2（商品フォームのツリー選択）/
+> Step 3（リーフ強制 V-5）/ Step 4（深さ上限・循環 V-7 系）/ Step 8 のテスト群のうち
+> V-5・V-5b・V-5c・V-5d・V-7・V-7b・V-7c・V-7d。`admin/subCategories/**` と
+> `forms/subCategory-details.tsx` は削除済み（`9571d880`）。
+>
+> **プラン本文に無い発見 2 点。**
+>
+> 1. **Phase B では商品を depth 1 のリーフにしか紐づけられない。** プランは
+>    「depth 2 以上は admin で作れる」ことだけを Done criteria にしていたが、
+>    `Product.subCategoryId` が **NOT NULL のまま `SubCategory` を参照する**ため、
+>    legacy 行を持たない depth 0 / depth 2 以上のノードへ紐づけると FK 違反になる。
+>    黙って落ちるより先に塞ぐべきなので、`isProductAssignableCategory`（UI の選択可否）と
+>    `assertLeafCategoryNode`（サーバー側の強制）の両方に入れた。**3 階層目は
+>    「作れるが商品は付けられない」状態**であり、Phase C で解消する。
+> 2. **`category-tree.ts` はトップレベルで `@/lib/db` を import していた。** ツリー編集
+>    フォームは `"use client"` なので、`toCanonicalCategorySlug` / `isWithinSubtree` を
+>    使うと Prisma クライアントがクライアントバンドルへ引きずり込まれる。純粋関数を
+>    `src/lib/category-path.ts` へ分離し、`category-tree.ts` から再輸出した（`3d776a4f`）。
+>    prefix 境界の定義は引き続き `subtreeOf` / `isWithinSubtree` の 2 関数のみ。
+>
+> **実バグ 1 件を検出し修正した（`366a2951`）。** `deleteCategory` が親の `childCount` を
+> 減らしていなかった。068 で `childCount` がリーフ強制の判定材料になったため、放置すると
+> **リーフを 1 つ消した親には二度と商品を紐づけられなくなる** —— `childCount` は導出列で
+> admin フォームに無く、UI からは復旧できない。削除と再計算を 1 つの `$transaction` に入れた。
+>
+> **V-5d は「素朴な同時ディスパッチでは緑のまま」だった。** バリアで 2 本を同時起動しても、
+> 正しい実装と壊れた実装で**最終 DB 状態が一致し得る**（「商品を付けた後に子ができた」は
+> 正当な状態）。競合相手のトランザクションを**開いたまま**にして `upsertProduct` を
+> ロック待ちに入らせて初めて赤にできる。**`FOR UPDATE` を `findUnique` に置き換えると
+> 本シナリオのみ失敗すること**を実測で確認した。
+>
+> **E2E 1 本は未検証のままコミットした（`524ba258`）。** 初回実行は
+> `page.getByRole("combobox").first()` がダッシュボードのサイドバーにあるナビゲーション用
+> combobox を掴んで失敗した。セレクタを `page.locator("form")` 配下へスコープしたが
+> **再実行していない**。CI は Playwright を実行しないため CI は赤くならない。
+> 次セッションの最初の作業として [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) に記録した。
+>
+> **ドキュメント同期は未完。** `QA_HANDOFF.md`（SSOT）と本ファイルは更新したが、
+> `07-testing.md` / `COVERAGE_REPORT.md` / `PROGRESS.md` への伝播と
+> `bun run coverage:dashboard` の再生成は**行っていない**。
+>
+> 統計: Jest **2121** passed / 2124 total / **194 スイート**、Integration **135** / 16 スイート、
+> 型エラー 0 / ESLint 0 errors。E2E は未実測（上記）。
+>
 > **067 の実行記録（2026-09-02・`8bebdc6e`〜`0ed9502a`）— DONE**
 >
 > **Phase B の境界は守られている。** `home.ts` / `size.ts` / `src/app/dashboard/**` の差分は
