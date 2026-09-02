@@ -102,6 +102,7 @@ jest.mock("@/lib/db", () => ({
             createMany: jest.fn(),
         },
         $transaction: jest.fn(),
+        $queryRaw: jest.fn(),
     },
 }));
 
@@ -142,7 +143,12 @@ interface ProductWithVariantInput {
     sku: string;
     weight: number;
     colors: { color: string }[];
-    sizes: { size: string; quantity: number; price: number; discount: number }[];
+    sizes: {
+        size: string;
+        quantity: number;
+        price: number;
+        discount: number;
+    }[];
     product_specs: { name: string; value: string }[];
     variant_specs: { name: string; value: string }[];
     keywords: string[];
@@ -217,6 +223,34 @@ const matchesScopedVariantLookup = (
 // ==================================================
 // upsertProduct
 // ==================================================
+/**
+ * `upsertProduct` のリーフ検証が引く `SELECT … FOR UPDATE` の戻り値を与える。
+ *
+ * 実装はこの行（Category ノード）の `childCount` と `depth` だけを見て可否を決める。
+ */
+const mockLockedCategoryNode = (node: {
+    id: string;
+    path: string;
+    depth: number;
+    childCount: number;
+}) => mockDb.$queryRaw.mockResolvedValue([node]);
+
+/** 商品を紐づけられるリーフ（Phase B では depth 1 まで）。 */
+const LEAF_NODE = {
+    id: "subcategory-001",
+    path: "electronics/smartphones",
+    depth: 1,
+    childCount: 0,
+};
+
+/** 子を持つノード。商品は紐づけられない。 */
+const NON_LEAF_NODE = {
+    id: "subcategory-001",
+    path: "electronics/smartphones",
+    depth: 1,
+    childCount: 1,
+};
+
 describe("upsertProduct", () => {
     describe("認証・権限エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
@@ -312,6 +346,12 @@ describe("upsertProduct", () => {
             // generateUniqueSlug: 初回で一意なslugが見つかる
             mockDb.product.findFirst.mockResolvedValue(null);
             mockDb.productVariant.findFirst.mockResolvedValue(null);
+            // 作成もリーフ検証のロックを握ったままの $transaction 内で行う（V-5）
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
+            );
+            mockLockedCategoryNode(LEAF_NODE);
         });
 
         it("商品もバリアントも存在しない場合、新規作成する", async () => {
@@ -395,6 +435,190 @@ describe("upsertProduct", () => {
         });
     });
 
+    // ==================================================
+    // カテゴリのリーフ強制（design.md V-5 系 / plan 068 Step 3）
+    // ==================================================
+    describe("カテゴリのリーフ強制", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.product.findFirst.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
+            mockDb.$transaction.mockImplementation(
+                async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+                    callback(mockDb)
+            );
+            mockDb.product.create.mockResolvedValue(createMockProduct());
+            mockDb.product.update.mockResolvedValue(createMockProduct());
+            mockDb.productVariant.update.mockResolvedValue(
+                createMockProductVariant()
+            );
+            for (const model of [
+                mockDb.spec,
+                mockDb.question,
+                mockDb.freeShipping,
+                mockDb.productVariantImage,
+                mockDb.color,
+                mockDb.size,
+            ]) {
+                model.deleteMany?.mockResolvedValue({ count: 0 });
+                model.createMany?.mockResolvedValue({ count: 0 });
+            }
+        });
+
+        it("V-5: 子を持つノードへの新規紐づけを拒否する", async () => {
+            // Arrange
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode(NON_LEAF_NODE);
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/leaf/i);
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+        });
+
+        it("V-5: 既存商品のカテゴリを非リーフへ変更する更新を拒否する", async () => {
+            // Arrange —— 別 root の非リーフへ付け替える
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({
+                    categoryId: "category-other",
+                    subCategoryId: "subcategory-other",
+                } as never)
+            );
+            mockDb.productVariant.findFirst.mockResolvedValue(
+                createMockProductVariant()
+            );
+            mockLockedCategoryNode(NON_LEAF_NODE);
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/leaf/i);
+            expect(mockDb.product.update).not.toHaveBeenCalled();
+        });
+
+        it("V-5b: カテゴリを変えない更新は、紐づけ先が非リーフでも成功する", async () => {
+            // Arrange —— 移行時に強制付け替えをしていないため、既存の非リーフ紐づけは
+            // 経過措置として残っている。無条件検証にするとそれらが一切編集できなくなる。
+            mockDb.product.findUnique.mockResolvedValue(createMockProduct());
+            mockDb.productVariant.findFirst.mockResolvedValue(
+                createMockProductVariant()
+            );
+            mockLockedCategoryNode(NON_LEAF_NODE);
+
+            // Act
+            await upsertProduct(
+                createMockProductWithVariantInput() as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // Assert —— 検証そのものを走らせない（ロックも引かない）
+            expect(mockDb.product.update).toHaveBeenCalled();
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+        });
+
+        it("V-5c: categoryId 据え置きでリーフ FK だけを非リーフへ差し替える更新を拒否する", async () => {
+            // Arrange —— categoryId の一致だけをスキップ条件にすると通ってしまう経路
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockProduct({
+                    subCategoryId: "subcategory-previous",
+                } as never)
+            );
+            mockDb.productVariant.findFirst.mockResolvedValue(
+                createMockProductVariant()
+            );
+            mockLockedCategoryNode(NON_LEAF_NODE);
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/leaf/i);
+            expect(mockDb.product.update).not.toHaveBeenCalled();
+        });
+
+        it("リーフノードへの紐づけは許可する", async () => {
+            // Arrange
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode(LEAF_NODE);
+
+            // Act
+            await upsertProduct(
+                createMockProductWithVariantInput() as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // Assert
+            expect(mockDb.product.create).toHaveBeenCalled();
+        });
+
+        it("対象ノードは SELECT … FOR UPDATE でロックしてから読む", async () => {
+            // Arrange —— upsertCategory が親を掴む行と同じ行をロックすることが、
+            // 「商品を L に紐づける」と「L の子を作る」の直列化の条件になる。
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode(LEAF_NODE);
+
+            // Act
+            await upsertProduct(
+                createMockProductWithVariantInput() as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // Assert
+            const sqlParts = mockDb.$queryRaw.mock.calls[0][0] as string[];
+            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+            expect(sqlParts.join("?")).toMatch(/"Category"/);
+        });
+
+        it("Phase B では depth 2 以上のノードへの紐づけを拒否する", async () => {
+            // Arrange —— depth 2 以上には legacy SubCategory 行が無く、
+            // NOT NULL の Product.subCategoryId を満たせない（Phase C まで）。
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode({
+                id: "subcategory-001",
+                path: "electronics/camera/lens",
+                depth: 2,
+                childCount: 0,
+            });
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/depth/i);
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+        });
+
+        it("存在しないカテゴリノードへの紐づけを拒否する", async () => {
+            // Arrange
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockDb.$queryRaw.mockResolvedValue([]);
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow("Category not found.");
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+        });
+    });
+
     describe("既存商品+バリアント更新", () => {
         beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
@@ -413,14 +637,20 @@ describe("upsertProduct", () => {
             mockDb.question.deleteMany.mockResolvedValue({ count: 0 });
             mockDb.question.createMany.mockResolvedValue({ count: 0 });
             mockDb.freeShipping.deleteMany.mockResolvedValue({ count: 0 });
-            mockDb.productVariantImage.deleteMany.mockResolvedValue({ count: 0 });
-            mockDb.productVariantImage.createMany.mockResolvedValue({ count: 0 });
+            mockDb.productVariantImage.deleteMany.mockResolvedValue({
+                count: 0,
+            });
+            mockDb.productVariantImage.createMany.mockResolvedValue({
+                count: 0,
+            });
             mockDb.color.deleteMany.mockResolvedValue({ count: 0 });
             mockDb.color.createMany.mockResolvedValue({ count: 0 });
             mockDb.size.deleteMany.mockResolvedValue({ count: 0 });
             mockDb.size.createMany.mockResolvedValue({ count: 0 });
             mockDb.product.update.mockResolvedValue(createMockProduct());
-            mockDb.productVariant.update.mockResolvedValue(createMockProductVariant());
+            mockDb.productVariant.update.mockResolvedValue(
+                createMockProductVariant()
+            );
             // generateUniqueSlug: 初回で一意
             mockDb.product.findFirst.mockResolvedValue(null);
             mockDb.productVariant.findFirst.mockResolvedValue(null);
@@ -430,18 +660,23 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                if (
-                    matchesScopedVariantLookup(params, {
-                        variantId: "variant-001",
-                        productId: "product-001",
-                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-                    })
-                ) {
-                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+            mockDb.productVariant.findFirst.mockImplementation(
+                async (params: unknown) => {
+                    if (
+                        matchesScopedVariantLookup(params, {
+                            variantId: "variant-001",
+                            productId: "product-001",
+                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        })
+                    ) {
+                        return createMockProductVariant({
+                            variantName: "Old Variant",
+                            slug: "old-variant",
+                        });
+                    }
+                    return null;
                 }
-                return null;
-            });
+            );
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -480,20 +715,28 @@ describe("upsertProduct", () => {
 
         it("商品名未変更時にslugが維持される", async () => {
             mockDb.product.findUnique.mockResolvedValue(
-                createMockProduct({ name: "New Product", slug: "existing-slug" })
+                createMockProduct({
+                    name: "New Product",
+                    slug: "existing-slug",
+                })
             );
-            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                if (
-                    matchesScopedVariantLookup(params, {
-                        variantId: "variant-001",
-                        productId: "product-001",
-                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-                    })
-                ) {
-                    return createMockProductVariant({ variantName: "Red Edition", slug: "existing-variant-slug" });
+            mockDb.productVariant.findFirst.mockImplementation(
+                async (params: unknown) => {
+                    if (
+                        matchesScopedVariantLookup(params, {
+                            variantId: "variant-001",
+                            productId: "product-001",
+                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        })
+                    ) {
+                        return createMockProductVariant({
+                            variantName: "Red Edition",
+                            slug: "existing-variant-slug",
+                        });
+                    }
+                    return null;
                 }
-                return null;
-            });
+            );
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -523,18 +766,23 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(
                 createMockProduct({ name: "Old Name", slug: "old-name" })
             );
-            mockDb.productVariant.findFirst.mockImplementation(async (params: unknown) => {
-                if (
-                    matchesScopedVariantLookup(params, {
-                        variantId: "variant-001",
-                        productId: "product-001",
-                        storeId: TEST_CONFIG.DEFAULT_STORE_ID,
-                    })
-                ) {
-                    return createMockProductVariant({ variantName: "Old Variant", slug: "old-variant" });
+            mockDb.productVariant.findFirst.mockImplementation(
+                async (params: unknown) => {
+                    if (
+                        matchesScopedVariantLookup(params, {
+                            variantId: "variant-001",
+                            productId: "product-001",
+                            storeId: TEST_CONFIG.DEFAULT_STORE_ID,
+                        })
+                    ) {
+                        return createMockProductVariant({
+                            variantName: "Old Variant",
+                            slug: "old-variant",
+                        });
+                    }
+                    return null;
                 }
-                return null;
-            });
+            );
 
             await upsertProduct(
                 createMockProductWithVariantInput({
@@ -886,7 +1134,11 @@ describe("getProducts", () => {
                                 categoryNode: {
                                     OR: [
                                         { path: "electronics" },
-                                        { path: { startsWith: "electronics/" } },
+                                        {
+                                            path: {
+                                                startsWith: "electronics/",
+                                            },
+                                        },
                                     ],
                                 },
                             },
@@ -917,7 +1169,9 @@ describe("getProducts", () => {
                         oldSlug: "smartphones",
                     },
                 },
-                select: { category: { select: { id: true, path: true, url: true } } },
+                select: {
+                    category: { select: { id: true, path: true, url: true } },
+                },
             });
             expect(mockDb.product.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -929,7 +1183,8 @@ describe("getProducts", () => {
                                         { path: "electronics/smartphones" },
                                         {
                                             path: {
-                                                startsWith: "electronics/smartphones/",
+                                                startsWith:
+                                                    "electronics/smartphones/",
                                             },
                                         },
                                     ],
@@ -1039,7 +1294,9 @@ describe("getProducts", () => {
                     const result = await getProducts(filters);
 
                     // Assert —— 別名表を entityType 付きで引いている
-                    expect(mockDb.categorySlugAlias.findUnique).toHaveBeenCalledWith(
+                    expect(
+                        mockDb.categorySlugAlias.findUnique
+                    ).toHaveBeenCalledWith(
                         expect.objectContaining({
                             where: {
                                 entityType_oldSlug: expect.objectContaining({
@@ -1234,9 +1491,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant(),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [
-                                createMockSize({ price: 50, discount: 0 }),
-                            ],
+                            sizes: [createMockSize({ price: 50, discount: 0 })],
                         },
                     ],
                 },
@@ -1247,9 +1502,7 @@ describe("getProducts", () => {
                             ...createMockProductVariant({ id: "v2" }),
                             images: [createMockVariantImage()],
                             colors: [],
-                            sizes: [
-                                createMockSize({ price: 20, discount: 0 }),
-                            ],
+                            sizes: [createMockSize({ price: 20, discount: 0 })],
                         },
                     ],
                 },
@@ -1474,9 +1727,7 @@ describe("getShippingDetails", () => {
 
     describe("配送方式別計算", () => {
         beforeEach(() => {
-            mockDb.country.findUnique.mockResolvedValue(
-                createMockCountry()
-            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
         });
 
         it("ITEM方式: 配送レートの値を使用する", async () => {
@@ -1600,7 +1851,11 @@ describe("getShippingDetails", () => {
                 id: "fs-001",
                 productId: "product-001",
                 eligibleCountries: [
-                    { id: "fsc-001", countryId: "country-001", freeShippingId: "fs-001" },
+                    {
+                        id: "fsc-001",
+                        countryId: "country-001",
+                        freeShippingId: "fs-001",
+                    },
                 ],
             };
 
@@ -1738,13 +1993,7 @@ describe("getProductFilteredReviews", () => {
     it("ページネーションが正しく適用される", async () => {
         mockDb.review.findMany.mockResolvedValue([]);
 
-        await getProductFilteredReviews(
-            "product-001",
-            {},
-            undefined,
-            3,
-            10
-        );
+        await getProductFilteredReviews("product-001", {}, undefined, 3, 10);
 
         expect(mockDb.review.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -1849,9 +2098,7 @@ describe("getProductShippingFee", () => {
         mockDb.country.findUnique.mockResolvedValue(createMockCountry());
 
         const freeShipping = {
-            eligibleCountries: [
-                { countryId: "country-001" },
-            ],
+            eligibleCountries: [{ countryId: "country-001" }],
         };
 
         const result = await getProductShippingFee(
@@ -1875,9 +2122,7 @@ describe("getProductShippingFee", () => {
         };
 
         beforeEach(() => {
-            mockDb.country.findUnique.mockResolvedValue(
-                createMockCountry()
-            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
             mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
         });
 
@@ -1917,9 +2162,7 @@ describe("getProductShippingFee", () => {
                 1
             );
             // clearMocksしないので、再度モックを設定
-            mockDb.country.findUnique.mockResolvedValue(
-                createMockCountry()
-            );
+            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
             mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
 
             const result5 = await getProductShippingFee(
@@ -1978,9 +2221,7 @@ describe("getProductShippingFee", () => {
 // ==================================================
 describe("getProductsByIds", () => {
     it("空のIDリストの場合エラーをスローする", async () => {
-        await expect(getProductsByIds([])).rejects.toThrow(
-            "Ids are undefined"
-        );
+        await expect(getProductsByIds([])).rejects.toThrow("Ids are undefined");
     });
 
     it("nullのIDリストの場合エラーをスローする", async () => {
@@ -2037,7 +2278,7 @@ describe("getProductsByIds", () => {
 
         expect(mockDb.productVariant.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: { id: { in: ["v1"] } }
+                where: { id: { in: ["v1"] } },
             })
         );
         expect(result.totalPages).toBe(0); // 0 records
@@ -2082,17 +2323,19 @@ describe("getProductPageData", () => {
             questions: [],
             reviews: [],
             rating: 4.5,
-            variants: [{
-                id: "variant-123",
-                slug: "black",
-                variantName: "Black",
-                isSale: false,
-                saleEndDate: null,
-                images: [{ url: "img1.jpg" }],
-                colors: [],
-                sizes: [{ price: { toNumber: () => 100 }, discount: 0 }],
-                specs: [],
-            }],
+            variants: [
+                {
+                    id: "variant-123",
+                    slug: "black",
+                    variantName: "Black",
+                    isSale: false,
+                    saleEndDate: null,
+                    images: [{ url: "img1.jpg" }],
+                    colors: [],
+                    sizes: [{ price: { toNumber: () => 100 }, discount: 0 }],
+                    specs: [],
+                },
+            ],
             variantsInfo: [],
         };
         mockDb.product.findUnique.mockResolvedValue(mockProduct);
@@ -2100,7 +2343,14 @@ describe("getProductPageData", () => {
         mockDb.store.findUnique.mockImplementation(async (params: unknown) => {
             const select =
                 typeof params === "object" && params !== null
-                    ? (params as { select?: { _count?: unknown; followers?: unknown } }).select
+                    ? (
+                          params as {
+                              select?: {
+                                  _count?: unknown;
+                                  followers?: unknown;
+                              };
+                          }
+                      ).select
                     : undefined;
             if (select && select._count) {
                 return { _count: { followers: 0 } };
@@ -2118,7 +2368,11 @@ describe("getProductPageData", () => {
         // cookies() が Promise を返すモック (Next.js 15+ 挙動)
         const cookieStore = {
             get: jest.fn().mockReturnValue({
-                value: JSON.stringify({ name: "United States", code: "US", city: "New York" })
+                value: JSON.stringify({
+                    name: "United States",
+                    code: "US",
+                    city: "New York",
+                }),
             }),
         };
         const cookiesPromise = Promise.resolve(cookieStore);
@@ -2129,4 +2383,3 @@ describe("getProductPageData", () => {
         expect(cookieStore.get).toHaveBeenCalledWith("userCountry");
     });
 });
-
