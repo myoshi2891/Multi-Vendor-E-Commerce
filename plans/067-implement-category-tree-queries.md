@@ -1,6 +1,13 @@
 # Plan 067: カテゴリツリー Phase B — 読み取りをサブツリー prefix へ切替（storefront）
 
-> **Executor instructions**: 本プランは **未実行**。plan [013](013-spike-category-tree-n-level.md)
+> **Executor instructions**: 本プランは **実行済み（DONE・2026-09-02・`8bebdc6e`〜`0ed9502a`）**。
+> 下の Done criteria のチェックはこの実行結果を指す。残 BLOCKED は
+> 「実 DB への `prisma migrate deploy` が権限で拒否され再同期が未適用」の 1 点のみで、
+> [`plans/README.md`](README.md) の 067 行と
+> [`docs/testing/QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) に記録がある。
+> 以下の着手前手順（Drift check 等）は**当時の実行時のもの**であり、再実行の必要はない。
+>
+> plan [013](013-spike-category-tree-n-level.md)
 > が確定した設計の実装 3 本のうち **2 本目**で、
 > [ADR-006](../docs/architecture/decisions/006-category-tree-representation.md) の
 > **Phase B** に対応する。

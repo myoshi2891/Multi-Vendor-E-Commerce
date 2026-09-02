@@ -115,7 +115,7 @@
   | 7 | Identity | 2 | User / Store の Identity ドメイン |
   | 8 | Messaging | 5 | 購入者↔販売者メッセージング（Conversation / Message / User / Store / Order） |
   | 9 | Support | 3 | サポート受付（SupportTicket / User / Order） |
-  | 10 | Enums | 9 | 全 enum 定義の参照ページ（エッジなし） |
+  | 10 | Enums | 10 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:

@@ -13,6 +13,13 @@
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
 - 2072 passed / 2075 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Integration is 131 tests across 15 suites: a review follow-up added +2 in
+  `category-tree-resync.test.ts` covering `Product.categoryNodeId` resynchronization — a product
+  created after the one-shot Phase A backfill (NULL) and one whose category changed afterwards
+  (stale). The section's `UPDATE "Product"` was executed by the suite but never asserted, which is
+  the exact path the file's own docstring describes as making products "silently disappear" once
+  reads switch over. `setup/migration-sql.ts` now runs a marked section inside `$transaction`, so
+  tests observe the same atomicity production gets.
   Code-review follow-up added +6 tests (+1 suite): `tests/component/store/category-link.test.tsx`
   (+3, new suite) pins that a category branch re-opens when a descendant becomes selected by a
   client-side navigation — the `useState` initializer runs once, but the branch stays mounted

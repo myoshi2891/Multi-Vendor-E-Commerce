@@ -247,7 +247,16 @@ admin の低頻度操作である。一方で読み取りは storefront の毎�
 
 ### 移行時に必ず実行する計測（件数を返すこと）
 
-1) と 2) は移行 SQL を書く前に、3) はデータ移行の直後に実行する。
+1) と 2) は移行 SQL を書く前に、3) は **A-6 の backfill 完了後**に実行する。
+
+> **本番の `Product` が大きい場合、Phase A のマイグレーションを 1 トランザクションで
+> 流さないこと。** `prisma migrate deploy` はファイル 1 本を 1 トランザクションで
+> 適用するため、`Product` への索引作成と FK の検証スキャンが取ったロックが区間の
+> 最後まで解放されず、商品の書き込みが止まる。ロックを最小化する別経路
+> （`CREATE INDEX CONCURRENTLY` / FK は `NOT VALID` 追加 → 別手順で `VALIDATE`）は
+> [`docs/migration/07-category-tree-phase-a-production.md`](../../migration/07-category-tree-phase-a-production.md)
+> に手順化してある。**マイグレーションファイル自体は編集しない**（適用済みファイルの
+> 改変禁止・空 DB / CI / 統合テストでは現行のままが正しい）。
 
 ```sql
 -- 1) Category と SubCategory の slug 衝突件数（D-2 のリネーム規則が発火する件数）
@@ -261,10 +270,11 @@ FROM "Category" c JOIN "SubCategory" s ON s.url = c.url
 ORDER BY c.url;
 
 -- 3) 非リーフに紐づく Product 件数（D-5 の経過措置の規模 / plan 066 の STOP 条件）
---    移行後の商品ノードは A-4 のとおり subCategoryId 由来（categoryNodeId := subCategoryId）。
+--    移行後の商品ノードは A-6 のとおり subCategoryId 由来（categoryNodeId := subCategoryId）。
 --    ゆえに数えるべきは「移行先ノードが子を持つ商品」であって、
 --    旧 categoryId（Phase C で drop される列）が子を持つかではない。
---    データ移行（A-3〜A-5）の直後、同じトランザクション内で実行する。
+--    A-6 の backfill 完了後、同じトランザクション内で実行する（backfill 前は
+--    categoryNodeId が NULL のままで JOIN が 1 行も返さず、STOP 条件が空振りする）。
 SELECT count(*) FROM "Product" p
 JOIN "Category" c ON c.id = p."categoryNodeId"
 WHERE c."childCount" > 0;
@@ -319,6 +329,7 @@ WHERE c."childCount" > 0;
 - 消費する後続 spike: [plan 014（カテゴリ別属性）](../../../plans/014-spike-category-attributes-facets.md) /
   [plan 015（ファセット検索）](../../../plans/015-spike-faceted-search-and-browse.md)
 - 関連 ADR: [ADR-004（統合テスト DB 戦略）](004-integration-test-db-strategy.md) — 移行の検証は testcontainers 上で行う
+- 本番適用手順: [`docs/migration/07-category-tree-phase-a-production.md`](../../migration/07-category-tree-phase-a-production.md) — Phase A のロック最小化ロールアウト
 
 ---
 
