@@ -804,11 +804,15 @@ describe("deleteCategory", () => {
     });
 
     describe("正常系", () => {
-        it("カテゴリを正常に削除する", async () => {
+        beforeEach(() => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
+            mockCategoryTx();
+        });
+
+        it("カテゴリを正常に削除する", async () => {
             const category = createMockCategory();
             mockDb.category.delete.mockResolvedValue(category);
 
@@ -818,6 +822,38 @@ describe("deleteCategory", () => {
             expect(mockDb.category.delete).toHaveBeenCalledWith({
                 where: { id: "category-001" },
             });
+        });
+
+        it("削除した子の分だけ親の childCount を再計算する", async () => {
+            // Arrange —— 親が childCount を持ったままだと、その親はリーフ強制
+            // （V-5）に永久に引っかかり、**二度と商品を紐づけられなくなる**。
+            // admin の UI からは直せない（childCount は導出列でフォームに無い）。
+            mockDb.category.delete.mockResolvedValue(
+                createMockCategory({ parentId: "electronics" } as never)
+            );
+            mockDb.category.count.mockResolvedValue(0);
+
+            // Act
+            await deleteCategory("camera");
+
+            // Assert
+            expect(mockDb.category.update).toHaveBeenCalledWith({
+                where: { id: "electronics" },
+                data: { childCount: 0 },
+            });
+        });
+
+        it("ルートの削除では childCount を触らない", async () => {
+            // Arrange
+            mockDb.category.delete.mockResolvedValue(
+                createMockCategory({ parentId: null } as never)
+            );
+
+            // Act
+            await deleteCategory("electronics");
+
+            // Assert
+            expect(mockDb.category.update).not.toHaveBeenCalled();
         });
     });
 });
