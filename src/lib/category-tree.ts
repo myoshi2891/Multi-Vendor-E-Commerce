@@ -184,3 +184,44 @@ export const flattenCategoryTree = <T extends CategoryTreeInput>(
     visit(nodes);
     return flat;
 };
+
+/**
+ * カテゴリツリーの最大 depth（ルート = 0 なので 5 階層）。
+ *
+ * ADR-006 / design.md V-7 の決定。`Category.depth` のコメントと同じ値であり、
+ * **書き込み側の検証はこの定数だけを見る**（マジックナンバーを散らさない）。
+ */
+export const MAX_CATEGORY_DEPTH = 4;
+
+/**
+ * Derive the depth of a materialized path.
+ *
+ * `path` は区切り文字を末尾に付けない約束（`subtreeOf` と同じ前提）なので、
+ * セグメント数 - 1 が depth になる。
+ *
+ * @param path - 対象ノードの `Category.path`
+ * @returns ルートを 0 とする深さ
+ */
+export const depthOfPath = (path: string): number => path.split("/").length - 1;
+
+/**
+ * Rebase a descendant path from one ancestor path onto another.
+ *
+ * materialized path は祖先を値として抱えているため、**親を替えたノードの `path`
+ * だけを更新すると子孫が旧祖先を指したまま取り残される**。`subtreeOf`（前置一致）で
+ * 回る検索・ファセット・admin ツリーはすべて `path` を正とするので、取り残しは
+ * 「商品が消えた」という形でしか表面化しない静かな破損になる。
+ *
+ * **呼び出し前に `isWithinSubtree(path, oldAncestorPath)` が真であることを確認すること。**
+ * 前置一致しない path を渡すと、セグメント境界を無視した文字列結合になる。
+ *
+ * @param path - 書き換え対象の子孫 path
+ * @param oldAncestorPath - 移動前の祖先 path
+ * @param newAncestorPath - 移動後の祖先 path
+ * @returns 新しい祖先を前置に持つ path
+ */
+export const rebasePath = (
+    path: string,
+    oldAncestorPath: string,
+    newAncestorPath: string
+): string => `${newAncestorPath}${path.slice(oldAncestorPath.length)}`;
