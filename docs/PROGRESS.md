@@ -4379,6 +4379,54 @@ Category 98 / SubCategory 58 / Product 105 / `categoryNodeId IS NULL` **0 件**�
 
 #### 残作業・BLOCKED
 
-残作業（storefront の残リンク・統合 V-1/V-6/3 階層・E2E V-2・docs 同期・README 更新）と
-BLOCKED（実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用）は
-[`docs/testing/QA_HANDOFF.md`](testing/QA_HANDOFF.md) の「067-B」を参照。
+残作業は **2026-09-02 に完了**（下記「カテゴリツリー Phase B の残作業完了」を参照）。
+BLOCKED（実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用）のみが残り、
+[`docs/testing/QA_HANDOFF.md`](testing/QA_HANDOFF.md) の「067-B の残 BLOCKED」節に記録した。
+
+---
+
+### カテゴリツリー Phase B の残作業完了 (2026-09-02)
+
+#### 概要
+
+plan 067（カテゴリツリー Phase B）の残作業 —— storefront の残リンク・統合テスト 4 本・
+E2E 1 本 —— を実装し、plan 067 を **DONE** にした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/layout/footer/{footer,links}.tsx` | リンク元を旧 `SubCategory` テーブルから `Category` ツリーへ移し、`?category=<正準slug>` を生成（308 の 1 ホップを解消） | `d7769375` |
+| `src/lib/category-tree.ts` | `flattenCategoryTree`（pre-order・並び替えなし）を追加。unit +2 | `d7769375` |
+| `tests/integration/product-browse.test.ts` | V-1（兄弟 prefix の非ヒット）/ depth 2 の商品がルート祖先で取れる / 旧 `?subCategory=` の同一サブツリー解決 / V-6（fail-closed）の +4 | `171ac4fa` |
+| `tests/integration/product-update.test.ts` | create・update 両経路の dual-write（3 列が揃う）+2 | `c094f7d4` |
+| `tests/e2e/search-filter.spec.ts` + `tests/e2e/seed/` | V-2: 旧 `?subCategory=` が **308** で正準ノードへ着地（`CategorySlugAlias` 経由の旧 slug を含む）。シードに別名行を 1 件追加 | `0ed9502a` |
+
+#### 踏まなかった罠
+
+1. **`links.tsx` の `?subCategory=` を機械的に `?category=` へ置換してはならない。**
+   旧 `SubCategory.url` は移行でリネームされ得るうえ、グローバル一意制約下で**別ノードの
+   正準 slug**になっている可能性がある。`resolveCategoryNode(CATEGORY)` は url 完全一致を
+   先に引くので、無関係なノードへ着地する。**データ源ごとツリーへ移す**のが正しい。
+   `home/category-card.tsx` は home.ts の legacy 経路（067 スコープ外）なので据え置き。
+2. **E2E の 308 検証に `page.goto` を使わない。** 最終 URL しか見えず 302 と区別できない。
+   `request.get(..., { maxRedirects: 0 })` でステータスと `Location` を直接見る。
+3. **別名テストで `Category.url` を書き換えない。** 旧 slug が url に残っていると
+   完全一致で解決してしまい、別名表を引く経路が 1 度も実行されない。別名行だけを足す。
+4. **ローカル E2E は `PORT=3100 E2E_NO_REUSE=1` で隔離する。** :3000 に別リポジトリの
+   next-server が居ると `reuseExistingServer` がそれを掴み、全 spec が赤になる
+   （`playwright.config.ts` に警告として明記されている既知の罠）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2062 passed / 2065 total | **2064 passed / 2067 total** |
+| スイート数 | 193 | **193**（不変） |
+| Integration | 123 / 15 スイート | **129 / 15 スイート** |
+| Playwright E2E | 64 tests/browser（計 192） | **65 tests/browser（計 195）** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors** |
+
+V-1 と dual-write は、本体を壊すと赤になることを実測で確認した（`subtreeOf` から境界文字
+`/` を落とす / `categoryNode` の connect を落とす）。

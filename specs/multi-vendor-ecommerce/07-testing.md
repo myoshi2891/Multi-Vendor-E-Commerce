@@ -12,7 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2062 passed / 2065 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+- 2064 passed / 2067 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Category tree Phase B (plan 067) closed: `flattenCategoryTree` (+2 tests, suites unchanged) backs the
+  footer category links, which now emit the canonical `?category=` slug instead of the legacy
+  `?subCategory=` that took a 308 hop on every click.
+  Integration is 129 tests across 15 suites (+4 in `product-browse.test.ts` for subtree filtering —
+  sibling-prefix isolation (V-1), depth-2 products reached through a root ancestor, legacy
+  `?subCategory=` resolving to the same subtree, fail-closed on an unresolvable slug (V-6) — and
+  +2 in `product-update.test.ts` pinning the `categoryNodeId` dual-write on both create and update).
+  E2E is 65 tests/browser across 29 files (195 total): `search-filter.spec.ts` asserts the 308
+  canonicalization for both the canonical slug and a `CategorySlugAlias`-only legacy slug.
+- Earlier entry: 2062 passed / 2065 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
   Category tree Phase B (plan 067) added `src/lib/category-tree.test.ts` (+1 suite) plus new cases in
   `schemas.test.ts`, `product.test.ts`, `category.test.ts` and `browse/page.test.tsx`.
   Integration is 123 tests across 15 suites (`category-tree-resync.test.ts`, +6 / +1 suite).
