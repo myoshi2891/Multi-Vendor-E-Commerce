@@ -54,6 +54,23 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Category } from '@prisma/client'
 import { useToast } from '@/hooks/use-toast'
 
+/** 1 階層あたりの字下げ幅（px）。 */
+const INDENT_PX = 16
+
+/**
+ * materialized path から親ノードの slug を取り出す。
+ *
+ * 親行を引き直さずに済むうえ、**`path` が正しく維持されていること自体の表示**にもなる
+ * （再親子化で子孫の path が取り残されると、この列が旧親を指したままになる）。
+ *
+ * @param path - `Category.path`（区切りは `/`、末尾に区切りは付かない）
+ * @returns 親の slug。ルートなら `null`
+ */
+const parentSlugOf = (path: string): string | null => {
+    const segments = path.split('/')
+    return segments.length < 2 ? null : segments[segments.length - 2]
+}
+
 export const columns: ColumnDef<Category>[] = [
     {
         accessorKey: 'image',
@@ -77,8 +94,14 @@ export const columns: ColumnDef<Category>[] = [
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => {
+            // 1 テーブルに全階層が並ぶ（plan 068 で SubCategory ルートを廃止）ため、
+            // 深さは字下げでしか読めない。`buildCategoryTree` → `flattenCategoryTree`
+            // の pre-order で並んでいるので、字下げがそのまま木の形になる。
             return (
-                <span className="text-lg font-extrabold capitalize">
+                <span
+                    className="text-lg font-extrabold capitalize"
+                    style={{ paddingLeft: row.original.depth * INDENT_PX }}
+                >
                     {row.original.name}
                 </span>
             )
@@ -90,6 +113,29 @@ export const columns: ColumnDef<Category>[] = [
         header: 'URL',
         cell: ({ row }) => {
             return <span>/{row.original.url}</span>
+        },
+    },
+    {
+        id: 'parent',
+        header: 'Parent',
+        cell: ({ row }) => {
+            const parentSlug = parentSlugOf(row.original.path)
+            return (
+                <span className="text-muted-foreground">
+                    {parentSlug === null ? '—' : `/${parentSlug}`}
+                </span>
+            )
+        },
+    },
+    {
+        accessorKey: 'sortOrder',
+        header: 'Order',
+        cell: ({ row }) => {
+            return (
+                <span className="text-muted-foreground">
+                    {row.original.sortOrder}
+                </span>
+            )
         },
     },
     {
