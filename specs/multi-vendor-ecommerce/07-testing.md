@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2064 passed / 2067 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+- 2065 passed / 2068 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Review follow-up added +1 regression test (suites unchanged): the coverage dashboard's test
+  scanner counted private-member calls (`this.#test(...)`) as test declarations, because its
+  negative lookbehind excluded `.` but not `#`. Widened to `(?<![.#\w$])` and pinned in
+  `scripts/coverage-dashboard/scan-tests.test.ts`.
+- Earlier entry: 2064 passed / 2067 total across 193 suites, as of 2026-09-02.
   Category tree Phase B (plan 067) closed: `flattenCategoryTree` (+2 tests, suites unchanged) backs the
   footer category links, which now emit the canonical `?category=` slug instead of the legacy
   `?subCategory=` that took a 308 hop on every click.

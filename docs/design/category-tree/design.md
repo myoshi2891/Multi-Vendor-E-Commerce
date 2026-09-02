@@ -243,7 +243,11 @@ for (const [slug, entityType] of [
     if (!slug) continue;
     const node = await resolveNode(slug, entityType);
     if (!node) return noMatchResult;                     // fail-closed を維持
-    whereClause.AND.push({ category: subtreeOf(node.path) });
+    // Phase B は新旧 FK が並走しており、旧 `category` は**ルート**を指す。
+    // サブツリー条件はリーフを指す新 FK（`categoryNode`）へ掛けること
+    // （旧側へ掛けると 3 階層目以降の商品に届かない）。Phase C で
+    // `categoryNodeId` が `categoryId` へ rename された後は `category` に戻る。
+    whereClause.AND.push({ categoryNode: subtreeOf(node.path) });
 }
 ```
 

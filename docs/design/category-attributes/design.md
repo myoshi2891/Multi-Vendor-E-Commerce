@@ -221,6 +221,30 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
   discriminated な構築にすること。
   [`click-to-add.tsx`](../../../src/components/dashboard/forms/click-to-add.tsx) の
   `Detail<T>` はインデックスシグネチャの緩い型なので、属性入力には**流用しない**。
+- **`NUMBER` は数値変換の前に空入力を `undefined` へ正規化する**。HTML の
+  `<input type="number">` は未入力を `""` で返し、`z.coerce.number()` は `Number("")`
+  すなわち **`0`** を通してしまう。任意属性が未入力のまま `0` として保存されると、
+  「値なし」と「0 と入力した」が DB 上で区別できなくなり、ファセット集計にも
+  偽の `0` が現れる。したがって:
+
+  ```ts
+  // 空文字・空白のみ・null は「未入力」に畳んでから数値へ落とす
+  const emptyToUndefined = (v: unknown) =>
+      typeof v === "string" && v.trim() === "" ? undefined : (v ?? undefined);
+
+  const numberField = (required: boolean) => {
+      const base = z.preprocess(emptyToUndefined, z.coerce.number());
+      // 正規化は required=false のときだけ「未入力を許す」意味を持つ。
+      // required=true では undefined が必須エラーとして正しく報告される。
+      return required ? base : base.optional();
+  };
+  ```
+
+  **`required: false` のときだけ `.optional()` を付ける**こと（`required: true` で
+  optional にすると Q5 の hard 検証が骨抜きになる）。検証シナリオには
+  「任意 `NUMBER` を空のまま保存 → 再読込しても `0` にならず未入力のまま」という
+  **ラウンドトリップ**を必ず含める（A-1 の「`type` と埋まっている列が一致する」だけでは
+  この事故を検出できない —— `valueNumber = 0` は列の一致条件を満たしてしまう）。
 
 ### Q5. 必須属性の強制レベル → **hard（保存ブロック）を既定**、審査モードで soft へ落とせる構造
 
@@ -251,13 +275,13 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 | **表示名の変更** | **許可**。`key`（機械キー）と `name`（表示名）を分離しているため表示名だけ変えられる | 影響なし |
 | **`key` の変更** | **禁止**。`@@unique([categoryId, key])` を安定キーとして扱う。変えたい場合は新規定義 + 旧定義の `archivedAt` | 旧定義に紐づいた値はそのまま残る（履歴） |
 | **単位の変更** | **許可するが値の再計算はしない**。`cm → mm` のような換算は**新規定義を作って移行**する | 旧単位のまま旧定義に残る。混在を避けるため旧定義は archive する |
-| **型の変更** | **`TEXT → NUMBER` のみ許可**。逆方向と `ENUM ⇄ NUMBER` は禁止（新規定義を作る）。さらに **in-place の型変更は「全行が変換可能」と確認できた場合に限る**（下記「型変更の 2 経路」） | **経路 1（全行変換可能）**: `valueText` → `valueNumber` へ UPDATE してから `type` を変更。`valueText` は NULL に戻す。**経路 2（変換不能な行が 1 行でもある）**: 旧定義の `type` は `TEXT` のまま `archivedAt` を付け、変換可能な値だけを新しい `NUMBER` 定義へ移す。**変換不能な値は旧定義（`TEXT`）側に残り、黙って NULL 化しない**（0-B のとおり変換不能が多数派になる前提） |
+| **型の変更** | **`TEXT → NUMBER` のみ許可**。逆方向と `ENUM ⇄ NUMBER` は禁止（新規定義を作る）。さらに **in-place の型変更は「全行が変換可能」と確認できた場合に限る**（下記「型変更の 2 経路」） | **経路 1（全行変換可能）**: `valueText` → `valueNumber` へ UPDATE してから `type` を変更。`valueText` は NULL に戻す。**経路 2（変換不能な行が 1 行でもある）**: 旧定義の `type` は `TEXT` のまま `archivedAt` を付け、変換可能な値だけを新しい `NUMBER` 定義へ移す。**変換不能な値は旧定義（`TEXT`）側に残り、黙って NULL 化しない**（0-B のとおり変換不能が多数派になる前提）。新旧定義は `key` を共有するため、**一意制約はアーカイブ済みを対象外にする**（下記「経路 2 と一意制約」） |
 | **enum 許容値の改名** | **許可**。`AttributeOption.label` を更新する | **FK なので既存値は自動追随**（ADR-007 D-3） |
 | **enum 許容値の削除** | **論理削除のみ**（`archivedAt`）。物理削除は `onDelete: Restrict` で阻止 | 既存値は参照を保つ。新規入力の選択肢からは消える |
 | **必須/任意の切替** | **許可**。任意 → 必須にしても既存商品を無効化しない | 値が無い既存商品は `SELECT` で列挙でき、Q5 のとおり**審査の差し戻し対象**として扱う。次回編集時に入口検証で hard に要求される |
 | **facetable の切替** | **許可・無停止**。インデックスは `definitionId` 単位で既に存在するため再構築不要 | 影響なし。**ただし `TEXT` 型の facetable 化は禁止/警告**（distinct 値が発散しファセット UI が破綻する） |
 | **所属カテゴリノードの変更** | **許可**。FK 付け替え 1 行 | 移動先カテゴリに属さない商品の値は残るが、ファセットには出なくなる。移動前に影響件数を計測すること |
-| **定義の削除** | **論理削除を既定**（`archivedAt`）。物理削除は `Restrict` で阻止 | 値は保持され、plan 015 のファセットから履歴が消えない |
+| **定義の削除** | **論理削除を既定**（`archivedAt`）。物理削除は `Restrict` で阻止 | **値は保持されるが、ファセットには出なくなる**。継承クエリが `archivedAt: null` で絞る（下記スキーマ §）ため、アーカイブ済み定義とその値は plan 015 のファセットから外れる（検証シナリオ A-6）。値が残るのは履歴・再有効化・エクスポートのためであって、ファセットに出し続けるためではない |
 
 > **型変更の 2 経路（A-1 の不変条件を壊さないため）。** `NUMBER` 定義の下に
 > `valueText` だけが埋まった行を残すことは**禁止**する —— それは検証シナリオ A-1
@@ -277,6 +301,38 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 > **これらの決定は Q2（格納方式）と強く結合している。** 「enum 改名が自動追随する」
 > 「変換不能行を安全に残せる」「論理削除で履歴が残る」はいずれも**正規化 + FK** の
 > 帰結であり、JSONB を選んでいたらどれも成立しない（ADR-007 の変更コスト比較表）。
+
+> **経路 2 と一意制約（`key` は据え置き、制約側をアーカイブ対象外にする）。**
+> 経路 2 は「旧 `TEXT` 定義を archive」＋「同じ `key` の新 `NUMBER` 定義を作成」なので、
+> `@@unique([categoryId, key])` を素のまま掛けると**同一ノードに同じ `key` が 2 行**現れて
+> **INSERT が落ちる**。ここで `key` を `size_v2` のように改名して逃げてはならない ——
+> Q7 が `key` を**不変の機械キー**と定めており（読み取り・エクスポート・plan 015 の
+> ファセット定義がこのキーで結び付いている）、改名は経路 2 を「型変更」ではなく
+> 「別属性への移行」に変えてしまう。したがって**制約の側を狭める**:
+>
+> ```prisma
+> // アーカイブ済みは一意性の対象外にする（部分ユニークインデックス）
+> // Prisma スキーマでは表現できないため、migration の SQL に直接書く。
+> @@unique([categoryId, key])  ← これを外し、下の raw SQL へ置き換える
+> ```
+>
+> ```sql
+> CREATE UNIQUE INDEX "AttributeDefinition_categoryId_key_active_key"
+>   ON "AttributeDefinition" ("categoryId", "key")
+>   WHERE "archivedAt" IS NULL;
+> ```
+>
+> **これに伴う読み書き規則**（1 ノード 1 `key` につき**アクティブは高々 1 件**）:
+>
+> - **書き込み**: upsert のキーは `(categoryId, key, archivedAt IS NULL)`。
+>   Prisma の `upsert` は部分インデックスを複合キーとして扱えないため、
+>   `findFirst({ where: { categoryId, key, archivedAt: null } })` → `create` / `update`
+>   を**同一 `$transaction` 内**で行う（アトミック操作の規約どおり）。
+> - **読み取り（入口検証・フォーム生成・ファセット）**: 既存の継承クエリと同じく
+>   `archivedAt: null` で絞るため、アクティブな 1 件だけが見え、**呼び出し側の
+>   コードは経路 2 の前後で変わらない**。
+> - **読み取り（履歴・エクスポート）**: `archivedAt` を外して引くと同じ `key` が
+>   複数返る。**`key` だけで一意と仮定しないこと** —— 行の識別は `definitionId` で行う。
 
 ---
 
@@ -299,7 +355,10 @@ model AttributeDefinition {
   required   Boolean   @default(false)             // Q5
   facetable  Boolean   @default(false)             // plan 015 が消費
   archivedAt DateTime?                             // Q7: 論理削除
-  @@unique([categoryId, key])
+  // Q7 の型変更 経路 2 は「同じ key の旧定義を archive して新定義を作る」ため、
+  // 素の複合ユニークだと衝突する。アクティブ行のみを対象にした
+  // 部分ユニークインデックスを migration の raw SQL で張る（上記「経路 2 と一意制約」）。
+  // @@unique([categoryId, key])   ← 採用しない
 }
 
 model ProductAttributeValue {

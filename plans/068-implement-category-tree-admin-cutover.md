@@ -115,6 +115,38 @@ Phase C はその曖昧さを閉じる。
    > また循環が成立すると `path` 前置一致で回る**サブツリー走査が停止しない**ため、
    > これは表示上の不整合ではなく可用性の問題である。検証は既存の深さ検証と同じ
    > `$transaction` 内で、`parent` を読んだ直後に行う。
+
+   > **再親子化は対象ノードだけでは終わらない —— 全子孫の `path` / `depth` を
+   > 同じ `$transaction` で書き換えること。** `path` は materialized path なので、
+   > 親を替えたノードの `path` だけを更新すると**子孫の `path` が旧祖先を指したまま
+   > 取り残される**。`subtreeOf`（前置一致）で回る検索・ファセット・admin ツリーは
+   > すべて `path` を正とするため、子孫は移動先のサブツリー検索に出てこず、
+   > 移動元のサブツリー検索には出続ける —— 「商品が消えた」という形でしか
+   > 表面化しない静かな破損である。
+   >
+   > ```ts
+   > // 旧サブツリーを 1 クエリで引き、prefix を置換して書き戻す
+   > const descendants = await tx.category.findMany({
+   >     where: { path: { startsWith: `${oldPath}/` } },
+   >     select: { id: true, path: true },
+   > });
+   > for (const d of descendants) {
+   >     const nextPath = `${newPath}/${d.path.slice(oldPath.length + 1)}`;
+   >     await tx.category.update({
+   >         where: { id: d.id },
+   >         data: { path: nextPath, depth: nextPath.split("/").length - 1 },
+   >     });
+   > }
+   > ```
+   >
+   > **深さ上限は「最深の子孫」で判定する。** `parent.depth + 1 <= 4` は移動する
+   > ノード自身しか見ておらず、3 段の子を持つノードを深い親へ移すと**子孫が上限を
+   > 突破する**。子孫の書き換え後に `max(depth) <= 4` を検証し、超えるなら
+   > トランザクションごと拒否する（部分適用された `path` を残さない）。
+   >
+   > **`childCount` は旧親と新親の両方を再計算する。** 片側だけ増減させると
+   > 「子がいないのに `childCount > 0`」になり、Step 3 のリーフ強制（`childCount === 0`）が
+   > 誤判定して正当なリーフへの紐づけを拒否しはじめる。
 5. **⚠️ ここから不可逆。オペレーター確認を取ること。**
    `bunx prisma migrate dev --name category_tree_phase_c` で
    `categoryNodeId` 必須化 → 旧 2 列 drop → `categoryId` へ rename → `SubCategory` drop。
@@ -122,6 +154,13 @@ Phase C はその曖昧さを閉じる。
    orphan WARNING が 0 件であることを確認。スキーマ差分と同一コミットに入れる。
 7. **`subCategory.ts` の互換 re-export を削除**し、`src/` から `SubCategory` 参照を一掃する。
 8. **テスト**:
+   - **V-7c（再親子化の子孫追随）**: 子・孫を持つノードを別の親へ移した後、
+     **全子孫の `path` が新しい親を前置に持ち、`depth` が 1 段ずつ増えている**こと。
+     加えて、移動前に子孫のリーフでヒットしていた `?category=<新親>` の商品検索が
+     移動後もヒットし、`?category=<旧親>` ではヒットしなくなること（`path` の
+     取り残しは検索結果でしか表面化しないため、DB の値だけでなく検索も検算する）。
+     上限超過ケース（移動で子孫が `depth > 4` になる）は拒否され、
+     **`path` が 1 行も書き換わっていない**ことも確認する。
    - **V-5**: 子を持つノードへの**新規紐づけ**が create / update **両方**で拒否される
      （update 側は「非リーフへカテゴリを変更する」ケース）
    - **V-5b**: 既存の非リーフ紐づけ商品を**カテゴリを変えずに**更新すると成功する

@@ -8,8 +8,18 @@
   (`Decimal(12,2)` for default shipping fee fields). `lowStockThreshold Int
   @default(5)` drives the inventory low-stock badge/summary (additive,
   non-destructive migration).
-- Product: belongs to a store, category, and subcategory; has variants, specs,
-  reviews, and questions.
+- Product: belongs to a store and to the category tree; has variants, specs,
+  reviews, and questions. The category link is **phase-dependent**
+  (ADR-006 / `docs/design/category-tree/design.md`):
+  - **Phase A / B (current)**: three legacy-plus-new foreign keys run in
+    parallel — `categoryId` points at the **root** node, `subCategoryId` at the
+    **leaf** (both retained from the pre-tree `Category` / `SubCategory` pair),
+    and `categoryNodeId` is the single new leaf reference that subtree filters
+    read. All three are dual-written.
+  - **Phase C (target, plan 068 — irreversible)**: `SubCategory` is dropped and
+    `categoryNodeId` is renamed to `categoryId`, leaving Product with **one**
+    reference to a single `Category` node at any depth. Root/leaf is then a
+    property of that node's `path` / `childCount`, not of a separate column.
 - ProductVariant: specific sellable variant; has sizes, colors, images, and
   specs.
 - Size: price (`Decimal(12,2)`), quantity, and discount for a variant size.
