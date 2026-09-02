@@ -47,8 +47,12 @@ const SKIP_PATTERN = /\b(it|test|describe)\.skip\b|\b(xit|xdescribe)\b/g;
 // `/^CREATE\b/i.test(sql)` のような `RegExp.prototype.test` のメンバー呼び出しが
 // 修飾子なしの宣言として計上されてしまう（実例: category-tree-migration.test.ts）。
 // `.` と識別子文字を後読みで弾き、行頭・空白・`(` 等に続く素の `it` / `test` だけを拾う。
+//
+// `#` も弾く。プライベートメンバ `this.#test(...)` は `test` の直前が `#` なので、
+// `.` だけを弾く後読みでは**すり抜けて宣言として計上される**（`.` は `#` の手前に
+// あって `test` の直前ではない）。クラスフィールド宣言 `#test() {}` も同様。
 const BLOCK_PATTERN =
-    /(?<![.\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
+    /(?<![.#\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\s*\(/g;
 // it.each / test.each は実行時にテーブル行数ぶんのテストへ展開される。
 // BLOCK_PATTERN は `it(` 形式しか拾えず each を 0 件と数えてしまうため、別途展開する。
 //
@@ -59,9 +63,9 @@ const BLOCK_PATTERN =
 //
 // 先頭の否定後読みは BLOCK_PATTERN と同じ理由で**必須**。`\b` はドットと識別子の
 // 境界でも成立するため、`schema.test.each(...)` のようなメンバー呼び出しが
-// `test.each` の宣言として計上されてしまう。
+// `test.each` の宣言として計上されてしまう。`#` を弾く理由も BLOCK_PATTERN と同じ。
 const EACH_PATTERN =
-    /(?<![.\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\.each\b/g;
+    /(?<![.#\w$])(it|test)(\.(skip|only|todo|failing|fails|fixme|concurrent))?\.each\b/g;
 
 /** 空白・行コメント・ブロックコメントを読み飛ばし、次の有効文字の位置を返す */
 function skipTrivia(content: string, start: number): number {

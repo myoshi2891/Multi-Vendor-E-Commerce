@@ -300,6 +300,31 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(1);
     });
 
+    // 後読みが弾くべき「メンバー経由の test」は `.` だけではない。
+    //  - `this.#test(...)` … `test` の直前は `#`（`.` は `#` の手前にある）
+    //  - `obj["test"](...)` / obj[`test`](...) … 名前がリテラルの中に入る
+    // `#` を後読みへ足す前は 1 件目が宣言として計上されていた。
+    it("プライベート / 計算プロパティ経由の test は testCount に数えない", async () => {
+        root = makeFixture({
+            "src/queries/member-exotic.test.ts": [
+                "class Helper {",
+                "    #test(value) { return value; }",
+                "    run(value) { return this.#test(value); }",
+                "}",
+                "it('real case', () => {",
+                '    expect(schema["test"](1)).toBe(1);',
+                "    expect(schema[`test`](2)).toBe(2);",
+                "    expect(new Helper().run(3)).toBe(3);",
+                "});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は `it('real case')` の 1 件だけ。
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     // 空テーブルは実行時に 0 件へ展開される（Jest では空 each 自体がエラー扱い）。
     // 配列の開き括弧自身を「内容あり」と見なすと 1 件に化け、testCount が過大になる。
     it("空の it.each([]) は 0 件として数える", async () => {
