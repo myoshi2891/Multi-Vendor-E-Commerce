@@ -55,11 +55,102 @@ const generateUniqueSlug = async (
     );
 };
 
+// db.$transaction のコールバックが受け取る tx の型（Accelerate 拡張済みクライアント）。
+// 素の Prisma.TransactionClient とは非互換のため $transaction から導出する
+// （`order.ts` の OrderTransactionClient と同じ理由・同じ形）。
+type ProductTransactionClient = Parameters<
+    Parameters<typeof db.$transaction>[0]
+>[0];
+
+/**
+ * Phase B で商品を紐づけられる最大 depth。
+ *
+ * depth 2 以上のノードには legacy `SubCategory` 行が存在しない（Phase A の移行は
+ * ルート直下しか legacy 表に写していない）ため、**NOT NULL の `Product.subCategoryId`
+ * を満たせない**。3 階層目のノードは admin では作れるが商品は付けられない、という
+ * 移行期の制約であり、Phase C（plan 068 Step 5）で旧列を落とすと解消する。
+ */
+const MAX_PRODUCT_CATEGORY_DEPTH = 1;
+
+/** リーフ検証で読む Category ノードの最小形。 */
+interface LockedProductCategoryNode {
+    id: string;
+    depth: number;
+    childCount: number;
+}
+
+/**
+ * 商品の紐づけ先が「リーフである」ことをトランザクション内で検証する。
+ *
+ * **ロック無しの `childCount` 読みは TOCTOU である。** 「商品をリーフ L に紐づける」と
+ * 「L の子を作る」が並行すると、前者は `childCount = 0` を読み、後者は L の子を INSERT
+ * して `childCount` を 1 にする —— どちらも成功し、非リーフに商品が紐づいた状態が残る。
+ * リーフ性は*他の行*に子があるかで決まる関係的な性質なので DB CHECK では担保できず
+ * （CHECK は同一行の値しか参照できない）、行ロックによる直列化が唯一の砦である。
+ *
+ * ロック対象は `upsertCategory` が子の作成時に掴む行と**同じ行**でなければならない
+ * （別々の行を掴んだのでは競合が検出できない）。
+ *
+ * @param tx - 商品を書き込むのと同じトランザクション（ロックを書き込みまで保持する）
+ * @param categoryNodeId - 紐づけ先ノードの id（Phase B では subCategoryId と同一）
+ */
+const assertLeafCategoryNode = async (
+    tx: ProductTransactionClient,
+    categoryNodeId: string
+): Promise<void> => {
+    // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
+    // （値は常にパラメータ化される）。
+    const lockedRows = await tx.$queryRaw<LockedProductCategoryNode[]>`
+        SELECT "id", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR UPDATE
+    `;
+    const node = lockedRows[0] ?? null;
+    if (!node) throw new Error("Category not found.");
+
+    if (node.childCount !== 0) {
+        throw new Error("Products can only be assigned to leaf categories.");
+    }
+
+    if (node.depth > MAX_PRODUCT_CATEGORY_DEPTH) {
+        throw new Error(
+            "Products cannot be assigned to categories at depth greater than " +
+                `${MAX_PRODUCT_CATEGORY_DEPTH} until the category tree cutover completes.`
+        );
+    }
+};
+
+/**
+ * リーフ検証を走らせるべきかを判定する。
+ *
+ * 検証は「カテゴリを新規設定した / 変更した」場合のみ。移行時に強制付け替えをして
+ * いない以上、**既存の非リーフ紐づけは経過措置として残っており**、無条件検証にすると
+ * それらの商品が在庫・価格の編集すらできなくなる（design.md §2-Q5）。
+ *
+ * **`categoryId` の一致だけを条件にしないこと（V-5c）。** 移行期の商品は root
+ * （`categoryId`）とリーフ（`subCategoryId`）の二重 FK を持つため、同一 root 内で
+ * リーフだけを非リーフノードへ差し替える更新が検証をすり抜ける。
+ */
+const categoryAssignmentChanged = (
+    product: ProductWithVariantType,
+    existingProduct: {
+        categoryId: string;
+        subCategoryId: string;
+    } | null
+): boolean =>
+    existingProduct === null ||
+    existingProduct.categoryId !== product.categoryId ||
+    existingProduct.subCategoryId !== product.subCategoryId;
+
 // Cookies
 import { cookies } from "next/headers";
 
 // Prisma
-import { Prisma, ProductVariant, ShippingFeeMethod, Size, Store } from "@prisma/client";
+import {
+    Prisma,
+    ProductVariant,
+    ShippingFeeMethod,
+    Size,
+    Store,
+} from "@prisma/client";
 
 // Function: upsertProduct
 // Description: Upserts a Product into the database, updating if it exists or creating a new one if not.
@@ -114,7 +205,11 @@ export const upsertProduct = async (
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in upsertProduct:", error.message, error.stack);
+            console.error(
+                "Error in upsertProduct:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in upsertProduct:", error);
         }
@@ -242,7 +337,13 @@ const handleProductCreate = async (
         updatedAt: product.updatedAt,
     };
 
-    const new_product = await db.product.create({ data: productData });
+    // 作成も検証と同じ tx に入れる —— 検証だけを別 tx で先に済ませると、
+    // ロックが create の前に解放されて TOCTOU の窓が開いたままになる。
+    const new_product = await db.$transaction(async (tx) => {
+        // V-5: 新規作成は常に「カテゴリを新規設定した」ケースにあたる
+        await assertLeafCategoryNode(tx, product.subCategoryId);
+        return tx.product.create({ data: productData });
+    });
     return new_product;
 };
 
@@ -306,7 +407,12 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
 // 既存の商品+バリアントをアトミックに更新
 const handleProductAndVariantUpdate = async (
     product: ProductWithVariantType,
-    existingProduct: { name: string; slug: string },
+    existingProduct: {
+        name: string;
+        slug: string;
+        categoryId: string;
+        subCategoryId: string;
+    },
     existingVariant: { variantName: string; slug: string }
 ): Promise<void> => {
     // 名前が変わった場合のみ slug を再生成（URL 安定性のため）
@@ -335,6 +441,12 @@ const handleProductAndVariantUpdate = async (
             : existingVariant.slug;
 
     await db.$transaction(async (tx) => {
+        // V-5: 紐づけ先がリーフであることを、書き込みと同じ tx 内で（ロックを
+        // 握ったまま）検証する。カテゴリを変えない更新は経過措置として素通しする。
+        if (categoryAssignmentChanged(product, existingProduct)) {
+            await assertLeafCategoryNode(tx, product.subCategoryId);
+        }
+
         // Product 本体の更新
         await tx.product.update({
             where: { id: product.productId },
@@ -351,7 +463,8 @@ const handleProductAndVariantUpdate = async (
                     ? { connect: { id: product.offerTagId } }
                     : { disconnect: true },
                 shippingFeeMethod: product.shippingFeeMethod,
-                freeShippingForAllCountries: product.freeShippingForAllCountries,
+                freeShippingForAllCountries:
+                    product.freeShippingForAllCountries,
                 updatedAt: product.updatedAt,
             },
         });
@@ -592,7 +705,11 @@ export const deleteProduct = async (productId: string) => {
         return response;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in deleteProduct:", error.message, error.stack);
+            console.error(
+                "Error in deleteProduct:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in deleteProduct:", error);
         }
@@ -619,313 +736,316 @@ export const getProducts = async (
     try {
         // Default values for page and pageSize
         const currentPage = page;
-    const limit = pageSize;
-    const skip = (currentPage - 1) * limit;
+        const limit = pageSize;
+        const skip = (currentPage - 1) * limit;
 
-    // Construct the base query
-    const whereClause: any = {
-        AND: [],
-    };
-
-    // URL 由来のフィルタ（store / category / subCategory / offer）は、対応する行が
-    // 存在しないことがある（古いブックマーク・打ち間違い・攻撃的な入力）。
-    // 見つからないときにフィルタを**黙って捨てる**と「該当なし」が「全件表示」に化けるため
-    // （存在しないカテゴリ URL で全カタログが出る）、明示的に 0 件を返す。
-    const noMatchResult = {
-        products: [] as typeof productsWithFilteredVariants,
-        totalPages: 0,
-        currentPage,
-        pageSize,
-        totalCount: 0,
-    };
-
-    // Apply store filter (using store URL)
-    if (filters.store) {
-        const store = await db.store.findUnique({
-            where: {
-                url: filters.store,
-            },
-            select: { id: true },
-        });
-        if (!store) return noMatchResult;
-        whereClause.AND.push({ storeId: store.id });
-    }
-
-    // Apply category / subCategory filters (using slugs)
-    //
-    // カテゴリツリー Phase B（ADR-006 / design.md §2-Q3）: 条件は「その 1 ノードと
-    // 完全一致」から「そのノードを根とするサブツリー」へ変わる。これにより
-    // 3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようになる。
-    //
-    // **2 系統である点は変えない。** `category` と `subCategory` を `??` で 1 本に
-    // 畳むと、両方指定時に片方が黙って捨てられて絞り込みが緩くなる。従来どおり
-    // 独立に AND へ積み、両方指定は 2 つのサブツリーの積として扱う。
-    //
-    // `?subCategory=` は恒久的に受理する（外部被リンクを切らないため。design.md §2-Q4）。
-    // 正準 URL への 308 は /browse 側の担当で、ここは解決だけを行う。
-    for (const [slug, entityType] of [
-        [filters.category, "CATEGORY"],
-        [filters.subCategory, "SUB_CATEGORY"],
-    ] as const) {
-        if (!slug) continue;
-        // `?category=a&category=b` のように同名パラメータが複数付くと Next.js は
-        // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
-        // `resolveCategoryNode` → Prisma の `where: { url }` へ到達して実行時に落ちる。
-        // 曖昧な指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す
-        // （/browse 側も `typeof === "string"` で同じ境界を引いている）。
-        if (typeof slug !== "string") return noMatchResult;
-        const node = await resolveCategoryNode(slug, entityType);
-        // fail-closed を維持する（未解決のフィルタを捨てて全件表示に化けさせない）
-        if (!node) return noMatchResult;
-        // **新 FK（categoryNode）を引くこと。** 旧 `category` はルートを指すので、
-        // そちらにサブツリー条件を掛けてもリーフに紐づく商品へ届かない
-        // （design.md §2-Q3 の擬似コードは Phase A 実装前に書かれており、
-        //  リレーション名が確定していなかった）。categoryNodeId は Phase A の
-        //  backfill と Phase B の dual-write により全商品で埋まっている。
-        whereClause.AND.push({ categoryNode: subtreeOf(node.path) });
-    }
-
-    // Apply size filter (using array of sizes)
-    if (filters.size && Array.isArray(filters.size)) {
-        whereClause.AND.push({
-            variants: {
-                some: {
-                    sizes: {
-                        some: {
-                            size: { in: filters.size },
-                        },
-                    },
-                },
-            },
-        });
-    }
-
-    // Apply offer filter (using offer URL)
-    if (filters.offer) {
-        const offer = await db.offerTag.findUnique({
-            where: {
-                url: filters.offer,
-            },
-            select: { id: true },
-        });
-        if (!offer) return noMatchResult;
-        whereClause.AND.push({ offerTagId: offer.id });
-    }
-
-    // Apply search filter (search term in product name or description)
-    // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
-    if (filters.search) {
-        whereClause.AND.push({
-            OR: [
-                {
-                    name: { contains: filters.search, mode: "insensitive" },
-                },
-                {
-                    description: {
-                        contains: filters.search,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    variants: {
-                        some: {
-                            OR: [
-                                {
-                                    variantName: {
-                                        contains: filters.search,
-                                        mode: "insensitive",
-                                    },
-                                },
-                                {
-                                    variantDescription: {
-                                        contains: filters.search,
-                                        mode: "insensitive",
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                },
-            ],
-        });
-    }
-
-    // Apply price filters (min and max price)
-    // 「未指定」と「0」を **truthy 判定で混同しない**。`filters.minPrice || filters.maxPrice`
-    // だと `maxPrice: 0`（= 上限 0 円の空レンジ）が「上限未指定」に化け、`gte` だけが
-    // 残って **全件が通ってしまう**。境界は明示的な存在判定で分ける。
-    const hasPriceBound = (value: unknown): value is number =>
-        typeof value === "number" && Number.isFinite(value);
-    const hasMinPrice = hasPriceBound(filters.minPrice);
-    const hasMaxPrice = hasPriceBound(filters.maxPrice);
-    if (hasMinPrice || hasMaxPrice) {
-        // 上限が無いときは `lte` を**付けない**。以前は `lte: Infinity` を渡していたが、
-        // Prisma は Decimal カラムのフィルタに Infinity を載せられず、シリアライズ時に
-        // 値が落ちて "Argument `lte` is missing." で throw していた（Prisma 5.22.0 実測）。
-        // つまり「下限だけ指定した絞り込み」が常に失敗する状態だった。
-        // `/browse` は page.tsx 側で maxPrice を Number.MAX_SAFE_INTEGER に既定化して
-        // いるため露見していなかったが、getProducts を直接呼ぶ他の経路では壊れる。
-        const priceFilter: { gte: number; lte?: number } = {
-            gte: hasMinPrice ? filters.minPrice : 0, // Default to 0 if no min price is set
+        // Construct the base query
+        const whereClause: any = {
+            AND: [],
         };
-        if (hasMaxPrice) {
-            priceFilter.lte = filters.maxPrice;
+
+        // URL 由来のフィルタ（store / category / subCategory / offer）は、対応する行が
+        // 存在しないことがある（古いブックマーク・打ち間違い・攻撃的な入力）。
+        // 見つからないときにフィルタを**黙って捨てる**と「該当なし」が「全件表示」に化けるため
+        // （存在しないカテゴリ URL で全カタログが出る）、明示的に 0 件を返す。
+        const noMatchResult = {
+            products: [] as typeof productsWithFilteredVariants,
+            totalPages: 0,
+            currentPage,
+            pageSize,
+            totalCount: 0,
+        };
+
+        // Apply store filter (using store URL)
+        if (filters.store) {
+            const store = await db.store.findUnique({
+                where: {
+                    url: filters.store,
+                },
+                select: { id: true },
+            });
+            if (!store) return noMatchResult;
+            whereClause.AND.push({ storeId: store.id });
         }
-        whereClause.AND.push({
-            variants: {
-                some: {
-                    sizes: {
-                        some: {
-                            price: priceFilter,
-                        },
-                    },
-                },
-            },
-        });
-    }
 
-    // Apply color filter
-    if (filters.color && filters.color.length > 0) {
-        const colorsArray = Array.isArray(filters.color)
-            ? filters.color
-            : [filters.color];
-        whereClause.AND.push({
-            variants: {
-                some: {
-                    colors: {
-                        some: {
-                            name: { in: colorsArray }, // Matching selected color(s)
-                        },
-                    },
-                },
-            },
-        });
-    }
-    // Define the sort order
-    let orderBy: Record<string, SortOrder> = {};
-    switch (sortBy) {
-        case "most-popular":
-            orderBy = { views: "desc" };
-            break;
-        case "new-arrivals":
-            orderBy = { createdAt: "desc" };
-            break;
-        case "top-rated":
-            orderBy = { rating: "desc" };
-            break;
-        default:
-            orderBy = { views: "desc" };
-    }
+        // Apply category / subCategory filters (using slugs)
+        //
+        // カテゴリツリー Phase B（ADR-006 / design.md §2-Q3）: 条件は「その 1 ノードと
+        // 完全一致」から「そのノードを根とするサブツリー」へ変わる。これにより
+        // 3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようになる。
+        //
+        // **2 系統である点は変えない。** `category` と `subCategory` を `??` で 1 本に
+        // 畳むと、両方指定時に片方が黙って捨てられて絞り込みが緩くなる。従来どおり
+        // 独立に AND へ積み、両方指定は 2 つのサブツリーの積として扱う。
+        //
+        // `?subCategory=` は恒久的に受理する（外部被リンクを切らないため。design.md §2-Q4）。
+        // 正準 URL への 308 は /browse 側の担当で、ここは解決だけを行う。
+        for (const [slug, entityType] of [
+            [filters.category, "CATEGORY"],
+            [filters.subCategory, "SUB_CATEGORY"],
+        ] as const) {
+            if (!slug) continue;
+            // `?category=a&category=b` のように同名パラメータが複数付くと Next.js は
+            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
+            // `resolveCategoryNode` → Prisma の `where: { url }` へ到達して実行時に落ちる。
+            // 曖昧な指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す
+            // （/browse 側も `typeof === "string"` で同じ境界を引いている）。
+            if (typeof slug !== "string") return noMatchResult;
+            const node = await resolveCategoryNode(slug, entityType);
+            // fail-closed を維持する（未解決のフィルタを捨てて全件表示に化けさせない）
+            if (!node) return noMatchResult;
+            // **新 FK（categoryNode）を引くこと。** 旧 `category` はルートを指すので、
+            // そちらにサブツリー条件を掛けてもリーフに紐づく商品へ届かない
+            // （design.md §2-Q3 の擬似コードは Phase A 実装前に書かれており、
+            //  リレーション名が確定していなかった）。categoryNodeId は Phase A の
+            //  backfill と Phase B の dual-write により全商品で埋まっている。
+            whereClause.AND.push({ categoryNode: subtreeOf(node.path) });
+        }
 
-    // Get all filtered, sorted products and total count in parallel
-    const [products, totalCount] = await Promise.all([
-        db.product.findMany({
-            where: whereClause,
-            orderBy,
-            take: limit, // Limit to page size
-            skip: skip, // Skip the products of previous pages
-            include: {
+        // Apply size filter (using array of sizes)
+        if (filters.size && Array.isArray(filters.size)) {
+            whereClause.AND.push({
                 variants: {
-                    include: {
-                        sizes: true,
-                        images: true,
-                        colors: true,
+                    some: {
+                        sizes: {
+                            some: {
+                                size: { in: filters.size },
+                            },
+                        },
                     },
                 },
-            },
-        }),
-        db.product.count({
-            where: whereClause,
-        }),
-    ]);
+            });
+        }
 
-    type VariantWithSizes = ProductVariant & { sizes: Size[] };
-    type ProductWithVariants = typeof products[number];
-    // Product price sorting
-    products.sort((a, b) => {
-        // Helper function to get the minimum price from a product's variants
-        const getMinPrice = (product: ProductWithVariants) =>
-            Math.min(
-                ...product.variants.flatMap((variant: VariantWithSizes) =>
-                    variant.sizes.map((size) => {
-                        let discount = size.discount;
-                        let discountedPrice = toNumberSafe(size.price) * (1 - discount / 100);
-                        return discountedPrice;
-                    })
-                ),
-                Infinity // Default to Infinity if no sizes exist
+        // Apply offer filter (using offer URL)
+        if (filters.offer) {
+            const offer = await db.offerTag.findUnique({
+                where: {
+                    url: filters.offer,
+                },
+                select: { id: true },
+            });
+            if (!offer) return noMatchResult;
+            whereClause.AND.push({ offerTagId: offer.id });
+        }
+
+        // Apply search filter (search term in product name or description)
+        // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
+        if (filters.search) {
+            whereClause.AND.push({
+                OR: [
+                    {
+                        name: { contains: filters.search, mode: "insensitive" },
+                    },
+                    {
+                        description: {
+                            contains: filters.search,
+                            mode: "insensitive",
+                        },
+                    },
+                    {
+                        variants: {
+                            some: {
+                                OR: [
+                                    {
+                                        variantName: {
+                                            contains: filters.search,
+                                            mode: "insensitive",
+                                        },
+                                    },
+                                    {
+                                        variantDescription: {
+                                            contains: filters.search,
+                                            mode: "insensitive",
+                                        },
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            });
+        }
+
+        // Apply price filters (min and max price)
+        // 「未指定」と「0」を **truthy 判定で混同しない**。`filters.minPrice || filters.maxPrice`
+        // だと `maxPrice: 0`（= 上限 0 円の空レンジ）が「上限未指定」に化け、`gte` だけが
+        // 残って **全件が通ってしまう**。境界は明示的な存在判定で分ける。
+        const hasPriceBound = (value: unknown): value is number =>
+            typeof value === "number" && Number.isFinite(value);
+        const hasMinPrice = hasPriceBound(filters.minPrice);
+        const hasMaxPrice = hasPriceBound(filters.maxPrice);
+        if (hasMinPrice || hasMaxPrice) {
+            // 上限が無いときは `lte` を**付けない**。以前は `lte: Infinity` を渡していたが、
+            // Prisma は Decimal カラムのフィルタに Infinity を載せられず、シリアライズ時に
+            // 値が落ちて "Argument `lte` is missing." で throw していた（Prisma 5.22.0 実測）。
+            // つまり「下限だけ指定した絞り込み」が常に失敗する状態だった。
+            // `/browse` は page.tsx 側で maxPrice を Number.MAX_SAFE_INTEGER に既定化して
+            // いるため露見していなかったが、getProducts を直接呼ぶ他の経路では壊れる。
+            const priceFilter: { gte: number; lte?: number } = {
+                gte: hasMinPrice ? filters.minPrice : 0, // Default to 0 if no min price is set
+            };
+            if (hasMaxPrice) {
+                priceFilter.lte = filters.maxPrice;
+            }
+            whereClause.AND.push({
+                variants: {
+                    some: {
+                        sizes: {
+                            some: {
+                                price: priceFilter,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        // Apply color filter
+        if (filters.color && filters.color.length > 0) {
+            const colorsArray = Array.isArray(filters.color)
+                ? filters.color
+                : [filters.color];
+            whereClause.AND.push({
+                variants: {
+                    some: {
+                        colors: {
+                            some: {
+                                name: { in: colorsArray }, // Matching selected color(s)
+                            },
+                        },
+                    },
+                },
+            });
+        }
+        // Define the sort order
+        let orderBy: Record<string, SortOrder> = {};
+        switch (sortBy) {
+            case "most-popular":
+                orderBy = { views: "desc" };
+                break;
+            case "new-arrivals":
+                orderBy = { createdAt: "desc" };
+                break;
+            case "top-rated":
+                orderBy = { rating: "desc" };
+                break;
+            default:
+                orderBy = { views: "desc" };
+        }
+
+        // Get all filtered, sorted products and total count in parallel
+        const [products, totalCount] = await Promise.all([
+            db.product.findMany({
+                where: whereClause,
+                orderBy,
+                take: limit, // Limit to page size
+                skip: skip, // Skip the products of previous pages
+                include: {
+                    variants: {
+                        include: {
+                            sizes: true,
+                            images: true,
+                            colors: true,
+                        },
+                    },
+                },
+            }),
+            db.product.count({
+                where: whereClause,
+            }),
+        ]);
+
+        type VariantWithSizes = ProductVariant & { sizes: Size[] };
+        type ProductWithVariants = (typeof products)[number];
+        // Product price sorting
+        products.sort((a, b) => {
+            // Helper function to get the minimum price from a product's variants
+            const getMinPrice = (product: ProductWithVariants) =>
+                Math.min(
+                    ...product.variants.flatMap((variant: VariantWithSizes) =>
+                        variant.sizes.map((size) => {
+                            let discount = size.discount;
+                            let discountedPrice =
+                                toNumberSafe(size.price) * (1 - discount / 100);
+                            return discountedPrice;
+                        })
+                    ),
+                    Infinity // Default to Infinity if no sizes exist
+                );
+
+            // Get minimum prices for both products
+            const minPriceA = getMinPrice(a);
+            const minPriceB = getMinPrice(b);
+
+            // Explicitly check for price sorting conditions
+            if (sortBy === "price-low-to-high") {
+                return minPriceA - minPriceB; // Ascending order
+            } else if (sortBy === "price-high-to-low") {
+                return minPriceB - minPriceA; // Descending order
+            }
+
+            // If no price sort option is provided, return 0 (no sorting by price)
+            return 0;
+        });
+
+        // Transform the products with filtered variants into ProductCardType structure
+        const productsWithFilteredVariants = products.map((product) => {
+            // Filter the variants based on the filters
+            const filteredVariants = product.variants;
+
+            // Transform the filtered variants into the VariantSimplified structure
+            const variants: VariantSimplified[] = filteredVariants.map(
+                (variant) => ({
+                    variantId: variant.id,
+                    variantSlug: variant.slug,
+                    variantName: variant.variantName,
+                    images: variant.images,
+                    sizes: variant.sizes.map((s) => ({
+                        ...s,
+                        price: toNumberSafe(s.price),
+                    })),
+                })
             );
 
-        // Get minimum prices for both products
-        const minPriceA = getMinPrice(a);
-        const minPriceB = getMinPrice(b);
+            // Extract variant images for the product
+            const variantImages: VariantImageType[] = filteredVariants.map(
+                (variant) => ({
+                    url: `/product/${product.slug}/${variant.slug}`,
+                    image: variant.variantImage
+                        ? variant.variantImage
+                        : variant.images[0].url,
+                })
+            );
+            // Return the product in the ProductCardType structure
+            return {
+                id: product.id,
+                slug: product.slug,
+                name: product.name,
+                rating: product.rating,
+                sales: product.sales,
+                numReviews: product.numReviews,
+                variants,
+                variantImages,
+            };
+        });
 
-        // Explicitly check for price sorting conditions
-        if (sortBy === "price-low-to-high") {
-            return minPriceA - minPriceB; // Ascending order
-        } else if (sortBy === "price-high-to-low") {
-            return minPriceB - minPriceA; // Descending order
-        }
+        // Calculate total pages
+        const totalPages = Math.ceil(totalCount / pageSize);
 
-        // If no price sort option is provided, return 0 (no sorting by price)
-        return 0;
-    });
-
-    // Transform the products with filtered variants into ProductCardType structure
-    const productsWithFilteredVariants = products.map((product) => {
-        // Filter the variants based on the filters
-        const filteredVariants = product.variants;
-
-        // Transform the filtered variants into the VariantSimplified structure
-        const variants: VariantSimplified[] = filteredVariants.map(
-            (variant) => ({
-                variantId: variant.id,
-                variantSlug: variant.slug,
-                variantName: variant.variantName,
-                images: variant.images,
-                sizes: variant.sizes.map((s) => ({
-                    ...s,
-                    price: toNumberSafe(s.price),
-                })),
-            })
-        );
-
-        // Extract variant images for the product
-        const variantImages: VariantImageType[] = filteredVariants.map(
-            (variant) => ({
-                url: `/product/${product.slug}/${variant.slug}`,
-                image: variant.variantImage
-                    ? variant.variantImage
-                    : variant.images[0].url,
-            })
-        );
-        // Return the product in the ProductCardType structure
+        // Return the filtered products, pagination metadata, and total count
         return {
-            id: product.id,
-            slug: product.slug,
-            name: product.name,
-            rating: product.rating,
-            sales: product.sales,
-            numReviews: product.numReviews,
-            variants,
-            variantImages,
+            products: productsWithFilteredVariants,
+            totalPages,
+            currentPage,
+            pageSize,
+            totalCount,
         };
-    });
-
-    // Calculate total pages
-    const totalPages = Math.ceil(totalCount / pageSize);
-
-    // Return the filtered products, pagination metadata, and total count
-    return {
-        products: productsWithFilteredVariants,
-        totalPages,
-        currentPage,
-        pageSize,
-        totalCount,
-    };
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("[product:getProducts]", error.message, { stack: error.stack });
+            console.error("[product:getProducts]", error.message, {
+                stack: error.stack,
+            });
         } else {
             console.error("[product:getProducts]", error);
         }
@@ -1225,111 +1345,117 @@ export const getShippingDetails = async (
     freeShipping: FreeShippingWithCountriesType | null
 ) => {
     try {
-    let shippingDetails = {
-        shippingFeeMethod,
-        shippingService: "",
-        shippingFee: 0,
-        extraShippingFee: 0,
-        deliveryTimeMin: 0,
-        deliveryTimeMax: 0,
-        returnPolicy: "",
-        countryCode: userCountry.code,
-        countryName: userCountry.name,
-        city: userCountry.city,
-        isFreeShipping: false,
-    };
-
-    const country = await db.country.findUnique({
-        where: {
-            name: userCountry.name,
-            code: userCountry.code,
-        },
-    });
-
-    if (country) {
-        // Retrieve shipping rate for the country
-        const shippingRate = await db.shippingRate.findFirst({
-            where: {
-                countryId: country.id,
-                storeId: store.id,
-            },
-        });
-
-        const returnPolicy = shippingRate?.returnPolicy || store.returnPolicy;
-        const shippingService =
-            shippingRate?.shippingService || store.defaultShippingService;
-        const shippingFeePerItem =
-            shippingRate?.shippingFeePerItem || store.defaultShippingFeePerItem;
-        const shippingFeeForAdditionalItem =
-            shippingRate?.shippingFeeForAdditionalItem ||
-            store.defaultShippingFeeForAdditionalItem;
-        const shippingFeePerKg =
-            shippingRate?.shippingFeePerKg || store.defaultShippingFeePerKg;
-        const shippingFeeFixed =
-            shippingRate?.shippingFeeFixed || store.defaultShippingFeeFixed;
-        const deliveryTimeMin =
-            shippingRate?.deliveryTimeMin || store.defaultDeliveryTimeMin;
-        const deliveryTimeMax =
-            shippingRate?.deliveryTimeMax || store.defaultDeliveryTimeMax;
-
-        // Check for free shipping
-        if (freeShipping) {
-            const free_shipping_countries = freeShipping.eligibleCountries;
-            const check_free_shipping = free_shipping_countries.find(
-                (c) => c.countryId === country.id
-            );
-            if (check_free_shipping) {
-                shippingDetails.isFreeShipping = true;
-            }
-        }
-
-        shippingDetails = {
+        let shippingDetails = {
             shippingFeeMethod,
-            shippingService: shippingService,
+            shippingService: "",
             shippingFee: 0,
             extraShippingFee: 0,
-            deliveryTimeMin,
-            deliveryTimeMax,
-            returnPolicy,
+            deliveryTimeMin: 0,
+            deliveryTimeMax: 0,
+            returnPolicy: "",
             countryCode: userCountry.code,
             countryName: userCountry.name,
             city: userCountry.city,
-            isFreeShipping: shippingDetails.isFreeShipping,
+            isFreeShipping: false,
         };
 
-        const { isFreeShipping } = shippingDetails;
-        switch (shippingFeeMethod) {
-            case "ITEM":
-                shippingDetails.shippingFee = isFreeShipping
-                    ? 0
-                    : shippingFeePerItem.toNumber();
-                shippingDetails.extraShippingFee = isFreeShipping
-                    ? 0
-                    : shippingFeeForAdditionalItem.toNumber();
-                break;
+        const country = await db.country.findUnique({
+            where: {
+                name: userCountry.name,
+                code: userCountry.code,
+            },
+        });
 
-            case "WEIGHT":
-                shippingDetails.shippingFee = isFreeShipping
-                    ? 0
-                    : shippingFeePerKg.toNumber();
-                break;
+        if (country) {
+            // Retrieve shipping rate for the country
+            const shippingRate = await db.shippingRate.findFirst({
+                where: {
+                    countryId: country.id,
+                    storeId: store.id,
+                },
+            });
 
-            case "FIXED":
-                shippingDetails.shippingFee = isFreeShipping
-                    ? 0
-                    : shippingFeeFixed.toNumber();
-                break;
+            const returnPolicy =
+                shippingRate?.returnPolicy || store.returnPolicy;
+            const shippingService =
+                shippingRate?.shippingService || store.defaultShippingService;
+            const shippingFeePerItem =
+                shippingRate?.shippingFeePerItem ||
+                store.defaultShippingFeePerItem;
+            const shippingFeeForAdditionalItem =
+                shippingRate?.shippingFeeForAdditionalItem ||
+                store.defaultShippingFeeForAdditionalItem;
+            const shippingFeePerKg =
+                shippingRate?.shippingFeePerKg || store.defaultShippingFeePerKg;
+            const shippingFeeFixed =
+                shippingRate?.shippingFeeFixed || store.defaultShippingFeeFixed;
+            const deliveryTimeMin =
+                shippingRate?.deliveryTimeMin || store.defaultDeliveryTimeMin;
+            const deliveryTimeMax =
+                shippingRate?.deliveryTimeMax || store.defaultDeliveryTimeMax;
 
-            default:
-                break;
+            // Check for free shipping
+            if (freeShipping) {
+                const free_shipping_countries = freeShipping.eligibleCountries;
+                const check_free_shipping = free_shipping_countries.find(
+                    (c) => c.countryId === country.id
+                );
+                if (check_free_shipping) {
+                    shippingDetails.isFreeShipping = true;
+                }
+            }
+
+            shippingDetails = {
+                shippingFeeMethod,
+                shippingService: shippingService,
+                shippingFee: 0,
+                extraShippingFee: 0,
+                deliveryTimeMin,
+                deliveryTimeMax,
+                returnPolicy,
+                countryCode: userCountry.code,
+                countryName: userCountry.name,
+                city: userCountry.city,
+                isFreeShipping: shippingDetails.isFreeShipping,
+            };
+
+            const { isFreeShipping } = shippingDetails;
+            switch (shippingFeeMethod) {
+                case "ITEM":
+                    shippingDetails.shippingFee = isFreeShipping
+                        ? 0
+                        : shippingFeePerItem.toNumber();
+                    shippingDetails.extraShippingFee = isFreeShipping
+                        ? 0
+                        : shippingFeeForAdditionalItem.toNumber();
+                    break;
+
+                case "WEIGHT":
+                    shippingDetails.shippingFee = isFreeShipping
+                        ? 0
+                        : shippingFeePerKg.toNumber();
+                    break;
+
+                case "FIXED":
+                    shippingDetails.shippingFee = isFreeShipping
+                        ? 0
+                        : shippingFeeFixed.toNumber();
+                    break;
+
+                default:
+                    break;
+            }
+            return shippingDetails;
         }
-        return shippingDetails;
-    }
 
-    return false;
+        return false;
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in getShippingDetails:", error.message, error.stack);
+            console.error(
+                "Error in getShippingDetails:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in getShippingDetails:", error);
         }
@@ -1475,70 +1601,74 @@ export const getProductShippingFee = async (
     quantity: number
 ) => {
     try {
-    // Fetch country information based on userCountry.name and userCountry.code
-    const country = await db.country.findUnique({
-        where: {
-            name: userCountry.name,
-            code: userCountry.code,
-        },
-    });
-
-    if (country) {
-        // Check if the user qualifies for free shipping
-        if (freeShipping) {
-            const free_shipping_countries = freeShipping.eligibleCountries;
-            const isEligibleForFreeShipping = free_shipping_countries.some(
-                (c) => c.countryId === country.id
-            );
-            if (isEligibleForFreeShipping) {
-                return new Prisma.Decimal("0"); // Free shipping
-            }
-        }
-
-        // Fetch shipping rate from the database for the given store and country
-        const shippingRate = await db.shippingRate.findFirst({
+        // Fetch country information based on userCountry.name and userCountry.code
+        const country = await db.country.findUnique({
             where: {
-                countryId: country.id,
-                storeId: store.id,
+                name: userCountry.name,
+                code: userCountry.code,
             },
         });
 
-        // Destructure the shippingRate with defaults
-        const {
-            shippingFeePerItem = store.defaultShippingFeePerItem,
-            shippingFeeForAdditionalItem = store.defaultShippingFeeForAdditionalItem,
-            shippingFeePerKg = store.defaultShippingFeePerKg,
-            shippingFeeFixed = store.defaultShippingFeeFixed,
-        } = shippingRate || {};
+        if (country) {
+            // Check if the user qualifies for free shipping
+            if (freeShipping) {
+                const free_shipping_countries = freeShipping.eligibleCountries;
+                const isEligibleForFreeShipping = free_shipping_countries.some(
+                    (c) => c.countryId === country.id
+                );
+                if (isEligibleForFreeShipping) {
+                    return new Prisma.Decimal("0"); // Free shipping
+                }
+            }
 
-        // Calculate the additional quantity (excluding the first item)
-        const additionalItemsQty = Math.max(0, quantity - 1);
+            // Fetch shipping rate from the database for the given store and country
+            const shippingRate = await db.shippingRate.findFirst({
+                where: {
+                    countryId: country.id,
+                    storeId: store.id,
+                },
+            });
 
-        // Define fee calculation methods in a map (using Decimal arithmetic)
-        const feeCalculators: Record<string, () => Prisma.Decimal> = {
-            ITEM: () =>
-                shippingFeePerItem.add(
-                    shippingFeeForAdditionalItem.mul(additionalItemsQty)
-                ),
-            WEIGHT: () => shippingFeePerKg.mul(weight).mul(quantity),
-            FIXED: () => shippingFeeFixed,
-        };
+            // Destructure the shippingRate with defaults
+            const {
+                shippingFeePerItem = store.defaultShippingFeePerItem,
+                shippingFeeForAdditionalItem = store.defaultShippingFeeForAdditionalItem,
+                shippingFeePerKg = store.defaultShippingFeePerKg,
+                shippingFeeFixed = store.defaultShippingFeeFixed,
+            } = shippingRate || {};
 
-        // Check if the fee calculation method exists and calculate the fee
-        const calculateFee = feeCalculators[shippingFeeMethod];
-        if (calculateFee) {
-            return calculateFee(); // Execute the corresponding calculation
+            // Calculate the additional quantity (excluding the first item)
+            const additionalItemsQty = Math.max(0, quantity - 1);
+
+            // Define fee calculation methods in a map (using Decimal arithmetic)
+            const feeCalculators: Record<string, () => Prisma.Decimal> = {
+                ITEM: () =>
+                    shippingFeePerItem.add(
+                        shippingFeeForAdditionalItem.mul(additionalItemsQty)
+                    ),
+                WEIGHT: () => shippingFeePerKg.mul(weight).mul(quantity),
+                FIXED: () => shippingFeeFixed,
+            };
+
+            // Check if the fee calculation method exists and calculate the fee
+            const calculateFee = feeCalculators[shippingFeeMethod];
+            if (calculateFee) {
+                return calculateFee(); // Execute the corresponding calculation
+            }
+
+            // If no valid shipping method is found, return 0
+            return new Prisma.Decimal("0");
         }
 
-        // If no valid shipping method is found, return 0
+        // Return 0 if the country is not found
         return new Prisma.Decimal("0");
-    }
-
-    // Return 0 if the country is not found
-    return new Prisma.Decimal("0");
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error in getProductShippingFee:", error.message, error.stack);
+            console.error(
+                "Error in getProductShippingFee:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error in getProductShippingFee:", error);
         }
@@ -1566,7 +1696,9 @@ export const getProductsByIds = async (
     }
 
     if (ids.length > MAX_IDS) {
-        console.warn(`Too many product IDs requested (${ids.length}). Truncating to maximum allowed (${MAX_IDS}).`);
+        console.warn(
+            `Too many product IDs requested (${ids.length}). Truncating to maximum allowed (${MAX_IDS}).`
+        );
         ids = ids.slice(0, MAX_IDS);
     }
 
@@ -1618,7 +1750,7 @@ export const getProductsByIds = async (
                 url: `/product/${variant.product.slug}/${variant.slug}`,
                 image: variant.variantImage
                     ? variant.variantImage
-                    : variant.images[0]?.url ?? "",
+                    : (variant.images[0]?.url ?? ""),
             };
             return {
                 id: variant.product.id,
@@ -1652,7 +1784,11 @@ export const getProductsByIds = async (
         };
     } catch (error: unknown) {
         if (error instanceof Error) {
-            console.error("Error retrieving products by ids:", error.message, error.stack);
+            console.error(
+                "Error retrieving products by ids:",
+                error.message,
+                error.stack
+            );
         } else {
             console.error("Error retrieving products by ids:", error);
         }
@@ -1662,7 +1798,9 @@ export const getProductsByIds = async (
 
 const incrementProductViews = async (productId: string) => {
     const cookieStore = await cookies();
-    const isProductAlreadyViewed = cookieStore.get(`viewedProduct_${productId}`)?.value;
+    const isProductAlreadyViewed = cookieStore.get(
+        `viewedProduct_${productId}`
+    )?.value;
 
     if (!isProductAlreadyViewed) {
         await db.product.update({
