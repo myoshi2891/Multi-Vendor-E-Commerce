@@ -603,6 +603,27 @@ describe("upsertProduct", () => {
             expect(mockDb.product.create).not.toHaveBeenCalled();
         });
 
+        it("Phase B では depth 0 のルートへの紐づけも拒否する", async () => {
+            // Arrange —— 子を持たないルートは「リーフ」だが legacy SubCategory 行が
+            // 無いため、NOT NULL の Product.subCategoryId を満たせない。
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode({
+                id: "subcategory-001",
+                path: "electronics",
+                depth: 0,
+                childCount: 0,
+            });
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/depth/i);
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+        });
+
         it("存在しないカテゴリノードへの紐づけを拒否する", async () => {
             // Arrange
             mockDb.product.findUnique.mockResolvedValue(null);

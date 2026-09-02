@@ -4,6 +4,7 @@ import {
     resolveCategoryNode,
     subtreeOf,
     toCanonicalCategorySlug,
+    isProductAssignableCategory,
 } from "./category-tree";
 
 jest.mock("@/lib/db", () => ({
@@ -328,5 +329,23 @@ describe("toCanonicalCategorySlug", () => {
         // 呼び出し側が「正規化できなかった」ことを検出できるようにする
         //（黙って "-" のような不正 slug を作らない）
         expect(toCanonicalCategorySlug("///")).toBe("");
+    });
+});
+
+// ==================================================
+// isProductAssignableCategory
+// ==================================================
+describe("isProductAssignableCategory", () => {
+    // Phase B の制約（plan 068）: 商品が紐づけられるのは
+    // 「子を持たない」かつ「legacy SubCategory 行が存在する depth 1」のノードだけ。
+    // depth 0 のルートと depth 2 以上のノードには SubCategory 行が無く、
+    // NOT NULL の Product.subCategoryId を満たせない。
+    it.each([
+        ["子を持たない depth 1", { depth: 1, childCount: 0 }, true],
+        ["子を持つ depth 1", { depth: 1, childCount: 2 }, false],
+        ["子を持たないルート", { depth: 0, childCount: 0 }, false],
+        ["depth 2 のリーフ", { depth: 2, childCount: 0 }, false],
+    ])("%s は %s", (_label, node, expected) => {
+        expect(isProductAssignableCategory(node)).toBe(expected);
     });
 });
