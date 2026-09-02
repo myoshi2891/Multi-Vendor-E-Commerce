@@ -1,7 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { resolveCategoryNode, subtreeOf } from "@/lib/category-tree";
+import {
+    PRODUCT_CATEGORY_DEPTH,
+    resolveCategoryNode,
+    subtreeOf,
+} from "@/lib/category-tree";
 import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils";
 // Types
 import {
@@ -62,16 +66,6 @@ type ProductTransactionClient = Parameters<
     Parameters<typeof db.$transaction>[0]
 >[0];
 
-/**
- * Phase B で商品を紐づけられる最大 depth。
- *
- * depth 2 以上のノードには legacy `SubCategory` 行が存在しない（Phase A の移行は
- * ルート直下しか legacy 表に写していない）ため、**NOT NULL の `Product.subCategoryId`
- * を満たせない**。3 階層目のノードは admin では作れるが商品は付けられない、という
- * 移行期の制約であり、Phase C（plan 068 Step 5）で旧列を落とすと解消する。
- */
-const MAX_PRODUCT_CATEGORY_DEPTH = 1;
-
 /** リーフ検証で読む Category ノードの最小形。 */
 interface LockedProductCategoryNode {
     id: string;
@@ -110,10 +104,14 @@ const assertLeafCategoryNode = async (
         throw new Error("Products can only be assigned to leaf categories.");
     }
 
-    if (node.depth > MAX_PRODUCT_CATEGORY_DEPTH) {
+    // Phase B の制約。depth 0（ルート）と depth 2 以上には legacy SubCategory 行が
+    // 無く、NOT NULL の Product.subCategoryId を満たせない（詳細は
+    // PRODUCT_CATEGORY_DEPTH の JSDoc）。UI 側の
+    // `isProductAssignableCategory` は同じ規則を選択可否として使う。
+    if (node.depth !== PRODUCT_CATEGORY_DEPTH) {
         throw new Error(
-            "Products cannot be assigned to categories at depth greater than " +
-                `${MAX_PRODUCT_CATEGORY_DEPTH} until the category tree cutover completes.`
+            `Products can only be assigned to categories at depth ${PRODUCT_CATEGORY_DEPTH} ` +
+                "until the category tree cutover completes."
         );
     }
 };

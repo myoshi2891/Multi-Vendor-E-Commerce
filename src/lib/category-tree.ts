@@ -11,6 +11,8 @@ import { CategoryAliasSource } from "@prisma/client";
  */
 export {
     MAX_CATEGORY_DEPTH,
+    PRODUCT_CATEGORY_DEPTH,
+    isProductAssignableCategory,
     subtreeOf,
     isWithinSubtree,
     depthOfPath,

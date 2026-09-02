@@ -5,10 +5,11 @@ import { columns } from "./columns";
 import { Plus } from "lucide-react";
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { getAllCategories } from "@/queries/category";
+import { flattenCategoryTree } from "@/lib/category-tree";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import { getAllCountries } from "@/queries/country";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Renders the seller product listing page for the store identified by `storeUrl`.
@@ -20,40 +21,44 @@ export const dynamic = 'force-dynamic';
  * @returns A React element for the seller product listing page populated with products, categories, offer tags, and countries
  */
 export default async function SellerProductPage({
-	params,
+    params,
 }: {
-	params: Promise<{ storeUrl: string }>;
+    params: Promise<{ storeUrl: string }>;
 }) {
-	const { storeUrl } = await params;
-	// Fetching products data from the database for the active store
-	const [products, categories, offerTags, countries] = await Promise.all([
-		getAllStoreProducts(storeUrl),
-		getAllCategories(),
-		getAllOfferTags(storeUrl),
-		getAllCountries(),
-	]);
+    const { storeUrl } = await params;
+    // Fetching products data from the database for the active store
+    const [products, categoryTree, offerTags, countries] = await Promise.all([
+        getAllStoreProducts(storeUrl),
+        getAllCategories(),
+        getAllOfferTags(storeUrl),
+        getAllCountries(),
+    ]);
 
-	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create New Product
-				</>
-			}
-			modalChildren={
-				<ProductDetails
-					categories={categories}
-					offerTags={offerTags}
-					countries={countries}
-					storeUrl={storeUrl}
-				/>
-			}
-			newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}
-			filterValue="name"
-			data={products}
-			columns={columns}
-			searchPlaceholder="Search product name..."
-		/>
-	);
+    // 商品フォームはツリーを 1 本の select で扱う（plan 068）。
+    // pre-order で平坦化して渡すと、選択肢の並びがそのまま木の形になる。
+    const categories = flattenCategoryTree(categoryTree);
+
+    return (
+        <DataTable
+            actionButtonText={
+                <>
+                    <Plus size={15} />
+                    Create New Product
+                </>
+            }
+            modalChildren={
+                <ProductDetails
+                    categories={categories}
+                    offerTags={offerTags}
+                    countries={countries}
+                    storeUrl={storeUrl}
+                />
+            }
+            newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}
+            filterValue="name"
+            data={products}
+            columns={columns}
+            searchPlaceholder="Search product name..."
+        />
+    );
 }

@@ -181,3 +181,33 @@ export const toCanonicalCategorySlug = (raw: string): string =>
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
+
+/**
+ * Phase B（plan 067/068）で商品を紐づけられるカテゴリの深さ。
+ *
+ * 移行（plan 066 の A-3）が legacy `SubCategory` 行の id を流用して Category
+ * ノードを作ったのは**ルート直下の 1 段だけ**である。したがって depth 0 と
+ * depth 2 以上のノードには対応する `SubCategory` 行が存在せず、**NOT NULL の
+ * `Product.subCategoryId` を満たせない**。3 階層目は admin では作れるが商品は
+ * 付けられない、という移行期の制約であり、Phase C で旧列を落とすと解消する。
+ */
+export const PRODUCT_CATEGORY_DEPTH = 1;
+
+/**
+ * Report whether a category node can currently hold products.
+ *
+ * 条件は 2 つ: **リーフであること**（design.md V-5）と、**legacy `SubCategory`
+ * 行が存在する深さであること**（Phase B の制約）。
+ *
+ * これは UI の選択可否を決めるための述語であり、**強制ではない** ——
+ * サーバー側の検証（`upsertProduct` の `assertLeafCategoryNode`）が本体である。
+ * リーフ性は他の行に子があるかで決まる関係的な性質なので、行ロック無しの
+ * この判定は表示の親切以上のものにはなり得ない。
+ *
+ * @param node - `childCount` と `depth` を持つカテゴリノード
+ * @returns 商品を紐づけられるなら true
+ */
+export const isProductAssignableCategory = (node: {
+    depth: number;
+    childCount: number;
+}): boolean => node.childCount === 0 && node.depth === PRODUCT_CATEGORY_DEPTH;
