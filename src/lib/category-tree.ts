@@ -139,3 +139,28 @@ export const buildCategoryTree = <T extends CategoryTreeInput>(
     }
     return roots;
 };
+
+/**
+ * Flatten a category tree back into a depth-first (pre-order) list.
+ *
+ * `buildCategoryTree` の逆向き。木の形のまま「先頭 N 件」を取りたい呼び出し側
+ * （footer のカテゴリリンク等）のために用意する。**並び替えはしない** ——
+ * 順序は木を組んだ時点のクエリの `orderBy` が決めるという `buildCategoryTree`
+ * の約束をここでも守る（並びの決定点を増やさない）。
+ *
+ * @param nodes - ルートノードの配列
+ * @returns 親 → 子孫の順に並んだ平坦な配列
+ */
+export const flattenCategoryTree = <T extends CategoryTreeInput>(
+    nodes: readonly CategoryTreeNode<T>[]
+): CategoryTreeNode<T>[] => {
+    const flat: CategoryTreeNode<T>[] = [];
+    const visit = (list: readonly CategoryTreeNode<T>[]): void => {
+        for (const node of list) {
+            flat.push(node);
+            visit(node.children);
+        }
+    };
+    visit(nodes);
+    return flat;
+};

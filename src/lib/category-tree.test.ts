@@ -1,4 +1,9 @@
-import { buildCategoryTree, resolveCategoryNode, subtreeOf } from "./category-tree";
+import {
+    buildCategoryTree,
+    flattenCategoryTree,
+    resolveCategoryNode,
+    subtreeOf,
+} from "./category-tree";
 
 jest.mock("@/lib/db", () => ({
     db: {
@@ -197,5 +202,46 @@ describe("buildCategoryTree", () => {
 
     it("空配列には空配列を返す", () => {
         expect(buildCategoryTree([])).toEqual([]);
+    });
+});
+
+describe("flattenCategoryTree", () => {
+    /** テスト用の最小ノード（flatten が読むのは children のみ） */
+    interface TestNode {
+        id: string;
+        parentId: string | null;
+        children: TestNode[];
+    }
+    const node = (
+        id: string,
+        parentId: string | null,
+        children: TestNode[] = []
+    ): TestNode => ({ id, parentId, children });
+
+    it("親 → 子孫の深さ優先順（pre-order）で平坦化する", () => {
+        // Arrange
+        const tree = [
+            node("electronics", null, [
+                node("camera", "electronics", [node("lens", "camera")]),
+                node("audio", "electronics"),
+            ]),
+            node("fashion", null),
+        ];
+
+        // Act
+        const flat = flattenCategoryTree(tree);
+
+        // Assert —— 並び替えはしない（順序はクエリの orderBy が決める）
+        expect(flat.map((n) => n.id)).toEqual([
+            "electronics",
+            "camera",
+            "lens",
+            "audio",
+            "fashion",
+        ]);
+    });
+
+    it("空配列には空配列を返す", () => {
+        expect(flattenCategoryTree([])).toEqual([]);
     });
 });
