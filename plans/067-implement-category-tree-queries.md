@@ -126,17 +126,17 @@ design.md §0 の 0-4 / 0-5 / 0-6 / 0-7 を参照。本プランに直結する�
 
 ALL を満たすこと:
 
-- [ ] V-1（兄弟 prefix 誤ヒットしない）/ V-2（旧 URL 308 到達性）/ V-6（fail-closed）が緑
-- [ ] 3 階層目の商品が祖先カテゴリのフィルタでヒットする統合テストが緑
-- [ ] **`grep -rn "startsWith" src/lib src/queries src/components | grep path` の結果が
+- [x] V-1（兄弟 prefix 誤ヒットしない）/ V-2（旧 URL 308 到達性）/ V-6（fail-closed）が緑
+- [x] 3 階層目の商品が祖先カテゴリのフィルタでヒットする統合テストが緑
+- [x] **`grep -rn "startsWith" src/lib src/queries src/components | grep path` の結果が
       `src/lib` の `subtreeOf` 定義 1 箇所のみ**（prefix 境界が散っていないことの機械的確認）
       —— Step 1 でヘルパーを `src/lib/` に置くため、検索対象に `src/lib` を含めないと
       定義そのものを取りこぼし、「0 件」を誤って合格と読んでしまう
-- [ ] `home.ts` / `size.ts` の差分が **0 行**（経路 B に触っていないこと）
-- [ ] `src/app/dashboard/**` の差分が **0 行**（068 の領分に踏み込んでいないこと）
-- [ ] 書き込み経路が dual-write であること —— 商品作成後に旧 `subCategoryId` と
+- [x] `home.ts` / `size.ts` の差分が **0 行**（経路 B に触っていないこと）
+- [x] `src/app/dashboard/**` の差分が **0 行**（068 の領分に踏み込んでいないこと）
+- [x] 書き込み経路が dual-write であること —— 商品作成後に旧 `subCategoryId` と
       新 `categoryNodeId` の両方が埋まる統合テストが緑
-- [ ] **読み取り切替の前に、未同期の `Product` / `SubCategory` を再同期していること。**
+- [x] **読み取り切替の前に、未同期の `Product` / `SubCategory` を再同期していること。**
       066 の backfill は一度きりで、Phase A の書き込み経路は `categoryNodeId` を
       **一切書かない**（`grep -rn categoryNodeId src/` が 0 件）。したがって 066 適用後に
       作成・カテゴリ変更された商品は `categoryNodeId` が NULL / 旧値のまま残る。
@@ -218,10 +218,10 @@ ALL を満たすこと:
       再同期の検証は**新規行だけで合格にしない** —— rename / 親付け替え /
       `featured` 変更を 066 適用後に起こした既存行が、それぞれ `url` / `path` /
       `featured` に反映されることを確認する。
-- [ ] 再同期後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL` が **0** であることを確認した
-- [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
-- [ ] E2E が 3 ブラウザで緑（flaky 0）
-- [ ] `spec-sync-after-test` によるドキュメント同期コミットが存在する
+- [x] 再同期後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL` が **0** であることを確認した
+- [x] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
+- [x] E2E が 3 ブラウザで緑（flaky 0）
+- [x] `spec-sync-after-test` によるドキュメント同期コミットが存在する
 
 ## STOP conditions
 

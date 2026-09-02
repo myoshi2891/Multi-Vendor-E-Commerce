@@ -140,12 +140,58 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
 | [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | DONE（2026-08-31・`0f0fa400`〜`868ccf82`。**事前計測は実 DB で実行し slug 衝突 0 件** — STOP 条件はいずれも非該当。Jest 2026 → **2025**（シードのツリー統合に伴う置き換えで −1 / スイート 191 不変）、Integration 108 → **117** / 13 → **14 スイート**。**Done criteria からの逸脱 1 点**〔「`src/queries/**` 差分 0 行」は達成不可能 — オペレーター承認のうえ `category.ts` のみ narrow。`src/components/**` は 0 差分を維持〕。**プラン本文の解釈 2 点**〔「シードを先に」は作業順でありコミット順ではない / 「商品は categoryUrl 1 本」は宣言データの形であって DB 書き込みではない〕。**プラン本文に無い発見 1 点**〔design.md §4 の移行 SQL は冪等でない〕。下の実行記録を参照） |
-| [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | **IN PROGRESS**（2026-09-02・`8bebdc6e`〜`9b4ea311`。読み取りのサブツリー化・dual-write・再同期マイグレーション・308 正準化は**実装済みで緑**〔Jest 2032 → **2062** / 192 → **193 スイート**、Integration 117 → **123** / 14 → **15 スイート**〕。**設計文書からの逸脱 3 点**〔design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで新 FK `categoryNode` を引く / `redirect()` は 307 なので `permanentRedirect()` / `?category=A&subCategory=B` は親子のときだけ畳む〕。**プラン本文の誤り 2 点**〔統合テストのコマンドが動作しない / Done criteria の grep が `src/app` を含まない〕。**BLOCKED 1 点**〔実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用〕。残作業は [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) の 067-B を参照） |
+| [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | **DONE**（2026-09-02・`8bebdc6e`〜`0ed9502a`。読み取りのサブツリー化・dual-write・再同期マイグレーション・308 正準化・storefront リンクの正準化・V-1/V-2/V-6 と 3 階層・dual-write のテストまで**完了**〔Jest 2032 → **2064** / 192 → **193 スイート**、Integration 117 → **129** / 14 → **15 スイート**、E2E 192 → **195**〕。**設計文書からの逸脱 3 点**〔design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで新 FK `categoryNode` を引く / `redirect()` は 307 なので `permanentRedirect()` / `?category=A&subCategory=B` は親子のときだけ畳む〕。**プラン本文の誤り 2 点**〔統合テストのコマンドが動作しない / Done criteria の grep が `src/app` を含まない〕。**BLOCKED 1 点**〔実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用 —— これのみ未解消で [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) の「067-B の残 BLOCKED」に記録〕。下の実行記録を参照） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | TODO |
 | [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | M–L | MED | 014 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **067 の実行記録（2026-09-02・`8bebdc6e`〜`0ed9502a`）— DONE**
+>
+> **Phase B の境界は守られている。** `home.ts` / `size.ts` / `src/app/dashboard/**` の差分は
+> **0 行**（経路 B と 068 の領分に踏み込んでいない）。prefix 境界の定義は
+> `src/lib/category-tree.ts` の `subtreeOf` / `isWithinSubtree` の 2 関数のみで、
+> DB 側（Prisma where）とアプリ側（308 の親子判定）が同じ定義を引く。
+>
+> **設計文書からの逸脱 3 点**: (1) design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで、
+> 旧 `category` はルートを指すため新 FK `categoryNode` を引く必要がある（設計は Phase A 実装前に
+> 書かれており、リレーション名が確定していなかった）。(2) `redirect()` は 307 なので
+> `permanentRedirect()`（308）を使う。(3) `?category=A&subCategory=B` は 2 つのサブツリーの積として
+> 効いているため、B が A の子孫のときだけ畳む（無条件に畳むと「0 件」が「B の結果」へ化ける）。
+>
+> **プラン本文の誤り 2 点**: 統合テストのコマンドは `bun run test:integration`（`jest.config.js` が
+> `/tests/integration/` を除外しているため本文の `bun run test -- tests/integration/...` は動かない）。
+> Done criteria の `grep startsWith` は検索対象に `src/app` を含んでおらず、実際の重複は
+> `browse/page.tsx` に出た（`isWithinSubtree` へ寄せて解消）。
+>
+> **storefront リンクの罠（本文に無い発見）**: `footer/links.tsx` の `?subCategory=` を機械的に
+> `?category=` へ置換してはならない。旧 `SubCategory.url` は移行でリネームされ得るうえ、
+> グローバル一意制約下で**別ノードの正準 slug**になっている可能性があり、
+> `resolveCategoryNode(CATEGORY)` は url 完全一致を先に引くので無関係なノードへ着地する。
+> **データ源ごと `Category` ツリーへ移す**のが正しい（`d7769375`）。
+> `home/category-card.tsx` は `home.ts` の legacy 経路（Out of scope）なので `?subCategory=` のまま。
+>
+> **テスト**: V-1（兄弟 prefix の非ヒット）/ depth 2 の祖先ヒット / 旧 `?subCategory=` の同一サブツリー
+> 解決 / V-6（fail-closed）を `product-browse.test.ts` に **+4**、create・update 両経路の dual-write を
+> `product-update.test.ts` に **+2**（`upsertProduct` のフィクスチャが既にあるファイルへ置いた）。
+> V-2 は `search-filter.spec.ts` に **+1**（`maxRedirects: 0` でステータスと `Location` を直接見る。
+> `page.goto` では最終 URL しか見えず 302 と区別できない）。E2E シードに `CategorySlugAlias` を 1 行足し、
+> 別名表を引く経路＝外部被リンクの生存経路を実際に通している。V-1 と dual-write は本体を壊すと
+> 赤になることを実測で確認済み。
+>
+> **BLOCKED（未解消・オペレーター承認待ち）**: 実 DB（Neon dev）への `bunx prisma migrate deploy` が
+> 権限で拒否されており、`20260901223148_category_tree_phase_b_resync` は**実 DB へ未適用**。
+> 使い捨て PostgreSQL では 6 シナリオすべて緑。なお実測で `Product.categoryNodeId IS NULL` は
+> **0 件**なので、dev DB の現データに限れば読み取り切替は既に安全（再同期は将来分の保険）。
+> **068（不可逆な Phase C）へ進む前に適用すること。**
+>
+> **ローカル E2E の注意**: `PORT=3100 E2E_NO_REUSE=1` で隔離すること。:3000 に別リポジトリの
+> next-server が居ると `reuseExistingServer` がそれを掴み、全 spec が赤になる
+> （`playwright.config.ts` に警告として明記されている既知の罠）。
+>
+> 統計: Jest **2064** passed / 2067 total / **193 スイート**、Integration **129** / 15 スイート、
+> E2E **65 tests/browser**（29 files・3 ブラウザ計 **195**）、型エラー 0 / ESLint 0 errors。
+>
 > **066 の実行記録（2026-08-31・`0f0fa400`〜`868ccf82`）— DONE**
 >
 > **Phase A の境界は守られている。** `git diff --stat 33ea327b -- src/components` は**空**で、
