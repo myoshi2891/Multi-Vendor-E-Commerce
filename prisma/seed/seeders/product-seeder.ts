@@ -21,7 +21,7 @@ import { rootAncestorUrl } from "../category-tree";
  *   - `products`: maps product slug → product id
  *   - `variants`: maps variant slug → variant id
  *   - `sizes`: maps "variantSlug:size" → size id
- * @throws Error if a referenced store, category, subcategory, offer tag, or country code from the seed data cannot be resolved via the provided maps
+ * @throws Error if a referenced store, category, subcategory, offer tag, or country code from the seed data cannot be resolved via the provided maps, or if a product's `categoryUrl` points at a root category instead of a leaf
  */
 export async function seedProducts(
     prisma: PrismaClient,
@@ -52,6 +52,15 @@ export async function seedProducts(
         }
 
         const rootUrl = rootAncestorUrl(p.categoryUrl);
+        // 商品はリーフに紐づく前提（categoryId = ルート / subCategoryId = リーフ）。
+        // ルート自身を指すと両者が同じノードへ落ち、`maps.categories.get(rootUrl)` は
+        // **成功してしまう**ので下の「ルートカテゴリが見つかりません」では捕まらない。
+        // 木の宣言データの誤りとして、投入前にここで落とす。
+        if (rootUrl === p.categoryUrl) {
+            throw new Error(
+                `商品のカテゴリはルート直下に置けません（リーフを指すこと）: ${p.categoryUrl}（商品: ${p.name}）`
+            );
+        }
         const rootId = maps.categories.get(rootUrl);
         if (!rootId) {
             throw new Error(

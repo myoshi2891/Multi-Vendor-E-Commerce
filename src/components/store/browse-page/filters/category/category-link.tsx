@@ -50,24 +50,27 @@ export default function CategoryLink({
     return (
         <section>
             <div className="relative mt-2 flex w-full items-center justify-between leading-5">
-                <label
-                    htmlFor={category.id}
+                <button
+                    type="button"
+                    aria-pressed={category.url === categoryQuery}
                     className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
                     onClick={() => handleCategoryChange(category.url)}
                 >
-                    <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-[#ccc]">
+                    <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-border">
                         {category.url === categoryQuery && (
-                            <div className="inline-block size-1.5 rounded-full bg-black"></div>
+                            <div className="inline-block size-1.5 rounded-full bg-foreground"></div>
                         )}
                     </span>
                     <div className="inline-block flex-1 overflow-visible text-clip whitespace-normal text-xs">
                         {category.name}
                     </div>
-                </label>
+                </button>
                 {hasChildren && (
-                    <span
+                    <button
+                        type="button"
                         className="cursor-pointer"
                         onClick={() => setExpand((prev) => !prev)}
+                        aria-expanded={expand}
                         aria-label={expand ? "Collapse" : "Expand"}
                     >
                         {expand ? (
@@ -75,7 +78,7 @@ export default function CategoryLink({
                         ) : (
                             <Plus className="w-3" />
                         )}
-                    </span>
+                    </button>
                 )}
             </div>
             {hasChildren && expand && (

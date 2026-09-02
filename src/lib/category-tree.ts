@@ -88,9 +88,29 @@ export const resolveCategoryNode = async (
         return alias?.category ?? null;
     };
 
-    return entityType === "SUB_CATEGORY"
-        ? ((await byAlias()) ?? (await byUrl()))
-        : ((await byUrl()) ?? (await byAlias()));
+    try {
+        return entityType === "SUB_CATEGORY"
+            ? ((await byAlias()) ?? (await byUrl()))
+            : ((await byUrl()) ?? (await byAlias()));
+    } catch (error: unknown) {
+        // **握り潰さない。** `null` は「解決できない slug」を意味し、呼び出し側は
+        // それを 0 件（fail-closed）へ変換する。DB 障害をここで `null` に畳むと
+        // 「該当なし」と区別できなくなるため、文脈だけ記録して元の例外を再送出する。
+        const context = { slug, entityType };
+        if (error instanceof Error) {
+            console.error("[CategoryTree:resolveCategoryNode] Lookup failed", {
+                ...context,
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error(
+                "[CategoryTree:resolveCategoryNode] Unknown lookup failure",
+                { ...context, error }
+            );
+        }
+        throw error;
+    }
 };
 
 /** `buildCategoryTree` が読む最小の形。Prisma の `Category` はこれを満たす。 */

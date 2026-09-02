@@ -668,6 +668,12 @@ export const getProducts = async (
         [filters.subCategory, "SUB_CATEGORY"],
     ] as const) {
         if (!slug) continue;
+        // `?category=a&category=b` のように同名パラメータが複数付くと Next.js は
+        // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
+        // `resolveCategoryNode` → Prisma の `where: { url }` へ到達して実行時に落ちる。
+        // 曖昧な指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す
+        // （/browse 側も `typeof === "string"` で同じ境界を引いている）。
+        if (typeof slug !== "string") return noMatchResult;
         const node = await resolveCategoryNode(slug, entityType);
         // fail-closed を維持する（未解決のフィルタを捨てて全件表示に化けさせない）
         if (!node) return noMatchResult;
