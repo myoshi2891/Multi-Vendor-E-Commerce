@@ -59,6 +59,32 @@ test.describe("検索・フィルタ", () => {
     await expect(page.getByText(/No Products/i)).toBeVisible({ timeout: 10000 });
   });
 
+  test("旧 ?subCategory= が 308 で正準ノードへ着地する", async ({ page }) => {
+    // plan 067 V-2。旧 URL は**恒久的に受理し続ける**（外部被リンクを切らない）が、
+    // 正準 URL へ 308 で寄せる。307 では検索エンジンに正準 URL が伝わらない。
+    const canonical = seed.subCategory.url;
+
+    for (const slug of [canonical, seed.subCategory.legacyUrl]) {
+      // maxRedirects: 0 で自動追従を止め、ステータスと Location を直接見る。
+      // page.goto では最終 URL しか見えず、308 と 302 の区別が付かない。
+      const response = await page.request.get(
+        `/browse?subCategory=${encodeURIComponent(slug)}`,
+        { maxRedirects: 0 }
+      );
+      expect(response.status()).toBe(308);
+      // 行き先は**正準 slug**。legacyUrl は Category.url に存在せず
+      // CategorySlugAlias 経由でしか解決できないので、別名表を引く経路の検証になる。
+      expect(response.headers()["location"]).toContain(
+        `category=${encodeURIComponent(canonical)}`
+      );
+    }
+
+    // 追従後に商品が実際に表示されること（308 の行き先が 0 件に化けていない）。
+    await page.goto(`/browse?subCategory=${encodeURIComponent(seed.subCategory.legacyUrl)}`);
+    await expect(page).toHaveURL(new RegExp(`[?&]category=${canonical}(&|$)`));
+    await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
+  });
+
   test("ページネーションで次ページに遷移できる", async ({ page }) => {
     // 専用カテゴリ（12 商品 > pageSize 10）を使い、2 ページ構成を決定的にする。
     // 既存の共有カテゴリでは他 spec の seed 追加で件数が動くため件数 assert が壊れる。

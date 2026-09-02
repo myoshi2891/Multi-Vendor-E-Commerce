@@ -262,6 +262,25 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // plan 066 A-3 のリネームで生まれる旧 slug の別名。**実際に Category.url を
+    // 書き換えるのではなく、別名行だけを足す**のが要点 —— 旧 slug が Category.url に
+    // 残っていると `resolveCategoryNode` は url 完全一致で解決してしまい、別名表を
+    // 引く経路（= 外部被リンクの生存経路）が E2E で 1 度も実行されない。
+    await prisma.categorySlugAlias.upsert({
+        where: {
+            entityType_oldSlug: {
+                entityType: "SUB_CATEGORY",
+                oldSlug: seed.subCategory.legacyUrl,
+            },
+        },
+        create: {
+            entityType: "SUB_CATEGORY",
+            oldSlug: seed.subCategory.legacyUrl,
+            categoryId: subCategoryNode.id,
+        },
+        update: { categoryId: subCategoryNode.id },
+    });
+
     // id 共有は Product.categoryNodeId の FK 前提そのもの。ここが崩れた DB は
     // 上の補正でも救えない（両行が別 id で既存）ので、FK 違反より手前で落とす。
     if (subCategory.id !== subCategoryNode.id) {
