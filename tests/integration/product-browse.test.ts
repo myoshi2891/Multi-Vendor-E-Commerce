@@ -435,11 +435,15 @@ async function arrangeCategoryTree() {
         root
     );
     const lens = await createNode("Lens", "lens", camera);
+    // camera は lens を持つ**非リーフ**なので商品を直接ぶら下げられない（V-5）。
+    // camera 直下の商品は、もう 1 枚のリーフ camera-body に置く。
+    // サブツリー検索の観点は変わらない（どちらも electronics/camera 配下）。
+    const cameraBody = await createNode("Camera Body", "camera-body", camera);
 
     const camProduct = await seedProductWithVariantAndSize(db, {
         storeId: store.id,
-        categoryId: root.id,
-        subCategoryId: camera.id,
+        categoryId: camera.id,
+        subCategoryId: cameraBody.id,
     });
     const accProduct = await seedProductWithVariantAndSize(db, {
         storeId: store.id,
@@ -452,7 +456,16 @@ async function arrangeCategoryTree() {
         subCategoryId: lens.id,
     });
 
-    return { root, camera, accessories, lens, camProduct, accProduct, lensProduct };
+    return {
+        root,
+        camera,
+        cameraBody,
+        accessories,
+        lens,
+        camProduct,
+        accProduct,
+        lensProduct,
+    };
 }
 
 describe("Scenario 9: category subtree filtering", () => {

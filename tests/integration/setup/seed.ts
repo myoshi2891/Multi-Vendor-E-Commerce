@@ -173,6 +173,7 @@ export interface SeedProductInput {
      * `seedCategoryWithSubcategory` が返す **共有 id**（`subCategory.id === childNode.id`）を渡すこと。
      * Phase A の `Product.categoryNodeId` はこの id をそのまま Category ノードの FK として使うため、
      * 共有関係にない SubCategory の id を渡すと FK 違反になる。`seedProduct` が事前に検証する。
+     * 併せて **リーフであること**（子カテゴリを持たないこと）も検証する（design.md V-5）。
      */
     subCategoryId: string;
     /** 商品レベルの配送方式。Cart→Checkout の shipping 計算検証で重要 */
@@ -223,6 +224,19 @@ export async function seedProductWithVariantAndSize(
             `[seed] Category ノード ${input.subCategoryId} の parentId は ` +
                 `${categoryNode.parentId ?? "null"} で、categoryId=${input.categoryId} の子ではありません。` +
                 `同じ seedCategoryWithSubcategory の戻り値から categoryId / subCategoryId を渡してください。`
+        );
+    }
+    // リーフ強制（design.md V-5）: 子を持つノードには商品を紐づけられない。
+    // parentId の検証だけでは「正しい親の下にある**非リーフ**」を通してしまい、
+    // Phase C で拒否されるはずのデータ形をテストが先に作ってしまう。
+    // childCount は非正規化列でシード側がドリフトしうるため、実際の子を数える。
+    const childCount = await db.category.count({
+        where: { parentId: input.subCategoryId },
+    });
+    if (childCount > 0) {
+        throw new Error(
+            `[seed] Category ノード ${input.subCategoryId} は子を ${childCount} 件持つ非リーフです。` +
+                `商品はリーフノードにのみ紐づけられます（design.md V-5）。子を持たないノードを渡してください。`
         );
     }
     const subCategory = await db.subCategory.findUnique({

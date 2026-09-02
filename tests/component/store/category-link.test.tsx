@@ -50,7 +50,7 @@ const rerenderWith = (
     rerender(<CategoryLink category={tree()} />);
 };
 
-describe("CategoryLink — 選択枝の開閉同期", () => {
+describe("CategoryLink — 選択肢の開閉同期", () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -78,7 +78,7 @@ describe("CategoryLink — 選択枝の開閉同期", () => {
     });
 
     it("子孫が選択されていなければユーザーの折りたたみを維持する", () => {
-        // Arrange —— 選択枝なので開いた状態で始まる
+        // Arrange —— 選択肢なので開いた状態で始まる
         const { rerender } = renderLink("category=camera");
         expect(screen.getByText("camera")).toBeInTheDocument();
 

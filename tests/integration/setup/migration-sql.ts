@@ -136,9 +136,16 @@ export function splitStatements(sql: string): string[] {
 
 
 /**
- * Run a marked migration section statement by statement.
+ * Run a marked migration section as one atomic unit.
  *
- * `$executeRawUnsafe` は 1 呼び出し 1 文しか受け付けないため分割して流す。
+ * `$executeRawUnsafe` は 1 呼び出し 1 文しか受け付けないため分割して流すが、
+ * **区間全体は 1 トランザクションに閉じる**。マイグレーションの区間は本番でも
+ * 1 トランザクションとして適用される（ADR 006 の計測 3 が「同じトランザクション内で
+ * 実行する」と規定しているのと同じ単位）ため、テストも同じ原子性で流さないと、
+ * 途中で失敗したときに**本番では起こり得ない中間状態**を観測してしまう。
+ *
+ * 注: 区間内に `CREATE INDEX CONCURRENTLY` 等のトランザクション不可な文を
+ * 置くことはできない（現状の区間には無い）。
  *
  * @param db - テスト用 PrismaClient
  * @param statements - `splitStatements` の結果
@@ -147,7 +154,13 @@ export async function runStatements(
     db: PrismaClient,
     statements: readonly string[]
 ): Promise<void> {
-    for (const statement of statements) {
-        await db.$executeRawUnsafe(statement);
-    }
+    await db.$transaction(
+        async (tx) => {
+            for (const statement of statements) {
+                await tx.$executeRawUnsafe(statement);
+            }
+        },
+        // 移行区間は文数が多く、既定の 5 秒では CI で頭打ちになる。
+        { maxWait: 10_000, timeout: 120_000 }
+    );
 }

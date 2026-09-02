@@ -68,6 +68,35 @@ async function seedSubCategory(
                 ${options.featured ?? false}, ${categoryId}, NOW(), NOW())`;
 }
 
+/** Product を作るのに必要な User + Store を 1 組作る。 */
+async function seedStoreOwner(db: PrismaClient): Promise<void> {
+    await db.$executeRaw`
+        INSERT INTO "User" (id, name, email, picture, role, "createdAt", "updatedAt")
+        VALUES ('user-1', 'Owner', 'owner@example.test', 'https://example.test/p.png', 'SELLER', NOW(), NOW())`;
+    await db.$executeRaw`
+        INSERT INTO "Store" (id, name, description, email, phone, url, logo, cover, status, "userId", "createdAt", "updatedAt")
+        VALUES ('store-1', 'Store', 'desc', 'store@example.test', '000', 'store-1',
+                'https://example.test/l.png', 'https://example.test/c.png', 'ACTIVE', 'user-1', NOW(), NOW())`;
+}
+
+/**
+ * Product を 1 行作る。`categoryNodeId` は明示的に渡す（NULL / stale を作り分けるため）。
+ * NULL 以外を渡す場合、その id の Category ノードが既に存在している必要がある（FK）。
+ */
+async function seedProduct(
+    db: PrismaClient,
+    id: string,
+    rootId: string,
+    subCategoryId: string,
+    categoryNodeId: string | null
+): Promise<void> {
+    await db.$executeRaw`
+        INSERT INTO "Product" (id, name, description, slug, brand, rating, "numReviews", "shippingFeeMethod",
+                               views, sales, "storeId", "categoryId", "subCategoryId", "categoryNodeId", "createdAt", "updatedAt")
+        VALUES (${id}, ${`Product ${id}`}, 'desc', ${`product-${id}`}, 'Brand', 0, 0, 'ITEM',
+                0, 0, 'store-1', ${rootId}, ${subCategoryId}, ${categoryNodeId}, NOW(), NOW())`;
+}
+
 describe("カテゴリツリー Phase B — 再同期 (plan 067)", () => {
     let db: PrismaClient;
 
@@ -189,6 +218,47 @@ describe("カテゴリツリー Phase B — 再同期 (plan 067)", () => {
             { id: "root-1", childCount: 0 },
             { id: "root-2", childCount: 1 },
         ]);
+    });
+
+    it("066 適用後に作られた商品の NULL な categoryNodeId を埋める", async () => {
+        // Arrange —— 066 の一度きりの backfill より後に作られた商品。
+        // Phase A の書き込み経路は categoryNodeId を書かないので NULL のまま残る。
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-new", "camera", "root-1");
+        await seedStoreOwner(db);
+        await seedProduct(db, "prod-null", "root-1", "sub-new", null);
+
+        // Act
+        await runResync(db);
+
+        // Assert —— 埋まっていないと、読み取り切替後にこの商品が静かに消える
+        const product = await db.product.findUniqueOrThrow({
+            where: { id: "prod-null" },
+        });
+        expect(product.categoryNodeId).toBe("sub-new");
+    });
+
+    it("066 適用後にカテゴリ変更された商品の stale な categoryNodeId を追随させる", async () => {
+        // Arrange —— 一度同期済みの商品のカテゴリを、Phase A の経路で付け替える。
+        // 旧 FK だけが動き、新 FK は移行時点の値（stale）のまま取り残される。
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-1", "camera", "root-1");
+        await seedSubCategory(db, "sub-2", "audio", "root-1");
+        await seedStoreOwner(db);
+        await runResync(db);
+        await seedProduct(db, "prod-stale", "root-1", "sub-1", "sub-1");
+
+        await db.$executeRaw`UPDATE "Product" SET "subCategoryId" = 'sub-2' WHERE id = 'prod-stale'`;
+
+        // Act —— NULL 埋めだけの実装（WHERE categoryNodeId IS NULL）ではこれを拾えない
+        await runResync(db);
+
+        // Assert
+        const product = await db.product.findUniqueOrThrow({
+            where: { id: "prod-stale" },
+        });
+        expect(product.categoryNodeId).toBe("sub-2");
+        expect(product.categoryNodeId).toBe(product.subCategoryId);
     });
 
     it("再同期は冪等（2 回目で結果が変わらない）", async () => {
