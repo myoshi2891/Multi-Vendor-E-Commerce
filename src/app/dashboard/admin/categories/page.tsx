@@ -32,7 +32,7 @@ export default async function AdminCategoriesPage() {
 					Create New Category
 				</>
 			}
-			modalChildren={<CategoryDetails />}
+			modalChildren={<CategoryDetails categories={categories} />}
 			newTabLink="/dashboard/admin/categories/new"
 			filterValue="name"
 			data={categories}

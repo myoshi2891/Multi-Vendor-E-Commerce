@@ -1,7 +1,7 @@
 'use client'
 
 // React, Next.js imports
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
@@ -45,7 +45,14 @@ import {
 } from 'lucide-react'
 
 // Queries
-import { deleteCategory, getCategory } from '@/queries/category'
+import {
+    deleteCategory,
+    getAllCategories,
+    getCategory,
+} from '@/queries/category'
+
+// カテゴリツリー（DB に触れない純粋ヘルパーのみ）
+import { flattenCategoryTree } from '@/lib/category-path'
 
 // Tanstack React Table
 import { ColumnDef } from '@tanstack/react-table'
@@ -176,6 +183,39 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const { toast } = useToast()
     const router = useRouter()
 
+    // 親選択の候補。Server Component 経由で渡せない行アクションのモーダル用に
+    // ここで取得する（subCategories の旧実装と同じ形）。古いレスポンスで新しい
+    // 状態を上書きしないよう cancelled フラグを置く。
+    const [categories, setCategories] = useState<Category[]>([])
+    useEffect(() => {
+        let cancelled = false
+
+        const fetchCategories = async () => {
+            try {
+                const tree = await getAllCategories()
+                if (!cancelled) setCategories(flattenCategoryTree(tree))
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        '[AdminCategories:fetchCategories] Failed to load categories',
+                        { error: error.message, stack: error.stack }
+                    )
+                } else {
+                    console.error(
+                        '[AdminCategories:fetchCategories] Unknown failure',
+                        { error }
+                    )
+                }
+                if (!cancelled) setCategories([])
+            }
+        }
+
+        fetchCategories()
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
     // Return null if rowData or rowData.id don't exist
     if (!rowData || !rowData.id) return null
 
@@ -197,7 +237,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                                 // Custom modal component
                                 <CustomModal>
                                     {/* Store details component */}
-                                    <CategoryDetails data={{ ...rowData }} />
+                                    <CategoryDetails
+                                        data={{ ...rowData }}
+                                        categories={categories}
+                                    />
                                 </CustomModal>,
                                 async () => {
                                     return {
