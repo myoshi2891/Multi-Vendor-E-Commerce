@@ -7,7 +7,7 @@ import { requireAdmin } from "@/lib/auth-guards";
 import { db } from "@/lib/db";
 
 // Prisma model
-import { Category, Prisma } from "@prisma/client";
+import { Category, CategoryAliasSource, Prisma } from "@prisma/client";
 
 // カテゴリツリー（materialized path）の共通ヘルパー
 import {
@@ -148,7 +148,13 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
             // 更新の場合のみ現在の姿が取れる（create では null）
             const current = await tx.category.findUnique({
                 where: { id: safeCategory.id },
-                select: { id: true, parentId: true, path: true, depth: true },
+                select: {
+                    id: true,
+                    parentId: true,
+                    path: true,
+                    depth: true,
+                    url: true,
+                },
             });
 
             let parent: LockedCategoryNode | null = null;
@@ -228,6 +234,24 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
                         path: descendant.path,
                         depth: depthOfPath(descendant.path),
                     },
+                });
+            }
+
+            // 旧 slug の到達性は別名表だけが担保する。移行で温存された url
+            // （大文字・`_` 等）はフォーム側で正準形へ寄せられるため、
+            // **通常の運用で rename が起きる**。
+            if (current && current.url !== safeCategory.url) {
+                await tx.categorySlugAlias.createMany({
+                    data: [
+                        {
+                            entityType: CategoryAliasSource.CATEGORY,
+                            oldSlug: current.url,
+                            categoryId: safeCategory.id,
+                        },
+                    ],
+                    // 旧 slug が既に**別ノードの**別名になっている場合は先着を残す。
+                    // 奪うと、生きている外部リンクの行き先が黙って変わる。
+                    skipDuplicates: true,
                 });
             }
 
@@ -401,11 +425,20 @@ export const deleteCategory = async (categoryId: string) => {
 
         if (!categoryId) throw new Error("Please provide a category ID.");
 
-        // Delete category from the database
-        const response = await db.category.delete({
-            where: {
-                id: categoryId,
-            },
+        // 削除と親の childCount 再計算は原子的に行う。**childCount は plan 068 で
+        // リーフ強制（V-5）の判定材料になった**ため、ドリフトするとその親には
+        // 二度と商品を紐づけられなくなる（導出列なので admin フォームからは直せない）。
+        //
+        // 子を持つノードの削除は self-relation の `onDelete: Restrict` が防ぐので、
+        // ここで扱うのは「リーフを消したときに親の値を戻す」ケースだけである。
+        const response = await db.$transaction(async (tx) => {
+            const deleted = await tx.category.delete({
+                where: {
+                    id: categoryId,
+                },
+            });
+            await recomputeChildCounts(tx, [deleted.parentId]);
+            return deleted;
         });
         return response;
     } catch (error: unknown) {
