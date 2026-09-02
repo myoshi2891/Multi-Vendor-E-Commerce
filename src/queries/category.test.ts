@@ -25,6 +25,8 @@ jest.mock("@/lib/db", () => ({
             findUnique: jest.fn(),
             findMany: jest.fn(),
             upsert: jest.fn(),
+            update: jest.fn(),
+            count: jest.fn(),
             delete: jest.fn(),
         },
         subCategory: {
@@ -33,10 +35,38 @@ jest.mock("@/lib/db", () => ({
         store: {
             findUnique: jest.fn(),
         },
+        $transaction: jest.fn(),
+        $queryRaw: jest.fn(),
     },
 }));
 
 const mockDb = require("@/lib/db").db;
+
+/**
+ * `upsertCategory` のツリー書き込み経路をモックする。
+ *
+ * 実装は 1 本の `$transaction` の中で「親行の `SELECT … FOR UPDATE` →
+ * 対象ノードの現在値読み出し → upsert → 子孫の path 追随 → childCount 再計算」を行う。
+ * コールバックには同じ `mockDb` を渡し、tx 内外で呼び出し記録を 1 箇所に集める。
+ */
+const mockCategoryTx = () => {
+    mockDb.$transaction.mockImplementation(
+        async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
+            callback(mockDb)
+    );
+    // 既定はルート作成（親なし・対象ノードは未作成・子孫なし）
+    mockDb.$queryRaw.mockResolvedValue([]);
+    mockDb.category.findUnique.mockResolvedValue(null);
+    mockDb.category.findMany.mockResolvedValue([]);
+    mockDb.category.count.mockResolvedValue(0);
+};
+
+/** `SELECT … FOR UPDATE` が返す親行を与える。 */
+const mockLockedParent = (parent: {
+    id: string;
+    path: string;
+    depth: number;
+}) => mockDb.$queryRaw.mockResolvedValue([parent]);
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -145,9 +175,10 @@ describe("upsertCategory", () => {
                 privateMetadata: { role: "ADMIN" },
             });
             mockDb.category.findFirst.mockResolvedValue(null);
+            mockCategoryTx();
         });
 
-        it("新規カテゴリを作成する", async () => {
+        it("新規ルートカテゴリを作成する（親なし ⇒ path = url / depth = 0）", async () => {
             const category = createMockCategory();
             mockDb.category.upsert.mockResolvedValue(category);
 
@@ -156,22 +187,21 @@ describe("upsertCategory", () => {
             expect(result).toEqual(category);
             expect(mockDb.category.upsert).toHaveBeenCalledWith({
                 where: { id: category.id },
-                update: category,
-                // Phase A（plan 066）: admin から作れるのはルートのみなので、
-                // 作成時は移行 SQL の A-1 と同じ規則で path / depth を補う。
+                // 移行 SQL の A-1 と同じ規則（ルート ⇒ path = url / depth = 0）。
+                // update 側にも書くのは、url の変更に path を追随させるため。
+                update: { ...category, path: category.url, depth: 0 },
                 create: { ...category, path: category.url, depth: 0 },
             });
         });
 
-        it("ツリー管理列は create / update のどちらにも渡さない", async () => {
+        it("path / depth / childCount は入力から受け取らずサーバー側で決める", async () => {
             // Arrange: 型上は存在しないが、実行時には渡り得る列を混ぜる
-            //（DB から読み戻した Category をそのまま渡す経路など）
+            //（DB から読み戻した Category をそのまま渡す経路など）。
+            // parentId / sortOrder は **admin が編集できる**列なので落とさない。
             const category = {
                 ...createMockCategory(),
-                parentId: "attacker-parent",
                 path: "attacker/path",
                 depth: 4,
-                sortOrder: 99,
                 childCount: 7,
             };
             mockDb.category.upsert.mockResolvedValue(createMockCategory());
@@ -181,15 +211,62 @@ describe("upsertCategory", () => {
 
             // Assert
             const callArg = mockDb.category.upsert.mock.calls[0][0];
-            for (const field of ["parentId", "sortOrder", "childCount"]) {
-                expect(callArg.update).not.toHaveProperty(field);
-                expect(callArg.create).not.toHaveProperty(field);
-            }
-            // path / depth は create 側でのみ、ルート規則の値に補われる
-            expect(callArg.update).not.toHaveProperty("path");
-            expect(callArg.update).not.toHaveProperty("depth");
+            expect(callArg.create).not.toHaveProperty("childCount");
+            expect(callArg.update).not.toHaveProperty("childCount");
+            // path / depth は入力値ではなくツリー規則の値で上書きされる
             expect(callArg.create.path).toBe(category.url);
             expect(callArg.create.depth).toBe(0);
+            expect(callArg.update.path).toBe(category.url);
+            expect(callArg.update.depth).toBe(0);
+        });
+
+        it("親を指定すると path を親から導出し depth を 1 段深くする", async () => {
+            // Arrange
+            mockLockedParent({
+                id: "electronics",
+                path: "electronics",
+                depth: 0,
+            });
+            const category = createMockCategory({
+                id: "camera",
+                name: "Camera",
+                url: "camera",
+                parentId: "electronics",
+            } as never);
+            mockDb.category.upsert.mockResolvedValue(category);
+
+            // Act
+            await upsertCategory(category as never);
+
+            // Assert
+            const callArg = mockDb.category.upsert.mock.calls[0][0];
+            expect(callArg.create.path).toBe("electronics/camera");
+            expect(callArg.create.depth).toBe(1);
+            expect(callArg.create.parentId).toBe("electronics");
+        });
+
+        it("親行は SELECT … FOR UPDATE でロックしてから読む", async () => {
+            // Arrange —— リーフ強制（upsertProduct 側）と同じ行を掴むことが
+            // 直列化の条件なので、ロック句の有無を機械的に検証する。
+            mockLockedParent({
+                id: "electronics",
+                path: "electronics",
+                depth: 0,
+            });
+            mockDb.category.upsert.mockResolvedValue(createMockCategory());
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "electronics",
+                } as never) as never
+            );
+
+            // Assert
+            const sqlParts = mockDb.$queryRaw.mock.calls[0][0] as string[];
+            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
         });
 
         it("既存カテゴリを更新する", async () => {
@@ -199,6 +276,241 @@ describe("upsertCategory", () => {
             const result = await upsertCategory(category as never);
 
             expect(result.name).toBe("Updated Name");
+        });
+    });
+
+    // ==================================================
+    // ツリー編集の不変条件（design.md V-7 系）
+    // ==================================================
+    describe("ツリー編集の不変条件", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.category.findFirst.mockResolvedValue(null);
+            mockCategoryTx();
+            mockDb.category.upsert.mockResolvedValue(createMockCategory());
+        });
+
+        it("V-7: depth 上限（4）を超える作成を拒否する", async () => {
+            // Arrange —— depth 4 の親の下は depth 5 になる
+            mockLockedParent({ id: "deep", path: "a/b/c/d", depth: 4 });
+
+            // Act / Assert
+            await expect(
+                upsertCategory(
+                    createMockCategory({
+                        id: "too-deep",
+                        url: "too-deep",
+                        parentId: "deep",
+                    } as never) as never
+                )
+            ).rejects.toThrow(/depth/i);
+            expect(mockDb.category.upsert).not.toHaveBeenCalled();
+        });
+
+        it("V-7: depth 上限ちょうど（4）は許可する", async () => {
+            // Arrange —— 境界の内側。上限を off-by-one で閉めていないことの確認
+            mockLockedParent({ id: "d3", path: "a/b/c", depth: 3 });
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "leaf",
+                    url: "leaf",
+                    parentId: "d3",
+                } as never) as never
+            );
+
+            // Assert
+            const callArg = mockDb.category.upsert.mock.calls[0][0];
+            expect(callArg.create.depth).toBe(4);
+        });
+
+        it("V-7b: 自分自身を親に指定した更新を拒否する（副作用なし）", async () => {
+            // Act / Assert
+            await expect(
+                upsertCategory(
+                    createMockCategory({
+                        id: "self",
+                        url: "self",
+                        parentId: "self",
+                    } as never) as never
+                )
+            ).rejects.toThrow(/own parent/i);
+            expect(mockDb.category.upsert).not.toHaveBeenCalled();
+            expect(mockDb.category.update).not.toHaveBeenCalled();
+        });
+
+        it("V-7c: 自分の子孫を親に指定した更新を拒否する（副作用なし）", async () => {
+            // Arrange —— electronics を electronics/camera の下へ移そうとする
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "electronics",
+                parentId: null,
+                path: "electronics",
+                depth: 0,
+            });
+            mockLockedParent({
+                id: "camera",
+                path: "electronics/camera",
+                depth: 1,
+            });
+
+            // Act / Assert
+            await expect(
+                upsertCategory(
+                    createMockCategory({
+                        id: "electronics",
+                        url: "electronics",
+                        parentId: "camera",
+                    } as never) as never
+                )
+            ).rejects.toThrow(/descendant/i);
+            expect(mockDb.category.upsert).not.toHaveBeenCalled();
+            expect(mockDb.category.update).not.toHaveBeenCalled();
+        });
+
+        it("V-7c: 兄弟（path が前置一致するだけ）への付け替えは拒否しない", async () => {
+            // Arrange —— `electronics/camera` に対する `electronics/camera-bags` は
+            // 素の startsWith だと子孫に誤判定される兄弟である。
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+            });
+            mockLockedParent({
+                id: "camera-bags",
+                path: "electronics/camera-bags",
+                depth: 1,
+            });
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "camera-bags",
+                } as never) as never
+            );
+
+            // Assert
+            const callArg = mockDb.category.upsert.mock.calls[0][0];
+            expect(callArg.update.path).toBe("electronics/camera-bags/camera");
+            expect(callArg.update.depth).toBe(2);
+        });
+
+        it("V-7d: 再親子化で全子孫の path / depth を書き換える", async () => {
+            // Arrange —— camera（子: lens / 孫: prime）を accessories の下へ移す
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+            });
+            mockLockedParent({
+                id: "accessories",
+                path: "electronics/accessories",
+                depth: 1,
+            });
+            mockDb.category.findMany.mockResolvedValue([
+                { id: "lens", path: "electronics/camera/lens" },
+                { id: "prime", path: "electronics/camera/lens/prime" },
+            ]);
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "accessories",
+                } as never) as never
+            );
+
+            // Assert —— 子孫は新しい親を前置に持ち、depth も 1 段ずつ増える
+            const updates = mockDb.category.update.mock.calls.map(
+                (call: [{ where: { id: string }; data: Record<string, unknown> }]) =>
+                    call[0]
+            );
+            const lens = updates.find(
+                (u: { where: { id: string } }) => u.where.id === "lens"
+            );
+            const prime = updates.find(
+                (u: { where: { id: string } }) => u.where.id === "prime"
+            );
+            expect(lens?.data).toMatchObject({
+                path: "electronics/accessories/camera/lens",
+                depth: 3,
+            });
+            expect(prime?.data).toMatchObject({
+                path: "electronics/accessories/camera/lens/prime",
+                depth: 4,
+            });
+        });
+
+        it("V-7d: 移動で子孫が depth 上限を超える場合は 1 行も書き換えない", async () => {
+            // Arrange —— 孫（相対 depth 2）を depth 3 の親の下へ移すと 5 段になる
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+            });
+            mockLockedParent({ id: "d3", path: "a/b/c", depth: 3 });
+            mockDb.category.findMany.mockResolvedValue([
+                { id: "lens", path: "electronics/camera/lens" },
+                { id: "prime", path: "electronics/camera/lens/prime" },
+            ]);
+
+            // Act / Assert
+            await expect(
+                upsertCategory(
+                    createMockCategory({
+                        id: "camera",
+                        url: "camera",
+                        parentId: "d3",
+                    } as never) as never
+                )
+            ).rejects.toThrow(/depth/i);
+            expect(mockDb.category.update).not.toHaveBeenCalled();
+        });
+
+        it("V-7d: 旧親と新親の childCount を両方再計算する", async () => {
+            // Arrange
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+            });
+            mockLockedParent({ id: "audio", path: "audio", depth: 0 });
+            mockDb.category.count.mockResolvedValue(2);
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "audio",
+                } as never) as never
+            );
+
+            // Assert —— 片側だけ増減させると「子がいないのに childCount > 0」になり、
+            // リーフ強制（V-5）が正当なリーフを拒否しはじめる。
+            const counted = mockDb.category.update.mock.calls
+                .map(
+                    (call: [{ where: { id: string }; data: Record<string, unknown> }]) =>
+                        call[0]
+                )
+                .filter(
+                    (u: { data: Record<string, unknown> }) =>
+                        "childCount" in u.data
+                )
+                .map((u: { where: { id: string } }) => u.where.id);
+            expect(counted).toEqual(
+                expect.arrayContaining(["electronics", "audio"])
+            );
         });
     });
 });
