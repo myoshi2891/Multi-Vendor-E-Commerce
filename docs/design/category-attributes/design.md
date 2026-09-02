@@ -232,16 +232,22 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
   const emptyToUndefined = (v: unknown) =>
       typeof v === "string" && v.trim() === "" ? undefined : (v ?? undefined);
 
-  const numberField = (required: boolean) => {
-      const base = z.preprocess(emptyToUndefined, z.coerce.number());
-      // 正規化は required=false のときだけ「未入力を許す」意味を持つ。
-      // required=true では undefined が必須エラーとして正しく報告される。
-      return required ? base : base.optional();
-  };
+  const numberField = (required: boolean) =>
+      // `.optional()` は preprocess の **内側**に置く。外側に付けると
+      // `ZodOptional` が先に走るが、入力は `""`（undefined ではない）なので
+      // そのまま内側へ渡り、正規化された undefined が `z.coerce.number()` に
+      // 入って `NaN` で落ちる —— 任意属性の未入力が保存できなくなる。
+      z.preprocess(
+          emptyToUndefined,
+          required ? z.coerce.number() : z.coerce.number().optional()
+      );
   ```
 
   **`required: false` のときだけ `.optional()` を付ける**こと（`required: true` で
-  optional にすると Q5 の hard 検証が骨抜きになる）。検証シナリオには
+  optional にすると Q5 の hard 検証が骨抜きになる）。`required: true` では
+  正規化後の `undefined` が `z.coerce.number()` に渡り `NaN` として弾かれる ——
+  保存はブロックされるがメッセージは「数値ではない」になるので、必須である旨を
+  出したい場合は `invalid_type_error` を明示すること。検証シナリオには
   「任意 `NUMBER` を空のまま保存 → 再読込しても `0` にならず未入力のまま」という
   **ラウンドトリップ**を必ず含める（A-1 の「`type` と埋まっている列が一致する」だけでは
   この事故を検出できない —— `valueNumber = 0` は列の一致条件を満たしてしまう）。

@@ -163,13 +163,25 @@ ADR-006 の path prefix（`c.path = $1 OR c.path LIKE $1 || '/%'`）を使う。
 ### Option 1: 正規化テーブル + 型別カラム（**採用**）
 
 ```sql
+-- 値ソースは 2 つある（D-1 でテーブルを分けたため）。VARIANT スコープの値は
+-- ProductVariant.productId 経由で商品へ畳んでから数える。
+WITH attr_value AS (
+    SELECT v."productId" AS product_id, v."definitionId", v."optionId",
+           v."valueText", v."valueBool", v."valueNumber"
+    FROM "ProductAttributeValue" v
+    UNION ALL
+    SELECT pv."productId", v."definitionId", v."optionId",
+           v."valueText", v."valueBool", v."valueNumber"
+    FROM "VariantAttributeValue" v
+    JOIN "ProductVariant" pv ON pv.id = v."variantId"
+)
 -- ファセット集計: 属性 × 値 × 件数
 SELECT d.key,
        COALESCE(o.label, v."valueText", v."valueBool"::text, v."valueNumber"::text) AS facet_value,
        count(DISTINCT p.id) AS product_count
 FROM "Product" p
 JOIN "Category" c ON c.id = p."categoryNodeId"   -- 商品のリーフノード（Phase C で categoryId へ rename）
-JOIN "ProductAttributeValue" v ON v."productId" = p.id
+JOIN attr_value v ON v.product_id = p.id
 JOIN "AttributeDefinition" d ON d.id = v."definitionId"
                             AND d.facetable AND d."archivedAt" IS NULL
 LEFT JOIN "AttributeOption" o ON o.id = v."optionId"
@@ -179,16 +191,31 @@ ORDER BY d.key, product_count DESC;
 
 -- 数値ファセット（範囲バケット）— 型別カラムがあるので素直に書ける
 -- 直前の集計と同じ商品・カテゴリ条件と定義条件を課す（でないとサブツリー外の商品まで数える）
+WITH attr_value AS (   -- 上と同一定義。実装では 1 つの CTE を共有する
+    SELECT v."productId" AS product_id, v."definitionId", v."valueNumber"
+    FROM "ProductAttributeValue" v
+    UNION ALL
+    SELECT pv."productId", v."definitionId", v."valueNumber"
+    FROM "VariantAttributeValue" v
+    JOIN "ProductVariant" pv ON pv.id = v."variantId"
+)
 SELECT d.key, width_bucket(v."valueNumber", 0, 100, 10) AS bucket, count(DISTINCT p.id)
 FROM "Product" p
 JOIN "Category" c ON c.id = p."categoryNodeId"
-JOIN "ProductAttributeValue" v ON v."productId" = p.id
+JOIN attr_value v ON v.product_id = p.id
 JOIN "AttributeDefinition" d ON d.id = v."definitionId"
                             AND d.type = 'NUMBER'
                             AND d.facetable AND d."archivedAt" IS NULL
 WHERE c.path = $1 OR c.path LIKE $1 || '/%'
 GROUP BY d.key, bucket;
 ```
+
+> **両方の集計で `VariantAttributeValue` も数えること。** `facetable` は
+> `scope` に依らず立てられ、C-5 のとおり**第 3 のバリアント軸こそが本設計の動機**である。
+> `ProductAttributeValue` だけを JOIN すると `scope = VARIANT` の facetable 属性が
+> ファセットから**丸ごと消える**（0 件ではなく、そもそもファセット自体が出ない）ので、
+> 欠落に気づく手掛かりが無い。件数は `count(DISTINCT p.id)` のままにすること ——
+> 1 商品が同じ値のバリアントを複数持つと、素の `count(*)` はその商品を重複計上する。
 
 > **`COALESCE` に `valueNumber` を含めること。** `facetable` は型に依らず立てられる
 > （`AttributeType.NUMBER` でも `true` にできる）ので、`label` / `valueText` /
