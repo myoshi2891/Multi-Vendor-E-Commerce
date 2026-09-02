@@ -12,7 +12,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2071 passed / 2074 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+- 2072 passed / 2075 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
   Code-review follow-up added +6 tests (+1 suite): `tests/component/store/category-link.test.tsx`
   (+3, new suite) pins that a category branch re-opens when a descendant becomes selected by a
   client-side navigation — the `useState` initializer runs once, but the branch stays mounted
