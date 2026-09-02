@@ -146,6 +146,22 @@ describe("resolveCategoryNode", () => {
         // Assert
         expect(node).toBeNull();
     });
+
+    it("DB 障害は null に畳まず再送出する（未解決 slug と区別するため）", async () => {
+        // Arrange —— null を返すと呼び出し側が「該当なし = 0 件」に変換してしまい、
+        // 障害が「商品が無い」として静かに表示される。
+        const failure = new Error("connection terminated");
+        mockDb.category.findUnique.mockRejectedValue(failure);
+        const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+        // Act / Assert
+        await expect(resolveCategoryNode("camera", "CATEGORY")).rejects.toThrow(
+            failure
+        );
+        expect(errorSpy).toHaveBeenCalled();
+
+        errorSpy.mockRestore();
+    });
 });
 
 describe("buildCategoryTree", () => {
