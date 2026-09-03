@@ -20,8 +20,9 @@
   `CategoryFormSchema`, slug canonicalization with rename aliases, and the admin category table's
   tree rendering — plus +4 integration tests in the new `tests/integration/category-tree-write.test.ts`
   covering the same invariants against a real database. `tests/e2e/admin-category-tree.spec.ts`
-  covers creating a third-level node through the admin form; it is green on chromium in both
-  webServer modes as of 2026-09-03 (firefox and webkit have not been run for it yet).
+  covers creating a third-level node through the admin form; it is green on all three browsers
+  as of 2026-09-03 — chromium in both webServer modes, firefox (7.9s) and webkit (12.7s) against
+  the production build, with `retries=2` left on and zero flaky.
   E2E is 66 tests/browser across 30 files (198 total), as of 2026-09-03.
   Earlier record (2072 / 2075 across 194 suites, Integration 131 across 15 suites, 2026-09-02):
   a review follow-up added +2 in
