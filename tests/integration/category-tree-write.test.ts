@@ -119,6 +119,37 @@ const createNode = async (
     return node;
 };
 
+/**
+ * 別コネクションが**行ロック待ちに入る**まで待つ。
+ *
+ * 固定 sleep（`setTimeout(300)`）で代用してはならない。300ms は「たぶん待ちに
+ * 入っただろう」という当て推量で、CI の遅い worker では待ちに入る前に先へ進んで
+ * **競合を再現しないまま緑になる**（偽陰性）。逆に速い環境では無駄に待つ。
+ * ここでは PostgreSQL 自身に「待っている backend がいるか」を訊く。
+ *
+ * `maxWorkers: 1`（jest.integration.config.js）なので、同一 DB で待っている
+ * backend は本テストが起動したものに限られる。
+ */
+const waitForLockedBackend = async (timeoutMs = 20_000): Promise<void> => {
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+        const [row] = await db.$queryRaw<{ blocked: number }[]>`
+            SELECT count(*)::int AS blocked
+              FROM pg_stat_activity
+             WHERE datname = current_database()
+               AND pid <> pg_backend_pid()
+               AND wait_event_type = 'Lock'
+        `;
+        if (row.blocked > 0) return;
+        if (Date.now() >= deadline) {
+            throw new Error(
+                "ロック待ちに入る backend を検出できませんでした（競合が再現していない）"
+            );
+        }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+};
+
 beforeEach(async () => {
     await resetDb(db);
     jest.clearAllMocks();
@@ -397,7 +428,7 @@ describe("Scenario 3: concurrent leaf assignment and child creation", () => {
             assignment = asSeller(owner.id, () =>
                 upsertProduct(input, store.url)
             ).catch((error: unknown) => error);
-            await new Promise((resolve) => setTimeout(resolve, 300));
+            await waitForLockedBackend();
         });
 
         // Assert —— コミット後にロックが解放され、商品側は childCount = 1 を読む。
@@ -414,5 +445,68 @@ describe("Scenario 3: concurrent leaf assignment and child creation", () => {
         });
         expect(productAfter.categoryNodeId).toBe(origin.subCategory.id);
         expect(productAfter.subCategoryId).toBe(origin.subCategory.id);
+    });
+});
+
+// ============================================================================
+// Scenario 5: subtree 移動と子孫の移動が競合しても path / parentId が矛盾しない
+// ============================================================================
+
+describe("Scenario 5: subtree move serializes against a concurrent descendant move", () => {
+    it("並行して subtree 外へ出た子孫に、古い subtree 配下の path を書き戻さない", async () => {
+        // Arrange —— a/x/d というツリーと、移動先 b（x 用）・z（d 用）を作る
+        const a = await createNode("A", "a", null);
+        const x = await createNode("X", "x", a);
+        const d = await createNode("D", "d", x);
+        const b = await createNode("B", "b", null);
+        const z = await createNode("Z", "z", null);
+
+        // Act —— 「d を z の下へ動かす」トランザクションを**開いたまま**、
+        // 「x を b の下へ動かす」（= d を含む subtree の移動）を走らせる。
+        //
+        // 外側 tx が握るロックと書き込みは `upsertCategory` が d に対して行うものと
+        // 同一である（自ノードの `SELECT … FOR UPDATE` → path / parentId の更新）。
+        // `upsertCategory` 自身を使わないのは、**コミットのタイミングを掴めないと
+        // 競合の窓を再現できない**ため。ここでの被検証対象は subtree 移動側の
+        // 子孫ロックである。
+        let subtreeMove!: Promise<unknown>;
+        await db.$transaction(async (tx) => {
+            await tx.$queryRaw`
+                SELECT "id" FROM "Category" WHERE "id" = ${d.id} FOR UPDATE
+            `;
+            await tx.category.update({
+                where: { id: d.id },
+                data: { parentId: z.id, path: `${z.url}/${d.url}`, depth: 1 },
+            });
+
+            // subtree 移動を起動して、d の行ロック待ちに入らせる（まだコミットしない）
+            subtreeMove = asAdmin(() =>
+                upsertCategory(nodeInput(x, { parentId: b.id }) as never)
+            ).catch((error: unknown) => error);
+            await waitForLockedBackend();
+        });
+
+        await subtreeMove;
+
+        // Assert —— d は z の子のままで、path と parentId が一致している。
+        // **子孫を非ロックで読むと、コミット前のスナップショット（a/x/d）を基に
+        // rebase した `b/x/d` を書き戻し、parentId = z と矛盾する**
+        // （このテストはそこで赤になる）。
+        const dAfter = await db.category.findUniqueOrThrow({
+            where: { id: d.id },
+            select: { parentId: true, path: true, depth: true },
+        });
+        expect(dAfter.parentId).toBe(z.id);
+        expect(dAfter.path).toBe("z/d");
+        expect(dAfter.depth).toBe(1);
+
+        // Assert —— 移動した x 自身は b の配下に入っている（本来の効果は出ている）
+        const xAfter = await db.category.findUniqueOrThrow({
+            where: { id: x.id },
+            select: { parentId: true, path: true, depth: true },
+        });
+        expect(xAfter.parentId).toBe(b.id);
+        expect(xAfter.path).toBe("b/x");
+        expect(xAfter.depth).toBe(1);
     });
 });

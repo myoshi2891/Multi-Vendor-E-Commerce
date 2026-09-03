@@ -460,6 +460,74 @@ describe("upsertCategory", () => {
             });
         });
 
+        it("自ノードも FOR UPDATE の対象に含める（子孫追随の直列化条件）", async () => {
+            // Arrange —— 親だけを掴むと、subtree を動かす本処理と「その subtree の
+            // 中の子孫を動かす」並行 upsert が同じ行で出会わない。自ノードを掴んで
+            // 初めて両者が直列化する。
+            mockLockedParent({
+                id: "electronics",
+                path: "electronics",
+                depth: 0,
+            });
+            mockDb.category.upsert.mockResolvedValue(createMockCategory());
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "electronics",
+                } as never) as never
+            );
+
+            // Assert —— id 昇順（camera → electronics）で 1 行ずつ掴む
+            const lockedIds = mockDb.$queryRaw.mock.calls.map(
+                (call: [string[], string]) => call[1]
+            );
+            expect(lockedIds.slice(0, 2)).toEqual(["camera", "electronics"]);
+        });
+
+        it("子孫は FOR UPDATE で掴んでから rebase する", async () => {
+            // Arrange —— camera（子: lens）を accessories の下へ移す
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+            });
+            mockLockedParent({
+                id: "accessories",
+                path: "electronics/accessories",
+                depth: 1,
+            });
+            mockDb.category.findMany.mockResolvedValue([
+                { id: "lens", path: "electronics/camera/lens" },
+            ]);
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "camera",
+                    url: "camera",
+                    parentId: "accessories",
+                } as never) as never
+            );
+
+            // Assert —— 子孫 lens もロック対象に含まれる（非ロック読みのままだと、
+            // 既に subtree 外へ動かされた行へ古い path を書き戻してしまう）
+            const lockedIds = mockDb.$queryRaw.mock.calls.map(
+                (call: [string[], string]) => call[1]
+            );
+            expect(lockedIds).toContain("lens");
+            // 掴んだ後にもう一度数え直して収束を確認している
+            expect(
+                mockDb.category.findMany.mock.calls.filter(
+                    (call: [{ where?: { path?: unknown } }]) =>
+                        call[0]?.where?.path !== undefined
+                ).length
+            ).toBeGreaterThanOrEqual(2);
+        });
+
         it("V-7d: 移動で子孫が depth 上限を超える場合は 1 行も書き換えない", async () => {
             // Arrange —— 孫（相対 depth 2）を depth 3 の親の下へ移すと 5 段になる
             mockDb.category.findUnique.mockResolvedValue({
@@ -489,7 +557,11 @@ describe("upsertCategory", () => {
 
         it("V-5 の裏側: 商品を持つノードの下に子カテゴリを作らせない", async () => {
             // Arrange —— 親はリーフだが商品が紐づいている
-            mockLockedParent({ id: "camera", path: "electronics/camera", depth: 1 });
+            mockLockedParent({
+                id: "camera",
+                path: "electronics/camera",
+                depth: 1,
+            });
             mockDb.product.count.mockResolvedValue(3);
 
             // Act / Assert —— 拒否され、書き込みは 1 行も起きない
@@ -517,7 +589,11 @@ describe("upsertCategory", () => {
                 depth: 2,
                 url: "lens",
             });
-            mockLockedParent({ id: "camera", path: "electronics/camera", depth: 1 });
+            mockLockedParent({
+                id: "camera",
+                path: "electronics/camera",
+                depth: 1,
+            });
             mockDb.product.count.mockResolvedValue(3);
 
             // Act

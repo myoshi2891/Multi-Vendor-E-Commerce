@@ -182,10 +182,19 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
         const childCount = SEED_CATEGORIES.filter(
             (c) => c.parentUrl === cat.url
         ).length;
-        await prisma.category.update({
-            where: { url: cat.url },
-            data: { childCount },
-        });
+        // 上の 2 つの upsert と同じ理由で URL を載せて再送出する。ここは全ノードを
+        // 舐める後段ループなので、素の Prisma エラーだけでは対象カテゴリが分からない。
+        try {
+            await prisma.category.update({
+                where: { url: cat.url },
+                data: { childCount },
+            });
+        } catch (error: unknown) {
+            throw new Error(
+                `カテゴリの childCount 更新に失敗しました: ${cat.url}`,
+                { cause: error }
+            );
+        }
     }
 
     // OfferTag（並列化）

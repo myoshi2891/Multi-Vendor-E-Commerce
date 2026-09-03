@@ -51,6 +51,15 @@ interface LockedCategoryNode {
     depth: number;
 }
 
+/** ロック取得後に読み直す「対象ノードの現在の姿」。 */
+interface CurrentCategoryNode {
+    id: string;
+    parentId: string | null;
+    path: string;
+    depth: number;
+    url: string;
+}
+
 /**
  * 導出列を実行時に落とす。
  *
@@ -70,14 +79,38 @@ const stripDerivedTreeFields = (
 };
 
 /**
+ * ロック集合が安定するまでの読み直し上限。
+ *
+ * 通常は 2 周（掴む → 掴んだ状態で読み直して変化なし）で収束する。並行編集で
+ * 対象が動き続けた場合に無限ループへ落ちないための上限であり、超過は失敗として扱う
+ * （中途半端な path を書くより、admin にリトライさせるほうが安全）。
+ */
+const MAX_LOCK_CONVERGENCE_ATTEMPTS = 4;
+
+const CONCURRENT_TREE_EDIT_MESSAGE =
+    "The category tree is being modified concurrently. Please retry.";
+
+/** ロケール非依存（UTF-16 コード単位順）の id 比較。詳細は `orderedLockTargets` の注記。 */
+const compareIds = (a: string, b: string): number => {
+    if (a < b) return -1;
+    return a > b ? 1 : 0;
+};
+
+/**
  * ロック対象の親 id を**重複排除して決定論的な順序に並べる**。
+ *
+ * 比較は **`localeCompare` ではなく素の `<` / `>`**（UTF-16 コード単位順）で行う。
+ * localeCompare の順序は ICU のロケール・照合設定に依存するため、環境が違う 2 つの
+ * プロセスが**別々の順序**を導き、順序固定という前提そのものが崩れうる。ここで欲しいのは
+ * 人間向けの読みやすさではなく「どこで実行しても同一」であることなので、
+ * コード単位順が正しい選択である。
  *
  * 順序を固定しないと相互デッドロックになる —— 旧親 A・新親 B を掴む再親子化と、
  * 旧親 B・新親 A を掴む再親子化が並行したとき、それぞれ片方を持って他方を待つ。
  * id 昇順は「どのトランザクションから見ても同じ」唯一の基準である。
  */
 const orderedLockTargets = (ids: readonly (string | null)[]): string[] =>
-    [...new Set(ids.filter((id): id is string => !!id))].sort();
+    [...new Set(ids.filter((id): id is string => !!id))].sort(compareIds);
 
 /**
  * 指定ノードを `FOR UPDATE` で掴む（`orderedLockTargets` の順に 1 行ずつ）。
@@ -101,6 +134,39 @@ const lockCategoryNodesForUpdate = async (
         if (row) locked.push(row);
     }
     return locked;
+};
+
+/**
+ * subtree（`rootPath` の子孫。自ノードは含まない）を `FOR UPDATE` で掴んでから読む。
+ *
+ * **非ロック読みのままにしてはならない。** 子孫の path 追随は read-modify-write で、
+ * READ COMMITTED では「読んだ後・書く前」に並行トランザクションが子孫を subtree の
+ * **外へ**動かせる。すると本トランザクションは、既に別の親に付け替わった行へ
+ * 「自分の subtree 配下」の path を書き戻し、`path` と `parentId` が矛盾する。
+ * 導出列である path はこの矛盾から自力復帰できない。
+ *
+ * 収束の根拠: 掴んだ後にもう一度数え直し、新しい id が出なくなるまで繰り返す。
+ * 子孫を動かす側は自ノード行を、子を足す側は親行を掴むので（`upsertCategory` の
+ * ロック集合）、一度全子孫を掴めば新規の出入りは起きない。
+ * それでも収束しない場合は無限ループでトランザクションを溶かすより明示的に失敗させる。
+ */
+const lockDescendantsForUpdate = async (
+    tx: CategoryTransactionClient,
+    rootPath: string
+): Promise<{ id: string; path: string }[]> => {
+    const locked = new Set<string>();
+    for (let attempt = 0; attempt < MAX_LOCK_CONVERGENCE_ATTEMPTS; attempt++) {
+        const descendants = await tx.category.findMany({
+            where: { path: { startsWith: `${rootPath}/` } },
+            select: { id: true, path: true },
+        });
+        const ids = orderedLockTargets(descendants.map((node) => node.id));
+        // 新しく掴むものが無い = 前回のロック以降に subtree が変わっていない
+        if (ids.every((id) => locked.has(id))) return descendants;
+        await lockCategoryNodesForUpdate(tx, ids);
+        for (const id of ids) locked.add(id);
+    }
+    throw new Error(CONCURRENT_TREE_EDIT_MESSAGE);
 };
 
 /**
@@ -140,6 +206,276 @@ const recomputeChildCounts = async (
 //   - category: Category object containing details of the category to be upserted.
 // Returns: Updated or newly created category details.
 
+/**
+ * 同名 / 同 URL の別カテゴリが既に居ないことを確かめる。
+ *
+ * 自分自身は `NOT id` で除外する（更新時に自分とぶつかって常に失敗するのを防ぐ）。
+ */
+const assertCategoryNameAndUrlAreFree = async (
+    category: CategoryUpsertInput
+): Promise<void> => {
+    const existingCategory = await db.category.findFirst({
+        where: {
+            AND: [
+                {
+                    OR: [{ name: category.name }, { url: category.url }],
+                },
+                {
+                    NOT: {
+                        id: category.id,
+                    },
+                },
+            ],
+        },
+    });
+    if (!existingCategory) return;
+
+    if (existingCategory.name === category.name) {
+        throw new Error("A category with the same name already exists");
+    }
+    if (existingCategory.url === category.url) {
+        throw new Error("A category with the same URL already exists");
+    }
+    // 到達不能（上の `OR` がどちらかの一致を保証する）。それでも黙って通さないのは、
+    // 照合順序の変更などで前提が崩れたときに重複を素通りさせないため。
+    // 元実装の「空メッセージで throw」をそのまま踏襲する。
+    throw new Error("");
+};
+
+/**
+ * 旧親・新親・**自ノード**を 1 つの昇順集合としてまとめて掴み、掴んだ状態で読み直す。
+ *
+ * 旧親と新親を同じ順序体系で掴む理由: 新親だけを先に掴んで旧親を
+ * `recomputeChildCounts` まで遅らせると、旧親 A・新親 B の付け替えと
+ * 旧親 B・新親 A の付け替えが交差してデッドロックする。
+ * 掴む行は `assertLeafCategoryNode`（upsertProduct の V-5）と同一であることが
+ * 直列化の条件 —— 別々の行をロックしたのでは「商品をリーフ L に紐づける」と
+ * 「L の子を作る」の競合を検出できない。
+ *
+ * **自ノードを含めるのが子孫追随の前提。** subtree を動かす本処理と、その subtree の
+ * 中の子孫を動かす並行 upsert は、親だけを掴んでいると一度も同じ行で出会わない
+ * （後者が掴むのは subtree 内の親行）。自ノードを掴んで初めて両者が直列化し、
+ * `lockDescendantsForUpdate` の収束も成立する。
+ *
+ * 掴んだ**後に読み直す**。ロック待ちの間に旧親が変わりうるため、待つ前に読んだ
+ * `current` は既に古い。読み直して対象が増えたら掴み直す。
+ */
+const acquireCategoryTreeLocks = async (
+    tx: CategoryTransactionClient,
+    categoryId: string,
+    nextParentId: string | null
+): Promise<{
+    current: CurrentCategoryNode | null;
+    lockedParents: LockedCategoryNode[];
+}> => {
+    let current: CurrentCategoryNode | null = null;
+    let lockedParents: LockedCategoryNode[] = [];
+    const lockedIds = new Set<string>();
+    for (let attempt = 0; attempt < MAX_LOCK_CONVERGENCE_ATTEMPTS; attempt++) {
+        // 更新の場合のみ現在の姿が取れる（create では null）
+        current = await tx.category.findUnique({
+            where: { id: categoryId },
+            select: {
+                id: true,
+                parentId: true,
+                path: true,
+                depth: true,
+                url: true,
+            },
+        });
+        const targets = orderedLockTargets([
+            categoryId,
+            current?.parentId ?? null,
+            nextParentId,
+        ]);
+        if (targets.every((id) => lockedIds.has(id))) {
+            return { current, lockedParents };
+        }
+        lockedParents = await lockCategoryNodesForUpdate(tx, targets);
+        for (const id of targets) lockedIds.add(id);
+    }
+    throw new Error(CONCURRENT_TREE_EDIT_MESSAGE);
+};
+
+/**
+ * 新しい親ノードを確定し、親側の不変条件（V-7c / V-7 / V-5 の裏側）を検証する。
+ *
+ * @returns 新親ノード。ルートへ置く場合は `null`。
+ */
+const resolveNextParentNode = async (
+    tx: CategoryTransactionClient,
+    params: {
+        lockedParents: readonly LockedCategoryNode[];
+        nextParentId: string | null;
+        current: CurrentCategoryNode | null;
+    }
+): Promise<LockedCategoryNode | null> => {
+    const { lockedParents, nextParentId, current } = params;
+    if (nextParentId === null) return null;
+
+    const parent =
+        lockedParents.find((node) => node.id === nextParentId) ?? null;
+    if (!parent) throw new Error("Parent category not found.");
+
+    // V-7c: 子孫への再親子化。判定は境界文字 `/` を含む前置一致
+    // （`isWithinSubtree`）で行う —— 素の startsWith だと
+    // `electronics/camera` に対して**兄弟の** `electronics/camera-bags` まで
+    // 子孫と誤判定し、正当な付け替えを拒否してしまう。
+    if (current && isWithinSubtree(parent.path, current.path)) {
+        throw new Error("A category cannot be moved under its own descendant.");
+    }
+
+    // V-7: 深さ上限
+    if (parent.depth + 1 > MAX_CATEGORY_DEPTH) {
+        throw new Error(`Category depth cannot exceed ${MAX_CATEGORY_DEPTH}.`);
+    }
+
+    // V-5 の裏側。リーフ強制は**双方向**でなければ成立しない ——
+    // upsertProduct 側（`assertLeafCategoryNode`）は「非リーフに商品を
+    // 紐づける」経路だけを塞ぐので、逆向きの「商品を持つノードの下に子を
+    // 作る」をここで塞がないと、順に実行するだけで不変条件が破れる。
+    // 上の FOR UPDATE と同じ行を掴んでいるため、並行実行も直列化される。
+    //
+    // 判定は**新たに P の子になる場合だけ**に限る。既に P の子である
+    // ノードの改名・並び替えまで弾くと、移行期に残っている
+    // 「商品を持つ非リーフ」（product.ts の V-5c 参照）配下の既存カテゴリが
+    // 編集不能になる。
+    const becomesNewChild =
+        current === null || current.parentId !== nextParentId;
+    if (!becomesNewChild) return parent;
+
+    const productsOnParent = await tx.product.count({
+        where: { categoryNodeId: parent.id },
+    });
+    if (productsOnParent > 0) {
+        throw new Error(
+            "A category with products cannot have child categories."
+        );
+    }
+    return parent;
+};
+
+/**
+ * V-7d: 子孫の追随先 path を算出する。
+ *
+ * **書き込む前に**上限を検証する —— `parent.depth + 1` は移動するノード自身しか
+ * 見ておらず、3 段の子を持つノードを深い親へ移すと子孫が上限を突破する。
+ *
+ * @returns 追随が必要な子孫の `{ id, path }`。移動していなければ空配列。
+ */
+const computeRebasedDescendants = async (
+    tx: CategoryTransactionClient,
+    movedFrom: string | null,
+    nextPath: string
+): Promise<{ id: string; path: string }[]> => {
+    if (movedFrom === null) return [];
+
+    const descendants = await lockDescendantsForUpdate(tx, movedFrom);
+    const rebased = descendants.map((descendant) => ({
+        id: descendant.id,
+        path: rebasePath(descendant.path, movedFrom, nextPath),
+    }));
+    for (const descendant of rebased) {
+        if (depthOfPath(descendant.path) > MAX_CATEGORY_DEPTH) {
+            throw new Error(
+                `Category depth cannot exceed ${MAX_CATEGORY_DEPTH}.`
+            );
+        }
+    }
+    return rebased;
+};
+
+/**
+ * rename 時に旧 slug の到達性を別名表へ退避する。
+ *
+ * 旧 slug の到達性は別名表だけが担保する。移行で温存された url（大文字・`_` 等）は
+ * フォーム側で正準形へ寄せられるため、**通常の運用で rename が起きる**。
+ */
+const recordSlugAliasOnRename = async (
+    tx: CategoryTransactionClient,
+    current: CurrentCategoryNode | null,
+    nextUrl: string,
+    categoryId: string
+): Promise<void> => {
+    if (!current || current.url === nextUrl) return;
+
+    await tx.categorySlugAlias.createMany({
+        data: [
+            {
+                entityType: CategoryAliasSource.CATEGORY,
+                oldSlug: current.url,
+                categoryId,
+            },
+        ],
+        // 旧 slug が既に**別ノードの**別名になっている場合は先着を残す。
+        // 奪うと、生きている外部リンクの行き先が黙って変わる。
+        skipDuplicates: true,
+    });
+};
+
+/**
+ * ツリーの書き換え本体（1 トランザクション内で完結させる部分）。
+ *
+ * 上限違反や循環で throw した場合に**部分適用された path を残さない**ことが、
+ * ここでの唯一の要件である。
+ */
+const applyCategoryTreeUpsert = async (
+    tx: CategoryTransactionClient,
+    safeCategory: CategoryUpsertInput,
+    nextParentId: string | null
+): Promise<Category> => {
+    const { current, lockedParents } = await acquireCategoryTreeLocks(
+        tx,
+        safeCategory.id,
+        nextParentId
+    );
+
+    const parent = await resolveNextParentNode(tx, {
+        lockedParents,
+        nextParentId,
+        current,
+    });
+
+    const path = parent
+        ? `${parent.path}/${safeCategory.url}`
+        : safeCategory.url;
+    const depth = parent ? parent.depth + 1 : 0;
+
+    const movedFrom =
+        current !== null && current.path !== path ? current.path : null;
+    const rebased = await computeRebasedDescendants(tx, movedFrom, path);
+
+    const treeColumns = { path, depth };
+    const categoryDetails = await tx.category.upsert({
+        where: {
+            id: safeCategory.id,
+        },
+        update: { ...safeCategory, ...treeColumns },
+        create: { ...safeCategory, ...treeColumns },
+    });
+
+    for (const descendant of rebased) {
+        await tx.category.update({
+            where: { id: descendant.id },
+            data: {
+                path: descendant.path,
+                depth: depthOfPath(descendant.path),
+            },
+        });
+    }
+
+    await recordSlugAliasOnRename(
+        tx,
+        current,
+        safeCategory.url,
+        safeCategory.id
+    );
+
+    await recomputeChildCounts(tx, [current?.parentId ?? null, nextParentId]);
+
+    return categoryDetails;
+};
+
 export const upsertCategory = async (category: CategoryUpsertInput) => {
     try {
         // 認証 + ADMIN 権限を集約検証 (auth-guards に統一)
@@ -149,31 +485,7 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
         if (!category) throw new Error("Please provide category data.");
 
         // Throw error if category with same name or URL already exists
-        const existingCategory = await db.category.findFirst({
-            where: {
-                AND: [
-                    {
-                        OR: [{ name: category.name }, { url: category.url }],
-                    },
-                    {
-                        NOT: {
-                            id: category.id,
-                        },
-                    },
-                ],
-            },
-        });
-
-        // Throw error if category with same name or URL already exists
-        if (existingCategory) {
-            let errorMessage = "";
-            if (existingCategory.name === category.name) {
-                errorMessage = "A category with the same name already exists";
-            } else if (existingCategory.url === category.url) {
-                errorMessage = "A category with the same URL already exists";
-            }
-            throw new Error(errorMessage);
-        }
+        await assertCategoryNameAndUrlAreFree(category);
 
         // 導出列は create / update のどちらへも渡さない（実行時に落とす）
         const safeCategory = stripDerivedTreeFields(category);
@@ -185,155 +497,10 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
             throw new Error("A category cannot be its own parent.");
         }
 
-        // ツリーの書き換えは 1 本のトランザクションで行う。上限違反や循環で throw した
-        // 場合に**部分適用された path を残さない**ことが、ここでの唯一の要件である。
-        return await db.$transaction(async (tx) => {
-            // 更新の場合のみ現在の姿が取れる（create では null）
-            const current = await tx.category.findUnique({
-                where: { id: safeCategory.id },
-                select: {
-                    id: true,
-                    parentId: true,
-                    path: true,
-                    depth: true,
-                    url: true,
-                },
-            });
-
-            // 旧親と新親を**同じ順序体系で**まとめて掴む。新親だけを先に掴んで旧親を
-            // `recomputeChildCounts` まで遅らせると、旧親 A・新親 B の付け替えと
-            // 旧親 B・新親 A の付け替えが交差してデッドロックする。
-            // 掴む行は `assertLeafCategoryNode`（upsertProduct の V-5）と同一である
-            // ことが直列化の条件 —— 別々の行をロックしたのでは「商品をリーフ L に
-            // 紐づける」と「L の子を作る」の競合を検出できない。
-            const lockedParents = await lockCategoryNodesForUpdate(
-                tx,
-                orderedLockTargets([current?.parentId ?? null, nextParentId])
-            );
-
-            let parent: LockedCategoryNode | null = null;
-            if (nextParentId !== null) {
-                parent =
-                    lockedParents.find((node) => node.id === nextParentId) ??
-                    null;
-                if (!parent) throw new Error("Parent category not found.");
-
-                // V-7c: 子孫への再親子化。判定は境界文字 `/` を含む前置一致
-                // （`isWithinSubtree`）で行う —— 素の startsWith だと
-                // `electronics/camera` に対して**兄弟の** `electronics/camera-bags` まで
-                // 子孫と誤判定し、正当な付け替えを拒否してしまう。
-                if (current && isWithinSubtree(parent.path, current.path)) {
-                    throw new Error(
-                        "A category cannot be moved under its own descendant."
-                    );
-                }
-
-                // V-7: 深さ上限
-                if (parent.depth + 1 > MAX_CATEGORY_DEPTH) {
-                    throw new Error(
-                        `Category depth cannot exceed ${MAX_CATEGORY_DEPTH}.`
-                    );
-                }
-
-                // V-5 の裏側。リーフ強制は**双方向**でなければ成立しない ——
-                // upsertProduct 側（`assertLeafCategoryNode`）は「非リーフに商品を
-                // 紐づける」経路だけを塞ぐので、逆向きの「商品を持つノードの下に子を
-                // 作る」をここで塞がないと、順に実行するだけで不変条件が破れる。
-                // 上の FOR UPDATE と同じ行を掴んでいるため、並行実行も直列化される。
-                //
-                // 判定は**新たに P の子になる場合だけ**に限る。既に P の子である
-                // ノードの改名・並び替えまで弾くと、移行期に残っている
-                // 「商品を持つ非リーフ」（product.ts の V-5c 参照）配下の既存カテゴリが
-                // 編集不能になる。
-                const becomesNewChild =
-                    current === null || current.parentId !== nextParentId;
-                if (becomesNewChild) {
-                    const productsOnParent = await tx.product.count({
-                        where: { categoryNodeId: parent.id },
-                    });
-                    if (productsOnParent > 0) {
-                        throw new Error(
-                            "A category with products cannot have child categories."
-                        );
-                    }
-                }
-            }
-
-            const path = parent
-                ? `${parent.path}/${safeCategory.url}`
-                : safeCategory.url;
-            const depth = parent ? parent.depth + 1 : 0;
-
-            // V-7d: 子孫の追随。**書き込む前に**上限を検証する —— `parent.depth + 1` は
-            // 移動するノード自身しか見ておらず、3 段の子を持つノードを深い親へ移すと
-            // 子孫が上限を突破する。
-            const movedFrom =
-                current !== null && current.path !== path ? current.path : null;
-            const rebased =
-                movedFrom === null
-                    ? []
-                    : (
-                          await tx.category.findMany({
-                              where: { path: { startsWith: `${movedFrom}/` } },
-                              select: { id: true, path: true },
-                          })
-                      ).map((descendant) => ({
-                          id: descendant.id,
-                          path: rebasePath(descendant.path, movedFrom, path),
-                      }));
-
-            for (const descendant of rebased) {
-                if (depthOfPath(descendant.path) > MAX_CATEGORY_DEPTH) {
-                    throw new Error(
-                        `Category depth cannot exceed ${MAX_CATEGORY_DEPTH}.`
-                    );
-                }
-            }
-
-            const treeColumns = { path, depth };
-            const categoryDetails = await tx.category.upsert({
-                where: {
-                    id: safeCategory.id,
-                },
-                update: { ...safeCategory, ...treeColumns },
-                create: { ...safeCategory, ...treeColumns },
-            });
-
-            for (const descendant of rebased) {
-                await tx.category.update({
-                    where: { id: descendant.id },
-                    data: {
-                        path: descendant.path,
-                        depth: depthOfPath(descendant.path),
-                    },
-                });
-            }
-
-            // 旧 slug の到達性は別名表だけが担保する。移行で温存された url
-            // （大文字・`_` 等）はフォーム側で正準形へ寄せられるため、
-            // **通常の運用で rename が起きる**。
-            if (current && current.url !== safeCategory.url) {
-                await tx.categorySlugAlias.createMany({
-                    data: [
-                        {
-                            entityType: CategoryAliasSource.CATEGORY,
-                            oldSlug: current.url,
-                            categoryId: safeCategory.id,
-                        },
-                    ],
-                    // 旧 slug が既に**別ノードの**別名になっている場合は先着を残す。
-                    // 奪うと、生きている外部リンクの行き先が黙って変わる。
-                    skipDuplicates: true,
-                });
-            }
-
-            await recomputeChildCounts(tx, [
-                current?.parentId ?? null,
-                nextParentId,
-            ]);
-
-            return categoryDetails;
-        });
+        // ツリーの書き換えは 1 本のトランザクションで行う。
+        return await db.$transaction((tx) =>
+            applyCategoryTreeUpsert(tx, safeCategory, nextParentId)
+        );
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error(
