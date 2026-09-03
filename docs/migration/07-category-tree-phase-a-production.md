@@ -53,6 +53,17 @@ transaction モード経由では失敗する。`DIRECT_URL`（Neon の直結エ
 psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f <各ステップのファイル>
 ```
 
+### Step 0 — 移行前ベースラインの記録（ロールバック判定に使う）
+
+**最初の DDL より前に**実行し、件数を控えておくこと。Step 5 は `SubCategory` 1 行につき
+`Category` 行を 1 行増やすため、ロールバックで「複製行を消し切ったか」を判定できるのは
+**この移行前の件数**だけである。Step 6 が測るのは `Product` の件数であって
+`Category` の件数ではないので、ここで取らないとロールバック時に比較対象を失う。
+
+```sql
+SELECT count(*) AS category_rows_baseline FROM "Category";
+```
+
 ### Step 1 — 加算のみ（1 トランザクション・一瞬）
 
 ```sql
@@ -202,7 +213,8 @@ DROP TABLE  IF EXISTS "CategorySlugAlias";
 -- Step 5 が投入した SubCategory 複製行を先に除去する（列を落とすと識別できなくなる）
 DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;
 
--- 件数が移行前の値（Step 6 で控えた root カテゴリ数）に戻ったことを確認してから次へ進む
+-- 件数が Step 0 で控えた移行前のベースライン（category_rows_baseline）に
+-- 戻ったことを確認してから次へ進む
 SELECT count(*) AS category_rows FROM "Category";
 
 ALTER TABLE "Category" DROP CONSTRAINT IF EXISTS "Category_parentId_fkey";
