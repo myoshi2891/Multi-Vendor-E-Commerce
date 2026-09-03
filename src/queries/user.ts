@@ -7,7 +7,6 @@ import { serializeCart } from "@/lib/serialize-cart";
 import { retryOnSerializationFailure } from "@/lib/db-retry";
 import { CartItem, Country as CountryDB, Prisma } from "@prisma/client";
 import { CartProductType, SerializedCartType, Country } from "@/lib/types";
-import { currentUser } from "@clerk/nextjs/server";
 import { requireUser } from "@/lib/auth-guards";
 import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
@@ -249,13 +248,11 @@ const buildValidatedCartItem = (
  * @returns {boolean} - Returns true if the follow status was updated successfully, false otherwise.
  */
 export const followStore = async (storeId: string): Promise<boolean> => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
+
     try {
-        // Get the current authenticated user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
         // Check if the store exists
         const store = await db.store.findUnique({ where: { id: storeId } });
         if (!store) throw new Error("Store not found."); // Store does not exist, cannot follow or unfollow
@@ -326,13 +323,11 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 export const saveUserCart = async (
     cartProducts: CartProductType[]
 ): Promise<boolean> => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
+
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
         const userId = user.id;
 
         // Fetch product, variant, and size data from the database for validation
@@ -485,13 +480,11 @@ export const saveUserCart = async (
  */
 
 export const getUserShippingAddresses = async () => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
+
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
         // Fetch shipping addresses from the database
         const shippingAddresses = await db.shippingAddress.findMany({
             where: {
@@ -527,13 +520,11 @@ export const getUserShippingAddresses = async () => {
  */
 
 export const upsertShippingAddress = async (address: ShippingAddress) => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
+
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
         // Ensure address data is provide
         if (!address) throw new Error("Please provide shipping address data.");
 
@@ -618,11 +609,11 @@ export const placeOrder = async (
     shippingAddress: ShippingAddress,
     cartId: string
 ): Promise<{ orderId: string }> => {
-    try {
-        // Ensure the user is authenticated
-        const user = await currentUser();
-        if (!user) throw new Error("Unauthenticated.");
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
 
+    try {
         const userId = user.id;
 
         // Fetch user's cart will all items（userId で所有権検証）
@@ -986,11 +977,11 @@ export const placeOrder = async (
 };
 
 export const emptyUserCart = async () => {
-    try {
-        // Ensure the user is authenticated
-        const user = await currentUser();
-        if (!user) throw new Error("Unauthenticated.");
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
 
+    try {
         const userId = user.id;
 
         // placeOrder が注文トランザクション内でカートを消費済みの場合があるため、
@@ -1124,11 +1115,11 @@ export const addToWishlist = async (
     variantId: string,
     sizeId?: string
 ) => {
-    try {
-        // Ensure the user is authenticated
-        const user = await currentUser();
-        if (!user) throw new Error("Unauthenticated.");
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
 
+    try {
         const userId = user.id;
         // Create the wishlist item
         const existingWishlistItem = await db.wishlist.findFirst({

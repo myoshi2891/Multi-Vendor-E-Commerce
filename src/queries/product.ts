@@ -134,9 +134,11 @@ const categoryAssignmentChanged = (
         subCategoryId: string;
     } | null
 ): boolean =>
-    existingProduct === null ||
-    existingProduct.categoryId !== product.categoryId ||
-    existingProduct.subCategoryId !== product.subCategoryId;
+    // `existingProduct === null` を別条件で書かずに optional chaining で畳む。
+    // null のとき両辺は undefined になり、string との `!==` が必ず真になるため
+    // 「既存が無い = 変更あり」という元の意味はそのまま保たれる。
+    existingProduct?.categoryId !== product.categoryId ||
+    existingProduct?.subCategoryId !== product.subCategoryId;
 
 // Cookies
 import { cookies } from "next/headers";

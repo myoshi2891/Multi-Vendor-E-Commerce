@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireAdmin, requireSeller, requireUser } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
 import {
     AdminOrderFilterSchema,
@@ -10,7 +10,6 @@ import {
     type AdminOrderFilter,
     type TrackOrderInput,
 } from "@/lib/schemas";
-import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -46,11 +45,7 @@ const restockOrderItems = async (
  */
 
 export const getOrder = async (orderId: string) => {
-    // Retrieve the current user
-    const user = await currentUser();
-
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+    const user = await requireUser();
 
     // Get order details with groups, product items, and ordered by total price
     const order = await db.order.findUnique({
@@ -162,15 +157,7 @@ export const updateOrderGroupStatus = async (
     groupId: string,
     status: OrderStatus
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
-
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // Ensure user has seller privileges
-    if (user.privateMetadata.role !== "SELLER")
-        throw new Error("Only sellers can perform this action.");
+    const user = await requireSeller();
 
     // Ensure the user is a seller of the specified store
     const store = await db.store.findUnique({
@@ -227,15 +214,7 @@ export const updateOrderItemStatus = async (
     orderItemId: string,
     status: ProductStatus
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
-
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // Ensure user has seller privileges
-    if (user.privateMetadata.role !== "SELLER")
-        throw new Error("Only sellers can perform this action.");
+    const user = await requireSeller();
 
     // Ensure the user is a seller of the specified store
     const store = await db.store.findUnique({

@@ -285,11 +285,13 @@ describe("upsertReview の評価集計（実 DB）", () => {
         // Arrange
         (currentUser as unknown as jest.Mock).mockResolvedValue(null);
 
-        // Act & Assert: 'Unauthorized.' は try の内側で throw され catch にラップされる
-        // （`Error updating review: Unauthorized.`）ため、部分一致で見る。
+        // Act & Assert: 認可ガードは try の**外**にあるので、catch の
+        // `Error updating review: <原文>` に包まれず素の文言がそのまま届く。
+        // 2026-09-03 の auth-guards 移行以前は `Error updating review: Unauthorized.`
+        // に化けており、呼び出し側が未認証と DB 障害を区別できなかった。
         await expect(
             upsertReview(product.id, buildReview({ rating: 5 }))
-        ).rejects.toThrow(/Unauthorized/);
+        ).rejects.toThrow("Unauthenticated.");
 
         // Assert: 副作用なし
         expect(await db.review.count()).toBe(0);

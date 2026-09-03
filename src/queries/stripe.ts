@@ -6,7 +6,7 @@ import {
     SETTLED_PAYMENT_STATUSES,
 } from "@/lib/payment-status";
 import { hasOrderSettledAfterConflict } from "@/lib/order-settlement";
-import { currentUser } from "@clerk/nextjs/server";
+import { requireUser } from "@/lib/auth-guards";
 import { PaymentStatus, Prisma } from "@prisma/client";
 import Stripe from "stripe";
 
@@ -73,12 +73,11 @@ const toStripeAmount = (total: Prisma.Decimal): number =>
  */
 
 export const createStripePaymentIntent = async (orderId: string) => {
-    try {
-        // Get current user
-        const user = await currentUser();
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
 
+    try {
         // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
         const order = await db.order.findUnique({
             where: {
@@ -206,12 +205,11 @@ export const createStripePayment = async (
     orderId: string,
     paymentIntentId: string
 ) => {
-    try {
-        // Get current user
-        const user = await currentUser();
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
 
+    try {
         // Fetch the order to get total price（IDOR 防止のため userId で絞り込み）
         const order = await db.order.findUnique({
             where: {
