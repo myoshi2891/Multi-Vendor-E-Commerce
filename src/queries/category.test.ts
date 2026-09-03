@@ -35,6 +35,9 @@ jest.mock("@/lib/db", () => ({
         categorySlugAlias: {
             createMany: jest.fn(),
         },
+        product: {
+            count: jest.fn(),
+        },
         store: {
             findUnique: jest.fn(),
         },
@@ -62,6 +65,8 @@ const mockCategoryTx = () => {
     mockDb.category.findUnique.mockResolvedValue(null);
     mockDb.category.findMany.mockResolvedValue([]);
     mockDb.category.count.mockResolvedValue(0);
+    // 既定は「親に商品が無い」= 子を作ってよい状態（V-5 の裏側）
+    mockDb.product.count.mockResolvedValue(0);
     mockDb.categorySlugAlias.createMany.mockResolvedValue({ count: 0 });
 };
 
@@ -480,6 +485,53 @@ describe("upsertCategory", () => {
                 )
             ).rejects.toThrow(/depth/i);
             expect(mockDb.category.update).not.toHaveBeenCalled();
+        });
+
+        it("V-5 の裏側: 商品を持つノードの下に子カテゴリを作らせない", async () => {
+            // Arrange —— 親はリーフだが商品が紐づいている
+            mockLockedParent({ id: "camera", path: "electronics/camera", depth: 1 });
+            mockDb.product.count.mockResolvedValue(3);
+
+            // Act / Assert —— 拒否され、書き込みは 1 行も起きない
+            await expect(
+                upsertCategory(
+                    createMockCategory({
+                        id: "lens",
+                        url: "lens",
+                        parentId: "camera",
+                    } as never) as never
+                )
+            ).rejects.toThrow(/products cannot have child categories/i);
+            expect(mockDb.product.count).toHaveBeenCalledWith({
+                where: { categoryNodeId: "camera" },
+            });
+            expect(mockDb.category.upsert).not.toHaveBeenCalled();
+        });
+
+        it("既に同じ親の下にいるノードの編集は商品件数で弾かない", async () => {
+            // Arrange —— 移行期に残る「商品を持つ非リーフ」配下の既存子を改名する
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "lens",
+                parentId: "camera",
+                path: "electronics/camera/lens",
+                depth: 2,
+                url: "lens",
+            });
+            mockLockedParent({ id: "camera", path: "electronics/camera", depth: 1 });
+            mockDb.product.count.mockResolvedValue(3);
+
+            // Act
+            await upsertCategory(
+                createMockCategory({
+                    id: "lens",
+                    url: "lens",
+                    parentId: "camera",
+                } as never) as never
+            );
+
+            // Assert —— 親が変わらない編集では件数を問い合わせすらしない
+            expect(mockDb.product.count).not.toHaveBeenCalled();
+            expect(mockDb.category.upsert).toHaveBeenCalled();
         });
 
         it("url の変更時に旧 slug を CategorySlugAlias へ残す", async () => {

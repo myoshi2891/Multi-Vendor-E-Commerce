@@ -185,6 +185,29 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
                         `Category depth cannot exceed ${MAX_CATEGORY_DEPTH}.`
                     );
                 }
+
+                // V-5 の裏側。リーフ強制は**双方向**でなければ成立しない ——
+                // upsertProduct 側（`assertLeafCategoryNode`）は「非リーフに商品を
+                // 紐づける」経路だけを塞ぐので、逆向きの「商品を持つノードの下に子を
+                // 作る」をここで塞がないと、順に実行するだけで不変条件が破れる。
+                // 上の FOR UPDATE と同じ行を掴んでいるため、並行実行も直列化される。
+                //
+                // 判定は**新たに P の子になる場合だけ**に限る。既に P の子である
+                // ノードの改名・並び替えまで弾くと、移行期に残っている
+                // 「商品を持つ非リーフ」（product.ts の V-5c 参照）配下の既存カテゴリが
+                // 編集不能になる。
+                const becomesNewChild =
+                    current === null || current.parentId !== nextParentId;
+                if (becomesNewChild) {
+                    const productsOnParent = await tx.product.count({
+                        where: { categoryNodeId: parent.id },
+                    });
+                    if (productsOnParent > 0) {
+                        throw new Error(
+                            "A category with products cannot have child categories."
+                        );
+                    }
+                }
             }
 
             const path = parent
