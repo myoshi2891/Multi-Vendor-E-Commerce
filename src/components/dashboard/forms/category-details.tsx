@@ -99,15 +99,31 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data, categories }) => {
     // Loading status based on form submission
     const isLoading = form.formState.isSubmitting;
 
+    // 編集対象を根とするサブツリーの高さ（自分だけなら 0）。
+    //
+    // **移動するのは 1 ノードではなくサブツリー全体である。** 深さ判定に
+    // 自分の高さを含めないと、「自分は入るが子孫が上限を超える」親を UI が
+    // 提示してしまい、保存して初めて upsertCategory の V-7（rebase 後の全子孫を
+    // MAX_CATEGORY_DEPTH で検証する経路）に弾かれる。
+    const subtreeHeight = data
+        ? (categories ?? []).reduce(
+              (max, node) =>
+                  isWithinSubtree(node.path, data.path)
+                      ? Math.max(max, node.depth - data.depth)
+                      : max,
+              0
+          )
+        : 0;
+
     // 親に選べないノードを落とす。
     // - 自分自身と自分の子孫（循環になる。サーバー側も V-7b / V-7c で拒否する）
-    // - depth が上限のノード（その下は上限を超える）
+    // - 自分のサブツリーを載せると上限を超えるノード
     // **UI の絞り込みは表示上の親切であって強制ではない** —— 本体の検証は
     // upsertCategory 側にある。
     const parentOptions = (categories ?? []).filter((candidate) => {
         if (data && candidate.id === data.id) return false;
         if (data && isWithinSubtree(candidate.path, data.path)) return false;
-        return candidate.depth < MAX_CATEGORY_DEPTH;
+        return candidate.depth + 1 + subtreeHeight <= MAX_CATEGORY_DEPTH;
     });
 
     // Reset form values when data changes

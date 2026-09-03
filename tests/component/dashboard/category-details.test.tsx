@@ -257,6 +257,58 @@ describe("CategoryDetails", () => {
             ]);
         });
 
+        it("境界値: 自分の子孫が上限を超える親は外す（移動するのはサブツリー全体）", () => {
+            // Arrange —— 編集対象 x は高さ 2 のサブツリー（x > y > z）を抱えている。
+            // MAX_CATEGORY_DEPTH = 4 なので、x を置ける最深の親は depth 1
+            //（1 + 1 + 2 = 4）。depth 2 の下に置くと z が depth 5 になる。
+            const x = category({ id: "x", name: "X", url: "x", path: "x" });
+            const y = category({
+                id: "y",
+                name: "Y",
+                url: "y",
+                parentId: "x",
+                path: "x/y",
+                depth: 1,
+            });
+            const z = category({
+                id: "z",
+                name: "Z",
+                url: "z",
+                parentId: "y",
+                path: "x/y/z",
+                depth: 2,
+            });
+            const shallow = category({
+                id: "shallow",
+                name: "Shallow",
+                url: "shallow",
+                path: "a/b",
+                depth: 1,
+            });
+            const tooDeepForSubtree = category({
+                id: "deep",
+                name: "TooDeepForSubtree",
+                url: "too-deep-for-subtree",
+                path: "a/b/c",
+                depth: 2,
+            });
+
+            // Act
+            render(
+                <CategoryDetails
+                    data={x}
+                    categories={[x, y, z, shallow, tooDeepForSubtree]}
+                />
+            );
+
+            // Assert —— 自ノードだけ見れば depth 2 も合法だが、子孫が溢れるので外す。
+            // 外さないと保存して初めて upsertCategory の V-7 に弾かれる。
+            expect(parentOptionLabels()).toEqual([
+                "Root (no parent)",
+                "Shallow",
+            ]);
+        });
+
         it("正常系: 親を選ぶと parentId が、Root を選ぶと null が入る", async () => {
             // Arrange
             const parent = category({
