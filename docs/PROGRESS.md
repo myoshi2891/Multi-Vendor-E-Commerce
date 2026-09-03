@@ -10,8 +10,8 @@
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2121 passed / 2124 total（3 skipped tests）/ 194 スイート（193 passed + 1 skipped suite）** — 2026-09-03 実測（plan 068 Step 1–9 で **+49 / スイート不変**: ツリー編集の不変条件・リーフ強制・`parentId`/`sortOrder` スキーマ・slug 正準化・admin 表のツリー表示）。以下は 2072 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応 第 2 弾で **+1 / スイート不変**: `src/lib/category-tree.test.ts` に `resolveCategoryNode` の DB 障害再送出ガードを追加。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 2071 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応で **+6 / スイート +1**: `tests/component/store/category-link.test.tsx` 新設 +3、`browse/page.test.tsx` +2、`parse-models.test.ts` +1。SSOT は `docs/testing/QA_HANDOFF.md`）。以下は 2062 時点までの記録: 2026-09-02 実測（plan 067 Phase B で `src/lib/category-tree.test.ts` 新設 **+1 スイート**。直前は 2032 passed / 192 スイート）。以下は 2032 時点までの記録: 2026-09-02 実測（`scripts/erd/parse-models.test.ts` 新設で **+4 / スイート +1**。直前は 2028 passed / 2031 total / 191 スイート）。以下は 2028 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `EACH_PATTERN` が `schema.test.each(` のメンバー呼び出しをテーブル展開として計上していた件の回帰ガード。直前は 2027 passed / 2030 total）。以下は 2027 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `BLOCK_PATTERN` が `.test(` のメンバー呼び出しをテスト宣言として計上していた件の回帰ガード。直前は 2026 passed / 2029 total）。以下は 2026 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `upsertCategory` のツリー管理列を実行時に落とすことの回帰ガード。直前は 2025 passed / 2028 total）。以下は 2025 時点までの記録: 2026-08-31 実測（plan 066 でシードの宣言データを単一の木へ統合したのに伴う **−1 / スイート不変**。`SEED_SUB_CATEGORIES` 前提のテストを木の不変条件テストへ置き換えた）。直前は 2026 passed / 2029 total・2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **135テスト / 16スイート** — 2026-09-03 実測 135/135 pass（plan 068 で `tests/integration/category-tree-write.test.ts` を新設し **+4 / スイート +1**）。以下は 131 時点までの記録: 2026-09-02 実測 131/131 pass（レビュー指摘対応で **+2 / スイート不変**: `category-tree-resync.test.ts` に `Product.categoryNodeId` の NULL 埋め / stale 追随を追加。区間の `UPDATE "Product"` は 実行されるだけで検算されていなかった。併せて `setup/migration-sql.ts` の `runStatements` を `$transaction` で包んだ。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 129 時点までの記録: 129/129 pass（plan 067 の残作業で `product-browse.test.ts` に **+4** / `product-update.test.ts` に **+2**・スイート不変。直前は 123 / 15 スイート — plan 067 で `category-tree-resync.test.ts` を新設し **+6 / スイート +1**。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 117 時点までの記録: **117テスト / 14スイート**（… + `product-browse` **16** + `category-tree-migration` **9**）— 2026-08-31 実測 117/117 pass（plan 066 / V-3・V-4 で `category-tree-migration.test.ts` を新設し **+9 / スイート +1**）。直前は 108 テスト / 13 スイート・2026-08-24 実測（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jestユニットテスト | **2129 passed / 2132 total（3 skipped tests）/ 194 スイート（193 passed + 1 skipped suite）** — 2026-09-03 実測（レビュー指摘対応で **+4 / スイート不変**: `category.test.ts` +2〔`upsertCategory` の自ノード / 子孫ロック〕、`parse-models.test.ts` +2〔行コメント中の `@@index(` で後続フィールドを落とさない〕。**差 8 のうち 4 は既存の未同期分**で、dashboard 再生成と併せて是正した。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 2121 時点までの記録: 2026-09-03 実測（plan 068 Step 1–9 で **+49 / スイート不変**: ツリー編集の不変条件・リーフ強制・`parentId`/`sortOrder` スキーマ・slug 正準化・admin 表のツリー表示）。以下は 2072 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応 第 2 弾で **+1 / スイート不変**: `src/lib/category-tree.test.ts` に `resolveCategoryNode` の DB 障害再送出ガードを追加。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 2071 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応で **+6 / スイート +1**: `tests/component/store/category-link.test.tsx` 新設 +3、`browse/page.test.tsx` +2、`parse-models.test.ts` +1。SSOT は `docs/testing/QA_HANDOFF.md`）。以下は 2062 時点までの記録: 2026-09-02 実測（plan 067 Phase B で `src/lib/category-tree.test.ts` 新設 **+1 スイート**。直前は 2032 passed / 192 スイート）。以下は 2032 時点までの記録: 2026-09-02 実測（`scripts/erd/parse-models.test.ts` 新設で **+4 / スイート +1**。直前は 2028 passed / 2031 total / 191 スイート）。以下は 2028 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `EACH_PATTERN` が `schema.test.each(` のメンバー呼び出しをテーブル展開として計上していた件の回帰ガード。直前は 2027 passed / 2030 total）。以下は 2027 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `BLOCK_PATTERN` が `.test(` のメンバー呼び出しをテスト宣言として計上していた件の回帰ガード。直前は 2026 passed / 2029 total）。以下は 2026 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `upsertCategory` のツリー管理列を実行時に落とすことの回帰ガード。直前は 2025 passed / 2028 total）。以下は 2025 時点までの記録: 2026-08-31 実測（plan 066 でシードの宣言データを単一の木へ統合したのに伴う **−1 / スイート不変**。`SEED_SUB_CATEGORIES` 前提のテストを木の不変条件テストへ置き換えた）。直前は 2026 passed / 2029 total・2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | **136テスト / 16スイート** — 2026-09-03 実測 136/136 pass（レビュー指摘対応で `category-tree-write.test.ts` に **+1 / スイート不変**: subtree 移動と子孫移動の競合で `path` / `parentId` が矛盾しないこと。併せて同ファイルの固定 `setTimeout(300)` を `pg_stat_activity` の待ちポーリングへ置換。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 135 時点までの記録: 2026-09-03 実測 135/135 pass（plan 068 で `tests/integration/category-tree-write.test.ts` を新設し **+4 / スイート +1**）。以下は 131 時点までの記録: 2026-09-02 実測 131/131 pass（レビュー指摘対応で **+2 / スイート不変**: `category-tree-resync.test.ts` に `Product.categoryNodeId` の NULL 埋め / stale 追随を追加。区間の `UPDATE "Product"` は 実行されるだけで検算されていなかった。併せて `setup/migration-sql.ts` の `runStatements` を `$transaction` で包んだ。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 129 時点までの記録: 129/129 pass（plan 067 の残作業で `product-browse.test.ts` に **+4** / `product-update.test.ts` に **+2**・スイート不変。直前は 123 / 15 スイート — plan 067 で `category-tree-resync.test.ts` を新設し **+6 / スイート +1**。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 117 時点までの記録: **117テスト / 14スイート**（… + `product-browse` **16** + `category-tree-migration` **9**）— 2026-08-31 実測 117/117 pass（plan 066 / V-3・V-4 で `category-tree-migration.test.ts` を新設し **+9 / スイート +1**）。直前は 108 テスト / 13 スイート・2026-08-24 実測（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -30,6 +30,40 @@
 | 日付 | 対象 | before | after | 記録 |
 |------|------|--------|-------|------|
 | 2026-08-09 | `PaymentDetails.amount`（Stripe セント→ドル・CORRECTNESS-05 残件） | 補正対象 **0 件**（`PaymentDetails` 総行数 0 / `Order` 18 行） | 0 件（no-op で COMMIT） | [plan 063](../plans/063-backfill-stripe-payment-amount.md) 実行記録。検証 `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`。手順とゲート設計は [`scripts/backfill/README.md`](../scripts/backfill/README.md) |
+
+### 規約違反の是正記録（spec-sync-check Layer 2・2026-09-03）
+
+`.claude/skills/spec-sync-check` の観点 D で検出した既存違反 **SV-1〜SV-3 をすべて是正**。
+ベースラインは
+[`spec-sync-check/SKILL.md`](../.claude/skills/spec-sync-check/SKILL.md) に更新済み。
+
+| # | 違反 | 是正前 | 是正後 | 対応 |
+|---|------|--------|--------|------|
+| SV-1 | tech.md「認可ガード」—— `src/queries/` のインライン認可展開 | **30** | **6**（全て承認済み例外） | `order.ts` 5 / `store.ts` 9 / `user.ts` 7 / `stripe.ts` 2 / `review.ts` 1 を `requireUser` / `requireSeller` / `requireAdmin` へ移行。残る `profile.ts` 5 と `paypal.ts` 1 は[tech.md の承認済み例外](../.claude/steering/tech.md#認可ガードの承認済み例外)として登録 |
+| SV-2 | tech.md「ログ禁止」—— `src/` 配下の `console.log` | 2 | **0** | `src/migration-scripts/` を削除 |
+| SV-3 | structure.md「`src/queries/` 以外でサーバーアクションを定義しない」 | 1 | **0** | 同上 |
+
+#### 移行で発見した実バグ 2 件
+
+認可チェックを**外側の `try` の中**に置いていたため、`catch` が認可エラーを汎用メッセージで
+**上書き**しており、呼び出し側が「未認証」と「DB 障害」を区別できなかった。
+tech.md の「認可ガードは `try/catch` の外に置く」が防ごうとしていた事象そのもの。
+
+| 関数 | 未認証時の実際の応答（修正前） | 修正後 |
+|---|---|---|
+| `user.ts` の `followStore` | `"Error following store"` | `"Unauthenticated."` |
+| `review.ts` の `upsertReview` | `"Error updating review: Unauthorized."` | `"Unauthenticated."` |
+
+> **どちらもテストが誤った挙動を追認していた**（`user.test.ts` / `review.test.ts` /
+> `tests/integration/review-aggregation.test.ts`）。テストは「現状の固定」であって
+> 「正しさの証明」ではないことの実例で、grep ベースの規約検査だけが発見経路だった。
+
+#### `src/migration-scripts/` 削除の根拠
+
+import 参照 0 件 / `package.json` に実行手段なし / `seedCountries` は
+`prisma/seed/seeders/base-seeder.ts` に代替済み / `updateVariantImage` は 2025-12 の
+一度きりの backfill。`jest.config.js` と `sonar-project.properties` の除外設定も
+（tech.md「両者を一致させること」の規約どおり）同時に削除した。
 
 ---
 
@@ -4315,6 +4349,7 @@ plan 067（カテゴリツリー Phase B）に着手する前に作業ツリー�
 > **注記**: plan 067 本文が挙げる統合テストのコマンド `bun run test -- tests/integration/...` は**動作しない**。
 > `jest.config.js` の `testPathIgnorePatterns` が `/tests/integration/` を除外しているため、
 > 正しくは `bun run test:integration`（`jest.integration.config.js` 経由）である。
+> （2026-09-03: plan 066 / 067 / 068 本文のコマンド表を `test:integration` へ修正済み。）
 
 #### テスト統計（更新）
 
@@ -4519,4 +4554,62 @@ Playwright を回さないので、この spec は赤くならないまま「3 �
 | Jest Integration | 131 / 15 スイート | **135 / 16 スイート** |
 | Playwright E2E | 65 tests/browser / 29 files | **66 tests/browser / 30 files**（chromium のみ緑を実測） |
 | lcov カバレッジ | Statements 70.51% (2026-08-23) | **72.45% (6395/8826)** / Branches 52.06% / Functions 60.73% / Lines 71.81%（2026-09-03） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud PR#176 の指摘解消 + Coverage on New Code のギャップ埋め (2026-09-03)
+
+#### 概要
+
+SonarCloud PR#176（dev → main）が挙げた Issue 8 件を解消し、あわせて Coverage on New Code
+50.9% の主因だった plan 068 の UI 面（0% カバレッジの巨大フォーム 2 本ほか）をコンポーネント
+テストで埋めた。
+
+#### Sonar Issue の対応（作業ツリー・未コミット）
+
+| ファイル | 指摘 | 対応 |
+|------|---------|---------|
+| `src/queries/category.ts` | sort に比較関数が無い（Reliability High） | `compareIds`（UTF-16 コード単位順）を追加。**`localeCompare` は採用しない** —— ロック取得順の固定が目的であり、ICU のロケール設定に依存すると環境ごとに順序が割れて前提が崩れる |
+| `src/lib/category-path.ts` | 正規表現の super-linear バックトラッキング | `/^-+\|-+$/` → `/^-\|-$/`。直前の `[^a-z0-9]+` がハイフンの連続を 1 文字へ畳んでいるため出力は同一 |
+| `src/app/(store)/browse/page.tsx` | 認知的複雑度 45 → 15 | `toBrowseSearchParams` / `resolveCanonicalCategoryHref` / `toArrayParam` へ抽出。`permanentRedirect` は throw する副作用なので判定と分離して page 本体に残した |
+| `src/queries/category.ts` | 認知的複雑度 24 → 15 | `$transaction` のコールバック本体を `applyCategoryTreeUpsert` へ移し、ロック取得・親検証・子孫 rebase・別名記録をヘルパーへ分割 |
+| `src/app/dashboard/admin/categories/columns.tsx` | `.at(-2)` を使う | `segments.at(-2) ?? null` |
+| `src/components/dashboard/forms/product-details.tsx` | 未使用 import | `Textarea` を削除 |
+| `src/components/store/layout/footer/links.tsx` | props を read-only に | `Readonly<{ ... }>` |
+| `src/queries/product.ts` | optional chain を使う | `existingProduct?.categoryId !== ...` |
+
+#### 追加したテスト
+
+| ファイル | 件数 | 固定した内容 | コミット |
+|------|---------|------|---------|
+| `tests/component/store/footer-links.test.tsx` | 3 | `?category=<正準slug>` の href 形式（旧 `?subCategory=` へ戻ると 308 を 1 ホップ踏む） | `d2b6cbeb` |
+| `tests/component/store/footer.test.tsx` | 4 | 子ノード優先・無ければルートで埋めるフォールバックと 7 件上限 | `9efb08be` |
+| `tests/component/store/product-filters.test.tsx` | 3 | `storeUrl` の両クエリ伝播（落ちると店舗ページで全店舗のカテゴリが出る） | `0be7c434` |
+| `tests/component/store/category-link.test.tsx` | +3 | `?category=` 張り替えと旧 `subCategory` 除去、同一 slug 再クリックの早期リターン | `03812ca3` |
+| `tests/component/dashboard/category-details.test.tsx` | 13 | 親候補の絞り込み（自分自身 / 子孫 / depth 上限）、旧 url の正準化、送信 3 分岐 | `46abe694` |
+| `tests/component/dashboard/product-details.test.tsx` | 9 | `isProductAssignableCategory` の 2 条件、リーフからのルート `categoryId` 導出、送信 | `3fef0e45` |
+
+jsdom で動かないウィジェット（Jodit / react-tag-input / MultiSelect / DateTimePicker /
+Radix Select）は値を素通しする最小スタブへ差し替えた。**検証対象はフォームの配線であって
+ウィジェットではない**ため、実体を動かす必要がない。
+
+#### カバレッジの変化
+
+| 対象 | 変更前 | 変更後 |
+|------|--------|--------|
+| PR 新コードの未カバー行 | 141 | **38** |
+| `product-details.tsx` | 0% | **81.3%** |
+| `category-details.tsx` | 0% | **96.2%** |
+| `footer.tsx` / `links.tsx` / `filters.tsx` | 0〜94% | **100%** |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2129 passed / 2132 total | **2164 passed / 2167 total**（2026-09-03 実測） |
+| スイート数 | 194 | **199** |
+| Jest スナップショット | 127 | **127**（不変） |
+| テストファイル総数 | 240 | **245** |
+| lcov カバレッジ | Statements 72.45% / Branches 52.06% | **Statements 74.94%** (6617/8829) / **Branches 60.59%** (3183/5253) / Functions 64.36% / Lines 74.43% |
 | 型エラー | 0 件 | **0 件** |

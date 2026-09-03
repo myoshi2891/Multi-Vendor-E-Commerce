@@ -12,8 +12,17 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2121 passed / 2124 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
-  Integration is 135 tests across 16 suites, as of 2026-09-03. Plan 068 (category-tree admin
+- 2164 passed / 2167 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+  SonarCloud PR#176 flagged a Coverage-on-New-Code gap on the plan 068 UI surface; +35
+  component tests across +5 suites closed it. New files live under `tests/component/store/`
+  (`footer-links`, `footer`, `product-filters`) and `tests/component/dashboard/`
+  (`category-details`, `product-details`), and `category-link.test.tsx` gained +3 cases for the
+  `?category=` rewrite. The two dashboard forms went from 0% to 96.2% / 81.3% line coverage;
+  `footer.tsx`, `links.tsx` and `filters.tsx` reached 100%. Jsdom-hostile widgets (Jodit,
+  react-tag-input, MultiSelect, DateTimePicker, Radix Select) are replaced with pass-through
+  stubs — the subject under test is the form wiring, not the widget.
+  Integration is 136 tests across 16 suites, as of 2026-09-03 (unchanged by PR#176).
+  Earlier record (2129 / 2132 across 194 suites, 2026-09-03): Plan 068 (category-tree admin
   cutover) added +49 unit/component tests without adding a suite — tree-edit invariants for
   `upsertCategory` (depth cap, self-parenting, re-parenting under a descendant, descendants
   following a move), leaf-only enforcement in `upsertProduct`, `parentId`/`sortOrder` on
