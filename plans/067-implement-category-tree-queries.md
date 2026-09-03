@@ -1,10 +1,16 @@
 # Plan 067: カテゴリツリー Phase B — 読み取りをサブツリー prefix へ切替（storefront）
 
 > **Executor instructions**: 本プランは **実行済み（DONE・2026-09-02・`8bebdc6e`〜`0ed9502a`）**。
-> 下の Done criteria のチェックはこの実行結果を指す。残 BLOCKED は
-> 「実 DB への `prisma migrate deploy` が権限で拒否され再同期が未適用」の 1 点のみで、
-> [`plans/README.md`](README.md) の 067 行と
-> [`docs/testing/QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) に記録がある。
+> 下の Done criteria のチェックはこの実行結果を指す。**残 BLOCKED は無い**
+> （2026-09-03 確認）。かつて「実 DB への `prisma migrate deploy` が権限で拒否され
+> 再同期が未適用」と記録されていたが、これは実測で否定された ——
+> `20260901223148_category_tree_phase_b_resync` は `_prisma_migrations` 上で
+> `finished_at` = 2026-09-02T03:03:00Z / `rolled_back_at` = NULL / `applied_steps_count` = 1
+> の**適用済み**であり、`Product.categoryNodeId IS NULL` は **0 件 / 105 行**である。
+> 同じ訂正が [`plans/README.md`](README.md) の 067 行、
+> [`docs/testing/QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) §067-B、
+> [`docs/testing/COVERAGE_REPORT.md`](../docs/testing/COVERAGE_REPORT.md)（2026-09-03 行）
+> に記録されている。Phase C（068）に残るゲートは**オペレーター承認のみ**である。
 > 以下の着手前手順（Drift check 等）は**当時の実行時のもの**であり、再実行の必要はない。
 >
 > plan [013](013-spike-category-tree-n-level.md)
@@ -233,6 +239,28 @@ ALL を満たすこと:
       再同期の検証は**新規行だけで合格にしない** —— rename / 親付け替え /
       `featured` 変更を 066 適用後に起こした既存行が、それぞれ `url` / `path` /
       `featured` に反映されることを確認する。
+
+  > **Deployment gate（再実行・ステージング適用時に必須）。** 上のトランザクションは
+  > 「その時点で NULL / 旧値の行」を直すだけで、**再同期後に旧 build が書いた行は
+  > 拾えない**。Phase A の書き込み経路は `categoryNodeId` を一切書かない
+  > （`grep -rn categoryNodeId src/` が 0 件）ため、再同期完了から prefix reader
+  > 切替までの間に旧 build が商品を作成・カテゴリ変更すると、その商品は
+  > `categoryNodeId` が NULL のまま残り、prefix 検索から**静かに落ちる**
+  > （0 件になるのではなく、その商品だけが結果に出ない）。
+  >
+  > したがって順序は次に固定する:
+  >
+  > 1. **dual-write を含む新 build を全インスタンスへ配備し、旧 build を停止
+  >    またはトラフィックから除外する**（ローリング更新なら旧 pod の drain 完了まで待つ）。
+  > 2. 稼働中の writer が全経路で `categoryNodeId` と旧カテゴリ列の両方を書くことを
+  >    確認する —— `grep -rn "categoryNodeId" src/queries/product.ts` が create /
+  >    update の双方に現れ、`bun run test` の dual-write 統合テストが緑であること。
+  > 3. その状態で**初めて**再同期トランザクションを実行する。
+  > 4. 再同期直後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL`
+  >    が 0 であることを確認し、**そのまま prefix reader へ切り替える**。
+  >
+  > 旧 build が 1 インスタンスでも生きている間は 3 へ進まないこと。再同期は
+  > 冪等なので、疑わしい場合は切替直前にもう一度流すほうが安全である。
 - [x] 再同期後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL` が **0** であることを確認した
 - [x] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors / `bun run test` 緑
 - [x] E2E が 3 ブラウザで緑（flaky 0）
