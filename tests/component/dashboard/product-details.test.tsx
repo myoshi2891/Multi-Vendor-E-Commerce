@@ -847,6 +847,55 @@ describe("ProductDetails", () => {
             );
         });
 
+        it("正常系: 選んだ終了日を付けたまま保存できる", async () => {
+            // Arrange —— schema は `.datetime({ offset: true })`。タイムゾーンを
+            // 落とした文字列を書くと送信が黙って止まる（この FormField には
+            // FormMessage が無く、画面に理由が出ない）。
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ isSale: true }));
+
+            // Act
+            fireEvent.click(screen.getByTestId("set-date"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— 保存値は「絶対時刻」であること（閲覧者の TZ で終了時刻が
+            // ずれないよう、オフセット無しのローカル表記では保存しない）
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        saleEndDate: new Date(
+                            2026,
+                            0,
+                            2,
+                            3,
+                            4,
+                            5
+                        ).toISOString(),
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("正常系: 終了日をクリアしても保存できる", async () => {
+            // Arrange —— クリアは空文字ではなく null。`nullish()` は空文字を許さない
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ isSale: true }));
+
+            // Act
+            fireEvent.click(screen.getByTestId("set-date"));
+            fireEvent.click(screen.getByTestId("clear-date"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({ saleEndDate: null }),
+                    "my-store"
+                )
+            );
+        });
+
         it("エッジケース: クリアすると値を空にする", () => {
             // Arrange
             renderForm(validData({ isSale: true }));

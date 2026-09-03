@@ -73,7 +73,6 @@ import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
 import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
-import { format } from "date-fns";
 import { NumberInput } from "@tremor/react";
 import InputFieldset from "../shared/input-fieldset";
 import { ArrowRight, Dot } from "lucide-react";
@@ -190,9 +189,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             questions: data?.questions ?? [],
             isSale: data?.isSale ?? false,
             weight: data?.weight,
-            saleEndDate:
-                data?.saleEndDate ||
-                format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+            saleEndDate: data?.saleEndDate || new Date().toISOString(),
             freeShippingForAllCountries: data?.freeShippingForAllCountries,
             freeShippingCountriesIds: data?.freeShippingCountriesIds || [],
             shippingFeeMethod: data?.shippingFeeMethod,
@@ -1067,13 +1064,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                                 onChange={(
                                                                     date
                                                                 ) => {
+                                                                    // ProductFormSchema は
+                                                                    // `.datetime({ offset: true })`。
+                                                                    // タイムゾーンを落とした表記も空文字も
+                                                                    // 通らないため、絶対時刻 (UTC) か
+                                                                    // null のどちらかを書く。
                                                                     field.onChange(
                                                                         date
-                                                                            ? format(
-                                                                                  date,
-                                                                                  "yyyy-MM-dd'T'HH:mm:ss"
-                                                                              )
-                                                                            : ""
+                                                                            ? date.toISOString()
+                                                                            : null
                                                                     );
                                                                 }}
                                                                 value={
