@@ -138,7 +138,7 @@ CHECK 制約も呼び出し規律も要らない。
 ### D-2. 型別カラム（`valueText` / `valueNumber` / `valueBool` / `optionId`）
 
 `NUMBER` を `Decimal(18,6)` にするのは、本リポジトリが `Float` を禁じ精度の要る値を
-`Decimal` で持つ規約（[`tech.md`](../../steering/tech.md)）に倣うため。
+`Decimal` で持つ規約（[`tech.md`](../../../.claude/steering/tech.md)）に倣うため。
 属性は金額ではないが、`55.5 インチ` と `0.1 + 0.2` の同型の事故を避ける理由は同じである。
 
 ### D-3. `ENUM` 型の値は `optionId` の **FK** で持つ（文字列で持たない）
@@ -227,7 +227,7 @@ GROUP BY d.key, bucket;
 - 集計が**素の `GROUP BY`**。`@@index([definitionId, valueNumber])` がそのまま効く。
 - 絞り込み（`valueNumber >= 55`）が **Prisma の型付き API で書ける** ——
   `where: { attributeValues: { some: { definitionId, valueNumber: { gte: 55 } } } }`。
-  `any` 禁止規約（[`tech.md`](../../steering/tech.md)）と衝突しない。
+  `any` 禁止規約（[`tech.md`](../../../.claude/steering/tech.md)）と衝突しない。
 - ENUM 値が FK なので**参照整合性が効く**（D-3）。
 - C-7 の未知（本リポジトリ初の JSONB + Accelerate 経由の JSON フィルタ）を持ち込まない。
 
