@@ -270,6 +270,12 @@ ALL を満たすこと:
 - [ ] `bun run erd:generate` の **stderr に orphan WARNING が 0 件**、`.drawio` が
       スキーマ変更と同一コミット
 - [ ] 検証シナリオ **A-1〜A-8 がすべて緑**
+- [ ] **scope 不一致を DB が拒否する統合テストが緑**（ADR-007 D-5 の 4 本）——
+      `scope = VARIANT` の定義を `ProductAttributeValue` へ、`PRODUCT` の定義を
+      `VariantAttributeValue` へ書く経路が両方向とも例外で落ちること。うち 1 本は
+      `$executeRaw` で直書きし、**アプリ層の検証を外しても DB が拒否する**ことを見る
+      （Zod / Server Action のガードを通す経路だけでは、C-2 の `createMany` 直書きに
+      相当する 5 箇所目が現れたときに素通りする）
 - [ ] **`grep -rn "valueNumber\|valueText\|valueBool" src/ | grep -v attribute-value | grep -v test`
       の結果が 0 件**（Step 5 のヘルパー集約が守られていることの機械的確認）
 - [ ] **`bunx eslint src/lib/attribute-schema.ts src/queries/attribute.ts --rule '{"@typescript-eslint/no-explicit-any":"error"}'`

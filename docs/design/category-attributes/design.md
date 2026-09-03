@@ -307,7 +307,7 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 > **これらの決定は Q2（格納方式）と強く結合している。** 「enum 改名が自動追随する」
 > 「変換不能行を安全に残せる」「論理削除で履歴が残る」はいずれも**正規化 + FK** の
 > 帰結であり、JSONB を選んでいたらどれも成立しない（ADR-007 の変更コスト比較表）。
-
+>
 > **経路 2 と一意制約（`key` は据え置き、制約側をアーカイブ対象外にする）。**
 > 経路 2 は「旧 `TEXT` 定義を archive」＋「同じ `key` の新 `NUMBER` 定義を作成」なので、
 > `@@unique([categoryId, key])` を素のまま掛けると**同一ノードに同じ `key` が 2 行**現れて
@@ -370,14 +370,18 @@ model AttributeDefinition {
 model ProductAttributeValue {
   productId    String                              // NOT NULL = 排他性が型で保証（Q1）
   definitionId String
+  scope        AttributeScope @default(PRODUCT)    // CHECK で PRODUCT 固定。
+                                                   // (definitionId, scope) の複合 FK で
+                                                   // VARIANT 定義の混入を DB が拒否（ADR-007 D-5）
   valueText    String?
   valueNumber  Decimal? @db.Decimal(18, 6)         // Float 禁止規約に倣う
   valueBool    Boolean?
   optionId     String?                             // ENUM は FK（Q7 の自動追随）
   @@unique([productId, definitionId])
 }
-// VariantAttributeValue は同型（FK は variantId・NOT NULL）。
-// 完全な定義（複合 FK (optionId, definitionId) を含む）は ADR-007 §Decision を参照。
+// VariantAttributeValue は同型（FK は variantId・NOT NULL・scope は VARIANT 固定）。
+// 完全な定義（複合 FK (optionId, definitionId) / (definitionId, scope) を含む）は
+// ADR-007 §Decision と D-5 を参照。
 ```
 
 ### 継承（plan 013 との接続）

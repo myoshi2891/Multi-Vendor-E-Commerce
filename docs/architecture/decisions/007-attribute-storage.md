@@ -67,6 +67,7 @@ model AttributeDefinition {
   //     ON "AttributeDefinition" ("categoryId", "key") WHERE "archivedAt" IS NULL;
   // 詳細: docs/design/category-attributes/design.md「経路 2 と一意制約」
   @@index([categoryId, facetable])
+  @@unique([id, scope])             // 複合 FK の参照先（値テーブルの scope 一致を DB で強制・D-5）
 }
 
 model AttributeOption {
@@ -88,7 +89,10 @@ model ProductAttributeValue {
   productId    String                            // NOT NULL —— 排他性が型で保証される
   product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   definitionId String
-  definition   AttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  // scope 固定の複合 FK: この列は常に PRODUCT（migration の CHECK で固定する）。
+  // (definitionId, scope) で参照するため、VARIANT スコープの定義はここに入らない（D-5）。
+  scope        AttributeScope @default(PRODUCT)
+  definition   AttributeDefinition @relation(fields: [definitionId, scope], references: [id, scope], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)        // 金額規約に倣い Float を使わない
@@ -108,7 +112,9 @@ model VariantAttributeValue {
   variantId    String                            // NOT NULL —— 排他性が型で保証される
   variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   definitionId String
-  definition   AttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  // 対称。この列は常に VARIANT（CHECK で固定）。PRODUCT スコープの定義は入らない（D-5）。
+  scope        AttributeScope @default(VARIANT)
+  definition   AttributeDefinition @relation(fields: [definitionId, scope], references: [id, scope], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)
@@ -151,6 +157,58 @@ CHECK 制約も呼び出し規律も要らない。
 
 物理削除すると plan 015 のファセットから履歴が消え、過去の商品が何を主張していたかが
 辿れなくなる。`onDelete: Restrict` と併せ、値が紐づいた定義は消せない。
+
+### D-5. `scope` の一致は**アプリ検証ではなく DB 制約**で強制する
+
+D-1 でテーブルを分けたことで保証されるのは「値の所有先が product **か** variant の
+どちらか一方」であって、**「その定義がそのテーブルに置かれてよいか」ではない**。
+分割しただけでは `scope = VARIANT` の定義の値を `ProductAttributeValue` に書けてしまい、
+逆も書ける。これは D-1 が排したはずの「呼び出し規律頼み」が別の面から戻ってくる形である
+—— C-2 のとおり本リポジトリには既に `createMany` の直書き経路があり、規律は破れる。
+
+**なぜ静かに壊れるか。** scope 違反は例外にならず、**ファセットの二重計上**として出る。
+plan 015 の集計は `ProductAttributeValue` と `VariantAttributeValue` を `UNION ALL` で
+畳むため、同じ属性が両テーブルに現れても SQL は矛盾に気づかない。`count(DISTINCT p.id)`
+は商品の重複こそ潰すが、「VARIANT 属性が商品側にも書かれている」ことは検出しない。
+admin で `scope` を切り替えたときの移行漏れも同じ形で残る。
+
+**制約の形**（`AttributeOption` の複合 FK と同型 —— D-3 と同じ「単一 FK では
+組み合わせを検証できない」問題である）:
+
+1. `AttributeDefinition` に `@@unique([id, scope])` を張り、複合 FK の参照先を作る。
+2. 各値テーブルに `scope` 列を持たせ、`(definitionId, scope)` で参照する。
+3. その `scope` 列を **migration の raw SQL で定数に固定する**:
+
+```sql
+ALTER TABLE "ProductAttributeValue"
+  ADD CONSTRAINT "ProductAttributeValue_scope_product"
+  CHECK ("scope" = 'PRODUCT');
+ALTER TABLE "VariantAttributeValue"
+  ADD CONSTRAINT "VariantAttributeValue_scope_variant"
+  CHECK ("scope" = 'VARIANT');
+```
+
+> **CHECK は省けない。** 複合 FK だけでは「値行の `scope` が定義の `scope` と一致する」
+> ことしか言えず、書き手が `scope: "VARIANT"` を `ProductAttributeValue` に入れれば
+> FK は**通ってしまう**。列を定数に固定して初めて「この表は PRODUCT 定義しか受けない」に
+> なる。Prisma の camelCase 列は PostgreSQL で二重引用符が必須である（D-1 の注記と同じ罠）。
+>
+> **`scope` は不変列として扱うこと。** 定義の `scope` を後から変える操作は、
+> 複合 FK により**値行ごと移し替える**（片方の表から消してもう片方へ入れる）以外に
+> 成立しない。これは制約の副作用ではなく意図した設計で、admin に「移行するか、
+> さもなくば拒否する」を選ばせる。
+
+**統合テストで不一致の拒否を実測すること**（[plan 069](../../../plans/069-implement-category-attributes.md)
+の Done criteria）。以下 4 本を最低限とし、いずれも**書き込みが例外で落ちる**ことを見る
+（アプリ層の Zod 検証を外しても DB が拒否することを確かめるため、`$executeRaw` で直接書く経路を
+1 本は含める）:
+
+| # | 書き込み | 期待 |
+|---|---------|------|
+| 1 | `scope = VARIANT` の定義を `ProductAttributeValue` へ | FK / CHECK 違反で reject |
+| 2 | `scope = PRODUCT` の定義を `VariantAttributeValue` へ | FK / CHECK 違反で reject |
+| 3 | `ProductAttributeValue.scope` に `'VARIANT'` を直書き | CHECK 違反で reject |
+| 4 | 正しい scope の組み合わせ | 成功（制約が正当な経路まで塞いでいないことの対照） |
 
 ---
 
@@ -216,7 +274,7 @@ GROUP BY d.key, bucket;
 > ファセットから**丸ごと消える**（0 件ではなく、そもそもファセット自体が出ない）ので、
 > 欠落に気づく手掛かりが無い。件数は `count(DISTINCT p.id)` のままにすること ——
 > 1 商品が同じ値のバリアントを複数持つと、素の `count(*)` はその商品を重複計上する。
-
+>
 > **`COALESCE` に `valueNumber` を含めること。** `facetable` は型に依らず立てられる
 > （`AttributeType.NUMBER` でも `true` にできる）ので、`label` / `valueText` /
 > `valueBool` だけを並べると **NUMBER 属性の facet_value が全行 NULL に潰れ**、
