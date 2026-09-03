@@ -137,8 +137,9 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
         // legacy SubCategory ミラー（Phase C = plan 068 で削除する）。
         // Category ノードと id を共有させるのが要点。
         if (cat.parentUrl && parentId) {
+            let mirror;
             try {
-                await prisma.subCategory.upsert({
+                mirror = await prisma.subCategory.upsert({
                     where: { url: cat.url },
                     update: {
                         name: cat.name,
@@ -159,6 +160,18 @@ export async function seedBase(prisma: PrismaClient): Promise<BaseSeedResult> {
                 throw new Error(
                     `legacy SubCategory ミラーの upsert に失敗しました: ${cat.url}`,
                     { cause: error }
+                );
+            }
+
+            // id 共有はミラーの前提そのもの（Phase B の再同期 SQL は
+            // Product.categoryNodeId = subCategoryId で両者を突き合わせる）。
+            // where は url なので、別 id の SubCategory 行が先に存在すると
+            // update 分岐に入って id は変わらず、不一致のまま黙って通過する。
+            // 後段で追跡困難な壊れ方をするより、ここで止める。
+            if (mirror.id !== record.id) {
+                throw new Error(
+                    `legacy SubCategory ミラーの id が Category ノードと一致しません: ` +
+                        `${cat.url} (expected ${record.id}, actual ${mirror.id})`
                 );
             }
         }

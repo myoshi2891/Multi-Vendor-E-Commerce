@@ -30,8 +30,12 @@ describe("seedBase", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         idCounter = 0;
-        mockUpsert.mockImplementation(() => ({
-            id: `mock-id-${++idCounter}`,
+        // 実 Prisma の upsert は「書き込んだ行」を返す。legacy SubCategory ミラーは
+        // create 側で id を明示しており、その id がそのまま返る —— seeder は
+        // 返り値の id が Category ノードと一致することを検証するため、
+        // モックも id を素通しにしないと実挙動から乖離する。
+        mockUpsert.mockImplementation((args?: { create?: { id?: string } }) => ({
+            id: args?.create?.id ?? `mock-id-${++idCounter}`,
         }));
         mockUpdate.mockImplementation(() => ({ id: "mock-id-update" }));
     });
@@ -146,6 +150,25 @@ describe("seedBase", () => {
         const userCallIndex = SEED_COUNTRIES.length;
         const userCall = mockUpsert.mock.calls[userCallIndex][0];
         expect(userCall.where).toHaveProperty("email", SEED_USERS[0].email);
+    });
+
+    it("異常ケース: legacy SubCategory の id が Category ノードと食い違う場合は停止すること", async () => {
+        // Arrange: 別 id の SubCategory 行が既にある状況（upsert が update 分岐に入り、
+        // create.id は無視されて既存 id が返る）を模す。
+        mockUpsert.mockImplementation(
+            (args?: { create?: { id?: string; url?: string } }) => ({
+                id:
+                    args?.create?.id === undefined
+                        ? `mock-id-${++idCounter}`
+                        : "pre-existing-sub-category-id",
+            })
+        );
+        const prisma = createMockPrisma();
+
+        // Act & Assert
+        await expect(seedBase(prisma)).rejects.toThrow(
+            /legacy SubCategory ミラーの id が Category ノードと一致しません/
+        );
     });
 
     it("異常ケース: DB接続失敗時にエラーがthrowされること", async () => {
