@@ -28,10 +28,15 @@ test.describe("検索・フィルタ", () => {
 
   test("カテゴリフィルタで絞り込まれる", async ({ page }) => {
     await page.goto("/browse");
+    // カテゴリは role=button + アクセシブルネームで指す。`label` 要素や
+    // 装飾クラス（内側ドットの bg-*）を掴むと、CategoryLink のマークアップ変更で
+    // 「機能は生きているのにセレクタだけが腐る」形で落ちる。
     // seed:e2e は全プロジェクト分の同名カテゴリを作成するため .first() で限定
-    const categoryLabel = page.locator("label").filter({ hasText: seed.category.name }).first();
-    await expect(categoryLabel).toBeVisible();
-    await categoryLabel.click();
+    const categoryButton = page
+      .getByRole("button", { name: seed.category.name })
+      .first();
+    await expect(categoryButton).toBeVisible();
+    await categoryButton.click();
     // カテゴリパラメータが URL に反映されることを確認
     await page.waitForURL(/[?&]category=/, { timeout: 5000 });
     await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
@@ -43,11 +48,11 @@ test.describe("検索・フィルタ", () => {
     await expect(searchInput).toBeVisible();
     await expect(searchInput).toHaveValue(productName);
 
-    // カテゴリが選択されていることを、アクティブインジケータ（内側ドット）の存在で確認
-    // 同名カテゴリが複数存在するため、アクティブインジケータを持つラベルで限定
-    const activeCategory = page.locator("label")
-      .filter({ hasText: seed.category.name })
-      .filter({ has: page.locator("div.rounded-full.bg-black") });
+    // 選択状態は aria-pressed で確認する（内側ドットは装飾であり、色クラスを
+    // 変えただけで落ちる）。同名カテゴリが複数存在するため、押下状態で限定する。
+    const activeCategory = page
+      .getByRole("button", { name: seed.category.name, pressed: true })
+      .first();
     await expect(activeCategory).toBeVisible({ timeout: 10000 });
   });
 
