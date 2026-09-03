@@ -1,6 +1,12 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+    render,
+    screen,
+    fireEvent,
+    waitFor,
+    within,
+} from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
@@ -30,37 +36,158 @@ jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 jest.mock("uuid", () => ({ v4: () => "generated-uuid" }));
 jest.mock("next-themes", () => ({ useTheme: () => ({ theme: "light" }) }));
 
+// 外部ウィジェットのスタブは「値を素通しする」だけでなく、**渡されたコールバックを
+// 発火できる操作面**を持たせる。product-details 側の配線（inline ハンドラ）は
+// ウィジェット経由でしか呼ばれないため、ここを潰すと検証不能になる。
 jest.mock("jodit-react", () => ({
     __esModule: true,
-    default: ({ onBlur }: { onBlur?: (value: string) => void }) => (
+    default: ({
+        value,
+        onChange,
+        onBlur,
+    }: {
+        value?: string;
+        onChange?: (value: string) => void;
+        onBlur?: (value: string) => void;
+    }) => (
         <textarea
             data-testid="jodit"
+            defaultValue={value}
+            onChange={(e) => onChange?.(e.target.value)}
             onBlur={(e) => onBlur?.(e.target.value)}
         />
     ),
 }));
 jest.mock("react-tag-input", () => ({
-    WithOutContext: () => <div data-testid="react-tags" />,
+    WithOutContext: ({
+        handleAddition,
+    }: {
+        handleAddition: (keyword: { id: string; text: string }) => void;
+    }) => (
+        <div data-testid="react-tags">
+            <button
+                type="button"
+                data-testid="add-keyword"
+                onClick={() =>
+                    handleAddition({ id: "added", text: "added-keyword" })
+                }
+            >
+                add keyword
+            </button>
+        </div>
+    ),
 }));
 jest.mock("react-multi-select-component", () => ({
-    MultiSelect: () => <div data-testid="multi-select" />,
+    MultiSelect: ({
+        options,
+        onChange,
+    }: {
+        options: { label: string; value: string }[];
+        onChange: (selected: { label: string; value: string }[]) => void;
+    }) => (
+        <div data-testid="multi-select">
+            <button
+                type="button"
+                data-testid="select-countries"
+                onClick={() => onChange(options)}
+            >
+                select countries
+            </button>
+        </div>
+    ),
 }));
 jest.mock("react-datetime-picker", () => ({
     __esModule: true,
-    default: () => <div data-testid="datetime-picker" />,
+    default: ({
+        value,
+        onChange,
+    }: {
+        value: Date | null;
+        onChange: (date: Date | null) => void;
+    }) => (
+        <div data-testid="datetime-picker">
+            <span data-testid="datetime-value">
+                {value ? value.toISOString() : "none"}
+            </span>
+            <button
+                type="button"
+                data-testid="set-date"
+                onClick={() => onChange(new Date(2026, 0, 2, 3, 4, 5))}
+            >
+                set date
+            </button>
+            <button
+                type="button"
+                data-testid="clear-date"
+                onClick={() => onChange(null)}
+            >
+                clear date
+            </button>
+        </div>
+    ),
 }));
 jest.mock("@tremor/react", () => ({
     NumberInput: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
         <input type="number" {...props} />
     ),
 }));
+// ImageUpload は商品画像（type="standard"）とバリアント画像（type="profile"）の
+// 2 箇所で使われ、onChange / onRemove の中身が別物なので type で撃ち分ける。
 jest.mock("@/components/dashboard/shared/image-upload", () => ({
     __esModule: true,
-    default: () => <div data-testid="image-upload" />,
+    default: ({
+        type,
+        value,
+        onChange,
+        onRemove,
+    }: {
+        type: string;
+        value: string[];
+        onChange: (url: string) => void;
+        onRemove: (url: string) => void;
+    }) => (
+        <div data-testid={`image-upload-${type}`}>
+            <button
+                type="button"
+                data-testid={`image-add-${type}`}
+                onClick={() =>
+                    onChange(`https://example.com/added-${type}.jpg`)
+                }
+            >
+                add image
+            </button>
+            <button
+                type="button"
+                data-testid={`image-remove-${type}`}
+                onClick={() => onRemove(value[0] ?? "")}
+            >
+                remove image
+            </button>
+        </div>
+    ),
 }));
 jest.mock("@/components/dashboard/shared/images-preview-grid", () => ({
     __esModule: true,
-    default: () => <div data-testid="images-preview-grid" />,
+    default: ({
+        images,
+        onRemove,
+    }: {
+        images: { url: string }[];
+        onRemove: (url: string) => void;
+    }) => (
+        <div data-testid="images-preview-grid">
+            {images.map((image, index) => (
+                <button
+                    key={image.url}
+                    type="button"
+                    data-testid={`preview-remove-${index}`}
+                    onClick={() => onRemove(image.url)}
+                >
+                    {image.url}
+                </button>
+            ))}
+        </div>
+    ),
 }));
 jest.mock("@/components/dashboard/shared/input-fieldset", () => ({
     __esModule: true,
@@ -473,6 +600,319 @@ describe("ProductDetails", () => {
                 ).toBeInTheDocument()
             );
             expect(mockUpsertProduct).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("画像ウィジェットの配線", () => {
+        it("正常系: ImageUpload の onChange で商品画像を 1 枚足す", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+
+            // Act
+            fireEvent.click(screen.getByTestId("image-add-standard"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— setImages と field.onChange の両方に反映される必要がある
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        images: [
+                            { url: "https://example.com/1.jpg" },
+                            { url: "https://example.com/2.jpg" },
+                            { url: "https://example.com/3.jpg" },
+                            { url: "https://example.com/added-standard.jpg" },
+                        ],
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("正常系: ImagesPreviewGrid の onRemove で商品画像を落とす", async () => {
+            // Arrange —— 3 枚必須なので 4 枚から 1 枚落とす
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(
+                validData({
+                    images: [
+                        { url: "https://example.com/1.jpg" },
+                        { url: "https://example.com/2.jpg" },
+                        { url: "https://example.com/3.jpg" },
+                        { url: "https://example.com/4.jpg" },
+                    ],
+                })
+            );
+
+            // Act
+            fireEvent.click(screen.getByTestId("preview-remove-0"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        images: [
+                            { url: "https://example.com/2.jpg" },
+                            { url: "https://example.com/3.jpg" },
+                            { url: "https://example.com/4.jpg" },
+                        ],
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("異常系: 商品画像を 3 枚未満にすると保存させない", async () => {
+            // Arrange
+            renderForm(validData());
+
+            // Act —— ImageUpload 側の onRemove（field.value から除去）
+            fireEvent.click(screen.getByTestId("image-remove-standard"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(
+                    screen.getByText(/at least 3 images/i)
+                ).toBeInTheDocument()
+            );
+            expect(mockUpsertProduct).not.toHaveBeenCalled();
+        });
+
+        it("正常系: バリアント画像は onChange で 1 枚に差し替わる", async () => {
+            // Arrange —— variantImage は length(1) 固定なので上書きセマンティクス
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+
+            // Act
+            fireEvent.click(screen.getByTestId("image-add-profile"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        variantImage: "https://example.com/added-profile.jpg",
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("異常系: バリアント画像を外すと保存させない", async () => {
+            // Arrange
+            renderForm(validData());
+
+            // Act
+            fireEvent.click(screen.getByTestId("image-remove-profile"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(
+                    screen.getByText(/Choose a variant image/i)
+                ).toBeInTheDocument()
+            );
+            expect(mockUpsertProduct).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("キーワード", () => {
+        const keywords = (count: number) =>
+            Array.from({ length: count }, (_, i) => `kw-${i}`);
+
+        it("正常系: 追加したキーワードが保存に載る", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ keywords: keywords(5) }));
+
+            // Act
+            fireEvent.click(screen.getByTestId("add-keyword"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        keywords: [...keywords(5), "added-keyword"],
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("エッジケース: 10 件に達したら追加を黙って無視する", async () => {
+            // Arrange —— schema の max(10) に触れる前にハンドラ側で止める
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ keywords: keywords(10) }));
+
+            // Act
+            fireEvent.click(screen.getByTestId("add-keyword"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— 11 件目は入らず、バリデーションエラーにもならない
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({ keywords: keywords(10) }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("正常系: チップの x で該当キーワードだけ落とす", async () => {
+            // Arrange —— min(5) を割らないよう 6 件から 1 件落とす
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ keywords: keywords(6) }));
+
+            // Act —— チップ内の x（同じ文字が国チップにもあるので chip 内に限定）
+            const chip = screen.getByText("kw-0").closest("div");
+            fireEvent.click(within(chip as HTMLElement).getByText("x"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        keywords: ["kw-1", "kw-2", "kw-3", "kw-4", "kw-5"],
+                    }),
+                    "my-store"
+                )
+            );
+        });
+    });
+
+    describe("説明エディタ", () => {
+        it("正常系: 商品説明の onChange が保存値へ反映される", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+            const edited = "x".repeat(240);
+
+            // Act
+            fireEvent.change(screen.getByTestId("jodit"), {
+                target: { value: edited },
+            });
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({ description: edited }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("正常系: バリアント説明タブの onChange が保存値へ反映される", async () => {
+            // Arrange —— Radix Tabs は非アクティブ側を描画しないので切り替える
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+
+            // Act
+            // Radix Tabs は click ではなく mousedown / focus で切り替わる
+            // （activationMode="automatic"）。click だけだと選択が動かない。
+            const variantTab = screen.getByRole("tab", {
+                name: /Variant description/i,
+            });
+            fireEvent.mouseDown(variantTab);
+            fireEvent.focus(variantTab);
+            fireEvent.change(screen.getByTestId("jodit"), {
+                target: { value: "variant only note" },
+            });
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        variantDescription: "variant only note",
+                    }),
+                    "my-store"
+                )
+            );
+        });
+    });
+
+    describe("セール終了日", () => {
+        it("正常系: 選んだ日時をピッカーへ返す", () => {
+            // Arrange —— isSale が false だとピッカー自体が描画されない
+            renderForm(validData({ isSale: true }));
+
+            // Act
+            fireEvent.click(screen.getByTestId("set-date"));
+
+            // Assert —— format() → new Date() の往復でローカル日時が保たれる
+            expect(screen.getByTestId("datetime-value")).toHaveTextContent(
+                new Date(2026, 0, 2, 3, 4, 5).toISOString()
+            );
+        });
+
+        it("エッジケース: クリアすると値を空にする", () => {
+            // Arrange
+            renderForm(validData({ isSale: true }));
+            fireEvent.click(screen.getByTestId("set-date"));
+
+            // Act —— onChange(null) 側の三項分岐
+            fireEvent.click(screen.getByTestId("clear-date"));
+
+            // Assert
+            expect(screen.getByTestId("datetime-value")).toHaveTextContent(
+                "none"
+            );
+        });
+    });
+
+    describe("無料配送の対象国", () => {
+        it("正常系: MultiSelect の選択がそのまま保存に載る", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+
+            // Act
+            fireEvent.click(screen.getByTestId("select-countries"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— countries prop が label/value 形式へ写像されている
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        freeShippingCountriesIds: [
+                            { label: "Japan", value: "country-1" },
+                        ],
+                    }),
+                    "my-store"
+                )
+            );
+        });
+
+        it("正常系: 国チップの x で該当国だけ外す", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(
+                validData({
+                    freeShippingCountriesIds: [
+                        { id: "fs-1", label: "Japan", value: "country-1" },
+                        { id: "fs-2", label: "France", value: "country-2" },
+                    ],
+                } as Partial<ProductWithVariantType>)
+            );
+
+            // Act
+            const chip = screen.getByText("Japan").closest("div");
+            fireEvent.click(within(chip as HTMLElement).getByText("x"));
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() =>
+                expect(mockUpsertProduct).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        freeShippingCountriesIds: [
+                            { id: "fs-2", label: "France", value: "country-2" },
+                        ],
+                    }),
+                    "my-store"
+                )
+            );
         });
     });
 });
