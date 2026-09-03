@@ -47,14 +47,23 @@ export interface Model {
  * `],`（型 `name:`）という**存在しないフィールド 2 本**を図に出してしまう。
  * ここで括弧の対応を数えてブロック全体を落とし、フィールド走査へ渡す。
  *
+ * **`@@` は行頭（直前の改行以降が空白だけ）のときにだけブロック属性とみなす。**
+ * 位置を問わず拾うと、行コメント中の `@@index(` のような**属性ではない出現**に
+ * 反応して、そこから対応する `)` まで（閉じ括弧が無ければ本体末尾まで）を丸ごと
+ * 捨てる。結果は「以降のフィールドが ER 図から黙って消える」という、差分を見ても
+ * 気づきにくい壊れ方になる。Prisma のブロック属性は必ず行頭に置かれるので、
+ * 行頭条件を課しても正当な記法は 1 つも落ちない。
+ *
  * @param body - `model X { ... }` の中身
  * @returns ブロック属性を除去した本体（行数は変わりうる）
  */
 function stripBlockAttributes(body: string): string {
     let out = "";
     let i = 0;
+    // 直前の改行（または本体先頭）以降が空白だけか
+    let atLineStart = true;
     while (i < body.length) {
-        if (body.startsWith("@@", i)) {
+        if (atLineStart && body.startsWith("@@", i)) {
             // 属性名を読み飛ばし、引数の `(` を探す（`@@map("x")` / `@@id([a])` 共通）
             let j = i + 2;
             while (j < body.length && /[\w.]/.test(body[j])) j++;
@@ -75,14 +84,19 @@ function stripBlockAttributes(body: string): string {
                     k++;
                 }
                 i = k;
+                atLineStart = false;
                 continue;
             }
             // 引数無しのブロック属性（将来形）: 属性名だけ落とす
             i = j;
+            atLineStart = false;
             continue;
         }
-        out += body[i];
+        const ch = body[i];
+        out += ch;
         i++;
+        if (ch === "\n") atLineStart = true;
+        else if (ch !== " " && ch !== "\t" && ch !== "\r") atLineStart = false;
     }
     return out;
 }
