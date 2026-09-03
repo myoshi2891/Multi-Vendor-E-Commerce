@@ -92,3 +92,46 @@ describe("CategoryLink — 選択肢の開閉同期", () => {
         expect(screen.queryByText("camera")).not.toBeInTheDocument();
     });
 });
+
+describe("CategoryLink — 選択時の URL 書き換え", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it("正常系: クリックで ?category= を張り替え、旧 subCategory を落とす", () => {
+        // Arrange —— 旧パラメータが残った URL
+        renderLink("subCategory=lens&sort=most-popular");
+
+        // Act
+        fireEvent.click(screen.getByText("electronics"));
+
+        // Assert —— 正準パラメータは category 1 本。subCategory を残すと
+        // 2 つのサブツリーの積になり、意図しない絞り込みが残る。
+        expect(mockReplace).toHaveBeenCalledWith(
+            "/browse?sort=most-popular&category=electronics"
+        );
+    });
+
+    it("エッジケース: 選択済みのカテゴリを再クリックしても遷移しない", () => {
+        // Arrange
+        renderLink("category=electronics");
+
+        // Act
+        fireEvent.click(screen.getByText("electronics"));
+
+        // Assert —— 同一 URL への replace は履歴を汚すだけなので早期リターンする
+        expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("正常系: 子カテゴリを選び直しても親の枝は開いたままになる", () => {
+        // Arrange —— 孫が選択済みなので electronics / camera とも開いて始まる
+        renderLink("category=lens");
+
+        // Act —— 中間ノードへ選択を移す
+        fireEvent.click(screen.getByText("camera"));
+
+        // Assert —— 遷移後も枝は畳まない（絞り込み対象が画面から消えない）
+        expect(mockReplace).toHaveBeenCalledWith("/browse?category=camera");
+        expect(screen.getByText("camera")).toBeInTheDocument();
+    });
+});
