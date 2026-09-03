@@ -377,8 +377,11 @@ function resolveConnectionLimit(): number {
 
 describe("Scenario 3: concurrent leaf assignment and child creation", () => {
     it("rejects the assignment when a child is being created under the same node", async () => {
-        // 前提: プールが 1 だと 2 本が接続待ちで直列化され、競合を検証しないまま緑になる。
-        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(2);
+        // 前提: このシナリオは **3 本**の接続を同時に握る —— 開いたままの外側 tx、
+        // ロック待ちに入る被検証側、そして `waitForLockedBackend` の
+        // `pg_stat_activity` ポーリング。プールが 2 以下だとポーリング自体が
+        // 接続待ちに入り、競合を検証しないまま timeout する。
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(3);
 
         // Arrange —— 商品は origin のリーフに紐づいた状態から、target のリーフへ
         // 付け替えようとする。
@@ -409,13 +412,16 @@ describe("Scenario 3: concurrent leaf assignment and child creation", () => {
             await tx.$queryRaw`
                 SELECT "id" FROM "Category" WHERE "id" = ${target.subCategory.id} FOR UPDATE
             `;
+            // `Date.now()` は 1 回だけ評価する。呼ぶたびに読むと ms 境界を跨いだ
+            // 瞬間に url と path の末尾セグメントがずれ、path の不変条件が壊れる。
+            const childSuffix = Date.now();
             await tx.category.create({
                 data: {
-                    name: `Child ${Date.now()}`,
+                    name: `Child ${childSuffix}`,
                     image: "https://example.test/node.png",
-                    url: `child-${Date.now()}`,
+                    url: `child-${childSuffix}`,
                     parentId: target.subCategory.id,
-                    path: `${target.childNode.path}/child-${Date.now()}`,
+                    path: `${target.childNode.path}/child-${childSuffix}`,
                     depth: target.childNode.depth + 1,
                 },
             });
@@ -454,6 +460,10 @@ describe("Scenario 3: concurrent leaf assignment and child creation", () => {
 
 describe("Scenario 5: subtree move serializes against a concurrent descendant move", () => {
     it("並行して subtree 外へ出た子孫に、古い subtree 配下の path を書き戻さない", async () => {
+        // 前提: Scenario 3 と同じく、外側 tx / 被検証側 / ロック検出ポーリングの
+        // 3 本を同時に握る。
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(3);
+
         // Arrange —— a/x/d というツリーと、移動先 b（x 用）・z（d 用）を作る
         const a = await createNode("A", "a", null);
         const x = await createNode("X", "x", a);
