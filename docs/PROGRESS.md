@@ -4664,3 +4664,50 @@ mousedown / focus 駆動）。バリアント説明タブの検証では `mouseD
 | Jest スナップショット | 127 | **127**（不変） |
 | lcov カバレッジ | Statements 74.94% / Branches 60.59% / Functions 64.36% / Lines 74.43% | **Statements 75.33%** (6651/8829) / **Branches 60.8%** (3194/5253) / **Functions 65.9%** (1119/1698) / **Lines 74.81%** (6017/8043) |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### セール終了日が保存できない不具合の修正（2026-09-03）
+
+#### 概要
+
+上記カバレッジ作業でウィジェットのコールバックを初めて実行した結果、
+**セール終了日を設定・クリアすると商品の保存が黙って止まる**不具合を発見し修正した。
+
+#### 原因
+
+| 層 | 実態 |
+|---|---|
+| schema | `saleEndDate: z.string().datetime({ offset: true }).nullish()`（zod v3 はタイムゾーン省略を許さない。空文字も不可） |
+| 書き込み | `format(date, "yyyy-MM-dd'T'HH:mm:ss")` = オフセット無し / クリア時は `""` |
+| 表示 | 当該 `FormField` に `<FormMessage />` が無い |
+
+3 つが重なり、**バリデーションで送信が止まるのに画面には何も出ない**状態だった。
+`defaultValues` も同じ表記だったが、編集時は `form.reset(data)` が `undefined` を
+入れ直すため（`nullish()` で合法）、症状はユーザーが日付を触った時にだけ出ていた。
+
+#### 修正
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/product-details.tsx` | 保存値を `date.toISOString()` / `null` に変更。`defaultValues` も `toISOString()` へ。未使用になった `date-fns` の `format` import を削除 | `41afbc7f` |
+| `tests/component/dashboard/product-details.test.tsx` | 回帰テスト +2（設定して保存できる / クリアして保存できる） | `41afbc7f` |
+
+絶対時刻で保存することで、オフセット無し表記が JS で「閲覧者のローカル時刻」として
+解釈され、商品ページの `Countdown` が閲覧者の TZ ごとに違う終了時刻を出す問題も塞いだ。
+
+#### 残課題
+
+- 当該 `FormField` に `<FormMessage />` が無い点は未対応（今回は無効値を書かない側で修正）。
+- 既存 DB に旧形式（オフセット無し）の `saleEndDate` 行があると、編集画面から保存できない。
+  ただし書き込み経路は本フォームのみで、その経路は検証で塞がれていたため、
+  シードにも該当値は無く実データは存在しない見込み。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2179 passed / 2182 total | **2181 passed / 2184 total**（2026-09-03 実測） |
+| スイート数 | 199 | **199**（不変） |
+| lcov カバレッジ | Statements 75.33% / Lines 74.81% | **Statements 75.32%** (6650/8828) / **Branches 60.8%** (3194/5253) / **Functions 65.9%** (1119/1698) / **Lines 74.8%** (6016/8042) |
+| 型エラー | 0 件 | **0 件** |

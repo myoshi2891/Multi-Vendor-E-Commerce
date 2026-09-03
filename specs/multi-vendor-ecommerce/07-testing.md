@@ -12,7 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2179 passed / 2182 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+- 2181 passed / 2184 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+  The coverage work surfaced a real defect and +2 regression tests pin it: `saleEndDate` was
+  written without a timezone (and cleared to `""`), neither of which `ProductFormSchema`'s
+  `.datetime({ offset: true }).nullish()` accepts, so saving a sale end date silently failed.
+  Earlier record (2179 / 2182 across 199 suites, 2026-09-03):
   The PR#176 follow-up closed the remaining gap on the two dashboard forms: +14 tests (suites
   unchanged) drive the inline callbacks the forms hand to their widgets (image add/remove,
   keyword cap, sale end date, free-shipping countries). Pass-through stubs never fired those
