@@ -206,6 +206,12 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             name: seed.category.name,
             image: seed.category.image,
             featured: false,
+            // create 側と同じツリー列を書く。**再シードは既存行の update を通る**ため、
+            // ここを省くと 066 以前に作られた行の childCount / path / depth が
+            // 旧値のまま残り、リーフ判定（childCount = 0）や subtree 検索が壊れる。
+            path: seed.category.url,
+            depth: 0,
+            childCount: 1,
         },
     });
 
@@ -555,6 +561,12 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
             name: seed.paginationCategory.name,
             image: seed.paginationCategory.image,
             featured: false,
+            // create 側と同じツリー列を書く。**再シードは既存行の update を通る**ため、
+            // ここを省くと 066 以前に作られた行の childCount / path / depth が
+            // 旧値のまま残り、リーフ判定（childCount = 0）や subtree 検索が壊れる。
+            path: seed.paginationCategory.url,
+            depth: 0,
+            childCount: 1,
         },
     });
 

@@ -100,10 +100,23 @@ test.describe("管理者によるカテゴリツリー編集", () => {
     });
 
     test.afterAll(async () => {
-        // 子から順に消す（self-relation は onDelete: Restrict）
-        await prisma.category
-            .deleteMany({ where: { path: { startsWith: `${rootUrl}/` } } })
-            .catch(() => {});
+        // 子から順に消す（self-relation は onDelete: Restrict）。
+        //
+        // **`deleteMany` 1 回では足りない。** Restrict は「まだ子を持つ行」の削除を
+        // 拒むので、孫が同じ一括削除に含まれていても、削除順が親→子になった時点で
+        // 失敗する。深い順に 1 行ずつ消して、常に葉から取り除く。
+        const descendants = await prisma.category
+            .findMany({
+                where: { path: { startsWith: `${rootUrl}/` } },
+                select: { id: true },
+                orderBy: { depth: "desc" },
+            })
+            .catch(() => []);
+        for (const node of descendants) {
+            await prisma.category
+                .delete({ where: { id: node.id } })
+                .catch(() => {});
+        }
         if (rootId) {
             await prisma.category
                 .delete({ where: { id: rootId } })
