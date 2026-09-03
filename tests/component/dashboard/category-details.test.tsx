@@ -32,18 +32,28 @@ jest.mock("@/components/dashboard/shared/image-upload", () => ({
     default: ({
         value,
         onChange,
+        onRemove,
     }: {
         value: string[];
         onChange: (url: string) => void;
+        onRemove: (url: string) => void;
     }) => (
-        <button
-            type="button"
-            data-testid="image-upload"
-            data-value={value.join(",")}
-            onClick={() => onChange("https://example.com/new.jpg")}
-        >
-            upload
-        </button>
+        <div data-value={value.join(",")}>
+            <button
+                type="button"
+                data-testid="image-upload"
+                onClick={() => onChange("https://example.com/new.jpg")}
+            >
+                upload
+            </button>
+            <button
+                type="button"
+                data-testid="image-remove"
+                onClick={() => onRemove(value[0] ?? "")}
+            >
+                remove
+            </button>
+        </div>
     ),
 }));
 
@@ -425,6 +435,33 @@ describe("CategoryDetails", () => {
             });
 
             // Act
+            fireEvent.click(
+                screen.getByRole("button", { name: "Create category" })
+            );
+
+            // Assert
+            await waitFor(() =>
+                expect(
+                    screen.getByText("Choose a category image.")
+                ).toBeInTheDocument()
+            );
+            expect(mockUpsertCategory).not.toHaveBeenCalled();
+        });
+
+        it("異常系: 選んだ画像を外すとサーバーを呼ばずに検証エラーを出す", async () => {
+            // Arrange —— image は length(1) 必須。onRemove は選択済みの 1 枚を
+            // フォームから落とすため、その後の送信は必ず弾かれる必要がある。
+            render(<CategoryDetails />);
+            fireEvent.click(screen.getByTestId("image-upload"));
+            fireEvent.change(screen.getByLabelText("Category name"), {
+                target: { value: "Camera" },
+            });
+            fireEvent.change(screen.getByLabelText("Category url"), {
+                target: { value: "camera" },
+            });
+
+            // Act
+            fireEvent.click(screen.getByTestId("image-remove"));
             fireEvent.click(
                 screen.getByRole("button", { name: "Create category" })
             );
