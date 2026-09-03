@@ -1,6 +1,12 @@
 # Plan 066: カテゴリツリー Phase A — スキーマ拡張・SubCategory 統合・互換レイヤー投入
 
-> **Executor instructions**: 本プランは **未実行**。plan [013](013-spike-category-tree-n-level.md)
+> **Executor instructions**: 本プランは **実行済み**（migration
+> `20260831102943_category_tree_phase_a`。以降 [067](067-implement-category-tree-queries.md) →
+> [068](068-implement-category-tree-admin-cutover.md) まで完了済み）。
+> **以下は着手当時の記述であり、再実行の指示ではない**（履歴として残す）。
+> 本番適用の手順は [`docs/migration/07-category-tree-phase-a-production.md`](../docs/migration/07-category-tree-phase-a-production.md) を参照。
+>
+> plan [013](013-spike-category-tree-n-level.md)
 > （spike）が確定した設計の**実装 3 本のうち 1 本目**であり、
 > [ADR-006](../docs/architecture/decisions/006-category-tree-representation.md) の
 > **Phase A** に対応する。
@@ -52,6 +58,8 @@
 - **Blocks**: [067](067-implement-category-tree-queries.md) / [068](068-implement-category-tree-admin-cutover.md)
 - **Category**: direction（実装）
 - **Planned at**: 2026-08-31, against HEAD `257b7873`（branch `dev`）
+- **State**: DONE（2026-08-31。migration `20260831102943_category_tree_phase_a` を適用し、
+  `tests/integration/category-tree-migration.test.ts` を新設）
 
 ## Why this matters
 

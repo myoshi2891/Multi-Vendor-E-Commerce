@@ -186,10 +186,25 @@ bunx prisma migrate status   # "Database schema is up to date!" を確認
 Phase A は**加算のみ**なので、新列・新テーブル・新 FK を drop すれば戻る（不可逆なのは
 Phase C = [plan 068](../../plans/068-implement-category-tree-admin-cutover.md) のみ）。
 
+> **列を落とす前に、Step 5 が入れた複製 `Category` 行を消すこと。** Phase A は加算のみだが、
+> それは*スキーマ*の話であって**データはそうではない** —— Step 5 は `SubCategory` 1 行につき
+> 同じ id の `Category` 行を 1 行作る。列だけ drop すると、この複製行は
+> 「`parentId` も `path` も持たないただのルートカテゴリ」として残り、
+> **移行前には無かったカテゴリがストアフロントとダッシュボードに並ぶ**。
+> 複製行は `SubCategory` と id を共有するので一意に特定でき、`SubCategory`
+> 自体は Phase A では消えない（drop は Phase C = plan 068）ため、この方法が使える。
+
 ```sql
 ALTER TABLE "Product"  DROP CONSTRAINT IF EXISTS "Product_categoryNodeId_fkey";
 ALTER TABLE "Product"  DROP COLUMN     IF EXISTS "categoryNodeId";
 DROP TABLE  IF EXISTS "CategorySlugAlias";
+
+-- Step 5 が投入した SubCategory 複製行を先に除去する（列を落とすと識別できなくなる）
+DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;
+
+-- 件数が移行前の値（Step 6 で控えた root カテゴリ数）に戻ったことを確認してから次へ進む
+SELECT count(*) AS category_rows FROM "Category";
+
 ALTER TABLE "Category" DROP CONSTRAINT IF EXISTS "Category_parentId_fkey";
 ALTER TABLE "Category" DROP COLUMN IF EXISTS "parentId",
                        DROP COLUMN IF EXISTS "path",
@@ -198,6 +213,10 @@ ALTER TABLE "Category" DROP COLUMN IF EXISTS "parentId",
                        DROP COLUMN IF EXISTS "sortOrder";
 DROP TYPE IF EXISTS "CategoryAliasSource";
 ```
+
+> `DELETE` が `Product` の FK で止まる場合は、**まだ Phase B/C の書き込み経路が生きている**
+> （`categoryNodeId` が複製行を指したまま）ことを意味する。ロールバックの前提が崩れているので
+> STOP して報告すること —— FK を外して押し切ると商品のカテゴリ紐づけが失われる。
 
 その後 `bunx prisma migrate resolve --rolled-back 20260831102943_category_tree_phase_a`。
 
