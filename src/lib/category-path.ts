@@ -180,7 +180,10 @@ export const toCanonicalCategorySlug = (raw: string): string =>
     raw
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+        // 直前の `[^a-z0-9]+` が非英数字の**連続**を "-" 1 文字へ畳んでいるため、この時点で
+        // ハイフンが 2 つ以上並ぶことはない。よって `-+` は不要であり、`-+$` が持っていた
+        // super-linear なバックトラッキング（S5852）ごと落とせる。
+        .replace(/^-|-$/g, "");
 
 /**
  * Phase B（plan 067/068）で商品を紐づけられるカテゴリの深さ。
