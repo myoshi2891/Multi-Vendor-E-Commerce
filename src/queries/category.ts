@@ -70,17 +70,60 @@ const stripDerivedTreeFields = (
 };
 
 /**
+ * ロック対象の親 id を**重複排除して決定論的な順序に並べる**。
+ *
+ * 順序を固定しないと相互デッドロックになる —— 旧親 A・新親 B を掴む再親子化と、
+ * 旧親 B・新親 A を掴む再親子化が並行したとき、それぞれ片方を持って他方を待つ。
+ * id 昇順は「どのトランザクションから見ても同じ」唯一の基準である。
+ */
+const orderedLockTargets = (ids: readonly (string | null)[]): string[] =>
+    [...new Set(ids.filter((id): id is string => !!id))].sort();
+
+/**
+ * 指定ノードを `FOR UPDATE` で掴む（`orderedLockTargets` の順に 1 行ずつ）。
+ *
+ * `WHERE id = ANY(...)` の 1 クエリにまとめないのは、複数行を返すクエリの
+ * **ロック取得順がプランに依存する**ため。順序の保証は本ヘルパーの存在意義そのもの
+ * なので、実行計画に委ねずループで明示する（admin 操作なので往復増は許容範囲）。
+ */
+const lockCategoryNodesForUpdate = async (
+    tx: CategoryTransactionClient,
+    orderedIds: readonly string[]
+): Promise<LockedCategoryNode[]> => {
+    const locked: LockedCategoryNode[] = [];
+    for (const id of orderedIds) {
+        // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
+        // （値は常にパラメータ化される）。
+        const rows = await tx.$queryRaw<LockedCategoryNode[]>`
+            SELECT "id", "path", "depth" FROM "Category" WHERE "id" = ${id} FOR UPDATE
+        `;
+        const row = rows[0];
+        if (row) locked.push(row);
+    }
+    return locked;
+};
+
+/**
  * 指定した親ノードの `childCount` を実数から再計算する。
  *
  * **片側だけ増減させないこと。** 再親子化は旧親と新親の両方を動かすため、片方だけ
  * 更新すると「子がいないのに `childCount > 0`」が残り、リーフ強制（V-5）が正当な
  * リーフへの商品紐づけを拒否しはじめる。
+ *
+ * **count → update の間に行ロックが要る。** これは read-modify-write であり、
+ * READ COMMITTED では並行トランザクションの未コミットな付け替えが `count` から
+ * 見えない。両者が同じ親を触ると「古い数を数え、後勝ちで書く」lost update になり、
+ * `childCount` が実数からドリフトする。`childCount` は 068 でリーフ強制の判定材料に
+ * なったため、ドリフトすると**その親には二度と商品を紐づけられない**（導出列なので
+ * admin フォームからは復旧できない）。親行を先に `FOR UPDATE` で掴んで直列化する。
  */
 const recomputeChildCounts = async (
     tx: CategoryTransactionClient,
     parentIds: readonly (string | null)[]
 ): Promise<void> => {
-    const targets = [...new Set(parentIds.filter((id): id is string => !!id))];
+    const targets = orderedLockTargets(parentIds);
+    // 呼び出し側が既に同じ行を同じ順序で掴んでいる場合、この再取得は待ちを生まない。
+    await lockCategoryNodesForUpdate(tx, targets);
     for (const id of targets) {
         const childCount = await tx.category.count({ where: { parentId: id } });
         await tx.category.update({ where: { id }, data: { childCount } });
@@ -157,16 +200,22 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
                 },
             });
 
+            // 旧親と新親を**同じ順序体系で**まとめて掴む。新親だけを先に掴んで旧親を
+            // `recomputeChildCounts` まで遅らせると、旧親 A・新親 B の付け替えと
+            // 旧親 B・新親 A の付け替えが交差してデッドロックする。
+            // 掴む行は `assertLeafCategoryNode`（upsertProduct の V-5）と同一である
+            // ことが直列化の条件 —— 別々の行をロックしたのでは「商品をリーフ L に
+            // 紐づける」と「L の子を作る」の競合を検出できない。
+            const lockedParents = await lockCategoryNodesForUpdate(
+                tx,
+                orderedLockTargets([current?.parentId ?? null, nextParentId])
+            );
+
             let parent: LockedCategoryNode | null = null;
             if (nextParentId !== null) {
-                // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
-                // （値は常にパラメータ化される）。**リーフ強制（upsertProduct の V-5）と
-                // 同じ行を掴むことが直列化の条件**である —— 別々の行をロックしたのでは
-                // 「商品をリーフ L に紐づける」と「L の子を作る」の競合を検出できない。
-                const lockedRows = await tx.$queryRaw<LockedCategoryNode[]>`
-                    SELECT "id", "path", "depth" FROM "Category" WHERE "id" = ${nextParentId} FOR UPDATE
-                `;
-                parent = lockedRows[0] ?? null;
+                parent =
+                    lockedParents.find((node) => node.id === nextParentId) ??
+                    null;
                 if (!parent) throw new Error("Parent category not found.");
 
                 // V-7c: 子孫への再親子化。判定は境界文字 `/` を含む前置一致
