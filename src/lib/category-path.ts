@@ -25,10 +25,11 @@
  * @param path - 対象ノードの `Category.path`（末尾に `/` を付けない）
  * @returns `{ OR: [完全一致, 子孫] }` の形の Prisma where 断片
  */
-export const subtreeOf = (path: string) =>
-    ({
-        OR: [{ path }, { path: { startsWith: `${path}/` } }],
-    }) as const;
+export const subtreeOf = (
+    path: string
+): { OR: [{ path: string }, { path: { startsWith: string } }] } => ({
+    OR: [{ path }, { path: { startsWith: `${path}/` } }],
+});
 
 /**
  * Report whether `path` is the ancestor path itself or one of its descendants.

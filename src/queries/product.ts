@@ -740,8 +740,14 @@ export const getProducts = async (
         const skip = (currentPage - 1) * limit;
 
         // Construct the base query
-        const whereClause: any = {
-            AND: [],
+        //
+        // `AND` は `ProductWhereInput | ProductWhereInput[]` のユニオンなので、
+        // `whereClause.AND` へ直接 `push` すると型の上では呼べない。**条件の配列を
+        // 別に持ち、それを `AND` に載せる**ことで、`any` を挟まずに各条件が
+        // `ProductWhereInput` として検証されるようにする。
+        const andConditions: Prisma.ProductWhereInput[] = [];
+        const whereClause: Prisma.ProductWhereInput = {
+            AND: andConditions,
         };
 
         // URL 由来のフィルタ（store / category / subCategory / offer）は、対応する行が
@@ -765,7 +771,7 @@ export const getProducts = async (
                 select: { id: true },
             });
             if (!store) return noMatchResult;
-            whereClause.AND.push({ storeId: store.id });
+            andConditions.push({ storeId: store.id });
         }
 
         // Apply category / subCategory filters (using slugs)
@@ -799,12 +805,12 @@ export const getProducts = async (
             // （design.md §2-Q3 の擬似コードは Phase A 実装前に書かれており、
             //  リレーション名が確定していなかった）。categoryNodeId は Phase A の
             //  backfill と Phase B の dual-write により全商品で埋まっている。
-            whereClause.AND.push({ categoryNode: subtreeOf(node.path) });
+            andConditions.push({ categoryNode: subtreeOf(node.path) });
         }
 
         // Apply size filter (using array of sizes)
         if (filters.size && Array.isArray(filters.size)) {
-            whereClause.AND.push({
+            andConditions.push({
                 variants: {
                     some: {
                         sizes: {
@@ -826,13 +832,13 @@ export const getProducts = async (
                 select: { id: true },
             });
             if (!offer) return noMatchResult;
-            whereClause.AND.push({ offerTagId: offer.id });
+            andConditions.push({ offerTagId: offer.id });
         }
 
         // Apply search filter (search term in product name or description)
         // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
         if (filters.search) {
-            whereClause.AND.push({
+            andConditions.push({
                 OR: [
                     {
                         name: { contains: filters.search, mode: "insensitive" },
@@ -888,7 +894,7 @@ export const getProducts = async (
             if (hasMaxPrice) {
                 priceFilter.lte = filters.maxPrice;
             }
-            whereClause.AND.push({
+            andConditions.push({
                 variants: {
                     some: {
                         sizes: {
@@ -906,7 +912,7 @@ export const getProducts = async (
             const colorsArray = Array.isArray(filters.color)
                 ? filters.color
                 : [filters.color];
-            whereClause.AND.push({
+            andConditions.push({
                 variants: {
                     some: {
                         colors: {
