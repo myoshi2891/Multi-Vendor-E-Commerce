@@ -18,7 +18,9 @@ export interface FooterCategoryLink {
  * そのまま `?category=` に載せてはならない（移行時にリネームされた slug は
  * CATEGORY 別名では解決できず 0 件になる）。
  */
-export default function Links({ categories }: { categories: FooterCategoryLink[] }) {
+export default function Links({
+	categories,
+}: Readonly<{ categories: FooterCategoryLink[] }>) {
 	return (
 		<div className="mt-5 grid gap-4 text-sm md:grid-cols-3">
 			{/* Categories */}

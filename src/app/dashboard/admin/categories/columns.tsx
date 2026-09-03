@@ -68,7 +68,7 @@ const INDENT_PX = 16
  */
 const parentSlugOf = (path: string): string | null => {
     const segments = path.split('/')
-    return segments.length < 2 ? null : segments[segments.length - 2]
+    return segments.length < 2 ? null : (segments.at(-2) ?? null)
 }
 
 export const columns: ColumnDef<Category>[] = [

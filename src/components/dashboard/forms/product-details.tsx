@@ -39,7 +39,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "react-multi-select-component";
 
 import { useToast } from "@/hooks/use-toast";
