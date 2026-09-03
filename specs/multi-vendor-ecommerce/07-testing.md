@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2181 passed / 2184 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+- 2182 passed / 2185 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-04.
+  Review follow-up added +1 test (suites unchanged): the parent picker in `category-details.tsx`
+  only checked the candidate's own depth, so editing a node with descendants offered parents
+  that `upsertCategory`'s V-7 rebase check rejects at save time. The test pins the subtree-height
+  rule and was verified to fail against the previous implementation.
+  Earlier record (2181 / 2184 across 199 suites, 2026-09-03):
   The coverage work surfaced a real defect and +2 regression tests pin it: `saleEndDate` was
   written without a timezone (and cleared to `""`), neither of which `ProductFormSchema`'s
   `.datetime({ offset: true }).nullish()` accepts, so saving a sale end date silently failed.

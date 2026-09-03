@@ -183,18 +183,26 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > ロック待ちに入らせて初めて赤にできる。**`FOR UPDATE` を `findUnique` に置き換えると
 > 本シナリオのみ失敗すること**を実測で確認した。
 >
-> **E2E 1 本は未検証のままコミットした（`524ba258`）。** 初回実行は
+> **E2E 1 本は未検証のままコミットし、`9034f300` で解消した。** `524ba258` の時点では
 > `page.getByRole("combobox").first()` がダッシュボードのサイドバーにあるナビゲーション用
-> combobox を掴んで失敗した。セレクタを `page.locator("form")` 配下へスコープしたが
-> **再実行していない**。CI は Playwright を実行しないため CI は赤くならない。
-> 次セッションの最初の作業として [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) に記録した。
+> combobox を掴んで失敗しており、セレクタを `page.locator("form")` 配下へスコープした
+> ものの再実行していなかった。`9034f300` で実際に走らせたところ、**spec 側にさらに 3 件の
+> 欠陥**（`CategoryFormSchema` に反する fixture / クライアント mount 前の入力が
+> react-hook-form の空既定に巻き戻される / Radix Select の portal 再構築による
+> detached クリック）が露見し、いずれも修正した。
+>
+> **3 ブラウザすべてで緑を実測した（2026-09-03）。** chromium は dev（`E2E_USE_DEV=1`）と
+> config 既定（`next build && next start`）の両起動モード、firefox 7.9s / webkit 12.7s は
+> 本番ビルド起動。`retries=2` を有効にしたまま **flaky 0**。実装側の欠陥は無く、
+> `src/` は無変更。詳細は [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md)。
 >
 > **ドキュメント同期は未完。** `QA_HANDOFF.md`（SSOT）と本ファイルは更新したが、
 > `07-testing.md` / `COVERAGE_REPORT.md` / `PROGRESS.md` への伝播と
 > `bun run coverage:dashboard` の再生成は**行っていない**。
 >
 > 統計: Jest **2121** passed / 2124 total / **194 スイート**、Integration **135** / 16 スイート、
-> 型エラー 0 / ESLint 0 errors。E2E は未実測（上記）。
+> 型エラー 0 / ESLint 0 errors。E2E は `admin-category-tree.spec.ts` を
+> **3 ブラウザで実測し全緑・flaky 0**（`9034f300`・上記）。
 >
 > **067 の実行記録（2026-09-02・`8bebdc6e`〜`0ed9502a`）— DONE**
 >
