@@ -190,12 +190,16 @@ describe("upsertCategory", () => {
             const result = await upsertCategory(category as never);
 
             expect(result).toEqual(category);
+            // `childCount` は入力から受け取らない（ツリーから導出される値）。
+            // 期待値の組み立てでも明示的に外しておく —— フィクスチャに列を足したときに
+            // 「実装は落としているのに期待値には残っている」ズレを表面化させるため。
+            const { childCount: _childCount, ...inputWithoutDerived } = category;
             expect(mockDb.category.upsert).toHaveBeenCalledWith({
                 where: { id: category.id },
                 // 移行 SQL の A-1 と同じ規則（ルート ⇒ path = url / depth = 0）。
                 // update 側にも書くのは、url の変更に path を追随させるため。
-                update: { ...category, path: category.url, depth: 0 },
-                create: { ...category, path: category.url, depth: 0 },
+                update: { ...inputWithoutDerived, path: category.url, depth: 0 },
+                create: { ...inputWithoutDerived, path: category.url, depth: 0 },
             });
         });
 

@@ -5,6 +5,7 @@ import "@testing-library/jest-dom";
 import type { CellContext } from "@tanstack/react-table";
 import type { Category } from "@prisma/client";
 import { columns } from "@/app/dashboard/admin/categories/columns";
+import { createMockCategory } from "@/config/test-fixtures";
 
 // 重い子コンポーネント・外部依存はスタブ化し、列定義のレンダリングロジックに集中する
 jest.mock("next/image", () => ({
@@ -38,18 +39,14 @@ jest.mock("@/components/dashboard/shared/custom-modal", () => ({
     default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-const sampleCategory = {
+const sampleCategory: Category = createMockCategory({
     id: "cat-1",
     name: "Shoes",
     url: "shoes",
     image: "https://img/shoes.png",
     featured: true,
-    parentId: null,
     path: "shoes",
-    depth: 0,
-    sortOrder: 0,
-    childCount: 0,
-} as Category;
+});
 
 /** 列のキー（accessorKey か id）。位置ではなくキーで引く。 */
 const columnKey = (column: (typeof columns)[number]): string =>
@@ -136,7 +133,7 @@ describe("admin/categories columns", () => {
         const { container } = renderCell("featured", {
             ...sampleCategory,
             featured: false,
-        } as Category);
+        });
 
         // Assert: featured=false は緑チェックなし
         expect(container.querySelector(".stroke-green-300")).toBeNull();
@@ -154,8 +151,8 @@ describe("admin/categories columns", () => {
         // Arrange: 3 行のテーブル
         const rows = [
             sampleCategory,
-            { ...sampleCategory, id: "cat-2" } as Category,
-            { ...sampleCategory, id: "cat-3" } as Category,
+            { ...sampleCategory, id: "cat-2" },
+            { ...sampleCategory, id: "cat-3" },
         ];
 
         // Act
@@ -173,7 +170,7 @@ describe("admin/categories columns", () => {
             ...sampleCategory,
             path: "electronics/camera/lens",
             depth: 2,
-        } as Category);
+        });
 
         // Assert —— 1 テーブルに全階層が並ぶため、深さは字下げでしか読めない
         expect(container.firstElementChild).toHaveStyle({
@@ -187,7 +184,7 @@ describe("admin/categories columns", () => {
             ...sampleCategory,
             path: "electronics/camera/lens",
             depth: 2,
-        } as Category);
+        });
 
         // Assert —— 親名は path の 1 つ手前のセグメントから読む
         //（親行を引き直さずに済み、path が正であることの表示にもなる）
@@ -207,7 +204,7 @@ describe("admin/categories columns", () => {
         renderCell("sortOrder", {
             ...sampleCategory,
             sortOrder: 3,
-        } as Category);
+        });
 
         // Assert
         expect(screen.getByText("3")).toBeInTheDocument();
@@ -218,7 +215,7 @@ describe("admin/categories columns", () => {
         const { container } = renderCell("actions", {
             ...sampleCategory,
             id: "",
-        } as Category);
+        });
 
         // Assert
         expect(container).toBeEmptyDOMElement();
