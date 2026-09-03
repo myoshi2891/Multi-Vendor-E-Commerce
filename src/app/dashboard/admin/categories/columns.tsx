@@ -1,7 +1,7 @@
 'use client'
 
 // React, Next.js imports
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
@@ -45,14 +45,7 @@ import {
 } from 'lucide-react'
 
 // Queries
-import {
-    deleteCategory,
-    getAllCategories,
-    getCategory,
-} from '@/queries/category'
-
-// カテゴリツリー（DB に触れない純粋ヘルパーのみ）
-import { flattenCategoryTree } from '@/lib/category-path'
+import { deleteCategory, getCategory } from '@/queries/category'
 
 // Tanstack React Table
 import { ColumnDef } from '@tanstack/react-table'
@@ -162,10 +155,19 @@ export const columns: ColumnDef<Category>[] = [
     },
     {
         id: 'actions',
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
             const rowData = row.original
 
-            return <CellActions rowData={rowData} />
+            // 親選択の候補は「このテーブルが描画している全カテゴリ」そのもの。
+            // ページ（Server Component）が `flattenCategoryTree` 済みの配列を
+            // `data` に渡しているので、行ごとに取得し直す必要はない。
+            // `getCoreRowModel` を使うのは、検索フィルタで絞られていても
+            // 親候補は全件でなければならないため。
+            const categories = table
+                .getCoreRowModel()
+                .rows.map((tableRow) => tableRow.original)
+
+            return <CellActions rowData={rowData} categories={categories} />
         },
     },
 ]
@@ -173,48 +175,18 @@ export const columns: ColumnDef<Category>[] = [
 // Define props interface for CellActions component
 interface CellActionsProps {
     rowData: Category
+    /** 親選択モーダルの候補（テーブルが描画中の全カテゴリ）。 */
+    categories: Category[]
 }
 
 // CellActions component definition
-const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
+const CellActions: React.FC<CellActionsProps> = ({ rowData, categories }) => {
     // Hooks
     const { setOpen, setClose } = useModal()
     const [loading, setLoading] = useState(false)
     const { toast } = useToast()
     const router = useRouter()
 
-    // 親選択の候補。Server Component 経由で渡せない行アクションのモーダル用に
-    // ここで取得する（subCategories の旧実装と同じ形）。古いレスポンスで新しい
-    // 状態を上書きしないよう cancelled フラグを置く。
-    const [categories, setCategories] = useState<Category[]>([])
-    useEffect(() => {
-        let cancelled = false
-
-        const fetchCategories = async () => {
-            try {
-                const tree = await getAllCategories()
-                if (!cancelled) setCategories(flattenCategoryTree(tree))
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    console.error(
-                        '[AdminCategories:fetchCategories] Failed to load categories',
-                        { error: error.message, stack: error.stack }
-                    )
-                } else {
-                    console.error(
-                        '[AdminCategories:fetchCategories] Unknown failure',
-                        { error }
-                    )
-                }
-                if (!cancelled) setCategories([])
-            }
-        }
-
-        fetchCategories()
-        return () => {
-            cancelled = true
-        }
-    }, [])
 
     // Return null if rowData or rowData.id don't exist
     if (!rowData || !rowData.id) return null

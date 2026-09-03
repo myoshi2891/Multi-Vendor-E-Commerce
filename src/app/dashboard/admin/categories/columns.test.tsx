@@ -61,16 +61,26 @@ const columnKey = (column: (typeof columns)[number]): string =>
  * **位置ではなくキーで引く。** 列を 1 本足すたびに全テストの添字がずれると、
  * 追加した列とは無関係なテストが赤くなり原因が読めなくなる。
  */
-function renderCell(key: string, category: Category) {
+function renderCell(
+    key: string,
+    category: Category,
+    tableRows: Category[] = [category]
+) {
     const column = columns.find((c) => columnKey(c) === key);
     if (!column) throw new Error(`column not found: ${key}`);
     const cell = column.cell;
     if (typeof cell !== "function") throw new Error("cell is not a function");
-    const ctx = { row: { original: category } } as CellContext<
-        Category,
-        unknown
-    >;
-    return render(<>{cell(ctx)}</>);
+    // actions 列は親候補をテーブル（= ページが渡した data）から読む。
+    // 行ごとにサーバーアクションを叩かないことがこのスタブで担保される。
+    const getCoreRowModel = jest.fn(() => ({
+        rows: tableRows.map((original) => ({ original })),
+    }));
+    const ctx = {
+        row: { original: category },
+        table: { getCoreRowModel },
+    } as unknown as CellContext<Category, unknown>;
+    const view = render(<>{cell(ctx)}</>);
+    return { ...view, getCoreRowModel };
 }
 
 describe("admin/categories columns", () => {
@@ -138,6 +148,22 @@ describe("admin/categories columns", () => {
 
         // Assert: CellActions の DropdownMenu トリガー
         expect(screen.getByText("Open menu")).toBeInTheDocument();
+    });
+
+    it("sources parent candidates from the table instead of fetching per row", () => {
+        // Arrange: 3 行のテーブル
+        const rows = [
+            sampleCategory,
+            { ...sampleCategory, id: "cat-2" } as Category,
+            { ...sampleCategory, id: "cat-3" } as Category,
+        ];
+
+        // Act
+        const { getCoreRowModel } = renderCell("actions", sampleCategory, rows);
+
+        // Assert: ページが渡した data をそのまま使う（行ごとの取得をしない）
+        expect(getCoreRowModel).toHaveBeenCalled();
+        expect(getCoreRowModel.mock.results[0].value.rows).toHaveLength(3);
     });
 
     // ---- ツリー表示（plan 068 Step 6）----
