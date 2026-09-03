@@ -1,6 +1,15 @@
 # Plan 068: カテゴリツリー — admin UI 統合 + Phase C カットオーバー（**不可逆**）
 
-> **Executor instructions**: 本プランは **未実行**。plan [013](013-spike-category-tree-n-level.md)
+> **Executor instructions**: 本プランは **一部実行済み（IN PROGRESS・2026-09-02・
+> `c653864f`〜`524ba258`）**。**完了しているのは Step 1–4**（admin 表のツリー統合 /
+> 商品フォームのツリー選択 / リーフ強制 V-5 / 深さ上限・循環 V-7 系）**と、Step 8 の
+> テストのうち V-5・V-5b・V-5c・V-5d・V-7・V-7b・V-7c・V-7d、および Step 9 の検証**
+> （lint / tsc / Jest / 統合 / E2E 3 ブラウザ）である。
+> **不可逆な Phase C = Step 5–7 は未着手**（`prisma/schema.prisma` の差分 0 行・
+> マイグレーションの新規追加も無い）。**Step 10（docs 同期）/ Step 11（README の完了記録）も未完**。
+> 実行記録の詳細は [`plans/README.md`](README.md) の 068 行を参照。
+>
+> plan [013](013-spike-category-tree-n-level.md)
 > が確定した設計の実装 3 本のうち **3 本目（最終）**で、
 > [ADR-006](../docs/architecture/decisions/006-category-tree-representation.md) の
 > **Phase C** を含む。
