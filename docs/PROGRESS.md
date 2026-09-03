@@ -4613,3 +4613,54 @@ Radix Select）は値を素通しする最小スタブへ差し替えた。**検
 | テストファイル総数 | 240 | **245** |
 | lcov カバレッジ | Statements 72.45% / Branches 52.06% | **Statements 74.94%** (6617/8829) / **Branches 60.59%** (3183/5253) / Functions 64.36% / Lines 74.43% |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#176 Coverage on New Code の残ギャップ解消（2026-09-03）
+
+#### 概要
+
+SonarCloud PR#176 の Coverage on New Code に残っていた 2 ファイル
+（`product-details.tsx` / `category-details.tsx`）の未カバーを潰し、両者とも
+**行カバレッジ 100%** にした。残るのは分岐のみ。
+
+#### 根本原因
+
+未カバーの正体は**ロジックではなく「子ウィジェットへ渡した inline コールバック」**だった。
+`ImageUpload.onChange/onRemove`、`ImagesPreviewGrid.onRemove`、`ReactTags.handleAddition`、
+`DateTimePicker.onChange`、`MultiSelect.onChange`、`JoditEditor.onChange` は、いずれも
+jsdom で動かないウィジェットへ渡される。前回のスタブは `<div/>` を返すだけだったため、
+**コールバックが一度も発火せず**、フォーム側のハンドラが未実行のまま残っていた。
+
+対策は本物のウィジェットを動かすことではなく、**スタブ側にコールバック発火用の操作面
+（1 コールバック 1 ボタン）を持たせる**こと。検証対象はフォームの配線であってウィジェット
+ではない、という既存方針は維持している。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/dashboard/product-details.test.tsx` | +14 テスト。商品画像の追加/削除（3 枚未満で送信を止める）、バリアント画像の差し替え/除去、キーワードの追加・10 件上限・チップ削除、商品/バリアント説明エディタ、セール終了日の設定/クリア、無料配送国の選択/チップ削除 | `bcdf62f5` |
+| `tests/component/dashboard/category-details.test.tsx` | +1 テスト。`ImageUpload.onRemove` 後は `length(1)` 検証で送信させない | `5015eb07` |
+
+#### 副次的な知見
+
+Radix Tabs は `fireEvent.click` では切り替わらない（`activationMode="automatic"` で
+mousedown / focus 駆動）。バリアント説明タブの検証では `mouseDown` + `focus` が必要。
+
+#### カバレッジの変化
+
+| 対象 | 変更前 | 変更後 |
+|------|--------|--------|
+| `product-details.tsx` | line 81.3% / branch 88.0% | **line 100%** / branch 90.3% |
+| `category-details.tsx` | line 96.2% / branch 92.2% | **line 100%** / branch 92.2% |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2164 passed / 2167 total | **2179 passed / 2182 total**（2026-09-03 実測） |
+| スイート数 | 199 | **199**（不変） |
+| Jest スナップショット | 127 | **127**（不変） |
+| lcov カバレッジ | Statements 74.94% / Branches 60.59% / Functions 64.36% / Lines 74.43% | **Statements 75.33%** (6651/8829) / **Branches 60.8%** (3194/5253) / **Functions 65.9%** (1119/1698) / **Lines 74.81%** (6017/8043) |
+| 型エラー | 0 件 | **0 件** |

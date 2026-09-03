@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2164 passed / 2167 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+- 2179 passed / 2182 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+  The PR#176 follow-up closed the remaining gap on the two dashboard forms: +14 tests (suites
+  unchanged) drive the inline callbacks the forms hand to their widgets (image add/remove,
+  keyword cap, sale end date, free-shipping countries). Pass-through stubs never fired those
+  callbacks, so the stubs now expose an operable surface (a button per callback). Both forms
+  are at 100% line coverage (branches 90.3% / 92.2%); what remains uncovered is branch-only.
+  Earlier record (2164 / 2167 across 199 suites, 2026-09-03):
   SonarCloud PR#176 flagged a Coverage-on-New-Code gap on the plan 068 UI surface; +35
   component tests across +5 suites closed it. New files live under `tests/component/store/`
   (`footer-links`, `footer`, `product-filters`) and `tests/component/dashboard/`
