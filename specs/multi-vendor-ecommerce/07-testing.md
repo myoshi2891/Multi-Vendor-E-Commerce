@@ -12,8 +12,19 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2072 passed / 2075 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
-  Integration is 131 tests across 15 suites: a review follow-up added +2 in
+- 2121 passed / 2124 total across 194 suites (3 skipped tests in 1 skipped suite), as of 2026-09-03.
+  Integration is 135 tests across 16 suites, as of 2026-09-03. Plan 068 (category-tree admin
+  cutover) added +49 unit/component tests without adding a suite — tree-edit invariants for
+  `upsertCategory` (depth cap, self-parenting, re-parenting under a descendant, descendants
+  following a move), leaf-only enforcement in `upsertProduct`, `parentId`/`sortOrder` on
+  `CategoryFormSchema`, slug canonicalization with rename aliases, and the admin category table's
+  tree rendering — plus +4 integration tests in the new `tests/integration/category-tree-write.test.ts`
+  covering the same invariants against a real database. `tests/e2e/admin-category-tree.spec.ts`
+  covers creating a third-level node through the admin form; it is green on chromium in both
+  webServer modes as of 2026-09-03 (firefox and webkit have not been run for it yet).
+  E2E is 66 tests/browser across 30 files (198 total), as of 2026-09-03.
+  Earlier record (2072 / 2075 across 194 suites, Integration 131 across 15 suites, 2026-09-02):
+  a review follow-up added +2 in
   `category-tree-resync.test.ts` covering `Product.categoryNodeId` resynchronization — a product
   created after the one-shot Phase A backfill (NULL) and one whose category changed afterwards
   (stale). The section's `UPDATE "Product"` was executed by the suite but never asserted, which is
