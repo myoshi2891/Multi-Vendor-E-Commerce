@@ -296,11 +296,21 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 > したがって型変更の前に必ず変換可能性を計測する:
 >
 > ```sql
-> SELECT count(*) FROM "ProductAttributeValue"
-> WHERE "definitionId" = $1 AND "valueText" !~ '^\s*-?[0-9]+(\.[0-9]+)?\s*$';
+> -- 値は定義の scope 側の 1 テーブルにしか入らない（複合 FK (definitionId, scope)、
+> -- ADR-007 D-5）が、計測 SQL を PRODUCT 側だけにすると VARIANT 定義では
+> -- 常に 0 件が返り、変換不能な値を抱えたまま経路 1 を選んでしまう。
+> -- 反対側は必ず 0 行なので、両テーブルを UNION ALL で合算して数える。
+> SELECT count(*) FROM (
+>     SELECT "valueText" FROM "ProductAttributeValue" WHERE "definitionId" = $1
+>     UNION ALL
+>     SELECT "valueText" FROM "VariantAttributeValue" WHERE "definitionId" = $1
+> ) v
+> WHERE v."valueText" !~ '^\s*-?[0-9]+(\.[0-9]+)?\s*$';
 > ```
 >
 > 0 件なら経路 1（in-place 変更）、1 件以上なら経路 2（archive + 新定義）を採る。
+> **経路 1 の UPDATE も同じ理由で scope 側のテーブルに当てること**（数え方と
+> 書き換え先がずれると、計測は緑なのに変換されない値が残る）。
 > **不変条件は「定義ごと」に閉じている**ため、経路 2 なら変換不能な値は
 > `TEXT` のままの旧定義に残り、履歴を失わずに A-1 を満たせる。
 >
