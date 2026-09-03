@@ -420,3 +420,48 @@ scripts/coverage-dashboard/render-html.ts  ダッシュボードデータ源 (NE
 docs/coverage-dashboard.html               生成物 (手動編集禁止)
 docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (テスト統計の SSOT)
 ```
+
+---
+
+## Layer 2 grep ベースライン（既知の例外リスト）
+
+> Step 3 / 観点 D の運用規定（本 skill 168-169 行・378 行）が要求するベースライン。
+> **ヒット件数がここに記録された値を超えた場合のみレグレッションとして報告する。**
+> 以下と同数なら「既存・増加なし」と報告し、31 件の既存ヒットを毎回再評価しない。
+>
+> **この節が無いと「増加分のみ報告」運用は成立しない。** 2026-09-03 の検査で、
+> 規定だけがあってベースラインが存在しないことが判明した（Layer 3 のドリフト）。
+> 検査のたびに既存違反を新規発見として扱ってしまい、本当の増加が埋もれる。
+
+### 計測日: 2026-09-03（SV-1〜SV-3 の是正後）
+
+| 検査 | 計測コマンド | ヒット数 | 内訳・許容理由 |
+|------|------------|---------|--------------|
+| D-1 `if (!user)` | `grep -rn "if (!user)" src/queries/ --include="*.ts" \| grep -v "\.test\."` | **6** | `profile.ts` 5 / `paypal.ts` 1。**すべて tech.md「認可ガードの承認済み例外」に記載済み**（移行すると *auth-guards に無い保護* が失われる 2 モジュール）。これ以外は 2026-09-03 に `requireUser` / `requireSeller` / `requireAdmin` へ移行完了 |
+| D-1 `role !== "` | `grep -rn 'role !== "' src/queries/ --include="*.ts" \| grep -v "\.test\."` | **1**（実違反 **0**） | `product.ts:684` は**コメント内の言及**のみ。ロール判定のインライン展開は全廃 |
+| D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
+| D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
+| D-4 queries 外の `"use server"` | `grep -rln '^"use server"' src/ --include="*.ts" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
+| D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts"` | **0** | ADR 001 遵守 |
+| D-6 cookie の生 `JSON.parse` | `grep -rn "JSON.parse.*cookie" src/` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
+
+> **是正前（commit `3f91e7f2`）は D-1 が 24 + 7 = 31、D-3 が 2、D-4 が 1 だった。**
+> 移行の過程で、認可チェックを外側の `try` の中に置いていたことによる**実バグ 2 件**
+> （`user.ts` の `followStore` / `review.ts` の `upsertReview` —— 認可エラーが
+> `catch` の汎用メッセージで上書きされ、呼び出し側が未認証と DB 障害を区別できなかった）
+> が発見された。**どちらもテストが誤った挙動を追認していた**ため、grep 検査だけが
+> 唯一の発見経路だった。
+
+### 未償却の実違反
+
+**現在ゼロ。** SV-1〜SV-3 は 2026-09-03 に是正済み（記録: `docs/PROGRESS.md`
+「規約違反の是正記録」）。残る D-1 の 6 件は
+[tech.md「認可ガードの承認済み例外」](../../steering/tech.md#認可ガードの承認済み例外)
+に理由付きで登録された例外であり、未償却の負債ではない。
+
+### 更新ルール
+
+- 検査でヒット数が**減った**場合は、この表を減少後の値へ更新する（改善の固定）
+- **増えた**場合は表を更新せず、増加分をレグレッションとして報告する
+  （ベースラインを黙って引き上げると検知器として死ぬ）
+- 計測日と commit を必ず併記する

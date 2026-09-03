@@ -206,11 +206,21 @@ Phase C = [plan 068](../../plans/068-implement-category-tree-admin-cutover.md) �
 > 自体は Phase A では消えない（drop は Phase C = plan 068）ため、この方法が使える。
 
 ```sql
+-- 【STOP 判定】列を落とす前に、複製行を指している Product が無いことを確かめる。
+-- 0 でなければ Phase B/C の書き込み経路がまだ生きている（= ロールバックの前提が
+-- 崩れている）ので、ここで中断して報告すること。押し切ると商品のカテゴリ紐づけが
+-- 失われる。**この検査は FK と列を落とす前にしか成立しない** —— 列を落とした後では
+-- 参照そのものが消え、後段の DELETE は静かに通ってしまう。
+SELECT count(*) AS products_on_mirror_rows
+  FROM "Product" p
+  JOIN "SubCategory" s ON s.id = p."categoryNodeId";
+-- ↑ が 0 であることを確認してから、以下を実行する。
+
 ALTER TABLE "Product"  DROP CONSTRAINT IF EXISTS "Product_categoryNodeId_fkey";
 ALTER TABLE "Product"  DROP COLUMN     IF EXISTS "categoryNodeId";
 DROP TABLE  IF EXISTS "CategorySlugAlias";
 
--- Step 5 が投入した SubCategory 複製行を先に除去する（列を落とすと識別できなくなる）
+-- Step 5 が投入した SubCategory 複製行を除去する（列を落とすと識別できなくなる）
 DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;
 
 -- 件数が Step 0 で控えた移行前のベースライン（category_rows_baseline）に
@@ -226,9 +236,13 @@ ALTER TABLE "Category" DROP COLUMN IF EXISTS "parentId",
 DROP TYPE IF EXISTS "CategoryAliasSource";
 ```
 
-> `DELETE` が `Product` の FK で止まる場合は、**まだ Phase B/C の書き込み経路が生きている**
-> （`categoryNodeId` が複製行を指したまま）ことを意味する。ロールバックの前提が崩れているので
-> STOP して報告すること —— FK を外して押し切ると商品のカテゴリ紐づけが失われる。
+> 上の `products_on_mirror_rows` が 0 でない場合は、**まだ Phase B/C の書き込み経路が
+> 生きている**（`categoryNodeId` が複製行を指したまま）ことを意味する。ロールバックの
+> 前提が崩れているので STOP して報告すること。
+>
+> かつてこの注記は「`DELETE` が `Product` の FK で止まったら STOP」と書いていたが、
+> **その時点では FK も列も既に落ちている**ため、この検知は原理的に発火しない。
+> 判定は上記のとおり drop の**前**に置くこと。
 
 その後 `bunx prisma migrate resolve --rolled-back 20260831102943_category_tree_phase_a`。
 

@@ -75,7 +75,7 @@ design.md §0 の 0-4 / 0-5 / 0-6 / 0-7 を参照。本プランに直結する�
 |---|---|
 | 型 / lint | `bunx tsc --noEmit` / `bun run lint` |
 | 対象ユニット | `bun run test -- src/queries/product.test.ts` / `src/queries/category.test.ts` / `src/queries/home.test.ts` |
-| 統合（Docker 必須） | `bun run test -- tests/integration/product-browse.test.ts` |
+| 統合（Docker 必須） | `bun run test:integration -- tests/integration/product-browse.test.ts` |
 | E2E（`CLERK_SECRET_KEY` 必要） | `bunx playwright test tests/e2e/search-filter.spec.ts` |
 
 ## Scope

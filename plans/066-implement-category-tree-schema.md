@@ -94,7 +94,7 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
 | ER 図の再生成 | `bun run erd:generate` |
 | 型チェック / lint | `bunx tsc --noEmit` / `bun run lint` |
 | ユニット | `bun run test` |
-| 統合（Docker 必須） | `docker info` で疎通確認後 `bun run test -- tests/integration` |
+| 統合（Docker 必須） | `docker info` で疎通確認後 `bun run test:integration` |
 
 ## Scope
 
@@ -156,7 +156,7 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
      SubCategory 側が `<親slug>-camera` にリネームされ、`CategorySlugAlias` に
      `(SUB_CATEGORY, "camera")` と `(CATEGORY, "camera")` の**2 行が共存**すること
      （キーを `oldSlug` 単体にしていたら引けない組み合わせ — design.md §2-Q2-3）
-7. `bun run lint` / `bunx tsc --noEmit` / `bun run test` / `bun run test -- tests/integration`。
+7. `bun run lint` / `bunx tsc --noEmit` / `bun run test` / `bun run test:integration`。
 8. **docs 同期**: `spec-sync-after-test` skill を起動（テスト数が変わるため rule 02 の必須手順）。
    ダッシュボード再生成と統計同期は**テストコードとは別コミット**にする。
 9. `plans/README.md` の 066 ステータス行を更新し、実施結果（衝突件数の実測値を含む）を記録する。
@@ -170,7 +170,7 @@ ALL を満たすこと:
 - [ ] `bun run erd:generate` の **stderr に orphan WARNING が 0 件**、
       `docs/architecture/data-model.drawio` がスキーマ変更と同一コミットに含まれる
 - [ ] **既存挙動が無変更であることの実測**: `bun run test` と
-      `bun run test -- tests/integration` の passed 数が、シード形状変更に伴う
+      `bun run test:integration` の passed 数が、シード形状変更に伴う
       追随を除いて**移行前と同一**（storefront の読み取り経路を触っていないため）
 - [ ] V-3（冪等性）/ V-4（`childCount` 整合）/ 衝突リネームの 3 シナリオが緑
 - [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors

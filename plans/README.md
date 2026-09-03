@@ -210,7 +210,8 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 効いているため、B が A の子孫のときだけ畳む（無条件に畳むと「0 件」が「B の結果」へ化ける）。
 >
 > **プラン本文の誤り 2 点**: 統合テストのコマンドは `bun run test:integration`（`jest.config.js` が
-> `/tests/integration/` を除外しているため本文の `bun run test -- tests/integration/...` は動かない）。
+> `/tests/integration/` を除外しているため本文の `bun run test -- tests/integration/...` は動かない
+> —— 2026-09-03 に 066 / 067 / 068 本文を修正済み）。
 > Done criteria の `grep startsWith` は検索対象に `src/app` を含んでおらず、実際の重複は
 > `browse/page.tsx` に出た（`isWithinSubtree` へ寄せて解消）。
 >

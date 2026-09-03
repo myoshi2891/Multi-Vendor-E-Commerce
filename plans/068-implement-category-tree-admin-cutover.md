@@ -67,7 +67,7 @@ Phase C はその曖昧さを閉じる。
 | マイグレーション | `bunx prisma migrate dev --name category_tree_phase_c`（**`db push` 禁止**） |
 | ER 図再生成 | `bun run erd:generate` |
 | 型 / lint | `bunx tsc --noEmit` / `bun run lint` |
-| 統合（Docker 必須） | `bun run test -- tests/integration` |
+| 統合（Docker 必須） | `bun run test:integration` |
 | E2E | `bunx playwright test` |
 
 ## Scope

@@ -234,10 +234,15 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 依存はゼロで、既存 tests/e2e/a11y/_helpers.ts の runA11yScan をそのまま使える。
     // 067-B (plan 067 カテゴリツリー Phase B の残作業) は 2026-09-02 に完了
     // (d7769375 footer / 171ac4fa 統合 V-1・V-6・3 階層 / c094f7d4 dual-write /
-    //  0ed9502a E2E V-2)。QA_HANDOFF.md の 067-B プロンプト節と同時に削除した。
-    // 残るのは実 DB への migrate deploy (権限で BLOCKED) のみで、これは
-    // safe-migration skill 経由のオペレーター承認待ち = テストタスクではないため
-    // NEXT_ACTIONS には載せず QA_HANDOFF.md 側にのみ記録する。
+    //  0ed9502a E2E V-2)。NEXT_ACTIONS からは削除した (QA_HANDOFF.md 側の 067-B 節は
+    //  「✅ 解消」の記録として残してある —— 前セッションが BLOCKED と誤記録した経緯を
+    //  追えるようにするため。依頼プロンプトとしては機能していないので G-2 の 1:1 対応の外)。
+    // 残っていた実 DB への migrate deploy も 2026-09-03 に解消した
+    // (20260901223148_category_tree_phase_b_resync は _prisma_migrations 上で
+    //  finished_at 2026-09-02 / rolled_back_at NULL の適用済み。前セッションが
+    //  「権限で BLOCKED」と記録したのは一時的な失敗の誤記録だった —— 経緯は
+    //  QA_HANDOFF.md の 067-B 節)。いずれもテストタスクではないため
+    // NEXT_ACTIONS には載せない。
     {
         priority: "medium",
         title: "home (/) の a11y spec 追加 (052 の残り 1 ページ)",
