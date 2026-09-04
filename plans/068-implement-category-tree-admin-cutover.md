@@ -6,7 +6,7 @@
 > テストのうち V-5・V-5b・V-5c・V-5d・V-7・V-7b・V-7c・V-7d、および Step 9 の検証**
 > （lint / tsc / Jest / 統合 / E2E 3 ブラウザ）である。
 > **不可逆な Phase C = Step 5–7 は未着手**（`prisma/schema.prisma` の差分 0 行・
-> マイグレーションの新規追加も無い）。**Step 10（docs 同期）/ Step 11（README の完了記録）も未完**。
+> マイグレーションの新規追加も無い）。**Step 11（README の完了記録）も未完**（Step 10 の docs 同期は 2026-09-03 に完了）。
 > 実行記録の詳細は [`plans/README.md`](README.md) の 068 行を参照。
 >
 > plan [013](013-spike-category-tree-n-level.md)

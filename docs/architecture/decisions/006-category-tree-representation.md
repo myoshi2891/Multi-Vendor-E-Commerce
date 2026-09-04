@@ -313,7 +313,7 @@ WHERE c."childCount" > 0;
 
 各 Phase は `bunx prisma migrate dev` で個別のマイグレーションにする
 （`db push` 禁止・既存マイグレーションの編集禁止 —
-[`.claude/steering/tech.md`](../../steering/tech.md)）。Phase ごとに
+[`.claude/steering/tech.md`](../../../.claude/steering/tech.md)）。Phase ごとに
 `bun run erd:generate` で ER 図を同一コミットで再生成する
 （[`.claude/rules/03-data-model-diagram-sync.md`](../../../.claude/rules/03-data-model-diagram-sync.md)）。
 
