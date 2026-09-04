@@ -5,6 +5,8 @@
 > [068](068-implement-category-tree-admin-cutover.md) まで完了済み）。
 > **以下は着手当時の記述であり、再実行の指示ではない**（履歴として残す）。
 > 本番適用の手順は [`docs/migration/07-category-tree-phase-a-production.md`](../docs/migration/07-category-tree-phase-a-production.md) を参照。
+> **実行時の実測値と、未達のまま残った Done criteria 1 件（逆移行の実行検証）は
+> 「実施結果」節にまとめてある。**
 >
 > plan [013](013-spike-category-tree-n-level.md)
 > （spike）が確定した設計の**実装 3 本のうち 1 本目**であり、
@@ -59,7 +61,11 @@
 - **Category**: direction（実装）
 - **Planned at**: 2026-08-31, against HEAD `257b7873`（branch `dev`）
 - **State**: DONE（2026-08-31。migration `20260831102943_category_tree_phase_a` を適用し、
-  `tests/integration/category-tree-migration.test.ts` を新設）
+  `tests/integration/category-tree-migration.test.ts` を新設）。
+  **ただし Done criteria 1 件が未達** —— 逆移行は手順のみ整備で**実行検証なし**
+  （「実施結果」節）。後続 [067](067-implement-category-tree-queries.md) /
+  [068](068-implement-category-tree-admin-cutover.md) は完了済みで Phase C まで進んでいるため、
+  この未達は「066 単体へのロールバック可能性が実測されていない」という限定的な残課題である
 
 ## Why this matters
 
@@ -161,35 +167,69 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
    ダッシュボード再生成と統計同期は**テストコードとは別コミット**にする。
 9. `plans/README.md` の 066 ステータス行を更新し、実施結果（衝突件数の実測値を含む）を記録する。
 
+## 実施結果（2026-08-31 実行時の実測。証拠: [`plans/README.md`](README.md) の「066 の実行記録」/ コミット `0f0fa400`〜`868ccf82`）
+
+### 事前計測（Step 1 / Step 4）
+
+| 計測 | 実測値 | 取得方法・根拠 |
+|------|--------|---------------|
+| slug 衝突（`Category.url` ∩ `SubCategory.url`）— Step 1 | **0 件** | 実 DB（Neon dev）に対し `PrismaClient.$queryRaw` で実行（`psql` 未導入のため）。STOP 条件の 20 件を大きく下回る。シードでの代替ではない |
+| 非リーフに紐づく `Product` — Step 4（A-6 直後） | **0 件** | A-6 は `subCategoryId` の列コピーなので `categoryNodeId` は必ず depth 1 の葉を指す。移行時計測でも「SubCategory を持たない `Category`」**0**・`categoryNodeId` 未 backfill **0**・`childCount` ドリフト **0** |
+| 移行前の規模（参考） | Category **40** / SubCategory **58** / Product **105** | 同上 |
+| 移行後の形状（参考） | ルート **40** / 子 **58** / alias **98** / リネーム **0** | 対応表は [`slug-migration-map.csv`](../docs/design/category-tree/slug-migration-map.csv)（衝突 0 のためヘッダ + 計測値のみ） |
+
+いずれの STOP 条件にも該当しなかった。
+
+### 未達の Done criteria
+
+- **逆移行の実行検証は未実施**。手順は
+  [`docs/migration/07-category-tree-phase-a-production.md`](../docs/migration/07-category-tree-phase-a-production.md) §4 と
+  [design.md §4](../docs/design/category-tree/design.md) に整備済みだが、実 DB で走らせて
+  `Category` 件数が移行前へ戻ることを確認した記録は残っていない。
+  `tests/integration/category-tree-migration.test.ts` も順方向（A-1〜A-6）のみを覆っており、
+  逆移行のケースを持たない。**Phase A の可逆性は「手順として用意されている」段階であり、
+  「実行して検証済み」ではない**。
+
 ## Done criteria
 
 ALL を満たすこと:
 
-- [ ] `bunx prisma migrate dev` が新規マイグレーション 1 本を生成し、
+- [x] `bunx prisma migrate dev` が新規マイグレーション 1 本を生成し、
       `prisma/migrations/` に履歴が残っている（`db push` を使っていない）
-- [ ] `bun run erd:generate` の **stderr に orphan WARNING が 0 件**、
+      —— `prisma/migrations/20260831102943_category_tree_phase_a/`
+- [x] `bun run erd:generate` の **stderr に orphan WARNING が 0 件**、
       `docs/architecture/data-model.drawio` がスキーマ変更と同一コミットに含まれる
-- [ ] **既存挙動が無変更であることの実測**: `bun run test` と
+      —— `0f0fa400` に `schema.prisma` / `generate-erd.ts` / `data-model.drawio` が同梱。
+      2026-09-05 の再実行でも WARNING 0 件・`.drawio` の差分 0（決定論性も確認）
+- [x] **既存挙動が無変更であることの実測**: `bun run test` と
       `bun run test:integration` の passed 数が、シード形状変更に伴う
       追随を除いて**移行前と同一**（storefront の読み取り経路を触っていないため）
-- [ ] V-3（冪等性）/ V-4（`childCount` 整合）/ 衝突リネームの 3 シナリオが緑
-- [ ] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors
-- [ ] `src/queries/**` の差分が **`src/queries/category.ts` のルート絞り込み
+      —— Jest 2026 → **2025**（シードのツリー統合に伴う置き換えで −1 / スイート 191 不変）、
+      Integration 108 → **117** / 13 → **14 スイート**（本プランで追加した移行テスト分）
+- [x] V-3（冪等性）/ V-4（`childCount` 整合）/ 衝突リネームの 3 シナリオが緑
+      —— `tests/integration/category-tree-migration.test.ts`（`9fc80ce3`）
+- [x] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors
+      （2026-09-05 の HEAD 実測でも tsc 0 件 / lint 0 errors・14 warnings）
+- [x] `src/queries/**` の差分が **`src/queries/category.ts` のルート絞り込み
       （`where: { parentId: null }`）のみ**で、`src/components/**` の差分は **0 行**
       （`git diff --stat <base> -- src/components` が空 かつ
       `git diff --name-only <base> -- src/queries` が `src/queries/category.ts` のみ ——
       Phase A の境界）。この 1 箇所だけは**既存挙動の保存**であり、読み替え（plan 067）
       ではない: A-3 が複製した子行を除外しないと、既存の全件読み取りが旧サブカテゴリを
-      トップレベルとして露出させてしまう（本プラン冒頭の注記）
-- [ ] 事前計測の実測値がプランの「実施結果」節に記録されている
+      トップレベルとして露出させてしまう（本プラン冒頭の注記）。
+      **逸脱 1 点（オペレーター承認済み）**: 型の連鎖により `category.test.ts`（+4/−1）も
+      同時に変わったため、実差分は `category.ts`（+17/−2）+ `category.test.ts` の 2 ファイル。
+      `src/components/**` は 0 差分を維持（詳細は [`plans/README.md`](README.md) の実行記録）
+- [x] 事前計測の実測値がプランの「実施結果」節に記録されている
       （Step 1 の slug 衝突件数 **と** Step 4 の A-6 直後に測る非リーフ紐づけ商品件数の 2 本）
-- [ ] **逆移行が用意され、実行して検証済み**: 新列・新テーブルの drop に加えて、
+      —— 上記「実施結果」節（衝突 **0 件** / 非リーフ紐づけ **0 件**）
+- [ ] **逆移行が用意され、実行して検証済み** ⚠️ **未達**（手順のみ整備・実行検証なし。「実施結果」節参照）: 新列・新テーブルの drop に加えて、
       **`SubCategory` と同じ id を持つ複製 `Category` 行を削除**する
       （`DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;`）。
       列を drop するだけでは複製行が残り、旧読み取りにトップレベルのカテゴリとして
       現れ続けるため、ロールバックが完了しない。実行後に `Category` の件数が
       移行前と一致することを確認する
-- [ ] `spec-sync-after-test` によるドキュメント同期コミットが存在する
+- [x] `spec-sync-after-test` によるドキュメント同期コミットが存在する —— `868ccf82`
 
 ## STOP conditions
 

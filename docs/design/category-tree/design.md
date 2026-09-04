@@ -207,7 +207,7 @@ SELECT count(*) FROM (
 
 | Phase | スキーマ | 読み取り | 書き込み | ロールバック |
 |-------|---------|---------|---------|-------------|
-| **A** | `Category` に木の列を追加 / `CategorySlugAlias` 新設 / `Product.categoryNodeId`（**nullable**）追加 | 旧 FK | 旧 FK のみ | 新列 drop のみ。既存挙動は無傷 |
+| **A** | `Category` に木の列を追加 / `CategorySlugAlias` 新設 / `Product.categoryNodeId`（**nullable**）追加 | 旧 FK | 旧 FK のみ | **drop だけでは戻らない** —— A-3 が取り込んだ複製行（`SubCategory` と同じ id を持つ `Category` 行）と対応する `CategorySlugAlias` を**先に削除**してから新列・新テーブルを drop する（§4 のロールバック手順）。既存挙動は無傷 |
 | **B** | 変更なし | **新 FK + サブツリー prefix** | **新旧 dual-write** | 読み取りを旧 FK へ戻す |
 | **C** | `categoryNodeId` 必須化 → `subCategoryId` / 旧 `categoryId` drop → `categoryNodeId` を `categoryId` へ rename → `SubCategory` drop | 新 FK | 新 FK | **不可逆**。C の前に B の実測期間を置く |
 
