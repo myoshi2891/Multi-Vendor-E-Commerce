@@ -9,6 +9,9 @@ import { db } from "@/lib/db";
 // Prisma model
 import { Category, CategoryAliasSource, Prisma } from "@prisma/client";
 
+// 入力バリデーション（フォームと同一の Zod スキーマを再利用する）
+import { CategoryFormSchema } from "@/lib/schemas";
+
 // カテゴリツリー（materialized path）の共通ヘルパー
 import {
     buildCategoryTree,
@@ -493,6 +496,20 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
 
         // Ensure category data is provided
         if (!category) throw new Error("Please provide category data.");
+
+        // slug をサーバー側で必ず検証する。**クライアントの Zod resolver は防御にならない**
+        // —— Server Action は公開エンドポイントなので、フォームを経由しない呼び出しが
+        // 任意の url を渡せる。`url` は materialized path のセグメントになり
+        // （`${parent.path}/${url}`）、`subtreeOf` の startsWith prefix として
+        // LIKE に渡るため、`/`（区切り文字）や `%` `_`（LIKE メタ文字）が混じると
+        // サブツリーの境界そのものが壊れる（schemas.ts の当該 regex 注記 / design.md §2-Q1）。
+        // 規約の二重定義を避けるため、フォームと**同一のスキーマ定義**を再利用する。
+        const parsedUrl = CategoryFormSchema.shape.url.safeParse(category.url);
+        if (!parsedUrl.success) {
+            throw new Error(
+                parsedUrl.error.issues[0]?.message ?? "Invalid category url."
+            );
+        }
 
         // Throw error if category with same name or URL already exists
         await assertCategoryNameAndUrlAreFree(category);

@@ -120,6 +120,28 @@ describe("upsertCategory", () => {
             );
         });
 
+        // slug はサーバー側で検証する。Server Action は公開エンドポイントなので、
+        // フォームの Zod resolver を経由しない呼び出しが任意の url を渡せる。
+        // `/` は materialized path の区切り、`%` / `_` は subtreeOf の
+        // startsWith が使う LIKE のメタ文字なので、混入するとサブツリー境界が壊れる。
+        it.each([
+            ["スラッシュ", "electronics/camera"],
+            ["パーセント", "electro%nics"],
+            ["アンダースコア", "electro_nics"],
+            ["大文字", "Electronics"],
+        ])(
+            "url に%sを含む場合はエラーをスローし、DB を一切触らない",
+            async (_label, url) => {
+                await expect(
+                    upsertCategory(createMockCategory({ url }) as never)
+                ).rejects.toThrow(/lowercase alphanumeric segments/);
+
+                // 検証は DB 参照より前に閉じる（重複チェックすら走らない）
+                expect(mockDb.category.findFirst).not.toHaveBeenCalled();
+                expect(mockDb.$transaction).not.toHaveBeenCalled();
+            }
+        );
+
         it("同名のカテゴリが存在する場合エラーをスローする", async () => {
             mockDb.category.findFirst.mockResolvedValue({
                 id: "other-cat",
