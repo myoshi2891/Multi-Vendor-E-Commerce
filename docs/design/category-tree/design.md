@@ -263,8 +263,11 @@ if (!storeId) {
 
 // 店舗スコープ: 商品を持つのはリーフだけなので、まず対象リーフを引き、
 // その path から祖先も残す（祖先が落ちると木が繋がらない）。
+// リレーションは**新 FK 側の `nodeProducts`**（Product.categoryNodeId）を使う。
+// 旧 `products`（Product.categoryId）は Phase B ではルートを指すため、掛けると
+// 3 階層目以降の商品に届かない。Phase C の FK rename 後は `products` に戻る。
 const leaves = await db.category.findMany({
-    where: { products: { some: { storeId } } },
+    where: { nodeProducts: { some: { storeId } } },
     select: { path: true },
 });
 if (leaves.length === 0) return [];

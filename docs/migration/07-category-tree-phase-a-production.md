@@ -179,6 +179,26 @@ JOIN "Category" c ON c.id = p."categoryNodeId"
 WHERE c."childCount" > 0;
 ```
 
+### Step 6.5 — 最終リコンサイル（解決の直前に必ず流す）
+
+**本手順は書き込みを止めない。** その代わり、Step 5 の backfill から Step 7 までの間に
+旧アプリ（`categoryNodeId` を書かない Phase A 以前のリビジョン）が作った行が
+`categoryNodeId IS NULL` のまま残りうる。解決の直前にもう一度だけ埋め直す:
+
+```sql
+UPDATE "Product" SET "categoryNodeId" = "subCategoryId"
+WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
+```
+
+Step 5 の A-6 と同一の冪等 UPDATE なので、何度流しても差分がゼロに収束する。
+差分が 0 行で返ることを確認してから Step 7 へ進むこと（0 行 = 取り残しなし）。
+
+> **なぜ「書き込みを止める」ではなく再実行なのか。** 本書は §1 のとおり
+> 「`Product` の書き込みを止めない」ことを目的に既定の 1 トランザクション経路から
+> 分岐している。ゲートを掛けると Step 1〜7 全体が書き込み停止時間になり、
+> 本書の存在意義そのものが消える。埋め直しが冪等である以上、
+> **停止ではなく収束**で取り残しを潰すのが正しい。
+
 ### Step 7 — マイグレーションを適用済みとして解決する
 
 手で同じ最終状態を作ったので、マイグレーションランナーには**適用済み**と伝える。
