@@ -45,6 +45,25 @@ describe("parseModels", () => {
         expect(model.fields.map((f) => f.name)).toEqual(["id", "definitionId"]);
     });
 
+    it("コメント中の @@id / @@unique を複合キーとして拾わない", () => {
+        // Arrange —— ブロック属性はモデル本体一括で走査するため、コメント中の
+        // 記述やコメントアウトされた属性まで一致していた回帰ケース
+        const src = `model AttributeOption {
+  id           String
+  definitionId String
+  value        String
+  // @@unique([definitionId, value]) は Phase C で追加予定
+  /// @@id([id, definitionId]) にする案もあった
+}`;
+
+        // Act
+        const [model] = parseModels(src, modelNames);
+
+        // Assert
+        expect(model.compositeUniques).toEqual([]);
+        expect(model.compositeId).toEqual([]);
+    });
+
     it("行コメント（// と ///）をフィールドとして出さない", () => {
         // Arrange —— 行コメントは `//` を fieldName、次トークンを型として
         // 計上され、偽のフィールドになっていた回帰ケース

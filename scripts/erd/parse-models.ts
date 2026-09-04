@@ -57,6 +57,37 @@ export interface Model {
  * @param body - `model X { ... }` の中身
  * @returns ブロック属性を除去した本体（行数は変わりうる）
  */
+/**
+ * 行コメント（`//` / `///`）を落とす。
+ *
+ * ブロック属性（`@@id` / `@@unique`）はモデル本体一括で走査するため、
+ * コメント中の記述（例: `// @@unique([a, b]) は Phase C で追加予定`）を
+ * そのままでは本物と区別できない。走査前にコメントだけ空文字へ潰す。
+ * 行構造は保つ（`\n` は残す）ので、後段の行単位処理には影響しない。
+ *
+ * 文字列リテラル内の `//`（`@default("http://x")` 等）はコメントではないため、
+ * ダブルクォートの内外を数えながら走る。
+ */
+function stripLineComments(body: string): string {
+    return body
+        .split("\n")
+        .map((line) => {
+            let inString = false;
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"' && line[i - 1] !== "\\") {
+                    inString = !inString;
+                    continue;
+                }
+                if (!inString && ch === "/" && line[i + 1] === "/") {
+                    return line.slice(0, i);
+                }
+            }
+            return line;
+        })
+        .join("\n");
+}
+
 function stripBlockAttributes(body: string): string {
     let out = "";
     let i = 0;
@@ -124,10 +155,17 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
                 .map((s) => s.trim())
                 .filter((s) => s.length > 0);
 
-        for (const uq of body.matchAll(/@@unique\s*\(\s*\[([^\]]*)\]/g)) {
+        // ただし**コメントは先に落とす**。本体一括で走査する以上、
+        // `// @@unique([a, b])` のような説明・コメントアウトされた属性まで
+        // 一致してしまい、実在しない複合キーが図に描かれる。
+        const attributeBody = stripLineComments(body);
+
+        for (const uq of attributeBody.matchAll(
+            /@@unique\s*\(\s*\[([^\]]*)\]/g
+        )) {
             compositeUniques.push(splitFieldList(uq[1]));
         }
-        const pk = body.match(/@@id\s*\(\s*\[([^\]]*)\]/);
+        const pk = attributeBody.match(/@@id\s*\(\s*\[([^\]]*)\]/);
         if (pk) {
             compositeId = splitFieldList(pk[1]);
         }
