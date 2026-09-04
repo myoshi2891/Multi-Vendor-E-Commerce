@@ -342,8 +342,35 @@ EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —
 >
 > - **書き込み**: upsert のキーは `(categoryId, key, archivedAt IS NULL)`。
 >   Prisma の `upsert` は部分インデックスを複合キーとして扱えないため、
->   `findFirst({ where: { categoryId, key, archivedAt: null } })` → `create` / `update`
->   を**同一 `$transaction` 内**で行う（アトミック操作の規約どおり）。
+>   **`INSERT ... ON CONFLICT` を raw SQL で書き、部分インデックスを推論させる**:
+>
+>   ```sql
+>   INSERT INTO "AttributeDefinition" ("id", "categoryId", "key", "name", "type", "scope", ...)
+>   VALUES ($1, $2, $3, $4, $5, $6, ...)
+>   ON CONFLICT ("categoryId", "key") WHERE "archivedAt" IS NULL
+>   DO UPDATE SET "name" = EXCLUDED."name", "type" = EXCLUDED."type", ...
+>   RETURNING *;
+>   ```
+>
+>   `ON CONFLICT` の推論句に**インデックスと同じ述語 `WHERE "archivedAt" IS NULL` を
+>   書くこと**（部分インデックスは述語を与えないと推論対象にならない）。
+>
+>   **`findFirst` → `create` / `update` に分けてはならない。`$transaction` で包んでも
+>   race は消えない** —— PostgreSQL の既定分離レベル READ COMMITTED では、同時に走る
+>   2 つのトランザクションが**どちらも `findFirst` で 0 件を見て、どちらも `create` に
+>   進む**。整合性は部分ユニークインデックスが最後に守るが、敗者は
+>   `P2002`（unique violation）で**エラーとして落ちる** —— 利用者から見れば
+>   「保存を押したら失敗した」であり、upsert の意味論を満たしていない。
+>   `ON CONFLICT` はこれを 1 文のアトミックな操作に畳む。
+>
+>   raw SQL を避けたい場合の代替は**リトライ**（`P2002` / serialization failure を
+>   捕捉して 1 度だけ再実行する）だが、`ON CONFLICT` を第一候補とすること。
+>
+>   **テスト要件**: 同一 `categoryId` + 同一 `key` の書き込みを**並行に発火**させ、
+>   片方が update、もう片方が create として成立し（順序は問わない）**アクティブ行が
+>   最終的に 1 件**であること、かつ**どちらの呼び出しも例外を投げない**ことを
+>   `tests/integration/` で固定する。単体のモックでは READ COMMITTED の
+>   ふるまいを再現できないため、実 DB の統合テストで検証すること。
 > - **読み取り（入口検証・フォーム生成・ファセット）**: 既存の継承クエリと同じく
 >   `archivedAt: null` で絞るため、アクティブな 1 件だけが見え、**呼び出し側の
 >   コードは経路 2 の前後で変わらない**。

@@ -254,7 +254,11 @@ ALL を満たすこと:
   >    またはトラフィックから除外する**（ローリング更新なら旧 pod の drain 完了まで待つ）。
   > 2. 稼働中の writer が全経路で `categoryNodeId` と旧カテゴリ列の両方を書くことを
   >    確認する —— `grep -rn "categoryNodeId" src/queries/product.ts` が create /
-  >    update の双方に現れ、`bun run test` の dual-write 統合テストが緑であること。
+  >    update の双方に現れ、**`bun run test:integration`** の dual-write 統合テスト
+  >    （`tests/integration/product-update.test.ts`）が緑であること。
+  >    **`bun run test` ではゲートにならない** —— `jest.config.js` の
+  >    `testPathIgnorePatterns` が `/tests/integration/` を除外しているため、
+  >    dual-write テストは 1 件も実行されずに緑になる。
   > 3. その状態で**初めて**再同期トランザクションを実行する。
   > 4. 再同期直後に `SELECT count(*) FROM "Product" WHERE "categoryNodeId" IS NULL`
   >    が 0 であることを確認し、**そのまま prefix reader へ切り替える**。

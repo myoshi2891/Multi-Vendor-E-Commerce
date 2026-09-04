@@ -207,7 +207,26 @@ WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
 ```
 
 Step 5 の A-6 と同一の冪等 UPDATE なので、何度流しても差分がゼロに収束する。
-差分が 0 行で返ることを確認してから Step 7 へ進むこと（0 行 = 取り残しなし）。
+**ただしこの UPDATE が返す行数は「今まさに埋め直した取り残しの数」であって、
+残存不一致の数ではない。** 初回はここが 0 にならないのが正常であり、この戻り値を
+そのまま合格判定に使ってはならない。**必ず独立した検証を 1 回追加し、それが 0 を
+返してから Step 7 へ進むこと**（どちらか一方でよい）:
+
+```sql
+-- (i) 不一致件数を直接数える（推奨: 判定と修正が分離される）
+SELECT count(*) AS remaining
+FROM "Product"
+WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
+-- → remaining = 0 を確認してから Step 7 へ
+
+-- (ii) あるいは同じ UPDATE をもう一度流し、影響行数が 0 であることを確認する
+UPDATE "Product" SET "categoryNodeId" = "subCategoryId"
+WHERE "categoryNodeId" IS DISTINCT FROM "subCategoryId";
+-- → UPDATE 0 を確認してから Step 7 へ
+```
+
+0 以外が返った場合は取り残しが残っている（= dual-write がまだ行き渡っていない）。
+前提条件 (b) の成立を確認し直してから、埋め直しと検証を繰り返すこと。
 
 > **なぜ「Step 1〜7 全体で書き込みを止める」ではなく再実行なのか。** 本書は §1 のとおり
 > 「`Product` の書き込みを止めない」ことを目的に既定の 1 トランザクション経路から

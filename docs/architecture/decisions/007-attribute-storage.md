@@ -346,7 +346,7 @@ ORDER BY kv.key, product_count DESC;
 
 | 変更 | Option 1（採用） | Option 2 / 3 |
 |------|------------------|--------------|
-| 型変更 `TEXT → NUMBER` | `valueText` → `valueNumber` の UPDATE。**変換不能行は `valueText` に残したまま検出できる**（`WHERE valueNumber IS NULL`） | 全ドキュメントの書き換え + 「旧形式も読む」互換コードをロールアウト期間中ずっと維持 |
+| 型変更 `TEXT → NUMBER` | **全行が変換できる場合に限り** `valueText` → `valueNumber` の UPDATE で in-place 変換。1 行でも変換不能なら型を書き換えず、**旧定義を `archivedAt` で退避し（値は `valueText` のまま保持）新しい NUMBER 定義を作る**。変換不能行は `WHERE valueNumber IS NULL` で事前に列挙できる | 全ドキュメントの書き換え + 「旧形式も読む」互換コードをロールアウト期間中ずっと維持 |
 | enum 許容値の改名 | `AttributeOption.label` を更新するだけ。**既存値は FK なので自動追随** | JSON 内の文字列を全件書き換え。取りこぼしは静かに残る |
 | enum 許容値の削除 | `archivedAt` を立てる。`onDelete: Restrict` で**参照中は消せない** | 参照整合性が無く、**孤児文字列が黙って残る** |
 | 任意 → 必須 | 値が無い商品を `SELECT` で列挙できる | 同左（JSON のキー欠落を探す。可能だが raw SQL） |
@@ -356,7 +356,29 @@ ORDER BY kv.key, product_count DESC;
 
 **C-4 が示すとおり、既存 `Spec` の値は 1 セルに複数の数値と単位が同居している**
 （`"28g (45cm) / 32g (50cm)"`）。したがって「型変更で既存値が変換不能」は仮想例ではなく
-**多数派**であり、変換不能行を安全に残せる Option 1 の性質が実運用上で効く。
+**多数派**であり、変換不能行を**失わずに列挙できる** Option 1 の性質が実運用上で効く。
+
+> **ただし「変換不能行を `valueText` に残したまま `dataType` だけ NUMBER にする」ことは禁止。**
+> D-1 が型で保証しているのは値の所有先の排他性であって、`valueText` / `valueNumber` /
+> `valueBool` / `optionId` のどれが埋まるかは**定義の `dataType` が決める不変条件**である。
+> NUMBER 定義の下に `valueText` だけの行が残ると、その行は `@@index([definitionId, valueNumber])`
+> を使うファセット集計から**黙って脱落**し（`valueNumber IS NULL`）、UI 上は「値がある」のに
+> 集計上は「値が無い」という二枚舌の状態になる —— これは本 ADR が Option 2 / 3 を
+> 退けた理由（値と定義が乖離しうる 2 系統）を Option 1 の内部に再現することに等しい。
+>
+> **したがって型変更の手順は 2 択に限る**:
+>
+> 1. **全行が変換可能** —— `valueText` → `valueNumber` を UPDATE し、`dataType` を
+>    NUMBER へ書き換える。変換後に `WHERE valueNumber IS NULL` が 0 行であることを
+>    同一トランザクション内で検証してからコミットする。
+> 2. **1 行でも変換不能** —— 既存定義は `dataType = TEXT` のまま `archivedAt` を立てて
+>    退避し（変換不能な値を含む全行を `valueText` に保持したまま残す）、**別の
+>    NUMBER 定義を新規作成**して以後の入力をそちらへ向ける。移行できる行は新定義へ
+>    個別に書き写す。`archivedAt` による論理削除は D-4 で既に定義済みであり、
+>    `onDelete: Restrict` が値ごと消える事故を防ぐ。
+>
+> C-4 の実データでは 2 が既定路線になる。「型を書き換えて残りは後で直す」という
+> 中間状態を作らないことが、この設計の要である。
 
 ---
 
