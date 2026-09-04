@@ -491,7 +491,7 @@ describe("Scenario 5: subtree move serializes against a concurrent descendant mo
 
             // subtree 移動を起動して、d の行ロック待ちに入らせる（まだコミットしない）
             subtreeMove = asAdmin(() =>
-                upsertCategory(nodeInput(x, { parentId: b.id }) as never)
+                upsertCategory(nodeInput(x, { parentId: b.id }))
             ).catch((error: unknown) => error);
             await waitForLockedBackend();
         });
