@@ -21,7 +21,26 @@ const FOOTER_CATEGORY_LIMIT = 7;
  * @returns The footer layout, including the newsletter section, contact details, category links, and rights bar.
  */
 export default async function Footer() {
-    const nodes = flattenCategoryTree(await getAllCategories());
+    // footer は全ストアページの共通レイアウトなので、カテゴリ取得の失敗で
+    // ページ全体を落とさない。getAllCategories は既にログを出して再 throw する
+    // ため、ここでは境界としてリンク欄だけ空にして描画を続ける。
+    let tree: Awaited<ReturnType<typeof getAllCategories>> = [];
+    try {
+        tree = await getAllCategories();
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[Footer:getAllCategories] Failed to load categories",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error("[Footer:getAllCategories] Unknown error", { error });
+        }
+    }
+    const nodes = flattenCategoryTree(tree);
     const descendants = nodes.filter((node) => node.depth > 0);
     const picked = descendants.length > 0 ? descendants : nodes;
     const categories: FooterCategoryLink[] = picked

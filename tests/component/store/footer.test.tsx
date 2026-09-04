@@ -108,6 +108,28 @@ describe("Footer — カテゴリリンクの選抜", () => {
         expect(categoryLinkNames()).not.toContain("child-7");
     });
 
+    it("異常系: カテゴリ取得が失敗しても throw せず、リンク欄だけ空で描画する", async () => {
+        // Arrange —— footer は全ストアページ共通レイアウトなので、
+        // DB 障害でページ全体を落とさないことが要件
+        mockGetAllCategories.mockRejectedValue(new Error("DB is down"));
+        const errorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        // Act
+        render(await Footer());
+
+        // Assert —— 描画は継続し、失敗は握り潰さずログに残る
+        expect(screen.getByTestId("store-footer")).toBeInTheDocument();
+        expect(categoryLinkNames()).toEqual([]);
+        expect(errorSpy).toHaveBeenCalledWith(
+            "[Footer:getAllCategories] Failed to load categories",
+            expect.objectContaining({ error: "DB is down" })
+        );
+
+        errorSpy.mockRestore();
+    });
+
     it("エッジケース: カテゴリが 0 件でも footer 自体は描画される", async () => {
         // Arrange
         resolveTree([]);
