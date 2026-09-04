@@ -123,11 +123,18 @@ const category = (overrides: Partial<Category> = {}): Category =>
         ...overrides,
     }) as Category;
 
-/** 親候補セレクトに並んでいる選択肢のラベル（先頭の全角スペース埋めは除去）。 */
+/**
+ * 親候補セレクトに並んでいる選択肢のラベル（先頭のインデント埋めは除去）。
+ *
+ * 埋め文字はコンポーネント側 (`category-details.tsx`) の `"\u00A0".repeat(...)` と
+ * 同じ **NO-BREAK SPACE (U+00A0)**。正規表現にはリテラルではなく `\u00A0` エスケープを
+ * 書くこと —— リテラルは通常の空白と見分けが付かず、エディタや整形で黙って
+ * 置き換えられても気付けない。
+ */
 const parentOptionLabels = (): string[] =>
     screen
         .getAllByRole("option")
-        .map((option) => (option.textContent ?? "").replace(/ /g, ""));
+        .map((option) => (option.textContent ?? "").replace(/\u00A0/g, ""));
 
 const mockToast = jest.fn();
 const mockPush = jest.fn();

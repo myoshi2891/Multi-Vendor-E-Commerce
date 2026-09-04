@@ -211,6 +211,11 @@ jest.mock("@/components/dashboard/forms/click-to-add", () => ({
 
 // Radix Select はポインタ操作に依存し jsdom で開けない。選択肢の列挙・disabled 状態と
 // onValueChange の配線だけを見たいので、素のボタンへ置き換える。
+// ツリーに無い id を選ぶ経路を叩くための番兵。実 UI には対応する選択肢が無いので
+// （`categories.map` からしか SelectItem は生えない）、mock 側に 1 つだけ足す。
+// jest.mock のファクトリは巻き上げられるため、参照できるのは `mock` 接頭辞の変数だけ。
+const mockUnknownNodeId = "99999999-9999-4999-8999-999999999999";
+
 jest.mock("@/components/ui/select", () => {
     const react: typeof React = jest.requireActual("react");
     const Ctx = react.createContext<(value: string) => void>(() => {});
@@ -229,7 +234,22 @@ jest.mock("@/components/ui/select", () => {
                 <div data-value={value}>{children}</div>
             </Ctx.Provider>
         ),
-        SelectContent: ({ children }: Children) => <div>{children}</div>,
+        SelectContent: ({ children }: Children) => {
+            const onValueChange = react.useContext(Ctx);
+            return (
+                <div>
+                    {children}
+                    {/* 実在しない id を onValueChange へ流す番兵。
+                        role="option" を付けないので選択肢の列挙 (categoryOptions)
+                        には現れない。 */}
+                    <button
+                        type="button"
+                        data-testid="select-unknown-value"
+                        onClick={() => onValueChange(mockUnknownNodeId)}
+                    />
+                </div>
+            );
+        },
         SelectTrigger: ({ children }: Children) => <div>{children}</div>,
         SelectValue: ({ placeholder }: { placeholder?: string }) => (
             <span>{placeholder}</span>
@@ -443,21 +463,37 @@ describe("ProductDetails", () => {
         });
 
         it("エッジケース: ツリーに無い id が選ばれても categoryId を書き換えない", async () => {
-            // Arrange
+            // Arrange —— 既知のリーフ (LEAF_ID / ルートは ROOT_ID) から始める。
+            // **初期値を未知 id にしただけでは fallback を通らない** ——
+            // categoryId は最初から ROOT_ID なので、導出が走っても走らなくても
+            // 同じ値が保存され、`if (!selected) return` を素通りさせても緑になる。
+            // 選択を「既知 → 未知」へ**遷移させて**初めて分岐が観測できる。
             mockUpsertProduct.mockResolvedValue({} as never);
-            renderForm(
-                validData({
-                    subCategoryId: "99999999-9999-4999-8999-999999999999",
-                })
-            );
+            renderForm(validData());
 
-            // Act
+            // Act —— カテゴリ側の Select に対して、ツリーに無い id を流す。
+            // 番兵は各 Select に 1 つずつ生えるので、同じ SelectContent 配下に
+            // 既知リーフの選択肢がある方（= カテゴリ用）を選ぶ。
+            const categoryUnknownPicker = screen
+                .getAllByTestId("select-unknown-value")
+                .find((picker) =>
+                    picker.parentElement?.querySelector(
+                        `[data-value="${LEAF_ID}"]`
+                    )
+                );
+            expect(categoryUnknownPicker).toBeDefined();
+            fireEvent.click(categoryUnknownPicker as HTMLElement);
+
             fireEvent.click(screen.getByRole("button", { name: /Save/i }));
 
-            // Assert —— 導出できない場合は既存値を保つ（黙って別カテゴリへ移さない）
+            // Assert —— 導出できない場合は既存値を保つ（黙って別カテゴリへ移さない）。
+            // 選択値そのものは差し替わっている（= 遷移が起きたことの裏取り）。
             await waitFor(() =>
                 expect(mockUpsertProduct).toHaveBeenCalledWith(
-                    expect.objectContaining({ categoryId: ROOT_ID }),
+                    expect.objectContaining({
+                        categoryId: ROOT_ID,
+                        subCategoryId: mockUnknownNodeId,
+                    }),
                     "my-store"
                 )
             );
