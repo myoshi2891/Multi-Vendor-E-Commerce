@@ -133,6 +133,31 @@ describe("parseModels", () => {
         ]);
     });
 
+    it("フィールドのデフォルト値に現れる @@id / @@unique を複合キーとして拾わない", () => {
+        // Arrange —— ブロック属性はモデル本体一括で走査するため、行頭アンカーが
+        // 無いと**行の途中の文字列リテラル**まで一致し、偽の複合キーが図に出る。
+        // 除去側 (stripBlockAttributes) は行頭でしか反応しないので、
+        // これらは同時に「フィールド」としても残り、二重計上になっていた回帰ケース。
+        const src = `model AttributeOption {
+  id           String
+  fakePk       String @default("@@id([id, definitionId])")
+  fakeUnique   String @default("@@unique([definitionId, value])")
+}`;
+
+        // Act
+        const [model] = parseModels(src, modelNames);
+
+        // Assert —— 複合キーは 1 件も生えない
+        expect(model.compositeId).toEqual([]);
+        expect(model.compositeUniques).toEqual([]);
+        // 3 行はいずれも通常フィールドのまま残る
+        expect(model.fields.map((f) => f.name)).toEqual([
+            "id",
+            "fakePk",
+            "fakeUnique",
+        ]);
+    });
+
     it("リレーションと Decimal 表示型を従来どおり解釈する", () => {
         // Arrange
         const src = `model ProductAttributeValue {

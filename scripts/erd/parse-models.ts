@@ -160,12 +160,18 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
         // 一致してしまい、実在しない複合キーが図に描かれる。
         const attributeBody = stripLineComments(body);
 
+        // さらに**行頭アンカー**（先行は空白のみ）を必須にする。アンカーが無いと
+        // フィールドのデフォルト値など**行の途中に現れる文字列**まで一致し、
+        // 実在しない複合キーが図に描かれる（例: `key String @default("@@id([a, b])")`）。
+        // 除去側の `stripBlockAttributes` は既に行頭でしか反応しないため、
+        // アンカー無しでは「フィールドとしても複合キーとしても数える」非対称が生じる。
+        // `[^\]]` は改行に一致するので、複数行形式は行頭 `@@` さえ満たせば従来どおり拾える。
         for (const uq of attributeBody.matchAll(
-            /@@unique\s*\(\s*\[([^\]]*)\]/g
+            /^[ \t]*@@unique\s*\(\s*\[([^\]]*)\]/gm
         )) {
             compositeUniques.push(splitFieldList(uq[1]));
         }
-        const pk = attributeBody.match(/@@id\s*\(\s*\[([^\]]*)\]/);
+        const pk = attributeBody.match(/^[ \t]*@@id\s*\(\s*\[([^\]]*)\]/m);
         if (pk) {
             compositeId = splitFieldList(pk[1]);
         }
