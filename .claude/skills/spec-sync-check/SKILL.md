@@ -147,16 +147,18 @@ grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.te
 # → ヒット = "console.log 禁止" 違反
 
 # D-4: src/queries/ 以外のサーバーアクション禁止
-grep -rln '^"use server"' src/ --include="*.ts" | grep -v "src/queries/"
+grep -rlnE "^['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "src/queries/"
 # → ヒット = "src/queries/ 以外でサーバーアクションを定義する" 違反
 #   行頭アンカー ^ は必須（付けないとコメント内の言及を誤検出する。ベースライン D-4 の注記参照）
+#   .tsx と 'use server'（単一引用符）も対象にする。ディレクティブの引用符はフォーマッタ設定次第で
+#   変わり、Server Action は .tsx にも書けるため、二重引用符 + .ts だけでは検知漏れになる
 
 # D-5: src/csrf* トークンモジュール新設禁止 (ADR 001)
 find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"
 # → ヒット = ADR 001 違反 (Origin/Host 検証 + Clerk SameSite Cookie に依拠する方針)
 
 # D-6: cookie の生 JSON.parse 禁止 (parseUserCountryCookie 必須)
-grep -rn "JSON.parse.*cookie\|cookies().*JSON.parse" src/ --include="*.ts" --include="*.tsx"
+grep -rnE "JSON\.parse.*cookie|cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"
 # → 要精査 (parseUserCountryCookie 経由かどうか)
 
 # D-7: docs/coverage-dashboard.html の手動編集禁止
@@ -451,9 +453,9 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 | D-1 `role !== "` | `grep -rn 'role !== "' src/queries/ --include="*.ts" \| grep -v "\.test\."` | **1**（実違反 **0**） | `product.ts:684` は**コメント内の言及**のみ。ロール判定のインライン展開は全廃 |
 | D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
 | D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
-| D-4 queries 外の `"use server"` | `grep -rln '^"use server"' src/ --include="*.ts" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
+| D-4 queries 外の `use server` | `grep -rlnE "^['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
 | D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts"` | **0** | ADR 001 遵守 |
-| D-6 cookie の生 `JSON.parse` | `grep -rn "JSON.parse.*cookie\\|cookies().*JSON.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
+| D-6 cookie の生 `JSON.parse` | `grep -rnE "JSON\.parse.*cookie\|cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
 
 > **是正前（commit `3f91e7f2`）は D-1 が 24 + 7 = 31、D-3 が 2、D-4 が 1 だった。**
 > 移行の過程で、認可チェックを外側の `try` の中に置いていたことによる**実バグ 2 件**
