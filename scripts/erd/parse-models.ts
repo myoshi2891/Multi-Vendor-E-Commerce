@@ -179,7 +179,12 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
         // ブロック属性は上で本体一括から取り出し済み。フィールド走査へ渡す前に
         // **ブロック全体**（複数行形式の継続行・`], name: "pk")` の閉じ行を含む）を落とす。
         // 行頭 `@@` の skip だけでは継続行が残り、偽のフィールドとして描画されてしまう。
-        const fieldBody = stripBlockAttributes(body);
+        //
+        // 入力は**コメント除去済みの本体**（`attributeBody`）を使う。行末コメントを残したまま
+        // 走らせると、コメント中の `@relation(...)` / `@db.Decimal(...)` が後段の `rest` に
+        // 混ざり、実在しない関係や表示型として拾われうる。属性の検出条件を
+        // ブロック属性側（`attributeBody`）と揃える意味もある。
+        const fieldBody = stripBlockAttributes(attributeBody);
 
         for (const rawLine of fieldBody.split("\n")) {
             const line = rawLine.trim();
