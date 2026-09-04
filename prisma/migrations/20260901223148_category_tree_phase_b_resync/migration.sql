@@ -16,6 +16,18 @@
 
 -- >>> PHASE_B_RESYNC >>>
 
+-- **swap 対策の一時退避（2 段階リネーム）。** a と b が url を交換した場合、
+-- 先に処理される側は「相手がまだ旧 url を保持している」ために衝突と判定され、
+-- `<親slug>-<旧slug>` へ不要に寄せられてしまう（後から処理される側だけが希望の
+-- url を得る）。Category.url は UNIQUE なので、交換は必ず「一旦どかす → 入れ直す」の
+-- 2 段階が要る。再同期対象（SubCategory 由来のノード）で url が変わる行を、
+-- 実 slug と衝突し得ない一時 url へ先に退避しておく。
+-- 一時 url は id を含むため一意で、直後のループが必ず最終 url を書き戻す。
+UPDATE "Category" c
+SET url = '__resync_tmp__' || c.id
+FROM "SubCategory" s
+WHERE c.id = s.id AND c.url IS DISTINCT FROM s.url;
+
 -- 066 の A-3 と同一の規則（衝突回避・属性同期）を新規行と既存行の双方へ適用する。
 DO $PHASE_B$
 DECLARE

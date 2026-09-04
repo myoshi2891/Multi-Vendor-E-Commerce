@@ -196,6 +196,35 @@ describe("カテゴリツリー Phase B — 再同期 (plan 067)", () => {
         expect(second?.path).toBe("electronics/electronics-camera");
     });
 
+    it("2 ノードが url を交換しても、双方が SubCategory 側の url に揃う", async () => {
+        // Arrange —— sub-a / sub-b を取り込んだあとで legacy 側の url を交換する
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-a", "camera", "root-1");
+        await seedSubCategory(db, "sub-b", "audio", "root-1");
+        await runResync(db);
+
+        // SubCategory.url も UNIQUE なので、legacy 側の交換自体が 2 段階になる
+        // （まさにこの制約が、Category 側にも一時退避を要求している理由）。
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'swap-tmp' WHERE id = 'sub-a'`;
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'camera' WHERE id = 'sub-b'`;
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'audio' WHERE id = 'sub-a'`;
+
+        // Act —— 一時退避が無いと、先に処理される側が「相手がまだ旧 url を持っている」
+        // ために衝突扱いされ、<親slug>-<旧slug> へ不要に寄せられる。
+        await runResync(db);
+
+        // Assert —— Category.url が SubCategory.url と一致している（片側だけずれない）
+        const nodes = await db.category.findMany({
+            where: { id: { in: ["sub-a", "sub-b"] } },
+            orderBy: { id: "asc" },
+            select: { id: true, url: true, path: true },
+        });
+        expect(nodes).toEqual([
+            { id: "sub-a", url: "audio", path: "electronics/audio" },
+            { id: "sub-b", url: "camera", path: "electronics/camera" },
+        ]);
+    });
+
     it("childCount を全件再計算する（親付け替えで両側が動くため）", async () => {
         // Arrange
         await seedRoot(db, "root-1", "electronics");
