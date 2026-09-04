@@ -375,6 +375,22 @@ Q2-1 でグローバル一意を維持したため、**フラット slug のま�
 > `"The category tree is being modified concurrently. Please retry."` で失敗させ、
 > 中途半端な `path` を書かない。実装は `src/queries/category.ts` の
 > `lockCategoryNodesForUpdate` / `lockDescendantsForUpdate`。
+>
+> **残るデッドロックの窓（既知・未解消）。** 実装は上の 3 種を *2 フェーズ*で掴む ——
+> `acquireCategoryTreeLocks` が「自ノード + 旧親 + 新親」を id 昇順で掴み、その後
+> `lockDescendantsForUpdate` が子孫を id 昇順で掴む。**各フェーズ内は昇順でも、
+> 2 フェーズを合わせた取得順は昇順にならない**（子孫の id は自ノードより小さくなり得る）。
+> したがって「X を動かす側」と「X の子 D を subtree の外へ動かす側」が
+> 逆順で出会い得る: 前者は X を掴んで D を待ち、後者は D（自ノード）を掴んで
+> X（旧親）を待つ。PostgreSQL のデッドロック検出が片方を `40P01` で abort するため
+> **不整合な `path` は書かれない**が、admin には失敗として見える。
+>
+> 恒久解は 2 つ。(a) 候補集合（自ノード・旧親・新親・**移動時は子孫**）を
+> **1 回の id 昇順**で掴み切る（`current.path` は先に非ロックで読めるので候補は算出できる。
+> ロック後の読み直しで集合が増えたら既存の収束ループで掴み直す）、
+> (b) `upsertCategory` の `$transaction` 全体を `40P01` で再試行する。
+> **どちらも未実装**であり、V-7e の統合テスト（Scenario 5）は子孫側を生の `$transaction`
+> で再現しているため、この経路（両側が `upsertCategory`）を覆っていない。
 
 <!-- -->
 
