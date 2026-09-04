@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2182 passed / 2185 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-04.
+- 2184 passed / 2187 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-04.
+  A second review follow-up added +2 tests (suites unchanged): the store footer now degrades
+  gracefully when `getAllCategories` throws (the footer is shared by every storefront page, so a
+  rethrow took down the whole render), and the ERD model parser no longer mistakes commented-out
+  `@@id` / `@@unique` lines for real composite keys.
+  Earlier record (2182 / 2185 across 199 suites, 2026-09-04):
   Review follow-up added +1 test (suites unchanged): the parent picker in `category-details.tsx`
   only checked the candidate's own depth, so editing a node with descendants offered parents
   that `upsertCategory`'s V-7 rebase check rejects at save time. The test pins the subtree-height
