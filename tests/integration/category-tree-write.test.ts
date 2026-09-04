@@ -464,17 +464,24 @@ describe("Scenario 5: subtree move serializes against a concurrent descendant mo
         // 3 本を同時に握る。
         expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(3);
 
-        // Arrange —— a/x/d というツリーと、移動先 b（x 用）・z（d 用）を作る
-        const a = await createNode("A", "a", null);
-        const x = await createNode("X", "x", a);
-        const d = await createNode("D", "d", x);
-        const b = await createNode("B", "b", null);
-        const z = await createNode("Z", "z", null);
-
-        // Act —— 「d を z の下へ動かす」トランザクションを**開いたまま**、
-        // 「x を b の下へ動かす」（= d を含む subtree の移動）を走らせる。
+        // Arrange —— alpha/xray/delta というツリーと、移動先 bravo（xray 用）・
+        // zulu（delta 用）を作る。
         //
-        // 外側 tx が握るロックと書き込みは `upsertCategory` が d に対して行うものと
+        // スラッグは `CategoryFormSchema.shape.url`（2 文字以上・小文字英数とハイフン）
+        // を満たす値にすること。`upsertCategory` はこの検証を `$transaction` に入る
+        // **前**に行うため、規約違反のスラッグだと被検証側が行ロック待ちに一度も
+        // 入らず、`waitForLockedBackend` が「競合が再現していない」で落ちる
+        // （＝本来の検証対象と無関係な理由で赤くなる）。
+        const a = await createNode("Alpha", "alpha", null);
+        const x = await createNode("Xray", "xray", a);
+        const d = await createNode("Delta", "delta", x);
+        const b = await createNode("Bravo", "bravo", null);
+        const z = await createNode("Zulu", "zulu", null);
+
+        // Act —— 「delta を zulu の下へ動かす」トランザクションを**開いたまま**、
+        // 「xray を bravo の下へ動かす」（= delta を含む subtree の移動）を走らせる。
+        //
+        // 外側 tx が握るロックと書き込みは `upsertCategory` が delta に対して行うものと
         // 同一である（自ノードの `SELECT … FOR UPDATE` → path / parentId の更新）。
         // `upsertCategory` 自身を使わないのは、**コミットのタイミングを掴めないと
         // 競合の窓を再現できない**ため。ここでの被検証対象は subtree 移動側の
@@ -489,7 +496,7 @@ describe("Scenario 5: subtree move serializes against a concurrent descendant mo
                 data: { parentId: z.id, path: `${z.url}/${d.url}`, depth: 1 },
             });
 
-            // subtree 移動を起動して、d の行ロック待ちに入らせる（まだコミットしない）
+            // subtree 移動を起動して、delta の行ロック待ちに入らせる（まだコミットしない）
             subtreeMove = asAdmin(() =>
                 upsertCategory(nodeInput(x, { parentId: b.id }))
             ).catch((error: unknown) => error);
@@ -498,25 +505,25 @@ describe("Scenario 5: subtree move serializes against a concurrent descendant mo
 
         await subtreeMove;
 
-        // Assert —— d は z の子のままで、path と parentId が一致している。
-        // **子孫を非ロックで読むと、コミット前のスナップショット（a/x/d）を基に
-        // rebase した `b/x/d` を書き戻し、parentId = z と矛盾する**
+        // Assert —— delta は zulu の子のままで、path と parentId が一致している。
+        // **子孫を非ロックで読むと、コミット前のスナップショット（alpha/xray/delta）を
+        // 基に rebase した `bravo/xray/delta` を書き戻し、parentId = zulu と矛盾する**
         // （このテストはそこで赤になる）。
         const dAfter = await db.category.findUniqueOrThrow({
             where: { id: d.id },
             select: { parentId: true, path: true, depth: true },
         });
         expect(dAfter.parentId).toBe(z.id);
-        expect(dAfter.path).toBe("z/d");
+        expect(dAfter.path).toBe("zulu/delta");
         expect(dAfter.depth).toBe(1);
 
-        // Assert —— 移動した x 自身は b の配下に入っている（本来の効果は出ている）
+        // Assert —— 移動した xray 自身は bravo の配下に入っている（本来の効果は出ている）
         const xAfter = await db.category.findUniqueOrThrow({
             where: { id: x.id },
             select: { parentId: true, path: true, depth: true },
         });
         expect(xAfter.parentId).toBe(b.id);
-        expect(xAfter.path).toBe("b/x");
+        expect(xAfter.path).toBe("bravo/xray");
         expect(xAfter.depth).toBe(1);
     });
 });
