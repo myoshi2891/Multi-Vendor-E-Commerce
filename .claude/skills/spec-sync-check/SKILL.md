@@ -147,8 +147,9 @@ grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.te
 # → ヒット = "console.log 禁止" 違反
 
 # D-4: src/queries/ 以外のサーバーアクション禁止
-grep -rln '"use server"' src/ --include="*.ts" | grep -v "src/queries/"
+grep -rln '^"use server"' src/ --include="*.ts" | grep -v "src/queries/"
 # → ヒット = "src/queries/ 以外でサーバーアクションを定義する" 違反
+#   行頭アンカー ^ は必須（付けないとコメント内の言及を誤検出する。ベースライン D-4 の注記参照）
 
 # D-5: src/csrf* トークンモジュール新設禁止 (ADR 001)
 find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"
@@ -442,7 +443,7 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 > 規定だけがあってベースラインが存在しないことが判明した（Layer 3 のドリフト）。
 > 検査のたびに既存違反を新規発見として扱ってしまい、本当の増加が埋もれる。
 
-### 計測日: 2026-09-03（SV-1〜SV-3 の是正後）
+### 計測日: 2026-09-03 / 計測コミット: `5f71166e`（SV-1〜SV-3 の是正後）
 
 | 検査 | 計測コマンド | ヒット数 | 内訳・許容理由 |
 |------|------------|---------|--------------|
@@ -452,7 +453,7 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 | D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
 | D-4 queries 外の `"use server"` | `grep -rln '^"use server"' src/ --include="*.ts" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
 | D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts"` | **0** | ADR 001 遵守 |
-| D-6 cookie の生 `JSON.parse` | `grep -rn "JSON.parse.*cookie" src/` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
+| D-6 cookie の生 `JSON.parse` | `grep -rn "JSON.parse.*cookie\\|cookies().*JSON.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
 
 > **是正前（commit `3f91e7f2`）は D-1 が 24 + 7 = 31、D-3 が 2、D-4 が 1 だった。**
 > 移行の過程で、認可チェックを外側の `try` の中に置いていたことによる**実バグ 2 件**
