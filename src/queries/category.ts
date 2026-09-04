@@ -28,10 +28,13 @@ import {
 // 既存の呼び出し側を壊さないよう、この 2 つは任意プロパティにしてある。
 type CategoryUpsertInput = Omit<
     Category,
-    "parentId" | "path" | "depth" | "sortOrder" | "childCount"
+    "parentId" | "path" | "depth" | "sortOrder" | "childCount" | "createdAt"
 > & {
     parentId?: string | null;
     sortOrder?: number;
+    // 作成時のみ任意で指定できる（列は @default(now())）。編集では送らせない —
+    // 送られても update からは落とす（`applyCategoryTreeUpsert`）。
+    createdAt?: Date;
 };
 
 // ツリーから導出される列。admin フォームからは書かせず、ここで計算して補う。
@@ -449,11 +452,15 @@ const applyCategoryTreeUpsert = async (
     const rebased = await computeRebasedDescendants(tx, movedFrom, path);
 
     const treeColumns = { path, depth };
+    // createdAt は作成時のみ書く。update に含めるとフォームが毎回送る `new Date()` が
+    // 既存行の作成日時を上書きし、admin 一覧の並び（createdAt 由来）が編集のたびに崩れる。
+    const updatableCategory: Partial<CategoryUpsertInput> = { ...safeCategory };
+    delete updatableCategory.createdAt;
     const categoryDetails = await tx.category.upsert({
         where: {
             id: safeCategory.id,
         },
-        update: { ...safeCategory, ...treeColumns },
+        update: { ...updatableCategory, ...treeColumns },
         create: { ...safeCategory, ...treeColumns },
     });
 

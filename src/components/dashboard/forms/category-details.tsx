@@ -152,7 +152,9 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data, categories }) => {
                 featured: values.featured,
                 parentId: values.parentId,
                 sortOrder: values.sortOrder,
-                createdAt: new Date(),
+                // 編集時は createdAt を送らない（サーバー側 update からも除外済み）。
+                // 新規作成時のみ作成日時を渡す。
+                ...(data?.id ? {} : { createdAt: new Date() }),
                 updatedAt: new Date(),
             });
 

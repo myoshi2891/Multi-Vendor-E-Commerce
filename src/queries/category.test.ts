@@ -193,14 +193,46 @@ describe("upsertCategory", () => {
             // `childCount` は入力から受け取らない（ツリーから導出される値）。
             // 期待値の組み立てでも明示的に外しておく —— フィクスチャに列を足したときに
             // 「実装は落としているのに期待値には残っている」ズレを表面化させるため。
-            const { childCount: _childCount, ...inputWithoutDerived } = category;
+            const { childCount: _childCount, ...inputWithoutDerived } =
+                category;
+            const { createdAt: _createdAt, ...inputWithoutCreatedAt } =
+                inputWithoutDerived;
             expect(mockDb.category.upsert).toHaveBeenCalledWith({
                 where: { id: category.id },
                 // 移行 SQL の A-1 と同じ規則（ルート ⇒ path = url / depth = 0）。
                 // update 側にも書くのは、url の変更に path を追随させるため。
-                update: { ...inputWithoutDerived, path: category.url, depth: 0 },
-                create: { ...inputWithoutDerived, path: category.url, depth: 0 },
+                // createdAt は update に含めない（既存行の作成日時を上書きしない）。
+                update: {
+                    ...inputWithoutCreatedAt,
+                    path: category.url,
+                    depth: 0,
+                },
+                create: {
+                    ...inputWithoutDerived,
+                    path: category.url,
+                    depth: 0,
+                },
             });
+        });
+
+        it("createdAt は create にだけ渡す（編集で作成日時を上書きしない）", async () => {
+            // Arrange: 編集フォームが誤って createdAt を送ってきた場合を模す
+            const category = {
+                ...createMockCategory(),
+                createdAt: new Date("2030-01-01T00:00:00.000Z"),
+            };
+            mockDb.category.upsert.mockResolvedValue(createMockCategory());
+
+            // Act
+            await upsertCategory(category as never);
+
+            // Assert
+            const callArg = mockDb.category.upsert.mock.calls[0][0];
+            expect(callArg.update).not.toHaveProperty("createdAt");
+            expect(callArg.create).toHaveProperty(
+                "createdAt",
+                category.createdAt
+            );
         });
 
         it("path / depth / childCount は入力から受け取らずサーバー側で決める", async () => {
