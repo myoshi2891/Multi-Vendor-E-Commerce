@@ -105,25 +105,46 @@ test.describe("管理者によるカテゴリツリー編集", () => {
         // **`deleteMany` 1 回では足りない。** Restrict は「まだ子を持つ行」の削除を
         // 拒むので、孫が同じ一括削除に含まれていても、削除順が親→子になった時点で
         // 失敗する。深い順に 1 行ずつ消して、常に葉から取り除く。
-        const descendants = await prisma.category
-            .findMany({
-                where: { path: { startsWith: `${rootUrl}/` } },
-                select: { id: true },
-                orderBy: { depth: "desc" },
-            })
-            .catch(() => []);
-        for (const node of descendants) {
-            await prisma.category
-                .delete({ where: { id: node.id } })
-                .catch(() => {});
+        //
+        // **失敗は握り潰さず、後始末を終えてから投げる。** 削除の取りこぼしは
+        // 次回実行のシード衝突として遅れて表面化するため、teardown で黙らせると
+        // 原因の遠い失敗になる。最初のエラーだけ保持して残りの削除は続行し、
+        // 接続とセッションの解放（finally）を済ませてから再 throw する。
+        let teardownError: unknown;
+        const record = (error: unknown) => {
+            if (teardownError === undefined) teardownError = error;
+        };
+
+        try {
+            const descendants = await prisma.category
+                .findMany({
+                    where: { path: { startsWith: `${rootUrl}/` } },
+                    select: { id: true },
+                    orderBy: { depth: "desc" },
+                })
+                .catch((error: unknown) => {
+                    record(error);
+                    return [];
+                });
+            for (const node of descendants) {
+                await prisma.category
+                    .delete({ where: { id: node.id } })
+                    .catch(record);
+            }
+            if (rootId) {
+                await prisma.category
+                    .delete({ where: { id: rootId } })
+                    .catch(record);
+            }
+        } finally {
+            try {
+                await prisma.$disconnect();
+            } finally {
+                await session.cleanup();
+            }
         }
-        if (rootId) {
-            await prisma.category
-                .delete({ where: { id: rootId } })
-                .catch(() => {});
-        }
-        await prisma.$disconnect();
-        await session.cleanup();
+
+        if (teardownError !== undefined) throw teardownError;
     });
 
     test("3 階層目のノードを作成し、ツリーとして一覧に現れる", async ({
