@@ -238,8 +238,11 @@ const assertCategoryNameAndUrlAreFree = async (
     }
     // 到達不能（上の `OR` がどちらかの一致を保証する）。それでも黙って通さないのは、
     // 照合順序の変更などで前提が崩れたときに重複を素通りさせないため。
-    // 元実装の「空メッセージで throw」をそのまま踏襲する。
-    throw new Error("");
+    // 空メッセージだと呼び出し側（category-details.tsx の handleSubmit）が
+    // 「Oops!」だけの toast を出して原因が一切伝わらないので、必ず理由を載せる。
+    throw new Error(
+        "A conflicting category already exists. Please use a different name and URL."
+    );
 };
 
 /**

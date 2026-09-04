@@ -1020,7 +1020,7 @@ export const getProducts = async (
                     url: `/product/${product.slug}/${variant.slug}`,
                     image: variant.variantImage
                         ? variant.variantImage
-                        : variant.images[0].url,
+                        : (variant.images[0]?.url ?? ""),
                 })
             );
             // Return the product in the ProductCardType structure
