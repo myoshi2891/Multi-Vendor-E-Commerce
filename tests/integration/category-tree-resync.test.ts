@@ -37,6 +37,18 @@ const RESYNC_STATEMENTS = splitStatements(
     )
 );
 
+const ALIAS_OWNER_STATEMENTS = splitStatements(
+    extractMarkedSection(
+        readMigrationSql("_category_tree_alias_owner_preserve"),
+        "ALIAS_OWNER_PRESERVE"
+    )
+);
+
+/** 別名所有者の先着投入（補正マイグレーション）を 1 回実行する。 */
+async function runAliasOwnerPreserve(db: PrismaClient): Promise<void> {
+    await runStatements(db, ALIAS_OWNER_STATEMENTS);
+}
+
 /** 再同期を 1 回実行する。 */
 async function runResync(db: PrismaClient): Promise<void> {
     await runStatements(db, RESYNC_STATEMENTS);
@@ -66,6 +78,26 @@ async function seedSubCategory(
         INSERT INTO "SubCategory" (id, name, image, url, featured, "categoryId", "createdAt", "updatedAt")
         VALUES (${id}, ${options.name ?? `Name ${url}`}, 'https://example.test/s.png', ${url},
                 ${options.featured ?? false}, ${categoryId}, NOW(), NOW())`;
+}
+
+/**
+ * 移行済みの depth 1 ノードを Category に直接作る。
+ *
+ * 補正区間（`ALIAS_OWNER_PRESERVE`）だけを単独で流すためのもの。再同期の全区間を
+ * 流すとその中の旧 A-4 相当の投入が先に所有者を書き換えてしまい、補正区間そのものを
+ * 観測できない。
+ */
+async function seedChildNode(
+    db: PrismaClient,
+    id: string,
+    url: string,
+    parentId: string,
+    parentPath: string
+): Promise<void> {
+    await db.$executeRaw`
+        INSERT INTO "Category" (id, name, image, url, featured, "parentId", "path", "depth", "sortOrder", "childCount", "createdAt", "updatedAt")
+        VALUES (${id}, ${`Name ${url}`}, 'https://example.test/c.png', ${url}, false,
+                ${parentId}, ${`${parentPath}/${url}`}, 1, 0, 0, NOW(), NOW())`;
 }
 
 /** Product を作るのに必要な User + Store を 1 組作る。 */
@@ -300,15 +332,109 @@ describe("カテゴリツリー Phase B — 再同期 (plan 067)", () => {
         await runResync(db);
         const first = await db.category.findMany({
             orderBy: { id: "asc" },
-            select: { id: true, url: true, path: true, depth: true, childCount: true },
+            select: {
+                id: true,
+                url: true,
+                path: true,
+                depth: true,
+                childCount: true,
+            },
         });
         await runResync(db);
         const second = await db.category.findMany({
             orderBy: { id: "asc" },
-            select: { id: true, url: true, path: true, depth: true, childCount: true },
+            select: {
+                id: true,
+                url: true,
+                path: true,
+                depth: true,
+                childCount: true,
+            },
         });
 
         // Assert
+        expect(second).toEqual(first);
+    });
+});
+
+/**
+ * SUB_CATEGORY 別名の所有者ルール（`_category_tree_alias_owner_preserve`）
+ *
+ * `resolveCategoryNode` は `SUB_CATEGORY` を **別名表 → `Category.url`** の順で引く
+ * （design.md §2-Q3）。したがって `(SUB_CATEGORY, X)` の所有者を後から書き換えると、
+ * 旧 slug X を持っていたノード宛の生きた `?subCategory=X` リンクが黙って別サブツリーへ
+ * 308 される。アプリ側の書き込み経路（`src/queries/category.ts`）が
+ * `createMany({ skipDuplicates: true })` で採っている**先着優先**を、移行側でも同じ規則に
+ * 揃えるのがこの区間である。
+ */
+describe("カテゴリツリー — SUB_CATEGORY 別名の所有者は先着で固定する", () => {
+    let db: PrismaClient;
+
+    beforeAll(() => {
+        db = getTestDb();
+    });
+
+    beforeEach(async () => {
+        await resetDb(db);
+    });
+
+    afterAll(async () => {
+        await disconnectTestDb();
+    });
+
+    it("旧 slug が別ノードの正準 slug に再利用されても、別名の所有者を奪わない", async () => {
+        // Arrange —— sub-a が "camera" として取り込まれ、別名 camera → sub-a ができる
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-a", "camera", "root-1");
+        await runResync(db);
+
+        // その後 sub-a は "camcorder" へリネームされ、空いた "camera" を sub-b が取る。
+        // ノード側の追随（url / path）は再同期の別区間が行う分なので、ここでは直接当てる
+        // ——「別名の所有者だけ」を観測対象に残すため。
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'camcorder' WHERE id = 'sub-a'`;
+        await db.$executeRaw`UPDATE "Category" SET url = 'camcorder', "path" = 'electronics/camcorder' WHERE id = 'sub-a'`;
+        await seedSubCategory(db, "sub-b", "camera", "root-1");
+        await seedChildNode(db, "sub-b", "camera", "root-1", "electronics");
+
+        // Act
+        await runAliasOwnerPreserve(db);
+
+        // Assert —— camera は先着の sub-a のまま。奪うと ?subCategory=camera が
+        // 「camera を名乗っていた頃の sub-a」ではなく sub-b へ 308 されてしまう。
+        const aliases = await db.categorySlugAlias.findMany({
+            where: { entityType: "SUB_CATEGORY" },
+            orderBy: { oldSlug: "asc" },
+            select: { oldSlug: true, categoryId: true },
+        });
+        expect(aliases).toEqual([
+            // 新 slug は自ノードの別名として追加される（先着が居ないため）
+            { oldSlug: "camcorder", categoryId: "sub-a" },
+            { oldSlug: "camera", categoryId: "sub-a" },
+        ]);
+    });
+
+    it("先着が居ない旧 slug は投入され、2 回目の実行で結果が変わらない（冪等）", async () => {
+        // Arrange
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-1", "camera", "root-1");
+        await seedChildNode(db, "sub-1", "camera", "root-1", "electronics");
+
+        // Act
+        await runAliasOwnerPreserve(db);
+        const first = await db.categorySlugAlias.findMany({
+            where: { entityType: "SUB_CATEGORY" },
+            orderBy: { oldSlug: "asc" },
+            select: { oldSlug: true, categoryId: true },
+        });
+        await runAliasOwnerPreserve(db);
+        const second = await db.categorySlugAlias.findMany({
+            where: { entityType: "SUB_CATEGORY" },
+            orderBy: { oldSlug: "asc" },
+            select: { oldSlug: true, categoryId: true },
+        });
+
+        // Assert
+        expect(first).toEqual([{ oldSlug: "camera", categoryId: "sub-1" }]);
         expect(second).toEqual(first);
     });
 });
