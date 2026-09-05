@@ -45,41 +45,45 @@ const restockOrderItems = async (
  */
 
 export const getOrder = async (orderId: string) => {
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
     const user = await requireUser();
 
-    // Get order details with groups, product items, and ordered by total price
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-        include: {
-            groups: {
-                include: {
-                    items: true,
-                    store: true,
-                    coupon: true,
-                    _count: {
-                        select: {
-                            items: true,
+    try {
+        // Get order details with groups, product items, and ordered by total price
+        return await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+            include: {
+                groups: {
+                    include: {
+                        items: true,
+                        store: true,
+                        coupon: true,
+                        _count: {
+                            select: {
+                                items: true,
+                            },
                         },
                     },
+                    orderBy: {
+                        total: "desc",
+                    },
                 },
-                orderBy: {
-                    total: "desc",
+                shippingAddress: {
+                    include: {
+                        country: true,
+                        user: true,
+                    },
                 },
+                paymentDetails: true,
             },
-            shippingAddress: {
-                include: {
-                    country: true,
-                    user: true,
-                },
-            },
-            paymentDetails: true,
-        },
-    });
-
-    return order;
+        });
+    } catch (error: unknown) {
+        logError("[Order:getOrder] Error", error);
+        throw new Error("Failed to fetch order.");
+    }
 };
 
 /**
@@ -157,45 +161,70 @@ export const updateOrderGroupStatus = async (
     groupId: string,
     status: OrderStatus
 ) => {
+    // 認可ガードは try/catch の外（tech.md「エラーハンドリング」）
     const user = await requireSeller();
 
-    // Ensure the user is a seller of the specified store
-    const store = await db.store.findUnique({
-        where: {
-            id: storeId,
-            userId: user.id,
-        },
-    });
+    // Prisma 呼び出しは**操作単位**で包む。所有権チェック（`!store`）と存在チェック
+    // （`!order`）は catch の外に置くこと —— 1 つの try で全体を包むと、認可の拒否が
+    // DB 障害と同じログ経路へ流れ、「権限が無い」と「DB が落ちている」を運用側で
+    // 区別できなくなる（tech.md「認可ガードは try/catch の外に置く」の趣旨）。
+    let store: Awaited<ReturnType<typeof db.store.findUnique>>;
+    try {
+        // Ensure the user is a seller of the specified store
+        store = await db.store.findUnique({
+            where: {
+                id: storeId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        logError("[Order:updateOrderGroupStatus] Store lookup failed", error);
+        throw new Error("Failed to update order group status.");
+    }
 
     // Verify ownership of the store
     if (!store) {
         throw new Error("Unauthorized to update order group status.");
     }
 
-    // Retrieve the order to be updated
-    const order = await db.orderGroup.findUnique({
-        where: {
-            id: groupId,
-            storeId: storeId,
-        },
-    });
+    let order: Awaited<ReturnType<typeof db.orderGroup.findUnique>>;
+    try {
+        // Retrieve the order to be updated
+        order = await db.orderGroup.findUnique({
+            where: {
+                id: groupId,
+                storeId: storeId,
+            },
+        });
+    } catch (error: unknown) {
+        logError(
+            "[Order:updateOrderGroupStatus] Order group lookup failed",
+            error
+        );
+        throw new Error("Failed to update order group status.");
+    }
 
     // Ensure order existence
     if (!order) {
         throw new Error("Order not found");
     }
 
-    // Update the order status
-    const updatedOrder = await db.orderGroup.update({
-        where: {
-            id: groupId,
-        },
-        data: {
-            status,
-        },
-    });
+    try {
+        // Update the order status
+        const updatedOrder = await db.orderGroup.update({
+            where: {
+                id: groupId,
+            },
+            data: {
+                status,
+            },
+        });
 
-    return updatedOrder.status;
+        return updatedOrder.status;
+    } catch (error: unknown) {
+        logError("[Order:updateOrderGroupStatus] Status update failed", error);
+        throw new Error("Failed to update order group status.");
+    }
 };
 
 /**

@@ -181,6 +181,32 @@ describe("getOrder", () => {
             expect(result).toBeNull();
         });
     });
+
+    describe("DB エラー", () => {
+        let errSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("DBクエリ失敗時に汎用メッセージへ変換してスローする", async () => {
+            // Arrange —— admin 版 getOrderForAdmin と同形。失敗を握り潰して null を
+            // 返すと「他人の注文（IDOR で弾かれた）」と区別できなくなる。
+            mockDb.order.findUnique.mockRejectedValue(new Error("db down"));
+
+            // Act / Assert
+            await expect(getOrder("order-001")).rejects.toThrow(
+                "Failed to fetch order."
+            );
+            expect(errSpy).toHaveBeenCalled();
+        });
+    });
 });
 
 // ==================================================
@@ -266,6 +292,70 @@ describe("updateOrderGroupStatus", () => {
                     "Confirmed" as never
                 )
             ).rejects.toThrow("Order not found");
+        });
+    });
+
+    describe("DB エラー", () => {
+        let errSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            errSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+        });
+        afterEach(() => errSpy.mockRestore());
+
+        it("ストア照会の失敗を汎用メッセージへ変換してスローする", async () => {
+            // Arrange
+            mockDb.store.findUnique.mockRejectedValue(new Error("db down"));
+
+            // Act / Assert —— 所有権拒否の文言と混ざらないこと
+            await expect(
+                updateOrderGroupStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "order-group-001",
+                    "Confirmed" as never
+                )
+            ).rejects.toThrow("Failed to update order group status.");
+            expect(errSpy).toHaveBeenCalled();
+        });
+
+        it("ステータス更新の失敗を汎用メッセージへ変換してスローする", async () => {
+            // Arrange
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.orderGroup.findUnique.mockResolvedValue(
+                createMockOrderGroup()
+            );
+            mockDb.orderGroup.update.mockRejectedValue(new Error("db down"));
+
+            // Act / Assert
+            await expect(
+                updateOrderGroupStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "order-group-001",
+                    "Confirmed" as never
+                )
+            ).rejects.toThrow("Failed to update order group status.");
+            expect(errSpy).toHaveBeenCalled();
+        });
+
+        it("所有権の拒否は DB エラーの文言で上書きしない（ログもしない）", async () => {
+            // Arrange —— 認可の拒否は catch を通らない経路であること
+            mockDb.store.findUnique.mockResolvedValue(null);
+
+            // Act / Assert
+            await expect(
+                updateOrderGroupStatus(
+                    "other-store",
+                    "order-group-001",
+                    "Confirmed" as never
+                )
+            ).rejects.toThrow("Unauthorized to update order group status.");
+            expect(errSpy).not.toHaveBeenCalled();
         });
     });
 
