@@ -62,7 +62,7 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
 
 | 目的 | コマンド |
 |---|---|
-| マイグレーション | `bunx prisma migrate dev --name category_attributes`（**`db push` 禁止**） |
+| マイグレーション | `bunx prisma migrate dev --create-only --name category_attributes` → 生 SQL 追記 → `bunx prisma migrate dev` で適用（**`db push` 禁止**） |
 | Prisma クライアント再生成 | `bunx prisma generate` |
 | ER 図の再生成 | `bun run erd:generate` |
 | 型 / lint | `bunx tsc --noEmit` / `bun run lint` |
@@ -146,7 +146,13 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
    > 決定は本プランと [`design.md`](../docs/design/category-attributes/design.md) §4 の
    > 両方へ書き戻し、`multiValued` を定義側に持たせる場合はその列も §3 のスキーマへ反映する。
 3. **スキーマ + マイグレーション**。design.md §3 / ADR-007 の Decision 節どおり。
-   `bunx prisma migrate dev --name category_attributes`。**既存マイグレーションは編集しない**。
+   **`--create-only` で生成してから適用する**:
+   `bunx prisma migrate dev --create-only --name category_attributes` で SQL を出し、
+   Step 2 で多値を選んだ場合はそこへ部分一意インデックス
+   （`WHERE "optionId" IS NOT NULL`。Prisma スキーマでは表現できない）を追記し、
+   その後 `bunx prisma migrate dev` で適用する。追記先は**この手順で生成した新規
+   マイグレーション**であり、**既存マイグレーションは編集しない**
+   （[`tech.md`](../.claude/steering/tech.md) の禁止事項）。
 4. **ER 図を再生成**。`scripts/erd/generate-erd.ts` の `PAGES` に新 4 モデルを追記 →
    `bun run erd:generate` → **stderr の orphan WARNING が 0 件**であることを確認
    （[`03-data-model-diagram-sync.md`](../.claude/rules/03-data-model-diagram-sync.md)）。
@@ -223,11 +229,20 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      > `upsertProduct` のリーフ強制（V-5）が「ロックを取ったうえで書き込みと同じ tx 内で
      > 再検証する」形を取っているのと同じ理由である。
      >
-     > したがって `$transaction` の内側でも、`Product` 行と対象 `ProductVariant` 行を
+     > したがって `$transaction` の内側でも、`Product` 行・対象 `ProductVariant` 行・
+     > **`attributes[].definitionId` が指す `AttributeDefinition` 行のすべて**を
      > `SELECT ... FOR UPDATE` で掴んだうえで上の 3 点を**再確認**してから書く
-     > （`Product.storeId` と `ProductVariant.productId` は掴んだ行の値で判定する）。
+     > （`Product.storeId` / `ProductVariant.productId` / `archivedAt` / `categoryId` /
+     > `scope` は、いずれも**掴んだ行の値**で判定する）。
+     > **定義行を掴まないと 3 番目の検証だけが無防備に残る。** `Product` と
+     > `ProductVariant` をロックしても `AttributeDefinition` は別行であり、
+     > 再確認と書き込みの間に `archivedAt` の付与・カテゴリの付け替え・`scope` の変更が
+     > 割り込める —— archive 済み定義の値が入った行が生まれ、`archivedAt` を
+     > 「これ以上増えない」ことの保証として使えなくなる。
      > 再確認に落ちたらトランザクションごと拒否し、**属性行を 1 行も残さない**。
-     > ロック順序を「`Product` → `ProductVariant`（id 昇順）」に固定してデッドロックを避ける。
+     > ロック順序は「`Product` → `ProductVariant`（id 昇順）→ `AttributeDefinition`
+     > （id 昇順）」に固定してデッドロックを避ける（同じ定義を触る 2 リクエストが
+     > 互い違いの順で掴むと循環待ちになる）。
      > Serializable + リトライでも同じ保証は得られるが、この経路は掴む行が少なく
      > 明示ロックのほうが失敗モードが読みやすい。
    - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、

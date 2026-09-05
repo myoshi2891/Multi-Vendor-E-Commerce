@@ -438,7 +438,6 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 >
 > **副次的な整備**: ADR 一覧の索引に未登録だった **004 / 005** も併せて追加した（`ae2c96d0`）。
 
-
 > **065 の実行記録（2026-08-31・`51c73e4c`）+ 054 の残り（`bb780b99`）— 両方 DONE**
 >
 > **065 は DONE。** `src/components/store/product-page/container.tsx` の **1 行**のみを変更した
