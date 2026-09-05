@@ -196,9 +196,11 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 > 本番ビルド起動。`retries=2` を有効にしたまま **flaky 0**。実装側の欠陥は無く、
 > `src/` は無変更。詳細は [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md)。
 >
-> **ドキュメント同期は未完。** `QA_HANDOFF.md`（SSOT）と本ファイルは更新したが、
+> **ドキュメント同期（Step 10）は 2026-09-03 に完了済み。** 以下は 2026-09-02 時点の
+> 記録（履歴）: 「`QA_HANDOFF.md`（SSOT）と本ファイルは更新したが、
 > `07-testing.md` / `COVERAGE_REPORT.md` / `PROGRESS.md` への伝播と
-> `bun run coverage:dashboard` の再生成は**行っていない**。
+> `bun run coverage:dashboard` の再生成は行っていない」。この残件は 2026-09-03 に
+> 解消し、上のサマリ行の記載（Step 10 完了）が現在の状態である。
 >
 > 統計: Jest **2121** passed / 2124 total / **194 スイート**、Integration **135** / 16 スイート、
 > 型エラー 0 / ESLint 0 errors。E2E は `admin-category-tree.spec.ts` を
