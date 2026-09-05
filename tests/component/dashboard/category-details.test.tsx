@@ -352,6 +352,16 @@ describe("CategoryDetails", () => {
     });
 
     describe("送信", () => {
+        // 失敗経路のテストは console.error を握り潰す。テスト末尾で mockRestore すると
+        // **アサーション失敗時にその行へ到達せず**、spy が後続テストへ漏れる
+        // （以降のスイートで本物のエラーログが消える）。afterEach で必ず戻す。
+        let consoleSpy: jest.SpyInstance | undefined;
+
+        afterEach(() => {
+            consoleSpy?.mockRestore();
+            consoleSpy = undefined;
+        });
+
         /** 新規作成に必要な入力を埋める。 */
         const fillNewCategory = () => {
             fireEvent.click(screen.getByTestId("image-upload"));
@@ -435,7 +445,7 @@ describe("CategoryDetails", () => {
             mockUpsertCategory.mockRejectedValue(
                 new Error("A category cannot be its own parent.")
             );
-            const consoleSpy = jest
+            consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
             render(<CategoryDetails />);
@@ -455,13 +465,12 @@ describe("CategoryDetails", () => {
                 })
             );
             expect(mockPush).not.toHaveBeenCalled();
-            consoleSpy.mockRestore();
         });
 
         it("異常系: Error 以外が投げられても汎用文言で握らずに表示する", async () => {
             // Arrange —— instanceof Error の else 分岐
             mockUpsertCategory.mockRejectedValue("boom");
-            const consoleSpy = jest
+            consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
             render(<CategoryDetails />);
@@ -480,7 +489,6 @@ describe("CategoryDetails", () => {
                     description: "An unknown error occurred",
                 })
             );
-            consoleSpy.mockRestore();
         });
 
         it("異常系: 画像未選択ならサーバーを呼ばずに検証エラーを出す", async () => {
