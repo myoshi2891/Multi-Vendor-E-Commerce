@@ -454,7 +454,7 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 | D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
 | D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
 | D-4 queries 外の `use server` | `grep -rlnE "^['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
-| D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts"` | **0** | ADR 001 遵守 |
+| D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"` | **0** | ADR 001 遵守（Step 3 / D-5 の正規コマンドと一致させること。`.tsx` を落とすと検知漏れになる） |
 | D-6 cookie の生 `JSON.parse` | `grep -rnE "JSON\.parse.*cookie\|cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
 
 > **是正前（commit `3f91e7f2`）は D-1 が 24 + 7 = 31、D-3 が 2、D-4 が 1 だった。**
