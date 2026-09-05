@@ -401,6 +401,14 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
 
         // Assert
         expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: "toys",
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
         expect(screen.getByTestId("product-list")).toBeInTheDocument();
     });
 
@@ -479,6 +487,14 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
 
         // Assert
         expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: ["toys", "electronics"],
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
     });
 
     it("解決できない subCategory では寄せず、getProducts の fail-closed に委ねる", async () => {
