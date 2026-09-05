@@ -7,6 +7,7 @@ import { Category } from "@prisma/client";
 import { upsertCategory } from "@/queries/category";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { createMockCategory } from "@/config/test-fixtures";
 
 /**
  * admin のカテゴリ編集フォーム（`src/components/dashboard/forms/category-details.tsx`）。
@@ -105,23 +106,15 @@ const mockUpsertCategory = upsertCategory as jest.MockedFunction<
     typeof upsertCategory
 >;
 
-/** ツリー列を持つ Category の最小ビルダー。 */
+/**
+ * ツリー列を持つ Category の最小ビルダー。
+ *
+ * 実体は共通フィクスチャ（`src/config/test-fixtures.ts`）で、本スイート固有の
+ * 既定値（`childCount: 1`）だけを重ねる。ローカルに列を並べ直すと `as Category`
+ * で握り潰すことになり、列を足したときに壊れるべきテストが壊れない。
+ */
 const category = (overrides: Partial<Category> = {}): Category =>
-    ({
-        id: "cat-root",
-        name: "Electronics",
-        image: "https://example.com/e.jpg",
-        url: "electronics",
-        featured: false,
-        parentId: null,
-        path: "electronics",
-        depth: 0,
-        sortOrder: 0,
-        childCount: 1,
-        createdAt: new Date("2024-01-01"),
-        updatedAt: new Date("2024-01-01"),
-        ...overrides,
-    }) as Category;
+    createMockCategory({ childCount: 1, ...overrides });
 
 /**
  * 親候補セレクトに並んでいる選択肢のラベル（先頭のインデント埋めは除去）。
