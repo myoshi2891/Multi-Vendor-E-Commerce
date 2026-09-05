@@ -72,6 +72,11 @@ export default function CategoryLink({
         // 正準パラメータは category 1 本。旧 subCategory が残っていると
         // 2 つのサブツリーの積になり、意図しない絞り込みが残る。
         params.delete("subCategory");
+        // 絞り込みを変えたらページャは 1 ページ目へ戻す。残すと「3 ページ目を見ている
+        // 状態で別カテゴリを選ぶ」と、新しい結果集合の 3 ページ目という
+        // ユーザーが指定していない位置に着地する（件数が足りなければ
+        // /browse 側の正準化で 1 ページ目へ寄るが、足りる場合は寄らない）。
+        params.delete("page");
         params.set("category", slug);
         replace(`${pathname}?${params.toString()}`);
         setExpand(true);
