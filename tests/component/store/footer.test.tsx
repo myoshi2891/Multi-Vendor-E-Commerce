@@ -69,6 +69,13 @@ describe("Footer — カテゴリリンクの選抜", () => {
         jest.clearAllMocks();
     });
 
+    // `jest.spyOn(console, "error")` を張るテストがあるため、**アサーション失敗時にも**
+    // 確実に元へ戻す。テスト末尾の `mockRestore()` は失敗時に到達せず、console.error が
+    // 差し替わったまま後続テストへ漏れる（本物のエラーが握り潰される）。
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     it("正常系: 子ノード（旧サブカテゴリ相当）だけを並べ、ルートは除外する", async () => {
         // Arrange —— electronics > camera / phone の 2 階層
         resolveTree([
@@ -126,8 +133,7 @@ describe("Footer — カテゴリリンクの選抜", () => {
             "[Footer:getAllCategories] Failed to load categories",
             expect.objectContaining({ error: "DB is down" })
         );
-
-        errorSpy.mockRestore();
+        // 復元は afterEach の restoreAllMocks が担う（失敗時にも走らせるため）
     });
 
     it("エッジケース: カテゴリが 0 件でも footer 自体は描画される", async () => {
