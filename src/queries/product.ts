@@ -809,13 +809,19 @@ export const getProducts = async (
         }
 
         // Apply size filter (using array of sizes)
-        if (filters.size && Array.isArray(filters.size)) {
+        // 単数指定（`?size=M` が 1 つだけ）は string で届くため、color と同じく配列へ
+        // 揃えてから渡す。`Array.isArray` を通過条件にすると単数指定が**黙って捨てられ**、
+        // 絞り込みなしの全件表示に化ける（フィルタは fail-closed 側に倒すのが本関数の方針）。
+        if (filters.size && filters.size.length > 0) {
+            const sizesArray = Array.isArray(filters.size)
+                ? filters.size
+                : [filters.size];
             andConditions.push({
                 variants: {
                     some: {
                         sizes: {
                             some: {
-                                size: { in: filters.size },
+                                size: { in: sizesArray },
                             },
                         },
                     },

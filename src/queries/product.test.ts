@@ -1449,6 +1449,31 @@ describe("getProducts", () => {
             });
         });
 
+        it("サイズが単数指定（string）でも配列へ揃えて適用する", async () => {
+            // Arrange —— `?size=M` が 1 つだけのとき string で届く
+            // Act
+            await getProducts({ size: "M" });
+
+            // Assert —— 黙って捨てず、配列指定と同じ where を組む
+            const callArgs = mockDb.product.findMany.mock.calls[0][0];
+            const sizeClause = callArgs.where.AND.find(
+                (c: Record<string, unknown>) =>
+                    JSON.stringify(c).includes("size")
+            );
+
+            expect(sizeClause).toEqual({
+                variants: {
+                    some: {
+                        sizes: {
+                            some: {
+                                size: { in: ["M"] },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+
         it("カラーでフィルタする", async () => {
             await getProducts({ color: ["Red", "Blue"] });
 
