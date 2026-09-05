@@ -66,6 +66,12 @@ interface CurrentCategoryNode {
     url: string;
 }
 
+/** 子孫追随の対象。`path` は rebase 元として使う。 */
+interface DescendantNode {
+    id: string;
+    path: string;
+}
+
 /**
  * 導出列を実行時に落とす。
  *
@@ -140,39 +146,6 @@ const lockCategoryNodesForUpdate = async (
         if (row) locked.push(row);
     }
     return locked;
-};
-
-/**
- * subtree（`rootPath` の子孫。自ノードは含まない）を `FOR UPDATE` で掴んでから読む。
- *
- * **非ロック読みのままにしてはならない。** 子孫の path 追随は read-modify-write で、
- * READ COMMITTED では「読んだ後・書く前」に並行トランザクションが子孫を subtree の
- * **外へ**動かせる。すると本トランザクションは、既に別の親に付け替わった行へ
- * 「自分の subtree 配下」の path を書き戻し、`path` と `parentId` が矛盾する。
- * 導出列である path はこの矛盾から自力復帰できない。
- *
- * 収束の根拠: 掴んだ後にもう一度数え直し、新しい id が出なくなるまで繰り返す。
- * 子孫を動かす側は自ノード行を、子を足す側は親行を掴むので（`upsertCategory` の
- * ロック集合）、一度全子孫を掴めば新規の出入りは起きない。
- * それでも収束しない場合は無限ループでトランザクションを溶かすより明示的に失敗させる。
- */
-const lockDescendantsForUpdate = async (
-    tx: CategoryTransactionClient,
-    rootPath: string
-): Promise<{ id: string; path: string }[]> => {
-    const locked = new Set<string>();
-    for (let attempt = 0; attempt < MAX_LOCK_CONVERGENCE_ATTEMPTS; attempt++) {
-        const descendants = await tx.category.findMany({
-            where: { path: { startsWith: `${rootPath}/` } },
-            select: { id: true, path: true },
-        });
-        const ids = orderedLockTargets(descendants.map((node) => node.id));
-        // 新しく掴むものが無い = 前回のロック以降に subtree が変わっていない
-        if (ids.every((id) => locked.has(id))) return descendants;
-        await lockCategoryNodesForUpdate(tx, ids);
-        for (const id of ids) locked.add(id);
-    }
-    throw new Error(CONCURRENT_TREE_EDIT_MESSAGE);
 };
 
 /**
@@ -252,7 +225,31 @@ const assertCategoryNameAndUrlAreFree = async (
 };
 
 /**
- * 旧親・新親・**自ノード**を 1 つの昇順集合としてまとめて掴み、掴んだ状態で読み直す。
+ * これから書く path を見積もる（ロック候補を絞るためだけの読み）。
+ *
+ * `applyCategoryTreeUpsert` が最終的に書く path と同じ式で、親は
+ * `nextParentId` の行から読む。1 周目は非ロック読みなので**見積もり**でしかないが、
+ * ロック取得後の読み直しで同じ比較をやり直すため、取りこぼしは収束ループが拾う。
+ *
+ * 親が見つからない場合は `null` を返す（呼び出し側は「path が変わる」と見なして
+ * 保守的に子孫まで候補へ入れる。実際の不在は `resolveNextParentNode` が弾く）。
+ */
+const computeNextPath = async (
+    tx: CategoryTransactionClient,
+    nextParentId: string | null,
+    nextUrl: string
+): Promise<string | null> => {
+    if (nextParentId === null) return nextUrl;
+    const parent = await tx.category.findUnique({
+        where: { id: nextParentId },
+        select: { path: true },
+    });
+    return parent ? `${parent.path}/${nextUrl}` : null;
+};
+
+/**
+ * ロック候補（旧親・新親・**自ノード**・**移動時は全子孫**）を
+ * **1 つの id 昇順集合**としてまとめて掴み、掴んだ状態で読み直す。
  *
  * 旧親と新親を同じ順序体系で掴む理由: 新親だけを先に掴んで旧親を
  * `recomputeChildCounts` まで遅らせると、旧親 A・新親 B の付け替えと
@@ -263,23 +260,44 @@ const assertCategoryNameAndUrlAreFree = async (
  *
  * **自ノードを含めるのが子孫追随の前提。** subtree を動かす本処理と、その subtree の
  * 中の子孫を動かす並行 upsert は、親だけを掴んでいると一度も同じ行で出会わない
- * （後者が掴むのは subtree 内の親行）。自ノードを掴んで初めて両者が直列化し、
- * `lockDescendantsForUpdate` の収束も成立する。
+ * （後者が掴むのは subtree 内の親行）。自ノードを掴んで初めて両者が直列化する。
  *
- * 掴んだ**後に読み直す**。ロック待ちの間に旧親が変わりうるため、待つ前に読んだ
- * `current` は既に古い。読み直して対象が増えたら掴み直す。
+ * **子孫を別フェーズで掴んではならない。** 「自ノード + 親」を掴んでから子孫を
+ * 掴む 2 フェーズ構成は、各フェーズ内が昇順でも**合成した取得順が昇順にならない**
+ * （子孫の id は自ノードより小さくなり得る）。すると「X を動かす側」と「X の子 D を
+ * subtree の外へ動かす側」が逆順で出会い、前者は X を持って D を待ち、後者は D を
+ * 持って X を待つ —— PostgreSQL が `40P01` で片方を abort するため不整合な path は
+ * 書かれないが、admin には理由の分からない失敗として見える。候補集合を 1 つに
+ * まとめて昇順で掴み切ればこの窓は閉じる。
+ *
+ * 子孫を候補に含めるのは **path が変わる（= 移動する）ときだけ**。判定は
+ * `current.path` と「これから書く path」の比較で行うので、url 変更・親の付け替えに
+ * 加えて「祖先が並行して動かされた」場合も同じ 1 本の条件で拾える。属性だけの編集
+ * （name / image / featured）で subtree 全体を掴まないためのふるい分けである。
+ *
+ * 掴んだ**後に読み直す**。ロック待ちの間に旧親や自分の path が変わりうるため、
+ * 待つ前に読んだ `current` は既に古い。読み直して候補が増えたら掴み直し、
+ * 増えなくなるまで繰り返す（自ノードを掴んだ後は親が変わらないので収束する）。
  */
 const acquireCategoryTreeLocks = async (
     tx: CategoryTransactionClient,
-    categoryId: string,
-    nextParentId: string | null
+    params: {
+        categoryId: string;
+        nextParentId: string | null;
+        nextUrl: string;
+    }
 ): Promise<{
     current: CurrentCategoryNode | null;
-    lockedParents: LockedCategoryNode[];
+    lockedNodes: LockedCategoryNode[];
+    descendants: DescendantNode[];
 }> => {
+    const { categoryId, nextParentId, nextUrl } = params;
     let current: CurrentCategoryNode | null = null;
-    let lockedParents: LockedCategoryNode[] = [];
+    let lockedNodes: LockedCategoryNode[] = [];
+    let descendants: DescendantNode[] = [];
+    let includeDescendants = false;
     const lockedIds = new Set<string>();
+
     for (let attempt = 0; attempt < MAX_LOCK_CONVERGENCE_ATTEMPTS; attempt++) {
         // 更新の場合のみ現在の姿が取れる（create では null）
         current = await tx.category.findUnique({
@@ -292,15 +310,32 @@ const acquireCategoryTreeLocks = async (
                 url: true,
             },
         });
+
+        // 一度立てたら降ろさない。既に掴んだ子孫を候補から外すと収束判定
+        // （候補 ⊆ 取得済み）が真になり、掴み直しの必要を見逃す。
+        includeDescendants ||=
+            current !== null &&
+            current.path !== (await computeNextPath(tx, nextParentId, nextUrl));
+
+        descendants =
+            includeDescendants && current !== null
+                ? await tx.category.findMany({
+                      where: { path: { startsWith: `${current.path}/` } },
+                      select: { id: true, path: true },
+                  })
+                : [];
+
         const targets = orderedLockTargets([
             categoryId,
             current?.parentId ?? null,
             nextParentId,
+            ...descendants.map((descendant) => descendant.id),
         ]);
+        // 新しく掴むものが無い = 待っている間に候補集合が変わっていない
         if (targets.every((id) => lockedIds.has(id))) {
-            return { current, lockedParents };
+            return { current, lockedNodes, descendants };
         }
-        lockedParents = await lockCategoryNodesForUpdate(tx, targets);
+        lockedNodes = await lockCategoryNodesForUpdate(tx, targets);
         for (const id of targets) lockedIds.add(id);
     }
     throw new Error(CONCURRENT_TREE_EDIT_MESSAGE);
@@ -314,16 +349,15 @@ const acquireCategoryTreeLocks = async (
 const resolveNextParentNode = async (
     tx: CategoryTransactionClient,
     params: {
-        lockedParents: readonly LockedCategoryNode[];
+        lockedNodes: readonly LockedCategoryNode[];
         nextParentId: string | null;
         current: CurrentCategoryNode | null;
     }
 ): Promise<LockedCategoryNode | null> => {
-    const { lockedParents, nextParentId, current } = params;
+    const { lockedNodes, nextParentId, current } = params;
     if (nextParentId === null) return null;
 
-    const parent =
-        lockedParents.find((node) => node.id === nextParentId) ?? null;
+    const parent = lockedNodes.find((node) => node.id === nextParentId) ?? null;
     if (!parent) throw new Error("Parent category not found.");
 
     // V-7c: 子孫への再親子化。判定は境界文字 `/` を含む前置一致
@@ -370,16 +404,21 @@ const resolveNextParentNode = async (
  * **書き込む前に**上限を検証する —— `parent.depth + 1` は移動するノード自身しか
  * 見ておらず、3 段の子を持つノードを深い親へ移すと子孫が上限を突破する。
  *
+ * 子孫は `acquireCategoryTreeLocks` が**掴んだうえで読んだ**ものを受け取る。ここで
+ * 読み直さないのは、非ロック読みだと read-modify-write の窓が開くため —— READ
+ * COMMITTED では「読んだ後・書く前」に並行トランザクションが子孫を subtree の外へ
+ * 動かせ、既に別の親に付け替わった行へ「自分の subtree 配下」の path を書き戻して
+ * `path` と `parentId` が矛盾する（導出列である path はそこから自力復帰できない）。
+ *
  * @returns 追随が必要な子孫の `{ id, path }`。移動していなければ空配列。
  */
-const computeRebasedDescendants = async (
-    tx: CategoryTransactionClient,
+const computeRebasedDescendants = (
+    descendants: readonly DescendantNode[],
     movedFrom: string | null,
     nextPath: string
-): Promise<{ id: string; path: string }[]> => {
+): DescendantNode[] => {
     if (movedFrom === null) return [];
 
-    const descendants = await lockDescendantsForUpdate(tx, movedFrom);
     const rebased = descendants.map((descendant) => ({
         id: descendant.id,
         path: rebasePath(descendant.path, movedFrom, nextPath),
@@ -433,14 +472,15 @@ const applyCategoryTreeUpsert = async (
     safeCategory: CategoryUpsertInput,
     nextParentId: string | null
 ): Promise<Category> => {
-    const { current, lockedParents } = await acquireCategoryTreeLocks(
-        tx,
-        safeCategory.id,
-        nextParentId
-    );
+    const { current, lockedNodes, descendants } =
+        await acquireCategoryTreeLocks(tx, {
+            categoryId: safeCategory.id,
+            nextParentId,
+            nextUrl: safeCategory.url,
+        });
 
     const parent = await resolveNextParentNode(tx, {
-        lockedParents,
+        lockedNodes,
         nextParentId,
         current,
     });
@@ -452,7 +492,7 @@ const applyCategoryTreeUpsert = async (
 
     const movedFrom =
         current !== null && current.path !== path ? current.path : null;
-    const rebased = await computeRebasedDescendants(tx, movedFrom, path);
+    const rebased = computeRebasedDescendants(descendants, movedFrom, path);
 
     const treeColumns = { path, depth };
     // createdAt は作成時のみ書く。update に含めるとフォームが毎回送る `new Date()` が
