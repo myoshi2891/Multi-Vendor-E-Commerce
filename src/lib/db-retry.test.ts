@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import {
+    isDeadlockFailure,
     isSerializationFailure,
+    retryOnDeadlock,
     retryOnSerializationFailure,
 } from "./db-retry";
 
@@ -11,6 +13,19 @@ const makeSerializationFailure = () =>
     new Prisma.PrismaClientKnownRequestError("could not serialize access", {
         code: "P2034",
         clientVersion: "test",
+    });
+
+/**
+ * デッドロック（SQLSTATE 40P01）を模した Prisma エラーを生成する。
+ *
+ * `$queryRaw` の失敗は `P2010` に畳まれ、生の SQLSTATE は `meta.code` に載る
+ * （`lockCategoryNodesForUpdate` の `SELECT ... FOR UPDATE` がこの経路）。
+ */
+const makeDeadlockFailure = () =>
+    new Prisma.PrismaClientKnownRequestError("Raw query failed", {
+        code: "P2010",
+        clientVersion: "test",
+        meta: { code: "40P01", message: "deadlock detected" },
     });
 
 const makeUniqueConstraintError = () =>
@@ -230,6 +245,97 @@ describe("retryOnSerializationFailure", () => {
             })
         ).rejects.toMatchObject({ code: "P2034" });
 
+        expect(operation).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("isDeadlockFailure", () => {
+    it("meta.code が 40P01 の P2010 を true と判定する", () => {
+        expect(isDeadlockFailure(makeDeadlockFailure())).toBe(true);
+    });
+
+    // 直列化異常とデッドロックを 1 つの述語に畳むと、原因も対処も違う 2 条件が
+    // 同じ上限・同じ再試行に混ざって運用側から判別できなくなる。分離を固定する。
+    it("直列化異常(P2034)は deadlock と判定しない", () => {
+        expect(isDeadlockFailure(makeSerializationFailure())).toBe(false);
+        expect(isSerializationFailure(makeDeadlockFailure())).toBe(false);
+    });
+
+    it("P2010 でも meta.code が別の SQLSTATE なら false", () => {
+        const other = new Prisma.PrismaClientKnownRequestError(
+            "Raw query failed",
+            {
+                code: "P2010",
+                clientVersion: "test",
+                meta: { code: "42601", message: "syntax error" },
+            }
+        );
+        expect(isDeadlockFailure(other)).toBe(false);
+    });
+
+    // meta は Prisma 側の任意フィールドで、欠落・非オブジェクトもあり得る。
+    // ここで throw すると catch の内側から別のエラーが出て元の失敗が化ける。
+    it.each([
+        ["meta 無し", undefined],
+        ["meta.code が非文字列", { code: 40101 }],
+        ["meta.code 自体が無い", { message: "deadlock detected" }],
+    ])("%s の P2010 は false（throw しない）", (_label, meta) => {
+        const error = new Prisma.PrismaClientKnownRequestError(
+            "Raw query failed",
+            { code: "P2010", clientVersion: "test", meta }
+        );
+        expect(isDeadlockFailure(error)).toBe(false);
+    });
+
+    it("Prisma エラー以外は false", () => {
+        expect(isDeadlockFailure(new Error("deadlock detected"))).toBe(false);
+        expect(isDeadlockFailure(null)).toBe(false);
+    });
+});
+
+describe("retryOnDeadlock", () => {
+    it("40P01 で失敗しても再試行して成功すれば結果を返す", async () => {
+        const operation = jest
+            .fn()
+            .mockRejectedValueOnce(makeDeadlockFailure())
+            .mockResolvedValueOnce("ok");
+
+        await expect(
+            retryOnDeadlock(operation, { baseDelayMs: 0 })
+        ).resolves.toBe("ok");
+        expect(operation).toHaveBeenCalledTimes(2);
+    });
+
+    it("maxAttempts まで再試行し、超えたら最後の 40P01 を投げ返す", async () => {
+        const operation = jest.fn().mockRejectedValue(makeDeadlockFailure());
+
+        await expect(
+            retryOnDeadlock(operation, { maxAttempts: 2, baseDelayMs: 0 })
+        ).rejects.toMatchObject({ code: "P2010" });
+        expect(operation).toHaveBeenCalledTimes(2);
+    });
+
+    // 再試行対象を取り違えると、Serializable 用の再試行が deadlock を握って
+    // 二重適用したり、その逆で正当な失敗を延々やり直したりする。
+    it("直列化異常(P2034)は再試行せず即座に投げ返す", async () => {
+        const operation = jest
+            .fn()
+            .mockRejectedValue(makeSerializationFailure());
+
+        await expect(
+            retryOnDeadlock(operation, { baseDelayMs: 0 })
+        ).rejects.toMatchObject({ code: "P2034" });
+        expect(operation).toHaveBeenCalledTimes(1);
+    });
+
+    it("40P01 以外のエラーは再試行せず即座に投げ返す", async () => {
+        const operation = jest
+            .fn()
+            .mockRejectedValue(makeUniqueConstraintError());
+
+        await expect(
+            retryOnDeadlock(operation, { baseDelayMs: 0 })
+        ).rejects.toMatchObject({ code: "P2002" });
         expect(operation).toHaveBeenCalledTimes(1);
     });
 });
