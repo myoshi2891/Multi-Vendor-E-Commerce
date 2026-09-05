@@ -358,9 +358,9 @@ ORDER BY kv.key, product_count DESC;
 （`"28g (45cm) / 32g (50cm)"`）。したがって「型変更で既存値が変換不能」は仮想例ではなく
 **多数派**であり、変換不能行を**失わずに列挙できる** Option 1 の性質が実運用上で効く。
 
-> **ただし「変換不能行を `valueText` に残したまま `dataType` だけ NUMBER にする」ことは禁止。**
+> **ただし「変換不能行を `valueText` に残したまま `type` だけ NUMBER にする」ことは禁止。**
 > D-1 が型で保証しているのは値の所有先の排他性であって、`valueText` / `valueNumber` /
-> `valueBool` / `optionId` のどれが埋まるかは**定義の `dataType` が決める不変条件**である。
+> `valueBool` / `optionId` のどれが埋まるかは**定義の `type` が決める不変条件**である。
 > NUMBER 定義の下に `valueText` だけの行が残ると、その行は `@@index([definitionId, valueNumber])`
 > を使うファセット集計から**黙って脱落**し（`valueNumber IS NULL`）、UI 上は「値がある」のに
 > 集計上は「値が無い」という二枚舌の状態になる —— これは本 ADR が Option 2 / 3 を
@@ -368,10 +368,10 @@ ORDER BY kv.key, product_count DESC;
 >
 > **したがって型変更の手順は 2 択に限る**:
 >
-> 1. **全行が変換可能** —— `valueText` → `valueNumber` を UPDATE し、`dataType` を
+> 1. **全行が変換可能** —— `valueText` → `valueNumber` を UPDATE し、`type` を
 >    NUMBER へ書き換える。変換後に `WHERE valueNumber IS NULL` が 0 行であることを
 >    同一トランザクション内で検証してからコミットする。
-> 2. **1 行でも変換不能** —— 既存定義は `dataType = TEXT` のまま `archivedAt` を立てて
+> 2. **1 行でも変換不能** —— 既存定義は `type = TEXT` のまま `archivedAt` を立てて
 >    退避し（変換不能な値を含む全行を `valueText` に保持したまま残す）、**別の
 >    NUMBER 定義を新規作成**して以後の入力をそちらへ向ける。移行できる行は新定義へ
 >    個別に書き写す。`archivedAt` による論理削除は D-4 で既に定義済みであり、
