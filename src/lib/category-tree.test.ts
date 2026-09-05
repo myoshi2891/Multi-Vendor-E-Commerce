@@ -345,7 +345,10 @@ describe("isProductAssignableCategory", () => {
         ["子を持つ depth 1", { depth: 1, childCount: 2 }, false],
         ["子を持たないルート", { depth: 0, childCount: 0 }, false],
         ["depth 2 のリーフ", { depth: 2, childCount: 0 }, false],
-    ])("%s は %s", (_label, node, expected) => {
+        // `as const` が無いと jest の `it.each` は行をタプルではなく union の配列と
+        // 見なし、コールバックの引数が実質 any へ落ちる（`node` が
+        // `isProductAssignableCategory` の引数型で検証されなくなる）。
+    ] as const)("%s は %s", (_label, node, expected) => {
         expect(isProductAssignableCategory(node)).toBe(expected);
     });
 });
