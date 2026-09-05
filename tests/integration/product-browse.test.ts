@@ -362,3 +362,194 @@ describe("Scenario 8: sorting", () => {
         ]);
     });
 });
+
+// ============================================================================
+// Scenario 9: カテゴリツリーのサブツリー検索（plan 067 Phase B）
+// ============================================================================
+
+/**
+ * 3 階層のカテゴリツリーと、各ノードに紐づく商品を作る。
+ *
+ * ```
+ * electronics                     (depth 0)
+ * ├── camera                      (depth 1)  ← 商品 camProduct
+ * │   └── lens                    (depth 2)  ← 商品 lensProduct
+ * └── camera-accessories          (depth 1)  ← 商品 accProduct
+ * ```
+ *
+ * **`camera` と `camera-accessories` が兄弟であることが本シナリオの核**で、
+ * 素の `startsWith("electronics/camera")` は後者を子孫として拾う。境界文字 `/` を
+ * 伴う `subtreeOf` でのみ 2 者が分離される（V-1）。
+ *
+ * 商品の seed ヘルパーは「`SubCategory` と `Category` ノードが id を共有する」
+ * Phase A の不変条件を検証するため、depth 1 / depth 2 のノードには対応する
+ * `SubCategory` 行を**同じ id で**作る（移行 A-3 と同じ規則）。
+ */
+async function arrangeCategoryTree() {
+    const owner = await seedUser(db);
+    const store = await seedStore(db, { userId: owner.id });
+
+    const root = await db.category.create({
+        data: {
+            name: "Electronics",
+            image: "https://example.test/electronics.png",
+            url: "electronics",
+            path: "electronics",
+            depth: 0,
+            childCount: 2,
+        },
+    });
+
+    /** Category ノードと、id を共有する SubCategory 行を対で作る */
+    const createNode = async (
+        name: string,
+        url: string,
+        parent: { id: string; path: string }
+    ) => {
+        const node = await db.category.create({
+            data: {
+                name,
+                image: `https://example.test/${url}.png`,
+                url,
+                parentId: parent.id,
+                path: `${parent.path}/${url}`,
+                depth: parent.path.split("/").length,
+            },
+        });
+        await db.subCategory.create({
+            data: {
+                id: node.id,
+                name,
+                image: `https://example.test/${url}.png`,
+                url,
+                categoryId: parent.id,
+            },
+        });
+        return node;
+    };
+
+    const camera = await createNode("Camera", "camera", root);
+    const accessories = await createNode(
+        "Camera Accessories",
+        "camera-accessories",
+        root
+    );
+    const lens = await createNode("Lens", "lens", camera);
+    // camera は lens を持つ**非リーフ**なので商品を直接ぶら下げられない（V-5）。
+    // camera 直下の商品は、もう 1 枚のリーフ camera-body に置く。
+    // サブツリー検索の観点は変わらない（どちらも electronics/camera 配下）。
+    const cameraBody = await createNode("Camera Body", "camera-body", camera);
+
+    const camProduct = await seedProductWithVariantAndSize(db, {
+        storeId: store.id,
+        categoryId: camera.id,
+        subCategoryId: cameraBody.id,
+    });
+    const accProduct = await seedProductWithVariantAndSize(db, {
+        storeId: store.id,
+        categoryId: root.id,
+        subCategoryId: accessories.id,
+    });
+    const lensProduct = await seedProductWithVariantAndSize(db, {
+        storeId: store.id,
+        categoryId: camera.id,
+        subCategoryId: lens.id,
+    });
+
+    return {
+        root,
+        camera,
+        cameraBody,
+        accessories,
+        lens,
+        camProduct,
+        accProduct,
+        lensProduct,
+    };
+}
+
+describe("Scenario 9: category subtree filtering", () => {
+    it("excludes a sibling whose slug shares the prefix (V-1)", async () => {
+        // Arrange
+        const tree = await arrangeCategoryTree();
+
+        // Act —— electronics/camera のサブツリー
+        const result = await getProducts({ category: tree.camera.url });
+
+        // Assert: camera と その子孫 lens のみ。
+        // electronics/camera-accessories は **prefix が一致するだけの兄弟**なので入らない。
+        expect(idsOf(result).sort()).toEqual(
+            [tree.camProduct.product.id, tree.lensProduct.product.id].sort()
+        );
+        expect(idsOf(result)).not.toContain(tree.accProduct.product.id);
+    });
+
+    it("matches a depth-2 product through its root ancestor", async () => {
+        // Arrange —— ツリー化の本題。2 段固定の旧実装では 3 階層目に到達できない
+        const tree = await arrangeCategoryTree();
+
+        // Act
+        const result = await getProducts({ category: tree.root.url });
+
+        // Assert: 祖先 1 つで全 3 商品（depth 1 と depth 2 の両方）が取れる
+        expect(result.totalCount).toBe(3);
+        expect(idsOf(result)).toContain(tree.lensProduct.product.id);
+    });
+
+    it("resolves the legacy ?subCategory= slug to the same subtree", async () => {
+        // Arrange
+        const tree = await arrangeCategoryTree();
+
+        // Act —— 旧パラメータも恒久的に受理する（design.md §2-Q4）
+        const result = await getProducts({ subCategory: tree.camera.url });
+
+        // Assert: ?category= と同じサブツリーに落ちる（子孫 lens を含む）
+        expect(idsOf(result).sort()).toEqual(
+            [tree.camProduct.product.id, tree.lensProduct.product.id].sort()
+        );
+    });
+
+    it("prefers the SUB_CATEGORY alias over a colliding canonical slug", async () => {
+        // Arrange —— 旧 slug "camera" が **別ノードの正準 slug のまま**という衝突を作る。
+        // lens を "optics" にリネームし、旧 slug "camera" の別名を lens へ張る。
+        // このとき DB には url="camera" の Category（本物の camera）が残っているので、
+        // `resolveCategoryNode` が url 完全一致を先に引く実装だと**別サブツリー**に
+        // 落ちる。SUB_CATEGORY だけ別名表を先に引く理由がここにある
+        // （src/lib/category-tree.ts / design.md §2-Q4）。unit テストは db を全モック
+        // するため、この優先順位は実 DB でしか固定できない。
+        const tree = await arrangeCategoryTree();
+        const renamed = await db.category.update({
+            where: { id: tree.lens.id },
+            data: { url: "optics", path: "electronics/camera/optics" },
+        });
+        await db.categorySlugAlias.create({
+            data: {
+                entityType: "SUB_CATEGORY",
+                oldSlug: "camera",
+                categoryId: renamed.id,
+            },
+        });
+
+        // Act —— 外部被リンクに残った旧 slug
+        const result = await getProducts({ subCategory: "camera" });
+
+        // Assert: 別名が指す **リネーム後の子**のサブツリーへ解決される。
+        // 正準 slug "camera" を持つ本物の camera ノード（配下に camProduct）ではない。
+        expect(idsOf(result)).toEqual([tree.lensProduct.product.id]);
+        expect(idsOf(result)).not.toContain(tree.camProduct.product.id);
+    });
+
+    it("returns no results for an unresolvable subCategory slug (V-6)", async () => {
+        // Arrange
+        await arrangeCategoryTree();
+
+        // Act
+        const result = await getProducts({ subCategory: "no-such-subcategory" });
+
+        // Assert: fail-closed。旧パラメータ側だけ fail-open へ退行しても
+        // Scenario 2（category 側）では検出できないので個別に固定する。
+        expect(result.totalCount).toBe(0);
+        expect(result.products).toHaveLength(0);
+        expect(result.totalPages).toBe(0);
+    });
+});

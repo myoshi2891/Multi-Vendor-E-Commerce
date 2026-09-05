@@ -197,7 +197,7 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                     activeImage={activeImage || images[0]}
                     setActiveImage={setActiveImage}
                 />
-                <div className="mt-4 flex w-full flex-col gap-4 md:mt-0 md:flex-row">
+                <div className="mt-4 flex min-w-0 flex-1 flex-col gap-4 md:mt-0 md:flex-row">
                     {/* Product main info */}
                     <ProductInfo
                         productData={productData}

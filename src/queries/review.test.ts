@@ -56,9 +56,15 @@ describe("upsertReview", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
+            // 修正前は "Error updating review: Unauthorized." だった ——
+            // 認可チェックが外側の try の中にあり、catch が汎用メッセージで
+            // 包んでいたため、呼び出し側は未認証と DB 障害を区別できなかった。
+            // 完全一致で照合する。`toThrow(string)` は**部分一致**なので、
+            // まさにこの回帰（"Error updating review: Unauthenticated."）を
+            // 素通しさせてしまい、テストが守るべきものを守れない。
             await expect(
                 upsertReview("product-001", createMockReview())
-            ).rejects.toThrow("Error updating review");
+            ).rejects.toThrow(/^Unauthenticated\.$/);
         });
     });
 

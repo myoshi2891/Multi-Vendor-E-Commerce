@@ -86,8 +86,8 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | S | LOW | — | DONE（2026-08-13・`8b83c185`〜`424f1b56`。プラン本文どおり 8 ケース・**逸脱なし**。Jest 1976 → **1984** / スイート 183 → **184**。STOP 条件 3 点はいずれも非該当（手計算値と実測は全一致 = 本体バグなし）。下の実行記録を参照） |
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | S | LOW | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | M | MED | — | TODO |
-| [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | TODO |
-| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | TODO |
+| [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | M | MED | — | DONE（2026-08-31・`ae2c96d0`〜`6c6867e8`。**STOP 条件 #4 に該当**〔影響ファイル実測 **82**〕— オペレーター判断で後続実装を **066/067/068 の 3 分割**とした。**逸脱 1 点**〔Q4 はプラン提示の (a)/(b) を採らず「URL の形を変えない」第 3 案〕。**プラン本文に無い発見 1 点**〔`home.ts`/`size.ts` の リレーションフィルタ経路〕。下の実行記録を参照） |
+| [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | M | MED | — | DONE（2026-08-31・`85d21075`〜`dcb040bd`。後続実装は **069 の 1 本**〔影響 約 20 ファイル = 60 基準内〕。**プラン本文との差分 1 点**〔`createMany` 直書き経路は仮定法ではなく既に 2 つ存在〕。**設計を決めた実測 2 点**〔数値が文字列に埋没 / `Size.size` が既に汎用軸として濫用〕。**BLOCKED 1 点**〔`psql` 未インストールで実 DB の表記揺れ実測は未実施 — 069 Step 1 へ送った〕。下の実行記録を参照） |
 | [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | M | LOW-MED | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | M | LOW-MED | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | M | LOW | — | TODO |
@@ -127,7 +127,7 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [051](051-e2e-country-selector.md) | 国選択セレクタ（Ship to）cookie 往復 E2E（TESTS-40） | tests | P1 | S | LOW | — | DONE |
 | [052](052-e2e-a11y-storefront-expansion.md) | a11y スキャンを browse / 商品詳細 / cart へ拡大（TESTS-43） | tests | P2 | S–M | LOW–MED | 042 Step 4 | DONE（2026-08-09・`df4d4f7e`〜`f685271d`。E2E 47 → **50 tests/browser** / 18 → **21 files** / 計 141 → **150**、a11y 4 → **7 スペック**でスイート **7 passed**。**Step 2 で STOP 条件（`color-contrast` 以外の違反）に該当** — critical 3 種 / serious 2 種の実違反を検出し、オペレーター承認のうえ **out of scope だった `src/` を修正**して green 化した。下の実行記録を参照） |
 | [053](053-e2e-auth-surface-smoke.md) | 認証サーフェススモーク（sign-up ウィジェット / Register / サインアウト）（TESTS-41） | tests | P2 | S | LOW | サインアウトのみ 042 | DONE（2026-08-12・`45cb7e1b`〜`b2a8f202`。042 が DONE のため **Step 3 も実施**。E2E 54 → **57 tests/browser** / 23 → **24 files** / 計 162 → **171**。実測 chromium 3 passed / 3 ブラウザ 9 passed・**flaky 0**。`src/` は無変更。**プラン本文と実 DOM の差 2 点で逸脱**〔ヘッダーの二重描画 / hover に `force: true` 必須〕— 下の実行記録を参照） |
-| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | **IN PROGRESS（browse は DONE / 商品詳細は保留）**（2026-08-23・`0dba44de`〜`1847946d`。E2E 62 → **63 tests/browser** / 27 → **28 files** / 計 186 → **189**、Visual 2 → **3 スペック**。**商品詳細はプラン Step 3 の目視ゲートで欠陥を検出したため意図的に見送った** —— 右パネル（Add to cart を含む）が 1280px でクリップ。**レイアウト修正は [plan 065](065-fix-product-detail-right-panel-clipping.md) として起票済み**（2026-08-24）で、修正後に撮影する。下の実行記録を参照） |
+| [054](054-e2e-vrt-expansion.md) | VRT 対象を商品詳細・browse へ拡大（TESTS-44） | tests | P3 | S–M | MED | 043 | DONE（browse: 2026-08-23・`0dba44de`〜`1847946d` / 商品詳細: 2026-08-31・`bb780b99`。**これで R9 ラウンドが閉じ切った**。商品詳細は plan 065 のブロッカー解消後に撮影 —— E2E 63 → **64 tests/browser** / 28 → **29 files** / 計 189 → **192**、Visual 3 → **4 スペック / 5 テスト**。目視ゲート合格・更新フラグなしの 2 回連続実行で 2 回とも 5 passed。下の実行記録を参照） |
 | [055](055-e2e-guest-cart-login-handoff.md) | ゲストカート → サインイン後の引き継ぎ E2E（TESTS-42） | tests | P2 | M | MED | 042 | DONE（2026-08-12・`9704903c`〜`7f09918a`。E2E 57 → **58 tests/browser** / 24 → **25 files** / 計 171 → **174**。実測 3 ブラウザ 3 passed・**flaky 0**、回帰 purchase-flow 5 passed。`src/` は無変更。**Drift check で `src/queries/user.ts` が +1565/−703 と動いていたが契約は健在で STOP 非該当**。プラン本文に無い追加 1 点〔新規コンテキストの localStorage が空であることの assert〕— 下の実行記録を参照） |
 | [056](056-e2e-newsletter-characterization.md) | Newsletter dormant 404 の characterization E2E（TESTS-39） | tests | P3 | S | LOW | — | DONE（2026-08-23・`50664cc5`〜`462d705d`。E2E 58 → **60 tests/browser** / 25 → **26 files** / 計 174 → **180**。実測 chromium 2 passed / 3 ブラウザ 6 passed・**flaky 0**。`src/` は無変更。**プラン本文どおり 2 テスト・逸脱なし**〔ただし Done criteria の `grep waitForTimeout` → 0 件を満たすためコメントの表現を調整〕。**これで R9 の残りは 054 のみ**。下の実行記録を参照） |
 | [057](057-upgrade-next-middleware-bypass.md) | Upgrade `next` off the HIGH middleware-bypass advisory (GHSA-26hh-7cqf-hhc6) | dependencies | P1 | S | LOW-MED | — | DONE |
@@ -138,10 +138,374 @@ Recommended order is by priority then leverage. Plans are independent unless "De
 | [062](062-stop-leaking-search-error-message.md) | 検索 route の生 `error.message` 漏洩停止 + `error:any` 撤去（SECURITY-05） | security | P2 | S | LOW | — | DONE |
 | [063](063-backfill-stripe-payment-amount.md) | `PaymentDetails.amount` の Stripe 既存行 backfill（セント→ドル・CORRECTNESS-05 の残件） | correctness | P2 | S–M | MED | — | DONE |
 | [064](064-fix-shipping-address-default-invariant.md) | `upsertShippingAddress` の default 不変条件修正（新規経路の解除 + `$transaction` + 部分 unique index・TESTS-21 の remediation） | correctness | P2 | M | MED | 037 | DONE（2026-08-09。下の実行記録を参照） |
-| [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | TODO（2026-08-24 起票。054 実行記録の「レイアウト修正は未起票」の追跡先。**054 の商品詳細 VRT は本プラン完了後に撮影する**） |
+| [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | S–M | MED | — | DONE（2026-08-31・`51c73e4c`。**根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独**。実測は 1280px で `right=1434 / clientWidth=1280`（**+154px**）→ 修正後 `right=1264`。**逸脱 1 点**〔プランが指示したパネルへの `shrink-0` は不要だったため見送り〕。下の実行記録を参照） |
+| [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | M | MED | 013 | DONE（2026-08-31・`0f0fa400`〜`868ccf82`。**事前計測は実 DB で実行し slug 衝突 0 件** — STOP 条件はいずれも非該当。Jest 2026 → **2025**（シードのツリー統合に伴う置き換えで −1 / スイート 191 不変）、Integration 108 → **117** / 13 → **14 スイート**。**Done criteria からの逸脱 1 点**〔「`src/queries/**` 差分 0 行」は達成不可能 — オペレーター承認のうえ `category.ts` のみ narrow。`src/components/**` は 0 差分を維持〕。**プラン本文の解釈 2 点**〔「シードを先に」は作業順でありコミット順ではない / 「商品は categoryUrl 1 本」は宣言データの形であって DB 書き込みではない〕。**プラン本文に無い発見 1 点**〔design.md §4 の移行 SQL は冪等でない〕。下の実行記録を参照） |
+| [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | M | MED | 066 | **DONE**（2026-09-02・`8bebdc6e`〜`0ed9502a`。読み取りのサブツリー化・dual-write・再同期マイグレーション・308 正準化・storefront リンクの正準化・V-1/V-2/V-6 と 3 階層・dual-write のテストまで**完了**〔Jest 2032 → **2064** / 192 → **193 スイート**、Integration 117 → **129** / 14 → **15 スイート**、E2E 192 → **195**〕。**設計文書からの逸脱 3 点**〔design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで新 FK `categoryNode` を引く / `redirect()` は 307 なので `permanentRedirect()` / `?category=A&subCategory=B` は親子のときだけ畳む〕。**プラン本文の誤り 2 点**〔統合テストのコマンドが動作しない / Done criteria の grep が `src/app` を含まない〕。**一時的に BLOCKED としていた再同期マイグレーションの実 DB 適用は解消済み**〔2026-09-03 に `_prisma_migrations` を直接引いて `20260901223148_category_tree_phase_b_resync` の適用済みを確認。当時の「`migrate deploy` が権限で拒否」は一時的失敗を恒久 BLOCKED と誤記録したもの。経緯は [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md) の「067-B」〕。下の実行記録を参照） |
+| [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | M–L | HIGH | 067 | **IN PROGRESS**（2026-09-02・`c653864f`〜`524ba258`。**Step 1–4（可逆な範囲）+ Step 8 のテスト群（V-5 / V-7 系）+ Step 9 の検証まで実装**し、**不可逆な Phase C（Step 5–7）は未着手**、**Step 11（README の完了記録）も未完**である —— Step 10（docs 同期）は 2026-09-03 に完了し、067 の再同期マイグレーションも実 DB へ適用済みを確認したので、**残るゲートはオペレーター承認のみ**である。Jest 2072 → **2121** / スイート 194 不変、Integration 131 → **135** / 15 → **16 スイート**。**E2E は 3 ブラウザで検証済み**（`9034f300` で chromium が dev / 本番ビルド両起動モード緑、2026-09-03 に firefox 7.9s / webkit 12.7s を本番ビルド起動で実測 —— `retries=2` のまま **flaky 0**・**spec の追加修正なし**）。**プラン本文に無い発見 2 点** / **実バグ 1 件を修正**。下の実行記録を参照）|
+| [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | M–L | MED | 014 | TODO |
 
 Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `REJECTED` (one-line rationale).
 
+> **068 の実行記録（2026-09-02・`c653864f`〜`524ba258`）— IN PROGRESS（Phase C 手前で停止）**
+>
+> **不可逆な操作は 1 つも行っていない。** `prisma/schema.prisma` の差分は **0 行**、
+> マイグレーションの新規追加も無い。Step 5–7（`categoryNodeId` 必須化 → 旧 2 列 drop →
+> rename → `SubCategory` drop → 互換 re-export 削除）は**未着手**である。
+>
+> **完了した範囲**: Step 1（admin 表のツリー統合）/ Step 2（商品フォームのツリー選択）/
+> Step 3（リーフ強制 V-5）/ Step 4（深さ上限・循環 V-7 系）/ Step 8 のテスト群のうち
+> V-5・V-5b・V-5c・V-5d・V-7・V-7b・V-7c・V-7d。`admin/subCategories/**` と
+> `forms/subCategory-details.tsx` は削除済み（`9571d880`）。
+>
+> **プラン本文に無い発見 2 点。**
+>
+> 1. **Phase B では商品を depth 1 のリーフにしか紐づけられない。** プランは
+>    「depth 2 以上は admin で作れる」ことだけを Done criteria にしていたが、
+>    `Product.subCategoryId` が **NOT NULL のまま `SubCategory` を参照する**ため、
+>    legacy 行を持たない depth 0 / depth 2 以上のノードへ紐づけると FK 違反になる。
+>    黙って落ちるより先に塞ぐべきなので、`isProductAssignableCategory`（UI の選択可否）と
+>    `assertLeafCategoryNode`（サーバー側の強制）の両方に入れた。**3 階層目は
+>    「作れるが商品は付けられない」状態**であり、Phase C で解消する。
+> 2. **`category-tree.ts` はトップレベルで `@/lib/db` を import していた。** ツリー編集
+>    フォームは `"use client"` なので、`toCanonicalCategorySlug` / `isWithinSubtree` を
+>    使うと Prisma クライアントがクライアントバンドルへ引きずり込まれる。純粋関数を
+>    `src/lib/category-path.ts` へ分離し、`category-tree.ts` から再輸出した（`3d776a4f`）。
+>    prefix 境界の定義は引き続き `subtreeOf` / `isWithinSubtree` の 2 関数のみ。
+>
+> **実バグ 1 件を検出し修正した（`366a2951`）。** `deleteCategory` が親の `childCount` を
+> 減らしていなかった。068 で `childCount` がリーフ強制の判定材料になったため、放置すると
+> **リーフを 1 つ消した親には二度と商品を紐づけられなくなる** —— `childCount` は導出列で
+> admin フォームに無く、UI からは復旧できない。削除と再計算を 1 つの `$transaction` に入れた。
+>
+> **V-5d は「素朴な同時ディスパッチでは緑のまま」だった。** バリアで 2 本を同時起動しても、
+> 正しい実装と壊れた実装で**最終 DB 状態が一致し得る**（「商品を付けた後に子ができた」は
+> 正当な状態）。競合相手のトランザクションを**開いたまま**にして `upsertProduct` を
+> ロック待ちに入らせて初めて赤にできる。**`FOR UPDATE` を `findUnique` に置き換えると
+> 本シナリオのみ失敗すること**を実測で確認した。
+>
+> **E2E 1 本は未検証のままコミットし、`9034f300` で解消した。** `524ba258` の時点では
+> `page.getByRole("combobox").first()` がダッシュボードのサイドバーにあるナビゲーション用
+> combobox を掴んで失敗しており、セレクタを `page.locator("form")` 配下へスコープした
+> ものの再実行していなかった。`9034f300` で実際に走らせたところ、**spec 側にさらに 3 件の
+> 欠陥**（`CategoryFormSchema` に反する fixture / クライアント mount 前の入力が
+> react-hook-form の空既定に巻き戻される / Radix Select の portal 再構築による
+> detached クリック）が露見し、いずれも修正した。
+>
+> **3 ブラウザすべてで緑を実測した（2026-09-03）。** chromium は dev（`E2E_USE_DEV=1`）と
+> config 既定（`next build && next start`）の両起動モード、firefox 7.9s / webkit 12.7s は
+> 本番ビルド起動。`retries=2` を有効にしたまま **flaky 0**。実装側の欠陥は無く、
+> `src/` は無変更。詳細は [`QA_HANDOFF.md`](../docs/testing/QA_HANDOFF.md)。
+>
+> **ドキュメント同期（Step 10）は 2026-09-03 に完了済み。** 以下は 2026-09-02 時点の
+> 記録（履歴）: 「`QA_HANDOFF.md`（SSOT）と本ファイルは更新したが、
+> `07-testing.md` / `COVERAGE_REPORT.md` / `PROGRESS.md` への伝播と
+> `bun run coverage:dashboard` の再生成は行っていない」。この残件は 2026-09-03 に
+> 解消し、上のサマリ行の記載（Step 10 完了）が現在の状態である。
+>
+> 統計: Jest **2121** passed / 2124 total / **194 スイート**、Integration **135** / 16 スイート、
+> 型エラー 0 / ESLint 0 errors。E2E は `admin-category-tree.spec.ts` を
+> **3 ブラウザで実測し全緑・flaky 0**（`9034f300`・上記）。
+>
+> **067 の実行記録（2026-09-02・`8bebdc6e`〜`0ed9502a`）— DONE**
+>
+> **Phase B の境界は守られている。** `home.ts` / `size.ts` / `src/app/dashboard/**` の差分は
+> **0 行**（経路 B と 068 の領分に踏み込んでいない）。prefix 境界の定義は
+> `src/lib/category-tree.ts` の `subtreeOf` / `isWithinSubtree` の 2 関数のみで、
+> DB 側（Prisma where）とアプリ側（308 の親子判定）が同じ定義を引く。
+>
+> **設計文書からの逸脱 3 点**: (1) design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤りで、
+> 旧 `category` はルートを指すため新 FK `categoryNode` を引く必要がある（設計は Phase A 実装前に
+> 書かれており、リレーション名が確定していなかった）。(2) `redirect()` は 307 なので
+> `permanentRedirect()`（308）を使う。(3) `?category=A&subCategory=B` は 2 つのサブツリーの積として
+> 効いているため、B が A の子孫のときだけ畳む（無条件に畳むと「0 件」が「B の結果」へ化ける）。
+>
+> **プラン本文の誤り 2 点**: 統合テストのコマンドは `bun run test:integration`（`jest.config.js` が
+> `/tests/integration/` を除外しているため本文の `bun run test -- tests/integration/...` は動かない
+> —— 2026-09-03 に 066 / 067 / 068 本文を修正済み）。
+> Done criteria の `grep startsWith` は検索対象に `src/app` を含んでおらず、実際の重複は
+> `browse/page.tsx` に出た（`isWithinSubtree` へ寄せて解消）。
+>
+> **storefront リンクの罠（本文に無い発見）**: `footer/links.tsx` の `?subCategory=` を機械的に
+> `?category=` へ置換してはならない。旧 `SubCategory.url` は移行でリネームされ得るうえ、
+> グローバル一意制約下で**別ノードの正準 slug**になっている可能性があり、
+> `resolveCategoryNode(CATEGORY)` は url 完全一致を先に引くので無関係なノードへ着地する。
+> **データ源ごと `Category` ツリーへ移す**のが正しい（`d7769375`）。
+> `home/category-card.tsx` は `home.ts` の legacy 経路（Out of scope）なので `?subCategory=` のまま。
+>
+> **テスト**: V-1（兄弟 prefix の非ヒット）/ depth 2 の祖先ヒット / 旧 `?subCategory=` の同一サブツリー
+> 解決 / V-6（fail-closed）を `product-browse.test.ts` に **+4**、create・update 両経路の dual-write を
+> `product-update.test.ts` に **+2**（`upsertProduct` のフィクスチャが既にあるファイルへ置いた）。
+> V-2 は `search-filter.spec.ts` に **+1**（`maxRedirects: 0` でステータスと `Location` を直接見る。
+> `page.goto` では最終 URL しか見えず 302 と区別できない）。E2E シードに `CategorySlugAlias` を 1 行足し、
+> 別名表を引く経路＝外部被リンクの生存経路を実際に通している。V-1 と dual-write は本体を壊すと
+> 赤になることを実測で確認済み。
+>
+> **~~BLOCKED~~ → 解消（2026-09-03 確認）**: 「実 DB への `migrate deploy` が権限で拒否され
+> `20260901223148_category_tree_phase_b_resync` は未適用」という記録は**実測で否定された**。
+> `_prisma_migrations` を直接引くと `finished_at` = 2026-09-02T03:03:00Z / `rolled_back_at` = NULL /
+> `applied_steps_count` = 1 で**適用済み**であり、`bunx prisma migrate status` も
+> 「17 migrations found / Database schema is up to date」と応答する。
+> `Product.categoryNodeId IS NULL` は **0 件 / 105 行**（2026-09-03 実測）。
+> **したがって Phase C に残るゲートはオペレーター承認のみ**（「plan 067 の状態で本番相当の
+> 実測期間を置いたこと」の確認）で、これは未取得のため Step 5 へは進んでいない。
+>
+> **ローカル E2E の注意**: `PORT=3100 E2E_NO_REUSE=1` で隔離すること。:3000 に別リポジトリの
+> next-server が居ると `reuseExistingServer` がそれを掴み、全 spec が赤になる
+> （`playwright.config.ts` に警告として明記されている既知の罠）。
+>
+> 統計: Jest **2064** passed / 2067 total / **193 スイート**、Integration **129** / 15 スイート、
+> E2E **65 tests/browser**（29 files・3 ブラウザ計 **195**）、型エラー 0 / ESLint 0 errors。
+>
+> **066 の実行記録（2026-08-31・`0f0fa400`〜`868ccf82`）— DONE**
+>
+> **Phase A の境界は守られている。** `git diff --stat 33ea327b -- src/components` は**空**で、
+> `src/queries` の差分は `category.ts`（+17/−2）と `category.test.ts`（+4/−1）のみ。読み取り経路は
+> 1 本も切り替えていないので storefront の挙動は変わらず、ロールバックは新列・新テーブルの drop で足りる。
+>
+> **事前計測は実 DB（Neon dev）で実行した —— シードで代替していない。** `psql` は未インストールだが、
+> `DIRECT_URL` は素の `postgresql://` なので PrismaClient の `$queryRaw` で直接測れる
+> （plan 014 が BLOCKED として 069 へ送った経路が、ここで解けた）。実測:
+>
+> | 指標 | 実測値 |
+> |------|--------|
+> | slug 衝突（`Category` ∩ `SubCategory`） | **0 件**（STOP 条件の 20 件を大きく下回る） |
+> | 規模 | Category **40** / SubCategory **58** / Product **105** |
+> | `Product.categoryId` が subCategory の親と食い違う行 | **0**（A-6 の列コピーが安全であることの根拠） |
+> | SubCategory を持たない Category | **0**（＝ 非リーフ紐づけの既存 Product は存在しない） |
+>
+> 移行後: ルート **40** / 子 **58** / alias **98** / リネーム **0** / `childCount` ドリフト **0** /
+> `categoryNodeId` 未 backfill **0**。対応表は
+> [`slug-migration-map.csv`](../docs/design/category-tree/slug-migration-map.csv)（衝突 0 のためヘッダのみ + 計測値）。
+>
+> **プラン本文に無い発見 —— design.md §4 の移行 SQL は冪等でない。** プランは §4 の A-1〜A-6 を
+> 「同マイグレーションに含める」と指示していたが、A-3 の素の `INSERT ... SELECT FROM "SubCategory"` は
+> 2 回目の実行で `duplicate key value violates unique constraint "Category_pkey"` に落ちる
+> （使い捨ての PostgreSQL で**実測**した）。§4 自身が「SQL レベルの概略」と断っているとおり、
+> `-2`/`-3` の空き番号採番（§2-Q2-2 の 2.）も 1 本の SQL では書けない。**id 既存チェックによる
+> スキップと採番ループを持つ `DO` ブロックへ書き直した**。V-3（冪等性）はこの失敗を潰した結果であって、
+> 後付けの願望ではない。
+>
+> **統合テストはマイグレーション本体を読んで実行する。** globalSetup の `prisma migrate deploy` は
+> **空 DB** に掛かるため、マイグレーション内の DML はテストから見ると常に no-op で通過する。
+> 移行そのものを検証するには旧形状データを入れて能動的に再実行するしかない。SQL をテスト側へ
+> 写経すると SSOT が 2 つになりドリフトするので、`-- >>> PHASE_A_DATA_MOVE >>>` マーカーで
+> 「再実行可能な区間」を宣言し、テストはそこを読み出すだけにした。`$executeRawUnsafe` は
+> 1 呼び出し 1 文なので、ドル引用符・単一引用符・行コメントを跨がない位置でだけ切る分割器を置いている
+> （素朴な `;` split は `DO $PHASE_A$ … $PHASE_A$` を内部のセミコロンで刻む）。
+>
+> **Done criteria からの逸脱 1 点（オペレーター承認済み）—— 「`src/queries/**` の差分 0 行」は
+> 達成不可能だった。** `upsertCategory` は Prisma のモデル型を丸ごと引数に取っており
+> （`category.ts:19`）、呼び出し側は object literal（`category-details.tsx:90`）。
+> **Prisma のモデル型は DB default の有無に関わらず全スカラーを必須プロパティにする**ので、
+> `Category` に列を 1 つ足した時点でこのリテラルが型エラーになる。`@default` を付けても回避できない
+> （任意になるのは `CategoryCreateInput` であってモデル型ではない）。引数型を新列 5 つ分だけ狭め、
+> `create` 側で `path = url` / `depth = 0` を補う対応を採った。**副次的な利得**: admin が Phase A 中に
+> 作るカテゴリも移行 SQL の A-1 と同じ不変条件を満たすため、067 が NULL/空 path を考えなくて済む。
+>
+> **プラン本文の解釈を 2 点、明示的に確定させた。**
+>
+> 1. **「シード 3 系統を先に書き換える」（Step 2）は作業順であってコミット順ではない。**
+>    `parentId` / `path` を書くシードはスキーマ変更前には `tsc` が通らず、rule 02 の
+>    「各コミットは単独で型チェック可能」と正面衝突する。趣旨は「どのテストが本当に壊れたのか
+>    読めなくなるのを防ぐ」ことなので、同一作業単位で書きつつコミットは tsc が通る単位に切った。
+> 2. **「商品側は `categoryUrl`（リーフ）1 本」は宣言データの形であって DB 書き込みの話ではない。**
+>    Phase A の `Product` は旧 2 FK が **NOT NULL のまま**なので、seeder は木を遡って
+>    `categoryId`（ルート）を導出し、`subCategoryId` / `categoryNodeId`（リーフ）と併せて 3 本書く。
+>    depth 1 のノードは **Category と `id` を共有する** legacy SubCategory 行としても書いており、
+>    これによりシード済み DB がマイグレーション A-3（`s.id` 流用）の結果と一致する。
+>
+> **`path` は NOT NULL にした**（オペレーター判断）。既存行のあるテーブルへの NOT NULL 追加なので
+> `migrate dev --create-only` で SQL を起こしてから「nullable 追加 → backfill → SET NOT NULL」の
+> 3 段に書き換えている。nullable のままだと 067 で `path!` の非 null アサーション（グローバル規約で禁止）
+> を誘発する。上の narrow により admin 作成経路も必ず path を書くので、NOT NULL で安全に締められた。
+>
+> **シードは depth 1 を上限として明示的に throw する。** legacy SubCategory はルート直下しか
+> 表現できないため、depth 2 以上のリーフは Phase A の `Product.subCategoryId` に落とせない。
+> 黙って壊れるより先に落とす。3 階層目は読み取りが新 FK へ移る 067 以降で入れる。
+>
+> **範囲外の既知課題を 1 件記録した（066 の変更とは無関係）。** `bun run seed:luxury` は
+> **Neon に対しては Phase 4（Review）で `P2028` に落ちる**。`review-seeder.ts` の `$transaction` が
+> Prisma 既定（maxWait 2s / timeout 5s）のままでリモート遅延に耐えないためで、
+> **ローカル PostgreSQL では 5 フェーズ完走する**ことを実測で確認した（Phase 1〜3 は Neon でも成功し、
+> カテゴリ 32 ノードと商品 36 件が投入されている）。注文処理で `ORDER_TRANSACTION_OPTIONS` を
+> 明示したのと同型の対応が要る。
+>
+> **本プランが主張しないこと**: (1) **読み取りは何も速くなっていない** —— `path` に索引は張ったが、
+> それを使うクエリは 067 まで存在しない。(2) 性能ベンチマークは取っていない。
+> (3) admin UI は 2 ルート（categories / subCategories）のままで、ツリー編集はできない（068 の担当）。
+> (4) リーフ強制（design.md V-5）と深さ上限の検証（V-7）は**アプリ層に入れていない** ——
+> Phase A は `src/queries` を触らない境界なので、シード側の不変条件テストで代替している。
+> (5) 旧 URL の 308 リダイレクト（V-2）は 067 の担当で、本プランは `CategorySlugAlias` の
+> **表を用意しただけ**である。
+>
+> **014 の実行記録（2026-08-31・`85d21075`〜`dcb040bd`）— DONE**
+>
+> **spike なので `src/` と `prisma/schema.prisma` は 1 行も変更していない。** 成果物は
+> [ADR-007](../docs/architecture/decisions/007-attribute-storage.md)（`85d21075`）/
+> [`docs/design/category-attributes/design.md`](../docs/design/category-attributes/design.md)（`1130aa4d`・389 行）/
+> 後続実装プラン **069**（`dcb040bd`）の 3 点。
+>
+> **後続実装は 1 本（069）。** 既存 `Spec` 参照は **7 ファイル**、属性 CRUD の新規追加を
+> 含めても **約 20 ファイル**で、013 の 82 とは桁が違う。013 と同じ 60 ファイル基準を
+> 適用して**分割していない**（判断根拠は design.md §1 の内訳表）。
+>
+> **格納方式は正規化テーブル + 型別カラムを採用した。** ADR-007 は 3 方式
+> （正規化 / JSONB+GIN / ハイブリッド）の**ファセット集計 SQL を実際に書き下して**比較している。
+> JSONB を採らない決定的な理由は 3 つ: (1) **GIN が効くのは包含条件による絞り込みで、
+> `jsonb_each_text` の展開 + `GROUP BY`（= ファセットの本命）は絞り込み後の集合を全走査する**、
+> (2) 全値が `text` になり数値ファセットが型を失う（属性ごとの式インデックスが要り
+> 「DDL 不要」の利点が崩れる）、(3) ENUM の参照整合性が無く、**解こうとしている表記揺れが
+> JSON の中で再発する**。
+>
+> **プラン本文との差分 1 点。** plan 014 は「現状のアプリケーションコードは安全である…
+> **`createMany` 等の直書き経路が 1 つ増えれば破れる**」と仮定法で書いていたが、
+> **実際には既に 2 経路ある**（`product.ts:350-356` / `:460-466` の `updateProduct` の
+> 「削除 + 再作成」。plan 038 で入ったもの）。不正行はまだ生まれていないが、
+> 排他性を守る責任はネスト `create` の構文的性質から**4 箇所の呼び出し規律へ移っている**。
+> これは「値テーブルを Product 用 / Variant 用に分離して FK を `NOT NULL` にする」決定
+> （ADR-007 D-1）を支える一次証拠になった。
+>
+> **設計を実質的に決めた実測 2 点。**
+>
+> 1. **数値が文字列に埋没している** —— `Dimensions: "200cm x 70cm"` /
+>    `Weight: "28g (45cm) / 32g (50cm)"` / `Heel Height: "100mm with concealed 10mm platform"`。
+>    1 セルに複数の数値と単位が同居しており、**機械変換は原理的に不可能**。
+>    これにより Q3（既存 `Spec` の処遇）は「一括移行して廃止」を選べず、
+>    **温存して「その他仕様」へ降格**が確定した。Q7 の「型変更で変換不能な既存値」も
+>    仮想例ではなく**多数派**であることが分かった。
+> 2. **`Size.size` は既に汎用軸として濫用されている** —— `S` / `M` / `L` に混じって
+>    `"90cm x 90cm"` `"95cm"` `"S (15cm)"` `"One Size"` が入っている。スカーフの
+>    `"90cm x 90cm"` は寸法であってサイズではない。**「第 3 のバリアント軸が必要」は
+>    将来の要件ではなく、既に破綻している現状の記述**である。`AttributeScope.VARIANT` で
+>    塞ぐ一方、`Size` は price/quantity/discount を持つ販売単位の実体なので
+>    **`Size.size` の一般化では吸収しない**と決めた。
+>
+> **BLOCKED 1 点（正直な記録）。** 実 DB での表記揺れ実測は**行えていない** ——
+> `psql` が未インストールで、`DATABASE_URL` は Prisma Accelerate の `prisma://` URL のため
+> psql から接続できない（素の接続文字列は `DIRECT_URL`）。代替根拠のシード実測では
+> **153 行 / 24 種の name すべて表記が揃っており、揺れは 1 件も無い**。
+> **これを「揺れが無い証拠」として扱っていない** —— シードは単一の作者による手書きであり、
+> plan 013 で `lux-` 前置命名が slug 衝突を偶然隠していたのと**同型の罠**である。
+> 実測は **069 の Step 1** へ送り、Done criteria で「シードで確認した」と書くことを禁じた。
+>
+> **明示的に未決として残した点**: 多値属性（アレルゲン等）の格納。
+> `@@unique([productId, definitionId])` は 1 属性 1 値なので、制約を緩めるか
+> `multiValued` フラグを持たせるかを **069 の Step 2** で決める。
+> **見落としではなく、認識したうえで実装時判断へ送った**（design.md §6-4 / §4 の注記）。
+>
+> **本 spike が主張しないこと**: (1) 性能ベンチマークは取っていない —— 比較はクエリの
+> 書ける/書けないとインデックスの効き方の**構造**に基づく。(2) ファセット集計の実行方式
+> （GROUP BY vs マテビュー vs キャッシュ）は plan 015 の領分。(3) 20 部門の属性シード網羅は
+> 範囲外（069 でパイロット 2〜3 部門のみ）。
+>
+> **013 の実行記録（2026-08-31・`ae2c96d0`〜`6c6867e8`）— DONE**
+>
+> **spike なので `src/` と `prisma/schema.prisma` は 1 行も変更していない**
+> （`git status --porcelain -- src/ prisma/schema.prisma` が空）。成果物は
+> [ADR-006](../docs/architecture/decisions/006-category-tree-representation.md)（`ae2c96d0`）/
+> [`docs/design/category-tree/design.md`](../docs/design/category-tree/design.md)（`257b7873`・407 行）/
+> 後続実装プラン **066–068**（`6c6867e8`）の 3 点。
+>
+> **STOP 条件 #4 に該当した（影響ファイル 60 超）。** 実測 **82 ファイル** ——
+> 粗集合 94 件から偽陽性 12 件を除いた値である（`SupportForm` の問い合わせ種別 enum 8 件 +
+> 「`// Upserting category data`」という**別フォームから複製されたコメントだけ**がヒットする
+> 4 件）。プランの規定どおり分割案を提示し、**オペレーター判断で 3 分割**（066 / 067 / 068）と
+> なった。分割境界は ADR-006 の Phase A/B/C に一致させ、**各プランが単独でロールバック可能な
+> 状態で閉じる**ようにしてある（066 は新列 drop で戻る / 067 は読み取りを旧 FK へ戻す /
+> 068 の Phase C のみ不可逆でオペレーター確認必須）。
+>
+> **プラン本文からの逸脱 1 点（Q4・URL 後方互換）。** プランは (a) 値に親パスを入れる
+> （`?category=electronics/camera`）/ (b) パス形ルート `/browse/electronics/camera` を新設、の
+> 2 択で問いを立てていたが、**いずれも採らず「URL の形を変えない」第 3 案**を選んだ。
+> これは Q2-1 で **slug のグローバル一意（`url @unique`）を維持**する決定を先に置いたことの
+> 帰結で、フラット slug のままで一意に解決できるためである。選べる条件が Q2-1 に依存している
+> 点は design.md §2-Q4 に明記した。リネームが発生する分だけを
+> `CategorySlugAlias (entityType, oldSlug)` 経由で 308 に寄せる。
+>
+> **プラン本文に無い発見 1 点 —— slug 解決には経路が 2 系統あり、壊れ方が非対称である。**
+> プランは `product.ts` の `findUnique` だけを挙げていたが、実際には
+> `home.ts:138-140` と `size.ts:57-58` が `where: { category: { url: value } }` という
+> **リレーションフィルタ**で slug を引いている。`findUnique` が一意列でしか呼べず
+> **型エラーで露見する**のに対し、リレーションフィルタは一意性を要求しないため
+> **コンパイルが通ったまま実行時に別ノードへ一致し得る**。「壊れても気づけない経路」が
+> 存在することが、親内一意（`@@unique([parentId, url])`）を却下した決め手になった
+> （ADR-006 Option 4）。副次的に、この決定によって経路 B は **067 で書き換え不要**になっている。
+>
+> **本 spike が主張しないこと**: (1) 性能ベンチマークは取っていない —— 方式選定はクエリ
+> **形状**と規模見積（カテゴリは O(10^2〜10^3) 行）に基づく。(2) ツリー UI（DnD エディタ）と
+> 参照タクソノミー 20 部門の投入は範囲外（068 の Out of scope に明記）。(3) `deleteCategory` の
+> 「無効化 + 付け替え」化は別プランで起票する。
+>
+> **副次的な整備**: ADR 一覧の索引に未登録だった **004 / 005** も併せて追加した（`ae2c96d0`）。
+
+> **065 の実行記録（2026-08-31・`51c73e4c`）+ 054 の残り（`bb780b99`）— 両方 DONE**
+>
+> **065 は DONE。** `src/components/store/product-page/container.tsx` の **1 行**のみを変更した
+> （`mt-4 flex w-full flex-col …` → `mt-4 flex min-w-0 flex-1 flex-col …`）。
+> Drift check は clean（`git diff --stat 1847946d -- …` に差分なし）で、
+> プラン本文の Current state は現行コードと一致していた。
+>
+> **再現はプランの指示どおり `getBoundingClientRect().right` で測った（`scrollWidth` は指標にしない）。**
+> 実測（chromium・購入パネル）:
+>
+> | 幅 | 修正前 | 修正後 |
+> |----|--------|--------|
+> | 768px | right=752 / clientWidth=768 | **同一**（挙動不変） |
+> | **1280px** | **right=1434 / 1280 = +154px はみ出し** | **right=1264 = -16px 収まり** |
+> | 1440px | right=1434 / 1440 | right=1424 |
+>
+> `scrollWidth === clientWidth` は全幅で維持されており、**クリップを横スクロールに
+> すり替えていない**ことを確認した。目視ゲート（1280 / 1440 / 768）も
+> `Ship to` / `Buy now` / `Add to cart` が全幅描画で合格。
+>
+> **根本原因はプランの診断どおり `container.tsx:200` の `w-full` 単独だった。**
+> flex コンテナ（`xl:flex`）の子における `w-full` は「残余幅」ではなく**親幅（1248px）**に
+> 解決されるため、画像 swiper（サムネ 64 + gap 8 + `md:size-96` 384 ≒ **456px**）と並ぶと
+> 確定的に溢れる。`min-w-0` を伴わせたのは、flex item 既定の `min-width: auto` が
+> min-content 以下への縮小を拒み、**`flex-1` だけでは溢れが残る**ため。
+>
+> **プラン本文からの逸脱 1 点**: プラン Step 2 は購入パネルへ `shrink-0` を付けることも
+> 指示していたが、**1 行目の修正だけで 3 幅すべて解消した**ため見送った。
+> 付けない方が良い実測上の理由がある —— **768px では現状パネルが 390 → 249px に縮んで
+> 収まっている**（修正前後で同値）ので、`shrink-0` を足すと逆に情報列を圧迫する。
+> contingency として用意していた `product-info.tsx` への `min-w-0` 追加も**不要**だった。
+>
+> **`page.tsx:91` の `overflow-x-hidden` はプランの指示どおり削除していない**
+> （原因ではなく発覚を遅らせた層であり、削除しても「クリップ」が「横スクロール」に
+> 置き換わるだけで欠陥は解消しない）。
+>
+> **続けて 054 の残りを実施し、054 も DONE にした（`bb780b99`）。**
+> `tests/e2e/visual/product.spec.ts` を新設し **+1 test/browser**
+> （E2E **63 → 64 tests/browser** / 28 → **29 files** / 3 ブラウザ計 189 → **192**、
+> Visual は **3 → 4 スペック / 4 → 5 テスト**、ダッシュボード集計 **232 → 233**）。
+> Step 0 の前提（既存 VRT が green）は **4 passed** で確認済み。撮影後、更新フラグなしの
+> **2 回連続実行で 2 回とも 5 passed**（flaky 0）。
+>
+> > **目視ゲートは合格した。** 右購入パネル（Ship to / Buy now / **Add to cart**）が
+> > 全幅で描画され、Related products / レビュー / フッターまで崩れていない。
+> > マゼンタの矩形は Playwright の mask 描画であって未ロード画像ではない
+> > （054 の browse 記録と同じ見分け）。
+>
+> **VRT に客観値の assert を 1 つ足した（プラン本文に無い追加 1 点）。** ピクセル比較の前に
+> `Add to cart` の右端が `clientWidth` 以内であることを assert している。**スクリーンショット
+> だけだと、次にベースラインを更新する担当者が壊れた状態をそのまま固定できてしまう** ——
+> まさに 054 が 2026-08-23 に踏みとどまった経路なので、「収まっている」ことは数値でも
+> 主張しておく。なお `devices["Desktop Chrome"]` のビューポートは **1280x720** で、
+> これは 065 でクリップが起きていた幅そのものである。
+>
+> **本プランが主張しないこと**: (1) **他ブレークポイント（sm / 2xl）の作り直しはしていない**
+> —— 1280px の欠損の修正に限定（プランの Out of scope）、(2) `ProductInfo` / `ProductSwiper`
+> の内部構造は無変更、(3) 768px のレイアウト（画像と情報列の間に空きが出る）は
+> **修正前後で数値同一**であり、本プランは改善も悪化もさせていない、
+> (4) firefox / webkit への VRT 拡大はしない（既存方針どおり chromium 限定）、
+> (5) `playwright.config.ts` は一切触っていない。
+>
+> 回帰: `bash scripts/e2e/run-local.sh tests/e2e/visual --project=chromium` **5 passed**
+> （2 回連続）・`bunx tsc --noEmit` **0 件**・`bun run lint` **0 errors**（15 warnings は
+> 既存ベースライン）・`bun run test` **2026 passed / 2029 total / 191 スイート**（不変）。
+> Integration **108** も不変。docs 同期は `b1a87ebb`（R9 が閉じ切ったため
+> `render-html.ts` の `NEXT_ACTIONS` R9 と `QA_HANDOFF.md` の R9 プロンプト節を同一コミットで削除）。
+>
 > **054 の実行記録（2026-08-23・`0dba44de`〜`1847946d`）— 部分完了**
 >
 > **browse は DONE / 商品詳細は保留。** `tests/e2e/visual/browse.spec.ts` を新設し
@@ -1803,6 +2167,29 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     回帰テストを必須とした（認可系は `docs/testing/SECURITY_GAP_REPORT.md` §5.2 の
     3 階層 IDOR パターン）。
 
+17. **カテゴリツリー実装プラン (066–068)** — spike [013](013-spike-category-tree-n-level.md) が
+    2026-08-31 に確定した設計の実装で、**Round 2 spike から出た最初の実装ラウンド**。
+    実行順は **066 → 067 → 068 の直列**であり、これは soft ordering ではなく
+    **hard 依存**（`path` 列が無ければ 067 の prefix 検索は書けず、067 の dual-write が
+    済んでいなければ 068 の必須化は NULL で落ちる）。**066 と 067 は可逆**で、
+    戻れる最後の地点は 067 —— **068 の Phase C（旧列 drop・`SubCategory` テーブル削除）は
+    不可逆**であり、着手前にオペレーター確認を必須としている。
+    環境前提は各プランの Commands 節が持つ（066/067 は Docker、067/068 は E2E に
+    `CLERK_SECRET_KEY`）。3 本とも `spec-sync-after-test` による docs 同期コミットが
+    必須（rule 02）。**014 / 015 の設計は 066–068 の完了を待たずに進められる** ——
+    014 が消費するのは design.md の「属性は `Category.id` 単一 FK に紐づく」という
+    前提だけで、実装の完了ではない。
+
+18. **カテゴリ別属性の実装プラン (069)** — spike [014](014-spike-category-attributes-facets.md) が
+    2026-08-31 に確定した設計の実装。**066–068 とは独立に着手できる**（hard 依存は 014 のみ）。
+    ただし属性の**継承**（祖先カテゴリで定義した属性が子孫に効く）は ADR-006 の `path` prefix に
+    依存するため、**066 未完了で着手すると継承が使えない縮退状態**になる（属性は直接紐づく
+    ノードにしか効かない）。069 の Step 0 がこの縮退の記録を義務づけている。
+    したがって **066 → 069 の順が望ましい（soft ordering）** が、前提ではない。
+    069 は [plan 015](015-spike-faceted-search-and-browse.md) の後続実装の前提でもある
+    （`facetable` フラグと `@@index([definitionId, valueNumber])` が集計の土台）。
+    環境前提は 069 の Commands 節が持つ（Docker + `$DIRECT_URL` 経由の psql）。
+
 ## Dependency notes
 
 > **表の "Depends on" 列は hard 依存のみを記載する**（＝ **先行プランが完了していないと
@@ -1824,9 +2211,9 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 
 | 種別 | 記載場所 | 対象 |
 |------|---------|------|
-| **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 |
-| **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 |
-| **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041 / `CLERK_SECRET_KEY`: 042 |
+| **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 / **066 → 013 / 067 → 066 / 068 → 067** |
+| **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 / **069 → 066**（継承を使う場合のみ） |
+| **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041・**066〜069** / `CLERK_SECRET_KEY`: 042・**067・068** / `psql`（**`$DIRECT_URL` 経由**。`$DATABASE_URL` は Accelerate の `prisma://` で不可）: **069** |
 
 - soft 依存は先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
   （各プラン冒頭の Executor 指示に、先行なしで進める場合の前提が明記されている）。

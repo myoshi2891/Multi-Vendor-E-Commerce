@@ -147,15 +147,18 @@ grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.te
 # → ヒット = "console.log 禁止" 違反
 
 # D-4: src/queries/ 以外のサーバーアクション禁止
-grep -rln '"use server"' src/ --include="*.ts" | grep -v "src/queries/"
+grep -rlnE "^['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "src/queries/"
 # → ヒット = "src/queries/ 以外でサーバーアクションを定義する" 違反
+#   行頭アンカー ^ は必須（付けないとコメント内の言及を誤検出する。ベースライン D-4 の注記参照）
+#   .tsx と 'use server'（単一引用符）も対象にする。ディレクティブの引用符はフォーマッタ設定次第で
+#   変わり、Server Action は .tsx にも書けるため、二重引用符 + .ts だけでは検知漏れになる
 
 # D-5: src/csrf* トークンモジュール新設禁止 (ADR 001)
 find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"
 # → ヒット = ADR 001 違反 (Origin/Host 検証 + Clerk SameSite Cookie に依拠する方針)
 
 # D-6: cookie の生 JSON.parse 禁止 (parseUserCountryCookie 必須)
-grep -rn "JSON.parse.*cookie\|cookies().*JSON.parse" src/ --include="*.ts" --include="*.tsx"
+grep -rnE "JSON\.parse.*cookie|cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"
 # → 要精査 (parseUserCountryCookie 経由かどうか)
 
 # D-7: docs/coverage-dashboard.html の手動編集禁止
@@ -420,3 +423,57 @@ scripts/coverage-dashboard/render-html.ts  ダッシュボードデータ源 (NE
 docs/coverage-dashboard.html               生成物 (手動編集禁止)
 docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (テスト統計の SSOT)
 ```
+
+---
+
+## Layer 2 grep ベースライン（既知の例外リスト）
+
+> Step 3 / 観点 D の運用規定（本 skill 168-169 行・378 行）が要求するベースライン。
+> **ヒット件数がここに記録された値を超えた場合はレグレッションとして報告する。**
+> 以下と同数なら既存分の内訳を毎回再評価しないでよい。
+>
+> **ただし件数の一致は「変化なし」を意味しない。** 承認済みの既存ヒットが 1 件消え、
+> 別ファイルに新しい違反が 1 件生えると総数は動かない。件数のしきい値は据え置いたまま、
+> **照合は「ファイル + 安定したシンボル名（関数名等）」または完全一致の集合比較**で行い、
+> 次の 2 つは総数が同じでも必ず報告すること:
+>
+> 1. ベースラインに載っている承認済みヒットが**消えている**（例外の前提が変わった可能性。
+>    実際に解消したなら「更新ルール」に従って表を減少後の値へ更新する）
+> 2. ベースラインに**無い場所**に新しいヒットが出ている（総数が同じでも新規違反）
+>
+> **この節が無いと「増加分のみ報告」運用は成立しない。** 2026-09-03 の検査で、
+> 規定だけがあってベースラインが存在しないことが判明した（Layer 3 のドリフト）。
+> 検査のたびに既存違反を新規発見として扱ってしまい、本当の増加が埋もれる。
+
+### 計測日: 2026-09-03 / 計測コミット: `5f71166e`（SV-1〜SV-3 の是正後）
+
+| 検査 | 計測コマンド | ヒット数 | 内訳・許容理由 |
+|------|------------|---------|--------------|
+| D-1 `if (!user)` | `grep -rn "if (!user)" src/queries/ --include="*.ts" \| grep -v "\.test\."` | **6** | `profile.ts` 5 / `paypal.ts` 1。**すべて tech.md「認可ガードの承認済み例外」に記載済み**（移行すると *auth-guards に無い保護* が失われる 2 モジュール）。これ以外は 2026-09-03 に `requireUser` / `requireSeller` / `requireAdmin` へ移行完了 |
+| D-1 `role !== "` | `grep -rn 'role !== "' src/queries/ --include="*.ts" \| grep -v "\.test\."` | **1**（実違反 **0**） | `product.ts:684` は**コメント内の言及**のみ。ロール判定のインライン展開は全廃 |
+| D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
+| D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
+| D-4 queries 外の `use server` | `grep -rlnE "^['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される |
+| D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"` | **0** | ADR 001 遵守（Step 3 / D-5 の正規コマンドと一致させること。`.tsx` を落とすと検知漏れになる） |
+| D-6 cookie の生 `JSON.parse` | `grep -rnE -e "JSON\.parse.*cookie" -e "cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
+
+> **是正前（commit `3f91e7f2`）は D-1 が 24 + 7 = 31、D-3 が 2、D-4 が 1 だった。**
+> 移行の過程で、認可チェックを外側の `try` の中に置いていたことによる**実バグ 2 件**
+> （`user.ts` の `followStore` / `review.ts` の `upsertReview` —— 認可エラーが
+> `catch` の汎用メッセージで上書きされ、呼び出し側が未認証と DB 障害を区別できなかった）
+> が発見された。**どちらもテストが誤った挙動を追認していた**ため、grep 検査だけが
+> 唯一の発見経路だった。
+
+### 未償却の実違反
+
+**現在ゼロ。** SV-1〜SV-3 は 2026-09-03 に是正済み（記録: `docs/PROGRESS.md`
+「規約違反の是正記録」）。残る D-1 の 6 件は
+[tech.md「認可ガードの承認済み例外」](../../steering/tech.md#認可ガードの承認済み例外)
+に理由付きで登録された例外であり、未償却の負債ではない。
+
+### 更新ルール
+
+- 検査でヒット数が**減った**場合は、この表を減少後の値へ更新する（改善の固定）
+- **増えた**場合は表を更新せず、増加分をレグレッションとして報告する
+  （ベースラインを黙って引き上げると検知器として死ぬ）
+- 計測日と commit を必ず併記する

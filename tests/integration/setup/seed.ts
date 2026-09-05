@@ -73,31 +73,56 @@ export async function seedUser(
 // ----------------------------------------------------------------------------
 // Category / SubCategory
 /**
- * Create a Category and a SubCategory linked to it in the database for tests.
+ * Create a two-level category tree for tests: a root Category and one child.
  *
- * @returns An object with `category` as the created Category and `subCategory` as the created SubCategory whose `categoryId` references `category.id`.
+ * plan 066 Phase A では新旧の表現が並走する。子ノードは
+ * (a) `parentId` / `path` / `depth` を持つ Category 行と
+ * (b) 同じ id を持つ legacy SubCategory 行
+ * の両方として書き込む。id を共有させるのはマイグレーション A-3 が `s.id` を
+ * 流用しているのと同じ状態にするためで、これにより `Product.categoryNodeId` と
+ * `Product.subCategoryId` が常に同値になる。
+ *
+ * @returns `category` はルート、`subCategory` は legacy 表現の子、
+ * `childNode` は同じ子の Category ノード表現（`childNode.id === subCategory.id`）。
  */
 
-export async function seedCategoryWithSubcategory(
-    db: PrismaClient
-): Promise<{ category: Category; subCategory: SubCategory }> {
+export async function seedCategoryWithSubcategory(db: PrismaClient): Promise<{
+    category: Category;
+    subCategory: SubCategory;
+    childNode: Category;
+}> {
     const suffix = uniq();
     const category = await db.category.create({
         data: {
             name: `Category ${suffix}`,
             image: "https://example.test/category.png",
             url: `category-${suffix}`,
+            // ルートなので path = url / depth = 0（マイグレーション A-1 と同じ規則）
+            path: `category-${suffix}`,
+            depth: 0,
+            childCount: 1,
+        },
+    });
+    const childNode = await db.category.create({
+        data: {
+            name: `SubCategory ${suffix}`,
+            image: "https://example.test/subcategory.png",
+            url: `subcategory-${suffix}`,
+            parentId: category.id,
+            path: `category-${suffix}/subcategory-${suffix}`,
+            depth: 1,
         },
     });
     const subCategory = await db.subCategory.create({
         data: {
+            id: childNode.id,
             name: `SubCategory ${suffix}`,
             image: "https://example.test/subcategory.png",
             url: `subcategory-${suffix}`,
             categoryId: category.id,
         },
     });
-    return { category, subCategory };
+    return { category, subCategory, childNode };
 }
 
 // ----------------------------------------------------------------------------
@@ -144,6 +169,12 @@ export async function seedStore(
 export interface SeedProductInput {
     storeId: string;
     categoryId: string;
+    /**
+     * `seedCategoryWithSubcategory` が返す **共有 id**（`subCategory.id === childNode.id`）を渡すこと。
+     * Phase A の `Product.categoryNodeId` はこの id をそのまま Category ノードの FK として使うため、
+     * 共有関係にない SubCategory の id を渡すと FK 違反になる。`seedProduct` が事前に検証する。
+     * 併せて **リーフであること**（子カテゴリを持たないこと）も検証する（design.md V-5）。
+     */
     subCategoryId: string;
     /** 商品レベルの配送方式。Cart→Checkout の shipping 計算検証で重要 */
     shippingFeeMethod?: ShippingFeeMethod;
@@ -172,6 +203,59 @@ export async function seedProductWithVariantAndSize(
     size: Size;
     image: ProductVariantImage;
 }> {
+    // categoryNodeId は subCategoryId をそのまま使う（id 共有が前提）。共有関係にない id を
+    // 渡されると Product 作成時に不透明な FK 違反になるので、手前で契約違反として落とす。
+    // 存在確認だけでは不十分: FK は「その id が実在するか」しか見ないため、**別カテゴリの**
+    // サブカテゴリ id を渡しても Product は作成に成功してしまい、categoryId と
+    // subCategoryId / categoryNodeId が親子でないテストデータが黙って生まれる。
+    // 親子関係は新旧両系統（Category.parentId と SubCategory.categoryId）で検証する。
+    const categoryNode = await db.category.findUnique({
+        where: { id: input.subCategoryId },
+        select: { id: true, parentId: true },
+    });
+    if (categoryNode === null) {
+        throw new Error(
+            `[seed] subCategoryId=${input.subCategoryId} に対応する Category ノードがありません。` +
+                `seedCategoryWithSubcategory が返す共有 id を渡してください。`
+        );
+    }
+    if (categoryNode.parentId !== input.categoryId) {
+        throw new Error(
+            `[seed] Category ノード ${input.subCategoryId} の parentId は ` +
+                `${categoryNode.parentId ?? "null"} で、categoryId=${input.categoryId} の子ではありません。` +
+                `同じ seedCategoryWithSubcategory の戻り値から categoryId / subCategoryId を渡してください。`
+        );
+    }
+    // リーフ強制（design.md V-5）: 子を持つノードには商品を紐づけられない。
+    // parentId の検証だけでは「正しい親の下にある**非リーフ**」を通してしまい、
+    // Phase C で拒否されるはずのデータ形をテストが先に作ってしまう。
+    // childCount は非正規化列でシード側がドリフトしうるため、実際の子を数える。
+    const childCount = await db.category.count({
+        where: { parentId: input.subCategoryId },
+    });
+    if (childCount > 0) {
+        throw new Error(
+            `[seed] Category ノード ${input.subCategoryId} は子を ${childCount} 件持つ非リーフです。` +
+                `商品はリーフノードにのみ紐づけられます（design.md V-5）。子を持たないノードを渡してください。`
+        );
+    }
+    const subCategory = await db.subCategory.findUnique({
+        where: { id: input.subCategoryId },
+        select: { categoryId: true },
+    });
+    if (subCategory === null) {
+        throw new Error(
+            `[seed] subCategoryId=${input.subCategoryId} に対応する SubCategory がありません。` +
+                `seedCategoryWithSubcategory が返す共有 id を渡してください。`
+        );
+    }
+    if (subCategory.categoryId !== input.categoryId) {
+        throw new Error(
+            `[seed] SubCategory ${input.subCategoryId} の categoryId は ${subCategory.categoryId} で、` +
+                `渡された categoryId=${input.categoryId} と一致しません。`
+        );
+    }
+
     const suffix = uniq();
     const product = await db.product.create({
         data: {
@@ -179,10 +263,14 @@ export async function seedProductWithVariantAndSize(
             description: "Integration test product",
             slug: `product-${suffix}`,
             brand: "TestBrand",
-            shippingFeeMethod: input.shippingFeeMethod ?? ShippingFeeMethod.ITEM,
+            shippingFeeMethod:
+                input.shippingFeeMethod ?? ShippingFeeMethod.ITEM,
             storeId: input.storeId,
             categoryId: input.categoryId,
             subCategoryId: input.subCategoryId,
+            // Phase A の新 FK。旧 subCategoryId と id を共有するリーフノードを指す
+            // （seedCategoryWithSubcategory が両表現に同じ id を振っている）。
+            categoryNodeId: input.subCategoryId,
         },
     });
 
@@ -261,15 +349,16 @@ export async function seedCoupon(
         data: {
             code: input.code ?? `COUPON-${suffix.toUpperCase()}`,
             startDate:
-                input.startDate ?? new Date(now - 24 * 60 * 60 * 1000).toISOString(),
-            endDate:
-                input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
+                input.startDate ??
+                new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+            endDate: input.endDate ?? new Date(now + ONE_YEAR_MS).toISOString(),
             discount: input.discount ?? 10,
             scope: input.scope,
             storeId: input.storeId,
-            users: input.connectUserIds && input.connectUserIds.length > 0
-                ? { connect: input.connectUserIds.map((id) => ({ id })) }
-                : undefined,
+            users:
+                input.connectUserIds && input.connectUserIds.length > 0
+                    ? { connect: input.connectUserIds.map((id) => ({ id })) }
+                    : undefined,
         },
     });
 }

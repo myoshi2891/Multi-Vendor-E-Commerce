@@ -30,11 +30,27 @@ export const CategoryFormSchema = z.object({
         })
         .min(2, { message: "Category url must be at least 2 characters long." })
         .max(50, { message: "Category url cannot exceed 50 characters." })
-        .regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+        // slug は Category.path のセグメントになる（materialized path / ADR-006）。
+        // 区切り文字 `/` と LIKE のメタ文字（`%` `_`）を文字集合で排除することで、
+        // `subtreeOf` の startsWith に渡す値のエスケープが不要になる
+        // （design.md §2-Q1）。**この制約を緩めないこと。**
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message:
-                "Only letters, numbers, hyphen, and underscore are allowed in the category url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
+                "Category url must be lowercase alphanumeric segments separated by single hyphens (e.g. electronics-camera).",
         }),
     featured: z.boolean().default(false),
+    // ツリー編集（plan 068）。null はルートを意味する。
+    // `path` / `depth` / `childCount` は **親と url から一意に決まる導出値**なので
+    // フォームには載せない —— `upsertCategory` がサーバー側で計算する。
+    parentId: z.string().nullable().default(null),
+    // 同一階層内の並び順。`getAllCategories` の orderBy が
+    // `[depth, sortOrder, name]` なので、この値が admin の並べ替え手段になる。
+    // RHF の `<input type="number">` は文字列を渡すため coerce が要る。
+    sortOrder: z.coerce
+        .number({ invalid_type_error: "Sort order must be a number." })
+        .int({ message: "Sort order must be an integer." })
+        .min(0, { message: "Sort order cannot be negative." })
+        .default(0),
 });
 
 //SubCategory form schema
@@ -67,9 +83,11 @@ export const SubCategoryFormSchema = z.object({
             message: "SubCategory url must be at least 2 characters long.",
         })
         .max(50, { message: "SubCategory url cannot exceed 50 characters." })
-        .regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+        // Category と同じ制約（Phase C で SubCategory は Category へ統合されるため、
+        // Phase B の間も両者の slug 規則を揃えておく）。design.md §2-Q1 を参照。
+        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
             message:
-                "Only letters, numbers, hyphen, and underscore are allowed in the Subcategory url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.",
+                "SubCategory url must be lowercase alphanumeric segments separated by single hyphens (e.g. lux-women-dresses).",
         }),
     featured: z.boolean().default(false),
     categoryId: z.string().uuid(),
@@ -696,8 +714,7 @@ export const SupportTicketSchema = z
         // フォームの controlled input は空欄を "" で渡すため、preprocess で空白→undefined に
         // 正規化してから optional 検証する（"" のまま .min(1) に当てると CONTACT 等が弾かれる）。
         orderId: z.preprocess(
-            (v) =>
-                typeof v === "string" && v.trim() === "" ? undefined : v,
+            (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
             z
                 .string()
                 .trim()

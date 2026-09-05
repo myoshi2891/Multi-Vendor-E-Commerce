@@ -25,6 +25,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseModels, type Field, type Model } from "./parse-models";
 
 // ---------------------------------------------------------------------------
 // 0. パス定義
@@ -38,35 +39,6 @@ const OVERRIDES_PATH = resolve(ROOT, "scripts/erd/layout-overrides.json");
 // ---------------------------------------------------------------------------
 // 1. 型定義
 // ---------------------------------------------------------------------------
-interface Field {
-    name: string;
-    /** `[]` / `?` を除いた素の型名 */
-    baseType: string;
-    isList: boolean;
-    isOptional: boolean;
-    isId: boolean;
-    isUnique: boolean;
-    /** `@db.Decimal(p,s)` が付いている場合の表示型（例: "Decimal(12,2)"） */
-    displayType: string;
-    /** リレーションオブジェクトフィールドか（baseType が model 名） */
-    isRelationObject: boolean;
-    /** このフィールドが外部キースカラーか */
-    isForeignKey: boolean;
-    /** `@relation(...)` の中身（owning 側のみ） */
-    relation?: {
-        name: string;
-        fields: string[];
-        references: string[];
-        onDelete?: string;
-    };
-}
-
-interface Model {
-    name: string;
-    fields: Field[];
-    /** `@@unique([a, b])` の複合ユニーク */
-    compositeUniques: string[][];
-}
 
 interface EnumDef {
     name: string;
@@ -155,78 +127,6 @@ function parseEnums(src: string): EnumDef[] {
     return enums;
 }
 
-function parseModels(src: string, modelNames: Set<string>): Model[] {
-    const models: Model[] = [];
-    const re = /model\s+(\w+)\s*\{([^{}]*)\}/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src)) !== null) {
-        const name = m[1];
-        const body = m[2];
-        const fields: Field[] = [];
-        const compositeUniques: string[][] = [];
-
-        for (const rawLine of body.split("\n")) {
-            const line = rawLine.trim();
-            if (line.length === 0) continue;
-
-            // ブロック属性 (@@unique / @@index / @@map ...)
-            if (line.startsWith("@@")) {
-                const uq = line.match(/@@unique\(\[([^\]]+)\]\)/);
-                if (uq) {
-                    compositeUniques.push(uq[1].split(",").map((s) => s.trim()));
-                }
-                continue;
-            }
-
-            const tokens = line.split(/\s+/);
-            if (tokens.length < 2) continue;
-            const fieldName = tokens[0];
-            const rawType = tokens[1];
-            const rest = tokens.slice(2).join(" ");
-
-            const isList = /\[\]/.test(rawType);
-            const isOptional = /\?$/.test(rawType);
-            const baseType = rawType.replace(/[[\]?]/g, "");
-
-            // 表示型（Decimal(p,s) を反映）
-            let displayType = baseType + (isList ? "[]" : "") + (isOptional ? "?" : "");
-            const dec = rest.match(/@db\.Decimal\((\d+),\s*(\d+)\)/);
-            if (dec) displayType = `Decimal(${dec[1]},${dec[2]})`;
-
-            const relMatch = rest.match(/@relation\(([^)]*)\)/);
-            let relation: Field["relation"];
-            if (relMatch) {
-                const inner = relMatch[1];
-                const nameM = inner.match(/"([^"]+)"/);
-                const fieldsM = inner.match(/fields:\s*\[([^\]]+)\]/);
-                const refsM = inner.match(/references:\s*\[([^\]]+)\]/);
-                const onDeleteM = inner.match(/onDelete:\s*(\w+)/);
-                relation = {
-                    name: nameM ? nameM[1] : "",
-                    fields: fieldsM ? fieldsM[1].split(",").map((s) => s.trim()) : [],
-                    references: refsM ? refsM[1].split(",").map((s) => s.trim()) : [],
-                    onDelete: onDeleteM ? onDeleteM[1] : undefined,
-                };
-            }
-
-            fields.push({
-                name: fieldName,
-                baseType,
-                isList,
-                isOptional,
-                isId: /@id\b/.test(rest),
-                isUnique: /@unique\b/.test(rest),
-                displayType,
-                isRelationObject: modelNames.has(baseType),
-                isForeignKey: false, // 後で確定
-                relation,
-            });
-        }
-
-        models.push({ name, fields, compositeUniques });
-    }
-    return models;
-}
 
 // ---------------------------------------------------------------------------
 // 3. リレーション（エッジ）の導出
@@ -511,6 +411,7 @@ const PAGES: PageDef[] = [
         detail: "full",
         models: [
             "Category",
+            "CategorySlugAlias",
             "SubCategory",
             "OfferTag",
             "Question",
@@ -524,6 +425,7 @@ const PAGES: PageDef[] = [
         cells: {
             SubCategory: [0, 0],
             Category: [0, 1],
+            CategorySlugAlias: [1, 0],
             OfferTag: [0, 2],
             Question: [0, 3],
             Product: [1, 1],
@@ -705,10 +607,17 @@ function entityLabel(model: Model): string {
         const uniq = f.isUnique && !f.isId ? " <i>U</i>" : "";
         rows.push(`${marker} ${f.name} : ${f.displayType}${uniq}`);
     }
+    // 複合主キーは個々のフィールドに 🔑 を付けない（単独で一意だと誤読させないため）。
+    // 構成列は通常属性のまま残し、注記行 1 行で PK の組を示す。
+    const pk =
+        model.compositeId.length > 0
+            ? `🔑 PK(${model.compositeId.join(", ")})`
+            : "";
     const cu = model.compositeUniques
         .map((c) => `⊕ unique(${c.join(", ")})`)
         .join("<br/>");
-    const body = rows.join("<br/>") + (cu ? `<br/>${cu}` : "");
+    const body =
+        rows.join("<br/>") + (pk ? `<br/>${pk}` : "") + (cu ? `<br/>${cu}` : "");
     return `<b>${model.name}</b><hr size="1"/>${body}`;
 }
 
@@ -720,7 +629,8 @@ function entityLabel(model: Model): string {
 function entityHeight(model: Model): number {
     const rowCount =
         model.fields.filter((f) => !f.isRelationObject).length +
-        model.compositeUniques.length;
+        model.compositeUniques.length +
+        (model.compositeId.length > 0 ? 1 : 0);
     return HEADER_HEIGHT + rowCount * ROW_HEIGHT + 8;
 }
 
@@ -774,17 +684,18 @@ function diagramXml(page: PageDef, cells: string[], pageWidth: number, pageHeigh
  * @param id - The mxCell id to assign to the legend cell
  * @param x - The left (x) position on the page in diagram units
  * @param y - The top (y) position on the page in diagram units
- * @returns The XML string for an `mxCell` representing the legend (fixed width 600 and height 135) containing HTML-formatted explanatory content
+ * @returns The XML string for an `mxCell` representing the legend (fixed width 600 and height 155) containing HTML-formatted explanatory content
  */
 function legendCell(id: string, x: number, y: number): string {
     const legend = [
         "<b>凡例 (Legend)</b>",
         "🔑 主キー (PK)　◆ 外部キー (FK)　<i>U</i> = unique　⊕ 複合ユニーク",
+        "🔑 PK(a, b) = 複合主キー（列の組で一意。各列は単独では一意でない）",
         "ER 記法 ─ 親側: ｜=1 / ○=任意(0..1)　／　子側: ⪪=多 (N)",
         "<font color='#C62828'><b>赤線 ⛓ = ON DELETE CASCADE</b>（親を消すと子も消える）</font>",
         "ボックスの塗り色・枠色 = ドメイン（見出しと対応）",
     ].join("<br/>");
-    return `<mxCell id="${id}" value="${esc(legend)}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="600" height="135" as="geometry"/></mxCell>`;
+    return `<mxCell id="${id}" value="${esc(legend)}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="600" height="155" as="geometry"/></mxCell>`;
 }
 
 /**
@@ -1033,7 +944,7 @@ function buildPage(
     cells.push(legendCell(`${page.id}_legend`, cont.cx, legendY));
 
     const pageWidth = Math.round(Math.max(cont.cx + cont.cw, cont.cx + 600) + 80);
-    const pageHeight = Math.round(legendY + 135 + 80);
+    const pageHeight = Math.round(legendY + 155 + 80);
     return diagramXml(page, cells, pageWidth, pageHeight);
 }
 

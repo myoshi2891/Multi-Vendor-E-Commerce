@@ -1,5 +1,5 @@
 'use client'
-import { CategoryWithSubsType } from "@/lib/types";
+import { CategoryTreeType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
@@ -8,7 +8,7 @@ import CategoryLink from "./category-link";
 export default function CategoryFilter({
     categories,
 }: {
-    categories: CategoryWithSubsType[];
+    categories: CategoryTreeType[];
 }) {
     const [show, setShow] = useState<boolean>(true);
     return (

@@ -12,7 +12,99 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
+- 2184 passed / 2187 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-04.
+  A second review follow-up added +2 tests (suites unchanged): the store footer now degrades
+  gracefully when `getAllCategories` throws (the footer is shared by every storefront page, so a
+  rethrow took down the whole render), and the ERD model parser no longer mistakes commented-out
+  `@@id` / `@@unique` lines for real composite keys.
+  Earlier record (2182 / 2185 across 199 suites, 2026-09-04):
+  Review follow-up added +1 test (suites unchanged): the parent picker in `category-details.tsx`
+  only checked the candidate's own depth, so editing a node with descendants offered parents
+  that `upsertCategory`'s V-7 rebase check rejects at save time. The test pins the subtree-height
+  rule and was verified to fail against the previous implementation.
+  Earlier record (2181 / 2184 across 199 suites, 2026-09-03):
+  The coverage work surfaced a real defect and +2 regression tests pin it: `saleEndDate` was
+  written without a timezone (and cleared to `""`), neither of which `ProductFormSchema`'s
+  `.datetime({ offset: true }).nullish()` accepts, so saving a sale end date silently failed.
+  Earlier record (2179 / 2182 across 199 suites, 2026-09-03):
+  The PR#176 follow-up closed the remaining gap on the two dashboard forms: +14 tests (suites
+  unchanged) drive the inline callbacks the forms hand to their widgets (image add/remove,
+  keyword cap, sale end date, free-shipping countries). Pass-through stubs never fired those
+  callbacks, so the stubs now expose an operable surface (a button per callback). Both forms
+  are at 100% line coverage (branches 90.3% / 92.2%); what remains uncovered is branch-only.
+  Earlier record (2164 / 2167 across 199 suites, 2026-09-03):
+  SonarCloud PR#176 flagged a Coverage-on-New-Code gap on the plan 068 UI surface; +35
+  component tests across +5 suites closed it. New files live under `tests/component/store/`
+  (`footer-links`, `footer`, `product-filters`) and `tests/component/dashboard/`
+  (`category-details`, `product-details`), and `category-link.test.tsx` gained +3 cases for the
+  `?category=` rewrite. The two dashboard forms went from 0% to 96.2% / 81.3% line coverage;
+  `footer.tsx`, `links.tsx` and `filters.tsx` reached 100%. Jsdom-hostile widgets (Jodit,
+  react-tag-input, MultiSelect, DateTimePicker, Radix Select) are replaced with pass-through
+  stubs — the subject under test is the form wiring, not the widget.
+  Integration is 136 tests across 16 suites, as of 2026-09-03 (unchanged by PR#176).
+  Earlier record (2129 / 2132 across 194 suites, 2026-09-03): Plan 068 (category-tree admin
+  cutover) added +49 unit/component tests without adding a suite — tree-edit invariants for
+  `upsertCategory` (depth cap, self-parenting, re-parenting under a descendant, descendants
+  following a move), leaf-only enforcement in `upsertProduct`, `parentId`/`sortOrder` on
+  `CategoryFormSchema`, slug canonicalization with rename aliases, and the admin category table's
+  tree rendering — plus +4 integration tests in the new `tests/integration/category-tree-write.test.ts`
+  covering the same invariants against a real database. `tests/e2e/admin-category-tree.spec.ts`
+  covers creating a third-level node through the admin form; it is green on all three browsers
+  as of 2026-09-03 — chromium in both webServer modes, firefox (7.9s) and webkit (12.7s) against
+  the production build, with `retries=2` left on and zero flaky.
+  E2E is 66 tests/browser across 30 files (198 total), as of 2026-09-03.
+  Earlier record (2072 / 2075 across 194 suites, Integration 131 across 15 suites, 2026-09-02):
+  a review follow-up added +2 in
+  `category-tree-resync.test.ts` covering `Product.categoryNodeId` resynchronization — a product
+  created after the one-shot Phase A backfill (NULL) and one whose category changed afterwards
+  (stale). The section's `UPDATE "Product"` was executed by the suite but never asserted, which is
+  the exact path the file's own docstring describes as making products "silently disappear" once
+  reads switch over. `setup/migration-sql.ts` now runs a marked section inside `$transaction`, so
+  tests observe the same atomicity production gets.
+  Code-review follow-up added +6 tests (+1 suite): `tests/component/store/category-link.test.tsx`
+  (+3, new suite) pins that a category branch re-opens when a descendant becomes selected by a
+  client-side navigation — the `useState` initializer runs once, but the branch stays mounted
+  while `?category=` changes — and that the sync only ever opens, preserving a user's manual
+  collapse. `src/app/(store)/browse/page.test.tsx` (+2) pins that an explicitly supplied but
+  unresolvable `category` (or an array one) is no longer folded into `?category=<sub>` by the
+  308 canonicalization, which had turned `getProducts`' fail-closed zero result into the
+  subcategory's results. `scripts/erd/parse-models.test.ts` (+1) pins that Prisma line comments
+  are not emitted as fields.
+- Earlier entry: 2065 passed / 2068 total across 193 suites (3 skipped tests in 1 skipped suite),
+  as of 2026-09-02. Review follow-up added +1 regression test (suites unchanged): the coverage dashboard's test
+  scanner counted private-member calls (`this.#test(...)`) as test declarations, because its
+  negative lookbehind excluded `.` but not `#`. Widened to `(?<![.#\w$])` and pinned in
+  `scripts/coverage-dashboard/scan-tests.test.ts`.
+- Earlier entry: 2064 passed / 2067 total across 193 suites, as of 2026-09-02.
+  Category tree Phase B (plan 067) closed: `flattenCategoryTree` (+2 tests, suites unchanged) backs the
+  footer category links, which now emit the canonical `?category=` slug instead of the legacy
+  `?subCategory=` that took a 308 hop on every click.
+  Integration is 129 tests across 15 suites (+4 in `product-browse.test.ts` for subtree filtering —
+  sibling-prefix isolation (V-1), depth-2 products reached through a root ancestor, legacy
+  `?subCategory=` resolving to the same subtree, fail-closed on an unresolvable slug (V-6) — and
+  +2 in `product-update.test.ts` pinning the `categoryNodeId` dual-write on both create and update).
+  E2E is 65 tests/browser across 29 files (195 total): `search-filter.spec.ts` asserts the 308
+  canonicalization for both the canonical slug and a `CategorySlugAlias`-only legacy slug.
+- Earlier entry: 2062 passed / 2065 total across 193 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Category tree Phase B (plan 067) added `src/lib/category-tree.test.ts` (+1 suite) plus new cases in
+  `schemas.test.ts`, `product.test.ts`, `category.test.ts` and `browse/page.test.tsx`.
+  Integration is 123 tests across 15 suites (`category-tree-resync.test.ts`, +6 / +1 suite).
+- Earlier entry: 2032 passed / 2035 total across 192 suites (3 skipped tests in 1 skipped suite), as of 2026-09-02.
+  Added `scripts/erd/parse-models.test.ts` (+4 tests / +1 suite) pinning the Prisma-schema parser
+  notation regressions after it was extracted out of `scripts/erd/generate-erd.ts`.
+- Earlier entry: 2028 passed / 2031 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+  A review fix closed a miscount in `scripts/coverage-dashboard/scan-tests.ts`: `BLOCK_PATTERN`
+  used `\b(it|test)\s*\(`, and `\b` also matches the boundary between `.` and an identifier, so
+  `RegExp.prototype.test` member calls such as `/^CREATE\b/i.test(sql)` were counted as test
+  declarations. A negative lookbehind `(?<![.\w$])` closes it; +1 regression test, suites unchanged.
+- Earlier entry: 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-31.
+- Earlier entry: 2025 passed / 2028 total across 191 suites, as of 2026-08-31 (before the review-fix regression guard on `upsertCategory`).
+  Plan 066 (category tree Phase A) folded the seed declaration data into a single tree, so the
+  `SEED_SUB_CATEGORIES` assertions in `prisma/seed/__tests__/` were replaced with tree invariants
+  (parent reference integrity, no self-parent, depth <= 1, every root has >= 2 children, products
+  point only at leaves, the legacy `SubCategory` row shares its id with the `Category` node, and
+  `childCount` is recomputed from the declaration). Net -1 test, suites unchanged.
+- Earlier entry: 2026 passed / 2029 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
 - Earlier entry: 2025 passed / 2028 total across 191 suites (3 skipped tests in 1 skipped suite), as of 2026-08-25.
   Regression detection points added while fixing code-review findings (+4 tests, suites
   unchanged): `stripe-payment.test.tsx` pins that a `clientSecret: null` response is surfaced
@@ -80,7 +172,17 @@
   (+1 suite). The two conditions are the `typeof next === "function"` split — the shared
   pager calls `setPage(i + 1)` for numbered pages and `setPage(prev => prev ± 1)` for
   Previous/Next, so both call shapes are needed to cover the branch.
-- Playwright E2E: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
+- Playwright E2E: 64 tests/browser across 29 files (192 across the three browsers), as of 2026-08-31.
+  Plan 065 fixed the product-detail layout defect described in the entry below, and the
+  remainder of plan 054 then added `tests/e2e/visual/product.spec.ts` (+1 test/browser; VRT is
+  chromium-only, so the other two projects skip it), bringing visual regression coverage to
+  cart, checkout, browse and product detail. The `devices["Desktop Chrome"]` viewport is
+  1280x720 — exactly the width at which the purchase panel used to be clipped — so the spec
+  doubles as a regression detector for that class of defect. Before comparing pixels it also
+  asserts both horizontal edges of "Add to cart": its left edge is at least `0` and its right
+  edge stays within `clientWidth`, so a panel pushed off either side of the viewport fails the
+  spec. That closes the path where a baseline refresh silently freezes a broken layout again.
+- Earlier entry: 63 tests/browser across 28 files (189 across the three browsers), as of 2026-08-23.
   Plan 054 added `tests/e2e/visual/browse.spec.ts` (+1 test/browser; VRT is chromium-only, so
   the other two projects skip it), bringing visual regression coverage to cart, checkout and
   browse. The product-detail baseline was deliberately **not** committed: the captured image
@@ -585,7 +687,15 @@
   - modal-provider's 9 tests were un-skipped after OI-8's root cause (a Prisma
     connection leak in `src/queries/size.test.ts`) was resolved in `83ef06c`;
     the remaining 3 skips are the DB-gated idempotency suite.
-- 108 integration tests across 13 suites
+- 117 integration tests across 14 suites
+  (adds `tests/integration/category-tree-migration.test.ts` 9), as of 2026-08-31, measured 117/117 pass.
+  Covers the category tree Phase A data move (plan 066 / V-3, V-4): root path/depth normalisation,
+  child adoption with id reuse, deterministic collision rename with alias rows coexisting under the
+  `(entityType, oldSlug)` composite key, idempotency across two runs, `childCount` consistency, and
+  the `Product.categoryNodeId` backfill. The suite reads the `PHASE_A_DATA_MOVE` marker section out
+  of the migration file itself rather than restating the SQL, so the migration stays the single
+  source of truth.
+- Earlier entry: 108 integration tests across 13 suites
   (adds `tests/integration/product-browse.test.ts` 16; `store-status.test.ts` 8 → 9 for the
   concurrent PENDING → BANNED / PENDING → ACTIVE transition), as of 2026-08-24,
   measured 108/108 pass.
@@ -875,13 +985,15 @@ Visual regression tests live in `tests/e2e/visual/` and use Playwright's
 `toHaveScreenshot()`. Chromium only (Firefox/WebKit excluded due to font
 rendering differences; Phase 2 scope).
 
-Covered scenarios (as of 2026-05-22):
+Covered scenarios (as of 2026-08-31):
 
 | Spec | Test | Snapshot file |
 |------|------|---------------|
 | `cart.spec.ts` | 空カートの表示 | `cart-empty-chromium-<os>.png` |
 | `cart.spec.ts` | 商品追加後のカート表示 | `cart-with-item-chromium-<os>.png` |
 | `checkout.spec.ts` | 未認証リダイレクト | `checkout-redirect-signin-chromium-<os>.png` |
+| `browse.spec.ts` | browse の商品グリッド表示 | `browse-grid-chromium-<os>.png` |
+| `product.spec.ts` | 商品詳細の購入パネル表示 | `product-detail-chromium-<os>.png` |
 
 ### Snapshot Naming Convention
 
@@ -903,7 +1015,8 @@ push しても、Linux CI は `-linux.png` を探して FAIL する。
 ```bash
 # Chromium 限定で baseline を再生成
 bunx playwright test tests/e2e/visual/ --update-snapshots --project=chromium
-git add tests/e2e/visual/cart.spec.ts-snapshots/ tests/e2e/visual/checkout.spec.ts-snapshots/
+# 全 spec のベースラインをまとめて stage する（browse / product / cart / checkout）
+git add tests/e2e/visual/*.spec.ts-snapshots/
 git commit -m "test(visual): update baseline screenshots"
 ```
 

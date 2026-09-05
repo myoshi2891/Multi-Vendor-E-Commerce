@@ -59,6 +59,98 @@ describe("CategoryFormSchema", () => {
         const result = CategoryFormSchema.parse(withoutFeatured);
         expect(result.featured).toBe(false);
     });
+
+    // plan 067 / design.md §2-Q1 —— slug は materialized path のセグメントになるため、
+    // 区切り文字 `/` と LIKE のメタ文字（`%` `_`）を含んではならない。これらを
+    // 文字集合で排除しておくことで `subtreeOf` の startsWith がエスケープ不要になる。
+    it.each([
+        ["区切り文字を含む slug", "electronics/camera"],
+        ["LIKE ワイルドカードの _ を含む slug", "electronics_camera"],
+        ["LIKE ワイルドカードの % を含む slug", "electronics%camera"],
+        ["大文字を含む slug", "Electronics"],
+        ["先頭がハイフンの slug", "-electronics"],
+        ["末尾がハイフンの slug", "electronics-"],
+    ])("%s は拒否される", (_label, url) => {
+        // Arrange / Act
+        const result = CategoryFormSchema.safeParse({ ...validData, url });
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it.each([["electronics"], ["electronics-camera"], ["lux-women-dresses"], ["a1"]])(
+        "小文字英数字とハイフン区切りの slug %s は受理される",
+        (url) => {
+            // Arrange / Act
+            const result = CategoryFormSchema.safeParse({ ...validData, url });
+
+            // Assert
+            expect(result.success).toBe(true);
+        }
+    );
+
+    // plan 068 —— admin がツリーを編集するための 2 列。path / depth / childCount は
+    // サーバー側の導出値なのでフォームには載せない（upsertCategory が計算する）。
+    it("parentId を省略するとルート（null）になる", () => {
+        // Arrange / Act
+        const result = CategoryFormSchema.parse(validData);
+
+        // Assert
+        expect(result.parentId).toBeNull();
+    });
+
+    it("parentId に親ノードの id を渡せる", () => {
+        // Arrange / Act
+        const result = CategoryFormSchema.safeParse({
+            ...validData,
+            parentId: "electronics",
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it("sortOrder を省略すると 0 になる", () => {
+        // Arrange / Act
+        const result = CategoryFormSchema.parse(validData);
+
+        // Assert
+        expect(result.sortOrder).toBe(0);
+    });
+
+    it.each([
+        ["負値", -1],
+        ["小数", 1.5],
+    ])("sortOrder が %s の場合エラー", (_label, sortOrder) => {
+        // Arrange / Act
+        const result = CategoryFormSchema.safeParse({ ...validData, sortOrder });
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it("sortOrder は <input type=\"number\"> の文字列を数値へ強制変換する", () => {
+        // Arrange / Act —— RHF の数値入力は文字列で届くため coerce が要る
+        const result = CategoryFormSchema.parse({ ...validData, sortOrder: "3" });
+
+        // Assert
+        expect(result.sortOrder).toBe(3);
+    });
+
+    it("path / depth / childCount はフォーム値として受け取らない", () => {
+        // Arrange / Act —— 導出列がフォーム経由で入ってもパース結果に残らない
+        const result = CategoryFormSchema.parse({
+            ...validData,
+            path: "attacker/path",
+            depth: 4,
+            childCount: 7,
+        });
+
+        // Assert
+        expect(result).not.toHaveProperty("path");
+        expect(result).not.toHaveProperty("depth");
+        expect(result).not.toHaveProperty("childCount");
+    });
 });
 
 // ==================================================

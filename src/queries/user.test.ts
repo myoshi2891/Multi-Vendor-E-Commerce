@@ -133,8 +133,15 @@ describe("followStore", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
 
+            // 修正前は "Error following store" だった —— 認可チェックが外側の
+            // try の中にあり、catch が認可エラーを汎用メッセージで**上書き**して
+            // いたため。呼び出し側は「未認証」と「DB 障害」を区別できなかった。
+            // 認可ガードを try の外へ出したことで本来の意味が呼び出し側へ届く。
+            // 完全一致で照合する（`toThrow(string)` は部分一致のため、
+            // "Error following store: Unauthenticated." のような包み直しを
+            // 検知できない）。
             await expect(followStore("store-001")).rejects.toThrow(
-                "Error following store"
+                /^Unauthenticated\.$/
             );
         });
     });

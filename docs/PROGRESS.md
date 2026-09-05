@@ -5,16 +5,16 @@
 
 ---
 
-## 現在の状態（2026-08-25 時点）
+## 現在の状態（2026-09-04 時点）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2026 passed / 2029 total（3 skipped tests）/ 191 スイート（190 passed + 1 skipped suite）** — 2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
-| Jest Integration テスト | **108テスト / 13スイート**（… + `store-status` **9** + `product-update` **5** + `product-browse` **16**）— 2026-08-24 実測 108/108 pass（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
+| Jestユニットテスト | **2184 passed / 2187 total（3 skipped tests）/ 199 スイート（198 passed + 1 skipped suite）** — 2026-09-04 実測（SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)。直近は CodeRabbit レビュー指摘対応の第 2 巡で **+2 / スイート不変**: `footer.test.tsx`〔カテゴリ取得失敗でも描画継続〕・`parse-models.test.ts`〔コメント中の複合キーを拾わない〕。その前は CodeRabbit レビュー指摘対応で **+1 / スイート不変**: `category-details.test.tsx`〔自分の子孫が上限を超える親は外す〕。その前は saleEndDate の実バグ修正で **+2 / スイート不変**: `product-details.test.tsx`〔終了日を設定して保存できる / クリアして保存できる〕。2129 → 2181 の内訳は本文の各実行記録を参照）。以下は 2129 時点までの記録: **2129 passed / 2132 total（3 skipped tests）/ 194 スイート（193 passed + 1 skipped suite）** — 2026-09-03 実測（レビュー指摘対応で **+4 / スイート不変**: `category.test.ts` +2〔`upsertCategory` の自ノード / 子孫ロック〕、`parse-models.test.ts` +2〔行コメント中の `@@index(` で後続フィールドを落とさない〕。**差 8 のうち 4 は既存の未同期分**で、dashboard 再生成と併せて是正した。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 2121 時点までの記録: 2026-09-03 実測（plan 068 Step 1–9 で **+49 / スイート不変**: ツリー編集の不変条件・リーフ強制・`parentId`/`sortOrder` スキーマ・slug 正準化・admin 表のツリー表示）。以下は 2072 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応 第 2 弾で **+1 / スイート不変**: `src/lib/category-tree.test.ts` に `resolveCategoryNode` の DB 障害再送出ガードを追加。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 2071 時点までの記録: 2026-09-02 実測（コードレビュー指摘対応で **+6 / スイート +1**: `tests/component/store/category-link.test.tsx` 新設 +3、`browse/page.test.tsx` +2、`parse-models.test.ts` +1。SSOT は `docs/testing/QA_HANDOFF.md`）。以下は 2062 時点までの記録: 2026-09-02 実測（plan 067 Phase B で `src/lib/category-tree.test.ts` 新設 **+1 スイート**。直前は 2032 passed / 192 スイート）。以下は 2032 時点までの記録: 2026-09-02 実測（`scripts/erd/parse-models.test.ts` 新設で **+4 / スイート +1**。直前は 2028 passed / 2031 total / 191 スイート）。以下は 2028 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `EACH_PATTERN` が `schema.test.each(` のメンバー呼び出しをテーブル展開として計上していた件の回帰ガード。直前は 2027 passed / 2030 total）。以下は 2027 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `scan-tests.ts` の `BLOCK_PATTERN` が `.test(` のメンバー呼び出しをテスト宣言として計上していた件の回帰ガード。直前は 2026 passed / 2029 total）。以下は 2026 時点までの記録: 2026-08-31 実測（レビュー指摘対応で **+1 / スイート不変** —— `upsertCategory` のツリー管理列を実行時に落とすことの回帰ガード。直前は 2025 passed / 2028 total）。以下は 2025 時点までの記録: 2026-08-31 実測（plan 066 でシードの宣言データを単一の木へ統合したのに伴う **−1 / スイート不変**。`SEED_SUB_CATEGORIES` 前提のテストを木の不変条件テストへ置き換えた）。直前は 2026 passed / 2029 total・2026-08-25 実測（コードレビュー指摘の修正に伴う回帰検知点。うち 1 件は `browse/page.tsx` の `normalizePriceParam` が空白のみの `?maxPrice=%20` を `Number("   ") === 0` 経由で「上限 0 の空レンジ」として通していた不具合の回帰ガード。**本行は 2020 のまま据え置かれていたが、実測との差 6 はこの間のレビュー対応分の未同期であり、本更新で是正した**）。直前: **2020 passed / 2023 total（3 skipped tests）/ 191 スイート** — 2026-08-24 実測（コードレビュー指摘の修正に伴う回帰検知点 **+3 / スイート不変**）。直前: **2017 passed / 2020 total / 191 スイート** — 2026-08-23 実測（plan 049 の本体修正に伴う検知点 **+4 / スイート +1**）。直前: **2013 passed / 2016 total（3 skipped tests）/ 190 スイート（189 passed + 1 skipped suite）** — 2026-08-23 実測（plan 030 で money-path クライアント **6 スイート・+26 テスト**を新設）。直前: **1987 passed / 1990 total / 184 スイート** — 2026-08-13 実測（レビュー指摘対応で **+3 / スイート不変**。`review.test.ts` に集計の原子性 2 本〔単一 `$transaction` への配線 / Product 行ロックが書き込みより手前〕、`shipping-utils.test.ts` に `Prisma.Decimal` 移行の丸め回帰 1 本）。以下は 1984 到達時点までの記録: 2026-08-13 実測（plan 010 で `src/lib/shipping-utils.test.ts` を新設し **+8 / スイート +1**。配送料計算 SSOT `computeShippingTotal` の直接ユニットテスト）。**⚠️ 1915 → 1984 の差 69 のうち本プランの成果は 8 件だけで、残る 61 テスト・3 スイートは本行の未同期分の是正である** —— SSOT の [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) は 2026-08-12 時点で既に 1976 / 183 スイートを記載しており、本行だけが 2026-08-10 の値のまま据え置かれていた（内訳は URL 数値パラメータ正規化 +36 / スイート +1、`browse-pagination.test.tsx` +6 / スイート +1、Prisma 遅延初期化 +13、`getProducts` 未マッチ URL フィルタ是正 +5、レビュー指摘対応 +1）。以下は 1915 到達時点までの記録: 2026-08-10 実測（CodeRabbit レビュー対応で `categories-menu.test.tsx` に +6 / `product-sort.test.tsx` に +1・スイート不変。**差 20 のうち 13 テスト・2 スイートは先行コミット `879763a0` の未同期分**を併せて是正したもの）。直前は 1895 passed / 1898 total / 178 スイート・2026-08-09 実測（CodeRabbit 指摘対応で `scripts/coverage-dashboard/render-html.test.ts` に +1・スイート不変）。直前は 1894 passed / 1897 total・2026-08-09 実測（plan 064 / TESTS-21 の本体修正で `src/queries/user.test.ts` に +3・スイート不変）。直前は 1891 passed / 1894 total・2026-08-08 実測（SonarCloud PR #169 の New Code カバレッジ 70% を受け `src/app/api/webhooks/stripe/route.test.ts` に非 USD 拒否ケースを追加し +1・スイート不変。直前は 1890 passed / 1893 total・2026-08-04 実測: plan 026 で `paypal.test.ts` を 40→56 に拡張し +16・スイート不変。同日 plan 029 で `profile.test.ts` を 34→63 に拡張し +29・スイート不変。同日 plan 028 で `src/queries/country.test.ts` を新設し +4 テスト / +1 スイート。`src/queries/` 20 モジュール中で唯一テストが無かった country.ts を閉じた）。直前: 2026-08-03 実測で 1841 / 1844・177 スイート（12 件のドリフトを訂正）。その前: 2026-08-01 実測（CodeRabbit レビュー対応 第 12 弾の回帰 +3・スイート数不変 — 静的走査が文字列リテラルの中身をコードと取り違えていた件。ダッシュボードは `scan-tests.test.ts` 81→24 / `size.test.ts` 9→8 に是正。直前の第 11 弾で +7、その前の SonarCloud 重複解消リファクタで +16・スイート +1）。増減の経緯は [`COVERAGE_REPORT.md §7 履歴`](./testing/COVERAGE_REPORT.md#7-履歴)、統計の SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md) |
+| Jest Integration テスト | **136テスト / 16スイート** — 2026-09-03 実測 136/136 pass（レビュー指摘対応で `category-tree-write.test.ts` に **+1 / スイート不変**: subtree 移動と子孫移動の競合で `path` / `parentId` が矛盾しないこと。併せて同ファイルの固定 `setTimeout(300)` を `pg_stat_activity` の待ちポーリングへ置換。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 135 時点までの記録: 2026-09-03 実測 135/135 pass（plan 068 で `tests/integration/category-tree-write.test.ts` を新設し **+4 / スイート +1**）。以下は 131 時点までの記録: 2026-09-02 実測 131/131 pass（レビュー指摘対応で **+2 / スイート不変**: `category-tree-resync.test.ts` に `Product.categoryNodeId` の NULL 埋め / stale 追随を追加。区間の `UPDATE "Product"` は 実行されるだけで検算されていなかった。併せて `setup/migration-sql.ts` の `runStatements` を `$transaction` で包んだ。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 129 時点までの記録: 129/129 pass（plan 067 の残作業で `product-browse.test.ts` に **+4** / `product-update.test.ts` に **+2**・スイート不変。直前は 123 / 15 スイート — plan 067 で `category-tree-resync.test.ts` を新設し **+6 / スイート +1**。SSOT は [`QA_HANDOFF.md`](./testing/QA_HANDOFF.md)）。以下は 117 時点までの記録: **117テスト / 14スイート**（… + `product-browse` **16** + `category-tree-migration` **9**）— 2026-08-31 実測 117/117 pass（plan 066 / V-3・V-4 で `category-tree-migration.test.ts` を新設し **+9 / スイート +1**）。直前は 108 テスト / 13 スイート・2026-08-24 実測（レビュー指摘対応で `store-status.test.ts` に並行遷移シナリオ **+1** / スイート不変。`updateStoreStatus` の昇格判定を tx 内 `FOR UPDATE` へ移した本体修正の回帰ガード）。直前 107（plan 039 で `product-browse.test.ts` を新設し **+16 / スイート +1**。R6 ラウンドが閉じ切った）。直前: **91テスト / 12スイート**（… + `store-status` **8** + `product-update` **5**）— 2026-08-23 実測 91/91 pass（plan 038 で `product-update.test.ts` を新設し **+5 / スイート +1**）。直前: **86テスト / 11スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7** + `store-status` **8**）— 2026-08-23 実測 86/86 pass（plan 035 で `store-status.test.ts` を新設し **+8 / スイート +1**。R5 ラウンドが閉じ切った）。直前: **78テスト / 10スイート**（`cart-checkout` 11 + `order-placement` **9** + `order-lifecycle` **8** + `webhook-payment` **12** + `search-products` **9** + `product-deletion` **4** + `shipping-address-default` **6** + `user-deletion-webhook` **7** + `coupon-code-uniqueness` **5** + `review-aggregation` **7**）— 2026-08-13 実測 78/78 pass（レビュー指摘対応で `review-aggregation.test.ts` に +2 / スイート不変。`upsertReview` の集計を単一 `$transaction` + Product 行 `SELECT … FOR UPDATE` へ直列化した本体修正に伴う並行シナリオ。**多ユーザー輻輳ケースは修正前の実装でも緑**なので、lost update の決定論的ガードは `review.test.ts` 側の配線テスト）。直前は 76テスト / 10スイート・同日実測 76/76 pass（plan 034 / TESTS-18 で `review-aggregation.test.ts` を新設し +5 / スイート +1。`upsertReview` の評価集計・User フォールバック upsert・同一ユーザー再投稿の update 分岐を実 DB で固定。**集計は非トランザクションなので並行投稿の lost update は未検証**）。直前は 71テスト / 9スイート・同日実測 71/71 pass（plan 041 / TESTS-25 で `coupon-code-uniqueness.test.ts` を新設し +5 / スイート +1。`Coupon.code` のグローバル unique 制約の実発火・既存行の無傷・行数不変を固定。**これで R7 ラウンドが閉じ切った**）。直前は 66テスト / 8スイート・2026-08-09 実測 66/66 pass（plans 033 / 036 / 037 / 040 の新設スイートと、plan 064 で `shipping-address-default` が 4 → 6）。直前は 40テスト / 4スイート・2026-08-08 計上（`a4d01b27` が `webhook-payment.test.ts` に非 USD 拒否シナリオ S8 を追加し 39→40・スイート不変。最後のフルラン実測は 2026-08-04 の 39/39 pass）。直前: 2026-08-04 実測 39/39 pass（plan 032 で `webhook-payment.test.ts` を新設し +11 / スイート +1。Stripe / PayPal webhook の冪等性・原子性を実 DB で検証）。直前: 28/28 pass（plan 031 で `order-lifecycle.test.ts` を新設し +8 / スイート +1。キャンセル・返金の親子連動と在庫復元、二重キャンセルの冪等性、group 単位キャンセルの親集約、両 admin 関数の認可ガード）。直前: 20 テスト / 2 スイート（plan 027 で order-placement に在庫の実減算量 / オーバーセルロールバック / PLATFORM クーポン端数吸収の 3 シナリオを追加。17→20・スイート不変）。直前: 17 テスト（2026-05-31 placeOrder 統合テスト +6 / +1 スイート）。`bun run test:integration`（testcontainers）で実行、`bun run test` 集計外。2026-07-17: ダッシュボード集計の 14 との乖離を解消（`scan-tests.ts` の `it.each` 展開対応で 14→17） |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
-| Playwright E2E | **63 tests/browser / 28 files（3ブラウザ計 189）** — 2026-08-23 実測。Visual は cart / checkout / browse の 3 スペック（chromium 限定）。Chromium / Firefox / WebKit |
+| Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
 
 ### 技術スタック（現行）
 | パッケージ | バージョン |
@@ -30,6 +30,40 @@
 | 日付 | 対象 | before | after | 記録 |
 |------|------|--------|-------|------|
 | 2026-08-09 | `PaymentDetails.amount`（Stripe セント→ドル・CORRECTNESS-05 残件） | 補正対象 **0 件**（`PaymentDetails` 総行数 0 / `Order` 18 行） | 0 件（no-op で COMMIT） | [plan 063](../plans/063-backfill-stripe-payment-amount.md) 実行記録。検証 `still_wrong=0` / `null_ratio=0` / `stale_paypal_currency=0`。手順とゲート設計は [`scripts/backfill/README.md`](../scripts/backfill/README.md) |
+
+### 規約違反の是正記録（spec-sync-check Layer 2・2026-09-03）
+
+`.claude/skills/spec-sync-check` の観点 D で検出した既存違反 **SV-1〜SV-3 をすべて是正**。
+ベースラインは
+[`spec-sync-check/SKILL.md`](../.claude/skills/spec-sync-check/SKILL.md) に更新済み。
+
+| # | 違反 | 是正前 | 是正後 | 対応 |
+|---|------|--------|--------|------|
+| SV-1 | tech.md「認可ガード」—— `src/queries/` のインライン認可展開 | **30** | **6**（全て承認済み例外） | `order.ts` 5 / `store.ts` 9 / `user.ts` 7 / `stripe.ts` 2 / `review.ts` 1 を `requireUser` / `requireSeller` / `requireAdmin` へ移行。残る `profile.ts` 5 と `paypal.ts` 1 は[tech.md の承認済み例外](../.claude/steering/tech.md#認可ガードの承認済み例外)として登録 |
+| SV-2 | tech.md「ログ禁止」—— `src/` 配下の `console.log` | 2 | **0** | `src/migration-scripts/` を削除 |
+| SV-3 | structure.md「`src/queries/` 以外でサーバーアクションを定義しない」 | 1 | **0** | 同上 |
+
+#### 移行で発見した実バグ 2 件
+
+認可チェックを**外側の `try` の中**に置いていたため、`catch` が認可エラーを汎用メッセージで
+**上書き**しており、呼び出し側が「未認証」と「DB 障害」を区別できなかった。
+tech.md の「認可ガードは `try/catch` の外に置く」が防ごうとしていた事象そのもの。
+
+| 関数 | 未認証時の実際の応答（修正前） | 修正後 |
+|---|---|---|
+| `user.ts` の `followStore` | `"Error following store"` | `"Unauthenticated."` |
+| `review.ts` の `upsertReview` | `"Error updating review: Unauthorized."` | `"Unauthenticated."` |
+
+> **どちらもテストが誤った挙動を追認していた**（`user.test.ts` / `review.test.ts` /
+> `tests/integration/review-aggregation.test.ts`）。テストは「現状の固定」であって
+> 「正しさの証明」ではないことの実例で、grep ベースの規約検査だけが発見経路だった。
+
+#### `src/migration-scripts/` 削除の根拠
+
+import 参照 0 件 / `package.json` に実行手段なし / `seedCountries` は
+`prisma/seed/seeders/base-seeder.ts` に代替済み / `updateVariantImage` は 2025-12 の
+一度きりの backfill。`jest.config.js` と `sonar-project.properties` の除外設定も
+（tech.md「両者を一致させること」の規約どおり）同時に削除した。
 
 ---
 
@@ -4192,3 +4226,559 @@ VRT の対象は cart 2 枚 + checkout リダイレクト 1 枚のみで、購�
 > 追加した検知点 4 件: `stripe-payment.test.tsx` +1 / `store.test.ts` +1 / `browse/page.test.tsx` +2。
 > なお QA_HANDOFF / COVERAGE_REPORT の記載値 2020 は実測 2021 と 1 件ドリフトしていたため、
 > 本更新で実測値へ揃えた。
+
+---
+
+### plan 065（商品詳細レイアウト修正）→ plan 054 完了（VRT 拡大・R9 クローズ） (2026-08-31)
+
+#### 概要
+
+商品詳細の右購入パネル（Ship to / Buy now / **Add to cart**）が 1280px でクリップされる
+レイアウト欠陥を修正し（plan 065）、そのブロックが外れたことで plan 054 の残りである
+商品詳細の VRT ベースラインを撮影した。これで improve Round 9（plans 051–056）が閉じ切った。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/product-page/container.tsx` | 情報+パネル行の `w-full` を `min-w-0 flex-1` へ置換。flex コンテナ（`xl:flex`）の子における `w-full` は残余幅ではなく**親幅（1248px）**に解決されるため、画像 swiper（456px）と並ぶと確定的に溢れていた | `51c73e4c` |
+| `tests/e2e/visual/product.spec.ts`（新規） | 商品詳細の VRT。chromium 限定 / fullPage / mask は既存 3 スペックと同形。ピクセル比較の前に `Add to cart` の右端が `clientWidth` 以内であることも assert | `bb780b99` |
+| `tests/e2e/visual/product.spec.ts-snapshots/product-detail-chromium-darwin.png`（新規） | 目視ゲート合格後のベースライン | `bb780b99` |
+| `scripts/coverage-dashboard/render-html.ts` | R9 の `NEXT_ACTIONS` エントリを削除（全 6 プラン DONE） | docs 同期コミット |
+| `docs/testing/QA_HANDOFF.md` | 統計テーブル（E2E / Visual / ファイル総数）+ HEAD 更新、R9 依頼プロンプト節を削除（`render-html.ts` と二重 SSOT のため同一コミットで同期） | 同上 |
+
+#### 実測（購入パネルの `getBoundingClientRect().right` vs `clientWidth`）
+
+| 幅 | 修正前 | 修正後 |
+|----|--------|--------|
+| 768px | right=752 / 768（収まり） | 同一（挙動不変） |
+| **1280px** | **right=1434 / 1280（+154px はみ出し）** | **right=1264（-16px 収まり）** |
+| 1440px | right=1434 / 1440（収まり） | right=1424 |
+
+`scrollWidth === clientWidth` は全幅で維持（クリップを横スクロールにすり替えていない）。
+`page.tsx` の `overflow-x-hidden`（症状を計測から隠していた層）はプランの指示どおり削除していない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2026 passed / 2029 total | **不変** |
+| Jest スイート数 | 191 | **不変** |
+| Jest Integration | 108 / 13 スイート | **不変** |
+| Playwright E2E | 63 tests/browser・28 files（計 189） | **64 tests/browser・29 files（計 192）** |
+| Playwright Visual | 3 スペック / 4 テスト | **4 スペック / 5 テスト** |
+| テストファイル総数（ダッシュボード集計） | 232 | **233** |
+| 型エラー | 0 件 | **0 件** |
+
+> **2026-08-31 追記（plan 066）**: `tests/integration/category-tree-migration.test.ts` の新設で
+> ダッシュボード集計は **233 → 234** になった。詳細は本ファイル末尾の plan 066 エントリを参照。
+
+---
+
+### plan 066: カテゴリツリー Phase A（スキーマ + 互換レイヤー） (2026-08-31)
+
+#### 概要
+
+固定 2 階層（`Category` + 子を持てない `SubCategory`）を N 階層ツリーへ移行する 3 分割実装の 1 本目。
+**構造だけを加算し、読み取り経路は 1 行も切り替えていない** —— storefront の挙動は不変で、
+ロールバックは新列・新テーブルの drop で足りる。この可逆性が 066/067/068 に分けた唯一の理由。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` | `Category` に `parentId`/`path`/`depth`/`sortOrder`/`childCount`、`CategorySlugAlias` + `CategoryAliasSource` enum を新設、`Product.categoryNodeId`（nullable） | `0f0fa400` |
+| `prisma/migrations/20260831102943_category_tree_phase_a/` | DDL 3 段（`path` を nullable 追加 → backfill → SET NOT NULL）+ 冪等なデータ移行 DML（`PHASE_A_DATA_MOVE` マーカー） | `0f0fa400` |
+| `scripts/erd/generate-erd.ts` / `docs/architecture/data-model.drawio` | `CategorySlugAlias` を Catalog ページへ追加し再生成（orphan WARNING 0 件） | `0f0fa400` |
+| `src/queries/category.ts` | `upsertCategory` の引数型を新列 5 つ分だけ narrow し、`create` で `path = url` / `depth = 0` を補う | `0f0fa400` |
+| シード 3 系統 | `SeedSubCategory` を廃し `parentUrl?` を持つ単一の木（32 ノード）へ。商品はリーフ 1 本 | `7fada5be` |
+| `tests/integration/category-tree-migration.test.ts` | 移行 DML の冪等性・衝突リネーム・`childCount` 整合（9 シナリオ） | `9fc80ce3` |
+
+#### 実測（事前計測と移行結果）
+
+事前計測は**実 DB（Neon）で実行**した。シードで代替していない。
+
+| 指標 | 値 |
+|------|----|
+| slug 衝突（`Category` ∩ `SubCategory`） | **0 件**（STOP 条件の 20 件を大きく下回る） |
+| 移行前の規模 | Category 40 / SubCategory 58 / Product 105 |
+| 移行後 | ルート 40 / 子 58 / alias 98 / リネーム 0 |
+| `childCount` ドリフト | **0** |
+| `Product.categoryNodeId` の未 backfill | **0** |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest ユニット | 2026 passed / 2029 total | **2025 passed / 2028 total** |
+| Jest スイート | 191 | **191**（不変） |
+| Jest Integration | 108 / 13 スイート | **117 / 14 スイート** |
+| Playwright E2E | 64 tests/browser（計 192） | **64 tests/browser（計 192）**（不変） |
+| 型エラー | 0 件 | **0 件** |
+
+#### 既知の課題（066 の範囲外）
+
+- `bun run seed:luxury` は **Neon に対しては Phase 4（Review）で `P2028` により失敗する**。
+  `review-seeder.ts` の `$transaction` が Prisma 既定（maxWait 2s / timeout 5s）のままで、
+  リモート DB のレイテンシで期限を超える。**ローカル PostgreSQL では 5 フェーズ完走**するため
+  plan 066 の変更とは無関係。注文処理で `ORDER_TRANSACTION_OPTIONS` を明示したのと同型の対応が要る。
+
+---
+
+### ERD パーサの切り出しと未コミット作業の片付け (2026-09-02)
+
+#### 概要
+
+前セッションから作業ツリーに残っていた 3 件の変更を、rule 02 に従い論理単位で分割コミットした。
+plan 067（カテゴリツリー Phase B）に着手する前に作業ツリーを clean にすることが目的。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `scripts/erd/parse-models.ts` / `.test.ts` / `generate-erd.ts` | Prisma スキーマのパーサを純関数として切り出し、記法の回帰をユニットテストで固定（+4 / スイート +1）。`stripBlockAttributes` で複数行ブロック属性の継続行が偽フィールドになる問題を修正 | `2877abf7` |
+| `docs/architecture/decisions/007-attribute-storage.md` / `docs/design/category-attributes/design.md` / `plans/066` / `plans/069` / `plans/README.md` | 多値属性の一意インデックスが NULL を重複許容する穴を 5 項目チェックリストとして明文化。ADR-007 に逆リレーションを追記 | `12554bd8` |
+| `tests/integration/setup/seed.ts` | `seedProductWithVariantAndSize` が新旧両系統（`Category.parentId` / `SubCategory.categoryId`）で親子を検証。存在確認だけでは別カテゴリの id を渡しても Product 作成が通っていた | `31ab8c20` |
+
+#### 実測
+
+- `bun run erd:generate` → `docs/architecture/data-model.drawio` に**差分ゼロ**（パーサ切り出しが挙動を変えていないことの機械的確認）
+- `bun run test:integration` → **117 passed / 14 スイート**（不変）
+- `bunx tsc --noEmit` → 0 件
+
+> **注記**: plan 067 本文が挙げる統合テストのコマンド `bun run test -- tests/integration/...` は**動作しない**。
+> `jest.config.js` の `testPathIgnorePatterns` が `/tests/integration/` を除外しているため、
+> 正しくは `bun run test:integration`（`jest.integration.config.js` 経由）である。
+> （2026-09-03: plan 066 / 067 / 068 本文のコマンド表を `test:integration` へ修正済み。）
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2028 passed / 2031 total | **2032 passed / 2035 total** |
+| スイート数 | 191（190 passed + 1 skipped） | **192（191 passed + 1 skipped）** |
+| Integration | 117 / 14 スイート | **不変** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### カテゴリツリー Phase B — 読み取りのサブツリー化 (2026-09-02 / plan 067・**IN PROGRESS**)
+
+#### 概要
+
+066 が置いた木の構造を、storefront の読み取りが実際に使うようにした。
+条件を「その 1 ノードと完全一致」から「そのノードを根とするサブツリー」へ変え、
+3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようにしている。
+Phase C（plan 068）は不可逆なので、**戻れる最後の地点がここ**である。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/category-tree.ts` | `subtreeOf` / `isWithinSubtree`（prefix 境界の一元化）、`resolveCategoryNode`（別名フォールバック）、`buildCategoryTree` | `8bebdc6e` `4cd23f1d` `9b4ea311` |
+| `src/lib/schemas.ts` | Category / SubCategory の slug を `/^[a-z0-9]+(?:-[a-z0-9]+)*$/` へ制約 | `10707b6d` |
+| `src/queries/product.ts` | browse フィルタを `categoryNode` のサブツリーへ + dual-write | `168c4ea7` `8cca6a84` |
+| `src/queries/category.ts` | `getAllCategories` をツリー返却へ（店舗スコープは祖先を prefix 展開する 2 クエリ） | `a1dbe5dc` |
+| `src/components/store/browse-page/filters/category/` | 2 段固定 → 再帰コンポーネント | `a1dbe5dc` |
+| `src/app/(store)/browse/page.tsx` | 旧 `?subCategory=` を `permanentRedirect`（308）で正準化 | `c478ec54` |
+| `prisma/migrations/*_category_tree_phase_b_resync` | `PHASE_B_RESYNC` 区間（rename / 親付け替え / featured を既存行にも追随） | `5c4b2501` |
+| `tests/integration/setup/migration-sql.ts` | マーカー抽出・SQL 分割器を Phase A / B で共有 | `5c4b2501` |
+
+#### 設計文書からの逸脱・発見
+
+1. **design.md §2-Q3 の `{ category: subtreeOf(...) }` は誤り。** `category` は旧 FK で
+   **ルート**を指すため、サブツリー条件を掛けてもリーフに紐づく商品へ届かない。
+   066 が追加した `categoryNode` を引く形に直した。設計文書は Phase A 実装前に
+   書かれており、リレーション名が確定していなかったことによる差分である。
+2. **`redirect()` は 307。** 308 が要件なので `permanentRedirect()` を使う。
+3. **`?category=A&subCategory=B` を無条件に畳めない。** 2 つのサブツリーの積として
+   効いているため、A と B が親子でない場合に畳むと「0 件」が「B の結果」へ化ける。
+   B が A の子孫（または同一）のときだけ畳む。
+4. **plan 067 本文の統合テストコマンドが動作しない。** `jest.config.js` が
+   `/tests/integration/` を除外しているため、正しくは `bun run test:integration`。
+5. **Done criteria の `grep startsWith` は検索対象に `src/app` を含んでいない。**
+   実際の重複は `browse/page.tsx` に出た（`isWithinSubtree` へ寄せて解消）。
+
+#### 実測
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2032 passed / 2035 total | **2062 passed / 2065 total** |
+| スイート数 | 192 | **193** |
+| Integration | 117 / 14 スイート | **123 / 15 スイート** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors** |
+
+実 DB 実測（`DIRECT_URL` 経由の `$queryRaw`）: slug 制約違反 **0 件** /
+Category 98 / SubCategory 58 / Product 105 / `categoryNodeId IS NULL` **0 件**。
+
+#### 残作業・BLOCKED
+
+残作業は **2026-09-02 に完了**（下記「カテゴリツリー Phase B の残作業完了」を参照）。
+BLOCKED（実 DB への `prisma migrate deploy` が権限で拒否され再同期は未適用）のみが残り、
+[`docs/testing/QA_HANDOFF.md`](testing/QA_HANDOFF.md) の「067-B の残 BLOCKED」節に記録した。
+
+---
+
+### カテゴリツリー Phase B の残作業完了 (2026-09-02)
+
+#### 概要
+
+plan 067（カテゴリツリー Phase B）の残作業 —— storefront の残リンク・統合テスト 4 本・
+E2E 1 本 —— を実装し、plan 067 を **DONE** にした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/layout/footer/{footer,links}.tsx` | リンク元を旧 `SubCategory` テーブルから `Category` ツリーへ移し、`?category=<正準slug>` を生成（308 の 1 ホップを解消） | `d7769375` |
+| `src/lib/category-tree.ts` | `flattenCategoryTree`（pre-order・並び替えなし）を追加。unit +2 | `d7769375` |
+| `tests/integration/product-browse.test.ts` | V-1（兄弟 prefix の非ヒット）/ depth 2 の商品がルート祖先で取れる / 旧 `?subCategory=` の同一サブツリー解決 / V-6（fail-closed）の +4 | `171ac4fa` |
+| `tests/integration/product-update.test.ts` | create・update 両経路の dual-write（3 列が揃う）+2 | `c094f7d4` |
+| `tests/e2e/search-filter.spec.ts` + `tests/e2e/seed/` | V-2: 旧 `?subCategory=` が **308** で正準ノードへ着地（`CategorySlugAlias` 経由の旧 slug を含む）。シードに別名行を 1 件追加 | `0ed9502a` |
+
+#### 踏まなかった罠
+
+1. **`links.tsx` の `?subCategory=` を機械的に `?category=` へ置換してはならない。**
+   旧 `SubCategory.url` は移行でリネームされ得るうえ、グローバル一意制約下で**別ノードの
+   正準 slug**になっている可能性がある。`resolveCategoryNode(CATEGORY)` は url 完全一致を
+   先に引くので、無関係なノードへ着地する。**データ源ごとツリーへ移す**のが正しい。
+   `home/category-card.tsx` は home.ts の legacy 経路（067 スコープ外）なので据え置き。
+2. **E2E の 308 検証に `page.goto` を使わない。** 最終 URL しか見えず 302 と区別できない。
+   `request.get(..., { maxRedirects: 0 })` でステータスと `Location` を直接見る。
+3. **別名テストで `Category.url` を書き換えない。** 旧 slug が url に残っていると
+   完全一致で解決してしまい、別名表を引く経路が 1 度も実行されない。別名行だけを足す。
+4. **ローカル E2E は `PORT=3100 E2E_NO_REUSE=1` で隔離する。** :3000 に別リポジトリの
+   next-server が居ると `reuseExistingServer` がそれを掴み、全 spec が赤になる
+   （`playwright.config.ts` に警告として明記されている既知の罠）。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2062 passed / 2065 total | **2064 passed / 2067 total** |
+| スイート数 | 193 | **193**（不変） |
+| Integration | 123 / 15 スイート | **129 / 15 スイート** |
+| Playwright E2E | 64 tests/browser（計 192） | **65 tests/browser（計 195）** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors** |
+
+V-1 と dual-write は、本体を壊すと赤になることを実測で確認した（`subtreeOf` から境界文字
+`/` を落とす / `categoryNode` の connect を落とす）。
+
+---
+
+### レビュー指摘対応（カテゴリツリー周辺のコード + 設計ドキュメント） (2026-09-02)
+
+#### 概要
+
+コードレビューの指摘を 1 件ずつ現行コードに突き合わせ、**まだ有効なものだけ**を修正した。
+コードは 5 件（fail-closed / a11y / 例外の握り潰し防止 / シードの不変条件 / 走査器の誤検出）、
+設計ドキュメントは 5 件。2 件は現行コードで既に解消済みだったため見送った（下記「見送り」）。
+
+#### 実施内容（コード）
+
+| 対象 | 変更内容 | 種別 |
+|------|---------|------|
+| `src/queries/product.ts` | `?category=a&category=b` で Next.js が渡す **配列**が `resolveCategoryNode` → Prisma の `where: { url }` へ素通りして実行時に落ちていた。`typeof !== "string"` を fail-closed（0 件）へ寄せ、`/browse` 側の `typeof === "string"` ガードと境界を揃えた | 正しさ |
+| `src/components/store/browse-page/filters/category/category-link.tsx` | カテゴリ選択が**宛先の無い `<label htmlFor>`**、開閉が `<span onClick>` で、どちらもキーボード到達不能かつ状態非公開だった。`<button type="button">` 2 本へ分離し `aria-pressed` / `aria-expanded` を公開。`border-[#ccc]` / `bg-black` をトークン（`border-border` / `bg-foreground`）へ置換 | a11y |
+| `src/lib/category-tree.ts` | `resolveCategoryNode` の Prisma 呼び出しを try/catch でラップ。**`null` に畳まず元の例外を再送出**する —— `null` は「解決不能な slug」= 0 件を意味するので、DB 障害を畳むと障害が「空カタログ 200」として出てしまう | 規約 + 可観測性 |
+| `prisma/seed/seeders/product-seeder.ts` | 商品の `categoryUrl` にルートを指定すると `maps.categories.get(rootUrl)` が**成功してしまい**既存の未検出エラーに掛からない。リーフ必須を明示的に throw | 不変条件 |
+| `scripts/coverage-dashboard/scan-tests.ts` | `BLOCK_PATTERN` / `EACH_PATTERN` の否定後読みが `(?<![.\w$])` で、プライベートメンバ `this.#test(...)` を宣言として計上していた（`test` の直前は `#` で、`.` は `#` の手前にあり後読みに掛からない）。`(?<![.#\w$])` へ広げ、`scan-tests.test.ts` に回帰ガード **+1**（Red→Green 実測: 修正前 1 件一致 / 修正後 0 件） | 計測の正確さ |
+
+#### 実施内容（ドキュメント）
+
+| 対象 | 変更内容 |
+|------|---------|
+| `docs/design/category-tree/design.md` | Phase B の擬似コードが `whereClause.AND.push({ category: … })` のままだった（設計執筆は Phase A 実装前）。実装どおり `categoryNode` へ直し、Phase C の rename で `category` に戻ることを併記 |
+| `docs/design/category-attributes/design.md` | (1) `NUMBER` は `z.coerce.number()` の前に空入力を `undefined` へ正規化する（`Number("") === 0` で「未入力」が `0` として保存され、ファセットに偽の `0` が出る）。`required: false` のときだけ `.optional()`。(2) 型変更 経路 2 は同じ `key` で新旧定義が並ぶため `@@unique([categoryId, key])` と衝突する。`key` は不変（Q7）なので**制約側**をアーカイブ対象外にする部分ユニークインデックスへ変更し、読み書き規則を明記。(3) 「定義の削除」行の「ファセットから履歴が消えない」を、継承クエリの `archivedAt: null` と検証シナリオ A-6 に合わせて「値は残るがファセットには出ない」へ訂正 |
+| `plans/068-implement-category-tree-admin-cutover.md` | 再親子化が対象ノードの `path` しか更新しない設計だった。**全子孫の `path` / `depth` を同一 `$transaction` で追随**させ、**最深子孫**で深さ上限を判定し、**旧親と新親の両方**の `childCount` を再計算することを追記。子孫の取り残しは検索結果でしか表面化しないため、回帰テスト V-7c は DB の値だけでなく `?category=` の検索結果も検算する |
+| `specs/multi-vendor-ecommerce/03-data-model.md` | Product のカテゴリ関係が「category と subcategory に属する」1 行だけだった。Phase A/B の 3 本の FK（root / leaf / 新 leaf の dual-write）と、Phase C（`SubCategory` 削除・`categoryNodeId` → `categoryId` rename で単一ノード参照）を段階ごとに明記 |
+
+#### 見送り（現行コードで無効）
+
+1. **`scripts/erd/parse-models.ts` の `isForeignKey` が常に false**: パーサは初期値を
+   `false` で置くが、`generate-erd.ts:969` の `markForeignKeys(models)` が生成パイプライン内で
+   確定させている（`generate-erd.ts:219`）。指摘中の `optionId` は `schema.prisma` に存在しない。
+2. **`render-html.ts` の 067-B コメントが未来日 2026-09-02**: 2026-09-02 は**発行日そのもの**で
+   未来日ではない。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2064 passed / 2067 total | **2065 passed / 2068 total** |
+| スイート数 | 193 | **193**（不変） |
+| Jest スナップショット | 127 | **127**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（15 warnings はすべて既存・変更ファイル外） |
+
+---
+
+### plan 068 の E2E 検証とドキュメント同期 (2026-09-03)
+
+#### 概要
+
+前セッションは plan 068（カテゴリツリーの admin 統合・リーフ強制）を Step 1–9 まで実装したが、
+E2E を**一度も実行しないままコミット**していた（`524ba258` が自らそう宣言していた）。CI は
+Playwright を回さないので、この spec は赤くならないまま「3 階層目を admin から作れる」という
+068 の中心的主張だけを無検証で保持していた。今セッションでそれを実行して緑にし、統計の伝播と
+ダッシュボード再生成を行った。**Phase C（不可逆）は未着手のまま**。
+
+#### E2E で見つかった欠陥（すべて spec 側。実装側の欠陥は無し）
+
+| # | 欠陥 | なぜ紛らわしかったか |
+|---|------|---------------------|
+| 1 | フィクスチャが `CategoryFormSchema` 違反。`name` は `^[a-zA-Z0-9\s]+$` でハイフンを弾くのに、slug 用の `Date.now()-乱数` を name にも流していた | `url` 側の規則は逆にハイフン区切りを**要求する**ため、同じ ID で片方だけ落ちる |
+| 2 | クライアントマウント前に `fill` していたため、react-hook-form の空 `defaultValues` が値を巻き戻した | 巻き戻るのは**制御 input だけ**。非制御の画像隠し入力と Radix Select の値は残るので「一部のフィールドだけ消える」形に見える |
+| 3 | Radix Select が開く際にポータルを作り直すため、option クリックが間欠的に `not stable` → `detached` | 1 回目の run では通っていた（間欠） |
+
+3 件とも**症状は `waitForURL` のタイムアウト**という同じ形で出た。原因から遠い位置で落ちるのを
+やめるため、送信直前に入力値を検算する assert を追加した。また `:3000` は別リポジトリのアプリが
+掴んでいることがあり（`reuseExistingServer` はポート応答しか見ない）、`PORT=3100 E2E_NO_REUSE=1`
+での隔離実行が必須であることを再確認した。
+
+#### 067-B「BLOCKED」の訂正
+
+引き継ぎは「`20260901223148_category_tree_phase_b_resync` が権限拒否で実 DB 未適用」と記録して
+いたが、`_prisma_migrations` を直接引くと `finished_at` = 2026-09-02T03:03:00Z /
+`rolled_back_at` = NULL で**適用済み**だった。`Product.categoryNodeId IS NULL` も 0 件 / 105 行。
+**Phase C に残るゲートはオペレーター承認のみ**である。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2072 passed / 2075 total | **2121 passed / 2124 total**（2026-09-03 実測） |
+| スイート数 | 194 | **194**（不変） |
+| Jest Integration | 131 / 15 スイート | **135 / 16 スイート** |
+| Playwright E2E | 65 tests/browser / 29 files | **66 tests/browser / 30 files**（chromium のみ緑を実測） |
+| lcov カバレッジ | Statements 70.51% (2026-08-23) | **72.45% (6395/8826)** / Branches 52.06% / Functions 60.73% / Lines 71.81%（2026-09-03） |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### SonarCloud PR#176 の指摘解消 + Coverage on New Code のギャップ埋め (2026-09-03)
+
+#### 概要
+
+SonarCloud PR#176（dev → main）が挙げた Issue 8 件を解消し、あわせて Coverage on New Code
+50.9% の主因だった plan 068 の UI 面（0% カバレッジの巨大フォーム 2 本ほか）をコンポーネント
+テストで埋めた。
+
+#### Sonar Issue の対応（作業ツリー・未コミット）
+
+| ファイル | 指摘 | 対応 |
+|------|---------|---------|
+| `src/queries/category.ts` | sort に比較関数が無い（Reliability High） | `compareIds`（UTF-16 コード単位順）を追加。**`localeCompare` は採用しない** —— ロック取得順の固定が目的であり、ICU のロケール設定に依存すると環境ごとに順序が割れて前提が崩れる |
+| `src/lib/category-path.ts` | 正規表現の super-linear バックトラッキング | `/^-+\|-+$/` → `/^-\|-$/`。直前の `[^a-z0-9]+` がハイフンの連続を 1 文字へ畳んでいるため出力は同一 |
+| `src/app/(store)/browse/page.tsx` | 認知的複雑度 45 → 15 | `toBrowseSearchParams` / `resolveCanonicalCategoryHref` / `toArrayParam` へ抽出。`permanentRedirect` は throw する副作用なので判定と分離して page 本体に残した |
+| `src/queries/category.ts` | 認知的複雑度 24 → 15 | `$transaction` のコールバック本体を `applyCategoryTreeUpsert` へ移し、ロック取得・親検証・子孫 rebase・別名記録をヘルパーへ分割 |
+| `src/app/dashboard/admin/categories/columns.tsx` | `.at(-2)` を使う | `segments.at(-2) ?? null` |
+| `src/components/dashboard/forms/product-details.tsx` | 未使用 import | `Textarea` を削除 |
+| `src/components/store/layout/footer/links.tsx` | props を read-only に | `Readonly<{ ... }>` |
+| `src/queries/product.ts` | optional chain を使う | `existingProduct?.categoryId !== ...` |
+
+#### 追加したテスト
+
+| ファイル | 件数 | 固定した内容 | コミット |
+|------|---------|------|---------|
+| `tests/component/store/footer-links.test.tsx` | 3 | `?category=<正準slug>` の href 形式（旧 `?subCategory=` へ戻ると 308 を 1 ホップ踏む） | `d2b6cbeb` |
+| `tests/component/store/footer.test.tsx` | 4 | 子ノード優先・無ければルートで埋めるフォールバックと 7 件上限 | `9efb08be` |
+| `tests/component/store/product-filters.test.tsx` | 3 | `storeUrl` の両クエリ伝播（落ちると店舗ページで全店舗のカテゴリが出る） | `0be7c434` |
+| `tests/component/store/category-link.test.tsx` | +3 | `?category=` 張り替えと旧 `subCategory` 除去、同一 slug 再クリックの早期リターン | `03812ca3` |
+| `tests/component/dashboard/category-details.test.tsx` | 13 | 親候補の絞り込み（自分自身 / 子孫 / depth 上限）、旧 url の正準化、送信 3 分岐 | `46abe694` |
+| `tests/component/dashboard/product-details.test.tsx` | 9 | `isProductAssignableCategory` の 2 条件、リーフからのルート `categoryId` 導出、送信 | `3fef0e45` |
+
+jsdom で動かないウィジェット（Jodit / react-tag-input / MultiSelect / DateTimePicker /
+Radix Select）は値を素通しする最小スタブへ差し替えた。**検証対象はフォームの配線であって
+ウィジェットではない**ため、実体を動かす必要がない。
+
+#### カバレッジの変化
+
+| 対象 | 変更前 | 変更後 |
+|------|--------|--------|
+| PR 新コードの未カバー行 | 141 | **38** |
+| `product-details.tsx` | 0% | **81.3%** |
+| `category-details.tsx` | 0% | **96.2%** |
+| `footer.tsx` / `links.tsx` / `filters.tsx` | 0〜94% | **100%** |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2129 passed / 2132 total | **2164 passed / 2167 total**（2026-09-03 実測） |
+| スイート数 | 194 | **199** |
+| Jest スナップショット | 127 | **127**（不変） |
+| テストファイル総数 | 240 | **245** |
+| lcov カバレッジ | Statements 72.45% / Branches 52.06% | **Statements 74.94%** (6617/8829) / **Branches 60.59%** (3183/5253) / Functions 64.36% / Lines 74.43% |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#176 Coverage on New Code の残ギャップ解消（2026-09-03）
+
+#### 概要
+
+SonarCloud PR#176 の Coverage on New Code に残っていた 2 ファイル
+（`product-details.tsx` / `category-details.tsx`）の未カバーを潰し、両者とも
+**行カバレッジ 100%** にした。残るのは分岐のみ。
+
+#### 根本原因
+
+未カバーの正体は**ロジックではなく「子ウィジェットへ渡した inline コールバック」**だった。
+`ImageUpload.onChange/onRemove`、`ImagesPreviewGrid.onRemove`、`ReactTags.handleAddition`、
+`DateTimePicker.onChange`、`MultiSelect.onChange`、`JoditEditor.onChange` は、いずれも
+jsdom で動かないウィジェットへ渡される。前回のスタブは `<div/>` を返すだけだったため、
+**コールバックが一度も発火せず**、フォーム側のハンドラが未実行のまま残っていた。
+
+対策は本物のウィジェットを動かすことではなく、**スタブ側にコールバック発火用の操作面
+（1 コールバック 1 ボタン）を持たせる**こと。検証対象はフォームの配線であってウィジェット
+ではない、という既存方針は維持している。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/dashboard/product-details.test.tsx` | +14 テスト。商品画像の追加/削除（3 枚未満で送信を止める）、バリアント画像の差し替え/除去、キーワードの追加・10 件上限・チップ削除、商品/バリアント説明エディタ、セール終了日の設定/クリア、無料配送国の選択/チップ削除 | `bcdf62f5` |
+| `tests/component/dashboard/category-details.test.tsx` | +1 テスト。`ImageUpload.onRemove` 後は `length(1)` 検証で送信させない | `5015eb07` |
+
+#### 副次的な知見
+
+Radix Tabs は `fireEvent.click` では切り替わらない（`activationMode="automatic"` で
+mousedown / focus 駆動）。バリアント説明タブの検証では `mouseDown` + `focus` が必要。
+
+#### カバレッジの変化
+
+| 対象 | 変更前 | 変更後 |
+|------|--------|--------|
+| `product-details.tsx` | line 81.3% / branch 88.0% | **line 100%** / branch 90.3% |
+| `category-details.tsx` | line 96.2% / branch 92.2% | **line 100%** / branch 92.2% |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2164 passed / 2167 total | **2179 passed / 2182 total**（2026-09-03 実測） |
+| スイート数 | 199 | **199**（不変） |
+| Jest スナップショット | 127 | **127**（不変） |
+| lcov カバレッジ | Statements 74.94% / Branches 60.59% / Functions 64.36% / Lines 74.43% | **Statements 75.33%** (6651/8829) / **Branches 60.8%** (3194/5253) / **Functions 65.9%** (1119/1698) / **Lines 74.81%** (6017/8043) |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### セール終了日が保存できない不具合の修正（2026-09-03）
+
+#### 概要
+
+上記カバレッジ作業でウィジェットのコールバックを初めて実行した結果、
+**セール終了日を設定・クリアすると商品の保存が黙って止まる**不具合を発見し修正した。
+
+#### 原因
+
+| 層 | 実態 |
+|---|---|
+| schema | `saleEndDate: z.string().datetime({ offset: true }).nullish()`（zod v3 はタイムゾーン省略を許さない。空文字も不可） |
+| 書き込み | `format(date, "yyyy-MM-dd'T'HH:mm:ss")` = オフセット無し / クリア時は `""` |
+| 表示 | 当該 `FormField` に `<FormMessage />` が無い |
+
+3 つが重なり、**バリデーションで送信が止まるのに画面には何も出ない**状態だった。
+`defaultValues` も同じ表記だったが、編集時は `form.reset(data)` が `undefined` を
+入れ直すため（`nullish()` で合法）、症状はユーザーが日付を触った時にだけ出ていた。
+
+#### 修正
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/product-details.tsx` | 保存値を `date.toISOString()` / `null` に変更。`defaultValues` も `toISOString()` へ。未使用になった `date-fns` の `format` import を削除 | `41afbc7f` |
+| `tests/component/dashboard/product-details.test.tsx` | 回帰テスト +2（設定して保存できる / クリアして保存できる） | `41afbc7f` |
+
+絶対時刻で保存することで、オフセット無し表記が JS で「閲覧者のローカル時刻」として
+解釈され、商品ページの `Countdown` が閲覧者の TZ ごとに違う終了時刻を出す問題も塞いだ。
+
+#### 残課題
+
+- 当該 `FormField` に `<FormMessage />` が無い点は未対応（今回は無効値を書かない側で修正）。
+- 既存 DB に旧形式（オフセット無し）の `saleEndDate` 行があると、編集画面から保存できない。
+  ただし書き込み経路は本フォームのみで、その経路は検証で塞がれていたため、
+  シードにも該当値は無く実データは存在しない見込み。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2179 passed / 2182 total | **2181 passed / 2184 total**（2026-09-03 実測） |
+| スイート数 | 199 | **199**（不変） |
+| lcov カバレッジ | Statements 75.33% / Lines 74.81% | **Statements 75.32%** (6650/8828) / **Branches 60.8%** (3194/5253) / **Functions 65.9%** (1119/1698) / **Lines 74.8%** (6016/8042) |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### CodeRabbit レビュー指摘の対応（2026-09-04）
+
+#### 概要
+
+CodeRabbit の指摘 12 件を現行コードに突き合わせて検証し、まだ有効な 9 件を修正した。
+**実バグは 1 件**（親候補の深さ判定）で、残りは型安全性・テスト基盤・ドキュメント同期。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/category-details.tsx` | 親候補フィルタに**編集対象のサブツリー高さ**を算入（`candidate.depth + 1 + height <= MAX_CATEGORY_DEPTH`）。従来は自ノードの収まりしか見ておらず、子孫を持つノードの編集で `upsertCategory` の V-7 が弾く親を提示していた。回帰テスト +1（旧実装で Red を確認） | `905082b8` |
+| `src/queries/product.ts` / `src/lib/category-path.ts` | `getProducts` の `whereClause: any` を `Prisma.ProductWhereInput` へ。**`subtreeOf` の `as const` readonly タプルが `CategoryWhereInput` に載らない型不整合が露見** —— カテゴリサブツリー絞り込みの where 断片はこれまで一度も型検査されていなかった | `27d592ff` |
+| `src/config/test-fixtures.ts` ほか | `createMockCategory` にツリー列を追加し `columns.test.tsx` の `as Category` を撤去。副次的に `category.test.ts` の期待値が実装（`childCount` を落とす）と食い違っていたことが判明し是正 | `ad5fdb6f` |
+| `tests/e2e/admin-category-tree.spec.ts` / `tests/e2e/seed/seed-e2e.ts` | 子孫を**深い順に逐次削除**（`onDelete: Restrict` は一括 `deleteMany` だと親→子の順に当たった時点で失敗する）。シードの root upsert が `update` 側でツリー列を書いておらず、再シート時に旧 `childCount` が残る件も修正 | `a84ac005` |
+| `tests/integration/category-tree-write.test.ts` | 接続数ガードを `>= 3` へ（外側 tx / 被検証側 / `pg_stat_activity` ポーリングで 3 本を同時に握る）。Scenario 5 はガード自体が欠けていた。`Date.now()` の複数回評価も 1 回に固定 | `fa554bae` |
+| `docs/PROGRESS.md` / `plans/README.md` | 統計の未同期（2129 → 2181）と、068 の E2E ステータス（`9034f300` で 3 ブラウザ緑）を反映 | 本コミット |
+
+#### 見送った指摘
+
+| 指摘 | 見送り理由 |
+|------|-----------|
+| `prisma/migrations/20260901223148_.../migration.sql` の 3 件（ON CONFLICT DO NOTHING / URL 交換順序 / ルート path 再計算） | **適用済みマイグレーションの編集は禁止**（`.claude/steering/tech.md` の禁止事項）。是正が要るなら補正マイグレーションを新規作成する |
+| `src/queries/product.ts:259` — `upsertSubCategory` が対になる Category ノードを作らない | 当該 Server Action に**呼び出し側が存在しない**（admin の subcategories ページは plan 068 で廃止済み）。Phase C で legacy テーブルごと消える経路であり、dual-write を足すのは方向が逆 |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2181 passed / 2184 total | **2182 passed / 2185 total**（2026-09-04 実測） |
+| スイート数 | 199 | **199**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### CodeRabbit レビュー指摘の対応（第 2 巡） (2026-09-04)
+
+#### 概要
+
+CodeRabbit のインラインレビュー 8 件を現行コードに突き合わせて検証し、5 件を修正・3 件を根拠付きで不採用とした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `docs/design/category-tree/design.md` | 店舗スコープ例の関係フィルタを旧 FK `products` → 新 FK `nodeProducts` に修正（実装との乖離） | `f506eb7c` |
+| `docs/migration/07-category-tree-phase-a-production.md` | Step 6.5〔最終リコンサイル〕を追加。書き込みゲート案は本書の目的（書き込みを止めない）と矛盾するため不採用 | `f506eb7c` |
+| `src/components/store/layout/footer/footer.tsx` | カテゴリ取得失敗を境界で catch し、リンク欄だけ空にして描画継続（+テスト 1） | `c3e06b89` |
+| `scripts/erd/parse-models.ts` | 行コメントを除去してからブロック属性を走査（コメント中の `@@id` / `@@unique` 誤検出）（+テスト 1） | `312ead8e` |
+| `tests/e2e/admin-category-tree.spec.ts` | teardown の `.catch(() => {})` を廃し、初回エラーを保持して後始末後に再 throw | `b55f2cf4` |
+
+#### 不採用とした指摘
+
+| 指摘 | 不採用の理由 |
+|------|-------------|
+| `20260901223148_category_tree_phase_b_resync` の `ON CONFLICT` を `DO NOTHING` へ | 適用済みマイグレーションの改変は禁止（tech.md 禁止事項）。挙動差はスラッグ再利用時のみで、必要なら補正マイグレーションを新設する |
+| `handleProductAndVariantUpdate` でリーフ検証を常時実行 | Phase B の経過措置として「カテゴリを変えない更新は素通し」が意図的な設計。常時化すると非リーフに紐づく既存商品の編集が不能になり、本番手順 Step 6 の STOP 計測が意味を失う |
+| Phase A 本番手順にアプリ書き込みゲートを導入 | 本手順は §1 のとおり書き込みを止めないための分岐経路。ゲートは目的そのものを打ち消す。取り残しは冪等 UPDATE の再実行（Step 6.5）で収束させる |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2182 passed / 2185 total | **2184 passed / 2187 total**（2026-09-04 実測） |
+| スイート数 | 199 | **199**（不変） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |

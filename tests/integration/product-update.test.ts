@@ -29,6 +29,8 @@ jest.mock("@clerk/nextjs/server", () => ({
 
 // ----------------------------------------------------------------------------
 
+import { randomUUID } from "node:crypto";
+
 import type { Product, ProductVariant, Size } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import type { ProductWithVariantType } from "@/lib/types";
@@ -352,5 +354,67 @@ describe("Scenario 5: transactional atomicity of the replacement", () => {
                 `ALTER TABLE "Spec" DROP CONSTRAINT IF EXISTS "${TMP_CONSTRAINT}"`
             );
         }
+    });
+});
+
+// ============================================================================
+// Scenario 6: カテゴリツリー FK の dual-write（plan 067 Phase B）
+// ============================================================================
+
+/**
+ * 読み取りは新 FK `categoryNodeId` へ切り替わっているが、旧 2 列（`categoryId` /
+ * `subCategoryId`）は Phase C（plan 068）まで書き続ける —— 旧列が生きている間だけ
+ * 読み取りを巻き戻せるためである。**片側だけ書く実装へ退行すると、症状は
+ * 「新しく作った商品だけが browse に出ない」という形でしか現れない**ので、
+ * 書き込み経路（create / update）の両方で 3 列が揃うことを実 DB で固定する。
+ */
+describe("Scenario 6: category tree FK dual-write", () => {
+    it("fills both the legacy subCategoryId and the new categoryNodeId on create", async () => {
+        // Arrange —— 未使用の id を渡して create 経路へ入れる
+        const { store, category, subCategory, seeded } = await arrangeSeller();
+        const newProductId = randomUUID();
+        const input = buildUpdateInput(seeded, {
+            productId: newProductId,
+            variantId: randomUUID(),
+            name: "Dual Write Product",
+            variantName: "Dual Write Variant",
+        });
+
+        // Act
+        await upsertProduct(input, store.url);
+
+        // Assert
+        const created = await db.product.findUniqueOrThrow({
+            where: { id: newProductId },
+        });
+        expect(created.categoryId).toBe(category.id);
+        expect(created.subCategoryId).toBe(subCategory.id);
+        // Phase A の不変条件（SubCategory と Category ノードの id 共有）により、
+        // 新 FK は旧 subCategoryId と同じ id を指す。
+        expect(created.categoryNodeId).toBe(subCategory.id);
+    });
+
+    it("keeps the two columns in step when the category changes on update", async () => {
+        // Arrange —— 別ツリーへの付け替え。旧列だけ動いて新 FK が取り残されると、
+        // 商品は「移動前のカテゴリで検索するとまだ出る」状態で固まる。
+        const { store, seeded } = await arrangeSeller();
+        const moved = await seedCategoryWithSubcategory(db);
+
+        // Act
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                categoryId: moved.category.id,
+                subCategoryId: moved.subCategory.id,
+            }),
+            store.url
+        );
+
+        // Assert
+        const updated = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+        });
+        expect(updated.categoryId).toBe(moved.category.id);
+        expect(updated.subCategoryId).toBe(moved.subCategory.id);
+        expect(updated.categoryNodeId).toBe(moved.childNode.id);
     });
 });

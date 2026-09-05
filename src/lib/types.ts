@@ -1,3 +1,4 @@
+import { CategoryTreeNode } from "@/lib/category-tree";
 import {
     getAllStoreProducts,
     getProductPageData,
@@ -425,6 +426,16 @@ export type FiltersQueryType = {
 export type CategoryWithSubsType = Category & {
     subCategories: SubCategory[];
 };
+
+/**
+ * `getAllCategories` が返すツリーノード（カテゴリツリー Phase B / plan 067）。
+ *
+ * 深さは固定されていない —— 2 段前提で書かれた描画（`category.subCategories.map`）は
+ * 3 階層目以降を取りこぼすため、消費側は再帰コンポーネントにすること。
+ * `CategoryWithSubsType` は Phase B の間だけ旧経路（home の featured カード等）が
+ * 使い続ける。統合は plan 068（Phase C）の担当。
+ */
+export type CategoryTreeType = CategoryTreeNode<Category>;
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
 

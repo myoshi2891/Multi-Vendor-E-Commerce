@@ -28,8 +28,10 @@ describe("scanTests", () => {
     it("Jest 用 *.test.ts / *.test.tsx を 'jest' kind として返す", async () => {
         // Arrange
         root = makeFixture({
-            "src/queries/user.test.ts": "describe('x', () => it.skip('y', () => {}));",
-            "src/components/foo.test.tsx": "describe('x', () => it('y', () => {}));",
+            "src/queries/user.test.ts":
+                "describe('x', () => it.skip('y', () => {}));",
+            "src/components/foo.test.tsx":
+                "describe('x', () => it('y', () => {}));",
             "src/components/foo.tsx": "export const X = 1;",
         });
 
@@ -256,6 +258,73 @@ describe("scanTests", () => {
         expect(results[0]?.testCount).toBe(5);
     });
 
+    // `\b(it|test)\s*\(` は `.` の直後の `test` にも一致するため、`RegExp.prototype.test`
+    // のようなメンバー呼び出しがテスト宣言として計上されていた
+    // （実例: tests/integration/category-tree-migration.test.ts の `/.../i.test(s)`）。
+    it("RegExp.prototype.test 等のメンバー呼び出しは testCount に数えない", async () => {
+        root = makeFixture({
+            "src/queries/member-call.test.ts": `
+                it('real case', () => {
+                    expect(/^CREATE\\b/i.test(sql)).toBe(false);
+                    expect(schema.test(value)).toBe(true);
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は `it('real case')` の 1 件だけ。`.test(` の 2 件は数えない。
+        expect(results[0]?.testCount).toBe(1);
+    });
+
+    // BLOCK_PATTERN と同じ穴が EACH_PATTERN 側にもあった。`\b` はドットと識別子の
+    // 境界でも成立するため、`schema.test.each(...)` のようなメンバー呼び出しが
+    // `test.each` の宣言として一致し、テーブル行数ぶん丸ごと過大計上されていた。
+    it("メンバー呼び出しの .test.each はテーブル展開として数えない", async () => {
+        root = makeFixture({
+            "src/queries/member-each.test.ts": `
+                it('real case', () => {
+                    const rows = schema.test.each([
+                        [1],
+                        [2],
+                        [3],
+                    ]);
+                    expect(rows).toBeDefined();
+                });
+            `,
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は `it('real case')` の 1 件だけ。`schema.test.each` の 3 行は数えない。
+        expect(results[0]?.testCount).toBe(1);
+    });
+
+    // 後読みが弾くべき「メンバー経由の test」は `.` だけではない。
+    //  - `this.#test(...)` … `test` の直前は `#`（`.` は `#` の手前にある）
+    //  - `obj["test"](...)` / obj[`test`](...) … 名前がリテラルの中に入る
+    // `#` を後読みへ足す前は 1 件目が宣言として計上されていた。
+    it("プライベート / 計算プロパティ経由の test は testCount に数えない", async () => {
+        root = makeFixture({
+            "src/queries/member-exotic.test.ts": [
+                "class Helper {",
+                "    #test(value) { return value; }",
+                "    run(value) { return this.#test(value); }",
+                "}",
+                "it('real case', () => {",
+                '    expect(schema["test"](1)).toBe(1);',
+                "    expect(schema[`test`](2)).toBe(2);",
+                "    expect(new Helper().run(3)).toBe(3);",
+                "});",
+            ].join("\n"),
+        });
+
+        const results = await scanTests(root);
+
+        // 宣言は `it('real case')` の 1 件だけ。
+        expect(results[0]?.testCount).toBe(1);
+    });
+
     // 空テーブルは実行時に 0 件へ展開される（Jest では空 each 自体がエラー扱い）。
     // 配列の開き括弧自身を「内容あり」と見なすと 1 件に化け、testCount が過大になる。
     it("空の it.each([]) は 0 件として数える", async () => {
@@ -414,7 +483,7 @@ describe("scanTests", () => {
         root = makeFixture({
             "src/lib/fixture-holder.test.ts": [
                 "const singleQuoted = 'it(\\'inner\\', () => {})';",
-                'const doubleQuoted = "test.skip(\'inner\', () => {})";',
+                "const doubleQuoted = \"test.skip('inner', () => {})\";",
                 "const templated = `it.each([[1], [2], [3]])('row=%s', () => {})`;",
                 "",
                 "it('the only real test', () => {});",
@@ -532,7 +601,7 @@ describe("scanTests", () => {
         // 上のテストが「常に false を返す」実装で緑にならないことを固定する。
         root = makeFixture({
             "src/lib/skip-in-code.test.ts": [
-                "const fixture = \"harmless string\";",
+                'const fixture = "harmless string";',
                 "",
                 "it.skip('really skipped', () => {});",
             ].join("\n"),
@@ -544,7 +613,9 @@ describe("scanTests", () => {
     });
 
     it("存在しない root では空配列を返す", async () => {
-        const result = await scanTests(join(tmpdir(), "definitely-not-exists-xyz"));
+        const result = await scanTests(
+            join(tmpdir(), "definitely-not-exists-xyz")
+        );
         expect(result).toEqual([]);
     });
 });

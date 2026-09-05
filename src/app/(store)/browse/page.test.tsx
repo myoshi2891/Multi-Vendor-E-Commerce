@@ -2,7 +2,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { redirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
+import { resolveCategoryNode } from "@/lib/category-tree";
 import { FiltersQueryType } from "@/lib/types";
 import { MAX_PAGE } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
@@ -18,6 +19,18 @@ jest.mock("next/navigation", () => ({
     redirect: jest.fn((url: string) => {
         throw new Error(`NEXT_REDIRECT:${url}`);
     }),
+    // 308（恒久）。307 の redirect とは別関数なので、取り違えを検出できるよう
+    // モックも別に置く。
+    permanentRedirect: jest.fn((url: string) => {
+        throw new Error(`NEXT_PERMANENT_REDIRECT:${url}`);
+    }),
+}));
+
+jest.mock("@/lib/category-tree", () => ({
+    resolveCategoryNode: jest.fn(),
+    // 境界判定は本物を使う（モックすると「親子でないなら畳まない」の検証が
+    // モックの都合で緑になり、実装の誤りを見逃す）。
+    isWithinSubtree: jest.requireActual("@/lib/category-tree").isWithinSubtree,
 }));
 
 // 子コンポーネントはページ側のロジック検証に不要（useSearchParams 等の client 依存を切る）
@@ -44,6 +57,8 @@ jest.mock("@/components/store/shared/product-list", () => ({
 
 const mockGetProducts = getProducts as jest.Mock;
 const mockRedirect = redirect as unknown as jest.Mock;
+const mockPermanentRedirect = permanentRedirect as unknown as jest.Mock;
+const mockResolveCategoryNode = resolveCategoryNode as jest.Mock;
 
 /**
  * searchParams のスタブ。Next.js は URL に無いキーを渡さないが、
@@ -86,7 +101,11 @@ describe("BrowsePage", () => {
         mockProductsResult(3, 10);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "2" })) }));
+        render(
+            await BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "2" })),
+            })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -103,7 +122,9 @@ describe("BrowsePage", () => {
         mockProductsResult(1, 5);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) }));
+        render(
+            await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -123,7 +144,9 @@ describe("BrowsePage", () => {
 
         // Act / Assert — redirect() は throw するため rejects で受ける
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "999" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "999" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         expect(parseRedirectUrl().get("page")).toBe("3");
@@ -181,7 +204,9 @@ describe("BrowsePage", () => {
         // Act
         render(
             await BrowsePage({
-                searchParams: Promise.resolve(makeQuery({ page: ["2", "999"] })),
+                searchParams: Promise.resolve(
+                    makeQuery({ page: ["2", "999"] })
+                ),
             })
         );
 
@@ -201,7 +226,9 @@ describe("BrowsePage", () => {
 
         // Act
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "5" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "5" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         // Assert
@@ -213,7 +240,11 @@ describe("BrowsePage", () => {
         mockProductsResult(0, 0);
 
         // Act
-        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "1" })) }));
+        render(
+            await BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "1" })),
+            })
+        );
 
         // Assert
         expect(mockRedirect).not.toHaveBeenCalled();
@@ -228,7 +259,9 @@ describe("BrowsePage", () => {
 
         // Act
         await expect(
-            BrowsePage({ searchParams: Promise.resolve(makeQuery({ page: "1e21" })) })
+            BrowsePage({
+                searchParams: Promise.resolve(makeQuery({ page: "1e21" })),
+            })
         ).rejects.toThrow("NEXT_REDIRECT");
 
         // Assert — クランプ後の MAX_PAGE で問い合わせ、表示は最終ページへ寄せる
@@ -292,5 +325,193 @@ describe("BrowsePage", () => {
             undefined,
             1
         );
+    });
+});
+
+// ==================================================
+// ?subCategory= の正準化（カテゴリツリー Phase B / plan 067）
+// ==================================================
+describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockResolveCategoryNode.mockResolvedValue(null);
+    });
+
+    it("?subCategory= を ?category=<正準slug> へ 308 で寄せる", async () => {
+        // Arrange —— リネーム済み slug が別名経由で正準ノードへ解決される
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? {
+                      id: "n1",
+                      path: "electronics/camera",
+                      url: "electronics-camera",
+                  }
+                : null
+        );
+
+        // Act / Assert —— 307 の redirect ではなく 308 の permanentRedirect を使う
+        await expect(
+            BrowsePage({
+                searchParams: Promise.resolve(
+                    makeQuery({ subCategory: "camera" })
+                ),
+            })
+        ).rejects.toThrow(
+            "NEXT_PERMANENT_REDIRECT:/browse?category=electronics-camera"
+        );
+        expect(mockRedirect).not.toHaveBeenCalled();
+    });
+
+    it("他のクエリパラメータを保ったまま寄せる", async () => {
+        // Arrange
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "e/camera", url: "camera" }
+                : null
+        );
+
+        // Act / Assert
+        await expect(
+            BrowsePage({
+                searchParams: Promise.resolve(
+                    makeQuery({ subCategory: "camera", sort: "most-popular" })
+                ),
+            })
+        ).rejects.toThrow(
+            "NEXT_PERMANENT_REDIRECT:/browse?sort=most-popular&category=camera"
+        );
+    });
+
+    it("category と subCategory が親子でない場合は寄せない（絞り込みを緩めない）", async () => {
+        // Arrange —— 2 つのサブツリーの積は「0 件」。畳むと sub の結果へ化ける。
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : { id: "n2", path: "toys", url: "toys" }
+        );
+        mockProductsResult(1);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({ category: "toys", subCategory: "camera" })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: "toys",
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
+        expect(screen.getByTestId("product-list")).toBeInTheDocument();
+    });
+
+    it("subCategory が親子関係にあるときは畳む（従来 UI が生成した組み合わせ）", async () => {
+        // Arrange
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : { id: "n2", path: "electronics", url: "electronics" }
+        );
+
+        // Act / Assert
+        await expect(
+            BrowsePage({
+                searchParams: Promise.resolve(
+                    makeQuery({
+                        category: "electronics",
+                        subCategory: "camera",
+                    })
+                ),
+            })
+        ).rejects.toThrow("NEXT_PERMANENT_REDIRECT:/browse?category=camera");
+    });
+
+    it("解決できない category では寄せない（fail-closed の 0 件を sub の結果へ化けさせない）", async () => {
+        // Arrange —— category は明示されているが解決できない。これを「未指定」に
+        // 丸めて畳むと、getProducts が返すはずの 0 件が sub の結果へ化ける。
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : null
+        );
+        mockProductsResult(0);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({ category: "renamed-away", subCategory: "camera" })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: "renamed-away",
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
+    });
+
+    it("category が配列なら寄せない（getProducts と同じ fail-closed 境界）", async () => {
+        // Arrange —— `?category=a&category=b` は解決できない指定として扱う。
+        mockResolveCategoryNode.mockImplementation(async (slug: string) =>
+            slug === "camera"
+                ? { id: "n1", path: "electronics/camera", url: "camera" }
+                : null
+        );
+        mockProductsResult(0);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({
+                    // Next.js は `?category=a&category=b` で string[] を渡すが、
+                    // FiltersQueryType は string 表現。実際の runtime 形を再現する。
+                    category: ["toys", "electronics"] as unknown as string,
+                    subCategory: "camera",
+                })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: ["toys", "electronics"],
+                subCategory: "camera",
+            }),
+            undefined,
+            1
+        );
+    });
+
+    it("解決できない subCategory では寄せず、getProducts の fail-closed に委ねる", async () => {
+        // Arrange
+        mockResolveCategoryNode.mockResolvedValue(null);
+        mockProductsResult(0);
+
+        // Act
+        const page = await BrowsePage({
+            searchParams: Promise.resolve(
+                makeQuery({ subCategory: "missing" })
+            ),
+        });
+        render(page);
+
+        // Assert
+        expect(mockPermanentRedirect).not.toHaveBeenCalled();
+        expect(mockGetProducts).toHaveBeenCalled();
     });
 });

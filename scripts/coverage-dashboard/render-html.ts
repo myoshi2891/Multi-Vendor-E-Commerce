@@ -223,17 +223,26 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     // 空メールの POST 不発は固定待機ではなく invalid イベント + expect.poll で決定化している
     // (checkValidity() は click 前でも false を返す純粋関数なので待ちの基準にならない)。
     // route 実装時は意図的に fail するので、成功系テストへ書き直すこと。残るのは 054 のみ。
-    {
-        priority: "medium",
-        title: "R9: E2E 残余ギャップ解消 (残り plan 054 — 先に plan 065 のレイアウト修正が要る)",
-        target: "(1) plans/065 — 商品詳細の右購入パネルが 1280px でクリップされるレイアウト欠陥の修正 (src/components/store/product-page/container.tsx)。(2) その後 plans/054 の残りである商品詳細の VRT ベースライン撮影 (browse は 2026-08-23 に完了)。完了分: 国選択 cookie 往復 (051)・a11y を browse・商品詳細・cart へ拡大 (052)・認証サーフェススモーク (053)・ゲストカート引き継ぎ (055)・Newsletter dormant 404 の characterization (056)。home の a11y は 052 の対象外で未着手 — 下の専用エントリを参照",
-        tool: "plans/065 (レイアウト修正) → plans/054 (VRT 撮影)。いずれも自己完結プラン (Sonnet 実行可・043 が先行済み・spec-sync 必須)",
-        cost: "S",
-        impact: "商品詳細の右パネル (Add to cart を含む) が 1280px でクリップされる欠陥は購買導線そのものの実害であり、plans/065 で単独に修正できる。修正後に撮影すれば壊れた見た目をベースラインに固定せずに済み、以後の UI 崩れをマージ前に阻止できる。browse 側は完了済み",
-    },
+    // 2026-08-31: R9 は閉じ切った。plans/065 (レイアウト修正・51c73e4c) で商品詳細の
+    // 右購入パネルのクリップを解消し (原因は情報+パネル行の `w-full` —— flex コンテナの
+    // 子における w-full は残余幅ではなく親幅に解決されるため画像 swiper と並ぶと必ず溢れる。
+    // min-w-0 flex-1 へ置換。1280px の実測は right=1434/clientWidth=1280 → right=1264)、
+    // 続けて plans/054 の残り (商品詳細の VRT ベースライン撮影・bb780b99) を実施した。
+    // 全 6 プランが DONE になったため本エントリと QA_HANDOFF の R9 プロンプト節を同時に削除した。
     // home の a11y spec は 052 の対象外。plan 052 本文は「home は OI-9 で対象外」と
     // していたが、OI-9 は 2026-06-06 に解消済みで、この記述は執筆時点の誤り。
     // 依存はゼロで、既存 tests/e2e/a11y/_helpers.ts の runA11yScan をそのまま使える。
+    // 067-B (plan 067 カテゴリツリー Phase B の残作業) は 2026-09-02 に完了
+    // (d7769375 footer / 171ac4fa 統合 V-1・V-6・3 階層 / c094f7d4 dual-write /
+    //  0ed9502a E2E V-2)。NEXT_ACTIONS からは削除した (QA_HANDOFF.md 側の 067-B 節は
+    //  「✅ 解消」の記録として残してある —— 前セッションが BLOCKED と誤記録した経緯を
+    //  追えるようにするため。依頼プロンプトとしては機能していないので G-2 の 1:1 対応の外)。
+    // 残っていた実 DB への migrate deploy も 2026-09-03 に解消した
+    // (20260901223148_category_tree_phase_b_resync は _prisma_migrations 上で
+    //  finished_at 2026-09-02 / rolled_back_at NULL の適用済み。前セッションが
+    //  「権限で BLOCKED」と記録したのは一時的な失敗の誤記録だった —— 経緯は
+    //  QA_HANDOFF.md の 067-B 節)。いずれもテストタスクではないため
+    // NEXT_ACTIONS には載せない。
     {
         priority: "medium",
         title: "home (/) の a11y spec 追加 (052 の残り 1 ページ)",

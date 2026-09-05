@@ -51,6 +51,11 @@ const BASE_E2E_SEED = {
     name: "E2E Subcategory",
     url: "e2e-subcategory",
     image: "/assets/images/no_image.png",
+    // カテゴリツリー移行（plan 066 A-3）で slug がリネームされたケースを再現する
+    // 旧 slug。`CategorySlugAlias`(SUB_CATEGORY) にだけ存在し、`Category.url` には
+    // 無い —— 旧 URL からの被リンクが 308 で正準ノードへ着地することを E2E で
+    // 検証するための素材（plan 067 V-2）。
+    legacyUrl: "e2e-subcategory-legacy",
   },
   product: {
     name: "E2E Test Product",
@@ -324,6 +329,7 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
     subCategory: {
       ...BASE_E2E_SEED.subCategory,
       url: withSuffix(BASE_E2E_SEED.subCategory.url, suffix),
+      legacyUrl: withSuffix(BASE_E2E_SEED.subCategory.legacyUrl, suffix),
     },
     product: {
       ...BASE_E2E_SEED.product,

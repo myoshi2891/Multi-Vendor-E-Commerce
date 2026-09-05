@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { ReviewDetailsType } from "@/lib/types";
-import { currentUser } from "@clerk/nextjs/server";
+import { requireUser } from "@/lib/auth-guards";
 
 /**
  * @name upsertReview
@@ -16,13 +16,12 @@ export const upsertReview = async (
 	productId: string,
 	review: ReviewDetailsType
 ) => {
+	// 認可ガードは try の外に置く（tech.md「認可ガード」）——
+	// 中に入れると catch が `Error updating review: <原文>` で包み、
+	// 呼び出し側が「未認証」と「DB 障害」を区別できなくなる。
+	const user = await requireUser()
+
 	try {
-        // Get current user
-        const user = await currentUser()
-
-        // Ensure user is authenticated
-        if (!user) throw new Error('Unauthorized.')
-
         // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードをオンデマンドで自動作成（フォールバック）。
         // findUnique → create の2段構えだと並行リクエスト時に unique 制約違反のレースが起きうるため、upsert でアトミック化する。
         const email = user.emailAddresses[0]?.emailAddress

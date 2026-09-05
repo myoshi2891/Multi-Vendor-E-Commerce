@@ -28,10 +28,15 @@ test.describe("検索・フィルタ", () => {
 
   test("カテゴリフィルタで絞り込まれる", async ({ page }) => {
     await page.goto("/browse");
+    // カテゴリは role=button + アクセシブルネームで指す。`label` 要素や
+    // 装飾クラス（内側ドットの bg-*）を掴むと、CategoryLink のマークアップ変更で
+    // 「機能は生きているのにセレクタだけが腐る」形で落ちる。
     // seed:e2e は全プロジェクト分の同名カテゴリを作成するため .first() で限定
-    const categoryLabel = page.locator("label").filter({ hasText: seed.category.name }).first();
-    await expect(categoryLabel).toBeVisible();
-    await categoryLabel.click();
+    const categoryButton = page
+      .getByRole("button", { name: seed.category.name })
+      .first();
+    await expect(categoryButton).toBeVisible();
+    await categoryButton.click();
     // カテゴリパラメータが URL に反映されることを確認
     await page.waitForURL(/[?&]category=/, { timeout: 5000 });
     await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
@@ -43,11 +48,11 @@ test.describe("検索・フィルタ", () => {
     await expect(searchInput).toBeVisible();
     await expect(searchInput).toHaveValue(productName);
 
-    // カテゴリが選択されていることを、アクティブインジケータ（内側ドット）の存在で確認
-    // 同名カテゴリが複数存在するため、アクティブインジケータを持つラベルで限定
-    const activeCategory = page.locator("label")
-      .filter({ hasText: seed.category.name })
-      .filter({ has: page.locator("div.rounded-full.bg-black") });
+    // 選択状態は aria-pressed で確認する（内側ドットは装飾であり、色クラスを
+    // 変えただけで落ちる）。同名カテゴリが複数存在するため、押下状態で限定する。
+    const activeCategory = page
+      .getByRole("button", { name: seed.category.name, pressed: true })
+      .first();
     await expect(activeCategory).toBeVisible({ timeout: 10000 });
   });
 
@@ -57,6 +62,32 @@ test.describe("検索・フィルタ", () => {
     await searchInput.fill("NonExistentProductxyz123");
     await searchInput.press("Enter");
     await expect(page.getByText(/No Products/i)).toBeVisible({ timeout: 10000 });
+  });
+
+  test("旧 ?subCategory= が 308 で正準ノードへ着地する", async ({ page }) => {
+    // plan 067 V-2。旧 URL は**恒久的に受理し続ける**（外部被リンクを切らない）が、
+    // 正準 URL へ 308 で寄せる。307 では検索エンジンに正準 URL が伝わらない。
+    const canonical = seed.subCategory.url;
+
+    for (const slug of [canonical, seed.subCategory.legacyUrl]) {
+      // maxRedirects: 0 で自動追従を止め、ステータスと Location を直接見る。
+      // page.goto では最終 URL しか見えず、308 と 302 の区別が付かない。
+      const response = await page.request.get(
+        `/browse?subCategory=${encodeURIComponent(slug)}`,
+        { maxRedirects: 0 }
+      );
+      expect(response.status()).toBe(308);
+      // 行き先は**正準 slug**。legacyUrl は Category.url に存在せず
+      // CategorySlugAlias 経由でしか解決できないので、別名表を引く経路の検証になる。
+      expect(response.headers()["location"]).toContain(
+        `category=${encodeURIComponent(canonical)}`
+      );
+    }
+
+    // 追従後に商品が実際に表示されること（308 の行き先が 0 件に化けていない）。
+    await page.goto(`/browse?subCategory=${encodeURIComponent(seed.subCategory.legacyUrl)}`);
+    await expect(page).toHaveURL(new RegExp(`[?&]category=${canonical}(&|$)`));
+    await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("ページネーションで次ページに遷移できる", async ({ page }) => {

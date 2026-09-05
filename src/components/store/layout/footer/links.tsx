@@ -1,17 +1,36 @@
-import { SubCategory } from "@prisma/client";
 import Link from "next/link";
 
-export default function Links({ subs }: { subs: SubCategory[] }) {
+/** footer が描くカテゴリリンク 1 件分。ツリーの内部表現は持ち込まない。 */
+export interface FooterCategoryLink {
+	id: string;
+	name: string;
+	/** 正準 slug（`Category.url`）。旧 `SubCategory.url` ではない */
+	url: string;
+}
+
+/**
+ * Renders the footer link columns.
+ *
+ * カテゴリリンクは `?category=<正準slug>` を生成する。カテゴリツリー Phase B
+ * （plan 067）以前は旧 `SubCategory.url` を `?subCategory=` に載せていたため、
+ * /browse 側の 308 正準化を毎回 1 ホップ踏んでいた。**渡ってくる url が
+ * `Category` 由来の正準 slug であることが前提**で、旧 `SubCategory.url` を
+ * そのまま `?category=` に載せてはならない（移行時にリネームされた slug は
+ * CATEGORY 別名では解決できず 0 件になる）。
+ */
+export default function Links({
+	categories,
+}: Readonly<{ categories: FooterCategoryLink[] }>) {
 	return (
 		<div className="mt-5 grid gap-4 text-sm md:grid-cols-3">
-			{/* SubCategories */}
+			{/* Categories */}
 			<div className="space-y-4">
 				<h1 className="text-lg font-bold">Find it Fast</h1>
 				<ul className="flex flex-col gap-y-1">
-					{subs.map((sub) => (
-						<li key={sub.id}>
-							<Link href={`/browse?subCategory=${sub.url}`}>
-								<span>{sub.name}</span>
+					{categories.map((category) => (
+						<li key={category.id}>
+							<Link href={`/browse?category=${category.url}`}>
+								<span>{category.name}</span>
 							</Link>
 						</li>
 					))}

@@ -4,9 +4,13 @@ import { db } from "@/lib/db";
 import { ShippingRateInput, StoreDefaultShippingInput, StoreStatus, StoreType } from "@/lib/types";
 
 // Clerk
-import { currentUser } from "@clerk/nextjs/server";
 // 認可ガード (src/lib/auth-guards.ts) 経由でロール+店舗所有権を集約する
-import { requireStoreOwner } from "@/lib/auth-guards";
+import {
+    requireAdmin,
+    requireSeller,
+    requireStoreOwner,
+    requireUser,
+} from "@/lib/auth-guards";
 
 // Prisma models
 import { ShippingRate, Store } from "@prisma/client";
@@ -66,17 +70,11 @@ function pickSellerEditableStoreFields<T extends object>(
 // - store: Store object containing details of the store to be upserted.
 // Returns: Updated or newly created store details.
 export const upsertStore = async (store: Partial<Store>) => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireSeller();
+
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify seller permission
-        if (user.privateMetadata.role !== "SELLER")
-            throw new Error("Only sellers can perform this action.");
-
         // Ensure store data is provided
         if (!store) throw new Error("Please provide store data.");
 
@@ -458,13 +456,11 @@ export const getStoreOrders = async (storeUrl: string) => {
  * @throws {Error} - When user is unauthenticated, store data is missing, or store with same details already exists
  */
 export const applySeller = async (store: StoreType) => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    const user = await requireUser();
+
     try {
-        // Get current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
         // Ensure store data is provided
         if (!store) throw new Error("Please provide store data.");
 
@@ -538,17 +534,11 @@ export const applySeller = async (store: StoreType) => {
  * @return {Array} - Array of store objects.
  * */
 export const getAllStores = async () => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    await requireAdmin();
+
     try {
-        // Ensure user is authenticated
-        const user = await currentUser();
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Verify admin permission
-        if (user.privateMetadata.role !== "ADMIN")
-            throw new Error(
-                "Unauthorized Access: Admin Privileges Required to View Stores."
-            );
-
         // Fetch all stores
         const stores = await db.store.findMany({
             include: {
@@ -585,17 +575,11 @@ export const updateStoreStatus = async (
     storeId: string,
     status: StoreStatus
 ) => {
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    await requireAdmin();
+
     try {
-        // Retrieve the current user
-        const user = await currentUser();
-
-        // Ensure user is authenticated
-        if (!user) throw new Error("Unauthenticated.");
-
-        // Ensure user has admin privileges
-        if (user.privateMetadata.role !== "ADMIN")
-            throw new Error("Only admins can perform this action.");
-
         // Ensure the user is a seller of the specified store
         // 存在確認のみ。オーナーのロールは tx 内でロック後に読み直す
         // （tx 外のスナップショットを昇格判定に使わない）。
@@ -718,12 +702,11 @@ export const updateStoreStatus = async (
  * @throws {Error} - When user is unauthenticated, lacks admin privileges, or store ID is not provided
  */
 export const deleteStore = async (storeId: string) => {
-    try {
-        const user = await currentUser();
+    // 認可ガードは try の外に置く（tech.md「認可ガード」）——
+    // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
+    await requireAdmin();
 
-        if (!user) throw new Error("Unauthenticated.");
-        if (user.privateMetadata.role !== "ADMIN")
-            throw new Error("Only admins can perform this action.");
+    try {
         if (!storeId) throw new Error("Please provide store ID.");
 
         // Soft delete - mark as deleted instead of removing
