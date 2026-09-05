@@ -409,7 +409,18 @@ Q2-1 でグローバル一意を維持したため、**フラット slug のま�
 > 始めた直後に祖先が動かされると、2 周目の読み直しで初めて子孫が候補に加わる。この
 > 掴み直しだけは自ノードより後に低い id を取り得る。`path` の整合性は収束ループが
 > 保証する（子孫は必ず掴んでから rebase する）が、この稀な経路では `40P01` があり得る。
-> 塞ぐなら `upsertCategory` の `$transaction` 全体を `40P01` で再試行する。
+>
+> **この窓は `upsertCategory` の `$transaction` 全体を `40P01` で再試行して塞いである**
+> （`retryOnDeadlock` / `src/lib/db-retry.ts`）。PostgreSQL は検出時に片方の
+> **トランザクション全体**を abort するため部分適用は残らず、掴み直しからやり直せば
+> 収束する。再試行は**トランザクション単位**でなければならない —— 内側だけを
+> やり直しても、既に取得済みのロックは掴み直せない。
+>
+> 直列化異常（`P2034` = SQLSTATE `40001`）用の `retryOnSerializationFailure` とは
+> **述語を分けてある**。原因（ロック順の交差 / Serializable の競合）も前提の分離レベルも
+> 異なり、1 つに畳むと運用側からどちらが起きたのか判別できなくなる。上限（既定 3 回）に
+> 達したら最後の `40P01` をそのまま投げ返す。検証は `src/queries/category.test.ts` の
+> 「並行編集でデッドロックした移動の再試行」。
 
 <!-- -->
 
@@ -495,16 +506,47 @@ model Product {
 
 Phase A のデータ移行のみ抜粋（DDL は Prisma のマイグレーションが生成する）。
 
+> **適用前提: 旧 writer を止めて drain し切ってから流すこと。**
+> Phase A のマイグレーションはデータ移動（A-1〜A-6）の直後に
+> `ALTER TABLE "Category" ALTER COLUMN "path" SET NOT NULL` まで進む。旧 build は
+> `Category` / `SubCategory` を `path` / `depth` を**書かずに** INSERT するため、
+> 移行の実行中に 1 件でも書き込みが通ると次の 2 つの形で壊れる:
+>
+> - `Category` の新規行 → `path` が NULL のまま残り、**`SET NOT NULL` がその場で失敗**して
+>   マイグレーション全体が abort する。
+> - `SubCategory` の新規行 → A-3 のループを通過済みなので `Category` へ取り込まれず、
+>   Phase B の読み取り（prefix 検索）から**静かに落ちる**。
+>
+> したがって適用手順は次のいずれか:
+>
+> 1. 旧 `Category` / `SubCategory` writer を全インスタンス停止し、**drain 完了を確認してから**
+>    マイグレーションを流す（ローリング更新なら旧 pod が 0 になるまで待つ）。
+> 2. あるいは先に dual-write build を配備して旧リビジョンを drain し切り、その後で流す
+>    （plan 067 の切替ゲートと同じ順序）。
+>
+> **マイグレーションファイル側では強制できない** —— 適用中の書き込みを DB 単体で締め出すには
+> テーブルロックが要り、それは「移行中は書き込みが止まる」ことを意味するので、
+> 停止時間の判断は運用側に置く。チェックイン済みの
+> `prisma/migrations/20260831102943_category_tree_phase_a/migration.sql` は変更しない
+> （[`tech.md`](../../../.claude/steering/tech.md) の「既存マイグレーションを編集しない」）。
+
 ```sql
 -- A-0: slug 文字集合の事前検証（Q1 の制約が既存行で成立しているかを確認する）。
 --      A-1 は url をそのまま path へ写すため、ここに `/` `%` `_` や大文字が混ざっていると
 --      subtreeOf の prefix 境界（Q1）が壊れたまま移行が完了してしまう。
---      **0 件でなければ A-1 を実行してはならない。**
+--      **`Category` だけでは足りない。** A-3 は `SubCategory.url` を子ノードの slug として
+--      そのまま `<親path>/<slug>` へ書くため、`SubCategory` 側に混入していれば同じように
+--      境界が壊れる。**2 本とも 0 件でなければ A-1 を実行してはならない。**
 --      違反行は正規化（小文字化・記号を `-` へ畳む）または Q2-2 と同じ規則でリネームし、
---      旧 slug は CategorySlugAlias（CATEGORY）へ登録して到達性を保つこと。
-SELECT id, url FROM "Category"
+--      旧 slug は CategorySlugAlias へ登録して到達性を保つこと。登録時の scope は
+--      **由来テーブルに合わせる** —— Category 由来は `CATEGORY`、SubCategory 由来は
+--      `SUB_CATEGORY`（キーが (entityType, oldSlug) なので、同名 slug でも共存できる。Q2-3）。
+SELECT 'CATEGORY' AS scope, id, url FROM "Category"
 WHERE url !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
-ORDER BY "createdAt" ASC, id ASC;
+UNION ALL
+SELECT 'SUB_CATEGORY' AS scope, id, url FROM "SubCategory"
+WHERE url !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+ORDER BY scope ASC, id ASC;
 
 -- A-1: 既存 Category をルート化（A-0 が 0 件であることを確認してから実行する）
 UPDATE "Category" SET "path" = "url", "depth" = 0 WHERE "parentId" IS NULL;
