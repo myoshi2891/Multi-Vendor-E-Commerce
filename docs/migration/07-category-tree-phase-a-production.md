@@ -361,7 +361,21 @@ COMMIT;
 -- 戻ったことを確認してから次へ進む。**一致するまでマーカーは落とさない**
 -- （不一致のときに何を消し損ねたかを引ける唯一の手掛かりであるため）。
 SELECT count(*) AS category_rows FROM "Category";
+```
 
+> **⛔ STOP — ここで人間の確認が要る。**
+> `category_rows` が Step 0 の `category_rows_baseline` と**一致することを目視で確認する**
+> まで、次のブロックを実行してはならない。不一致は「複製行を消し損ねた」または
+> 「消しすぎた」を意味し、次のブロックの `DROP COLUMN` / `DROP TYPE` は
+> **元に戻せない**（`path` / `depth` / `parentId` の値はダンプからしか復元できない）。
+>
+> このため列削除は**別スクリプトとして分けてある**。`psql -f` で上のブロックと
+> 続けて流さないこと —— 1 ファイルにまとめると、検証 SELECT の結果を誰も見ないまま
+> 破壊的 DDL まで到達する経路ができる。
+
+一致を確認できたら、次のブロックを**別途**実行する:
+
+```sql
 ALTER TABLE "Category" DROP CONSTRAINT IF EXISTS "Category_parentId_fkey";
 ALTER TABLE "Category" DROP COLUMN IF EXISTS "parentId",
                        DROP COLUMN IF EXISTS "path",
