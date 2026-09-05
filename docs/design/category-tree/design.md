@@ -569,17 +569,35 @@ UPDATE "Product" SET "categoryNodeId" = "subCategoryId";
 テーブルへ行を**追加**しているため、列を落としても複製行が残り、元の Category データと
 混在したままになる。逆マイグレーションは**複製行を識別して削除する**こと:
 
-```sql
--- A-3 の複製行だけを消す。id を流用しているので SubCategory と id で照合できる。
--- parentId IS NOT NULL だけを条件にしない（将来 admin が作った子まで巻き込むため）。
-DELETE FROM "Category" c
-WHERE c."parentId" IS NOT NULL
-  AND EXISTS (SELECT 1 FROM "SubCategory" s WHERE s.id = c.id);
+**照合先は「現在の `SubCategory` 行」ではなく「移行済み id の記録」であること。**
+A-3 は id を流用するので `SubCategory` との join は一見すると同定手段に見えるが、その
+対応は**移行時点のスナップショットでしか成立しない** —— 移行後に `SubCategory` が
+1 行でも削除されていると、対応する複製 `Category` 行は join に掛からず**残留**し、
+ロールバック後の件数が移行前のベースラインに戻らない。A-4 の別名表が
+`entityType = 'SUB_CATEGORY'` の `categoryId` として移行済み id を保持しているので、
+これを恒久マーカーへ写し取ってから消す:
 
--- 参照している別名も落とす（categoryId の FK が残らないように先/同時に）
+```sql
+-- 1) 移行済み id を、別名表を消す前にマーカーへ確保する
+CREATE TABLE IF NOT EXISTS "PhaseARollbackMirror" ("categoryId" TEXT PRIMARY KEY);
+INSERT INTO "PhaseARollbackMirror" ("categoryId")
+SELECT "categoryId" FROM "CategorySlugAlias" WHERE "entityType" = 'SUB_CATEGORY'
+ON CONFLICT DO NOTHING;
+
+-- 2) 別名を落とす（categoryId の FK が残らないように Category より先）
 DELETE FROM "CategorySlugAlias" a
-WHERE a."entityType" = 'SUB_CATEGORY'
-  AND EXISTS (SELECT 1 FROM "SubCategory" s WHERE s.id = a."categoryId");
+ USING "PhaseARollbackMirror" m
+ WHERE a."entityType" = 'SUB_CATEGORY' AND a."categoryId" = m."categoryId";
+
+-- 3) A-3 の複製行だけを、マーカーを使って消す
+DELETE FROM "Category" c
+ USING "PhaseARollbackMirror" m
+ WHERE c.id = m."categoryId";
+
+-- 4) 件数が移行前のベースラインへ戻ったことを確認する。
+--    一致するまでマーカーは落とさない（消し損ねを引ける唯一の手掛かりであるため）。
+SELECT count(*) AS category_rows FROM "Category";
+-- 一致を確認してから: DROP TABLE "PhaseARollbackMirror";
 ```
 
 削除順は FK に従い、`CategorySlugAlias` → `Category` の順（`Product.categoryNodeId` は

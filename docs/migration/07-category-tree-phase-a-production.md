@@ -160,6 +160,42 @@ psql "$DIRECT_URL" -v ON_ERROR_STOP=1 --single-transaction -f /tmp/phase-a-data-
 
 区間は冪等（V-3）なので、中断したら**そのまま再実行してよい**。
 
+> **前提条件（`Category` / `SubCategory` の書き込み窓）。** §1 が止めないと約束しているのは
+> **`Product` の書き込み**であって、**カテゴリ自体の編集ではない**。A-3 が走った後に
+> 旧リビジョンの admin が
+>
+> - **`SubCategory` を新規作成する** と、その行には対応する `Category` の複製が作られず、
+>   ツリーから**黙って欠落**する（A-3 は 1 度しか走らないため、後から自然には埋まらない）
+> - **`Category` を新規作成する** と、旧コードは `path` / `depth` を書かないので
+>   `path IS NULL` の行が生まれ、直下の `SET NOT NULL` が**失敗する**
+>
+> したがって **A-3 から Step 7 までの区間は、次のどちらかを満たすこと**:
+>
+> - **(a) `Category` / `SubCategory` への書き込みを止め、旧リビジョンを drain し切る**、または
+> - **(b) 複製と別名（`Category` 行と `CategorySlugAlias`）を同時に書く dual-write ビルドを
+>   デプロイし、旧リビジョンが完全に drain し切っている**
+>
+> `Product` 側と違い、こちらは**カテゴリ編集を止めれば足りる**（商品の書き込みは止まらない）ので、
+> 通常は (a) が現実的である。中断して再開する場合は、**A-3 は冪等なので Step 5 を丸ごと
+> 再実行してよい** —— 窓の間に生えた `SubCategory` はその再実行で取り込まれる。
+
+`path` を締める前に、**窓の間に取り残しが生まれていないこと**を確認する:
+
+```sql
+-- (1) path が埋まっていない Category 行（旧リビジョンの書き込み残り）
+SELECT count(*) AS categories_without_path FROM "Category" WHERE "path" IS NULL;
+
+-- (2) 複製が作られていない SubCategory（A-3 の後に生えた行）
+SELECT count(*) AS unmirrored_subcategories
+  FROM "SubCategory" s
+ WHERE NOT EXISTS (SELECT 1 FROM "Category" c WHERE c.id = s.id);
+```
+
+**両方が 0 でなければ先へ進まない。** 0 でない場合は上の前提条件が崩れている
+（カテゴリ編集がまだ生きている）ので、書き込みを止めたうえで Step 5 を再実行し、
+再度この 2 本を流して 0 を確認すること。`SET NOT NULL` は (1) が 0 でなければ
+どのみち失敗するが、(2) は**失敗せず静かに欠落する**ため、この検査でしか捕まらない。
+
 続けて `path` を締める:
 
 ```sql
@@ -275,13 +311,28 @@ SELECT count(*) AS products_on_mirror_rows
 
 ALTER TABLE "Product"  DROP CONSTRAINT IF EXISTS "Product_categoryNodeId_fkey";
 ALTER TABLE "Product"  DROP COLUMN     IF EXISTS "categoryNodeId";
-DROP TABLE  IF EXISTS "CategorySlugAlias";
 
--- Step 5 が投入した SubCategory 複製行を除去する（列を落とすと識別できなくなる）
-DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;
+-- Step 5 が投入した複製行の id を、**消す前に**恒久マーカーへ書き出す。
+-- A-4 の別名表は 'SUB_CATEGORY' 行の categoryId として「取り込んだ SubCategory の id」を
+-- 保持しており（A-3 が id を流用するため両者は同一）、これが移行済み id の記録である。
+CREATE TABLE IF NOT EXISTS "PhaseARollbackMirror" ("categoryId" TEXT PRIMARY KEY);
+INSERT INTO "PhaseARollbackMirror" ("categoryId")
+SELECT "categoryId" FROM "CategorySlugAlias" WHERE "entityType" = 'SUB_CATEGORY'
+ON CONFLICT DO NOTHING;
+
+DROP TABLE IF EXISTS "CategorySlugAlias";
+
+-- Step 5 が投入した SubCategory 複製行を、上のマーカーを使って除去する。
+-- **現在の "SubCategory" 行と突き合わせてはならない** —— 移行後に SubCategory が
+-- 1 行でも削除されていると、その複製 Category 行は join に掛からず**残留**し、
+-- 下のベースライン照合が合わなくなる（かつ列を落とした後では識別不能になる）。
+DELETE FROM "Category" c
+ USING "PhaseARollbackMirror" m
+ WHERE c.id = m."categoryId";
 
 -- 件数が Step 0 で控えた移行前のベースライン（category_rows_baseline）に
--- 戻ったことを確認してから次へ進む
+-- 戻ったことを確認してから次へ進む。**一致するまでマーカーは落とさない**
+-- （不一致のときに何を消し損ねたかを引ける唯一の手掛かりであるため）。
 SELECT count(*) AS category_rows FROM "Category";
 
 ALTER TABLE "Category" DROP CONSTRAINT IF EXISTS "Category_parentId_fkey";
@@ -291,6 +342,13 @@ ALTER TABLE "Category" DROP COLUMN IF EXISTS "parentId",
                        DROP COLUMN IF EXISTS "childCount",
                        DROP COLUMN IF EXISTS "sortOrder";
 DROP TYPE IF EXISTS "CategoryAliasSource";
+```
+
+`category_rows` が `category_rows_baseline` と一致したことを確認できたら、
+最後にマーカーを片付ける（一致するまでは残しておくこと）:
+
+```sql
+DROP TABLE IF EXISTS "PhaseARollbackMirror";
 ```
 
 > 上の `products_on_mirror_rows` が 0 でない場合は、**まだ Phase B/C の書き込み経路が
