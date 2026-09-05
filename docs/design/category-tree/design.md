@@ -130,7 +130,10 @@ URL の形が変わり 0-10 の互換が崩れる / **`parentId = NULL` のル�
 1. 衝突組のうち **SubCategory 由来の側**をリネームする（上位 URL を温存）。
 2. 新 slug = `${親slug}-${旧slug}`。なお衝突する場合は `-2`, `-3`, … と**最初の空き番号**を昇順採用。
 3. 処理順は `ORDER BY "createdAt" ASC, "id" ASC` に固定（決定論性）。
-4. `CategorySlugAlias` 行は `(entityType, oldSlug)` で **upsert**（冪等性 — 再実行で同結果）。
+4. `CategorySlugAlias` 行は `(entityType, oldSlug)` で **投入**する（冪等性 — 再実行で同結果）。
+   `SUB_CATEGORY` は **`DO NOTHING`（先着優先）**。所有者を書き換えると、旧 slug を
+   再利用したノードへ生きた `?subCategory=` リンクが黙って 308 される（Q2-3 の解決順序が
+   別名を先に引くため）。アプリ側の書き込み経路も `skipDuplicates: true` で同じ規則。
 
 > **`id` 衝突は考えなくてよい。** 両テーブルとも `@default(uuid())` であり実質起こらない。
 > 実際に起きるのは **slug 衝突**である。
@@ -374,23 +377,30 @@ Q2-1 でグローバル一意を維持したため、**フラット slug のま�
 > 収束する）。収束しない場合は
 > `"The category tree is being modified concurrently. Please retry."` で失敗させ、
 > 中途半端な `path` を書かない。実装は `src/queries/category.ts` の
-> `lockCategoryNodesForUpdate` / `lockDescendantsForUpdate`。
+> `acquireCategoryTreeLocks` / `lockCategoryNodesForUpdate`。
 >
-> **残るデッドロックの窓（既知・未解消）。** 実装は上の 3 種を *2 フェーズ*で掴む ——
-> `acquireCategoryTreeLocks` が「自ノード + 旧親 + 新親」を id 昇順で掴み、その後
-> `lockDescendantsForUpdate` が子孫を id 昇順で掴む。**各フェーズ内は昇順でも、
-> 2 フェーズを合わせた取得順は昇順にならない**（子孫の id は自ノードより小さくなり得る）。
-> したがって「X を動かす側」と「X の子 D を subtree の外へ動かす側」が
-> 逆順で出会い得る: 前者は X を掴んで D を待ち、後者は D（自ノード）を掴んで
-> X（旧親）を待つ。PostgreSQL のデッドロック検出が片方を `40P01` で abort するため
-> **不整合な `path` は書かれない**が、admin には失敗として見える。
+> **なぜ 1 回の昇順で掴み切るのか（旧実装のデッドロック窓）。** 初期の実装は上の 3 種を
+> *2 フェーズ*で掴んでいた —— 「自ノード + 旧親 + 新親」を id 昇順で掴み、その後
+> 子孫を id 昇順で掴む。**各フェーズ内は昇順でも、2 フェーズを合わせた取得順は昇順に
+> ならない**（子孫の id は自ノードより小さくなり得る）。したがって「X を動かす側」と
+> 「X の子 D を subtree の外へ動かす側」が逆順で出会えた: 前者は X を掴んで D を待ち、
+> 後者は D（自ノード）を掴んで X（旧親）を待つ。PostgreSQL のデッドロック検出が片方を
+> `40P01` で abort するため**不整合な `path` は書かれない**が、admin には理由の分からない
+> 失敗として見える。
 >
-> 恒久解は 2 つ。(a) 候補集合（自ノード・旧親・新親・**移動時は子孫**）を
-> **1 回の id 昇順**で掴み切る（`current.path` は先に非ロックで読めるので候補は算出できる。
-> ロック後の読み直しで集合が増えたら既存の収束ループで掴み直す）、
-> (b) `upsertCategory` の `$transaction` 全体を `40P01` で再試行する。
-> **どちらも未実装**であり、V-7e の統合テスト（Scenario 5）は子孫側を生の `$transaction`
-> で再現しているため、この経路（両側が `upsertCategory`）を覆っていない。
+> 現在の `acquireCategoryTreeLocks` は候補集合（自ノード・旧親・新親・**移動時は子孫**）を
+> **1 つの id 昇順集合**として掴み切る。候補の算出に必要な `current.path` と親の `path` は
+> 先に非ロックで読めるので、掴む前に集合を確定できる。子孫を候補へ入れる条件は
+> 「`current.path` が**これから書く path** と異なる」——url 変更・親の付け替えに加えて
+> 「祖先が並行して動かされた」場合も同じ 1 本の条件で拾え、属性だけの編集
+> （name / image / featured）では subtree 全体を掴まない。V-7e の統合テストは
+> Scenario 6 でこの経路を固定している（旧実装では `40P01` で赤くなる）。
+>
+> **残る窓（既知）。** 1 周目の候補算出は非ロック読みなので、「属性だけの編集」を
+> 始めた直後に祖先が動かされると、2 周目の読み直しで初めて子孫が候補に加わる。この
+> 掴み直しだけは自ノードより後に低い id を取り得る。`path` の整合性は収束ループが
+> 保証する（子孫は必ず掴んでから rebase する）が、この稀な経路では `40P01` があり得る。
+> 塞ぐなら `upsertCategory` の `$transaction` 全体を `40P01` で再試行する。
 
 <!-- -->
 
@@ -531,9 +541,11 @@ END
 $$;
 
 -- A-4: エイリアス投入（冪等 — Q2-2 の 4.）
+-- SUB_CATEGORY は先着優先。旧 slug が別ノードに再利用されても所有者を奪わない
+-- （補正マイグレーション `_category_tree_alias_owner_preserve`）。
 INSERT INTO "CategorySlugAlias" ("entityType", "oldSlug", "categoryId")
 SELECT 'SUB_CATEGORY', s.url, s.id FROM "SubCategory" s
-ON CONFLICT ("entityType", "oldSlug") DO UPDATE SET "categoryId" = EXCLUDED."categoryId";
+ON CONFLICT ("entityType", "oldSlug") DO NOTHING;
 
 INSERT INTO "CategorySlugAlias" ("entityType", "oldSlug", "categoryId")
 SELECT 'CATEGORY', c.url, c.id FROM "Category" c WHERE c."parentId" IS NULL
