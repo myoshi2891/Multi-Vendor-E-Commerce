@@ -764,6 +764,11 @@ export const getProducts = async (
 
         // Apply store filter (using store URL)
         if (filters.store) {
+            // `?store=a&store=b` のように同名パラメータが複数付くと Next.js は
+            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
+            // `where: { url }` へ到達して実行時に落ちる。カテゴリ側と同じく、曖昧な
+            // 指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す。
+            if (typeof filters.store !== "string") return noMatchResult;
             const store = await db.store.findUnique({
                 where: {
                     url: filters.store,
@@ -831,6 +836,8 @@ export const getProducts = async (
 
         // Apply offer filter (using offer URL)
         if (filters.offer) {
+            // store / category と同じ理由（`?offer=a&offer=b` は `string[]` で届く）。
+            if (typeof filters.offer !== "string") return noMatchResult;
             const offer = await db.offerTag.findUnique({
                 where: {
                     url: filters.offer,

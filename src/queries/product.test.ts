@@ -1353,6 +1353,30 @@ describe("getProducts", () => {
                 expect(result.currentPage).toBe(3);
                 expect(result.pageSize).toBe(20);
             });
+
+            // `?store=a&store=b` のように同名パラメータが複数付くと Next.js は
+            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
+            // Prisma の `where: { url }` へ到達して実行時に落ちる。category 側と同じく
+            // fail-closed で 0 件に倒す（曖昧な指定 = 解決できない指定）。
+            it.each([
+                ["store", { store: ["a", "b"] }],
+                ["offer", { offer: ["a", "b"] }],
+            ] as const)(
+                "%s に配列が届いたら DB を引かずに 0 件を返す",
+                async (_label, filters) => {
+                    // Act
+                    const result = await getProducts(filters);
+
+                    // Assert —— 配列を Prisma へ渡さない（実行時エラーにしない）
+                    expect(mockDb.store.findUnique).not.toHaveBeenCalled();
+                    expect(mockDb.offerTag.findUnique).not.toHaveBeenCalled();
+
+                    // Assert —— フィルタを捨てて全件を返してもならない
+                    expect(result.products).toEqual([]);
+                    expect(result.totalCount).toBe(0);
+                    expect(mockDb.product.findMany).not.toHaveBeenCalled();
+                }
+            );
         });
 
         it("価格範囲でフィルタする", async () => {
