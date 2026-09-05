@@ -509,6 +509,36 @@ describe("Scenario 9: category subtree filtering", () => {
         );
     });
 
+    it("prefers the SUB_CATEGORY alias over a colliding canonical slug", async () => {
+        // Arrange —— 旧 slug "camera" が **別ノードの正準 slug のまま**という衝突を作る。
+        // lens を "optics" にリネームし、旧 slug "camera" の別名を lens へ張る。
+        // このとき DB には url="camera" の Category（本物の camera）が残っているので、
+        // `resolveCategoryNode` が url 完全一致を先に引く実装だと**別サブツリー**に
+        // 落ちる。SUB_CATEGORY だけ別名表を先に引く理由がここにある
+        // （src/lib/category-tree.ts / design.md §2-Q4）。unit テストは db を全モック
+        // するため、この優先順位は実 DB でしか固定できない。
+        const tree = await arrangeCategoryTree();
+        const renamed = await db.category.update({
+            where: { id: tree.lens.id },
+            data: { url: "optics", path: "electronics/camera/optics" },
+        });
+        await db.categorySlugAlias.create({
+            data: {
+                entityType: "SUB_CATEGORY",
+                oldSlug: "camera",
+                categoryId: renamed.id,
+            },
+        });
+
+        // Act —— 外部被リンクに残った旧 slug
+        const result = await getProducts({ subCategory: "camera" });
+
+        // Assert: 別名が指す **リネーム後の子**のサブツリーへ解決される。
+        // 正準 slug "camera" を持つ本物の camera ノード（配下に camProduct）ではない。
+        expect(idsOf(result)).toEqual([tree.lensProduct.product.id]);
+        expect(idsOf(result)).not.toContain(tree.camProduct.product.id);
+    });
+
     it("returns no results for an unresolvable subCategory slug (V-6)", async () => {
         // Arrange
         await arrangeCategoryTree();
