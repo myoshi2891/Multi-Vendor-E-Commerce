@@ -245,13 +245,23 @@ export const updateOrderItemStatus = async (
 ) => {
     const user = await requireSeller();
 
-    // Ensure the user is a seller of the specified store
-    const store = await db.store.findUnique({
-        where: {
-            id: storeId,
-            userId: user.id,
-        },
-    });
+    // 認可ガード（requireSeller）と所有権判定（`!store`）は try/catch の外、
+    // Prisma 呼び出しだけを中に置く —— updateOrderGroupStatus / getOrder と同じ形。
+    // 包まないと、DB 障害時に生の Prisma エラー（接続文字列を含みうる）が
+    // そのまま UI へ抜ける（tech.md「外部呼び出しは必ず try/catch でラップ」）。
+    let store: Awaited<ReturnType<typeof db.store.findUnique>>;
+    try {
+        // Ensure the user is a seller of the specified store
+        store = await db.store.findUnique({
+            where: {
+                id: storeId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        logError("[Order:updateOrderItemStatus] Store lookup failed", error);
+        throw new Error("Failed to update order item status.");
+    }
 
     // Verify ownership of the store
     if (!store) {
