@@ -138,6 +138,11 @@ design.md §0 の 0-1 / 0-2 / 0-3 / 0-12 を参照。要点のみ再掲:
    目標形は design.md §3。**既存マイグレーションは編集しない**
    （[`tech.md`](../.claude/steering/tech.md) 禁止事項）。
 4. **データ移行 SQL**（design.md §4 の A-1〜A-6）を同マイグレーションに含める。
+   > **適用前に旧 `Category` / `SubCategory` writer を停止し drain し切ること。**
+   > データ移動の直後に `path` の `SET NOT NULL` まで進むため、実行中の 1 件の
+   > 書き込みでマイグレーションが abort するか、取り込まれない `SubCategory` 行が
+   > 残る。前提と代替（dual-write build 先行配備）は design.md §4 冒頭の
+   > 「適用前提」ブロックが正。
    リネーム規則は §2-Q2-2 の 4 点（SubCategory 側をリネーム / `${親slug}-${旧slug}` /
    衝突時は最初の空き番号 / `ORDER BY createdAt ASC, id ASC` で決定論化）。
    **A-6 の backfill 完了直後に、非リーフに紐づく商品の件数を計測**し、Step 1 の
@@ -211,14 +216,16 @@ ALL を満たすこと:
 - [x] `bunx tsc --noEmit` 0 件 / `bun run lint` 0 errors
       （2026-09-05 の HEAD 実測でも tsc 0 件 / lint 0 errors・14 warnings）
 - [x] `src/queries/**` の差分が **`src/queries/category.ts` のルート絞り込み
-      （`where: { parentId: null }`）のみ**で、`src/components/**` の差分は **0 行**
+      （`where: { parentId: null }`）と、その型の連鎖で追随する
+      `src/queries/category.test.ts` のみ**で、`src/components/**` の差分は **0 行**
       （`git diff --stat <base> -- src/components` が空 かつ
-      `git diff --name-only <base> -- src/queries` が `src/queries/category.ts` のみ ——
-      Phase A の境界）。この 1 箇所だけは**既存挙動の保存**であり、読み替え（plan 067）
-      ではない: A-3 が複製した子行を除外しないと、既存の全件読み取りが旧サブカテゴリを
+      `git diff --name-only <base> -- src/queries` が上記 2 ファイルのみ ——
+      Phase A の境界）。テストは実装の型に追随するだけなので境界の逸脱ではない
+      （**振る舞いの変更は `category.ts` の 1 箇所に限る**ことが条件の本旨）。
+      この 1 箇所だけは**既存挙動の保存**であり、読み替え（plan 067）ではない:
+      A-3 が複製した子行を除外しないと、既存の全件読み取りが旧サブカテゴリを
       トップレベルとして露出させてしまう（本プラン冒頭の注記）。
-      **逸脱 1 点（オペレーター承認済み）**: 型の連鎖により `category.test.ts`（+4/−1）も
-      同時に変わったため、実差分は `category.ts`（+17/−2）+ `category.test.ts` の 2 ファイル。
+      実差分は `category.ts`（+17/−2）+ `category.test.ts`（+4/−1）の 2 ファイル。
       `src/components/**` は 0 差分を維持（詳細は [`plans/README.md`](README.md) の実行記録）
 - [x] 事前計測の実測値がプランの「実施結果」節に記録されている
       （Step 1 の slug 衝突件数 **と** Step 4 の A-6 直後に測る非リーフ紐づけ商品件数の 2 本）
