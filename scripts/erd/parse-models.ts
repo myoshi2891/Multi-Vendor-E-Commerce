@@ -75,9 +75,18 @@ function stripLineComments(body: string): string {
             let inString = false;
             for (let i = 0; i < line.length; i++) {
                 const ch = line[i];
-                if (ch === '"' && line[i - 1] !== "\\") {
-                    inString = !inString;
-                    continue;
+                if (ch === '"') {
+                    // 直前の連続バックスラッシュを数え、**偶数個のときだけ**トグルする。
+                    // `line[i - 1] !== "\\"` だけで見ると、`"C:\\\\"` のように
+                    // **エスケープされたバックスラッシュ**で終わる文字列の閉じクォートを
+                    // 「エスケープされたクォート」と誤認し、inString が true のまま
+                    // 行末まで走って行コメントを落とし損ねる。
+                    let backslashes = 0;
+                    while (line[i - 1 - backslashes] === "\\") backslashes++;
+                    if (backslashes % 2 === 0) {
+                        inString = !inString;
+                        continue;
+                    }
                 }
                 if (!inString && ch === "/" && line[i + 1] === "/") {
                     return line.slice(0, i);
