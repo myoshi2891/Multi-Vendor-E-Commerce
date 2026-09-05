@@ -111,6 +111,15 @@ const subtreeOf = (p: string) => ({ OR: [{ path: p }, { path: { startsWith: `${p
 - `LIKE` メタ文字（`%` `_`）と区切り文字 `/` は **slug の文字集合制約**
   `/^[a-z0-9]+(?:-[a-z0-9]+)*$/` で排除する。エスケープを書かずに済ませるための制約であり、
   **緩めてはならない**。
+- この制約は **Zod だけでなく DB の CHECK 制約でも掛ける**。カテゴリは seed
+  （`prisma/seed/`）や直接 SQL からも書けるため、アプリ層のバリデーションだけでは
+  `path` に `/` や `%` が混入する経路が残る。移行では A-0 で既存行を検証した後に付与する:
+
+  ```sql
+  ALTER TABLE "Category"
+    ADD CONSTRAINT "Category_url_slug_format"
+    CHECK (url ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+  ```
 - 「直下の子のみ」が要る画面（admin のツリー展開）は `{ parentId: node.id }` を使う
   （path の区切り数を数える必要はない）。
 
@@ -487,7 +496,17 @@ model Product {
 Phase A のデータ移行のみ抜粋（DDL は Prisma のマイグレーションが生成する）。
 
 ```sql
--- A-1: 既存 Category をルート化
+-- A-0: slug 文字集合の事前検証（Q1 の制約が既存行で成立しているかを確認する）。
+--      A-1 は url をそのまま path へ写すため、ここに `/` `%` `_` や大文字が混ざっていると
+--      subtreeOf の prefix 境界（Q1）が壊れたまま移行が完了してしまう。
+--      **0 件でなければ A-1 を実行してはならない。**
+--      違反行は正規化（小文字化・記号を `-` へ畳む）または Q2-2 と同じ規則でリネームし、
+--      旧 slug は CategorySlugAlias（CATEGORY）へ登録して到達性を保つこと。
+SELECT id, url FROM "Category"
+WHERE url !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+ORDER BY "createdAt" ASC, id ASC;
+
+-- A-1: 既存 Category をルート化（A-0 が 0 件であることを確認してから実行する）
 UPDATE "Category" SET "path" = "url", "depth" = 0 WHERE "parentId" IS NULL;
 
 -- A-2: 衝突の事前計測（Q2-4）— 0 でも規則は実装しておく
