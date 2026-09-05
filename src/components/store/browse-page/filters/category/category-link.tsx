@@ -56,7 +56,18 @@ export default function CategoryLink({
     }
 
     const handleCategoryChange = (slug: string) => {
-        if (slug === categoryQuery) return;
+        // 早期リターンは「すでに正準な選択を選び直した」ときだけ。
+        // `slug === categoryQuery` だけで返すと、`?category=camera&subCategory=lens`
+        // のように **stale なパラメータが残った状態**で選択中のノードを押したとき、
+        // 正準化（subCategory の除去・重複 category の一本化）を行う手段が
+        // 画面上から消える —— 表示は camera が選択済みなのに、実際の絞り込みは
+        // 2 つのサブツリーの積のまま、という状態から抜けられなくなる。
+        const isCanonicalSelection =
+            slug === categoryQuery &&
+            searchParams.getAll("category").length === 1 &&
+            !searchParams.has("subCategory");
+        if (isCanonicalSelection) return;
+
         const params = new URLSearchParams(searchParams);
         // 正準パラメータは category 1 本。旧 subCategory が残っていると
         // 2 つのサブツリーの積になり、意図しない絞り込みが残る。

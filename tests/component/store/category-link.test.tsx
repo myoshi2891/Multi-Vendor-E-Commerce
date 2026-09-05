@@ -123,6 +123,33 @@ describe("CategoryLink — 選択時の URL 書き換え", () => {
         expect(mockReplace).not.toHaveBeenCalled();
     });
 
+    it("エッジケース: stale な subCategory が残っていれば再クリックで正準化する", () => {
+        // Arrange —— 表示上は electronics が選択済みだが、旧パラメータが残っている
+        renderLink("category=electronics&subCategory=lens");
+
+        // Act
+        fireEvent.click(screen.getByText("electronics"));
+
+        // Assert —— 同一 slug でも「正準化して寄せ直す」経路は残す。
+        // ここで早期リターンすると、stale な絞り込みから抜ける手段が UI から消える。
+        expect(mockReplace).toHaveBeenCalledWith(
+            "/browse?category=electronics"
+        );
+    });
+
+    it("エッジケース: category が重複していれば再クリックで 1 本に畳む", () => {
+        // Arrange
+        renderLink("category=electronics&category=camera");
+
+        // Act
+        fireEvent.click(screen.getByText("electronics"));
+
+        // Assert
+        expect(mockReplace).toHaveBeenCalledWith(
+            "/browse?category=electronics"
+        );
+    });
+
     it("正常系: 子カテゴリを選び直しても親の枝は開いたままになる", () => {
         // Arrange —— 孫が選択済みなので electronics / camera とも開いて始まる
         renderLink("category=lens");
