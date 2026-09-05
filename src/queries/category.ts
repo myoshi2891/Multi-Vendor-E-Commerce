@@ -283,16 +283,21 @@ const acquireCategoryTreeLocks = async (
     tx: CategoryTransactionClient,
     params: {
         categoryId: string;
-        nextParentId: string | null;
+        nextParentId: string | null | undefined;
         nextUrl: string;
     }
 ): Promise<{
     current: CurrentCategoryNode | null;
     lockedNodes: LockedCategoryNode[];
     descendants: DescendantNode[];
+    resolvedParentId: string | null;
 }> => {
     const { categoryId, nextParentId, nextUrl } = params;
     let current: CurrentCategoryNode | null = null;
+    // `parentId` 未指定（undefined）は「現在の親を保つ」。null だけがルートへの移動。
+    // 解決は `current` を**掴んだうえで読み直した後**に行う必要があるため、
+    // 収束ループの内側で毎周計算する（待っている間に並行編集で親が変わり得る）。
+    let resolvedParentId: string | null = null;
     let lockedNodes: LockedCategoryNode[] = [];
     let descendants: DescendantNode[] = [];
     let includeDescendants = false;
@@ -311,11 +316,17 @@ const acquireCategoryTreeLocks = async (
             },
         });
 
+        resolvedParentId =
+            nextParentId === undefined
+                ? (current?.parentId ?? null)
+                : nextParentId;
+
         // 一度立てたら降ろさない。既に掴んだ子孫を候補から外すと収束判定
         // （候補 ⊆ 取得済み）が真になり、掴み直しの必要を見逃す。
         includeDescendants ||=
             current !== null &&
-            current.path !== (await computeNextPath(tx, nextParentId, nextUrl));
+            current.path !==
+                (await computeNextPath(tx, resolvedParentId, nextUrl));
 
         descendants =
             includeDescendants && current !== null
@@ -328,12 +339,12 @@ const acquireCategoryTreeLocks = async (
         const targets = orderedLockTargets([
             categoryId,
             current?.parentId ?? null,
-            nextParentId,
+            resolvedParentId,
             ...descendants.map((descendant) => descendant.id),
         ]);
         // 新しく掴むものが無い = 待っている間に候補集合が変わっていない
         if (targets.every((id) => lockedIds.has(id))) {
-            return { current, lockedNodes, descendants };
+            return { current, lockedNodes, descendants, resolvedParentId };
         }
         lockedNodes = await lockCategoryNodesForUpdate(tx, targets);
         for (const id of targets) lockedIds.add(id);
@@ -470,9 +481,9 @@ const recordSlugAliasOnRename = async (
 const applyCategoryTreeUpsert = async (
     tx: CategoryTransactionClient,
     safeCategory: CategoryUpsertInput,
-    nextParentId: string | null
+    nextParentId: string | null | undefined
 ): Promise<Category> => {
-    const { current, lockedNodes, descendants } =
+    const { current, lockedNodes, descendants, resolvedParentId } =
         await acquireCategoryTreeLocks(tx, {
             categoryId: safeCategory.id,
             nextParentId,
@@ -481,7 +492,7 @@ const applyCategoryTreeUpsert = async (
 
     const parent = await resolveNextParentNode(tx, {
         lockedNodes,
-        nextParentId,
+        nextParentId: resolvedParentId,
         current,
     });
 
@@ -524,7 +535,10 @@ const applyCategoryTreeUpsert = async (
         safeCategory.id
     );
 
-    await recomputeChildCounts(tx, [current?.parentId ?? null, nextParentId]);
+    await recomputeChildCounts(tx, [
+        current?.parentId ?? null,
+        resolvedParentId,
+    ]);
 
     return categoryDetails;
 };
@@ -556,7 +570,14 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
 
         // 導出列は create / update のどちらへも渡さない（実行時に落とす）
         const safeCategory = stripDerivedTreeFields(category);
-        const nextParentId = safeCategory.parentId ?? null;
+        // `?? null` で畳んではならない。`parentId` の**未指定（undefined）**は
+        // 「現在の親を保つ」であり、`null`（ルートへ移す）とは別の意味である
+        // （`CategoryUpsertInput.parentId` が `?: string | null` である以上、
+        // フォームを経由しない呼び出しは省略できる）。畳むと、Prisma の update は
+        // `parentId: undefined` を**無視して親を残す**一方で path / depth だけが
+        // ルートとして書き直され、`parentId` と導出列 path が矛盾したノードが残る。
+        // 実際の解決は `current` を掴んだ後に `acquireCategoryTreeLocks` が行う。
+        const nextParentId = safeCategory.parentId;
 
         // V-7b: 自己参照。DB を読む前に閉じられる唯一の循環なので先に弾く。
         // **子孫への付け替え（V-7c）とは拒否理由が違う**ので 1 本に畳まない。
