@@ -98,10 +98,14 @@ const nodeInput = (
 const createNode = async (
     name: string,
     url: string,
-    parent: { id: string; path: string; depth: number } | null
+    parent: { id: string; path: string; depth: number } | null,
+    // id を明示できるようにしてあるのは、ロック取得順（id 昇順）が検証対象になる
+    // シナリオで「子孫の id が自ノードより小さい」形を作る必要があるため。
+    options: { id?: string } = {}
 ): Promise<Category> => {
     const node = await db.category.create({
         data: {
+            ...(options.id ? { id: options.id } : {}),
             name,
             image: "https://example.test/node.png",
             url,
@@ -525,5 +529,80 @@ describe("Scenario 5: subtree move serializes against a concurrent descendant mo
         expect(xAfter.parentId).toBe(b.id);
         expect(xAfter.path).toBe("bravo/xray");
         expect(xAfter.depth).toBe(1);
+    });
+});
+
+// ============================================================================
+// Scenario 6: subtree 移動と子孫の移動が交差してもデッドロックしない
+// ============================================================================
+
+describe("Scenario 6: subtree move takes its whole lock set in one ascending order", () => {
+    it("子孫の id が自ノードより小さくても、先に子孫を掴んで交差を作らない", async () => {
+        // 前提: 外側 tx / 被検証側 / ロック検出ポーリングの 3 本を同時に握る。
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(3);
+
+        // Arrange —— **id を明示**して「子孫 delta < 自ノード xray」の並びを作る。
+        // 旧実装は「自ノード + 旧親 + 新親」を掴んでから子孫を掴む 2 フェーズだったため、
+        // この並びでは合成した取得順が id 昇順にならず、
+        // 「xray を動かす側」と「delta を xray の外へ動かす側」が逆順で出会えた。
+        const a = await createNode("Alpha", "alpha", null, {
+            id: "cat-5-alpha",
+        });
+        const x = await createNode("Xray", "xray", a, { id: "cat-9-xray" });
+        const d = await createNode("Delta", "delta", x, { id: "cat-1-delta" });
+        const b = await createNode("Bravo", "bravo", null, {
+            id: "cat-7-bravo",
+        });
+
+        // Act —— 外側 tx は「delta を動かす側」を演じ、まず自ノード delta を掴む。
+        // その状態で subtree 移動（xray → bravo）を起動し、待ちに入らせてから
+        // 外側 tx が**旧親 xray** を掴みにいく。
+        //
+        // 旧実装ではここで循環待ちが完成し、PostgreSQL が 40P01 で片方を abort した
+        // （不整合な path は書かれないが、admin には理由の分からない失敗に見える）。
+        // 候補集合を 1 つの昇順で掴むなら、被検証側は xray より先に delta で待つので
+        // xray はまだ空いており、この SELECT は待たずに通る。
+        let subtreeMove!: Promise<unknown>;
+        await db.$transaction(async (tx) => {
+            await tx.$queryRaw`
+                SELECT "id" FROM "Category" WHERE "id" = ${d.id} FOR UPDATE
+            `;
+
+            subtreeMove = asAdmin(() =>
+                upsertCategory(nodeInput(x, { parentId: b.id }))
+            ).catch((error: unknown) => error);
+            await waitForLockedBackend();
+
+            // デッドロックすればここが 40P01 で throw し、外側 tx ごと落ちる。
+            await tx.$queryRaw`
+                SELECT "id" FROM "Category" WHERE "id" = ${x.id} FOR UPDATE
+            `;
+        });
+
+        const result = await subtreeMove;
+
+        // Assert —— 被検証側は abort されず、移動が完了している
+        expect(result).not.toBeInstanceOf(Error);
+        const [xAfter, dAfter] = await Promise.all([
+            db.category.findUniqueOrThrow({
+                where: { id: x.id },
+                select: { parentId: true, path: true, depth: true },
+            }),
+            db.category.findUniqueOrThrow({
+                where: { id: d.id },
+                select: { parentId: true, path: true, depth: true },
+            }),
+        ]);
+        expect(xAfter).toEqual({
+            parentId: b.id,
+            path: "bravo/xray",
+            depth: 1,
+        });
+        // 子孫も同じロック集合で掴んでいるので、path はきちんと追随する
+        expect(dAfter).toEqual({
+            parentId: x.id,
+            path: "bravo/xray/delta",
+            depth: 2,
+        });
     });
 });
