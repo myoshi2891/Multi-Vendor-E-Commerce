@@ -564,7 +564,12 @@ UPDATE "Product" SET "categoryNodeId" = "subCategoryId";
 > 既存行は A-1 で `parentId IS NULL` のままである。Phase A の旧読み取りは
 > `where: { parentId: null }` でルートに限定し、ツリーを返すのは plan 067 / 068 に譲る。
 
-**ロールバック**: Phase B は新列・新テーブルの drop で戻せる。
+**ロールバック**: Phase B はスキーマを変えないので、**読み取りを旧 FK へ戻すだけ**で戻る。
+このとき Phase A の新列・新テーブル（`Category` の木の列 / `CategorySlugAlias` /
+`Product.categoryNodeId`）は**残したまま**にする —— dual-write を継続させ、読み取りだけを
+旧 FK に落とすためである。新列・新テーブルの drop は Phase B のロールバックではなく、
+**Phase A まで完全に戻す手順**（下記）の一部として実施する。
+
 **Phase A は「新列・新テーブルの drop」だけでは戻らない** —— A-3 が既存 `Category`
 テーブルへ行を**追加**しているため、列を落としても複製行が残り、元の Category データと
 混在したままになる。逆マイグレーションは**複製行を識別して削除する**こと:

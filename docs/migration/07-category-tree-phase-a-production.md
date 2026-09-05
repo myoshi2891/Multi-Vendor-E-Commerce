@@ -295,8 +295,10 @@ Phase C = [plan 068](../../plans/068-implement-category-tree-admin-cutover.md) �
 > 同じ id の `Category` 行を 1 行作る。列だけ drop すると、この複製行は
 > 「`parentId` も `path` も持たないただのルートカテゴリ」として残り、
 > **移行前には無かったカテゴリがストアフロントとダッシュボードに並ぶ**。
-> 複製行は `SubCategory` と id を共有するので一意に特定でき、`SubCategory`
-> 自体は Phase A では消えない（drop は Phase C = plan 068）ため、この方法が使える。
+> 複製行は `SubCategory` と id を共有するが、**同定に使うのは現在の `SubCategory` 行ではなく
+> A-4 の別名表（`CategorySlugAlias` の `entityType = 'SUB_CATEGORY'`）が保持する移行済み id**
+> である。移行後に `SubCategory` が 1 行でも削除されていると、その複製 `Category` 行は
+> join に掛からず残留し、参照検査もベースライン照合も取りこぼす。
 
 ```sql
 -- 【STOP 判定】列を落とす前に、複製行を指している Product が無いことを確かめる。
@@ -304,31 +306,56 @@ Phase C = [plan 068](../../plans/068-implement-category-tree-admin-cutover.md) �
 -- 崩れている）ので、ここで中断して報告すること。押し切ると商品のカテゴリ紐づけが
 -- 失われる。**この検査は FK と列を落とす前にしか成立しない** —— 列を落とした後では
 -- 参照そのものが消え、後段の DELETE は静かに通ってしまう。
+--
+-- 突き合わせ先は**現在の "SubCategory" 行ではない** —— 移行後に SubCategory が 1 行でも
+-- 削除されていると、その複製 Category 行は join に掛からず、複製行を指したままの
+-- Product を**見落とす**。Phase A が残した恒久マーカー（A-4 の別名表の
+-- 'SUB_CATEGORY' 行 = 取り込んだ SubCategory の id）を使うこと。
+-- 1 商品につき別名が複数あり得る（別名表の PK は (entityType, oldSlug)）ので、
+-- join ではなく EXISTS で数える。数えるのは「複製行を指している Product の件数」。
 SELECT count(*) AS products_on_mirror_rows
   FROM "Product" p
-  JOIN "SubCategory" s ON s.id = p."categoryNodeId";
+ WHERE EXISTS (
+       SELECT 1
+         FROM "CategorySlugAlias" a
+        WHERE a."categoryId" = p."categoryNodeId"
+          AND a."entityType" = 'SUB_CATEGORY');
 -- ↑ が 0 であることを確認してから、以下を実行する。
+-- 再実行時に別名表が既に落ちている場合は、突き合わせ先を "PhaseARollbackMirror" に
+-- 読み替えること（下の破壊的ブロックが commit 済み = 別名表の内容は移し終えている）。
+
+-- ここから先が破壊的処理。参照検査を通した**後**に、単一トランザクションへまとめる。
+-- 途中で失敗しても部分適用が残らないため、同じブロックをそのまま再実行できる
+-- （マーカー取得済み、または別名表が既に落ちている場合は INSERT を飛ばす）。
+BEGIN;
 
 ALTER TABLE "Product"  DROP CONSTRAINT IF EXISTS "Product_categoryNodeId_fkey";
 ALTER TABLE "Product"  DROP COLUMN     IF EXISTS "categoryNodeId";
 
--- Step 5 が投入した複製行の id を、**消す前に**恒久マーカーへ書き出す。
+-- Step 5 が投入した複製行の id を、別名表を**消す前に**恒久マーカーへ書き出す。
 -- A-4 の別名表は 'SUB_CATEGORY' 行の categoryId として「取り込んだ SubCategory の id」を
 -- 保持しており（A-3 が id を流用するため両者は同一）、これが移行済み id の記録である。
 CREATE TABLE IF NOT EXISTS "PhaseARollbackMirror" ("categoryId" TEXT PRIMARY KEY);
-INSERT INTO "PhaseARollbackMirror" ("categoryId")
-SELECT "categoryId" FROM "CategorySlugAlias" WHERE "entityType" = 'SUB_CATEGORY'
-ON CONFLICT DO NOTHING;
+DO $$
+BEGIN
+    -- 再実行ガード: 既にマーカーを確保済み、または別名表が既に無い場合は何もしない。
+    IF to_regclass('"CategorySlugAlias"') IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM "PhaseARollbackMirror") THEN
+        INSERT INTO "PhaseARollbackMirror" ("categoryId")
+        SELECT "categoryId" FROM "CategorySlugAlias" WHERE "entityType" = 'SUB_CATEGORY'
+        ON CONFLICT DO NOTHING;
+    END IF;
+END $$;
 
 DROP TABLE IF EXISTS "CategorySlugAlias";
 
 -- Step 5 が投入した SubCategory 複製行を、上のマーカーを使って除去する。
--- **現在の "SubCategory" 行と突き合わせてはならない** —— 移行後に SubCategory が
--- 1 行でも削除されていると、その複製 Category 行は join に掛からず**残留**し、
--- 下のベースライン照合が合わなくなる（かつ列を落とした後では識別不能になる）。
+-- **現在の "SubCategory" 行と突き合わせてはならない**（理由は上の参照検査と同じ）。
 DELETE FROM "Category" c
  USING "PhaseARollbackMirror" m
  WHERE c.id = m."categoryId";
+
+COMMIT;
 
 -- 件数が Step 0 で控えた移行前のベースライン（category_rows_baseline）に
 -- 戻ったことを確認してから次へ進む。**一致するまでマーカーは落とさない**
