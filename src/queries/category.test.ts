@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import {
     upsertCategory,
     getAllCategories,
@@ -778,6 +779,113 @@ describe("upsertCategory", () => {
             expect(counted).toEqual(
                 expect.arrayContaining(["electronics", "audio"])
             );
+        });
+    });
+
+    // ==================================================
+    // デッドロック（SQLSTATE 40P01）の再試行
+    // ==================================================
+    describe("並行編集でデッドロックした移動の再試行", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.category.findFirst.mockResolvedValue(null);
+            mockCategoryTx();
+        });
+
+        /**
+         * `lockCategoryNodesForUpdate` の `SELECT … FOR UPDATE` が
+         * デッドロックの敗者として abort されたときに Prisma が返すエラー。
+         */
+        const deadlock = () =>
+            new Prisma.PrismaClientKnownRequestError("Raw query failed", {
+                code: "P2010",
+                clientVersion: "test",
+                meta: { code: "40P01", message: "deadlock detected" },
+            });
+
+        /** camera を electronics 配下から audio 配下へ移す入力。 */
+        const moveCameraUnderAudio = () =>
+            createMockCategory({
+                id: "camera",
+                url: "camera",
+                parentId: "audio",
+            } as never) as never;
+
+        const mockMoveTarget = () => {
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "camera",
+                parentId: "electronics",
+                path: "electronics/camera",
+                depth: 1,
+                url: "camera",
+            });
+        };
+
+        it("ロック取得が 40P01 で落ちてもトランザクションごと再試行して完了する", async () => {
+            // Arrange —— `acquireCategoryTreeLocks` の候補算出は 1 周目が非ロック読みなので、
+            // 掴み直しの周回だけは自ノードより後に低い id を取り得る（design.md「残る窓」）。
+            // その敗者側を模して、最初の試行の FOR UPDATE だけを 40P01 で落とす。
+            mockMoveTarget();
+            mockDb.$queryRaw
+                .mockRejectedValueOnce(deadlock())
+                .mockResolvedValue([{ id: "audio", path: "audio", depth: 0 }]);
+            const moved = createMockCategory({
+                id: "camera",
+                parentId: "audio",
+            } as never);
+            mockDb.category.upsert.mockResolvedValue(moved);
+
+            // Act
+            const result = await upsertCategory(moveCameraUnderAudio());
+
+            // Assert —— 2 回目のトランザクションで移動が完了する。
+            // PostgreSQL は検出時に片方の**トランザクション全体**を abort するため、
+            // 1 回目の部分適用は残らない（= 再実行が二重適用にならない）。
+            expect(result).toEqual(moved);
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(2);
+            expect(mockDb.category.upsert).toHaveBeenCalledTimes(1);
+            expect(mockDb.category.upsert).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    update: expect.objectContaining({
+                        path: "audio/camera",
+                        depth: 1,
+                    }),
+                })
+            );
+        });
+
+        it("再試行の上限に達したら 40P01 をそのまま投げ返す（別のエラーに化けない）", async () => {
+            // Arrange —— 掴み直しても毎回敗者になる場合。握りつぶすと admin には
+            // 「成功したのに動いていない」に見えるため、必ず投げ返す。
+            mockMoveTarget();
+            mockDb.$queryRaw.mockRejectedValue(deadlock());
+
+            // Act & Assert
+            await expect(
+                upsertCategory(moveCameraUnderAudio())
+            ).rejects.toMatchObject({ code: "P2010" });
+            expect(mockDb.category.upsert).not.toHaveBeenCalled();
+        });
+
+        it("40P01 以外の失敗は再試行しない", async () => {
+            // Arrange —— 再試行しても結果が変わらないエラーで無駄に往復しない。
+            mockMoveTarget();
+            mockDb.$queryRaw.mockRejectedValue(
+                new Prisma.PrismaClientKnownRequestError("syntax error", {
+                    code: "P2010",
+                    clientVersion: "test",
+                    meta: { code: "42601" },
+                })
+            );
+
+            // Act & Assert
+            await expect(
+                upsertCategory(moveCameraUnderAudio())
+            ).rejects.toMatchObject({ code: "P2010" });
+            expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
         });
     });
 });

@@ -6,6 +6,9 @@ import { requireAdmin } from "@/lib/auth-guards";
 // DB
 import { db } from "@/lib/db";
 
+// デッドロック（SQLSTATE 40P01）でのトランザクション再試行
+import { retryOnDeadlock } from "@/lib/db-retry";
+
 // Prisma model
 import { Category, CategoryAliasSource, Prisma } from "@prisma/client";
 
@@ -586,8 +589,22 @@ export const upsertCategory = async (category: CategoryUpsertInput) => {
         }
 
         // ツリーの書き換えは 1 本のトランザクションで行う。
-        return await db.$transaction((tx) =>
-            applyCategoryTreeUpsert(tx, safeCategory, nextParentId)
+        //
+        // **デッドロック（`40P01`）はトランザクション単位で再試行する。**
+        // `acquireCategoryTreeLocks` は候補集合を 1 つの id 昇順で掴み切るので通常の
+        // 交差は起きないが、1 周目の候補算出は非ロック読みであり、「属性だけの編集」を
+        // 始めた直後に祖先が動かされると 2 周目の掴み直しだけは自ノードより後に低い id を
+        // 取り得る（design.md の「残る窓（既知）」）。PostgreSQL はこの検出時に片方の
+        // トランザクション全体を abort するため部分適用は残らず、掴み直しからやり直せば
+        // 収束する。上限に達したら最後の `40P01` をそのまま投げ返す。
+        //
+        // `retryOnSerializationFailure`（`P2034` = SQLSTATE 40001）とは**別物**なので
+        // 分けてある —— こちらは Serializable ではなく READ COMMITTED + 明示ロックの経路で、
+        // 原因はロック順の交差である。
+        return await retryOnDeadlock(() =>
+            db.$transaction((tx) =>
+                applyCategoryTreeUpsert(tx, safeCategory, nextParentId)
+            )
         );
     } catch (error: unknown) {
         if (error instanceof Error) {
