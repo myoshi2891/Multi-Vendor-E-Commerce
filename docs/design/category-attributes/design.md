@@ -252,6 +252,46 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
   **ラウンドトリップ**を必ず含める（A-1 の「`type` と埋まっている列が一致する」だけでは
   この事故を検出できない —— `valueNumber = 0` は列の一致条件を満たしてしまう）。
 
+- **`ENUM` の候補は DTO で運ぶ**。`z.enum([...])` は候補文字列をスキーマ構築時に
+  必要とするので、定義 DTO が `options` を持っていないと `buildAttributeShape` は
+  ENUM を組み立てられない（`z.string()` へ退避すると Q7 の FK 追随が壊れる）。
+  したがって継承クエリ（下記「継承」§）は定義と一緒に**アクティブな許容値**を返し、
+  DTO は次の形を持つ:
+
+  ```ts
+  type AttributeOptionDto = { id: string; value: string; label: string };
+  type AttributeDefinitionDto = {
+      key: string; name: string; type: AttributeType; scope: AttributeScope;
+      required: boolean; unit: string | null;
+      options: AttributeOptionDto[];   // ENUM 以外は空配列
+  };
+  ```
+
+  フォームが持つのは `value`（不変の機械値）で、`label` は表示にのみ使う。
+  保存時に writer が `(definitionId, value)`（`@@unique([definitionId, value])`）で
+  `optionId` へ解決する —— `label` を保存経路に通さないこと（Q7 の改名が値を壊す）。
+
+- **アーカイブ済み許容値は「新規選択不可・既存値は保持」**。選択肢の生成は
+  `archivedAt: null` に絞る（Q7「enum 許容値の削除」＝論理削除の目的）。一方、
+  既存商品が既にアーカイブ済みの `optionId` を持つ場合、その値を候補から外したまま
+  編集画面を開くと、**無編集で保存しただけで値が黙って落ちる**（`z.enum` が現在値を
+  弾き、必須なら保存不能・任意なら未入力へ潰れる）。したがって:
+
+  - **表示**: 当該商品の現在値がアーカイブ済みなら、その 1 件だけを候補へ
+    「（廃止）」表記付きで**混ぜる**（他商品には出さない）。
+  - **保存**: スキーマの候補集合は「アクティブ ∪ その商品の現在値」。
+    別の値へ変更したら、アーカイブ済みの選択肢は候補から消える（片道）。
+  - サーバー側の再検証も同じ集合で行うこと（クライアントの候補は認可ではない）。
+
+- **候補が 1 件も無い `ENUM` 定義の扱いを決めておく**。`z.enum([])` は型として
+  成立しない（非空タプルを要求する）ので、実装は必ずこの分岐を持つ:
+
+  - `required: true` → その定義の入力を **disabled + 保存ブロック**とし、
+    「許容値が未登録」である旨と admin の許容値管理 UI（Q6）へ導線を出す。
+    黙って `z.string()` へ退避しない（表記揺れが再流入する）。
+  - `required: false` → **未入力のみ許容**（`z.undefined()` 相当）。
+  - 検証シナリオに「許容値ゼロの ENUM を含むカテゴリで商品編集画面が落ちない」を含める。
+
 ### Q5. 必須属性の強制レベル → **hard（保存ブロック）を既定**、審査モードで soft へ落とせる構造
 
 EXPANSION_BLUEPRINT §3.2 の部門 8（ヘルスケア・OTC）/ 9（食品 —— アレルゲン）/
@@ -434,7 +474,17 @@ const defs = await db.attributeDefinition.findMany({
     where: { category: { path: { in: ancestorPaths } }, archivedAt: null },
     // 後段の重複 key 解決規則が d.category.path を読むため、リレーションを明示的に含める。
     // Prisma はデフォルトでスカラーのみ返すので、include が無いと d.category は undefined。
-    include: { category: { select: { path: true } } },
+    // options も同様 —— これが無いと ENUM の z.enum([...]) を組み立てられない（Q4 の DTO）。
+    // 候補は archivedAt: null に絞る（廃止値は新規選択させない）。既存商品が持つ
+    // アーカイブ済みの現在値は、フォーム側で「その商品の現在値」として 1 件だけ足す。
+    include: {
+        category: { select: { path: true } },
+        options: {
+            where: { archivedAt: null },
+            select: { id: true, value: true, label: true },
+            orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
+        },
+    },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
 });
 ```
