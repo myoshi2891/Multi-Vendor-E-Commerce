@@ -851,6 +851,12 @@ export const getProducts = async (
         // Apply search filter (search term in product name or description)
         // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
         if (filters.search) {
+            // store / offer / category と同じ理由（`?search=a&search=b` は `string[]`
+            // で届く）。型は `string` を主張するが、値は URL 由来なので信用できない。
+            // 配列のまま `contains` へ渡すと Prisma の実行時バリデーション例外になり、
+            // 外側の catch が「取得失敗」の汎用エラーへ畳んでしまう。fail-closed で
+            // 空結果を返し、他フィルタと挙動を揃える。
+            if (typeof filters.search !== "string") return noMatchResult;
             andConditions.push({
                 OR: [
                     {
