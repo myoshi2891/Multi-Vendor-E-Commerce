@@ -29,8 +29,10 @@ jest.mock("next/navigation", () => ({
 jest.mock("@/lib/category-tree", () => ({
     resolveCategoryNode: jest.fn(),
     // 境界判定は本物を使う（モックすると「親子でないなら畳まない」の検証が
-    // モックの都合で緑になり、実装の誤りを見逃す）。
-    isWithinSubtree: jest.requireActual("@/lib/category-tree").isWithinSubtree,
+    // モックの都合で緑になり、実装の誤りを見逃す）。実体は `@/lib/category-path`
+    // にあり、そちらは import を 1 つも持たない純関数モジュール —— 再エクスポート元の
+    // `category-tree` を requireActual すると `@/lib/db` まで読み込んでしまう。
+    isWithinSubtree: jest.requireActual("@/lib/category-path").isWithinSubtree,
 }));
 
 // 子コンポーネントはページ側のロジック検証に不要（useSearchParams 等の client 依存を切る）
