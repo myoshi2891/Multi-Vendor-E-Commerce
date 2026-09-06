@@ -584,6 +584,7 @@ const ORIGIN_X = 80; // ページ内エンティティ配置の原点 X
 const ORIGIN_Y = 120; // ページ内エンティティ配置の原点 Y（上に見出し帯を確保）
 const CONTAINER_PAD = 28; // ドメインコンテナの四辺パディング
 const HEADING_BAND = 34; // コンテナ上辺に確保する見出し帯
+const LEGEND_HEIGHT = 155; // 凡例ボックスの高さ（ページ高の算出にも使う）
 
 // ---------------------------------------------------------------------------
 // 5. XML 生成ヘルパー
@@ -695,7 +696,7 @@ function legendCell(id: string, x: number, y: number): string {
         "<font color='#C62828'><b>赤線 ⛓ = ON DELETE CASCADE</b>（親を消すと子も消える）</font>",
         "ボックスの塗り色・枠色 = ドメイン（見出しと対応）",
     ].join("<br/>");
-    return `<mxCell id="${id}" value="${esc(legend)}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="600" height="155" as="geometry"/></mxCell>`;
+    return `<mxCell id="${id}" value="${esc(legend)}" style="rounded=2;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=8;fillColor=#FFFDE7;strokeColor=#F9A825;strokeWidth=1.5;fontSize=12;fontColor=#10242E;" vertex="1" parent="1"><mxGeometry x="${x}" y="${y}" width="600" height="${LEGEND_HEIGHT}" as="geometry"/></mxCell>`;
 }
 
 /**
@@ -944,7 +945,7 @@ function buildPage(
     cells.push(legendCell(`${page.id}_legend`, cont.cx, legendY));
 
     const pageWidth = Math.round(Math.max(cont.cx + cont.cw, cont.cx + 600) + 80);
-    const pageHeight = Math.round(legendY + 155 + 80);
+    const pageHeight = Math.round(legendY + LEGEND_HEIGHT + 80);
     return diagramXml(page, cells, pageWidth, pageHeight);
 }
 
