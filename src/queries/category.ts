@@ -331,12 +331,27 @@ const acquireCategoryTreeLocks = async (
             current.path !==
                 (await computeNextPath(tx, resolvedParentId, nextUrl));
 
+        // `startsWith` は LIKE に落ちるが、Prisma は値中の `%` / `_` を
+        // エスケープしない。066 は既存 url を書き換えずに温存するため、
+        // `_` を含む legacy な path が現存し得る（`toCanonicalSlug` の注記）——
+        // その場合 `a_b/` は `axb/` のような**サブツリー外**の行まで拾う。
+        // 拾った行を rebase すると `path` と `parentId` が矛盾した行が生まれる
+        // （導出列である path はそこから自力復帰できない）ので、
+        // セグメント境界を見る `isWithinSubtree` でアプリ側でも絞り直す。
+        // ロック対象からも外れるため、無関係な行を掴んで待たせることもなくなる。
+        const currentNode = current;
         descendants =
-            includeDescendants && current !== null
-                ? await tx.category.findMany({
-                      where: { path: { startsWith: `${current.path}/` } },
-                      select: { id: true, path: true },
-                  })
+            includeDescendants && currentNode !== null
+                ? (
+                      await tx.category.findMany({
+                          where: {
+                              path: { startsWith: `${currentNode.path}/` },
+                          },
+                          select: { id: true, path: true },
+                      })
+                  ).filter((descendant) =>
+                      isWithinSubtree(descendant.path, currentNode.path)
+                  )
                 : [];
 
         const targets = orderedLockTargets([
