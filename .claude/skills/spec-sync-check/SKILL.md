@@ -151,7 +151,7 @@ grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.te
 #   `console.log("x"); // console` のようなインライン違反まで静かに落ちる
 
 # D-4: src/queries/ 以外のサーバーアクション禁止
-grep -rlnE "^[[:space:]]*['\"]use server['\"];?[[:space:]]*$" src/ --include="*.ts" --include="*.tsx" | grep -v "src/queries/"
+grep -rlnE "^[[:space:]]*['\"]use server['\"];?[[:space:]]*(//.*|/\*.*)?$" src/ --include="*.ts" --include="*.tsx" | grep -v "src/queries/"
 # → ヒット = "src/queries/ 以外でサーバーアクションを定義する" 違反
 #   行頭アンカー ^ は必須（付けないとコメント内の言及を誤検出する。ベースライン D-4 の注記参照）
 #   ただし `^['\"]` だけでは**関数本体に置く "use server"（インライン Server Action）を
@@ -160,6 +160,9 @@ grep -rlnE "^[[:space:]]*['\"]use server['\"];?[[:space:]]*$" src/ --include="*.
 #   変わり、Server Action は .tsx にも書けるため、二重引用符 + .ts だけでは検知漏れになる
 #   行末アンカー `;?[[:space:]]*$` も必須 —— 無いと `"use server": handler` のような
 #   **オブジェクトのプロパティ名**まで拾う。ディレクティブは必ず単独行で終わる
+#   ただし行末は**末尾コメントを許す**こと（`"use server"; // 理由` は正当な
+#   ディレクティブで、`$` 直結だと検知漏れになる）。`:` の後に続く形は
+#   コメント分岐にも一致しないので、プロパティ名の誤検出は起きない
 
 # D-5: src/csrf* トークンモジュール新設禁止 (ADR 001)
 find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"
@@ -461,7 +464,7 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 | D-1 `role !== "` | `grep -rn 'role !== "' src/queries/ --include="*.ts" \| grep -v "\.test\."` | **1**（実違反 **0**） | `product.ts:684` は**コメント内の言及**のみ。ロール判定のインライン展開は全廃 |
 | D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
 | D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -vE "^[^:]+:[0-9]+:[[:space:]]*//"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
-| D-4 queries 外の `use server` | `grep -rlnE "^[[:space:]]*['\"]use server['\"];?[[:space:]]*$" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される。**先頭空白 `[[:space:]]*` も必須** —— 関数本体に置くインライン Server Action の `"use server"` は必ずインデントされ、`^['\"]` だけでは検知漏れになる。**行末アンカー `;?[[:space:]]*$` も必須** —— 無いと `"use server": handler` のようなオブジェクトのプロパティ名を誤検出する |
+| D-4 queries 外の `use server` | `grep -rlnE "^[[:space:]]*['\"]use server['\"];?[[:space:]]*(//.*|/\*.*)?$" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される。**先頭空白 `[[:space:]]*` も必須** —— 関数本体に置くインライン Server Action の `"use server"` は必ずインデントされ、`^['\"]` だけでは検知漏れになる。**行末アンカー `;?[[:space:]]*$` も必須** —— 無いと `"use server": handler` のようなオブジェクトのプロパティ名を誤検出する。**ただし末尾コメントは許すこと**（`"use server"; // 理由` は正当なディレクティブで、`$` 直結だと検知漏れになる） |
 | D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"` | **0** | ADR 001 遵守（Step 3 / D-5 の正規コマンドと一致させること。`.tsx` を落とすと検知漏れになる） |
 | D-6 cookie の生 `JSON.parse` | `grep -rnE -e "JSON\.parse.*cookie" -e "cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
 
