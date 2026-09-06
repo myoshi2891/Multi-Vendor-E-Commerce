@@ -1,4 +1,4 @@
-import { CategoryTreeNode } from "@/lib/category-tree";
+import type { CategoryTreeNode } from "@/lib/category-tree";
 import {
     getAllStoreProducts,
     getProductPageData,
