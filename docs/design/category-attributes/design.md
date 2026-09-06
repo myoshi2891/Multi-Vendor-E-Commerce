@@ -273,14 +273,28 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
 
 - **アーカイブ済み許容値は「新規選択不可・既存値は保持」**。選択肢の生成は
   `archivedAt: null` に絞る（Q7「enum 許容値の削除」＝論理削除の目的）。一方、
-  既存商品が既にアーカイブ済みの `optionId` を持つ場合、その値を候補から外したまま
+  既存の値が既にアーカイブ済みの `optionId` を持つ場合、その値を候補から外したまま
   編集画面を開くと、**無編集で保存しただけで値が黙って落ちる**（`z.enum` が現在値を
-  弾き、必須なら保存不能・任意なら未入力へ潰れる）。したがって:
+  弾き、必須なら保存不能・任意なら未入力へ潰れる）。
 
-  - **表示**: 当該商品の現在値がアーカイブ済みなら、その 1 件だけを候補へ
-    「（廃止）」表記付きで**混ぜる**（他商品には出さない）。
-  - **保存**: スキーマの候補集合は「アクティブ ∪ その商品の現在値」。
+  **例外は「値の所有単位」ごとに閉じること。** 値の所有単位は
+  `ProductAttributeValue` なら `productId`、`VariantAttributeValue` なら
+  **`variantId`**（スキーマ §3 のとおり FK は variantId・NOT NULL）。VARIANT 定義で
+  「商品配下のバリアント全ての現在値を union する」実装にすると、**バリアント A が
+  持つアーカイブ済みの値がバリアント B の候補に現れ、B で新規に選べてしまう** ——
+  論理削除の目的（新規選択の停止）が破れる。したがって:
+
+  - **表示**: 当該レコード（product / **variant** 単位）の現在値がアーカイブ済み
+    なら、その 1 件だけを候補へ「（廃止）」表記付きで**混ぜる**（他の product /
+    他の variant には出さない）。
+  - **保存**: スキーマの候補集合は「アクティブ ∪ **その 1 レコードの現在値**」。
     別の値へ変更したら、アーカイブ済みの選択肢は候補から消える（片道）。
+    すなわち無編集保存は既存のアーカイブ済み `optionId` を許容し、別の値へ
+    変更した後はそれを許容しない。
+  - この規則を **`AttributeValueInput` / DTO / schema 構築（`buildAttributeShape`）/
+    writer / トランザクション内の再検証**すべてに同じ形で適用すること。
+    `VariantAttributeValue` の検証は `variantId` 単位で候補集合を組み立て、
+    商品全体で union しない。
   - サーバー側の再検証も同じ集合で行うこと（クライアントの候補は認可ではない）。
 
 - **候補が 1 件も無い `ENUM` 定義の扱いを決めておく**。`z.enum([])` は型として
@@ -475,8 +489,10 @@ const defs = await db.attributeDefinition.findMany({
     // 後段の重複 key 解決規則が d.category.path を読むため、リレーションを明示的に含める。
     // Prisma はデフォルトでスカラーのみ返すので、include が無いと d.category は undefined。
     // options も同様 —— これが無いと ENUM の z.enum([...]) を組み立てられない（Q4 の DTO）。
-    // 候補は archivedAt: null に絞る（廃止値は新規選択させない）。既存商品が持つ
-    // アーカイブ済みの現在値は、フォーム側で「その商品の現在値」として 1 件だけ足す。
+    // 候補は archivedAt: null に絞る（廃止値は新規選択させない）。既存の
+    // アーカイブ済みの現在値は、フォーム側で「その 1 レコード（PRODUCT なら
+    // productId、VARIANT なら variantId）の現在値」として 1 件だけ足す
+    // —— 商品配下のバリアント全体で union しないこと（上記 Q4 の ENUM 節）。
     include: {
         category: { select: { path: true } },
         options: {
