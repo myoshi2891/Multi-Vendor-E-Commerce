@@ -4772,7 +4772,7 @@ CodeRabbit のインラインレビュー 8 件を現行コードに突き合わ
 |------|-------------|
 | `20260901223148_category_tree_phase_b_resync` の `ON CONFLICT` を `DO NOTHING` へ | 適用済みマイグレーションの改変は禁止（tech.md 禁止事項）。挙動差はスラッグ再利用時のみで、必要なら補正マイグレーションを新設する |
 | `handleProductAndVariantUpdate` でリーフ検証を常時実行 | Phase B の経過措置として「カテゴリを変えない更新は素通し」が意図的な設計。常時化すると非リーフに紐づく既存商品の編集が不能になり、本番手順 Step 6 の STOP 計測が意味を失う |
-| Phase A 本番手順にアプリ書き込みゲートを導入 | 本手順は §1 のとおり書き込みを止めないための分岐経路。ゲートは目的そのものを打ち消す。取り残しは冪等 UPDATE の再実行（Step 6.5）で収束させる |
+| Phase A 本番手順にアプリ書き込みゲートを導入 | 本手順は §1 のとおり書き込みを止めないための分岐経路であり、**全区間へのゲートは目的そのものを打ち消す**ため不採用。**ただし「リコンサイルだけで収束する」という当時の理由付けは 2026-09-05 に撤回済み** —— legacy writer が書き続けている限り、Step 6.5 の UPDATE 直後・0 行確認と Step 7 の間・Step 7 の後にも取り残しが生えるため、冪等 UPDATE の再実行では閉じない。現行手順（[`docs/migration/07-category-tree-phase-a-production.md`](migration/07-category-tree-phase-a-production.md) Step 6.5 前提条件）は **(a) `Category` / `SubCategory` の書き込みを Step 6.5〜Step 7 の区間だけ止めて旧リビジョンを drain し切る**、または **(b) dual-write build を全インスタンスへ配備して旧リビジョンが完全に drain し切っている**、のいずれかを必須としている（`a7aefbc2`） |
 
 #### テスト統計（更新）
 
