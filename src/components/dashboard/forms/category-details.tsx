@@ -177,7 +177,20 @@ const CategoryDetails: FC<CategoryDetailsProps> = ({ data, categories }) => {
                 error instanceof Error
                     ? error.message
                     : "An unknown error occurred";
-            console.error(error);
+            if (error instanceof Error) {
+                console.error(
+                    "[CategoryDetails:handleSubmit] Failed to save category",
+                    {
+                        error: error.message,
+                        stack: error.stack,
+                    }
+                );
+            } else {
+                console.error(
+                    "[CategoryDetails:handleSubmit] Unknown error while saving category",
+                    { error }
+                );
+            }
             toast({
                 variant: "destructive",
                 title: "Oops!",
