@@ -7,7 +7,7 @@
 >
 > **着手前に必ず読むもの**（本プランは設計を再説明しない）:
 > - [`docs/design/category-attributes/design.md`](../docs/design/category-attributes/design.md)
->   §0（前提）/ §2（全 7 問の決定）/ §3（目標スキーマ・継承）/ §5（検証シナリオ A-1〜A-8）
+>   §0（前提）/ §2（全 7 問の決定）/ §3（目標スキーマ・継承）/ §5（検証シナリオ A-1〜A-10）
 > - [ADR-007](../docs/architecture/decisions/007-attribute-storage.md) の Decision D-1〜D-4
 >
 > **カテゴリツリー（066–068）との関係**: 属性定義は `Category.id` に紐づき、継承は
@@ -82,7 +82,7 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
   [`product-details.tsx:179`](../src/components/dashboard/forms/product-details.tsx) の resolver 差し替え
 - 商品詳細の 2 セクション表示（「仕様」= 構造化属性 /「その他仕様」= `Spec`）
 - パイロット部門 **2〜3 部門**の属性定義シード（design.md §4 の家電・ファッション・食品）
-- 検証シナリオ A-1〜A-8 のテスト
+- 検証シナリオ A-1〜A-10 のテスト
 
 **Out of scope**（越えないこと）:
 - **`Spec` の廃止・一括移行** —— design.md Q3 で**温存**と決定済み。0-B により機械変換は不可能
@@ -215,13 +215,23 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      `definitionId` が**呼び出し元のものである**ことは何も保証しない。判別可能な union を
      通っただけの id をそのまま upsert のキーに使うと、他人の商品・他店舗のバリアントへ
      書き込む経路（IDOR）が開く。`requireStoreOwner`（[`src/lib/auth-guards.ts`](../src/lib/auth-guards.ts)）
-     で店舗所有権を確認したうえで、次の 3 点を**書き込み前に**検証し、1 つでも外れたら拒否する:
+     で店舗所有権を確認したうえで、次の 4 点を**書き込み前に**検証し、1 つでも外れたら拒否する:
      1. 各 `attributes[].variantId` が **編集対象の商品に属する**バリアントであること
         （`ProductVariant.productId === product.id`）
      2. その商品が **その店舗に属する**こと（`Product.storeId === store.id`）
      3. 各 `definitionId` が **選択中のカテゴリで有効な定義**であること
         （`AttributeDefinition.categoryId` が選択ノードの祖先パス集合に含まれ、
         かつ `archivedAt` が null。scope が payload の `scope` と一致すること）
+     4. 各 `attributes[].optionId` が **その `definitionId` に属する生きた選択肢**で
+        あること（`AttributeOption.definitionId === attributes[].definitionId`
+        かつ `AttributeOption.archivedAt` が null）
+        > **`definitionId` の検証だけでは `optionId` は守られない。** 両者は
+        > 別行であり、`optionId` は payload から来る素の id である。
+        > 検証しないと、**別定義の選択肢**（例: 「色」の定義に「容量」の選択肢）を
+        > 差した行や、**archive 済みの選択肢**を差した行が作れてしまう。
+        > どちらも FK 制約は通る（`AttributeOption` の実在行を指しているため）ので、
+        > DB 側では止まらない —— A-6（archive 済みはファセットに出ない）と
+        > A-1（type と実列の一致）の不変条件が、値の側から静かに破れる。
      > 外側の検証は**早期拒否と観測のため**に置く（拒否のたびにロールバックが要らず、
      > どの id が弾かれたかを素直にログできる）。ただし**外側だけで済ませてはならない** ——
      > 外で通してから書くまでの間に、商品のカテゴリ移動・バリアントの付け替え・定義の
@@ -230,19 +240,23 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      > 再検証する」形を取っているのと同じ理由である。
      >
      > したがって `$transaction` の内側でも、`Product` 行・対象 `ProductVariant` 行・
-     > **`attributes[].definitionId` が指す `AttributeDefinition` 行のすべて**を
-     > `SELECT ... FOR UPDATE` で掴んだうえで上の 3 点を**再確認**してから書く
+     > **`attributes[].definitionId` が指す `AttributeDefinition` 行**・
+     > **`attributes[].optionId` が指す `AttributeOption` 行のすべて**を
+     > `SELECT ... FOR UPDATE` で掴んだうえで上の 4 点を**再確認**してから書く
      > （`Product.storeId` / `ProductVariant.productId` / `archivedAt` / `categoryId` /
-     > `scope` は、いずれも**掴んだ行の値**で判定する）。
+     > `scope` / `AttributeOption.definitionId` は、いずれも**掴んだ行の値**で判定する）。
      > **定義行を掴まないと 3 番目の検証だけが無防備に残る。** `Product` と
      > `ProductVariant` をロックしても `AttributeDefinition` は別行であり、
      > 再確認と書き込みの間に `archivedAt` の付与・カテゴリの付け替え・`scope` の変更が
      > 割り込める —— archive 済み定義の値が入った行が生まれ、`archivedAt` を
      > 「これ以上増えない」ことの保証として使えなくなる。
      > 再確認に落ちたらトランザクションごと拒否し、**属性行を 1 行も残さない**。
+     > **選択肢行も同じ理由で掴む。** 定義を掴んでも `AttributeOption` は別行であり、
+     > 再確認と書き込みの間に選択肢の archive・別定義への付け替えが割り込める。
      > ロック順序は「`Product` → `ProductVariant`（id 昇順）→ `AttributeDefinition`
-     > （id 昇順）」に固定してデッドロックを避ける（同じ定義を触る 2 リクエストが
-     > 互い違いの順で掴むと循環待ちになる）。
+     > （id 昇順）→ `AttributeOption`（id 昇順）」に固定してデッドロックを避ける
+     > （同じ定義・選択肢を触る 2 リクエストが互い違いの順で掴むと循環待ちになる。
+     > **id 昇順という決定的な順序が要**であり、payload の並び順で掴んではならない）。
      > Serializable + リトライでも同じ保証は得られるが、この経路は掴む行が少なく
      > 明示ロックのほうが失敗モードが読みやすい。
    - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、
@@ -253,19 +267,23 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      **そのバリアントの分だけ**削除される、(5) **外側の検証を通過した後に前提が崩れた場合**
      —— 検証後・書き込み前に商品を別カテゴリへ移す / バリアントを別商品へ付け替える /
      定義を archive する —— に、tx 内の再検証が拒否し**属性行が 1 行も残らない**こと、
-     の 5 本。型別カラム（`valueText` / `valueNumber` /
+     (6) **別定義の `optionId`** を混ぜた payload と **archive 済み `optionId`** を含む
+     payload が、外側・tx 内の双方で拒否され**属性行が 1 行も残らない**こと、
+     の 6 本。型別カラム（`valueText` / `valueNumber` /
      `valueBool` / `optionId`）のどれに入ったかも A-1 と同じ基準で検証する。
 9. **商品詳細の 2 セクション表示**
    （[`product-specs.tsx`](../src/components/store/product-page/product-specs.tsx)）。
    「仕様」= 構造化属性 /「その他仕様」= `Spec`。
 10. **パイロット部門シード**（2〜3 部門）。`@@unique([definitionId, value])` で upsert し
     **冪等**にする。
-11. **テスト**（design.md §5 の A-1〜A-8）。特に:
+11. **テスト**（design.md §5 の A-1〜A-10）。特に:
     - **A-1**: `type` と埋まった列の一致（Step 5 のヘルパー集約の実効性）
     - **A-3**: 必須属性欠落で create / update **両方**が拒否される
     - **A-4**: `AttributeOption.label` の改名が既存商品の表示に自動追随する
     - **A-7**: `TEXT → NUMBER` の型変更で変換不能値が `valueText` に残り **NULL 化されない**
     - **A-8**: `Spec` の読み書きが壊れていない（温存の回帰ガード）
+    - **A-9**: 任意 `NUMBER` 属性の空入力が `0` に化けない（保存 → 再読込のラウンドトリップ）
+    - **A-10**: 祖先・子孫に同じ `key` の定義がある場合の読み取り / 保存 / 拒否
     - **認可の拒否 3 本**（Step 8 の再検証に対応。型付き payload だけに依存していない
       ことの実証）: (1) **別商品**のバリアント id を混ぜた payload が拒否される、
       (2) **別店舗**の商品 id で呼ぶと拒否される、(3) 選択カテゴリと**無関係な定義**の
@@ -284,7 +302,7 @@ ALL を満たすこと:
 - [ ] `bunx prisma migrate dev` が新規マイグレーション 1 本を生成（`db push` 未使用）
 - [ ] `bun run erd:generate` の **stderr に orphan WARNING が 0 件**、`.drawio` が
       スキーマ変更と同一コミット
-- [ ] 検証シナリオ **A-1〜A-8 がすべて緑**
+- [ ] 検証シナリオ **A-1〜A-10 がすべて緑**
 - [ ] **scope 不一致を DB が拒否する統合テストが緑**（ADR-007 D-5 の 4 本）——
       `scope = VARIANT` の定義を `ProductAttributeValue` へ、`PRODUCT` の定義を
       `VariantAttributeValue` へ書く経路が両方向とも例外で落ちること。うち 1 本は
