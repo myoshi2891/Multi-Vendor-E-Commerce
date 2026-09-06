@@ -15,7 +15,7 @@ export default async function ProductFilters({
     storeUrl?: string; // The store URL for which the filters should be applied
 }) {
     const { category, subCategory, offer } = queries; // Extract the search query parameters from the queries object
-    const categories = await getAllCategories(storeUrl); // Fetch all categories from the database
+    const categories = await getAllCategories(storeUrl); // カテゴリツリー（ルート配列。各ノードが children を持つ）
     const offers = await getAllOfferTags(storeUrl); // Fetch all offer tags from the database
     return (
         <div className="scrollbar sticky top-0 h-[840px] flex-none basis-[196px] overflow-auto overflow-x-hidden pb-2.5 pr-6 transition-transform">

@@ -25,7 +25,6 @@ module.exports = {
         "!src/constants/**",
         "!src/data/**",
         "!src/config/**", // テスト共通インフラ
-        "!src/migration-scripts/**",
         "!src/**/icons/**", // 純表示 SVG
         "!src/app/**/{layout,loading,error,not-found,template,page}.tsx", // 純 RSC ラッパー
     ],

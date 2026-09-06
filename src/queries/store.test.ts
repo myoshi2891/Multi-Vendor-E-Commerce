@@ -1520,8 +1520,11 @@ describe("getAllStores", () => {
         it("ADMINロール以外の場合エラーをスローする", async () => {
             TestHelpers.mockUserWithRole("SELLER");
 
+            // auth-guards の正準文言（`requireAdmin`）。移行前は
+            // "Unauthorized Access: Admin Privileges Required to View Stores."
+            // という本関数固有の文言だったが、他の ADMIN 系アクションと揃えた。
             await expect(getAllStores()).rejects.toThrow(
-                "Unauthorized Access: Admin Privileges Required to View Stores."
+                "Only admins can perform this action."
             );
         });
     });

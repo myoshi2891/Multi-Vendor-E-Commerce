@@ -19,7 +19,7 @@ export async function seedAll(prisma: PrismaClient): Promise<void> {
   console.log("🌱 Seed開始...\n");
 
   // Phase 1: 基底エンティティ
-  console.log("📦 Phase 1: Country, User, Category, SubCategory, OfferTag");
+  console.log("📦 Phase 1: Country, User, Category ツリー, OfferTag");
   const baseMaps = await seedBase(prisma);
   console.log(`✅ Phase 1 完了 (${baseMaps.countries.size}カ国, ${baseMaps.users.size}ユーザー, ${baseMaps.categories.size}カテゴリ)\n`);
 
@@ -33,7 +33,6 @@ export async function seedAll(prisma: PrismaClient): Promise<void> {
   const productMaps = await seedProducts(prisma, {
     stores,
     categories: baseMaps.categories,
-    subCategories: baseMaps.subCategories,
     offerTags: baseMaps.offerTags,
     countries: baseMaps.countries,
   });

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { ReviewDetailsType } from "@/lib/types";
-import { currentUser } from "@clerk/nextjs/server";
+import { requireUser } from "@/lib/auth-guards";
 
 /**
  * @name upsertReview
@@ -16,28 +16,44 @@ export const upsertReview = async (
 	productId: string,
 	review: ReviewDetailsType
 ) => {
+	// 認可ガードは try の外に置く（tech.md「認可ガード」）——
+	// 中に入れると catch が `Error updating review: <原文>` で包み、
+	// 呼び出し側が「未認証」と「DB 障害」を区別できなくなる。
+	const user = await requireUser()
+
 	try {
-        // Get current user
-        const user = await currentUser()
-
-        // Ensure user is authenticated
-        if (!user) throw new Error('Unauthorized.')
-
-        // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードをオンデマンドで自動作成（フォールバック）。
-        // findUnique → create の2段構えだと並行リクエスト時に unique 制約違反のレースが起きうるため、upsert でアトミック化する。
+        // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードを
+        // オンデマンドで自動作成（フォールバック）。既存行は一切書き換えない。
+        //
+        // ここは `db.$transaction`（下の集計ブロック）の**外側**にあり、Product 行の
+        // FOR UPDATE による直列化では守られない。同一ユーザーの二重送信（連打）は
+        // 2 本がそのまま同時に到達しうるため、この 1 文自体がレース安全である必要がある。
+        //
+        // `upsert` は使えない。実測（testcontainers PostgreSQL・同時 2 本 × 15 回）:
+        //   - `update: {}` … Prisma は空の update を `ON CONFLICT DO UPDATE SET` へ
+        //     組み立てられず **read → insert の 2 往復に退化**する。30 本中 14 本が
+        //     `id` の P2002 で落ちた（CI の review-aggregation シナリオ 6 の実失敗原因）。
+        //   - `update` を埋めて native `ON CONFLICT ("id")` にしても、conflict target は
+        //     id 一本なので `email @unique` の衝突は素通りし、30 本中 4 本が P2002 で落ちた。
+        //
+        // `createMany` + `skipDuplicates` は `ON CONFLICT DO NOTHING`（target 無し
+        // ＝ 全 unique 制約が対象）になり、上記どちらの衝突も握り潰す。実測 0/30。
+        // 戻り値（作成件数）は参照しない —— 「作った」か「既に居た」かは呼び出し側に
+        // とって等価だからで、これは `update: {}` が表していた意図そのものである。
         const email = user.emailAddresses[0]?.emailAddress
         if (!email) throw new Error('User email not found in Clerk.')
 
-        await db.user.upsert({
-            where: { id: user.id },
-            update: {}, // 既存ユーザーは変更しない（フォールバック作成のみが目的）
-            create: {
-                id: user.id,
-                name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-                email: email,
-                picture: user.imageUrl || '',
-                role: 'USER',
-            },
+        await db.user.createMany({
+            data: [
+                {
+                    id: user.id,
+                    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+                    email: email,
+                    picture: user.imageUrl || '',
+                    role: 'USER',
+                },
+            ],
+            skipDuplicates: true,
         })
 
         // Ensure productId and review are provided

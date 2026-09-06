@@ -11,6 +11,7 @@ This directory contains guides and reference materials for database and framewor
 - [Test Strategy Updates](./03-test-strategy-updates.md)
 - [Document Update Checklist](./04-document-update-checklist.md)
 - [Postgres Migration Steps](./05-postgres-migration-steps.md)
+- [Category Tree Phase A — Production Rollout](./07-category-tree-phase-a-production.md) — ロックを最小化する本番適用手順（`CREATE INDEX CONCURRENTLY` / FK `NOT VALID` → `VALIDATE`）
 
 ### Framework Upgrades
 - [Framework Upgrade Guide](./06-framework-upgrade.md) — Next.js 14→16.2.1, React 18→19, Clerk v6→v7, Swiper 11→12, ESLint 8→9 (2026-03-28)

@@ -27,7 +27,7 @@ Prisma ORM を使用した PostgreSQL (Neon) データベースのスキーマ�
 - ✅ マイグレーション名は変更内容が明確にわかるスネークケース（例: `add_user_profile`）とすること。
 
 ### 3. データシードと運用
-- ✅ 開発用の初期データやテストデータの投入には、必要に応じてシードスクリプト（例: `bun run seed:e2e` または `src/migration-scripts/` 内のスクリプト）を活用すること。
+- ✅ 開発用の初期データやテストデータの投入には、シードスクリプト（`bun run seed:e2e` / `bun run seed:luxury`、実体は `prisma/seed/`）を活用すること。**`src/` 配下にシード・移行スクリプトを置かないこと** —— `src/` はアプリケーションコードのスコープであり、`console.log` 禁止と「サーバーアクションは `src/queries/` のみ」の規約が掛かる（旧 `src/migration-scripts/` は 2026-09-03 に削除済み）。
 - ✅ クライアントの再生成が必要な場合は `bunx prisma generate` を実行すること。
 
 ## Step-by-Step Guide

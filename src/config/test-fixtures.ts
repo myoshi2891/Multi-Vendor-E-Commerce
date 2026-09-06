@@ -124,6 +124,14 @@ type MockCategory = {
     image: string;
     url: string;
     featured: boolean;
+    // カテゴリツリー Phase A（ADR-006）の列。**Prisma の `Category` を満たす形に
+    // しておくこと** —— 欠けていると呼び出し側が `as Category` で握り潰すしかなく、
+    // 列を足したときに壊れるべきテストが壊れない。
+    parentId: string | null;
+    path: string;
+    depth: number;
+    sortOrder: number;
+    childCount: number;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -443,6 +451,11 @@ export const createMockCategory = (
     image: "https://example.com/electronics.jpg",
     url: "electronics",
     featured: false,
+    parentId: null,
+    path: "electronics",
+    depth: 0,
+    sortOrder: 0,
+    childCount: 0,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,

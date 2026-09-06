@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-coats",
+    categoryUrl: "lux-women-coats",
     offerTagUrl: "lux-new-arrival",
     variants: [
       {
@@ -110,8 +109,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-blouses",
+    categoryUrl: "lux-women-blouses",
     variants: [
       {
         variantName: "Champagne",
@@ -205,8 +203,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-trousers",
+    categoryUrl: "lux-women-trousers",
     variants: [
       {
         variantName: "Classic Black",
@@ -268,8 +265,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-sunglasses",
+    categoryUrl: "lux-acc-sunglasses",
     offerTagUrl: "lux-best-seller",
     variants: [
       {
@@ -358,8 +354,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-totes",
+    categoryUrl: "lux-bags-totes",
     variants: [
       {
         variantName: "Natural Canvas with Tan Leather",
@@ -417,8 +412,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "LUMIERE PARIS",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-lumiere-paris",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-gloves",
+    categoryUrl: "lux-acc-gloves",
     variants: [
       {
         variantName: "Cognac",

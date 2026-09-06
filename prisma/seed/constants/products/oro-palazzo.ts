@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-men",
-    subCategoryUrl: "lux-men-suits",
+    categoryUrl: "lux-men-suits",
     offerTagUrl: "lux-seasonal-sale",
     variants: [
       {
@@ -110,8 +109,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-shoes",
-    subCategoryUrl: "lux-shoes-loafers",
+    categoryUrl: "lux-shoes-loafers",
     offerTagUrl: "lux-best-seller",
     variants: [
       {
@@ -175,8 +173,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-watches",
-    subCategoryUrl: "lux-watches-classic",
+    categoryUrl: "lux-watches-classic",
     offerTagUrl: "lux-exclusive",
     variants: [
       {
@@ -235,8 +232,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "FIXED",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-watches",
-    subCategoryUrl: "lux-watches-classic",
+    categoryUrl: "lux-watches-classic",
     variants: [
       {
         variantName: "Rose Gold with Ivory Dial",
@@ -293,9 +289,8 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-accessories",
     // ポケットスクエアはスカーフに近いアクセサリーのため、lux-acc-scarves に分類
-    subCategoryUrl: "lux-acc-scarves",
+    categoryUrl: "lux-acc-scarves",
     variants: [
       {
         variantName: "Classic Trio",
@@ -352,8 +347,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "ORO PALAZZO",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-oro-palazzo",
-    categoryUrl: "lux-men",
-    subCategoryUrl: "lux-men-outerwear",
+    categoryUrl: "lux-men-outerwear",
     offerTagUrl: "lux-new-arrival",
     variants: [
       {

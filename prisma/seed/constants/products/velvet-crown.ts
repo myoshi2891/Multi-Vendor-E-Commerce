@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-handbags",
+    categoryUrl: "lux-bags-handbags",
     offerTagUrl: "lux-best-seller",
     variants: [
       {
@@ -104,8 +103,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-handbags",
+    categoryUrl: "lux-bags-handbags",
     offerTagUrl: "lux-limited-edition",
     variants: [
       {
@@ -163,8 +161,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-shoes",
-    subCategoryUrl: "lux-shoes-boots",
+    categoryUrl: "lux-shoes-boots",
     variants: [
       {
         variantName: "Camel Suede",
@@ -227,8 +224,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-shoes",
-    subCategoryUrl: "lux-shoes-heels",
+    categoryUrl: "lux-shoes-heels",
     variants: [
       {
         variantName: "Classic Red",
@@ -324,8 +320,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-belts",
+    categoryUrl: "lux-acc-belts",
     variants: [
       {
         variantName: "Tan with Silver Buckle",
@@ -386,8 +381,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "VELVET CROWN",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-velvet-crown",
-    categoryUrl: "lux-bags",
-    subCategoryUrl: "lux-bags-clutches",
+    categoryUrl: "lux-bags-clutches",
     offerTagUrl: "lux-exclusive",
     variants: [
       {

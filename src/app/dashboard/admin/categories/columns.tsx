@@ -54,6 +54,23 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Category } from '@prisma/client'
 import { useToast } from '@/hooks/use-toast'
 
+/** 1 階層あたりの字下げ幅（px）。 */
+const INDENT_PX = 16
+
+/**
+ * materialized path から親ノードの slug を取り出す。
+ *
+ * 親行を引き直さずに済むうえ、**`path` が正しく維持されていること自体の表示**にもなる
+ * （再親子化で子孫の path が取り残されると、この列が旧親を指したままになる）。
+ *
+ * @param path - `Category.path`（区切りは `/`、末尾に区切りは付かない）
+ * @returns 親の slug。ルートなら `null`
+ */
+const parentSlugOf = (path: string): string | null => {
+    const segments = path.split('/')
+    return segments.length < 2 ? null : (segments.at(-2) ?? null)
+}
+
 export const columns: ColumnDef<Category>[] = [
     {
         accessorKey: 'image',
@@ -77,8 +94,14 @@ export const columns: ColumnDef<Category>[] = [
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => {
+            // 1 テーブルに全階層が並ぶ（plan 068 で SubCategory ルートを廃止）ため、
+            // 深さは字下げでしか読めない。`buildCategoryTree` → `flattenCategoryTree`
+            // の pre-order で並んでいるので、字下げがそのまま木の形になる。
             return (
-                <span className="text-lg font-extrabold capitalize">
+                <span
+                    className="text-lg font-extrabold capitalize"
+                    style={{ paddingLeft: row.original.depth * INDENT_PX }}
+                >
                     {row.original.name}
                 </span>
             )
@@ -90,6 +113,29 @@ export const columns: ColumnDef<Category>[] = [
         header: 'URL',
         cell: ({ row }) => {
             return <span>/{row.original.url}</span>
+        },
+    },
+    {
+        id: 'parent',
+        header: 'Parent',
+        cell: ({ row }) => {
+            const parentSlug = parentSlugOf(row.original.path)
+            return (
+                <span className="text-muted-foreground">
+                    {parentSlug === null ? '—' : `/${parentSlug}`}
+                </span>
+            )
+        },
+    },
+    {
+        accessorKey: 'sortOrder',
+        header: 'Order',
+        cell: ({ row }) => {
+            return (
+                <span className="text-muted-foreground">
+                    {row.original.sortOrder}
+                </span>
+            )
         },
     },
     {
@@ -109,10 +155,19 @@ export const columns: ColumnDef<Category>[] = [
     },
     {
         id: 'actions',
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
             const rowData = row.original
 
-            return <CellActions rowData={rowData} />
+            // 親選択の候補は「このテーブルが描画している全カテゴリ」そのもの。
+            // ページ（Server Component）が `flattenCategoryTree` 済みの配列を
+            // `data` に渡しているので、行ごとに取得し直す必要はない。
+            // `getCoreRowModel` を使うのは、検索フィルタで絞られていても
+            // 親候補は全件でなければならないため。
+            const categories = table
+                .getCoreRowModel()
+                .rows.map((tableRow) => tableRow.original)
+
+            return <CellActions rowData={rowData} categories={categories} />
         },
     },
 ]
@@ -120,15 +175,18 @@ export const columns: ColumnDef<Category>[] = [
 // Define props interface for CellActions component
 interface CellActionsProps {
     rowData: Category
+    /** 親選択モーダルの候補（テーブルが描画中の全カテゴリ）。 */
+    categories: Category[]
 }
 
 // CellActions component definition
-const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
+const CellActions: React.FC<CellActionsProps> = ({ rowData, categories }) => {
     // Hooks
     const { setOpen, setClose } = useModal()
     const [loading, setLoading] = useState(false)
     const { toast } = useToast()
     const router = useRouter()
+
 
     // Return null if rowData or rowData.id don't exist
     if (!rowData || !rowData.id) return null
@@ -151,7 +209,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                                 // Custom modal component
                                 <CustomModal>
                                     {/* Store details component */}
-                                    <CategoryDetails data={{ ...rowData }} />
+                                    <CategoryDetails
+                                        data={{ ...rowData }}
+                                        categories={categories}
+                                    />
                                 </CustomModal>,
                                 async () => {
                                     return {

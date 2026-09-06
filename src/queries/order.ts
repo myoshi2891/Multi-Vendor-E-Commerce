@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireAdmin, requireSeller, requireUser } from "@/lib/auth-guards";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
 import {
     AdminOrderFilterSchema,
@@ -10,7 +10,6 @@ import {
     type AdminOrderFilter,
     type TrackOrderInput,
 } from "@/lib/schemas";
-import { currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
 
 /**
@@ -46,45 +45,45 @@ const restockOrderItems = async (
  */
 
 export const getOrder = async (orderId: string) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // 認可ガードは try/catch の外に置く（認可エラーを汎用 DB エラーで上書きしないため）
+    const user = await requireUser();
 
-    // Ensure the user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // Get order details with groups, product items, and ordered by total price
-    const order = await db.order.findUnique({
-        where: {
-            id: orderId,
-            userId: user.id,
-        },
-        include: {
-            groups: {
-                include: {
-                    items: true,
-                    store: true,
-                    coupon: true,
-                    _count: {
-                        select: {
-                            items: true,
+    try {
+        // Get order details with groups, product items, and ordered by total price
+        return await db.order.findUnique({
+            where: {
+                id: orderId,
+                userId: user.id,
+            },
+            include: {
+                groups: {
+                    include: {
+                        items: true,
+                        store: true,
+                        coupon: true,
+                        _count: {
+                            select: {
+                                items: true,
+                            },
                         },
                     },
+                    orderBy: {
+                        total: "desc",
+                    },
                 },
-                orderBy: {
-                    total: "desc",
+                shippingAddress: {
+                    include: {
+                        country: true,
+                        user: true,
+                    },
                 },
+                paymentDetails: true,
             },
-            shippingAddress: {
-                include: {
-                    country: true,
-                    user: true,
-                },
-            },
-            paymentDetails: true,
-        },
-    });
-
-    return order;
+        });
+    } catch (error: unknown) {
+        logError("[Order:getOrder] Error", error);
+        throw new Error("Failed to fetch order.");
+    }
 };
 
 /**
@@ -162,53 +161,70 @@ export const updateOrderGroupStatus = async (
     groupId: string,
     status: OrderStatus
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    // 認可ガードは try/catch の外（tech.md「エラーハンドリング」）
+    const user = await requireSeller();
 
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // Ensure user has seller privileges
-    if (user.privateMetadata.role !== "SELLER")
-        throw new Error("Only sellers can perform this action.");
-
-    // Ensure the user is a seller of the specified store
-    const store = await db.store.findUnique({
-        where: {
-            id: storeId,
-            userId: user.id,
-        },
-    });
+    // Prisma 呼び出しは**操作単位**で包む。所有権チェック（`!store`）と存在チェック
+    // （`!order`）は catch の外に置くこと —— 1 つの try で全体を包むと、認可の拒否が
+    // DB 障害と同じログ経路へ流れ、「権限が無い」と「DB が落ちている」を運用側で
+    // 区別できなくなる（tech.md「認可ガードは try/catch の外に置く」の趣旨）。
+    let store: Awaited<ReturnType<typeof db.store.findUnique>>;
+    try {
+        // Ensure the user is a seller of the specified store
+        store = await db.store.findUnique({
+            where: {
+                id: storeId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        logError("[Order:updateOrderGroupStatus] Store lookup failed", error);
+        throw new Error("Failed to update order group status.");
+    }
 
     // Verify ownership of the store
     if (!store) {
         throw new Error("Unauthorized to update order group status.");
     }
 
-    // Retrieve the order to be updated
-    const order = await db.orderGroup.findUnique({
-        where: {
-            id: groupId,
-            storeId: storeId,
-        },
-    });
+    let order: Awaited<ReturnType<typeof db.orderGroup.findUnique>>;
+    try {
+        // Retrieve the order to be updated
+        order = await db.orderGroup.findUnique({
+            where: {
+                id: groupId,
+                storeId: storeId,
+            },
+        });
+    } catch (error: unknown) {
+        logError(
+            "[Order:updateOrderGroupStatus] Order group lookup failed",
+            error
+        );
+        throw new Error("Failed to update order group status.");
+    }
 
     // Ensure order existence
     if (!order) {
         throw new Error("Order not found");
     }
 
-    // Update the order status
-    const updatedOrder = await db.orderGroup.update({
-        where: {
-            id: groupId,
-        },
-        data: {
-            status,
-        },
-    });
+    try {
+        // Update the order status
+        const updatedOrder = await db.orderGroup.update({
+            where: {
+                id: groupId,
+            },
+            data: {
+                status,
+            },
+        });
 
-    return updatedOrder.status;
+        return updatedOrder.status;
+    } catch (error: unknown) {
+        logError("[Order:updateOrderGroupStatus] Status update failed", error);
+        throw new Error("Failed to update order group status.");
+    }
 };
 
 /**
@@ -227,23 +243,25 @@ export const updateOrderItemStatus = async (
     orderItemId: string,
     status: ProductStatus
 ) => {
-    // Retrieve the current user
-    const user = await currentUser();
+    const user = await requireSeller();
 
-    // Ensure user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
-
-    // Ensure user has seller privileges
-    if (user.privateMetadata.role !== "SELLER")
-        throw new Error("Only sellers can perform this action.");
-
-    // Ensure the user is a seller of the specified store
-    const store = await db.store.findUnique({
-        where: {
-            id: storeId,
-            userId: user.id,
-        },
-    });
+    // 認可ガード（requireSeller）と所有権判定（`!store`）は try/catch の外、
+    // Prisma 呼び出しだけを中に置く —— updateOrderGroupStatus / getOrder と同じ形。
+    // 包まないと、DB 障害時に生の Prisma エラー（接続文字列を含みうる）が
+    // そのまま UI へ抜ける（tech.md「外部呼び出しは必ず try/catch でラップ」）。
+    let store: Awaited<ReturnType<typeof db.store.findUnique>>;
+    try {
+        // Ensure the user is a seller of the specified store
+        store = await db.store.findUnique({
+            where: {
+                id: storeId,
+                userId: user.id,
+            },
+        });
+    } catch (error: unknown) {
+        logError("[Order:updateOrderItemStatus] Store lookup failed", error);
+        throw new Error("Failed to update order item status.");
+    }
 
     // Verify ownership of the store
     if (!store) {

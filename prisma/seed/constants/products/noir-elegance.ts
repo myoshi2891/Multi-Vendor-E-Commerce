@@ -13,8 +13,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-coats",
+    categoryUrl: "lux-women-coats",
     offerTagUrl: "lux-new-arrival",
     variants: [
       {
@@ -110,8 +109,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-dresses",
+    categoryUrl: "lux-women-dresses",
     offerTagUrl: "lux-exclusive",
     variants: [
       {
@@ -172,8 +170,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-men",
-    subCategoryUrl: "lux-men-suits",
+    categoryUrl: "lux-men-suits",
     variants: [
       {
         variantName: "Jet Black",
@@ -268,8 +265,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-men",
-    subCategoryUrl: "lux-men-outerwear",
+    categoryUrl: "lux-men-outerwear",
     variants: [
       {
         variantName: "Obsidian Black",
@@ -329,8 +325,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-women",
-    subCategoryUrl: "lux-women-skirts",
+    categoryUrl: "lux-women-skirts",
     variants: [
       {
         variantName: "Ivory",
@@ -424,8 +419,7 @@ export const STORE_PRODUCTS: SeedProduct[] = [
     brand: "NOIR ELEGANCE",
     shippingFeeMethod: "ITEM",
     storeUrl: "lux-noir-elegance",
-    categoryUrl: "lux-accessories",
-    subCategoryUrl: "lux-acc-scarves",
+    categoryUrl: "lux-acc-scarves",
     offerTagUrl: "lux-best-seller",
     variants: [
       {

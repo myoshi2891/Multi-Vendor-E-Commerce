@@ -38,7 +38,7 @@
 | **cookie パース** | 外部 cookie の JSON パースは必ず `parseUserCountryCookie()` を使用すること（`src/lib/utils.ts`）。生の `JSON.parse` + キャストは禁止 |
 | **URL パラメータ正規化** | URL 由来の数値パラメータは `normalizePageParam()` / `normalizePositiveIntParam()`（`src/lib/utils.ts`）を使用すること。**インライン展開の新規追加は禁止**。上限クランプ無しの値で `skip` / `take` を算出することも禁止（詳細: 下記「URL 数値パラメータの正規化」項） |
 | **CSRF** | Next.js 16 Server Actions の Origin/Host 検証と Clerk `SameSite=Lax` セッション Cookie に依拠する。`src/lib/csrf*` 等のトークンモジュールを新設しないこと。例外時は [ADR 001](../../docs/architecture/decisions/001-csrf-policy.md) を Superseded で更新する |
-| **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する |
+| **認可ガード** | `src/queries/` の Server Action で `if (!user) ... if (role !== "...")` のインライン展開を新規追加しないこと。共通ヘルパー `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner`（`src/lib/auth-guards.ts`）を使用する。**既存コードの移行は 2026-09-03 に完了**し、残る 6 箇所は下記の承認済み例外のみ（[「認可ガードの承認済み例外」](#認可ガードの承認済み例外)） |
 | **静的解析（SonarCloud）** | CI の `sonarcloud` ジョブは **非ブロッキング**（`continue-on-error: true`、`SONAR_TOKEN` 未登録時は skip）。カバレッジは `jest.config.js` の `--coverage` が出す `coverage/lcov.info` を `sonar-project.properties` 経由で取り込む。`sonar.coverage.exclusions` は `collectCoverageFrom` の除外と**一致**させること（分母の二重計上を防ぐ）。Quality Gate のブロッキング化は New Code 基準を整えてから（[ADR-005](../../docs/architecture/decisions/005-sonarqube-static-analysis.md)） |
 | **コミットメッセージ** | Conventional Commits 形式（例: `feat:` / `fix:` / `chore:`） |
 
@@ -97,6 +97,29 @@ expect(subtotalCents + shippingCents).toBe(totalCents);
 > 不正なトークンが後続の正常値に隠れる経路自体を塞ぐこと。
 
 **実装例**: [plans/047](../../plans/047-e2e-checkout-order-detail.md) の「推奨実装（経路 B）」
+
+### 認可ガードの承認済み例外
+
+**この 2 モジュールだけは `auth-guards` ヘルパーへ移行しない。** それ以外の
+`src/queries/` は 2026-09-03 に移行済みで、新規追加は引き続き禁止。
+
+| モジュール | 箇所 | 移行しない理由 |
+|---|---|---|
+| `src/queries/profile.ts` | 5 | `currentUser()` を `try/catch` で包み、Clerk 障害を **`"Failed to get user orders."` 等の汎用メッセージ**へ畳んだうえで詳細は構造化ログにのみ残す設計。`requireUser()` は `` `requireUser: failed to fetch currentUser - ${error.message}` `` と**元の Clerk エラー文言を呼び出し側へ伝播**するため、移行すると情報開示面で後退する。挙動は `profile.test.ts` の「currentUser の catch」ブロックが 5 関数 × 2 観点で固定済み |
+| `src/queries/paypal.ts` | 1 | モジュール private ヘルパー `requirePayPalUser` の内部。`logPrefix` 付きのログと PayPal 固有のエラー整形を持つ意図的な設計で、[`04-interfaces.md`](../../specs/multi-vendor-ecommerce/04-interfaces.md) の "Server Actions (Queries)" 節が明示的に記載している |
+
+> **例外を認める基準は「移行すると何かが後退すること」。** 単に「書き換えが面倒」は
+> 理由にならない。上の 2 件はいずれも *`auth-guards` に無い保護*（メッセージ衛生 /
+> ドメイン固有のログ）を持っており、置換すると失われる。
+>
+> **逆に、移行で実バグが 2 件見つかった。** `user.ts` の `followStore` と
+> `review.ts` の `upsertReview` は認可チェックを**外側の `try` の中**に置いていたため、
+> `catch` が `"Error following store"` / `"Error updating review: <原文>"` で
+> 認可エラーを上書きし、呼び出し側が「未認証」と「DB 障害」を区別できなかった
+> （どちらもテストがその誤った挙動を追認していた）。これが上の
+> 「エラーハンドリング」欄が *認可ガードを `try/catch` の外に置く* と定めている理由である。
+
+---
 
 ### 配送料計算の中央集約
 

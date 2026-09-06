@@ -27,20 +27,17 @@ export type SeedUser = {
   role: Role;
 };
 
+/**
+ * カテゴリツリーのノード 1 件（plan 066 Phase A）。
+ * SubCategory は独立した型ではなくなり、`parentUrl` を持つ SeedCategory として表現する。
+ */
 export type SeedCategory = {
   name: string;
   url: string;
   image: string;
   featured: boolean;
-};
-
-export type SeedSubCategory = {
-  name: string;
-  url: string;
-  image: string;
-  featured: boolean;
-  /** 親カテゴリのurl（紐付け用） */
-  categoryUrl: string;
+  /** 親カテゴリの url。未指定ならルート（depth 0） */
+  parentUrl?: string;
 };
 
 export type SeedOfferTag = {
@@ -122,10 +119,11 @@ export type SeedProduct = {
   shippingFeeMethod: ShippingFeeMethod;
   /** ストアのurl（Store紐付け用） */
   storeUrl: string;
-  /** カテゴリのurl（Category紐付け用） */
+  /**
+   * 紐づけ先カテゴリの url。**リーフノードを指す**。
+   * 旧 Product.categoryId（ルート）は木を遡って導出するので、ここには書かない。
+   */
   categoryUrl: string;
-  /** サブカテゴリのurl（SubCategory紐付け用） */
-  subCategoryUrl: string;
   /** オファータグのurl（OfferTag紐付け用、オプション） */
   offerTagUrl?: string;
   variants: SeedProductVariant[];
@@ -266,8 +264,7 @@ export type SeedShippingRate = {
 export type SeedMaps = {
   countries: Map<string, string>; // code -> id
   users: Map<string, string>; // email -> id
-  categories: Map<string, string>; // url -> id
-  subCategories: Map<string, string>; // url -> id
+  categories: Map<string, string>; // url -> id（ルート・子を区別せず全ノード）
   offerTags: Map<string, string>; // url -> id
   stores: Map<string, string>; // url -> id
   products: Map<string, string>; // slug -> id

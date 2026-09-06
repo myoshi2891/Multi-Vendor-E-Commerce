@@ -39,6 +39,11 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+enum CategoryAliasSource {
+  CATEGORY
+  SUB_CATEGORY
+}
+
 model Category {
   id       String  @id @default(uuid())
   name     String
@@ -46,13 +51,48 @@ model Category {
   url      String  @unique
   featured Boolean @default(false)
 
+  // --- カテゴリツリー Phase A（ADR-006 / design.md §3）---
+  // 隣接リスト（parentId）+ materialized path のハイブリッド。
+  // path は区切り文字を末尾に付けずに保存する（例 "electronics/camera"）。
+  // サブツリー検索は { OR: [{ path: p }, { path: { startsWith: `${p}/` } }] } で書く。
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[] @relation("CategoryTree")
+
+  path       String
+  depth      Int    @default(0) // ルート = 0、上限 4（最大 5 階層・design.md Q5）
+  sortOrder  Int    @default(0)
+  childCount Int    @default(0) // リーフ判定の非正規化。整合性は統合テストで担保する
+
+  aliases CategorySlugAlias[]
+
   subCategories SubCategory[] @relation("CategoryToSubcategory")
   products      Product[]     @relation("CategoryToProduct")
+
+  // Phase A で追加した新 FK 経路（Phase C で categoryId に統合される）
+  nodeProducts Product[] @relation("CategoryNodeToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([name])
+  @@index([parentId, sortOrder])
+  @@index([path])
+}
+
+/// 旧 slug → 現ノードの対応表。
+/// キーを oldSlug 単体にしないのは、Category "camera" と SubCategory "camera" が
+/// 共存し得る（統合前は別テーブルの別 @unique）ため。まさにリネームが必要になった
+/// ペアが 1 キーに 2 行ぶつかって引けなくなる（design.md §2-Q2-3）。
+model CategorySlugAlias {
+  entityType CategoryAliasSource
+  oldSlug    String
+  categoryId String
+  category   Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime            @default(now())
+
+  @@id([entityType, oldSlug])
+  @@index([categoryId])
 }
 
 model SubCategory {
@@ -160,12 +200,18 @@ model Product {
   subCategoryId String
   subCategory   SubCategory @relation("SubCategoryToProduct", fields: [subCategoryId], references: [id])
 
+  // Phase A の新 FK。リーフノード 1 本を指す。Phase C（plan 068）で必須化し
+  // categoryId へ rename する。それまでは nullable = ロールバック可能。
+  categoryNodeId String?
+  categoryNode   Category? @relation("CategoryNodeToProduct", fields: [categoryNodeId], references: [id])
+
   offerTagId String?
   offerTag   OfferTag? @relation("OfferTagToProduct", fields: [offerTagId], references: [id])
 
   @@index([storeId])
   @@index([categoryId])
   @@index([subCategoryId])
+  @@index([categoryNodeId])
   @@index([offerTagId])
 }
 

@@ -22,11 +22,6 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
         link: "/dashboard/admin/categories",
     },
     {
-        label: "Sub-Categories",
-        icon: "categories",
-        link: "/dashboard/admin/subCategories",
-    },
-    {
         label: "Offer Tags",
         icon: "offer",
         link: "/dashboard/admin/offer-tags",
