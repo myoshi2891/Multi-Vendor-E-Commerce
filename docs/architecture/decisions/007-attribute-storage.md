@@ -67,7 +67,7 @@ model AttributeDefinition {
   //     ON "AttributeDefinition" ("categoryId", "key") WHERE "archivedAt" IS NULL;
   // 詳細: docs/design/category-attributes/design.md「経路 2 と一意制約」
   @@index([categoryId, facetable])
-  @@unique([id, scope])             // 複合 FK の参照先（値テーブルの scope 一致を DB で強制・D-5）
+  @@unique([id, scope, type])       // 複合 FK の参照先（値テーブルの scope / type 一致を DB で強制・D-5 / D-6）
 }
 
 model AttributeOption {
@@ -92,7 +92,11 @@ model ProductAttributeValue {
   // scope 固定の複合 FK: この列は常に PRODUCT（migration の CHECK で固定する）。
   // (definitionId, scope) で参照するため、VARIANT スコープの定義はここに入らない（D-5）。
   scope        AttributeScope @default(PRODUCT)
-  definition   AttributeDefinition @relation(fields: [definitionId, scope], references: [id, scope], onDelete: Restrict)
+  // 定義の type を値行にも複製し、FK に含める。これにより「定義の型が変わったのに
+  // 値行が旧型のまま」が DB で表現不能になり、下の CHECK が「その型の列だけが
+  // 埋まっている」を強制する（D-6）。
+  type         AttributeType
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type], references: [id, scope, type], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)        // 金額規約に倣い Float を使わない
@@ -114,7 +118,9 @@ model VariantAttributeValue {
   definitionId String
   // 対称。この列は常に VARIANT（CHECK で固定）。PRODUCT スコープの定義は入らない（D-5）。
   scope        AttributeScope @default(VARIANT)
-  definition   AttributeDefinition @relation(fields: [definitionId, scope], references: [id, scope], onDelete: Restrict)
+  // 対称（D-6）。
+  type         AttributeType
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type], references: [id, scope, type], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)
@@ -199,16 +205,71 @@ ALTER TABLE "VariantAttributeValue"
 > さもなくば拒否する」を選ばせる。
 
 **統合テストで不一致の拒否を実測すること**（[plan 069](../../../plans/069-implement-category-attributes.md)
-の Done criteria）。以下 4 本を最低限とし、いずれも**書き込みが例外で落ちる**ことを見る
-（アプリ層の Zod 検証を外しても DB が拒否することを確かめるため、`$executeRaw` で直接書く経路を
-1 本は含める）:
+の Done criteria）。以下 7 本を最低限とし、#1〜#6 は**書き込みが例外で落ちる**こと、
+#7 は**通る**ことを見る（#4〜#6 は D-6 の分。アプリ層の Zod 検証を外しても DB が拒否する
+ことを確かめるため、`$executeRaw` で直接書く経路を 1 本は含める）:
 
 | # | 書き込み | 期待 |
 |---|---------|------|
 | 1 | `scope = VARIANT` の定義を `ProductAttributeValue` へ | FK / CHECK 違反で reject |
 | 2 | `scope = PRODUCT` の定義を `VariantAttributeValue` へ | FK / CHECK 違反で reject |
 | 3 | `ProductAttributeValue.scope` に `'VARIANT'` を直書き | CHECK 違反で reject |
-| 4 | 正しい scope の組み合わせ | 成功（制約が正当な経路まで塞いでいないことの対照） |
+| 4 | `type = NUMBER` の定義の値行に `valueText` だけを入れる | CHECK 違反で reject（D-6） |
+| 5 | 値行の 4 列すべてを NULL のまま INSERT | CHECK 違反で reject（D-6） |
+| 6 | 定義の `type` だけを更新し、値行の `type` を据え置く | FK 違反で reject（D-6） |
+| 7 | 正しい scope / type の組み合わせ | 成功（制約が正当な経路まで塞いでいないことの対照） |
+
+### D-6. 「`type` とどの列が埋まるか」の一致も **DB 制約**で強制する
+
+D-5 で `scope` に対して行った議論は、`type` に対して**そのまま成立する**。
+`valueText` / `valueNumber` / `valueBool` / `optionId` のどれが埋まってよいかは
+`AttributeDefinition.type` が決める不変条件だが、値テーブルが `type` を知らなければ
+その不変条件は**書き手の規律にしか支えられていない**。C-2 のとおり本リポジトリには
+既に `createMany` の直書き経路があり、規律は破れる。
+
+**なぜ静かに壊れるか。** D-5 と同じく例外にならない。`type = NUMBER` の定義の下に
+`valueText` だけの行が残ると、`@@index([definitionId, valueNumber])` を使うファセット
+集計から `valueNumber IS NULL` として**黙って脱落**し、UI では「値がある」のに集計では
+「値が無い」という二枚舌になる。これは本 ADR が Option 2 / 3 を退けた理由（値と定義が
+乖離しうる 2 系統）を Option 1 の内部に再現することに等しい。
+
+**制約の形**（D-5 と同型に、複合 FK と CHECK の 2 段で張る）:
+
+1. `AttributeDefinition` の複合ユニークを `@@unique([id, scope, type])` へ広げる
+   （D-5 の 2 列版を置き換える。`id` 単体が PK なので実質の一意性は変わらず、
+   これは複合 FK の参照先を作るためだけの索引である）。
+2. 各値テーブルに `type` 列を持たせ、`(definitionId, scope, type)` で参照する。
+   **`type` を FK に含めることが要点** —— 定義の `type` を更新しようとすると、
+   旧 `type` を指す値行が残っている限り FK が拒否する。「型を書き換えて残りは
+   後で直す」という中間状態が**表現不能**になる（「変更コスト比較」の型変更手順を参照）。
+3. 「その `type` の列だけが埋まっている」ことを migration の raw SQL で固定する:
+
+```sql
+ALTER TABLE "ProductAttributeValue"
+  ADD CONSTRAINT "ProductAttributeValue_value_matches_type"
+  CHECK (
+    CASE "type"
+      WHEN 'TEXT'    THEN "valueText"   IS NOT NULL AND "valueNumber" IS NULL     AND "valueBool" IS NULL AND "optionId" IS NULL
+      WHEN 'NUMBER'  THEN "valueNumber" IS NOT NULL AND "valueText"   IS NULL     AND "valueBool" IS NULL AND "optionId" IS NULL
+      WHEN 'BOOLEAN' THEN "valueBool"   IS NOT NULL AND "valueText"   IS NULL     AND "valueNumber" IS NULL AND "optionId" IS NULL
+      WHEN 'ENUM'    THEN "optionId"    IS NOT NULL AND "valueText"   IS NULL     AND "valueNumber" IS NULL AND "valueBool" IS NULL
+    END
+  );
+-- "VariantAttributeValue" にも同一の CHECK を張る（名前だけ差し替える）。
+```
+
+> **CHECK は「どれか 1 つが埋まっている」ではなく「`type` が指す列が埋まっている」で
+> 書くこと。** 前者だと NUMBER 定義の下の `valueText` 行を通してしまい、防ぎたかった
+> 事故がそのまま残る。上の形は同時に**全列 NULL の行も拒否する**。
+>
+> **値の無い行は作らない。** 「まだ入力されていない任意属性」を全列 NULL の行で
+> 表すことは禁止し、**行を作らないこと**で表現する。`@@unique([productId, definitionId])`
+> があるため「行の不在 = 未入力」は一意に読め、`LEFT JOIN ... IS NULL` で
+> 未入力商品を列挙できる（「変更コスト比較」の *任意 → 必須* 行が前提にしている性質）。
+> 空行を許すと「NULL 行あり」と「行なし」の 2 通りの未入力表現が生まれ、
+> ファセットの件数がどちらを数えるかで割れる。
+>
+> Prisma の camelCase 列は PostgreSQL で二重引用符が必須である（D-1 / D-5 と同じ罠）。
 
 ---
 
@@ -292,8 +353,9 @@ GROUP BY d.key, bucket;
 **デメリット**:
 - 商品 1 件の属性を読むのに JOIN が要る（N 属性 = N 行）。
 - 属性が増えると値テーブルの行数が商品数 × 属性数で伸びる。
-- 型別カラムが 4 つあり、「どれが埋まっているか」は `type` を見ないと決まらない
-  （アプリ層の判別が必要）。
+- 型別カラムが 4 つあり、「どれが埋まっているか」は `type` を見ないと決まらない。
+  ただし D-6 で値行自身が `type` を持つため、判別に定義への JOIN は要らず、
+  不一致は DB が拒否する（アプリ層の規律には依存しない）。
 
 ### Option 2: 商品側 JSONB 列 + GIN インデックス
 
@@ -368,9 +430,17 @@ ORDER BY kv.key, product_count DESC;
 >
 > **したがって型変更の手順は 2 択に限る**:
 >
-> 1. **全行が変換可能** —— `valueText` → `valueNumber` を UPDATE し、`type` を
->    NUMBER へ書き換える。変換後に `WHERE valueNumber IS NULL` が 0 行であることを
->    同一トランザクション内で検証してからコミットする。
+> 1. **全行が変換可能** —— `valueText` → `valueNumber` を UPDATE し、定義と**値行の
+>    両方の** `type` を NUMBER へ書き換える。D-6 で `type` を複合 FK に含めたため、
+>    定義だけを先に更新すれば旧 `type` を指す値行が FK 違反になり、値行だけを先に
+>    更新すれば参照先の組が存在せずやはり違反になる —— **どちらの順序でも単独では
+>    通らない**。したがってこの FK は migration で
+>    `DEFERRABLE INITIALLY DEFERRED` として張り、定義・値行・列の移し替えを
+>    **1 トランザクションでまとめてコミットする**（Prisma スキーマでは表現できないため
+>    D-5 / D-6 の CHECK と同じく raw SQL で宣言する）。コミット前に
+>    `WHERE valueNumber IS NULL` が 0 行であることを同一トランザクション内で検証する。
+>    この「まとめてしか通らない」性質こそが、下の禁止事項を手順書ではなく
+>    **DB で担保している**部分である。
 > 2. **1 行でも変換不能** —— 既存定義は `type = TEXT` のまま `archivedAt` を立てて
 >    退避し（変換不能な値を含む全行を `valueText` に保持したまま残す）、**別の
 >    NUMBER 定義を新規作成**して以後の入力をそちらへ向ける。移行できる行は新定義へ
@@ -400,17 +470,18 @@ ORDER BY kv.key, product_count DESC;
   設計されており、パーティショニングは当面不要と判断するが、監視対象ではある。
 - **商品 1 件の属性取得に JOIN が必要**（現行の `include: { specs: true }` と同じ形なので
   新しい負担ではない）。
-- **型別 4 カラムのうち 1 つだけが埋まる**疎な表現になる。どれを読むかは
-  `AttributeDefinition.type` から決まるため、読み出しヘルパーを 1 箇所に集約すること
-  （散らすと `type` と実際に埋まった列の不一致が検出できなくなる）。
+- **型別 4 カラムのうち 1 つだけが埋まる**疎な表現になる（どれが埋まるかは
+  値行の `type` が決め、D-6 の CHECK が DB で強制する）。読み出しヘルパーは
+  1 箇所に集約すること —— 不整合の防止は DB 側で済んでいるので、こちらの理由は
+  分岐を重複させないという保守上のものである。
 - 属性の追加が**マイグレーションではなくデータ投入**で済む点は Option 2 と同じだが、
   **型別カラムの追加**（将来 `DATE` 型を足す等）は DDL になる。
 
 ### Risks
 
-- **`type` と埋まっている列の不整合** —— `type = NUMBER` なのに `valueText` だけ埋まっている行。
-  → 書き込みを 1 つのヘルパーに集約し、整合性を検査する統合テストを置く
-  （C-2 の教訓: 規律だけに頼らない）。
+- ~~**`type` と埋まっている列の不整合**~~ —— D-6 の複合 FK + CHECK で**表現不能**にした。
+  残るリスクは制約そのものの張り忘れなので、拒否されることを実測する統合テスト
+  （D-5 の表 #4〜#6）を Done criteria に置く（C-2 の教訓: 規律だけに頼らない）。
 - **`archivedAt` の付いた定義がファセットに漏れる** → 集計クエリの
   `d."archivedAt" IS NULL` を共通ヘルパーに閉じ込める。
 - **属性が facetable のまま大量の distinct 値を持つ**（例: 自由記述 TEXT を facetable にする）
