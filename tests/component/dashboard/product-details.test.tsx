@@ -425,6 +425,14 @@ describe("ProductDetails", () => {
         });
     });
 
+    // spy の解除は afterEach に置く —— テスト本体末尾の mockRestore() は
+    // waitFor が失敗した時点で到達しなくなり、黙らせた console.error が
+    // 以降のテストへ漏れる。clearAllMocks は呼び出し履歴を消すだけで
+    // spy の実装を戻さないので、別途 restoreAllMocks が要る。
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     describe("カテゴリ選択（plan 068 のツリー化）", () => {
         it("正常系: 商品を紐づけられる深さのノードだけを選択可能にする", () => {
             // Arrange / Act
@@ -579,9 +587,7 @@ describe("ProductDetails", () => {
             mockUpsertProduct.mockRejectedValue(
                 new Error("Products can only be attached to leaf categories.")
             );
-            const consoleSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            jest.spyOn(console, "error").mockImplementation(() => {});
             renderForm(validData());
 
             // Act
@@ -597,15 +603,12 @@ describe("ProductDetails", () => {
                 })
             );
             expect(mockRefresh).not.toHaveBeenCalled();
-            consoleSpy.mockRestore();
         });
 
         it("異常系: Error 以外が投げられても汎用文言で表示する", async () => {
             // Arrange —— instanceof Error の else 分岐
             mockUpsertProduct.mockRejectedValue("boom");
-            const consoleSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            jest.spyOn(console, "error").mockImplementation(() => {});
             renderForm(validData());
 
             // Act
@@ -619,7 +622,6 @@ describe("ProductDetails", () => {
                     description: "An unknown error occurred",
                 })
             );
-            consoleSpy.mockRestore();
         });
 
         it("異常系: 必須項目が欠けていればサーバーを呼ばない", async () => {
