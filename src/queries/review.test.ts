@@ -13,7 +13,9 @@ jest.mock("@/lib/db", () => ({
         user: {
             findUnique: jest.fn(),
             create: jest.fn(),
-            upsert: jest.fn(),
+            // フォールバック作成は createMany + skipDuplicates（ON CONFLICT DO NOTHING）。
+            // upsert はレース時に P2002 を投げるため使わない（review.ts のコメント参照）。
+            createMany: jest.fn(),
         },
         review: {
             findFirst: jest.fn(),
@@ -35,11 +37,9 @@ const mockDb = require("@/lib/db").db;
 
 beforeEach(() => {
     jest.clearAllMocks();
-    // upsert はフォールバック作成用。戻り値は upsertReview 内で参照しないが、
-    // 既定で解決させて undefined による予期せぬ挙動を避ける。
-    mockDb.user.upsert.mockResolvedValue({
-        id: TEST_CONFIG.DEFAULT_USER_ID,
-    });
+    // createMany はフォールバック作成用。戻り値（count）は upsertReview 内で
+    // 参照しないが、既定で解決させて undefined による予期せぬ挙動を避ける。
+    mockDb.user.createMany.mockResolvedValue({ count: 1 });
     // transaction callback を同じ DB モックで実行する（user.test.ts と同じ配線）。
     mockDb.$transaction.mockImplementation(
         async (callback: (tx: typeof mockDb) => Promise<unknown>) =>
@@ -87,18 +87,21 @@ describe("upsertReview", () => {
 
             await upsertReview("product-001", createMockReview());
 
-            // findUnique→create のレースを避けるため upsert でアトミックに作成されること。
-            // 既存ユーザーは update: {} で変更しない（フォールバック作成のみが目的）。
-            expect(mockDb.user.upsert).toHaveBeenCalledWith({
-                where: { id: TEST_CONFIG.DEFAULT_USER_ID },
-                update: {},
-                create: {
-                    id: TEST_CONFIG.DEFAULT_USER_ID,
-                    name: "John Doe",
-                    email: "john@example.com",
-                    picture: "https://example.com/avatar.jpg",
-                    role: "USER",
-                },
+            // 並行投稿でも P2002 にならない「無ければ作る」であること。
+            // skipDuplicates: true は ON CONFLICT DO NOTHING に落ち、id / email の
+            // どちらの unique 衝突も握り潰す。**この true を落とすとレースが再発する**
+            // ため、期待値から外してはならない（回帰ガード）。
+            expect(mockDb.user.createMany).toHaveBeenCalledWith({
+                data: [
+                    {
+                        id: TEST_CONFIG.DEFAULT_USER_ID,
+                        name: "John Doe",
+                        email: "john@example.com",
+                        picture: "https://example.com/avatar.jpg",
+                        role: "USER",
+                    },
+                ],
+                skipDuplicates: true,
             });
         });
 
@@ -112,12 +115,12 @@ describe("upsertReview", () => {
                 emailAddresses: [],
             });
 
-            // メール検証は upsert 前に行われるため、upsert へは到達しない
+            // メール検証は作成前に行われるため、createMany へは到達しない
             await expect(
                 upsertReview("product-001", createMockReview())
             ).rejects.toThrow("User email not found in Clerk.");
 
-            expect(mockDb.user.upsert).not.toHaveBeenCalled();
+            expect(mockDb.user.createMany).not.toHaveBeenCalled();
         });
     });
 
