@@ -143,8 +143,12 @@ grep -rn "new PrismaClient(" src/ --include="*.ts" --include="*.tsx"
 # → ヒット = "src/lib/db.ts シングルトン経由を使う" 違反 (例外: prisma/seed/, tests/)
 
 # D-3: src/ 配下の console.log 禁止 (CLI のみ許容)
-grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.test\."
+grep -rn "console\.log(" src/ --include="*.ts" --include="*.tsx" | grep -v "\.test\." \
+  | grep -vE "^[^:]+:[0-9]+:[[:space:]]*//"
 # → ヒット = "console.log 禁止" 違反
+#   末尾の除外は **本文の先頭が `//` の行（= 行コメントそのもの）** だけを落とす。
+#   `grep -v "// *console"` のような**行のどこかに一致すれば除外**する形にしないこと ——
+#   `console.log("x"); // console` のようなインライン違反まで静かに落ちる
 
 # D-4: src/queries/ 以外のサーバーアクション禁止
 grep -rlnE "^[[:space:]]*['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" | grep -v "src/queries/"
@@ -454,7 +458,7 @@ docs/testing/QA_HANDOFF.md                 即時 TODO + 依頼プロンプト (
 | D-1 `if (!user)` | `grep -rn "if (!user)" src/queries/ --include="*.ts" \| grep -v "\.test\."` | **6** | `profile.ts` 5 / `paypal.ts` 1。**すべて tech.md「認可ガードの承認済み例外」に記載済み**（移行すると *auth-guards に無い保護* が失われる 2 モジュール）。これ以外は 2026-09-03 に `requireUser` / `requireSeller` / `requireAdmin` へ移行完了 |
 | D-1 `role !== "` | `grep -rn 'role !== "' src/queries/ --include="*.ts" \| grep -v "\.test\."` | **1**（実違反 **0**） | `product.ts:684` は**コメント内の言及**のみ。ロール判定のインライン展開は全廃 |
 | D-2 `new PrismaClient(` | `grep -rn "new PrismaClient(" src/` | **2** | `src/lib/db.ts:5` はシングルトン本体（規約の実体）、`src/lib/db.test.ts` はテスト名の文字列。**いずれも違反ではない** |
-| D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -v "// *console"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
+| D-3 `console.log(` | `grep -rn "console\.log(" src/ \| grep -v "\.test\." \| grep -vE "^[^:]+:[0-9]+:[[:space:]]*//"` | **0** | `src/migration-scripts/` の削除（2026-09-03）で解消 |
 | D-4 queries 外の `use server` | `grep -rlnE "^[[:space:]]*['\"]use server['\"]" src/ --include="*.ts" --include="*.tsx" \| grep -v "src/queries/"` | **0** | 同上。**行頭アンカー `^` を必ず付けること** —— 付けないと `order-settlement.ts` / `payment-status.ts` / `store-constants.ts` の**コメント内言及**が誤検出される。**先頭空白 `[[:space:]]*` も必須** —— 関数本体に置くインライン Server Action の `"use server"` は必ずインデントされ、`^['\"]` だけでは検知漏れになる |
 | D-5 `csrf*` モジュール | `find src/lib -name "csrf*.ts" -o -name "csrf*.tsx"` | **0** | ADR 001 遵守（Step 3 / D-5 の正規コマンドと一致させること。`.tsx` を落とすと検知漏れになる） |
 | D-6 cookie の生 `JSON.parse` | `grep -rnE -e "JSON\.parse.*cookie" -e "cookies\(\).*JSON\.parse" src/ --include="*.ts" --include="*.tsx"` | **1** | `src/lib/utils.ts:347` は `parseUserCountryCookie` の**実装内部**。違反ではない |
