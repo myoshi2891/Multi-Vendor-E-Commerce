@@ -2122,7 +2122,8 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
     043（VRT 再撮影）/ 046（/browse ページネーション配線 — `src/` の最小 feature を含む）** に
     着手可能。045 と 046 は同じ seed ファイル（`tests/e2e/seed/`）を触るため後発が先発の
     diff を取り込むこと。042 完了後は **047（注文系 P1）→ 048 → 050 → 049** の順を推奨。
-    全プラン `CLERK_SECRET_KEY` + ローカル Docker Postgres（`scripts/e2e/run-local.sh`）前提、
+    認証系（**042・047〜050**）は `CLERK_SECRET_KEY` 必須（043〜046 は不要）。全プラン
+    ローカル Docker Postgres（`scripts/e2e/run-local.sh`）前提、
     実行前に :3000 の解放（`docker compose stop app`）が必要（044 が機械化する）。
 14. **Round 9 E2E plans (051–056)** — E2E 特化の第 2 弾（R8 未スイープの残余切り口。
     詳細: `audit/findings-17-e2e-coverage-r9.md`。ベースラインは R8 実測 #2 を SSOT 引き継ぎ —
@@ -2213,7 +2214,7 @@ Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` (one-line reason) | `
 |------|---------|------|
 | **hard 依存** | 表の "Depends on" 列 | 047〜050 → 042 / 052 → 042 Step 4 / 053（サインアウトのみ）→ 042 / 054 → 043 / 055 → 042 / **066 → 013 / 067 → 066 / 068 → 067** |
 | **soft 依存** | 下の soft ordering 一覧 | 014 → 013 / 015 → 014 / 018 → 021 / 022 → 019・018 / **069 → 066**（継承を使う場合のみ） |
-| **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041・**042〜056**（E2E ラウンドは `scripts/e2e/run-local.sh` がローカル Docker Postgres を起動する。上の 13. / 14. を参照）・**066〜069** / `CLERK_SECRET_KEY`: 042・**067・068** / `psql`（**`$DIRECT_URL` 経由**。`$DATABASE_URL` は Accelerate の `prisma://` で不可）: **069** |
+| **環境前提** | **各プランの Step 0 / 前提チェック** | `Docker 必須`: 027・031〜041・**042〜056**（E2E ラウンドは `scripts/e2e/run-local.sh` がローカル Docker Postgres を起動する。上の 13. / 14. を参照）・**066〜069** / `CLERK_SECRET_KEY`: 042・**047〜050**・**067・068**（043〜046 は認証不要 —— 045 は明示的に「CLERK_SECRET_KEY 無し環境でも動く」） / `psql`（**`$DIRECT_URL` 経由**。`$DATABASE_URL` は Accelerate の `prisma://` で不可）: **069** |
 
 - soft 依存は先行プランの設計を**消費できると望ましい**が、未実施でも着手可能
   （各プラン冒頭の Executor 指示に、先行なしで進める場合の前提が明記されている）。
