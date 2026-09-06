@@ -11,11 +11,15 @@
 - Product: belongs to a store and to the category tree; has variants, specs,
   reviews, and questions. The category link is **phase-dependent**
   (ADR-006 / `docs/design/category-tree/design.md`):
-  - **Phase A / B (current)**: three legacy-plus-new foreign keys run in
-    parallel — `categoryId` points at the **root** node, `subCategoryId` at the
-    **leaf** (both retained from the pre-tree `Category` / `SubCategory` pair),
-    and `categoryNodeId` is the single new leaf reference that subtree filters
-    read. All three are dual-written.
+  - **Phase A (plan 066)**: reads and writes stay on the legacy pair —
+    `categoryId` points at the **root** node and `subCategoryId` at the
+    **leaf**. A nullable `categoryNodeId` is added and backfilled once, but
+    **no write path populates it** (the backfill is a snapshot, re-synced
+    immediately before the Phase B read switch).
+  - **Phase B (plan 067, current)**: subtree filters switch to reading
+    `categoryNodeId`, and writes become **dual-write** — the new
+    `categoryNodeId` and the legacy `categoryId` / `subCategoryId` are all
+    updated, so reverting the read path alone rolls Phase B back.
   - **Phase C (target, plan 068 — irreversible)**: `SubCategory` is dropped and
     `categoryNodeId` is renamed to `categoryId`, leaving Product with **one**
     reference to a single `Category` node at any depth. Root/leaf is then a
