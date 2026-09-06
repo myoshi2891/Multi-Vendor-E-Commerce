@@ -300,31 +300,42 @@ Phase C = [plan 068](../../plans/068-implement-category-tree-admin-cutover.md) �
 > である。移行後に `SubCategory` が 1 行でも削除されていると、その複製 `Category` 行は
 > join に掛からず残留し、参照検査もベースライン照合も取りこぼす。
 
-```sql
--- 【STOP 判定】列を落とす前に、複製行を指している Product が無いことを確かめる。
--- 0 でなければ Phase B/C の書き込み経路がまだ生きている（= ロールバックの前提が
--- 崩れている）ので、ここで中断して報告すること。押し切ると商品のカテゴリ紐づけが
--- 失われる。**この検査は FK と列を落とす前にしか成立しない** —— 列を落とした後では
--- 参照そのものが消え、後段の DELETE は静かに通ってしまう。
---
--- 突き合わせ先は**現在の "SubCategory" 行ではない** —— 移行後に SubCategory が 1 行でも
--- 削除されていると、その複製 Category 行は join に掛からず、複製行を指したままの
--- Product を**見落とす**。Phase A が残した恒久マーカー（A-4 の別名表の
--- 'SUB_CATEGORY' 行 = 取り込んだ SubCategory の id）を使うこと。
--- 1 商品につき別名が複数あり得る（別名表の PK は (entityType, oldSlug)）ので、
--- join ではなく EXISTS で数える。数えるのは「複製行を指している Product の件数」。
-SELECT count(*) AS products_on_mirror_rows
-  FROM "Product" p
- WHERE EXISTS (
-       SELECT 1
-         FROM "CategorySlugAlias" a
-        WHERE a."categoryId" = p."categoryNodeId"
-          AND a."entityType" = 'SUB_CATEGORY');
--- ↑ が 0 であることを確認してから、以下を実行する。
--- 再実行時に別名表が既に落ちている場合は、突き合わせ先を "PhaseARollbackMirror" に
--- 読み替えること（下の破壊的ブロックが commit 済み = 別名表の内容は移し終えている）。
+> **「複製行を指す Product が 0 件」を STOP 条件にしてはならない。** Step 6 の backfill は
+> `categoryNodeId = subCategoryId` を全件に流すため、**Phase A が成功していれば
+> 全商品が複製行を指している**。それは異常ではなく Phase A の完了状態そのものであり、
+> この件数を 0 と要求すると**正当なロールバックが永久に実行できない**。
+> 判定すべきは「複製行が参照されているか」ではなく、**「複製行への参照を捨てても
+> カテゴリ紐づけが失われないか」**である。
 
--- ここから先が破壊的処理。参照検査を通した**後**に、単一トランザクションへまとめる。
+```sql
+-- 【STOP 判定 1】Phase C が走っていないこと。Phase C は "subCategoryId" を落とすため、
+-- 落ちていれば商品のカテゴリ紐づけは新列にしか無く、Phase A のロールバックは
+-- そもそも成立しない（不可逆。ダンプからの復旧に切り替えること）。
+SELECT count(*) AS legacy_column_present
+  FROM information_schema.columns
+ WHERE table_name = 'Product' AND column_name = 'subCategoryId';
+-- ↑ が 1 であること。0 なら STOP して報告する。
+
+-- 【STOP 判定 2】書き込みが止まっていること。dual-write ビルド（Step 6 の経路 (b)）を
+-- 巻き戻し、"categoryNodeId" を書くリビジョンが 1 つも稼働していないことを
+-- **デプロイ側で確認する**（SQL では確認できない。ここが人間の判断点）。
+-- 静止する前に測ると、下の判定 3 は「今は 0 でも次の書き込みで増える」値になる。
+
+-- 【STOP 判定 3】新列にしか紐づきを持たない Product が無いこと。
+-- 静止後にこれが 0 なら、"categoryNodeId" を落としても旧列 "subCategoryId" が
+-- 紐づきを保持しているため、ロールバックで失われる情報は無い。
+SELECT count(*) AS products_without_legacy_link
+  FROM "Product"
+ WHERE "categoryNodeId" IS NOT NULL
+   AND "subCategoryId"  IS NULL;
+-- ↑ が 0 であることを確認してから、以下を実行する。
+-- 0 でなければ、Phase B 以降に新経路だけで作られた商品が居る。押し切ると
+-- その商品のカテゴリ紐づけが失われるので、STOP して個別に旧列へ書き戻すこと。
+
+-- ここから先が破壊的処理。上の 3 判定を通した**後**に、単一トランザクションへまとめる。
+-- 順序は「先に "categoryNodeId"（と FK）を落とし、その後に複製行を DELETE する」。
+-- 逆順にすると複製行を指す全商品の FK に阻まれて DELETE が必ず失敗する —— これは
+-- 検知したい異常ではなく、backfill 済みなら**必ず**起きる正常な状態である。
 -- 途中で失敗しても部分適用が残らないため、同じブロックをそのまま再実行できる
 -- （マーカー取得済み、または別名表が既に落ちている場合は INSERT を飛ばす）。
 BEGIN;
@@ -392,13 +403,13 @@ DROP TYPE IF EXISTS "CategoryAliasSource";
 DROP TABLE IF EXISTS "PhaseARollbackMirror";
 ```
 
-> 上の `products_on_mirror_rows` が 0 でない場合は、**まだ Phase B/C の書き込み経路が
-> 生きている**（`categoryNodeId` が複製行を指したまま）ことを意味する。ロールバックの
-> 前提が崩れているので STOP して報告すること。
->
-> かつてこの注記は「`DELETE` が `Product` の FK で止まったら STOP」と書いていたが、
-> **その時点では FK も列も既に落ちている**ため、この検知は原理的に発火しない。
-> 判定は上記のとおり drop の**前**に置くこと。
+> **この判定は 2 度書き直されている。** 最初は「`DELETE` が `Product` の FK で止まったら
+> STOP」だったが、その時点では FK も列も既に落ちており**原理的に発火しない**。次に
+> 「複製行を指す Product が 0 件」へ移したが、これは backfill 後に**必ず全商品が該当する**
+> ため、逆に**常に発火して正当なロールバックを止める**条件だった。どちらも
+> 「複製行が参照されていること」を異常と見なした点が誤りで、それは Phase A の
+> 正常な完了状態である。現行の 3 判定は代わりに
+> **「Phase C 未実行」「書き込みの静止」「旧列にフォールバックできること」**を見る。
 
 その後 `bunx prisma migrate resolve --rolled-back 20260831102943_category_tree_phase_a`。
 

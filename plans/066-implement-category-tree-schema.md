@@ -232,11 +232,16 @@ ALL を満たすこと:
       （Step 1 の slug 衝突件数 **と** Step 4 の A-6 直後に測る非リーフ紐づけ商品件数の 2 本）
       —— 上記「実施結果」節（衝突 **0 件** / 非リーフ紐づけ **0 件**）
 - [ ] **逆移行が用意され、実行して検証済み** ⚠️ **未達**（手順のみ整備・実行検証なし。「実施結果」節参照）: 新列・新テーブルの drop に加えて、
-      **`SubCategory` と同じ id を持つ複製 `Category` 行を削除**する
-      （`DELETE FROM "Category" c USING "SubCategory" s WHERE c.id = s.id;`）。
+      **A-3 が複製した `Category` 行を削除**する。突き合わせ先は**現在の `SubCategory`
+      テーブルではない** —— Phase A 後に `SubCategory` が 1 行でも削除されていると、
+      その複製行は join に掛からず残留する。Phase A が残した恒久マーカー
+      （`PhaseARollbackMirror`、または別名表 `CategorySlugAlias` の
+      `entityType = 'SUB_CATEGORY'` 行）を使うこと:
+      `DELETE FROM "Category" c USING "PhaseARollbackMirror" m WHERE c.id = m."categoryId";`
       列を drop するだけでは複製行が残り、旧読み取りにトップレベルのカテゴリとして
       現れ続けるため、ロールバックが完了しない。実行後に `Category` の件数が
-      移行前と一致することを確認する
+      移行前と一致することを確認する（完全な手順・STOP 判定は
+      [`docs/migration/07-category-tree-phase-a-production.md`](../docs/migration/07-category-tree-phase-a-production.md) §4）
 - [x] `spec-sync-after-test` によるドキュメント同期コミットが存在する —— `868ccf82`
 
 ## STOP conditions
