@@ -253,12 +253,30 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      > 再確認に落ちたらトランザクションごと拒否し、**属性行を 1 行も残さない**。
      > **選択肢行も同じ理由で掴む。** 定義を掴んでも `AttributeOption` は別行であり、
      > 再確認と書き込みの間に選択肢の archive・別定義への付け替えが割り込める。
-     > ロック順序は「`Product` → `ProductVariant`（id 昇順）→ `AttributeDefinition`
-     > （id 昇順）→ `AttributeOption`（id 昇順）」に固定してデッドロックを避ける
+     > **カテゴリ行も掴む。** 3 番目の検証は `AttributeDefinition.categoryId` が
+     > **選択ノードの祖先パス集合**に含まれるかを見るが、この集合は `Category` 行から
+     > 導出される。`Product` を掴んでも固定されるのは `categoryNodeId` だけで、
+     > **祖先の並びは固定されない** —— 再確認と書き込みの間にカテゴリの付け替え
+     > （`acquireCategoryTreeLocks` を持つ [`updateCategory`](../src/queries/category.ts)）
+     > が割り込むと、祖先から外れた定義の値を持つ行が commit できてしまう。
+     > 属性側が `Category` 行を 1 行も掴まない限り、両者は**一度も同じ行で出会わない**ので
+     > 直列化しない。tx 内で**選択ノードと祖先パス上の全 `Category` 行**を
+     > `SELECT ... FOR UPDATE`（id 昇順）で掴み、祖先パス集合は**掴んだ行の `path`**から
+     > 導出すること。
+     >
+     > ロック順序は「`Category`（選択ノード + 祖先、id 昇順）→ `Product` →
+     > `ProductVariant`（id 昇順）→ `AttributeDefinition`（id 昇順）→
+     > `AttributeOption`（id 昇順）」に固定してデッドロックを避ける
      > （同じ定義・選択肢を触る 2 リクエストが互い違いの順で掴むと循環待ちになる。
      > **id 昇順という決定的な順序が要**であり、payload の並び順で掴んではならない）。
-     > Serializable + リトライでも同じ保証は得られるが、この経路は掴む行が少なく
-     > 明示ロックのほうが失敗モードが読みやすい。
+     > `Category` を先頭に置くのは、`upsertProduct` の V-5
+     > （`assertLeafCategoryNode` → `product.create/update`）が既に
+     > 「カテゴリ行 → 商品行」の順で掴んでおり、これに合わせるため。
+     > `acquireCategoryTreeLocks` は `Category` 行しか掴まないので、
+     > クラス内が id 昇順であれば循環はできない。
+     > 代替として Serializable + [`retryOnSerializationFailure`](../src/lib/db-retry.ts)
+     > でも同じ保証は得られる（`40001` を再試行する）。どちらを採るにせよ、
+     > **無効な属性行が commit できないことを race テストで示すこと**（下記 (7)）。
    - 読み取り DTO（商品編集フォームの初期値と `product-specs.tsx`）にも `attributes` を載せ、
      **保存直後に同じ値が再読込できる**状態にする。VARIANT 属性は `variantId` ごとに束ねる。
    - Step 11 に**往復テスト**を足す: (1) 属性値を入力 → 保存 → 再読込して同値、
@@ -269,7 +287,12 @@ design.md §0 の 0-1〜0-9 と 0-A〜0-E を参照。本プランに直結す�
      定義を archive する —— に、tx 内の再検証が拒否し**属性行が 1 行も残らない**こと、
      (6) **別定義の `optionId`** を混ぜた payload と **archive 済み `optionId`** を含む
      payload が、外側・tx 内の双方で拒否され**属性行が 1 行も残らない**こと、
-     の 6 本。型別カラム（`valueText` / `valueNumber` /
+     (7) **カテゴリ付け替えとの race** —— 属性保存 tx の検証後・書き込み前に
+     `updateCategory` が選択ノードを別の親へ移し、定義の `categoryId` が祖先パスから
+     外れる —— に、**無効な属性行が 1 行も commit されない**こと（属性 tx が拒否するか、
+     カテゴリ側が待たされて祖先集合が保たれるかのいずれか。どちらに転んでも
+     不変条件が破れないことを検証する）、
+     の 7 本。型別カラム（`valueText` / `valueNumber` /
      `valueBool` / `optionId`）のどれに入ったかも A-1 と同じ基準で検証する。
 9. **商品詳細の 2 セクション表示**
    （[`product-specs.tsx`](../src/components/store/product-page/product-specs.tsx)）。

@@ -63,8 +63,9 @@
 - **State**: DONE（2026-08-31。migration `20260831102943_category_tree_phase_a` を適用し、
   `tests/integration/category-tree-migration.test.ts` を新設）。
   **ただし Done criteria 1 件が未達** —— 逆移行は手順のみ整備で**実行検証なし**
-  （「実施結果」節）。後続 [067](067-implement-category-tree-queries.md) /
-  [068](068-implement-category-tree-admin-cutover.md) は完了済みで Phase C まで進んでいるため、
+  （「実施結果」節）。後続 [067](067-implement-category-tree-queries.md) は完了、
+  [068](068-implement-category-tree-admin-cutover.md) は Phase A/B 相当の Step 1–4 まで完了で、
+  **不可逆な Phase C（068 Step 5–7）は 2026-09-03 時点で未着手**（オペレーター承認待ち）。
   この未達は「066 単体へのロールバック可能性が実測されていない」という限定的な残課題である
 
 ## Why this matters
