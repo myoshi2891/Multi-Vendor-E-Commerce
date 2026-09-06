@@ -159,8 +159,37 @@ ALL を満たすこと:
       新 `categoryNodeId` の両方が埋まる統合テストが緑
 - [x] **読み取り切替の前に、未同期の `Product` / `SubCategory` を再同期していること。**
       066 の backfill は一度きりで、Phase A の書き込み経路は `categoryNodeId` を
-      **一切書かない**（`grep -rn categoryNodeId src/` が 0 件）。したがって 066 適用後に
+      **一切書かない**。したがって 066 適用後に
       作成・カテゴリ変更された商品は `categoryNodeId` が NULL / 旧値のまま残る。
+      > **機械的確認は「書き込み経路」に限定すること。** 素の
+      > `grep -rn categoryNodeId src/` は 067 適用後には必ずヒットする ——
+      > `assertLeafCategoryNode` の引数・`where: { categoryNodeId: ... }` の
+      > 読み取りフィルタ・JSDoc といった**正当な参照**が入るためで、
+      > 「0 件」を配備ゲートにすると 067 完了と同時にゲートが恒久的に赤くなる。
+      > 見るべきは次の 2 点であり、どちらも `src/queries/` の `Product` 書き込み
+      > payload（`categoryNode` / `subCategory` の relation connect）に閉じている:
+      >
+      > ```bash
+      > # (1) dual-write が生きている
+      > grep -rn "categoryNode: { connect:" src/queries/ --include="*.ts" \
+      >   | grep -v "\.test\." | wc -l
+      > # → 1 以上（0 なら dual-write build が入っていない = 再同期しても取り残される）
+      >
+      > # (2) legacy 単独 writer が残っていない —— 次の 2 つの件数が一致すること
+      > grep -rn "subCategory: { connect:" src/queries/ --include="*.ts" \
+      >   | grep -v "\.test\." | wc -l
+      > grep -rn -A 1 "subCategory: { connect:" src/queries/ --include="*.ts" \
+      >   | grep -v "\.test\." | grep -c "categoryNode: { connect:"
+      > # → 不一致 = 旧 FK だけを書く payload が残っている（片側書き込み経路）
+      > ```
+      >
+      > 読み取り参照（`assertLeafCategoryNode` の引数・`where` 句・JSDoc）は
+      > どちらの式にも掛からないため、正当な参照でゲートが止まることはない。
+      >
+      > **(2) の一致は「コード側に片側書き込みが無い」ことしか言わない。**
+      > コードから legacy writer が消えていても、旧リビジョンが 1 インスタンスでも
+      > 生きていれば書き続ける。順序の保証は下記の配備ゲート側の責務であり、
+      > この grep はその**前提（コード側の準備）だけ**を確認する。
       **トランザクションが覆うのは再同期だけ**である —— dual-write の有効化も
       アプリの配備も DB トランザクションには入らない（入れられない）。順序の保証は
       配備ゲート側の責務で、本節末尾の「順序は次に固定する」ブロックに従う:
