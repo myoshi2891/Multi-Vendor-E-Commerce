@@ -346,7 +346,7 @@ ORDER BY kv.key, product_count DESC;
 
 | 変更 | Option 1（採用） | Option 2 / 3 |
 |------|------------------|--------------|
-| 型変更 `TEXT → NUMBER` | **全行が変換できる場合に限り** `valueText` → `valueNumber` の UPDATE で in-place 変換。1 行でも変換不能なら型を書き換えず、**旧定義を `archivedAt` で退避し（値は `valueText` のまま保持）新しい NUMBER 定義を作る**。変換不能行は `WHERE valueNumber IS NULL` で事前に列挙できる | 全ドキュメントの書き換え + 「旧形式も読む」互換コードをロールアウト期間中ずっと維持 |
+| 型変更 `TEXT → NUMBER` | **全行が変換できる場合に限り** `valueText` → `valueNumber` の UPDATE で in-place 変換。1 行でも変換不能なら型を書き換えず、**旧定義を `archivedAt` で退避し（値は `valueText` のまま保持）新しい NUMBER 定義を作る**。どちらの経路になるかは**事前に列挙できる** —— `valueNumber IS NULL` ではなく **`valueText` の数値形式を検査する**（`valueNumber` は変換前の全行で NULL なので判定材料にならない）。scope 側 2 テーブルを `UNION ALL` して `valueText !~ '^\s*-?[0-9]+(\.[0-9]+)?\s*$'` を数える。0 件なら in-place 変換、1 件以上なら旧定義を archive する経路を採る（SQL は [`docs/design/category-attributes/design.md`](../../design/category-attributes/design.md) 「型変更の 2 経路」） | 全ドキュメントの書き換え + 「旧形式も読む」互換コードをロールアウト期間中ずっと維持 |
 | enum 許容値の改名 | `AttributeOption.label` を更新するだけ。**既存値は FK なので自動追随** | JSON 内の文字列を全件書き換え。取りこぼしは静かに残る |
 | enum 許容値の削除 | `archivedAt` を立てる。`onDelete: Restrict` で**参照中は消せない** | 参照整合性が無く、**孤児文字列が黙って残る** |
 | 任意 → 必須 | 値が無い商品を `SELECT` で列挙できる | 同左（JSON のキー欠落を探す。可能だが raw SQL） |
