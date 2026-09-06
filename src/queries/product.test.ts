@@ -226,10 +226,12 @@ const matchesScopedVariantLookup = (
 /**
  * `upsertProduct` のリーフ検証が引く `SELECT … FOR UPDATE` の戻り値を与える。
  *
- * 実装はこの行（Category ノード）の `childCount` と `depth` だけを見て可否を決める。
+ * 実装はこの行（Category ノード）の `childCount` / `depth` / `parentId` を見て
+ * 可否を決める（`parentId` は商品が併せて書く root と一致していなければならない）。
  */
 const mockLockedCategoryNode = (node: {
     id: string;
+    parentId: string | null;
     path: string;
     depth: number;
     childCount: number;
@@ -238,6 +240,7 @@ const mockLockedCategoryNode = (node: {
 /** 商品を紐づけられるリーフ（Phase B では depth 1 まで）。 */
 const LEAF_NODE = {
     id: "subcategory-001",
+    parentId: "category-001",
     path: "electronics/smartphones",
     depth: 1,
     childCount: 0,
@@ -246,6 +249,7 @@ const LEAF_NODE = {
 /** 子を持つノード。商品は紐づけられない。 */
 const NON_LEAF_NODE = {
     id: "subcategory-001",
+    parentId: "category-001",
     path: "electronics/smartphones",
     depth: 1,
     childCount: 1,
@@ -588,6 +592,7 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(null);
             mockLockedCategoryNode({
                 id: "subcategory-001",
+                parentId: "subcategory-camera",
                 path: "electronics/camera/lens",
                 depth: 2,
                 childCount: 0,
@@ -609,6 +614,7 @@ describe("upsertProduct", () => {
             mockDb.product.findUnique.mockResolvedValue(null);
             mockLockedCategoryNode({
                 id: "subcategory-001",
+                parentId: null,
                 path: "electronics",
                 depth: 0,
                 childCount: 0,
@@ -621,6 +627,26 @@ describe("upsertProduct", () => {
                     TEST_CONFIG.TEST_STORE_URL
                 )
             ).rejects.toThrow(/depth/i);
+            expect(mockDb.product.create).not.toHaveBeenCalled();
+        });
+
+        it("リーフの親が categoryId と一致しない紐づけを拒否する", async () => {
+            // Arrange —— Server Action は公開エンドポイントなので、フォームを
+            // 経由しない呼び出しが「別 root のリーフ」を渡せる。二重 FK
+            // （categoryId / subCategoryId）が食い違った行を書かせない。
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockLockedCategoryNode({
+                ...LEAF_NODE,
+                parentId: "category-other",
+            });
+
+            // Act / Assert
+            await expect(
+                upsertProduct(
+                    createMockProductWithVariantInput() as never,
+                    TEST_CONFIG.TEST_STORE_URL
+                )
+            ).rejects.toThrow(/does not belong/i);
             expect(mockDb.product.create).not.toHaveBeenCalled();
         });
 

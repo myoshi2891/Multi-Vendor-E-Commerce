@@ -69,6 +69,7 @@ type ProductTransactionClient = Parameters<
 /** リーフ検証で読む Category ノードの最小形。 */
 interface LockedProductCategoryNode {
     id: string;
+    parentId: string | null;
     depth: number;
     childCount: number;
 }
@@ -85,17 +86,28 @@ interface LockedProductCategoryNode {
  * ロック対象は `upsertCategory` が子の作成時に掴む行と**同じ行**でなければならない
  * （別々の行を掴んだのでは競合が検出できない）。
  *
+ * **親の一致も同じロックの下で見る。** Phase B の商品は root（`categoryId`）と
+ * リーフ（`subCategoryId`）の**二重 FK** を持つが、両者が親子であることは FK では
+ * 表現できない（FK は参照先の存在しか見ない）。depth 検証は「リーフがルート直下で
+ * ある」ことしか言わず、**どのルートの直下か**は無検査で残る —— Server Action は
+ * 公開エンドポイントなので、フォームを経由しない呼び出しが無関係な root と leaf の
+ * 組み合わせを渡せてしまい、`category` と `subCategory` / `categoryNode` が食い違った
+ * 行が書ける。読み取りが新 FK 側へ切り替わっている以上、この食い違いはパンくず・
+ * 絞り込みの両方を静かに壊す。
+ *
  * @param tx - 商品を書き込むのと同じトランザクション（ロックを書き込みまで保持する）
  * @param categoryNodeId - 紐づけ先ノードの id（Phase B では subCategoryId と同一）
+ * @param expectedParentId - 商品が併せて書く root の id（`product.categoryId`）
  */
 const assertLeafCategoryNode = async (
     tx: ProductTransactionClient,
-    categoryNodeId: string
+    categoryNodeId: string,
+    expectedParentId: string
 ): Promise<void> => {
     // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
     // （値は常にパラメータ化される）。
     const lockedRows = await tx.$queryRaw<LockedProductCategoryNode[]>`
-        SELECT "id", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR UPDATE
+        SELECT "id", "parentId", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR UPDATE
     `;
     const node = lockedRows[0] ?? null;
     if (!node) throw new Error("Category not found.");
@@ -112,6 +124,15 @@ const assertLeafCategoryNode = async (
         throw new Error(
             `Products can only be assigned to categories at depth ${PRODUCT_CATEGORY_DEPTH} ` +
                 "until the category tree cutover completes."
+        );
+    }
+
+    // 二重 FK の整合。depth 検証の**後**に置く —— depth 違反のノードは親も一致しない
+    // のが普通で、先に親不一致で弾くと移行期の構造制約（より具体的な理由）が
+    // 呼び出し側に届かなくなる。
+    if (node.parentId !== expectedParentId) {
+        throw new Error(
+            "The selected sub category does not belong to the selected category."
         );
     }
 };
@@ -341,7 +362,11 @@ const handleProductCreate = async (
     // ロックが create の前に解放されて TOCTOU の窓が開いたままになる。
     const new_product = await db.$transaction(async (tx) => {
         // V-5: 新規作成は常に「カテゴリを新規設定した」ケースにあたる
-        await assertLeafCategoryNode(tx, product.subCategoryId);
+        await assertLeafCategoryNode(
+            tx,
+            product.subCategoryId,
+            product.categoryId
+        );
         return tx.product.create({ data: productData });
     });
     return new_product;
@@ -444,7 +469,11 @@ const handleProductAndVariantUpdate = async (
         // V-5: 紐づけ先がリーフであることを、書き込みと同じ tx 内で（ロックを
         // 握ったまま）検証する。カテゴリを変えない更新は経過措置として素通しする。
         if (categoryAssignmentChanged(product, existingProduct)) {
-            await assertLeafCategoryNode(tx, product.subCategoryId);
+            await assertLeafCategoryNode(
+                tx,
+                product.subCategoryId,
+                product.categoryId
+            );
         }
 
         // Product 本体の更新
@@ -983,31 +1012,77 @@ export const getProducts = async (
 
         type VariantWithSizes = ProductVariant & { sizes: Size[] };
         type ProductWithVariants = (typeof products)[number];
-        // Product price sorting
-        products.sort((a, b) => {
-            // Helper function to get the minimum price from a product's variants
-            const getMinPrice = (product: ProductWithVariants) =>
-                Math.min(
-                    ...product.variants.flatMap((variant: VariantWithSizes) =>
-                        variant.sizes.map((size) => {
-                            let discount = size.discount;
-                            let discountedPrice =
-                                toNumberSafe(size.price) * (1 - discount / 100);
-                            return discountedPrice;
-                        })
-                    ),
-                    Infinity // Default to Infinity if no sizes exist
+
+        /**
+         * `Decimal` 列を **Decimal のまま** 扱うための正規化。
+         *
+         * 型は `Decimal` でも、実行時に必ず `Prisma.Decimal` インスタンスとは限らない
+         * （シリアライズを挟む経路では number / string で届く。`toNumberSafe` が
+         * `unknown` を受けているのと同じ前提）。素で `.mul()` を呼ぶと
+         * `is not a function` で落ちるため、非 Decimal は既存ヘルパーを通して包み直す。
+         */
+        const toDecimalSafe = (value: Prisma.Decimal): Prisma.Decimal =>
+            Prisma.Decimal.isDecimal(value)
+                ? value
+                : new Prisma.Decimal(toNumberSafe(value));
+
+        /**
+         * 商品配下の全サイズのうち、割引後価格が最小のものを **Decimal のまま** 返す。
+         *
+         * `toNumberSafe(size.price) * (1 - discount / 100)` としないこと
+         * （`.claude/steering/tech.md`「金額・数値精度」）。`1 - discount / 100` は
+         * 2 進では割り切れず、Decimal(12,2) の正確な値を number に落とした時点で
+         * 誤差が乗る。ソートの比較関数は全順序であることを要求するため、本来同値の
+         * 2 商品が誤差で前後し、同じデータでもページ間で並びが揺れうる。
+         * 100 での乗除は 10 進では桁移動なので Decimal 上では厳密である。
+         *
+         * サイズが 1 件も無い商品は `null`（= 価格なし）を返す。元実装の
+         * `Math.min(..., Infinity)` と同じく、比較時は常に「最大」として扱う。
+         */
+        const minDiscountedPrice = (
+            product: ProductWithVariants
+        ): Prisma.Decimal | null =>
+            product.variants
+                .flatMap((variant: VariantWithSizes) =>
+                    variant.sizes.map((size) =>
+                        toDecimalSafe(size.price)
+                            // discount は Float（百分率）。number のまま引くと
+                            // 100 - 12.3 の段階で誤差が入るので Decimal 側で引く。
+                            .mul(new Prisma.Decimal(100).sub(size.discount))
+                            .div(100)
+                    )
+                )
+                .reduce<Prisma.Decimal | null>(
+                    (min, price) =>
+                        min === null || price.lessThan(min) ? price : min,
+                    null
                 );
 
-            // Get minimum prices for both products
-            const minPriceA = getMinPrice(a);
-            const minPriceB = getMinPrice(b);
+        // 比較のたびに再計算しない（sort は同じ商品を何度も比較する）。
+        const minPriceByProductId = new Map<string, Prisma.Decimal | null>(
+            products.map((product) => [product.id, minDiscountedPrice(product)])
+        );
+
+        /** 昇順比較。`null`（価格なし）は常に大きい側へ寄せる。 */
+        const compareMinPrice = (
+            a: Prisma.Decimal | null,
+            b: Prisma.Decimal | null
+        ): number => {
+            if (a === null) return b === null ? 0 : 1;
+            if (b === null) return -1;
+            return a.comparedTo(b);
+        };
+
+        // Product price sorting
+        products.sort((a, b) => {
+            const minPriceA = minPriceByProductId.get(a.id) ?? null;
+            const minPriceB = minPriceByProductId.get(b.id) ?? null;
 
             // Explicitly check for price sorting conditions
             if (sortBy === "price-low-to-high") {
-                return minPriceA - minPriceB; // Ascending order
+                return compareMinPrice(minPriceA, minPriceB); // Ascending order
             } else if (sortBy === "price-high-to-low") {
-                return minPriceB - minPriceA; // Descending order
+                return compareMinPrice(minPriceB, minPriceA); // Descending order
             }
 
             // If no price sort option is provided, return 0 (no sorting by price)
