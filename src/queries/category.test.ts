@@ -1137,6 +1137,30 @@ describe("deleteCategory", () => {
             });
         });
 
+        it("削除対象と親を id 昇順で FOR UPDATE してから削除する", async () => {
+            // Arrange —— delete の戻り値だけに頼ると、ロックの取得順が
+            // 「子 → 親」に固定される。upsertCategory は id 昇順で掴むため、
+            // 親の id が子より小さいと順序が交差して 40P01 になる。
+            mockDb.category.findUnique.mockResolvedValue({
+                parentId: "electronics",
+            } as never);
+            mockDb.category.delete.mockResolvedValue(
+                createMockCategory({ parentId: "electronics" } as never)
+            );
+
+            // Act
+            await deleteCategory("camera");
+
+            // Assert —— "camera" < "electronics"（UTF-16 コード単位順）
+            const lockedIds = mockDb.$queryRaw.mock.calls.map(
+                (call: unknown[]) => call[1]
+            );
+            expect(lockedIds.slice(0, 2)).toEqual(["camera", "electronics"]);
+            const sqlParts = mockDb.$queryRaw.mock.calls[0][0] as string[];
+            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+            expect(sqlParts.join("?")).toMatch(/"Category"/);
+        });
+
         it("ルートの削除では childCount を触らない", async () => {
             // Arrange
             mockDb.category.delete.mockResolvedValue(

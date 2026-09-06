@@ -770,6 +770,55 @@ export const getCategory = async (categoryId: string) => {
     }
 };
 
+/**
+ * 削除対象と**その時点の親**を、`orderedLockTargets` の id 昇順で掴む。
+ *
+ * **`tx.category.delete` の戻り値に頼るだけでは足りない。** 返る `parentId` は
+ * 削除行のロック下の値なので値としては正しいが、その経路はロックの取得順が
+ * 「子 → 親」に固定される。`upsertCategory`（`acquireCategoryTreeLocks`）は候補集合を
+ * id 昇順で掴むため、親の id が子より小さいときに両者の順序が交差し、
+ * 相互デッドロック（`40P01`）になる。削除側も同じ昇順へ揃えることでこの窓を閉じる。
+ *
+ * 親 id を知るには一度読む必要があり、その 1 周目の読みは非ロックである
+ * （待っている間に付け替えられうる）。掴んだ後に読み直し、親が変わっていなければ
+ * 確定とする —— 自ノードを掴んだ後は親が動かないので必ず収束する。
+ * 掴み直しで自ノードより小さい id を後から取り得る点は upsert 側と同じ既知の窓で、
+ * トランザクション全体の `retryOnDeadlock` が受け持つ。
+ *
+ * @returns 掴んだ時点の親（ルート直下なら `parentId: null`）。対象が存在しなければ `null`。
+ */
+const lockCategoryForDelete = async (
+    tx: CategoryTransactionClient,
+    categoryId: string
+): Promise<{ parentId: string | null } | null> => {
+    // 候補集合の種。存在しない場合は掴むものが無く、呼び出し側の delete が
+    // Prisma の「見つからない」エラーをそのまま投げる（既存の挙動を変えない）。
+    const seed = await tx.category.findUnique({
+        where: { id: categoryId },
+        select: { parentId: true },
+    });
+    if (!seed) return null;
+
+    let candidateParentId: string | null = seed.parentId;
+    for (let attempt = 0; attempt < MAX_LOCK_CONVERGENCE_ATTEMPTS; attempt++) {
+        await lockCategoryNodesForUpdate(
+            tx,
+            orderedLockTargets([categoryId, candidateParentId])
+        );
+
+        const current = await tx.category.findUnique({
+            where: { id: categoryId },
+            select: { parentId: true },
+        });
+        if (!current) return null;
+        if (current.parentId === candidateParentId) {
+            return { parentId: current.parentId };
+        }
+        candidateParentId = current.parentId;
+    }
+    throw new Error(CONCURRENT_TREE_EDIT_MESSAGE);
+};
+
 // Function: deleteCategory
 // Description: Deletes a category from the database by its ID.
 // Permission Level: Admin only
@@ -790,15 +839,28 @@ export const deleteCategory = async (categoryId: string) => {
         //
         // 子を持つノードの削除は self-relation の `onDelete: Restrict` が防ぐので、
         // ここで扱うのは「リーフを消したときに親の値を戻す」ケースだけである。
-        const response = await db.$transaction(async (tx) => {
-            const deleted = await tx.category.delete({
-                where: {
-                    id: categoryId,
-                },
-            });
-            await recomputeChildCounts(tx, [deleted.parentId]);
-            return deleted;
-        });
+        //
+        // ロックは `lockCategoryForDelete` が upsert 側と**同じ id 昇順**で掴む。
+        // 残るデッドロック窓（掴み直しで低い id を後から取る）は upsertCategory と
+        // 同じく `retryOnDeadlock` がトランザクション単位で受け持つ ——
+        // PostgreSQL は `40P01` で片方を丸ごと abort するので部分適用は残らない。
+        const response = await retryOnDeadlock(() =>
+            db.$transaction(async (tx) => {
+                const locked = await lockCategoryForDelete(tx, categoryId);
+                const deleted = await tx.category.delete({
+                    where: {
+                        id: categoryId,
+                    },
+                });
+                // `locked` が null になるのは対象が存在しない場合だけで、そのときは
+                // 直前の delete が既に throw している。型の上に残る null は
+                // 同じ行の値である `deleted.parentId` で畳む。
+                await recomputeChildCounts(tx, [
+                    locked?.parentId ?? deleted.parentId,
+                ]);
+                return deleted;
+            })
+        );
         return response;
     } catch (error: unknown) {
         if (error instanceof Error) {
