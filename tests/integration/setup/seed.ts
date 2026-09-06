@@ -174,6 +174,8 @@ export interface SeedProductInput {
      * Phase A の `Product.categoryNodeId` はこの id をそのまま Category ノードの FK として使うため、
      * 共有関係にない SubCategory の id を渡すと FK 違反になる。`seedProduct` が事前に検証する。
      * 併せて **リーフであること**（子カテゴリを持たないこと）も検証する（design.md V-5）。
+     * `categoryId` との対応は**ルート祖先**で見るので、3 階層以上のツリーでは
+     * `categoryId` にリーフの直近の親ではなく**ルート**の id を渡すこと。
      */
     subCategoryId: string;
     /** 商品レベルの配送方式。Cart→Checkout の shipping 計算検証で重要 */
@@ -184,6 +186,38 @@ export interface SeedProductInput {
     sizePrice?: number;
     /** Size 在庫 */
     sizeQuantity?: number;
+}
+
+/** ツリーの想定最大深さ（design.md の深さ上限）に対する安全余裕。壊れたデータで無限ループしないための番人。 */
+const MAX_ANCESTOR_WALK = 16;
+
+/**
+ * リーフノードから `parentId` を遡り、**ルート祖先**（`parentId === null` のノード）の id を返す。
+ *
+ * legacy の `Product.categoryId` はルートカテゴリを指す列なので、3 階層以上のツリーでも
+ * 「リーフ ↔ ルート」の対応で検証できるようにする。
+ */
+async function resolveRootAncestorId(
+    db: PrismaClient,
+    node: { id: string; parentId: string | null }
+): Promise<string> {
+    let current = node;
+    for (let hop = 0; hop < MAX_ANCESTOR_WALK; hop++) {
+        if (current.parentId === null) return current.id;
+        const parent = await db.category.findUnique({
+            where: { id: current.parentId },
+            select: { id: true, parentId: true },
+        });
+        if (parent === null) {
+            throw new Error(
+                `[seed] Category ノード ${current.id} の parentId=${current.parentId} が実在しません。`
+            );
+        }
+        current = parent;
+    }
+    throw new Error(
+        `[seed] Category ノード ${node.id} の祖先を ${MAX_ANCESTOR_WALK} 段辿ってもルートに到達しませんでした（循環の疑い）。`
+    );
 }
 
 /**
@@ -209,6 +243,12 @@ export async function seedProductWithVariantAndSize(
     // サブカテゴリ id を渡しても Product は作成に成功してしまい、categoryId と
     // subCategoryId / categoryNodeId が親子でないテストデータが黙って生まれる。
     // 親子関係は新旧両系統（Category.parentId と SubCategory.categoryId）で検証する。
+    //
+    // 比較先は**直近の親ではなくルート祖先**であること。legacy の `Product.categoryId` は
+    // 2 階層モデルの「トップレベルのカテゴリ」を指す列で、3 階層以上のツリーで直近の親を
+    // 要求すると、呼び出し側は `categoryId` に**ルートでない中間ノード**を渡すしかなくなり、
+    // legacy 列だけを見る経路から商品が消えたテストデータが黙って生まれる
+    // （例: electronics/camera/camera-body のリーフに商品を吊るすと categoryId=camera）。
     const categoryNode = await db.category.findUnique({
         where: { id: input.subCategoryId },
         select: { id: true, parentId: true },
@@ -219,11 +259,12 @@ export async function seedProductWithVariantAndSize(
                 `seedCategoryWithSubcategory が返す共有 id を渡してください。`
         );
     }
-    if (categoryNode.parentId !== input.categoryId) {
+    const rootAncestorId = await resolveRootAncestorId(db, categoryNode);
+    if (rootAncestorId !== input.categoryId) {
         throw new Error(
-            `[seed] Category ノード ${input.subCategoryId} の parentId は ` +
-                `${categoryNode.parentId ?? "null"} で、categoryId=${input.categoryId} の子ではありません。` +
-                `同じ seedCategoryWithSubcategory の戻り値から categoryId / subCategoryId を渡してください。`
+            `[seed] Category ノード ${input.subCategoryId} のルート祖先は ` +
+                `${rootAncestorId} で、categoryId=${input.categoryId} と一致しません。` +
+                `legacy の categoryId には**ルート**カテゴリの id を渡してください。`
         );
     }
     // リーフ強制（design.md V-5）: 子を持つノードには商品を紐づけられない。
@@ -249,10 +290,11 @@ export async function seedProductWithVariantAndSize(
                 `seedCategoryWithSubcategory が返す共有 id を渡してください。`
         );
     }
-    if (subCategory.categoryId !== input.categoryId) {
+    // legacy ミラーも同じルート祖先を指す（SubCategory は常にルート Category にぶら下がる）。
+    if (subCategory.categoryId !== rootAncestorId) {
         throw new Error(
             `[seed] SubCategory ${input.subCategoryId} の categoryId は ${subCategory.categoryId} で、` +
-                `渡された categoryId=${input.categoryId} と一致しません。`
+                `ルート祖先 ${rootAncestorId}（= 渡された categoryId）と一致しません。`
         );
     }
 

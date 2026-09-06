@@ -400,7 +400,13 @@ async function arrangeCategoryTree() {
         },
     });
 
-    /** Category ノードと、id を共有する SubCategory 行を対で作る */
+    /**
+     * Category ノードと、id を共有する SubCategory 行を対で作る。
+     *
+     * legacy 側の `SubCategory.categoryId` は**ルート**（= `root`）を指す。2 階層モデルの
+     * SubCategory は常にトップレベルの Category にぶら下がる行なので、直近の親が中間ノード
+     * （camera）でもミラーはルートを向くのが legacy として正しい形になる。
+     */
     const createNode = async (
         name: string,
         url: string,
@@ -422,7 +428,7 @@ async function arrangeCategoryTree() {
                 name,
                 image: `https://example.test/${url}.png`,
                 url,
-                categoryId: parent.id,
+                categoryId: root.id,
             },
         });
         return node;
@@ -440,9 +446,10 @@ async function arrangeCategoryTree() {
     // サブツリー検索の観点は変わらない（どちらも electronics/camera 配下）。
     const cameraBody = await createNode("Camera Body", "camera-body", camera);
 
+    // legacy の categoryId は**ルート**を指す（camera は中間ノードであってルートではない）。
     const camProduct = await seedProductWithVariantAndSize(db, {
         storeId: store.id,
-        categoryId: camera.id,
+        categoryId: root.id,
         subCategoryId: cameraBody.id,
     });
     const accProduct = await seedProductWithVariantAndSize(db, {
@@ -452,7 +459,7 @@ async function arrangeCategoryTree() {
     });
     const lensProduct = await seedProductWithVariantAndSize(db, {
         storeId: store.id,
-        categoryId: camera.id,
+        categoryId: root.id,
         subCategoryId: lens.id,
     });
 
