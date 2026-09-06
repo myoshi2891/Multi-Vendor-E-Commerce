@@ -163,13 +163,20 @@ Phase C はその曖昧さを閉じる。
    > 表面化しない静かな破損である。
    >
    > ```ts
-   > // 旧サブツリーを 1 クエリで引き、prefix を置換して書き戻す
-   > const descendants = await tx.category.findMany({
-   >     where: { path: { startsWith: `${oldPath}/` } },
-   >     select: { id: true, path: true },
+   > // 候補集合は **ID 昇順でロックしてから** 読む。素の findMany は非ロック読みで、
+   > // 「読んだ後・書く前」に並行する再親子化が同じ子孫を別サブツリーへ動かせる ——
+   > // その行へ旧サブツリー基準の path を書き戻すと path と parentId が矛盾する。
+   > // 実装は共有ヘルパー `acquireCategoryTreeLocks`（src/queries/category.ts）を使う。
+   > // 自前で書く場合も FOR UPDATE を ID 昇順で掛けること（デッドロック回避）。
+   > const { current, descendants } = await acquireCategoryTreeLocks(tx, {
+   >     categoryId,
+   >     nextParentId,
+   >     nextUrl,
    > });
+   > // ロック取得後の値で rebase する（待っている間に候補が変わり得るため、
+   > // ヘルパーは候補が増えなくなるまで掴み直して収束させている）
    > for (const d of descendants) {
-   >     const nextPath = `${newPath}/${d.path.slice(oldPath.length + 1)}`;
+   >     const nextPath = `${newPath}/${d.path.slice(current.path.length + 1)}`;
    >     await tx.category.update({
    >         where: { id: d.id },
    >         data: { path: nextPath, depth: nextPath.split("/").length - 1 },

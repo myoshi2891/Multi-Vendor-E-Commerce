@@ -120,6 +120,7 @@ const subtreeOf = (p: string) => ({ OR: [{ path: p }, { path: { startsWith: `${p
     ADD CONSTRAINT "Category_url_slug_format"
     CHECK (url ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
   ```
+
 - 「直下の子のみ」が要る画面（admin のツリー展開）は `{ parentId: node.id }` を使う
   （path の区切り数を数える必要はない）。
 
