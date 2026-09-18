@@ -274,8 +274,11 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
 - **アーカイブ済み許容値は「新規選択不可・既存値は保持」**。選択肢の生成は
   `archivedAt: null` に絞る（Q7「enum 許容値の削除」＝論理削除の目的）。一方、
   既存の値が既にアーカイブ済みの `optionId` を持つ場合、その値を候補から外したまま
-  編集画面を開くと、**無編集で保存しただけで値が黙って落ちる**（`z.enum` が現在値を
-  弾き、必須なら保存不能・任意なら未入力へ潰れる）。
+  編集画面を開くと、**無編集で保存しただけで検証エラーになり保存できなくなる**
+  （`z.enum` が現在値を弾くため。`.optional()` は `undefined`（未指定）のみを許容し、
+  値ありの候補外文字列を `undefined` へ変換するわけではないので、必須・任意を問わず
+  保存に失敗する —— 別途 `.transform()` 等で候補外文字列を `undefined` に落とす
+  正規化を挟まない限り「任意項目なら未入力へ潰れる」という挙動にはならない）。
 
   **例外は「値の所有単位」ごとに閉じること。** 値の所有単位は
   `ProductAttributeValue` なら `productId`、`VariantAttributeValue` なら
