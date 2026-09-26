@@ -1,6 +1,8 @@
 # Plan 069: カテゴリ別属性スキーマの実装（属性定義 CRUD + 動的フォーム + パイロット部門シード）
 
-> **Executor instructions**: 本プランは **未実行**。plan [014](014-spike-category-attributes-facets.md)
+> **Status: DONE（2026-09-27・HEAD `718716ef` 時点）**。実行記録は下の「実施結果」。
+>
+> **Executor instructions**: 本プランはplan [014](014-spike-category-attributes-facets.md)
 > （spike）が確定した設計の実装であり、**1 本で完結する**
 > （影響ファイルは新規約 13 + 既存 7 = **約 20**。plan 013 の 82 とは桁が違うため
 > 分割していない —— 判断根拠は [`design.md`](../docs/design/category-attributes/design.md) §1）。
@@ -66,6 +68,12 @@
 | 8 前半 | `src/lib/attribute-schema.ts`（`ProductFormSchema.extend()`・A-9 / A-11） | `e78b58aa` / `188a0ed4` |
 | 8 後半 | `src/lib/attribute-sync.ts` + `upsertProduct` 配線（外側検証 → tx 内ロック再検証 → 同期）。`product-attributes.test.ts`（IDOR 3 本 × 3 階層・A-3・選択肢・tx 内再検証） | `f3fe778b` / `89318c2b` |
 | 8 UI | `product-details.tsx` + `attribute-fields.tsx`（カテゴリ変更で定義再取得・所有先付き payload）、コンポーネントテスト 4 本 | `fa86bfa8` |
+| 9 | 読み取り DTO（`findProductAttributeDisplay`: 有効定義 ∩ 値行・ENUM label は FK 先・VARIANT は `variantId` 単位）+ `product-specs.tsx` の 2 セクション化 | `d33c207b` / `129ccca4` |
+| 10 | パイロット 3 部門シード（`lux-electronics` / `lux-gourmet` を追加、定義 16・選択肢 46）。使い捨て Postgres で 2 回実行し件数・行内容ハッシュが同一 | `7542cbeb` / `fc3e2b5d` |
+| 11 | 統合テスト `category-attributes.test.ts` 40 本（全緑） | `5d54e5cf` |
+| 12 | lint 0 errors / tsc 0 / unit 2340 pass / integration 181 pass、Done criteria の grep・eslint 確認 | — |
+| 13 | spec-sync（QA_HANDOFF → 07-testing / COVERAGE_REPORT / PROGRESS、04-interfaces に attribute モジュール、dashboard 再生成） | `718716ef` |
+| 14 | `plans/README.md` の 069 行を DONE へ | 本コミット |
 
 **実装上の判断（レビュー時に確認してほしい点）**:
 - 複合 FK は `onUpdate: Restrict`（Prisma 既定の CASCADE だと定義の type / multiValued 変更が値行へ連鎖する）。
@@ -79,25 +87,30 @@
   （一覧のリンク先が 404）。そのためフォームの初期値ロード（既存属性値・A-11 の archivedCurrent 供給）は
   UI 側未配線。サーバー側（A-11 検証）とスキーマ側は実装済み。
 
-**残作業（次セッションはここから）**:
-1. **Step 9**: 読み取り DTO（`getProductPageData` 系）に属性を載せ、
-   `src/components/store/product-page/product-specs.tsx` を「仕様」（構造化属性・ENUM は label を FK で引く = A-4）/
-   「その他仕様」（`Spec`）の 2 セクションにする。VARIANT 属性は `variantId` ごとに束ねる。
-   列名は `ATTRIBUTE_VALUE_COLUMNS_SELECT` + `fromAttributeValueRows` 経由（Done criteria の grep を守る）。
-2. **Step 10**: パイロット 3 部門シード（家電・ファッション・食品。allergens は多値 ENUM）。
-   `prisma/seed/` の既存構成に合わせ、`@@unique([definitionId, value])` / アクティブ部分 UNIQUE で冪等。2 回実行で同一を確認。
-   シード先カテゴリが E2E シードと重なり**必須属性で既存 E2E の商品作成が落ちないか**を確認すること。
-3. **Step 11**: 統合テスト `tests/integration/category-attributes.test.ts`（Docker）。
-   ADR-007 D-5/D-6 の 7 本（`$executeRaw` 直書き含む）、D-7 部分 UNIQUE（単値重複拒否・多値許可・multiValued 不一致 FK 拒否）、
-   A-1〜A-11、アーカイブ後の値保持（両スコープ）、往復 7 本（race (5)(7) は `updateCategory` と並行）、
-   定義 ON CONFLICT の並行作成（design.md Q7 のテスト要件）。
-4. **Step 12**: `bun run lint` / `bunx tsc --noEmit` / `bun run test` / `bun run test:integration`、Done criteria の grep / eslint 確認。
-5. **Step 13**: `spec-sync-after-test`（テスト数が増えている。QA_HANDOFF.md SSOT → 07-testing / COVERAGE_REPORT / PROGRESS、
-   dashboard 再生成）を**別コミット**で。`04-interfaces.md` に `src/queries/attribute.ts` を追記。
-6. **Step 14**: README の 069 行を DONE へ。
-7. **未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`（本プラン外）と
-   本プランの `20260926085624_category_attributes` が未適用。共有 DB への適用はオペレーター判断
-   （`bunx prisma migrate deploy`。リセットは発生しない）。ローカル検証は使い捨て Postgres で実施済み（DROP 提案なし）。
+**Step 9〜11 の実装上の判断**:
+- 店頭の「仕様」は**商品の現在のカテゴリノードに効く定義**だけを出す（書き込み検証と同じ解決規則）。
+  アーカイブ済み定義・カテゴリ移動で外れた定義の値は履歴として DB に残るが表示しない。
+  属性の読み取り失敗はページごと失敗させる（アレルゲン等の表示義務がある値を黙って欠落させない）。
+- シードの定義は `(categoryId, key, archivedAt: null)` で突き合わせ、`type` / `scope` / `multiValued` が
+  定数と食い違えば**上書きせず throw**（値行の複合 FK が `onUpdate: Restrict`）。選択肢の `archivedAt` は触らない。
+  E2E シード（`e2e-*`）には属性を置かないので、必須属性で既存 E2E の商品作成は落ちない。
+- 統合テストの race は、実装を差し替えずに「外側検証の後」「tx 内同期の直前」へフックを挟んで決定的に再現した。
+  ミューテーション確認: tx 内再検証を外すと 3 本が落ちる。**tx 先頭の `lockAttributeCategoryPath` を外しても落ちない** ——
+  商品行の UPDATE が FK 検査で参照先 Category（root / leaf）に `FOR KEY SHARE` を取り、カテゴリ移動側の
+  `FOR UPDATE`（移動ノード + 子孫）と衝突して同じ直列化が起きるため。不変条件は保たれているが、
+  このロックは現状「唯一の防御」ではない（多重防御）。
+
+**フォローアップ（本プランの Done criteria 外・未着手）**:
+1. **商品フォームの初期値ロード**: 既存商品・既存バリアントの編集ページが存在しないため、既存属性値と
+   A-11 の `archivedCurrent` の UI 供給は未配線（サーバー側・スキーマ側は実装済み）。編集ページ新設時に配線する。
+2. **design.md Q3 の併存ルール 2（Spec 名が定義名と重なったら警告）** は未実装。
+3. **design.md Q3-4（`product_specs` / `variant_specs` の `min(1)` 必須を残すか）** は未判断のまま現状維持。
+   外すと「その他仕様」なしで保存できるようになる販売者向けの挙動変更なので、プロダクト判断が要る。
+4. **共有 DB への未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`
+   （本プラン外）と `20260926085624_category_attributes` が未適用。適用はオペレーター判断
+   （`bunx prisma migrate deploy`。リセットは発生しない）。適用後に `bun run seed:luxury` でパイロット定義が入る。
+5. luxury シードの既存商品には属性値を入れていない（Q3 のとおり `Spec` からの機械移行はしない）。
+   店頭の「Specifications」セクションはパイロットカテゴリに商品・値が入るまで表示されない。
 
 ## Why this matters
 

@@ -35,17 +35,15 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | — | TODO |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
-| [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装） | direction | P2 | 014 | IN PROGRESS |
 
-- **069**: Step 0–8 完了、Step 9–14 が残り。引き継ぎは [プラン本文「進捗と引き継ぎ」](069-implement-category-attributes.md)。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
-- **015**（ファセット検索 spike）は 069 の完了（`facetable` と値テーブルの索引）を土台にする。
+- **015**（ファセット検索 spike）の土台（069 の `facetable` と値テーブルの索引）は 2026-09-27 に揃った。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（020・016・017 は独立）。
 
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（56 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（57 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -105,5 +103,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [065](065-fix-product-detail-right-panel-clipping.md) | 商品詳細の右購入パネルが 1280px でクリップされる欠陥の修正（plan 054 のブロッカー） | correctness | P2 | — | DONE |
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | 013 | DONE |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | 066 | DONE |
+| [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装）。Step 1 実測: `Spec` 153 行・不正 0・孤児 0 / Step 2: `multiValued` 列 + 部分 UNIQUE（多値は ENUM 限定） | direction | P2 | 014 | DONE |
 
 </details>
