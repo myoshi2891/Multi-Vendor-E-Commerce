@@ -101,7 +101,7 @@
 
 - **「Server-side `placeOrder` idempotency」**（plan 006 から deferred）→ **A-5 で解消**。
   ただし同項目に併記されていた **`applyCoupon` の lost-update `$transaction` リファクタは未解決**
-  （別事案として分離済み — `README.md` Deferred 節）。
+  （別事案として分離済み — `DEFERRED.md` Deferred 節）。
 - **CORRECTNESS-05**（`PaymentDetails.amount` 単位不一致）→ **コード側は A-3 で解消**。
   **既存行の backfill は未起票**（過去の Stripe 決済行はセント値のまま残る）。
 - **TESTS-02 capture 経路** / **`saveUserCart` 統合** → 先行依存だった plan 003 / 005 が
@@ -227,7 +227,7 @@ rejected 3 件。全所見を直接コード読解で vet・Newsletter 404 は c
 して書き直しを強制する設計）。(2) home（`/`）の a11y / VRT は OI-9 解消後の追加項目として
 plan 052 / 054 の Maintenance notes に記録。
 次のアクション: **051（依存ゼロ・P1）と 056 は即実行可能**。R8 plans 042〜050 の実行と併走する
-場合の依存順は plans/README「Recommended sequencing #13」参照（052 ← 042 Step 4 /
+場合の依存順は plans/archive/README-full-log.md「Recommended sequencing #13」参照（052 ← 042 Step 4 /
 055・053 サインアウト部 ← 042 / 054 ← 043）。E2E の未スイープ切り口は本ラウンドでほぼ枯渇 —
 次ラウンドを行う場合は plans 042〜056 の実行結果と OI-9 / OI-11 の解消状況を先に確認すること。
 
@@ -717,7 +717,7 @@ VSCode「問題」パネルの件数が消化しても動かない件を調査�
    `signInWithPassword` 起因の失敗はゼロ、a11y は 4 spec すべて passed、認証依存バッチは
    chromium で 7 passed / 2 failed。したがって **047–050・052・055 のブロックは解除された**。
    ただし 042 自体は Step 5–6 未達の**部分完了**で、残る 2 failed はサインインではなく
-   「重い注文フローの間欠 120s ハング」（README の Deferred 節に新規起票）。
+   「重い注文フローの間欠 120s ハング」（README の Deferred 節に新規起票 —— 2026-09-26 以降は `DEFERRED.md`）。
    051 は素の DONE。依存ゼロで即着手できるのは **056 / 044 / 045**、
    042 待ちが解けた **047（P1）** が次の先頭候補。
 3. **Round 14 が生んだ残件**（いずれも小さく独立）:
@@ -835,7 +835,7 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 > | `bun audit` | 97 件 | **90 件**（critical 1 / high 30 / moderate 45 / low 14 — **2026-07-19 / Round 13 実測**。詳細 `audit/findings-18-security-r13.md` §0） |
 > | `@clerk/nextjs` | `^7.0.7`（CRITICAL 影響圏内） | **`^7.5.0`**（[plan 004](004-upgrade-clerk-nextjs-security.md) DONE で解消。解決レンジの正値は `audit/findings-06-dependencies.md` を単一の出典とする — **2026-07-26 実測**: `@clerk/nextjs@7.5.19` / `@clerk/shared@4.25.4` / `js-cookie@3.0.7`） |
 > | `next` | `^16.2.1` | **`~16.2.12`**（**2026-07-30 実測**。`~16.2.10` が新規 9 advisory の影響範囲 `<16.2.11` に再露出したため独立の依存メンテとして bump — `audit/findings-06-dependencies.md` DEPS-08 解決②。[plan 057](057-upgrade-next-middleware-bypass.md) は **DONE** — 保留だった Step 5 スモークを 2026-08-03 に実施し PASS。R1 の「最新・対応不要」判定は撤回済み） |
-> | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / README Deferred で継続追跡） |
+> | `applyCoupon` ロストアップデート | 未対応 | **未対応のまま**（`08-open-questions.md` / `DEFERRED.md` で継続追跡） |
 > | tsc / lint | 0 エラー / 15 警告 | 同左（**2026-07-27 再実測**・変化なし） |
 
 - ベースライン: tsc 0 エラー / lint 0 エラー・15 警告 / `bun audit` 97 件 ← **R1 時点**
@@ -843,13 +843,13 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
 - 既知・未対応（プラン化候補）: OI-9 ホーム SSR 500 / OI-11 seller `self is not defined` / OI-10 a11y color-contrast / C2 bundle size / applyCoupon total ロストアップデート / E2E 120s ハング
   ← **OI-9 / OI-11 は Round 9 時点でも「未着手」を確認済み**（`docs/testing/QA_HANDOFF.md`）。
   最新の解消状況は QA_HANDOFF 側を正とする
-- **direction 残候補: 一覧は [`plans/README.md`](README.md) の Deferred 節を参照**（**単一の出所**）。
+- **direction 残候補: 一覧は [`plans/DEFERRED.md`](DEFERRED.md) の Deferred 節を参照**（**単一の出所**）。
   > 本ファイルに一覧を再掲していたが、README 側と**二重管理**になり、片方だけ更新されて
   > ドリフトしていた（例: `/dashboard/admin/orders`・`/dashboard/admin/coupons`・
   > seller inventory は「要実在確認」と書かれていたが、後続ラウンドの再監査で
   > **3 画面とも実装済み**と確認され、`docs/unimplemented-screens-plan.md` ごと
   > DX-02 の退役対象になっている — [`audit/recon.md`](audit/recon.md) の残存候補行を参照）。
-  > 残候補の追加・削除は **README の Deferred 節だけを更新**すること。
+  > 残候補の追加・削除は **`DEFERRED.md` の Deferred 節だけを更新**すること。
 
 ## 2026-07-10 追記: 正式版昇格（docs への SSOT 移管）
 
