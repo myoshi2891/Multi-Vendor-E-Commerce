@@ -74,6 +74,14 @@ export type AttributeFormValues = Record<string, AttributeFormValue>;
 /** バリアント編集対象の現在値に含まれるアーカイブ済み選択肢（A-11: レコード単位）。 */
 export type ArchivedCurrentOptions = Record<string, AttributeOptionDTO[]>;
 
+/** 編集フォームの属性初期値（既存商品・既存バリアントの編集ページ）。 */
+export interface AttributeFormInitialValues {
+    productAttributes: AttributeFormValues;
+    variantAttributes: AttributeFormValues;
+    /** このレコード（商品 / 編集中のバリアント）の現在値に含まれるアーカイブ済み選択肢（A-11）。 */
+    archivedCurrent: ArchivedCurrentOptions;
+}
+
 /**
  * `upsertProduct` へ送る属性値 1 件（plan 069 Step 8 の保存契約）。
  *

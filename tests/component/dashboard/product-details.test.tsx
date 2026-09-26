@@ -10,7 +10,7 @@ import {
 import "@testing-library/jest-dom";
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
-import { ProductWithVariantType } from "@/lib/types";
+import type { ProductFormData, ProductWithVariantType } from "@/lib/types";
 import { upsertProduct } from "@/queries/product";
 import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 import type { AttributeDefinitionDTO } from "@/lib/attribute-definitions";
@@ -390,7 +390,7 @@ const validData = (
         ...overrides,
     }) as Partial<ProductWithVariantType>;
 
-const renderForm = (data?: Partial<ProductWithVariantType>) =>
+const renderForm = (data?: ProductFormData) =>
     render(
         <ProductDetails
             data={data}
@@ -1106,6 +1106,86 @@ describe("ProductDetails", () => {
                 variantId: "variant-1",
                 value: null,
             });
+        });
+
+        it("編集: 既存の属性値を初期値として表示し、無編集保存でそのまま送る", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData(),
+                productAttributes: { "def-material": "Wool" },
+                variantAttributes: { "def-weight": "250" },
+            });
+
+            // Assert —— 初期値
+            expect(await screen.findByLabelText("Material *")).toHaveValue(
+                "Wool"
+            );
+            expect(screen.getByLabelText("Net weight (g)")).toHaveValue("250");
+
+            // Act —— 無編集で保存
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-material",
+                    value: "Wool",
+                },
+                {
+                    scope: "VARIANT",
+                    definitionId: "def-weight",
+                    variantId: "variant-1",
+                    value: "250",
+                },
+            ]);
+        });
+
+        it("A-11: このレコードのアーカイブ済み現在値だけを (Discontinued) 付きで候補に混ぜ、無編集保存を通す", async () => {
+            // Arrange
+            (getEffectiveAttributeDefinitions as jest.Mock).mockResolvedValue([
+                attributeDef({
+                    id: "def-color",
+                    name: "Color",
+                    type: "ENUM",
+                    options: [{ id: "opt-red", value: "red", label: "Red" }],
+                }),
+            ]);
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData(),
+                productAttributes: { "def-color": "opt-old" },
+                archivedCurrent: {
+                    "def-color": [
+                        { id: "opt-old", value: "old", label: "Old red" },
+                    ],
+                },
+            });
+
+            // Assert —— 候補
+            expect(
+                await screen.findByRole("option", {
+                    name: "Old red (Discontinued)",
+                })
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole("option", { name: "Red" })
+            ).toBeInTheDocument();
+
+            // Act
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— スキーマが現在値を弾かない
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-color",
+                    value: "opt-old",
+                },
+            ]);
         });
 
         it("新バリアント画面: 商品属性は描画も送信もしない（同期対象外）", async () => {

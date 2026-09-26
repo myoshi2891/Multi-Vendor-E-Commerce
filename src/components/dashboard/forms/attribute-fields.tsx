@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 
 // Types
 import type {
+    ArchivedCurrentOptions,
     AttributeDefinitionDTO,
     AttributeFormValue,
     AttributeOptionDTO,
@@ -40,6 +41,8 @@ interface AttributeFieldsProps {
     control: Control<ProductFormWithAttributes>;
     prefix: "productAttributes" | "variantAttributes";
     definitions: readonly AttributeDefinitionDTO[];
+    /** このレコードの現在値であるアーカイブ済み選択肢（A-11）。他レコードの値は渡さないこと。 */
+    archivedCurrent?: ArchivedCurrentOptions;
     disabled?: boolean;
 }
 
@@ -54,14 +57,20 @@ const asStringArray = (value: AttributeFormValue | undefined): string[] =>
 
 interface ControlProps {
     def: AttributeDefinitionDTO;
+    /** アクティブな選択肢 + このレコードのアーカイブ済み現在値（"(Discontinued)" 表記付き）。 */
+    options: readonly AttributeOptionDTO[];
     value: AttributeFormValue | undefined;
     onChange: (value: AttributeFormValue) => void;
     disabled?: boolean;
 }
 
-const OptionSelect: FC<
-    ControlProps & { options: readonly AttributeOptionDTO[] }
-> = ({ def, value, onChange, disabled, options }) => (
+const OptionSelect: FC<ControlProps> = ({
+    def,
+    value,
+    onChange,
+    disabled,
+    options,
+}) => (
     <Select
         disabled={disabled}
         value={asString(value) || UNSET_VALUE}
@@ -107,15 +116,15 @@ const BooleanSelect: FC<ControlProps> = ({ value, onChange, disabled }) => (
 );
 
 const MultiOptionCheckboxes: FC<ControlProps> = ({
-    def,
     value,
     onChange,
     disabled,
+    options,
 }) => {
     const selected = asStringArray(value);
     return (
         <div className="flex flex-wrap gap-4">
-            {def.options.map((option) => (
+            {options.map((option) => (
                 <label
                     key={option.id}
                     className="flex items-center gap-2 text-sm"
@@ -169,7 +178,7 @@ const AttributeControl: FC<ControlProps> = (props) => {
             return def.multiValued ? (
                 <MultiOptionCheckboxes {...props} />
             ) : (
-                <OptionSelect {...props} options={def.options} />
+                <OptionSelect {...props} />
             );
     }
 };
@@ -178,10 +187,28 @@ const AttributeControl: FC<ControlProps> = (props) => {
  * 解決済みの属性定義からフォーム項目を描画する（plan 069 Step 8）。
  * 値の型はスコープ別オブジェクト `prefix.<definitionId>` に入る。
  */
+/** アクティブな選択肢の後ろに、このレコードのアーカイブ済み現在値を廃止表記で足す。 */
+const optionsFor = (
+    def: AttributeDefinitionDTO,
+    archivedCurrent: ArchivedCurrentOptions | undefined
+): AttributeOptionDTO[] => {
+    const archived = (archivedCurrent?.[def.id] ?? []).filter(
+        (option) => !def.options.some((active) => active.id === option.id)
+    );
+    return [
+        ...def.options,
+        ...archived.map((option) => ({
+            ...option,
+            label: `${option.label} (Discontinued)`,
+        })),
+    ];
+};
+
 const AttributeFields: FC<AttributeFieldsProps> = ({
     control,
     prefix,
     definitions,
+    archivedCurrent,
     disabled,
 }) => (
     <div className="grid gap-4 md:grid-cols-2">
@@ -195,6 +222,7 @@ const AttributeFields: FC<AttributeFieldsProps> = ({
                         <FormLabel>{labelFor(def)}</FormLabel>
                         <AttributeControl
                             def={def}
+                            options={optionsFor(def, archivedCurrent)}
                             value={field.value}
                             onChange={field.onChange}
                             disabled={disabled}

@@ -12,6 +12,7 @@ import {
     resolveEffectiveDefinitions,
     type ArchivedCurrentOptions,
     type AttributeDefinitionDTO,
+    type AttributeFormInitialValues,
     type AttributeFormValue,
     type AttributeFormValues,
     type AttributeOptionDTO,
@@ -230,14 +231,6 @@ export const findProductAttributeDisplay = async (
         variants,
     };
 };
-
-/** 編集フォームの属性初期値（plan 069 フォローアップ: 既存バリアントの編集ページ）。 */
-export interface AttributeFormInitialValues {
-    productAttributes: AttributeFormValues;
-    variantAttributes: AttributeFormValues;
-    /** このレコード（商品 / 編集中のバリアント）の現在値に含まれるアーカイブ済み選択肢（A-11）。 */
-    archivedCurrent: ArchivedCurrentOptions;
-}
 
 export type AttributeFormValueClient = Pick<
     AttributeTransactionClient,

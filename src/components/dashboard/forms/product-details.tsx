@@ -70,7 +70,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ProductWithVariantType } from "@/lib/types";
+import type { ProductFormData } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
 import AttributeFields from "./attribute-fields";
@@ -102,7 +102,7 @@ const shippingFeeMethods = [
 ];
 
 interface ProductDetailsProps {
-    data?: Partial<ProductWithVariantType>;
+    data?: ProductFormData;
     categories: Category[];
     offerTags: OfferTag[];
     storeUrl: string;
@@ -180,9 +180,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // 新バリアント画面では商品レベルを編集しないので、PRODUCT 属性は描画も送信もしない
     // （送らない = サーバー側で同期対象外）。
     const includeProductScope = !isNewVariantPage;
+    // 編集中レコードの現在値に含まれるアーカイブ済み選択肢（A-11）。候補と検証の両方に足す
+    const archivedCurrent = data?.archivedCurrent;
     const productSchema = useMemo(
-        () => makeProductSchema(attributeDefs, { includeProductScope }),
-        [attributeDefs, includeProductScope]
+        () =>
+            makeProductSchema(attributeDefs, {
+                includeProductScope,
+                archivedCurrent,
+            }),
+        [attributeDefs, includeProductScope, archivedCurrent]
     );
 
     // Form hook for managing form state and validation
@@ -190,8 +196,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         mode: "onChange", // Form validation mode
         resolver: zodResolver(productSchema), // Resolver for form validation
         defaultValues: {
-            productAttributes: {},
-            variantAttributes: {},
+            // 既存レコードの値（編集ページ）。定義の取得後は有効な定義の分だけが残る
+            productAttributes: data?.productAttributes ?? {},
+            variantAttributes: data?.variantAttributes ?? {},
             // Setting default form values from data (if available)
             name: data?.name ?? "",
             description: data?.description ?? "",
@@ -832,6 +839,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                         control={form.control}
                                         prefix="productAttributes"
                                         definitions={productAttributeDefs}
+                                        archivedCurrent={archivedCurrent}
                                         disabled={isLoading}
                                     />
                                 </InputFieldset>
@@ -842,6 +850,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                     control={form.control}
                                     prefix="variantAttributes"
                                     definitions={variantAttributeDefs}
+                                    archivedCurrent={archivedCurrent}
                                     disabled={isLoading}
                                 />
                             </InputFieldset>
