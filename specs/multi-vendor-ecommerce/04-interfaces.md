@@ -36,6 +36,8 @@ Dashboard:
 - `/dashboard/seller/stores` store list
 - `/dashboard/seller/stores/new` create store
 - `/dashboard/seller/stores/[storeUrl]` store details
+- `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` add a variant to an existing product
+- `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` edit an existing product + variant (`force-dynamic`; loads via `getProductVariantForEdit`, including category-attribute initial values)
 - `/dashboard/seller/stores/[storeUrl]/inventory` inventory management (F2)
 - `/dashboard/seller/stores/[storeUrl]/messages` seller-side messaging (force-dynamic; two-pane list identified by buyer + reused thread)
 - `/dashboard/admin` admin overview
@@ -170,6 +172,8 @@ Definitions hang off a `Category` node and are inherited by its subtree; for the
 | `upsertAttributeOption(definitionId, input)` / `archiveAttributeOption(id)` / `restoreAttributeOption(id)` | ENUM allowed values; `value` is immutable, `label` renames follow through to product display (A-4). | `requireAdmin` |
 | `changeAttributeTypeToNumber(id)` | TEXT → NUMBER. Route 1 (all rows convertible) converts in place; route 2 archives the TEXT definition, keeps unconvertible values there and moves the rest to a new NUMBER definition (A-7). | `requireAdmin` |
 | `getEffectiveAttributeDefinitions(categoryId)` | Effective definitions (active options only) for the product form. | Public (catalog metadata) |
+
+The seller edit page reads values through `getProductVariantForEdit(storeUrl, productId, variantId)` in `src/queries/product.ts` (`requireStoreOwner`; the product lookup is scoped by `storeId`, so another store's product returns `null`). It returns the product form shape plus `productAttributes` / `variantAttributes` initial values and `archivedCurrent` — only **this record's** archived current options, which the form lists as "(Discontinued)" so an unedited save passes (A-11). The product form warns (without blocking) when a legacy `Spec` name duplicates a category attribute (`findSpecAttributeOverlaps`), and `Spec` rows are optional (fully blank rows are dropped).
 
 Product values are written only through `upsertProduct`'s `attributes: AttributeValueInput[]` payload (owner-discriminated: VARIANT carries `variantId`). `src/lib/attribute-sync.ts` validates outside the transaction (early rejection) and again inside it after locking Category → Product → Variant → Definition → Option rows; the column choice lives only in `src/lib/attribute-value.ts`. The storefront reads values via `findProductAttributeDisplay` (`src/lib/attribute-repository.ts`) and `product-specs.tsx` renders **Specifications** (structured attributes) above **Other specifications** (legacy `Spec`).
 

@@ -56,7 +56,11 @@
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.
-3) Create products and variants with sizes, colors, and images.
+3) Create products and variants with sizes, colors, and images. The product form renders the
+   category attributes effective for the selected node (inherited, deepest key wins); required
+   attributes block saving. Existing variants are edited at
+   `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]`, which
+   preloads the saved attribute values.
 4) Configure per-country shipping rates.
 5) View the store dashboard (F1) at `/dashboard/seller/stores/[storeUrl]`: 6 KPI
    cards (revenue from Paid orders, orders, views, sales, products, low-stock

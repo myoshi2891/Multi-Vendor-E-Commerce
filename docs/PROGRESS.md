@@ -4810,3 +4810,33 @@ plan 069 の残作業のうち、商品詳細の構造化属性表示（Step 9�
 | Integration | 136 / 16 スイート | **181 / 17 スイート** |
 | 型エラー | 0 件 | **0 件** |
 | ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### plan 069 フォローアップ（編集ページ・Spec 任意化・重複警告・属性値シード） (2026-09-27)
+
+#### 概要
+
+plan 069 の Done criteria 外として残していたフォローアップのうち、コードで閉じる 4 件を実施した。共有開発 DB（Neon）への migration 適用はオペレーター判断のため未実施。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/attribute-repository.ts` | `findAttributeFormValues`: レコード単位の属性初期値と、そのレコードのアーカイブ済み現在値（A-11） | `dd5b6bd8` |
+| `src/queries/product.ts` | `getProductVariantForEdit`（`requireStoreOwner`・店舗スコープで商品を引き、フォームの形へ戻す） | `a3a84de1` |
+| `.../products/[productId]/variants/[variantId]/page.tsx` ほか | 既存バリアントの編集ページ（一覧のリンク先が 404 だった）。アーカイブ済み現在値は "(Discontinued)" で候補化 | `924ae810` |
+| `src/lib/schemas.ts` | Spec の `min(1)` を撤去（design.md Q3-4 の決定）。空行は未入力として落とす | `827ee3f7` / `eeecb378` |
+| `src/lib/attribute-definitions.ts` / `product-details.tsx` | Spec 名が属性と重なったら警告（ブロックしない・Q3 併存ルール 2） | `4f3795a0` / `6b8b36aa` |
+| `prisma/seed/` | パイロット商品 2（カメラ・チョコレート）と属性値シード（ファッション 12 商品は Spec の Material から明確に言えるものだけ人手で対応づけ）。使い捨て Postgres で 2 回実行し同一 | `b8bc160a` / `742e4cc9` |
+| `tests/integration/category-attributes.test.ts` | 編集ページの往復（読み込み → 無編集保存で値が変わらない）と他店舗商品で null | `c27fde9b` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2340 passed / 2343 total | **2372 passed / 2375 total**（2026-09-27 実測） |
+| スイート数 | 206 | **207** |
+| Integration | 181 / 17 スイート | **183 / 17 スイート** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |

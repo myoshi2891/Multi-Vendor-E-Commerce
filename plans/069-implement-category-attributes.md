@@ -100,17 +100,18 @@
   `FOR UPDATE`（移動ノード + 子孫）と衝突して同じ直列化が起きるため。不変条件は保たれているが、
   このロックは現状「唯一の防御」ではない（多重防御）。
 
-**フォローアップ（本プランの Done criteria 外・未着手）**:
-1. **商品フォームの初期値ロード**: 既存商品・既存バリアントの編集ページが存在しないため、既存属性値と
-   A-11 の `archivedCurrent` の UI 供給は未配線（サーバー側・スキーマ側は実装済み）。編集ページ新設時に配線する。
-2. **design.md Q3 の併存ルール 2（Spec 名が定義名と重なったら警告）** は未実装。
-3. **design.md Q3-4（`product_specs` / `variant_specs` の `min(1)` 必須を残すか）** は未判断のまま現状維持。
-   外すと「その他仕様」なしで保存できるようになる販売者向けの挙動変更なので、プロダクト判断が要る。
-4. **共有 DB への未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`
-   （本プラン外）と `20260926085624_category_attributes` が未適用。適用はオペレーター判断
-   （`bunx prisma migrate deploy`。リセットは発生しない）。適用後に `bun run seed:luxury` でパイロット定義が入る。
-5. luxury シードの既存商品には属性値を入れていない（Q3 のとおり `Spec` からの機械移行はしない）。
-   店頭の「Specifications」セクションはパイロットカテゴリに商品・値が入るまで表示されない。
+**フォローアップ（Done criteria 外）— 2026-09-27 対応状況**:
+1. ✅ **商品フォームの初期値ロード**: 既存バリアントの編集ページ
+   `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` を新設
+   （`getProductVariantForEdit` → `findAttributeFormValues`。アーカイブ済み現在値は "(Discontinued)" で候補化）。
+   `dd5b6bd8` / `a3a84de1` / `924ae810` / `c27fde9b`
+2. ✅ **Q3 併存ルール 2（Spec 名と属性の重複警告）**: `findSpecAttributeOverlaps`、ブロックしない。`4f3795a0` / `6b8b36aa`
+3. ✅ **Q3-4（Spec の `min(1)`）**: 撤去を決定・実装（空行は未入力として落とす）。design.md に決定を記録。`827ee3f7` / `eeecb378`
+4. ⏳ **共有 DB への未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`
+   （本プラン外）と `20260926085624_category_attributes` が未適用。**オペレーター作業**
+   （`bunx prisma migrate deploy` → 任意で `bun run seed:luxury`）。
+5. ✅ **店頭の「Specifications」**: パイロット商品 2（家電・食品）とファッション 12 商品に属性値をシード
+   （Spec からの機械移行ではなく、主素材が明確なものだけ人手で対応づけ。混紡 2 商品は Spec のみ）。`b8bc160a` / `742e4cc9`
 
 ## Why this matters
 

@@ -12,7 +12,11 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2340 passed / 2343 total across 206 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+- 2372 passed / 2375 total across 207 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+  Plan 069 follow-ups add `src/queries/product-edit.test.ts` (edit-page loader: IDOR tiers, form
+  shape, attribute initial values) and extend the attribute, schema, product-form and seeder
+  tests. Integration is 183 across 17 suites (+2: the edit page load-and-save round trip).
+  Earlier record (2340 / 2343 across 206 suites, 2026-09-27):
   Plan 069 (category attributes, Steps 5-11) added the attribute helpers, admin actions, dynamic
   form schema and save contract tests; Steps 9-10 add `src/lib/attribute-repository.test.ts`
   (product-page read DTO), `tests/component/store/product-specs.test.tsx` (two spec sections) and
