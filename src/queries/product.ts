@@ -34,6 +34,10 @@ import {
     type AttributeSyncContext,
 } from "@/lib/attribute-sync";
 import type { AttributeValueInput } from "@/lib/attribute-definitions";
+import {
+    findProductAttributeDisplay,
+    type ProductAttributeDisplay,
+} from "@/lib/attribute-repository";
 
 // Slugify
 import slugify from "slugify";
@@ -1259,12 +1263,16 @@ export const getProductPageData = async (
     // Reviews stats
     const ratingStatistics = await getRatingStatistics(product.id);
 
+    // 構造化属性（「仕様」セクション）。表示中のバリアント分だけ読む
+    const attributes = await getProductAttributeDisplay(product);
+
     return formatProductResponse(
         product,
         productShippingDetails,
         storeFollowersCount,
         isUserFollowingStore,
-        ratingStatistics
+        ratingStatistics,
+        attributes
     );
 };
 
@@ -1279,6 +1287,8 @@ export const retrieveProductDetails = async (
         },
         include: {
             category: true,
+            // 構造化属性の有効定義はツリーノードの path から解決する（plan 069 Step 9）
+            categoryNode: { select: { path: true } },
             subCategory: true,
             offerTag: true,
             store: true,
@@ -1345,6 +1355,32 @@ export const retrieveProductDetails = async (
     };
 };
 
+const getProductAttributeDisplay = async (
+    product: NonNullable<ProductPageType>
+): Promise<ProductAttributeDisplay> => {
+    try {
+        return await findProductAttributeDisplay(db, {
+            categoryPath: product.categoryNode?.path ?? null,
+            productId: product.id,
+            variantIds: product.variants.map((variant) => variant.id),
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[product:getProductAttributeDisplay] Failed to load attributes",
+                { error: error.message, stack: error.stack }
+            );
+        } else {
+            console.error(
+                "[product:getProductAttributeDisplay] Unknown error",
+                { error }
+            );
+        }
+        // アレルゲン等の表示義務がある属性を黙って欠落させないため、ページごと失敗させる
+        throw error;
+    }
+};
+
 const getUserCountry = async () => {
     const cookieStore = await cookies();
     const cookieValue = cookieStore.get("userCountry")?.value;
@@ -1355,7 +1391,8 @@ const formatProductResponse = (
     shippingDetails: ProductShippingDetailsType,
     storeFollowersCount: number,
     isUserFollowingStore: boolean,
-    ratingStatistics: RatingStatisticsType
+    ratingStatistics: RatingStatisticsType,
+    attributes: ProductAttributeDisplay
 ) => {
     if (!product) return;
     const variant = product.variants[0];
@@ -1398,6 +1435,10 @@ const formatProductResponse = (
         specs: {
             product: product.specs,
             variant: variant.specs,
+        },
+        attributes: {
+            product: attributes.product,
+            variant: attributes.variants[variant.id] ?? [],
         },
         questions,
         rating: product.rating,
