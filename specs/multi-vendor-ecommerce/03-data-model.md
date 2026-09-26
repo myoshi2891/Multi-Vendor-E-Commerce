@@ -105,7 +105,7 @@
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
-- **図の構成（10 ページ）**: `data-model.drawio` は機能ドメインごとに 10 タブに分割されている。
+- **図の構成（11 ページ）**: `data-model.drawio` は機能ドメインごとに 11 タブに分割されている。
   クロスドメインエッジを同一ページ内に収めるため、関連モデルは複数ページに重複掲載される。
 
   | Page | タブ名 | 掲載エンティティ数 | 概要 |
@@ -119,7 +119,8 @@
   | 7 | Identity | 2 | User / Store の Identity ドメイン |
   | 8 | Messaging | 5 | 購入者↔販売者メッセージング（Conversation / Message / User / Store / Order） |
   | 9 | Support | 3 | サポート受付（SupportTicket / User / Order） |
-  | 10 | Enums | 10 | 全 enum 定義の参照ページ（エッジなし） |
+  | 10 | Attributes | 7 | カテゴリ別属性（AttributeDefinition / AttributeOption / Product・VariantAttributeValue。plan 069 / ADR-007） |
+  | 11 | Enums | 12 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:
