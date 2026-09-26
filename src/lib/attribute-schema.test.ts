@@ -37,7 +37,10 @@ describe("makeProductSchema", () => {
         );
 
         // Act
-        const result = schema.safeParse({});
+        const result = schema.safeParse({
+            productAttributes: {},
+            variantAttributes: {},
+        });
 
         // Assert
         expect(schema.shape.name).toBeDefined();
