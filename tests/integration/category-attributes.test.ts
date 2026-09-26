@@ -92,7 +92,7 @@ import {
     upsertAttributeOption,
 } from "@/queries/attribute";
 import { upsertCategory } from "@/queries/category";
-import { upsertProduct } from "@/queries/product";
+import { getProductVariantForEdit, upsertProduct } from "@/queries/product";
 import { disconnectTestDb, getTestDb } from "./setup/db";
 import { resetDb } from "./setup/reset-db";
 import {
@@ -1688,6 +1688,129 @@ describe("Options, archiving and display", () => {
             black.id
         );
         expect(readBack(finish, await variantRows(variantB.id))).toBe(white.id);
+    });
+});
+
+// ============================================================================
+// 編集ページ: 読み込み → 無編集保存で値が変わらない
+// ============================================================================
+
+describe("Edit page round trip (getProductVariantForEdit → upsertProduct)", () => {
+    it("loads attributes (incl. the record's archived option) and an unedited save keeps them", async () => {
+        // Arrange
+        const { owner, store, root, seeded } = await arrange();
+        const color = await createDefinition(root.id, {
+            key: "color",
+            type: "ENUM",
+            options: ["red", "old"],
+        });
+        const allergens = await createDefinition(root.id, {
+            key: "allergens",
+            type: "ENUM",
+            multiValued: true,
+            options: ["milk", "egg"],
+        });
+        const storage = await createDefinition(root.id, {
+            key: "storage",
+            type: "NUMBER",
+            scope: "VARIANT",
+        });
+        const oldOption = color.options[1];
+        await asSeller(owner.id, () =>
+            upsertProduct(
+                buildUpdateInput(seeded, [
+                    {
+                        scope: "PRODUCT",
+                        definitionId: color.id,
+                        value: oldOption.id,
+                    },
+                    {
+                        scope: "PRODUCT",
+                        definitionId: allergens.id,
+                        value: allergens.options.map((o) => o.id),
+                    },
+                    {
+                        scope: "VARIANT",
+                        definitionId: storage.id,
+                        variantId: seeded.variant.id,
+                        value: "128",
+                    },
+                ]),
+                store.url
+            )
+        );
+        await db.attributeOption.update({
+            where: { id: oldOption.id },
+            data: { archivedAt: new Date() },
+        });
+
+        // Act —— 編集ページが読む値を、そのまま（フォームが送る形で）保存し直す
+        const loaded = await asSeller(owner.id, () =>
+            getProductVariantForEdit(
+                store.url,
+                seeded.product.id,
+                seeded.variant.id
+            )
+        );
+        if (!loaded) throw new Error("product not loaded");
+        const attributes: AttributeValueInput[] = [
+            ...Object.entries(loaded.productAttributes).map(
+                ([definitionId, value]) =>
+                    ({ scope: "PRODUCT", definitionId, value }) as const
+            ),
+            ...Object.entries(loaded.variantAttributes).map(
+                ([definitionId, value]) =>
+                    ({
+                        scope: "VARIANT",
+                        definitionId,
+                        variantId: loaded.variantId,
+                        value,
+                    }) as const
+            ),
+        ];
+        const before = await productRows(seeded.product.id);
+        await asSeller(owner.id, () =>
+            upsertProduct({ ...loaded, attributes }, store.url)
+        );
+
+        // Assert
+        expect(loaded.archivedCurrent).toEqual({
+            [color.id]: [{ id: oldOption.id, value: "old", label: "OLD" }],
+        });
+        const after = await productRows(seeded.product.id);
+        expect(readBack(color, after)).toBe(oldOption.id);
+        expect(readBack(allergens, after)).toEqual(readBack(allergens, before));
+        expect(readBack(storage, await variantRows(seeded.variant.id))).toBe(
+            "128"
+        );
+        // 商品本体の項目も往復で崩れない
+        const product = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+            include: { specs: true },
+        });
+        expect(product.name).toBe(seeded.product.name);
+        expect(product.specs.map((spec) => spec.name)).toEqual(["care"]);
+    });
+
+    it("returns null for another store's product (no data leak)", async () => {
+        const { owner, store, root, leaf } = await arrange();
+        const victim = await seedUser(db);
+        const victimStore = await seedStore(db, { userId: victim.id });
+        const victimProduct = await seedProductWithVariantAndSize(db, {
+            storeId: victimStore.id,
+            categoryId: root.id,
+            subCategoryId: leaf.id,
+        });
+
+        await expect(
+            asSeller(owner.id, () =>
+                getProductVariantForEdit(
+                    store.url,
+                    victimProduct.product.id,
+                    victimProduct.variant.id
+                )
+            )
+        ).resolves.toBeNull();
     });
 });
 
