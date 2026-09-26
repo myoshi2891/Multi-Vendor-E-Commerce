@@ -12,7 +12,15 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2184 passed / 2187 total across 199 suites (3 skipped tests in 1 skipped suite), as of 2026-09-04.
+- 2340 passed / 2343 total across 206 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+  Plan 069 (category attributes, Steps 5-11) added the attribute helpers, admin actions, dynamic
+  form schema and save contract tests; Steps 9-10 add `src/lib/attribute-repository.test.ts`
+  (product-page read DTO), `tests/component/store/product-specs.test.tsx` (two spec sections) and
+  `prisma/seed/__tests__/attribute-seeder.test.ts` (pilot seed constants and idempotency).
+  Integration is 181 tests across 17 suites, as of 2026-09-27: `category-attributes.test.ts`
+  (+40) proves the ADR-007 D-5/D-6/D-7 constraints on a real Postgres, the save round trips
+  including tx-level re-validation races, and A-2..A-11.
+  Earlier record (2184 / 2187 across 199 suites, 2026-09-04):
   A second review follow-up added +2 tests (suites unchanged): the store footer now degrades
   gracefully when `getAllCategories` throws (the footer is shared by every storefront page, so a
   rethrow took down the whole render), and the ERD model parser no longer mistakes commented-out

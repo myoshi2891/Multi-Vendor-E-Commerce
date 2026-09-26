@@ -43,6 +43,7 @@ Dashboard:
 - `/dashboard/admin/categories` manage categories
 - `/dashboard/admin/subCategories` manage subcategories
 - `/dashboard/admin/offer-tags` manage offer tags
+- `/dashboard/admin/attributes` manage category attribute definitions (`/new`, and `/[id]/options` for ENUM allowed values) — plan 069
 
 ## API Routes
 - `POST /api/setUserCountryInCookies` set user country cookie
@@ -58,7 +59,7 @@ Dashboard:
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
   home, profile, review, coupon, stripe, PayPal, user, size, dashboard, inventory,
-  store-dashboard, message, support.
+  store-dashboard, message, support, attribute.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
@@ -156,6 +157,21 @@ Return type `StoreDashboardStats` is exported from `store-dashboard.ts`; `SalesP
 | `markConversationRead(conversationId)` | `updateMany` peer-sent unread only (`senderId: { not: user.id }, isRead: false`). Idempotent. | `assertParticipant` |
 
 Sender role is derived (`message.senderId === conversation.userId` ⇒ buyer-sent), not stored. `SendMessageSchema` / `StartConversationSchema` live in `src/lib/schemas.ts`; `ConversationWithLatest` / `MessageType` / `StoreConversationWithLatest` are derived via `Prisma.PromiseReturnType` in `src/lib/types.ts`. Buyer UI (Phase 3, implemented): `/profile/messages` (`force-dynamic`) + `src/components/store/profile/messages/{messages-container,conversation-thread}.tsx` (5s polling with `cancelled` flag + `document.hidden` pause). Seller UI (Phase 4, implemented): `/dashboard/seller/stores/[storeUrl]/messages` (`force-dynamic`) + `src/components/dashboard/seller/seller-messages-container.tsx` reusing `conversation-thread.tsx`; the list is identified by the buyer `user`. Round-trip E2E (Phase 5) is planned.
+
+### attribute module (`src/queries/attribute.ts`) — category attributes (plan 069)
+
+Definitions hang off a `Category` node and are inherited by its subtree; for the same `key` on the ancestor path the **deepest node wins** (`resolveEffectiveDefinitions`, `src/lib/attribute-definitions.ts`). Deletion is logical (`archivedAt`); archived definitions keep their values but drop out of the effective set. Storage invariants (scope / type / multi-valued, one value per attribute) are enforced by DB constraints — ADR-007 D-5〜D-7.
+
+| Function | Description | Auth |
+|----------|-------------|------|
+| `upsertAttributeDefinition(input)` | Create via `INSERT ... ON CONFLICT ("categoryId","key") WHERE "archivedAt" IS NULL` (concurrent creates converge on one row; a shape mismatch is rejected). Update refuses `key` changes and type / scope / multiValued changes while values exist. | `requireAdmin` |
+| `archiveAttributeDefinition(id)` / `restoreAttributeDefinition(id)` | Logical delete / restore. | `requireAdmin` |
+| `getAllAttributeDefinitions()` / `getAttributeDefinition(id)` | Admin list / detail. | `requireAdmin` |
+| `upsertAttributeOption(definitionId, input)` / `archiveAttributeOption(id)` / `restoreAttributeOption(id)` | ENUM allowed values; `value` is immutable, `label` renames follow through to product display (A-4). | `requireAdmin` |
+| `changeAttributeTypeToNumber(id)` | TEXT → NUMBER. Route 1 (all rows convertible) converts in place; route 2 archives the TEXT definition, keeps unconvertible values there and moves the rest to a new NUMBER definition (A-7). | `requireAdmin` |
+| `getEffectiveAttributeDefinitions(categoryId)` | Effective definitions (active options only) for the product form. | Public (catalog metadata) |
+
+Product values are written only through `upsertProduct`'s `attributes: AttributeValueInput[]` payload (owner-discriminated: VARIANT carries `variantId`). `src/lib/attribute-sync.ts` validates outside the transaction (early rejection) and again inside it after locking Category → Product → Variant → Definition → Option rows; the column choice lives only in `src/lib/attribute-value.ts`. The storefront reads values via `findProductAttributeDisplay` (`src/lib/attribute-repository.ts`) and `product-specs.tsx` renders **Specifications** (structured attributes) above **Other specifications** (legacy `Spec`).
 
 ### support module (`src/queries/support.ts`) — public support forms
 
