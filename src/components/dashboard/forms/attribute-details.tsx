@@ -186,7 +186,7 @@ const AttributeDetails: FC<AttributeDetailsProps> = ({ data, categories }) => {
                                                     key={category.id}
                                                     value={category.id}
                                                 >
-                                                    {" ".repeat(
+                                                    {"\u00A0".repeat(
                                                         category.depth * 4
                                                     )}
                                                     {category.name}
