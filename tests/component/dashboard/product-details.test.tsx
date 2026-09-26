@@ -1008,6 +1008,33 @@ describe("ProductDetails", () => {
             );
         });
     });
+    describe("Spec（その他仕様）は任意（plan 069 / design.md Q3-4）", () => {
+        it("正常系: 空行のままでも保存でき、空行は送らない", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(
+                validData({
+                    product_specs: [{ name: "", value: "" }],
+                    variant_specs: [{ name: "", value: "" }],
+                })
+            );
+
+            // Act
+            fireEvent.click(
+                await screen.findByRole("button", { name: /Save/i })
+            );
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0]).toEqual(
+                expect.objectContaining({
+                    product_specs: [],
+                    variant_specs: [],
+                })
+            );
+        });
+    });
+
     describe("カテゴリ別属性（plan 069）", () => {
         const attributeDef = (
             overrides: Partial<AttributeDefinitionDTO> &
