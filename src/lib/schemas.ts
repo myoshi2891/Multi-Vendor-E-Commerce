@@ -1,4 +1,8 @@
-import { ShippingFeeMethod } from "@prisma/client";
+import {
+    AttributeScope,
+    AttributeType,
+    ShippingFeeMethod,
+} from "@prisma/client";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
 import * as z from "zod";
 
@@ -770,3 +774,94 @@ export const AdminOrderFilterSchema = z.object({
 });
 
 export type AdminOrderFilter = z.infer<typeof AdminOrderFilterSchema>;
+
+// ---------------------------------------------------------------------------
+// カテゴリ別属性（plan 069 / ADR-007）
+// ---------------------------------------------------------------------------
+
+/** 属性・許容値の機械キー。不変（design.md Q7）なので URL 同様に厳格に絞る。 */
+const ATTRIBUTE_MACHINE_KEY_PATTERN = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+// Attribute definition form schema
+export const AttributeDefinitionFormSchema = z
+    .object({
+        categoryId: z
+            .string({ required_error: "Category is required." })
+            .min(1, { message: "Category is required." }),
+        key: z
+            .string({ required_error: "Key is required." })
+            .min(2, { message: "Key must be at least 2 characters long." })
+            .max(50, { message: "Key cannot exceed 50 characters." })
+            .regex(ATTRIBUTE_MACHINE_KEY_PATTERN, {
+                message:
+                    "Key must be lowercase snake_case (letters, numbers, underscores).",
+            }),
+        name: z
+            .string({ required_error: "Name is required." })
+            .trim()
+            .min(1, { message: "Name is required." })
+            .max(100, { message: "Name cannot exceed 100 characters." }),
+        type: z.nativeEnum(AttributeType),
+        scope: z.nativeEnum(AttributeScope),
+        unit: z
+            .string()
+            .trim()
+            .max(20, { message: "Unit cannot exceed 20 characters." })
+            .nullable(),
+        required: z.boolean(),
+        facetable: z.boolean(),
+        multiValued: z.boolean(),
+        sortOrder: z
+            .number({ invalid_type_error: "Sort order must be a number." })
+            .int()
+            .min(0)
+            .max(10000),
+    })
+    .superRefine((value, ctx) => {
+        // D-7: 多値は ENUM 限定（DB の CHECK と同じ規則を入口で先に返す）
+        if (value.multiValued && value.type !== AttributeType.ENUM) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["multiValued"],
+                message: "Only ENUM attributes can be multi-valued.",
+            });
+        }
+        // ADR-007 Risks: TEXT の facetable は distinct 値が発散してファセット UI が破綻する
+        if (value.facetable && value.type === AttributeType.TEXT) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["facetable"],
+                message: "TEXT attributes cannot be facetable.",
+            });
+        }
+    });
+
+export type AttributeDefinitionFormValues = z.infer<
+    typeof AttributeDefinitionFormSchema
+>;
+
+// Attribute option form schema
+export const AttributeOptionFormSchema = z.object({
+    value: z
+        .string({ required_error: "Value is required." })
+        .min(1, { message: "Value is required." })
+        .max(50, { message: "Value cannot exceed 50 characters." })
+        .regex(/^[a-z0-9]+(?:[_-][a-z0-9]+)*$/, {
+            message:
+                "Value must be lowercase letters and numbers separated by - or _.",
+        }),
+    label: z
+        .string({ required_error: "Label is required." })
+        .trim()
+        .min(1, { message: "Label is required." })
+        .max(100, { message: "Label cannot exceed 100 characters." }),
+    sortOrder: z
+        .number({ invalid_type_error: "Sort order must be a number." })
+        .int()
+        .min(0)
+        .max(10000),
+});
+
+export type AttributeOptionFormValues = z.infer<
+    typeof AttributeOptionFormSchema
+>;
