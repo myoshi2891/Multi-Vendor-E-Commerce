@@ -11,6 +11,8 @@ import type {
   PaymentStatus,
   PaymentMethod,
   ProductStatus,
+  AttributeType,
+  AttributeScope,
 } from "@prisma/client";
 
 // ===== 基底エンティティ =====
@@ -38,6 +40,30 @@ export type SeedCategory = {
   featured: boolean;
   /** 親カテゴリの url。未指定ならルート（depth 0） */
   parentUrl?: string;
+};
+
+/** 属性定義の許容値 1 件（`@@unique([definitionId, value])` で冪等に upsert する）。 */
+export type SeedAttributeOption = {
+  value: string;
+  label: string;
+};
+
+/**
+ * カテゴリ別属性定義 1 件（plan 069 Step 10）。
+ * `categoryUrl` のノードに紐づき、子孫ノードへ継承される（design.md §3）。
+ */
+export type SeedAttributeDefinition = {
+  categoryUrl: string;
+  key: string;
+  name: string;
+  type: AttributeType;
+  scope: AttributeScope;
+  unit: string | null;
+  required: boolean;
+  facetable: boolean;
+  multiValued: boolean;
+  /** ENUM のみ。並び順は配列順（sortOrder = index） */
+  options?: SeedAttributeOption[];
 };
 
 export type SeedOfferTag = {

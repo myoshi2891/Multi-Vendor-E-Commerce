@@ -5,6 +5,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { seedBase } from "./base-seeder";
+import { seedAttributes } from "./attribute-seeder";
 import { seedStores } from "./store-seeder";
 import { seedProducts } from "./product-seeder";
 import { seedReviews } from "./review-seeder";
@@ -22,6 +23,11 @@ export async function seedAll(prisma: PrismaClient): Promise<void> {
   console.log("📦 Phase 1: Country, User, Category ツリー, OfferTag");
   const baseMaps = await seedBase(prisma);
   console.log(`✅ Phase 1 完了 (${baseMaps.countries.size}カ国, ${baseMaps.users.size}ユーザー, ${baseMaps.categories.size}カテゴリ)\n`);
+
+  // Phase 1.5: カテゴリ別属性定義（カテゴリ id が要るので Phase 1 の直後）
+  console.log("🏷️  Phase 1.5: AttributeDefinition, AttributeOption");
+  const attributes = await seedAttributes(prisma, baseMaps.categories);
+  console.log(`✅ Phase 1.5 完了 (${attributes.definitions.size}定義, ${attributes.optionCount}選択肢)\n`);
 
   // Phase 2: ストア
   console.log("🏪 Phase 2: Store, ShippingRate");
