@@ -36,6 +36,22 @@
 - **Category**: direction（実装）
 - **Planned at**: 2026-08-31, against HEAD `1130aa4d`（branch `dev`）
 
+## 実施結果（2026-09-26〜・HEAD `4ba8391b` から着手）
+
+- **Drift check**: `Spec` は型付き化・カテゴリ紐づけされていない（STOP 非該当）。
+  `product.ts` / `product-details.tsx` の差分は 066–068 由来で、本文の行番号参照は古い。
+- **Step 0（前提）**: 066 は DONE（`path` / `depth` 列あり）。**継承（祖先パス集合）は縮退なしで実装する。**
+- **Step 1（実 DB 計測）**: `psql` 未インストールのため
+  `docker run --rm -e DIRECT_URL postgres:16 psql "$DIRECT_URL"` で開発 DB（Neon）を実測（シードではない）。
+  - `Spec` 総数 **153** / 不正行（両方セット）**0** / 孤児 **0** → STOP 非該当。移行は行わない（Q3 温存）ので扱いの決定は「現状維持」。
+  - `name` 上位: Material 47 / Origin 35 / Care 12 / Hardware 10 / Dimensions 10 / Lining 7 / Construction 6 / Heel Height 3 / 以下 2 以下 16 種（計 24 種）。
+    **大文字小文字・単複の表記揺れは観測されず**。ただし値側の数値埋め込み（0-B）は本計測の対象外。
+- **Step 2（多値属性）**: **`multiValued` 列 + DB 強制**に決定。多値は ENUM 限定、単値・多値とも部分 UNIQUE で担保。
+  5 項目表は [design.md §4「多値属性の決定」](../docs/design/category-attributes/design.md)、
+  制約の形は [ADR-007 D-7](../docs/architecture/decisions/007-attribute-storage.md)。
+  - **本文からの解釈 1 点**: Step 8 の「単値は upsert」は**採らない**。部分 UNIQUE には Prisma の upsert キーが
+    生成されないため、単値・多値とも `deleteMany`（所有先 + definitionId）→ `createMany` の置換で書く。
+
 ## Why this matters
 
 現行の属性は自由記述の `Spec` のみで、**数値比較も許容値の統制もできない**

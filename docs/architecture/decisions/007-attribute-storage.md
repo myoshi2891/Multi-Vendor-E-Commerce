@@ -55,6 +55,7 @@ model AttributeDefinition {
   unit       String?                             // "cm" / "inch" / "g"
   required   Boolean        @default(false)
   facetable  Boolean        @default(false)      // plan 015 が消費するメタデータ
+  multiValued Boolean       @default(false)      // 多値（ENUM 限定・CHECK）。plan 069 Step 2 / D-7
   sortOrder  Int            @default(0)
   archivedAt DateTime?                           // 論理削除（既定）
   options    AttributeOption[]
@@ -67,7 +68,7 @@ model AttributeDefinition {
   //     ON "AttributeDefinition" ("categoryId", "key") WHERE "archivedAt" IS NULL;
   // 詳細: docs/design/category-attributes/design.md「経路 2 と一意制約」
   @@index([categoryId, facetable])
-  @@unique([id, scope, type])       // 複合 FK の参照先（値テーブルの scope / type 一致を DB で強制・D-5 / D-6）
+  @@unique([id, scope, type, multiValued]) // 複合 FK の参照先（値テーブルの scope / type / multiValued 一致を DB で強制・D-5 / D-6 / D-7）
 }
 
 model AttributeOption {
@@ -96,7 +97,8 @@ model ProductAttributeValue {
   // 値行が旧型のまま」が DB で表現不能になり、下の CHECK が「その型の列だけが
   // 埋まっている」を強制する（D-6）。
   type         AttributeType
-  definition   AttributeDefinition @relation(fields: [definitionId, scope, type], references: [id, scope, type], onDelete: Restrict)
+  multiValued  Boolean                           // 定義から複製（D-7）
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type, multiValued], references: [id, scope, type, multiValued], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)        // 金額規約に倣い Float を使わない
@@ -106,7 +108,7 @@ model ProductAttributeValue {
   // 単一 FK だと「別定義の許容値」を保存できてしまい、D-3 の参照整合性が成立しない。
   option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict)
 
-  @@unique([productId, definitionId])
+  @@index([productId, definitionId])  // 一意性は raw SQL の部分 UNIQUE（D-7）
   @@index([definitionId, valueNumber])
   @@index([definitionId, optionId])
 }
@@ -120,7 +122,8 @@ model VariantAttributeValue {
   scope        AttributeScope @default(VARIANT)
   // 対称（D-6）。
   type         AttributeType
-  definition   AttributeDefinition @relation(fields: [definitionId, scope, type], references: [id, scope, type], onDelete: Restrict)
+  multiValued  Boolean                           // 定義から複製（D-7）
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type, multiValued], references: [id, scope, type, multiValued], onDelete: Restrict)
 
   valueText   String?
   valueNumber Decimal? @db.Decimal(18, 6)
@@ -128,7 +131,7 @@ model VariantAttributeValue {
   optionId    String?
   option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict)
 
-  @@unique([variantId, definitionId])
+  @@index([variantId, definitionId])  // 一意性は raw SQL の部分 UNIQUE（D-7）
   @@index([definitionId, valueNumber])
   @@index([definitionId, optionId])
 }
@@ -270,6 +273,30 @@ ALTER TABLE "ProductAttributeValue"
 > ファセットの件数がどちらを数えるかで割れる。
 >
 > Prisma の camelCase 列は PostgreSQL で二重引用符が必須である（D-1 / D-5 と同じ罠）。
+
+### D-7. 多値属性は `multiValued` を値行へ複製し、**部分 UNIQUE** で 1 属性 1 値 / 1 選択肢 1 行を強制する
+
+plan 069 Step 2 の決定（2026-09-26）。詳細な 5 項目表は
+[design.md §4「多値属性の決定」](../../design/category-attributes/design.md)。
+
+1. `AttributeDefinition.multiValued` を追加し、`CHECK (NOT "multiValued" OR "type" = 'ENUM')`
+   で**多値を ENUM に限定**する（D-6 の CHECK が ENUM ⇒ `optionId` NOT NULL を強制するので、
+   多値行に NULL の `optionId` は存在しない —— NULL 同士が重複可能になる PostgreSQL の罠を踏まない）。
+2. D-5 / D-6 と同型に、値行が `multiValued` を持ち `(definitionId, scope, type, multiValued)` で
+   参照する。値行が残っている限り定義の `multiValued` は切り替えられない。
+3. 一意性は migration の raw SQL で張る部分 UNIQUE（Prisma スキーマでは表現できない）:
+
+```sql
+CREATE UNIQUE INDEX "ProductAttributeValue_single_key"
+  ON "ProductAttributeValue" ("productId", "definitionId") WHERE NOT "multiValued";
+CREATE UNIQUE INDEX "ProductAttributeValue_multi_key"
+  ON "ProductAttributeValue" ("productId", "definitionId", "optionId") WHERE "multiValued";
+-- "VariantAttributeValue" にも "variantId" で同形の 2 本を張る。
+```
+
+> **保存は upsert ではなく `deleteMany` → `createMany` の置換で書く。** 部分 UNIQUE には
+> Prisma の `upsert` 用の where キーが生成されないため。単値でも多値でも同じ経路になり、
+> 書き込み経路が 1 つに揃う（D-6 の「書き込みを散らさない」と整合する）。
 
 ---
 
