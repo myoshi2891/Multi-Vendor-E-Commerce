@@ -10,10 +10,15 @@ import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
 // Form handling utilities
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
-// Schema
-import { ProductFormSchema } from "@/lib/schemas";
+// Schema（カテゴリ別属性で動的に拡張する・plan 069）
+import {
+    emptyAttributeValues,
+    makeProductSchema,
+    toAttributePayload,
+    type ProductFormWithAttributes,
+} from "@/lib/attribute-schema";
+import type { AttributeDefinitionDTO } from "@/lib/attribute-definitions";
 
 // カテゴリツリー（DB に触れない純粋ヘルパーのみ）
 import { isProductAssignableCategory } from "@/lib/category-path";
@@ -46,6 +51,7 @@ import ImageUpload from "../shared/image-upload";
 
 // Queries
 import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 
 // ReactTags
 import { WithOutContext as ReactTags } from "react-tag-input";
@@ -67,6 +73,7 @@ import {
 import { ProductWithVariantType } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
+import AttributeFields from "./attribute-fields";
 
 // React date time picker
 import DateTimePicker from "react-datetime-picker";
@@ -162,11 +169,29 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Temporary state for images
     const [images, setImages] = useState<{ url: string }[]>([]);
 
+    // 選択カテゴリに効く属性定義（祖先から継承・同一 key は最深ノード）。
+    // カテゴリ選択の変更で再取得し、スキーマも作り直す（design.md Q4）。
+    const [attributeDefs, setAttributeDefs] = useState<
+        AttributeDefinitionDTO[]
+    >([]);
+    // 直前に反映した定義。「定義なし → 定義なし」の遷移では state もフォーム値も
+    // 触らない（無意味な再描画と、テスト環境での act 外更新を避ける）。
+    const appliedDefsRef = useRef<AttributeDefinitionDTO[]>([]);
+    // 新バリアント画面では商品レベルを編集しないので、PRODUCT 属性は描画も送信もしない
+    // （送らない = サーバー側で同期対象外）。
+    const includeProductScope = !isNewVariantPage;
+    const productSchema = useMemo(
+        () => makeProductSchema(attributeDefs, { includeProductScope }),
+        [attributeDefs, includeProductScope]
+    );
+
     // Form hook for managing form state and validation
-    const form = useForm<z.infer<typeof ProductFormSchema>>({
+    const form = useForm<ProductFormWithAttributes>({
         mode: "onChange", // Form validation mode
-        resolver: zodResolver(ProductFormSchema), // Resolver for form validation
+        resolver: zodResolver(productSchema), // Resolver for form validation
         defaultValues: {
+            productAttributes: {},
+            variantAttributes: {},
             // Setting default form values from data (if available)
             name: data?.name ?? "",
             description: data?.description ?? "",
@@ -227,6 +252,69 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         }
     }, [selectedNodeId, categories, form]);
 
+    // カテゴリが変わったら属性定義を取り直す（古い応答で上書きしないよう cancelled で守る）
+    useEffect(() => {
+        let cancelled = false;
+        const fetchDefinitions = async () => {
+            try {
+                const defs = selectedNodeId
+                    ? await getEffectiveAttributeDefinitions(selectedNodeId)
+                    : [];
+                if (cancelled) return;
+                if (defs.length === 0 && appliedDefsRef.current.length === 0) {
+                    return;
+                }
+                appliedDefsRef.current = defs;
+                setAttributeDefs(defs);
+                // 消えた定義の値は持ち越さず、残った定義の入力は保つ
+                form.setValue(
+                    "productAttributes",
+                    emptyAttributeValues(
+                        defs,
+                        "PRODUCT",
+                        form.getValues().productAttributes
+                    )
+                );
+                form.setValue(
+                    "variantAttributes",
+                    emptyAttributeValues(
+                        defs,
+                        "VARIANT",
+                        form.getValues().variantAttributes
+                    )
+                );
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        "[ProductDetails:fetchDefinitions] Error:",
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        "[ProductDetails:fetchDefinitions] Unknown error:",
+                        error
+                    );
+                }
+                if (!cancelled && appliedDefsRef.current.length > 0) {
+                    appliedDefsRef.current = [];
+                    setAttributeDefs([]);
+                }
+            }
+        };
+        void fetchDefinitions();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedNodeId, form]);
+
+    const productAttributeDefs = attributeDefs.filter(
+        (def) => def.scope === "PRODUCT"
+    );
+    const variantAttributeDefs = attributeDefs.filter(
+        (def) => def.scope === "VARIANT"
+    );
+
     // Extract errors state from form
     const errors = form.formState.errors;
 
@@ -242,6 +330,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 variantImage: data.variantImage
                     ? [{ url: data.variantImage }]
                     : [],
+                // 属性値は定義の取得後に埋める（上の fetchDefinitions）
+                productAttributes: form.getValues().productAttributes ?? {},
+                variantAttributes: form.getValues().variantAttributes ?? {},
             });
 
             // すべての local state を再初期化
@@ -260,8 +351,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     }, [data, form]);
 
     // Submit handler for form submission
-    const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
+    const handleSubmit = async (values: ProductFormWithAttributes) => {
         try {
+            const variantId = data?.variantId ? data.variantId : v4();
             // colors から空プレースホルダーを除外
             const filteredColors = values.colors.filter(
                 (c) => c.color.trim() !== ""
@@ -273,7 +365,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             const response = await upsertProduct(
                 {
                     productId: data?.productId ? data.productId : v4(),
-                    variantId: data?.variantId ? data.variantId : v4(),
+                    variantId,
                     name: values.name,
                     description: values.description,
                     variantName: values.variantName,
@@ -299,6 +391,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                         values.freeShippingForAllCountries,
                     freeShippingCountriesIds:
                         values.freeShippingCountriesIds || [],
+                    attributes: toAttributePayload(attributeDefs, values, {
+                        variantId,
+                        includeProductScope,
+                    }),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -728,6 +824,28 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 />
                             </div>
                         </InputFieldset>
+                        {/* カテゴリ別属性（plan 069）: 商品レベルは 1 度だけ、バリアント属性はこのバリアントに */}
+                        {includeProductScope &&
+                            productAttributeDefs.length > 0 && (
+                                <InputFieldset label="Product attributes">
+                                    <AttributeFields
+                                        control={form.control}
+                                        prefix="productAttributes"
+                                        definitions={productAttributeDefs}
+                                        disabled={isLoading}
+                                    />
+                                </InputFieldset>
+                            )}
+                        {variantAttributeDefs.length > 0 && (
+                            <InputFieldset label="Variant attributes">
+                                <AttributeFields
+                                    control={form.control}
+                                    prefix="variantAttributes"
+                                    definitions={variantAttributeDefs}
+                                    disabled={isLoading}
+                                />
+                            </InputFieldset>
+                        )}
                         {/* Brand, Sku, weight */}
                         <InputFieldset
                             label={

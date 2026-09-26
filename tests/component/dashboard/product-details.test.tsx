@@ -12,6 +12,8 @@ import ProductDetails from "@/components/dashboard/forms/product-details";
 import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
 import { ProductWithVariantType } from "@/lib/types";
 import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
+import type { AttributeDefinitionDTO } from "@/lib/attribute-definitions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +33,10 @@ import { useRouter } from "next/navigation";
  */
 
 jest.mock("@/queries/product", () => ({ upsertProduct: jest.fn() }));
+// カテゴリ別属性（plan 069）。定義なしのカテゴリとして振る舞わせる
+jest.mock("@/queries/attribute", () => ({
+    getEffectiveAttributeDefinitions: jest.fn(async () => []),
+}));
 jest.mock("@/hooks/use-toast");
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 jest.mock("uuid", () => ({ v4: () => "generated-uuid" }));
@@ -1000,6 +1006,126 @@ describe("ProductDetails", () => {
                     "my-store"
                 )
             );
+        });
+    });
+    describe("カテゴリ別属性（plan 069）", () => {
+        const attributeDef = (
+            overrides: Partial<AttributeDefinitionDTO> &
+                Pick<AttributeDefinitionDTO, "id" | "name">
+        ): AttributeDefinitionDTO => ({
+            key: overrides.id,
+            type: "TEXT",
+            scope: "PRODUCT",
+            unit: null,
+            required: false,
+            multiValued: false,
+            options: [],
+            ...overrides,
+        });
+        const definitions = [
+            attributeDef({
+                id: "def-material",
+                name: "Material",
+                required: true,
+            }),
+            attributeDef({
+                id: "def-weight",
+                name: "Net weight",
+                type: "NUMBER",
+                scope: "VARIANT",
+                unit: "g",
+            }),
+        ];
+
+        beforeEach(() => {
+            (getEffectiveAttributeDefinitions as jest.Mock).mockResolvedValue(
+                definitions
+            );
+        });
+
+        it("正常系: 選択カテゴリの属性を商品・バリアント別に描画し、payload に所有先付きで載せる", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+            const material = await screen.findByLabelText("Material *");
+
+            // Act
+            fireEvent.change(material, { target: { value: "Silk" } });
+            fireEvent.change(screen.getByLabelText("Net weight (g)"), {
+                target: { value: "120" },
+            });
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(getEffectiveAttributeDefinitions).toHaveBeenCalledWith(
+                LEAF_ID
+            );
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-material",
+                    value: "Silk",
+                },
+                {
+                    scope: "VARIANT",
+                    definitionId: "def-weight",
+                    variantId: "variant-1",
+                    value: "120",
+                },
+            ]);
+        });
+
+        it("異常系: 必須属性が空ならサーバーを呼ばない（A-3）", async () => {
+            renderForm(validData());
+            await screen.findByLabelText("Material *");
+
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            expect(
+                await screen.findByText("Material is required.")
+            ).toBeInTheDocument();
+            expect(mockUpsertProduct).not.toHaveBeenCalled();
+        });
+
+        it("正常系: 任意 NUMBER の空入力は 0 ではなく null（削除対象）で送る（A-9）", async () => {
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+            fireEvent.change(await screen.findByLabelText("Material *"), {
+                target: { value: "Silk" },
+            });
+
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(
+                mockUpsertProduct.mock.calls[0][0].attributes
+            ).toContainEqual({
+                scope: "VARIANT",
+                definitionId: "def-weight",
+                variantId: "variant-1",
+                value: null,
+            });
+        });
+
+        it("新バリアント画面: 商品属性は描画も送信もしない（同期対象外）", async () => {
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ variantId: undefined }));
+            await screen.findByLabelText("Net weight (g)");
+
+            expect(
+                screen.queryByLabelText("Material *")
+            ).not.toBeInTheDocument();
+            fireEvent.click(
+                screen.getByRole("button", {
+                    name: /Create variant|Save|Create/i,
+                })
+            );
+
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            const attributes =
+                mockUpsertProduct.mock.calls[0][0].attributes ?? [];
+            expect(attributes.every((a) => a.scope === "VARIANT")).toBe(true);
         });
     });
 });
