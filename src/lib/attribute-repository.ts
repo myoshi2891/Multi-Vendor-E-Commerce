@@ -10,7 +10,11 @@ import type { db } from "@/lib/db";
 import {
     ancestorPathsOf,
     resolveEffectiveDefinitions,
+    type ArchivedCurrentOptions,
     type AttributeDefinitionDTO,
+    type AttributeFormValue,
+    type AttributeFormValues,
+    type AttributeOptionDTO,
 } from "@/lib/attribute-definitions";
 import {
     ATTRIBUTE_VALUE_COLUMNS_SELECT,
@@ -224,5 +228,105 @@ export const findProductAttributeDisplay = async (
     return {
         product: toAttributeDisplayItems(productDefs, productRows),
         variants,
+    };
+};
+
+/** 編集フォームの属性初期値（plan 069 フォローアップ: 既存バリアントの編集ページ）。 */
+export interface AttributeFormInitialValues {
+    productAttributes: AttributeFormValues;
+    variantAttributes: AttributeFormValues;
+    /** このレコード（商品 / 編集中のバリアント）の現在値に含まれるアーカイブ済み選択肢（A-11）。 */
+    archivedCurrent: ArchivedCurrentOptions;
+}
+
+export type AttributeFormValueClient = Pick<
+    AttributeTransactionClient,
+    "productAttributeValue" | "variantAttributeValue"
+>;
+
+const formValueSelect = {
+    ...ATTRIBUTE_VALUE_COLUMNS_SELECT,
+    option: {
+        select: { id: true, value: true, label: true, archivedAt: true },
+    },
+} as const;
+
+type FormValueRow = AttributeValueRow & {
+    definitionId: string;
+    option: {
+        id: string;
+        value: string;
+        label: string;
+        archivedAt: Date | null;
+    } | null;
+};
+
+const toFormValue = (rows: readonly FormValueRow[]): AttributeFormValue => {
+    const [first] = rows;
+    if (!first) return null;
+    // 値行は定義の type / multiValued を複製して持つ（複合 FK で一致が保証される）
+    const value = fromAttributeValueRows(first, rows);
+    return typeof value === "number" ? String(value) : value;
+};
+
+/** definitionId ごとに束ねてフォーム値へ戻し、アーカイブ済みの現在値を集める。 */
+const collectFormValues = (
+    rows: readonly FormValueRow[],
+    archivedCurrent: ArchivedCurrentOptions
+): AttributeFormValues => {
+    const byDefinition = new Map<string, FormValueRow[]>();
+    for (const row of rows) {
+        byDefinition.set(row.definitionId, [
+            ...(byDefinition.get(row.definitionId) ?? []),
+            row,
+        ]);
+    }
+    const values: AttributeFormValues = {};
+    for (const [definitionId, defRows] of byDefinition) {
+        values[definitionId] = toFormValue(defRows);
+        const archived: AttributeOptionDTO[] = defRows.flatMap((row) =>
+            row.option && row.option.archivedAt !== null
+                ? [
+                      {
+                          id: row.option.id,
+                          value: row.option.value,
+                          label: row.option.label,
+                      },
+                  ]
+                : []
+        );
+        if (archived.length > 0) archivedCurrent[definitionId] = archived;
+    }
+    return values;
+};
+
+/**
+ * 既存商品・バリアントの属性値を編集フォームの初期値として読む。
+ *
+ * アーカイブ済み選択肢は**このレコードの現在値だけ**を候補へ戻す（A-11: 商品配下の
+ * 他バリアントの値と union しない）。定義の有効性はフォーム側が取得する定義集合で絞る
+ * （集合に無い定義の値は `emptyAttributeValues` が持ち越さない）。
+ */
+export const findAttributeFormValues = async (
+    client: AttributeFormValueClient,
+    params: { productId: string; variantId: string }
+): Promise<AttributeFormInitialValues> => {
+    const [productRows, variantRows] = await Promise.all([
+        client.productAttributeValue.findMany({
+            where: { productId: params.productId },
+            select: formValueSelect,
+            orderBy: { createdAt: "asc" },
+        }),
+        client.variantAttributeValue.findMany({
+            where: { variantId: params.variantId },
+            select: formValueSelect,
+            orderBy: { createdAt: "asc" },
+        }),
+    ]);
+    const archivedCurrent: ArchivedCurrentOptions = {};
+    return {
+        productAttributes: collectFormValues(productRows, archivedCurrent),
+        variantAttributes: collectFormValues(variantRows, archivedCurrent),
+        archivedCurrent,
     };
 };

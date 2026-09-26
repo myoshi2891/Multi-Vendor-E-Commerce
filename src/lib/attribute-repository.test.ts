@@ -1,9 +1,11 @@
 import { Prisma } from "@prisma/client";
 import type { AttributeDefinitionDTO } from "./attribute-definitions";
 import {
+    findAttributeFormValues,
     findProductAttributeDisplay,
     toAttributeDisplayItems,
     type AttributeDisplayClient,
+    type AttributeFormValueClient,
 } from "./attribute-repository";
 
 const defDTO = (
@@ -336,5 +338,135 @@ describe("findProductAttributeDisplay", () => {
         });
 
         expect(client.variantAttributeValue.findMany).not.toHaveBeenCalled();
+    });
+});
+
+describe("findAttributeFormValues", () => {
+    const formClient = (fixtures: {
+        productValues?: unknown[];
+        variantValues?: unknown[];
+    }) => {
+        const client = {
+            productAttributeValue: {
+                findMany: jest
+                    .fn()
+                    .mockResolvedValue(fixtures.productValues ?? []),
+            },
+            variantAttributeValue: {
+                findMany: jest
+                    .fn()
+                    .mockResolvedValue(fixtures.variantValues ?? []),
+            },
+        };
+        return {
+            client,
+            typed: client as unknown as AttributeFormValueClient,
+        };
+    };
+
+    const option = (id: string, archived = false) => ({
+        id,
+        value: id,
+        label: id.toUpperCase(),
+        archivedAt: archived ? new Date("2026-09-01") : null,
+    });
+
+    it("所有先（productId / variantId）で絞って読み、定義ごとのフォーム値へ戻す", async () => {
+        // Arrange
+        const { client, typed } = formClient({
+            productValues: [
+                valueRow({ definitionId: "d-brand", valueText: "Acme" }),
+                valueRow({
+                    definitionId: "d-size",
+                    type: "NUMBER",
+                    valueNumber: new Prisma.Decimal("55.5"),
+                }),
+                {
+                    ...valueRow({
+                        definitionId: "d-allergens",
+                        type: "ENUM",
+                        multiValued: true,
+                        optionId: "milk",
+                    }),
+                    option: option("milk"),
+                },
+                {
+                    ...valueRow({
+                        definitionId: "d-allergens",
+                        type: "ENUM",
+                        multiValued: true,
+                        optionId: "egg",
+                    }),
+                    option: option("egg"),
+                },
+            ],
+            variantValues: [
+                valueRow({
+                    definitionId: "d-wifi",
+                    type: "BOOLEAN",
+                    valueBool: false,
+                }),
+            ],
+        });
+
+        // Act
+        const result = await findAttributeFormValues(typed, {
+            productId: "p1",
+            variantId: "v1",
+        });
+
+        // Assert
+        expect(client.productAttributeValue.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { productId: "p1" } })
+        );
+        expect(client.variantAttributeValue.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { variantId: "v1" } })
+        );
+        expect(result.productAttributes).toEqual({
+            "d-brand": "Acme",
+            "d-size": "55.5",
+            "d-allergens": ["milk", "egg"],
+        });
+        expect(result.variantAttributes).toEqual({ "d-wifi": false });
+        expect(result.archivedCurrent).toEqual({});
+    });
+
+    it("このレコードの現在値のアーカイブ済み選択肢だけを archivedCurrent に集める（A-11）", async () => {
+        // Arrange
+        const { typed } = formClient({
+            productValues: [
+                {
+                    ...valueRow({
+                        definitionId: "d-color",
+                        type: "ENUM",
+                        optionId: "old",
+                    }),
+                    option: option("old", true),
+                },
+            ],
+            variantValues: [
+                {
+                    ...valueRow({
+                        definitionId: "d-finish",
+                        type: "ENUM",
+                        optionId: "matte",
+                    }),
+                    option: option("matte"),
+                },
+            ],
+        });
+
+        // Act
+        const result = await findAttributeFormValues(typed, {
+            productId: "p1",
+            variantId: "v1",
+        });
+
+        // Assert
+        expect(result.archivedCurrent).toEqual({
+            "d-color": [{ id: "old", value: "old", label: "OLD" }],
+        });
+        expect(result.productAttributes).toEqual({ "d-color": "old" });
+        expect(result.variantAttributes).toEqual({ "d-finish": "matte" });
     });
 });
