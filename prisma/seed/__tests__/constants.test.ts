@@ -66,10 +66,10 @@ describe("seed定数データ バリデーション", () => {
     });
 
     describe("SEED_CATEGORIES", () => {
-        it("32ノード（ルート7 + 子25）のカテゴリツリーであること", () => {
-            expect(SEED_CATEGORIES.length).toBe(32);
-            expect(SEED_CATEGORIES.filter((c) => !c.parentUrl).length).toBe(7);
-            expect(SEED_CATEGORIES.filter((c) => c.parentUrl).length).toBe(25);
+        it("38ノード（ルート9 + 子29）のカテゴリツリーであること", () => {
+            expect(SEED_CATEGORIES.length).toBe(38);
+            expect(SEED_CATEGORIES.filter((c) => !c.parentUrl).length).toBe(9);
+            expect(SEED_CATEGORIES.filter((c) => c.parentUrl).length).toBe(29);
         });
 
         it("全てのnameがZod制約を満たすこと（2-50字、英数字スペースのみ）", () => {
