@@ -1,4 +1,8 @@
-import type { SeedAttributeDefinition, SeedAttributeOption } from "../types";
+import type {
+    SeedAttributeDefinition,
+    SeedAttributeOption,
+    SeedAttributeValue,
+} from "../types";
 
 const options = (...pairs: [string, string][]): SeedAttributeOption[] =>
     pairs.map(([value, label]) => ({ value, label }));
@@ -21,7 +25,8 @@ const fashionDefinitions = (categoryUrl: string): SeedAttributeDefinition[] => [
             ["silk", "Silk"],
             ["linen", "Linen"],
             ["cashmere", "Cashmere"],
-            ["leather", "Leather"]
+            ["leather", "Leather"],
+            ["polyester", "Polyester"]
         ),
     },
     {
@@ -197,5 +202,111 @@ export const SEED_ATTRIBUTE_DEFINITIONS: SeedAttributeDefinition[] = [
         facetable: true,
         multiValued: false,
         options: options(["best_before", "Best before"], ["use_by", "Use by"]),
+    },
+];
+
+/** 商品ごとの属性値（fashion は既存 Spec の Material 記述から明確に言えるものだけ）。 */
+const fashion = (
+    productSlug: string,
+    material: string,
+    season: string
+): SeedAttributeValue[] => [
+    { productSlug, key: "material", value: material },
+    { productSlug, key: "pattern", value: "solid" },
+    { productSlug, key: "season", value: season },
+];
+
+/**
+ * 属性値のシード（plan 069 フォローアップ: 店頭の「Specifications」を実データで確認するため）。
+ *
+ * - **Spec からの機械移行ではない**（design.md Q3）。既存の Material 記述を人が読み、
+ *   選択肢に明確に対応するものだけを書いた。混紡で主素材が言えない 2 商品
+ *   （`lux-maison-embroidered-tulle-blouse` のチュール / `lux-noir-satin-midi-skirt` の
+ *   ポリエステル・シルク混）は構造化値を入れず、Spec だけで残す
+ * - パイロット 2 商品は必須属性（食品の allergens / origin_country / net_weight）を満たす
+ */
+export const SEED_ATTRIBUTE_VALUES: SeedAttributeValue[] = [
+    // ===== ファッション =====
+    ...fashion(
+        "lux-noir-cashmere-double-breasted-coat",
+        "cashmere",
+        "autumn_winter"
+    ),
+    ...fashion("lux-noir-silk-charmeuse-evening-dress", "silk", "all_season"),
+    ...fashion("lux-noir-italian-wool-tailored-suit", "wool", "all_season"),
+    ...fashion("lux-noir-merino-turtleneck-sweater", "wool", "autumn_winter"),
+    ...fashion("lux-maison-hand-draped-silk-gown", "silk", "all_season"),
+    ...fashion("lux-maison-structured-tweed-jacket", "wool", "autumn_winter"),
+    ...fashion(
+        "lux-maison-pleated-chiffon-maxi-dress",
+        "silk",
+        "spring_summer"
+    ),
+    ...fashion("lux-oro-italian-linen-summer-suit", "linen", "spring_summer"),
+    ...fashion("lux-oro-cashmere-blend-overcoat", "wool", "autumn_winter"),
+    ...fashion("lux-lumiere-boucle-cropped-jacket", "wool", "autumn_winter"),
+    ...fashion("lux-lumiere-silk-camisole-top", "silk", "spring_summer"),
+    ...fashion(
+        "lux-lumiere-high-waisted-palazzo-trousers",
+        "polyester",
+        "all_season"
+    ),
+
+    // ===== 家電（ルートの connectivity を継承 + カメラ子ノードの定義）=====
+    {
+        productSlug: "lux-atelier-rangefinder-camera",
+        key: "connectivity",
+        value: "usb_c",
+    },
+    {
+        productSlug: "lux-atelier-rangefinder-camera",
+        key: "screen_size",
+        value: "3",
+    },
+    {
+        productSlug: "lux-atelier-rangefinder-camera",
+        key: "resolution",
+        value: "4k",
+    },
+    {
+        productSlug: "lux-atelier-rangefinder-camera",
+        variantSlug: "lux-atelier-rangefinder-camera-256",
+        key: "storage_capacity",
+        value: "256",
+    },
+    {
+        productSlug: "lux-atelier-rangefinder-camera",
+        variantSlug: "lux-atelier-rangefinder-camera-512",
+        key: "storage_capacity",
+        value: "512",
+    },
+
+    // ===== 食品（必須 + 多値 allergens）=====
+    {
+        productSlug: "lux-lumiere-grand-cru-chocolate",
+        key: "allergens",
+        value: ["milk", "tree_nuts", "soy"],
+    },
+    {
+        productSlug: "lux-lumiere-grand-cru-chocolate",
+        key: "origin_country",
+        value: "fr",
+    },
+    {
+        productSlug: "lux-lumiere-grand-cru-chocolate",
+        key: "best_before_type",
+        value: "best_before",
+    },
+    {
+        productSlug: "lux-lumiere-grand-cru-chocolate",
+        variantSlug: "lux-lumiere-grand-cru-chocolate-12",
+        key: "net_weight",
+        value: "150",
+    },
+    {
+        productSlug: "lux-lumiere-grand-cru-chocolate",
+        variantSlug: "lux-lumiere-grand-cru-chocolate-24",
+        key: "net_weight",
+        value: "300",
     },
 ];

@@ -1,5 +1,13 @@
-import { seedAttributes } from "../seeders/attribute-seeder";
-import { SEED_ATTRIBUTE_DEFINITIONS } from "../constants/attributes";
+import {
+    resolveSeedAttributeDefinition,
+    seedAttributes,
+    seedAttributeValues,
+} from "../seeders/attribute-seeder";
+import {
+    SEED_ATTRIBUTE_DEFINITIONS,
+    SEED_ATTRIBUTE_VALUES,
+} from "../constants/attributes";
+import { ALL_SEED_PRODUCTS, PILOT_PRODUCTS } from "../constants/products";
 import { SEED_CATEGORIES } from "../constants/categories";
 import {
     AttributeDefinitionFormSchema,
@@ -221,5 +229,255 @@ describe("seedAttributes", () => {
             seedAttributes(createMockPrisma(), new Map())
         ).rejects.toThrow("定義先カテゴリが見つかりません");
         expect(mockCreate).not.toHaveBeenCalled();
+    });
+});
+
+describe("resolveSeedAttributeDefinition", () => {
+    it("祖先から継承し、同じ key は最も深いノードの定義を返す", () => {
+        expect(
+            resolveSeedAttributeDefinition(
+                "lux-electronics-cameras",
+                "connectivity"
+            )?.categoryUrl
+        ).toBe("lux-electronics");
+        expect(
+            resolveSeedAttributeDefinition(
+                "lux-electronics-cameras",
+                "resolution"
+            )?.categoryUrl
+        ).toBe("lux-electronics-cameras");
+    });
+
+    it("祖先パス上に無い key は undefined", () => {
+        expect(
+            resolveSeedAttributeDefinition(
+                "lux-electronics-audio",
+                "resolution"
+            )
+        ).toBeUndefined();
+    });
+});
+
+describe("SEED_ATTRIBUTE_VALUES", () => {
+    const productBySlug = new Map(ALL_SEED_PRODUCTS.map((p) => [p.slug, p]));
+
+    it("全値が実在する商品（とその商品のバリアント）を指し、定義の scope と一致すること", () => {
+        for (const entry of SEED_ATTRIBUTE_VALUES) {
+            const product = productBySlug.get(entry.productSlug);
+            expect(product).toBeDefined();
+            if (!product) continue;
+            const def = resolveSeedAttributeDefinition(
+                product.categoryUrl,
+                entry.key
+            );
+            expect(def).toBeDefined();
+            expect(def?.scope).toBe(entry.variantSlug ? "VARIANT" : "PRODUCT");
+            if (entry.variantSlug) {
+                expect(product.variants.map((v) => v.slug)).toContain(
+                    entry.variantSlug
+                );
+            }
+        }
+    });
+
+    it("ENUM の値は選択肢の value に存在し、多値かどうかと配列かどうかが一致すること", () => {
+        for (const entry of SEED_ATTRIBUTE_VALUES) {
+            const product = productBySlug.get(entry.productSlug);
+            const def =
+                product &&
+                resolveSeedAttributeDefinition(product.categoryUrl, entry.key);
+            if (!def || def.type !== "ENUM") continue;
+            const values = Array.isArray(entry.value)
+                ? entry.value
+                : [entry.value];
+            expect(Array.isArray(entry.value)).toBe(def.multiValued);
+            const optionValues = (def.options ?? []).map((o) => o.value);
+            for (const value of values) {
+                expect(optionValues).toContain(value);
+            }
+        }
+    });
+
+    it("同じ所有先 × key の値が重複しないこと", () => {
+        const keys = SEED_ATTRIBUTE_VALUES.map(
+            (e) => `${e.productSlug}:${e.variantSlug ?? "-"}:${e.key}`
+        );
+        expect(new Set(keys).size).toBe(keys.length);
+    });
+
+    it("パイロット商品は必須属性をすべて満たすこと（PRODUCT は商品、VARIANT は全バリアント）", () => {
+        for (const product of PILOT_PRODUCTS) {
+            const keys = new Set(SEED_ATTRIBUTE_DEFINITIONS.map((d) => d.key));
+            for (const key of keys) {
+                const def = resolveSeedAttributeDefinition(
+                    product.categoryUrl,
+                    key
+                );
+                if (!def?.required) continue;
+                const owners =
+                    def.scope === "PRODUCT"
+                        ? [undefined]
+                        : product.variants.map((v) => v.slug);
+                for (const variantSlug of owners) {
+                    expect(
+                        SEED_ATTRIBUTE_VALUES.some(
+                            (e) =>
+                                e.productSlug === product.slug &&
+                                e.variantSlug === variantSlug &&
+                                e.key === key
+                        )
+                    ).toBe(true);
+                }
+            }
+        }
+    });
+});
+
+describe("seedAttributeValues", () => {
+    const mockProductDeleteMany = jest.fn();
+    const mockVariantDeleteMany = jest.fn();
+    const mockProductCreateMany = jest.fn();
+    const mockVariantCreateMany = jest.fn();
+    const mockOptionFindMany = jest.fn();
+
+    const valuePrisma = () =>
+        ({
+            productAttributeValue: {
+                deleteMany: mockProductDeleteMany,
+                createMany: mockProductCreateMany,
+            },
+            variantAttributeValue: {
+                deleteMany: mockVariantDeleteMany,
+                createMany: mockVariantCreateMany,
+            },
+            attributeOption: { findMany: mockOptionFindMany },
+        }) as unknown as import("@prisma/client").PrismaClient;
+
+    const maps = () => ({
+        definitions: new Map(
+            SEED_ATTRIBUTE_DEFINITIONS.map((d) => [
+                `${d.categoryUrl}:${d.key}`,
+                `def:${d.categoryUrl}:${d.key}`,
+            ])
+        ),
+        products: new Map(
+            ALL_SEED_PRODUCTS.map((p) => [p.slug, `p:${p.slug}`])
+        ),
+        variants: new Map(
+            ALL_SEED_PRODUCTS.flatMap((p) =>
+                p.variants.map((v) => [v.slug, `v:${v.slug}`] as const)
+            )
+        ),
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        // 選択肢 id は `opt:<definitionId>:<value>` とする
+        mockOptionFindMany.mockImplementation(
+            (args: { where: { definitionId: string } }) => {
+                const def = SEED_ATTRIBUTE_DEFINITIONS.find(
+                    (d) =>
+                        `def:${d.categoryUrl}:${d.key}` ===
+                        args.where.definitionId
+                );
+                return (def?.options ?? []).map((o) => ({
+                    id: `opt:${args.where.definitionId}:${o.value}`,
+                    value: o.value,
+                }));
+            }
+        );
+    });
+
+    it("全シード商品の既存値を所有先単位で消してから作り直す（収束）", async () => {
+        // Act
+        await seedAttributeValues(valuePrisma(), maps());
+
+        // Assert
+        expect(mockProductDeleteMany).toHaveBeenCalledWith({
+            where: {
+                productId: {
+                    in: ALL_SEED_PRODUCTS.map((p) => `p:${p.slug}`),
+                },
+            },
+        });
+        expect(mockVariantDeleteMany).toHaveBeenCalledWith({
+            where: {
+                variantId: {
+                    in: ALL_SEED_PRODUCTS.flatMap((p) =>
+                        p.variants.map((v) => `v:${v.slug}`)
+                    ),
+                },
+            },
+        });
+    });
+
+    it("型に応じた列へ変換し、ENUM は選択肢 value を id へ引く（多値は選択肢ごとに 1 行）", async () => {
+        await seedAttributeValues(valuePrisma(), maps());
+
+        const productRows = mockProductCreateMany.mock.calls.flatMap(
+            ([args]) => args.data
+        );
+        const allergenDef = "def:lux-gourmet:allergens";
+        expect(
+            productRows
+                .filter(
+                    (r: { definitionId: string }) =>
+                        r.definitionId === allergenDef
+                )
+                .map((r: { optionId: string }) => r.optionId)
+        ).toEqual([
+            `opt:${allergenDef}:milk`,
+            `opt:${allergenDef}:tree_nuts`,
+            `opt:${allergenDef}:soy`,
+        ]);
+        const screen = productRows.find(
+            (r: { definitionId: string }) =>
+                r.definitionId === "def:lux-electronics-cameras:screen_size"
+        );
+        expect(screen).toEqual(
+            expect.objectContaining({
+                productId: "p:lux-atelier-rangefinder-camera",
+                scope: "PRODUCT",
+                type: "NUMBER",
+                multiValued: false,
+                valueText: null,
+                optionId: null,
+            })
+        );
+        expect(screen.valueNumber.toString()).toBe("3");
+
+        const variantRows = mockVariantCreateMany.mock.calls.flatMap(
+            ([args]) => args.data
+        );
+        expect(
+            variantRows.map((r: { variantId: string }) => r.variantId).sort()
+        ).toEqual(
+            [
+                "v:lux-atelier-rangefinder-camera-256",
+                "v:lux-atelier-rangefinder-camera-512",
+                "v:lux-lumiere-grand-cru-chocolate-12",
+                "v:lux-lumiere-grand-cru-chocolate-24",
+            ].sort()
+        );
+        expect(
+            variantRows.every((r: { scope: string }) => r.scope === "VARIANT")
+        ).toBe(true);
+    });
+
+    it("選択肢が DB に無ければ throw する（黙って落とさない）", async () => {
+        mockOptionFindMany.mockResolvedValue([]);
+
+        await expect(
+            seedAttributeValues(valuePrisma(), maps())
+        ).rejects.toThrow("選択肢が見つかりません");
+    });
+
+    it("定義が投入されていなければ throw する", async () => {
+        await expect(
+            seedAttributeValues(valuePrisma(), {
+                ...maps(),
+                definitions: new Map(),
+            })
+        ).rejects.toThrow("属性定義が見つかりません");
     });
 });

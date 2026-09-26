@@ -66,6 +66,19 @@ export type SeedAttributeDefinition = {
   options?: SeedAttributeOption[];
 };
 
+/**
+ * 商品・バリアントの属性値 1 件（plan 069 フォローアップ）。
+ * 定義は商品のカテゴリの祖先パス上で `key` を引いて解決する（最深ノードが勝つ）。
+ */
+export type SeedAttributeValue = {
+  productSlug: string;
+  /** VARIANT スコープの定義のときだけ指定する */
+  variantSlug?: string;
+  key: string;
+  /** TEXT / NUMBER は文字列、BOOLEAN は真偽、ENUM は選択肢の value（多値は配列） */
+  value: string | boolean | string[];
+};
+
 export type SeedOfferTag = {
   name: string;
   url: string;

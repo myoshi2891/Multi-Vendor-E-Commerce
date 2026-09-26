@@ -5,7 +5,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { seedBase } from "./base-seeder";
-import { seedAttributes } from "./attribute-seeder";
+import { seedAttributes, seedAttributeValues } from "./attribute-seeder";
 import { seedStores } from "./store-seeder";
 import { seedProducts } from "./product-seeder";
 import { seedReviews } from "./review-seeder";
@@ -43,6 +43,15 @@ export async function seedAll(prisma: PrismaClient): Promise<void> {
     countries: baseMaps.countries,
   });
   console.log(`✅ Phase 3 完了 (${productMaps.products.size}商品, ${productMaps.variants.size}バリアント)\n`);
+
+  // Phase 3.5: 属性値（定義と商品・バリアントの id が要るので Phase 3 の後）
+  console.log("🏷️  Phase 3.5: ProductAttributeValue, VariantAttributeValue");
+  const attributeValues = await seedAttributeValues(prisma, {
+    definitions: attributes.definitions,
+    products: productMaps.products,
+    variants: productMaps.variants,
+  });
+  console.log(`✅ Phase 3.5 完了 (商品 ${attributeValues.productValues}行, バリアント ${attributeValues.variantValues}行)\n`);
 
   // Phase 4: レビュー
   console.log("⭐ Phase 4: Review, ReviewImage");
