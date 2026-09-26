@@ -1,17 +1,23 @@
-import { ALL_SEED_PRODUCTS } from "../constants/products";
+import {
+    ALL_SEED_PRODUCTS,
+    FASHION_SEED_PRODUCTS,
+    PILOT_PRODUCTS,
+} from "../constants/products";
 import { SEED_STORES } from "../constants/stores";
 import { SEED_CATEGORIES } from "../constants/categories";
 import { SEED_OFFER_TAGS } from "../constants/offer-tags";
 import { NAME_REGEX, URL_REGEX } from "../helpers";
 
 describe("ALL_SEED_PRODUCTS バリデーション", () => {
-    it("36商品のデータが存在すること", () => {
-        expect(ALL_SEED_PRODUCTS.length).toBe(36);
+    it("38商品（ファッション36 + パイロット2）のデータが存在すること", () => {
+        expect(FASHION_SEED_PRODUCTS.length).toBe(36);
+        expect(PILOT_PRODUCTS.length).toBe(2);
+        expect(ALL_SEED_PRODUCTS.length).toBe(38);
     });
 
-    it("各店舗に6商品ずつ割り当てられていること", () => {
+    it("ファッションの各店舗に6商品ずつ割り当てられていること", () => {
         const grouped = new Map<string, number>();
-        for (const p of ALL_SEED_PRODUCTS) {
+        for (const p of FASHION_SEED_PRODUCTS) {
             grouped.set(p.storeUrl, (grouped.get(p.storeUrl) ?? 0) + 1);
         }
         for (const store of SEED_STORES) {
