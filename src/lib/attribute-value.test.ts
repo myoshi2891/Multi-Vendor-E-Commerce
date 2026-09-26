@@ -43,13 +43,19 @@ describe("toAttributeValueRows", () => {
             const [r] = result.rows;
             expect(r.valueNumber).toBeInstanceOf(Prisma.Decimal);
             expect(r.valueNumber?.toString()).toBe("55.5");
-            expect(r).toMatchObject({ valueText: null, valueBool: null, optionId: null });
+            expect(r).toMatchObject({
+                valueText: null,
+                valueBool: null,
+                optionId: null,
+            });
         });
 
         it("NUMBER は number 入力も受け付ける", () => {
             const result = toAttributeValueRows(def("NUMBER"), 0);
 
-            expect(result.ok && result.rows[0].valueNumber?.toString()).toBe("0");
+            expect(result.ok && result.rows[0].valueNumber?.toString()).toBe(
+                "0"
+            );
         });
 
         it("BOOLEAN は valueBool のみを埋める（false も値として保存する）", () => {
@@ -71,7 +77,11 @@ describe("toAttributeValueRows", () => {
         });
 
         it("ENUM（多値）は選択肢ごとに 1 行を作り、重複は 1 行に畳む", () => {
-            const result = toAttributeValueRows(def("ENUM", true), ["a", "b", "a"]);
+            const result = toAttributeValueRows(def("ENUM", true), [
+                "a",
+                "b",
+                "a",
+            ]);
 
             expect(result).toEqual({
                 ok: true,
@@ -92,7 +102,10 @@ describe("toAttributeValueRows", () => {
             ["undefined", def("ENUM"), undefined],
             ["多値の空配列", def("ENUM", true), []],
         ])("%s → rows = []", (_label, d, input) => {
-            expect(toAttributeValueRows(d, input)).toEqual({ ok: true, rows: [] });
+            expect(toAttributeValueRows(d, input)).toEqual({
+                ok: true,
+                rows: [],
+            });
         });
     });
 
@@ -101,6 +114,12 @@ describe("toAttributeValueRows", () => {
             ["NUMBER に数値でない文字列", def("NUMBER"), "28g"],
             ["NUMBER に Infinity", def("NUMBER"), Number.POSITIVE_INFINITY],
             ["NUMBER に NaN", def("NUMBER"), Number.NaN],
+            [
+                "NUMBER が Decimal(18,6) の整数部を超える",
+                def("NUMBER"),
+                "1000000000000",
+            ],
+            ["NUMBER が小数 7 桁", def("NUMBER"), "0.1234567"],
             ["BOOLEAN に文字列", def("BOOLEAN"), "true"],
             ["TEXT に数値", def("TEXT"), 1],
             ["単値 ENUM に配列", def("ENUM"), ["a"]],
