@@ -1,4 +1,5 @@
 import type { CategoryTreeNode } from "@/lib/category-tree";
+import type { AttributeValueInput } from "@/lib/attribute-definitions";
 import {
     getAllStoreProducts,
     getProductPageData,
@@ -94,6 +95,11 @@ export type ProductWithVariantType = {
     freeShippingForAllCountries: boolean;
     freeShippingCountriesIds: { id?: string; label: string; value: string }[];
     shippingFeeMethod: ShippingFeeMethod;
+    /**
+     * カテゴリ別属性値（plan 069）。省略 = 属性を送っていない（作成時の必須検証は行う）。
+     * 形はサーバー側で再検証する（`parseAttributeInputs`）。
+     */
+    attributes?: AttributeValueInput[];
     createdAt: Date;
     updatedAt: Date;
 };
