@@ -52,6 +52,53 @@
   - **本文からの解釈 1 点**: Step 8 の「単値は upsert」は**採らない**。部分 UNIQUE には Prisma の upsert キーが
     生成されないため、単値・多値とも `deleteMany`（所有先 + definitionId）→ `createMany` の置換で書く。
 
+### 進捗と引き継ぎ（2026-09-26 セッション終了時点・HEAD `fa86bfa8`）
+
+**完了**（コミット順）:
+
+| Step | 内容 | コミット |
+|---|---|---|
+| 0–2 | 前提記録・実 DB 計測・多値決定（design.md §4 / ADR-007 D-7） | `c4163ff0` |
+| 3–4 | スキーマ + マイグレーション `20260926085624_category_attributes` + ERD（11 ページ化） | `7100fd91` |
+| 5 | `src/lib/attribute-value.ts`（型→列の唯一の決定点） | `2af871f3` / `65015e99` |
+| 6 | `src/lib/attribute-definitions.ts`（祖先パス・最深 key 解決・DTO / payload 型）、`src/queries/attribute.ts`（admin CRUD・ON CONFLICT 作成・TEXT→NUMBER 経路 1/2・`getEffectiveAttributeDefinitions`）、`src/lib/attribute-repository.ts` | `b7bcaa58`〜`37c4e164` |
+| 7 | admin UI `/dashboard/admin/attributes`（+ `[id]/options`）、サイドバー | `de5e0b2a` |
+| 8 前半 | `src/lib/attribute-schema.ts`（`ProductFormSchema.extend()`・A-9 / A-11） | `e78b58aa` / `188a0ed4` |
+| 8 後半 | `src/lib/attribute-sync.ts` + `upsertProduct` 配線（外側検証 → tx 内ロック再検証 → 同期）。`product-attributes.test.ts`（IDOR 3 本 × 3 階層・A-3・選択肢・tx 内再検証） | `f3fe778b` / `89318c2b` |
+| 8 UI | `product-details.tsx` + `attribute-fields.tsx`（カテゴリ変更で定義再取得・所有先付き payload）、コンポーネントテスト 4 本 | `fa86bfa8` |
+
+**実装上の判断（レビュー時に確認してほしい点）**:
+- 複合 FK は `onUpdate: Restrict`（Prisma 既定の CASCADE だと定義の type / multiValued 変更が値行へ連鎖する）。
+  このため TEXT→NUMBER の経路 1 は「値行削除 → type 変更 → 再作成」で実装した。
+- 同期範囲は **カバレッジ**方式: 所有先を作成した / 入力を 1 件以上送ったスコープだけ同期し、
+  そのスコープでは送られなかった有効定義も削除（アクティブ定義・その所有先に限定）。
+  作成時は payload 省略でも必須を hard に要求する（`product-attributes.test.ts` で固定）。
+- tx 内のロック順は Category（選択ノード + 祖先・id 昇順、`lockAttributeCategoryPath` を tx 先頭で）→
+  Product/Variant（書き込みで取得）→ Definition（id 昇順）→ Option（id 昇順）。
+- 既存バリアント編集ページ（`/products/[id]/variants/[variantId]`）は**現行リポジトリに存在しない**
+  （一覧のリンク先が 404）。そのためフォームの初期値ロード（既存属性値・A-11 の archivedCurrent 供給）は
+  UI 側未配線。サーバー側（A-11 検証）とスキーマ側は実装済み。
+
+**残作業（次セッションはここから）**:
+1. **Step 9**: 読み取り DTO（`getProductPageData` 系）に属性を載せ、
+   `src/components/store/product-page/product-specs.tsx` を「仕様」（構造化属性・ENUM は label を FK で引く = A-4）/
+   「その他仕様」（`Spec`）の 2 セクションにする。VARIANT 属性は `variantId` ごとに束ねる。
+   列名は `ATTRIBUTE_VALUE_COLUMNS_SELECT` + `fromAttributeValueRows` 経由（Done criteria の grep を守る）。
+2. **Step 10**: パイロット 3 部門シード（家電・ファッション・食品。allergens は多値 ENUM）。
+   `prisma/seed/` の既存構成に合わせ、`@@unique([definitionId, value])` / アクティブ部分 UNIQUE で冪等。2 回実行で同一を確認。
+   シード先カテゴリが E2E シードと重なり**必須属性で既存 E2E の商品作成が落ちないか**を確認すること。
+3. **Step 11**: 統合テスト `tests/integration/category-attributes.test.ts`（Docker）。
+   ADR-007 D-5/D-6 の 7 本（`$executeRaw` 直書き含む）、D-7 部分 UNIQUE（単値重複拒否・多値許可・multiValued 不一致 FK 拒否）、
+   A-1〜A-11、アーカイブ後の値保持（両スコープ）、往復 7 本（race (5)(7) は `updateCategory` と並行）、
+   定義 ON CONFLICT の並行作成（design.md Q7 のテスト要件）。
+4. **Step 12**: `bun run lint` / `bunx tsc --noEmit` / `bun run test` / `bun run test:integration`、Done criteria の grep / eslint 確認。
+5. **Step 13**: `spec-sync-after-test`（テスト数が増えている。QA_HANDOFF.md SSOT → 07-testing / COVERAGE_REPORT / PROGRESS、
+   dashboard 再生成）を**別コミット**で。`04-interfaces.md` に `src/queries/attribute.ts` を追記。
+6. **Step 14**: README の 069 行を DONE へ。
+7. **未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`（本プラン外）と
+   本プランの `20260926085624_category_attributes` が未適用。共有 DB への適用はオペレーター判断
+   （`bunx prisma migrate deploy`。リセットは発生しない）。ローカル検証は使い捨て Postgres で実施済み（DROP 提案なし）。
+
 ## Why this matters
 
 現行の属性は自由記述の `Spec` のみで、**数値比較も許容値の統制もできない**
