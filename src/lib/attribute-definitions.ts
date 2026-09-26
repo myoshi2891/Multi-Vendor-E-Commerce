@@ -11,9 +11,8 @@ import type { AttributeScope, AttributeType } from "@prisma/client";
  *
  * @example ancestorPathsOf("electronics/camera") → ["electronics", "electronics/camera"]
  */
-export const ancestorPathsOf = (_path: string): string[] => {
-    throw new Error("not implemented");
-};
+export const ancestorPathsOf = (path: string): string[] =>
+    path.split("/").map((_, i, segments) => segments.slice(0, i + 1).join("/"));
 
 /** 解決規則が読む最小の形。 */
 export interface ResolvableDefinition {
@@ -31,9 +30,20 @@ export interface ResolvableDefinition {
  * @returns 入力順を保った、`key` ごとに 1 件へ畳んだ配列
  */
 export const resolveEffectiveDefinitions = <T extends ResolvableDefinition>(
-    _defs: readonly T[]
+    defs: readonly T[]
 ): T[] => {
-    throw new Error("not implemented");
+    const winners = new Map<string, T>();
+    for (const def of defs) {
+        const current = winners.get(def.key);
+        if (
+            !current ||
+            def.category.path.length > current.category.path.length
+        ) {
+            winners.set(def.key, def);
+        }
+    }
+    const winnerSet = new Set(winners.values());
+    return defs.filter((def) => winnerSet.has(def));
 };
 
 /** フォーム・表示が消費する属性定義 DTO（`getEffectiveAttributeDefinitions` の戻り値）。 */
