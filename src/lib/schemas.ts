@@ -165,6 +165,27 @@ export const StoreFormSchema = z.object({
 });
 
 // Product form schema
+/**
+ * Spec（その他仕様）の行リスト。名前・値の両方が空の行は**未入力**として落とし
+ * （フォームは空行 1 つで始まる）、片方だけ入力された行は拒否する。件数は問わない。
+ */
+const specListSchema = (message: string) =>
+    z
+        .object({ name: z.string(), value: z.string() })
+        .array()
+        .transform((specs) =>
+            specs.filter(
+                (spec) => spec.name.trim() !== "" || spec.value.trim() !== ""
+            )
+        )
+        .refine(
+            (specs) =>
+                specs.every(
+                    (spec) => spec.name.length > 0 && spec.value.length > 0
+                ),
+            { message }
+        );
+
 export const ProductFormSchema = z.object({
     name: z
         .string({
@@ -310,39 +331,14 @@ export const ProductFormSchema = z.object({
                     "Size name, quantity, and price cannot be empty or less than 1.",
             }
         ),
-    product_specs: z
-        .object({
-            name: z.string(),
-            value: z.string(),
-        })
-        .array()
-        .min(1, "Product must have at least one product spec.")
-        .refine(
-            (product_specs) =>
-                product_specs.every(
-                    (s) => s.name.length > 0 && s.value.length > 0
-                ),
-            {
-                message: "All product specs must have a name and value.",
-            }
-        ),
-    variant_specs: z
-        .object({
-            name: z.string(),
-            value: z.string(),
-        })
-        .array()
-        .min(1, "Product must have at least one product variant spec.")
-        .refine(
-            (product_specs) =>
-                product_specs.every(
-                    (s) => s.name.length > 0 && s.value.length > 0
-                ),
-            {
-                message:
-                    "All product variant specs must have a name and value.",
-            }
-        ),
+    // Spec は「その他仕様」として温存し、任意にする（plan 069 / design.md Q3-4）。
+    // 構造化属性が主役になったため、Spec 空の商品も保存できる必要がある。
+    product_specs: specListSchema(
+        "All product specs must have a name and value."
+    ),
+    variant_specs: specListSchema(
+        "All product variant specs must have a name and value."
+    ),
     questions: z
         .object({
             question: z.string(),

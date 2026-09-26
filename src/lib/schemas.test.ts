@@ -261,6 +261,59 @@ describe("ProductFormSchema", () => {
         expect(() => ProductFormSchema.parse(validData)).not.toThrow();
     });
 
+    describe("Spec（その他仕様）は任意（plan 069 / design.md Q3-4）", () => {
+        it("product_specs / variant_specs が空でもパースが成功する", () => {
+            const result = ProductFormSchema.safeParse({
+                ...validData,
+                product_specs: [],
+                variant_specs: [],
+            });
+
+            expect(result.success).toBe(true);
+        });
+
+        it("名前・値の両方が空の行は未入力として落とす", () => {
+            // Arrange —— フォームの初期状態は空行 1 つ
+            const input = {
+                ...validData,
+                product_specs: [
+                    { name: "", value: "" },
+                    { name: "Care", value: "Hand wash" },
+                ],
+                variant_specs: [{ name: " ", value: "" }],
+            };
+
+            // Act
+            const result = ProductFormSchema.parse(input);
+
+            // Assert
+            expect(result.product_specs).toEqual([
+                { name: "Care", value: "Hand wash" },
+            ]);
+            expect(result.variant_specs).toEqual([]);
+        });
+
+        it("片方だけ入力された行はエラー", () => {
+            const productResult = ProductFormSchema.safeParse({
+                ...validData,
+                product_specs: [{ name: "Care", value: "" }],
+            });
+            const variantResult = ProductFormSchema.safeParse({
+                ...validData,
+                variant_specs: [{ name: "", value: "Solid" }],
+            });
+
+            expect(productResult.success).toBe(false);
+            expect(productResult.error?.issues[0].message).toBe(
+                "All product specs must have a name and value."
+            );
+            expect(variantResult.success).toBe(false);
+            expect(variantResult.error?.issues[0].message).toBe(
+                "All product variant specs must have a name and value."
+            );
+        });
+    });
+
     it("descriptionが200文字未満の場合エラー", () => {
         const result = ProductFormSchema.safeParse({
             ...validData,
