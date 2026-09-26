@@ -18,7 +18,10 @@ import {
     toAttributePayload,
     type ProductFormWithAttributes,
 } from "@/lib/attribute-schema";
-import type { AttributeDefinitionDTO } from "@/lib/attribute-definitions";
+import {
+    findSpecAttributeOverlaps,
+    type AttributeDefinitionDTO,
+} from "@/lib/attribute-definitions";
 
 // カテゴリツリー（DB に触れない純粋ヘルパーのみ）
 import { isProductAssignableCategory } from "@/lib/category-path";
@@ -320,6 +323,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     );
     const variantAttributeDefs = attributeDefs.filter(
         (def) => def.scope === "VARIANT"
+    );
+
+    // Spec 名が構造化属性と重なったら警告する（ブロックしない・design.md Q3 併存ルール 2）。
+    // 新バリアント画面では商品 Spec を編集しないので対象外。
+    const specOverlaps = useMemo(
+        () =>
+            findSpecAttributeOverlaps(
+                [...(isNewVariantPage ? [] : productSpecs), ...variantSpecs],
+                attributeDefs
+            ),
+        [isNewVariantPage, productSpecs, variantSpecs, attributeDefs]
     );
 
     // Extract errors state from form
@@ -1095,6 +1109,27 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                     </div>
                                 </TabsContent>
                             </Tabs>
+                            {specOverlaps.length > 0 && (
+                                <div
+                                    role="status"
+                                    className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+                                >
+                                    <p>
+                                        These specifications duplicate
+                                        attributes of this category. Enter the
+                                        values in the attribute fields and keep
+                                        specifications for supplementary notes.
+                                    </p>
+                                    <ul className="mt-1 list-disc pl-5">
+                                        {specOverlaps.map((overlap) => (
+                                            <li key={overlap.specName}>
+                                                {overlap.specName} →{" "}
+                                                {overlap.attributeName}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </InputFieldset>
 
                         {/* Questions */}

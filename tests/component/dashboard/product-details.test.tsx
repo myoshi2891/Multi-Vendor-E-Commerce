@@ -1215,6 +1215,32 @@ describe("ProductDetails", () => {
             ]);
         });
 
+        it("Spec 名が属性と重なると警告するが、保存は止めない（design.md Q3 併存ルール 2）", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData({
+                    product_specs: [{ name: "material", value: "Cotton" }],
+                }),
+                productAttributes: { "def-material": "Cotton" },
+            });
+
+            // Assert —— 警告
+            const warning = await screen.findByRole("status");
+            expect(warning).toHaveTextContent("material → Material");
+
+            // Act & Assert —— ブロックしない
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+        });
+
+        it("Spec 名が属性と重ならなければ警告しない", async () => {
+            renderForm(validData());
+            await screen.findByLabelText("Material *");
+
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        });
+
         it("新バリアント画面: 商品属性は描画も送信もしない（同期対象外）", async () => {
             mockUpsertProduct.mockResolvedValue({} as never);
             renderForm(validData({ variantId: undefined }));
