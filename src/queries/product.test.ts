@@ -106,6 +106,15 @@ jest.mock("@/lib/db", () => ({
     },
 }));
 
+// 属性の検証・同期は product-attributes.test.ts（実装を通す）と統合テストで検証する。
+// ここでは upsertProduct 本体の分岐とカテゴリのロックだけを見るため no-op にする。
+jest.mock("@/lib/attribute-sync", () => ({
+    parseAttributeInputs: jest.fn(() => []),
+    precheckAttributeValues: jest.fn(),
+    lockAttributeCategoryPath: jest.fn(),
+    syncAttributeValues: jest.fn(),
+}));
+
 jest.mock("cookies-next", () => ({
     getCookie: jest.fn(),
 }));
@@ -414,6 +423,11 @@ describe("upsertProduct", () => {
             });
             mockDb.store.findUnique.mockResolvedValue(createMockStore());
             mockDb.productVariant.findFirst.mockResolvedValue(null);
+            // バリアント作成は属性の同期と同じ tx で行う（plan 069）
+            mockDb.$transaction.mockImplementation(
+                async (fn: (tx: typeof mockDb) => Promise<unknown>) =>
+                    fn(mockDb)
+            );
         });
 
         it("既存商品に新しいバリアントを追加する", async () => {
