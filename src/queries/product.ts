@@ -35,6 +35,7 @@ import {
 } from "@/lib/attribute-sync";
 import type { AttributeValueInput } from "@/lib/attribute-definitions";
 import {
+    findAttributeFormValues,
     findProductAttributeDisplay,
     type ProductAttributeDisplay,
 } from "@/lib/attribute-repository";
@@ -722,6 +723,131 @@ export const getProductMainInfo = async (productId: string) => {
             value: spec.value,
         })),
     };
+};
+
+// Function: getProductVariantForEdit
+// Description: 既存バリアントの編集ページ用に、商品 + バリアントを商品フォームの形
+//              （ProductWithVariantType）へ戻して返す。属性値はフォーム初期値と、
+//              このレコードの現在値に含まれるアーカイブ済み選択肢（A-11）を添える。
+// Permission Level: Seller only（店舗オーナー）
+// Parameters:
+//   - storeUrl: 編集中の店舗
+//   - productId / variantId: 編集対象
+// Returns: フォーム初期値。商品が店舗に無い / バリアントが商品に無い場合は null
+
+export const getProductVariantForEdit = async (
+    storeUrl: string,
+    productId: string,
+    variantId: string
+) => {
+    // 認可ガードは try の外（認可エラーを汎用メッセージで上書きしない・tech.md）
+    const { store } = await requireStoreOwner(storeUrl);
+
+    try {
+        const product = await db.product.findUnique({
+            where: { id: productId, storeId: store.id },
+            include: {
+                specs: true,
+                questions: true,
+                freeShipping: {
+                    include: {
+                        eligibleCountries: { include: { country: true } },
+                    },
+                },
+                variants: {
+                    where: { id: variantId },
+                    include: {
+                        images: true,
+                        colors: true,
+                        sizes: true,
+                        specs: true,
+                    },
+                },
+            },
+        });
+        const variant = product?.variants[0];
+        if (!product || !variant) return null;
+
+        const attributes = await findAttributeFormValues(db, {
+            productId: product.id,
+            variantId: variant.id,
+        });
+
+        return {
+            productId: product.id,
+            variantId: variant.id,
+            name: product.name,
+            description: product.description,
+            variantName: variant.variantName,
+            variantDescription: variant.variantDescription ?? "",
+            images: variant.images.map((image) => ({
+                id: image.id,
+                url: image.url,
+            })),
+            variantImage: variant.variantImage,
+            categoryId: product.categoryId,
+            subCategoryId: product.subCategoryId,
+            offerTagId: product.offerTagId ?? undefined,
+            isSale: variant.isSale,
+            saleEndDate: variant.saleEndDate,
+            brand: product.brand,
+            sku: variant.sku,
+            weight: variant.weight,
+            colors: variant.colors.map((color) => ({
+                id: color.id,
+                color: color.name,
+            })),
+            sizes: variant.sizes.map((size) => ({
+                id: size.id,
+                size: size.size,
+                quantity: size.quantity,
+                price: toNumberSafe(size.price),
+                discount: size.discount,
+            })),
+            product_specs: product.specs.map((spec) => ({
+                id: spec.id,
+                name: spec.name,
+                value: spec.value,
+            })),
+            variant_specs: variant.specs.map((spec) => ({
+                id: spec.id,
+                name: spec.name,
+                value: spec.value,
+            })),
+            // 保存側は keywords.join(",") で 1 列に詰めている
+            keywords: variant.keywords
+                ? variant.keywords.split(",").filter((k) => k.length > 0)
+                : [],
+            questions: product.questions.map((q) => ({
+                id: q.id,
+                question: q.question,
+                answer: q.answer,
+            })),
+            freeShippingForAllCountries: product.freeShippingForAllCountries,
+            freeShippingCountriesIds: (
+                product.freeShipping?.eligibleCountries ?? []
+            ).map(({ country }) => ({
+                label: country.name,
+                value: country.id,
+            })),
+            shippingFeeMethod: product.shippingFeeMethod,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            ...attributes,
+        };
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[product:getProductVariantForEdit] Failed to load product",
+                { error: error.message, stack: error.stack }
+            );
+        } else {
+            console.error("[product:getProductVariantForEdit] Unknown error", {
+                error,
+            });
+        }
+        throw new Error("Failed to load the product for editing.");
+    }
 };
 
 // Function: getAllStoreProducts
