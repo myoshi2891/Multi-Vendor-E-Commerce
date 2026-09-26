@@ -1,5 +1,6 @@
 import {
     ancestorPathsOf,
+    findSpecAttributeOverlaps,
     resolveEffectiveDefinitions,
 } from "./attribute-definitions";
 
@@ -57,5 +58,51 @@ describe("resolveEffectiveDefinitions（A-10: 同一 key は最深ノードが�
 
     it("空入力は空配列", () => {
         expect(resolveEffectiveDefinitions([])).toEqual([]);
+    });
+});
+
+describe("findSpecAttributeOverlaps（design.md Q3 併存ルール 2）", () => {
+    const def = (key: string, name: string) => ({ key, name });
+
+    it("Spec 名が定義の表示名・機械キーと重なるものを、大文字小文字・前後空白・区切りを無視して返す", () => {
+        // Arrange
+        const defs = [
+            def("material", "Material"),
+            def("net_weight", "Net weight"),
+        ];
+        const specs = [
+            { name: " material " },
+            { name: "Net Weight" },
+            { name: "net-weight" },
+            { name: "Care" },
+        ];
+
+        // Act
+        const overlaps = findSpecAttributeOverlaps(specs, defs);
+
+        // Assert
+        expect(overlaps).toEqual([
+            { specName: "material", attributeName: "Material" },
+            // "net-weight" は正規化すると "Net Weight" と同名なので 1 件にまとまる
+            { specName: "Net Weight", attributeName: "Net weight" },
+        ]);
+    });
+
+    it("空の Spec 名と、定義が無いときは何も返さない", () => {
+        expect(
+            findSpecAttributeOverlaps([{ name: "" }], [def("a", "A")])
+        ).toEqual([]);
+        expect(findSpecAttributeOverlaps([{ name: "Material" }], [])).toEqual(
+            []
+        );
+    });
+
+    it("同じ Spec 名が複数行あっても 1 件にまとめる", () => {
+        expect(
+            findSpecAttributeOverlaps(
+                [{ name: "Material" }, { name: "material" }],
+                [def("material", "Material")]
+            )
+        ).toEqual([{ specName: "Material", attributeName: "Material" }]);
     });
 });

@@ -46,6 +46,49 @@ export const resolveEffectiveDefinitions = <T extends ResolvableDefinition>(
     return defs.filter((def) => winnerSet.has(def));
 };
 
+/** 名前比較用の正規化: 大文字小文字・前後空白・区切り（空白 / `_` / `-`）の違いを無視する。 */
+const normalizeName = (name: string): string =>
+    name
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, " ");
+
+export interface SpecAttributeOverlap {
+    specName: string;
+    attributeName: string;
+}
+
+/**
+ * 自由記述の Spec 名が、選択カテゴリの属性定義（表示名 or 機械キー）と重なるものを返す
+ * （design.md Q3 併存ルール 2: 二重入力の防止）。
+ *
+ * **警告に使うだけでブロックはしない** —— 販売者が「単位違いの補足」を Spec に
+ * 書きたい正当なケースがあるため。
+ *
+ * @returns Spec 名ごとに 1 件（入力順）
+ */
+export const findSpecAttributeOverlaps = (
+    specs: readonly { name: string }[],
+    defs: readonly { key: string; name: string }[]
+): SpecAttributeOverlap[] => {
+    const byName = new Map<string, string>();
+    for (const def of defs) {
+        byName.set(normalizeName(def.key), def.name);
+        byName.set(normalizeName(def.name), def.name);
+    }
+    const seen = new Set<string>();
+    const overlaps: SpecAttributeOverlap[] = [];
+    for (const spec of specs) {
+        const normalized = normalizeName(spec.name);
+        if (normalized === "" || seen.has(normalized)) continue;
+        const attributeName = byName.get(normalized);
+        if (attributeName === undefined) continue;
+        seen.add(normalized);
+        overlaps.push({ specName: spec.name.trim(), attributeName });
+    }
+    return overlaps;
+};
+
 /** フォーム・表示が消費する属性定義 DTO（`getEffectiveAttributeDefinitions` の戻り値）。 */
 export interface AttributeDefinitionDTO {
     id: string;
