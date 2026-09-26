@@ -73,3 +73,20 @@ export type AttributeFormValues = Record<string, AttributeFormValue>;
 
 /** バリアント編集対象の現在値に含まれるアーカイブ済み選択肢（A-11: レコード単位）。 */
 export type ArchivedCurrentOptions = Record<string, AttributeOptionDTO[]>;
+
+/**
+ * `upsertProduct` へ送る属性値 1 件（plan 069 Step 8 の保存契約）。
+ *
+ * - 所有先を型で判別する: VARIANT は `variantId` を必須とする（`{ definitionId, value }[]` では
+ *   同じ定義を持つ複数バリアントを区別できず、最後の 1 件が他を上書きする）
+ * - **配列に含まれない定義は「送信されなかった」＝同期対象外**、`value` が空
+ *   （null / 空文字 / 空配列）の要素は「空で送信された」＝削除対象
+ */
+export type AttributeValueInput =
+    | { scope: "PRODUCT"; definitionId: string; value: AttributeFormValue }
+    | {
+          scope: "VARIANT";
+          definitionId: string;
+          variantId: string;
+          value: AttributeFormValue;
+      };
