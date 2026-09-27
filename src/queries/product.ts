@@ -25,6 +25,20 @@ import {
 import { currentUser } from "@clerk/nextjs/server";
 // 認可ガード (src/lib/auth-guards.ts) 経由でロール検証を集約する
 import { requireSeller, requireStoreOwner } from "@/lib/auth-guards";
+// カテゴリ別属性の検証・同期（plan 069 Step 8 の保存契約）
+import {
+    lockAttributeCategoryPath,
+    parseAttributeInputs,
+    precheckAttributeValues,
+    syncAttributeValues,
+    type AttributeSyncContext,
+} from "@/lib/attribute-sync";
+import type { AttributeValueInput } from "@/lib/attribute-definitions";
+import {
+    findAttributeFormValues,
+    findProductAttributeDisplay,
+    type ProductAttributeDisplay,
+} from "@/lib/attribute-repository";
 
 // Slugify
 import slugify from "slugify";
@@ -107,7 +121,7 @@ const assertLeafCategoryNode = async (
     // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
     // （値は常にパラメータ化される）。
     const lockedRows = await tx.$queryRaw<LockedProductCategoryNode[]>`
-        SELECT "id", "parentId", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR UPDATE
+        SELECT "id", "parentId", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR SHARE
     `;
     const node = lockedRows[0] ?? null;
     if (!node) throw new Error("Category not found.");
@@ -208,21 +222,45 @@ export const upsertProduct = async (
             },
         });
 
+        // 属性値（plan 069）。payload の形を検証し、外側で一度検証する —— 早期拒否と
+        // 観測のため。書き込みと同じ tx 内で行を掴んだうえで必ず再検証する
+        // （`syncAttributeValues`）。新バリアント追加は商品のカテゴリを変えないので、
+        // 既存商品の紐づけ先を基準にする。
+        const attributes: AttributeSyncArgs = {
+            inputs: parseAttributeInputs(product.attributes),
+            context: {
+                storeId: store.id,
+                productId: product.productId,
+                categoryNodeId:
+                    existingProduct && !existingVariant
+                        ? existingProduct.subCategoryId
+                        : product.subCategoryId,
+                createsProduct: !existingProduct,
+                createdVariantId: existingVariant ? null : product.variantId,
+            },
+        };
+        await precheckAttributeValues(
+            db,
+            attributes.context,
+            attributes.inputs
+        );
+
         if (existingProduct) {
             if (existingVariant) {
                 // 既存の商品とバリアントを更新
                 await handleProductAndVariantUpdate(
                     product,
                     existingProduct,
-                    existingVariant
+                    existingVariant,
+                    attributes
                 );
             } else {
                 // 既存商品に新規バリアントを追加
-                await handleVariantCreate(product);
+                await handleVariantCreate(product, attributes);
             }
         } else {
             // 新規商品・バリアント作成
-            await handleProductCreate(product, store.id);
+            await handleProductCreate(product, store.id, attributes);
         }
     } catch (error: unknown) {
         if (error instanceof Error) {
@@ -238,9 +276,16 @@ export const upsertProduct = async (
     }
 };
 
+/** 属性の同期に必要な入力（検証済みの payload と所有先の文脈）。 */
+interface AttributeSyncArgs {
+    inputs: AttributeValueInput[];
+    context: AttributeSyncContext;
+}
+
 const handleProductCreate = async (
     product: ProductWithVariantType,
-    storeId: string
+    storeId: string,
+    attributes: AttributeSyncArgs
 ) => {
     // Generate unique slugs for product and variant
     const productSlug = await generateUniqueSlug(
@@ -361,18 +406,26 @@ const handleProductCreate = async (
     // 作成も検証と同じ tx に入れる —— 検証だけを別 tx で先に済ませると、
     // ロックが create の前に解放されて TOCTOU の窓が開いたままになる。
     const new_product = await db.$transaction(async (tx) => {
+        // 属性の継承元（選択ノード + 祖先）を id 昇順で先に掴む。リーフ単独のロック
+        // （assertLeafCategoryNode）より前に置き、カテゴリ更新とロック順を揃える。
+        await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
         // V-5: 新規作成は常に「カテゴリを新規設定した」ケースにあたる
         await assertLeafCategoryNode(
             tx,
             product.subCategoryId,
             product.categoryId
         );
-        return tx.product.create({ data: productData });
+        const created = await tx.product.create({ data: productData });
+        await syncAttributeValues(tx, attributes.context, attributes.inputs);
+        return created;
     });
     return new_product;
 };
 
-const handleVariantCreate = async (product: ProductWithVariantType) => {
+const handleVariantCreate = async (
+    product: ProductWithVariantType,
+    attributes: AttributeSyncArgs
+) => {
     // Generate unique slug for variant
     const variantSlug = await generateUniqueSlug(
         slugify(product.variantName, {
@@ -424,7 +477,13 @@ const handleVariantCreate = async (product: ProductWithVariantType) => {
         updatedAt: product.updatedAt,
     };
 
-    const new_variant = await db.productVariant.create({ data: variantData });
+    // 属性の同期（VARIANT スコープの必須を含む）とバリアント作成を 1 tx に入れる
+    const new_variant = await db.$transaction(async (tx) => {
+        await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+        const created = await tx.productVariant.create({ data: variantData });
+        await syncAttributeValues(tx, attributes.context, attributes.inputs);
+        return created;
+    });
 
     return new_variant;
 };
@@ -438,7 +497,8 @@ const handleProductAndVariantUpdate = async (
         categoryId: string;
         subCategoryId: string;
     },
-    existingVariant: { variantName: string; slug: string }
+    existingVariant: { variantName: string; slug: string },
+    attributes: AttributeSyncArgs
 ): Promise<void> => {
     // 名前が変わった場合のみ slug を再生成（URL 安定性のため）
     const productSlug =
@@ -466,6 +526,9 @@ const handleProductAndVariantUpdate = async (
             : existingVariant.slug;
 
     await db.$transaction(async (tx) => {
+        // 属性の継承元を id 昇順で先に掴む（handleProductCreate と同じ理由）
+        await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+
         // V-5: 紐づけ先がリーフであることを、書き込みと同じ tx 内で（ロックを
         // 握ったまま）検証する。カテゴリを変えない更新は経過措置として素通しする。
         if (categoryAssignmentChanged(product, existingProduct)) {
@@ -619,6 +682,9 @@ const handleProductAndVariantUpdate = async (
                 })),
             });
         }
+
+        // 属性値: 商品・バリアントの書き込み後に、掴んだ行で再検証してから同期する
+        await syncAttributeValues(tx, attributes.context, attributes.inputs);
     });
 };
 
@@ -657,6 +723,131 @@ export const getProductMainInfo = async (productId: string) => {
             value: spec.value,
         })),
     };
+};
+
+// Function: getProductVariantForEdit
+// Description: 既存バリアントの編集ページ用に、商品 + バリアントを商品フォームの形
+//              （ProductWithVariantType）へ戻して返す。属性値はフォーム初期値と、
+//              このレコードの現在値に含まれるアーカイブ済み選択肢（A-11）を添える。
+// Permission Level: Seller only（店舗オーナー）
+// Parameters:
+//   - storeUrl: 編集中の店舗
+//   - productId / variantId: 編集対象
+// Returns: フォーム初期値。商品が店舗に無い / バリアントが商品に無い場合は null
+
+export const getProductVariantForEdit = async (
+    storeUrl: string,
+    productId: string,
+    variantId: string
+) => {
+    // 認可ガードは try の外（認可エラーを汎用メッセージで上書きしない・tech.md）
+    const { store } = await requireStoreOwner(storeUrl);
+
+    try {
+        const product = await db.product.findUnique({
+            where: { id: productId, storeId: store.id },
+            include: {
+                specs: true,
+                questions: true,
+                freeShipping: {
+                    include: {
+                        eligibleCountries: { include: { country: true } },
+                    },
+                },
+                variants: {
+                    where: { id: variantId },
+                    include: {
+                        images: true,
+                        colors: true,
+                        sizes: true,
+                        specs: true,
+                    },
+                },
+            },
+        });
+        const variant = product?.variants[0];
+        if (!product || !variant) return null;
+
+        const attributes = await findAttributeFormValues(db, {
+            productId: product.id,
+            variantId: variant.id,
+        });
+
+        return {
+            productId: product.id,
+            variantId: variant.id,
+            name: product.name,
+            description: product.description,
+            variantName: variant.variantName,
+            variantDescription: variant.variantDescription ?? "",
+            images: variant.images.map((image) => ({
+                id: image.id,
+                url: image.url,
+            })),
+            variantImage: variant.variantImage,
+            categoryId: product.categoryId,
+            subCategoryId: product.subCategoryId,
+            offerTagId: product.offerTagId ?? undefined,
+            isSale: variant.isSale,
+            saleEndDate: variant.saleEndDate,
+            brand: product.brand,
+            sku: variant.sku,
+            weight: variant.weight,
+            colors: variant.colors.map((color) => ({
+                id: color.id,
+                color: color.name,
+            })),
+            sizes: variant.sizes.map((size) => ({
+                id: size.id,
+                size: size.size,
+                quantity: size.quantity,
+                price: toNumberSafe(size.price),
+                discount: size.discount,
+            })),
+            product_specs: product.specs.map((spec) => ({
+                id: spec.id,
+                name: spec.name,
+                value: spec.value,
+            })),
+            variant_specs: variant.specs.map((spec) => ({
+                id: spec.id,
+                name: spec.name,
+                value: spec.value,
+            })),
+            // 保存側は keywords.join(",") で 1 列に詰めている
+            keywords: variant.keywords
+                ? variant.keywords.split(",").filter((k) => k.length > 0)
+                : [],
+            questions: product.questions.map((q) => ({
+                id: q.id,
+                question: q.question,
+                answer: q.answer,
+            })),
+            freeShippingForAllCountries: product.freeShippingForAllCountries,
+            freeShippingCountriesIds: (
+                product.freeShipping?.eligibleCountries ?? []
+            ).map(({ country }) => ({
+                label: country.name,
+                value: country.id,
+            })),
+            shippingFeeMethod: product.shippingFeeMethod,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            ...attributes,
+        };
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[product:getProductVariantForEdit] Failed to load product",
+                { error: error.message, stack: error.stack }
+            );
+        } else {
+            console.error("[product:getProductVariantForEdit] Unknown error", {
+                error,
+            });
+        }
+        throw new Error("Failed to load the product for editing.");
+    }
 };
 
 // Function: getAllStoreProducts
@@ -1198,12 +1389,16 @@ export const getProductPageData = async (
     // Reviews stats
     const ratingStatistics = await getRatingStatistics(product.id);
 
+    // 構造化属性（「仕様」セクション）。表示中のバリアント分だけ読む
+    const attributes = await getProductAttributeDisplay(product);
+
     return formatProductResponse(
         product,
         productShippingDetails,
         storeFollowersCount,
         isUserFollowingStore,
-        ratingStatistics
+        ratingStatistics,
+        attributes
     );
 };
 
@@ -1218,6 +1413,8 @@ export const retrieveProductDetails = async (
         },
         include: {
             category: true,
+            // 構造化属性の有効定義はツリーノードの path から解決する（plan 069 Step 9）
+            categoryNode: { select: { path: true } },
             subCategory: true,
             offerTag: true,
             store: true,
@@ -1284,6 +1481,32 @@ export const retrieveProductDetails = async (
     };
 };
 
+const getProductAttributeDisplay = async (
+    product: NonNullable<ProductPageType>
+): Promise<ProductAttributeDisplay> => {
+    try {
+        return await findProductAttributeDisplay(db, {
+            categoryPath: product.categoryNode?.path ?? null,
+            productId: product.id,
+            variantIds: product.variants.map((variant) => variant.id),
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error(
+                "[product:getProductAttributeDisplay] Failed to load attributes",
+                { error: error.message, stack: error.stack }
+            );
+        } else {
+            console.error(
+                "[product:getProductAttributeDisplay] Unknown error",
+                { error }
+            );
+        }
+        // アレルゲン等の表示義務がある属性を黙って欠落させないため、ページごと失敗させる
+        throw error;
+    }
+};
+
 const getUserCountry = async () => {
     const cookieStore = await cookies();
     const cookieValue = cookieStore.get("userCountry")?.value;
@@ -1294,7 +1517,8 @@ const formatProductResponse = (
     shippingDetails: ProductShippingDetailsType,
     storeFollowersCount: number,
     isUserFollowingStore: boolean,
-    ratingStatistics: RatingStatisticsType
+    ratingStatistics: RatingStatisticsType,
+    attributes: ProductAttributeDisplay
 ) => {
     if (!product) return;
     const variant = product.variants[0];
@@ -1337,6 +1561,10 @@ const formatProductResponse = (
         specs: {
             product: product.specs,
             variant: variant.specs,
+        },
+        attributes: {
+            product: attributes.product,
+            variant: attributes.variants[variant.id] ?? [],
         },
         questions,
         rating: product.rating,

@@ -3,7 +3,7 @@ import type { SeedCategory } from "../types";
 const defaultImage = "/assets/images/no_image.png";
 
 /**
- * カテゴリツリー（ルート 7 + 子 25 = 32 ノード）。
+ * カテゴリツリー（ルート 9 + 子 29 = 38 ノード）。
  *
  * plan 066 Phase A で SubCategory を廃し、`parentUrl` を持つ単一の木にした。
  * 商品は必ず**リーフ**（= 子を持たないノード）に紐づく。
@@ -34,6 +34,20 @@ export const SEED_CATEGORIES: SeedCategory[] = [
     {
         name: "Watches",
         url: "lux-watches",
+        image: defaultImage,
+        featured: false,
+    },
+    // カテゴリ別属性のパイロット部門（plan 069 Step 10）。家電・食品は属性定義の
+    // 置き場所として置く（商品定数は未投入）。属性は constants/attributes.ts
+    {
+        name: "Electronics",
+        url: "lux-electronics",
+        image: defaultImage,
+        featured: false,
+    },
+    {
+        name: "Gourmet",
+        url: "lux-gourmet",
         image: defaultImage,
         featured: false,
     },
@@ -226,5 +240,37 @@ export const SEED_CATEGORIES: SeedCategory[] = [
         image: defaultImage,
         featured: false,
         parentUrl: "lux-watches",
+    },
+
+    // Electronics
+    {
+        name: "Audio",
+        url: "lux-electronics-audio",
+        image: defaultImage,
+        featured: false,
+        parentUrl: "lux-electronics",
+    },
+    {
+        name: "Cameras",
+        url: "lux-electronics-cameras",
+        image: defaultImage,
+        featured: false,
+        parentUrl: "lux-electronics",
+    },
+
+    // Gourmet
+    {
+        name: "Chocolate",
+        url: "lux-gourmet-chocolate",
+        image: defaultImage,
+        featured: false,
+        parentUrl: "lux-gourmet",
+    },
+    {
+        name: "Tea",
+        url: "lux-gourmet-tea",
+        image: defaultImage,
+        featured: false,
+        parentUrl: "lux-gourmet",
     },
 ];

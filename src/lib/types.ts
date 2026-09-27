@@ -1,4 +1,8 @@
 import type { CategoryTreeNode } from "@/lib/category-tree";
+import type {
+    AttributeFormInitialValues,
+    AttributeValueInput,
+} from "@/lib/attribute-definitions";
 import {
     getAllStoreProducts,
     getProductPageData,
@@ -94,9 +98,21 @@ export type ProductWithVariantType = {
     freeShippingForAllCountries: boolean;
     freeShippingCountriesIds: { id?: string; label: string; value: string }[];
     shippingFeeMethod: ShippingFeeMethod;
+    /**
+     * カテゴリ別属性値（plan 069）。省略 = 属性を送っていない（作成時の必須検証は行う）。
+     * 形はサーバー側で再検証する（`parseAttributeInputs`）。
+     */
+    attributes?: AttributeValueInput[];
     createdAt: Date;
     updatedAt: Date;
 };
+
+/**
+ * 商品フォームの `data`（新規は undefined、新バリアントは商品情報のみ、編集は全項目）。
+ * 編集時は属性の初期値とこのレコードのアーカイブ済み現在値を添える（plan 069）。
+ */
+export type ProductFormData = Partial<ProductWithVariantType> &
+    Partial<AttributeFormInitialValues>;
 
 // Store product
 export type StoreProductType = Prisma.PromiseReturnType<

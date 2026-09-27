@@ -1,6 +1,8 @@
 # Plan 069: カテゴリ別属性スキーマの実装（属性定義 CRUD + 動的フォーム + パイロット部門シード）
 
-> **Executor instructions**: 本プランは **未実行**。plan [014](014-spike-category-attributes-facets.md)
+> **Status: DONE（2026-09-27・HEAD `718716ef` 時点）**。実行記録は下の「実施結果」。
+>
+> **Executor instructions**: 本プランはplan [014](014-spike-category-attributes-facets.md)
 > （spike）が確定した設計の実装であり、**1 本で完結する**
 > （影響ファイルは新規約 13 + 既存 7 = **約 20**。plan 013 の 82 とは桁が違うため
 > 分割していない —— 判断根拠は [`design.md`](../docs/design/category-attributes/design.md) §1）。
@@ -35,6 +37,81 @@
 - **Blocks**: [plan 015](015-spike-faceted-search-and-browse.md) の後続実装（ファセット検索）
 - **Category**: direction（実装）
 - **Planned at**: 2026-08-31, against HEAD `1130aa4d`（branch `dev`）
+
+## 実施結果（2026-09-26〜・HEAD `4ba8391b` から着手）
+
+- **Drift check**: `Spec` は型付き化・カテゴリ紐づけされていない（STOP 非該当）。
+  `product.ts` / `product-details.tsx` の差分は 066–068 由来で、本文の行番号参照は古い。
+- **Step 0（前提）**: 066 は DONE（`path` / `depth` 列あり）。**継承（祖先パス集合）は縮退なしで実装する。**
+- **Step 1（実 DB 計測）**: `psql` 未インストールのため
+  `docker run --rm -e DIRECT_URL postgres:16 psql "$DIRECT_URL"` で開発 DB（Neon）を実測（シードではない）。
+  - `Spec` 総数 **153** / 不正行（両方セット）**0** / 孤児 **0** → STOP 非該当。移行は行わない（Q3 温存）ので扱いの決定は「現状維持」。
+  - `name` 上位: Material 47 / Origin 35 / Care 12 / Hardware 10 / Dimensions 10 / Lining 7 / Construction 6 / Heel Height 3 / 以下 2 以下 16 種（計 24 種）。
+    **大文字小文字・単複の表記揺れは観測されず**。ただし値側の数値埋め込み（0-B）は本計測の対象外。
+- **Step 2（多値属性）**: **`multiValued` 列 + DB 強制**に決定。多値は ENUM 限定、単値・多値とも部分 UNIQUE で担保。
+  5 項目表は [design.md §4「多値属性の決定」](../docs/design/category-attributes/design.md)、
+  制約の形は [ADR-007 D-7](../docs/architecture/decisions/007-attribute-storage.md)。
+  - **本文からの解釈 1 点**: Step 8 の「単値は upsert」は**採らない**。部分 UNIQUE には Prisma の upsert キーが
+    生成されないため、単値・多値とも `deleteMany`（所有先 + definitionId）→ `createMany` の置換で書く。
+
+### 進捗と引き継ぎ（2026-09-26 セッション終了時点・HEAD `fa86bfa8`）
+
+**完了**（コミット順）:
+
+| Step | 内容 | コミット |
+|---|---|---|
+| 0–2 | 前提記録・実 DB 計測・多値決定（design.md §4 / ADR-007 D-7） | `c4163ff0` |
+| 3–4 | スキーマ + マイグレーション `20260926085624_category_attributes` + ERD（11 ページ化） | `7100fd91` |
+| 5 | `src/lib/attribute-value.ts`（型→列の唯一の決定点） | `2af871f3` / `65015e99` |
+| 6 | `src/lib/attribute-definitions.ts`（祖先パス・最深 key 解決・DTO / payload 型）、`src/queries/attribute.ts`（admin CRUD・ON CONFLICT 作成・TEXT→NUMBER 経路 1/2・`getEffectiveAttributeDefinitions`）、`src/lib/attribute-repository.ts` | `b7bcaa58`〜`37c4e164` |
+| 7 | admin UI `/dashboard/admin/attributes`（+ `[id]/options`）、サイドバー | `de5e0b2a` |
+| 8 前半 | `src/lib/attribute-schema.ts`（`ProductFormSchema.extend()`・A-9 / A-11） | `e78b58aa` / `188a0ed4` |
+| 8 後半 | `src/lib/attribute-sync.ts` + `upsertProduct` 配線（外側検証 → tx 内ロック再検証 → 同期）。`product-attributes.test.ts`（IDOR 3 本 × 3 階層・A-3・選択肢・tx 内再検証） | `f3fe778b` / `89318c2b` |
+| 8 UI | `product-details.tsx` + `attribute-fields.tsx`（カテゴリ変更で定義再取得・所有先付き payload）、コンポーネントテスト 4 本 | `fa86bfa8` |
+| 9 | 読み取り DTO（`findProductAttributeDisplay`: 有効定義 ∩ 値行・ENUM label は FK 先・VARIANT は `variantId` 単位）+ `product-specs.tsx` の 2 セクション化 | `d33c207b` / `129ccca4` |
+| 10 | パイロット 3 部門シード（`lux-electronics` / `lux-gourmet` を追加、定義 16・選択肢 46）。使い捨て Postgres で 2 回実行し件数・行内容ハッシュが同一 | `7542cbeb` / `fc3e2b5d` |
+| 11 | 統合テスト `category-attributes.test.ts` 40 本（全緑） | `5d54e5cf` |
+| 12 | lint 0 errors / tsc 0 / unit 2340 pass / integration 181 pass、Done criteria の grep・eslint 確認 | — |
+| 13 | spec-sync（QA_HANDOFF → 07-testing / COVERAGE_REPORT / PROGRESS、04-interfaces に attribute モジュール、dashboard 再生成） | `718716ef` |
+| 14 | `plans/README.md` の 069 行を DONE へ | 本コミット |
+
+**実装上の判断（レビュー時に確認してほしい点）**:
+- 複合 FK は `onUpdate: Restrict`（Prisma 既定の CASCADE だと定義の type / multiValued 変更が値行へ連鎖する）。
+  このため TEXT→NUMBER の経路 1 は「値行削除 → type 変更 → 再作成」で実装した。
+- 同期範囲は **カバレッジ**方式: 所有先を作成した / 入力を 1 件以上送ったスコープだけ同期し、
+  そのスコープでは送られなかった有効定義も削除（アクティブ定義・その所有先に限定）。
+  作成時は payload 省略でも必須を hard に要求する（`product-attributes.test.ts` で固定）。
+- tx 内のロック順は Category（選択ノード + 祖先・id 昇順、`lockAttributeCategoryPath` を tx 先頭で）→
+  Product/Variant（書き込みで取得）→ Definition（id 昇順）→ Option（id 昇順）。
+- 既存バリアント編集ページ（`/products/[id]/variants/[variantId]`）は**現行リポジトリに存在しない**
+  （一覧のリンク先が 404）。そのためフォームの初期値ロード（既存属性値・A-11 の archivedCurrent 供給）は
+  UI 側未配線。サーバー側（A-11 検証）とスキーマ側は実装済み。
+
+**Step 9〜11 の実装上の判断**:
+- 店頭の「仕様」は**商品の現在のカテゴリノードに効く定義**だけを出す（書き込み検証と同じ解決規則）。
+  アーカイブ済み定義・カテゴリ移動で外れた定義の値は履歴として DB に残るが表示しない。
+  属性の読み取り失敗はページごと失敗させる（アレルゲン等の表示義務がある値を黙って欠落させない）。
+- シードの定義は `(categoryId, key, archivedAt: null)` で突き合わせ、`type` / `scope` / `multiValued` が
+  定数と食い違えば**上書きせず throw**（値行の複合 FK が `onUpdate: Restrict`）。選択肢の `archivedAt` は触らない。
+  E2E シード（`e2e-*`）には属性を置かないので、必須属性で既存 E2E の商品作成は落ちない。
+- 統合テストの race は、実装を差し替えずに「外側検証の後」「tx 内同期の直前」へフックを挟んで決定的に再現した。
+  ミューテーション確認: tx 内再検証を外すと 3 本が落ちる。**tx 先頭の `lockAttributeCategoryPath` を外しても落ちない** ——
+  商品行の UPDATE が FK 検査で参照先 Category（root / leaf）に `FOR KEY SHARE` を取り、カテゴリ移動側の
+  `FOR UPDATE`（移動ノード + 子孫）と衝突して同じ直列化が起きるため。不変条件は保たれているが、
+  このロックは現状「唯一の防御」ではない（多重防御）。
+
+**フォローアップ（Done criteria 外）— 2026-09-27 対応状況**:
+1. ✅ **商品フォームの初期値ロード**: 既存バリアントの編集ページ
+   `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` を新設
+   （`getProductVariantForEdit` → `findAttributeFormValues`。アーカイブ済み現在値は "(Discontinued)" で候補化）。
+   `dd5b6bd8` / `a3a84de1` / `924ae810` / `c27fde9b`
+2. ✅ **Q3 併存ルール 2（Spec 名と属性の重複警告）**: `findSpecAttributeOverlaps`、ブロックしない。`4f3795a0` / `6b8b36aa`
+3. ✅ **Q3-4（Spec の `min(1)`）**: 撤去を決定・実装（空行は未入力として落とす）。design.md に決定を記録。`827ee3f7` / `eeecb378`
+4. ⏳ **共有 DB への未適用マイグレーション**: 開発 DB（Neon）には `20260905101500_category_tree_alias_owner_preserve`
+   （本プラン外）と `20260926085624_category_attributes` が未適用。**オペレーター作業**
+   （`bunx prisma migrate deploy` → 任意で `bun run seed:luxury`）。
+5. ✅ **店頭の「Specifications」**: パイロット商品 2（家電・食品）とファッション 12 商品に属性値をシード
+   （Spec からの機械移行ではなく、主素材が明確なものだけ人手で対応づけ。混紡 2 商品は Spec のみ）。`b8bc160a` / `742e4cc9`
 
 ## Why this matters
 

@@ -231,7 +231,7 @@ Stop and report if:
   idiom the stock decrement uses. **Do not re-plan this as open work.**
 
   Still genuinely open (do *not* fold into the above): the `applyCoupon` lost-update
-  `$transaction` refactor tracked in `specs/.../08-open-questions.md` and the README Deferred
+  `$transaction` refactor tracked in `specs/.../08-open-questions.md` and `plans/DEFERRED.md`
   list. That was mentioned here only as an overlapping refactor, not as part of the cart-consumption
   follow-up, and it remains unaddressed.
 - ~~Reviewer should confirm the ref is released in a `finally` (no path leaves it stuck `true`, which would permanently disable ordering for that mounted component).~~ **Superseded — see below.**

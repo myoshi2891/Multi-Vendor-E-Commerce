@@ -1,4 +1,8 @@
-import { ShippingFeeMethod } from "@prisma/client";
+import {
+    AttributeScope,
+    AttributeType,
+    ShippingFeeMethod,
+} from "@prisma/client";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
 import * as z from "zod";
 
@@ -161,6 +165,28 @@ export const StoreFormSchema = z.object({
 });
 
 // Product form schema
+/**
+ * Spec（その他仕様）の行リスト。名前・値の両方が空の行は**未入力**として落とし
+ * （フォームは空行 1 つで始まる）、片方だけ入力された行は拒否する。件数は問わない。
+ */
+const specListSchema = (message: string) =>
+    z
+        .object({ name: z.string(), value: z.string() })
+        .array()
+        .transform((specs) =>
+            specs
+                .map((spec) => ({
+                    name: spec.name.trim(),
+                    value: spec.value.trim(),
+                }))
+                .filter((spec) => spec.name !== "" || spec.value !== "")
+        )
+        .refine(
+            (specs) =>
+                specs.every((spec) => spec.name !== "" && spec.value !== ""),
+            { message }
+        );
+
 export const ProductFormSchema = z.object({
     name: z
         .string({
@@ -306,39 +332,14 @@ export const ProductFormSchema = z.object({
                     "Size name, quantity, and price cannot be empty or less than 1.",
             }
         ),
-    product_specs: z
-        .object({
-            name: z.string(),
-            value: z.string(),
-        })
-        .array()
-        .min(1, "Product must have at least one product spec.")
-        .refine(
-            (product_specs) =>
-                product_specs.every(
-                    (s) => s.name.length > 0 && s.value.length > 0
-                ),
-            {
-                message: "All product specs must have a name and value.",
-            }
-        ),
-    variant_specs: z
-        .object({
-            name: z.string(),
-            value: z.string(),
-        })
-        .array()
-        .min(1, "Product must have at least one product variant spec.")
-        .refine(
-            (product_specs) =>
-                product_specs.every(
-                    (s) => s.name.length > 0 && s.value.length > 0
-                ),
-            {
-                message:
-                    "All product variant specs must have a name and value.",
-            }
-        ),
+    // Spec は「その他仕様」として温存し、任意にする（plan 069 / design.md Q3-4）。
+    // 構造化属性が主役になったため、Spec 空の商品も保存できる必要がある。
+    product_specs: specListSchema(
+        "All product specs must have a name and value."
+    ),
+    variant_specs: specListSchema(
+        "All product variant specs must have a name and value."
+    ),
     questions: z
         .object({
             question: z.string(),
@@ -770,3 +771,94 @@ export const AdminOrderFilterSchema = z.object({
 });
 
 export type AdminOrderFilter = z.infer<typeof AdminOrderFilterSchema>;
+
+// ---------------------------------------------------------------------------
+// カテゴリ別属性（plan 069 / ADR-007）
+// ---------------------------------------------------------------------------
+
+/** 属性・許容値の機械キー。不変（design.md Q7）なので URL 同様に厳格に絞る。 */
+const ATTRIBUTE_MACHINE_KEY_PATTERN = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+
+// Attribute definition form schema
+export const AttributeDefinitionFormSchema = z
+    .object({
+        categoryId: z
+            .string({ required_error: "Category is required." })
+            .min(1, { message: "Category is required." }),
+        key: z
+            .string({ required_error: "Key is required." })
+            .min(2, { message: "Key must be at least 2 characters long." })
+            .max(50, { message: "Key cannot exceed 50 characters." })
+            .regex(ATTRIBUTE_MACHINE_KEY_PATTERN, {
+                message:
+                    "Key must be lowercase snake_case (letters, numbers, underscores).",
+            }),
+        name: z
+            .string({ required_error: "Name is required." })
+            .trim()
+            .min(1, { message: "Name is required." })
+            .max(100, { message: "Name cannot exceed 100 characters." }),
+        type: z.nativeEnum(AttributeType),
+        scope: z.nativeEnum(AttributeScope),
+        unit: z
+            .string()
+            .trim()
+            .max(20, { message: "Unit cannot exceed 20 characters." })
+            .nullable(),
+        required: z.boolean(),
+        facetable: z.boolean(),
+        multiValued: z.boolean(),
+        sortOrder: z
+            .number({ invalid_type_error: "Sort order must be a number." })
+            .int()
+            .min(0)
+            .max(10000),
+    })
+    .superRefine((value, ctx) => {
+        // D-7: 多値は ENUM 限定（DB の CHECK と同じ規則を入口で先に返す）
+        if (value.multiValued && value.type !== AttributeType.ENUM) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["multiValued"],
+                message: "Only ENUM attributes can be multi-valued.",
+            });
+        }
+        // ADR-007 Risks: TEXT の facetable は distinct 値が発散してファセット UI が破綻する
+        if (value.facetable && value.type === AttributeType.TEXT) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["facetable"],
+                message: "TEXT attributes cannot be facetable.",
+            });
+        }
+    });
+
+export type AttributeDefinitionFormValues = z.infer<
+    typeof AttributeDefinitionFormSchema
+>;
+
+// Attribute option form schema
+export const AttributeOptionFormSchema = z.object({
+    value: z
+        .string({ required_error: "Value is required." })
+        .min(1, { message: "Value is required." })
+        .max(50, { message: "Value cannot exceed 50 characters." })
+        .regex(/^[a-z0-9]+(?:[_-][a-z0-9]+)*$/, {
+            message:
+                "Value must be lowercase letters and numbers separated by - or _.",
+        }),
+    label: z
+        .string({ required_error: "Label is required." })
+        .trim()
+        .min(1, { message: "Label is required." })
+        .max(100, { message: "Label cannot exceed 100 characters." }),
+    sortOrder: z
+        .number({ invalid_type_error: "Sort order must be a number." })
+        .int()
+        .min(0)
+        .max(10000),
+});
+
+export type AttributeOptionFormValues = z.infer<
+    typeof AttributeOptionFormSchema
+>;

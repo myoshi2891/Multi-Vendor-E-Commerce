@@ -4782,3 +4782,91 @@ CodeRabbit のインラインレビュー 8 件を現行コードに突き合わ
 | スイート数 | 199 | **199**（不変） |
 | 型エラー | 0 件 | **0 件** |
 | ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### plan 069 カテゴリ別属性 Step 9〜11（商品詳細表示・パイロットシード・統合テスト） (2026-09-27)
+
+#### 概要
+
+plan 069 の残作業のうち、商品詳細の構造化属性表示（Step 9）、パイロット 3 部門の属性定義シード（Step 10）、実 DB の統合テスト（Step 11）を実施した。Step 5〜8（2026-09-26）で未同期だったテスト統計もここで実測値へ揃える。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/attribute-repository.ts` / `src/queries/product.ts` | `findProductAttributeDisplay`: 商品の `categoryNode.path` に効く有効定義 ∩ 値行で表示行を作る。ENUM label は値行の FK 先（A-4）、VARIANT は `variantId` 単位 | `d33c207b` |
+| `src/components/store/product-page/product-specs.tsx` ほか | 「Specifications（構造化属性）/ Other specifications（Spec）」の 2 セクション化（空セクションは非表示） | `129ccca4` |
+| `prisma/seed/constants/categories.ts` | `lux-electronics` / `lux-gourmet`（各子 2）を追加（38 ノード） | `7542cbeb` |
+| `prisma/seed/seeders/attribute-seeder.ts` ほか | 家電（ルート + カメラ子で継承）・ファッション（women/men）・食品（allergens のみ多値）の定義 16 / 選択肢 46。使い捨て Postgres で 2 回実行し行内容ハッシュまで同一 | `fc3e2b5d` |
+| `tests/integration/category-attributes.test.ts` | +40: D-5/D-6/D-7・往復 (1)〜(7)・認可 3 本・A-2〜A-11・TEXT→NUMBER・ON CONFLICT 並行作成 | `5d54e5cf` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2184 passed / 2187 total | **2340 passed / 2343 total**（2026-09-27 実測・Step 5〜11 累計） |
+| スイート数 | 199 | **206**（+1 skipped 込み） |
+| Integration | 136 / 16 スイート | **181 / 17 スイート** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### plan 069 フォローアップ（編集ページ・Spec 任意化・重複警告・属性値シード） (2026-09-27)
+
+#### 概要
+
+plan 069 の Done criteria 外として残していたフォローアップのうち、コードで閉じる 4 件を実施した。共有開発 DB（Neon）への migration 適用はオペレーター判断のため未実施。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/attribute-repository.ts` | `findAttributeFormValues`: レコード単位の属性初期値と、そのレコードのアーカイブ済み現在値（A-11） | `dd5b6bd8` |
+| `src/queries/product.ts` | `getProductVariantForEdit`（`requireStoreOwner`・店舗スコープで商品を引き、フォームの形へ戻す） | `a3a84de1` |
+| `.../products/[productId]/variants/[variantId]/page.tsx` ほか | 既存バリアントの編集ページ（一覧のリンク先が 404 だった）。アーカイブ済み現在値は "(Discontinued)" で候補化 | `924ae810` |
+| `src/lib/schemas.ts` | Spec の `min(1)` を撤去（design.md Q3-4 の決定）。空行は未入力として落とす | `827ee3f7` / `eeecb378` |
+| `src/lib/attribute-definitions.ts` / `product-details.tsx` | Spec 名が属性と重なったら警告（ブロックしない・Q3 併存ルール 2） | `4f3795a0` / `6b8b36aa` |
+| `prisma/seed/` | パイロット商品 2（カメラ・チョコレート）と属性値シード（ファッション 12 商品は Spec の Material から明確に言えるものだけ人手で対応づけ）。使い捨て Postgres で 2 回実行し同一 | `b8bc160a` / `742e4cc9` |
+| `tests/integration/category-attributes.test.ts` | 編集ページの往復（読み込み → 無編集保存で値が変わらない）と他店舗商品で null | `c27fde9b` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2340 passed / 2343 total | **2372 passed / 2375 total**（2026-09-27 実測） |
+| スイート数 | 206 | **207** |
+| Integration | 181 / 17 スイート | **183 / 17 スイート** |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### PR#179 レビュー指摘・SonarCloud 対応 (2026-09-27)
+
+#### 概要
+
+PR#179 のレビュー指摘 4 件と SonarCloud の指摘 19 件に対応し、Quality Gate が落ちていた 2 条件（New Reliability Rating D・Coverage on New Code 66.8% < 80%）を解消する変更とテストを入れた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/attribute-sync.ts` / `src/queries/product.ts` | 読み取り専用行（Category / AttributeDefinition / AttributeOption）を `FOR SHARE` へ。Product / ProductVariant は `FOR UPDATE` のまま（同一商品の同期を直列化） | `173b0075` |
+| `src/lib/attribute-value.ts` / `attribute-schema.ts` | TEXT を trim 後の長さで検証し、`TEXT_MAX_LENGTH` をフォームと共有 | `173b0075` |
+| `src/lib/schemas.ts` | Spec の名前・値を一度だけ trim（空白だけの片側を拒否） | `173b0075` |
+| `src/queries/attribute.ts` | 属性定義・選択肢の再アーカイブを拒否し `archivedAt`（監査時刻）を保持 | `173b0075` |
+| SonarCloud 19 件 | `localeCompare`（Reliability）、認知的複雑度 3 件の関数分割、入れ子三項・optional chain・readonly props・`<output>`・`node:crypto` ほか | `173b0075` |
+| admin 属性 UI のテスト | フォーム 2 本・一覧列 2 本・`category-options`（いずれも New Code カバレッジ 0% → 100%） | `f80763c6`〜`f31416dc` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2372 passed / 2375 total | **2426 passed / 2429 total**（2026-09-27 実測。`review-seeder` +3〔`b05b9008`〕を含む） |
+| スイート数 | 207 | **212** |
+| Integration | 183 / 17 スイート | **183 / 17 スイート**（変更なし・今回は未実行） |
+| lcov（全体） | Lines 74.8%（2026-09-03） | **Lines 76.77% / Statements 77.17% / Branches 64.4%**（2026-09-27 再測定） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |

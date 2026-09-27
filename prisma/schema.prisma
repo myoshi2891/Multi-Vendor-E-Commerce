@@ -72,6 +72,9 @@ model Category {
   // Phase A で追加した新 FK 経路（Phase C で categoryId に統合される）
   nodeProducts Product[] @relation("CategoryNodeToProduct")
 
+  // カテゴリ別属性（plan 069 / ADR-007）。継承は path prefix で引く（design.md §3）
+  attributeDefinitions AttributeDefinition[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -188,11 +191,13 @@ model Product {
   storeId String
   store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
 
-  variants  ProductVariant[] @relation("ProductToProductVariant")
-  specs     Spec[]           @relation("ProductSpec")
-  questions Question[]       @relation("ProductQuestion")
-  reviews   Review[]         @relation("ReviewToProduct")
-  wishlist  Wishlist[]       @relation("WishlistToProduct")
+  variants ProductVariant[] @relation("ProductToProductVariant")
+  specs    Spec[]           @relation("ProductSpec")
+
+  attributeValues ProductAttributeValue[]
+  questions       Question[]              @relation("ProductQuestion")
+  reviews         Review[]                @relation("ReviewToProduct")
+  wishlist        Wishlist[]              @relation("WishlistToProduct")
 
   categoryId String
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
@@ -235,7 +240,9 @@ model ProductVariant {
   images ProductVariantImage[] @relation("ProductVariantToVariantImage")
   colors Color[]               @relation("ProductVariantColors")
   specs  Spec[]                @relation("ProductVariantSpec")
-  wishes Wishlist[]            @relation("WishlistToProductVariant")
+
+  attributeValues VariantAttributeValue[]
+  wishes          Wishlist[]              @relation("WishlistToProductVariant")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -315,6 +322,120 @@ model Spec {
 
   @@index([productId])
   @@index([variantId])
+}
+
+// ---------------------------------------------------------------------------
+// カテゴリ別属性（plan 069 / ADR-007 D-1〜D-7 / docs/design/category-attributes/design.md）
+//
+// Prisma スキーマで表現できない制約は migration の raw SQL が持つ:
+//   - AttributeDefinition の (categoryId, key) 一意はアクティブ行のみ（部分 UNIQUE）
+//   - 値テーブルの scope 固定 CHECK（D-5）/ type と埋まる列の一致 CHECK（D-6）
+//   - 単値・多値の一意性（部分 UNIQUE・D-7）/ 多値は ENUM 限定の CHECK（D-7）
+// ---------------------------------------------------------------------------
+
+enum AttributeType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  ENUM
+}
+
+enum AttributeScope {
+  PRODUCT
+  VARIANT
+}
+
+model AttributeDefinition {
+  id          String         @id @default(uuid())
+  categoryId  String
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  key         String // 機械キー（不変）
+  name        String // 表示名（可変）
+  type        AttributeType
+  scope       AttributeScope
+  unit        String?
+  required    Boolean        @default(false)
+  facetable   Boolean        @default(false)
+  multiValued Boolean        @default(false)
+  sortOrder   Int            @default(0)
+  archivedAt  DateTime?
+
+  options       AttributeOption[]
+  productValues ProductAttributeValue[]
+  variantValues VariantAttributeValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id, scope, type, multiValued])
+  @@index([categoryId, facetable])
+}
+
+model AttributeOption {
+  id           String              @id @default(uuid())
+  definitionId String
+  definition   AttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  value        String // 機械値（不変）
+  label        String // 表示名（可変）
+  sortOrder    Int                 @default(0)
+  archivedAt   DateTime?
+
+  productValues ProductAttributeValue[]
+  variantValues VariantAttributeValue[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([definitionId, value])
+  @@unique([id, definitionId])
+}
+
+model ProductAttributeValue {
+  id           String              @id @default(uuid())
+  productId    String
+  product      Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  definitionId String
+  scope        AttributeScope      @default(PRODUCT)
+  type         AttributeType
+  multiValued  Boolean
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type, multiValued], references: [id, scope, type, multiValued], onDelete: Restrict, onUpdate: Restrict)
+
+  valueText   String?
+  valueNumber Decimal?         @db.Decimal(18, 6)
+  valueBool   Boolean?
+  optionId    String?
+  option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict, onUpdate: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, definitionId])
+  @@index([definitionId, valueNumber])
+  @@index([definitionId, optionId])
+}
+
+model VariantAttributeValue {
+  id           String              @id @default(uuid())
+  variantId    String
+  variant      ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  definitionId String
+  scope        AttributeScope      @default(VARIANT)
+  type         AttributeType
+  multiValued  Boolean
+  definition   AttributeDefinition @relation(fields: [definitionId, scope, type, multiValued], references: [id, scope, type, multiValued], onDelete: Restrict, onUpdate: Restrict)
+
+  valueText   String?
+  valueNumber Decimal?         @db.Decimal(18, 6)
+  valueBool   Boolean?
+  optionId    String?
+  option      AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict, onUpdate: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([variantId, definitionId])
+  @@index([definitionId, valueNumber])
+  @@index([definitionId, optionId])
 }
 
 model Question {

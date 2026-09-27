@@ -106,6 +106,15 @@ jest.mock("@/lib/db", () => ({
     },
 }));
 
+// 属性の検証・同期は product-attributes.test.ts（実装を通す）と統合テストで検証する。
+// ここでは upsertProduct 本体の分岐とカテゴリのロックだけを見るため no-op にする。
+jest.mock("@/lib/attribute-sync", () => ({
+    parseAttributeInputs: jest.fn(() => []),
+    precheckAttributeValues: jest.fn(),
+    lockAttributeCategoryPath: jest.fn(),
+    syncAttributeValues: jest.fn(),
+}));
+
 jest.mock("cookies-next", () => ({
     getCookie: jest.fn(),
 }));
@@ -414,6 +423,11 @@ describe("upsertProduct", () => {
             });
             mockDb.store.findUnique.mockResolvedValue(createMockStore());
             mockDb.productVariant.findFirst.mockResolvedValue(null);
+            // バリアント作成は属性の同期と同じ tx で行う（plan 069）
+            mockDb.$transaction.mockImplementation(
+                async (fn: (tx: typeof mockDb) => Promise<unknown>) =>
+                    fn(mockDb)
+            );
         });
 
         it("既存商品に新しいバリアントを追加する", async () => {
@@ -568,9 +582,10 @@ describe("upsertProduct", () => {
             expect(mockDb.product.create).toHaveBeenCalled();
         });
 
-        it("対象ノードは SELECT … FOR UPDATE でロックしてから読む", async () => {
-            // Arrange —— upsertCategory が親を掴む行と同じ行をロックすることが、
-            // 「商品を L に紐づける」と「L の子を作る」の直列化の条件になる。
+        it("対象ノードは SELECT … FOR SHARE でロックしてから読む", async () => {
+            // Arrange —— upsertCategory が親を FOR UPDATE で掴む行と同じ行を共有ロックすることが、
+            // 「商品を L に紐づける」と「L の子を作る」の直列化の条件になる
+            // （商品保存どうしは共有ロック同士なので並行できる）。
             mockDb.product.findUnique.mockResolvedValue(null);
             mockLockedCategoryNode(LEAF_NODE);
 
@@ -582,7 +597,7 @@ describe("upsertProduct", () => {
 
             // Assert
             const sqlParts = mockDb.$queryRaw.mock.calls[0][0] as string[];
-            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+            expect(sqlParts.join("?")).toMatch(/FOR SHARE/);
             expect(sqlParts.join("?")).toMatch(/"Category"/);
         });
 

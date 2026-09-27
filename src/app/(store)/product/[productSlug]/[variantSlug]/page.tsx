@@ -67,6 +67,7 @@ export default async function ProductVariantPage({
         productId,
         variantInfo,
         specs,
+        attributes,
         questions,
         shippingDetails,
         category,
@@ -120,11 +121,17 @@ export default async function ProductVariantPage({
                             ]}
                         />
                     </>
-                    {(specs.product.length > 0 || specs.variant.length > 0) && (
+                    {(specs.product.length > 0 ||
+                        specs.variant.length > 0 ||
+                        attributes.product.length > 0 ||
+                        attributes.variant.length > 0) && (
                         <>
                             <Separator className="mt-6" />
-                            {/* Specs table */}
-                            <ProductSpecs specs={specs} />
+                            {/* Specs table: 構造化属性 + その他仕様（Spec） */}
+                            <ProductSpecs
+                                attributes={attributes}
+                                specs={specs}
+                            />
                         </>
                     )}
                     {questions.length > 0 && (

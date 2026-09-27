@@ -73,6 +73,19 @@
   null). `status String @default("OPEN")` (kept as `String` not enum until the
   operator-side admin UI defines the value set — see design.md 判断4). No money
   fields. Added via additive, non-destructive migration `add_support_ticket`.
+- AttributeDefinition, AttributeOption: per-category attribute schema (plan 069 /
+  [ADR-007](../../docs/architecture/decisions/007-attribute-storage.md)).
+  AttributeDefinition belongs to a Category (`onDelete: Restrict`) and carries an
+  immutable machine `key`, a mutable display `name`, `type`, `scope`, optional
+  `unit`, and `required` / `facetable` / `multiValued` flags. AttributeOption is the
+  allowed-value list of an `ENUM` definition (immutable `value`, mutable `label`;
+  cascades with its definition). Both are soft-deleted via `archivedAt` (ADR-007 D-4).
+- ProductAttributeValue, VariantAttributeValue: attribute values, split into one
+  table per owner (ADR-007 D-1; each cascades with its Product / ProductVariant).
+  Typed columns `valueText` / `valueNumber` (`Decimal(18,6)`, not money) /
+  `valueBool` / `optionId` (D-2, D-3). `scope`, `type`, and `multiValued` are
+  copied onto each value row so that composite FKs to the definition enforce them
+  at the DB level (D-5〜D-7; see Indexing and Uniqueness).
 
 ## Enumerations
 - Role: USER, ADMIN, SELLER
@@ -81,6 +94,8 @@
 - OrderStatus, PaymentStatus, PaymentMethod, ProductStatus
 - CouponScope: STORE, PLATFORM (Coupon.scope; default STORE)
 - SupportTicketCategory: CONTACT, RETURN_REQUEST, DISPUTE, PROBLEM_REPORT
+- AttributeType: TEXT, NUMBER, BOOLEAN, ENUM
+- AttributeScope: PRODUCT, VARIANT
 
 ## Money Field Convention
 - All monetary amounts use `Decimal(12,2)` (Prisma `@db.Decimal(12,2)`) for
@@ -98,14 +113,33 @@
   silently match a different node. Global uniqueness also keeps the existing query-shaped URLs
   working unchanged.
 - Composite unique: ShippingRate(storeId, countryId),
-  Review(userId, productId), Conversation(userId, storeId).
+  Review(userId, productId), Conversation(userId, storeId),
+  AttributeDefinition(id, scope, type, multiValued),
+  AttributeOption(definitionId, value), AttributeOption(id, definitionId).
+  The two `id`-leading keys are FK targets, not business uniqueness: value rows
+  reference the definition by `(definitionId, scope, type, multiValued)` and the
+  option by `(optionId, definitionId)`, so a value can neither disagree with its
+  definition's scope/type (ADR-007 D-5 / D-6) nor point at another definition's option.
+- Attribute constraints (hand-written in migration
+  `20260926085624_category_attributes`; partial indexes and CHECKs cannot be
+  expressed in `schema.prisma`):
+  - Partial unique `AttributeDefinition(categoryId, key) WHERE "archivedAt" IS NULL`
+    — uniqueness among active rows only, so archive + recreate with the same key
+    (type change route 2) is allowed.
+  - Partial unique per value table (ADR-007 D-7): single-valued
+    `(productId | variantId, definitionId) WHERE NOT "multiValued"`, multi-valued
+    `(productId | variantId, definitionId, optionId) WHERE "multiValued"`.
+  - CHECKs: `scope` pinned to `PRODUCT` / `VARIANT` per table (D-5); exactly the
+    column matching `type` is non-null (D-6); `multiValued` only for `ENUM` (D-7),
+    which together keep `optionId` non-null on multi-valued rows so the partial
+    unique never treats NULLs as distinct.
 - GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.
 
 ## ER 図 (Diagram)
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
-- **図の構成（10 ページ）**: `data-model.drawio` は機能ドメインごとに 10 タブに分割されている。
+- **図の構成（11 ページ）**: `data-model.drawio` は機能ドメインごとに 11 タブに分割されている。
   クロスドメインエッジを同一ページ内に収めるため、関連モデルは複数ページに重複掲載される。
 
   | Page | タブ名 | 掲載エンティティ数 | 概要 |
@@ -119,7 +153,8 @@
   | 7 | Identity | 2 | User / Store の Identity ドメイン |
   | 8 | Messaging | 5 | 購入者↔販売者メッセージング（Conversation / Message / User / Store / Order） |
   | 9 | Support | 3 | サポート受付（SupportTicket / User / Order） |
-  | 10 | Enums | 10 | 全 enum 定義の参照ページ（エッジなし） |
+  | 10 | Attributes | 7 | カテゴリ別属性（AttributeDefinition / AttributeOption / Product・VariantAttributeValue。plan 069 / ADR-007） |
+  | 11 | Enums | 12 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:

@@ -10,10 +10,18 @@ import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
 // Form handling utilities
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
-// Schema
-import { ProductFormSchema } from "@/lib/schemas";
+// Schema（カテゴリ別属性で動的に拡張する・plan 069）
+import {
+    emptyAttributeValues,
+    makeProductSchema,
+    toAttributePayload,
+    type ProductFormWithAttributes,
+} from "@/lib/attribute-schema";
+import {
+    findSpecAttributeOverlaps,
+    type AttributeDefinitionDTO,
+} from "@/lib/attribute-definitions";
 
 // カテゴリツリー（DB に触れない純粋ヘルパーのみ）
 import { isProductAssignableCategory } from "@/lib/category-path";
@@ -46,6 +54,7 @@ import ImageUpload from "../shared/image-upload";
 
 // Queries
 import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 
 // ReactTags
 import { WithOutContext as ReactTags } from "react-tag-input";
@@ -64,9 +73,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ProductWithVariantType } from "@/lib/types";
+import type { ProductFormData } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
+import AttributeFields from "./attribute-fields";
 
 // React date time picker
 import DateTimePicker from "react-datetime-picker";
@@ -95,7 +105,7 @@ const shippingFeeMethods = [
 ];
 
 interface ProductDetailsProps {
-    data?: Partial<ProductWithVariantType>;
+    data?: ProductFormData;
     categories: Category[];
     offerTags: OfferTag[];
     storeUrl: string;
@@ -162,11 +172,40 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // Temporary state for images
     const [images, setImages] = useState<{ url: string }[]>([]);
 
+    // 選択カテゴリに効く属性定義（祖先から継承・同一 key は最深ノード）。
+    // カテゴリ選択の変更で再取得し、スキーマも作り直す（design.md Q4）。
+    const [attributeDefs, setAttributeDefs] = useState<
+        AttributeDefinitionDTO[]
+    >([]);
+    // 直前に反映した定義。「定義なし → 定義なし」の遷移では state もフォーム値も
+    // 触らない（無意味な再描画と、テスト環境での act 外更新を避ける）。
+    const appliedDefsRef = useRef<AttributeDefinitionDTO[]>([]);
+    // 属性定義の取得失敗を販売者に伝える（黙って欄が消えると入力漏れに気づけない）
+    const [attributeLoadError, setAttributeLoadError] = useState<string | null>(
+        null
+    );
+    // 新バリアント画面では商品レベルを編集しないので、PRODUCT 属性は描画も送信もしない
+    // （送らない = サーバー側で同期対象外）。
+    const includeProductScope = !isNewVariantPage;
+    // 編集中レコードの現在値に含まれるアーカイブ済み選択肢（A-11）。候補と検証の両方に足す
+    const archivedCurrent = data?.archivedCurrent;
+    const productSchema = useMemo(
+        () =>
+            makeProductSchema(attributeDefs, {
+                includeProductScope,
+                archivedCurrent,
+            }),
+        [attributeDefs, includeProductScope, archivedCurrent]
+    );
+
     // Form hook for managing form state and validation
-    const form = useForm<z.infer<typeof ProductFormSchema>>({
+    const form = useForm<ProductFormWithAttributes>({
         mode: "onChange", // Form validation mode
-        resolver: zodResolver(ProductFormSchema), // Resolver for form validation
+        resolver: zodResolver(productSchema), // Resolver for form validation
         defaultValues: {
+            // 既存レコードの値（編集ページ）。定義の取得後は有効な定義の分だけが残る
+            productAttributes: data?.productAttributes ?? {},
+            variantAttributes: data?.variantAttributes ?? {},
             // Setting default form values from data (if available)
             name: data?.name ?? "",
             description: data?.description ?? "",
@@ -227,6 +266,85 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         }
     }, [selectedNodeId, categories, form]);
 
+    // カテゴリが変わったら属性定義を取り直す（古い応答で上書きしないよう cancelled で守る）
+    useEffect(() => {
+        let cancelled = false;
+        const fetchDefinitions = async () => {
+            try {
+                const defs = selectedNodeId
+                    ? await getEffectiveAttributeDefinitions(selectedNodeId)
+                    : [];
+                if (cancelled) return;
+                setAttributeLoadError(null);
+                if (defs.length === 0 && appliedDefsRef.current.length === 0) {
+                    return;
+                }
+                appliedDefsRef.current = defs;
+                setAttributeDefs(defs);
+                // 消えた定義の値は持ち越さず、残った定義の入力は保つ
+                form.setValue(
+                    "productAttributes",
+                    emptyAttributeValues(
+                        defs,
+                        "PRODUCT",
+                        form.getValues().productAttributes
+                    )
+                );
+                form.setValue(
+                    "variantAttributes",
+                    emptyAttributeValues(
+                        defs,
+                        "VARIANT",
+                        form.getValues().variantAttributes
+                    )
+                );
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error(
+                        "[ProductDetails:fetchDefinitions] Error:",
+                        error.message,
+                        error.stack
+                    );
+                } else {
+                    console.error(
+                        "[ProductDetails:fetchDefinitions] Unknown error:",
+                        error
+                    );
+                }
+                if (cancelled) return;
+                setAttributeLoadError(
+                    "Failed to load attributes for this category. Please reselect the category to try again."
+                );
+                if (appliedDefsRef.current.length > 0) {
+                    appliedDefsRef.current = [];
+                    setAttributeDefs([]);
+                }
+            }
+        };
+        void fetchDefinitions();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedNodeId, form]);
+
+    const productAttributeDefs = attributeDefs.filter(
+        (def) => def.scope === "PRODUCT"
+    );
+    const variantAttributeDefs = attributeDefs.filter(
+        (def) => def.scope === "VARIANT"
+    );
+
+    // Spec 名が構造化属性と重なったら警告する（ブロックしない・design.md Q3 併存ルール 2）。
+    // 新バリアント画面では商品 Spec を編集しないので対象外。
+    const specOverlaps = useMemo(
+        () =>
+            findSpecAttributeOverlaps(
+                [...(isNewVariantPage ? [] : productSpecs), ...variantSpecs],
+                attributeDefs
+            ),
+        [isNewVariantPage, productSpecs, variantSpecs, attributeDefs]
+    );
+
     // Extract errors state from form
     const errors = form.formState.errors;
 
@@ -242,6 +360,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 variantImage: data.variantImage
                     ? [{ url: data.variantImage }]
                     : [],
+                // 属性値は定義の取得後に埋める（上の fetchDefinitions）
+                productAttributes: form.getValues().productAttributes ?? {},
+                variantAttributes: form.getValues().variantAttributes ?? {},
             });
 
             // すべての local state を再初期化
@@ -260,8 +381,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     }, [data, form]);
 
     // Submit handler for form submission
-    const handleSubmit = async (values: z.infer<typeof ProductFormSchema>) => {
+    const handleSubmit = async (values: ProductFormWithAttributes) => {
         try {
+            const variantId = data?.variantId ? data.variantId : v4();
             // colors から空プレースホルダーを除外
             const filteredColors = values.colors.filter(
                 (c) => c.color.trim() !== ""
@@ -273,7 +395,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             const response = await upsertProduct(
                 {
                     productId: data?.productId ? data.productId : v4(),
-                    variantId: data?.variantId ? data.variantId : v4(),
+                    variantId,
                     name: values.name,
                     description: values.description,
                     variantName: values.variantName,
@@ -299,6 +421,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                         values.freeShippingForAllCountries,
                     freeShippingCountriesIds:
                         values.freeShippingCountriesIds || [],
+                    attributes: toAttributePayload(attributeDefs, values, {
+                        variantId,
+                        includeProductScope,
+                    }),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 },
@@ -728,6 +854,38 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 />
                             </div>
                         </InputFieldset>
+                        {/* カテゴリ別属性（plan 069）: 商品レベルは 1 度だけ、バリアント属性はこのバリアントに */}
+                        {attributeLoadError && (
+                            <p
+                                role="alert"
+                                className="rounded-md border border-destructive/50 p-3 text-sm font-medium text-destructive"
+                            >
+                                {attributeLoadError}
+                            </p>
+                        )}
+                        {includeProductScope &&
+                            productAttributeDefs.length > 0 && (
+                                <InputFieldset label="Product attributes">
+                                    <AttributeFields
+                                        control={form.control}
+                                        prefix="productAttributes"
+                                        definitions={productAttributeDefs}
+                                        archivedCurrent={archivedCurrent}
+                                        disabled={isLoading}
+                                    />
+                                </InputFieldset>
+                            )}
+                        {variantAttributeDefs.length > 0 && (
+                            <InputFieldset label="Variant attributes">
+                                <AttributeFields
+                                    control={form.control}
+                                    prefix="variantAttributes"
+                                    definitions={variantAttributeDefs}
+                                    archivedCurrent={archivedCurrent}
+                                    disabled={isLoading}
+                                />
+                            </InputFieldset>
+                        )}
                         {/* Brand, Sku, weight */}
                         <InputFieldset
                             label={
@@ -968,6 +1126,24 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                     </div>
                                 </TabsContent>
                             </Tabs>
+                            {specOverlaps.length > 0 && (
+                                <output className="mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                    <p>
+                                        These specifications duplicate
+                                        attributes of this category. Enter the
+                                        values in the attribute fields and keep
+                                        specifications for supplementary notes.
+                                    </p>
+                                    <ul className="mt-1 list-disc pl-5">
+                                        {specOverlaps.map((overlap) => (
+                                            <li key={overlap.specName}>
+                                                {overlap.specName} →{" "}
+                                                {overlap.attributeName}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </output>
+                            )}
                         </InputFieldset>
 
                         {/* Questions */}

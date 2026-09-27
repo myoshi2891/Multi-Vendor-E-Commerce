@@ -190,11 +190,16 @@ GIN インデックスが効くのは包含条件による**絞り込み**であ
 2. **入力**: 商品フォームで、そのカテゴリに `AttributeDefinition` が存在する `name` を
    `Spec` に入力しようとしたら**警告する**（ブロックはしない —— 販売者が
    「単位違いの補足」を書きたい正当なケースがある）。
+   *(2026-09-27 実装: `findSpecAttributeOverlaps` —— 表示名・機械キーと、大文字小文字・区切りを
+   無視して照合し、Spec 欄の下に警告を出す。保存は止めない)*
 3. **ファセット対象は構造化属性のみ**。`Spec` は 0-4 のとおり元々検索に使われておらず、
    この境界は現状を追認するだけで新たな制約を課さない。
 4. `Spec` を**新規に必須化しない**。現行の Zod は `min(1)` で最低 1 件を要求しているが
    （0-3）、構造化属性が主役になった後もこの必須を残すかは 069 で判断する
    （残すと「その他仕様」が空の商品を保存できない）。
+   **決定（2026-09-27）: `min(1)` を外す。** 名前・値の両方が空の行は未入力として落とし、
+   片方だけの行は従来どおり拒否する（`ProductFormSchema` の `specListSchema`）。
+   サーバー側は元々 Spec の件数を検証していないため、変更はフォームの検証だけで閉じる。
 
 ### Q4. フォームの動的生成 → **ファクトリ関数化（i18n 案A と同形）**
 
@@ -271,6 +276,13 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
   保存時に writer が `(definitionId, value)`（`@@unique([definitionId, value])`）で
   `optionId` へ解決する —— `label` を保存経路に通さないこと（Q7 の改名が値を壊す）。
 
+  **`AttributeDefinitionDto.options` は定義単位の型だが、値は record 単位で再取得すること。**
+  上記の型定義には `productId` / `variantId` が現れないため、「1 商品につき 1 回取得して
+  全バリアントのフォームで使い回す」実装を誘発しやすい。しかし下記のとおりアーカイブ済み
+  現在値の混在はレコード（VARIANT なら `variantId`）ごとに異なるため、**継承クエリは
+  対象レコードの ID を引数に取り、バリアントごとに個別に呼び出す**こと。同一商品配下の
+  複数バリアントで DTO インスタンスをキャッシュ共有しない。
+
 - **アーカイブ済み許容値は「新規選択不可・既存値は保持」**。選択肢の生成は
   `archivedAt: null` に絞る（Q7「enum 許容値の削除」＝論理削除の目的）。一方、
   既存の値が既にアーカイブ済みの `optionId` を持つ場合、その値を候補から外したまま
@@ -297,8 +309,16 @@ export const makeProductSchema = (defs: AttributeDefinitionDTO[]) =>
   - この規則を **`AttributeValueInput` / DTO / schema 構築（`buildAttributeShape`）/
     writer / トランザクション内の再検証**すべてに同じ形で適用すること。
     `VariantAttributeValue` の検証は `variantId` 単位で候補集合を組み立て、
-    商品全体で union しない。
+    商品全体で union しない。**`buildAttributeShape` には呼び出し元が
+    「その 1 バリアントのために取得した」`AttributeDefinitionDto` を渡すこと** ——
+    商品配下の他バリアントの DTO と混在させたり、複数バリアント分の `options` を
+    マージしてから渡したりしない。
   - サーバー側の再検証も同じ集合で行うこと（クライアントの候補は認可ではない）。
+  - **検証シナリオ**: 同一商品の 2 つのバリアントがそれぞれ異なる `optionId` を
+    アーカイブ済みの現在値として持つ場合、バリアント A の編集フォームの候補には
+    A の現在値のみが（廃止）表記で混ざり、B の現在値は現れない（逆も同様）。
+    双方とも無編集保存は成功するが、A の候補から B の現在値へ変更する保存は拒否される
+    （下記 A-11）。
 
 - **候補が 1 件も無い `ENUM` 定義の扱いを決めておく**。`z.enum([])` は型として
   成立しない（非空タプルを要求する）ので、実装は必ずこの分岐を持つ:
@@ -454,6 +474,7 @@ model AttributeDefinition {
   unit       String?
   required   Boolean   @default(false)             // Q5
   facetable  Boolean   @default(false)             // plan 015 が消費
+  multiValued Boolean  @default(false)             // §4「多値属性の決定」: ENUM 限定
   archivedAt DateTime?                             // Q7: 論理削除
   // Q7 の型変更 経路 2 は「同じ key の旧定義を archive して新定義を作る」ため、
   // 素の複合ユニークだと衝突する。アクティブ行のみを対象にした
@@ -471,7 +492,9 @@ model ProductAttributeValue {
   valueNumber  Decimal? @db.Decimal(18, 6)         // Float 禁止規約に倣う
   valueBool    Boolean?
   optionId     String?                             // ENUM は FK（Q7 の自動追随）
-  @@unique([productId, definitionId])
+  multiValued  Boolean                             // 定義から複製（§4「多値属性の決定」）
+  // 一意性は raw SQL の部分 UNIQUE（単値: WHERE NOT multiValued / 多値: optionId を含む）
+  @@index([productId, definitionId])
 }
 // VariantAttributeValue は同型（FK は variantId・NOT NULL・scope は VARIANT 固定）。
 // 完全な定義（複合 FK (optionId, definitionId) / (definitionId, scope) を含む）は
@@ -589,6 +612,36 @@ for (const d of defs.sort((a, b) => a.category.path.length - b.category.path.len
 > （チェックリストと推奨解は [plan 069](../../../plans/069-implement-category-attributes.md) Step 2）。
 > **本 spike はこの穴を認識したうえで未決として残す**（見落としではない）。
 
+### 多値属性の決定（plan 069 Step 2・2026-09-26 確定）
+
+**`multiValued Boolean` を定義側に持たせ、値行へ複合 FK で非正規化して DB で強制する。**
+ADR-007 D-5（`scope`）/ D-6（`type`）と同じ「複合 FK + CHECK」の形であり、
+多値かどうかも書き手の規律に頼らない。
+
+| 項目 | 単値（`multiValued = false`） | 多値（`multiValued = true`） |
+|---|---|---|
+| 対象型 | 全型 | **ENUM 限定**（定義側 CHECK: `NOT "multiValued" OR "type" = 'ENUM'`） |
+| 一意性 | 部分 UNIQUE `(所有先, "definitionId") WHERE NOT "multiValued"` | 部分 UNIQUE `(所有先, "definitionId", "optionId") WHERE "multiValued"` |
+| upsert キー | **使わない**（下記） | 使わない（キーが行ではなく行集合） |
+| delete の単位 | `(所有先, definitionId)` の 1 行 | `(所有先, definitionId)` の行集合 |
+| `optionId` の nullability | ENUM 以外は NULL（D-6 の CHECK） | NOT NULL（D-6 の CHECK が ENUM ⇒ NOT NULL を強制） |
+| NULL 重複の防止 | 複合キーに `optionId` を含めない | 多値は ENUM 限定なので NULL 行が存在しない |
+
+所有先は `ProductAttributeValue` では `productId`、`VariantAttributeValue` では `variantId`
+（PRODUCT / VARIANT の両スコープに同形の 2 本ずつ、計 4 本の部分 UNIQUE を張る）。
+
+- `AttributeDefinition` の複合 unique は `@@unique([id, scope, type, multiValued])` へ広げ、
+  値行は `(definitionId, scope, type, multiValued)` で参照する。値行が残っている限り
+  定義の `multiValued` は切り替えられない（`type` 変更と同じ性質 —— 中間状態が表現不能）。
+- Prisma スキーマの `@@unique([productId, definitionId])` / `@@unique([variantId, definitionId])`
+  は `@@index` に置き換え、一意性は migration の raw SQL の部分 UNIQUE が担う
+  （前例: `20260809064416_add_shipping_address_single_default_index`）。
+- **保存は単値・多値とも「`(所有先, definitionId)` の `deleteMany` → `createMany`」の置換で
+  一様に書く。** 部分 UNIQUE しか持たない列には Prisma の `upsert` の where キーが
+  生成されないため、単値の upsert は成立しない。意味は同じ（1 属性 1 値は部分 UNIQUE が保証）。
+- **波及範囲**: 多値を使うのは食品部門の `allergens` のみ（家電・ファッションは全て単値）。
+  STOP 条件「食品以外へ波及」には該当しない。
+
 ---
 
 ## 5. 検証シナリオ（plan 069 の必須項目）
@@ -605,6 +658,7 @@ for (const d of defs.sort((a, b) => a.category.path.length - b.category.path.len
 | A-8 | `Spec` の読み書きが**壊れていない**（「その他仕様」として動作する） | Q3 の温存。回帰ガード |
 | A-9 | 任意の `NUMBER` 属性に**空入力**を保存 → 再読込しても `0` に変換されない（ラウンドトリップで「未入力」が保たれる） | 空文字 → `Number("")` は `0` になる。`valueNumber` は nullable なので、`0` と「未入力」は DB 上区別できる —— 区別を潰すのはフォーム側の暗黙変換だけであり、潰れると必須判定・ファセット集計の双方が静かに狂う |
 | A-10 | 祖先カテゴリと子孫カテゴリに**同じ `key` の属性定義**がある場合の読み取り・保存・拒否（どちらの定義に紐づいたか、`@@unique` の単位で衝突しないか） | §3 の継承は祖先パス集合を引くため、同名 `key` が 2 定義ぶん返る。定義単位で解決しないと近い側の値が遠い側を上書きする / 保存できない、が起きる。A-2（継承の実効性）が扱うのは 1 定義のみで、この重複は未カバー |
+| A-11 | 同一商品配下の**2 バリアントがそれぞれ異なるアーカイブ済み現在値**を持つ ENUM 属性で、バリアント A の候補に B の現在値が混入しない（逆も同様）。両バリアントとも無編集保存は成功し、A の候補経由で B の現在値へ変更する保存は拒否される | Q4 の「例外は値の所有単位ごとに閉じる」。DTO を商品単位でキャッシュ共有すると union が再発するため、`variantId` 単位の再取得が効いていることを直接検証する |
 
 ---
 

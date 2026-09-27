@@ -10,8 +10,10 @@ import {
 import "@testing-library/jest-dom";
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { Category, Country, OfferTag, ShippingFeeMethod } from "@prisma/client";
-import { ProductWithVariantType } from "@/lib/types";
+import type { ProductFormData, ProductWithVariantType } from "@/lib/types";
 import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
+import type { AttributeDefinitionDTO } from "@/lib/attribute-definitions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -31,6 +33,10 @@ import { useRouter } from "next/navigation";
  */
 
 jest.mock("@/queries/product", () => ({ upsertProduct: jest.fn() }));
+// カテゴリ別属性（plan 069）。定義なしのカテゴリとして振る舞わせる
+jest.mock("@/queries/attribute", () => ({
+    getEffectiveAttributeDefinitions: jest.fn(async () => []),
+}));
 jest.mock("@/hooks/use-toast");
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 jest.mock("uuid", () => ({ v4: () => "generated-uuid" }));
@@ -384,7 +390,7 @@ const validData = (
         ...overrides,
     }) as Partial<ProductWithVariantType>;
 
-const renderForm = (data?: Partial<ProductWithVariantType>) =>
+const renderForm = (data?: ProductFormData) =>
     render(
         <ProductDetails
             data={data}
@@ -1000,6 +1006,280 @@ describe("ProductDetails", () => {
                     "my-store"
                 )
             );
+        });
+    });
+    describe("Spec（その他仕様）は任意（plan 069 / design.md Q3-4）", () => {
+        it("正常系: 空行のままでも保存でき、空行は送らない", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(
+                validData({
+                    product_specs: [{ name: "", value: "" }],
+                    variant_specs: [{ name: "", value: "" }],
+                })
+            );
+
+            // Act
+            fireEvent.click(
+                await screen.findByRole("button", { name: /Save/i })
+            );
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0]).toEqual(
+                expect.objectContaining({
+                    product_specs: [],
+                    variant_specs: [],
+                })
+            );
+        });
+    });
+
+    describe("カテゴリ別属性（plan 069）", () => {
+        const attributeDef = (
+            overrides: Partial<AttributeDefinitionDTO> &
+                Pick<AttributeDefinitionDTO, "id" | "name">
+        ): AttributeDefinitionDTO => ({
+            key: overrides.id,
+            type: "TEXT",
+            scope: "PRODUCT",
+            unit: null,
+            required: false,
+            multiValued: false,
+            options: [],
+            ...overrides,
+        });
+        const definitions = [
+            attributeDef({
+                id: "def-material",
+                name: "Material",
+                required: true,
+            }),
+            attributeDef({
+                id: "def-weight",
+                name: "Net weight",
+                type: "NUMBER",
+                scope: "VARIANT",
+                unit: "g",
+            }),
+        ];
+
+        beforeEach(() => {
+            (getEffectiveAttributeDefinitions as jest.Mock).mockResolvedValue(
+                definitions
+            );
+        });
+
+        it("正常系: 選択カテゴリの属性を商品・バリアント別に描画し、payload に所有先付きで載せる", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+            const material = await screen.findByLabelText("Material *");
+
+            // Act
+            fireEvent.change(material, { target: { value: "Silk" } });
+            fireEvent.change(screen.getByLabelText("Net weight (g)"), {
+                target: { value: "120" },
+            });
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(getEffectiveAttributeDefinitions).toHaveBeenCalledWith(
+                LEAF_ID
+            );
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-material",
+                    value: "Silk",
+                },
+                {
+                    scope: "VARIANT",
+                    definitionId: "def-weight",
+                    variantId: "variant-1",
+                    value: "120",
+                },
+            ]);
+        });
+
+        it("異常系: 必須属性が空ならサーバーを呼ばない（A-3）", async () => {
+            renderForm(validData());
+            await screen.findByLabelText("Material *");
+
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            expect(
+                await screen.findByText("Material is required.")
+            ).toBeInTheDocument();
+            expect(mockUpsertProduct).not.toHaveBeenCalled();
+        });
+
+        it("正常系: 任意 NUMBER の空入力は 0 ではなく null（削除対象）で送る（A-9）", async () => {
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData());
+            fireEvent.change(await screen.findByLabelText("Material *"), {
+                target: { value: "Silk" },
+            });
+
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(
+                mockUpsertProduct.mock.calls[0][0].attributes
+            ).toContainEqual({
+                scope: "VARIANT",
+                definitionId: "def-weight",
+                variantId: "variant-1",
+                value: null,
+            });
+        });
+
+        it("編集: 既存の属性値を初期値として表示し、無編集保存でそのまま送る", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData(),
+                productAttributes: { "def-material": "Wool" },
+                variantAttributes: { "def-weight": "250" },
+            });
+
+            // Assert —— 初期値
+            expect(await screen.findByLabelText("Material *")).toHaveValue(
+                "Wool"
+            );
+            expect(screen.getByLabelText("Net weight (g)")).toHaveValue("250");
+
+            // Act —— 無編集で保存
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-material",
+                    value: "Wool",
+                },
+                {
+                    scope: "VARIANT",
+                    definitionId: "def-weight",
+                    variantId: "variant-1",
+                    value: "250",
+                },
+            ]);
+        });
+
+        it("A-11: このレコードのアーカイブ済み現在値だけを (Discontinued) 付きで候補に混ぜ、無編集保存を通す", async () => {
+            // Arrange
+            (getEffectiveAttributeDefinitions as jest.Mock).mockResolvedValue([
+                attributeDef({
+                    id: "def-color",
+                    name: "Color",
+                    type: "ENUM",
+                    options: [{ id: "opt-red", value: "red", label: "Red" }],
+                }),
+            ]);
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData(),
+                productAttributes: { "def-color": "opt-old" },
+                archivedCurrent: {
+                    "def-color": [
+                        { id: "opt-old", value: "old", label: "Old red" },
+                    ],
+                },
+            });
+
+            // Assert —— 候補
+            expect(
+                await screen.findByRole("option", {
+                    name: "Old red (Discontinued)",
+                })
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole("option", { name: "Red" })
+            ).toBeInTheDocument();
+
+            // Act
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+
+            // Assert —— スキーマが現在値を弾かない
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            expect(mockUpsertProduct.mock.calls[0][0].attributes).toEqual([
+                {
+                    scope: "PRODUCT",
+                    definitionId: "def-color",
+                    value: "opt-old",
+                },
+            ]);
+        });
+
+        it("Spec 名が属性と重なると警告するが、保存は止めない（design.md Q3 併存ルール 2）", async () => {
+            // Arrange
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm({
+                ...validData({
+                    product_specs: [{ name: "material", value: "Cotton" }],
+                }),
+                productAttributes: { "def-material": "Cotton" },
+            });
+
+            // Assert —— 警告
+            const warning = await screen.findByRole("status");
+            expect(warning).toHaveTextContent("material → Material");
+
+            // Act & Assert —— ブロックしない
+            fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+        });
+
+        it("異常系: 定義の取得に失敗したら alert で知らせ、再選択で成功すれば消す", async () => {
+            // Arrange —— 初回（LEAF_ID）だけ失敗させる
+            jest.spyOn(console, "error").mockImplementation(() => undefined);
+            (getEffectiveAttributeDefinitions as jest.Mock)
+                .mockRejectedValueOnce(new Error("network down"))
+                .mockResolvedValue(definitions);
+            renderForm(validData());
+
+            // Assert —— 失敗は利用者に見える形で出る（黙って欄が消えない）
+            expect(await screen.findByRole("alert")).toHaveTextContent(
+                /reselect the category/i
+            );
+
+            // Act —— 別カテゴリを選び直すと再取得される
+            fireEvent.click(screen.getByRole("option", { name: "Phone" }));
+
+            // Assert —— 成功した取得でエラーは消える
+            await screen.findByLabelText("Material *");
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+
+        it("Spec 名が属性と重ならなければ警告しない", async () => {
+            renderForm(validData());
+            await screen.findByLabelText("Material *");
+
+            expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        });
+
+        it("新バリアント画面: 商品属性は描画も送信もしない（同期対象外）", async () => {
+            mockUpsertProduct.mockResolvedValue({} as never);
+            renderForm(validData({ variantId: undefined }));
+            await screen.findByLabelText("Net weight (g)");
+
+            expect(
+                screen.queryByLabelText("Material *")
+            ).not.toBeInTheDocument();
+            fireEvent.click(
+                screen.getByRole("button", {
+                    name: /Create variant|Save|Create/i,
+                })
+            );
+
+            await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
+            const attributes =
+                mockUpsertProduct.mock.calls[0][0].attributes ?? [];
+            expect(attributes.every((a) => a.scope === "VARIANT")).toBe(true);
         });
     });
 });

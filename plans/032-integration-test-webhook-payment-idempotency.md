@@ -426,7 +426,7 @@ Stop and report back (do not improvise) if:
 
 ## Maintenance notes
 
-- CORRECTNESS-01（`charge.refunded` の paymentIntentId 相関 — `plans/README.md` Deferred 参照）が
+- CORRECTNESS-01（`charge.refunded` の paymentIntentId 相関 — `plans/DEFERRED.md` Deferred 参照）が
   実装されると Stripe 側の相関ロジックが変わる。S3 の fixture 差し替え箇所が影響を受けるため、
   その実装 PR では本テストの期待値見直しをレビュー観点に含めること。
 - TESTS-02（`src/queries/stripe.ts` / `paypal.ts` の同期 capture 経路）は plan 003 の
