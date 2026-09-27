@@ -61,7 +61,7 @@ export default function CountryLanguageCurrencySelector({
         <DismissibleDetails className="group relative inline-block">
             {/* Trigger */}
             <summary
-                aria-label="Country, language and currency"
+                aria-label={`Country, language and currency: ${userCountry.name}, English, USD`}
                 className="cursor-pointer list-none"
             >
                 <div className="flex h-11 cursor-pointer items-center px-2 py-0">
