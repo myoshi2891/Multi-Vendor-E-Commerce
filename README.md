@@ -1,8 +1,10 @@
-# 概要
+# Luxuries for Happiness
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/myoshi2891/Multi-Vendor-E-Commerce)
 
 **関連ソースファイル**: `CLAUDE.md` / `package.json` / `src/lib/db.ts` / `src/app/layout.tsx` / `src/middleware.ts` / `specs/multi-vendor-ecommerce/04-interfaces.md`
+
+**贅沢・幸運・幸せをテーマにしたマルチベンダーEC。** ホームは英日併記の三幕構成と、スクロールに反応する3Dの宝石でブランドの世界観を表現します。動きを減らす設定やWebGL非対応端末では静止ビジュアルを表示します。
 
 このドキュメントは、マルチベンダー EC プラットフォームのアーキテクチャ・技術スタック・コアビジネスシステムの概要を提供します。このプラットフォームは、複数の独立した出品者が統一されたマーケットプレイス内で店舗を運営し、顧客が異なるベンダーから一度の取引で購入できる仕組みを実現しています。
 

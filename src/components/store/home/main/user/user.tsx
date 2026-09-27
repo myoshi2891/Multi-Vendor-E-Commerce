@@ -38,7 +38,7 @@ export default async function HomeUserCard({
                     <div className="absolute inset-x-0 top-16 mx-auto h-5 w-full cursor-pointer text-center font-bold capitalize text-black">
                         {user
                             ? user.fullName?.toLowerCase()
-                            : "Welcome to GoShop"}
+                            : "Welcome to Luxuries for Happiness"}
                     </div>
                 </div>
                 {/* User Links */}

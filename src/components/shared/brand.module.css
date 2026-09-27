@@ -1,0 +1,33 @@
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 13px;
+    color: #d4ba83;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 29px;
+    line-height: 1;
+    white-space: nowrap;
+}
+.star {
+    font-size: 33px;
+    font-weight: 400;
+}
+.subtitle {
+    display: block;
+    font-family: Arial, sans-serif;
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    margin-top: 7px;
+}
+@media (max-width: 480px) {
+    .brand {
+        font-size: 24px;
+        gap: 9px;
+    }
+    .star {
+        font-size: 26px;
+    }
+    .subtitle {
+        font-size: 7px;
+    }
+}
