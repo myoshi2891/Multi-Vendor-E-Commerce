@@ -19,8 +19,11 @@ export default async function Selection() {
                   )
               )
             : [await getProducts({}, "", 1, 8)];
+        // 先頭バリアントの無い商品は下の map で除外されるため、描画可能なものだけで
+        // フォールバック要否を判定する (全件除外で空グリッドになるのを防ぐ)。
         const selected = results
             .flatMap((result) => result.products)
+            .filter((product) => product.variants[0])
             .slice(0, 8);
         const result = {
             products: selected.length
