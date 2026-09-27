@@ -12,11 +12,17 @@ export default async function Selection() {
     let failed = false;
     try {
         const categories = await getBrandCategories();
+        // カテゴリ別取得は個別に settle させ、一部が失敗しても成功分は描画する。
+        // 失敗の詳細は getProducts 側で構造化ログ済みのため、ここでは除外のみ行う。
         const results = categories.length
-            ? await Promise.all(
-                  categories.map((category) =>
-                      getProducts({ category: category.url }, "", 1, 3)
+            ? (
+                  await Promise.allSettled(
+                      categories.map((category) =>
+                          getProducts({ category: category.url }, "", 1, 3)
+                      )
                   )
+              ).flatMap((settled) =>
+                  settled.status === "fulfilled" ? [settled.value] : []
               )
             : [await getProducts({}, "", 1, 8)];
         // 先頭バリアントの無い商品は下の map で除外されるため、描画可能なものだけで
