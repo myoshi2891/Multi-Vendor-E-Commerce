@@ -8,6 +8,7 @@ test.beforeEach(async ({ context, baseURL }) => {
 for (const width of [390, 768, 1440]) {
     test(`home is readable and navigable at ${width}px`, async ({ page }, testInfo) => {
         await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: "reduce" });
         const errors: string[] = [];
         page.on("pageerror", error => errors.push(error.message));
         await page.goto("/");
