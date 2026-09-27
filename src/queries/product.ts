@@ -121,7 +121,7 @@ const assertLeafCategoryNode = async (
     // Prisma の fluent API はロック句を表現できないため $queryRaw を使う
     // （値は常にパラメータ化される）。
     const lockedRows = await tx.$queryRaw<LockedProductCategoryNode[]>`
-        SELECT "id", "parentId", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR UPDATE
+        SELECT "id", "parentId", "depth", "childCount" FROM "Category" WHERE "id" = ${categoryNodeId} FOR SHARE
     `;
     const node = lockedRows[0] ?? null;
     if (!node) throw new Error("Category not found.");

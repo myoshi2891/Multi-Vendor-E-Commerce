@@ -174,15 +174,16 @@ const specListSchema = (message: string) =>
         .object({ name: z.string(), value: z.string() })
         .array()
         .transform((specs) =>
-            specs.filter(
-                (spec) => spec.name.trim() !== "" || spec.value.trim() !== ""
-            )
+            specs
+                .map((spec) => ({
+                    name: spec.name.trim(),
+                    value: spec.value.trim(),
+                }))
+                .filter((spec) => spec.name !== "" || spec.value !== "")
         )
         .refine(
             (specs) =>
-                specs.every(
-                    (spec) => spec.name.length > 0 && spec.value.length > 0
-                ),
+                specs.every((spec) => spec.name !== "" && spec.value !== ""),
             { message }
         );
 

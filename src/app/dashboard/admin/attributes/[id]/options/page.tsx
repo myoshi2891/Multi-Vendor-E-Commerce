@@ -14,12 +14,12 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminAttributeOptionsPage({
     params,
-}: {
+}: Readonly<{
     params: Promise<{ id: string }>;
-}) {
+}>) {
     const { id } = await params;
     const definition = await getAttributeDefinition(id);
-    if (!definition || definition.type !== "ENUM") notFound();
+    if (definition?.type !== "ENUM") notFound();
 
     return (
         <div className="flex w-full flex-col gap-6">

@@ -99,7 +99,7 @@ interface World {
     product: { id: string; storeId: string } | null;
     variants: { id: string; productId: string }[];
     definitions: DefinitionFixture[];
-    /** tx 内（FOR UPDATE 付き）の読み取りだけに返す定義。race の再現に使う。 */
+    /** tx 内（行ロック付き）の読み取りだけに返す定義。race の再現に使う。 */
     lockedDefinitions?: DefinitionFixture[];
     options: { id: string; definitionId: string; archivedAt: Date | null }[];
 }
@@ -129,7 +129,7 @@ const routeQueryRaw = (world: World) =>
             const values = flattenValues(rawValues);
             const locked = rawValues.some(
                 (value) =>
-                    isSqlFragment(value) && value.sql.includes("FOR UPDATE")
+                    isSqlFragment(value) && /FOR (UPDATE|SHARE)/.test(value.sql)
             );
             if (sql.includes('FROM "AttributeDefinition" d')) {
                 return locked && world.lockedDefinitions
@@ -625,7 +625,7 @@ describe("upsertProduct の属性値保存", () => {
     });
 
     it("tx 内の再検証: 外側の検証後に定義が archive されたら属性行を 1 行も書かない", async () => {
-        // Arrange: 外側（ロックなし）ではアクティブ、tx 内（FOR UPDATE）ではアーカイブ済み
+        // Arrange: 外側（ロックなし）ではアクティブ、tx 内（行ロック付き）ではアーカイブ済み
         const active = definition({ id: "origin_note" });
         const world: World = {
             product: null,

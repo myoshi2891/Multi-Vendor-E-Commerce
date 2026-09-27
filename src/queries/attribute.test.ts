@@ -5,6 +5,7 @@ import {
     archiveAttributeDefinition,
     restoreAttributeDefinition,
     upsertAttributeOption,
+    archiveAttributeOption,
     changeAttributeTypeToNumber,
     getEffectiveAttributeDefinitions,
 } from "./attribute";
@@ -91,6 +92,12 @@ const lockedDefinition = (overrides: Record<string, unknown> = {}) => ({
     archivedAt: null,
     ...overrides,
 });
+
+const recordNotFound = () =>
+    new Prisma.PrismaClientKnownRequestError("Record to update not found", {
+        code: "P2025",
+        clientVersion: "test",
+    });
 
 const uniqueViolation = () =>
     new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
@@ -326,9 +333,20 @@ describe("archiveAttributeDefinition / restoreAttributeDefinition", () => {
         await archiveAttributeDefinition("def-1");
 
         expect(mockDb.attributeDefinition.update).toHaveBeenCalledWith({
-            where: { id: "def-1" },
+            where: { id: "def-1", archivedAt: null },
             data: { archivedAt: expect.any(Date) },
         });
+    });
+
+    it("アーカイブ済み（または存在しない）定義の archive は拒否し、archivedAt を上書きしない", async () => {
+        // Arrange —— where の archivedAt: null に一致しない行は P2025
+        asAdmin();
+        mockDb.attributeDefinition.update.mockRejectedValue(recordNotFound());
+
+        // Act & Assert
+        await expect(archiveAttributeDefinition("def-1")).rejects.toThrow(
+            "Attribute not found or already archived."
+        );
     });
 
     it("restore で同 key のアクティブ定義と衝突したら重複メッセージを返す", async () => {
@@ -347,6 +365,29 @@ describe("archiveAttributeDefinition / restoreAttributeDefinition", () => {
             "Only admins can perform this action."
         );
         expect(mockDb.attributeDefinition.update).not.toHaveBeenCalled();
+    });
+});
+
+describe("archiveAttributeOption", () => {
+    it("アクティブな選択肢だけを対象に archivedAt を立てる", async () => {
+        asAdmin();
+        mockDb.attributeOption.update.mockResolvedValue({ id: "opt-1" });
+
+        await archiveAttributeOption("opt-1");
+
+        expect(mockDb.attributeOption.update).toHaveBeenCalledWith({
+            where: { id: "opt-1", archivedAt: null },
+            data: { archivedAt: expect.any(Date) },
+        });
+    });
+
+    it("アーカイブ済み（または存在しない）選択肢の archive は拒否する", async () => {
+        asAdmin();
+        mockDb.attributeOption.update.mockRejectedValue(recordNotFound());
+
+        await expect(archiveAttributeOption("opt-1")).rejects.toThrow(
+            "Option not found or already archived."
+        );
     });
 });
 

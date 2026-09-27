@@ -10,6 +10,7 @@
  */
 import * as z from "zod";
 import { ProductFormSchema } from "@/lib/schemas";
+import { TEXT_MAX_LENGTH } from "@/lib/attribute-value";
 import type {
     ArchivedCurrentOptions,
     AttributeDefinitionDTO,
@@ -32,7 +33,6 @@ export interface MakeProductSchemaOptions {
 type AttributeShape = Record<string, z.ZodType<AttributeFormValue>>;
 
 const NUMERIC_PATTERN = /^-?\d+(\.\d+)?$/;
-const TEXT_MAX_LENGTH = 500;
 
 const requiredMessage = (def: AttributeDefinitionDTO) =>
     `${def.name} is required.`;

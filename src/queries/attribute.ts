@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { AttributeScope, AttributeType, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 // 認可ガード (src/lib/auth-guards.ts) 経由でロール検証を集約する
@@ -43,6 +43,11 @@ const isForeignKeyViolation = (error: unknown): boolean =>
     (error.code === "P2003" ||
         (error.code === "P2010" && error.meta?.code === "23503"));
 
+/** 更新対象の行が無い（Prisma API: P2025）。 */
+const isRecordNotFound = (error: unknown): boolean =>
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025";
+
 /**
  * catch 節の共通処理。業務エラーと既知の制約違反は意味のあるメッセージで、
  * それ以外は構造化ログ + 汎用メッセージで再送出する。
@@ -51,9 +56,12 @@ const rethrow = (
     tag: string,
     fallback: string,
     error: unknown,
-    messages: { unique?: string; foreignKey?: string } = {}
+    messages: { unique?: string; foreignKey?: string; notFound?: string } = {}
 ): never => {
     if (error instanceof AttributeActionError) throw new Error(error.message);
+    if (messages.notFound && isRecordNotFound(error)) {
+        throw new Error(messages.notFound);
+    }
     if (messages.unique && isUniqueViolation(error)) {
         throw new Error(messages.unique);
     }
@@ -235,15 +243,19 @@ export const upsertAttributeDefinition = async (input: unknown) => {
 export const archiveAttributeDefinition = async (definitionId: string) => {
     await requireAdmin();
     try {
+        // アクティブな行だけを対象にし、再アーカイブで元の archivedAt（監査時刻）を上書きしない
         return await db.attributeDefinition.update({
-            where: { id: definitionId },
+            where: { id: definitionId, archivedAt: null },
             data: { archivedAt: new Date() },
         });
     } catch (error: unknown) {
         return rethrow(
             "archiveAttributeDefinition",
             "Error archiving attribute.",
-            error
+            error,
+            {
+                notFound: "Attribute not found or already archived.",
+            }
         );
     }
 };
@@ -382,15 +394,19 @@ export const upsertAttributeOption = async (
 export const archiveAttributeOption = async (optionId: string) => {
     await requireAdmin();
     try {
+        // アクティブな行だけを対象にし、再アーカイブで元の archivedAt（監査時刻）を上書きしない
         return await db.attributeOption.update({
-            where: { id: optionId },
+            where: { id: optionId, archivedAt: null },
             data: { archivedAt: new Date() },
         });
     } catch (error: unknown) {
         return rethrow(
             "archiveAttributeOption",
             "Error archiving option.",
-            error
+            error,
+            {
+                notFound: "Option not found or already archived.",
+            }
         );
     }
 };

@@ -18,9 +18,9 @@ export const dynamic = "force-dynamic";
  */
 export default async function SellerEditProductVariantPage({
     params,
-}: {
+}: Readonly<{
     params: Promise<{ storeUrl: string; productId: string; variantId: string }>;
-}) {
+}>) {
     const { storeUrl, productId, variantId } = await params;
     const product = await getProductVariantForEdit(
         storeUrl,

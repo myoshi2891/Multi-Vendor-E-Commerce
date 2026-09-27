@@ -3,6 +3,7 @@ import {
     toAttributeValueRows,
     fromAttributeValueRows,
     isEmptyAttributeInput,
+    TEXT_MAX_LENGTH,
     type AttributeValueRow,
 } from "./attribute-value";
 
@@ -109,6 +110,20 @@ describe("toAttributeValueRows", () => {
         });
     });
 
+    it("TEXT は trim 後の長さで上限を判定し、trim 済みの値を保存する", () => {
+        // Arrange —— 前後空白を除けばちょうど上限
+        const body = "a".repeat(TEXT_MAX_LENGTH);
+
+        // Act
+        const result = toAttributeValueRows(def("TEXT"), `  ${body}  `);
+
+        // Assert
+        expect(result).toEqual({
+            ok: true,
+            rows: [row({ type: "TEXT", valueText: body })],
+        });
+    });
+
     describe("異常系", () => {
         it.each([
             ["NUMBER に数値でない文字列", def("NUMBER"), "28g"],
@@ -122,6 +137,11 @@ describe("toAttributeValueRows", () => {
             ["NUMBER が小数 7 桁", def("NUMBER"), "0.1234567"],
             ["BOOLEAN に文字列", def("BOOLEAN"), "true"],
             ["TEXT に数値", def("TEXT"), 1],
+            [
+                "TEXT が trim 後も上限を超える",
+                def("TEXT"),
+                "a".repeat(TEXT_MAX_LENGTH + 1),
+            ],
             ["単値 ENUM に配列", def("ENUM"), ["a"]],
             ["多値 ENUM に文字列", def("ENUM", true), "a"],
             ["多値 ENUM に空文字の要素", def("ENUM", true), ["a", ""]],

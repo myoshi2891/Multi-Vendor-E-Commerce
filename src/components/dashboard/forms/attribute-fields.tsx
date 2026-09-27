@@ -46,8 +46,11 @@ interface AttributeFieldsProps {
     disabled?: boolean;
 }
 
-const labelFor = (def: AttributeDefinitionDTO) =>
-    `${def.name}${def.unit ? ` (${def.unit})` : ""}${def.required ? " *" : ""}`;
+const labelFor = (def: AttributeDefinitionDTO) => {
+    const unit = def.unit ? ` (${def.unit})` : "";
+    const requiredMark = def.required ? " *" : "";
+    return `${def.name}${unit}${requiredMark}`;
+};
 
 const asString = (value: AttributeFormValue | undefined): string =>
     typeof value === "string" ? value : "";
@@ -55,13 +58,26 @@ const asString = (value: AttributeFormValue | undefined): string =>
 const asStringArray = (value: AttributeFormValue | undefined): string[] =>
     Array.isArray(value) ? value : [];
 
-interface ControlProps {
-    def: AttributeDefinitionDTO;
-    /** アクティブな選択肢 + このレコードのアーカイブ済み現在値（"(Discontinued)" 表記付き）。 */
-    options: readonly AttributeOptionDTO[];
+/** BOOLEAN の値を Select の値へ（未選択は番兵値）。 */
+const booleanSelectValue = (value: AttributeFormValue | undefined): string => {
+    if (value === true) return "true";
+    if (value === false) return "false";
+    return UNSET_VALUE;
+};
+
+interface ValueControlProps {
     value: AttributeFormValue | undefined;
     onChange: (value: AttributeFormValue) => void;
     disabled?: boolean;
+}
+
+interface OptionControlProps extends ValueControlProps {
+    /** アクティブな選択肢 + このレコードのアーカイブ済み現在値（"(Discontinued)" 表記付き）。 */
+    options: readonly AttributeOptionDTO[];
+}
+
+interface ControlProps extends OptionControlProps {
+    def: AttributeDefinitionDTO;
 }
 
 const OptionSelect: FC<ControlProps> = ({
@@ -92,12 +108,14 @@ const OptionSelect: FC<ControlProps> = ({
     </Select>
 );
 
-const BooleanSelect: FC<ControlProps> = ({ value, onChange, disabled }) => (
+const BooleanSelect: FC<ValueControlProps> = ({
+    value,
+    onChange,
+    disabled,
+}) => (
     <Select
         disabled={disabled}
-        value={
-            value === true ? "true" : value === false ? "false" : UNSET_VALUE
-        }
+        value={booleanSelectValue(value)}
         onValueChange={(next) =>
             onChange(next === UNSET_VALUE ? null : next === "true")
         }
@@ -115,7 +133,7 @@ const BooleanSelect: FC<ControlProps> = ({ value, onChange, disabled }) => (
     </Select>
 );
 
-const MultiOptionCheckboxes: FC<ControlProps> = ({
+const MultiOptionCheckboxes: FC<OptionControlProps> = ({
     value,
     onChange,
     disabled,
@@ -148,7 +166,7 @@ const MultiOptionCheckboxes: FC<ControlProps> = ({
 };
 
 const AttributeControl: FC<ControlProps> = (props) => {
-    const { def, value, onChange, disabled } = props;
+    const { def, options, value, onChange, disabled } = props;
     switch (def.type) {
         case "TEXT":
             return (
@@ -173,10 +191,21 @@ const AttributeControl: FC<ControlProps> = (props) => {
                 </FormControl>
             );
         case "BOOLEAN":
-            return <BooleanSelect {...props} />;
+            return (
+                <BooleanSelect
+                    value={value}
+                    onChange={onChange}
+                    disabled={disabled}
+                />
+            );
         case "ENUM":
             return def.multiValued ? (
-                <MultiOptionCheckboxes {...props} />
+                <MultiOptionCheckboxes
+                    options={options}
+                    value={value}
+                    onChange={onChange}
+                    disabled={disabled}
+                />
             ) : (
                 <OptionSelect {...props} />
             );

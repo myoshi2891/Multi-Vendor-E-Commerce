@@ -582,9 +582,10 @@ describe("upsertProduct", () => {
             expect(mockDb.product.create).toHaveBeenCalled();
         });
 
-        it("対象ノードは SELECT … FOR UPDATE でロックしてから読む", async () => {
-            // Arrange —— upsertCategory が親を掴む行と同じ行をロックすることが、
-            // 「商品を L に紐づける」と「L の子を作る」の直列化の条件になる。
+        it("対象ノードは SELECT … FOR SHARE でロックしてから読む", async () => {
+            // Arrange —— upsertCategory が親を FOR UPDATE で掴む行と同じ行を共有ロックすることが、
+            // 「商品を L に紐づける」と「L の子を作る」の直列化の条件になる
+            // （商品保存どうしは共有ロック同士なので並行できる）。
             mockDb.product.findUnique.mockResolvedValue(null);
             mockLockedCategoryNode(LEAF_NODE);
 
@@ -596,7 +597,7 @@ describe("upsertProduct", () => {
 
             // Assert
             const sqlParts = mockDb.$queryRaw.mock.calls[0][0] as string[];
-            expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+            expect(sqlParts.join("?")).toMatch(/FOR SHARE/);
             expect(sqlParts.join("?")).toMatch(/"Category"/);
         });
 

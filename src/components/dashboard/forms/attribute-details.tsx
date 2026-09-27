@@ -118,6 +118,10 @@ const AttributeDetails: FC<AttributeDetailsProps> = ({ data, categories }) => {
     });
 
     const isLoading = form.formState.isSubmitting;
+    const idleLabel = isEdit
+        ? "Save attribute information"
+        : "Create attribute";
+    const submitLabel = isLoading ? "loading..." : idleLabel;
 
     const handleSubmit = async (values: AttributeDefinitionFormValues) => {
         try {
@@ -376,11 +380,7 @@ const AttributeDetails: FC<AttributeDetailsProps> = ({ data, categories }) => {
                             />
                         ))}
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading
-                                ? "loading..."
-                                : isEdit
-                                  ? "Save attribute information"
-                                  : "Create attribute"}
+                            {submitLabel}
                         </Button>
                     </form>
                 </Form>

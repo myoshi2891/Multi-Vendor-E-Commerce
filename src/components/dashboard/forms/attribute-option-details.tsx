@@ -70,6 +70,8 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
     });
 
     const isLoading = form.formState.isSubmitting;
+    const idleLabel = isEdit ? "Save option" : "Add option";
+    const submitLabel = isLoading ? "loading..." : idleLabel;
 
     const handleSubmit = async (values: AttributeOptionFormValues) => {
         try {
@@ -171,11 +173,7 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
                             )}
                         />
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading
-                                ? "loading..."
-                                : isEdit
-                                  ? "Save option"
-                                  : "Add option"}
+                            {submitLabel}
                         </Button>
                     </form>
                 </Form>

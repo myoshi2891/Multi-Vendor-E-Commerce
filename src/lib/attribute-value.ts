@@ -45,6 +45,9 @@ export const ATTRIBUTE_VALUE_COLUMNS_SELECT = {
 
 /** `Decimal(18, 6)` に収まる範囲（整数部 12 桁・小数部 6 桁）。 */
 const NUMBER_INTEGER_LIMIT = new Prisma.Decimal("1e12");
+
+/** TEXT 値の最大長（trim 後）。フォーム側（`buildAttributeShape`）と共有する。 */
+export const TEXT_MAX_LENGTH = 500;
 const NUMBER_SCALE = 6;
 const NUMERIC_PATTERN = /^-?\d+(\.\d+)?$/;
 
@@ -82,6 +85,72 @@ const parseNumber = (input: unknown): Prisma.Decimal | null => {
     return decimal;
 };
 
+const invalid = (error: string): ToAttributeValueRowsResult => ({
+    ok: false,
+    error,
+});
+
+const toTextRows = (
+    def: AttributeValueDef,
+    input: unknown
+): ToAttributeValueRowsResult => {
+    if (typeof input !== "string") return invalid("Expected a text value.");
+    const valueText = input.trim();
+    if (valueText.length > TEXT_MAX_LENGTH) {
+        return invalid(`Text cannot exceed ${TEXT_MAX_LENGTH} characters.`);
+    }
+    return { ok: true, rows: [{ ...emptyRow(def), valueText }] };
+};
+
+const toNumberRows = (
+    def: AttributeValueDef,
+    input: unknown
+): ToAttributeValueRowsResult => {
+    const valueNumber = parseNumber(input);
+    if (!valueNumber) return invalid("Expected a number within range.");
+    return { ok: true, rows: [{ ...emptyRow(def), valueNumber }] };
+};
+
+const toBooleanRows = (
+    def: AttributeValueDef,
+    input: unknown
+): ToAttributeValueRowsResult => {
+    if (typeof input !== "boolean") return invalid("Expected a boolean value.");
+    return { ok: true, rows: [{ ...emptyRow(def), valueBool: input }] };
+};
+
+const toEnumRows = (
+    def: AttributeValueDef,
+    input: unknown
+): ToAttributeValueRowsResult => {
+    if (!def.multiValued) {
+        if (typeof input !== "string") {
+            return invalid("Expected a single option.");
+        }
+        return { ok: true, rows: [{ ...emptyRow(def), optionId: input }] };
+    }
+    const isOptionList =
+        Array.isArray(input) &&
+        input.every((item) => typeof item === "string" && item.trim() !== "");
+    if (!isOptionList) return invalid("Expected a list of options.");
+    // 重複は畳む（選択肢ごとに 1 行）
+    const optionIds = [...new Set<string>(input)];
+    return {
+        ok: true,
+        rows: optionIds.map((optionId) => ({ ...emptyRow(def), optionId })),
+    };
+};
+
+const ROW_CONVERTERS: Record<
+    AttributeType,
+    (def: AttributeValueDef, input: unknown) => ToAttributeValueRowsResult
+> = {
+    TEXT: toTextRows,
+    NUMBER: toNumberRows,
+    BOOLEAN: toBooleanRows,
+    ENUM: toEnumRows,
+};
+
 /**
  * 入力値を値テーブルの行（値列部分）へ変換する。
  *
@@ -92,62 +161,10 @@ export function toAttributeValueRows(
     input: unknown
 ): ToAttributeValueRowsResult {
     if (def.multiValued && def.type !== "ENUM") {
-        return { ok: false, error: "Multi-valued attributes must be ENUM." };
+        return invalid("Multi-valued attributes must be ENUM.");
     }
     if (isEmptyAttributeInput(input)) return { ok: true, rows: [] };
-
-    switch (def.type) {
-        case "TEXT": {
-            if (typeof input !== "string") {
-                return { ok: false, error: "Expected a text value." };
-            }
-            return {
-                ok: true,
-                rows: [{ ...emptyRow(def), valueText: input.trim() }],
-            };
-        }
-        case "NUMBER": {
-            const valueNumber = parseNumber(input);
-            if (!valueNumber) {
-                return { ok: false, error: "Expected a number within range." };
-            }
-            return { ok: true, rows: [{ ...emptyRow(def), valueNumber }] };
-        }
-        case "BOOLEAN": {
-            if (typeof input !== "boolean") {
-                return { ok: false, error: "Expected a boolean value." };
-            }
-            return { ok: true, rows: [{ ...emptyRow(def), valueBool: input }] };
-        }
-        case "ENUM": {
-            if (!def.multiValued) {
-                if (typeof input !== "string") {
-                    return { ok: false, error: "Expected a single option." };
-                }
-                return {
-                    ok: true,
-                    rows: [{ ...emptyRow(def), optionId: input }],
-                };
-            }
-            if (!Array.isArray(input)) {
-                return { ok: false, error: "Expected a list of options." };
-            }
-            const optionIds: string[] = [];
-            for (const item of input) {
-                if (typeof item !== "string" || item.trim() === "") {
-                    return { ok: false, error: "Expected a list of options." };
-                }
-                if (!optionIds.includes(item)) optionIds.push(item);
-            }
-            return {
-                ok: true,
-                rows: optionIds.map((optionId) => ({
-                    ...emptyRow(def),
-                    optionId,
-                })),
-            };
-        }
-    }
+    return ROW_CONVERTERS[def.type](def, input);
 }
 
 /**

@@ -1110,10 +1110,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 </TabsContent>
                             </Tabs>
                             {specOverlaps.length > 0 && (
-                                <div
-                                    role="status"
-                                    className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
-                                >
+                                <output className="mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
                                     <p>
                                         These specifications duplicate
                                         attributes of this category. Enter the
@@ -1128,7 +1125,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             </li>
                                         ))}
                                     </ul>
-                                </div>
+                                </output>
                             )}
                         </InputFieldset>
 

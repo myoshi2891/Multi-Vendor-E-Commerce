@@ -312,6 +312,28 @@ describe("ProductFormSchema", () => {
                 "All product variant specs must have a name and value."
             );
         });
+
+        it("空白だけの名前・値は空として扱い、入力済みの行は trim して残す", () => {
+            // Arrange —— 片方が空白だけの行は「片方だけ入力」と同じ
+            const blankName = {
+                ...validData,
+                product_specs: [{ name: "  ", value: "Cotton" }],
+            };
+            const padded = {
+                ...validData,
+                product_specs: [{ name: " Material ", value: " Cotton " }],
+            };
+
+            // Act
+            const blankResult = ProductFormSchema.safeParse(blankName);
+            const paddedResult = ProductFormSchema.parse(padded);
+
+            // Assert
+            expect(blankResult.success).toBe(false);
+            expect(paddedResult.product_specs).toEqual([
+                { name: "Material", value: "Cotton" },
+            ]);
+        });
     });
 
     it("descriptionが200文字未満の場合エラー", () => {
