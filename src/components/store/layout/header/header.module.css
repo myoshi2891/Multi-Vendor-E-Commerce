@@ -127,9 +127,6 @@
     .actions {
         gap: 12px;
     }
-    .account {
-        display: none;
-    }
     .announcement {
         font-size: 7px;
         gap: 12px;
