@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: false,
-    transpilePackages: ['@react-three/fiber', 'three', 'its-fine'],
+    transpilePackages: ['@react-three/fiber', 'three'],
     images: {
         remotePatterns: [
             {
