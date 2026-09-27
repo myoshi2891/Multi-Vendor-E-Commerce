@@ -101,6 +101,7 @@
 }
 .menuPanel > details > div {
     position: relative;
+    top: auto;
 }
 .menuPanel > details > div > div {
     margin-left: 0;
