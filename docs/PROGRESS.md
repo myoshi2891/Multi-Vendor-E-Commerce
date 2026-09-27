@@ -4840,3 +4840,33 @@ plan 069 の Done criteria 外として残していたフォローアップの�
 | Integration | 181 / 17 スイート | **183 / 17 スイート** |
 | 型エラー | 0 件 | **0 件** |
 | ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### PR#179 レビュー指摘・SonarCloud 対応 (2026-09-27)
+
+#### 概要
+
+PR#179 のレビュー指摘 4 件と SonarCloud の指摘 19 件に対応し、Quality Gate が落ちていた 2 条件（New Reliability Rating D・Coverage on New Code 66.8% < 80%）を解消する変更とテストを入れた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/lib/attribute-sync.ts` / `src/queries/product.ts` | 読み取り専用行（Category / AttributeDefinition / AttributeOption）を `FOR SHARE` へ。Product / ProductVariant は `FOR UPDATE` のまま（同一商品の同期を直列化） | `173b0075` |
+| `src/lib/attribute-value.ts` / `attribute-schema.ts` | TEXT を trim 後の長さで検証し、`TEXT_MAX_LENGTH` をフォームと共有 | `173b0075` |
+| `src/lib/schemas.ts` | Spec の名前・値を一度だけ trim（空白だけの片側を拒否） | `173b0075` |
+| `src/queries/attribute.ts` | 属性定義・選択肢の再アーカイブを拒否し `archivedAt`（監査時刻）を保持 | `173b0075` |
+| SonarCloud 19 件 | `localeCompare`（Reliability）、認知的複雑度 3 件の関数分割、入れ子三項・optional chain・readonly props・`<output>`・`node:crypto` ほか | `173b0075` |
+| admin 属性 UI のテスト | フォーム 2 本・一覧列 2 本・`category-options`（いずれも New Code カバレッジ 0% → 100%） | `f80763c6`〜`f31416dc` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2372 passed / 2375 total | **2426 passed / 2429 total**（2026-09-27 実測。`review-seeder` +3〔`b05b9008`〕を含む） |
+| スイート数 | 207 | **212** |
+| Integration | 183 / 17 スイート | **183 / 17 スイート**（変更なし・今回は未実行） |
+| lcov（全体） | Lines 74.8%（2026-09-03） | **Lines 76.77% / Statements 77.17% / Branches 64.4%**（2026-09-27 再測定） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（14 warnings は既存） |

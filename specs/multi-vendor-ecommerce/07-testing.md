@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2372 passed / 2375 total across 207 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+- 2426 passed / 2429 total across 212 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+  PR#179 follow-ups cover the admin attribute forms (`tests/component/dashboard/attribute-details`,
+  `attribute-option-details`), the admin attribute list / option columns and actions
+  (`src/app/dashboard/admin/attributes/**/columns.test.tsx`) and the category option loader, and
+  add regression tests for the TEXT length limit, spec trimming and the re-archive guard.
+  Earlier record (2372 / 2375 across 207 suites, 2026-09-27):
   Plan 069 follow-ups add `src/queries/product-edit.test.ts` (edit-page loader: IDOR tiers, form
   shape, attribute initial values) and extend the attribute, schema, product-form and seeder
   tests. Integration is 183 across 17 suites (+2: the edit page load-and-save round trip).
