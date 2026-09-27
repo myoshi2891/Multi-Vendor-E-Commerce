@@ -39,10 +39,10 @@ export default function HomePage() {
                 </div>
                 <Suspense
                     fallback={
-                        <div className={styles.empty} role="status">
+                        <output className={styles.empty}>
                             Discovering the collection… /
                             コレクションを読み込んでいます
-                        </div>
+                        </output>
                     }
                 >
                     <Selection />
@@ -51,7 +51,7 @@ export default function HomePage() {
             <div className={styles.closing}>
                 <span aria-hidden="true">✦</span>
                 <p>
-                    A little luxury. A lot of happiness.
+                    A little luxury. A lot of happiness.{" "}
                     <small lang="ja">贅沢は、幸せのきっかけ。</small>
                 </p>
                 <span aria-hidden="true">✦</span>

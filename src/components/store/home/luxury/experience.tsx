@@ -38,9 +38,9 @@ class SceneBoundary extends Component<
 /** One decorative canvas follows three HTML chapters; commerce never waits for WebGL. */
 export default function Experience({
     categories,
-}: {
+}: Readonly<{
     categories: CollectionLink[];
-}) {
+}>) {
     const root = useRef<HTMLDivElement>(null);
     const reduced = useSyncExternalStore(
         subscribeMotion,
@@ -86,6 +86,9 @@ export default function Experience({
         };
     }, []);
     const animate = reduced === false && !paused;
+    let motionLabel = "PAUSE MOTION";
+    if (reduced) motionLabel = "STILL EXPERIENCE";
+    else if (paused) motionLabel = "RESUME MOTION";
     return (
         <div
             ref={root}
@@ -133,11 +136,7 @@ export default function Experience({
                         ) : (
                             <Pause size={12} />
                         )}{" "}
-                        {reduced
-                            ? "STILL EXPERIENCE"
-                            : paused
-                              ? "RESUME MOTION"
-                              : "PAUSE MOTION"}
+                        {motionLabel}
                     </button>
                 </div>
             </div>

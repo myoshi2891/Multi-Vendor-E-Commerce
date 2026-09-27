@@ -92,23 +92,26 @@ export default async function Selection() {
                 </Link>
             ))}
             {!products.length && (
-                <div role="status">
-                    <p>
-                        {failed
-                            ? "Our collection is taking a little longer to arrive."
-                            : "Something extraordinary is on its way."}
-                    </p>
-                    <p lang="ja">
-                        {failed
-                            ? "商品を読み込めませんでした。再読み込みしてお試しください。"
-                            : "新しいコレクションの登場をお待ちください。"}
-                    </p>
+                <>
+                    {/* <output> はフレーズ内容のみ許容するため、リンクは live region の外に置く */}
+                    <output className={styles.statusMessage}>
+                        <span>
+                            {failed
+                                ? "Our collection is taking a little longer to arrive."
+                                : "Something extraordinary is on its way."}
+                        </span>
+                        <span lang="ja">
+                            {failed
+                                ? "商品を読み込めませんでした。再読み込みしてお試しください。"
+                                : "新しいコレクションの登場をお待ちください。"}
+                        </span>
+                    </output>
                     <a href={failed ? "/#collections" : "/browse"}>
                         {failed
                             ? "Try again / 再読み込み"
                             : "Explore the store →"}
                     </a>
-                </div>
+                </>
             )}
         </div>
     );

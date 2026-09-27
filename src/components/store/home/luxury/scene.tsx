@@ -20,7 +20,12 @@ interface Props {
     active: boolean;
     compact: boolean;
 }
-function Sculpture({ progress, compact }: Omit<Props, "active">) {
+/** スクロール進捗に応じた彫刻の水平位置。前半は右→左、後半は左→右へ流れる。compact 時は中央固定。 */
+function sculptureX(p: number, compact: boolean): number {
+    if (compact) return 0;
+    return p < 0.5 ? 1.9 - p * 7 : -1.6 + (p - 0.5) * 7;
+}
+function Sculpture({ progress, compact }: Readonly<Omit<Props, "active">>) {
     const group = useRef<Group>(null);
     const gem = useRef<Mesh>(null);
     const material = useRef<MeshPhysicalMaterial>(null);
@@ -73,7 +78,7 @@ function Sculpture({ progress, compact }: Omit<Props, "active">) {
         const warmth = Math.max(0, (p - 0.45) / 0.55);
         if (group.current) {
             target.set(
-                compact ? 0 : p < 0.5 ? 1.9 - p * 7 : -1.6 + (p - 0.5) * 7,
+                sculptureX(p, compact),
                 Math.sin(t * 0.6) * 0.12,
                 0
             );
@@ -187,7 +192,7 @@ function ContextGuard({ onLost }: { onLost: () => void }) {
     }, [gl, onLost]);
     return null;
 }
-export default function Scene({ progress, active, compact }: Props) {
+export default function Scene({ progress, active, compact }: Readonly<Props>) {
     const [lost, setLost] = useState(false);
     if (lost) return null;
     return (

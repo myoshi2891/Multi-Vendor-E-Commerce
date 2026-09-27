@@ -336,9 +336,14 @@
     margin-top: 8px;
 }
 .empty {
+    display: block;
     border-block: 1px solid #cdc7b6;
     padding: 45px 0;
     line-height: 2;
+}
+.statusMessage,
+.statusMessage > span {
+    display: block;
 }
 .empty a {
     text-decoration: underline;
