@@ -37,7 +37,8 @@ export default async function UserMenu() {
     }
 
     return (
-        <DismissibleDetails className="group relative">
+        // モバイルでは details を static にし、検索/メニューパネルと同じく header 基準で配置する
+        <DismissibleDetails className="group relative max-sm:static">
             {/* Trigger */}
             <summary
                 aria-label="Account menu"
@@ -72,13 +73,13 @@ export default async function UserMenu() {
                 )}
             </summary>
             {/* Content */}
-            <div className="absolute right-0 top-full cursor-pointer">
+            <div className="absolute right-0 top-full cursor-pointer max-sm:right-[5%]">
                 <div className="relative z-40 p-0 pt-2.5 text-sm text-[#222]">
                     {/* Triangle */}
-                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white"></div>
+                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white max-sm:hidden"></div>
                     {/* Menu */}
                     <div className="rounded-3xl bg-white text-sm text-[#222] shadow-lg">
-                        <div className="w-[305px]">
+                        <div className="w-[min(305px,90vw)]">
                             <div className="px-6 pb-0 pt-5">
                                 {user ? (
                                     <div className="user-avatar flex flex-col items-center justify-center">
@@ -129,7 +130,7 @@ export default async function UserMenu() {
                                     ))}
                                 </ul>
                                 <Separator className="mx-auto !max-w-[257px]" />
-                                <ul className="w-[288px] px-4 pb-1 pt-2.5">
+                                <ul className="w-full px-4 pb-1 pt-2.5">
                                     {extraLinks.map((item, i) => (
                                         <li key={i}>
                                             <Link
