@@ -25,10 +25,13 @@ export default async function Selection() {
             .flatMap((result) => result.products)
             .filter((product) => product.variants[0])
             .slice(0, 8);
+        // 汎用クエリへのフォールバックはカテゴリ別取得の後だけ。カテゴリが空なら
+        // results[0] が既に汎用クエリの結果なので、同一クエリを再発行しない。
         const result = {
-            products: selected.length
-                ? selected
-                : (await getProducts({}, "", 1, 8)).products,
+            products:
+                selected.length || !categories.length
+                    ? selected
+                    : (await getProducts({}, "", 1, 8)).products,
         };
         products = result.products.flatMap((product) => {
             const variant = product.variants[0];
