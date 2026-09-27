@@ -1,0 +1,140 @@
+.header {
+    background: #0b100e;
+    color: #eeeade;
+    position: relative;
+    z-index: 50;
+    border-bottom: 1px solid #c2ba9429;
+    color-scheme: dark;
+}
+.announcement {
+    min-height: 29px;
+    background: #17251d;
+    color: #c5c6af;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 6px 15px;
+    font-size: 8px;
+    letter-spacing: 0.17em;
+}
+.announcement span[lang] {
+    font-size: 9px;
+    letter-spacing: 0.13em;
+}
+.bar {
+    min-height: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 15px 5%;
+}
+.logo {
+    flex-shrink: 0;
+}
+.desktopNav {
+    display: flex;
+    gap: 32px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+}
+.desktopNav a:hover {
+    color: #d4ba83;
+}
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+}
+.header summary {
+    list-style: none;
+    cursor: pointer;
+}
+.header summary::-webkit-details-marker {
+    display: none;
+}
+.header summary svg {
+    flex-shrink: 0;
+}
+.header a:focus-visible,
+.header summary:focus-visible,
+.header button:focus-visible {
+    outline: 2px solid #d4ba83;
+    outline-offset: 5px;
+}
+.searchPanel,
+.menuPanel {
+    position: absolute;
+    top: 100%;
+    right: 5%;
+    background: #17231c;
+    padding: 28px;
+    border: 1px solid #b9a77355;
+    width: min(480px, 90vw);
+    box-shadow: 0 25px 50px #0006;
+}
+.searchPanel > p {
+    font-family: Georgia, serif;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+.searchPanel > p span {
+    display: block;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    margin-top: 10px;
+    color: #b9bcaa;
+}
+.searchPanel input {
+    min-width: 0;
+}
+.menuPanel {
+    width: min(350px, 90vw);
+}
+.menuPanel nav {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-bottom: 24px;
+    font-size: 12px;
+}
+.menuPanel > details > div {
+    position: relative;
+}
+.menuPanel > details > div > div {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+}
+.account > details > summary > div {
+    margin: 0;
+}
+.account > details > summary > div > div {
+    display: none;
+}
+@media (max-width: 1023px) {
+    .desktopNav {
+        display: none;
+    }
+}
+@media (max-width: 480px) {
+    .bar {
+        gap: 8px;
+        min-height: 76px;
+        padding: 14px 5%;
+    }
+    .actions {
+        gap: 12px;
+    }
+    .account {
+        display: none;
+    }
+    .announcement {
+        font-size: 7px;
+        gap: 12px;
+    }
+    .announcement span[lang] {
+        font-size: 8px;
+    }
+}

@@ -100,8 +100,9 @@ export default function Search() {
             >
                 <input
                     type="text"
-                    placeholder="Search..."
-                    className="m-2.5 flex-1 border-none bg-white pl-2.5 text-black outline-none"
+                    placeholder="Search the collection…"
+                    aria-label="Search products"
+                    className="m-2.5 min-w-0 flex-1 border-none bg-white pl-2.5 text-black outline-none"
                     value={searchQuery}
                     onChange={handleInputChange}
                 />

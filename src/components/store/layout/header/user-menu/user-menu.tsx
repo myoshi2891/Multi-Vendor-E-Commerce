@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { SignOutButton, UserButton } from "@clerk/nextjs";
+import DismissibleDetails from "../dismissible-details";
 import { currentUser } from "@clerk/nextjs/server";
 import { ChevronDown, UserIcon } from "lucide-react";
 import Image from "next/image";
@@ -37,9 +37,12 @@ export default async function UserMenu() {
     }
 
     return (
-        <div className="group relative">
+        <DismissibleDetails className="group relative">
             {/* Trigger */}
-            <div className="">
+            <summary
+                aria-label="Account menu"
+                className="cursor-pointer list-none"
+            >
                 {user ? (
                     <Image
                         src={user.imageUrl}
@@ -67,15 +70,10 @@ export default async function UserMenu() {
                         </div>
                     </div>
                 )}
-            </div>
+            </summary>
             {/* Content */}
-            <div
-                className={cn(
-                    "absolute -left-20 top-0 hidden cursor-pointer group-hover:block",
-                    { "-left-[200px] lg:-left-[148px]": user }
-                )}
-            >
-                <div className="relative bottom-auto left-2 right-auto z-40 mt-10 p-0 pt-2.5 text-sm text-[#222]">
+            <div className="absolute right-0 top-full cursor-pointer">
+                <div className="relative z-40 p-0 pt-2.5 text-sm text-[#222]">
                     {/* Triangle */}
                     <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white"></div>
                     {/* Menu */}
@@ -148,7 +146,7 @@ export default async function UserMenu() {
                     </div>
                 </div>
             </div>
-        </div>
+        </DismissibleDetails>
     );
 }
 

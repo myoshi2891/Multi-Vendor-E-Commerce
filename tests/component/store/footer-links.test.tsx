@@ -24,9 +24,9 @@ const link = (
     ...overrides,
 });
 
-/** "Find it Fast" 見出しを持つカテゴリ欄だけを切り出す。 */
+/** "Collections" 見出しを持つカテゴリ欄だけを切り出す。 */
 const categoryColumn = () =>
-    screen.getByRole("heading", { name: "Find it Fast" }).closest("div")!;
+    screen.getByRole("heading", { name: "Collections" }).closest("div")!;
 
 describe("Links（footer カテゴリリンク）", () => {
     it("正常系: カテゴリを ?category=<正準slug> のリンクとして描画する", () => {
@@ -55,7 +55,7 @@ describe("Links（footer カテゴリリンク）", () => {
 
         // Assert
         expect(
-            screen.getByRole("heading", { name: "Find it Fast" })
+            screen.getByRole("heading", { name: "Collections" })
         ).toBeInTheDocument();
         expect(within(categoryColumn()).queryAllByRole("link")).toHaveLength(0);
     });
