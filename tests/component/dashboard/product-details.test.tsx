@@ -1234,6 +1234,27 @@ describe("ProductDetails", () => {
             await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalled());
         });
 
+        it("異常系: 定義の取得に失敗したら alert で知らせ、再選択で成功すれば消す", async () => {
+            // Arrange —— 初回（LEAF_ID）だけ失敗させる
+            jest.spyOn(console, "error").mockImplementation(() => undefined);
+            (getEffectiveAttributeDefinitions as jest.Mock)
+                .mockRejectedValueOnce(new Error("network down"))
+                .mockResolvedValue(definitions);
+            renderForm(validData());
+
+            // Assert —— 失敗は利用者に見える形で出る（黙って欄が消えない）
+            expect(await screen.findByRole("alert")).toHaveTextContent(
+                /reselect the category/i
+            );
+
+            // Act —— 別カテゴリを選び直すと再取得される
+            fireEvent.click(screen.getByRole("option", { name: "Phone" }));
+
+            // Assert —— 成功した取得でエラーは消える
+            await screen.findByLabelText("Material *");
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+
         it("Spec 名が属性と重ならなければ警告しない", async () => {
             renderForm(validData());
             await screen.findByLabelText("Material *");

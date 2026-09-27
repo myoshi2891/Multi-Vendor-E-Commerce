@@ -180,6 +180,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     // 直前に反映した定義。「定義なし → 定義なし」の遷移では state もフォーム値も
     // 触らない（無意味な再描画と、テスト環境での act 外更新を避ける）。
     const appliedDefsRef = useRef<AttributeDefinitionDTO[]>([]);
+    // 属性定義の取得失敗を販売者に伝える（黙って欄が消えると入力漏れに気づけない）
+    const [attributeLoadError, setAttributeLoadError] = useState<string | null>(
+        null
+    );
     // 新バリアント画面では商品レベルを編集しないので、PRODUCT 属性は描画も送信もしない
     // （送らない = サーバー側で同期対象外）。
     const includeProductScope = !isNewVariantPage;
@@ -271,6 +275,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                     ? await getEffectiveAttributeDefinitions(selectedNodeId)
                     : [];
                 if (cancelled) return;
+                setAttributeLoadError(null);
                 if (defs.length === 0 && appliedDefsRef.current.length === 0) {
                     return;
                 }
@@ -306,7 +311,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                         error
                     );
                 }
-                if (!cancelled && appliedDefsRef.current.length > 0) {
+                if (cancelled) return;
+                setAttributeLoadError(
+                    "Failed to load attributes for this category. Please reselect the category to try again."
+                );
+                if (appliedDefsRef.current.length > 0) {
                     appliedDefsRef.current = [];
                     setAttributeDefs([]);
                 }
@@ -846,6 +855,14 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                             </div>
                         </InputFieldset>
                         {/* カテゴリ別属性（plan 069）: 商品レベルは 1 度だけ、バリアント属性はこのバリアントに */}
+                        {attributeLoadError && (
+                            <p
+                                role="alert"
+                                className="rounded-md border border-destructive/50 p-3 text-sm font-medium text-destructive"
+                            >
+                                {attributeLoadError}
+                            </p>
+                        )}
                         {includeProductScope &&
                             productAttributeDefs.length > 0 && (
                                 <InputFieldset label="Product attributes">
