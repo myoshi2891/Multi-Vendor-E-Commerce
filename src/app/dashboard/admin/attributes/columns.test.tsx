@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { CellContext } from "@tanstack/react-table";
 import {
+    AttributeCategoriesProvider,
     columns,
     type AttributeRow,
 } from "@/app/dashboard/admin/attributes/columns";
@@ -33,7 +34,11 @@ jest.mock("@/queries/attribute", () => ({
 }));
 jest.mock("@/components/dashboard/forms/attribute-details", () => ({
     __esModule: true,
-    default: () => <div data-testid="attribute-details" />,
+    default: ({ categories }: { categories: { id: string }[] }) => (
+        <div data-testid="attribute-details">
+            {categories.map((c) => c.id).join(",")}
+        </div>
+    ),
 }));
 jest.mock("@/components/dashboard/shared/custom-modal", () => ({
     __esModule: true,
@@ -92,7 +97,6 @@ const attributeRow = (overrides: Partial<AttributeRow> = {}): AttributeRow => ({
     updatedAt: new Date("2026-01-01"),
     category: { name: "Shoes", path: "fashion/shoes" },
     _count: { options: 0 },
-    categories: [],
     ...overrides,
 });
 
@@ -100,7 +104,11 @@ const attributeRow = (overrides: Partial<AttributeRow> = {}): AttributeRow => ({
 const columnKey = (column: (typeof columns)[number]): string =>
     "accessorKey" in column ? String(column.accessorKey) : String(column.id);
 
-function renderCell(key: string, row: AttributeRow) {
+function renderCell(
+    key: string,
+    row: AttributeRow,
+    wrap: (node: React.ReactNode) => React.ReactNode = (node) => node
+) {
     const column = columns.find((c) => columnKey(c) === key);
     if (!column) throw new Error(`column not found: ${key}`);
     const cell = column.cell;
@@ -109,7 +117,7 @@ function renderCell(key: string, row: AttributeRow) {
         AttributeRow,
         unknown
     >;
-    return render(<>{cell(ctx)}</>);
+    return render(<>{wrap(cell(ctx))}</>);
 }
 
 const menuItem = (name: string) => screen.getByRole("menuitem", { name });
@@ -219,12 +227,34 @@ describe("admin/attributes columns", () => {
             expect(screen.queryByText("Archive")).toBeNull();
         });
 
-        it("編集はモーダルでフォームを開く", () => {
-            renderCell("actions", attributeRow());
+        it("編集はモーダルでフォームを開き、Provider のカテゴリを渡す", () => {
+            const categories = [
+                {
+                    id: "cat-shoes",
+                    name: "Shoes",
+                    path: "fashion/shoes",
+                    depth: 1,
+                },
+                {
+                    id: "cat-bags",
+                    name: "Bags",
+                    path: "fashion/bags",
+                    depth: 1,
+                },
+            ];
+            renderCell("actions", attributeRow(), (node) => (
+                <AttributeCategoriesProvider categories={categories}>
+                    {node}
+                </AttributeCategoriesProvider>
+            ));
 
             fireEvent.click(menuItem("Edit details"));
 
             expect(mockSetOpen).toHaveBeenCalledTimes(1);
+            render(<>{mockSetOpen.mock.calls[0][0]}</>);
+            expect(screen.getByTestId("attribute-details")).toHaveTextContent(
+                "cat-shoes,cat-bags"
+            );
         });
 
         it("アーカイブは成功を通知して refresh する", async () => {

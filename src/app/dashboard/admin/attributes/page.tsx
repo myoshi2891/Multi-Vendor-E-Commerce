@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 import AttributeDetails from "@/components/dashboard/forms/attribute-details";
 
 // Columns
-import { columns } from "./columns";
+import { AttributeCategoriesProvider, columns } from "./columns";
 import { getAttributeCategoryOptions } from "./category-options";
 
 export const dynamic = "force-dynamic";
@@ -23,19 +23,21 @@ export default async function AdminAttributesPage() {
     ]);
 
     return (
-        <DataTable
-            actionButtonText={
-                <>
-                    <Plus size={15} />
-                    Create attribute
-                </>
-            }
-            modalChildren={<AttributeDetails categories={categories} />}
-            newTabLink="/dashboard/admin/attributes/new"
-            filterValue="name"
-            data={attributes.map((attribute) => ({ ...attribute, categories }))}
-            searchPlaceholder="Search attribute name..."
-            columns={columns}
-        />
+        <AttributeCategoriesProvider categories={categories}>
+            <DataTable
+                actionButtonText={
+                    <>
+                        <Plus size={15} />
+                        Create attribute
+                    </>
+                }
+                modalChildren={<AttributeDetails categories={categories} />}
+                newTabLink="/dashboard/admin/attributes/new"
+                filterValue="name"
+                data={attributes}
+                searchPlaceholder="Search attribute name..."
+                columns={columns}
+            />
+        </AttributeCategoriesProvider>
     );
 }

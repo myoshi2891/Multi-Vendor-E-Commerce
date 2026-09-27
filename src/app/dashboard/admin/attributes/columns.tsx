@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js imports
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -53,8 +53,25 @@ import { AttributeType, type AttributeDefinition } from "@prisma/client";
 export type AttributeRow = AttributeDefinition & {
     category: { name: string; path: string };
     _count: { options: number };
-    categories: AttributeCategoryOption[];
 };
+
+// 編集フォームのカテゴリ選択肢。全行で同一なので行データへ複製せず Context で 1 回だけ渡す。
+// columns（関数）をサーバーから渡さずに済むよう、Provider もこのクライアントモジュールに置く。
+const AttributeCategoriesContext = createContext<AttributeCategoryOption[]>([]);
+
+export function AttributeCategoriesProvider({
+    categories,
+    children,
+}: {
+    categories: AttributeCategoryOption[];
+    children: React.ReactNode;
+}) {
+    return (
+        <AttributeCategoriesContext.Provider value={categories}>
+            {children}
+        </AttributeCategoriesContext.Provider>
+    );
+}
 
 export const columns: ColumnDef<AttributeRow>[] = [
     {
@@ -124,6 +141,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
+    const categories = useContext(AttributeCategoriesContext);
 
     const run = async <T,>(
         action: () => Promise<T>,
@@ -149,7 +167,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
         }
     };
 
-    const { categories, category: _category, _count, ...definition } = rowData;
+    const { category: _category, _count, ...definition } = rowData;
     const archived = Boolean(rowData.archivedAt);
 
     return (
