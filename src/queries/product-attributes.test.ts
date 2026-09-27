@@ -129,7 +129,8 @@ const routeQueryRaw = (world: World) =>
             const values = flattenValues(rawValues);
             const locked = rawValues.some(
                 (value) =>
-                    isSqlFragment(value) && /FOR (UPDATE|SHARE)/.test(value.sql)
+                    isSqlFragment(value) &&
+                    /FOR (NO KEY UPDATE|UPDATE|SHARE)/.test(value.sql)
             );
             if (sql.includes('FROM "AttributeDefinition" d')) {
                 return locked && world.lockedDefinitions

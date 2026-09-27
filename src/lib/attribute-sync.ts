@@ -117,9 +117,13 @@ interface Snapshot {
 
 const MAX_CATEGORY_LOCK_ATTEMPTS = 3;
 
-/** この tx が書き換える行（Product / ProductVariant）。同一商品の同期を直列化する。 */
+/**
+ * この tx が書き換える行（Product / ProductVariant）。同一商品の同期を直列化する。
+ * キー列は変えないので FOR NO KEY UPDATE で足りる —— FOR UPDATE だと、この行を FK で
+ * 参照する他テーブルへの INSERT（FOR KEY SHARE）まで不要に待たせてしまう。
+ */
 const lockClause = (lock: boolean) =>
-    lock ? Prisma.sql`FOR UPDATE` : Prisma.empty;
+    lock ? Prisma.sql`FOR NO KEY UPDATE` : Prisma.empty;
 
 /**
  * 読むだけの行（Category / AttributeDefinition / AttributeOption）。付け替え・アーカイブ
