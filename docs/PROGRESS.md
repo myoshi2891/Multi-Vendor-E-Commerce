@@ -4870,3 +4870,33 @@ PR#179 のレビュー指摘 4 件と SonarCloud の指摘 19 件に対応し、
 | lcov（全体） | Lines 74.8%（2026-09-03） | **Lines 76.77% / Statements 77.17% / Branches 64.4%**（2026-09-27 再測定） |
 | 型エラー | 0 件 | **0 件** |
 | ESLint | 0 errors | **0 errors**（14 warnings は既存） |
+
+---
+
+### PR#180 ラグジュアリーホームの SonarCloud 対応 (2026-09-27)
+
+#### 概要
+
+PR#180 の SonarCloud New Code に出ていた未解決 45 件（Reliability 含む）を解消し、Coverage on New Code 25.6% の主因だったファイルをテストで埋めた。HEAD `9b68b0ae` 上の作業ツリー分で、コミットは別途行う。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `sonar-project.properties` | `S6747`（Unknown property）34 件は react-three-fiber の JSX プロパティ（`intensity` / `args` / `attach` ほか）を DOM 属性表で判定する誤検知。`sonar.issue.ignore.multicriteria` で `scene.tsx` に限定して除外（型は `ThreeElements` で tsc が検証） | 未コミット |
+| `scene.tsx` / `experience.tsx` / `dismissible-details.tsx` | props を `Readonly<...>` に（4 件）、入れ子三項を `sculptureX()` / `motionLabel` へ切り出し（2 件） | 未コミット |
+| `src/app/(store)/page.tsx` / `selection.tsx` | `role="status"` → `<output>`（2 件）。`<output>` はフレーズ内容のみ許容のため、`selection` はメッセージだけを包みリンクは live region の外へ。`<small>` 前の空白を `{" "}` で明示（1 件） | 未コミット |
+| `dismissible-details.tsx` | `<details>` の JSX `onClick` / `onSubmit`（S1082 / S6847）を `useEffect` 内のネイティブリスナーへ移設。先に特性化テスト 8 本を書き、移設前後で同じく緑 | 未コミット |
+| テスト追加 | `luxury/experience.test.tsx` +11（Scene は `next/dynamic` ごとスタブ、WebGL 可否・一時停止・可視性・エラー境界・後始末）、`luxury/data.test.ts` +4、`dismissible-details.test.tsx` +8。experience はミューテーション（WebGL 判定・境界の除去）で該当テストが落ちることを確認 | 未コミット |
+| `jest.config.js` / `sonar-project.properties` | jsdom で描画できない WebGL の `scene.tsx` を `collectCoverageFrom` と `sonar.coverage.exclusions` の双方から除外（分母を一致させる規約どおり） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 (unit/component) | 2426 passed / 2429 total | **2456 passed / 2459 total**（2026-09-27 実測。ラグジュアリーホーム本体の `selection` +4 を含む） |
+| スイート数 | 212 | **217** |
+| Integration | 183 / 17 スイート | **183 / 17 スイート**（変更なし・今回は未実行） |
+| lcov（全体） | Lines 76.77% / Statements 77.17% / Branches 64.4% | **Lines 77% / Statements 77.37% / Branches 64.82%**（2026-09-27 再測定） |
+| 型エラー | 0 件 | **0 件** |
+| ESLint | 0 errors | **0 errors**（15 warnings。+1 は `9b68b0ae` で入った `scene.tsx` の `react-hooks/immutability`） |
