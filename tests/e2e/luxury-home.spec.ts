@@ -52,6 +52,9 @@ test("home has no serious accessibility violations", async ({ page }) => {
 test("cinematic scene can be paused and resumed", async ({ page }, testInfo) => {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
+    // ヘッドレス環境によっては WebGL2 が無く、演出はフォールバック表示になる（別テストで検証）
+    const hasWebGL2 = await page.evaluate(() => document.createElement("canvas").getContext("webgl2") !== null);
+    test.skip(!hasWebGL2, "WebGL2 unavailable in this browser project");
     await expect(page.getByTestId("luxury-canvas").locator("canvas")).toBeVisible({ timeout: 20000 });
     await page.screenshot({ path: testInfo.outputPath("home-webgl.png") });
     await page.getByRole("button", { name: "Pause animation / 演出を停止" }).click();
