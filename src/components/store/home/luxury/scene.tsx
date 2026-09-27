@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Color,
     Group,
@@ -194,6 +194,8 @@ function ContextGuard({ onLost }: { onLost: () => void }) {
 }
 export default function Scene({ progress, active, compact }: Readonly<Props>) {
     const [lost, setLost] = useState(false);
+    // 参照を固定し、ContextGuard の effect がレンダー毎にリスナーを張り直さないようにする
+    const handleLost = useCallback(() => setLost(true), []);
     if (lost) return null;
     return (
         <div className={styles.canvas} data-testid="luxury-canvas">
@@ -209,7 +211,7 @@ export default function Scene({ progress, active, compact }: Readonly<Props>) {
                 fallback={null}
             >
                 <color attach="background" args={["#0b100e"]} />
-                <ContextGuard onLost={() => setLost(true)} />
+                <ContextGuard onLost={handleLost} />
                 <Sculpture progress={progress} compact={compact} />
             </Canvas>
         </div>
