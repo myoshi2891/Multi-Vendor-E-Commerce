@@ -399,10 +399,9 @@ describe("upsertAttributeOption", () => {
 
     it("ENUM 以外の定義には追加できない", async () => {
         asAdmin();
-        mockDb.attributeDefinition.findUnique.mockResolvedValue({
-            type: "TEXT",
-            archivedAt: null,
-        });
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "TEXT" }),
+        ]);
 
         await expect(upsertAttributeOption("def-1", option)).rejects.toThrow(
             "Options can only be added to ENUM attributes."
@@ -412,10 +411,9 @@ describe("upsertAttributeOption", () => {
 
     it("ENUM 定義に選択肢を作成する", async () => {
         asAdmin();
-        mockDb.attributeDefinition.findUnique.mockResolvedValue({
-            type: "ENUM",
-            archivedAt: null,
-        });
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM" }),
+        ]);
         mockDb.attributeOption.create.mockResolvedValue({ id: "opt-1" });
 
         await upsertAttributeOption("def-1", option);
@@ -425,12 +423,46 @@ describe("upsertAttributeOption", () => {
         });
     });
 
+    it("定義行を FOR UPDATE で掴んでから同じ tx で作成する（型変更と直列化）", async () => {
+        // Arrange
+        asAdmin();
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM" }),
+        ]);
+        mockDb.attributeOption.create.mockResolvedValue({ id: "opt-1" });
+
+        // Act
+        await upsertAttributeOption("def-1", option);
+
+        // Assert
+        expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+        const [sqlParts, ...values] = mockDb.$queryRaw.mock.calls[0];
+        expect(sqlParts.join("?")).toMatch(/FOR UPDATE/);
+        expect(values).toEqual(["def-1"]);
+        expect(mockDb.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+            mockDb.attributeOption.create.mock.invocationCallOrder[0]
+        );
+    });
+
+    it("ロック後に読んだ定義がアーカイブ済みなら拒否する", async () => {
+        // Arrange
+        asAdmin();
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM", archivedAt: new Date() }),
+        ]);
+
+        // Act / Assert
+        await expect(upsertAttributeOption("def-1", option)).rejects.toThrow(
+            "Restore the attribute before editing it."
+        );
+        expect(mockDb.attributeOption.create).not.toHaveBeenCalled();
+    });
+
     it("value（機械値）の変更は拒否し、label だけを更新できる", async () => {
         asAdmin();
-        mockDb.attributeDefinition.findUnique.mockResolvedValue({
-            type: "ENUM",
-            archivedAt: null,
-        });
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM" }),
+        ]);
         mockDb.attributeOption.findFirst.mockResolvedValue({ value: "egg" });
 
         await expect(
@@ -441,10 +473,9 @@ describe("upsertAttributeOption", () => {
 
     it("label の改名は update で行う（A-4 の自動追随は FK が担う）", async () => {
         asAdmin();
-        mockDb.attributeDefinition.findUnique.mockResolvedValue({
-            type: "ENUM",
-            archivedAt: null,
-        });
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM" }),
+        ]);
         mockDb.attributeOption.findFirst.mockResolvedValue({ value: "wheat" });
         mockDb.attributeOption.update.mockResolvedValue({ id: "opt-1" });
 
@@ -462,10 +493,9 @@ describe("upsertAttributeOption", () => {
 
     it("同じ value の重複は重複メッセージを返す", async () => {
         asAdmin();
-        mockDb.attributeDefinition.findUnique.mockResolvedValue({
-            type: "ENUM",
-            archivedAt: null,
-        });
+        mockDb.$queryRaw.mockResolvedValue([
+            lockedDefinition({ type: "ENUM" }),
+        ]);
         mockDb.attributeOption.create.mockRejectedValue(uniqueViolation());
 
         await expect(upsertAttributeOption("def-1", option)).rejects.toThrow(

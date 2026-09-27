@@ -353,32 +353,33 @@ export const upsertAttributeOption = async (
 
     try {
         const data = parseOrFail(AttributeOptionFormSchema.safeParse(input));
-        const definition = await db.attributeDefinition.findUnique({
-            where: { id: definitionId },
-            select: { type: true, archivedAt: true },
-        });
-        if (!definition) fail("Attribute not found.");
-        if (definition?.type !== AttributeType.ENUM) {
-            fail("Options can only be added to ENUM attributes.");
-        }
-        if (definition?.archivedAt)
-            fail("Restore the attribute before editing it.");
 
-        if (id) {
-            const current = await db.attributeOption.findFirst({
-                where: { id, definitionId },
-                select: { value: true },
+        // 定義行を FOR UPDATE で掴んでから type / archivedAt を確認し、同じ tx で書く。
+        // 型変更・定義更新と直列化し、確認と書き込みの間に定義が変わる窓を閉じる。
+        return await db.$transaction(async (tx) => {
+            const definition = await lockDefinition(tx, definitionId);
+            if (definition.type !== AttributeType.ENUM) {
+                fail("Options can only be added to ENUM attributes.");
+            }
+            if (definition.archivedAt)
+                fail("Restore the attribute before editing it.");
+
+            if (id) {
+                const current = await tx.attributeOption.findFirst({
+                    where: { id, definitionId },
+                    select: { value: true },
+                });
+                if (!current) fail("Option not found.");
+                if (current?.value !== data.value)
+                    fail("Option value cannot be changed.");
+                return tx.attributeOption.update({
+                    where: { id },
+                    data: { label: data.label, sortOrder: data.sortOrder },
+                });
+            }
+            return tx.attributeOption.create({
+                data: { ...data, definitionId },
             });
-            if (!current) fail("Option not found.");
-            if (current?.value !== data.value)
-                fail("Option value cannot be changed.");
-            return await db.attributeOption.update({
-                where: { id },
-                data: { label: data.label, sortOrder: data.sortOrder },
-            });
-        }
-        return await db.attributeOption.create({
-            data: { ...data, definitionId },
         });
     } catch (error: unknown) {
         return rethrow("upsertAttributeOption", "Error saving option.", error, {
