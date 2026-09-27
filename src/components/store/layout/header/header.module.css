@@ -99,6 +99,11 @@
     padding-bottom: 24px;
     font-size: 12px;
 }
+/* 国選択の details は inline-block で summary 幅に縮むため、パネル幅まで広げる */
+.menuPanel > details {
+    display: block;
+    width: 100%;
+}
 .menuPanel > details > div {
     position: relative;
     top: auto;
