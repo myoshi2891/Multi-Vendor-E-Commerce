@@ -46,12 +46,14 @@ restart: ## アプリコンテナを再起動
 # 稼働中コンテナへの exec ではなく停止 → 一時コンテナで入れる: 途中失敗で .bin が欠けた
 # 状態のまま dev サーバーが再起動ループするのを避けるため。
 # install / generate が失敗しても app は必ず再起動する。終了コードは install の失敗を優先し、
-# install 成功時は start の結果を返す (起動失敗を成功扱いにしない)。
+# install 成功時は起動の結果を返す (起動失敗を成功扱いにしない)。
+# app コンテナが未作成 (make down 後など) でも動くよう、停止は失敗を無視し、起動は
+# 既存コンテナ前提の start ではなく作成も兼ねる up -d を使う。
 install: ## 依存追加後に node_modules volume を同期 (app 停止 → install → generate → 起動)
-	$(COMPOSE) stop app
+	-$(COMPOSE) stop app
 	$(COMPOSE) run --rm --no-deps app sh -c "bun install --frozen-lockfile && bunx prisma generate"; \
 	install_status=$$?; \
-	$(COMPOSE) start app; \
+	$(COMPOSE) up -d app; \
 	start_status=$$?; \
 	if [ $$install_status -ne 0 ]; then exit $$install_status; fi; \
 	exit $$start_status
