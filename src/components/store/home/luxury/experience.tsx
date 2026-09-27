@@ -87,8 +87,16 @@ export default function Experience({
     }, []);
     const animate = reduced === false && !paused;
     let motionLabel = "PAUSE MOTION";
-    if (reduced) motionLabel = "STILL EXPERIENCE";
-    else if (paused) motionLabel = "RESUME MOTION";
+    let motionAriaLabel = "Pause animation / 演出を停止";
+    if (reduced) {
+        // 無効化された操作なので、動作ではなく表示どおりの状態を読み上げる
+        motionLabel = "STILL EXPERIENCE";
+        motionAriaLabel =
+            "Still experience, motion reduced / 静止表示（動きを減らす設定）";
+    } else if (paused) {
+        motionLabel = "RESUME MOTION";
+        motionAriaLabel = "Resume animation / 演出を再開";
+    }
     return (
         <div
             ref={root}
@@ -125,11 +133,7 @@ export default function Experience({
                         onClick={() => setPaused(!paused)}
                         aria-pressed={paused}
                         disabled={Boolean(reduced)}
-                        aria-label={
-                            paused
-                                ? "Resume animation / 演出を再開"
-                                : "Pause animation / 演出を停止"
-                        }
+                        aria-label={motionAriaLabel}
                     >
                         {paused || reduced ? (
                             <Play size={12} />

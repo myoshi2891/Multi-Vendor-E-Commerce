@@ -189,6 +189,8 @@ describe("Luxury home experience", () => {
         expect(screen.queryByTestId("scene")).not.toBeInTheDocument();
         expect(motionButton()).toBeDisabled();
         expect(motionButton()).toHaveTextContent("STILL EXPERIENCE");
+        // 無効ボタンが「一時停止」を名乗らない (表示と読み上げを一致させる)
+        expect(motionButton()).toHaveAccessibleName(/^Still experience/);
         expect(screen.getByTestId("gem-fallback")).toBeInTheDocument();
     });
 
