@@ -109,6 +109,31 @@ describe("DismissibleDetails", () => {
         expect(screen.getByText("Open menu")).toHaveFocus();
     });
 
+    it("入れ子で両方開いている時の Escape は内側だけを閉じる", () => {
+        // Arrange: ヘッダーのメニュー内に国/言語セレクターが入る構成
+        render(
+            <DismissibleDetails>
+                <summary>Open menu</summary>
+                <DismissibleDetails>
+                    <summary>Open selector</summary>
+                </DismissibleDetails>
+            </DismissibleDetails>
+        );
+        const outer = screen.getByText("Open menu").closest("details");
+        const inner = screen.getByText("Open selector").closest("details");
+        if (!outer || !inner) throw new Error("details 要素が見つかりません");
+        outer.open = true;
+        inner.open = true;
+
+        // Act
+        fireEvent.keyDown(document, { key: "Escape" });
+
+        // Assert
+        expect(inner.open).toBe(false);
+        expect(outer.open).toBe(true);
+        expect(screen.getByText("Open selector")).toHaveFocus();
+    });
+
     it("閉じている時の Escape ではフォーカスを動かさない", () => {
         // Arrange
         renderPanel();
