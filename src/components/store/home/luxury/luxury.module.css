@@ -1,6 +1,13 @@
 .home {
     --gold: #d4ba83;
     --ivory: #f1eee4;
+    /* 操作要素 (CTA / モーション切替) の配色。装飾色とは分けて命名する */
+    --control-accent: var(--gold);
+    --control-accent-hover: #ecdbb5;
+    --control-on-accent: #141c16;
+    --control-text: #d4c5a6;
+    --control-surface: #0b100ecc;
+    --control-border: #bba57445;
     background: #0b100e;
     color: var(--ivory);
     overflow: clip;
@@ -138,8 +145,8 @@
     display: inline-flex;
     align-items: center;
     gap: 40px;
-    background: #d4ba83;
-    color: #141c16;
+    background: var(--control-accent);
+    color: var(--control-on-accent);
     padding: 18px 25px;
     margin-top: 36px;
     font-size: 11px;
@@ -149,7 +156,7 @@
         gap 0.25s;
 }
 .cta:hover {
-    background: #ecdbb5;
+    background: var(--control-accent-hover);
     gap: 49px;
 }
 .heroBottom {
@@ -238,10 +245,10 @@
     gap: 9px;
     font-size: 8px;
     letter-spacing: 0.13em;
-    color: #d4c5a6;
+    color: var(--control-text);
     padding: 12px;
-    background: #0b100ecc;
-    border: 1px solid #bba57445;
+    background: var(--control-surface);
+    border: 1px solid var(--control-border);
 }
 
 .collections {
