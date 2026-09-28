@@ -15,9 +15,12 @@ import { MessageIcon, OrderIcon, WishlistIcon } from "../../../icons";
  * actions when no user is authenticated. The menu also includes quick links (orders, messages, wishlist) and additional
  * navigation entries.
  *
+ * @param disclosureName - 同名の disclosure と排他的に開閉させるためのネイティブ `name`
  * @returns A React element representing the user menu and its hoverable dropdown content
  */
-export default async function UserMenu() {
+export default async function UserMenu({
+    disclosureName,
+}: Readonly<{ disclosureName?: string }> = {}) {
     // Clerk の外部呼び出しは try/catch でラップする（規約: 外部 API 呼び出し）。
     // 取得失敗時は user=null のままサインイン/登録ブランチを描画して安全に縮退する。
     let user: Awaited<ReturnType<typeof currentUser>> = null;
@@ -38,7 +41,10 @@ export default async function UserMenu() {
 
     return (
         // モバイルでは details を static にし、検索/メニューパネルと同じく header 基準で配置する
-        <DismissibleDetails className="group relative max-sm:static">
+        <DismissibleDetails
+            className="group relative max-sm:static"
+            name={disclosureName}
+        >
             {/* Trigger */}
             <summary
                 aria-label="Account menu"

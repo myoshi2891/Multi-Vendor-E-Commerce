@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-/** Native disclosure with touch, keyboard, outside-click and navigation dismissal. */
+/**
+ * Native disclosure with touch, keyboard, outside-click and navigation dismissal.
+ * `name` を共有する disclosure 同士はネイティブの排他アコーディオンとして 1 つだけ開く。
+ */
 export default function DismissibleDetails({
     children,
     className,
-}: Readonly<{ children: ReactNode; className?: string }>) {
+    name,
+}: Readonly<{ children: ReactNode; className?: string; name?: string }>) {
     const ref = useRef<HTMLDetailsElement>(null);
     useEffect(() => {
         const details = ref.current;
@@ -49,7 +53,7 @@ export default function DismissibleDetails({
         };
     }, []);
     return (
-        <details ref={ref} className={className}>
+        <details ref={ref} className={className} name={name}>
             {children}
         </details>
     );

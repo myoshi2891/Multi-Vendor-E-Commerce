@@ -163,4 +163,15 @@ describe("DismissibleDetails", () => {
         expect(removeSpy).toHaveBeenCalledWith("keydown", expect.any(Function));
         removeSpy.mockRestore();
     });
+    it("forwards the native disclosure name for exclusive panels", () => {
+        render(
+            <DismissibleDetails name="store-header-panel">
+                <summary>Named</summary>
+            </DismissibleDetails>
+        );
+        expect(screen.getByText("Named").closest("details")).toHaveAttribute(
+            "name",
+            "store-header-panel"
+        );
+    });
 });

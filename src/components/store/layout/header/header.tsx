@@ -11,6 +11,10 @@ import Search from "./search/search";
 import CountryLanguageCurrencySelector from "./country-lang-curr-selector";
 import styles from "./header.module.css";
 
+// 検索・アカウント・メニューのトップレベル disclosure は同時に 1 つだけ開く。
+// 入れ子の国/言語/通貨セレクターはメニュー内で開くため name を付けない。
+const PANEL_NAME = "store-header-panel";
+
 export default async function StoreHeader() {
     const cookieStore = await cookies();
     const userCountry = parseUserCountryCookie(
@@ -32,7 +36,10 @@ export default async function StoreHeader() {
                     <Link href="/about">Our world</Link>
                 </nav>
                 <div className={styles.actions}>
-                    <DismissibleDetails className={styles.search}>
+                    <DismissibleDetails
+                        className={styles.search}
+                        name={PANEL_NAME}
+                    >
                         <summary aria-label="Open search / 検索">
                             <SearchIcon size={19} />
                         </summary>
@@ -47,10 +54,13 @@ export default async function StoreHeader() {
                         </div>
                     </DismissibleDetails>
                     <div className={styles.account}>
-                        <UserMenu />
+                        <UserMenu disclosureName={PANEL_NAME} />
                     </div>
                     <Cart />
-                    <DismissibleDetails className={styles.menu}>
+                    <DismissibleDetails
+                        className={styles.menu}
+                        name={PANEL_NAME}
+                    >
                         <summary aria-label="Open menu / メニュー">
                             <Menu size={21} />
                         </summary>
