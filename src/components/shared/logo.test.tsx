@@ -21,7 +21,7 @@ describe("Logo", () => {
         render(<Logo width="100px" height="50px" />);
 
         // Assert
-        const img = screen.getByAltText("GoShop");
+        const img = screen.getByAltText("Luxuries for Happiness");
         expect(img).toBeInTheDocument();
     });
 

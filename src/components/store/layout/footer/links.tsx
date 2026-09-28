@@ -25,7 +25,7 @@ export default function Links({
 		<div className="mt-5 grid gap-4 text-sm md:grid-cols-3">
 			{/* Categories */}
 			<div className="space-y-4">
-				<h1 className="text-lg font-bold">Find it Fast</h1>
+				<h2 className="text-lg font-bold">Collections</h2>
 				<ul className="flex flex-col gap-y-1">
 					{categories.map((category) => (
 						<li key={category.id}>
@@ -49,7 +49,7 @@ export default function Links({
 				</ul>
 			</div>
 			<div className="space-y-4">
-				<h1 className="text-lg font-bold">Customer care</h1>
+				<h2 className="text-lg font-bold">Customer care</h2>
 				<ul className="flex flex-col gap-y-1">
 					{footer_links.slice(6).map((link) => (
 						<li key={link.title}>

@@ -3,7 +3,7 @@ import { FC } from "react";
 import Image from "next/image";
 
 // Logo image
-import LogoImg from "../../../public/assets/icons/logo-1.png";
+const LogoImg = "/assets/brand/wordmark.svg";
 
 interface LogoProps {
 	width: string;
@@ -15,8 +15,10 @@ const Logo: FC<LogoProps> = ({ width, height }) => {
         <div className="z-50" style={{ width: width, height: height }}>
             <Image
                 src={LogoImg}
-                alt="GoShop"
-                className="size-full overflow-visible object-cover"
+                width={360}
+                height={80}
+                alt="Luxuries for Happiness"
+                className="size-full overflow-visible object-contain"
                 priority
             />
         </div>

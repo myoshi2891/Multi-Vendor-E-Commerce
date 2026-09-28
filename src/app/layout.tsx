@@ -29,8 +29,10 @@ const geistMono = localFont({
 
 // Metadata
 export const metadata: Metadata = {
-	title: "GoShop",
-	description: "Welcome to GoShop!",
+	title: "Luxuries for Happiness",
+	description: "Exceptional things. Meaningful moments. 幸せを纏う、という贅沢。",
+    icons: { icon: "/assets/brand/star.svg" },
+    openGraph: { title: "Luxuries for Happiness", description: "A little luxury. A lot of happiness. 幸せを纏う、という贅沢。" },
 };
 
 /**

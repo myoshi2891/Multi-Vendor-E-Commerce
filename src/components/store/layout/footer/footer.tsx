@@ -1,6 +1,7 @@
 import { flattenCategoryTree } from "@/lib/category-tree";
 import { getAllCategories } from "@/queries/category";
-import Contact from "./contact";
+import Brand from "@/components/shared/brand";
+import styles from "./footer.module.css";
 import Links, { FooterCategoryLink } from "./links";
 import Newsletter from "./newsletter";
 
@@ -47,24 +48,26 @@ export default async function Footer() {
         .slice(0, FOOTER_CATEGORY_LIMIT)
         .map(({ id, name, url }) => ({ id, name, url }));
     return (
-        <div data-testid="store-footer" className="w-full bg-background">
+        <footer data-testid="store-footer" className={styles.footer}>
             <Newsletter />
-            <div className="mx-auto max-w-[1430px]">
-                <div className="p-5">
-                    <div className="grid md:grid-cols-2 md:gap-x-5">
-                        <Contact />
-                        <Links categories={categories} />
-                    </div>
+            <div className={styles.body}>
+                <div className={styles.identity}>
+                    <Brand />
+                    <p>
+                        Extraordinary things.
+                        <br />
+                        Meaningful moments.
+                    </p>
+                    <p lang="ja">心が動く出会いを、日常に。</p>
                 </div>
+                <Links categories={categories} />
             </div>
-            {/* Rights */}
-            <div className="bg-gradient-to-r from-slate-500 to-slate-800 px-2 text-white">
-                <div className="mx-auto flex h-7 max-w-[1430px] items-center">
-                    <span className="text-sm">
-                        <b>@ GoShop</b> - All Rights Reserved
-                    </span>
-                </div>
+            <div className={styles.bottom}>
+                <span>
+                    © {new Date().getFullYear()} Luxuries for Happiness
+                </span>
+                <span>LUXURY. FORTUNE. HAPPINESS.</span>
             </div>
-        </div>
+        </footer>
     );
 }

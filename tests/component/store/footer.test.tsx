@@ -54,10 +54,10 @@ const resolveTree = (roots: TreeNodeStub[]) => {
     );
 };
 
-/** "Find it Fast" 見出しを持つカテゴリ欄のリンク名を取り出す。 */
+/** "Collections" 見出しを持つカテゴリ欄のリンク名を取り出す。 */
 const categoryLinkNames = (): string[] => {
     const column = screen
-        .getByRole("heading", { name: "Find it Fast" })
+        .getByRole("heading", { name: "Collections" })
         .closest("div")!;
     return within(column)
         .queryAllByRole("link")

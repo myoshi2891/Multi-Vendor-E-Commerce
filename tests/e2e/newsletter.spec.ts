@@ -38,7 +38,7 @@ test.describe("Newsletter 購読フォーム（characterization: dormant 404）"
         );
         await page
             .locator("form")
-            .getByRole("button", { name: "Sign up" })
+            .getByRole("button", { name: "Subscribe ↗" })
             .click();
         const response = await responsePromise;
 
@@ -111,7 +111,7 @@ test.describe("Newsletter 購読フォーム（characterization: dormant 404）"
         await emailInput.fill("");
         await page
             .locator("form")
-            .getByRole("button", { name: "Sign up" })
+            .getByRole("button", { name: "Subscribe ↗" })
             .click();
 
         // 固定待機（時間で待つ API）は使わない。「1s 待って POST が無ければ OK」は決定論的でなく、

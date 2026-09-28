@@ -2,6 +2,7 @@ import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { ChevronDown, Globe } from "lucide-react";
 import Link from "next/link";
+import Brand from "@/components/shared/brand";
 import { Button } from "../../ui/button";
 
 export default async function MinimalHeader() {
@@ -11,12 +12,10 @@ export default async function MinimalHeader() {
             <div className="mx-auto px-6">
                 <div className="relative flex items-center justify-between py-2">
                     <Link href="/">
-                        <h1 className="font-mono text-2xl font-extrabold">
-                            GoShop
-                        </h1>
+                        <Brand />
                     </Link>
-                    <div className="flex items-center gap-x-5">
-                        <div className="flex items-center gap-x-1">
+                    <div className="flex items-center gap-x-2">
+                        <div className="hidden items-center gap-x-1 sm:flex">
                             <Globe className="w-3" />
                             <div className="cursor-pointer py-2 text-sm text-main-primary">
                                 English

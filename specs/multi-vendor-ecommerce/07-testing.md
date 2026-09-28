@@ -12,7 +12,12 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2426 passed / 2429 total across 212 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+- 2456 passed / 2459 total across 217 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+  PR#180 (luxury home) adds colocated component tests under `src/components/store/home/luxury/`
+  (`selection`, `experience` with the WebGL scene stubbed via `next/dynamic`, and `data`) plus
+  `tests/component/store/dismissible-details.test.tsx`. The WebGL `scene.tsx` is excluded from
+  coverage in both `jest.config.js` and `sonar-project.properties` (jsdom cannot render it).
+  Earlier record (2426 / 2429 across 212 suites, 2026-09-27):
   PR#179 follow-ups cover the admin attribute forms (`tests/component/dashboard/attribute-details`,
   `attribute-option-details`), the admin attribute list / option columns and actions
   (`src/app/dashboard/admin/attributes/**/columns.test.tsx`) and the category option loader, and

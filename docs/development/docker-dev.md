@@ -52,6 +52,7 @@ make logs            # http://localhost:3000
 | `make down` | 停止（DB データは保持） |
 | `make down-v` | 停止 + ボリューム削除（DB 完全リセット） |
 | `make logs` | アプリのログを追従 |
+| `make install` | `package.json` / `bun.lock` 変更後に node_modules volume を同期（app 停止 → `bun install --frozen-lockfile` → `prisma generate` → 起動） |
 | `make sh` | アプリコンテナでシェル |
 | `make psql` | DB に `psql` 接続 |
 | `make migrate` | `prisma migrate dev`（開発用マイグレーション生成） |
@@ -112,7 +113,8 @@ make sonar-down
 | ページが 500 (`Publishable key not valid.`) | `.env.docker` の Clerk キーが stub のまま。実際の Clerk **test** キー（`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`）に差し替える |
 | ソース変更が反映されない | `WATCHPACK_POLLING=true` が効いているか確認。重い場合は `make restart` |
 | `@prisma/client` が見つからない | `make generate`（named volume の node_modules に再生成） |
-| 依存を更新したのに反映されない | `make down && make build && make up`（node_modules volume を作り直す場合は `make down-v`） |
+| 依存を更新したのに反映されない（`Module not found: Can't resolve '<pkg>'`） | `make install`。node_modules は named volume（`app-node-modules`）で、作成時に 1 度だけイメージから初期化されるため `make build` では更新されない |
+| `next: command not found`（exit 127）で app が再起動ループ | インストール中断で `.bin` リンクが欠けた状態。bun は再実行してもリンクを張り直さないため、volume を空にして入れ直す: `docker compose stop app && docker compose run --rm --no-deps --entrypoint sh app -c 'find node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} +' && make install` |
 | ポート 5432 が衝突 | ホストの別 Postgres を停止するか、`docker-compose.yml` の `db` ポートを変更 |
 | DB をまっさらにしたい | `make down-v && make setup` |
 

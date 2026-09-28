@@ -17,6 +17,7 @@ test.describe("検索・フィルタ", () => {
   });
 
   test("商品名で検索し結果が表示される", async ({ page }) => {
+    await page.getByLabel("Open search / 検索").click();
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
     await expect(searchInput).toBeVisible();
     await searchInput.fill(productName);
@@ -44,6 +45,7 @@ test.describe("検索・フィルタ", () => {
 
   test("フィルタ条件が URL パラメータに反映される", async ({ page }) => {
     await page.goto(`/browse?search=${encodeURIComponent(productName)}&category=${encodeURIComponent(seed.category.url)}`);
+    await page.getByLabel("Open search / 検索").click();
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
     await expect(searchInput).toBeVisible();
     await expect(searchInput).toHaveValue(productName);
@@ -57,6 +59,7 @@ test.describe("検索・フィルタ", () => {
   });
 
   test("検索結果 0 件で適切なメッセージ表示される", async ({ page }) => {
+    await page.getByLabel("Open search / 検索").click();
     const searchInput = page.getByPlaceholder(/Search|What are you looking for/i).first();
     await expect(searchInput).toBeVisible();
     await searchInput.fill("NonExistentProductxyz123");

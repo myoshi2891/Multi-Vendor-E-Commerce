@@ -17,7 +17,7 @@ export default function DownloadApp() {
                 </span>
                 <div className="ml-1">
                     <b className="inline-block max-w-[90px] text-xs font-medium text-white">
-                        Download the GoShop App
+                        Download the Luxuries for Happiness App
                     </b>
                 </div>
             </div>
@@ -30,7 +30,7 @@ export default function DownloadApp() {
                         <div className="flex">
                             <div className="mx-3">
                                 <h3 className="m-0 mx-auto max-w-40 text-[20px] font-bold text-main-primary">
-                                    Download the GoShop App
+                                    Download the Luxuries for Happiness App
                                 </h3>
                                 <div className="mt-4 flex items-center gap-x-2">
                                     <Link

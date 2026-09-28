@@ -53,6 +53,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
             },
         ]);
         await page.goto(PAGE_WITH_HEADER);
+        await page.getByLabel("Open menu / メニュー").click();
     };
 
     test("既存の userCountry cookie がヘッダー表示に反映される", async ({
@@ -82,18 +83,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
 
         await gotoWithCountry(page);
 
-        // group-hover 制御のため hover が必須。以降の操作は dropdown 内の要素へ
-        // 連続して行う（間にマウスを逃がすと閉じてしまう）。
-        //
-        // `force: true` が必要な理由: hover した瞬間に開く dropdown
-        // （`.absolute.top-0.group-hover:block`）がトリガー要素の上に重なるため、
-        // Playwright の actionability 再チェックが常に
-        // "intercepts pointer events" を報告し、hover が成功扱いにならない。
-        // これは「hover で自分を覆う要素を開く」CSS パターンの構造的な帰結であり、
-        // 待てば解消する類のものではない（実測: 30s タイムアウトまでリトライし続ける）。
-        // force はチェックを飛ばすだけでマウスは実際に移動するので、
-        // CSS :hover は正しく発火する。
-        await page.getByText("United States/EN/").hover({ force: true });
+        await page.getByLabel("Country, language and currency").click();
         await expect(page.getByText("Ship to")).toBeVisible();
 
         // ドロップダウン内のコンボボックストリガー（選択中の国名を表示している）
@@ -132,6 +122,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
         // サーバー側が Japan を読み出す。テストを分けると 2 本目が 1 本目の
         // 実行順に暗黙依存し、Playwright の独立コンテキスト前提で成立しない。
         await page.reload();
+        await page.getByLabel("Open menu / メニュー").click();
         await expect(page.getByText("Japan/EN/")).toBeVisible({
             timeout: 10000,
         });

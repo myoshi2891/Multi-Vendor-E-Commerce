@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { SignOutButton, UserButton } from "@clerk/nextjs";
+import DismissibleDetails from "../dismissible-details";
 import { currentUser } from "@clerk/nextjs/server";
 import { ChevronDown, UserIcon } from "lucide-react";
 import Image from "next/image";
@@ -15,9 +15,12 @@ import { MessageIcon, OrderIcon, WishlistIcon } from "../../../icons";
  * actions when no user is authenticated. The menu also includes quick links (orders, messages, wishlist) and additional
  * navigation entries.
  *
+ * @param disclosureName - 同名の disclosure と排他的に開閉させるためのネイティブ `name`
  * @returns A React element representing the user menu and its hoverable dropdown content
  */
-export default async function UserMenu() {
+export default async function UserMenu({
+    disclosureName,
+}: Readonly<{ disclosureName?: string }> = {}) {
     // Clerk の外部呼び出しは try/catch でラップする（規約: 外部 API 呼び出し）。
     // 取得失敗時は user=null のままサインイン/登録ブランチを描画して安全に縮退する。
     let user: Awaited<ReturnType<typeof currentUser>> = null;
@@ -37,9 +40,16 @@ export default async function UserMenu() {
     }
 
     return (
-        <div className="group relative">
+        // モバイルでは details を static にし、検索/メニューパネルと同じく header 基準で配置する
+        <DismissibleDetails
+            className="group relative max-sm:static"
+            name={disclosureName}
+        >
             {/* Trigger */}
-            <div className="">
+            <summary
+                aria-label="Account menu"
+                className="cursor-pointer list-none"
+            >
                 {user ? (
                     <Image
                         src={user.imageUrl}
@@ -67,20 +77,15 @@ export default async function UserMenu() {
                         </div>
                     </div>
                 )}
-            </div>
+            </summary>
             {/* Content */}
-            <div
-                className={cn(
-                    "absolute -left-20 top-0 hidden cursor-pointer group-hover:block",
-                    { "-left-[200px] lg:-left-[148px]": user }
-                )}
-            >
-                <div className="relative bottom-auto left-2 right-auto z-40 mt-10 p-0 pt-2.5 text-sm text-[#222]">
+            <div className="absolute right-0 top-full cursor-pointer max-sm:right-[5%]">
+                <div className="relative z-40 p-0 pt-2.5 text-sm text-[#222]">
                     {/* Triangle */}
-                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white"></div>
+                    <div className="absolute left-[149px] right-24 top-1 size-0 !border-b-[10px] !border-x-transparent border-b-white max-sm:hidden"></div>
                     {/* Menu */}
                     <div className="rounded-3xl bg-white text-sm text-[#222] shadow-lg">
-                        <div className="w-[305px]">
+                        <div className="w-[min(305px,90vw)]">
                             <div className="px-6 pb-0 pt-5">
                                 {user ? (
                                     <div className="user-avatar flex flex-col items-center justify-center">
@@ -131,7 +136,7 @@ export default async function UserMenu() {
                                     ))}
                                 </ul>
                                 <Separator className="mx-auto !max-w-[257px]" />
-                                <ul className="w-[288px] px-4 pb-1 pt-2.5">
+                                <ul className="w-full px-4 pb-1 pt-2.5">
                                     {extraLinks.map((item, i) => (
                                         <li key={i}>
                                             <Link
@@ -148,7 +153,7 @@ export default async function UserMenu() {
                     </div>
                 </div>
             </div>
-        </div>
+        </DismissibleDetails>
     );
 }
 

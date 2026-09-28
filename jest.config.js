@@ -27,6 +27,7 @@ module.exports = {
         "!src/config/**", // テスト共通インフラ
         "!src/**/icons/**", // 純表示 SVG
         "!src/app/**/{layout,loading,error,not-found,template,page}.tsx", // 純 RSC ラッパー
+        "!src/components/store/home/luxury/scene.tsx", // WebGL 描画 (jsdom で実行不可。呼び出し側の分岐は experience.test.tsx)
     ],
     coverageReporters: ["lcov", "text-summary"],
     transform: {

@@ -3,6 +3,7 @@
 # 代表的な流れ:
 #   make setup   # 初回: build → up → DB 起動待ち → migrate → seed
 #   make logs    # アプリのログを追う (http://localhost:3000)
+#   make install # package.json / bun.lock 変更後に node_modules volume を同期
 #   make down    # 停止 (データは保持)
 #   make down-v  # 停止 + ボリューム削除 (DB を完全リセット)
 #
@@ -14,7 +15,7 @@ SONAR_COMPOSE := docker compose -f docker-compose.sonar.yml $(if $(wildcard .env
 
 .DEFAULT_GOAL := help
 
-.PHONY: help up down down-v build restart ps logs sh psql \
+.PHONY: help up down down-v build restart install ps logs sh psql \
         migrate migrate-deploy generate studio seed seed-e2e \
         lint test test-e2e setup \
         sonar-up sonar-down sonar-scan
@@ -40,6 +41,22 @@ build: ## イメージを再ビルド
 
 restart: ## アプリコンテナを再起動
 	$(COMPOSE) restart app
+
+# node_modules は named volume のため、イメージ再ビルド (make build) では更新されない。
+# 稼働中コンテナへの exec ではなく停止 → 一時コンテナで入れる: 途中失敗で .bin が欠けた
+# 状態のまま dev サーバーが再起動ループするのを避けるため。
+# install / generate が失敗しても app は必ず再起動する。終了コードは install の失敗を優先し、
+# install 成功時は起動の結果を返す (起動失敗を成功扱いにしない)。
+# app コンテナが未作成 (make down 後など) でも動くよう、停止は失敗を無視し、起動は
+# 既存コンテナ前提の start ではなく作成も兼ねる up -d を使う。
+install: ## 依存追加後に node_modules volume を同期 (app 停止 → install → generate → 起動)
+	-$(COMPOSE) stop app
+	$(COMPOSE) run --rm --no-deps app sh -c "bun install --frozen-lockfile && bunx prisma generate"; \
+	install_status=$$?; \
+	$(COMPOSE) up -d app; \
+	start_status=$$?; \
+	if [ $$install_status -ne 0 ]; then exit $$install_status; fi; \
+	exit $$start_status
 
 ps: ## コンテナの状態を表示
 	$(COMPOSE) ps
