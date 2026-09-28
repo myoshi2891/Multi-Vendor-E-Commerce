@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Prisma } from "@prisma/client";
 import { getProducts } from "@/queries/product";
 import { getBrandCategories } from "./data";
+import RetryLink from "./retry-link";
 import type { LuxuryProduct } from "./types";
 import styles from "./luxury.module.css";
 
@@ -118,11 +119,11 @@ export default async function Selection() {
                                 : "新しいコレクションの登場をお待ちください。"}
                         </span>
                     </output>
-                    <a href={failed ? "/#collections" : "/browse"}>
-                        {failed
-                            ? "Try again / 再読み込み"
-                            : "Explore the store →"}
-                    </a>
+                    {failed ? (
+                        <RetryLink>Try again / 再読み込み</RetryLink>
+                    ) : (
+                        <a href="/browse">Explore the store →</a>
+                    )}
                 </>
             )}
         </div>

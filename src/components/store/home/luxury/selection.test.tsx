@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import Selection from "./selection";
 import { getProducts } from "@/queries/product";
@@ -40,5 +40,16 @@ describe("Luxury home selection", () => {
         render(await Selection());
         expect(screen.getByRole("status")).toHaveTextContent("商品を読み込めませんでした");
         expect(screen.getByRole("link", { name: /Try again/ })).toHaveAttribute("href", "/#collections");
+    });
+    it("reloads the page at the collections position when retrying", async () => {
+        const errors = jest.spyOn(console, "error").mockImplementation(() => {});
+        products.mockRejectedValue(new Error("Database unavailable"));
+        window.history.replaceState(null, "", "/");
+        render(await Selection());
+        // 同一ページのフラグメント遷移で終わらせず、既定動作を止めて再読み込みする
+        expect(fireEvent.click(screen.getByRole("link", { name: /Try again/ }))).toBe(false);
+        expect(window.location.hash).toBe("#collections");
+        // jsdom は reload を未実装としてエラー報告する＝reload が呼ばれた証跡
+        expect(errors.mock.calls.some(([e]) => String(e).includes("navigation"))).toBe(true);
     });
 });
