@@ -24,7 +24,10 @@ test.describe("検索・フィルタ", () => {
     await searchInput.press("Enter");
 
     await page.waitForURL(/.*search=.*/);
-    await expect(page.getByText(productName).first()).toBeVisible({ timeout: 10000 });
+    // 検索語はヒーロー等にもエコーされうるため、結果領域（<section aria-label>
+    // = role=region）に限定して「商品カードとして表示された」ことを検証する。
+    const results = page.getByRole("region", { name: "Collection results" });
+    await expect(results.getByText(productName).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("カテゴリフィルタで絞り込まれる", async ({ page }) => {
