@@ -1,4 +1,6 @@
 import { ShieldCheck, Undo } from 'lucide-react'
+import Link from 'next/link'
+import styles from './product.module.css'
 
 export default function ReturnsSecurityPrivacyCard({
     returnPolicy,
@@ -6,9 +8,15 @@ export default function ReturnsSecurityPrivacyCard({
     returnPolicy: string
 }) {
     return (
-        <div className="mt-2 space-y-2">
-            <Returns returnPolicy={returnPolicy} />
-            <SecurityPrivacyCard />
+        <div className={styles.assuranceList}>
+            <div className={styles.assuranceItem}>
+                <Undo size={17} aria-hidden="true" />
+                <div><strong>Considered returns</strong><p>{returnPolicy}</p><Link href="/returns-exchange">Returns &amp; exchanges</Link></div>
+            </div>
+            <div className={styles.assuranceItem}>
+                <ShieldCheck size={17} aria-hidden="true" />
+                <div><strong>Secure by design</strong><p>Protected payment and respectful handling of your details.</p><Link href="/legal">Privacy &amp; terms</Link></div>
+            </div>
         </div>
     )
 }

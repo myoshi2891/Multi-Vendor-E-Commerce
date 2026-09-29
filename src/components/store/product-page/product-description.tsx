@@ -2,6 +2,7 @@
 
 // import DOMPurify from "dompurify";
 import { sanitize } from '@/utils/sanitize'
+import styles from './product.module.css'
 
 export default function ProductDescription({
     text,
@@ -11,16 +12,10 @@ export default function ProductDescription({
     const sanitizedDescription1 = sanitize(text[0])
     const sanitizedDescription2 = sanitize(text[1])
     return (
-        <div className="pt-6">
-            {/* Title */}
-            <div className="h-12">
-                <h2 className="text-2xl font-bold text-main-primary">
-                    Description
-                </h2>
-            </div>
-            {/* Display both descriptions */}
-            <div dangerouslySetInnerHTML={{ __html: sanitizedDescription1 }} />
-            <div dangerouslySetInnerHTML={{ __html: sanitizedDescription2 }} />
-        </div>
+        <section id="description" className={styles.descriptionSection}>
+            <div className={styles.contentHeading}><div><p>THE STORY OF THE PIECE</p><h2>Description</h2></div></div>
+            <div className={styles.descriptionProse} dangerouslySetInnerHTML={{ __html: sanitizedDescription1 }} />
+            {sanitizedDescription2 && <div className={styles.descriptionProse} dangerouslySetInnerHTML={{ __html: sanitizedDescription2 }} />}
+        </section>
     )
 }

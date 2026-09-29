@@ -43,7 +43,7 @@ const ProductVariantSelector: FC<Props> = ({
                         )}
                     >
                         <Image
-                            src={variant.variantImage}
+                            src={variant.variantImage.includes('/no_image') ? '/assets/brand/star.svg' : variant.variantImage}
                             alt={`product variant ${variant.variantUrl}`}
                             width={48}
                             height={48}

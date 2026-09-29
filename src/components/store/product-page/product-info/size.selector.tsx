@@ -2,6 +2,7 @@ import { CartProductType } from '@/lib/types'
 import { Size } from '@prisma/client'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FC, useEffect, useCallback } from 'react'
+import styles from '../product.module.css'
 
 export type SizeWithPrice = Omit<Size, 'price'> & { price: number }
 
@@ -39,17 +40,19 @@ const SizeSelector: FC<Props> = ({ sizeId, sizes, handleChange }) => {
     }, [sizeId, sizes, handleCartProductToBeAddedChange])
 
     return (
-        <div className="flex flex-wrap gap-4">
+        <div className={styles.sizeOptions}>
             {sizes.map((size) => (
-                <span
-                    key={size.size}
-                    className="cursor-pointer rounded-full border px-5 py-1 hover:border-black"
-                    style={{ borderColor: sizeId === size.id ? '#000' : '' }}
+                <button
+                    type="button"
+                    key={size.id}
+                    className={styles.sizeOption}
+                    aria-pressed={sizeId === size.id}
+                    disabled={size.quantity <= 0}
                     data-testid={`size-option-${size.id}`}
                     onClick={() => handleSelectSize(size)}
                 >
                     {size.size}
-                </span>
+                </button>
             ))}
         </div>
     )

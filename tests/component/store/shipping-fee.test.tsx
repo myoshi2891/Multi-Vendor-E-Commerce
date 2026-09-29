@@ -51,8 +51,12 @@ describe('ProductShippingFee', () => {
             render(<ProductShippingFee method="FIXED" fee={15} extraFee={0} weight={1} quantity={5} />)
             
             expect(screen.getByText(/calculates the delivery fee on a fixed price/)).toBeInTheDocument()
-            expect(screen.getByText(/Fee/)).toBeInTheDocument()
-            expect(screen.getByText(matchText('$15 (quantity doesn\'t affect shipping fee.)'))).toBeInTheDocument()
+            expect(screen.getByText('Fixed fee')).toBeInTheDocument()
+            // 固定料金は数量に依存しないため、乗算を示唆する数量行は出さない
+            expect(screen.queryByText('Quantity')).not.toBeInTheDocument()
+            expect(screen.queryByText('x5')).not.toBeInTheDocument()
+            expect(screen.getByText('Total delivery')).toBeInTheDocument()
+            expect(screen.getByText(matchText('This fixed delivery fee stays the same when you add more items.'))).toBeInTheDocument()
         })
     })
 

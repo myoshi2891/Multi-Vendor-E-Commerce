@@ -6,14 +6,16 @@ import ProductInfo from './product-info/product-info'
 import ShipTo from './shipping/ship-to'
 import ShippingDetails from './shipping/shipping-details'
 import ReturnsSecurityPrivacyCard from './returns-security-privacy-card'
-import { cn, isProductValidToAdd, updateProductHistory } from "@/lib/utils";
+import { isProductValidToAdd, updateProductHistory } from "@/lib/utils";
 import QuantitySelector from "./quantity-selector";
-import SocialShare from "../shared/social-share";
 import { ProductVariantImage, ShippingFeeMethod } from "@prisma/client";
 import { useCartStore } from "@/cart-store/useCartStore";
 import toast from "react-hot-toast";
 import useFromStore from "@/hooks/useFromStore";
 import { setCookie } from "cookies-next";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, ShoppingBag } from "lucide-react";
+import styles from "./product.module.css";
 
 type OptionsType = NonNullable<Parameters<typeof setCookie>[2]>;
 
@@ -47,10 +49,8 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
     const {
         productId,
         variantId,
-        variantSlug,
         images,
         shippingDetails,
-        sizes,
     } = productData;
 
     // State for temporary product images
@@ -63,6 +63,9 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
     );
 
     const hasShippingDetails = shippingDetails !== false;
+    // 全サイズが在庫切れなら選択できるサイズが無いため、選択ヒントの代わりに在庫切れを伝える
+    const isSoldOut = productData.sizes.every((size) => size.quantity <= 0);
+    const router = useRouter();
     const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as Exclude<ProductShippingDetailsType, false>) : DEFAULT_SHIPPING_DETAILS;
 
     // Initialize the default product data for the cart item
@@ -161,9 +164,17 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
     }, [variantId]);
 
     const handleAddToCart = () => {
+        if (!isProductValid) return toast.error("Please select a size first");
         if (maxQty <= 0) return toast.error("Out of stock");
         addToCart(productToBeAddedToCart);
-        toast.success("Product added to cart successfully!");
+        toast.success("Added to your bag");
+    };
+
+    const handleBuyNow = () => {
+        if (!isProductValid) return toast.error("Please select a size first");
+        if (maxQty <= 0) return toast.error("Out of stock");
+        addToCart(productToBeAddedToCart);
+        router.push("/cart");
     };
 
     const maxQty = useMemo(() => {
@@ -174,9 +185,8 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                 p.sizeId === sizeId
         );
 
-        return search_product
-            ? search_product.stock - search_product?.quantity
-            : stock;
+        // カート行の stock は投入時点の値で古い可能性があるため、現在の在庫から投入済み数量を差し引く
+        return search_product ? stock - search_product.quantity : stock;
     }, [cartItems, productId, variantId, sizeId, stock]);
 
     // Set view cookie
@@ -189,15 +199,16 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
     }, [productId]);
 
     return (
-        <div className="relative">
-            <div className="w-full xl:flex xl:gap-4">
+        <div className={styles.productBody}>
+            <div className={styles.productGrid}>
                 {/* Product images swiper */}
                 <ProductSwiper
                     images={variantImages.length > 0 ? variantImages : images}
                     activeImage={activeImage || images[0]}
                     setActiveImage={setActiveImage}
+                    productName={productData.name}
                 />
-                <div className="mt-4 flex min-w-0 flex-1 flex-col gap-4 md:mt-0 md:flex-row">
+                <div className={styles.productDetails}>
                     {/* Product main info */}
                     <ProductInfo
                         productData={productData}
@@ -207,9 +218,12 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                         setActiveImage={setActiveImage}
                     />
                     {/* Shipping details - buy actions buttons */}
-                    <div className="w-[390px]">
-                        <div className="z-20">
-                            <div className="overflow-hidden overflow-y-auto rounded-md border bg-white p-4 pb-0">
+                    <aside className={styles.purchasePanel} aria-label="Purchase options">
+                        <div className={styles.purchaseCard}>
+                            <p className={styles.cardEyebrow}>YOUR NEXT FAVORITE THING</p>
+                            <h2>Make it yours.</h2>
+                            <p className={styles.cardIntro}>A little luxury, ready for your everyday.</p>
+                            <div className={styles.cardDivider} />
                                 {/* Ship to */}
                                 {hasShippingDetails && (
                                     <>
@@ -218,7 +232,7 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                             countryName={normalizedShippingDetails.countryName}
                                             city={normalizedShippingDetails.city}
                                         />
-                                        <div className="mt-3 space-y-3">
+                                        <div className={styles.shippingBlock}>
                                             <ShippingDetails
                                                 shippingDetails={normalizedShippingDetails}
                                                 quantity={productToBeAddedToCart.quantity}
@@ -231,10 +245,10 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                     </>
                                 )}
                                 {/* Action buttons */}
-                                <div className="sticky bottom-0 mt-5 space-y-3 bg-white pb-4">
+                                <div className={styles.purchaseActions}>
                                     {/* Qty selector */}
                                     {sizeId && (
-                                        <div className="mt-4 flex w-full justify-end">
+                                        <div className={styles.quantityRow}>
                                             <QuantitySelector
                                                 productId={
                                                     productToBeAddedToCart.productId
@@ -256,36 +270,32 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                         </div>
                                     )}
                                     {/* Action buttons */}
-                                    <button className="relative inline-block h-11 w-full min-w-20 cursor-pointer select-none whitespace-nowrap rounded-3xl border border-orange-border bg-orange-background py-2.5 font-bold leading-6 text-white transition-all duration-300 ease-bezier-1 hover:bg-orange-hover">
-                                        <span>Buy now</span>
+                                    <button type="button" className={styles.buyButton} onClick={handleBuyNow} disabled={!isProductValid || maxQty <= 0}>
+                                        <span>Buy now</span><ArrowUpRight size={17} />
                                     </button>
                                     <button
-                                        // disabled={!isProductValid}
-                                        className={cn(
-                                            "relative inline-block h-11 w-full min-w-20 cursor-pointer select-none whitespace-nowrap rounded-3xl border border-orange-border bg-orange-border py-2.5 font-bold leading-6 text-orange-hover transition-all duration-300 ease-bezier-1 hover:bg-[#e4cdce]",
-                                            {
-                                                "cursor-not-allowed":
-                                                    !isProductValid ||
-                                                    maxQty <= 0,
-                                            }
-                                        )}
+                                        type="button"
+                                        disabled={!isProductValid || maxQty <= 0}
+                                        className={styles.cartButton}
                                         data-testid="add-to-cart"
-                                        onClick={() => handleAddToCart()}
+                                        onClick={handleAddToCart}
                                     >
-                                        <span>Add to cart</span>
+                                        <ShoppingBag size={16} /><span>Add to bag</span>
                                     </button>
-                                    {/* Share to socials */}
-                                    <SocialShare
-                                        url={`/product/${productData.productSlug}/${productData.variantSlug}`}
-                                        quote={`${productData.name} ・ ${productData.variantName}`}
-                                    />
+                                    {!sizeId && (
+                                        <p className={styles.selectionHint}>
+                                            {isSoldOut ? 'This piece is currently out of stock.' : 'Select a size to continue.'}
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
                         </div>
-                    </div>
+                    </aside>
                 </div>
             </div>
-            <div className="mt-6 w-[calc(100%-390px)] pb-16">{children}</div>
+            <div className={styles.belowFold}>
+                <div className={styles.sectionIntro}><span>✦</span><p>THE STORY CONTINUES</p><h2>Explore the <em>details.</em></h2></div>
+                {children}
+            </div>
         </div>
     );
 };

@@ -194,7 +194,7 @@ describe('ReviewDetails Component Tests', () => {
 
         // clientX = 30 のとき、x = 30 >= 20 なので、3.0 になる
         fireEvent.mouseMove(star, { clientX: 30 });
-        expect(document.querySelectorAll('svg.text-yellow-400').length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('svg[class*="c7a464"]').length).toBeGreaterThan(0);
 
         // mouseLeave でホバーがリセットされる
         fireEvent.mouseLeave(star);

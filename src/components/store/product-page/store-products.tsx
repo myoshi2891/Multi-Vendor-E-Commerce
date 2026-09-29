@@ -3,7 +3,8 @@
 import { ProductType } from "@/lib/types";
 import { getProducts } from "@/queries/product";
 import { FC, useEffect, useState } from "react";
-import ProductList from "../shared/product-list";
+import EditorialProductGrid from './editorial-product-grid'
+import styles from './product.module.css'
 
 interface Props {
     storeUrl: string;
@@ -42,9 +43,8 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
         };
     }, [storeUrl, count])
 
-    return <div className="relative mt-6">
-        <ProductList products={products} title={`Recommended from ${storeName}`} arrow />
-    </div>
+    if (products.length === 0) return null
+    return <div className={styles.contentSection}><EditorialProductGrid products={products} title={`From ${storeName}`} eyebrow="MORE FROM THIS BOUTIQUE" /></div>
 }
 
 export default StoreProducts;
