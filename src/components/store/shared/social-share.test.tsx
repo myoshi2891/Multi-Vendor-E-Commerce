@@ -39,4 +39,39 @@ describe('SocialShare', () => {
         expect(screen.getByRole('button', { name: 'Share on WhatsApp' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Share on Pinterest' })).toBeInTheDocument()
     })
+
+    it('announces a successful copy to screen readers without changing the button name', async () => {
+        // Arrange
+        const writeText = jest.fn().mockResolvedValue(undefined)
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+        render(<SocialShare url="/product/example/variant" quote="Example" editorial />)
+        expect(screen.getByRole('status')).toBeEmptyDOMElement()
+
+        // Act
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
+        })
+
+        // Assert
+        expect(screen.getByRole('status')).toHaveTextContent('Product link copied to clipboard')
+        expect(screen.getByRole('button', { name: 'Copy product link' })).toHaveTextContent('Link copied')
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
+    it('shows an error message when copying fails', async () => {
+        // Arrange
+        const writeText = jest.fn().mockRejectedValue(new Error('denied'))
+        Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+        render(<SocialShare url="/product/example/variant" quote="Example" editorial />)
+
+        // Act
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
+        })
+
+        // Assert
+        expect(screen.getByRole('alert')).toHaveTextContent("Couldn't copy the link")
+        expect(screen.getByRole('status')).toBeEmptyDOMElement()
+        expect(screen.getByRole('button', { name: 'Copy product link' })).toHaveTextContent('Copy link')
+    })
 })

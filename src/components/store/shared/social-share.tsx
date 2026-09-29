@@ -27,6 +27,7 @@ const getServerOrigin = () => ''
 
 const SocialShare: FC<Props> = ({ url, quote, isCol, editorial, media }) => {
     const [copied, setCopied] = useState(false)
+    const [copyError, setCopyError] = useState(false)
     const origin = useSyncExternalStore(subscribeToOrigin, getBrowserOrigin, getServerOrigin)
     const shareUrl = origin ? new URL(url, origin).toString() : url
     const mediaUrl = origin ? new URL(media || '/assets/brand/gem.svg', origin).toString() : (media || '/assets/brand/gem.svg')
@@ -35,8 +36,11 @@ const SocialShare: FC<Props> = ({ url, quote, isCol, editorial, media }) => {
             const absoluteUrl = new URL(url, window.location.origin).toString()
             await navigator.clipboard.writeText(absoluteUrl)
             setCopied(true)
+            setCopyError(false)
         } catch {
+            // 権限拒否・非セキュアコンテキスト等。失敗をユーザーに通知する
             setCopied(false)
+            setCopyError(true)
         }
     }
     const tile = (content: ReactNode) => editorial
@@ -64,6 +68,13 @@ const SocialShare: FC<Props> = ({ url, quote, isCol, editorial, media }) => {
                 {editorial ? <span className={styles.shareAction}><PinterestIcon size={20} round /><span>Pinterest</span></span> : <PinterestIcon size={32} round />}
             </PinterestShareButton>)}
             </div>
+            {/* live region は内容変化前から DOM に存在させる必要があるため常時描画する */}
+            <span role="status" className="sr-only">{copied ? 'Product link copied to clipboard' : ''}</span>
+            {copyError && (
+                <p role="alert" className="mt-2 text-xs text-red-600">
+                    Couldn&apos;t copy the link. Please copy it from the address bar.
+                </p>
+            )}
         </div>
     );
 };

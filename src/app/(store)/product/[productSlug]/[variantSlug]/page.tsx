@@ -82,10 +82,12 @@ export default async function ProductVariantPage({
         reviews,
     } = productData
 
+    // ナビゲーション用データは任意表示のため、失敗時は空配列で縮退させる
+    // （エラー詳細は各クエリ内で構造化ログ済み）。関連商品の失敗は従来どおり伝播させる。
     const [relatedProducts, categories, offerTags] = await Promise.all([
         getProducts({ category: category.url }, '', 1, 12),
-        getAllCategories(),
-        getAllOfferTags(),
+        getAllCategories().catch(() => []),
+        getAllOfferTags().catch(() => []),
     ])
 
     return (

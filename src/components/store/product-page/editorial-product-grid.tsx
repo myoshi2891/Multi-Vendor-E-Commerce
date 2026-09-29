@@ -25,7 +25,8 @@ export default function EditorialProductGrid({
                 {products.map((product) => {
                     const variant = product.variants[0]
                     if (!variant) return null
-                    const image = variant.images[0]?.url
+                    // ギャラリー画像が無い場合は代表画像（variantImages）を優先し、最後にブランド画像へ
+                    const image = variant.images[0]?.url || product.variantImages[0]?.image
                     const placeholder = !image || image.includes('/no_image')
                     const prices = variant.sizes.map((size) => size.price * (1 - size.discount / 100))
                     const minPrice = prices.length > 0 ? Math.min(...prices) : null
