@@ -12,7 +12,13 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2456 passed / 2459 total across 217 suites (3 skipped tests in 1 skipped suite), as of 2026-09-27.
+- 2521 passed / 2524 total across 229 suites (3 skipped tests in 1 skipped suite), as of 2026-09-29.
+  PR#181 (product detail redesign) adds colocated component tests under
+  `src/components/store/product-page/` (`container`, `product-info/product-info`, plus extended
+  `product-swiper` / `product-navigation` / `editorial-product-grid`) and
+  `src/components/store/cards/store-card.test.tsx`. Styling moved to CSS Modules, which Jest maps
+  to an empty object, so these tests assert ARIA state and visible text rather than class names.
+  Earlier record (2456 / 2459 across 217 suites, 2026-09-27):
   PR#180 (luxury home) adds colocated component tests under `src/components/store/home/luxury/`
   (`selection`, `experience` with the WebGL scene stubbed via `next/dynamic`, and `data`) plus
   `tests/component/store/dismissible-details.test.tsx`. The WebGL `scene.tsx` is excluded from
