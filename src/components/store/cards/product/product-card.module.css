@@ -1,0 +1,68 @@
+.editorial { min-width: 0; }
+.editorial .card {
+    width: 100%; padding: 0; border: 0; border-radius: 0;
+    background: transparent; box-shadow: none;
+}
+.editorial .card:hover { box-shadow: none; }
+.editorial .card > div > a { display: block; }
+.editorial :global(.swiper) { height: 100%; }
+.editorial .card > div > a > div:first-child {
+    width: 100%; height: auto; aspect-ratio: 4 / 5; border-radius: 0;
+    background: #e5e2d7; filter: none; margin-bottom: 15px;
+}
+.editorial :global(.swiper-slide) { height: 100%; }
+.editorial :global(.swiper-slide img) { width: 100%; height: 100%; object-fit: cover; }
+.editorial .card > div > a > div:nth-child(2) {
+    height: auto; margin-bottom: 5px; color: #17251d;
+    font: 400 clamp(15px, 1.45vw, 20px)/1.35 Georgia, 'Times New Roman', serif;
+    overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.editorial .card :global([data-testid="product-card-price"]) {
+    color: #766541; font-size: 13px; font-weight: 500;
+}
+.editorial .actions {
+    position: absolute; top: 0; left: 0; z-index: 10;
+    width: 100%; aspect-ratio: 4 / 5;
+    display: flex; flex-direction: column; justify-content: flex-end; gap: 12px;
+    padding: 14px; border: 0;
+    background: linear-gradient(to bottom, transparent 24%, #0b100eb8 68%, #0b100eed);
+    opacity: 0; pointer-events: none;
+    transition: none;
+}
+.editorial .card:hover .actions, .editorial .card:focus-within .actions { opacity: 1; }
+.editorial .card:hover .actions :global(a),
+.editorial .card:hover .actions :global(button),
+.editorial .card:focus-within .actions :global(a),
+.editorial .card:focus-within .actions :global(button) { pointer-events: auto; }
+.editorial .actions > div:nth-child(2) { display: none; }
+.editorial .buttonRow {
+    display: grid; grid-template-columns: minmax(0, 1fr) 40px 40px;
+    gap: 6px;
+}
+.editorial .buttonRow :global(a) {
+    min-width: 0; width: 100%; height: 40px; border: 0; border-radius: 0;
+    background: #d4ba83; color: #17251d;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+    transition: none;
+}
+.editorial .buttonRow :global(a:hover) { background: #ead7ad; }
+.editorial .buttonRow :global(button) {
+    width: 40px; min-width: 40px; max-width: 40px; height: 40px;
+    border: 1px solid #d4ba83; border-radius: 0;
+    background: #0b100ecc; color: #f1eee4;
+    transition: none;
+}
+.editorial .buttonRow :global(button:hover) { background: #21382a; }
+@media (hover: none) {
+    .editorial .actions {
+        position: static; width: 100%; aspect-ratio: auto;
+        padding: 12px 0 0; background: transparent;
+        opacity: 1; pointer-events: auto;
+    }
+    .editorial .actions :global(a), .editorial .actions :global(button) { pointer-events: auto; }
+    .editorial .buttonRow :global(button) { background: #17251d; }
+}
+@media (max-width: 620px) {
+    .editorial .buttonRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .editorial .buttonRow :global(a) { grid-column: 1 / -1; }
+}

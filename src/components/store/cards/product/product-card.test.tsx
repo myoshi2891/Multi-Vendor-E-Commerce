@@ -26,7 +26,7 @@ jest.mock("react-hot-toast", () => {
 // 子コンポーネントは描画ノイズ・next/navigation 依存を避けて軽量スタブに置換
 jest.mock("./swiper", () => ({
     __esModule: true,
-    default: () => <div data-testid="swiper" />,
+    default: ({ autoplayOnHover }: { autoplayOnHover?: boolean }) => <div data-testid="swiper" data-autoplay={String(autoplayOnHover)} />,
 }));
 jest.mock("./variant-switcher", () => ({
     __esModule: true,
@@ -94,6 +94,24 @@ beforeEach(() => {
 });
 
 describe("ProductCard", () => {
+    it("商品への CTA を単一のリンクとして描画する", () => {
+        render(<ProductCard product={createProduct("v1")} variant="editorial" />);
+        const link = screen.getByRole("link", { name: "Add to cart" });
+        expect(link).toHaveAttribute("href", "/product/slug-v1/variant-v1");
+        expect(link.closest("button")).toBeNull();
+    });
+
+    it("editorial カードの操作パネルをカード内の独立領域として描画する", () => {
+        render(<ProductCard product={createProduct("v1")} variant="editorial" />);
+        const actions = screen.getByTestId("product-card-actions");
+        expect(actions).toContainElement(screen.getByRole("link", { name: "Add to cart" }));
+        expect(actions).toContainElement(screen.getByRole("button", { name: "Add to wishlist" }));
+    });
+
+    it("editorial カードでは画像ホバー時の自動切替を止める", () => {
+        render(<ProductCard product={createProduct("v1")} variant="editorial" />);
+        expect(screen.getByTestId("swiper")).toHaveAttribute("data-autoplay", "false");
+    });
     // 基本描画
     it("商品名とバリアント名を描画する", () => {
         // Arrange & Act

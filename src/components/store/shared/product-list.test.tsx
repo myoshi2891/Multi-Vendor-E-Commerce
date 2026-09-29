@@ -44,6 +44,12 @@ describe("ProductList Component", () => {
         expect(screen.getByText("No Products")).toBeInTheDocument();
     });
 
+    it("editorial 表示で商品がないときは案内と一覧へのリンクを表示する", () => {
+        render(<ProductList products={[]} variant="editorial" />);
+        expect(screen.getByText("No pieces found in this edit.")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Explore all pieces" })).toHaveAttribute("href", "/browse");
+    });
+
     it("renders title with no link", () => {
         render(<ProductList products={mockProducts} title="Hot Deals" />);
         const heading = screen.getByRole("heading", { name: /Hot Deals/i });
