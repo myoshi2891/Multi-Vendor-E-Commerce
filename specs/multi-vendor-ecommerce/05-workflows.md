@@ -1,5 +1,11 @@
 # Workflows
 
+## Landing Page Flow
+1) `/` opens with three scroll chapters (Luxury, Fortune, Happiness) over a decorative gem stage. The hero and final chapter link to `#collections`; the Fortune chapter links to up to three live categories with canonical `/browse?category=<slug>` URLs. Category priority is jewelry, watches, then bags when those names exist; other categories fill the remaining slots in returned order. If no categories are available, a general `/browse` link remains.
+2) The collection section shows up to eight products with first-variant detail links and the lowest discounted size price, calculated with Decimal arithmetic. It requests up to three products per featured category, tolerates individual category query failures, and fills from a general product query when no displayable category products remain. When there are no categories, it makes one general query. Products without a first variant are excluded. A separate link leads to all pieces at `/browse`.
+3) The WebGL2 scene loads only on the client when motion is allowed and the shopper has not paused it. Scene activity follows viewport intersection and tab visibility. The branded still image and all HTML content remain usable when WebGL2 is unavailable, the scene fails, motion is paused, or `prefers-reduced-motion: reduce` is set. The motion button toggles pause/resume; under reduced motion it is disabled and reports the still state.
+4) The collection has a loading announcement while streamed data resolves. An empty result shows a bilingual empty state and a `/browse` link. A fetch failure shows a bilingual error and a retry link that reloads `/#collections` so the server query actually runs again.
+
 ## Customer Purchase Flow
 1) Browse or search products. `/browse` paginates at 10 products per page: the page reads the
    `page` query parameter, passes it to `getProducts`, and renders the shared pager only when
@@ -14,6 +20,19 @@
 7) Select payment method and capture payment via Stripe or PayPal.
 8) Order status and payment details are updated via payment webhook.
 9) Customer views order history and order details.
+
+## Product Detail Flow
+1) The variant page shows collection navigation, a breadcrumb, an editorial intro, and a responsive gallery / product information / purchase-panel layout. On wide screens these occupy three side-by-side areas; the information and purchase panel stack below 1200px, and all areas stack below 801px. Category links return to `/browse?category=...`; offer links return to `/browse?offer=...`. The gallery supports thumbnails, previous/next buttons, and image enlargement with a close button or Escape. A `/no_image` placeholder uses branded artwork and does not open the enlarged view.
+2) The information panel shows product and variant names, rating and review count, price, color variants, sizes, SKU copy, seller link, share controls, and a link to the description. An invalid stored rating falls back to the weighted average of review buckets. Hovering a color variant previews its images; following it opens that variant URL. Selecting a size writes its ID to the `size` query parameter, updates the displayed discounted price and stock, and enables quantity selection. Out-of-stock sizes are disabled.
+3) The purchase panel shows the destination, shipping service, estimated dates, and a fee breakdown when shipping details exist. The fee summary uses `computeShippingTotal` for the selected quantity and weight; complimentary shipping hides the fee breakdown. Returns and privacy links lead to their respective pages.
+4) `Buy now` and `Add to bag` remain disabled until a valid in-stock size is selected and the remaining stock permits another item. When all sizes are sold out, the panel says so. Remaining quantity is calculated from current selected-size stock minus the matching quantity already in the cart. `Add to bag` adds to the local cart with a success toast; `Buy now` adds and navigates to `/cart`.
+5) Below the purchase area, the page renders the sanitized description; structured category attributes under **Specifications** and legacy specs under **Other specifications** when present; same-category related products; review statistics, filters, sorting, pagination, and review form; questions when present; seller card; and up to five products from that store. Empty optional sections are omitted. Recommendation cards link to variant pages and use representative or branded placeholder imagery when gallery images are unavailable.
+
+## Browse Collection Flow
+1) `/browse` presents a dark collection hero, result count, filter sidebar, sort control, and an editorial product grid. On narrow screens the filter controls open through a disclosure button (`aria-expanded`); the grid adapts from two to four columns across breakpoints. Zero results show an explicit empty state.
+2) The filter sidebar lists active conditions as removable chips. A long value wraps inside the sidebar. `Filter (N)` counts filter values, including repeated values, but excludes `sort`; `Clear All` removes the query string. Removing one chip preserves the other active conditions.
+3) The sort trigger is one button with two visually separated areas: `Sort by` and the selected value. Its radio menu offers Most Popular (default), New Arrivals, Top Rated, and ascending/descending price. Selecting an option updates `sort` while retaining the other query parameters. The label and value must remain within the control at narrow widths.
+4) Editorial cards show variant, Add to cart, wishlist, and compare controls over the image on hover or keyboard focus; touch layouts keep them visible below the image. The overlay stays fixed over the image without an entrance slide, and editorial image autoplay on hover is disabled so moving between cards does not restart an image animation. `Add to cart` links to the variant detail page, where a size and quantity can be chosen before the cart mutation.
 
 ## Offer Discovery Flow
 1) Customer opens `/offers` from the user-menu "Discounts & Offers" link (now wired to `/offers`) or directly.
