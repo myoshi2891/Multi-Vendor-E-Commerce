@@ -45,10 +45,10 @@ describe('SizeSelector', () => {
         render(<SizeSelector sizes={sizes} sizeId="s2" handleChange={mockHandleChange} />)
 
         const selectedOption = screen.getByTestId('size-option-s2')
-        expect(selectedOption).toHaveStyle({ borderColor: '#000' })
+        expect(selectedOption).toHaveAttribute('aria-pressed', 'true')
 
         const unselectedOption = screen.getByTestId('size-option-s1')
-        expect(unselectedOption).not.toHaveStyle({ borderColor: '#000' })
+        expect(unselectedOption).toHaveAttribute('aria-pressed', 'false')
     })
 
     it('calls handleChange and router.replace on size click', () => {

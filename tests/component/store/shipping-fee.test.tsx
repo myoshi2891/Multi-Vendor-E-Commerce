@@ -52,7 +52,8 @@ describe('ProductShippingFee', () => {
             
             expect(screen.getByText(/calculates the delivery fee on a fixed price/)).toBeInTheDocument()
             expect(screen.getByText(/Fee/)).toBeInTheDocument()
-            expect(screen.getByText(matchText('$15 (quantity doesn\'t affect shipping fee.)'))).toBeInTheDocument()
+            expect(screen.getByText('Total delivery')).toBeInTheDocument()
+            expect(screen.getByText(matchText('This fixed delivery fee stays the same when you add more items.'))).toBeInTheDocument()
         })
     })
 
