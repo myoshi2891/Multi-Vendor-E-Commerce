@@ -14,7 +14,7 @@
 .eyebrow { color: var(--gold); font-size: 10px; letter-spacing: .22em; font-weight: 600; }
 .hero h1 { font: 400 clamp(55px, 7vw, 112px)/1.04 Georgia, 'Times New Roman', serif; letter-spacing: -.055em; margin: 22px 0 17px; }
 .hero h1 span { color: #c9ac70; }
-.heroDescription { color: #bbbfb3; font-size: 13px; letter-spacing: .035em; line-height: 1.8; }
+.heroDescription { color: #bbbfb3; font-size: 13px; letter-spacing: .035em; line-height: 1.8; overflow-wrap: anywhere; }
 .heroFoot { display: flex; justify-content: space-between; gap: 16px; border-top: 1px solid #c2ba9429; margin-top: 67px; padding-top: 22px; color: #aab09f; font-size: 9px; letter-spacing: .16em; }
 .heroFoot span[lang] { font-size: 11px; }
 .catalog { max-width: 1600px; padding: 69px 6% 110px; margin: auto; }
