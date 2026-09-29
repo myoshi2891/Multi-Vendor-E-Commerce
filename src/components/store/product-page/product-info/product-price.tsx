@@ -1,7 +1,6 @@
 "use client";
 import { CartProductType } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { usePathname, useRouter } from "next/navigation";
+import styles from '../product.module.css'
 import { FC, useEffect } from "react";
 
 interface SimplifiedSize {
@@ -60,21 +59,11 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                 ? `$${minPrice}`
                 : `$${minPrice} - $${maxPrice}`;
 
-        // If a discount exist when minPrice=maxPrice
-        let discount = 0;
-        if (minPrice === maxPrice) {
-            let check_discount = sizes.find((s) => s.discount > 0);
-            if (check_discount) {
-                discount = check_discount.discount;
-            }
-        }
         return (
             <div>
-                <div className="mr-2.5 inline-block font-bold leading-none text-orange-primary">
+                <div>
                     <span
-                        className={cn("inline-block text-nowrap text-4xl", {
-                            "text-lg": isCard,
-                        })}
+                        className={isCard ? 'text-lg font-bold text-orange-primary' : styles.priceValue}
                         data-testid={
                             isCard ? "product-card-price" : "product-price"
                         }
@@ -83,12 +72,12 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
                     </span>
                 </div>
                 {!sizeId && !isCard && (
-                    <div className="mt-1 text-xs leading-4 text-orange-background">
+                    <div className={styles.priceNote}>
                         <span>Note : Select a size to see the exact price</span>
                     </div>
                 )}
                 {!sizeId && !isCard && (
-                    <p className="mt-2 text-xs">{totalQuantity} pieces</p>
+                    <p className={styles.priceNote}>{totalQuantity} pieces available</p>
                 )}
             </div>
         );
@@ -106,25 +95,25 @@ const ProductPrice: FC<Props> = ({ sizeId, sizes, isCard, handleChange }) => {
 
     return (
         <div>
-            <div className="mr-2.5 inline-block font-bold leading-none text-orange-primary">
+            <div className="inline-block">
                 <span
-                    className="inline-block text-4xl"
+                    className={isCard ? 'text-lg font-bold text-orange-primary' : styles.priceValue}
                     data-testid={isCard ? "product-card-price" : "product-price"}
                 >
                     ${discountedPrice.toFixed(2)}
                 </span>
             </div>
             {selectedSize.price !== discountedPrice && (
-                <span className="mr-2 inline-block text-xl font-normal leading-6 text-[#999] line-through">
+                <span className={styles.priceOriginal}>
                     ${selectedSize.price.toFixed(2)}
                 </span>
             )}
             {selectedSize.discount > 0 && (
-                <span className="inline-block text-xl leading-6 text-orange-secondary">
+                <span className={styles.priceDiscount}>
                     {selectedSize.discount}% off
                 </span>
             )}
-            <p className="mt-2 text-xs">
+            <p className={styles.priceNote}>
                 {selectedSize.quantity > 0 ? (
                     `${selectedSize.quantity} items`
                 ) : (

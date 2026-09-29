@@ -5,29 +5,28 @@ import Link from 'next/link'
 import { Dispatch, FC, SetStateAction } from 'react'
 import { CopyIcon } from '@/components/store/icons'
 import toast from 'react-hot-toast'
-import ReactStars from 'react-rating-stars-component'
 import ProductPrice from './product-price'
 import Countdown from '../../shared/countdown'
-import { Separator } from '@/components/ui/separator'
 import ColorWheel from '@/components/shared/color-wheel'
 import ProductVariantSelector from './variant-selector'
 import SizeSelector from './size.selector'
-import ProductAssurancePolicy from './assurance-policy'
 import { ProductVariantImage } from '@prisma/client'
 import ProductWatch from "./product-watch";
+import { ArrowUpRight, Star } from 'lucide-react'
+import styles from '../product.module.css'
+import { resolveProductRating } from '../display-rating'
+import SocialShare from '../../shared/social-share'
 
 interface Props {
     productData: ProductPageDataType;
-    quantity?: number;
     sizeId: string | undefined;
-    handleChange: (property: keyof CartProductType, value: any) => void;
+    handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
     setVariantImages: Dispatch<SetStateAction<ProductVariantImage[]>>;
     setActiveImage: Dispatch<SetStateAction<ProductVariantImage | null>>;
 }
 
 const ProductInfo: FC<Props> = ({
     productData,
-    quantity,
     sizeId,
     handleChange,
     setVariantImages,
@@ -48,7 +47,6 @@ const ProductInfo: FC<Props> = ({
 
     // Destructure necessary properties from the productData object
     const {
-        productId,
         name,
         sku,
         colors,
@@ -57,6 +55,7 @@ const ProductInfo: FC<Props> = ({
         isSale,
         saleEndDate,
         variantName,
+        variantDescription,
         variantId,
         store,
         rating,
@@ -64,6 +63,7 @@ const ProductInfo: FC<Props> = ({
     } = productData;
 
     const { totalReviews } = reviewsStatistics;
+    const displayRating = resolveProductRating(rating, reviewsStatistics.ratingStatistics)
     // Function to copy the SKU to the clipboard
     const copySkuToClipboard = async () => {
         try {
@@ -75,91 +75,36 @@ const ProductInfo: FC<Props> = ({
     };
 
     return (
-        <div className="relative w-full xl:w-[540px]">
-            {/* Title */}
-            <div>
-                <h1 className="inline font-bold leading-5 text-main-primary">
-                    {name}・{variantName}
-                </h1>
+        <div className={styles.info}>
+            <p className={styles.infoEyebrow}><span>✦</span> THE CURATED COLLECTION <span> / {store.name}</span></p>
+            <h1>{name}<span>{variantName}</span></h1>
+            <div className={styles.ratingRow}>
+                <span className={styles.stars} aria-label={`${displayRating.toFixed(2)} out of 5 stars`}><Star size={15} fill="currentColor" /> {displayRating.toFixed(2)}</span>
+                <Link href="#reviews">{totalReviews === 0 ? 'Be the first to review' : `${totalReviews} reviews`} <ArrowUpRight size={13} /></Link>
             </div>
-            {/* Sku - Rating - Num reviews */}
-            <div className="mt-2 flex items-center text-xs">
-                {/* Store details */}
-                <Link
-                    href={`/store/${store.url}`}
-                    className="mr-2 hidden hover:underline sm:inline-block md:hidden lg:inline-block"
-                >
-                    <div className="flex w-full items-center gap-x-1">
-                        <Image
-                            src={store.logo}
-                            alt={store.name}
-                            width={100}
-                            height={100}
-                            className="size-8 rounded-full object-cover"
-                            priority
-                        />
-                    </div>
-                </Link>
-                <div className="whitespace-nowrap">
-                    <span className="flex-1 truncate text-gray-500">
-                        SKU: {sku}
-                    </span>
-                    <span
-                        className="mx-1 inline-block cursor-pointer align-middle text-[#2F68A8]"
-                        onClick={copySkuToClipboard}
-                    >
-                        <CopyIcon />
-                    </span>
-                </div>
-                <div className="ml-4 flex flex-1 items-center gap-x-2 whitespace-nowrap">
-                    <ReactStars
-                        count={5}
-                        size={24}
-                        color="#F5F5F5"
-                        activeColor="#FFD804"
-                        value={rating}
-                        isHalf
-                        edit={false}
-                    />
-                    <Link
-                        href="#review"
-                        className="text-[#ffd804] hover:underline"
-                    >
-                        (
-                        {totalReviews === 0
-                            ? "No reviews yet"
-                            : totalReviews === 1
-                              ? "1 review"
-                              : `${totalReviews} reviews`}
-                        )
-                    </Link>
-                </div>
-            </div>
-            {/* Price - Sale countdown */}
-            <div className="relative my-2 flex flex-col justify-between sm:flex-row">
+            <div className={styles.priceBlock}>
+                <p>THE PRICE</p>
                 <ProductPrice
                     sizeId={sizeId}
                     sizes={sizes}
                     handleChange={handleChange}
                 />
                 {isSale && saleEndDate && (
-                    <div className="mt-4 pb-2">
+                    <div className={styles.countdown}>
                         <Countdown targetDate={saleEndDate} />
                     </div>
                 )}
             </div>
-            {/* Product live watchers count */}
-            <ProductWatch productId={variantId} />
-            <Separator className="mt-2" />
+            <div className={styles.infoStory}>
+                {variantDescription && <p data-testid="product-summary">{variantDescription}</p>}
+                <Link href="#description">Read the story <ArrowUpRight size={14} /></Link>
+            </div>
+            <div className={styles.watch}><ProductWatch productId={variantId} /></div>
+            <div className={styles.infoDivider} />
             {/* Color Wheel - variant switcher */}
-            <div className="mt-4 space-y-2">
-                <div className="relative flex items-center justify-between font-bold text-main-primary">
-                    <span className="flex items-center gap-x-2">
-                        {colors.length > 1 ? "Colors" : "Color"}
-                        <ColorWheel colors={colors} size={25} />
-                    </span>
-                </div>
-                <div className="mt-4">
+            <div className={styles.optionGroup}>
+                <p>01 <span>{colors.length > 1 ? 'Choose your color' : 'Color'}</span><ColorWheel colors={colors} size={22} /></p>
+                <div className={styles.variantOptions}>
                     {variantInfo.length > 0 && (
                         <ProductVariantSelector
                             variants={variantInfo}
@@ -171,10 +116,8 @@ const ProductInfo: FC<Props> = ({
                 </div>
             </div>
             {/* Size selector */}
-            <div className="mt-4 space-y-2 pb-2">
-                <div>
-                    <h1 className="font-bold text-main-primary">Size</h1>
-                </div>
+            <div className={styles.optionGroup}>
+                <p>02 <span>Choose your size</span></p>
                 <SizeSelector
                     sizeId={sizeId}
                     sizes={sizes}
@@ -182,8 +125,15 @@ const ProductInfo: FC<Props> = ({
                 />
             </div>
             {/* Product assurance */}
-            <Separator className="mt-2" />
-            <ProductAssurancePolicy />
+            <div className={styles.infoDivider} />
+            <div className={styles.sku}>REFERENCE <button type="button" onClick={copySkuToClipboard}>{sku} <CopyIcon /></button></div>
+            <div className={styles.storeLink} data-testid="curated-by"><Image src={store.logo.includes('/no_image') ? '/assets/brand/star.svg' : store.logo} alt="" width={34} height={34} /><div><span>CURATED BY</span><Link href={`/store/${store.url}`}>{store.name} <ArrowUpRight size={13} /></Link></div></div>
+            <SocialShare
+                url={`/product/${productData.productSlug}/${productData.variantSlug}`}
+                quote={`${name} ・ ${variantName}`}
+                editorial
+                media={productData.images[0]?.url}
+            />
         </div>
     );
 };

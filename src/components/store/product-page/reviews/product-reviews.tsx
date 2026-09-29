@@ -16,6 +16,7 @@ import ReviewFilters from './filters'
 import ReviewsSort from './sort'
 import Pagination from '../../shared/pagination'
 import ReviewDetails from '../../forms/review-details'
+import styles from '../product.module.css'
 
 interface Props {
     productId: string
@@ -83,20 +84,14 @@ const ProductReviews: FC<Props> = ({
     }, [filters, sort, page])
 
     return (
-        <div id="reviews" className="pt-6">
-            {/* Title */}
-            <div className="h-12">
-                <h2 className="text-2xl font-bold text-main-primary">
-                    Custom Reviews ({totalReviews})
-                </h2>
-            </div>
-            {/* Statistics */}
-            <div className="w-full">
-                <div className="flex items-center gap-4">
+        <section id="reviews" className={styles.reviewSection}>
+            <div className={styles.contentHeading}><div><p>VOICES FROM THE COLLECTION</p><h2>Customer reviews ({totalReviews})</h2></div></div>
+            <div>
+                <div className={styles.reviewStats}>
                     {/* Rating card */}
-                    <RatingCard rating={rating} />
+                    <RatingCard rating={rating} editorial />
                     {/* Rating stats card */}
-                    <RatingStatisticsCard statistics={ratingStatistics} />
+                    <RatingStatisticsCard statistics={ratingStatistics} editorial />
                 </div>
             </div>
             {totalReviews > 0 && (
@@ -113,7 +108,7 @@ const ProductReviews: FC<Props> = ({
                         <ReviewsSort sort={sort} setSort={setSort} />
                     </div>
                     {/* Reviews */}
-                    <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className={styles.reviewGrid}>
                         {data.length > 0 ? (
                             <>
                                 <div className="flex flex-col gap-3">
@@ -124,6 +119,7 @@ const ProductReviews: FC<Props> = ({
                                             <ReviewCard
                                                 key={review.id}
                                                 review={review}
+                                                editorial
                                             />
                                         ))}
                                 </div>
@@ -135,6 +131,7 @@ const ProductReviews: FC<Props> = ({
                                             <ReviewCard
                                                 key={review.id}
                                                 review={review}
+                                                editorial
                                             />
                                         ))}
                                 </div>
@@ -157,7 +154,7 @@ const ProductReviews: FC<Props> = ({
                     )}
                 </>
             )}
-            <div className="mt-10">
+            <div className={styles.reviewFormWrap}>
                 <ReviewDetails
                     productId={productId}
                     setReviews={setData}
@@ -165,7 +162,7 @@ const ProductReviews: FC<Props> = ({
                     reviews={data}
                 />
             </div>
-        </div>
+        </section>
     )
 }
 

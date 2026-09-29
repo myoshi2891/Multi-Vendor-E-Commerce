@@ -19,6 +19,7 @@ import { PulseLoader } from 'react-spinners'
 import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
 import { v4 } from 'uuid'
+import styles from '../product-page/product.module.css'
 
 /**
  * Renders an interactive star rating control with half-star precision and optional editability.
@@ -116,25 +117,25 @@ function CustomRatingStars({
                         {/* Empty Star Background */}
                         <Star
                             size={size}
-                            className="text-slate-300 absolute top-0 left-0"
+                            className="absolute left-0 top-0 text-slate-300"
                             fill="currentColor"
                         />
                         {/* Active Star Overlay */}
                         {isFull && (
                             <Star
                                 size={size}
-                                className="text-yellow-400 absolute top-0 left-0"
+                                className="absolute left-0 top-0 text-[#c7a464]"
                                 fill="currentColor"
                             />
                         )}
                         {isHalf && (
                             <div
-                                className="absolute top-0 left-0 overflow-hidden"
+                                className="absolute left-0 top-0 overflow-hidden"
                                 style={{ width: '50%', height: size }}
                             >
                                 <Star
                                     size={size}
-                                    className="text-yellow-400"
+                                    className="text-[#c7a464]"
                                     fill="currentColor"
                                 />
                             </div>
@@ -269,15 +270,15 @@ export default function ReviewDetails({
     }, [form.getValues().variantName])
     return (
         <div>
-            <div className="rounded-xl bg-[#f5f5f5] p-4">
+            <div className={styles.reviewForm}>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)}>
                         <div className="flex flex-col space-y-4">
                             {/* Title */}
                             <div className="pt-4">
-                                <h1 className="text-2xl font-bold">
+                                <h3 className={styles.reviewFormTitle}>
                                     Add a review
-                                </h1>
+                                </h3>
                             </div>
                             {/* Form items */}
                             <div className="flex flex-col gap-3">
@@ -439,7 +440,7 @@ export default function ReviewDetails({
                                 )}
                             </div>
                             <div className="flex w-full justify-end">
-                                <Button type="submit" className="h-12 w-36">
+                                <Button type="submit" className={styles.reviewSubmit}>
                                     {isLoading ? (
                                         <PulseLoader size={5} color="#fff" />
                                     ) : (

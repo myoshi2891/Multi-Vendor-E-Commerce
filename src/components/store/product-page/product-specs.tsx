@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
 import type { AttributeDisplayItem } from "@/lib/attribute-repository";
 import { FC, useId } from "react";
+import styles from './product.module.css'
 
 interface Spec {
     name: string;
@@ -61,21 +61,13 @@ const SpecSection = ({
     const headingId = useId();
     if (product.length === 0 && variant.length === 0) return null;
     return (
-        <section aria-labelledby={headingId} className="pt-6">
-            {/* Title */}
-            <div className="h-12">
-                <h2
-                    id={headingId}
-                    className="text-2xl font-bold text-main-primary"
-                >
-                    {title}
-                </h2>
-            </div>
+        <section aria-labelledby={headingId} className={styles.specSection}>
+            <div className={styles.contentHeading}><div><p>THE FINER DETAILS</p><h2 id={headingId}>{title}</h2></div></div>
             {/* Product Specs Table */}
             {product.length > 0 && <SpecTable data={product} />}
             {/* Variant Specs Table */}
             {variant.length > 0 && (
-                <SpecTable data={variant} noTopBorder={product.length > 0} />
+                <SpecTable data={variant} />
             )}
         </section>
     );
@@ -83,34 +75,14 @@ const SpecSection = ({
 
 const SpecTable = ({
     data,
-    noTopBorder,
 }: {
     data: Spec[];
-    noTopBorder?: boolean;
 }) => {
     return (
-        <ul
-            className={cn("grid grid-cols-2 border", {
-                "border-t-0": noTopBorder,
-            })}
-        >
+        <dl className={styles.specGrid}>
             {data.map((spec, i) => (
-                <li
-                    key={i}
-                    className={cn("flex border-t", {
-                        "border-t-0": i === 0,
-                    })}
-                >
-                    <div className="relative float-left flex w-1/2 max-w-[50%] text-sm leading-7">
-                        <div className="w-44 bg-[#f5f5f5] p-4 text-main-primary">
-                            <span className="leading-5">{spec.name}</span>
-                        </div>
-                        <div className="flex-1 break-words p-4 leading-5 text-[#151515]">
-                            <span className="leading-5">{spec.value}</span>
-                        </div>
-                    </div>
-                </li>
+                <div key={`${spec.name}-${i}`}><dt>{spec.name}</dt><dd>{spec.value}</dd></div>
             ))}
-        </ul>
+        </dl>
     );
 };

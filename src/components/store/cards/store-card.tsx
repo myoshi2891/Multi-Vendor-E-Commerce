@@ -8,8 +8,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FC, useState } from 'react'
 import toast from 'react-hot-toast'
+import { ArrowUpRight } from 'lucide-react'
+import styles from '../product-page/product.module.css'
 
 interface Props {
+    editorial?: boolean
     store: {
         id: string
         url: string
@@ -20,7 +23,7 @@ interface Props {
     }
 }
 
-const StoreCard: FC<Props> = ({ store }) => {
+const StoreCard: FC<Props> = ({ store, editorial = false }) => {
     const { id, name, logo, url, followersCount, isUserFollowingStore } = store
     const [following, setFollowing] = useState<boolean>(isUserFollowingStore)
     const [storeFollowersCount, setStoreFollowersCount] =
@@ -52,6 +55,21 @@ const StoreCard: FC<Props> = ({ store }) => {
         } catch (error) {
             toast.error('Something happened, Try again later.')
         }
+    }
+
+    if (editorial) {
+        return (
+            <section className={styles.boutiqueCard} aria-label={`About ${name}`}>
+                <div className={styles.boutiqueIdentity}>
+                    <Image src={logo.includes('/no_image') ? '/assets/brand/star.svg' : logo} alt="" width={64} height={64} />
+                    <div><p>THE BOUTIQUE BEHIND THE PIECE</p><h2>{name}</h2><span>{storeFollowersCount} followers</span></div>
+                </div>
+                <div className={styles.boutiqueActions}>
+                    <button type="button" disabled={!isLoaded} aria-pressed={following} onClick={handleStoreFollow}>{following ? <Check size={15} /> : <Plus size={15} />}{following ? 'Following' : 'Follow boutique'}</button>
+                    <Link href={`/store/${url}`}>Visit boutique <ArrowUpRight size={15} /></Link>
+                </div>
+            </section>
+        )
     }
 
     return (

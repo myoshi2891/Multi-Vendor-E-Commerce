@@ -1,5 +1,6 @@
 import { MapPin } from "lucide-react";
 import { FC } from "react";
+import styles from '../product.module.css'
 
 interface Props {
 	countryName: string;
@@ -9,17 +10,10 @@ interface Props {
 
 const ShipTo: FC<Props> = ({ countryName, countryCode, city }) => {
 	return (
-		<div className="flex h-7 justify-between">
-			<div className="mr-2 flex items-center whitespace-nowrap font-bold">
-				<span>Ship to</span>
-			</div>
-			<div className="flex items-center overflow-hidden">
-				<MapPin className="mb-1 w-4 stroke-main-primary" />
-				<span className="max-w-[200px] cursor-pointer truncate pl-0.5 text-sm text-main-secondary">
-					{[countryName, city, countryCode].filter(Boolean).join(", ")}
-				</span>
-			</div>
-		</div>
+        <div className={styles.shipTo}>
+            <span>Ship to</span>
+            <strong><MapPin size={14} aria-hidden="true" />{[countryName, city, countryCode].filter(Boolean).join(', ')}</strong>
+        </div>
 	);
 };
 

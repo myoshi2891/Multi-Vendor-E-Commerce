@@ -3,11 +3,14 @@ import ColorWheel from '@/components/shared/color-wheel'
 import { ReviewWithImageType } from '@/lib/types'
 import Image from 'next/image'
 import ReactStars from 'react-rating-stars-component'
+import styles from '../product-page/product.module.css'
 
 export default function ReviewCard({
     review,
+    editorial = false,
 }: {
     review: ReviewWithImageType
+    editorial?: boolean
 }) {
     const { user, images } = review
     const colors = review.color
@@ -18,7 +21,7 @@ export default function ReviewCard({
     const { name } = user
     const censoredName = `${name[0]}***${name[name.length - 1]}`
     return (
-        <div className="relative flex h-fit rounded-xl border border-[#d8d8d8] px-2.5 py-4">
+        <div className={editorial ? styles.reviewCard : "relative flex h-fit rounded-xl border border-[#d8d8d8] px-2.5 py-4"}>
             <div className="w-16 space-y-1 px-2">
                 <Image
                     src={user.picture}
@@ -38,7 +41,7 @@ export default function ReviewCard({
                         count={5}
                         size={24}
                         color="#f5f5f5"
-                        activeColor="#ffd804"
+                        activeColor={editorial ? '#c7a464' : '#ffd804'}
                         value={review.rating}
                         isHalf
                         edit={false}

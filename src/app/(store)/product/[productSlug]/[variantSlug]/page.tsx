@@ -1,5 +1,4 @@
 import StoreCard from "@/components/store/cards/store-card";
-import CategoriesHeader from '@/components/store/layout/categories-header/categories-header'
 import ProductPageContainer from '@/components/store/product-page/container'
 import ProductDescription from '@/components/store/product-page/product-description'
 import ProductQuestions from '@/components/store/product-page/product-questions'
@@ -7,9 +6,15 @@ import ProductSpecs from '@/components/store/product-page/product-specs'
 import RelatedProducts from '@/components/store/product-page/related-product'
 import ProductReviews from '@/components/store/product-page/reviews/product-reviews'
 import StoreProducts from '@/components/store/product-page/store-products'
-import { Separator } from '@/components/ui/separator'
 import { getProductPageData, getProducts } from '@/queries/product'
 import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft, ArrowUpRight } from 'lucide-react'
+import styles from '@/components/store/product-page/product.module.css'
+import ProductNavigation from '@/components/store/product-page/product-navigation'
+import { getAllCategories } from '@/queries/category'
+import { getAllOfferTags } from '@/queries/offer-tag'
+import { resolveProductRating } from '@/components/store/product-page/display-rating'
 
 export const dynamic = 'force-dynamic';
 
@@ -77,83 +82,75 @@ export default async function ProductVariantPage({
         reviews,
     } = productData
 
-    const relatedProducts = await getProducts(
-        {
-            category: category.url,
-        },
-        '',
-        1,
-        12
-    )
+    const [relatedProducts, categories, offerTags] = await Promise.all([
+        getProducts({ category: category.url }, '', 1, 12),
+        getAllCategories(),
+        getAllOfferTags(),
+    ])
 
     return (
-        <div>
-            <CategoriesHeader />
-            <div className="mx-auto max-w-[1650px] overflow-x-hidden p-4">
-                <div className="rounded-md border bg-white p-4 text-black shadow" />
-
+        <main className={styles.page}>
+            <ProductNavigation categories={categories} offers={offerTags} />
+            <div className={styles.pageShell}>
+                <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+                    <Link href="/browse"><ArrowLeft size={14} /> The collection</Link>
+                    <span aria-hidden="true">/</span>
+                    <Link href={`/browse?category=${encodeURIComponent(category.url)}`}>{category.name}</Link>
+                    <span aria-hidden="true">/</span>
+                    <span aria-current="page">{productData.name}</span>
+                </nav>
+                <div className={styles.intro}>
+                    <div>
+                        <p className={styles.eyebrow}>THE EXTRAORDINARY, EVERY DAY <span>✦</span> A PIECE TO TREASURE</p>
+                        <p className={styles.introTitle}>Made to be <em>yours.</em></p>
+                        <p lang="ja" className={styles.introJapanese}>心ときめく出会いを、あなたの毎日に。</p>
+                    </div>
+                    <Link href="/browse" className={styles.introLink}>Explore the collection <ArrowUpRight size={15} /></Link>
+                </div>
                 <ProductPageContainer productData={productData} sizeId={sizeId}>
-                    {relatedProducts.products && (
-                        <>
-                            <Separator />
-                            {/* Related Products */}
-                            <RelatedProducts
-                                products={relatedProducts.products}
-                            />
-                        </>
-                    )}
-                    <Separator className="mt-6" />
-                    {/* Product Reviews */}
-                    <ProductReviews
-                        productId={productData.productId}
-                        rating={productData.rating}
-                        statistics={reviewsStatistics}
-                        reviews={reviews}
-                        variantsInfo={variantInfo}
-                    />
-                    <>
-                        <Separator className="mt-6" />
-                        {/* Product description */}
+                    <div className={styles.contentSection}>
                         <ProductDescription
                             text={[
                                 productData.description,
                                 productData.variantDescription || '',
                             ]}
                         />
-                    </>
+                    </div>
                     {(specs.product.length > 0 ||
                         specs.variant.length > 0 ||
                         attributes.product.length > 0 ||
                         attributes.variant.length > 0) && (
-                        <>
-                            <Separator className="mt-6" />
-                            {/* Specs table: 構造化属性 + その他仕様（Spec） */}
-                            <ProductSpecs
-                                attributes={attributes}
-                                specs={specs}
-                            />
-                        </>
+                        <div className={styles.contentSection}>
+                            <ProductSpecs attributes={attributes} specs={specs} />
+                        </div>
                     )}
+                    {relatedProducts.products.length > 0 && (
+                        <div className={styles.contentSection}>
+                            <RelatedProducts products={relatedProducts.products} />
+                        </div>
+                    )}
+                    <div className={styles.contentSection}>
+                        <ProductReviews
+                            productId={productData.productId}
+                            rating={resolveProductRating(productData.rating, reviewsStatistics.ratingStatistics)}
+                            statistics={reviewsStatistics}
+                            reviews={reviews}
+                            variantsInfo={variantInfo}
+                        />
+                    </div>
                     {questions.length > 0 && (
-                        <>
-                            <Separator className="mt-6" />
-                            {/* Product Questions */}
+                        <div className={styles.contentSection}>
                             <ProductQuestions
                                 questions={productData.questions}
                             />
-                        </>
+                        </div>
                     )}
-                    <Separator className="mt-6" />
-                    {/* Store Card */}
-                    <StoreCard store={productData.store} />
-                    {/* Store products */}
-                    <StoreProducts
-                        storeUrl={store.url}
-                        storeName={store.name}
-                        count={5}
-                    />
+                    <div className={styles.contentSection}>
+                        <StoreCard store={productData.store} editorial />
+                    </div>
+                    <StoreProducts storeUrl={store.url} storeName={store.name} count={5} />
                 </ProductPageContainer>
             </div>
-        </div>
+        </main>
     )
 }

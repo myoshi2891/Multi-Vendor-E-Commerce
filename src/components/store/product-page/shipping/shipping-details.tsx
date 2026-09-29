@@ -1,129 +1,70 @@
-"use client";
-import { ProductShippingDetailsType } from "@/lib/types";
-import { ChevronDown, ChevronRight, ChevronUp, Truck } from "lucide-react";
-import { FC, useState } from "react";
-import ProductShippingFee from "./shipping-fee";
-import { getShippingDatesRange } from "@/lib/utils";
-import { computeShippingTotal } from "@/lib/shipping-utils";
+'use client'
 
-interface Props {
-	shippingDetails: ProductShippingDetailsType;
-	quantity: number;
-	weight: number;
+import { useId, useState } from 'react'
+import { ChevronDown, Truck } from 'lucide-react'
+import { ProductShippingDetailsType } from '@/lib/types'
+import { computeShippingTotal } from '@/lib/shipping-utils'
+import { getShippingDatesRange } from '@/lib/utils'
+import ProductShippingFee from './shipping-fee'
+import styles from '../product.module.css'
+
+export default function ShippingDetails({
+    shippingDetails,
+    quantity,
+    weight,
+}: {
+    shippingDetails: ProductShippingDetailsType
+    quantity: number
+    weight: number
+}) {
+    const [expanded, setExpanded] = useState(false)
+    const panelId = useId()
+    if (!shippingDetails) return null
+
+    const {
+        countryName,
+        shippingService,
+        shippingFeeMethod,
+        shippingFee,
+        extraShippingFee,
+        deliveryTimeMin,
+        deliveryTimeMax,
+        isFreeShipping,
+    } = shippingDetails
+    const total = computeShippingTotal(shippingFeeMethod, shippingFee, extraShippingFee, weight, quantity)
+    const { minDate, maxDate } = getShippingDatesRange(deliveryTimeMin, deliveryTimeMax)
+
+    return (
+        <div className={styles.shippingDetails}>
+            <div className={styles.shippingSummary}>
+                <Truck size={18} aria-hidden="true" />
+                <div><span>DELIVERY</span><strong>{isFreeShipping ? 'Complimentary shipping' : `Shipping to ${countryName}`}</strong></div>
+                <b>{isFreeShipping ? 'FREE' : `$${total}`}</b>
+            </div>
+            <dl className={styles.shippingMeta}>
+                <div><dt>Service</dt><dd>{shippingService}</dd></div>
+                <div><dt>Estimated</dt><dd>{minDate.slice(4)} – {maxDate.slice(4)}</dd></div>
+            </dl>
+            {!isFreeShipping && (
+                <>
+                    <button
+                        type="button"
+                        className={styles.shippingToggle}
+                        data-testid="shipping-breakdown-toggle"
+                        aria-label={`${expanded ? 'Hide' : 'Show'} shipping fee breakdown`}
+                        aria-expanded={expanded}
+                        aria-controls={panelId}
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        <span>Shipping fee breakdown</span><ChevronDown size={16} aria-hidden="true" />
+                    </button>
+                    {expanded && (
+                        <div id={panelId} role="region" aria-label="Shipping fee breakdown" className={styles.feePanel}>
+                            <ProductShippingFee method={shippingFeeMethod} fee={shippingFee} extraFee={extraShippingFee} quantity={quantity} weight={weight} />
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    )
 }
-
-function isValidShippingDetails(
-	details: ProductShippingDetailsType
-): details is Exclude<ProductShippingDetailsType, boolean> {
-	return typeof details !== "boolean" && details !== null && details !== undefined;
-}
-
-const ShippingDetails: FC<Props> = (props) => {
-	if (!isValidShippingDetails(props.shippingDetails)) return null;
-	return <ShippingDetailsInner
-		shippingDetails={props.shippingDetails}
-		quantity={props.quantity}
-		weight={props.weight}
-	/>;
-};
-
-interface InnerProps extends Omit<Props, "shippingDetails"> {
-    shippingDetails: Exclude<ProductShippingDetailsType, boolean>;
-}
-
-const ShippingDetailsInner: FC<InnerProps> = ({ shippingDetails, quantity, weight }) => {
-	const [toggle, setToggle] = useState<boolean>(false);
-	const {
-		countryName,
-		deliveryTimeMax,
-		deliveryTimeMin,
-		shippingFee,
-		extraShippingFee,
-		returnPolicy,
-		shippingFeeMethod,
-		shippingService,
-	} = shippingDetails;
-
-	const shippingTotal = computeShippingTotal(
-		shippingFeeMethod,
-		shippingFee,
-		extraShippingFee,
-		weight,
-		quantity
-	);
-
-	const { minDate, maxDate } = getShippingDatesRange(
-		deliveryTimeMin,
-		deliveryTimeMax
-	);
-	return (
-		<div>
-			<div className="space-y-1">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-x-1">
-						<Truck className="w-4" />
-						{shippingDetails.isFreeShipping ? (
-							<span className="flex items-center text-sm font-bold">
-								<span>
-									Free Shipping to
-									<span>{countryName}</span>
-								</span>
-							</span>
-						) : (
-							<span className="flex items-center text-sm font-bold">
-								<span>
-									Shipping to <span>{countryName}</span>
-								</span>
-								<span>&nbsp;for ${shippingTotal}</span>
-							</span>
-						)}
-					</div>
-					<ChevronRight className="w-3" />
-				</div>
-				<span className="ml-5 flex items-center text-sm">
-					Service:&nbsp;
-					<strong className="text-sm">{shippingService}</strong>
-				</span>
-				<span className="ml-5 flex items-center text-sm">
-					Delivery:&nbsp;
-					<strong className="text-sm">
-						{minDate.slice(4)} - {maxDate.slice(4)}
-					</strong>
-				</span>
-				{/* Product shipping fee */}
-				{!shippingDetails.isFreeShipping && (
-					<>
-						{toggle && (
-							<ProductShippingFee
-								fee={shippingFee}
-								extraFee={extraShippingFee}
-								method={shippingFeeMethod}
-								weight={weight}
-								quantity={quantity}
-							/>
-						)}
-						<button
-							type="button"
-							aria-expanded={toggle}
-							onClick={() => setToggle((prev) => !prev)}
-							className="ml-4 flex h-5 w-full max-w-[calc(100%-2rem)] cursor-pointer items-center bg-gray-100 hover:bg-gray-200"
-						>
-							<span className="flex w-full items-center justify-between gap-x-1 px-2">
-								<span className="text-xs">
-									{toggle ? "Hide" : "Shipping Fee Breakdown"}
-								</span>
-								{toggle ? (
-									<ChevronUp className="w-4" />
-								) : (
-									<ChevronDown className="w-4" />
-								)}
-							</span>
-						</button>
-					</>
-				)}
-			</div>
-		</div>
-	);
-};
-
-export default ShippingDetails;
