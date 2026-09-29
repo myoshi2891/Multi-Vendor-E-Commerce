@@ -92,6 +92,13 @@ describe("ProductSort", () => {
         ).toBeInTheDocument();
     });
 
+    it("ラベルと選択値を独立した領域に配置する", () => {
+        renderSort("sort=price-high-to-low");
+        const trigger = screen.getByRole("button", { name: "Sort by Price High to low" });
+        expect(trigger.querySelector("[data-sort-label]")).toHaveTextContent("Sort by");
+        expect(trigger.querySelector("[data-sort-value]")).toHaveTextContent("Price High to low");
+    });
+
     it("トリガー操作でメニューを開き、全ソート項目を radio として提示する", () => {
         // Arrange
         renderSort();

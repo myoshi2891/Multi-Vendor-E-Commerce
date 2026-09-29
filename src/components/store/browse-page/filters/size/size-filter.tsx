@@ -3,7 +3,7 @@ import { FiltersQueryType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { getFilteredSizes } from "@/queries/size";
 import { Minus, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import SizeLink from "./size-link";
 
 export default function SizeFilter({
@@ -15,6 +15,7 @@ export default function SizeFilter({
 }) {
     const { category, subCategory, offer, search } = queries;
     const [show, setShow] = useState<boolean>(true);
+    const panelId = useId();
     const [sizes, setSizes] = useState<{ size: string }[]>([]);
     const [total, setTotal] = useState<number>(10);
     const [take, setTake] = useState<number>(10);
@@ -50,23 +51,17 @@ export default function SizeFilter({
     return (
         <div className="pb-4 pt-5">
             {/* Header */}
-            <div
-                className="relative flex cursor-pointer select-none items-center justify-between"
-                onClick={() => setShow((prev) => !prev)}
-            >
-                <h3 className="line-clamp-1 text-ellipsis text-sm font-bold capitalize text-main-primary">
+            <h3>
+                <button type="button" aria-expanded={show} aria-controls={panelId}
+                    className="flex min-h-9 w-full cursor-pointer items-center justify-between text-left text-sm font-bold text-main-primary"
+                    onClick={() => setShow((prev) => !prev)}>
                     Size
-                </h3>
-                <span className="absolute right-0">
-                    {show ? (
-                        <Minus className="w-3" />
-                    ) : (
-                        <Plus className="w-3" />
-                    )}
-                </span>
-            </div>
+                    {show ? <Minus className="w-3" aria-hidden="true" /> : <Plus className="w-3" aria-hidden="true" />}
+                </button>
+            </h3>
             {/* Filter */}
             <div
+                id={panelId}
                 className={cn("mt-2.5 space-y-2", {
                     hidden: !show,
                 })}

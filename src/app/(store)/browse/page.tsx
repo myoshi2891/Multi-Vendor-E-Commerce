@@ -1,4 +1,5 @@
 import BrowsePagination from "@/components/store/browse-page/browse-pagination";
+import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
@@ -7,6 +8,7 @@ import { normalizePageParam } from "@/lib/utils";
 import { getProducts } from "@/queries/product";
 import { permanentRedirect, redirect } from "next/navigation";
 import { isWithinSubtree, resolveCategoryNode } from "@/lib/category-tree";
+import styles from "./browse.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -195,7 +197,7 @@ export default async function BrowsePage({
         sort,
         currentPage
     );
-    const { products, totalPages } = products_data;
+    const { products, totalPages, totalCount } = products_data;
 
     // 範囲外ページ（?page=999）は空リストを描画せず正準 URL へ寄せる。
     // ページャは page={currentPage} をハイライトするため、寄せないと
@@ -209,34 +211,56 @@ export default async function BrowsePage({
         redirect(buildBrowseHref(query, canonicalPage));
     }
 
+    const searchTerm = typeof search === "string" ? search.trim() : "";
+    const resultCount = totalCount ?? products.length;
+
     return (
-        <div className="mx-auto max-w-[95%]">
-            <div className="mt-5 flex gap-x-5">
-                <ProductFilters
-                    queries={{
-                        category,
-                        offer,
-                        search,
-                        size,
-                        sort,
-                        subCategory,
-                        maxPrice,
-                        minPrice,
-                        color,
-                    }}
-                />
-                <div className="space-y-5 p-4">
-                    <ProductSort />
-                    {/* Product list */}
-                    <ProductList products={products} />
-                    {totalPages > 1 && (
-                        <BrowsePagination
-                            page={currentPage}
-                            totalPages={totalPages}
-                        />
-                    )}
+        <main className={styles.browse}>
+            <header className={styles.hero}>
+                <div className={styles.heroInner}>
+                    <p className={styles.eyebrow}>THE EDIT / CURATED FOR YOU</p>
+                    <h1>{searchTerm ? "Search results" : "The collection"}<span>.</span></h1>
+                    <p className={styles.heroDescription}>
+                        {searchTerm ? `Pieces matching “${searchTerm}”` : "Explore pieces worth keeping, chosen for the everyday extraordinary."}
+                    </p>
+                    <div className={styles.heroFoot}>
+                        <span>DISCOVER SOMETHING SPECIAL</span>
+                        <span lang="ja">心ときめくひとつを、ここから。</span>
+                    </div>
+                </div>
+            </header>
+
+            <div className={styles.catalog}>
+                <div className={styles.catalogIntro}>
+                    <div>
+                        <p className={styles.eyebrow}>EXPLORE THE EDIT</p>
+                        <h2>Find your <em>favorite.</em></h2>
+                    </div>
+                    <p>{resultCount} {resultCount === 1 ? "piece" : "pieces"}</p>
+                </div>
+                <div className={styles.catalogLayout}>
+                    <section className={styles.filters} aria-label="Refine the collection">
+                        <p className={styles.sectionLabel}>REFINE YOUR SEARCH</p>
+                        <FilterPanel>
+                            <ProductFilters
+                                queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }}
+                            />
+                        </FilterPanel>
+                    </section>
+                    <section className={styles.results} aria-label="Collection results">
+                        <div className={styles.resultsBar}>
+                            <span>THE COLLECTION <span className={styles.resultNumber}>/ {String(currentPage).padStart(2, "0")}</span></span>
+                            <ProductSort />
+                        </div>
+                        <ProductList products={products} variant="editorial" />
+                        {totalPages > 1 && (
+                            <div className={styles.pagination}>
+                                <BrowsePagination page={currentPage} totalPages={totalPages} />
+                            </div>
+                        )}
+                    </section>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }

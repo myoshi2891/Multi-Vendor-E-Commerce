@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils";
 import { OfferTag } from "@prisma/client";
 import { Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import OfferLink from "./offer-link";
 
 export default function OfferFilter({
@@ -11,26 +11,21 @@ export default function OfferFilter({
     offers: OfferTag[];
 }) {
     const [show, setShow] = useState<boolean>(true);
+    const panelId = useId();
     return (
         <div className="pb-4 pt-5">
             {/* Header */}
-            <div
-                className="relative flex cursor-pointer select-none items-center justify-between"
-                onClick={() => setShow((prev) => !prev)}
-            >
-                <h3 className="line-clamp-1 text-ellipsis text-sm font-bold capitalize text-main-primary">
+            <h3>
+                <button type="button" aria-expanded={show} aria-controls={panelId}
+                    className="flex min-h-9 w-full cursor-pointer items-center justify-between text-left text-sm font-bold text-main-primary"
+                    onClick={() => setShow((prev) => !prev)}>
                     Offer
-                </h3>
-                <span className="absolute right-0">
-                    {show ? (
-                        <Minus className="w-3" />
-                    ) : (
-                        <Plus className="w-3" />
-                    )}
-                </span>
-            </div>
+                    {show ? <Minus className="w-3" aria-hidden="true" /> : <Plus className="w-3" aria-hidden="true" />}
+                </button>
+            </h3>
             {/* Filter */}
             <div
+                id={panelId}
                 className={cn("mt-2.5 flex flex-wrap gap-2", {
                     hidden: !show,
                 })}

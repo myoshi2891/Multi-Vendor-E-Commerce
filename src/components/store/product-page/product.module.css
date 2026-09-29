@@ -109,6 +109,9 @@
 .purchaseCard :global(.text-\[\#979797\]) { color: #b9c5b8; }
 .shippingBlock { border-top: 1px solid #c7c89b35; border-bottom: 1px solid #c7c89b35; margin: 17px 0; padding: 16px 0; }
 .shippingDetails { min-width: 0; }
+.shippingUnavailable { padding: 18px 0; border-bottom: 1px solid #c7c89b35; }
+.shippingUnavailable strong { display: block; color: #f2f0e9; font-size: 12px; }
+.shippingUnavailable p { margin-top: 7px; color: #c1cbbb; font-size: 12px; line-height: 1.6; }
 .shippingSummary { display: flex; align-items: center; gap: 12px; }
 .shippingSummary > svg { flex: none; color: #d4ba83; }
 .shippingSummary > div { min-width: 0; flex: 1; }

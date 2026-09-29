@@ -2,14 +2,14 @@
 
 ## UI Routes (App Router)
 Storefront:
-- `/` home
-- `/browse` browse and search; supports a `page` query parameter (1-based, normalized per the tech.md URL-parameter rule) that is passed to `getProducts(filters, sort, page)`. The pager renders only when `totalPages > 1`, via the client wrapper `src/components/store/browse-page/browse-pagination.tsx`, which preserves all existing query parameters (filters, sort, search) and replaces only `page`.
+- `/` dynamic storefront landing page (`force-dynamic`). Streams `BrandExperience` and `Selection` through separate Suspense boundaries; `getBrandCategories` supplies up to three live category slugs, and the selection uses `getProducts` for up to eight displayable products. The experience's WebGL scene is decorative and client-only; navigation and shopping links remain in HTML. See `05-workflows.md` for display and failure states.
+- `/browse` browse and search; reads `search`, `category`, legacy `subCategory`, `offer`, repeatable `size` / `color`, `minPrice`, `maxPrice`, `sort`, and 1-based `page` query parameters. `page` is normalized per the tech.md URL-parameter rule and passed to `getProducts(filters, sort, page)`; out-of-range pages redirect to the last available page (or page 1 for zero results). Resolvable legacy `subCategory` redirects (308) to `category` only when it is nested under the supplied category or no category is supplied; conflicting or unresolvable category filters retain fail-closed results. The pager renders only when `totalPages > 1`, via `src/components/store/browse-page/browse-pagination.tsx`, preserving other query parameters and replacing only `page`.
 - `/offers` platform-wide offer (OfferTag) landing; each tag links to `/browse?offer=<url>` (reuses `getAllOfferTags`, `force-dynamic`)
 - `/about` `/legal` `/faqs` `/product-support` static content pages (DB-independent, SSG; rendered via shared `StaticPageLayout` fed by typed content constants in `src/components/store/static/content/`)
 - `/customer-service` support hub portal (cards linking to `/contact` `/returns-exchange` `/faqs` `/track-order` `/product-support`)
 - `/faq` → 308 `permanentRedirect` to canonical `/faqs` (deduplicates the legacy footer link)
-- `/product/[productSlug]` product details
-- `/product/[productSlug]/[variantSlug]` variant details
+- `/product/[productSlug]` redirects to the first variant, or `/` when the product is missing, has no variants, or cannot be loaded.
+- `/product/[productSlug]/[variantSlug]` dynamic variant detail page. Missing product data returns 404. Optional `size` is a size ID: invalid IDs redirect to the variant URL without `size`, and a variant with exactly one size redirects to `?size=<id>`. The page fetches product data plus same-category related products; category and offer navigation fetches may fail independently and then render empty navigation lists. The client purchase panel uses the selected size for price, stock, quantity, and cart actions; further UI behavior is specified in `05-workflows.md`.
 - `/store/[storeUrl]` store page
 - `/cart` cart
 - `/checkout` checkout (protected)

@@ -1550,6 +1550,7 @@ const formatProductResponse = (
             url: store.url,
             name: store.name,
             logo: store.logo,
+            returnPolicy: store.returnPolicy,
             followersCount: storeFollowersCount,
             isUserFollowingStore,
         },

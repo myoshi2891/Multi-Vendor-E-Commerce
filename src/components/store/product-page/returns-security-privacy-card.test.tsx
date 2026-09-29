@@ -9,4 +9,11 @@ describe('ReturnsSecurityPrivacyCard', () => {
         expect(screen.getByRole('link', { name: 'Returns & exchanges' })).toHaveAttribute('href', '/returns-exchange')
         expect(screen.getByRole('link', { name: 'Privacy & terms' })).toHaveAttribute('href', '/legal')
     })
+
+    it('shows a useful returns message when the store policy is empty', () => {
+        render(<ReturnsSecurityPrivacyCard returnPolicy="" />)
+
+        expect(screen.getByText('See the returns policy for details.')).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Returns & exchanges' })).toHaveAttribute('href', '/returns-exchange')
+    })
 })

@@ -239,11 +239,19 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                                 weight={productData.weight}
                                             />
                                         </div>
-                                        <ReturnsSecurityPrivacyCard
-                                            returnPolicy={normalizedShippingDetails.returnPolicy}
-                                        />
                                     </>
                                 )}
+                                {!hasShippingDetails && (
+                                    <div className={styles.shippingUnavailable} role="status">
+                                        <strong>Delivery</strong>
+                                        <p>Delivery details are unavailable for your selected country.</p>
+                                    </div>
+                                )}
+                                <ReturnsSecurityPrivacyCard
+                                    returnPolicy={hasShippingDetails
+                                        ? normalizedShippingDetails.returnPolicy
+                                        : productData.store.returnPolicy}
+                                />
                                 {/* Action buttons */}
                                 <div className={styles.purchaseActions}>
                                     {/* Qty selector */}

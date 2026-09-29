@@ -30,9 +30,9 @@
 
 | 機能カテゴリ | 概要 | 主要な入出力/振る舞い | 関連ファイルパス |
 |---|---|---|---|
-| ホーム | トップページ。おすすめ商品・特集カテゴリを表示 | `getHomeDataDynamic` 等で商品・カテゴリを取得し SSR 描画 | `src/app/(store)/page.tsx`, `src/queries/home.ts` |
-| 商品閲覧・検索（Browse） | カテゴリ/価格/サイズ/色での絞り込み、ソート、ページネーション | URL パラメータを `normalizePageParam` 等で正規化し、カテゴリツリー（materialized path）で解決 | `src/app/(store)/browse/page.tsx`, `src/lib/category-tree.ts`, `src/queries/product.ts` |
-| 商品詳細 | 商品スラッグ→バリアントスラッグへリダイレクトし、バリアント別詳細を表示 | 最初のバリアントへ自動リダイレクト | `src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx` |
+| ホーム | 三章構成のランディング演出、カテゴリ導線、最大8件のコレクションを表示 | `getBrandCategories` と `getProducts` を別々の Suspense 境界で取得。WebGL 演出は任意で、静止画・再試行導線を用意。詳細は [`05-workflows.md`](../specs/multi-vendor-ecommerce/05-workflows.md#landing-page-flow) | `src/app/(store)/page.tsx`, `src/components/store/home/luxury/`, `src/queries/product.ts` |
+| 商品閲覧・検索（Browse） | カテゴリ/オファー/価格/サイズ/色での絞り込み、ソート、ページネーション。レスポンシブなフィルタと商品カード操作 | URL パラメータを正規化し、カテゴリツリー（materialized path）で解決。操作・表示の詳細は [`05-workflows.md`](../specs/multi-vendor-ecommerce/05-workflows.md#browse-collection-flow) | `src/app/(store)/browse/page.tsx`, `src/components/store/browse-page/`, `src/queries/product.ts` |
+| 商品詳細 | バリアント別の画像ギャラリー、サイズ・価格・在庫、配送と購入パネル、レビュー・仕様・関連商品を表示 | 商品スラッグのみの URL は最初のバリアントへリダイレクト。`size` クエリで選択サイズを保持し、購入可否と残数を判定。詳細は [`05-workflows.md`](../specs/multi-vendor-ecommerce/05-workflows.md#product-detail-flow) | `src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx`, `src/components/store/product-page/` |
 | 商品比較 | 選択した複数商品をグリッドで比較 | クライアント側 `localStorage`（`useCompareStore`）で完結、サーバークエリは商品取得のみ | `src/app/(store)/compare/page.tsx` |
 | オファー・割引一覧 | プラットフォーム全体の割引タグ一覧 | `getAllOfferTags` 取得、絞込は `/browse` に委譲 | `src/app/(store)/offers/page.tsx` |
 | カート | カート内容表示、国別送料計算 | Zustand 永続ストア（`useCartStore`）で追加/更新/削除 | `src/app/(store)/cart/page.tsx`, `src/cart-store/useCartStore.ts` |

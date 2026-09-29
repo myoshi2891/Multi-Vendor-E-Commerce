@@ -12,17 +12,20 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2521 passed / 2524 total across 229 suites (3 skipped tests in 1 skipped suite), as of 2026-09-29.
+- 2534 passed / 2537 total across 234 suites (233 passed, 1 skipped suite; 3 skipped tests), measured on 2026-09-29 for the uncommitted `/browse` redesign. The 13 added tests and 5 added suites cover the filter disclosure, long active-filter values, category/offer/size controls, sort trigger and query preservation, editorial list, and card actions. Relevant real-DB `product-browse.test.ts` passed 21/21; targeted Chromium `search-filter.spec.ts` and `a11y/browse.spec.ts` passed 7/7. TypeScript, targeted ESLint, and `git diff --check` also passed. This is a targeted E2E result, not a full cross-browser run. The `browse-grid` Chromium visual baseline (`tests/e2e/visual/browse.spec.ts`) was refreshed on 2026-09-30: the run via `scripts/e2e/run-local.sh` failed against the prior GoShop layout, the diff was reviewed as the intended redesign (hero, editorial grid, filter panel, pagination), and two consecutive runs without `--update-snapshots` then passed.
+  Earlier record (2521 / 2524 across 229 suites, 2026-09-29):
   PR#181 (product detail redesign) adds colocated component tests under
   `src/components/store/product-page/` (`container`, `product-info/product-info`, plus extended
   `product-swiper` / `product-navigation` / `editorial-product-grid`) and
   `src/components/store/cards/store-card.test.tsx`. Styling moved to CSS Modules, which Jest maps
   to an empty object, so these tests assert ARIA state and visible text rather than class names.
+  Product-detail behavior is pinned by `container.test.tsx` (selection and sold-out hints, cart actions, current-stock limit, shipping fallback), `product-swiper.test.tsx` (thumbnail, placeholder, previous/next and enlarged-image controls), `product-navigation.test.tsx` (category/offer links and menu dismissal), and `editorial-product-grid.test.tsx` (variant links, price, image fallback). Existing `tests/e2e/visual/product.spec.ts` supplies the product-page screenshot baseline. This records the committed PR#181 coverage; these product-detail tests were not rerun for this documentation-only update.
   Earlier record (2456 / 2459 across 217 suites, 2026-09-27):
   PR#180 (luxury home) adds colocated component tests under `src/components/store/home/luxury/`
   (`selection`, `experience` with the WebGL scene stubbed via `next/dynamic`, and `data`) plus
   `tests/component/store/dismissible-details.test.tsx`. The WebGL `scene.tsx` is excluded from
   coverage in both `jest.config.js` and `sonar-project.properties` (jsdom cannot render it).
+  The landing-page checks cover live category ranking and empty fallback (`data.test.ts`), product routes, discounted prices, partial fetch failure and retry (`selection.test.tsx`), and reduced motion, pause/resume, viewport activity, WebGL failure fallback, and category links (`experience.test.tsx`). `tests/e2e/luxury-home.spec.ts` covers 390/768/1440px navigation and overflow, serious/critical axe violations, motion controls when WebGL2 is available, and a forced no-WebGL path. These are existing tests; they were not rerun for this documentation-only update.
   Earlier record (2426 / 2429 across 212 suites, 2026-09-27):
   PR#179 follow-ups cover the admin attribute forms (`tests/component/dashboard/attribute-details`,
   `attribute-option-details`), the admin attribute list / option columns and actions

@@ -22,29 +22,35 @@ import { useEffect, useRef } from 'react'
  */
 export default function ProductCardImageSwiper({
     images,
+    autoplayOnHover = true,
 }: {
     images: ProductVariantImage[]
+    autoplayOnHover?: boolean
 }) {
     const swiperRef = useRef<SwiperRef>(null)
     useEffect(() => {
-        if (swiperRef.current && swiperRef.current.swiper) {
+        if (autoplayOnHover && swiperRef.current?.swiper?.autoplay) {
             swiperRef.current.swiper.autoplay.stop()
         }
-    }, [swiperRef])
+    }, [autoplayOnHover])
     return (
         <div
             className="relative mb-2 h-[200px] w-full overflow-hidden rounded-2xl bg-white contrast-[90%]"
-            onMouseEnter={() => swiperRef.current?.swiper.autoplay.start()}
+            onMouseEnter={() => {
+                if (autoplayOnHover) swiperRef.current?.swiper.autoplay.start()
+            }}
             onMouseLeave={() => {
-                swiperRef.current?.swiper.autoplay.stop();
-                swiperRef.current?.swiper.slideTo(0);
+                if (autoplayOnHover) {
+                    swiperRef.current?.swiper.autoplay.stop();
+                    swiperRef.current?.swiper.slideTo(0);
+                }
             }}
             // style={{ height: "200px" }}
         >
             <Swiper
                 ref={swiperRef}
-                modules={[Autoplay]}
-                autoplay={{ delay: 500 }}
+                modules={autoplayOnHover ? [Autoplay] : []}
+                autoplay={autoplayOnHover ? { delay: 500 } : false}
             >
                 {images.map((img, index) => (
                     <SwiperSlide key={img.id ?? index}>

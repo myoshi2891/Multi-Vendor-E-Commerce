@@ -84,11 +84,11 @@ export default function CategoryLink({
 
     return (
         <section>
-            <div className="relative mt-2 flex w-full items-center justify-between leading-5">
+            <div className="relative mt-1 flex min-h-8 w-full items-center justify-between leading-5">
                 <button
                     type="button"
                     aria-pressed={category.url === categoryQuery}
-                    className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
+                    className="flex min-h-8 cursor-pointer select-none items-center whitespace-nowrap text-left"
                     onClick={() => handleCategoryChange(category.url)}
                 >
                     <span className="relative mr-2 grid size-3 place-items-center rounded-full border border-border">
@@ -103,7 +103,7 @@ export default function CategoryLink({
                 {hasChildren && (
                     <button
                         type="button"
-                        className="cursor-pointer"
+                        className="grid min-h-8 min-w-8 cursor-pointer place-items-center"
                         onClick={() => setExpand((prev) => !prev)}
                         aria-expanded={expand}
                         aria-label={expand ? "Collapse" : "Expand"}

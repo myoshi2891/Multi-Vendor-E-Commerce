@@ -12,6 +12,7 @@ import { addToWishlist } from "@/queries/user";
 import { useCompareStore } from "@/compare-store/useCompareStore";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import styles from "./product-card.module.css";
 
 /**
  * Renders an interactive product card for the selected product variant.
@@ -21,7 +22,7 @@ import toast from "react-hot-toast";
  * @param product - The product and its available variants to display
  * @returns A React element representing the product card
  */
-export default function ProductCard({ product }: { product: ProductType }) {
+export default function ProductCard({ product, variant: appearance }: { product: ProductType; variant?: "editorial" }) {
     const { name, slug, rating, sales, variantImages, variants, id } = product;
     const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
     const { variantSlug, variantName, images, sizes } = variant;
@@ -61,8 +62,8 @@ export default function ProductCard({ product }: { product: ProductType }) {
     };
 
     return (
-        <div>
-            <div className="group relative w-48 rounded-t-3xl border border-transparent bg-white p-4 transition-all duration-75 ease-in-out hover:border-border hover:shadow-xl sm:w-[225px]">
+        <div className={appearance === "editorial" ? styles.editorial : undefined}>
+            <div className={cn("group relative w-48 rounded-t-3xl border border-transparent bg-white p-4 transition-all duration-75 ease-in-out hover:border-border hover:shadow-xl sm:w-[225px]", appearance === "editorial" && styles.card)}>
                 <div className="relative size-full">
                     <Link
                         href={`/product/${slug}/${variantSlug}`}
@@ -70,7 +71,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
                         data-testid={`product-card-${slug}`}
                     >
                         {/* Images Swiper */}
-                        <ProductCardImageSwiper images={images} />
+                        <ProductCardImageSwiper images={images} autoplayOnHover={appearance !== "editorial"} />
                         {/* Title */}
                         <div className="line-clamp-1 h-[18px] overflow-hidden text-ellipsis text-sm text-main-primary">
                             {name} ・ {variantName}
@@ -100,7 +101,12 @@ export default function ProductCard({ product }: { product: ProductType }) {
                         />
                     </Link>
                 </div>
-                <div className="absolute -left-px z-30 hidden w-[calc(100%+2px)] space-y-2 rounded-b-3xl border border-t-0 bg-white px-4 pb-4 shadow-xl group-hover:block">
+                <div
+                    data-testid={appearance === "editorial" ? "product-card-actions" : undefined}
+                    className={appearance === "editorial"
+                        ? styles.actions
+                        : "absolute -left-px z-30 hidden w-[calc(100%+2px)] space-y-2 rounded-b-3xl border border-t-0 bg-white px-4 pb-4 shadow-xl group-hover:block"}
+                >
                     {/* Variant switcher */}
                     <VariantSwitcher
                         images={variantImages}
@@ -110,8 +116,8 @@ export default function ProductCard({ product }: { product: ProductType }) {
                     />
                     <div className="h-4"></div>
                     {/* Action buttons */}
-                    <div className="flex flex-row gap-x-1">
-                        <Button>
+                    <div className={cn("flex flex-row gap-x-1", appearance === "editorial" && styles.buttonRow)}>
+                        <Button asChild>
                             <Link href={`/product/${slug}/${variantSlug}`}>
                                 Add to cart
                             </Link>

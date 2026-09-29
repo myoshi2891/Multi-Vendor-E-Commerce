@@ -52,8 +52,8 @@ jest.mock("@/components/store/browse-page/sort", () => ({
 }));
 jest.mock("@/components/store/shared/product-list", () => ({
     __esModule: true,
-    default: ({ products }: { products: unknown[] }) => (
-        <div data-testid="product-list">{products.length}</div>
+    default: ({ products, variant }: { products: unknown[]; variant?: string }) => (
+        <div data-testid="product-list" data-variant={variant}>{products.length}</div>
     ),
 }));
 
@@ -93,6 +93,24 @@ const parseRedirectUrl = (): URLSearchParams => {
 describe("BrowsePage", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    it("新しいコレクションの見出しと結果領域を表示する", async () => {
+        mockProductsResult(1, 4);
+        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) }));
+
+        expect(screen.getByRole("heading", { level: 1, name: /The collection/i })).toBeInTheDocument();
+        expect(screen.getByText(/4 pieces/i)).toBeInTheDocument();
+        expect(screen.getByRole("region", { name: /Refine the collection/i })).toContainElement(screen.getByTestId("filters"));
+        expect(screen.getByTestId("product-list")).toHaveAttribute("data-variant", "editorial");
+    });
+
+    it("検索語がある場合は検索結果として見出しを表示する", async () => {
+        mockProductsResult(1, 0);
+        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({ search: "gold" })) }));
+
+        expect(screen.getByRole("heading", { level: 1, name: /Search results/i })).toBeInTheDocument();
+        expect(screen.getByText(/gold/)).toBeInTheDocument();
     });
 
     // ==================================================
