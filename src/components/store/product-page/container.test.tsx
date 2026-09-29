@@ -53,7 +53,7 @@ jest.mock('./product-info/product-info', () => ({
 }))
 jest.mock('./shipping/ship-to', () => ({ __esModule: true, default: () => <div data-testid="ship-to" /> }))
 jest.mock('./shipping/shipping-details', () => ({ __esModule: true, default: () => <div data-testid="shipping-details" /> }))
-jest.mock('./returns-security-privacy-card', () => ({ __esModule: true, default: () => <div data-testid="returns-card" /> }))
+jest.mock('./returns-security-privacy-card', () => ({ __esModule: true, default: ({ returnPolicy }: { returnPolicy: string }) => <div data-testid="returns-card">{returnPolicy}</div> }))
 jest.mock('./quantity-selector', () => ({ __esModule: true, default: () => <div data-testid="quantity-selector" /> }))
 
 const shippingDetails = {
@@ -81,6 +81,7 @@ const buildProductData = (overrides: Record<string, unknown> = {}) => ({
     weight: 0.2,
     sizes: [{ id: 'size-1', size: 'M', quantity: 3 }, { id: 'size-2', size: 'L', quantity: 0 }],
     images: [{ id: 'img-1', url: '/uploads/pearl.jpg' }, { id: 'img-2', url: '/uploads/clasp.jpg' }],
+    store: { returnPolicy: 'Store returns within 30 days' },
     shippingDetails,
     ...overrides,
 }) as unknown as ProductPageDataType
@@ -141,13 +142,23 @@ describe('ProductPageContainer', () => {
         expect(screen.queryByText('This piece is currently out of stock.')).not.toBeInTheDocument()
     })
 
-    it('hides shipping information when the product cannot ship', () => {
+    it('explains unavailable delivery while keeping return and privacy information visible', () => {
         // Arrange & Act
         renderContainer(undefined, { shippingDetails: false })
 
         // Assert
         expect(screen.queryByTestId('ship-to')).not.toBeInTheDocument()
         expect(screen.queryByTestId('shipping-details')).not.toBeInTheDocument()
+        expect(screen.getByText('Delivery details are unavailable for your selected country.')).toBeInTheDocument()
+        expect(screen.getByTestId('returns-card')).toHaveTextContent('Store returns within 30 days')
+    })
+
+    it('keeps the configured shipping and return details visible', () => {
+        renderContainer(undefined)
+
+        expect(screen.getByTestId('ship-to')).toBeInTheDocument()
+        expect(screen.getByTestId('shipping-details')).toBeInTheDocument()
+        expect(screen.getByTestId('returns-card')).toHaveTextContent('30 days')
     })
 
     it('adds the selected size to the bag', () => {

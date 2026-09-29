@@ -11,7 +11,7 @@ export default function ReturnsSecurityPrivacyCard({
         <div className={styles.assuranceList}>
             <div className={styles.assuranceItem}>
                 <Undo size={17} aria-hidden="true" />
-                <div><strong>Considered returns</strong><p>{returnPolicy}</p><Link href="/returns-exchange">Returns &amp; exchanges</Link></div>
+                <div><strong>Considered returns</strong><p>{returnPolicy.trim() || 'See the returns policy for details.'}</p><Link href="/returns-exchange">Returns &amp; exchanges</Link></div>
             </div>
             <div className={styles.assuranceItem}>
                 <ShieldCheck size={17} aria-hidden="true" />
