@@ -1,0 +1,11 @@
+.toggle { display: none; }
+@media (max-width: 850px) {
+    .toggle {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        width: 100%; min-height: 48px; border: 1px solid #aeb5a6; padding: 0 16px;
+        color: #17251d; font-size: 12px; font-weight: 600; letter-spacing: .07em;
+    }
+    .toggle svg:last-child { margin-left: auto; }
+    .content[data-open="false"] { display: none; }
+    .content[data-open="true"] { padding-top: 16px; }
+}

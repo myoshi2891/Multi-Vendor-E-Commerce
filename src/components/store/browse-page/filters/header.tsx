@@ -2,7 +2,6 @@
 import { FiltersQueryType } from "@/lib/types";
 import { X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 
 export default function FiltersHeader({
     queries,
@@ -13,17 +12,11 @@ export default function FiltersHeader({
     const pathname = usePathname();
     const { replace } = useRouter();
 
-    const [currentParams, setCurrentParams] = useState<string>(searchParams.toString());
-
-    useEffect(() => {
-        // Update the currentParams whenever the searchParams change in the URL
-        setCurrentParams(searchParams.toString());
-    }, [searchParams])
-
-    const queriesArray = Object.entries(queries);
+    const queriesArray = Object.entries(queries).filter(
+        ([key, value]) => key !== "sort" && value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)
+    );
     const queriesLength = queriesArray.reduce(
-        (count, [queryKey, queryValue]) => {
-            if (queryKey === "sort") return count; // Exclude sort query from count
+        (count, [, queryValue]) => {
             return count + (Array.isArray(queryValue) ? queryValue.length : 1); // Count array lengths or single
         },
         0
@@ -64,7 +57,6 @@ export default function FiltersHeader({
 
         // Replace the URL with updated params
         replace(`${pathname}?${params.toString()}`);
-        setCurrentParams(params.toString()); // Trigger re-render with updated params
     };
 
     return (
@@ -74,45 +66,41 @@ export default function FiltersHeader({
                     Filter ({queriesLength})
                 </div>
                 {queriesLength > 0 && (
-                    <div
+                    <button
+                        type="button"
                         className="cursor-pointer text-xs text-orange-background hover:underline"
                         onClick={() => handleClearQueries()}
                     >
                         Clear All
-                    </div>
+                    </button>
                 )}
             </div>
             {/* Display filters */}
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex min-w-0 flex-wrap gap-2">
                 {queriesArray.map(([queryKey, queryValue]) => {
-                    if (queryKey === "sort") return null; // Exclude sort query
                     const isArrayQuery = Array.isArray(queryValue);
                     const queryValues = isArrayQuery
                         ? queryValue
                         : [queryValue];
                     return (
-                        <div key={queryKey} className="flex flex-wrap gap-2">
+                        <div key={queryKey} className="flex min-w-0 max-w-full flex-wrap gap-2">
                             {queryValues.map((value, index) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={index}
-                                    className="w-fit cursor-pointer rounded-sm border px-1.5 py-0.5 text-center text-sm"
+                                    className="inline-flex min-w-0 max-w-full cursor-pointer items-start gap-1.5 rounded-sm border px-1.5 py-1 text-left text-xs leading-snug"
+                                    aria-label={`Remove ${queryKey} ${value}`}
+                                    onClick={() => {
+                                        isArrayQuery
+                                            ? handleRemoveQuery(queryKey, queryValues, value)
+                                            : handleRemoveQuery(queryKey);
+                                    }}
                                 >
-                                    <span className="mr-2 truncate text-main-secondary">
+                                    <span className="min-w-0 break-all text-main-secondary">
                                         {value}
                                     </span>
-                                    <X
-                                        className="inline-block w-3 cursor-pointer text-main-primary hover:text-black"
-                                        onClick={() => {
-                                            isArrayQuery
-                                                ? handleRemoveQuery(
-                                                      queryKey,
-                                                      queryValues,
-                                                      value
-                                                  ) //Remove specific value from array query
-                                                : handleRemoveQuery(queryKey); // Remove entire query
-                                        }}
-                                    />
-                                </div>
+                                    <X className="mt-0.5 size-3 shrink-0 text-main-primary" aria-hidden="true" />
+                                </button>
                             ))}
                         </div>
                     );

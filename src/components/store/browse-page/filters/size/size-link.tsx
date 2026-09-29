@@ -32,7 +32,7 @@ export default function SizeLink({ size }: { size: string }) {
     };
 
     return (
-        <label className="flex cursor-pointer select-none items-center whitespace-nowrap text-left"
+        <button type="button" aria-pressed={Boolean(existed_size)} className="flex min-h-8 w-full cursor-pointer select-none items-center whitespace-nowrap text-left"
         onClick={()=> handleSizeChange(size)}>
             <span
                 className={cn(
@@ -48,6 +48,6 @@ export default function SizeLink({ size }: { size: string }) {
             <div className="inline-block flex-1 overflow-visible text-clip whitespace-normal text-xs">
                 {size}
             </div>
-        </label>
+        </button>
     );
 }

@@ -29,14 +29,16 @@ export default function OfferLink({
     };
 
     return (
-        <div
+        <button
+            type="button"
+            aria-pressed={offerQuery === offer.url}
             className={cn(
-                "w-fit cursor-pointer rounded-lg border px-1.5 py-1 text-sm hover:border-orange-background",
+                "min-h-8 w-fit cursor-pointer rounded-lg border px-2 py-1 text-sm hover:border-orange-background",
                 {   "bg-[#ffebed] text-orange-background border-orange-background": offerQuery === offer.url, }
             )}
             onClick={() => handleOfferChange(offer.url)}
         >
             {offer.name}
-        </div>
+        </button>
     );
 }

@@ -64,7 +64,7 @@ test.describe("検索・フィルタ", () => {
     await expect(searchInput).toBeVisible();
     await searchInput.fill("NonExistentProductxyz123");
     await searchInput.press("Enter");
-    await expect(page.getByText(/No Products/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("No pieces found in this edit.")).toBeVisible({ timeout: 10000 });
   });
 
   test("旧 ?subCategory= が 308 で正準ノードへ着地する", async ({ page }) => {
