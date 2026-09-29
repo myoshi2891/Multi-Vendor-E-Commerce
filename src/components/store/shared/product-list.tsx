@@ -37,6 +37,12 @@ const ProductList: FC<Props> = ({ products, title, link, arrow, variant }) => {
     return (
         <div className="relative" data-variant={variant}>
             {title && renderTitle()}
+            {/* 絞り込み結果の告知用。新規マウントされた空状態は読み上げられないため常設ノードの文言を更新する */}
+            {variant === 'editorial' && (
+                <p role="status" className="sr-only">
+                    {products.length === 0 ? 'No pieces match these filters.' : ''}
+                </p>
+            )}
             {products.length > 0 ? (
                 <div
                     className={cn(
