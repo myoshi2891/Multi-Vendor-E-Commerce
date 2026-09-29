@@ -2475,6 +2475,8 @@ describe("getProductPageData", () => {
 
     it("cookies() が Promise を返す場合に cookieStore.get で正しく国を解決すること", async () => {
         const { cookies } = require("next/headers");
+        mockDb.review.groupBy.mockResolvedValue([]);
+        mockDb.review.count.mockResolvedValue(0);
 
         // cookies() が Promise を返すモック (Next.js 15+ 挙動)
         const cookieStore = {
@@ -2492,5 +2494,6 @@ describe("getProductPageData", () => {
         const result = await getProductPageData("lux-noir", "black");
         expect(result).toBeDefined();
         expect(cookieStore.get).toHaveBeenCalledWith("userCountry");
+        expect(result?.store).toEqual(expect.objectContaining({ returnPolicy: "14 days" }));
     });
 });
