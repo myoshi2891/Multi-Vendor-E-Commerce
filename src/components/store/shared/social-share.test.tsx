@@ -1,10 +1,11 @@
 /** @jest-environment jsdom */
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
 import SocialShare from './social-share'
 
 jest.mock('next-share', () => {
-    const Button = ({ children, url, 'aria-label': label }: { children: React.ReactNode; url?: string; 'aria-label'?: string }) =>
-        <button data-url={url} aria-label={label}>{children}</button>
+    const Button = ({ children, url, media, 'aria-label': label }: { children: React.ReactNode; url?: string; media?: string; 'aria-label'?: string }) =>
+        <button data-url={url} data-media={media} aria-label={label}>{children}</button>
     return {
         FacebookShareButton: Button,
         TwitterShareButton: Button,
@@ -23,9 +24,9 @@ describe('SocialShare', () => {
         Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
         render(<SocialShare url="/product/example/variant" quote="Example" />)
 
-        await act(async () => {
-            fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
-        })
+        fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
+
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Product link copied to clipboard'))
         expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/product/example/variant`)
     })
 
@@ -48,12 +49,10 @@ describe('SocialShare', () => {
         expect(screen.getByRole('status')).toBeEmptyDOMElement()
 
         // Act
-        await act(async () => {
-            fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
-        })
+        fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
 
         // Assert
-        expect(screen.getByRole('status')).toHaveTextContent('Product link copied to clipboard')
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Product link copied to clipboard'))
         expect(screen.getByRole('button', { name: 'Copy product link' })).toHaveTextContent('Link copied')
         expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
@@ -65,13 +64,28 @@ describe('SocialShare', () => {
         render(<SocialShare url="/product/example/variant" quote="Example" editorial />)
 
         // Act
-        await act(async () => {
-            fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
-        })
+        fireEvent.click(screen.getByRole('button', { name: 'Copy product link' }))
 
         // Assert
-        expect(screen.getByRole('alert')).toHaveTextContent("Couldn't copy the link")
+        expect(await screen.findByRole('alert')).toHaveTextContent("Couldn't copy the link")
         expect(screen.getByRole('status')).toBeEmptyDOMElement()
         expect(screen.getByRole('button', { name: 'Copy product link' })).toHaveTextContent('Copy link')
+    })
+
+    it('keeps share URLs relative during server rendering where no origin is available', () => {
+        // Arrange & Act: サーバー描画では useSyncExternalStore が getServerSnapshot（空 origin）を使う
+        const html = renderToString(<SocialShare url="/product/example/variant" quote="Example" />)
+
+        // Assert
+        expect(html).toContain('data-url="/product/example/variant"')
+        expect(html).not.toContain(`${window.location.origin}/product/example/variant`)
+    })
+
+    it('shares branded fallback media when no product image is provided', () => {
+        // Arrange & Act
+        render(<SocialShare url="/product/example/variant" quote="Example" editorial />)
+
+        // Assert
+        expect(screen.getByRole('button', { name: 'Share on Pinterest' })).toHaveAttribute('data-media', `${window.location.origin}/assets/brand/gem.svg`)
     })
 })

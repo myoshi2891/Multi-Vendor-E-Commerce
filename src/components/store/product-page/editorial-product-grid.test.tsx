@@ -13,6 +13,7 @@ const product = {
         images: [{ url: '/assets/images/no_image.png' }],
         sizes: [{ price: 120, discount: 10 }],
     }],
+    variantImages: [],
 } as unknown as ProductType
 
 describe('EditorialProductGrid', () => {
@@ -39,6 +40,22 @@ describe('EditorialProductGrid', () => {
         // Assert
         const image = screen.getByTestId('editorial-product-image')
         expect(image).toHaveAttribute('src', expect.stringContaining('pearl.jpg'))
+        expect(image).toHaveAttribute('alt', 'Pearl Drop Earrings White Gold')
+    })
+
+    it('prefers the primary variant image over a placeholder gallery image', () => {
+        // Arrange: ギャラリー先頭はプレースホルダー、代表画像は有効
+        const withPlaceholderGallery = {
+            ...product,
+            variantImages: [{ url: '/product/pearl-earrings/white-gold', image: 'https://res.cloudinary.com/demo/pearl-primary.jpg' }],
+        } as unknown as ProductType
+
+        // Act
+        render(<EditorialProductGrid products={[withPlaceholderGallery]} title="Related products" />)
+
+        // Assert
+        const image = screen.getByTestId('editorial-product-image')
+        expect(image).toHaveAttribute('src', expect.stringContaining('pearl-primary.jpg'))
         expect(image).toHaveAttribute('alt', 'Pearl Drop Earrings White Gold')
     })
 })
