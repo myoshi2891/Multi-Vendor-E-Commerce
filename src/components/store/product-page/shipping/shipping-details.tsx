@@ -12,11 +12,11 @@ export default function ShippingDetails({
     shippingDetails,
     quantity,
     weight,
-}: {
+}: Readonly<{
     shippingDetails: ProductShippingDetailsType
     quantity: number
     weight: number
-}) {
+}>) {
     const [expanded, setExpanded] = useState(false)
     const panelId = useId()
     if (!shippingDetails) return null
@@ -59,9 +59,9 @@ export default function ShippingDetails({
                         <span>Shipping fee breakdown</span><ChevronDown size={16} aria-hidden="true" />
                     </button>
                     {expanded && (
-                        <div id={panelId} role="region" aria-label="Shipping fee breakdown" className={styles.feePanel}>
+                        <section id={panelId} aria-label="Shipping fee breakdown" className={styles.feePanel}>
                             <ProductShippingFee method={shippingFeeMethod} fee={shippingFee} extraFee={extraShippingFee} quantity={quantity} weight={weight} />
-                        </div>
+                        </section>
                     )}
                 </>
             )}

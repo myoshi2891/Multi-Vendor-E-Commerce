@@ -8,11 +8,11 @@ export default function EditorialProductGrid({
     products,
     title,
     eyebrow = 'CURATED FOR YOU',
-}: {
+}: Readonly<{
     products: ProductType[]
     title: string
     eyebrow?: string
-}) {
+}>) {
     if (products.length === 0) return null
 
     return (
@@ -25,8 +25,9 @@ export default function EditorialProductGrid({
                 {products.map((product) => {
                     const variant = product.variants[0]
                     if (!variant) return null
-                    // ギャラリー画像が無い場合は代表画像（variantImages）を優先し、最後にブランド画像へ
-                    const image = variant.images[0]?.url || product.variantImages[0]?.image
+                    // ギャラリー画像が無い / プレースホルダーの場合は代表画像（variantImages）を使い、最後にブランド画像へ
+                    const galleryImage = variant.images[0]?.url
+                    const image = galleryImage && !galleryImage.includes('/no_image') ? galleryImage : product.variantImages[0]?.image
                     const placeholder = !image || image.includes('/no_image')
                     const prices = variant.sizes.map((size) => size.price * (1 - size.discount / 100))
                     const minPrice = prices.length > 0 ? Math.min(...prices) : null

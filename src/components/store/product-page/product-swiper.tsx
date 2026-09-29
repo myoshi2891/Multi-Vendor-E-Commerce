@@ -11,12 +11,12 @@ export default function ProductSwiper({
     activeImage,
     setActiveImage,
     productName,
-}: {
+}: Readonly<{
     images: ProductVariantImage[]
     activeImage: ProductVariantImage | null
     setActiveImage: Dispatch<SetStateAction<ProductVariantImage | null>>
     productName?: string
-}) {
+}>) {
     const [isZoomOpen, setIsZoomOpen] = useState(false)
     useEffect(() => {
         if (!isZoomOpen) return
@@ -85,10 +85,11 @@ export default function ProductSwiper({
                 </div>
             )}
             {isZoomOpen && !hasPlaceholder && (
-                <div className={styles.lightbox} role="dialog" aria-modal="true" aria-label="Enlarged product image" onClick={() => setIsZoomOpen(false)}>
+                // fill 画像がダイアログ全面を覆うため背景クリックは到達しない。閉じる操作は Close ボタンと Escape キーに集約する
+                <dialog open className={styles.lightbox} aria-modal="true" aria-label="Enlarged product image">
                     <button type="button" className={styles.lightboxClose} onClick={() => setIsZoomOpen(false)} aria-label="Close image"><X size={22} /></button>
-                    <Image src={selected.url} alt={selected.alt || productName || 'Product image'} fill sizes="100vw" onClick={(event) => event.stopPropagation()} />
-                </div>
+                    <Image src={selected.url} alt={selected.alt || productName || 'Product image'} fill sizes="100vw" />
+                </dialog>
             )}
         </div>
     )

@@ -63,6 +63,8 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
     );
 
     const hasShippingDetails = shippingDetails !== false;
+    // 全サイズが在庫切れなら選択できるサイズが無いため、選択ヒントの代わりに在庫切れを伝える
+    const isSoldOut = productData.sizes.every((size) => size.quantity <= 0);
     const router = useRouter();
     const normalizedShippingDetails = hasShippingDetails ? (shippingDetails as Exclude<ProductShippingDetailsType, false>) : DEFAULT_SHIPPING_DETAILS;
 
@@ -183,9 +185,8 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                 p.sizeId === sizeId
         );
 
-        return search_product
-            ? search_product.stock - search_product?.quantity
-            : stock;
+        // カート行の stock は投入時点の値で古い可能性があるため、現在の在庫から投入済み数量を差し引く
+        return search_product ? stock - search_product.quantity : stock;
     }, [cartItems, productId, variantId, sizeId, stock]);
 
     // Set view cookie
@@ -281,7 +282,11 @@ const ProductPageContainerInner: FC<InnerProps> = ({ productData, sizeId, childr
                                     >
                                         <ShoppingBag size={16} /><span>Add to bag</span>
                                     </button>
-                                    {!sizeId && <p className={styles.selectionHint}>Select a size to continue.</p>}
+                                    {!sizeId && (
+                                        <p className={styles.selectionHint}>
+                                            {isSoldOut ? 'This piece is currently out of stock.' : 'Select a size to continue.'}
+                                        </p>
+                                    )}
                                 </div>
                         </div>
                     </aside>

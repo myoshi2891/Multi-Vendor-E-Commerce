@@ -10,10 +10,10 @@ type NavigationItem = { name: string; url: string }
 export default function ProductNavigation({
     categories,
     offers,
-}: {
+}: Readonly<{
     categories: NavigationItem[]
     offers: NavigationItem[]
-}) {
+}>) {
     const [open, setOpen] = useState(false)
     const root = useRef<HTMLDivElement>(null)
 

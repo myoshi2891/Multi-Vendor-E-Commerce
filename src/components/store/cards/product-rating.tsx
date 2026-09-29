@@ -2,7 +2,7 @@
 import ReactStars from "react-rating-stars-component";
 import styles from '../product-page/product.module.css'
 
-export default function RatingCard({ rating, editorial = false }: { rating: number; editorial?: boolean }) {
+export default function RatingCard({ rating, editorial = false }: Readonly<{ rating: number; editorial?: boolean }>) {
 	const fixed_rating = Number(rating.toFixed(2));
     return (
 		<div className={editorial ? styles.ratingCard : "h-44 flex-1"}>

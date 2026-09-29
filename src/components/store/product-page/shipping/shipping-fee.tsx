@@ -9,13 +9,13 @@ export default function ProductShippingFee({
     extraFee,
     weight,
     quantity,
-}: {
+}: Readonly<{
     method: ShippingFeeMethod
     fee: number
     extraFee: number
     weight: number
     quantity: number
-}) {
+}>) {
     const total = computeShippingTotal(method, fee, extraFee, weight, quantity)
     let note: string
     let formula: string
@@ -42,7 +42,8 @@ export default function ProductShippingFee({
             break
         case ShippingFeeMethod.FIXED:
             note = 'This store calculates the delivery fee on a fixed price.'
-            rows = [{ label: 'Fee', value: `$${fee}` }, { label: 'Quantity', value: `x${quantity}` }]
+            // 固定料金は数量に依存しないため、数量行を出して乗算と誤読させない
+            rows = [{ label: 'Fixed fee', value: `$${fee}` }]
             formula = 'This fixed delivery fee stays the same when you add more items.'
             break
         default:

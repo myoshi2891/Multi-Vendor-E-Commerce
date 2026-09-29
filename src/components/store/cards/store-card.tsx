@@ -2,13 +2,12 @@
 import { cn } from '@/lib/utils'
 import { followStore } from '@/queries/user'
 import { useUser } from '@clerk/nextjs'
-import { Check, MessageSquareMore, Plus } from 'lucide-react'
+import { ArrowUpRight, Check, MessageSquareMore, Plus } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FC, useState } from 'react'
 import toast from 'react-hot-toast'
-import { ArrowUpRight } from 'lucide-react'
 import styles from '../product-page/product.module.css'
 
 interface Props {
