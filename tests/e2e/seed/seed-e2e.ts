@@ -321,6 +321,9 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    await prisma.spec.deleteMany({ where: { productId: product.id, name: "E2E material" } });
+    await prisma.spec.create({ data: { productId: product.id, name: "E2E material", value: "Sterling silver" } });
+
     const variants: Array<{ id: string; slug: string }> = [];
     for (const v of seed.variants) {
         const variant = await prisma.productVariant.upsert({

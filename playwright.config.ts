@@ -72,7 +72,7 @@ export default defineConfig({
     stderr: "pipe",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium", use: { ...devices["Desktop Chrome"], ...(process.env.PLAYWRIGHT_CHROME_EXECUTABLE ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROME_EXECUTABLE } } : {}) } },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
