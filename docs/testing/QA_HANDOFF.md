@@ -31,7 +31,7 @@
 - `npm test -- --runInBand --silent`: 2534 passed / 2537 total、234 suites（233 passed / 1 skipped）、127 snapshots passed。
 - 実 DB の `tests/integration/product-browse.test.ts`: 21/21 passed。関連する Chromium E2E `search-filter.spec.ts` と `a11y/browse.spec.ts`: 7/7 passed。
 - `npx tsc --noEmit`、関連ファイルの ESLint、`git diff --check` は通過。ソート変更時の URL 条件保持、個別チップ削除、Clear All、長いフィルタ値の表示範囲、商品カードのホバー切替もブラウザで確認した。
-- 全ブラウザ・全 E2E は今回実行していない。`browse-grid` の既存画像ベースラインは旧レイアウトであり、新レイアウトの画像差分確認と更新が残る。上表の Integration / E2E / Visual の総数と過去のフルラン結果は今回の部分実行で更新していない。
+- 全ブラウザ・全 E2E は今回実行していない。`browse-grid` の画像ベースラインは 2026-09-30 に更新済み（`a8c385a2`）: `scripts/e2e/run-local.sh` 経由の chromium 実行で旧 GoShop レイアウトとの差分を確認し、新レイアウト（ヒーロー / editorial グリッド / フィルタパネル / ページネーション）への意図した変更とレビューしたうえで再撮影、更新フラグなしで 2 回連続 passed を確認した。上表の Integration / E2E / Visual の総数と過去のフルラン結果は今回の部分実行で更新していない。
 
 > **恒久メモ（Unit 行・Integration 行の到達点）**: Unit 行は `queries / pages / store / dashbd /
 > shared / lib` が ✦、`api` は構造的 N/A（categorize 上 api-contract 固定・実カバーは API/Contract 行 ✦
