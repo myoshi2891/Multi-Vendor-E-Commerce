@@ -2,14 +2,17 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getUserCountry } from "./lib/country";
 
+// Edge Runtimeではモジュールファクトリをリクエストごとに解決できないため、
+// createRouteMatcherはモジュールトップレベルで一度だけ評価する必要がある
+const protectedRoutes = createRouteMatcher([
+    "/dashboard",
+    "/dashboard/(.*)",
+    "/checkout",
+    "/profile",
+    "/profile/(.*)",
+]);
+
 export default clerkMiddleware(async (auth, req, next) => {
-    const protectedRoutes = createRouteMatcher([
-        "/dashboard",
-        "/dashboard/(.*)",
-        "/checkout",
-        "/profile",
-        "/profile/(.*)",
-    ]);
     if (protectedRoutes(req)) await auth.protect();
 
     // リダイレクトではなくレスポンスに直接 Cookie をセット
