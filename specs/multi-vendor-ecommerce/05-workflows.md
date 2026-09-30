@@ -59,9 +59,10 @@
 
 ## Product Compare Flow
 1) Customer clicks the Add-to-compare toggle on a product card (`product-card.tsx`), which stores the selected `ProductVariant.id` in `useCompareStore` (Zustand + persist, localStorage key `compare-store`, max 4 items, idempotent). The toggle removes the variant if already present and shows a toast; a 5th add is rejected with an error toast.
-2) Customer opens `/compare` (client wrapper page; no server render of store queries, so no `force-dynamic`).
+2) Customer opens `/compare`. The Server Component renders the branded hero and passes `getProductsByIds` as `fetchProductsAction` to the client grid; it does not read localStorage. The existing store layout remains `force-dynamic`.
 3) `CompareGrid` (client) reads the variant ids from `useCompareStore`. When the list is empty it renders an empty state and does **not** call `getProductsByIds` (that query throws on an empty id array).
-4) For a non-empty list, `CompareGrid` fetches products via the existing `getProductsByIds()` (guarded by a `useEffect` cancellation flag) and renders them side-by-side (image / name / lowest size price / rating) with per-column remove and a clear-all action.
+4) For a non-empty list, `CompareGrid` invokes the supplied action (guarded by a `useEffect` cancellation flag) and renders image, name, variant, the existing discounted size-price range, rating, sales, and product links side by side. Individual remove and clear-all preserve the existing store behavior. The scrollable comparison region can be reached and scrolled with the keyboard on narrow screens.
+5) The page shows the selected count out of four. Empty selections offer a collection link. Loading is announced through a status; failure through an alert with retry; zero returned products through an unavailable status and collection link. Retry and unavailable states retain selection IDs. Cancelled responses cannot restore products after removal or clear.
 
 ## Buyer↔Seller Messaging Flow
 1) A conversation is created idempotently per `(userId, storeId)` via `getOrCreateConversation()`.

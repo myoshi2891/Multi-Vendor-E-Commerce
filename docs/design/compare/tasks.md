@@ -93,3 +93,13 @@
 | 6        | docs     | spec-sync + dashboard 再生成（統計同期は単独コミット） |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。
+
+## Phase 4: デザインシステム移行（2026-09-30）
+
+- [x] 4-A 計画保存、DS-PAGE-009／DS-COMP-056の着手記録。
+- [x] 4-B TDD: 空状態導線、状態通知、失敗・再試行、取得ゼロ、全消去後の古い応答を確認。
+- [x] 4-C ページ・グリッド・局所CSSの移行。ActionをServer Componentから渡す。
+- [x] 4-D 関連23件、Chromium6件、全体Jest、coverage、lint、型検査、PC／モバイル／境界表示を検証。
+- [x] 4-E 要件・設計・仕様・QA・移行台帳・元計画・全体進捗の同期と最終差分検証。
+
+実施記録は[移行進捗](../design-system/PROGRESS.md)、[移行計画](../../../plans/compare-design-system-plan.md)。コミットは依頼されていないため行わない。従来Phase 1〜3の完了は維持する。
