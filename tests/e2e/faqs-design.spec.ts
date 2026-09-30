@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 for (const width of [1440, 390, 768]) {
-    test(`FAQs appearance and navigation at ${width}px`, async ({ page }) => {
+    test(`FAQs appearance and navigation at ${width}px`, async ({ page }, testInfo) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/faqs", { waitUntil: "commit" });
         const main = page.getByRole("main");
@@ -26,7 +26,7 @@ for (const width of [1440, 390, 768]) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
         const results = await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
         expect(results.violations).toEqual([]);
-        await page.screenshot({ path: `test-results/faqs-${width}.png`, fullPage: true });
+        await page.screenshot({ path: testInfo.outputPath(`faqs-${width}.png`), fullPage: true });
     });
 }
 
