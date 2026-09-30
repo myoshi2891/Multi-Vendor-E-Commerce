@@ -1,6 +1,6 @@
 # TDD & Step-by-Step Commit Discipline
 
-> コミットに関する規定はユーザーが明示的にコミットを依頼した場合に適用する。TDD・検証・文書同期はコミット依頼の有無にかかわらず実施する。UI変更は [design-system-workflow](../../.agent/skills/design-system-workflow/SKILL.md) と [進捗ノート](../../docs/design/design-system/PROGRESS.md) に従う。全体統計は実測値のみを同期し、部分実行から推測しない。
+> コミットに関する規定はユーザーが明示的にコミットを依頼した場合に適用する。TDD・検証・文書同期はコミット依頼の有無にかかわらず実施する。UI変更は [design-system-workflow](../../.agent/skills/design-system-workflow/SKILL.md) と [進捗ノート](../../docs/design/design-system/PROGRESS.md) に従う。全体統計は実測値のみを同期し、部分実行から推測しない。セッション終了時の [`QA_HANDOFF.md`](../../docs/testing/QA_HANDOFF.md) 更新は必須だが、そのコミットはユーザーが明示的に依頼した場合のみ行う。
 
 ## Scope
 - すべてのテスト追加・修正作業（`src/**/*.test.ts`、`tests/component/**/*.test.tsx`、`tests/e2e/**/*.spec.ts`、`prisma/seed/__tests__/**`）
