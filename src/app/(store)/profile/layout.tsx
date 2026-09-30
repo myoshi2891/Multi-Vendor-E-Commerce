@@ -1,18 +1,27 @@
 import ProfileSidebar from "@/components/store/layout/profile-sidebar/sidebar";
+import styles from "@/components/store/profile/profile.module.css";
+import Link from "next/link";
 import { ReactNode } from "react";
 
-/**
- * Wraps profile page content in the store profile layout.
- *
- * @param children - Content to display in the main profile area.
- * @returns The layout JSX element containing the sidebar and provided content.
- */
-export default async function ProfileLayout({ children }: { children: ReactNode }) {
+/** 顧客アカウント共通枠。認証はrequest proxyで保護する。 */
+export default function ProfileLayout({ children }: { children: ReactNode }) {
     return (
-        <div className="min-h-screen bg-[#f5f5f5]">
-            <div className="mx-auto flex max-w-container gap-4 p-4">
+        <div className={styles.shell} data-profile-shell>
+            <header className={styles.hero}>
+                <div className={styles.heroInner}>
+                    <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+                        <Link href="/">Home</Link>
+                        <span aria-hidden="true">/</span>
+                        <Link href="/profile">Account</Link>
+                    </nav>
+                    <p className={styles.heroLabel}>
+                        A little space, just for you.
+                    </p>
+                </div>
+            </header>
+            <div className={styles.frame}>
                 <ProfileSidebar />
-                <main className="mt-12 w-full">{children}</main>
+                <main className={styles.main}>{children}</main>
             </div>
         </div>
     );
