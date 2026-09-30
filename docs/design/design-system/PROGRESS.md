@@ -50,7 +50,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
 | DS-PAGE-007 | `/cart` | 未適用 | P1 | TODO | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | 未実施 |
 | DS-PAGE-008 | `/checkout` | 未適用 | P1 | TODO | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | 未実施 |
-| DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
+| DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-011 | `/customer-service` | 未適用 | P2 | TODO | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | 未実施 |
 | DS-PAGE-012 | `/dispute` | 未適用 | P2 | TODO | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | 未実施 |
@@ -170,7 +170,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-053 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/product-page/product-info/product-price.tsx](<../../../src/components/store/product-page/product-info/product-price.tsx>) | TODO | 未実施 |
 | DS-COMP-054 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/store-card.tsx](<../../../src/components/store/cards/store-card.tsx>) | TODO | 未実施 |
 | DS-COMP-055 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/shared/product-list.tsx](<../../../src/components/store/shared/product-list.tsx>) | TODO | 未実施 |
-| DS-COMP-056 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/compare/compare-grid.tsx](<../../../src/components/store/compare/compare-grid.tsx>) | 検証済み | [compare実施記録](#compare移行記録) |
+| DS-COMP-056 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/compare/compare-grid.tsx](<../../../src/components/store/compare/compare-grid.tsx>) | 実装済み | [compare実施記録](#compare移行記録) |
 | DS-COMP-057 | P2 | ページング・フィルター（P2） | [src/components/store/shared/pagination.tsx](<../../../src/components/store/shared/pagination.tsx>) | TODO | 未実施 |
 | DS-COMP-058 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/browse-pagination.tsx](<../../../src/components/store/browse-page/browse-pagination.tsx>) | TODO | 未実施 |
 | DS-COMP-059 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/header.tsx](<../../../src/components/store/browse-page/filters/header.tsx>) | TODO | 未実施 |
@@ -371,7 +371,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ### 2026-09-30 DS-PAGE-009／DS-COMP-056 — /compare
 
 - 計画: [compare-design-system-plan](../../../plans/compare-design-system-plan.md)。適用スキルはdesign-system-workflowとspec-sync-after-test。
-- 状態: 検証済み（受け入れ条件・検証・仕様書／計画／進捗同期完了）。未コミット。
+- 状態: 実装済み（受け入れ条件・Chromium検証・仕様書／計画／進捗同期完了。Firefox・WebKitのブラウザー検証が残るため検証済みにしない）。未コミット。
 - 変更: 深緑のヒーロー・アイボリー比較面・ゴールドの操作と価格・セリフ見出し・罫線、件数表示、コレクション導線、空／取得中／失敗・再試行／商品取得ゼロを整備。既存価格ロジック・最大4件・localStorage・削除・商品リンクを維持。既存取得ActionをServer Componentからpropで渡す。
 - Red: `bun run test -- --runInBand --silent src/components/store/compare/compare-grid.test.tsx` → UI未対応4件失敗／既存回帰8件成功。失敗理由はコレクション導線・読み込みstatus・エラーalert／再試行・取得ゼロ案内の欠如。応答キャンセルは既存回帰として先行成功。
 - ブラウザー先行テスト: 変更前に追加したが最初の実行はChromiumのMachPort権限拒否で起動できず、ブラウザー上のRedは未確認。環境エラーをRed実績に含めない。権限を拡張して実装後の検証を実施。
