@@ -177,7 +177,7 @@ export const useCompareStore = create(
 | --------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
 | `getProductsByIds` の空配列 throw             | バグ         | `items.length === 0` で呼ばない（AC-CMP6）                                                     |
 | localStorage に残った無効 ID（削除済み商品）  | データ整合   | `getProductsByIds` は存在する variant のみ返す。差分が出ても描画は欠落のみ（クラッシュしない） |
-| SSR でストアを読もうとして hydration mismatch | レンダリング | ストアは client 部品（`CompareGrid`）でのみ読む。page は wrapper のみ                          |
+| SSR でストアを読もうとして hydration mismatch | レンダリング | ストアは client 部品（`CompareGrid`）でのみ読む。page は Server Component で localStorage を読まず、`getProductsByIds` を `fetchProductsAction` prop として注入するだけ。商品取得は `CompareGrid` の effect 内でクライアント側から行う |
 | スペック未対応で比較価値が薄い                | UX           | 判断4 の任意拡張で対応。MVP は基本比較                                                         |
 
 ---
