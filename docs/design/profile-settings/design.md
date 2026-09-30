@@ -14,7 +14,7 @@
 | 0-3 | ユーザーメニューの `extraLinks` の「Settings」が `link: "/"`（誤リンク） | [`user-menu.tsx:162-165`](../../../src/components/store/layout/header/user-menu/user-menu.tsx#L162-L165) |
 | 0-4 | ユーザーメニューの `links` の「Messages」は `link: "/profile/messages"`（リンク済・本設計の対象外、姉妹設計書 messages 側） | [`user-menu.tsx:146-150`](../../../src/components/store/layout/header/user-menu/user-menu.tsx#L146-L150) |
 | 0-5 | プロフィールサイドバーの `menu` 配列に Settings エントリが無い（Overview/Orders/Payment/.../Following の8項目のみ） | [`sidebar.tsx:63-96`](../../../src/components/store/layout/profile-sidebar/sidebar.tsx#L63-L96) |
-| 0-6 | profile 配下ページの雛形は `export const dynamic='force-dynamic'` + async server component + container（ただし本ページは DB 非依存のため `force-dynamic` 不要） | [`profile/reviews/page.tsx`](../../../src/app/(store)/profile/reviews/page.tsx) |
+| 0-6 | profile 配下ページの雛形は `export const dynamic='force-dynamic'` + async server component + container（ただし本ページは DB 非依存のため `force-dynamic` 不要） | [`profile/reviews/page.tsx`](<../../../src/app/(store)/profile/reviews/page.tsx>) |
 | 0-7 | profile レイアウトはサイドバー幅 296px + メインコンテンツ | [`sidebar.tsx:32`](../../../src/components/store/layout/profile-sidebar/sidebar.tsx#L32) |
 
 ---
@@ -42,7 +42,7 @@ src/components/store/layout/profile-sidebar/
 
 ### 1.3 認可方針
 
-- `/profile/*` は Clerk middleware の保護ルート（[`src/middleware.ts`](../../../src/middleware.ts)）。`settings/page.tsx` で追加の認可ガードは不要。
+- `/profile/*` は Clerk request proxy の保護ルート（[`src/proxy.ts`](../../../src/proxy.ts)）。`settings/page.tsx` で追加の認可ガードは不要。
 - `<UserProfile />` 自体が現在のセッションユーザーにスコープされるため、IDOR の懸念は無い。
 
 ---
@@ -190,3 +190,7 @@ jest.mock("@clerk/nextjs", () => ({
 2. `bun run dev` → 認証済みで `/profile/settings` を開き、`<UserProfile>` が描画されること、サイドバー/ユーザーメニューから到達できることを確認（Playwright `browser_take_screenshot` をターゲット ref で）。
 3. 氏名を変更 → Clerk webhook（staging）→ `bunx prisma studio` で `User.name` 更新を確認（AC-S5）。
 4. （任意・破壊的）テストアカウントで削除 → `User` 行が消えること（AC-S6）。
+
+## 共通アカウント枠の回帰確認（2026-09-30）
+
+[profile概要の移行](../profile-overview/PROGRESS.md)で共通layout／sidebarをブランド化。Settings導線と選択状態、390pxのClerk UserProfile表示・横スクロールなしをChromiumで確認した。PCサイドバーは220px、800px以下は本文の上に折り返しメニューを表示する。UserProfile自体のappearanceと認証・webhookは変更しない。元の機能完了履歴を保持し、[移行証跡](../design-system/PROGRESS.md#profile移行記録)に検証範囲を記録。

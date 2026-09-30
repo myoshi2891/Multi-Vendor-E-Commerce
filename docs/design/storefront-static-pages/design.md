@@ -12,7 +12,7 @@
 | 0-1 | footer の `footer_links` に `/about` `/contact` `/compare` `/faq` `/track-order` `/customer-service` `/returns-exchange` `/faqs` `/product-support` が定義済み（リンクは生きているがページが無い） | [`footer/links.tsx:49-98`](../../../src/components/store/layout/footer/links.tsx#L49-L98)                                                                       |
 | 0-2 | `/faq`（title "FAQ"）と `/faqs`（title "FAQs"）が**両方**定義されている（重複）                                                                                                                    | [`links.tsx:66-68`](../../../src/components/store/layout/footer/links.tsx#L66) / [`links.tsx:90-93`](../../../src/components/store/layout/footer/links.tsx#L90) |
 | 0-3 | user-menu の `extraLinks` で「Help Center」=`""`、「Legal & Privacy」=`""`（空文字リンク）                                                                                                         | [`user-menu.tsx:185-196`](../../../src/components/store/layout/header/user-menu/user-menu.tsx#L185-L196)                                                        |
-| 0-4 | middleware の保護対象は `/dashboard` `/dashboard/(.*)` `/checkout` `/profile` `/profile/(.*)` のみ。本設計の全ルートは**公開**                                                                     | [`middleware.ts:6-13`](../../../src/middleware.ts#L6-L13)                                                                                                       |
+| 0-4 | proxy の保護対象は `/dashboard` `/dashboard/(.*)` `/checkout` `/profile` `/profile/(.*)` のみ。本設計の全ルートは**公開**                                                                     | [`proxy.ts:8-14`](../../../src/proxy.ts#L8-L14)                                                                                                       |
 | 0-5 | `(store)` セグメントに layout があり、ストアフロント共通ヘッダー/フッターが付く                                                                                                                    | [`src/app/(store)/layout.tsx`](<../../../src/app/(store)/layout.tsx>)                                                                                           |
 | 0-6 | クラス結合は `cn`（`src/lib/utils.ts`）を使用                                                                                                                                                      | [`src/lib/utils.ts`](../../../src/lib/utils.ts)                                                                                                                 |
 
@@ -171,7 +171,7 @@ export const ABOUT_SECTIONS: StaticSection[] = [
 ];
 ```
 
-各ページの定数（`legal.ts` / `faqs.ts` / `product-support.ts`）も同型で用意する。`faqs.ts` は Q&A を `{ heading: question, body: answer }` にマップすれば共有レイアウトでそのまま描画できる。
+各ページの定数（`legal.ts` / `faqs.ts` / `product-support.ts`）も同型で用意する。`faqs.ts` は Q&A の `{ heading: question, body: answer }` 定数。2026-09-30の移行後は `/faqs/page.tsx` の専用レイアウトで常時表示する。
 
 ### 2.2 各ページ `page.tsx`（例: about）
 
@@ -192,7 +192,7 @@ export default function AboutPage() {
 }
 ```
 
-> `legal/page.tsx` は `withToc` を有効化（複数規約の目次）。`faqs/page.tsx` は `FAQ_SECTIONS` を渡す。`product-support/page.tsx` も同型。
+> `legal/page.tsx` は `withToc` を有効化（複数規約の目次）。`faqs/page.tsx` は `FAQ_SECTIONS` を専用レイアウトで描画する。`product-support/page.tsx` も同型。
 
 ### 2.3 `/faq` → `/faqs` リダイレクト
 
@@ -365,3 +365,13 @@ export default function CustomerServicePage() {
 3. `/faq` → `/faqs` にリダイレクトされること。
 4. user-menu から「Help Center」「Legal & Privacy」で各ページに到達できること。
 5. 文面はプレースホルダのため、運営に正式文面の差替を依頼（フォローアップ）。
+
+## FAQ専用レイアウト（2026-09-30）
+
+- `/faqs/page.tsx` と `faqs.module.css` にブランド表現を局所化し、他の静的ページには波及させない。
+- Contactと同じ深緑 `#0b100e`、アイボリー `#f3f0e8`、ゴールド `#d4ba83`。明るい面の装飾・focusは濃いゴールド `#75613b`、本文は `#536356`。英語見出しはGeorgia、日本語は既存本文フォント。
+- PCでは質問目次／回答の2列、800px以下では1列。既存FAQ定数を再利用し、h1「FAQs」、各質問h2、回答は改行区切りのpで常時表示する。
+- 目次と回答は定数の並び順に対応する `faq-1`〜`faq-4` を共有し、日本語slugifyによる空IDを避ける。sectionは見出しをaria-labelledbyで参照する。
+- ラベル付きのパンくず・質問目次・サポートnav、装飾aria-hidden、フォーカス輪郭、アンカーのscroll-marginを設ける。FAQ本文のJavaScript操作やDBアクセスを追加しない。親store layoutの動的レンダリングは継続。
+- メタデータをブランド名に同期。`/faq` の308転送はそのまま。
+- [要件](requirements.md#faqデザイン移行2026-09-30)と[保存計画](../../../plans/faqs-design-system-plan.md)を参照。

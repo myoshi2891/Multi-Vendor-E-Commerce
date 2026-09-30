@@ -45,3 +45,7 @@
 - [ ] `routing="hash"` で MVP 要件を満たすか。
 - [ ] `appearance` 調整がサイドバー 296px と干渉しないか。
 - [ ] webhook 既存同期に回帰が無いか（変更しない前提）。
+
+## 共通アカウント枠の回帰確認（2026-09-30）
+
+[profile概要の移行](../profile-overview/PROGRESS.md)で共通layout／sidebarをブランド化。Settings導線と選択状態、390pxのClerk UserProfile表示・横スクロールなしをChromiumで確認した。PCサイドバーは220px、800px以下は本文の上に折り返しメニューを表示する。UserProfile自体のappearanceと認証・webhookは変更しない。元の機能完了履歴を保持し、[移行証跡](../design-system/PROGRESS.md#profile移行記録)に検証範囲を記録。

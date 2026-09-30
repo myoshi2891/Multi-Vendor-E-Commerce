@@ -38,8 +38,8 @@
 | ID                        | 内容                                                                                                                                         |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **NFR-SP1**（コード規約） | `any` 禁止・`console.log` 禁止。新規ページは server component。コンテンツは型付き定数（`{ heading: string; body: string }[]` 等）。          |
-| **NFR-SP2**（視覚整合）   | shadcn/ui + Tailwind、slate ベース、ダーク/ライト対応。既存ストアフロントのタイポgrafィと余白に整合。                                        |
-| **NFR-SP3**（DRY）        | 5 ページが見出し・本文・目次の体裁を**共有レイアウト部品**で共通化し、各ページはコンテンツ定数のみを差し込む。                               |
+| **NFR-SP2**（視覚整合）   | 未移行ページは既存テーマを維持。移行済み `/faqs` はCSS Moduleで深緑・アイボリー・ゴールド、セリフ見出し、読みやすい本文を採用し、公開ストアフロントのlight配色に整合。                                        |
+| **NFR-SP3**（DRY）        | 未移行ページは共有レイアウトを利用。ブランド移行済みページは専用レイアウトを許容し、FAQの質問・回答は既存の型付き定数を再利用する。                               |
 | **NFR-SP4**（SEO/メタ）   | 各ページに `export const metadata`（title/description）を付与（静的・SSG 可）。                                                              |
 | **NFR-SP5**（TDD）        | [`.claude/rules/02-tdd-step-commit.md`](../../../.claude/rules/02-tdd-step-commit.md) 遵守（Red→Green・1論理単位=1commit・spec-sync 同梱）。 |
 
@@ -51,3 +51,11 @@
 - FAQ の全文検索（MVP は静的展開。クライアント側フィルタは任意）。
 - フォーム送信を伴う画面（`/contact` 等は [support-forms](../support-forms/) 設計書）。
 - 多言語・多通貨（[`product.md` スコープ外](../../../.claude/steering/product.md)）。
+
+## FAQデザイン移行（2026-09-30）
+
+- **AC-SP7**: `/faqs` は深緑のヒーロー、アイボリー本文、ゴールド装飾、セリフ見出しを表示。1440／390／768pxで横スクロールを生じず、日本語本文を折り返す。
+- **AC-SP8**: 4件の既存質問・回答を常時表示し、質問一覧から一意なアンカーへキーボードで移動可能。focusを可視化し、本文はplain textとする。
+- **AC-SP9**: HomeのパンくずとContact／Track your order／Returns & Exchange／Customer serviceへのサポート導線を表示する。
+- `/faq` の308転送、公開アクセス、プレースホルダ回答を維持。検索・CMS・回答ポリシーの確定は対象外。
+- 検証: [FAQ移行計画](../../../plans/faqs-design-system-plan.md)、[移行記録](../design-system/PROGRESS.md#faqs移行記録)。

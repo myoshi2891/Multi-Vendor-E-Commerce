@@ -40,7 +40,7 @@
 |----|------|
 | **NFR-S1**（セキュリティ） | パスワード・MFA・アカウント削除は Clerk 公式 UI に委譲し、自前で認証情報を扱わない。秘密情報のハードコード・ログ出力をしない（global CLAUDE.md 準拠）。 |
 | **NFR-S2**（コード規約） | `any` 禁止（`unknown` + 型ガード）。`console.log` 禁止。新規ページは server component とし、client 部分は Clerk コンポーネントに限定。 |
-| **NFR-S3**（視覚整合） | `<UserProfile appearance>` で profile レイアウト（slate base / サイドバー幅 296px）と干渉しないよう調整。 |
+| **NFR-S3**（視覚整合） | `<UserProfile appearance>` で profile共通枠（アイボリー／PCサイドバー220px、狭い画面は折り返しナビゲーション）に収まり、モバイルで横スクロールを生じないよう調整。 |
 | **NFR-S4**（TDD） | [`.claude/rules/02-tdd-step-commit.md`](../../../.claude/rules/02-tdd-step-commit.md) を遵守（Red→Green→Refactor・1論理単位=1commit・spec-sync 同梱）。 |
 
 ---
@@ -50,3 +50,7 @@
 - 通知設定・言語/通貨設定・テーマ切替（[`product.md` スコープ外](../../../.claude/steering/product.md): 多通貨対応は現フェーズ対象外）。
 - 販売者/管理者向けの設定画面。
 - Clerk の `<UserProfile>` をカスタムフォームで置き換えること（[design.md §判断1](./design.md) で却下）。
+
+## 共通枠の移行（2026-09-30）
+
+profile概要と共通ナビゲーションの新デザインは[profile-overview仕様](../profile-overview/requirements.md)を参照。Settingsへのリンク、選択状態、Clerk UserProfileの表示は回帰確認済み。UserProfile自体のブランド変更は本移行に含めない。
