@@ -52,14 +52,13 @@ async function seed(page: Page, count: number) {
 
 async function mockProducts(
     page: Page,
-    options: { failFirst?: boolean; empty?: boolean; delay?: number } = {}
+    options: { failFirst?: boolean; empty?: boolean; gate?: Promise<void> } = {}
 ) {
     let calls = 0;
     await page.route("**/compare", async (route) => {
         if (!route.request().headers()["next-action"]) return route.continue();
         calls++;
-        if (options.delay)
-            await new Promise((done) => setTimeout(done, options.delay));
+        if (options.gate) await options.gate;
         if (options.failFirst && calls === 1)
             return route.fulfill({ status: 500, body: "Unavailable" });
         const ids = JSON.parse(
@@ -187,12 +186,18 @@ test("loading and unavailable selections remain accessible", async ({
 }) => {
     await page.setViewportSize({ width: 700, height: 1000 });
     await seed(page, 2);
-    await mockProducts(page, { delay: 1500, empty: true });
+    // 読み込み中の走査が終わるまでレスポンスを保留する（固定遅延だと走査と競合する）
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    await mockProducts(page, { gate, empty: true });
     await page.goto("/compare", { waitUntil: "commit" });
     await expect(page.getByRole("status")).toContainText(
         "Loading your selection"
     );
     await accessible(page);
+    release();
     await expect(
         page.getByText("Your selected pieces are no longer available.")
     ).toBeVisible();
