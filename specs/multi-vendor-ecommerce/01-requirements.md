@@ -7,6 +7,7 @@
 - Search products by name, brand, and variant keywords.
 - Refine the browse collection by category, offer, size, color, price, and search term; keep active conditions when sorting or paging, and allow removing individual conditions or clearing them all.
 - Use the browse filters on narrow screens and reach product-card actions with touch or keyboard as well as pointer hover.
+- Compare up to four persisted product variants side by side, remove individual selections or clear them, and reach the collection from empty or unavailable states. Show accessible loading and failure feedback with retry while preserving the selection.
 - View product details, variants, sizes, colors, images, and specs.
 - On a product detail page, inspect gallery images and their enlarged view, see the selected size's price and stock, and review delivery, returns, seller, reviews, questions, and related products when available.
 - Prevent purchase actions when no valid in-stock size is selected; show a clear selection or sold-out message.

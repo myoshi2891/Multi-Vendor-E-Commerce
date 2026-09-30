@@ -52,13 +52,14 @@ Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Cler
 
 ## エージェント行動方針
 
-- コードを一行も書く前に Implementation Plan を生成し、ユーザーに確認を求める
+- コード実装前に対象・受け入れ条件・検証方法を `plans/` に保存する。ユーザーの承認済み計画・指示は再利用し、新たな仕様判断や範囲拡張だけ確認する
 - 不確実な場合は実装前に確認（"Always Proceed" 禁止）
-- git commit はタスク単位で細かく行う
+- git commit は明示的な依頼がある場合にタスク単位で行う。文書同期はコミット依頼の有無にかかわらず実施する
+- UI・レイアウト変更は [design-system-workflow](../skills/design-system-workflow/SKILL.md) を読み、TDD・実装後検証・仕様書確認／更新・[進捗ノート](../../docs/design/design-system/PROGRESS.md)の更新までを完了条件とする
 
 ## テスト関連ドキュメントの更新ルール
 
-テストコードを追加・変更したセッションでは、以下のドキュメントを**必ず**更新してコミットする。
+テストコードを追加・変更したセッションでは、以下のドキュメントを該当条件に従って更新する。コミットは明示的な依頼時に行う。全体統計は実測した場合だけ更新し、部分実行の結果から推測しない。
 詳細は [`.claude/steering/documentation-guide.md`](.claude/steering/documentation-guide.md#docstesting-各ファイルの更新ルール) を参照。
 
 | タイミング | 更新対象 | 内容 |

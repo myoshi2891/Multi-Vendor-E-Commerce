@@ -123,3 +123,9 @@
 - 静的解析プラットフォームとして **SonarQube / SonarCloud** を採用し、継続的なコード品質（バグ・スメル・脆弱性・テストカバレッジ）の可視化および監視を行います。
   - **CI (SaaS)**: PR 毎に SonarCloud にて自動解析を実行します。品質ゲート (Quality Gate) は導入初期段階では非ブロッキング（`continue-on-error`）で運用します。
   - **ローカル (Docker)**: `docker-compose.sonar.yml` および Makefile (`make sonar-up/scan/down`) を使用し、ローカル環境でも CI と同等の静的解析を再現・事前確認できます（詳細は [`docs/architecture/decisions/005-sonarqube-static-analysis.md`](../../docs/architecture/decisions/005-sonarqube-static-analysis.md) を参照）。
+
+## Comparison presentation
+
+- The comparison page scopes brand colors to its CSS Module, preserving semantic state colors and existing price calculations elsewhere.
+- At 1440px, 390px and the 700px boundary, horizontal overflow is confined to a named, keyboard-focusable comparison region. Links/buttons expose visible focus; reduced motion disables skeleton animation.
+- Loading/error/unavailable feedback uses status/alert semantics. Main-scoped axe checks cover WCAG 2 AA in the comparison E2E; shared header/footer and other routes remain outside this migration's scope.

@@ -512,7 +512,12 @@ NEXT_PUBLIC_PAYPAL_CLIENT_ID=
 | `bun run test:watch` | Jest ウォッチモード |
 | `bunx playwright test` | E2E テストを実行 |
 | `bun run seed:e2e` | テスト用データベースをシード |
-| `bun run seed:luxury` | ラグジュアリーデータセット生成（ローカル開発・デザイン確認用） |
+| `bun run seed:luxury` | ホスト側の `.env` の接続先にラグジュアリーデータセットを投入 |
+| `make seed` | Docker アプリが参照する `.env.docker` の開発DBにラグジュアリーデータセットを投入 |
+
+Docker で `localhost:3000` を起動している場合は `make seed` を使用する。
+ホスト側の `.env` と Docker の `.env.docker` は接続先が異なるため、
+ホストで `bun run seed:luxury` を実行しても Docker の開発DBには反映されない。
 
 ### テスト戦略
 
