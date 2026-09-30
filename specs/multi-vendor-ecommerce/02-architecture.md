@@ -31,6 +31,6 @@
 ## Validation
 - Zod schemas in `src/lib/schemas.ts` validate form inputs and constraints.
 
-## Middleware
-- `src/middleware.ts` enforces auth on protected routes and sets a
+## Request Proxy
+- `src/proxy.ts` enforces auth on protected routes and sets a
   `userCountry` cookie for shipping context.

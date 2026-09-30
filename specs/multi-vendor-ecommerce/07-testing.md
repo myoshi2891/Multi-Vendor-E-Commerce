@@ -1180,3 +1180,21 @@ CI での PR トリガー時に、Lighthouse CI ジョブ (`.github/workflows/lh
 - `/browse` ページなどを対象に Lighthouse の desktop プリセットで 3 回測定を実行。
 - パフォーマンス（Performance）、LCP、CLS、TBT などのスコアが指定のしきい値に適合しているかを自動監査（現在はベースライン観測段階のため警告のみで非ブロッキング）。
 - 測定レポートは一時ストレージ（Lighthouse temporary public storage）にアップロードされ、結果のリンクが CI ログに記録されます。
+
+## Public FAQs design regression
+
+- `src/app/(store)/faqs/page.test.tsx` covers existing plain-text questions/answers, unique question-navigation targets, breadcrumb, and support destinations.
+- `tests/e2e/faqs-design.spec.ts` covers rendered palette/typography, responsive overflow at 1440/390/768px, keyboard focus and anchor navigation, WCAG axe scan of the FAQ main content, and `/faq` 308 redirect. Run against the actual application; do not count environment startup errors as TDD Red.
+- Session evidence and verification scope: [FAQ migration record](../../docs/design/design-system/PROGRESS.md#faqs移行記録). Partial runs do not update the full-suite statistics above.
+
+## Profile overview design regression
+
+- `tests/component/store/profile-overview.test.tsx` covers identity casing/image, no-name fallback, unauthenticated identity omission, Clerk lookup failure/reload, supported shortcuts, unavailable features, order filters and support links. The existing `profile-sidebar.test.tsx` now verifies exactly one current item for overview, order filters, settings and paged wishlist routes, preserving ten destinations.
+- `tests/e2e/profile-design.spec.ts` uses the existing test-user lifecycle and Clerk testing sign-in to verify authenticated rendering at 1440/390/768px, keyboard focus/Tab/Enter, overflow, axe of the profile shell including color contrast, shared orders/addresses/settings navigation and guest sign-in redirection.
+- [Migration evidence](../../docs/design/design-system/PROGRESS.md#profile移行記録). Full-suite counts and coverage percentages above remain at the prior measurement; partial design runs are recorded separately in QA_HANDOFF.
+
+## Wishlist design regression
+
+- `tests/component/store/wishlist.test.tsx` covers editorial-card selection, URL-based page links/current indication, updated page props, bounded large pagination, empty and lookup-failure states, page normalization and redirects, and the loading status. Re-run existing product-card, profile-query and sidebar suites for regression.
+- `tests/e2e/wishlist-design.spec.ts` uses a test customer and eleven existing catalog products to verify empty/ten-piece/last-page states, 1440/390/768px overflow and main-scoped axe, keyboard focus/compare/pagination, browser back and canonical/alias redirects. Wishlist fixtures are owned by the test customer and removed by its cleanup; no catalog creation, seed or database reset.
+- [Migration evidence](../../docs/design/design-system/PROGRESS.md#wishlist移行記録). Loading and fetch-failure feedback are checked in RTL; browser tests do not force server lookup errors. Full-suite totals and coverage remain at the prior measurement.

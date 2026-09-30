@@ -17,6 +17,10 @@
 - Pay with Stripe or PayPal.
 - View order details and order status history.
 - Manage profile, addresses, wishlist, and reviews.
+- Browse saved wishlist pieces in the branded responsive account layout with existing product-card actions and URL-based pagination; reach the collection from empty results and see readable loading or lookup-failure feedback with reload.
+- Reach account sections from responsive branded navigation with an accessible current-page indication; use profile shortcuts and existing order filters, see readable account-lookup failure feedback, and reach order support. Show unimplemented coupon/credit shortcuts as unavailable rather than broken links.
+
+- Read the public FAQs with all existing answers visible, navigate to individual questions by keyboard-accessible anchors, and reach contact, tracking, returns, and customer service from the branded responsive page. Keep the permanent `/faq` to `/faqs` redirect.
 
 ## Seller
 - Apply for seller role.
