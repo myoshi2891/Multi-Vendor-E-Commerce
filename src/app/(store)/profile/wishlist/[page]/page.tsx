@@ -1,18 +1,19 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowUpRight, Heart } from "lucide-react";
 import WishlistContainer from "@/components/store/profile/wishlist/container";
+import WishlistHeading from "@/components/store/profile/wishlist/heading";
+import styles from "@/components/store/profile/wishlist/wishlist.module.css";
 import { normalizePageParam } from "@/lib/utils";
 import { getUserWishlist } from "@/queries/profile";
 import { redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+    title: "Your Wishlist | Luxuries for Happiness",
+    description: "お気に入りに保存した商品を確認できます。",
+};
 
-/**
- * Renders the authenticated user's wishlist for the requested page.
- *
- * Out-of-range pages are redirected to the canonical page.
- *
- * @param params - Route parameters containing the requested page number.
- * @returns The wishlist content with pagination, or an empty-state message.
- */
 export default async function ProfileWishlistPage({
     params,
 }: {
@@ -20,20 +21,30 @@ export default async function ProfileWishlistPage({
 }) {
     const { page: pageParam } = await params;
     const page = normalizePageParam(pageParam);
-    const wishlist_data = await getUserWishlist(page);
-    const { wishlist, totalPages } = wishlist_data;
-
-    // 範囲外ページは最終ページ（該当 0 件なら 1 ページ目）へ寄せる。
-    // 遷移後は canonicalPage === page になるためループしない。
-    // redirect() は NEXT_REDIRECT を throw するため try/catch の外に置くこと。
-    const canonicalPage = totalPages >= 1 ? Math.min(page, totalPages) : 1;
-    if (canonicalPage !== page) {
-        redirect(`/profile/wishlist/${canonicalPage}`);
+    let data;
+    try {
+        data = await getUserWishlist(page);
+    } catch {
+        return (
+            <div className={styles.wishlist}>
+                <WishlistHeading />
+                <section role="alert" className={styles.error}>
+                    <h2>Your wishlist is unavailable</h2>
+                    <p lang="ja">
+                        お気に入りを取得できませんでした。もう一度お試しください。
+                    </p>
+                    <a href={`/profile/wishlist/${page}`}>Reload wishlist</a>
+                </section>
+            </div>
+        );
     }
-
+    const { wishlist, totalPages } = data;
+    // redirectは例外をthrowするので取得のtry/catchの外で実行する。
+    const canonicalPage = totalPages >= 1 ? Math.min(page, totalPages) : 1;
+    if (canonicalPage !== page) redirect(`/profile/wishlist/${canonicalPage}`);
     return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">Your Wishlist</h1>
+        <div className={styles.wishlist}>
+            <WishlistHeading />
             {wishlist.length > 0 ? (
                 <WishlistContainer
                     products={wishlist}
@@ -41,7 +52,20 @@ export default async function ProfileWishlistPage({
                     totalPages={totalPages}
                 />
             ) : (
-                <div>Your wishlist is empty.</div>
+                <section
+                    className={styles.empty}
+                    aria-labelledby="wishlist-empty-title"
+                >
+                    <Heart size={32} strokeWidth={1.2} aria-hidden="true" />
+                    <h2 id="wishlist-empty-title">Your wishlist is empty.</h2>
+                    <p lang="ja">
+                        心ときめく一品を見つけたら、お気に入りに保存してみませんか。
+                    </p>
+                    <Link href="/browse">
+                        Explore the collection{" "}
+                        <ArrowUpRight size={16} aria-hidden="true" />
+                    </Link>
+                </section>
             )}
         </div>
     );
