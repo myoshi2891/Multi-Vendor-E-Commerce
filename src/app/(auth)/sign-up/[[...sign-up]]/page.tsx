@@ -1,14 +1,14 @@
+import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
+import AuthFrame from "@/components/store/auth/auth-frame";
+import { authAppearance } from "@/components/store/auth/appearance";
 
-/**
- * Renders the sign-up page.
- *
- * @returns The sign-up page layout with the Clerk `SignUp` component centered in the page.
- */
+export const metadata: Metadata = { title: "Sign up | Luxuries for Happiness" };
+
 export default function SignUpPage() {
-	return (
-		<div className="grid w-full flex-1 place-content-center py-10">
-			<SignUp />
-		</div>
-	);
+    return (
+        <AuthFrame mode="sign-up">
+            <SignUp appearance={authAppearance} />
+        </AuthFrame>
+    );
 }

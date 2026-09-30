@@ -47,7 +47,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider afterSignOutUrl="/">
+		<ClerkProvider
+            afterSignOutUrl="/"
+            localization={{
+                signIn: { start: { title: "Sign in", titleCombined: "Sign in" } },
+                signUp: { start: { title: "Create your account", titleCombined: "Create your account" } },
+            }}
+        >
 			<html lang="en" suppressHydrationWarning>
 				<body
 					className={`${geistSans.variable} ${geistMono.variable} antialiased`}
