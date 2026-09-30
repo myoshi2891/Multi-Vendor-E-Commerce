@@ -136,7 +136,10 @@ it("announces loading and keeps decorative skeletons out of the accessibility tr
     ).toBeVisible();
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Loading your wishlist");
-    expect(status.parentElement).toHaveAttribute("aria-busy", "true");
+    expect(status.closest("[aria-busy='true']")).toBeNull();
+    const skeletons = status.nextElementSibling;
+    expect(skeletons).toHaveAttribute("aria-busy", "true");
+    expect(skeletons).toHaveAttribute("aria-hidden", "true");
     expect(
         screen.getByRole("link", { name: /The collection/ })
     ).toHaveAttribute("href", "/browse");

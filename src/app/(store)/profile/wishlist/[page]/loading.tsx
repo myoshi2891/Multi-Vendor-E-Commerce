@@ -5,9 +5,9 @@ export default function WishlistLoading() {
     return (
         <div className={styles.wishlist}>
             <WishlistHeading />
-            <div className={styles.loading} aria-busy="true">
+            <div className={styles.loading}>
                 <p role="status">Loading your wishlist…</p>
-                <div className={styles.skeletons} aria-hidden="true">
+                <div className={styles.skeletons} aria-busy="true" aria-hidden="true">
                     {Array.from({ length: 6 }, (_, index) => (
                         <span key={index} />
                     ))}
