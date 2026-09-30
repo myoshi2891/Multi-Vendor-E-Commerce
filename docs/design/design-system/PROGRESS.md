@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare移行後のソース判定は本体適用9・未適用49（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist移行後のソース判定は本体適用12・未適用46（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -55,7 +55,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-011 | `/customer-service` | 未適用 | P2 | TODO | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | 未実施 |
 | DS-PAGE-012 | `/dispute` | 未適用 | P2 | TODO | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | 未実施 |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
-| DS-PAGE-014 | `/faqs` | 未適用 | P3 | TODO | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | 未実施 |
+| DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 未適用 | P3 | TODO | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | 未実施 |
 | DS-PAGE-016 | `/offers` | 未適用 | P2 | TODO | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | 未実施 |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | 未実施 |
@@ -70,12 +70,12 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-026 | `/profile/messages` | 未適用 | P2 | TODO | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | 未実施 |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 未適用 | P2 | TODO | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | 未実施 |
 | DS-PAGE-028 | `/profile/orders` | 未適用 | P2 | TODO | [src/app/(store)/profile/orders/page.tsx](<../../../src/app/(store)/profile/orders/page.tsx>) | 未実施 |
-| DS-PAGE-029 | `/profile` | 未適用 | P2 | TODO | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | 未実施 |
+| DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) |
 | DS-PAGE-030 | `/profile/payment` | 未適用 | P2 | TODO | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | 未実施 |
 | DS-PAGE-031 | `/profile/reviews` | 未適用 | P2 | TODO | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | 未実施 |
 | DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | TODO | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | 未実施 |
-| DS-PAGE-033 | `/profile/wishlist/[page]` | 未適用 | P2 | TODO | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | 未実施 |
-| DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | 未実施 |
+| DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
+| DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 未適用 | P2 | TODO | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | 未実施 |
 | DS-PAGE-036 | `/returns-exchange` | 未適用 | P2 | TODO | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | 未実施 |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | 未実施 |
@@ -191,15 +191,15 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-074 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/cards/rating-statistics.tsx](<../../../src/components/store/cards/rating-statistics.tsx>) | TODO | 未実施 |
 | DS-COMP-075 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/forms/review-details.tsx](<../../../src/components/store/forms/review-details.tsx>) | TODO | 未実施 |
 | DS-COMP-076 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/shared/upload-images.tsx](<../../../src/components/store/shared/upload-images.tsx>) | TODO | 未実施 |
-| DS-COMP-077 | P2 | マイページ（P2） | [src/components/store/layout/profile-sidebar/sidebar.tsx](<../../../src/components/store/layout/profile-sidebar/sidebar.tsx>) | TODO | 未実施 |
-| DS-COMP-078 | P2 | マイページ（P2） | [src/components/store/profile/overview.tsx](<../../../src/components/store/profile/overview.tsx>) | TODO | 未実施 |
-| DS-COMP-079 | P2 | マイページ（P2） | [src/components/store/profile/orders-overview.tsx](<../../../src/components/store/profile/orders-overview.tsx>) | TODO | 未実施 |
+| DS-COMP-077 | P2 | マイページ（P2） | [src/components/store/layout/profile-sidebar/sidebar.tsx](<../../../src/components/store/layout/profile-sidebar/sidebar.tsx>) | 検証済み | [profile実施記録](#profile移行記録) |
+| DS-COMP-078 | P2 | マイページ（P2） | [src/components/store/profile/overview.tsx](<../../../src/components/store/profile/overview.tsx>) | 検証済み | [profile実施記録](#profile移行記録) |
+| DS-COMP-079 | P2 | マイページ（P2） | [src/components/store/profile/orders-overview.tsx](<../../../src/components/store/profile/orders-overview.tsx>) | 検証済み | [profile実施記録](#profile移行記録) |
 | DS-COMP-080 | P2 | マイページ（P2） | [src/components/store/profile/orders/orders-table.tsx](<../../../src/components/store/profile/orders/orders-table.tsx>) | TODO | 未実施 |
 | DS-COMP-081 | P2 | マイページ（P2） | [src/components/store/profile/orders/order-table-header.tsx](<../../../src/components/store/profile/orders/order-table-header.tsx>) | TODO | 未実施 |
 | DS-COMP-082 | P2 | マイページ（P2） | [src/components/store/profile/payments/payments-table.tsx](<../../../src/components/store/profile/payments/payments-table.tsx>) | TODO | 未実施 |
 | DS-COMP-083 | P2 | マイページ（P2） | [src/components/store/profile/payments/payment-table-header.tsx](<../../../src/components/store/profile/payments/payment-table-header.tsx>) | TODO | 未実施 |
 | DS-COMP-084 | P2 | マイページ（P2） | [src/components/store/profile/addresses/container.tsx](<../../../src/components/store/profile/addresses/container.tsx>) | TODO | 未実施 |
-| DS-COMP-085 | P2 | マイページ（P2） | [src/components/store/profile/wishlist/container.tsx](<../../../src/components/store/profile/wishlist/container.tsx>) | TODO | 未実施 |
+| DS-COMP-085 | P2 | マイページ（P2） | [src/components/store/profile/wishlist/container.tsx](<../../../src/components/store/profile/wishlist/container.tsx>) | 検証済み | [wishlist実施記録](#wishlist移行記録) |
 | DS-COMP-086 | P2 | マイページ（P2） | [src/components/store/profile/following/container.tsx](<../../../src/components/store/profile/following/container.tsx>) | TODO | 未実施 |
 | DS-COMP-087 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-container.tsx](<../../../src/components/store/profile/reviews/reviews-container.tsx>) | TODO | 未実施 |
 | DS-COMP-088 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-header.tsx](<../../../src/components/store/profile/reviews/reviews-header.tsx>) | TODO | 未実施 |
@@ -389,3 +389,52 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 最終文書検証: 635件のローカル参照、66ページ／200部品のID、適用9／未適用49の件数、compare完了チェックの整合を確認。Prettierと `git diff --check` 成功。
 - 制約: 他ブラウザーと全E2Eは未実行。共有ヘッダー・フッターは今回のaxe対象外。比較画面本体の完了と既存商品カード全体の検証を区別する。
 - 次: 共通基盤DS-BASE-001。今回の比較画面を基盤変更後の回帰対象に含める。
+
+## FAQs移行記録
+
+- 日付: 2026-09-30。対象: DS-PAGE-014。未コミット。
+- [保存計画](../../../plans/faqs-design-system-plan.md)。深緑ヒーロー／アイボリー本文／セリフ見出し、質問目次、サポート導線をFAQ専用CSS Moduleで実装。既存4件の質問・プレースホルダ回答を常時plain text表示する。
+- Red: RTL新要件2件失敗、既存表示回帰1件成功。Chromiumの3画面幅で旧背景色による失敗を実測、308転送の回帰1件は成功。
+- Green／Refactor: 目次と本文を同じ質問配列から生成し、空の日本語slugの代わりに一意なfaq-1〜4を採用。最終関連Jest 4 suites／24件成功（FAQ3・共有静的レイアウト5・コンテンツ5・proxy参照へ同期した既存middleware11）。
+- Chromium 4/4成功（`E2E_BASE_URL=http://localhost:3001 bunx playwright test tests/e2e/faqs-design.spec.ts --project=chromium`）。1440／390／768px、全回答、横スクロールなし、目次focus・Enterでアンカー到達、FAQ mainのWCAG axe違反0、`/faq`の308転送を確認。1440／390pxスクリーンショットも目視確認。証跡はtest-results/faqs-1440.png、faqs-390.png、faqs-768.png（ローカル生成物）。
+- `bun run lint`: 0 errors／既存12 warnings。`bunx tsc --noEmit`: 成功。別作業のmiddleware→proxy移行に残っていたテストimportを同期して型エラーを解消。proxy本体には変更を加えない。
+- 環境記録: 初期起動はsandboxのEPERM、Turbopack内部panic、ポート衝突。Webpack起動へ変更後、CSS未適用も発生。ユーザーから別作業で解消済みとの連絡後に再実行し成功。これら環境エラーはRed実績に含めない。ブラウザ検証は別作業の修正を含む現在の作業ツリーで実施。
+- 同期: [要件](../storefront-static-pages/requirements.md)、[設計](../storefront-static-pages/design.md)、[タスク](../storefront-static-pages/tasks.md)、[機能要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)、[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、移行計画、QA_HANDOFF。02-architectureは別作業のproxy移行に伴う実体パスのみ同期。00-overview／03-data-modelはスコープ・データの変更がないため変更不要。
+- `bun run coverage:dashboard`で292 test files／328既存lcov entriesを反映。全体Jest・coverageは再測定していないため全体成功数・率は据え置き。未実施: Firefox／WebKit、全E2E。FAQに送信・ローディング・エラー状態は存在しない。
+- DS-PAGE-013は308回帰のみ確認。共有静的レイアウト・他画面の移行は今回の完了範囲に含めない。
+
+- 最終文書確認: 更新対象内のローカル参照52件を確認し、proxy移行で切れた設計書参照を同期。ページ台帳の本体適用10／未適用48／転送7／仮実装1と66件の合計、FAQ完了チェックの整合を確認。変更対象ESLintと `git diff --check` 成功。
+
+## profile移行記録
+
+- 日付: 2026-09-30。DS-PAGE-029／DS-COMP-077・078・079。未コミット。
+- [保存計画](../../../plans/profile-design-system-plan.md)、[要件](../profile-overview/requirements.md)、[設計](../profile-overview/design.md)、[タスク](../profile-overview/tasks.md)、[進捗](../profile-overview/PROGRESS.md)。
+- 共通layoutに深緑アカウント帯・アイボリーの枠、h1 My accountとセリフ見出しを導入。CSS Moduleの変数をshellに限定。sidebarは10リンクを保持し、モバイルでは折り返す。
+- 会員名の大文字小文字と画像を保持し、名前未設定のfallback／Clerk取得失敗のalertと通常再読込を整備。クイックリンクと4注文フィルターを保持。未実装Coupons／Shopping creditの404リンクは準備中の非リンクへ、無操作のサポート行はContact／Disputeの既存窓口へのリンクへ変更。
+- Red: RTL11件失敗／既存回帰2件成功（Settingsリンク、user=null）。Chromium4件失敗（新h1／navigationなし）／未認証転送1件成功。初期JestのAVIF解析エラーは画像をモックして解消し、要件による失敗を再測定。環境エラーをRedには含めない。
+- Green／Refactor: shell・sidebar・概要2部品でCSSを共有し、定数からリンクを描画。日本語ラベル・装飾aria-hidden、aria-labelledbyとaria-currentを整理。モバイルでは会員名と設定リンクを別行へ調整。旧画像依存のテストモックを除去し、Prettier後の最終実行を記録。
+- 関連Jest: `bun run test -- --runInBand --silent --runTestsByPath tests/component/store/profile-overview.test.tsx tests/component/store/profile-sidebar.test.tsx tests/component/store/settings-page.test.tsx tests/component/store/user-menu.test.tsx src/components/store/profile/orders/orders-table.test.tsx` → 5 suites／28件成功。氏名保持・未設定・user=null・取得失敗、準備中機能、クイックリンク・注文・サポート、ページング／フィルターの選択を確認。
+- Chromium: `E2E_BASE_URL=http://localhost:3001 bunx playwright test tests/e2e/profile-design.spec.ts --project=chromium` → 5/5成功（38.0s）。1440／390／768px、通常表示（氏名なしfallback）、横スクロールなし、可視focus・Tab／Enter、profile共通枠のWCAG axe違反0（color-contrast除外なし）、未認証転送、Orders／Shipping address／Settingsへの遷移と選択、Clerk UserProfileの表示・モバイル横スクロールなしを確認。
+- 実Clerkテストユーザーは既存session helperで作成・後処理し、公式testing signInで認証。seed／DB初期化／購入／フォーム送信は実行しない。スクリーンショットtest-results/profile-1440.png／profile-390.png／profile-768.pngを生成し、PC・モバイルを目視確認（ローカル生成物）。
+- `bun run lint`: 0 errors／既存12 warnings。対象限定ESLint無警告、`bunx tsc --noEmit`: 成功、`git diff --check`: 成功。dashboardは294ファイル／既存lcov328、マトリクス18/80を再生成。全体Jest・coverage未再測定のため全体成功数・率を推測更新しない。
+- 文書同期: profile-overview、profile-settingsの共通枠要件・設計・タスク・進捗、[SDD機能要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)、[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、移行計画、QA、テスト実装計画、全体進捗。00-overview／02-architecture／03-data-modelは既存範囲・構成・データモデルを維持するため変更不要。
+- 制約: Firefox／WebKit・全E2E・Clerk設定フォーム操作は未実行。エラー状態はRTLで検証。子ページ本文／UserProfile自体のデザイン移行は別IDのまま。旧profile a11y specのcontrast除外は過去のスイート設定であり、新specには適用しない。
+
+- 最終文書整合: profile新設仕様・設定仕様・保存計画のローカルリンク68件を検証し、旧middleware参照と括弧入りパスを修正。ページ台帳11適用／47未適用／7転送／1仮実装=66、対象3部品のチェックと検証済み状態を同期。
+
+## wishlist移行記録
+
+- 日付: 2026-09-30。対象: DS-PAGE-033／DS-COMP-085、aliasの回帰DS-PAGE-034。未コミット。
+- [保存計画](../../../plans/wishlist-design-system-plan.md)、[要件](../profile-wishlist/requirements.md)、[設計](../profile-wishlist/design.md)、[タスク](../profile-wishlist/tasks.md)、[進捗](../profile-wishlist/PROGRESS.md)。
+- profile共通枠に合わせたセリフ見出し・日本語リード・コレクションリンクを導入。共有見出しをpageとloadingで使用。既存ProductListのeditorial表示で最大3列、狭い画面は2列。現在ページの表示数とpage／totalPagesのみ表示する。
+- 空はコレクションへの案内、取得失敗は汎用alertとフル再読込、loadingはstatus／aria-busyと静的スケルトン。URLページングへ変更し、ローカルstate／effectの旧ページへのpushを除去。番号は最大7件、境界方向は非リンク、現在ページ1件にaria-current。
+- Red: RTL新要件5件失敗／正規化とredirectの既存回帰1件成功。Chromium新要件5件失敗を実測（コレクション導線、見出し配色、リンクページング）。
+- Green／Refactor: 共通見出し・CSS Module・URLリンクへ整理。loadingのテスト1件は実装後の回帰確認（過去のRedは主張しない）。関連最終Jestはwishlist7、共有product-card11、profile query63、sidebar6、計87件／4 suites成功。
+- コマンド: `bun run test -- --runInBand --silent --runTestsByPath tests/component/store/wishlist.test.tsx src/components/store/cards/product/product-card.test.tsx src/queries/profile.test.ts tests/component/store/profile-sidebar.test.tsx`。
+- Chromium: `E2E_BASE_URL=http://localhost:3001 bunx playwright test tests/e2e/wishlist-design.spec.ts --project=chromium` → 5/5成功（50.7s）。空・10商品・最終1商品、1440／390／768px、横スクロールなし、focus・Enter、比較追加のaria-pressed、mainのWCAG axe違反0（contrast除外なし）、ページ変更・ブラウザ戻る、alias／範囲外／不正パラメーターの既存正規化を確認。
+- 初回Greenの3画面幅テストは価格ノードも数えるselectorで20件になり失敗。商品Linkのみに限定して再実行・成功。テスト参照の誤りであり実装のRedには含めない。Clerk testingのテスト終了後通信警告は出たが、最終認証と全assertionは成功。
+- 既存カタログ11商品をテスト顧客のwishlist fixtureに保存し、顧客の後処理で除去。商品作成・seed・DB初期化・購入は行わない。test-results/wishlist-1440.png／wishlist-390.png／wishlist-768.png／wishlist-empty.pngを生成しPC・モバイル・空を目視確認。fixtureの商品画像は既存のno_imageプレースホルダを含む。
+- `bun run lint`: 0 errors／既存12 warnings。対象限定ESLint無警告、`bunx tsc --noEmit`: 成功、`git diff --check`: 成功。全体Jest／coverage・Firefox／WebKitは未実行。エラー・loadingの状態はRTL確認、ブラウザでの取得障害・遅延の強制再現は未実施。
+- 文書同期: profile-wishlist、[機能要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)、[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、移行計画、QA、テスト実装計画、全体進捗。00-overview／02-architecture／03-data-modelは既存機能範囲・構成・データを維持するため変更不要。保存バリアントの取得仕様や削除機能、他profile本文は変更しない。
+
+- dashboard再生成は296ファイル／既存lcov328、マトリクス18/80。カバレッジは今回収集していないため率・ヒートマップの変更なし。

@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare移行により本体適用9・未適用49へ更新。検証範囲と証跡は[進捗ノート](../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。検証範囲と証跡は[進捗ノート](../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -66,8 +66,8 @@
 
 | 判定 | 件数 |
 |---|---:|
-| 本体適用・周辺確認 | 9 |
-| 未適用 | 49 |
+| 本体適用・周辺確認 | 12 |
+| 未適用 | 46 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -91,7 +91,7 @@
 | `/customer-service` | 未適用 | P2 | [src/app/(store)/customer-service/page.tsx](<../src/app/(store)/customer-service/page.tsx>) |
 | `/dispute` | 未適用 | P2 | [src/app/(store)/dispute/page.tsx](<../src/app/(store)/dispute/page.tsx>) |
 | `/faq` | 転送専用 | 回帰検証 | [src/app/(store)/faq/page.tsx](<../src/app/(store)/faq/page.tsx>) |
-| `/faqs` | 未適用 | P3 | [src/app/(store)/faqs/page.tsx](<../src/app/(store)/faqs/page.tsx>) |
+| `/faqs` | 本体適用・周辺確認 | P3 | [src/app/(store)/faqs/page.tsx](<../src/app/(store)/faqs/page.tsx>) |
 | `/legal` | 未適用 | P3 | [src/app/(store)/legal/page.tsx](<../src/app/(store)/legal/page.tsx>) |
 | `/offers` | 未適用 | P2 | [src/app/(store)/offers/page.tsx](<../src/app/(store)/offers/page.tsx>) |
 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/page.tsx](<../src/app/(store)/page.tsx>) |
@@ -106,11 +106,11 @@
 | `/profile/messages` | 未適用 | P2 | [src/app/(store)/profile/messages/page.tsx](<../src/app/(store)/profile/messages/page.tsx>) |
 | `/profile/orders/[filter]` | 未適用 | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../src/app/(store)/profile/orders/[filter]/page.tsx>) |
 | `/profile/orders` | 未適用 | P2 | [src/app/(store)/profile/orders/page.tsx](<../src/app/(store)/profile/orders/page.tsx>) |
-| `/profile` | 未適用 | P2 | [src/app/(store)/profile/page.tsx](<../src/app/(store)/profile/page.tsx>) |
+| `/profile` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/page.tsx](<../src/app/(store)/profile/page.tsx>) |
 | `/profile/payment` | 未適用 | P2 | [src/app/(store)/profile/payment/page.tsx](<../src/app/(store)/profile/payment/page.tsx>) |
 | `/profile/reviews` | 未適用 | P2 | [src/app/(store)/profile/reviews/page.tsx](<../src/app/(store)/profile/reviews/page.tsx>) |
 | `/profile/settings` | 未適用 | P2 | [src/app/(store)/profile/settings/page.tsx](<../src/app/(store)/profile/settings/page.tsx>) |
-| `/profile/wishlist/[page]` | 未適用 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
+| `/profile/wishlist/[page]` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
 | `/profile/wishlist` | 転送専用 | 回帰検証 | [src/app/(store)/profile/wishlist/page.tsx](<../src/app/(store)/profile/wishlist/page.tsx>) |
 | `/report-problem` | 未適用 | P2 | [src/app/(store)/report-problem/page.tsx](<../src/app/(store)/report-problem/page.tsx>) |
 | `/returns-exchange` | 未適用 | P2 | [src/app/(store)/returns-exchange/page.tsx](<../src/app/(store)/returns-exchange/page.tsx>) |
@@ -278,15 +278,15 @@ editorial 分岐は適用済み。通常表示は旧デザインが残るため�
 
 ProfileLayoutは灰色面。サイドバー・表・概要・空状態を一体で移行。
 
-- [ ] [src/components/store/layout/profile-sidebar/sidebar.tsx](<../src/components/store/layout/profile-sidebar/sidebar.tsx>)
-- [ ] [src/components/store/profile/overview.tsx](<../src/components/store/profile/overview.tsx>)
-- [ ] [src/components/store/profile/orders-overview.tsx](<../src/components/store/profile/orders-overview.tsx>)
+- [x] [src/components/store/layout/profile-sidebar/sidebar.tsx](<../src/components/store/layout/profile-sidebar/sidebar.tsx>)
+- [x] [src/components/store/profile/overview.tsx](<../src/components/store/profile/overview.tsx>)
+- [x] [src/components/store/profile/orders-overview.tsx](<../src/components/store/profile/orders-overview.tsx>)
 - [ ] [src/components/store/profile/orders/orders-table.tsx](<../src/components/store/profile/orders/orders-table.tsx>)
 - [ ] [src/components/store/profile/orders/order-table-header.tsx](<../src/components/store/profile/orders/order-table-header.tsx>)
 - [ ] [src/components/store/profile/payments/payments-table.tsx](<../src/components/store/profile/payments/payments-table.tsx>)
 - [ ] [src/components/store/profile/payments/payment-table-header.tsx](<../src/components/store/profile/payments/payment-table-header.tsx>)
 - [ ] [src/components/store/profile/addresses/container.tsx](<../src/components/store/profile/addresses/container.tsx>)
-- [ ] [src/components/store/profile/wishlist/container.tsx](<../src/components/store/profile/wishlist/container.tsx>)
+- [x] [src/components/store/profile/wishlist/container.tsx](<../src/components/store/profile/wishlist/container.tsx>)
 - [ ] [src/components/store/profile/following/container.tsx](<../src/components/store/profile/following/container.tsx>)
 - [ ] [src/components/store/profile/reviews/reviews-container.tsx](<../src/components/store/profile/reviews/reviews-container.tsx>)
 - [ ] [src/components/store/profile/reviews/reviews-header.tsx](<../src/components/store/profile/reviews/reviews-header.tsx>)
@@ -555,3 +555,30 @@ CSSの実装文字列をそのままなぞる大量の単体テストは作ら�
 状態・証跡は[進捗ノート](../docs/design/design-system/PROGRESS.md)に記録し、当計画は完了チェックと対象・優先度を同期する。進め方は [design-system-workflow](../.agent/skills/design-system-workflow/SKILL.md) を参照する。
 
 全画面のデザイン統一を完了とするのは、利用中の対象が検証済み、または理由付き保留として整理され、適用済み画面の回帰確認が終わった時点とする。
+
+### FAQs移行チェック（DS-PAGE-014）
+
+- [x] [保存計画](faqs-design-system-plan.md)に対象・受け入れ条件・検証方法を記録。
+- [x] 新要件のRTL・ブラウザRed確認後、専用レイアウト・CSS Moduleを実装。
+- [x] 1440／390／768px、キーボードfocus・アンカー、axe、旧URL転送、関連RTL、lint、型チェックを確認。
+- [x] 関連仕様・QA・[移行記録](../docs/design/design-system/PROGRESS.md#faqs移行記録)を同期。
+
+共有StaticPageLayout（DS-COMP-123）と他の静的ページは未移行。今回のチェックはFAQ本体のみ。
+
+### Profile移行チェック（DS-PAGE-029／DS-COMP-077〜079）
+
+- [x] [保存計画](profile-design-system-plan.md)に対象・受け入れ条件・先行テストを記録。
+- [x] RTLと認証後ブラウザのRed→Green、共通CSS／定数の整理後に再検証。
+- [x] 1440／390／768px、focus・キーボード、axe、未認証転送、共有ナビゲーションの子ページ回帰を確認。
+- [x] [profile仕様](../docs/design/profile-overview/requirements.md)、設定の共通枠仕様、QA、[移行進捗](../docs/design/design-system/PROGRESS.md#profile移行記録)を同期。
+
+他profileページの本文・Clerk UserProfile自体は未移行のまま。共有枠が新デザインになったことを全子ページの移行完了とは扱わない。
+
+### Wishlist移行チェック（DS-PAGE-033／DS-COMP-085）
+
+- [x] [保存計画](wishlist-design-system-plan.md)に対象・受け入れ条件・先行テストを記録。
+- [x] RTLと認証後ChromiumのRed→Green、共通見出し・URLリンクの整理後に再検証。
+- [x] 1440／390／768px、空／商品あり／ページング、比較・focus・Enter、axe、ブラウザ戻ると転送を確認。
+- [x] [Wishlist仕様](../docs/design/profile-wishlist/requirements.md)、QA、[移行進捗](../docs/design/design-system/PROGRESS.md#wishlist移行記録)を同期。
+
+DS-PAGE-034のalias転送も回帰確認。共有ProductCardの他画面・他機能まで移行済みとは扱わない。

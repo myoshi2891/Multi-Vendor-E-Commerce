@@ -1,86 +1,89 @@
 import Link from "next/link";
-import { AppealIcon, ArrowIcon, DollarIcon } from "@/components/store/icons";
-import UnpaidImg from "@/public/assets/images/unpaid.avif";
-import ToBeShippedImg from "@/public/assets/images/to-be-shipped.avif";
-import ShippedImg from "@/public/assets/images/shipped.avif";
-import ToBeReviewedImg from "@/public/assets/images/to-de-reviewed.webp";
-import Image from "next/image";
-export default function OrdersOverview() {
-    return (
-        <div className="mt-4 border bg-white p-4 shadow-sm">
-            <div className="flex items-center border-b">
-                <div className="inline-block flex-1 py-3 text-xl font-bold">
-                    My Orders
-                </div>
-                <Link href="/profile/orders">
-                    <div className="flex cursor-pointer items-center text-sm text-main-primary">
-                        View All
-                        <span className="ml-2 inline-block text-lg">
-                            <ArrowIcon />
-                        </span>
-                    </div>
-                </Link>
-            </div>
-            <div className="grid grid-cols-4 py-8">
-                {menu.map((item) => (
-                    <Link href={item.link} key={item.link}>
-                        <div className="relative flex w-full cursor-pointer flex-col items-center justify-center">
-                            <Image
-                                src={item.img}
-                                alt={item.title}
-                                width={100}
-                                height={100}
-                                className="size-14 object-cover"
-                                priority
-                            />
-                            <div className="text-main-primary">
-                                {item.title}
-                            </div>
-                        </div>
-                    </Link>
-                ))}
-            </div>
-            <div className="relative flex cursor-pointer items-center border-t py-4">
-                <span className="inline-block text-2xl">
-                    <AppealIcon />
-                </span>
-                <div className="ml-1.5 text-main-primary">My appeal</div>
-                <span className="absolute right-0 text-lg text-main-secondary">
-                    <ArrowIcon />
-                </span>
-            </div>
-            <div className="relative flex cursor-pointer items-center border-t py-4">
-                <span className="inline-block text-2xl">
-                    <DollarIcon />
-                </span>
-                <div className="ml-1.5 text-main-primary">In dispute</div>
-                <span className="absolute right-0 text-lg text-main-secondary">
-                    <ArrowIcon />
-                </span>
-            </div>
-        </div>
-    );
-}
+import {
+    ArrowUpRight,
+    CreditCard,
+    Package,
+    Truck,
+    PackageCheck,
+} from "lucide-react";
+import styles from "./profile.module.css";
 
-const menu = [
+const orderLinks = [
     {
         title: "Unpaid",
-        img: UnpaidImg,
-        link: "/profile/orders/unpaid",
+        label: "お支払い待ち",
+        icon: CreditCard,
+        filter: "unpaid",
     },
     {
         title: "To be shipped",
-        img: ToBeShippedImg,
-        link: "/profile/orders/toShip",
+        label: "発送待ち",
+        icon: Package,
+        filter: "toShip",
     },
-    {
-        title: "Shipped",
-        img: ShippedImg,
-        link: "/profile/orders/shipped",
-    },
+    { title: "Shipped", label: "配送中", icon: Truck, filter: "shipped" },
     {
         title: "Delivered",
-        img: ToBeReviewedImg,
-        link: "/profile/orders/delivered",
+        label: "お届け済み",
+        icon: PackageCheck,
+        filter: "delivered",
     },
 ];
+const supportLinks = [
+    {
+        title: "Order support",
+        label: "ご注文に関するお問い合わせ",
+        href: "/contact",
+    },
+    {
+        title: "Open a dispute",
+        label: "お取引の問題について相談する",
+        href: "/dispute",
+    },
+];
+
+export default function OrdersOverview() {
+    return (
+        <section
+            aria-labelledby="profile-orders-title"
+            className={styles.panel}
+        >
+            <div className={styles.panelHeading}>
+                <div>
+                    <p className={styles.eyebrow}>EVERY LITTLE DISCOVERY</p>
+                    <h2 id="profile-orders-title">My orders</h2>
+                </div>
+                <Link href="/profile/orders">
+                    View all orders{" "}
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+            </div>
+            <div className={styles.orderLinks}>
+                {orderLinks.map(({ title, label, icon: Icon, filter }) => (
+                    <Link
+                        href={`/profile/orders/${filter}`}
+                        key={filter}
+                        className={styles.orderLink}
+                    >
+                        <Icon size={25} strokeWidth={1.4} aria-hidden="true" />
+                        <span>{title}</span>
+                        <small lang="ja">{label}</small>
+                    </Link>
+                ))}
+            </div>
+            <div className={styles.supportLinks}>
+                {supportLinks.map((link) => (
+                    <Link href={link.href} key={link.href}>
+                        <span>
+                            <span className={styles.supportTitle}>
+                                {link.title}
+                            </span>
+                            <span lang="ja">{link.label}</span>
+                        </span>
+                        <ArrowUpRight size={18} aria-hidden="true" />
+                    </Link>
+                ))}
+            </div>
+        </section>
+    );
+}

@@ -4,21 +4,17 @@ import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ProfileSidebar from "@/components/store/layout/profile-sidebar/sidebar";
 
+let mockPathname = "/profile";
+
 // "use client" コンポーネント。usePathname を固定値でモックする。
 jest.mock("next/navigation", () => ({
-    usePathname: () => "/profile",
-}));
-jest.mock("next/link", () => ({
-    __esModule: true,
-    default: ({
-        children,
-        href,
-    }: React.PropsWithChildren<{ href: string }>) => (
-        <a href={href}>{children}</a>
-    ),
+    usePathname: () => mockPathname,
 }));
 
 describe("ProfileSidebar", () => {
+    beforeEach(() => {
+        mockPathname = "/profile";
+    });
     it('renders a Settings menu entry pointing to "/profile/settings"', () => {
         // Arrange / Act
         render(<ProfileSidebar />);
@@ -26,5 +22,37 @@ describe("ProfileSidebar", () => {
         // Assert
         const settingsLink = screen.getByRole("link", { name: "Settings" });
         expect(settingsLink).toHaveAttribute("href", "/profile/settings");
+    });
+});
+
+describe("Profile account navigation", () => {
+    it.each([
+        "/profile",
+        "/profile/orders/shipped",
+        "/profile/settings",
+        "/profile/wishlist/3",
+    ])("indicates exactly one current link for %s", (path) => {
+        mockPathname = path;
+        render(<ProfileSidebar />);
+        const nav = screen.getByRole("navigation", {
+            name: "Account navigation",
+        });
+        const current = nav.querySelectorAll('[aria-current="page"]');
+        expect(current).toHaveLength(1);
+        const expected = path.includes("/orders")
+            ? "/profile/orders"
+            : path.includes("/wishlist")
+              ? "/profile/wishlist/1"
+              : path;
+        expect(current[0]).toHaveAttribute("href", expected);
+    });
+    it("preserves all ten existing account destinations", () => {
+        mockPathname = "/profile";
+        render(<ProfileSidebar />);
+        expect(
+            screen
+                .getByRole("navigation", { name: "Account navigation" })
+                .querySelectorAll("a")
+        ).toHaveLength(10);
     });
 });

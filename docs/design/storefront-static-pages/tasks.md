@@ -100,3 +100,10 @@
 | 8        | docs      | spec-sync + dashboard 再生成（統計同期は単独コミット）    |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。
+
+## FAQブランド移行（DS-PAGE-014、2026-09-30）
+
+- [x] 保存計画、RTL新要件2件／表示回帰1件、ブラウザ新配色のRed確認。
+- [x] FAQ専用レイアウト・CSS Module、質問目次・サポート導線、plain text常時表示。
+- [x] 関連Jest、Chromium3幅＋308転送、axe、lint／tsc、仕様とQA同期。
+- 検証詳細は[移行記録](../design-system/PROGRESS.md#faqs移行記録)。元のPhase 1機能完了履歴は保持。今回コミットは依頼されていない。

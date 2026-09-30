@@ -1,0 +1,64 @@
+.faqs {
+    --gold: #d4ba83;
+    --ink: #17251d;
+    --muted: #536356;
+    --line: #c9c7b8;
+    --accent: #75613b;
+    background: #f3f0e8;
+    color: var(--ink);
+    color-scheme: light;
+}
+.faqs a:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+.faqs a:hover { color: var(--accent); }
+.hero { background: radial-gradient(ellipse at 85% 45%, #26443355, transparent 50%), #0b100e; color: #f1eee4; }
+.heroInner { position: relative; max-width: 1600px; margin: auto; padding: 30px 7% 28px; }
+.breadcrumb { display: flex; gap: 15px; font-size: 11px; color: #a5b0a6; }
+.hero a:hover { color: var(--gold); }
+.hero a:focus-visible { outline-color: var(--gold); }
+.heroCopy { position: relative; z-index: 1; padding: 65px 0 70px; }
+.eyebrow { font-size: 10px; letter-spacing: .22em; font-weight: 500; color: var(--accent); }
+.hero .eyebrow { color: var(--gold); }
+.hero h1 { font: 400 clamp(72px, 8vw, 116px)/1.05 Georgia, "Times New Roman", serif; letter-spacing: -.055em; margin: 24px 0 27px; }
+.subtitle { font-size: 14px; letter-spacing: .18em; line-height: 1.8; }
+.description { margin-top: 17px; color: #b6bfb3; font-size: 13px; line-height: 2.1; }
+.star { position: absolute; right: 12%; top: 105px; font: 400 clamp(130px, 17vw, 240px)/1 Georgia, serif; color: var(--gold); opacity: .65; }
+.heroFoot { border-top: 1px solid #d4ba8333; padding-top: 23px; display: flex; justify-content: space-between; gap: 20px; font-size: 10px; letter-spacing: .14em; color: #b6bfb3; }
+.heroFoot a { display: inline-flex; align-items: center; gap: 18px; min-height: 28px; }
+.content { max-width: 1400px; margin: auto; padding: 80px 7% 90px; display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(45px, 7vw, 100px); align-items: start; }
+.guide, .questions { min-width: 0; }
+.guide h2, .support h2 { font: 400 clamp(35px, 3.6vw, 50px)/1.15 Georgia, "Times New Roman", serif; letter-spacing: -.035em; margin: 22px 0 30px; }
+.guide em, .support em { color: var(--accent); }
+.questionNav { border-top: 1px solid var(--line); }
+.questionNav a { display: flex; align-items: center; gap: 14px; padding: 20px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.questionNav a > span { color: var(--accent); font-size: 11px; }
+.questionNav svg { margin-left: auto; flex-shrink: 0; }
+.questions, .question { scroll-margin-top: 35px; }
+.question { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 16px; padding: 30px 0 34px; border-top: 1px solid var(--line); }
+.question:last-child { border-bottom: 1px solid var(--line); }
+.number { font: 400 20px/1.6 Georgia, serif; color: var(--accent); }
+.question h2 { font-size: 18px; font-weight: 500; line-height: 1.8; overflow-wrap: anywhere; }
+.question p { margin-top: 17px; font-size: 14px; line-height: 2.1; color: var(--muted); overflow-wrap: anywhere; }
+.support { max-width: 1400px; margin: auto; padding: 0 7% 90px; display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(45px, 7vw, 100px); }
+.supportCopy { border-top: 1px solid var(--line); padding-top: 30px; }
+.supportCopy p[lang] { color: var(--muted); font-size: 13px; line-height: 2; }
+.supportLinks { border-top: 1px solid var(--line); min-width: 0; }
+.supportLinks a { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.supportLinks svg { flex-shrink: 0; }
+.linkTitle { display: block; font: 400 22px/1.4 Georgia, serif; }
+.supportLinks span[lang] { display: block; color: var(--muted); margin-top: 7px; font-size: 12px; }
+@media (max-width: 800px) {
+    .content, .support { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+    .content { padding-top: 50px; padding-bottom: 50px; }
+    .support { padding-bottom: 60px; }
+    .heroFoot { flex-wrap: wrap; }
+    .star { right: 8%; top: 120px; font-size: 110px; }
+}
+@media (max-width: 480px) {
+    .heroInner { padding: 24px 6% 25px; }
+    .heroCopy { padding: 50px 0 45px; }
+    .star { top: 105px; font-size: 70px; }
+    .content, .support { padding-left: 6%; padding-right: 6%; }
+    .question { grid-template-columns: 24px minmax(0, 1fr); gap: 10px; }
+    .question h2 { font-size: 16px; }
+    .heroFoot > span { font-size: 9px; letter-spacing: .1em; }
+}

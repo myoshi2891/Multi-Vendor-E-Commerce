@@ -30,7 +30,7 @@ jest.mock("./lib/country", () => ({
 import { clerkMiddleware, type ClerkMiddlewareAuth } from "@clerk/nextjs/server";
 
 // ミドルウェアの実体をインポート（clerkMiddleware のモックにより、内部の関数がそのまま取得される）
-import middleware from "./middleware";
+import middleware from "./proxy";
 
 // clerkMiddleware のハンドラー関数の型
 type MiddlewareHandler = (auth: ClerkMiddlewareAuth, req: NextRequest, event: NextFetchEvent) => Promise<Response | void> | Response | void;

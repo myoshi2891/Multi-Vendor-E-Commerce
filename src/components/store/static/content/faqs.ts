@@ -2,7 +2,7 @@ import type { StaticSection } from "../static-page-layout";
 
 /**
  * FAQ 本文。Q&A を { heading: question, body: answer } にマップし、
- * 共有レイアウトでそのまま描画する。文章はプレースホルダ（運営が後日差替）。
+ * FAQ専用レイアウトで常時表示する。文章はプレースホルダ（運営が後日差替）。
  */
 export const FAQ_SECTIONS: StaticSection[] = [
     {

@@ -994,3 +994,21 @@ jsdom 環境のコンポーネントテストは **ファイル先頭に `/** @j
 3. **Phase 3 完了後:** `bun run seed:e2e && bunx playwright test` で E2E テストがパスすること
 4. **各 Step 完了後:** `bunx tsc --noEmit && bun run lint` で型エラー・リントエラーなしを確認
 5. **最終確認:** `bun run test -- --coverage` でカバレッジレポートを生成し、ビジネスロジック領域が 80%+ であることを確認
+
+## FAQsデザイン回帰 — ✅ Completed (2026-09-30)
+
+- FAQの既存回答、質問アンカー、サポート導線のRTLを3件追加。
+- Chromiumの1440／390／768px、focusとキーボードアンカー操作、axe、308転送を4件追加。
+- [検証証跡](../design/design-system/PROGRESS.md#faqs移行記録)。既存proxy回帰11件もテスト参照先同期後に成功。全体統計の再測定は行っていない。
+
+## Profile overviewデザイン回帰 — ✅ Completed (2026-09-30)
+
+- 会員情報・エラー・href・準備中機能のRTL7件を新設、既存sidebarに選択状態等5件を追加。新要件11件Red／既存回帰2件成功を確認。
+- Chromiumに3画面幅、キーボード、axe、共有子ルート、未認証転送の5件を追加。既存設定／user-menu／注文表の回帰を含め最終RTL28件成功。
+- [検証記録](../design/design-system/PROGRESS.md#profile移行記録)。全体統計は再測定せず、テストファイル走査294件のみQAに同期。
+
+## Wishlistデザイン回帰 — ✅ Completed (2026-09-30)
+
+- 新RTLの5件Red、正規化・redirectの既存回帰1件を確認。loadingの実装後回帰1件を含む新suiteは7件。
+- Chromiumに空・3画面幅・ページング／ブラウザ戻るの5件を追加。最終関連RTL87/87、Chromium5/5成功。
+- [証跡](../design/design-system/PROGRESS.md#wishlist移行記録)。共有カードの別画面・全体統計の再測定は含まない。
