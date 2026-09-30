@@ -1,51 +1,44 @@
 import ProductFilters from "@/components/store/browse-page/filters";
-import ProductSort from "@/components/store/browse-page/sort";
-import CategoriesHeader from "@/components/store/layout/categories-header/categories-header";
+import FilterPanel from "@/components/store/browse-page/filter-panel";
 import StoreDetails from "@/components/store/store-page/store-details";
 import StoreProducts from "@/components/store/store-page/store-products";
 import { FiltersQueryType } from "@/lib/types";
 import { getStorePageDetails } from "@/queries/store";
+import catalog from "../../browse/browse.module.css";
+import styles from "@/components/store/store-page/store-page.module.css";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-/**
- * Renders the store page for a given store URL.
- *
- * The page includes the category header, store details, filter controls, sort controls, and product listings.
- *
- * @param params - Resolves to the store URL for the page.
- * @param searchParams - Resolves to the filter and query parameters used by the product controls.
- * @returns The JSX for the store page.
- */
-export default async function StorePage({
-    params,
-    searchParams,
-}: {
+export default async function StorePage({ params, searchParams }: {
     params: Promise<{ storeUrl: string }>;
     searchParams: Promise<FiltersQueryType>;
 }) {
     const { storeUrl } = await params;
-    const resolvedSearchParams = await searchParams;
+    const query = await searchParams;
     const store = await getStorePageDetails(storeUrl);
     return (
-        <>
-            <CategoriesHeader />
+        <main className={catalog.browse}>
             <StoreDetails details={store} />
-            <div className="mx-auto max-w-[95%] border-t">
-                <div className="mt-5 flex gap-x-5">
-                    <ProductFilters
-                        queries={resolvedSearchParams}
-                        storeUrl={storeUrl}
-                    />
-                    <div className="space-y-5 p-4">
-                        <ProductSort />
-                        <StoreProducts
-                            searchParams={resolvedSearchParams}
-                            store={storeUrl}
-                        />
+            <div id="collection" className={catalog.catalog}>
+                <div className={catalog.catalogIntro}>
+                    <div>
+                        <p className={catalog.eyebrow}>THE STORE EDIT</p>
+                        <h2>A collection to <em>discover.</em></h2>
                     </div>
+                    <a href="#store-about" className={styles.aboutLink}>About the store ↗</a>
+                </div>
+                <div className={catalog.catalogLayout}>
+                    <section className={catalog.filters} aria-label="Refine the store collection">
+                        <p className={catalog.sectionLabel}>REFINE YOUR SEARCH</p>
+                        <FilterPanel>
+                            <ProductFilters queries={query} storeUrl={storeUrl} />
+                        </FilterPanel>
+                    </section>
+                    <section className={catalog.results} aria-label="Store collection results">
+                        <StoreProducts searchParams={query} store={storeUrl} />
+                    </section>
                 </div>
             </div>
-        </>
+        </main>
     );
 }

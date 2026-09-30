@@ -1,60 +1,45 @@
-"use client"
 import { StoreDetailsType } from "@/lib/types";
-import { CircleCheckBig } from "lucide-react";
+import { ArrowDownRight, Star } from "lucide-react";
 import Image from "next/image";
-import ReactStars from "react-rating-stars-component";
+import Link from "next/link";
+import styles from "./store-page.module.css";
 
-export default function StoreDetails({
-    details,
-}: {
-    details: StoreDetailsType;
-}) {
-    const { averageRating, cover, description, logo, name, numReviews } =
-        details;
-    const numOfReviews = new Intl.NumberFormat().format(numReviews);
-    
+export default function StoreDetails({ details }: { details: StoreDetailsType }) {
+    const { averageRating, cover, description, logo, name, numReviews } = details;
     return (
-        <div className="relative w-full pb-28">
-            <div className="relative">
-                <Image
-                    src={cover}
-                    alt={name}
-                    width={2000}
-                    height={500}
-                    className="h-96 w-full object-cover"
-                />
-                <div className="absolute bottom-[-100px] left-11 flex items-end">
-                    <Image
-                        src={logo}
-                        alt={name}
-                        width={200}
-                        height={200}
-                        className="size-44 rounded-full object-cover shadow-2xl"
-                    />
-                    <div className="mb-5 pl-1">
-                        <div className="flex items-center gap-x-1">
-                            <h1 className="text-2xl font-bold capitalize leading-5">
-                                {name.toLowerCase()}
-                            </h1>
-                            <CircleCheckBig className="mt-0.5 stroke-green-400" />
+        <header className={styles.hero}>
+            <div className={styles.heroInner}>
+                <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+                    <Link href="/">Home</Link><span aria-hidden="true">/</span>
+                    <Link href="/browse">The collection</Link><span aria-hidden="true">/</span>
+                    <span aria-current="page">{name}</span>
+                </nav>
+                <div className={styles.heroLayout}>
+                    <div className={styles.identity}>
+                        <p className={styles.eyebrow}>MEET THE STORE</p>
+                        <h1>{name}<span>.</span></h1>
+                        <div id="store-about" className={styles.storeProfile}>
+                            <Image src={logo} alt={`${name} logo`} width={64} height={64} className={styles.logo} />
+                            <div className={styles.profileCopy}>
+                                <p className={styles.profileLabel}>ABOUT THE STORE</p>
+                                {description && <p className={styles.description}>{description}</p>}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-x-1">
-                            <ReactStars
-                                count={5}
-                                size={24}
-                                color="#e2dfdf"
-                                activeColor="#FFD804"
-                                isHalf
-                                edit={false}
-                                value={averageRating}
-                            />
-                            <p className="text-xs text-main-secondary">
-                                ({numOfReviews} reviews)
-                            </p>
+                        <div className={styles.rating}>
+                            <Star size={15} aria-hidden="true" />
+                            {numReviews > 0 ? (
+                                <><span className={styles.ratingValue}>{averageRating.toFixed(1)} / 5</span><span>{new Intl.NumberFormat().format(numReviews)} {numReviews === 1 ? "review" : "reviews"}</span></>
+                            ) : <span>No reviews yet</span>}
                         </div>
+                        <a href="#collection" className={styles.collectionLink}>Explore the collection <ArrowDownRight size={18} aria-hidden="true" /></a>
+                    </div>
+                    <div className={styles.coverFrame}>
+                        <Image src={cover} alt={`${name} cover`} fill sizes="(max-width: 850px) 88vw, 50vw" className={styles.cover} priority />
+                        <span className={styles.coverCaption}>A LITTLE DISCOVERY, A LITTLE HAPPINESS.</span>
                     </div>
                 </div>
+                <div className={styles.heroFoot}><span>THE COLLECTION / {name}</span><span lang="ja">心ときめく出会いを、このお店から。</span></div>
             </div>
-        </div>
+        </header>
     );
 }
