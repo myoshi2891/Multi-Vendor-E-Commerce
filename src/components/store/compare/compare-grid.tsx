@@ -156,7 +156,7 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
                                         href={href}
                                         aria-label={`View ${product.name}`}
                                     >
-                                        {image ? (
+                                        {image?.image ? (
                                             <Image
                                                 src={image.image}
                                                 alt={product.name}

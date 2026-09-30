@@ -257,3 +257,53 @@ it("getProductsByIds が非 Error を throw したとき Unknown error をログ
 
     errorSpy.mockRestore();
 });
+
+// 回帰: 画像オブジェクトはあるが画像 URL が空のとき、空 src で Image を描画せず代替表示にする
+it("画像 URL が空のとき Image unavailable を表示しリンクは variantImages の url を使う", async () => {
+    useCompareStore.setState({ items: ["v1"] });
+    const product = createProduct("v1", "Alpha Shirt");
+    mockedGetProductsByIds.mockResolvedValue({
+        products: [
+            { ...product, variantImages: [{ url: "/product/custom", image: "" }] },
+        ],
+        totalPages: 1,
+    });
+
+    render(<CompareGrid fetchProductsAction={mockedGetProductsByIds} />);
+
+    expect(await screen.findByText("Image unavailable")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(
+        screen.getByRole("link", { name: "View Alpha Shirt" })
+    ).toHaveAttribute("href", "/product/custom");
+});
+
+it("画像が無いときは代替表示とバリアント URL へのリンクを使う", async () => {
+    useCompareStore.setState({ items: ["v1"] });
+    const product = createProduct("v1", "Alpha Shirt");
+    mockedGetProductsByIds.mockResolvedValue({
+        products: [{ ...product, variantImages: [] }],
+        totalPages: 1,
+    });
+
+    render(<CompareGrid fetchProductsAction={mockedGetProductsByIds} />);
+
+    expect(await screen.findByText("Image unavailable")).toBeInTheDocument();
+    expect(
+        screen.getByRole("link", { name: "View Alpha Shirt" })
+    ).toHaveAttribute("href", "/product/slug-v1/variant-v1");
+});
+
+it("バリアントが無い商品はカードを描画しない", async () => {
+    useCompareStore.setState({ items: ["v1", "v2"] });
+    const broken = createProduct("v1", "Alpha Shirt");
+    mockedGetProductsByIds.mockResolvedValue({
+        products: [{ ...broken, variants: [] }, createProduct("v2", "Beta Shoes")],
+        totalPages: 1,
+    });
+
+    render(<CompareGrid fetchProductsAction={mockedGetProductsByIds} />);
+
+    expect(await screen.findByText("Beta Shoes")).toBeInTheDocument();
+    expect(screen.queryByText("Alpha Shirt")).not.toBeInTheDocument();
+});
