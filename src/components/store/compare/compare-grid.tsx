@@ -60,6 +60,160 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
         };
     }, [items, attempt, fetchProductsAction]);
 
+    const renderBody = () => {
+        if (items.length === 0) {
+            return (
+                <div data-testid="compare-empty" className={styles.empty}>
+                    <Columns2 size={40} strokeWidth={1} aria-hidden="true" />
+                    <h3>A little perspective.</h3>
+                    <p>
+                        No products to compare yet. Add products from the store
+                        to compare them here.
+                    </p>
+                    <Link href="/browse" className={styles.cta}>
+                        Explore the collection{" "}
+                        <ArrowUpRight size={17} aria-hidden="true" />
+                    </Link>
+                </div>
+            );
+        }
+        if (loading) {
+            return (
+                <div>
+                    <p role="status" className={styles.notice}>
+                        Loading your selection…
+                    </p>
+                    <div className={styles.scroller} aria-hidden="true">
+                        {items.map((id) => (
+                            <div
+                                key={id}
+                                className={`${styles.skeleton} animate-pulse`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        if (failed) {
+            return (
+                <div className={styles.empty}>
+                    <p role="alert">
+                        We couldn’t load your selection. Please try again.
+                    </p>
+                    <button
+                        type="button"
+                        className={styles.cta}
+                        onClick={() => setAttempt((value) => value + 1)}
+                    >
+                        Try again
+                    </button>
+                </div>
+            );
+        }
+        if (products.length === 0) {
+            return (
+                <div className={styles.empty}>
+                    <p role="status">
+                        Your selected pieces are no longer available.
+                    </p>
+                    <Link href="/browse" className={styles.cta}>
+                        Explore the collection{" "}
+                        <ArrowUpRight size={17} aria-hidden="true" />
+                    </Link>
+                </div>
+            );
+        }
+        return (
+            <div
+                className={styles.scroller}
+                role="region"
+                aria-label="Selected products"
+                tabIndex={0}
+            >
+                {products.map((product) => {
+                    const variant = product.variants[0];
+                    if (!variant) return null;
+                    const image = product.variantImages[0];
+                    const href =
+                        image?.url ??
+                        `/product/${product.slug}/${variant.variantSlug}`;
+                    return (
+                        <article
+                            key={variant.variantId}
+                            className={styles.card}
+                        >
+                            <div className={styles.image}>
+                                <Link
+                                    href={href}
+                                    aria-label={`View ${product.name}`}
+                                >
+                                    {image?.image ? (
+                                        <Image
+                                            src={image.image}
+                                            alt={product.name}
+                                            fill
+                                            sizes="(max-width: 700px) 260px, 280px"
+                                            className={styles.productImage}
+                                        />
+                                    ) : (
+                                        <span className={styles.imageFallback}>
+                                            Image unavailable
+                                        </span>
+                                    )}
+                                </Link>
+                                <button
+                                    type="button"
+                                    aria-label="Remove from compare"
+                                    className={styles.remove}
+                                    onClick={() =>
+                                        removeFromCompare(variant.variantId)
+                                    }
+                                >
+                                    <X size={17} aria-hidden="true" />
+                                </button>
+                            </div>
+                            <div className={styles.cardBody}>
+                                <p className={styles.variant}>
+                                    {variant.variantName}
+                                </p>
+                                <h3>
+                                    <Link href={href}>{product.name}</Link>
+                                </h3>
+                                <div className={styles.price}>
+                                    <ProductPrice
+                                        sizes={variant.sizes}
+                                        isCard
+                                        handleChange={() => {}}
+                                    />
+                                </div>
+                                <dl className={styles.details}>
+                                    <div>
+                                        <dt>Rating</dt>
+                                        <dd>
+                                            {product.rating.toFixed(1)}{" "}
+                                            <span>/ 5</span>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt>Sold</dt>
+                                        <dd>{product.sales}</dd>
+                                    </div>
+                                </dl>
+                                <Link href={href} className={styles.detailLink}>
+                                    View piece{" "}
+                                    <ArrowUpRight
+                                        size={15}
+                                        aria-hidden="true"
+                                    />
+                                </Link>
+                            </div>
+                        </article>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <div>
             <div className={styles.toolbar}>
@@ -82,150 +236,7 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
                     )}
                 </div>
             </div>
-            {items.length === 0 ? (
-                <div data-testid="compare-empty" className={styles.empty}>
-                    <Columns2 size={40} strokeWidth={1} aria-hidden="true" />
-                    <h3>A little perspective.</h3>
-                    <p>
-                        No products to compare yet. Add products from the store
-                        to compare them here.
-                    </p>
-                    <Link href="/browse" className={styles.cta}>
-                        Explore the collection{" "}
-                        <ArrowUpRight size={17} aria-hidden="true" />
-                    </Link>
-                </div>
-            ) : loading ? (
-                <div>
-                    <p role="status" className={styles.notice}>
-                        Loading your selection…
-                    </p>
-                    <div className={styles.scroller} aria-hidden="true">
-                        {items.map((id) => (
-                            <div
-                                key={id}
-                                className={`${styles.skeleton} animate-pulse`}
-                            />
-                        ))}
-                    </div>
-                </div>
-            ) : failed ? (
-                <div className={styles.empty}>
-                    <p role="alert">
-                        We couldn’t load your selection. Please try again.
-                    </p>
-                    <button
-                        type="button"
-                        className={styles.cta}
-                        onClick={() => setAttempt((value) => value + 1)}
-                    >
-                        Try again
-                    </button>
-                </div>
-            ) : products.length === 0 ? (
-                <div className={styles.empty}>
-                    <p role="status">
-                        Your selected pieces are no longer available.
-                    </p>
-                    <Link href="/browse" className={styles.cta}>
-                        Explore the collection{" "}
-                        <ArrowUpRight size={17} aria-hidden="true" />
-                    </Link>
-                </div>
-            ) : (
-                <div
-                    className={styles.scroller}
-                    role="region"
-                    aria-label="Selected products"
-                    tabIndex={0}
-                >
-                    {products.map((product) => {
-                        const variant = product.variants[0];
-                        if (!variant) return null;
-                        const image = product.variantImages[0];
-                        const href =
-                            image?.url ??
-                            `/product/${product.slug}/${variant.variantSlug}`;
-                        return (
-                            <article
-                                key={variant.variantId}
-                                className={styles.card}
-                            >
-                                <div className={styles.image}>
-                                    <Link
-                                        href={href}
-                                        aria-label={`View ${product.name}`}
-                                    >
-                                        {image?.image ? (
-                                            <Image
-                                                src={image.image}
-                                                alt={product.name}
-                                                fill
-                                                sizes="(max-width: 700px) 260px, 280px"
-                                                className={styles.productImage}
-                                            />
-                                        ) : (
-                                            <span
-                                                className={styles.imageFallback}
-                                            >
-                                                Image unavailable
-                                            </span>
-                                        )}
-                                    </Link>
-                                    <button
-                                        type="button"
-                                        aria-label="Remove from compare"
-                                        className={styles.remove}
-                                        onClick={() =>
-                                            removeFromCompare(variant.variantId)
-                                        }
-                                    >
-                                        <X size={17} aria-hidden="true" />
-                                    </button>
-                                </div>
-                                <div className={styles.cardBody}>
-                                    <p className={styles.variant}>
-                                        {variant.variantName}
-                                    </p>
-                                    <h3>
-                                        <Link href={href}>{product.name}</Link>
-                                    </h3>
-                                    <div className={styles.price}>
-                                        <ProductPrice
-                                            sizes={variant.sizes}
-                                            isCard
-                                            handleChange={() => {}}
-                                        />
-                                    </div>
-                                    <dl className={styles.details}>
-                                        <div>
-                                            <dt>Rating</dt>
-                                            <dd>
-                                                {product.rating.toFixed(1)}{" "}
-                                                <span>/ 5</span>
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt>Sold</dt>
-                                            <dd>{product.sales}</dd>
-                                        </div>
-                                    </dl>
-                                    <Link
-                                        href={href}
-                                        className={styles.detailLink}
-                                    >
-                                        View piece{" "}
-                                        <ArrowUpRight
-                                            size={15}
-                                            aria-hidden="true"
-                                        />
-                                    </Link>
-                                </div>
-                            </article>
-                        );
-                    })}
-                </div>
-            )}
+            {renderBody()}
         </div>
     );
 }
