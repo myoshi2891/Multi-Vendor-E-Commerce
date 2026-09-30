@@ -17,9 +17,13 @@ export default async function StoreProducts({ searchParams, store }: { searchPar
                 <span>THE COLLECTION <span className={styles.resultCount}>/ {products.length} {products.length === 1 ? "PIECE" : "PIECES"}</span></span>
                 <ProductSort />
             </div>
+            {/* 件数変化を読み上げるため、status 領域は条件分岐の外で常時マウントする */}
+            <p role="status" className="sr-only">
+                {products.length > 0 ? `${products.length} ${products.length === 1 ? "piece" : "pieces"} found.` : "No pieces match these filters."}
+            </p>
             {products.length > 0 ? <ProductList products={products} variant="editorial" /> : (
                 <div className={styles.empty}>
-                    <p role="status">No pieces match these filters.</p>
+                    <p>No pieces match these filters.</p>
                     <p>Try another filter or explore the store’s full collection.</p>
                     <Link href={`/store/${store}#collection`}>Clear filters ↗</Link>
                 </div>
