@@ -4971,3 +4971,15 @@ Coverage on New Code 62.0% の主因だった `store-details.tsx`・`store-produ
 | lcov（全体） | Statements 80.8% / Branches 67.7% / Functions 74.14% / Lines 80.62% | **Statements 80.97% / Branches 68.02% / Functions 74.24% / Lines 80.79%** |
 | テストファイル（ダッシュボード） | 288 | **290** |
 | 型エラー | 0 件 | **0 件** |
+
+### FAQs デザインシステム移行（2026-09-30）
+
+FAQ画面（DS-PAGE-014）の新ブランド適用、質問目次・サポート導線、TDDと仕様同期を完了。検証証跡は[デザイン移行ノート](design/design-system/PROGRESS.md#faqs移行記録)。未コミット。ダッシュボード走査のテストファイル数はQA_HANDOFFと同期し292へ更新、既存lcov328は再測定なし。全体Jest成功数とカバレッジ率は前回実測値のまま。
+
+### Profile概要 デザインシステム移行（2026-09-30）
+
+/profile本体（DS-PAGE-029）と共通ナビゲーション・会員情報・注文概要（DS-COMP-077〜079）を移行。TDD、3画面幅、認証・キーボード・axe・子ルート回帰と文書同期を完了。Jest28/28、Chromium5/5、lint 0 errors／既存12 warnings、tsc成功。未コミット。[詳細な証跡](design/design-system/PROGRESS.md#profile移行記録)。QA_HANDOFFと同期しdashboard走査294ファイル／既存lcov328、全体Jest成功数・カバレッジ率は再測定なし。子ページ本文とClerk UserProfileの全面移行は対象外。
+
+### Wishlist デザインシステム移行（2026-09-30）
+
+/profile/wishlist/[page]（DS-PAGE-033）と一覧（DS-COMP-085）を移行。ブランド見出し・editorialカード・URLページング、空／取得失敗／loadingを整備しTDDと文書同期を完了。関連Jest87/87、Chromium5/5、lint 0 errors／既存12 warnings、tsc成功。未コミット。[証跡](design/design-system/PROGRESS.md#wishlist移行記録)。QA_HANDOFFと同期しdashboard走査296ファイル／既存lcov328、全体Jest成功数とcoverage率は再測定なし。
