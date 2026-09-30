@@ -1,0 +1,134 @@
+.contact {
+    --gold: #d4ba83;
+    --ink: #17251d;
+    --background: 43 31% 93%;
+    --foreground: 138 23% 12%;
+    --destructive: 0 65% 38%;
+    background: #f3f0e8;
+    color: var(--ink);
+    color-scheme: light;
+}
+.contact a:focus-visible {
+    outline: 2px solid #a68a56;
+    outline-offset: 6px;
+}
+.hero {
+    background: radial-gradient(ellipse at 85% 45%, #26443355, transparent 50%), #0b100e;
+    color: #f1eee4;
+}
+.heroInner {
+    position: relative;
+    max-width: 1600px;
+    margin: auto;
+    padding: 30px 7% 28px;
+}
+.breadcrumb { display: flex; gap: 15px; font-size: 10px; color: #a5b0a6; }
+.breadcrumb a:hover, .heroFoot a:hover { color: var(--gold); }
+.heroCopy { position: relative; z-index: 1; padding: 65px 0 70px; }
+.eyebrow { font-size: 10px; letter-spacing: .22em; font-weight: 500; color: var(--gold); }
+.hero h1 {
+    font: 400 clamp(64px, 8vw, 116px)/1.05 Georgia, "Times New Roman", serif;
+    letter-spacing: -.055em;
+    margin: 24px 0 27px;
+}
+.hero h1 em { color: var(--gold); }
+.japanese { font-size: 14px; letter-spacing: .18em; line-height: 1.8; }
+.description { margin-top: 17px; color: #b6bfb3; font-size: 12px; line-height: 2.1; }
+.heroStar {
+    position: absolute;
+    right: 12%;
+    top: 100px;
+    font: 400 clamp(130px, 17vw, 240px)/1 Georgia, serif;
+    color: var(--gold);
+    opacity: .65;
+}
+.heroFoot {
+    border-top: 1px solid #d4ba8333;
+    padding-top: 23px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: #b6bfb3;
+}
+.heroFoot a { display: inline-flex; align-items: center; gap: 18px; }
+.content {
+    max-width: 1400px;
+    margin: auto;
+    padding: 80px 7% 100px;
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: clamp(45px, 7vw, 100px);
+    align-items: start;
+}
+.content .eyebrow { color: #75613b; }
+.help h2 {
+    font: 400 clamp(35px, 3.6vw, 50px)/1.15 Georgia, "Times New Roman", serif;
+    letter-spacing: -.035em;
+    margin-top: 23px;
+}
+.help h2 em { color: #75613b; }
+.helpDescription { font-size: 12px; line-height: 2.1; color: #536356; margin-top: 25px; }
+.helpLinks { margin-top: 40px; border-top: 1px solid #c9c7b8; }
+.helpLinks a { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 23px 0; border-bottom: 1px solid #c9c7b8; }
+.helpLinks a:hover { color: #75613b; }
+.linkTitle { display: block; font: 400 19px/1.4 Georgia, "Times New Roman", serif; }
+.helpLinks span[lang] { display: block; font-size: 11px; color: #536356; margin-top: 7px; }
+.formPanel { min-width: 0; scroll-margin-top: 30px; border-top: 1px solid #9b916f; padding-top: 25px; }
+.formHeading { margin-bottom: 32px; }
+.formHeading h2 { font: 400 36px/1.2 Georgia, "Times New Roman", serif; letter-spacing: -.035em; margin-top: 13px; }
+.formHeading p { font-size: 11px; color: #536356; margin-top: 13px; }
+.formPanel form { display: flex; flex-direction: column; gap: 25px; }
+.formPanel form > * { margin-top: 0; }
+.formPanel label { font-size: 12px; letter-spacing: .06em; }
+.formPanel input, .formPanel textarea {
+    background: #faf8f2;
+    color: var(--ink);
+    border: 1px solid #a6ab9f;
+    border-radius: 0;
+    padding: 13px 15px;
+    font-size: 16px;
+    box-shadow: none;
+}
+.formPanel input { height: 49px; }
+.formPanel textarea { min-height: 170px; resize: vertical; }
+.formPanel input:focus-visible, .formPanel textarea:focus-visible, .formPanel button:focus-visible {
+    outline: 2px solid #8b7346;
+    outline-offset: 3px;
+    box-shadow: none;
+}
+.formPanel input[aria-invalid="true"], .formPanel textarea[aria-invalid="true"] { border-color: #a02222; }
+.formPanel button[type="submit"] {
+    align-self: flex-start;
+    height: auto;
+    min-height: 52px;
+    padding: 16px 30px;
+    border-radius: 0;
+    background: var(--gold);
+    color: #141c16;
+    font-size: 12px;
+    letter-spacing: .04em;
+}
+.formPanel button[type="submit"]:hover { background: #e2cc9f; }
+.formPanel output { display: block; background: #e8ecdf; border-left: 2px solid #75613b; padding: 28px; font-size: 14px; line-height: 2; }
+.formNote { font-size: 11px; line-height: 1.9; color: #536356; margin-top: 25px; }
+@media (max-width: 800px) {
+    .content { grid-template-columns: 1fr; gap: 50px; padding: 50px 6% 65px; }
+    .heroInner { padding: 25px 6%; }
+    .heroStar { right: 8%; top: 120px; opacity: .2; }
+    .heroCopy { padding: 50px 0; }
+    .heroFoot > span { display: none; }
+    .help h2 br { display: none; }
+    .helpLinks { margin-top: 28px; }
+}
+@media (max-width: 430px) {
+    .hero h1 { font-size: 60px; }
+    .japanese { font-size: 12px; letter-spacing: .1em; }
+    .description br { display: none; }
+    .heroStar { top: 110px; }
+    .formPanel button[type="submit"] { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .formPanel button { transition: none; }
+}
