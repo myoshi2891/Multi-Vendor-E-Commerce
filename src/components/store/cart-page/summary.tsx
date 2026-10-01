@@ -33,9 +33,22 @@ const CartSummary: FC<Props> = ({
             setLoading(true);
             const res = await saveCartAction(cartItems);
             if (res) router.push("/checkout");
-        } catch (error: any) {
-            // Handle error
-            toast.error(error.toString());
+        } catch (error: unknown) {
+            // 生のエラーメッセージは UI に出さず、詳細はログにのみ残す
+            if (error instanceof Error) {
+                console.error(
+                    "[CartSummary:handleSaveCart] Failed to save cart",
+                    {
+                        error: error.message,
+                        stack: error.stack,
+                    }
+                );
+            } else {
+                console.error("[CartSummary:handleSaveCart] Unknown error", {
+                    error,
+                });
+            }
+            toast.error("We couldn’t start checkout. Please try again.");
         } finally {
             setLoading(false);
         }

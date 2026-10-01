@@ -19,8 +19,10 @@ const CartHeader: FC<Props> = ({
     const cartLength = cartItems.length;
     const selectedLength = selectedItems.length;
 
-    const handleSelectAll = () => {
-        const areAllSelected = cartItems.every((item) =>
+    // 件数ではなく productId/variantId/sizeId の一致で全選択を判定する
+    const areAllSelected =
+        cartLength > 0 &&
+        cartItems.every((item) =>
             selectedItems.some(
                 (selected) =>
                     selected.productId === item.productId &&
@@ -28,6 +30,8 @@ const CartHeader: FC<Props> = ({
                     selected.sizeId === item.sizeId
             )
         );
+
+    const handleSelectAll = () => {
         setSelectedItems(areAllSelected ? [] : cartItems);
     };
     const removeSelectedFromCart = () => {
@@ -53,9 +57,7 @@ const CartHeader: FC<Props> = ({
                 <label>
                     <input
                         type="checkbox"
-                        checked={
-                            cartLength > 0 && selectedLength === cartLength
-                        }
+                        checked={areAllSelected}
                         onChange={handleSelectAll}
                     />
                     <span>Select all products</span>
