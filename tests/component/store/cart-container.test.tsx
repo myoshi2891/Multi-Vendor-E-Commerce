@@ -257,4 +257,47 @@ describe("CartContainer", () => {
         });
         expect(toast.error).not.toHaveBeenCalled();
     });
+
+    // 失敗アラートは過去の同期結果。再同期（配送国の変更で effect が再実行）に
+    // 成功した後も残ると、もう事実でない警告を role="alert" で伝え続ける。
+    it("clears the sync error alert after a later successful sync", async () => {
+        // Arrange
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        mockStoreWith(items);
+        (updateCartWithLatest as jest.Mock)
+            .mockRejectedValueOnce(new Error("sync boom"))
+            .mockResolvedValueOnce(items);
+        const { rerender } = render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
+        await waitFor(() => {
+            expect(screen.getByRole("alert")).toBeInTheDocument();
+        });
+
+        // Act
+        rerender(
+            <CartContainer
+                userCountry={{ ...userCountry, name: "France", code: "FR" }}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
+
+        // Assert
+        await waitFor(() => {
+            expect(mockSetCart).toHaveBeenCalledWith(items);
+        });
+        await waitFor(() => {
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        });
+        consoleSpy.mockRestore();
+    });
 });

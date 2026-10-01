@@ -58,6 +58,8 @@ export default function CartContainer({
                     }
 
                     setCart(updatedCart);
+                    // 再同期に成功したら過去の失敗アラートを消す
+                    setSyncError(false);
                     setLoading(false);
                 } catch (error) {
                     // Handle error
