@@ -4983,3 +4983,19 @@ FAQ画面（DS-PAGE-014）の新ブランド適用、質問目次・サポート
 ### Wishlist デザインシステム移行（2026-09-30）
 
 /profile/wishlist/[page]（DS-PAGE-033）と一覧（DS-COMP-085）を移行。ブランド見出し・editorialカード・URLページング、空／取得失敗／loadingを整備しTDDと文書同期を完了。関連Jest87/87、Chromium5/5、lint 0 errors／既存12 warnings、tsc成功。未コミット。[証跡](design/design-system/PROGRESS.md#wishlist移行記録)。QA_HANDOFFと同期しdashboard走査296ファイル／既存lcov328、全体Jest成功数とcoverage率は再測定なし。
+
+### 2026-10-01 注文追跡デザイン移行
+
+`/track-order` の画面・フォーム・結果をブランドに統一。TDD、各状態・レスポンシブ・アクセシビリティ確認、仕様書同期完了。[証跡](design/design-system/PROGRESS.md#track-order移行記録)。テストファイル数はQA_HANDOFFと同じ297（dashboard走査実測）。全体テスト成功数・coverage率は前回実測を維持。未コミット。
+
+### 2026-10-01 サポート窓口デザイン移行
+
+`/customer-service` のヒーロー・案内・5導線をブランドに統一。TDD・表示と操作検証・仕様同期完了。[証跡](design/design-system/PROGRESS.md#customer-service移行記録)。QA_HANDOFFと同期: dashboard実測298テストファイル。全体Jest成功数・coverage率は前回実測維持。未コミット。
+
+### 2026-10-01 返品・交換デザイン移行
+
+`/returns-exchange` をブランドに統一。ポリシー全文保持、申請フォーム・送信中・受付を整備しTDD／検証／仕様同期完了。[証跡](design/design-system/PROGRESS.md#returns-exchange移行記録)。QA_HANDOFFと同期: dashboard実測299テストファイル、全体成功数・coverage率は前回実測維持。未コミット。
+
+### 2026-10-01 製品サポートデザイン移行
+
+`/product-support` をブランドに統一。3本文・プレースホルダを維持し、目次と4窓口を追加。TDD・検証・仕様同期完了。[証跡](design/design-system/PROGRESS.md#product-support移行記録)。QA_HANDOFFと同期: dashboard実測301ファイル。全体成功数・coverage率は前回実測維持。未コミット。

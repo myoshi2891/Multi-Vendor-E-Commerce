@@ -1012,3 +1012,15 @@ jsdom 環境のコンポーネントテストは **ファイル先頭に `/** @j
 - 新RTLの5件Red、正規化・redirectの既存回帰1件を確認。loadingの実装後回帰1件を含む新suiteは7件。
 - Chromiumに空・3画面幅・ページング／ブラウザ戻るの5件を追加。最終関連RTL87/87、Chromium5/5成功。
 - [証跡](../design/design-system/PROGRESS.md#wishlist移行記録)。共有カードの別画面・全体統計の再測定は含まない。
+
+### Customer service デザイン検証 — ✅ Completed (2026-10-01)
+
+新規 `customer-service-design.spec.ts` 3幅でRedを確認後Green。導線・focus・Enter・hover・横溢れ・axe AA確認。[証跡](../design/design-system/PROGRESS.md#customer-service移行記録)。全体統計はQA_HANDOFF参照。
+
+### Returns & Exchange デザイン検証 — ✅ Completed (2026-10-01)
+
+SupportFormに送信中ロックと返品payload、失敗後再試行のRTLを追加。Chromium3幅でRed→Green、他3画面のaction Props回帰。[証跡](../design/design-system/PROGRESS.md#returns-exchange移行記録)。全体統計はQA_HANDOFF参照。
+
+### Product support デザイン検証 — ✅ Completed (2026-10-01)
+
+ページRTL1件とChromium3幅のRed→Green。本文保持・目次アンカー・support導線・focus/Enter・axe AA確認。[証跡](../design/design-system/PROGRESS.md#product-support移行記録)。全体統計はQA_HANDOFF参照。
