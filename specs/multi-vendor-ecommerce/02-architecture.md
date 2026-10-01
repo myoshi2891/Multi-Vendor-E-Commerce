@@ -20,6 +20,8 @@
 - Modules cover product, store, category, order, profile, review, coupon, and
   payment operations.
 
+- Cart Server Component imports the approved query facade and passes synchronization, save and wishlist actions as props to the cart clients; cart clients do not import server actions directly. Storefront react-hot-toast rendering lives in `store/shared/store-toaster.tsx`.
+
 ## Data Access
 - Prisma client configured in `src/lib/db.ts`.
 - PostgreSQL fulltext search (tsvector/tsquery) used in product search with a fallback to `contains`.

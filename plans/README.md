@@ -5,6 +5,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 
 - **ラウンド別の経緯・各プランの詳細な実行記録・推奨順の履歴・Deferred / Rejected 一覧**は
   [`archive/README-full-log.md`](archive/README-full-log.md)（2026-09-26 まで本ファイルだった全文。**凍結・更新しない**）
+- 新デザイン・デザインシステム関連の計画: [`layout-design/`](layout-design/README.md)
 - セッション再開時の状態: [`ADVISOR_STATE.md`](ADVISOR_STATE.md)
 - **Deferred / Rejected の生きた台帳**: [`DEFERRED.md`](DEFERRED.md)（direction 残候補の単一の出所）
 - 監査の生データ・triage 台帳: [`audit/`](audit/)（[`VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md) / [`recon.md`](audit/recon.md)）

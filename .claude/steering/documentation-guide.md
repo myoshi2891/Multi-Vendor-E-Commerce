@@ -92,7 +92,7 @@
 
 ### デザインシステム移行の進捗
 
-- 対象・優先度・受け入れ条件: [移行計画](../../plans/design-system-adoption-plan.md)。
+- 対象・優先度・受け入れ条件: [移行計画](../../plans/layout-design/design-system-adoption-plan.md)。
 - 画面・部品の状態と検証証跡: [docs/design/design-system/PROGRESS.md](../../docs/design/design-system/PROGRESS.md) を正本とする。
 - 実施手順: [design-system-workflow](../../.agent/skills/design-system-workflow/SKILL.md)。計画保存 → TDD → 実装後検証 → 仕様書・計画・進捗の同期までを同じ作業単位で行う。
 - 機能仕様の正本と全体テスト統計の正本は既存の役割を維持する。仕様変更がない文書は確認結果と理由を進捗ノートへ残す。

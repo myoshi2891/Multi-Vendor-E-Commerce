@@ -39,7 +39,7 @@
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **NFR-SP1**（コード規約） | `any` 禁止・`console.log` 禁止。新規ページは server component。コンテンツは型付き定数（`{ heading: string; body: string }[]` 等）。          |
 | **NFR-SP2**（視覚整合）   | 未移行ページは既存テーマを維持。移行済み `/faqs` はCSS Moduleで深緑・アイボリー・ゴールド、セリフ見出し、読みやすい本文を採用し、公開ストアフロントのlight配色に整合。                                        |
-| **NFR-SP3**（DRY）        | 未移行ページは共有レイアウトを利用。ブランド移行済みページは専用レイアウトを許容し、FAQの質問・回答は既存の型付き定数を再利用する。                               |
+| **NFR-SP3**（DRY）        | 未移行ページは共有レイアウトを利用。ブランド移行済みページは専用レイアウトを許容し、FAQ・製品サポートの本文は既存の型付き定数を再利用する。                               |
 | **NFR-SP4**（SEO/メタ）   | 各ページに `export const metadata`（title/description）を付与（静的・SSG 可）。                                                              |
 | **NFR-SP5**（TDD）        | [`.claude/rules/02-tdd-step-commit.md`](../../../.claude/rules/02-tdd-step-commit.md) 遵守（Red→Green・1論理単位=1commit・spec-sync 同梱）。 |
 
@@ -58,4 +58,12 @@
 - **AC-SP8**: 4件の既存質問・回答を常時表示し、質問一覧から一意なアンカーへキーボードで移動可能。focusを可視化し、本文はplain textとする。
 - **AC-SP9**: HomeのパンくずとContact／Track your order／Returns & Exchange／Customer serviceへのサポート導線を表示する。
 - `/faq` の308転送、公開アクセス、プレースホルダ回答を維持。検索・CMS・回答ポリシーの確定は対象外。
-- 検証: [FAQ移行計画](../../../plans/faqs-design-system-plan.md)、[移行記録](../design-system/PROGRESS.md#faqs移行記録)。
+- 検証: [FAQ移行計画](../../../plans/layout-design/faqs-design-system-plan.md)、[移行記録](../design-system/PROGRESS.md#faqs移行記録)。
+
+## Customer service デザイン受け入れ条件（2026-10-01）
+
+既存5窓口のタイトル・説明・URLを保持し、深緑ヒーロー／クリーム背景／ゴールド／セリフ見出しを適用。パンくずとサポートメニューを提供。1440/390/768pxで横溢れなく、キーボードfocus・Enter遷移・hover・WCAG AAを満たす。公開・静的・DB非依存を維持。
+
+## Product support デザイン受け入れ条件（2026-10-01）
+
+既存3セクションの見出し・本文・プレースホルダ表記を保持。深緑ヒーロー、クリーム背景、ゴールド、セリフ見出し、Homeパンくず。3項目の目次に一意で空でないアンカーを設け、focus/Enterで本文へ移動できる。Customer service・Contact・Returns & Exchange・Track your orderの4導線を表示。1440/390/768pxで横溢れなし、WCAG AA。公開Server Component、plain text・DB非依存、親store layoutのレンダリング方針は維持。

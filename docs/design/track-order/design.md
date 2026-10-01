@@ -142,84 +142,27 @@ export const trackOrder = async (input: TrackOrderInput) => {
 
 > **IDOR の核心**: `where` を `{ id: orderId }` のみにし、email 照合は**取得後**にアプリ層で `toLowerCase()` 比較する。これにより「(a) 不一致でデータを返さない」「(b) where は orderId 単独」「(c) 副作用なし（読取のみ）」の 3 階層を満たす（AC-TO2〜TO4）。
 
-### 2.3 ページ `track-order/page.tsx`
+### 2.3 ページ `track-order/page.tsx`（2026-10-01移行）
 
-```tsx
-// src/app/(store)/track-order/page.tsx
-import type { Metadata } from "next";
-import TrackOrderForm from "@/components/store/track-order/track-order-form";
-
-export const metadata: Metadata = { title: "Track your order | Marketplace" };
-
-/** 注文追跡ページ。公開。照会は client フォーム → server action（force-dynamic 不要）。 */
-export default function TrackOrderPage() {
-    return (
-        <main className="mx-auto max-w-2xl px-4 py-10">
-            <h1 className="mb-2 text-2xl font-bold">Track your order</h1>
-            <p className="mb-6 text-sm text-muted-foreground">
-                注文番号とご注文時のメールアドレスを入力してください。
-            </p>
-            <TrackOrderForm />
-        </main>
-    );
-}
-```
+公開Server Componentが `trackOrder` をimportし、`<TrackOrderForm lookupAction={trackOrder} />` として渡す。Clientは型のみimportする。
+深緑ヒーロー・パンくず・セリフ見出し・ゴールド装飾、クリーム背景。案内＋フォームの2カラムを800px以下で1カラムにする。案内から `/customer-service` へ移動できる。
+スタイルの正本は [track-order.module.css](../../../src/components/store/track-order/track-order.module.css)。
 
 ### 2.4 照会フォーム `track-order-form.tsx`（client）
 
-```tsx
-"use client";
-import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
-import { trackOrder } from "@/queries/order";
-import TrackOrderResult from "./track-order-result";
-
-export default function TrackOrderForm() {
-    const isSubmittingRef = useRef(false);
-    const [result, setResult] =
-        useState<Awaited<ReturnType<typeof trackOrder>>>(null);
-    const [notFound, setNotFound] = useState(false);
-    const form = useForm<TrackOrderInput>({
-        resolver: zodResolver(TrackOrderSchema),
-        defaultValues: { orderId: "", email: "" },
-    });
-
-    const onSubmit = async (values: TrackOrderInput) => {
-        if (isSubmittingRef.current) return;
-        isSubmittingRef.current = true;
-        setNotFound(false);
-        try {
-            const data = await trackOrder(values);
-            if (!data) setNotFound(true);
-            setResult(data);
-        } finally {
-            isSubmittingRef.current = false;
-        }
-    };
-
-    return (
-        <div>
-            {/* RHF: orderId / email の Input + submit ボタン（shadcn Form） */}
-            {/* form.handleSubmit(onSubmit) を submit に接続 */}
-            {notFound ? (
-                <p role="status">注文が見つかりませんでした。</p>
-            ) : null}
-            {result ? <TrackOrderResult order={result} /> : null}
-        </div>
-    );
-}
-```
-
-> **重要**: not found は「不一致」「不存在」を区別しない単一メッセージ（要件 TO-5）。`result` の型は `trackOrder` の戻り値型から推論（`Awaited<ReturnType<typeof trackOrder>>`）し、`any` を使わない。
+- Props: `lookupAction: typeof trackOrder`。RHF + Zod、ラベル付き注文番号・email入力。
+- `useRef`で二重送信を防止。送信中はフォーム `aria-busy`、ボタン「照会中…」、入力・ボタンdisabled。
+- 再送信開始／不正入力時に直前の結果・未検出・失敗をクリア。
+- nullは「注文が見つかりませんでした。」、例外は「注文の照会に失敗しました。時間をおいて再度お試しください。」をoutputで通知。
+- 型は既存action戻り値から推論。照合・列挙防止仕様は維持。
+- 48pxの角型入力・深緑ボタン、キーボードfocusを可視化。
 
 ### 2.5 結果表示 `track-order-result.tsx`
 
 - props: `order`（`trackOrder` の非 null 戻り値）。
 - 表示: `orderStatus` / `paymentStatus`（バッジ）、`groups` をループし `store.name` + `shippingService` + `shippingDeliveryMin〜Max`、各 `items` の `name`/`image`/`quantity`/`status`。
 - 金額に触れる場合は `Decimal` を境界で `toNumber()`（NFR-TO3）。
-- **既存部品調査**: `src/app/(store)/order/[orderId]/` のステータス表示部品が流用可能なら import して使う。
+- 共有OrderStatusTag / PaymentStatusTag / ProductStatusTagを再利用。長い注文ID・商品名・配送情報は折り返す。数量の文字色はブランドmutedでAAコントラストを確保。
 
 ---
 

@@ -255,204 +255,24 @@ export async function createSupportTicket(
 
 > **`server-action-scaffold` skill** を起動し本雛形を生成すると、構造化ログ・try/catch 配置が規約に揃う。
 
-### 2.4 共有フォーム部品（`support-form.tsx`・client component）
+### 2.4 共通フォーム `support-form.tsx`（2026-10-01）
 
-**方針**: category を prop で受け、RHF + Zod resolver で検証。`orderId` 欄は category により表示。リエントランシーガードで二重送信防止。
+- Props: `category`、`submitLabel?`、`submitAction: typeof createSupportTicket`、`appearance?: "default" | "brand"`（既定default）。Clientはactionを型のみimportし、Server Componentから受け取ったactionを呼ぶ。
+- RHF＋既存SupportTicketSchema。orderId欄の要否はcategoryがRETURN_REQUESTまたはDISPUTEかで導出し、独立requireOrderId propsは持たない。UUID形式・既存検証メッセージを保持。
+- `useRef`で二重送信抑止。フォームは`aria-busy`と`noValidate`（Zodエラーをフォーム上に統一表示）。ブランド時は送信中「送信中…」表示、入力・textarea・ボタンdisabled。defaultの既存ボタン文言を保持。
+- 成功時にフィールドをリセットしてフォームを外し、outputで「受け付けました。担当より追ってご連絡します。」を通知。brandは装飾チェックと淡い緑の受付枠。
+- 失敗はrole alertで表示し、入力を保持して再試行可能。
+- ブランドフォームは48px角型入力・深緑ボタン・focus outline、エラー色はローカルdestructiveトークンでAAコントラスト確保。
+- スタイル: [support-form.module.css](../../../src/components/store/support/support-form.module.css)。
 
-```tsx
-"use client";
-import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { SupportTicketSchema, type SupportTicketInput } from "@/lib/schemas";
-import { createSupportTicket } from "@/queries/support";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+### 2.5 各ページ `page.tsx`（2026-10-01）
 
-interface SupportFormProps {
-    category: SupportTicketInput["category"];
-    /** orderId 欄を表示するか（RETURN_REQUEST / DISPUTE で true） */
-    requireOrderId?: boolean;
-    submitLabel?: string;
-}
+各公開Server Componentが `createSupportTicket` をimportし `submitAction` として渡す。レンダリング時のDB読取なし、force-dynamic不要。
 
-export default function SupportForm({
-    category,
-    requireOrderId,
-    submitLabel,
-}: SupportFormProps) {
-    const isSubmittingRef = useRef(false);
-    const [done, setDone] = useState(false);
-    const form = useForm<SupportTicketInput>({
-        resolver: zodResolver(SupportTicketSchema),
-        defaultValues: {
-            category,
-            name: "",
-            email: "",
-            subject: "",
-            message: "",
-            orderId: "",
-        },
-    });
-
-    const onSubmit = async (values: SupportTicketInput) => {
-        if (isSubmittingRef.current) return; // 早期リターン（二重送信防止）
-        isSubmittingRef.current = true;
-        try {
-            await createSupportTicket(values);
-            setDone(true);
-            form.reset({
-                ...form.getValues(),
-                name: "",
-                email: "",
-                subject: "",
-                message: "",
-                orderId: "",
-            });
-        } catch (error: unknown) {
-            // ユーザー向けエラーは form のルートエラーに反映（console は使わない）。
-            const message =
-                error instanceof Error ? error.message : "送信に失敗しました。";
-            form.setError("root", { message });
-        } finally {
-            isSubmittingRef.current = false;
-        }
-    };
-
-    if (done)
-        return (
-            <p role="status">受け付けました。担当より追ってご連絡します。</p>
-        );
-
-    // shadcn/ui Form プリミティブで描画（既存ダッシュボードフォームのスタイルに準拠）。
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* ルートエラー（server action からの汎用エラー）を上部に表示 */}
-                {form.formState.errors.root?.message && (
-                    <p role="alert" className="text-sm text-destructive">
-                        {form.formState.errors.root.message}
-                    </p>
-                )}
-
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>お名前</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>メールアドレス</FormLabel>
-                            <FormControl>
-                                <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="subject"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>件名</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="message"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>内容</FormLabel>
-                            <FormControl>
-                                <Textarea rows={6} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                {/* RETURN_REQUEST / DISPUTE のときのみ orderId 欄を表示 */}
-                {requireOrderId && (
-                    <FormField
-                        control={form.control}
-                        name="orderId"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>対象の注文番号</FormLabel>
-                                <FormControl>
-                                    <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {submitLabel ?? "送信"}
-                </Button>
-            </form>
-        </Form>
-    );
-}
-```
-
-> `category` は hidden 値として常に送る（フォーム上では編集不可）。`requireOrderId` は UI 表示の切替で、最終的な必須検証は Zod の `superRefine`（§2.2）が担う（クライアント/サーバー二重防御）。
-
-### 2.5 各ページ `page.tsx`
-
-```tsx
-// src/app/(store)/contact/page.tsx
-import type { Metadata } from "next";
-import SupportForm from "@/components/store/support/support-form";
-
-export const metadata: Metadata = { title: "Contact | Marketplace" };
-
-/** お問い合わせフォーム。公開（ゲスト可）。DB 書込は server action 側のため force-dynamic 不要。 */
-export default function ContactPage() {
-    return (
-        <main className="mx-auto max-w-2xl px-4 py-10">
-            <h1 className="mb-6 text-2xl font-bold">Contact us</h1>
-            <SupportForm category="CONTACT" submitLabel="Send" />
-        </main>
-    );
-}
-```
-
-- `returns-exchange/page.tsx`: **上部に返品ポリシー要約 → 下部にフォーム** の順で描画する。
-    - ポリシー要約は [storefront-static-pages](../storefront-static-pages/) の**型付き定数を `import`** して描画する（server fetch しない）。よって**キャッシュ戦略は不要**・`force-dynamic` も不要（静的・Prisma を読まない）。
-    - 実装順/依存: ポリシー要約は静的定数のみで自己完結し `SupportForm` に依存しない。よって storefront-static-pages 側の定数（`returns` ポリシー本文）が先に存在することだけが前提（無ければプレースホルダ定数で先行可）。`SupportForm`（§2.4）→ ページ組み込みの順で実装する。
-    - 構成: `<>{/* ポリシー要約（import 定数） */}<SupportForm category="RETURN_REQUEST" requireOrderId /></>`。
-- `dispute/page.tsx`: `<SupportForm category="DISPUTE" requireOrderId />`。
-- `report-problem/page.tsx`: `<SupportForm category="PROBLEM_REPORT" />`。
-
-> **`force-dynamic`**: 各ページは client フォームを描画するだけで、レンダリング時に `src/queries/*` の Prisma を**読まない**（書込は submit 時の server action 内）。よって `force-dynamic` は不要（[tech.md 規約](../../../.claude/steering/tech.md)の対象外）。
+- contact: category CONTACT、既存表示を維持（ブランドページの外側スタイルを再利用、フォームappearance既定）。
+- returns-exchange: category RETURN_REQUEST、appearance brand。深緑ヒーロー・パンくず・セリフh1・ゴールド装飾、クリーム本文。既存RETURNS_POLICY_SUMMARYを全文表示し、ポリシー＋申請の2列（800px以下1列）。フォームにはh2・全項目入力案内。サポート窓口へLink。返品条件・返金処理は変更しない。
+- dispute: category DISPUTE、既存表示を維持。
+- report-problem: category PROBLEM_REPORT、既存表示を維持。
 
 ### 2.6 変更: `user-menu.tsx`（3 リンク配線）
 

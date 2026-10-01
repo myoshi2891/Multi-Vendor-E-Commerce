@@ -2,7 +2,7 @@
 import { ReactNode } from 'react'
 
 // Toaster
-import { Toaster } from 'react-hot-toast'
+import StoreToaster from '@/components/store/shared/store-toaster'
 
 // Layout chrome
 import StoreHeader from '@/components/store/layout/header/header'
@@ -24,7 +24,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
             <StoreHeader />
             <div className="flex-1">{children}</div>
             <Footer />
-            <Toaster position="top-center" />
+            <StoreToaster />
         </div>
     )
 }

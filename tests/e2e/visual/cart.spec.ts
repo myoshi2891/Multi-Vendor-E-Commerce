@@ -34,7 +34,7 @@ async function addItemToCart(
         { timeout: 5000 }
     );
     await page.getByTestId("add-to-cart").click();
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+    await expect(page.getByText("Added to your bag", { exact: true })).toBeVisible({
         timeout: 5000,
     });
     await waitForCartPersist(page);

@@ -27,4 +27,4 @@ profile-wishlist requirements/design/tasks/PROGRESSを新設。本計画、SDD 0
 - Red: 新RTL5件失敗／既存正規化・redirect回帰1件成功。Chromium新要件5件失敗を実測。
 - Green／Refactor後: loadingの既存実装回帰1件を追加し、関連Jest4 suites／87件成功。Chromium5/5成功（50.7s）、1440／390／768px、空・10商品・最終1商品、比較・focus・Enter、axe違反0、URLページング・ブラウザ戻る・alias／範囲外／不正パラメーターを確認。
 - lint 0 errors／既存12 warnings、変更対象ESLint無警告、tsc成功、diffチェック成功。仕様・台帳・QA同期済み。全体Jest／coverage、Firefox／WebKitは未実行。
-- 未コミット。証跡は[wishlist移行記録](../docs/design/design-system/PROGRESS.md#wishlist移行記録)。
+- 未コミット。証跡は[wishlist移行記録](../../docs/design/design-system/PROGRESS.md#wishlist移行記録)。

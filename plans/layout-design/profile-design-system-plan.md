@@ -26,4 +26,4 @@
 - Green／Refactor後: 関連Jest5 suites／28件成功、Chromium5件成功。1440／390／768px、focus・Tab／Enter、共有枠のaxe（contrast除外なし）、注文・住所・設定遷移、未認証転送を確認。会員名なしはブラウザ、氏名保持・Clerk失敗・user=nullはRTLで確認。
 - lint 0 errors／既存12 warnings、変更対象ESLint無警告、tsc成功、diffチェック成功。
 - 仕様・移行台帳・QA・進捗同期済み。dashboard294ファイル／既存lcov328を反映。全体Jest／coverage、Firefox／WebKitは今回未実行。
-- 未コミット。詳細は[profile移行記録](../docs/design/design-system/PROGRESS.md#profile移行記録)。
+- 未コミット。詳細は[profile移行記録](../../docs/design/design-system/PROGRESS.md#profile移行記録)。

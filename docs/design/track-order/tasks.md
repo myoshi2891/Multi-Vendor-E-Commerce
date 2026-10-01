@@ -102,3 +102,9 @@
 | 7        | docs         | spec-sync + dashboard 再生成（統計同期は単独コミット） |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。
+
+## デザインシステム移行（2026-10-01）
+
+- [x] 計画保存、先行RTL Red → Green、ブラウザーのコントラスト検出と修正。
+- [x] 関連Jest82/82、Chromium3/3、lint（既存警告12のみ）、tsc、1440/390/768px・各状態・axe AA・スクリーンショット。
+- [x] requirements/design、SDD、移行計画・進捗、QA_HANDOFFを同期、dashboard再生成。全体テスト・coverage統計は再測定していない。未コミット。

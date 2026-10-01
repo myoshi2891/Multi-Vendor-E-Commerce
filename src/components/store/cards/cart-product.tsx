@@ -1,34 +1,48 @@
-import { useCartStore } from '@/cart-store/useCartStore'
-import { CartProductType, Country } from '@/lib/types'
-import { cn } from '@/lib/utils'
-import { addToWishlist } from '@/queries/user'
-import {
-    Check,
-    ChevronRight,
-    Heart,
-    Minus,
-    Plus,
-    Trash,
-    Truck,
-} from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import {
-    Dispatch,
-    FC,
-    SetStateAction,
-    useEffect,
-    useRef,
-    useState,
-} from 'react'
-import toast from 'react-hot-toast'
+import { useCartStore } from "@/cart-store/useCartStore";
+import { CartProductType, Country } from "@/lib/types";
+import styles from "../cart-page/cart.module.css";
+
+import { Heart, Minus, Plus, Trash, Truck } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Dispatch, FC, SetStateAction, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+
+// addToWishlist（src/queries/user.ts）が重複時に投げる文言。
+// "use server" モジュールは関数以外を export できないためここで持つ。
+const WISHLIST_DUPLICATE_MESSAGE = "Product is already in the wishlist.";
+
+/** 配送方式ごとのカート行の送料合計（表示・合計送料の集計に使う）。 */
+const computeLineShippingFee = (
+    shippingMethod: string,
+    shippingFee: number,
+    extraShippingFee: number,
+    weight: number,
+    quantity: number
+): number => {
+    if (shippingMethod === "ITEM") {
+        const extraItems = quantity > 1 ? quantity - 1 : 0;
+        return shippingFee + extraShippingFee * extraItems;
+    }
+    if (shippingMethod === "WEIGHT") return shippingFee * weight * quantity;
+    return shippingFee;
+};
+
+/** 単数/複数で語を切り替えた件数ラベル（例: "1 item" / "3 items"）。 */
+const pluralize = (count: number, singular: string, plural: string): string =>
+    count === 1 ? `1 ${singular}` : `${count} ${plural}`;
 
 interface Props {
-    product: CartProductType
-    selectedItems: CartProductType[]
-    setSelectedItems: Dispatch<SetStateAction<CartProductType[]>>
-    setTotalShipping: Dispatch<SetStateAction<number>>
-    userCountry: Country
+    product: CartProductType;
+    selectedItems: CartProductType[];
+    setSelectedItems: Dispatch<SetStateAction<CartProductType[]>>;
+    setTotalShipping: Dispatch<SetStateAction<number>>;
+    userCountry: Country;
+    wishlistAction: (
+        productId: string,
+        variantId: string,
+        sizeId?: string
+    ) => Promise<unknown>;
 }
 
 const CartProduct: FC<Props> = ({
@@ -37,6 +51,7 @@ const CartProduct: FC<Props> = ({
     setSelectedItems,
     setTotalShipping,
     userCountry,
+    wishlistAction,
 }) => {
     const {
         productId,
@@ -54,91 +69,76 @@ const CartProduct: FC<Props> = ({
         weight,
         shippingFee,
         shippingMethod,
-        shippingService,
         extraShippingFee,
-    } = product
+    } = product;
 
-    // Store previous values to avoid unnecessary re-renders
-    const prevShippingFeeRef = useRef(shippingFee)
-    const prevUserCountryRef = useRef(userCountry)
-    const prevQuantityRef = useRef(quantity)
-
-    const unique_id = `${productId}-${variantId}-${sizeId}`
-
-    const totalPrice = price * quantity
-
-    const [shippingInfo, setShippingInfo] = useState({
-        initialFee: 0,
-        extraFee: 0,
-        totalFee: 0,
-        method: shippingMethod,
-        weight: weight,
-        shippingService: shippingService,
-    })
-
-    // Function to calculate shipping fee
-    const calculateShipping = () => {
-        let initialFee = 0
-        let extraFee = 0
-        let totalFee = 0
-
-        if (shippingMethod === 'ITEM') {
-            initialFee = shippingFee
-            extraFee = quantity > 1 ? extraShippingFee * (quantity - 1) : 0
-            totalFee = initialFee + extraFee
-        } else if (shippingMethod === 'WEIGHT') {
-            totalFee = shippingFee * weight * quantity
-        } else if (shippingMethod === 'FIXED') {
-            totalFee = shippingFee
-        }
-
-        // Subtract the previous shipping total for this product before updating
-        if (stock > 0) {
-            setTotalShipping(
-                (prevTotal) => prevTotal - shippingInfo.totalFee + totalFee
-            )
-        }
-
-        // Update state
-        setShippingInfo({
-            initialFee,
-            extraFee,
-            totalFee,
-            method: shippingMethod,
+    const unique_id = `${productId}-${variantId}-${sizeId}`;
+    const totalPrice = price * quantity;
+    const shippingContribution = useRef(0);
+    const initialFee = shippingMethod === "ITEM" ? shippingFee : 0;
+    const shippingInfo = {
+        initialFee,
+        weight,
+        totalFee: computeLineShippingFee(
+            shippingMethod,
+            shippingFee,
+            extraShippingFee,
             weight,
-            shippingService,
-        })
-    }
+            quantity
+        ),
+    };
 
-    // Recalculate shipping fees whenever quantity, country or fees changes
     useEffect(() => {
-        if (
-            shippingFee !== prevShippingFeeRef.current ||
-            userCountry !== prevUserCountryRef.current ||
-            quantity !== prevQuantityRef.current
-        ) {
-            calculateShipping()
+        const previous = shippingContribution.current;
+        const next = stock > 0 ? shippingInfo.totalFee : 0;
+        shippingContribution.current = next;
+        setTotalShipping((total) => total - previous + next);
+    }, [shippingInfo.totalFee, stock, setTotalShipping]);
+
+    useEffect(
+        () => () => {
+            const previous = shippingContribution.current;
+            shippingContribution.current = 0;
+            setTotalShipping((total) => total - previous);
+        },
+        [setTotalShipping]
+    );
+
+    // 配送方式ごとの送料内訳。ネストした三項演算子を避けるため早期リターンで分岐する。
+    const renderShippingBreakdown = () => {
+        if (shippingMethod === "ITEM") {
+            const extraItems = quantity - 1;
+            const extraBreakdown =
+                extraItems === 0
+                    ? ""
+                    : `+ ${pluralize(extraItems, "item", "items")} x $${extraShippingFee} (${pluralize(extraItems, "additional item", "additional items")})`;
+            return (
+                <>
+                    ${shippingInfo.initialFee}
+                    (first item)&nbsp;
+                    {extraBreakdown}= ${shippingInfo.totalFee.toFixed(2)}
+                </>
+            );
         }
-
-        //Update refs after calculating shipping
-        prevShippingFeeRef.current = shippingFee
-        prevUserCountryRef.current = userCountry
-        prevQuantityRef.current = quantity
-
-        // Add a check to recalculate shipping fee on component load (after a refresh)
-        if (!shippingInfo.totalFee) {
-            calculateShipping()
+        if (shippingMethod === "WEIGHT") {
+            return (
+                <>
+                    ${shippingFee} x {shippingInfo.weight}kg x {quantity}{" "}
+                    {quantity > 1 ? "items" : "item"} = $
+                    {shippingInfo.totalFee.toFixed(2)}
+                </>
+            );
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [quantity, shippingFee, userCountry, shippingInfo.totalFee, stock])
+        return <>Fixed Fee : ${shippingInfo.totalFee.toFixed(2)}</>;
+    };
 
-    const selected = selectedItems.find(
+    const selected = selectedItems.some(
         (p) => unique_id === `${p.productId}-${p.variantId}-${p.sizeId}`
-    )
+    );
 
     const { updateProductQuantity, removeFromCart } = useCartStore(
         (state) => state
-    )
+    );
 
     const handleSelectProduct = () => {
         setSelectedItems((prev) => {
@@ -147,276 +147,167 @@ const CartProduct: FC<Props> = ({
                     item.productId === product.productId &&
                     item.variantId === product.variantId &&
                     item.sizeId === product.sizeId
-            )
+            );
             return exists
-                ? prev.filter((item) => item !== product) // Remove if exists
-                : [...prev, product]
-        })
-    }
+                ? prev.filter(
+                      (item) =>
+                          `${item.productId}-${item.variantId}-${item.sizeId}` !==
+                          unique_id
+                  )
+                : [...prev, product];
+        });
+    };
 
-    const updateProductQuantityHandler = (type: 'add' | 'remove') => {
-        if (type === 'add' && quantity < stock) {
+    const updateProductQuantityHandler = (type: "add" | "remove") => {
+        if (type === "add" && quantity < stock) {
             // increase quantity by 1 but ensure it doesn't exceed stock
-            updateProductQuantity(product, quantity + 1)
-        } else if (type === 'remove') {
+            updateProductQuantity(product, quantity + 1);
+        } else if (type === "remove") {
             // decrease quantity by 1 but ensure it doesn't go below 1
             if (quantity > 1) {
-                updateProductQuantity(product, quantity - 1)
+                updateProductQuantity(product, quantity - 1);
             } else {
-                removeFromCart(product)
+                removeFromCart(product);
             }
         }
-    }
+    };
 
     // Handle add product to wishlist
     const handleAddToWishlist = async () => {
         try {
-            const res = await addToWishlist(productId, variantId, sizeId)
-            if (res) toast.success('Product successfully added to wishlist')
-        } catch (error: any) {
-            toast.error(error.toString())
+            const res = await wishlistAction(productId, variantId, sizeId);
+            if (res) toast.success("Product successfully added to wishlist");
+        } catch (error: unknown) {
+            // サーバーの内部エラー（Prisma の生メッセージ等）は表示しない。
+            // 利用者が対処できる「登録済み」だけを区別して伝える。
+            const isDuplicate =
+                error instanceof Error &&
+                error.message === WISHLIST_DUPLICATE_MESSAGE;
+            toast.error(
+                isDuplicate
+                    ? WISHLIST_DUPLICATE_MESSAGE
+                    : "Failed to add product to wishlist"
+            );
         }
-    }
+    };
 
     return (
-        <div
-            className={cn(
-                'select-none border-t border-t-[#ebebeb] bg-white px-6',
-                {
-                    'bg-red-100': stock === 0,
-                }
-            )}
+        <article
+            className={`${styles.product} ${stock === 0 ? styles.unavailable : ""}`}
             data-testid={`cart-item-${unique_id}`}
         >
-            <div className="py-4">
-                <div className="relative flex self-start">
-                    {/* Image */}
-                    <div className="flex items-center">
-                        {stock > 0 && (
-                            <label
-                                htmlFor={unique_id}
-                                className="mr-2 inline-flex cursor-pointer items-center p-0 align-middle text-sm leading-6 text-gray-900"
-                            >
-                                <span className="inline-flex cursor-pointer p-0.5 leading-8">
-                                    <span
-                                        className={cn(
-                                            'bg-full flex size-5 items-center justify-center rounded-full border border-gray-300 leading-8 hover:border-orange-background',
-                                            {
-                                                'border-orange-background':
-                                                    selected,
-                                            }
-                                        )}
-                                    >
-                                        {selected && (
-                                            <span className="flex size-5 items-center justify-center rounded-full bg-orange-background">
-                                                <Check className="mt-0.5 w-3.5 text-white" />
-                                            </span>
-                                        )}
-                                    </span>
-                                </span>
-                                <input
-                                    type="checkbox"
-                                    id={unique_id}
-                                    hidden
-                                    onChange={() => handleSelectProduct()}
-                                />
-                            </label>
-                        )}
+            <div className={styles.productRow}>
+                {stock > 0 ? (
+                    <input
+                        type="checkbox"
+                        id={unique_id}
+                        aria-label={`Select ${name}`}
+                        checked={selected}
+                        onChange={handleSelectProduct}
+                    />
+                ) : (
+                    <span />
+                )}
+                <Link
+                    href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
+                >
+                    <Image
+                        src={image}
+                        alt={name}
+                        width={200}
+                        height={200}
+                        className={styles.image}
+                        data-testid="cart-item-image"
+                    />
+                </Link>
+                <div className={styles.productInfo}>
+                    <div className={styles.productTitle}>
                         <Link
                             href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
+                            className={styles.productName}
+                            data-testid="cart-item-name"
                         >
-                            <div className="relative m-0 ml-2 mr-4 size-28 rounded-lg bg-gray-200">
-                                <Image
-                                    src={image}
-                                    alt={name}
-                                    height={200}
-                                    width={200}
-                                    className="size-full rounded-md object-cover"
-                                />
-                            </div>
+                            {name} ・ {variantName}
                         </Link>
-                    </div>
-                    {/* Info */}
-                    <div className="w-0 min-w-0 flex-1">
-                        {/* Title - Actions */}
-                        <div className="w-[calc(100%-48px] flex items-start overflow-hidden whitespace-nowrap">
-                            <Link
-                                href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
-                                className="inline-block truncate text-sm"
-                                data-testid="cart-item-name"
+                        <div className={styles.actions}>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                aria-label={`Save ${name} to wishlist`}
+                                onClick={handleAddToWishlist}
+                                data-testid="cart-item-wishlist-btn"
                             >
-                                {name} ・ {variantName}
-                            </Link>
-                            <div className="absolute right-0 top-0">
-                                <span
-                                    className="mr-2.5 inline-block cursor-pointer"
-                                    onClick={() => handleAddToWishlist()}
-                                    data-testid="cart-item-wishlist-btn"
-                                >
-                                    <Heart className="w-4 hover:stroke-orange-secondary" />
-                                </span>
-                                <span
-                                    className="inline-block cursor-pointer"
-                                    onClick={() => removeFromCart(product)}
-                                >
-                                    <Trash className="w-4 hover:stroke-orange-secondary" />
-                                </span>
-                            </div>
-                        </div>
-                        {/* Style - size */}
-                        <div className="my-1">
-                            <button className="relative h-[24px] max-w-full cursor-pointer whitespace-normal rounded-xl bg-gray-100 px-2.5 py-0 text-xs font-bold leading-4 text-main-primary outline-0">
-                                <span className="flex flex-wrap items-center justify-between">
-                                    <div className="inline-block max-w-[95%] truncate text-left">
-                                        {size}
-                                    </div>
-                                    <span className="ml-0.5">
-                                        <ChevronRight className="w-3" />
-                                    </span>
-                                </span>
+                                <Heart size={16} aria-hidden="true" />
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                aria-label={`Remove ${name} from cart`}
+                                onClick={() => removeFromCart(product)}
+                            >
+                                <Trash size={16} aria-hidden="true" />
                             </button>
                         </div>
-                        {/* Price - Delivery */}
-                        <div className="relative mt-2 flex items-center justify-between">
-                            {stock > 0 ? (
-                                <div>
-                                    <span className="inline-block break-all">
-                                        ${price.toFixed(2)} x {quantity} = $
-                                        {totalPrice.toFixed(2)}
-                                    </span>
-                                </div>
-                            ) : (
-                                <div>
-                                    <span className="inline-block break-all text-sm text-red-500">
-                                        Out of stock
-                                    </span>
-                                </div>
-                            )}
-                            {/* Quantity changer */}
-                            <div className="text-xs">
-                                <div className="inline-flex list-none items-center text-sm leading-6 text-gray-900">
-                                    <div
-                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
-                                        onClick={() =>
-                                            updateProductQuantityHandler(
-                                                'remove'
-                                            )
-                                        }
-                                        onKeyDown={(event) => {
-                                            if (
-                                                event.key === 'Enter' ||
-                                                event.key === ' '
-                                            ) {
-                                                event.preventDefault();
-                                                updateProductQuantityHandler(
-                                                    'remove'
-                                                );
-                                            }
-                                        }}
-                                        role="button"
-                                        tabIndex={0}
-                                        aria-label="Decrease quantity"
-                                        data-testid="cart-qty-decrease"
-                                    >
-                                        <Minus className="w-3 stroke-[#555]" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={quantity}
-                                        readOnly
-                                        min={1}
-                                        max={stock}
-                                        className="m-1 h-6 w-[32px] border-none bg-transparent text-center font-bold leading-6 tracking-normal text-gray-900 outline-none"
-                                        data-testid="cart-item-qty"
-                                    />
-                                    <div
-                                        className="grid size-6 cursor-pointer place-items-center rounded-full bg-gray-100 text-xs leading-6 hover:bg-gray-200"
-                                        onClick={() =>
-                                            updateProductQuantityHandler('add')
-                                        }
-                                        onKeyDown={(event) => {
-                                            if (
-                                                event.key === 'Enter' ||
-                                                event.key === ' '
-                                            ) {
-                                                event.preventDefault();
-                                                updateProductQuantityHandler(
-                                                    'add'
-                                                );
-                                            }
-                                        }}
-                                        role="button"
-                                        tabIndex={0}
-                                        aria-label="Increase quantity"
-                                        data-testid="cart-qty-increase"
-                                    >
-                                        <Plus className="w-3 stroke-[#555]" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Shipping info */}
-                        {stock > 0 && (
-                            <div className="mt-1 cursor-pointer text-xs text-[#999]">
-                                <div className="mb-1 flex items-center">
-                                    <span>
-                                        <Truck className="inline-block w-4 text-[#01A971]" />
-                                        {shippingInfo.totalFee > 0 ? (
-                                            <span className="ml-1 text-[#01A971]">
-                                                {shippingMethod === 'ITEM' ? (
-                                                    <>
-                                                        $
-                                                        {
-                                                            shippingInfo.initialFee
-                                                        }
-                                                        (first item)&nbsp;
-                                                        {quantity === 1
-                                                            ? ''
-                                                            : `+ ${quantity - 1 === 1 ? '1 item' : `${quantity - 1} items`}
-                                                    x $${extraShippingFee}
-                                                    (${quantity - 1 === 1 ? '1 additional item' : `${quantity - 1} additional items`})`}
-                                                        = $
-                                                        {shippingInfo.totalFee.toFixed(
-                                                            2
-                                                        )}
-                                                    </>
-                                                ) : shippingMethod ===
-                                                  'WEIGHT' ? (
-                                                    <>
-                                                        ${shippingFee} x{' '}
-                                                        {shippingInfo.weight}kg
-                                                        x {quantity}{' '}
-                                                        {quantity > 1
-                                                            ? 'items'
-                                                            : 'item'}{' '}
-                                                        = $
-                                                        {shippingInfo.totalFee.toFixed(
-                                                            2
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        Fixed Fee : $
-                                                        {shippingInfo.totalFee.toFixed(
-                                                            2
-                                                        )}
-                                                    </>
-                                                )}
-                                            </span>
-                                        ) : (
-                                            <span className="ml-1 text-[#01A971]">
-                                                Free Delivery
-                                            </span>
-                                        )}
-                                    </span>
-                                </div>
-                            </div>
-                        )}
                     </div>
+                    <p className={styles.size}>
+                        Size: <span>{size}</span>
+                    </p>
+                    <div className={styles.priceRow}>
+                        {stock > 0 ? (
+                            <span>
+                                ${price.toFixed(2)} x {quantity} = $
+                                {totalPrice.toFixed(2)}
+                            </span>
+                        ) : (
+                            <span className={styles.error}>Out of stock</span>
+                        )}
+                        <div className={styles.quantity}>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                aria-label="Decrease quantity"
+                                data-testid="cart-qty-decrease"
+                                onClick={() =>
+                                    updateProductQuantityHandler("remove")
+                                }
+                            >
+                                <Minus size={13} aria-hidden="true" />
+                            </button>
+                            <input
+                                aria-label={`Quantity for ${name}`}
+                                type="text"
+                                value={quantity}
+                                readOnly
+                                data-testid="cart-item-qty"
+                            />
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                aria-label="Increase quantity"
+                                disabled={quantity >= stock}
+                                data-testid="cart-qty-increase"
+                                onClick={() =>
+                                    updateProductQuantityHandler("add")
+                                }
+                            >
+                                <Plus size={13} aria-hidden="true" />
+                            </button>
+                        </div>
+                    </div>
+                    {stock > 0 && (
+                        <div className={styles.shipping}>
+                            <Truck aria-hidden="true" />
+                            {shippingInfo.totalFee > 0 ? (
+                                <span>{renderShippingBreakdown()}</span>
+                            ) : (
+                                <span>Free Delivery</span>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
-        </div>
-    )
-}
+        </article>
+    );
+};
 
-export default CartProduct
+export default CartProduct;

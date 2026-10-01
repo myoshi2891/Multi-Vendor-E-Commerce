@@ -12,7 +12,10 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2575 passed / 2578 total across 240 suites (239 passed, 1 skipped suite; 3 skipped tests), measured on 2026-09-30 after the PR#183 SonarCloud New Code follow-up: new RTL suites `tests/component/store/store-details.test.tsx` (3) and `tests/component/store/store-products.test.tsx` (3), plus three compare-grid regression cases (empty image source, missing image, missing variant). 127 snapshots passed. Full coverage: statements 80.97%, branches 68.02%, functions 74.24%, lines 80.79%; the dashboard discovers 290 test files and 328 lcov entries.
+- 2621 passed / 2624 total across 246 suites (245 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-02 after adding a regression test to `tests/component/store/cart-container.test.tsx` (+1: a later successful cart sync clears the stale sync-error alert).
+- Previously: 2620 passed / 2623 total across 246 suites (245 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-01 after plan 071 (dev-only Clerk user sync + generic wishlist error toast): new `scripts/dev/clerk-user-mapping.test.ts` (6) and `tests/component/store/cart-product.test.tsx` (+2); the remaining +5 / +1 suite belong to the in-progress cart design migration.
+- Earlier measurement (2026-10-01): 2607 passed / 2610 total across 244 suites (243 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-01 after plan 070 (cart sync drops items no longer in the DB instead of failing the whole sync): `src/queries/user.test.ts` (+4, 2 rewritten) and `tests/component/store/cart-container.test.tsx` (+2).
+- Earlier measurement (2026-09-30): 2575 passed / 2578 total across 240 suites (239 passed, 1 skipped suite; 3 skipped tests), measured on 2026-09-30 after the PR#183 SonarCloud New Code follow-up: new RTL suites `tests/component/store/store-details.test.tsx` (3) and `tests/component/store/store-products.test.tsx` (3), plus three compare-grid regression cases (empty image source, missing image, missing variant). 127 snapshots passed. Full coverage: statements 80.97%, branches 68.02%, functions 74.24%, lines 80.79%; the dashboard discovers 290 test files and 328 lcov entries.
 - Earlier measurement (2026-09-30, compare migration): 2566 passed / 2569 total across 238 suites (237 passed, 1 skipped suite; 3 skipped tests), measured on 2026-09-30 for the current working tree, including earlier uncommitted changes. Compare adds five RTL cases in its existing suite; the full increase is not attributable to this migration alone. 127 snapshots passed. Full coverage: statements 80.8%, branches 67.7%, functions 74.14%, lines 80.62%; the regenerated dashboard discovers 288 test files and 328 lcov entries.
 - Compare UI migration is covered by `src/components/store/compare/compare-grid.test.tsx` (12 tests) and `src/compare-store/useCompareStore.test.ts` (11 tests), plus `tests/e2e/compare-design.spec.ts` (six Chromium cases, mocked action responses). Cases include collection navigation, accessible loading and retry, unavailable selection, cancelled responses, removal/clear, brand colors, focus, local horizontal scrolling, and main-scoped axe at desktop/mobile/boundary widths. Other browsers and the full E2E suite were not run in this session.
 - Earlier measurement (2026-09-29):
@@ -1198,3 +1201,23 @@ CI での PR トリガー時に、Lighthouse CI ジョブ (`.github/workflows/lh
 - `tests/component/store/wishlist.test.tsx` covers editorial-card selection, URL-based page links/current indication, updated page props, bounded large pagination, empty and lookup-failure states, page normalization and redirects, and the loading status. Re-run existing product-card, profile-query and sidebar suites for regression.
 - `tests/e2e/wishlist-design.spec.ts` uses a test customer and eleven existing catalog products to verify empty/ten-piece/last-page states, 1440/390/768px overflow and main-scoped axe, keyboard focus/compare/pagination, browser back and canonical/alias redirects. Wishlist fixtures are owned by the test customer and removed by its cleanup; no catalog creation, seed or database reset.
 - [Migration evidence](../../docs/design/design-system/PROGRESS.md#wishlist移行記録). Loading and fetch-failure feedback are checked in RTL; browser tests do not force server lookup errors. Full-suite totals and coverage remain at the prior measurement.
+
+### Track order design migration (2026-10-01)
+
+`track-order-form.test.tsx` additionally tests pending copy, input/button locking and unlocking. `tests/e2e/track-order-design.spec.ts` checks 1440/390/768px, brand colors/type, visible focus, validation, pending, missing, failure/retry, success with long identifiers/product names, no horizontal overflow and axe AA. Server Action responses are intercepted; no DB mutation.
+
+### Customer service design migration (2026-10-01)
+
+`tests/e2e/customer-service-design.spec.ts` tests 1440/390/768px, cream background and serif heading, all five links/descriptions, hover, keyboard focus and Enter navigation, no horizontal overflow, axe WCAG AA, and screenshots. The existing page RTL test verifies destination preservation.
+
+### Returns/exchange design migration (2026-10-01)
+
+SupportForm RTL adds branded pending/locking and RETURN_REQUEST/UUID payload assertions plus failure/retry regression. `tests/e2e/returns-exchange-design.spec.ts` verifies 1440/390/768px, unchanged policy, focus/Enter, empty and invalid fields, pending, failure/retry, receipt, overflow and axe AA for each state. Additional browser regression submits mocked actions from contact/dispute/report-problem after the Props boundary change. No real ticket creation, refund or external transmission.
+
+### Product support design migration (2026-10-01)
+
+`product-support/page.test.tsx` verifies unchanged copy, unique/nonempty table-of-contents targets and four support destinations. `tests/e2e/product-support-design.spec.ts` checks brand colors/type, 1440/390/768px, visible content, focus/Enter anchor navigation, contact navigation, no horizontal overflow and axe AA. Shared StaticPageLayout/content tests remain regression checks.
+
+## Cart design migration (2026-10-01)
+
+The cart component suites cover synchronization (including stale-item removal), shipping methods and removal cleanup, accessible item controls, checkout save/navigation/failure and duplicate submission prevention. `tests/e2e/cart-design.spec.ts` covers 1440/390/768px, empty/populated/loading/out-of-stock/sync-error states, selection and removal, success/error toast styling and dismissal, pending/failed checkout, focus, overflow and scoped axe AA (no contrast exclusions). Server-action responses are mocked; payment and actual DB writes are outside this design verification. Evidence and measured results: [design progress](../../docs/design/design-system/PROGRESS.md#cart移行記録).

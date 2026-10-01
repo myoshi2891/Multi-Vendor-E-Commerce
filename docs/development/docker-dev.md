@@ -59,6 +59,7 @@ make logs            # http://localhost:3000
 | `make generate` | Prisma クライアント再生成 |
 | `make studio` | Prisma Studio（http://localhost:5555） |
 | `make seed` / `make seed-e2e` | シード投入 |
+| `make sync-clerk-users` | Clerk のユーザーをローカル DB の `User` へ upsert（Webhook がローカルに届かないため。Clerk へは書き戻さない・接続先がローカル DB の時のみ実行） |
 | `make lint` / `make test` / `make test-e2e` | 品質チェックをコンテナ内で実行 |
 
 ホストから直接 DB に繋ぐ場合は `postgresql://dev:dev@localhost:5432/multivendor_dev`
@@ -113,8 +114,10 @@ make sonar-down
 | ページが 500 (`Publishable key not valid.`) | `.env.docker` の Clerk キーが stub のまま。実際の Clerk **test** キー（`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`）に差し替える |
 | ソース変更が反映されない | `WATCHPACK_POLLING=true` が効いているか確認。重い場合は `make restart` |
 | `@prisma/client` が見つからない | `make generate`（named volume の node_modules に再生成） |
+| 全ページが 500 で `Failed to load external module @prisma/client-<hash>: ResolveMessage: Cannot find module` | `make restart`（`make generate` では直らない）。詳細は下記「Turbopack の外部モジュール解決エラー」 |
 | 依存を更新したのに反映されない（`Module not found: Can't resolve '<pkg>'`） | `make install`。node_modules は named volume（`app-node-modules`）で、作成時に 1 度だけイメージから初期化されるため `make build` では更新されない |
 | `next: command not found`（exit 127）で app が再起動ループ | インストール中断で `.bin` リンクが欠けた状態。bun は再実行してもリンクを張り直さないため、volume を空にして入れ直す: `docker compose stop app && docker compose run --rm --no-deps --entrypoint sh app -c 'find node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} +' && make install` |
+| お気に入り追加・カート保存等で `Foreign key constraint violated: <Model>_userId_fkey` | ログイン中の Clerk ユーザーの `User` 行がローカル DB に無い（Webhook はローカルに届かない）。`make sync-clerk-users`。ローカルで新規サインアップした後も再実行する |
 | ポート 5432 が衝突 | ホストの別 Postgres を停止するか、`docker-compose.yml` の `db` ポートを変更 |
 | DB をまっさらにしたい | `make down-v && make setup` |
 
@@ -125,6 +128,28 @@ make sonar-down
 './cjs/index.cjs'`）。Makefile の `make seed` / `make seed-e2e` は `bun prisma/seed/seed.ts` のように
 **bun で TS ファイルを直接実行**することで回避している（bun は TS / tsconfig paths をネイティブ解決）。
 ホスト側 (`bun run seed:luxury`) は実 Node 経由の `tsx` で従来どおり動作する。
+
+### Turbopack の外部モジュール解決エラー（`@prisma/client-<hash>`）
+
+**症状**: `src/lib/db.ts` の import で失敗し、`(store)/layout.tsx` 経由で全ページが 500 になる。
+
+```
+Failed to load external module @prisma/client-2c3a283f134fdcb6: ResolveMessage: Cannot find module
+'@prisma/client-2c3a283f134fdcb6' from '/app/.next/dev/server/chunks/ssr/...'
+```
+
+**対処**: `make restart`（app コンテナの再起動）。`.next` は削除しないこと（下記の理由で再発しやすくなる）。
+
+**見分け方**: モジュール名にハッシュ（`-<16 桁>`）が付いており、エラー型が Bun 固有の `ResolveMessage` であること。
+`docker compose exec app ls -la .next/dev/node_modules/@prisma/` でリンクが `../../../../node_modules/@prisma/client`
+を指していれば、ファイル側は正常で本事象に該当する。
+
+**原因（推定）**: Turbopack は外部パッケージをハッシュ付きシンボリックリンク
+（`.next/dev/node_modules/@prisma/client-<hash>`）経由で読み込む。コンテナ内の `node` は Bun の fallback shim
+（上記）のため `next dev` は Bun ランタイム上で動いており、リンク生成前に解決を試みた長寿命プロセスが
+「見つからない」結果を保持していると考えられる。根拠: 同じ位置から新規 bun プロセスでは解決でき、リンクが
+既に存在する状態で再起動すると解消する（2026-10-01 確認）。`.next/dev` が作り直された直後の初回コンパイルで
+再発しうる。恒久対策（イメージに実 Node.js を入れ `next dev` を Node で動かす）は未実施。
 
 ---
 
@@ -183,3 +208,13 @@ Clerk/Stripe 等のキーは export せず `.env` から従来どおり供給さ
 > **注意 (reuseExistingServer)**: `playwright.config.ts` は `reuseExistingServer: !CI` のため、
 > :3000 に Neon 向きの dev サーバーが起動中だと**再利用されてしまい**、切替が無効化される。
 > `bun run test:e2e:local` 実行前に、:3000 の既存サーバー（`bun run dev` 等）を必ず停止すること。
+
+### Dockerとホストの開発サーバーを併用する
+
+ソースをbind mountするため、既定の`.next`も共有される。同時にNext devを動かす場合はホスト側の出力先を分離する。共有するとClerk等のmodule factory不在やTurbopackキャッシュ破損が起こり得る。
+
+```bash
+NEXT_DEV_DIST_DIR=.next/cart-preview bun run dev --port 3001
+```
+
+Dockerは既定の`.next`を使う。`NEXT_DEV_DIST_DIR`はdevelopment時のみ有効で、本番出力先は`.next`。キャッシュを削除するときは両サーバーを停止してから`.next`（分離先を含む）を削除し、上記設定で再起動する。

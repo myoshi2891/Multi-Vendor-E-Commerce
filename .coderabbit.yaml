@@ -3,3 +3,4 @@
 reviews:
     path_filters:
         - "!prisma/seed/**"
+        - "!plans/layout-design/**"

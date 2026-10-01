@@ -13,6 +13,7 @@
 - Prevent purchase actions when no valid in-stock size is selected; show a clear selection or sold-out message.
 - Add items to cart with quantity and size selection.
 - Manage cart contents (update quantity, remove items).
+- Use a responsive branded cart with keyboard-operable selection, bulk/individual removal, quantity and wishlist controls; show loading, empty, unavailable and sync-failure states. Remove each deleted item's shipping contribution from the summary, prevent repeat checkout submissions while saving, and preserve the bag after a failure. Storefront notifications use readable branded success/error feedback with a keyboard-accessible dismiss control. See [cart requirements](../../docs/design/cart/requirements.md).
 - Checkout with shipping address selection and shipping fees.
 - Pay with Stripe or PayPal.
 - View order details and order status history.
@@ -40,3 +41,11 @@
 - Validation of form inputs.
 - Country-aware shipping configuration.
 - Search with fulltext and fallback matching.
+
+- Public order tracking uses the storefront cream/deep-green/gold palette and serif headings, responsive lookup and result cards, visible keyboard focus, and accessible pending/error/missing/success states. Lock inputs and submit while lookup is pending; long order IDs and product names wrap without horizontal overflow.
+
+- The public customer-service hub preserves all five support destinations, titles and descriptions in a responsive cream/deep-green/gold layout with serif headings, breadcrumbs, visible keyboard focus and accessible link activation.
+
+- Returns/exchange preserves the existing policy and uses the storefront cream/deep-green/gold palette, serif heading and responsive policy/form layout. Validate all fields including the UUID order number, lock the branded form during submission, preserve inputs after failure and show an accessible receipt after success.
+
+- Product support preserves existing setup, troubleshooting and aftercare content and placeholder notices in a responsive branded layout with breadcrumbs, keyboard-accessible section anchors and four support destinations.

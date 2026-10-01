@@ -13,7 +13,9 @@
    rewrites only the `page` parameter. Invalid values (`NaN`, `Infinity`, fractions, `< 1`)
    fall back to page 1.
 2) Open product page and choose a variant and size.
-3) Add to cart (Zustand + localStorage).
+3) Add to cart (Zustand + localStorage). Opening `/cart` re-syncs items via `updateCartWithLatest()`;
+   items whose product / variant / size no longer exist in the DB are dropped (not an error) and the
+   buyer is notified with a toast (plan 070).
 4) Server-side cart validation via `saveUserCart()` recalculates prices, stock, and shipping from DB.
 5) Proceed to checkout and select shipping address; `updateCheckoutProductWithLatest()` recalculates shipping for selected country.
 6) Create an order atomically via `placeOrder()` (`db.$transaction`) with inventory deduction.
@@ -41,19 +43,19 @@
 
 ## Static Content & Support Flow
 1) Customer reaches static pages from the footer links or the user-menu: "Help Center" → `/customer-service`, "Legal & Privacy" → `/legal` (both previously empty strings, now wired).
-2) `/customer-service` is a support hub presenting cards to `/contact`, `/returns-exchange`, `/faqs`, `/track-order`, and `/product-support`.
-3) `/about`, `/legal` (with table of contents), `/faqs`, and `/product-support` render typed content constants through the shared `StaticPageLayout` (plain-text paragraphs only; placeholder copy pending operator replacement).
-4) Legacy `/faq` issues a 308 `permanentRedirect` to the canonical `/faqs`. All pages are public (outside middleware protection) and DB-independent (SSG, no `force-dynamic`).
+2) `/customer-service` is a responsive branded support hub with breadcrumbs and keyboard-accessible numbered cards to `/contact`, `/returns-exchange`, `/faqs`, `/track-order`, and `/product-support`.
+3) `/about`, `/legal` (with table of contents), `/faqs`, and `/product-support` render typed content constants as plain-text paragraphs; branded pages use dedicated layouts. Product support preserves its three sections and placeholder notices, provides keyboard-accessible anchors, and links to customer-service/contact/returns-exchange/track-order for further help.
+4) Legacy `/faq` issues a 308 `permanentRedirect` to the canonical `/faqs`. These pages are public (outside middleware protection) and their content is DB-independent. The parent store layout rendering strategy is unchanged.
 
 ## Support Form Submission Flow
 1) Customer (guest or signed-in) reaches a support form: `/contact` (general), `/returns-exchange` (return/exchange, shows a policy summary on top), `/dispute` (order dispute), or `/report-problem`. The user-menu wires "Return & Refund Policy" → `/returns-exchange`, "Order Dispute Resolution" → `/dispute`, and "Report a Problem" → `/report-problem`.
-2) The shared `SupportForm` (client) collects name / email / subject / message, plus an order number for `/returns-exchange` and `/dispute` (`requireOrderId`). It validates with `SupportTicketSchema` (RHF + zodResolver) and guards against double submission with a `useRef` flag.
+2) The shared `SupportForm` (client) collects name / email / subject / message, plus an order number derived from `RETURN_REQUEST` / `DISPUTE`. RHF + SupportTicketSchema validates input, and a useRef flag guards double submission. Server Components supply `createSupportTicket` via `submitAction`. `/returns-exchange` selects the branded appearance: pending submission shows 「送信中…」 and locks fields and submit. Errors preserve inputs for retry; success replaces the form with an output receipt. The existing returns policy is displayed unchanged alongside the responsive form.
 3) On submit, the public server action `createSupportTicket(input)` re-validates, attaches `userId` only when `currentUser()` resolves (guest submissions leave it null), and creates one `SupportTicket` row with the form's `category`. The message body (PII) is never logged.
 4) On success the form shows a receipt message (`role="status"`); a generic failure surfaces as a root-level error (`role="alert"`). No external email/notification is sent in this MVP — operators triage via the stored `status` (admin viewing UI is a follow-up).
 
 ## Order Tracking Flow
 1) Customer (guest or signed-in) reaches `/track-order` from the footer "Track your Order" link or the `/customer-service` support hub card.
-2) The client `TrackOrderForm` collects an order number and email, validates with `TrackOrderSchema` (RHF + zodResolver), and guards against double submission with a `useRef` flag.
+2) The client `TrackOrderForm` collects an order number and email, validates with `TrackOrderSchema` (RHF + zodResolver), and guards against double submission with a `useRef` flag. The Server Component provides the action via `lookupAction`; pending lookup displays 「照会中…」 and disables the inputs and submit button.
 3) On submit, the public server action `trackOrder({ orderId, email })` fetches the order by `where: { id: orderId }` only and compares the input email to the owner `User.email` in the app layer (case-insensitive). A match returns the order (groups → items / store) with email stripped; a mismatch, a missing order, or invalid input all return the **same** `null` (enumeration-safe).
 4) `TrackOrderResult` renders the overall `orderStatus` / `paymentStatus` and, per store group, the shipping service and delivery window plus each item's `ProductStatus`, reusing the shared `OrderStatusTag` / `PaymentStatusTag` / `ProductStatusTag`. A `null` result shows a single generic "not found" message.
 
@@ -119,3 +121,7 @@
 ## Country Detection
 1) Middleware checks for the `userCountry` cookie.
 2) If missing, country is detected and written to cookies.
+
+### Cart presentation and feedback (2026-10-01)
+
+The branded cart shows persisted items after synchronization, preserves local items with refresh feedback on sync failure, and keeps the existing stale-item removal notice. Item removal also removes its shipping contribution. Saving shows a pending status and locks the checkout button; rejection leaves the bag available for retry. See [cart design](../../docs/design/cart/design.md).

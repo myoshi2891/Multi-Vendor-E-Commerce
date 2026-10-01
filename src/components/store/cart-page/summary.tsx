@@ -1,17 +1,22 @@
-import { CartProductType } from '@/lib/types'
-import { FC, useState } from 'react'
-import { Button } from '../ui/button'
-import toast from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
-import { saveUserCart } from '@/queries/user'
-import { PulseLoader } from 'react-spinners'
+import { CartProductType } from "@/lib/types";
+import { FC, useState } from "react";
+import styles from "./cart.module.css";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+
+import { ArrowRight } from "lucide-react";
 
 interface Props {
-    cartItems: CartProductType[]
-    shippingFees: number
+    cartItems: CartProductType[];
+    shippingFees: number;
+    saveCartAction: (items: CartProductType[]) => Promise<boolean>;
 }
 
-const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
+const CartSummary: FC<Props> = ({
+    cartItems,
+    shippingFees,
+    saveCartAction,
+}) => {
     const router = useRouter();
     const [loading, setLoading] = useState<boolean>(false);
     // Calculate subTotal from cartItems
@@ -23,75 +28,79 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
     const total = subTotal + shippingFees;
 
     const handleSaveCart = async () => {
+        if (loading) return;
         try {
             setLoading(true);
-            const res = await saveUserCart(cartItems);
+            const res = await saveCartAction(cartItems);
             if (res) router.push("/checkout");
-        } catch (error: any) {
-            // Handle error
-            toast.error(error.toString());
+        } catch (error: unknown) {
+            // 生のエラーメッセージは UI に出さず、詳細はログにのみ残す
+            if (error instanceof Error) {
+                console.error(
+                    "[CartSummary:handleSaveCart] Failed to save cart",
+                    {
+                        error: error.message,
+                        stack: error.stack,
+                    }
+                );
+            } else {
+                console.error("[CartSummary:handleSaveCart] Unknown error", {
+                    error,
+                });
+            }
+            toast.error("We couldn’t start checkout. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="relative bg-white px-6 py-4">
-            <h1 className="mb-4 text-2xl font-bold text-gray-900">Summary</h1>
-            <div className="mt-4 flex items-center border-b pb-1 text-sm font-medium text-[#222]">
-                <h2 className="truncate break-normal">Subtotal</h2>
-                <h3 className="w-0 min-w-0 flex-1 text-right">
-                    <span className="px-0.5 text-black">
-                        <div className="inline-block break-all text-lg text-black">
-                            ${subTotal.toFixed(2)}
-                        </div>
-                    </span>
-                </h3>
-            </div>
-            <div className="mt-2 flex items-center border-b pb-1 text-sm font-medium text-[#222]">
-                <h2 className="truncate break-normal">Shipping Fees</h2>
-                <h3 className="w-0 min-w-0 flex-1 text-right">
-                    <span className="px-0.5 text-black">
-                        <div className="inline-block break-all text-lg text-black">
-                            +${shippingFees.toFixed(2)}
-                        </div>
-                    </span>
-                </h3>
-            </div>
-            <div className="mt-2 flex items-center border-b pb-1 text-sm font-medium text-[#222]">
-                <h2 className="truncate break-normal">Taxes</h2>
-                <h3 className="w-0 min-w-0 flex-1 text-right">
-                    <span className="px-0.5 text-black">
-                        <div className="inline-block break-all text-lg text-black">
-                            +$0.00
-                        </div>
-                    </span>
-                </h3>
-            </div>
-            <div className="mt-2 flex items-center text-sm font-bold text-[#222]">
-                <h2 className="truncate break-normal">Total</h2>
-                <h3 className="w-0 min-w-0 flex-1 text-right">
-                    <span className="px-0.5 text-black">
-                        <div
-                            className="inline-block break-all text-lg text-black"
-                            data-testid="cart-total"
-                        >
-                            ${total.toFixed(2)}
-                        </div>
-                    </span>
-                </h3>
-            </div>
-            <div className="my-2.5">
-                <Button onClick={() => handleSaveCart()} data-testid="checkout">
-                    {loading ? (
-                        <PulseLoader size={5} color="#fff" />
-                    ) : (
-                        <span>Checkout ({cartItems.length})</span>
-                    )}
-                </Button>
-            </div>
-        </div>
+        <section
+            className={styles.summary}
+            aria-labelledby="cart-summary-heading"
+        >
+            <h2 id="cart-summary-heading">Summary</h2>
+            <dl>
+                <div className={styles.summaryRow}>
+                    <dt>Subtotal</dt>
+                    <dd>${subTotal.toFixed(2)}</dd>
+                </div>
+                <div className={styles.summaryRow}>
+                    <dt>Shipping Fees</dt>
+                    <dd>+${shippingFees.toFixed(2)}</dd>
+                </div>
+                <div className={styles.summaryRow}>
+                    <dt>Taxes</dt>
+                    <dd>+$0.00</dd>
+                </div>
+                <div className={`${styles.summaryRow} ${styles.total}`}>
+                    <dt>Total</dt>
+                    <dd data-testid="cart-total">${total.toFixed(2)}</dd>
+                </div>
+            </dl>
+            <button
+                type="button"
+                className={styles.primary}
+                onClick={handleSaveCart}
+                disabled={loading}
+                aria-busy={loading}
+                data-testid="checkout"
+            >
+                {loading ? (
+                    <output>Preparing checkout…</output>
+                ) : (
+                    <>
+                        Checkout ({cartItems.length}){" "}
+                        <ArrowRight size={16} aria-hidden="true" />
+                    </>
+                )}
+            </button>
+            <p className={styles.summaryNote}>
+                Shipping is based on your destination. Review your delivery
+                details at checkout.
+            </p>
+        </section>
     );
-}
+};
 
-export default CartSummary
+export default CartSummary;

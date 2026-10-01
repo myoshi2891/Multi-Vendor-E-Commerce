@@ -6,7 +6,7 @@ Storefront:
 - `/` dynamic storefront landing page (`force-dynamic`). Streams `BrandExperience` and `Selection` through separate Suspense boundaries; `getBrandCategories` supplies up to three live category slugs, and the selection uses `getProducts` for up to eight displayable products. The experience's WebGL scene is decorative and client-only; navigation and shopping links remain in HTML. See `05-workflows.md` for display and failure states.
 - `/browse` browse and search; reads `search`, `category`, legacy `subCategory`, `offer`, repeatable `size` / `color`, `minPrice`, `maxPrice`, `sort`, and 1-based `page` query parameters. `page` is normalized per the tech.md URL-parameter rule and passed to `getProducts(filters, sort, page)`; out-of-range pages redirect to the last available page (or page 1 for zero results). Resolvable legacy `subCategory` redirects (308) to `category` only when it is nested under the supplied category or no category is supplied; conflicting or unresolvable category filters retain fail-closed results. The pager renders only when `totalPages > 1`, via `src/components/store/browse-page/browse-pagination.tsx`, preserving other query parameters and replacing only `page`.
 - `/offers` platform-wide offer (OfferTag) landing; each tag links to `/browse?offer=<url>` (reuses `getAllOfferTags`, `force-dynamic`)
-- `/about` `/legal` `/faqs` `/product-support` static content pages (DB-independent, SSG; rendered via shared `StaticPageLayout` fed by typed content constants in `src/components/store/static/content/`)
+- `/about` `/legal` `/faqs` `/product-support` public content pages (DB-independent; typed content constants in `src/components/store/static/content/`). Branded pages use dedicated Server Component layouts; `/legal` retains `StaticPageLayout`. Parent store rendering remains unchanged.
 - `/customer-service` support hub portal (cards linking to `/contact` `/returns-exchange` `/faqs` `/track-order` `/product-support`)
 - `/faq` → 308 `permanentRedirect` to canonical `/faqs` (deduplicates the legacy footer link)
 - `/product/[productSlug]` redirects to the first variant, or `/` when the product is missing, has no variants, or cannot be loaded.
@@ -202,3 +202,19 @@ Four support form types (contact / return / dispute / problem-report) collapse i
 - `NEXT_PUBLIC_PAYPAL_CLIENT_ID`
 - `PAYPAL_SECRET`
 - `WEBHOOK_SECRET`
+
+### Order tracking presentation boundary (2026-10-01)
+
+The public Server Component passes `trackOrder` as `lookupAction` to TrackOrderForm. Client components import its type only. The branded page includes breadcrumbs and a customer-service link; lookup response and email matching remain unchanged.
+
+### Customer service presentation (2026-10-01)
+
+`/customer-service` is a static Server Component. `SUPPORT_LINKS` remains the source for its five destinations; the branded hub exposes Home breadcrumbs and a named support navigation with numbered cards. No API or data-model change.
+
+### Support form presentation boundary (2026-10-01)
+
+SupportForm receives `submitAction: typeof createSupportTicket` from each Server Component (contact, returns-exchange, dispute, report-problem); Client imports the action type only. Optional `appearance` is `default` or `brand`, with returns-exchange selecting brand. Category determines whether an order ID is required. Action input/output and persistence behavior are unchanged.
+
+### Product support presentation (2026-10-01)
+
+`/product-support` preserves all three PRODUCT_SUPPORT_SECTIONS headings/bodies and placeholder notices. It exposes Home breadcrumbs, a named three-link table of contents targeting support-1 through support-3, and customer-service/contact/returns-exchange/track-order links. Dedicated CSS Module; no API or data-model change.

@@ -1,7 +1,7 @@
 # Profile Overview — 要件
 
 - 対象: `/profile`（DS-PAGE-029）、共通layout／sidebar（DS-COMP-077）、会員情報（078）、注文概要（079）。
-- 保存計画: [profile-design-system-plan](../../../plans/profile-design-system-plan.md)。
+- 保存計画: [profile-design-system-plan](../../../plans/layout-design/profile-design-system-plan.md)。
 - [設計](design.md)、[タスク](tasks.md)、[進捗](PROGRESS.md)。
 
 ## 機能・受け入れ条件

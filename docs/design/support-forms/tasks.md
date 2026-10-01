@@ -131,3 +131,9 @@
 | 11       | docs         | spec-sync + dashboard 再生成（統計同期は単独コミット）        |
 
 > 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。
+
+## 返品・交換デザイン移行（2026-10-01）
+
+- [x] DS-PAGE-036／DS-COMP-093計画保存、送信中RTL1件とChromium3件Red確認後にブランド表示を実装。
+- [x] 関連Jest16/16、Chromium4/4、他3呼び出し元Props移行回帰、3幅・各状態・axe AA・画像確認、lint/tsc。
+- [x] requirements/design/PROGRESS、SDD、台帳、QA、dashboardを同期。未コミット。[検証証跡](../design-system/PROGRESS.md#returns-exchange移行記録)。

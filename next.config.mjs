@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: false,
+    // Keep concurrent local dev servers from sharing Turbopack output/cache.
+    distDir: process.env.NODE_ENV === 'development'
+        ? process.env.NEXT_DEV_DIST_DIR || '.next'
+        : '.next',
     transpilePackages: ['@react-three/fiber', 'three'],
     images: {
         remotePatterns: [

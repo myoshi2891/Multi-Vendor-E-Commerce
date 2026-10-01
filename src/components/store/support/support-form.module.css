@@ -1,0 +1,63 @@
+.form {
+    --destructive: 6 48% 39%;
+    display: grid;
+    gap: 24px;
+    color: #17251d;
+}
+.form :is(input, textarea, button):focus-visible {
+    outline: 2px solid #75613b;
+    outline-offset: 4px;
+    box-shadow: none;
+}
+.input,
+.textarea {
+    border-radius: 0;
+    /* WCAG 1.4.11: #faf8f2 背景に対し 3.39:1（非テキスト 3:1 以上） */
+    border-color: #8a877a;
+    background: #faf8f2;
+    color: #17251d;
+    font-size: 16px;
+}
+.input {
+    height: 48px;
+}
+.textarea {
+    line-height: 1.8;
+    resize: vertical;
+    min-height: 150px;
+}
+.submit {
+    width: 100%;
+    height: auto;
+    min-height: 48px;
+    white-space: normal;
+    padding: 12px 20px;
+    border-radius: 0;
+    background: #17251d;
+    color: #faf8f2;
+    line-height: 1.8;
+}
+.submit:hover {
+    background: #304a39;
+}
+.error {
+    padding: 16px;
+    border: 1px solid #b85d50;
+    color: #963e34;
+    font-size: 13px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+}
+.success {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 24px;
+    background: #e8eee5;
+    border: 1px solid #abbba6;
+    color: #243f2b;
+    font-size: 14px;
+    line-height: 2;
+    overflow-wrap: anywhere;
+}

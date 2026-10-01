@@ -10,18 +10,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
-import { trackOrder } from "@/queries/order";
+import type { trackOrder } from "@/queries/order";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import TrackOrderResult from "./track-order-result";
+import styles from "./track-order.module.css";
 
 /**
  * Renders the public order tracking form.
  *
  * Submits an order ID and email address to look up a matching order and display its tracking details or a status message.
  */
-export default function TrackOrderForm() {
+export default function TrackOrderForm({
+    lookupAction,
+}: Readonly<{
+    lookupAction: typeof trackOrder;
+}>) {
     const isSubmittingRef = useRef(false);
     const [result, setResult] =
         useState<Awaited<ReturnType<typeof trackOrder>>>(null);
@@ -47,7 +52,7 @@ export default function TrackOrderForm() {
         isSubmittingRef.current = true;
         resetLookup();
         try {
-            const data = await trackOrder(values);
+            const data = await lookupAction(values);
             if (!data) setNotFound(true);
             setResult(data);
         } catch {
@@ -60,13 +65,14 @@ export default function TrackOrderForm() {
     };
 
     return (
-        <div>
+        <div className={styles.lookup}>
             <Form {...form}>
                 <form
                     onSubmit={(e) =>
                         void form.handleSubmit(onSubmit, resetLookup)(e)
                     }
-                    className="space-y-4"
+                    className={styles.form}
+                    aria-busy={form.formState.isSubmitting}
                     noValidate
                 >
                     <FormField
@@ -76,7 +82,12 @@ export default function TrackOrderForm() {
                             <FormItem>
                                 <FormLabel>注文番号</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="注文番号" {...field} />
+                                    <Input
+                                        className={styles.input}
+                                        disabled={form.formState.isSubmitting}
+                                        placeholder="注文番号"
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -90,6 +101,9 @@ export default function TrackOrderForm() {
                                 <FormLabel>メールアドレス</FormLabel>
                                 <FormControl>
                                     <Input
+                                        className={styles.input}
+                                        disabled={form.formState.isSubmitting}
+                                        autoComplete="email"
                                         type="email"
                                         placeholder="メールアドレス"
                                         {...field}
@@ -99,19 +113,23 @@ export default function TrackOrderForm() {
                             </FormItem>
                         )}
                     />
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                        追跡する
+                    <Button
+                        className={styles.submit}
+                        type="submit"
+                        disabled={form.formState.isSubmitting}
+                    >
+                        {form.formState.isSubmitting ? "照会中…" : "追跡する"}
                     </Button>
                 </form>
             </Form>
 
             {failed ? (
-                <output className="mt-6 block text-sm text-destructive">
+                <output className={styles.message}>
                     注文の照会に失敗しました。時間をおいて再度お試しください。
                 </output>
             ) : null}
             {notFound ? (
-                <output className="mt-6 block text-sm text-muted-foreground">
+                <output className={styles.message}>
                     注文が見つかりませんでした。
                 </output>
             ) : null}

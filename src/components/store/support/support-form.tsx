@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SupportTicketSchema, type SupportTicketInput } from "@/lib/schemas";
-import { createSupportTicket } from "@/queries/support";
+import type { createSupportTicket } from "@/queries/support";
 import {
     Form,
     FormControl,
@@ -15,16 +15,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CheckCircle2 } from "lucide-react";
+import styles from "./support-form.module.css";
 
 interface SupportFormProps {
     category: SupportTicketInput["category"];
+    submitAction: typeof createSupportTicket;
+    appearance?: "default" | "brand";
     submitLabel?: string;
 }
 
 export default function SupportForm({
     category,
     submitLabel,
+    submitAction,
+    appearance = "default",
 }: Readonly<SupportFormProps>) {
+    const branded = appearance === "brand";
     // orderId 欄の要否は category から導出する（schemas.ts の superRefine と同一条件）。
     // caller が category と requireOrderId を別々に渡してずれる事故を防ぐ。
     const requireOrderId =
@@ -43,11 +50,13 @@ export default function SupportForm({
         },
     });
 
+    const lockInputs = branded && form.formState.isSubmitting;
+
     const onSubmit = async (values: SupportTicketInput) => {
         if (isSubmittingRef.current) return; // 早期リターン（二重送信防止）
         isSubmittingRef.current = true;
         try {
-            await createSupportTicket(values);
+            await submitAction(values);
             setDone(true);
             form.reset({
                 ...form.getValues(),
@@ -68,15 +77,36 @@ export default function SupportForm({
     };
 
     if (done)
-        return <output>受け付けました。担当より追ってご連絡します。</output>;
+        return (
+            <output className={branded ? styles.success : undefined}>
+                {branded && (
+                    <CheckCircle2
+                        size={28}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                    />
+                )}
+                受け付けました。担当より追ってご連絡します。
+            </output>
+        );
 
     // shadcn/ui Form プリミティブで描画（既存ダッシュボードフォームのスタイルに準拠）。
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className={branded ? styles.form : "space-y-4"}
+                aria-busy={form.formState.isSubmitting}
+                noValidate
+            >
                 {/* ルートエラー（server action からの汎用エラー）を上部に表示 */}
                 {form.formState.errors.root?.message && (
-                    <p role="alert" className="text-sm text-destructive">
+                    <p
+                        role="alert"
+                        className={
+                            branded ? styles.error : "text-sm text-destructive"
+                        }
+                    >
                         {form.formState.errors.root.message}
                     </p>
                 )}
@@ -88,7 +118,13 @@ export default function SupportForm({
                         <FormItem>
                             <FormLabel>お名前</FormLabel>
                             <FormControl>
-                                <Input {...field} />
+                                <Input
+                                    className={
+                                        branded ? styles.input : undefined
+                                    }
+                                    disabled={lockInputs}
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -101,7 +137,15 @@ export default function SupportForm({
                         <FormItem>
                             <FormLabel>メールアドレス</FormLabel>
                             <FormControl>
-                                <Input type="email" {...field} />
+                                <Input
+                                    className={
+                                        branded ? styles.input : undefined
+                                    }
+                                    disabled={lockInputs}
+                                    type="email"
+                                    autoComplete="email"
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -114,7 +158,13 @@ export default function SupportForm({
                         <FormItem>
                             <FormLabel>件名</FormLabel>
                             <FormControl>
-                                <Input {...field} />
+                                <Input
+                                    className={
+                                        branded ? styles.input : undefined
+                                    }
+                                    disabled={lockInputs}
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -127,7 +177,14 @@ export default function SupportForm({
                         <FormItem>
                             <FormLabel>内容</FormLabel>
                             <FormControl>
-                                <Textarea rows={6} {...field} />
+                                <Textarea
+                                    className={
+                                        branded ? styles.textarea : undefined
+                                    }
+                                    disabled={lockInputs}
+                                    rows={6}
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -143,7 +200,13 @@ export default function SupportForm({
                             <FormItem>
                                 <FormLabel>対象の注文番号</FormLabel>
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Input
+                                        className={
+                                            branded ? styles.input : undefined
+                                        }
+                                        disabled={lockInputs}
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -151,8 +214,14 @@ export default function SupportForm({
                     />
                 )}
 
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {submitLabel ?? "送信"}
+                <Button
+                    className={branded ? styles.submit : undefined}
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                >
+                    {branded && form.formState.isSubmitting
+                        ? "送信中…"
+                        : (submitLabel ?? "送信")}
                 </Button>
             </form>
         </Form>

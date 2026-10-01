@@ -21,7 +21,12 @@ describe("SupportForm", () => {
     // T-SF5 / AC-SF5
     it("必須未入力で submit するとエラーを表示し createSupportTicket を呼ばない", async () => {
         // Arrange
-        render(<SupportForm category="CONTACT" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="CONTACT"
+            />
+        );
 
         // Act — 何も入力せず送信
         fireEvent.click(screen.getByRole("button", { name: /送信|send/i }));
@@ -45,7 +50,12 @@ describe("SupportForm", () => {
                     resolveFn = resolve;
                 })
         );
-        render(<SupportForm category="CONTACT" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="CONTACT"
+            />
+        );
 
         fireEvent.change(screen.getByLabelText("お名前"), {
             target: { value: "山田太郎" },
@@ -71,6 +81,9 @@ describe("SupportForm", () => {
 
         // 後始末（保留 promise を解決）
         resolveFn({ id: "ticket-1" });
+        expect(await screen.findByRole("status")).toHaveTextContent(
+            "受け付けました。"
+        );
     });
 
     /** 有効入力を全フィールドに入力するヘルパー */
@@ -92,7 +105,12 @@ describe("SupportForm", () => {
     // T-SF7 — 送信成功で受付メッセージ（<output> = role status）を表示する
     it("送信成功で受付メッセージを表示する", async () => {
         // Arrange
-        render(<SupportForm category="CONTACT" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="CONTACT"
+            />
+        );
         fillValid();
 
         // Act
@@ -111,7 +129,12 @@ describe("SupportForm", () => {
     it("送信失敗時にエラーメッセージを alert で表示する", async () => {
         // Arrange
         mockCreate.mockRejectedValue(new Error("boom"));
-        render(<SupportForm category="CONTACT" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="CONTACT"
+            />
+        );
         fillValid();
 
         // Act
@@ -126,7 +149,12 @@ describe("SupportForm", () => {
     // T-SF9 — category=RETURN_REQUEST から注文番号欄の表示を導出する
     it("category=RETURN_REQUEST で対象の注文番号欄を表示する", () => {
         // Arrange / Act
-        render(<SupportForm category="RETURN_REQUEST" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="RETURN_REQUEST"
+            />
+        );
 
         // Assert
         expect(screen.getByLabelText("対象の注文番号")).toBeInTheDocument();
@@ -135,11 +163,79 @@ describe("SupportForm", () => {
     // T-SF10 — submitLabel でボタン文言を上書きする
     it("submitLabel でボタン文言を上書きする", () => {
         // Arrange / Act
-        render(<SupportForm category="CONTACT" submitLabel="送信する" />);
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="CONTACT"
+                submitLabel="送信する"
+            />
+        );
 
         // Assert
         expect(
             screen.getByRole("button", { name: "送信する" })
         ).toBeInTheDocument();
+    });
+    it("返品のブランドフォームは送信中を通知して入力をロックし、注文番号とカテゴリを送信する", async () => {
+        let resolve!: (value: { id: string }) => void;
+        mockCreate.mockImplementation(
+            () =>
+                new Promise((done) => {
+                    resolve = done;
+                })
+        );
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="RETURN_REQUEST"
+                appearance="brand"
+            />
+        );
+        fillValid();
+        fireEvent.change(screen.getByLabelText("対象の注文番号"), {
+            target: { value: "123e4567-e89b-12d3-a456-426614174000" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "送信" }));
+        expect(
+            await screen.findByRole("button", { name: "送信中…" })
+        ).toBeDisabled();
+        for (const field of screen.getAllByRole("textbox"))
+            expect(field).toBeDisabled();
+        expect(mockCreate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                category: "RETURN_REQUEST",
+                orderId: "123e4567-e89b-12d3-a456-426614174000",
+            })
+        );
+        resolve({ id: "ticket-1" });
+        expect(await screen.findByRole("status")).toHaveTextContent(
+            "受け付けました。"
+        );
+    });
+
+    it("返品申請の失敗後も入力を保持し再試行できる", async () => {
+        mockCreate.mockRejectedValueOnce(new Error("送信に失敗しました。"));
+        render(
+            <SupportForm
+                submitAction={createSupportTicket}
+                category="RETURN_REQUEST"
+                appearance="brand"
+            />
+        );
+        fillValid();
+        fireEvent.change(screen.getByLabelText("対象の注文番号"), {
+            target: { value: "123e4567-e89b-12d3-a456-426614174000" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "送信" }));
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "送信に失敗しました。"
+        );
+        expect(screen.getByLabelText("対象の注文番号")).toHaveValue(
+            "123e4567-e89b-12d3-a456-426614174000"
+        );
+        fireEvent.click(screen.getByRole("button", { name: "送信" }));
+        expect(await screen.findByRole("status")).toHaveTextContent(
+            "受け付けました。"
+        );
     });
 });

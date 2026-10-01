@@ -16,7 +16,7 @@ SONAR_COMPOSE := docker compose -f docker-compose.sonar.yml $(if $(wildcard .env
 .DEFAULT_GOAL := help
 
 .PHONY: help up down down-v build restart install ps logs sh psql \
-        migrate migrate-deploy generate studio seed seed-e2e \
+        migrate migrate-deploy generate studio seed seed-e2e sync-clerk-users \
         lint test test-e2e setup \
         sonar-up sonar-down sonar-scan
 
@@ -96,6 +96,10 @@ seed: ## ラグジュアリーデータセットを投入 (bun 直接実行)
 
 seed-e2e: ## E2E 用シードデータを投入 (bun 直接実行)
 	$(APP) bun tests/e2e/seed/seed-e2e.ts
+
+# Clerk Webhook はローカル DB に届かないため、ログインユーザーの User 行をここで取り込む。
+sync-clerk-users: ## Clerk のユーザーをローカル DB へ upsert (Clerk へは書き戻さない)
+	$(APP) bun scripts/dev/sync-clerk-users.ts
 
 ## --- 品質 ---
 

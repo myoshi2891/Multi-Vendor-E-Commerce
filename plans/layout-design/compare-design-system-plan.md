@@ -33,4 +33,4 @@
 
 - 関連Jest23/23、Chromium6/6、実データ取得の追加確認1件成功。全体Jest2566 passed／2569 total、238 suites、127 snapshots成功。
 - lintエラー0（既存warning12、変更対象warning0）、型検査、Prettier、差分確認成功。
-- 635件の文書参照と66画面／200部品の台帳整合を確認。詳細は[移行進捗](../docs/design/design-system/PROGRESS.md#compare移行記録)。
+- 635件の文書参照と66画面／200部品の台帳整合を確認。詳細は[移行進捗](../../docs/design/design-system/PROGRESS.md#compare移行記録)。

@@ -1,0 +1,64 @@
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: min(440px, calc(100vw - 32px));
+    padding: 18px 20px;
+    background: #17251d;
+    color: #f3f0e8;
+    border: 1px solid #75613b;
+    box-shadow: 0 12px 40px #0b100e26;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    pointer-events: auto;
+    transition:
+        opacity 0.2s,
+        transform 0.2s;
+}
+.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.hidden {
+    opacity: 0;
+    transform: translateY(-12px);
+}
+.message {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.toast > svg {
+    flex-shrink: 0;
+}
+.success {
+    color: #d4ba83;
+}
+.error {
+    color: #f0b7a1;
+}
+.close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    color: #f3f0e8;
+    background: transparent;
+    border: 1px solid #75613b;
+    cursor: pointer;
+}
+.close:hover {
+    background: #344538;
+}
+.close:focus-visible {
+    outline: 2px solid #d4ba83;
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        transition: none;
+    }
+}
