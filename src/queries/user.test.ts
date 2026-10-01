@@ -1804,30 +1804,120 @@ describe("emptyUserCart", () => {
 // updateCartWithLatest
 // ==================================================
 describe("updateCartWithLatest", () => {
-    describe("データ検証", () => {
-        it("商品が見つからない場合エラーをスローする", async () => {
+    // DB から消えた明細（販売者の削除・シードの作り直し等）で同期全体を
+    // 失敗させないため、見つからない明細は例外にせず結果から除外する。
+    describe("データ検証（存在しない明細の除外）", () => {
+        let warnSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            mockGetCookie.mockReturnValue(null);
+            warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            warnSpy.mockRestore();
+        });
+
+        it("商品が見つからない明細は除外して返す", async () => {
+            // Arrange
             const cartProducts = [createMockCartProduct()];
             mockDb.product.findUnique.mockResolvedValue(null);
 
-            await expect(
-                updateCartWithLatest(cartProducts as never)
-            ).rejects.toThrow(
-                "Product not found or variant or size not found."
-            );
+            // Act
+            const result = await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(result).toEqual([]);
         });
 
-        it("バリアントが見つからない場合エラーをスローする", async () => {
+        it("バリアントが見つからない明細は除外して返す", async () => {
+            // Arrange
             const cartProducts = [createMockCartProduct()];
             mockDb.product.findUnique.mockResolvedValue({
                 ...createMockFullProduct(),
                 variants: [],
             });
 
-            await expect(
-                updateCartWithLatest(cartProducts as never)
-            ).rejects.toThrow(
-                "Product not found or variant or size not found."
+            // Act
+            const result = await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it("サイズが見つからない明細は除外して返す", async () => {
+            // Arrange
+            const cartProducts = [createMockCartProduct()];
+            const dbProduct = createMockFullProduct();
+            dbProduct.variants[0].sizes = [];
+            mockDb.product.findUnique.mockResolvedValue(dbProduct);
+
+            // Act
+            const result = await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it("存在しない明細だけを除外し、残りは最新データで同期する", async () => {
+            // Arrange
+            const valid = createMockCartProduct({ quantity: 1 });
+            const stale = createMockCartProduct({
+                productId: "product-stale",
+                sizeId: "size-stale",
+            });
+            mockDb.product.findUnique.mockImplementation(
+                (args: { where: { id: string } }) =>
+                    Promise.resolve(
+                        args.where.id === "product-stale"
+                            ? null
+                            : createMockFullProduct()
+                    )
             );
+
+            // Act
+            const result = await updateCartWithLatest([valid, stale] as never);
+
+            // Assert
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    productId: "product-001",
+                    sizeId: "size-001",
+                })
+            );
+        });
+
+        it("除外が発生した場合は件数を構造化ログで警告する", async () => {
+            // Arrange
+            const cartProducts = [
+                createMockCartProduct(),
+                createMockCartProduct({ productId: "product-stale-2" }),
+            ];
+            mockDb.product.findUnique.mockResolvedValue(null);
+
+            // Act
+            await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(warnSpy).toHaveBeenCalledWith(
+                "[User:updateCartWithLatest] Removed stale cart items",
+                { count: 2 }
+            );
+        });
+
+        it("除外が無い場合は警告しない", async () => {
+            // Arrange
+            const cartProducts = [createMockCartProduct()];
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+
+            // Act
+            await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(warnSpy).not.toHaveBeenCalled();
         });
     });
 

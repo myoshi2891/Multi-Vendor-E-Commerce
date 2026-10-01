@@ -1015,12 +1015,18 @@ export const emptyUserCart = async () => {
  * @Parameters  cartProducts: CartProductType[]
  *  - productId: The ID of the product to update the cart with.
  * @returns CartProductType[]
+ *
+ * DB に存在しない明細（販売者による削除、シードでの Size 作り直し等で localStorage の
+ * ID が古くなったもの）は例外にせず**結果から除外**する。1 件の不整合で `Promise.all`
+ * 全体を失敗させると、残りの明細の価格・在庫まで更新されなくなるため。
+ * 呼び出し側は戻り値の件数が減ったことで除外を検知できる。
+ * 注文確定系（saveUserCart / placeOrder）は不整合を通さないよう従来どおり例外にする。
  */
 export const updateCartWithLatest = async (
     cartProducts: CartProductType[]
 ): Promise<CartProductType[]> => {
     // Fetch product, variant, and size data from the database for validation
-    const validatedCartItems = await Promise.all(
+    const syncedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
             const { productId, variantId, sizeId, quantity } = cartProduct;
 
@@ -1031,12 +1037,7 @@ export const updateCartWithLatest = async (
                 sizeId
             );
 
-            if (!found) {
-                // return cartProduct
-                throw new Error(
-                    `Product not found or variant or size not found.`
-                );
-            }
+            if (!found) return null;
             const { product, variant, size } = found;
 
             // Calculate Shipping details
@@ -1100,6 +1101,18 @@ export const updateCartWithLatest = async (
             };
         })
     );
+
+    const validatedCartItems = syncedCartItems.filter(
+        (item): item is NonNullable<typeof item> => item !== null
+    );
+
+    const removedCount = cartProducts.length - validatedCartItems.length;
+    if (removedCount > 0) {
+        console.warn("[User:updateCartWithLatest] Removed stale cart items", {
+            count: removedCount,
+        });
+    }
+
     return validatedCartItems;
 };
 
