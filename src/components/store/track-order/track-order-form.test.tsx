@@ -54,7 +54,7 @@ describe("TrackOrderForm", () => {
 
     it("T-TO7: 未入力 submit でエラー表示・trackOrder を呼ばない", async () => {
         // Arrange
-        render(<TrackOrderForm />);
+        render(<TrackOrderForm lookupAction={trackOrder} />);
 
         // Act: 何も入力せず送信
         fireEvent.click(screen.getByRole("button", { name: /追跡する/ }));
@@ -71,7 +71,7 @@ describe("TrackOrderForm", () => {
     it("T-TO8: 一致時に order/group/item の各ステータスが描画される", async () => {
         // Arrange
         (trackOrder as jest.Mock).mockResolvedValue(matchedResult);
-        render(<TrackOrderForm />);
+        render(<TrackOrderForm lookupAction={trackOrder} />);
 
         // Act: 有効な入力で送信
         fillAndSubmit();
@@ -105,7 +105,7 @@ describe("TrackOrderForm", () => {
     it("T-TO9: trackOrder が null を返すと not-found のみ表示し結果 UI を出さない", async () => {
         // Arrange: 不一致/不存在を表す null
         (trackOrder as jest.Mock).mockResolvedValue(null);
-        render(<TrackOrderForm />);
+        render(<TrackOrderForm lookupAction={trackOrder} />);
 
         // Act
         fillAndSubmit();
@@ -124,7 +124,7 @@ describe("TrackOrderForm", () => {
     it("T-TO10: trackOrder が throw すると not-found ではなく再試行メッセージを表示する", async () => {
         // Arrange: 一過性のインフラ障害
         (trackOrder as jest.Mock).mockRejectedValue(new Error("DB down"));
-        render(<TrackOrderForm />);
+        render(<TrackOrderForm lookupAction={trackOrder} />);
 
         // Act
         fillAndSubmit();
@@ -139,5 +139,29 @@ describe("TrackOrderForm", () => {
             screen.queryByText("注文が見つかりませんでした。")
         ).not.toBeInTheDocument();
         expect(screen.queryByText("Test Store")).not.toBeInTheDocument();
+    });
+    it("送信中は状態を伝え、入力と再送信をロックする", async () => {
+        let resolve!: (value: null) => void;
+        (trackOrder as jest.Mock).mockImplementation(
+            () =>
+                new Promise((done) => {
+                    resolve = done;
+                })
+        );
+        render(<TrackOrderForm lookupAction={trackOrder} />);
+        fillAndSubmit();
+        const button = await screen.findByRole("button", { name: "照会中…" });
+        expect(button).toBeDisabled();
+        expect(
+            screen.getByRole("textbox", { name: "注文番号" })
+        ).toBeDisabled();
+        expect(
+            screen.getByRole("textbox", { name: "メールアドレス" })
+        ).toBeDisabled();
+        resolve(null);
+        expect(
+            await screen.findByText("注文が見つかりませんでした。")
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /追跡する/ })).toBeEnabled();
     });
 });
