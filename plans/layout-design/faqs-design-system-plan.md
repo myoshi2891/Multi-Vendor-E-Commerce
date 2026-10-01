@@ -36,4 +36,4 @@
 
 ## 最終結果
 
-2026-09-30、未コミット。受け入れ条件を確認。関連Jest24/24、Chromium4/4、lint 0 errors／既存12 warnings、tsc成功。仕様と進捗を同期。全体Jest／coverage・Firefox／WebKitは未実行。詳しいRed／Green／Refactor・環境制約は[移行記録](../docs/design/design-system/PROGRESS.md#faqs移行記録)。
+2026-09-30、未コミット。受け入れ条件を確認。関連Jest24/24、Chromium4/4、lint 0 errors／既存12 warnings、tsc成功。仕様と進捗を同期。全体Jest／coverage・Firefox／WebKitは未実行。詳しいRed／Green／Refactor・環境制約は[移行記録](../../docs/design/design-system/PROGRESS.md#faqs移行記録)。

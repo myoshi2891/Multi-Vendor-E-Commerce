@@ -23,4 +23,4 @@ WishlistContainerはClient state／useEffect／router.pushを除去し、Server 
 
 ## 検証
 
-[保存計画](../../../plans/wishlist-design-system-plan.md)。RTLで新要件のRed、card/query/sidebar回帰。Chromiumはテスト顧客に既存カタログ11商品のお気に入りだけを作成し、空／10商品／最終1商品のページ、比較操作・キーボード・axe・範囲外と戻るを確認。テスト顧客の後処理によりfixtureを除去し、商品作成／seed／DB初期化／購入は行わない。取得失敗とloadingはRTL確認、ブラウザでの強制障害再現は行わない。
+[保存計画](../../../plans/layout-design/wishlist-design-system-plan.md)。RTLで新要件のRed、card/query/sidebar回帰。Chromiumはテスト顧客に既存カタログ11商品のお気に入りだけを作成し、空／10商品／最終1商品のページ、比較操作・キーボード・axe・範囲外と戻るを確認。テスト顧客の後処理によりfixtureを除去し、商品作成／seed／DB初期化／購入は行わない。取得失敗とloadingはRTL確認、ブラウザでの強制障害再現は行わない。

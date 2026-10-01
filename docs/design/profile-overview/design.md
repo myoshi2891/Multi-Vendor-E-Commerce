@@ -23,4 +23,4 @@
 
 ## 検証
 
-[要件](requirements.md)と[移行計画](../../../plans/profile-design-system-plan.md)。RTLで会員情報とエラー、href、選択状態。Playwrightで実Clerkテスト認証を使い、3画面幅、Tab／Enter、axe、子ページ導線、未認証転送を確認。テストユーザーは既存createCustomerSessionで作成・後処理し、Clerk公式testingのsignInでサインインする。seed／DB初期化／注文送信はしない。
+[要件](requirements.md)と[移行計画](../../../plans/layout-design/profile-design-system-plan.md)。RTLで会員情報とエラー、href、選択状態。Playwrightで実Clerkテスト認証を使い、3画面幅、Tab／Enter、axe、子ページ導線、未認証転送を確認。テストユーザーは既存createCustomerSessionで作成・後処理し、Clerk公式testingのsignInでサインインする。seed／DB初期化／注文送信はしない。

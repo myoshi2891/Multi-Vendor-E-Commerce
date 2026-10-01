@@ -102,4 +102,4 @@
 - [x] 4-D 関連23件、Chromium6件、全体Jest、coverage、lint、型検査、PC／モバイル／境界表示を検証。
 - [x] 4-E 要件・設計・仕様・QA・移行台帳・元計画・全体進捗の同期と最終差分検証。
 
-実施記録は[移行進捗](../design-system/PROGRESS.md)、[移行計画](../../../plans/compare-design-system-plan.md)。コミットは依頼されていないため行わない。従来Phase 1〜3の完了は維持する。
+実施記録は[移行進捗](../design-system/PROGRESS.md)、[移行計画](../../../plans/layout-design/compare-design-system-plan.md)。コミットは依頼されていないため行わない。従来Phase 1〜3の完了は維持する。

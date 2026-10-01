@@ -1,6 +1,6 @@
 # Profile Wishlist — 要件
 
-対象: `/profile/wishlist/[page]`（DS-PAGE-033）、WishlistContainer（DS-COMP-085）。[保存計画](../../../plans/wishlist-design-system-plan.md)、[設計](design.md)、[タスク](tasks.md)、[進捗](PROGRESS.md)。
+対象: `/profile/wishlist/[page]`（DS-PAGE-033）、WishlistContainer（DS-COMP-085）。[保存計画](../../../plans/layout-design/wishlist-design-system-plan.md)、[設計](design.md)、[タスク](tasks.md)、[進捗](PROGRESS.md)。
 
 | ID | 受け入れ条件 | 検証 |
 |---|---|---|

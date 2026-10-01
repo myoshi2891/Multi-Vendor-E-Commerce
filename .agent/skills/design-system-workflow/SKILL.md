@@ -9,7 +9,7 @@ description: Multi-Vendor E-Commerceの画面・レイアウト・デザイン�
 
 ## 参照先と正本
 
-- [移行計画](../../../plans/design-system-adoption-plan.md): 優先順位、対象、受け入れ条件。
+- [移行計画](../../../plans/layout-design/design-system-adoption-plan.md): 優先順位、対象、受け入れ条件。
 - [進捗ノート](../../../docs/design/design-system/PROGRESS.md): 画面・部品ごとの状態と証跡。
 - [機能仕様](../../../specs/multi-vendor-ecommerce/00-overview.md): 変更に関連する要件・インターフェース・ワークフロー・品質・テスト仕様を読む。
 - [文書配置・同期ガイド](../../../.claude/steering/documentation-guide.md): 文書ごとの役割。

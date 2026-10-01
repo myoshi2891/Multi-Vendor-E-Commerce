@@ -374,7 +374,7 @@ export default function CustomerServicePage() {
 - 目次と回答は定数の並び順に対応する `faq-1`〜`faq-4` を共有し、日本語slugifyによる空IDを避ける。sectionは見出しをaria-labelledbyで参照する。
 - ラベル付きのパンくず・質問目次・サポートnav、装飾aria-hidden、フォーカス輪郭、アンカーのscroll-marginを設ける。FAQ本文のJavaScript操作やDBアクセスを追加しない。親store layoutの動的レンダリングは継続。
 - メタデータをブランド名に同期。`/faq` の308転送はそのまま。
-- [要件](requirements.md#faqデザイン移行2026-09-30)と[保存計画](../../../plans/faqs-design-system-plan.md)を参照。
+- [要件](requirements.md#faqデザイン移行2026-09-30)と[保存計画](../../../plans/layout-design/faqs-design-system-plan.md)を参照。
 
 ## Customer service 表示設計（2026-10-01）
 

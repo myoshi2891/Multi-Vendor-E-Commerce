@@ -64,4 +64,4 @@
 
 ## デザインシステム移行（2026-09-30）
 
-[移行計画](../../../plans/compare-design-system-plan.md)と[進捗ノート](../design-system/PROGRESS.md)に従い、深緑のヒーロー・アイボリーの比較面・ゴールドの操作、空／取得中／取得失敗・再試行／取得ゼロを整備。最大4件・永続ストア・既存価格表示と商品導線は維持する。[要件](./requirements.md) AC-CMP7〜12と[設計](./design.md) §2.2〜2.3が現行仕様。
+[移行計画](../../../plans/layout-design/compare-design-system-plan.md)と[進捗ノート](../design-system/PROGRESS.md)に従い、深緑のヒーロー・アイボリーの比較面・ゴールドの操作、空／取得中／取得失敗・再試行／取得ゼロを整備。最大4件・永続ストア・既存価格表示と商品導線は維持する。[要件](./requirements.md) AC-CMP7〜12と[設計](./design.md) §2.2〜2.3が現行仕様。

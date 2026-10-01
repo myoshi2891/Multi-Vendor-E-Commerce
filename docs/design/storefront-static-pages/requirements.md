@@ -58,7 +58,7 @@
 - **AC-SP8**: 4件の既存質問・回答を常時表示し、質問一覧から一意なアンカーへキーボードで移動可能。focusを可視化し、本文はplain textとする。
 - **AC-SP9**: HomeのパンくずとContact／Track your order／Returns & Exchange／Customer serviceへのサポート導線を表示する。
 - `/faq` の308転送、公開アクセス、プレースホルダ回答を維持。検索・CMS・回答ポリシーの確定は対象外。
-- 検証: [FAQ移行計画](../../../plans/faqs-design-system-plan.md)、[移行記録](../design-system/PROGRESS.md#faqs移行記録)。
+- 検証: [FAQ移行計画](../../../plans/layout-design/faqs-design-system-plan.md)、[移行記録](../design-system/PROGRESS.md#faqs移行記録)。
 
 ## Customer service デザイン受け入れ条件（2026-10-01）
 
