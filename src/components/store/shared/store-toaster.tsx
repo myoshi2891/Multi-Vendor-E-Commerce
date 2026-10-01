@@ -13,8 +13,10 @@ export default function StoreToaster() {
         >
             {(notification) => (
                 <div
-                    role="status"
-                    aria-live="polite"
+                    role={notification.type === "error" ? "alert" : "status"}
+                    aria-live={
+                        notification.type === "error" ? "assertive" : "polite"
+                    }
                     className={`${styles.toast} ${notification.visible ? styles.visible : styles.hidden}`}
                 >
                     {notification.type === "error" ? (

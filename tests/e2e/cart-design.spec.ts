@@ -105,8 +105,8 @@ test("sync error shows branded dismissible toast and keeps local items", async (
     await page.goto("/cart");
     await expect(page.getByTestId("cart-item-name")).toBeVisible();
     const notification = page
-        .getByRole("status")
-        .filter({ hasText: "We couldn’t refresh" });
+        .getByRole("alert")
+        .filter({ hasText: "Please try again before checkout" });
     await expect(notification).toBeVisible();
     await expect(notification).toHaveCSS("background-color", "rgb(23, 37, 29)");
     await page.getByRole("button", { name: "Dismiss notification" }).click();
