@@ -24,9 +24,9 @@ import styles from "./track-order.module.css";
  */
 export default function TrackOrderForm({
     lookupAction,
-}: {
+}: Readonly<{
     lookupAction: typeof trackOrder;
-}) {
+}>) {
     const isSubmittingRef = useRef(false);
     const [result, setResult] =
         useState<Awaited<ReturnType<typeof trackOrder>>>(null);
