@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import SupportForm from "@/components/store/support/support-form";
+import { createSupportTicket } from "@/queries/support";
 import styles from "./contact.module.css";
 
 export const metadata: Metadata = {
@@ -55,7 +56,7 @@ export default function ContactPage() {
                         <h2 id="contact-form-title">Send us a note.</h2>
                         <p lang="ja">すべての項目をご入力ください。</p>
                     </div>
-                    <SupportForm category="CONTACT" submitLabel="Send message ↗" />
+                    <SupportForm submitAction={createSupportTicket} category="CONTACT" submitLabel="Send message ↗" />
                     <p className={styles.formNote} lang="ja">ご返信のため、受信可能なメールアドレスをご入力ください。</p>
                 </section>
             </div>
