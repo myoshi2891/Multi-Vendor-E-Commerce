@@ -1,6 +1,11 @@
-import CartContainer from '@/components/store/cart-page/container'
-import { parseUserCountryCookie } from '@/lib/utils'
-import { cookies } from 'next/headers'
+import {
+    updateCartWithLatest,
+    saveUserCart,
+    addToWishlist,
+} from "@/queries/user";
+import CartContainer from "@/components/store/cart-page/container";
+import { parseUserCountryCookie } from "@/lib/utils";
+import { cookies } from "next/headers";
 
 /**
  * Renders the cart page with the parsed user country.
@@ -11,9 +16,18 @@ import { cookies } from 'next/headers'
  * @returns The cart container rendered with the parsed `userCountry` value.
  */
 export default async function CartPage() {
-    const cookieStore = await cookies()
-    const userCountry = parseUserCountryCookie(cookieStore.get('userCountry')?.value)
+    const cookieStore = await cookies();
+    const userCountry = parseUserCountryCookie(
+        cookieStore.get("userCountry")?.value
+    );
 
     // Return the CartContainer component with the userCountry prop
-    return <CartContainer userCountry={userCountry} />
+    return (
+        <CartContainer
+            userCountry={userCountry}
+            syncCartAction={updateCartWithLatest}
+            saveCartAction={saveUserCart}
+            wishlistAction={addToWishlist}
+        />
+    );
 }

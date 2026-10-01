@@ -6,6 +6,7 @@ import CartContainer from "@/components/store/cart-page/container";
 import { createMockCartProduct } from "@/config/test-fixtures";
 import { useCartStore } from "@/cart-store/useCartStore";
 import { updateCartWithLatest } from "@/queries/user";
+import toast from "react-hot-toast";
 import type { CartProductType } from "@/lib/types";
 
 /**
@@ -21,6 +22,13 @@ import type { CartProductType } from "@/lib/types";
  */
 
 jest.mock("@/cart-store/useCartStore");
+jest.mock("react-hot-toast", () => ({
+    __esModule: true,
+    default: {
+        success: jest.fn(),
+        error: jest.fn(),
+    },
+}));
 jest.mock("@/queries/user", () => ({
     updateCartWithLatest: jest.fn(),
 }));
@@ -54,23 +62,6 @@ jest.mock("@/components/store/cart-page/empty-cart", () => ({
     __esModule: true,
     default: () => <div data-testid="empty-cart">EmptyCart</div>,
 }));
-jest.mock("@/components/store/cards/fast-delivery", () => ({
-    __esModule: true,
-    default: () => <div>FastDelivery</div>,
-}));
-jest.mock(
-    "@/components/store/product-page/returns-security-privacy-card",
-    () => ({
-        SecurityPrivacyCard: () => <div>SecurityPrivacyCard</div>,
-    })
-);
-jest.mock("@/components/store/shared/country-note", () => ({
-    __esModule: true,
-    default: ({ country }: { country: string }) => (
-        <div data-testid="country-note">{country}</div>
-    ),
-}));
-
 describe("CartContainer", () => {
     const mockSetCart = jest.fn();
     const userCountry = {
@@ -111,7 +102,14 @@ describe("CartContainer", () => {
         mockStoreWith([]);
 
         // Act
-        render(<CartContainer userCountry={userCountry} />);
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
 
         // Assert
         expect(screen.getByTestId("empty-cart")).toBeInTheDocument();
@@ -126,7 +124,14 @@ describe("CartContainer", () => {
         (updateCartWithLatest as jest.Mock).mockResolvedValue(items);
 
         // Act
-        render(<CartContainer userCountry={userCountry} />);
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
 
         // Assert: サーバー同期が走り、その結果でストアが更新される。
         // ここが呼ばれないと、ユーザーは在庫切れや旧価格のまま Checkout へ進む。
@@ -151,7 +156,14 @@ describe("CartContainer", () => {
         (updateCartWithLatest as jest.Mock).mockResolvedValue(items);
 
         // Act
-        render(<CartContainer userCountry={userCountry} />);
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
 
         // Assert: 送料は CartProduct 群が setTotalShipping で積み上げる。
         // stub は積み上げないので初期値 0 のまま —— ここで固定するのは
@@ -173,7 +185,14 @@ describe("CartContainer", () => {
         );
 
         // Act
-        render(<CartContainer userCountry={userCountry} />);
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
 
         // Assert: 同期に失敗しても loading を解いて**ローカルのカートを表示する**。
         // ここで loading が解けないと、ユーザーは "loading..." に張り付いたまま
@@ -187,5 +206,55 @@ describe("CartContainer", () => {
             expect.any(Error)
         );
         consoleSpy.mockRestore();
+    });
+
+    // サーバーが DB から消えた明細を除外して返したとき、ユーザーに理由を伝える。
+    // 黙って消すと「カートに入れたはずの商品が無い」状態の説明がつかない。
+    it("notifies the user when the server drops unavailable items", async () => {
+        // Arrange
+        mockStoreWith(items);
+        const [available] = items;
+        (updateCartWithLatest as jest.Mock).mockResolvedValue([available]);
+
+        // Act
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
+
+        // Assert
+        await waitFor(() => {
+            expect(mockSetCart).toHaveBeenCalledWith([available]);
+        });
+        expect(toast.error).toHaveBeenCalledTimes(1);
+        expect(toast.error).toHaveBeenCalledWith(
+            "Some items are no longer available and were removed from your cart."
+        );
+    });
+
+    it("does not notify when every item is still available", async () => {
+        // Arrange
+        mockStoreWith(items);
+        (updateCartWithLatest as jest.Mock).mockResolvedValue(items);
+
+        // Act
+        render(
+            <CartContainer
+                userCountry={userCountry}
+                syncCartAction={updateCartWithLatest}
+                saveCartAction={jest.fn()}
+                wishlistAction={jest.fn()}
+            />
+        );
+
+        // Assert
+        await waitFor(() => {
+            expect(mockSetCart).toHaveBeenCalledWith(items);
+        });
+        expect(toast.error).not.toHaveBeenCalled();
     });
 });

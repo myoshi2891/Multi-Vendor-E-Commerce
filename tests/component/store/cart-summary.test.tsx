@@ -48,10 +48,32 @@ describe("CartSummary", () => {
     const EXPECTED_SUBTOTAL = "$38.00"; // 21.00 + 17.00
     const EXPECTED_TOTAL = "$45.50"; // 38.00 + 7.50
 
+    it("announces saving and prevents duplicate checkout submissions", async () => {
+        (saveUserCart as jest.Mock).mockReturnValue(new Promise(() => {}));
+        render(
+            <CartSummary
+                saveCartAction={saveUserCart}
+                cartItems={cartItems}
+                shippingFees={SHIPPING_FEES}
+            />
+        );
+        fireEvent.click(screen.getByTestId("checkout"));
+        expect(screen.getByTestId("checkout")).toBeDisabled();
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Preparing checkout"
+        );
+        fireEvent.click(screen.getByTestId("checkout"));
+        expect(saveUserCart).toHaveBeenCalledTimes(1);
+    });
+
     it("renders the subtotal and the total including shipping fees", () => {
         // Arrange + Act
         render(
-            <CartSummary cartItems={cartItems} shippingFees={SHIPPING_FEES} />
+            <CartSummary
+                saveCartAction={saveUserCart}
+                cartItems={cartItems}
+                shippingFees={SHIPPING_FEES}
+            />
         );
 
         // Assert
@@ -72,7 +94,11 @@ describe("CartSummary", () => {
         // Arrange
         (saveUserCart as jest.Mock).mockResolvedValue(true);
         render(
-            <CartSummary cartItems={cartItems} shippingFees={SHIPPING_FEES} />
+            <CartSummary
+                saveCartAction={saveUserCart}
+                cartItems={cartItems}
+                shippingFees={SHIPPING_FEES}
+            />
         );
 
         // Act
@@ -93,7 +119,11 @@ describe("CartSummary", () => {
             new Error("Unauthenticated.")
         );
         render(
-            <CartSummary cartItems={cartItems} shippingFees={SHIPPING_FEES} />
+            <CartSummary
+                saveCartAction={saveUserCart}
+                cartItems={cartItems}
+                shippingFees={SHIPPING_FEES}
+            />
         );
 
         // Act
@@ -112,7 +142,11 @@ describe("CartSummary", () => {
         // 偽値なら遷移しない。reject 系だけでは この分岐の false 側が未検証で残る。
         (saveUserCart as jest.Mock).mockResolvedValue(undefined);
         render(
-            <CartSummary cartItems={cartItems} shippingFees={SHIPPING_FEES} />
+            <CartSummary
+                saveCartAction={saveUserCart}
+                cartItems={cartItems}
+                shippingFees={SHIPPING_FEES}
+            />
         );
 
         // Act
