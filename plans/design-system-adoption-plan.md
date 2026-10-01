@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。検証範囲と証跡は[進捗ノート](../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。検証範囲と証跡は[進捗ノート](../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -66,8 +66,9 @@
 
 | 判定 | 件数 |
 |---|---:|
+| 検証済み（2026-10-01） | 4 |
 | 本体適用・周辺確認 | 12 |
-| 未適用 | 46 |
+| 未適用 | 42 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
