@@ -228,6 +228,8 @@
     margin: 18px 0 30px;
 }
 .loading {
+    /* <output> は既定で inline のため、padding / min-height を効かせるには block 化が必要 */
+    display: block;
     padding: 65px 6%;
     min-height: 300px;
     font:

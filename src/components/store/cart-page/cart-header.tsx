@@ -58,7 +58,7 @@ const CartHeader: FC<Props> = ({
                         }
                         onChange={handleSelectAll}
                     />
-                    Select all products
+                    <span>Select all products</span>
                 </label>
                 {selectedLength > 0 && (
                     <button

@@ -74,7 +74,7 @@ const CartSummary: FC<Props> = ({
                 data-testid="checkout"
             >
                 {loading ? (
-                    <span role="status">Preparing checkout…</span>
+                    <output>Preparing checkout…</output>
                 ) : (
                     <>
                         Checkout ({cartItems.length}){" "}

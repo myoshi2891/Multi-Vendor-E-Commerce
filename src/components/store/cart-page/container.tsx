@@ -70,18 +70,23 @@ export default function CartContainer({
                 }
             }
         };
-        loadAndSyncCart();
+        void loadAndSyncCart();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isCartLoaded, userCountry]);
+
+    const isCartLoading =
+        cartItems === undefined || (cartItems.length > 0 && loading);
 
     return (
         <main className={styles.page}>
             <CartHero />
-            {cartItems === undefined || (cartItems.length > 0 && loading) ? (
-                <div className={styles.loading} role="status">
+            {isCartLoading && (
+                <output className={styles.loading}>
                     Loading your shopping bag…
-                </div>
-            ) : cartItems.length > 0 ? (
+                </output>
+            )}
+            {!isCartLoading && cartItems.length === 0 && <EmptyCart />}
+            {!isCartLoading && cartItems.length > 0 && (
                 <div className={styles.layout}>
                     <section
                         className={styles.items}
@@ -171,8 +176,6 @@ export default function CartContainer({
                         </div>
                     </aside>
                 </div>
-            ) : (
-                <EmptyCart />
             )}
         </main>
     );

@@ -12,6 +12,26 @@ import toast from "react-hot-toast";
 // "use server" モジュールは関数以外を export できないためここで持つ。
 const WISHLIST_DUPLICATE_MESSAGE = "Product is already in the wishlist.";
 
+/** 配送方式ごとのカート行の送料合計（表示・合計送料の集計に使う）。 */
+const computeLineShippingFee = (
+    shippingMethod: string,
+    shippingFee: number,
+    extraShippingFee: number,
+    weight: number,
+    quantity: number
+): number => {
+    if (shippingMethod === "ITEM") {
+        const extraItems = quantity > 1 ? quantity - 1 : 0;
+        return shippingFee + extraShippingFee * extraItems;
+    }
+    if (shippingMethod === "WEIGHT") return shippingFee * weight * quantity;
+    return shippingFee;
+};
+
+/** 単数/複数で語を切り替えた件数ラベル（例: "1 item" / "3 items"）。 */
+const pluralize = (count: number, singular: string, plural: string): string =>
+    count === 1 ? `1 ${singular}` : `${count} ${plural}`;
+
 interface Props {
     product: CartProductType;
     selectedItems: CartProductType[];
@@ -59,13 +79,13 @@ const CartProduct: FC<Props> = ({
     const shippingInfo = {
         initialFee,
         weight,
-        totalFee:
-            shippingMethod === "ITEM"
-                ? shippingFee +
-                  (quantity > 1 ? extraShippingFee * (quantity - 1) : 0)
-                : shippingMethod === "WEIGHT"
-                  ? shippingFee * weight * quantity
-                  : shippingFee,
+        totalFee: computeLineShippingFee(
+            shippingMethod,
+            shippingFee,
+            extraShippingFee,
+            weight,
+            quantity
+        ),
     };
 
     useEffect(() => {
@@ -84,7 +104,35 @@ const CartProduct: FC<Props> = ({
         [setTotalShipping]
     );
 
-    const selected = selectedItems.find(
+    // 配送方式ごとの送料内訳。ネストした三項演算子を避けるため早期リターンで分岐する。
+    const renderShippingBreakdown = () => {
+        if (shippingMethod === "ITEM") {
+            const extraItems = quantity - 1;
+            const extraBreakdown =
+                extraItems === 0
+                    ? ""
+                    : `+ ${pluralize(extraItems, "item", "items")} x $${extraShippingFee} (${pluralize(extraItems, "additional item", "additional items")})`;
+            return (
+                <>
+                    ${shippingInfo.initialFee}
+                    (first item)&nbsp;
+                    {extraBreakdown}= ${shippingInfo.totalFee.toFixed(2)}
+                </>
+            );
+        }
+        if (shippingMethod === "WEIGHT") {
+            return (
+                <>
+                    ${shippingFee} x {shippingInfo.weight}kg x {quantity}{" "}
+                    {quantity > 1 ? "items" : "item"} = $
+                    {shippingInfo.totalFee.toFixed(2)}
+                </>
+            );
+        }
+        return <>Fixed Fee : ${shippingInfo.totalFee.toFixed(2)}</>;
+    };
+
+    const selected = selectedItems.some(
         (p) => unique_id === `${p.productId}-${p.variantId}-${p.sizeId}`
     );
 
@@ -154,7 +202,7 @@ const CartProduct: FC<Props> = ({
                         type="checkbox"
                         id={unique_id}
                         aria-label={`Select ${name}`}
-                        checked={Boolean(selected)}
+                        checked={selected}
                         onChange={handleSelectProduct}
                     />
                 ) : (
@@ -250,33 +298,7 @@ const CartProduct: FC<Props> = ({
                         <div className={styles.shipping}>
                             <Truck aria-hidden="true" />
                             {shippingInfo.totalFee > 0 ? (
-                                <span>
-                                    {shippingMethod === "ITEM" ? (
-                                        <>
-                                            ${shippingInfo.initialFee}
-                                            (first item)&nbsp;
-                                            {quantity === 1
-                                                ? ""
-                                                : `+ ${quantity - 1 === 1 ? "1 item" : `${quantity - 1} items`}
-                                                    x $${extraShippingFee}
-                                                    (${quantity - 1 === 1 ? "1 additional item" : `${quantity - 1} additional items`})`}
-                                            = $
-                                            {shippingInfo.totalFee.toFixed(2)}
-                                        </>
-                                    ) : shippingMethod === "WEIGHT" ? (
-                                        <>
-                                            ${shippingFee} x{" "}
-                                            {shippingInfo.weight}kg x {quantity}{" "}
-                                            {quantity > 1 ? "items" : "item"} =
-                                            ${shippingInfo.totalFee.toFixed(2)}
-                                        </>
-                                    ) : (
-                                        <>
-                                            Fixed Fee : $
-                                            {shippingInfo.totalFee.toFixed(2)}
-                                        </>
-                                    )}
-                                </span>
+                                <span>{renderShippingBreakdown()}</span>
                             ) : (
                                 <span>Free Delivery</span>
                             )}
