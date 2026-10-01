@@ -100,11 +100,9 @@ export default function ProductSupportPage() {
                                 <h2 id={`${section.id}-title`}>
                                     {section.heading}
                                 </h2>
-                                {section.body
-                                    .split("\n\n")
-                                    .map((paragraph, index) => (
-                                        <p key={index}>{paragraph}</p>
-                                    ))}
+                                {section.body.split("\n\n").map((paragraph) => (
+                                    <p key={paragraph}>{paragraph}</p>
+                                ))}
                             </div>
                         </section>
                     ))}
