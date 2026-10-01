@@ -1198,3 +1198,19 @@ CI での PR トリガー時に、Lighthouse CI ジョブ (`.github/workflows/lh
 - `tests/component/store/wishlist.test.tsx` covers editorial-card selection, URL-based page links/current indication, updated page props, bounded large pagination, empty and lookup-failure states, page normalization and redirects, and the loading status. Re-run existing product-card, profile-query and sidebar suites for regression.
 - `tests/e2e/wishlist-design.spec.ts` uses a test customer and eleven existing catalog products to verify empty/ten-piece/last-page states, 1440/390/768px overflow and main-scoped axe, keyboard focus/compare/pagination, browser back and canonical/alias redirects. Wishlist fixtures are owned by the test customer and removed by its cleanup; no catalog creation, seed or database reset.
 - [Migration evidence](../../docs/design/design-system/PROGRESS.md#wishlist移行記録). Loading and fetch-failure feedback are checked in RTL; browser tests do not force server lookup errors. Full-suite totals and coverage remain at the prior measurement.
+
+### Track order design migration (2026-10-01)
+
+`track-order-form.test.tsx` additionally tests pending copy, input/button locking and unlocking. `tests/e2e/track-order-design.spec.ts` checks 1440/390/768px, brand colors/type, visible focus, validation, pending, missing, failure/retry, success with long identifiers/product names, no horizontal overflow and axe AA. Server Action responses are intercepted; no DB mutation.
+
+### Customer service design migration (2026-10-01)
+
+`tests/e2e/customer-service-design.spec.ts` tests 1440/390/768px, cream background and serif heading, all five links/descriptions, hover, keyboard focus and Enter navigation, no horizontal overflow, axe WCAG AA, and screenshots. The existing page RTL test verifies destination preservation.
+
+### Returns/exchange design migration (2026-10-01)
+
+SupportForm RTL adds branded pending/locking and RETURN_REQUEST/UUID payload assertions plus failure/retry regression. `tests/e2e/returns-exchange-design.spec.ts` verifies 1440/390/768px, unchanged policy, focus/Enter, empty and invalid fields, pending, failure/retry, receipt, overflow and axe AA for each state. Additional browser regression submits mocked actions from contact/dispute/report-problem after the Props boundary change. No real ticket creation, refund or external transmission.
+
+### Product support design migration (2026-10-01)
+
+`product-support/page.test.tsx` verifies unchanged copy, unique/nonempty table-of-contents targets and four support destinations. `tests/e2e/product-support-design.spec.ts` checks brand colors/type, 1440/390/768px, visible content, focus/Enter anchor navigation, contact navigation, no horizontal overflow and axe AA. Shared StaticPageLayout/content tests remain regression checks.

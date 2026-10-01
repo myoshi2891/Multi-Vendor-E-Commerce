@@ -88,14 +88,14 @@
 | `/checkout` | 未適用 | P1 | [src/app/(store)/checkout/page.tsx](<../src/app/(store)/checkout/page.tsx>) |
 | `/compare` | 本体適用・周辺確認 | P2 | [src/app/(store)/compare/page.tsx](<../src/app/(store)/compare/page.tsx>) |
 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/contact/page.tsx](<../src/app/(store)/contact/page.tsx>) |
-| `/customer-service` | 未適用 | P2 | [src/app/(store)/customer-service/page.tsx](<../src/app/(store)/customer-service/page.tsx>) |
+| `/customer-service` | 検証済み（2026-10-01） | P2 | [src/app/(store)/customer-service/page.tsx](<../src/app/(store)/customer-service/page.tsx>) |
 | `/dispute` | 未適用 | P2 | [src/app/(store)/dispute/page.tsx](<../src/app/(store)/dispute/page.tsx>) |
 | `/faq` | 転送専用 | 回帰検証 | [src/app/(store)/faq/page.tsx](<../src/app/(store)/faq/page.tsx>) |
 | `/faqs` | 本体適用・周辺確認 | P3 | [src/app/(store)/faqs/page.tsx](<../src/app/(store)/faqs/page.tsx>) |
 | `/legal` | 未適用 | P3 | [src/app/(store)/legal/page.tsx](<../src/app/(store)/legal/page.tsx>) |
 | `/offers` | 未適用 | P2 | [src/app/(store)/offers/page.tsx](<../src/app/(store)/offers/page.tsx>) |
 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/page.tsx](<../src/app/(store)/page.tsx>) |
-| `/product-support` | 未適用 | P3 | [src/app/(store)/product-support/page.tsx](<../src/app/(store)/product-support/page.tsx>) |
+| `/product-support` | 検証済み（2026-10-01） | P3 | [src/app/(store)/product-support/page.tsx](<../src/app/(store)/product-support/page.tsx>) |
 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) |
 | `/product/[productSlug]` | 転送専用 | 回帰検証 | [src/app/(store)/product/[productSlug]/page.tsx](<../src/app/(store)/product/[productSlug]/page.tsx>) |
 | `/profile/addresses` | 未適用 | P2 | [src/app/(store)/profile/addresses/page.tsx](<../src/app/(store)/profile/addresses/page.tsx>) |
@@ -113,9 +113,9 @@
 | `/profile/wishlist/[page]` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
 | `/profile/wishlist` | 転送専用 | 回帰検証 | [src/app/(store)/profile/wishlist/page.tsx](<../src/app/(store)/profile/wishlist/page.tsx>) |
 | `/report-problem` | 未適用 | P2 | [src/app/(store)/report-problem/page.tsx](<../src/app/(store)/report-problem/page.tsx>) |
-| `/returns-exchange` | 未適用 | P2 | [src/app/(store)/returns-exchange/page.tsx](<../src/app/(store)/returns-exchange/page.tsx>) |
+| `/returns-exchange` | 検証済み（2026-10-01） | P2 | [src/app/(store)/returns-exchange/page.tsx](<../src/app/(store)/returns-exchange/page.tsx>) |
 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/store/[storeUrl]/page.tsx](<../src/app/(store)/store/[storeUrl]/page.tsx>) |
-| `/track-order` | 未適用 | P2 | [src/app/(store)/track-order/page.tsx](<../src/app/(store)/track-order/page.tsx>) |
+| `/track-order` | 検証済み（2026-10-01） | P2 | [src/app/(store)/track-order/page.tsx](<../src/app/(store)/track-order/page.tsx>) |
 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) |
 | `/dashboard/admin/attributes/new` | 未適用 | P4 | [src/app/dashboard/admin/attributes/new/page.tsx](<../src/app/dashboard/admin/attributes/new/page.tsx>) |
 | `/dashboard/admin/attributes` | 未適用 | P4 | [src/app/dashboard/admin/attributes/page.tsx](<../src/app/dashboard/admin/attributes/page.tsx>) |
@@ -304,9 +304,9 @@ ProfileLayoutは灰色面。サイドバー・表・概要・空状態を一体�
 
 Contactの親CSSによる適用と、他のSupportForm呼び出し先を区別。受付完了・エラー・結果カードまで対応。
 
-- [ ] [src/components/store/support/support-form.tsx](<../src/components/store/support/support-form.tsx>)
-- [ ] [src/components/store/track-order/track-order-form.tsx](<../src/components/store/track-order/track-order-form.tsx>)
-- [ ] [src/components/store/track-order/track-order-result.tsx](<../src/components/store/track-order/track-order-result.tsx>)
+- [x] [src/components/store/support/support-form.tsx](<../src/components/store/support/support-form.tsx>)
+- [x] [src/components/store/track-order/track-order-form.tsx](<../src/components/store/track-order/track-order-form.tsx>)
+- [x] [src/components/store/track-order/track-order-result.tsx](<../src/components/store/track-order/track-order-result.tsx>)
 
 ### 通知・状態・補助UI（P2）
 

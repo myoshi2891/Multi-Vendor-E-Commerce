@@ -40,3 +40,11 @@
 - Validation of form inputs.
 - Country-aware shipping configuration.
 - Search with fulltext and fallback matching.
+
+- Public order tracking uses the storefront cream/deep-green/gold palette and serif headings, responsive lookup and result cards, visible keyboard focus, and accessible pending/error/missing/success states. Lock inputs and submit while lookup is pending; long order IDs and product names wrap without horizontal overflow.
+
+- The public customer-service hub preserves all five support destinations, titles and descriptions in a responsive cream/deep-green/gold layout with serif headings, breadcrumbs, visible keyboard focus and accessible link activation.
+
+- Returns/exchange preserves the existing policy and uses the storefront cream/deep-green/gold palette, serif heading and responsive policy/form layout. Validate all fields including the UUID order number, lock the branded form during submission, preserve inputs after failure and show an accessible receipt after success.
+
+- Product support preserves existing setup, troubleshooting and aftercare content and placeholder notices in a responsive branded layout with breadcrumbs, keyboard-accessible section anchors and four support destinations.
