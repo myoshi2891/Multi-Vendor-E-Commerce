@@ -5006,8 +5006,12 @@ FAQ画面（DS-PAGE-014）の新ブランド適用、質問目次・サポート
 
 ### 2026-10-01 Cartデザインシステム適用
 
-`/cart`とストアreact-hot-toastを新デザインへ移行。空・商品入り・エラー・処理中をレスポンシブ／キーボード操作で検証。関連27テスト、Chromium10件成功。仕様書と設計・移行台帳を同期。全体統計は再測定せず保持。[検証記録](design/design-system/PROGRESS.md#cart移行記録)。未コミット。
+`/cart`とストアreact-hot-toastを新デザインへ移行。空・商品入り・エラー・処理中をレスポンシブ／キーボード操作で検証。関連27テスト、Chromium10件成功。仕様書と設計・移行台帳を同期。QA_HANDOFFと同期: dashboard実測303ファイル（既存lcov328は再測定なし）。全体成功数・coverage率は再測定せず保持。[検証記録](design/design-system/PROGRESS.md#cart移行記録)。未コミット。
 
 ### 2026-10-01 開発用 Clerk ユーザー同期 + お気に入りエラー表示（plan 071）
 
 ローカル Docker DB に Clerk ユーザーがおらず（Webhook がローカルに届かない）、お気に入り追加等が `*_userId_fkey` 違反になっていた。`make sync-clerk-users` を追加して 6 / 6 件を同期（冪等を確認）し、`cart-product.tsx` の生エラー表示を固定文言に修正。[計画](../plans/071-dev-clerk-user-sync.md)。QA_HANDOFF と同期: Jest 2620 passed / 2623 total・246 スイート（全体実測、うち本件 +8）。未コミット。
+
+### 2026-10-02 カート同期エラー表示の解除
+
+`/cart` で同期に一度失敗すると、配送国変更で再同期が成功しても失敗アラートが残っていた。成功時に `syncError` を解除し、`cart-container.test.tsx` に回帰テスト +1（Red を確認）。QA_HANDOFF と同期: Jest 2621 passed / 2624 total・246 スイート（全体実測）。dashboard 実測 304 ファイル（cart 移行時の 303 に plan 071 の新規テストファイル +1、本件はファイル数不変・既存lcov328は再測定なし）。未コミット。
