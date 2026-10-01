@@ -2,14 +2,14 @@
 
 - 更新日: 2026-09-30
 - 状態: 運用文書・ルール整備済み／個別移行は継続
-- 対象・優先度・受け入れ条件: [移行計画](../../../plans/design-system-adoption-plan.md)。
+- 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
-- 運用整備計画: [design-system-workflow-plan](../../../plans/design-system-workflow-plan.md)。
+- 運用整備計画: [design-system-workflow-plan](../../../plans/layout-design/design-system-workflow-plan.md)。
 - 全体進捗: [docs/PROGRESS.md](../../PROGRESS.md)。全体テスト統計の正本: [QA_HANDOFF](../../testing/QA_HANDOFF.md)。
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist移行後のソース判定は本体適用16・未適用42（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加（現台帳201部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist移行後のソース判定は本体適用16・未適用42（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -48,7 +48,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | TODO | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | 未実施 |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
-| DS-PAGE-007 | `/cart` | 未適用 | P1 | TODO | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | 未実施 |
+| DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
 | DS-PAGE-008 | `/checkout` | 未適用 | P1 | TODO | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | 未実施 |
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
@@ -140,11 +140,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-023 | P1 | モーダル・配送先（P1） | [src/components/ui/alert-dialog.tsx](<../../../src/components/ui/alert-dialog.tsx>) | TODO | 未実施 |
 | DS-COMP-024 | P1 | モーダル・配送先（P1） | [src/components/ui/drawer.tsx](<../../../src/components/ui/drawer.tsx>) | TODO | 未実施 |
 | DS-COMP-025 | P1 | モーダル・配送先（P1） | [src/components/ui/sheet.tsx](<../../../src/components/ui/sheet.tsx>) | TODO | 未実施 |
-| DS-COMP-026 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/container.tsx](<../../../src/components/store/cart-page/container.tsx>) | TODO | 未実施 |
-| DS-COMP-027 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/cart-header.tsx](<../../../src/components/store/cart-page/cart-header.tsx>) | TODO | 未実施 |
-| DS-COMP-028 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/summary.tsx](<../../../src/components/store/cart-page/summary.tsx>) | TODO | 未実施 |
-| DS-COMP-029 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/empty-cart.tsx](<../../../src/components/store/cart-page/empty-cart.tsx>) | TODO | 未実施 |
-| DS-COMP-030 | P1 | カート・購入手続き（P1） | [src/components/store/cards/cart-product.tsx](<../../../src/components/store/cards/cart-product.tsx>) | TODO | 未実施 |
+| DS-COMP-026 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/container.tsx](<../../../src/components/store/cart-page/container.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
+| DS-COMP-027 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/cart-header.tsx](<../../../src/components/store/cart-page/cart-header.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
+| DS-COMP-028 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/summary.tsx](<../../../src/components/store/cart-page/summary.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
+| DS-COMP-029 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/empty-cart.tsx](<../../../src/components/store/cart-page/empty-cart.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
+| DS-COMP-030 | P1 | カート・購入手続き（P1） | [src/components/store/cards/cart-product.tsx](<../../../src/components/store/cards/cart-product.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
 | DS-COMP-031 | P1 | カート・購入手続き（P1） | [src/components/store/checkout-page/container.tsx](<../../../src/components/store/checkout-page/container.tsx>) | TODO | 未実施 |
 | DS-COMP-032 | P1 | カート・購入手続き（P1） | [src/components/store/cards/checkout-product.tsx](<../../../src/components/store/cards/checkout-product.tsx>) | TODO | 未実施 |
 | DS-COMP-033 | P1 | カート・購入手続き（P1） | [src/components/store/cards/place-order.tsx](<../../../src/components/store/cards/place-order.tsx>) | TODO | 未実施 |
@@ -315,6 +315,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-198 | P4 | 利用確認が必要な旧部品 | [src/components/store/shared/swiper.tsx](<../../../src/components/store/shared/swiper.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-199 | P4 | 利用確認が必要な旧部品 | [src/components/store/shared/shipping-addresses/address.list.tsx](<../../../src/components/store/shared/shipping-addresses/address.list.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-200 | P4 | 利用確認が必要な旧部品 | [src/components/store/cards/address-card.tsx](<../../../src/components/store/cards/address-card.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
+| DS-COMP-201 | P1 | ストア通知 | [src/components/store/shared/store-toaster.tsx](../../../src/components/store/shared/store-toaster.tsx) | 検証済み | [cart移行記録](#cart移行記録) |
 
 ## 前セッションの確認結果
 
@@ -353,11 +354,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 ### 2026-09-30 DS-OPS-001 — 進捗ノート・開発スキル・ルール
 
-- 計画: [承認済みの整備計画](../../../plans/design-system-workflow-plan.md)。
+- 計画: [承認済みの整備計画](../../../plans/layout-design/design-system-workflow-plan.md)。
 - 状態: 検証済み（文書検証・計画・進捗同期完了）。
 - 変更: 66画面・200部品の台帳、新スキル、AGENTSと既存ルールの参照を整備。
 - Red／Green／画面検証: 対象外（文書のみ）。アプリコード・テスト・全体統計を変更しない。
-- 文書同期: [移行計画](../../../plans/design-system-adoption-plan.md)、[配置ガイド](../../../.claude/steering/documentation-guide.md)、[全体進捗](../../PROGRESS.md)。
+- 文書同期: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)、[配置ガイド](../../../.claude/steering/documentation-guide.md)、[全体進捗](../../PROGRESS.md)。
 - 変更不要: [機能概要](../../../specs/multi-vendor-ecommerce/00-overview.md)、[要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)、[インターフェース](../../../specs/multi-vendor-ecommerce/04-interfaces.md)、[ワークフロー](../../../specs/multi-vendor-ecommerce/05-workflows.md)、[品質](../../../specs/multi-vendor-ecommerce/06-quality.md)、[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)。開発運用文書のみで機能・API・DB・テスト方針を変更しない。
 - 変更不要: [静的ページの進捗](../storefront-static-pages/PROGRESS.md)、[サポートフォームの進捗](../support-forms/PROGRESS.md)。過去の機能完了記録を維持し、移行状態はこのノートで追跡する。
 - 検証結果: skill-creator付属の `scripts/quick_validate.py` を `python` で `.agent/skills/design-system-workflow` に対して実行 → `Skill is valid!`。初回の `python3` はPyYAML不足で失敗したため、既存のPyYAMLを利用できる `python` で成功を確認した。
@@ -370,7 +371,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 ### 2026-09-30 DS-PAGE-009／DS-COMP-056 — /compare
 
-- 計画: [compare-design-system-plan](../../../plans/compare-design-system-plan.md)。適用スキルはdesign-system-workflowとspec-sync-after-test。
+- 計画: [compare-design-system-plan](../../../plans/layout-design/compare-design-system-plan.md)。適用スキルはdesign-system-workflowとspec-sync-after-test。
 - 状態: 実装済み（受け入れ条件・Chromium検証・仕様書／計画／進捗同期完了。Firefox・WebKitのブラウザー検証が残るため検証済みにしない）。未コミット。
 - 変更: 深緑のヒーロー・アイボリー比較面・ゴールドの操作と価格・セリフ見出し・罫線、件数表示、コレクション導線、空／取得中／失敗・再試行／商品取得ゼロを整備。既存価格ロジック・最大4件・localStorage・削除・商品リンクを維持。既存取得ActionをServer Componentからpropで渡す。
 - Red: `bun run test -- --runInBand --silent src/components/store/compare/compare-grid.test.tsx` → UI未対応4件失敗／既存回帰8件成功。失敗理由はコレクション導線・読み込みstatus・エラーalert／再試行・取得ゼロ案内の欠如。応答キャンセルは既存回帰として先行成功。
@@ -381,7 +382,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - ブラウザー検証の修正: Nextのroute-announcerにもalertロールがあるため、取得失敗のアサーションをmain内へ限定した。商品応答と画像はテスト内フィクスチャで再現。最終テストの画像はPlaywrightのoutputPathへ保存する。
 - 品質: `bun run lint` → 0 errors／12 warnings、変更対象の限定ESLint → エラー・警告なし。`bunx tsc --noEmit` → 成功。既存warningは別画面にあり今回の範囲外。
 - カバレッジ同期: `bun run coverage:dashboard` → 288 test files／328 lcov entries／18/80 cells。初回tsxのIPC権限拒否を権限拡張で解消。残っていた単一ファイルのlcovを全体coverageで更新してから再生成した。
-- 文書同期: [比較要件](../compare/requirements.md)・[設計](../compare/design.md)・[タスク](../compare/tasks.md)・[進捗](../compare/PROGRESS.md)・[README](../compare/README.md)、[機能要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[UIインターフェース](../../../specs/multi-vendor-ecommerce/04-interfaces.md)・[ワークフロー](../../../specs/multi-vendor-ecommerce/05-workflows.md)・[品質](../../../specs/multi-vendor-ecommerce/06-quality.md)・[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、[QA_HANDOFF](../../testing/QA_HANDOFF.md)・[COVERAGE_REPORT](../../testing/COVERAGE_REPORT.md)・[全体進捗](../../PROGRESS.md)・[元移行計画](../../../plans/design-system-adoption-plan.md)・生成ダッシュボード。
+- 文書同期: [比較要件](../compare/requirements.md)・[設計](../compare/design.md)・[タスク](../compare/tasks.md)・[進捗](../compare/PROGRESS.md)・[README](../compare/README.md)、[機能要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[UIインターフェース](../../../specs/multi-vendor-ecommerce/04-interfaces.md)・[ワークフロー](../../../specs/multi-vendor-ecommerce/05-workflows.md)・[品質](../../../specs/multi-vendor-ecommerce/06-quality.md)・[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、[QA_HANDOFF](../../testing/QA_HANDOFF.md)・[COVERAGE_REPORT](../../testing/COVERAGE_REPORT.md)・[全体進捗](../../PROGRESS.md)・[元移行計画](../../../plans/layout-design/design-system-adoption-plan.md)・生成ダッシュボード。
 - 変更不要: [概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アーキテクチャ](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[データモデル](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[Open Questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md)。機能範囲・Actionの引数／戻り値・API・DB・認可は変更しない。スペック行比較・上限時の通知は既存の別課題を維持する。
 - 実データ追加確認: 一時Playwright specで既存商品カードのハイドレーション完了を待ち、DOMのclickで比較選択を保存。実際の取得Actionで `E2E Test Product` が表示され、画像のnaturalWidthが正であることを確認。1/1成功、PC／モバイルの画像をローカル一時ディレクトリへ保存した。データベース変更なし。
 - 追加確認中の切り分け: 初期手順はload待ち・画像のpointer遮蔽・選択ボタンの名前変更・ハイドレーション前操作で失敗。取得処理そのものの失敗とは扱わず、commit待ちとReactイベント準備後の保存を確認する手順で成功を確認した。既存商品カードのポインター操作全般は今回の移行範囲外。
@@ -393,7 +394,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ## FAQs移行記録
 
 - 日付: 2026-09-30。対象: DS-PAGE-014。未コミット。
-- [保存計画](../../../plans/faqs-design-system-plan.md)。深緑ヒーロー／アイボリー本文／セリフ見出し、質問目次、サポート導線をFAQ専用CSS Moduleで実装。既存4件の質問・プレースホルダ回答を常時plain text表示する。
+- [保存計画](../../../plans/layout-design/faqs-design-system-plan.md)。深緑ヒーロー／アイボリー本文／セリフ見出し、質問目次、サポート導線をFAQ専用CSS Moduleで実装。既存4件の質問・プレースホルダ回答を常時plain text表示する。
 - Red: RTL新要件2件失敗、既存表示回帰1件成功。Chromiumの3画面幅で旧背景色による失敗を実測、308転送の回帰1件は成功。
 - Green／Refactor: 目次と本文を同じ質問配列から生成し、空の日本語slugの代わりに一意なfaq-1〜4を採用。最終関連Jest 4 suites／24件成功（FAQ3・共有静的レイアウト5・コンテンツ5・proxy参照へ同期した既存middleware11）。
 - Chromium 4/4成功（`E2E_BASE_URL=http://localhost:3001 bunx playwright test tests/e2e/faqs-design.spec.ts --project=chromium`）。1440／390／768px、全回答、横スクロールなし、目次focus・Enterでアンカー到達、FAQ mainのWCAG axe違反0、`/faq`の308転送を確認。1440／390pxスクリーンショットも目視確認。証跡はtest-results/faqs-1440.png、faqs-390.png、faqs-768.png（ローカル生成物）。
@@ -408,7 +409,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ## profile移行記録
 
 - 日付: 2026-09-30。DS-PAGE-029／DS-COMP-077・078・079。未コミット。
-- [保存計画](../../../plans/profile-design-system-plan.md)、[要件](../profile-overview/requirements.md)、[設計](../profile-overview/design.md)、[タスク](../profile-overview/tasks.md)、[進捗](../profile-overview/PROGRESS.md)。
+- [保存計画](../../../plans/layout-design/profile-design-system-plan.md)、[要件](../profile-overview/requirements.md)、[設計](../profile-overview/design.md)、[タスク](../profile-overview/tasks.md)、[進捗](../profile-overview/PROGRESS.md)。
 - 共通layoutに深緑アカウント帯・アイボリーの枠、h1 My accountとセリフ見出しを導入。CSS Moduleの変数をshellに限定。sidebarは10リンクを保持し、モバイルでは折り返す。
 - 会員名の大文字小文字と画像を保持し、名前未設定のfallback／Clerk取得失敗のalertと通常再読込を整備。クイックリンクと4注文フィルターを保持。未実装Coupons／Shopping creditの404リンクは準備中の非リンクへ、無操作のサポート行はContact／Disputeの既存窓口へのリンクへ変更。
 - Red: RTL11件失敗／既存回帰2件成功（Settingsリンク、user=null）。Chromium4件失敗（新h1／navigationなし）／未認証転送1件成功。初期JestのAVIF解析エラーは画像をモックして解消し、要件による失敗を再測定。環境エラーをRedには含めない。
@@ -425,7 +426,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ## wishlist移行記録
 
 - 日付: 2026-09-30。対象: DS-PAGE-033／DS-COMP-085、aliasの回帰DS-PAGE-034。未コミット。
-- [保存計画](../../../plans/wishlist-design-system-plan.md)、[要件](../profile-wishlist/requirements.md)、[設計](../profile-wishlist/design.md)、[タスク](../profile-wishlist/tasks.md)、[進捗](../profile-wishlist/PROGRESS.md)。
+- [保存計画](../../../plans/layout-design/wishlist-design-system-plan.md)、[要件](../profile-wishlist/requirements.md)、[設計](../profile-wishlist/design.md)、[タスク](../profile-wishlist/tasks.md)、[進捗](../profile-wishlist/PROGRESS.md)。
 - profile共通枠に合わせたセリフ見出し・日本語リード・コレクションリンクを導入。共有見出しをpageとloadingで使用。既存ProductListのeditorial表示で最大3列、狭い画面は2列。現在ページの表示数とpage／totalPagesのみ表示する。
 - 空はコレクションへの案内、取得失敗は汎用alertとフル再読込、loadingはstatus／aria-busyと静的スケルトン。URLページングへ変更し、ローカルstate／effectの旧ページへのpushを除去。番号は最大7件、境界方向は非リンク、現在ページ1件にaria-current。
 - Red: RTL新要件5件失敗／正規化とredirectの既存回帰1件成功。Chromium新要件5件失敗を実測（コレクション導線、見出し配色、リンクページング）。
@@ -442,7 +443,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ## track-order移行記録
 
 - 日付: 2026-10-01。DS-PAGE-038／DS-COMP-094／095。未コミット。
-- [保存計画](../../../plans/track-order-design-system-plan.md)。深緑ヒーロー・クリーム背景・セリフ・ゴールド、案内／照会フォーム、結果カード、レスポンシブ折り返し。Server ComponentからactionをPropsで渡す。
+- [保存計画](../../../plans/layout-design/track-order-design-system-plan.md)。深緑ヒーロー・クリーム背景・セリフ・ゴールド、案内／照会フォーム、結果カード、レスポンシブ折り返し。Server ComponentからactionをPropsで渡す。
 - Red: RTL追加1件が「照会中…」なしで失敗（既存4件成功）。ブラウザー初回はsandboxのChromium制限で実行不能（Redに数えない）。実装後の成功結果で数量コントラスト4.48不足を検出し修正。
 - Green/Refactor: 関連Jest `bun run test -- --runInBand src/components/store/track-order/track-order-form.test.tsx src/queries/order.test.ts` 82/82。既存照合・IDORは回帰確認。
 - Playwright: 公開画面専用の一時config（既存localhost:3000、Chromium、1 worker、認証不要なのでClerk globalSetupを省略）で `tests/e2e/track-order-design.spec.ts` 3/3。1440/390/768px、未入力・送信中・未検出・失敗・再試行・成功、長いID／商品名、focus・横溢れなし。各状態axe AA違反0、contrast除外なし。PC／モバイル画像目視確認。
@@ -452,7 +453,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 ## customer-service移行記録
 
-- 2026-10-01、DS-PAGE-011、未コミット。[保存計画](../../../plans/customer-service-design-system-plan.md)。
+- 2026-10-01、DS-PAGE-011、未コミット。[保存計画](../../../plans/layout-design/customer-service-design-system-plan.md)。
 - 深緑ヒーロー・クリーム背景・ゴールド・セリフ、パンくず、案内＋番号付きカード。SUPPORT_LINKSの5タイトル・説明・URLを保持。公開Server Component、DB非依存。
 - Red: `customer-service-design.spec.ts` 3幅で背景色がtransparentのため失敗（要件の期待値はcream）。Green: 実装後のPCキーボード遷移チェックが一度失敗し、Enter直前のfocusを明示して再検証。
 - 最終Chromium3/3（1440/390/768px、配色・フォント・5導線・hover・focus・Enter・横溢れなし・axe AA違反0、contrast除外なし）。PC／モバイルスクリーンショット目視。注文追跡回帰3/3。
@@ -463,7 +464,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 ## returns-exchange移行記録
 
-- 2026-10-01、DS-PAGE-036／DS-COMP-093（ブランド表示をopt-in、他画面は表示既定）。未コミット。[計画](../../../plans/returns-exchange-design-system-plan.md)。
+- 2026-10-01、DS-PAGE-036／DS-COMP-093（ブランド表示をopt-in、他画面は表示既定）。未コミット。[計画](../../../plans/layout-design/returns-exchange-design-system-plan.md)。
 - 深緑・クリーム・ゴールド・セリフh1、パンくず、返品ポリシー全文を保つ案内＋フォーム、送信中ロック・受付完了。Clientのaction直接importを型のみにし、4ページがsubmitAction Propsを渡す。
 - Red: ブランド送信中RTL1件が「送信中…」なしで失敗（既存と再試行回帰7件成功）。Chromium3件は旧背景transparentで失敗。失敗後再試行は既存挙動の回帰確認。実装後のaxeで入力エラー色の比率3.54不足を検出し、ブランドフォーム内のdestructiveトークンを修正。
 - Green/Refactor: 関連Jest `bun run test -- --runInBand src/components/store/support/support-form.test.tsx src/queries/support.test.ts` 16/16（2 suites）。既存二重送信テストのpromise解決後の受付を待ち、act警告を解消。
@@ -475,10 +476,23 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 ## product-support移行記録
 
-- 2026-10-01、DS-PAGE-018、未コミット。[計画](../../../plans/product-support-design-system-plan.md)。
+- 2026-10-01、DS-PAGE-018、未コミット。[計画](../../../plans/layout-design/product-support-design-system-plan.md)。
 - 深緑ヒーロー・クリーム・ゴールド・セリフ、Homeパンくず、3目次・番号付き本文・4サポート導線。PRODUCT_SUPPORT_SECTIONSとプレースホルダ表記を保持しplain text表示。専用Server Component／CSS Module。共有StaticPageLayoutは変更せずDS-COMP-123はTODOを維持。
 - Red: ページRTL1件が目次不在、Chromium3件が旧背景transparentで失敗。本文保持は回帰確認。
 - Green/Refactor: `bun run test -- --runInBand 'src/app/\(store\)/product-support/page.test.tsx' src/components/store/static/static-page-layout.test.tsx src/components/store/static/content/content.test.ts` 11/11、3 suites。
 - `bunx playwright test --config /private/tmp/product-support-playwright.config.ts` Chromium3/3。公開ページ専用一時config、既存localhost:3000・1 worker・Clerk globalSetup省略。1440/390/768px、本文・目次focus/Enter・support-3への移動・ContactのEnter遷移・横溢れなし・axe AA違反0（contrast除外なし）。PC／モバイル画像を目視確認。
 - `bun run lint`: 0 errors／既存12 warnings。`bunx tsc --noEmit`: 成功。dashboard再生成301ファイル／既存lcov328。全体Jest／coverage率再測定なし。
 - storefront-static-pages requirements/design/tasks/PROGRESS、SDD requirements/interfaces/workflows/testing、移行計画・QA_HANDOFF・テスト計画を同期。overview／architecture／data-modelは変更不要（範囲・認証・DB変更なし）。親store layoutのレンダリング方針は維持。受け入れ範囲の残課題なし、外部送信なし。
+
+## Cart移行記録
+
+- 2026-10-01、DS-PAGE-007／DS-COMP-026〜030・201、未コミット。[計画](../../../plans/layout-design/cart-design-system-plan.md)／[要件](../cart/requirements.md)／[設計](../cart/design.md)。
+- 深緑ヒーロー・アイボリー・ゴールド、レスポンシブな商品行と集計、空・読み込み・在庫切れ・同期失敗・保存中、全選択・削除・wishlist・数量のnative操作、/legal実リンク。既存の消失明細の除外通知を保持。削除時の送料寄与分を除去し、Server Componentからaction propsを渡す。
+- DS-COMP-035〜037相当の保証・配送国表示はカート内にスコープして検証。旧共有部品そのものは変更していないため、それらのTODOは維持。DS-COMP-102/103（Radix）とSonnerの移行は対象外。
+- Red: RTL2件がアクセシブル名不在・保存中ボタン未無効化で失敗、Chromiumの390px空状態がmain/h1不在で失敗。追加の送料cleanupテストがunmount時の集計更新不在で失敗。既存機能は回帰確認。
+- Green/Refactor: `bun run test --runInBand tests/component/store/cart-summary.test.tsx tests/component/store/cart-product.test.tsx tests/component/store/cart-container.test.tsx tests/unit/next-dev-cache.test.ts` 27/27、4 suites。キャッシュ設定テストは開発時の分離が未対応でRed、既定と本番出力の回帰を含む。
+- `bunx playwright test --config /private/tmp/cart-playwright.config.ts tests/e2e/cart-design.spec.ts --project=chromium` 10/10。localhost:3001、1440/390/768px、空／商品入り／読み込み／在庫切れ／同期失敗／wishlist成功／保存中・失敗、選択・削除・focus、横あふれなし、mainと通知のaxe AA違反0（contrast除外なし）。操作のaction応答はmock、PC/モバイル画像を目視確認。
+- `bun run lint`: 0 errors／既存12 warnings。`bunx tsc --noEmit`: 成功。`git diff --check`: 成功。dashboard再生成303ファイル／既存lcov328、全体Jestとカバレッジ率は再測定していない。
+- 検証中にDocker/ホストが.nextを共有しClerk module factory不在・Turbopack panicが発生。ユーザー指示で両サーバー停止・キャッシュ削除後、NEXT_DEV_DIST_DIRで3001の出力を.next/cart-previewへ分離。開発時のみ有効、既定・本番は.nextを保持。再起動後の最終10件は全成功。
+- 01-requirements／02-architecture／07-testing、cart要件・設計、移行計画・QA_HANDOFF・テスト計画・全体進捗を同期。00-overview／03-data-model／04-interfaces／06-qualityは変更不要（商品スコープ、DB、API、品質基準の変更なし）。05-workflowsの既存カート同期／購入フローは保持し表示と再送信防止を追記。
+- 画像回帰: `tests/e2e/visual/cart.spec.ts` の古い商品追加通知期待値を既存実装の「Added to your bag」へ同期。空／商品入りのChromium画像基準を更新して目視確認後、`bunx playwright test --config /private/tmp/cart-playwright.config.ts tests/e2e/visual/cart.spec.ts --project=chromium`（更新なし）2/2成功。商品入りは既存fixtureの商品を使い、購入・保存を行わずゲストカート追加と同期を確認。

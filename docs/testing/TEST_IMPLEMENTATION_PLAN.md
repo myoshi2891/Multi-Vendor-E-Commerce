@@ -1024,3 +1024,9 @@ SupportFormに送信中ロックと返品payload、失敗後再試行のRTLを�
 ### Product support デザイン検証 — ✅ Completed (2026-10-01)
 
 ページRTL1件とChromium3幅のRed→Green。本文保持・目次アンカー・support導線・focus/Enter・axe AA確認。[証跡](../design/design-system/PROGRESS.md#product-support移行記録)。全体統計はQA_HANDOFF参照。
+
+### Cart design migration ✅ Completed (2026-10-01)
+
+Cart RTL adds accessible item controls, shipping cleanup and pending checkout lock/status; next-dev-cache tests pin optional development output separation and unchanged default/production output. Targeted Jest 27/27. Chromium cart-design 10/10 covers responsive states, branded notifications, keyboard focus and scoped axe. Full statistics remain the previous measurement; see [progress evidence](../design/design-system/PROGRESS.md#cart移行記録).
+
+- Cart画像回帰: 空／商品入りの基準更新・目視確認後、更新なしのChromium実行2/2成功。

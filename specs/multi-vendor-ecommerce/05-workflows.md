@@ -13,7 +13,9 @@
    rewrites only the `page` parameter. Invalid values (`NaN`, `Infinity`, fractions, `< 1`)
    fall back to page 1.
 2) Open product page and choose a variant and size.
-3) Add to cart (Zustand + localStorage).
+3) Add to cart (Zustand + localStorage). Opening `/cart` re-syncs items via `updateCartWithLatest()`;
+   items whose product / variant / size no longer exist in the DB are dropped (not an error) and the
+   buyer is notified with a toast (plan 070).
 4) Server-side cart validation via `saveUserCart()` recalculates prices, stock, and shipping from DB.
 5) Proceed to checkout and select shipping address; `updateCheckoutProductWithLatest()` recalculates shipping for selected country.
 6) Create an order atomically via `placeOrder()` (`db.$transaction`) with inventory deduction.
@@ -119,3 +121,7 @@
 ## Country Detection
 1) Middleware checks for the `userCountry` cookie.
 2) If missing, country is detected and written to cookies.
+
+### Cart presentation and feedback (2026-10-01)
+
+The branded cart shows persisted items after synchronization, preserves local items with refresh feedback on sync failure, and keeps the existing stale-item removal notice. Item removal also removes its shipping contribution. Saving shows a pending status and locks the checkout button; rejection leaves the bag available for retry. See [cart design](../../docs/design/cart/design.md).

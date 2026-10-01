@@ -4943,7 +4943,7 @@ PR#180 の SonarCloud New Code に出ていた未解決 45 件（Reliability 含
 
 深緑のヒーローとアイボリーの比較面、ゴールドの操作・価格、選択件数、空・読み込み・取得失敗／再試行・商品取得ゼロの表示を整備。上限4件、価格表示、商品リンク、個別削除・全消去を維持。関連23件、Chromium6件、全体Jest2566件成功、型検査成功、lintエラー0（警告12）。全体coverage再測定後にダッシュボードを再生成。
 
-[計画](../plans/compare-design-system-plan.md)・[比較画面の設計](./design/compare/design.md)・[移行進捗](./design/design-system/PROGRESS.md)に同期。未コミット。次のデザイン移行は共通基盤DS-BASE-001。
+[計画](../plans/layout-design/compare-design-system-plan.md)・[比較画面の設計](./design/compare/design.md)・[移行進捗](./design/design-system/PROGRESS.md)に同期。未コミット。次のデザイン移行は共通基盤DS-BASE-001。
 
 ---
 
@@ -4999,3 +4999,15 @@ FAQ画面（DS-PAGE-014）の新ブランド適用、質問目次・サポート
 ### 2026-10-01 製品サポートデザイン移行
 
 `/product-support` をブランドに統一。3本文・プレースホルダを維持し、目次と4窓口を追加。TDD・検証・仕様同期完了。[証跡](design/design-system/PROGRESS.md#product-support移行記録)。QA_HANDOFFと同期: dashboard実測301ファイル。全体成功数・coverage率は前回実測維持。未コミット。
+
+### 2026-10-01 カート同期の不整合明細除外（plan 070）
+
+`/cart` で localStorage のカートに DB から消えた明細（E2E シードの Size 作り直し・販売者の削除）があると `updateCartWithLatest` が全体を失敗させ 500 になっていた。不明明細を除外して返し、件数減少時に toast で通知するよう修正。[計画](../plans/070-cart-sync-drop-stale-items.md)。QA_HANDOFF と同期: Jest 2607 passed / 2610 total・244 スイート（全体実測、うち本件 +6）。実機で 500 解消・通知・localStorage からの除外を確認。未コミット。
+
+### 2026-10-01 Cartデザインシステム適用
+
+`/cart`とストアreact-hot-toastを新デザインへ移行。空・商品入り・エラー・処理中をレスポンシブ／キーボード操作で検証。関連27テスト、Chromium10件成功。仕様書と設計・移行台帳を同期。全体統計は再測定せず保持。[検証記録](design/design-system/PROGRESS.md#cart移行記録)。未コミット。
+
+### 2026-10-01 開発用 Clerk ユーザー同期 + お気に入りエラー表示（plan 071）
+
+ローカル Docker DB に Clerk ユーザーがおらず（Webhook がローカルに届かない）、お気に入り追加等が `*_userId_fkey` 違反になっていた。`make sync-clerk-users` を追加して 6 / 6 件を同期（冪等を確認）し、`cart-product.tsx` の生エラー表示を固定文言に修正。[計画](../plans/071-dev-clerk-user-sync.md)。QA_HANDOFF と同期: Jest 2620 passed / 2623 total・246 スイート（全体実測、うち本件 +8）。未コミット。

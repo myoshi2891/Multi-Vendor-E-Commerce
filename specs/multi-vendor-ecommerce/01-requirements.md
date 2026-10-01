@@ -13,6 +13,7 @@
 - Prevent purchase actions when no valid in-stock size is selected; show a clear selection or sold-out message.
 - Add items to cart with quantity and size selection.
 - Manage cart contents (update quantity, remove items).
+- Use a responsive branded cart with keyboard-operable selection, bulk/individual removal, quantity and wishlist controls; show loading, empty, unavailable and sync-failure states. Remove each deleted item's shipping contribution from the summary, prevent repeat checkout submissions while saving, and preserve the bag after a failure. Storefront notifications use readable branded success/error feedback with a keyboard-accessible dismiss control. See [cart requirements](../../docs/design/cart/requirements.md).
 - Checkout with shipping address selection and shipping fees.
 - Pay with Stripe or PayPal.
 - View order details and order status history.
