@@ -192,7 +192,7 @@ export default function AboutPage() {
 }
 ```
 
-> `legal/page.tsx` は `withToc` を有効化（複数規約の目次）。`faqs/page.tsx` は `FAQ_SECTIONS` を専用レイアウトで描画する。`product-support/page.tsx` も同型。
+> `legal/page.tsx` は `withToc` を有効化（複数規約の目次）。`faqs/page.tsx` は `FAQ_SECTIONS` を専用レイアウトで描画する。`product-support/page.tsx` は PRODUCT_SUPPORT_SECTIONS を専用ブランドレイアウトで描画する（2026-10-01表示設計参照）。
 
 ### 2.3 `/faq` → `/faqs` リダイレクト
 
@@ -212,7 +212,7 @@ export default function FaqRedirectPage() {
 
 ### 2.4 Customer Service ポータル `customer-service/page.tsx`
 
-**方針**: サポート入口のハブ。導線カード配列を定数化し、`Card` でグリッド表示する。
+**方針**: サポート入口のハブ。導線カード配列を定数化し、CSS Moduleによる番号付きリンクカードを表示する（2026-10-01表示設計参照）。
 
 ```ts
 // src/components/store/static/content/customer-service.ts
@@ -375,3 +375,15 @@ export default function CustomerServicePage() {
 - ラベル付きのパンくず・質問目次・サポートnav、装飾aria-hidden、フォーカス輪郭、アンカーのscroll-marginを設ける。FAQ本文のJavaScript操作やDBアクセスを追加しない。親store layoutの動的レンダリングは継続。
 - メタデータをブランド名に同期。`/faq` の308転送はそのまま。
 - [要件](requirements.md#faqデザイン移行2026-09-30)と[保存計画](../../../plans/faqs-design-system-plan.md)を参照。
+
+## Customer service 表示設計（2026-10-01）
+
+`customer-service/page.tsx` はServer Componentで `SUPPORT_LINKS` を再利用。CSS Moduleで深緑ヒーロー・セリフh1・ゴールド装飾・Homeパンくずを表示。本文は案内＋番号付き5カードの2列、800px以下で1列。各カードにh2・日本語説明・装飾矢印を置き、番号と矢印はaria-hidden。nav名は「サポートメニュー」。カードのhover背景とfocus outline、reduced-motion対応を定義。DB・認証・窓口内容は変更なし。
+
+## Product support 表示設計（2026-10-01）
+
+[page.tsx](<../../../src/app/(store)/product-support/page.tsx>) は専用CSS Moduleを使用する公開Server Component。PRODUCT_SUPPORT_SECTIONSの本文を段落単位でplain text表示し、プレースホルダ表記を維持。DB読取・Client操作は追加しない。
+
+深緑ヒーロー・クリーム本文・ゴールド・Georgia見出し、パンくずを表示。案内／3目次＋番号付き本文の2列を800px以下で1列にする。アンカーは順序に対応するsupport-1〜3、各sectionをh2のaria-labelledbyで関連付け、scroll-marginを設定。h1はProduct support。装飾番号・星・矢印はaria-hidden。目次名は「サポート内容一覧」。
+
+下部「サポート窓口」navにcustomer-service/contact/returns-exchange/track-orderの4リンクを配置。全リンクでfocus outlineを可視化する。共有StaticPageLayoutは変更せず、他ページの移行には数えない。

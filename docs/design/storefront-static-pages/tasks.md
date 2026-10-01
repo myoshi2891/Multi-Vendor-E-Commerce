@@ -107,3 +107,15 @@
 - [x] FAQ専用レイアウト・CSS Module、質問目次・サポート導線、plain text常時表示。
 - [x] 関連Jest、Chromium3幅＋308転送、axe、lint／tsc、仕様とQA同期。
 - 検証詳細は[移行記録](../design-system/PROGRESS.md#faqs移行記録)。元のPhase 1機能完了履歴は保持。今回コミットは依頼されていない。
+
+## Customer service デザイン移行（2026-10-01）
+
+- [x] DS-PAGE-011計画保存、Chromium先行3件Red、実装、Green/整理後3件成功。
+- [x] 既存RTL1件・track-order回帰3件、1440/390/768px・focus/Enter・hover・axe AA・画像、lint/tsc。
+- [x] 仕様・移行台帳・QA同期、dashboard再生成。未コミット。[証跡](../design-system/PROGRESS.md#customer-service移行記録)。
+
+## Product support デザイン移行（2026-10-01）
+
+- [x] DS-PAGE-018計画保存、RTL目次不在とChromium背景色3件Redを確認後に実装。
+- [x] 関連Jest11/11、Chromium3/3、3幅・本文保持・focus/Enter・横溢れ・axe AA・PC/モバイル画像、lint/tsc。
+- [x] requirements/design/PROGRESS、SDD、移行計画と台帳、QA・テスト計画同期、dashboard再生成。[証跡](../design-system/PROGRESS.md#product-support移行記録)。未コミット。

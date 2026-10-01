@@ -44,3 +44,7 @@
 - [ ] PII（本文）をログしていないか。
 - [ ] user-menu の Discounts & Offers 行を触っていないか（offers 設計書が担当）。
 - [ ] `orderId` 条件必須が Zod superRefine、DB は nullable か。
+
+## 2026-10-01 返品・交換デザイン移行
+
+DS-PAGE-036と共通フォームDS-COMP-093のブランド表示を検証済み。既存ポリシー・validation・送信仕様維持。TDD、関連Jest16件・Chromium4件、lint/tsc、3幅・各状態・axe・画像確認と文書同期完了。未コミット。[証跡](../design-system/PROGRESS.md#returns-exchange移行記録)。他画面はaction Propsを同期し既定表示を保持。

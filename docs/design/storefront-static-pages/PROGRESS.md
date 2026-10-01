@@ -48,3 +48,7 @@
 ## FAQデザイン移行（2026-09-30）
 
 DS-PAGE-014を新ブランドへ移行。既存4回答を保ち、質問目次とサポート導線を追加した。関連テスト・表示・型・lint検証と仕様同期を完了（未コミット）。[詳細な証跡](../design-system/PROGRESS.md#faqs移行記録)。
+
+## 2026-10-01 Product support デザイン移行
+
+DS-PAGE-018を検証済み。3本文・プレースホルダを保持し、ブランド表示・目次・サポート4導線を整備。TDD、関連Jest11/11・Chromium3/3、lint/tsc・3幅・axe・画像確認と仕様同期完了。[証跡](../design-system/PROGRESS.md#product-support移行記録)。未コミット。共有StaticPageLayoutは変更なし。
