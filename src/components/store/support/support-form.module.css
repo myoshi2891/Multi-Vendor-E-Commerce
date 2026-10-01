@@ -12,7 +12,8 @@
 .input,
 .textarea {
     border-radius: 0;
-    border-color: #c9c7b8;
+    /* WCAG 1.4.11: #faf8f2 背景に対し 3.39:1（非テキスト 3:1 以上） */
+    border-color: #8a877a;
     background: #faf8f2;
     color: #17251d;
     font-size: 16px;
