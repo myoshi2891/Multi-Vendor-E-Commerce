@@ -6,6 +6,13 @@
 
 ---
 
+## 購入者画面のデザイン移行（2026-10-03、未コミット）
+
+- 実装・検証・文書同期完了。[保存計画](../../../plans/layout-design/profile-messages-design-system-plan.md)、[移行証跡](../design-system/PROGRESS.md#profile-messages移行記録)。DS-PAGE-026/DS-COMP-090/202を検証済みへ。
+- 関連Jest94/94（7 suites）、Chromium5/5（41.4s）、lint 0 errors/既存11 warnings、tsc成功。3幅/全状態/keyboard/axe AAとPC/モバイル画像目視。
+- 新購入者action Props境界と専用hook/threadを導入。販売者/旧共有部品の移行は別対象。今回送信・既読はmockで、実店舗への送信なし。全体Jest/coverageは前回実測保持。
+- 以下のPhase完了/AC-M8往復は初回機能実装の履歴として維持し、今回の実行結果と区別する。
+
 ## 🧭 現在地（2026-06-20・Phase 5 完了＝全フェーズ完了）
 
 - ✅ **設計完了** — README / requirements / design / tasks / PROGRESS を作成。

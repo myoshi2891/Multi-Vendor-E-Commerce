@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加（現台帳201部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews移行後のソース判定は本体適用22・未適用36（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加（現台帳202部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用23・未適用35（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -67,7 +67,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | 未実施 |
 | DS-PAGE-024 | `/profile/history/[page]` | 未適用 | P2 | TODO | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | 未実施 |
 | DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | 未実施 |
-| DS-PAGE-026 | `/profile/messages` | 未適用 | P2 | TODO | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | 未実施 |
+| DS-PAGE-026 | `/profile/messages` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | [messages実施記録](#profile-messages移行記録) |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | [orders実施記録](#profile-orders移行記録) |
 | DS-PAGE-028 | `/profile/orders` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/page.tsx](<../../../src/app/(store)/profile/orders/page.tsx>) | [orders実施記録](#profile-orders移行記録) |
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) |
@@ -204,7 +204,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-087 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-container.tsx](<../../../src/components/store/profile/reviews/reviews-container.tsx>) | 検証済み | [reviews実施記録](#profile-reviews移行記録) |
 | DS-COMP-088 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-header.tsx](<../../../src/components/store/profile/reviews/reviews-header.tsx>) | 検証済み | [reviews実施記録](#profile-reviews移行記録) |
 | DS-COMP-089 | P2 | メッセージ共用部品（P2） | [src/components/shared/messages/messages-layout.tsx](<../../../src/components/shared/messages/messages-layout.tsx>) | TODO | 未実施 |
-| DS-COMP-090 | P2 | メッセージ共用部品（P2） | [src/components/store/profile/messages/messages-container.tsx](<../../../src/components/store/profile/messages/messages-container.tsx>) | TODO | 未実施 |
+| DS-COMP-090 | P2 | メッセージ共用部品（P2） | [src/components/store/profile/messages/messages-container.tsx](<../../../src/components/store/profile/messages/messages-container.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
 | DS-COMP-091 | P2 | メッセージ共用部品（P2） | [src/components/store/profile/messages/conversation-thread.tsx](<../../../src/components/store/profile/messages/conversation-thread.tsx>) | TODO | 未実施 |
 | DS-COMP-092 | P2 | メッセージ共用部品（P2） | [src/components/dashboard/seller/seller-messages-container.tsx](<../../../src/components/dashboard/seller/seller-messages-container.tsx>) | TODO | 未実施 |
 | DS-COMP-093 | P2 | サポート・追跡（P2） | [src/components/store/support/support-form.tsx](<../../../src/components/store/support/support-form.tsx>) | 検証済み | [returns-exchange移行記録](#returns-exchange移行記録) |
@@ -316,6 +316,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-199 | P4 | 利用確認が必要な旧部品 | [src/components/store/shared/shipping-addresses/address.list.tsx](<../../../src/components/store/shared/shipping-addresses/address.list.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-200 | P4 | 利用確認が必要な旧部品 | [src/components/store/cards/address-card.tsx](<../../../src/components/store/cards/address-card.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-201 | P1 | ストア通知 | [src/components/store/shared/store-toaster.tsx](../../../src/components/store/shared/store-toaster.tsx) | 検証済み | [cart移行記録](#cart移行記録) |
+| DS-COMP-202 | P2 | 購入者メッセージ専用スレッド | [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../../src/components/store/profile/messages/profile-conversation-thread.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
 
 ## 前セッションの確認結果
 
@@ -553,3 +554,18 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 制約: 初期空は実query、通常/遅延/失敗はaction応答mock。レビューDB書き込み/購入/seed/実決済/外部送信なし。初回失敗/route loadingはRTL。Firefox/WebKit/全E2E/全体coverage未実行。受け入れ範囲の残課題なし。
 
 - 最終文書整合: 先行account移行分を含む新設/更新部分のローカルリンク158件（アンカー含む）を検証。台帳12本体適用/10検証済み/36未適用/7転送/1仮実装=66、対象3IDと部品2件の計画チェックを照合。`git diff --check`成功、対象限定ESLint無警告、整形後tsc成功。
+
+## profile-messages移行記録
+
+- 2026-10-03。DS-PAGE-026、DS-COMP-090、新設DS-COMP-202、未コミット。[保存計画](../../../plans/layout-design/profile-messages-design-system-plan.md)、[要件](../profile-messages/requirements.md)、[設計](../profile-messages/design.md)、[タスク](../profile-messages/tasks.md)。
+- My messagesのserif h1/日本語リード/サポート、account配色の会話一覧と購入者専用スレッド。PC2ペイン/mobile縦配置、長い店舗名/本文/改行wrap、native会話選択/pressed、You/Storeと日時、focus可能な一覧/log。label付きcomposer、trim/1〜2000文字、送信中入力/切替/一覧再読込ロック、失敗時draft保持、成功status/再取得。
+- 新表示facadeは既存認証/所有者/参加者queryへ委譲し、表示項目とISO日時へ投影。Server Componentから4action Propsを注入し、新購入者Clientに直接action importなし。初回一覧失敗/retryとroute loading、スレッド取得/既読/送信失敗の汎用案内/retryを整備。旧shared hook/layout/threadと販売者画面DS-COMP-089/091/092は変更せずTODOを維持。
+- 専用hookは5秒poll/背面停止/多重要求防止、live IDとcancelledで切替/unmount旧応答を破棄。送信後の再取得は進行中pollの後へqueueし、新着取得を取りこぼさない。認可、送信transaction、DBモデルは変更しない。
+- Red: 先行RTL8件/query4件の失敗、Chromium390px h1不在1件を実測（環境エラーなし）。Green/Refactor後のserver/loading/上限validation/queued refresh5件は実装後回帰。旧query直接呼び出し・子モック・consoleログだけの確認をaction Props/実フォーム操作/汎用retryへ同期。
+- 最終Jest: `bun run test -- --runInBand --silent --runTestsByPath src/components/store/profile/messages/messages-container.test.tsx src/queries/profile-messages.test.ts src/queries/message.test.ts src/components/store/profile/messages/conversation-thread.test.tsx src/components/dashboard/seller/seller-messages-container.test.tsx tests/component/store/profile-sidebar.test.tsx src/components/store/profile/reviews/reviews-container.test.tsx` → 94/94、7 suites、4.003s。既存queryのIDOR3階層と送信/既読、旧thread、販売者/sidebar/reviews回帰を含む。
+- 最終Chromium: `bunx playwright test --config /private/tmp/profile-messages-playwright.config.ts` → 5/5、41.4s。実Clerk test session/cleanup、初期空実query、1440/390/768px、空/長い会話・本文/双方向bubble、focus/Enter、mobile取得失敗/retry・既読失敗/retry・空入力validation・送信中lock・送信失敗/draft保持/retry/success、未認証転送。本文axe AA違反0（contrast除外なし）、横溢れなし。test-results/profile-messages-1440.png・profile-messages-390.pngを目視確認。
+- lint 0 errors/既存11 warnings、tsc成功。dashboard実測314ファイル/既存lcov328、18/80。全体Jest/coverage率は再測定せず前回実測保持。
+- 文書同期: 既存profile-messages5文書の旧schema未実装/旧UI例/Client直接import可の記述を現行設計へ同期、SDD01/02/04/05/07、移行計画/台帳、QA/テスト実装計画/全体進捗。00-overview/03-data-model/06-qualityは確認済み・変更不要（範囲/DBモデル/認可/品質基準を維持）。初回機能実装のフェーズ/往復E2E履歴は保持。
+- 制約: 会話/スレッド/送信/既読はaction応答mock。店舗への実送信/会話DB作成/購入/seedなし。初期サーバー失敗/loadingはRTL、poll/raceはRTL。既存AC-M8実往復E2E/Firefox/WebKit/全E2E/全体coverageは未実行。受け入れ範囲の残課題なし。
+
+- 最終文書整合: 新設/更新部分のローカルリンク33件（アンカー含む）を検証。台帳12本体適用/11検証済み/35未適用/7転送/1仮実装=66、部品202件、新規/対象3IDと計画チェック、旧共有3IDのTODO維持を照合。`git diff --check`成功、対象限定ESLint無警告。

@@ -54,3 +54,20 @@
 - リアルタイム配信（WebSocket/Pusher 等の外部依存追加）。
 - 添付ファイル・画像・タイピングインジケータ・プッシュ通知。
 - 商品ページ/注文画面からの「問い合わせ」起点ボタン（本設計は server action `getOrCreateConversation` を用意するに留め、起点 UI は別 PR）。
+
+## 5. 購入者画面のデザイン移行（2026-10-03）
+
+[保存計画](../../../plans/layout-design/profile-messages-design-system-plan.md)。機能要件M-1〜M-7と認可/transactionは維持。
+
+| ID | 受け入れ条件 | 検証 |
+|---|---|---|
+| DS-M1 | account共通の深緑/アイボリー/ゴールド、GeorgiaのMy messages h1、日本語リードとサポート導線。 | RTL / Chromium |
+| DS-M2 | 店舗名/logo/最新本文で識別するnative会話選択とaria-pressed、PC2ペイン/mobile縦配置。長い名称/本文を省略せずwrap。 | RTL / Chromium |
+| DS-M3 | 時系列メッセージ、購入者/店舗を文字と左右で区別、改行保持、UTC日時。scroll領域はkeyboard操作可能。 | RTL / Chromium |
+| DS-M4 | 空/未選択/メッセージなし、初回一覧/スレッド失敗の汎用alertとretry、取得中status。既読失敗は会話を保持し個別retry。 | RTL / Chromium |
+| DS-M5 | label付きtextarea、既存trim/1〜2000文字制約。送信中は入力/会話切替/再読込をロックし二重送信防止。失敗はdraft保持、成功はクリア/status/再取得。 | RTL / Chromium |
+| DS-M6 | 5秒poll・背面停止・多重要求防止・切替/unmount旧応答破棄。送信成功時は進行中pollの後に再取得をqueueし更新を取りこぼさない。 | RTL |
+| DS-M7 | 4actionをServer ComponentからPropsで注入。表示facadeは所有者/参加者queryに委譲し必要な項目とISO日時のみ返す。 | query / RTL |
+| DS-M8 | 1440/390/768px、focus/Tab/Enter、横溢れなし、axe AA違反0（contrast除外なし）。 | Chromium |
+
+販売者画面と旧共有部品のデザイン移行、新規起票UIは対象外。今回の送信/既読/会話データはaction応答mockで検証し、既存AC-M8実往復の過去実績は再実行結果として扱わない。
