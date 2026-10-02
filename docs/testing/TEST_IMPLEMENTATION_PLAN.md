@@ -1048,3 +1048,7 @@ RTL6件/query11件/mobile h1のRed→Green。最終関連110/110（5 suites）�
 ### Profile Reviews デザイン検証 — ✅ Completed (2026-10-03)
 
 RTL6件/query2件/mobile h1のRed→Green。初期データ回帰1件は旧実装でも成功、server/loading/draft4件は実装後回帰。最終関連116/116（7 suites）、Chromium5/5（3幅/小数評価/写真/本文検索と条件/全状態/keyboard/axe/未認証）。lint/tsc成功。[証跡](../design/design-system/PROGRESS.md#profile-reviews移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+### Profile Messages デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued refresh5件は実装後回帰。最終94/94（7 suites）、Chromium5/5（3幅/会話と送信・既読・取得失敗/keyboard/axe/未認証）。販売者/旧thread/query/sidebar/reviews回帰を含む。実送信・AC-M8往復は今回未実行。[証跡](../design/design-system/PROGRESS.md#profile-messages移行記録)。全体統計はQA_HANDOFFの前回実測を維持。

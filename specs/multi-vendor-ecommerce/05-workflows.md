@@ -153,3 +153,10 @@ The branded cart shows persisted items after synchronization, preserves local it
 2. Choose View all/1–5 stars, select a period, or submit text search with Search/Enter. New conditions reset page 1; paging retains applied conditions. Unsubmitted draft is not applied by rating/period changes; empty submission clears search, Remove all filters clears every condition.
 3. Lookup locks controls and shows status/skeleton without stale cards. Generic failure keeps conditions for Try again; success renders review cards and page metadata.
 4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
+
+## Profile message presentation flow
+
+1. Authenticate and open `/profile/messages`; show initial own store conversations or empty collection link, with generic load failure/retry when needed.
+2. Select a conversation by keyboard/touch. Clear previous messages, fetch the thread and mark counterpart messages read. Show sender labels and UTC times; thread failure offers retry, read-status failure keeps the thread and offers its own retry.
+3. While selected, poll every five seconds when the tab is visible. Prevent overlapping polls and discard responses after switching/unmounting. Queue a post-send refresh after an active poll.
+4. Submit a labeled message using existing trim/1–2000 character validation. Sending locks input/selection/reload and prevents duplicates; failure preserves the draft, success clears it and refetches. No new conversation initiation or attachment UI is added.

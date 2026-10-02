@@ -59,3 +59,7 @@ Authenticated customers manage shipping addresses in the branded responsive `/pr
 ## Profile review presentation
 
 Authenticated customers browse their review history in the branded responsive account layout, retaining masked author/avatar, fractional rating, variant, color, size, quantity, text and photos. Native rating filters, labeled periods and explicit Search/Enter search operate on review text. Empty search clears search; full reset also clears period/rating. Preserve conditions during paging/retry, reset page on new conditions, lock pending controls and hide stale results. Provide empty/filtered-empty/loading/generic failure/retry and a readable update date. See [review requirements](../../docs/design/profile-reviews/requirements.md).
+
+## Profile message presentation
+
+Authenticated buyers read and send existing store conversations in the branded responsive account layout, with native selected-conversation controls, long-name/text wrapping, chronological buyer/store bubbles and UTC dates. Provide empty/unselected/loading/generic list/thread failure and retry; a read-status failure keeps the conversation available and offers its own retry. Preserve trimmed 1–2000 character validation, lock input/selection/reload while sending, prevent duplicates, retain failed drafts and refresh after success. Maintain five-second polling, hidden-tab pause and stale-response protection. See [message requirements](../../docs/design/profile-messages/requirements.md).

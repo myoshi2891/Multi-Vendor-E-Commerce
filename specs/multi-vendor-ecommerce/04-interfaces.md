@@ -234,3 +234,7 @@ SupportForm receives `submitAction: typeof createSupportTicket` from each Server
 ### Profile review display contract
 
 `getUserReviewsForDisplay(filter = "", period = "", search = "", page = 1)` returns `{reviews, totalPages}`. Review fields: id, rating, review, variant, color, size, quantity, updatedAt (ISO), user `{name,picture}`, images `{id,url,alt}[]`. Exclude private user fields and internal relations/timestamps. Delegate to the existing authenticated user-scoped query: ratings 1–5, four createdAt periods, case-insensitive review-text search, 10 items/page, updatedAt descending. UI Search/Enter replaces delayed search; empty search/full reset work explicitly. No order/product/store search or mutation is added. [Contract](../../docs/design/profile-reviews/requirements.md).
+
+### Profile message display contract
+
+`getProfileConversations()` returns own conversations with id, userId (buyer/sender comparison), updatedAt ISO, store `{name,logo}` and latest messages `{content}[]`; exclude order/store/internal relation data. `getProfileConversationMessages(id)` returns chronological `{id,senderId,content,createdAt ISO}[]` after existing participant validation. The Server Component injects these with existing `sendMessage(id, content)` and `markConversationRead(id)` through Props. Existing schemas, authorization and transaction contracts remain. [UI contract](../../docs/design/profile-messages/requirements.md).

@@ -26,7 +26,7 @@
 | 型エラー | **0 件** |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **312** / lcovエントリ **328** / マトリクス18/80セル（23%）。2026-10-03 `bun run coverage:dashboard` の走査で 312 を実測（lcov は 2026-09-30 の測定値）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| テストファイル総数（ダッシュボード集計） | **314** / lcovエントリ **328** / マトリクス18/80セル（23%）。2026-10-03 `bun run coverage:dashboard` の走査で 314 を実測（lcov は 2026-09-30 の測定値）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）
 
@@ -562,3 +562,10 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 - 先行RTL6/query2/mobile h1のRed→Green。旧実装でも成功する初期データ回帰1件、実装後server/loading/draft回帰4件はRedと区別。最終関連116/116（7 suites）、Chromium5/5、3幅/全状態/keyboard/axe AA。lint 0 errors/既存11 warnings、tsc成功。
 - 初期空は実認証/query、通常/遅延/失敗はaction mock。レビューDB書き込み/購入なし。共有商品ページReviewCardは移行対象外。
 - dashboard実測312ファイル/既存lcov328、18/80。全体Jest/coverage率は前回値を保持。受け入れ範囲の残課題なし。次着手は既存Open Issuesと共通DS-BASE-001の計画に従う。
+
+### `/profile/messages` デザイン移行（2026-10-03、未コミット）
+
+- [計画](../../plans/layout-design/profile-messages-design-system-plan.md)、[要件](../design/profile-messages/requirements.md)、[証跡](../design/design-system/PROGRESS.md#profile-messages移行記録)。DS-PAGE-026/DS-COMP-090/新202を検証済みへ。旧共有089/091と販売者092はTODO維持。
+- 先行RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued refresh5件は実装後回帰。最終94/94、7 suites。Chromium5/5、3幅/keyboard/axe AA/取得・既読・送信失敗とretry。lint 0 errors/既存11 warnings、tsc成功。
+- 初期空は実認証/query。会話データ/送信/既読はaction mockで、実店舗への送信とメッセージDB書き込みなし。AC-M8実往復とFirefox/WebKit/全E2Eは未実行。
+- dashboard実測314ファイル/既存lcov328、18/80。全体Jest/coverageは前回値維持。受け入れ範囲の残課題なし。次着手は既存Open Issuesと共通DS-BASE-001の計画に従う。

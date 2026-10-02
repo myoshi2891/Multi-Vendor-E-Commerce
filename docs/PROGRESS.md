@@ -5037,3 +5037,7 @@ Clerk `createRouteMatcher` の非推奨警告に対応し、`src/proxy.ts` の�
 ### Profile Reviews デザイン移行（2026-10-03）
 
 `/profile/reviews`をブランド本文/専用reviewカードへ移行。評価/期間/本文検索/全解除/ページングと空/取得中/失敗/再試行を整備。小数評価・投稿内容・写真を保持、最小表示action Propsと操作ロックを導入。TDD、関連116件/Chromium5件成功、lint 0 errors/既存11 warnings、tsc成功。仕様/台帳/QA同期済み。[証跡](design/design-system/PROGRESS.md#profile-reviews移行記録)。QA_HANDOFFと同期: dashboard実測312ファイル/既存lcov328、全体成功数/coverage率は前回実測維持。通常reviewはmock検証、未コミット。
+
+### Profile Messages デザイン移行（2026-10-03）
+
+`/profile/messages`をブランド本文/購入者専用会話一覧・スレッドへ移行。5秒poll/既読/送信を保持し、取得・既読・送信失敗のretry、draft保持、送信中lockとqueued refresh、最小action Propsを整備。TDD、関連94件/Chromium5件成功、lint 0 errors/既存11 warnings、tsc成功。既存仕様の旧UI/Client import記述と台帳/QAを同期。[証跡](design/design-system/PROGRESS.md#profile-messages移行記録)。QA_HANDOFFと同期: dashboard実測314ファイル/既存lcov328、全体成功数/coverage率は前回値維持。実送信なし、未コミット。

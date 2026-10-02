@@ -52,3 +52,7 @@ The force-dynamic addresses Server Component supplies initial projected address/
 ## Account review history boundary
 
 The force-dynamic `/profile/reviews` Server Component loads projected display data and passes getUserReviewsForDisplay as an action prop. The Client container/header import no actions, avoid duplicate mount fetches and serialize lookups. The facade delegates to the existing owner-scoped getUserReviews and sends only displayed review, author and photo fields with ISO updatedAt. A profile-only review card replaces use of the shared product-page ReviewCard here; the shared component and review mutations are unchanged. [Design](../../docs/design/profile-reviews/design.md).
+
+## Account message boundary
+
+The force-dynamic buyer messages Server Component passes initial projected data and four action props (list/thread display facades, send and mark read). Buyer clients import no actions. A profile-only conversation hook/thread provides polling, queued post-send refresh and visible failure/retry states. Shared legacy messaging components and seller UI are unchanged. Facades delegate to existing ownership/participant checks and atomic send/read actions without DB model changes. [Design](../../docs/design/profile-messages/design.md).
