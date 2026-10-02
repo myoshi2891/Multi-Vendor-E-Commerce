@@ -1,6 +1,8 @@
 import {
     getUserOrders,
+    getUserOrdersForDisplay,
     getUserPayments,
+    getUserPaymentsForDisplay,
     getUserReviews,
     getUserWishlist,
     getUserFollowedStores,
@@ -1037,5 +1039,71 @@ describe("期間フィルタの境界値（3 関数 × 3 期間）", () => {
                 },
             })
         );
+    });
+});
+
+
+describe("getUserOrdersForDisplay boundary regression", () => {
+    it("serializes money and dates, limits exposed fields, and preserves owner filters", async () => {
+        (currentUser as jest.Mock).mockResolvedValue({ id: TEST_CONFIG.DEFAULT_USER_ID });
+        mockDb.order.findMany.mockResolvedValue([{
+            id: "order-one", userId: "private-user", shippingAddressId: "private-address",
+            total: { toNumber: () => 25.5 }, createdAt: new Date("2026-10-01T00:00:00Z"),
+            paymentStatus: "Paid", orderStatus: "Shipped",
+            groups: [{ storeId: "private-store", total: { toNumber: () => 25.5 },
+                _count: { items: 2 }, items: [{ image: "/piece.png", price: { toNumber: () => 10 } }] }],
+        }]);
+        mockDb.order.count.mockResolvedValue(11);
+        const result = await getUserOrdersForDisplay("shipped", "last-1-year", "coat", 2);
+        expect(JSON.parse(JSON.stringify(result))).toEqual({ totalPages: 2, orders: [{
+            id: "order-one", total: 25.5, createdAt: "2026-10-01T00:00:00.000Z",
+            paymentStatus: "Paid", orderStatus: "Shipped",
+            groups: [{ _count: { items: 2 }, items: [{ image: "/piece.png" }] }],
+        }] });
+        expect(mockDb.order.findMany).toHaveBeenCalledWith(expect.objectContaining({
+            skip: 10, take: 10, where: { AND: expect.arrayContaining([
+                { userId: TEST_CONFIG.DEFAULT_USER_ID }, { orderStatus: "Shipped" },
+                expect.objectContaining({ createdAt: expect.any(Object) }),
+                expect.objectContaining({ OR: expect.any(Array) }),
+            ]) },
+        }));
+    });
+    it("stops before database access when authentication fails", async () => {
+        (currentUser as jest.Mock).mockResolvedValue(null);
+        await expect(getUserOrdersForDisplay()).rejects.toThrow("Unauthenticated.");
+        expect(mockDb.order.findMany).not.toHaveBeenCalled();
+        expect(mockDb.order.count).not.toHaveBeenCalled();
+    });
+});
+
+
+describe("getUserPaymentsForDisplay boundary regression", () => {
+    it("serializes dollar amounts/dates and projects only display fields under owner-scoped conditions", async () => {
+        (currentUser as jest.Mock).mockResolvedValue({ id: TEST_CONFIG.DEFAULT_USER_ID });
+        mockDb.paymentDetails.findMany.mockResolvedValue([{
+            id: "payment-one", paymentIntentId: "pi_one", paymentMethod: "Stripe",
+            amount: { toNumber: () => 42.5 }, status: "Completed", orderId: "order-one",
+            updatedAt: new Date("2026-10-01T00:00:00Z"), userId: "private-user", currency: "usd",
+            order: { total: { toNumber: () => 42.5 }, shippingAddressId: "private-address" },
+        }]);
+        mockDb.paymentDetails.count.mockResolvedValue(11);
+        const result = await getUserPaymentsForDisplay("credit-card", "last-1-year", "pi_one", 2);
+        expect(JSON.parse(JSON.stringify(result))).toEqual({ totalPages: 2, payments: [{
+            id: "payment-one", paymentIntentId: "pi_one", paymentMethod: "Stripe", amount: 42.5,
+            status: "Completed", orderId: "order-one", updatedAt: "2026-10-01T00:00:00.000Z",
+        }] });
+        expect(mockDb.paymentDetails.findMany).toHaveBeenCalledWith(expect.objectContaining({
+            skip: 10, take: 10, where: { AND: expect.arrayContaining([
+                { userId: TEST_CONFIG.DEFAULT_USER_ID }, { paymentMethod: "Stripe" },
+                expect.objectContaining({ createdAt: expect.any(Object) }),
+                { OR: [{ id: { contains: "pi_one", mode: "insensitive" } }, { paymentIntentId: { contains: "pi_one", mode: "insensitive" } }] },
+            ]) },
+        }));
+    });
+    it("stops before database access when authentication fails", async () => {
+        (currentUser as jest.Mock).mockResolvedValue(null);
+        await expect(getUserPaymentsForDisplay()).rejects.toThrow("Unauthenticated.");
+        expect(mockDb.paymentDetails.findMany).not.toHaveBeenCalled();
+        expect(mockDb.paymentDetails.count).not.toHaveBeenCalled();
     });
 });

@@ -1,15 +1,22 @@
 import ReviewsContainer from "@/components/store/profile/reviews/reviews-container";
-import { getUserReviews } from "@/queries/profile";
-
-export const dynamic = 'force-dynamic';
-
+import { getUserReviewsForDisplay } from "@/queries/profile";
+export const dynamic = "force-dynamic";
 export default async function ProfileReviewsPage() {
-    const reviews_data = await getUserReviews();
-    const { reviews, totalPages } = reviews_data;
+    let result: Awaited<ReturnType<typeof getUserReviewsForDisplay>> = {
+        reviews: [],
+        totalPages: 0,
+    };
+    let initialError = false;
+    try {
+        result = await getUserReviewsForDisplay();
+    } catch {
+        initialError = true;
+    }
     return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">Your reviews</h1>
-            <ReviewsContainer reviews={reviews} totalPages={totalPages} />
-        </div>
+        <ReviewsContainer
+            {...result}
+            initialError={initialError}
+            fetchReviewsAction={getUserReviewsForDisplay}
+        />
     );
 }

@@ -1,308 +1,243 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, act, fireEvent } from "@testing-library/react";
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import PaymentsTable from "./payments-table";
-import { getUserPayments } from "@/queries/profile";
-import { UserPaymentType } from "@/lib/types";
+import PaymentsTable, { type PaymentHistoryEntry } from "./payments-table";
+import ProfilePaymentPage from "@/app/(store)/profile/payment/page";
+import PaymentLoading from "@/app/(store)/profile/payment/loading";
+import { getUserPaymentsForDisplay } from "@/queries/profile";
 
-// Mock the query
 jest.mock("@/queries/profile", () => ({
-    getUserPayments: jest.fn(),
+    getUserPaymentsForDisplay: jest.fn(),
+}));
+jest.mock("next/navigation", () => ({
+    useRouter: () => ({ refresh: jest.fn() }),
 }));
 
-// Mock PaymentTableHeader to isolate table search/filters
-jest.mock("./payment-table-header", () => {
-    return function DummyHeader({
-        setFilter,
-        setPeriod,
-        setSearch,
-    }: {
-        setFilter: (v: any) => void;
-        setPeriod: (v: any) => void;
-        setSearch: (v: any) => void;
-    }) {
-        return (
-            <div data-testid="dummy-header">
-                <button
-                    data-testid="btn-filter"
-                    onClick={() => setFilter("PAID")}
-                >
-                    Set Filter Paid
-                </button>
-                <button
-                    data-testid="btn-period"
-                    onClick={() => setPeriod("last-month")}
-                >
-                    Set Period Last Month
-                </button>
-                <button
-                    data-testid="btn-search"
-                    onClick={() => setSearch("test-search")}
-                >
-                    Set Search Text
-                </button>
-            </div>
+const payment = (
+    amount: number | string,
+    method = "Stripe"
+): PaymentHistoryEntry =>
+    ({
+        id: "payment-one",
+        paymentIntentId: "pi_one",
+        paymentMethod: method,
+        amount,
+        status: "Completed",
+        orderId: "order-one",
+        updatedAt: new Date("2026-10-01T00:00:00Z"),
+    }) as unknown as PaymentHistoryEntry;
+const result = { payments: [payment(42.5)], totalPages: 2 };
+function setup(extra = {}) {
+    const fetchPaymentsAction = jest.fn().mockResolvedValue(result);
+    const props = { ...result, fetchPaymentsAction, ...extra };
+    render(<PaymentsTable {...props} />);
+    return { user: userEvent.setup(), fetchPaymentsAction };
+}
+describe("branded payment history", () => {
+    it.each(["Stripe", "PayPal"])(
+        "preserves serialized dollar amounts for %s without dividing by 100",
+        (method) => {
+            setup({ payments: [payment("42.50", method)], totalPages: 1 });
+            expect(screen.getByText("$42.50")).toBeVisible();
+            expect(screen.queryByText("$0.43")).not.toBeInTheDocument();
+            expect(screen.getByText("pi_one")).toBeVisible();
+            expect(screen.getByText("#payment-one")).toBeVisible();
+        }
+    );
+    it("provides branded heading, empty collection link and named controls", () => {
+        setup({ payments: [], totalPages: 0 });
+        expect(
+            screen.getByRole("heading", { name: "My payments", level: 1 })
+        ).toBeVisible();
+        expect(
+            screen.getByRole("heading", { name: "No payments yet" })
+        ).toBeVisible();
+        expect(
+            screen.getByRole("link", { name: "Explore the collection" })
+        ).toHaveAttribute("href", "/browse");
+        expect(
+            screen.getByRole("button", { name: "View all" })
+        ).toHaveAttribute("aria-pressed", "true");
+        expect(
+            screen.getByRole("combobox", { name: "Payment period" })
+        ).toBeVisible();
+        expect(
+            screen.queryByRole("navigation", { name: "Payments pagination" })
+        ).not.toBeInTheDocument();
+    });
+    it("submits search and empty-search reset at page one", async () => {
+        const { user, fetchPaymentsAction } = setup();
+        await user.click(screen.getByRole("button", { name: "Next page" }));
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith("", "", "", 2)
         );
-    };
+        await user.type(
+            screen.getByRole("searchbox", { name: "Search payments" }),
+            "pi_one"
+        );
+        await user.click(screen.getByRole("button", { name: "Search" }));
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith(
+                "",
+                "",
+                "pi_one",
+                1
+            )
+        );
+        await user.clear(
+            screen.getByRole("searchbox", { name: "Search payments" })
+        );
+        await user.keyboard("{Enter}");
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith("", "", "", 1)
+        );
+    });
+    it("preserves method/period on paging and clears every condition", async () => {
+        const { user, fetchPaymentsAction } = setup();
+        await user.click(screen.getByRole("button", { name: "PayPal" }));
+        await user.selectOptions(
+            screen.getByRole("combobox", { name: "Payment period" }),
+            "last-1-year"
+        );
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith(
+                "paypal",
+                "last-1-year",
+                "",
+                1
+            )
+        );
+        await user.click(screen.getByRole("button", { name: "Next page" }));
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith(
+                "paypal",
+                "last-1-year",
+                "",
+                2
+            )
+        );
+        expect(
+            screen.getByRole("button", { name: "Next page" })
+        ).toBeDisabled();
+        await user.click(
+            screen.getByRole("button", { name: "Remove all filters" })
+        );
+        await waitFor(() =>
+            expect(fetchPaymentsAction).toHaveBeenLastCalledWith("", "", "", 1)
+        );
+        expect(
+            screen.getByRole("combobox", { name: "Payment period" })
+        ).toHaveValue("");
+        expect(
+            screen.getByRole("button", { name: "Previous page" })
+        ).toBeDisabled();
+    });
+    it("locks pending controls, prevents duplicate requests, hides stale results and retries", async () => {
+        let reject!: (error: Error) => void;
+        const pending = new Promise<never>((_, fail) => {
+            reject = fail;
+        });
+        const fetchPaymentsAction = jest
+            .fn()
+            .mockReturnValueOnce(pending)
+            .mockResolvedValue(result);
+        const { user } = setup({ fetchPaymentsAction });
+        await user.click(screen.getByRole("button", { name: "Credit card" }));
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Loading payments"
+        );
+        expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
+        expect(screen.queryByText("$42.50")).not.toBeInTheDocument();
+        fireEvent.submit(screen.getByRole("search"));
+        expect(fetchPaymentsAction).toHaveBeenCalledTimes(1);
+        await act(async () => reject(new Error("private database details")));
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "We couldn’t load your payments"
+        );
+        expect(
+            screen.queryByText("private database details")
+        ).not.toBeInTheDocument();
+        await user.click(screen.getByRole("button", { name: "Try again" }));
+        await waitFor(() => expect(screen.getByText("$42.50")).toBeVisible());
+        expect(fetchPaymentsAction).toHaveBeenLastCalledWith(
+            "credit-card",
+            "",
+            "",
+            1
+        );
+    });
+    it("distinguishes filtered empty results and initial errors with retry/detail links", async () => {
+        const fetchPaymentsAction = jest
+            .fn()
+            .mockResolvedValueOnce({ payments: [], totalPages: 0 })
+            .mockResolvedValue(result);
+        const { user } = setup({ initialError: true, fetchPaymentsAction });
+        expect(screen.getByRole("alert")).toBeVisible();
+        await user.click(screen.getByRole("button", { name: "Try again" }));
+        await waitFor(() =>
+            expect(
+                screen.getByRole("heading", { name: "No payments yet" })
+            ).toBeVisible()
+        );
+        fetchPaymentsAction.mockResolvedValueOnce({
+            payments: [],
+            totalPages: 0,
+        });
+        await user.click(screen.getByRole("button", { name: "PayPal" }));
+        await waitFor(() =>
+            expect(
+                screen.getByRole("heading", { name: "No matching payments" })
+            ).toBeVisible()
+        );
+        await user.click(screen.getByRole("button", { name: "View all" }));
+        await waitFor(() =>
+            expect(
+                screen.getByRole("link", {
+                    name: "View order for payment payment-one",
+                })
+            ).toHaveAttribute("href", "/order/order-one")
+        );
+    });
 });
 
-// Mock Pagination
-jest.mock("../../shared/pagination", () => {
-    return function DummyPagination({
-        page,
-        setPage,
-    }: {
-        page: number;
-        setPage: (p: number) => void;
-    }) {
-        return (
-            <div data-testid="dummy-pagination">
-                <span data-testid="current-page">{page}</span>
-                <button
-                    data-testid="btn-next"
-                    onClick={() => setPage(page + 1)}
-                >
-                    Next
-                </button>
-            </div>
+describe("server and loading boundary regression", () => {
+    beforeEach(() => jest.clearAllMocks());
+    it("renders initial lookup failure with generic retry", async () => {
+        (getUserPaymentsForDisplay as jest.Mock).mockRejectedValueOnce(
+            new Error("private provider details")
         );
-    };
-});
-
-const mockPayments = [
-    {
-        id: "payment-1",
-        paymentIntentId: "intent-1",
-        paymentMethod: "Stripe",
-        amount: { toNumber: () => 1000 },
-        status: "COMPLETED",
-        orderId: "order-1",
-        updatedAt: new Date("2026-06-06T00:00:00Z"),
-    },
-    {
-        id: "payment-2",
-        paymentIntentId: "intent-2",
-        paymentMethod: "PayPal",
-        amount: { toNumber: () => 50 },
-        status: "PENDING",
-        orderId: "order-2",
-        updatedAt: new Date("2026-06-06T00:00:00Z"),
-    },
-] as unknown as UserPaymentType[];
-
-describe("PaymentsTable Component", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it("renders table headers and records correctly", async () => {
-        (getUserPayments as jest.Mock).mockResolvedValue({
-            payments: mockPayments,
-            totalPages: 2,
-        });
-
-        await act(async () => {
-            render(<PaymentsTable payments={mockPayments} totalPages={2} />);
-        });
-
-        expect(screen.getByText("#payment-1")).toBeInTheDocument();
-        expect(screen.getByText("#payment-2")).toBeInTheDocument();
-        expect(screen.getByText("intent-1")).toBeInTheDocument();
-        expect(screen.getByText("intent-2")).toBeInTheDocument();
-        // PaymentDetails.amount は provider によらずドル建て（Decimal(12,2)）。
-        // Stripe 行も /100 されない。
-        expect(screen.getByText("$1000.00")).toBeInTheDocument();
-        expect(screen.getByText("$50.00")).toBeInTheDocument();
-    });
-
-    it("resets page to 1 when filters or search change", async () => {
-        (getUserPayments as jest.Mock).mockResolvedValue({
-            payments: [],
-            totalPages: 1,
-        });
-
-        let renderResult: any;
-        await act(async () => {
-            renderResult = render(
-                <PaymentsTable payments={mockPayments} totalPages={5} />
-            );
-        });
-
-        // 1. Move to page 2 via pagination
-        const nextBtn = screen.getByTestId("btn-next");
-        await act(async () => {
-            fireEvent.click(nextBtn);
-        });
-        expect(screen.getByTestId("current-page")).toHaveTextContent("2");
-
-        // 2. Change filter
-        const filterBtn = screen.getByTestId("btn-filter");
-        await act(async () => {
-            fireEvent.click(filterBtn);
-        });
-        // page resets to 1 in render phase
-        expect(screen.getByTestId("current-page")).toHaveTextContent("1");
-    });
-
-    it("protects against race conditions by discarding obsolete requests", async () => {
-        let resolveRequest1: (value: any) => void = () => {};
-        let resolveRequest2: (value: any) => void = () => {};
-
-        const promise1 = new Promise((resolve) => {
-            resolveRequest1 = resolve;
-        });
-        const promise2 = new Promise((resolve) => {
-            resolveRequest2 = resolve;
-        });
-
-        // First call will return promise1, second call will return promise2
-        (getUserPayments as jest.Mock)
-            .mockImplementationOnce(() => promise1)
-            .mockImplementationOnce(() => promise2);
-
-        await act(async () => {
-            render(<PaymentsTable payments={mockPayments} totalPages={2} />);
-        });
-
-        // Trigger request 2 by changing next page
-        const nextBtn = screen.getByTestId("btn-next");
-        await act(async () => {
-            fireEvent.click(nextBtn); // Counter goes to 2
-        });
-
-        // Resolve request 2 first
-        const secondPayments = [
-            {
-                id: "payment-latest",
-                paymentIntentId: "intent-latest",
-                paymentMethod: "Stripe",
-                amount: { toNumber: () => 3000 },
-                status: "COMPLETED",
-                orderId: "order-latest",
-                updatedAt: new Date(),
-            },
-        ] as unknown as UserPaymentType[];
-
-        await act(async () => {
-            resolveRequest2({
-                payments: secondPayments,
-                totalPages: 1,
-            });
-        });
-
-        // Resolve request 1 later (simulating late arrival)
-        const oldPayments = [
-            {
-                id: "payment-stale",
-                paymentIntentId: "intent-stale",
-                paymentMethod: "Stripe",
-                amount: { toNumber: () => 500 },
-                status: "COMPLETED",
-                orderId: "order-stale",
-                updatedAt: new Date(),
-            },
-        ] as unknown as UserPaymentType[];
-
-        await act(async () => {
-            resolveRequest1({
-                payments: oldPayments,
-                totalPages: 1,
-            });
-        });
-
-        // Stale result should NOT be rendered
-        expect(screen.queryByText("#payment-stale")).not.toBeInTheDocument();
-        // Latest result should be rendered
-        expect(screen.getByText("#payment-latest")).toBeInTheDocument();
-    });
-
-    it("logs console error when getUserPayments fails", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        const error = new Error("Database network failure");
-        (getUserPayments as jest.Mock).mockRejectedValue(error);
-
-        await act(async () => {
-            render(<PaymentsTable payments={mockPayments} totalPages={2} />);
-        });
-
-        expect(consoleSpy).toHaveBeenCalledWith(
-            "[PaymentsTable:getData] Error fetching payments:",
-            error.message,
-            error.stack
+        render(await ProfilePaymentPage());
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "We couldn’t load your payments"
         );
-        consoleSpy.mockRestore();
+        expect(
+            screen.queryByText("private provider details")
+        ).not.toBeInTheDocument();
     });
-
-    it("logs generic console error when non-Error object is thrown", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        (getUserPayments as jest.Mock).mockRejectedValue("string error");
-
-        await act(async () => {
-            render(<PaymentsTable payments={mockPayments} totalPages={2} />);
-        });
-
-        expect(consoleSpy).toHaveBeenCalledWith(
-            "[PaymentsTable:getData] Unknown error:",
-            "string error"
+    it("does not refetch successful initial data during hydration", async () => {
+        (getUserPaymentsForDisplay as jest.Mock).mockResolvedValueOnce(result);
+        render(await ProfilePaymentPage());
+        expect(getUserPaymentsForDisplay).toHaveBeenCalledTimes(1);
+        expect(screen.getByText("$42.50")).toBeVisible();
+    });
+    it("announces route loading with the shared heading", () => {
+        render(<PaymentLoading />);
+        expect(
+            screen.getByRole("heading", { name: "My payments", level: 1 })
+        ).toBeVisible();
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Loading payments"
         );
-        consoleSpy.mockRestore();
-    });
-
-    it("renders the amount when it arrives serialized across the RSC boundary", () => {
-        // RSC 境界を越えた Decimal は**メソッドを失う**。ここで本物の Decimal 風モック
-        // （{ toNumber: () => ... }）を渡すと、実際にユーザーが踏む経路を一度も通らない。
-        (getUserPayments as jest.Mock).mockResolvedValue({
-            payments: [],
-            totalPages: 1,
-        });
-        const serialized = {
-            id: "payment-serialized",
-            paymentIntentId: "pi_serialized",
-            paymentMethod: "PayPal",
-            status: "Completed",
-            amount: "42.50",
-            currency: "usd",
-            createdAt: new Date("2026-01-01"),
-            updatedAt: new Date("2026-01-01"),
-            orderId: "order-001",
-            userId: "user-001",
-        } as unknown as UserPaymentType;
-
-        render(<PaymentsTable payments={[serialized]} totalPages={1} />);
-
-        expect(screen.getByText("$42.50")).toBeInTheDocument();
-    });
-
-    it("does not divide a serialized Stripe dollar amount by 100", () => {
-        // 回帰検知点: 表示側が paymentMethod === "Stripe" を見て / 100 していた頃、
-        // ドル建てで保存された 42.50 が $0.43 と表示されていた。
-        // 単位は永続化層（Decimal(12,2) = ドル）で一意に決まっており、
-        // provider による表示時正規化は存在しない。
-        (getUserPayments as jest.Mock).mockResolvedValue({
-            payments: [],
-            totalPages: 1,
-        });
-        const stripePayment = {
-            id: "payment-stripe-dollars",
-            paymentIntentId: "pi_dollars",
-            paymentMethod: "Stripe",
-            status: "Completed",
-            amount: "42.50",
-            currency: "usd",
-            createdAt: new Date("2026-01-01"),
-            updatedAt: new Date("2026-01-01"),
-            orderId: "order-002",
-            userId: "user-001",
-        } as unknown as UserPaymentType;
-
-        render(<PaymentsTable payments={[stripePayment]} totalPages={1} />);
-
-        expect(screen.getByText("$42.50")).toBeInTheDocument();
-        expect(screen.queryByText("$0.43")).not.toBeInTheDocument();
+        expect(
+            screen.getByRole("region", { name: "Payment history" })
+        ).toHaveAttribute("aria-busy", "true");
     });
 });
