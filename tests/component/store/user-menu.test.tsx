@@ -11,7 +11,18 @@ jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn().mockResolvedValue(null),
 }));
 jest.mock("@clerk/nextjs", () => ({
-    UserButton: () => <div data-testid="user-button" />,
+    // appearance.elements.avatarBox を data 属性へ露出し、Clerk の公式 API で
+    // アバターサイズを指定していること（構造依存 CSS 不使用）を検証できるようにする
+    UserButton: ({
+        appearance,
+    }: {
+        appearance?: { elements?: { avatarBox?: string } };
+    }) => (
+        <div
+            data-testid="user-button"
+            data-avatar-box={appearance?.elements?.avatarBox}
+        />
+    ),
     SignOutButton: () => <div data-testid="sign-out-button" />,
 }));
 // next/image を素の img に差し替え（jsdom で next 最適化を回避）
@@ -148,6 +159,23 @@ describe("UserMenu", () => {
         expect(
             screen.queryByRole("button", { name: "Sign in" })
         ).not.toBeInTheDocument();
+    });
+
+    it("認証済み時は UserButton のアバターサイズを appearance.elements で指定する（.cl-avatarBox 直接指定を使わない）", async () => {
+        // Arrange
+        mockCurrentUser.mockResolvedValueOnce({
+            imageUrl: "https://cdn.example/avatar.png",
+            fullName: "Jane Doe",
+        });
+
+        // Act
+        render(await UserMenu());
+
+        // Assert
+        expect(screen.getByTestId("user-button")).toHaveAttribute(
+            "data-avatar-box",
+            "size-[70px]"
+        );
     });
 
     it("認証済みで fullName が無い場合は alt に 'user name' をフォールバックする", async () => {
