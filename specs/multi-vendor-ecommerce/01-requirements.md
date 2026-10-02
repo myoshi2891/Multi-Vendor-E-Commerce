@@ -16,7 +16,9 @@
 - Use a responsive branded cart with keyboard-operable selection, bulk/individual removal, quantity and wishlist controls; show loading, empty, unavailable and sync-failure states. Remove each deleted item's shipping contribution from the summary, prevent repeat checkout submissions while saving, and preserve the bag after a failure. Storefront notifications use readable branded success/error feedback with a keyboard-accessible dismiss control. See [cart requirements](../../docs/design/cart/requirements.md).
 - Checkout with shipping address selection and shipping fees.
 - Pay with Stripe or PayPal.
+- Browse payment history in the branded responsive account layout, retaining payment/intent IDs, update date, method, dollar amount, status and order-detail links. Use accessible method filters, period selection, explicit ID search (including empty-search reset), full reset and paging, with pending controls locked and generic failure feedback/retry. See [payment-history requirements](../../docs/design/profile-payment/requirements.md).
 - View order details and order status history.
+- Browse order history in the branded responsive account layout, preserving IDs, dates, thumbnails, item counts, payment/delivery states, totals and detail links. Use keyboard-operable status filters, period selection, explicit search submission (including empty-search reset), full filter reset and paging. Show accessible empty, pending and lookup-failure states with retry; lock controls during lookup and hide stale results. See [order-history requirements](../../docs/design/profile-orders/requirements.md).
 - Manage profile, addresses, wishlist, and reviews.
 - Browse saved wishlist pieces in the branded responsive account layout with existing product-card actions and URL-based pagination; reach the collection from empty results and see readable loading or lookup-failure feedback with reload.
 - Reach account sections from responsive branded navigation with an accessible current-page indication; use profile shortcuts and existing order filters, see readable account-lookup failure feedback, and reach order support. Show unimplemented coupon/credit shortcuts as unavailable rather than broken links.
@@ -49,3 +51,11 @@
 - Returns/exchange preserves the existing policy and uses the storefront cream/deep-green/gold palette, serif heading and responsive policy/form layout. Validate all fields including the UUID order number, lock the branded form during submission, preserve inputs after failure and show an accessible receipt after success.
 
 - Product support preserves existing setup, troubleshooting and aftercare content and placeholder notices in a responsive branded layout with breadcrumbs, keyboard-accessible section anchors and four support destinations.
+
+## Profile shipping address presentation
+
+Authenticated customers manage shipping addresses in the branded responsive `/profile/addresses` body: readable address cards, default indicator, add/edit dialog and explicit Make default action. Preserve all existing address fields and Zod validation. Use labeled native inputs and a select containing DB-supported countries; restore all values when editing. Provide empty/loading/load-failure/retry and save/default pending/failure/success feedback. Prevent duplicate submission and dialog dismissal while saving; preserve inputs after failure. Keyboard users can scroll the pending dialog even when its inputs are disabled. No delete action is added. See [address requirements](../../docs/design/profile-addresses/requirements.md).
+
+## Profile review presentation
+
+Authenticated customers browse their review history in the branded responsive account layout, retaining masked author/avatar, fractional rating, variant, color, size, quantity, text and photos. Native rating filters, labeled periods and explicit Search/Enter search operate on review text. Empty search clears search; full reset also clears period/rating. Preserve conditions during paging/retry, reset page on new conditions, lock pending controls and hide stale results. Provide empty/filtered-empty/loading/generic failure/retry and a readable update date. See [review requirements](../../docs/design/profile-reviews/requirements.md).

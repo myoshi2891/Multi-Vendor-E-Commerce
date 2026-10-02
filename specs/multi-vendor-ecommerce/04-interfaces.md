@@ -218,3 +218,19 @@ SupportForm receives `submitAction: typeof createSupportTicket` from each Server
 ### Product support presentation (2026-10-01)
 
 `/product-support` preserves all three PRODUCT_SUPPORT_SECTIONS headings/bodies and placeholder notices. It exposes Home breadcrumbs, a named three-link table of contents targeting support-1 through support-3, and customer-service/contact/returns-exchange/track-order links. Dedicated CSS Module; no API or data-model change.
+
+## Account Order History Display
+
+`/profile/orders` and `/profile/orders/[filter]` share the branded responsive order-history body; the existing filter whitelist and invalid-filter fallback remain. `getUserOrdersForDisplay(filter = "", period = "", search = "", page = 1)` returns `{ orders, totalPages }`: each order has id, createdAt (ISO string), total (number), paymentStatus, orderStatus and groups containing only item counts and image URLs. It delegates to the existing authenticated query and does not change its public contract. Server Components pass the action to the client as `fetchOrdersAction`. No new HTTP endpoint or data model. [Details](../../docs/design/profile-orders/design.md).
+
+## Account Payment History Display
+
+`/profile/payment` is a force-dynamic Server Component with a branded responsive history body and loading state. `getUserPaymentsForDisplay(filter = "", period = "", search = "", page = 1)` returns `{ payments, totalPages }`; each payment contains id, paymentIntentId, paymentMethod, amount (number in dollars), status, orderId and updatedAt (ISO string). It delegates to the existing authenticated query and preserves its contract, method filters and case-insensitive payment/intent-ID search. The client receives `fetchPaymentsAction` via Props; no new HTTP endpoint, schema or provider operation. [Details](../../docs/design/profile-payment/design.md).
+
+### Profile shipping addresses contract
+
+`getProfileShippingAddresses()` returns `{addresses, countries}`. Address fields are id, firstName, lastName, phone, address1, address2, city, state, zip_code, countryId, default plus country `{id,name,code}`; countries use those same three fields. Exclude user/timestamps/private relations. `saveProfileShippingAddress(input)` accepts existing ShippingAddressSchema fields plus optional UUID id and returns address fields without country/user/timestamps. `makeProfileShippingAddressDefault(id)` accepts UUID and returns `{id}`. All authenticate; edit/default reject non-owned IDs before writes. Countries are supported DB records in name order. Errors exposed by UI are generic. Existing upsert accepts optional dates for backward compatibility; the new facade omits them. [UI contract](../../docs/design/profile-addresses/requirements.md).
+
+### Profile review display contract
+
+`getUserReviewsForDisplay(filter = "", period = "", search = "", page = 1)` returns `{reviews, totalPages}`. Review fields: id, rating, review, variant, color, size, quantity, updatedAt (ISO), user `{name,picture}`, images `{id,url,alt}[]`. Exclude private user fields and internal relations/timestamps. Delegate to the existing authenticated user-scoped query: ratings 1–5, four createdAt periods, case-insensitive review-text search, 10 items/page, updatedAt descending. UI Search/Enter replaces delayed search; empty search/full reset work explicitly. No order/product/store search or mutation is added. [Contract](../../docs/design/profile-reviews/requirements.md).
