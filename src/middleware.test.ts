@@ -7,19 +7,6 @@ import { getUserCountry } from "./lib/country";
 // clerkMiddleware は渡されたハンドラーをそのまま返すようにし、テストから直接呼び出せるようにする。
 jest.mock("@clerk/nextjs/server", () => ({
     clerkMiddleware: jest.fn((handler) => handler),
-    createRouteMatcher: jest.fn((routes: string[]) => {
-        return (req: NextRequest) => {
-            const path = req.nextUrl.pathname;
-            return routes.some((route) => {
-                // シンプルな前方一致または完全一致でシミュレーション（ReDoSを避ける）
-                if (route.endsWith("(.*)")) {
-                    const base = route.replace("(.*)", "");
-                    return path.startsWith(base);
-                }
-                return path === route;
-            });
-        };
-    }),
 }));
 
 // 2. ./lib/country のモック
@@ -65,28 +52,20 @@ describe("Middleware", () => {
     } as unknown as NextFetchEvent;
 
     describe("ルーティング保護 (Authentication & Route Protection)", () => {
-        const protectedPaths = [
+        // 認証はリソース側（layout / page / Server Action）で行う。proxy のパスマッチ保護は
+        // Next.js のルーティングと乖離し得るため撤去した（plans/072）。
+        const paths = [
+            "/",
+            "/browse",
             "/dashboard",
             "/dashboard/settings",
             "/checkout",
             "/profile",
             "/profile/orders",
         ];
-        const publicPaths = ["/", "/browse"];
 
-        it.each(protectedPaths)(
-            "[P0] 正常系: 保護されたルート (%s) の場合は auth.protect() が呼ばれる",
-            async (path) => {
-                const req = new NextRequest(`http://localhost:3000${path}`);
-                req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
-                await typedMiddleware(mockAuth as unknown as ClerkMiddlewareAuth, req, mockEvent);
-
-                expect(mockProtect).toHaveBeenCalled();
-            }
-        );
-
-        it.each(publicPaths)(
-            "[P0] 正常系: パブリックなルート (%s) の場合は auth.protect() が呼ばれない",
+        it.each(paths)(
+            "[P0] 正常系: パス (%s) に関わらず proxy では auth.protect() を呼ばない",
             async (path) => {
                 const req = new NextRequest(`http://localhost:3000${path}`);
                 req.cookies.set("userCountry", JSON.stringify({ name: "Japan" }));
