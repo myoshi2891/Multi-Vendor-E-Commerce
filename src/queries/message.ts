@@ -308,3 +308,28 @@ export const markConversationRead = async (
         throw new Error("既読の更新に失敗しました。");
     }
 };
+
+/** Minimal, serializable account conversation list; ownership is checked by the existing query. */
+export const getProfileConversations = async () => {
+    const conversations = await getUserConversations();
+    return conversations.map((conversation) => ({
+        id: conversation.id,
+        userId: conversation.userId,
+        updatedAt: conversation.updatedAt.toISOString(),
+        store: { name: conversation.store.name, logo: conversation.store.logo },
+        messages: conversation.messages.map((message) => ({
+            content: message.content,
+        })),
+    }));
+};
+
+/** Minimal thread data; the existing query verifies participation before reading messages. */
+export const getProfileConversationMessages = async (id: string) => {
+    const messages = await getConversationMessages(id);
+    return messages.map((message) => ({
+        id: message.id,
+        senderId: message.senderId,
+        content: message.content,
+        createdAt: message.createdAt.toISOString(),
+    }));
+};

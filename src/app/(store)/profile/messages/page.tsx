@@ -1,14 +1,27 @@
 import MessagesContainer from "@/components/store/profile/messages/messages-container";
-import { getUserConversations } from "@/queries/message";
-
+import {
+    getProfileConversations,
+    getProfileConversationMessages,
+    sendMessage,
+    markConversationRead,
+} from "@/queries/message";
 export const dynamic = "force-dynamic";
-
 export default async function ProfileMessagesPage() {
-    const conversations = await getUserConversations();
+    let conversations: Awaited<ReturnType<typeof getProfileConversations>> = [];
+    let initialError = false;
+    try {
+        conversations = await getProfileConversations();
+    } catch {
+        initialError = true;
+    }
     return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">Messages</h1>
-            <MessagesContainer initialConversations={conversations} />
-        </div>
+        <MessagesContainer
+            initialConversations={conversations}
+            initialError={initialError}
+            loadConversationsAction={getProfileConversations}
+            loadMessagesAction={getProfileConversationMessages}
+            sendMessageAction={sendMessage}
+            markReadAction={markConversationRead}
+        />
     );
 }
