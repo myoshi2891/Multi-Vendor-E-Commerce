@@ -5015,3 +5015,7 @@ FAQ画面（DS-PAGE-014）の新ブランド適用、質問目次・サポート
 ### 2026-10-02 カート同期エラー表示の解除
 
 `/cart` で同期に一度失敗すると、配送国変更で再同期が成功しても失敗アラートが残っていた。成功時に `syncError` を解除し、`cart-container.test.tsx` に回帰テスト +1（Red を確認）。QA_HANDOFF と同期: Jest 2621 passed / 2624 total・246 スイート（全体実測）。dashboard 実測 304 ファイル（cart 移行時の 303 に plan 071 の新規テストファイル +1、本件はファイル数不変・既存lcov328は再測定なし）。未コミット。
+
+### 2026-10-02 開発時コンソール警告の解消（plan 072）
+
+Clerk `createRouteMatcher` の非推奨警告に対応し、`src/proxy.ts` のパスマッチ保護を撤去。`/profile/*` は `profile/layout.tsx` の `auth()` + `redirectToSignIn()` で保護（`/dashboard/*`・`/checkout` は既存のリソース側検証）。Clerk 構造依存 CSS（`.user-avatar .cl-avatarBox`・重複 2 箇所）を `UserButton` の `appearance.elements` へ移行し、`html { position: relative }` で framer-motion のスクロールコンテナ警告を解消。`THREE.Clock` は `@react-three/fiber` 内部由来のため未対応（tech.md に記載）。QA_HANDOFF と同期: Jest 2624 passed / 2627 total・247 スイート（全体実測）。dashboard 実測 305 ファイル。未コミット。

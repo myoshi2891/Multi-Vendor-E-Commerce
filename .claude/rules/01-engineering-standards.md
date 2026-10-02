@@ -34,7 +34,9 @@ These standards align with the current repo tooling and architecture.
 
 ## Security
 - Require `currentUser()` and role checks for protected actions.
-- Protect routes with `clerkMiddleware` and `createRouteMatcher`.
+- Check auth in each protected layout / page / Server Action (resource-based).
+  Never gate routes with `createRouteMatcher` path matching (deprecated by Clerk;
+  `src/proxy.ts` keeps `clerkMiddleware` only for auth context).
 - Secrets live only in environment variables; never commit or log `.env` contents.
 - Verify webhooks (Svix) and validate all user input.
 

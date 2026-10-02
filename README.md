@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/myoshi2891/Multi-Vendor-E-Commerce)
 
-**関連ソースファイル**: `CLAUDE.md` / `package.json` / `src/lib/db.ts` / `src/app/layout.tsx` / `src/middleware.ts` / `specs/multi-vendor-ecommerce/04-interfaces.md`
+**関連ソースファイル**: `CLAUDE.md` / `package.json` / `src/lib/db.ts` / `src/app/layout.tsx` / `src/proxy.ts` / `specs/multi-vendor-ecommerce/04-interfaces.md`
 
 **贅沢・幸運・幸せをテーマにしたマルチベンダーEC。** ホームは英日併記の三幕構成と、スクロールに反応する3Dの宝石でブランドの世界観を表現します。動きを減らす設定やWebGL非対応端末では静止ビジュアルを表示します。
 
@@ -242,7 +242,7 @@ flowchart TD
     SELLER_R --> SELLER_R2
     ADMIN_R --> ADMIN_R2
 
-    MW["src/middleware.ts<br>Clerk 認証ミドルウェア"]
+    MW["src/proxy.ts<br>Clerk 認証コンテキスト"]
     MW -->|"保護"| PROTECTED
     MW -->|"保護"| SELLER_R2
     MW -->|"保護"| ADMIN_R2
@@ -256,7 +256,7 @@ flowchart TD
 
 **アクセス制御の実装**:
 
-- **ミドルウェア**: `src/middleware.ts` が `/dashboard/*`・`/checkout`・`/profile/*` を保護
+- **認証**: `src/proxy.ts`（`clerkMiddleware`）が認証コンテキストを確立し、`/dashboard/*`・`/checkout`・`/profile/*` は各 layout / page で認可
 - **サーバーアクション**: `src/lib/auth-guards.ts` の `requireUser` / `requireAdmin` / `requireSeller` / `requireStoreOwner` ヘルパーで認証・ロール・店舗所有権を集約検証。`requireStoreOwner` は `where: { url, userId }` の複合検索で IDOR 防御も同時に担保する
 - **ロール昇格**: `src/queries/store.ts` の `updateStoreStatus()` が USER → SELLER に昇格
 
@@ -357,7 +357,7 @@ Multi-Vendor-E-Commerce/
 │   │   ├── schemas.ts                # Zod バリデーションスキーマ
 │   │   ├── types.ts                  # TypeScript 型定義
 │   │   └── utils.ts                  # ユーティリティ関数
-│   └── middleware.ts                 # Clerk 認証ミドルウェア
+│   └── proxy.ts                      # Clerk 認証コンテキスト（clerkMiddleware）
 ├── prisma/
 │   ├── schema.prisma                 # データベーススキーマ（PostgreSQL）
 │   ├── migrations/                   # マイグレーション履歴

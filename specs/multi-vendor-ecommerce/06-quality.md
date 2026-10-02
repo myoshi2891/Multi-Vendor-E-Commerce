@@ -1,7 +1,7 @@
 # Quality Attributes
 
 ## Security
-- Clerk middleware protects `/dashboard`, `/checkout`, and `/profile` routes.
+- `/dashboard`, `/checkout`, and `/profile` are protected at the resource level (layout / page / Server Action auth checks); `src/proxy.ts` (`clerkMiddleware`) only establishes auth context and does not path-match routes.
 - Server actions validate authentication via `currentUser`.
 - Webhook requests are verified with Svix signatures; handlers use the
   SDK-verified `evt.data` object instead of re-parsing the raw body.
