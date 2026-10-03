@@ -34,8 +34,13 @@
 - Zod schemas in `src/lib/schemas.ts` validate form inputs and constraints.
 
 ## Request Proxy
-- `src/proxy.ts` enforces auth on protected routes and sets a
-  `userCountry` cookie for shipping context.
+- `src/proxy.ts` runs `clerkMiddleware` only to establish the auth context and
+  sets a `userCountry` cookie for shipping context. It does not protect routes
+  by path matching (`createRouteMatcher` was removed in plans/072).
+- Route authorization is enforced on the resource side. For `/profile/*`
+  (including the order-history pages below), `src/app/(store)/profile/layout.tsx`
+  calls `auth()` and returns `redirectToSignIn()` when there is no user; the
+  Server Actions those pages receive also verify ownership themselves.
 
 ## Account Order History Boundary
 
