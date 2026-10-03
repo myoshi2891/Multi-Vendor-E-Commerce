@@ -146,7 +146,7 @@ test.describe("Profile messages design system", () => {
                     return route.fulfill({ status: 500, body: "Unavailable" });
                 return fulfill(route, messages);
             }
-            readAction = action;
+            if (!readAction) readAction = action;
             if (action === readAction && ++readCalls === 1)
                 return route.fulfill({ status: 500, body: "Unavailable" });
             return fulfill(route, { count: 0 });
