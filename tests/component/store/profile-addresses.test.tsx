@@ -161,6 +161,29 @@ describe("branded profile address management", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         expect(screen.getByRole("status")).toHaveTextContent("Address saved");
     });
+    it("closes the editor and reloads when the saved country is not listed", async () => {
+        const saveAddressAction = jest.fn().mockResolvedValue({
+            ...address,
+            countryId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        });
+        const { user, loadAddressesAction } = setup({ saveAddressAction });
+        await user.click(
+            screen.getByRole("button", { name: "Edit address for Mina Mori" })
+        );
+        await user.click(screen.getByRole("button", { name: "Save address" }));
+        await waitFor(() =>
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+        );
+        await waitFor(() =>
+            expect(loadAddressesAction).toHaveBeenCalledTimes(1)
+        );
+        expect(screen.getAllByRole("status")[0]).toHaveTextContent(
+            "Address saved"
+        );
+        expect(
+            await screen.findByRole("button", { name: "Refresh addresses" })
+        ).toBeEnabled();
+    });
     it("locks pending save, retains values after failure and retries without duplicates", async () => {
         let reject!: (error: Error) => void;
         const pending = new Promise<never>((_, fail) => {

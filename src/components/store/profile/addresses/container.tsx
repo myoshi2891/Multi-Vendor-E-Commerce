@@ -32,12 +32,18 @@ export default function AddressContainer({
     const [editor, setEditor] = useState<ProfileAddress | "new" | null>(null);
     const pending = useRef(false);
     const trigger = useRef<HTMLButtonElement | null>(null);
-    async function reload() {
+    // 保存結果の国が一覧に無い場合、busy 解除後に再取得するためのフラグ
+    const reloadAfterSave = useRef(false);
+    function reload() {
         if (pending.current || busy) return;
+        void loadAddresses("");
+    }
+    async function loadAddresses(notice: string) {
+        if (pending.current) return;
         pending.current = true;
         setLoading(true);
         setLoadError(false);
-        setMessage("");
+        setMessage(notice);
         setError("");
         try {
             setData(await loadAddressesAction());
@@ -78,7 +84,14 @@ export default function AddressContainer({
         const country = data.countries.find(
             (item) => item.id === saved.countryId
         );
-        if (!country) return;
+        if (!country) {
+            // 一覧に無い国で保存された場合は手元で組み立てず、サーバーから取り直す
+            reloadAfterSave.current = true;
+            setEditor(null);
+            setMessage("Address saved.");
+            setError("");
+            return;
+        }
         const next = { ...saved, country };
         setData((current) => {
             const items = current.addresses.map((address) =>
@@ -96,6 +109,12 @@ export default function AddressContainer({
         setEditor(null);
         setMessage("Address saved.");
         setError("");
+    }
+    function onBusyChange(next: boolean) {
+        setBusy(next);
+        if (next || !reloadAfterSave.current) return;
+        reloadAfterSave.current = false;
+        void loadAddresses("Address saved.");
     }
     function openEditor(
         button: HTMLButtonElement,
@@ -119,7 +138,7 @@ export default function AddressContainer({
                     type="button"
                     className={styles.secondary}
                     disabled={loading || busy}
-                    onClick={() => void reload()}
+                    onClick={reload}
                 >
                     Refresh addresses
                 </button>
@@ -147,7 +166,7 @@ export default function AddressContainer({
                         <button
                             type="button"
                             className={styles.primary}
-                            onClick={() => void reload()}
+                            onClick={reload}
                         >
                             Try again
                         </button>
@@ -299,7 +318,7 @@ export default function AddressContainer({
                                 countries={data.countries}
                                 saveAddressAction={saveAddressAction}
                                 onSaved={onSaved}
-                                onBusyChange={setBusy}
+                                onBusyChange={onBusyChange}
                                 onCancel={() => {
                                     if (!busy) setEditor(null);
                                 }}
