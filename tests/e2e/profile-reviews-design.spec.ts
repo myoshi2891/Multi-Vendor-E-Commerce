@@ -152,12 +152,16 @@ test.describe("Profile reviews design system", () => {
         await expect(
             page.getByRole("button", { name: "Next page" })
         ).toBeEnabled();
-        expect(calls.at(-1)).toEqual(["4", "last-1-year", "lovely", 1]);
+        await expect
+            .poll(() => calls.at(-1))
+            .toEqual(["4", "last-1-year", "lovely", 1]);
         await page.getByRole("button", { name: "Next page" }).click();
         await expect(
             page.getByRole("button", { name: "Next page" })
         ).toBeDisabled();
-        expect(calls.at(-1)).toEqual(["4", "last-1-year", "lovely", 2]);
+        await expect
+            .poll(() => calls.at(-1))
+            .toEqual(["4", "last-1-year", "lovely", 2]);
         await page.getByRole("searchbox").fill("missing");
         await page.getByRole("searchbox").press("Enter");
         await expect(
@@ -169,7 +173,9 @@ test.describe("Profile reviews design system", () => {
         await expect(
             page.getByRole("button", { name: "Next page" })
         ).toBeEnabled();
-        expect(calls.at(-1)).toEqual(["4", "last-1-year", "", 1]);
+        await expect
+            .poll(() => calls.at(-1))
+            .toEqual(["4", "last-1-year", "", 1]);
         await page.getByRole("button", { name: "Remove all filters" }).click();
         await expect(
             page.getByRole("button", { name: "View all", exact: true })
@@ -179,7 +185,7 @@ test.describe("Profile reviews design system", () => {
         await expect(
             page.getByRole("button", { name: "Next page" })
         ).toBeEnabled();
-        expect(calls.at(-1)).toEqual(["", "", "", 1]);
+        await expect.poll(() => calls.at(-1)).toEqual(["", "", "", 1]);
         await accessible(page);
     });
 });
