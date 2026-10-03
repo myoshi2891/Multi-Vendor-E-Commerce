@@ -21,6 +21,8 @@ jest.mock("@/lib/db", () => {
     return {
         db: {
             $queryRaw: jest.fn(),
+            // recomputeProductDerivedColumns（searchKeywords / minPrice の再計算・plans 074/076）
+            $executeRaw: jest.fn(),
             $transaction: jest.fn(),
             store: model("findUnique"),
             product: model("findUnique", "findFirst", "create", "update"),
