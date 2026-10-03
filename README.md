@@ -243,9 +243,9 @@ flowchart TD
     ADMIN_R --> ADMIN_R2
 
     MW["src/proxy.ts<br>Clerk 認証コンテキスト"]
-    MW -->|"保護"| PROTECTED
-    MW -->|"保護"| SELLER_R2
-    MW -->|"保護"| ADMIN_R2
+    MW -->|"認証コンテキスト確立"| PROTECTED
+    MW -->|"認証コンテキスト確立"| SELLER_R2
+    MW -->|"認証コンテキスト確立"| ADMIN_R2
 ```
 
 | ロール | アクセスレベル | 主なルート | サーバーアクション |
