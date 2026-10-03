@@ -213,8 +213,8 @@ model Product {
   offerTagId String?
   offerTag   OfferTag? @relation("OfferTagToProduct", fields: [offerTagId], references: [id])
 
-  // 全文検索（plan 074 / ADR-008）。searchKeywords は配下バリアントの keywords を連結した
-  // 非正規化列で、src/queries/product.ts の recomputeProductDerivedColumns が tx 内で書き込む。
+  // 全文検索（plan 074 / ADR-008）。searchKeywords は配下バリアントの variantName /
+  // variantDescription / keywords を連結した非正規化列で、src/queries/product.ts の recomputeProductDerivedColumns が tx 内で書き込む。
   // searchVector は name(A) / brand(B) / searchKeywords(C) / description(D) の重み付き生成列
   // （GENERATED ALWAYS AS ... STORED）。式と GIN インデックス Product_searchVector_idx は
   // マイグレーション SQL にのみ存在する（Prisma は生成式と tsvector の GIN を表現できない）。

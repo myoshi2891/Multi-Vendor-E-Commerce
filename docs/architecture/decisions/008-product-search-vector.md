@@ -48,10 +48,12 @@ ALTER TABLE "Product" ADD COLUMN "searchVector" tsvector GENERATED ALWAYS AS (
 CREATE INDEX "Product_searchVector_idx" ON "Product" USING GIN ("searchVector");
 ```
 
-- **D-1**: `searchKeywords` は**アプリ層が書き込む**。商品配下の全バリアントの `keywords` を連結した値で、
+- **D-1**: `searchKeywords` は**アプリ層が書き込む**。商品配下の全バリアントの `variantName` /
+  `variantDescription` / `keywords` を連結した値で（導出 SQL は `src/lib/product-derived-columns.ts`）、
   バリアントを作成・更新する `src/queries/product.ts` の tx の中で、
   `recomputeProductDerivedColumns(tx, productId)` が再計算する
-- **D-2**: 検索述語は `"searchVector" @@ plainto_tsquery('simple', $q)` の**1 種類だけ**にする。
+- **D-2**: 検索述語は `"searchVector" @@ to_tsquery('simple', buildPrefixTsQuery(q))` の**1 種類だけ**にする
+  （`buildPrefixTsQuery`（`src/lib/search-query.ts`）が入力を tsquery 構文へ安全に組み立て、最後の語を前方一致にする）。
   式を複数箇所に書く運用をやめる
 - **D-3**: カテゴリ名は `searchVector` に**含めない**。カテゴリ名を変えるとサブツリー配下の全商品を書き直すことになり、
   同期のコストがカテゴリの規模に比例するため。カテゴリ候補はサジェストに別クエリで出す
