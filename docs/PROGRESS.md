@@ -5044,4 +5044,4 @@ Clerk `createRouteMatcher` の非推奨警告に対応し、`src/proxy.ts` の�
 
 ### プロフィール住所の失敗ログ（2026-10-03）
 
-レビュー指摘対応。`src/queries/user.ts` の `getProfileShippingAddresses` / `saveProfileShippingAddress` / `makeProfileShippingAddressDefault` が `catch {}` で原因を捨てていたため、`[User:<関数名>]` の2引数構造化ログを追加（利用者向けの汎用メッセージは不変）。`profile-addresses.test.ts` +6（Red を確認）。QA_HANDOFFと同期: Jest 2674 passed / 2677 total・251 スイート（全体実測。前回同期以降の Profile 移行分 +44 / +4 スイートを含む）、型エラー 0、dashboard実測314ファイル/既存lcov328。未コミット。
+レビュー指摘対応。`src/queries/user.ts` の `getProfileShippingAddresses` / `saveProfileShippingAddress` / `makeProfileShippingAddressDefault` が `catch {}` で原因を捨てていたため、`[User:<関数名>]` の2引数構造化ログを追加（利用者向けの汎用メッセージは不変）。`profile-addresses.test.ts` +6（Red を確認）。QA_HANDOFFと同期: Jest 2674 passed / 2677 total・251 スイート（当時の中間実測。現行値は住所一覧再読込テスト追加後の 2675 passed / 2678 total で、正本は QA_HANDOFF と「現在の状態」表。前回同期以降の Profile 移行分 +44 / +4 スイートを含む）、型エラー 0、dashboard実測314ファイル/既存lcov328。未コミット。
