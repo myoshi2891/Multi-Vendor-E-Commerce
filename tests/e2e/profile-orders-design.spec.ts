@@ -112,6 +112,7 @@ test.describe("Profile orders design system", () => {
                 body: `0:{"a":"$@1","f":"","b":"development"}\n1:${JSON.stringify({ orders: [order], totalPages: 2 })}\n`,
             });
         });
+        await page.waitForLoadState("networkidle");
         await page.getByRole("button", { name: "To pay" }).click();
         await expect(page.getByRole("status")).toContainText("Loading orders");
         await expect(

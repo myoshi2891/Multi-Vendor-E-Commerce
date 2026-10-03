@@ -137,6 +137,7 @@ test.describe("Profile payment design system", () => {
                 body: response,
             });
         });
+        await page.waitForLoadState("networkidle");
         await page.getByRole("button", { name: "PayPal", exact: true }).click();
         await expect(page.getByRole("status")).toContainText(
             "Loading payments"
