@@ -15,6 +15,8 @@ import {
     createMockMessageType,
 } from "@/config/test-fixtures";
 jest.mock("@/queries/message", () => ({
+    getProfileConversations: jest.fn().mockResolvedValue([]),
+    getProfileConversationMessages: jest.fn().mockResolvedValue([]),
     getConversationMessages: jest.fn().mockResolvedValue([]),
     markConversationRead: jest.fn().mockResolvedValue({ count: 0 }),
     sendMessage: jest.fn(),
