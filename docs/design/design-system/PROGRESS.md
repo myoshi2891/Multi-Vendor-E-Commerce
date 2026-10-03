@@ -317,6 +317,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-200 | P4 | 利用確認が必要な旧部品 | [src/components/store/cards/address-card.tsx](<../../../src/components/store/cards/address-card.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-201 | P1 | ストア通知 | [src/components/store/shared/store-toaster.tsx](../../../src/components/store/shared/store-toaster.tsx) | 検証済み | [cart移行記録](#cart移行記録) |
 | DS-COMP-202 | P2 | 購入者メッセージ専用スレッド | [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../../src/components/store/profile/messages/profile-conversation-thread.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
+| DS-COMP-203 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx](<../../../src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx>) | 検証済み | [属性ファセット実施記録](#属性ファセット移行記録) |
 
 ## 前セッションの確認結果
 
@@ -569,3 +570,17 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 制約: 会話/スレッド/送信/既読はaction応答mock。店舗への実送信/会話DB作成/購入/seedなし。初期サーバー失敗/loadingはRTL、poll/raceはRTL。既存AC-M8実往復E2E/Firefox/WebKit/全E2E/全体coverageは未実行。受け入れ範囲の残課題なし。
 
 - 最終文書整合: 新設/更新部分のローカルリンク33件（アンカー含む）を検証。台帳12本体適用/11検証済み/35未適用/7転送/1仮実装=66、部品202件、新規/対象3IDと計画チェック、旧共有3IDのTODO維持を照合。`git diff --check`成功、対象限定ESLint無警告。
+
+## 属性ファセット移行記録
+
+### 2026-10-03 DS-COMP-203 — /browse 属性ファセット（新規部品）
+
+- 計画: [plans/076](../../../plans/076-facet-counts-and-min-price.md)（Step 5）。設計: [faceted-search design](../faceted-search/design.md) §2-Q3
+- 状態: 検証済み（新規部品。既存 Size フィルタと同じ見出し・行・選択マークの書式）
+- 変更: `filters/attribute/attribute-facet-filter.tsx` を新設し、`filters.tsx` から Size の下に描画。値は `/browse` の Server Component が `getProductFacets` で集計して props で渡す（Server Action を client から呼ばない）。`?attr.<key>=<value>` をトグルし、ページ番号は外す。開閉は `hidden` 属性。ストアページ（`/store/[storeUrl]`）は facets を渡さないため表示変化なし。
+- Red: `attribute-facet-filter.test.tsx` を先に作成し、モジュール不在で失敗（6 件）。Green 後、開閉ケースの失敗はテスト側の取得方法（`hidden` 要素はロール検索から除外）だったため `{ hidden: true }` に修正。
+- Green／Refactor: `bun run test -- src/components/store/browse-page/filters/attribute/attribute-facet-filter.test.tsx` 6/6、`browse/page.test.tsx` 23/23、lint 0 errors（既存 12 warnings）、tsc 成功。
+- 表示確認: 1440px（`/browse?category=lux-women&attr.material=silk`・ラグジュアリーデータ）で Material / Pattern / Season の 3 セクション、Silk 選択時に Material 内の他の値の件数を維持し他 key は 4 件の母集合で再集計、横スクロールなし。390px でフィルタパネルを開き横スクロールなし（scrollWidth 390）、値ボタンは幅 343 × 高さ 32、focus で 2px のアウトライン、Enter で選択でき URL に `attr.material=wool` が追加され 6 件（OR）に。axe: `tests/e2e/a11y/browse.spec.ts` を seed カテゴリ URL（ファセットあり）に変更し chromium で違反 0（color-contrast は既知負債 OI-10 で従来どおり除外）。ストアフロントのためテーマはライトのみ。
+- 文書同期: [04-interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)（/browse の `attr.*`・`getProductFacets`）、[03-data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)、[08-open-questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md)（価格の絞り込みの意味）、[design.md §5](../faceted-search/design.md)。
+- 残課題／保留: フィルタ見出し（DS-COMP-059 `filters/header.tsx`）の「Filter (n)」件数と選択中チップに属性の選択が含まれない（既存 `queries` の項目だけを数える）。解除は各ファセットのボタンと「Clear All」で可能。DS-COMP-059 の移行時に `attr.*` のチップ化を含めること。
+- 変更記録: 未コミット
