@@ -126,4 +126,30 @@ test.describe("検索・フィルタ", () => {
     await page.goto(`/browse?category=${category}&page=abc`);
     await expect(cards).toHaveCount(10);
   });
+
+  test("属性ファセットで絞り込める（plan 076）", async ({ page }) => {
+    // Arrange — seed はカテゴリに e2e_finish を定義し、productB にだけ gloss を付けている
+    await page.goto(`/browse?category=${seed.category.url}`);
+    const results = page.getByRole("region", { name: "Collection results" });
+    await expect(results.getByText(seed.product.name).first()).toBeVisible();
+    const gloss = page
+      .getByRole("region", { name: seed.facet.name })
+      .getByRole("button", { name: `${seed.facet.productBOption.label} (1)` });
+    await expect(gloss).toHaveAttribute("aria-pressed", "false");
+
+    // Act
+    await gloss.click();
+
+    // Assert — URL に選択が載り、gloss の productB だけが残る
+    await page.waitForURL(
+      new RegExp(`attr\\.${seed.facet.key}=${seed.facet.productBOption.value}`)
+    );
+    await expect(results.getByText(seed.productB.name).first()).toBeVisible();
+    await expect(results.getByText(seed.product.name, { exact: true })).toHaveCount(0);
+    await expect(
+      page
+        .getByRole("region", { name: seed.facet.name })
+        .getByRole("button", { name: `${seed.facet.productBOption.label} (1)` })
+    ).toHaveAttribute("aria-pressed", "true");
+  });
 });

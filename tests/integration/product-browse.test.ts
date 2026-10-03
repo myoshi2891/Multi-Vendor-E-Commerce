@@ -36,7 +36,8 @@ jest.mock("@clerk/nextjs/server", () => ({
 // ----------------------------------------------------------------------------
 
 import { Prisma } from "@prisma/client";
-import { getProducts } from "@/queries/product";
+import type { ProductFacet, ProductFilters } from "@/lib/types";
+import { getProductFacets, getProducts } from "@/queries/product";
 import { disconnectTestDb, getTestDb } from "./setup/db";
 import { resetDb } from "./setup/reset-db";
 import {
@@ -126,7 +127,23 @@ async function arrangeCatalog() {
         data: { views: 10, createdAt: new Date("2026-01-01T00:00:00Z") },
     });
 
+    // 価格ソートが使う非正規化列 minPrice を埋める。アプリの書き込み経路
+    // （recomputeProductDerivedColumns）を通さずに行を作っているので、マイグレーションの
+    // backfill と同じ SQL で導出する（同期そのものは product-update.test.ts が検証する）。
+    await fillMinPrice();
+
     return { store, cat1, cat2, a, b, c };
+}
+
+/** 全商品の minPrice を、Size の price / discount から導出し直す（backfill と同じ式）。 */
+async function fillMinPrice(): Promise<void> {
+    await db.$executeRaw`
+        UPDATE "Product" p SET "minPrice" = (
+            SELECT round(min(s."price" * (1 - s."discount"::numeric / 100)), 2)
+            FROM "ProductVariant" pv
+            JOIN "Size" s ON s."productVariantId" = pv."id"
+            WHERE pv."productId" = p."id"
+        )`;
 }
 
 /** 返却された products の id 配列（並び順を保つ） */
@@ -217,7 +234,8 @@ describe("Scenario 3: nested some filters", () => {
 
     it("filters by color passed as a bare string", async () => {
         // 単一文字列を渡す経路（実装側で配列化される）を通す
-        const result = await getProducts({ color: "Red" });
+        // Server Action への直接入力は型どおりとは限らない（parseProductFilters が配列へ揃える）
+        const result = await getProducts({ color: "Red" } as unknown as ProductFilters);
 
         expect(result.totalCount).toBe(1);
         expect(idsOf(result)).toEqual([fx.a.product.id]);
@@ -266,6 +284,103 @@ describe("Scenario 5: case-insensitive search", () => {
 
         expect(result.totalCount).toBe(1);
         expect(idsOf(result)).toEqual([fx.c.product.id]);
+    });
+});
+
+describe("Scenario 5b: search through searchVector (plan 075)", () => {
+    // 旧実装（name / description / variantName / variantDescription への ILIKE）では
+    // 当たらなかった語で検索し、検索ベクトル経由に切り替わったことを固定する。
+
+    it("matches the brand, which the former ILIKE search never looked at", async () => {
+        // Arrange
+        await db.product.update({
+            where: { id: fx.b.product.id },
+            data: { brand: "Zephyrcraft" },
+        });
+
+        // Act
+        const result = await getProducts({ search: "zephyrcraft" });
+
+        // Assert
+        expect(idsOf(result)).toEqual([fx.b.product.id]);
+    });
+
+    it("matches variant keywords via the denormalized searchKeywords column", async () => {
+        // Arrange — searchKeywords の同期（recomputeProductDerivedColumns）は
+        // product-update.test.ts が検証する。ここでは列に値がある前提で検索経路だけを見る
+        await db.product.update({
+            where: { id: fx.a.product.id },
+            data: { searchKeywords: "tourmaline beryl" },
+        });
+
+        // Act
+        const result = await getProducts({ search: "beryl" });
+
+        // Assert
+        expect(idsOf(result)).toEqual([fx.a.product.id]);
+    });
+
+    it("matches a partially typed last word as a prefix", async () => {
+        // Act — "auro" は Aurora Lamp の前方一致
+        const result = await getProducts({ search: "auro" });
+
+        // Assert
+        expect(idsOf(result)).toEqual([fx.c.product.id]);
+    });
+
+    it("applies filters before paging, so later pages still hold matches", async () => {
+        // Arrange — 3 商品すべてに同じ語を持たせ、カテゴリ 1（A・B）で絞る。
+        // 「検索で上位 N 件を確定 → 後段で絞り込み」の順だと、ページ 2 が空になったり
+        // totalCount が絞り込み前の件数になったりする（design.md §2-Q2 の anti-pattern）
+        await db.product.updateMany({ data: { searchKeywords: "obsidian" } });
+
+        // Act
+        const page1 = await getProducts(
+            { search: "obsidian", category: fx.cat1.category.url },
+            "most-popular",
+            1,
+            1
+        );
+        const page2 = await getProducts(
+            { search: "obsidian", category: fx.cat1.category.url },
+            "most-popular",
+            2,
+            1
+        );
+
+        // Assert
+        expect(page1.totalCount).toBe(2);
+        expect(idsOf(page1)).toEqual([fx.a.product.id]);
+        expect(idsOf(page2)).toEqual([fx.b.product.id]);
+    });
+
+    it("orders by relevance when no sort is given, name hits before description hits", async () => {
+        // Arrange — A は name に、C は description にだけ "garnet" を持つ。
+        // views は C(10) < A(30) なので、views 順なら A が先に来てしまい区別できない。
+        // そこで A の views を最小にして、relevance でしか A が先頭にならない状態を作る。
+        await db.product.update({
+            where: { id: fx.a.product.id },
+            data: { name: "Garnet Ring", views: 0 },
+        });
+        await db.product.update({
+            where: { id: fx.c.product.id },
+            data: { description: "garnet inlay" },
+        });
+
+        // Act
+        const result = await getProducts({ search: "garnet" });
+
+        // Assert
+        expect(idsOf(result)).toEqual([fx.a.product.id, fx.c.product.id]);
+    });
+
+    it("returns no results for a search made only of tsquery operators", async () => {
+        // Act
+        const result = await getProducts({ search: "&|!():*" });
+
+        // Assert
+        expect(result.totalCount).toBe(0);
+        expect(result.products).toEqual([]);
     });
 });
 
@@ -335,20 +450,69 @@ describe("Scenario 8: sorting", () => {
         ]);
     });
 
+    it("breaks ties on the sort key by id so pages neither overlap nor drop items", async () => {
+        // Arrange — views を全件同値にする。seed 直後の実データ（views=0 が大半）と同じ状況で、
+        // tie-breaker が無いとページ境界の行が実行ごとに入れ替わりうる（plan 073）。
+        // さらに **id の降順**に 1 件ずつ UPDATE して、ヒープ上の物理順序を id 降順にそろえる
+        // （UPDATE は新しい行バージョンをヒープ末尾に書く）。同点の並びは保証されないだけで、
+        // 小さなデータでは物理順のまま返りやすい。物理順を期待値（id 昇順）の逆にしておけば、
+        // tie-breaker を外したときにこのテストが確実に落ちる。
+        const expected = [fx.a.product.id, fx.b.product.id, fx.c.product.id].sort();
+        for (const id of [...expected].reverse()) {
+            await db.product.update({ where: { id }, data: { views: 0 } });
+        }
+
+        // Act — ページサイズ 2 で全ページを走査する
+        const page1 = await getProducts({}, "most-popular", 1, 2);
+        const page2 = await getProducts({}, "most-popular", 2, 2);
+
+        // Assert — 同点は id 昇順。2 ページの和集合が全件と一致し、重複も欠落も無い
+        expect([...idsOf(page1), ...idsOf(page2)]).toEqual(expected);
+    });
+
     it("orders ascending by discounted price for price-low-to-high", async () => {
-        // pageSize は全 3 件が 1 ページに収まる 10 を渡す。
-        // TODO(characterization): price 系ソートは DB の orderBy ではなく
-        // **取得後の配列に対する JS ソート**で、ページ内でしか効かない。pageSize=2 だと
-        // 「DB が views desc で選んだ 2 件だけを価格順に並べ替える」結果になり、全体の
-        // 価格順とは一致しない（ページを跨ぐと価格順が壊れるという現実装の帰結）。
-        // DB レベルソートへ改善された場合は、pageSize=2 でページを跨いだ全体順序を
-        // assert するケースを追加すること（本ケースの期待値は 1 ページに収める限り不変）。
+        // ページを跨いだ全体順序は "orders by price across the whole catalog" が検証する
+        // （plan 076 で price 系ソートを DB の minPrice 列へ移した）。
         const result = await getProducts({}, "price-low-to-high", 1, 10);
 
         expect(idsOf(result)).toEqual([
             fx.a.product.id, // 50
             fx.b.product.id, // 150
             fx.c.product.id, // 300
+        ]);
+    });
+
+    it("orders by price across the whole catalog, not just within the page", async () => {
+        // Arrange — views は A(30) > B(20) > C(10)、価格は A(50) < B(150) < C(300)。
+        // 旧実装は views 順で 1 ページ分（A, B）を取ってからメモリ上で並べ替えていたため、
+        // 高い順の 1 ページ目が [B, A] になり、最も高い C が 2 ページ目へ押し出されていた。
+
+        // Act
+        const page1 = await getProducts({}, "price-high-to-low", 1, 2);
+        const page2 = await getProducts({}, "price-high-to-low", 2, 2);
+
+        // Assert
+        expect(idsOf(page1)).toEqual([fx.c.product.id, fx.b.product.id]);
+        expect(idsOf(page2)).toEqual([fx.a.product.id]);
+    });
+
+    it("uses the discounted price and puts products without sizes last", async () => {
+        // Arrange — B に 80% 引き（150 → 30.00）を付けて最安にし、C のサイズを消す
+        await db.size.update({
+            where: { id: fx.b.size.id },
+            data: { discount: 80 },
+        });
+        await db.size.deleteMany({ where: { productVariantId: fx.c.variant.id } });
+        await fillMinPrice();
+
+        // Act
+        const result = await getProducts({}, "price-low-to-high", 1, 10);
+
+        // Assert — B(30) → A(50) → C(価格なし)
+        expect(idsOf(result)).toEqual([
+            fx.b.product.id,
+            fx.a.product.id,
+            fx.c.product.id,
         ]);
     });
 
@@ -558,5 +722,218 @@ describe("Scenario 9: category subtree filtering", () => {
         expect(result.totalCount).toBe(0);
         expect(result.products).toHaveLength(0);
         expect(result.totalPages).toBe(0);
+    });
+});
+
+// ============================================================================
+// Scenario 11: 属性ファセット（plan 076 / ADR-007）
+// ============================================================================
+
+/**
+ * カテゴリ 1 のルートノードに facetable な属性定義を作り、A・B に値を付ける。
+ *
+ * | key      | scope   | A          | B      |
+ * |----------|---------|------------|--------|
+ * | material | PRODUCT | wool       | silk   |
+ * | pattern  | PRODUCT | solid      | solid  |
+ * | finish   | VARIANT | matte（バリアント） | —  |
+ * | hidden   | PRODUCT | x（facetable=false） | — |
+ *
+ * VARIANT スコープを含めるのは、ProductAttributeValue だけを見る実装だと
+ * そのファセットが丸ごと消えるため（ADR-007 の注意書き）。
+ */
+async function arrangeAttributes() {
+    const nodeId = fx.cat1.category.id;
+    const define = async (
+        key: string,
+        scope: "PRODUCT" | "VARIANT",
+        facetable: boolean,
+        options: string[]
+    ) => {
+        const definition = await db.attributeDefinition.create({
+            data: {
+                categoryId: nodeId,
+                key,
+                name: key.charAt(0).toUpperCase() + key.slice(1),
+                type: "ENUM",
+                scope,
+                facetable,
+                options: {
+                    create: options.map((value, i) => ({
+                        value,
+                        label: value.charAt(0).toUpperCase() + value.slice(1),
+                        sortOrder: i,
+                    })),
+                },
+            },
+            include: { options: true },
+        });
+        const optionId = (value: string) => {
+            const option = definition.options.find((o) => o.value === value);
+            if (!option) throw new Error(`option ${value} not found`);
+            return option.id;
+        };
+        return { definition, optionId };
+    };
+    const productValue = async (
+        def: Awaited<ReturnType<typeof define>>,
+        productId: string,
+        value: string
+    ) =>
+        db.productAttributeValue.create({
+            data: {
+                productId,
+                definitionId: def.definition.id,
+                scope: "PRODUCT",
+                type: "ENUM",
+                multiValued: false,
+                optionId: def.optionId(value),
+            },
+        });
+
+    const material = await define("material", "PRODUCT", true, ["wool", "silk"]);
+    const pattern = await define("pattern", "PRODUCT", true, ["solid"]);
+    const finish = await define("finish", "VARIANT", true, ["matte"]);
+    const hidden = await define("hidden", "PRODUCT", false, ["x"]);
+
+    await productValue(material, fx.a.product.id, "wool");
+    await productValue(material, fx.b.product.id, "silk");
+    await productValue(pattern, fx.a.product.id, "solid");
+    await productValue(pattern, fx.b.product.id, "solid");
+    await productValue(hidden, fx.a.product.id, "x");
+    await db.variantAttributeValue.create({
+        data: {
+            variantId: fx.a.variant.id,
+            definitionId: finish.definition.id,
+            scope: "VARIANT",
+            type: "ENUM",
+            multiValued: false,
+            optionId: finish.optionId("matte"),
+        },
+    });
+}
+
+/** facet を key → { value: count } の形にして比較しやすくする */
+const facetCounts = (facets: ProductFacet[]) =>
+    Object.fromEntries(
+        facets.map((f) => [
+            f.key,
+            Object.fromEntries(f.values.map((v) => [v.value, v.count])),
+        ])
+    );
+
+describe("Scenario 11: attribute facets", () => {
+    beforeEach(async () => {
+        await arrangeAttributes();
+    });
+
+    it("filters by an attribute value (PRODUCT scope)", async () => {
+        const result = await getProducts({
+            category: fx.cat1.category.url,
+            attributes: { material: ["wool"] },
+        });
+
+        expect(idsOf(result)).toEqual([fx.a.product.id]);
+    });
+
+    it("ORs values within a key and ANDs across keys", async () => {
+        const both = await getProducts({
+            category: fx.cat1.category.url,
+            attributes: { material: ["wool", "silk"] },
+        }, "most-popular");
+        const narrowed = await getProducts({
+            category: fx.cat1.category.url,
+            attributes: { material: ["wool", "silk"], finish: ["matte"] },
+        });
+
+        expect(idsOf(both)).toEqual([fx.a.product.id, fx.b.product.id]);
+        expect(idsOf(narrowed)).toEqual([fx.a.product.id]);
+    });
+
+    it("filters by a VARIANT-scope attribute", async () => {
+        const result = await getProducts({
+            category: fx.cat1.category.url,
+            attributes: { finish: ["matte"] },
+        });
+
+        expect(idsOf(result)).toEqual([fx.a.product.id]);
+    });
+
+    it("returns no results for an unknown key or a non-facetable key (fail-closed)", async () => {
+        const unknown = await getProducts({ attributes: { color_family: ["red"] } });
+        const notFacetable = await getProducts({ attributes: { hidden: ["x"] } });
+
+        expect(unknown.totalCount).toBe(0);
+        expect(notFacetable.totalCount).toBe(0);
+    });
+
+    it("counts facet values within the category subtree, including VARIANT scope", async () => {
+        const facets = await getProductFacets({ category: fx.cat1.category.url });
+
+        expect(facetCounts(facets)).toEqual({
+            material: { silk: 1, wool: 1 },
+            pattern: { solid: 2 },
+            finish: { matte: 1 },
+        });
+        // facetable=false の定義はファセットに出さない
+        expect(facets.map((f) => f.key)).not.toContain("hidden");
+        // 表示名は option.label、定義名は name
+        const material = facets.find((f) => f.key === "material");
+        expect(material?.name).toBe("Material");
+        expect(material?.values.map((v) => v.label).sort()).toEqual(["Silk", "Wool"]);
+    });
+
+    it("keeps the other values of a selected key countable (disjunctive faceting)", async () => {
+        // Act — material=wool を選ぶ
+        const facets = await getProductFacets({
+            category: fx.cat1.category.url,
+            attributes: { material: ["wool"] },
+        });
+
+        // Assert — material 自身の件数は自分の選択を外して数える（silk が 0 にならない）。
+        // 他の key（pattern）は選択を課した母集合（A だけ）で数える。
+        expect(facetCounts(facets)).toEqual({
+            material: { silk: 1, wool: 1 },
+            pattern: { solid: 1 },
+            finish: { matte: 1 },
+        });
+        const wool = facets
+            .find((f) => f.key === "material")
+            ?.values.find((v) => v.value === "wool");
+        expect(wool?.selected).toBe(true);
+    });
+
+    it("narrows facet counts by the search term too", async () => {
+        // Act — "aurora" は C（カテゴリ 2）にしか無いので、カテゴリ 1 の母集合は空
+        const facets = await getProductFacets({
+            category: fx.cat1.category.url,
+            search: "aurora",
+        });
+
+        // Assert
+        expect(facets).toEqual([]);
+    });
+
+    it("still returns a selected key that has no values here, so it can be cleared", async () => {
+        // Arrange — カテゴリを切り替えると前のカテゴリの attr.* が URL に残る。
+        // その key がファセットに出ないと、0 件に絞られたまま解除する手段が無くなる。
+
+        // Act
+        const facets = await getProductFacets({
+            category: fx.cat1.category.url,
+            attributes: { voltage: ["220v"] },
+        });
+
+        // Assert
+        expect(facets.find((f) => f.key === "voltage")).toEqual({
+            key: "voltage",
+            name: "voltage",
+            unit: null,
+            values: [{ value: "220v", label: "220v", count: 0, selected: true }],
+        });
+    });
+
+    it("returns no facets without a category (facets are category-scoped)", async () => {
+        expect(await getProductFacets({})).toEqual([]);
     });
 });

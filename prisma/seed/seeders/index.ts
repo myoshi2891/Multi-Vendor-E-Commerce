@@ -10,6 +10,7 @@ import { seedStores } from "./store-seeder";
 import { seedProducts } from "./product-seeder";
 import { seedReviews } from "./review-seeder";
 import { seedCommerce } from "./commerce-seeder";
+import { productDerivedColumnsUpdateSql } from "../../../src/lib/product-derived-columns";
 
 /**
  * Orchestrates database seeding in five ordered phases: base entities, stores, products, reviews, and commerce.
@@ -72,6 +73,13 @@ export async function seedAll(prisma: PrismaClient): Promise<void> {
     sizes: productMaps.sizes,
   });
   console.log("✅ Phase 5 完了\n");
+
+  // Phase 6: 非正規化列（searchKeywords / minPrice）の導出（plans 074 / 076）。
+  // 商品を upsertProduct を通さずに作っているので、アプリと同じ導出 SQL を全商品へ流す。
+  // 省くと seed した商品が keywords で検索に当たらず、価格ソートで末尾に並ぶ。
+  console.log("🔎 Phase 6: Product.searchKeywords / minPrice の導出");
+  const derived = await prisma.$executeRaw(productDerivedColumnsUpdateSql());
+  console.log(`✅ Phase 6 完了 (${derived}商品)\n`);
 
   console.log("🎉 Seed完了！");
 }

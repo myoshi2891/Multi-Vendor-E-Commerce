@@ -21,7 +21,12 @@ test.describe("a11y: /browse", () => {
             projectName: testInfo.project.name,
         });
 
-        await runA11yScan(page, "/browse", {
+        // seed のカテゴリで絞った /browse をスキャンする（plans 073 / 076）。
+        // - 素の /browse は views=0 の同点が大半で、並び順は id の tie-breaker で決まる。
+        //   seed 商品が 1 ページ目に来る保証は無い（以前は物理順で偶然 1 ページ目に出ていた）。
+        //   カテゴリで絞れば seed 商品は必ず含まれ、件数も 1 ページに収まる。
+        // - このカテゴリには属性ファセット（e2e_finish）があるので、ファセット UI も検査対象に入る。
+        await runA11yScan(page, `/browse?category=${seed.category.url}`, {
             // seed 商品のカードが描画されるまで待つ。prefix セレクタ
             // （[data-testid^="product-card-"]）はカード内の "product-card-price"
             // にもマッチするため、slug 完全一致で掴む。
