@@ -16,7 +16,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2709 passed / 2712 total / 254 スイート**（253 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-03 作業ツリー全体を `bun run test` で実測（plans 073〜076 後）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **2721 passed / 2724 total / 254 スイート**（253 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-04 作業ツリー全体を `bun run test` で実測（PR #187 レビュー対応・`getProductFacets` ユニットテスト追加後）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | カバレッジ全体（lcov **2026-09-30 実測**・PR#183 SonarCloud New Code 対応後） | Statements **80.97%** (8268/10211) / Branches **68.02%** (4408/6480) / Functions **74.24%** (1482/1996) / Lines **80.79%** (7497/9279)。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest Integration テスト総数 | **218** / **17 スイート**（**2026-10-03 実測: 218/218 pass**・`bun run test:integration`）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
@@ -278,7 +278,7 @@ plans 073〜076（plan 015 ファセット検索の後続）の未コミット�
 - git status で作業ツリーが 2026-10-03 セッション終了時の状態か確認する（HEAD 3277d8a5 / 未コミット）。
   変更内容の全体像は plans/073〜076 の「実施結果」節と docs/design/faceted-search/design.md §5 にある。
 - 着手前に bun run test / bun run test:integration / bunx tsc --noEmit / bun run lint を実行し、
-  2709 passed / 2712 total（254 スイート）・Integration 218/218・型エラー 0・lint 0 errors を再現すること。
+  2721 passed / 2724 total（254 スイート）・Integration 218/218・型エラー 0・lint 0 errors を再現すること。
   再現しなければ STOP して報告する。
 
 コミット分割（.claude/rules/02-tdd-step-commit.md・03-data-model-diagram-sync.md に従う）:
