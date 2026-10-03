@@ -531,6 +531,25 @@ const profileAddressFields = (address: ShippingAddress) => ({
     default: address.default,
 });
 
+/**
+ * プロフィール住所系の失敗を構造化ログに残す。
+ * 呼び出し側は汎用メッセージで throw し直すため、詳細はここにだけ残す。
+ */
+const logProfileAddressError = (
+    fn: string,
+    message: string,
+    error: unknown
+) => {
+    if (error instanceof Error) {
+        console.error(`[User:${fn}] ${message}`, {
+            error: error.message,
+            stack: error.stack,
+        });
+    } else {
+        console.error(`[User:${fn}] ${message}`, { error });
+    }
+};
+
 /** Account-only display data; no user details or internal timestamps. */
 export const getProfileShippingAddresses = async () => {
     const addresses = await getUserShippingAddresses();
@@ -550,7 +569,12 @@ export const getProfileShippingAddresses = async () => {
                 },
             })),
         };
-    } catch {
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "getProfileShippingAddresses",
+            "Error loading shipping destinations",
+            error
+        );
         throw new Error("Failed to load shipping destinations.");
     }
 };
@@ -575,7 +599,12 @@ export const saveProfileShippingAddress = async (
             userId: user.id,
         });
         return profileAddressFields(saved);
-    } catch {
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "saveProfileShippingAddress",
+            "Error saving shipping address",
+            error
+        );
         throw new Error("Failed to save shipping address.");
     }
 };
@@ -594,7 +623,12 @@ export const makeProfileShippingAddressDefault = async (id: string) => {
             userId: user.id,
         });
         return { id };
-    } catch {
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "makeProfileShippingAddressDefault",
+            "Error updating default shipping address",
+            error
+        );
         throw new Error("Failed to update default shipping address.");
     }
 };

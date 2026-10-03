@@ -208,3 +208,59 @@ it("handles country lookup failure without exposing DB details", async () => {
     );
     expect(mockDb.$transaction).not.toHaveBeenCalled();
 });
+
+// Review follow-up: failures are logged in the structured format, not swallowed.
+describe("profile address failure logging", () => {
+    const cases = [
+        {
+            name: "getProfileShippingAddresses",
+            message: "Failed to load shipping destinations.",
+            fail: (error: unknown) =>
+                mockDb.country.findMany.mockRejectedValue(error),
+            run: () => api.getProfileShippingAddresses(),
+        },
+        {
+            name: "saveProfileShippingAddress",
+            message: "Failed to save shipping address.",
+            fail: (error: unknown) =>
+                mockDb.shippingAddress.findFirst.mockRejectedValue(error),
+            run: () =>
+                api.saveProfileShippingAddress({ ...values, id: address.id }),
+        },
+        {
+            name: "makeProfileShippingAddressDefault",
+            message: "Failed to update default shipping address.",
+            fail: (error: unknown) =>
+                mockDb.shippingAddress.findFirst.mockRejectedValue(error),
+            run: () => api.makeProfileShippingAddressDefault(address.id),
+        },
+    ];
+    it.each(cases)(
+        "$name logs Error details and keeps its generic message",
+        async ({ name, message, fail, run }) => {
+            // Arrange
+            const spy = jest.spyOn(console, "error").mockImplementation();
+            fail(new Error("private DB details"));
+            // Act / Assert
+            await expect(run()).rejects.toThrow(message);
+            expect(spy).toHaveBeenCalledWith(
+                expect.stringMatching(new RegExp(`^\\[User:${name}\\] `)),
+                { error: "private DB details", stack: expect.any(String) }
+            );
+            spy.mockRestore();
+        }
+    );
+    it.each(cases)(
+        "$name logs non-Error throws as-is",
+        async ({ name, message, fail, run }) => {
+            const spy = jest.spyOn(console, "error").mockImplementation();
+            fail("raw failure");
+            await expect(run()).rejects.toThrow(message);
+            expect(spy).toHaveBeenCalledWith(
+                expect.stringMatching(new RegExp(`^\\[User:${name}\\] `)),
+                { error: "raw failure" }
+            );
+            spy.mockRestore();
+        }
+    );
+});
