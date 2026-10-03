@@ -1233,7 +1233,7 @@ const queryFacetCounts = (
                min(d.unit) AS unit,
                min(d."sortOrder") AS def_order,
                ${FACET_VALUE_SQL} AS value,
-               ${FACET_LABEL_SQL} AS label,
+               min(${FACET_LABEL_SQL}) AS label,
                min(o."sortOrder") AS option_order,
                count(DISTINCT v.product_id) AS count
         FROM attr_value v
@@ -1243,7 +1243,9 @@ const queryFacetCounts = (
         WHERE ${keyFilter}
         -- 別名（value / label）では GROUP BY しない。GROUP BY の名前解決は入力列が優先されるため、
         -- "value" は別名ではなく AttributeOption の列 o.value として解釈されてしまう。
-        GROUP BY d.key, ${FACET_VALUE_SQL}, ${FACET_LABEL_SQL}
+        -- label は GROUP BY に含めず集約する。含めると同じ key × value が label 違いで複数行に割れ、
+        -- 件数が分散する（1 つの値に 1 行・1 件数を保証する）。
+        GROUP BY d.key, ${FACET_VALUE_SQL}
     `);
 
 /**
