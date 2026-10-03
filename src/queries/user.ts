@@ -16,6 +16,12 @@ import {
     getShippingDetails,
 } from "./product";
 import { ShippingAddress } from "@prisma/client";
+import { randomUUID } from "node:crypto";
+import {
+    ProfileShippingAddressSchema,
+    ProfileShippingAddressIdSchema,
+} from "@/lib/schemas";
+import type { z } from "zod";
 
 /**
  * `placeOrder` の注文トランザクションに課す実行時間上限。
@@ -511,6 +517,122 @@ export const getUserShippingAddresses = async () => {
     }
 };
 
+const profileAddressFields = (address: ShippingAddress) => ({
+    id: address.id,
+    firstName: address.firstName,
+    lastName: address.lastName,
+    phone: address.phone,
+    address1: address.address1,
+    address2: address.address2,
+    city: address.city,
+    state: address.state,
+    zip_code: address.zip_code,
+    countryId: address.countryId,
+    default: address.default,
+});
+
+/**
+ * プロフィール住所系の失敗を構造化ログに残す。
+ * 呼び出し側は汎用メッセージで throw し直すため、詳細はここにだけ残す。
+ */
+const logProfileAddressError = (
+    fn: string,
+    message: string,
+    error: unknown
+) => {
+    if (error instanceof Error) {
+        console.error(`[User:${fn}] ${message}`, {
+            error: error.message,
+            stack: error.stack,
+        });
+    } else {
+        console.error(`[User:${fn}] ${message}`, { error });
+    }
+};
+
+/** Account-only display data; no user details or internal timestamps. */
+export const getProfileShippingAddresses = async () => {
+    const addresses = await getUserShippingAddresses();
+    try {
+        const countries = await db.country.findMany({
+            select: { id: true, name: true, code: true },
+            orderBy: { name: "asc" },
+        });
+        return {
+            countries,
+            addresses: addresses.map((address) => ({
+                ...profileAddressFields(address),
+                country: {
+                    id: address.country.id,
+                    name: address.country.name,
+                    code: address.country.code,
+                },
+            })),
+        };
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "getProfileShippingAddresses",
+            "Error loading shipping destinations",
+            error
+        );
+        throw new Error("Failed to load shipping destinations.");
+    }
+};
+
+/** Validate profile input and delegate to the existing owner/default transaction. */
+export const saveProfileShippingAddress = async (
+    input: z.input<typeof ProfileShippingAddressSchema>
+) => {
+    const user = await requireUser();
+    const { id, ...values } = ProfileShippingAddressSchema.parse(input);
+    try {
+        if (id) {
+            const owned = await db.shippingAddress.findFirst({
+                where: { id, userId: user.id },
+            });
+            if (!owned) throw new Error("Shipping address not found.");
+        }
+        const saved = await upsertShippingAddress({
+            ...values,
+            address2: values.address2 ?? "",
+            id: id ?? randomUUID(),
+            userId: user.id,
+        });
+        return profileAddressFields(saved);
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "saveProfileShippingAddress",
+            "Error saving shipping address",
+            error
+        );
+        throw new Error("Failed to save shipping address.");
+    }
+};
+
+export const makeProfileShippingAddressDefault = async (id: string) => {
+    const user = await requireUser();
+    ProfileShippingAddressIdSchema.parse(id);
+    try {
+        const owned = await db.shippingAddress.findFirst({
+            where: { id, userId: user.id },
+        });
+        if (!owned) throw new Error("Shipping address not found.");
+        await upsertShippingAddress({
+            ...profileAddressFields(owned),
+            default: true,
+            userId: user.id,
+        });
+        return { id };
+    } catch (error: unknown) {
+        logProfileAddressError(
+            "makeProfileShippingAddressDefault",
+            "Error updating default shipping address",
+            error
+        );
+        throw new Error("Failed to update default shipping address.");
+    }
+};
+
 /**
  * @Function upsertShippingAddress
  * @Description Upserts a shipping address for a specific user.
@@ -519,7 +641,10 @@ export const getUserShippingAddresses = async () => {
  * @Returns Updated or newly created shipping address details.
  */
 
-export const upsertShippingAddress = async (address: ShippingAddress) => {
+export const upsertShippingAddress = async (
+    address: Omit<ShippingAddress, "createdAt" | "updatedAt"> &
+        Partial<Pick<ShippingAddress, "createdAt" | "updatedAt">>
+) => {
     // 認可ガードは try の外に置く（tech.md「認可ガード」）——
     // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
     const user = await requireUser();

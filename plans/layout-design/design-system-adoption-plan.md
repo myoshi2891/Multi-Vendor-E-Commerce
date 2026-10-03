@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -66,9 +66,9 @@
 
 | 判定 | 件数 |
 |---|---:|
-| 検証済み（2026-10-01） | 5 |
+| 検証済み（2026-10-03） | 11 |
 | 本体適用・周辺確認 | 12 |
-| 未適用 | 41 |
+| 未適用 | 35 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -99,17 +99,17 @@
 | `/product-support` | 検証済み（2026-10-01） | P3 | [src/app/(store)/product-support/page.tsx](<../../src/app/(store)/product-support/page.tsx>) |
 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) |
 | `/product/[productSlug]` | 転送専用 | 回帰検証 | [src/app/(store)/product/[productSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/page.tsx>) |
-| `/profile/addresses` | 未適用 | P2 | [src/app/(store)/profile/addresses/page.tsx](<../../src/app/(store)/profile/addresses/page.tsx>) |
+| `/profile/addresses` | 検証済み | P2 | [src/app/(store)/profile/addresses/page.tsx](<../../src/app/(store)/profile/addresses/page.tsx>) |
 | `/profile/following/[page]` | 未適用 | P2 | [src/app/(store)/profile/following/[page]/page.tsx](<../../src/app/(store)/profile/following/[page]/page.tsx>) |
 | `/profile/following` | 転送専用 | 回帰検証 | [src/app/(store)/profile/following/page.tsx](<../../src/app/(store)/profile/following/page.tsx>) |
 | `/profile/history/[page]` | 未適用 | P2 | [src/app/(store)/profile/history/[page]/page.tsx](<../../src/app/(store)/profile/history/[page]/page.tsx>) |
 | `/profile/history` | 転送専用 | 回帰検証 | [src/app/(store)/profile/history/page.tsx](<../../src/app/(store)/profile/history/page.tsx>) |
-| `/profile/messages` | 未適用 | P2 | [src/app/(store)/profile/messages/page.tsx](<../../src/app/(store)/profile/messages/page.tsx>) |
-| `/profile/orders/[filter]` | 未適用 | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../src/app/(store)/profile/orders/[filter]/page.tsx>) |
-| `/profile/orders` | 未適用 | P2 | [src/app/(store)/profile/orders/page.tsx](<../../src/app/(store)/profile/orders/page.tsx>) |
+| `/profile/messages` | 検証済み | P2 | [src/app/(store)/profile/messages/page.tsx](<../../src/app/(store)/profile/messages/page.tsx>) |
+| `/profile/orders/[filter]` | 検証済み | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../src/app/(store)/profile/orders/[filter]/page.tsx>) |
+| `/profile/orders` | 検証済み | P2 | [src/app/(store)/profile/orders/page.tsx](<../../src/app/(store)/profile/orders/page.tsx>) |
 | `/profile` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/page.tsx](<../../src/app/(store)/profile/page.tsx>) |
-| `/profile/payment` | 未適用 | P2 | [src/app/(store)/profile/payment/page.tsx](<../../src/app/(store)/profile/payment/page.tsx>) |
-| `/profile/reviews` | 未適用 | P2 | [src/app/(store)/profile/reviews/page.tsx](<../../src/app/(store)/profile/reviews/page.tsx>) |
+| `/profile/payment` | 検証済み | P2 | [src/app/(store)/profile/payment/page.tsx](<../../src/app/(store)/profile/payment/page.tsx>) |
+| `/profile/reviews` | 検証済み | P2 | [src/app/(store)/profile/reviews/page.tsx](<../../src/app/(store)/profile/reviews/page.tsx>) |
 | `/profile/settings` | 未適用 | P2 | [src/app/(store)/profile/settings/page.tsx](<../../src/app/(store)/profile/settings/page.tsx>) |
 | `/profile/wishlist/[page]` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
 | `/profile/wishlist` | 転送専用 | 回帰検証 | [src/app/(store)/profile/wishlist/page.tsx](<../../src/app/(store)/profile/wishlist/page.tsx>) |
@@ -282,22 +282,22 @@ ProfileLayoutは灰色面。サイドバー・表・概要・空状態を一体�
 - [x] [src/components/store/layout/profile-sidebar/sidebar.tsx](<../../src/components/store/layout/profile-sidebar/sidebar.tsx>)
 - [x] [src/components/store/profile/overview.tsx](<../../src/components/store/profile/overview.tsx>)
 - [x] [src/components/store/profile/orders-overview.tsx](<../../src/components/store/profile/orders-overview.tsx>)
-- [ ] [src/components/store/profile/orders/orders-table.tsx](<../../src/components/store/profile/orders/orders-table.tsx>)
-- [ ] [src/components/store/profile/orders/order-table-header.tsx](<../../src/components/store/profile/orders/order-table-header.tsx>)
-- [ ] [src/components/store/profile/payments/payments-table.tsx](<../../src/components/store/profile/payments/payments-table.tsx>)
-- [ ] [src/components/store/profile/payments/payment-table-header.tsx](<../../src/components/store/profile/payments/payment-table-header.tsx>)
-- [ ] [src/components/store/profile/addresses/container.tsx](<../../src/components/store/profile/addresses/container.tsx>)
+- [x] [src/components/store/profile/orders/orders-table.tsx](<../../src/components/store/profile/orders/orders-table.tsx>)
+- [x] [src/components/store/profile/orders/order-table-header.tsx](<../../src/components/store/profile/orders/order-table-header.tsx>)
+- [x] [src/components/store/profile/payments/payments-table.tsx](<../../src/components/store/profile/payments/payments-table.tsx>)
+- [x] [src/components/store/profile/payments/payment-table-header.tsx](<../../src/components/store/profile/payments/payment-table-header.tsx>)
+- [x] [src/components/store/profile/addresses/container.tsx](<../../src/components/store/profile/addresses/container.tsx>)
 - [x] [src/components/store/profile/wishlist/container.tsx](<../../src/components/store/profile/wishlist/container.tsx>)
 - [ ] [src/components/store/profile/following/container.tsx](<../../src/components/store/profile/following/container.tsx>)
-- [ ] [src/components/store/profile/reviews/reviews-container.tsx](<../../src/components/store/profile/reviews/reviews-container.tsx>)
-- [ ] [src/components/store/profile/reviews/reviews-header.tsx](<../../src/components/store/profile/reviews/reviews-header.tsx>)
+- [x] [src/components/store/profile/reviews/reviews-container.tsx](<../../src/components/store/profile/reviews/reviews-container.tsx>)
+- [x] [src/components/store/profile/reviews/reviews-header.tsx](<../../src/components/store/profile/reviews/reviews-header.tsx>)
 
 ### メッセージ共用部品（P2）
 
 幅300pxの会話一覧・固定高520px・旧青系送信。購入者と出店者の両画面を検証する。
 
 - [ ] [src/components/shared/messages/messages-layout.tsx](<../../src/components/shared/messages/messages-layout.tsx>)
-- [ ] [src/components/store/profile/messages/messages-container.tsx](<../../src/components/store/profile/messages/messages-container.tsx>)
+- [x] [src/components/store/profile/messages/messages-container.tsx](<../../src/components/store/profile/messages/messages-container.tsx>)
 - [ ] [src/components/store/profile/messages/conversation-thread.tsx](<../../src/components/store/profile/messages/conversation-thread.tsx>)
 - [ ] [src/components/dashboard/seller/seller-messages-container.tsx](<../../src/components/dashboard/seller/seller-messages-container.tsx>)
 
@@ -587,3 +587,9 @@ DS-PAGE-034のalias転送も回帰確認。共有ProductCardの他画面・他�
 ### ストア通知（追加対象 DS-COMP-201）
 
 - [x] [src/components/store/shared/store-toaster.tsx](../../src/components/store/shared/store-toaster.tsx): カートと全ストアのreact-hot-toast。Radix/SonnerのDS-COMP-102/103は未移行。証跡は[cart移行記録](../../docs/design/design-system/PROGRESS.md#cart移行記録)。
+
+### 購入者メッセージ専用スレッド（追加対象 DS-COMP-202）
+
+- [x] [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../src/components/store/profile/messages/profile-conversation-thread.tsx>)
+
+既存shared layout/hook/threadと販売者部品の移行は別対象。[証跡](../../docs/design/design-system/PROGRESS.md#profile-messages移行記録)。

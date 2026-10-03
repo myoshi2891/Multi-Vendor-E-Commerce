@@ -157,4 +157,13 @@ Phase 5: E2E（購入者↔販売者往復）+ spec-sync
 | 4 | seller page / container / test | feat/test |
 | 5 | E2E（独立）/ docs 同期（独立・dashboard 再生成同梱） | test/docs |
 
-> 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。テストが Red のまま実装へ進まない。
+> 各コミットは単独で `bunx tsc --noEmit` 通過。複数フェーズ混在の巨大コミット禁止（rule 02 NEVER）。先行テストの期待したRedを記録してからGreenへ進む。
+
+## 購入者画面デザイン移行（2026-10-03）
+
+[保存計画](../../../plans/layout-design/profile-messages-design-system-plan.md)。初回機能実装のコミット計画とは区別し、今回のコミットは明示依頼時のみ。
+
+- [x] 計画保存、DS-PAGE-026/DS-COMP-090/202登録、先行RTL8/query4/mobile h1のRed。
+- [x] 購入者専用heading/layout/thread/hook、最小表示facadeとaction Props、route loading。
+- [x] 最終関連Jest94/94、Chromium5/5、3幅/全状態/keyboard/axe、画像目視。
+- [x] lint/tscと仕様/台帳/QA/全体進捗/文書リンク同期。

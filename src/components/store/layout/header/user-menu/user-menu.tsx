@@ -88,8 +88,15 @@ export default async function UserMenu({
                         <div className="w-[min(305px,90vw)]">
                             <div className="px-6 pb-0 pt-5">
                                 {user ? (
-                                    <div className="user-avatar flex flex-col items-center justify-center">
-                                        <UserButton />
+                                    <div className="flex flex-col items-center justify-center">
+                                        {/* Clerk 内部 DOM（.cl-avatarBox）への CSS 依存を避け、公式 API で指定する */}
+                                        <UserButton
+                                            appearance={{
+                                                elements: {
+                                                    avatarBox: "size-[70px]",
+                                                },
+                                            }}
+                                        />
                                     </div>
                                 ) : (
                                     <div className="space-y-1">

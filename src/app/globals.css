@@ -84,6 +84,11 @@
 	* {
 		@apply border-border;
 	}
+	/* framer-motion の useScroll({ target }) は既定のスクロールコンテナ（<html>）の
+	   位置計測に non-static position を要求する（static だと開発時に警告）。 */
+	html {
+		position: relative;
+	}
 	body {
 		@apply bg-background text-foreground;
 	}
@@ -209,12 +214,6 @@
 
 .perspective-1000 {
 	perspective: 1000px;
-}
-
-/* User Clerk Button */
-.user-avatar .cl-avatarBox {
-	width: 70px !important;
-	height: 70px !important;
 }
 
 /*---Custom scrollbar---*/
@@ -490,12 +489,6 @@
 }
 .card:hover .image-container {
 	box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.17);
-}
-
-/* User Clerk Button */
-.user-avatar .cl-avatarBox {
-	width: 70px !important;
-	height: 70px !important;
 }
 
 /* Custom scrollbar */

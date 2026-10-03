@@ -125,3 +125,38 @@
 ### Cart presentation and feedback (2026-10-01)
 
 The branded cart shows persisted items after synchronization, preserves local items with refresh feedback on sync failure, and keeps the existing stale-item removal notice. Item removal also removes its shipping contribution. Saving shows a pending status and locks the checkout button; rejection leaves the bag available for retry. See [cart design](../../docs/design/cart/design.md).
+
+## Account Order History
+
+1. Open `/profile/orders` or an existing `/profile/orders/{filter}` shortcut after authentication. Render the server result in the branded account shell, with a collection link for empty orders.
+2. Select one of five status filters or four periods, or submit the labeled search form with Search/Enter. New conditions reset page to 1; previous/next preserves applied conditions. Empty search clears search; Remove all filters clears status, period and search.
+3. During lookup, show a status/skeleton, disable controls and hide the pager and old results. On failure, show a generic alert and retry using the same conditions. Initial lookup errors use the same retry path.
+4. Read IDs, dates, item counts, thumbnails, payment/delivery status and totals, and follow the unchanged order-detail URL. Page-local filters reset to route defaults on reload. No purchase, payment or fulfillment side effects are added.
+
+## Account Payment History
+
+1. Open `/profile/payment` after authentication and view server-provided records; empty history offers the collection link.
+2. Select View all / PayPal / Credit card, select one of four periods, or submit payment-ID/intent-ID search with Search/Enter. New conditions reset to page 1; paging preserves applied conditions. Empty search removes search; Remove all filters clears method, period and search.
+3. During lookup, announce loading, lock controls and hide stale records/paging. Failure shows a generic alert and retries the same conditions; initial lookup failure uses the same path.
+4. Read payment IDs, update date, intent ID, method, dollar amount and status, and follow `/order/{orderId}`. Stripe and PayPal amounts are already stored in dollars and are never divided by 100. Page-local conditions reset on reload; browsing performs no payment or refund.
+
+## Profile shipping address management
+
+1. Authenticate and open `/profile/addresses`; render server-provided cards/default indicator or empty state. Refresh addresses reloads supported countries and addresses; failure offers Try again.
+2. Add new address or Edit opens a labeled dialog with native supported-country selection and existing schema validation. Editing restores address line 2, country and default as well as other fields.
+3. Save locks all input/submission/dismissal actions and prevents duplicates. The dialog remains keyboard scrollable. Failure retains input for retry; success closes the dialog, restores trigger focus and updates cards/default/status.
+4. Make default explicitly updates an owned address via the existing atomic upsert. Pending blocks repeated changes; failure retains the list and allows retry; success leaves at most one default indicator. Browsing/card selection alone never saves. No deletion or purchase is added.
+
+## Profile review history
+
+1. Authenticate and open `/profile/reviews`; render server-provided own reviews or the empty collection link without a second mount request.
+2. Choose View all/1–5 stars, select a period, or submit text search with Search/Enter. New conditions reset page 1; paging retains applied conditions. Unsubmitted draft is not applied by rating/period changes; empty submission clears search, Remove all filters clears every condition.
+3. Lookup locks controls and shows status/skeleton without stale cards. Generic failure keeps conditions for Try again; success renders review cards and page metadata.
+4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
+
+## Profile message presentation flow
+
+1. Authenticate and open `/profile/messages`; show initial own store conversations or empty collection link, with generic load failure/retry when needed.
+2. Select a conversation by keyboard/touch. Clear previous messages, fetch the thread and mark counterpart messages read. Show sender labels and UTC times; thread failure offers retry, read-status failure keeps the thread and offers its own retry.
+3. While selected, poll every five seconds when the tab is visible. Prevent overlapping polls and discard responses after switching/unmounting. Queue a post-send refresh after an active poll.
+4. Submit a labeled message using existing trim/1–2000 character validation. Sending locks input/selection/reload and prevents duplicates; failure preserves the draft, success clears it and refetches. No new conversation initiation or attachment UI is added.

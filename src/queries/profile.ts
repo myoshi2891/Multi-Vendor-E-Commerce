@@ -179,6 +179,30 @@ export const getUserOrders = async (
     };
 };
 
+/** Serializable, minimal order history data for the account client. */
+export const getUserOrdersForDisplay = async (
+    filter: OrderTableFilter = "",
+    period: OrderTableDateFilter = "",
+    search = "",
+    page = 1
+) => {
+    const result = await getUserOrders(filter, period, search, page);
+    return {
+        totalPages: result.totalPages,
+        orders: result.orders.map(order => ({
+            id: order.id,
+            createdAt: order.createdAt.toISOString(),
+            total: toNumberSafe(order.total),
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            groups: order.groups.map(group => ({
+                _count: { items: group._count.items },
+                items: group.items.map(item => ({ image: item.image })),
+            })),
+        })),
+    };
+};
+
 /**
  * @function getUserPayments
  * @description Retrieves paginated payment details for the authenticated user, with optional filters
@@ -312,6 +336,28 @@ export const getUserPayments = async (
     };
 };
 
+/** Serializable, minimal payment history data; amounts remain in dollars. */
+export const getUserPaymentsForDisplay = async (
+    filter: PaymentTableFilter = "",
+    period: PaymentTableDateFilter = "",
+    search = "",
+    page = 1
+) => {
+    const result = await getUserPayments(filter, period, search, page);
+    return {
+        totalPages: result.totalPages,
+        payments: result.payments.map(payment => ({
+            id: payment.id,
+            paymentIntentId: payment.paymentIntentId,
+            paymentMethod: payment.paymentMethod,
+            amount: toNumberSafe(payment.amount),
+            status: payment.status,
+            orderId: payment.orderId,
+            updatedAt: payment.updatedAt.toISOString(),
+        })),
+    };
+};
+
 /**
  * @function getUserReviews
  * @description Retrieves paginated reviews for the authenticated user, with optional filters for rating
@@ -437,6 +483,35 @@ export const getUserReviews = async (
         currentPage: page,
         pageSize,
         totalCount,
+    };
+};
+
+/** Account review display data, excluding private user fields and relations. */
+export const getUserReviewsForDisplay = async (
+    filter: ReviewFilter = "",
+    period: ReviewDateFilter = "",
+    search = "",
+    page = 1
+) => {
+    const result = await getUserReviews(filter, period, search, page);
+    return {
+        totalPages: result.totalPages,
+        reviews: result.reviews.map((review) => ({
+            id: review.id,
+            rating: review.rating,
+            review: review.review,
+            variant: review.variant,
+            color: review.color,
+            size: review.size,
+            quantity: review.quantity,
+            updatedAt: review.updatedAt.toISOString(),
+            user: { name: review.user.name, picture: review.user.picture },
+            images: review.images.map((image) => ({
+                id: image.id,
+                url: image.url,
+                alt: image.alt,
+            })),
+        })),
     };
 };
 

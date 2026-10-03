@@ -539,6 +539,11 @@ export const ShippingAddressSchema = z.object({
     default: z.boolean().default(false),
 });
 
+export const ProfileShippingAddressIdSchema = z.string().uuid();
+export const ProfileShippingAddressSchema = ShippingAddressSchema.extend({
+    id: ProfileShippingAddressIdSchema.optional(),
+});
+
 export const CouponFormSchema = z.object({
     code: z
         .string({

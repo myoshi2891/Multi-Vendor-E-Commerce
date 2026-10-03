@@ -35,7 +35,7 @@
 | **サーバーアクションの配置** | `src/queries/` に集約する（`src/actions/` は存在しない） |
 | **入力バリデーション** | `src/lib/schemas.ts` の Zod スキーマを使用する（フォームは React Hook Form + Zod resolver） |
 | **DB アクセス** | `src/lib/db.ts` の Prisma シングルトン経由のみ（`src/` 配下で `new PrismaClient()` は禁止。ただし `prisma/seed/` とテストスクリプトは例外：独立プロセスで `$disconnect()` の明示的制御が必要） |
-| **認証** | Clerk middleware を使用する（保護ルート: `/dashboard/*` / `/checkout` / `/profile/*`） |
+| **認証** | リソース側（layout / page / Server Action）で検証する。`src/proxy.ts` の `clerkMiddleware` は認証コンテキスト確立のみで、パスマッチ保護（`createRouteMatcher`）は使わない（plans/072）。保護対象: `/dashboard/*`（各 layout / page）・`/checkout`（page）・`/profile/*`（`profile/layout.tsx`） |
 
 ---
 

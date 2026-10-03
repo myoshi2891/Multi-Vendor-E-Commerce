@@ -66,7 +66,7 @@ make help                     # 全コマンド一覧
 
 | サービス | 用途 | 設定ファイル |
 |---|---|---|
-| Clerk | 認証・ユーザー管理 | `src/middleware.ts` |
+| Clerk | 認証・ユーザー管理 | `src/proxy.ts`（認証コンテキスト）+ 各 layout / page / Server Action（認可） |
 | Stripe | 決済処理 | `src/queries/stripe.ts` |
 | PayPal | 決済処理 | `src/queries/paypal.ts` |
 | Cloudinary | 画像ホスティング | `next.config.mjs` の remotePatterns |

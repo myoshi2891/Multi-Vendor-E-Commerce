@@ -1,6 +1,6 @@
 # Profile Messages（`/profile/messages`）— 設計書
 
-> 購入者↔販売者のメッセージ（チャット）画面。新規 Prisma モデル（Conversation/Message）+ ポーリング更新で構成する。
+> 購入者↔販売者のメッセージ（チャット）画面。実装済みConversation/Messageと5秒ポーリング更新で構成する。
 > 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
 
 ---
@@ -54,3 +54,7 @@
 - 認可: [`src/lib/auth-guards.ts`](../../../src/lib/auth-guards.ts)
 - 姉妹設計書: [`docs/design/profile-settings/`](../profile-settings/)（同じ顧客メニュー C の Settings 画面）
 - 雛形: [`docs/design/admin-dashboard/`](../admin-dashboard/)（特に Phase 5 の破壊的変更隔離パターン）
+
+## 購入者画面のデザイン移行（2026-10-03）
+
+[保存計画](../../../plans/layout-design/profile-messages-design-system-plan.md)。購入者専用のブランド本文/会話一覧/スレッド、注入action境界、取得/既読/送信失敗のretryを追加。販売者と共有旧部品の移行は別対象。機能実装の過去フェーズ履歴は維持し、今回のTDD/検証証跡は[進捗](PROGRESS.md)に記録する。コミットは明示依頼時のみ。

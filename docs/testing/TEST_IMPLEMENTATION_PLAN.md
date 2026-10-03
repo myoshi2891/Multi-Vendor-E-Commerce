@@ -1030,3 +1030,25 @@ SupportFormに送信中ロックと返品payload、失敗後再試行のRTLを�
 Cart RTL adds accessible item controls, shipping cleanup and pending checkout lock/status; next-dev-cache tests pin optional development output separation and unchanged default/production output. Targeted Jest 27/27. Chromium cart-design 10/10 covers responsive states, branded notifications, keyboard focus and scoped axe. Full statistics remain the previous measurement; see [progress evidence](../design/design-system/PROGRESS.md#cart移行記録).
 
 - Cart画像回帰: 空／商品入りの基準更新・目視確認後、更新なしのChromium実行2/2成功。
+
+
+### Profile Orders デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL新要件5件とmobile h1のChromium Redを確認。表示queryとサーバー/loadingは実装後回帰。最終関連81/81、Chromium5/5（3幅、全状態、操作、axe AA、filter fallback、未認証）。[証跡](../design/design-system/PROGRESS.md#profile-orders移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+
+### Profile Payment デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL新要件5件とChromium mobile h1のRedを実測。money回帰2件、表示queryとserver/loadingは実装後回帰。最終関連93/93（4 suites）、Chromium5/5（3幅/全状態/長いID/操作/axe/未認証）。旧mock操作・競合要求・ログ検証をnative操作/操作ロック/汎用再試行へ同期。[証跡](../design/design-system/PROGRESS.md#profile-payment移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+### Profile Addresses デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL6件/query11件/mobile h1のRed→Green。最終関連110/110（5 suites）、Chromium5/5（3幅/フォーム全状態/既定変更/keyboard/axe/未認証）、lint/tsc成功。server/loading/国取得失敗等5件は実装後回帰。既存profileのnative selector/注文カード導線を同期、DB書き込みシナリオは未実行。[証跡](../design/design-system/PROGRESS.md#profile-addresses移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+### Profile Reviews デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL6件/query2件/mobile h1のRed→Green。初期データ回帰1件は旧実装でも成功、server/loading/draft4件は実装後回帰。最終関連116/116（7 suites）、Chromium5/5（3幅/小数評価/写真/本文検索と条件/全状態/keyboard/axe/未認証）。lint/tsc成功。[証跡](../design/design-system/PROGRESS.md#profile-reviews移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+### Profile Messages デザイン検証 — ✅ Completed (2026-10-03)
+
+RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued refresh5件は実装後回帰。最終94/94（7 suites）、Chromium5/5（3幅/会話と送信・既読・取得失敗/keyboard/axe/未認証）。販売者/旧thread/query/sidebar/reviews回帰を含む。実送信・AC-M8往復は今回未実行。[証跡](../design/design-system/PROGRESS.md#profile-messages移行記録)。全体統計はQA_HANDOFFの前回実測を維持。

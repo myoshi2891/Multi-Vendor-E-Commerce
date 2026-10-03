@@ -7,7 +7,7 @@
 | **Frontend** | Next.js 16.2.1 (App Router) + TypeScript strict mode |
 | **Runtime** | React 19 |
 | **UI** | Tailwind CSS + shadcn/ui（CSS 変数・baseカラー: slate） |
-| **認証** | Clerk v7（middleware: `src/middleware.ts`） |
+| **認証** | Clerk v7（`src/proxy.ts` の `clerkMiddleware` + リソース側の認可） |
 | **DB** | PostgreSQL (Neon) + Prisma ORM + Prisma Accelerate |
 | **決済** | Stripe / PayPal |
 | **画像** | Cloudinary |
@@ -290,12 +290,17 @@ declare module "use-onclickoutside" {
 Next.js 16 の async request APIs に合わせ、Clerk v7 の API もすべて非同期になった:
 
 ```typescript
-// middleware.ts — clerkMiddleware ハンドラーは async
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-export default clerkMiddleware(async (auth, req) => {
-    if (protectedRoutes(req)) await auth.protect();  // auth は直接プロパティ（関数呼び出し不要）
+// proxy.ts — clerkMiddleware ハンドラーは async。認証コンテキスト確立のみ行う
+import { clerkMiddleware } from "@clerk/nextjs/server";
+export default clerkMiddleware(async (_auth, req) => {
+    // createRouteMatcher によるパスマッチ保護は Clerk が非推奨化（パス判定と Next.js の
+    // ルーティングが乖離し得る）。認可は各 layout / page / Server Action で行う（plans/072）
     // ...
 });
+
+// layout / page — 未認証はサインインへ（例: src/app/(store)/profile/layout.tsx）
+const { userId, redirectToSignIn } = await auth();
+if (!userId) return redirectToSignIn();
 
 // Server Component / Server Action
 import { auth, currentUser } from "@clerk/nextjs/server";
@@ -340,7 +345,7 @@ try {
 
 > 完全な実装例は `src/queries/paypal.ts` を参照（Prisma: `db.order.findUnique` 等の try/catch ブロック、Clerk: `currentUser()` 呼び出しブロック、PayPal/Stripe: 外部 API 呼び出しブロック — すべて同パターン）。
 
-**実装例**: `src/middleware.ts`、`src/queries/` 配下の全 Server Action
+**実装例**: `src/proxy.ts`、`src/app/(store)/profile/layout.tsx`、`src/queries/` 配下の全 Server Action
 
 ### DB 依存ページの動的レンダリング規約（Next.js 16）
 
@@ -421,7 +426,8 @@ const setOpen = (modal, fetchData): void => {
 
 | 警告 | 対応方針 | 理由 |
 |------|---------|------|
-| `The "middleware" file convention is deprecated. Please use "proxy" instead.` | 対応しない | Clerk v7.0.7 の `clerkMiddleware` は `src/middleware.ts` 配置前提。`@clerk/nextjs` の `proxy.d.ts` は frontend API proxy 用途であり middleware 代替ではない。Clerk が `proxy.ts` を正式サポートするまで rename しない |
+| `The "middleware" file convention is deprecated. Please use "proxy" instead.` | 対応済み | `src/proxy.ts` へ rename 済み（`clerkMiddleware` をそのまま default export） |
+| `THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` | 対応しない | `@react-three/fiber@9.8.1`（2026-10 時点の最新）の内部 `new THREE.Clock()` が発生源。アプリ側からは回避不可。上流の対応を待つ |
 | `AVIF image not supported (Turbopack)` | 対応しない | ローカル `import` の最適化スキップのみ。Next.js Image のリモート画像最適化経路には影響なく、production の画像配信品質は変化しない。Turbopack の AVIF 対応追加を待つ |
 
 ---

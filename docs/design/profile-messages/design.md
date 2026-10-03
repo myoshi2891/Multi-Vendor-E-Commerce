@@ -1,6 +1,6 @@
 # Profile Messages — 設計（design.md）
 
-> 中核設計。実装者（Sonnet）が**該当行を特定して差分実装できる**粒度で記述する。
+> 中核設計。既存機能の設計と2026-10-03の購入者画面構成を記述する。
 > 要件 ID は [requirements.md](./requirements.md)、手順は [tasks.md](./tasks.md)。
 
 ---
@@ -9,11 +9,11 @@
 
 | # | 事実 | 出典 |
 |---|------|------|
-| 0-1 | メッセージング用モデル（Conversation/Message/Chat）は**存在しない**。新規追加が必要 | `prisma/schema.prisma` 全走査 |
+| 0-1 | Conversation/Messageは実装・migration適用済み。今回DBモデルの変更はない | `prisma/schema.prisma` 全走査 |
 | 0-2 | 認可ヘルパーは `requireUser(): Promise<User>` / `requireStoreOwner(storeUrl): Promise<{user, store}>`。会話参加者の検証はどちらでも表現できない → カスタムが必要 | [`src/lib/auth-guards.ts`](../../../src/lib/auth-guards.ts) |
 | 0-3 | server action の典型: 認可は try の外 → Zod `safeParse` → `db.$transaction`/`updateMany`（IDOR 防止 where 句）→ `catch` で `[Module:Fn]` 構造化ログ → 汎用メッセージ throw | [`src/queries/inventory.ts`](../../../src/queries/inventory.ts)（`updateSizeStock`） |
 | 0-4 | ユニットテストは AAA + `src/config/`（test-config / test-fixtures / test-helpers）。`AssertionHelpers.expectAuthError` 等が認可エラー文字列と整合 | [`src/queries/store.test.ts`](../../../src/queries/store.test.ts) |
-| 0-5 | `/profile/messages` リンクは [user-menu.tsx:146-150](../../../src/components/store/layout/header/user-menu/user-menu.tsx#L146-L150) に**既存**（ページのみ未実装）。sidebar には未追加（[sidebar.tsx:63-96](../../../src/components/store/layout/profile-sidebar/sidebar.tsx#L63-L96)） |
+| 0-5 | `/profile/messages`ページ、ヘッダーとprofile sidebarのリンクは実装済み | [user-menu](../../../src/components/store/layout/header/user-menu/user-menu.tsx) / [sidebar](../../../src/components/store/layout/profile-sidebar/sidebar.tsx) |
 | 0-6 | ページ雛形は `force-dynamic` + async server component + container（[`profile/reviews/page.tsx`](../../../src/app/(store)/profile/reviews/page.tsx)）。useEffect の `cancelled` フラグ非同期パターンは [tech.md](../../../.claude/steering/tech.md)・[`profile/history/[page]/page.tsx`](../../../src/app/(store)/profile/history/) |
 | 0-7 | 型は `Prisma.PromiseReturnType<typeof fn>` で導出（admin の `AdminOrderType` と同型） | [`src/lib/types.ts`](../../../src/lib/types.ts) |
 
@@ -21,7 +21,7 @@
 
 ## 1. 共通設計
 
-### 1.1 ディレクトリ構成（新規/変更）
+### 1.1 初回機能実装時のディレクトリ構成（履歴）
 
 ```
 prisma/schema.prisma                                    ← 変更（Conversation/Message + 逆リレーション）
@@ -252,74 +252,30 @@ export type MessageType =
 
 ---
 
-## 4. UI 設計
+## 4. 現行UI設計（2026-10-03）
 
-### 4.1 顧客ページ `src/app/(store)/profile/messages/page.tsx`
+### 4.1 購入者ページとサーバー境界
 
-```tsx
-import MessagesContainer from "@/components/store/profile/messages/messages-container";
-import { getUserConversations } from "@/queries/message";
+- force-dynamic Server Componentの初期`getProfileConversations`をtry/catch。初期data/initialErrorと4action（一覧/スレッド表示facade、sendMessage、markConversationRead）をPropsでMessagesContainerへ渡す。
+- 新しい購入者Client/container/hook/threadにquery直接importはない。既存機能の旧「Clientから直接action import可」という記述を廃止し、core.mdのProps境界に合わせる。
+- `getProfileConversations`は既存getUserConversationsへ委譲し、id/userId/updatedAt ISO、store name+logo、最新message contentのみ投影。`getProfileConversationMessages`は参加者検証付き既存queryへ委譲しid/senderId/content/createdAt ISOのみ投影。送信・既読の認可/transactionは既存actionを維持。
 
-export const dynamic = "force-dynamic";   // NFR-M4
+### 4.2 購入者MessagesContainerとuseProfileConversation
 
-export default async function ProfileMessagesPage() {
-    const conversations = await getUserConversations();
-    return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">Messages</h1>
-            <MessagesContainer initialConversations={conversations} />
-        </div>
-    );
-}
-```
+- 専用module CSS、headingを通常/loadingで共有。会話一覧/スレッドをPC2列、1000px以下で縦配置。native選択/aria-pressed、長い名称と本文wrap、scroll領域はfocus可能。空はcollection導線、未選択は案内。
+- 一覧は初期Propsを表示しmount fetchなし。再読込は同期refとdisabledで直列化。初回/再読込失敗は汎用alertとretry。
+- 購入者専用hookは注入したload/mark actionsを使う。選択時はmessagesをクリアして即取得・既読化。5秒poll、document.hiddenで背景poll停止、cancelledとlive IDで旧応答破棄。pollは重複しない。送信後/手動retryは進行中pollの後にforeground取得をqueueする。
+- スレッド取得中status/aria-busy、失敗は旧messagesを隠してretry。既読失敗は表示を維持しRetry read status。非同期既読結果も旧会話へ適用しない。
 
-### 4.2 `messages-container.tsx`（`'use client'`・2ペイン・ポーリング）
+### 4.3 ProfileConversationThread（購入者専用）
 
-- 左ペイン: 会話一覧（`initialConversations` を state 初期値に）。選択中 `conversationId` を state 管理。
-- 右ペイン: `<ConversationThread conversationId={selected} />`。
-- **ポーリング**（NFR-M5・tech.md cancelled パターン）:
+- buyerをsenderId===conversation.userIdで判別。深緑/クリームのbubble、You/StoreとUTC日時で色だけに依存しない。本文は改行/wrap、role=logの領域をキーボードでscrollできる。
+- RHF+SendMessageSchema.pick(content)のtrim/1〜2000文字制約、label/error-describedby/aria-invalid、汎用送信alertと成功status。
+- 非同期validationの前から同期refで二重送信を防ぐ。送信中は入力と会話切替/一覧再読込をロック。失敗でdraft保持、成功でクリアしhookへ再取得通知。取得失敗/取得中は送信を停止する。
 
-```typescript
-useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
+### 4.4 販売者側と移行対象外
 
-    const poll = async () => {
-        if (document.hidden) return;          // バックグラウンド時は停止
-        try {
-            const msgs = await getConversationMessages(selectedId);
-            if (!cancelled) setMessages(msgs);
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                console.error("[Messages:poll]", error.message, error.stack);
-            }
-        }
-    };
-
-    poll();                                   // 初回即時
-    const id = setInterval(poll, 5000);       // 5s 間隔
-    return () => { cancelled = true; clearInterval(id); };
-}, [selectedId]);
-```
-
-> `getConversationMessages` / `sendMessage` は server action のため client から直接 import 可（`"use server"`）。UI コンポーネントから `src/queries` を呼ぶのは**サーバーアクション呼び出し**であり、structure.md の「UI から queries を直接 import 禁止」は**データ取得関数の同期 import** を指す。本パターンは Server Action 呼び出しなので許容（既存 `address-details.tsx` 等と同様）。実装時に既存の呼び出し慣行に合わせる。
-
-### 4.3 `conversation-thread.tsx`（バブル + composer）
-
-- メッセージを `senderId === conversation.userId` で左右振り分け表示。
-- composer: RHF + `zodResolver(SendMessageSchema)`。送信は **useRef リエントランシーガード**（tech.md）。送信成功後に `markConversationRead` + 楽観的追加 or 再フェッチ。
-
-### 4.4 販売者側 `dashboard/seller/stores/[storeUrl]/messages/page.tsx`
-
-- `getStoreConversations(storeUrl)` → `SellerMessagesContainer`（`conversation-thread.tsx` を流用）。`force-dynamic`。
-- 返信は同じ `sendMessage`（`assertParticipant` が店舗オーナーを許可）。
-
-### 4.5 導線
-
-- `sidebar.tsx` の `menu`（[63-96](../../../src/components/store/layout/profile-sidebar/sidebar.tsx#L63-L96)）に `{ title: "Messages", link: "/profile/messages" }` 追加。
-- user-menu の `/profile/messages` リンクは既存（変更不要・事実 0-5）。
-
----
+SellerMessagesContainer、shared MessagesLayout/useConversationThreadと旧ConversationThreadは従来の構成を維持し今回変更しない。販売者画面の旧action直接importは既存残件として専用移行時に解消する。購入者専用threadを新台帳DS-COMP-202に登録し、旧共有DS-COMP-089/091/092は完了扱いにしない。商品/注文からの問い合わせ起点UIは引き続き対象外。
 
 ## 判断1. 新規モデルを作る理由（既存への相乗り却下）
 

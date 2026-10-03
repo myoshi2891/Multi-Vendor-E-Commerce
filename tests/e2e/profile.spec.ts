@@ -23,15 +23,9 @@ const clerk = clerkSecretKey
  * 前提データであり、注文履歴は「注文した → 後から確認できる」という取引の基本保証で、
  * どちらもブラウザ導線でしか固定できない。
  *
- * **国リストについて（本 spec 固有の前提）**: `CountrySelector` が描画するのは
- * 静的な ISO 国リストだが、配送先として保存できるのは DB の `Country` 行だけで、
- * 両者は名前一致でしか結びつかない。E2E の seed は並列分離のため国名にサフィックスを
- * 付ける（"United States CHROMIUM-W0" 等）ので、**seed の国は選択肢に現れない**。
- * そこでテスト 1 は静的リストと一致する実国名の Country 行を自前で作り、それを選ぶ。
- * （一致しない国を選んだ場合にフォームがエラーを出すことは、component テスト
- * `tests/component/store/shipping-form.test.tsx` が固定している。）
- *
- * 構造の手本: tests/e2e/stock-decrement.spec.ts（認証付き DB バック構成・購入フロー）。
+ * **国リストについて**: profileはDB対応国のnative selectを使用する。
+ * 本specの国fixtureは既存checkoutの共有フォームとの互換性のため実国名を維持する。
+ * 共有CountrySelectorの静的リスト/名前照合はshipping-form componentテストで確認する。
  */
 test.describe.serial("プロフィール（住所管理 / 注文履歴）", () => {
     let seed: ReturnType<typeof buildE2ESeed>;
@@ -39,7 +33,7 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
     let userPassword: string;
     let clerkUserId: string;
     let seedCountryId: string;
-    /** 静的国リストと一致する実国名の Country 行（UI から選べる唯一の国） */
+    /** 本spec専用のDB対応国fixture（checkoutの共有フォームにも対応） */
     let selectableCountryId: string;
     let selectableCountryName: string;
 
@@ -67,8 +61,7 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         }
         seedCountryId = country.id;
 
-        // UI から選べる国を用意する。code は seed 側と衝突しないよう本 spec 専用にし、
-        // name は静的リストに実在する値（"United States"）にする。
+        // DB対応国を用意する。codeはseedと分離し、実国名はcheckout互換のため保持する。
         selectableCountryName = "United States";
         const selectableCode = `PS-${testInfo.project.name.slice(0, 3).toUpperCase()}`;
         const selectable = await prisma.country.upsert({
@@ -166,39 +159,22 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         await signInWithPassword(page, userEmail, userPassword);
 
         await gotoStable(page, "/profile/addresses");
-        await page.getByText("Add new address").click();
-
-        // 名前は英字のみ（ShippingAddressSchema の `/^[a-zA-Z]+$/`）。
-        // "E2E" は数字を含むため "First name can only contain letters." で弾かれる。
-        await page.getByPlaceholder("First name").fill("Profile");
-        await page.getByPlaceholder("Last name").fill("Tester");
-        await page.getByPlaceholder("Phone number").fill("+15550001111");
+        await page.getByRole("button", { name: "Add new address" }).click();
+        // ShippingAddressSchemaの英字名制約を保持。国はDB対応国のnative select。
+        for (const [label, value] of [
+            ["First name", "Profile"],
+            ["Last name", "Tester"],
+            ["Phone number", "+15550001111"],
+            ["Address line 1", uniqueStreet],
+            ["City", "Testville"],
+            ["State / Province", "CA"],
+            ["Postal code", "90210"],
+        ])
+            await page.getByLabel(label, { exact: true }).fill(value);
         await page
-            .getByPlaceholder("Street, house/apartment/unit")
-            .fill(uniqueStreet);
-        await page.getByPlaceholder("City").fill("Testville");
-        await page.getByPlaceholder("State/Province").fill("CA");
-        await page.getByPlaceholder("Zip code").fill("90210");
-
-        // 国はカスタムコンボボックス（native select ではない）。
-        // トグルボタン → 検索 → role="option" の順に操作する。
-        await page
-            .getByRole("button", { name: /United States/ })
-            .first()
-            .click();
-        await page
-            .getByPlaceholder("Search a country")
-            .fill(selectableCountryName);
-        await page
-            .getByRole("option")
-            .filter({ hasText: selectableCountryName })
-            .first()
-            .click();
-
-        // 送信ボタンのラベルは**新規と編集で違う**。プラン本文は
-        // "Save Address information" を指定しているが、それは編集時
-        // （`data?.id` あり）のラベルで、新規追加は "Create Address"。
-        await page.getByRole("button", { name: /Create Address/i }).click();
+            .getByRole("combobox", { name: "Country" })
+            .selectOption(selectableCountryId);
+        await page.getByRole("button", { name: "Save address" }).click();
 
         // Assert: 一覧に**その固有の Street** がちょうど 1 件現れる
         await expect(page.getByText(uniqueStreet)).toHaveCount(1, {
@@ -274,14 +250,18 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         // Assert: 履歴の**その注文の行**から詳細へ遷移できる。
         // 行を特定せずに View を押すと、注文が複数あるときに別の注文へ飛んでも気づけない。
         await gotoStable(page, "/profile/orders");
-        const row = page.locator("tr").filter({ hasText: `#${orderId}` });
+        const row = page
+            .getByRole("list", { name: "Your orders" })
+            .getByRole("listitem")
+            .filter({ hasText: orderId });
         await expect(row).toHaveCount(1, { timeout: 15000 });
-        await row.getByRole("link", { name: "View" }).click();
+        await row
+            .getByRole("link", { name: `View order ${orderId}`, exact: true })
+            .click();
         // 正規表現に orderId を埋めると ID 内の記号がメタ文字として解釈されうるため、
         // pathname を直接検証する述語で待つ。
-        await page.waitForURL(
-            (url) => url.pathname === `/order/${orderId}`,
-            { timeout: 15000 }
-        );
+        await page.waitForURL((url) => url.pathname === `/order/${orderId}`, {
+            timeout: 15000,
+        });
     });
 });

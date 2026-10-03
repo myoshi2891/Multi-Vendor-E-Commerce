@@ -1,20 +1,11 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getUserCountry } from "./lib/country";
 
-// Edge Runtimeではモジュールファクトリをリクエストごとに解決できないため、
-// createRouteMatcherはモジュールトップレベルで一度だけ評価する必要がある
-const protectedRoutes = createRouteMatcher([
-    "/dashboard",
-    "/dashboard/(.*)",
-    "/checkout",
-    "/profile",
-    "/profile/(.*)",
-]);
-
-export default clerkMiddleware(async (auth, req, next) => {
-    if (protectedRoutes(req)) await auth.protect();
-
+// 認証・認可はリソース側（layout / page / Server Action）で行う。
+// パスマッチ（createRouteMatcher）による保護は Next.js のルーティングと乖離し得るため廃止した
+// （plans/072）。clerkMiddleware は認証コンテキスト確立のために残す。
+export default clerkMiddleware(async (_auth, req) => {
     // リダイレクトではなくレスポンスに直接 Cookie をセット
     // （リダイレクト方式は非ブラウザクライアントで無限ループを引き起こす）
     const countryCookie = req.cookies.get("userCountry");
@@ -37,9 +28,16 @@ export default clerkMiddleware(async (auth, req, next) => {
             return response;
         } catch (error) {
             if (error instanceof Error) {
-                console.error("[middleware] Failed to set userCountry cookie:", error.message, error.stack);
+                console.error(
+                    "[middleware] Failed to set userCountry cookie:",
+                    error.message,
+                    error.stack
+                );
             } else {
-                console.error("[middleware] Failed to set userCountry cookie:", error);
+                console.error(
+                    "[middleware] Failed to set userCountry cookie:",
+                    error
+                );
             }
             // Cookie設定失敗時もレスポンスを返す（リクエストをクラッシュさせない）
             return NextResponse.next({ request: req });

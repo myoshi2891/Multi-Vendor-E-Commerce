@@ -1,15 +1,24 @@
 import PaymentsTable from "@/components/store/profile/payments/payments-table";
-import { getUserPayments } from "@/queries/profile";
+import { getUserPaymentsForDisplay } from "@/queries/profile";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function ProfilePaymentPage() {
-    const payments_data = await getUserPayments();
-    const { payments, totalPages } = payments_data;
-
+    let result: Awaited<ReturnType<typeof getUserPaymentsForDisplay>> = {
+        payments: [],
+        totalPages: 0,
+    };
+    let initialError = false;
+    try {
+        result = await getUserPaymentsForDisplay();
+    } catch {
+        initialError = true;
+    }
     return (
-        <div>
-            <PaymentsTable payments={payments} totalPages={totalPages} />
-        </div>
+        <PaymentsTable
+            {...result}
+            initialError={initialError}
+            fetchPaymentsAction={getUserPaymentsForDisplay}
+        />
     );
 }

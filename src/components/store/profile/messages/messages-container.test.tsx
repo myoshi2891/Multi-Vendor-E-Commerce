@@ -1,450 +1,359 @@
 /** @jest-environment jsdom */
 import React from "react";
 import {
+    act,
+    fireEvent,
     render,
     screen,
-    fireEvent,
-    act,
     waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import MessagesContainer from "./messages-container";
-import {
-    getConversationMessages,
-    markConversationRead,
-} from "@/queries/message";
 import {
     createMockConversationWithLatest,
     createMockMessageType,
 } from "@/config/test-fixtures";
-
 jest.mock("@/queries/message", () => ({
-    getConversationMessages: jest.fn(),
-    markConversationRead: jest.fn(),
+    getProfileConversations: jest.fn().mockResolvedValue([]),
+    getProfileConversationMessages: jest.fn().mockResolvedValue([]),
+    getConversationMessages: jest.fn().mockResolvedValue([]),
+    markConversationRead: jest.fn().mockResolvedValue({ count: 0 }),
+    sendMessage: jest.fn(),
 }));
-
-// next/image を素の img に差し替え（jsdom で next 最適化を回避）
 jest.mock("next/image", () => ({
     __esModule: true,
-    default: (props: { src: string; alt: string }) => (
-        <img src={props.src} alt={props.alt} />
+    default: ({ src, alt }: { src: string; alt: string }) => (
+        <img src={src} alt={alt} />
     ),
 }));
-
-// 子スレッドはモックし、渡された conversation / messages / onSent を観測する
-jest.mock("./conversation-thread", () => ({
-    __esModule: true,
-    default: ({
-        conversation,
-        messages,
-        onSent,
-    }: {
-        conversation: { id: string } | null;
-        messages: { id: string }[];
-        onSent: () => void;
-    }) => (
-        <div data-testid="thread">
-            <span data-testid="selected-id">{conversation?.id ?? "none"}</span>
-            <span data-testid="message-count">{messages.length}</span>
-            <button data-testid="trigger-sent" onClick={() => onSent()}>
-                sent
-            </button>
-        </div>
-    ),
-}));
-
-const conversations = [
+const conversations = ["Acme Store", "Beta Store"].map((name, i) =>
     createMockConversationWithLatest({
-        id: "conv-1",
-        userId: "user-buyer",
-        storeId: "store-1",
-        store: { id: "store-1", name: "Acme Store", logo: "", url: "acme" },
-        messages: [
-            createMockMessageType({ id: "m0", content: "latest preview" }),
-        ],
-    }),
-    createMockConversationWithLatest({
-        id: "conv-2",
-        userId: "user-buyer",
-        storeId: "store-2",
-        store: { id: "store-2", name: "Beta Store", logo: "", url: "beta" },
+        id: `conv-${i}`,
+        userId: "buyer",
+        store: { id: `store-${i}`, name, url: `store-${i}`, logo: "" },
         messages: [],
-    }),
-];
-
-describe("MessagesContainer", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-        (getConversationMessages as jest.Mock).mockResolvedValue([]);
-        (markConversationRead as jest.Mock).mockResolvedValue({ count: 0 });
+    })
+);
+const message = createMockMessageType({
+    id: "msg-one",
+    senderId: "seller",
+    content: "Hello from the store",
+});
+function setup(extra = {}) {
+    const actions = {
+        loadConversationsAction: jest.fn().mockResolvedValue(conversations),
+        loadMessagesAction: jest.fn().mockResolvedValue([message]),
+        markReadAction: jest.fn().mockResolvedValue({ count: 0 }),
+        sendMessageAction: jest.fn().mockResolvedValue({ id: "new-message" }),
+    };
+    const props = { initialConversations: conversations, ...actions, ...extra };
+    const mounted = render(<MessagesContainer {...props} />);
+    return { ...actions, ...mounted, user: userEvent.setup() };
+}
+afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+});
+it("renders branded heading and explicit conversation selection", async () => {
+    const { user, loadMessagesAction, markReadAction } = setup();
+    expect(
+        screen.getByRole("heading", { name: "My messages", level: 1 })
+    ).toBeVisible();
+    await user.click(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    );
+    expect(await screen.findByText("Hello from the store")).toBeVisible();
+    expect(loadMessagesAction).toHaveBeenCalledWith("conv-0");
+    expect(markReadAction).toHaveBeenCalledWith("conv-0");
+    expect(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    ).toHaveAttribute("aria-pressed", "true");
+});
+it("offers the collection from an empty inbox and retries initial list failure", async () => {
+    const { user, loadConversationsAction } = setup({
+        initialConversations: [],
+        initialError: true,
     });
-
-    it("renders the conversation list from initial props", () => {
-        render(<MessagesContainer initialConversations={conversations} />);
-        expect(screen.getByText("Acme Store")).toBeInTheDocument();
-        expect(screen.getByText("Beta Store")).toBeInTheDocument();
-        expect(screen.getByText("latest preview")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn’t load your conversations"
+    );
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(loadConversationsAction).toHaveBeenCalledTimes(1);
+    await screen.findByRole("button", {
+        name: "Open conversation with Acme Store",
     });
-
-    it("shows an empty state when there are no conversations", () => {
-        render(<MessagesContainer initialConversations={[]} />);
-        expect(screen.getByText(/no conversations yet/i)).toBeInTheDocument();
+});
+it("shows the empty inbox without a duplicate mount lookup", () => {
+    const { loadConversationsAction } = setup({ initialConversations: [] });
+    expect(
+        screen.getByRole("heading", { name: "No conversations yet" })
+    ).toBeVisible();
+    expect(
+        screen.getByRole("link", { name: "Explore the collection" })
+    ).toHaveAttribute("href", "/browse");
+    expect(loadConversationsAction).not.toHaveBeenCalled();
+});
+it("shows loading and generic thread failure with retry", async () => {
+    let reject!: (error: Error) => void;
+    const loadMessagesAction = jest
+        .fn()
+        .mockImplementationOnce(
+            () =>
+                new Promise((_, fail) => {
+                    reject = fail;
+                })
+        )
+        .mockResolvedValue([message]);
+    const { user } = setup({ loadMessagesAction });
+    await user.click(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Loading messages");
+    await act(async () => reject(new Error("private details")));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn’t load these messages"
+    );
+    await user.click(screen.getByRole("button", { name: "Retry messages" }));
+    expect(await screen.findByText(message.content)).toBeVisible();
+});
+it("validates, locks sending, prevents duplicates and preserves draft after failure", async () => {
+    let reject!: (error: Error) => void;
+    const sendMessageAction = jest
+        .fn()
+        .mockImplementationOnce(
+            () =>
+                new Promise((_, fail) => {
+                    reject = fail;
+                })
+        )
+        .mockResolvedValue({ id: "new" });
+    const { user, loadMessagesAction } = setup({ sendMessageAction });
+    await user.click(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    );
+    await screen.findByText(message.content);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "メッセージを入力してください"
+    );
+    const input = screen.getByRole("textbox", { name: "Your message" });
+    await user.type(input, "  Thank you  ");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(input).toBeDisabled();
+    expect(
+        screen.getByRole("button", {
+            name: "Open conversation with Beta Store",
+        })
+    ).toBeDisabled();
+    await act(async () => {
+        fireEvent.submit(screen.getByRole("form", { name: "Send a message" }));
     });
-
-    it("fetches messages and marks read when a conversation is selected", async () => {
-        (getConversationMessages as jest.Mock).mockResolvedValue([
-            { id: "m1" },
-            { id: "m2" },
-        ]);
-
-        render(<MessagesContainer initialConversations={conversations} />);
-
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        await waitFor(() => {
-            expect(getConversationMessages).toHaveBeenCalledWith("conv-1");
-            expect(markConversationRead).toHaveBeenCalledWith("conv-1");
-            expect(screen.getByTestId("selected-id")).toHaveTextContent(
-                "conv-1"
-            );
-            expect(screen.getByTestId("message-count")).toHaveTextContent("2");
-        });
-    });
-
-    it("re-polls every 5 seconds while a conversation is selected", async () => {
-        jest.useFakeTimers();
-        render(<MessagesContainer initialConversations={conversations} />);
-
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        // 選択時の初回フェッチ
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        // 5 秒進めると 2 回目のポーリング
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(5000);
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(2);
-
-        jest.useRealTimers();
-    });
-
-    it("skips polling while the tab is hidden (document.hidden)", async () => {
-        jest.useFakeTimers();
-        const hiddenSpy = jest
-            .spyOn(document, "hidden", "get")
-            .mockReturnValue(false);
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        // タブを背面化 → interval の poll は早期 return
-        hiddenSpy.mockReturnValue(true);
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(5000);
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        hiddenSpy.mockRestore();
-        jest.useRealTimers();
-    });
-
-    it("refetches when the thread reports a successful send", async () => {
-        render(<MessagesContainer initialConversations={conversations} />);
-
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        await waitFor(() =>
-            expect(getConversationMessages).toHaveBeenCalledTimes(1)
-        );
-
-        await act(async () => {
-            fireEvent.click(screen.getByTestId("trigger-sent"));
-        });
-        await waitFor(() =>
-            expect(getConversationMessages).toHaveBeenCalledTimes(2)
-        );
-    });
-
-    it("logs a structured error when polling fails", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        const error = new Error("fetch failed");
-        (getConversationMessages as jest.Mock).mockRejectedValue(error);
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:poll] Failed to fetch messages",
-                error.message,
-                error.stack
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("renders the store logo as an avatar image when present", () => {
-        const withLogo = [
-            createMockConversationWithLatest({
-                id: "conv-logo",
-                userId: "user-buyer",
-                storeId: "store-9",
-                store: {
-                    id: "store-9",
-                    name: "Logo Store",
-                    logo: "https://cdn.example/logo.png",
-                    url: "logo",
-                },
-                messages: [],
-            }),
-        ];
-        render(<MessagesContainer initialConversations={withLogo} />);
-
-        const avatar = screen.getByRole("img", { name: "Logo Store" });
-        expect(avatar).toHaveAttribute(
-            "src",
-            "https://cdn.example/logo.png"
-        );
-    });
-
-    it("logs the unknown branch when polling rejects a non-Error", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        (getConversationMessages as jest.Mock).mockRejectedValue("boom");
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:poll] Unknown error",
-                "boom"
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("logs a structured error when markConversationRead fails (Error)", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        const error = new Error("mark fail");
-        (markConversationRead as jest.Mock).mockRejectedValue(error);
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:markRead] Failed to mark as read",
-                error.message,
-                error.stack
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("logs the unknown branch when markConversationRead rejects a non-Error", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-        (markConversationRead as jest.Mock).mockRejectedValue("mboom");
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:markRead] Unknown error",
-                "mboom"
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("logs a structured error when the send refetch fails (Error)", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        const error = new Error("refetch fail");
-        (getConversationMessages as jest.Mock).mockRejectedValue(error);
-        await act(async () => {
-            fireEvent.click(screen.getByTestId("trigger-sent"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:handleSent] Failed to refetch",
-                error.message,
-                error.stack
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("logs the unknown branch when the send refetch rejects a non-Error", async () => {
-        const consoleSpy = jest
-            .spyOn(console, "error")
-            .mockImplementation(() => {});
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        (getConversationMessages as jest.Mock).mockRejectedValue("hboom");
-        await act(async () => {
-            fireEvent.click(screen.getByTestId("trigger-sent"));
-        });
-
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[MessagesContainer:handleSent] Unknown error",
-                "hboom"
-            );
-        });
-        consoleSpy.mockRestore();
-    });
-
-    it("is a no-op when re-clicking the already-selected conversation", async () => {
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        await waitFor(() =>
-            expect(getConversationMessages).toHaveBeenCalledTimes(1)
-        );
-
-        // 同一会話を再クリック → selectConversation は早期 return（再フェッチしない）
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-    });
-
-    it("ignores a send event while no conversation is selected", async () => {
-        render(<MessagesContainer initialConversations={conversations} />);
-
-        // 未選択のまま送信通知 → handleSent は selectedId なしで早期 return
-        await act(async () => {
-            fireEvent.click(screen.getByTestId("trigger-sent"));
-        });
-        expect(getConversationMessages).not.toHaveBeenCalled();
-    });
-
-    it("skips an overlapping poll while a previous poll is still in flight", async () => {
-        jest.useFakeTimers();
-        // ポーリングを解決させず in-flight を維持する（次の interval が早期 return する）
-        (getConversationMessages as jest.Mock).mockReturnValue(
-            new Promise<never>(() => {})
-        );
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        // 5 秒進めても前回ポーリングが in-flight のため 2 回目は早期 return（呼ばれない）
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(5000);
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        jest.useRealTimers();
-    });
-
-    it("does not apply poll results after unmount (cancelled guard)", async () => {
-        let resolvePoll: ((v: { id: string }[]) => void) | undefined;
-        (getConversationMessages as jest.Mock).mockReturnValue(
-            new Promise<{ id: string }[]>((resolve) => {
-                resolvePoll = resolve;
+    expect(sendMessageAction).toHaveBeenCalledTimes(1);
+    await act(async () => reject(new Error("private details")));
+    expect(input).toHaveValue("  Thank you  ");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn’t send your message"
+    );
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(input).toHaveValue(""));
+    expect(sendMessageAction).toHaveBeenLastCalledWith("conv-0", "Thank you");
+    expect(loadMessagesAction.mock.calls.length).toBeGreaterThan(1);
+});
+it("preserves the thread and allows retry when marking read fails", async () => {
+    const markReadAction = jest
+        .fn()
+        .mockRejectedValueOnce(new Error("private details"))
+        .mockResolvedValue({ count: 1 });
+    const { user } = setup({ markReadAction });
+    await user.click(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    );
+    expect(await screen.findByText(message.content)).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn’t update the read status"
+    );
+    await user.click(screen.getByRole("button", { name: "Retry read status" }));
+    await waitFor(() =>
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    );
+});
+it("polls every five seconds, pauses hidden tabs and cleans up on unmount", async () => {
+    jest.useFakeTimers();
+    const hidden = jest.spyOn(document, "hidden", "get").mockReturnValue(false);
+    const { loadMessagesAction, unmount } = setup();
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Open conversation with Acme Store",
             })
         );
-
-        const { unmount } = render(
-            <MessagesContainer initialConversations={conversations} />
-        );
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-        expect(getConversationMessages).toHaveBeenCalledTimes(1);
-
-        // アンマウント後に in-flight だったポーリングが解決 → cancelled で setMessages されない
-        unmount();
-        await act(async () => {
-            resolvePoll?.([{ id: "late" }]);
-        });
-        // act 警告（unmount 後の state 更新）なく完了すれば cancelled ガードが機能している
     });
-
-    it("discards a stale send-refetch when the conversation changed mid-flight", async () => {
-        // conv-1 選択 → 送信 refetch を保留 → conv-2 へ切替 → 保留 refetch が解決しても
-        // requestedId(conv-1) !== 現在選択(conv-2) なので破棄される（取り違え防止のレースガード）
-        let resolveStale: ((v: { id: string }[]) => void) | undefined;
-        (getConversationMessages as jest.Mock)
-            .mockResolvedValueOnce([]) // conv-1 初回ポーリング
-            .mockImplementationOnce(
-                () =>
-                    new Promise<{ id: string }[]>((resolve) => {
-                        resolveStale = resolve;
-                    })
-            ) // 送信 refetch（保留）
-            .mockResolvedValue([{ id: "fresh-1" }, { id: "fresh-2" }]); // conv-2 ポーリング
-
-        render(<MessagesContainer initialConversations={conversations} />);
-        await act(async () => {
-            fireEvent.click(screen.getByText("Acme Store"));
-        });
-
-        // 送信 refetch を起動（保留状態のまま）
-        await act(async () => {
-            fireEvent.click(screen.getByTestId("trigger-sent"));
-        });
-
-        // 別会話へ切替（selectedIdRef が conv-2 になる）
-        await act(async () => {
-            fireEvent.click(screen.getByText("Beta Store"));
-        });
-        await waitFor(() =>
-            expect(screen.getByTestId("selected-id")).toHaveTextContent(
-                "conv-2"
-            )
-        );
-
-        // 保留中だった conv-1 の refetch を遅延解決 → 古い結果なので破棄される
-        await act(async () => {
-            resolveStale?.([{ id: "stale-1" }]);
-        });
-
-        // conv-2 のポーリング結果（2件）のまま。stale の 1 件で上書きされていない
-        await waitFor(() =>
-            expect(screen.getByTestId("message-count")).toHaveTextContent("2")
+    expect(loadMessagesAction).toHaveBeenCalledTimes(1);
+    await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+    });
+    expect(loadMessagesAction).toHaveBeenCalledTimes(2);
+    hidden.mockReturnValue(true);
+    await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+    });
+    expect(loadMessagesAction).toHaveBeenCalledTimes(2);
+    unmount();
+    hidden.mockReturnValue(false);
+    await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+    });
+    expect(loadMessagesAction).toHaveBeenCalledTimes(2);
+});
+it("discards stale responses and does not overlap polling requests", async () => {
+    jest.useFakeTimers();
+    let resolve!: (messages: unknown[]) => void;
+    const loadMessagesAction = jest
+        .fn()
+        .mockImplementationOnce(
+            () =>
+                new Promise((done) => {
+                    resolve = done;
+                })
+        )
+        .mockResolvedValue([{ ...message, content: "Beta reply" }]);
+    setup({ loadMessagesAction });
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Open conversation with Acme Store",
+            })
         );
     });
+    await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+    });
+    expect(loadMessagesAction).toHaveBeenCalledTimes(1);
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Open conversation with Beta Store",
+            })
+        );
+    });
+    await act(async () => resolve([message]));
+    expect(screen.getByText("Beta reply")).toBeVisible();
+    expect(screen.queryByText(message.content)).not.toBeInTheDocument();
+});
+
+// Post-implementation regression: server boundary and initial route states.
+describe("Profile messages server boundary", () => {
+    it("passes server data and all four actions without duplicate mount fetching", async () => {
+        jest.doMock("@/queries/message", () => ({
+            getProfileConversations: jest.fn().mockResolvedValue(conversations),
+            getProfileConversationMessages: jest.fn(),
+            sendMessage: jest.fn(),
+            markConversationRead: jest.fn(),
+        }));
+        const actions = await import("@/queries/message");
+        const { default: Page } = await import(
+            "@/app/(store)/profile/messages/page"
+        );
+        const element = await Page();
+        expect(element.props.sendMessageAction).toBe(actions.sendMessage);
+        expect(element.props.markReadAction).toBe(actions.markConversationRead);
+        render(element);
+        expect(actions.getProfileConversations).toHaveBeenCalledTimes(1);
+        expect(
+            screen.getByRole("button", {
+                name: "Open conversation with Acme Store",
+            })
+        ).toBeVisible();
+    });
+    it("renders route loading with the branded heading", async () => {
+        const { default: Loading } = await import(
+            "@/app/(store)/profile/messages/loading"
+        );
+        render(<Loading />);
+        expect(
+            screen.getByRole("heading", { name: "My messages", level: 1 })
+        ).toBeVisible();
+        expect(
+            screen.getByRole("region", { name: "Message management" })
+        ).toHaveAttribute("aria-busy", "true");
+    });
+});
+
+// Post-implementation checks for composer bounds and refresh during a pending poll.
+it("rejects overlong messages without sending", async () => {
+    const { user, sendMessageAction } = setup();
+    await user.click(
+        screen.getByRole("button", {
+            name: "Open conversation with Acme Store",
+        })
+    );
+    await screen.findByText(message.content);
+    fireEvent.change(screen.getByRole("textbox", { name: "Your message" }), {
+        target: { value: "x".repeat(2001) },
+    });
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("2000文字以内");
+    expect(sendMessageAction).not.toHaveBeenCalled();
+});
+it("queues the post-send refresh behind an active background poll", async () => {
+    jest.useFakeTimers();
+    let resolve!: (value: unknown[]) => void;
+    const loadMessagesAction = jest
+        .fn()
+        .mockResolvedValueOnce([message])
+        .mockImplementationOnce(
+            () =>
+                new Promise((done) => {
+                    resolve = done;
+                })
+        )
+        .mockResolvedValue([{ ...message, content: "Latest after send" }]);
+    const { sendMessageAction } = setup({ loadMessagesAction });
+    await act(async () => {
+        fireEvent.click(
+            screen.getByRole("button", {
+                name: "Open conversation with Acme Store",
+            })
+        );
+    });
+    await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+    });
+    await act(async () => {
+        fireEvent.change(
+            screen.getByRole("textbox", { name: "Your message" }),
+            { target: { value: "Thanks" } }
+        );
+        fireEvent.submit(screen.getByRole("form", { name: "Send a message" }));
+    });
+    expect(sendMessageAction).toHaveBeenCalledWith("conv-0", "Thanks");
+    expect(loadMessagesAction).toHaveBeenCalledTimes(2);
+    await act(async () => resolve([message]));
+    expect(loadMessagesAction).toHaveBeenCalledTimes(3);
+    expect(screen.getByText("Latest after send")).toBeVisible();
+});
+it("turns an initial server load failure into generic retry feedback", async () => {
+    const { getProfileConversations } = await import("@/queries/message");
+    (getProfileConversations as jest.Mock).mockRejectedValueOnce(
+        new Error("private details")
+    );
+    const { default: Page } = await import(
+        "@/app/(store)/profile/messages/page"
+    );
+    render(await Page());
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "We couldn’t load your conversations"
+    );
+    expect(screen.queryByText("private details")).not.toBeInTheDocument();
 });
